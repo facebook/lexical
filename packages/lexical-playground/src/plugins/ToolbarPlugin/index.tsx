@@ -61,6 +61,7 @@ import {
   OUTDENT_CONTENT_COMMAND,
   REDO_COMMAND,
   SELECTION_CHANGE_COMMAND,
+  SKIP_DOM_SELECTION_TAG,
   SKIP_SELECTION_FOCUS_TAG,
   TextFormatType,
   UNDO_COMMAND,
@@ -77,6 +78,7 @@ import catTypingGif from '../../images/cat-typing.gif';
 import {$createStickyNode} from '../../nodes/StickyNode';
 import DropDown, {DropDownItem} from '../../ui/DropDown';
 import DropdownColorPicker from '../../ui/DropdownColorPicker';
+import {isKeyboardInput} from '../../utils/focusUtils';
 import {getSelectedNode} from '../../utils/getSelectedNode';
 import {sanitizeUrl} from '../../utils/url';
 import {EmbedConfigs} from '../AutoEmbedPlugin';
@@ -574,24 +576,25 @@ export default function ToolbarPlugin({
   const [isEditable, setIsEditable] = useState(() => editor.isEditable());
   const {toolbarState, updateToolbarState} = useToolbarState();
 
-  const dispatchFormatTextCommand = (payload: TextFormatType) => {
-    activeEditor.update(() => {
-      $addUpdateTag(SKIP_SELECTION_FOCUS_TAG);
-      activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, payload);
-    });
-  };
-
   const dispatchToolbarCommand = <T extends LexicalCommand<unknown>>(
     command: T,
     payload: CommandPayloadType<T> | undefined = undefined,
+    skipRefocus: boolean = false,
   ) => {
     activeEditor.update(() => {
-      $addUpdateTag(SKIP_SELECTION_FOCUS_TAG);
+      if (skipRefocus) {
+        $addUpdateTag(SKIP_DOM_SELECTION_TAG);
+      }
 
       // Re-assert on Type so that payload can have a default param
       activeEditor.dispatchCommand(command, payload as CommandPayloadType<T>);
     });
   };
+
+  const dispatchFormatTextCommand = (
+    payload: TextFormatType,
+    skipRefocus: boolean = false,
+  ) => dispatchToolbarCommand(FORMAT_TEXT_COMMAND, payload, skipRefocus);
 
   const $handleHeadingNode = useCallback(
     (selectedElement: LexicalNode) => {
@@ -831,10 +834,16 @@ export default function ToolbarPlugin({
   }, [$updateToolbar, activeEditor, editor, updateToolbarState]);
 
   const applyStyleText = useCallback(
-    (styles: Record<string, string>, skipHistoryStack?: boolean) => {
+    (
+      styles: Record<string, string>,
+      skipHistoryStack?: boolean,
+      skipRefocus: boolean = false,
+    ) => {
       activeEditor.update(
         () => {
-          $addUpdateTag(SKIP_SELECTION_FOCUS_TAG);
+          if (skipRefocus) {
+            $addUpdateTag(SKIP_DOM_SELECTION_TAG);
+          }
           const selection = $getSelection();
           if (selection !== null) {
             $patchStyleText(selection, styles);
@@ -847,15 +856,27 @@ export default function ToolbarPlugin({
   );
 
   const onFontColorSelect = useCallback(
-    (value: string, skipHistoryStack: boolean) => {
-      applyStyleText({color: value}, skipHistoryStack);
+    (
+      value: string,
+      skipHistoryStack: boolean,
+      skipRefocus: boolean = false,
+    ) => {
+      applyStyleText({color: value}, skipHistoryStack, skipRefocus);
     },
     [applyStyleText],
   );
 
   const onBgColorSelect = useCallback(
-    (value: string, skipHistoryStack: boolean) => {
-      applyStyleText({'background-color': value}, skipHistoryStack);
+    (
+      value: string,
+      skipHistoryStack: boolean,
+      skipRefocus: boolean = false,
+    ) => {
+      applyStyleText(
+        {'background-color': value},
+        skipHistoryStack,
+        skipRefocus,
+      );
     },
     [applyStyleText],
   );
@@ -911,7 +932,9 @@ export default function ToolbarPlugin({
     <div className="toolbar">
       <button
         disabled={!toolbarState.canUndo || !isEditable}
-        onClick={() => dispatchToolbarCommand(UNDO_COMMAND)}
+        onClick={(e) =>
+          dispatchToolbarCommand(UNDO_COMMAND, undefined, isKeyboardInput(e))
+        }
         title={IS_APPLE ? 'Undo (⌘Z)' : 'Undo (Ctrl+Z)'}
         type="button"
         className="toolbar-item spaced"
@@ -920,7 +943,9 @@ export default function ToolbarPlugin({
       </button>
       <button
         disabled={!toolbarState.canRedo || !isEditable}
-        onClick={() => dispatchToolbarCommand(REDO_COMMAND)}
+        onClick={(e) =>
+          dispatchToolbarCommand(REDO_COMMAND, undefined, isKeyboardInput(e))
+        }
         title={IS_APPLE ? 'Redo (⇧⌘Z)' : 'Redo (Ctrl+Y)'}
         type="button"
         className="toolbar-item"
@@ -1038,7 +1063,9 @@ export default function ToolbarPlugin({
           <Divider />
           <button
             disabled={!isEditable}
-            onClick={() => dispatchFormatTextCommand('bold')}
+            onClick={(e) =>
+              dispatchFormatTextCommand('bold', isKeyboardInput(e))
+            }
             className={
               'toolbar-item spaced ' + (toolbarState.isBold ? 'active' : '')
             }
@@ -1049,7 +1076,9 @@ export default function ToolbarPlugin({
           </button>
           <button
             disabled={!isEditable}
-            onClick={() => dispatchFormatTextCommand('italic')}
+            onClick={(e) =>
+              dispatchFormatTextCommand('italic', isKeyboardInput(e))
+            }
             className={
               'toolbar-item spaced ' + (toolbarState.isItalic ? 'active' : '')
             }
@@ -1060,7 +1089,9 @@ export default function ToolbarPlugin({
           </button>
           <button
             disabled={!isEditable}
-            onClick={() => dispatchFormatTextCommand('underline')}
+            onClick={(e) =>
+              dispatchFormatTextCommand('underline', isKeyboardInput(e))
+            }
             className={
               'toolbar-item spaced ' +
               (toolbarState.isUnderline ? 'active' : '')
@@ -1073,7 +1104,9 @@ export default function ToolbarPlugin({
           {canViewerSeeInsertCodeButton && (
             <button
               disabled={!isEditable}
-              onClick={() => dispatchFormatTextCommand('code')}
+              onClick={(e) =>
+                dispatchFormatTextCommand('code', isKeyboardInput(e))
+              }
               className={
                 'toolbar-item spaced ' + (toolbarState.isCode ? 'active' : '')
               }
@@ -1119,7 +1152,9 @@ export default function ToolbarPlugin({
             buttonAriaLabel="Formatting options for additional text styles"
             buttonIconClassName="icon dropdown-more">
             <DropDownItem
-              onClick={() => dispatchFormatTextCommand('lowercase')}
+              onClick={(e) =>
+                dispatchFormatTextCommand('lowercase', isKeyboardInput(e))
+              }
               className={
                 'item wide ' + dropDownActiveClass(toolbarState.isLowercase)
               }
@@ -1132,7 +1167,9 @@ export default function ToolbarPlugin({
               <span className="shortcut">{SHORTCUTS.LOWERCASE}</span>
             </DropDownItem>
             <DropDownItem
-              onClick={() => dispatchFormatTextCommand('uppercase')}
+              onClick={(e) =>
+                dispatchFormatTextCommand('uppercase', isKeyboardInput(e))
+              }
               className={
                 'item wide ' + dropDownActiveClass(toolbarState.isUppercase)
               }
@@ -1145,7 +1182,9 @@ export default function ToolbarPlugin({
               <span className="shortcut">{SHORTCUTS.UPPERCASE}</span>
             </DropDownItem>
             <DropDownItem
-              onClick={() => dispatchFormatTextCommand('capitalize')}
+              onClick={(e) =>
+                dispatchFormatTextCommand('capitalize', isKeyboardInput(e))
+              }
               className={
                 'item wide ' + dropDownActiveClass(toolbarState.isCapitalize)
               }
@@ -1158,7 +1197,9 @@ export default function ToolbarPlugin({
               <span className="shortcut">{SHORTCUTS.CAPITALIZE}</span>
             </DropDownItem>
             <DropDownItem
-              onClick={() => dispatchFormatTextCommand('strikethrough')}
+              onClick={(e) =>
+                dispatchFormatTextCommand('strikethrough', isKeyboardInput(e))
+              }
               className={
                 'item wide ' + dropDownActiveClass(toolbarState.isStrikethrough)
               }
@@ -1171,7 +1212,9 @@ export default function ToolbarPlugin({
               <span className="shortcut">{SHORTCUTS.STRIKETHROUGH}</span>
             </DropDownItem>
             <DropDownItem
-              onClick={() => dispatchFormatTextCommand('subscript')}
+              onClick={(e) =>
+                dispatchFormatTextCommand('subscript', isKeyboardInput(e))
+              }
               className={
                 'item wide ' + dropDownActiveClass(toolbarState.isSubscript)
               }
@@ -1184,7 +1227,9 @@ export default function ToolbarPlugin({
               <span className="shortcut">{SHORTCUTS.SUBSCRIPT}</span>
             </DropDownItem>
             <DropDownItem
-              onClick={() => dispatchFormatTextCommand('superscript')}
+              onClick={(e) =>
+                dispatchFormatTextCommand('superscript', isKeyboardInput(e))
+              }
               className={
                 'item wide ' + dropDownActiveClass(toolbarState.isSuperscript)
               }
@@ -1197,7 +1242,9 @@ export default function ToolbarPlugin({
               <span className="shortcut">{SHORTCUTS.SUPERSCRIPT}</span>
             </DropDownItem>
             <DropDownItem
-              onClick={() => dispatchFormatTextCommand('highlight')}
+              onClick={(e) =>
+                dispatchFormatTextCommand('highlight', isKeyboardInput(e))
+              }
               className={
                 'item wide ' + dropDownActiveClass(toolbarState.isHighlight)
               }
@@ -1209,7 +1256,7 @@ export default function ToolbarPlugin({
               </div>
             </DropDownItem>
             <DropDownItem
-              onClick={() => clearFormatting(activeEditor)}
+              onClick={(e) => clearFormatting(activeEditor, isKeyboardInput(e))}
               className="item wide"
               title="Clear text formatting"
               aria-label="Clear all text formatting">

@@ -20,7 +20,7 @@ import {
 } from 'react';
 import {createPortal} from 'react-dom';
 
-import {focusNearestDescendant} from '../utils/focusUtils';
+import {focusNearestDescendant, isKeyboardInput} from '../utils/focusUtils';
 
 type DropDownContextType = {
   registerItem: (ref: React.RefObject<HTMLButtonElement>) => void;
@@ -198,7 +198,7 @@ export default function DropDown({
     const button = buttonRef.current;
 
     if (button !== null && showDropDown) {
-      const handle = (event: MouseEvent) => {
+      const handle = (event: PointerEvent) => {
         const target = event.target;
         if (!isDOMNode(target)) {
           return;
@@ -213,7 +213,7 @@ export default function DropDown({
         if (!button.contains(target)) {
           setShowDropDown(false);
 
-          if (targetIsDropDownItem) {
+          if (targetIsDropDownItem && isKeyboardInput(event)) {
             button.focus();
           }
         }

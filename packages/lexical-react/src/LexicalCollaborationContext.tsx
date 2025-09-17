@@ -9,7 +9,7 @@
 import type {Doc} from 'yjs';
 
 import {createContext, useContext, useMemo} from 'react';
-import invariant from 'shared/invariant';
+import devInvariant from 'shared/devInvariant';
 
 export type CollaborationContextType = {
   clientID: number;
@@ -43,16 +43,22 @@ const randomEntry = entries[Math.floor(Math.random() * entries.length)];
 export const CollaborationContext =
   createContext<CollaborationContextType | null>(null);
 
+function newContext() {
+  return {
+    clientID: 0,
+    color: randomEntry[1],
+    isCollabActive: false,
+    name: randomEntry[0],
+    yjsDocMap: new Map(),
+  };
+}
+
+// This is here to help the transition post-#7818, however should be removed in a future release as
+// a shared context across editors is likely to lead to bugs.
+const UNSAFE_GLOBAL_CONTEXT = newContext();
+
 export function LexicalCollaboration({children}: {children: React.ReactNode}) {
-  const collabContext = useMemo(() => {
-    return {
-      clientID: 0,
-      color: randomEntry[1],
-      isCollabActive: false,
-      name: randomEntry[0],
-      yjsDocMap: new Map(),
-    };
-  }, []);
+  const collabContext = useMemo(() => newContext(), []);
 
   return (
     <CollaborationContext.Provider value={collabContext}>
@@ -65,11 +71,13 @@ export function useCollaborationContext(
   username?: string,
   color?: string,
 ): CollaborationContextType {
-  const collabContext = useContext(CollaborationContext);
-  invariant(
+  let collabContext = useContext(CollaborationContext);
+  devInvariant(
     collabContext != null,
     'useCollaborationContext: no context provider found',
   );
+
+  collabContext = collabContext ?? UNSAFE_GLOBAL_CONTEXT;
 
   if (username != null) {
     collabContext.name = username;

@@ -24,7 +24,6 @@ import {
   COMMAND_PRIORITY_LOW,
   NodeKey,
 } from 'lexical';
-import * as React from 'react';
 import {useEffect, useMemo, useRef, useState} from 'react';
 
 import Button from '../ui/Button';
@@ -53,10 +52,10 @@ function PollOptionComponent({
     onSelect?: () => void,
   ) => void;
 }): JSX.Element {
-  const {clientID} = useCollaborationContext();
+  const {name: username} = useCollaborationContext();
   const checkboxRef = useRef(null);
   const votesArray = option.votes;
-  const checkedIndex = votesArray.indexOf(clientID);
+  const checkedIndex = votesArray.indexOf(username);
   const checked = checkedIndex !== -1;
   const votes = votesArray.length;
   const text = option.text;
@@ -74,7 +73,7 @@ function PollOptionComponent({
           type="checkbox"
           onChange={(e) => {
             withPollNode((node) => {
-              node.toggleVote(option, clientID);
+              node.toggleVote(option, username);
             });
           }}
           checked={checked}

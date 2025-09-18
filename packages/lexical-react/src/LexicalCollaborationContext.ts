@@ -11,7 +11,6 @@ import type {Doc} from 'yjs';
 import {createContext, useContext} from 'react';
 
 export type CollaborationContextType = {
-  clientID: number;
   color: string;
   isCollabActive: boolean;
   name: string;
@@ -39,7 +38,6 @@ const entries = [
 
 const randomEntry = entries[Math.floor(Math.random() * entries.length)];
 export const CollaborationContext = createContext<CollaborationContextType>({
-  clientID: 0,
   color: randomEntry[1],
   isCollabActive: false,
   name: randomEntry[0],

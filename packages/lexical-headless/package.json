@@ -40,31 +40,16 @@
     ".": {
       "import": {
         "types": "./index.d.ts",
-        "development": "./index.dev.mjs",
-        "production": "./index.prod.mjs",
-        "node": "./index.node.mjs",
-        "default": "./index.mjs"
+        "development": "./LexicalHeadless.dev.mjs",
+        "production": "./LexicalHeadless.prod.mjs",
+        "node": "./LexicalHeadless.node.mjs",
+        "default": "./LexicalHeadless.mjs"
       },
       "require": {
         "types": "./index.d.ts",
-        "development": "./index.dev.js",
-        "production": "./index.prod.js",
-        "default": "./index.js"
-      }
-    },
-    "./index.js": {
-      "import": {
-        "types": "./index.d.ts",
-        "development": "./index.dev.mjs",
-        "production": "./index.prod.mjs",
-        "node": "./index.node.mjs",
-        "default": "./index.mjs"
-      },
-      "require": {
-        "types": "./index.d.ts",
-        "development": "./index.dev.js",
-        "production": "./index.prod.js",
-        "default": "./index.js"
+        "development": "./LexicalHeadless.dev.js",
+        "production": "./LexicalHeadless.prod.js",
+        "default": "./LexicalHeadless.js"
       }
     }
   },

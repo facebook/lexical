@@ -12,6 +12,7 @@ const fs = require('fs-extra');
 const glob = require('glob');
 const {packagesManager} = require('./shared/packagesManager');
 const {PackageMetadata} = require('./shared/PackageMetadata');
+const npmToWwwName = require('./www/npmToWwwName');
 
 const monorepoPackageJson = require('./shared/readMonorepoPackageJson')();
 // get version from monorepo package.json version
@@ -170,13 +171,17 @@ function updatePublicPackage(pkg) {
         const hasBrowser = fs.existsSync(
           pkg.resolve('src', fn.replace(/(\.tsx?)$/, '.browser$1')),
         );
-        let entry = exportEntry(basename);
+        const isIndex = basename === 'index';
+        let entry = exportEntry(
+          isIndex ? npmToWwwName(pkg.getNpmName()) : basename,
+          isIndex ? 'index.d.ts' : undefined,
+        );
         if (hasBrowser) {
           entry = withBrowser(entry);
         }
         // support for import "@lexical/react/LexicalComposer"
-        exports[basename === 'index' ? '.' : `./${basename}`] = entry;
-        if (!hasBrowser) {
+        exports[isIndex ? '.' : `./${basename}`] = entry;
+        if (!hasBrowser && !isIndex) {
           // support for import "@lexical/react/LexicalComposer.js"
           // @mdxeditor/editor uses this at least as of v3.46.0
           exports[`./${basename}.js`] = entry;

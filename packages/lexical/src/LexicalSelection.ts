@@ -1534,7 +1534,7 @@ export class RangeSelection implements BaseSelection {
         selectedNodes.pop();
       } else if (endOffset !== lastNodeTextLength) {
         [lastNode] = lastNode.splitText(endOffset);
-        selectedNodes[lastIndex] = lastNode;
+        selectedNodes[selectedNodes.length - 1] = lastNode;
       }
     }
     return selectedNodes;

@@ -12,7 +12,6 @@ import {createContext, useContext, useMemo} from 'react';
 import devInvariant from 'shared/devInvariant';
 
 export type CollaborationContextType = {
-  clientID: number;
   color: string;
   isCollabActive: boolean;
   name: string;
@@ -45,7 +44,6 @@ export const CollaborationContext =
 
 function newContext() {
   return {
-    clientID: 0,
     color: randomEntry[1],
     isCollabActive: false,
     name: randomEntry[0],

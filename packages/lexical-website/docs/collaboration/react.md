@@ -97,14 +97,14 @@ In a production environment, you should bootstrap the editor's initial content o
 Using the `withHeadlessCollaborationEditor` function from the [FAQ](faq.md) page, you can create a bootstrapped `Y.Doc` with the following:
 
 ```tsx
+import type {CreateEditorArgs} from 'lexical';
+
 import {$getRoot, $createParagraphNode} from 'lexical';
 import {Doc} from 'yjs';
 
 import {withHeadlessCollaborationEditor} from './withHeadlessCollaborationEditor';
 
-function createBootstrappedYDoc(
-  nodes: ReadonlyArray<Klass<LexicalNode> | LexicalNodeReplacement>,
-): SerializedEditorState<SerializedLexicalNode> {
+function createBootstrappedYDoc(nodes: CreateEditorArgs['nodes']): Doc {
   return withHeadlessCollaborationEditor(nodes, (editor) => {
     const yDoc = new Doc();
     editor.update(() => {

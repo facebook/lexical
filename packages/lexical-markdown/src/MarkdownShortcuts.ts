@@ -29,7 +29,7 @@ import {
 } from 'lexical';
 import invariant from 'shared/invariant';
 
-import {TRANSFORMERS} from '.';
+import {TRANSFORMERS} from './MarkdownTransformers';
 import {canContainTransformableMarkdown} from './importTextTransformers';
 import {indexBy, PUNCTUATION_OR_SPACE, transformersByType} from './utils';
 

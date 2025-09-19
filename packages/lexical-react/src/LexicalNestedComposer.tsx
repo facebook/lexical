@@ -10,7 +10,7 @@ import type {LexicalComposerContextType} from '@lexical/react/LexicalComposerCon
 import type {EditableListener, KlassConstructor, Transform} from 'lexical';
 import type {JSX} from 'react';
 
-import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
+import {CollaborationContext} from '@lexical/react/LexicalCollaborationContext';
 import {
   createLexicalComposerContext,
   LexicalComposerContext,
@@ -201,12 +201,13 @@ export function LexicalNestedComposer({
   );
 
   // If collaboration is enabled, make sure we don't render the children until the collaboration subdocument is ready.
-  const {isCollabActive, yjsDocMap} = useCollaborationContext();
+  const collabContext = useContext(CollaborationContext);
+  const {isCollabActive, yjsDocMap} = collabContext ?? {};
 
   const isCollabReady =
     skipCollabChecks ||
     wasCollabPreviouslyReadyRef.current ||
-    yjsDocMap.has(initialEditor.getKey());
+    (yjsDocMap && yjsDocMap.has(initialEditor.getKey()));
 
   useEffect(() => {
     if (isCollabReady) {

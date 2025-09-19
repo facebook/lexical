@@ -66,7 +66,7 @@
         "./packages/lexical-react/src/LexicalClickableLinkPlugin.tsx"
       ],
       "@lexical/react/LexicalCollaborationContext": [
-        "./packages/lexical-react/src/LexicalCollaborationContext.ts"
+        "packages/lexical-react/src/LexicalCollaborationContext.tsx"
       ],
       "@lexical/react/LexicalCollaborationPlugin": [
         "./packages/lexical-react/src/LexicalCollaborationPlugin.tsx"

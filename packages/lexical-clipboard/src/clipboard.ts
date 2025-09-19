@@ -588,6 +588,7 @@ export function setLexicalClipboardDataTransfer(
   clipboardData: DataTransfer,
   data: LexicalClipboardData,
 ) {
+  clipboardData.clearData();
   for (const k in data) {
     const v = data[k as keyof LexicalClipboardData];
     if (v !== undefined) {

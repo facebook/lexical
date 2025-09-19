@@ -29,7 +29,6 @@ import {
   registerMarkdownShortcuts,
   TextMatchTransformer,
   Transformer,
-  TRANSFORMERS,
 } from '../..';
 import {
   CODE,
@@ -37,6 +36,7 @@ import {
   HEADING,
   MultilineElementTransformer,
   normalizeMarkdown,
+  TRANSFORMERS,
 } from '../../MarkdownTransformers';
 
 const SIMPLE_INLINE_JSX_MATCHER: TextMatchTransformer = {

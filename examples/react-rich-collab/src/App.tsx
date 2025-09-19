@@ -7,6 +7,7 @@
  */
 import type {Provider} from '@lexical/yjs';
 
+import {LexicalCollaboration} from '@lexical/react/LexicalCollaborationContext';
 import {CollaborationPlugin} from '@lexical/react/LexicalCollaborationPlugin';
 import {LexicalComposer} from '@lexical/react/LexicalComposer';
 import {Fragment, useCallback, useEffect, useRef, useState} from 'react';
@@ -151,20 +152,22 @@ export default function App() {
           </Fragment>
         ))}
       </p>
-      <LexicalComposer initialConfig={editorConfig}>
-        {/* With CollaborationPlugin - we MUST NOT use @lexical/react/LexicalHistoryPlugin */}
-        <CollaborationPlugin
-          id="lexical/react-rich-collab"
-          providerFactory={providerFactory}
-          // Unless you have a way to avoid race condition between 2+ users trying to do bootstrap simultaneously
-          // you should never try to bootstrap on client. It's better to perform bootstrap within Yjs server.
-          shouldBootstrap={false}
-          username={userProfile.name}
-          cursorColor={userProfile.color}
-          cursorsContainerRef={containerRef}
-        />
-        <Editor />
-      </LexicalComposer>
+      <LexicalCollaboration>
+        <LexicalComposer initialConfig={editorConfig}>
+          {/* With CollaborationPlugin - we MUST NOT use @lexical/react/LexicalHistoryPlugin */}
+          <CollaborationPlugin
+            id="lexical/react-rich-collab"
+            providerFactory={providerFactory}
+            // Unless you have a way to avoid race condition between 2+ users trying to do bootstrap simultaneously
+            // you should never try to bootstrap on client. It's better to perform bootstrap within Yjs server.
+            shouldBootstrap={false}
+            username={userProfile.name}
+            cursorColor={userProfile.color}
+            cursorsContainerRef={containerRef}
+          />
+          <Editor />
+        </LexicalComposer>
+      </LexicalCollaboration>
     </div>
   );
 }

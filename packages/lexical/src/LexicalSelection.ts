@@ -1523,6 +1523,7 @@ export class RangeSelection implements BaseSelection {
         selectedNodes.shift();
       } else if (startOffset !== 0) {
         [, firstNode] = firstNode.splitText(startOffset);
+        this._cachedNodes = selectedNodes;
         selectedNodes[0] = firstNode;
       }
     }
@@ -1534,6 +1535,7 @@ export class RangeSelection implements BaseSelection {
         selectedNodes.pop();
       } else if (endOffset !== lastNodeTextLength) {
         [lastNode] = lastNode.splitText(endOffset);
+        this._cachedNodes = selectedNodes;
         selectedNodes[selectedNodes.length - 1] = lastNode;
       }
     }

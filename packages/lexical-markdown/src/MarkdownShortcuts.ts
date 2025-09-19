@@ -29,8 +29,8 @@ import {
 } from 'lexical';
 import invariant from 'shared/invariant';
 
-import {TRANSFORMERS} from './MarkdownTransformers';
 import {canContainTransformableMarkdown} from './importTextTransformers';
+import {TRANSFORMERS} from './MarkdownTransformers';
 import {indexBy, PUNCTUATION_OR_SPACE, transformersByType} from './utils';
 
 function runElementTransformers(

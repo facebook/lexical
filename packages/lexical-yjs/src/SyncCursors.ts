@@ -36,11 +36,11 @@ import {
 
 import {Provider, UserState} from '.';
 import {
+  AnyBinding,
   type BaseBinding,
   type Binding,
   type BindingV2,
   isBindingV1,
-  isBindingV2,
 } from './Bindings';
 import {CollabDecoratorNode} from './CollabDecoratorNode';
 import {CollabElementNode} from './CollabElementNode';
@@ -393,7 +393,7 @@ export function getAnchorAndFocusCollabNodesForUserState(
 }
 
 export function $getAnchorAndFocusForUserState(
-  binding: BaseBinding,
+  binding: AnyBinding,
   userState: UserState,
 ): {
   anchorKey: NodeKey | null;
@@ -433,52 +433,50 @@ export function $getAnchorAndFocusForUserState(
       focusKey: focusCollabNode !== null ? focusCollabNode.getKey() : null,
       focusOffset,
     };
-  } else if (isBindingV2(binding)) {
-    let [anchorNode, anchorOffset] = $getNodeAndOffsetV2(
-      binding.mapping,
-      anchorAbsPos,
-    );
-    let [focusNode, focusOffset] = $getNodeAndOffsetV2(
-      binding.mapping,
-      focusAbsPos,
-    );
-    // For a non-collapsed selection, if the start of the selection is as the end of a text node,
-    // move it to the beginning of the next text node (if one exists).
+  }
+
+  let [anchorNode, anchorOffset] = $getNodeAndOffsetV2(
+    binding.mapping,
+    anchorAbsPos,
+  );
+  let [focusNode, focusOffset] = $getNodeAndOffsetV2(
+    binding.mapping,
+    focusAbsPos,
+  );
+  // For a non-collapsed selection, if the start of the selection is as the end of a text node,
+  // move it to the beginning of the next text node (if one exists).
+  if (
+    focusNode &&
+    anchorNode &&
+    (focusNode !== anchorNode || focusOffset !== anchorOffset)
+  ) {
+    const isBackwards = focusNode.isBefore(anchorNode);
+    const startNode = isBackwards ? focusNode : anchorNode;
+    const startOffset = isBackwards ? focusOffset : anchorOffset;
     if (
-      focusNode &&
-      anchorNode &&
-      (focusNode !== anchorNode || focusOffset !== anchorOffset)
+      $isTextNode(startNode) &&
+      $isTextNode(startNode.getNextSibling()) &&
+      startOffset === startNode.getTextContentSize()
     ) {
-      const isBackwards = focusNode.isBefore(anchorNode);
-      const startNode = isBackwards ? focusNode : anchorNode;
-      const startOffset = isBackwards ? focusOffset : anchorOffset;
-      if (
-        $isTextNode(startNode) &&
-        $isTextNode(startNode.getNextSibling()) &&
-        startOffset === startNode.getTextContentSize()
-      ) {
-        if (isBackwards) {
-          focusNode = startNode.getNextSibling();
-          focusOffset = 0;
-        } else {
-          anchorNode = startNode.getNextSibling();
-          anchorOffset = 0;
-        }
+      if (isBackwards) {
+        focusNode = startNode.getNextSibling();
+        focusOffset = 0;
+      } else {
+        anchorNode = startNode.getNextSibling();
+        anchorOffset = 0;
       }
     }
-    return {
-      anchorKey: anchorNode !== null ? anchorNode.getKey() : null,
-      anchorOffset,
-      focusKey: focusNode !== null ? focusNode.getKey() : null,
-      focusOffset,
-    };
-  } else {
-    invariant(false, 'getAnchorAndFocusForUserState: unknown binding type');
   }
+  return {
+    anchorKey: anchorNode !== null ? anchorNode.getKey() : null,
+    anchorOffset,
+    focusKey: focusNode !== null ? focusNode.getKey() : null,
+    focusOffset,
+  };
 }
 
 export function $syncLocalCursorPosition(
-  binding: BaseBinding,
+  binding: AnyBinding,
   provider: Provider,
 ): void {
   const awareness = provider.awareness;
@@ -619,7 +617,7 @@ function getAwarenessStatesDefault(
 }
 
 export function syncCursorPositions(
-  binding: BaseBinding,
+  binding: AnyBinding,
   provider: Provider,
   options?: SyncCursorPositionsOptions,
 ): void {
@@ -695,7 +693,7 @@ export function syncCursorPositions(
 }
 
 export function syncLexicalSelectionToYjs(
-  binding: BaseBinding,
+  binding: AnyBinding,
   provider: Provider,
   prevSelection: null | BaseSelection,
   nextSelection: null | BaseSelection,
@@ -731,11 +729,9 @@ export function syncLexicalSelectionToYjs(
     if (isBindingV1(binding)) {
       anchorPos = createRelativePosition(nextSelection.anchor, binding);
       focusPos = createRelativePosition(nextSelection.focus, binding);
-    } else if (isBindingV2(binding)) {
+    } else {
       anchorPos = createRelativePositionV2(nextSelection.anchor, binding);
       focusPos = createRelativePositionV2(nextSelection.focus, binding);
-    } else {
-      invariant(false, 'syncLexicalSelectionToYjs: unknown binding type');
     }
   }
 

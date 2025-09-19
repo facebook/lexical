@@ -23,7 +23,7 @@ import {CollabV2Mapping} from './CollabV2Mapping';
 import {initializeNodeProperties} from './Utils';
 
 export type ClientID = number;
-export type BaseBinding = {
+export interface BaseBinding {
   clientID: number;
   cursors: Map<ClientID, Cursor>;
   cursorsContainer: null | HTMLElement;
@@ -33,10 +33,9 @@ export type BaseBinding = {
   id: string;
   nodeProperties: Map<string, {[property: string]: unknown}>; // node type to property to default value
   excludedProperties: ExcludedProperties;
-};
-export type ExcludedProperties = Map<Klass<LexicalNode>, Set<string>>;
+}
 
-export type Binding = BaseBinding & {
+export interface Binding extends BaseBinding {
   collabNodeMap: Map<
     NodeKey,
     | CollabElementNode
@@ -45,12 +44,16 @@ export type Binding = BaseBinding & {
     | CollabLineBreakNode
   >;
   root: CollabElementNode;
-};
+}
 
-export type BindingV2 = BaseBinding & {
+export interface BindingV2 extends BaseBinding {
   mapping: CollabV2Mapping;
   root: XmlElement;
-};
+}
+
+export type AnyBinding = Binding | BindingV2;
+
+export type ExcludedProperties = Map<Klass<LexicalNode>, Set<string>>;
 
 function createBaseBinding(
   editor: LexicalEditor,

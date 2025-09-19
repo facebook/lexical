@@ -111,7 +111,14 @@ function resolveExternalEsm(id) {
  * in the bundles.
  */
 const monorepoExternalsSet = new Set(Object.entries(wwwMappings).flat());
-const thirdPartyExternals = ['react', 'react-dom', 'yjs', 'y-websocket'];
+const thirdPartyExternals = [
+  'react',
+  'react-dom',
+  'yjs',
+  'y-websocket',
+  'happy-dom',
+  '@floating-ui/react',
+];
 const thirdPartyExternalsRegExp = new RegExp(
   `^(${thirdPartyExternals.join('|')})(\\/|$)`,
 );
@@ -213,10 +220,12 @@ async function build(
       alias({
         entries: [
           {find: 'shared', replacement: path.resolve('packages/shared/src')},
+          {find: 'buffer', replacement: 'buffer'},
         ],
       }),
       nodeResolve({
         extensions,
+        preferBuiltins: false,
       }),
       babel({
         babelHelpers: 'bundled',
@@ -434,6 +443,7 @@ async function buildAll() {
     const {name, sourcePath, outputPath, packageName, modules} =
       pkg.getPackageBuildDefinition();
     const {version} = pkg.packageJson;
+    // if (packageName === 'lexical-headless') { debugger; }
     for (const module of modules) {
       for (const format of formats) {
         const {sourceFileName, outputFileName} = module;

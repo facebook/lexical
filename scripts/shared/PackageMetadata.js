@@ -31,6 +31,7 @@ const npmToWwwName = require('../www/npmToWwwName');
  * @typedef {Object} ModuleExportEntry
  * @property {string} name
  * @property {string} sourceFileName
+ * @property {undefined | string} [browserSourceFileName]
  */
 
 /**
@@ -157,7 +158,10 @@ class PackageMetadata {
           }?`,
         );
       }
-      return {name, sourceFileName};
+      const browserSourceFileName = [
+        sourceFileName.replace(/(\.tsx?)$/, '.browser$1'),
+      ].find((fn) => fs.existsSync(this.resolve('src', fn)));
+      return {browserSourceFileName, name, sourceFileName};
     });
   }
 
@@ -188,11 +192,21 @@ class PackageMetadata {
   getPackageBuildDefinition() {
     const npmName = this.getNpmName();
     return {
-      modules: this.getExportedNpmModuleEntries().map(
-        ({name, sourceFileName}) => ({
-          outputFileName: npmToWwwName(name),
-          sourceFileName,
-        }),
+      modules: this.getExportedNpmModuleEntries().flatMap(
+        ({name, sourceFileName, browserSourceFileName}) => [
+          {
+            outputFileName: npmToWwwName(name),
+            sourceFileName,
+          },
+          ...(browserSourceFileName
+            ? [
+                {
+                  outputFileName: `${npmToWwwName(name)}.browser`,
+                  sourceFileName: browserSourceFileName,
+                },
+              ]
+            : []),
+        ],
       ),
       name: readableName(npmToWwwName(npmName)),
       outputPath: this.resolve('dist/'),

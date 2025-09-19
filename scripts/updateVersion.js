@@ -22,6 +22,10 @@ const publicNpmNames = new Set(
 );
 
 /**
+ * @typedef {Record<'import'|'require', Record<string,string>>} ImportRequireExports
+ */
+
+/**
  * - Set the version to the monorepo ./package.json version
  * - Update dependencies, devDependencies, and peerDependencies
  * - Update the exports map and set other required default fields
@@ -90,7 +94,8 @@ function withEnvironments(fileName) {
  * Build an export map for a particular entry point in the package.json
  *
  * @param {string} basename the name of the entry point module without an extension (e.g. 'index')
- * @returns {Record<'import'|'require', Record<string,string>>} The export map for this file
+ * @param {string} [typesBasename]
+ * @returns {ImportRequireExports} The export map for this file
  */
 function exportEntry(basename, typesBasename = `${basename}.d.ts`) {
   // Bundlers such as webpack require 'types' to be first and 'default' to be
@@ -112,6 +117,28 @@ function exportEntry(basename, typesBasename = `${basename}.d.ts`) {
     },
     /* eslint-enable sort-keys-fix/sort-keys-fix */
   };
+}
+
+/**
+ * Add a browser condition for a particular entry point in the package.json
+ *
+ * @param {string} basename the name of the entry point module without an extension (e.g. 'index')
+ * @param {string} [typesBasename]
+ * @param {ImportRequireExports} exports
+ * @returns {Record<'browser'|'import'|'require', Record<string,string>>} The export map for this file
+ */
+function withBrowser(exports) {
+  const browser = Object.fromEntries(
+    Object.entries(exports.import).flatMap(([k, v]) => {
+      if (k === 'node') {
+        return [];
+      } else if (k === 'types') {
+        return [[k, v]];
+      }
+      return [[k, v.replace(/((?:\.d)?\.m?js)$/, '.browser$1')]];
+    }),
+  );
+  return {browser, ...exports};
 }
 
 /**
@@ -140,12 +167,20 @@ function updatePublicPackage(pkg) {
     for (const fn of fs.readdirSync(pkg.resolve('src'))) {
       if (/^[^.]+\.tsx?$/.test(fn)) {
         const basename = fn.replace(/\.tsx?$/, '');
-        const entry = exportEntry(basename);
+        const hasBrowser = fs.existsSync(
+          pkg.resolve('src', fn.replace(/(\.tsx?)$/, '.browser$1')),
+        );
+        let entry = exportEntry(basename);
+        if (hasBrowser) {
+          entry = withBrowser(entry);
+        }
         // support for import "@lexical/react/LexicalComposer"
-        exports[`./${basename}`] = entry;
-        // support for import "@lexical/react/LexicalComposer.js"
-        // @mdxeditor/editor uses this at least as of 2.13.1
-        exports[`./${basename}.js`] = entry;
+        exports[basename === 'index' ? '.' : `./${basename}`] = entry;
+        if (!hasBrowser) {
+          // support for import "@lexical/react/LexicalComposer.js"
+          // @mdxeditor/editor uses this at least as of v3.46.0
+          exports[`./${basename}.js`] = entry;
+        }
       }
     }
     packageJson.exports = exports;

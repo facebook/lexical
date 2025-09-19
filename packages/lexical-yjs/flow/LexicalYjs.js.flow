@@ -106,7 +106,7 @@ export type Binding = {
   docMap: Map<string, Doc>,
   editor: LexicalEditor,
   id: string,
-  nodeProperties: Map<string, Array<string>>,
+  nodeProperties: Map<string, {[property: string]: mixed}>,
   root: CollabElementNode,
 };
 

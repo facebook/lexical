@@ -7,6 +7,7 @@
  */
 
 import type {EditorState, NodeKey} from 'lexical';
+import type {ContentType, Transaction as YTransaction} from 'yjs';
 
 import {
   $addUpdateTag,
@@ -21,8 +22,11 @@ import {
   HISTORIC_TAG,
   SKIP_SCROLL_INTO_VIEW_TAG,
 } from 'lexical';
+import {YXmlElement, YXmlText} from 'node_modules/yjs/dist/src/internals';
 import invariant from 'shared/invariant';
 import {
+  Item,
+  iterateDeletedStructs,
   Map as YMap,
   Text as YText,
   XmlElement,
@@ -33,7 +37,8 @@ import {
   YXmlEvent,
 } from 'yjs';
 
-import {Binding, Provider} from '.';
+import {Binding, BindingV2, Provider} from '.';
+import {AnyBinding} from './Bindings';
 import {CollabDecoratorNode} from './CollabDecoratorNode';
 import {CollabElementNode} from './CollabElementNode';
 import {CollabTextNode} from './CollabTextNode';
@@ -43,6 +48,7 @@ import {
   SyncCursorPositionsFn,
   syncLexicalSelectionToYjs,
 } from './SyncCursors';
+import {$createOrUpdateNodeFromYElement, $updateYFragment} from './SyncV2';
 import {
   $getOrInitCollabNodeFromSharedType,
   $moveSelectionToPreviousNode,
@@ -150,31 +156,7 @@ export function syncYjsChangesToLexical(
         $syncEvent(binding, event);
       }
 
-      const selection = $getSelection();
-
-      if ($isRangeSelection(selection)) {
-        if (doesSelectionNeedRecovering(selection)) {
-          const prevSelection = currentEditorState._selection;
-
-          if ($isRangeSelection(prevSelection)) {
-            $syncLocalCursorPosition(binding, provider);
-            if (doesSelectionNeedRecovering(selection)) {
-              // If the selected node is deleted, move the selection to the previous or parent node.
-              const anchorNodeKey = selection.anchor.key;
-              $moveSelectionToPreviousNode(anchorNodeKey, currentEditorState);
-            }
-          }
-
-          syncLexicalSelectionToYjs(
-            binding,
-            provider,
-            prevSelection,
-            $getSelection(),
-          );
-        } else {
-          $syncLocalCursorPosition(binding, provider);
-        }
-      }
+      $syncCursorFromYjs(currentEditorState, binding, provider);
 
       if (!isFromUndoManger) {
         // If it is an external change, we don't want the current scroll position to get changed
@@ -185,19 +167,44 @@ export function syncYjsChangesToLexical(
     {
       onUpdate: () => {
         syncCursorPositionsFn(binding, provider);
-        // If there was a collision on the top level paragraph
-        // we need to re-add a paragraph. To ensure this insertion properly syncs with other clients,
-        // it must be placed outside of the update block above that has tags 'collaboration' or 'historic'.
-        editor.update(() => {
-          if ($getRoot().getChildrenSize() === 0) {
-            $getRoot().append($createParagraphNode());
-          }
-        });
+        editor.update(() => $ensureEditorNotEmpty());
       },
       skipTransforms: true,
       tag: isFromUndoManger ? HISTORIC_TAG : COLLABORATION_TAG,
     },
   );
+}
+
+function $syncCursorFromYjs(
+  editorState: EditorState,
+  binding: AnyBinding,
+  provider: Provider,
+) {
+  const selection = $getSelection();
+
+  if ($isRangeSelection(selection)) {
+    if (doesSelectionNeedRecovering(selection)) {
+      const prevSelection = editorState._selection;
+
+      if ($isRangeSelection(prevSelection)) {
+        $syncLocalCursorPosition(binding, provider);
+        if (doesSelectionNeedRecovering(selection)) {
+          // If the selected node is deleted, move the selection to the previous or parent node.
+          const anchorNodeKey = selection.anchor.key;
+          $moveSelectionToPreviousNode(anchorNodeKey, editorState);
+        }
+      }
+
+      syncLexicalSelectionToYjs(
+        binding,
+        provider,
+        prevSelection,
+        $getSelection(),
+      );
+    } else {
+      $syncLocalCursorPosition(binding, provider);
+    }
+  }
 }
 
 function $handleNormalizationMergeConflicts(
@@ -251,6 +258,15 @@ function $handleNormalizationMergeConflicts(
   }
 }
 
+// If there was a collision on the top level paragraph
+// we need to re-add a paragraph. To ensure this insertion properly syncs with other clients,
+// it must be placed outside of the update block above that has tags 'collaboration' or 'historic'.
+function $ensureEditorNotEmpty() {
+  if ($getRoot().getChildrenSize() === 0) {
+    $getRoot().append($createParagraphNode());
+  }
+}
+
 type IntentionallyMarkedAsDirtyElement = boolean;
 
 export function syncLexicalUpdateToYjs(
@@ -295,6 +311,128 @@ export function syncLexicalUpdateToYjs(
           prevNodeMap,
           dirtyElements,
           dirtyLeaves,
+        );
+      }
+
+      const selection = $getSelection();
+      const prevSelection = prevEditorState._selection;
+      syncLexicalSelectionToYjs(binding, provider, prevSelection, selection);
+    });
+  });
+}
+
+function $syncEventV2(
+  binding: BindingV2,
+  event: YEvent<YXmlElement | YXmlText>,
+): void {
+  const {target} = event;
+  if (target instanceof XmlElement && event instanceof YXmlEvent) {
+    $createOrUpdateNodeFromYElement(
+      target,
+      binding,
+      event.attributesChanged,
+      // @ts-expect-error childListChanged is private
+      event.childListChanged,
+    );
+  } else if (target instanceof XmlText && event instanceof YTextEvent) {
+    const parent = target.parent;
+    if (parent instanceof XmlElement) {
+      // Need to sync via parent element in order to attach new next nodes.
+      $createOrUpdateNodeFromYElement(parent, binding, new Set(), true);
+    } else {
+      invariant(false, 'Expected XmlElement parent for XmlText');
+    }
+  } else {
+    invariant(false, 'Expected xml or text event');
+  }
+}
+
+export function syncYjsChangesToLexicalV2__EXPERIMENTAL(
+  binding: BindingV2,
+  provider: Provider,
+  events: Array<YEvent<YXmlElement | YXmlText>>,
+  transaction: YTransaction,
+  isFromUndoManger: boolean,
+): void {
+  const editor = binding.editor;
+  const editorState = editor._editorState;
+
+  // Remove deleted nodes from the mapping
+  iterateDeletedStructs(transaction, transaction.deleteSet, (struct) => {
+    if (struct.constructor === Item) {
+      const content = struct.content as ContentType;
+      const type = content.type;
+      if (type) {
+        binding.mapping.delete(type as XmlElement | XmlText);
+      }
+    }
+  });
+
+  // This line precompute the delta before editor update. The reason is
+  // delta is computed when it is accessed. Note that this can only be
+  // safely computed during the event call. If it is accessed after event
+  // call it might result in unexpected behavior.
+  // https://github.com/yjs/yjs/blob/00ef472d68545cb260abd35c2de4b3b78719c9e4/src/utils/YEvent.js#L132
+  events.forEach((event) => event.delta);
+
+  editor.update(
+    () => {
+      for (let i = 0; i < events.length; i++) {
+        const event = events[i];
+        $syncEventV2(binding, event);
+      }
+
+      $syncCursorFromYjs(editorState, binding, provider);
+
+      if (!isFromUndoManger) {
+        // If it is an external change, we don't want the current scroll position to get changed
+        // since the user might've intentionally scrolled somewhere else in the document.
+        $addUpdateTag(SKIP_SCROLL_INTO_VIEW_TAG);
+      }
+    },
+    {
+      // Need any text node normalization to be synchronously updated back to Yjs, otherwise the
+      // binding.mapping will get out of sync.
+      discrete: true,
+      onUpdate: () => {
+        syncCursorPositions(binding, provider);
+        editor.update(() => $ensureEditorNotEmpty());
+      },
+      skipTransforms: true,
+      tag: isFromUndoManger ? HISTORIC_TAG : COLLABORATION_TAG,
+    },
+  );
+}
+
+export function syncLexicalUpdateToYjsV2__EXPERIMENTAL(
+  binding: BindingV2,
+  provider: Provider,
+  prevEditorState: EditorState,
+  currEditorState: EditorState,
+  dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
+  normalizedNodes: Set<NodeKey>,
+  tags: Set<string>,
+): void {
+  const isFromYjs = tags.has(COLLABORATION_TAG) || tags.has(HISTORIC_TAG);
+  if (isFromYjs && normalizedNodes.size === 0) {
+    return;
+  }
+
+  // Nodes are normalized synchronously (`discrete: true` above), so the mapping may now be
+  // incorrect for these nodes, as they point to `getLatest` which is mutable within an update.
+  normalizedNodes.forEach((nodeKey) => {
+    binding.mapping.deleteNode(nodeKey);
+  });
+
+  syncWithTransaction(binding, () => {
+    currEditorState.read(() => {
+      if (dirtyElements.has('root')) {
+        $updateYFragment(
+          binding.doc,
+          binding.root,
+          $getRoot(),
+          binding,
+          new Set(dirtyElements.keys()),
         );
       }
 

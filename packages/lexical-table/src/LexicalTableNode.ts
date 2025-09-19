@@ -234,6 +234,7 @@ export class TableNode extends ElementNode {
     this.__rowStriping = false;
     this.__frozenColumnCount = 0;
     this.__frozenRowCount = 0;
+    this.__colWidths = undefined;
   }
 
   exportJSON(): SerializedTableNode {

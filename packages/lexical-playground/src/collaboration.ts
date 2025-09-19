@@ -31,6 +31,10 @@ export function createWebsocketProvider(
     doc.load();
   }
 
+  return createWebsocketProviderWithDoc(id, doc);
+}
+
+export function createWebsocketProviderWithDoc(id: string, doc: Doc): Provider {
   // @ts-expect-error
   return new WebsocketProvider(
     WEBSOCKET_ENDPOINT,

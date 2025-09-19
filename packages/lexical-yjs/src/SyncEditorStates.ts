@@ -37,7 +37,8 @@ import {
   YXmlEvent,
 } from 'yjs';
 
-import {BaseBinding, Binding, BindingV2, Provider} from '.';
+import {Binding, BindingV2, Provider} from '.';
+import {AnyBinding} from './Bindings';
 import {CollabDecoratorNode} from './CollabDecoratorNode';
 import {CollabElementNode} from './CollabElementNode';
 import {CollabTextNode} from './CollabTextNode';
@@ -176,7 +177,7 @@ export function syncYjsChangesToLexical(
 
 function $syncCursorFromYjs(
   editorState: EditorState,
-  binding: BaseBinding,
+  binding: AnyBinding,
   provider: Provider,
 ) {
   const selection = $getSelection();

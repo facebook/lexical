@@ -597,7 +597,7 @@ function $getNodeAndOffsetV2(
 }
 
 export type SyncCursorPositionsFn = (
-  binding: BaseBinding,
+  binding: AnyBinding,
   provider: Provider,
   options?: SyncCursorPositionsOptions,
 ) => void;

@@ -203,7 +203,7 @@ type CollaborationPluginV2Props = {
   id: string;
   doc: Doc;
   provider: Provider;
-  shouldBootstrap: boolean;
+  __shouldBootstrapUnsafe: boolean;
   username?: string;
   cursorColor?: string;
   cursorsContainerRef?: CursorsContainerRef;
@@ -216,7 +216,7 @@ export function CollaborationPluginV2__EXPERIMENTAL({
   id,
   doc,
   provider,
-  shouldBootstrap,
+  __shouldBootstrapUnsafe,
   username,
   cursorColor,
   cursorsContainerRef,
@@ -238,9 +238,9 @@ export function CollaborationPluginV2__EXPERIMENTAL({
     name,
     color,
     {
+      __shouldBootstrapUnsafe,
       awarenessData,
       excludedProperties,
-      shouldBootstrap,
     },
   );
 

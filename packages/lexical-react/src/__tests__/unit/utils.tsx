@@ -56,8 +56,8 @@ function Editor({
           id="main"
           doc={doc}
           provider={provider}
-          shouldBootstrap={shouldBootstrapEditor}
           awarenessData={awarenessData}
+          __shouldBootstrapUnsafe={shouldBootstrapEditor}
         />
       ) : (
         <CollaborationPlugin

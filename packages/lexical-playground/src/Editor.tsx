@@ -317,7 +317,7 @@ function CollabV2({
       id={id}
       doc={doc}
       provider={provider}
-      shouldBootstrap={shouldBootstrap}
+      __shouldBootstrapUnsafe={shouldBootstrap}
     />
   );
 }

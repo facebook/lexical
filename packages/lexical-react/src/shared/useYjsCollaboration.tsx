@@ -113,7 +113,7 @@ export function useYjsCollaboration(
         normalizedNodes,
         tags,
       }) => {
-        if (tags.has(SKIP_COLLAB_TAG) === false) {
+        if (!tags.has(SKIP_COLLAB_TAG)) {
           syncLexicalUpdateToYjs(
             binding,
             provider,
@@ -181,11 +181,15 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
     awarenessData?: object;
     excludedProperties?: ExcludedProperties;
     rootName?: string;
-    shouldBootstrap?: boolean;
+    __shouldBootstrapUnsafe?: boolean;
   } = {},
 ): BindingV2 {
-  const {awarenessData, excludedProperties, rootName, shouldBootstrap} =
-    options;
+  const {
+    awarenessData,
+    excludedProperties,
+    rootName,
+    __shouldBootstrapUnsafe: shouldBootstrap,
+  } = options;
 
   // Note: v2 does not support 'reload' event, which is not an actual Yjs event type.
   const isReloadingDoc = useMemo(() => ({current: false}), []);
@@ -241,7 +245,7 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
         normalizedNodes,
         tags,
       }) => {
-        if (tags.has(SKIP_COLLAB_TAG) === false) {
+        if (!tags.has(SKIP_COLLAB_TAG)) {
           syncLexicalUpdateToYjsV2__EXPERIMENTAL(
             binding,
             provider,

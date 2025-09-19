@@ -84,16 +84,43 @@ function Editor() {
       <CollaborationPlugin
         id="lexical/react-rich-collab"
         providerFactory={providerFactory}
-        // Optional initial editor state in case collaborative Y.Doc won't
-        // have any existing data on server. Then it'll use this value to populate editor.
-        // It accepts same type of values as LexicalComposer editorState
-        // prop (json string, state object, or a function)
-        initialEditorState={$initialEditorState}
-        shouldBootstrap={true}
       />
     </LexicalComposer>
   );
 }
+```
+
+**Initial editor content:**
+
+In a production environment, you should bootstrap the editor's initial content on the server. If bootstrapping was left to the client and two clients connected at the same time, they could both try to initialize the content resulting in document corruption.
+
+Using the `withHeadlessCollaborationEditor` function from the [FAQ](faq.md) page, you can create a bootstrapped `Y.Doc` with the following:
+
+```tsx
+import {$getRoot, $createParagraphNode} from 'lexical';
+import {Doc} from 'yjs';
+
+import {withHeadlessCollaborationEditor} from './withHeadlessCollaborationEditor';
+
+function createBootstrappedYDoc(
+  nodes: ReadonlyArray<Klass<LexicalNode> | LexicalNodeReplacement>,
+): SerializedEditorState<SerializedLexicalNode> {
+  return withHeadlessCollaborationEditor(nodes, (editor) => {
+    const yDoc = new Doc();
+    editor.update(() => {
+      $getRoot().append($createParagraphNode());
+    }, {discrete: true});
+    return yDoc;
+  });
+}
+```
+
+If you're simply following the above example to play around in a local dev environment, then you can add the following props to `CollaborationPlugin` to initialize the editor state client-side:
+
+```tsx
+// Dev-testing only, do not use in real-world cases.
+initialEditorState={$initialEditorState}
+shouldBootstrap={true}
 ```
 
 ## See it in action

@@ -52,6 +52,8 @@ export const SKIP_SCROLL_INTO_VIEW_TAG = 'skip-scroll-into-view';
  */
 export const SKIP_DOM_SELECTION_TAG = 'skip-dom-selection';
 
+export const SKIP_SELECTION_FOCUS_TAG = 'skip-selection-focus';
+
 /**
  * The update was triggered by editor.focus()
  */

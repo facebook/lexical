@@ -1,6 +1,7 @@
 {
   "name": "lexical-esm-astro-react",
   "type": "module",
+  "private": true,
   "version": "0.35.0",
   "scripts": {
     "dev": "astro dev",

@@ -28,6 +28,7 @@ export default function lexicalMonorepoPlugin(): Plugin {
                 : env.command === 'serve'
                   ? 'source'
                   : 'development',
+              env.isSsrBuild,
             ),
           },
         }),

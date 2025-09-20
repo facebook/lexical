@@ -21,11 +21,40 @@ const require = createRequire(import.meta.url);
 const {packagesManager} =
   require('../../scripts/shared/packagesManager') as typeof import('../../scripts/shared/packagesManager');
 
-const sourceModuleResolution = () => {
+/**
+ * Escape a string for exact match in a RegExp
+ * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_expressions#escaping
+ */
+function escapeRegExp(string: string): string {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
+}
+
+function entryFindRegExp(name: string): RegExp {
+  return new RegExp(`^${escapeRegExp(name)}$`);
+}
+
+function resolveSource(
+  pkg: PackageMetadata,
+  sourceFileName: string,
+  isSsrBuild = false,
+): string {
+  if (!isSsrBuild) {
+    const browserSourceFileName = pkg.resolve(
+      'src',
+      sourceFileName.replace(/(\.tsx?)$/, '.browser$1'),
+    );
+    if (fs.existsSync(browserSourceFileName)) {
+      return browserSourceFileName;
+    }
+  }
+  return pkg.resolve('src', sourceFileName);
+}
+
+const sourceModuleResolution = (isSsrBuild = false) => {
   function toAlias(pkg: PackageMetadata, entry: ModuleExportEntry) {
     return {
-      find: entry.name,
-      replacement: pkg.resolve('src', entry.sourceFileName),
+      find: entryFindRegExp(entry.name),
+      replacement: resolveSource(pkg, entry.sourceFileName, isSsrBuild),
     };
   }
 
@@ -43,15 +72,24 @@ const sourceModuleResolution = () => {
   ];
 };
 
-const distModuleResolution = (environment: 'development' | 'production') => {
+const distModuleResolution = (
+  environment: 'development' | 'production',
+  isSsrBuild = false,
+) => {
   return [
     ...packagesManager.getPublicPackages().flatMap((pkg) =>
       pkg
         .getNormalizedNpmModuleExportEntries()
         .map((entry: NpmModuleExportEntry) => {
           const [name, moduleExports] = entry;
-          const replacements = ([environment, 'default'] as const).map(
-            (condition) => pkg.resolve('dist', moduleExports.import[condition]),
+          const replacements = ([environment, 'default'] as const).flatMap(
+            (condition) =>
+              [
+                !isSsrBuild &&
+                  moduleExports.browser &&
+                  moduleExports.browser[condition],
+                moduleExports.import[condition],
+              ].flatMap((fn) => (fn ? [pkg.resolve('dist', fn)] : [])),
           );
           const replacement = replacements.find(fs.existsSync.bind(fs));
           if (!replacement) {
@@ -63,7 +101,7 @@ const distModuleResolution = (environment: 'development' | 'production') => {
             );
           }
           return {
-            find: name,
+            find: entryFindRegExp(name),
             replacement,
           };
         }),
@@ -72,7 +110,7 @@ const distModuleResolution = (environment: 'development' | 'production') => {
       (pkg: PackageMetadata) =>
         pkg.getPrivateModuleEntries().map((entry: ModuleExportEntry) => {
           return {
-            find: entry.name,
+            find: entryFindRegExp(entry.name),
             replacement: pkg.resolve('src', entry.sourceFileName),
           };
         }),
@@ -82,8 +120,9 @@ const distModuleResolution = (environment: 'development' | 'production') => {
 
 export default function moduleResolution(
   environment: 'source' | 'development' | 'production',
+  isSsrBuild = false,
 ): Alias[] {
   return environment === 'source'
-    ? sourceModuleResolution()
-    : distModuleResolution(environment);
+    ? sourceModuleResolution(isSsrBuild)
+    : distModuleResolution(environment, isSsrBuild);
 }

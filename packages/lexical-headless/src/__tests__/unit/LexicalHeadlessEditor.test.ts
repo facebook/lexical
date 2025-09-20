@@ -18,6 +18,7 @@
 
 import type {EditorState, LexicalEditor, RangeSelection} from 'lexical';
 
+import {withDOM} from '@lexical/headless/dom';
 import {$generateHtmlFromNodes} from '@lexical/html';
 import {JSDOM} from 'jsdom';
 import {
@@ -210,5 +211,32 @@ describe('LexicalHeadlessEditor', () => {
     expect(html).toBe(
       '<p dir="ltr"><span style="white-space: pre-wrap;">hello world</span></p>',
     );
+  });
+
+  describe('withDOM', () => {
+    it('uses happy-dom from node', () => {
+      expect(typeof window).toBe('undefined');
+      withDOM(() => {
+        expect(typeof window).toBe('object');
+        expect('happyDOM' in window && typeof window.happyDOM).toBe('object');
+      });
+    });
+    it('can generate html withDOM', () => {
+      editor.setEditorState(
+        // "hello world"
+        editor.parseEditorState(
+          `{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"hello world","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"paragraph","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`,
+        ),
+      );
+      const html = withDOM(() =>
+        editor
+          .getEditorState()
+          .read(() => $generateHtmlFromNodes(editor, null)),
+      );
+
+      expect(html).toBe(
+        '<p dir="ltr"><span style="white-space: pre-wrap;">hello world</span></p>',
+      );
+    });
   });
 });

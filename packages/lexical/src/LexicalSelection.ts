@@ -1492,53 +1492,53 @@ export class RangeSelection implements BaseSelection {
    * @returns The nodes in the Selection
    */
   extract(): Array<LexicalNode> {
-    const selectedNodes = this.getNodes();
+    const selectedNodes = [...this.getNodes()];
     const selectedNodesLength = selectedNodes.length;
-    const lastIndex = selectedNodesLength - 1;
-    const anchor = this.anchor;
-    const focus = this.focus;
     let firstNode = selectedNodes[0];
-    let lastNode = selectedNodes[lastIndex];
+    let lastNode = selectedNodes[selectedNodesLength - 1];
     const [anchorOffset, focusOffset] = $getCharacterOffsets(this);
+    const isBackward = this.isBackward();
+    const [startPoint, endPoint] = isBackward
+      ? [this.focus, this.anchor]
+      : [this.anchor, this.focus];
+    const [startOffset, endOffset] = isBackward
+      ? [focusOffset, anchorOffset]
+      : [anchorOffset, focusOffset];
 
     if (selectedNodesLength === 0) {
       return [];
     } else if (selectedNodesLength === 1) {
       if ($isTextNode(firstNode) && !this.isCollapsed()) {
-        const startOffset =
-          anchorOffset > focusOffset ? focusOffset : anchorOffset;
-        const endOffset =
-          anchorOffset > focusOffset ? anchorOffset : focusOffset;
         const splitNodes = firstNode.splitText(startOffset, endOffset);
         const node = startOffset === 0 ? splitNodes[0] : splitNodes[1];
-        this._cachedNodes = node != null ? [node] : [];
-      } else {
-        this._cachedNodes = [firstNode];
+        if (node) {
+          startPoint.set(node.getKey(), 0, 'text');
+          endPoint.set(node.getKey(), node.getTextContentSize(), 'text');
+          return [node];
+        }
+        return [];
       }
-      return this._cachedNodes;
+      return [firstNode];
     }
-    const isBefore = anchor.isBefore(focus);
 
     if ($isTextNode(firstNode)) {
-      const startOffset = isBefore ? anchorOffset : focusOffset;
       if (startOffset === firstNode.getTextContentSize()) {
         selectedNodes.shift();
       } else if (startOffset !== 0) {
         [, firstNode] = firstNode.splitText(startOffset);
-        this._cachedNodes = selectedNodes;
         selectedNodes[0] = firstNode;
+        startPoint.set(firstNode.getKey(), 0, 'text');
       }
     }
     if ($isTextNode(lastNode)) {
       const lastNodeText = lastNode.getTextContent();
       const lastNodeTextLength = lastNodeText.length;
-      const endOffset = isBefore ? focusOffset : anchorOffset;
       if (endOffset === 0) {
         selectedNodes.pop();
       } else if (endOffset !== lastNodeTextLength) {
         [lastNode] = lastNode.splitText(endOffset);
-        this._cachedNodes = selectedNodes;
         selectedNodes[selectedNodes.length - 1] = lastNode;
+        endPoint.set(lastNode.getKey(), lastNode.getTextContentSize(), 'text');
       }
     }
     return selectedNodes;

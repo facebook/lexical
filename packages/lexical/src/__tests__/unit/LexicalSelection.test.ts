@@ -30,6 +30,7 @@ import {
   createEditor,
   ElementNode,
   LexicalEditor,
+  type LexicalNode,
   ParagraphNode,
   RangeSelection,
   TextNode,
@@ -44,6 +45,10 @@ import {
   initializeUnitTest,
   invariant,
 } from '../utils';
+
+function mapLatest<T extends LexicalNode>(nodes: T[]): T[] {
+  return nodes.map((node) => node.getLatest());
+}
 
 describe('LexicalSelection tests', () => {
   initializeUnitTest((testEnv) => {
@@ -1489,12 +1494,12 @@ describe('extract()', () => {
           selection.anchor.set(paragraphText.getKey(), 10, 'text');
           selection.focus.set(linkText.getKey(), 4, 'text');
           const extracted = selection.extract();
-          expect(extracted).toEqual([
+          expect(mapLatest(extracted)).toEqual([
             expect.objectContaining({__text: 'text'}),
-            linkNode,
+            linkNode.getLatest(),
             expect.objectContaining({__text: 'link'}),
           ]);
-          expect(selection.getNodes()).toEqual(extracted);
+          expect(mapLatest(selection.getNodes())).toEqual(mapLatest(extracted));
         },
         {discrete: true},
       );
@@ -1509,12 +1514,17 @@ describe('extract()', () => {
             'text',
           );
           selection.focus.set(linkText.getKey(), 4, 'text');
+          const beforeNodes = selection.getNodes();
           const extracted = selection.extract();
-          expect(extracted).toEqual([
-            linkNode,
+          expect(mapLatest(extracted)).toEqual([
+            linkNode.getLatest(),
             expect.objectContaining({__text: 'link'}),
           ]);
-          expect(selection.getNodes()).toEqual(extracted);
+          // The identity of the linkText does not change
+          // since the first node is re-used
+          expect(mapLatest(selection.getNodes())).toEqual(
+            mapLatest(beforeNodes),
+          );
         },
         {discrete: true},
       );
@@ -1525,12 +1535,17 @@ describe('extract()', () => {
           const selection = $createRangeSelection();
           selection.anchor.set(paragraphText.getKey(), 4, 'text');
           selection.focus.set(linkText.getKey(), 0, 'text');
-          const extracted = selection.extract();
-          expect(extracted).toEqual([
+          const beforeNodes = selection.getNodes();
+          expect(mapLatest(selection.extract())).toEqual([
             expect.objectContaining({__text: 'graph text'}),
-            linkNode,
+            linkNode.getLatest(),
           ]);
-          expect(selection.getNodes()).toEqual(extracted);
+          // The identity is not paragraphText anymore because
+          // that is the left side outside of the extraction
+          expect(mapLatest(selection.getNodes())).toEqual([
+            paragraphText.getNextSibling(),
+            ...mapLatest(beforeNodes.slice(1)),
+          ]);
         },
         {discrete: true},
       );

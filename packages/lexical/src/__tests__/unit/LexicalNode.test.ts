@@ -159,7 +159,7 @@ describe('LexicalNode tests', () => {
       });
       test('LexicalNode.afterCloneFrom()', () => {
         class VersionedTextNode extends TextNode {
-          // ['constructor']!: KlassConstructor<typeof VersionedTextNode>;
+          // declare ['constructor']: KlassConstructor<typeof VersionedTextNode>;
           __version = 0;
           static getType(): 'vtext' {
             return 'vtext';

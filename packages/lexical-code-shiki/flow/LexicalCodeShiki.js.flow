@@ -6,7 +6,21 @@
  *
  * @flow strict
  */
+import type {
+  LexicalExtension,
+  LexicalNode,
+  ExtensionConfigBase,
+} from 'lexical';
+import type {CodeNode} from '@lexical/code';
 
 /**
  * LexicalCodeShiki
  */
+
+export type Tokenizer = {
+  defaultLanguage: string;
+  defaultTheme: string;
+  $tokenize: (codeNode: CodeNode, language?: string) => LexicalNode[];
+}
+declare export var ShikiTokenizer: Tokenizer;
+declare export var CodeHighlighterShikiExtension: LexicalExtension<{tokenizer: Tokenizer}, "@lexical/code-shiki", void, void>;

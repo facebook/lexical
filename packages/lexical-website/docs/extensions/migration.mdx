@@ -1,0 +1,575 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Migration Guide
+
+Migrating to Lexical Builder is designed to be seamless! Lexical Builder is
+a higher-level API on top of the existing functionality you are already using.
+
+Generally speaking, the only thing that needs to change is how you create the
+editor. Everything else can be migrated (or not) at your own leisure, but
+the result will be simpler and more composable if you do!
+
+## Vanilla JS App
+
+<Tabs>
+<TabItem value="before" label="Before">
+
+```ts
+import {registerDragonSupport} from '@lexical/dragon';
+import {createEmptyHistoryState, registerHistory} from '@lexical/history';
+import {HeadingNode, QuoteNode, registerRichText} from '@lexical/rich-text';
+import {mergeRegister} from '@lexical/utils';
+// highlight-next-line
+import {createEditor} from 'lexical';
+import $prepopulatedRichText from './$prepopulatedRichText';
+
+const editorRef = document.getElementById('lexical-editor');
+const stateRef = document.getElementById(
+  'lexical-state',
+) as HTMLTextAreaElement;
+
+// highlight-next-line
+const editor = createEditor({
+  namespace: 'Vanilla JS Demo',
+  // Register nodes specific for @lexical/rich-text
+  nodes: [HeadingNode, QuoteNode],
+  // highlight-start
+  onError: (error: Error) => {
+    throw error;
+  },
+  // highlight-end
+  theme: {quote: 'PlaygroundEditorTheme__quote'},
+});
+editor.setRootElement(editorRef);
+
+// Registering Plugins
+mergeRegister(
+  registerRichText(editor),
+  registerDragonSupport(editor),
+  registerHistory(editor, createEmptyHistoryState(), 300),
+);
+
+editor.update(prepopulatedRichText, {tag: 'history-merge'});
+```
+
+</TabItem>
+<TabItem value="minimal" label="After (minimal changes)">
+
+```ts
+import {registerDragonSupport} from '@lexical/dragon';
+import {createEmptyHistoryState, registerHistory} from '@lexical/history';
+import {HeadingNode, QuoteNode, registerRichText} from '@lexical/rich-text';
+import {mergeRegister} from '@lexical/utils';
+// highlight-next-line
+import {buildEditorFromExtensions} from '@lexical/extension';
+import $prepopulatedRichText from './$prepopulatedRichText';
+
+const editorRef = document.getElementById('lexical-editor');
+const stateRef = document.getElementById(
+  'lexical-state',
+) as HTMLTextAreaElement;
+
+// highlight-next-line
+const editor = buildEditorFromExtensions({
+  // Any string is suitable as long as it uniquely defines the Extension in the editor
+  name: '[root]',
+  namespace: 'Vanilla JS Demo (with Lexical Extension)',
+  // Register nodes specific for @lexical/rich-text
+  nodes: [HeadingNode, QuoteNode],
+  // highlight-next-line
+  // onError boilerplate removed
+  theme: {quote: 'PlaygroundEditorTheme__quote'},
+});
+editor.setRootElement(editorRef);
+
+// Registering Plugins
+mergeRegister(
+  registerRichText(editor),
+  registerDragonSupport(editor),
+  registerHistory(editor, createEmptyHistoryState(), 300),
+);
+
+editor.update($prepopulatedRichText, {tag: 'history-merge'});
+```
+
+</TabItem>
+<TabItem value="all-in" label="After (all-in)">
+
+```ts
+import {buildEditorFromExtensions} from '@lexical/extension';
+import {HistoryExtension} from '@lexical/history';
+import {RichTextExtension} from '@lexical/rich-text';
+import prepopulatedRichText from './prepopulatedRichText';
+
+const editor = buildEditorFromExtensions({
+  // highlight-start
+  // This works similarly to LexicalComposer editorState
+  $initialEditorState: $prepopulatedRichText,
+  // highlight-end
+  name: '[root]',
+  namespace: 'Vanilla JS Demo (all-in with Lexical Builder)',
+  // highlight-start
+  // RichTextExtension has a nodes property to add QuoteNode and HeadingNode
+  // DragonExtension is a dependency of RichTextExtension
+  // All three extensions have register properties to add behavior to the editor,
+  // with defaults for all of the History configuration
+  dependencies: [RichTextExtension, HistoryExtension],
+  // highlight-end
+  theme: {quote: 'PlaygroundEditorTheme__quote'},
+});
+editor.setRootElement(editorRef);
+```
+
+</TabItem>
+</Tabs>
+
+## React App
+
+<Tabs>
+<TabItem value="before" label="Before">
+
+```tsx
+import {ContentEditable} from '@lexical/react/LexicalContentEditable';
+// highlight-start
+import {AutoFocusPlugin} from '@lexical/react/LexicalAutoFocusPlugin';
+import {LexicalComposer} from '@lexical/react/LexicalComposer';
+import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
+import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
+import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
+// highlight-end
+
+import ExampleTheme from './ExampleTheme';
+import ToolbarPlugin from './plugins/ToolbarPlugin';
+import TreeViewPlugin from './plugins/TreeViewPlugin';
+
+const placeholderText = 'Enter some rich text...';
+const contentEditable = (
+  <ContentEditable
+    className="editor-input"
+    aria-placeholder={placeholderText}
+    placeholder={<div className="editor-placeholder">{placeholderText}</div>}
+  />
+);
+
+// highlight-start
+const editorConfig = {
+  namespace: 'React.js Demo',
+  nodes: [],
+  // Handling of errors during update
+  onError(error: Error) {
+    throw error;
+  },
+  // The editor theme
+  theme: ExampleTheme,
+};
+// highlight-end
+
+export default function App() {
+  return (
+    // highlight-next-line
+    <LexicalComposer initialConfig={editorConfig}>
+      <div className="editor-container">
+        <ToolbarPlugin />
+        <div className="editor-inner">
+          {/* highlight-start */}
+          <RichTextPlugin
+            contentEditable={contentEditable}
+            ErrorBoundary={LexicalErrorBoundary}
+          />
+          <HistoryPlugin />
+          <AutoFocusPlugin />
+          {/* highlight-end */}
+          <TreeViewPlugin />
+        </div>
+      </div>
+      {/* highlight-next-line */}
+    </LexicalComposer>
+  );
+}
+```
+
+</TabItem>
+<TabItem value="after" label="After">
+
+```tsx
+import { ContentEditable } from "@lexical/react/LexicalContentEditable";
+// highlight-start
+import { HistoryExtension } from "@lexical/history";
+import { RichTextExtension } from "@lexical/rich-text";
+import { AutoFocusExtension } from "@lexical/extension";
+import { LexicalExtensionComposer } from "@lexical/react/LexicalExtensionComposer";
+// highlight-end
+
+import ExampleTheme from "./ExampleTheme";
+import ToolbarPlugin from "./plugins/ToolbarPlugin";
+import TreeViewPlugin from "./plugins/TreeViewPlugin";
+
+const placeholderText = "Enter some rich text...";
+const contentEditable = (
+  <ContentEditable
+    className="editor-input"
+    aria-placeholder={placeholderText}
+    placeholder={<div className="editor-placeholder">{placeholderText}</div>}
+  />
+);
+
+// highlight-start
+const editorExtension = defineExtension({
+  name: "[root]",
+  namespace: "React.js Extension Demo",
+  dependencies: [
+    AutoFocusExtension,
+    RichTextExtension,
+    HistoryExtension,
+    configExtension(ReactExtension, { contentEditable: null }),
+  ],
+  // The editor theme
+  theme: ExampleTheme,
+});
+// highlight-end
+
+export default function App() {
+  return (
+    // highlight-next-line
+    {/* We specify our own layout for the editor's children */}
+    <LexicalExtensionComposer extension={editorExtension} contentEditable={null}>
+      <div className="editor-container">
+        <ToolbarPlugin />
+        <div className="editor-inner">
+          {/* highlight-next-line */}
+          {contentEditable}
+          <TreeViewPlugin />
+        </div>
+      </div>
+      {/* highlight-next-line */}
+    </LexicalExtensionComposer>
+  );
+}
+```
+
+</TabItem>
+</Tabs>
+
+## React Plug-in (without UI)
+
+<Tabs>
+<TabItem value="before" label="Before">
+
+```tsx
+// highlight-start
+/**
+ * USAGE:
+ * 1. Add KeywordNode to your initialConfig nodes Array.
+ *    If you forget this, you will get an error.
+ * 2. Add the <KeywordPlugin /> as a child of your LexicalComposer.
+ *    If you forget this, it will silently not work.
+ * 3. Add CSS somewhere for '.keyword'.
+ *    If you don't like that selector, too bad.
+ */
+// highlight-end
+import type {EditorConfig, LexicalNode, SerializedTextNode} from 'lexical';
+import {$create, TextNode} from 'lexical';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalTextEntity} from '@lexical/react/useLexicalTextEntity';
+import {useCallback, useEffect} from 'react';
+
+export class KeywordNode extends TextNode {
+  $config() {
+    return this.config('keyword', {extends: TextNode});
+  }
+
+  createDOM(config: EditorConfig): HTMLElement {
+    const dom = super.createDOM(config);
+    dom.style.cursor = 'default';
+    dom.className = 'keyword';
+    return dom;
+  }
+
+  canInsertTextBefore(): boolean {
+    return false;
+  }
+
+  canInsertTextAfter(): boolean {
+    return false;
+  }
+
+  isTextEntity(): true {
+    return true;
+  }
+}
+
+export function $createKeywordNode(keyword: string): KeywordNode {
+  return $create(KeywordNode).setTextContent(keyword);
+}
+
+export function $isKeywordNode(node: LexicalNode | null | undefined): boolean {
+  return node instanceof KeywordNode;
+}
+
+const KEYWORDS_REGEX =
+  /(^|[^A-Za-z])(congrats|congratulations|mazel tov|mazal tov)($|[^A-Za-z])/i;
+
+export function KeywordsPlugin(): JSX.Element | null {
+  const [editor] = useLexicalComposerContext();
+
+  useEffect(() => {
+    if (!editor.hasNodes([KeywordNode])) {
+      throw new Error('KeywordsPlugin: KeywordNode not registered on editor');
+    }
+  }, [editor]);
+
+  const $convertToKeywordNode = useCallback(
+    (textNode: TextNode): KeywordNode => {
+      return $createKeywordNode(textNode.getTextContent());
+    },
+    [],
+  );
+
+  const getKeywordMatch = useCallback((text: string) => {
+    const matchArr = KEYWORDS_REGEX.exec(text);
+
+    if (matchArr === null) {
+      return null;
+    }
+
+    const hashtagLength = matchArr[2].length;
+    const startOffset = matchArr.index + matchArr[1].length;
+    const endOffset = startOffset + hashtagLength;
+    return {
+      end: endOffset,
+      start: startOffset,
+    };
+  }, []);
+
+  useLexicalTextEntity<KeywordNode>(
+    getKeywordMatch,
+    KeywordNode,
+    $convertToKeywordNode,
+  );
+
+  return null;
+}
+```
+
+</TabItem>
+<TabItem value="minimal" label="After (minimal)">
+
+```tsx
+// highlight-start
+// Use this strategy for a minimal changes and to expose a backwards
+// compatible interface to support editors not using Lexical Builder
+/**
+ * USAGE:
+ * 1. Add KeywordsExtension as a dependency to your LexicalExtensionComposer root extension
+ * 2. Add CSS somewhere for '.keyword'.
+ *    If you don't like that selector, too bad.
+ */
+// highlight-end
+import type {EditorConfig, LexicalNode, SerializedTextNode} from 'lexical';
+// highlight-start
+import {$create, TextNode, defineExtension, configExtension} from 'lexical';
+import {ReactExtension} from '@lexical/react/ReactExtension';
+// highlight-end
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalTextEntity} from '@lexical/react/useLexicalTextEntity';
+import {useCallback, useEffect} from 'react';
+
+export class KeywordNode extends TextNode {
+  $config() {
+    return this.config('keyword', {extends: TextNode});
+  }
+
+  createDOM(config: EditorConfig): HTMLElement {
+    const dom = super.createDOM(config);
+    dom.style.cursor = 'default';
+    dom.className = 'keyword';
+    return dom;
+  }
+
+  canInsertTextBefore(): boolean {
+    return false;
+  }
+
+  canInsertTextAfter(): boolean {
+    return false;
+  }
+
+  isTextEntity(): true {
+    return true;
+  }
+}
+
+export function $createKeywordNode(keyword: string): KeywordNode {
+  return $create(KeywordNode).setTextContent(keyword);
+}
+
+export function $isKeywordNode(node: LexicalNode | null | undefined): boolean {
+  return node instanceof KeywordNode;
+}
+
+const KEYWORDS_REGEX =
+  /(^|[^A-Za-z])(congrats|congratulations|mazel tov|mazal tov)($|[^A-Za-z])/i;
+
+export function KeywordsPlugin(): JSX.Element | null {
+  const [editor] = useLexicalComposerContext();
+
+  useEffect(() => {
+    if (!editor.hasNodes([KeywordNode])) {
+      throw new Error('KeywordsPlugin: KeywordNode not registered on editor');
+    }
+  }, [editor]);
+
+  const $convertToKeywordNode = useCallback(
+    (textNode: TextNode): KeywordNode => {
+      return $createKeywordNode(textNode.getTextContent());
+    },
+    [],
+  );
+
+  const getKeywordMatch = useCallback((text: string) => {
+    const matchArr = KEYWORDS_REGEX.exec(text);
+
+    if (matchArr === null) {
+      return null;
+    }
+
+    const hashtagLength = matchArr[2].length;
+    const startOffset = matchArr.index + matchArr[1].length;
+    const endOffset = startOffset + hashtagLength;
+    return {
+      end: endOffset,
+      start: startOffset,
+    };
+  }, []);
+
+  useLexicalTextEntity<KeywordNode>(
+    getKeywordMatch,
+    KeywordNode,
+    $convertToKeywordNode,
+  );
+
+  return null;
+}
+
+// highlight-start
+// We only need to add metadata so that you can easily use this extension!
+export const KeywordsExtension = defineExtension({
+  name: '@lexical/example/LexicalKeywords',
+  nodes: [KeywordNode],
+  dependencies: [
+    configExtension(ReactExtension, {decorators: [<KeywordsPlugin />]}),
+  ],
+});
+// highlight-end
+```
+
+</TabItem>
+<TabItem value="all-in" label="After (all-in)">
+
+```tsx
+// highlight-start
+// Use this strategy if you are dropping legacy support
+/**
+ * USAGE:
+ * 1. Add KeywordsExtension as a dependency to your LexicalExtensionComposer root extension
+ *    OR use it in a Vanilla JS project because it never really needed React!
+ * 2. Add CSS somewhere for '.keyword', or change it!
+ *    If you don't like that selector, use
+ *    `configExtension(KeywordsExtension, {className: 'something-else'})`
+ */
+import type {
+  EditorConfig,
+  LexicalNode,
+  SerializedTextNode,
+  $getEditor,
+} from "lexical";
+import {
+  $create,
+  TextNode,
+  configExtension
+  defineExtension,
+  safeCast,
+} from "lexical";
+import {
+  getExtensionDependencyFromEditor,
+} from "@lexical/extension";
+// highlight-end
+import { registerLexicalTextEntity } from "@lexical/text";
+import { useCallback, useEffect } from "react";
+
+// highlight-start
+// Provide any type-safe configuration, that a Node can use in its
+// implementation, without trying to shoehorn it into the theme!
+export interface KeywordsConfig {
+  /** The className to use for KeywordNode, default is "keyword" */
+  className: string;
+}
+// highlight-end
+
+export class KeywordNode extends TextNode {
+  $config() {
+    return this.config('keyword', {extends: TextNode});
+  }
+
+  createDOM(config: EditorConfig): HTMLElement {
+    const dom = super.createDOM(config);
+    dom.style.cursor = "default";
+    // highlight-start
+    // This lets us configure the class name!
+    dom.className = getExtensionDependencyFromEditor(
+      $getEditor(),
+      KeywordsExtension,
+    ).config.className;
+    // highlight-end
+    return dom;
+  }
+
+  canInsertTextBefore(): boolean {
+    return false;
+  }
+
+  canInsertTextAfter(): boolean {
+    return false;
+  }
+
+  isTextEntity(): true {
+    return true;
+  }
+}
+
+export function $createKeywordNode(keyword: string): KeywordNode {
+  return new KeywordNode(keyword);
+}
+
+export function $isKeywordNode(node: LexicalNode | null | undefined): boolean {
+  return node instanceof KeywordNode;
+}
+
+const KEYWORDS_REGEX =
+  /(^|[^A-Za-z])(congrats|congratulations|mazel tov|mazal tov)($|[^A-Za-z])/i;
+
+function $convertToKeywordNode(textNode: TextNode) {
+  return $createKeywordNode(textNode.getTextContent());
+}
+
+// highlight-start
+// Oh wait, we don't even have a React dependency anymore!
+export const KeywordsExtension = defineExtension({
+  name: "@lexical/example/LexicalKeywords",
+  nodes: [KeywordNode],
+  config: safeCast<KeywordsConfig>({ className: "keyword" }),
+  register(editor) {
+    return registerLexicalTextEntity(
+      editor,
+      getKeywordMatch,
+      KeywordNode,
+      $convertToKeywordNode,
+    );
+  },
+});
+// highlight-end
+```
+
+</TabItem>
+</Tabs>

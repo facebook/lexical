@@ -6,18 +6,15 @@
  *
  */
 
-import type {
-  DOMConversionMap,
-  DOMConversionOutput,
-  DOMExportOutput,
-  EditorConfig,
-  LexicalCommand,
-  LexicalNode,
-  NodeKey,
-  SerializedLexicalNode,
-} from 'lexical';
+import type {DOMConversionMap, DOMConversionOutput, NodeKey} from 'lexical';
 import type {JSX} from 'react';
 
+import {
+  $isHorizontalRuleNode,
+  HorizontalRuleNode as BaseHorizontalRuleNode,
+  INSERT_HORIZONTAL_RULE_COMMAND,
+  type SerializedHorizontalRuleNode,
+} from '@lexical/extension';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
 import {
@@ -29,16 +26,15 @@ import {
   $applyNodeReplacement,
   CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
-  createCommand,
-  DecoratorNode,
 } from 'lexical';
 import * as React from 'react';
 import {useEffect} from 'react';
 
-export type SerializedHorizontalRuleNode = SerializedLexicalNode;
-
-export const INSERT_HORIZONTAL_RULE_COMMAND: LexicalCommand<void> =
-  createCommand('INSERT_HORIZONTAL_RULE_COMMAND');
+export {
+  $isHorizontalRuleNode,
+  INSERT_HORIZONTAL_RULE_COMMAND,
+  type SerializedHorizontalRuleNode,
+};
 
 function HorizontalRuleComponent({nodeKey}: {nodeKey: NodeKey}) {
   const [editor] = useLexicalComposerContext();
@@ -83,7 +79,10 @@ function HorizontalRuleComponent({nodeKey}: {nodeKey: NodeKey}) {
   return null;
 }
 
-export class HorizontalRuleNode extends DecoratorNode<JSX.Element> {
+/**
+ * @deprecated A pure Lexical implementation is available in `@lexical/extension` as HorizontalRuleExtension
+ */
+export class HorizontalRuleNode extends BaseHorizontalRuleNode {
   static getType(): string {
     return 'horizontalrule';
   }
@@ -107,28 +106,6 @@ export class HorizontalRuleNode extends DecoratorNode<JSX.Element> {
     };
   }
 
-  exportDOM(): DOMExportOutput {
-    return {element: document.createElement('hr')};
-  }
-
-  createDOM(config: EditorConfig): HTMLElement {
-    const element = document.createElement('hr');
-    addClassNamesToElement(element, config.theme.hr);
-    return element;
-  }
-
-  getTextContent(): string {
-    return '\n';
-  }
-
-  isInline(): false {
-    return false;
-  }
-
-  updateDOM(): boolean {
-    return false;
-  }
-
   decorate(): JSX.Element {
     return <HorizontalRuleComponent nodeKey={this.__key} />;
   }
@@ -138,12 +115,9 @@ function $convertHorizontalRuleElement(): DOMConversionOutput {
   return {node: $createHorizontalRuleNode()};
 }
 
+/**
+ * @deprecated A pure Lexical implementation is available in `@lexical/extension` as HorizontalRuleExtension
+ */
 export function $createHorizontalRuleNode(): HorizontalRuleNode {
   return $applyNodeReplacement(new HorizontalRuleNode());
-}
-
-export function $isHorizontalRuleNode(
-  node: LexicalNode | null | undefined,
-): node is HorizontalRuleNode {
-  return node instanceof HorizontalRuleNode;
 }

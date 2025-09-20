@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {Tabs} from 'wxt/browser';
 import type {StoreApi} from 'zustand';
 
 import {IS_FIREFOX, IS_SAFARI} from 'shared/environment';
@@ -76,7 +75,7 @@ export default class ActionIconWatchdog {
   private handleTabsUpdatedEvent(
     tabId: number,
     _changeInfo: unknown,
-    tab: Tabs.Tab,
+    tab: Browser.tabs.Tab,
   ): void {
     this.checkAndHandleRestrictedPageIfSo(tab);
   }
@@ -88,7 +87,7 @@ export default class ActionIconWatchdog {
     );
   }
 
-  private async checkAndHandleRestrictedPageIfSo(tab: Tabs.Tab) {
+  private async checkAndHandleRestrictedPageIfSo(tab: Browser.tabs.Tab) {
     if (tab.id == null) {
       return;
     }

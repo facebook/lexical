@@ -8,3 +8,8 @@
  */
 
 declare export function ListPlugin(): null;
+
+export type ListPluginProps = {
+  hasStrictIndent?: boolean;
+};
+declare export function ListPlugin(props: ListPluginProps): null;

@@ -14,6 +14,7 @@ import {
   $isDecoratorNode,
   $isElementNode,
   $isTextNode,
+  defineExtension,
 } from 'lexical';
 
 import {$createMarkNode, $isMarkNode, MarkNode} from './MarkNode';
@@ -155,5 +156,13 @@ export function $getMarkIDs(
   }
   return null;
 }
+
+/**
+ * Configures {@link MarkNode}
+ */
+export const MarkExtension = defineExtension({
+  name: '@lexical/mark',
+  nodes: [MarkNode],
+});
 
 export {$createMarkNode, $isMarkNode, MarkNode, SerializedMarkNode};

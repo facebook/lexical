@@ -12,6 +12,8 @@ import type {
   NodeKey,
   RangeSelection,
   SerializedElementNode,
+  LexicalExtension,
+  ExtensionConfigBase,
 } from 'lexical';
 import {ElementNode} from 'lexical';
 declare export class OverflowNode extends ElementNode {
@@ -29,3 +31,5 @@ declare export function $isOverflowNode(
 ): node is OverflowNode;
 
 export type SerializedOverflowNode = SerializedElementNode;
+
+declare export var OverflowExtension: LexicalExtension<ExtensionConfigBase, "@lexical/overflow", void, void>;

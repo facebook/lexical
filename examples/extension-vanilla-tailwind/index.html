@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lexical Checklist</title>
+  </head>
+  <body>
+    <div id="app">
+      <div class="p-4">
+        <h1 class="text-2xl font-bold">Lexical Checklist</h1>
+        <div class="border-2 border-solid border-gray-600 my-2">
+          <div class="p-2" id="lexical-editor" contenteditable></div>
+        </div>
+        <div id="lazy-loaded"></div>
+        <h4 class="text-xl font-bold">Editor state:</h4>
+        <pre class="w-full whitespace-pre" id="lexical-state"></pre>
+      </div>
+    </div>
+    <script src="/src/main.ts" type="module"></script>
+  </body>
+</html>

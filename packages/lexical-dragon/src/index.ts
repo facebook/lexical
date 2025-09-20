@@ -6,11 +6,14 @@
  *
  */
 
+import {effect, namedSignals} from '@lexical/extension';
 import {
   $getSelection,
   $isRangeSelection,
   $isTextNode,
+  defineExtension,
   LexicalEditor,
+  safeCast,
 } from 'lexical';
 
 export function registerDragonSupport(editor: LexicalEditor): () => void {
@@ -123,3 +126,23 @@ export function registerDragonSupport(editor: LexicalEditor): () => void {
     window.removeEventListener('message', handler, true);
   };
 }
+
+export interface DragonConfig {
+  disabled: boolean;
+}
+
+/**
+ * Add Dragon speech to text input support to the editor, via the
+ * \@lexical/dragon module.
+ */
+export const DragonExtension = defineExtension({
+  build: (editor, config, state) => namedSignals(config),
+  config: safeCast<DragonConfig>({disabled: typeof window === 'undefined'}),
+  name: '@lexical/dragon',
+  register: (editor, config, state) =>
+    effect(() =>
+      state.getOutput().disabled.value
+        ? undefined
+        : registerDragonSupport(editor),
+    ),
+});

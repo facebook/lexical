@@ -8,16 +8,20 @@
  */
 
 import type {
+  NodeKey,
   LexicalNode,
   LexicalEditor,
   ParagraphNode,
   RangeSelection,
   LexicalCommand,
   SerializedElementNode,
+  LexicalExtension,
+  ExtensionConfigBase,
 } from 'lexical';
+import type {NamedSignalsOutput} from '@lexical/extension';
 import {ElementNode} from 'lexical';
 
-type ListNodeTagType = 'ul' | 'ol';
+export type ListNodeTagType = 'ul' | 'ol';
 export type ListType = 'number' | 'bullet' | 'check';
 declare export function $createListItemNode(
   checked?: boolean | void,
@@ -95,3 +99,20 @@ export type SerializedListNode = SerializedElementNode & {
   start: number,
   tag: ListNodeTagType,
 };
+
+declare export function registerListStrictIndentTransform(
+  editor: LexicalEditor,
+): () => void;
+
+declare export function registerCheckList(editor: LexicalEditor): () => void;
+
+declare export var UPDATE_LIST_START_COMMAND: LexicalCommand<{
+  listNodeKey: NodeKey;
+  newStart: number;
+}>
+
+export type ListConfig = {
+  hasStrictIndent: boolean;
+};
+declare export var ListExtension: LexicalExtension<ListConfig, "@lexical/list/List", NamedSignalsOutput<ListConfig>, void>;
+declare export var CheckListExtension: LexicalExtension<ExtensionConfigBase, "@lexical/list/CheckList", void, void>;

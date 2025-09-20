@@ -10,6 +10,7 @@ import type {JSX} from 'react';
 
 import {$createLinkNode} from '@lexical/link';
 import {$createListItemNode, $createListNode} from '@lexical/list';
+import {LexicalCollaboration} from '@lexical/react/LexicalCollaborationContext';
 import {LexicalComposer} from '@lexical/react/LexicalComposer';
 import {$createHeadingNode, $createQuoteNode} from '@lexical/rich-text';
 import {
@@ -209,28 +210,30 @@ function App(): JSX.Element {
   };
 
   return (
-    <LexicalComposer initialConfig={initialConfig}>
-      <SharedHistoryContext>
-        <TableContext>
-          <ToolbarContext>
-            <header>
-              <a href="https://lexical.dev" target="_blank" rel="noreferrer">
-                <img src={logo} alt="Lexical Logo" />
-              </a>
-            </header>
-            <div className="editor-shell">
-              <Editor />
-            </div>
-            <Settings />
-            {isDevPlayground ? <DocsPlugin /> : null}
-            {isDevPlayground ? <PasteLogPlugin /> : null}
-            {isDevPlayground ? <TestRecorderPlugin /> : null}
+    <LexicalCollaboration>
+      <LexicalComposer initialConfig={initialConfig}>
+        <SharedHistoryContext>
+          <TableContext>
+            <ToolbarContext>
+              <header>
+                <a href="https://lexical.dev" target="_blank" rel="noreferrer">
+                  <img src={logo} alt="Lexical Logo" />
+                </a>
+              </header>
+              <div className="editor-shell">
+                <Editor />
+              </div>
+              <Settings />
+              {isDevPlayground ? <DocsPlugin /> : null}
+              {isDevPlayground ? <PasteLogPlugin /> : null}
+              {isDevPlayground ? <TestRecorderPlugin /> : null}
 
-            {measureTypingPerf ? <TypingPerfPlugin /> : null}
-          </ToolbarContext>
-        </TableContext>
-      </SharedHistoryContext>
-    </LexicalComposer>
+              {measureTypingPerf ? <TypingPerfPlugin /> : null}
+            </ToolbarContext>
+          </TableContext>
+        </SharedHistoryContext>
+      </LexicalComposer>
+    </LexicalCollaboration>
   );
 }
 

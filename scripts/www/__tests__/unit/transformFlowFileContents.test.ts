@@ -5,10 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-// @ts-check
-'use strict';
 
-const transformFlowFileContents = require('../../transformFlowFileContents');
+import {describe, expect, it} from 'vitest';
+
+import transformFlowFileContents from '../../transformFlowFileContents';
 
 const HEADER_BEFORE =
   `

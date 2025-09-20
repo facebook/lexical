@@ -5,13 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-// @ts-check
-'use strict';
 
-const ErrorMap = require('../../ErrorMap');
+import {describe, expect, test, vi} from 'vitest';
 
-/** @returns {Promise<void>} */
-function waitTick() {
+import ErrorMap from '../../ErrorMap';
+
+function waitTick(): Promise<void> {
   return new Promise((resolve) => queueMicrotask(resolve));
 }
 
@@ -21,13 +20,13 @@ describe('ErrorMap', () => {
     {
       initialMessages: ['known message', 'another known message'],
     },
-  ].forEach(({name, initialMessages}) => {
+  ].forEach(({initialMessages}) => {
     const initialMap = Object.fromEntries(
       initialMessages.map((message, i) => [`${i}`, message]),
     );
     describe(`with ${initialMessages.length} message(s)`, () => {
       test('does not insert unless extractCodes is true', async () => {
-        const flush = jest.fn();
+        const flush = vi.fn();
         const errorMap = new ErrorMap(initialMap, flush);
         expect(errorMap.getOrAddToErrorMap('unknown message', false)).toBe(
           undefined,
@@ -40,7 +39,7 @@ describe('ErrorMap', () => {
       });
       if (initialMessages.length > 0) {
         test('looks up existing messages', async () => {
-          const flush = jest.fn();
+          const flush = vi.fn();
           const errorMap = new ErrorMap(initialMap, flush);
           initialMessages.forEach((msg, i) => {
             expect(errorMap.getOrAddToErrorMap(msg, false)).toBe(i);
@@ -55,7 +54,7 @@ describe('ErrorMap', () => {
         });
       }
       test('inserts with extractCodes true', async () => {
-        const flush = jest.fn();
+        const flush = vi.fn();
         const errorMap = new ErrorMap(initialMap, flush);
         const msg = 'unknown message';
         const beforeSize = initialMessages.length;
@@ -77,7 +76,7 @@ describe('ErrorMap', () => {
         });
       });
       test('inserts two messages with extractCodes true', async () => {
-        const flush = jest.fn();
+        const flush = vi.fn();
         const errorMap = new ErrorMap(initialMap, flush);
         const msgs = ['unknown message', 'another unknown message'];
         msgs.forEach((msg, i) => {

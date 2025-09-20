@@ -5,28 +5,25 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-// @ts-check
-'use strict';
+import * as babel from '@babel/core';
+import prettier from '@prettier/sync';
+import * as fs from 'fs-extra';
+import * as path from 'node:path';
+import {describe, expect, it} from 'vitest';
 
-const fs = require('fs-extra');
-const path = require('node:path');
-const transformErrorMessages = require('../../transform-error-messages');
-const babel = require('@babel/core');
-const prettier = require('@prettier/sync');
+import transformErrorMessages from '../../transform-error-messages';
 
 const prettierConfig = prettier.resolveConfig(__filename) || {};
 
-/** @returns {Promise<void>} */
-function waitTick() {
+function waitTick(): Promise<void> {
   return new Promise((resolve) => queueMicrotask(resolve));
 }
 
-/**
- * @param {Record<string,string>} before
- * @param {Record<string,string>} after
- * @param {(errorCodesPath: string) => Promise<void> | void} cb
- */
-async function withCodes(before, after, cb) {
+async function withCodes(
+  before: Record<string, string>,
+  after: Record<string, string>,
+  cb: (errorCodesPath: string) => Promise<void> | void,
+) {
   const tmpdir = fs.mkdtempSync('transform-error-messages');
   try {
     const errorCodesPath = path.join(tmpdir, 'codes.json');
@@ -39,13 +36,7 @@ async function withCodes(before, after, cb) {
   }
 }
 
-/**
- *
- * @param {TemplateStringsArray} strings
- * @param  {...unknown} keys
- * @returns {string}
- */
-function fmt(strings, ...keys) {
+function fmt(strings: TemplateStringsArray, ...keys: unknown[]): string {
   const result = [strings[0]];
   keys.forEach((key, i) => {
     result.push(String(key), strings[i + 1]);
@@ -80,24 +71,35 @@ const NEW_MSG_MAP = Object.fromEntries(
   [KNOWN_MSG, NEW_MSG].map((msg, i) => [String(i), msg]),
 );
 
-/**
- * @typedef {Object} ExpectTransformOptions
- * @property {string} codeBefore
- * @property {string} codeExpect
- * @property {Record<string, string>} messageMapBefore
- * @property {Record<string, string>} messageMapExpect
- * @property {Partial<import('../../transform-error-messages').TransformErrorMessagesOptions>} opts
- */
+interface ExpectTransformOptions {
+  codeBefore: string;
+  codeExpect: string;
+  messageMapBefore: Record<string, string>;
+  messageMapExpect: Record<string, string>;
+  opts: Partial<
+    import('../../transform-error-messages').TransformErrorMessagesOptions
+  >;
+}
 
-/** @param {ExpectTransformOptions} opts */
-async function expectTransform(opts) {
+async function expectTransform(opts: ExpectTransformOptions) {
   return await withCodes(
     opts.messageMapBefore,
     opts.messageMapExpect,
     async (errorCodesPath) => {
-      const {code} = babel.transform(fmt`${opts.codeBefore}`, {
+      const {code} = babel.transformSync(fmt`${opts.codeBefore}`, {
+        configFile: false,
         plugins: [[transformErrorMessages, {errorCodesPath, ...opts.opts}]],
-      });
+        presets: [
+          [
+            '@babel/preset-env',
+            {
+              targets: {
+                node: 'current',
+              },
+            },
+          ],
+        ],
+      })!;
       expect(fmt`${code}`).toEqual(fmt`${opts.codeExpect}`);
     },
   );

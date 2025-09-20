@@ -30,6 +30,7 @@ import {
   createEditor,
   ElementNode,
   LexicalEditor,
+  type LexicalNode,
   ParagraphNode,
   RangeSelection,
   TextNode,
@@ -44,6 +45,10 @@ import {
   initializeUnitTest,
   invariant,
 } from '../utils';
+
+function mapLatest<T extends LexicalNode>(nodes: T[]): T[] {
+  return nodes.map((node) => node.getLatest());
+}
 
 describe('LexicalSelection tests', () => {
   initializeUnitTest((testEnv) => {
@@ -1356,6 +1361,191 @@ describe('getNodes()', () => {
             focus: {key: emptyListItem.getKey(), offset: 0, type: 'element'},
           });
           expect(selection.getNodes()).toEqual([emptyListItem]);
+        },
+        {discrete: true},
+      );
+    });
+  });
+});
+
+describe('extract()', () => {
+  initializeUnitTest((testEnv) => {
+    let paragraphNode: ParagraphNode;
+    let paragraphText: TextNode;
+    let linkNode: LinkNode;
+    let linkText: TextNode;
+    let listNode: ListNode;
+    let listItemText1: TextNode;
+    let listItemText2: TextNode;
+    let listItem1: ListItemNode;
+    let listItem2: ListItemNode;
+    let emptyParagraph: ParagraphNode;
+
+    beforeEach(() => {
+      testEnv.editor.update(() => {
+        paragraphText = $createTextNode('paragraph text');
+        linkText = $createTextNode('link text');
+        linkNode = $createLinkNode();
+        paragraphNode = $createParagraphNode();
+        listItemText1 = $createTextNode('item 1');
+        listItemText2 = $createTextNode('item 2');
+        listItem1 = $createListItemNode();
+        listItem2 = $createListItemNode();
+        listNode = $createListNode('bullet');
+        emptyParagraph = $createParagraphNode();
+        $getRoot()
+          .clear()
+          .append(
+            paragraphNode.append(paragraphText, linkNode.append(linkText)),
+            listNode.append(
+              listItem1.append(listItemText1),
+              listItem2.append(listItemText2),
+            ),
+            emptyParagraph,
+          );
+      });
+    });
+    test('Manual select all without normalization', () => {
+      testEnv.editor.update(
+        () => {
+          const selection = $createRangeSelection();
+          selection.anchor.set('root', 0, 'element');
+          selection.focus.set('root', $getRoot().getChildrenSize(), 'element');
+          const extracted = selection.extract();
+          expect(extracted).toEqual([
+            paragraphText,
+            linkNode,
+            linkText,
+            // The parent paragraphNode comes later because there is
+            // an implicit normalization in the beginning of getNodes
+            // to work around… something? See the getDescendantByIndex usage.
+            paragraphNode,
+            listNode,
+            listItem1,
+            listItemText1,
+            listItem2,
+            listItemText2,
+            emptyParagraph,
+          ]);
+          expect(selection.getNodes()).toEqual(extracted);
+        },
+        {discrete: true},
+      );
+    });
+    test('Manual select all from first text to last empty paragraph', () => {
+      testEnv.editor.update(
+        () => {
+          const selection = $createRangeSelection();
+          selection.anchor.set(paragraphText.getKey(), 0, 'text');
+          selection.focus.set(emptyParagraph.getKey(), 0, 'element');
+          const extracted = selection.extract();
+          expect(extracted).toEqual([
+            paragraphText,
+            linkNode,
+            linkText,
+            // The parent paragraphNode comes later because there is
+            // an implicit normalization in the beginning of getNodes
+            // to work around… something? See the getDescendantByIndex usage.
+            paragraphNode,
+            listNode,
+            listItem1,
+            listItemText1,
+            listItem2,
+            listItemText2,
+            emptyParagraph,
+          ]);
+          expect(selection.getNodes()).toEqual(extracted);
+        },
+        {discrete: true},
+      );
+    });
+    test('select partial TextNode extracts paragraph text', () => {
+      testEnv.editor.update(
+        () => {
+          const selection = $createRangeSelection();
+          selection.anchor.set(paragraphText.getKey(), 2, 'text');
+          selection.focus.set(paragraphText.getKey(), 8, 'text');
+          const extracted = selection.extract();
+          expect(extracted).toEqual([
+            expect.objectContaining({__text: 'ragrap'}),
+          ]);
+          expect(selection.getNodes()).toEqual(extracted);
+        },
+        {discrete: true},
+      );
+    });
+    test('select partial TextNode extracts link text', () => {
+      testEnv.editor.update(
+        () => {
+          const selection = $createRangeSelection();
+          selection.anchor.set(linkText.getKey(), 1, 'text');
+          selection.focus.set(linkText.getKey(), 4, 'text');
+          const extracted = selection.extract();
+          expect(extracted).toEqual([expect.objectContaining({__text: 'ink'})]);
+          expect(selection.getNodes()).toEqual(extracted);
+        },
+        {discrete: true},
+      );
+    });
+    test('select multiple partial TextNode extracts text', () => {
+      testEnv.editor.update(
+        () => {
+          const selection = $createRangeSelection();
+          selection.anchor.set(paragraphText.getKey(), 10, 'text');
+          selection.focus.set(linkText.getKey(), 4, 'text');
+          const extracted = selection.extract();
+          expect(mapLatest(extracted)).toEqual([
+            expect.objectContaining({__text: 'text'}),
+            linkNode.getLatest(),
+            expect.objectContaining({__text: 'link'}),
+          ]);
+          expect(mapLatest(selection.getNodes())).toEqual(mapLatest(extracted));
+        },
+        {discrete: true},
+      );
+    });
+    test('select last offset TextNode as first node removes node', () => {
+      testEnv.editor.update(
+        () => {
+          const selection = $createRangeSelection();
+          selection.anchor.set(
+            paragraphText.getKey(),
+            paragraphText.getTextContentSize(),
+            'text',
+          );
+          selection.focus.set(linkText.getKey(), 4, 'text');
+          const beforeNodes = selection.getNodes();
+          const extracted = selection.extract();
+          expect(mapLatest(extracted)).toEqual([
+            linkNode.getLatest(),
+            expect.objectContaining({__text: 'link'}),
+          ]);
+          // The identity of the linkText does not change
+          // since the first node is re-used
+          expect(mapLatest(selection.getNodes())).toEqual(
+            mapLatest(beforeNodes),
+          );
+        },
+        {discrete: true},
+      );
+    });
+    test('select 0 offset TextNode as last node removes node', () => {
+      testEnv.editor.update(
+        () => {
+          const selection = $createRangeSelection();
+          selection.anchor.set(paragraphText.getKey(), 4, 'text');
+          selection.focus.set(linkText.getKey(), 0, 'text');
+          const beforeNodes = selection.getNodes();
+          expect(mapLatest(selection.extract())).toEqual([
+            expect.objectContaining({__text: 'graph text'}),
+            linkNode.getLatest(),
+          ]);
+          // The identity is not paragraphText anymore because
+          // that is the left side outside of the extraction
+          expect(mapLatest(selection.getNodes())).toEqual([
+            paragraphText.getNextSibling(),
+            ...mapLatest(beforeNodes.slice(1)),
+          ]);
         },
         {discrete: true},
       );

@@ -13,7 +13,9 @@
 const fs = require('fs');
 const path = require('node:path');
 
-const {PackageMetadata} = require('../../../scripts/shared/PackageMetadata.js');
+const {
+  PackageMetadata,
+} = require('../../../../scripts/shared/PackageMetadata.js');
 
 /**
  * @param {string} fn

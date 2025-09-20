@@ -17,13 +17,13 @@ export class CollabLineBreakNode {
   _map: YMap<unknown>;
   _key: NodeKey;
   _parent: CollabElementNode;
-  _type: 'linebreak';
+  _type: string;
 
-  constructor(map: YMap<unknown>, parent: CollabElementNode) {
+  constructor(map: YMap<unknown>, parent: CollabElementNode, type?: string) {
     this._key = '';
     this._map = map;
     this._parent = parent;
-    this._type = 'linebreak';
+    this._type = type || 'linebreak';
   }
 
   getNode(): null | LineBreakNode {
@@ -40,7 +40,7 @@ export class CollabLineBreakNode {
   }
 
   getType(): string {
-    return this._type;
+    return this._type || 'linebreak';
   }
 
   getSize(): number {
@@ -63,8 +63,9 @@ export class CollabLineBreakNode {
 export function $createCollabLineBreakNode(
   map: YMap<unknown>,
   parent: CollabElementNode,
+  type?: string,
 ): CollabLineBreakNode {
-  const collabNode = new CollabLineBreakNode(map, parent);
+  const collabNode = new CollabLineBreakNode(map, parent, type);
   map._collabNode = collabNode;
   return collabNode;
 }

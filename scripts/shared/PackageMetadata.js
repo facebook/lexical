@@ -37,7 +37,7 @@ const npmToWwwName = require('../www/npmToWwwName');
 /**
  * @typedef {Record<'types' | 'development' | 'production' | 'node' | 'default', string>} ImportCondition
  * @typedef {Record<'types' | 'development' | 'production' | 'default', string>} RequireCondition
- * @typedef {readonly [string, { import: ImportCondition; require: RequireCondition }]} NpmModuleExportEntry
+ * @typedef {readonly [string, { browser?: RequireCondition; import: ImportCondition; require: RequireCondition }]} NpmModuleExportEntry
  */
 
 /**

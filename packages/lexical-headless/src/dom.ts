@@ -12,7 +12,8 @@ import {Window as HappyDOMWindow} from 'happy-dom';
  * Call the given synchronous function with a window object,
  * either from the browser or happy-dom in a non-browser
  * environment. It will also set window, document, and MutationObserver
- * on globalThis while the callback is running.
+ * on globalThis while the callback is running. This is
+ * useful primarily to parse and render HTML server-side.
  *
  * It is not safe to do anything asynchronous during this callback.
  *

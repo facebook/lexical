@@ -120,7 +120,7 @@
     "@babel/preset-typescript": "^7.24.1",
     "@lexical/eslint-plugin": "file:./packages/lexical-eslint-plugin",
     "@lexical/eslint-plugin-internal": "file:./packages/lexical-eslint-plugin-internal",
-    "@playwright/test": "^1.52.0",
+    "@playwright/test": "^1.51.1",
     "@rollup/plugin-alias": "^5.1.0",
     "@rollup/plugin-babel": "^6.0.4",
     "@rollup/plugin-commonjs": "^25.0.7",

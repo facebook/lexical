@@ -1511,9 +1511,11 @@ export class RangeSelection implements BaseSelection {
           anchorOffset > focusOffset ? anchorOffset : focusOffset;
         const splitNodes = firstNode.splitText(startOffset, endOffset);
         const node = startOffset === 0 ? splitNodes[0] : splitNodes[1];
-        return node != null ? [node] : [];
+        this._cachedNodes = node != null ? [node] : [];
+      } else {
+        this._cachedNodes = [firstNode];
       }
-      return [firstNode];
+      return this._cachedNodes;
     }
     const isBefore = anchor.isBefore(focus);
 

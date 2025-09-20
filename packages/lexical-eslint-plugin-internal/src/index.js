@@ -14,14 +14,14 @@ module.exports = {
   configs: {
     all: {
       rules: {
-        'lexical/no-imports-from-self': 'error',
-        'lexical/no-optional-chaining': 'error',
+        '@lexical/internal/no-imports-from-self': 'error',
+        '@lexical/internal/no-optional-chaining': 'error',
       },
     },
     recommended: {
       rules: {
-        'lexical/no-imports-from-self': 'error',
-        'lexical/no-optional-chaining': 'error',
+        '@lexical/internal/no-imports-from-self': 'error',
+        '@lexical/internal/no-optional-chaining': 'error',
       },
     },
   },

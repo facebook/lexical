@@ -190,6 +190,30 @@ editor.registerUpdateListener(({editorState}) => {
 });
 ```
 
+:::warning Editor Context Limitation
+
+Note that `editorState.read()` does not provide editor context by default. Functions like `$getEditor()` 
+will fail unless you explicitly provide the editor:
+
+```js
+// ❌ This will throw an error
+editorState.read(() => {
+  const editor = $getEditor(); // Error: "Unable to find an active editor"
+});
+
+// ✅ Provide editor context explicitly  
+editorState.read(() => {
+  const editor = $getEditor(); // Works!
+}, { editor });
+
+// ✅ Or use editor.read() which provides context automatically
+editor.read(() => {
+  const editor = $getEditor(); // Works!
+});
+```
+
+:::
+
 ## When are Listeners, Transforms, and Commands called?
 
 There are several types of callbacks that can be registered with the editor that are related to

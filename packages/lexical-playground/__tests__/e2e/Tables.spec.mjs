@@ -53,6 +53,7 @@ import {
   selectFromAlignDropdown,
   selectorBoundingBox,
   setBackgroundColor,
+  sleep,
   test,
   toggleColumnHeader,
   unmergeTableCell,
@@ -6699,6 +6700,8 @@ test.describe.parallel('Tables', () => {
       false,
       false,
     );
+    // undo is used so we need to wait for history
+    await sleep(1050);
 
     await withExclusiveClipboardAccess(async () => {
       const clipboard = await copyToClipboard(page);

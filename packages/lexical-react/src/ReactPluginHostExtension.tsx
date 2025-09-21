@@ -6,6 +6,7 @@
  *
  */
 import type {DecoratorComponentProps} from './shared/types';
+import type {JSX} from 'react';
 
 import {
   effect,
@@ -41,7 +42,7 @@ export interface HostMountCommandArg {
 export interface MountPluginCommandArg {
   key: string;
   element: JSX.Element | null;
-  domNode?: Container | null;
+  domNode?: Element | DocumentFragment | null;
 }
 
 export function mountReactExtensionComponent<

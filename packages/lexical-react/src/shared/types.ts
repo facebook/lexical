@@ -6,6 +6,7 @@
  *
  */
 import type {LexicalComposerContextWithEditor} from '@lexical/react/LexicalComposerContext';
+import type {JSX} from 'react';
 
 export interface EditorChildrenComponentProps {
   context: LexicalComposerContextWithEditor;

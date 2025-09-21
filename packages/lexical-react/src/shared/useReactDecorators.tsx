@@ -7,6 +7,7 @@
  */
 
 import type {LexicalEditor} from 'lexical';
+import type {JSX} from 'react';
 
 import {Suspense, useMemo, useSyncExternalStore} from 'react';
 import {createPortal} from 'react-dom';

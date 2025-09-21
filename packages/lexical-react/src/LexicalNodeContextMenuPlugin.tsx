@@ -23,11 +23,11 @@ import {
 } from '@floating-ui/react';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$getNearestNodeFromDOMNode, LexicalNode} from 'lexical';
-import {forwardRef, MutableRefObject, useEffect, useRef, useState} from 'react';
+import {forwardRef, JSX, RefObject, useEffect, useRef, useState} from 'react';
 
 class MenuOption {
   key: string;
-  ref?: MutableRefObject<HTMLElement | null>;
+  ref?: RefObject<HTMLElement | null>;
 
   constructor(key: string) {
     this.key = key;

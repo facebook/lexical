@@ -114,6 +114,7 @@ const monorepoExternalsSet = new Set(Object.entries(wwwMappings).flat());
 const thirdPartyExternals = [
   'react',
   'react-dom',
+  'react-error-boundary',
   'yjs',
   'y-websocket',
   'happy-dom',
@@ -443,7 +444,6 @@ async function buildAll() {
     const {name, sourcePath, outputPath, packageName, modules} =
       pkg.getPackageBuildDefinition();
     const {version} = pkg.packageJson;
-    // if (packageName === 'lexical-headless') { debugger; }
     for (const module of modules) {
       for (const format of formats) {
         const {sourceFileName, outputFileName} = module;

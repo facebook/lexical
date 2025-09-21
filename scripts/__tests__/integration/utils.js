@@ -41,9 +41,12 @@ exports.withCwd = withCwd;
  * @returns {Promise<string>}
  */
 function expectSuccessfulExec(cmd) {
-  // playwright detects jest, so we clear this env var while running subcommands
+  // clear out parts of the environment that would confuse
+  // node, npm and playwright.
   const env = Object.fromEntries(
-    Object.entries(process.env).filter(([k]) => k !== 'JEST_WORKER_ID'),
+    Object.entries(process.env).filter(
+      ([k]) => !(k === 'JEST_WORKER_ID' || /^(NODE|npm)/.test(k)),
+    ),
   );
   return exec(cmd, {capture: ['stdout', 'stderr'], env}).catch((err) => {
     expect(
@@ -96,14 +99,14 @@ async function buildExample({packageJson, exampleDir}) {
     (cleanDir) => fs.removeSync(path.resolve(exampleDir, cleanDir)),
   );
   await withCwd(exampleDir, async () => {
-    await exec(
+    await expectSuccessfulExec(
       `npm install --prefix=./ --no-save ${installDeps
         .map((fn) => `'${fn}'`)
         .join(' ')}`,
     );
-    await exec('npm run build');
+    await expectSuccessfulExec('npm run build');
     if (hasPlaywright) {
-      await exec('npx playwright install');
+      await expectSuccessfulExec('npx playwright install');
     }
   });
   return depsMap;

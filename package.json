@@ -122,7 +122,7 @@
     "@babel/preset-typescript": "^7.24.1",
     "@lexical/eslint-plugin": "file:./packages/lexical-eslint-plugin",
     "@lexical/eslint-plugin-internal": "file:./packages/lexical-eslint-plugin-internal",
-    "@playwright/test": "^1.45.0",
+    "@playwright/test": "^1.51.1",
     "@rollup/plugin-alias": "^5.1.0",
     "@rollup/plugin-babel": "^6.0.4",
     "@rollup/plugin-commonjs": "^25.0.7",
@@ -138,8 +138,8 @@
     "@types/prettier": "^2.7.3",
     "@types/prismjs": "^1.26.0",
     "@types/proper-lockfile": "^4.1.4",
-    "@types/react": "^18.0.8",
-    "@types/react-dom": "^18.0.3",
+    "@types/react": "^19.1.12",
+    "@types/react-dom": "^19.1.9",
     "@types/trusted-types": "^2.0.7",
     "@typescript-eslint/eslint-plugin": "^8.39.1",
     "@typescript-eslint/parser": "^8.39.1",
@@ -184,7 +184,7 @@
     "prettier-plugin-organize-attributes": "^0.0.5",
     "prettier-plugin-tailwindcss": "^0.4.1",
     "proper-lockfile": "^4.1.2",
-    "react-test-renderer": "^17.0.2",
+    "react-test-renderer": "^19.1.1",
     "rollup": "^4.22.4",
     "tmp": "^0.2.1",
     "ts-jest": "^29.1.2",
@@ -198,6 +198,6 @@
   },
   "dependencies": {
     "semver": "^7.7.2",
-    "yjs": "^13.5.42"
+    "yjs": "^13.6.27"
   }
 }

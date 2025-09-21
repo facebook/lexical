@@ -379,10 +379,10 @@ test.describe.parallel('Selection', () => {
     `;
     const imageHtml = html`
       <span
-        class="inline-editor-image"
+        class="editor-image"
         contenteditable="false"
         data-lexical-decorator="true">
-        <span draggable="false">${pasteImageHtml}</span>
+        <div draggable="false">${pasteImageHtml}</div>
       </span>
     `;
 

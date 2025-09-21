@@ -26,8 +26,8 @@ import {
   TextNode,
 } from 'lexical';
 import {
-  MutableRefObject,
   ReactPortal,
+  RefObject,
   useCallback,
   useEffect,
   useMemo,
@@ -53,7 +53,7 @@ export const PUNCTUATION =
 
 export class MenuOption {
   key: string;
-  ref?: MutableRefObject<HTMLElement | null>;
+  ref?: RefObject<HTMLElement | null>;
 
   constructor(key: string) {
     this.key = key;
@@ -67,7 +67,7 @@ export class MenuOption {
 }
 
 export type MenuRenderFn<TOption extends MenuOption> = (
-  anchorElementRef: MutableRefObject<HTMLElement | null>,
+  anchorElementRef: RefObject<HTMLElement | null>,
   itemProps: {
     selectedIndex: number | null;
     selectOptionAndCleanUp: (option: TOption) => void;
@@ -271,7 +271,7 @@ export function LexicalMenu<TOption extends MenuOption>({
 }: {
   close: () => void;
   editor: LexicalEditor;
-  anchorElementRef: MutableRefObject<HTMLElement | null>;
+  anchorElementRef: RefObject<HTMLElement | null>;
   resolution: MenuResolution;
   options: Array<TOption>;
   shouldSplitNodeWithQuery?: boolean;
@@ -511,7 +511,7 @@ export function useMenuAnchorRef(
   className?: string,
   parent: HTMLElement | undefined = CAN_USE_DOM ? document.body : undefined,
   shouldIncludePageYOffset__EXPERIMENTAL: boolean = true,
-): MutableRefObject<HTMLElement | null> {
+): RefObject<HTMLElement | null> {
   const [editor] = useLexicalComposerContext();
   const initialAnchorElement = CAN_USE_DOM
     ? document.createElement('div')

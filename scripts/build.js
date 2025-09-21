@@ -111,7 +111,14 @@ function resolveExternalEsm(id) {
  * in the bundles.
  */
 const monorepoExternalsSet = new Set(Object.entries(wwwMappings).flat());
-const thirdPartyExternals = ['react', 'react-dom', 'yjs', 'y-websocket'];
+const thirdPartyExternals = [
+  'react',
+  'react-dom',
+  'react-error-boundary',
+  '@floating-ui/react',
+  'yjs',
+  'y-websocket',
+];
 const thirdPartyExternalsRegExp = new RegExp(
   `^(${thirdPartyExternals.join('|')})(\\/|$)`,
 );

@@ -47,7 +47,7 @@ export type SerializedHorizontalRuleNode = SerializedLexicalNode;
 export const INSERT_HORIZONTAL_RULE_COMMAND: LexicalCommand<void> =
   createCommand('INSERT_HORIZONTAL_RULE_COMMAND');
 
-export class HorizontalRuleNode extends DecoratorNode<JSX.Element> {
+export class HorizontalRuleNode extends DecoratorNode<null> {
   static getType(): string {
     return 'horizontalrule';
   }

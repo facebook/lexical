@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import type {JSX} from 'react';
+
 import {LexicalBuilder} from '@lexical/extension';
 import {ReactProviderExtension} from '@lexical/react/ReactProviderExtension';
 import {type LexicalEditor} from 'lexical';

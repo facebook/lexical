@@ -5,11 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {ForwardedRef, RefCallback} from 'react';
+import type {Ref} from 'react';
 
-export function mergeRefs<T>(
-  ...refs: (RefCallback<T> | ForwardedRef<T>)[]
-): RefCallback<T> {
+export function mergeRefs<T>(...refs: Ref<T>[]): (value: null | T) => void {
   return (value) => {
     for (const ref of refs) {
       if (typeof ref === 'function') {

@@ -11,6 +11,7 @@
 import {spawn} from 'child-process-promise';
 import {sync as globSync} from 'glob';
 import minimist from 'minimist';
+import * as fs from 'node:fs';
 import * as path from 'node:path';
 import {gt as semverGt} from 'semver';
 
@@ -31,7 +32,7 @@ async function main() {
     // assume that npm run update-packages has already updated the version and lexical deps
     const json = pkg.packageJson;
     const {lexicalUnreleasedDependencies = {}} = json;
-    let hasUnreleasedDependency = false;
+    let hasUnreleasedDependency = !!json.lexicalUnreleasedDependencies;
     for (const [k, v] of Object.entries(lexicalUnreleasedDependencies)) {
       if (semverGt(version, v)) {
         delete lexicalUnreleasedDependencies[k];
@@ -62,6 +63,17 @@ async function main() {
       }
     };
     await npm('i');
+    if (hasUnreleasedDependency) {
+      console.log(
+        'Unreleased lexical dependencies required, removing local versions',
+      );
+      for (const dir of [
+        pkg.resolve('node_modules', '{lexical,@lexical}'),
+      ].flatMap((v) => globSync(v))) {
+        console.log(`> rm -rf ${dir}`);
+        fs.rmSync(dir, {force: true, recursive: true});
+      }
+    }
     await npm(
       'run',
       'build',

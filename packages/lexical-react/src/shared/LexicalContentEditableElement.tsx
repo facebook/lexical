@@ -78,10 +78,7 @@ function ContentEditableElementImpl(
     },
     [editor],
   );
-  const mergedRefs: RefCallback<HTMLDivElement> = useMemo(
-    () => mergeRefs(ref, handleRef),
-    [handleRef, ref],
-  );
+  const mergedRefs = useMemo(() => mergeRefs(ref, handleRef), [handleRef, ref]);
 
   useLayoutEffect(() => {
     setEditable(editor.isEditable());

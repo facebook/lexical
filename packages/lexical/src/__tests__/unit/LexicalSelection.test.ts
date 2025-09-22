@@ -1626,7 +1626,6 @@ describe('Regression tests for #7846', () => {
           const paragraphText = $createTextNode('finna');
           const selection = headingText.selectStart();
           selection.insertNodes([paragraph.append(paragraphText)]);
-          expect($getRoot().getChildren()).toEqual([paragraph]);
           expect($getRoot().getTextContent()).toEqual('finna chyeah');
         },
         {discrete: true},

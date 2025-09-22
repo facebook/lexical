@@ -669,6 +669,22 @@ describe('Markdown', () => {
       html: '<p><span style="white-space: pre-wrap;">[h</span><a href="https://lexical.dev"><span style="white-space: pre-wrap;">ello</span></a><a href="https://lexical.dev"><span style="white-space: pre-wrap;">world</span></a></p>',
       md: '[h[ello](https://lexical.dev)[world](https://lexical.dev)',
     },
+    {
+      html: '<p style="padding-inline-start: 40px;"><span style="white-space: pre-wrap;">Hello Word</span></p>',
+      md: '\tHello Word',
+    },
+    {
+      html: '<p style="padding-inline-start: 80px;"><span style="white-space: pre-wrap;">Hello Word</span></p>',
+      md: '\t\tHello Word',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">Hello\t Word</span></p>',
+      md: 'Hello\t Word',
+    },
+    {
+      html: '<p style="padding-inline-start: 40px;"><i><em style="white-space: pre-wrap;">Hello</em></i><span style="white-space: pre-wrap;"> Word</span></p>',
+      md: '\t*Hello* Word',
+    },
   ];
 
   const HIGHLIGHT_TEXT_MATCH_IMPORT: TextMatchTransformer = {

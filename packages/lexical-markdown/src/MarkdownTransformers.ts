@@ -35,6 +35,8 @@ import {
 import {
   $createLineBreakNode,
   $createTextNode,
+  $isParagraphNode,
+  $isTextNode,
   ElementNode,
   Klass,
   LexicalNode,
@@ -209,6 +211,7 @@ const CODE_SINGLE_LINE_REGEX =
   /^[ \t]*```[^`]+(?:(?:`{1,2}|`{4,})[^`]+)*```(?:[^`]|$)/;
 const TABLE_ROW_REG_EXP = /^(?:\|)(.+)(?:\|)\s?$/;
 const TABLE_ROW_DIVIDER_REG_EXP = /^(\| ?:?-*:? ?)+\|\s?$/;
+const INDENT_REGEX = /^\t+/;
 
 const createBlockNode = (
   createNode: (match: Array<string>) => ElementNode,
@@ -592,6 +595,37 @@ export const LINK: TextMatchTransformer = {
     return linkTextNode;
   },
   trigger: ')',
+  type: 'text-match',
+};
+
+export const INDENT: TextMatchTransformer = {
+  dependencies: [],
+  export: (node, exportChildren, exportFormat) => {
+    const parentNode = node.getParent();
+    const textContent = node.getTextContent();
+    if (
+      !$isParagraphNode(parentNode) ||
+      !$isTextNode(node) ||
+      parentNode.getFirstChild() !== node
+    ) {
+      return null;
+    }
+    const indent = parentNode.getIndent();
+    const textWithFormat = exportFormat(node, textContent);
+    return textWithFormat ? '\t'.repeat(indent) + textWithFormat : null;
+  },
+  importRegExp: INDENT_REGEX,
+  regExp: INDENT_REGEX,
+  replace: (textNode, match) => {
+    const [indents] = match;
+    const parentNode = textNode.getParent();
+    if (!parentNode || !$isParagraphNode(parentNode)) {
+      return;
+    }
+    parentNode.setIndent(indents.length);
+    textNode.setTextContent(textNode.getTextContent().replace(/^\t+/, ''));
+    return textNode;
+  },
   type: 'text-match',
 };
 

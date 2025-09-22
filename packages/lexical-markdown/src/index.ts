@@ -27,6 +27,7 @@ import {
   CODE,
   HEADING,
   HIGHLIGHT,
+  INDENT,
   INLINE_CODE,
   ITALIC_STAR,
   ITALIC_UNDERSCORE,
@@ -65,7 +66,7 @@ const TEXT_FORMAT_TRANSFORMERS: Array<TextFormatTransformer> = [
   STRIKETHROUGH,
 ];
 
-const TEXT_MATCH_TRANSFORMERS: Array<TextMatchTransformer> = [LINK];
+const TEXT_MATCH_TRANSFORMERS: Array<TextMatchTransformer> = [INDENT, LINK];
 
 const TRANSFORMERS: Array<Transformer> = [
   ...ELEMENT_TRANSFORMERS,

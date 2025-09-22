@@ -10,7 +10,7 @@ import type {LexicalEditor} from 'lexical';
 import type {JSX} from 'react';
 
 import * as React from 'react';
-import {forwardRef, Ref, useMemo, useState} from 'react';
+import {forwardRef, Ref, useCallback, useMemo, useState} from 'react';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
 import {mergeRefs} from './mergeRefs';
@@ -62,29 +62,23 @@ function ContentEditableElementImpl(
 ): JSX.Element {
   const [isEditable, setEditable] = useState(editor.isEditable());
 
-  const [rootElement, setRootElement] = useState<null | HTMLElement>(null);
-
-  // Defer setting the root element until after the component has been mounted, otherwise
-  // ownerDocument may not be correct, e.g. when rendering into a different document via
-  // createPortal.
-  useLayoutEffect(() => {
-    // defaultView is required for a root element.
-    // In multi-window setups, the defaultView may not exist at certain points.
-    if (
-      rootElement &&
-      rootElement.ownerDocument &&
-      rootElement.ownerDocument.defaultView
-    ) {
-      editor.setRootElement(rootElement);
-    } else {
-      editor.setRootElement(null);
-    }
-  }, [editor, rootElement]);
-
-  const mergedRefs = useMemo(
-    () => mergeRefs(ref, setRootElement),
-    [setRootElement, ref],
+  const handleRef = useCallback(
+    (rootElement: null | HTMLElement) => {
+      // defaultView is required for a root element.
+      // In multi-window setups, the defaultView may not exist at certain points.
+      if (
+        rootElement &&
+        rootElement.ownerDocument &&
+        rootElement.ownerDocument.defaultView
+      ) {
+        editor.setRootElement(rootElement);
+      } else {
+        editor.setRootElement(null);
+      }
+    },
+    [editor],
   );
+  const mergedRefs = useMemo(() => mergeRefs(ref, handleRef), [handleRef, ref]);
 
   useLayoutEffect(() => {
     setEditable(editor.isEditable());

@@ -1720,6 +1720,66 @@ export function updateDOMBlockCursorElement(
 }
 
 /**
+ * Returns a Selection object from a ShadowRoot using the best available API.
+ *
+ * This function implements a progressive enhancement strategy for getting selection
+ * from Shadow DOM contexts, trying modern APIs first and gracefully falling back
+ * to older or experimental APIs when needed.
+ *
+ * **Selection Proxy:**
+ * When getComposedRanges returns valid ranges, this function creates a Selection proxy
+ * that uses the composed ranges data. This ensures proper text node resolution and
+ * range handling across Shadow DOM boundaries.
+ *
+ * **Error Handling:**
+ * The function includes comprehensive error handling for all API calls, ensuring
+ * graceful degradation even when modern APIs throw exceptions.
+ *
+ * @param shadowRoot - The ShadowRoot to get selection from
+ * @returns Selection object from the most appropriate API, or null if no selection available
+ *
+ */
+export function getDOMSelectionFromShadowRoot(
+  shadowRoot: ShadowRoot,
+): null | Selection {
+  // Try modern getComposedRanges API first
+  if ('getComposedRanges' in Selection.prototype) {
+    try {
+      const globalSelection = window.getSelection();
+      if (globalSelection) {
+        const ranges = (
+          globalSelection as SelectionWithComposedRanges
+        ).getComposedRanges({
+          shadowRoots: [shadowRoot],
+        });
+        if (ranges.length > 0) {
+          // Create a proxy Selection that uses composed ranges
+          // This ensures we get correct text nodes from StaticRange data
+          return createSelectionWithComposedRanges(globalSelection, ranges);
+        }
+        // If no ranges found, fall through to experimental API
+      }
+    } catch (error) {
+      // If getComposedRanges fails, fall through to experimental API
+    }
+  }
+
+  // Fallback to experimental getSelection if available
+  if (
+    typeof (shadowRoot as ShadowRootWithSelection).getSelection === 'function'
+  ) {
+    try {
+      return (shadowRoot as ShadowRootWithSelection).getSelection();
+    } catch (error) {
+      // Continue to final fallback
+    }
+  }
+
+  // Final fallback to document selection
+  return window.getSelection();
+}
+
+/**
  * Returns the selection for the given window, or the global window if null.
  * Enhanced with Shadow DOM support using modern getComposedRanges() API when available,
  * with fallback to checking if the selection is within the shadow DOM.
@@ -1741,38 +1801,7 @@ export function getDOMSelection(
   if (rootElement) {
     const shadowRoot = getShadowRoot(rootElement);
     if (shadowRoot) {
-      // Try modern getComposedRanges API first
-      if ('getComposedRanges' in Selection.prototype) {
-        try {
-          const globalSelection = window.getSelection();
-          if (globalSelection) {
-            const ranges = (
-              globalSelection as SelectionWithComposedRanges
-            ).getComposedRanges({
-              shadowRoots: [shadowRoot],
-            });
-            if (ranges.length > 0) {
-              // Create a proxy Selection that uses composed ranges
-              // This ensures we get correct text nodes from StaticRange data
-              return createSelectionWithComposedRanges(globalSelection, ranges);
-            }
-          }
-        } catch (error) {
-          invariant(false, 'getComposedRanges failed, falling back:');
-        }
-      }
-
-      // Fallback to experimental getSelection if available
-      if (
-        typeof (shadowRoot as ShadowRootWithSelection).getSelection ===
-        'function'
-      ) {
-        try {
-          return (shadowRoot as ShadowRootWithSelection).getSelection();
-        } catch (error) {
-          invariant(false, 'ShadowRoot.getSelection failed:');
-        }
-      }
+      return getDOMSelectionFromShadowRoot(shadowRoot);
     }
   }
 
@@ -2088,7 +2117,14 @@ export function getShadowRoot(element: HTMLElement): ShadowRoot | null {
 }
 
 /**
- * Checks if the editor is running in Shadow DOM context
+ * Checks if the Lexical editor is running within a Shadow DOM context.
+ *
+ * This function determines whether the editor's root element is contained within
+ * a ShadowRoot, which is essential for enabling Shadow DOM-specific functionality
+ * like specialized deletion commands and selection handling.
+ *
+ * @param editor - The Lexical editor instance to check
+ * @returns `true` if the editor is in Shadow DOM, `false` otherwise
  */
 export function $isInShadowDOMContext(editor: LexicalEditor): boolean {
   const rootElement = editor.getRootElement();
@@ -2374,62 +2410,7 @@ export function getDOMSelectionFromTarget(
     const shadowRoot = getShadowRoot(eventTarget);
 
     if (shadowRoot) {
-      if ('getComposedRanges' in Selection.prototype) {
-        try {
-          const globalSelection = window.getSelection();
-          if (globalSelection) {
-            const ranges = (
-              globalSelection as SelectionWithComposedRanges
-            ).getComposedRanges({
-              shadowRoots: [shadowRoot],
-            });
-            if (ranges.length > 0) {
-              return createSelectionWithComposedRanges(globalSelection, ranges);
-            }
-          }
-        } catch (error) {
-          invariant(false, 'getComposedRanges failed, falling back:');
-        }
-      }
-    }
-  }
-
-  if (isHTMLElement(eventTarget)) {
-    const shadowRoot = getShadowRoot(eventTarget);
-
-    if (shadowRoot) {
-      if ('getComposedRanges' in Selection.prototype) {
-        try {
-          const globalSelection = window.getSelection();
-          if (globalSelection) {
-            const ranges = (
-              globalSelection as SelectionWithComposedRanges
-            ).getComposedRanges({
-              shadowRoots: [shadowRoot],
-            });
-            if (ranges.length > 0) {
-              return createSelectionWithComposedRanges(globalSelection, ranges);
-            }
-          }
-        } catch (error) {
-          invariant(false, 'getComposedRanges failed, falling back:');
-        }
-      }
-
-      // Fallback to experimental getSelection if available
-      if (
-        typeof (shadowRoot as ShadowRootWithSelection).getSelection ===
-        'function'
-      ) {
-        try {
-          return (shadowRoot as ShadowRootWithSelection).getSelection();
-        } catch (error) {
-          invariant(
-            false,
-            'ShadowRoot.getSelection failed in getDOMSelectionFromTarget:',
-          );
-        }
-      }
+      return getDOMSelectionFromShadowRoot(shadowRoot);
     }
   }
 

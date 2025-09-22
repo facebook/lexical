@@ -271,6 +271,7 @@ export {
   getDOMOwnerDocument,
   getDOMSelection,
   getDOMSelectionForEditor,
+  getDOMSelectionFromShadowRoot,
   getDOMSelectionFromTarget,
   getDOMTextNode,
   getEditorPropertyFromDOMNode,

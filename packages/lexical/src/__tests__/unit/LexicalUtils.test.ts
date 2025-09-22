@@ -14,6 +14,7 @@ import {
   $getNodeByKey,
   $getRoot,
   $getState,
+  $isInShadowDOMContext,
   $isTokenOrSegmented,
   $nodesOfType,
   $onUpdate,
@@ -38,6 +39,7 @@ import {
   getDocumentFromElement,
   getDOMSelection,
   getDOMSelectionForEditor,
+  getDOMSelectionFromShadowRoot,
   getDOMSelectionFromTarget,
   getShadowRoot,
   getTextDirection,
@@ -1147,6 +1149,231 @@ describe('$copyNode', () => {
       });
     });
 
+    describe('getDOMSelectionFromShadowRoot()', () => {
+      test('should return selection from getComposedRanges when available and ranges exist', () => {
+        const {shadowRoot, cleanup} = createShadowDOMHost();
+
+        // Create mock range
+        const mockRange = {
+          collapsed: false,
+          endContainer: document.createTextNode('test'),
+          endOffset: 4,
+          startContainer: document.createTextNode('test'),
+          startOffset: 0,
+        } as StaticRange;
+
+        // Mock window.getSelection to return a selection with getComposedRanges
+        const mockGetComposedRanges = jest.fn().mockReturnValue([mockRange]);
+        const mockWindowSelection = {
+          getComposedRanges: mockGetComposedRanges,
+          getRangeAt: jest.fn().mockReturnValue({}),
+          rangeCount: 1,
+        } as unknown as Selection;
+        const originalGetSelection = window.getSelection;
+        window.getSelection = jest.fn().mockReturnValue(mockWindowSelection);
+
+        // Mock getComposedRanges on Selection prototype to pass the 'in' check
+        const originalGetComposedRanges = (Selection.prototype as any)
+          .getComposedRanges;
+        (Selection.prototype as any).getComposedRanges = jest.fn();
+
+        const selection = getDOMSelectionFromShadowRoot(shadowRoot);
+
+        expect(mockGetComposedRanges).toHaveBeenCalledWith({
+          shadowRoots: [shadowRoot],
+        });
+        expect(selection).not.toBeNull();
+
+        // Cleanup mocks
+        (Selection.prototype as any).getComposedRanges =
+          originalGetComposedRanges;
+        window.getSelection = originalGetSelection;
+
+        cleanup();
+      });
+
+      test('should fallback to shadowRoot.getSelection when getComposedRanges returns empty array', () => {
+        const {shadowRoot, cleanup} = createShadowDOMHost();
+
+        // Mock window.getSelection to return a selection with getComposedRanges that returns empty array
+        const mockGetComposedRanges = jest.fn().mockReturnValue([]);
+        const mockWindowSelection = {
+          getComposedRanges: mockGetComposedRanges,
+          rangeCount: 0,
+        } as unknown as Selection;
+        const originalGetSelection = window.getSelection;
+        window.getSelection = jest.fn().mockReturnValue(mockWindowSelection);
+
+        // Mock getComposedRanges on Selection prototype to pass the 'in' check
+        const originalGetComposedRanges = (Selection.prototype as any)
+          .getComposedRanges;
+        (Selection.prototype as any).getComposedRanges = jest.fn();
+
+        // Mock shadowRoot.getSelection as fallback
+        const mockShadowSelection = {rangeCount: 1} as Selection;
+        const mockGetSelection = jest.fn().mockReturnValue(mockShadowSelection);
+        Object.defineProperty(shadowRoot, 'getSelection', {
+          configurable: true,
+          value: mockGetSelection,
+        });
+
+        const selection = getDOMSelectionFromShadowRoot(shadowRoot);
+
+        expect(mockGetComposedRanges).toHaveBeenCalled();
+        expect(mockGetSelection).toHaveBeenCalled();
+        expect(selection).toBe(mockShadowSelection);
+
+        // Cleanup mocks
+        (Selection.prototype as any).getComposedRanges =
+          originalGetComposedRanges;
+        window.getSelection = originalGetSelection;
+
+        cleanup();
+      });
+
+      test('should fallback to window.getSelection when getComposedRanges throws error', () => {
+        const {shadowRoot, cleanup} = createShadowDOMHost();
+
+        // Mock window.getSelection to return a selection with getComposedRanges that throws error
+        const mockGetComposedRanges = jest.fn().mockImplementation(() => {
+          throw new Error('getComposedRanges failed');
+        });
+        const mockWindowSelection = {
+          getComposedRanges: mockGetComposedRanges,
+          rangeCount: 0,
+        } as unknown as Selection;
+        const originalGetSelection = window.getSelection;
+        window.getSelection = jest.fn().mockReturnValue(mockWindowSelection);
+
+        // Mock getComposedRanges on Selection prototype to pass the 'in' check
+        const originalGetComposedRanges = (Selection.prototype as any)
+          .getComposedRanges;
+        (Selection.prototype as any).getComposedRanges = jest.fn();
+
+        // Mock shadowRoot.getSelection as fallback
+        const mockShadowSelection = {rangeCount: 1} as Selection;
+        const mockGetSelection = jest.fn().mockReturnValue(mockShadowSelection);
+        Object.defineProperty(shadowRoot, 'getSelection', {
+          configurable: true,
+          value: mockGetSelection,
+        });
+
+        const selection = getDOMSelectionFromShadowRoot(shadowRoot);
+
+        expect(mockGetComposedRanges).toHaveBeenCalled();
+        expect(mockGetSelection).toHaveBeenCalled();
+        expect(selection).toBe(mockShadowSelection);
+
+        // Cleanup mocks
+        (Selection.prototype as any).getComposedRanges =
+          originalGetComposedRanges;
+        window.getSelection = originalGetSelection;
+
+        cleanup();
+      });
+
+      test('should fallback to window.getSelection when shadowRoot.getSelection throws error', () => {
+        const {shadowRoot, cleanup} = createShadowDOMHost();
+
+        // Mock window.getSelection to return a selection with getComposedRanges that returns empty array
+        const mockGetComposedRanges = jest.fn().mockReturnValue([]);
+        const mockWindowSelection = {
+          getComposedRanges: mockGetComposedRanges,
+          rangeCount: 0,
+        } as unknown as Selection;
+        const originalGetSelection = window.getSelection;
+        window.getSelection = jest.fn().mockReturnValue(mockWindowSelection);
+
+        // Mock getComposedRanges on Selection prototype to pass the 'in' check
+        const originalGetComposedRanges = (Selection.prototype as any)
+          .getComposedRanges;
+        (Selection.prototype as any).getComposedRanges = jest.fn();
+
+        // Mock shadowRoot.getSelection to throw error
+        const mockGetSelection = jest.fn().mockImplementation(() => {
+          throw new Error('shadowRoot.getSelection failed');
+        });
+        Object.defineProperty(shadowRoot, 'getSelection', {
+          configurable: true,
+          value: mockGetSelection,
+        });
+
+        const selection = getDOMSelectionFromShadowRoot(shadowRoot);
+
+        expect(mockGetComposedRanges).toHaveBeenCalled();
+        expect(mockGetSelection).toHaveBeenCalled();
+        expect(selection).toBe(mockWindowSelection);
+
+        // Cleanup mocks
+        (Selection.prototype as any).getComposedRanges =
+          originalGetComposedRanges;
+        window.getSelection = originalGetSelection;
+
+        cleanup();
+      });
+
+      test('should fallback to window.getSelection when getComposedRanges is not supported', () => {
+        const {shadowRoot, cleanup} = createShadowDOMHost();
+
+        // Remove getComposedRanges from Selection prototype
+        const originalGetComposedRanges = (Selection.prototype as any)
+          .getComposedRanges;
+        delete (Selection.prototype as any).getComposedRanges;
+
+        // Mock window.getSelection to return a selection
+        const mockWindowSelection = {rangeCount: 0} as Selection;
+        const originalGetSelection = window.getSelection;
+        window.getSelection = jest.fn().mockReturnValue(mockWindowSelection);
+
+        // Mock shadowRoot.getSelection as fallback
+        const mockShadowSelection = {rangeCount: 1} as Selection;
+        const mockGetSelection = jest.fn().mockReturnValue(mockShadowSelection);
+        Object.defineProperty(shadowRoot, 'getSelection', {
+          configurable: true,
+          value: mockGetSelection,
+        });
+
+        const selection = getDOMSelectionFromShadowRoot(shadowRoot);
+
+        expect(mockGetSelection).toHaveBeenCalled();
+        expect(selection).toBe(mockShadowSelection);
+
+        // Cleanup mocks
+        (Selection.prototype as any).getComposedRanges =
+          originalGetComposedRanges;
+        window.getSelection = originalGetSelection;
+
+        cleanup();
+      });
+
+      test('should return window.getSelection when shadowRoot.getSelection is not supported', () => {
+        const {shadowRoot, cleanup} = createShadowDOMHost();
+
+        // Remove getComposedRanges from Selection prototype
+        const originalGetComposedRanges = (Selection.prototype as any)
+          .getComposedRanges;
+        delete (Selection.prototype as any).getComposedRanges;
+
+        // Mock window.getSelection to return a selection
+        const mockWindowSelection = {rangeCount: 0} as Selection;
+        const originalGetSelection = window.getSelection;
+        window.getSelection = jest.fn().mockReturnValue(mockWindowSelection);
+
+        // Don't add getSelection to shadowRoot (not supported)
+
+        const selection = getDOMSelectionFromShadowRoot(shadowRoot);
+
+        expect(selection).toBe(mockWindowSelection);
+
+        // Cleanup mocks
+        (Selection.prototype as any).getComposedRanges =
+          originalGetComposedRanges;
+        window.getSelection = originalGetSelection;
+
+        cleanup();
+      });
+    });
+
     describe('getDOMSelectionForEditor()', () => {
       test('should return selection from editor window and root element', () => {
         const mockEditor = {
@@ -1522,6 +1749,55 @@ describe('$copyNode', () => {
           originalGetComposedRanges;
 
         cleanup();
+      });
+    });
+
+    describe('Shadow DOM deletion commands', () => {
+      describe('$isInShadowDOMContext()', () => {
+        test('should return true when editor is in shadow DOM', () => {
+          const {shadowRoot, cleanup} = createShadowDOMHost();
+
+          const editorDiv = document.createElement('div');
+          shadowRoot.appendChild(editorDiv);
+
+          const mockEditor = {
+            getRootElement: jest.fn().mockReturnValue(editorDiv),
+          } as unknown as LexicalEditor;
+
+          const result = $isInShadowDOMContext(mockEditor);
+
+          expect(result).toBe(true);
+          expect(mockEditor.getRootElement).toHaveBeenCalled();
+
+          cleanup();
+        });
+
+        test('should return false when editor is not in shadow DOM', () => {
+          const editorDiv = document.createElement('div');
+          document.body.appendChild(editorDiv);
+
+          const mockEditor = {
+            getRootElement: jest.fn().mockReturnValue(editorDiv),
+          } as unknown as LexicalEditor;
+
+          const result = $isInShadowDOMContext(mockEditor);
+
+          expect(result).toBe(false);
+          expect(mockEditor.getRootElement).toHaveBeenCalled();
+
+          document.body.removeChild(editorDiv);
+        });
+
+        test('should return false when editor has no root element', () => {
+          const mockEditor = {
+            getRootElement: jest.fn().mockReturnValue(null),
+          } as unknown as LexicalEditor;
+
+          const result = $isInShadowDOMContext(mockEditor);
+
+          expect(result).toBe(false);
+          expect(mockEditor.getRootElement).toHaveBeenCalled();
+        });
       });
     });
   });

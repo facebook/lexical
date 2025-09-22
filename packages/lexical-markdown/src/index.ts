@@ -25,6 +25,7 @@ import {
   BOLD_UNDERSCORE,
   CHECK_LIST,
   CODE,
+  ELEMENT_TRANSFORMERS,
   HEADING,
   HIGHLIGHT,
   INDENT,
@@ -32,48 +33,16 @@ import {
   ITALIC_STAR,
   ITALIC_UNDERSCORE,
   LINK,
+  MULTILINE_ELEMENT_TRANSFORMERS,
   normalizeMarkdown,
   ORDERED_LIST,
   QUOTE,
   STRIKETHROUGH,
+  TEXT_FORMAT_TRANSFORMERS,
+  TEXT_MATCH_TRANSFORMERS,
+  TRANSFORMERS,
   UNORDERED_LIST,
 } from './MarkdownTransformers';
-
-const ELEMENT_TRANSFORMERS: Array<ElementTransformer> = [
-  HEADING,
-  QUOTE,
-  UNORDERED_LIST,
-  ORDERED_LIST,
-];
-
-const MULTILINE_ELEMENT_TRANSFORMERS: Array<MultilineElementTransformer> = [
-  CODE,
-];
-
-// Order of text format transformers matters:
-//
-// - code should go first as it prevents any transformations inside
-// - then longer tags match (e.g. ** or __ should go before * or _)
-const TEXT_FORMAT_TRANSFORMERS: Array<TextFormatTransformer> = [
-  INLINE_CODE,
-  BOLD_ITALIC_STAR,
-  BOLD_ITALIC_UNDERSCORE,
-  BOLD_STAR,
-  BOLD_UNDERSCORE,
-  HIGHLIGHT,
-  ITALIC_STAR,
-  ITALIC_UNDERSCORE,
-  STRIKETHROUGH,
-];
-
-const TEXT_MATCH_TRANSFORMERS: Array<TextMatchTransformer> = [INDENT, LINK];
-
-const TRANSFORMERS: Array<Transformer> = [
-  ...ELEMENT_TRANSFORMERS,
-  ...MULTILINE_ELEMENT_TRANSFORMERS,
-  ...TEXT_FORMAT_TRANSFORMERS,
-  ...TEXT_MATCH_TRANSFORMERS,
-];
 
 /**
  * Renders markdown from a string. The selection is moved to the start after the operation.

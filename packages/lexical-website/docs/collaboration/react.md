@@ -41,6 +41,7 @@ $ HOST=localhost PORT=1234 YPERSISTENCE=./yjs-wss-db npx y-websocket
 
 ```tsx
 import {$getRoot, $createParagraphNode, $createTextNode} from 'lexical';
+import {LexicalCollaboration} from '@lexical/react/LexicalCollaborationContext';
 import {LexicalComposer} from '@lexical/react/LexicalComposer';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
@@ -75,23 +76,25 @@ function Editor() {
   );
 
   return (
-    <LexicalComposer initialConfig={initialConfig}>
-      <RichTextPlugin
-        contentEditable={<ContentEditable className="editor-input" />}
-        placeholder={<div className="editor-placeholder">Enter some rich text...</div>}
-        ErrorBoundary={LexicalErrorBoundary}
-      />
-      <CollaborationPlugin
-        id="lexical/react-rich-collab"
-        providerFactory={providerFactory}
-        // Optional initial editor state in case collaborative Y.Doc won't
-        // have any existing data on server. Then it'll use this value to populate editor.
-        // It accepts same type of values as LexicalComposer editorState
-        // prop (json string, state object, or a function)
-        initialEditorState={$initialEditorState}
-        shouldBootstrap={true}
-      />
-    </LexicalComposer>
+    <LexicalCollaboration>
+      <LexicalComposer initialConfig={initialConfig}>
+        <RichTextPlugin
+          contentEditable={<ContentEditable className="editor-input" />}
+          placeholder={<div className="editor-placeholder">Enter some rich text...</div>}
+          ErrorBoundary={LexicalErrorBoundary}
+        />
+        <CollaborationPlugin
+          id="lexical/react-rich-collab"
+          providerFactory={providerFactory}
+          // Optional initial editor state in case collaborative Y.Doc won't
+          // have any existing data on server. Then it'll use this value to populate editor.
+          // It accepts same type of values as LexicalComposer editorState
+          // prop (json string, state object, or a function)
+          initialEditorState={$initialEditorState}
+          shouldBootstrap={true}
+        />
+      </LexicalComposer>
+    <LexicalCollaboration>
   );
 }
 ```

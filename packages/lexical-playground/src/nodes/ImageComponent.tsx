@@ -58,24 +58,33 @@ import ContentEditable from '../ui/ContentEditable';
 import ImageResizer from '../ui/ImageResizer';
 import {$isImageNode} from './ImageNode';
 
-const imageCache = new Map<string, Promise<boolean> | boolean>();
+type ImageStatus =
+  | {error: true}
+  | {error: false; width: number; height: number};
+
+const imageCache = new Map<string, Promise<ImageStatus> | ImageStatus>();
 
 export const RIGHT_CLICK_IMAGE_COMMAND: LexicalCommand<MouseEvent> =
   createCommand('RIGHT_CLICK_IMAGE_COMMAND');
 
-function useSuspenseImage(src: string) {
+function useSuspenseImage(src: string): ImageStatus {
   let cached = imageCache.get(src);
-  if (typeof cached === 'boolean') {
+  if (cached && 'error' in cached && typeof cached.error === 'boolean') {
     return cached;
   } else if (!cached) {
-    cached = new Promise<boolean>((resolve) => {
+    cached = new Promise<ImageStatus>((resolve) => {
       const img = new Image();
       img.src = src;
-      img.onload = () => resolve(false);
-      img.onerror = () => resolve(true);
-    }).then((hasError) => {
-      imageCache.set(src, hasError);
-      return hasError;
+      img.onload = () =>
+        resolve({
+          error: false,
+          height: img.naturalHeight,
+          width: img.naturalWidth,
+        });
+      img.onerror = () => resolve({error: true});
+    }).then((rval) => {
+      imageCache.set(src, rval);
+      return rval;
     });
     imageCache.set(src, cached);
     throw cached;
@@ -106,32 +115,16 @@ function LazyImage({
   width: 'inherit' | number;
   onError: () => void;
 }): JSX.Element {
-  const [dimensions, setDimensions] = useState<{
-    width: number;
-    height: number;
-  } | null>(null);
   const isSVGImage = isSVG(src);
-
-  // Set initial dimensions for SVG images
-  useEffect(() => {
-    if (imageRef.current && isSVGImage) {
-      const {naturalWidth, naturalHeight} = imageRef.current;
-      setDimensions({
-        height: naturalHeight,
-        width: naturalWidth,
-      });
-    }
-  }, [imageRef, isSVGImage]);
-
-  const hasError = useSuspenseImage(src);
+  const status = useSuspenseImage(src);
 
   useEffect(() => {
-    if (hasError) {
+    if (status.error) {
       onError();
     }
-  }, [hasError, onError]);
+  }, [status.error, onError]);
 
-  if (hasError) {
+  if (status.error) {
     return <BrokenImage />;
   }
 
@@ -146,8 +139,8 @@ function LazyImage({
     }
 
     // Use natural dimensions if available, otherwise fallback to defaults
-    const naturalWidth = dimensions?.width || 200;
-    const naturalHeight = dimensions?.height || 200;
+    const naturalWidth = status.width;
+    const naturalHeight = status.height;
 
     let finalWidth = naturalWidth;
     let finalHeight = naturalHeight;
@@ -185,15 +178,6 @@ function LazyImage({
       style={imageStyle}
       onError={onError}
       draggable="false"
-      onLoad={(e) => {
-        if (isSVGImage) {
-          const img = e.currentTarget;
-          setDimensions({
-            height: img.naturalHeight,
-            width: img.naturalWidth,
-          });
-        }
-      }}
     />
   );
 }

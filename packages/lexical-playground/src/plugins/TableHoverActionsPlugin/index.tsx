@@ -148,7 +148,7 @@ function TableHoverActionsContainer({
               tableHasScroll && parentElement
                 ? parentElement.offsetLeft
                 : tableElemLeft - editorElemLeft,
-            top: tableElemBottom - editorElemY + 5,
+            top: tableElemBottom - editorElemY + (tableHasScroll ? 16 : 5),
             width:
               tableHasScroll && parentElement
                 ? parentElement.offsetWidth

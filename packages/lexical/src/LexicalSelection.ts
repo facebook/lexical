@@ -80,10 +80,9 @@ import {
   $setCompositionKey,
   doesContainSurrogatePair,
   getActiveElement,
-  getDOMSelection,
+  getDOMSelectionForEditor,
   getDOMTextNode,
   getElementByKeyOrThrow,
-  getWindow,
   INTERNAL_$isBlock,
   isHTMLElement,
   isSelectionCapturedInDecoratorInput,
@@ -93,6 +92,45 @@ import {
   toggleTextFormatType,
 } from './LexicalUtils';
 import {$createTabNode, $isTabNode} from './nodes/LexicalTabNode';
+
+/**
+ * Options for the getComposedRanges() method. Allows specifying which
+ * shadow roots should be included when computing composed ranges.
+ */
+export type GetComposedRangesOptions = {
+  shadowRoots?: ShadowRoot[];
+};
+
+/**
+ * Extended Selection interface that includes the modern getComposedRanges() method.
+ * This API is available in Chrome 125+, Firefox 132+, and other modern browsers.
+ * It provides a standardized way to get selection ranges across shadow DOM boundaries.
+ */
+export interface SelectionWithComposedRanges extends Selection {
+  /**
+   * Returns an array of StaticRange objects representing the current selection
+   * across shadow DOM boundaries. This is the modern replacement for the
+   * experimental ShadowRoot.getSelection() method.
+   *
+   * @param options - Configuration options for the composed ranges
+   * @returns Array of StaticRange objects representing the selection
+   */
+  getComposedRanges(options?: GetComposedRangesOptions): StaticRange[];
+}
+
+/**
+ * Extension for ShadowRoot with experimental getSelection method.
+ * This is a fallback for browsers that don't support getComposedRanges yet.
+ */
+export interface ShadowRootWithSelection extends ShadowRoot {
+  /**
+   * Experimental API for getting selection within shadow DOM.
+   * Available in some browsers as experimental feature.
+   *
+   * @returns Selection object or null if no selection
+   */
+  getSelection(): Selection | null;
+}
 
 export type TextPointType = {
   _selection: BaseSelection;
@@ -1575,10 +1613,7 @@ export class RangeSelection implements BaseSelection {
     const collapse = alter === 'move';
 
     const editor = getActiveEditor();
-    const domSelection = getDOMSelection(
-      getWindow(editor),
-      editor.getRootElement(),
-    );
+    const domSelection = getDOMSelectionForEditor(editor);
 
     if (!domSelection) {
       return;
@@ -2592,10 +2627,7 @@ export function $internalCreateSelection(
 ): null | BaseSelection {
   const currentEditorState = editor.getEditorState();
   const lastSelection = currentEditorState._selection;
-  const domSelection = getDOMSelection(
-    getWindow(editor),
-    editor.getRootElement(),
-  );
+  const domSelection = getDOMSelectionForEditor(editor);
 
   if ($isRangeSelection(lastSelection) || lastSelection == null) {
     return $internalCreateRangeSelection(

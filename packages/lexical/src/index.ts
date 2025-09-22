@@ -115,11 +115,6 @@ export {
   SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
   UNDO_COMMAND,
 } from './LexicalCommands';
-export type {
-  GetComposedRangesOptions,
-  ShadowRootWithComposedRanges,
-  ShadowRootWithSelection,
-} from './LexicalConstants';
 export {DOM_DOCUMENT_FRAGMENT_TYPE} from './LexicalConstants';
 export {
   IS_ALL_FORMATTING,
@@ -216,10 +211,13 @@ export {$normalizeSelection as $normalizeSelection__EXPERIMENTAL} from './Lexica
 export type {
   BaseSelection,
   ElementPointType as ElementPoint,
+  GetComposedRangesOptions,
   NodeSelection,
   Point,
   PointType,
   RangeSelection,
+  SelectionWithComposedRanges,
+  ShadowRootWithSelection,
   TextPointType as TextPoint,
 } from './LexicalSelection';
 export {
@@ -265,9 +263,10 @@ export {
   $setCompositionKey,
   $setSelection,
   $splitNode,
-  createSelectionFromComposedRanges,
+  getDocumentFromElement,
   getDOMOwnerDocument,
   getDOMSelection,
+  getDOMSelectionForEditor,
   getDOMSelectionFromTarget,
   getDOMTextNode,
   getEditorPropertyFromDOMNode,

@@ -7,10 +7,6 @@
  */
 
 import type {
-  ShadowRootWithComposedRanges,
-  ShadowRootWithSelection,
-} from './LexicalConstants';
-import type {
   CommandPayloadType,
   EditorConfig,
   EditorThemeClasses,
@@ -26,8 +22,11 @@ import type {
 import type {EditorState} from './LexicalEditorState';
 import type {
   BaseSelection,
+  GetComposedRangesOptions,
   PointType,
   RangeSelection,
+  SelectionWithComposedRanges,
+  ShadowRootWithSelection,
 } from './LexicalSelection';
 import type {RootNode} from './nodes/LexicalRootNode';
 
@@ -151,7 +150,12 @@ export function $isSelectionCapturedInDecorator(node: Node): boolean {
 }
 
 export function isSelectionCapturedInDecoratorInput(anchorDOM: Node): boolean {
-  const activeElement = document.activeElement;
+  const editor = getNearestEditorFromDOMNode(anchorDOM);
+
+  const rootElement = editor ? editor.getRootElement() : null;
+  const activeElement = rootElement
+    ? getActiveElement(rootElement)
+    : document.activeElement;
 
   if (!isHTMLElement(activeElement)) {
     return false;
@@ -717,10 +721,7 @@ export function $updateSelectedTextFromDOM(
   data?: string,
 ): void {
   // Update the text content with the latest composition text
-  const domSelection = getDOMSelection(
-    getWindow(editor),
-    editor.getRootElement(),
-  );
+  const domSelection = getDOMSelectionForEditor(editor);
   if (domSelection === null) {
     return;
   }
@@ -1486,7 +1487,7 @@ export function getDefaultView(domElem: EventTarget | null): Window | null {
 }
 
 export function getWindow(editor: LexicalEditor): Window {
-  const windowObj = editor._window;
+  const windowObj = editor._window || window;
   if (windowObj === null) {
     invariant(false, 'window object not found');
   }
@@ -1671,7 +1672,7 @@ export function updateDOMBlockCursorElement(
     $isRangeSelection(nextSelection) &&
     nextSelection.isCollapsed() &&
     nextSelection.anchor.type === 'element' &&
-    rootElement.contains(document.activeElement)
+    rootElement.contains(getActiveElement(rootElement))
   ) {
     const anchor = nextSelection.anchor;
     const elementNode = anchor.getNode();
@@ -1721,7 +1722,7 @@ export function updateDOMBlockCursorElement(
 /**
  * Returns the selection for the given window, or the global window if null.
  * Enhanced with Shadow DOM support using modern getComposedRanges() API when available,
- * with fallback to experimental ShadowRoot.getSelection() for older browsers.
+ * with fallback to checking if the selection is within the shadow DOM.
  * Will return null if {@link CAN_USE_DOM} is false.
  *
  * @param targetWindow - The window to get the selection from
@@ -1740,21 +1741,24 @@ export function getDOMSelection(
   if (rootElement) {
     const shadowRoot = getShadowRoot(rootElement);
     if (shadowRoot) {
-      // Try modern getComposedRanges API first (Chrome 125+, Firefox 132+)
-      if (
-        typeof (shadowRoot as ShadowRootWithComposedRanges)
-          .getComposedRanges === 'function'
-      ) {
+      // Try modern getComposedRanges API first
+      if ('getComposedRanges' in Selection.prototype) {
         try {
-          const ranges = (shadowRoot as ShadowRootWithComposedRanges)
-            .getComposedRanges!({
-            shadowRoots: [shadowRoot],
-          });
-          if (ranges.length > 0) {
-            return createSelectionFromComposedRanges(ranges);
+          const globalSelection = window.getSelection();
+          if (globalSelection) {
+            const ranges = (
+              globalSelection as SelectionWithComposedRanges
+            ).getComposedRanges({
+              shadowRoots: [shadowRoot],
+            });
+            if (ranges.length > 0) {
+              // Create a proxy Selection that uses composed ranges
+              // This ensures we get correct text nodes from StaticRange data
+              return createSelectionWithComposedRanges(globalSelection, ranges);
+            }
           }
         } catch (error) {
-          console.warn('getComposedRanges failed, falling back:', error);
+          invariant(false, 'getComposedRanges failed, falling back:');
         }
       }
 
@@ -1766,7 +1770,7 @@ export function getDOMSelection(
         try {
           return (shadowRoot as ShadowRootWithSelection).getSelection();
         } catch (error) {
-          console.warn('ShadowRoot.getSelection failed:', error);
+          invariant(false, 'ShadowRoot.getSelection failed:');
         }
       }
     }
@@ -1776,39 +1780,155 @@ export function getDOMSelection(
 }
 
 /**
- * Creates a Selection-like object from composed ranges for Shadow DOM compatibility.
- * This function converts StaticRange objects returned by getComposedRanges() into
- * a standard Selection object that can be used by Lexical.
+ * Creates a SelectionWithComposedRanges proxy that uses StaticRange objects
+ * from getComposedRanges API for Shadow DOM compatibility.
  *
- * @param ranges - Array of StaticRange objects from getComposedRanges()
- * @returns A Selection object or null if no ranges are provided or conversion fails
+ * @param baseSelection - The base Selection object to proxy
+ * @param composedRanges - Array of StaticRange objects from getComposedRanges
+ * @returns A proxy Selection object that works with composed ranges
  */
-export function createSelectionFromComposedRanges(
-  ranges: StaticRange[],
-): Selection | null {
-  if (ranges.length === 0) {
-    return null;
+
+// Helper function to find the first text node within an element
+function findTextNodeInElement(element: Node): Text | null {
+  if (element.nodeType === Node.TEXT_NODE) {
+    return element as Text;
   }
 
-  // For now, we'll use the document selection as a fallback
-  // In a full implementation, we'd create a custom Selection object
-  const docSelection = document.getSelection();
-  if (!docSelection) {
-    return null;
+  for (const child of element.childNodes) {
+    const textNode = findTextNodeInElement(child);
+    if (textNode) {
+      return textNode;
+    }
   }
 
-  try {
-    const range = ranges[0];
-    docSelection.removeAllRanges();
-    const dynamicRange = document.createRange();
-    dynamicRange.setStart(range.startContainer, range.startOffset);
-    dynamicRange.setEnd(range.endContainer, range.endOffset);
-    docSelection.addRange(dynamicRange);
-    return docSelection;
-  } catch (error) {
-    console.warn('Failed to create selection from composed ranges:', error);
-    return null;
+  return null;
+}
+function createSelectionWithComposedRanges(
+  baseSelection: Selection,
+  composedRanges: StaticRange[],
+): Selection {
+  const firstRange = composedRanges[0];
+
+  if (!firstRange) {
+    return baseSelection;
   }
+
+  // Create a Proxy that intercepts property access and method calls
+  const proxy = new Proxy(baseSelection, {
+    get(target, prop, receiver) {
+      // Override specific properties to use composed ranges data
+      switch (prop) {
+        case 'anchorNode': {
+          const startContainer = firstRange.startContainer;
+
+          const textNode =
+            startContainer.nodeType === Node.TEXT_NODE
+              ? startContainer
+              : findTextNodeInElement(startContainer);
+
+          return textNode || startContainer;
+        }
+        case 'anchorOffset':
+          return firstRange.startOffset;
+        case 'focusNode': {
+          const endContainer = firstRange.endContainer;
+
+          const textNode =
+            endContainer.nodeType === Node.TEXT_NODE
+              ? endContainer
+              : findTextNodeInElement(endContainer);
+
+          return textNode || endContainer;
+        }
+        case 'focusOffset':
+          return firstRange.endOffset;
+        case 'isCollapsed':
+          return firstRange.collapsed;
+        case 'rangeCount':
+          return composedRanges.length;
+        case 'type':
+          // Return type based on composed ranges state
+          return firstRange.collapsed ? 'Caret' : 'Range';
+        case 'getRangeAt': {
+          return function (index: number): Range {
+            if (index >= composedRanges.length) {
+              throw new DOMException('Index out of range', 'IndexSizeError');
+            }
+
+            const staticRange = composedRanges[index];
+            const range = document.createRange();
+            range.setStart(staticRange.startContainer, staticRange.startOffset);
+            range.setEnd(staticRange.endContainer, staticRange.endOffset);
+            return range;
+          };
+        }
+        case 'getComposedRanges': {
+          return function (_options?: GetComposedRangesOptions): StaticRange[] {
+            return composedRanges;
+          };
+        }
+        case 'modify': {
+          return function (
+            alter: 'move' | 'extend',
+            direction: 'backward' | 'forward' | 'left' | 'right',
+            granularity: 'character' | 'word' | 'lineboundary',
+          ): void {
+            // For shadow DOM, we need to delegate to the base selection
+            // but first we need to sync our composed ranges state to the base selection
+            try {
+              // Apply the composed ranges to the base selection first
+              if (composedRanges.length > 0 && firstRange) {
+                const range = document.createRange();
+                range.setStart(
+                  firstRange.startContainer,
+                  firstRange.startOffset,
+                );
+                range.setEnd(firstRange.endContainer, firstRange.endOffset);
+
+                target.removeAllRanges();
+                target.addRange(range);
+              }
+
+              // Now call modify on the base selection
+              target.modify(alter, direction, granularity);
+            } catch (error) {
+              // If anything fails, just delegate to the base selection
+              target.modify(alter, direction, granularity);
+            }
+          };
+        }
+        case 'removeAllRanges': {
+          return function (): void {
+            target.removeAllRanges();
+          };
+        }
+        case 'addRange': {
+          return function (range: Range): void {
+            target.addRange(range);
+          };
+        }
+        default: {
+          // For all other properties and methods, delegate to the original Selection
+          const value = Reflect.get(target, prop, receiver);
+          // Bind methods to the original target to maintain correct 'this' context
+          return typeof value === 'function' ? value.bind(target) : value;
+        }
+      }
+    },
+
+    // Ensure instanceof checks work correctly
+    getPrototypeOf(_target) {
+      return Selection.prototype;
+    },
+  });
+
+  return proxy;
+}
+
+export function getDOMSelectionForEditor(
+  editor: LexicalEditor,
+): null | Selection {
+  return getDOMSelection(getWindow(editor), editor.getRootElement() || null);
 }
 
 /**
@@ -1840,7 +1960,11 @@ export function getShadowRoot(element: HTMLElement): ShadowRoot | null {
  * @param element - The HTMLElement to get the document for
  * @returns The Document object that should be used for DOM operations
  */
-export function getDocumentFromElement(element: HTMLElement): Document {
+export function getDocumentFromElement(element: null | HTMLElement): Document {
+  if (!element) {
+    return document;
+  }
+
   const shadowRoot = getShadowRoot(element);
   if (shadowRoot) {
     return shadowRoot.ownerDocument || document;
@@ -1885,24 +2009,45 @@ export function getDOMSelectionFromTarget(
     const shadowRoot = getShadowRoot(eventTarget);
 
     if (shadowRoot) {
-      // Try modern getComposedRanges API first
-      if (
-        typeof (shadowRoot as ShadowRootWithComposedRanges)
-          .getComposedRanges === 'function'
-      ) {
+      if ('getComposedRanges' in Selection.prototype) {
         try {
-          const ranges = (shadowRoot as ShadowRootWithComposedRanges)
-            .getComposedRanges!({
-            shadowRoots: [shadowRoot],
-          });
-          if (ranges.length > 0) {
-            return createSelectionFromComposedRanges(ranges);
+          const globalSelection = window.getSelection();
+          if (globalSelection) {
+            const ranges = (
+              globalSelection as SelectionWithComposedRanges
+            ).getComposedRanges({
+              shadowRoots: [shadowRoot],
+            });
+            if (ranges.length > 0) {
+              return createSelectionWithComposedRanges(globalSelection, ranges);
+            }
           }
         } catch (error) {
-          console.warn(
-            'getComposedRanges failed in getDOMSelectionFromTarget:',
-            error,
-          );
+          invariant(false, 'getComposedRanges failed, falling back:');
+        }
+      }
+    }
+  }
+
+  if (isHTMLElement(eventTarget)) {
+    const shadowRoot = getShadowRoot(eventTarget);
+
+    if (shadowRoot) {
+      if ('getComposedRanges' in Selection.prototype) {
+        try {
+          const globalSelection = window.getSelection();
+          if (globalSelection) {
+            const ranges = (
+              globalSelection as SelectionWithComposedRanges
+            ).getComposedRanges({
+              shadowRoots: [shadowRoot],
+            });
+            if (ranges.length > 0) {
+              return createSelectionWithComposedRanges(globalSelection, ranges);
+            }
+          }
+        } catch (error) {
+          invariant(false, 'getComposedRanges failed, falling back:');
         }
       }
 
@@ -1914,9 +2059,9 @@ export function getDOMSelectionFromTarget(
         try {
           return (shadowRoot as ShadowRootWithSelection).getSelection();
         } catch (error) {
-          console.warn(
+          invariant(
+            false,
             'ShadowRoot.getSelection failed in getDOMSelectionFromTarget:',
-            error,
           );
         }
       }

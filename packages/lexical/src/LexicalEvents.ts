@@ -94,7 +94,7 @@ import {
   doesContainSurrogatePair,
   getAnchorTextFromDOM,
   getDocumentFromElement,
-  getDOMSelection,
+  getDOMSelectionForEditor,
   getDOMSelectionFromTarget,
   getDOMTextNode,
   getEditorPropertyFromDOMNode,
@@ -209,10 +209,7 @@ function $shouldPreventDefaultAndInsertText(
   const focus = selection.focus;
   const anchorNode = anchor.getNode();
   const editor = getActiveEditor();
-  const domSelection = getDOMSelection(
-    getWindow(editor),
-    editor.getRootElement(),
-  );
+  const domSelection = getDOMSelectionForEditor(editor);
   const domAnchorNode = domSelection !== null ? domSelection.anchorNode : null;
   const anchorKey = anchor.key;
   const backingAnchorElement = editor.getElementByKey(anchorKey);
@@ -482,10 +479,7 @@ function $updateSelectionFormatStyleFromElementNode(
 function onClick(event: PointerEvent, editor: LexicalEditor): void {
   updateEditorSync(editor, () => {
     const selection = $getSelection();
-    const domSelection = getDOMSelection(
-      getWindow(editor),
-      editor.getRootElement(),
-    );
+    const domSelection = getDOMSelectionForEditor(editor);
     const lastSelection = $getPreviousSelection();
 
     if (domSelection) {
@@ -940,10 +934,7 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
         }
         const anchor = selection.anchor;
         const anchorNode = anchor.getNode();
-        const domSelection = getDOMSelection(
-          getWindow(editor),
-          editor.getRootElement(),
-        );
+        const domSelection = getDOMSelectionForEditor(editor);
         if (domSelection === null) {
           return;
         }

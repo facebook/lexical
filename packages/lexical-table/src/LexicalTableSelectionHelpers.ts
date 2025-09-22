@@ -70,7 +70,7 @@ import {
   FOCUS_COMMAND,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
-  getDOMSelection,
+  getDOMSelectionForEditor,
   INSERT_PARAGRAPH_COMMAND,
   isDOMNode,
   isHTMLElement,
@@ -1134,7 +1134,7 @@ export function applyTableHandlers(
           selection.tableKey === tableNode.getKey()
         ) {
           // if selection goes outside of the table we need to change it to Range selection
-          const domSelection = getDOMSelection(editorWindow, rootElement);
+          const domSelection = getDOMSelectionForEditor(editor);
           if (
             domSelection &&
             domSelection.anchorNode &&
@@ -2222,10 +2222,7 @@ function $handleArrowKey(
       if (anchor.type === 'element') {
         edgeSelectionRect = anchorDOM.getBoundingClientRect();
       } else {
-        const domSelection = getDOMSelection(
-          getEditorWindow(editor),
-          editor.getRootElement(),
-        );
+        const domSelection = getDOMSelectionForEditor(editor);
         if (domSelection === null || domSelection.rangeCount === 0) {
           return false;
         }
@@ -2393,10 +2390,7 @@ function $getTableEdgeCursorPosition(
   }
 
   // TODO: Add support for nested tables
-  const domSelection = getDOMSelection(
-    getEditorWindow(editor),
-    editor.getRootElement(),
-  );
+  const domSelection = getDOMSelectionForEditor(editor);
   if (!domSelection) {
     return undefined;
   }

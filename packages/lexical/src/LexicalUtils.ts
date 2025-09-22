@@ -1873,11 +1873,10 @@ function createSelectionWithComposedRanges(
             direction: 'backward' | 'forward' | 'left' | 'right',
             granularity: 'character' | 'word' | 'lineboundary',
           ): void {
-            // For shadow DOM, we need to delegate to the base selection
-            // but first we need to sync our composed ranges state to the base selection
+            // For shadow DOM, we need special handling for character granularity
             try {
-              // Apply the composed ranges to the base selection first
               if (composedRanges.length > 0 && firstRange) {
+                // Sync our composed ranges to the base DOM selection
                 const range = document.createRange();
                 range.setStart(
                   firstRange.startContainer,
@@ -1887,9 +1886,145 @@ function createSelectionWithComposedRanges(
 
                 target.removeAllRanges();
                 target.addRange(range);
+
+                // For character granularity in Shadow DOM, we need to manually handle the modification
+                if (granularity === 'character' && alter === 'extend') {
+                  // Handle character-by-character extension manually for Shadow DOM
+                  const isBackward =
+                    direction === 'backward' || direction === 'left';
+
+                  // Check if the current selection is collapsed (caret position)
+                  const isCollapsed = firstRange.collapsed;
+                  let manuallyHandled = false;
+
+                  if (isCollapsed) {
+                    // For collapsed selection, we need to extend from the current position
+                    const container = firstRange.startContainer;
+                    const offset = firstRange.startOffset;
+
+                    if (container.nodeType === Node.TEXT_NODE) {
+                      const textNode = container as Text;
+                      const textContent = textNode.textContent || '';
+
+                      if (isBackward && offset > 0) {
+                        // Extend backward by one character (for backspace)
+                        const newRange = document.createRange();
+                        newRange.setStart(container, offset - 1);
+                        newRange.setEnd(container, offset);
+                        target.removeAllRanges();
+                        target.addRange(newRange);
+                        manuallyHandled = true;
+
+                        // Force update Lexical selection state to match the DOM range
+                        // This mimics what RangeSelection.modify does after calling moveNativeSelection
+                        try {
+                          const currentSelection = $getSelection();
+                          if ($isRangeSelection(currentSelection)) {
+                            currentSelection.applyDOMRange(newRange);
+                            currentSelection.dirty = true;
+                          }
+                        } catch (e) {
+                          // If updating Lexical selection fails, continue with normal flow
+                        }
+                      } else if (!isBackward && offset < textContent.length) {
+                        // Extend forward by one character (for delete key)
+                        const newRange = document.createRange();
+                        newRange.setStart(container, offset);
+                        newRange.setEnd(container, offset + 1);
+                        target.removeAllRanges();
+                        target.addRange(newRange);
+                        manuallyHandled = true;
+
+                        // Force update Lexical selection state to match the DOM range
+                        // This mimics what RangeSelection.modify does after calling moveNativeSelection
+                        try {
+                          const currentSelection = $getSelection();
+                          if ($isRangeSelection(currentSelection)) {
+                            currentSelection.applyDOMRange(newRange);
+                            currentSelection.dirty = true;
+                          }
+                        } catch (e) {
+                          // If updating Lexical selection fails, continue with normal flow
+                        }
+                      }
+                    }
+                  } else {
+                    // For non-collapsed selection, extend the existing selection
+                    const container = isBackward
+                      ? firstRange.startContainer
+                      : firstRange.endContainer;
+                    const offset = isBackward
+                      ? firstRange.startOffset
+                      : firstRange.endOffset;
+
+                    if (container.nodeType === Node.TEXT_NODE) {
+                      const textNode = container as Text;
+                      const textContent = textNode.textContent || '';
+
+                      if (isBackward && offset > 0) {
+                        // Extend selection backward by one character
+                        const newRange = document.createRange();
+                        newRange.setStart(container, offset - 1);
+                        newRange.setEnd(
+                          firstRange.endContainer,
+                          firstRange.endOffset,
+                        );
+                        target.removeAllRanges();
+                        target.addRange(newRange);
+                        manuallyHandled = true;
+
+                        // Force update Lexical selection state to match the DOM range
+                        // This mimics what RangeSelection.modify does after calling moveNativeSelection
+                        try {
+                          const _editor = getActiveEditor();
+                          const currentSelection = $getSelection();
+                          if ($isRangeSelection(currentSelection)) {
+                            currentSelection.applyDOMRange(newRange);
+                            currentSelection.dirty = true;
+                          }
+                        } catch (e) {
+                          // If updating Lexical selection fails, continue with normal flow
+                        }
+                      } else if (!isBackward && offset < textContent.length) {
+                        // Extend selection forward by one character
+                        const newRange = document.createRange();
+                        newRange.setStart(
+                          firstRange.startContainer,
+                          firstRange.startOffset,
+                        );
+                        newRange.setEnd(container, offset + 1);
+                        target.removeAllRanges();
+                        target.addRange(newRange);
+                        manuallyHandled = true;
+
+                        // Force update Lexical selection state to match the DOM range
+                        // This mimics what RangeSelection.modify does after calling moveNativeSelection
+                        try {
+                          const currentSelection = $getSelection();
+                          if ($isRangeSelection(currentSelection)) {
+                            currentSelection.applyDOMRange(newRange);
+                            currentSelection.dirty = true;
+                          }
+                        } catch (e) {
+                          // If updating Lexical selection fails, continue with normal flow
+                        }
+                      }
+                    }
+                  }
+
+                  // Only call native modify if we didn't handle it manually
+                  if (!manuallyHandled) {
+                    target.modify(alter, direction, granularity);
+                  }
+                  return;
+                }
+
+                // For non-character granularity or other cases, use native modify
+                target.modify(alter, direction, granularity);
+                return;
               }
 
-              // Now call modify on the base selection
+              // Fallback to base selection modify for non-shadow DOM cases
               target.modify(alter, direction, granularity);
             } catch (error) {
               // If anything fails, just delegate to the base selection
@@ -1950,6 +2085,133 @@ export function getShadowRoot(element: HTMLElement): ShadowRoot | null {
     current = current.parentNode;
   }
   return null;
+}
+
+/**
+ * Checks if the editor is running in Shadow DOM context
+ */
+export function $isInShadowDOMContext(editor: LexicalEditor): boolean {
+  const rootElement = editor.getRootElement();
+  return rootElement ? getShadowRoot(rootElement) !== null : false;
+}
+
+/**
+ * Special character deletion handler for Shadow DOM
+ * This bypasses the problematic modify() method and directly manipulates text
+ */
+export function $deleteCharacterInShadowDOM(
+  selection: RangeSelection,
+  isBackward: boolean,
+): boolean {
+  if (!selection.isCollapsed()) {
+    // If there's already a selection, just remove it
+    selection.removeText();
+    return true;
+  }
+
+  const anchor = selection.anchor;
+  const focus = selection.focus;
+  const anchorNode = anchor.getNode();
+
+  if (!$isTextNode(anchorNode)) {
+    return false;
+  }
+
+  const textContent = anchorNode.getTextContent();
+  const offset = anchor.offset;
+
+  if (isBackward) {
+    // Backspace: delete character before cursor
+    if (offset > 0) {
+      const newText =
+        textContent.slice(0, offset - 1) + textContent.slice(offset);
+      anchorNode.setTextContent(newText);
+      const newOffset = offset - 1;
+
+      // Update both anchor and focus to the new position
+      anchor.set(anchor.key, newOffset, anchor.type);
+      focus.set(focus.key, newOffset, focus.type);
+
+      // Mark selection as dirty to force reconciliation
+      selection.dirty = true;
+      return true;
+    }
+  } else {
+    // Delete: delete character after cursor
+    if (offset < textContent.length) {
+      const newText =
+        textContent.slice(0, offset) + textContent.slice(offset + 1);
+      anchorNode.setTextContent(newText);
+
+      // Update both anchor and focus to keep cursor at same position
+      anchor.set(anchor.key, offset, anchor.type);
+      focus.set(focus.key, offset, focus.type);
+
+      // Mark selection as dirty to force reconciliation
+      selection.dirty = true;
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Special line deletion handler for Shadow DOM
+ * This bypasses the problematic modify() method and directly manipulates text
+ */
+export function $deleteLineInShadowDOM(
+  selection: RangeSelection,
+  isBackward: boolean,
+): boolean {
+  if (!selection.isCollapsed()) {
+    // If there's already a selection, just remove it
+    selection.removeText();
+    return true;
+  }
+
+  const anchor = selection.anchor;
+  const focus = selection.focus;
+  const anchorNode = anchor.getNode();
+
+  if (!$isTextNode(anchorNode)) {
+    return false;
+  }
+
+  const textContent = anchorNode.getTextContent();
+  const offset = anchor.offset;
+
+  if (isBackward) {
+    // Cmd+Backspace: delete from beginning of line to cursor
+    if (offset > 0) {
+      const newText = textContent.slice(offset);
+      anchorNode.setTextContent(newText);
+
+      // Move cursor to beginning of line (position 0)
+      anchor.set(anchor.key, 0, anchor.type);
+      focus.set(focus.key, 0, focus.type);
+
+      // Mark selection as dirty to force reconciliation
+      selection.dirty = true;
+      return true;
+    }
+  } else {
+    // Cmd+Delete: delete from cursor to end of line
+    if (offset < textContent.length) {
+      const newText = textContent.slice(0, offset);
+      anchorNode.setTextContent(newText);
+
+      // Keep cursor at same position
+      anchor.set(anchor.key, offset, anchor.type);
+      focus.set(focus.key, offset, focus.type);
+
+      // Mark selection as dirty to force reconciliation
+      selection.dirty = true;
+      return true;
+    }
+  }
+
+  return false;
 }
 
 /**

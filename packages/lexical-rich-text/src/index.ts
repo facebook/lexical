@@ -51,6 +51,7 @@ import {
   $createTabNode,
   $deleteCharacterInShadowDOM,
   $deleteLineInShadowDOM,
+  $deleteWordInShadowDOM,
   $getAdjacentNode,
   $getNearestNodeFromDOMNode,
   $getRoot,
@@ -638,6 +639,15 @@ export function registerRichText(editor: LexicalEditor): () => void {
         if (!$isRangeSelection(selection)) {
           return false;
         }
+
+        // Special handling for Shadow DOM
+        if ($isInShadowDOMContext(editor)) {
+          if ($deleteWordInShadowDOM(selection, isBackward)) {
+            return true;
+          }
+          // If shadow DOM handler didn't work, fall through to normal handler
+        }
+
         selection.deleteWord(isBackward);
         return true;
       },

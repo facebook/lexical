@@ -2215,6 +2215,109 @@ export function $deleteLineInShadowDOM(
 }
 
 /**
+ * Special word deletion handler for Shadow DOM
+ * This bypasses the problematic modify() method and directly manipulates text
+ */
+export function $deleteWordInShadowDOM(
+  selection: RangeSelection,
+  isBackward: boolean,
+): boolean {
+  if (!selection.isCollapsed()) {
+    // If there's already a selection, just remove it
+    selection.removeText();
+    return true;
+  }
+
+  const anchor = selection.anchor;
+  const focus = selection.focus;
+  const anchorNode = anchor.getNode();
+
+  if (!$isTextNode(anchorNode)) {
+    return false;
+  }
+
+  const textContent = anchorNode.getTextContent();
+  const offset = anchor.offset;
+
+  // Simple word boundary regex - matches word characters (letters, digits, underscore)
+  const wordCharRegex = /\w/;
+
+  if (isBackward) {
+    // Option+Backspace: delete word before cursor
+    if (offset > 0) {
+      let startOffset = offset;
+
+      // Skip any non-word characters immediately before cursor
+      while (
+        startOffset > 0 &&
+        !wordCharRegex.test(textContent[startOffset - 1])
+      ) {
+        startOffset--;
+      }
+
+      // Find beginning of the word
+      while (
+        startOffset > 0 &&
+        wordCharRegex.test(textContent[startOffset - 1])
+      ) {
+        startOffset--;
+      }
+
+      if (startOffset < offset) {
+        const newText =
+          textContent.slice(0, startOffset) + textContent.slice(offset);
+        anchorNode.setTextContent(newText);
+
+        // Move cursor to word beginning
+        anchor.set(anchor.key, startOffset, anchor.type);
+        focus.set(focus.key, startOffset, focus.type);
+
+        // Mark selection as dirty to force reconciliation
+        selection.dirty = true;
+        return true;
+      }
+    }
+  } else {
+    // Option+Delete: delete word after cursor
+    if (offset < textContent.length) {
+      let endOffset = offset;
+
+      // Skip any non-word characters immediately after cursor
+      while (
+        endOffset < textContent.length &&
+        !wordCharRegex.test(textContent[endOffset])
+      ) {
+        endOffset++;
+      }
+
+      // Find end of the word
+      while (
+        endOffset < textContent.length &&
+        wordCharRegex.test(textContent[endOffset])
+      ) {
+        endOffset++;
+      }
+
+      if (endOffset > offset) {
+        const newText =
+          textContent.slice(0, offset) + textContent.slice(endOffset);
+        anchorNode.setTextContent(newText);
+
+        // Keep cursor at same position
+        anchor.set(anchor.key, offset, anchor.type);
+        focus.set(focus.key, offset, focus.type);
+
+        // Mark selection as dirty to force reconciliation
+        selection.dirty = true;
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+/**
  * Gets the appropriate Document object for an element, accounting for shadow DOM.
  * Returns the ownerDocument of the ShadowRoot if the element is in shadow DOM,
  * otherwise returns the element's ownerDocument or the global document.

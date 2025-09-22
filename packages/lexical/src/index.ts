@@ -244,6 +244,7 @@ export {
   $findMatchingParent,
   $deleteCharacterInShadowDOM,
   $deleteLineInShadowDOM,
+  $deleteWordInShadowDOM,
   $getAdjacentNode,
   $getEditor,
   $getNearestNodeFromDOMNode,

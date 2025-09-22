@@ -13,6 +13,7 @@ import {
   ListItemNode,
   ListNode,
 } from '@lexical/list';
+import {$createHeadingNode} from '@lexical/rich-text';
 import {
   $caretRangeFromSelection,
   $comparePointCaretNext,
@@ -839,49 +840,6 @@ describe('LexicalSelection tests', () => {
   });
 });
 
-describe('Regression tests for #6701', () => {
-  test('insertNodes fails an invariant when there is no Block ancestor', async () => {
-    class InlineElementNode extends ElementNode {
-      static clone(prevNode: InlineElementNode): InlineElementNode {
-        return new InlineElementNode(prevNode.__key);
-      }
-      static getType() {
-        return 'inline-element-node';
-      }
-      static importJSON(serializedNode: SerializedElementNode) {
-        return new InlineElementNode().updateFromJSON(serializedNode);
-      }
-      isInline() {
-        return true;
-      }
-      createDOM() {
-        return document.createElement('span');
-      }
-      updateDOM() {
-        return false;
-      }
-    }
-    const editor = createEditor({
-      nodes: [InlineElementNode],
-      onError: (err) => {
-        throw err;
-      },
-    });
-    expect(() =>
-      editor.update(
-        () => {
-          const textNode = $createTextNode('test');
-          $getRoot().clear().append(new InlineElementNode().append(textNode));
-          textNode.select().insertNodes([$createTextNode('more text')]);
-        },
-        {discrete: true},
-      ),
-    ).toThrow(
-      /Expected node TextNode of type text to have a block ElementNode ancestor/,
-    );
-  });
-});
-
 describe('getNodes()', () => {
   initializeUnitTest((testEnv) => {
     let paragraphNode: ParagraphNode;
@@ -1553,7 +1511,50 @@ describe('extract()', () => {
   });
 });
 
-describe('Regression #7081', () => {
+describe('Regression tests for #6701', () => {
+  test('insertNodes fails an invariant when there is no Block ancestor', async () => {
+    class InlineElementNode extends ElementNode {
+      static clone(prevNode: InlineElementNode): InlineElementNode {
+        return new InlineElementNode(prevNode.__key);
+      }
+      static getType() {
+        return 'inline-element-node';
+      }
+      static importJSON(serializedNode: SerializedElementNode) {
+        return new InlineElementNode().updateFromJSON(serializedNode);
+      }
+      isInline() {
+        return true;
+      }
+      createDOM() {
+        return document.createElement('span');
+      }
+      updateDOM() {
+        return false;
+      }
+    }
+    const editor = createEditor({
+      nodes: [InlineElementNode],
+      onError: (err) => {
+        throw err;
+      },
+    });
+    expect(() =>
+      editor.update(
+        () => {
+          const textNode = $createTextNode('test');
+          $getRoot().clear().append(new InlineElementNode().append(textNode));
+          textNode.select().insertNodes([$createTextNode('more text')]);
+        },
+        {discrete: true},
+      ),
+    ).toThrow(
+      /Expected node TextNode of type text to have a block ElementNode ancestor/,
+    );
+  });
+});
+
+describe('Regression tests for #7081', () => {
   initializeUnitTest((testEnv) => {
     test('Firefox selection & paste before linebreak', () => {
       testEnv.editor.update(
@@ -1587,7 +1588,7 @@ describe('Regression #7081', () => {
   });
 });
 
-describe('Regression #7173', () => {
+describe('Regression tests for #7173', () => {
   initializeUnitTest((testEnv) => {
     test('Can insertNodes of multiple blocks with a target of an initial empty block and the entire next block', () => {
       testEnv.editor.update(
@@ -1613,7 +1614,28 @@ describe('Regression #7173', () => {
   });
 });
 
-describe('Regression #3181', () => {
+describe('Regression tests for #7846', () => {
+  initializeUnitTest((testEnv) => {
+    test('insertNodes can insert in HeadingNode', async () => {
+      testEnv.editor.update(
+        () => {
+          const heading = $createHeadingNode('h1');
+          const headingText = $createTextNode(' chyeah');
+          $getRoot().clear().append(heading.append(headingText));
+          const paragraph = $createParagraphNode();
+          const paragraphText = $createTextNode('finna');
+          const selection = headingText.selectStart();
+          selection.insertNodes([paragraph.append(paragraphText)]);
+          expect($getRoot().getChildren()).toEqual([paragraph]);
+          expect($getRoot().getTextContent()).toEqual('finna chyeah');
+        },
+        {discrete: true},
+      );
+    });
+  });
+});
+
+describe('Regression tests for #3181', () => {
   initializeUnitTest((testEnv) => {
     test('Point.isBefore edge case with mixed TextNode & ElementNode and matching descendants', () => {
       testEnv.editor.update(

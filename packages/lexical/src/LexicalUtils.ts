@@ -1895,31 +1895,16 @@ export function createSelectionWithComposedRanges(
           ): void {
             // For shadow DOM, sync ranges and delegate to native modify
             // Complex logic is handled at higher levels in Lexical
-            try {
-              if (composedRanges.length > 0 && firstRange) {
-                // Sync our composed ranges to the base DOM selection
-                const range = document.createRange();
-                range.setStart(
-                  firstRange.startContainer,
-                  firstRange.startOffset,
-                );
-                range.setEnd(firstRange.endContainer, firstRange.endOffset);
+            if (composedRanges.length > 0 && firstRange) {
+              // Sync our composed ranges to the base DOM selection
+              const range = document.createRange();
+              range.setStart(firstRange.startContainer, firstRange.startOffset);
+              range.setEnd(firstRange.endContainer, firstRange.endOffset);
 
-                target.removeAllRanges();
-                target.addRange(range);
+              target.removeAllRanges();
+              target.addRange(range);
 
-                // For Shadow DOM, delegate to native modify first, then handle manually if needed
-                try {
-                  target.modify(alter, direction, granularity);
-                } catch (_error) {
-                  // If native modify fails, we'll handle it at a higher level in Lexical
-                }
-              }
-
-              // Fallback to base selection modify for non-shadow DOM cases
-              target.modify(alter, direction, granularity);
-            } catch (_error) {
-              // If anything fails, just delegate to the base selection
+              // For Shadow DOM, delegate to native modify first, then handle manually if needed
               target.modify(alter, direction, granularity);
             }
           };

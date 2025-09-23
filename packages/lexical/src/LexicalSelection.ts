@@ -67,6 +67,9 @@ import {
   isCurrentlyReadOnlyMode,
 } from './LexicalUpdates';
 import {
+  $deleteCharacterInShadowDOM,
+  $deleteLineInShadowDOM,
+  $deleteWordInShadowDOMWithI18n,
   $findMatchingParent,
   $getCompositionKey,
   $getNearestRootOrShadowRoot,
@@ -1784,6 +1787,17 @@ export class RangeSelection implements BaseSelection {
       if (this.forwardDeletion(anchor, anchorNode, isBackward)) {
         return;
       }
+
+      // Try Shadow DOM direct deletion first for better reliability
+      const editor = getActiveEditor();
+      const rootElement = editor.getRootElement();
+      if (rootElement && isShadowRoot(getShadowRootOrDocument(rootElement))) {
+        // Try direct deletion first in Shadow DOM
+        if ($deleteCharacterInShadowDOM(this, isBackward)) {
+          return;
+        }
+      }
+
       const direction = isBackward ? 'previous' : 'next';
       const initialCaret = $caretFromPoint(anchor, direction);
       const initialRange = $extendCaretToRange(initialCaret);
@@ -1952,6 +1966,16 @@ export class RangeSelection implements BaseSelection {
    */
   deleteLine(isBackward: boolean): void {
     if (this.isCollapsed()) {
+      // Try Shadow DOM direct deletion first for better reliability
+      const editor = getActiveEditor();
+      const rootElement = editor.getRootElement();
+      if (rootElement && isShadowRoot(getShadowRootOrDocument(rootElement))) {
+        // Try direct line deletion first in Shadow DOM
+        if ($deleteLineInShadowDOM(this, isBackward)) {
+          return;
+        }
+      }
+
       this.modify('extend', isBackward, 'lineboundary');
     }
     if (this.isCollapsed()) {
@@ -1978,110 +2002,13 @@ export class RangeSelection implements BaseSelection {
         return;
       }
 
-      // Check for Shadow DOM context and handle directly
+      // Try Shadow DOM direct deletion first for better reliability
       const editor = getActiveEditor();
       const rootElement = editor.getRootElement();
       if (rootElement && isShadowRoot(getShadowRootOrDocument(rootElement))) {
-        // Handle word deletion directly in Shadow DOM
-        if ($isTextNode(anchorNode)) {
-          const textContent = anchorNode.getTextContent();
-          const offset = anchor.offset;
-          const wordCharRegex = /\w/;
-
-          if (isBackward && offset > 0) {
-            // Find word boundary backward - simple and predictable logic
-            let startOffset = offset;
-
-            if (startOffset > 0) {
-              const charBeforeCursor = textContent[startOffset - 1];
-
-              if (/\s/.test(charBeforeCursor)) {
-                // Cursor is after whitespace - skip all whitespace first
-                while (
-                  startOffset > 0 &&
-                  /\s/.test(textContent[startOffset - 1])
-                ) {
-                  startOffset--;
-                }
-                // Then delete the word before the whitespace
-                while (
-                  startOffset > 0 &&
-                  wordCharRegex.test(textContent[startOffset - 1])
-                ) {
-                  startOffset--;
-                }
-              } else if (wordCharRegex.test(charBeforeCursor)) {
-                // Cursor is in a word - delete to beginning of word
-                while (
-                  startOffset > 0 &&
-                  wordCharRegex.test(textContent[startOffset - 1])
-                ) {
-                  startOffset--;
-                }
-              } else {
-                // Cursor is after punctuation/symbol - delete just that character
-                startOffset--;
-              }
-            }
-
-            if (startOffset < offset) {
-              const newText =
-                textContent.slice(0, startOffset) + textContent.slice(offset);
-              anchorNode.setTextContent(newText);
-
-              // Move cursor to deletion start point
-              anchor.set(anchor.key, startOffset, anchor.type);
-              const focus = this.focus;
-              focus.set(focus.key, startOffset, focus.type);
-              this.dirty = true;
-              return;
-            }
-          } else if (!isBackward && offset < textContent.length) {
-            // Handle forward word deletion
-            let endOffset = offset;
-            const charAfterCursor = textContent[endOffset];
-
-            if (/\s/.test(charAfterCursor)) {
-              // Skip whitespace first
-              while (
-                endOffset < textContent.length &&
-                /\s/.test(textContent[endOffset])
-              ) {
-                endOffset++;
-              }
-              // Then delete the word
-              while (
-                endOffset < textContent.length &&
-                wordCharRegex.test(textContent[endOffset])
-              ) {
-                endOffset++;
-              }
-            } else if (wordCharRegex.test(charAfterCursor)) {
-              // Delete word characters
-              while (
-                endOffset < textContent.length &&
-                wordCharRegex.test(textContent[endOffset])
-              ) {
-                endOffset++;
-              }
-            } else {
-              // Delete one character
-              endOffset++;
-            }
-
-            if (endOffset > offset) {
-              const newText =
-                textContent.slice(0, offset) + textContent.slice(endOffset);
-              anchorNode.setTextContent(newText);
-
-              // Keep cursor at same position
-              anchor.set(anchor.key, offset, anchor.type);
-              const focus = this.focus;
-              focus.set(focus.key, offset, focus.type);
-              this.dirty = true;
-              return;
-            }
-          }
+        // Use international-aware word deletion for Shadow DOM
+        if ($deleteWordInShadowDOMWithI18n(this, isBackward)) {
+          return;
         }
       }
 
@@ -2183,528 +2110,95 @@ function moveNativeSelection(
   // Selection.modify() method applies a change to the current selection or cursor position,
   // but is still non-standard in some browsers.
 
-  // Check if we're in Shadow DOM context and have getComposedRanges support
+  // Always try native modify first - it handles i18n, bidi text, and complex scripts correctly
+  try {
+    domSelection.modify(alter, direction, granularity);
+
+    // Check if the native modify worked correctly in Shadow DOM context
+    if (
+      domSelection.rangeCount > 0 &&
+      isSelectionValidAfterModify(domSelection)
+    ) {
+      return; // Native modify worked fine
+    }
+  } catch (_error) {
+    // Native modify failed, will try Shadow DOM fallback
+  }
+
+  // Fallback only for Shadow DOM when native modify fails
   if (
     typeof domSelection.getComposedRanges === 'function' &&
     domSelection.rangeCount > 0
   ) {
     try {
-      const shadowRoots: ShadowRoot[] = [];
-
-      // Find shadow roots from the current selection
-      const range = domSelection.getRangeAt(0);
-      const startRoot = getShadowRootOrDocument(
-        range.startContainer as HTMLElement,
-      );
-      const endRoot = getShadowRootOrDocument(
-        range.endContainer as HTMLElement,
-      );
-
-      const startShadow = isShadowRoot(startRoot) ? startRoot : null;
-      const endShadow = isShadowRoot(endRoot) ? endRoot : null;
-
-      if (startShadow) {
-        shadowRoots.push(startShadow);
-      }
-      if (endShadow && endShadow !== startShadow) {
-        shadowRoots.push(endShadow);
-      }
-
+      // Try to restore selection using composed ranges
+      const shadowRoots = findShadowRootsInSelection(domSelection);
       if (shadowRoots.length > 0) {
-        // Get composed ranges to work with Shadow DOM
         const composedRanges = domSelection.getComposedRanges({shadowRoots});
-
         if (composedRanges.length > 0) {
-          // Handle Shadow DOM modify operations manually
+          // Only handle the minimal case: sync composed ranges back to DOM selection
           const firstRange = composedRanges[0];
-          const isBackward = direction === 'backward' || direction === 'left';
-
-          // Sync our composed ranges to the base DOM selection
-          const currentRange = document.createRange();
-          currentRange.setStart(
-            firstRange.startContainer,
-            firstRange.startOffset,
-          );
-          currentRange.setEnd(firstRange.endContainer, firstRange.endOffset);
+          const range = document.createRange();
+          range.setStart(firstRange.startContainer, firstRange.startOffset);
+          range.setEnd(firstRange.endContainer, firstRange.endOffset);
 
           domSelection.removeAllRanges();
-          domSelection.addRange(currentRange);
+          domSelection.addRange(range);
 
-          // Handle different granularities manually for Shadow DOM
-          if (
-            handleShadowDOMModify(
-              domSelection,
-              firstRange,
-              alter,
-              isBackward,
-              granularity,
-            )
-          ) {
-            return;
-          }
+          // Try native modify again with synced selection
+          domSelection.modify(alter, direction, granularity);
         }
       }
     } catch (_error) {
-      // If Shadow DOM handling fails, fall through to regular modify
+      // If all else fails, we'll let Lexical handle it at a higher level
     }
   }
-
-  // Regular DOM selection modify
-  domSelection.modify(alter, direction, granularity);
 }
 
-// Helper function to handle Shadow DOM modify operations
-function handleShadowDOMModify(
-  domSelection: Selection,
-  firstRange: StaticRange,
-  alter: 'move' | 'extend',
-  isBackward: boolean,
-  granularity: 'character' | 'word' | 'lineboundary',
-): boolean {
-  // Check if this is being called from within the deletion flow
-  // We detect this by checking if we're in the context where getActiveEditor can be called
-  let isInDeletionContext = false;
-  try {
-    const _editor = getActiveEditor();
-    isInDeletionContext = true;
-  } catch {
-    // Not in editor context, this is probably a direct modify call
-    isInDeletionContext = false;
+// Helper function to validate if selection is in a reasonable state after modify
+function isSelectionValidAfterModify(domSelection: Selection): boolean {
+  // Basic validation - selection should exist and be within reasonable bounds
+  if (domSelection.rangeCount === 0) {
+    return false;
   }
 
-  // For character granularity in Shadow DOM
-  if (granularity === 'character') {
-    const isCollapsed = firstRange.collapsed;
-
-    if (isCollapsed && alter === 'extend' && isInDeletionContext) {
-      // This is being called from deleteCharacter - handle deletion directly
-      return handleShadowDOMDirectDeletion(firstRange, isBackward, 'character');
-    } else if (alter === 'extend') {
-      // Handle normal extension for selection
-      return handleShadowDOMExtension(
-        domSelection,
-        firstRange,
-        isBackward,
-        'character',
-      );
-    }
-  } else if (granularity === 'word' && alter === 'extend') {
-    // Word deletion is now handled directly in deleteWord() method
-    // This only handles word selection
-    return handleShadowDOMWordSelection(domSelection, firstRange, isBackward);
-  } else if (granularity === 'lineboundary' && alter === 'extend') {
-    if (isInDeletionContext) {
-      // Handle line deletion directly
-      return handleShadowDOMDirectDeletion(
-        firstRange,
-        isBackward,
-        'lineboundary',
-      );
-    } else {
-      // Handle line boundary selection for Shadow DOM
-      return handleShadowDOMLineSelection(domSelection, firstRange, isBackward);
-    }
-  }
-
-  return false;
-}
-
-// Helper function for direct deletion in Shadow DOM (used by deleteCharacter, deleteWord, etc.)
-function handleShadowDOMDirectDeletion(
-  firstRange: StaticRange,
-  isBackward: boolean,
-  granularity: 'character' | 'word' | 'lineboundary',
-): boolean {
   try {
-    const editor = getActiveEditor();
-    editor.update(() => {
-      const currentSelection = $getSelection();
-      if (!$isRangeSelection(currentSelection)) {
-        return;
-      }
-
-      if (granularity === 'character') {
-        // Use the existing Shadow DOM character deletion logic
-        const anchor = currentSelection.anchor;
-        const focus = currentSelection.focus;
-        const anchorNode = anchor.getNode();
-
-        if (!$isTextNode(anchorNode)) {
-          return;
-        }
-
-        const textContent = anchorNode.getTextContent();
-        const offset = anchor.offset;
-
-        if (isBackward && offset > 0) {
-          // Backspace: delete character before cursor
-          const newText =
-            textContent.slice(0, offset - 1) + textContent.slice(offset);
-          anchorNode.setTextContent(newText);
-          const newOffset = offset - 1;
-
-          // Update both anchor and focus to the new position
-          anchor.set(anchor.key, newOffset, anchor.type);
-          focus.set(focus.key, newOffset, focus.type);
-          currentSelection.dirty = true;
-        } else if (!isBackward && offset < textContent.length) {
-          // Delete: delete character after cursor
-          const newText =
-            textContent.slice(0, offset) + textContent.slice(offset + 1);
-          anchorNode.setTextContent(newText);
-
-          // Keep cursor at same position
-          anchor.set(anchor.key, offset, anchor.type);
-          focus.set(focus.key, offset, focus.type);
-          currentSelection.dirty = true;
-        }
-      } else if (granularity === 'word') {
-        // Handle word deletion
-        const anchor = currentSelection.anchor;
-        const focus = currentSelection.focus;
-        const anchorNode = anchor.getNode();
-
-        if (!$isTextNode(anchorNode)) {
-          return;
-        }
-
-        const textContent = anchorNode.getTextContent();
-        const offset = anchor.offset;
-        const wordCharRegex = /\w/;
-
-        if (isBackward && offset > 0) {
-          // Find word boundary backward - simple and predictable logic
-          let startOffset = offset;
-
-          if (startOffset > 0) {
-            const charBeforeCursor = textContent[startOffset - 1];
-
-            if (/\s/.test(charBeforeCursor)) {
-              // Cursor is after whitespace - skip all whitespace first
-              while (
-                startOffset > 0 &&
-                /\s/.test(textContent[startOffset - 1])
-              ) {
-                startOffset--;
-              }
-              // Then delete the word before the whitespace
-              while (
-                startOffset > 0 &&
-                wordCharRegex.test(textContent[startOffset - 1])
-              ) {
-                startOffset--;
-              }
-            } else if (wordCharRegex.test(charBeforeCursor)) {
-              // Cursor is in a word - delete to beginning of word
-              while (
-                startOffset > 0 &&
-                wordCharRegex.test(textContent[startOffset - 1])
-              ) {
-                startOffset--;
-              }
-            } else {
-              // Cursor is after punctuation/symbol - delete just that character
-              startOffset--;
-            }
-          }
-
-          if (startOffset < offset) {
-            const newText =
-              textContent.slice(0, startOffset) + textContent.slice(offset);
-            anchorNode.setTextContent(newText);
-
-            // Move cursor to deletion start point
-            anchor.set(anchor.key, startOffset, anchor.type);
-            focus.set(focus.key, startOffset, focus.type);
-            currentSelection.dirty = true;
-          }
-        } else if (!isBackward && offset < textContent.length) {
-          // Find word boundary forward
-          let endOffset = offset;
-
-          // Skip any non-word characters immediately after cursor
-          while (
-            endOffset < textContent.length &&
-            !wordCharRegex.test(textContent[endOffset])
-          ) {
-            endOffset++;
-          }
-
-          // Find end of the word
-          while (
-            endOffset < textContent.length &&
-            wordCharRegex.test(textContent[endOffset])
-          ) {
-            endOffset++;
-          }
-
-          if (endOffset > offset) {
-            const newText =
-              textContent.slice(0, offset) + textContent.slice(endOffset);
-            anchorNode.setTextContent(newText);
-
-            // Keep cursor at same position
-            anchor.set(anchor.key, offset, anchor.type);
-            focus.set(focus.key, offset, focus.type);
-            currentSelection.dirty = true;
-          }
-        }
-      } else if (granularity === 'lineboundary') {
-        // Handle line deletion
-        const anchor = currentSelection.anchor;
-        const focus = currentSelection.focus;
-        const anchorNode = anchor.getNode();
-
-        if (!$isTextNode(anchorNode)) {
-          return;
-        }
-
-        const textContent = anchorNode.getTextContent();
-        const offset = anchor.offset;
-
-        if (isBackward && offset > 0) {
-          // Delete from beginning of line to cursor
-          const newText = textContent.slice(offset);
-          anchorNode.setTextContent(newText);
-
-          // Move cursor to beginning
-          anchor.set(anchor.key, 0, anchor.type);
-          focus.set(focus.key, 0, focus.type);
-          currentSelection.dirty = true;
-        } else if (!isBackward && offset < textContent.length) {
-          // Delete from cursor to end of line
-          const newText = textContent.slice(0, offset);
-          anchorNode.setTextContent(newText);
-
-          // Keep cursor at same position
-          anchor.set(anchor.key, offset, anchor.type);
-          focus.set(focus.key, offset, focus.type);
-          currentSelection.dirty = true;
-        }
-      }
-    });
-    return true;
-  } catch {
+    const range = domSelection.getRangeAt(0);
+    return range.startContainer !== null && range.endContainer !== null;
+  } catch (_error) {
     return false;
   }
 }
 
-// Helper function for extension (selection) in Shadow DOM
-function handleShadowDOMExtension(
-  domSelection: Selection,
-  firstRange: StaticRange,
-  isBackward: boolean,
-  granularity: 'character' | 'word' | 'lineboundary',
-): boolean {
-  const isCollapsed = firstRange.collapsed;
+// Helper function to find shadow roots in current selection
+function findShadowRootsInSelection(domSelection: Selection): ShadowRoot[] {
+  const shadowRoots: ShadowRoot[] = [];
 
-  if (isCollapsed) {
-    // For collapsed selection, we need to extend from the current position
-    const container = firstRange.startContainer;
-    const offset = firstRange.startOffset;
-
-    if (container.nodeType === Node.TEXT_NODE) {
-      const textNode = container as Text;
-      const textContent = textNode.textContent || '';
-
-      if (isBackward && offset > 0) {
-        // Extend backward by one character
-        const newRange = document.createRange();
-        newRange.setStart(container, offset - 1);
-        newRange.setEnd(container, offset);
-        domSelection.removeAllRanges();
-        domSelection.addRange(newRange);
-        updateLexicalSelection(newRange);
-        return true;
-      } else if (!isBackward && offset < textContent.length) {
-        // Extend forward by one character
-        const newRange = document.createRange();
-        newRange.setStart(container, offset);
-        newRange.setEnd(container, offset + 1);
-        domSelection.removeAllRanges();
-        domSelection.addRange(newRange);
-        updateLexicalSelection(newRange);
-        return true;
-      }
-    }
-  } else {
-    // For non-collapsed selection, extend the existing selection
-    const container = isBackward
-      ? firstRange.startContainer
-      : firstRange.endContainer;
-    const offset = isBackward ? firstRange.startOffset : firstRange.endOffset;
-
-    if (container.nodeType === Node.TEXT_NODE) {
-      const textNode = container as Text;
-      const textContent = textNode.textContent || '';
-
-      if (isBackward && offset > 0) {
-        // Extend selection backward
-        const newRange = document.createRange();
-        newRange.setStart(container, offset - 1);
-        newRange.setEnd(firstRange.endContainer, firstRange.endOffset);
-        domSelection.removeAllRanges();
-        domSelection.addRange(newRange);
-        updateLexicalSelection(newRange);
-        return true;
-      } else if (!isBackward && offset < textContent.length) {
-        // Extend selection forward
-        const newRange = document.createRange();
-        newRange.setStart(firstRange.startContainer, firstRange.startOffset);
-        newRange.setEnd(container, offset + 1);
-        domSelection.removeAllRanges();
-        domSelection.addRange(newRange);
-        updateLexicalSelection(newRange);
-        return true;
-      }
-    }
+  if (domSelection.rangeCount === 0) {
+    return shadowRoots;
   }
 
-  return false;
-}
-
-// Helper function to update Lexical selection state
-function updateLexicalSelection(range: Range): void {
   try {
-    const editor = getActiveEditor();
-    editor.update(() => {
-      const currentSelection = $getSelection();
-      if ($isRangeSelection(currentSelection)) {
-        currentSelection.applyDOMRange(range);
-        currentSelection.dirty = true;
-      }
-    });
+    const range = domSelection.getRangeAt(0);
+    const startRoot = getShadowRootOrDocument(
+      range.startContainer as HTMLElement,
+    );
+    const endRoot = getShadowRootOrDocument(range.endContainer as HTMLElement);
+
+    const startShadow = isShadowRoot(startRoot) ? startRoot : null;
+    const endShadow = isShadowRoot(endRoot) ? endRoot : null;
+
+    if (startShadow) {
+      shadowRoots.push(startShadow);
+    }
+    if (endShadow && endShadow !== startShadow) {
+      shadowRoots.push(endShadow);
+    }
   } catch (_error) {
-    // If updating Lexical selection fails, continue with normal flow
-  }
-}
-
-// Helper function for word selection in Shadow DOM
-function handleShadowDOMWordSelection(
-  domSelection: Selection,
-  firstRange: StaticRange,
-  isBackward: boolean,
-): boolean {
-  const container = firstRange.startContainer;
-  const offset = firstRange.startOffset;
-
-  if (container.nodeType === Node.TEXT_NODE) {
-    const textNode = container as Text;
-    const textContent = textNode.textContent || '';
-    const wordCharRegex = /\w/;
-
-    if (isBackward && offset > 0) {
-      // Find word boundary backward - simple and predictable logic
-      let startOffset = offset;
-
-      if (startOffset > 0) {
-        const charBeforeCursor = textContent[startOffset - 1];
-
-        if (/\s/.test(charBeforeCursor)) {
-          // Cursor is after whitespace - skip all whitespace first
-          while (startOffset > 0 && /\s/.test(textContent[startOffset - 1])) {
-            startOffset--;
-          }
-          // Then select the word before the whitespace
-          while (
-            startOffset > 0 &&
-            wordCharRegex.test(textContent[startOffset - 1])
-          ) {
-            startOffset--;
-          }
-        } else if (wordCharRegex.test(charBeforeCursor)) {
-          // Cursor is in a word - select to beginning of word
-          while (
-            startOffset > 0 &&
-            wordCharRegex.test(textContent[startOffset - 1])
-          ) {
-            startOffset--;
-          }
-        } else {
-          // Cursor is after punctuation/symbol - select just that character
-          startOffset--;
-        }
-      }
-
-      if (startOffset < offset) {
-        const newRange = document.createRange();
-        newRange.setStart(container, startOffset);
-        newRange.setEnd(container, offset);
-        domSelection.removeAllRanges();
-        domSelection.addRange(newRange);
-        updateLexicalSelection(newRange);
-        return true;
-      }
-    } else if (!isBackward && offset < textContent.length) {
-      // Find word boundary forward
-      let endOffset = offset;
-
-      // Skip any non-word characters immediately after cursor
-      while (
-        endOffset < textContent.length &&
-        !wordCharRegex.test(textContent[endOffset])
-      ) {
-        endOffset++;
-      }
-
-      // Find end of the word
-      while (
-        endOffset < textContent.length &&
-        wordCharRegex.test(textContent[endOffset])
-      ) {
-        endOffset++;
-      }
-
-      if (endOffset > offset) {
-        const newRange = document.createRange();
-        newRange.setStart(container, offset);
-        newRange.setEnd(container, endOffset);
-        domSelection.removeAllRanges();
-        domSelection.addRange(newRange);
-        updateLexicalSelection(newRange);
-        return true;
-      }
-    }
+    // Failed to analyze selection
   }
 
-  return false;
-}
-
-// Helper function for line boundary selection in Shadow DOM
-function handleShadowDOMLineSelection(
-  domSelection: Selection,
-  firstRange: StaticRange,
-  isBackward: boolean,
-): boolean {
-  const container = firstRange.startContainer;
-  const offset = firstRange.startOffset;
-
-  if (container.nodeType === Node.TEXT_NODE) {
-    const textNode = container as Text;
-    const textContent = textNode.textContent || '';
-
-    if (isBackward && offset > 0) {
-      // Select from beginning of line to cursor
-      const newRange = document.createRange();
-      newRange.setStart(container, 0);
-      newRange.setEnd(container, offset);
-      domSelection.removeAllRanges();
-      domSelection.addRange(newRange);
-      updateLexicalSelection(newRange);
-      return true;
-    } else if (!isBackward && offset < textContent.length) {
-      // Select from cursor to end of line
-      const newRange = document.createRange();
-      newRange.setStart(container, offset);
-      newRange.setEnd(container, textContent.length);
-      domSelection.removeAllRanges();
-      domSelection.addRange(newRange);
-      updateLexicalSelection(newRange);
-      return true;
-    }
-  }
-
-  return false;
+  return shadowRoots;
 }
 
 /**

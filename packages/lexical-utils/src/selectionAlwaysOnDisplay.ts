@@ -6,13 +6,12 @@
  *
  */
 
-import type {
-  LexicalEditor,
-  SelectionWithComposedRanges,
-  ShadowRootWithSelection,
+import {
+  isDocumentFragment,
+  type LexicalEditor,
+  type SelectionWithComposedRanges,
+  type ShadowRootWithSelection,
 } from 'lexical';
-
-import {DOM_DOCUMENT_FRAGMENT_TYPE} from 'lexical';
 import invariant from 'shared/invariant';
 
 import markSelection from './markSelection';
@@ -32,7 +31,7 @@ export default function selectionAlwaysOnDisplay(
     let domSelection: Selection | null = null;
     let current: Node | null = editorRootElement;
     while (current) {
-      if (current.nodeType === DOM_DOCUMENT_FRAGMENT_TYPE) {
+      if (isDocumentFragment(current.nodeType)) {
         const shadowRoot = current as ShadowRoot;
 
         // Try modern getComposedRanges API first
@@ -50,7 +49,7 @@ export default function selectionAlwaysOnDisplay(
                 domSelection = globalSelection;
               }
             }
-          } catch (error) {
+          } catch (_error) {
             invariant(false, 'getComposedRanges failed:');
           }
         }
@@ -65,7 +64,7 @@ export default function selectionAlwaysOnDisplay(
             domSelection = (
               shadowRoot as ShadowRootWithSelection
             ).getSelection();
-          } catch (error) {
+          } catch (_error) {
             invariant(false, 'ShadowRoot.getSelection failed:');
           }
         }
@@ -105,7 +104,7 @@ export default function selectionAlwaysOnDisplay(
   if (editorRootElement) {
     let current: Node | null = editorRootElement;
     while (current) {
-      if (current.nodeType === DOM_DOCUMENT_FRAGMENT_TYPE) {
+      if (isDocumentFragment(current.nodeType)) {
         targetDocument = (current as ShadowRoot).ownerDocument || document;
         break;
       }

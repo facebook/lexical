@@ -115,7 +115,6 @@ export {
   SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
   UNDO_COMMAND,
 } from './LexicalCommands';
-export {DOM_DOCUMENT_FRAGMENT_TYPE} from './LexicalConstants';
 export {
   IS_ALL_FORMATTING,
   IS_BOLD,

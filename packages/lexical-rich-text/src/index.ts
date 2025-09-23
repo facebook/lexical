@@ -608,7 +608,6 @@ export function registerRichText(editor: LexicalEditor): () => void {
       DELETE_CHARACTER_COMMAND,
       (isBackward) => {
         const selection = $getSelection();
-
         if ($isRangeSelection(selection)) {
           selection.deleteCharacter(isBackward);
           return true;
@@ -627,7 +626,6 @@ export function registerRichText(editor: LexicalEditor): () => void {
         if (!$isRangeSelection(selection)) {
           return false;
         }
-
         selection.deleteWord(isBackward);
         return true;
       },
@@ -640,7 +638,6 @@ export function registerRichText(editor: LexicalEditor): () => void {
         if (!$isRangeSelection(selection)) {
           return false;
         }
-
         selection.deleteLine(isBackward);
         return true;
       },

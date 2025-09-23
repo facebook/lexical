@@ -1346,11 +1346,7 @@ export function getElementByKeyOrThrow(
  *   will narrow the type to ShadowRoot for subsequent operations.
  */
 export function isShadowRoot(node: Node | null): node is ShadowRoot {
-  return (
-    node !== null &&
-    node.nodeType === DOM_DOCUMENT_FRAGMENT_TYPE &&
-    'host' in node
-  );
+  return isDocumentFragment(node) && 'host' in node;
 }
 
 export function getParentElement(node: Node): HTMLElement | null {
@@ -2219,6 +2215,89 @@ export function $deleteWordInShadowDOM(
   }
 
   return false;
+}
+
+/**
+ * Improved word deletion handler for Shadow DOM with better i18n support
+ * Uses native text segmentation when available, falls back to basic regex
+ */
+export function $deleteWordInShadowDOMWithI18n(
+  selection: RangeSelection,
+  isBackward: boolean,
+): boolean {
+  if (!selection.isCollapsed()) {
+    // If there's already a selection, just remove it
+    selection.removeText();
+    return true;
+  }
+
+  const anchor = selection.anchor;
+  const focus = selection.focus;
+  const anchorNode = anchor.getNode();
+
+  if (!$isTextNode(anchorNode)) {
+    return false;
+  }
+
+  const textContent = anchorNode.getTextContent();
+  const offset = anchor.offset;
+
+  // Try to use native text segmentation for better i18n support
+  if (typeof Intl !== 'undefined' && 'Segmenter' in Intl) {
+    try {
+      // Use Intl.Segmenter for proper word boundary detection
+      const segmenter = new Intl.Segmenter(undefined, {
+        granularity: 'word',
+      });
+      const segments = Array.from(segmenter.segment(textContent)) as Array<{
+        segment: string;
+        index: number;
+        isWordLike?: boolean;
+      }>;
+
+      let startOffset = offset;
+      let endOffset = offset;
+
+      if (isBackward) {
+        // Find the start of the word/segment to delete
+        for (let i = segments.length - 1; i >= 0; i--) {
+          const segment = segments[i];
+          if (segment.index < offset) {
+            if (segment.isWordLike) {
+              startOffset = segment.index;
+              break;
+            }
+          }
+        }
+      } else {
+        // Find the end of the word/segment to delete
+        for (const segment of segments) {
+          if (segment.index >= offset && segment.isWordLike) {
+            endOffset = segment.index + segment.segment.length;
+            break;
+          }
+        }
+      }
+
+      if (startOffset !== offset || endOffset !== offset) {
+        const newText =
+          textContent.slice(0, startOffset) + textContent.slice(endOffset);
+        anchorNode.setTextContent(newText);
+
+        // Update cursor position
+        const newOffset = isBackward ? startOffset : startOffset;
+        anchor.set(anchor.key, newOffset, anchor.type);
+        focus.set(focus.key, newOffset, focus.type);
+        selection.dirty = true;
+        return true;
+      }
+    } catch (_error) {
+      // Intl.Segmenter failed, fall back to simple approach
+    }
+  }
+
+  // Fallback to simple regex-based approach for older browsers
+  return $deleteWordInShadowDOM(selection, isBackward);
 }
 
 /**

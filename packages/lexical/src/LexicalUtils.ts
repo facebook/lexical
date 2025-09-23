@@ -1938,18 +1938,6 @@ export function createSelectionWithComposedRanges(
                         target.removeAllRanges();
                         target.addRange(newRange);
                         manuallyHandled = true;
-
-                        // Force update Lexical selection state to match the DOM range
-                        // This mimics what RangeSelection.modify does after calling moveNativeSelection
-                        try {
-                          const currentSelection = $getSelection();
-                          if ($isRangeSelection(currentSelection)) {
-                            currentSelection.applyDOMRange(newRange);
-                            currentSelection.dirty = true;
-                          }
-                        } catch (_error) {
-                          // If updating Lexical selection fails, continue with normal flow
-                        }
                       } else if (!isBackward && offset < textContent.length) {
                         // Extend forward by one character (for delete key)
                         const newRange = document.createRange();
@@ -1958,18 +1946,6 @@ export function createSelectionWithComposedRanges(
                         target.removeAllRanges();
                         target.addRange(newRange);
                         manuallyHandled = true;
-
-                        // Force update Lexical selection state to match the DOM range
-                        // This mimics what RangeSelection.modify does after calling moveNativeSelection
-                        try {
-                          const currentSelection = $getSelection();
-                          if ($isRangeSelection(currentSelection)) {
-                            currentSelection.applyDOMRange(newRange);
-                            currentSelection.dirty = true;
-                          }
-                        } catch (_error) {
-                          // If updating Lexical selection fails, continue with normal flow
-                        }
                       }
                     }
                   } else {
@@ -1996,19 +1972,6 @@ export function createSelectionWithComposedRanges(
                         target.removeAllRanges();
                         target.addRange(newRange);
                         manuallyHandled = true;
-
-                        // Force update Lexical selection state to match the DOM range
-                        // This mimics what RangeSelection.modify does after calling moveNativeSelection
-                        try {
-                          const _editor = getActiveEditor();
-                          const currentSelection = $getSelection();
-                          if ($isRangeSelection(currentSelection)) {
-                            currentSelection.applyDOMRange(newRange);
-                            currentSelection.dirty = true;
-                          }
-                        } catch (_error) {
-                          // If updating Lexical selection fails, continue with normal flow
-                        }
                       } else if (!isBackward && offset < textContent.length) {
                         // Extend selection forward by one character
                         const newRange = document.createRange();
@@ -2020,18 +1983,6 @@ export function createSelectionWithComposedRanges(
                         target.removeAllRanges();
                         target.addRange(newRange);
                         manuallyHandled = true;
-
-                        // Force update Lexical selection state to match the DOM range
-                        // This mimics what RangeSelection.modify does after calling moveNativeSelection
-                        try {
-                          const currentSelection = $getSelection();
-                          if ($isRangeSelection(currentSelection)) {
-                            currentSelection.applyDOMRange(newRange);
-                            currentSelection.dirty = true;
-                          }
-                        } catch (_error) {
-                          // If updating Lexical selection fails, continue with normal flow
-                        }
                       }
                     }
                   }

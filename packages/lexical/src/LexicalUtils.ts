@@ -2246,14 +2246,25 @@ export function $deleteWordInShadowDOMWithI18n(
   if (typeof Intl !== 'undefined' && 'Segmenter' in Intl) {
     try {
       // Use Intl.Segmenter for proper word boundary detection
-      const segmenter = new Intl.Segmenter(undefined, {
+      // Type assertion needed as Intl.Segmenter is not yet in all TypeScript versions
+      interface IntlSegmenterConstructor {
+        new (
+          locales?: string | string[],
+          options?: {granularity?: string},
+        ): {
+          segment: (text: string) => Iterable<{
+            segment: string;
+            index: number;
+            isWordLike?: boolean;
+          }>;
+        };
+      }
+      const IntlSegmenter = (Intl as {Segmenter: IntlSegmenterConstructor})
+        .Segmenter;
+      const segmenter = new IntlSegmenter(undefined, {
         granularity: 'word',
       });
-      const segments = Array.from(segmenter.segment(textContent)) as Array<{
-        segment: string;
-        index: number;
-        isWordLike?: boolean;
-      }>;
+      const segments = Array.from(segmenter.segment(textContent));
 
       let startOffset = offset;
       let endOffset = offset;

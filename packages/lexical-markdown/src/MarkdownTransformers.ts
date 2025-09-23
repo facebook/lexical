@@ -655,7 +655,10 @@ export const TEXT_FORMAT_TRANSFORMERS: Array<TextFormatTransformer> = [
   STRIKETHROUGH,
 ];
 
-export const TEXT_MATCH_TRANSFORMERS: Array<TextMatchTransformer> = [INDENT, LINK];
+export const TEXT_MATCH_TRANSFORMERS: Array<TextMatchTransformer> = [
+  INDENT,
+  LINK,
+];
 
 export const TRANSFORMERS: Array<Transformer> = [
   ...ELEMENT_TRANSFORMERS,

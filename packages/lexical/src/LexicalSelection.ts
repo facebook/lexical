@@ -1346,7 +1346,7 @@ export class RangeSelection implements BaseSelection {
 
     const firstPoint = this.isBackward() ? this.focus : this.anchor;
     const firstNode = firstPoint.getNode();
-    const firstBlock = $getAncestor(firstNode, INTERNAL_$isBlock);
+    let firstBlock = $getAncestor(firstNode, INTERNAL_$isBlock);
 
     const last = nodes[nodes.length - 1]!;
 
@@ -1383,17 +1383,22 @@ export class RangeSelection implements BaseSelection {
     const blocksParent = $wrapInlineNodes(nodes);
     const nodeToSelect = blocksParent.getLastDescendant()!;
     const blocks = blocksParent.getChildren();
+    const shouldInsert = !$isElementNode(firstBlock) || !firstBlock.isEmpty();
+    const insertedParagraph = shouldInsert ? this.insertParagraph() : null;
+    const lastToInsert: LexicalNode | undefined = blocks[blocks.length - 1];
+    let firstToInsert: LexicalNode | undefined = blocks[0];
+    if (!firstBlock || !firstBlock.isAttached()) {
+      firstBlock = $getAncestor(
+        firstNode,
+        INTERNAL_$isBlock,
+      ).getPreviousSibling();
+    }
     const isMergeable = (node: LexicalNode): node is ElementNode =>
       $isElementNode(node) &&
       INTERNAL_$isBlock(node) &&
       !node.isEmpty() &&
       $isElementNode(firstBlock) &&
       (!firstBlock.isEmpty() || firstBlock.canMergeWhenEmpty());
-
-    const shouldInsert = !$isElementNode(firstBlock) || !firstBlock.isEmpty();
-    const insertedParagraph = shouldInsert ? this.insertParagraph() : null;
-    const lastToInsert: LexicalNode | undefined = blocks[blocks.length - 1];
-    let firstToInsert: LexicalNode | undefined = blocks[0];
     if (isMergeable(firstToInsert)) {
       invariant(
         $isElementNode(firstBlock),

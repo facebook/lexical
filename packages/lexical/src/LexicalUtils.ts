@@ -1827,7 +1827,7 @@ function findTextNodeInElement(element: Node): Text | null {
 
   return walker.nextNode() as Text | null;
 }
-function createSelectionWithComposedRanges(
+export function createSelectionWithComposedRanges(
   baseSelection: Selection,
   composedRanges: StaticRange[],
 ): Selection {

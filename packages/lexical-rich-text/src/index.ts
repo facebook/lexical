@@ -49,9 +49,6 @@ import {
   $createParagraphNode,
   $createRangeSelection,
   $createTabNode,
-  $deleteCharacterInShadowDOM,
-  $deleteLineInShadowDOM,
-  $deleteWordInShadowDOM,
   $getAdjacentNode,
   $getNearestNodeFromDOMNode,
   $getRoot,
@@ -59,7 +56,6 @@ import {
   $insertNodes,
   $isDecoratorNode,
   $isElementNode,
-  $isInShadowDOMContext,
   $isNodeSelection,
   $isRangeSelection,
   $isRootNode,
@@ -613,14 +609,6 @@ export function registerRichText(editor: LexicalEditor): () => void {
       (isBackward) => {
         const selection = $getSelection();
 
-        // Special handling for Shadow DOM
-        if ($isRangeSelection(selection) && $isInShadowDOMContext(editor)) {
-          if ($deleteCharacterInShadowDOM(selection, isBackward)) {
-            return true;
-          }
-          // If shadow DOM handler didn't work, fall through to normal handler
-        }
-
         if ($isRangeSelection(selection)) {
           selection.deleteCharacter(isBackward);
           return true;
@@ -640,14 +628,6 @@ export function registerRichText(editor: LexicalEditor): () => void {
           return false;
         }
 
-        // Special handling for Shadow DOM
-        if ($isInShadowDOMContext(editor)) {
-          if ($deleteWordInShadowDOM(selection, isBackward)) {
-            return true;
-          }
-          // If shadow DOM handler didn't work, fall through to normal handler
-        }
-
         selection.deleteWord(isBackward);
         return true;
       },
@@ -659,14 +639,6 @@ export function registerRichText(editor: LexicalEditor): () => void {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
           return false;
-        }
-
-        // Special handling for Shadow DOM
-        if ($isInShadowDOMContext(editor)) {
-          if ($deleteLineInShadowDOM(selection, isBackward)) {
-            return true;
-          }
-          // If shadow DOM handler didn't work, fall through to normal handler
         }
 
         selection.deleteLine(isBackward);

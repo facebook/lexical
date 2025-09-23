@@ -97,9 +97,9 @@ import {$createTabNode, $isTabNode} from './nodes/LexicalTabNode';
  * Options for the getComposedRanges() method. Allows specifying which
  * shadow roots should be included when computing composed ranges.
  */
-export type GetComposedRangesOptions = {
+export interface GetComposedRangesOptions {
   shadowRoots?: ShadowRoot[];
-};
+}
 
 /**
  * Extended Selection interface that includes the modern getComposedRanges() method.

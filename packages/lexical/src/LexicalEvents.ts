@@ -93,13 +93,13 @@ import {
   dispatchCommand,
   doesContainSurrogatePair,
   getAnchorTextFromDOM,
-  getDocumentFromElement,
   getDOMSelectionForEditor,
   getDOMSelectionFromTarget,
   getDOMTextNode,
   getEditorPropertyFromDOMNode,
   getEditorsToPropagate,
   getNearestEditorFromDOMNode,
+  getShadowRootOrDocument,
   getWindow,
   isBackspace,
   isBold,
@@ -176,7 +176,7 @@ let lastKeyDownTimeStamp = 0;
 let lastKeyCode: null | string = null;
 let lastBeforeInputInsertTextTimeStamp = 0;
 let unprocessedBeforeInputData: null | string = null;
-const rootElementsRegistered = new WeakMap<Document, number>();
+const rootElementsRegistered = new WeakMap<Document | ShadowRoot, number>();
 let isSelectionChangeFromDOMUpdate = false;
 let isSelectionChangeFromMouseDown = false;
 let isInsertLineBreak = false;
@@ -1322,7 +1322,7 @@ export function addRootElementEvents(
 ): void {
   // We only want to have a single global selectionchange event handler, shared
   // between all editor instances.
-  const doc = getDocumentFromElement(rootElement);
+  const doc = getShadowRootOrDocument(rootElement);
   const documentRootElementsCount = rootElementsRegistered.get(doc);
   if (
     documentRootElementsCount === undefined ||
@@ -1429,7 +1429,7 @@ const rootElementNotRegisteredWarning = warnOnlyOnce(
 );
 
 export function removeRootElementEvents(rootElement: HTMLElement): void {
-  const doc = getDocumentFromElement(rootElement);
+  const doc = getShadowRootOrDocument(rootElement);
   const documentRootElementsCount = rootElementsRegistered.get(doc);
   if (documentRootElementsCount === undefined) {
     // This can happen if setRootElement() failed

@@ -41,7 +41,7 @@ import {
   getDOMSelectionForEditor,
   getDOMSelectionFromShadowRoot,
   getDOMSelectionFromTarget,
-  getShadowRoot,
+  getShadowRootOrDocument,
   getTextDirection,
   // getWindow, // Currently unused
   isArray,
@@ -838,11 +838,11 @@ describe('$copyNode', () => {
     });
 
     describe('getShadowRoot()', () => {
-      test('should return null for regular DOM elements', () => {
+      test('should return Document for regular DOM elements', () => {
         const div = document.createElement('div');
         document.body.appendChild(div);
 
-        expect(getShadowRoot(div)).toBeNull();
+        expect(getShadowRootOrDocument(div)).toBe(document);
 
         document.body.removeChild(div);
       });
@@ -853,14 +853,14 @@ describe('$copyNode', () => {
         const innerDiv = document.createElement('div');
         shadowRoot.appendChild(innerDiv);
 
-        expect(getShadowRoot(innerDiv)).toBe(shadowRoot);
+        expect(getShadowRootOrDocument(innerDiv)).toBe(shadowRoot);
 
         cleanup();
       });
 
-      test('should return null for elements not in DOM', () => {
+      test('should return Document for elements not in DOM', () => {
         const div = document.createElement('div');
-        expect(getShadowRoot(div)).toBeNull();
+        expect(getShadowRootOrDocument(div)).toBe(document);
       });
 
       test('should traverse up to find shadow root', () => {
@@ -871,7 +871,7 @@ describe('$copyNode', () => {
         shadowRoot.appendChild(outerDiv);
         outerDiv.appendChild(innerDiv);
 
-        expect(getShadowRoot(innerDiv)).toBe(shadowRoot);
+        expect(getShadowRootOrDocument(innerDiv)).toBe(shadowRoot);
 
         cleanup();
       });
@@ -989,7 +989,7 @@ describe('$copyNode', () => {
         } as StaticRange;
 
         // Mock getComposedRanges to return our range
-        const mockGetComposedRanges = jest.fn().mockReturnValue([mockRange]);
+        const mockGetComposedRanges = vi.fn().mockReturnValue([mockRange]);
         const originalGetComposedRanges = (Selection.prototype as any)
           .getComposedRanges;
         (Selection.prototype as any).getComposedRanges = mockGetComposedRanges;
@@ -1018,14 +1018,14 @@ describe('$copyNode', () => {
         shadowRoot.appendChild(innerDiv);
 
         // Mock getComposedRanges to return empty array
-        const mockGetComposedRanges = jest.fn().mockReturnValue([]);
+        const mockGetComposedRanges = vi.fn().mockReturnValue([]);
         const originalGetComposedRanges = (Selection.prototype as any)
           .getComposedRanges;
         (Selection.prototype as any).getComposedRanges = mockGetComposedRanges;
 
         // Mock getSelection as fallback
         const mockSelection = {rangeCount: 0} as Selection;
-        const mockGetSelection = jest.fn().mockReturnValue(mockSelection);
+        const mockGetSelection = vi.fn().mockReturnValue(mockSelection);
         Object.defineProperty(shadowRoot, 'getSelection', {
           configurable: true,
           value: mockGetSelection,
@@ -1089,7 +1089,7 @@ describe('$copyNode', () => {
         } as StaticRange;
 
         // Mock getComposedRanges to return our range
-        const mockGetComposedRanges = jest.fn().mockReturnValue([mockRange]);
+        const mockGetComposedRanges = vi.fn().mockReturnValue([mockRange]);
         const originalGetComposedRanges = (Selection.prototype as any)
           .getComposedRanges;
         (Selection.prototype as any).getComposedRanges = mockGetComposedRanges;
@@ -1122,14 +1122,14 @@ describe('$copyNode', () => {
         shadowRoot.appendChild(innerDiv);
 
         // Mock getComposedRanges to return empty array
-        const mockGetComposedRanges = jest.fn().mockReturnValue([]);
+        const mockGetComposedRanges = vi.fn().mockReturnValue([]);
         const originalGetComposedRanges = (Selection.prototype as any)
           .getComposedRanges;
         (Selection.prototype as any).getComposedRanges = mockGetComposedRanges;
 
         // Mock getSelection as fallback
         const mockSelection = {rangeCount: 0} as Selection;
-        const mockGetSelection = jest.fn().mockReturnValue(mockSelection);
+        const mockGetSelection = vi.fn().mockReturnValue(mockSelection);
         Object.defineProperty(shadowRoot, 'getSelection', {
           configurable: true,
           value: mockGetSelection,
@@ -1163,19 +1163,19 @@ describe('$copyNode', () => {
         } as StaticRange;
 
         // Mock window.getSelection to return a selection with getComposedRanges
-        const mockGetComposedRanges = jest.fn().mockReturnValue([mockRange]);
+        const mockGetComposedRanges = vi.fn().mockReturnValue([mockRange]);
         const mockWindowSelection = {
           getComposedRanges: mockGetComposedRanges,
-          getRangeAt: jest.fn().mockReturnValue({}),
+          getRangeAt: vi.fn().mockReturnValue({}),
           rangeCount: 1,
         } as unknown as Selection;
         const originalGetSelection = window.getSelection;
-        window.getSelection = jest.fn().mockReturnValue(mockWindowSelection);
+        window.getSelection = vi.fn().mockReturnValue(mockWindowSelection);
 
         // Mock getComposedRanges on Selection prototype to pass the 'in' check
         const originalGetComposedRanges = (Selection.prototype as any)
           .getComposedRanges;
-        (Selection.prototype as any).getComposedRanges = jest.fn();
+        (Selection.prototype as any).getComposedRanges = vi.fn();
 
         const selection = getDOMSelectionFromShadowRoot(shadowRoot);
 
@@ -1196,22 +1196,22 @@ describe('$copyNode', () => {
         const {shadowRoot, cleanup} = createShadowDOMHost();
 
         // Mock window.getSelection to return a selection with getComposedRanges that returns empty array
-        const mockGetComposedRanges = jest.fn().mockReturnValue([]);
+        const mockGetComposedRanges = vi.fn().mockReturnValue([]);
         const mockWindowSelection = {
           getComposedRanges: mockGetComposedRanges,
           rangeCount: 0,
         } as unknown as Selection;
         const originalGetSelection = window.getSelection;
-        window.getSelection = jest.fn().mockReturnValue(mockWindowSelection);
+        window.getSelection = vi.fn().mockReturnValue(mockWindowSelection);
 
         // Mock getComposedRanges on Selection prototype to pass the 'in' check
         const originalGetComposedRanges = (Selection.prototype as any)
           .getComposedRanges;
-        (Selection.prototype as any).getComposedRanges = jest.fn();
+        (Selection.prototype as any).getComposedRanges = vi.fn();
 
         // Mock shadowRoot.getSelection as fallback
         const mockShadowSelection = {rangeCount: 1} as Selection;
-        const mockGetSelection = jest.fn().mockReturnValue(mockShadowSelection);
+        const mockGetSelection = vi.fn().mockReturnValue(mockShadowSelection);
         Object.defineProperty(shadowRoot, 'getSelection', {
           configurable: true,
           value: mockGetSelection,
@@ -1235,7 +1235,7 @@ describe('$copyNode', () => {
         const {shadowRoot, cleanup} = createShadowDOMHost();
 
         // Mock window.getSelection to return a selection with getComposedRanges that throws error
-        const mockGetComposedRanges = jest.fn().mockImplementation(() => {
+        const mockGetComposedRanges = vi.fn().mockImplementation(() => {
           throw new Error('getComposedRanges failed');
         });
         const mockWindowSelection = {
@@ -1243,16 +1243,16 @@ describe('$copyNode', () => {
           rangeCount: 0,
         } as unknown as Selection;
         const originalGetSelection = window.getSelection;
-        window.getSelection = jest.fn().mockReturnValue(mockWindowSelection);
+        window.getSelection = vi.fn().mockReturnValue(mockWindowSelection);
 
         // Mock getComposedRanges on Selection prototype to pass the 'in' check
         const originalGetComposedRanges = (Selection.prototype as any)
           .getComposedRanges;
-        (Selection.prototype as any).getComposedRanges = jest.fn();
+        (Selection.prototype as any).getComposedRanges = vi.fn();
 
         // Mock shadowRoot.getSelection as fallback
         const mockShadowSelection = {rangeCount: 1} as Selection;
-        const mockGetSelection = jest.fn().mockReturnValue(mockShadowSelection);
+        const mockGetSelection = vi.fn().mockReturnValue(mockShadowSelection);
         Object.defineProperty(shadowRoot, 'getSelection', {
           configurable: true,
           value: mockGetSelection,
@@ -1276,21 +1276,21 @@ describe('$copyNode', () => {
         const {shadowRoot, cleanup} = createShadowDOMHost();
 
         // Mock window.getSelection to return a selection with getComposedRanges that returns empty array
-        const mockGetComposedRanges = jest.fn().mockReturnValue([]);
+        const mockGetComposedRanges = vi.fn().mockReturnValue([]);
         const mockWindowSelection = {
           getComposedRanges: mockGetComposedRanges,
           rangeCount: 0,
         } as unknown as Selection;
         const originalGetSelection = window.getSelection;
-        window.getSelection = jest.fn().mockReturnValue(mockWindowSelection);
+        window.getSelection = vi.fn().mockReturnValue(mockWindowSelection);
 
         // Mock getComposedRanges on Selection prototype to pass the 'in' check
         const originalGetComposedRanges = (Selection.prototype as any)
           .getComposedRanges;
-        (Selection.prototype as any).getComposedRanges = jest.fn();
+        (Selection.prototype as any).getComposedRanges = vi.fn();
 
         // Mock shadowRoot.getSelection to throw error
-        const mockGetSelection = jest.fn().mockImplementation(() => {
+        const mockGetSelection = vi.fn().mockImplementation(() => {
           throw new Error('shadowRoot.getSelection failed');
         });
         Object.defineProperty(shadowRoot, 'getSelection', {
@@ -1323,11 +1323,11 @@ describe('$copyNode', () => {
         // Mock window.getSelection to return a selection
         const mockWindowSelection = {rangeCount: 0} as Selection;
         const originalGetSelection = window.getSelection;
-        window.getSelection = jest.fn().mockReturnValue(mockWindowSelection);
+        window.getSelection = vi.fn().mockReturnValue(mockWindowSelection);
 
         // Mock shadowRoot.getSelection as fallback
         const mockShadowSelection = {rangeCount: 1} as Selection;
-        const mockGetSelection = jest.fn().mockReturnValue(mockShadowSelection);
+        const mockGetSelection = vi.fn().mockReturnValue(mockShadowSelection);
         Object.defineProperty(shadowRoot, 'getSelection', {
           configurable: true,
           value: mockGetSelection,
@@ -1357,7 +1357,7 @@ describe('$copyNode', () => {
         // Mock window.getSelection to return a selection
         const mockWindowSelection = {rangeCount: 0} as Selection;
         const originalGetSelection = window.getSelection;
-        window.getSelection = jest.fn().mockReturnValue(mockWindowSelection);
+        window.getSelection = vi.fn().mockReturnValue(mockWindowSelection);
 
         // Don't add getSelection to shadowRoot (not supported)
 
@@ -1378,7 +1378,7 @@ describe('$copyNode', () => {
       test('should return selection from editor window and root element', () => {
         const mockEditor = {
           _window: window,
-          getRootElement: jest.fn().mockReturnValue(document.body),
+          getRootElement: vi.fn().mockReturnValue(document.body),
         } as unknown as LexicalEditor;
 
         const selection = getDOMSelectionForEditor(mockEditor);
@@ -1390,7 +1390,7 @@ describe('$copyNode', () => {
       test('should handle null root element', () => {
         const mockEditor = {
           _window: window,
-          getRootElement: jest.fn().mockReturnValue(null),
+          getRootElement: vi.fn().mockReturnValue(null),
         } as unknown as LexicalEditor;
 
         const selection = getDOMSelectionForEditor(mockEditor);
@@ -1413,7 +1413,7 @@ describe('$copyNode', () => {
 
         const mockEditor = {
           _window: window,
-          getRootElement: jest.fn().mockReturnValue(editorDiv),
+          getRootElement: vi.fn().mockReturnValue(editorDiv),
         } as unknown as LexicalEditor;
 
         // Create a mock StaticRange
@@ -1426,7 +1426,7 @@ describe('$copyNode', () => {
         } as StaticRange;
 
         // Mock getComposedRanges to return our range
-        const mockGetComposedRanges = jest.fn().mockReturnValue([mockRange]);
+        const mockGetComposedRanges = vi.fn().mockReturnValue([mockRange]);
         const originalGetComposedRanges = (Selection.prototype as any)
           .getComposedRanges;
         (Selection.prototype as any).getComposedRanges = mockGetComposedRanges;
@@ -1476,7 +1476,7 @@ describe('$copyNode', () => {
         } as StaticRange;
 
         // Mock getComposedRanges to return our range
-        const mockGetComposedRanges = jest.fn().mockReturnValue([mockRange]);
+        const mockGetComposedRanges = vi.fn().mockReturnValue([mockRange]);
         const originalGetComposedRanges = (Selection.prototype as any)
           .getComposedRanges;
         (Selection.prototype as any).getComposedRanges = mockGetComposedRanges;
@@ -1525,7 +1525,7 @@ describe('$copyNode', () => {
         } as StaticRange;
 
         // Mock getComposedRanges to return our range
-        const mockGetComposedRanges = jest.fn().mockReturnValue([mockRange]);
+        const mockGetComposedRanges = vi.fn().mockReturnValue([mockRange]);
         const originalGetComposedRanges = (Selection.prototype as any)
           .getComposedRanges;
         (Selection.prototype as any).getComposedRanges = mockGetComposedRanges;
@@ -1563,7 +1563,7 @@ describe('$copyNode', () => {
         } as StaticRange;
 
         // Mock getComposedRanges to return our range
-        const mockGetComposedRanges = jest.fn().mockReturnValue([mockRange]);
+        const mockGetComposedRanges = vi.fn().mockReturnValue([mockRange]);
         const originalGetComposedRanges = (Selection.prototype as any)
           .getComposedRanges;
         (Selection.prototype as any).getComposedRanges = mockGetComposedRanges;
@@ -1609,7 +1609,7 @@ describe('$copyNode', () => {
         const mockRanges = [mockRange];
 
         // Mock getComposedRanges to return our range
-        const mockGetComposedRanges = jest.fn().mockReturnValue(mockRanges);
+        const mockGetComposedRanges = vi.fn().mockReturnValue(mockRanges);
         const originalGetComposedRanges = (Selection.prototype as any)
           .getComposedRanges;
         (Selection.prototype as any).getComposedRanges = mockGetComposedRanges;
@@ -1653,7 +1653,7 @@ describe('$copyNode', () => {
         } as StaticRange;
 
         // Mock getComposedRanges to return our range
-        const mockGetComposedRanges = jest.fn().mockReturnValue([mockRange]);
+        const mockGetComposedRanges = vi.fn().mockReturnValue([mockRange]);
         const originalGetComposedRanges = (Selection.prototype as any)
           .getComposedRanges;
         (Selection.prototype as any).getComposedRanges = mockGetComposedRanges;
@@ -1691,7 +1691,7 @@ describe('$copyNode', () => {
         } as StaticRange;
 
         // Mock getComposedRanges to return our range
-        const mockGetComposedRanges = jest.fn().mockReturnValue([mockRange]);
+        const mockGetComposedRanges = vi.fn().mockReturnValue([mockRange]);
         const originalGetComposedRanges = (Selection.prototype as any)
           .getComposedRanges;
         (Selection.prototype as any).getComposedRanges = mockGetComposedRanges;
@@ -1727,7 +1727,7 @@ describe('$copyNode', () => {
         } as StaticRange;
 
         // Mock getComposedRanges to return our range
-        const mockGetComposedRanges = jest.fn().mockReturnValue([mockRange]);
+        const mockGetComposedRanges = vi.fn().mockReturnValue([mockRange]);
         const originalGetComposedRanges = (Selection.prototype as any)
           .getComposedRanges;
         (Selection.prototype as any).getComposedRanges = mockGetComposedRanges;
@@ -1761,7 +1761,7 @@ describe('$copyNode', () => {
           shadowRoot.appendChild(editorDiv);
 
           const mockEditor = {
-            getRootElement: jest.fn().mockReturnValue(editorDiv),
+            getRootElement: vi.fn().mockReturnValue(editorDiv),
           } as unknown as LexicalEditor;
 
           const result = $isInShadowDOMContext(mockEditor);
@@ -1777,7 +1777,7 @@ describe('$copyNode', () => {
           document.body.appendChild(editorDiv);
 
           const mockEditor = {
-            getRootElement: jest.fn().mockReturnValue(editorDiv),
+            getRootElement: vi.fn().mockReturnValue(editorDiv),
           } as unknown as LexicalEditor;
 
           const result = $isInShadowDOMContext(mockEditor);
@@ -1790,7 +1790,7 @@ describe('$copyNode', () => {
 
         test('should return false when editor has no root element', () => {
           const mockEditor = {
-            getRootElement: jest.fn().mockReturnValue(null),
+            getRootElement: vi.fn().mockReturnValue(null),
           } as unknown as LexicalEditor;
 
           const result = $isInShadowDOMContext(mockEditor);

@@ -27,6 +27,7 @@ import {
   COMMAND_PRIORITY_CRITICAL,
   COPY_COMMAND,
   getDOMSelectionForEditor,
+  getWindow,
   isSelectionWithinEditor,
   LexicalEditor,
   LexicalNode,
@@ -467,7 +468,7 @@ export async function copyToClipboard(
   }
 
   const rootElement = editor.getRootElement();
-  const editorWindow = editor._window || window;
+  const editorWindow = getWindow(editor);
   const windowDocument = editorWindow.document;
   const domSelection = getDOMSelectionForEditor(editor);
   if (rootElement === null || domSelection === null) {

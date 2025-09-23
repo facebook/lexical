@@ -1759,7 +1759,7 @@ export function getDOMSelectionFromShadowRoot(
         }
         // If no ranges found, fall through to experimental API
       }
-    } catch (error) {
+    } catch (_error) {
       // If getComposedRanges fails, fall through to experimental API
     }
   }
@@ -1770,7 +1770,7 @@ export function getDOMSelectionFromShadowRoot(
   ) {
     try {
       return (shadowRoot as ShadowRootWithSelection).getSelection();
-    } catch (error) {
+    } catch (_error) {
       // Continue to final fallback
     }
   }
@@ -1799,8 +1799,8 @@ export function getDOMSelection(
 
   // Check if we're inside a shadow DOM
   if (rootElement) {
-    const shadowRoot = getShadowRoot(rootElement);
-    if (shadowRoot) {
+    const shadowRoot = getShadowRootOrDocument(rootElement);
+    if (shadowRoot && isShadowRoot(shadowRoot)) {
       return getDOMSelectionFromShadowRoot(shadowRoot);
     }
   }
@@ -1823,14 +1823,9 @@ function findTextNodeInElement(element: Node): Text | null {
     return element as Text;
   }
 
-  for (const child of element.childNodes) {
-    const textNode = findTextNodeInElement(child);
-    if (textNode) {
-      return textNode;
-    }
-  }
+  const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null);
 
-  return null;
+  return walker.nextNode() as Text | null;
 }
 function createSelectionWithComposedRanges(
   baseSelection: Selection,
@@ -1952,7 +1947,7 @@ function createSelectionWithComposedRanges(
                             currentSelection.applyDOMRange(newRange);
                             currentSelection.dirty = true;
                           }
-                        } catch (e) {
+                        } catch (_error) {
                           // If updating Lexical selection fails, continue with normal flow
                         }
                       } else if (!isBackward && offset < textContent.length) {
@@ -1972,7 +1967,7 @@ function createSelectionWithComposedRanges(
                             currentSelection.applyDOMRange(newRange);
                             currentSelection.dirty = true;
                           }
-                        } catch (e) {
+                        } catch (_error) {
                           // If updating Lexical selection fails, continue with normal flow
                         }
                       }
@@ -2011,7 +2006,7 @@ function createSelectionWithComposedRanges(
                             currentSelection.applyDOMRange(newRange);
                             currentSelection.dirty = true;
                           }
-                        } catch (e) {
+                        } catch (_error) {
                           // If updating Lexical selection fails, continue with normal flow
                         }
                       } else if (!isBackward && offset < textContent.length) {
@@ -2034,7 +2029,7 @@ function createSelectionWithComposedRanges(
                             currentSelection.applyDOMRange(newRange);
                             currentSelection.dirty = true;
                           }
-                        } catch (e) {
+                        } catch (_error) {
                           // If updating Lexical selection fails, continue with normal flow
                         }
                       }
@@ -2055,7 +2050,7 @@ function createSelectionWithComposedRanges(
 
               // Fallback to base selection modify for non-shadow DOM cases
               target.modify(alter, direction, granularity);
-            } catch (error) {
+            } catch (_error) {
               // If anything fails, just delegate to the base selection
               target.modify(alter, direction, granularity);
             }
@@ -2092,7 +2087,7 @@ function createSelectionWithComposedRanges(
 export function getDOMSelectionForEditor(
   editor: LexicalEditor,
 ): null | Selection {
-  return getDOMSelection(getWindow(editor), editor.getRootElement() || null);
+  return getDOMSelection(getWindow(editor), editor.getRootElement());
 }
 
 /**
@@ -2101,19 +2096,18 @@ export function getDOMSelectionForEditor(
  * encapsulation.
  *
  * @param element - The HTMLElement to start traversing from
- * @returns The ShadowRoot if found, or null if the element is not in shadow DOM
+ * @returns The ShadowRoot if found, or Document if the element is not in shadow DOM
  */
-export function getShadowRoot(element: HTMLElement): ShadowRoot | null {
-  let current: Node | null = element;
+export function getShadowRootOrDocument(
+  element: HTMLElement,
+): ShadowRoot | Document {
+  const shadowRoot = element.getRootNode({composed: false});
 
-  while (current) {
-    if (current.nodeType === DOM_DOCUMENT_FRAGMENT_TYPE) {
-      return current as ShadowRoot;
-    }
-
-    current = current.parentNode;
+  if (isShadowRoot(shadowRoot)) {
+    return shadowRoot;
   }
-  return null;
+
+  return document;
 }
 
 /**
@@ -2128,7 +2122,9 @@ export function getShadowRoot(element: HTMLElement): ShadowRoot | null {
  */
 export function $isInShadowDOMContext(editor: LexicalEditor): boolean {
   const rootElement = editor.getRootElement();
-  return rootElement ? getShadowRoot(rootElement) !== null : false;
+  return rootElement
+    ? isShadowRoot(getShadowRootOrDocument(rootElement))
+    : false;
 }
 
 /**
@@ -2362,15 +2358,18 @@ export function $deleteWordInShadowDOM(
  * @returns The Document object that should be used for DOM operations
  */
 export function getDocumentFromElement(element: null | HTMLElement): Document {
-  if (!element) {
+  if (!element || !CAN_USE_DOM) {
     return document;
   }
 
-  const shadowRoot = getShadowRoot(element);
-  if (shadowRoot) {
-    return shadowRoot.ownerDocument || document;
+  const rootNode = element.getRootNode({composed: true});
+
+  // If the element is not connected to a document, return the default document
+  if (rootNode === element || rootNode.nodeType !== Node.DOCUMENT_NODE) {
+    return element.ownerDocument || document;
   }
-  return element.ownerDocument || document;
+
+  return rootNode as Document;
 }
 
 /**
@@ -2382,9 +2381,9 @@ export function getDocumentFromElement(element: null | HTMLElement): Document {
  * @returns The currently active Element or null if no element is focused
  */
 export function getActiveElement(rootElement: HTMLElement): Element | null {
-  const shadowRoot = getShadowRoot(rootElement);
+  const shadowRoot = getShadowRootOrDocument(rootElement);
 
-  if (shadowRoot && shadowRoot.activeElement) {
+  if (shadowRoot && isShadowRoot(shadowRoot) && shadowRoot.activeElement) {
     return shadowRoot.activeElement;
   }
   return getDocumentFromElement(rootElement).activeElement;
@@ -2407,9 +2406,9 @@ export function getDOMSelectionFromTarget(
 
   // Check if eventTarget is in shadow DOM
   if (isHTMLElement(eventTarget)) {
-    const shadowRoot = getShadowRoot(eventTarget);
+    const shadowRoot = getShadowRootOrDocument(eventTarget);
 
-    if (shadowRoot) {
+    if (shadowRoot && isShadowRoot(shadowRoot)) {
       return getDOMSelectionFromShadowRoot(shadowRoot);
     }
   }

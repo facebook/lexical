@@ -16,6 +16,7 @@ import type {
 } from './types';
 
 /**
+ * @experimental
  * Define a LexicalExtension from the given object literal. TypeScript will
  * infer Config and Name in most cases, but you may want to use
  * {@link safeCast} for config if there are default fields or varying types.
@@ -63,6 +64,7 @@ export function defineExtension<
 }
 
 /**
+ * @experimental
  * Override a partial of the configuration of an Extension, to be used
  * in the dependencies array of another extension, or as
  * an argument to {@link buildEditorFromExtensions}.
@@ -100,6 +102,7 @@ export function configExtension<
 }
 
 /**
+ * @experimental
  * Used to declare a peer dependency of an extension in a type-safe way,
  * requires the type parameter. The most common use case for peer dependencies
  * is to avoid a direct import dependency, so you would want to use a

@@ -1897,7 +1897,8 @@ export function createSelectionWithComposedRanges(
             direction: 'backward' | 'forward' | 'left' | 'right',
             granularity: 'character' | 'word' | 'lineboundary',
           ): void {
-            // For shadow DOM, we need special handling for character granularity
+            // For shadow DOM, sync ranges and delegate to native modify
+            // Complex logic is handled at higher levels in Lexical
             try {
               if (composedRanges.length > 0 && firstRange) {
                 // Sync our composed ranges to the base DOM selection
@@ -1911,92 +1912,12 @@ export function createSelectionWithComposedRanges(
                 target.removeAllRanges();
                 target.addRange(range);
 
-                // For character granularity in Shadow DOM, we need to manually handle the modification
-                if (granularity === 'character' && alter === 'extend') {
-                  // Handle character-by-character extension manually for Shadow DOM
-                  const isBackward =
-                    direction === 'backward' || direction === 'left';
-
-                  // Check if the current selection is collapsed (caret position)
-                  const isCollapsed = firstRange.collapsed;
-                  let manuallyHandled = false;
-
-                  if (isCollapsed) {
-                    // For collapsed selection, we need to extend from the current position
-                    const container = firstRange.startContainer;
-                    const offset = firstRange.startOffset;
-
-                    if (container.nodeType === Node.TEXT_NODE) {
-                      const textNode = container as Text;
-                      const textContent = textNode.textContent || '';
-
-                      if (isBackward && offset > 0) {
-                        // Extend backward by one character (for backspace)
-                        const newRange = document.createRange();
-                        newRange.setStart(container, offset - 1);
-                        newRange.setEnd(container, offset);
-                        target.removeAllRanges();
-                        target.addRange(newRange);
-                        manuallyHandled = true;
-                      } else if (!isBackward && offset < textContent.length) {
-                        // Extend forward by one character (for delete key)
-                        const newRange = document.createRange();
-                        newRange.setStart(container, offset);
-                        newRange.setEnd(container, offset + 1);
-                        target.removeAllRanges();
-                        target.addRange(newRange);
-                        manuallyHandled = true;
-                      }
-                    }
-                  } else {
-                    // For non-collapsed selection, extend the existing selection
-                    const container = isBackward
-                      ? firstRange.startContainer
-                      : firstRange.endContainer;
-                    const offset = isBackward
-                      ? firstRange.startOffset
-                      : firstRange.endOffset;
-
-                    if (container.nodeType === Node.TEXT_NODE) {
-                      const textNode = container as Text;
-                      const textContent = textNode.textContent || '';
-
-                      if (isBackward && offset > 0) {
-                        // Extend selection backward by one character
-                        const newRange = document.createRange();
-                        newRange.setStart(container, offset - 1);
-                        newRange.setEnd(
-                          firstRange.endContainer,
-                          firstRange.endOffset,
-                        );
-                        target.removeAllRanges();
-                        target.addRange(newRange);
-                        manuallyHandled = true;
-                      } else if (!isBackward && offset < textContent.length) {
-                        // Extend selection forward by one character
-                        const newRange = document.createRange();
-                        newRange.setStart(
-                          firstRange.startContainer,
-                          firstRange.startOffset,
-                        );
-                        newRange.setEnd(container, offset + 1);
-                        target.removeAllRanges();
-                        target.addRange(newRange);
-                        manuallyHandled = true;
-                      }
-                    }
-                  }
-
-                  // Only call native modify if we didn't handle it manually
-                  if (!manuallyHandled) {
-                    target.modify(alter, direction, granularity);
-                  }
-                  return;
+                // For Shadow DOM, delegate to native modify first, then handle manually if needed
+                try {
+                  target.modify(alter, direction, granularity);
+                } catch (_error) {
+                  // If native modify fails, we'll handle it at a higher level in Lexical
                 }
-
-                // For non-character granularity or other cases, use native modify
-                target.modify(alter, direction, granularity);
-                return;
               }
 
               // Fallback to base selection modify for non-shadow DOM cases

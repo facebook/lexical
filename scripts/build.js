@@ -114,10 +114,9 @@ const monorepoExternalsSet = new Set(Object.entries(wwwMappings).flat());
 const thirdPartyExternals = [
   'react',
   'react-dom',
-  'react-error-boundary',
-  '@floating-ui/react',
   'yjs',
   'y-websocket',
+  ...(isWWW ? [] : ['react-error-boundary', '@floating-ui/react']),
 ];
 const thirdPartyExternalsRegExp = new RegExp(
   `^(${thirdPartyExternals.join('|')})(\\/|$)`,
@@ -201,6 +200,12 @@ async function build(
         warning.message.endsWith(`Can't resolve original location of error.`)
       ) {
         // Ignored
+      } else if (
+        isWWW &&
+        warning.code === 'MODULE_LEVEL_DIRECTIVE' &&
+        /"use client"/.test(warning.message)
+      ) {
+        // Ignored in WWW
       } else if (typeof warning.code === 'string') {
         console.error(warning);
         // This is a warning coming from Rollup itself.

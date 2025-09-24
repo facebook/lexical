@@ -116,7 +116,8 @@ const thirdPartyExternals = [
   'react-dom',
   'yjs',
   'y-websocket',
-  ...(isWWW ? [] : ['react-error-boundary', '@floating-ui/react', 'happy-dom']),
+  'happy-dom',
+  ...(isWWW ? [] : ['react-error-boundary', '@floating-ui/react']),
 ];
 const thirdPartyExternalsRegExp = new RegExp(
   `^(${thirdPartyExternals.join('|')})(\\/|$)`,

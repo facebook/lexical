@@ -8,8 +8,8 @@
 
 import type {DOMConversionMap, NodeKey} from '../LexicalNode';
 
-import invariant from 'shared/invariant';
 import devInvariant from 'shared/devInvariant';
+import invariant from 'shared/invariant';
 
 import {IS_UNMERGEABLE} from '../LexicalConstants';
 import {EditorConfig} from '../LexicalEditor';

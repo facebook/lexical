@@ -31,6 +31,7 @@ module.name_mapper='^@lexical/extension$' -> '<PROJECT_ROOT>/packages/lexical-ex
 module.name_mapper='^@lexical/file$' -> '<PROJECT_ROOT>/packages/lexical-file/flow/LexicalFile.js.flow'
 module.name_mapper='^@lexical/hashtag$' -> '<PROJECT_ROOT>/packages/lexical-hashtag/flow/LexicalHashtag.js.flow'
 module.name_mapper='^@lexical/headless$' -> '<PROJECT_ROOT>/packages/lexical-headless/flow/LexicalHeadless.js.flow'
+module.name_mapper='^@lexical/headless/dom$' -> '<PROJECT_ROOT>/packages/lexical-headless/flow/dom.js.flow'
 module.name_mapper='^@lexical/history$' -> '<PROJECT_ROOT>/packages/lexical-history/flow/LexicalHistory.js.flow'
 module.name_mapper='^@lexical/html$' -> '<PROJECT_ROOT>/packages/lexical-html/flow/LexicalHtml.js.flow'
 module.name_mapper='^@lexical/link$' -> '<PROJECT_ROOT>/packages/lexical-link/flow/LexicalLink.js.flow'

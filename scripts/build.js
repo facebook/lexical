@@ -226,6 +226,41 @@ async function build(
       }
     },
     plugins: [
+      ...(isWWW
+        ? [
+            /* in www we do not use export conditions so we build a virtual fork module instead */
+            {
+              load(source) {
+                if (source.startsWith(BROWSER_FORK_MODULE_PREFIX)) {
+                  const server = source.slice(
+                    BROWSER_FORK_MODULE_PREFIX.length,
+                    -'.cjs'.length,
+                  );
+                  const client = server.replace(/(\.[^.]+)$/, '.browser$1');
+                  return `module.exports = typeof window === 'undefined' ? require(${JSON.stringify(server)}) : require(${JSON.stringify(client)});`;
+                }
+                return null;
+              },
+              name: 'browser-fork-module',
+              renderChunk(source) {
+                // Ugly hack to effectively undo the hoist of require('jsdom')
+                const m = source.match(/require\('jsdom'\);/);
+                if (m) {
+                  return (
+                    source.slice(0, m.index) +
+                    `typeof window === 'undefined' ? require('jsdom') : undefined;` +
+                    source.slice(m.index + m[0].length)
+                  );
+                }
+              },
+              resolveId(source) {
+                return source.startsWith(BROWSER_FORK_MODULE_PREFIX)
+                  ? source
+                  : null;
+              },
+            },
+          ]
+        : []),
       alias({
         entries: [
           {find: 'shared', replacement: path.resolve('packages/shared/src')},
@@ -260,7 +295,9 @@ async function build(
           ['@babel/preset-react', {runtime: 'automatic'}],
         ],
       }),
-      commonjs(),
+      commonjs({
+        strictRequires: true,
+      }),
       json(),
       replace(
         Object.assign(
@@ -443,6 +480,8 @@ function buildForkModules(outputPath, outputFileName, format, exports) {
   }
 }
 
+const BROWSER_FORK_MODULE_PREFIX = '\x00browser-fork-module:';
+
 async function buildAll() {
   if (!isWWW && (isRelease || isProduction)) {
     await buildTSDeclarationFiles();
@@ -451,7 +490,7 @@ async function buildAll() {
   const formats = isWWW ? ['cjs'] : ['cjs', 'esm'];
   for (const pkg of packagesManager.getPublicPackages()) {
     const {name, sourcePath, outputPath, packageName, modules} =
-      pkg.getPackageBuildDefinition();
+      pkg.getPackageBuildDefinition({consolidateBrowserSource: isWWW});
     const {version} = pkg.packageJson;
     for (const module of modules) {
       for (const format of formats) {
@@ -460,7 +499,9 @@ async function buildAll() {
 
         await build(
           `${name}${module.name ? '-' + module.name : ''}`,
-          inputFile,
+          isWWW && module.browserSourceFileName
+            ? `${BROWSER_FORK_MODULE_PREFIX}${inputFile}.cjs`
+            : inputFile,
           outputPath,
           path.resolve(
             outputPath,

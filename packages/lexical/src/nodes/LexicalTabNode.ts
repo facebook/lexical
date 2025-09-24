@@ -9,6 +9,7 @@
 import type {DOMConversionMap, NodeKey} from '../LexicalNode';
 
 import invariant from 'shared/invariant';
+import devInvariant from 'shared/devInvariant';
 
 import {IS_UNMERGEABLE} from '../LexicalConstants';
 import {EditorConfig} from '../LexicalEditor';
@@ -58,7 +59,7 @@ export class TabNode extends TextNode {
   }
 
   setTextContent(text: string): this {
-    invariant(
+    devInvariant(
       text === '\t' || text === '',
       'TabNode does not support setTextContent',
     );

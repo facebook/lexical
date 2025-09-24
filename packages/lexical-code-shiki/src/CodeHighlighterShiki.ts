@@ -23,6 +23,7 @@ import {
   $getStartOfCodeInLine,
   $isCodeHighlightNode,
   $isCodeNode,
+  CodeExtension,
   CodeHighlightNode,
   CodeNode,
   DEFAULT_CODE_LANGUAGE,
@@ -47,6 +48,7 @@ import {
   $normalizeCaret,
   $setSelectionFromCaretRange,
   COMMAND_PRIORITY_LOW,
+  defineExtension,
   INDENT_CONTENT_COMMAND,
   INSERT_TAB_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
@@ -71,7 +73,7 @@ import {
 export interface Tokenizer {
   defaultLanguage: string;
   defaultTheme: string;
-  $tokenize(codeNode: CodeNode, language?: string): LexicalNode[];
+  $tokenize: (codeNode: CodeNode, language?: string) => LexicalNode[];
 }
 
 const DEFAULT_CODE_THEME = 'one-light';
@@ -905,3 +907,14 @@ export function registerCodeHighlighting(
 
   return mergeRegister(...registrations);
 }
+
+/**
+ * Add code highlighting support for code blocks with Shiki
+ */
+export const CodeHighlighterShikiExtension = defineExtension({
+  config: {tokenizer: ShikiTokenizer},
+  dependencies: [CodeExtension],
+  name: '@lexical/code-shiki',
+  register: (editor, {tokenizer}) =>
+    registerCodeHighlighting(editor, tokenizer),
+});

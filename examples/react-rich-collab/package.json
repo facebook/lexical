@@ -13,6 +13,10 @@
     "server:ws": "cross-env HOST=localhost PORT=1234 YPERSISTENCE=./yjs-wss-db npx y-websocket",
     "server:webrtc": "cross-env HOST=localhost PORT=1235 npx y-webrtc"
   },
+  "lexicalUnreleasedDependencies": {
+    "@lexical/react": "0.35.0",
+    "@lexical/yjs": "0.35.0"
+  },
   "dependencies": {
     "@lexical/react": "0.35.0",
     "@lexical/utils": "0.35.0",
@@ -22,7 +26,7 @@
     "react-dom": "^19.1.1",
     "y-webrtc": "^10.3.0",
     "y-websocket": "^2.0.2",
-    "yjs": "^13.6.15"
+    "yjs": "^13.6.27"
   },
   "devDependencies": {
     "@types/react": "^19.1.12",
@@ -31,6 +35,9 @@
     "concurrently": "^8.2.2",
     "cross-env": "^7.0.3",
     "typescript": "^5.9.2",
-    "vite": "^5.1.4"
+    "vite": "^7.1.4"
+  },
+  "overrides": {
+    "yjs": "$yjs"
   }
 }

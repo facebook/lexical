@@ -13,6 +13,7 @@ import {
   $getStartOfCodeInLine,
 } from './FlatStructureUtils';
 
+export {CodeExtension} from './CodeExtension';
 export {PrismTokenizer, registerCodeHighlighting} from './CodeHighlighterPrism';
 export {
   $createCodeHighlightNode,

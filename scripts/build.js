@@ -247,6 +247,7 @@ async function build(
           [
             '@babel/preset-typescript',
             {
+              allowDeclareFields: true,
               tsconfig: path.resolve('./tsconfig.build.json'),
             },
           ],

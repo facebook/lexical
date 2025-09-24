@@ -292,6 +292,8 @@ export type AnyStateConfig = StateConfig<any, any>;
  * @param key The key to use
  * @param valueConfig Configuration for the value type
  * @returns a StateConfig
+ *
+ * @__NO_SIDE_EFFECTS__
  */
 export function createState<K extends string, V>(
   key: K,

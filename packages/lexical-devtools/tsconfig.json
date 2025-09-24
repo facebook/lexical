@@ -1,9 +1,9 @@
 {
   "extends": "./.wxt/tsconfig.json",
-  "lib": ["dom", "dom.iterable"],
+  "lib": ["esnext", "dom", "dom.iterable", "ESNext.Disposable"],
   "include": ["./.wxt/wxt.d.ts", "./**/*", "../../libdefs"],
   "compilerOptions": {
-    "target": "ES2019",
+    "target": "esnext",
     "allowImportingTsExtensions": true,
     "jsx": "react-jsx",
     "allowJs": true,
@@ -16,6 +16,7 @@
       "@lexical/devtools-core": ["../lexical-devtools-core/src/index.ts"],
       "@lexical/dragon": ["../lexical-dragon/src/index.ts"],
       "@lexical/eslint-plugin": ["../lexical-eslint-plugin/src/index.ts"],
+      "@lexical/extension": ["../lexical-extension/src/index.ts"],
       "@lexical/file": ["../lexical-file/src/index.ts"],
       "@lexical/hashtag": ["../lexical-hashtag/src/index.ts"],
       "@lexical/headless": ["../lexical-headless/src/index.ts"],
@@ -29,6 +30,9 @@
       "@lexical/offset": ["../lexical-offset/src/index.ts"],
       "@lexical/overflow": ["../lexical-overflow/src/index.ts"],
       "@lexical/plain-text": ["../lexical-plain-text/src/index.ts"],
+      "@lexical/react/ExtensionComponent": [
+        "../lexical-react/src/ExtensionComponent.tsx"
+      ],
       "@lexical/react/LexicalAutoEmbedPlugin": [
         "../lexical-react/src/LexicalAutoEmbedPlugin.tsx"
       ],
@@ -82,6 +86,9 @@
       ],
       "@lexical/react/LexicalErrorBoundary": [
         "../lexical-react/src/LexicalErrorBoundary.tsx"
+      ],
+      "@lexical/react/LexicalExtensionComposer": [
+        "../lexical-react/src/LexicalExtensionComposer.tsx"
       ],
       "@lexical/react/LexicalHashtagPlugin": [
         "../lexical-react/src/LexicalHashtagPlugin.ts"
@@ -143,6 +150,21 @@
       "@lexical/react/LexicalTypeaheadMenuPlugin": [
         "../lexical-react/src/LexicalTypeaheadMenuPlugin.tsx"
       ],
+      "@lexical/react/ReactExtension": [
+        "../lexical-react/src/ReactExtension.tsx"
+      ],
+      "@lexical/react/ReactPluginHostExtension": [
+        "../lexical-react/src/ReactPluginHostExtension.tsx"
+      ],
+      "@lexical/react/ReactProviderExtension": [
+        "../lexical-react/src/ReactProviderExtension.tsx"
+      ],
+      "@lexical/react/TreeViewExtension": [
+        "../lexical-react/src/TreeViewExtension.tsx"
+      ],
+      "@lexical/react/useExtensionComponent": [
+        "../lexical-react/src/useExtensionComponent.tsx"
+      ],
       "@lexical/react/useLexicalEditable": [
         "../lexical-react/src/useLexicalEditable.ts"
       ],
@@ -161,6 +183,7 @@
       "@lexical/rich-text": ["../lexical-rich-text/src/index.ts"],
       "@lexical/selection": ["../lexical-selection/src/index.ts"],
       "@lexical/table": ["../lexical-table/src/index.ts"],
+      "@lexical/tailwind": ["../lexical-tailwind/src/index.ts"],
       "@lexical/text": ["../lexical-text/src/index.ts"],
       "@lexical/utils": ["../lexical-utils/src/index.ts"],
       "@lexical/yjs": ["../lexical-yjs/src/index.ts"],

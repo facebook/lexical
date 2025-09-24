@@ -1,0 +1,16 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
+@import 'tailwindcss';
+/*
+TODO #7706: update @source after npm release of v0.36.0
+
+In a normal project this would probably look like:
+@source "../node_modules/lexical-tailwind"
+*/
+@source "../../../packages/lexical-tailwind/src/index.ts";

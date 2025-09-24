@@ -216,6 +216,31 @@ class PackageMetadata {
   }
 
   /**
+   * Replace the dependency map at `packageJson[key]` in-place with
+   * deps sorted lexically by key. If deps was empty, it will be removed.
+   * If `overrideDeps` is specified, it will replace the existing dependencies
+   * at that key with that record.
+   *
+   * @param {'dependencies'|'peerDependencies'|'devDependencies'|'lexicalUnreleasedDependencies'} key
+   * @param {Record<string, string>} [overrideDeps]
+   * @returns {this}
+   */
+  sortDependencies(key, overrideDeps) {
+    const deps = overrideDeps ?? this.packageJson[key];
+    if (deps) {
+      const entries = Object.entries(deps);
+      if (entries.length === 0) {
+        delete this.packageJson[key];
+      } else {
+        this.packageJson[key] = Object.fromEntries(
+          entries.sort(([a], [b]) => a.localeCompare(b)),
+        );
+      }
+    }
+    return this;
+  }
+
+  /**
    * Writes this.packageJson back to this.packageJsonPath
    */
   writeSync() {

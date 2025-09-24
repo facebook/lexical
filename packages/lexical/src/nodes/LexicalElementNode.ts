@@ -308,7 +308,7 @@ export function indexPath(root: HTMLElement, child: Node): number[] {
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class ElementNode extends LexicalNode {
   /** @internal */
-  ['constructor']!: KlassConstructor<typeof ElementNode>;
+  declare ['constructor']: KlassConstructor<typeof ElementNode>;
   /** @internal */
   __first: null | NodeKey;
   /** @internal */

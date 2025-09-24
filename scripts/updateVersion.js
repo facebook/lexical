@@ -193,25 +193,6 @@ function updatePublicPackage(pkg) {
 }
 
 /**
- * Replace the dependency map at packageJson[key] in-place with
- * deps sorted lexically by key. If deps was empty, it will be removed.
- *
- * @param {Record<string, any>} packageJson
- * @param {'dependencies'|'peerDependencies'} key
- * @param {Record<string, string>} deps
- */
-function sortDependencies(packageJson, key, deps) {
-  const entries = Object.entries(deps);
-  if (entries.length === 0) {
-    delete packageJson[key];
-  } else {
-    packageJson[key] = Object.fromEntries(
-      entries.sort((a, b) => a[0].localeCompare(b[0])),
-    );
-  }
-}
-
-/**
  * Update dependencies and peerDependencies in pkg in-place.
  * All entries for monorepo packages will be updated to version.
  * All peerDependencies for monorepo packages will be moved to dependencies.
@@ -240,9 +221,10 @@ function updateDependencies(pkg) {
       dependencies[peerDep] = version;
     }
   });
-  sortDependencies(packageJson, 'dependencies', dependencies);
-  sortDependencies(packageJson, 'devDependencies', devDependencies);
-  sortDependencies(packageJson, 'peerDependencies', peerDependencies);
+  pkg
+    .sortDependencies('dependencies', dependencies)
+    .sortDependencies('devDependencies', devDependencies)
+    .sortDependencies('peerDependencies', peerDependencies);
 }
 
 updateVersion();

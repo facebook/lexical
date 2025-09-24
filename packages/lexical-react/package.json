@@ -42,32 +42,32 @@
   "exports": {
     "./ExtensionComponent": {
       "import": {
-        "types": "./ExtensionComponent.d.ts",
-        "development": "./ExtensionComponent.dev.mjs",
-        "production": "./ExtensionComponent.prod.mjs",
-        "node": "./ExtensionComponent.node.mjs",
-        "default": "./ExtensionComponent.mjs"
+        "types": "./LexicalExtensionComponent.d.ts",
+        "development": "./LexicalExtensionComponent.dev.mjs",
+        "production": "./LexicalExtensionComponent.prod.mjs",
+        "node": "./LexicalExtensionComponent.node.mjs",
+        "default": "./LexicalExtensionComponent.mjs"
       },
       "require": {
-        "types": "./ExtensionComponent.d.ts",
-        "development": "./ExtensionComponent.dev.js",
-        "production": "./ExtensionComponent.prod.js",
-        "default": "./ExtensionComponent.js"
+        "types": "./LexicalExtensionComponent.d.ts",
+        "development": "./LexicalExtensionComponent.dev.js",
+        "production": "./LexicalExtensionComponent.prod.js",
+        "default": "./LexicalExtensionComponent.js"
       }
     },
     "./ExtensionComponent.js": {
       "import": {
-        "types": "./ExtensionComponent.d.ts",
-        "development": "./ExtensionComponent.dev.mjs",
-        "production": "./ExtensionComponent.prod.mjs",
-        "node": "./ExtensionComponent.node.mjs",
-        "default": "./ExtensionComponent.mjs"
+        "types": "./LexicalExtensionComponent.d.ts",
+        "development": "./LexicalExtensionComponent.dev.mjs",
+        "production": "./LexicalExtensionComponent.prod.mjs",
+        "node": "./LexicalExtensionComponent.node.mjs",
+        "default": "./LexicalExtensionComponent.mjs"
       },
       "require": {
-        "types": "./ExtensionComponent.d.ts",
-        "development": "./ExtensionComponent.dev.js",
-        "production": "./ExtensionComponent.prod.js",
-        "default": "./ExtensionComponent.js"
+        "types": "./LexicalExtensionComponent.d.ts",
+        "development": "./LexicalExtensionComponent.dev.js",
+        "production": "./LexicalExtensionComponent.prod.js",
+        "default": "./LexicalExtensionComponent.js"
       }
     },
     "./LexicalAutoEmbedPlugin": {
@@ -1242,152 +1242,152 @@
     },
     "./ReactExtension": {
       "import": {
-        "types": "./ReactExtension.d.ts",
-        "development": "./ReactExtension.dev.mjs",
-        "production": "./ReactExtension.prod.mjs",
-        "node": "./ReactExtension.node.mjs",
-        "default": "./ReactExtension.mjs"
+        "types": "./LexicalReactExtension.d.ts",
+        "development": "./LexicalReactExtension.dev.mjs",
+        "production": "./LexicalReactExtension.prod.mjs",
+        "node": "./LexicalReactExtension.node.mjs",
+        "default": "./LexicalReactExtension.mjs"
       },
       "require": {
-        "types": "./ReactExtension.d.ts",
-        "development": "./ReactExtension.dev.js",
-        "production": "./ReactExtension.prod.js",
-        "default": "./ReactExtension.js"
+        "types": "./LexicalReactExtension.d.ts",
+        "development": "./LexicalReactExtension.dev.js",
+        "production": "./LexicalReactExtension.prod.js",
+        "default": "./LexicalReactExtension.js"
       }
     },
     "./ReactExtension.js": {
       "import": {
-        "types": "./ReactExtension.d.ts",
-        "development": "./ReactExtension.dev.mjs",
-        "production": "./ReactExtension.prod.mjs",
-        "node": "./ReactExtension.node.mjs",
-        "default": "./ReactExtension.mjs"
+        "types": "./LexicalReactExtension.d.ts",
+        "development": "./LexicalReactExtension.dev.mjs",
+        "production": "./LexicalReactExtension.prod.mjs",
+        "node": "./LexicalReactExtension.node.mjs",
+        "default": "./LexicalReactExtension.mjs"
       },
       "require": {
-        "types": "./ReactExtension.d.ts",
-        "development": "./ReactExtension.dev.js",
-        "production": "./ReactExtension.prod.js",
-        "default": "./ReactExtension.js"
+        "types": "./LexicalReactExtension.d.ts",
+        "development": "./LexicalReactExtension.dev.js",
+        "production": "./LexicalReactExtension.prod.js",
+        "default": "./LexicalReactExtension.js"
       }
     },
     "./ReactPluginHostExtension": {
       "import": {
-        "types": "./ReactPluginHostExtension.d.ts",
-        "development": "./ReactPluginHostExtension.dev.mjs",
-        "production": "./ReactPluginHostExtension.prod.mjs",
-        "node": "./ReactPluginHostExtension.node.mjs",
-        "default": "./ReactPluginHostExtension.mjs"
+        "types": "./LexicalReactPluginHostExtension.d.ts",
+        "development": "./LexicalReactPluginHostExtension.dev.mjs",
+        "production": "./LexicalReactPluginHostExtension.prod.mjs",
+        "node": "./LexicalReactPluginHostExtension.node.mjs",
+        "default": "./LexicalReactPluginHostExtension.mjs"
       },
       "require": {
-        "types": "./ReactPluginHostExtension.d.ts",
-        "development": "./ReactPluginHostExtension.dev.js",
-        "production": "./ReactPluginHostExtension.prod.js",
-        "default": "./ReactPluginHostExtension.js"
+        "types": "./LexicalReactPluginHostExtension.d.ts",
+        "development": "./LexicalReactPluginHostExtension.dev.js",
+        "production": "./LexicalReactPluginHostExtension.prod.js",
+        "default": "./LexicalReactPluginHostExtension.js"
       }
     },
     "./ReactPluginHostExtension.js": {
       "import": {
-        "types": "./ReactPluginHostExtension.d.ts",
-        "development": "./ReactPluginHostExtension.dev.mjs",
-        "production": "./ReactPluginHostExtension.prod.mjs",
-        "node": "./ReactPluginHostExtension.node.mjs",
-        "default": "./ReactPluginHostExtension.mjs"
+        "types": "./LexicalReactPluginHostExtension.d.ts",
+        "development": "./LexicalReactPluginHostExtension.dev.mjs",
+        "production": "./LexicalReactPluginHostExtension.prod.mjs",
+        "node": "./LexicalReactPluginHostExtension.node.mjs",
+        "default": "./LexicalReactPluginHostExtension.mjs"
       },
       "require": {
-        "types": "./ReactPluginHostExtension.d.ts",
-        "development": "./ReactPluginHostExtension.dev.js",
-        "production": "./ReactPluginHostExtension.prod.js",
-        "default": "./ReactPluginHostExtension.js"
+        "types": "./LexicalReactPluginHostExtension.d.ts",
+        "development": "./LexicalReactPluginHostExtension.dev.js",
+        "production": "./LexicalReactPluginHostExtension.prod.js",
+        "default": "./LexicalReactPluginHostExtension.js"
       }
     },
     "./ReactProviderExtension": {
       "import": {
-        "types": "./ReactProviderExtension.d.ts",
-        "development": "./ReactProviderExtension.dev.mjs",
-        "production": "./ReactProviderExtension.prod.mjs",
-        "node": "./ReactProviderExtension.node.mjs",
-        "default": "./ReactProviderExtension.mjs"
+        "types": "./LexicalReactProviderExtension.d.ts",
+        "development": "./LexicalReactProviderExtension.dev.mjs",
+        "production": "./LexicalReactProviderExtension.prod.mjs",
+        "node": "./LexicalReactProviderExtension.node.mjs",
+        "default": "./LexicalReactProviderExtension.mjs"
       },
       "require": {
-        "types": "./ReactProviderExtension.d.ts",
-        "development": "./ReactProviderExtension.dev.js",
-        "production": "./ReactProviderExtension.prod.js",
-        "default": "./ReactProviderExtension.js"
+        "types": "./LexicalReactProviderExtension.d.ts",
+        "development": "./LexicalReactProviderExtension.dev.js",
+        "production": "./LexicalReactProviderExtension.prod.js",
+        "default": "./LexicalReactProviderExtension.js"
       }
     },
     "./ReactProviderExtension.js": {
       "import": {
-        "types": "./ReactProviderExtension.d.ts",
-        "development": "./ReactProviderExtension.dev.mjs",
-        "production": "./ReactProviderExtension.prod.mjs",
-        "node": "./ReactProviderExtension.node.mjs",
-        "default": "./ReactProviderExtension.mjs"
+        "types": "./LexicalReactProviderExtension.d.ts",
+        "development": "./LexicalReactProviderExtension.dev.mjs",
+        "production": "./LexicalReactProviderExtension.prod.mjs",
+        "node": "./LexicalReactProviderExtension.node.mjs",
+        "default": "./LexicalReactProviderExtension.mjs"
       },
       "require": {
-        "types": "./ReactProviderExtension.d.ts",
-        "development": "./ReactProviderExtension.dev.js",
-        "production": "./ReactProviderExtension.prod.js",
-        "default": "./ReactProviderExtension.js"
+        "types": "./LexicalReactProviderExtension.d.ts",
+        "development": "./LexicalReactProviderExtension.dev.js",
+        "production": "./LexicalReactProviderExtension.prod.js",
+        "default": "./LexicalReactProviderExtension.js"
       }
     },
     "./TreeViewExtension": {
       "import": {
-        "types": "./TreeViewExtension.d.ts",
-        "development": "./TreeViewExtension.dev.mjs",
-        "production": "./TreeViewExtension.prod.mjs",
-        "node": "./TreeViewExtension.node.mjs",
-        "default": "./TreeViewExtension.mjs"
+        "types": "./LexicalTreeViewExtension.d.ts",
+        "development": "./LexicalTreeViewExtension.dev.mjs",
+        "production": "./LexicalTreeViewExtension.prod.mjs",
+        "node": "./LexicalTreeViewExtension.node.mjs",
+        "default": "./LexicalTreeViewExtension.mjs"
       },
       "require": {
-        "types": "./TreeViewExtension.d.ts",
-        "development": "./TreeViewExtension.dev.js",
-        "production": "./TreeViewExtension.prod.js",
-        "default": "./TreeViewExtension.js"
+        "types": "./LexicalTreeViewExtension.d.ts",
+        "development": "./LexicalTreeViewExtension.dev.js",
+        "production": "./LexicalTreeViewExtension.prod.js",
+        "default": "./LexicalTreeViewExtension.js"
       }
     },
     "./TreeViewExtension.js": {
       "import": {
-        "types": "./TreeViewExtension.d.ts",
-        "development": "./TreeViewExtension.dev.mjs",
-        "production": "./TreeViewExtension.prod.mjs",
-        "node": "./TreeViewExtension.node.mjs",
-        "default": "./TreeViewExtension.mjs"
+        "types": "./LexicalTreeViewExtension.d.ts",
+        "development": "./LexicalTreeViewExtension.dev.mjs",
+        "production": "./LexicalTreeViewExtension.prod.mjs",
+        "node": "./LexicalTreeViewExtension.node.mjs",
+        "default": "./LexicalTreeViewExtension.mjs"
       },
       "require": {
-        "types": "./TreeViewExtension.d.ts",
-        "development": "./TreeViewExtension.dev.js",
-        "production": "./TreeViewExtension.prod.js",
-        "default": "./TreeViewExtension.js"
+        "types": "./LexicalTreeViewExtension.d.ts",
+        "development": "./LexicalTreeViewExtension.dev.js",
+        "production": "./LexicalTreeViewExtension.prod.js",
+        "default": "./LexicalTreeViewExtension.js"
       }
     },
     "./useExtensionComponent": {
       "import": {
-        "types": "./useExtensionComponent.d.ts",
-        "development": "./useExtensionComponent.dev.mjs",
-        "production": "./useExtensionComponent.prod.mjs",
-        "node": "./useExtensionComponent.node.mjs",
-        "default": "./useExtensionComponent.mjs"
+        "types": "./useLexicalExtensionComponent.d.ts",
+        "development": "./useLexicalExtensionComponent.dev.mjs",
+        "production": "./useLexicalExtensionComponent.prod.mjs",
+        "node": "./useLexicalExtensionComponent.node.mjs",
+        "default": "./useLexicalExtensionComponent.mjs"
       },
       "require": {
-        "types": "./useExtensionComponent.d.ts",
-        "development": "./useExtensionComponent.dev.js",
-        "production": "./useExtensionComponent.prod.js",
-        "default": "./useExtensionComponent.js"
+        "types": "./useLexicalExtensionComponent.d.ts",
+        "development": "./useLexicalExtensionComponent.dev.js",
+        "production": "./useLexicalExtensionComponent.prod.js",
+        "default": "./useLexicalExtensionComponent.js"
       }
     },
     "./useExtensionComponent.js": {
       "import": {
-        "types": "./useExtensionComponent.d.ts",
-        "development": "./useExtensionComponent.dev.mjs",
-        "production": "./useExtensionComponent.prod.mjs",
-        "node": "./useExtensionComponent.node.mjs",
-        "default": "./useExtensionComponent.mjs"
+        "types": "./useLexicalExtensionComponent.d.ts",
+        "development": "./useLexicalExtensionComponent.dev.mjs",
+        "production": "./useLexicalExtensionComponent.prod.mjs",
+        "node": "./useLexicalExtensionComponent.node.mjs",
+        "default": "./useLexicalExtensionComponent.mjs"
       },
       "require": {
-        "types": "./useExtensionComponent.d.ts",
-        "development": "./useExtensionComponent.dev.js",
-        "production": "./useExtensionComponent.prod.js",
-        "default": "./useExtensionComponent.js"
+        "types": "./useLexicalExtensionComponent.d.ts",
+        "development": "./useLexicalExtensionComponent.dev.js",
+        "production": "./useLexicalExtensionComponent.prod.js",
+        "default": "./useLexicalExtensionComponent.js"
       }
     },
     "./useLexicalEditable": {

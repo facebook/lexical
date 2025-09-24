@@ -133,6 +133,7 @@ export function getRegisteredNode(
 
 export const isArray = Array.isArray;
 
+/** @internal */
 export const scheduleMicroTask: (fn: () => void) => void =
   typeof queueMicrotask === 'function'
     ? queueMicrotask
@@ -1858,17 +1859,6 @@ export function INTERNAL_$isBlock(
     firstChild.isInline();
 
   return !node.isInline() && node.canBeEmpty() !== false && isLeafElement;
-}
-
-export function $getAncestor<NodeType extends LexicalNode = LexicalNode>(
-  node: LexicalNode,
-  predicate: (ancestor: LexicalNode) => ancestor is NodeType,
-): NodeType | null {
-  let parent = node;
-  while (parent !== null && parent.getParent() !== null && !predicate(parent)) {
-    parent = parent.getParentOrThrow();
-  }
-  return predicate(parent) ? parent : null;
 }
 
 /**

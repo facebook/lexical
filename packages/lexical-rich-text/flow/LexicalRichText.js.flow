@@ -16,6 +16,9 @@ import type {
   LexicalEditor,
   LexicalCommand,
   RangeSelection,
+  LexicalExtension,
+  ExtensionConfigBase,
+  SerializedElementNode,
 } from 'lexical';
 import {ElementNode} from 'lexical';
 
@@ -57,3 +60,13 @@ declare export function $isHeadingNode(
   node: ?LexicalNode,
 ): node is  HeadingNode;
 declare export function registerRichText(editor: LexicalEditor): () => void;
+
+export type SerializedQuoteNode = SerializedElementNode;
+export type SerializedHeadingNode = {
+  ...SerializedElementNode,
+  tag: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6',
+  ...
+};
+
+
+declare export var RichTextExtension: LexicalExtension<ExtensionConfigBase, "@lexical/rich-text", void, void>;

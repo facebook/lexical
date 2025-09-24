@@ -116,6 +116,7 @@ const thirdPartyExternals = [
   'react-dom',
   'yjs',
   'y-websocket',
+  'happy-dom',
   ...(isWWW ? [] : ['react-error-boundary', '@floating-ui/react']),
 ];
 const thirdPartyExternalsRegExp = new RegExp(
@@ -225,10 +226,12 @@ async function build(
       alias({
         entries: [
           {find: 'shared', replacement: path.resolve('packages/shared/src')},
+          {find: 'buffer', replacement: 'buffer'},
         ],
       }),
       nodeResolve({
         extensions,
+        preferBuiltins: false,
       }),
       babel({
         babelHelpers: 'bundled',
@@ -247,6 +250,7 @@ async function build(
           [
             '@babel/preset-typescript',
             {
+              allowDeclareFields: true,
               tsconfig: path.resolve('./tsconfig.build.json'),
             },
           ],

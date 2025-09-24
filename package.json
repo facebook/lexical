@@ -13,6 +13,7 @@
   },
   "engineStrict": true,
   "scripts": {
+    "start:example": "sh -c '(cd \"examples/$0\"; npm i && npm run monorepo:dev)'",
     "start": "cross-env NODE_ENV=development concurrently \"npm:collab\" \"npm run dev --prefix packages/lexical-playground\"",
     "start:website": "npm run start --prefix packages/lexical-website -- --port 3001",
     "start:playground": "npm run start-test-server",
@@ -105,6 +106,7 @@
     "update-version": "node ./scripts/updateVersion",
     "update-tsconfig": "node ./scripts/update-tsconfig",
     "update-flowconfig": "node ./scripts/update-flowconfig",
+    "update-examples": "node ./scripts/update-examples.mjs",
     "create-www-stubs": "node ./scripts/create-www-stubs",
     "update-packages": "npm run update-version && npm run update-tsconfig && npm run update-flowconfig && npm run create-docs && npm run create-www-stubs",
     "postversion": "node ./scripts/npm/postversion",
@@ -190,11 +192,12 @@
     "ts-node": "^10.9.1",
     "typedoc": "^0.28.10",
     "typescript": "^5.9.2",
-    "vite": "^5.2.11",
+    "vite": "^7.1.4",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.2.4"
   },
   "dependencies": {
-    "yjs": "^13.5.42"
+    "semver": "^7.7.2",
+    "yjs": "^13.6.27"
   }
 }

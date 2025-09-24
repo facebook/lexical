@@ -140,6 +140,12 @@ function TableHoverActionsContainer({
           anchorElem.getBoundingClientRect();
 
         if (hoveredRowNode) {
+          const platform =
+            navigator.userAgentData && 'platform' in navigator.userAgentData
+              ? (navigator.userAgentData as {platform: string}).platform
+              : navigator.platform;
+          const isMac = platform.toLowerCase().includes('mac');
+
           setShownColumn(false);
           setShownRow(true);
           setPosition({
@@ -148,7 +154,10 @@ function TableHoverActionsContainer({
               tableHasScroll && parentElement
                 ? parentElement.offsetLeft
                 : tableElemLeft - editorElemLeft,
-            top: tableElemBottom - editorElemY + (tableHasScroll ? 16 : 5),
+            top:
+              tableElemBottom -
+              editorElemY +
+              (tableHasScroll ? (isMac ? 5 : 16) : 5),
             width:
               tableHasScroll && parentElement
                 ? parentElement.offsetWidth

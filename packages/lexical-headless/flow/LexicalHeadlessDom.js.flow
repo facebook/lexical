@@ -8,6 +8,6 @@
  */
 
 /**
- * dom
+ * LexicalHeadlessDom
  */
 declare export function withDOM<T>(f: (window: typeof globalThis.window) => T): T;

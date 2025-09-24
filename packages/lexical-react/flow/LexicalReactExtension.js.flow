@@ -8,7 +8,7 @@
  */
 
 /**
- * ReactExtension
+ * LexicalReactExtension
  */
 
 import type {LexicalExtension} from 'lexical';

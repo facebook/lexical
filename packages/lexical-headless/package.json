@@ -18,23 +18,23 @@
   "exports": {
     "./dom": {
       "browser": {
-        "types": "./dom.d.ts",
-        "development": "./dom.dev.browser.mjs",
-        "production": "./dom.prod.browser.mjs",
-        "default": "./dom.browser.mjs"
+        "types": "./LexicalHeadlessDom.d.ts",
+        "development": "./LexicalHeadlessDom.dev.browser.mjs",
+        "production": "./LexicalHeadlessDom.prod.browser.mjs",
+        "default": "./LexicalHeadlessDom.browser.mjs"
       },
       "import": {
-        "types": "./dom.d.ts",
-        "development": "./dom.dev.mjs",
-        "production": "./dom.prod.mjs",
-        "node": "./dom.node.mjs",
-        "default": "./dom.mjs"
+        "types": "./LexicalHeadlessDom.d.ts",
+        "development": "./LexicalHeadlessDom.dev.mjs",
+        "production": "./LexicalHeadlessDom.prod.mjs",
+        "node": "./LexicalHeadlessDom.node.mjs",
+        "default": "./LexicalHeadlessDom.mjs"
       },
       "require": {
-        "types": "./dom.d.ts",
-        "development": "./dom.dev.js",
-        "production": "./dom.prod.js",
-        "default": "./dom.js"
+        "types": "./LexicalHeadlessDom.d.ts",
+        "development": "./LexicalHeadlessDom.dev.js",
+        "production": "./LexicalHeadlessDom.prod.js",
+        "default": "./LexicalHeadlessDom.js"
       }
     },
     ".": {

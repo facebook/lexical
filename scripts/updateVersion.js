@@ -171,9 +171,10 @@ function updatePublicPackage(pkg) {
         const hasBrowser = fs.existsSync(
           pkg.resolve('src', fn.replace(/(\.tsx?)$/, '.browser$1')),
         );
+        const packageName = pkg.getNpmName();
         const isIndex = basename === 'index';
         let entry = exportEntry(
-          isIndex ? npmToWwwName(pkg.getNpmName()) : basename,
+          npmToWwwName(isIndex ? packageName : `${packageName}/${basename}`),
           isIndex ? 'index.d.ts' : undefined,
         );
         if (hasBrowser) {

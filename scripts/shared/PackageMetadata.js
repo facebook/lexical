@@ -144,9 +144,12 @@ class PackageMetadata {
     const npmName = this.getNpmName();
     return this.getExportedNpmModuleNames().map((name) => {
       const outputFileName = npmToWwwName(name);
-      const sourceBaseName = name === npmName ? 'index' : outputFileName;
-      const sourceCandidates = ['.ts', '.tsx'].map(
-        (ext) => sourceBaseName + ext,
+      const sourceBaseNames =
+        name === npmName
+          ? ['index']
+          : [name.replace(/^.*\//, ''), outputFileName];
+      const sourceCandidates = sourceBaseNames.flatMap((sourceBaseName) =>
+        ['.ts', '.tsx'].map((ext) => sourceBaseName + ext),
       );
       const sourceFileName = sourceCandidates.find((fn) =>
         fs.existsSync(this.resolve('src', fn)),

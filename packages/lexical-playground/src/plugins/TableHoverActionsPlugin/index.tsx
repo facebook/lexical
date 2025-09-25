@@ -140,11 +140,7 @@ function TableHoverActionsContainer({
           anchorElem.getBoundingClientRect();
 
         if (hoveredRowNode) {
-          const platform =
-            navigator.userAgentData && 'platform' in navigator.userAgentData
-              ? (navigator.userAgentData as {platform: string}).platform
-              : navigator.platform;
-          const isMac = platform.toLowerCase().includes('mac');
+          const isMac = /^mac/i.test(navigator.platform);
 
           setShownColumn(false);
           setShownRow(true);

@@ -18,15 +18,13 @@
  * @param {boolean} [forTypes] true to match the name that typescript will produce
  * @returns {string} the name of the package in www format
  */
-module.exports = function npmToWwwName(name, forTypes = false) {
+module.exports = function npmToWwwName(name) {
   let parts = name.replace(/^@/, '').split(/\//g);
 
   // Handle the @lexical/react/FlatNameSpace scenario
   if (name.startsWith('@lexical/react/')) {
     const lastPart = parts[parts.length - 1];
-    if (forTypes) {
-      parts = [lastPart];
-    } else if (lastPart.match(/^(use)?lexical/i)) {
+    if (lastPart.match(/^(use)?lexical/i)) {
       parts = [lastPart];
     } else if (lastPart.startsWith('use')) {
       parts = ['useLexical', lastPart.replace(/^use/, '')];

@@ -18,20 +18,20 @@
   "exports": {
     "./dom": {
       "browser": {
-        "types": "./LexicalHeadlessDom.d.ts",
+        "types": "./dom.d.ts",
         "development": "./LexicalHeadlessDom.dev.browser.mjs",
         "production": "./LexicalHeadlessDom.prod.browser.mjs",
         "default": "./LexicalHeadlessDom.browser.mjs"
       },
       "import": {
-        "types": "./LexicalHeadlessDom.d.ts",
+        "types": "./dom.d.ts",
         "development": "./LexicalHeadlessDom.dev.mjs",
         "production": "./LexicalHeadlessDom.prod.mjs",
         "node": "./LexicalHeadlessDom.node.mjs",
         "default": "./LexicalHeadlessDom.mjs"
       },
       "require": {
-        "types": "./LexicalHeadlessDom.d.ts",
+        "types": "./dom.d.ts",
         "development": "./LexicalHeadlessDom.dev.js",
         "production": "./LexicalHeadlessDom.prod.js",
         "default": "./LexicalHeadlessDom.js"

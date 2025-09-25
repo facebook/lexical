@@ -177,10 +177,7 @@ function updatePublicPackage(pkg) {
           ? packageName
           : `${packageName}/${basename}`;
         const entryName = npmToWwwName(entryNameInput);
-        const typesName = isIndex
-          ? 'index'
-          : npmToWwwName(entryNameInput, true);
-        let entry = exportEntry(entryName, `${typesName}.d.ts`);
+        let entry = exportEntry(entryName, `${basename}.d.ts`);
         if (hasBrowser) {
           entry = withBrowser(entry);
         }

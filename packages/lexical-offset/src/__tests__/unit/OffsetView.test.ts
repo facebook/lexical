@@ -1,0 +1,486 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+import {$createOffsetView, type OffsetView} from '@lexical/offset';
+import {
+  $getNodeByKey,
+  type EditorState,
+  type LexicalEditor,
+  type LexicalNode,
+} from 'lexical';
+
+import {NodeMapBuilder} from './helpers/NodeMapBuilder';
+
+describe('OffsetView', () => {
+  describe('$createOffsetView', () => {
+    describe('internally produced offset map', () => {
+      it('should not contain the root node', () => {
+        const nodeMapBuilder = new NodeMapBuilder();
+        const nodeMap = nodeMapBuilder
+          .addRootNode()
+          .addParagraphNode('paragraphNode')
+          .addTextNode('text', 'textNode')
+          .build();
+
+        const offsetView: OffsetView = $createOffsetView(
+          {} as LexicalEditor,
+          1,
+          arrangeEditorState(nodeMap),
+        );
+
+        expect(offsetView).toBeTruthy();
+        expect(offsetView._offsetMap.size).toEqual(2);
+        expect(offsetView._offsetMap.has('paragraphNode')).toBe(true);
+        expect(offsetView._offsetMap.has('textNode')).toBe(true);
+      });
+
+      describe('inline nodes', () => {
+        it('should have type "inline"', () => {
+          const nodeMapBuilder = new NodeMapBuilder();
+          const nodeMap = nodeMapBuilder
+            .addRootNode()
+            .addParagraphNode()
+            .addLineBreakNode('inlineNode')
+            .build();
+
+          const offsetView: OffsetView = $createOffsetView(
+            {} as LexicalEditor,
+            1,
+            arrangeEditorState(nodeMap),
+          );
+
+          const inlineOffsetNode = offsetView._offsetMap.get('inlineNode');
+          expect(inlineOffsetNode?.type).toBe('inline');
+        });
+
+        it('should have end being start plus 1', () => {
+          const nodeMapBuilder = new NodeMapBuilder();
+          const nodeMap = nodeMapBuilder
+            .addRootNode()
+            .addParagraphNode()
+            .addLineBreakNode('inlineNode')
+            .build();
+
+          const offsetView: OffsetView = $createOffsetView(
+            {} as LexicalEditor,
+            1,
+            arrangeEditorState(nodeMap),
+          );
+
+          const inlineOffsetNode = offsetView._offsetMap.get('inlineNode');
+          expect(inlineOffsetNode?.start).toBe(0);
+          expect(inlineOffsetNode?.end).toBe(1);
+        });
+      });
+
+      describe('element nodes', () => {
+        it('should have type "element"', () => {
+          const nodeMapBuilder = new NodeMapBuilder();
+          const nodeMap = nodeMapBuilder
+            .addRootNode()
+            .addParagraphNode('elementNode')
+            .build();
+
+          const offsetView: OffsetView = $createOffsetView(
+            {} as LexicalEditor,
+            1,
+            arrangeEditorState(nodeMap),
+          );
+
+          const elementOffsetNode = offsetView._offsetMap.get('elementNode');
+          expect(elementOffsetNode?.type).toBe('element');
+        });
+
+        it("should have end being greater than its last child node's end by 1", () => {
+          // Arrange
+          const nodeMapBuilder = new NodeMapBuilder();
+          const nodeMap = nodeMapBuilder
+            .addRootNode()
+            .addParagraphNode('elementNode')
+            .addTextNodeOf(4, 'lastChildOfElementNode')
+            .addParagraphNode('elementNode2')
+            .addTextNodeOf(4)
+            .addLineBreakNode('lastChildOfElementNode2')
+            .build();
+
+          // Act
+          const offsetView: OffsetView = $createOffsetView(
+            {} as LexicalEditor,
+            1,
+            arrangeEditorState(nodeMap),
+          );
+
+          // Assert
+          const elementOffsetNode = offsetView._offsetMap.get('elementNode');
+          expect(elementOffsetNode?.end).toBe(5);
+
+          const lastOffsetChildOfElementNode = offsetView._offsetMap.get(
+            'lastChildOfElementNode',
+          );
+          expect(lastOffsetChildOfElementNode?.end).toBe(4);
+
+          const elementOffsetNode2 = offsetView._offsetMap.get('elementNode2');
+          expect(elementOffsetNode2?.end).toBe(11);
+
+          const lastOffsetChildOfElementNode2 = offsetView._offsetMap.get(
+            'lastChildOfElementNode2',
+          );
+          expect(lastOffsetChildOfElementNode2?.end).toBe(10);
+        });
+      });
+
+      describe('text nodes', () => {
+        it('should have type "text"', () => {
+          const nodeMapBuilder = new NodeMapBuilder();
+          const nodeMap = nodeMapBuilder
+            .addRootNode()
+            .addParagraphNode()
+            .addTextNodeOf(5, 'textNode')
+            .build();
+
+          const offsetView: OffsetView = $createOffsetView(
+            {} as LexicalEditor,
+            1,
+            arrangeEditorState(nodeMap),
+          );
+
+          const textOffsetNode = offsetView._offsetMap.get('textNode');
+          expect(textOffsetNode?.type).toBe('text');
+        });
+
+        it('should have end being start plus length of text', () => {
+          // Arrange
+          const nodeMapBuilder = new NodeMapBuilder();
+          const nodeMap = nodeMapBuilder
+            .addRootNode()
+            .addParagraphNode()
+            .addTextNodeOf(1, 'textNode')
+            .addTextNodeOf(4, 'textNode2')
+            .build();
+
+          // Act
+          const offsetView: OffsetView = $createOffsetView(
+            {} as LexicalEditor,
+            1,
+            arrangeEditorState(nodeMap),
+          );
+
+          // Assert
+          const textOffsetNode = offsetView._offsetMap.get('textNode');
+          expect(textOffsetNode?.start).toBe(0);
+          expect(textOffsetNode?.end).toBe(1);
+
+          const textOffsetNode2 = offsetView._offsetMap.get('textNode2');
+          expect(textOffsetNode2?.start).toBe(1);
+          expect(textOffsetNode2?.end).toBe(5);
+        });
+      });
+
+      it('should have proper start and end offsets for nodes', () => {
+        // Arrange
+        const nodeMapBuilder = new NodeMapBuilder();
+        const nodeMap = nodeMapBuilder
+          .addRootNode()
+          .addParagraphNode('paragraphNode1')
+          .addTextNodeOf(4, 'textNode1')
+          .addLineBreakNode('lineBreakNode1')
+          .addTextNodeOf(4, 'textNode2')
+          .build();
+
+        // Act
+        const offsetView: OffsetView = $createOffsetView(
+          {} as LexicalEditor,
+          1,
+          arrangeEditorState(nodeMap),
+        );
+
+        // Assert
+        expect(offsetView).toBeTruthy();
+        expect(offsetView._offsetMap.size).toEqual(4);
+        const paragraphOffsetNode = offsetView._offsetMap.get('paragraphNode1');
+        expect(paragraphOffsetNode?.start).toBe(0);
+        expect(paragraphOffsetNode?.end).toBe(10);
+
+        const textNode1 = offsetView._offsetMap.get('textNode1');
+        expect(textNode1?.start).toBe(0);
+        expect(textNode1?.end).toBe(4);
+
+        const lineBreakNode = offsetView._offsetMap.get('lineBreakNode1');
+        expect(lineBreakNode?.start).toBe(4);
+        expect(lineBreakNode?.end).toBe(5);
+
+        const textNode2 = offsetView._offsetMap.get('textNode2');
+        expect(textNode2?.start).toBe(5);
+        expect(textNode2?.end).toBe(9);
+      });
+    });
+  });
+
+  describe('createSelectionFromOffsets', () => {
+    it('should return null when end offset is over text length', () => {
+      const nodeMapBuilder = new NodeMapBuilder();
+      const nodeMap = nodeMapBuilder
+        .addRootNode()
+        .addParagraphNode()
+        .addTextNode('text')
+        .build();
+      const offsetView: OffsetView = $arrangeOffsetView(nodeMap);
+
+      const selection = offsetView.createSelectionFromOffsets(0, 6);
+
+      expect(selection).toBeNull();
+    });
+
+    it('should return null when start offset is over text length', () => {
+      const nodeMapBuilder = new NodeMapBuilder();
+      const nodeMap = nodeMapBuilder
+        .addRootNode()
+        .addParagraphNode()
+        .addTextNode('text')
+        .build();
+      const offsetView: OffsetView = $arrangeOffsetView(nodeMap);
+
+      const selection = offsetView.createSelectionFromOffsets(6, 0);
+
+      expect(selection).toBeNull();
+    });
+
+    it('should return null when start node cannot be found by its key', () => {
+      const nodeMapBuilder = new NodeMapBuilder();
+      const nodeMap = nodeMapBuilder
+        .addRootNode()
+        .addParagraphNode()
+        .addTextNode('text')
+        .addTextNode('some more text', 'textNodeCanBeFound')
+        .build();
+      ($getNodeByKey as jest.Mock).mockImplementation((key) => {
+        if (key === 'textNodeCanBeFound') {
+          return nodeMap.get(key);
+        }
+        return null;
+      });
+      const offsetView: OffsetView = $arrangeOffsetView(nodeMap, false);
+
+      const selection = offsetView.createSelectionFromOffsets(0, 10);
+
+      expect(selection).toBeNull();
+    });
+
+    it('should return null when end node cannot be found by its key', () => {
+      const nodeMapBuilder = new NodeMapBuilder();
+      const nodeMap = nodeMapBuilder
+        .addRootNode()
+        .addParagraphNode()
+        .addTextNode('text', 'textNodeCanBeFound')
+        .addTextNode('some more text')
+        .build();
+      ($getNodeByKey as jest.Mock).mockImplementation((key) => {
+        if (key === 'textNodeCanBeFound') {
+          return nodeMap.get(key);
+        }
+        return null;
+      });
+      const offsetView: OffsetView = $arrangeOffsetView(nodeMap, false);
+
+      const selection = offsetView.createSelectionFromOffsets(0, 10);
+
+      expect(selection).toBeNull();
+    });
+
+    describe('returned selection', () => {
+      it('should have anchor being same as focus when start offset is same as end offset', () => {
+        const nodeMapBuilder = new NodeMapBuilder();
+        const nodeMap = nodeMapBuilder
+          .addRootNode()
+          .addParagraphNode()
+          .addTextNode('text', 'targetNode')
+          .build();
+        const offsetView: OffsetView = $arrangeOffsetView(nodeMap);
+
+        const selection = offsetView.createSelectionFromOffsets(0, 0);
+
+        expect(selection).toBeTruthy();
+
+        if (!selection) {
+          throw new Error('Selection is null');
+        }
+
+        expect(selection.anchor.key).toBe('targetNode');
+        expect(selection.anchor.key).toEqual(selection.focus.key);
+        expect(selection.anchor.offset).toBe(0);
+        expect(selection.anchor.offset).toEqual(selection.focus.offset);
+        expect(selection.anchor.type).toBe('text');
+        expect(selection.anchor.type).toEqual(selection.focus.type);
+      });
+
+      describe('input offsets point to an inline node', () => {
+        it('should "index" the containing element node', () => {
+          const nodeMapBuilder = new NodeMapBuilder();
+          // \n
+          const nodeMap = nodeMapBuilder
+            .addRootNode()
+            .addParagraphNode('elementNode')
+            .addLineBreakNode('inlineNode')
+            .build();
+          const offsetView: OffsetView = $arrangeOffsetView(nodeMap);
+
+          const selection = offsetView.createSelectionFromOffsets(0, 0);
+
+          expect(selection).toBeTruthy();
+
+          if (!selection) {
+            throw new Error('Selection is null');
+          }
+
+          expect(selection.anchor.key).toBe('elementNode');
+          expect(selection.focus.key).toBe('elementNode');
+          expect(selection.anchor.type).toBe('element');
+          expect(selection.focus.type).toBe('element');
+          expect(selection.anchor.offset).toBe(0);
+          expect(selection.focus.offset).toBe(0);
+        });
+
+        it('should have offset as "index" of inline node plus 1 when both input offsets point directly after the inline node', () => {
+          const nodeMapBuilder = new NodeMapBuilder();
+          // xxxx\n
+          const nodeMap = nodeMapBuilder
+            .addRootNode()
+            .addParagraphNode('elementNode')
+            .addTextNodeOf(4)
+            .addLineBreakNode('inlineNode')
+            .build();
+          const offsetView: OffsetView = $arrangeOffsetView(nodeMap);
+
+          const selection = offsetView.createSelectionFromOffsets(5, 5);
+
+          expect(selection).toBeTruthy();
+
+          if (!selection) {
+            throw new Error('Selection is null');
+          }
+
+          expect(selection.anchor.key).toBe('elementNode');
+          expect(selection.focus.key).toBe('elementNode');
+          expect(selection.anchor.type).toBe('element');
+          expect(selection.focus.type).toBe('element');
+          expect(selection.anchor.offset).toBe(2);
+          expect(selection.focus.offset).toBe(2);
+        });
+
+        it('should have adjacent anchor and focus offsets when input offsets are "selecting" a single inline node', () => {
+          const nodeMapBuilder = new NodeMapBuilder();
+          // \n
+          const nodeMap = nodeMapBuilder
+            .addRootNode()
+            .addParagraphNode('elementNode')
+            .addLineBreakNode('inlineNode')
+            .build();
+          const offsetView: OffsetView = $arrangeOffsetView(nodeMap);
+
+          const selection = offsetView.createSelectionFromOffsets(0, 1);
+
+          expect(selection).toBeTruthy();
+
+          if (!selection) {
+            throw new Error('Selection is null');
+          }
+
+          expect(selection.anchor.key).toBe('elementNode');
+          expect(selection.focus.key).toBe('elementNode');
+          expect(selection.anchor.type).toBe('element');
+          expect(selection.focus.type).toBe('element');
+          expect(selection.anchor.offset).toBe(0);
+          expect(selection.focus.offset).toBe(1);
+        });
+      });
+
+      it('should index a text node when input offset points to a text node', () => {
+        const nodeMapBuilder = new NodeMapBuilder();
+        const nodeMap = nodeMapBuilder
+          .addRootNode()
+          .addParagraphNode()
+          .addTextNodeOf(4, 'textNode')
+          .build();
+        const offsetView: OffsetView = $arrangeOffsetView(nodeMap);
+
+        const selection = offsetView.createSelectionFromOffsets(0, 4);
+
+        expect(selection).toBeTruthy();
+
+        if (!selection) {
+          throw new Error('Selection is null');
+        }
+
+        expect(selection.anchor.key).toBe('textNode');
+        expect(selection.focus.key).toBe('textNode');
+        expect(selection.anchor.type).toBe('text');
+        expect(selection.focus.type).toBe('text');
+        expect(selection.anchor.offset).toBe(0);
+        expect(selection.focus.offset).toBe(4);
+      });
+    });
+
+    // TODO Prefer text node and over next node start
+  });
+});
+
+function $arrangeOffsetView(
+  nodeMap: Map<string, LexicalNode>,
+  doArrangeGetNodeByKey: boolean = true,
+): OffsetView {
+  if (doArrangeGetNodeByKey) {
+    ($getNodeByKey as jest.Mock).mockImplementation((key) => {
+      return nodeMap.get(key);
+    });
+  }
+  const editorState = arrangeEditorState(nodeMap);
+  const editor = {} as LexicalEditor;
+  const offsetView: OffsetView = $createOffsetView(editor, 1, editorState);
+  return offsetView;
+}
+
+function arrangeEditorState(nodeMap: Map<string, LexicalNode>) {
+  return {
+    _nodeMap: nodeMap,
+  } as EditorState;
+}
+
+jest.mock('lexical', () => {
+  const actual = jest.requireActual('lexical');
+  return {
+    ...actual,
+    $createRangeSelection: jest.fn(() => {
+      // Have to do this as checks on PointType's set would require an active state...
+      const createPointStub = () => {
+        const pointStub = {
+          key: '',
+          offset: -1,
+          set: (key: string, offset: number, type: string) => {},
+          type: 'element',
+        };
+        pointStub.set = (key: string, offset: number, type: string) => {
+          pointStub.key = key;
+          pointStub.offset = offset;
+          pointStub.type = type;
+        };
+        return pointStub;
+      };
+
+      return {
+        anchor: createPointStub(),
+        focus: createPointStub(),
+      };
+    }),
+    $getNodeByKey: jest.fn(),
+    $isElementNode: jest.fn((node) => {
+      return node.__type === 'element' || node.__type === 'paragraph';
+    }),
+    $isTextNode: jest.fn((node) => {
+      return node.__type === 'text';
+    }),
+  };
+});

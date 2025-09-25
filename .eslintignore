@@ -14,3 +14,4 @@
 **/.docusaurus
 /playwright-report
 test-results
+examples/*svelte*

@@ -13,6 +13,7 @@ packages/playwright
 packages/playwright-core
 packages/lexical-website/docs/api
 packages/lexical-website/fb/*.json
+examples/*svelte*
 **/*.md
 **/*.js.flow
 **/node_modules

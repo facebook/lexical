@@ -6,7 +6,18 @@
  *
  */
 
-import {Window as HappyDOMWindow} from 'happy-dom';
+import * as HappyDOM from 'happy-dom';
+
+function createWindow(): Window & typeof globalThis {
+  if ('Window' in HappyDOM) {
+    // @ts-expect-error -- DOMWindow is not exactly Window
+    return new HappyDOM.Window();
+  } else {
+    const jsdom = HappyDOM as typeof import('jsdom');
+    // @ts-expect-error -- this is jsdom in www
+    return new jsdom.JSDOM().window;
+  }
+}
 
 /**
  * Call the given synchronous function with a window object,
@@ -28,8 +39,7 @@ export function withDOM<T>(f: (window: Window) => T): T {
   }
   const prevMutationObserver = globalThis.MutationObserver;
   const prevDocument = globalThis.document;
-  // @ts-expect-error -- DOMWindow is not exactly Window
-  const newWindow: Window & typeof globalThis = new HappyDOMWindow();
+  const newWindow = createWindow();
   globalThis.window = newWindow;
   globalThis.document = newWindow.document;
   globalThis.MutationObserver = newWindow.MutationObserver;

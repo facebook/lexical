@@ -69,6 +69,7 @@ const wwwMappings = {
       `shikijs-themes-${name}`,
     ]),
   ),
+  'happy-dom': 'jsdom',
   'prismjs/components/prism-c': 'prism-c',
   'prismjs/components/prism-clike': 'prism-clike',
   'prismjs/components/prism-core': 'prismjs',
@@ -86,6 +87,7 @@ const wwwMappings = {
   'prismjs/components/prism-swift': 'prism-swift',
   'prismjs/components/prism-typescript': 'prism-typescript',
   'react-dom': 'ReactDOM',
+  'react-dom/client': 'ReactDOM',
   // The react entrypoint in fb includes the jsx runtime
   'react/jsx-runtime': 'react',
 };
@@ -117,6 +119,7 @@ const thirdPartyExternals = [
   'yjs',
   'y-websocket',
   'happy-dom',
+  'jsdom',
   ...(isWWW ? [] : ['react-error-boundary', '@floating-ui/react']),
 ];
 const thirdPartyExternalsRegExp = new RegExp(

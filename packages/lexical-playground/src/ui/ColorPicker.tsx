@@ -14,13 +14,18 @@ import {calculateZoomLevel} from '@lexical/utils';
 import {useMemo, useRef, useState} from 'react';
 import * as React from 'react';
 
+import {isKeyboardInput} from '../utils/focusUtils';
 import TextInput from './TextInput';
 
 let skipAddingToHistoryStack = false;
 
 interface ColorPickerProps {
   color: string;
-  onChange?: (value: string, skipHistoryStack: boolean) => void;
+  onChange?: (
+    value: string,
+    skipHistoryStack: boolean,
+    skipRefocus: boolean,
+  ) => void;
 }
 
 export function parseAllowedColor(input: string) {
@@ -73,10 +78,10 @@ export default function ColorPicker({
     [selfColor.hsv],
   );
 
-  const emitOnChange = (newColor: string) => {
+  const emitOnChange = (newColor: string, skipRefocus: boolean = false) => {
     // Check if the dropdown is actually active
     if (innerDivRef.current !== null && onChange) {
-      onChange(newColor, skipAddingToHistoryStack);
+      onChange(newColor, skipAddingToHistoryStack, skipRefocus);
     }
   };
 
@@ -110,12 +115,12 @@ export default function ColorPicker({
     emitOnChange(newColor.hex);
   };
 
-  const onBasicColorClick = (basicColor: string) => () => {
+  const onBasicColorClick = (e: React.MouseEvent, basicColor: string) => {
     const newColor = transformColor('hex', basicColor);
 
     setSelfColor(newColor);
     setInputColor(newColor.hex);
-    emitOnChange(newColor.hex);
+    emitOnChange(newColor.hex, isKeyboardInput(e));
   };
 
   return (
@@ -130,7 +135,7 @@ export default function ColorPicker({
             className={basicColor === selfColor.hex ? ' active' : ''}
             key={basicColor}
             style={{backgroundColor: basicColor}}
-            onClick={onBasicColorClick(basicColor)}
+            onClick={(e) => onBasicColorClick(e, basicColor)}
           />
         ))}
       </div>

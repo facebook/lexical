@@ -856,22 +856,14 @@ export default function ToolbarPlugin({
   );
 
   const onFontColorSelect = useCallback(
-    (
-      value: string,
-      skipHistoryStack: boolean,
-      skipRefocus: boolean = false,
-    ) => {
+    (value: string, skipHistoryStack: boolean, skipRefocus: boolean) => {
       applyStyleText({color: value}, skipHistoryStack, skipRefocus);
     },
     [applyStyleText],
   );
 
   const onBgColorSelect = useCallback(
-    (
-      value: string,
-      skipHistoryStack: boolean,
-      skipRefocus: boolean = false,
-    ) => {
+    (value: string, skipHistoryStack: boolean, skipRefocus: boolean) => {
       applyStyleText(
         {'background-color': value},
         skipHistoryStack,

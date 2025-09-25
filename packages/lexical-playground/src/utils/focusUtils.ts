@@ -61,7 +61,7 @@ export const focusNearestDescendant = (
 export const isKeyboardInput = (
   event: MouseEvent | PointerEvent | React.MouseEvent,
 ): boolean => {
-  if (event instanceof PointerEvent) {
+  if ('pointerId' in event && 'pointerType' in event) {
     return event.pointerId === -1 && event.pointerType === '';
   }
 

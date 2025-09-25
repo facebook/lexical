@@ -466,8 +466,6 @@ function buildForkModules(outputPath, outputFileName, format, exports) {
   }
 }
 
-const BROWSER_FORK_MODULE_PREFIX = '\x00browser-fork-module:';
-
 async function buildAll() {
   if (!isWWW && (isRelease || isProduction)) {
     await buildTSDeclarationFiles();

@@ -6,17 +6,11 @@
  *
  */
 
-import * as HappyDOM from 'happy-dom';
+import {Window as HappyDOMWindow} from 'happy-dom';
 
 function createWindow(): Window & typeof globalThis {
-  if ('Window' in HappyDOM) {
-    // @ts-expect-error -- DOMWindow is not exactly Window
-    return new HappyDOM.Window();
-  } else {
-    const jsdom = HappyDOM as typeof import('jsdom');
-    // @ts-expect-error -- this is jsdom in www
-    return new jsdom.JSDOM().window;
-  }
+  // @ts-expect-error -- DOMWindow is not exactly Window
+  return new HappyDOMWindow();
 }
 
 /**

@@ -120,7 +120,9 @@ const thirdPartyExternals = [
   'y-websocket',
   'happy-dom',
   'jsdom',
-  ...(isWWW ? [] : ['react-error-boundary', '@floating-ui/react']),
+  ...(isWWW
+    ? [':server-only-hack:.*']
+    : ['react-error-boundary', '@floating-ui/react']),
 ];
 const thirdPartyExternalsRegExp = new RegExp(
   `^(${thirdPartyExternals.join('|')})(\\/|$)`,
@@ -230,33 +232,19 @@ async function build(
         ? [
             /* in www we do not use export conditions so we build a virtual fork module instead */
             {
-              load(source) {
-                if (source.startsWith(BROWSER_FORK_MODULE_PREFIX)) {
-                  const server = source.slice(
-                    BROWSER_FORK_MODULE_PREFIX.length,
-                    -'.cjs'.length,
-                  );
-                  const client = server.replace(/(\.[^.]+)$/, '.browser$1');
-                  return `module.exports = typeof window === 'undefined' ? require(${JSON.stringify(server)}) : require(${JSON.stringify(client)});`;
-                }
-                return null;
-              },
-              name: 'browser-fork-module',
+              name: 'server-only-hack',
               renderChunk(source) {
                 // Ugly hack to effectively undo the hoist of require('jsdom')
-                const m = source.match(/require\('jsdom'\);/);
+                const m = source.match(
+                  /require\(':server-only-hack:([^']+)'\);/,
+                );
                 if (m) {
                   return (
                     source.slice(0, m.index) +
-                    `typeof window === 'undefined' ? require('jsdom') : undefined;` +
+                    `typeof window === 'undefined' ? require('${m[1]}') : undefined;` +
                     source.slice(m.index + m[0].length)
                   );
                 }
-              },
-              resolveId(source) {
-                return source.startsWith(BROWSER_FORK_MODULE_PREFIX)
-                  ? source
-                  : null;
               },
             },
           ]
@@ -295,9 +283,7 @@ async function build(
           ['@babel/preset-react', {runtime: 'automatic'}],
         ],
       }),
-      commonjs({
-        strictRequires: true,
-      }),
+      commonjs(),
       json(),
       replace(
         Object.assign(
@@ -495,13 +481,20 @@ async function buildAll() {
     for (const module of modules) {
       for (const format of formats) {
         const {sourceFileName, outputFileName} = module;
-        const inputFile = path.resolve(sourcePath, sourceFileName);
-
+        let inputFile = path.resolve(sourcePath, sourceFileName);
+        if (
+          isWWW &&
+          module.browserSourceFileName &&
+          module.sourceFileName.endsWith('.ts')
+        ) {
+          const wwwCjs = inputFile.replace(/\.ts$/, '.www.cjs');
+          if (fs.existsSync(wwwCjs)) {
+            inputFile = wwwCjs;
+          }
+        }
         await build(
           `${name}${module.name ? '-' + module.name : ''}`,
-          isWWW && module.browserSourceFileName
-            ? `${BROWSER_FORK_MODULE_PREFIX}${inputFile}.cjs`
-            : inputFile,
+          inputFile,
           outputPath,
           path.resolve(
             outputPath,

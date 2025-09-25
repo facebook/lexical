@@ -1,6 +1,6 @@
 {
   "name": "@lexical/eslint-plugin-internal",
-  "version": "0.35.0",
+  "version": "0.35.1-nightly.20250925.0",
   "description": "Internal ESLint plugin for the lexical monorepo",
   "main": "src/index.js",
   "private": true,

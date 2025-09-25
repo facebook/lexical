@@ -6,7 +6,7 @@
     "extension",
     "plugin"
   ],
-  "version": "0.35.0",
+  "version": "0.35.1-nightly.20250925.0",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -23,9 +23,9 @@
   "sideEffects": false,
   "module": "LexicalExtension.mjs",
   "dependencies": {
-    "@lexical/utils": "0.35.0",
+    "@lexical/utils": "0.35.1-nightly.20250925.0",
     "@preact/signals-core": "^1.11.0",
-    "lexical": "0.35.0"
+    "lexical": "0.35.1-nightly.20250925.0"
   },
   "exports": {
     ".": {

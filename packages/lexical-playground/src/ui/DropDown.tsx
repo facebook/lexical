@@ -76,7 +76,7 @@ function DropDownItems({
   autofocus,
 }: {
   children: React.ReactNode;
-  dropDownRef: React.RefObject<HTMLDivElement>;
+  dropDownRef: React.RefObject<HTMLDivElement> | null;
   onClose: () => void;
   autofocus: boolean;
 }) {
@@ -142,8 +142,8 @@ function DropDownItems({
   }, [items, highlightedItem]);
 
   useEffect(() => {
-    if (autofocus && dropDownRef.current) {
-      focusNearestDescendant(dropDownRef.current);
+    if (autofocus && dropDownRef?.current) {
+      focusNearestDescendant(dropDownRef?.current);
     }
   }, [autofocus, dropDownRef]);
 

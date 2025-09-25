@@ -23,7 +23,7 @@ type Props = {
   onChange?: (
     color: string,
     skipHistoryStack: boolean,
-    skipRefous: boolean,
+    skipRefocus: boolean,
   ) => void;
 };
 

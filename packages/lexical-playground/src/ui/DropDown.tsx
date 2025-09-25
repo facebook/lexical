@@ -73,10 +73,12 @@ function DropDownItems({
   children,
   dropDownRef,
   onClose,
+  autofocus,
 }: {
   children: React.ReactNode;
   dropDownRef: React.RefObject<HTMLDivElement>;
   onClose: () => void;
+  autofocus: boolean;
 }) {
   const [items, setItems] = useState<React.RefObject<HTMLButtonElement>[]>();
   const [highlightedItem, setHighlightedItem] =
@@ -136,12 +138,14 @@ function DropDownItems({
 
     if (highlightedItem && highlightedItem.current) {
       highlightedItem.current.focus();
-    } else if (!items) {
-      if (dropDownRef.current) {
-        focusNearestDescendant(dropDownRef.current);
-      }
     }
   }, [items, highlightedItem, dropDownRef]);
+
+  useEffect(() => {
+    if (autofocus && dropDownRef.current) {
+      focusNearestDescendant(dropDownRef.current);
+    }
+  }, [autofocus, dropDownRef]);
 
   return (
     <DropDownContext.Provider value={contextValue}>
@@ -172,6 +176,7 @@ export default function DropDown({
   const dropDownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [showDropDown, setShowDropDown] = useState(false);
+  const [shouldAutofocus, setShouldAutofocus] = useState(false);
 
   const handleClose = () => {
     setShowDropDown(false);
@@ -248,6 +253,11 @@ export default function DropDown({
     };
   }, [buttonRef, dropDownRef, showDropDown]);
 
+  const handleOnClick = (e: React.MouseEvent) => {
+    setShowDropDown(!showDropDown);
+    setShouldAutofocus(isKeyboardInput(e));
+  };
+
   return (
     <>
       <button
@@ -255,7 +265,7 @@ export default function DropDown({
         disabled={disabled}
         aria-label={buttonAriaLabel || buttonLabel}
         className={buttonClassName}
-        onClick={() => setShowDropDown(!showDropDown)}
+        onClick={handleOnClick}
         ref={buttonRef}>
         {buttonIconClassName && <span className={buttonIconClassName} />}
         {buttonLabel && (
@@ -266,7 +276,10 @@ export default function DropDown({
 
       {showDropDown &&
         createPortal(
-          <DropDownItems dropDownRef={dropDownRef} onClose={handleClose}>
+          <DropDownItems
+            dropDownRef={dropDownRef}
+            onClose={handleClose}
+            autofocus={shouldAutofocus}>
             {children}
           </DropDownItems>,
           document.body,

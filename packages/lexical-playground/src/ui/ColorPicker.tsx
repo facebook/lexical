@@ -11,7 +11,7 @@ import type {JSX} from 'react';
 import './ColorPicker.css';
 
 import {calculateZoomLevel} from '@lexical/utils';
-import {useEffect, useMemo, useRef, useState} from 'react';
+import {useMemo, useRef, useState} from 'react';
 import * as React from 'react';
 
 import TextInput from './TextInput';
@@ -53,7 +53,9 @@ export default function ColorPicker({
   onChange,
 }: Readonly<ColorPickerProps>): JSX.Element {
   const [selfColor, setSelfColor] = useState(transformColor('hex', color));
-  const [inputColor, setInputColor] = useState(color);
+  const [inputColor, setInputColor] = useState(
+    transformColor('hex', color).hex,
+  );
   const innerDivRef = useRef(null);
 
   const saturationPosition = useMemo(
@@ -71,11 +73,19 @@ export default function ColorPicker({
     [selfColor.hsv],
   );
 
+  const emitOnChange = (newColor: string) => {
+    // Check if the dropdown is actually active
+    if (innerDivRef.current !== null && onChange) {
+      onChange(newColor, skipAddingToHistoryStack);
+    }
+  };
+
   const onSetHex = (hex: string) => {
     setInputColor(hex);
     if (/^#[0-9A-Fa-f]{6}$/i.test(hex)) {
       const newColor = transformColor('hex', hex);
       setSelfColor(newColor);
+      emitOnChange(newColor.hex);
     }
   };
 
@@ -88,6 +98,7 @@ export default function ColorPicker({
     const newColor = transformColor('hsv', newHsv);
     setSelfColor(newColor);
     setInputColor(newColor.hex);
+    emitOnChange(newColor.hex);
   };
 
   const onMoveHue = ({x}: Position) => {
@@ -96,24 +107,16 @@ export default function ColorPicker({
 
     setSelfColor(newColor);
     setInputColor(newColor.hex);
+    emitOnChange(newColor.hex);
   };
 
-  useEffect(() => {
-    // Check if the dropdown is actually active
-    if (innerDivRef.current !== null && onChange) {
-      onChange(selfColor.hex, skipAddingToHistoryStack);
-      setInputColor(selfColor.hex);
-    }
-  }, [selfColor, onChange]);
+  const onBasicColorClick = (basicColor: string) => () => {
+    const newColor = transformColor('hex', basicColor);
 
-  useEffect(() => {
-    if (color === undefined) {
-      return;
-    }
-    const newColor = transformColor('hex', color);
     setSelfColor(newColor);
     setInputColor(newColor.hex);
-  }, [color]);
+    emitOnChange(newColor.hex);
+  };
 
   return (
     <div
@@ -127,10 +130,7 @@ export default function ColorPicker({
             className={basicColor === selfColor.hex ? ' active' : ''}
             key={basicColor}
             style={{backgroundColor: basicColor}}
-            onClick={() => {
-              setInputColor(basicColor);
-              setSelfColor(transformColor('hex', basicColor));
-            }}
+            onClick={onBasicColorClick(basicColor)}
           />
         ))}
       </div>

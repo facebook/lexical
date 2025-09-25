@@ -6,48 +6,17 @@
  *
  */
 
-const isFocusable = (el: HTMLElement): boolean => {
-  const interactiveTags = [
-    'A',
-    'BUTTON',
-    'INPUT',
-    'SELECT',
-    'TEXTAREA',
-    'DETAILS',
-    'SUMMARY',
-  ];
-  if (
-    interactiveTags.includes(el.tagName) ||
-    el.hasAttribute('tabindex') ||
-    el.hasAttribute('contenteditable')
-  ) {
-    return true;
-  }
-  return false;
-};
-
 export const findFirstFocusableDescendant = (
   startElement: HTMLElement,
 ): HTMLElement | null => {
-  for (const childNode of startElement.children) {
-    if (!(childNode instanceof HTMLElement)) {
-      continue;
-    }
+  const focusableSelector =
+    'button, a[href], input, select, textarea, details, summary [tabindex], [contenteditable]';
 
-    if (isFocusable(childNode as HTMLElement)) {
-      return childNode as HTMLElement;
-    }
+  const focusableDescendants = startElement.querySelector(
+    focusableSelector,
+  ) as HTMLElement;
 
-    const focusableChild = findFirstFocusableDescendant(
-      childNode as HTMLElement,
-    );
-
-    if (focusableChild) {
-      return focusableChild;
-    }
-  }
-
-  return null;
+  return focusableDescendants;
 };
 
 export const focusNearestDescendant = (

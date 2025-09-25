@@ -1,3 +1,36 @@
+## v0.36.0 (2025-09-25)
+
+- lexical-headless Bug Fix Replace happy-dom with jsdom in www and map react-domclient (#7858) Bob Ippolito
+-  Bug Fix npmToWwwName ensures lexical prefix (#7857) Bob Ippolito
+- lexical-headless Feature lexicalheadlessdom module for easier SSR (#7833) Bob Ippolito
+- lexical Chore Change TabNode.setTextContent invariant to devInvariant (#7855) Aman Harwara
+- lexical-extensiondocs Chore Add experimental to extension functions (#7853) Bob Ippolito
+- lexicallexical-extension Feature Lexical Extension (#7706) Bob Ippolito
+- lexical-react Bug Fix Include react-error-boundary and floating-uireact in WWW bundle (#7852) Bob Ippolito
+- lexical-react Bug Fix Add visibility margin to isTriggerVisibleInNearestScrollContainer to prevent popover from wrongfully closing (#7844) David
+- lexicallexical-reactlexical-playground Chore Update from React 18 to React 19 (#7802) Bob Ippolito
+- lexical-playground Chore remove InlineImageNode and InlineImagePlugun (#7839) Bob Ippolito
+-  Bug Fix Relocate internal eslint plugin to packageslexical-eslint-plugin-internal (#7834) Bob Ippolito
+- lexical Bug Fix Fix cache coherency issue with RangeSelection#extract (#7836) River
+- lexical-clipboard Bug Fix Update Lexical Clipboard with Empty Selection (#7835) River
+- lexical-markdown Refactor Remove MarkdownShortcuts.ts Dependency on index.ts (#7832) River
+- lexical-react Breaking change enforce use of collab context provider (#7818) James Fitzsimmons
+- lexical-yjslexical-playground Breaking change remove clientID from collab context (#7816) James Fitzsimmons
+- lexical-clipboard Fix copy correct selection when editor in different windowdocument (#7822) James Fitzsimmons
+- lexical Chore Improve error message when a node is registered from a foreign lexical module (#7821) Bob Ippolito
+- lexicallexical-selectionlexical-utils Refactor Consolidate ancestor lookup via findMatchingParent (#7814) Chase Naples
+- lexical-markdown Update Flow types to match TypeScript (#7813) Daniel Teo
+- lexical-website Bug Fix Replace broken algolia search with easyops-cndocusaurus-search-local (#7810) Bob Ippolito
+- lexical-list Fix clear li checklist attributes when inserting nested list (#7805) James Fitzsimmons
+-  Chore Port scripts unit tests to vitest and fix test include match pattern (#7807) Bob Ippolito
+- lexical-react Fix Use explicit key attr in NodeContextMenuPlugin (#7803) Bob Ippolito
+- lexical-list Fix updating list type tofrom check type updates child DOM elements (#7800) James Fitzsimmons
+- lexical-playground DatetimeNode DOM updates (#7786) Ivaylo Pavlov
+- examples Chore Update examples for v0.35.0 (#7799) Bob Ippolito
+- lexical-website Chore Update docusaurus-plugin-typedoc (#7766) Bob Ippolito
+- v0.35.0 (#7797) Bob Ippolito
+- v0.35.0 Lexical GitHub Actions Bot
+
 ## v0.35.0 (2025-09-04)
 
 - lexical-history Add Missing Argument for DispatchCommand in UndoRedo Docs Example (#7795) Lithika Damnod

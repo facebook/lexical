@@ -69,6 +69,7 @@ const wwwMappings = {
       `shikijs-themes-${name}`,
     ]),
   ),
+  'happy-dom': 'jsdom',
   'prismjs/components/prism-c': 'prism-c',
   'prismjs/components/prism-clike': 'prism-clike',
   'prismjs/components/prism-core': 'prismjs',
@@ -86,6 +87,7 @@ const wwwMappings = {
   'prismjs/components/prism-swift': 'prism-swift',
   'prismjs/components/prism-typescript': 'prism-typescript',
   'react-dom': 'ReactDOM',
+  'react-dom/client': 'ReactDOM',
   // The react entrypoint in fb includes the jsx runtime
   'react/jsx-runtime': 'react',
 };
@@ -111,7 +113,15 @@ function resolveExternalEsm(id) {
  * in the bundles.
  */
 const monorepoExternalsSet = new Set(Object.entries(wwwMappings).flat());
-const thirdPartyExternals = ['react', 'react-dom', 'yjs', 'y-websocket'];
+const thirdPartyExternals = [
+  'react',
+  'react-dom',
+  'yjs',
+  'y-websocket',
+  'happy-dom',
+  'jsdom',
+  ...(isWWW ? [] : ['react-error-boundary', '@floating-ui/react']),
+];
 const thirdPartyExternalsRegExp = new RegExp(
   `^(${thirdPartyExternals.join('|')})(\\/|$)`,
 );
@@ -194,6 +204,12 @@ async function build(
         warning.message.endsWith(`Can't resolve original location of error.`)
       ) {
         // Ignored
+      } else if (
+        isWWW &&
+        warning.code === 'MODULE_LEVEL_DIRECTIVE' &&
+        /"use client"/.test(warning.message)
+      ) {
+        // Ignored in WWW
       } else if (typeof warning.code === 'string') {
         console.error(warning);
         // This is a warning coming from Rollup itself.
@@ -213,10 +229,12 @@ async function build(
       alias({
         entries: [
           {find: 'shared', replacement: path.resolve('packages/shared/src')},
+          {find: 'buffer', replacement: 'buffer'},
         ],
       }),
       nodeResolve({
         extensions,
+        preferBuiltins: false,
       }),
       babel({
         babelHelpers: 'bundled',
@@ -235,6 +253,7 @@ async function build(
           [
             '@babel/preset-typescript',
             {
+              allowDeclareFields: true,
               tsconfig: path.resolve('./tsconfig.build.json'),
             },
           ],

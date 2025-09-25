@@ -53,4 +53,7 @@ export const IS_ANDROID_CHROME: boolean =
   CAN_USE_DOM && IS_ANDROID && IS_CHROME;
 
 export const IS_APPLE_WEBKIT =
-  CAN_USE_DOM && /AppleWebKit\/[\d.]+/.test(navigator.userAgent) && !IS_CHROME;
+  CAN_USE_DOM &&
+  /AppleWebKit\/[\d.]+/.test(navigator.userAgent) &&
+  IS_APPLE &&
+  !IS_CHROME;

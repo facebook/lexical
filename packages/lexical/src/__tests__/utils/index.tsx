@@ -112,7 +112,7 @@ export function initializeUnitTest(
     const ref = createRef<HTMLDivElement>();
 
     const useLexicalEditor = (
-      rootElementRef: React.RefObject<HTMLDivElement>,
+      rootElementRef: React.RefObject<null | HTMLDivElement>,
     ) => {
       const lexicalEditor = React.useMemo(() => {
         const lexical = createTestEditor(editorConfig);

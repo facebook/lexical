@@ -12,6 +12,8 @@ import type {
   RangeSelection,
   TextNode,
   SerializedElementNode,
+  LexicalExtension,
+  ExtensionConfigBase,
 } from 'lexical';
 import {ElementNode, LexicalNode} from 'lexical';
 
@@ -53,3 +55,5 @@ declare export function $wrapSelectionInMarkNode(
 ): void;
 
 declare export function $unwrapMarkNode(node: MarkNode): void;
+
+declare export var MarkExtension: LexicalExtension<ExtensionConfigBase, "@lexical/mark", void, void>;

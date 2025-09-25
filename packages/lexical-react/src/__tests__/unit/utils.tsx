@@ -6,7 +6,10 @@
  *
  */
 
-import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
+import {
+  LexicalCollaboration,
+  useCollaborationContext,
+} from '@lexical/react/LexicalCollaborationContext';
 import {CollaborationPlugin} from '@lexical/react/LexicalCollaborationPlugin';
 import {LexicalComposer} from '@lexical/react/LexicalComposer';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
@@ -16,8 +19,7 @@ import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {Provider, UserState} from '@lexical/yjs';
 import {LexicalEditor} from 'lexical';
 import * as React from 'react';
-import {Container} from 'react-dom';
-import {createRoot, Root} from 'react-dom/client';
+import {type Container, createRoot, type Root} from 'react-dom/client';
 import * as ReactTestUtils from 'shared/react-test-utils';
 import {expect} from 'vitest';
 import * as Y from 'yjs';
@@ -172,22 +174,24 @@ export class Client implements Provider {
 
     ReactTestUtils.act(() => {
       reactRoot.render(
-        <LexicalComposer
-          initialConfig={{
-            editorState: null,
-            namespace: '',
-            onError: (e) => {
-              throw e;
-            },
-          }}>
-          <Editor
-            provider={this}
-            doc={this._doc}
-            setEditor={(editor) => (this._editor = editor)}
-            awarenessData={awarenessData}
-            shouldBootstrapEditor={options.shouldBootstrapEditor}
-          />
-        </LexicalComposer>,
+        <LexicalCollaboration>
+          <LexicalComposer
+            initialConfig={{
+              editorState: null,
+              namespace: '',
+              onError: (e) => {
+                throw e;
+              },
+            }}>
+            <Editor
+              provider={this}
+              doc={this._doc}
+              setEditor={(editor) => (this._editor = editor)}
+              awarenessData={awarenessData}
+              shouldBootstrapEditor={options.shouldBootstrapEditor}
+            />
+          </LexicalComposer>
+        </LexicalCollaboration>,
       );
     });
   }

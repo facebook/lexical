@@ -382,11 +382,8 @@ export type DOMExportOutput = {
 export type NodeKey = string;
 
 export class LexicalNode {
-  /**
-   * @internal
-   * Allow us to look up the type including static props
-   */
-  ['constructor']!: KlassConstructor<typeof LexicalNode>;
+  /** @internal Allow us to look up the type including static props */
+  declare ['constructor']: KlassConstructor<typeof LexicalNode>;
   /** @internal */
   __type: string;
   /** @internal */

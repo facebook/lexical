@@ -9,14 +9,10 @@
     "build": "tsc && vite build",
     "preview": "vite preview"
   },
-  "lexicalUnreleasedDependencies": {
-    "@lexical/extension": "0.35.0",
-    "@lexical/react": "0.35.0",
-    "@lexical/tailwind": "0.35.0",
-    "lexical": "0.35.0"
-  },
   "dependencies": {
+    "@lexical/extension": "0.36.0",
     "@lexical/react": "0.36.0",
+    "@lexical/tailwind": "0.36.0",
     "lexical": "0.36.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"

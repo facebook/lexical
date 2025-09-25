@@ -13,10 +13,6 @@
     "server:ws": "cross-env HOST=localhost PORT=1234 YPERSISTENCE=./yjs-wss-db npx y-websocket",
     "server:webrtc": "cross-env HOST=localhost PORT=1235 npx y-webrtc"
   },
-  "lexicalUnreleasedDependencies": {
-    "@lexical/react": "0.35.0",
-    "@lexical/yjs": "0.35.0"
-  },
   "dependencies": {
     "@lexical/react": "0.36.0",
     "@lexical/utils": "0.36.0",

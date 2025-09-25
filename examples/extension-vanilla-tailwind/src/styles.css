@@ -7,10 +7,4 @@
  */
 
 @import 'tailwindcss';
-/*
-TODO #7706: update @source after npm release of v0.36.0
-
-In a normal project this would probably look like:
-@source "../node_modules/lexical-tailwind"
-*/
-@source "../../../packages/lexical-tailwind/src/index.ts";
+@source "../node_modules/lexical-tailwind";

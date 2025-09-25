@@ -15,15 +15,18 @@
  * '@lexical/react/useLexicalEditor' -> 'useLexicalEditor'
  *
  * @param {string} name the npm or directory name of a package
+ * @param {boolean} [forTypes] true to match the name that typescript will produce
  * @returns {string} the name of the package in www format
  */
-module.exports = function npmToWwwName(name) {
+module.exports = function npmToWwwName(name, forTypes = false) {
   let parts = name.replace(/^@/, '').split(/\//g);
 
   // Handle the @lexical/react/FlatNameSpace scenario
   if (name.startsWith('@lexical/react/')) {
     const lastPart = parts[parts.length - 1];
-    if (lastPart.match(/^(use)?lexical/i)) {
+    if (forTypes) {
+      parts = [lastPart];
+    } else if (lastPart.match(/^(use)?lexical/i)) {
       parts = [lastPart];
     } else if (lastPart.startsWith('use')) {
       parts = ['useLexical', lastPart.replace(/^use/, '')];

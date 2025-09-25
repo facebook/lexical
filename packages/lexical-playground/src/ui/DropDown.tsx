@@ -137,7 +137,7 @@ function DropDownItems({
     if (highlightedItem && highlightedItem.current) {
       highlightedItem.current.focus();
     } else if (!items) {
-      if (dropDownRef && dropDownRef.current) {
+      if (dropDownRef.current) {
         focusNearestDescendant(dropDownRef.current);
       }
     }

@@ -14,6 +14,7 @@ import type {SerializedRootNode} from './nodes/LexicalRootNode';
 
 import invariant from 'shared/invariant';
 
+import {cloneMap} from './LexicalGenMap';
 import {readEditorState} from './LexicalUpdates';
 import {$getRoot} from './LexicalUtils';
 import {$isElementNode} from './nodes/LexicalElementNode';
@@ -45,8 +46,12 @@ export function editorStateHasDirtySelection(
   return false;
 }
 
-export function cloneEditorState(current: EditorState): EditorState {
-  return new EditorState(new Map(current._nodeMap));
+/** @internal */
+export function cloneEditorState(
+  current: EditorState,
+  selection: null | BaseSelection = null,
+): EditorState {
+  return new EditorState(cloneMap(current._nodeMap), selection);
 }
 
 export function createEmptyEditorState(): EditorState {
@@ -128,8 +133,8 @@ export class EditorState {
   }
 
   clone(selection?: null | BaseSelection): EditorState {
-    const editorState = new EditorState(
-      this._nodeMap,
+    const editorState = cloneEditorState(
+      this,
       selection === undefined ? this._selection : selection,
     );
     editorState._readOnly = true;

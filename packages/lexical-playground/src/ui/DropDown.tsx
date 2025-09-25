@@ -139,7 +139,7 @@ function DropDownItems({
     if (highlightedItem && highlightedItem.current) {
       highlightedItem.current.focus();
     }
-  }, [items, highlightedItem, dropDownRef]);
+  }, [items, highlightedItem]);
 
   useEffect(() => {
     if (autofocus && dropDownRef.current) {

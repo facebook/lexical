@@ -25,7 +25,7 @@ import type {
   TextFormatType,
 } from 'lexical';
 
-import {IS_IOS, IS_SAFARI} from 'shared/environment';
+import {IS_APPLE_WEBKIT, IS_IOS, IS_SAFARI} from 'shared/environment';
 import invariant from 'shared/invariant';
 
 import {$isTextNode, TextNode} from '../index';
@@ -191,7 +191,9 @@ export class ElementDOMSlot<T extends HTMLElement = HTMLElement> {
     if (lineBreakType === null) {
       this.removeManagedLineBreak();
     } else {
-      const webkitHack = lineBreakType === 'decorator' && (IS_IOS || IS_SAFARI);
+      const webkitHack =
+        lineBreakType === 'decorator' &&
+        (IS_APPLE_WEBKIT || IS_IOS || IS_SAFARI);
       this.insertManagedLineBreak(webkitHack);
     }
   }

@@ -9,6 +9,7 @@
 import {$findMatchingParent} from '@lexical/utils';
 import {
   $createPoint,
+  $getNodeByKey,
   $getSelection,
   $isElementNode,
   $isParagraphNode,
@@ -134,13 +135,22 @@ export class TableSelection implements BaseSelection {
    * @returns true if the TableSelection is (probably) valid
    */
   isValid(): boolean {
-    return (
-      this.tableKey !== 'root' &&
-      this.anchor.key !== 'root' &&
-      this.anchor.type === 'element' &&
-      this.focus.key !== 'root' &&
-      this.focus.type === 'element'
-    );
+    if (
+      this.tableKey === 'root' ||
+      this.anchor.key === 'root' ||
+      this.anchor.type !== 'element' ||
+      this.focus.key === 'root' ||
+      this.focus.type !== 'element'
+    ) {
+      return false;
+    }
+
+    // Check if the referenced nodes still exist in the editor
+    const tableNode = $getNodeByKey(this.tableKey);
+    const anchorNode = $getNodeByKey(this.anchor.key);
+    const focusNode = $getNodeByKey(this.focus.key);
+
+    return tableNode !== null && anchorNode !== null && focusNode !== null;
   }
 
   /**

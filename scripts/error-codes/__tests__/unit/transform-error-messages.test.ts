@@ -248,7 +248,7 @@ describe('transform-error-messages', () => {
           codeExpect: `
           /*FIXME (minify-errors-in-prod): Unminified error message in production build!*/
           if (!condition) {
-            formatDevErrorMessage(\`A new invariant\`);
+            formatDevWarningMessage(\`A new invariant\`);
           }
        `,
           messageMapBefore: KNOWN_MSG_MAP,

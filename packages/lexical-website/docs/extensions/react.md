@@ -210,9 +210,6 @@ While this does mean your application will include the React runtime, you
 don't have to use JSX or have any other React infrastructure in your app.
 
 See
-[extension-vanilla-react-plugin-host](https://github.com/etrepum/lexical/blob/extension/examples/extension-vanilla-react-plugin-host/src/main.ts)
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/~/github.com/facebook/lexical/pull/7706?file=examples/extension-vanilla-react-plugin-host/src/main.ts&configPath=examples/extension-vanilla-react-plugin-host)
+[extension-vanilla-react-plugin-host](https://github.com/facebook/lexical/blob/main/examples/extension-vanilla-react-plugin-host/src/main.ts)
+[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/facebook/lexical/tree/main/examples/?file=src%2Fmain.ts)
 for usage of this extension and its API
-
-TODO #7706: update github url after merge
-TODO #7706: update stackblitz url after merge

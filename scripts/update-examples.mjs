@@ -32,7 +32,7 @@ async function main() {
     // assume that npm run update-packages has already updated the version and lexical deps
     const json = pkg.packageJson;
     const {lexicalUnreleasedDependencies = {}} = json;
-    let hasUnreleasedDependency = !!json.lexicalUnreleasedDependencies;
+    let hasUnreleasedDependency = false;
     for (const [k, v] of Object.entries(lexicalUnreleasedDependencies)) {
       if (semverGt(version, v)) {
         delete lexicalUnreleasedDependencies[k];

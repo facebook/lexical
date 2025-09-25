@@ -6,5 +6,8 @@
  *
  */
 
-@import 'tailwindcss';
-@source "../node_modules/lexical-tailwind";
+// Do not require this module directly! Use normal `invariant` calls.
+
+export default function formatDevWarningMessage(message: string): void {
+  console.warn(message);
+}

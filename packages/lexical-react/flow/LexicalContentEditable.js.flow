@@ -75,6 +75,6 @@ export type Props = $ReadOnly<{
 }>;
 
 declare export var ContentEditable: component(
-  ref: React.RefSetter<HTMLDivElement>,
+  ref?: React.RefSetter<HTMLDivElement>,
   ...Props
 );

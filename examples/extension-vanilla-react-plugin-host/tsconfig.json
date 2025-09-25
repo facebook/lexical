@@ -16,11 +16,9 @@
 
     /* Linting */
     "strict": true,
-    // "noUnusedLocals": true,
-    // "noUnusedParameters": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  /* TODO #7706 this depends on unreleased packages so we build from monorepo */
-  "extends": ["../../tsconfig.json"],
-  "include": ["src", "../../libdefs"]
+  "include": ["src"]
 }

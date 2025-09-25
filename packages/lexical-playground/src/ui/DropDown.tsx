@@ -277,7 +277,7 @@ export default function DropDown({
       {showDropDown &&
         createPortal(
           <DropDownItems
-            dropDownRef={dropDownRef}
+            dropDownRef={dropDownRef as React.RefObject<HTMLDivElement>}
             onClose={handleClose}
             autofocus={shouldAutofocus}>
             {children}

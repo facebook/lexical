@@ -19,8 +19,8 @@
     "./dom": {
       "browser": {
         "types": "./dom.d.ts",
-        "development": "./LexicalHeadlessDom.dev.browser.mjs",
-        "production": "./LexicalHeadlessDom.prod.browser.mjs",
+        "development": "./LexicalHeadlessDom.browser.dev.mjs",
+        "production": "./LexicalHeadlessDom.browser.prod.mjs",
         "default": "./LexicalHeadlessDom.browser.mjs"
       },
       "import": {

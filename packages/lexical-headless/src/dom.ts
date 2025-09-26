@@ -31,6 +31,7 @@ export function withDOM<T>(f: (window: typeof globalThis.window) => T): T {
   if (prevWindow) {
     return f(globalThis.window);
   }
+  const prevComputedStyle = globalThis.getComputedStyle;
   const prevDOMParser = globalThis.DOMParser;
   const prevMutationObserver = globalThis.MutationObserver;
   const prevDocument = globalThis.document;
@@ -39,9 +40,11 @@ export function withDOM<T>(f: (window: typeof globalThis.window) => T): T {
   globalThis.document = newWindow.document;
   globalThis.MutationObserver = newWindow.MutationObserver;
   globalThis.DOMParser = newWindow.DOMParser;
+  globalThis.getComputedStyle = newWindow.getComputedStyle;
   try {
     return f(newWindow);
   } finally {
+    globalThis.getComputedStyle = prevComputedStyle;
     globalThis.DOMParser = prevDOMParser;
     globalThis.MutationObserver = prevMutationObserver;
     globalThis.document = prevDocument;

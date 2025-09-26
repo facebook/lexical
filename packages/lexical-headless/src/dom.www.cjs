@@ -15,6 +15,7 @@ if (typeof window === 'undefined') {
     if (prevWindow) {
       return f(ctx.window);
     }
+    const prevGetComputedStyle = ctx.getComputedStyle;
     const prevDOMParser = ctx.DOMParser;
     const prevMutationObserver = ctx.MutationObserver;
     const prevDocument = ctx.document;
@@ -23,9 +24,11 @@ if (typeof window === 'undefined') {
     ctx.document = newWindow.document;
     ctx.MutationObserver = newWindow.MutationObserver;
     ctx.DOMParser = newWindow.DOMParser;
+    ctx.getComputedStyle = newWindow.getComputedStyle;
     try {
       return f(newWindow);
     } finally {
+      ctx.getComputedStyle = prevGetComputedStyle;
       ctx.DOMParser = prevDOMParser;
       ctx.MutationObserver = prevMutationObserver;
       ctx.document = prevDocument;

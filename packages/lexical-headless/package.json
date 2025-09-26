@@ -54,9 +54,7 @@
     }
   },
   "dependencies": {
+    "happy-dom": "^18.0.1",
     "lexical": "0.36.1"
-  },
-  "devDependencies": {
-    "happy-dom": "^18.0.1"
   }
 }

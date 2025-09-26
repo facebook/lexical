@@ -76,7 +76,7 @@ function DropDownItems({
   autofocus,
 }: {
   children: React.ReactNode;
-  dropDownRef: React.RefObject<HTMLDivElement>;
+  dropDownRef: React.RefObject<HTMLDivElement | null>;
   onClose: () => void;
   autofocus: boolean;
 }) {
@@ -277,7 +277,7 @@ export default function DropDown({
       {showDropDown &&
         createPortal(
           <DropDownItems
-            dropDownRef={dropDownRef as React.RefObject<HTMLDivElement>}
+            dropDownRef={dropDownRef}
             onClose={handleClose}
             autofocus={shouldAutofocus}>
             {children}

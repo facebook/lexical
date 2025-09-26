@@ -1,11 +1,11 @@
 {
   "name": "@lexical/website",
-  "version": "0.35.0",
+  "version": "0.36.1",
   "private": true,
   "scripts": {
     "docusaurus": "docusaurus",
     "start": " TYPEDOC_WATCH=true docusaurus start",
-    "build": "docusaurus build",
+    "build": "IGNORE_PEER_DEPENDENCIES=react docusaurus build",
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",
     "clear": "docusaurus clear",
@@ -28,8 +28,8 @@
     "fs-extra": "^10.0.0",
     "mermaid": "^11.6.0",
     "prism-react-renderer": "^2.3.1",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
     "typedoc-plugin-markdown": "^4.8.1",
     "typedoc-plugin-no-inherit": "^1.6.1",
     "typedoc-plugin-rename-defaults": "^0.7.0",
@@ -42,6 +42,9 @@
     "typedoc": "^0.28.10",
     "typescript": "^5.9.2",
     "webpack": "^5.76.0"
+  },
+  "overrides": {
+    "react": "$react"
   },
   "browserslist": {
     "production": [

@@ -42,7 +42,7 @@ import {Doc, Transaction, UndoManager, YEvent} from 'yjs';
 
 import {InitialEditorStateType} from '../LexicalComposer';
 
-export type CursorsContainerRef = React.MutableRefObject<HTMLElement | null>;
+export type CursorsContainerRef = React.RefObject<HTMLElement | null>;
 
 export function useYjsCollaboration(
   editor: LexicalEditor,

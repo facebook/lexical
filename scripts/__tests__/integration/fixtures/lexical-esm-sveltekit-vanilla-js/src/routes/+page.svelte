@@ -33,20 +33,20 @@
 	};
 	onMount(() => {
 		const editor = createEditor(initialConfig);
-		editor.setRootElement(editorRef);
-
 		// Registering Plugins
-		mergeRegister(
+		return mergeRegister(
 			registerRichText(editor),
 			registerDragonSupport(editor),
-			registerHistory(editor, createEmptyHistoryState(), 300)
+			registerHistory(editor, createEmptyHistoryState(), 300),
+			editor.registerUpdateListener(({ editorState }) => {
+				stateRef!.value = JSON.stringify(editorState.toJSON(), undefined, 2);
+			}),
+			(() => {
+				editor.update(prepopulatedRichText, { tag: HISTORY_MERGE_TAG });
+				editor.setRootElement(editorRef);
+				return () => editor.setRootElement(null);
+			})(),
 		);
-
-		editor.update(prepopulatedRichText, { tag: HISTORY_MERGE_TAG });
-
-		editor.registerUpdateListener(({ editorState }) => {
-			stateRef!.value = JSON.stringify(editorState.toJSON(), undefined, 2);
-		});
 	});
 </script>
 

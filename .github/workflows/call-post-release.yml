@@ -32,10 +32,7 @@ jobs:
         with:
           node-version: 22.x
       - run: |
-          npm i
-          for x in examples/*/ scripts/__tests__/integration/fixtures/*/; do
-            pushd "$x" && npm i && npm run build && popd
-          done
+          npm i && npm run update-examples
       - uses: stefanzweifel/git-auto-commit-action@v6
         with:
           commit_message: 'Update examples for ${{ steps.latest.outputs.release }}'

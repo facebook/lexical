@@ -1,0 +1,52 @@
+{
+  "name": "@lexical/tailwind",
+  "keywords": [
+    "lexical",
+    "editor",
+    "tailwind",
+    "theme",
+    "css"
+  ],
+  "version": "0.36.1",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/facebook/lexical.git",
+    "directory": "packages/lexical-tailwind"
+  },
+  "main": "LexicalTailwind.js",
+  "types": "index.d.ts",
+  "bugs": {
+    "url": "https://github.com/facebook/lexical/issues"
+  },
+  "homepage": "https://github.com/facebook/lexical#readme",
+  "dependencies": {
+    "@lexical/extension": "0.36.1",
+    "lexical": "0.36.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.1.13",
+    "tailwind-merge": "^3.3.1",
+    "tailwindcss": "^4.1.13"
+  },
+  "description": "This package contains an extension to use Tailwind for the editor theme",
+  "sideEffects": false,
+  "module": "LexicalTailwind.mjs",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./index.d.ts",
+        "development": "./LexicalTailwind.dev.mjs",
+        "production": "./LexicalTailwind.prod.mjs",
+        "node": "./LexicalTailwind.node.mjs",
+        "default": "./LexicalTailwind.mjs"
+      },
+      "require": {
+        "types": "./index.d.ts",
+        "development": "./LexicalTailwind.dev.js",
+        "production": "./LexicalTailwind.prod.js",
+        "default": "./LexicalTailwind.js"
+      }
+    }
+  }
+}

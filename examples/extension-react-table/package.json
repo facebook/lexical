@@ -1,0 +1,28 @@
+{
+  "name": "@lexical/extension-react-table-example",
+  "private": true,
+  "version": "0.36.1",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "monorepo:dev": "vite -c vite.config.monorepo.ts",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@lexical/extension": "0.36.1",
+    "@lexical/react": "0.36.1",
+    "@lexical/tailwind": "0.36.1",
+    "lexical": "0.36.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.12",
+    "@types/react-dom": "^19.1.9",
+    "@vitejs/plugin-react": "^5.0.2",
+    "cross-env": "^7.0.3",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.4"
+  }
+}

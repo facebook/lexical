@@ -1,7 +1,7 @@
 {
   "name": "@lexical/monorepo",
   "description": "Lexical is an extensible text editor framework that provides excellent reliability, accessibility and performance.",
-  "version": "0.35.0",
+  "version": "0.36.1",
   "license": "MIT",
   "private": true,
   "workspaces": [
@@ -13,6 +13,7 @@
   },
   "engineStrict": true,
   "scripts": {
+    "start:example": "sh -c '(cd \"examples/$0\"; npm i && npm run monorepo:dev)'",
     "start": "cross-env NODE_ENV=development concurrently \"npm:collab\" \"npm run dev --prefix packages/lexical-playground\"",
     "start:website": "npm run start --prefix packages/lexical-website -- --port 3001",
     "start:playground": "npm run start-test-server",
@@ -105,6 +106,7 @@
     "update-version": "node ./scripts/updateVersion",
     "update-tsconfig": "node ./scripts/update-tsconfig",
     "update-flowconfig": "node ./scripts/update-flowconfig",
+    "update-examples": "node ./scripts/update-examples.mjs",
     "create-www-stubs": "node ./scripts/create-www-stubs",
     "update-packages": "npm run update-version && npm run update-tsconfig && npm run update-flowconfig && npm run create-docs && npm run create-www-stubs",
     "postversion": "node ./scripts/npm/postversion",
@@ -119,7 +121,8 @@
     "@babel/preset-react": "^7.24.1",
     "@babel/preset-typescript": "^7.24.1",
     "@lexical/eslint-plugin": "file:./packages/lexical-eslint-plugin",
-    "@playwright/test": "^1.45.0",
+    "@lexical/eslint-plugin-internal": "file:./packages/lexical-eslint-plugin-internal",
+    "@playwright/test": "^1.51.1",
     "@rollup/plugin-alias": "^5.1.0",
     "@rollup/plugin-babel": "^6.0.4",
     "@rollup/plugin-commonjs": "^25.0.7",
@@ -135,8 +138,8 @@
     "@types/prettier": "^2.7.3",
     "@types/prismjs": "^1.26.0",
     "@types/proper-lockfile": "^4.1.4",
-    "@types/react": "^18.0.8",
-    "@types/react-dom": "^18.0.3",
+    "@types/react": "^19.1.12",
+    "@types/react-dom": "^19.1.9",
     "@types/trusted-types": "^2.0.7",
     "@typescript-eslint/eslint-plugin": "^8.39.1",
     "@typescript-eslint/parser": "^8.39.1",
@@ -154,7 +157,6 @@
     "eslint-plugin-import": "^2.29.1",
     "eslint-plugin-jest": "^28.5.0",
     "eslint-plugin-jsx-a11y": "^6.8.0",
-    "eslint-plugin-lexical": "file:./eslint-plugin",
     "eslint-plugin-no-function-declare-after-return": "^1.1.0",
     "eslint-plugin-no-only-tests": "^3.1.0",
     "eslint-plugin-react": "^7.34.1",
@@ -182,7 +184,7 @@
     "prettier-plugin-organize-attributes": "^0.0.5",
     "prettier-plugin-tailwindcss": "^0.4.1",
     "proper-lockfile": "^4.1.2",
-    "react-test-renderer": "^17.0.2",
+    "react-test-renderer": "^19.1.1",
     "rollup": "^4.22.4",
     "tmp": "^0.2.1",
     "ts-jest": "^29.1.2",
@@ -190,11 +192,12 @@
     "ts-node": "^10.9.1",
     "typedoc": "^0.28.10",
     "typescript": "^5.9.2",
-    "vite": "^5.2.11",
+    "vite": "^7.1.4",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.2.4"
   },
   "dependencies": {
-    "yjs": "^13.5.42"
+    "semver": "^7.7.2",
+    "yjs": "^13.6.27"
   }
 }

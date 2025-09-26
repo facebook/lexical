@@ -22,8 +22,11 @@ import type {
 import type {EditorState} from './LexicalEditorState';
 import type {
   BaseSelection,
+  GetComposedRangesOptions,
   PointType,
   RangeSelection,
+  SelectionWithComposedRanges,
+  ShadowRootWithSelection,
 } from './LexicalSelection';
 import type {RootNode} from './nodes/LexicalRootNode';
 
@@ -147,7 +150,12 @@ export function $isSelectionCapturedInDecorator(node: Node): boolean {
 }
 
 export function isSelectionCapturedInDecoratorInput(anchorDOM: Node): boolean {
-  const activeElement = document.activeElement;
+  const editor = getNearestEditorFromDOMNode(anchorDOM);
+
+  const rootElement = editor ? editor.getRootElement() : null;
+  const activeElement = rootElement
+    ? getActiveElement(rootElement)
+    : document.activeElement;
 
   if (!isHTMLElement(activeElement)) {
     return false;
@@ -713,7 +721,7 @@ export function $updateSelectedTextFromDOM(
   data?: string,
 ): void {
   // Update the text content with the latest composition text
-  const domSelection = getDOMSelection(getWindow(editor));
+  const domSelection = getDOMSelectionForEditor(editor);
   if (domSelection === null) {
     return;
   }
@@ -1327,11 +1335,25 @@ export function getElementByKeyOrThrow(
   return element;
 }
 
+/**
+ * Type guard function that checks if a node is a ShadowRoot. This function performs
+ * runtime validation to safely narrow types and enable type-safe Shadow DOM operations.
+ * It checks both the nodeType and the presence of the 'host' property to distinguish
+ * ShadowRoot from regular DocumentFragment nodes.
+ *
+ * @param node - The Node to check (can be null)
+ * @returns True if the node is a ShadowRoot, false otherwise. When true, TypeScript
+ *   will narrow the type to ShadowRoot for subsequent operations.
+ */
+export function isShadowRoot(node: Node | null): node is ShadowRoot {
+  return isDocumentFragment(node) && 'host' in node;
+}
+
 export function getParentElement(node: Node): HTMLElement | null {
   const parentElement =
     (node as HTMLSlotElement).assignedSlot || node.parentElement;
-  return isDocumentFragment(parentElement)
-    ? ((parentElement as unknown as ShadowRoot).host as HTMLElement)
+  return isShadowRoot(parentElement)
+    ? (parentElement.host as HTMLElement)
     : parentElement;
 }
 
@@ -1461,7 +1483,7 @@ export function getDefaultView(domElem: EventTarget | null): Window | null {
 }
 
 export function getWindow(editor: LexicalEditor): Window {
-  const windowObj = editor._window;
+  const windowObj = editor._window || window;
   if (windowObj === null) {
     invariant(false, 'window object not found');
   }
@@ -1646,7 +1668,7 @@ export function updateDOMBlockCursorElement(
     $isRangeSelection(nextSelection) &&
     nextSelection.isCollapsed() &&
     nextSelection.anchor.type === 'element' &&
-    rootElement.contains(document.activeElement)
+    rootElement.contains(getActiveElement(rootElement))
   ) {
     const anchor = nextSelection.anchor;
     const elementNode = anchor.getNode();
@@ -1694,25 +1716,650 @@ export function updateDOMBlockCursorElement(
 }
 
 /**
+ * Returns a Selection object from a ShadowRoot using the best available API.
+ *
+ * This function implements a progressive enhancement strategy for getting selection
+ * from Shadow DOM contexts, trying modern APIs first and gracefully falling back
+ * to older or experimental APIs when needed.
+ *
+ * **Selection Proxy:**
+ * When getComposedRanges returns valid ranges, this function creates a Selection proxy
+ * that uses the composed ranges data. This ensures proper text node resolution and
+ * range handling across Shadow DOM boundaries.
+ *
+ * **Error Handling:**
+ * The function includes comprehensive error handling for all API calls, ensuring
+ * graceful degradation even when modern APIs throw exceptions.
+ *
+ * @param shadowRoot - The ShadowRoot to get selection from
+ * @returns Selection object from the most appropriate API, or null if no selection available
+ *
+ */
+export function getDOMSelectionFromShadowRoot(
+  shadowRoot: ShadowRoot,
+): null | Selection {
+  // Try modern getComposedRanges API first
+  if ('getComposedRanges' in Selection.prototype) {
+    try {
+      const globalSelection = window.getSelection();
+      if (globalSelection) {
+        const ranges = (
+          globalSelection as SelectionWithComposedRanges
+        ).getComposedRanges({
+          shadowRoots: [shadowRoot],
+        });
+        if (ranges.length > 0) {
+          // Create a proxy Selection that uses composed ranges
+          // This ensures we get correct text nodes from StaticRange data
+          return createSelectionWithComposedRanges(globalSelection, ranges);
+        }
+        // If no ranges found, fall through to experimental API
+      }
+    } catch (_error) {
+      // If getComposedRanges fails, fall through to experimental API
+    }
+  }
+
+  // Fallback to experimental getSelection if available
+  if (
+    typeof (shadowRoot as ShadowRootWithSelection).getSelection === 'function'
+  ) {
+    try {
+      return (shadowRoot as ShadowRootWithSelection).getSelection();
+    } catch (_error) {
+      // Continue to final fallback
+    }
+  }
+
+  // Final fallback to document selection
+  return window.getSelection();
+}
+
+/**
  * Returns the selection for the given window, or the global window if null.
+ * Enhanced with Shadow DOM support using modern getComposedRanges() API when available,
+ * with fallback to checking if the selection is within the shadow DOM.
  * Will return null if {@link CAN_USE_DOM} is false.
  *
- * @param targetWindow The window to get the selection from
- * @returns a Selection or null
+ * @param targetWindow - The window to get the selection from
+ * @param rootElement - The root element to check for shadow DOM context (optional)
+ * @returns A Selection object or null if selection cannot be retrieved
  */
-export function getDOMSelection(targetWindow: null | Window): null | Selection {
-  return !CAN_USE_DOM ? null : (targetWindow || window).getSelection();
+export function getDOMSelection(
+  targetWindow: null | Window,
+  rootElement?: HTMLElement | null,
+): null | Selection {
+  if (!CAN_USE_DOM) {
+    return null;
+  }
+
+  // Check if we're inside a shadow DOM
+  if (rootElement) {
+    const shadowRoot = getShadowRootOrDocument(rootElement);
+    if (shadowRoot && isShadowRoot(shadowRoot)) {
+      return getDOMSelectionFromShadowRoot(shadowRoot);
+    }
+  }
+
+  return (targetWindow || window).getSelection();
+}
+
+/**
+ * Creates a SelectionWithComposedRanges proxy that uses StaticRange objects
+ * from getComposedRanges API for Shadow DOM compatibility.
+ *
+ * @param baseSelection - The base Selection object to proxy
+ * @param composedRanges - Array of StaticRange objects from getComposedRanges
+ * @returns A proxy Selection object that works with composed ranges
+ */
+
+// Helper function to find the first text node within an element
+function findTextNodeInElement(element: Node): Text | null {
+  if (element.nodeType === Node.TEXT_NODE) {
+    return element as Text;
+  }
+
+  const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null);
+
+  return walker.nextNode() as Text | null;
+}
+export function createSelectionWithComposedRanges(
+  baseSelection: Selection,
+  composedRanges: StaticRange[],
+): Selection {
+  const firstRange = composedRanges[0];
+
+  if (!firstRange) {
+    return baseSelection;
+  }
+
+  // Create a Proxy that intercepts property access and method calls
+  const proxy = new Proxy(baseSelection, {
+    get(target, prop, receiver) {
+      // Override specific properties to use composed ranges data
+      switch (prop) {
+        case 'anchorNode': {
+          const startContainer = firstRange.startContainer;
+
+          const textNode =
+            startContainer.nodeType === Node.TEXT_NODE
+              ? startContainer
+              : findTextNodeInElement(startContainer);
+
+          return textNode || startContainer;
+        }
+        case 'anchorOffset':
+          return firstRange.startOffset;
+        case 'focusNode': {
+          const endContainer = firstRange.endContainer;
+
+          const textNode =
+            endContainer.nodeType === Node.TEXT_NODE
+              ? endContainer
+              : findTextNodeInElement(endContainer);
+
+          return textNode || endContainer;
+        }
+        case 'focusOffset':
+          return firstRange.endOffset;
+        case 'isCollapsed':
+          return firstRange.collapsed;
+        case 'rangeCount':
+          return composedRanges.length;
+        case 'type':
+          // Return type based on composed ranges state
+          return firstRange.collapsed ? 'Caret' : 'Range';
+        case 'getRangeAt': {
+          return function (index: number): Range {
+            if (index >= composedRanges.length) {
+              throw new DOMException('Index out of range', 'IndexSizeError');
+            }
+
+            const staticRange = composedRanges[index];
+            const range = document.createRange();
+            range.setStart(staticRange.startContainer, staticRange.startOffset);
+            range.setEnd(staticRange.endContainer, staticRange.endOffset);
+            return range;
+          };
+        }
+        case 'getComposedRanges': {
+          return function (_options?: GetComposedRangesOptions): StaticRange[] {
+            return composedRanges;
+          };
+        }
+        case 'modify': {
+          return function (
+            alter: 'move' | 'extend',
+            direction: 'backward' | 'forward' | 'left' | 'right',
+            granularity: 'character' | 'word' | 'lineboundary',
+          ): void {
+            // For shadow DOM, sync ranges and delegate to native modify
+            // Complex logic is handled at higher levels in Lexical
+            if (composedRanges.length > 0 && firstRange) {
+              // Sync our composed ranges to the base DOM selection
+              const range = document.createRange();
+              range.setStart(firstRange.startContainer, firstRange.startOffset);
+              range.setEnd(firstRange.endContainer, firstRange.endOffset);
+
+              target.removeAllRanges();
+              target.addRange(range);
+
+              // For Shadow DOM, delegate to native modify first, then handle manually if needed
+              target.modify(alter, direction, granularity);
+            }
+          };
+        }
+        case 'removeAllRanges': {
+          return function (): void {
+            target.removeAllRanges();
+          };
+        }
+        case 'addRange': {
+          return function (range: Range): void {
+            target.addRange(range);
+          };
+        }
+        default: {
+          // For all other properties and methods, delegate to the original Selection
+          const value = Reflect.get(target, prop, receiver);
+          // Bind methods to the original target to maintain correct 'this' context
+          return typeof value === 'function' ? value.bind(target) : value;
+        }
+      }
+    },
+
+    // Ensure instanceof checks work correctly
+    getPrototypeOf(_target) {
+      return Selection.prototype;
+    },
+  });
+
+  return proxy;
+}
+
+export function getDOMSelectionForEditor(
+  editor: LexicalEditor,
+): null | Selection {
+  return getDOMSelection(getWindow(editor), editor.getRootElement());
+}
+
+/**
+ * Traverses up the DOM tree to find a ShadowRoot if the element is inside a shadow DOM.
+ * This function helps determine whether the given element is rendered within Shadow DOM
+ * encapsulation.
+ *
+ * @param element - The HTMLElement to start traversing from
+ * @returns The ShadowRoot if found, or Document if the element is not in shadow DOM
+ */
+export function getShadowRootOrDocument(
+  element: HTMLElement,
+): ShadowRoot | Document {
+  const shadowRoot = element.getRootNode({composed: false});
+
+  if (isShadowRoot(shadowRoot)) {
+    return shadowRoot;
+  }
+
+  return document;
+}
+
+/**
+ * Checks if the Lexical editor is running within a Shadow DOM context.
+ *
+ * This function determines whether the editor's root element is contained within
+ * a ShadowRoot, which is essential for enabling Shadow DOM-specific functionality
+ * like specialized deletion commands and selection handling.
+ *
+ * @param editor - The Lexical editor instance to check
+ * @returns `true` if the editor is in Shadow DOM, `false` otherwise
+ */
+export function $isInShadowDOMContext(editor: LexicalEditor): boolean {
+  const rootElement = editor.getRootElement();
+  return rootElement
+    ? isShadowRoot(getShadowRootOrDocument(rootElement))
+    : false;
+}
+
+/**
+ * Special character deletion handler for Shadow DOM
+ * This bypasses the problematic modify() method and directly manipulates text
+ */
+export function $deleteCharacterInShadowDOM(
+  selection: RangeSelection,
+  isBackward: boolean,
+): boolean {
+  if (!selection.isCollapsed()) {
+    // If there's already a selection, just remove it
+    selection.removeText();
+    return true;
+  }
+
+  const anchor = selection.anchor;
+  const focus = selection.focus;
+  const anchorNode = anchor.getNode();
+
+  if (!$isTextNode(anchorNode)) {
+    return false;
+  }
+
+  const textContent = anchorNode.getTextContent();
+  const offset = anchor.offset;
+
+  if (isBackward) {
+    // Backspace: delete character before cursor
+    if (offset > 0) {
+      const newText =
+        textContent.slice(0, offset - 1) + textContent.slice(offset);
+      anchorNode.setTextContent(newText);
+      const newOffset = offset - 1;
+
+      // Update both anchor and focus to the new position
+      anchor.set(anchor.key, newOffset, anchor.type);
+      focus.set(focus.key, newOffset, focus.type);
+
+      // Mark selection as dirty to force reconciliation
+      selection.dirty = true;
+      return true;
+    }
+  } else {
+    // Delete: delete character after cursor
+    if (offset < textContent.length) {
+      const newText =
+        textContent.slice(0, offset) + textContent.slice(offset + 1);
+      anchorNode.setTextContent(newText);
+
+      // Update both anchor and focus to keep cursor at same position
+      anchor.set(anchor.key, offset, anchor.type);
+      focus.set(focus.key, offset, focus.type);
+
+      // Mark selection as dirty to force reconciliation
+      selection.dirty = true;
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Special line deletion handler for Shadow DOM
+ * This bypasses the problematic modify() method and directly manipulates text
+ */
+export function $deleteLineInShadowDOM(
+  selection: RangeSelection,
+  isBackward: boolean,
+): boolean {
+  if (!selection.isCollapsed()) {
+    // If there's already a selection, just remove it
+    selection.removeText();
+    return true;
+  }
+
+  const anchor = selection.anchor;
+  const focus = selection.focus;
+  const anchorNode = anchor.getNode();
+
+  if (!$isTextNode(anchorNode)) {
+    return false;
+  }
+
+  const textContent = anchorNode.getTextContent();
+  const offset = anchor.offset;
+
+  if (isBackward) {
+    // Cmd+Backspace: delete from beginning of line to cursor
+    if (offset > 0) {
+      const newText = textContent.slice(offset);
+      anchorNode.setTextContent(newText);
+
+      // Move cursor to beginning of line (position 0)
+      anchor.set(anchor.key, 0, anchor.type);
+      focus.set(focus.key, 0, focus.type);
+
+      // Mark selection as dirty to force reconciliation
+      selection.dirty = true;
+      return true;
+    }
+  } else {
+    // Cmd+Delete: delete from cursor to end of line
+    if (offset < textContent.length) {
+      const newText = textContent.slice(0, offset);
+      anchorNode.setTextContent(newText);
+
+      // Keep cursor at same position
+      anchor.set(anchor.key, offset, anchor.type);
+      focus.set(focus.key, offset, focus.type);
+
+      // Mark selection as dirty to force reconciliation
+      selection.dirty = true;
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Special word deletion handler for Shadow DOM
+ * This bypasses the problematic modify() method and directly manipulates text
+ */
+export function $deleteWordInShadowDOM(
+  selection: RangeSelection,
+  isBackward: boolean,
+): boolean {
+  if (!selection.isCollapsed()) {
+    // If there's already a selection, just remove it
+    selection.removeText();
+    return true;
+  }
+
+  const anchor = selection.anchor;
+  const focus = selection.focus;
+  const anchorNode = anchor.getNode();
+
+  if (!$isTextNode(anchorNode)) {
+    return false;
+  }
+
+  const textContent = anchorNode.getTextContent();
+  const offset = anchor.offset;
+
+  // Simple word boundary regex - matches word characters (letters, digits, underscore)
+  const wordCharRegex = /\w/;
+
+  if (isBackward) {
+    // Option+Backspace: delete word before cursor
+    if (offset > 0) {
+      let startOffset = offset;
+
+      // Skip any non-word characters immediately before cursor
+      while (
+        startOffset > 0 &&
+        !wordCharRegex.test(textContent[startOffset - 1])
+      ) {
+        startOffset--;
+      }
+
+      // Find beginning of the word
+      while (
+        startOffset > 0 &&
+        wordCharRegex.test(textContent[startOffset - 1])
+      ) {
+        startOffset--;
+      }
+
+      if (startOffset < offset) {
+        const newText =
+          textContent.slice(0, startOffset) + textContent.slice(offset);
+        anchorNode.setTextContent(newText);
+
+        // Move cursor to word beginning
+        anchor.set(anchor.key, startOffset, anchor.type);
+        focus.set(focus.key, startOffset, focus.type);
+
+        // Mark selection as dirty to force reconciliation
+        selection.dirty = true;
+        return true;
+      }
+    }
+  } else {
+    // Option+Delete: delete word after cursor
+    if (offset < textContent.length) {
+      let endOffset = offset;
+
+      // Skip any non-word characters immediately after cursor
+      while (
+        endOffset < textContent.length &&
+        !wordCharRegex.test(textContent[endOffset])
+      ) {
+        endOffset++;
+      }
+
+      // Find end of the word
+      while (
+        endOffset < textContent.length &&
+        wordCharRegex.test(textContent[endOffset])
+      ) {
+        endOffset++;
+      }
+
+      if (endOffset > offset) {
+        const newText =
+          textContent.slice(0, offset) + textContent.slice(endOffset);
+        anchorNode.setTextContent(newText);
+
+        // Keep cursor at same position
+        anchor.set(anchor.key, offset, anchor.type);
+        focus.set(focus.key, offset, focus.type);
+
+        // Mark selection as dirty to force reconciliation
+        selection.dirty = true;
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Improved word deletion handler for Shadow DOM with better i18n support
+ * Uses native text segmentation when available, falls back to basic regex
+ */
+export function $deleteWordInShadowDOMWithI18n(
+  selection: RangeSelection,
+  isBackward: boolean,
+): boolean {
+  if (!selection.isCollapsed()) {
+    // If there's already a selection, just remove it
+    selection.removeText();
+    return true;
+  }
+
+  const anchor = selection.anchor;
+  const focus = selection.focus;
+  const anchorNode = anchor.getNode();
+
+  if (!$isTextNode(anchorNode)) {
+    return false;
+  }
+
+  const textContent = anchorNode.getTextContent();
+  const offset = anchor.offset;
+
+  // Try to use native text segmentation for better i18n support
+  if (typeof Intl !== 'undefined' && 'Segmenter' in Intl) {
+    try {
+      // Use Intl.Segmenter for proper word boundary detection
+      // Type assertion needed as Intl.Segmenter is not yet in all TypeScript versions
+      interface IntlSegmenterConstructor {
+        new (
+          locales?: string | string[],
+          options?: {granularity?: string},
+        ): {
+          segment: (text: string) => Iterable<{
+            segment: string;
+            index: number;
+            isWordLike?: boolean;
+          }>;
+        };
+      }
+      const IntlSegmenter = (Intl as {Segmenter: IntlSegmenterConstructor})
+        .Segmenter;
+      const segmenter = new IntlSegmenter(undefined, {
+        granularity: 'word',
+      });
+      const segments = Array.from(segmenter.segment(textContent));
+
+      let startOffset = offset;
+      let endOffset = offset;
+
+      if (isBackward) {
+        // Find the start of the word/segment to delete
+        for (let i = segments.length - 1; i >= 0; i--) {
+          const segment = segments[i];
+          if (segment.index < offset) {
+            if (segment.isWordLike) {
+              startOffset = segment.index;
+              break;
+            }
+          }
+        }
+      } else {
+        // Find the end of the word/segment to delete
+        for (const segment of segments) {
+          if (segment.index >= offset && segment.isWordLike) {
+            endOffset = segment.index + segment.segment.length;
+            break;
+          }
+        }
+      }
+
+      if (startOffset !== offset || endOffset !== offset) {
+        const newText =
+          textContent.slice(0, startOffset) + textContent.slice(endOffset);
+        anchorNode.setTextContent(newText);
+
+        // Update cursor position
+        const newOffset = isBackward ? startOffset : startOffset;
+        anchor.set(anchor.key, newOffset, anchor.type);
+        focus.set(focus.key, newOffset, focus.type);
+        selection.dirty = true;
+        return true;
+      }
+    } catch (_error) {
+      // Intl.Segmenter failed, fall back to simple approach
+    }
+  }
+
+  // Fallback to simple regex-based approach for older browsers
+  return $deleteWordInShadowDOM(selection, isBackward);
+}
+
+/**
+ * Gets the appropriate Document object for an element, accounting for shadow DOM.
+ * Returns the ownerDocument of the ShadowRoot if the element is in shadow DOM,
+ * otherwise returns the element's ownerDocument or the global document.
+ *
+ * @param element - The HTMLElement to get the document for
+ * @returns The Document object that should be used for DOM operations
+ */
+export function getDocumentFromElement(element: null | HTMLElement): Document {
+  if (!element || !CAN_USE_DOM) {
+    return document;
+  }
+
+  const rootNode = element.getRootNode({composed: true});
+
+  // If the element is not connected to a document, return the default document
+  if (rootNode === element || rootNode.nodeType !== Node.DOCUMENT_NODE) {
+    return element.ownerDocument || document;
+  }
+
+  return rootNode as Document;
+}
+
+/**
+ * Gets the currently active (focused) element, accounting for shadow DOM encapsulation.
+ * In shadow DOM, the activeElement is tracked separately within the ShadowRoot.
+ * Falls back to the document's activeElement if not in shadow DOM.
+ *
+ * @param rootElement - The root element to check for shadow DOM context
+ * @returns The currently active Element or null if no element is focused
+ */
+export function getActiveElement(rootElement: HTMLElement): Element | null {
+  const shadowRoot = getShadowRootOrDocument(rootElement);
+
+  if (shadowRoot && isShadowRoot(shadowRoot) && shadowRoot.activeElement) {
+    return shadowRoot.activeElement;
+  }
+  return getDocumentFromElement(rootElement).activeElement;
 }
 
 /**
  * Returns the selection for the defaultView of the ownerDocument of given EventTarget.
+ * Enhanced with Shadow DOM support using modern getComposedRanges() API when available,
+ * with fallback to experimental ShadowRoot.getSelection() for compatibility.
  *
- * @param eventTarget The node to get the selection from
- * @returns a Selection or null
+ * @param eventTarget - The EventTarget (typically a DOM node) to get the selection from
+ * @returns A Selection object from the appropriate context or null if unavailable
  */
 export function getDOMSelectionFromTarget(
   eventTarget: null | EventTarget,
 ): null | Selection {
+  if (!eventTarget) {
+    return null;
+  }
+
+  // Check if eventTarget is in shadow DOM
+  if (isHTMLElement(eventTarget)) {
+    const shadowRoot = getShadowRootOrDocument(eventTarget);
+
+    if (shadowRoot && isShadowRoot(shadowRoot)) {
+      return getDOMSelectionFromShadowRoot(shadowRoot);
+    }
+  }
+
   const defaultView = getDefaultView(eventTarget);
   return defaultView ? defaultView.getSelection() : null;
 }

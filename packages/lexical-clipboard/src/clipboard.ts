@@ -26,7 +26,8 @@ import {
   BaseSelection,
   COMMAND_PRIORITY_CRITICAL,
   COPY_COMMAND,
-  getDOMSelection,
+  getDOMSelectionForEditor,
+  getWindow,
   isSelectionWithinEditor,
   LexicalEditor,
   LexicalNode,
@@ -467,9 +468,9 @@ export async function copyToClipboard(
   }
 
   const rootElement = editor.getRootElement();
-  const editorWindow = editor._window || window;
+  const editorWindow = getWindow(editor);
   const windowDocument = editorWindow.document;
-  const domSelection = getDOMSelection(editorWindow);
+  const domSelection = getDOMSelectionForEditor(editor);
   if (rootElement === null || domSelection === null) {
     return false;
   }
@@ -518,7 +519,7 @@ function $copyToClipboardEvent(
   data?: LexicalClipboardData,
 ): boolean {
   if (data === undefined) {
-    const domSelection = getDOMSelection(editor._window);
+    const domSelection = getDOMSelectionForEditor(editor);
     if (!domSelection) {
       return false;
     }

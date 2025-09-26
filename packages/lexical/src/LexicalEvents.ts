@@ -93,12 +93,13 @@ import {
   dispatchCommand,
   doesContainSurrogatePair,
   getAnchorTextFromDOM,
-  getDOMSelection,
+  getDOMSelectionForEditor,
   getDOMSelectionFromTarget,
   getDOMTextNode,
   getEditorPropertyFromDOMNode,
   getEditorsToPropagate,
   getNearestEditorFromDOMNode,
+  getShadowRootOrDocument,
   getWindow,
   isBackspace,
   isBold,
@@ -175,7 +176,7 @@ let lastKeyDownTimeStamp = 0;
 let lastKeyCode: null | string = null;
 let lastBeforeInputInsertTextTimeStamp = 0;
 let unprocessedBeforeInputData: null | string = null;
-const rootElementsRegistered = new WeakMap<Document, number>();
+const rootElementsRegistered = new WeakMap<Document | ShadowRoot, number>();
 let isSelectionChangeFromDOMUpdate = false;
 let isSelectionChangeFromMouseDown = false;
 let isInsertLineBreak = false;
@@ -208,7 +209,7 @@ function $shouldPreventDefaultAndInsertText(
   const focus = selection.focus;
   const anchorNode = anchor.getNode();
   const editor = getActiveEditor();
-  const domSelection = getDOMSelection(getWindow(editor));
+  const domSelection = getDOMSelectionForEditor(editor);
   const domAnchorNode = domSelection !== null ? domSelection.anchorNode : null;
   const anchorKey = anchor.key;
   const backingAnchorElement = editor.getElementByKey(anchorKey);
@@ -478,7 +479,7 @@ function $updateSelectionFormatStyleFromElementNode(
 function onClick(event: PointerEvent, editor: LexicalEditor): void {
   updateEditorSync(editor, () => {
     const selection = $getSelection();
-    const domSelection = getDOMSelection(getWindow(editor));
+    const domSelection = getDOMSelectionForEditor(editor);
     const lastSelection = $getPreviousSelection();
 
     if (domSelection) {
@@ -933,7 +934,7 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
         }
         const anchor = selection.anchor;
         const anchorNode = anchor.getNode();
-        const domSelection = getDOMSelection(getWindow(editor));
+        const domSelection = getDOMSelectionForEditor(editor);
         if (domSelection === null) {
           return;
         }
@@ -1321,7 +1322,7 @@ export function addRootElementEvents(
 ): void {
   // We only want to have a single global selectionchange event handler, shared
   // between all editor instances.
-  const doc = rootElement.ownerDocument;
+  const doc = getShadowRootOrDocument(rootElement);
   const documentRootElementsCount = rootElementsRegistered.get(doc);
   if (
     documentRootElementsCount === undefined ||
@@ -1428,7 +1429,7 @@ const rootElementNotRegisteredWarning = warnOnlyOnce(
 );
 
 export function removeRootElementEvents(rootElement: HTMLElement): void {
-  const doc = rootElement.ownerDocument;
+  const doc = getShadowRootOrDocument(rootElement);
   const documentRootElementsCount = rootElementsRegistered.get(doc);
   if (documentRootElementsCount === undefined) {
     // This can happen if setRootElement() failed

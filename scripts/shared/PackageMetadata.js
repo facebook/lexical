@@ -16,6 +16,7 @@ const npmToWwwName = require('../www/npmToWwwName');
  * @typedef {Object} ModuleBuildDefinition
  * @property {string} outputFileName
  * @property {string} sourceFileName
+ * @property {undefined | string} [browserSourceFileName]
  */
 
 /**
@@ -192,16 +193,17 @@ class PackageMetadata {
   /**
    * @returns {PackageBuildDefinition}
    */
-  getPackageBuildDefinition() {
+  getPackageBuildDefinition(opts = {consolidateBrowserSource: false}) {
     const npmName = this.getNpmName();
     return {
       modules: this.getExportedNpmModuleEntries().flatMap(
         ({name, sourceFileName, browserSourceFileName}) => [
           {
+            browserSourceFileName,
             outputFileName: npmToWwwName(name),
             sourceFileName,
           },
-          ...(browserSourceFileName
+          ...(browserSourceFileName && !opts.consolidateBrowserSource
             ? [
                 {
                   outputFileName: `${npmToWwwName(name)}.browser`,

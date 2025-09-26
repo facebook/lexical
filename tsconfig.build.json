@@ -195,6 +195,9 @@
       "shared/formatDevErrorMessage": [
         "./packages/shared/src/formatDevErrorMessage.ts"
       ],
+      "shared/formatDevWarningMessage": [
+        "./packages/shared/src/formatDevWarningMessage.ts"
+      ],
       "shared/formatProdErrorMessage": [
         "./packages/shared/src/formatProdErrorMessage.ts"
       ],

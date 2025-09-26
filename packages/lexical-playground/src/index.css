@@ -1438,6 +1438,10 @@ button.action-button:disabled {
   overflow-y: hidden; /* disable vertical scroll*/
 }
 
+.toolbar .toolbar-item:focus {
+  outline: 2px solid rgb(60, 132, 244);
+}
+
 button.toolbar-item {
   border: 0;
   display: flex;

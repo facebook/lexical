@@ -15,15 +15,18 @@ if (typeof window === 'undefined') {
     if (prevWindow) {
       return f(ctx.window);
     }
+    const prevDOMParser = ctx.DOMParser;
     const prevMutationObserver = ctx.MutationObserver;
     const prevDocument = ctx.document;
     const newWindow = new (require(':server-only-hack:jsdom').JSDOM)();
     ctx.window = newWindow;
     ctx.document = newWindow.document;
     ctx.MutationObserver = newWindow.MutationObserver;
+    ctx.DOMParser = newWindow.DOMParser;
     try {
       return f(newWindow);
     } finally {
+      ctx.DOMParser = prevDOMParser;
       ctx.MutationObserver = prevMutationObserver;
       ctx.document = prevDocument;
       ctx.window = prevWindow;

@@ -8,7 +8,7 @@
 
 import {Window as HappyDOMWindow} from 'happy-dom';
 
-function createWindow(): Window & typeof globalThis {
+function createWindow(): typeof globalThis.window {
   // @ts-expect-error -- DOMWindow is not exactly Window
   return new HappyDOMWindow();
 }
@@ -25,21 +25,24 @@ function createWindow(): Window & typeof globalThis {
  * @param f A function that uses the window object
  * @returns The result of that function.
  */
-export function withDOM<T>(f: (window: Window) => T): T {
+export function withDOM<T>(f: (window: typeof globalThis.window) => T): T {
   const prevWindow = globalThis.window;
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- handle recursive case
   if (prevWindow) {
     return f(globalThis.window);
   }
+  const prevDOMParser = globalThis.DOMParser;
   const prevMutationObserver = globalThis.MutationObserver;
   const prevDocument = globalThis.document;
   const newWindow = createWindow();
   globalThis.window = newWindow;
   globalThis.document = newWindow.document;
   globalThis.MutationObserver = newWindow.MutationObserver;
+  globalThis.DOMParser = newWindow.DOMParser;
   try {
     return f(newWindow);
   } finally {
+    globalThis.DOMParser = prevDOMParser;
     globalThis.MutationObserver = prevMutationObserver;
     globalThis.document = prevDocument;
     globalThis.window = prevWindow;

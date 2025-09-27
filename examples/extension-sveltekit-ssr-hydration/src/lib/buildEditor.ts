@@ -5,18 +5,34 @@
  * conventions around it.
  */
 
-import { buildEditorFromExtensions, EditorStateExtension } from '@lexical/extension';
+import {
+	buildEditorFromExtensions,
+	EditorStateExtension,
+	effect,
+	InitialStateExtension,
+	watchedSignal
+} from '@lexical/extension';
 import { RichTextExtension } from '@lexical/rich-text';
 import { TailwindExtension } from '@lexical/tailwind';
 import { HistoryExtension } from '@lexical/history';
 import { $generateNodesFromDOM } from '@lexical/html';
 import { $insertGeneratedNodes } from '@lexical/clipboard';
 import { AutoLinkExtension, ClickableLinkExtension } from '@lexical/link';
-import { $addUpdateTag, $getEditor, HISTORY_MERGE_TAG } from 'lexical';
+import {
+	$addUpdateTag,
+	$getEditor,
+	configExtension,
+	defineExtension,
+	HISTORY_MERGE_TAG,
+	safeCast,
+	type EditorState
+} from 'lexical';
 import { CheckListExtension } from '@lexical/list';
-// @ts-expect-error -- broken types
+// @ts-expect-error -- broken types TODO #7859
 import { withDOM } from '@lexical/headless/dom';
 import { $selectAll, type InitialEditorStateType, type LexicalEditor } from 'lexical';
+import type { ViteHotContext } from 'vite/types/hot.js';
+import { mergeRegister } from '@lexical/utils';
 
 export const INITIAL_CONTENT = `
 <h1>Welcome to the Svelte 5 Tailwind example!</h1>
@@ -54,6 +70,7 @@ export function $initialEditorStateServer() {
 export function prerenderHtml(editor: LexicalEditor) {
 	return withDOM(({ document, getComputedStyle }: typeof globalThis.window) => {
 		const el = document.createElement('div');
+		// TODO #7859 this global patch can be removed
 		const prevGetComputedStyle = globalThis.getComputedStyle;
 		try {
 			globalThis.getComputedStyle = getComputedStyle;
@@ -68,10 +85,59 @@ export function prerenderHtml(editor: LexicalEditor) {
 }
 
 export function hydrate(editor: LexicalEditor, dom: HTMLElement) {
-	editor.update(() => $parseInitialHtml(dom.innerHTML));
+	if (editor.getEditorState().isEmpty()) {
+		// TODO #7859 can use $generateNodesFromDOM directly
+		editor.update(() => $parseInitialHtml(dom.innerHTML), { tag: HISTORY_MERGE_TAG });
+	}
 }
 
-export function buildEditor($initialEditorState: InitialEditorStateType = null) {
+interface LexicalHMRState {
+	editable: boolean;
+	editorState: EditorState;
+}
+const HMR_KEY = 'lexicalHMR';
+
+export const WatchEditableExtension = defineExtension({
+	name: '@lexical/extension/WatchEditable',
+	build(editor) {
+		return watchedSignal(
+			() => editor.isEditable(),
+			(signal) =>
+				editor.registerEditableListener((editable) => {
+					signal.value = editable;
+				})
+		);
+	}
+});
+
+const HMRExtension = defineExtension({
+	name: '@lexical/examples/hmr',
+	config: safeCast<{ hot: null | ViteHotContext }>({ hot: null }),
+	dependencies: [EditorStateExtension, WatchEditableExtension],
+	afterRegistration(editor, { hot }, state) {
+		if (hot) {
+			const lexicalHMR: undefined | LexicalHMRState = hot.data[HMR_KEY];
+			if (lexicalHMR) {
+				editor.setEditable(lexicalHMR.editable);
+				editor.setEditorState(lexicalHMR.editorState, { tag: HISTORY_MERGE_TAG });
+			}
+			const editorStateSignal = state.getDependency(EditorStateExtension).output;
+			const editableSignal = state.getDependency(WatchEditableExtension).output;
+			return effect(() => {
+				hot.data[HMR_KEY] = safeCast<LexicalHMRState>({
+					editable: editableSignal.value,
+					editorState: editorStateSignal.value
+				});
+			});
+		}
+		return () => {};
+	}
+});
+
+export function buildEditor(
+	$initialEditorState: InitialEditorStateType = null,
+	hot: null | ViteHotContext = null
+) {
 	return buildEditorFromExtensions({
 		name: '[root]',
 		$initialEditorState,
@@ -83,7 +149,9 @@ export function buildEditor($initialEditorState: InitialEditorStateType = null) 
 			AutoLinkExtension,
 			ClickableLinkExtension,
 			CheckListExtension,
-			EditorStateExtension
+			EditorStateExtension,
+			WatchEditableExtension,
+			configExtension(HMRExtension, { hot })
 		]
 	});
 }

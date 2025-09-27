@@ -13,6 +13,8 @@ that come with Lexical and its associated packages.
 🧪 This API is experimental, and may evolve with no deprecation
 period. Be prepared to track its development closely if you adopt it early.
 
+Lexical Extension became available in v0.36.1 (September 2025).
+
 ## Use Case
 
 Lexical Extensions allow complex features to be added to your editor

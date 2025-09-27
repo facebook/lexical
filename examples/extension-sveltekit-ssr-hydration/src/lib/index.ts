@@ -5,9 +5,4 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
-import { sveltekit } from '@sveltejs/kit/vite';
-
-export default {
-	plugins: [sveltekit()],
-};
+// place files you want to import through the `$lib` alias in this folder.

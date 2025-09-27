@@ -76,6 +76,8 @@
 		>
 		<div
 			class="relative container mx-auto border border-solid p-4"
+			role="textbox"
+			data-lexical-editor="true"
 			bind:this={editorRef}
 			contenteditable={editable}
 		>

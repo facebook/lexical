@@ -519,7 +519,13 @@ function $copyToClipboardEvent(
 ): boolean {
   if (data === undefined) {
     const domSelection = getDOMSelection(editor._window);
-    if (!domSelection || domSelection.isCollapsed) {
+    const editorSelection = $getSelection();
+
+    if (editorSelection && editorSelection.isCollapsed()) {
+      return false;
+    }
+
+    if (!domSelection) {
       return false;
     }
     const anchorDOM = domSelection.anchorNode;

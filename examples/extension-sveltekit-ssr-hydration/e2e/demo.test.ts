@@ -26,4 +26,12 @@ test('html is prerendered', async ({ page }) => {
 	// to prove that we are rehydrating directly from html and not some
 	// other sidecar
 	expect(scripts.filter((text) => text.includes('SERVER_AND_HTML_ONLY'))).toEqual([]);
+	// verify that the lexical editor is mounted and has an accessible version
+	expect(
+		await page.evaluate(
+			() =>
+				// @ts-expect-error -- internal implementation detail
+				document.querySelector('[contenteditable]')!.__lexicalEditor.constructor.version
+		)
+	).toMatch(/^\d+\.\d+\.\d+/);
 });

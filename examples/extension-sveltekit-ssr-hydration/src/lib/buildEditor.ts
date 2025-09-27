@@ -1,4 +1,11 @@
 /**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+/**
  * We set up the editor (mostly) outside of .svelte files to avoid the
  * svelte/dollar_prefix_invalid compiler error because svelte
  * assigns special meaning that prefix and Lexical also has its
@@ -9,7 +16,6 @@ import {
 	buildEditorFromExtensions,
 	EditorStateExtension,
 	effect,
-	InitialStateExtension,
 	watchedSignal
 } from '@lexical/extension';
 import { RichTextExtension } from '@lexical/rich-text';
@@ -32,7 +38,6 @@ import { CheckListExtension } from '@lexical/list';
 import { withDOM } from '@lexical/headless/dom';
 import { $selectAll, type InitialEditorStateType, type LexicalEditor } from 'lexical';
 import type { ViteHotContext } from 'vite/types/hot.js';
-import { mergeRegister } from '@lexical/utils';
 
 export const INITIAL_CONTENT = `
 <h1>Welcome to the Svelte 5 Tailwind example!</h1>

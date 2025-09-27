@@ -1,13 +1,16 @@
 <script lang="ts">
+	// Use * imports to reference lexical $functions from a .svelte
+	// file without renaming
 	import * as buildEditor from '$lib/buildEditor';
 	import { browser } from '$app/environment';
 	import * as extension from '@lexical/extension';
-	import { derivedFromSignal } from '$lib/derivedFromSignal.svelte';
 
 	let editorRef: HTMLElement;
 	let exportJson = $state('');
 	let initialState = browser ? null : buildEditor.$initialEditorStateServer;
 	const editor = buildEditor.buildEditor(initialState, browser ? import.meta.hot : undefined);
+	// preact signals comply with the svelte store API so we can use these reactively with $ prefixes
+	// from a .svelte file
 	const stateSignal = extension.getExtensionDependencyFromEditor(
 		editor,
 		extension.EditorStateExtension
@@ -16,8 +19,6 @@
 		editor,
 		buildEditor.WatchEditableExtension
 	).output;
-	let editableValue = derivedFromSignal(editableSignal);
-	let stateValue = derivedFromSignal(stateSignal);
 	$effect(() => {
 		if (browser && editorRef) {
 			buildEditor.hydrate(editor, editorRef);
@@ -25,9 +26,9 @@
 		}
 	});
 	$effect(() => {
-		exportJson = JSON.stringify(stateValue.value, null, 2);
+		// Only compute this on the client
+		exportJson = JSON.stringify($stateSignal, null, 2);
 	});
-	const prerender = browser ? '<!-- server hydrated -->' : buildEditor.prerenderHtml(editor);
 </script>
 
 <svelte:head>
@@ -42,18 +43,18 @@
 		<button
 			class="mb-2 cursor-pointer border-0 bg-indigo-700 px-6 py-2.5 text-sm font-medium tracking-wider text-white outline-0 hover:bg-indigo-800"
 			onclick={() => {
-				editor.setEditable(!editableValue.value);
-			}}>Toggle Editable {editableValue.value ? 'OFF' : 'ON'}</button
+				editor.setEditable(!$editableSignal);
+			}}>Toggle Editable {$editableSignal ? 'OFF' : 'ON'}</button
 		>
 		<div
 			class="relative container mx-auto border border-solid p-4"
 			role="textbox"
 			data-lexical-editor="true"
 			bind:this={editorRef}
-			contenteditable={editableValue.value}
+			contenteditable={$editableSignal}
 		>
 			<!-- svelte-ignore hydration_html_changed -->
-			{@html browser ? '<!-- server hydrated -->' : prerender}
+			{@html browser ? '<!-- server hydrated -->' : buildEditor.prerenderHtml(editor)}
 		</div>
 	</div>
 	<pre class="max-w-xl">{exportJson}</pre>

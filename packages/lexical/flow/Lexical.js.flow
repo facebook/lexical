@@ -316,6 +316,23 @@ export type EditorConfig = {
   theme: EditorThemeClasses,
   namespace: string,
   disableEvents?: boolean,
+  /** @internal @experimental */
+  createDOM?: <T: LexicalNode>(
+    editor: LexicalEditor,
+    node: T,
+  ) => HTMLElement;
+  /** @internal @experimental */
+  exportDOM?: <T: LexicalNode>(
+    editor: LexicalEditor,
+    node: T,
+  ) => DOMExportOutput;
+  /** @internal @experimental */
+  updateDOM?: <T: LexicalNode>(
+    editor: LexicalEditor,
+    nextNode: T,
+    prevNode: T,
+    dom: HTMLElement,
+  ) => boolean;  
 };
 export type CommandListenerPriority = 0 | 1 | 2 | 3 | 4;
 export const COMMAND_PRIORITY_EDITOR = 0;

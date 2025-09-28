@@ -43,6 +43,7 @@ import {
   getCachedTypeToNodeMap,
   getDefaultView,
   getDOMSelection,
+  getRegisteredNode,
   getStaticNodeConfig,
   hasOwnExportDOM,
   hasOwnStaticMethod,
@@ -188,11 +189,11 @@ export type EditorThemeClasses = {
   [key: string]: any;
 };
 
-export type EditorConfig = {
+export interface EditorConfig extends DOMConfig {
   disableEvents?: boolean;
   namespace: string;
   theme: EditorThemeClasses;
-};
+}
 
 export type LexicalNodeReplacement = {
   replace: Klass<LexicalNode>;
@@ -213,7 +214,28 @@ export type HTMLConfig = {
  */
 export type LexicalNodeConfig = Klass<LexicalNode> | LexicalNodeReplacement;
 
-export type CreateEditorArgs = {
+/** @internal @experimental */
+export interface DOMConfig {
+  /** @internal @experimental */
+  createDOM: <T extends LexicalNode>(
+    editor: LexicalEditor,
+    node: T,
+  ) => HTMLElement;
+  /** @internal @experimental */
+  exportDOM: <T extends LexicalNode>(
+    editor: LexicalEditor,
+    node: T,
+  ) => DOMExportOutput;
+  /** @internal @experimental */
+  updateDOM: <T extends LexicalNode>(
+    editor: LexicalEditor,
+    nextNode: T,
+    prevNode: T,
+    dom: HTMLElement,
+  ) => boolean;
+}
+
+export interface CreateEditorArgs {
   disableEvents?: boolean;
   editorState?: EditorState;
   namespace?: string;
@@ -223,7 +245,8 @@ export type CreateEditorArgs = {
   editable?: boolean;
   theme?: EditorThemeClasses;
   html?: HTMLConfig;
-};
+  dom?: Partial<DOMConfig>;
+}
 
 export type RegisteredNodes = Map<string, RegisteredNode>;
 
@@ -494,6 +517,22 @@ function initializeConversionCache(
   return conversionCache;
 }
 
+const defaultDOMConfig: DOMConfig = {
+  createDOM: (editor, node) => {
+    return node.createDOM(editor._config, editor);
+  },
+  exportDOM: (editor, node) => {
+    const registeredNode = getRegisteredNode(editor, node.getType());
+    // Use HTMLConfig overrides, if available.
+    return registeredNode && registeredNode.exportDOM !== undefined
+      ? registeredNode.exportDOM(editor, node)
+      : node.exportDOM(editor);
+  },
+  updateDOM: (editor, nextNode, prevNode, dom) => {
+    return nextNode.updateDOM(prevNode, dom, editor._config);
+  },
+};
+
 /**
  * Creates a new LexicalEditor attached to a single contentEditable (provided in the config). This is
  * the lowest-level initialization API for a LexicalEditor. If you're using React or another framework,
@@ -617,6 +656,8 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
       disableEvents,
       namespace,
       theme,
+      ...defaultDOMConfig,
+      ...(editorConfig && editorConfig.dom),
     },
     onError ? onError : console.error,
     initializeConversionCache(registeredNodes, html ? html.import : undefined),

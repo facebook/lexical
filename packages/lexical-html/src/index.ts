@@ -29,7 +29,6 @@ import {
   $isTextNode,
   ArtificialNode__DO_NOT_USE,
   ElementNode,
-  getRegisteredNode,
   isDocumentFragment,
   isDOMDocumentNode,
   isInlineDomNode,
@@ -113,17 +112,7 @@ function $appendNodesToHTML(
     target = clone;
   }
   const children = $isElementNode(target) ? target.getChildren() : [];
-  const registeredNode = getRegisteredNode(editor, target.getType());
-  let exportOutput;
-
-  // Use HTMLConfig overrides, if available.
-  if (registeredNode && registeredNode.exportDOM !== undefined) {
-    exportOutput = registeredNode.exportDOM(editor, target);
-  } else {
-    exportOutput = target.exportDOM(editor);
-  }
-
-  const {element, after} = exportOutput;
+  const {element, after} = editor._config.exportDOM(editor, target);
 
   if (!element) {
     return false;

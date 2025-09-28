@@ -993,12 +993,11 @@ test.describe('CopyAndPaste', () => {
     );
 
     // Copy with collapsed selection - should NOT overwrite clipboard
+    // Paste - should restore the original "Hello world" content
     await withExclusiveClipboardAccess(async () => {
       await page.keyboard.press('ControlOrMeta+c');
+      await page.keyboard.press('ControlOrMeta+v');
     });
-
-    // Paste - should restore the original "Hello world" content
-    await page.keyboard.press('ControlOrMeta+v');
 
     // Confirm that the content has been added back
     await assertHTML(

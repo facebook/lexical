@@ -979,7 +979,7 @@ test.describe('CopyAndPaste', () => {
     );
 
     // Select all content
-    await page.keyboard.press('Meta+a');
+    await page.keyboard.press('ControlOrMeta+a');
 
     // Cut the content (copies to clipboard AND removes content)
     await withExclusiveClipboardAccess(async () => {

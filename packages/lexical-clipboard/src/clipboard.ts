@@ -519,9 +519,9 @@ function $copyToClipboardEvent(
 ): boolean {
   if (data === undefined) {
     const domSelection = getDOMSelection(editor._window);
-    const editorSelection = $getSelection();
+    const selection = $getSelection();
 
-    if (editorSelection && editorSelection.isCollapsed()) {
+    if (selection && selection.isCollapsed()) {
       return false;
     }
 
@@ -537,7 +537,7 @@ function $copyToClipboardEvent(
     ) {
       return false;
     }
-    const selection = $getSelection();
+
     if (selection === null) {
       return false;
     }

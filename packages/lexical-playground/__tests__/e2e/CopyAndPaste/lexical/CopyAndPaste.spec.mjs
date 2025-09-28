@@ -960,4 +960,56 @@ test.describe('CopyAndPaste', () => {
       );
     });
   });
+
+  test('Cut then copy empty selection preserves clipboard', async ({
+    isRichText,
+    page,
+  }) => {
+    await focusEditor(page);
+
+    await page.keyboard.type('Hello world');
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">Hello world</span>
+        </p>
+      `,
+    );
+
+    // Select all content
+    await page.keyboard.press('Meta+a');
+
+    // Cut the content (copies to clipboard AND removes content)
+    await withExclusiveClipboardAccess(async () => {
+      await page.keyboard.press('ControlOrMeta+x');
+    });
+
+    // Confirm that the content was removed
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+      `,
+    );
+
+    // Copy with collapsed selection - should NOT overwrite clipboard
+    await withExclusiveClipboardAccess(async () => {
+      await page.keyboard.press('ControlOrMeta+c');
+    });
+
+    // Paste - should restore the original "Hello world" content
+    await page.keyboard.press('ControlOrMeta+v');
+
+    // Confirm that the content has been added back
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">Hello world</span>
+        </p>
+      `,
+    );
+  });
 });

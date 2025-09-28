@@ -521,7 +521,7 @@ function $copyToClipboardEvent(
     const domSelection = getDOMSelection(editor._window);
     const selection = $getSelection();
 
-    if (selection && selection.isCollapsed()) {
+    if (!selection || selection.isCollapsed()) {
       return false;
     }
 
@@ -538,9 +538,6 @@ function $copyToClipboardEvent(
       return false;
     }
 
-    if (selection === null) {
-      return false;
-    }
     data = $getClipboardDataFromSelection(selection);
   }
   event.preventDefault();

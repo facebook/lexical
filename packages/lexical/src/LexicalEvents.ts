@@ -135,7 +135,6 @@ import {
   isTab,
   isUnderline,
   isUndo,
-  scheduleMicroTask,
 } from './LexicalUtils';
 
 type RootElementRemoveHandles = Array<() => void>;
@@ -176,6 +175,9 @@ let lastKeyDownTimeStamp = 0;
 let lastKeyCode: null | string = null;
 let lastBeforeInputInsertTextTimeStamp = 0;
 let unprocessedBeforeInputData: null | string = null;
+// Node can be moved between documents (for example using createPortal), so we
+// need to track the document each root element was originally registered on.
+const rootElementToDocument = new WeakMap<HTMLElement, Document>();
 const rootElementsRegistered = new WeakMap<Document, number>();
 let isSelectionChangeFromDOMUpdate = false;
 let isSelectionChangeFromMouseDown = false;
@@ -1320,22 +1322,15 @@ export function addRootElementEvents(
   rootElement: HTMLElement,
   editor: LexicalEditor,
 ): void {
-  // Defer adding selectionchange handler until after the component has been
-  // connected to the DOM, otherwise ownerDocument may not be correct, e.g.
-  // when rendering into a different document via createPortal.
-  scheduleMicroTask(() => {
-    // We only want to have a single global selectionchange event handler, shared
-    // between all editor instances.
-    const doc = rootElement.ownerDocument;
-    const documentRootElementsCount = rootElementsRegistered.get(doc);
-    if (
-      documentRootElementsCount === undefined ||
-      documentRootElementsCount < 1
-    ) {
-      doc.addEventListener('selectionchange', onDocumentSelectionChange);
-    }
-    rootElementsRegistered.set(doc, (documentRootElementsCount || 0) + 1);
-  });
+  // We only want to have a single global selectionchange event handler, shared
+  // between all editor instances.
+  const doc = rootElement.ownerDocument;
+  rootElementToDocument.set(rootElement, doc);
+  const documentRootElementsCount = rootElementsRegistered.get(doc) ?? 0;
+  if (documentRootElementsCount < 1) {
+    doc.addEventListener('selectionchange', onDocumentSelectionChange);
+  }
+  rootElementsRegistered.set(doc, documentRootElementsCount + 1);
 
   // @ts-expect-error: internal field
   rootElement.__lexicalEditor = editor;
@@ -1434,24 +1429,28 @@ const rootElementNotRegisteredWarning = warnOnlyOnce(
 );
 
 export function removeRootElementEvents(rootElement: HTMLElement): void {
-  scheduleMicroTask(() => {
-    const doc = rootElement.ownerDocument;
-    const documentRootElementsCount = rootElementsRegistered.get(doc);
-    if (documentRootElementsCount === undefined) {
-      // This can happen if setRootElement() failed
-      rootElementNotRegisteredWarning();
-      return;
-    }
+  const doc = rootElementToDocument.get(rootElement);
+  if (doc === undefined) {
+    rootElementNotRegisteredWarning();
+    return;
+  }
 
-    // We only want to have a single global selectionchange event handler, shared
-    // between all editor instances.
-    const newCount = documentRootElementsCount - 1;
-    invariant(newCount >= 0, 'Root element count less than 0');
-    rootElementsRegistered.set(doc, newCount);
-    if (newCount === 0) {
-      doc.removeEventListener('selectionchange', onDocumentSelectionChange);
-    }
-  });
+  const documentRootElementsCount = rootElementsRegistered.get(doc);
+  if (documentRootElementsCount === undefined) {
+    // This can happen if setRootElement() failed
+    rootElementNotRegisteredWarning();
+    return;
+  }
+
+  // We only want to have a single global selectionchange event handler, shared
+  // between all editor instances.
+  const newCount = documentRootElementsCount - 1;
+  invariant(newCount >= 0, 'Root element count less than 0');
+  rootElementToDocument.delete(rootElement);
+  rootElementsRegistered.set(doc, newCount);
+  if (newCount === 0) {
+    doc.removeEventListener('selectionchange', onDocumentSelectionChange);
+  }
 
   const editor = getEditorPropertyFromDOMNode(rootElement);
 

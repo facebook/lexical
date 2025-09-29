@@ -982,12 +982,11 @@ test.describe('CopyAndPaste', () => {
     );
 
     // Select all content and Cut the content (copies to clipboard AND removes content)
-    await withExclusiveClipboardAccess(async () => {
-      await selectAll(page);
-      await keyDownCtrlOrMeta(page);
-      await page.keyboard.press('x');
-      await keyUpCtrlOrMeta(page);
-    });
+    await selectAll(page);
+
+    await keyDownCtrlOrMeta(page);
+    await page.keyboard.press('x');
+    await keyUpCtrlOrMeta(page);
 
     await assertHTML(
       page,
@@ -997,13 +996,13 @@ test.describe('CopyAndPaste', () => {
     );
 
     // Copy with collapsed selection and Paste
-    await withExclusiveClipboardAccess(async () => {
-      await keyDownCtrlOrMeta(page);
-      await page.keyboard.press('c');
-      await keyUpCtrlOrMeta(page);
+    await selectAll(page);
 
-      await paste(page);
-    });
+    await keyDownCtrlOrMeta(page);
+    await page.keyboard.press('c');
+    await keyUpCtrlOrMeta(page);
+
+    await paste(page);
 
     await assertHTML(
       page,

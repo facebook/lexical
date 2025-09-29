@@ -525,7 +525,7 @@ function $copyToClipboardEvent(
       return false;
     }
 
-    if (!domSelection || domSelection.isCollapsed) {
+    if (!domSelection) {
       return false;
     }
     const anchorDOM = domSelection.anchorNode;

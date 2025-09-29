@@ -12,7 +12,6 @@ import {
   moveToEditorEnd,
   moveToLineEnd,
   moveToPrevWord,
-  paste,
   selectAll,
 } from '../../../keyboardShortcuts/index.mjs';
 import {
@@ -970,7 +969,7 @@ test.describe('CopyAndPaste', () => {
     page,
     context,
   }) => {
-    await context.grantPermissions(['clipboard-read']);
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await focusEditor(page);
 
     await page.keyboard.type('Hello world');

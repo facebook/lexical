@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import {expect} from '@playwright/test';
 
 import {
   moveToEditorBeginning,
@@ -967,7 +968,9 @@ test.describe('CopyAndPaste', () => {
   test('Cut then copy empty selection preserves clipboard', async ({
     isRichText,
     page,
+    context,
   }) => {
+    await context.grantPermissions(['clipboard-read']);
     await focusEditor(page);
 
     await page.keyboard.type('Hello world');
@@ -981,9 +984,8 @@ test.describe('CopyAndPaste', () => {
       `,
     );
 
-    // Select all content and Cut the content (copies to clipboard AND removes content)
+    // Select all and cut
     await selectAll(page);
-
     await keyDownCtrlOrMeta(page);
     await page.keyboard.press('x');
     await keyUpCtrlOrMeta(page);
@@ -995,22 +997,25 @@ test.describe('CopyAndPaste', () => {
       `,
     );
 
-    // Copy with collapsed selection and Paste
+    await withExclusiveClipboardAccess(async () => {
+      const clipboardText = await page.evaluate(() =>
+        navigator.clipboard.readText(),
+      );
+      expect(clipboardText).toBe('Hello world');
+    });
+
+    // Copy with collapsed selection
     await selectAll(page);
 
     await keyDownCtrlOrMeta(page);
     await page.keyboard.press('c');
     await keyUpCtrlOrMeta(page);
 
-    await paste(page);
-
-    await assertHTML(
-      page,
-      html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <span data-lexical-text="true">Hello world</span>
-        </p>
-      `,
-    );
+    await withExclusiveClipboardAccess(async () => {
+      const clipboardText = await page.evaluate(() =>
+        navigator.clipboard.readText(),
+      );
+      expect(clipboardText).toBe('Hello world');
+    });
   });
 });

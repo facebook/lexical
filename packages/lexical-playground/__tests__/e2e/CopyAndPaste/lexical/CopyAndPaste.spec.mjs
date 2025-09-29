@@ -989,7 +989,6 @@ test.describe('CopyAndPaste', () => {
       await keyUpCtrlOrMeta(page);
     });
 
-    // Confirm that the content was removed
     await assertHTML(
       page,
       html`
@@ -997,13 +996,15 @@ test.describe('CopyAndPaste', () => {
       `,
     );
 
-    // Copy with collapsed selection - should NOT overwrite clipboard
-    // Paste - should restore the original "Hello world" content
+    // Copy with collapsed selection and Paste
     await withExclusiveClipboardAccess(async () => {
+      await keyDownCtrlOrMeta(page);
+      await page.keyboard.press('c');
+      await keyUpCtrlOrMeta(page);
+
       await paste(page);
     });
 
-    // Confirm that the content has been added back
     await assertHTML(
       page,
       html`

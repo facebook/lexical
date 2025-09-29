@@ -120,7 +120,9 @@ const thirdPartyExternals = [
   'y-websocket',
   'happy-dom',
   'jsdom',
-  ...(isWWW ? [] : ['react-error-boundary', '@floating-ui/react']),
+  ...(isWWW
+    ? [':server-only-hack:.*']
+    : ['react-error-boundary', '@floating-ui/react']),
 ];
 const thirdPartyExternalsRegExp = new RegExp(
   `^(${thirdPartyExternals.join('|')})(\\/|$)`,
@@ -226,6 +228,27 @@ async function build(
       }
     },
     plugins: [
+      ...(isWWW
+        ? [
+            /* in www we do not use export conditions so we build a virtual fork module instead */
+            {
+              name: 'server-only-hack',
+              renderChunk(source) {
+                // Ugly hack to effectively undo the hoist of require('jsdom')
+                const m = source.match(
+                  /require\(':server-only-hack:([^']+)'\);/,
+                );
+                if (m) {
+                  return (
+                    source.slice(0, m.index) +
+                    `typeof window === 'undefined' ? require('${m[1]}') : undefined;` +
+                    source.slice(m.index + m[0].length)
+                  );
+                }
+              },
+            },
+          ]
+        : []),
       alias({
         entries: [
           {find: 'shared', replacement: path.resolve('packages/shared/src')},
@@ -451,13 +474,22 @@ async function buildAll() {
   const formats = isWWW ? ['cjs'] : ['cjs', 'esm'];
   for (const pkg of packagesManager.getPublicPackages()) {
     const {name, sourcePath, outputPath, packageName, modules} =
-      pkg.getPackageBuildDefinition();
+      pkg.getPackageBuildDefinition({consolidateBrowserSource: isWWW});
     const {version} = pkg.packageJson;
     for (const module of modules) {
       for (const format of formats) {
         const {sourceFileName, outputFileName} = module;
-        const inputFile = path.resolve(sourcePath, sourceFileName);
-
+        let inputFile = path.resolve(sourcePath, sourceFileName);
+        if (
+          isWWW &&
+          module.browserSourceFileName &&
+          module.sourceFileName.endsWith('.ts')
+        ) {
+          const wwwCjs = inputFile.replace(/\.ts$/, '.www.cjs');
+          if (fs.existsSync(wwwCjs)) {
+            inputFile = wwwCjs;
+          }
+        }
         await build(
           `${name}${module.name ? '-' + module.name : ''}`,
           inputFile,

@@ -1,0 +1,5 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "cd ../.. && npm install || (echo 'retry without cache' && rm -rf node_modules && npm install)",
+  "framework": "docusaurus-2"
+}

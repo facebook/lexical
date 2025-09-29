@@ -11,7 +11,10 @@ import type {
   DOMChildConversion,
   DOMConversion,
   DOMConversionFn,
+  DOMExportOutput,
+  EditorDOMConfig,
   ElementFormatType,
+  Klass,
   LexicalEditor,
   LexicalNode,
 } from 'lexical';
@@ -28,10 +31,14 @@ import {
   $isRootOrShadowRoot,
   $isTextNode,
   ArtificialNode__DO_NOT_USE,
+  DEFAULT_EDITOR_DOM_CONFIG,
+  defineExtension,
   ElementNode,
   isDocumentFragment,
   isDOMDocumentNode,
   isInlineDomNode,
+  safeCast,
+  shallowMergeConfig,
 } from 'lexical';
 
 /**
@@ -66,6 +73,10 @@ export function $generateNodesFromDOM(
   return lexicalNodes;
 }
 
+function getEditorDOMConfig(editor: LexicalEditor): EditorDOMConfig {
+  return editor._config.dom || DEFAULT_EDITOR_DOM_CONFIG;
+}
+
 export function $generateHtmlFromNodes(
   editor: LexicalEditor,
   selection?: BaseSelection | null,
@@ -82,10 +93,11 @@ export function $generateHtmlFromNodes(
   const container = document.createElement('div');
   const root = $getRoot();
   const topLevelChildren = root.getChildren();
+  const domConfig = getEditorDOMConfig(editor);
 
   for (let i = 0; i < topLevelChildren.length; i++) {
     const topLevelNode = topLevelChildren[i];
-    $appendNodesToHTML(editor, topLevelNode, container, selection);
+    $appendNodesToHTML(editor, topLevelNode, container, selection, domConfig);
   }
 
   return container.innerHTML;
@@ -96,6 +108,7 @@ function $appendNodesToHTML(
   currentNode: LexicalNode,
   parentElement: HTMLElement | DocumentFragment,
   selection: BaseSelection | null = null,
+  domConfig: EditorDOMConfig = getEditorDOMConfig(editor),
 ): boolean {
   let shouldInclude =
     selection !== null ? currentNode.isSelected(selection) : true;
@@ -112,7 +125,7 @@ function $appendNodesToHTML(
     target = clone;
   }
   const children = $isElementNode(target) ? target.getChildren() : [];
-  const {element, after} = editor._config.exportDOM(editor, target);
+  const {element, after} = domConfig.exportDOM(editor, target);
 
   if (!element) {
     return false;
@@ -127,6 +140,7 @@ function $appendNodesToHTML(
       childNode,
       fragment,
       selection,
+      domConfig,
     );
 
     if (
@@ -373,3 +387,111 @@ function isDomNodeBetweenTwoInlineNodes(node: Node): boolean {
     isInlineDomNode(node.nextSibling) && isInlineDomNode(node.previousSibling)
   );
 }
+
+/** @internal @experimental */
+export interface DOMConfig {
+  overrides: AnyDOMConfigMatch[];
+}
+/** @internal @experimental */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyDOMConfigMatch = DOMConfigMatch<any>;
+
+type NodeMatch<T extends LexicalNode> =
+  | Klass<T>
+  | ((node: LexicalNode) => node is T);
+
+/** @internal @experimental */
+export interface DOMConfigMatch<T extends LexicalNode> {
+  nodes: ('*' | NodeMatch<T>)[];
+  createDOM?: (
+    editor: LexicalEditor,
+    node: T,
+    next: () => HTMLElement,
+  ) => HTMLElement;
+  updateDOM?: (
+    editor: LexicalEditor,
+    nextNode: T,
+    prevNode: T,
+    dom: HTMLElement,
+    next: () => boolean,
+  ) => boolean;
+  exportDOM?: (
+    editor: LexicalEditor,
+    node: T,
+    next: () => DOMExportOutput,
+  ) => DOMExportOutput;
+}
+
+function mergeDOMConfigMatch(
+  acc: EditorDOMConfig,
+  match: AnyDOMConfigMatch,
+): EditorDOMConfig {
+  // TODO Consider using a node type map to make this more efficient when
+  // there are more overrides
+  const {nodes, createDOM, updateDOM, exportDOM} = match;
+  const matcher = (node: LexicalNode): boolean => {
+    for (const predicate of nodes) {
+      if (predicate === '*') {
+        return true;
+      } else if ('getType' in predicate || '$config' in predicate.prototype) {
+        if (node instanceof predicate) {
+          return true;
+        }
+      } else if (predicate(node)) {
+        return true;
+      }
+    }
+    return false;
+  };
+  return {
+    createDOM: createDOM
+      ? (editor, node) => {
+          const next = () => acc.createDOM(editor, node);
+          return matcher(node) ? createDOM(editor, node, next) : next();
+        }
+      : acc.createDOM,
+    exportDOM: exportDOM
+      ? (editor, node) => {
+          const next = () => acc.exportDOM(editor, node);
+          return matcher(node) ? exportDOM(editor, node, next) : next();
+        }
+      : acc.exportDOM,
+    updateDOM: updateDOM
+      ? (editor, nextNode, prevNode, dom) => {
+          const next = () => acc.updateDOM(editor, nextNode, prevNode, dom);
+          return matcher(nextNode)
+            ? updateDOM(editor, nextNode, prevNode, dom, next)
+            : next();
+        }
+      : acc.updateDOM,
+  };
+}
+
+function compileOverrides(
+  {overrides}: DOMConfig,
+  defaults: EditorDOMConfig,
+): EditorDOMConfig {
+  // The beginning of the array will be the overrides towards the top
+  // of the tree so should be higher precedence, so we compose the functions
+  // from the right
+  return overrides.reduceRight(mergeDOMConfigMatch, defaults);
+}
+
+/** @internal @experimental */
+export const DOMExtension = defineExtension({
+  config: safeCast<DOMConfig>({
+    overrides: [],
+  }),
+  init(editorConfig, config) {
+    const defaults = {...DEFAULT_EDITOR_DOM_CONFIG, ...editorConfig.dom};
+    editorConfig.dom = compileOverrides(config, defaults);
+  },
+  mergeConfig(config, partial) {
+    const merged = shallowMergeConfig(config, partial);
+    if (partial.overrides) {
+      merged.overrides = [...merged.overrides, ...partial.overrides];
+    }
+    return merged;
+  },
+  name: '@lexical/html/DOM',
+});

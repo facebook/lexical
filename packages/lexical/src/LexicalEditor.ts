@@ -189,7 +189,8 @@ export type EditorThemeClasses = {
   [key: string]: any;
 };
 
-export interface EditorConfig extends DOMConfig {
+export interface EditorConfig {
+  dom?: EditorDOMConfig;
   disableEvents?: boolean;
   namespace: string;
   theme: EditorThemeClasses;
@@ -215,7 +216,7 @@ export type HTMLConfig = {
 export type LexicalNodeConfig = Klass<LexicalNode> | LexicalNodeReplacement;
 
 /** @internal @experimental */
-export interface DOMConfig {
+export interface EditorDOMConfig {
   /** @internal @experimental */
   createDOM: <T extends LexicalNode>(
     editor: LexicalEditor,
@@ -245,7 +246,7 @@ export interface CreateEditorArgs {
   editable?: boolean;
   theme?: EditorThemeClasses;
   html?: HTMLConfig;
-  dom?: Partial<DOMConfig>;
+  dom?: Partial<EditorDOMConfig>;
 }
 
 export type RegisteredNodes = Map<string, RegisteredNode>;
@@ -517,7 +518,8 @@ function initializeConversionCache(
   return conversionCache;
 }
 
-const defaultDOMConfig: DOMConfig = {
+/** @internal */
+export const DEFAULT_EDITOR_DOM_CONFIG: EditorDOMConfig = {
   createDOM: (editor, node) => {
     return node.createDOM(editor._config, editor);
   },
@@ -654,10 +656,12 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
     registeredNodes,
     {
       disableEvents,
+      dom: {
+        ...DEFAULT_EDITOR_DOM_CONFIG,
+        ...(editorConfig && editorConfig.dom),
+      },
       namespace,
       theme,
-      ...defaultDOMConfig,
-      ...(editorConfig && editorConfig.dom),
     },
     onError ? onError : console.error,
     initializeConversionCache(registeredNodes, html ? html.import : undefined),

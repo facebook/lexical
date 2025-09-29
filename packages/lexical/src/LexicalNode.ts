@@ -1504,3 +1504,9 @@ export function insertRangeAfter(
     currentNode = currentNode.insertAfter(nodeToInsert);
   }
 }
+
+export function $isLexicalNode(
+  node: null | undefined | LexicalNode,
+): node is LexicalNode {
+  return node instanceof LexicalNode;
+}

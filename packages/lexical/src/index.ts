@@ -133,9 +133,9 @@ export type {
   CommandListenerPriority,
   CommandPayloadType,
   CreateEditorArgs,
-  DOMConfig,
   EditableListener,
   EditorConfig,
+  EditorDOMConfig,
   EditorSetOptions,
   EditorThemeClasses,
   EditorThemeClassName,
@@ -163,6 +163,7 @@ export {
   COMMAND_PRIORITY_LOW,
   COMMAND_PRIORITY_NORMAL,
   createEditor,
+  DEFAULT_EDITOR_DOM_CONFIG,
 } from './LexicalEditor';
 export type {
   EditorState,
@@ -193,7 +194,7 @@ export type {
   StaticNodeConfigRecord,
   StaticNodeConfigValue,
 } from './LexicalNode';
-export {buildImportMap} from './LexicalNode';
+export {$isLexicalNode, buildImportMap} from './LexicalNode';
 export {
   $getState,
   $getStateChange,

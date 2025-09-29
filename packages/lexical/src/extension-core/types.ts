@@ -353,6 +353,10 @@ export interface InitialEditorConfig {
    */
   disableEvents?: CreateEditorArgs['disableEvents'];
   /**
+   * @internal @experimental
+   */
+  dom?: CreateEditorArgs['dom'];
+  /**
    * Used when this editor is nested inside of another editor
    */
   parentEditor?: CreateEditorArgs['parentEditor'];

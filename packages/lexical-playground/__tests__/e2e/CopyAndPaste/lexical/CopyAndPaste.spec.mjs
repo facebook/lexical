@@ -11,6 +11,7 @@ import {
   moveToEditorEnd,
   moveToLineEnd,
   moveToPrevWord,
+  paste,
   selectAll,
 } from '../../../keyboardShortcuts/index.mjs';
 import {
@@ -23,6 +24,8 @@ import {
   initialize,
   insertYouTubeEmbed,
   IS_LINUX,
+  keyDownCtrlOrMeta,
+  keyUpCtrlOrMeta,
   pasteFromClipboard,
   test,
   withExclusiveClipboardAccess,
@@ -980,8 +983,10 @@ test.describe('CopyAndPaste', () => {
 
     // Select all content and Cut the content (copies to clipboard AND removes content)
     await withExclusiveClipboardAccess(async () => {
-      await page.keyboard.press('ControlOrMeta+a');
-      await page.keyboard.press('ControlOrMeta+x');
+      await selectAll(page);
+      await keyDownCtrlOrMeta(page);
+      await page.keyboard.press('x');
+      await keyUpCtrlOrMeta(page);
     });
 
     // Confirm that the content was removed
@@ -995,8 +1000,7 @@ test.describe('CopyAndPaste', () => {
     // Copy with collapsed selection - should NOT overwrite clipboard
     // Paste - should restore the original "Hello world" content
     await withExclusiveClipboardAccess(async () => {
-      await page.keyboard.press('ControlOrMeta+c');
-      await page.keyboard.press('ControlOrMeta+v');
+      await paste(page);
     });
 
     // Confirm that the content has been added back

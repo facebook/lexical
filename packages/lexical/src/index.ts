@@ -168,6 +168,7 @@ export type {
   EditorStateReadOptions,
   SerializedEditorState,
 } from './LexicalEditorState';
+export {$isEditorState} from './LexicalEditorState';
 export type {EventHandler} from './LexicalEvents';
 export type {
   BaseStaticNodeConfig,
@@ -236,12 +237,14 @@ export {
   $cloneWithProperties,
   $copyNode,
   $create,
+  $findMatchingParent,
   $getAdjacentNode,
   $getEditor,
   $getNearestNodeFromDOMNode,
   $getNearestRootOrShadowRoot,
   $getNodeByKey,
   $getNodeByKeyOrThrow,
+  $getNodeFromDOMNode,
   $getRoot,
   $hasAncestor,
   $hasUpdateTag,
@@ -264,6 +267,7 @@ export {
   getNearestEditorFromDOMNode,
   getRegisteredNode,
   getRegisteredNodeOrThrow,
+  getStaticNodeConfig,
   INTERNAL_$isBlock,
   isBlockDomNode,
   isDocumentFragment,
@@ -327,3 +331,36 @@ export {
   SKIP_SCROLL_INTO_VIEW_TAG,
   type UpdateTag,
 } from './LexicalUpdateTags';
+
+// LexicalExtension
+export {
+  type AnyLexicalExtension,
+  type AnyLexicalExtensionArgument,
+  type AnyNormalizedLexicalExtensionArgument,
+  configExtension,
+  type configTypeSymbol,
+  declarePeerDependency,
+  defineExtension,
+  type ExtensionBuildState,
+  type ExtensionConfigBase,
+  type ExtensionInitState,
+  type ExtensionRegisterState,
+  type InitialEditorConfig,
+  type InitialEditorStateType,
+  type initTypeSymbol,
+  type LexicalEditorWithDispose,
+  type LexicalExtension,
+  type LexicalExtensionArgument,
+  type LexicalExtensionConfig,
+  type LexicalExtensionDependency,
+  type LexicalExtensionInit,
+  type LexicalExtensionInternal,
+  type LexicalExtensionName,
+  type LexicalExtensionOutput,
+  type NormalizedLexicalExtensionArgument,
+  type NormalizedPeerDependency,
+  type OutputComponentExtension,
+  type outputTypeSymbol,
+  safeCast,
+  shallowMergeConfig,
+} from './extension-core';

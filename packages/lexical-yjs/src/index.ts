@@ -10,6 +10,8 @@ import type {Binding} from './Bindings';
 import type {LexicalCommand} from 'lexical';
 import type {Doc, RelativePosition, UndoManager, XmlText} from 'yjs';
 
+import './types';
+
 import {createCommand} from 'lexical';
 import {UndoManager as YjsUndoManager} from 'yjs';
 

@@ -6,11 +6,14 @@
  *
  */
 
+import {effect, namedSignals} from '@lexical/extension';
 import {
   $getSelection,
   $isRangeSelection,
   $isTextNode,
+  defineExtension,
   LexicalEditor,
+  safeCast,
 } from 'lexical';
 
 export function registerDragonSupport(editor: LexicalEditor): () => void {
@@ -32,7 +35,7 @@ export function registerDragonSupport(editor: LexicalEditor): () => void {
 
       try {
         parsedData = JSON.parse(data);
-      } catch (e) {
+      } catch (_e) {
         return;
       }
 
@@ -53,11 +56,10 @@ export function registerDragonSupport(editor: LexicalEditor): () => void {
               text,
               selStart,
               selLength,
-              formatCommand,
+              _formatCommand,
             ] = args;
             // TODO: we should probably handle formatCommand somehow?
-            // eslint-disable-next-line no-unused-expressions
-            formatCommand;
+            // formatCommand;
             editor.update(() => {
               const selection = $getSelection();
 
@@ -124,3 +126,23 @@ export function registerDragonSupport(editor: LexicalEditor): () => void {
     window.removeEventListener('message', handler, true);
   };
 }
+
+export interface DragonConfig {
+  disabled: boolean;
+}
+
+/**
+ * Add Dragon speech to text input support to the editor, via the
+ * \@lexical/dragon module.
+ */
+export const DragonExtension = defineExtension({
+  build: (editor, config, state) => namedSignals(config),
+  config: safeCast<DragonConfig>({disabled: typeof window === 'undefined'}),
+  name: '@lexical/dragon',
+  register: (editor, config, state) =>
+    effect(() =>
+      state.getOutput().disabled.value
+        ? undefined
+        : registerDragonSupport(editor),
+    ),
+});

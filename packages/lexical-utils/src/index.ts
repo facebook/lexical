@@ -10,7 +10,9 @@ import {
   $caretFromPoint,
   $cloneWithProperties,
   $createParagraphNode,
+  $findMatchingParent,
   $getAdjacentChildCaret,
+  $getAdjacentSiblingOrParentSiblingCaret,
   $getCaretInDirection,
   $getChildCaret,
   $getChildCaretOrSelf,
@@ -41,7 +43,6 @@ import {
   type NodeCaret,
   type NodeKey,
   PointCaret,
-  RootMode,
   type SiblingCaret,
   SplitAtPointCaretNextOptions,
   StateConfig,
@@ -69,6 +70,8 @@ export {default as mergeRegister} from './mergeRegister';
 export {default as positionNodeOnRange} from './positionNodeOnRange';
 export {default as selectionAlwaysOnDisplay} from './selectionAlwaysOnDisplay';
 export {
+  $findMatchingParent,
+  $getAdjacentSiblingOrParentSiblingCaret,
   $splitNode,
   isBlockDomNode,
   isHTMLAnchorElement,
@@ -405,40 +408,6 @@ export type DOMNodeToLexicalConversionMap = Record<
   string,
   DOMNodeToLexicalConversion
 >;
-
-/**
- * Starts with a node and moves up the tree (toward the root node) to find a matching node based on
- * the search parameters of the findFn. (Consider JavaScripts' .find() function where a testing function must be
- * passed as an argument. eg. if( (node) => node.__type === 'div') ) return true; otherwise return false
- * @param startingNode - The node where the search starts.
- * @param findFn - A testing function that returns true if the current node satisfies the testing parameters.
- * @returns A parent node that matches the findFn parameters, or null if one wasn't found.
- */
-export const $findMatchingParent: {
-  <T extends LexicalNode>(
-    startingNode: LexicalNode,
-    findFn: (node: LexicalNode) => node is T,
-  ): T | null;
-  (
-    startingNode: LexicalNode,
-    findFn: (node: LexicalNode) => boolean,
-  ): LexicalNode | null;
-} = (
-  startingNode: LexicalNode,
-  findFn: (node: LexicalNode) => boolean,
-): LexicalNode | null => {
-  let curr: ElementNode | LexicalNode | null = startingNode;
-
-  while (curr !== $getRoot() && curr != null) {
-    if (findFn(curr)) {
-      return curr;
-    }
-
-    curr = curr.getParent();
-  }
-
-  return null;
-};
 
 /**
  * Attempts to resolve nested element nodes of the same type into a single node of that type.
@@ -870,35 +839,6 @@ export function $unwrapNode(node: ElementNode): void {
     1,
     node.getChildren(),
   );
-}
-
-/**
- * Returns the Node sibling when this exists, otherwise the closest parent sibling. For example
- * R -> P -> T1, T2
- *   -> P2
- * returns T2 for node T1, P2 for node T2, and null for node P2.
- * @param node LexicalNode.
- * @returns An array (tuple) containing the found Lexical node and the depth difference, or null, if this node doesn't exist.
- */
-export function $getAdjacentSiblingOrParentSiblingCaret<
-  D extends CaretDirection,
->(
-  startCaret: NodeCaret<D>,
-  rootMode: RootMode = 'root',
-): null | [NodeCaret<D>, number] {
-  let depthDiff = 0;
-  let caret = startCaret;
-  let nextCaret = $getAdjacentChildCaret(caret);
-  while (nextCaret === null) {
-    depthDiff--;
-    nextCaret = caret.getParentCaret(rootMode);
-    if (!nextCaret) {
-      return null;
-    }
-    caret = nextCaret;
-    nextCaret = $getAdjacentChildCaret(caret);
-  }
-  return nextCaret && [nextCaret, depthDiff];
 }
 
 /**

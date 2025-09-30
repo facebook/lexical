@@ -8,17 +8,35 @@
     "headless"
   ],
   "license": "MIT",
-  "version": "0.33.1",
-  "main": "LexicalHeadless.js",
-  "types": "index.d.ts",
+  "version": "0.36.1",
   "repository": {
     "type": "git",
     "url": "https://github.com/facebook/lexical",
     "directory": "packages/lexical-headless"
   },
-  "module": "LexicalHeadless.mjs",
   "sideEffects": false,
   "exports": {
+    "./dom": {
+      "browser": {
+        "types": "./dom.d.ts",
+        "development": "./LexicalHeadlessDom.browser.dev.mjs",
+        "production": "./LexicalHeadlessDom.browser.prod.mjs",
+        "default": "./LexicalHeadlessDom.browser.mjs"
+      },
+      "import": {
+        "types": "./dom.d.ts",
+        "development": "./LexicalHeadlessDom.dev.mjs",
+        "production": "./LexicalHeadlessDom.prod.mjs",
+        "node": "./LexicalHeadlessDom.node.mjs",
+        "default": "./LexicalHeadlessDom.mjs"
+      },
+      "require": {
+        "types": "./dom.d.ts",
+        "development": "./LexicalHeadlessDom.dev.js",
+        "production": "./LexicalHeadlessDom.prod.js",
+        "default": "./LexicalHeadlessDom.js"
+      }
+    },
     ".": {
       "import": {
         "types": "./index.d.ts",
@@ -36,6 +54,7 @@
     }
   },
   "dependencies": {
-    "lexical": "0.33.1"
+    "happy-dom": "^18.0.1",
+    "lexical": "0.36.1"
   }
 }

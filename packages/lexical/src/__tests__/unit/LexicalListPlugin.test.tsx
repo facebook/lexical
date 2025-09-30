@@ -32,6 +32,7 @@ import {
 } from 'lexical/src/__tests__/utils';
 import {createRoot, Root} from 'react-dom/client';
 import * as ReactTestUtils from 'shared/react-test-utils';
+import {afterEach, beforeEach, describe, test, vi} from 'vitest';
 
 import {
   INSERT_UNORDERED_LIST_COMMAND,
@@ -53,7 +54,7 @@ describe('@lexical/list tests', () => {
     // @ts-ignore
     container = null;
 
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   // Shared instance across tests
@@ -102,7 +103,7 @@ describe('@lexical/list tests', () => {
           spellcheck="true"
           style="user-select: text; white-space: pre-wrap; word-break: break-word;"
           data-lexical-editor="true">
-          <ul>
+          <ul dir="auto">
             <li value="1">
               <br />
             </li>
@@ -127,7 +128,7 @@ describe('@lexical/list tests', () => {
           spellcheck="true"
           style="user-select: text; white-space: pre-wrap; word-break: break-word;"
           data-lexical-editor="true">
-          <p>
+          <p dir="auto">
             <br />
           </p>
         </div>
@@ -157,7 +158,7 @@ describe('@lexical/list tests', () => {
           spellcheck="true"
           style="user-select: text; white-space: pre-wrap; word-break: break-word;"
           data-lexical-editor="true">
-          <ul>
+          <ul dir="auto">
             <li value="1">
               <br />
             </li>
@@ -182,7 +183,7 @@ describe('@lexical/list tests', () => {
           spellcheck="true"
           style="user-select: text; white-space: pre-wrap; word-break: break-word;"
           data-lexical-editor="true">
-          <ul>
+          <ul dir="auto">
             <li value="1">
               <ul>
                 <li value="1"><br /></li>
@@ -209,7 +210,7 @@ describe('@lexical/list tests', () => {
           spellcheck="true"
           style="user-select: text; white-space: pre-wrap; word-break: break-word;"
           data-lexical-editor="true">
-          <ul>
+          <ul dir="auto">
             <li value="1">
               <br />
             </li>
@@ -245,19 +246,19 @@ describe('@lexical/list tests', () => {
           spellcheck="true"
           style="user-select: text; white-space: pre-wrap; word-break: break-word;"
           data-lexical-editor="true">
-          <ul>
-            <li dir="ltr" value="1">
+          <ul dir="auto">
+            <li value="1">
               <span data-lexical-text="true">First item</span>
             </li>
             <li value="2">
               <ul>
-                <li dir="ltr" value="1">
+                <li value="1">
                   <span data-lexical-text="true">Nested item</span>
                 </li>
               </ul>
             </li>
           </ul>
-          <p style="padding-inline-start: calc(1 * 40px)"><br /></p>
+          <p dir="auto" style="padding-inline-start: calc(1 * 40px)"><br /></p>
         </div>
       `,
     );
@@ -277,22 +278,22 @@ describe('@lexical/list tests', () => {
           spellcheck="true"
           style="user-select: text; white-space: pre-wrap; word-break: break-word;"
           data-lexical-editor="true">
-          <ul>
-            <li dir="ltr" value="1">
+          <ul dir="auto">
+            <li value="1">
               <span data-lexical-text="true">First item</span>
             </li>
             <li value="2">
               <ul>
-                <li dir="ltr" value="1">
+                <li value="1">
                   <span data-lexical-text="true">Nested item</span>
                 </li>
               </ul>
             </li>
           </ul>
-          <p dir="ltr" style="padding-inline-start: calc(1 * 40px)">
+          <p dir="auto" style="padding-inline-start: calc(1 * 40px)">
             <span data-lexical-text="true">more text</span>
           </p>
-          <p dir="ltr"><span data-lexical-text="true">even more text</span></p>
+          <p dir="auto"><span data-lexical-text="true">even more text</span></p>
         </div>
       `,
     );

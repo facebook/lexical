@@ -10,7 +10,11 @@
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, '.SFNSText-Regular',
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    '.SFNSText-Regular',
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -584,6 +588,10 @@ i.equation {
   background-image: url(images/icons/plus-slash-minus.svg);
 }
 
+i.calendar {
+  background-image: url(images/icons/calendar.svg);
+}
+
 i.gif {
   background-image: url(images/icons/filetype-gif.svg);
 }
@@ -761,7 +769,9 @@ i.page-break,
   z-index: 100;
   display: block;
   position: fixed;
-  box-shadow: 0 12px 28px 0 rgba(0, 0, 0, 0.2), 0 2px 4px 0 rgba(0, 0, 0, 0.1),
+  box-shadow:
+    0 12px 28px 0 rgba(0, 0, 0, 0.2),
+    0 2px 4px 0 rgba(0, 0, 0, 0.1),
     inset 0 0 0 1px rgba(255, 255, 255, 0.5);
   border-radius: 8px;
   min-height: 40px;
@@ -1149,79 +1159,6 @@ i.page-break,
   cursor: nw-resize;
 }
 
-.editor-shell span.inline-editor-image {
-  cursor: default;
-  display: inline-block;
-  position: relative;
-  z-index: 1;
-}
-
-.editor-shell .inline-editor-image img {
-  max-width: 100%;
-  cursor: default;
-}
-
-.editor-shell .inline-editor-image img.focused {
-  outline: 2px solid rgb(60, 132, 244);
-}
-
-.editor-shell .inline-editor-image img.focused.draggable {
-  cursor: grab;
-}
-
-.editor-shell .inline-editor-image img.focused.draggable:active {
-  cursor: grabbing;
-}
-
-.editor-shell .inline-editor-image .image-caption-container .tree-view-output {
-  margin: 0;
-  border-radius: 0;
-}
-
-.editor-shell .inline-editor-image.position-full {
-  margin: 1em 0 1em 0;
-}
-
-.editor-shell .inline-editor-image.position-left {
-  float: left;
-  width: 50%;
-  margin: 1em 1em 0 0;
-}
-
-.editor-shell .inline-editor-image.position-right {
-  float: right;
-  width: 50%;
-  margin: 1em 0 0 1em;
-}
-
-.editor-shell .inline-editor-image .image-edit-button {
-  display: block;
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  padding: 6px 8px;
-  margin: 0 auto;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 5px;
-  background-color: rgba(0, 0, 0, 0.5);
-  min-width: 60px;
-  color: #fff;
-  cursor: pointer;
-  user-select: none;
-}
-
-.editor-shell .inline-editor-image .image-edit-button:hover {
-  background-color: rgba(60, 132, 244, 0.5);
-}
-
-.editor-shell .inline-editor-image .image-caption-container {
-  display: block;
-  background-color: #f4f4f4;
-  min-width: 100%;
-  color: #000;
-  overflow: hidden;
-}
-
 .emoji {
   color: transparent;
   caret-color: rgb(5, 5, 5);
@@ -1483,14 +1420,6 @@ button.action-button:disabled {
   white-space: nowrap;
   display: inline-block;
   pointer-events: none;
-}
-
-.ltr {
-  text-align: left;
-}
-
-.rtl {
-  text-align: right;
 }
 
 .toolbar {

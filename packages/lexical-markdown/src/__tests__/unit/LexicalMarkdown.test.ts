@@ -20,6 +20,7 @@ import {
   $insertNodes,
   $isRangeSelection,
 } from 'lexical';
+import {describe, expect, it} from 'vitest';
 
 import {
   $convertFromMarkdownString,
@@ -28,7 +29,6 @@ import {
   registerMarkdownShortcuts,
   TextMatchTransformer,
   Transformer,
-  TRANSFORMERS,
 } from '../..';
 import {
   CODE,
@@ -36,6 +36,7 @@ import {
   HEADING,
   MultilineElementTransformer,
   normalizeMarkdown,
+  TRANSFORMERS,
 } from '../../MarkdownTransformers';
 
 const SIMPLE_INLINE_JSX_MATCHER: TextMatchTransformer = {
@@ -571,6 +572,10 @@ describe('Markdown', () => {
       md: '**Bold** [`text **Bold in code**`](https://lexical.dev) **Bold 3**',
     },
     {
+      html: '<p><b><strong style="white-space: pre-wrap;">Bold</strong></b><span style="white-space: pre-wrap;"> </span><code spellcheck="false" style="white-space: pre-wrap;"><span>[text](https://lexical.dev)</span></code><span style="white-space: pre-wrap;"> </span><b><strong style="white-space: pre-wrap;">Bold 3</strong></b></p>',
+      md: '**Bold** `[text](https://lexical.dev)` **Bold 3**',
+    },
+    {
       html: '<p><span style="white-space: pre-wrap;">Text </span><b><strong style="white-space: pre-wrap;">boldstart </strong></b><a href="https://lexical.dev"><b><strong style="white-space: pre-wrap;">text</strong></b></a><b><strong style="white-space: pre-wrap;"> boldend</strong></b><span style="white-space: pre-wrap;"> text</span></p>',
       md: 'Text **boldstart [text](https://lexical.dev) boldend** text',
       mdAfterExport:
@@ -647,6 +652,22 @@ describe('Markdown', () => {
     {
       html: '<p><b><strong style="white-space: pre-wrap;">&nbsp;</strong></b></p>',
       md: '**&#160;**',
+    },
+    {
+      html: '<p><a href="https://lexical.dev"><span style="white-space: pre-wrap;">[h]ello</span></a><a href="https://lexical.dev"><span style="white-space: pre-wrap;">h[e]llo</span></a></p>',
+      md: '[[h]ello](https://lexical.dev)[h[e]llo](https://lexical.dev)',
+    },
+    {
+      html: '<p><a href="https://lexical.dev"><span style="white-space: pre-wrap;">h[e[ll]]o</span></a><a href="https://lexical.dev"><span style="white-space: pre-wrap;">world</span></a></p>',
+      md: '[h[e[ll]]o](https://lexical.dev)[world](https://lexical.dev)',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">[hello]](https://lexical.dev)</span><a href="https://lexical.dev"><span style="white-space: pre-wrap;">world</span></a></p>',
+      md: '[hello]](https://lexical.dev)[world](https://lexical.dev)',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">[h</span><a href="https://lexical.dev"><span style="white-space: pre-wrap;">ello</span></a><a href="https://lexical.dev"><span style="white-space: pre-wrap;">world</span></a></p>',
+      md: '[h[ello](https://lexical.dev)[world](https://lexical.dev)',
     },
   ];
 

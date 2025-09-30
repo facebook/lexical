@@ -10,7 +10,11 @@ body {
   margin: 0;
   font-size: 14px;
   background: #eee;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, '.SFNSText-Regular',
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    '.SFNSText-Regular',
     sans-serif;
   font-weight: 500;
   -webkit-font-smoothing: antialiased;
@@ -44,14 +48,6 @@ body {
 h1 {
   font-size: 18px;
   color: #333;
-}
-
-.ltr {
-  text-align: left;
-}
-
-.rtl {
-  text-align: right;
 }
 
 .editor-container {

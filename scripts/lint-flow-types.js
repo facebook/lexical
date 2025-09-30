@@ -47,8 +47,8 @@ function collectFlowExports(flowAst) {
       node.type === 'Identifier'
         ? node
         : 'id' in node && node.id.type === 'Identifier'
-        ? node.id
-        : null;
+          ? node.id
+          : null;
     if (identifier) {
       exportNames.set(identifier.name, identifier);
       return true;
@@ -131,7 +131,7 @@ function lintFlowTypesForPackage(
   /** @type {tsMorph.Project} */ project,
   /** @type {PackageMetadata} */ pkg,
 ) {
-  const def = pkg.getPackageBuildDefinition();
+  const def = pkg.getPackageBuildDefinition({consolidateBrowserSource: true});
   if (def.packageName === 'lexical-eslint-plugin') {
     return false;
   }

@@ -148,7 +148,7 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
                 throw new Error('TableCellResizer: Table element not found.');
               }
 
-              targetRef.current = target as HTMLElement;
+              targetRef.current = target;
               tableRectRef.current = tableElement.getBoundingClientRect();
               updateActiveCell(cell);
             },
@@ -350,8 +350,8 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
 
   const toggleResize = useCallback(
     (
-        direction: PointerDraggingDirection,
-      ): PointerEventHandler<HTMLDivElement> =>
+      direction: PointerDraggingDirection,
+    ): PointerEventHandler<HTMLDivElement> =>
       (event) => {
         event.preventDefault();
         event.stopPropagation();

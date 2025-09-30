@@ -51,7 +51,6 @@ const elementExcludedProperties = new Set<string>([
   '__first',
   '__last',
   '__size',
-  '__dir',
 ]);
 const rootExcludedProperties = new Set<string>(['__cachedText']);
 const textExcludedProperties = new Set<string>(['__text']);
@@ -546,7 +545,7 @@ export function doesSelectionNeedRecovering(
     ) {
       recoveryNeeded = true;
     }
-  } catch (e) {
+  } catch (_e) {
     // Sometimes checking nor a node via getNode might trigger
     // an error, so we need recovery then too.
     recoveryNeeded = true;

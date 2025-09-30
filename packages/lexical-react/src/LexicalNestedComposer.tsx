@@ -10,7 +10,7 @@ import type {LexicalComposerContextType} from '@lexical/react/LexicalComposerCon
 import type {EditableListener, KlassConstructor, Transform} from 'lexical';
 import type {JSX} from 'react';
 
-import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
+import {CollaborationContext} from '@lexical/react/LexicalCollaborationContext';
 import {
   createLexicalComposerContext,
   LexicalComposerContext,
@@ -19,6 +19,7 @@ import {
   createSharedNodeState,
   EditorThemeClasses,
   getRegisteredNode,
+  getStaticNodeConfig,
   Klass,
   LexicalEditor,
   LexicalNode,
@@ -32,8 +33,19 @@ import warnOnlyOnce from 'shared/warnOnlyOnce';
 function getTransformSetFromKlass(
   klass: KlassConstructor<typeof LexicalNode>,
 ): Set<Transform<LexicalNode>> {
+  const transforms = new Set<Transform<LexicalNode>>();
+  const {ownNodeConfig} = getStaticNodeConfig(klass);
   const transform = klass.transform();
-  return new Set(transform ? [transform] : []);
+  if (ownNodeConfig) {
+    const $transform = ownNodeConfig.$transform;
+    if ($transform) {
+      transforms.add($transform);
+    }
+  }
+  if (transform) {
+    transforms.add(transform);
+  }
+  return transforms;
 }
 
 export interface LexicalNestedComposerProps {
@@ -189,12 +201,13 @@ export function LexicalNestedComposer({
   );
 
   // If collaboration is enabled, make sure we don't render the children until the collaboration subdocument is ready.
-  const {isCollabActive, yjsDocMap} = useCollaborationContext();
+  const collabContext = useContext(CollaborationContext);
+  const {isCollabActive, yjsDocMap} = collabContext ?? {};
 
   const isCollabReady =
     skipCollabChecks ||
     wasCollabPreviouslyReadyRef.current ||
-    yjsDocMap.has(initialEditor.getKey());
+    (yjsDocMap && yjsDocMap.has(initialEditor.getKey()));
 
   useEffect(() => {
     if (isCollabReady) {

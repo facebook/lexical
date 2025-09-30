@@ -23,11 +23,11 @@ import {
 } from '@floating-ui/react';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$getNearestNodeFromDOMNode, LexicalNode} from 'lexical';
-import {forwardRef, MutableRefObject, useEffect, useRef, useState} from 'react';
+import {forwardRef, JSX, RefObject, useEffect, useRef, useState} from 'react';
 
 class MenuOption {
   key: string;
-  ref?: MutableRefObject<HTMLElement | null>;
+  ref?: RefObject<HTMLElement | null>;
 
   constructor(key: string) {
     this.key = key;
@@ -248,10 +248,14 @@ const NodeContextMenuPlugin = forwardRef<
       setIsOpen(true);
     }
 
-    document.addEventListener('contextmenu', onContextMenu);
-    return () => {
-      document.removeEventListener('contextmenu', onContextMenu);
-    };
+    return editor.registerRootListener((rootElement, prevRootElement) => {
+      if (prevRootElement !== null) {
+        prevRootElement.removeEventListener('contextmenu', onContextMenu);
+      }
+      if (rootElement !== null) {
+        rootElement.addEventListener('contextmenu', onContextMenu);
+      }
+    });
   }, [items, itemClassName, separatorClassName, refs, editor]);
 
   return (
@@ -283,6 +287,7 @@ const NodeContextMenuPlugin = forwardRef<
                         },
                         tabIndex: activeIndex === index ? 0 : -1,
                       })}
+                      key={item.key}
                     />
                   );
                 } else if (item.type === 'separator') {
@@ -295,6 +300,7 @@ const NodeContextMenuPlugin = forwardRef<
                         },
                         tabIndex: activeIndex === index ? 0 : -1,
                       })}
+                      key={item.key}
                     />
                   );
                 }

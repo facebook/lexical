@@ -43,7 +43,8 @@ export type SerializedParagraphNode = Spread<
 
 /** @noInheritDoc */
 export class ParagraphNode extends ElementNode {
-  ['constructor']!: KlassConstructor<typeof ParagraphNode>;
+  /** @internal */
+  declare ['constructor']: KlassConstructor<typeof ParagraphNode>;
 
   static getType(): string {
     return 'paragraph';

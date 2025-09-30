@@ -40,6 +40,7 @@ import useModal from '../../hooks/useModal';
 import catTypingGif from '../../images/cat-typing.gif';
 import {EmbedConfigs} from '../AutoEmbedPlugin';
 import {INSERT_COLLAPSIBLE_COMMAND} from '../CollapsiblePlugin';
+import {INSERT_DATETIME_COMMAND} from '../DateTimePlugin';
 import {InsertEquationDialog} from '../EquationsPlugin';
 import {INSERT_EXCALIDRAW_COMMAND} from '../ExcalidrawPlugin';
 import {INSERT_IMAGE_COMMAND, InsertImageDialog} from '../ImagesPlugin';
@@ -263,6 +264,44 @@ function getBaseOptions(editor: LexicalEditor, showModal: ShowModal) {
             editor.dispatchCommand(INSERT_EMBED_COMMAND, embedConfig.type),
         }),
     ),
+    new ComponentPickerOption('Date', {
+      icon: <i className="icon calendar" />,
+      keywords: ['date', 'calendar', 'time'],
+      onSelect: () => {
+        const dateTime = new Date();
+        dateTime.setHours(0, 0, 0, 0); // Set time to midnight
+        editor.dispatchCommand(INSERT_DATETIME_COMMAND, {dateTime});
+      },
+    }),
+    new ComponentPickerOption('Today', {
+      icon: <i className="icon calendar" />,
+      keywords: ['date', 'calendar', 'time', 'today'],
+      onSelect: () => {
+        const dateTime = new Date();
+        dateTime.setHours(0, 0, 0, 0); // Set time to midnight
+        editor.dispatchCommand(INSERT_DATETIME_COMMAND, {dateTime});
+      },
+    }),
+    new ComponentPickerOption('Tomorrow', {
+      icon: <i className="icon calendar" />,
+      keywords: ['date', 'calendar', 'time', 'tomorrow'],
+      onSelect: () => {
+        const dateTime = new Date();
+        dateTime.setDate(dateTime.getDate() + 1);
+        dateTime.setHours(0, 0, 0, 0); // Set time to midnight
+        editor.dispatchCommand(INSERT_DATETIME_COMMAND, {dateTime});
+      },
+    }),
+    new ComponentPickerOption('Yesterday', {
+      icon: <i className="icon calendar" />,
+      keywords: ['date', 'calendar', 'time', 'yesterday'],
+      onSelect: () => {
+        const dateTime = new Date();
+        dateTime.setDate(dateTime.getDate() - 1);
+        dateTime.setHours(0, 0, 0, 0); // Set time to midnight
+        editor.dispatchCommand(INSERT_DATETIME_COMMAND, {dateTime});
+      },
+    }),
     new ComponentPickerOption('Equation', {
       icon: <i className="icon equation" />,
       keywords: ['equation', 'latex', 'math'],

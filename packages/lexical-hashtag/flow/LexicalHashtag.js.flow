@@ -12,13 +12,13 @@ import type {
   LexicalNode,
   NodeKey,
   SerializedTextNode,
+  LexicalExtension,
 } from 'lexical';
 
 import {TextNode} from 'lexical';
 
 declare export class HashtagNode extends TextNode {
   static getType(): string;
-  // $FlowFixMe
   static clone(node: HashtagNode): HashtagNode;
   static importJSON(serializedNode: SerializedTextNode): HashtagNode;
   constructor(text: string, key?: NodeKey): void;
@@ -31,3 +31,9 @@ declare export function $createHashtagNode(text?: string): HashtagNode;
 declare export function $isHashtagNode(
   node: ?LexicalNode,
 ): node is HashtagNode;
+
+
+export type HashtagConfig = {
+  getHashtagMatch: (text: string) => null | {start: number; end: number};
+}
+declare export var HashtagExtension: LexicalExtension<HashtagConfig, "@lexical/hashtag/Hashtag", void, void>;

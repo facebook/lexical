@@ -14,6 +14,7 @@ import {
   $isDecoratorNode,
   $isElementNode,
   $isTextNode,
+  defineExtension,
 } from 'lexical';
 
 import {$createMarkNode, $isMarkNode, MarkNode} from './MarkNode';
@@ -126,10 +127,11 @@ export function $wrapSelectionInMarkNode(
   }
   // Make selection collapsed at the end
   if ($isElementNode(lastCreatedMarkNode)) {
-    // eslint-disable-next-line no-unused-expressions
-    isBackward
-      ? lastCreatedMarkNode.selectStart()
-      : lastCreatedMarkNode.selectEnd();
+    if (isBackward) {
+      lastCreatedMarkNode.selectStart();
+    } else {
+      lastCreatedMarkNode.selectEnd();
+    }
   }
 }
 
@@ -154,5 +156,13 @@ export function $getMarkIDs(
   }
   return null;
 }
+
+/**
+ * Configures {@link MarkNode}
+ */
+export const MarkExtension = defineExtension({
+  name: '@lexical/mark',
+  nodes: [MarkNode],
+});
 
 export {$createMarkNode, $isMarkNode, MarkNode, SerializedMarkNode};

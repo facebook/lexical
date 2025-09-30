@@ -23,6 +23,7 @@ import {
   $getStartOfCodeInLine,
   $isCodeHighlightNode,
   $isCodeNode,
+  CodeExtension,
   CodeHighlightNode,
   CodeNode,
   DEFAULT_CODE_LANGUAGE,
@@ -47,6 +48,7 @@ import {
   $normalizeCaret,
   $setSelectionFromCaretRange,
   COMMAND_PRIORITY_LOW,
+  defineExtension,
   INDENT_CONTENT_COMMAND,
   INSERT_TAB_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
@@ -71,7 +73,7 @@ import {
 export interface Tokenizer {
   defaultLanguage: string;
   defaultTheme: string;
-  $tokenize(codeNode: CodeNode, language?: string): LexicalNode[];
+  $tokenize: (codeNode: CodeNode, language?: string) => LexicalNode[];
 }
 
 const DEFAULT_CODE_THEME = 'one-light';
@@ -796,13 +798,13 @@ export function registerCodeHighlighting(
   // Add the rest of the registrations
   registrations.push(
     editor.registerNodeTransform(CodeNode, (node) =>
-      codeNodeTransform(node, editor, tokenizer as Tokenizer),
+      codeNodeTransform(node, editor, tokenizer),
     ),
     editor.registerNodeTransform(TextNode, (node) =>
-      $textNodeTransform(node, editor, tokenizer as Tokenizer),
+      $textNodeTransform(node, editor, tokenizer),
     ),
     editor.registerNodeTransform(CodeHighlightNode, (node) =>
-      $textNodeTransform(node, editor, tokenizer as Tokenizer),
+      $textNodeTransform(node, editor, tokenizer),
     ),
     editor.registerCommand(
       KEY_TAB_COMMAND,
@@ -893,15 +895,26 @@ export function registerCodeHighlighting(
     ),
     editor.registerCommand(
       MOVE_TO_START,
-      (event) => $handleMoveTo(MOVE_TO_START, event as KeyboardEvent),
+      (event) => $handleMoveTo(MOVE_TO_START, event),
       COMMAND_PRIORITY_LOW,
     ),
     editor.registerCommand(
       MOVE_TO_END,
-      (event) => $handleMoveTo(MOVE_TO_END, event as KeyboardEvent),
+      (event) => $handleMoveTo(MOVE_TO_END, event),
       COMMAND_PRIORITY_LOW,
     ),
   );
 
   return mergeRegister(...registrations);
 }
+
+/**
+ * Add code highlighting support for code blocks with Shiki
+ */
+export const CodeHighlighterShikiExtension = defineExtension({
+  config: {tokenizer: ShikiTokenizer},
+  dependencies: [CodeExtension],
+  name: '@lexical/code-shiki',
+  register: (editor, {tokenizer}) =>
+    registerCodeHighlighting(editor, tokenizer),
+});

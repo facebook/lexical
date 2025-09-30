@@ -25,7 +25,7 @@ import type {
   TextFormatType,
 } from 'lexical';
 
-import {IS_IOS, IS_SAFARI} from 'shared/environment';
+import {IS_APPLE_WEBKIT, IS_IOS, IS_SAFARI} from 'shared/environment';
 import invariant from 'shared/invariant';
 
 import {$isTextNode, TextNode} from '../index';
@@ -191,7 +191,9 @@ export class ElementDOMSlot<T extends HTMLElement = HTMLElement> {
     if (lineBreakType === null) {
       this.removeManagedLineBreak();
     } else {
-      const webkitHack = lineBreakType === 'decorator' && (IS_IOS || IS_SAFARI);
+      const webkitHack =
+        lineBreakType === 'decorator' &&
+        (IS_APPLE_WEBKIT || IS_IOS || IS_SAFARI);
       this.insertManagedLineBreak(webkitHack);
     }
   }
@@ -307,7 +309,8 @@ export function indexPath(root: HTMLElement, child: Node): number[] {
 /** @noInheritDoc */
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class ElementNode extends LexicalNode {
-  ['constructor']!: KlassConstructor<typeof ElementNode>;
+  /** @internal */
+  declare ['constructor']: KlassConstructor<typeof ElementNode>;
   /** @internal */
   __first: null | NodeKey;
   /** @internal */

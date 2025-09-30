@@ -7,6 +7,7 @@
  */
 
 import {$createLineBreakNode, $isLineBreakNode} from 'lexical';
+import {describe, expect, test} from 'vitest';
 
 import {initializeUnitTest} from '../../../__tests__/utils';
 

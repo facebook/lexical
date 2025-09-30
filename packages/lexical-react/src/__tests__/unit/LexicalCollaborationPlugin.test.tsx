@@ -6,6 +6,7 @@
  *
  */
 
+import {LexicalCollaboration} from '@lexical/react/LexicalCollaborationContext';
 import {CollaborationPlugin} from '@lexical/react/LexicalCollaborationPlugin';
 import {LexicalComposer} from '@lexical/react/LexicalComposer';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
@@ -14,6 +15,7 @@ import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import * as React from 'react';
 import {createRoot, Root} from 'react-dom/client';
 import * as ReactTestUtils from 'shared/react-test-utils';
+import {beforeEach, describe, expect, test, vi} from 'vitest';
 import * as Y from 'yjs';
 
 describe(`LexicalCollaborationPlugin`, () => {
@@ -40,7 +42,7 @@ describe(`LexicalCollaborationPlugin`, () => {
   });
 
   test(`providerFactory called only once`, () => {
-    const providerFactory = jest.fn(
+    const providerFactory = vi.fn(
       (id: string, yjsDocMap: Map<string, Y.Doc>) => {
         const doc = new Y.Doc();
         yjsDocMap.set(id, doc);
@@ -63,23 +65,27 @@ describe(`LexicalCollaborationPlugin`, () => {
     );
     function MemoComponent() {
       return (
-        <LexicalComposer initialConfig={editorConfig}>
-          {/* With CollaborationPlugin - we MUST NOT use @lexical/react/LexicalHistoryPlugin */}
-          <CollaborationPlugin
-            id="lexical/react-rich-collab"
-            providerFactory={providerFactory}
-            // Unless you have a way to avoid race condition between 2+ users trying to do bootstrap simultaneously
-            // you should never try to bootstrap on client. It's better to perform bootstrap within Yjs server.
-            shouldBootstrap={false}
-          />
-          <RichTextPlugin
-            contentEditable={<ContentEditable className="editor-input" />}
-            placeholder={
-              <div className="editor-placeholder">Enter some rich text...</div>
-            }
-            ErrorBoundary={LexicalErrorBoundary}
-          />
-        </LexicalComposer>
+        <LexicalCollaboration>
+          <LexicalComposer initialConfig={editorConfig}>
+            {/* With CollaborationPlugin - we MUST NOT use @lexical/react/LexicalHistoryPlugin */}
+            <CollaborationPlugin
+              id="lexical/react-rich-collab"
+              providerFactory={providerFactory}
+              // Unless you have a way to avoid race condition between 2+ users trying to do bootstrap simultaneously
+              // you should never try to bootstrap on client. It's better to perform bootstrap within Yjs server.
+              shouldBootstrap={false}
+            />
+            <RichTextPlugin
+              contentEditable={<ContentEditable className="editor-input" />}
+              placeholder={
+                <div className="editor-placeholder">
+                  Enter some rich text...
+                </div>
+              }
+              ErrorBoundary={LexicalErrorBoundary}
+            />
+          </LexicalComposer>
+        </LexicalCollaboration>
       );
     }
     ReactTestUtils.act(() => {

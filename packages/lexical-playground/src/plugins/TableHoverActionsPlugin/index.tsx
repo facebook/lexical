@@ -94,7 +94,7 @@ function TableHoverActionsContainer({
             if (tableDOMElement) {
               const rowCount = table.getChildrenSize();
               const colCount = (
-                (table as TableNode).getChildAtIndex(0) as TableRowNode
+                table.getChildAtIndex(0) as TableRowNode
               )?.getChildrenSize();
 
               const rowIndex =
@@ -140,6 +140,8 @@ function TableHoverActionsContainer({
           anchorElem.getBoundingClientRect();
 
         if (hoveredRowNode) {
+          const isMac = /^mac/i.test(navigator.platform);
+
           setShownColumn(false);
           setShownRow(true);
           setPosition({
@@ -148,7 +150,10 @@ function TableHoverActionsContainer({
               tableHasScroll && parentElement
                 ? parentElement.offsetLeft
                 : tableElemLeft - editorElemLeft,
-            top: tableElemBottom - editorElemY + 5,
+            top:
+              tableElemBottom -
+              editorElemY +
+              (tableHasScroll && !isMac ? 16 : 5),
             width:
               tableHasScroll && parentElement
                 ? parentElement.offsetWidth

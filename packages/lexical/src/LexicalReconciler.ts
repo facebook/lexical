@@ -17,7 +17,6 @@ import type {LexicalPrivateDOM, NodeKey, NodeMap} from './LexicalNode';
 import type {ElementDOMSlot, ElementNode} from './nodes/LexicalElementNode';
 
 import invariant from 'shared/invariant';
-import normalizeClassNames from 'shared/normalizeClassNames';
 
 import {
   $isDecoratorNode,
@@ -41,7 +40,6 @@ import {
   $textContentRequiresDoubleLinebreakAtEnd,
   cloneDecorators,
   getElementByKeyOrThrow,
-  getTextDirection,
   setMutatedNode,
   setNodeKeyOnDOMNode,
 } from './LexicalUtils';
@@ -49,7 +47,6 @@ import {
 type IntentionallyMarkedAsDirtyElement = boolean;
 
 let subTreeTextContent = '';
-let subTreeDirectionedTextContent = '';
 let subTreeTextFormat: number | null = null;
 let subTreeTextStyle: string = '';
 let editorTextContent = '';
@@ -59,7 +56,6 @@ let activeEditorNodes: RegisteredNodes;
 let treatAllNodesAsDirty = false;
 let activeEditorStateReadOnly = false;
 let activeMutationListeners: MutationListeners;
-let activeTextDirection: 'ltr' | 'rtl' | null = null;
 let activeDirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>;
 let activeDirtyLeaves: Set<NodeKey>;
 let activePrevNodeMap: NodeMap;
@@ -165,6 +161,32 @@ function setElementFormat(dom: HTMLElement, format: number): void {
   }
 }
 
+export function $getReconciledDirection(
+  node: ElementNode,
+): 'ltr' | 'rtl' | 'auto' | null {
+  const direction = node.__dir;
+  if (direction !== null) {
+    return direction;
+  }
+  if ($isRootNode(node)) {
+    return null;
+  }
+  const parent = node.getParentOrThrow();
+  if (!$isRootNode(parent) || parent.__dir !== null) {
+    return null;
+  }
+  return 'auto';
+}
+
+function $setElementDirection(dom: HTMLElement, node: ElementNode): void {
+  const direction = $getReconciledDirection(node);
+  if (direction !== null) {
+    dom.dir = direction;
+  } else {
+    dom.removeAttribute('dir');
+  }
+}
+
 function $createNode(key: NodeKey, slot: ElementDOMSlot | null): HTMLElement {
   const node = activeNextNodeMap.get(key);
 
@@ -186,14 +208,14 @@ function $createNode(key: NodeKey, slot: ElementDOMSlot | null): HTMLElement {
   if ($isElementNode(node)) {
     const indent = node.__indent;
     const childrenSize = node.__size;
-
+    $setElementDirection(dom, node);
     if (indent !== 0) {
       setElementIndent(dom, indent);
     }
     if (childrenSize !== 0) {
       const endIndex = childrenSize - 1;
       const children = createChildrenArray(node, activeNextNodeMap);
-      $createChildrenWithDirection(children, endIndex, node, dom);
+      $createChildren(children, node, 0, endIndex, node.getDOMSlot(dom));
     }
     const format = node.__format;
 
@@ -218,10 +240,6 @@ function $createNode(key: NodeKey, slot: ElementDOMSlot | null): HTMLElement {
       }
       // Decorators are always non editable
       dom.contentEditable = 'false';
-    } else if ($isTextNode(node)) {
-      if (!node.isDirectionless()) {
-        subTreeDirectionedTextContent += text;
-      }
     }
     subTreeTextContent += text;
     editorTextContent += text;
@@ -244,19 +262,6 @@ function $createNode(key: NodeKey, slot: ElementDOMSlot | null): HTMLElement {
     'created',
   );
   return dom;
-}
-
-function $createChildrenWithDirection(
-  children: Array<NodeKey>,
-  endIndex: number,
-  element: ElementNode,
-  dom: HTMLElement,
-): void {
-  const previousSubTreeDirectionedTextContent = subTreeDirectionedTextContent;
-  subTreeDirectionedTextContent = '';
-  $createChildren(children, element, 0, endIndex, element.getDOMSlot(dom));
-  reconcileBlockDirection(element, dom);
-  subTreeDirectionedTextContent = previousSubTreeDirectionedTextContent;
 }
 
 function $createChildren(
@@ -303,8 +308,8 @@ function isLastChildLineBreakOrDecorator(
         return $isLineBreakNode(node)
           ? 'line-break'
           : $isDecoratorNode(node) && node.isInline()
-          ? 'decorator'
-          : null;
+            ? 'decorator'
+            : null;
       }
     }
     return 'empty';
@@ -351,92 +356,16 @@ function reconcileTextStyle(element: ElementNode): void {
   }
 }
 
-function reconcileBlockDirection(
-  element: ElementNode,
-  dom: HTMLElement & LexicalPrivateDOM,
-): void {
-  const previousSubTreeDirectionTextContent: string =
-    dom.__lexicalDirTextContent || '';
-  const previousDirection: string = dom.__lexicalDir || '';
-
-  if (
-    previousSubTreeDirectionTextContent !== subTreeDirectionedTextContent ||
-    previousDirection !== activeTextDirection
-  ) {
-    const hasEmptyDirectionedTextContent = subTreeDirectionedTextContent === '';
-    const direction = hasEmptyDirectionedTextContent
-      ? activeTextDirection
-      : getTextDirection(subTreeDirectionedTextContent);
-
-    if (direction !== previousDirection) {
-      const classList = dom.classList;
-      const theme = activeEditorConfig.theme;
-      let previousDirectionTheme =
-        previousDirection !== null ? theme[previousDirection] : undefined;
-      let nextDirectionTheme =
-        direction !== null ? theme[direction] : undefined;
-
-      // Remove the old theme classes if they exist
-      if (previousDirectionTheme !== undefined) {
-        if (typeof previousDirectionTheme === 'string') {
-          const classNamesArr = normalizeClassNames(previousDirectionTheme);
-          previousDirectionTheme = theme[previousDirection] = classNamesArr;
-        }
-
-        // @ts-ignore: intentional
-        classList.remove(...previousDirectionTheme);
-      }
-
-      if (
-        direction === null ||
-        (hasEmptyDirectionedTextContent && direction === 'ltr')
-      ) {
-        // Remove direction
-        dom.removeAttribute('dir');
-      } else {
-        // Apply the new theme classes if they exist
-        if (nextDirectionTheme !== undefined) {
-          if (typeof nextDirectionTheme === 'string') {
-            const classNamesArr = normalizeClassNames(nextDirectionTheme);
-            // @ts-expect-error: intentional
-            nextDirectionTheme = theme[direction] = classNamesArr;
-          }
-
-          if (nextDirectionTheme !== undefined) {
-            classList.add(...nextDirectionTheme);
-          }
-        }
-
-        // Update direction
-        dom.dir = direction;
-      }
-
-      if (!activeEditorStateReadOnly) {
-        const writableNode = element.getWritable();
-        writableNode.__dir = direction;
-      }
-    }
-
-    activeTextDirection = direction;
-    dom.__lexicalDirTextContent = subTreeDirectionedTextContent;
-    dom.__lexicalDir = direction;
-  }
-}
-
 function $reconcileChildrenWithDirection(
   prevElement: ElementNode,
   nextElement: ElementNode,
   dom: HTMLElement,
 ): void {
-  const previousSubTreeDirectionTextContent = subTreeDirectionedTextContent;
-  subTreeDirectionedTextContent = '';
   subTreeTextFormat = null;
   subTreeTextStyle = '';
   $reconcileChildren(prevElement, nextElement, nextElement.getDOMSlot(dom));
-  reconcileBlockDirection(nextElement, dom);
   reconcileTextFormat(nextElement);
   reconcileTextStyle(nextElement);
-  subTreeDirectionedTextContent = previousSubTreeDirectionTextContent;
 }
 
 function createChildrenArray(
@@ -597,19 +526,8 @@ function $reconcileNode(
         subTreeTextContent += previousSubTreeTextContent;
         editorTextContent += previousSubTreeTextContent;
       }
-
-      const previousSubTreeDirectionTextContent = dom.__lexicalDirTextContent;
-
-      if (previousSubTreeDirectionTextContent !== undefined) {
-        subTreeDirectionedTextContent += previousSubTreeDirectionTextContent;
-      }
     } else {
       const text = prevNode.getTextContent();
-
-      if ($isTextNode(prevNode) && !prevNode.isDirectionless()) {
-        subTreeDirectionedTextContent += text;
-      }
-
       editorTextContent += text;
       subTreeTextContent += text;
     }
@@ -642,16 +560,15 @@ function $reconcileNode(
   }
 
   if ($isElementNode(prevNode) && $isElementNode(nextNode)) {
-    // Reconcile element children
     const nextIndent = nextNode.__indent;
 
-    if (nextIndent !== prevNode.__indent) {
+    if (treatAllNodesAsDirty || nextIndent !== prevNode.__indent) {
       setElementIndent(dom, nextIndent);
     }
 
     const nextFormat = nextNode.__format;
 
-    if (nextFormat !== prevNode.__format) {
+    if (treatAllNodesAsDirty || nextFormat !== prevNode.__format) {
       setElementFormat(dom, nextFormat);
     }
     if (isDirty) {
@@ -665,6 +582,27 @@ function $reconcileNode(
       subTreeTextContent += DOUBLE_LINE_BREAK;
       editorTextContent += DOUBLE_LINE_BREAK;
     }
+
+    if (treatAllNodesAsDirty || nextNode.__dir !== prevNode.__dir) {
+      $setElementDirection(dom, nextNode);
+      if (
+        // Root node direction changing from set to unset (or vice versa)
+        // changes how children's direction is calculated.
+        $isRootNode(nextNode) &&
+        // Can skip if all children already reconciled.
+        !treatAllNodesAsDirty
+      ) {
+        for (const child of nextNode.getChildren()) {
+          if ($isElementNode(child)) {
+            const childDom = getElementByKeyOrThrow(
+              activeEditor,
+              child.getKey(),
+            );
+            $setElementDirection(childDom, child);
+          }
+        }
+      }
+    }
   } else {
     const text = nextNode.getTextContent();
 
@@ -674,9 +612,6 @@ function $reconcileNode(
       if (decorator !== null) {
         reconcileDecorator(key, decorator);
       }
-    } else if ($isTextNode(nextNode) && !nextNode.isDirectionless()) {
-      // Handle text content, for LTR, LTR cases.
-      subTreeDirectionedTextContent += text;
     }
 
     subTreeTextContent += text;
@@ -833,11 +768,9 @@ export function $reconcileRoot(
   // The cache must be rebuilt during reconciliation to account for any changes.
   subTreeTextContent = '';
   editorTextContent = '';
-  subTreeDirectionedTextContent = '';
   // Rather than pass around a load of arguments through the stack recursively
   // we instead set them as bindings within the scope of the module.
   treatAllNodesAsDirty = dirtyType === FULL_RECONCILE;
-  activeTextDirection = null;
   activeEditor = editor;
   activeEditorConfig = editor._config;
   activeEditorNodes = editor._nodes;

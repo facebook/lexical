@@ -28,6 +28,7 @@ import * as React from 'react';
 import {createRef, useEffect, useMemo} from 'react';
 import {createRoot} from 'react-dom/client';
 import * as ReactTestUtils from 'shared/react-test-utils';
+import {afterEach, beforeEach, describe, expect, test} from 'vitest';
 
 import {
   $createTestSegmentedNode,
@@ -90,7 +91,9 @@ describe('LexicalTextNode tests', () => {
     return Promise.resolve().then();
   }
 
-  function useLexicalEditor(rootElementRef: React.RefObject<HTMLDivElement>) {
+  function useLexicalEditor(
+    rootElementRef: React.RefObject<null | HTMLDivElement>,
+  ) {
     const editor = useMemo(() => createTestEditor(editorConfig), []);
 
     useEffect(() => {
@@ -345,15 +348,13 @@ describe('LexicalTextNode tests', () => {
 
       // Set each format and ensure that the other formats are cleared
       capitalizationFormats.forEach((formatToSet) => {
-        textNode.toggleFormat(formatToSet as TextFormatType);
+        textNode.toggleFormat(formatToSet);
 
         capitalizationFormats
           .filter((format) => format !== formatToSet)
-          .forEach((format) =>
-            expect(textNode.hasFormat(format as TextFormatType)).toBe(false),
-          );
+          .forEach((format) => expect(textNode.hasFormat(format)).toBe(false));
 
-        expect(textNode.hasFormat(formatToSet as TextFormatType)).toBe(true);
+        expect(textNode.hasFormat(formatToSet)).toBe(true);
       });
     });
   });

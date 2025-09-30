@@ -26,8 +26,8 @@ import {
   TextNode,
 } from 'lexical';
 import {
-  MutableRefObject,
   ReactPortal,
+  RefObject,
   useCallback,
   useEffect,
   useMemo,
@@ -53,7 +53,7 @@ export const PUNCTUATION =
 
 export class MenuOption {
   key: string;
-  ref?: MutableRefObject<HTMLElement | null>;
+  ref?: RefObject<HTMLElement | null>;
 
   constructor(key: string) {
     this.key = key;
@@ -67,7 +67,7 @@ export class MenuOption {
 }
 
 export type MenuRenderFn<TOption extends MenuOption> = (
-  anchorElementRef: MutableRefObject<HTMLElement | null>,
+  anchorElementRef: RefObject<HTMLElement | null>,
   itemProps: {
     selectedIndex: number | null;
     selectOptionAndCleanUp: (option: TOption) => void;
@@ -194,7 +194,12 @@ function isTriggerVisibleInNearestScrollContainer(
 ): boolean {
   const tRect = targetElement.getBoundingClientRect();
   const cRect = containerElement.getBoundingClientRect();
-  return tRect.top > cRect.top && tRect.top < cRect.bottom;
+
+  const VISIBILITY_MARGIN_PX = 6;
+  return (
+    tRect.top >= cRect.top - VISIBILITY_MARGIN_PX &&
+    tRect.top <= cRect.bottom + VISIBILITY_MARGIN_PX
+  );
 }
 
 // Reposition the menu on scroll, window resize, and element resize.
@@ -271,7 +276,7 @@ export function LexicalMenu<TOption extends MenuOption>({
 }: {
   close: () => void;
   editor: LexicalEditor;
-  anchorElementRef: MutableRefObject<HTMLElement | null>;
+  anchorElementRef: RefObject<HTMLElement | null>;
   resolution: MenuResolution;
   options: Array<TOption>;
   shouldSplitNodeWithQuery?: boolean;
@@ -373,8 +378,8 @@ export function LexicalMenu<TOption extends MenuOption>({
               selectedIndex === null
                 ? 0
                 : selectedIndex !== options.length - 1
-                ? selectedIndex + 1
-                : 0;
+                  ? selectedIndex + 1
+                  : 0;
             updateSelectedIndex(newSelectedIndex);
             const option = options[newSelectedIndex];
             if (option.ref != null && option.ref.current) {
@@ -402,8 +407,8 @@ export function LexicalMenu<TOption extends MenuOption>({
               selectedIndex === null
                 ? options.length - 1
                 : selectedIndex !== 0
-                ? selectedIndex - 1
-                : options.length - 1;
+                  ? selectedIndex - 1
+                  : options.length - 1;
             updateSelectedIndex(newSelectedIndex);
             const option = options[newSelectedIndex];
             if (option.ref != null && option.ref.current) {
@@ -511,7 +516,7 @@ export function useMenuAnchorRef(
   className?: string,
   parent: HTMLElement | undefined = CAN_USE_DOM ? document.body : undefined,
   shouldIncludePageYOffset__EXPERIMENTAL: boolean = true,
-): MutableRefObject<HTMLElement | null> {
+): RefObject<HTMLElement | null> {
   const [editor] = useLexicalComposerContext();
   const initialAnchorElement = CAN_USE_DOM
     ? document.createElement('div')

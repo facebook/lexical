@@ -41,7 +41,6 @@ export default defineConfig({
     }
 
     const manifestConf: UserManifest = {
-      author: 'Lexical',
       description: `Adds Lexical debugging tools to the ${browserName} Developer Tools.`,
       homepage_url: 'https://lexical.dev/',
       icons: {
@@ -55,7 +54,6 @@ export default defineConfig({
       version: version + `.${buildVersion}`,
       web_accessible_resources: [
         {
-          extension_ids: [],
           matches: ['<all_urls>'],
           resources: ['injected.js'],
         },
@@ -74,31 +72,11 @@ export default defineConfig({
       // $ openssl genrsa 2048 | openssl pkcs8 -topk8 -nocrypt -out key.pem # private key
       // $ openssl rsa -in key.pem -pubout -outform DER | openssl base64 -A # this key below (strip % at the end)
       // $ openssl rsa -in key.pem -pubout -outform DER | shasum -a 256 | head -c32 | tr 0-9a-f a-p # extension ID
-      // @ts-expect-error https://github.com/wxt-dev/wxt/issues/521#issuecomment-1978147707
       manifestConf.key =
         'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAve7nOT9MtnECslFqKw5x0a/OvR/ZzsDBvcR3SIpQg446O7tKwFZTOQWgmceKZJAPT03Ztwdj7qJfAteSwaW4Aeoo6gK5BU7lAAAXeZNhzmuLSJhE4eu8KVDwck16iEx1C/IBKCypM+7H1wjwSVsjGpij2EDiH4Pw/aJ9LLRia7LO3xXTQTYzaJCzx1A+5JiFo5Y9tTtORdyFV/5bfaxibentXNxm52sj3spBe3wC7BuNoYmto9YdKhYk8Xsvs0u8tC7lRae9h57flLCmqPTi9ho4PkJXs4v/okxtGN2Lhwf3Az3ws1LAUqzGJrNK598IRU70a5ONtqXUc3vdGVJxtwIDAQAB';
     }
 
     return manifestConf;
-  },
-  runner: {
-    binaries: {
-      edge: '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
-    },
-    chromiumArgs: [
-      '--auto-open-devtools-for-tabs',
-      // Open chrome://version to validate it works
-      // We use this instead of chromiumProfile because of https://github.com/wxt-dev/wxt/issues/366
-      `--user-data-dir=${path.join(__dirname, '.browser-profiles/chromium')}`,
-      '--hide-crash-restore-bubble',
-      '--enable-extension-activity-logging',
-    ],
-    startUrls: [
-      'https://playground.lexical.dev/',
-      'about:debugging#/runtime/this-firefox',
-      // Doesn't work due to https://github.com/mozilla/web-ext/pull/2774
-      // 'chrome://inspect/#service-workers',
-    ],
   },
   srcDir: './src',
   vite: (configEnv) => {
@@ -126,6 +104,7 @@ export default defineConfig({
           plugins: [
             '@babel/plugin-transform-flow-strip-types',
             [
+              // eslint-disable-next-line @typescript-eslint/no-require-imports
               require('../../scripts/error-codes/transform-error-messages'),
               {
                 noMinify: true,
@@ -151,6 +130,25 @@ export default defineConfig({
         ],
       },
     };
+  },
+  webExt: {
+    binaries: {
+      edge: '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
+    },
+    chromiumArgs: [
+      '--auto-open-devtools-for-tabs',
+      // Open chrome://version to validate it works
+      // We use this instead of chromiumProfile because of https://github.com/wxt-dev/wxt/issues/366
+      `--user-data-dir=${path.join(__dirname, '.browser-profiles/chromium')}`,
+      '--hide-crash-restore-bubble',
+      '--enable-extension-activity-logging',
+    ],
+    startUrls: [
+      'https://playground.lexical.dev/',
+      'about:debugging#/runtime/this-firefox',
+      // Doesn't work due to https://github.com/mozilla/web-ext/pull/2774
+      // 'chrome://inspect/#service-workers',
+    ],
   },
   zip: {
     sourcesRoot: path.resolve('../..'),

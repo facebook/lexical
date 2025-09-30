@@ -1,7 +1,7 @@
 {
   "name": "@lexical/react-rich-example",
   "private": true,
-  "version": "0.33.1",
+  "version": "0.36.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,17 +10,17 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@lexical/react": "0.33.1",
-    "lexical": "0.33.1",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "@lexical/react": "0.36.1",
+    "lexical": "0.36.1",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
   },
   "devDependencies": {
-    "@types/react": "^18.2.59",
-    "@types/react-dom": "^18.2.19",
-    "@vitejs/plugin-react": "^4.2.1",
+    "@types/react": "^19.1.12",
+    "@types/react-dom": "^19.1.9",
+    "@vitejs/plugin-react": "^5.0.2",
     "cross-env": "^7.0.3",
-    "typescript": "^5.2.2",
-    "vite": "^5.2.11"
+    "typescript": "^5.9.2",
+    "vite": "^7.1.4"
   }
 }

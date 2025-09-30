@@ -67,6 +67,9 @@ import {
   isCurrentlyReadOnlyMode,
 } from './LexicalUpdates';
 import {
+  $deleteCharacterInShadowDOM,
+  $deleteLineInShadowDOM,
+  $deleteWordInShadowDOMWithI18n,
   $findMatchingParent,
   $getCompositionKey,
   $getNearestRootOrShadowRoot,
@@ -79,19 +82,60 @@ import {
   $isTokenOrTab,
   $setCompositionKey,
   doesContainSurrogatePair,
-  getDOMSelection,
+  getActiveElement,
+  getDOMSelectionForEditor,
   getDOMTextNode,
   getElementByKeyOrThrow,
-  getWindow,
+  getShadowRootOrDocument,
   INTERNAL_$isBlock,
   isHTMLElement,
   isSelectionCapturedInDecoratorInput,
   isSelectionWithinEditor,
+  isShadowRoot,
   removeDOMBlockCursorElement,
   scrollIntoViewIfNeeded,
   toggleTextFormatType,
 } from './LexicalUtils';
 import {$createTabNode, $isTabNode} from './nodes/LexicalTabNode';
+
+/**
+ * Options for the getComposedRanges() method. Allows specifying which
+ * shadow roots should be included when computing composed ranges.
+ */
+export interface GetComposedRangesOptions {
+  shadowRoots?: ShadowRoot[];
+}
+
+/**
+ * Extended Selection interface that includes the modern getComposedRanges() method.
+ * This API is available in Chrome 125+, Firefox 132+, and other modern browsers.
+ * It provides a standardized way to get selection ranges across shadow DOM boundaries.
+ */
+export interface SelectionWithComposedRanges extends Selection {
+  /**
+   * Returns an array of StaticRange objects representing the current selection
+   * across shadow DOM boundaries. This is the modern replacement for the
+   * experimental ShadowRoot.getSelection() method.
+   *
+   * @param options - Configuration options for the composed ranges
+   * @returns Array of StaticRange objects representing the selection
+   */
+  getComposedRanges(options?: GetComposedRangesOptions): StaticRange[];
+}
+
+/**
+ * Extension for ShadowRoot with experimental getSelection method.
+ * This is a fallback for browsers that don't support getComposedRanges yet.
+ */
+export interface ShadowRootWithSelection extends ShadowRoot {
+  /**
+   * Experimental API for getting selection within shadow DOM.
+   * Available in some browsers as experimental feature.
+   *
+   * @returns Selection object or null if no selection
+   */
+  getSelection(): Selection | null;
+}
 
 export type TextPointType = {
   _selection: BaseSelection;
@@ -1574,7 +1618,7 @@ export class RangeSelection implements BaseSelection {
     const collapse = alter === 'move';
 
     const editor = getActiveEditor();
-    const domSelection = getDOMSelection(getWindow(editor));
+    const domSelection = getDOMSelectionForEditor(editor);
 
     if (!domSelection) {
       return;
@@ -1743,6 +1787,17 @@ export class RangeSelection implements BaseSelection {
       if (this.forwardDeletion(anchor, anchorNode, isBackward)) {
         return;
       }
+
+      // Try Shadow DOM direct deletion first for better reliability
+      const editor = getActiveEditor();
+      const rootElement = editor.getRootElement();
+      if (rootElement && isShadowRoot(getShadowRootOrDocument(rootElement))) {
+        // Try direct deletion first in Shadow DOM
+        if ($deleteCharacterInShadowDOM(this, isBackward)) {
+          return;
+        }
+      }
+
       const direction = isBackward ? 'previous' : 'next';
       const initialCaret = $caretFromPoint(anchor, direction);
       const initialRange = $extendCaretToRange(initialCaret);
@@ -1911,6 +1966,16 @@ export class RangeSelection implements BaseSelection {
    */
   deleteLine(isBackward: boolean): void {
     if (this.isCollapsed()) {
+      // Try Shadow DOM direct deletion first for better reliability
+      const editor = getActiveEditor();
+      const rootElement = editor.getRootElement();
+      if (rootElement && isShadowRoot(getShadowRootOrDocument(rootElement))) {
+        // Try direct line deletion first in Shadow DOM
+        if ($deleteLineInShadowDOM(this, isBackward)) {
+          return;
+        }
+      }
+
       this.modify('extend', isBackward, 'lineboundary');
     }
     if (this.isCollapsed()) {
@@ -1936,6 +2001,17 @@ export class RangeSelection implements BaseSelection {
       if (this.forwardDeletion(anchor, anchorNode, isBackward)) {
         return;
       }
+
+      // Try Shadow DOM direct deletion first for better reliability
+      const editor = getActiveEditor();
+      const rootElement = editor.getRootElement();
+      if (rootElement && isShadowRoot(getShadowRootOrDocument(rootElement))) {
+        // Use international-aware word deletion for Shadow DOM
+        if ($deleteWordInShadowDOMWithI18n(this, isBackward)) {
+          return;
+        }
+      }
+
       this.modify('extend', isBackward, 'word');
     }
     this.removeText();
@@ -2033,7 +2109,96 @@ function moveNativeSelection(
 ): void {
   // Selection.modify() method applies a change to the current selection or cursor position,
   // but is still non-standard in some browsers.
-  domSelection.modify(alter, direction, granularity);
+
+  // Always try native modify first - it handles i18n, bidi text, and complex scripts correctly
+  try {
+    domSelection.modify(alter, direction, granularity);
+
+    // Check if the native modify worked correctly in Shadow DOM context
+    if (
+      domSelection.rangeCount > 0 &&
+      isSelectionValidAfterModify(domSelection)
+    ) {
+      return; // Native modify worked fine
+    }
+  } catch (_error) {
+    // Native modify failed, will try Shadow DOM fallback
+  }
+
+  // Fallback only for Shadow DOM when native modify fails
+  if (
+    typeof domSelection.getComposedRanges === 'function' &&
+    domSelection.rangeCount > 0
+  ) {
+    try {
+      // Try to restore selection using composed ranges
+      const shadowRoots = findShadowRootsInSelection(domSelection);
+      if (shadowRoots.length > 0) {
+        const composedRanges = domSelection.getComposedRanges({shadowRoots});
+        if (composedRanges.length > 0) {
+          // Only handle the minimal case: sync composed ranges back to DOM selection
+          const firstRange = composedRanges[0];
+          const range = document.createRange();
+          range.setStart(firstRange.startContainer, firstRange.startOffset);
+          range.setEnd(firstRange.endContainer, firstRange.endOffset);
+
+          domSelection.removeAllRanges();
+          domSelection.addRange(range);
+
+          // Try native modify again with synced selection
+          domSelection.modify(alter, direction, granularity);
+        }
+      }
+    } catch (_error) {
+      // If all else fails, we'll let Lexical handle it at a higher level
+    }
+  }
+}
+
+// Helper function to validate if selection is in a reasonable state after modify
+function isSelectionValidAfterModify(domSelection: Selection): boolean {
+  // Basic validation - selection should exist and be within reasonable bounds
+  if (domSelection.rangeCount === 0) {
+    return false;
+  }
+
+  try {
+    const range = domSelection.getRangeAt(0);
+    return range.startContainer !== null && range.endContainer !== null;
+  } catch (_error) {
+    return false;
+  }
+}
+
+// Helper function to find shadow roots in current selection
+function findShadowRootsInSelection(domSelection: Selection): ShadowRoot[] {
+  const shadowRoots: ShadowRoot[] = [];
+
+  if (domSelection.rangeCount === 0) {
+    return shadowRoots;
+  }
+
+  try {
+    const range = domSelection.getRangeAt(0);
+    const startRoot = getShadowRootOrDocument(
+      range.startContainer as HTMLElement,
+    );
+    const endRoot = getShadowRootOrDocument(range.endContainer as HTMLElement);
+
+    const startShadow = isShadowRoot(startRoot) ? startRoot : null;
+    const endShadow = isShadowRoot(endRoot) ? endRoot : null;
+
+    if (startShadow) {
+      shadowRoots.push(startShadow);
+    }
+    if (endShadow && endShadow !== startShadow) {
+      shadowRoots.push(endShadow);
+    }
+  } catch (_error) {
+    // Failed to analyze selection
+  }
+
+  return shadowRoots;
 }
 
 /**
@@ -2588,7 +2753,7 @@ export function $internalCreateSelection(
 ): null | BaseSelection {
   const currentEditorState = editor.getEditorState();
   const lastSelection = currentEditorState._selection;
-  const domSelection = getDOMSelection(getWindow(editor));
+  const domSelection = getDOMSelectionForEditor(editor);
 
   if ($isRangeSelection(lastSelection) || lastSelection == null) {
     return $internalCreateRangeSelection(
@@ -2979,7 +3144,7 @@ export function updateDOMSelection(
   const focusDOMNode = domSelection.focusNode;
   const anchorOffset = domSelection.anchorOffset;
   const focusOffset = domSelection.focusOffset;
-  const activeElement = document.activeElement;
+  const activeElement = getActiveElement(rootElement);
 
   // TODO: make this not hard-coded, and add another config option
   // that makes this configurable.

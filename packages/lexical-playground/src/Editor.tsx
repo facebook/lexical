@@ -76,6 +76,7 @@ import TreeViewPlugin from './plugins/TreeViewPlugin';
 import TwitterPlugin from './plugins/TwitterPlugin';
 import YouTubePlugin from './plugins/YouTubePlugin';
 import ContentEditable from './ui/ContentEditable';
+import ShadowDOMWrapper from './ui/ShadowDOMWrapper';
 
 const skipCollaborationInit =
   // @ts-expect-error
@@ -94,6 +95,7 @@ export default function Editor(): JSX.Element {
       hasLinkAttributes,
       isCharLimitUtf8,
       isRichText,
+      isShadowDOM,
       showTreeView,
       showTableOfContents,
       shouldUseLexicalContextMenu,
@@ -159,7 +161,9 @@ export default function Editor(): JSX.Element {
           setIsLinkEditMode={setIsLinkEditMode}
         />
       )}
-      <div
+      <ShadowDOMWrapper
+        key={`shadow-${isShadowDOM}`}
+        enabled={isShadowDOM}
         className={`editor-container ${showTreeView ? 'tree-view' : ''} ${
           !isRichText ? 'plain-text' : ''
         }`}>
@@ -280,7 +284,7 @@ export default function Editor(): JSX.Element {
           isRichText={isRichText}
           shouldPreserveNewLinesInMarkdown={shouldPreserveNewLinesInMarkdown}
         />
-      </div>
+      </ShadowDOMWrapper>
       {showTreeView && <TreeViewPlugin />}
     </>
   );

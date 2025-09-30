@@ -995,8 +995,7 @@ test.describe('CopyAndPaste', () => {
         `,
       );
 
-      // Copy with a collapsed selection, we expect it to not
-      // change the clipboard
+      // Copy with a collapsed selection, we expect it to not change the clipboard
       await keyDownCtrlOrMeta(page);
       await page.keyboard.press('c');
       await keyUpCtrlOrMeta(page);

@@ -31,7 +31,6 @@ import {
   html,
   initialize,
   insertDateTime,
-  sleep,
   test,
 } from '../utils/index.mjs';
 

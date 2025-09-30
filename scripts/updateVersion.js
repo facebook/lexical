@@ -136,7 +136,7 @@ function withBrowser(exports) {
       } else if (k === 'types') {
         return [[k, v]];
       }
-      return [[k, v.replace(/((?:\.d)?\.m?js)$/, '.browser$1')]];
+      return [[k, v.replace(/((?:\.dev|\.prod)?\.m?js)$/, '.browser$1')]];
     }),
   );
   return {browser, ...exports};

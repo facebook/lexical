@@ -131,7 +131,7 @@ function lintFlowTypesForPackage(
   /** @type {tsMorph.Project} */ project,
   /** @type {PackageMetadata} */ pkg,
 ) {
-  const def = pkg.getPackageBuildDefinition();
+  const def = pkg.getPackageBuildDefinition({consolidateBrowserSource: true});
   if (def.packageName === 'lexical-eslint-plugin') {
     return false;
   }

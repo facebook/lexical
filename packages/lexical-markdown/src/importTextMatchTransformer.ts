@@ -47,7 +47,9 @@ export function findOutermostTextMatchTransformer(
     if (
       foundMatchStartIndex === undefined ||
       foundMatchEndIndex === undefined ||
-      (startIndex < foundMatchStartIndex && endIndex > foundMatchEndIndex)
+      // Wraps previous match or is strictly before it.
+      (startIndex < foundMatchStartIndex &&
+        (endIndex > foundMatchEndIndex || endIndex <= foundMatchStartIndex))
     ) {
       foundMatchStartIndex = startIndex;
       foundMatchEndIndex = endIndex;

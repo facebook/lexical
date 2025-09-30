@@ -16,6 +16,8 @@ import type {
   XmlText,
 } from 'yjs';
 
+import './types';
+
 import {createCommand} from 'lexical';
 import {UndoManager as YjsUndoManager} from 'yjs';
 

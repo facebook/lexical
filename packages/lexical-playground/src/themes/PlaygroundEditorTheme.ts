@@ -65,7 +65,6 @@ const theme: EditorThemeClasses = {
   hrSelected: 'PlaygroundEditorTheme__hrSelected',
   image: 'editor-image',
   indent: 'PlaygroundEditorTheme__indent',
-  inlineImage: 'inline-editor-image',
   layoutContainer: 'PlaygroundEditorTheme__layoutContainer',
   layoutItem: 'PlaygroundEditorTheme__layoutItem',
   link: 'PlaygroundEditorTheme__link',

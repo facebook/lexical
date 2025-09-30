@@ -6687,6 +6687,8 @@ test.describe.parallel('Tables', () => {
       false,
       false,
     );
+    // undo is used so we need to wait for history
+    await sleep(1050);
 
     await sleep(1050);
 

@@ -238,7 +238,7 @@ declare export class LexicalEditor {
 type EditorReadOptions = {
   pending?: boolean,
 };
-type EditorUpdateOptions = {
+export type EditorUpdateOptions = {
   onUpdate?: () => void,
   tag?: string | Array<string>,
   skipTransforms?: true,
@@ -247,7 +247,7 @@ type EditorUpdateOptions = {
 type EditorFocusOptions = {
   defaultSelection?: 'rootStart' | 'rootEnd',
 };
-type EditorSetOptions = {
+export type EditorSetOptions = {
   tag?: string,
 };
 type EditorThemeClassName = string;
@@ -1506,3 +1506,175 @@ declare export function getStaticNodeConfig(cls: Class<LexicalNode>): {
   ownNodeType: void | string;
   ownNodeConfig: void | StaticNodeConfigValue<LexicalNode, string>;
 };
+
+declare export function $isEditorState(x: mixed): x is EditorState;
+
+// $FlowFixMe[unclear-type]
+export type AnyLexicalExtension = LexicalExtension<any, string, any, any>;
+export type AnyLexicalExtensionArgument =
+  | AnyLexicalExtension
+  | AnyNormalizedLexicalExtensionArgument;
+export type AnyNormalizedLexicalExtensionArgument =
+  // $FlowFixMe[unclear-type]
+  NormalizedLexicalExtensionArgument<any, string, any, any>;  
+declare export function configExtension<
+  Config: ExtensionConfigBase,
+  Name: string,
+  Output,
+  Init,
+>(
+  ...args: NormalizedLexicalExtensionArgument<Config, Name, Output, Init>
+): NormalizedLexicalExtensionArgument<Config, Name, Output, Init>;
+declare export const configTypeSymbol: symbol;
+declare export function declarePeerDependency<
+  Extension: AnyLexicalExtension = empty,
+>(
+  name: Extension['name'],
+  config?: Partial<LexicalExtensionConfig<Extension>>,
+): NormalizedPeerDependency<Extension>;
+declare export function defineExtension<
+  Config: ExtensionConfigBase,
+  Name: string,
+  Output,
+  Init,
+>(
+  extension: LexicalExtension<Config, Name, Output, Init>,
+): LexicalExtension<Config, Name, Output, Init>;
+export type ExtensionConfigBase = {...};
+export interface ExtensionInitState {
+  getPeer: <Dependency: AnyLexicalExtension = empty>(
+    name: Dependency['name'],
+  ) => void | Omit<LexicalExtensionDependency<Dependency>, 'output'>;
+  getDependency: <Dependency: AnyLexicalExtension>(
+    dep: Dependency,
+  ) => Omit<LexicalExtensionDependency<Dependency>, 'output'>;
+  getDirectDependentNames: () => $ReadOnlySet<string>;
+  getPeerNameSet: () => $ReadOnlySet<string>;
+}
+export interface ExtensionBuildState<Init>
+  extends Omit<ExtensionInitState, 'getPeer' | 'getDependency'> {
+  getPeer: <Dependency: AnyLexicalExtension = empty>(
+    name: Dependency['name'],
+  ) => void | LexicalExtensionDependency<Dependency>;
+  getDependency: <Dependency: AnyLexicalExtension>(
+    dep: Dependency,
+  ) => LexicalExtensionDependency<Dependency>;
+  getInitResult: () => Init;
+}
+
+export interface ExtensionRegisterState<Init, Output>
+  extends ExtensionBuildState<Init> {
+  getSignal: () => AbortSignal;
+  getOutput: () => Output;
+}
+export interface InitialEditorConfig {
+  disableEvents?: CreateEditorArgs['disableEvents'];
+  parentEditor?: CreateEditorArgs['parentEditor'];
+  namespace?: CreateEditorArgs['namespace'];
+  nodes?: CreateEditorArgs['nodes'];
+  theme?: CreateEditorArgs['theme'];
+  html?: CreateEditorArgs['html'];
+  editable?: CreateEditorArgs['editable'];
+  onError?: (error: Error, editor: LexicalEditor) => void;
+  $initialEditorState?: InitialEditorStateType;
+}
+export type InitialEditorStateType =
+  | null
+  | string
+  | EditorState
+  | ((editor: LexicalEditor) => void);
+declare export const initTypeSymbol: symbol;
+
+interface Disposable {
+  // [Symbol.dispose]: () => void;
+}
+export interface LexicalEditorWithDispose extends LexicalEditor, Disposable {
+  dispose: () => void;
+}
+export interface LexicalExtension<
+  Config: ExtensionConfigBase,
+  Name: string,
+  Output,
+  Init,
+> extends InitialEditorConfig,
+    LexicalExtensionInternal<Config, Output, Init> {
+  +name: Name;
+  conflictsWith?: string[];
+  dependencies?: AnyLexicalExtensionArgument[];
+  peerDependencies?: NormalizedPeerDependency<AnyLexicalExtension>[];
+  config?: Config;
+  mergeConfig?: (config: Config, overrides: Partial<Config>) => Config;
+  init?: (
+    editorConfig: InitialEditorConfig,
+    config: Config,
+    state: ExtensionInitState,
+  ) => Init;
+  build?: (
+    editor: LexicalEditor,
+    config: Config,
+    state: ExtensionBuildState<Init>,
+  ) => Output;
+  register?: (
+    editor: LexicalEditor,
+    config: Config,
+    state: ExtensionRegisterState<Init, Output>,
+  ) => () => void;
+  afterRegistration?: (
+    editor: LexicalEditor,
+    config: Config,
+    state: ExtensionRegisterState<Init, Output>,
+  ) => () => void;
+}
+export type LexicalExtensionArgument<
+  Config: ExtensionConfigBase,
+  Name: string,
+  Output,
+  Init,
+> =
+  | LexicalExtension<Config, Name, Output, Init>
+  | NormalizedLexicalExtensionArgument<Config, Name, Output, Init>;
+export type LexicalExtensionConfig<Extension: AnyLexicalExtension> =
+  $NonMaybeType<Extension[typeof configTypeSymbol]>;
+export interface LexicalExtensionDependency<
+  +Dependency: AnyLexicalExtension,
+> {
+  config: LexicalExtensionConfig<Dependency>;
+  output: LexicalExtensionOutput<Dependency>;
+}
+export type LexicalExtensionInit<Extension: AnyLexicalExtension> =
+  $NonMaybeType<Extension[typeof initTypeSymbol]>;
+export interface LexicalExtensionInternal<Config, Output, Init> extends LexicalExtensionInternalConfig<Config>, LexicalExtensionInternalOutput<Output> {
+  [typeof initTypeSymbol]: Init;
+}
+interface LexicalExtensionInternalConfig<Config> {
+  [typeof configTypeSymbol]: Config;
+}
+interface LexicalExtensionInternalOutput<Output> {
+  [typeof outputTypeSymbol]: Output;
+}
+
+export type LexicalExtensionName<Extension: AnyLexicalExtension> =
+  Extension['name'];
+
+export type LexicalExtensionOutput<Extension: AnyLexicalExtension> =
+  $NonMaybeType<Extension[typeof outputTypeSymbol]>;
+declare export const peerDependencySymbol: symbol;
+export type NormalizedLexicalExtensionArgument<
+  Config: ExtensionConfigBase,
+  Name: string,
+  Output,
+  Init,
+> = [LexicalExtension<Config, Name, Output, Init>, ...Partial<Config>[]];
+export type NormalizedPeerDependency<Extension: AnyLexicalExtension> = [
+  Extension['name'],
+  Partial<LexicalExtensionConfig<Extension>> | void,
+] & {+[typeof peerDependencySymbol]: Extension};
+export type OutputComponentExtension<ComponentType> =
+  // $FlowFixMe[unclear-type]
+  LexicalExtension<any, any, {Component: ComponentType}, any>;
+declare export const outputTypeSymbol: symbol;
+declare export function safeCast<T>(value: T): T;
+declare export function shallowMergeConfig<T: ExtensionConfigBase>(
+  config: T,
+  overrides?: Partial<T>,
+): T;

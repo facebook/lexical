@@ -6,20 +6,21 @@
  *
  */
 
-import type {JSX} from 'react';
-
 import {$createLinkNode} from '@lexical/link';
 import {$createListItemNode, $createListNode} from '@lexical/list';
-import {LexicalComposer} from '@lexical/react/LexicalComposer';
+import {LexicalCollaboration} from '@lexical/react/LexicalCollaborationContext';
+import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
 import {$createHeadingNode, $createQuoteNode} from '@lexical/rich-text';
 import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
   $isTextNode,
+  defineExtension,
   DOMConversionMap,
   TextNode,
 } from 'lexical';
+import {type JSX, useMemo} from 'react';
 
 import {isDevPlayground} from './appSettings';
 import {FlashMessageContext} from './context/FlashMessageContext';
@@ -193,44 +194,48 @@ function App(): JSX.Element {
     settings: {isCollab, emptyEditor, measureTypingPerf},
   } = useSettings();
 
-  const initialConfig = {
-    editorState: isCollab
-      ? null
-      : emptyEditor
-        ? undefined
-        : $prepopulatedRichText,
-    html: {import: buildImportMap()},
-    namespace: 'Playground',
-    nodes: [...PlaygroundNodes],
-    onError: (error: Error) => {
-      throw error;
-    },
-    theme: PlaygroundEditorTheme,
-  };
+  const app = useMemo(
+    () =>
+      defineExtension({
+        $initialEditorState: isCollab
+          ? null
+          : emptyEditor
+            ? undefined
+            : $prepopulatedRichText,
+        html: {import: buildImportMap()},
+        name: '@lexical/playground',
+        namespace: 'Playground',
+        nodes: PlaygroundNodes,
+        theme: PlaygroundEditorTheme,
+      }),
+    [emptyEditor, isCollab],
+  );
 
   return (
-    <LexicalComposer initialConfig={initialConfig}>
-      <SharedHistoryContext>
-        <TableContext>
-          <ToolbarContext>
-            <header>
-              <a href="https://lexical.dev" target="_blank" rel="noreferrer">
-                <img src={logo} alt="Lexical Logo" />
-              </a>
-            </header>
-            <div className="editor-shell">
-              <Editor />
-            </div>
-            <Settings />
-            {isDevPlayground ? <DocsPlugin /> : null}
-            {isDevPlayground ? <PasteLogPlugin /> : null}
-            {isDevPlayground ? <TestRecorderPlugin /> : null}
+    <LexicalCollaboration>
+      <LexicalExtensionComposer extension={app} contentEditable={null}>
+        <SharedHistoryContext>
+          <TableContext>
+            <ToolbarContext>
+              <header>
+                <a href="https://lexical.dev" target="_blank" rel="noreferrer">
+                  <img src={logo} alt="Lexical Logo" />
+                </a>
+              </header>
+              <div className="editor-shell">
+                <Editor />
+              </div>
+              <Settings />
+              {isDevPlayground ? <DocsPlugin /> : null}
+              {isDevPlayground ? <PasteLogPlugin /> : null}
+              {isDevPlayground ? <TestRecorderPlugin /> : null}
 
-            {measureTypingPerf ? <TypingPerfPlugin /> : null}
-          </ToolbarContext>
-        </TableContext>
-      </SharedHistoryContext>
-    </LexicalComposer>
+              {measureTypingPerf ? <TypingPerfPlugin /> : null}
+            </ToolbarContext>
+          </TableContext>
+        </SharedHistoryContext>
+      </LexicalExtensionComposer>
+    </LexicalCollaboration>
   );
 }
 

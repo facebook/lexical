@@ -67,7 +67,7 @@ import {
   isCurrentlyReadOnlyMode,
 } from './LexicalUpdates';
 import {
-  $getAncestor,
+  $findMatchingParent,
   $getCompositionKey,
   $getNearestRootOrShadowRoot,
   $getNodeByKey,
@@ -1346,7 +1346,7 @@ export class RangeSelection implements BaseSelection {
 
     const firstPoint = this.isBackward() ? this.focus : this.anchor;
     const firstNode = firstPoint.getNode();
-    const firstBlock = $getAncestor(firstNode, INTERNAL_$isBlock);
+    const firstBlock = $findMatchingParent(firstNode, INTERNAL_$isBlock);
 
     const last = nodes[nodes.length - 1]!;
 
@@ -1413,7 +1413,10 @@ export class RangeSelection implements BaseSelection {
       );
       insertRangeAfter(firstBlock, firstToInsert);
     }
-    const lastInsertedBlock = $getAncestor(nodeToSelect, INTERNAL_$isBlock);
+    const lastInsertedBlock = $findMatchingParent(
+      nodeToSelect,
+      INTERNAL_$isBlock,
+    );
 
     if (
       insertedParagraph &&
@@ -1451,7 +1454,7 @@ export class RangeSelection implements BaseSelection {
       return paragraph;
     }
     const index = $removeTextAndSplitBlock(this);
-    const block = $getAncestor(this.anchor.getNode(), INTERNAL_$isBlock);
+    const block = $findMatchingParent(this.anchor.getNode(), INTERNAL_$isBlock);
     invariant(
       $isElementNode(block),
       'Expected ancestor to be a block ElementNode',
@@ -1492,49 +1495,53 @@ export class RangeSelection implements BaseSelection {
    * @returns The nodes in the Selection
    */
   extract(): Array<LexicalNode> {
-    const selectedNodes = this.getNodes();
+    const selectedNodes = [...this.getNodes()];
     const selectedNodesLength = selectedNodes.length;
-    const lastIndex = selectedNodesLength - 1;
-    const anchor = this.anchor;
-    const focus = this.focus;
     let firstNode = selectedNodes[0];
-    let lastNode = selectedNodes[lastIndex];
+    let lastNode = selectedNodes[selectedNodesLength - 1];
     const [anchorOffset, focusOffset] = $getCharacterOffsets(this);
+    const isBackward = this.isBackward();
+    const [startPoint, endPoint] = isBackward
+      ? [this.focus, this.anchor]
+      : [this.anchor, this.focus];
+    const [startOffset, endOffset] = isBackward
+      ? [focusOffset, anchorOffset]
+      : [anchorOffset, focusOffset];
 
     if (selectedNodesLength === 0) {
       return [];
     } else if (selectedNodesLength === 1) {
       if ($isTextNode(firstNode) && !this.isCollapsed()) {
-        const startOffset =
-          anchorOffset > focusOffset ? focusOffset : anchorOffset;
-        const endOffset =
-          anchorOffset > focusOffset ? anchorOffset : focusOffset;
         const splitNodes = firstNode.splitText(startOffset, endOffset);
         const node = startOffset === 0 ? splitNodes[0] : splitNodes[1];
-        return node != null ? [node] : [];
+        if (node) {
+          startPoint.set(node.getKey(), 0, 'text');
+          endPoint.set(node.getKey(), node.getTextContentSize(), 'text');
+          return [node];
+        }
+        return [];
       }
       return [firstNode];
     }
-    const isBefore = anchor.isBefore(focus);
 
     if ($isTextNode(firstNode)) {
-      const startOffset = isBefore ? anchorOffset : focusOffset;
       if (startOffset === firstNode.getTextContentSize()) {
         selectedNodes.shift();
       } else if (startOffset !== 0) {
         [, firstNode] = firstNode.splitText(startOffset);
         selectedNodes[0] = firstNode;
+        startPoint.set(firstNode.getKey(), 0, 'text');
       }
     }
     if ($isTextNode(lastNode)) {
       const lastNodeText = lastNode.getTextContent();
       const lastNodeTextLength = lastNodeText.length;
-      const endOffset = isBefore ? focusOffset : anchorOffset;
       if (endOffset === 0) {
         selectedNodes.pop();
       } else if (endOffset !== lastNodeTextLength) {
         [lastNode] = lastNode.splitText(endOffset);
-        selectedNodes[lastIndex] = lastNode;
+        selectedNodes[selectedNodes.length - 1] = lastNode;
+        endPoint.set(lastNode.getKey(), lastNode.getTextContentSize(), 'text');
       }
     }
     return selectedNodes;

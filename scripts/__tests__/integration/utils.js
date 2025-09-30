@@ -41,9 +41,12 @@ exports.withCwd = withCwd;
  * @returns {Promise<string>}
  */
 function expectSuccessfulExec(cmd) {
-  // playwright detects jest, so we clear this env var while running subcommands
+  // clear out parts of the environment that would confuse
+  // node, npm and playwright.
   const env = Object.fromEntries(
-    Object.entries(process.env).filter(([k]) => k !== 'JEST_WORKER_ID'),
+    Object.entries(process.env).filter(
+      ([k]) => !(k === 'JEST_WORKER_ID' || /^(NODE|npm)/.test(k)),
+    ),
   );
   return exec(cmd, {capture: ['stdout', 'stderr'], env}).catch((err) => {
     expect(
@@ -69,31 +72,41 @@ exports.expectSuccessfulExec = expectSuccessfulExec;
  */
 async function buildExample({packageJson, exampleDir}) {
   let hasPlaywright = false;
-  const depsMap = packagesManager.computedMonorepoDependencyMap(
-    ['dependencies', 'devDependencies', 'peerDependencies'].flatMap(
-      (depType) => {
-        const deps = packageJson[depType] || {};
-        hasPlaywright ||= '@playwright/test' in deps;
-        return Object.keys(deps);
-      },
-    ),
-  );
-  const installDeps = [...depsMap.values()].map((pkg) =>
-    path.resolve('npm', `${pkg.getDirectoryName()}-${monorepoVersion}.tgz`),
-  );
-  if (installDeps.length === 0) {
+  /** @type {Map<string, string} */
+  const allDeps = new Map();
+  for (const depType of [
+    'dependencies',
+    'devDependencies',
+    'peerDependencies',
+    'lexicalUnreleasedDependencies',
+  ]) {
+    const deps = packageJson[depType] || {};
+    hasPlaywright ||= '@playwright/test' in deps;
+    for (const [dep, v] of Object.entries(deps)) {
+      allDeps.set(dep, `${dep}@${v}`);
+    }
+  }
+  const depsMap = packagesManager.computedMonorepoDependencyMap([
+    ...allDeps.keys(),
+  ]);
+  if (depsMap.size === 0) {
     throw new Error(`No lexical dependencies detected: ${exampleDir}`);
   }
+  const installDeps = Array.from(depsMap.entries(), ([dep, pkg]) =>
+    path.resolve('npm', `${pkg.getDirectoryName()}-${monorepoVersion}.tgz`),
+  );
   ['node_modules', 'dist', 'build', '.next', '.svelte-kit'].forEach(
     (cleanDir) => fs.removeSync(path.resolve(exampleDir, cleanDir)),
   );
   await withCwd(exampleDir, async () => {
-    await exec(
-      `npm install --no-save ${installDeps.map((fn) => `'${fn}'`).join(' ')}`,
+    await expectSuccessfulExec(
+      `npm install --prefix=./ --no-save ${installDeps
+        .map((fn) => `'${fn}'`)
+        .join(' ')}`,
     );
-    await exec('npm run build');
+    await expectSuccessfulExec('npm run build');
     if (hasPlaywright) {
-      await exec('npx playwright install');
+      await expectSuccessfulExec('npx playwright install');
     }
   });
   return depsMap;

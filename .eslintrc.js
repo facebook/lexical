@@ -19,7 +19,7 @@ module.exports = {
   extends: [
     'fbjs',
     'plugin:react-hooks/recommended',
-    'plugin:lexical/all',
+    'plugin:@lexical/internal/all',
     'prettier',
   ],
 
@@ -116,13 +116,13 @@ module.exports = {
         'packages/lexical-devtools/**',
       ],
       rules: {
-        'lexical/no-optional-chaining': OFF,
+        '@lexical/internal/no-optional-chaining': OFF,
       },
     },
     {
       files: ['packages/**/__tests__/**'],
       rules: {
-        'lexical/no-imports-from-self': OFF,
+        '@lexical/internal/no-imports-from-self': OFF,
       },
     },
     {
@@ -170,8 +170,8 @@ module.exports = {
     'no-function-declare-after-return',
     'react',
     'no-only-tests',
-    'lexical',
     '@lexical',
+    '@lexical/internal',
   ],
 
   // Stop ESLint from looking for a configuration file in parent folders
@@ -179,6 +179,7 @@ module.exports = {
   // We're stricter than the default config, mostly. We'll override a few rules
   // and then enable some React specific ones.
   rules: {
+    '@lexical/internal/no-imports-from-self': ERROR,
     'accessor-pairs': OFF,
     'consistent-return': OFF,
     curly: [ERROR, 'all'],
@@ -187,7 +188,9 @@ module.exports = {
     'dot-notation': [ERROR, {allowPattern: '^(error|warn)$'}],
 
     'eol-last': ERROR,
+
     eqeqeq: [ERROR, 'allow-null'],
+
     // Prettier forces semicolons in a few places
     'ft-flow/object-type-delimiter': OFF,
 
@@ -209,8 +212,6 @@ module.exports = {
     'jsx-quotes': [ERROR, 'prefer-double'],
 
     'keyword-spacing': [ERROR, {after: true, before: true}],
-
-    'lexical/no-imports-from-self': ERROR,
 
     // Enforced by Prettier
     // TODO: Prettier doesn't handle long strings or long comments. Not a big

@@ -31,6 +31,7 @@ import {
   ElementNode,
   getRegisteredNode,
   isDocumentFragment,
+  isDOMDocumentNode,
   isInlineDomNode,
 } from 'lexical';
 
@@ -41,13 +42,14 @@ import {
  */
 export function $generateNodesFromDOM(
   editor: LexicalEditor,
-  dom: Document,
+  dom: Document | ParentNode,
 ): Array<LexicalNode> {
-  const elements = dom.body ? dom.body.childNodes : [];
+  const elements = isDOMDocumentNode(dom)
+    ? dom.body.childNodes
+    : dom.childNodes;
   let lexicalNodes: Array<LexicalNode> = [];
   const allArtificialNodes: Array<ArtificialNode__DO_NOT_USE> = [];
-  for (let i = 0; i < elements.length; i++) {
-    const element = elements[i];
+  for (const element of elements) {
     if (!IGNORE_TAGS.has(element.nodeName)) {
       const lexicalNode = $createNodesFromDOM(
         element,

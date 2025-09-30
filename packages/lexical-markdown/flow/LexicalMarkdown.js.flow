@@ -43,6 +43,13 @@ export type MultilineElementTransformer = {
     node: LexicalNode,
     traverseChildren: (node: ElementNode) => string,
   ) => string | null;
+  handleImportAfterStartMatch?: (args: {
+    lines: Array<string>;
+    rootNode: ElementNode;
+    startLineIndex: number;
+    startMatch: RegExp$matchResult;
+    transformer: MultilineElementTransformer;
+  }) => [boolean, number] | null | void;
   regExpStart: RegExp;
   regExpEnd?:
     | RegExp
@@ -70,26 +77,24 @@ export type TextFormatTransformer = $ReadOnly<{
 
 export type TextMatchTransformer = $ReadOnly<{
   dependencies: Array<Class<LexicalNode>>,
-  export: (
+  export?: (
     node: LexicalNode,
     exportChildren: (node: ElementNode) => string,
     exportFormat: (node: TextNode, textContent: string) => string,
   ) => string | null,
-  importRegExp: RegExp,
+  getEndIndex?: (node: TextNode, match: RegExp$matchResult) => number | false;
+  importRegExp?: RegExp,
   regExp: RegExp,
-  replace: (node: TextNode, match: RegExp$matchResult) => void,
-  trigger: string,
+  replace?: (node: TextNode, match: RegExp$matchResult) => void | TextNode,
+  trigger?: string,
   type: 'text-match',
 }>;
-// TODO:
-// transformers should be required argument, breaking change
+
 declare export function registerMarkdownShortcuts(
   editor: LexicalEditor,
   transformers?: Array<Transformer>,
 ): () => void;
 
-// TODO:
-// transformers should be required argument, breaking change
 declare export function $convertFromMarkdownString(
   markdown: string,
   transformers?: Array<Transformer>,
@@ -98,33 +103,33 @@ declare export function $convertFromMarkdownString(
   shouldMergeAdjacentLines?: boolean,
 ): void;
 
-// TODO:
-// transformers should be required argument, breaking change
 declare export function $convertToMarkdownString(
   transformers?: Array<Transformer>,
   node?: ElementNode,
   shouldPreserveNewLines?: boolean,
 ): string;
 
+declare export var INLINE_CODE: TextFormatTransformer;
+declare export var HIGHLIGHT: TextFormatTransformer;
 declare export var BOLD_ITALIC_STAR: TextFormatTransformer;
 declare export var BOLD_ITALIC_UNDERSCORE: TextFormatTransformer;
 declare export var BOLD_STAR: TextFormatTransformer;
 declare export var BOLD_UNDERSCORE: TextFormatTransformer;
-declare export var INLINE_CODE: TextFormatTransformer;
+declare export var STRIKETHROUGH: TextFormatTransformer;
 declare export var ITALIC_STAR: TextFormatTransformer;
 declare export var ITALIC_UNDERSCORE: TextFormatTransformer;
-declare export var STRIKETHROUGH: TextFormatTransformer;
 
-declare export var UNORDERED_LIST: ElementTransformer;
-declare export var CODE: MultilineElementTransformer;
 declare export var HEADING: ElementTransformer;
-declare export var ORDERED_LIST: ElementTransformer;
 declare export var QUOTE: ElementTransformer;
+declare export var CODE: MultilineElementTransformer;
+declare export var UNORDERED_LIST: ElementTransformer;
 declare export var CHECK_LIST: ElementTransformer;
+declare export var ORDERED_LIST: ElementTransformer;
 
 declare export var LINK: TextMatchTransformer;
 
 declare export var TRANSFORMERS: Array<Transformer>;
 declare export var ELEMENT_TRANSFORMERS: Array<ElementTransformer>;
+declare export var MULTILINE_ELEMENT_TRANSFORMERS: Array<MultilineElementTransformer>;
 declare export var TEXT_FORMAT_TRANSFORMERS: Array<TextFormatTransformer>;
 declare export var TEXT_MATCH_TRANSFORMERS: Array<TextFormatTransformer>;

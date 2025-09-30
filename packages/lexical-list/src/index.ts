@@ -6,7 +6,7 @@
  *
  */
 
-import type {SerializedListItemNode} from './LexicalListItemNode';
+import type {ListMarker, SerializedListItemNode} from './LexicalListItemNode';
 import type {
   ListNodeTagType,
   ListType,
@@ -39,6 +39,7 @@ import {
 import {
   $createListItemNode,
   $isListItemNode,
+  $isListMarker,
   ListItemNode,
 } from './LexicalListItemNode';
 import {$createListNode, $isListNode, ListNode} from './LexicalListNode';
@@ -51,10 +52,12 @@ export {
   $handleListInsertParagraph,
   $insertList,
   $isListItemNode,
+  $isListMarker,
   $isListNode,
   $removeList,
   INSERT_CHECK_LIST_COMMAND,
   ListItemNode,
+  ListMarker,
   ListNode,
   ListNodeTagType,
   ListType,

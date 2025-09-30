@@ -1377,6 +1377,7 @@ describe('LexicalListItemNode tests', () => {
           direction: null,
           format: '',
           indent: 0,
+          marker: '-',
           type: 'listitem',
           value: 1,
           version: 1,

@@ -969,7 +969,6 @@ test.describe('CopyAndPaste', () => {
     page,
     context,
   }) => {
-    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await focusEditor(page);
 
     await page.keyboard.type('Hello world');
@@ -985,36 +984,38 @@ test.describe('CopyAndPaste', () => {
 
     // Select all and cut
     await selectAll(page);
-    await keyDownCtrlOrMeta(page);
-    await page.keyboard.press('x');
-    await keyUpCtrlOrMeta(page);
+    await withExclusiveClipboardAccess(async () => {
+      await keyDownCtrlOrMeta(page);
+      await page.keyboard.press('x');
+      await keyUpCtrlOrMeta(page);
+
+      // Confirm that the cut occurred
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        `,
+      );
+
+      // Copy with a collapsed selection, we expect it to not
+      // change the clipboard
+      await keyDownCtrlOrMeta(page);
+      await page.keyboard.press('c');
+      await keyUpCtrlOrMeta(page);
+
+      // Paste what was on the clipboard back into the document
+      await keyDownCtrlOrMeta(page);
+      await page.keyboard.press('v');
+      await keyUpCtrlOrMeta(page);
+    });
 
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">Hello world</span>
+        </p>
       `,
     );
-
-    await withExclusiveClipboardAccess(async () => {
-      const clipboardText = await page.evaluate(() =>
-        navigator.clipboard.readText(),
-      );
-      expect(clipboardText).toBe('Hello world');
-    });
-
-    // Copy with collapsed selection
-    await selectAll(page);
-
-    await keyDownCtrlOrMeta(page);
-    await page.keyboard.press('c');
-    await keyUpCtrlOrMeta(page);
-
-    await withExclusiveClipboardAccess(async () => {
-      const clipboardText = await page.evaluate(() =>
-        navigator.clipboard.readText(),
-      );
-      expect(clipboardText).toBe('Hello world');
-    });
   });
 });

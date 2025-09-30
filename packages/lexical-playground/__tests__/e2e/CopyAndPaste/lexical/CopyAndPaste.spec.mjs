@@ -987,7 +987,6 @@ test.describe('CopyAndPaste', () => {
       await page.keyboard.press('x');
       await keyUpCtrlOrMeta(page);
 
-      // Confirm that the cut occurred
       await assertHTML(
         page,
         html`

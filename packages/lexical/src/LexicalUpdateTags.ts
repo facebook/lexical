@@ -53,8 +53,8 @@ export const SKIP_SCROLL_INTO_VIEW_TAG = 'skip-scroll-into-view';
 export const SKIP_DOM_SELECTION_TAG = 'skip-dom-selection';
 
 /**
- * Indicated that after changing the selection, the editor should not focus itself
- * This tag is ignored if SKIP_DOM_SELECTION_TAG is used
+ * Indicates that after changing the selection, the editor should not focus itself
+ * This tag is ignored if {@link SKIP_DOM_SELECTION_TAG} is used
  */
 export const SKIP_SELECTION_FOCUS_TAG = 'skip-selection-focus';
 

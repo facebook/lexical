@@ -23,11 +23,14 @@ import {$patchStyleText, $setBlocksType} from '@lexical/selection';
 import {$isTableSelection} from '@lexical/table';
 import {$getNearestBlockElementAncestorOrThrow} from '@lexical/utils';
 import {
+  $addUpdateTag,
   $createParagraphNode,
   $getSelection,
   $isRangeSelection,
   $isTextNode,
   LexicalEditor,
+  SKIP_DOM_SELECTION_TAG,
+  SKIP_SELECTION_FOCUS_TAG,
 } from 'lexical';
 
 import {
@@ -117,6 +120,7 @@ export const updateFontSizeInSelection = (
   editor: LexicalEditor,
   newFontSize: string | null,
   updateType: UpdateFontSizeType | null,
+  skipRefocus: boolean,
 ) => {
   const getNextFontSize = (prevFontSize: string | null): string => {
     if (!prevFontSize) {
@@ -131,6 +135,9 @@ export const updateFontSizeInSelection = (
   };
 
   editor.update(() => {
+    if (skipRefocus) {
+      $addUpdateTag(SKIP_DOM_SELECTION_TAG);
+    }
     if (editor.isEditable()) {
       const selection = $getSelection();
       if (selection !== null) {
@@ -146,17 +153,24 @@ export const updateFontSize = (
   editor: LexicalEditor,
   updateType: UpdateFontSizeType,
   inputValue: string,
+  skipRefocus: boolean = false,
 ) => {
   if (inputValue !== '') {
     const nextFontSize = calculateNextFontSize(Number(inputValue), updateType);
-    updateFontSizeInSelection(editor, String(nextFontSize) + 'px', null);
+    updateFontSizeInSelection(
+      editor,
+      String(nextFontSize) + 'px',
+      null,
+      skipRefocus,
+    );
   } else {
-    updateFontSizeInSelection(editor, null, updateType);
+    updateFontSizeInSelection(editor, null, updateType, skipRefocus);
   }
 };
 
 export const formatParagraph = (editor: LexicalEditor) => {
   editor.update(() => {
+    $addUpdateTag(SKIP_SELECTION_FOCUS_TAG);
     const selection = $getSelection();
     $setBlocksType(selection, () => $createParagraphNode());
   });
@@ -169,6 +183,7 @@ export const formatHeading = (
 ) => {
   if (blockType !== headingSize) {
     editor.update(() => {
+      $addUpdateTag(SKIP_SELECTION_FOCUS_TAG);
       const selection = $getSelection();
       $setBlocksType(selection, () => $createHeadingNode(headingSize));
     });
@@ -177,7 +192,10 @@ export const formatHeading = (
 
 export const formatBulletList = (editor: LexicalEditor, blockType: string) => {
   if (blockType !== 'bullet') {
-    editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined);
+    editor.update(() => {
+      $addUpdateTag(SKIP_SELECTION_FOCUS_TAG);
+      editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined);
+    });
   } else {
     formatParagraph(editor);
   }
@@ -185,7 +203,10 @@ export const formatBulletList = (editor: LexicalEditor, blockType: string) => {
 
 export const formatCheckList = (editor: LexicalEditor, blockType: string) => {
   if (blockType !== 'check') {
-    editor.dispatchCommand(INSERT_CHECK_LIST_COMMAND, undefined);
+    editor.update(() => {
+      $addUpdateTag(SKIP_SELECTION_FOCUS_TAG);
+      editor.dispatchCommand(INSERT_CHECK_LIST_COMMAND, undefined);
+    });
   } else {
     formatParagraph(editor);
   }
@@ -196,7 +217,10 @@ export const formatNumberedList = (
   blockType: string,
 ) => {
   if (blockType !== 'number') {
-    editor.dispatchCommand(INSERT_ORDERED_LIST_COMMAND, undefined);
+    editor.update(() => {
+      $addUpdateTag(SKIP_SELECTION_FOCUS_TAG);
+      editor.dispatchCommand(INSERT_ORDERED_LIST_COMMAND, undefined);
+    });
   } else {
     formatParagraph(editor);
   }
@@ -205,6 +229,7 @@ export const formatNumberedList = (
 export const formatQuote = (editor: LexicalEditor, blockType: string) => {
   if (blockType !== 'quote') {
     editor.update(() => {
+      $addUpdateTag(SKIP_SELECTION_FOCUS_TAG);
       const selection = $getSelection();
       $setBlocksType(selection, () => $createQuoteNode());
     });
@@ -214,6 +239,7 @@ export const formatQuote = (editor: LexicalEditor, blockType: string) => {
 export const formatCode = (editor: LexicalEditor, blockType: string) => {
   if (blockType !== 'code') {
     editor.update(() => {
+      $addUpdateTag(SKIP_SELECTION_FOCUS_TAG);
       let selection = $getSelection();
       if (!selection) {
         return;
@@ -233,8 +259,14 @@ export const formatCode = (editor: LexicalEditor, blockType: string) => {
   }
 };
 
-export const clearFormatting = (editor: LexicalEditor) => {
+export const clearFormatting = (
+  editor: LexicalEditor,
+  skipRefocus: boolean = false,
+) => {
   editor.update(() => {
+    if (skipRefocus) {
+      $addUpdateTag(SKIP_DOM_SELECTION_TAG);
+    }
     const selection = $getSelection();
     if ($isRangeSelection(selection) || $isTableSelection(selection)) {
       const anchor = selection.anchor;

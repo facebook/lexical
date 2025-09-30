@@ -255,6 +255,9 @@ const config = {
   },
 
   markdown: {
+    hooks: {
+      onBrokenMarkdownLinks: 'throw',
+    },
     mermaid: true,
     parseFrontMatter,
     preprocessor: ({fileContent}) =>
@@ -267,7 +270,6 @@ const config = {
   onBrokenAnchors: 'throw',
   // These are false positives when linking from API docs
   onBrokenLinks: 'ignore',
-  onBrokenMarkdownLinks: 'throw',
   organizationName: 'facebook',
   plugins: [
     process.env.FB_INTERNAL
@@ -343,14 +345,8 @@ const config = {
   tagline: 'An extensible text editor framework that does things differently',
 
   themeConfig:
-    /** @type {import('@docusaurus/preset-classic').ThemeConfig & import('@docusaurus/theme-search-algolia').ThemeConfig} */
+    /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
-      algolia: {
-        apiKey: '00b99bc61a623e1abd819b1d655da918',
-        appId: 'YRGKJK6OMH',
-        contextualSearch: true,
-        indexName: 'lexical',
-      },
       docs: {
         sidebar: {
           autoCollapseCategories: true,
@@ -477,7 +473,20 @@ const config = {
       },
     }),
 
-  themes: ['@docusaurus/theme-mermaid'],
+  themes: [
+    '@docusaurus/theme-mermaid',
+    [
+      require.resolve('@easyops-cn/docusaurus-search-local'),
+      /** @type {import("@easyops-cn/docusaurus-search-local").PluginOptions} */
+      ({
+        // ... Your options.
+        // `hashed` is recommended as long-term-cache of index file is possible.
+        hashed: true,
+        indexBlog: false,
+        language: ['en'],
+      }),
+    ],
+  ],
 
   title: TITLE,
   url: 'https://lexical.dev',

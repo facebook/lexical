@@ -44,17 +44,28 @@ export default defineConfig({
           lexicalTestMocks(),
         ],
         test: {
+          env: {
+            LEXICAL_VERSION: JSON.stringify(
+              `${process.env.npm_package_version}+git`,
+            ),
+          },
           environment: 'jsdom',
-          include: [
-            'packages/*/src/__tests__/unit/**/*.test{.ts,.tsx,.js,.jsx}',
-          ],
+          include: ['packages/**/__tests__/unit/**/*.test{.ts,.tsx,.js,.jsx}'],
           name: 'unit',
+          setupFiles: ['./vitest.setup.mts'],
+          typecheck: {
+            tsconfig: './tsconfig.test.json',
+          },
+        },
+      },
+      {
+        extends: true,
+        test: {
+          environment: 'node',
+          include: ['scripts/**/__tests__/unit/**/*.test.ts'],
+          name: 'scripts-unit',
         },
       },
     ],
-    setupFiles: ['./vitest.setup.mts'],
-    typecheck: {
-      tsconfig: './tsconfig.test.json',
-    },
   },
 });

@@ -133,6 +133,7 @@ export function getRegisteredNode(
 
 export const isArray = Array.isArray;
 
+/** @internal */
 export const scheduleMicroTask: (fn: () => void) => void =
   typeof queueMicrotask === 'function'
     ? queueMicrotask
@@ -1764,23 +1765,6 @@ export function $splitNode(
   return [leftTree, rightTree];
 }
 
-export function $findMatchingParent(
-  startingNode: LexicalNode,
-  findFn: (node: LexicalNode) => boolean,
-): LexicalNode | null {
-  let curr: ElementNode | LexicalNode | null = startingNode;
-
-  while (curr !== $getRoot() && curr != null) {
-    if (findFn(curr)) {
-      return curr;
-    }
-
-    curr = curr.getParent();
-  }
-
-  return null;
-}
-
 /**
  * @param x - The element being tested
  * @returns Returns true if x is an HTML anchor tag, false otherwise
@@ -1875,17 +1859,6 @@ export function INTERNAL_$isBlock(
     firstChild.isInline();
 
   return !node.isInline() && node.canBeEmpty() !== false && isLeafElement;
-}
-
-export function $getAncestor<NodeType extends LexicalNode = LexicalNode>(
-  node: LexicalNode,
-  predicate: (ancestor: LexicalNode) => ancestor is NodeType,
-): NodeType | null {
-  let parent = node;
-  while (parent !== null && parent.getParent() !== null && !predicate(parent)) {
-    parent = parent.getParentOrThrow();
-  }
-  return predicate(parent) ? parent : null;
 }
 
 /**
@@ -2036,6 +2009,29 @@ export function hasOwnExportDOM(klass: Klass<LexicalNode>) {
 
 /** @internal */
 function isAbstractNodeClass(klass: Klass<LexicalNode>): boolean {
+  if (!(klass === LexicalNode || klass.prototype instanceof LexicalNode)) {
+    let ownNodeType = '<unknown>';
+    let version = '<unknown>';
+    try {
+      ownNodeType = klass.getType();
+    } catch (_err) {
+      // ignore
+    }
+    try {
+      if (LexicalEditor.version) {
+        version = JSON.parse(LexicalEditor.version);
+      }
+    } catch (_err) {
+      // ignore
+    }
+    invariant(
+      false,
+      '%s (type %s) does not subclass LexicalNode from the lexical package used by this editor (version %s). All lexical and @lexical/* packages used by an editor must have identical versions. If you suspect the version does match, then the problem may be caused by multiple copies of the same lexical module (e.g. both esm and cjs, or included directly in multiple entrypoints).',
+      klass.name,
+      ownNodeType,
+      version,
+    );
+  }
   return (
     klass === DecoratorNode || klass === ElementNode || klass === LexicalNode
   );
@@ -2141,3 +2137,37 @@ export function $create<T extends LexicalNode>(klass: Klass<T>): T {
   );
   return new registeredNode.klass() as T;
 }
+
+/**
+ * Starts with a node and moves up the tree (toward the root node) to find a matching node based on
+ * the search parameters of the findFn. (Consider JavaScripts' .find() function where a testing function must be
+ * passed as an argument. eg. if( (node) => node.__type === 'div') ) return true; otherwise return false
+ * @param startingNode - The node where the search starts.
+ * @param findFn - A testing function that returns true if the current node satisfies the testing parameters.
+ * @returns `startingNode` or one of its ancestors that matches the `findFn` predicate and is not the `RootNode`, or `null` if no match was found.
+ */
+export const $findMatchingParent: {
+  <T extends LexicalNode>(
+    startingNode: LexicalNode,
+    findFn: (node: LexicalNode) => node is T,
+  ): T | null;
+  (
+    startingNode: LexicalNode,
+    findFn: (node: LexicalNode) => boolean,
+  ): LexicalNode | null;
+} = (
+  startingNode: LexicalNode,
+  findFn: (node: LexicalNode) => boolean,
+): LexicalNode | null => {
+  let curr: ElementNode | LexicalNode | null = startingNode;
+
+  while (curr != null && !$isRootNode(curr)) {
+    if (findFn(curr)) {
+      return curr;
+    }
+
+    curr = curr.getParent();
+  }
+
+  return null;
+};

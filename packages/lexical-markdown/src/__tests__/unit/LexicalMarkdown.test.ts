@@ -29,7 +29,6 @@ import {
   registerMarkdownShortcuts,
   TextMatchTransformer,
   Transformer,
-  TRANSFORMERS,
 } from '../..';
 import {
   CODE,
@@ -37,7 +36,16 @@ import {
   HEADING,
   MultilineElementTransformer,
   normalizeMarkdown,
+  TRANSFORMERS,
 } from '../../MarkdownTransformers';
+
+const HIGHLIGHT_TEXT_MATCH_IMPORT: TextMatchTransformer = {
+  ...LINK,
+  importRegExp: /\$([^$]+?)\$/,
+  replace: (textNode, match) => {
+    textNode.toggleFormat('highlight');
+  },
+};
 
 const SIMPLE_INLINE_JSX_MATCHER: TextMatchTransformer = {
   dependencies: [LinkNode],
@@ -604,6 +612,14 @@ describe('Markdown', () => {
       md: '[link](https://lexical.dev)[link2](https://lexical.dev)',
     },
     {
+      // Import only: <mark>...</mark> is exported as ==...== in markdown.
+      // Use HIGHLIGHT_TEXT_MATCH_IMPORT as custom transformer even though it is included later to ensure it runs before LINK.
+      customTransformers: [HIGHLIGHT_TEXT_MATCH_IMPORT],
+      html: '<p><span style="white-space: pre-wrap;">Multiple </span><a href="https://lexical.dev"><code spellcheck="false" style="white-space: pre-wrap;"><span>TextMatchTransformer</span></code><span style="white-space: pre-wrap;">s</span></a><s><mark style="white-space: pre-wrap;"><span>$ with formatting$</span></mark></s></p>',
+      md: 'Multiple [`TextMatchTransformer`s](https://lexical.dev)~~$ with formatting$~~',
+      skipExport: true,
+    },
+    {
       html: '<p><b><code spellcheck="false" style="white-space: pre-wrap;"><strong>Bold Code</strong></code></b></p>',
       md: '**`Bold Code`**',
     },
@@ -670,14 +686,6 @@ describe('Markdown', () => {
       md: '[h[ello](https://lexical.dev)[world](https://lexical.dev)',
     },
   ];
-
-  const HIGHLIGHT_TEXT_MATCH_IMPORT: TextMatchTransformer = {
-    ...LINK,
-    importRegExp: /\$([^$]+?)\$/,
-    replace: (textNode) => {
-      textNode.setFormat('highlight');
-    },
-  };
 
   for (const {
     html,

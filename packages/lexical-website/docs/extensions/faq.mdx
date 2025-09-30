@@ -1,0 +1,80 @@
+# FAQ
+
+## What's the compatibility story?
+
+All Legacy Plugins (React Components) are compatible with Lexical Extensions!
+
+Lexical Extensions are _only_ compatible with editors created using the
+Lexical Extension API (`buildEditorFromExtensions`, or an abstraction that uses
+it internally such as `LexicalExtensionComposer`).
+
+See the [Migration Guide](./migration) for more detailed examples!
+
+## Why is it called an Extension instead of a Plugin?
+
+Legacy reasons. Historically, Lexical has used the term Plugin to refer
+to a React component that adds behavior to the editor. Transitioning
+this word to another meaning would be confusing.
+
+It would also be a tricky transition for public APIs, since the ideal
+names for exports are already taken, so the legacy Plugin and the new
+Extension could not be colocated if they were both called Plugin!
+
+## What about lazy loading?
+
+Lazy loading does not need any special support! All of the functions
+that you implement with extensions must be synchronous, but your
+`register` or `afterRegistration` function can perform an asynchronous
+`import()`, network calls, etc. You just need to make sure that the
+dispose function that you return can manage the cleanup appropriately.
+You can also use `getSignal()` on the state to get an AbortSignal
+which may be more convenient than tapping into the dispose function.
+
+This is similar to how you would use `React.lazy` to defer loading the
+implementation to when it is used.
+
+See the extension-vanilla-tailwind example for a demonstration for
+how this can be done.
+[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/facebook/lexical/tree/main/examples/extension-vanilla-tailwind?file=src%2Fmain.ts)
+
+:::note
+
+The Extension itself must be synchronously imported before creating the
+editor. Lexical needs all editor configuration (including nodes) up front.
+This is no different than without Lexical Extension. The Lexical core would
+need significant changes to allow configuration changes to an editor at
+runtime.
+
+:::
+
+## How do we prevent all of the frameworks from being loaded?
+
+Vanilla JS and React have first class support in Lexical. Lexical Builder
+provides a path for Extensions written for either of these to be loaded into
+any editor regardless of what framework the page is using.
+
+When you depend on an Extension that depends on `ReactExtension`, you will get a runtime
+error if a React provider is not present (`LexicalExtensionComposer` or
+`ReactPluginHostExtension`). Think of it like an unsatisfied but required peer
+dependency. This way you won't get confused if you add an extension that requires
+React but it never renders correctly because React isn't set up properly.
+
+Other frameworks can use the functionality exposed by Lexical Builder
+to provide their own integrations in a similar way. Supporting
+`DecoratorNode` subclasses in multiple frameworks is not currently
+supported, or planned to be supported, because I am pretty sure that
+you can use mutation listeners for the same purpose. Perhaps the
+decorate method could even be deprecated at some point!
+
+## How will this interact with Lexical Dev Tools?
+
+All of the Builder metadata is present at runtime, and is is present
+on the LexicalEditor instance with a well-known symbol so that the dev tools
+can access it. There are many things that could be done, here are
+a few examples:
+
+- Show a diagram of the Extension tree
+- Track which config came from which Extension (e.g. which node, which theme
+  property, etc.)
+- Track which commands/listeners/etc. were registered by which Extensions
+  (would require editor instrumentation)

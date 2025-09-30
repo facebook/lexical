@@ -201,8 +201,6 @@ function YjsCollaborationCursors({
     syncCursorPositionsFn,
   );
 
-  collabContext.clientID = binding.clientID;
-
   useYjsHistory(editor, binding);
   useYjsFocusTracking(editor, provider, name, color, awarenessData);
 

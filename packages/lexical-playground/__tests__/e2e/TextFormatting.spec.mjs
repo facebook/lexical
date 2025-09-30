@@ -31,6 +31,7 @@ import {
   html,
   initialize,
   insertDateTime,
+  sleep,
   test,
 } from '../utils/index.mjs';
 
@@ -1198,7 +1199,7 @@ test.describe.parallel('TextFormatting', () => {
           html`
             <p class="PlaygroundEditorTheme__paragraph" dir="auto">
               <span data-lexical-text="true">A</span>
-              ${getExpectedDateTimeHtml()}
+              ${getExpectedDateTimeHtml({selected: true})}
               <span data-lexical-text="true">BC</span>
             </p>
           `,

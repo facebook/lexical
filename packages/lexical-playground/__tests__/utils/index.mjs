@@ -758,7 +758,7 @@ export async function insertDateTime(page) {
   await sleep(500);
 }
 
-export function getExpectedDateTimeHtml() {
+export function getExpectedDateTimeHtml({selected = false} = {}) {
   const now = new Date();
   const date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   return html`
@@ -767,7 +767,9 @@ export function getExpectedDateTimeHtml() {
       style="display: inline-block;"
       data-lexical-datetime="${date.toString()}"
       data-lexical-decorator="true">
-      <div class="dateTimePill" style="cursor: pointer; width: fit-content;">
+      <div
+        class="dateTimePill ${selected ? 'selected' : ''}"
+        style="cursor: pointer; width: fit-content;">
         ${date.toDateString()}
       </div>
     </span>

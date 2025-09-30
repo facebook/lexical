@@ -201,7 +201,7 @@ export type TextMatchTransformer = Readonly<{
 
 const ORDERED_LIST_REGEX = /^(\s*)(\d{1,})\.\s/;
 const UNORDERED_LIST_REGEX = /^(\s*)[-*+]\s/;
-const CHECK_LIST_REGEX = /^(\s*)(?:-\s)?\s?(\[(\s|x)?\])\s/i;
+const CHECK_LIST_REGEX = /^(\s*)(?:[-*+]\s)?\s?(\[(\s|x)?\])\s/i;
 const HEADING_REGEX = /^(#{1,6})\s/;
 const QUOTE_REGEX = /^>\s/;
 const CODE_START_REGEX = /^[ \t]*```([\w-]+)?/;
@@ -252,8 +252,8 @@ const listReplace = (listType: ListType): ElementTransformer['replace'] => {
     const listItem = $createListItemNode(
       listType === 'check' ? match[3] === 'x' : undefined,
     );
-    if (listType === 'bullet') {
-      const markerFound = match[0].trim();
+    if (listType === 'bullet' || listType === 'check') {
+      const markerFound = match[0][0];
       const listMarker: ListMarker = $isListMarker(markerFound)
         ? markerFound
         : '-';
@@ -316,7 +316,7 @@ const listExport = (
         listType === 'number'
           ? `${listNode.getStart() + index}. `
           : listType === 'check'
-            ? `- [${listItemNode.getChecked() ? 'x' : ' '}] `
+            ? `${listItemNode.getMarker()} [${listItemNode.getChecked() ? 'x' : ' '}] `
             : listItemNode.getMarker() + ' ';
       output.push(indent + prefix + exportChildren(listItemNode));
       index++;

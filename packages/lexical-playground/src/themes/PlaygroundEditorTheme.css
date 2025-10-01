@@ -672,3 +672,22 @@
   background-repeat: no-repeat;
   background-size: contain;
 }
+
+.PlaygroundEditorTheme__attachment {
+  cursor: default;
+  display: inline-block;
+  position: relative;
+  user-select: none;
+}
+
+.PlaygroundEditorTheme__attachment.focused {
+  outline: 2px solid rgb(60, 132, 244);
+}
+
+.PlaygroundEditorTheme__attachment.focused.draggable {
+  cursor: grab;
+}
+
+.PlaygroundEditorTheme__attachment.focused.draggable:active {
+  cursor: grabbing;
+}

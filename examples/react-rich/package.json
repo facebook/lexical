@@ -1,7 +1,7 @@
 {
   "name": "@lexical/react-rich-example",
   "private": true,
-  "version": "0.36.1",
+  "version": "0.36.2-nightly.20251001.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,8 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@lexical/react": "0.36.1",
-    "lexical": "0.36.1",
+    "@lexical/react": "0.36.2-nightly.20251001.0",
+    "lexical": "0.36.2-nightly.20251001.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },

@@ -350,6 +350,13 @@ export function LexicalMenu<TOption extends MenuOption>({
     }
   }, [options, selectedIndex, updateSelectedIndex, preselectFirstItem]);
 
+  // Clamp highlighted index if options list shrinks
+  useEffect(() => {
+    if (selectedIndex != null && options && selectedIndex >= options.length) {
+      updateSelectedIndex(options.length ? options.length - 1 : -1);
+    }
+  }, [options.length, selectedIndex, updateSelectedIndex]);
+
   useEffect(() => {
     return mergeRegister(
       editor.registerCommand(
@@ -380,9 +387,18 @@ export function LexicalMenu<TOption extends MenuOption>({
                 : selectedIndex !== options.length - 1
                   ? selectedIndex + 1
                   : 0;
+
             updateSelectedIndex(newSelectedIndex);
+
             const option = options[newSelectedIndex];
-            if (option.ref != null && option.ref.current) {
+            if (!option) {
+              updateSelectedIndex(-1);
+              event.preventDefault();
+              event.stopImmediatePropagation();
+              return true;
+            }
+
+            if (option.ref && option.ref.current) {
               editor.dispatchCommand(
                 SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND,
                 {
@@ -409,9 +425,18 @@ export function LexicalMenu<TOption extends MenuOption>({
                 : selectedIndex !== 0
                   ? selectedIndex - 1
                   : options.length - 1;
+
             updateSelectedIndex(newSelectedIndex);
+
             const option = options[newSelectedIndex];
-            if (option.ref != null && option.ref.current) {
+            if (!option) {
+              updateSelectedIndex(-1);
+              event.preventDefault();
+              event.stopImmediatePropagation();
+              return true;
+            }
+
+            if (option.ref && option.ref.current) {
               scrollIntoViewIfNeeded(option.ref.current);
             }
             event.preventDefault();

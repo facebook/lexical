@@ -206,6 +206,7 @@ export {
   type NodeStateJSON,
   type StateConfig,
   type StateConfigKey,
+  type StateConfigPair,
   type StateConfigValue,
   type StateValueConfig,
   type StateValueOrUpdater,

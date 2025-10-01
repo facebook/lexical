@@ -226,6 +226,15 @@ export interface StateValueConfig<V> {
 }
 
 /**
+ * A tuple of a StateConfig and a value, used for contexts outside of
+ * NodeState such as DOMExtension.
+ */
+export type StateConfigPair<K extends string, V> = readonly [
+  StateConfig<K, V>,
+  V,
+];
+
+/**
  * The return value of {@link createState}, for use with
  * {@link $getState} and {@link $setState}.
  */
@@ -251,6 +260,7 @@ export class StateConfig<K extends string, V> {
    * the `defaultValue`, it will not be serialized to JSON.
    */
   readonly defaultValue: V;
+
   constructor(key: K, stateValueConfig: StateValueConfig<V>) {
     this.key = key;
     this.parse = stateValueConfig.parse.bind(stateValueConfig);
@@ -261,6 +271,14 @@ export class StateConfig<K extends string, V> {
       stateValueConfig,
     );
     this.defaultValue = this.parse(undefined);
+  }
+
+  /**
+   * Convenience method to produce a tuple of a StateConfig and a value
+   * of that StateConfig (skipping the parse step).
+   */
+  pair(value: V): StateConfigPair<K, V> {
+    return [this, value];
   }
 }
 

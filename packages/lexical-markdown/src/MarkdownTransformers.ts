@@ -6,7 +6,7 @@
  *
  */
 
-import type {ListMarker, ListType} from '@lexical/list';
+import type {ListType} from '@lexical/list';
 import type {HeadingTagType} from '@lexical/rich-text';
 
 import {$createCodeNode, $isCodeNode, CodeNode} from '@lexical/code';
@@ -20,7 +20,6 @@ import {
   $createListItemNode,
   $createListNode,
   $isListItemNode,
-  $isListMarker,
   $isListNode,
   ListItemNode,
   ListNode,
@@ -252,13 +251,6 @@ const listReplace = (listType: ListType): ElementTransformer['replace'] => {
     const listItem = $createListItemNode(
       listType === 'check' ? match[3] === 'x' : undefined,
     );
-    if (listType === 'bullet') {
-      const markerFound = match[0].trim();
-      const listMarker: ListMarker = $isListMarker(markerFound)
-        ? markerFound
-        : '-';
-      listItem.setMarker(listMarker);
-    }
     if ($isListNode(nextNode) && nextNode.getListType() === listType) {
       const firstChild = nextNode.getFirstChild();
       if (firstChild !== null) {
@@ -317,7 +309,7 @@ const listExport = (
           ? `${listNode.getStart() + index}. `
           : listType === 'check'
             ? `- [${listItemNode.getChecked() ? 'x' : ' '}] `
-            : listItemNode.getMarker() + ' ';
+            : '- ';
       output.push(indent + prefix + exportChildren(listItemNode));
       index++;
     }

@@ -44,12 +44,10 @@ import {$createListNode, $isListNode} from './';
 import {$handleIndent, $handleOutdent, mergeLists} from './formatList';
 import {isNestedListNode} from './utils';
 
-export type ListMarker = '-' | '*' | '+';
 export type SerializedListItemNode = Spread<
   {
     checked: boolean | undefined;
     value: number;
-    marker: ListMarker;
   },
   SerializedElementNode
 >;
@@ -80,8 +78,6 @@ export class ListItemNode extends ElementNode {
   __value: number;
   /** @internal */
   __checked?: boolean;
-  /** @internal */
-  __marker: ListMarker;
 
   /** @internal */
   $config() {
@@ -110,20 +106,17 @@ export class ListItemNode extends ElementNode {
   constructor(
     value: number = 1,
     checked: undefined | boolean = undefined,
-    marker: ListMarker = '-',
     key?: NodeKey,
   ) {
     super(key);
     this.__value = value === undefined ? 1 : value;
     this.__checked = checked;
-    this.__marker = marker;
   }
 
   afterCloneFrom(prevNode: this): void {
     super.afterCloneFrom(prevNode);
     this.__value = prevNode.__value;
     this.__checked = prevNode.__checked;
-    this.__marker = prevNode.__marker;
   }
 
   createDOM(config: EditorConfig): HTMLElement {
@@ -197,7 +190,6 @@ export class ListItemNode extends ElementNode {
     return {
       ...super.exportJSON(),
       checked: this.getChecked(),
-      marker: this.getMarker(),
       value: this.getValue(),
     };
   }
@@ -394,18 +386,6 @@ export class ListItemNode extends ElementNode {
   toggleChecked(): this {
     const self = this.getWritable();
     return self.setChecked(!self.__checked);
-  }
-
-  getMarker(): ListMarker {
-    const self = this.getLatest();
-
-    return self.__marker;
-  }
-
-  setMarker(marker: ListMarker): this {
-    const self = this.getWritable();
-    self.__marker = marker;
-    return self;
   }
 
   getIndent(): number {
@@ -621,8 +601,4 @@ export function $isListItemNode(
   node: LexicalNode | null | undefined,
 ): node is ListItemNode {
   return node instanceof ListItemNode;
-}
-
-export function $isListMarker(marker: string): marker is ListMarker {
-  return marker === '-' || marker === '+' || marker === '*';
 }

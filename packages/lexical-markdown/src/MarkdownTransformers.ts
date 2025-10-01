@@ -35,6 +35,9 @@ import {
 import {
   $createLineBreakNode,
   $createTextNode,
+  $getState,
+  $setState,
+  createState,
   ElementNode,
   Klass,
   LexicalNode,
@@ -200,7 +203,7 @@ export type TextMatchTransformer = Readonly<{
 
 const ORDERED_LIST_REGEX = /^(\s*)(\d{1,})\.\s/;
 const UNORDERED_LIST_REGEX = /^(\s*)[-*+]\s/;
-const CHECK_LIST_REGEX = /^(\s*)(?:-\s)?\s?(\[(\s|x)?\])\s/i;
+const CHECK_LIST_REGEX = /^(\s*)(?:[-*+]\s)?\s?(\[(\s|x)?\])\s/i;
 const HEADING_REGEX = /^(#{1,6})\s/;
 const QUOTE_REGEX = /^>\s/;
 const CODE_START_REGEX = /^[ \t]*```([\w-]+)?/;
@@ -209,6 +212,10 @@ const CODE_SINGLE_LINE_REGEX =
   /^[ \t]*```[^`]+(?:(?:`{1,2}|`{4,})[^`]+)*```(?:[^`]|$)/;
 const TABLE_ROW_REG_EXP = /^(?:\|)(.+)(?:\|)\s?$/;
 const TABLE_ROW_DIVIDER_REG_EXP = /^(\| ?:?-*:? ?)+\|\s?$/;
+
+const listMarkerState = createState('listMarker', {
+  parse: (v) => (typeof v === 'string' ? v : '-'),
+});
 
 const createBlockNode = (
   createNode: (match: Array<string>) => ElementNode,
@@ -251,6 +258,9 @@ const listReplace = (listType: ListType): ElementTransformer['replace'] => {
     const listItem = $createListItemNode(
       listType === 'check' ? match[3] === 'x' : undefined,
     );
+    if (listType === 'bullet' || listType === 'check') {
+      $setState(listItem, listMarkerState, match[0][0]);
+    }
     if ($isListNode(nextNode) && nextNode.getListType() === listType) {
       const firstChild = nextNode.getFirstChild();
       if (firstChild !== null) {
@@ -285,7 +295,7 @@ const listReplace = (listType: ListType): ElementTransformer['replace'] => {
   };
 };
 
-const listExport = (
+const $listExport = (
   listNode: ListNode,
   exportChildren: (node: ElementNode) => string,
   depth: number,
@@ -298,7 +308,7 @@ const listExport = (
       if (listItemNode.getChildrenSize() === 1) {
         const firstChild = listItemNode.getFirstChild();
         if ($isListNode(firstChild)) {
-          output.push(listExport(firstChild, exportChildren, depth + 1));
+          output.push($listExport(firstChild, exportChildren, depth + 1));
           continue;
         }
       }
@@ -308,8 +318,8 @@ const listExport = (
         listType === 'number'
           ? `${listNode.getStart() + index}. `
           : listType === 'check'
-            ? `- [${listItemNode.getChecked() ? 'x' : ' '}] `
-            : '- ';
+            ? `${$getState(listItemNode, listMarkerState)} [${listItemNode.getChecked() ? 'x' : ' '}] `
+            : $getState(listItemNode, listMarkerState) + ' ';
       output.push(indent + prefix + exportChildren(listItemNode));
       index++;
     }
@@ -459,7 +469,7 @@ export const CODE: MultilineElementTransformer = {
 export const UNORDERED_LIST: ElementTransformer = {
   dependencies: [ListNode, ListItemNode],
   export: (node, exportChildren) => {
-    return $isListNode(node) ? listExport(node, exportChildren, 0) : null;
+    return $isListNode(node) ? $listExport(node, exportChildren, 0) : null;
   },
   regExp: UNORDERED_LIST_REGEX,
   replace: listReplace('bullet'),
@@ -469,7 +479,7 @@ export const UNORDERED_LIST: ElementTransformer = {
 export const CHECK_LIST: ElementTransformer = {
   dependencies: [ListNode, ListItemNode],
   export: (node, exportChildren) => {
-    return $isListNode(node) ? listExport(node, exportChildren, 0) : null;
+    return $isListNode(node) ? $listExport(node, exportChildren, 0) : null;
   },
   regExp: CHECK_LIST_REGEX,
   replace: listReplace('check'),
@@ -479,7 +489,7 @@ export const CHECK_LIST: ElementTransformer = {
 export const ORDERED_LIST: ElementTransformer = {
   dependencies: [ListNode, ListItemNode],
   export: (node, exportChildren) => {
-    return $isListNode(node) ? listExport(node, exportChildren, 0) : null;
+    return $isListNode(node) ? $listExport(node, exportChildren, 0) : null;
   },
   regExp: ORDERED_LIST_REGEX,
   replace: listReplace('number'),

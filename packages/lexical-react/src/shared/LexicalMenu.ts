@@ -377,12 +377,12 @@ export function LexicalMenu<TOption extends MenuOption>({
             const newSelectedIndex =
               selectedIndex === null
                 ? 0
-                : selectedIndex !== options.length - 1
+                : selectedIndex < options.length - 1
                   ? selectedIndex + 1
                   : 0;
             updateSelectedIndex(newSelectedIndex);
             const option = options[newSelectedIndex];
-            if (option.ref != null && option.ref.current) {
+            if (option && option.ref != null && option.ref.current) {
               editor.dispatchCommand(
                 SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND,
                 {
@@ -411,7 +411,7 @@ export function LexicalMenu<TOption extends MenuOption>({
                   : options.length - 1;
             updateSelectedIndex(newSelectedIndex);
             const option = options[newSelectedIndex];
-            if (option.ref != null && option.ref.current) {
+            if (option && option.ref != null && option.ref.current) {
               scrollIntoViewIfNeeded(option.ref.current);
             }
             event.preventDefault();

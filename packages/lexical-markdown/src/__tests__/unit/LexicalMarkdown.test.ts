@@ -10,15 +10,22 @@ import {$createCodeNode, CodeNode} from '@lexical/code';
 import {createHeadlessEditor} from '@lexical/headless';
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
 import {$createLinkNode, LinkNode} from '@lexical/link';
-import {ListItemNode, ListNode} from '@lexical/list';
+import {
+  $createListItemNode,
+  $createListNode,
+  ListItemNode,
+  ListNode,
+} from '@lexical/list';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
   $getSelection,
+  $getState,
   $insertNodes,
   $isRangeSelection,
+  $setState,
 } from 'lexical';
 import {describe, expect, it} from 'vitest';
 
@@ -34,6 +41,7 @@ import {
   CODE,
   ElementTransformer,
   HEADING,
+  listMarkerState,
   MultilineElementTransformer,
   normalizeMarkdown,
   TRANSFORMERS,
@@ -923,6 +931,58 @@ describe('Markdown', () => {
     expect(editor.read(() => $generateHtmlFromNodes(editor))).toBe(
       '<h1><br></h1>',
     );
+  });
+
+  describe('list marker', () => {
+    it('should remember marker used on import', () => {
+      const editor = createHeadlessEditor({
+        nodes: [ListNode, ListItemNode],
+      });
+      editor.update(
+        () =>
+          $convertFromMarkdownString(
+            '+ hello',
+            [...TRANSFORMERS],
+            undefined,
+            true,
+            false,
+          ),
+        {discrete: true},
+      );
+      editor.getEditorState().read(() => {
+        const node = $getRoot().getLastDescendant()?.getParent();
+        expect(node).toBeInstanceOf(ListItemNode);
+        const marker = node ? $getState(node, listMarkerState) : undefined;
+        expect(marker).toBe('+');
+      });
+    });
+
+    it('should remember marker used on export', () => {
+      const editor = createHeadlessEditor({
+        nodes: [ListNode, ListItemNode],
+      });
+      editor.update(
+        () => {
+          const listNode = $createListNode();
+          const listItemNode = $createListItemNode();
+          listItemNode.append($createTextNode('hello'));
+          $setState(listItemNode, listMarkerState, '+');
+          listNode.append(listItemNode);
+          listNode.setListType('bullet');
+          $getRoot().select();
+          $insertNodes([listNode]);
+        },
+        {discrete: true},
+      );
+      editor.getEditorState().read(() => {
+        const markdownString = $convertToMarkdownString(
+          [...TRANSFORMERS],
+          undefined,
+          true,
+        );
+        expect(markdownString).toBe('+ hello');
+      });
+    });
   });
 });
 

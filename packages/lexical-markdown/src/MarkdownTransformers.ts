@@ -259,7 +259,8 @@ const listReplace = (listType: ListType): ElementTransformer['replace'] => {
       listType === 'check' ? match[3] === 'x' : undefined,
     );
     if (listType === 'bullet' || listType === 'check') {
-      $setState(listItem, listMarkerState, match[0][0]);
+      const marker = match[0].trim()[0];
+      $setState(listItem, listMarkerState, marker);
     }
     if ($isListNode(nextNode) && nextNode.getListType() === listType) {
       const firstChild = nextNode.getFirstChild();

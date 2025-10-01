@@ -34,7 +34,6 @@ import {
 	type EditorState
 } from 'lexical';
 import { CheckListExtension } from '@lexical/list';
-// @ts-expect-error -- broken types TODO #7859
 import { withDOM } from '@lexical/headless/dom';
 import { $selectAll, type InitialEditorStateType, type LexicalEditor } from 'lexical';
 import type { ViteHotContext } from 'vite/types/hot.js';
@@ -59,9 +58,7 @@ export const INITIAL_CONTENT = `
 </ul>
 `.trim();
 
-function $parseInitialHtml(html: string) {
-	const parser = new window.DOMParser();
-	const dom = parser.parseFromString(html, 'text/html');
+function $parseInitialDOM(dom: Document | ParentNode) {
 	const editor = $getEditor();
 	const nodes = $generateNodesFromDOM(editor, dom);
 	$insertGeneratedNodes(editor, nodes, $selectAll());
@@ -69,7 +66,10 @@ function $parseInitialHtml(html: string) {
 }
 
 export function $initialEditorStateServer() {
-	withDOM(() => $parseInitialHtml(INITIAL_CONTENT));
+	withDOM(() => {
+		const parser = new window.DOMParser();
+		$parseInitialDOM(parser.parseFromString(INITIAL_CONTENT, 'text/html'));
+	});
 }
 
 export function prerenderHtml(editor: LexicalEditor) {
@@ -91,8 +91,7 @@ export function prerenderHtml(editor: LexicalEditor) {
 
 export function hydrate(editor: LexicalEditor, dom: HTMLElement) {
 	if (editor.getEditorState().isEmpty()) {
-		// TODO #7859 can use $generateNodesFromDOM directly
-		editor.update(() => $parseInitialHtml(dom.innerHTML), { tag: HISTORY_MERGE_TAG });
+		editor.update(() => $parseInitialDOM(dom), { tag: HISTORY_MERGE_TAG });
 	}
 }
 

@@ -46,6 +46,7 @@ import {
   isInlineDomNode,
   shallowMergeConfig,
 } from 'lexical';
+import invariant from 'shared/invariant';
 
 /**
  * How you parse your html string to get a document is left up to you. In the browser you can use the native
@@ -85,36 +86,25 @@ function getEditorDOMConfig(editor: LexicalEditor): EditorDOMConfig {
 
 export function $generateHtmlFromNodes(
   editor: LexicalEditor,
-  selection?: BaseSelection | null,
+  selection: BaseSelection | null = null,
 ): string {
   if (
     typeof document === 'undefined' ||
     (typeof window === 'undefined' && typeof global.window === 'undefined')
   ) {
-    throw new Error(
-      'To use $generateHtmlFromNodes in headless mode please initialize a headless browser implementation such as JSDom before calling this function.',
+    invariant(
+      false,
+      'To use $generateHtmlFromNodes in headless mode please initialize a headless browser implementation such as JSDom or use withDOM from @lexical/headless/dom before calling this function.',
     );
   }
 
   return withDOMContextIfAvailable(editor, [DOMContextExport.pair(true)])(
     () => {
-      const container = document.createElement('div');
-      const root = $getRoot();
-      const topLevelChildren = root.getChildren();
-      const domConfig = getEditorDOMConfig(editor);
-
-      for (let i = 0; i < topLevelChildren.length; i++) {
-        const topLevelNode = topLevelChildren[i];
-        $appendNodesToHTML(
-          editor,
-          topLevelNode,
-          container,
-          selection,
-          domConfig,
-        );
-      }
-
-      return container.innerHTML;
+      return INTERNAL_$generateDOMFromNodes(
+        editor,
+        selection,
+        document.createElement('div'),
+      ).innerHTML;
     },
   );
 }
@@ -586,6 +576,29 @@ export function $withDOMContext(
     editor,
     DOMExtension,
   ).output.withContext(cfg);
+}
+
+export function $generateDOMFromNodes<T extends HTMLElement | DocumentFragment>(
+  container: T,
+  selection: null | BaseSelection = null,
+): T {
+  return $withDOMContext([DOMContextExport.pair(true)])(() =>
+    INTERNAL_$generateDOMFromNodes($getEditor(), selection, container),
+  );
+}
+
+function INTERNAL_$generateDOMFromNodes<
+  T extends HTMLElement | DocumentFragment,
+>(editor: LexicalEditor, selection: null | BaseSelection, container: T): T {
+  const root = $getRoot();
+  const topLevelChildren = root.getChildren();
+  const domConfig = getEditorDOMConfig(editor);
+
+  for (let i = 0; i < topLevelChildren.length; i++) {
+    const topLevelNode = topLevelChildren[i];
+    $appendNodesToHTML(editor, topLevelNode, container, selection, domConfig);
+  }
+  return container;
 }
 
 const DOMExtensionName = '@lexical/html/DOM';

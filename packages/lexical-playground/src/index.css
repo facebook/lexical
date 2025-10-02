@@ -501,6 +501,10 @@ i.youtube {
   background-image: url(images/icons/youtube.svg);
 }
 
+i.attachment {
+  background-image: url(images/icons/paperclip.svg);
+}
+
 .icon.left-align,
 i.left-align {
   background-image: url(images/icons/text-left.svg);

@@ -753,6 +753,22 @@ export async function insertDateTime(page) {
   await sleep(500);
 }
 
+export async function insertAttachment(page, filePath) {
+  await selectFromInsertDropdown(page, '.attachment');
+  await waitForSelector(page, '[role="dialog"]');
+
+  const frame = getPageOrFrame(page);
+  await frame.setInputFiles(
+    'input[data-test-id="attachment-modal-file-upload"]',
+    filePath,
+  );
+
+  await waitForSelector(page, '.FilePreview__container');
+  await click(page, 'button[data-test-id="attachment-modal-file-upload-btn"]');
+  await page.waitForSelector('[role="dialog"]', {state: 'detached'});
+  await waitForSelector(page, '.AttachmentNode__container');
+}
+
 export async function insertImageCaption(page, caption) {
   await click(page, '.editor-image img');
   await click(page, '.image-caption-button');

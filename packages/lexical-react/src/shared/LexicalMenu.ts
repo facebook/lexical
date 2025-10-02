@@ -290,7 +290,9 @@ export function LexicalMenu<TOption extends MenuOption>({
   commandPriority?: CommandListenerPriority;
   preselectFirstItem?: boolean;
 }): JSX.Element | null {
-  const [selectedIndex, setHighlightedIndex] = useState<null | number>(null);
+  const [rawSelectedIndex, setHighlightedIndex] = useState<null | number>(null);
+  // Clamp highlighted index if options list shrinks
+  const selectedIndex = rawSelectedIndex !== null ? Math.min(options.length - 1, rawSelectedIndex) : null;
 
   const matchingString = resolution.match && resolution.match.matchingString;
 

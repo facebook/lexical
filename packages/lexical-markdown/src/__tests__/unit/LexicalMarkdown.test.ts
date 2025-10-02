@@ -950,8 +950,8 @@ describe('Markdown', () => {
         {discrete: true},
       );
       editor.getEditorState().read(() => {
-        const node = $getRoot().getLastDescendant()?.getParent();
-        expect(node).toBeInstanceOf(ListItemNode);
+        const node = $getRoot().getFirstChild();
+        expect(node).toBeInstanceOf(ListNode);
         const marker = node ? $getState(node, listMarkerState) : undefined;
         expect(marker).toBe('+');
       });
@@ -964,9 +964,9 @@ describe('Markdown', () => {
       editor.update(
         () => {
           const listNode = $createListNode();
+          $setState(listNode, listMarkerState, '+');
           const listItemNode = $createListItemNode();
           listItemNode.append($createTextNode('hello'));
-          $setState(listItemNode, listMarkerState, '+');
           listNode.append(listItemNode);
           listNode.setListType('bullet');
           $getRoot().select();

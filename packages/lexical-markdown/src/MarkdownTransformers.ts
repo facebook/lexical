@@ -258,11 +258,14 @@ const listReplace = (listType: ListType): ElementTransformer['replace'] => {
     const listItem = $createListItemNode(
       listType === 'check' ? match[3] === 'x' : undefined,
     );
-    if (listType === 'bullet' || listType === 'check') {
-      const marker = match[0].trim()[0];
-      $setState(listItem, listMarkerState, marker);
-    }
+    const listMarker =
+      listType === 'bullet' || listType === 'check'
+        ? match[0].trim()[0]
+        : undefined;
     if ($isListNode(nextNode) && nextNode.getListType() === listType) {
+      if (listMarker) {
+        $setState(nextNode, listMarkerState, listMarker);
+      }
       const firstChild = nextNode.getFirstChild();
       if (firstChild !== null) {
         firstChild.insertBefore(listItem);
@@ -275,6 +278,9 @@ const listReplace = (listType: ListType): ElementTransformer['replace'] => {
       $isListNode(previousNode) &&
       previousNode.getListType() === listType
     ) {
+      if (listMarker) {
+        $setState(previousNode, listMarkerState, listMarker);
+      }
       previousNode.append(listItem);
       parentNode.remove();
     } else {
@@ -282,6 +288,9 @@ const listReplace = (listType: ListType): ElementTransformer['replace'] => {
         listType,
         listType === 'number' ? Number(match[2]) : undefined,
       );
+      if (listMarker) {
+        $setState(list, listMarkerState, listMarker);
+      }
       list.append(listItem);
       parentNode.replace(list);
     }
@@ -315,12 +324,13 @@ const $listExport = (
       }
       const indent = ' '.repeat(depth * LIST_INDENT_SIZE);
       const listType = listNode.getListType();
+      const listMarker = $getState(listNode, listMarkerState);
       const prefix =
         listType === 'number'
           ? `${listNode.getStart() + index}. `
           : listType === 'check'
-            ? `${$getState(listItemNode, listMarkerState)} [${listItemNode.getChecked() ? 'x' : ' '}] `
-            : $getState(listItemNode, listMarkerState) + ' ';
+            ? `${listMarker} [${listItemNode.getChecked() ? 'x' : ' '}] `
+            : listMarker + ' ';
       output.push(indent + prefix + exportChildren(listItemNode));
       index++;
     }

@@ -97,16 +97,8 @@ export function $generateHtmlFromNodes(
       'To use $generateHtmlFromNodes in headless mode please initialize a headless browser implementation such as JSDom or use withDOM from @lexical/headless/dom before calling this function.',
     );
   }
-
-  return withDOMContextIfAvailable(editor, [DOMContextExport.pair(true)])(
-    () => {
-      return INTERNAL_$generateDOMFromNodes(
-        editor,
-        selection,
-        document.createElement('div'),
-      ).innerHTML;
-    },
-  );
+  return $generateDOMFromNodes(document.createElement('div'), selection, editor)
+    .innerHTML;
 }
 
 function $appendNodesToHTML(
@@ -415,7 +407,6 @@ export interface DOMConfigMatch<T extends LexicalNode> {
     editor: LexicalEditor,
     node: T,
     next: () => HTMLElement,
-    getContextValue: <K extends string, V>(stateConfig: StateConfig<K, V>) => V,
   ) => HTMLElement;
   updateDOM?: (
     editor: LexicalEditor,
@@ -423,25 +414,18 @@ export interface DOMConfigMatch<T extends LexicalNode> {
     prevNode: T,
     dom: HTMLElement,
     next: () => boolean,
-    getContextValue: <K extends string, V>(stateConfig: StateConfig<K, V>) => V,
   ) => boolean;
   exportDOM?: (
     editor: LexicalEditor,
     node: T,
     next: () => DOMExportOutput,
-    getContextValue: <K extends string, V>(stateConfig: StateConfig<K, V>) => V,
   ) => DOMExportOutput;
 }
 
 function compileOverrides(
   {overrides}: DOMConfig,
   defaults: EditorDOMConfig,
-  contextRef: ContextRef,
 ): EditorDOMConfig {
-  function getContextValue<K extends string, V>(cfg: StateConfig<K, V>): V {
-    const rec = contextRef.current;
-    return rec && cfg.key in rec ? (rec[cfg.key] as V) : cfg.defaultValue;
-  }
   function mergeDOMConfigMatch(
     acc: EditorDOMConfig,
     match: AnyDOMConfigMatch,
@@ -467,31 +451,20 @@ function compileOverrides(
       createDOM: createDOM
         ? (editor, node) => {
             const next = () => acc.createDOM(editor, node);
-            return matcher(node)
-              ? createDOM(editor, node, next, getContextValue)
-              : next();
+            return matcher(node) ? createDOM(editor, node, next) : next();
           }
         : acc.createDOM,
       exportDOM: exportDOM
         ? (editor, node) => {
             const next = () => acc.exportDOM(editor, node);
-            return matcher(node)
-              ? exportDOM(editor, node, next, getContextValue)
-              : next();
+            return matcher(node) ? exportDOM(editor, node, next) : next();
           }
         : acc.exportDOM,
       updateDOM: updateDOM
         ? (editor, nextNode, prevNode, dom) => {
             const next = () => acc.updateDOM(editor, nextNode, prevNode, dom);
             return matcher(nextNode)
-              ? updateDOM(
-                  editor,
-                  nextNode,
-                  prevNode,
-                  dom,
-                  next,
-                  getContextValue,
-                )
+              ? updateDOM(editor, nextNode, prevNode, dom, next)
               : next();
           }
         : acc.updateDOM,
@@ -512,10 +485,6 @@ export const DOMContextClipboard = createState('@lexical/html/clipboard', {
   parse: (v) => !!v,
 });
 
-interface ContextRef {
-  current: ContextRecord;
-}
-
 export type StateConfigPair<K extends string, V> = readonly [
   StateConfig<K, V>,
   V,
@@ -524,16 +493,13 @@ export type StateConfigPair<K extends string, V> = readonly [
 export type AnyStateConfigPair = StateConfigPair<any, any>;
 
 export interface DOMExtensionOutput {
-  withContext: (contexts: Iterable<AnyStateConfigPair>) => <T>(f: () => T) => T;
-  getContextValue: <K extends string, V>(cfg: StateConfig<K, V>) => V;
+  defaults: ContextRecord;
 }
 
 type ContextRecord = Record<string, unknown>;
 
-function setContextDefaults(
-  ctx: ContextRecord,
-  pairs: Iterable<AnyStateConfigPair>,
-): ContextRecord {
+function contextFromPairs(pairs: Iterable<AnyStateConfigPair>): ContextRecord {
+  const ctx: ContextRecord = {};
   for (const [cfg, value] of pairs) {
     ctx[cfg.key] = value;
   }
@@ -549,57 +515,71 @@ function getDOMExtensionOutputIfAvailable(
     : undefined;
 }
 
+export function getContextValueFromRecord<K extends string, V>(
+  context: ContextRecord,
+  cfg: StateConfig<K, V>,
+): V {
+  return cfg.key in context ? (context[cfg.key] as V) : cfg.defaultValue;
+}
+
 export function $getDOMContextValue<K extends string, V>(
   cfg: StateConfig<K, V>,
   editor: LexicalEditor = $getEditor(),
 ): V {
-  return getExtensionDependencyFromEditor(
-    editor,
-    DOMExtension,
-  ).output.getContextValue(cfg);
-}
-
-/** @internal */
-export function withDOMContextIfAvailable(
-  editor: LexicalEditor,
-  cfg: Iterable<AnyStateConfigPair>,
-): <T>(f: () => T) => T {
-  const output = getDOMExtensionOutputIfAvailable(editor);
-  return output ? output.withContext(cfg) : (f) => f();
+  const context =
+    activeDOMContext && activeDOMContext.editor === editor
+      ? activeDOMContext.context
+      : getExtensionDependencyFromEditor(editor, DOMExtension).output.defaults;
+  return getContextValueFromRecord(context, cfg);
 }
 
 export function $withDOMContext(
   cfg: Iterable<AnyStateConfigPair>,
   editor = $getEditor(),
 ): <T>(f: () => T) => T {
-  return getExtensionDependencyFromEditor(
-    editor,
-    DOMExtension,
-  ).output.withContext(cfg);
+  const updates = contextFromPairs(cfg);
+  return (f) => {
+    const prevDOMContext = activeDOMContext;
+    let context: ContextRecord;
+    if (prevDOMContext && prevDOMContext.editor === editor) {
+      context = {...prevDOMContext.context, ...updates};
+    } else {
+      const ext = getDOMExtensionOutputIfAvailable(editor);
+      context = ext ? {...ext.defaults, ...updates} : updates;
+    }
+    try {
+      activeDOMContext = {context, editor};
+      return f();
+    } finally {
+      activeDOMContext = prevDOMContext;
+    }
+  };
 }
 
 export function $generateDOMFromNodes<T extends HTMLElement | DocumentFragment>(
   container: T,
   selection: null | BaseSelection = null,
+  editor: LexicalEditor = $getEditor(),
 ): T {
-  return $withDOMContext([DOMContextExport.pair(true)])(() =>
-    INTERNAL_$generateDOMFromNodes($getEditor(), selection, container),
-  );
+  return $withDOMContext(
+    [DOMContextExport.pair(true)],
+    editor,
+  )(() => {
+    const root = $getRoot();
+    const topLevelChildren = root.getChildren();
+    const domConfig = getEditorDOMConfig(editor);
+
+    for (let i = 0; i < topLevelChildren.length; i++) {
+      const topLevelNode = topLevelChildren[i];
+      $appendNodesToHTML(editor, topLevelNode, container, selection, domConfig);
+    }
+    return container;
+  });
 }
 
-function INTERNAL_$generateDOMFromNodes<
-  T extends HTMLElement | DocumentFragment,
->(editor: LexicalEditor, selection: null | BaseSelection, container: T): T {
-  const root = $getRoot();
-  const topLevelChildren = root.getChildren();
-  const domConfig = getEditorDOMConfig(editor);
-
-  for (let i = 0; i < topLevelChildren.length; i++) {
-    const topLevelNode = topLevelChildren[i];
-    $appendNodesToHTML(editor, topLevelNode, container, selection, domConfig);
-  }
-  return container;
-}
+let activeDOMContext:
+  | undefined
+  | {editor: LexicalEditor; context: ContextRecord};
 
 const DOMExtensionName = '@lexical/html/DOM';
 /** @internal @experimental */
@@ -607,41 +587,22 @@ export const DOMExtension = defineExtension<
   DOMConfig,
   typeof DOMExtensionName,
   DOMExtensionOutput,
-  ContextRef
+  void
 >({
   build(editor, config, state) {
-    const contextRef = state.getInitResult();
-    function getContextValue<K extends string, V>(cfg: StateConfig<K, V>): V {
-      const {current} = contextRef;
-      return current && cfg.key in current
-        ? (current[cfg.key] as V)
-        : cfg.defaultValue;
-    }
-    function withContext(contexts: Iterable<AnyStateConfigPair>) {
-      const overrides = setContextDefaults({}, contexts);
-      return <T>(f: () => T): T => {
-        const prevCurrent = contextRef.current;
-        contextRef.current = {...prevCurrent, ...overrides};
-        try {
-          return f();
-        } finally {
-          contextRef.current = prevCurrent;
-        }
-      };
-    }
-    return {getContextValue, withContext};
+    return {
+      defaults: contextFromPairs(config.contextDefaults),
+    };
   },
   config: {
     contextDefaults: [],
     overrides: [],
   },
   init(editorConfig, config) {
-    const defaults = {...DEFAULT_EDITOR_DOM_CONFIG, ...editorConfig.dom};
-    const contextRef: ContextRef = {
-      current: setContextDefaults({}, config.contextDefaults),
-    };
-    editorConfig.dom = compileOverrides(config, defaults, contextRef);
-    return contextRef;
+    editorConfig.dom = compileOverrides(config, {
+      ...DEFAULT_EDITOR_DOM_CONFIG,
+      ...editorConfig.dom,
+    });
   },
   mergeConfig(config, partial) {
     const merged = shallowMergeConfig(config, partial);

@@ -7,6 +7,7 @@
  */
 
 import type {
+  AnyStateConfig,
   BaseSelection,
   DOMChildConversion,
   DOMConversion,
@@ -496,12 +497,19 @@ export interface DOMExtensionOutput {
   defaults: ContextRecord;
 }
 
-type ContextRecord = Record<string, unknown>;
+type ContextRecord = Map<AnyStateConfig, unknown>;
 
 function contextFromPairs(pairs: Iterable<AnyStateConfigPair>): ContextRecord {
-  const ctx: ContextRecord = {};
-  for (const [cfg, value] of pairs) {
-    ctx[cfg.key] = value;
+  return new Map(pairs);
+}
+
+function mergeContext(
+  defaults: ContextRecord,
+  overrides: ContextRecord | Iterable<AnyStateConfigPair>,
+) {
+  const ctx = new Map(defaults);
+  for (const [k, v] of overrides) {
+    ctx.set(k, v);
   }
   return ctx;
 }
@@ -519,7 +527,8 @@ export function getContextValueFromRecord<K extends string, V>(
   context: ContextRecord,
   cfg: StateConfig<K, V>,
 ): V {
-  return cfg.key in context ? (context[cfg.key] as V) : cfg.defaultValue;
+  const v = context.get(cfg);
+  return v !== undefined || context.has(cfg) ? (v as V) : cfg.defaultValue;
 }
 
 export function $getDOMContextValue<K extends string, V>(
@@ -542,10 +551,10 @@ export function $withDOMContext(
     const prevDOMContext = activeDOMContext;
     let context: ContextRecord;
     if (prevDOMContext && prevDOMContext.editor === editor) {
-      context = {...prevDOMContext.context, ...updates};
+      context = mergeContext(prevDOMContext.context, updates);
     } else {
       const ext = getDOMExtensionOutputIfAvailable(editor);
-      context = ext ? {...ext.defaults, ...updates} : updates;
+      context = ext ? mergeContext(ext.defaults, updates) : updates;
     }
     try {
       activeDOMContext = {context, editor};

@@ -26,10 +26,12 @@ import {
   BaseSelection,
   COMMAND_PRIORITY_CRITICAL,
   COPY_COMMAND,
+  defineExtension,
   getDOMSelection,
   isSelectionWithinEditor,
   LexicalEditor,
   LexicalNode,
+  safeCast,
   SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
   SerializedElementNode,
   SerializedTextNode,
@@ -579,6 +581,29 @@ export function $getClipboardDataFromSelection(
   }
   return clipboardData;
 }
+
+export interface GetClipboardDataConfig {
+  $getMimeType: Record<
+    keyof LexicalClipboardData | (string & {}),
+    (
+      selection: null | BaseSelection,
+      next: () => null | string,
+    ) => null | string
+  >;
+}
+
+export const GetClipboardDataExtension = defineExtension({
+  config: safeCast<GetClipboardDataConfig>({
+    $getMimeType: {
+      'application/x-lexical-editor': (sel, next) =>
+        sel ? $getLexicalContent($getEditor(), sel) : next(),
+      'text/html': (sel, next) =>
+        sel ? $getHtmlContent($getEditor(), sel) : next(),
+      'text/plain': (sel, next) => (sel ? sel.getTextContent() : next()),
+    },
+  }),
+  name: '@lexical/clipboard/GetClipboardData',
+});
 
 /**
  * Call setData on the given clipboardData for each MIME type present

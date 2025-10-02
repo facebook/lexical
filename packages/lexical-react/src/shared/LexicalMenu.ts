@@ -350,13 +350,6 @@ export function LexicalMenu<TOption extends MenuOption>({
     }
   }, [options, selectedIndex, updateSelectedIndex, preselectFirstItem]);
 
-  // Clamp highlighted index if options list shrinks
-  useEffect(() => {
-    if (selectedIndex != null && options && selectedIndex >= options.length) {
-      updateSelectedIndex(options.length ? options.length - 1 : -1);
-    }
-  }, [options.length, selectedIndex, updateSelectedIndex]);
-
   useEffect(() => {
     return mergeRegister(
       editor.registerCommand(

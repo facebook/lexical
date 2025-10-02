@@ -213,7 +213,7 @@ const CODE_SINGLE_LINE_REGEX =
 const TABLE_ROW_REG_EXP = /^(?:\|)(.+)(?:\|)\s?$/;
 const TABLE_ROW_DIVIDER_REG_EXP = /^(\| ?:?-*:? ?)+\|\s?$/;
 
-export const listMarkerState = createState('listMarker', {
+export const listMarkerState = createState('mdListMarker', {
   parse: (v) => (typeof v === 'string' ? v : '-'),
 });
 

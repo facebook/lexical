@@ -781,6 +781,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
           // back to being a range selection.
           const nodes = selection.getNodes();
           if (nodes.length > 0) {
+            event.preventDefault();
             nodes[0].selectPrevious();
             return true;
           }
@@ -810,6 +811,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
           // back to being a range selection.
           const nodes = selection.getNodes();
           if (nodes.length > 0) {
+            event.preventDefault();
             nodes[0].selectNext(0, 0);
             return true;
           }

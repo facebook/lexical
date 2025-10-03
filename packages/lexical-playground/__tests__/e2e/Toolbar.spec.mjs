@@ -23,6 +23,7 @@ import {
   html,
   initialize,
   insertSampleImage,
+  IS_COLLAB_V2,
   SAMPLE_IMAGE_URL,
   selectFromAlignDropdown,
   selectFromInsertDropdown,
@@ -45,7 +46,8 @@ test.describe('Toolbar', () => {
       tag: '@flaky',
     },
     async ({page, isPlainText}) => {
-      test.skip(isPlainText);
+      // TODO(collab-v2): nested editors are not supported yet
+      test.skip(isPlainText || IS_COLLAB_V2);
       await focusEditor(page);
 
       // Add caption

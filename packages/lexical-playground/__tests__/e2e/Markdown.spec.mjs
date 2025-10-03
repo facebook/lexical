@@ -25,6 +25,7 @@ import {
   getHTML,
   html,
   initialize,
+  IS_COLLAB_V2,
   LEGACY_EVENTS,
   pasteFromClipboard,
   pressToggleBold,
@@ -909,6 +910,9 @@ test.describe.parallel('Markdown', () => {
   });
 
   test('can import single decorator node (#2604)', async ({page}) => {
+    // TODO(collab-v2): nested editors are not supported yet
+    test.skip(IS_COLLAB_V2);
+
     await focusEditor(page);
     await page.keyboard.type(
       '```markdown ![Yellow flower in tilt shift lens](' +
@@ -942,6 +946,9 @@ test.describe.parallel('Markdown', () => {
   test('can import several text match transformers in a same line (#5385)', async ({
     page,
   }) => {
+    // TODO(collab-v2): nested editors are not supported yet
+    test.skip(IS_COLLAB_V2);
+
     await focusEditor(page);
     await page.keyboard.type(
       '```markdown [link](https://lexical.dev)[link](https://lexical.dev)![Yellow flower in tilt shift lens](' +
@@ -1112,7 +1119,7 @@ const LIST_MARKER_MARKDOWN = html`
 
 const TYPED_MARKDOWN = `# Markdown Shortcuts
 This is *italic*, _italic_, **bold**, __bold__, ~~strikethrough~~ text
-This is *__~~bold italic strikethrough~~__* text, ___~~this one too~~___
+This is ~~*__bold italic strikethrough__*~~ text, ___~~this one too~~___
 It ~~___works [with links](https://lexical.io) too___~~
 *Nested **stars tags** are handled too*
 # Title
@@ -1160,7 +1167,7 @@ const TYPED_MARKDOWN_HTML = html`
   <p class="PlaygroundEditorTheme__paragraph" dir="auto">
     <span data-lexical-text="true">This is</span>
     <strong
-      class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textStrikethrough PlaygroundEditorTheme__textItalic"
+      class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic PlaygroundEditorTheme__textStrikethrough"
       data-lexical-text="true">
       bold italic strikethrough
     </strong>

@@ -176,7 +176,7 @@ export function $createCollabNodeFromLexicalNode(
   } else if ($isLineBreakNode(lexicalNode)) {
     const map = new YMap();
     map.set('__type', 'linebreak');
-    collabNode = $createCollabLineBreakNode(map, parent);
+    collabNode = $createCollabLineBreakNode(map, parent, nodeType);
   } else if ($isDecoratorNode(lexicalNode)) {
     const xmlElem = new XmlElement();
     collabNode = $createCollabDecoratorNode(xmlElem, parent, nodeType);
@@ -239,7 +239,7 @@ export function $getOrInitCollabNodeFromSharedType(
       return $createCollabElementNode(sharedType, targetParent, type);
     } else if (sharedType instanceof YMap) {
       if (type === 'linebreak') {
-        return $createCollabLineBreakNode(sharedType, targetParent);
+        return $createCollabLineBreakNode(sharedType, targetParent, type);
       }
       return $createCollabTextNode(sharedType, '', targetParent, type);
     } else if (sharedType instanceof XmlElement) {

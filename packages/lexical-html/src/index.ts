@@ -106,48 +106,63 @@ export function $generateHtmlFromNodes(
 function $appendNodesToHTML(
   editor: LexicalEditor,
   currentNode: LexicalNode,
-  parentElement: HTMLElement | DocumentFragment,
+  parentElementAppend: (element: Node) => void,
   selection: BaseSelection | null = null,
   domConfig: EditorDOMConfig = getEditorDOMConfig(editor),
 ): boolean {
-  let shouldInclude =
-    selection !== null ? currentNode.isSelected(selection) : true;
-  const shouldExclude =
-    $isElementNode(currentNode) && currentNode.excludeFromCopy('html');
+  let shouldInclude = domConfig.$shouldInclude(currentNode, selection, editor);
+  const shouldExclude = domConfig.$shouldExclude(
+    currentNode,
+    selection,
+    editor,
+  );
   let target = currentNode;
 
-  if (selection !== null) {
-    let clone = $cloneWithProperties(currentNode);
-    clone =
-      $isTextNode(clone) && selection !== null
-        ? $sliceSelectedTextNodeContent(selection, clone)
-        : clone;
-    target = clone;
+  if (selection && $isTextNode(currentNode)) {
+    for (const pt of selection.getStartEndPoints() || []) {
+      if (pt.key === currentNode.getKey()) {
+        target = $sliceSelectedTextNodeContent(
+          selection,
+          $cloneWithProperties(currentNode),
+        );
+        break;
+      }
+    }
   }
-  const children = $isElementNode(target) ? target.getChildren() : [];
-  const {element, after} = domConfig.exportDOM(target, editor);
+  const exportProps = domConfig.$exportDOM(target, editor);
+  const {element, after, append, $getChildNodes} = exportProps;
 
   if (!element) {
     return false;
   }
 
   const fragment = document.createDocumentFragment();
+  const children = $getChildNodes
+    ? $getChildNodes()
+    : $isElementNode(target)
+      ? target.getChildren()
+      : [];
 
-  for (let i = 0; i < children.length; i++) {
-    const childNode = children[i];
+  const fragmentAppend = fragment.append.bind(fragment);
+  for (const childNode of children) {
     const shouldIncludeChild = $appendNodesToHTML(
       editor,
       childNode,
-      fragment,
+      fragmentAppend,
       selection,
       domConfig,
     );
 
     if (
       !shouldInclude &&
-      $isElementNode(currentNode) &&
       shouldIncludeChild &&
-      currentNode.extractWithChild(childNode, selection, 'html')
+      domConfig.$extractWithChild(
+        currentNode,
+        childNode,
+        selection,
+        'html',
+        editor,
+      )
     ) {
       shouldInclude = true;
     }
@@ -155,9 +170,13 @@ function $appendNodesToHTML(
 
   if (shouldInclude && !shouldExclude) {
     if (isHTMLElement(element) || isDocumentFragment(element)) {
-      element.append(fragment);
+      if (append) {
+        append(fragment);
+      } else {
+        element.append(fragment);
+      }
     }
-    parentElement.append(element);
+    parentElementAppend(element);
 
     if (after) {
       const newElement = after.call(target, element);
@@ -170,7 +189,7 @@ function $appendNodesToHTML(
       }
     }
   } else {
-    parentElement.append(fragment);
+    parentElementAppend(fragment);
   }
 
   return shouldInclude;
@@ -405,23 +424,43 @@ type NodeMatch<T extends LexicalNode> =
 /** @internal @experimental */
 export interface DOMConfigMatch<T extends LexicalNode> {
   readonly nodes: '*' | readonly NodeMatch<T>[];
-  createDOM?: (
+  $createDOM?: (
     node: T,
-    next: () => HTMLElement,
+    $next: () => HTMLElement,
     editor: LexicalEditor,
   ) => HTMLElement;
-  updateDOM?: (
+  $updateDOM?: (
     nextNode: T,
     prevNode: T,
     dom: HTMLElement,
-    next: () => boolean,
+    $next: () => boolean,
     editor: LexicalEditor,
   ) => boolean;
-  exportDOM?: (
+  $exportDOM?: (
     node: T,
-    next: () => DOMExportOutput,
+    $next: () => DOMExportOutput,
     editor: LexicalEditor,
   ) => DOMExportOutput;
+  $shouldExclude?: (
+    node: T,
+    selection: null | BaseSelection,
+    $next: () => boolean,
+    editor: LexicalEditor,
+  ) => boolean;
+  $shouldInclude?: (
+    node: T,
+    selection: null | BaseSelection,
+    $next: () => boolean,
+    editor: LexicalEditor,
+  ) => boolean;
+  $extractWithChild?: (
+    node: T,
+    childNode: LexicalNode,
+    selection: null | BaseSelection,
+    destination: 'clone' | 'html',
+    $next: () => boolean,
+    editor: LexicalEditor,
+  ) => boolean;
 }
 
 function compileOverrides(
@@ -434,7 +473,15 @@ function compileOverrides(
   ): EditorDOMConfig {
     // TODO Consider using a node type map to make this more efficient when
     // there are more overrides
-    const {nodes, createDOM, updateDOM, exportDOM} = match;
+    const {
+      nodes,
+      $createDOM,
+      $updateDOM,
+      $exportDOM,
+      $shouldExclude,
+      $shouldInclude,
+      $extractWithChild,
+    } = match;
     const matcher = (node: LexicalNode): boolean => {
       for (const predicate of nodes) {
         if (predicate === '*') {
@@ -450,26 +497,64 @@ function compileOverrides(
       return false;
     };
     return {
-      createDOM: createDOM
+      $createDOM: $createDOM
         ? (node, editor) => {
-            const next = () => acc.createDOM(node, editor);
-            return matcher(node) ? createDOM(node, next, editor) : next();
+            const $next = () => acc.$createDOM(node, editor);
+            return matcher(node) ? $createDOM(node, $next, editor) : $next();
           }
-        : acc.createDOM,
-      exportDOM: exportDOM
+        : acc.$createDOM,
+      $exportDOM: $exportDOM
         ? (node, editor) => {
-            const next = () => acc.exportDOM(node, editor);
-            return matcher(node) ? exportDOM(node, next, editor) : next();
+            const $next = () => acc.$exportDOM(node, editor);
+            return matcher(node) ? $exportDOM(node, $next, editor) : $next();
           }
-        : acc.exportDOM,
-      updateDOM: updateDOM
+        : acc.$exportDOM,
+      $extractWithChild: $extractWithChild
+        ? (node, childNode, selection, destination, editor) => {
+            const $next = () =>
+              acc.$extractWithChild(
+                node,
+                childNode,
+                selection,
+                destination,
+                editor,
+              );
+            return matcher(node)
+              ? $extractWithChild(
+                  node,
+                  childNode,
+                  selection,
+                  destination,
+                  $next,
+                  editor,
+                )
+              : $next();
+          }
+        : acc.$extractWithChild,
+      $shouldExclude: $shouldExclude
+        ? (node, selection, editor) => {
+            const $next = () => acc.$shouldExclude(node, selection, editor);
+            return matcher(node)
+              ? $shouldExclude(node, selection, $next, editor)
+              : $next();
+          }
+        : acc.$shouldExclude,
+      $shouldInclude: $shouldInclude
+        ? (node, selection, editor) => {
+            const $next = () => acc.$shouldInclude(node, selection, editor);
+            return matcher(node)
+              ? $shouldInclude(node, selection, $next, editor)
+              : $next();
+          }
+        : acc.$shouldInclude,
+      $updateDOM: $updateDOM
         ? (nextNode, prevNode, dom, editor) => {
-            const next = () => acc.updateDOM(nextNode, prevNode, dom, editor);
+            const $next = () => acc.$updateDOM(nextNode, prevNode, dom, editor);
             return matcher(nextNode)
-              ? updateDOM(nextNode, prevNode, dom, next, editor)
-              : next();
+              ? $updateDOM(nextNode, prevNode, dom, $next, editor)
+              : $next();
           }
-        : acc.updateDOM,
+        : acc.$updateDOM,
     };
   }
   // The beginning of the array will be the overrides towards the top
@@ -581,12 +666,17 @@ export function $generateDOMFromNodes<T extends HTMLElement | DocumentFragment>(
     editor,
   )(() => {
     const root = $getRoot();
-    const topLevelChildren = root.getChildren();
     const domConfig = getEditorDOMConfig(editor);
 
-    for (let i = 0; i < topLevelChildren.length; i++) {
-      const topLevelNode = topLevelChildren[i];
-      $appendNodesToHTML(editor, topLevelNode, container, selection, domConfig);
+    const parentElementAppend = container.append.bind(container);
+    for (const topLevelNode of root.getChildren()) {
+      $appendNodesToHTML(
+        editor,
+        topLevelNode,
+        parentElementAppend,
+        selection,
+        domConfig,
+      );
     }
     return container;
   });
@@ -603,7 +693,8 @@ export function $generateDOMFromRoot<T extends HTMLElement | DocumentFragment>(
   )(() => {
     const selection = null;
     const domConfig = getEditorDOMConfig(editor);
-    $appendNodesToHTML(editor, root, container, selection, domConfig);
+    const parentElementAppend = container.append.bind(container);
+    $appendNodesToHTML(editor, root, parentElementAppend, selection, domConfig);
     return container;
   });
 }
@@ -613,6 +704,9 @@ let activeDOMContext:
   | {editor: LexicalEditor; context: ContextRecord};
 
 /**
+ * A convenience function for type inference when constructing DOM overrides for
+ * use with {@link DOMExtension}.
+ *
  * @__NO_SIDE_EFFECTS__
  */
 export function domOverride(
@@ -648,6 +742,7 @@ export const DOMExtension = defineExtension<
     overrides: [],
   },
   html: {
+    // Define a RootNode export for $generateDOMFromRoot
     export: new Map([
       [
         RootNode,

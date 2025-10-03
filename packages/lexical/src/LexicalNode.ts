@@ -372,12 +372,14 @@ export type DOMExportOutputMap = Map<
   (editor: LexicalEditor, target: LexicalNode) => DOMExportOutput
 >;
 
-export type DOMExportOutput = {
+export interface DOMExportOutput {
   after?: (
     generatedElement: HTMLElement | DocumentFragment | Text | null | undefined,
   ) => HTMLElement | DocumentFragment | Text | null | undefined;
   element: HTMLElement | DocumentFragment | Text | null;
-};
+  append?: (element: HTMLElement | DocumentFragment | Text) => void;
+  $getChildNodes?: () => Iterable<LexicalNode>;
+}
 
 export type NodeKey = string;
 

@@ -50,16 +50,16 @@ describe('DOMExtension', () => {
           configExtension(DOMExtension, {
             overrides: [
               domOverride('*', {
-                createDOM(node, next) {
-                  const result = next();
+                $createDOM(node, $next) {
+                  const result = $next();
                   const id = $getState(node, idState);
                   if (id) {
                     result.setAttribute('id', id);
                   }
                   return result;
                 },
-                updateDOM(nextNode, prevNode, dom, next) {
-                  if (next()) {
+                $updateDOM(nextNode, prevNode, dom, $next) {
+                  if ($next()) {
                     return true;
                   }
                   const change = $getStateChange(nextNode, prevNode, idState);
@@ -151,8 +151,8 @@ describe('DOMExtension', () => {
           configExtension(DOMExtension, {
             overrides: [
               domOverride('*', {
-                exportDOM(node, next) {
-                  const result = next();
+                $exportDOM(node, $next) {
+                  const result = $next();
                   const id = $getState(node, idState);
                   if (id && isHTMLElement(result.element)) {
                     result.element.setAttribute('id', id);
@@ -161,8 +161,8 @@ describe('DOMExtension', () => {
                 },
               }),
               domOverride([TextNode], {
-                exportDOM(node, next) {
-                  const result = next();
+                $exportDOM(node, $next) {
+                  const result = $next();
                   if (
                     $getDOMContextValue(DOMContextRoot) &&
                     isHTMLElement(result.element) &&

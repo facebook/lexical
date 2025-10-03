@@ -8,7 +8,7 @@
 
 import type {PropertiesHyphenFallback} from 'csstype';
 
-import {DOMExtension} from '@lexical/html';
+import {DOMExtension, domOverride} from '@lexical/html';
 import {$forEachSelectedTextNode} from '@lexical/selection';
 import InlineStyleParser from 'inline-style-parser';
 import {
@@ -381,16 +381,16 @@ export const StyleStateExtension = defineExtension({
   dependencies: [
     configExtension(DOMExtension, {
       overrides: [
-        {
-          createDOM(_editor, node, next) {
-            const dom: HTMLElementWithManagedStyle = next();
+        domOverride('*', {
+          $createDOM(node, $next) {
+            const dom: HTMLElementWithManagedStyle = $next();
             const nextStyleObject = $getStyleObject(node);
             dom[PREV_STYLE_STATE] = nextStyleObject;
             applyStyle(dom, nextStyleObject);
             return dom;
           },
-          exportDOM(_editor, node, next) {
-            const output = next();
+          $exportDOM(node, $next) {
+            const output = $next();
             const style = $getStyleObject(node);
             if (output.element && style !== NO_STYLE) {
               return {
@@ -408,15 +408,13 @@ export const StyleStateExtension = defineExtension({
             }
             return output;
           },
-          nodes: ['*'],
-          updateDOM(
-            _editor,
+          $updateDOM(
             nextNode,
             prevNode,
             dom: HTMLElementWithManagedStyle,
-            next,
+            $next,
           ) {
-            if (next()) {
+            if ($next()) {
               return true;
             }
             const prevStyleObject = getPreviousStyleObject(
@@ -429,7 +427,7 @@ export const StyleStateExtension = defineExtension({
             applyStyle(dom, diffStyleObjects(prevStyleObject, nextStyleObject));
             return false;
           },
-        },
+        }),
       ],
     }),
   ],

@@ -17,7 +17,13 @@ import type {
 
 import invariant from 'shared/invariant';
 
-import {$getRoot, $getSelection, TextNode} from '.';
+import {
+  $getRoot,
+  $getSelection,
+  $isElementNode,
+  BaseSelection,
+  TextNode,
+} from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
 import {cloneEditorState, createEmptyEditorState} from './LexicalEditorState';
 import {addRootElementEvents, removeRootElementEvents} from './LexicalEvents';
@@ -218,20 +224,38 @@ export type LexicalNodeConfig = Klass<LexicalNode> | LexicalNodeReplacement;
 /** @internal @experimental */
 export interface EditorDOMConfig {
   /** @internal @experimental */
-  createDOM: <T extends LexicalNode>(
+  $createDOM: <T extends LexicalNode>(
     node: T,
     editor: LexicalEditor,
   ) => HTMLElement;
   /** @internal @experimental */
-  exportDOM: <T extends LexicalNode>(
+  $exportDOM: <T extends LexicalNode>(
     node: T,
     editor: LexicalEditor,
   ) => DOMExportOutput;
   /** @internal @experimental */
-  updateDOM: <T extends LexicalNode>(
+  $extractWithChild: <T extends LexicalNode>(
+    node: T,
+    childNode: LexicalNode,
+    selection: null | BaseSelection,
+    destination: 'clone' | 'html',
+    editor: LexicalEditor,
+  ) => boolean;
+  /** @internal @experimental */
+  $updateDOM: <T extends LexicalNode>(
     nextNode: T,
     prevNode: T,
     dom: HTMLElement,
+    editor: LexicalEditor,
+  ) => boolean;
+  $shouldInclude: <T extends LexicalNode>(
+    node: T,
+    selection: null | BaseSelection,
+    editor: LexicalEditor,
+  ) => boolean;
+  $shouldExclude: <T extends LexicalNode>(
+    node: T,
+    selection: null | BaseSelection,
     editor: LexicalEditor,
   ) => boolean;
 }
@@ -520,19 +544,23 @@ function initializeConversionCache(
 
 /** @internal */
 export const DEFAULT_EDITOR_DOM_CONFIG: EditorDOMConfig = {
-  createDOM: (node, editor) => {
-    return node.createDOM(editor._config, editor);
-  },
-  exportDOM: (node, editor) => {
+  $createDOM: (node, editor) => node.createDOM(editor._config, editor),
+  $exportDOM: (node, editor) => {
     const registeredNode = getRegisteredNode(editor, node.getType());
     // Use HTMLConfig overrides, if available.
     return registeredNode && registeredNode.exportDOM !== undefined
       ? registeredNode.exportDOM(editor, node)
       : node.exportDOM(editor);
   },
-  updateDOM: (nextNode, prevNode, dom, editor) => {
-    return nextNode.updateDOM(prevNode, dom, editor._config);
-  },
+  $extractWithChild: (node, childNode, selection, destination, _editor) =>
+    $isElementNode(node) &&
+    node.extractWithChild(childNode, selection, destination),
+  $shouldExclude: (node, _selection, _editor) =>
+    $isElementNode(node) && node.excludeFromCopy('html'),
+  $shouldInclude: (node, selection, _editor) =>
+    selection ? node.isSelected(selection) : true,
+  $updateDOM: (nextNode, prevNode, dom, editor) =>
+    nextNode.updateDOM(prevNode, dom, editor._config),
 };
 
 /**

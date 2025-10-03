@@ -196,7 +196,7 @@ function $createNode(key: NodeKey, slot: ElementDOMSlot | null): HTMLElement {
   if (node === undefined) {
     invariant(false, 'createNode: node does not exist in nodeMap');
   }
-  const dom = activeEditorDOMConfig.createDOM(activeEditor, node);
+  const dom = activeEditorDOMConfig.createDOM(node, activeEditor);
   storeDOMWithKey(key, dom, activeEditor);
 
   // This helps preserve the text, and stops spell check tools from
@@ -550,7 +550,7 @@ function $reconcileNode(
   }
 
   // Update node. If it returns true, we need to unmount and re-create the node
-  if (activeEditorDOMConfig.updateDOM(activeEditor, nextNode, prevNode, dom)) {
+  if (activeEditorDOMConfig.updateDOM(nextNode, prevNode, dom, activeEditor)) {
     const replacementDOM = $createNode(key, null);
 
     if (parentDOM === null) {

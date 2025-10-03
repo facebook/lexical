@@ -149,20 +149,20 @@ type DOMConversionCache = Map<
 export type EditorDOMConfig = {
   /** @internal @experimental */
   createDOM: <T: LexicalNode>(
-    editor: LexicalEditor,
     node: T,
+    editor: LexicalEditor,
   ) => HTMLElement;
   /** @internal @experimental */
   exportDOM: <T: LexicalNode>(
-    editor: LexicalEditor,
     node: T,
+    editor: LexicalEditor,
   ) => DOMExportOutput;
   /** @internal @experimental */
   updateDOM: <T: LexicalNode>(
-    editor: LexicalEditor,
     nextNode: T,
     prevNode: T,
     dom: HTMLElement,
+    editor: LexicalEditor,
   ) => boolean;  
 }
 

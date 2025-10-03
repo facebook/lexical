@@ -219,20 +219,20 @@ export type LexicalNodeConfig = Klass<LexicalNode> | LexicalNodeReplacement;
 export interface EditorDOMConfig {
   /** @internal @experimental */
   createDOM: <T extends LexicalNode>(
-    editor: LexicalEditor,
     node: T,
+    editor: LexicalEditor,
   ) => HTMLElement;
   /** @internal @experimental */
   exportDOM: <T extends LexicalNode>(
-    editor: LexicalEditor,
     node: T,
+    editor: LexicalEditor,
   ) => DOMExportOutput;
   /** @internal @experimental */
   updateDOM: <T extends LexicalNode>(
-    editor: LexicalEditor,
     nextNode: T,
     prevNode: T,
     dom: HTMLElement,
+    editor: LexicalEditor,
   ) => boolean;
 }
 
@@ -520,17 +520,17 @@ function initializeConversionCache(
 
 /** @internal */
 export const DEFAULT_EDITOR_DOM_CONFIG: EditorDOMConfig = {
-  createDOM: (editor, node) => {
+  createDOM: (node, editor) => {
     return node.createDOM(editor._config, editor);
   },
-  exportDOM: (editor, node) => {
+  exportDOM: (node, editor) => {
     const registeredNode = getRegisteredNode(editor, node.getType());
     // Use HTMLConfig overrides, if available.
     return registeredNode && registeredNode.exportDOM !== undefined
       ? registeredNode.exportDOM(editor, node)
       : node.exportDOM(editor);
   },
-  updateDOM: (editor, nextNode, prevNode, dom) => {
+  updateDOM: (nextNode, prevNode, dom, editor) => {
     return nextNode.updateDOM(prevNode, dom, editor._config);
   },
 };

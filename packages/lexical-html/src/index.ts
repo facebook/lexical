@@ -45,6 +45,7 @@ import {
   isDocumentFragment,
   isDOMDocumentNode,
   isInlineDomNode,
+  RootNode,
   shallowMergeConfig,
 } from 'lexical';
 import invariant from 'shared/invariant';
@@ -124,7 +125,7 @@ function $appendNodesToHTML(
     target = clone;
   }
   const children = $isElementNode(target) ? target.getChildren() : [];
-  const {element, after} = domConfig.exportDOM(editor, target);
+  const {element, after} = domConfig.exportDOM(target, editor);
 
   if (!element) {
     return false;
@@ -403,23 +404,23 @@ type NodeMatch<T extends LexicalNode> =
 
 /** @internal @experimental */
 export interface DOMConfigMatch<T extends LexicalNode> {
-  nodes: ('*' | NodeMatch<T>)[];
+  readonly nodes: '*' | readonly NodeMatch<T>[];
   createDOM?: (
-    editor: LexicalEditor,
     node: T,
     next: () => HTMLElement,
+    editor: LexicalEditor,
   ) => HTMLElement;
   updateDOM?: (
-    editor: LexicalEditor,
     nextNode: T,
     prevNode: T,
     dom: HTMLElement,
     next: () => boolean,
+    editor: LexicalEditor,
   ) => boolean;
   exportDOM?: (
-    editor: LexicalEditor,
     node: T,
     next: () => DOMExportOutput,
+    editor: LexicalEditor,
   ) => DOMExportOutput;
 }
 
@@ -450,22 +451,22 @@ function compileOverrides(
     };
     return {
       createDOM: createDOM
-        ? (editor, node) => {
-            const next = () => acc.createDOM(editor, node);
-            return matcher(node) ? createDOM(editor, node, next) : next();
+        ? (node, editor) => {
+            const next = () => acc.createDOM(node, editor);
+            return matcher(node) ? createDOM(node, next, editor) : next();
           }
         : acc.createDOM,
       exportDOM: exportDOM
-        ? (editor, node) => {
-            const next = () => acc.exportDOM(editor, node);
-            return matcher(node) ? exportDOM(editor, node, next) : next();
+        ? (node, editor) => {
+            const next = () => acc.exportDOM(node, editor);
+            return matcher(node) ? exportDOM(node, next, editor) : next();
           }
         : acc.exportDOM,
       updateDOM: updateDOM
-        ? (editor, nextNode, prevNode, dom) => {
-            const next = () => acc.updateDOM(editor, nextNode, prevNode, dom);
+        ? (nextNode, prevNode, dom, editor) => {
+            const next = () => acc.updateDOM(nextNode, prevNode, dom, editor);
             return matcher(nextNode)
-              ? updateDOM(editor, nextNode, prevNode, dom, next)
+              ? updateDOM(nextNode, prevNode, dom, next, editor)
               : next();
           }
         : acc.updateDOM,
@@ -476,6 +477,11 @@ function compileOverrides(
   // from the right
   return overrides.reduceRight(mergeDOMConfigMatch, defaults);
 }
+
+/** true if this is a whole document export operation ($generateDOMFromRoot) */
+export const DOMContextRoot = createState('@lexical/html/root', {
+  parse: (v) => !!v,
+});
 
 /** true if this is an export operation ($generateHtmlFromNodes) */
 export const DOMContextExport = createState('@lexical/html/export', {
@@ -586,9 +592,43 @@ export function $generateDOMFromNodes<T extends HTMLElement | DocumentFragment>(
   });
 }
 
+export function $generateDOMFromRoot<T extends HTMLElement | DocumentFragment>(
+  container: T,
+  root: LexicalNode = $getRoot(),
+): T {
+  const editor = $getEditor();
+  return $withDOMContext(
+    [DOMContextExport.pair(true), DOMContextRoot.pair(true)],
+    editor,
+  )(() => {
+    const selection = null;
+    const domConfig = getEditorDOMConfig(editor);
+    $appendNodesToHTML(editor, root, container, selection, domConfig);
+    return container;
+  });
+}
+
 let activeDOMContext:
   | undefined
   | {editor: LexicalEditor; context: ContextRecord};
+
+/**
+ * @__NO_SIDE_EFFECTS__
+ */
+export function domOverride(
+  nodes: '*',
+  config: Omit<DOMConfigMatch<LexicalNode>, 'nodes'>,
+): DOMConfigMatch<LexicalNode>;
+export function domOverride<T extends LexicalNode>(
+  nodes: readonly NodeMatch<T>[],
+  config: Omit<DOMConfigMatch<T>, 'nodes'>,
+): DOMConfigMatch<T>;
+export function domOverride(
+  nodes: AnyDOMConfigMatch['nodes'],
+  config: Omit<AnyDOMConfigMatch, 'nodes'>,
+): AnyDOMConfigMatch {
+  return {...config, nodes};
+}
 
 const DOMExtensionName = '@lexical/html/DOM';
 /** @internal @experimental */
@@ -606,6 +646,18 @@ export const DOMExtension = defineExtension<
   config: {
     contextDefaults: [],
     overrides: [],
+  },
+  html: {
+    export: new Map([
+      [
+        RootNode,
+        () => {
+          const element = document.createElement('div');
+          element.role = 'textbox';
+          return {element};
+        },
+      ],
+    ]),
   },
   init(editorConfig, config) {
     editorConfig.dom = compileOverrides(config, {

@@ -393,18 +393,22 @@ export const StyleStateExtension = defineExtension({
             const output = $next();
             const style = $getStyleObject(node);
             if (output.element && style !== NO_STYLE) {
-              return {
-                ...output,
-                after: (generatedElement) => {
-                  const el = output.after
-                    ? output.after(generatedElement)
-                    : generatedElement;
-                  if (isHTMLElement(el)) {
-                    applyStyle(el, style);
-                  }
-                  return el;
-                },
-              };
+              if (output.after) {
+                return {
+                  ...output,
+                  after: (generatedElement) => {
+                    const el = output.after
+                      ? output.after(generatedElement)
+                      : generatedElement;
+                    if (isHTMLElement(el)) {
+                      applyStyle(el, style);
+                    }
+                    return el;
+                  },
+                };
+              } else if (isHTMLElement(output.element)) {
+                applyStyle(output.element, style);
+              }
             }
             return output;
           },

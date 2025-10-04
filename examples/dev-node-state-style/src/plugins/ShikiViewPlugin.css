@@ -1,0 +1,5 @@
+.shiki-view-plugin > pre.shiki {
+  margin: 0;
+  padding: 10px;
+  white-space: pre-wrap;
+}

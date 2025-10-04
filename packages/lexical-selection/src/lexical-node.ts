@@ -45,7 +45,7 @@ import {
 export function $sliceSelectedTextNodeContent(
   selection: BaseSelection,
   textNode: TextNode,
-): LexicalNode {
+): TextNode {
   const anchorAndFocus = selection.getStartEndPoints();
   if (
     textNode.isSelected(selection) &&

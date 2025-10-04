@@ -8,6 +8,7 @@
 
 import type {
   EditorConfig,
+  EditorDOMConfig,
   LexicalEditor,
   MutatedNodes,
   MutationListeners,
@@ -24,6 +25,7 @@ import {
   $isLineBreakNode,
   $isRootNode,
   $isTextNode,
+  DEFAULT_EDITOR_DOM_CONFIG,
 } from '.';
 import {
   DOUBLE_LINE_BREAK,
@@ -62,6 +64,7 @@ let activePrevNodeMap: NodeMap;
 let activeNextNodeMap: NodeMap;
 let activePrevKeyToDOMMap: Map<NodeKey, HTMLElement>;
 let mutatedNodes: MutatedNodes;
+let activeEditorDOMConfig: EditorDOMConfig;
 
 function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
   const node = activePrevNodeMap.get(key);
@@ -193,7 +196,7 @@ function $createNode(key: NodeKey, slot: ElementDOMSlot | null): HTMLElement {
   if (node === undefined) {
     invariant(false, 'createNode: node does not exist in nodeMap');
   }
-  const dom = node.createDOM(activeEditorConfig, activeEditor);
+  const dom = activeEditorDOMConfig.$createDOM(node, activeEditor);
   storeDOMWithKey(key, dom, activeEditor);
 
   // This helps preserve the text, and stops spell check tools from
@@ -547,7 +550,7 @@ function $reconcileNode(
   }
 
   // Update node. If it returns true, we need to unmount and re-create the node
-  if (nextNode.updateDOM(prevNode, dom, activeEditorConfig)) {
+  if (activeEditorDOMConfig.$updateDOM(nextNode, prevNode, dom, activeEditor)) {
     const replacementDOM = $createNode(key, null);
 
     if (parentDOM === null) {
@@ -773,6 +776,7 @@ export function $reconcileRoot(
   treatAllNodesAsDirty = dirtyType === FULL_RECONCILE;
   activeEditor = editor;
   activeEditorConfig = editor._config;
+  activeEditorDOMConfig = editor._config.dom || DEFAULT_EDITOR_DOM_CONFIG;
   activeEditorNodes = editor._nodes;
   activeMutationListeners = activeEditor._listeners.mutation;
   activeDirtyElements = dirtyElements;
@@ -808,6 +812,7 @@ export function $reconcileRoot(
   activePrevKeyToDOMMap = undefined;
   // @ts-ignore
   mutatedNodes = undefined;
+  activeEditorDOMConfig = DEFAULT_EDITOR_DOM_CONFIG;
 
   return currentMutatedNodes;
 }

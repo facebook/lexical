@@ -65,19 +65,19 @@ function isGoogleDocCheckboxImg(img: HTMLImageElement): boolean {
 
 function $convertImageElement(domNode: Node): null | DOMConversionOutput {
   const img = domNode as HTMLImageElement;
-  if (img.src.startsWith("file:///") || isGoogleDocCheckboxImg(img)) {
+  if (img.src.startsWith('file:///') || isGoogleDocCheckboxImg(img)) {
     return null;
   }
-  const { alt: altText, src, width, height } = img;
+  const {alt: altText, src, width, height} = img;
 
   const parentElement = img.parentElement;
-  const isInsideFigure = parentElement && parentElement?.tagName === "FIGURE";
+  const isInsideFigure = parentElement && parentElement?.tagName === 'FIGURE';
 
   if (isInsideFigure) {
-    let captionText = "";
-    const figcaption = parentElement.querySelector("figcaption");
+    let captionText = '';
+    const figcaption = parentElement.querySelector('figcaption');
     if (figcaption) {
-      captionText = figcaption.textContent || figcaption.innerText || "";
+      captionText = figcaption.textContent || figcaption.innerText || '';
       figcaption.remove(); // This is to prevent Lexical from adding an extra span after inserting an image because of the figcaption.
     }
     const captionEditor = createEditor({
@@ -93,16 +93,16 @@ function $convertImageElement(domNode: Node): null | DOMConversionOutput {
     }
     const node = $createImageNode({
       altText,
+      caption: captionEditor,
       height,
+      showCaption: true,
       src,
       width,
-      showCaption: true,
-      caption: captionEditor,
     });
-    return { node };
+    return {node};
   }
-  const node = $createImageNode({ altText, height, src, width });
-  return { node };
+  const node = $createImageNode({altText, height, src, width});
+  return {node};
 }
 
 export type SerializedImageNode = Spread<
@@ -172,11 +172,11 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
   }
 
   exportDOM(): DOMExportOutput {
-    const imgElement = document.createElement("img");
-    imgElement.setAttribute("src", this.__src);
-    imgElement.setAttribute("alt", this.__altText);
-    imgElement.setAttribute("width", this.__width.toString());
-    imgElement.setAttribute("height", this.__height.toString());
+    const imgElement = document.createElement('img');
+    imgElement.setAttribute('src', this.__src);
+    imgElement.setAttribute('alt', this.__altText);
+    imgElement.setAttribute('width', this.__width.toString());
+    imgElement.setAttribute('height', this.__height.toString());
 
     if (this.__showCaption && this.__caption) {
       const editorState = this.__caption.getEditorState();
@@ -185,18 +185,18 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
       });
 
       if (captionText.trim()) {
-        const figureElement = document.createElement("figure");
-        const figcaptionElement = document.createElement("figcaption");
+        const figureElement = document.createElement('figure');
+        const figcaptionElement = document.createElement('figcaption');
         figcaptionElement.textContent = captionText;
 
         figureElement.appendChild(imgElement);
         figureElement.appendChild(figcaptionElement);
 
-        return { element: figureElement };
+        return {element: figureElement};
       }
     }
 
-    return { element: imgElement };
+    return {element: imgElement};
   }
 
   static importDOM(): DOMConversionMap | null {

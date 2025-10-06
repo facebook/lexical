@@ -108,7 +108,7 @@ test.describe('HTML Image CopyAndPaste', () => {
             <img
               alt="sample image alt"
               height="inherit"
-              src="/src/images/yellow-flower.jpg"
+              src="${SAMPLE_IMAGE_URL}"
               width="inherit" />
             <figcaption>
               <span style="white-space: pre-wrap;">this is a caption with</span>

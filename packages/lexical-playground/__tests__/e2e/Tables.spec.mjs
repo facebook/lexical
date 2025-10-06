@@ -29,12 +29,13 @@ import {
   dragMouse,
   expect,
   focusEditor,
+  getExpectedDateTimeHtml,
   getPageOrFrame,
   html,
   initialize,
   insertCollapsible,
+  insertDateTime,
   insertHorizontalRule,
-  insertSampleImage,
   insertTable,
   insertTableColumnBefore,
   insertTableRowAbove,
@@ -46,7 +47,6 @@ import {
   LEGACY_EVENTS,
   mergeTableCells,
   pasteFromClipboard,
-  SAMPLE_IMAGE_URL,
   selectCellFromTableCoord,
   selectCellsFromTableCords,
   selectFromAdditionalStylesDropdown,
@@ -1356,7 +1356,7 @@ test.describe.parallel('Tables', () => {
     await focusEditor(page);
     await page.keyboard.type('Text before');
     await page.keyboard.press('Enter');
-    await insertSampleImage(page);
+    await insertDateTime(page);
     await page.keyboard.press('Enter');
     await page.keyboard.type('Text after');
     await insertTable(page, 2, 3);
@@ -1448,7 +1448,7 @@ test.describe.parallel('Tables', () => {
   });
 
   test(
-    'Table selection: can select multiple cells and insert an image',
+    'Table selection: can select multiple cells and insert a decorator',
     {
       tag: '@flaky',
     },
@@ -1468,10 +1468,8 @@ test.describe.parallel('Tables', () => {
       await page.keyboard.press('ArrowDown');
       await page.keyboard.up('Shift');
 
-      await insertSampleImage(page);
+      await insertDateTime(page);
       await page.keyboard.type(' <- it works!');
-
-      await waitForSelector(page, '.editor-image img');
 
       await assertHTML(
         page,
@@ -1501,18 +1499,7 @@ test.describe.parallel('Tables', () => {
               </th>
               <td class="PlaygroundEditorTheme__tableCell">
                 <p class="PlaygroundEditorTheme__paragraph">
-                  <span
-                    class="editor-image"
-                    contenteditable="false"
-                    data-lexical-decorator="true">
-                    <div draggable="false">
-                      <img
-                        alt="Yellow flower in tilt shift lens"
-                        draggable="false"
-                        src="${SAMPLE_IMAGE_URL}"
-                        style="height: inherit; max-width: 500px; width: inherit" />
-                    </div>
-                  </span>
+                  ${getExpectedDateTimeHtml()}
                   <span data-lexical-text="true">&lt;- it works!</span>
                 </p>
               </td>
@@ -6701,6 +6688,8 @@ test.describe.parallel('Tables', () => {
       false,
     );
     // undo is used so we need to wait for history
+    await sleep(1050);
+
     await sleep(1050);
 
     await withExclusiveClipboardAccess(async () => {

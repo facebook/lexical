@@ -320,13 +320,11 @@ function $appendNodesToJSON(
     $isElementNode(currentNode) && currentNode.excludeFromCopy('html');
   let target = currentNode;
 
-  if (selection !== null) {
-    let clone = $cloneWithProperties(currentNode);
-    clone =
-      $isTextNode(clone) && selection !== null
-        ? $sliceSelectedTextNodeContent(selection, clone)
-        : clone;
-    target = clone;
+  if (selection !== null && $isTextNode(target)) {
+    target = $sliceSelectedTextNodeContent(
+      selection,
+      $cloneWithProperties(target),
+    );
   }
   const children = $isElementNode(target) ? target.getChildren() : [];
 
@@ -519,6 +517,12 @@ function $copyToClipboardEvent(
 ): boolean {
   if (data === undefined) {
     const domSelection = getDOMSelection(editor._window);
+    const selection = $getSelection();
+
+    if (!selection || selection.isCollapsed()) {
+      return false;
+    }
+
     if (!domSelection) {
       return false;
     }
@@ -531,10 +535,7 @@ function $copyToClipboardEvent(
     ) {
       return false;
     }
-    const selection = $getSelection();
-    if (selection === null) {
-      return false;
-    }
+
     data = $getClipboardDataFromSelection(selection);
   }
   event.preventDefault();

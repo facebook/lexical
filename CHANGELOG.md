@@ -1,3 +1,20 @@
+## v0.36.2 (2025-09-30)
+
+- docs Chore Export DOMConversion types so that they are in the docs (#7893) Bob Ippolito
+- lexical-markdown Bug Fix Ensure First Match is Used in importTextMatchTransformer (#7890) River
+- lexical-react Fix ensure selection listeners cleaned up from original owner document (#7843) James Fitzsimmons
+- lexical-clipboard Preventing copying empty string (#7880) Nikhil Sharma
+- lexical-website Chore Update to docusaurus v3.9.1 (#7881) Bob Ippolito
+- lexical-headlesslexical-html Bug Fix Fix entrypoint for lexicalheadlessdom and generalize generateNodesFromDOM (#7859) Bob Ippolito
+- lexical-table Bug Fix Handle accessing table selection following table deletion (#7864) Patrick Moody
+- lexical-headless Bug Fix Fix types for lexicalheadlessdom and simplify npmToWwwName workaround (#7873) Bob Ippolito
+- Update examples for v0.36.1 (#7872) Bob Ippolito
+- lexical-playground Bug Fix Table add-row button no longer hides horizontal scroll (#7847) Nikhil Sharma
+- lexical-website Chore add example for how to bootstrap collab ydoc on the server (#7830) James Fitzsimmons
+-  Bug Fix devInvariant should warn in prod even if not in codes.json (#7870) Bob Ippolito
+- v0.36.1 (#7871) Bob Ippolito
+- v0.36.1 Lexical GitHub Actions Bot
+
 ## v0.36.1 (2025-09-25)
 
 -  Bug Fix Update examples and fix package.json for v0.36.0 (will need a patch release) (#7867) Bob Ippolito

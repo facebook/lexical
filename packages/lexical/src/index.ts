@@ -177,6 +177,9 @@ export type {
   DOMConversionFn,
   DOMConversionMap,
   DOMConversionOutput,
+  DOMConversionProp,
+  DOMConversionPropByTagName,
+  DOMConversionTagNameMap,
   DOMExportOutput,
   DOMExportOutputMap,
   LexicalExportJSON,
@@ -329,6 +332,7 @@ export {
   SKIP_COLLAB_TAG,
   SKIP_DOM_SELECTION_TAG,
   SKIP_SCROLL_INTO_VIEW_TAG,
+  SKIP_SELECTION_FOCUS_TAG,
   type UpdateTag,
 } from './LexicalUpdateTags';
 

@@ -62,7 +62,11 @@ function onCopyForPlainText(
         : event.clipboardData;
       const selection = $getSelection();
 
-      if (selection !== null && clipboardData != null) {
+      if (
+        selection !== null &&
+        !selection.isCollapsed() &&
+        clipboardData != null
+      ) {
         event.preventDefault();
         const htmlString = $getHtmlContent(editor);
 

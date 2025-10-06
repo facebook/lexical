@@ -22,6 +22,7 @@ import {
   insertSampleImage,
   insertUploadImage,
   insertUrlImage,
+  IS_COLLAB_V2,
   IS_WINDOWS,
   LEGACY_EVENTS,
   SAMPLE_IMAGE_URL,
@@ -33,6 +34,9 @@ import {
 } from '../utils/index.mjs';
 
 test.describe('Images', () => {
+  // TODO(collab-v2): nested editors are not supported yet
+  test.skip(IS_COLLAB_V2);
+
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
   test(`Can create a decorator and move selection around it`, async ({
     page,

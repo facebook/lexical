@@ -546,7 +546,6 @@ export class LexicalNode {
 
     if (__DEV__) {
       if (this.__type !== 'root') {
-        errorOnReadOnly();
         errorOnTypeKlassMismatch(this.__type, this.constructor);
       }
     }

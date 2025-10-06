@@ -320,13 +320,11 @@ function $appendNodesToJSON(
     $isElementNode(currentNode) && currentNode.excludeFromCopy('html');
   let target = currentNode;
 
-  if (selection !== null) {
-    let clone = $cloneWithProperties(currentNode);
-    clone =
-      $isTextNode(clone) && selection !== null
-        ? $sliceSelectedTextNodeContent(selection, clone)
-        : clone;
-    target = clone;
+  if (selection !== null && $isTextNode(target)) {
+    target = $sliceSelectedTextNodeContent(
+      selection,
+      $cloneWithProperties(target),
+    );
   }
   const children = $isElementNode(target) ? target.getChildren() : [];
 

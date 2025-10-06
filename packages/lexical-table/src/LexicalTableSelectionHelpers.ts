@@ -46,6 +46,7 @@ import {
   $extendCaretToRange,
   $getAdjacentChildCaret,
   $getChildCaret,
+  $getEditor,
   $getEditorDOMConfig,
   $getNearestNodeFromDOMNode,
   $getPreviousSelection,
@@ -129,10 +130,11 @@ export function $getTableElement<T extends HTMLElement | null>(
   if (!dom) {
     return dom as T & null;
   }
+  const editor = $getEditor();
   const element = (
     isHTMLTableElement(dom)
       ? dom
-      : $getEditorDOMConfig().$getDOMSlot(tableNode, dom).element
+      : $getEditorDOMConfig(editor).$getDOMSlot(tableNode, dom, editor).element
   ) as HTMLTableElementWithWithTableSelectionState;
   invariant(
     element.nodeName === 'TABLE',

@@ -14,6 +14,7 @@ import type {
   DOMConversionFn,
   DOMExportOutput,
   EditorDOMConfig,
+  ElementDOMSlot,
   ElementFormatType,
   Klass,
   LexicalEditor,
@@ -424,6 +425,11 @@ type NodeMatch<T extends LexicalNode> =
 /** @internal @experimental */
 export interface DOMConfigMatch<T extends LexicalNode> {
   readonly nodes: '*' | readonly NodeMatch<T>[];
+  $getDOMSlot?: <N extends ElementNode>(
+    node: N,
+    $next: () => ElementDOMSlot<HTMLElement>,
+    editor: LexicalEditor,
+  ) => ElementDOMSlot<HTMLElement>;
   $createDOM?: (
     node: T,
     $next: () => HTMLElement,
@@ -475,6 +481,7 @@ function compileOverrides(
     // there are more overrides
     const {
       nodes,
+      $getDOMSlot,
       $createDOM,
       $updateDOM,
       $exportDOM,
@@ -531,6 +538,14 @@ function compileOverrides(
               : $next();
           }
         : acc.$extractWithChild,
+      $getDOMSlot: $getDOMSlot
+        ? (node, dom, editor) => {
+            const $next = () => acc.$getDOMSlot(node, dom, editor);
+            return $isElementNode(node) && matcher(node)
+              ? $getDOMSlot(node, $next, editor)
+              : $next();
+          }
+        : acc.$getDOMSlot,
       $shouldExclude: $shouldExclude
         ? (node, selection, editor) => {
             const $next = () => acc.$shouldExclude(node, selection, editor);

@@ -14,7 +14,7 @@ import type {
   DOMExportOutputMap,
   NodeKey,
 } from './LexicalNode';
-import type {ElementDOMSlot, ElementNode} from './nodes/LexicalElementNode';
+import type {ElementDOMSlot} from './nodes/LexicalElementNode';
 
 import invariant from 'shared/invariant';
 
@@ -230,9 +230,10 @@ export interface EditorDOMConfig {
     editor: LexicalEditor,
   ) => HTMLElement;
   /** @internal @experimental */
-  $getDOMSlot: <T extends ElementNode>(
+  $getDOMSlot: <T extends LexicalNode>(
     node: T,
     dom: HTMLElement,
+    editor: LexicalEditor,
   ) => ElementDOMSlot<HTMLElement>;
   /** @internal @experimental */
   $exportDOM: <T extends LexicalNode>(
@@ -563,7 +564,15 @@ export const DEFAULT_EDITOR_DOM_CONFIG: EditorDOMConfig = {
   $extractWithChild: (node, childNode, selection, destination, _editor) =>
     $isElementNode(node) &&
     node.extractWithChild(childNode, selection, destination),
-  $getDOMSlot: (node, dom) => node.getDOMSlot(dom),
+  $getDOMSlot: (node, dom, _editor) => {
+    invariant(
+      $isElementNode(node),
+      '$getDOMSlot called on a non-ElementNode (key %s type %s)',
+      node.getKey(),
+      node.getType(),
+    );
+    return node.getDOMSlot(dom);
+  },
   $shouldExclude: (node, _selection, _editor) =>
     $isElementNode(node) && node.excludeFromCopy('html'),
   $shouldInclude: (node, selection, _editor) =>

@@ -2302,9 +2302,10 @@ function $internalResolveSelectionPoint(
           elementDOM !== null,
           '$internalResolveSelectionPoint: node in DOM but not keyToDOMMap',
         );
-        const slot = $getEditorDOMConfig().$getDOMSlot(
+        const slot = $getEditorDOMConfig(editor).$getDOMSlot(
           resolvedElement,
           elementDOM,
+          editor,
         );
         [resolvedElement, resolvedOffset] = slot.resolveChildIndex(
           resolvedElement,

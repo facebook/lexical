@@ -969,7 +969,7 @@ export class ElementNode extends LexicalNode {
 
   /** @internal */
   reconcileObservedMutation(dom: HTMLElement, editor: LexicalEditor): void {
-    const slot = $getEditorDOMConfig(editor).$getDOMSlot(this, dom);
+    const slot = $getEditorDOMConfig(editor).$getDOMSlot(this, dom, editor);
     let currentDOM = slot.getFirstChild();
     for (
       let currentNode = this.getFirstChild();

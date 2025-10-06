@@ -223,7 +223,7 @@ function $createNode(key: NodeKey, slot: ElementDOMSlot | null): HTMLElement {
         node,
         0,
         endIndex,
-        activeEditorDOMConfig.$getDOMSlot(node, dom),
+        activeEditorDOMConfig.$getDOMSlot(node, dom, activeEditor),
       );
     }
     const format = node.__format;
@@ -342,7 +342,7 @@ function $reconcileElementTerminatingLineBreak(
   );
   if (prevLineBreak !== nextLineBreak) {
     activeEditorDOMConfig
-      .$getDOMSlot(nextElement, dom)
+      .$getDOMSlot(nextElement, dom, activeEditor)
       .setManagedLineBreak(nextLineBreak);
   }
 }
@@ -377,7 +377,7 @@ function $reconcileChildrenWithDirection(
   $reconcileChildren(
     prevElement,
     nextElement,
-    activeEditorDOMConfig.$getDOMSlot(nextElement, dom),
+    activeEditorDOMConfig.$getDOMSlot(nextElement, dom, activeEditor),
   );
   reconcileTextFormat(nextElement);
   reconcileTextStyle(nextElement);

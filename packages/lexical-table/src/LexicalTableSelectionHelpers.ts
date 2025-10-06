@@ -46,6 +46,7 @@ import {
   $extendCaretToRange,
   $getAdjacentChildCaret,
   $getChildCaret,
+  $getEditorDOMConfig,
   $getNearestNodeFromDOMNode,
   $getPreviousSelection,
   $getSelection,
@@ -121,7 +122,7 @@ export function isHTMLTableElement(el: unknown): el is HTMLTableElement {
   return isHTMLElement(el) && el.nodeName === 'TABLE';
 }
 
-export function getTableElement<T extends HTMLElement | null>(
+export function $getTableElement<T extends HTMLElement | null>(
   tableNode: TableNode,
   dom: T,
 ): HTMLTableElementWithWithTableSelectionState | (T & null) {
@@ -129,7 +130,9 @@ export function getTableElement<T extends HTMLElement | null>(
     return dom as T & null;
   }
   const element = (
-    isHTMLTableElement(dom) ? dom : tableNode.getDOMSlot(dom).element
+    isHTMLTableElement(dom)
+      ? dom
+      : $getEditorDOMConfig().$getDOMSlot(tableNode, dom).element
   ) as HTMLTableElementWithWithTableSelectionState;
   invariant(
     element.nodeName === 'TABLE',
@@ -138,6 +141,8 @@ export function getTableElement<T extends HTMLElement | null>(
   );
   return element;
 }
+/** @deprecated renamed to {@link $getTableElement} by @lexical/eslint-plugin rules-of-lexical */
+export const getTableElement = $getTableElement;
 
 export function getEditorWindow(editor: LexicalEditor): Window | null {
   return editor._window;
@@ -177,7 +182,7 @@ const DELETE_KEY_COMMANDS = [
   KEY_DELETE_COMMAND,
 ] as const;
 
-export function applyTableHandlers(
+export function $applyTableHandlers(
   tableNode: TableNode,
   element: HTMLElement,
   editor: LexicalEditor,
@@ -192,7 +197,7 @@ export function applyTableHandlers(
 
   const tableObserver = new TableObserver(editor, tableNode.getKey());
 
-  const tableElement = getTableElement(tableNode, element);
+  const tableElement = $getTableElement(tableNode, element);
   attachTableObserverToTableElement(tableElement, tableObserver);
   tableObserver.listenersToRemove.add(() =>
     detachTableObserverFromTableElement(tableElement, tableObserver),
@@ -1243,6 +1248,8 @@ export function applyTableHandlers(
 
   return tableObserver;
 }
+/** @deprecated renamed to {@link $applyTableHandlers} by @lexical/eslint-plugin rules-of-lexical */
+export const applyTableHandlers = $applyTableHandlers;
 
 export type HTMLTableElementWithWithTableSelectionState = HTMLTableElement & {
   [LEXICAL_ELEMENT_KEY]?: TableObserver | undefined;
@@ -1335,11 +1342,11 @@ export function doesTargetContainText(node: Node): boolean {
   return false;
 }
 
-export function getTable(
+export function $getTable(
   tableNode: TableNode,
   dom: HTMLElement,
 ): TableDOMTable {
-  const tableElement = getTableElement(tableNode, dom);
+  const tableElement = $getTableElement(tableNode, dom);
   const domRows: TableDOMRows = [];
   const grid = {
     columns: 0,
@@ -1410,6 +1417,8 @@ export function getTable(
 
   return grid;
 }
+/** @deprecated renamed to {@link $getTable} by @lexical/eslint-plugin rules-of-lexical */
+export const getTable = $getTable;
 
 export function $updateDOMForSelection(
   editor: LexicalEditor,
@@ -2193,12 +2202,12 @@ function $handleArrowKey(
       }
       const anchorCellTable = $findTableNode(anchorCellNode);
       if (anchorCellTable !== tableNode && anchorCellTable != null) {
-        const anchorCellTableElement = getTableElement(
+        const anchorCellTableElement = $getTableElement(
           anchorCellTable,
           editor.getElementByKey(anchorCellTable.getKey()),
         );
         if (anchorCellTableElement != null) {
-          tableObserver.table = getTable(
+          tableObserver.table = $getTable(
             anchorCellTable,
             anchorCellTableElement,
           );
@@ -2297,7 +2306,7 @@ function $handleArrowKey(
       $isTableNode(tableNodeFromSelection),
       '$handleArrowKey: TableSelection.getNodes()[0] expected to be TableNode',
     );
-    const tableElement = getTableElement(
+    const tableElement = $getTableElement(
       tableNodeFromSelection,
       editor.getElementByKey(tableNodeFromSelection.getKey()),
     );
@@ -2311,7 +2320,7 @@ function $handleArrowKey(
     }
     tableObserver.$updateTableTableSelection(selection);
 
-    const grid = getTable(tableNodeFromSelection, tableElement);
+    const grid = $getTable(tableNodeFromSelection, tableElement);
     const cordsAnchor = tableNode.getCordsFromCellNode(anchorCellNode, grid);
     const anchorCell = tableNode.getDOMCellFromCordsOrThrow(
       cordsAnchor.x,
@@ -2396,7 +2405,7 @@ function $getTableEdgeCursorPosition(
   }
   const domAnchorNode = domSelection.anchorNode;
   const tableNodeParentDOM = editor.getElementByKey(tableNodeParent.getKey());
-  const tableElement = getTableElement(
+  const tableElement = $getTableElement(
     tableNode,
     editor.getElementByKey(tableNode.getKey()),
   );

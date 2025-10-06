@@ -44,6 +44,7 @@ import {
 } from '../LexicalSelection';
 import {errorOnReadOnly, getActiveEditor} from '../LexicalUpdates';
 import {
+  $getEditorDOMConfig,
   $getNodeByKey,
   $isRootOrShadowRoot,
   isHTMLElement,
@@ -968,7 +969,7 @@ export class ElementNode extends LexicalNode {
 
   /** @internal */
   reconcileObservedMutation(dom: HTMLElement, editor: LexicalEditor): void {
-    const slot = this.getDOMSlot(dom);
+    const slot = $getEditorDOMConfig(editor).$getDOMSlot(this, dom);
     let currentDOM = slot.getFirstChild();
     for (
       let currentNode = this.getFirstChild();

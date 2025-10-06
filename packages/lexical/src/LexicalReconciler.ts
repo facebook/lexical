@@ -218,7 +218,13 @@ function $createNode(key: NodeKey, slot: ElementDOMSlot | null): HTMLElement {
     if (childrenSize !== 0) {
       const endIndex = childrenSize - 1;
       const children = createChildrenArray(node, activeNextNodeMap);
-      $createChildren(children, node, 0, endIndex, node.getDOMSlot(dom));
+      $createChildren(
+        children,
+        node,
+        0,
+        endIndex,
+        activeEditorDOMConfig.$getDOMSlot(node, dom),
+      );
     }
     const format = node.__format;
 
@@ -226,7 +232,7 @@ function $createNode(key: NodeKey, slot: ElementDOMSlot | null): HTMLElement {
       setElementFormat(dom, format);
     }
     if (!node.isInline()) {
-      reconcileElementTerminatingLineBreak(null, node, dom);
+      $reconcileElementTerminatingLineBreak(null, node, dom);
     }
     if ($textContentRequiresDoubleLinebreakAtEnd(node)) {
       subTreeTextContent += DOUBLE_LINE_BREAK;
@@ -321,7 +327,7 @@ function isLastChildLineBreakOrDecorator(
 }
 
 // If we end an element with a LineBreakNode, then we need to add an additional <br>
-function reconcileElementTerminatingLineBreak(
+function $reconcileElementTerminatingLineBreak(
   prevElement: null | ElementNode,
   nextElement: ElementNode,
   dom: HTMLElement & LexicalPrivateDOM,
@@ -335,7 +341,9 @@ function reconcileElementTerminatingLineBreak(
     activeNextNodeMap,
   );
   if (prevLineBreak !== nextLineBreak) {
-    nextElement.getDOMSlot(dom).setManagedLineBreak(nextLineBreak);
+    activeEditorDOMConfig
+      .$getDOMSlot(nextElement, dom)
+      .setManagedLineBreak(nextLineBreak);
   }
 }
 
@@ -366,7 +374,11 @@ function $reconcileChildrenWithDirection(
 ): void {
   subTreeTextFormat = null;
   subTreeTextStyle = '';
-  $reconcileChildren(prevElement, nextElement, nextElement.getDOMSlot(dom));
+  $reconcileChildren(
+    prevElement,
+    nextElement,
+    activeEditorDOMConfig.$getDOMSlot(nextElement, dom),
+  );
   reconcileTextFormat(nextElement);
   reconcileTextStyle(nextElement);
 }
@@ -577,7 +589,7 @@ function $reconcileNode(
     if (isDirty) {
       $reconcileChildrenWithDirection(prevNode, nextNode, dom);
       if (!$isRootNode(nextNode) && !nextNode.isInline()) {
-        reconcileElementTerminatingLineBreak(prevNode, nextNode, dom);
+        $reconcileElementTerminatingLineBreak(prevNode, nextNode, dom);
       }
     }
 

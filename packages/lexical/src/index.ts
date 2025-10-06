@@ -246,6 +246,7 @@ export {
   $findMatchingParent,
   $getAdjacentNode,
   $getEditor,
+  $getEditorDOMConfig,
   $getNearestNodeFromDOMNode,
   $getNearestRootOrShadowRoot,
   $getNodeByKey,

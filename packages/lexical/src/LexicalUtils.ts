@@ -9,6 +9,7 @@
 import type {
   CommandPayloadType,
   EditorConfig,
+  EditorDOMConfig,
   EditorThemeClasses,
   Klass,
   LexicalCommand,
@@ -45,6 +46,7 @@ import {
   $isTabNode,
   $isTextNode,
   DecoratorNode,
+  DEFAULT_EDITOR_DOM_CONFIG,
   ElementNode,
   HISTORY_MERGE_TAG,
   LineBreakNode,
@@ -1867,6 +1869,15 @@ export function INTERNAL_$isBlock(
  */
 export function $getEditor(): LexicalEditor {
   return getActiveEditor();
+}
+
+/**
+ * @internal @experimental
+ */
+export function $getEditorDOMConfig(
+  editor: LexicalEditor = $getEditor(),
+): EditorDOMConfig {
+  return editor._config.dom || DEFAULT_EDITOR_DOM_CONFIG;
 }
 
 /** @internal */

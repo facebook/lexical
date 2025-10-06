@@ -32,6 +32,7 @@ test.describe('HTML Image CopyAndPaste', () => {
     page,
     isPlainText,
     isCollab,
+    browserName,
   }) => {
     test.skip(isPlainText || isCollab);
     let clipboard = {
@@ -56,6 +57,9 @@ test.describe('HTML Image CopyAndPaste', () => {
     await sleepInsertImage();
     await page.keyboard.type(' inline ');
     await page.pause();
+    const captionEditorStyle =
+      (browserName === 'webkit' ? '' : `user-select: text; `) +
+      `white-space: pre-wrap; word-break: break-word`;
 
     await assertHTML(
       page,
@@ -79,7 +83,7 @@ test.describe('HTML Image CopyAndPaste', () => {
                 contenteditable="true"
                 role="textbox"
                 spellcheck="true"
-                style="user-select: text; white-space: pre-wrap; word-break: break-word"
+                style="${captionEditorStyle}"
                 aria-placeholder="Enter a caption..."
                 data-lexical-editor="true">
                 <p class="PlaygroundEditorTheme__paragraph" dir="auto">

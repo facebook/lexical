@@ -65,6 +65,8 @@ import {
 import {LexicalEditor} from './LexicalEditor';
 import {flushRootMutations} from './LexicalMutations';
 import {
+  $isEphemeral,
+  $markEphemeral,
   LexicalNode,
   type LexicalPrivateDOM,
   type NodeKey,
@@ -446,6 +448,12 @@ export function removeFromParent(node: LexicalNode): void {
 // the cloning heuristic. Instead use node.getWritable().
 export function internalMarkNodeAsDirty(node: LexicalNode): void {
   errorOnInfiniteTransforms();
+  invariant(
+    !$isEphemeral(node),
+    'internalMarkNodeAsDirty: Ephemeral nodes must not be marked as dirty (key %s type %s)',
+    node.__key,
+    node.__type,
+  );
   const latest = node.getLatest();
   const parent = latest.__parent;
   const editorState = getActiveEditorState();
@@ -1949,6 +1957,24 @@ export function $cloneWithProperties<T extends LexicalNode>(latestNode: T): T {
     );
   }
   return mutableNode;
+}
+
+/**
+ * Returns a clone with {@link $cloneWithProperties} and then "detaches"
+ * it from the state by overriding its getLatest and getWritable to always
+ * return this. This node can not be added to an EditorState or become the
+ * parent, child, or sibling of another node. It is primarily only useful
+ * for making in-place temporary modifications to a TextNode when
+ * serializing a partial slice.
+ *
+ * Does not mutate the EditorState.
+ * @param latestNode - The node to be cloned.
+ * @returns The clone of the node.
+ */
+export function $cloneWithPropertiesEphemeral<T extends LexicalNode>(
+  latestNode: T,
+): T {
+  return $markEphemeral($cloneWithProperties(latestNode));
 }
 
 export function setNodeIndentFromDOM(

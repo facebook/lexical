@@ -342,8 +342,9 @@ export function $syncPropertiesFromYjs(
         writableNode = lexicalNode.getWritable();
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      writableNode[property as keyof typeof writableNode] = nextValue as any;
+      writableNode[property as string & keyof typeof writableNode] =
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        nextValue as any;
     }
   }
 }

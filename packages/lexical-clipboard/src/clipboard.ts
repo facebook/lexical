@@ -11,7 +11,6 @@ import {$addNodeStyle, $sliceSelectedTextNodeContent} from '@lexical/selection';
 import {objectKlassEquals} from '@lexical/utils';
 import {
   $caretFromPoint,
-  $cloneWithProperties,
   $createTabNode,
   $getCaretRange,
   $getChildCaret,
@@ -321,10 +320,7 @@ function $appendNodesToJSON(
   let target = currentNode;
 
   if (selection !== null && $isTextNode(target)) {
-    target = $sliceSelectedTextNodeContent(
-      selection,
-      $cloneWithProperties(target),
-    );
+    target = $sliceSelectedTextNodeContent(selection, target, 'clone');
   }
   const children = $isElementNode(target) ? target.getChildren() : [];
 

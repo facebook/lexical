@@ -89,10 +89,11 @@ declare export function $forEachSelectedTextNode(
   fn: (textNode: TextNode) => void,
 ): void;
 
-declare export function $sliceSelectedTextNodeContent(
+declare export function $sliceSelectedTextNodeContent<T: TextNode>(
   selection: BaseSelection,
-  textNode: TextNode,
-): LexicalNode;
+  textNode: T,
+  mutates?: 'self' | 'clone',
+): T;
 
 declare export function $copyBlockFormatIndent(
   srcNode: ElementNode,

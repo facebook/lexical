@@ -19,16 +19,20 @@ import type {JSX} from 'react';
 
 import {mergeRegister} from '@lexical/utils';
 import {
+  CLEAR_DIFF_VERSIONS_COMMAND__EXPERIMENTAL,
   CONNECTED_COMMAND,
   createBindingV2__EXPERIMENTAL,
   createUndoManager,
+  DIFF_VERSIONS_COMMAND__EXPERIMENTAL,
   initLocalState,
+  renderSnapshot__EXPERIMENTAL,
   setLocalStateFocus,
   syncCursorPositions,
   syncLexicalUpdateToYjs,
   syncLexicalUpdateToYjsV2__EXPERIMENTAL,
   syncYjsChangesToLexical,
   syncYjsChangesToLexicalV2__EXPERIMENTAL,
+  syncYjsStateToLexicalV2__EXPERIMENTAL,
   TOGGLE_CONNECT_COMMAND,
 } from '@lexical/yjs';
 import {
@@ -46,9 +50,9 @@ import {
   UNDO_COMMAND,
 } from 'lexical';
 import * as React from 'react';
-import {useCallback, useEffect, useMemo, useRef} from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
-import {Doc, Transaction, UndoManager, YEvent} from 'yjs';
+import {Doc, Snapshot, Transaction, UndoManager, YEvent} from 'yjs';
 
 import {InitialEditorStateType} from '../LexicalComposer';
 
@@ -217,9 +221,46 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
     }
   }, [binding, editor, shouldBootstrap]);
 
+  const [diffSnapshots, setDiffSnapshots] = useState<{
+    prevSnapshot?: Snapshot;
+    snapshot?: Snapshot;
+  } | null>();
+
+  useEffect(() => {
+    mergeRegister(
+      editor.registerCommand(
+        CLEAR_DIFF_VERSIONS_COMMAND__EXPERIMENTAL,
+        () => {
+          setDiffSnapshots(null);
+          // Ensure that any state already in Yjs is loaded into the editor (eg: after clearing diff view).
+          syncYjsStateToLexicalV2__EXPERIMENTAL(binding, provider);
+          return true;
+        },
+        COMMAND_PRIORITY_EDITOR,
+      ),
+      editor.registerCommand(
+        DIFF_VERSIONS_COMMAND__EXPERIMENTAL,
+        ({prevSnapshot, snapshot}) => {
+          setDiffSnapshots({prevSnapshot, snapshot});
+          return true;
+        },
+        COMMAND_PRIORITY_EDITOR,
+      ),
+    );
+  }, [editor, binding, provider]);
+
   useEffect(() => {
     const {root} = binding;
     const {awareness} = provider;
+
+    if (diffSnapshots) {
+      renderSnapshot__EXPERIMENTAL(
+        binding,
+        diffSnapshots.snapshot,
+        diffSnapshots.prevSnapshot,
+      );
+      return;
+    }
 
     const onYjsTreeChanges: OnYjsTreeChanges = (events, transaction) => {
       const origin = transaction.origin;
@@ -269,7 +310,7 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
       removeListener();
       awareness.off('update', onAwarenessUpdate);
     };
-  }, [binding, provider, editor]);
+  }, [binding, provider, editor, diffSnapshots]);
 
   useProvider(
     editor,

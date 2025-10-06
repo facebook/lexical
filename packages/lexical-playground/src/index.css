@@ -1273,6 +1273,10 @@ i.page-break,
   background-image: url(images/icons/plug-fill.svg);
 }
 
+.actions i.versions {
+  background-image: url(images/icons/clock-history.svg);
+}
+
 .table-cell-action-button-container {
   position: absolute;
   z-index: 3;

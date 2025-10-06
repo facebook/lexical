@@ -88,7 +88,7 @@ export const InitialStateExtension = defineExtension({
   // These are automatically added by createEditor, we add them here so they are
   // visible during extensionRep.init so extensions can see all known types before the
   // editor is created.
-  // (excluding FragmentNode because it isn't really public API
+  // (excluding ArtificialNode__DO_NOT_USE because it isn't really public API
   // and shouldn't change anything)
   nodes: [RootNode, TextNode, LineBreakNode, TabNode, ParagraphNode],
 });

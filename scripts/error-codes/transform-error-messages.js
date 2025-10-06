@@ -55,11 +55,13 @@ const invariantExpressions = [
     dev: 'formatDevErrorMessage',
     name: 'invariant',
     prod: 'formatProdErrorMessage',
+    prodNoCode: 'formatDevErrorMessage',
   },
   {
     dev: 'formatDevErrorMessage',
     name: 'devInvariant',
     prod: 'formatProdWarningMessage',
+    prodNoCode: 'formatDevWarningMessage',
   },
 ];
 
@@ -79,7 +81,7 @@ module.exports = function (babel, opts) {
         const node = path.node;
         const {extractCodes, noMinify} =
           /** @type Partial<TransformErrorMessagesOptions> */ (file.opts);
-        for (const {name, dev, prod} of invariantExpressions) {
+        for (const {name, dev, prod, prodNoCode} of invariantExpressions) {
           if (path.get('callee').isIdentifier({name})) {
             // Turns this code:
             //
@@ -137,9 +139,11 @@ module.exports = function (babel, opts) {
               //   if (!condition) {
               //     formatDevErrorMessage(`A ${adj} message that contains ${noun}`);
               //   }
+              const moduleName =
+                prodErrorId === undefined && !noMinify ? prodNoCode : dev;
               const formatDevErrorMessageIdentifier =
-                helperModuleImports.addDefault(path, `shared/${dev}`, {
-                  nameHint: dev,
+                helperModuleImports.addDefault(path, `shared/${moduleName}`, {
+                  nameHint: moduleName,
                 });
               callExpression = t.callExpression(
                 formatDevErrorMessageIdentifier,

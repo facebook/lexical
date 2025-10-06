@@ -69,6 +69,7 @@ const wwwMappings = {
       `shikijs-themes-${name}`,
     ]),
   ),
+  'happy-dom': 'jsdom',
   'prismjs/components/prism-c': 'prism-c',
   'prismjs/components/prism-clike': 'prism-clike',
   'prismjs/components/prism-core': 'prismjs',
@@ -86,6 +87,7 @@ const wwwMappings = {
   'prismjs/components/prism-swift': 'prism-swift',
   'prismjs/components/prism-typescript': 'prism-typescript',
   'react-dom': 'ReactDOM',
+  'react-dom/client': 'ReactDOM',
   // The react entrypoint in fb includes the jsx runtime
   'react/jsx-runtime': 'react',
 };
@@ -114,10 +116,13 @@ const monorepoExternalsSet = new Set(Object.entries(wwwMappings).flat());
 const thirdPartyExternals = [
   'react',
   'react-dom',
-  'react-error-boundary',
-  '@floating-ui/react',
   'yjs',
   'y-websocket',
+  'happy-dom',
+  'jsdom',
+  ...(isWWW
+    ? [':server-only-hack:.*']
+    : ['react-error-boundary', '@floating-ui/react']),
 ];
 const thirdPartyExternalsRegExp = new RegExp(
   `^(${thirdPartyExternals.join('|')})(\\/|$)`,
@@ -201,6 +206,12 @@ async function build(
         warning.message.endsWith(`Can't resolve original location of error.`)
       ) {
         // Ignored
+      } else if (
+        isWWW &&
+        warning.code === 'MODULE_LEVEL_DIRECTIVE' &&
+        /"use client"/.test(warning.message)
+      ) {
+        // Ignored in WWW
       } else if (typeof warning.code === 'string') {
         console.error(warning);
         // This is a warning coming from Rollup itself.
@@ -217,13 +228,36 @@ async function build(
       }
     },
     plugins: [
+      ...(isWWW
+        ? [
+            /* in www we do not use export conditions so we build a virtual fork module instead */
+            {
+              name: 'server-only-hack',
+              renderChunk(source) {
+                // Ugly hack to effectively undo the hoist of require('jsdom')
+                const m = source.match(
+                  /require\(':server-only-hack:([^']+)'\);/,
+                );
+                if (m) {
+                  return (
+                    source.slice(0, m.index) +
+                    `typeof window === 'undefined' ? require('${m[1]}') : undefined;` +
+                    source.slice(m.index + m[0].length)
+                  );
+                }
+              },
+            },
+          ]
+        : []),
       alias({
         entries: [
           {find: 'shared', replacement: path.resolve('packages/shared/src')},
+          {find: 'buffer', replacement: 'buffer'},
         ],
       }),
       nodeResolve({
         extensions,
+        preferBuiltins: false,
       }),
       babel({
         babelHelpers: 'bundled',
@@ -242,6 +276,7 @@ async function build(
           [
             '@babel/preset-typescript',
             {
+              allowDeclareFields: true,
               tsconfig: path.resolve('./tsconfig.build.json'),
             },
           ],
@@ -439,13 +474,22 @@ async function buildAll() {
   const formats = isWWW ? ['cjs'] : ['cjs', 'esm'];
   for (const pkg of packagesManager.getPublicPackages()) {
     const {name, sourcePath, outputPath, packageName, modules} =
-      pkg.getPackageBuildDefinition();
+      pkg.getPackageBuildDefinition({consolidateBrowserSource: isWWW});
     const {version} = pkg.packageJson;
     for (const module of modules) {
       for (const format of formats) {
         const {sourceFileName, outputFileName} = module;
-        const inputFile = path.resolve(sourcePath, sourceFileName);
-
+        let inputFile = path.resolve(sourcePath, sourceFileName);
+        if (
+          isWWW &&
+          module.browserSourceFileName &&
+          module.sourceFileName.endsWith('.ts')
+        ) {
+          const wwwCjs = inputFile.replace(/\.ts$/, '.www.cjs');
+          if (fs.existsSync(wwwCjs)) {
+            inputFile = wwwCjs;
+          }
+        }
         await build(
           `${name}${module.name ? '-' + module.name : ''}`,
           inputFile,

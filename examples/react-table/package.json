@@ -1,7 +1,7 @@
 {
   "name": "@lexical/react-table-example",
   "private": true,
-  "version": "0.35.0",
+  "version": "0.36.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,8 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@lexical/react": "0.35.0",
-    "lexical": "0.35.0",
+    "@lexical/react": "0.36.1",
+    "lexical": "0.36.1",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },
@@ -21,6 +21,6 @@
     "@vitejs/plugin-react": "^5.0.2",
     "cross-env": "^7.0.3",
     "typescript": "^5.9.2",
-    "vite": "^5.2.11"
+    "vite": "^7.1.4"
   }
 }

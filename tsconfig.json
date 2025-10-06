@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2019",
-    "lib": ["esnext", "dom", "dom.iterable"],
+    "lib": ["esnext", "dom", "dom.iterable", "ESNext.Disposable"],
     "module": "esnext",
     "jsx": "react-jsx",
     "moduleResolution": "bundler",
@@ -9,7 +9,7 @@
     "noEmit": true,
     "strict": true,
     "baseUrl": ".",
-    "typeRoots": ["node_modules/@types", "libdefs/globals"],
+    "typeRoots": ["node_modules/@types"],
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "allowJs": true,
@@ -25,9 +25,11 @@
       "@lexical/eslint-plugin": [
         "./packages/lexical-eslint-plugin/src/index.ts"
       ],
+      "@lexical/extension": ["./packages/lexical-extension/src/index.ts"],
       "@lexical/file": ["./packages/lexical-file/src/index.ts"],
       "@lexical/hashtag": ["./packages/lexical-hashtag/src/index.ts"],
       "@lexical/headless": ["./packages/lexical-headless/src/index.ts"],
+      "@lexical/headless/dom": ["./packages/lexical-headless/src/dom.ts"],
       "@lexical/history": ["./packages/lexical-history/src/index.ts"],
       "@lexical/html": ["./packages/lexical-html/src/index.ts"],
       "@lexical/link": ["./packages/lexical-link/src/index.ts"],
@@ -37,6 +39,9 @@
       "@lexical/offset": ["./packages/lexical-offset/src/index.ts"],
       "@lexical/overflow": ["./packages/lexical-overflow/src/index.ts"],
       "@lexical/plain-text": ["./packages/lexical-plain-text/src/index.ts"],
+      "@lexical/react/ExtensionComponent": [
+        "./packages/lexical-react/src/ExtensionComponent.tsx"
+      ],
       "@lexical/react/LexicalAutoEmbedPlugin": [
         "./packages/lexical-react/src/LexicalAutoEmbedPlugin.tsx"
       ],
@@ -90,6 +95,9 @@
       ],
       "@lexical/react/LexicalErrorBoundary": [
         "./packages/lexical-react/src/LexicalErrorBoundary.tsx"
+      ],
+      "@lexical/react/LexicalExtensionComposer": [
+        "./packages/lexical-react/src/LexicalExtensionComposer.tsx"
       ],
       "@lexical/react/LexicalHashtagPlugin": [
         "./packages/lexical-react/src/LexicalHashtagPlugin.ts"
@@ -151,6 +159,21 @@
       "@lexical/react/LexicalTypeaheadMenuPlugin": [
         "./packages/lexical-react/src/LexicalTypeaheadMenuPlugin.tsx"
       ],
+      "@lexical/react/ReactExtension": [
+        "./packages/lexical-react/src/ReactExtension.tsx"
+      ],
+      "@lexical/react/ReactPluginHostExtension": [
+        "./packages/lexical-react/src/ReactPluginHostExtension.tsx"
+      ],
+      "@lexical/react/ReactProviderExtension": [
+        "./packages/lexical-react/src/ReactProviderExtension.tsx"
+      ],
+      "@lexical/react/TreeViewExtension": [
+        "./packages/lexical-react/src/TreeViewExtension.tsx"
+      ],
+      "@lexical/react/useExtensionComponent": [
+        "./packages/lexical-react/src/useExtensionComponent.tsx"
+      ],
       "@lexical/react/useLexicalEditable": [
         "./packages/lexical-react/src/useLexicalEditable.ts"
       ],
@@ -169,6 +192,7 @@
       "@lexical/rich-text": ["./packages/lexical-rich-text/src/index.ts"],
       "@lexical/selection": ["./packages/lexical-selection/src/index.ts"],
       "@lexical/table": ["./packages/lexical-table/src/index.ts"],
+      "@lexical/tailwind": ["./packages/lexical-tailwind/src/index.ts"],
       "@lexical/text": ["./packages/lexical-text/src/index.ts"],
       "@lexical/utils": ["./packages/lexical-utils/src/index.ts"],
       "@lexical/yjs": ["./packages/lexical-yjs/src/index.ts"],
@@ -178,6 +202,9 @@
       "shared/environment": ["./packages/shared/src/environment.ts"],
       "shared/formatDevErrorMessage": [
         "./packages/shared/src/formatDevErrorMessage.ts"
+      ],
+      "shared/formatDevWarningMessage": [
+        "./packages/shared/src/formatDevWarningMessage.ts"
       ],
       "shared/formatProdErrorMessage": [
         "./packages/shared/src/formatProdErrorMessage.ts"
@@ -206,6 +233,7 @@
       "@lexical/devtools-core/src": ["./packages/lexical-devtools-core/src"],
       "@lexical/dragon/src": ["./packages/lexical-dragon/src"],
       "@lexical/eslint-plugin/src": ["./packages/lexical-eslint-plugin/src"],
+      "@lexical/extension/src": ["./packages/lexical-extension/src"],
       "@lexical/file/src": ["./packages/lexical-file/src"],
       "@lexical/hashtag/src": ["./packages/lexical-hashtag/src"],
       "@lexical/headless/src": ["./packages/lexical-headless/src"],
@@ -228,6 +256,7 @@
         "./packages/lexical-selection/src/__tests__/utils/index.ts"
       ],
       "@lexical/table/src": ["./packages/lexical-table/src"],
+      "@lexical/tailwind/src": ["./packages/lexical-tailwind/src"],
       "@lexical/text/src": ["./packages/lexical-text/src"],
       "@lexical/utils/src": ["./packages/lexical-utils/src"],
       "@lexical/yjs/src": ["./packages/lexical-yjs/src"],

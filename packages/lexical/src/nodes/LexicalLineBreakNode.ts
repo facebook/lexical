@@ -26,7 +26,7 @@ export type SerializedLineBreakNode = SerializedLexicalNode;
 /** @noInheritDoc */
 export class LineBreakNode extends LexicalNode {
   /** @internal */
-  ['constructor']!: KlassConstructor<typeof LineBreakNode>;
+  declare ['constructor']: KlassConstructor<typeof LineBreakNode>;
   static getType(): string {
     return 'linebreak';
   }

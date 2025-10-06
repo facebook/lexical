@@ -255,6 +255,9 @@ const config = {
   },
 
   markdown: {
+    hooks: {
+      onBrokenMarkdownLinks: 'throw',
+    },
     mermaid: true,
     parseFrontMatter,
     preprocessor: ({fileContent}) =>
@@ -267,7 +270,6 @@ const config = {
   onBrokenAnchors: 'throw',
   // These are false positives when linking from API docs
   onBrokenLinks: 'ignore',
-  onBrokenMarkdownLinks: 'throw',
   organizationName: 'facebook',
   plugins: [
     process.env.FB_INTERNAL

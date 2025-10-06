@@ -16,6 +16,7 @@ const npmToWwwName = require('../www/npmToWwwName');
  * @typedef {Object} ModuleBuildDefinition
  * @property {string} outputFileName
  * @property {string} sourceFileName
+ * @property {undefined | string} [browserSourceFileName]
  */
 
 /**
@@ -31,12 +32,13 @@ const npmToWwwName = require('../www/npmToWwwName');
  * @typedef {Object} ModuleExportEntry
  * @property {string} name
  * @property {string} sourceFileName
+ * @property {undefined | string} [browserSourceFileName]
  */
 
 /**
  * @typedef {Record<'types' | 'development' | 'production' | 'node' | 'default', string>} ImportCondition
  * @typedef {Record<'types' | 'development' | 'production' | 'default', string>} RequireCondition
- * @typedef {readonly [string, { import: ImportCondition; require: RequireCondition }]} NpmModuleExportEntry
+ * @typedef {readonly [string, { browser?: RequireCondition; import: ImportCondition; require: RequireCondition }]} NpmModuleExportEntry
  */
 
 /**
@@ -143,9 +145,12 @@ class PackageMetadata {
     const npmName = this.getNpmName();
     return this.getExportedNpmModuleNames().map((name) => {
       const outputFileName = npmToWwwName(name);
-      const sourceBaseName = name === npmName ? 'index' : outputFileName;
-      const sourceCandidates = ['.ts', '.tsx'].map(
-        (ext) => sourceBaseName + ext,
+      const sourceBaseNames =
+        name === npmName
+          ? ['index']
+          : [name.replace(/^.*\//, ''), outputFileName];
+      const sourceCandidates = sourceBaseNames.flatMap((sourceBaseName) =>
+        ['.ts', '.tsx'].map((ext) => sourceBaseName + ext),
       );
       const sourceFileName = sourceCandidates.find((fn) =>
         fs.existsSync(this.resolve('src', fn)),
@@ -157,7 +162,10 @@ class PackageMetadata {
           }?`,
         );
       }
-      return {name, sourceFileName};
+      const browserSourceFileName = [
+        sourceFileName.replace(/(\.tsx?)$/, '.browser$1'),
+      ].find((fn) => fs.existsSync(this.resolve('src', fn)));
+      return {browserSourceFileName, name, sourceFileName};
     });
   }
 
@@ -185,20 +193,56 @@ class PackageMetadata {
   /**
    * @returns {PackageBuildDefinition}
    */
-  getPackageBuildDefinition() {
+  getPackageBuildDefinition(opts = {consolidateBrowserSource: false}) {
     const npmName = this.getNpmName();
     return {
-      modules: this.getExportedNpmModuleEntries().map(
-        ({name, sourceFileName}) => ({
-          outputFileName: npmToWwwName(name),
-          sourceFileName,
-        }),
+      modules: this.getExportedNpmModuleEntries().flatMap(
+        ({name, sourceFileName, browserSourceFileName}) => [
+          {
+            browserSourceFileName,
+            outputFileName: npmToWwwName(name),
+            sourceFileName,
+          },
+          ...(browserSourceFileName && !opts.consolidateBrowserSource
+            ? [
+                {
+                  outputFileName: `${npmToWwwName(name)}.browser`,
+                  sourceFileName: browserSourceFileName,
+                },
+              ]
+            : []),
+        ],
       ),
       name: readableName(npmToWwwName(npmName)),
       outputPath: this.resolve('dist/'),
       packageName: this.getDirectoryName(),
       sourcePath: this.resolve('src/'),
     };
+  }
+
+  /**
+   * Replace the dependency map at `packageJson[key]` in-place with
+   * deps sorted lexically by key. If deps was empty, it will be removed.
+   * If `overrideDeps` is specified, it will replace the existing dependencies
+   * at that key with that record.
+   *
+   * @param {'dependencies'|'peerDependencies'|'devDependencies'|'lexicalUnreleasedDependencies'} key
+   * @param {Record<string, string>} [overrideDeps]
+   * @returns {this}
+   */
+  sortDependencies(key, overrideDeps) {
+    const deps = overrideDeps ?? this.packageJson[key];
+    if (deps) {
+      const entries = Object.entries(deps);
+      if (entries.length === 0) {
+        delete this.packageJson[key];
+      } else {
+        this.packageJson[key] = Object.fromEntries(
+          entries.sort(([a], [b]) => a.localeCompare(b)),
+        );
+      }
+    }
+    return this;
   }
 
   /**

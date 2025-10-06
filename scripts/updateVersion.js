@@ -12,6 +12,7 @@ const fs = require('fs-extra');
 const glob = require('glob');
 const {packagesManager} = require('./shared/packagesManager');
 const {PackageMetadata} = require('./shared/PackageMetadata');
+const npmToWwwName = require('./www/npmToWwwName');
 
 const monorepoPackageJson = require('./shared/readMonorepoPackageJson')();
 // get version from monorepo package.json version
@@ -20,6 +21,10 @@ const version = monorepoPackageJson.version;
 const publicNpmNames = new Set(
   packagesManager.getPublicPackages().map((pkg) => pkg.getNpmName()),
 );
+
+/**
+ * @typedef {Record<'import'|'require', Record<string,string>>} ImportRequireExports
+ */
 
 /**
  * - Set the version to the monorepo ./package.json version
@@ -90,7 +95,8 @@ function withEnvironments(fileName) {
  * Build an export map for a particular entry point in the package.json
  *
  * @param {string} basename the name of the entry point module without an extension (e.g. 'index')
- * @returns {Record<'import'|'require', Record<string,string>>} The export map for this file
+ * @param {string} [typesBasename]
+ * @returns {ImportRequireExports} The export map for this file
  */
 function exportEntry(basename, typesBasename = `${basename}.d.ts`) {
   // Bundlers such as webpack require 'types' to be first and 'default' to be
@@ -112,6 +118,28 @@ function exportEntry(basename, typesBasename = `${basename}.d.ts`) {
     },
     /* eslint-enable sort-keys-fix/sort-keys-fix */
   };
+}
+
+/**
+ * Add a browser condition for a particular entry point in the package.json
+ *
+ * @param {string} basename the name of the entry point module without an extension (e.g. 'index')
+ * @param {string} [typesBasename]
+ * @param {ImportRequireExports} exports
+ * @returns {Record<'browser'|'import'|'require', Record<string,string>>} The export map for this file
+ */
+function withBrowser(exports) {
+  const browser = Object.fromEntries(
+    Object.entries(exports.import).flatMap(([k, v]) => {
+      if (k === 'node') {
+        return [];
+      } else if (k === 'types') {
+        return [[k, v]];
+      }
+      return [[k, v.replace(/((?:\.dev|\.prod)?\.m?js)$/, '.browser$1')]];
+    }),
+  );
+  return {browser, ...exports};
 }
 
 /**
@@ -140,34 +168,29 @@ function updatePublicPackage(pkg) {
     for (const fn of fs.readdirSync(pkg.resolve('src'))) {
       if (/^[^.]+\.tsx?$/.test(fn)) {
         const basename = fn.replace(/\.tsx?$/, '');
-        const entry = exportEntry(basename);
+        const hasBrowser = fs.existsSync(
+          pkg.resolve('src', fn.replace(/(\.tsx?)$/, '.browser$1')),
+        );
+        const packageName = pkg.getNpmName();
+        const isIndex = basename === 'index';
+        const entryNameInput = isIndex
+          ? packageName
+          : `${packageName}/${basename}`;
+        const entryName = npmToWwwName(entryNameInput);
+        let entry = exportEntry(entryName, `${basename}.d.ts`);
+        if (hasBrowser) {
+          entry = withBrowser(entry);
+        }
         // support for import "@lexical/react/LexicalComposer"
-        exports[`./${basename}`] = entry;
-        // support for import "@lexical/react/LexicalComposer.js"
-        // @mdxeditor/editor uses this at least as of 2.13.1
-        exports[`./${basename}.js`] = entry;
+        exports[isIndex ? '.' : `./${basename}`] = entry;
+        if (!hasBrowser && !isIndex) {
+          // support for import "@lexical/react/LexicalComposer.js"
+          // @mdxeditor/editor uses this at least as of v3.46.0
+          exports[`./${basename}.js`] = entry;
+        }
       }
     }
     packageJson.exports = exports;
-  }
-}
-
-/**
- * Replace the dependency map at packageJson[key] in-place with
- * deps sorted lexically by key. If deps was empty, it will be removed.
- *
- * @param {Record<string, any>} packageJson
- * @param {'dependencies'|'peerDependencies'} key
- * @param {Record<string, string>} deps
- */
-function sortDependencies(packageJson, key, deps) {
-  const entries = Object.entries(deps);
-  if (entries.length === 0) {
-    delete packageJson[key];
-  } else {
-    packageJson[key] = Object.fromEntries(
-      entries.sort((a, b) => a[0].localeCompare(b[0])),
-    );
   }
 }
 
@@ -200,9 +223,10 @@ function updateDependencies(pkg) {
       dependencies[peerDep] = version;
     }
   });
-  sortDependencies(packageJson, 'dependencies', dependencies);
-  sortDependencies(packageJson, 'devDependencies', devDependencies);
-  sortDependencies(packageJson, 'peerDependencies', peerDependencies);
+  pkg
+    .sortDependencies('dependencies', dependencies)
+    .sortDependencies('devDependencies', devDependencies)
+    .sortDependencies('peerDependencies', peerDependencies);
 }
 
 updateVersion();

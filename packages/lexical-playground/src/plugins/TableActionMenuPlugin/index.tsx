@@ -849,7 +849,7 @@ function TableCellActionMenuContainer({
     let timeoutId: ReturnType<typeof setTimeout> | undefined = undefined;
     const callback = () => {
       timeoutId = undefined;
-      editor.getEditorState().read($moveMenu);
+      editor.getEditorState().read($moveMenu, {editor});
     };
     const delayedCallback = () => {
       if (timeoutId === undefined) {

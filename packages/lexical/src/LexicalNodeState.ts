@@ -903,7 +903,7 @@ function computeSize(
  */
 function undefinedIfEmpty<T extends object>(obj: undefined | T): undefined | T {
   if (obj) {
-    for (const key in obj) {
+    for (const _key in obj) {
       return obj;
     }
   }

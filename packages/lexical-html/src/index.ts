@@ -12,6 +12,7 @@ import type {
   DOMChildConversion,
   DOMConversion,
   DOMConversionFn,
+  DOMConversionOutput,
   DOMExportOutput,
   EditorDOMConfig,
   ElementDOMSlot,
@@ -469,7 +470,7 @@ export interface DOMConfigMatch<T extends LexicalNode> {
   ) => boolean;
 }
 
-function compileOverrides(
+function compileDOMConfigOverrides(
   {overrides}: DOMConfig,
   defaults: EditorDOMConfig,
 ): EditorDOMConfig {
@@ -580,16 +581,35 @@ function compileOverrides(
 
 /** true if this is a whole document export operation ($generateDOMFromRoot) */
 export const DOMContextRoot = createState('@lexical/html/root', {
-  parse: (v) => !!v,
+  parse: Boolean,
 });
 
 /** true if this is an export operation ($generateHtmlFromNodes) */
 export const DOMContextExport = createState('@lexical/html/export', {
-  parse: (v) => !!v,
+  parse: Boolean,
 });
 /** true if the DOM is for or from the clipboard */
 export const DOMContextClipboard = createState('@lexical/html/clipboard', {
-  parse: (v) => !!v,
+  parse: Boolean,
+});
+
+const DOMContextForChildMap = createState('@lexical/htm/forChildMap', {
+  parse: (): null | Map<string, DOMChildConversion> => null,
+});
+const DOMContextParentLexicalNode = createState(
+  '@lexical/html/parentLexicalNode',
+  {
+    parse: (): null | LexicalNode => null,
+  },
+);
+const DOMContextHasBlockAncestorLexicalNode = createState(
+  '@lexical/html/hasBlockAncestorLexicalNode',
+  {
+    parse: Boolean,
+  },
+);
+const DOMContextArtificialNodes = createState('@lexical/html/ArtificialNodes', {
+  parse: (): null | ArtificialNode__DO_NOT_USE[] => null,
 });
 
 export type StateConfigPair<K extends string, V> = readonly [
@@ -647,6 +667,8 @@ export function $getDOMContextValue<K extends string, V>(
       : getExtensionDependencyFromEditor(editor, DOMExtension).output.defaults;
   return getContextValueFromRecord(context, cfg);
 }
+
+export const $getDOMImportContextValue = $getDOMContextValue;
 
 export function $withDOMContext(
   cfg: Iterable<AnyStateConfigPair>,
@@ -770,7 +792,7 @@ export const DOMExtension = defineExtension<
     ]),
   },
   init(editorConfig, config) {
-    editorConfig.dom = compileOverrides(config, {
+    editorConfig.dom = compileDOMConfigOverrides(config, {
       ...DEFAULT_EDITOR_DOM_CONFIG,
       ...editorConfig.dom,
     });
@@ -785,4 +807,366 @@ export const DOMExtension = defineExtension<
     return merged;
   },
   name: DOMExtensionName,
+});
+
+/** @internal @experimental */
+export interface DOMImportOutput {
+  node: null | LexicalNode | LexicalNode[];
+  getChildren?: () => Iterable<ChildNode>;
+  childContext?: AnyStateConfigPair[];
+  $appendChild?: (node: LexicalNode, dom: ChildNode) => void;
+  $finalize?: (
+    node: null | LexicalNode | LexicalNode[],
+  ) => null | LexicalNode | LexicalNode[];
+}
+
+export type DOMImportFunction<T extends Node> = (
+  node: T,
+  $next: () => null | undefined | DOMImportOutput,
+  editor: LexicalEditor,
+) => null | undefined | DOMImportOutput;
+
+export interface NodeNameMap extends HTMLElementTagNameMap {
+  '*': Node;
+  '#text': Text;
+  '#document': Document;
+  '#comment': Comment;
+  '#cdata-section': CDATASection;
+}
+
+export type NodeNameToType<T extends string> = T extends keyof NodeNameMap
+  ? NodeNameMap[T]
+  : Node;
+
+/**
+ * A convenience function for type inference when constructing DOM overrides for
+ * use with {@link DOMImportExtension}.
+ *
+ * @__NO_SIDE_EFFECTS__
+ */
+export function importOverride<T extends string>(
+  tag: T,
+  $import: DOMImportFunction<NodeNameToType<T>>,
+  options: Omit<DOMImportConfigMatch, 'tag' | '$import'> = {},
+): DOMImportConfigMatch {
+  return {
+    ...options,
+    $import: $import as DOMImportFunction<Node>,
+    tag: tag.toLowerCase(),
+  };
+}
+
+/** @internal @experimental */
+export interface DOMImportConfig {
+  overrides: DOMImportConfigMatch[];
+}
+export interface DOMImportConfigMatch {
+  tag: '*' | '#text' | '#cdata-section' | '#comment' | (string & {});
+  selector?: string;
+  priority?: 0 | 1 | 2 | 3 | 4;
+  $import: (
+    node: Node,
+    $next: () => null | undefined | DOMImportOutput,
+    editor: LexicalEditor,
+  ) => null | undefined | DOMImportOutput;
+}
+
+export type DOMImportNodeFunction = DOMImportExtensionOutput['$importNode'];
+export interface DOMImportExtensionOutput {
+  $importNode: (node: Node) => null | undefined | DOMImportOutput;
+  $importNodes: (node: Node) => LexicalNode[];
+}
+
+const DOMImportExtensionName = '@lexical/html/DOMImport';
+
+class MatchesImport {
+  tag: string;
+  matches: DOMImportConfigMatch[] = [];
+  constructor(tag: string) {
+    this.tag = tag;
+  }
+  push(match: DOMImportConfigMatch) {
+    invariant(
+      match.tag === this.tag,
+      'MatchesImport requires all to use the same tag',
+    );
+    this.matches.push(match);
+  }
+  compile(
+    $nextImport: (node: Node) => null | undefined | DOMImportOutput,
+    editor: LexicalEditor,
+  ): DOMImportExtensionOutput['$importNode'] {
+    const {matches, tag} = this;
+    return (node) => {
+      const el = isHTMLElement(node) ? node : null;
+      const $importAt = (start: number): null | undefined | DOMImportOutput => {
+        let rval: undefined | null | DOMImportOutput;
+        for (let i = start; !rval && i >= 0; i--) {
+          const match = matches[i];
+          if (match) {
+            const {$import, selector} = matches[i];
+            if (!selector || (el && el.matches(selector))) {
+              rval = $import(node, $importAt.bind(null, i - 1), editor);
+            }
+          }
+        }
+        return rval;
+      };
+      return (
+        ((tag === node.nodeName.toLowerCase() || (el && tag === '*')) &&
+          $importAt(matches.length - 1)) ||
+        $nextImport(node)
+      );
+    };
+  }
+}
+
+class TagImport {
+  tags: Map<string, MatchesImport> = new Map();
+  push(match: DOMImportConfigMatch) {
+    invariant(match.tag !== '*', 'TagImport can not handle wildcards');
+    const matches = this.tags.get(match.tag) || new MatchesImport(match.tag);
+    this.tags.set(match.tag, matches);
+    matches.push(match);
+  }
+  compile(
+    $nextImport: (node: Node) => null | undefined | DOMImportOutput,
+    editor: LexicalEditor,
+  ): DOMImportExtensionOutput['$importNode'] {
+    const compiled = new Map<string, DOMImportNodeFunction>();
+    for (const [tag, matches] of this.tags.entries()) {
+      compiled.set(tag, matches.compile($nextImport, editor));
+    }
+    return compiled.size === 0
+      ? $nextImport
+      : (node: Node) => {
+          const $import = compiled.get(node.nodeName.toLowerCase());
+          return $import ? $import(node) : $nextImport(node);
+        };
+  }
+}
+
+const EMPTY_ARRAY = [] as const;
+const emptyGetChildren = () => EMPTY_ARRAY;
+
+function compileLegacyImportDOM(
+  editor: LexicalEditor,
+): DOMImportExtensionOutput['$importNode'] {
+  return (node) => {
+    if (IGNORE_TAGS.has(node.nodeName)) {
+      return {getChildren: emptyGetChildren, node: null};
+    }
+    // If the DOM node doesn't have a transformer, we don't know what
+    // to do with it but we still need to process any childNodes.
+    let childLexicalNodes: LexicalNode[] = [];
+    let postTransform: DOMConversionOutput['after'];
+    let hasBlockAncestorLexicalNodeForChildren = false;
+    const output: DOMImportOutput & {node: LexicalNode[]} = {
+      $appendChild: (childNode) => childLexicalNodes.push(childNode),
+      $finalize: (nodeOrNodes) => {
+        const finalLexicalNodes = Array.isArray(nodeOrNodes)
+          ? nodeOrNodes
+          : nodeOrNodes
+            ? [nodeOrNodes]
+            : [];
+        const finalLexicalNode: null | LexicalNode =
+          finalLexicalNodes[finalLexicalNodes.length - 1] || null;
+        if (postTransform) {
+          childLexicalNodes = postTransform(childLexicalNodes);
+        }
+        if (isBlockDomNode(node)) {
+          if (!hasBlockAncestorLexicalNodeForChildren) {
+            childLexicalNodes = wrapContinuousInlines(
+              node,
+              childLexicalNodes,
+              $createParagraphNode,
+            );
+          } else {
+            const allArtificialNodes = $getDOMImportContextValue(
+              DOMContextArtificialNodes,
+            );
+            invariant(
+              allArtificialNodes !== null,
+              'Missing DOMContextArtificialNodes',
+            );
+            childLexicalNodes = wrapContinuousInlines(
+              node,
+              childLexicalNodes,
+              () => {
+                const artificialNode = new ArtificialNode__DO_NOT_USE();
+                allArtificialNodes.push(artificialNode);
+                return artificialNode;
+              },
+            );
+          }
+        }
+
+        if (finalLexicalNode == null) {
+          if (childLexicalNodes.length > 0) {
+            // If it hasn't been converted to a LexicalNode, we hoist its children
+            // up to the same level as it.
+            finalLexicalNodes.push(...childLexicalNodes);
+          } else {
+            if (isBlockDomNode(node) && isDomNodeBetweenTwoInlineNodes(node)) {
+              // Empty block dom node that hasnt been converted, we replace it with a linebreak if its between inline nodes
+              finalLexicalNodes.push($createLineBreakNode());
+            }
+          }
+        } else {
+          if ($isElementNode(finalLexicalNode)) {
+            // If the current node is a ElementNode after conversion,
+            // we can append all the children to it.
+            finalLexicalNode.splice(
+              finalLexicalNode.getChildrenSize(),
+              0,
+              childLexicalNodes,
+            );
+          }
+        }
+
+        return finalLexicalNodes;
+      },
+      node: [],
+    };
+    let currentLexicalNode = null;
+    const transformFunction = getConversionFunction(node, editor);
+    const transformOutput = transformFunction
+      ? transformFunction(node as HTMLElement)
+      : null;
+    const addChildContext = (cfg: AnyStateConfigPair) => {
+      output.childContext = output.childContext || [];
+      output.childContext.push(cfg);
+    };
+
+    if (transformOutput !== null) {
+      const forChildMap = $getDOMImportContextValue(
+        DOMContextForChildMap,
+        editor,
+      );
+      const parentLexicalNode = $getDOMImportContextValue(
+        DOMContextParentLexicalNode,
+        editor,
+      );
+      postTransform = transformOutput.after;
+      const transformNodes = transformOutput.node;
+      currentLexicalNode = Array.isArray(transformNodes)
+        ? transformNodes[transformNodes.length - 1]
+        : transformNodes;
+
+      if (currentLexicalNode !== null && forChildMap) {
+        for (const forChildFunction of forChildMap.values()) {
+          currentLexicalNode = forChildFunction(
+            currentLexicalNode,
+            parentLexicalNode,
+          );
+
+          if (!currentLexicalNode) {
+            break;
+          }
+        }
+
+        if (currentLexicalNode) {
+          output.node.push(
+            ...(Array.isArray(transformNodes)
+              ? transformNodes
+              : [currentLexicalNode]),
+          );
+        }
+      }
+
+      if (transformOutput.forChild != null) {
+        addChildContext(
+          DOMContextForChildMap.pair(
+            new Map(forChildMap || []).set(
+              node.nodeName,
+              transformOutput.forChild,
+            ),
+          ),
+        );
+      }
+    }
+
+    const hasBlockAncestorLexicalNode = $getDOMImportContextValue(
+      DOMContextHasBlockAncestorLexicalNode,
+    );
+    hasBlockAncestorLexicalNodeForChildren =
+      currentLexicalNode != null && $isRootOrShadowRoot(currentLexicalNode)
+        ? false
+        : (currentLexicalNode != null &&
+            $isBlockElementNode(currentLexicalNode)) ||
+          $getDOMImportContextValue(DOMContextHasBlockAncestorLexicalNode);
+    if (
+      hasBlockAncestorLexicalNode !== hasBlockAncestorLexicalNodeForChildren
+    ) {
+      addChildContext(
+        DOMContextHasBlockAncestorLexicalNode.pair(
+          hasBlockAncestorLexicalNodeForChildren,
+        ),
+      );
+    }
+    return output;
+  };
+}
+
+function importOverrideSort(
+  a: DOMImportConfigMatch,
+  b: DOMImportConfigMatch,
+): number {
+  // Lowest priority and non-wildcards first
+  return (
+    (a.priority || 0) - (b.priority || 0) ||
+    Number(a.tag === '*') - Number(b.tag === '*')
+  );
+}
+
+function compileImportOverrides(
+  editor: LexicalEditor,
+  config: DOMImportConfig,
+): DOMImportExtensionOutput {
+  function $importNodes(): LexicalNode[] {
+    return [];
+  }
+  let $importNode = compileLegacyImportDOM(editor);
+  let importer: TagImport | MatchesImport = new TagImport();
+  const sortedOverrides = config.overrides.sort(importOverrideSort);
+  for (const match of sortedOverrides) {
+    if (match.tag === '*') {
+      if (!(importer instanceof MatchesImport && importer.tag === match.tag)) {
+        $importNode = importer.compile($importNode, editor);
+        importer = new MatchesImport(match.tag);
+      }
+    } else if (importer instanceof MatchesImport) {
+      $importNode = importer.compile($importNode, editor);
+      importer = new TagImport();
+    }
+    importer.push(match);
+  }
+  $importNode = importer.compile($importNode, editor);
+
+  return {
+    $importNode,
+    $importNodes,
+  };
+}
+
+/** @internal @experimental */
+export const DOMImportExtension = defineExtension<
+  DOMImportConfig,
+  typeof DOMImportExtensionName,
+  DOMImportExtensionOutput,
+  null
+>({
+  build: compileImportOverrides,
+  config: {overrides: []},
+  dependencies: [DOMExtension],
+  mergeConfig(config, partial) {
+    const merged = shallowMergeConfig(config, partial);
+    for (const k of ['overrides'] as const) {
+      if (partial[k]) {
+        (merged[k] as unknown[]) = [...merged[k], ...partial[k]];
+      }
+    }
+    return merged;
+  },
+  name: DOMImportExtensionName,
 });

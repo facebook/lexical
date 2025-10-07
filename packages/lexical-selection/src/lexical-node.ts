@@ -7,6 +7,7 @@
  */
 import {
   $caretRangeFromSelection,
+  $cloneWithPropertiesEphemeral,
   $createTextNode,
   $getCharacterOffsets,
   $getNodeByKey,
@@ -40,12 +41,14 @@ import {
  * it to be generated into the new TextNode.
  * @param selection - The selection containing the node whose TextNode is to be edited.
  * @param textNode - The TextNode to be edited.
- * @returns The updated TextNode.
+ * @param mutates - 'clone' to return a clone before mutating, 'self' to update in-place
+ * @returns The updated TextNode or clone.
  */
-export function $sliceSelectedTextNodeContent(
+export function $sliceSelectedTextNodeContent<T extends TextNode>(
   selection: BaseSelection,
-  textNode: TextNode,
-): TextNode {
+  textNode: T,
+  mutates: 'clone' | 'self' = 'self',
+): T {
   const anchorAndFocus = selection.getStartEndPoints();
   if (
     textNode.isSelected(selection) &&
@@ -83,7 +86,13 @@ export function $sliceSelectedTextNodeContent(
       // NOTE: This mutates __text directly because the primary use case is to
       // modify a $cloneWithProperties node that should never be added
       // to the EditorState so we must not call getWritable via setTextContent
-      textNode.__text = textNode.__text.slice(startOffset, endOffset);
+      const text = textNode.__text.slice(startOffset, endOffset);
+      if (text !== textNode.__text) {
+        if (mutates === 'clone') {
+          textNode = $cloneWithPropertiesEphemeral(textNode);
+        }
+        textNode.__text = text;
+      }
     }
   }
   return textNode;

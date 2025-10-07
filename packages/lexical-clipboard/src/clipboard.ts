@@ -15,7 +15,6 @@ import {$addNodeStyle, $sliceSelectedTextNodeContent} from '@lexical/selection';
 import {objectKlassEquals} from '@lexical/utils';
 import {
   $caretFromPoint,
-  $cloneWithProperties,
   $createTabNode,
   $getCaretRange,
   $getChildCaret,
@@ -38,7 +37,6 @@ import {
   safeCast,
   SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
   SerializedElementNode,
-  SerializedTextNode,
   shallowMergeConfig,
 } from 'lexical';
 import invariant from 'shared/invariant';
@@ -329,31 +327,16 @@ function $appendNodesToJSON(
   let target = currentNode;
 
   if (selection !== null && $isTextNode(target)) {
-    target = $sliceSelectedTextNodeContent(
-      selection,
-      $cloneWithProperties(target),
-    );
+    target = $sliceSelectedTextNodeContent(selection, target, 'clone');
   }
   const children = $isElementNode(target) ? target.getChildren() : [];
 
   const serializedNode = exportNodeToJSON(target);
-
-  // TODO: TextNode calls getTextContent() (NOT node.__text) within its exportJSON method
-  // which uses getLatest() to get the text from the original node with the same key.
-  // This is a deeper issue with the word "clone" here, it's still a reference to the
-  // same node as far as the LexicalEditor is concerned since it shares a key.
-  // We need a way to create a clone of a Node in memory with its own key, but
-  // until then this hack will work for the selected text extract use case.
-  if ($isTextNode(target)) {
-    const text = target.__text;
+  if ($isTextNode(target) && target.getTextContentSize() === 0) {
     // If an uncollapsed selection ends or starts at the end of a line of specialized,
     // TextNodes, such as code tokens, we will get a 'blank' TextNode here, i.e., one
     // with text of length 0. We don't want this, it makes a confusing mess. Reset!
-    if (text.length > 0) {
-      (serializedNode as SerializedTextNode).text = text;
-    } else {
-      shouldInclude = false;
-    }
+    shouldInclude = false;
   }
 
   for (let i = 0; i < children.length; i++) {

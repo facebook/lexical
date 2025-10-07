@@ -42,6 +42,8 @@ import {
   ContentString,
   Doc as YDoc,
   ID,
+  isDeleted,
+  Item,
   Snapshot,
   Text as YText,
   typeListToArraySnapshot,
@@ -63,17 +65,8 @@ type TextAttributes = {
   p?: Record<string, unknown>; // properties
   [key: `s_${string}`]: unknown; // state
   i?: number; // used to prevent Yjs from merging text nodes itself
-  // ychange?: Record<string, unknown>;
+  ychange?: Record<string, unknown>;
 };
-
-/*
-const isVisible = (item: Item, snapshot?: Snapshot): boolean =>
-  snapshot === undefined
-    ? !item.deleted
-    : snapshot.sv.has(item.id.client) &&
-      snapshot.sv.get(item.id.client)! > item.id.clock &&
-      !isDeleted(snapshot.ds, item.id);
-*/
 
 // https://docs.yjs.dev/api/shared-types/y.xmlelement
 // "Define a top-level type; Note that the nodeName is always "undefined""
@@ -156,21 +149,19 @@ export const $createOrUpdateNodeFromYElement = (
     $spliceChildren(node, children);
   }
 
-  const attrs = el.getAttributes(snapshot);
-  // TODO(collab-v2): support for ychange
-  /*
-  if (snapshot !== undefined) {
-    if (!isVisible(el._item!, snapshot)) {
-      attrs.ychange = computeYChange
+  // TODO(collab-v2): typing for XmlElement generic
+  const attrs = el.getAttributes(snapshot) as Record<string, unknown>;
+  if (!isRootElement(el) && snapshot !== undefined) {
+    if (!isItemVisible(el._item!, snapshot)) {
+      attrs[stateKeyToAttrKey('ychange')] = computeYChange
         ? computeYChange('removed', el._item!.id)
         : {type: 'removed'};
-    } else if (!isVisible(el._item!, prevSnapshot)) {
-      attrs.ychange = computeYChange
+    } else if (!isItemVisible(el._item!, prevSnapshot)) {
+      attrs[stateKeyToAttrKey('ychange')] = computeYChange
         ? computeYChange('added', el._item!.id)
         : {type: 'added'};
     }
   }
-  */
   const properties: Record<string, unknown> = {
     ...getDefaultNodeProperties(node, binding),
   };
@@ -268,6 +259,13 @@ const $spliceChildren = (node: ElementNode, nextChildren: LexicalNode[]) => {
     );
   }
 };
+
+const isItemVisible = (item: Item, snapshot?: Snapshot): boolean =>
+  snapshot === undefined
+    ? !item.deleted
+    : snapshot.sv.has(item.id.client) &&
+      snapshot.sv.get(item.id.client)! > item.id.clock &&
+      !isDeleted(snapshot.ds, item.id);
 
 const $createOrUpdateTextNodesFromYText = (
   text: XmlText,
@@ -631,10 +629,14 @@ const toDelta = (
 ): Array<{insert: string; attributes: TextAttributes}> => {
   return ytext
     .toDelta(snapshot, prevSnapshot, computeYChange)
-    .map((delta: {insert: string; attributes?: TextAttributes}) => ({
-      ...delta,
-      attributes: delta.attributes ?? {},
-    }));
+    .map((delta: {insert: string; attributes?: TextAttributes}) => {
+      const attributes = delta.attributes ?? {};
+      if ('ychange' in attributes) {
+        attributes[stateKeyToAttrKey('ychange')] = attributes.ychange;
+        delete attributes.ychange;
+      }
+      return {...delta, attributes};
+    });
 };
 
 const propertiesToAttributes = (node: LexicalNode, meta: BindingV2) => {
@@ -651,7 +653,7 @@ const propertiesToAttributes = (node: LexicalNode, meta: BindingV2) => {
 };
 
 const STATE_KEY_PREFIX = 's_';
-const stateKeyToAttrKey = (key: string) => STATE_KEY_PREFIX + key;
+const stateKeyToAttrKey = (key: string): `s_${string}` => `s_${key}`;
 const attrKeyToStateKey = (key: string) => {
   if (!key.startsWith(STATE_KEY_PREFIX)) {
     throw new Error(`Invalid state key: ${key}`);

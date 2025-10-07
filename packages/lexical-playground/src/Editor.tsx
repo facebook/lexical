@@ -80,8 +80,11 @@ import TableOfContentsPlugin from './plugins/TableOfContentsPlugin';
 import ToolbarPlugin from './plugins/ToolbarPlugin';
 import TreeViewPlugin from './plugins/TreeViewPlugin';
 import TwitterPlugin from './plugins/TwitterPlugin';
+import {VersionsPlugin} from './plugins/VersionsPlugin';
 import YouTubePlugin from './plugins/YouTubePlugin';
 import ContentEditable from './ui/ContentEditable';
+
+const COLLAB_DOC_ID = 'main';
 
 const skipCollaborationInit =
   // @ts-expect-error
@@ -185,17 +188,25 @@ export default function Editor(): JSX.Element {
         <SpeechToTextPlugin />
         <AutoLinkPlugin />
         <DateTimePlugin />
-        <CommentPlugin
-          providerFactory={isCollab ? createWebsocketProvider : undefined}
-        />
+        {!(isCollab && useCollabV2) && (
+          <CommentPlugin
+            providerFactory={isCollab ? createWebsocketProvider : undefined}
+          />
+        )}
         {isRichText ? (
           <>
             {isCollab ? (
               useCollabV2 ? (
-                <CollabV2 id="main" shouldBootstrap={!skipCollaborationInit} />
+                <>
+                  <CollabV2
+                    id={COLLAB_DOC_ID}
+                    shouldBootstrap={!skipCollaborationInit}
+                  />
+                  <VersionsPlugin id={COLLAB_DOC_ID} />
+                </>
               ) : (
                 <CollaborationPlugin
-                  id="main"
+                  id={COLLAB_DOC_ID}
                   providerFactory={createWebsocketProvider}
                   shouldBootstrap={!skipCollaborationInit}
                 />
@@ -288,8 +299,8 @@ export default function Editor(): JSX.Element {
         {shouldUseLexicalContextMenu && <ContextMenuPlugin />}
         {shouldAllowHighlightingWithBrackets && <SpecialTextPlugin />}
         <ActionsPlugin
-          isRichText={isRichText}
           shouldPreserveNewLinesInMarkdown={shouldPreserveNewLinesInMarkdown}
+          useCollabV2={useCollabV2}
         />
       </div>
       {showTreeView && <TreeViewPlugin />}
@@ -304,7 +315,8 @@ function CollabV2({
   id: string;
   shouldBootstrap: boolean;
 }) {
-  const doc = useMemo(() => new Doc(), []);
+  // VersionsPlugin needs GC disabled.
+  const doc = useMemo(() => new Doc({gc: false}), []);
 
   const provider = useMemo(() => {
     return createWebsocketProviderWithDoc('main', doc);

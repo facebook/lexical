@@ -30,7 +30,6 @@ import {
 import {$sliceSelectedTextNodeContent} from '@lexical/selection';
 import {isBlockDomNode, isHTMLElement} from '@lexical/utils';
 import {
-  $cloneWithProperties,
   $createLineBreakNode,
   $createParagraphNode,
   $getEditor,
@@ -120,16 +119,8 @@ function $appendNodesToHTML(
   );
   let target = currentNode;
 
-  if (selection && $isTextNode(currentNode)) {
-    for (const pt of selection.getStartEndPoints() || []) {
-      if (pt.key === currentNode.getKey()) {
-        target = $sliceSelectedTextNodeContent(
-          selection,
-          $cloneWithProperties(currentNode),
-        );
-        break;
-      }
-    }
+  if (selection !== null && $isTextNode(currentNode)) {
+    target = $sliceSelectedTextNodeContent(selection, currentNode, 'clone');
   }
   const exportProps = domConfig.$exportDOM(target, editor);
   const {element, after, append, $getChildNodes} = exportProps;

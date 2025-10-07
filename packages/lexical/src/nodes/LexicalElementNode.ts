@@ -35,7 +35,7 @@ import {
   ELEMENT_TYPE_TO_FORMAT,
   TEXT_TYPE_TO_FORMAT,
 } from '../LexicalConstants';
-import {LexicalNode} from '../LexicalNode';
+import {$isEphemeral, LexicalNode} from '../LexicalNode';
 import {
   $getSelection,
   $internalMakeRangeSelection,
@@ -686,7 +686,12 @@ export class ElementNode extends LexicalNode {
     deleteCount: number,
     nodesToInsert: Array<LexicalNode>,
   ): this {
-    const nodesToInsertLength = nodesToInsert.length;
+    invariant(
+      !$isEphemeral(this),
+      'ElementNode.splice: Ephemeral nodes can not mutate their children (key %s type %s)',
+      this.__key,
+      this.__type,
+    );
     const oldSize = this.getChildrenSize();
     const writableSelf = this.getWritable();
     invariant(
@@ -701,7 +706,7 @@ export class ElementNode extends LexicalNode {
     const nodesToRemoveKeys = [];
     const nodeAfterRange = this.getChildAtIndex(start + deleteCount);
     let nodeBeforeRange = null;
-    let newSize = oldSize - deleteCount + nodesToInsertLength;
+    let newSize = oldSize - deleteCount + nodesToInsert.length;
 
     if (start !== 0) {
       if (start === oldSize) {
@@ -733,8 +738,7 @@ export class ElementNode extends LexicalNode {
     }
 
     let prevNode = nodeBeforeRange;
-    for (let i = 0; i < nodesToInsertLength; i++) {
-      const nodeToInsert = nodesToInsert[i];
+    for (const nodeToInsert of nodesToInsert) {
       if (prevNode !== null && nodeToInsert.is(prevNode)) {
         nodeBeforeRange = prevNode = prevNode.getPreviousSibling();
       }

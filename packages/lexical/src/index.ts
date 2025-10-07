@@ -241,6 +241,7 @@ export {
   $addUpdateTag,
   $applyNodeReplacement,
   $cloneWithProperties,
+  $cloneWithPropertiesEphemeral,
   $copyNode,
   $create,
   $findMatchingParent,

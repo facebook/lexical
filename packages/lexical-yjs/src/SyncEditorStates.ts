@@ -404,6 +404,32 @@ export function syncYjsChangesToLexicalV2__EXPERIMENTAL(
   );
 }
 
+export function syncYjsStateToLexicalV2__EXPERIMENTAL(
+  binding: BindingV2,
+  provider: Provider,
+) {
+  binding.mapping.clear();
+  const editor = binding.editor;
+  editor.update(
+    () => {
+      $getRoot().clear();
+      $createOrUpdateNodeFromYElement(binding.root, binding, null, true);
+      $addUpdateTag(COLLABORATION_TAG);
+    },
+    {
+      // Need any text node normalization to be synchronously updated back to Yjs, otherwise the
+      // binding.mapping will get out of sync.
+      discrete: true,
+      onUpdate: () => {
+        syncCursorPositions(binding, provider);
+        editor.update(() => $ensureEditorNotEmpty());
+      },
+      skipTransforms: true,
+      tag: COLLABORATION_TAG,
+    },
+  );
+}
+
 export function syncLexicalUpdateToYjsV2__EXPERIMENTAL(
   binding: BindingV2,
   provider: Provider,

@@ -633,7 +633,7 @@ export function syncCursorPositions(
     const awarenessState = awarenessStates[i];
     const [clientID, awareness] = awarenessState;
 
-    if (clientID !== localClientID) {
+    if (clientID !== 0 && clientID !== localClientID) {
       visitedClientIDs.add(clientID);
       const {name, color, focusing} = awareness;
       let selection = null;

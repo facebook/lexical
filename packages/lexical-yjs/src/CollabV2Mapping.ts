@@ -108,4 +108,10 @@ export class CollabV2Mapping {
   has(sharedType: SharedType): boolean {
     return this._sharedTypeToNodeKeys.has(sharedType);
   }
+
+  clear(): void {
+    this._nodeMap.clear();
+    this._sharedTypeToNodeKeys.clear();
+    this._nodeKeyToSharedType.clear();
+  }
 }

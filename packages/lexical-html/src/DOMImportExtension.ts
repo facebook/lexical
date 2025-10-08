@@ -129,7 +129,7 @@ function compileLegacyImportDOM(
     let childLexicalNodes: LexicalNode[] = [];
     let postTransform: DOMConversionOutput['after'];
     let hasBlockAncestorLexicalNodeForChildren = false;
-    const output: DOMImportOutput & {node: LexicalNode[]} = {
+    const output: DOMImportOutput = {
       $appendChild: (childNode) => childLexicalNodes.push(childNode),
       $finalize: (nodeOrNodes) => {
         const finalLexicalNodes = Array.isArray(nodeOrNodes)
@@ -194,9 +194,9 @@ function compileLegacyImportDOM(
 
         return finalLexicalNodes;
       },
-      node: [],
+      node: null,
     };
-    let currentLexicalNode = null;
+    let currentLexicalNode: null | LexicalNode = null;
     const transformFunction = getConversionFunction(node, editor);
     const transformOutput = transformFunction
       ? transformFunction(node as HTMLElement)
@@ -216,31 +216,30 @@ function compileLegacyImportDOM(
         editor,
       );
       postTransform = transformOutput.after;
-      const transformNodes = transformOutput.node;
-      currentLexicalNode = Array.isArray(transformNodes)
-        ? transformNodes[transformNodes.length - 1]
-        : transformNodes;
+      let transformNodeArray = Array.isArray(transformOutput.node)
+        ? transformOutput.node
+        : transformOutput.node
+          ? [transformOutput.node]
+          : [];
 
-      if (currentLexicalNode !== null && forChildMap) {
-        for (const forChildFunction of forChildMap.values()) {
-          currentLexicalNode = forChildFunction(
-            currentLexicalNode,
-            parentLexicalNode,
-          );
+      if (transformNodeArray.length > 0 && forChildMap) {
+        const transformWithForChild = (initial: LexicalNode) => {
+          let current: null | undefined | LexicalNode = initial;
+          for (const forChildFunction of forChildMap.values()) {
+            current = forChildFunction(current, parentLexicalNode);
 
-          if (!currentLexicalNode) {
-            break;
+            if (!current) {
+              return [];
+            }
           }
-        }
-
-        if (currentLexicalNode) {
-          output.node.push(
-            ...(Array.isArray(transformNodes)
-              ? transformNodes
-              : [currentLexicalNode]),
-          );
-        }
+          return [current];
+        };
+        transformNodeArray = transformNodeArray.flatMap(transformWithForChild);
       }
+      currentLexicalNode =
+        transformNodeArray[transformNodeArray.length - 1] || null;
+      output.node =
+        transformNodeArray.length > 1 ? transformNodeArray : currentLexicalNode;
 
       if (transformOutput.forChild != null) {
         addChildContext(
@@ -262,7 +261,7 @@ function compileLegacyImportDOM(
         ? false
         : (currentLexicalNode != null &&
             $isBlockElementNode(currentLexicalNode)) ||
-          $getDOMImportContextValue(DOMContextHasBlockAncestorLexicalNode);
+          hasBlockAncestorLexicalNode;
     if (
       hasBlockAncestorLexicalNode !== hasBlockAncestorLexicalNodeForChildren
     ) {
@@ -271,6 +270,9 @@ function compileLegacyImportDOM(
           hasBlockAncestorLexicalNodeForChildren,
         ),
       );
+    }
+    if ($isElementNode(currentLexicalNode)) {
+      addChildContext(DOMContextParentLexicalNode.pair(currentLexicalNode));
     }
     return output;
   };
@@ -332,7 +334,7 @@ export function $compileImportOverrides(
           },
         ],
       ];
-      for (let entry = stack.pop(); entry; ) {
+      for (let entry = stack.pop(); entry; entry = stack.pop()) {
         const [node, ctx, fn, $parentAppendChild] = entry;
         const output = $withDOMImportContext(ctx)(() => fn(node));
         const children =
@@ -354,6 +356,21 @@ export function $compileImportOverrides(
             $appendChild = (childNode, _dom) => outputNode.push(childNode);
           } else if ($isElementNode(outputNode)) {
             $appendChild = (childNode, _dom) => outputNode.append(childNode);
+          }
+          const {$finalize} = output;
+          if ($finalize) {
+            stack.push([
+              node,
+              ctx,
+              () => ({node: $finalize(outputNode)}),
+              $parentAppendChild,
+            ]);
+          } else if (outputNode) {
+            for (const addNode of Array.isArray(outputNode)
+              ? outputNode
+              : [outputNode]) {
+              $parentAppendChild(addNode, node as ChildNode);
+            }
           }
         }
         for (let i = children.length - 1; i >= 0; i--) {

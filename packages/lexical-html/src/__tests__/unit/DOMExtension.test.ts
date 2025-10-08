@@ -7,7 +7,13 @@
  */
 
 import {buildEditorFromExtensions} from '@lexical/extension';
-import {$generateDOMFromRoot} from '@lexical/html';
+import {
+  $generateDOMFromRoot,
+  $getDOMContextValue,
+  DOMContextRoot,
+  DOMExtension,
+  domOverride,
+} from '@lexical/html';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -23,10 +29,6 @@ import {
 } from 'lexical';
 import {expectHtmlToBeEqual, html} from 'lexical/src/__tests__/utils';
 import {describe, expect, test} from 'vitest';
-
-import {$getDOMContextValue, DOMContextRoot} from '../../ContextRecord';
-import {DOMExtension} from '../../DOMExtension';
-import {domOverride} from '../../domOverride';
 
 const idState = createState('id', {
   parse: (v) => (typeof v === 'string' ? v : null),

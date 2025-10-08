@@ -27,7 +27,11 @@ import {
   configExtension,
   defineExtension,
 } from 'lexical';
-import {expectHtmlToBeEqual, html} from 'lexical/src/__tests__/utils';
+import {
+  expectHtmlToBeEqual,
+  html,
+  // prettifyHtml,
+} from 'lexical/src/__tests__/utils';
 import {assert, describe, test} from 'vitest';
 
 interface ImportTestCase {
@@ -166,7 +170,6 @@ describe('DOMImportExtension', () => {
       `,
       name: 'google doc checklist',
       pastedHTML: html`
-        <meta charset="utf-8" />
         <meta charset="utf-8" />
         <b
           id="docs-internal-guid-1980f960-7fff-f4df-4ba3-26c6e1508542"
@@ -439,7 +442,13 @@ describe('DOMImportExtension', () => {
       );
       const rootElement = document.createElement('div');
       builtEditor.setRootElement(rootElement);
+      // try {
       expectHtmlToBeEqual(rootElement.innerHTML, expectedHTML);
+      // } catch (err) {
+      //   console.log(prettifyHtml(rootElement.innerHTML));
+      //   console.log(prettifyHtml(expectedHTML));
+      //   throw err;
+      // }
     },
   );
 });

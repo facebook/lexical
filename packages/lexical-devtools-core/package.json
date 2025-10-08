@@ -8,16 +8,16 @@
     "utils"
   ],
   "license": "MIT",
-  "version": "0.36.2",
+  "version": "0.36.3-nightly.20251008.0",
   "main": "LexicalDevtoolsCore.js",
   "types": "index.d.ts",
   "dependencies": {
-    "@lexical/html": "0.36.2",
-    "@lexical/link": "0.36.2",
-    "@lexical/mark": "0.36.2",
-    "@lexical/table": "0.36.2",
-    "@lexical/utils": "0.36.2",
-    "lexical": "0.36.2"
+    "@lexical/html": "0.36.3-nightly.20251008.0",
+    "@lexical/link": "0.36.3-nightly.20251008.0",
+    "@lexical/mark": "0.36.3-nightly.20251008.0",
+    "@lexical/table": "0.36.3-nightly.20251008.0",
+    "@lexical/utils": "0.36.3-nightly.20251008.0",
+    "lexical": "0.36.3-nightly.20251008.0"
   },
   "peerDependencies": {
     "react": ">=17.x",

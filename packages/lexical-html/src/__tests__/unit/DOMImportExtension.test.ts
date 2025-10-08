@@ -12,6 +12,7 @@ import {
   getExtensionDependencyFromEditor,
 } from '@lexical/extension';
 import {
+  $generateNodesFromDOM,
   DOMConfig,
   DOMExtension,
   DOMImportConfig,
@@ -21,18 +22,20 @@ import {CheckListExtension, ListExtension} from '@lexical/list';
 import {
   $getEditor,
   $getSelection,
+  $isElementNode,
   $isRangeSelection,
   $selectAll,
   $setSelection,
   configExtension,
   defineExtension,
+  LexicalNode,
 } from 'lexical';
 import {
   expectHtmlToBeEqual,
   html,
   // prettifyHtml,
 } from 'lexical/src/__tests__/utils';
-import {assert, describe, test} from 'vitest';
+import {assert, describe, expect, test} from 'vitest';
 
 interface ImportTestCase {
   name: string;
@@ -298,6 +301,25 @@ describe('DOMImportExtension', () => {
               $getEditor(),
               DOMImportExtension,
             ).output.$importNodes(doc);
+
+            // Compare legacy $generateNodesFromDOM to $generateNodes
+            const legacyNodes = $generateNodesFromDOM(editor, doc);
+            expect(nodes.length).toEqual(legacyNodes.length);
+            function compareJSON(a: LexicalNode, b: LexicalNode) {
+              expect(a.exportJSON()).toEqual(b.exportJSON());
+              if ($isElementNode(a) && $isElementNode(b)) {
+                const as = a.getChildren();
+                const bs = b.getChildren();
+                expect(as.length).toEqual(bs.length);
+                for (let i = 0; i < as.length; i++) {
+                  compareJSON(as[i], bs[i]);
+                }
+              }
+            }
+            for (let i = 0; i < nodes.length; i++) {
+              compareJSON(nodes[i], legacyNodes[i]);
+            }
+
             $insertGeneratedNodes(editor, nodes, $selectAll());
             if (plainTextInsert) {
               const newSelection = $getSelection();

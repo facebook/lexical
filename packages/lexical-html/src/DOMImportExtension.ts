@@ -22,6 +22,8 @@ import {
   ArtificialNode__DO_NOT_USE,
   defineExtension,
   DOMConversionOutput,
+  type ElementFormatType,
+  type ElementNode,
   isBlockDomNode,
   isDOMDocumentNode,
   isHTMLElement,
@@ -45,7 +47,33 @@ import {
 import {DOMExtension} from './DOMExtension';
 import {getConversionFunction} from './getConversionFunction';
 import {isDomNodeBetweenTwoInlineNodes} from './isDomNodeBetweenTwoInlineNodes';
-import {$wrapContinuousInlines} from './wrapContinuousInlines';
+
+function $wrapContinuousInlinesInPlace(
+  domNode: Node,
+  nodes: LexicalNode[],
+  $createWrapperFn: () => ElementNode,
+): void {
+  const textAlign = (domNode as HTMLElement).style
+    .textAlign as ElementFormatType;
+  // wrap contiguous inline child nodes in para
+  let j = 0;
+  for (let i = 0, wrapper: undefined | ElementNode; i < nodes.length; i++) {
+    const node = nodes[i];
+    if ($isBlockElementNode(node)) {
+      if (textAlign && !node.getFormat()) {
+        node.setFormat(textAlign);
+      }
+      wrapper = undefined;
+      nodes[j++] = node;
+    } else {
+      if (!wrapper) {
+        nodes[j++] = wrapper = $createWrapperFn().setFormat(textAlign);
+      }
+      wrapper.append(node);
+    }
+  }
+  nodes.length = j;
+}
 
 class MatchesImport {
   tag: string;
@@ -144,7 +172,7 @@ function compileLegacyImportDOM(
         }
         if (isBlockDomNode(node)) {
           if (!hasBlockAncestorLexicalNodeForChildren) {
-            childLexicalNodes = $wrapContinuousInlines(
+            $wrapContinuousInlinesInPlace(
               node,
               childLexicalNodes,
               $createParagraphNode,
@@ -157,15 +185,11 @@ function compileLegacyImportDOM(
               allArtificialNodes !== null,
               'Missing DOMContextArtificialNodes',
             );
-            childLexicalNodes = $wrapContinuousInlines(
-              node,
-              childLexicalNodes,
-              () => {
-                const artificialNode = new ArtificialNode__DO_NOT_USE();
-                allArtificialNodes.push(artificialNode);
-                return artificialNode;
-              },
-            );
+            $wrapContinuousInlinesInPlace(node, childLexicalNodes, () => {
+              const artificialNode = new ArtificialNode__DO_NOT_USE();
+              allArtificialNodes.push(artificialNode);
+              return artificialNode;
+            });
           }
         }
 
@@ -184,11 +208,7 @@ function compileLegacyImportDOM(
           if ($isElementNode(finalLexicalNode)) {
             // If the current node is a ElementNode after conversion,
             // we can append all the children to it.
-            finalLexicalNode.splice(
-              finalLexicalNode.getChildrenSize(),
-              0,
-              childLexicalNodes,
-            );
+            finalLexicalNode.append(...childLexicalNodes);
           }
         }
 

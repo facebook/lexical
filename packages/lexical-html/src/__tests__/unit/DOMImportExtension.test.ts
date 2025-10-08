@@ -64,6 +64,16 @@ describe('DOMImportExtension', () => {
         </p>
       `,
     ),
+    importCase(
+      'reduced ul>li>p',
+      `<ul><li><p>first</p></li><li><p>second</p></li></ul>`,
+      html`
+        <ul dir="auto">
+          <li value="1"><span data-lexical-text="true">first</span></li>
+          <li value="2"><span data-lexical-text="true">second</span></li>
+        </ul>
+      `,
+    ),
     {
       expectedHTML: html`
         <p dir="auto"><span data-lexical-text="true">Hello!</span></p>

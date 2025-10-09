@@ -8,7 +8,7 @@
     "html"
   ],
   "license": "MIT",
-  "version": "0.36.2",
+  "version": "0.36.3-nightly.20251009.0",
   "main": "LexicalHtml.js",
   "types": "index.d.ts",
   "repository": {
@@ -17,9 +17,9 @@
     "directory": "packages/lexical-html"
   },
   "dependencies": {
-    "@lexical/selection": "0.36.2",
-    "@lexical/utils": "0.36.2",
-    "lexical": "0.36.2"
+    "@lexical/selection": "0.36.3-nightly.20251009.0",
+    "@lexical/utils": "0.36.3-nightly.20251009.0",
+    "lexical": "0.36.3-nightly.20251009.0"
   },
   "module": "LexicalHtml.mjs",
   "sideEffects": false,

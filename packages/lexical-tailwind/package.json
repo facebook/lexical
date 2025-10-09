@@ -7,7 +7,7 @@
     "theme",
     "css"
   ],
-  "version": "0.36.2",
+  "version": "0.36.3-nightly.20251009.0",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -21,8 +21,8 @@
   },
   "homepage": "https://github.com/facebook/lexical#readme",
   "dependencies": {
-    "@lexical/extension": "0.36.2",
-    "lexical": "0.36.2"
+    "@lexical/extension": "0.36.3-nightly.20251009.0",
+    "lexical": "0.36.3-nightly.20251009.0"
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.1.13",

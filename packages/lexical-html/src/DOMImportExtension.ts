@@ -9,7 +9,6 @@ import type {
   DOMImportConfig,
   DOMImportConfigMatch,
   DOMImportExtensionOutput,
-  DOMImportNodeFunction,
   DOMImportOutput,
 } from './types';
 
@@ -129,7 +128,7 @@ class TagImport {
     $nextImport: (node: Node) => null | undefined | DOMImportOutput,
     editor: LexicalEditor,
   ): DOMImportExtensionOutput['$importNode'] {
-    const compiled = new Map<string, DOMImportNodeFunction>();
+    const compiled = new Map<string, DOMImportExtensionOutput['$importNode']>();
     for (const [tag, matches] of this.tags.entries()) {
       compiled.set(tag, matches.compile($nextImport, editor));
     }
@@ -299,7 +298,7 @@ export function $compileImportOverrides(
   editor: LexicalEditor,
   config: DOMImportConfig,
 ): DOMImportExtensionOutput {
-  let $importNode = compileLegacyImportDOM(editor);
+  let $importNode = config.compileLegacyImportNode(editor);
   let importer: TagImport | MatchesImport = new TagImport();
   const sortedOverrides = config.overrides.sort(importOverrideSort);
   for (const match of sortedOverrides) {
@@ -326,7 +325,7 @@ export function $compileImportOverrides(
       const stack: [
         Node,
         AnyStateConfigPair[],
-        DOMImportNodeFunction,
+        DOMImportExtensionOutput['$importNode'],
         NonNullable<DOMImportOutput['$appendChild']>,
       ][] = [
         [
@@ -445,7 +444,7 @@ export const DOMImportExtension = defineExtension<
   null
 >({
   build: $compileImportOverrides,
-  config: {overrides: []},
+  config: {compileLegacyImportNode: compileLegacyImportDOM, overrides: []},
   dependencies: [DOMExtension],
   mergeConfig(config, partial) {
     const merged = shallowMergeConfig(config, partial);

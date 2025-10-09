@@ -114,6 +114,9 @@ export interface DOMConfigMatch<T extends LexicalNode> {
 /** @internal @experimental */
 export interface DOMImportConfig {
   overrides: DOMImportConfigMatch[];
+  compileLegacyImportNode: (
+    editor: LexicalEditor,
+  ) => DOMImportExtensionOutput['$importNode'];
 }
 export interface DOMImportConfigMatch {
   tag: '*' | '#text' | '#cdata-section' | '#comment' | (string & {});
@@ -126,7 +129,6 @@ export interface DOMImportConfigMatch {
   ) => null | undefined | DOMImportOutput;
 }
 
-export type DOMImportNodeFunction = DOMImportExtensionOutput['$importNode'];
 export interface DOMImportExtensionOutput {
   $importNode: (node: Node) => null | undefined | DOMImportOutput;
   $importNodes: (root: ParentNode | Document) => LexicalNode[];

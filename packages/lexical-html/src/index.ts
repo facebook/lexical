@@ -37,7 +37,6 @@ export type {
   DOMImportConfigMatch,
   DOMImportExtensionOutput,
   DOMImportFunction,
-  DOMImportNodeFunction,
   DOMImportOutput,
   NodeMatch,
   NodeNameMap,

@@ -10,22 +10,16 @@ import {$createLineBreakNode, ArtificialNode__DO_NOT_USE} from 'lexical';
 export function $unwrapArtificialNodes(
   allArtificialNodes: Array<ArtificialNode__DO_NOT_USE>,
 ) {
+  // Replace artificial node with its children, inserting a linebreak
+  // between adjacent artificial nodes
   for (const node of allArtificialNodes) {
-    if (node.getParent()) {
-      if (node.getNextSibling() instanceof ArtificialNode__DO_NOT_USE) {
-        node.insertAfter($createLineBreakNode());
-      }
-    }
-  }
-  // Replace artificial node with it's children
-  for (const node of allArtificialNodes) {
-    if (node.getParent()) {
-      node.getIndexWithinParent();
+    const parent = node.getParent();
+    if (parent) {
       const children = node.getChildren();
-      for (const child of children) {
-        node.insertBefore(child);
+      if (node.getNextSibling() instanceof ArtificialNode__DO_NOT_USE) {
+        children.push($createLineBreakNode());
       }
-      node.remove();
+      parent.splice(node.getIndexWithinParent(), 1, children);
     }
   }
 }

@@ -11,7 +11,7 @@ export function $unwrapArtificialNodes(
   allArtificialNodes: Array<ArtificialNode__DO_NOT_USE>,
 ) {
   for (const node of allArtificialNodes) {
-    if (node.isAttached()) {
+    if (node.getParent()) {
       if (node.getNextSibling() instanceof ArtificialNode__DO_NOT_USE) {
         node.insertAfter($createLineBreakNode());
       }
@@ -20,6 +20,7 @@ export function $unwrapArtificialNodes(
   // Replace artificial node with it's children
   for (const node of allArtificialNodes) {
     if (node.getParent()) {
+      node.getIndexWithinParent();
       const children = node.getChildren();
       for (const child of children) {
         node.insertBefore(child);

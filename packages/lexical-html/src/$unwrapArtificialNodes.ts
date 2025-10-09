@@ -11,16 +11,20 @@ export function $unwrapArtificialNodes(
   allArtificialNodes: Array<ArtificialNode__DO_NOT_USE>,
 ) {
   for (const node of allArtificialNodes) {
-    if (node.getNextSibling() instanceof ArtificialNode__DO_NOT_USE) {
-      node.insertAfter($createLineBreakNode());
+    if (node.isAttached()) {
+      if (node.getNextSibling() instanceof ArtificialNode__DO_NOT_USE) {
+        node.insertAfter($createLineBreakNode());
+      }
     }
   }
   // Replace artificial node with it's children
   for (const node of allArtificialNodes) {
-    const children = node.getChildren();
-    for (const child of children) {
-      node.insertBefore(child);
+    if (node.getParent()) {
+      const children = node.getChildren();
+      for (const child of children) {
+        node.insertBefore(child);
+      }
+      node.remove();
     }
-    node.remove();
   }
 }

@@ -16,13 +16,12 @@ export {
   $getDOMImportContextValue,
   $withDOMContext,
   $withDOMImportContext,
-  // DOMContextArtificialNodes,
   DOMContextClipboard,
   DOMContextExport,
-  // DOMContextForChildMap,
   DOMContextHasBlockAncestorLexicalNode,
   DOMContextParentLexicalNode,
   DOMContextRoot,
+  DOMContextWhiteSpaceCollapse,
 } from './ContextRecord';
 export {DOMExtension} from './DOMExtension';
 export {DOMImportExtension} from './DOMImportExtension';
@@ -38,6 +37,8 @@ export type {
   DOMImportExtensionOutput,
   DOMImportFunction,
   DOMImportOutput,
+  DOMTextWrapMode,
+  DOMWhiteSpaceCollapse,
   NodeMatch,
   NodeNameMap,
   NodeNameToType,

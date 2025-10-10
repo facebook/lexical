@@ -5,6 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import type {
+  DOMExtensionOutput,
+  DOMTextWrapMode,
+  DOMWhiteSpaceCollapse,
+} from './types';
+
 import {
   getExtensionDependencyFromEditor,
   LexicalBuilder,
@@ -12,17 +18,20 @@ import {
 import {
   $getEditor,
   type AnyStateConfig,
-  ArtificialNode__DO_NOT_USE,
   createState,
-  DOMChildConversion,
   type LexicalEditor,
   LexicalNode,
   type StateConfig,
+  TextFormatType,
 } from 'lexical';
 
-import {DOMExtensionName} from './constants';
+import {
+  DOMExtensionName,
+  DOMTextWrapModeKeys,
+  DOMWhiteSpaceCollapseKeys,
+} from './constants';
 import {DOMExtension} from './DOMExtension';
-import {DOMExtensionOutput} from './types';
+import {parseStringEnum} from './parseStringEnum';
 
 let activeDOMContext:
   | undefined
@@ -116,9 +125,30 @@ export const DOMContextExport = createState('@lexical/html/export', {
 export const DOMContextClipboard = createState('@lexical/html/clipboard', {
   parse: Boolean,
 });
-export const DOMContextForChildMap = createState('@lexical/htm/forChildMap', {
-  parse: (): null | Map<string, DOMChildConversion> => null,
+
+export const DOMContextTextFormats = createState('@lexical/html/textFormats', {
+  parse: (s): null | {[K in TextFormatType]?: undefined | boolean} => null,
 });
+
+export const DOMContextWhiteSpaceCollapse = createState(
+  '@lexical/html/whiteSpaceCollapse',
+  {
+    parse: (s): DOMWhiteSpaceCollapse =>
+      (typeof s === 'string' &&
+        parseStringEnum(DOMWhiteSpaceCollapseKeys, s)) ||
+      'collapse',
+  },
+);
+
+export const DOMContextTextWrapMode = createState(
+  '@lexical/html/textWrapMode',
+  {
+    parse: (s): DOMTextWrapMode =>
+      (typeof s === 'string' && parseStringEnum(DOMTextWrapModeKeys, s)) ||
+      'wrap',
+  },
+);
+
 export const DOMContextParentLexicalNode = createState(
   '@lexical/html/parentLexicalNode',
   {
@@ -129,12 +159,6 @@ export const DOMContextHasBlockAncestorLexicalNode = createState(
   '@lexical/html/hasBlockAncestorLexicalNode',
   {
     parse: Boolean,
-  },
-);
-export const DOMContextArtificialNodes = createState(
-  '@lexical/html/ArtificialNodes',
-  {
-    parse: (): null | ArtificialNode__DO_NOT_USE[] => null,
   },
 );
 

@@ -6,6 +6,11 @@
  *
  */
 
+import type {
+  DOMImportNextSymbol,
+  DOMTextWrapModeKeys,
+  DOMWhiteSpaceCollapseKeys,
+} from './constants';
 import type {AnyStateConfigPair, ContextRecord} from './ContextRecord';
 import type {
   BaseSelection,
@@ -22,9 +27,11 @@ export interface DOMExtensionOutput {
 }
 
 /** @internal @experimental */
-export interface DOMImportOutput {
+export type DOMImportOutput = DOMImportOutputNode | DOMImportOutputContinue;
+
+export interface DOMImportOutputNode {
   node: null | LexicalNode | LexicalNode[];
-  getChildren?: () => NodeListOf<ChildNode> | readonly ChildNode[];
+  childNodes?: NodeListOf<ChildNode> | readonly ChildNode[];
   childContext?: AnyStateConfigPair[];
   $appendChild?: (node: LexicalNode, dom: ChildNode) => void;
   $finalize?: (
@@ -32,9 +39,20 @@ export interface DOMImportOutput {
   ) => null | LexicalNode | LexicalNode[];
 }
 
+export interface DOMImportOutputContinue {
+  node: DOMImportNext;
+  childContext?: AnyStateConfigPair[];
+  nextContext?: AnyStateConfigPair[];
+  $appendChild?: never;
+  childNodes?: never;
+  $finalize?: (
+    node: null | LexicalNode | LexicalNode[],
+  ) => null | LexicalNode | LexicalNode[];
+}
+
 export type DOMImportFunction<T extends Node> = (
   node: T,
-  $next: () => null | undefined | DOMImportOutput,
+  $next: DOMImportNext,
   editor: LexicalEditor,
 ) => null | undefined | DOMImportOutput;
 
@@ -124,12 +142,20 @@ export interface DOMImportConfigMatch {
   priority?: 0 | 1 | 2 | 3 | 4;
   $import: (
     node: Node,
-    $next: () => null | undefined | DOMImportOutput,
+    $next: DOMImportNext,
     editor: LexicalEditor,
   ) => null | undefined | DOMImportOutput;
+}
+
+export interface DOMImportNext {
+  (): null | undefined | DOMImportOutput;
+  readonly [DOMImportNextSymbol]: true;
 }
 
 export interface DOMImportExtensionOutput {
   $importNode: (node: Node) => null | undefined | DOMImportOutput;
   $importNodes: (root: ParentNode | Document) => LexicalNode[];
 }
+
+export type DOMWhiteSpaceCollapse = keyof typeof DOMWhiteSpaceCollapseKeys;
+export type DOMTextWrapMode = keyof typeof DOMTextWrapModeKeys;

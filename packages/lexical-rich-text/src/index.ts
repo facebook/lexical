@@ -32,6 +32,8 @@ import {
 } from '@lexical/clipboard';
 import {DragonExtension} from '@lexical/dragon';
 import {
+  $isAtNodeEnd,
+  $isParentElementRTL,
   $isParentRTL,
   $moveCharacter,
   $shouldOverrideDefaultCharacterSelection,
@@ -590,6 +592,48 @@ function $resetCapitalization(selection: RangeSelection): void {
   }
 }
 
+/**
+ * If the selection is at the start/end in a non-paragraph node
+ * and there is no node before it, creates a paragraph node before
+ * the selection and selects it.
+ * @param before Whether the check should be before or after.
+ * @returns Whether a paragraph was inserted.
+ */
+function $insertAndSelectParagraphIfAtEdge(
+  selection: RangeSelection,
+  before: boolean,
+): boolean {
+  const firstOrLast = before
+    ? $getRoot().getFirstDescendant()
+    : $getRoot().getLastDescendant();
+  const nodes = selection.getNodes();
+  const index = before ? 0 : nodes.length - 1;
+  if (
+    nodes[index] === firstOrLast &&
+    (before ? selection.focus.offset === 0 : $isAtNodeEnd(selection.focus)) &&
+    nodes[nodes.length - 1].getType() !== 'paragraph' &&
+    !nodes[nodes.length - 1]
+      .getParents()
+      .some((parent) => parent.getType() === 'paragraph')
+  ) {
+    let current: LexicalNode | null = nodes[nodes.length - 1];
+    while (current !== null && current.isInline()) {
+      current = current.getParent();
+    }
+    if (current !== null) {
+      const p = $createParagraphNode();
+      if (before) {
+        current.insertBefore(p);
+      } else {
+        current.insertAfter(p);
+      }
+      p.select();
+      return true;
+    }
+  }
+  return false;
+}
+
 export function registerRichText(editor: LexicalEditor): () => void {
   const removeListener = mergeRegister(
     editor.registerCommand(
@@ -786,6 +830,10 @@ export function registerRichText(editor: LexicalEditor): () => void {
             return true;
           }
         } else if ($isRangeSelection(selection)) {
+          if ($insertAndSelectParagraphIfAtEdge(selection, true)) {
+            event.preventDefault();
+            return true;
+          }
           const possibleNode = $getAdjacentNode(selection.focus, true);
           if (
             !event.shiftKey &&
@@ -816,6 +864,10 @@ export function registerRichText(editor: LexicalEditor): () => void {
             return true;
           }
         } else if ($isRangeSelection(selection)) {
+          if ($insertAndSelectParagraphIfAtEdge(selection, false)) {
+            event.preventDefault();
+            return true;
+          }
           if ($isSelectionAtEndOfRoot(selection)) {
             event.preventDefault();
             return true;
@@ -857,6 +909,15 @@ export function registerRichText(editor: LexicalEditor): () => void {
         if (!$isRangeSelection(selection)) {
           return false;
         }
+        if (
+          $insertAndSelectParagraphIfAtEdge(
+            selection,
+            !$isParentElementRTL(selection),
+          )
+        ) {
+          event.preventDefault();
+          return true;
+        }
         if ($shouldOverrideDefaultCharacterSelection(selection, true)) {
           const isHoldingShift = event.shiftKey;
           event.preventDefault();
@@ -887,6 +948,15 @@ export function registerRichText(editor: LexicalEditor): () => void {
         }
         if (!$isRangeSelection(selection)) {
           return false;
+        }
+        if (
+          $insertAndSelectParagraphIfAtEdge(
+            selection,
+            $isParentElementRTL(selection),
+          )
+        ) {
+          event.preventDefault();
+          return true;
         }
         const isHoldingShift = event.shiftKey;
         if ($shouldOverrideDefaultCharacterSelection(selection, false)) {

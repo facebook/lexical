@@ -9,7 +9,7 @@
     "accessibility"
   ],
   "license": "MIT",
-  "version": "0.37.0",
+  "version": "0.37.1-nightly.20251013.0",
   "main": "LexicalDragon.js",
   "types": "index.d.ts",
   "repository": {
@@ -37,7 +37,7 @@
     }
   },
   "dependencies": {
-    "@lexical/extension": "0.37.0",
-    "lexical": "0.37.0"
+    "@lexical/extension": "0.37.1-nightly.20251013.0",
+    "lexical": "0.37.1-nightly.20251013.0"
   }
 }

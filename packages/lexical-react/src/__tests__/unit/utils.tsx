@@ -89,7 +89,7 @@ export class Client implements Provider {
     _useCollabV2: boolean;
   };
   _connected: boolean = false;
-  _doc: Y.Doc = new Y.Doc();
+  _doc: Y.Doc = new Y.Doc({gc: false});
 
   _listeners = new Map<string, Set<(data: unknown) => void>>();
   _updates: Uint8Array[] = [];

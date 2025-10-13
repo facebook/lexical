@@ -8,7 +8,7 @@
     "headless"
   ],
   "license": "MIT",
-  "version": "0.36.2",
+  "version": "0.37.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/facebook/lexical",
@@ -54,7 +54,7 @@
     }
   },
   "dependencies": {
-    "happy-dom": "^18.0.1",
-    "lexical": "0.36.2"
+    "happy-dom": "^20.0.0",
+    "lexical": "0.37.0"
   }
 }

@@ -74,12 +74,9 @@ export function $getCodeLineDirection(
 
   while (node !== null) {
     if ($isCodeHighlightNode(node)) {
-      const text = node.getTextContent();
-      for (let i = 0; i < text.length; i++) {
-        const direction = getTextDirection(text[i]);
-        if (direction !== null) {
-          return direction;
-        }
+      const direction = getTextDirection(node.getTextContent());
+      if (direction !== null) {
+        return direction;
       }
     }
 

@@ -19,6 +19,7 @@ export {
   $withImportContext,
   ImportContextHasBlockAncestorLexicalNode,
   ImportContextParentLexicalNode,
+  ImportContextTextAlign,
   ImportContextTextFormats,
   ImportContextWhiteSpaceCollapse,
 } from './ImportContext';
@@ -32,7 +33,9 @@ export {
 export type {
   AnyDOMRenderMatch,
   AnyImportStateConfig,
+  AnyImportStateConfigPair,
   AnyRenderStateConfig,
+  AnyRenderStateConfigPair,
   DOMImportConfig,
   DOMImportConfigMatch,
   DOMImportExtensionOutput,

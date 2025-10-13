@@ -231,7 +231,7 @@ export interface StateValueConfig<V> {
  */
 export type StateConfigPair<K extends string | symbol, V> = readonly [
   StateConfig<K, V>,
-  V,
+  ValueOrUpdater<V>,
 ];
 
 /**
@@ -277,7 +277,7 @@ export class StateConfig<K extends string | symbol, V> {
    * Convenience method to produce a tuple of a StateConfig and a value
    * of that StateConfig (skipping the parse step).
    */
-  pair(value: V): StateConfigPair<K, V> {
+  pair(value: ValueOrUpdater<V>): StateConfigPair<K, V> {
     return [this, value];
   }
 }

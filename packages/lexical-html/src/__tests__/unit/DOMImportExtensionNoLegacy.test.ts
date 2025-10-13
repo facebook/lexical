@@ -14,6 +14,7 @@ import {
 import {
   $generateNodesFromDOM,
   $getImportContextValue,
+  AnyImportStateConfigPair,
   type DOMImportConfig,
   DOMImportExtension,
   type DOMImportNext,
@@ -21,6 +22,7 @@ import {
   type DOMImportOutputNode,
   type DOMRenderConfig,
   DOMRenderExtension,
+  ImportContextTextAlign,
   ImportContextTextFormats,
   ImportContextWhiteSpaceCollapse,
   importOverride,
@@ -30,6 +32,7 @@ import {
   $createListNode,
   CheckListExtension,
   ListExtension,
+  ListType,
 } from '@lexical/list';
 import {
   $createLineBreakNode,
@@ -45,11 +48,13 @@ import {
   CaretDirection,
   configExtension,
   defineExtension,
+  ElementNode,
   isBlockDomNode,
   isDOMTextNode,
   isHTMLElement,
   isInlineDomNode,
   LexicalNode,
+  StateConfigValue,
   TextFormatType,
   TextNode,
 } from 'lexical';
@@ -78,12 +83,24 @@ function importCase(
   return {expectedHTML, name, pastedHTML};
 }
 
+function listTypeFromDOM(dom: HTMLUListElement | HTMLOListElement): ListType {
+  if (
+    // lexical html
+    dom.getAttribute('__lexicallisttype') === 'check' ||
+    // is github checklist
+    dom.classList.contains('contains-task-list') ||
+    // if children are checklist items, the node is a checklist ul. Applicable for googledoc checklist pasting.
+    dom.querySelector(':scope > li[aria-checked]')
+  ) {
+    return 'check';
+  }
+  return dom.tagName === 'OL' ? 'number' : 'bullet';
+}
+
 function $importListNode(
   dom: HTMLUListElement | HTMLOListElement,
 ): DOMImportOutputNode {
-  const listNode = $createListNode().setListType(
-    dom.tagName === 'OL' ? 'number' : 'bullet',
-  );
+  const listNode = $createListNode().setListType(listTypeFromDOM(dom));
   return {childNodes: dom.querySelectorAll(':scope>li'), node: listNode};
 }
 
@@ -107,17 +124,12 @@ function $addTextFormatContinue(
   format: TextFormatType,
 ): (node: HTMLElement, $next: DOMImportNext) => null | DOMImportOutputContinue {
   return (_dom, $next) => {
-    const prev = $getImportContextValue(ImportContextTextFormats);
-    const rval: null | DOMImportOutputContinue =
-      !prev || !prev[format]
-        ? {
-            childContext: [
-              ImportContextTextFormats.pair({...prev, [format]: true}),
-            ],
-            node: $next,
-          }
-        : null;
-    return rval;
+    return {
+      childContext: [
+        ImportContextTextFormats.pair((prev) => ({...prev, [format]: true})),
+      ],
+      node: $next,
+    };
   };
 }
 
@@ -157,12 +169,10 @@ function findTextInLine(text: Text, direction: CaretDirection): null | Text {
 function $createTextNodeWithCurrentFormat(text: string = ''): TextNode {
   let node = $createTextNode(text);
   const fmt = $getImportContextValue(ImportContextTextFormats);
-  if (fmt) {
-    for (const k in fmt) {
-      const textFormat = k as keyof typeof fmt;
-      if (fmt[textFormat]) {
-        node = node.toggleFormat(textFormat);
-      }
+  for (const k in fmt) {
+    const textFormat = k as keyof typeof fmt;
+    if (fmt[textFormat]) {
+      node = node.toggleFormat(textFormat);
     }
   }
   return node;
@@ -264,33 +274,102 @@ const formatOverrides = Object.entries(TO_FORMAT).map(([tag, format]) =>
   importOverride(tag as keyof typeof TO_FORMAT, $addTextFormatContinue(format)),
 );
 
+function $applyTextAlignToElement<T extends ElementNode>(node: T): T {
+  const align = $getImportContextValue(ImportContextTextAlign);
+  return align ? node.setFormat(align) : node;
+}
+
 const NO_LEGACY_CONFIG: Partial<DOMImportConfig> = {
   compileLegacyImportNode: () => () => null,
   overrides: [
     importOverride('#text', $convertTextDOMNode),
     importOverride('*', (dom) => {
       if (isBlockDomNode(dom)) {
-        const node = $createParagraphNode();
-        const {textAlign} = dom.style;
-        switch (textAlign) {
-          case 'center':
-          case 'end':
-          case 'justify':
-          case 'left':
-          case 'right':
-          case 'start':
-            node.setFormat(textAlign);
-            break;
-          default:
-            break;
-        }
-        return {node};
+        return {node: $applyTextAlignToElement($createParagraphNode())};
       }
     }),
+    importOverride(
+      '*',
+      (dom, $next): undefined | DOMImportOutputContinue => {
+        const childContext: AnyImportStateConfigPair[] = [];
+        if (isBlockDomNode(dom)) {
+          const {textAlign} = dom.style;
+          switch (textAlign) {
+            case 'center':
+            case 'end':
+            case 'justify':
+            case 'left':
+            case 'right':
+            case 'start':
+              childContext.push(ImportContextTextAlign.pair(textAlign));
+              break;
+            default:
+              break;
+          }
+        }
+        if (isHTMLElement(dom)) {
+          const {fontWeight, fontStyle, textDecoration, verticalAlign} =
+            dom.style;
+          let formats:
+            | undefined
+            | StateConfigValue<typeof ImportContextTextFormats>;
+          const setFormat = (k: TextFormatType, v: boolean) => {
+            const fmt = formats || Object.create(null);
+            fmt[k] = v;
+            formats = fmt;
+          };
+          switch (fontWeight) {
+            case '400':
+            case 'normal':
+              setFormat('bold', false);
+              break;
+            case '700':
+            case 'bold':
+              setFormat('bold', true);
+              break;
+            default:
+              break;
+          }
+          const italic = 'italic';
+          if (fontStyle === 'normal') {
+            setFormat(italic, false);
+          } else if (fontStyle === italic) {
+            setFormat(italic, true);
+          }
+          const underline = 'underline';
+          const strikethrough = 'strikethrough';
+          for (const dec of textDecoration.split(' ')) {
+            if (dec === 'none') {
+              setFormat(underline, false);
+              setFormat(strikethrough, false);
+            } else if (dec === underline) {
+              setFormat(underline, true);
+            } else if (dec === 'line-through') {
+              setFormat('strikethrough', true);
+            }
+          }
+          if (verticalAlign === 'sub') {
+            setFormat('subscript', true);
+          } else if (verticalAlign === 'super') {
+            setFormat('superscript', true);
+          }
+          if (formats) {
+            const boundFormats = formats;
+            childContext.push(
+              ImportContextTextFormats.pair((v) => ({...v, ...boundFormats})),
+            );
+          }
+        }
+        if (childContext.length > 0) {
+          return {childContext, node: $next};
+        }
+      },
+      {priority: 1},
+    ),
     ...formatOverrides,
     ...listOverrides,
     importOverride('li', (dom) => {
-      return {node: $createListItemNode()};
+      return {node: $applyTextAlignToElement($createListItemNode())};
     }),
   ],
 };

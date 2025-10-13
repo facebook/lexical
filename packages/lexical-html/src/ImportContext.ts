@@ -17,6 +17,7 @@ import {
   $getEditor,
   type ArtificialNode__DO_NOT_USE,
   type DOMChildConversion,
+  ElementFormatType,
   type LexicalEditor,
   type LexicalNode,
   type TextFormatType,
@@ -62,9 +63,17 @@ export const ImportContextDOMNode = createImportState(
   (): null | Node => null,
 );
 
+const NO_FORMATS: {readonly [K in TextFormatType]?: undefined | boolean} =
+  Object.create(null);
+
+export const ImportContextTextAlign = createImportState(
+  'textAlign',
+  (): undefined | ElementFormatType => undefined,
+);
+
 export const ImportContextTextFormats = createImportState(
   'textFormats',
-  (): null | {[K in TextFormatType]?: undefined | boolean} => null,
+  () => NO_FORMATS,
 );
 
 export const ImportContextWhiteSpaceCollapse = createImportState(

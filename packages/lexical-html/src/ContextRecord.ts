@@ -78,8 +78,11 @@ export function updateContextFromPairs<Ctx extends AnyContextSymbol>(
   pairs: undefined | readonly AnyContextConfigPair<Ctx>[],
 ): ContextRecord<Ctx> {
   if (pairs) {
-    for (const [k, v] of pairs) {
-      contextRecord[k.key] = v;
+    for (const [{key}, valueOrUpdater] of pairs) {
+      contextRecord[key] =
+        typeof valueOrUpdater === 'function'
+          ? valueOrUpdater(contextRecord[key])
+          : valueOrUpdater;
     }
   }
   return contextRecord;

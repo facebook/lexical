@@ -693,6 +693,10 @@ describe('Markdown', () => {
       html: '<p><span style="white-space: pre-wrap;">[h</span><a href="https://lexical.dev"><span style="white-space: pre-wrap;">ello</span></a><a href="https://lexical.dev"><span style="white-space: pre-wrap;">world</span></a></p>',
       md: '[h[ello](https://lexical.dev)[world](https://lexical.dev)',
     },
+    {
+      html: '<p><a href="https://lexical.dev"><span style="white-space: pre-wrap;"></span></a></p>',
+      md: '[](https://lexical.dev)',
+    },
   ];
 
   for (const {

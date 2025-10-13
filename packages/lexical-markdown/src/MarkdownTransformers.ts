@@ -604,6 +604,7 @@ export const LINK: TextMatchTransformer = {
     }
     const linkTextNode = $createTextNode(parsedLinkText);
     linkTextNode.setFormat(textNode.getFormat());
+    linkTextNode.toggleUnmergeable();
     linkNode.append(linkTextNode);
     textNode.replace(linkNode);
 

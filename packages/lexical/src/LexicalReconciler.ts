@@ -8,7 +8,7 @@
 
 import type {
   EditorConfig,
-  EditorDOMConfig,
+  EditorDOMRenderConfig,
   LexicalEditor,
   MutatedNodes,
   MutationListeners,
@@ -64,7 +64,7 @@ let activePrevNodeMap: NodeMap;
 let activeNextNodeMap: NodeMap;
 let activePrevKeyToDOMMap: Map<NodeKey, HTMLElement>;
 let mutatedNodes: MutatedNodes;
-let activeEditorDOMConfig: EditorDOMConfig;
+let activeEditorDOMRenderConfig: EditorDOMRenderConfig;
 
 function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
   const node = activePrevNodeMap.get(key);
@@ -196,7 +196,7 @@ function $createNode(key: NodeKey, slot: ElementDOMSlot | null): HTMLElement {
   if (node === undefined) {
     invariant(false, 'createNode: node does not exist in nodeMap');
   }
-  const dom = activeEditorDOMConfig.$createDOM(node, activeEditor);
+  const dom = activeEditorDOMRenderConfig.$createDOM(node, activeEditor);
   storeDOMWithKey(key, dom, activeEditor);
 
   // This helps preserve the text, and stops spell check tools from
@@ -223,7 +223,7 @@ function $createNode(key: NodeKey, slot: ElementDOMSlot | null): HTMLElement {
         node,
         0,
         endIndex,
-        activeEditorDOMConfig.$getDOMSlot(node, dom, activeEditor),
+        activeEditorDOMRenderConfig.$getDOMSlot(node, dom, activeEditor),
       );
     }
     const format = node.__format;
@@ -341,7 +341,7 @@ function $reconcileElementTerminatingLineBreak(
     activeNextNodeMap,
   );
   if (prevLineBreak !== nextLineBreak) {
-    activeEditorDOMConfig
+    activeEditorDOMRenderConfig
       .$getDOMSlot(nextElement, dom, activeEditor)
       .setManagedLineBreak(nextLineBreak);
   }
@@ -377,7 +377,7 @@ function $reconcileChildrenWithDirection(
   $reconcileChildren(
     prevElement,
     nextElement,
-    activeEditorDOMConfig.$getDOMSlot(nextElement, dom, activeEditor),
+    activeEditorDOMRenderConfig.$getDOMSlot(nextElement, dom, activeEditor),
   );
   reconcileTextFormat(nextElement);
   reconcileTextStyle(nextElement);
@@ -562,7 +562,14 @@ function $reconcileNode(
   }
 
   // Update node. If it returns true, we need to unmount and re-create the node
-  if (activeEditorDOMConfig.$updateDOM(nextNode, prevNode, dom, activeEditor)) {
+  if (
+    activeEditorDOMRenderConfig.$updateDOM(
+      nextNode,
+      prevNode,
+      dom,
+      activeEditor,
+    )
+  ) {
     const replacementDOM = $createNode(key, null);
 
     if (parentDOM === null) {
@@ -788,7 +795,7 @@ export function $reconcileRoot(
   treatAllNodesAsDirty = dirtyType === FULL_RECONCILE;
   activeEditor = editor;
   activeEditorConfig = editor._config;
-  activeEditorDOMConfig = editor._config.dom || DEFAULT_EDITOR_DOM_CONFIG;
+  activeEditorDOMRenderConfig = editor._config.dom || DEFAULT_EDITOR_DOM_CONFIG;
   activeEditorNodes = editor._nodes;
   activeMutationListeners = activeEditor._listeners.mutation;
   activeDirtyElements = dirtyElements;
@@ -824,7 +831,7 @@ export function $reconcileRoot(
   activePrevKeyToDOMMap = undefined;
   // @ts-ignore
   mutatedNodes = undefined;
-  activeEditorDOMConfig = DEFAULT_EDITOR_DOM_CONFIG;
+  activeEditorDOMRenderConfig = DEFAULT_EDITOR_DOM_CONFIG;
 
   return currentMutatedNodes;
 }

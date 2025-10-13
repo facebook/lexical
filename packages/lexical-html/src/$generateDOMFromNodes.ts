@@ -8,12 +8,12 @@
 import {$sliceSelectedTextNodeContent} from '@lexical/selection';
 import {
   $getEditor,
-  $getEditorDOMConfig,
+  $getEditorDOMRenderConfig,
   $getRoot,
   $isElementNode,
   $isTextNode,
   type BaseSelection,
-  type EditorDOMConfig,
+  type EditorDOMRenderConfig,
   isDocumentFragment,
   isHTMLElement,
   type LexicalEditor,
@@ -22,22 +22,22 @@ import {
 import invariant from 'shared/invariant';
 
 import {
-  $withDOMContext,
-  DOMContextExport,
-  DOMContextRoot,
-} from './ContextRecord';
+  $withRenderContext,
+  RenderContextExport,
+  RenderContextRoot,
+} from './RenderContext';
 
 export function $generateDOMFromNodes<T extends HTMLElement | DocumentFragment>(
   container: T,
   selection: null | BaseSelection = null,
   editor: LexicalEditor = $getEditor(),
 ): T {
-  return $withDOMContext(
-    [DOMContextExport.pair(true)],
+  return $withRenderContext(
+    [RenderContextExport.pair(true)],
     editor,
   )(() => {
     const root = $getRoot();
-    const domConfig = $getEditorDOMConfig(editor);
+    const domConfig = $getEditorDOMRenderConfig(editor);
 
     const parentElementAppend = container.append.bind(container);
     for (const topLevelNode of root.getChildren()) {
@@ -58,12 +58,12 @@ export function $generateDOMFromRoot<T extends HTMLElement | DocumentFragment>(
   root: LexicalNode = $getRoot(),
 ): T {
   const editor = $getEditor();
-  return $withDOMContext(
-    [DOMContextExport.pair(true), DOMContextRoot.pair(true)],
+  return $withRenderContext(
+    [RenderContextExport.pair(true), RenderContextRoot.pair(true)],
     editor,
   )(() => {
     const selection = null;
-    const domConfig = $getEditorDOMConfig(editor);
+    const domConfig = $getEditorDOMRenderConfig(editor);
     const parentElementAppend = container.append.bind(container);
     $appendNodesToHTML(editor, root, parentElementAppend, selection, domConfig);
     return container;
@@ -74,7 +74,7 @@ function $appendNodesToHTML(
   currentNode: LexicalNode,
   parentElementAppend: (element: Node) => void,
   selection: BaseSelection | null = null,
-  domConfig: EditorDOMConfig = $getEditorDOMConfig(editor),
+  domConfig: EditorDOMRenderConfig = $getEditorDOMRenderConfig(editor),
 ): boolean {
   let shouldInclude = domConfig.$shouldInclude(currentNode, selection, editor);
   const shouldExclude = domConfig.$shouldExclude(

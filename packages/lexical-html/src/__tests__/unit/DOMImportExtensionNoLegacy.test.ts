@@ -13,12 +13,16 @@ import {
 } from '@lexical/extension';
 import {
   $generateNodesFromDOM,
-  $getDOMImportContextValue,
-  DOMConfig,
-  DOMContextWhiteSpaceCollapse,
-  DOMExtension,
-  DOMImportConfig,
+  $getImportContextValue,
+  type DOMImportConfig,
   DOMImportExtension,
+  type DOMImportNext,
+  type DOMImportOutputContinue,
+  type DOMImportOutputNode,
+  type DOMRenderConfig,
+  DOMRenderExtension,
+  ImportContextTextFormats,
+  ImportContextWhiteSpaceCollapse,
   importOverride,
 } from '@lexical/html';
 import {
@@ -57,20 +61,13 @@ import {
 import invariant from 'shared/invariant';
 import {assert, describe, expect, test} from 'vitest';
 
-import {DOMContextTextFormats} from '../../ContextRecord';
-import {
-  DOMImportNext,
-  DOMImportOutputContinue,
-  DOMImportOutputNode,
-} from '../../types';
-
 interface ImportTestCase {
   name: string;
   pastedHTML: string;
   expectedHTML: string;
   plainTextInsert?: string;
   importConfig?: Partial<DOMImportConfig>;
-  exportConfig?: Partial<DOMConfig>;
+  exportConfig?: Partial<DOMRenderConfig>;
 }
 
 function importCase(
@@ -110,12 +107,12 @@ function $addTextFormatContinue(
   format: TextFormatType,
 ): (node: HTMLElement, $next: DOMImportNext) => null | DOMImportOutputContinue {
   return (_dom, $next) => {
-    const prev = $getDOMImportContextValue(DOMContextTextFormats);
+    const prev = $getImportContextValue(ImportContextTextFormats);
     const rval: null | DOMImportOutputContinue =
       !prev || !prev[format]
         ? {
             childContext: [
-              DOMContextTextFormats.pair({...prev, [format]: true}),
+              ImportContextTextFormats.pair({...prev, [format]: true}),
             ],
             node: $next,
           }
@@ -159,7 +156,7 @@ function findTextInLine(text: Text, direction: CaretDirection): null | Text {
 
 function $createTextNodeWithCurrentFormat(text: string = ''): TextNode {
   let node = $createTextNode(text);
-  const fmt = $getDOMImportContextValue(DOMContextTextFormats);
+  const fmt = $getImportContextValue(ImportContextTextFormats);
   if (fmt) {
     for (const k in fmt) {
       const textFormat = k as keyof typeof fmt;
@@ -181,7 +178,7 @@ function $convertTextDOMNode(domNode: Text): DOMImportOutputNode {
   let textContent = domNode_.textContent || '';
   // No collapse and preserve segment break for pre, pre-wrap and pre-line
   if (
-    $getDOMImportContextValue(DOMContextWhiteSpaceCollapse).startsWith('pre')
+    $getImportContextValue(ImportContextWhiteSpaceCollapse).startsWith('pre')
   ) {
     const parts = textContent.split(/(\r?\n|\t)/);
     const nodes: Array<LexicalNode> = [];
@@ -577,7 +574,7 @@ describe('DOMImportExtension (no legacy)', () => {
           },
           dependencies: [
             configExtension(DOMImportExtension, NO_LEGACY_CONFIG, importConfig),
-            configExtension(DOMExtension, exportConfig),
+            configExtension(DOMRenderExtension, exportConfig),
             ListExtension,
             CheckListExtension,
           ],

@@ -7,11 +7,12 @@
  */
 
 import type {
+  DOMImportContextSymbol,
   DOMImportNextSymbol,
+  DOMRenderContextSymbol,
   DOMTextWrapModeKeys,
   DOMWhiteSpaceCollapseKeys,
 } from './constants';
-import type {AnyStateConfigPair, ContextRecord} from './ContextRecord';
 import type {
   BaseSelection,
   DOMExportOutput,
@@ -20,11 +21,53 @@ import type {
   Klass,
   LexicalEditor,
   LexicalNode,
+  StateConfig,
 } from 'lexical';
 
-export interface DOMExtensionOutput {
-  defaults: ContextRecord;
+export type AnyContextSymbol =
+  | typeof DOMImportContextSymbol
+  | typeof DOMRenderContextSymbol;
+
+export type ContextRecord<_K extends symbol> = Record<string | symbol, unknown>;
+
+export type ContextConfig<Sym extends symbol, V> = StateConfig<symbol, V> & {
+  readonly [K in Sym]?: true;
+};
+
+export type ContextConfigPair<Ctx extends AnyContextSymbol, V> = readonly [
+  ContextConfig<Ctx, V>,
+  V,
+];
+
+export type AnyContextConfigPair<Ctx extends AnyContextSymbol> =
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ContextConfigPair<Ctx, any>;
+
+export interface DOMRenderExtensionOutput {
+  defaults: undefined | ContextRecord<typeof DOMRenderContextSymbol>;
 }
+
+export type ImportStateConfig<V> = ContextConfig<
+  typeof DOMImportContextSymbol,
+  V
+>;
+
+export type RenderStateConfig<V> = ContextConfig<
+  typeof DOMRenderContextSymbol,
+  V
+>;
+
+export type AnyImportStateConfigPair = AnyContextConfigPair<
+  typeof DOMImportContextSymbol
+>;
+export type AnyRenderStateConfigPair = AnyContextConfigPair<
+  typeof DOMRenderContextSymbol
+>;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyRenderStateConfig = RenderStateConfig<any>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyImportStateConfig = ImportStateConfig<any>;
 
 /** @internal @experimental */
 export type DOMImportOutput = DOMImportOutputNode | DOMImportOutputContinue;
@@ -32,7 +75,7 @@ export type DOMImportOutput = DOMImportOutputNode | DOMImportOutputContinue;
 export interface DOMImportOutputNode {
   node: null | LexicalNode | LexicalNode[];
   childNodes?: NodeListOf<ChildNode> | readonly ChildNode[];
-  childContext?: AnyStateConfigPair[];
+  childContext?: AnyImportStateConfigPair[];
   $appendChild?: (node: LexicalNode, dom: ChildNode) => void;
   $finalize?: (
     node: null | LexicalNode | LexicalNode[],
@@ -41,8 +84,8 @@ export interface DOMImportOutputNode {
 
 export interface DOMImportOutputContinue {
   node: DOMImportNext;
-  childContext?: AnyStateConfigPair[];
-  nextContext?: AnyStateConfigPair[];
+  childContext?: AnyImportStateConfigPair[];
+  nextContext?: AnyImportStateConfigPair[];
   $appendChild?: never;
   childNodes?: never;
   $finalize?: (
@@ -69,21 +112,21 @@ export type NodeNameToType<T extends string> = T extends keyof NodeNameMap
   : Node;
 
 /** @internal @experimental */
-export interface DOMConfig {
-  overrides: AnyDOMConfigMatch[];
-  contextDefaults: AnyStateConfigPair[];
+export interface DOMRenderConfig {
+  overrides: AnyDOMRenderMatch[];
+  contextDefaults: AnyRenderStateConfigPair[];
 }
 
 /** @internal @experimental */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyDOMConfigMatch = DOMConfigMatch<any>;
+export type AnyDOMRenderMatch = DOMRenderMatch<any>;
 
 export type NodeMatch<T extends LexicalNode> =
   | Klass<T>
   | ((node: LexicalNode) => node is T);
 
 /** @internal @experimental */
-export interface DOMConfigMatch<T extends LexicalNode> {
+export interface DOMRenderMatch<T extends LexicalNode> {
   readonly nodes: '*' | readonly NodeMatch<T>[];
   $getDOMSlot?: <N extends ElementNode>(
     node: N,

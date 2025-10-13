@@ -5,29 +5,33 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {AnyDOMConfigMatch, DOMConfig, DOMExtensionOutput} from './types';
+import type {
+  AnyDOMRenderMatch,
+  DOMRenderConfig,
+  DOMRenderExtensionOutput,
+} from './types';
 
 import {
   $isElementNode,
   DEFAULT_EDITOR_DOM_CONFIG,
   defineExtension,
-  EditorDOMConfig,
+  EditorDOMRenderConfig,
   type LexicalNode,
   RootNode,
   shallowMergeConfig,
 } from 'lexical';
 
-import {DOMExtensionName} from './constants';
+import {DOMRenderExtensionName} from './constants';
 import {contextFromPairs} from './ContextRecord';
 
-export function compileDOMConfigOverrides(
-  {overrides}: DOMConfig,
-  defaults: EditorDOMConfig,
-): EditorDOMConfig {
-  function mergeDOMConfigMatch(
-    acc: EditorDOMConfig,
-    match: AnyDOMConfigMatch,
-  ): EditorDOMConfig {
+function compileDOMRenderConfigOverrides(
+  {overrides}: DOMRenderConfig,
+  defaults: EditorDOMRenderConfig,
+): EditorDOMRenderConfig {
+  function mergeDOMRenderMatch(
+    acc: EditorDOMRenderConfig,
+    match: AnyDOMRenderMatch,
+  ): EditorDOMRenderConfig {
     // TODO Consider using a node type map to make this more efficient when
     // there are more overrides
     const {
@@ -126,20 +130,20 @@ export function compileDOMConfigOverrides(
   // The beginning of the array will be the overrides towards the top
   // of the tree so should be higher precedence, so we compose the functions
   // from the right
-  return overrides.reduceRight(mergeDOMConfigMatch, defaults);
+  return overrides.reduceRight(mergeDOMRenderMatch, defaults);
 }
 
 /** @internal @experimental */
 
-export const DOMExtension = defineExtension<
-  DOMConfig,
-  typeof DOMExtensionName,
-  DOMExtensionOutput,
+export const DOMRenderExtension = defineExtension<
+  DOMRenderConfig,
+  typeof DOMRenderExtensionName,
+  DOMRenderExtensionOutput,
   void
 >({
   build(editor, config, state) {
     return {
-      defaults: contextFromPairs(config.contextDefaults) || new Map(),
+      defaults: contextFromPairs(config.contextDefaults, undefined),
     };
   },
   config: {
@@ -160,7 +164,7 @@ export const DOMExtension = defineExtension<
     ]),
   },
   init(editorConfig, config) {
-    editorConfig.dom = compileDOMConfigOverrides(config, {
+    editorConfig.dom = compileDOMRenderConfigOverrides(config, {
       ...DEFAULT_EDITOR_DOM_CONFIG,
       ...editorConfig.dom,
     });
@@ -174,5 +178,5 @@ export const DOMExtension = defineExtension<
     }
     return merged;
   },
-  name: DOMExtensionName,
+  name: DOMRenderExtensionName,
 });

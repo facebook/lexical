@@ -6,6 +6,8 @@
  *
  */
 import type {
+  AnyImportStateConfigPair,
+  ContextRecord,
   DOMImportConfig,
   DOMImportConfigMatch,
   DOMImportExtensionOutput,
@@ -23,10 +25,8 @@ import {
   $isElementNode,
   $isRootOrShadowRoot,
   ArtificialNode__DO_NOT_USE,
-  createState,
   defineExtension,
-  DOMChildConversion,
-  DOMConversionOutput,
+  type DOMConversionOutput,
   type ElementFormatType,
   type ElementNode,
   isBlockDomNode,
@@ -40,6 +40,7 @@ import invariant from 'shared/invariant';
 
 import {$unwrapArtificialNodes} from './$unwrapArtificialNodes';
 import {
+  DOMImportContextSymbol,
   DOMImportExtensionName,
   DOMImportNextSymbol,
   DOMTextWrapModeKeys,
@@ -47,28 +48,22 @@ import {
   IGNORE_TAGS,
 } from './constants';
 import {
-  $getDOMImportContextValue,
-  $withDOMImportContext,
-  AnyStateConfigPair,
-  DOMContextHasBlockAncestorLexicalNode,
-  DOMContextParentLexicalNode,
-  DOMContextTextWrapMode,
-  DOMContextWhiteSpaceCollapse,
+  $withFullContext,
+  createChildContext,
+  updateContextFromPairs,
 } from './ContextRecord';
-import {DOMExtension} from './DOMExtension';
 import {getConversionFunction} from './getConversionFunction';
+import {
+  $getImportContextValue,
+  ImportContextArtificialNodes,
+  ImportContextDOMNode,
+  ImportContextForChildMap,
+  ImportContextHasBlockAncestorLexicalNode,
+  ImportContextParentLexicalNode,
+  ImportContextTextWrapMode,
+  ImportContextWhiteSpaceCollapse,
+} from './ImportContext';
 import {isDomNodeBetweenTwoInlineNodes} from './isDomNodeBetweenTwoInlineNodes';
-
-export const DOMContextForChildMap = createState('@lexical/htm/forChildMap', {
-  parse: (): null | Map<string, DOMChildConversion> => null,
-});
-
-export const DOMContextArtificialNodes = createState(
-  '@lexical/html/ArtificialNodes',
-  {
-    parse: (): null | ArtificialNode__DO_NOT_USE[] => null,
-  },
-);
 
 function $wrapContinuousInlinesInPlace(
   domNode: Node,
@@ -214,8 +209,8 @@ function compileLegacyImportDOM(
             finalLexicalNode && $isRootOrShadowRoot(finalLexicalNode)
               ? false
               : (finalLexicalNode && $isBlockElementNode(finalLexicalNode)) ||
-                $getDOMImportContextValue(
-                  DOMContextHasBlockAncestorLexicalNode,
+                $getImportContextValue(
+                  ImportContextHasBlockAncestorLexicalNode,
                 );
 
           if (!hasBlockAncestorLexicalNodeForChildren) {
@@ -225,12 +220,12 @@ function compileLegacyImportDOM(
               $createParagraphNode,
             );
           } else {
-            const allArtificialNodes = $getDOMImportContextValue(
-              DOMContextArtificialNodes,
+            const allArtificialNodes = $getImportContextValue(
+              ImportContextArtificialNodes,
             );
             invariant(
               allArtificialNodes !== null,
-              'Missing DOMContextArtificialNodes',
+              'Missing ImportContextArtificialNodes',
             );
             $wrapContinuousInlinesInPlace(node, childLexicalNodes, () => {
               const artificialNode = new ArtificialNode__DO_NOT_USE();
@@ -268,18 +263,18 @@ function compileLegacyImportDOM(
     const transformOutput = transformFunction
       ? transformFunction(node as HTMLElement)
       : null;
-    const addChildContext = (cfg: AnyStateConfigPair) => {
+    const addChildContext = (cfg: AnyImportStateConfigPair) => {
       output.childContext = output.childContext || [];
       output.childContext.push(cfg);
     };
 
     if (transformOutput !== null) {
-      const forChildMap = $getDOMImportContextValue(
-        DOMContextForChildMap,
+      const forChildMap = $getImportContextValue(
+        ImportContextForChildMap,
         editor,
       );
-      const parentLexicalNode = $getDOMImportContextValue(
-        DOMContextParentLexicalNode,
+      const parentLexicalNode = $getImportContextValue(
+        ImportContextParentLexicalNode,
         editor,
       );
       postTransform = transformOutput.after;
@@ -310,7 +305,7 @@ function compileLegacyImportDOM(
 
       if (transformOutput.forChild) {
         addChildContext(
-          DOMContextForChildMap.pair(
+          ImportContextForChildMap.pair(
             new Map(forChildMap || []).set(
               node.nodeName,
               transformOutput.forChild,
@@ -334,7 +329,7 @@ function importOverrideSort(
 
 type ImportStackEntry = [
   dom: Node,
-  ctx: AnyStateConfigPair[],
+  ctx: ContextRecord<typeof DOMImportContextSymbol>,
   $importNode: DOMImportExtensionOutput['$importNode'],
   $appendChild: NonNullable<DOMImportOutput['$appendChild']>,
 ];
@@ -347,9 +342,9 @@ function composeFinalizers<T>(
 }
 
 function parseDOMWhiteSpaceCollapseFromNode(
+  ctx: ContextRecord<typeof DOMImportContextSymbol>,
   node: Node,
-): undefined | AnyStateConfigPair[] {
-  let pairs: undefined | AnyStateConfigPair[];
+): ContextRecord<typeof DOMImportContextSymbol> {
   if (isHTMLElement(node)) {
     const {style} = node;
     let textWrapMode: undefined | DOMTextWrapMode;
@@ -385,17 +380,14 @@ function parseDOMWhiteSpaceCollapseFromNode(
       (DOMTextWrapModeKeys as Record<string, undefined | DOMTextWrapMode>)[
         style.textWrapMode
       ] || textWrapMode;
-    if (textWrapMode || whiteSpaceCollapse) {
-      pairs = [];
-      if (textWrapMode) {
-        pairs.push(DOMContextTextWrapMode.pair(textWrapMode));
-      }
-      if (whiteSpaceCollapse) {
-        pairs.push(DOMContextWhiteSpaceCollapse.pair(whiteSpaceCollapse));
-      }
+    if (textWrapMode) {
+      ctx[ImportContextTextWrapMode.key] = textWrapMode;
+    }
+    if (whiteSpaceCollapse) {
+      ctx[ImportContextWhiteSpaceCollapse.key] = whiteSpaceCollapse;
     }
   }
-  return pairs;
+  return ctx;
 }
 
 export function compileDOMImportOverrides(
@@ -422,163 +414,145 @@ export function compileDOMImportOverrides(
     rootOrDocument: ParentNode | Document,
   ): LexicalNode[] => {
     const artificialNodes: ArtificialNode__DO_NOT_USE[] = [];
-    return $withDOMImportContext([
-      DOMContextArtificialNodes.pair(artificialNodes),
-    ])(() => {
-      const nodes: LexicalNode[] = [];
-      const stack: ImportStackEntry[] = [
-        [
-          isDOMDocumentNode(rootOrDocument)
-            ? rootOrDocument.body
-            : rootOrDocument,
-          [],
-          () => ({node: null}),
-          (node) => {
-            nodes.push(node);
-          },
-        ],
-      ];
-      for (let entry = stack.pop(); entry; entry = stack.pop()) {
-        const [node, ctx, fn, $parentAppendChild] = entry;
-        const outputContinue: DOMImportOutputContinue & {
-          nextContext: AnyStateConfigPair[];
-        } = {
-          nextContext: ctx,
-          node: withImportNextSymbol(fn.bind(null, node)),
-        };
-        const whiteSpaceState = parseDOMWhiteSpaceCollapseFromNode(node);
-        if (whiteSpaceState) {
-          outputContinue.nextContext = [...ctx, ...whiteSpaceState];
-        }
-        let currentOutput: null | undefined | DOMImportOutput = outputContinue;
-        while ($isImportOutputContinue(currentOutput)) {
-          if (currentOutput.nextContext && outputContinue.nextContext !== ctx) {
-            if (outputContinue.nextContext === ctx) {
-              outputContinue.nextContext = [...ctx];
-            }
-            outputContinue.nextContext.push(...currentOutput.nextContext);
-          }
-          const $finalize = composeFinalizers(
-            outputContinue.$finalize,
-            currentOutput.$finalize,
-          );
-          if ($finalize) {
-            outputContinue.$finalize = $finalize;
-          }
-          if (currentOutput.childContext) {
-            if (!outputContinue.childContext) {
-              outputContinue.childContext = [...currentOutput.childContext];
-            } else {
-              outputContinue.childContext.push(...currentOutput.childContext);
-            }
-          }
-          currentOutput = $withDOMImportContext(outputContinue.nextContext)(
-            currentOutput.node,
+    const nodes: LexicalNode[] = [];
+    const rootNode = isDOMDocumentNode(rootOrDocument)
+      ? rootOrDocument.body
+      : rootOrDocument;
+    const stack: ImportStackEntry[] = [
+      [
+        rootNode,
+        updateContextFromPairs(createChildContext(undefined), [
+          ImportContextArtificialNodes.pair(artificialNodes),
+        ]),
+        () => ({node: null}),
+        (node) => {
+          nodes.push(node);
+        },
+      ],
+    ];
+    for (let entry = stack.pop(); entry; entry = stack.pop()) {
+      const [node, ctx, fn, $parentAppendChild] = entry;
+      ctx[ImportContextDOMNode.key] = node;
+      const outputContinue: DOMImportOutputContinue = {
+        node: withImportNextSymbol(fn.bind(null, node)),
+      };
+      parseDOMWhiteSpaceCollapseFromNode(ctx, node);
+      let currentOutput: null | undefined | DOMImportOutput = outputContinue;
+      let childContext:
+        | undefined
+        | ContextRecord<typeof DOMImportContextSymbol>;
+      const updateChildContext = (
+        pairs: undefined | readonly AnyImportStateConfigPair[],
+      ) => {
+        if (pairs) {
+          childContext = updateContextFromPairs(
+            childContext || createChildContext(ctx),
+            pairs,
           );
         }
-        invariant(
-          !$isImportOutputContinue(currentOutput),
-          'currentOutput can not be a continue',
+      };
+      while ($isImportOutputContinue(currentOutput)) {
+        updateContextFromPairs(ctx, currentOutput.nextContext);
+        updateChildContext(currentOutput.childContext);
+        outputContinue.$finalize = composeFinalizers(
+          outputContinue.$finalize,
+          currentOutput.$finalize,
         );
-        const output = currentOutput;
-        let children: NodeListOf<ChildNode> | readonly ChildNode[] =
-          isHTMLElement(node) ? node.childNodes : EMPTY_ARRAY;
-        let $finalize = outputContinue.$finalize;
-        let mergedContext = outputContinue.childContext
-          ? [...outputContinue.nextContext, ...outputContinue.childContext]
-          : outputContinue.nextContext;
-        let $appendChild = $parentAppendChild;
-        const outputNode = output ? output.node : null;
-        invariant(
-          typeof outputNode !== 'function',
-          'outputNode must not be a function',
+        currentOutput = $withFullContext(
+          DOMImportContextSymbol,
+          ctx,
+          currentOutput.node,
+          editor,
         );
-        if (!output) {
-          if ($finalize) {
-            const $boundFinalize = $finalize.bind(null, null);
-            stack.push([
-              node,
-              ctx,
-              () => ({node: $boundFinalize()}),
-              $parentAppendChild,
-            ]);
-          }
-        } else {
-          if (output.$appendChild) {
-            $appendChild = output.$appendChild;
-          } else if (Array.isArray(outputNode)) {
-            $appendChild = (childNode, _dom) => outputNode.push(childNode);
-          } else if ($isElementNode(outputNode)) {
-            $appendChild = (childNode, _dom) => outputNode.append(childNode);
-          }
-          children = output.childNodes || children;
-          $finalize = composeFinalizers($finalize, output.$finalize);
-          if ($finalize) {
-            const $boundFinalize = $finalize.bind(null, outputNode);
-            stack.push([
-              node,
-              ctx,
-              () => ({node: $boundFinalize()}),
-              $parentAppendChild,
-            ]);
-          } else if (outputNode) {
-            for (const addNode of Array.isArray(outputNode)
-              ? outputNode
-              : [outputNode]) {
-              $parentAppendChild(addNode, node as ChildNode);
-            }
-          }
-
-          const addChildContext = (pair: AnyStateConfigPair) => {
-            if ($getDOMImportContextValue(pair[0]) === pair[1]) {
-              return;
-            }
-            if (mergedContext === ctx) {
-              mergedContext = [...ctx];
-            }
-            mergedContext.push(pair);
-          };
-          for (const pair of output.childContext || EMPTY_ARRAY) {
-            addChildContext(pair);
-          }
-          const currentLexicalNode = Array.isArray(outputNode)
-            ? outputNode[outputNode.length - 1] || null
-            : outputNode;
-          const hasBlockAncestorLexicalNode = $getDOMImportContextValue(
-            DOMContextHasBlockAncestorLexicalNode,
-          );
-          const hasBlockAncestorLexicalNodeForChildren =
-            currentLexicalNode && $isRootOrShadowRoot(currentLexicalNode)
-              ? false
-              : (currentLexicalNode &&
-                  $isBlockElementNode(currentLexicalNode)) ||
-                hasBlockAncestorLexicalNode;
-
-          if (
-            hasBlockAncestorLexicalNode !==
-            hasBlockAncestorLexicalNodeForChildren
-          ) {
-            addChildContext(
-              DOMContextHasBlockAncestorLexicalNode.pair(
-                hasBlockAncestorLexicalNodeForChildren,
-              ),
-            );
-          }
-          if ($isElementNode(currentLexicalNode)) {
-            addChildContext(
-              DOMContextParentLexicalNode.pair(currentLexicalNode),
-            );
+      }
+      invariant(
+        !$isImportOutputContinue(currentOutput),
+        'currentOutput can not be a continue',
+      );
+      const output = currentOutput;
+      let children: NodeListOf<ChildNode> | readonly ChildNode[] =
+        isHTMLElement(node) ? node.childNodes : EMPTY_ARRAY;
+      let $finalize = outputContinue.$finalize;
+      let $appendChild = $parentAppendChild;
+      const outputNode = output ? output.node : null;
+      invariant(
+        typeof outputNode !== 'function',
+        'outputNode must not be a function',
+      );
+      const pushFinalize = () => {
+        if ($finalize) {
+          const $boundFinalize = $finalize.bind(null, outputNode);
+          stack.push([
+            node,
+            ctx,
+            () => ({node: $boundFinalize()}),
+            $parentAppendChild,
+          ]);
+        }
+      };
+      if (!output) {
+        pushFinalize();
+      } else {
+        if (output.$appendChild) {
+          $appendChild = output.$appendChild;
+        } else if (Array.isArray(outputNode)) {
+          $appendChild = (childNode, _dom) => outputNode.push(childNode);
+        } else if ($isElementNode(outputNode)) {
+          $appendChild = (childNode, _dom) => outputNode.append(childNode);
+        }
+        children = output.childNodes || children;
+        $finalize = composeFinalizers($finalize, output.$finalize);
+        if ($finalize) {
+          pushFinalize();
+        } else if (outputNode) {
+          for (const addNode of Array.isArray(outputNode)
+            ? outputNode
+            : [outputNode]) {
+            $parentAppendChild(addNode, node as ChildNode);
           }
         }
-        // Push children in reverse so they are popped off the stack in-order
-        for (let i = children.length - 1; i >= 0; i--) {
-          const childDom = children[i];
-          stack.push([childDom, mergedContext, $importNode, $appendChild]);
+
+        updateChildContext(output.childContext);
+        const currentLexicalNode = Array.isArray(outputNode)
+          ? outputNode[outputNode.length - 1] || null
+          : outputNode;
+        const hasBlockAncestorLexicalNode = $getImportContextValue(
+          ImportContextHasBlockAncestorLexicalNode,
+        );
+        const hasBlockAncestorLexicalNodeForChildren =
+          currentLexicalNode && $isRootOrShadowRoot(currentLexicalNode)
+            ? false
+            : (currentLexicalNode && $isBlockElementNode(currentLexicalNode)) ||
+              hasBlockAncestorLexicalNode;
+
+        if (
+          hasBlockAncestorLexicalNode !== hasBlockAncestorLexicalNodeForChildren
+        ) {
+          updateChildContext([
+            ImportContextHasBlockAncestorLexicalNode.pair(
+              hasBlockAncestorLexicalNodeForChildren,
+            ),
+          ]);
+        }
+        if ($isElementNode(currentLexicalNode)) {
+          updateChildContext([
+            ImportContextParentLexicalNode.pair(currentLexicalNode),
+          ]);
         }
       }
-      $unwrapArtificialNodes(artificialNodes);
-      return nodes;
-    });
+      // Push children in reverse so they are popped off the stack in-order
+      for (let i = children.length - 1; i >= 0; i--) {
+        const childDom = children[i];
+        stack.push([
+          childDom,
+          createChildContext(childContext || ctx),
+          $importNode,
+          $appendChild,
+        ]);
+      }
+    }
+    $unwrapArtificialNodes(artificialNodes);
+    return nodes;
   };
 
   return {
@@ -596,7 +570,6 @@ export const DOMImportExtension = defineExtension<
 >({
   build: compileDOMImportOverrides,
   config: {compileLegacyImportNode: compileLegacyImportDOM, overrides: []},
-  dependencies: [DOMExtension],
   mergeConfig(config, partial) {
     const merged = shallowMergeConfig(config, partial);
     for (const k of ['overrides'] as const) {

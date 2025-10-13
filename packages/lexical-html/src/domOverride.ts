@@ -5,27 +5,27 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {AnyDOMConfigMatch, DOMConfigMatch, NodeMatch} from './types';
+import type {AnyDOMRenderMatch, DOMRenderMatch, NodeMatch} from './types';
 import type {LexicalNode} from 'lexical';
 
 /**
  * A convenience function for type inference when constructing DOM overrides for
- * use with {@link DOMExtension}.
+ * use with {@link DOMRenderExtension}.
  *
  * @__NO_SIDE_EFFECTS__
  */
 
 export function domOverride(
   nodes: '*',
-  config: Omit<DOMConfigMatch<LexicalNode>, 'nodes'>,
-): DOMConfigMatch<LexicalNode>;
+  config: Omit<DOMRenderMatch<LexicalNode>, 'nodes'>,
+): DOMRenderMatch<LexicalNode>;
 export function domOverride<T extends LexicalNode>(
   nodes: readonly NodeMatch<T>[],
-  config: Omit<DOMConfigMatch<T>, 'nodes'>,
-): DOMConfigMatch<T>;
+  config: Omit<DOMRenderMatch<T>, 'nodes'>,
+): DOMRenderMatch<T>;
 export function domOverride(
-  nodes: AnyDOMConfigMatch['nodes'],
-  config: Omit<AnyDOMConfigMatch, 'nodes'>,
-): AnyDOMConfigMatch {
+  nodes: AnyDOMRenderMatch['nodes'],
+  config: Omit<AnyDOMRenderMatch, 'nodes'>,
+): AnyDOMRenderMatch {
   return {...config, nodes};
 }

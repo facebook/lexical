@@ -227,9 +227,9 @@ export interface StateValueConfig<V> {
 
 /**
  * A tuple of a StateConfig and a value, used for contexts outside of
- * NodeState such as DOMExtension.
+ * NodeState such as DOMRenderExtension.
  */
-export type StateConfigPair<K extends string, V> = readonly [
+export type StateConfigPair<K extends string | symbol, V> = readonly [
   StateConfig<K, V>,
   V,
 ];
@@ -238,7 +238,7 @@ export type StateConfigPair<K extends string, V> = readonly [
  * The return value of {@link createState}, for use with
  * {@link $getState} and {@link $setState}.
  */
-export class StateConfig<K extends string, V> {
+export class StateConfig<K extends string | symbol, V> {
   /** The string key used when serializing this state to JSON */
   readonly key: K;
   /** The parse function from the StateValueConfig passed to createState */
@@ -313,7 +313,7 @@ export type AnyStateConfig = StateConfig<any, any>;
  *
  * @__NO_SIDE_EFFECTS__
  */
-export function createState<K extends string, V>(
+export function createState<K extends symbol | string, V>(
   key: K,
   valueConfig: StateValueConfig<V>,
 ): StateConfig<K, V> {

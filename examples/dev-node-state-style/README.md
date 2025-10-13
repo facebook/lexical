@@ -1,7 +1,7 @@
 # DEV Node State Style example
 
 Here we have an example that demonstrates how NodeState can be used with a
-DOMExtension to override create and export behavior of any node.
+DOMRenderExtension to override create and export behavior of any node.
 
 This example currently depends on unreleased features (v0.37+) and will not
 work outside of the monorepo.

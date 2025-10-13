@@ -8,7 +8,7 @@
 
 import type {PropertiesHyphenFallback} from 'csstype';
 
-import {DOMExtension, domOverride} from '@lexical/html';
+import {domOverride, DOMRenderExtension} from '@lexical/html';
 import {$forEachSelectedTextNode} from '@lexical/selection';
 import InlineStyleParser from 'inline-style-parser';
 import {
@@ -379,7 +379,7 @@ export function constructStyleImportMap(
 
 export const StyleStateExtension = defineExtension({
   dependencies: [
-    configExtension(DOMExtension, {
+    configExtension(DOMRenderExtension, {
       overrides: [
         domOverride('*', {
           $createDOM(node, $next) {

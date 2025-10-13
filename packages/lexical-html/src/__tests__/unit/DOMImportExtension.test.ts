@@ -13,10 +13,10 @@ import {
 } from '@lexical/extension';
 import {
   $generateNodesFromDOM,
-  DOMConfig,
-  DOMExtension,
   DOMImportConfig,
   DOMImportExtension,
+  DOMRenderConfig,
+  DOMRenderExtension,
 } from '@lexical/html';
 import {CheckListExtension, ListExtension} from '@lexical/list';
 import {
@@ -43,7 +43,7 @@ interface ImportTestCase {
   expectedHTML: string;
   plainTextInsert?: string;
   importConfig?: Partial<DOMImportConfig>;
-  exportConfig?: Partial<DOMConfig>;
+  exportConfig?: Partial<DOMRenderConfig>;
 }
 
 function importCase(
@@ -333,7 +333,7 @@ describe('DOMImportExtension', () => {
           },
           dependencies: [
             configExtension(DOMImportExtension, importConfig),
-            configExtension(DOMExtension, exportConfig),
+            configExtension(DOMRenderExtension, exportConfig),
             ListExtension,
             CheckListExtension,
           ],

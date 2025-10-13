@@ -11,32 +11,39 @@ export {
   $generateHtmlFromNodes,
 } from './$generateDOMFromNodes';
 export {$generateNodesFromDOM} from './$generateNodesFromDOM';
-export {
-  $getDOMContextValue,
-  $getDOMImportContextValue,
-  $withDOMContext,
-  $withDOMImportContext,
-  DOMContextClipboard,
-  DOMContextExport,
-  DOMContextHasBlockAncestorLexicalNode,
-  DOMContextParentLexicalNode,
-  DOMContextRoot,
-  DOMContextWhiteSpaceCollapse,
-} from './ContextRecord';
-export {DOMExtension} from './DOMExtension';
 export {DOMImportExtension} from './DOMImportExtension';
 export {domOverride} from './domOverride';
+export {DOMRenderExtension} from './DOMRenderExtension';
+export {
+  $getImportContextValue,
+  $withImportContext,
+  ImportContextHasBlockAncestorLexicalNode,
+  ImportContextParentLexicalNode,
+  ImportContextTextFormats,
+  ImportContextWhiteSpaceCollapse,
+} from './ImportContext';
 export {importOverride} from './importOverride';
+export {
+  $getRenderContextValue,
+  $withRenderContext,
+  RenderContextExport,
+  RenderContextRoot,
+} from './RenderContext';
 export type {
-  AnyDOMConfigMatch,
-  DOMConfig,
-  DOMConfigMatch,
-  DOMExtensionOutput,
+  AnyDOMRenderMatch,
+  AnyImportStateConfig,
+  AnyRenderStateConfig,
   DOMImportConfig,
   DOMImportConfigMatch,
   DOMImportExtensionOutput,
   DOMImportFunction,
+  DOMImportNext,
   DOMImportOutput,
+  DOMImportOutputContinue,
+  DOMImportOutputNode,
+  DOMRenderConfig,
+  DOMRenderExtensionOutput,
+  DOMRenderMatch,
   DOMTextWrapMode,
   DOMWhiteSpaceCollapse,
   NodeMatch,

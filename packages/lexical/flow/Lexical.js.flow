@@ -146,7 +146,7 @@ type DOMConversionCache = Map<
   Array<(node: Node) => DOMConversion | null>,
 >;
 
-export type EditorDOMConfig = {
+export type EditorDOMRenderConfig = {
   /** @internal @experimental */
   createDOM: <T: LexicalNode>(
     node: T,
@@ -168,7 +168,7 @@ export type EditorDOMConfig = {
 
 export type CreateEditorArgs = {
   /** @internal @experimental */
-  dom?: Partial<EditorDOMConfig>;
+  dom?: Partial<EditorDOMRenderConfig>;
   disableEvents?: boolean;
   editorState?: EditorState;
   namespace?: string;

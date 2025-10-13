@@ -9,7 +9,7 @@
 import type {
   CommandPayloadType,
   EditorConfig,
-  EditorDOMConfig,
+  EditorDOMRenderConfig,
   EditorThemeClasses,
   Klass,
   LexicalCommand,
@@ -1889,9 +1889,9 @@ export function $getEditor(): LexicalEditor {
 /**
  * @internal @experimental
  */
-export function $getEditorDOMConfig(
+export function $getEditorDOMRenderConfig(
   editor: LexicalEditor = $getEditor(),
-): EditorDOMConfig {
+): EditorDOMRenderConfig {
   return editor._config.dom || DEFAULT_EDITOR_DOM_CONFIG;
 }
 

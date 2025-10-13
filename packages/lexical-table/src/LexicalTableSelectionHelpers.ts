@@ -47,7 +47,7 @@ import {
   $getAdjacentChildCaret,
   $getChildCaret,
   $getEditor,
-  $getEditorDOMConfig,
+  $getEditorDOMRenderConfig,
   $getNearestNodeFromDOMNode,
   $getPreviousSelection,
   $getSelection,
@@ -134,7 +134,8 @@ export function $getTableElement<T extends HTMLElement | null>(
   const element = (
     isHTMLTableElement(dom)
       ? dom
-      : $getEditorDOMConfig(editor).$getDOMSlot(tableNode, dom, editor).element
+      : $getEditorDOMRenderConfig(editor).$getDOMSlot(tableNode, dom, editor)
+          .element
   ) as HTMLTableElementWithWithTableSelectionState;
   invariant(
     element.nodeName === 'TABLE',

@@ -6,175 +6,150 @@
  *
  */
 import type {
-  DOMExtensionOutput,
-  DOMTextWrapMode,
-  DOMWhiteSpaceCollapse,
+  AnyContextConfigPair,
+  AnyContextSymbol,
+  ContextConfig,
+  ContextRecord,
 } from './types';
 
-import {
-  getExtensionDependencyFromEditor,
-  LexicalBuilder,
-} from '@lexical/extension';
-import {
-  $getEditor,
-  type AnyStateConfig,
-  createState,
-  type LexicalEditor,
-  LexicalNode,
-  type StateConfig,
-  TextFormatType,
-} from 'lexical';
+import {$getEditor, createState, type LexicalEditor} from 'lexical';
 
-import {
-  DOMExtensionName,
-  DOMTextWrapModeKeys,
-  DOMWhiteSpaceCollapseKeys,
-} from './constants';
-import {DOMExtension} from './DOMExtension';
-import {parseStringEnum} from './parseStringEnum';
+let activeContext: undefined | EditorContext;
 
-let activeDOMContext:
-  | undefined
-  | {editor: LexicalEditor; context: ContextRecord};
+type WithContext<Ctx extends AnyContextSymbol> = {
+  [K in Ctx]?: undefined | ContextRecord<Ctx>;
+};
 
-export type ContextRecord = Map<AnyStateConfig, unknown>;
-export function contextFromPairs(
-  pairs: Iterable<AnyStateConfigPair>,
-): undefined | ContextRecord {
-  let rval: undefined | ContextRecord;
+export type EditorContext = {
+  editor: LexicalEditor;
+} & WithContext<AnyContextSymbol>;
+
+export function getContextValue<Ctx extends AnyContextSymbol, V>(
+  contextRecord: undefined | ContextRecord<Ctx>,
+  cfg: ContextConfig<Ctx, V>,
+) {
+  const {key} = cfg;
+  return contextRecord && key in contextRecord
+    ? (contextRecord[key] as V)
+    : cfg.defaultValue;
+}
+
+export function getEditorContext(
+  editor: LexicalEditor,
+): undefined | EditorContext {
+  return activeContext && activeContext.editor === editor
+    ? activeContext
+    : undefined;
+}
+
+export function getEditorContextValue<Ctx extends AnyContextSymbol, V>(
+  sym: Ctx,
+  context: undefined | EditorContext,
+  cfg: ContextConfig<Ctx, V>,
+): V {
+  return getContextValue(context && context[sym], cfg);
+}
+
+export function contextFromPairs<Ctx extends AnyContextSymbol>(
+  pairs: readonly AnyContextConfigPair<Ctx>[],
+  parent: undefined | ContextRecord<Ctx>,
+): undefined | ContextRecord<Ctx> {
+  let rval = parent;
   for (const [k, v] of pairs) {
-    rval = (rval || new Map()).set(k, v);
+    const key = k.key;
+    if (rval === parent && getContextValue(rval, k) === v) {
+      continue;
+    }
+    const ctx = rval || createChildContext(parent);
+    ctx[key] = v;
+    rval = ctx;
   }
   return rval;
 }
-function mergeContext(
-  defaults: ContextRecord,
-  overrides: ContextRecord | Iterable<AnyStateConfigPair>,
-) {
-  let ctx: undefined | ContextRecord;
-  for (const [k, v] of overrides) {
-    if (!ctx) {
-      if (defaults.get(k) === v) {
-        continue;
-      }
-      ctx = new Map(defaults);
+
+export function createChildContext<Ctx extends AnyContextSymbol>(
+  parent: undefined | ContextRecord<Ctx>,
+): ContextRecord<Ctx> {
+  return Object.create(parent || null);
+}
+
+export function updateContextFromPairs<Ctx extends AnyContextSymbol>(
+  contextRecord: ContextRecord<Ctx>,
+  pairs: undefined | readonly AnyContextConfigPair<Ctx>[],
+): ContextRecord<Ctx> {
+  if (pairs) {
+    for (const [k, v] of pairs) {
+      contextRecord[k.key] = v;
     }
-    ctx.set(k, v);
   }
-  return ctx || defaults;
+  return contextRecord;
 }
 
-export function getContextValueFromRecord<K extends string, V>(
-  context: ContextRecord,
-  cfg: StateConfig<K, V>,
-): V {
-  const v = context.get(cfg);
-  return v !== undefined || context.has(cfg) ? (v as V) : cfg.defaultValue;
-}
-
-export function $getDOMContextValue<K extends string, V>(
-  cfg: StateConfig<K, V>,
+/**
+ * @__NO_SIDE_EFFECTS__
+ */
+export function $withFullContext<Ctx extends AnyContextSymbol, T>(
+  sym: Ctx,
+  contextRecord: ContextRecord<Ctx>,
+  f: () => T,
   editor: LexicalEditor = $getEditor(),
-): V {
-  const context =
-    activeDOMContext && activeDOMContext.editor === editor
-      ? activeDOMContext.context
-      : getExtensionDependencyFromEditor(editor, DOMExtension).output.defaults;
-  return getContextValueFromRecord(context, cfg);
+): T {
+  const prevDOMContext = activeContext;
+  const parentEditorContext = getEditorContext(editor);
+  try {
+    activeContext = {...parentEditorContext, editor, [sym]: contextRecord};
+    return f();
+  } finally {
+    activeContext = prevDOMContext;
+  }
 }
 
-export const $getDOMImportContextValue = $getDOMContextValue;
-
-export function $withDOMContext(
-  cfg: Iterable<AnyStateConfigPair>,
-  editor = $getEditor(),
-): <T>(f: () => T) => T {
-  const updates = contextFromPairs(cfg);
-  return (f) => {
-    if (!updates) {
-      return f();
-    }
-    const prevDOMContext = activeDOMContext;
-    let context: ContextRecord;
-    if (prevDOMContext && prevDOMContext.editor === editor) {
-      context = mergeContext(prevDOMContext.context, updates);
-    } else {
-      const ext = getDOMExtensionOutputIfAvailable(editor);
-      context = ext ? mergeContext(ext.defaults, updates) : updates;
-    }
-    try {
-      activeDOMContext = {context, editor};
-      return f();
-    } finally {
-      activeDOMContext = prevDOMContext;
-    }
+/**
+ * @__NO_SIDE_EFFECTS__
+ */
+export function $withContext<Ctx extends AnyContextSymbol>(
+  sym: Ctx,
+  $defaults: (editor: LexicalEditor) => undefined | ContextRecord<Ctx> = () =>
+    undefined,
+) {
+  return (
+    cfg: readonly AnyContextConfigPair<Ctx>[],
+    editor = $getEditor(),
+  ): (<T>(f: () => T) => T) => {
+    return (f) => {
+      const prevDOMContext = activeContext;
+      const parentEditorContext = getEditorContext(editor);
+      const parentContextRecord =
+        parentEditorContext && parentEditorContext[sym];
+      const contextRecord = contextFromPairs(
+        cfg,
+        parentContextRecord || $defaults(editor),
+      );
+      if (!contextRecord || contextRecord === parentContextRecord) {
+        return f();
+      }
+      try {
+        activeContext = {...parentEditorContext, editor, [sym]: contextRecord};
+        return f();
+      } finally {
+        activeContext = prevDOMContext;
+      }
+    };
   };
 }
-export const $withDOMImportContext = $withDOMContext;
 
-/** true if this is a whole document export operation ($generateDOMFromRoot) */
-export const DOMContextRoot = createState('@lexical/html/root', {
-  parse: Boolean,
-});
-
-/** true if this is an export operation ($generateHtmlFromNodes) */
-export const DOMContextExport = createState('@lexical/html/export', {
-  parse: Boolean,
-});
-/** true if the DOM is for or from the clipboard */
-export const DOMContextClipboard = createState('@lexical/html/clipboard', {
-  parse: Boolean,
-});
-
-export const DOMContextTextFormats = createState('@lexical/html/textFormats', {
-  parse: (s): null | {[K in TextFormatType]?: undefined | boolean} => null,
-});
-
-export const DOMContextWhiteSpaceCollapse = createState(
-  '@lexical/html/whiteSpaceCollapse',
-  {
-    parse: (s): DOMWhiteSpaceCollapse =>
-      (typeof s === 'string' &&
-        parseStringEnum(DOMWhiteSpaceCollapseKeys, s)) ||
-      'collapse',
-  },
-);
-
-export const DOMContextTextWrapMode = createState(
-  '@lexical/html/textWrapMode',
-  {
-    parse: (s): DOMTextWrapMode =>
-      (typeof s === 'string' && parseStringEnum(DOMTextWrapModeKeys, s)) ||
-      'wrap',
-  },
-);
-
-export const DOMContextParentLexicalNode = createState(
-  '@lexical/html/parentLexicalNode',
-  {
-    parse: (): null | LexicalNode => null,
-  },
-);
-export const DOMContextHasBlockAncestorLexicalNode = createState(
-  '@lexical/html/hasBlockAncestorLexicalNode',
-  {
-    parse: Boolean,
-  },
-);
-
-export type StateConfigPair<K extends string, V> = readonly [
-  StateConfig<K, V>,
-  V,
-];
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyStateConfigPair = StateConfigPair<any, any>;
-
-export function getDOMExtensionOutputIfAvailable(
-  editor: LexicalEditor,
-): undefined | DOMExtensionOutput {
-  const builder = LexicalBuilder.maybeFromEditor(editor);
-  return builder && builder.hasExtensionByName(DOMExtensionName)
-    ? getExtensionDependencyFromEditor(editor, DOMExtension).output
-    : undefined;
+/**
+ * @__NO_SIDE_EFFECTS__
+ */
+export function createContextStateFactory<Tag extends symbol>(tag: Tag) {
+  const contextTag: {readonly [k in Tag]: true} = {[tag]: true} as const;
+  return <V>(
+    name: string,
+    getDefaultValue: () => V,
+    isEqual?: (a: V, b: V) => boolean,
+  ) =>
+    Object.assign(
+      createState(Symbol(name), {isEqual, parse: getDefaultValue}),
+      contextTag,
+    );
 }

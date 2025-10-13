@@ -9,10 +9,10 @@
 import {buildEditorFromExtensions} from '@lexical/extension';
 import {
   $generateDOMFromRoot,
-  $getDOMContextValue,
-  DOMContextRoot,
-  DOMExtension,
+  $getRenderContextValue,
   domOverride,
+  DOMRenderExtension,
+  RenderContextRoot,
 } from '@lexical/html';
 import {
   $createParagraphNode,
@@ -34,7 +34,7 @@ const idState = createState('id', {
   parse: (v) => (typeof v === 'string' ? v : null),
 });
 
-describe('DOMExtension', () => {
+describe('DOMRenderExtension', () => {
   test('can override DOM create + update', () => {
     const editor = buildEditorFromExtensions(
       defineExtension({
@@ -47,7 +47,7 @@ describe('DOMExtension', () => {
           );
         },
         dependencies: [
-          configExtension(DOMExtension, {
+          configExtension(DOMRenderExtension, {
             overrides: [
               domOverride('*', {
                 $createDOM(node, $next) {
@@ -148,7 +148,7 @@ describe('DOMExtension', () => {
           );
         },
         dependencies: [
-          configExtension(DOMExtension, {
+          configExtension(DOMRenderExtension, {
             overrides: [
               domOverride('*', {
                 $exportDOM(node, $next) {
@@ -164,7 +164,7 @@ describe('DOMExtension', () => {
                 $exportDOM(node, $next) {
                   const result = $next();
                   if (
-                    $getDOMContextValue(DOMContextRoot) &&
+                    $getRenderContextValue(RenderContextRoot) &&
                     isHTMLElement(result.element) &&
                     result.element.style.getPropertyValue('white-space')
                   ) {

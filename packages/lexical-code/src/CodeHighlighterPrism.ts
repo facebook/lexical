@@ -25,6 +25,7 @@ import {
   $getCaretRange,
   $getCaretRangeInDirection,
   $getNodeByKey,
+  $getRoot,
   $getSelection,
   $getSiblingCaret,
   $getTextPointCaret,
@@ -837,23 +838,18 @@ export function registerCodeHighlighting(
       KEY_ARROW_UP_COMMAND,
       (event) => {
         const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
+        if (!$isRangeSelection(selection) || !$isSelectionInCode(selection)) {
           return false;
         }
+        const firstNode = $getRoot().getFirstDescendant();
         const {anchor} = selection;
         const anchorNode = anchor.getNode();
-        if (!$isSelectionInCode(selection)) {
-          return false;
-        }
-        // If at the start of a code block, prevent selection from moving out
         if (
-          selection.isCollapsed() &&
-          anchor.offset === 0 &&
-          anchorNode.getPreviousSibling() === null &&
-          $isCodeNode(anchorNode.getParentOrThrow())
+          firstNode &&
+          anchorNode &&
+          firstNode.getKey() === anchorNode.getKey()
         ) {
-          event.preventDefault();
-          return true;
+          return false;
         }
         return $handleShiftLines(KEY_ARROW_UP_COMMAND, event);
       },
@@ -863,23 +859,18 @@ export function registerCodeHighlighting(
       KEY_ARROW_DOWN_COMMAND,
       (event) => {
         const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
+        if (!$isRangeSelection(selection) || !$isSelectionInCode(selection)) {
           return false;
         }
+        const lastNode = $getRoot().getLastDescendant();
         const {anchor} = selection;
         const anchorNode = anchor.getNode();
-        if (!$isSelectionInCode(selection)) {
-          return false;
-        }
-        // If at the end of a code block, prevent selection from moving out
         if (
-          selection.isCollapsed() &&
-          anchor.offset === anchorNode.getTextContentSize() &&
-          anchorNode.getNextSibling() === null &&
-          $isCodeNode(anchorNode.getParentOrThrow())
+          lastNode &&
+          anchorNode &&
+          lastNode.getKey() === anchorNode.getKey()
         ) {
-          event.preventDefault();
-          return true;
+          return false;
         }
         return $handleShiftLines(KEY_ARROW_DOWN_COMMAND, event);
       },

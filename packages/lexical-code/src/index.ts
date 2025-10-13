@@ -7,6 +7,7 @@
  */
 
 import {
+  $getCodeLineDirection,
   $getEndOfCodeInLine,
   $getFirstCodeNodeOfLine,
   $getLastCodeNodeOfLine,
@@ -39,6 +40,7 @@ export {
   normalizeCodeLang as normalizeCodeLanguage,
 } from './FacadePrism';
 export {
+  $getCodeLineDirection,
   $getEndOfCodeInLine,
   $getFirstCodeNodeOfLine,
   $getLastCodeNodeOfLine,
@@ -53,3 +55,5 @@ export const getLastCodeNodeOfLine = $getLastCodeNodeOfLine;
 export const getEndOfCodeInLine = $getEndOfCodeInLine;
 /** @deprecated renamed to {@link $getStartOfCodeInLine} by @lexical/eslint-plugin rules-of-lexical */
 export const getStartOfCodeInLine = $getStartOfCodeInLine;
+/** @deprecated renamed to {@link $getCodeLineDirection} by @lexical/eslint-plugin rules-of-lexical */
+export const getCodeLineDirection = $getCodeLineDirection;

@@ -17,6 +17,7 @@ import type {
 } from 'lexical';
 
 import {
+  $getCodeLineDirection,
   $getEndOfCodeInLine,
   $getFirstCodeNodeOfLine,
   $getLastCodeNodeOfLine,
@@ -734,8 +735,12 @@ function $handleMoveTo(
     return false;
   }
 
-  if (isMoveToStart) {
-    const start = $getStartOfCodeInLine(focusNode, focus.offset);
+  const focusLineNode = focusNode as CodeHighlightNode | TabNode;
+  const direction = $getCodeLineDirection(focusLineNode);
+  const moveToStart = direction === 'rtl' ? !isMoveToStart : isMoveToStart;
+
+  if (moveToStart) {
+    const start = $getStartOfCodeInLine(focusLineNode, focus.offset);
     if (start !== null) {
       const {node, offset} = start;
       if ($isLineBreakNode(node)) {
@@ -744,10 +749,10 @@ function $handleMoveTo(
         selection.setTextNodeRange(node, offset, node, offset);
       }
     } else {
-      focusNode.getParentOrThrow().selectStart();
+      focusLineNode.getParentOrThrow().selectStart();
     }
   } else {
-    const node = $getEndOfCodeInLine(focusNode);
+    const node = $getEndOfCodeInLine(focusLineNode);
     node.select();
   }
 

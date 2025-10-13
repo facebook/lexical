@@ -1019,6 +1019,7 @@ i.page-break,
   display: inline-block;
   position: relative;
   user-select: none;
+  overflow: hidden;
 }
 
 .editor-shell .editor-image img {
@@ -1057,6 +1058,9 @@ i.page-break,
   min-width: 100px;
   color: #000;
   overflow: hidden;
+  box-sizing: border-box;
+  max-width: 100%;
+  word-wrap: break-word;
 }
 
 .editor-shell .editor-image .image-caption-button {

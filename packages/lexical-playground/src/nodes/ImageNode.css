@@ -22,6 +22,8 @@
   width: calc(100% - 20px);
   white-space: pre-wrap;
   word-break: break-word;
+  overflow-wrap: break-word;
+  box-sizing: border-box;
 }
 
 .ImageNode__placeholder {

@@ -19,7 +19,7 @@
   padding: 10px;
   user-select: text;
   font-size: 12px;
-  width: calc(100% - 20px);
+  width: 100%;
   white-space: pre-wrap;
   word-break: break-word;
   overflow-wrap: break-word;

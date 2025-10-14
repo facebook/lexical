@@ -30,6 +30,7 @@ import {
   $insertDataTransferForRichText,
   copyToClipboard,
 } from '@lexical/clipboard';
+import {DragonExtension} from '@lexical/dragon';
 import {
   $isParentRTL,
   $moveCharacter,
@@ -68,6 +69,7 @@ import {
   COPY_COMMAND,
   createCommand,
   CUT_COMMAND,
+  defineExtension,
   DELETE_CHARACTER_COMMAND,
   DELETE_LINE_COMMAND,
   DELETE_WORD_COMMAND,
@@ -779,6 +781,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
           // back to being a range selection.
           const nodes = selection.getNodes();
           if (nodes.length > 0) {
+            event.preventDefault();
             nodes[0].selectPrevious();
             return true;
           }
@@ -808,6 +811,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
           // back to being a range selection.
           const nodes = selection.getNodes();
           if (nodes.length > 0) {
+            event.preventDefault();
             nodes[0].selectNext(0, 0);
             return true;
           }
@@ -1140,3 +1144,15 @@ export function registerRichText(editor: LexicalEditor): () => void {
   );
   return removeListener;
 }
+
+/**
+ * An extension to register \@lexical/rich-text behavior and nodes
+ * ({@link HeadingNode}, {@link QuoteNode})
+ */
+export const RichTextExtension = defineExtension({
+  conflictsWith: ['@lexical/plain-text'],
+  dependencies: [DragonExtension],
+  name: '@lexical/rich-text',
+  nodes: [HeadingNode, QuoteNode],
+  register: registerRichText,
+});

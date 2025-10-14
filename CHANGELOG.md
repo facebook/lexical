@@ -1,3 +1,107 @@
+## v0.37.0 (2025-10-11)
+
+- lexical-yjs Chore fix imports of Yjs XML types (#7908) James Fitzsimmons
+- lexical-react Chore make shouldBootstrapUnsafe prop optional (#7907) James Fitzsimmons
+- lexical-playground Bug Fix Export ParagraphNode as div roleparagraph when it contains block DOM (#7906) Bob Ippolito
+- lexicallexical-clipboardlexical-htmllexical-selection Feature Add an internal ephemeral node concept (#7904) Bob Ippolito
+- lexical-yjslexical-react Feature commands for diffing two yjs snapshots in collab v2 (#7903) James Fitzsimmons
+- lexicallexical-clipboardlexical-playground Feature ImageNode caption support for exportDOM and importDOM (#7900) Mehmet Can Ertan
+- lexical-rich-text Bug fix updown arrows for node selection (#7902) Maksim Horbachevsky
+- lexical-listlexical-markdown Feature Keep list marker for markdown round-trip (#7892) Simon
+- lexical-yjslexical-react Feature initial implementation of collab v2 (#7616) James Fitzsimmons
+- lexical-react Bug Fix LexicalMenu guard against undefined option when list shrinks (#7899) MRADUL TRIPATHI
+- examples Feature sveltekit ssr example (#7879) Bob Ippolito
+- Update examples for v0.36.2 (#7896) Bob Ippolito
+- v0.36.2 (#7894) Bob Ippolito
+- v0.36.2 Lexical GitHub Actions Bot
+
+## v0.36.2 (2025-09-30)
+
+- docs Chore Export DOMConversion types so that they are in the docs (#7893) Bob Ippolito
+- lexical-markdown Bug Fix Ensure First Match is Used in importTextMatchTransformer (#7890) River
+- lexical-react Fix ensure selection listeners cleaned up from original owner document (#7843) James Fitzsimmons
+- lexical-clipboard Preventing copying empty string (#7880) Nikhil Sharma
+- lexical-website Chore Update to docusaurus v3.9.1 (#7881) Bob Ippolito
+- lexical-headlesslexical-html Bug Fix Fix entrypoint for lexicalheadlessdom and generalize generateNodesFromDOM (#7859) Bob Ippolito
+- lexical-table Bug Fix Handle accessing table selection following table deletion (#7864) Patrick Moody
+- lexical-headless Bug Fix Fix types for lexicalheadlessdom and simplify npmToWwwName workaround (#7873) Bob Ippolito
+- Update examples for v0.36.1 (#7872) Bob Ippolito
+- lexical-playground Bug Fix Table add-row button no longer hides horizontal scroll (#7847) Nikhil Sharma
+- lexical-website Chore add example for how to bootstrap collab ydoc on the server (#7830) James Fitzsimmons
+-  Bug Fix devInvariant should warn in prod even if not in codes.json (#7870) Bob Ippolito
+- v0.36.1 (#7871) Bob Ippolito
+- v0.36.1 Lexical GitHub Actions Bot
+
+## v0.36.1 (2025-09-25)
+
+-  Bug Fix Update examples and fix package.json for v0.36.0 (will need a patch release) (#7867) Bob Ippolito
+- Make ref optional in ContentEditable flow (#7866) Gerard Rovira
+- v0.36.0 (#7861) Bob Ippolito
+- lexical Bug Fix account for Apple WebView in setManagedLineBreak (#7854) Matsuoka
+- lexical-headless Bug Fix Replace happy-dom with jsdom in www and map react-domclient (#7858) Bob Ippolito
+-  Bug Fix npmToWwwName ensures lexical prefix (#7857) Bob Ippolito
+- lexical-headless Feature lexicalheadlessdom module for easier SSR (#7833) Bob Ippolito
+- lexical Chore Change TabNode.setTextContent invariant to devInvariant (#7855) Aman Harwara
+- lexical-extensiondocs Chore Add experimental to extension functions (#7853) Bob Ippolito
+- lexicallexical-extension Feature Lexical Extension (#7706) Bob Ippolito
+- lexical-react Bug Fix Include react-error-boundary and floating-uireact in WWW bundle (#7852) Bob Ippolito
+- lexical-react Bug Fix Add visibility margin to isTriggerVisibleInNearestScrollContainer to prevent popover from wrongfully closing (#7844) David
+- lexicallexical-reactlexical-playground Chore Update from React 18 to React 19 (#7802) Bob Ippolito
+- lexical-playground Chore remove InlineImageNode and InlineImagePlugun (#7839) Bob Ippolito
+-  Bug Fix Relocate internal eslint plugin to packageslexical-eslint-plugin-internal (#7834) Bob Ippolito
+- lexical Bug Fix Fix cache coherency issue with RangeSelection#extract (#7836) River
+- lexical-clipboard Bug Fix Update Lexical Clipboard with Empty Selection (#7835) River
+- lexical-markdown Refactor Remove MarkdownShortcuts.ts Dependency on index.ts (#7832) River
+- lexical-react Breaking change enforce use of collab context provider (#7818) James Fitzsimmons
+- lexical-yjslexical-playground Breaking change remove clientID from collab context (#7816) James Fitzsimmons
+- lexical-clipboard Fix copy correct selection when editor in different windowdocument (#7822) James Fitzsimmons
+- lexical Chore Improve error message when a node is registered from a foreign lexical module (#7821) Bob Ippolito
+- lexicallexical-selectionlexical-utils Refactor Consolidate ancestor lookup via findMatchingParent (#7814) Chase Naples
+- lexical-markdown Update Flow types to match TypeScript (#7813) Daniel Teo
+- lexical-website Bug Fix Replace broken algolia search with easyops-cndocusaurus-search-local (#7810) Bob Ippolito
+- lexical-list Fix clear li checklist attributes when inserting nested list (#7805) James Fitzsimmons
+-  Chore Port scripts unit tests to vitest and fix test include match pattern (#7807) Bob Ippolito
+- lexical-react Fix Use explicit key attr in NodeContextMenuPlugin (#7803) Bob Ippolito
+- lexical-list Fix updating list type tofrom check type updates child DOM elements (#7800) James Fitzsimmons
+- lexical-playground DatetimeNode DOM updates (#7786) Ivaylo Pavlov
+- examples Chore Update examples for v0.35.0 (#7799) Bob Ippolito
+- lexical-website Chore Update docusaurus-plugin-typedoc (#7766) Bob Ippolito
+- v0.35.0 (#7797) Bob Ippolito
+- v0.35.0 Lexical GitHub Actions Bot
+
+## v0.36.0 (2025-09-25)
+
+- lexical-headless Bug Fix Replace happy-dom with jsdom in www and map react-domclient (#7858) Bob Ippolito
+-  Bug Fix npmToWwwName ensures lexical prefix (#7857) Bob Ippolito
+- lexical-headless Feature lexicalheadlessdom module for easier SSR (#7833) Bob Ippolito
+- lexical Chore Change TabNode.setTextContent invariant to devInvariant (#7855) Aman Harwara
+- lexical-extensiondocs Chore Add experimental to extension functions (#7853) Bob Ippolito
+- lexicallexical-extension Feature Lexical Extension (#7706) Bob Ippolito
+- lexical-react Bug Fix Include react-error-boundary and floating-uireact in WWW bundle (#7852) Bob Ippolito
+- lexical-react Bug Fix Add visibility margin to isTriggerVisibleInNearestScrollContainer to prevent popover from wrongfully closing (#7844) David
+- lexicallexical-reactlexical-playground Chore Update from React 18 to React 19 (#7802) Bob Ippolito
+- lexical-playground Chore remove InlineImageNode and InlineImagePlugun (#7839) Bob Ippolito
+-  Bug Fix Relocate internal eslint plugin to packageslexical-eslint-plugin-internal (#7834) Bob Ippolito
+- lexical Bug Fix Fix cache coherency issue with RangeSelection#extract (#7836) River
+- lexical-clipboard Bug Fix Update Lexical Clipboard with Empty Selection (#7835) River
+- lexical-markdown Refactor Remove MarkdownShortcuts.ts Dependency on index.ts (#7832) River
+- lexical-react Breaking change enforce use of collab context provider (#7818) James Fitzsimmons
+- lexical-yjslexical-playground Breaking change remove clientID from collab context (#7816) James Fitzsimmons
+- lexical-clipboard Fix copy correct selection when editor in different windowdocument (#7822) James Fitzsimmons
+- lexical Chore Improve error message when a node is registered from a foreign lexical module (#7821) Bob Ippolito
+- lexicallexical-selectionlexical-utils Refactor Consolidate ancestor lookup via findMatchingParent (#7814) Chase Naples
+- lexical-markdown Update Flow types to match TypeScript (#7813) Daniel Teo
+- lexical-website Bug Fix Replace broken algolia search with easyops-cndocusaurus-search-local (#7810) Bob Ippolito
+- lexical-list Fix clear li checklist attributes when inserting nested list (#7805) James Fitzsimmons
+-  Chore Port scripts unit tests to vitest and fix test include match pattern (#7807) Bob Ippolito
+- lexical-react Fix Use explicit key attr in NodeContextMenuPlugin (#7803) Bob Ippolito
+- lexical-list Fix updating list type tofrom check type updates child DOM elements (#7800) James Fitzsimmons
+- lexical-playground DatetimeNode DOM updates (#7786) Ivaylo Pavlov
+- examples Chore Update examples for v0.35.0 (#7799) Bob Ippolito
+- lexical-website Chore Update docusaurus-plugin-typedoc (#7766) Bob Ippolito
+- v0.35.0 (#7797) Bob Ippolito
+- v0.35.0 Lexical GitHub Actions Bot
+
 ## v0.35.0 (2025-09-04)
 
 - lexical-history Add Missing Argument for DispatchCommand in UndoRedo Docs Example (#7795) Lithika Damnod

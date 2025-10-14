@@ -1,7 +1,7 @@
 {
   "name": "@lexical/react-rich-collab-example",
   "private": true,
-  "version": "0.35.0",
+  "version": "0.37.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -14,23 +14,26 @@
     "server:webrtc": "cross-env HOST=localhost PORT=1235 npx y-webrtc"
   },
   "dependencies": {
-    "@lexical/react": "0.35.0",
-    "@lexical/utils": "0.35.0",
-    "@lexical/yjs": "0.35.0",
-    "lexical": "0.35.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "@lexical/react": "0.37.0",
+    "@lexical/utils": "0.37.0",
+    "@lexical/yjs": "0.37.0",
+    "lexical": "0.37.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
     "y-webrtc": "^10.3.0",
     "y-websocket": "^2.0.2",
-    "yjs": "^13.6.15"
+    "yjs": "^13.6.27"
   },
   "devDependencies": {
-    "@types/react": "^18.2.59",
-    "@types/react-dom": "^18.2.19",
-    "@vitejs/plugin-react": "^4.2.1",
+    "@types/react": "^19.1.12",
+    "@types/react-dom": "^19.1.9",
+    "@vitejs/plugin-react": "^5.0.2",
     "concurrently": "^8.2.2",
     "cross-env": "^7.0.3",
     "typescript": "^5.9.2",
-    "vite": "^5.1.4"
+    "vite": "^7.1.4"
+  },
+  "overrides": {
+    "yjs": "$yjs"
   }
 }

@@ -26,6 +26,7 @@ import {
   TableCellNode,
   TableRowNode,
 } from '@lexical/table';
+import {JSDOM} from 'jsdom';
 import {
   $createLineBreakNode,
   $createNodeSelection,
@@ -182,7 +183,7 @@ describe('LexicalEditor tests', () => {
   });
 
   function useLexicalEditor(
-    rootElementRef: React.RefObject<HTMLDivElement>,
+    rootElementRef: React.RefObject<null | HTMLDivElement>,
     onError?: (error: Error) => void,
     nodes?: ReadonlyArray<Klass<LexicalNode> | LexicalNodeReplacement>,
   ) {
@@ -2155,6 +2156,18 @@ describe('LexicalEditor tests', () => {
     expect(textNodeMutation2[0].get(textNodeKeys[1])).toBe('destroyed');
     expect(textNodeMutation2[0].get(textNodeKeys[2])).toBe('destroyed');
   });
+  it('rejects creating an editor with invalid LexicalNode parent class', async () => {
+    class FakeLexicalNode {
+      static getType() {
+        return 'fake-node';
+      }
+    }
+    expect(() =>
+      createEditor({nodes: [FakeLexicalNode as Klass<LexicalNode>]}),
+    ).toThrowError(
+      /FakeLexicalNode \(type fake-node\) does not subclass LexicalNode from the lexical package used by this editor/,
+    );
+  });
   it('mutation listener on newly initialized editor', async () => {
     editor = createEditor();
     const textNodeMutations = vi.fn();
@@ -3180,20 +3193,45 @@ describe('LexicalEditor tests', () => {
     expect(ParagraphNode.importDOM).toHaveBeenCalledTimes(1);
   });
 
-  it('root element count is always positive', () => {
-    const newEditor1 = createTestEditor();
-    const newEditor2 = createTestEditor();
+  describe('setRootElement', () => {
+    it('root element count is always positive', () => {
+      const newEditor1 = createTestEditor();
+      const newEditor2 = createTestEditor();
 
-    const container1 = document.createElement('div');
-    const container2 = document.createElement('div');
+      const container1 = document.createElement('div');
+      const container2 = document.createElement('div');
 
-    newEditor1.setRootElement(container1);
-    newEditor1.setRootElement(null);
+      newEditor1.setRootElement(container1);
+      newEditor1.setRootElement(null);
 
-    newEditor1.setRootElement(container1);
-    newEditor2.setRootElement(container2);
-    newEditor1.setRootElement(null);
-    newEditor2.setRootElement(null);
+      newEditor1.setRootElement(container1);
+      newEditor2.setRootElement(container2);
+      newEditor1.setRootElement(null);
+      newEditor2.setRootElement(null);
+    });
+
+    it('should handle root element moving between documents', () => {
+      const origEditor = createTestEditor();
+      origEditor.setRootElement(container);
+
+      // Register and unregister editor in jsdom document, so that root element
+      // count is non-zero.
+      const jsdom = new JSDOM();
+      const jsdomDocument = jsdom.window.document;
+      const jsdomContainer = jsdomDocument.createElement('div');
+      const jsdomEditor = createTestEditor();
+      jsdomEditor.setRootElement(jsdomContainer);
+      jsdomEditor.setRootElement(null);
+
+      // Move container from original document to jsdom document
+      jsdomDocument.body.appendChild(container);
+
+      // Ensure that cleanup still works
+      origEditor.setRootElement(null);
+
+      // Move node back to the original document so afterEach works
+      document.body.appendChild(container);
+    });
   });
 
   describe('html config', () => {

@@ -6,9 +6,18 @@
  *
  */
 
-import type {Binding} from './Bindings';
+import type {BaseBinding} from './Bindings';
 import type {LexicalCommand} from 'lexical';
-import type {Doc, RelativePosition, UndoManager, XmlText} from 'yjs';
+import type {
+  Doc,
+  RelativePosition,
+  Snapshot,
+  UndoManager,
+  XmlElement,
+  XmlText,
+} from 'yjs';
+
+import './types';
 
 import {createCommand} from 'lexical';
 import {UndoManager as YjsUndoManager} from 'yjs';
@@ -27,6 +36,17 @@ export const CONNECTED_COMMAND: LexicalCommand<boolean> =
 export const TOGGLE_CONNECT_COMMAND: LexicalCommand<boolean> = createCommand(
   'TOGGLE_CONNECT_COMMAND',
 );
+
+export const DIFF_VERSIONS_COMMAND__EXPERIMENTAL: LexicalCommand<{
+  // Starting snapshot if defined, otherwise compare since start of time.
+  prevSnapshot?: Snapshot;
+  // Ending snapshot if defined, otherwise compare against current state of the Yjs document.
+  snapshot?: Snapshot;
+}> = createCommand('DIFF_VERSIONS_COMMAND');
+export const CLEAR_DIFF_VERSIONS_COMMAND__EXPERIMENTAL: LexicalCommand<void> =
+  createCommand('CLEAR_DIFF_VERSIONS_COMMAND');
+export {$getYChangeState, renderSnapshot__EXPERIMENTAL} from './RenderSnapshot';
+
 export type ProviderAwareness = {
   getLocalState: () => UserState | null;
   getStates: () => Map<number, UserState>;
@@ -58,12 +78,18 @@ export type Delta = Array<Operation>;
 export type YjsNode = Record<string, unknown>;
 export type YjsEvent = Record<string, unknown>;
 export type {Provider};
-export type {Binding, ClientID, ExcludedProperties} from './Bindings';
-export {createBinding} from './Bindings';
+export type {
+  BaseBinding,
+  Binding,
+  BindingV2,
+  ClientID,
+  ExcludedProperties,
+} from './Bindings';
+export {createBinding, createBindingV2__EXPERIMENTAL} from './Bindings';
 
 export function createUndoManager(
-  binding: Binding,
-  root: XmlText,
+  binding: BaseBinding,
+  root: XmlText | XmlElement,
 ): UndoManager {
   return new YjsUndoManager(root, {
     trackedOrigins: new Set([binding, null]),
@@ -118,5 +144,8 @@ export {
 } from './SyncCursors';
 export {
   syncLexicalUpdateToYjs,
+  syncLexicalUpdateToYjsV2__EXPERIMENTAL,
   syncYjsChangesToLexical,
+  syncYjsChangesToLexicalV2__EXPERIMENTAL,
+  syncYjsStateToLexicalV2__EXPERIMENTAL,
 } from './SyncEditorStates';

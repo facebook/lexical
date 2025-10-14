@@ -47,6 +47,7 @@ import {
   SPEECH_TO_TEXT_COMMAND,
   SUPPORT_SPEECH_RECOGNITION,
 } from '../SpeechToTextPlugin';
+import {SHOW_VERSIONS_COMMAND} from '../VersionsPlugin';
 
 async function sendEditorState(editor: LexicalEditor): Promise<void> {
   const stringifiedEditorState = JSON.stringify(editor.getEditorState());
@@ -95,11 +96,11 @@ async function shareDoc(doc: SerializedDocument): Promise<void> {
 }
 
 export default function ActionsPlugin({
-  isRichText,
   shouldPreserveNewLinesInMarkdown,
+  useCollabV2,
 }: {
-  isRichText: boolean;
   shouldPreserveNewLinesInMarkdown: boolean;
+  useCollabV2: boolean;
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();
   const [isEditable, setIsEditable] = useState(() => editor.isEditable());
@@ -285,19 +286,30 @@ export default function ActionsPlugin({
         <i className="markdown" />
       </button>
       {isCollabActive && (
-        <button
-          className="action-button connect"
-          onClick={() => {
-            editor.dispatchCommand(TOGGLE_CONNECT_COMMAND, !connected);
-          }}
-          title={`${
-            connected ? 'Disconnect' : 'Connect'
-          } Collaborative Editing`}
-          aria-label={`${
-            connected ? 'Disconnect from' : 'Connect to'
-          } a collaborative editing server`}>
-          <i className={connected ? 'disconnect' : 'connect'} />
-        </button>
+        <>
+          <button
+            className="action-button connect"
+            onClick={() => {
+              editor.dispatchCommand(TOGGLE_CONNECT_COMMAND, !connected);
+            }}
+            title={`${
+              connected ? 'Disconnect' : 'Connect'
+            } Collaborative Editing`}
+            aria-label={`${
+              connected ? 'Disconnect from' : 'Connect to'
+            } a collaborative editing server`}>
+            <i className={connected ? 'disconnect' : 'connect'} />
+          </button>
+          {useCollabV2 && (
+            <button
+              className="action-button versions"
+              onClick={() => {
+                editor.dispatchCommand(SHOW_VERSIONS_COMMAND, undefined);
+              }}>
+              <i className="versions" />
+            </button>
+          )}
+        </>
       )}
       {modal}
     </div>

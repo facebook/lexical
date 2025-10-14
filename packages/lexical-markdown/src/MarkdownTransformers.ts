@@ -35,6 +35,9 @@ import {
 import {
   $createLineBreakNode,
   $createTextNode,
+  $getState,
+  $setState,
+  createState,
   ElementNode,
   Klass,
   LexicalNode,
@@ -201,7 +204,7 @@ export type TextMatchTransformer = Readonly<{
 const EMPTY_OR_WHITESPACE_ONLY = /^[\t ]*$/;
 const ORDERED_LIST_REGEX = /^(\s*)(\d+)\.\s/;
 const UNORDERED_LIST_REGEX = /^(\s*)[-*+]\s/;
-const CHECK_LIST_REGEX = /^(\s*)(?:-\s)?\s?(\[(\s|x)?\])\s/i;
+const CHECK_LIST_REGEX = /^(\s*)(?:[-*+]\s)?\s?(\[(\s|x)?\])\s/i;
 const HEADING_REGEX = /^(#{1,6})\s/;
 const QUOTE_REGEX = /^>\s/;
 const CODE_START_REGEX = /^[ \t]*(?:```|\\`\\`\\`)([\w-]+)?/;
@@ -212,6 +215,10 @@ const TABLE_ROW_REG_EXP = /^\|(.+)\|\s?$/;
 const TABLE_ROW_DIVIDER_REG_EXP = /^(\| ?:?-*:? ?)+\|\s?$/;
 const TAG_START_REGEX = /^[ \t]*<[a-z_][\w-]*(?:\s[^<>]*)?\/?>/i;
 const TAG_END_REGEX = /^[ \t]*<\/[a-z_][\w-]*\s*>/i;
+
+export const listMarkerState = createState('mdListMarker', {
+  parse: (v) => (typeof v === 'string' ? v : '-'),
+});
 
 const createBlockNode = (
   createNode: (match: Array<string>) => ElementNode,
@@ -254,7 +261,14 @@ const listReplace = (listType: ListType): ElementTransformer['replace'] => {
     const listItem = $createListItemNode(
       listType === 'check' ? match[3] === 'x' : undefined,
     );
+    const listMarker =
+      listType === 'bullet' || listType === 'check'
+        ? match[0].trim()[0]
+        : undefined;
     if ($isListNode(nextNode) && nextNode.getListType() === listType) {
+      if (listMarker) {
+        $setState(nextNode, listMarkerState, listMarker);
+      }
       const firstChild = nextNode.getFirstChild();
       if (firstChild !== null) {
         firstChild.insertBefore(listItem);
@@ -267,6 +281,9 @@ const listReplace = (listType: ListType): ElementTransformer['replace'] => {
       $isListNode(previousNode) &&
       previousNode.getListType() === listType
     ) {
+      if (listMarker) {
+        $setState(previousNode, listMarkerState, listMarker);
+      }
       previousNode.append(listItem);
       parentNode.remove();
     } else {
@@ -274,6 +291,9 @@ const listReplace = (listType: ListType): ElementTransformer['replace'] => {
         listType,
         listType === 'number' ? Number(match[2]) : undefined,
       );
+      if (listMarker) {
+        $setState(list, listMarkerState, listMarker);
+      }
       list.append(listItem);
       parentNode.replace(list);
     }
@@ -288,7 +308,7 @@ const listReplace = (listType: ListType): ElementTransformer['replace'] => {
   };
 };
 
-const listExport = (
+const $listExport = (
   listNode: ListNode,
   exportChildren: (node: ElementNode) => string,
   depth: number,
@@ -301,18 +321,19 @@ const listExport = (
       if (listItemNode.getChildrenSize() === 1) {
         const firstChild = listItemNode.getFirstChild();
         if ($isListNode(firstChild)) {
-          output.push(listExport(firstChild, exportChildren, depth + 1));
+          output.push($listExport(firstChild, exportChildren, depth + 1));
           continue;
         }
       }
       const indent = ' '.repeat(depth * LIST_INDENT_SIZE);
       const listType = listNode.getListType();
+      const listMarker = $getState(listNode, listMarkerState);
       const prefix =
         listType === 'number'
           ? `${listNode.getStart() + index}. `
           : listType === 'check'
-            ? `- [${listItemNode.getChecked() ? 'x' : ' '}] `
-            : '- ';
+            ? `${listMarker} [${listItemNode.getChecked() ? 'x' : ' '}] `
+            : listMarker + ' ';
       output.push(indent + prefix + exportChildren(listItemNode));
       index++;
     }
@@ -462,7 +483,7 @@ export const CODE: MultilineElementTransformer = {
 export const UNORDERED_LIST: ElementTransformer = {
   dependencies: [ListNode, ListItemNode],
   export: (node, exportChildren) => {
-    return $isListNode(node) ? listExport(node, exportChildren, 0) : null;
+    return $isListNode(node) ? $listExport(node, exportChildren, 0) : null;
   },
   regExp: UNORDERED_LIST_REGEX,
   replace: listReplace('bullet'),
@@ -472,7 +493,7 @@ export const UNORDERED_LIST: ElementTransformer = {
 export const CHECK_LIST: ElementTransformer = {
   dependencies: [ListNode, ListItemNode],
   export: (node, exportChildren) => {
-    return $isListNode(node) ? listExport(node, exportChildren, 0) : null;
+    return $isListNode(node) ? $listExport(node, exportChildren, 0) : null;
   },
   regExp: CHECK_LIST_REGEX,
   replace: listReplace('check'),
@@ -482,7 +503,7 @@ export const CHECK_LIST: ElementTransformer = {
 export const ORDERED_LIST: ElementTransformer = {
   dependencies: [ListNode, ListItemNode],
   export: (node, exportChildren) => {
-    return $isListNode(node) ? listExport(node, exportChildren, 0) : null;
+    return $isListNode(node) ? $listExport(node, exportChildren, 0) : null;
   },
   regExp: ORDERED_LIST_REGEX,
   replace: listReplace('number'),
@@ -597,6 +618,41 @@ export const LINK: TextMatchTransformer = {
   trigger: ')',
   type: 'text-match',
 };
+
+export const ELEMENT_TRANSFORMERS: Array<ElementTransformer> = [
+  HEADING,
+  QUOTE,
+  UNORDERED_LIST,
+  ORDERED_LIST,
+];
+
+export const MULTILINE_ELEMENT_TRANSFORMERS: Array<MultilineElementTransformer> =
+  [CODE];
+
+// Order of text format transformers matters:
+//
+// - code should go first as it prevents any transformations inside
+// - then longer tags match (e.g. ** or __ should go before * or _)
+export const TEXT_FORMAT_TRANSFORMERS: Array<TextFormatTransformer> = [
+  INLINE_CODE,
+  BOLD_ITALIC_STAR,
+  BOLD_ITALIC_UNDERSCORE,
+  BOLD_STAR,
+  BOLD_UNDERSCORE,
+  HIGHLIGHT,
+  ITALIC_STAR,
+  ITALIC_UNDERSCORE,
+  STRIKETHROUGH,
+];
+
+export const TEXT_MATCH_TRANSFORMERS: Array<TextMatchTransformer> = [LINK];
+
+export const TRANSFORMERS: Array<Transformer> = [
+  ...ELEMENT_TRANSFORMERS,
+  ...MULTILINE_ELEMENT_TRANSFORMERS,
+  ...TEXT_FORMAT_TRANSFORMERS,
+  ...TEXT_MATCH_TRANSFORMERS,
+];
 
 export function normalizeMarkdown(
   input: string,

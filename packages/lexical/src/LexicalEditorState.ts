@@ -95,6 +95,13 @@ export interface EditorStateReadOptions {
   editor?: LexicalEditor | null;
 }
 
+/**
+ * Type guard that returns true if the argument is an EditorState
+ */
+export function $isEditorState(x: unknown): x is EditorState {
+  return x instanceof EditorState;
+}
+
 export class EditorState {
   _nodeMap: NodeMap;
   _selection: null | BaseSelection;

@@ -1,0 +1,57 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
+.VersionsPlugin_Container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 320px;
+}
+
+.VersionsPlugin_Header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.VersionsPlugin_VersionList {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.VersionsPlugin_VersionItem {
+  align-items: center;
+  background-color: white;
+  border: none;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 16px;
+  width: 100%;
+
+  &:disabled {
+    color: #777;
+    font-style: italic;
+    cursor: default;
+  }
+}
+
+.VersionsPlugin_VersionItem:hover:not(:disabled) {
+  background-color: #f5f5f5;
+}
+
+.VersionsPlugin_VersionItem--selected {
+  background-color: #e3f2fd;
+}
+
+.VersionsPlugin_CompareButton {
+  align-self: center;
+}

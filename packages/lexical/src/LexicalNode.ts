@@ -381,12 +381,33 @@ export type DOMExportOutput = {
 
 export type NodeKey = string;
 
+const EPHEMERAL = Symbol.for('ephemeral');
+
+/**
+ * @internal
+ * @param node any LexicalNode
+ * @returns true if the node was created with {@link $cloneWithPropertiesEphemeral}
+ */
+export function $isEphemeral(
+  node: LexicalNode & {readonly [EPHEMERAL]?: boolean},
+): boolean {
+  return node[EPHEMERAL] || false;
+}
+/**
+ * @internal
+ * Mark this node as ephemeral, its instance always returns this
+ * for getLatest and getWritable. It must not be added to an EditorState.
+ */
+export function $markEphemeral<T extends LexicalNode>(
+  node: T & {[EPHEMERAL]?: boolean},
+): T {
+  node[EPHEMERAL] = true;
+  return node;
+}
+
 export class LexicalNode {
-  /**
-   * @internal
-   * Allow us to look up the type including static props
-   */
-  ['constructor']!: KlassConstructor<typeof LexicalNode>;
+  /** @internal Allow us to look up the type including static props */
+  declare ['constructor']: KlassConstructor<typeof LexicalNode>;
   /** @internal */
   __type: string;
   /** @internal */
@@ -549,7 +570,6 @@ export class LexicalNode {
 
     if (__DEV__) {
       if (this.__type !== 'root') {
-        errorOnReadOnly();
         errorOnTypeKlassMismatch(this.__type, this.constructor);
       }
     }
@@ -979,6 +999,9 @@ export class LexicalNode {
    *
    */
   getLatest(): this {
+    if ($isEphemeral(this)) {
+      return this;
+    }
     const latest = $getNodeByKey<this>(this.__key);
     if (latest === null) {
       invariant(
@@ -996,6 +1019,9 @@ export class LexicalNode {
    *
    */
   getWritable(): this {
+    if ($isEphemeral(this)) {
+      return this;
+    }
     errorOnReadOnly();
     const editorState = getActiveEditorState();
     const editor = getActiveEditor();

@@ -29,7 +29,7 @@ export type Options = ReadonlyArray<Option>;
 export type Option = Readonly<{
   text: string;
   uid: string;
-  votes: Array<number>;
+  votes: Array<string>;
 }>;
 
 const PollComponent = React.lazy(() => import('./PollComponent'));
@@ -52,7 +52,7 @@ export function createPollOption(text = ''): Option {
 function cloneOption(
   option: Option,
   text: string,
-  votes?: Array<number>,
+  votes?: Array<string>,
 ): Option {
   return {
     text,
@@ -90,7 +90,7 @@ function parseOptions(json: unknown): Options {
         typeof row.text === 'string' &&
         typeof row.uid === 'string' &&
         Array.isArray(row.votes) &&
-        row.votes.every((v: unknown) => typeof v === 'number')
+        row.votes.every((v: unknown) => typeof v === 'string')
       ) {
         options.push(row);
       }
@@ -167,7 +167,7 @@ export class PollNode extends DecoratorNode<JSX.Element> {
     });
   }
 
-  toggleVote(option: Option, clientID: number): this {
+  toggleVote(option: Option, username: string): this {
     return this.setOptions((prevOptions) => {
       const index = prevOptions.indexOf(option);
       if (index === -1) {
@@ -175,9 +175,9 @@ export class PollNode extends DecoratorNode<JSX.Element> {
       }
       const votes = option.votes;
       const votesClone = Array.from(votes);
-      const voteIndex = votes.indexOf(clientID);
+      const voteIndex = votes.indexOf(username);
       if (voteIndex === -1) {
-        votesClone.push(clientID);
+        votesClone.push(username);
       } else {
         votesClone.splice(voteIndex, 1);
       }

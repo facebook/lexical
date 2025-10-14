@@ -12,6 +12,7 @@ import {
   $getHtmlContent,
   $insertDataTransferForPlainText,
 } from '@lexical/clipboard';
+import {DragonExtension} from '@lexical/dragon';
 import {
   $moveCharacter,
   $shouldOverrideDefaultCharacterSelection,
@@ -25,6 +26,7 @@ import {
   CONTROLLED_TEXT_INSERTION_COMMAND,
   COPY_COMMAND,
   CUT_COMMAND,
+  defineExtension,
   DELETE_CHARACTER_COMMAND,
   DELETE_LINE_COMMAND,
   DELETE_WORD_COMMAND,
@@ -60,7 +62,11 @@ function onCopyForPlainText(
         : event.clipboardData;
       const selection = $getSelection();
 
-      if (selection !== null && clipboardData != null) {
+      if (
+        selection !== null &&
+        !selection.isCollapsed() &&
+        clipboardData != null
+      ) {
         event.preventDefault();
         const htmlString = $getHtmlContent(editor);
 
@@ -417,3 +423,13 @@ export function registerPlainText(editor: LexicalEditor): () => void {
   );
   return removeListener;
 }
+
+/**
+ * An extension to register \@lexical/plain-text behavior
+ */
+export const PlainTextExtension = defineExtension({
+  conflictsWith: ['@lexical/rich-text'],
+  dependencies: [DragonExtension],
+  name: '@lexical/plain-text',
+  register: registerPlainText,
+});

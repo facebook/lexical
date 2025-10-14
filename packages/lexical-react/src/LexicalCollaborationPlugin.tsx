@@ -7,7 +7,6 @@
  */
 
 import type {JSX} from 'react';
-import type {Doc} from 'yjs';
 
 import {
   type CollaborationContextType,
@@ -23,22 +22,24 @@ import {
 } from '@lexical/yjs';
 import {LexicalEditor} from 'lexical';
 import {useEffect, useRef, useState} from 'react';
+import {Doc} from 'yjs';
 
 import {InitialEditorStateType} from './LexicalComposer';
 import {
   CursorsContainerRef,
   useYjsCollaboration,
+  useYjsCollaborationV2__EXPERIMENTAL,
+  useYjsCursors,
   useYjsFocusTracking,
   useYjsHistory,
+  useYjsHistoryV2,
 } from './shared/useYjsCollaboration';
 
-type Props = {
+type ProviderFactory = (id: string, yjsDocMap: Map<string, Doc>) => Provider;
+
+type CollaborationPluginProps = {
   id: string;
-  providerFactory: (
-    // eslint-disable-next-line no-shadow
-    id: string,
-    yjsDocMap: Map<string, Doc>,
-  ) => Provider;
+  providerFactory: ProviderFactory;
   shouldBootstrap: boolean;
   username?: string;
   cursorColor?: string;
@@ -61,27 +62,16 @@ export function CollaborationPlugin({
   excludedProperties,
   awarenessData,
   syncCursorPositionsFn,
-}: Props): JSX.Element {
+}: CollaborationPluginProps): JSX.Element {
   const isBindingInitialized = useRef(false);
   const isProviderInitialized = useRef(false);
 
   const collabContext = useCollaborationContext(username, cursorColor);
-
   const {yjsDocMap, name, color} = collabContext;
 
   const [editor] = useLexicalComposerContext();
 
-  useEffect(() => {
-    collabContext.isCollabActive = true;
-
-    return () => {
-      // Resetting flag only when unmount top level editor collab plugin. Nested
-      // editors (e.g. image caption) should unmount without affecting it
-      if (editor._parentEditor == null) {
-        collabContext.isCollabActive = false;
-      }
-    };
-  }, [collabContext, editor]);
+  useCollabActive(collabContext, editor);
 
   const [provider, setProvider] = useState<Provider>();
   const [doc, setDoc] = useState<Doc>();
@@ -201,10 +191,75 @@ function YjsCollaborationCursors({
     syncCursorPositionsFn,
   );
 
-  collabContext.clientID = binding.clientID;
-
   useYjsHistory(editor, binding);
   useYjsFocusTracking(editor, provider, name, color, awarenessData);
 
   return cursors;
 }
+
+type CollaborationPluginV2Props = {
+  id: string;
+  doc: Doc;
+  provider: Provider;
+  __shouldBootstrapUnsafe?: boolean;
+  username?: string;
+  cursorColor?: string;
+  cursorsContainerRef?: CursorsContainerRef;
+  excludedProperties?: ExcludedProperties;
+  // `awarenessData` parameter allows arbitrary data to be added to the awareness.
+  awarenessData?: object;
+};
+
+export function CollaborationPluginV2__EXPERIMENTAL({
+  id,
+  doc,
+  provider,
+  __shouldBootstrapUnsafe,
+  username,
+  cursorColor,
+  cursorsContainerRef,
+  excludedProperties,
+  awarenessData,
+}: CollaborationPluginV2Props): JSX.Element {
+  const collabContext = useCollaborationContext(username, cursorColor);
+  const {yjsDocMap, name, color} = collabContext;
+
+  const [editor] = useLexicalComposerContext();
+  useCollabActive(collabContext, editor);
+
+  const binding = useYjsCollaborationV2__EXPERIMENTAL(
+    editor,
+    id,
+    doc,
+    provider,
+    yjsDocMap,
+    name,
+    color,
+    {
+      __shouldBootstrapUnsafe,
+      awarenessData,
+      excludedProperties,
+    },
+  );
+
+  useYjsHistoryV2(editor, binding);
+  useYjsFocusTracking(editor, provider, name, color, awarenessData);
+  return useYjsCursors(binding, cursorsContainerRef);
+}
+
+const useCollabActive = (
+  collabContext: CollaborationContextType,
+  editor: LexicalEditor,
+) => {
+  useEffect(() => {
+    collabContext.isCollabActive = true;
+
+    return () => {
+      // Resetting flag only when unmount top level editor collab plugin. Nested
+      // editors (e.g. image caption) should unmount without affecting it
+      if (editor._parentEditor == null) {
+        collabContext.isCollabActive = false;
+      }
+    };
+  }, [collabContext, editor]);
+};

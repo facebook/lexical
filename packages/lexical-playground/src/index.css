@@ -1159,79 +1159,6 @@ i.page-break,
   cursor: nw-resize;
 }
 
-.editor-shell span.inline-editor-image {
-  cursor: default;
-  display: inline-block;
-  position: relative;
-  z-index: 1;
-}
-
-.editor-shell .inline-editor-image img {
-  max-width: 100%;
-  cursor: default;
-}
-
-.editor-shell .inline-editor-image img.focused {
-  outline: 2px solid rgb(60, 132, 244);
-}
-
-.editor-shell .inline-editor-image img.focused.draggable {
-  cursor: grab;
-}
-
-.editor-shell .inline-editor-image img.focused.draggable:active {
-  cursor: grabbing;
-}
-
-.editor-shell .inline-editor-image .image-caption-container .tree-view-output {
-  margin: 0;
-  border-radius: 0;
-}
-
-.editor-shell .inline-editor-image.position-full {
-  margin: 1em 0 1em 0;
-}
-
-.editor-shell .inline-editor-image.position-left {
-  float: left;
-  width: 50%;
-  margin: 1em 1em 0 0;
-}
-
-.editor-shell .inline-editor-image.position-right {
-  float: right;
-  width: 50%;
-  margin: 1em 0 0 1em;
-}
-
-.editor-shell .inline-editor-image .image-edit-button {
-  display: block;
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  padding: 6px 8px;
-  margin: 0 auto;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 5px;
-  background-color: rgba(0, 0, 0, 0.5);
-  min-width: 60px;
-  color: #fff;
-  cursor: pointer;
-  user-select: none;
-}
-
-.editor-shell .inline-editor-image .image-edit-button:hover {
-  background-color: rgba(60, 132, 244, 0.5);
-}
-
-.editor-shell .inline-editor-image .image-caption-container {
-  display: block;
-  background-color: #f4f4f4;
-  min-width: 100%;
-  color: #000;
-  overflow: hidden;
-}
-
 .emoji {
   color: transparent;
   caret-color: rgb(5, 5, 5);
@@ -1344,6 +1271,10 @@ i.page-break,
 
 .actions i.connect {
   background-image: url(images/icons/plug-fill.svg);
+}
+
+.actions i.versions {
+  background-image: url(images/icons/clock-history.svg);
 }
 
 .table-cell-action-button-container {
@@ -1509,6 +1440,10 @@ button.action-button:disabled {
   top: 0;
   z-index: 2;
   overflow-y: hidden; /* disable vertical scroll*/
+}
+
+.toolbar .toolbar-item:focus {
+  outline: 2px solid rgb(60, 132, 244);
 }
 
 button.toolbar-item {

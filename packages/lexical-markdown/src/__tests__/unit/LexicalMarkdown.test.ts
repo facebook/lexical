@@ -10,15 +10,22 @@ import {$createCodeNode, CodeNode} from '@lexical/code';
 import {createHeadlessEditor} from '@lexical/headless';
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
 import {$createLinkNode, LinkNode} from '@lexical/link';
-import {ListItemNode, ListNode} from '@lexical/list';
+import {
+  $createListItemNode,
+  $createListNode,
+  ListItemNode,
+  ListNode,
+} from '@lexical/list';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
   $getSelection,
+  $getState,
   $insertNodes,
   $isRangeSelection,
+  $setState,
 } from 'lexical';
 import {describe, expect, it} from 'vitest';
 
@@ -29,15 +36,24 @@ import {
   registerMarkdownShortcuts,
   TextMatchTransformer,
   Transformer,
-  TRANSFORMERS,
 } from '../..';
 import {
   CODE,
   ElementTransformer,
   HEADING,
+  listMarkerState,
   MultilineElementTransformer,
   normalizeMarkdown,
+  TRANSFORMERS,
 } from '../../MarkdownTransformers';
+
+const HIGHLIGHT_TEXT_MATCH_IMPORT: TextMatchTransformer = {
+  ...LINK,
+  importRegExp: /\$([^$]+?)\$/,
+  replace: (textNode, match) => {
+    textNode.toggleFormat('highlight');
+  },
+};
 
 const SIMPLE_INLINE_JSX_MATCHER: TextMatchTransformer = {
   dependencies: [LinkNode],
@@ -604,6 +620,14 @@ describe('Markdown', () => {
       md: '[link](https://lexical.dev)[link2](https://lexical.dev)',
     },
     {
+      // Import only: <mark>...</mark> is exported as ==...== in markdown.
+      // Use HIGHLIGHT_TEXT_MATCH_IMPORT as custom transformer even though it is included later to ensure it runs before LINK.
+      customTransformers: [HIGHLIGHT_TEXT_MATCH_IMPORT],
+      html: '<p><span style="white-space: pre-wrap;">Multiple </span><a href="https://lexical.dev"><code spellcheck="false" style="white-space: pre-wrap;"><span>TextMatchTransformer</span></code><span style="white-space: pre-wrap;">s</span></a><s><mark style="white-space: pre-wrap;"><span>$ with formatting$</span></mark></s></p>',
+      md: 'Multiple [`TextMatchTransformer`s](https://lexical.dev)~~$ with formatting$~~',
+      skipExport: true,
+    },
+    {
       html: '<p><b><code spellcheck="false" style="white-space: pre-wrap;"><strong>Bold Code</strong></code></b></p>',
       md: '**`Bold Code`**',
     },
@@ -670,14 +694,6 @@ describe('Markdown', () => {
       md: '[h[ello](https://lexical.dev)[world](https://lexical.dev)',
     },
   ];
-
-  const HIGHLIGHT_TEXT_MATCH_IMPORT: TextMatchTransformer = {
-    ...LINK,
-    importRegExp: /\$([^$]+?)\$/,
-    replace: (textNode) => {
-      textNode.setFormat('highlight');
-    },
-  };
 
   for (const {
     html,
@@ -915,6 +931,58 @@ describe('Markdown', () => {
     expect(editor.read(() => $generateHtmlFromNodes(editor))).toBe(
       '<h1><br></h1>',
     );
+  });
+
+  describe('list marker', () => {
+    it('should remember marker used on import', () => {
+      const editor = createHeadlessEditor({
+        nodes: [ListNode, ListItemNode],
+      });
+      editor.update(
+        () =>
+          $convertFromMarkdownString(
+            '+ hello',
+            [...TRANSFORMERS],
+            undefined,
+            true,
+            false,
+          ),
+        {discrete: true},
+      );
+      editor.getEditorState().read(() => {
+        const node = $getRoot().getFirstChild();
+        expect(node).toBeInstanceOf(ListNode);
+        const marker = node ? $getState(node, listMarkerState) : undefined;
+        expect(marker).toBe('+');
+      });
+    });
+
+    it('should remember marker used on export', () => {
+      const editor = createHeadlessEditor({
+        nodes: [ListNode, ListItemNode],
+      });
+      editor.update(
+        () => {
+          const listNode = $createListNode();
+          $setState(listNode, listMarkerState, '+');
+          const listItemNode = $createListItemNode();
+          listItemNode.append($createTextNode('hello'));
+          listNode.append(listItemNode);
+          listNode.setListType('bullet');
+          $getRoot().select();
+          $insertNodes([listNode]);
+        },
+        {discrete: true},
+      );
+      editor.getEditorState().read(() => {
+        const markdownString = $convertToMarkdownString(
+          [...TRANSFORMERS],
+          undefined,
+          true,
+        );
+        expect(markdownString).toBe('+ hello');
+      });
+    });
   });
 });
 

@@ -10,6 +10,7 @@ import {
   moveLeft,
   moveRight,
   redo,
+  selectAll,
   selectCharacters,
   toggleUnderline,
   undo,
@@ -19,10 +20,12 @@ import {
   assertSelection,
   clearEditor,
   click,
+  copyToClipboard,
   focusEditor,
   getHTML,
   html,
   initialize,
+  IS_COLLAB_V2,
   LEGACY_EVENTS,
   pasteFromClipboard,
   pressToggleBold,
@@ -30,6 +33,7 @@ import {
   SAMPLE_IMAGE_URL,
   test,
   waitForSelector,
+  withExclusiveClipboardAccess,
 } from '../utils/index.mjs';
 
 async function checkHTMLExpectationsIncludingUndoRedo(
@@ -906,6 +910,9 @@ test.describe.parallel('Markdown', () => {
   });
 
   test('can import single decorator node (#2604)', async ({page}) => {
+    // TODO(collab-v2): nested editors are not supported yet
+    test.skip(IS_COLLAB_V2);
+
     await focusEditor(page);
     await page.keyboard.type(
       '```markdown ![Yellow flower in tilt shift lens](' +
@@ -939,6 +946,9 @@ test.describe.parallel('Markdown', () => {
   test('can import several text match transformers in a same line (#5385)', async ({
     page,
   }) => {
+    // TODO(collab-v2): nested editors are not supported yet
+    test.skip(IS_COLLAB_V2);
+
     await focusEditor(page);
     await page.keyboard.type(
       '```markdown [link](https://lexical.dev)[link](https://lexical.dev)![Yellow flower in tilt shift lens](' +
@@ -1049,11 +1059,67 @@ test.describe.parallel('Markdown', () => {
       focusPath: [0, 2, 0],
     });
   });
+
+  test('keep list marker on its own items', async ({page}) => {
+    await focusEditor(page);
+    await page.keyboard.type('+');
+    await page.keyboard.type(' a');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Tab');
+    await page.keyboard.type('b');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('c');
+    await click(page, '.action-button .markdown');
+    await assertHTML(page, LIST_MARKER_MARKDOWN);
+  });
+
+  test('keep list marker on its own items with copy/paste', async ({page}) => {
+    await focusEditor(page);
+    await page.keyboard.type('+');
+    await page.keyboard.type(' a');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Tab');
+    await page.keyboard.type('b');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('c');
+    await selectAll(page);
+    await withExclusiveClipboardAccess(async () => {
+      const clipboard = await copyToClipboard(page);
+      // Delete selected text and then delete remaining bullet list.
+      await page.keyboard.press('Backspace');
+      await page.keyboard.press('Backspace');
+      await pasteFromClipboard(page, clipboard);
+      await click(page, '.action-button .markdown');
+      await assertHTML(page, LIST_MARKER_MARKDOWN);
+    });
+  });
 });
+
+const LIST_MARKER_MARKDOWN = html`
+  <code
+    class="PlaygroundEditorTheme__code"
+    dir="auto"
+    spellcheck="false"
+    data-gutter="123"
+    data-highlight-language="markdown"
+    data-language="markdown">
+    <span data-lexical-text="true">+</span>
+    <span data-lexical-text="true">a</span>
+    <br />
+    <span data-lexical-text="true"></span>
+    <span data-lexical-text="true">-</span>
+    <span data-lexical-text="true">b</span>
+    <br />
+    <span data-lexical-text="true">+</span>
+    <span data-lexical-text="true">c</span>
+  </code>
+`;
 
 const TYPED_MARKDOWN = `# Markdown Shortcuts
 This is *italic*, _italic_, **bold**, __bold__, ~~strikethrough~~ text
-This is *__~~bold italic strikethrough~~__* text, ___~~this one too~~___
+This is ~~*__bold italic strikethrough__*~~ text, ___~~this one too~~___
 It ~~___works [with links](https://lexical.io) too___~~
 *Nested **stars tags** are handled too*
 # Title
@@ -1101,7 +1167,7 @@ const TYPED_MARKDOWN_HTML = html`
   <p class="PlaygroundEditorTheme__paragraph" dir="auto">
     <span data-lexical-text="true">This is</span>
     <strong
-      class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textStrikethrough PlaygroundEditorTheme__textItalic"
+      class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic PlaygroundEditorTheme__textStrikethrough"
       data-lexical-text="true">
       bold italic strikethrough
     </strong>

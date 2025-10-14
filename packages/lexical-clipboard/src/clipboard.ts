@@ -11,7 +11,6 @@ import {$addNodeStyle, $sliceSelectedTextNodeContent} from '@lexical/selection';
 import {objectKlassEquals} from '@lexical/utils';
 import {
   $caretFromPoint,
-  $cloneWithProperties,
   $createTabNode,
   $getCaretRange,
   $getChildCaret,
@@ -32,7 +31,6 @@ import {
   LexicalNode,
   SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
   SerializedElementNode,
-  SerializedTextNode,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
@@ -320,34 +318,17 @@ function $appendNodesToJSON(
     $isElementNode(currentNode) && currentNode.excludeFromCopy('html');
   let target = currentNode;
 
-  if (selection !== null) {
-    let clone = $cloneWithProperties(currentNode);
-    clone =
-      $isTextNode(clone) && selection !== null
-        ? $sliceSelectedTextNodeContent(selection, clone)
-        : clone;
-    target = clone;
+  if (selection !== null && $isTextNode(target)) {
+    target = $sliceSelectedTextNodeContent(selection, target, 'clone');
   }
   const children = $isElementNode(target) ? target.getChildren() : [];
 
   const serializedNode = exportNodeToJSON(target);
-
-  // TODO: TextNode calls getTextContent() (NOT node.__text) within its exportJSON method
-  // which uses getLatest() to get the text from the original node with the same key.
-  // This is a deeper issue with the word "clone" here, it's still a reference to the
-  // same node as far as the LexicalEditor is concerned since it shares a key.
-  // We need a way to create a clone of a Node in memory with its own key, but
-  // until then this hack will work for the selected text extract use case.
-  if ($isTextNode(target)) {
-    const text = target.__text;
+  if ($isTextNode(target) && target.getTextContentSize() === 0) {
     // If an uncollapsed selection ends or starts at the end of a line of specialized,
     // TextNodes, such as code tokens, we will get a 'blank' TextNode here, i.e., one
     // with text of length 0. We don't want this, it makes a confusing mess. Reset!
-    if (text.length > 0) {
-      (serializedNode as SerializedTextNode).text = text;
-    } else {
-      shouldInclude = false;
-    }
+    shouldInclude = false;
   }
 
   for (let i = 0; i < children.length; i++) {
@@ -468,7 +449,7 @@ export async function copyToClipboard(
 
   const rootElement = editor.getRootElement();
   const editorWindow = editor._window || window;
-  const windowDocument = window.document;
+  const windowDocument = editorWindow.document;
   const domSelection = getDOMSelection(editorWindow);
   if (rootElement === null || domSelection === null) {
     return false;
@@ -489,7 +470,7 @@ export async function copyToClipboard(
         if (objectKlassEquals(secondEvent, ClipboardEvent)) {
           removeListener();
           if (clipboardEventTimeout !== null) {
-            window.clearTimeout(clipboardEventTimeout);
+            editorWindow.clearTimeout(clipboardEventTimeout);
             clipboardEventTimeout = null;
           }
           resolve($copyToClipboardEvent(editor, secondEvent, data));
@@ -501,7 +482,7 @@ export async function copyToClipboard(
     );
     // If the above hack execCommand hack works, this timeout code should never fire. Otherwise,
     // the listener will be quickly freed so that the user can reuse it again
-    clipboardEventTimeout = window.setTimeout(() => {
+    clipboardEventTimeout = editorWindow.setTimeout(() => {
       removeListener();
       clipboardEventTimeout = null;
       resolve(false);
@@ -519,6 +500,12 @@ function $copyToClipboardEvent(
 ): boolean {
   if (data === undefined) {
     const domSelection = getDOMSelection(editor._window);
+    const selection = $getSelection();
+
+    if (!selection || selection.isCollapsed()) {
+      return false;
+    }
+
     if (!domSelection) {
       return false;
     }
@@ -531,10 +518,7 @@ function $copyToClipboardEvent(
     ) {
       return false;
     }
-    const selection = $getSelection();
-    if (selection === null) {
-      return false;
-    }
+
     data = $getClipboardDataFromSelection(selection);
   }
   event.preventDefault();
@@ -588,6 +572,11 @@ export function setLexicalClipboardDataTransfer(
   clipboardData: DataTransfer,
   data: LexicalClipboardData,
 ) {
+  for (const [k] of clipboardDataFunctions) {
+    if (data[k] === undefined) {
+      clipboardData.setData(k, '');
+    }
+  }
   for (const k in data) {
     const v = data[k as keyof LexicalClipboardData];
     if (v !== undefined) {

@@ -213,8 +213,9 @@ const CODE_SINGLE_LINE_REGEX =
   /^[ \t]*```[^`]+(?:(?:`{1,2}|`{4,})[^`]+)*```(?:[^`]|$)/;
 const TABLE_ROW_REG_EXP = /^\|(.+)\|\s?$/;
 const TABLE_ROW_DIVIDER_REG_EXP = /^(\| ?:?-*:? ?)+\|\s?$/;
-const TAG_FIRST_REGEX = /^<[a-z_][\w-]*(?:\s[^<>]*)?\/?>/i;
-const TAG_LAST_REGEX = /^<\/[a-z_][\w-]*\s*>/i;
+const TAG_START_REGEX = /^<[a-z_][\w-]*(?:\s[^<>]*)?\/?>/i;
+const TAG_END_REGEX = /^<\/[a-z_][\w-]*\s*>/i;
+const ENDS_WITH = (regex: RegExp) => new RegExp(`${regex.source}$`);
 
 export const listMarkerState = createState('mdListMarker', {
   parse: (v) => (typeof v === 'string' ? v : '-'),
@@ -662,7 +663,6 @@ export function normalizeMarkdown(
   let inCodeBlock = false;
   const sanitizedLines: string[] = [];
   let nestedDeepCodeBlock = 0;
-  // const inMdxTag = false;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trimEnd();
@@ -702,17 +702,6 @@ export function normalizeMarkdown(
       continue;
     }
 
-    // if (TAG_FIRST_REGEX.test(line)) {
-    //   inMdxTag = true;
-    // }
-    // if (TAG_LAST_REGEX.test(line)) {
-    //   inMdxTag = false;
-    // }
-    // if (inMdxTag) {
-    //   sanitizedLines.push(line);
-    //   continue;
-    // }
-
     // In markdown the concept of "empty paragraphs" does not exist.
     // Blocks must be separated by an empty line. Non-empty adjacent lines must be merged.
     if (
@@ -728,10 +717,10 @@ export function normalizeMarkdown(
       TABLE_ROW_REG_EXP.test(line) ||
       TABLE_ROW_DIVIDER_REG_EXP.test(line) ||
       !shouldMergeAdjacentLines ||
-      TAG_FIRST_REGEX.test(line) ||
-      TAG_LAST_REGEX.test(line) ||
-      // TAG_FIRST_REGEX.test(lastLine) ||
-      TAG_LAST_REGEX.test(lastLine) ||
+      TAG_START_REGEX.test(line) ||
+      TAG_END_REGEX.test(line) ||
+      ENDS_WITH(TAG_END_REGEX).test(lastLine) ||
+      ENDS_WITH(TAG_START_REGEX).test(lastLine) ||
       CODE_END_REGEX.test(lastLine)
     ) {
       sanitizedLines.push(line);

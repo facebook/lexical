@@ -272,6 +272,7 @@ export {
   getRegisteredNode,
   getRegisteredNodeOrThrow,
   getStaticNodeConfig,
+  getTextDirection,
   INTERNAL_$isBlock,
   isBlockDomNode,
   isDocumentFragment,

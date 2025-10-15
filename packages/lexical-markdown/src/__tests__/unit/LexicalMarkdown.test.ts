@@ -1139,7 +1139,7 @@ E3
   });
 });
 
-describe('normalizeMarkdown – new behaviors', () => {
+describe('normalizeMarkdown – shouldMergeAdjacentLines = true', () => {
   it('merges adjacent plain text lines with a single space', () => {
     const md = `Hello
 world`;

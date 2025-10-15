@@ -201,7 +201,6 @@ export type TextMatchTransformer = Readonly<{
   type: 'text-match';
 }>;
 
-const EMPTY_OR_WHITESPACE_ONLY = /^[\t ]*$/;
 const ORDERED_LIST_REGEX = /^(\s*)(\d+)\.\s/;
 const UNORDERED_LIST_REGEX = /^(\s*)[-*+]\s/;
 const CHECK_LIST_REGEX = /^(\s*)(?:[-*+]\s)?\s?(\[(\s|x)?\])\s/i;
@@ -705,8 +704,8 @@ export function normalizeMarkdown(
     // In markdown the concept of "empty paragraphs" does not exist.
     // Blocks must be separated by an empty line. Non-empty adjacent lines must be merged.
     if (
-      EMPTY_OR_WHITESPACE_ONLY.test(line) ||
-      EMPTY_OR_WHITESPACE_ONLY.test(lastLine!) ||
+      line === '' ||
+      lastLine === '' ||
       !lastLine ||
       HEADING_REGEX.test(lastLine) ||
       HEADING_REGEX.test(line) ||

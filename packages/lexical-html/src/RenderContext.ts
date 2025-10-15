@@ -14,7 +14,7 @@ import {$getEditor, LexicalEditor} from 'lexical';
 import {DOMRenderContextSymbol, DOMRenderExtensionName} from './constants';
 import {
   $withContext,
-  createContextStateFactory,
+  createContextState,
   getContextValue,
   getEditorContext,
 } from './ContextRecord';
@@ -24,13 +24,18 @@ import {AnyContextConfigPair, ContextRecord, RenderStateConfig} from './types';
 /**
  * @__NO_SIDE_EFFECTS__
  */
-export const createRenderState: <V>(
+export function createRenderState<V>(
   name: string,
   getDefaultValue: () => V,
   isEqual?: (a: V, b: V) => boolean,
-) => RenderStateConfig<V> = /*@__PURE__*/ createContextStateFactory(
-  DOMRenderContextSymbol,
-);
+): RenderStateConfig<V> {
+  return createContextState(
+    DOMRenderContextSymbol,
+    name,
+    getDefaultValue,
+    isEqual,
+  );
+}
 
 /**
  * true if the export was initiated from the root of the document

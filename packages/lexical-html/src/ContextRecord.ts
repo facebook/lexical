@@ -144,15 +144,14 @@ export function $withContext<Ctx extends AnyContextSymbol>(
 /**
  * @__NO_SIDE_EFFECTS__
  */
-export function createContextStateFactory<Tag extends symbol>(tag: Tag) {
-  const contextTag: {readonly [k in Tag]: true} = {[tag]: true} as const;
-  return <V>(
-    name: string,
-    getDefaultValue: () => V,
-    isEqual?: (a: V, b: V) => boolean,
-  ) =>
-    Object.assign(
-      createState(Symbol(name), {isEqual, parse: getDefaultValue}),
-      contextTag,
-    );
+export function createContextState<Tag extends symbol, V>(
+  tag: Tag,
+  name: string,
+  getDefaultValue: () => V,
+  isEqual?: (a: V, b: V) => boolean,
+): ContextConfig<Tag, V> {
+  return Object.assign(
+    createState(Symbol(name), {isEqual, parse: getDefaultValue}),
+    {[tag]: true} as const,
+  );
 }

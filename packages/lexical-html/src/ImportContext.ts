@@ -26,7 +26,7 @@ import {
 import {DOMImportContextSymbol} from './constants';
 import {
   $withContext,
-  createContextStateFactory,
+  createContextState,
   getEditorContext,
   getEditorContextValue,
 } from './ContextRecord';
@@ -34,13 +34,18 @@ import {
 /**
  * @__NO_SIDE_EFFECTS__
  */
-export const createImportState: <V>(
+export function createImportState<V>(
   name: string,
   getDefaultValue: () => V,
   isEqual?: (a: V, b: V) => boolean,
-) => ImportStateConfig<V> = /*@__PURE__*/ createContextStateFactory(
-  DOMImportContextSymbol,
-);
+): ImportStateConfig<V> {
+  return createContextState(
+    DOMImportContextSymbol,
+    name,
+    getDefaultValue,
+    isEqual,
+  );
+}
 
 export const $withImportContext: (
   cfg: readonly AnyContextConfigPair<typeof DOMImportContextSymbol>[],

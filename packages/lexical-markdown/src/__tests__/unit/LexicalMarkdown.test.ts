@@ -1097,7 +1097,7 @@ A2`;
 A2`);
   });
 
-  it('does not merge across MDX tags', () => {
+  it('mdx start tag followed by content, than closing tag preceded by content', () => {
     const md = `<MyComponent>Line 1
 Some Text</MyComponent>`;
     expect(normalizeMarkdown(md, true)).toBe(

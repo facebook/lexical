@@ -661,7 +661,6 @@ export function normalizeMarkdown(
   const lines = input.split('\n');
   let inCodeBlock = false;
   const sanitizedLines: string[] = [];
-  let nestedDeepCodeBlock = 0;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trimEnd();
@@ -673,24 +672,9 @@ export function normalizeMarkdown(
       continue;
     }
 
-    if (CODE_END_REGEX.test(line)) {
-      if (nestedDeepCodeBlock === 0) {
-        inCodeBlock = true;
-      }
-      if (nestedDeepCodeBlock === 1) {
-        inCodeBlock = false;
-      }
-      if (nestedDeepCodeBlock > 0) {
-        nestedDeepCodeBlock--;
-      }
-      sanitizedLines.push(line);
-      continue;
-    }
-
-    // Toggle inCodeBlock state when encountering start or end of a code block
-    if (CODE_START_REGEX.test(line)) {
-      inCodeBlock = true;
-      nestedDeepCodeBlock++;
+    // Detect the start or end of a code block
+    if (CODE_START_REGEX.test(line) || CODE_END_REGEX.test(line)) {
+      inCodeBlock = !inCodeBlock;
       sanitizedLines.push(line);
       continue;
     }

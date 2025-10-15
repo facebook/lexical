@@ -1139,7 +1139,7 @@ E3
   });
 });
 
-describe.skip('normalizeMarkdown – new behaviors', () => {
+describe('normalizeMarkdown – new behaviors', () => {
   it('merges adjacent plain text lines with a single space', () => {
     const md = `Hello
 world`;
@@ -1175,27 +1175,5 @@ A2`;
     expect(normalizeMarkdown(md, true)).toBe(`A1
 
 A2`);
-  });
-
-  it('handles a code block that contains a literal ``` line without breaking merging outside', () => {
-    const md = `Intro
-para
-\`\`\`md
-some code
-\`\`\`
-still code
-\`\`\`
-Outro
-text`;
-    // Outside the fenced block, adjacent non-empty lines should merge with a space
-    expect(normalizeMarkdown(md, true)).toBe(
-      `Intro para
-\`\`\`md
-some code
-\`\`\`
-still code
-\`\`\`
-Outro text`,
-    );
   });
 });

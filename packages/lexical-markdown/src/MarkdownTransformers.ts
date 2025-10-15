@@ -204,7 +204,7 @@ export type TextMatchTransformer = Readonly<{
 const EMPTY_OR_WHITESPACE_ONLY = /^[\t ]*$/;
 const ORDERED_LIST_REGEX = /^(\s*)(\d+)\.\s/;
 const UNORDERED_LIST_REGEX = /^(\s*)[-*+]\s/;
-const CHECK_LIST_REGEX = /^(\s*)(?:[-*+]\s)?\s?(\[(\s|x)?\])\s/i;
+const CHECK_LIST_REGEX = /^(\s*)(?:-\s)?\s?(\[(\s|x)?\])\s/i;
 const HEADING_REGEX = /^(#{1,6})\s/;
 const QUOTE_REGEX = /^>\s/;
 const CODE_START_REGEX = /^[ \t]*(?:```|\\`\\`\\`)([\w-]+)?/;
@@ -213,8 +213,8 @@ const CODE_SINGLE_LINE_REGEX =
   /^[ \t]*```[^`]+(?:(?:`{1,2}|`{4,})[^`]+)*```(?:[^`]|$)/;
 const TABLE_ROW_REG_EXP = /^\|(.+)\|\s?$/;
 const TABLE_ROW_DIVIDER_REG_EXP = /^(\| ?:?-*:? ?)+\|\s?$/;
-const TAG_START_REGEX = /^[ \t]*<[a-z_][\w-]*(?:\s[^<>]*)?\/?>/i;
-const TAG_END_REGEX = /^[ \t]*<\/[a-z_][\w-]*\s*>/i;
+const TAG_FIRST_REGEX = /^<[a-z_][\w-]*(?:\s[^<>]*)?\/?>/i;
+const TAG_LAST_REGEX = /^<\/[a-z_][\w-]*\s*>/i;
 
 export const listMarkerState = createState('mdListMarker', {
   parse: (v) => (typeof v === 'string' ? v : '-'),
@@ -662,9 +662,10 @@ export function normalizeMarkdown(
   let inCodeBlock = false;
   const sanitizedLines: string[] = [];
   let nestedDeepCodeBlock = 0;
+  let inMdxTag = false;
 
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
+    const line = lines[i].trimEnd();
     const lastLine = sanitizedLines[sanitizedLines.length - 1];
 
     // Code blocks of ```single line``` don't toggle the inCodeBlock flag
@@ -701,6 +702,17 @@ export function normalizeMarkdown(
       continue;
     }
 
+    if (TAG_FIRST_REGEX.test(line)) {
+      inMdxTag = true;
+    }
+    if (TAG_LAST_REGEX.test(line)) {
+      inMdxTag = false;
+    }
+    if (inMdxTag) {
+      sanitizedLines.push(line);
+      continue;
+    }
+
     // In markdown the concept of "empty paragraphs" does not exist.
     // Blocks must be separated by an empty line. Non-empty adjacent lines must be merged.
     if (
@@ -716,15 +728,16 @@ export function normalizeMarkdown(
       TABLE_ROW_REG_EXP.test(line) ||
       TABLE_ROW_DIVIDER_REG_EXP.test(line) ||
       !shouldMergeAdjacentLines ||
-      TAG_START_REGEX.test(line) ||
-      TAG_END_REGEX.test(line) ||
-      TAG_START_REGEX.test(lastLine) ||
-      TAG_END_REGEX.test(lastLine) ||
+      TAG_FIRST_REGEX.test(line) ||
+      TAG_LAST_REGEX.test(line) ||
+      TAG_FIRST_REGEX.test(lastLine) ||
+      TAG_LAST_REGEX.test(lastLine) ||
       CODE_END_REGEX.test(lastLine)
     ) {
       sanitizedLines.push(line);
     } else {
-      sanitizedLines[sanitizedLines.length - 1] = lastLine + ' ' + line.trim();
+      sanitizedLines[sanitizedLines.length - 1] =
+        lastLine + ' ' + line.trimStart();
     }
   }
 

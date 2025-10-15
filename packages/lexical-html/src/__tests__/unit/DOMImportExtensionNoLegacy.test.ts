@@ -283,15 +283,18 @@ const NO_LEGACY_CONFIG: Partial<DOMImportConfig> = {
   compileLegacyImportNode: () => () => null,
   overrides: [
     importOverride('#text', $convertTextDOMNode),
-    importOverride('*', (dom) => {
+    importOverride('*', function $overrideCreateParagraphFromBlock(dom) {
       if (isBlockDomNode(dom)) {
         return {node: $applyTextAlignToElement($createParagraphNode())};
       }
     }),
     importOverride(
       '*',
-      (dom, $next): undefined | DOMImportOutputContinue => {
-        const childContext: AnyImportStateConfigPair[] = [];
+      function $overrideBlockFormatAndAlignment(
+        dom,
+        $next,
+      ): undefined | DOMImportOutputContinue {
+        const nextContext: AnyImportStateConfigPair[] = [];
         if (isBlockDomNode(dom)) {
           const {textAlign} = dom.style;
           switch (textAlign) {
@@ -301,7 +304,7 @@ const NO_LEGACY_CONFIG: Partial<DOMImportConfig> = {
             case 'left':
             case 'right':
             case 'start':
-              childContext.push(ImportContextTextAlign.pair(textAlign));
+              nextContext.push(ImportContextTextAlign.pair(textAlign));
               break;
             default:
               break;
@@ -355,13 +358,13 @@ const NO_LEGACY_CONFIG: Partial<DOMImportConfig> = {
           }
           if (formats) {
             const boundFormats = formats;
-            childContext.push(
+            nextContext.push(
               ImportContextTextFormats.pair((v) => ({...v, ...boundFormats})),
             );
           }
         }
-        if (childContext.length > 0) {
-          return {childContext, node: $next};
+        if (nextContext.length > 0) {
+          return {nextContext, node: $next};
         }
       },
       {priority: 1},
@@ -369,7 +372,24 @@ const NO_LEGACY_CONFIG: Partial<DOMImportConfig> = {
     ...formatOverrides,
     ...listOverrides,
     importOverride('li', (dom) => {
-      return {node: $applyTextAlignToElement($createListItemNode())};
+      const node = $applyTextAlignToElement($createListItemNode());
+      let ariaChecked: boolean | undefined;
+      if (dom.ariaChecked === 'true') {
+        ariaChecked = true;
+      } else if (dom.ariaChecked === 'false') {
+        ariaChecked = false;
+      } else {
+        const input: null | HTMLInputElement = dom.querySelector(
+          'input[type=checkbox]',
+        );
+        if (input) {
+          ariaChecked = input.checked;
+        }
+      }
+      if (ariaChecked !== undefined) {
+        node.setChecked(ariaChecked);
+      }
+      return {node};
     }),
   ],
 };

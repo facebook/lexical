@@ -184,7 +184,7 @@ export const DOMRenderExtension = defineExtension<
     const merged = shallowMergeConfig(config, partial);
     for (const k of ['overrides', 'contextDefaults'] as const) {
       if (partial[k]) {
-        (merged[k] as unknown[]) = [...merged[k], ...partial[k]];
+        (merged[k] as unknown[]) = [...config[k], ...partial[k]];
       }
     }
     return merged;

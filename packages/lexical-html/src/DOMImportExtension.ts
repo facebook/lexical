@@ -127,13 +127,17 @@ class MatchesImport {
             }
           }
         }
-        return rval;
+        return (
+          rval || {
+            node: withImportNextSymbol($nextImport.bind(null, node)),
+          }
+        );
       };
-      return (
-        ((tag === node.nodeName.toLowerCase() || (el && tag === '*')) &&
-          $importAt(matches.length - 1)) || {
-          node: withImportNextSymbol($nextImport.bind(null, node)),
-        }
+
+      return $importAt(
+        (tag === node.nodeName.toLowerCase() || (el && tag === '*')
+          ? matches.length
+          : 0) - 1,
       );
     };
   }
@@ -574,7 +578,7 @@ export const DOMImportExtension = defineExtension<
     const merged = shallowMergeConfig(config, partial);
     for (const k of ['overrides'] as const) {
       if (partial[k]) {
-        (merged[k] as unknown[]) = [...merged[k], ...partial[k]];
+        (merged[k] as unknown[]) = [...config[k], ...partial[k]];
       }
     }
     return merged;

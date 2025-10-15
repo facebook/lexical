@@ -140,10 +140,14 @@ export const $createOrUpdateNodeFromYElement = (
     if (snapshot === undefined || prevSnapshot === undefined) {
       el.toArray().forEach($createChildren);
     } else {
-      typeListToArraySnapshot(
-        el,
-        new Snapshot(prevSnapshot.ds, snapshot.sv),
-      ).forEach($createChildren);
+      typeListToArraySnapshot(el, new Snapshot(prevSnapshot.ds, snapshot.sv))
+        .filter(
+          (childType) =>
+            !childType._item.deleted ||
+            isItemVisible(childType._item, snapshot) ||
+            isItemVisible(childType._item, prevSnapshot),
+        )
+        .forEach($createChildren);
     }
 
     $spliceChildren(node, children);

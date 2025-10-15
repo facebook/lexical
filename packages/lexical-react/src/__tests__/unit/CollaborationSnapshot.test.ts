@@ -255,6 +255,54 @@ describe('CollaborationSnapshot', () => {
       );
     });
 
+    it('should not include elements that were added and removed between snapshots', async () => {
+      editor1.update(
+        () => {
+          $getRoot()
+            .getFirstChildOrThrow<ParagraphNode>()
+            .append($createTextNode('First paragraph'));
+        },
+        {discrete: true},
+      );
+
+      editor1.update(
+        () => {
+          $getRoot().append(
+            $createParagraphNode().append(
+              $createTextNode('Paragraph that will be removed'),
+            ),
+          );
+        },
+        {discrete: true},
+      );
+
+      editor1.update(
+        () => {
+          $getRoot().splice(1, 1, []);
+        },
+        {discrete: true},
+      );
+
+      const snapshot = Y.snapshot(client1.getDoc());
+
+      await waitForReact(() =>
+        editor1.dispatchCommand(DIFF_VERSIONS_COMMAND__EXPERIMENTAL, {
+          snapshot,
+        }),
+      );
+
+      expectHtmlToBeEqual(
+        client1.getHTML(),
+        html`
+          <p class="y-added" dir="auto">
+            <span class="y-added" data-lexical-text="true">
+              First paragraph
+            </span>
+          </p>
+        `,
+      );
+    });
+
     it('should ignore changes from other clients while in diff mode', async () => {
       await waitForReact(() => {
         editor1.update(() => {

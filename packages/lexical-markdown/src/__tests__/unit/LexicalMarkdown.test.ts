@@ -1176,4 +1176,12 @@ A2`;
 
 A2`);
   });
+
+  it('does not merge across MDX tags', () => {
+    const md = `<MyComponent>Line 1
+Some Text</MyComponent>`;
+    expect(normalizeMarkdown(md, true)).toBe(
+      `<MyComponent>Line 1 Some Text</MyComponent>`,
+    );
+  });
 });

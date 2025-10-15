@@ -204,7 +204,7 @@ export type TextMatchTransformer = Readonly<{
 const EMPTY_OR_WHITESPACE_ONLY = /^[\t ]*$/;
 const ORDERED_LIST_REGEX = /^(\s*)(\d+)\.\s/;
 const UNORDERED_LIST_REGEX = /^(\s*)[-*+]\s/;
-const CHECK_LIST_REGEX = /^(\s*)(?:-\s)?\s?(\[(\s|x)?\])\s/i;
+const CHECK_LIST_REGEX = /^(\s*)(?:[-*+]\s)?\s?(\[(\s|x)?\])\s/i;
 const HEADING_REGEX = /^(#{1,6})\s/;
 const QUOTE_REGEX = /^>\s/;
 const CODE_START_REGEX = /^[ \t]*(?:```|\\`\\`\\`)([\w-]+)?/;
@@ -662,7 +662,7 @@ export function normalizeMarkdown(
   let inCodeBlock = false;
   const sanitizedLines: string[] = [];
   let nestedDeepCodeBlock = 0;
-  let inMdxTag = false;
+  // const inMdxTag = false;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trimEnd();
@@ -702,16 +702,16 @@ export function normalizeMarkdown(
       continue;
     }
 
-    if (TAG_FIRST_REGEX.test(line)) {
-      inMdxTag = true;
-    }
-    if (TAG_LAST_REGEX.test(line)) {
-      inMdxTag = false;
-    }
-    if (inMdxTag) {
-      sanitizedLines.push(line);
-      continue;
-    }
+    // if (TAG_FIRST_REGEX.test(line)) {
+    //   inMdxTag = true;
+    // }
+    // if (TAG_LAST_REGEX.test(line)) {
+    //   inMdxTag = false;
+    // }
+    // if (inMdxTag) {
+    //   sanitizedLines.push(line);
+    //   continue;
+    // }
 
     // In markdown the concept of "empty paragraphs" does not exist.
     // Blocks must be separated by an empty line. Non-empty adjacent lines must be merged.
@@ -730,7 +730,7 @@ export function normalizeMarkdown(
       !shouldMergeAdjacentLines ||
       TAG_FIRST_REGEX.test(line) ||
       TAG_LAST_REGEX.test(line) ||
-      TAG_FIRST_REGEX.test(lastLine) ||
+      // TAG_FIRST_REGEX.test(lastLine) ||
       TAG_LAST_REGEX.test(lastLine) ||
       CODE_END_REGEX.test(lastLine)
     ) {

@@ -30,15 +30,19 @@ import {
 import {
   $createListItemNode,
   $createListNode,
+  $isListItemNode,
+  $isListNode,
   CheckListExtension,
   ListExtension,
   ListType,
 } from '@lexical/list';
 import {
+  $copyNode,
   $createLineBreakNode,
   $createParagraphNode,
   $createTabNode,
   $createTextNode,
+  $getChildCaret,
   $getEditor,
   $getSelection,
   $isElementNode,
@@ -97,11 +101,47 @@ function listTypeFromDOM(dom: HTMLUListElement | HTMLOListElement): ListType {
   return dom.tagName === 'OL' ? 'number' : 'bullet';
 }
 
+/*
+ * This function normalizes the children of a ListNode after the conversion from HTML,
+ * ensuring that they are all ListItemNodes
+ */
+function $normalizeListNode(
+  node: null | LexicalNode | LexicalNode[],
+): null | LexicalNode | LexicalNode[] {
+  if (Array.isArray(node) || !$isListNode(node)) {
+    return node;
+  }
+  for (const child of node.getChildren()) {
+    // Wrap all children in li elements
+    if (!$isListItemNode(child)) {
+      const li = $createListItemNode();
+      child.replace(li).append(child);
+    }
+  }
+  return node;
+}
+
+function $isOnlyChild(node: LexicalNode): boolean {
+  return !!(node.getPreviousSibling() || node.getNextSibling());
+}
+
+function $normalizeListItemNode(
+  node: null | LexicalNode | LexicalNode[],
+): null | LexicalNode | LexicalNode[] {
+  if (Array.isArray(node) || !$isListItemNode(node)) {
+    return node;
+  }
+  return $unwrapBlockDOM(
+    node,
+    (el) => !el.isInline() || ($isListNode(el) && !$isOnlyChild(el)),
+  );
+}
+
 function $importListNode(
   dom: HTMLUListElement | HTMLOListElement,
 ): DOMImportOutputNode {
   const listNode = $createListNode().setListType(listTypeFromDOM(dom));
-  return {childNodes: dom.querySelectorAll(':scope>li'), node: listNode};
+  return {$finalize: $normalizeListNode, node: listNode};
 }
 
 const listOverrides = (['ul', 'ol'] as const).map((tag) =>
@@ -279,13 +319,48 @@ function $applyTextAlignToElement<T extends ElementNode>(node: T): T {
   return align ? node.setFormat(align) : node;
 }
 
+function $unwrapBlockDOM(
+  node: LexicalNode | LexicalNode[] | null,
+  $splitPredicate: (el: ElementNode) => boolean = (el) => !el.isInline(),
+  $createNextElement: (el: ElementNode) => ElementNode = $copyNode,
+): null | LexicalNode | LexicalNode[] {
+  if (Array.isArray(node) || !$isElementNode(node)) {
+    return node;
+  }
+  let adjacentNodes: undefined | ElementNode[];
+  let lastParent: undefined | ElementNode;
+  for (const {origin} of $getChildCaret(node, 'next')) {
+    if ($isElementNode(origin) && $splitPredicate(origin)) {
+      lastParent = undefined;
+      adjacentNodes = adjacentNodes || [];
+      origin.remove();
+      adjacentNodes.push(origin);
+    } else if (adjacentNodes) {
+      lastParent = lastParent || $createNextElement(node);
+      origin.remove();
+      lastParent.append(origin);
+    }
+  }
+  if (adjacentNodes) {
+    if (node.isEmpty()) {
+      node.remove();
+    } else {
+      adjacentNodes.unshift(node);
+    }
+  }
+  return adjacentNodes || node;
+}
+
 const NO_LEGACY_CONFIG: Partial<DOMImportConfig> = {
   compileLegacyImportNode: () => () => null,
   overrides: [
     importOverride('#text', $convertTextDOMNode),
     importOverride('*', function $overrideCreateParagraphFromBlock(dom) {
       if (isBlockDomNode(dom)) {
-        return {node: $applyTextAlignToElement($createParagraphNode())};
+        return {
+          $finalize: $unwrapBlockDOM,
+          node: $applyTextAlignToElement($createParagraphNode()),
+        };
       }
     }),
     importOverride(
@@ -389,7 +464,7 @@ const NO_LEGACY_CONFIG: Partial<DOMImportConfig> = {
       if (ariaChecked !== undefined) {
         node.setChecked(ariaChecked);
       }
-      return {node};
+      return {$finalize: $normalizeListItemNode, node};
     }),
   ],
 };

@@ -489,7 +489,7 @@ export function compileDOMImportOverrides(
           stack.push([
             node,
             ctx,
-            () => ({node: $boundFinalize()}),
+            () => ({childNodes: EMPTY_ARRAY, node: $boundFinalize()}),
             $parentAppendChild,
           ]);
         }

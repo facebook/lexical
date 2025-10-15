@@ -22,7 +22,6 @@ import {
   HISTORIC_TAG,
   SKIP_SCROLL_INTO_VIEW_TAG,
 } from 'lexical';
-import {YXmlElement, YXmlText} from 'node_modules/yjs/dist/src/internals';
 import invariant from 'shared/invariant';
 import {
   Item,
@@ -323,7 +322,7 @@ export function syncLexicalUpdateToYjs(
 
 function $syncEventV2(
   binding: BindingV2,
-  event: YEvent<YXmlElement | YXmlText>,
+  event: YEvent<XmlElement | XmlText>,
 ): void {
   const {target} = event;
   if (target instanceof XmlElement && event instanceof YXmlEvent) {
@@ -350,7 +349,7 @@ function $syncEventV2(
 export function syncYjsChangesToLexicalV2__EXPERIMENTAL(
   binding: BindingV2,
   provider: Provider,
-  events: Array<YEvent<YXmlElement | YXmlText>>,
+  events: Array<YEvent<XmlElement | XmlText>>,
   transaction: YTransaction,
   isFromUndoManger: boolean,
 ): void {

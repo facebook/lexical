@@ -1,3 +1,20 @@
+## v0.37.0 (2025-10-11)
+
+- lexical-yjs Chore fix imports of Yjs XML types (#7908) James Fitzsimmons
+- lexical-react Chore make shouldBootstrapUnsafe prop optional (#7907) James Fitzsimmons
+- lexical-playground Bug Fix Export ParagraphNode as div roleparagraph when it contains block DOM (#7906) Bob Ippolito
+- lexicallexical-clipboardlexical-htmllexical-selection Feature Add an internal ephemeral node concept (#7904) Bob Ippolito
+- lexical-yjslexical-react Feature commands for diffing two yjs snapshots in collab v2 (#7903) James Fitzsimmons
+- lexicallexical-clipboardlexical-playground Feature ImageNode caption support for exportDOM and importDOM (#7900) Mehmet Can Ertan
+- lexical-rich-text Bug fix updown arrows for node selection (#7902) Maksim Horbachevsky
+- lexical-listlexical-markdown Feature Keep list marker for markdown round-trip (#7892) Simon
+- lexical-yjslexical-react Feature initial implementation of collab v2 (#7616) James Fitzsimmons
+- lexical-react Bug Fix LexicalMenu guard against undefined option when list shrinks (#7899) MRADUL TRIPATHI
+- examples Feature sveltekit ssr example (#7879) Bob Ippolito
+- Update examples for v0.36.2 (#7896) Bob Ippolito
+- v0.36.2 (#7894) Bob Ippolito
+- v0.36.2 Lexical GitHub Actions Bot
+
 ## v0.36.2 (2025-09-30)
 
 - docs Chore Export DOMConversion types so that they are in the docs (#7893) Bob Ippolito

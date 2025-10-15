@@ -22,6 +22,7 @@ import {
   type DOMImportOutputNode,
   type DOMRenderConfig,
   DOMRenderExtension,
+  ImportContextParentLexicalNode,
   ImportContextTextAlign,
   ImportContextTextFormats,
   ImportContextWhiteSpaceCollapse,
@@ -118,7 +119,10 @@ function $normalizeListNode(
       child.replace(li).append(child);
     }
   }
-  return node;
+  // Wrap self in a ListItem if it's directly in a ListNode
+  return $isListNode($getImportContextValue(ImportContextParentLexicalNode))
+    ? $createListItemNode().append(node)
+    : node;
 }
 
 function $isOnlyChild(node: LexicalNode): boolean {

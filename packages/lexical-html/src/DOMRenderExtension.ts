@@ -20,6 +20,7 @@ import {
   RootNode,
   shallowMergeConfig,
 } from 'lexical';
+import devInvariant from 'shared/devInvariant';
 
 import {DOMRenderExtensionName} from './constants';
 import {contextFromPairs} from './ContextRecord';
@@ -48,12 +49,22 @@ function compileDOMRenderConfigOverrides(
       for (const predicate of nodes) {
         if (predicate === '*') {
           return true;
-        } else if ('getType' in predicate || '$config' in predicate.prototype) {
+        }
+        if ('getType' in predicate || '$config' in predicate.prototype) {
           if (node instanceof predicate) {
             return true;
           }
-        } else if (predicate(node)) {
-          return true;
+        } else {
+          const rval = predicate(node);
+          devInvariant(
+            typeof rval === 'boolean',
+            'domOverride predicate %s returned %s, expecting boolean',
+            predicate.name,
+            typeof rval,
+          );
+          if (rval) {
+            return true;
+          }
         }
       }
       return false;

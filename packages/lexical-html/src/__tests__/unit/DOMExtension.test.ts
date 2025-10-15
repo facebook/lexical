@@ -166,7 +166,12 @@ describe('DOMRenderExtension', () => {
                   if (
                     $getRenderContextValue(RenderContextRoot) &&
                     isHTMLElement(result.element) &&
-                    result.element.style.getPropertyValue('white-space')
+                    result.element.style.getPropertyValue('white-space') ===
+                      'pre-wrap' &&
+                    // we know there aren't tabs or newlines but if there are
+                    // leading, trailing, or adjacent spaces then we need the
+                    // pre-wrap to preserve the content
+                    !/^\s|\s$|\s\s/.test(result.element.textContent)
                   ) {
                     result.element.style.setProperty('white-space', null);
                     if (result.element.style.cssText === '') {

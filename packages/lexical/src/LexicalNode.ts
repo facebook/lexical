@@ -372,12 +372,14 @@ export type DOMExportOutputMap = Map<
   (editor: LexicalEditor, target: LexicalNode) => DOMExportOutput
 >;
 
-export type DOMExportOutput = {
+export interface DOMExportOutput {
   after?: (
     generatedElement: HTMLElement | DocumentFragment | Text | null | undefined,
   ) => HTMLElement | DocumentFragment | Text | null | undefined;
   element: HTMLElement | DocumentFragment | Text | null;
-};
+  append?: (element: HTMLElement | DocumentFragment | Text) => void;
+  $getChildNodes?: () => Iterable<LexicalNode>;
+}
 
 export type NodeKey = string;
 
@@ -1532,4 +1534,10 @@ export function insertRangeAfter(
   for (const nodeToInsert of nodesToInsert) {
     currentNode = currentNode.insertAfter(nodeToInsert);
   }
+}
+
+export function $isLexicalNode(
+  node: null | undefined | LexicalNode,
+): node is LexicalNode {
+  return node instanceof LexicalNode;
 }

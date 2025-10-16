@@ -5,7 +5,8 @@
   "license": "MIT",
   "private": true,
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "examples/dev-*"
   ],
   "engines": {
     "npm": ">=8.2.3",

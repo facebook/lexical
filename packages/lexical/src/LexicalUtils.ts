@@ -9,6 +9,7 @@
 import type {
   CommandPayloadType,
   EditorConfig,
+  EditorDOMRenderConfig,
   EditorThemeClasses,
   Klass,
   LexicalCommand,
@@ -45,6 +46,7 @@ import {
   $isTabNode,
   $isTextNode,
   DecoratorNode,
+  DEFAULT_EDITOR_DOM_CONFIG,
   ElementNode,
   HISTORY_MERGE_TAG,
   LineBreakNode,
@@ -1815,7 +1817,9 @@ export function isDocumentFragment(x: unknown): x is DocumentFragment {
  * @param node - the Dom Node to check
  * @returns if the Dom Node is an inline node
  */
-export function isInlineDomNode(node: Node) {
+export function isInlineDomNode(
+  node: Node,
+): node is (HTMLElement | Text) & {[InlineDOMBrand]: never} {
   const inlineNodes = new RegExp(
     /^(a|abbr|acronym|b|cite|code|del|em|i|ins|kbd|label|mark|output|q|ruby|s|samp|span|strong|sub|sup|time|u|tt|var|#text)$/,
     'i',
@@ -1823,12 +1827,17 @@ export function isInlineDomNode(node: Node) {
   return node.nodeName.match(inlineNodes) !== null;
 }
 
+const BlockDOMBrand = Symbol.for('@lexical/BlockDOMBrand');
+const InlineDOMBrand = Symbol.for('@lexical/InlineDOMBrand');
+
 /**
  *
  * @param node - the Dom Node to check
  * @returns if the Dom Node is a block node
  */
-export function isBlockDomNode(node: Node) {
+export function isBlockDomNode(
+  node: Node,
+): node is HTMLElement & {[BlockDOMBrand]: never} {
   const blockNodes = new RegExp(
     /^(address|article|aside|blockquote|canvas|dd|div|dl|dt|fieldset|figcaption|figure|footer|form|h1|h2|h3|h4|h5|h6|header|hr|li|main|nav|noscript|ol|p|pre|section|table|td|tfoot|ul|video)$/,
     'i',
@@ -1875,6 +1884,15 @@ export function INTERNAL_$isBlock(
  */
 export function $getEditor(): LexicalEditor {
   return getActiveEditor();
+}
+
+/**
+ * @internal @experimental
+ */
+export function $getEditorDOMRenderConfig(
+  editor: LexicalEditor = $getEditor(),
+): EditorDOMRenderConfig {
+  return editor._config.dom || DEFAULT_EDITOR_DOM_CONFIG;
 }
 
 /** @internal */

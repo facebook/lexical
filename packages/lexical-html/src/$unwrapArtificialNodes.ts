@@ -13,13 +13,17 @@ export function $unwrapArtificialNodes(
   // Replace artificial node with its children, inserting a linebreak
   // between adjacent artificial nodes
   for (const node of allArtificialNodes) {
+    if (
+      node.getParent() &&
+      node.getNextSibling() instanceof ArtificialNode__DO_NOT_USE
+    ) {
+      node.insertAfter($createLineBreakNode());
+    }
+  }
+  for (const node of allArtificialNodes) {
     const parent = node.getParent();
     if (parent) {
-      const children = node.getChildren();
-      if (node.getNextSibling() instanceof ArtificialNode__DO_NOT_USE) {
-        children.push($createLineBreakNode());
-      }
-      parent.splice(node.getIndexWithinParent(), 1, children);
+      parent.splice(node.getIndexWithinParent(), 1, node.getChildren());
     }
   }
 }

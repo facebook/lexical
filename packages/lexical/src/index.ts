@@ -162,6 +162,7 @@ export {
   COMMAND_PRIORITY_LOW,
   COMMAND_PRIORITY_NORMAL,
   createEditor,
+  getTransformSetFromKlass,
 } from './LexicalEditor';
 export type {
   EditorState,

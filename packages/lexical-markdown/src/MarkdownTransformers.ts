@@ -214,7 +214,7 @@ const TABLE_ROW_REG_EXP = /^(?:\|)(.+)(?:\|)\s?$/;
 const TABLE_ROW_DIVIDER_REG_EXP = /^(\| ?:?-*:? ?)+\|\s?$/;
 const TAG_START_REGEX = /^<[a-z_][\w-]*(?:\s[^<>]*)?\/?>/i;
 const TAG_END_REGEX = /^<\/[a-z_][\w-]*\s*>/i;
-const ENDS_WITH = (regex: RegExp) => new RegExp(`${regex.source}$`);
+const ENDS_WITH = (regex: RegExp) => new RegExp(`(?:${regex.source})$`, regex.flags);
 
 export const listMarkerState = createState('mdListMarker', {
   parse: (v) => (typeof v === 'string' ? v : '-'),

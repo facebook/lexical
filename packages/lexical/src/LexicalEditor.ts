@@ -499,12 +499,17 @@ export function getTransformSetFromKlass(
   klass: KlassConstructor<typeof LexicalNode>,
 ): Set<Transform<LexicalNode>> {
   const transforms = new Set<Transform<LexicalNode>>();
+  const staticTransforms = new Set<(typeof klass)['transform']>();
   let currentKlass: undefined | typeof klass = klass;
   while (currentKlass) {
     const {ownNodeConfig} = getStaticNodeConfig(currentKlass);
-    const transform = currentKlass.transform();
-    if (transform) {
-      transforms.add(transform);
+    const staticTransform = currentKlass.transform;
+    if (!staticTransforms.has(staticTransform)) {
+      staticTransforms.add(staticTransform);
+      const transform = currentKlass.transform();
+      if (transform) {
+        transforms.add(transform);
+      }
     }
     if (ownNodeConfig) {
       const $transform = ownNodeConfig.$transform;
@@ -570,6 +575,9 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
         replace = options.with;
         replaceWithKlass = options.withKlass || null;
       }
+      // For the side-effect of filling in the static methods
+      void getStaticNodeConfig(klass);
+
       // Ensure custom nodes implement required methods and replaceWithKlass is instance of base klass.
       if (__DEV__) {
         // ArtificialNode__DO_NOT_USE can get renamed, so we use the type

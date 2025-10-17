@@ -22,6 +22,15 @@ Note that the local server needs to be running in order to run the e2e tests.
 
 `npm run start` will start both the dev server and collab server. If you don't need collab, use `npm run dev` to start just the dev server.
 
+If you're contributing to the website or documentation, you can run docusaurus
+with:
+
+- `npm run start:website`
+
+A full build of the website can be done with:
+
+- `npm -w packages/lexical-website run build`
+
 ## Contributor License Agreement ("CLA")
 
 In order to accept your pull request, we need you to submit a CLA. You only need

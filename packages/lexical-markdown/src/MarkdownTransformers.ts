@@ -218,7 +218,7 @@ const ENDS_WITH = (regex: RegExp) =>
   new RegExp(`(?:${regex.source})$`, regex.flags);
 
 export const listMarkerState = createState('mdListMarker', {
-  parse: (v) => (typeof v === 'string' ? v : '-'),
+  parse: (v) => (typeof v === 'string' && /^[-*+]$/.test(v) ? v : '-'),
 });
 
 const createBlockNode = (
@@ -262,9 +262,11 @@ const listReplace = (listType: ListType): ElementTransformer['replace'] => {
     const listItem = $createListItemNode(
       listType === 'check' ? match[3] === 'x' : undefined,
     );
+    const firstMatchChar = match[0].trim()[0];
     const listMarker =
-      listType === 'bullet' || listType === 'check'
-        ? match[0].trim()[0]
+      (listType === 'bullet' || listType === 'check') &&
+      firstMatchChar === listMarkerState.parse(firstMatchChar)
+        ? firstMatchChar
         : undefined;
     if ($isListNode(nextNode) && nextNode.getListType() === listType) {
       if (listMarker) {

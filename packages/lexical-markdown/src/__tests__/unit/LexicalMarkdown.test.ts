@@ -38,6 +38,7 @@ import {
   Transformer,
 } from '../..';
 import {
+  CHECK_LIST,
   CODE,
   ElementTransformer,
   HEADING,
@@ -954,6 +955,54 @@ describe('Markdown', () => {
         expect(node).toBeInstanceOf(ListNode);
         const marker = node ? $getState(node, listMarkerState) : undefined;
         expect(marker).toBe('+');
+      });
+    });
+    it('should not use [ as a marker for an implicit check list', () => {
+      const editor = createHeadlessEditor({
+        nodes: [ListNode, ListItemNode],
+      });
+      registerMarkdownShortcuts(editor, [CHECK_LIST]);
+      editor.update(
+        () =>
+          $getRoot()
+            .clear()
+            .append($createParagraphNode())
+            .selectEnd()
+            .insertText('[]'),
+        {discrete: true},
+      );
+      editor.update(() => $getSelection()!.insertText(' '), {
+        discrete: true,
+      });
+      editor.read(() => {
+        const node = $getRoot().getFirstChild();
+        expect(node).toBeInstanceOf(ListNode);
+        const marker = node ? $getState(node, listMarkerState) : undefined;
+        expect(marker).toBe('-');
+      });
+    });
+    it('should remember the marker for checkbox with an explicit marker', () => {
+      const editor = createHeadlessEditor({
+        nodes: [ListNode, ListItemNode],
+      });
+      registerMarkdownShortcuts(editor, [CHECK_LIST]);
+      editor.update(
+        () =>
+          $getRoot()
+            .clear()
+            .append($createParagraphNode())
+            .selectEnd()
+            .insertText('* []'),
+        {discrete: true},
+      );
+      editor.update(() => $getSelection()!.insertText(' '), {
+        discrete: true,
+      });
+      editor.read(() => {
+        const node = $getRoot().getFirstChild();
+        expect(node).toBeInstanceOf(ListNode);
+        const marker = node ? $getState(node, listMarkerState) : undefined;
+        expect(marker).toBe('*');
       });
     });
 

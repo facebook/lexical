@@ -363,9 +363,15 @@ export interface InitialEditorConfig {
    */
   namespace?: CreateEditorArgs['namespace'];
   /**
-   * The nodes that this Extension adds to the Editor configuration, will be merged with other Extensions
+   * The nodes that this Extension adds to the Editor configuration, will be
+   * merged with other Extensions.
+   *
+   * Can be a function to defer the access of the nodes to editor construction
+   * which may be useful in cases when the node and extension are defined in
+   * different modules and have depenendencies on each other, depending on the
+   * bundler configuration.
    */
-  nodes?: CreateEditorArgs['nodes'];
+  nodes?: CreateEditorArgs['nodes'] | (() => CreateEditorArgs['nodes']);
   /**
    * EditorThemeClasses that will be deep merged with other Extensions
    */

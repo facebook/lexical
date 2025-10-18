@@ -24,6 +24,7 @@ import {
 } from 'lexical';
 import invariant from 'shared/invariant';
 
+import {getNodeConfig} from './config';
 import {deepThemeMergeInPlace} from './deepThemeMergeInPlace';
 import {
   applyPermanentMark,
@@ -36,6 +37,9 @@ import {InitialStateExtension} from './InitialStateExtension';
 
 /** @internal Use a well-known symbol for dev tools purposes */
 export const builderSymbol = Symbol.for('@lexical/extension/LexicalBuilder');
+
+type BuildCreateEditorArgs = Omit<CreateEditorArgs, 'onError'> &
+  Pick<InitialEditorConfig, 'onError' | '$initialEditorState'>;
 
 /**
  * Build a LexicalEditor by combining together one or more extensions, optionally
@@ -398,8 +402,8 @@ export class LexicalBuilder {
     return mergeRegister(...cleanups);
   }
 
-  buildCreateEditorArgs() {
-    const config: InitialEditorConfig = {};
+  buildCreateEditorArgs(): BuildCreateEditorArgs {
+    const config: BuildCreateEditorArgs = {};
     const nodes = new Set<NonNullable<CreateEditorArgs['nodes']>[number]>();
     const replacedNodes = new Map<
       KlassConstructor<typeof LexicalNode>,
@@ -430,7 +434,7 @@ export class LexicalBuilder {
         config.$initialEditorState = extension.$initialEditorState;
       }
       if (extension.nodes) {
-        for (const node of extension.nodes) {
+        for (const node of getNodeConfig(extension)) {
           if (typeof node !== 'function') {
             const conflictExtension = replacedNodes.get(node.replace);
             if (conflictExtension) {

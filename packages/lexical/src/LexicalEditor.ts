@@ -552,6 +552,40 @@ function initializeConversionCache(
 }
 
 /** @internal */
+export function getTransformSetFromKlass(
+  klass: KlassConstructor<typeof LexicalNode>,
+): Set<Transform<LexicalNode>> {
+  const transforms = new Set<Transform<LexicalNode>>();
+  const staticTransforms = new Set<(typeof klass)['transform']>();
+  let currentKlass: undefined | typeof klass = klass;
+  while (currentKlass) {
+    const {ownNodeConfig} = getStaticNodeConfig(currentKlass);
+    const staticTransform = currentKlass.transform;
+    if (!staticTransforms.has(staticTransform)) {
+      staticTransforms.add(staticTransform);
+      const transform = currentKlass.transform();
+      if (transform) {
+        transforms.add(transform);
+      }
+    }
+    if (ownNodeConfig) {
+      const $transform = ownNodeConfig.$transform;
+      if ($transform) {
+        transforms.add($transform);
+      }
+      currentKlass = ownNodeConfig.extends;
+    } else {
+      const parent = Object.getPrototypeOf(currentKlass);
+      currentKlass =
+        parent.prototype instanceof LexicalNode && parent !== LexicalNode
+          ? parent
+          : undefined;
+    }
+  }
+  return transforms;
+}
+
+/** @internal */
 export const DEFAULT_EDITOR_DOM_CONFIG: EditorDOMRenderConfig = {
   $createDOM: (node, editor) => node.createDOM(editor._config, editor),
   $exportDOM: (node, editor) => {
@@ -628,7 +662,9 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
         replace = options.with;
         replaceWithKlass = options.withKlass || null;
       }
-      const {ownNodeConfig} = getStaticNodeConfig(klass);
+      // For the side-effect of filling in the static methods
+      void getStaticNodeConfig(klass);
+
       // Ensure custom nodes implement required methods and replaceWithKlass is instance of base klass.
       if (__DEV__) {
         // ArtificialNode__DO_NOT_USE can get renamed, so we use the type
@@ -678,14 +714,7 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
         }
       }
       const type = klass.getType();
-      const transform = klass.transform();
-      const transforms = new Set<Transform<LexicalNode>>();
-      if (ownNodeConfig && ownNodeConfig.$transform) {
-        transforms.add(ownNodeConfig.$transform);
-      }
-      if (transform !== null) {
-        transforms.add(transform);
-      }
+      const transforms = getTransformSetFromKlass(klass);
       registeredNodes.set(type, {
         exportDOM: html && html.export ? html.export.get(klass) : undefined,
         klass,

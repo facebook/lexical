@@ -164,6 +164,7 @@ export {
   COMMAND_PRIORITY_NORMAL,
   createEditor,
   DEFAULT_EDITOR_DOM_CONFIG,
+  getTransformSetFromKlass,
 } from './LexicalEditor';
 export type {
   EditorState,
@@ -276,6 +277,7 @@ export {
   getRegisteredNode,
   getRegisteredNodeOrThrow,
   getStaticNodeConfig,
+  getTextDirection,
   INTERNAL_$isBlock,
   isBlockDomNode,
   isDocumentFragment,

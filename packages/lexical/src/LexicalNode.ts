@@ -107,7 +107,8 @@ export interface StaticNodeConfigValue<
   readonly type?: Type;
   /**
    * An alternative to the internal static transform() method
-   * that provides better type inference.
+   * that provides better type inference. If implemented this
+   * transform will be registered for this class and any subclass.
    */
   readonly $transform?: (node: T) => void;
   /**

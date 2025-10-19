@@ -1718,3 +1718,6 @@ declare export function shallowMergeConfig<T: ExtensionConfigBase>(
   config: T,
   overrides?: Partial<T>,
 ): T;
+declare export function getTransformSetFromKlass(
+  klass: Class<typeof LexicalNode>,
+): Set<Transform<LexicalNode>>;

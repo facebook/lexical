@@ -16,6 +16,7 @@ import {
   defineExtension,
   LexicalEditor,
   PASTE_COMMAND,
+  shallowMergeConfig,
 } from 'lexical';
 
 import {
@@ -136,6 +137,16 @@ export const LinkExtension = defineExtension({
     return namedSignals(config);
   },
   config: defaultProps,
+  mergeConfig(config, overrides) {
+    const merged = shallowMergeConfig(config, overrides);
+    if (config.attributes) {
+      merged.attributes = shallowMergeConfig(
+        config.attributes,
+        merged.attributes,
+      );
+    }
+    return merged;
+  },
   name: '@lexical/link/Link',
   nodes: [LinkNode],
   register(editor, config, state) {

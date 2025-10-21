@@ -60,7 +60,6 @@ import {
   $normalizeCaret,
   $setPointFromCaret,
   $setSelection,
-  COMMAND_PRIORITY_CRITICAL,
   COMMAND_PRIORITY_HIGH,
   CONTROLLED_TEXT_INSERTION_COMMAND,
   CUT_COMMAND,
@@ -471,7 +470,7 @@ export function applyTableHandlers(
       editor.registerCommand(
         command,
         deleteTextHandler(command),
-        COMMAND_PRIORITY_CRITICAL,
+        COMMAND_PRIORITY_HIGH,
       ),
     );
   }
@@ -529,7 +528,7 @@ export function applyTableHandlers(
       editor.registerCommand(
         command,
         $deleteCellHandler,
-        COMMAND_PRIORITY_CRITICAL,
+        COMMAND_PRIORITY_HIGH,
       ),
     );
   }
@@ -559,7 +558,7 @@ export function applyTableHandlers(
         }
         return false;
       },
-      COMMAND_PRIORITY_CRITICAL,
+      COMMAND_PRIORITY_HIGH,
     ),
   );
 
@@ -590,7 +589,7 @@ export function applyTableHandlers(
 
         return false;
       },
-      COMMAND_PRIORITY_CRITICAL,
+      COMMAND_PRIORITY_HIGH,
     ),
   );
 
@@ -657,7 +656,7 @@ export function applyTableHandlers(
         }
         return true;
       },
-      COMMAND_PRIORITY_CRITICAL,
+      COMMAND_PRIORITY_HIGH,
     ),
   );
 
@@ -702,7 +701,7 @@ export function applyTableHandlers(
 
         return false;
       },
-      COMMAND_PRIORITY_CRITICAL,
+      COMMAND_PRIORITY_HIGH,
     ),
   );
 
@@ -736,7 +735,7 @@ export function applyTableHandlers(
 
           return true;
         },
-        COMMAND_PRIORITY_CRITICAL,
+        COMMAND_PRIORITY_HIGH,
       ),
     );
   }
@@ -950,7 +949,7 @@ export function applyTableHandlers(
 
         return true;
       },
-      COMMAND_PRIORITY_CRITICAL,
+      COMMAND_PRIORITY_HIGH,
     ),
   );
 
@@ -1210,7 +1209,7 @@ export function applyTableHandlers(
 
         return false;
       },
-      COMMAND_PRIORITY_CRITICAL,
+      COMMAND_PRIORITY_HIGH,
     ),
   );
 
@@ -1237,7 +1236,7 @@ export function applyTableHandlers(
         }
         return false;
       },
-      COMMAND_PRIORITY_CRITICAL,
+      COMMAND_PRIORITY_HIGH,
     ),
   );
 

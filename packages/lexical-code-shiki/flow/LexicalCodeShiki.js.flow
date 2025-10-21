@@ -22,5 +22,6 @@ export type Tokenizer = {
   defaultTheme: string;
   $tokenize: (codeNode: CodeNode, language?: string) => LexicalNode[];
 }
+export type CodeHighlighterShikiConfig = Tokenizer;
 declare export var ShikiTokenizer: Tokenizer;
-declare export var CodeHighlighterShikiExtension: LexicalExtension<{tokenizer: Tokenizer}, "@lexical/code-shiki", void, void>;
+declare export var CodeHighlighterShikiExtension: LexicalExtension<CodeHighlighterShikiConfig, "@lexical/code-shiki", void, void>;

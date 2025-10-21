@@ -643,12 +643,69 @@ export function $toggleLink(
           parentLink.remove();
         } else {
           // Only some children are being extracted, split the link
-          // We need to process in reverse order to maintain correct positioning
-          for (let i = allChildren.length - 1; i >= 0; i--) {
-            const child = allChildren[i];
-            if (extractedChildren.has(child.getKey())) {
-              // Insert after the link to maintain order
-              parentLink.insertAfter(child);
+          // Determine if extracted children are at the beginning, end, or middle
+          const firstExtractedIndex = allChildren.findIndex((child) =>
+            extractedChildren.has(child.getKey()),
+          );
+          const lastExtractedIndex = allChildren.findLastIndex((child) =>
+            extractedChildren.has(child.getKey()),
+          );
+
+          const isAtStart = firstExtractedIndex === 0;
+          const isAtEnd = lastExtractedIndex === allChildren.length - 1;
+
+          if (isAtStart && !isAtEnd) {
+            // Extracted children are at the beginning
+            for (let i = 0; i <= lastExtractedIndex; i++) {
+              const child = allChildren[i];
+              if (extractedChildren.has(child.getKey())) {
+                parentLink.insertBefore(child);
+              }
+            }
+          } else if (isAtEnd && !isAtStart) {
+            // Extracted children are at the end
+            for (
+              let i = allChildren.length - 1;
+              i >= firstExtractedIndex;
+              i--
+            ) {
+              const child = allChildren[i];
+              if (extractedChildren.has(child.getKey())) {
+                parentLink.insertAfter(child);
+              }
+            }
+          } else {
+            // Extracted children are in the middle - need to split into two links
+            // Keep the original link for children before extraction point
+            // Create a new link for children after extraction point
+            const childrenAfterExtraction = allChildren.slice(
+              lastExtractedIndex + 1,
+            );
+
+            // First, move extracted children out
+            for (let i = lastExtractedIndex; i >= firstExtractedIndex; i--) {
+              const child = allChildren[i];
+              if (extractedChildren.has(child.getKey())) {
+                parentLink.insertAfter(child);
+              }
+            }
+
+            // Then, create a new link for trailing children
+            if (childrenAfterExtraction.length > 0) {
+              const newLink = $createLinkNode(parentLink.getURL(), {
+                rel: parentLink.getRel(),
+                target: parentLink.getTarget(),
+                title: parentLink.getTitle(),
+              });
+
+              // Find the last extracted child (now outside the link)
+              const lastExtractedChild = allChildren[lastExtractedIndex];
+              lastExtractedChild.insertAfter(newLink);
+
+              // Move trailing children to the new link
+              childrenAfterExtraction.forEach((child) => {
+                newLink.append(child);
+              });
             }
           }
         }

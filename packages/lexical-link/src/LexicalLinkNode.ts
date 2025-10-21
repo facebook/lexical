@@ -611,22 +611,49 @@ export function $toggleLink(
   const nodes = selection.extract();
 
   if (url === null) {
-    // Remove LinkNodes
+    // Remove LinkNodes - process links to avoid issues with multiple nodes from same link
+    const processedLinks = new Set<NodeKey>();
+
     nodes.forEach((node) => {
-      const parentLink = $findMatchingParent(
-        node,
-        (parent): parent is LinkNode =>
-          !$isAutoLinkNode(parent) && $isLinkNode(parent),
-      );
+      const parentLink = node.getParent();
 
-      if (parentLink) {
-        const children = parentLink.getChildren();
+      if ($isLinkNode(parentLink) && !$isAutoLinkNode(parentLink)) {
+        const linkKey = parentLink.getKey();
 
-        for (let i = 0; i < children.length; i++) {
-          parentLink.insertBefore(children[i]);
+        // Skip if we've already started processing this link
+        if (processedLinks.has(linkKey)) {
+          return;
         }
 
-        parentLink.remove();
+        // Check which children should be moved out (those in the extracted nodes)
+        const extractedChildren = new Set(
+          nodes.filter((n) => parentLink.isParentOf(n)).map((n) => n.getKey()),
+        );
+
+        const allChildren = parentLink.getChildren();
+        const remainingChildren = allChildren.filter(
+          (child) => !extractedChildren.has(child.getKey()),
+        );
+
+        // If all children are being extracted, remove the entire link
+        if (remainingChildren.length === 0) {
+          allChildren.forEach((child) => {
+            parentLink.insertBefore(child);
+          });
+          parentLink.remove();
+        } else {
+          // Only some children are being extracted, split the link
+          // We need to process in reverse order to maintain correct positioning
+          for (let i = allChildren.length - 1; i >= 0; i--) {
+            const child = allChildren[i];
+            if (extractedChildren.has(child.getKey())) {
+              // Insert after the link to maintain order
+              parentLink.insertAfter(child);
+            }
+          }
+        }
+
+        processedLinks.add(linkKey);
       }
     });
     return;

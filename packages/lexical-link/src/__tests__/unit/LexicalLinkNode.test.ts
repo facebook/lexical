@@ -19,6 +19,7 @@ import {
   $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
+  $getNodeByKey,
   $getRoot,
   $getSelection,
   $isLineBreakNode,
@@ -580,6 +581,65 @@ describe('LexicalLinkNode tests', () => {
         const [textNode, lineBreakNode] = children;
         expect($isTextNode(textNode)).toBe(true);
         expect($isLineBreakNode(lineBreakNode)).toBe(true);
+      });
+    });
+
+    test('$toggleLink removes link from trailing space only', async () => {
+      const {editor} = testEnv;
+      let textNodeKey: string;
+
+      // Create a link with text and a trailing space
+      await editor.update(() => {
+        const paragraph = $createParagraphNode();
+        const textNode = $createTextNode('hello ');
+        textNodeKey = textNode.getKey();
+        const linkNode = $createLinkNode('https://example.com');
+        linkNode.append(textNode);
+        paragraph.append(linkNode);
+        $getRoot().clear().append(paragraph);
+      });
+
+      // Verify initial structure
+      editor.read(() => {
+        const paragraph = $getRoot().getFirstChild() as ParagraphNode;
+        const linkNode = paragraph.getFirstChild();
+        expect($isLinkNode(linkNode)).toBe(true);
+        if ($isLinkNode(linkNode)) {
+          expect(linkNode.getTextContent()).toBe('hello ');
+        }
+      });
+
+      // Select only the trailing space and remove the link from it
+      await editor.update(() => {
+        const textNode = $getNodeByKey(textNodeKey);
+        if ($isTextNode(textNode)) {
+          textNode.select(5, 6); // Select the trailing space
+          $toggleLink(null);
+        }
+      });
+
+      // Verify that the link was removed only from the space
+      editor.read(() => {
+        const paragraph = $getRoot().getFirstChild() as ParagraphNode;
+        const children = paragraph.getChildren();
+
+        // Should have two children: linkNode with 'hello' and a text node with ' '
+        expect(children.length).toBe(2);
+
+        const [linkNode, spaceNode] = children;
+
+        // First child should still be a link containing 'hello'
+        expect($isLinkNode(linkNode)).toBe(true);
+        if ($isLinkNode(linkNode)) {
+          expect(linkNode.getTextContent()).toBe('hello');
+          expect(linkNode.getURL()).toBe('https://example.com');
+        }
+
+        // Second child should be a text node with just the space
+        expect($isTextNode(spaceNode)).toBe(true);
+        if ($isTextNode(spaceNode)) {
+          expect(spaceNode.getTextContent()).toBe(' ');
+        }
       });
     });
   });

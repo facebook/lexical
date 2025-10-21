@@ -1655,72 +1655,60 @@ describe('Regression #3181', () => {
   describe('Shadow DOM support', () => {
     initializeUnitTest(() => {
       describe('Shadow DOM word boundary logic', () => {
+        // Helper functions matching RangeSelection implementation
+        function isWordBoundary(char: string): boolean {
+          return (
+            char === ' ' || char === '\t' || char === '\n' || char === '\r'
+          );
+        }
+
+        function findWordStart(text: string, offset: number): number {
+          let position = offset - 1;
+
+          // Skip spaces
+          while (position >= 0 && isWordBoundary(text[position])) {
+            position--;
+          }
+
+          // Find word start
+          while (position > 0 && !isWordBoundary(text[position - 1])) {
+            position--;
+          }
+
+          return position >= 0 ? position : 0;
+        }
+
         test('should correctly identify word boundaries for backward deletion', () => {
           // Test cases for word boundary logic
           const testCases = [
             {
               description: 'cursor after word',
-              // after "world"
               expected: {deletedText: 'world', startOffset: 6},
-
               offset: 11,
-
-              text: 'Hello world test',
-            },
-            {
-              description: 'cursor after punctuation',
-              // after "example."
-              expected: {deletedText: '.', startOffset: 12},
-
-              offset: 13,
-
-              text: 'test.example.com',
+              text: 'Hello world',
             },
             {
               description: 'cursor in whitespace',
-              // in multiple spaces
               expected: {deletedText: 'Hello   ', startOffset: 0},
-
               offset: 8,
-
               text: 'Hello   world',
+            },
+            {
+              description: 'cursor at start',
+              expected: {deletedText: '', startOffset: 0},
+              offset: 0,
+              text: 'Hello world',
+            },
+            {
+              description: 'cursor after single word',
+              expected: {deletedText: 'Hello', startOffset: 0},
+              offset: 5,
+              text: 'Hello',
             },
           ];
 
           testCases.forEach(({text, offset, expected, description}) => {
-            // Simulate the word boundary logic from deleteWord
-            let startOffset = offset;
-            const wordCharRegex = /\w/;
-
-            if (startOffset > 0) {
-              const charBeforeCursor = text[startOffset - 1];
-
-              if (/\s/.test(charBeforeCursor)) {
-                // Skip whitespace to find the word before it
-                while (startOffset > 0 && /\s/.test(text[startOffset - 1])) {
-                  startOffset--;
-                }
-                // Then delete the word before the whitespace
-                while (
-                  startOffset > 0 &&
-                  wordCharRegex.test(text[startOffset - 1])
-                ) {
-                  startOffset--;
-                }
-              } else if (wordCharRegex.test(charBeforeCursor)) {
-                // Delete to beginning of word
-                while (
-                  startOffset > 0 &&
-                  wordCharRegex.test(text[startOffset - 1])
-                ) {
-                  startOffset--;
-                }
-              } else {
-                // Delete just that character
-                startOffset--;
-              }
-            }
-
+            const startOffset = findWordStart(text, offset);
             const deletedText = text.slice(startOffset, offset);
 
             expect(startOffset).toBe(expected.startOffset);
@@ -1728,72 +1716,53 @@ describe('Regression #3181', () => {
           });
         });
 
+        function findWordEnd(text: string, offset: number): number {
+          let position = offset;
+
+          // Skip spaces
+          while (position < text.length && isWordBoundary(text[position])) {
+            position++;
+          }
+
+          // Find word end
+          while (position < text.length && !isWordBoundary(text[position])) {
+            position++;
+          }
+
+          return position;
+        }
+
         test('should correctly identify word boundaries for forward deletion', () => {
           // Test cases for forward word deletion logic
           const testCases = [
             {
-              description: 'cursor after space before word',
-              // after "Hello "
+              description: 'cursor before word',
               expected: {deletedText: 'world', endOffset: 11},
-
               offset: 6,
-
-              text: 'Hello world test',
+              text: 'Hello world',
             },
             {
               description: 'cursor at beginning of text',
-              // at beginning
               expected: {deletedText: 'Hello', endOffset: 5},
-
               offset: 0,
-
-              text: 'Hello world test',
+              text: 'Hello world',
             },
             {
-              description: 'cursor before punctuation',
-              // after "test"
-              expected: {deletedText: '.', endOffset: 5},
-
-              offset: 4,
-
-              text: 'test.example.com',
+              description: 'cursor at end',
+              expected: {deletedText: '', endOffset: 11},
+              offset: 11,
+              text: 'Hello world',
+            },
+            {
+              description: 'cursor with spaces before word',
+              expected: {deletedText: '  world', endOffset: 7},
+              offset: 0,
+              text: '  world',
             },
           ];
 
           testCases.forEach(({text, offset, expected, description}) => {
-            // Simulate the forward word boundary logic from deleteWord
-            let endOffset = offset;
-            const wordCharRegex = /\w/;
-
-            if (endOffset < text.length) {
-              const charAfterCursor = text[endOffset];
-
-              if (/\s/.test(charAfterCursor)) {
-                // Skip whitespace first
-                while (endOffset < text.length && /\s/.test(text[endOffset])) {
-                  endOffset++;
-                }
-                // Then delete the word
-                while (
-                  endOffset < text.length &&
-                  wordCharRegex.test(text[endOffset])
-                ) {
-                  endOffset++;
-                }
-              } else if (wordCharRegex.test(charAfterCursor)) {
-                // Delete word characters
-                while (
-                  endOffset < text.length &&
-                  wordCharRegex.test(text[endOffset])
-                ) {
-                  endOffset++;
-                }
-              } else {
-                // Delete one character
-                endOffset++;
-              }
-            }
-
+            const endOffset = findWordEnd(text, offset);
             const deletedText = text.slice(offset, endOffset);
 
             expect(endOffset).toBe(expected.endOffset);

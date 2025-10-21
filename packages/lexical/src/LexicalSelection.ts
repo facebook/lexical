@@ -84,12 +84,10 @@ import {
   getDOMSelectionForEditor,
   getDOMTextNode,
   getElementByKeyOrThrow,
-  getShadowRootOrDocument,
   INTERNAL_$isBlock,
   isHTMLElement,
   isSelectionCapturedInDecoratorInput,
   isSelectionWithinEditor,
-  isShadowRoot,
   removeDOMBlockCursorElement,
   scrollIntoViewIfNeeded,
   toggleTextFormatType,
@@ -1700,11 +1698,12 @@ export class RangeSelection implements BaseSelection {
   }
   /**
    * Helper for handling forward character and word deletion that prevents element nodes
-   * like a table, columns layout being destroyed
+   * like a table, columns layout being destroyed. Also prevents deletion into shadow roots.
    *
    * @param anchor the anchor
    * @param anchorNode the anchor node in the selection
    * @param isBackward whether or not selection is backwards
+   * @returns true if deletion should be prevented
    */
   forwardDeletion(
     anchor: PointType,
@@ -1745,52 +1744,6 @@ export class RangeSelection implements BaseSelection {
       let anchorNode: TextNode | ElementNode | null = anchor.getNode();
       if (this.forwardDeletion(anchor, anchorNode, isBackward)) {
         return;
-      }
-
-      // Only handle if we're in a Shadow DOM context
-      const editor = getActiveEditor();
-      const rootElement = editor.getRootElement();
-      if (rootElement && isShadowRoot(getShadowRootOrDocument(rootElement))) {
-        // Only handle collapsed selections for character deletion
-        if (this.isCollapsed()) {
-          // Only handle text nodes
-          if ($isTextNode(anchorNode)) {
-            const textContent = anchorNode.getTextContent();
-            const offset = anchor.offset;
-
-            // Simple deletion logic
-            if (isBackward) {
-              // Backspace: delete character before cursor
-              if (offset > 0) {
-                const newText =
-                  textContent.slice(0, offset - 1) + textContent.slice(offset);
-                anchorNode.setTextContent(newText);
-
-                // Update selection position
-                const newOffset = offset - 1;
-                anchor.set(anchor.key, newOffset, anchor.type);
-                this.focus.set(this.focus.key, newOffset, this.focus.type);
-                this.dirty = true;
-
-                return;
-              }
-            } else {
-              // Delete: delete character after cursor
-              if (offset < textContent.length) {
-                const newText =
-                  textContent.slice(0, offset) + textContent.slice(offset + 1);
-                anchorNode.setTextContent(newText);
-
-                // Keep cursor at same position
-                anchor.set(anchor.key, offset, anchor.type);
-                this.focus.set(this.focus.key, offset, this.focus.type);
-                this.dirty = true;
-
-                return;
-              }
-            }
-          }
-        }
       }
 
       const direction = isBackward ? 'previous' : 'next';
@@ -1897,7 +1850,37 @@ export class RangeSelection implements BaseSelection {
 
       // Handle the deletion around decorators.
       const focus = this.focus;
+      const initialAnchorKey = anchor.key;
+      const initialAnchorOffset = anchor.offset;
+      const initialFocusKey = focus.key;
+      const initialFocusOffset = focus.offset;
+
       this.modify('extend', isBackward, 'character');
+
+      // Check if modify actually changed the selection (it might not in shadow DOM)
+      const selectionChanged =
+        this.anchor.key !== initialAnchorKey ||
+        this.anchor.offset !== initialAnchorOffset ||
+        this.focus.key !== initialFocusKey ||
+        this.focus.offset !== initialFocusOffset;
+
+      if (
+        !selectionChanged &&
+        anchor.type === 'text' &&
+        $isTextNode(anchorNode)
+      ) {
+        // Fallback for environments where modify doesn't work (e.g., shadow DOM)
+        const textContent = anchorNode.getTextContent();
+        const offset = anchor.offset;
+
+        if (isBackward && offset > 0) {
+          // Select the character before cursor
+          this.anchor.set(anchor.key, offset - 1, 'text');
+        } else if (!isBackward && offset < textContent.length) {
+          // Select the character after cursor
+          this.focus.set(focus.key, offset + 1, 'text');
+        }
+      }
 
       if (!this.isCollapsed()) {
         const focusNode = focus.type === 'text' ? focus.getNode() : null;
@@ -1961,57 +1944,38 @@ export class RangeSelection implements BaseSelection {
    */
   deleteLine(isBackward: boolean): void {
     if (this.isCollapsed()) {
-      // Try Shadow DOM direct deletion first for better reliability
-      const editor = getActiveEditor();
-      const rootElement = editor.getRootElement();
-      if (rootElement && isShadowRoot(getShadowRootOrDocument(rootElement))) {
-        if (!this.isCollapsed()) {
-          // If there's already a selection, just remove it
-          this.removeText();
-          return;
-        }
+      const anchor = this.anchor;
+      const focus = this.focus;
+      const initialAnchorKey = anchor.key;
+      const initialAnchorOffset = anchor.offset;
+      const initialFocusKey = focus.key;
+      const initialFocusOffset = focus.offset;
 
-        const anchor = this.anchor;
-        const focus = this.focus;
+      this.modify('extend', isBackward, 'lineboundary');
+
+      // Check if modify actually changed the selection (it might not in shadow DOM)
+      const selectionChanged =
+        this.anchor.key !== initialAnchorKey ||
+        this.anchor.offset !== initialAnchorOffset ||
+        this.focus.key !== initialFocusKey ||
+        this.focus.offset !== initialFocusOffset;
+
+      if (!selectionChanged && anchor.type === 'text') {
+        // Fallback for environments where modify doesn't work (e.g., shadow DOM)
         const anchorNode = anchor.getNode();
-
         if ($isTextNode(anchorNode)) {
           const textContent = anchorNode.getTextContent();
           const offset = anchor.offset;
 
-          if (isBackward) {
-            // Cmd+Backspace: delete from beginning of line to cursor
-            if (offset > 0) {
-              const newText = textContent.slice(offset);
-              anchorNode.setTextContent(newText);
-
-              // Move cursor to beginning of line (position 0)
-              anchor.set(anchor.key, 0, anchor.type);
-              focus.set(focus.key, 0, focus.type);
-
-              // Mark selection as dirty to force reconciliation
-              this.dirty = true;
-              return;
-            }
-          } else {
-            // Cmd+Delete: delete from cursor to end of line
-            if (offset < textContent.length) {
-              const newText = textContent.slice(0, offset);
-              anchorNode.setTextContent(newText);
-
-              // Keep cursor at same position
-              anchor.set(anchor.key, offset, anchor.type);
-              focus.set(focus.key, offset, focus.type);
-
-              // Mark selection as dirty to force reconciliation
-              this.dirty = true;
-              return;
-            }
+          if (isBackward && offset > 0) {
+            // Delete from beginning of line to cursor
+            this.anchor.set(anchor.key, 0, 'text');
+          } else if (!isBackward && offset < textContent.length) {
+            // Delete from cursor to end of line
+            this.focus.set(focus.key, textContent.length, 'text');
           }
         }
       }
-
-      this.modify('extend', isBackward, 'lineboundary');
     }
     if (this.isCollapsed()) {
       // If the selection was already collapsed at the lineboundary,
@@ -2021,6 +1985,59 @@ export class RangeSelection implements BaseSelection {
     } else {
       this.removeText();
     }
+  }
+
+  /**
+   * Helper function to determine if a character is a word boundary (whitespace).
+   * @param char the character to check
+   * @returns true if the character is a word boundary
+   */
+  private isWordBoundary(char: string): boolean {
+    return char === ' ' || char === '\t' || char === '\n' || char === '\r';
+  }
+
+  /**
+   * Find the start of a word going backward from the given offset in text.
+   * @param text the text to search in
+   * @param offset the starting offset
+   * @returns the offset of the word start
+   */
+  private findWordStart(text: string, offset: number): number {
+    let position = offset - 1;
+
+    // Skip spaces
+    while (position >= 0 && this.isWordBoundary(text[position])) {
+      position--;
+    }
+
+    // Find word start
+    while (position > 0 && !this.isWordBoundary(text[position - 1])) {
+      position--;
+    }
+
+    return position >= 0 ? position : 0;
+  }
+
+  /**
+   * Find the end of a word going forward from the given offset in text.
+   * @param text the text to search in
+   * @param offset the starting offset
+   * @returns the offset of the word end
+   */
+  private findWordEnd(text: string, offset: number): number {
+    let position = offset;
+
+    // Skip spaces
+    while (position < text.length && this.isWordBoundary(text[position])) {
+      position++;
+    }
+
+    // Find word end
+    while (position < text.length && !this.isWordBoundary(text[position])) {
+      position++;
+    }
+
+    return position;
   }
 
   /**
@@ -2037,87 +2054,86 @@ export class RangeSelection implements BaseSelection {
         return;
       }
 
-      // Try Shadow DOM direct deletion first for better reliability
-      const editor = getActiveEditor();
-      const rootElement = editor.getRootElement();
-      if (rootElement && isShadowRoot(getShadowRootOrDocument(rootElement))) {
-        // Use simple word boundary detection for Shadow DOM
+      const initialAnchorKey = anchor.key;
+      const initialAnchorOffset = anchor.offset;
+      const focus = this.focus;
+      const initialFocusKey = focus.key;
+      const initialFocusOffset = focus.offset;
 
-        if (!this.isCollapsed()) {
-          // If there's already a selection, just remove it
-          this.removeText();
-          return;
-        }
+      this.modify('extend', isBackward, 'word');
 
-        const focus = this.focus;
+      // Check if modify actually changed the selection (it might not in shadow DOM)
+      const selectionChanged =
+        this.anchor.key !== initialAnchorKey ||
+        this.anchor.offset !== initialAnchorOffset ||
+        this.focus.key !== initialFocusKey ||
+        this.focus.offset !== initialFocusOffset;
 
-        if ($isTextNode(anchorNode)) {
-          const textContent = anchorNode.getTextContent();
-          const offset = anchor.offset;
+      if (
+        !selectionChanged &&
+        anchor.type === 'text' &&
+        $isTextNode(anchorNode)
+      ) {
+        // Fallback for environments where modify doesn't work (e.g., shadow DOM)
+        const textContent = anchorNode.getTextContent();
+        const offset = anchor.offset;
 
-          if (isBackward) {
-            // Option+Backspace: delete word before cursor
-            if (offset > 0) {
-              // Find word boundary
-              let wordStart = offset;
-
-              // Skip trailing spaces
-              while (wordStart > 0 && /\s/.test(textContent[wordStart - 1])) {
-                wordStart--;
-              }
-
-              // Find start of word
-              while (wordStart > 0 && !/\s/.test(textContent[wordStart - 1])) {
-                wordStart--;
-              }
-
-              const newText =
-                textContent.slice(0, wordStart) + textContent.slice(offset);
-              anchorNode.setTextContent(newText);
-
-              // Move cursor to word start
-              anchor.set(anchor.key, wordStart, anchor.type);
-              focus.set(focus.key, wordStart, focus.type);
-              this.dirty = true;
-              return;
+        if (isBackward) {
+          // Backward: find start of word before cursor
+          if (offset === 0) {
+            // At node start, check previous sibling
+            const prevSibling = anchorNode.getPreviousSibling();
+            if ($isTextNode(prevSibling)) {
+              const prevText = prevSibling.getTextContent();
+              const position = this.findWordStart(prevText, prevText.length);
+              this.anchor.set(prevSibling.__key, position, 'text');
             }
           } else {
-            // Option+Delete: delete word after cursor
-            if (offset < textContent.length) {
-              // Find word boundary
-              let wordEnd = offset;
-
-              // Skip leading spaces
-              while (
-                wordEnd < textContent.length &&
-                /\s/.test(textContent[wordEnd])
-              ) {
-                wordEnd++;
+            const position = this.findWordStart(textContent, offset);
+            if (position === 0 && this.isWordBoundary(textContent[0])) {
+              // Only spaces in this node, try previous sibling
+              const prevSibling = anchorNode.getPreviousSibling();
+              if ($isTextNode(prevSibling)) {
+                const prevText = prevSibling.getTextContent();
+                const prevPosition = this.findWordStart(
+                  prevText,
+                  prevText.length,
+                );
+                this.anchor.set(prevSibling.__key, prevPosition, 'text');
+                return;
               }
-
-              // Find end of word
-              while (
-                wordEnd < textContent.length &&
-                !/\s/.test(textContent[wordEnd])
-              ) {
-                wordEnd++;
-              }
-
-              const newText =
-                textContent.slice(0, offset) + textContent.slice(wordEnd);
-              anchorNode.setTextContent(newText);
-
-              // Keep cursor at same position
-              anchor.set(anchor.key, offset, anchor.type);
-              focus.set(focus.key, offset, focus.type);
-              this.dirty = true;
-              return;
             }
+            this.anchor.set(anchor.key, position, 'text');
+          }
+        } else {
+          // Forward: find end of word after cursor
+          if (offset === textContent.length) {
+            // At node end, check next sibling
+            const nextSibling = anchorNode.getNextSibling();
+            if ($isTextNode(nextSibling)) {
+              const nextText = nextSibling.getTextContent();
+              const position = this.findWordEnd(nextText, 0);
+              this.focus.set(nextSibling.__key, position, 'text');
+            }
+          } else {
+            const position = this.findWordEnd(textContent, offset);
+            if (
+              position === textContent.length &&
+              this.isWordBoundary(textContent[textContent.length - 1])
+            ) {
+              // Only spaces in this node, try next sibling
+              const nextSibling = anchorNode.getNextSibling();
+              if ($isTextNode(nextSibling)) {
+                const nextText = nextSibling.getTextContent();
+                const nextPosition = this.findWordEnd(nextText, 0);
+                this.focus.set(nextSibling.__key, nextPosition, 'text');
+                return;
+              }
+            }
+            this.focus.set(focus.key, position, 'text');
           }
         }
       }
-
-      this.modify('extend', isBackward, 'word');
     }
     this.removeText();
   }

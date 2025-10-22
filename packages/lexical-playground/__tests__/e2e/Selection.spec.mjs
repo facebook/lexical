@@ -1672,18 +1672,17 @@ test.describe.parallel('Selection', () => {
     await focusEditor(page);
     await page.keyboard.type('Hello');
     await page.locator('input.font-size-input').focus();
-    const treeOutput = page.locator('.tree-view-output');
-
-    await expect(treeOutput).toContainText('selection: range');
 
     // It is important that his update is not called via UI event (e.g., as onClick handler)
     // as internal code relies on window.event to track those
     await page.evaluate(() => {
-      const editorElement = document.querySelector(
+      const editor = document.querySelector(
         'div[contenteditable="true"]',
-      );
+      ).__lexicalEditor;
 
-      const editor = editorElement.__lexicalEditor;
+      if (editor._editorState._selection == null) {
+        throw new Error('Expected selection to be no null');
+      }
 
       return new Promise((resolve) => {
         editor.update(
@@ -1702,6 +1701,14 @@ test.describe.parallel('Selection', () => {
       });
     });
 
-    await expect(treeOutput).toContainText('selection: range');
+    await page.evaluate(() => {
+      const editor = document.querySelector(
+        'div[contenteditable="true"]',
+      ).__lexicalEditor;
+
+      if (editor._editorState._selection == null) {
+        throw new Error('Expected selection to be no null');
+      }
+    });
   });
 });

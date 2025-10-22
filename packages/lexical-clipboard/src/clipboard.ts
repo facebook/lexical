@@ -144,8 +144,9 @@ export function $insertDataTransferForRichText(
         const nodes = $generateNodesFromSerializedNodes(payload.nodes);
         return $insertGeneratedNodes(editor, nodes, selection);
       }
-    } catch {
-      // Fail silently.
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.log(error);
     }
   }
 
@@ -164,8 +165,9 @@ export function $insertDataTransferForRichText(
       );
       const nodes = $generateNodesFromDOM(editor, dom);
       return $insertGeneratedNodes(editor, nodes, selection);
-    } catch {
-      // Fail silently.
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.log(error);
     }
   }
 

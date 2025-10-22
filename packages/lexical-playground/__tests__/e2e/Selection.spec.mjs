@@ -1663,4 +1663,45 @@ test.describe.parallel('Selection', () => {
       focusPath: [1, 1, 0],
     });
   });
+
+  test('programatic update on blurred editor does not kill selection', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type('Hello');
+    await page.locator('input.font-size-input').focus();
+    const treeOutput = page.locator('.tree-view-output');
+
+    await expect(treeOutput).toContainText('selection: range');
+
+    // It is important that his update is not called via UI event (e.g., as onClick handler)
+    // as internal code relies on window.event to track those
+    await page.evaluate(() => {
+      const editorElement = document.querySelector(
+        'div[contenteditable="true"]',
+      );
+
+      const editor = editorElement.__lexicalEditor;
+
+      return new Promise((resolve) => {
+        editor.update(
+          () => {
+            for (const node of editor._editorState._nodeMap) {
+              if (node.type === 'text') {
+                node.toggleFormat('bold');
+              }
+            }
+          },
+          {
+            onUpdate: resolve,
+            tag: 'skip-dom-selection',
+          },
+        );
+      });
+    });
+
+    await expect(treeOutput).toContainText('selection: range');
+  });
 });

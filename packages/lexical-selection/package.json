@@ -9,7 +9,7 @@
     "selection"
   ],
   "license": "MIT",
-  "version": "0.37.0",
+  "version": "0.37.1-nightly.20251022.0",
   "main": "LexicalSelection.js",
   "types": "index.d.ts",
   "repository": {
@@ -37,6 +37,6 @@
     }
   },
   "dependencies": {
-    "lexical": "0.37.0"
+    "lexical": "0.37.1-nightly.20251022.0"
   }
 }

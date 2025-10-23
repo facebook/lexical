@@ -533,6 +533,68 @@ function $withSelectedNodes<T>($fn: () => T): T {
 }
 
 /**
+ * Splits a LinkNode by removing selected children from it.
+ * Handles three cases: selection at start, end, or middle of the link.
+ * @param parentLink - The LinkNode to split
+ * @param extractedNodes - The nodes that were extracted from the selection
+ */
+function $splitLinkAtSelection(
+  parentLink: LinkNode,
+  extractedNodes: LexicalNode[],
+): void {
+  const extractedKeys = new Set(
+    extractedNodes
+      .filter((n) => parentLink.isParentOf(n))
+      .map((n) => n.getKey()),
+  );
+
+  const allChildren = parentLink.getChildren();
+  const extractedChildren = allChildren.filter((child) =>
+    extractedKeys.has(child.getKey()),
+  );
+
+  if (extractedChildren.length === allChildren.length) {
+    allChildren.forEach((child) => parentLink.insertBefore(child));
+    parentLink.remove();
+    return;
+  }
+
+  const firstExtractedIndex = allChildren.findIndex((child) =>
+    extractedKeys.has(child.getKey()),
+  );
+  const lastExtractedIndex = allChildren.findLastIndex((child) =>
+    extractedKeys.has(child.getKey()),
+  );
+
+  const isAtStart = firstExtractedIndex === 0;
+  const isAtEnd = lastExtractedIndex === allChildren.length - 1;
+
+  if (isAtStart) {
+    extractedChildren.forEach((child) => parentLink.insertBefore(child));
+  } else if (isAtEnd) {
+    for (let i = extractedChildren.length - 1; i >= 0; i--) {
+      parentLink.insertAfter(extractedChildren[i]);
+    }
+  } else {
+    for (let i = extractedChildren.length - 1; i >= 0; i--) {
+      parentLink.insertAfter(extractedChildren[i]);
+    }
+
+    const trailingChildren = allChildren.slice(lastExtractedIndex + 1);
+    if (trailingChildren.length > 0) {
+      const newLink = $createLinkNode(parentLink.getURL(), {
+        rel: parentLink.getRel(),
+        target: parentLink.getTarget(),
+        title: parentLink.getTitle(),
+      });
+
+      extractedChildren[extractedChildren.length - 1].insertAfter(newLink);
+      trailingChildren.forEach((child) => newLink.append(child));
+    }
+  }
+}
+
+/**
  * Generates or updates a LinkNode. It can also delete a LinkNode if the URL is null,
  * but saves any children and brings them up to the parent node.
  * @param urlOrAttributes - The URL the link directs to, or an attributes object with an url property
@@ -611,7 +673,6 @@ export function $toggleLink(
   const nodes = selection.extract();
 
   if (url === null) {
-    // Remove LinkNodes - process links to avoid issues with multiple nodes from same link
     const processedLinks = new Set<NodeKey>();
 
     nodes.forEach((node) => {
@@ -620,96 +681,11 @@ export function $toggleLink(
       if ($isLinkNode(parentLink) && !$isAutoLinkNode(parentLink)) {
         const linkKey = parentLink.getKey();
 
-        // Skip if we've already started processing this link
         if (processedLinks.has(linkKey)) {
           return;
         }
 
-        // Check which children should be moved out (those in the extracted nodes)
-        const extractedChildren = new Set(
-          nodes.filter((n) => parentLink.isParentOf(n)).map((n) => n.getKey()),
-        );
-
-        const allChildren = parentLink.getChildren();
-        const remainingChildren = allChildren.filter(
-          (child) => !extractedChildren.has(child.getKey()),
-        );
-
-        // If all children are being extracted, remove the entire link
-        if (remainingChildren.length === 0) {
-          allChildren.forEach((child) => {
-            parentLink.insertBefore(child);
-          });
-          parentLink.remove();
-        } else {
-          // Only some children are being extracted, split the link
-          // Determine if extracted children are at the beginning, end, or middle
-          const firstExtractedIndex = allChildren.findIndex((child) =>
-            extractedChildren.has(child.getKey()),
-          );
-          const lastExtractedIndex = allChildren.findLastIndex((child) =>
-            extractedChildren.has(child.getKey()),
-          );
-
-          const isAtStart = firstExtractedIndex === 0;
-          const isAtEnd = lastExtractedIndex === allChildren.length - 1;
-
-          if (isAtStart && !isAtEnd) {
-            // Extracted children are at the beginning
-            for (let i = 0; i <= lastExtractedIndex; i++) {
-              const child = allChildren[i];
-              if (extractedChildren.has(child.getKey())) {
-                parentLink.insertBefore(child);
-              }
-            }
-          } else if (isAtEnd && !isAtStart) {
-            // Extracted children are at the end
-            for (
-              let i = allChildren.length - 1;
-              i >= firstExtractedIndex;
-              i--
-            ) {
-              const child = allChildren[i];
-              if (extractedChildren.has(child.getKey())) {
-                parentLink.insertAfter(child);
-              }
-            }
-          } else {
-            // Extracted children are in the middle - need to split into two links
-            // Keep the original link for children before extraction point
-            // Create a new link for children after extraction point
-            const childrenAfterExtraction = allChildren.slice(
-              lastExtractedIndex + 1,
-            );
-
-            // First, move extracted children out
-            for (let i = lastExtractedIndex; i >= firstExtractedIndex; i--) {
-              const child = allChildren[i];
-              if (extractedChildren.has(child.getKey())) {
-                parentLink.insertAfter(child);
-              }
-            }
-
-            // Then, create a new link for trailing children
-            if (childrenAfterExtraction.length > 0) {
-              const newLink = $createLinkNode(parentLink.getURL(), {
-                rel: parentLink.getRel(),
-                target: parentLink.getTarget(),
-                title: parentLink.getTitle(),
-              });
-
-              // Find the last extracted child (now outside the link)
-              const lastExtractedChild = allChildren[lastExtractedIndex];
-              lastExtractedChild.insertAfter(newLink);
-
-              // Move trailing children to the new link
-              childrenAfterExtraction.forEach((child) => {
-                newLink.append(child);
-              });
-            }
-          }
-        }
-
+        $splitLinkAtSelection(parentLink, nodes);
         processedLinks.add(linkKey);
       }
     });

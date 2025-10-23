@@ -1663,4 +1663,53 @@ test.describe.parallel('Selection', () => {
       focusPath: [1, 1, 0],
     });
   });
+
+  test('programatic update on blurred editor does not kill selection', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await focusEditor(page);
+    await page.keyboard.type('Hello');
+    await page.locator('input.font-size-input').focus();
+
+    // It is important that his update is not called via UI event (e.g., as onClick handler)
+    // as internal code relies on window.event to track those
+    await page.evaluate(() => {
+      const editor = document.querySelector(
+        'div[contenteditable="true"]',
+      ).__lexicalEditor;
+
+      if (editor._editorState._selection == null) {
+        throw new Error('Expected selection to be no null');
+      }
+
+      return new Promise((resolve) => {
+        editor.update(
+          () => {
+            for (const node of editor._editorState._nodeMap) {
+              if (node.type === 'text') {
+                node.toggleFormat('bold');
+              }
+            }
+          },
+          {
+            onUpdate: resolve,
+            tag: 'skip-dom-selection',
+          },
+        );
+      });
+    });
+
+    await page.evaluate(() => {
+      const editor = document.querySelector(
+        'div[contenteditable="true"]',
+      ).__lexicalEditor;
+
+      if (editor._editorState._selection == null) {
+        throw new Error('Expected selection to be no null');
+      }
+    });
+  });
 });

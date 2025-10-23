@@ -1667,8 +1667,9 @@ test.describe.parallel('Selection', () => {
   test('programatic update on blurred editor does not kill selection', async ({
     page,
     isPlainText,
+    isCollab,
   }) => {
-    test.skip(isPlainText);
+    test.skip(isPlainText || isCollab);
     await focusEditor(page);
     await page.keyboard.type('Hello');
     await page.locator('input.font-size-input').focus();

@@ -27,7 +27,7 @@ export interface KnownTypesAndNodes {
  * @returns The known types and nodes as Sets
  */
 export function getKnownTypesAndNodes(
-  config: InitialEditorConfig,
+  config: Pick<InitialEditorConfig, 'nodes'>,
 ): KnownTypesAndNodes {
   const types: KnownTypesAndNodes['types'] = new Set();
   const nodes: KnownTypesAndNodes['nodes'] = new Set();
@@ -45,7 +45,7 @@ export function getKnownTypesAndNodes(
 }
 
 export function getNodeConfig(
-  config: InitialEditorConfig,
+  config: Pick<InitialEditorConfig, 'nodes'>,
 ): NonNullable<CreateEditorArgs['nodes']> {
   return (
     (typeof config.nodes === 'function' ? config.nodes() : config.nodes) || []

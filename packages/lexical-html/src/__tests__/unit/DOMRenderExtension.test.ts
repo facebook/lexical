@@ -15,6 +15,8 @@ import {
   RenderContextRoot,
 } from '@lexical/html';
 import {
+  $create,
+  $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
   $getRoot,
@@ -195,6 +197,76 @@ describe('DOMRenderExtension', () => {
             <div id="root" role="textbox">
               <p id="paragraph">
                 <span id="text">text!</span>
+              </p>
+            </div>
+          `,
+        );
+      }),
+    );
+  });
+  test('type merge', () => {
+    class TextNodeA extends TextNode {
+      $config() {
+        return this.config('text-a', {extends: TextNode});
+      }
+    }
+    const editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: () => {
+          $getRoot().append(
+            $createParagraphNode().append(
+              $create(TextNodeA).setTextContent('text a'),
+              $createLineBreakNode(),
+              $createTextNode().setTextContent('plain text'),
+            ),
+          );
+        },
+        dependencies: [
+          configExtension(DOMRenderExtension, {
+            overrides: [
+              domOverride([TextNode], {
+                $exportDOM(node) {
+                  const span = document.createElement('span');
+                  span.append(node.getTextContent());
+                  return {element: span};
+                },
+              }),
+              domOverride([TextNodeA], {
+                $exportDOM(node) {
+                  const span = document.createElement('span');
+                  span.append(node.getTextContent());
+                  span.dataset.lexicalType = node.getType();
+                  return {element: span};
+                },
+              }),
+              domOverride([TextNode], {
+                $exportDOM(node, $next) {
+                  const r = $next();
+                  if (isHTMLElement(r.element)) {
+                    r.element.dataset.didOverride = 'true';
+                  }
+                  return r;
+                },
+              }),
+            ],
+          }),
+        ],
+        name: 'root',
+        nodes: [TextNodeA],
+      }),
+    );
+    expect(
+      editor.read(() => {
+        expectHtmlToBeEqual(
+          $generateDOMFromRoot(document.createElement('div')).innerHTML,
+          html`
+            <div role="textbox">
+              <p>
+                <span data-did-override="true" data-lexical-type="text-a">
+                  text a
+                </span>
+                <br />
+                <span data-did-override="true">plain text</span>
               </p>
             </div>
           `,

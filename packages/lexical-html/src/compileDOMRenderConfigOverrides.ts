@@ -29,7 +29,9 @@ type TypeTree = {
   [NodeType in string]?: TypeRecord;
 };
 
-function buildTypeTree(editorConfig: InitialEditorConfig): TypeTree {
+export function buildTypeTree(
+  editorConfig: Pick<InitialEditorConfig, 'nodes'>,
+): TypeTree {
   const t: TypeTree = {};
   const {nodes} = getKnownTypesAndNodes(editorConfig);
   for (const klass of nodes) {
@@ -67,7 +69,7 @@ type PreEditorDOMRenderConfig = {
   [K in keyof EditorDOMRenderConfig]: AnyRender<AnyDOMRenderMatch[K]>[];
 };
 
-const ALWAYS_TRUE = () => true as const;
+export const ALWAYS_TRUE = () => true as const;
 
 function buildNodePredicate<T extends LexicalNode>(klass: Klass<T>) {
   return (node: LexicalNode): node is T => node instanceof klass;
@@ -281,10 +283,10 @@ function addOverride<K extends keyof PreEditorDOMRenderConfig>(
   }
 }
 
-export function compileDOMRenderConfigOverrides(
-  editorConfig: InitialEditorConfig,
-  {overrides}: DOMRenderConfig,
-): EditorDOMRenderConfig {
+export function precompileDOMRenderConfigOverrides(
+  editorConfig: Pick<InitialEditorConfig, 'nodes'>,
+  overrides: DOMRenderConfig['overrides'],
+): PreEditorDOMRenderConfig {
   const typeTree = buildTypeTree(editorConfig);
   const prerender = makePrerender();
   for (const override of overrides) {
@@ -294,6 +296,14 @@ export function compileDOMRenderConfigOverrides(
       addOverride(prerender, k, predicateOrTypes, override[k]);
     }
   }
+  return prerender;
+}
+
+export function compileDOMRenderConfigOverrides(
+  editorConfig: InitialEditorConfig,
+  {overrides}: DOMRenderConfig,
+): EditorDOMRenderConfig {
+  const prerender = precompileDOMRenderConfigOverrides(editorConfig, overrides);
   const dom = {
     ...DEFAULT_EDITOR_DOM_CONFIG,
     ...editorConfig.dom,

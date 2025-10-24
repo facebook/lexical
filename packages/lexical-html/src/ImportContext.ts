@@ -7,7 +7,6 @@
  */
 
 import type {
-  AnyContextConfigPair,
   DOMTextWrapMode,
   DOMWhiteSpaceCollapse,
   ImportStateConfig,
@@ -21,17 +20,24 @@ import {
   type LexicalEditor,
   type LexicalNode,
   type TextFormatType,
+  ValueOrUpdater,
 } from 'lexical';
+import invariant from 'shared/invariant';
 
 import {DOMImportContextSymbol} from './constants';
 import {
-  $withContext,
   createContextState,
-  getEditorContext,
-  getEditorContextValue,
+  getContextRecord,
+  getContextValue,
+  setContextValue,
 } from './ContextRecord';
 
 /**
+ * Create a context state to be used during import.
+ *
+ * Note that to support the ValueOrUpdater pattern you can not use a
+ * function for V (but you may wrap it in an array or object).
+ *
  * @__NO_SIDE_EFFECTS__
  */
 export function createImportState<V>(
@@ -47,20 +53,24 @@ export function createImportState<V>(
   );
 }
 
-export const $withImportContext: (
-  cfg: readonly AnyContextConfigPair<typeof DOMImportContextSymbol>[],
-  editor?: LexicalEditor,
-) => <T>(f: () => T) => T = /*@__PURE__*/ $withContext(DOMImportContextSymbol);
-
 export function $getImportContextValue<V>(
   cfg: ImportStateConfig<V>,
   editor: LexicalEditor = $getEditor(),
 ): V {
-  return getEditorContextValue(
-    DOMImportContextSymbol,
-    getEditorContext(editor),
-    cfg,
+  return getContextValue(getContextRecord(DOMImportContextSymbol, editor), cfg);
+}
+
+export function $setImportContextValue<V>(
+  cfg: ImportStateConfig<V>,
+  valueOrUpdater: ValueOrUpdater<V>,
+  editor: LexicalEditor = $getEditor(),
+): V {
+  const ctx = getContextRecord(DOMImportContextSymbol, editor);
+  invariant(
+    ctx !== undefined,
+    '$setImportContextValue used outside of DOM import',
   );
+  return setContextValue(ctx, cfg, valueOrUpdater);
 }
 
 export const ImportContextDOMNode = createImportState(

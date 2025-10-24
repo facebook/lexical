@@ -15,13 +15,18 @@ import {DOMRenderContextSymbol, DOMRenderExtensionName} from './constants';
 import {
   $withContext,
   createContextState,
+  getContextRecord,
   getContextValue,
-  getEditorContext,
 } from './ContextRecord';
 import {DOMRenderExtension} from './DOMRenderExtension';
 import {AnyContextConfigPair, ContextRecord, RenderStateConfig} from './types';
 
 /**
+ * Create a context state to be used during render.
+ *
+ * Note that to support the ValueOrUpdater pattern you can not use a
+ * function for V (but you may wrap it in an array or object).
+ *
  * @__NO_SIDE_EFFECTS__
  */
 export function createRenderState<V>(
@@ -60,9 +65,8 @@ function getDefaultRenderContext(
 function getRenderContext(
   editor: LexicalEditor,
 ): undefined | ContextRecord<typeof DOMRenderContextSymbol> {
-  const editorContext = getEditorContext(editor);
   return (
-    (editorContext && editorContext[DOMRenderContextSymbol]) ||
+    getContextRecord(DOMRenderContextSymbol, editor) ||
     getDefaultRenderContext(editor)
   );
 }

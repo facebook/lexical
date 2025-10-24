@@ -12,7 +12,12 @@ import type {
   ContextRecord,
 } from './types';
 
-import {$getEditor, createState, type LexicalEditor} from 'lexical';
+import {
+  $getEditor,
+  createState,
+  type LexicalEditor,
+  ValueOrUpdater,
+} from 'lexical';
 
 let activeContext: undefined | EditorContext;
 
@@ -34,20 +39,18 @@ export function getContextValue<Ctx extends AnyContextSymbol, V>(
     : cfg.defaultValue;
 }
 
-export function getEditorContext(
-  editor: LexicalEditor,
-): undefined | EditorContext {
+function getEditorContext(editor: LexicalEditor): undefined | EditorContext {
   return activeContext && activeContext.editor === editor
     ? activeContext
     : undefined;
 }
 
-export function getEditorContextValue<Ctx extends AnyContextSymbol, V>(
+export function getContextRecord<Ctx extends AnyContextSymbol>(
   sym: Ctx,
-  context: undefined | EditorContext,
-  cfg: ContextConfig<Ctx, V>,
-): V {
-  return getContextValue(context && context[sym], cfg);
+  editor: LexicalEditor,
+): undefined | ContextRecord<Ctx> {
+  const editorContext = getEditorContext(editor);
+  return editorContext && editorContext[sym];
 }
 
 export function contextFromPairs<Ctx extends AnyContextSymbol>(
@@ -73,16 +76,29 @@ export function createChildContext<Ctx extends AnyContextSymbol>(
   return Object.create(parent || null);
 }
 
+export function setContextValue<Ctx extends AnyContextSymbol, V>(
+  contextRecord: ContextRecord<Ctx>,
+  cfg: ContextConfig<Ctx, V>,
+  valueOrUpdater: ValueOrUpdater<V>,
+): V {
+  const {key, defaultValue} = cfg;
+  const value =
+    typeof valueOrUpdater !== 'function'
+      ? valueOrUpdater
+      : (valueOrUpdater as (prev: V) => V)(
+          key in contextRecord ? (contextRecord[key] as V) : defaultValue,
+        );
+  contextRecord[key] = value;
+  return value;
+}
+
 export function updateContextFromPairs<Ctx extends AnyContextSymbol>(
   contextRecord: ContextRecord<Ctx>,
   pairs: undefined | readonly AnyContextConfigPair<Ctx>[],
 ): ContextRecord<Ctx> {
   if (pairs) {
-    for (const [{key}, valueOrUpdater] of pairs) {
-      contextRecord[key] =
-        typeof valueOrUpdater === 'function'
-          ? valueOrUpdater(contextRecord[key])
-          : valueOrUpdater;
+    for (const [cfg, valueOrUpdater] of pairs) {
+      setContextValue(contextRecord, cfg, valueOrUpdater);
     }
   }
   return contextRecord;

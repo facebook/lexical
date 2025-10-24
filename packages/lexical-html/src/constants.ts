@@ -30,3 +30,7 @@ export const DOMTextWrapModeKeys = {
   nowrap: 'nowrap',
   wrap: 'wrap',
 } as const;
+
+export const EMPTY_ARRAY = [] as const;
+
+export const ALWAYS_TRUE = () => true as const;

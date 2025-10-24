@@ -19,10 +19,10 @@ import {
 import {describe, expect, test} from 'vitest';
 
 import {
-  ALWAYS_TRUE,
   buildTypeTree,
   precompileDOMRenderConfigOverrides,
 } from '../../compileDOMRenderConfigOverrides';
+import {ALWAYS_TRUE} from '../../constants';
 
 describe('buildTypeTree', () => {
   test('includes basic types', () => {
@@ -118,6 +118,9 @@ describe('precompileDOMRenderConfigOverrides', () => {
         },
       }),
       domOverride('*', {
+        $createDOM(node, $next) {
+          return $next();
+        },
         $exportDOM(node, $next) {
           return $next();
         },
@@ -150,7 +153,7 @@ describe('precompileDOMRenderConfigOverrides', () => {
       overrides,
     );
     expect(prerender).toEqual({
-      $createDOM: [],
+      $createDOM: [[ALWAYS_TRUE, overrides[1].$createDOM]],
       $exportDOM: [
         [
           'types',

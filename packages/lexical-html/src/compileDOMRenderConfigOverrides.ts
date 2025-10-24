@@ -18,6 +18,7 @@ import {
 } from 'lexical';
 import invariant from 'shared/invariant';
 
+import {ALWAYS_TRUE} from './constants';
 import {AnyDOMRenderMatch, DOMRenderConfig, DOMRenderMatch} from './types';
 
 interface TypeRecord {
@@ -68,8 +69,6 @@ type AnyRender<T> =
 type PreEditorDOMRenderConfig = {
   [K in keyof EditorDOMRenderConfig]: AnyRender<AnyDOMRenderMatch[K]>[];
 };
-
-export const ALWAYS_TRUE = () => true as const;
 
 function buildNodePredicate<T extends LexicalNode>(klass: Klass<T>) {
   return (node: LexicalNode): node is T => node instanceof klass;

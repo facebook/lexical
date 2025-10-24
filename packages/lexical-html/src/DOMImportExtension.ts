@@ -19,17 +19,11 @@ import type {
 } from './types';
 
 import {
-  $createLineBreakNode,
-  $createParagraphNode,
   $isBlockElementNode,
   $isElementNode,
   $isRootOrShadowRoot,
   ArtificialNode__DO_NOT_USE,
   defineExtension,
-  type DOMConversionOutput,
-  type ElementFormatType,
-  type ElementNode,
-  isBlockDomNode,
   isDOMDocumentNode,
   isHTMLElement,
   type LexicalEditor,
@@ -39,58 +33,29 @@ import {
 import invariant from 'shared/invariant';
 
 import {$unwrapArtificialNodes} from './$unwrapArtificialNodes';
+import {compileLegacyImportDOM} from './compileLegacyImportDOM';
 import {
   DOMImportContextSymbol,
   DOMImportExtensionName,
   DOMImportNextSymbol,
   DOMTextWrapModeKeys,
   DOMWhiteSpaceCollapseKeys,
-  IGNORE_TAGS,
+  EMPTY_ARRAY,
 } from './constants';
 import {
   $withFullContext,
   createChildContext,
   updateContextFromPairs,
 } from './ContextRecord';
-import {getConversionFunction} from './getConversionFunction';
 import {
   $getImportContextValue,
   ImportContextArtificialNodes,
   ImportContextDOMNode,
-  ImportContextForChildMap,
   ImportContextHasBlockAncestorLexicalNode,
   ImportContextParentLexicalNode,
   ImportContextTextWrapMode,
   ImportContextWhiteSpaceCollapse,
 } from './ImportContext';
-import {isDomNodeBetweenTwoInlineNodes} from './isDomNodeBetweenTwoInlineNodes';
-
-function $wrapContinuousInlinesInPlace(
-  domNode: Node,
-  nodes: LexicalNode[],
-  $createWrapperFn: () => ElementNode,
-): void {
-  const textAlign = (domNode as HTMLElement).style
-    .textAlign as ElementFormatType;
-  // wrap contiguous inline child nodes in para
-  let j = 0;
-  for (let i = 0, wrapper: undefined | ElementNode; i < nodes.length; i++) {
-    const node = nodes[i];
-    if ($isBlockElementNode(node)) {
-      if (textAlign && !node.getFormat()) {
-        node.setFormat(textAlign);
-      }
-      wrapper = undefined;
-      nodes[j++] = node;
-    } else {
-      if (!wrapper) {
-        nodes[j++] = wrapper = $createWrapperFn().setFormat(textAlign);
-      }
-      wrapper.append(node);
-    }
-  }
-  nodes.length = j;
-}
 
 class MatchesImport {
   tag: string;
@@ -180,147 +145,6 @@ class TagImport {
       : (node: Node) =>
           (compiled.get(node.nodeName.toLowerCase()) || $nextImport)(node);
   }
-}
-
-const EMPTY_ARRAY = [] as const;
-
-function compileLegacyImportDOM(
-  editor: LexicalEditor,
-): DOMImportExtensionOutput['$importNode'] {
-  return (node) => {
-    if (IGNORE_TAGS.has(node.nodeName)) {
-      return {childNodes: EMPTY_ARRAY, node: null};
-    }
-    // If the DOM node doesn't have a transformer, we don't know what
-    // to do with it but we still need to process any childNodes.
-    let childLexicalNodes: LexicalNode[] = [];
-    let postTransform: DOMConversionOutput['after'];
-    const output: DOMImportOutput = {
-      $appendChild: (childNode) => childLexicalNodes.push(childNode),
-      $finalize: (nodeOrNodes) => {
-        const finalLexicalNodes = Array.isArray(nodeOrNodes)
-          ? nodeOrNodes
-          : nodeOrNodes
-            ? [nodeOrNodes]
-            : [];
-        const finalLexicalNode: null | LexicalNode =
-          finalLexicalNodes[finalLexicalNodes.length - 1] || null;
-        if (postTransform) {
-          childLexicalNodes = postTransform(childLexicalNodes);
-        }
-        if (isBlockDomNode(node)) {
-          const hasBlockAncestorLexicalNodeForChildren =
-            finalLexicalNode && $isRootOrShadowRoot(finalLexicalNode)
-              ? false
-              : (finalLexicalNode && $isBlockElementNode(finalLexicalNode)) ||
-                $getImportContextValue(
-                  ImportContextHasBlockAncestorLexicalNode,
-                );
-
-          if (!hasBlockAncestorLexicalNodeForChildren) {
-            $wrapContinuousInlinesInPlace(
-              node,
-              childLexicalNodes,
-              $createParagraphNode,
-            );
-          } else {
-            const allArtificialNodes = $getImportContextValue(
-              ImportContextArtificialNodes,
-            );
-            invariant(
-              allArtificialNodes !== null,
-              'Missing ImportContextArtificialNodes',
-            );
-            $wrapContinuousInlinesInPlace(node, childLexicalNodes, () => {
-              const artificialNode = new ArtificialNode__DO_NOT_USE();
-              allArtificialNodes.push(artificialNode);
-              return artificialNode;
-            });
-          }
-        }
-
-        if (finalLexicalNode == null) {
-          if (childLexicalNodes.length > 0) {
-            // If it hasn't been converted to a LexicalNode, we hoist its children
-            // up to the same level as it.
-            finalLexicalNodes.push(...childLexicalNodes);
-          } else {
-            if (isBlockDomNode(node) && isDomNodeBetweenTwoInlineNodes(node)) {
-              // Empty block dom node that hasnt been converted, we replace it with a linebreak if its between inline nodes
-              finalLexicalNodes.push($createLineBreakNode());
-            }
-          }
-        } else {
-          if ($isElementNode(finalLexicalNode)) {
-            // If the current node is a ElementNode after conversion,
-            // we can append all the children to it.
-            finalLexicalNode.append(...childLexicalNodes);
-          }
-        }
-
-        return finalLexicalNodes;
-      },
-      node: null,
-    };
-    let currentLexicalNode: null | LexicalNode = null;
-    const transformFunction = getConversionFunction(node, editor);
-    const transformOutput = transformFunction
-      ? transformFunction(node as HTMLElement)
-      : null;
-    const addChildContext = (cfg: AnyImportStateConfigPair) => {
-      output.childContext = output.childContext || [];
-      output.childContext.push(cfg);
-    };
-
-    if (transformOutput !== null) {
-      const forChildMap = $getImportContextValue(
-        ImportContextForChildMap,
-        editor,
-      );
-      const parentLexicalNode = $getImportContextValue(
-        ImportContextParentLexicalNode,
-        editor,
-      );
-      postTransform = transformOutput.after;
-      let transformNodeArray = Array.isArray(transformOutput.node)
-        ? transformOutput.node
-        : transformOutput.node
-          ? [transformOutput.node]
-          : [];
-
-      if (transformNodeArray.length > 0 && forChildMap) {
-        const transformWithForChild = (initial: LexicalNode) => {
-          let current: null | undefined | LexicalNode = initial;
-          for (const forChildFunction of forChildMap.values()) {
-            current = forChildFunction(current, parentLexicalNode);
-
-            if (!current) {
-              return [];
-            }
-          }
-          return [current];
-        };
-        transformNodeArray = transformNodeArray.flatMap(transformWithForChild);
-      }
-      currentLexicalNode =
-        transformNodeArray[transformNodeArray.length - 1] || null;
-      output.node =
-        transformNodeArray.length > 1 ? transformNodeArray : currentLexicalNode;
-
-      if (transformOutput.forChild) {
-        addChildContext(
-          ImportContextForChildMap.pair(
-            new Map(forChildMap || []).set(
-              node.nodeName,
-              transformOutput.forChild,
-            ),
-          ),
-        );
-      }
-    }
-
-    return output;
-  };
 }
 
 function importOverrideSort(

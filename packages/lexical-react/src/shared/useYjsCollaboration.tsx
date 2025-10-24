@@ -173,7 +173,6 @@ export function useYjsCollaboration(
   return useYjsCursors(binding, cursorsContainerRef);
 }
 
-
 export function useYjsCollaborationV2__EXPERIMENTAL(
   editor: LexicalEditor,
   id: string,
@@ -187,7 +186,7 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
     excludedProperties?: ExcludedProperties;
     rootName?: string;
     __shouldBootstrapUnsafe?: boolean;
-    syncCursorPositionsFn?: SyncCursorPositionsFn,
+    syncCursorPositionsFn?: SyncCursorPositionsFn;
   } = {
   },
 ): BindingV2 {

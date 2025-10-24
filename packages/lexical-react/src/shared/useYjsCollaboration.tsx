@@ -186,7 +186,10 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
     excludedProperties?: ExcludedProperties;
     rootName?: string;
     __shouldBootstrapUnsafe?: boolean;
-  } = {},
+    syncCursorPositionsFn?: SyncCursorPositionsFn
+  } = {
+    syncCursorPositionsFn: syncCursorPositions,
+  },
 ): BindingV2 {
   const {
     awarenessData,
@@ -272,6 +275,7 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
           events,
           transaction,
           isFromUndoManger,
+          options.syncCursorPositionsFn,
         );
       }
     };

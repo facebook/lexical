@@ -352,6 +352,7 @@ export function syncYjsChangesToLexicalV2__EXPERIMENTAL(
   events: Array<YEvent<XmlElement | XmlText>>,
   transaction: YTransaction,
   isFromUndoManger: boolean,
+  syncCursorPositionsFn: SyncCursorPositionsFn = syncCursorPositions,
 ): void {
   const editor = binding.editor;
   const editorState = editor._editorState;
@@ -394,7 +395,7 @@ export function syncYjsChangesToLexicalV2__EXPERIMENTAL(
       // binding.mapping will get out of sync.
       discrete: true,
       onUpdate: () => {
-        syncCursorPositions(binding, provider);
+        syncCursorPositionsFn(binding, provider);
         editor.update(() => $ensureEditorNotEmpty());
       },
       skipTransforms: true,

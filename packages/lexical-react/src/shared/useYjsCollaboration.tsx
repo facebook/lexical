@@ -196,6 +196,7 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
     excludedProperties,
     rootName,
     __shouldBootstrapUnsafe: shouldBootstrap,
+    syncCursorPositionsFn,
   } = options;
 
   // Note: v2 does not support 'reload' event, which is not an actual Yjs event type.
@@ -275,7 +276,7 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
           events,
           transaction,
           isFromUndoManger,
-          options.syncCursorPositionsFn,
+          syncCursorPositionsFn,
         );
       }
     };
@@ -314,7 +315,7 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
       removeListener();
       awareness.off('update', onAwarenessUpdate);
     };
-  }, [binding, provider, editor, diffSnapshots]);
+  }, [binding, provider, editor, diffSnapshots, syncCursorPositionsFn]);
 
   useProvider(
     editor,

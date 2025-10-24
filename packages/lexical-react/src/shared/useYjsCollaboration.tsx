@@ -173,6 +173,7 @@ export function useYjsCollaboration(
   return useYjsCursors(binding, cursorsContainerRef);
 }
 
+
 export function useYjsCollaborationV2__EXPERIMENTAL(
   editor: LexicalEditor,
   id: string,
@@ -186,9 +187,8 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
     excludedProperties?: ExcludedProperties;
     rootName?: string;
     __shouldBootstrapUnsafe?: boolean;
-    syncCursorPositionsFn?: SyncCursorPositionsFn
+    syncCursorPositionsFn?: SyncCursorPositionsFn,
   } = {
-    syncCursorPositionsFn: syncCursorPositions,
   },
 ): BindingV2 {
   const {
@@ -196,7 +196,7 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
     excludedProperties,
     rootName,
     __shouldBootstrapUnsafe: shouldBootstrap,
-    syncCursorPositionsFn,
+    syncCursorPositionsFn = syncCursorPositions,
   } = options;
 
   // Note: v2 does not support 'reload' event, which is not an actual Yjs event type.

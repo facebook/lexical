@@ -5,11 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {
-  CreateEditorArgs,
-  InitialEditorConfig,
-  KlassConstructor,
-  LexicalNode,
+import {
+  type CreateEditorArgs,
+  getStaticNodeConfig,
+  type InitialEditorConfig,
+  type KlassConstructor,
+  type LexicalNode,
 } from 'lexical';
 
 export interface KnownTypesAndNodes {
@@ -25,7 +26,9 @@ export interface KnownTypesAndNodes {
  * @param config The InitialEditorConfig (accessible from an extension's init)
  * @returns The known types and nodes as Sets
  */
-export function getKnownTypesAndNodes(config: InitialEditorConfig) {
+export function getKnownTypesAndNodes(
+  config: InitialEditorConfig,
+): KnownTypesAndNodes {
   const types: KnownTypesAndNodes['types'] = new Set();
   const nodes: KnownTypesAndNodes['nodes'] = new Set();
   for (const klassOrReplacement of getNodeConfig(config)) {
@@ -33,6 +36,8 @@ export function getKnownTypesAndNodes(config: InitialEditorConfig) {
       typeof klassOrReplacement === 'function'
         ? klassOrReplacement
         : klassOrReplacement.replace;
+    // For the side-effect of filling in the static methods
+    void getStaticNodeConfig(klass);
     types.add(klass.getType());
     nodes.add(klass);
   }

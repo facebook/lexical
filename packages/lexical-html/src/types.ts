@@ -17,7 +17,6 @@ import type {
   BaseSelection,
   DOMExportOutput,
   ElementDOMSlot,
-  ElementNode,
   Klass,
   LexicalEditor,
   LexicalNode,
@@ -70,9 +69,9 @@ export type AnyRenderStateConfig = RenderStateConfig<any>;
 export type AnyImportStateConfig = ImportStateConfig<any>;
 
 /** @internal @experimental */
-export type DOMImportOutput = DOMImportOutputNode | DOMImportOutputContinue;
+export type DOMImportOutput = DOMImportOutputNodes | DOMImportOutputContinue;
 
-export interface DOMImportOutputNode {
+export interface DOMImportOutputNodes {
   node: null | LexicalNode | LexicalNode[];
   childNodes?: NodeListOf<ChildNode> | readonly ChildNode[];
   childContext?: AnyImportStateConfigPair[];
@@ -128,8 +127,9 @@ export type NodeMatch<T extends LexicalNode> =
 /** @internal @experimental */
 export interface DOMRenderMatch<T extends LexicalNode> {
   readonly nodes: '*' | readonly NodeMatch<T>[];
-  $getDOMSlot?: <N extends ElementNode>(
+  $getDOMSlot?: <N extends LexicalNode>(
     node: N,
+    dom: HTMLElement,
     $next: () => ElementDOMSlot<HTMLElement>,
     editor: LexicalEditor,
   ) => ElementDOMSlot<HTMLElement>;

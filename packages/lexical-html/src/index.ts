@@ -43,7 +43,7 @@ export type {
   DOMImportNext,
   DOMImportOutput,
   DOMImportOutputContinue,
-  DOMImportOutputNode,
+  DOMImportOutputNodes,
   DOMRenderConfig,
   DOMRenderExtensionOutput,
   DOMRenderMatch,

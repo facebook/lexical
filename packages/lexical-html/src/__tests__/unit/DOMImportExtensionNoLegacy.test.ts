@@ -19,7 +19,7 @@ import {
   DOMImportExtension,
   type DOMImportNext,
   type DOMImportOutputContinue,
-  type DOMImportOutputNode,
+  type DOMImportOutputNodes,
   type DOMRenderConfig,
   DOMRenderExtension,
   ImportContextParentLexicalNode,
@@ -143,7 +143,7 @@ function $normalizeListItemNode(
 
 function $importListNode(
   dom: HTMLUListElement | HTMLOListElement,
-): DOMImportOutputNode {
+): DOMImportOutputNodes {
   const listNode = $createListNode().setListType(listTypeFromDOM(dom));
   return {$finalize: $normalizeListNode, node: listNode};
 }
@@ -222,7 +222,7 @@ function $createTextNodeWithCurrentFormat(text: string = ''): TextNode {
   return node;
 }
 
-function $convertTextDOMNode(domNode: Text): DOMImportOutputNode {
+function $convertTextDOMNode(domNode: Text): DOMImportOutputNodes {
   const domNode_ = domNode as Text;
   const parentDom = domNode.parentElement;
   invariant(

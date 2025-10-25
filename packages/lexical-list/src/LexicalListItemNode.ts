@@ -564,6 +564,19 @@ function $convertListItemElement(domNode: HTMLElement): DOMConversionOutput {
     }
   }
 
+  const isJoplinCheckList = domNode.classList.contains('joplin-checkbox');
+  if (isJoplinCheckList) {
+    for (const child of domNode.children) {
+      if (
+        child.classList.contains('checkbox-wrapper') &&
+        child.children.length > 0 &&
+        child.children[0].tagName === 'INPUT'
+      ) {
+        return $convertCheckboxInput(child.children[0]);
+      }
+    }
+  }
+
   const ariaCheckedAttr = domNode.getAttribute('aria-checked');
   const checked =
     ariaCheckedAttr === 'true'

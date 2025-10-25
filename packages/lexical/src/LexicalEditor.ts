@@ -42,7 +42,7 @@ import {
   getCachedClassNameArray,
   getCachedTypeToNodeMap,
   getDefaultView,
-  getDOMSelection,
+  getDOMSelectionForEditor,
   getStaticNodeConfig,
   hasOwnExportDOM,
   hasOwnStaticMethod,
@@ -1401,7 +1401,7 @@ export class LexicalEditor {
       rootElement.blur();
     }
 
-    const domSelection = getDOMSelection(this._window);
+    const domSelection = getDOMSelectionForEditor(this);
 
     if (domSelection !== null) {
       domSelection.removeAllRanges();

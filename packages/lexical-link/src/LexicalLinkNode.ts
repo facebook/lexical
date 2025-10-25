@@ -533,6 +533,68 @@ function $withSelectedNodes<T>($fn: () => T): T {
 }
 
 /**
+ * Splits a LinkNode by removing selected children from it.
+ * Handles three cases: selection at start, end, or middle of the link.
+ * @param parentLink - The LinkNode to split
+ * @param extractedNodes - The nodes that were extracted from the selection
+ */
+function $splitLinkAtSelection(
+  parentLink: LinkNode,
+  extractedNodes: LexicalNode[],
+): void {
+  const extractedKeys = new Set(
+    extractedNodes
+      .filter((n) => parentLink.isParentOf(n))
+      .map((n) => n.getKey()),
+  );
+
+  const allChildren = parentLink.getChildren();
+  const extractedChildren = allChildren.filter((child) =>
+    extractedKeys.has(child.getKey()),
+  );
+
+  if (extractedChildren.length === allChildren.length) {
+    allChildren.forEach((child) => parentLink.insertBefore(child));
+    parentLink.remove();
+    return;
+  }
+
+  const firstExtractedIndex = allChildren.findIndex((child) =>
+    extractedKeys.has(child.getKey()),
+  );
+  const lastExtractedIndex = allChildren.findLastIndex((child) =>
+    extractedKeys.has(child.getKey()),
+  );
+
+  const isAtStart = firstExtractedIndex === 0;
+  const isAtEnd = lastExtractedIndex === allChildren.length - 1;
+
+  if (isAtStart) {
+    extractedChildren.forEach((child) => parentLink.insertBefore(child));
+  } else if (isAtEnd) {
+    for (let i = extractedChildren.length - 1; i >= 0; i--) {
+      parentLink.insertAfter(extractedChildren[i]);
+    }
+  } else {
+    for (let i = extractedChildren.length - 1; i >= 0; i--) {
+      parentLink.insertAfter(extractedChildren[i]);
+    }
+
+    const trailingChildren = allChildren.slice(lastExtractedIndex + 1);
+    if (trailingChildren.length > 0) {
+      const newLink = $createLinkNode(parentLink.getURL(), {
+        rel: parentLink.getRel(),
+        target: parentLink.getTarget(),
+        title: parentLink.getTitle(),
+      });
+
+      extractedChildren[extractedChildren.length - 1].insertAfter(newLink);
+      trailingChildren.forEach((child) => newLink.append(child));
+    }
+  }
+}
+
+/**
  * Generates or updates a LinkNode. It can also delete a LinkNode if the URL is null,
  * but saves any children and brings them up to the parent node.
  * @param urlOrAttributes - The URL the link directs to, or an attributes object with an url property
@@ -611,22 +673,20 @@ export function $toggleLink(
   const nodes = selection.extract();
 
   if (url === null) {
-    // Remove LinkNodes
+    const processedLinks = new Set<NodeKey>();
+
     nodes.forEach((node) => {
-      const parentLink = $findMatchingParent(
-        node,
-        (parent): parent is LinkNode =>
-          !$isAutoLinkNode(parent) && $isLinkNode(parent),
-      );
+      const parentLink = node.getParent();
 
-      if (parentLink) {
-        const children = parentLink.getChildren();
+      if ($isLinkNode(parentLink) && !$isAutoLinkNode(parentLink)) {
+        const linkKey = parentLink.getKey();
 
-        for (let i = 0; i < children.length; i++) {
-          parentLink.insertBefore(children[i]);
+        if (processedLinks.has(linkKey)) {
+          return;
         }
 
-        parentLink.remove();
+        $splitLinkAtSelection(parentLink, nodes);
+        processedLinks.add(linkKey);
       }
     });
     return;

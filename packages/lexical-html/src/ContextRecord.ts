@@ -6,18 +6,15 @@
  *
  */
 import type {
-  AnyContextConfigPair,
+  AnyContextConfigPairOrUpdater,
   AnyContextSymbol,
   ContextConfig,
+  ContextConfigPair,
+  ContextConfigUpdater,
   ContextRecord,
 } from './types';
 
-import {
-  $getEditor,
-  createState,
-  type LexicalEditor,
-  ValueOrUpdater,
-} from 'lexical';
+import {$getEditor, createState, type LexicalEditor} from 'lexical';
 
 let activeContext: undefined | EditorContext;
 
@@ -53,12 +50,24 @@ export function getContextRecord<Ctx extends AnyContextSymbol>(
   return editorContext && editorContext[sym];
 }
 
+function toPair<Ctx extends AnyContextSymbol, V>(
+  contextRecord: undefined | ContextRecord<Ctx>,
+  pairOrUpdater: ContextConfigPair<Ctx, V> | ContextConfigUpdater<Ctx, V>,
+): ContextConfigPair<Ctx, V> {
+  if ('cfg' in pairOrUpdater) {
+    const {cfg, updater} = pairOrUpdater;
+    return [cfg, updater(getContextValue(contextRecord, cfg))];
+  }
+  return pairOrUpdater;
+}
+
 export function contextFromPairs<Ctx extends AnyContextSymbol>(
-  pairs: readonly AnyContextConfigPair<Ctx>[],
+  pairs: readonly AnyContextConfigPairOrUpdater<Ctx>[],
   parent: undefined | ContextRecord<Ctx>,
 ): undefined | ContextRecord<Ctx> {
   let rval = parent;
-  for (const [k, v] of pairs) {
+  for (const pairOrUpdater of pairs) {
+    const [k, v] = toPair(rval, pairOrUpdater);
     const key = k.key;
     if (rval === parent && getContextValue(rval, k) === v) {
       continue;
@@ -79,26 +88,36 @@ export function createChildContext<Ctx extends AnyContextSymbol>(
 export function setContextValue<Ctx extends AnyContextSymbol, V>(
   contextRecord: ContextRecord<Ctx>,
   cfg: ContextConfig<Ctx, V>,
-  valueOrUpdater: ValueOrUpdater<V>,
+  value: V,
 ): V {
-  const {key, defaultValue} = cfg;
-  const value =
-    typeof valueOrUpdater !== 'function'
-      ? valueOrUpdater
-      : (valueOrUpdater as (prev: V) => V)(
-          key in contextRecord ? (contextRecord[key] as V) : defaultValue,
-        );
-  contextRecord[key] = value;
+  contextRecord[cfg.key] = value;
   return value;
+}
+
+export function contextUpdater<Ctx extends AnyContextSymbol, V>(
+  cfg: ContextConfig<Ctx, V>,
+  updater: (prev: V) => V,
+): ContextConfigUpdater<Ctx, V> {
+  return {cfg, updater};
+}
+
+export function updateContextValue<Ctx extends AnyContextSymbol, V>(
+  contextRecord: ContextRecord<Ctx>,
+  cfg: ContextConfig<Ctx, V>,
+  updater: (prev: V) => V,
+): V {
+  const value = updater(getContextValue(contextRecord, cfg));
+  return setContextValue(contextRecord, cfg, value);
 }
 
 export function updateContextFromPairs<Ctx extends AnyContextSymbol>(
   contextRecord: ContextRecord<Ctx>,
-  pairs: undefined | readonly AnyContextConfigPair<Ctx>[],
+  pairs: undefined | readonly AnyContextConfigPairOrUpdater<Ctx>[],
 ): ContextRecord<Ctx> {
   if (pairs) {
-    for (const [cfg, valueOrUpdater] of pairs) {
-      setContextValue(contextRecord, cfg, valueOrUpdater);
+    for (const pairOrUpdater of pairs) {
+      const [cfg, value] = toPair(contextRecord, pairOrUpdater);
+      setContextValue(contextRecord, cfg, value);
     }
   }
   return contextRecord;
@@ -132,7 +151,7 @@ export function $withContext<Ctx extends AnyContextSymbol>(
     undefined,
 ) {
   return (
-    cfg: readonly AnyContextConfigPair<Ctx>[],
+    cfg: readonly AnyContextConfigPairOrUpdater<Ctx>[],
     editor = $getEditor(),
   ): (<T>(f: () => T) => T) => {
     return (f) => {

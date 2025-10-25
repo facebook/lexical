@@ -19,7 +19,11 @@ import {
   getContextValue,
 } from './ContextRecord';
 import {DOMRenderExtension} from './DOMRenderExtension';
-import {AnyContextConfigPair, ContextRecord, RenderStateConfig} from './types';
+import {
+  AnyRenderStateConfigPairOrUpdater,
+  ContextRecord,
+  RenderStateConfig,
+} from './types';
 
 /**
  * Create a context state to be used during render.
@@ -79,7 +83,7 @@ export function $getRenderContextValue<V>(
 }
 
 export const $withRenderContext: (
-  cfg: readonly AnyContextConfigPair<typeof DOMRenderContextSymbol>[],
+  cfg: readonly AnyRenderStateConfigPairOrUpdater[],
   editor?: LexicalEditor,
 ) => <T>(f: () => T) => T = $withContext(
   DOMRenderContextSymbol,

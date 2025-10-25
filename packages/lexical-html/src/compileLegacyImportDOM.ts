@@ -6,7 +6,7 @@
  *
  */
 import type {
-  AnyImportStateConfigPair,
+  AnyImportStateConfigPairOrUpdater,
   DOMImportExtensionOutput,
   DOMImportOutput,
 } from './types';
@@ -120,7 +120,7 @@ export function compileLegacyImportDOM(
     const transformOutput = transformFunction
       ? transformFunction(node as HTMLElement)
       : null;
-    const addChildContext = (cfg: AnyImportStateConfigPair) => {
+    const addChildContext = (cfg: AnyImportStateConfigPairOrUpdater) => {
       output.childContext = output.childContext || [];
       output.childContext.push(cfg);
     };

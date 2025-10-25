@@ -20,7 +20,6 @@ import {
   type LexicalEditor,
   type LexicalNode,
   type TextFormatType,
-  ValueOrUpdater,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
@@ -62,7 +61,7 @@ export function $getImportContextValue<V>(
 
 export function $setImportContextValue<V>(
   cfg: ImportStateConfig<V>,
-  valueOrUpdater: ValueOrUpdater<V>,
+  value: V,
   editor: LexicalEditor = $getEditor(),
 ): V {
   const ctx = getContextRecord(DOMImportContextSymbol, editor);
@@ -70,7 +69,7 @@ export function $setImportContextValue<V>(
     ctx !== undefined,
     '$setImportContextValue used outside of DOM import',
   );
-  return setContextValue(ctx, cfg, valueOrUpdater);
+  return setContextValue(ctx, cfg, value);
 }
 
 export const ImportContextDOMNode = createImportState(

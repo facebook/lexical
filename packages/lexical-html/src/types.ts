@@ -33,14 +33,20 @@ export type ContextConfig<Sym extends symbol, V> = StateConfig<symbol, V> & {
   readonly [K in Sym]?: true;
 };
 
+export type ContextConfigUpdater<Ctx extends AnyContextSymbol, V> = {
+  readonly cfg: ContextConfig<Ctx, V>;
+  readonly updater: (prev: V) => V;
+};
 export type ContextConfigPair<Ctx extends AnyContextSymbol, V> = readonly [
   ContextConfig<Ctx, V>,
   V,
 ];
 
-export type AnyContextConfigPair<Ctx extends AnyContextSymbol> =
+export type AnyContextConfigPairOrUpdater<Ctx extends AnyContextSymbol> =
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ContextConfigPair<Ctx, any>;
+  | ContextConfigPair<Ctx, any>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  | ContextConfigUpdater<Ctx, any>;
 
 export interface DOMRenderExtensionOutput {
   defaults: undefined | ContextRecord<typeof DOMRenderContextSymbol>;
@@ -56,10 +62,10 @@ export type RenderStateConfig<V> = ContextConfig<
   V
 >;
 
-export type AnyImportStateConfigPair = AnyContextConfigPair<
+export type AnyImportStateConfigPairOrUpdater = AnyContextConfigPairOrUpdater<
   typeof DOMImportContextSymbol
 >;
-export type AnyRenderStateConfigPair = AnyContextConfigPair<
+export type AnyRenderStateConfigPairOrUpdater = AnyContextConfigPairOrUpdater<
   typeof DOMRenderContextSymbol
 >;
 
@@ -74,7 +80,7 @@ export type DOMImportOutput = DOMImportOutputNodes | DOMImportOutputContinue;
 export interface DOMImportOutputNodes {
   node: null | LexicalNode | LexicalNode[];
   childNodes?: NodeListOf<ChildNode> | readonly ChildNode[];
-  childContext?: AnyImportStateConfigPair[];
+  childContext?: AnyImportStateConfigPairOrUpdater[];
   $appendChild?: (node: LexicalNode, dom: ChildNode) => void;
   $finalize?: (
     node: null | LexicalNode | LexicalNode[],
@@ -83,8 +89,8 @@ export interface DOMImportOutputNodes {
 
 export interface DOMImportOutputContinue {
   node: DOMImportNext;
-  childContext?: AnyImportStateConfigPair[];
-  nextContext?: AnyImportStateConfigPair[];
+  childContext?: AnyImportStateConfigPairOrUpdater[];
+  nextContext?: AnyImportStateConfigPairOrUpdater[];
   $appendChild?: never;
   childNodes?: never;
   $finalize?: (
@@ -113,7 +119,7 @@ export type NodeNameToType<T extends string> = T extends keyof NodeNameMap
 /** @internal @experimental */
 export interface DOMRenderConfig {
   overrides: AnyDOMRenderMatch[];
-  contextDefaults: AnyRenderStateConfigPair[];
+  contextDefaults: AnyRenderStateConfigPairOrUpdater[];
 }
 
 /** @internal @experimental */
@@ -180,10 +186,10 @@ export interface DOMImportConfig {
   ) => DOMImportExtensionOutput['$importNode'];
 }
 export interface DOMImportConfigMatch {
-  tag: '*' | '#text' | '#cdata-section' | '#comment' | (string & {});
-  selector?: string;
-  priority?: 0 | 1 | 2 | 3 | 4;
-  $import: (
+  readonly tag: '*' | '#text' | '#cdata-section' | '#comment' | (string & {});
+  readonly selector?: string;
+  readonly priority?: 0 | 1 | 2 | 3 | 4;
+  readonly $import: (
     node: Node,
     $next: DOMImportNext,
     editor: LexicalEditor,

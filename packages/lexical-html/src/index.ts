@@ -11,6 +11,7 @@ export {
   $generateHtmlFromNodes,
 } from './$generateDOMFromNodes';
 export {$generateNodesFromDOM} from './$generateNodesFromDOM';
+export {contextUpdater} from './ContextRecord';
 export {DOMImportExtension} from './DOMImportExtension';
 export {domOverride} from './domOverride';
 export {DOMRenderExtension} from './DOMRenderExtension';
@@ -32,9 +33,9 @@ export {
 export type {
   AnyDOMRenderMatch,
   AnyImportStateConfig,
-  AnyImportStateConfigPair,
+  AnyImportStateConfigPairOrUpdater,
   AnyRenderStateConfig,
-  AnyRenderStateConfigPair,
+  AnyRenderStateConfigPairOrUpdater,
   DOMImportConfig,
   DOMImportConfigMatch,
   DOMImportExtensionOutput,

@@ -14,7 +14,8 @@ import {
 import {
   $generateNodesFromDOM,
   $getImportContextValue,
-  AnyImportStateConfigPair,
+  AnyImportStateConfigPairOrUpdater,
+  contextUpdater,
   type DOMImportConfig,
   DOMImportExtension,
   type DOMImportNext,
@@ -170,7 +171,10 @@ function $addTextFormatContinue(
   return (_dom, $next) => {
     return {
       childContext: [
-        ImportContextTextFormats.pair((prev) => ({...prev, [format]: true})),
+        contextUpdater(ImportContextTextFormats, (prev) => ({
+          ...prev,
+          [format]: true,
+        })),
       ],
       node: $next,
     };
@@ -373,7 +377,7 @@ const NO_LEGACY_CONFIG: Partial<DOMImportConfig> = {
         dom,
         $next,
       ): undefined | DOMImportOutputContinue {
-        const nextContext: AnyImportStateConfigPair[] = [];
+        const nextContext: AnyImportStateConfigPairOrUpdater[] = [];
         if (isBlockDomNode(dom)) {
           const {textAlign} = dom.style;
           switch (textAlign) {
@@ -438,7 +442,10 @@ const NO_LEGACY_CONFIG: Partial<DOMImportConfig> = {
           if (formats) {
             const boundFormats = formats;
             nextContext.push(
-              ImportContextTextFormats.pair((v) => ({...v, ...boundFormats})),
+              contextUpdater(ImportContextTextFormats, (v) => ({
+                ...v,
+                ...boundFormats,
+              })),
             );
           }
         }

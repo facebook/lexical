@@ -16,6 +16,7 @@ import {
   $getImportContextValue,
   AnyImportStateConfigPairOrUpdater,
   contextUpdater,
+  contextValue,
   type DOMImportConfig,
   DOMImportExtension,
   type DOMImportNext,
@@ -387,7 +388,7 @@ const NO_LEGACY_CONFIG: Partial<DOMImportConfig> = {
             case 'left':
             case 'right':
             case 'start':
-              nextContext.push(ImportContextTextAlign.pair(textAlign));
+              nextContext.push(contextValue(ImportContextTextAlign, textAlign));
               break;
             default:
               break;

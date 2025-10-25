@@ -21,6 +21,7 @@ import {
 } from 'lexical';
 import invariant from 'shared/invariant';
 
+import {contextValue} from './ContextRecord';
 import {
   $withRenderContext,
   RenderContextExport,
@@ -33,7 +34,7 @@ export function $generateDOMFromNodes<T extends HTMLElement | DocumentFragment>(
   editor: LexicalEditor = $getEditor(),
 ): T {
   return $withRenderContext(
-    [RenderContextExport.pair(true)],
+    [contextValue(RenderContextExport, true)],
     editor,
   )(() => {
     const root = $getRoot();
@@ -59,7 +60,10 @@ export function $generateDOMFromRoot<T extends HTMLElement | DocumentFragment>(
 ): T {
   const editor = $getEditor();
   return $withRenderContext(
-    [RenderContextExport.pair(true), RenderContextRoot.pair(true)],
+    [
+      contextValue(RenderContextExport, true),
+      contextValue(RenderContextRoot, true),
+    ],
     editor,
   )(() => {
     const selection = null;

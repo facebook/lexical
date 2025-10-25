@@ -27,6 +27,7 @@ import invariant from 'shared/invariant';
 
 import {$wrapContinuousInlinesInPlace} from './$wrapContinuousInlinesInPlace';
 import {EMPTY_ARRAY, IGNORE_TAGS} from './constants';
+import {contextValue} from './ContextRecord';
 import {getConversionFunction} from './getConversionFunction';
 import {
   $getImportContextValue,
@@ -162,7 +163,8 @@ export function compileLegacyImportDOM(
 
       if (transformOutput.forChild) {
         addChildContext(
-          ImportContextForChildMap.pair(
+          contextValue(
+            ImportContextForChildMap,
             new Map(forChildMap || []).set(
               node.nodeName,
               transformOutput.forChild,

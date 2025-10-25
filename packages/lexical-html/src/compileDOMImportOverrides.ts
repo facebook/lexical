@@ -40,6 +40,7 @@ import {
 } from './constants';
 import {
   $withFullContext,
+  contextValue,
   createChildContext,
   updateContextFromPairs,
 } from './ContextRecord';
@@ -245,7 +246,7 @@ function compileImportNodes(
       [
         rootNode,
         updateContextFromPairs(createChildContext(undefined), [
-          ImportContextArtificialNodes.pair(artificialNodes),
+          contextValue(ImportContextArtificialNodes, artificialNodes),
         ]),
         () => ({node: null}),
         (node) => {
@@ -352,14 +353,15 @@ function compileImportNodes(
           hasBlockAncestorLexicalNode !== hasBlockAncestorLexicalNodeForChildren
         ) {
           updateChildContext([
-            ImportContextHasBlockAncestorLexicalNode.pair(
+            contextValue(
+              ImportContextHasBlockAncestorLexicalNode,
               hasBlockAncestorLexicalNodeForChildren,
             ),
           ]);
         }
         if ($isElementNode(currentLexicalNode)) {
           updateChildContext([
-            ImportContextParentLexicalNode.pair(currentLexicalNode),
+            contextValue(ImportContextParentLexicalNode, currentLexicalNode),
           ]);
         }
       }

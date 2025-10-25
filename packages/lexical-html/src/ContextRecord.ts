@@ -94,6 +94,13 @@ export function setContextValue<Ctx extends AnyContextSymbol, V>(
   return value;
 }
 
+export function contextValue<Ctx extends AnyContextSymbol, V>(
+  cfg: ContextConfig<Ctx, V>,
+  value: V,
+): ContextConfigPair<Ctx, V> {
+  return [cfg, value];
+}
+
 export function contextUpdater<Ctx extends AnyContextSymbol, V>(
   cfg: ContextConfig<Ctx, V>,
   updater: (prev: V) => V,

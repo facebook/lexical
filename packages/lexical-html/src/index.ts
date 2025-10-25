@@ -11,7 +11,7 @@ export {
   $generateHtmlFromNodes,
 } from './$generateDOMFromNodes';
 export {$generateNodesFromDOM} from './$generateNodesFromDOM';
-export {contextUpdater} from './ContextRecord';
+export {contextUpdater, contextValue} from './ContextRecord';
 export {DOMImportExtension} from './DOMImportExtension';
 export {domOverride} from './domOverride';
 export {DOMRenderExtension} from './DOMRenderExtension';

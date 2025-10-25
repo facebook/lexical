@@ -24,7 +24,7 @@ import {$applyNodeReplacement, ElementNode, TextNode} from 'lexical';
 
 import {$createCodeNode} from './CodeNode';
 
-type SerializedCodeHighlightNode = Spread<
+export type SerializedCodeHighlightNode = Spread<
   {
     highlightType: string | null | undefined;
   },

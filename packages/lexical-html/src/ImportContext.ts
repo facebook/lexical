@@ -20,6 +20,7 @@ import {
   type LexicalEditor,
   type LexicalNode,
   type TextFormatType,
+  TextNode,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
@@ -89,6 +90,17 @@ export const ImportContextTextFormats = createImportState(
   'textFormats',
   () => NO_FORMATS,
 );
+
+export function $applyTextFormatsFromContext<T extends TextNode>(node: T): T {
+  const fmt = $getImportContextValue(ImportContextTextFormats);
+  for (const k in fmt) {
+    const textFormat = k as keyof typeof fmt;
+    if (fmt[textFormat]) {
+      node = node.toggleFormat(textFormat);
+    }
+  }
+  return node;
+}
 
 export const ImportContextWhiteSpaceCollapse = createImportState(
   'whiteSpaceCollapse',

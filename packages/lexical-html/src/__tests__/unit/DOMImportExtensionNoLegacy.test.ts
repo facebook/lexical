@@ -12,6 +12,7 @@ import {
   getExtensionDependencyFromEditor,
 } from '@lexical/extension';
 import {
+  $applyTextFormatsFromContext,
   $generateNodesFromDOM,
   $getImportContextValue,
   AnyImportStateConfigPairOrUpdater,
@@ -216,15 +217,7 @@ function findTextInLine(text: Text, direction: CaretDirection): null | Text {
 }
 
 function $createTextNodeWithCurrentFormat(text: string = ''): TextNode {
-  let node = $createTextNode(text);
-  const fmt = $getImportContextValue(ImportContextTextFormats);
-  for (const k in fmt) {
-    const textFormat = k as keyof typeof fmt;
-    if (fmt[textFormat]) {
-      node = node.toggleFormat(textFormat);
-    }
-  }
-  return node;
+  return $applyTextFormatsFromContext($createTextNode(text));
 }
 
 function $convertTextDOMNode(domNode: Text): DOMImportOutputNodes {

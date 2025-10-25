@@ -16,6 +16,7 @@ export {DOMImportExtension} from './DOMImportExtension';
 export {domOverride} from './domOverride';
 export {DOMRenderExtension} from './DOMRenderExtension';
 export {
+  $applyTextFormatsFromContext,
   $getImportContextValue,
   ImportContextHasBlockAncestorLexicalNode,
   ImportContextParentLexicalNode,

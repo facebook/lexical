@@ -7,6 +7,8 @@
  */
 
 import {
+  $getEditor,
+  $getEditorDOMRenderConfig,
   $getSelection,
   $isElementNode,
   $isRangeSelection,
@@ -28,7 +30,7 @@ function $getOrderedSelectionPoints(selection: RangeSelection): [Point, Point] {
   return selection.isBackward() ? [points[1], points[0]] : points;
 }
 
-function rangeTargetFromPoint(
+function $rangeTargetFromPoint(
   point: Point,
   node: ElementNode | TextNode,
   dom: HTMLElement,
@@ -37,12 +39,17 @@ function rangeTargetFromPoint(
     const textDOM = getDOMTextNode(dom) || dom;
     return [textDOM, point.offset];
   } else {
-    const slot = node.getDOMSlot(dom);
+    const editor = $getEditor();
+    const slot = $getEditorDOMRenderConfig(editor).$getDOMSlot(
+      node,
+      dom,
+      editor,
+    );
     return [slot.element, slot.getFirstChildOffset() + point.offset];
   }
 }
 
-function rangeFromPoints(
+function $rangeFromPoints(
   editor: LexicalEditor,
   start: Point,
   startNode: ElementNode | TextNode,
@@ -53,8 +60,8 @@ function rangeFromPoints(
 ): Range {
   const editorDocument = editor._window ? editor._window.document : document;
   const range = editorDocument.createRange();
-  range.setStart(...rangeTargetFromPoint(start, startNode, startDOM));
-  range.setEnd(...rangeTargetFromPoint(end, endNode, endDOM));
+  range.setStart(...$rangeTargetFromPoint(start, startNode, startDOM));
+  range.setEnd(...$rangeTargetFromPoint(end, endNode, endDOM));
   return range;
 }
 /**
@@ -113,7 +120,7 @@ export default function markSelection(
         currentStartNodeDOM !== null &&
         currentEndNodeDOM !== null
       ) {
-        const range = rangeFromPoints(
+        const range = $rangeFromPoints(
           editor,
           start,
           currentStartNode,

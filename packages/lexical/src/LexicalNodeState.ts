@@ -226,10 +226,19 @@ export interface StateValueConfig<V> {
 }
 
 /**
+ * A tuple of a StateConfig and a value, used for contexts outside of
+ * NodeState such as DOMRenderExtension.
+ */
+export type StateConfigPair<K extends string | symbol, V> = readonly [
+  StateConfig<K, V>,
+  V,
+];
+
+/**
  * The return value of {@link createState}, for use with
  * {@link $getState} and {@link $setState}.
  */
-export class StateConfig<K extends string, V> {
+export class StateConfig<K extends string | symbol, V> {
   /** The string key used when serializing this state to JSON */
   readonly key: K;
   /** The parse function from the StateValueConfig passed to createState */
@@ -251,6 +260,7 @@ export class StateConfig<K extends string, V> {
    * the `defaultValue`, it will not be serialized to JSON.
    */
   readonly defaultValue: V;
+
   constructor(key: K, stateValueConfig: StateValueConfig<V>) {
     this.key = key;
     this.parse = stateValueConfig.parse.bind(stateValueConfig);
@@ -261,6 +271,14 @@ export class StateConfig<K extends string, V> {
       stateValueConfig,
     );
     this.defaultValue = this.parse(undefined);
+  }
+
+  /**
+   * Convenience method to produce a tuple of a StateConfig and a value
+   * of that StateConfig (skipping the parse step).
+   */
+  pair(value: V): StateConfigPair<K, V> {
+    return [this, value];
   }
 }
 
@@ -295,7 +313,7 @@ export type AnyStateConfig = StateConfig<any, any>;
  *
  * @__NO_SIDE_EFFECTS__
  */
-export function createState<K extends string, V>(
+export function createState<K extends symbol | string, V>(
   key: K,
   valueConfig: StateValueConfig<V>,
 ): StateConfig<K, V> {
@@ -885,7 +903,7 @@ function computeSize(
  */
 function undefinedIfEmpty<T extends object>(obj: undefined | T): undefined | T {
   if (obj) {
-    for (const key in obj) {
+    for (const _key in obj) {
       return obj;
     }
   }

@@ -4,7 +4,6 @@ on:
   pull_request:
     types: [labeled, synchronize, reopened]
     paths-ignore:
-      - 'examples/**'
       - 'packages/lexical-website/**'
       - 'packages/*/README.md'
 

@@ -42,11 +42,13 @@ export type ContextConfigPair<Ctx extends AnyContextSymbol, V> = readonly [
   V,
 ];
 
+export type ContextPairOrUpdater<Ctx extends AnyContextSymbol, V> =
+  | ContextConfigPair<Ctx, V>
+  | ContextConfigUpdater<Ctx, V>;
+
 export type AnyContextConfigPairOrUpdater<Ctx extends AnyContextSymbol> =
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  | ContextConfigPair<Ctx, any>
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  | ContextConfigUpdater<Ctx, any>;
+  ContextPairOrUpdater<Ctx, any>;
 
 export interface DOMRenderExtensionOutput {
   defaults: undefined | ContextRecord<typeof DOMRenderContextSymbol>;
@@ -74,28 +76,10 @@ export type AnyRenderStateConfig = RenderStateConfig<any>;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyImportStateConfig = ImportStateConfig<any>;
 
-/** @internal @experimental */
-export type DOMImportOutput = DOMImportOutputNodes | DOMImportOutputContinue;
-
-export interface DOMImportOutputNodes {
+export interface DOMImportOutput {
   node: null | LexicalNode | LexicalNode[];
   childNodes?: NodeListOf<ChildNode> | readonly ChildNode[];
-  childContext?: AnyImportStateConfigPairOrUpdater[];
   $appendChild?: (node: LexicalNode, dom: ChildNode) => void;
-  $finalize?: (
-    node: null | LexicalNode | LexicalNode[],
-  ) => null | LexicalNode | LexicalNode[];
-}
-
-export interface DOMImportOutputContinue {
-  node: DOMImportNext;
-  childContext?: AnyImportStateConfigPairOrUpdater[];
-  nextContext?: AnyImportStateConfigPairOrUpdater[];
-  $appendChild?: never;
-  childNodes?: never;
-  $finalize?: (
-    node: null | LexicalNode | LexicalNode[],
-  ) => null | LexicalNode | LexicalNode[];
 }
 
 export type DOMImportFunction<T extends Node> = (
@@ -208,3 +192,7 @@ export interface DOMImportExtensionOutput {
 
 export type DOMWhiteSpaceCollapse = keyof typeof DOMWhiteSpaceCollapseKeys;
 export type DOMTextWrapMode = keyof typeof DOMTextWrapModeKeys;
+
+export type DOMImportContextFinalizer = (
+  node: null | LexicalNode | LexicalNode[],
+) => null | LexicalNode | LexicalNode[];

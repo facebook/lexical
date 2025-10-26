@@ -20,7 +20,7 @@ import {
   $updateImportContextValue,
   type DOMImportConfig,
   DOMImportExtension,
-  type DOMImportOutputNodes,
+  type DOMImportOutput,
   type DOMRenderConfig,
   DOMRenderExtension,
   ImportContextParentLexicalNode,
@@ -71,6 +71,8 @@ import {
 } from 'lexical/src/__tests__/utils';
 import invariant from 'shared/invariant';
 import {assert, describe, expect, test} from 'vitest';
+
+import {$addImportContextFinalizer} from '../../ImportContext';
 
 interface ImportTestCase {
   name: string;
@@ -144,9 +146,10 @@ function $normalizeListItemNode(
 
 function $importListNode(
   dom: HTMLUListElement | HTMLOListElement,
-): DOMImportOutputNodes {
+): DOMImportOutput {
   const listNode = $createListNode().setListType(listTypeFromDOM(dom));
-  return {$finalize: $normalizeListNode, node: listNode};
+  $addImportContextFinalizer($normalizeListNode);
+  return {node: listNode};
 }
 
 const listOverrides = (['ul', 'ol'] as const).map((tag) =>
@@ -211,7 +214,7 @@ function $createTextNodeWithCurrentFormat(text: string = ''): TextNode {
   return $applyTextFormatsFromContext($createTextNode(text));
 }
 
-function $convertTextDOMNode(domNode: Text): DOMImportOutputNodes {
+function $convertTextDOMNode(domNode: Text): DOMImportOutput {
   const domNode_ = domNode as Text;
   const parentDom = domNode.parentElement;
   invariant(
@@ -417,8 +420,8 @@ const NO_LEGACY_CONFIG: Partial<DOMImportConfig> = {
     importOverride('br', () => ({node: $createLineBreakNode()})),
     importOverride('*', function $overrideCreateParagraphFromBlock(dom) {
       if (isBlockDomNode(dom)) {
+        $addImportContextFinalizer($unwrapBlockDOM);
         return {
-          $finalize: $unwrapBlockDOM,
           node: $applyTextAlignToElement($createParagraphNode()),
         };
       }
@@ -443,7 +446,8 @@ const NO_LEGACY_CONFIG: Partial<DOMImportConfig> = {
       if (ariaChecked !== undefined) {
         node.setChecked(ariaChecked);
       }
-      return {$finalize: $normalizeListItemNode, node};
+      $addImportContextFinalizer($normalizeListItemNode);
+      return {node};
     }),
     importOverride(
       '*',

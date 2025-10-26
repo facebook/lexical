@@ -29,11 +29,28 @@ export type EditorContext = {
 export function getContextValue<Ctx extends AnyContextSymbol, V>(
   contextRecord: undefined | ContextRecord<Ctx>,
   cfg: ContextConfig<Ctx, V>,
-) {
+): V {
   const {key} = cfg;
   return contextRecord && key in contextRecord
     ? (contextRecord[key] as V)
     : cfg.defaultValue;
+}
+
+export function popOwnContextValue<Ctx extends AnyContextSymbol, V>(
+  contextRecord: ContextRecord<Ctx>,
+  cfg: ContextConfig<Ctx, V>,
+): undefined | V {
+  const rval = getOwnContextValue(contextRecord, cfg);
+  delete contextRecord[cfg.key];
+  return rval;
+}
+
+export function getOwnContextValue<Ctx extends AnyContextSymbol, V>(
+  contextRecord: ContextRecord<Ctx>,
+  cfg: ContextConfig<Ctx, V>,
+): undefined | V {
+  const {key} = cfg;
+  return key in contextRecord ? (contextRecord[key] as V) : undefined;
 }
 
 function getEditorContext(editor: LexicalEditor): undefined | EditorContext {

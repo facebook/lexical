@@ -12,16 +12,14 @@ import {
   getExtensionDependencyFromEditor,
 } from '@lexical/extension';
 import {
+  $applyTextAlignToElement,
   $applyTextFormatsFromContext,
   $generateNodesFromDOM,
   $getImportContextValue,
-  AnyImportStateConfigPairOrUpdater,
-  contextUpdater,
-  contextValue,
+  $setImportContextValue,
+  $updateImportContextValue,
   type DOMImportConfig,
   DOMImportExtension,
-  type DOMImportNext,
-  type DOMImportOutputContinue,
   type DOMImportOutputNodes,
   type DOMRenderConfig,
   DOMRenderExtension,
@@ -167,19 +165,12 @@ const listOverrides = (['ul', 'ol'] as const).map((tag) =>
 //     'preserve-spaces': (s) => s.replace(/(?:\r?\n|\t)/g, ' '),
 //   };
 
-function $addTextFormatContinue(
-  format: TextFormatType,
-): (node: HTMLElement, $next: DOMImportNext) => null | DOMImportOutputContinue {
-  return (_dom, $next) => {
-    return {
-      childContext: [
-        contextUpdater(ImportContextTextFormats, (prev) => ({
-          ...prev,
-          [format]: true,
-        })),
-      ],
-      node: $next,
-    };
+function $addTextFormatContinue(format: TextFormatType): () => undefined {
+  return () => {
+    $updateImportContextValue(ImportContextTextFormats, (prev) => ({
+      ...prev,
+      [format]: true,
+    }));
   };
 }
 
@@ -316,11 +307,6 @@ const formatOverrides = Object.entries(TO_FORMAT).map(([tag, format]) =>
   importOverride(tag as keyof typeof TO_FORMAT, $addTextFormatContinue(format)),
 );
 
-function $applyTextAlignToElement<T extends ElementNode>(node: T): T {
-  const align = $getImportContextValue(ImportContextTextAlign);
-  return align ? node.setFormat(align) : node;
-}
-
 function $unwrapBlockDOM(
   node: LexicalNode | LexicalNode[] | null,
   $splitPredicate: (el: ElementNode) => boolean = (el) => !el.isInline(),
@@ -353,10 +339,82 @@ function $unwrapBlockDOM(
   return adjacentNodes || node;
 }
 
+type Writable<T> = {-readonly [K in keyof T]: T[K]};
+
+function $updateFormatContextFromDOM(dom: HTMLElement) {
+  const {fontWeight, fontStyle, textDecoration, verticalAlign} = dom.style;
+  let formats:
+    | undefined
+    | Writable<StateConfigValue<typeof ImportContextTextFormats>>;
+  const setFormat = (k: TextFormatType, v: boolean) => {
+    const fmt = formats || {};
+    fmt[k] = v;
+    formats = fmt;
+  };
+  switch (fontWeight) {
+    case '400':
+    case 'normal':
+      setFormat('bold', false);
+      break;
+    case '700':
+    case 'bold':
+      setFormat('bold', true);
+      break;
+    default:
+      break;
+  }
+  const italic = 'italic';
+  if (fontStyle === 'normal') {
+    setFormat(italic, false);
+  } else if (fontStyle === italic) {
+    setFormat(italic, true);
+  }
+  const underline = 'underline';
+  const strikethrough = 'strikethrough';
+  for (const dec of textDecoration.split(' ')) {
+    if (dec === 'none') {
+      setFormat(underline, false);
+      setFormat(strikethrough, false);
+    } else if (dec === underline) {
+      setFormat(underline, true);
+    } else if (dec === 'line-through') {
+      setFormat('strikethrough', true);
+    }
+  }
+  if (verticalAlign === 'sub') {
+    setFormat('subscript', true);
+  } else if (verticalAlign === 'super') {
+    setFormat('superscript', true);
+  }
+  if (formats) {
+    $updateImportContextValue(ImportContextTextFormats, (v) => ({
+      ...v,
+      ...formats,
+    }));
+  }
+}
+
+function $updateTextAlignmentContextFromDOM(dom: HTMLElement): void {
+  const {textAlign} = dom.style;
+  switch (textAlign) {
+    case 'center':
+    case 'end':
+    case 'justify':
+    case 'left':
+    case 'right':
+    case 'start':
+      $setImportContextValue(ImportContextTextAlign, textAlign);
+      break;
+    default:
+      break;
+  }
+}
+
 const NO_LEGACY_CONFIG: Partial<DOMImportConfig> = {
   compileLegacyImportNode: () => () => null,
   overrides: [
     importOverride('#text', $convertTextDOMNode),
+    importOverride('br', () => ({node: $createLineBreakNode()})),
     importOverride('*', function $overrideCreateParagraphFromBlock(dom) {
       if (isBlockDomNode(dom)) {
         return {
@@ -365,90 +423,6 @@ const NO_LEGACY_CONFIG: Partial<DOMImportConfig> = {
         };
       }
     }),
-    importOverride(
-      '*',
-      function $overrideBlockFormatAndAlignment(
-        dom,
-        $next,
-      ): undefined | DOMImportOutputContinue {
-        const nextContext: AnyImportStateConfigPairOrUpdater[] = [];
-        if (isBlockDomNode(dom)) {
-          const {textAlign} = dom.style;
-          switch (textAlign) {
-            case 'center':
-            case 'end':
-            case 'justify':
-            case 'left':
-            case 'right':
-            case 'start':
-              nextContext.push(contextValue(ImportContextTextAlign, textAlign));
-              break;
-            default:
-              break;
-          }
-        }
-        if (isHTMLElement(dom)) {
-          const {fontWeight, fontStyle, textDecoration, verticalAlign} =
-            dom.style;
-          let formats:
-            | undefined
-            | StateConfigValue<typeof ImportContextTextFormats>;
-          const setFormat = (k: TextFormatType, v: boolean) => {
-            const fmt = formats || Object.create(null);
-            fmt[k] = v;
-            formats = fmt;
-          };
-          switch (fontWeight) {
-            case '400':
-            case 'normal':
-              setFormat('bold', false);
-              break;
-            case '700':
-            case 'bold':
-              setFormat('bold', true);
-              break;
-            default:
-              break;
-          }
-          const italic = 'italic';
-          if (fontStyle === 'normal') {
-            setFormat(italic, false);
-          } else if (fontStyle === italic) {
-            setFormat(italic, true);
-          }
-          const underline = 'underline';
-          const strikethrough = 'strikethrough';
-          for (const dec of textDecoration.split(' ')) {
-            if (dec === 'none') {
-              setFormat(underline, false);
-              setFormat(strikethrough, false);
-            } else if (dec === underline) {
-              setFormat(underline, true);
-            } else if (dec === 'line-through') {
-              setFormat('strikethrough', true);
-            }
-          }
-          if (verticalAlign === 'sub') {
-            setFormat('subscript', true);
-          } else if (verticalAlign === 'super') {
-            setFormat('superscript', true);
-          }
-          if (formats) {
-            const boundFormats = formats;
-            nextContext.push(
-              contextUpdater(ImportContextTextFormats, (v) => ({
-                ...v,
-                ...boundFormats,
-              })),
-            );
-          }
-        }
-        if (nextContext.length > 0) {
-          return {nextContext, node: $next};
-        }
-      },
-      {priority: 1},
-    ),
     ...formatOverrides,
     ...listOverrides,
     importOverride('li', (dom) => {
@@ -471,6 +445,18 @@ const NO_LEGACY_CONFIG: Partial<DOMImportConfig> = {
       }
       return {$finalize: $normalizeListItemNode, node};
     }),
+    importOverride(
+      '*',
+      function $overrideBlockFormatAndAlignment(dom): undefined {
+        if (isHTMLElement(dom)) {
+          if (isBlockDomNode(dom)) {
+            $updateTextAlignmentContextFromDOM(dom);
+          }
+          $updateFormatContextFromDOM(dom);
+        }
+      },
+      {priority: 1},
+    ),
   ],
 };
 

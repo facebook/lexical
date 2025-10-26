@@ -16,11 +16,12 @@ import {
   $getEditor,
   type ArtificialNode__DO_NOT_USE,
   type DOMChildConversion,
-  ElementFormatType,
+  type ElementFormatType,
+  type ElementNode,
   type LexicalEditor,
   type LexicalNode,
   type TextFormatType,
-  TextNode,
+  type TextNode,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
@@ -30,6 +31,7 @@ import {
   getContextRecord,
   getContextValue,
   setContextValue,
+  updateContextValue,
 } from './ContextRecord';
 
 /**
@@ -73,6 +75,19 @@ export function $setImportContextValue<V>(
   return setContextValue(ctx, cfg, value);
 }
 
+export function $updateImportContextValue<V>(
+  cfg: ImportStateConfig<V>,
+  updater: (prev: V) => V,
+  editor: LexicalEditor = $getEditor(),
+): V {
+  const ctx = getContextRecord(DOMImportContextSymbol, editor);
+  invariant(
+    ctx !== undefined,
+    '$updateImportContextValue used outside of DOM import',
+  );
+  return updateContextValue(ctx, cfg, updater);
+}
+
 export const ImportContextDOMNode = createImportState(
   'domNode',
   (): null | Node => null,
@@ -85,6 +100,11 @@ export const ImportContextTextAlign = createImportState(
   'textAlign',
   (): undefined | ElementFormatType => undefined,
 );
+
+export function $applyTextAlignToElement<T extends ElementNode>(node: T): T {
+  const align = $getImportContextValue(ImportContextTextAlign);
+  return align ? node.setFormat(align) : node;
+}
 
 export const ImportContextTextFormats = createImportState(
   'textFormats',

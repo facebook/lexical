@@ -16,8 +16,11 @@ export {DOMImportExtension} from './DOMImportExtension';
 export {domOverride} from './domOverride';
 export {DOMRenderExtension} from './DOMRenderExtension';
 export {
+  $applyTextAlignToElement,
   $applyTextFormatsFromContext,
   $getImportContextValue,
+  $setImportContextValue,
+  $updateImportContextValue,
   ImportContextHasBlockAncestorLexicalNode,
   ImportContextParentLexicalNode,
   ImportContextTextAlign,

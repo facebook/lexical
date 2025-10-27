@@ -1,3 +1,7 @@
+## v0.38.1 (2025-10-27)
+
+- v0.38.0 Lexical GitHub Actions Bot
+
 ## v0.38.0 (2025-10-27)
 
 - lexical-list Bug Fix fix pasting checklist from joplin (#7946) Antonella Sgarlatta

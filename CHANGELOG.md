@@ -1,3 +1,28 @@
+## v0.38.0 (2025-10-27)
+
+- lexical-list Bug Fix fix pasting checklist from joplin (#7946) Antonella Sgarlatta
+- lexical Bug Fix update block cursor if selection has changed (#7947) Maksim Horbachevsky
+- lexical-link Feature Enable Selective Removal Within Linked Text (#7944) Christopher Norman
+- Fix Log exceptions in clipboard paste handler (fixes #7940) (#7942) Nikhil Sharma
+- lexical Bug Fix retain selection during updates on unfocused editor (#7941) Maksim Horbachevsky
+- lexical-table Chore Lower table handler command priority (#7933) Patrick Moody
+- lexical-linklexical-code-shikiexamples Feature Implement mergeConfig for LinkExtension and flatten config for CodeHighlighterShikiExtension (#7936) Bob Ippolito
+- lexical-react Bug Fix Add getServerSnapshot for RSC compatibility (#7935) Elias Rhouzlane
+- lexical-website Documentation Update change setText to setTextContent (#7932) bbertold
+- lexical-extension Feature Allow nodes config to be deferred for circular dependency reasons (#7930) Bob Ippolito
+- lexicallexical-list Bug Fix Apply static transform and config transform from all superclasses (#7926) Bob Ippolito
+- lexical-markdown Bug Fix Fix implicit checklist marker export regression (#7928) Bob Ippolito
+- lexical-website Chore Update docusuarus and add contributing docs (#7931) Bob Ippolito
+- lexical-markdown Bug Fix Prevent Markdown links with empty string link text from being automatically removed (#7923) Adam Bolcsfoldi
+- lexical-playground Bug Fix Fix image caption overflow issue (#7920) Ritoban Dutta
+- lexical-markdown Fix bugs in normalizeMarkdown (#7812) German Jablonski
+- lexical-code Bug Fix Respect RTL when moving to line startend in code blocks (#7921) Shehab
+- lexical-yjs Fix skip elements that were added and removed between snapshots (#7922) James Fitzsimmons
+- Documentation Chore Update bounty program link in CONTRIBUTING.md (#7915) Mustkeem K
+- Update examples for v0.37.0 (#7911) Bob Ippolito
+- v0.37.0 (#7910) Bob Ippolito
+- v0.37.0 Lexical GitHub Actions Bot
+
 ## v0.37.0 (2025-10-11)
 
 - lexical-yjs Chore fix imports of Yjs XML types (#7908) James Fitzsimmons

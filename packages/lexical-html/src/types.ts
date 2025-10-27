@@ -8,7 +8,6 @@
 
 import type {
   DOMImportContextSymbol,
-  DOMImportNextSymbol,
   DOMRenderContextSymbol,
   DOMTextWrapModeKeys,
   DOMWhiteSpaceCollapseKeys,
@@ -84,7 +83,7 @@ export interface DOMImportOutput {
 
 export type DOMImportFunction<T extends Node> = (
   node: T,
-  $next: DOMImportNext,
+  $next: () => null | undefined | DOMImportOutput,
   editor: LexicalEditor,
 ) => null | undefined | DOMImportOutput;
 
@@ -173,16 +172,7 @@ export interface DOMImportConfigMatch {
   readonly tag: '*' | '#text' | '#cdata-section' | '#comment' | (string & {});
   readonly selector?: string;
   readonly priority?: 0 | 1 | 2 | 3 | 4;
-  readonly $import: (
-    node: Node,
-    $next: DOMImportNext,
-    editor: LexicalEditor,
-  ) => null | undefined | DOMImportOutput;
-}
-
-export interface DOMImportNext {
-  (): null | undefined | DOMImportOutput;
-  readonly [DOMImportNextSymbol]: true;
+  readonly $import: DOMImportFunction<Node>;
 }
 
 export interface DOMImportExtensionOutput {

@@ -8,7 +8,6 @@
 export const DOMRenderExtensionName = '@lexical/html/DOM';
 export const DOMImportExtensionName = '@lexical/html/DOMImport';
 export const IGNORE_TAGS = new Set(['STYLE', 'SCRIPT']);
-export const DOMImportNextSymbol = Symbol.for('@lexical/html/DOMImportNext');
 export const DOMImportContextSymbol = Symbol.for(
   '@lexical/html/DOMImportContext',
 );
@@ -34,3 +33,5 @@ export const DOMTextWrapModeKeys = {
 export const EMPTY_ARRAY = [] as const;
 
 export const ALWAYS_TRUE = () => true as const;
+
+export const ALWAYS_NULL = () => null;

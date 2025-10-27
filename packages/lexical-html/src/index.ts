@@ -46,7 +46,6 @@ export type {
   DOMImportContextFinalizer,
   DOMImportExtensionOutput,
   DOMImportFunction,
-  DOMImportNext,
   DOMImportOutput,
   DOMRenderConfig,
   DOMRenderExtensionOutput,

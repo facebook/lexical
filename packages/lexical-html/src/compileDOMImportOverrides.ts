@@ -12,7 +12,6 @@ import type {
   DOMImportConfigMatch,
   DOMImportContextFinalizer,
   DOMImportExtensionOutput,
-  DOMImportNext,
   DOMImportOutput,
   DOMTextWrapMode,
   DOMWhiteSpaceCollapse,
@@ -32,8 +31,8 @@ import invariant from 'shared/invariant';
 
 import {$unwrapArtificialNodes} from './$unwrapArtificialNodes';
 import {
+  ALWAYS_NULL,
   DOMImportContextSymbol,
-  DOMImportNextSymbol,
   DOMTextWrapModeKeys,
   DOMWhiteSpaceCollapseKeys,
   EMPTY_ARRAY,
@@ -81,24 +80,28 @@ class MatchesImport<Tag extends string> {
       const el = isHTMLElement(node) ? node : null;
       const $importAt = (start: number): null | undefined | DOMImportOutput => {
         let rval: undefined | null | DOMImportOutput;
-        let nextCalled = false;
-        for (let i = start; !rval && i >= 0 && !nextCalled; i--) {
+        let $importFallback = $nextImport;
+        for (
+          let i = start;
+          i >= 0 && !rval && $importFallback !== ALWAYS_NULL;
+          i--
+        ) {
           const match = matches[i];
           if (match) {
             const {$import, selector} = matches[i];
             if (!selector || (el && el.matches(selector))) {
               rval = $import(
                 node,
-                withImportNextSymbol(() => {
-                  nextCalled = true;
+                () => {
+                  $importFallback = ALWAYS_NULL;
                   return $importAt(i - 1);
-                }),
+                },
                 editor,
               );
             }
           }
         }
-        return rval || (nextCalled ? undefined : $nextImport(node));
+        return rval || $importFallback(node);
       };
 
       return $importAt(
@@ -108,12 +111,6 @@ class MatchesImport<Tag extends string> {
       );
     };
   }
-}
-
-function withImportNextSymbol(
-  fn: () => null | undefined | DOMImportOutput,
-): DOMImportNext {
-  return Object.assign(fn, {[DOMImportNextSymbol]: true} as const);
 }
 
 class TagImport {
@@ -166,13 +163,6 @@ type ImportStackEntry = [
   $importNode: DOMImportExtensionOutput['$importNode'],
   $appendChild: NonNullable<DOMImportOutput['$appendChild']>,
 ];
-
-// function composeFinalizers<T>(
-//   outer: undefined | ((v: T) => T),
-//   inner: undefined | ((v: T) => T),
-// ): undefined | ((v: T) => T) {
-//   return outer ? (inner ? (v) => outer(inner(v)) : outer) : inner;
-// }
 
 function parseDOMWhiteSpaceCollapseFromNode(
   ctx: ContextRecord<typeof DOMImportContextSymbol>,

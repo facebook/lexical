@@ -1,7 +1,7 @@
 {
   "name": "@lexical/extension-react-table-example",
   "private": true,
-  "version": "0.38.0",
+  "version": "0.38.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,10 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@lexical/extension": "0.38.0",
-    "@lexical/react": "0.38.0",
-    "@lexical/tailwind": "0.38.0",
-    "lexical": "0.38.0",
+    "@lexical/extension": "0.38.1",
+    "@lexical/react": "0.38.1",
+    "@lexical/tailwind": "0.38.1",
+    "lexical": "0.38.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },

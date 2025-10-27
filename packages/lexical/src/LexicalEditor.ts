@@ -14,10 +14,17 @@ import type {
   DOMExportOutputMap,
   NodeKey,
 } from './LexicalNode';
+import type {ElementDOMSlot} from './nodes/LexicalElementNode';
 
 import invariant from 'shared/invariant';
 
-import {$getRoot, $getSelection, TextNode} from '.';
+import {
+  $getRoot,
+  $getSelection,
+  $isElementNode,
+  BaseSelection,
+  TextNode,
+} from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
 import {cloneEditorState, createEmptyEditorState} from './LexicalEditorState';
 import {addRootElementEvents, removeRootElementEvents} from './LexicalEvents';
@@ -43,6 +50,7 @@ import {
   getCachedTypeToNodeMap,
   getDefaultView,
   getDOMSelection,
+  getRegisteredNode,
   getStaticNodeConfig,
   hasOwnExportDOM,
   hasOwnStaticMethod,
@@ -188,11 +196,12 @@ export type EditorThemeClasses = {
   [key: string]: any;
 };
 
-export type EditorConfig = {
+export interface EditorConfig {
+  dom?: EditorDOMRenderConfig;
   disableEvents?: boolean;
   namespace: string;
   theme: EditorThemeClasses;
-};
+}
 
 export type LexicalNodeReplacement = {
   replace: Klass<LexicalNode>;
@@ -213,7 +222,54 @@ export type HTMLConfig = {
  */
 export type LexicalNodeConfig = Klass<LexicalNode> | LexicalNodeReplacement;
 
-export type CreateEditorArgs = {
+/** @internal @experimental */
+export interface EditorDOMRenderConfig {
+  /** @internal @experimental */
+  $createDOM: <T extends LexicalNode>(
+    node: T,
+    editor: LexicalEditor,
+  ) => HTMLElement;
+  /** @internal @experimental */
+  $getDOMSlot: <T extends LexicalNode>(
+    node: T,
+    dom: HTMLElement,
+    editor: LexicalEditor,
+  ) => ElementDOMSlot<HTMLElement>;
+  /** @internal @experimental */
+  $exportDOM: <T extends LexicalNode>(
+    node: T,
+    editor: LexicalEditor,
+  ) => DOMExportOutput;
+  /** @internal @experimental */
+  $extractWithChild: <T extends LexicalNode>(
+    node: T,
+    childNode: LexicalNode,
+    selection: null | BaseSelection,
+    destination: 'clone' | 'html',
+    editor: LexicalEditor,
+  ) => boolean;
+  /** @internal @experimental */
+  $updateDOM: <T extends LexicalNode>(
+    nextNode: T,
+    prevNode: T,
+    dom: HTMLElement,
+    editor: LexicalEditor,
+  ) => boolean;
+  /** @internal @experimental */
+  $shouldInclude: <T extends LexicalNode>(
+    node: T,
+    selection: null | BaseSelection,
+    editor: LexicalEditor,
+  ) => boolean;
+  /** @internal @experimental */
+  $shouldExclude: <T extends LexicalNode>(
+    node: T,
+    selection: null | BaseSelection,
+    editor: LexicalEditor,
+  ) => boolean;
+}
+
+export interface CreateEditorArgs {
   disableEvents?: boolean;
   editorState?: EditorState;
   namespace?: string;
@@ -223,7 +279,8 @@ export type CreateEditorArgs = {
   editable?: boolean;
   theme?: EditorThemeClasses;
   html?: HTMLConfig;
-};
+  dom?: Partial<EditorDOMRenderConfig>;
+}
 
 export type RegisteredNodes = Map<string, RegisteredNode>;
 
@@ -528,6 +585,36 @@ export function getTransformSetFromKlass(
   return transforms;
 }
 
+/** @internal */
+export const DEFAULT_EDITOR_DOM_CONFIG: EditorDOMRenderConfig = {
+  $createDOM: (node, editor) => node.createDOM(editor._config, editor),
+  $exportDOM: (node, editor) => {
+    const registeredNode = getRegisteredNode(editor, node.getType());
+    // Use HTMLConfig overrides, if available.
+    return registeredNode && registeredNode.exportDOM !== undefined
+      ? registeredNode.exportDOM(editor, node)
+      : node.exportDOM(editor);
+  },
+  $extractWithChild: (node, childNode, selection, destination, _editor) =>
+    $isElementNode(node) &&
+    node.extractWithChild(childNode, selection, destination),
+  $getDOMSlot: (node, dom, _editor) => {
+    invariant(
+      $isElementNode(node),
+      '$getDOMSlot called on a non-ElementNode (key %s type %s)',
+      node.getKey(),
+      node.getType(),
+    );
+    return node.getDOMSlot(dom);
+  },
+  $shouldExclude: (node, _selection, _editor) =>
+    $isElementNode(node) && node.excludeFromCopy('html'),
+  $shouldInclude: (node, selection, _editor) =>
+    selection ? node.isSelected(selection) : true,
+  $updateDOM: (nextNode, prevNode, dom, editor) =>
+    nextNode.updateDOM(prevNode, dom, editor._config),
+};
+
 /**
  * Creates a new LexicalEditor attached to a single contentEditable (provided in the config). This is
  * the lowest-level initialization API for a LexicalEditor. If you're using React or another framework,
@@ -644,6 +731,10 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
     registeredNodes,
     {
       disableEvents,
+      dom: {
+        ...DEFAULT_EDITOR_DOM_CONFIG,
+        ...(editorConfig && editorConfig.dom),
+      },
       namespace,
       theme,
     },

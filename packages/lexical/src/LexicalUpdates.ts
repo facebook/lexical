@@ -120,7 +120,8 @@ export function getActiveEditor(): LexicalEditor {
       'Unable to find an active editor. ' +
         'This method can only be used ' +
         'synchronously during the callback of ' +
-        'editor.update() or editor.read().%s',
+        'editor.update(), editor.read(), or ' +
+        'editor.getEditorState().read(..., {editor}).%s',
       collectBuildInformation(),
     );
   }

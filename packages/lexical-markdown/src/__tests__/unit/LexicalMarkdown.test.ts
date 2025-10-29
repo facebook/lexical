@@ -370,6 +370,14 @@ describe('Markdown', () => {
       md: '`Hello` world',
     },
     {
+      html: '<p><code spellcheck="false" style="white-space: pre-wrap;"><span>Backtick\\</span></code><span style="white-space: pre-wrap;"> after backslash</span></p>',
+      md: '`Backtick\\` after backslash',
+    },
+    {
+      html: '<p><code spellcheck="false" style="white-space: pre-wrap;"><span>Backtick</span></code><span style="white-space: pre-wrap;">\\ before backslash</span></p>',
+      md: '`Backtick`\\\\ before backslash',
+    },
+    {
       html: '<p><s><span style="white-space: pre-wrap;">Hello</span></s><span style="white-space: pre-wrap;"> world</span></p>',
       md: '~~Hello~~ world',
     },

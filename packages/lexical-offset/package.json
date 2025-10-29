@@ -8,7 +8,7 @@
     "offset"
   ],
   "license": "MIT",
-  "version": "0.38.1",
+  "version": "0.38.2-nightly.20251029.0",
   "main": "LexicalOffset.js",
   "types": "index.d.ts",
   "repository": {
@@ -36,6 +36,6 @@
     }
   },
   "dependencies": {
-    "lexical": "0.38.1"
+    "lexical": "0.38.2-nightly.20251029.0"
   }
 }

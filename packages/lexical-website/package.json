@@ -1,6 +1,6 @@
 {
   "name": "@lexical/website",
-  "version": "0.38.1",
+  "version": "0.38.2-nightly.20251030.0",
   "private": true,
   "scripts": {
     "docusaurus": "cross-env IGNORE_PEER_DEPENDENCIES=react docusaurus",

@@ -1,7 +1,7 @@
 {
   "name": "@lexical/monorepo",
   "description": "Lexical is an extensible text editor framework that provides excellent reliability, accessibility and performance.",
-  "version": "0.38.1",
+  "version": "0.38.2-nightly.20251030.0",
   "license": "MIT",
   "private": true,
   "workspaces": [

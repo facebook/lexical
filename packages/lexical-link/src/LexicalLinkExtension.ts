@@ -148,7 +148,7 @@ export const LinkExtension = defineExtension({
     return merged;
   },
   name: '@lexical/link/Link',
-  nodes: [LinkNode],
+  nodes: () => [LinkNode],
   register(editor, config, state) {
     return registerLink(editor, state.getOutput());
   },

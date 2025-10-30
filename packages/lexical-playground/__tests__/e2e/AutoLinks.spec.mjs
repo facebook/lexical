@@ -752,4 +752,669 @@ test.describe.parallel('Auto Links', () => {
       {ignoreClasses: true},
     );
   });
+
+  //Hindi
+  test('Can convert Hindi (Unicode) url-like text into links', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type(
+      'नमस्ते https://उदाहरण.भारत और http://उदाहरण.भारत/पथ?कुंजी=मान#खंड और www.उदाहरण.भारत',
+    );
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <span data-lexical-text="true">नमस्ते</span>
+          <a href="https://उदाहरण.भारत">
+            <span data-lexical-text="true">https://उदाहरण.भारत</span>
+          </a>
+          <span data-lexical-text="true">और</span>
+          <a href="http://उदाहरण.भारत/पथ?कुंजी=मान#खंड">
+            <span data-lexical-text="true">
+              http://उदाहरण.भारत/पथ?कुंजी=मान#खंड
+            </span>
+          </a>
+          <span data-lexical-text="true">और</span>
+          <a href="https://www.उदाहरण.भारत">
+            <span data-lexical-text="true">www.उदाहरण.भारत</span>
+          </a>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  // Chinese
+  test('Can convert Chinese (Unicode) url-like text into links', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type(
+      '你好 https://例子.中国 和 http://例子.中国/路径?键=值#部分 和 www.例子.中国',
+    );
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <span data-lexical-text="true">你好</span>
+          <a href="https://例子.中国">
+            <span data-lexical-text="true">https://例子.中国</span>
+          </a>
+          <span data-lexical-text="true">和</span>
+          <a href="http://例子.中国/路径?键=值#部分">
+            <span data-lexical-text="true">
+              http://例子.中国/路径?键=值#部分
+            </span>
+          </a>
+          <span data-lexical-text="true">和</span>
+          <a href="https://www.例子.中国">
+            <span data-lexical-text="true">www.例子.中国</span>
+          </a>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  // Arabic
+  test('Can convert Arabic (Unicode) url-like text into links', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type(
+      'مرحبا https://مثال.موقع و http://مثال.موقع/مسار?مفتاح=قيمة#قسم و www.مثال.موقع',
+    );
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <span data-lexical-text="true">مرحبا</span>
+          <a href="https://مثال.موقع">
+            <span data-lexical-text="true">https://مثال.موقع</span>
+          </a>
+          <span data-lexical-text="true">و</span>
+          <a href="http://مثال.موقع/مسار?مفتاح=قيمة#قسم">
+            <span data-lexical-text="true">
+              http://مثال.موقع/مسار?مفتاح=قيمة#قسم
+            </span>
+          </a>
+          <span data-lexical-text="true">و</span>
+          <a href="https://www.مثال.موقع">
+            <span data-lexical-text="true">www.مثال.موقع</span>
+          </a>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  // Russian
+  test('Can convert Russian (Unicode) url-like text into links', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type(
+      'Привет https://пример.рф и http://пример.рф/путь?ключ=значение#раздел и www.пример.рф',
+    );
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <span data-lexical-text="true">Привет</span>
+          <a href="https://пример.рф">
+            <span data-lexical-text="true">https://пример.рф</span>
+          </a>
+          <span data-lexical-text="true">и</span>
+          <a href="http://пример.рф/путь?ключ=значение#раздел">
+            <span data-lexical-text="true">
+              http://пример.рф/путь?ключ=значение#раздел
+            </span>
+          </a>
+          <span data-lexical-text="true">и</span>
+          <a href="https://www.пример.рф">
+            <span data-lexical-text="true">www.пример.рф</span>
+          </a>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  // Japanese
+  test('Can convert Japanese (Unicode) url-like text into links', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type(
+      'こんにちは https://例え.日本 と http://例え.日本/パス?キー=値#部分 と www.例え.日本',
+    );
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <span data-lexical-text="true">こんにちは</span>
+          <a href="https://例え.日本">
+            <span data-lexical-text="true">https://例え.日本</span>
+          </a>
+          <span data-lexical-text="true">と</span>
+          <a href="http://例え.日本/パス?キー=値#部分">
+            <span data-lexical-text="true">
+              http://例え.日本/パス?キー=値#部分
+            </span>
+          </a>
+          <span data-lexical-text="true">と</span>
+          <a href="https://www.例え.日本">
+            <span data-lexical-text="true">www.例え.日本</span>
+          </a>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  // Korean
+  test('Can convert Korean (Unicode) url-like text into links', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type(
+      '안녕하세요 https://예시.한국 그리고 http://예시.한국/경로?키=값#부분 그리고 www.예시.한국',
+    );
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <span data-lexical-text="true">안녕하세요</span>
+          <a href="https://예시.한국">
+            <span data-lexical-text="true">https://예시.한국</span>
+          </a>
+          <span data-lexical-text="true">그리고</span>
+          <a href="http://예시.한국/경로?키=값#부분">
+            <span data-lexical-text="true">
+              http://예시.한국/경로?키=값#부분
+            </span>
+          </a>
+          <span data-lexical-text="true">그리고</span>
+          <a href="https://www.예시.한국">
+            <span data-lexical-text="true">www.예시.한국</span>
+          </a>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  // Spanish
+  test('Can convert Spanish (Unicode) url-like text into links', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type(
+      'Hola https://ejemplo.es y http://ejemplo.es/camino?clave=valor#seccion y www.ejemplo.es',
+    );
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <span data-lexical-text="true">Hola</span>
+          <a href="https://ejemplo.es">
+            <span data-lexical-text="true">https://ejemplo.es</span>
+          </a>
+          <span data-lexical-text="true">y</span>
+          <a href="http://ejemplo.es/camino?clave=valor#seccion">
+            <span data-lexical-text="true">
+              http://ejemplo.es/camino?clave=valor#seccion
+            </span>
+          </a>
+          <span data-lexical-text="true">y</span>
+          <a href="https://www.ejemplo.es">
+            <span data-lexical-text="true">www.ejemplo.es</span>
+          </a>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  //French
+  test('Can convert French (Unicode) url-like text into links', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type(
+      'Bonjour https://exemple.fr et http://exemple.fr/chemin?clé=valeur#section et www.exemple.fr',
+    );
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <span data-lexical-text="true">Bonjour</span>
+          <a href="https://exemple.fr">
+            <span data-lexical-text="true">https://exemple.fr</span>
+          </a>
+          <span data-lexical-text="true">et</span>
+          <a href="http://exemple.fr/chemin?clé=valeur#section">
+            <span data-lexical-text="true">
+              http://exemple.fr/chemin?clé=valeur#section
+            </span>
+          </a>
+          <span data-lexical-text="true">et</span>
+          <a href="https://www.exemple.fr">
+            <span data-lexical-text="true">www.exemple.fr</span>
+          </a>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  // Bengali
+  test('Can convert Bengali (Unicode) url-like text into links', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type(
+      'হ্যালো https://উদাহরণ.ভারত এবং http://উদাহরণ.ভারত/পথ?চাবি=মান#অংশ এবং www.উদাহরণ.ভারত',
+    );
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <span data-lexical-text="true">হ্যালো</span>
+          <a href="https://উদাহরণ.ভারত">
+            <span data-lexical-text="true">https://উদাহরণ.ভারত</span>
+          </a>
+          <span data-lexical-text="true">এবং</span>
+          <a href="http://উদাহরণ.ভারত/পথ?চাবি=মান#অংশ">
+            <span data-lexical-text="true">
+              http://উদাহরণ.ভারত/পথ?চাবি=মান#অংশ
+            </span>
+          </a>
+          <span data-lexical-text="true">এবং</span>
+          <a href="https://www.উদাহরণ.ভারত">
+            <span data-lexical-text="true">www.উদাহরণ.ভারত</span>
+          </a>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  //German
+  test('Can convert German (Unicode) url-like text into links', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type(
+      'Hallo https://beispiel.de und http://beispiel.de/pfad?schlüssel=wert#abschnitt und www.beispiel.de',
+    );
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <span data-lexical-text="true">Hallo</span>
+          <a href="https://beispiel.de">
+            <span data-lexical-text="true">https://beispiel.de</span>
+          </a>
+          <span data-lexical-text="true">und</span>
+          <a href="http://beispiel.de/pfad?schlüssel=wert#abschnitt">
+            <span data-lexical-text="true">
+              http://beispiel.de/pfad?schlüssel=wert#abschnitt
+            </span>
+          </a>
+          <span data-lexical-text="true">und</span>
+          <a href="https://www.beispiel.de">
+            <span data-lexical-text="true">www.beispiel.de</span>
+          </a>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  // Italian
+  test('Can convert Italian (Unicode) url-like text into links', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type(
+      'Ciao https://esempio.it e http://esempio.it/percorso?chiave=valore#sezione e www.esempio.it',
+    );
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <span data-lexical-text="true">Ciao</span>
+          <a href="https://esempio.it">
+            <span data-lexical-text="true">https://esempio.it</span>
+          </a>
+          <span data-lexical-text="true">e</span>
+          <a href="http://esempio.it/percorso?chiave=valore#sezione">
+            <span data-lexical-text="true">
+              http://esempio.it/percorso?chiave=valore#sezione
+            </span>
+          </a>
+          <span data-lexical-text="true">e</span>
+          <a href="https://www.esempio.it">
+            <span data-lexical-text="true">www.esempio.it</span>
+          </a>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  // Portuguese
+  test('Can convert Portuguese (Unicode) url-like text into links', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type(
+      'Olá https://exemplo.pt e http://exemplo.pt/caminho?chave=valor#secao e www.exemplo.pt',
+    );
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <span data-lexical-text="true">Olá</span>
+          <a href="https://exemplo.pt">
+            <span data-lexical-text="true">https://exemplo.pt</span>
+          </a>
+          <span data-lexical-text="true">e</span>
+          <a href="http://exemplo.pt/caminho?chave=valor#secao">
+            <span data-lexical-text="true">
+              http://exemplo.pt/caminho?chave=valor#secao
+            </span>
+          </a>
+          <span data-lexical-text="true">e</span>
+          <a href="https://www.exemplo.pt">
+            <span data-lexical-text="true">www.exemplo.pt</span>
+          </a>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  // Turkish
+  test('Can convert Turkish (Unicode) url-like text into links', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type(
+      'Merhaba https://örnek.tr ve http://örnek.tr/yol?anahtar=değer#bölüm ve www.örnek.tr',
+    );
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <span data-lexical-text="true">Merhaba</span>
+          <a href="https://örnek.tr">
+            <span data-lexical-text="true">https://örnek.tr</span>
+          </a>
+          <span data-lexical-text="true">ve</span>
+          <a href="http://örnek.tr/yol?anahtar=değer#bölüm">
+            <span data-lexical-text="true">
+              http://örnek.tr/yol?anahtar=değer#bölüm
+            </span>
+          </a>
+          <span data-lexical-text="true">ve</span>
+          <a href="https://www.örnek.tr">
+            <span data-lexical-text="true">www.örnek.tr</span>
+          </a>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  // Indonesian
+  test('Can convert Indonesian (Unicode) url-like text into links', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type(
+      'Halo https://contoh.id dan http://contoh.id/jalur?kunci=nilai#bagian dan www.contoh.id',
+    );
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <span data-lexical-text="true">Halo</span>
+          <a href="https://contoh.id">
+            <span data-lexical-text="true">https://contoh.id</span>
+          </a>
+          <span data-lexical-text="true">dan</span>
+          <a href="http://contoh.id/jalur?kunci=nilai#bagian">
+            <span data-lexical-text="true">
+              http://contoh.id/jalur?kunci=nilai#bagian
+            </span>
+          </a>
+          <span data-lexical-text="true">dan</span>
+          <a href="https://www.contoh.id">
+            <span data-lexical-text="true">www.contoh.id</span>
+          </a>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  // Vietnamese
+  test('Can convert Vietnamese (Unicode) url-like text into links', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type(
+      'Xin chào https://vídụ.vn và http://vídụ.vn/đường?khóa=giátrị#phần và www.vídụ.vn',
+    );
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <span data-lexical-text="true">Xin chào</span>
+          <a href="https://vídụ.vn">
+            <span data-lexical-text="true">https://vídụ.vn</span>
+          </a>
+          <span data-lexical-text="true">và</span>
+          <a href="http://vídụ.vn/đường?khóa=giátrị#phần">
+            <span data-lexical-text="true">
+              http://vídụ.vn/đường?khóa=giátrị#phần
+            </span>
+          </a>
+          <span data-lexical-text="true">và</span>
+          <a href="https://www.vídụ.vn">
+            <span data-lexical-text="true">www.vídụ.vn</span>
+          </a>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  // Polish
+  test('Can convert Polish (Unicode) url-like text into links', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type(
+      'Cześć https://przykład.pl i http://przykład.pl/ścieżka?klucz=wartość#sekcja i www.przykład.pl',
+    );
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <span data-lexical-text="true">Cześć</span>
+          <a href="https://przykład.pl">
+            <span data-lexical-text="true">https://przykład.pl</span>
+          </a>
+          <span data-lexical-text="true">i</span>
+          <a href="http://przykład.pl/ścieżka?klucz=wartość#sekcja">
+            <span data-lexical-text="true">
+              http://przykład.pl/ścieżka?klucz=wartość#sekcja
+            </span>
+          </a>
+          <span data-lexical-text="true">i</span>
+          <a href="https://www.przykład.pl">
+            <span data-lexical-text="true">www.przykład.pl</span>
+          </a>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  // Swedish
+  test('Can convert Swedish (Unicode) url-like text into links', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type(
+      'Hej https://exempel.se och http://exempel.se/väg?nyckel=värde#sektion och www.exempel.se',
+    );
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <span data-lexical-text="true">Hej</span>
+          <a href="https://exempel.se">
+            <span data-lexical-text="true">https://exempel.se</span>
+          </a>
+          <span data-lexical-text="true">och</span>
+          <a href="http://exempel.se/väg?nyckel=värde#sektion">
+            <span data-lexical-text="true">
+              http://exempel.se/väg?nyckel=värde#sektion
+            </span>
+          </a>
+          <span data-lexical-text="true">och</span>
+          <a href="https://www.exempel.se">
+            <span data-lexical-text="true">www.exempel.se</span>
+          </a>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  // Dutch
+  test('Can convert Dutch (Unicode) url-like text into links', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type(
+      'Hallo https://voorbeeld.nl en http://voorbeeld.nl/pad?sleutel=waarde#sectie en www.voorbeeld.nl',
+    );
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <span data-lexical-text="true">Hallo</span>
+          <a href="https://voorbeeld.nl">
+            <span data-lexical-text="true">https://voorbeeld.nl</span>
+          </a>
+          <span data-lexical-text="true">en</span>
+          <a href="http://voorbeeld.nl/pad?sleutel=waarde#sectie">
+            <span data-lexical-text="true">
+              http://voorbeeld.nl/pad?sleutel=waarde#sectie
+            </span>
+          </a>
+          <span data-lexical-text="true">en</span>
+          <a href="https://www.voorbeeld.nl">
+            <span data-lexical-text="true">www.voorbeeld.nl</span>
+          </a>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  // Greek
+  test('Can convert Greek (Unicode) url-like text into links', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type(
+      'Γειά σου https://παράδειγμα.ελ και http://παράδειγμα.ελ/διαδρομή?κλειδί=τιμή#ενότητα και www.παράδειγμα.ελ',
+    );
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <span data-lexical-text="true">Γειά σου</span>
+          <a href="https://παράδειγμα.ελ">
+            <span data-lexical-text="true">https://παράδειγμα.ελ</span>
+          </a>
+          <span data-lexical-text="true">και</span>
+          <a href="http://παράδειγμα.ελ/διαδρομή?κλειδί=τιμή#ενότητα">
+            <span data-lexical-text="true">
+              http://παράδειγμα.ελ/διαδρομή?κλειδί=τιμή#ενότητα
+            </span>
+          </a>
+          <span data-lexical-text="true">και</span>
+          <a href="https://www.παράδειγμα.ελ">
+            <span data-lexical-text="true">www.παράδειγμα.ελ</span>
+          </a>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
 });

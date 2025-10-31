@@ -28,6 +28,7 @@ export default function Settings(): JSX.Element {
       isCharLimit,
       isCharLimitUtf8,
       isAutocomplete,
+      isShadowDOM,
       showTreeView,
       showNestedEditorTreeView,
       // disableBeforeInput,
@@ -138,6 +139,11 @@ export default function Settings(): JSX.Element {
             onClick={() => setOption('isAutocomplete', !isAutocomplete)}
             checked={isAutocomplete}
             text="Autocomplete"
+          />
+          <Switch
+            onClick={() => setOption('isShadowDOM', !isShadowDOM)}
+            checked={isShadowDOM}
+            text="Shadow DOM"
           />
           {/* <Switch
             onClick={() => {

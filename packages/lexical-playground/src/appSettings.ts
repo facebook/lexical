@@ -23,6 +23,7 @@ export const DEFAULT_SETTINGS = {
   isCollab: false,
   isMaxLength: false,
   isRichText: true,
+  isShadowDOM: false,
   listStrictIndent: false,
   measureTypingPerf: false,
   selectionAlwaysOnDisplay: false,

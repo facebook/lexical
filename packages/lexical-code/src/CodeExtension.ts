@@ -15,5 +15,5 @@ import {CodeNode} from './CodeNode';
  */
 export const CodeExtension = defineExtension({
   name: '@lexical/code',
-  nodes: [CodeNode, CodeHighlightNode],
+  nodes: () => [CodeNode, CodeHighlightNode],
 });

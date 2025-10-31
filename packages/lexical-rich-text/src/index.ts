@@ -1153,6 +1153,6 @@ export const RichTextExtension = defineExtension({
   conflictsWith: ['@lexical/plain-text'],
   dependencies: [DragonExtension],
   name: '@lexical/rich-text',
-  nodes: [HeadingNode, QuoteNode],
+  nodes: () => [HeadingNode, QuoteNode],
   register: registerRichText,
 });

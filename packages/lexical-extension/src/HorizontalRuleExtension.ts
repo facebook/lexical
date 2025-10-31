@@ -136,7 +136,7 @@ function $toggleNodeSelection(
 export const HorizontalRuleExtension = defineExtension({
   dependencies: [EditorStateExtension, NodeSelectionExtension],
   name: '@lexical/extension/HorizontalRule',
-  nodes: [HorizontalRuleNode],
+  nodes: () => [HorizontalRuleNode],
   register(editor, config, state) {
     const {watchNodeKey} = state.getDependency(NodeSelectionExtension).output;
     const nodeSelectionStore = signal({

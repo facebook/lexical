@@ -72,5 +72,5 @@ export function $isOverflowNode(
  */
 export const OverflowExtension = defineExtension({
   name: '@lexical/overflow',
-  nodes: [OverflowNode],
+  nodes: () => [OverflowNode],
 });

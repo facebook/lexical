@@ -52,7 +52,7 @@ or `theme` (specify classes to be used for nodes provided by lexical).
 ```ts
 export const CodeExtension = defineExtension({
   name: '@lexical/code',
-  nodes: [CodeNode, CodeHighlightNode],
+  nodes: () => [CodeNode, CodeHighlightNode],
 });
 ```
 

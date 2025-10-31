@@ -1935,41 +1935,28 @@ describe('LexicalEditor tests', () => {
       COMMAND_PRIORITY_EDITOR,
     );
 
-    expect(editor._commands).toEqual(
-      new Map([
-        [
-          command,
-          [
-            new Set([commandListener, commandListenerTwo]),
-            new Set(),
-            new Set(),
-            new Set(),
-            new Set(),
-          ],
-        ],
-      ]),
-    );
+    expect(editor._commands.has(command)).toEqual(true);
+    expect(editor._commands.get(command)).toEqual([
+      new Set([commandListener, commandListenerTwo]),
+      new Set(),
+      new Set(),
+      new Set(),
+      new Set(),
+    ]);
 
     removeCommandListener();
 
-    expect(editor._commands).toEqual(
-      new Map([
-        [
-          command,
-          [
-            new Set([commandListenerTwo]),
-            new Set(),
-            new Set(),
-            new Set(),
-            new Set(),
-          ],
-        ],
-      ]),
-    );
+    expect(editor._commands.get(command)).toEqual([
+      new Set([commandListenerTwo]),
+      new Set(),
+      new Set(),
+      new Set(),
+      new Set(),
+    ]);
 
     removeCommandListenerTwo();
 
-    expect(editor._commands).toEqual(new Map());
+    expect(editor._commands.has(command)).toEqual(false);
   });
 
   it('can register transforms before updates', async () => {

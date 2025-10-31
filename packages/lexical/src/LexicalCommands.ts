@@ -37,6 +37,15 @@ export const SELECTION_INSERT_CLIPBOARD_NODES_COMMAND: LexicalCommand<{
 }> = createCommand('SELECTION_INSERT_CLIPBOARD_NODES_COMMAND');
 export const CLICK_COMMAND: LexicalCommand<MouseEvent> =
   createCommand('CLICK_COMMAND');
+export const BEFORE_INPUT_COMMAND: LexicalCommand<InputEvent> = createCommand(
+  'BEFORE_INPUT_COMMAND',
+);
+export const INPUT_COMMAND: LexicalCommand<InputEvent> =
+  createCommand('INPUT_COMMAND');
+export const COMPOSITION_START_COMMAND: LexicalCommand<CompositionEvent> =
+  createCommand('COMPOSITION_START_COMMAND');
+export const COMPOSITION_END_COMMAND: LexicalCommand<CompositionEvent> =
+  createCommand('COMPOSITION_END_COMMAND');
 /**
  * Dispatched to delete a character, the payload will be `true` if the deletion
  * is backwards (backspace or delete on macOS) and `false` if forwards

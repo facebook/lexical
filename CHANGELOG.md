@@ -1,3 +1,11 @@
+## v0.38.2 (2025-10-31)
+
+- lexical-markdown Code backslash fix (#7958) MarekKuncik
+- Update codeowners (#7957) Gerard Rovira
+- Update examples for v0.38.1 (#7952) Bob Ippolito
+- v0.38.1 (#7951) Bob Ippolito
+- v0.38.1 Lexical GitHub Actions Bot
+
 ## v0.38.1 (2025-10-27)
 
 - v0.38.0 Lexical GitHub Actions Bot

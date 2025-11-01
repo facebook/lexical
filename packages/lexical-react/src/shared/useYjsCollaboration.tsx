@@ -170,6 +170,8 @@ export function useYjsCollaboration(
     onBootstrap,
   );
 
+  useAwareness(binding, provider);
+
   return useYjsCursors(binding, cursorsContainerRef);
 }
 
@@ -251,7 +253,6 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
 
   useEffect(() => {
     const {root} = binding;
-    const {awareness} = provider;
 
     if (diffSnapshots) {
       renderSnapshot__EXPERIMENTAL(
@@ -300,15 +301,9 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
       },
     );
 
-    const onAwarenessUpdate = () => {
-      syncCursorPositions(binding, provider);
-    };
-    awareness.on('update', onAwarenessUpdate);
-
     return () => {
       root.unobserveDeep(onYjsTreeChanges);
       removeListener();
-      awareness.off('update', onAwarenessUpdate);
     };
   }, [binding, provider, editor, diffSnapshots]);
 
@@ -321,6 +316,8 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
     awarenessData,
     onBootstrap,
   );
+
+  useAwareness(binding, provider);
 
   return binding;
 }
@@ -421,6 +418,20 @@ function useProvider(
       COMMAND_PRIORITY_EDITOR,
     );
   }, [connect, disconnect, editor]);
+}
+
+function useAwareness(binding: Binding | BindingV2, provider: Provider) {
+  useEffect(() => {
+    const {awareness} = provider;
+    const onAwarenessUpdate = () => {
+      syncCursorPositions(binding, provider);
+    };
+    awareness.on('update', onAwarenessUpdate);
+
+    return () => {
+      awareness.off('update', onAwarenessUpdate);
+    };
+  }, [binding, provider]);
 }
 
 export function useYjsCursors(

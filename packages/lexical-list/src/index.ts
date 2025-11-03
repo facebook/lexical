@@ -300,7 +300,7 @@ export const ListExtension = defineExtension({
   },
   config: safeCast<ListConfig>({hasStrictIndent: false}),
   name: '@lexical/list/List',
-  nodes: [ListNode, ListItemNode],
+  nodes: () => [ListNode, ListItemNode],
   register(editor, config, state) {
     const stores = state.getOutput();
     return mergeRegister(

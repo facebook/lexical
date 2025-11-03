@@ -872,7 +872,7 @@ export class ElementNode extends LexicalNode {
     // these would be set on reconcile (#7968)
     if (
       (textFormat !== 0 || textStyle !== '') &&
-      !this.isShadowRoot() &&
+      !$isRootOrShadowRoot(this) &&
       !this.getChildren().some($isTextNode)
     ) {
       if (textFormat !== 0) {

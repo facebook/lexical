@@ -868,11 +868,19 @@ export class ElementNode extends LexicalNode {
     };
     const textFormat = this.getTextFormat();
     const textStyle = this.getTextStyle();
-    if (textFormat !== 0) {
-      json.textFormat = textFormat;
-    }
-    if (textStyle !== '') {
-      json.textStyle = textStyle;
+    // Only persist for cases when there are no TextNode children from which
+    // these would be set on reconcile (#7968)
+    if (
+      (textFormat !== 0 || textStyle !== '') &&
+      !this.isShadowRoot() &&
+      !this.getChildren().some($isTextNode)
+    ) {
+      if (textFormat !== 0) {
+        json.textFormat = textFormat;
+      }
+      if (textStyle !== '') {
+        json.textStyle = textStyle;
+      }
     }
     return json;
   }

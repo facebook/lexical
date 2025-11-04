@@ -17,6 +17,7 @@ import type {
 } from 'lexical';
 
 import {
+  $getCodeLineDirection,
   $getEndOfCodeInLine,
   $getFirstCodeNodeOfLine,
   $getLastCodeNodeOfLine,
@@ -57,6 +58,7 @@ import {
   MOVE_TO_END,
   MOVE_TO_START,
   OUTDENT_CONTENT_COMMAND,
+  safeCast,
   TabNode,
   TextNode,
 } from 'lexical';
@@ -73,13 +75,21 @@ import {
 export interface Tokenizer {
   defaultLanguage: string;
   defaultTheme: string;
-  $tokenize: (codeNode: CodeNode, language?: string) => LexicalNode[];
+  $tokenize: (
+    this: Tokenizer,
+    codeNode: CodeNode,
+    language?: string,
+  ) => LexicalNode[];
 }
 
 const DEFAULT_CODE_THEME = 'one-light';
 
 export const ShikiTokenizer: Tokenizer = {
-  $tokenize(codeNode: CodeNode, language?: string): LexicalNode[] {
+  $tokenize(
+    this: Tokenizer,
+    codeNode: CodeNode,
+    language?: string,
+  ): LexicalNode[] {
     return $getHighlightNodes(codeNode, language || this.defaultLanguage);
   },
   defaultLanguage: DEFAULT_CODE_LANGUAGE,
@@ -734,8 +744,12 @@ function $handleMoveTo(
     return false;
   }
 
-  if (isMoveToStart) {
-    const start = $getStartOfCodeInLine(focusNode, focus.offset);
+  const focusLineNode = focusNode as CodeHighlightNode | TabNode;
+  const direction = $getCodeLineDirection(focusLineNode);
+  const moveToStart = direction === 'rtl' ? !isMoveToStart : isMoveToStart;
+
+  if (moveToStart) {
+    const start = $getStartOfCodeInLine(focusLineNode, focus.offset);
     if (start !== null) {
       const {node, offset} = start;
       if ($isLineBreakNode(node)) {
@@ -744,10 +758,10 @@ function $handleMoveTo(
         selection.setTextNodeRange(node, offset, node, offset);
       }
     } else {
-      focusNode.getParentOrThrow().selectStart();
+      focusLineNode.getParentOrThrow().selectStart();
     }
   } else {
-    const node = $getEndOfCodeInLine(focusNode);
+    const node = $getEndOfCodeInLine(focusLineNode);
     node.select();
   }
 
@@ -908,13 +922,14 @@ export function registerCodeHighlighting(
   return mergeRegister(...registrations);
 }
 
+export type CodeHighlighterShikiConfig = Tokenizer;
+
 /**
  * Add code highlighting support for code blocks with Shiki
  */
 export const CodeHighlighterShikiExtension = defineExtension({
-  config: {tokenizer: ShikiTokenizer},
+  config: safeCast<CodeHighlighterShikiConfig>(ShikiTokenizer),
   dependencies: [CodeExtension],
   name: '@lexical/code-shiki',
-  register: (editor, {tokenizer}) =>
-    registerCodeHighlighting(editor, tokenizer),
+  register: (editor, config) => registerCodeHighlighting(editor, config),
 });

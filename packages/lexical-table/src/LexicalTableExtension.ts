@@ -58,7 +58,7 @@ export const TableExtension = defineExtension({
     hasTabHandler: true,
   }),
   name: '@lexical/table/Table',
-  nodes: [TableNode, TableRowNode, TableCellNode],
+  nodes: () => [TableNode, TableRowNode, TableCellNode],
   register(editor, config, state) {
     const stores = state.getOutput();
     return mergeRegister(

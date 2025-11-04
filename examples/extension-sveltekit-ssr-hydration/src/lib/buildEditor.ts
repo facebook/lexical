@@ -73,16 +73,9 @@ export function $initialEditorStateServer() {
 }
 
 export function prerenderHtml(editor: LexicalEditor) {
-	return withDOM(({ document, getComputedStyle }: typeof globalThis.window) => {
+	return withDOM(({ document }: typeof globalThis.window) => {
 		const el = document.createElement('div');
-		// TODO #7859 this global patch can be removed
-		const prevGetComputedStyle = globalThis.getComputedStyle;
-		try {
-			globalThis.getComputedStyle = getComputedStyle;
-			editor.setRootElement(el);
-		} finally {
-			globalThis.getComputedStyle = prevGetComputedStyle;
-		}
+		editor.setRootElement(el);
 		const html = el.innerHTML;
 		editor.setRootElement(null);
 		return html;
@@ -138,6 +131,18 @@ const HMRExtension = defineExtension({
 	}
 });
 
+const ClickableWhenReadonlyExtension = defineExtension({
+	name: '@lexical/extension/ClickableOnlyWhenEditable',
+	dependencies: [WatchEditableExtension, ClickableLinkExtension],
+	register: (editor, config, state) => {
+		const editableSignal = state.getDependency(WatchEditableExtension).output;
+		const disabledSignal = state.getDependency(ClickableLinkExtension).output.disabled;
+		return effect(() => {
+			disabledSignal.value = editableSignal.value;
+		});
+	}
+});
+
 export function buildEditor(
 	$initialEditorState: InitialEditorStateType = null,
 	hot: null | ViteHotContext = null
@@ -151,7 +156,8 @@ export function buildEditor(
 			TailwindExtension,
 			HistoryExtension,
 			AutoLinkExtension,
-			ClickableLinkExtension,
+			ClickableWhenReadonlyExtension,
+			configExtension(ClickableLinkExtension, { newTab: true }),
 			CheckListExtension,
 			EditorStateExtension,
 			WatchEditableExtension,

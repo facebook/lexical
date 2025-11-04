@@ -162,7 +162,7 @@ export function $getMarkIDs(
  */
 export const MarkExtension = defineExtension({
   name: '@lexical/mark',
-  nodes: [MarkNode],
+  nodes: () => [MarkNode],
 });
 
 export {$createMarkNode, $isMarkNode, MarkNode, SerializedMarkNode};

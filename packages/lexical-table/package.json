@@ -8,14 +8,14 @@
     "table"
   ],
   "license": "MIT",
-  "version": "0.38.2",
+  "version": "0.38.3-nightly.20251104.0",
   "main": "LexicalTable.js",
   "types": "index.d.ts",
   "dependencies": {
-    "@lexical/clipboard": "0.38.2",
-    "@lexical/extension": "0.38.2",
-    "@lexical/utils": "0.38.2",
-    "lexical": "0.38.2"
+    "@lexical/clipboard": "0.38.3-nightly.20251104.0",
+    "@lexical/extension": "0.38.3-nightly.20251104.0",
+    "@lexical/utils": "0.38.3-nightly.20251104.0",
+    "lexical": "0.38.3-nightly.20251104.0"
   },
   "repository": {
     "type": "git",

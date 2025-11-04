@@ -162,6 +162,7 @@ export {
   COMMAND_PRIORITY_LOW,
   COMMAND_PRIORITY_NORMAL,
   createEditor,
+  getTransformSetFromKlass,
 } from './LexicalEditor';
 export type {
   EditorState,
@@ -238,6 +239,7 @@ export {
   $addUpdateTag,
   $applyNodeReplacement,
   $cloneWithProperties,
+  $cloneWithPropertiesEphemeral,
   $copyNode,
   $create,
   $findMatchingParent,
@@ -271,6 +273,7 @@ export {
   getRegisteredNode,
   getRegisteredNodeOrThrow,
   getStaticNodeConfig,
+  getTextDirection,
   INTERNAL_$isBlock,
   isBlockDomNode,
   isDocumentFragment,

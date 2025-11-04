@@ -201,7 +201,7 @@ type CollaborationPluginV2Props = {
   id: string;
   doc: Doc;
   provider: Provider;
-  __shouldBootstrapUnsafe: boolean;
+  __shouldBootstrapUnsafe?: boolean;
   username?: string;
   cursorColor?: string;
   cursorsContainerRef?: CursorsContainerRef;

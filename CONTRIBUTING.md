@@ -22,6 +22,15 @@ Note that the local server needs to be running in order to run the e2e tests.
 
 `npm run start` will start both the dev server and collab server. If you don't need collab, use `npm run dev` to start just the dev server.
 
+If you're contributing to the website or documentation, you can run docusaurus
+with:
+
+- `npm run start:website`
+
+A full build of the website can be done with:
+
+- `npm -w packages/lexical-website run build`
+
 ## Contributor License Agreement ("CLA")
 
 In order to accept your pull request, we need you to submit a CLA. You only need
@@ -34,7 +43,7 @@ Complete your CLA here: <https://code.facebook.com/cla>
 We use GitHub issues to track public bugs. Please ensure your description is
 clear and has sufficient instructions to be able to reproduce the issue.
 
-Facebook has a [bounty program](https://www.facebook.com/whitehat/) for the safe
+Meta has a [bounty program](https://bugbounty.meta.com/) for the safe
 disclosure of security bugs. In those cases, please go through the process
 outlined on that page and do not file a public issue.
 

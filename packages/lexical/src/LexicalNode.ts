@@ -107,7 +107,8 @@ export interface StaticNodeConfigValue<
   readonly type?: Type;
   /**
    * An alternative to the internal static transform() method
-   * that provides better type inference.
+   * that provides better type inference. If implemented this
+   * transform will be registered for this class and any subclass.
    */
   readonly $transform?: (node: T) => void;
   /**
@@ -380,6 +381,30 @@ export type DOMExportOutput = {
 };
 
 export type NodeKey = string;
+
+const EPHEMERAL = Symbol.for('ephemeral');
+
+/**
+ * @internal
+ * @param node any LexicalNode
+ * @returns true if the node was created with {@link $cloneWithPropertiesEphemeral}
+ */
+export function $isEphemeral(
+  node: LexicalNode & {readonly [EPHEMERAL]?: boolean},
+): boolean {
+  return node[EPHEMERAL] || false;
+}
+/**
+ * @internal
+ * Mark this node as ephemeral, its instance always returns this
+ * for getLatest and getWritable. It must not be added to an EditorState.
+ */
+export function $markEphemeral<T extends LexicalNode>(
+  node: T & {[EPHEMERAL]?: boolean},
+): T {
+  node[EPHEMERAL] = true;
+  return node;
+}
 
 export class LexicalNode {
   /** @internal Allow us to look up the type including static props */
@@ -975,6 +1000,9 @@ export class LexicalNode {
    *
    */
   getLatest(): this {
+    if ($isEphemeral(this)) {
+      return this;
+    }
     const latest = $getNodeByKey<this>(this.__key);
     if (latest === null) {
       invariant(
@@ -992,6 +1020,9 @@ export class LexicalNode {
    *
    */
   getWritable(): this {
+    if ($isEphemeral(this)) {
+      return this;
+    }
     errorOnReadOnly();
     const editorState = getActiveEditorState();
     const editor = getActiveEditor();

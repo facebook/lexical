@@ -214,10 +214,14 @@ const CODE_SINGLE_LINE_REGEX =
   /^[ \t]*```[^`]+(?:(?:`{1,2}|`{4,})[^`]+)*```(?:[^`]|$)/;
 const TABLE_ROW_REG_EXP = /^(?:\|)(.+)(?:\|)\s?$/;
 const TABLE_ROW_DIVIDER_REG_EXP = /^(\| ?:?-*:? ?)+\|\s?$/;
+const TAG_START_REGEX = /^<[a-z_][\w-]*(?:\s[^<>]*)?\/?>/i;
+const TAG_END_REGEX = /^<\/[a-z_][\w-]*\s*>/i;
+const ENDS_WITH = (regex: RegExp) =>
+  new RegExp(`(?:${regex.source})$`, regex.flags);
 const INDENT_REGEX = /^\t+/;
 
 export const listMarkerState = createState('mdListMarker', {
-  parse: (v) => (typeof v === 'string' ? v : '-'),
+  parse: (v) => (typeof v === 'string' && /^[-*+]$/.test(v) ? v : '-'),
 });
 
 const createBlockNode = (
@@ -261,9 +265,11 @@ const listReplace = (listType: ListType): ElementTransformer['replace'] => {
     const listItem = $createListItemNode(
       listType === 'check' ? match[3] === 'x' : undefined,
     );
+    const firstMatchChar = match[0].trim()[0];
     const listMarker =
-      listType === 'bullet' || listType === 'check'
-        ? match[0].trim()[0]
+      (listType === 'bullet' || listType === 'check') &&
+      firstMatchChar === listMarkerState.parse(firstMatchChar)
+        ? firstMatchChar
         : undefined;
     if ($isListNode(nextNode) && nextNode.getListType() === listType) {
       if (listMarker) {
@@ -588,9 +594,9 @@ export const LINK: TextMatchTransformer = {
     return linkContent;
   },
   importRegExp:
-    /(?:\[(.*?)\])(?:\((?:([^()\s]+)(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))/,
+    /(?:\[(.+?)\])(?:\((?:([^()\s]+)(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))/,
   regExp:
-    /(?:\[(.*?)\])(?:\((?:([^()\s]+)(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))$/,
+    /(?:\[(.+?)\])(?:\((?:([^()\s]+)(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))$/,
   replace: (textNode, match) => {
     const [, linkText, linkUrl, linkTitle] = match;
     const linkNode = $createLinkNode(linkUrl, {title: linkTitle});
@@ -694,7 +700,7 @@ export function normalizeMarkdown(
   const sanitizedLines: string[] = [];
 
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
+    const line = lines[i].trimEnd();
     const lastLine = sanitizedLines[sanitizedLines.length - 1];
 
     // Code blocks of ```single line``` don't toggle the inCodeBlock flag
@@ -730,11 +736,17 @@ export function normalizeMarkdown(
       CHECK_LIST_REGEX.test(line) ||
       TABLE_ROW_REG_EXP.test(line) ||
       TABLE_ROW_DIVIDER_REG_EXP.test(line) ||
-      !shouldMergeAdjacentLines
+      !shouldMergeAdjacentLines ||
+      TAG_START_REGEX.test(line) ||
+      TAG_END_REGEX.test(line) ||
+      ENDS_WITH(TAG_END_REGEX).test(lastLine) ||
+      ENDS_WITH(TAG_START_REGEX).test(lastLine) ||
+      CODE_END_REGEX.test(lastLine)
     ) {
       sanitizedLines.push(line);
     } else {
-      sanitizedLines[sanitizedLines.length - 1] = lastLine + line;
+      sanitizedLines[sanitizedLines.length - 1] =
+        lastLine + ' ' + line.trimStart();
     }
   }
 

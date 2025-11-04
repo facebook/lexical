@@ -39,6 +39,7 @@ export {
   normalizeCodeLang as normalizeCodeLanguage,
 } from './FacadePrism';
 export {
+  $getCodeLineDirection,
   $getEndOfCodeInLine,
   $getFirstCodeNodeOfLine,
   $getLastCodeNodeOfLine,

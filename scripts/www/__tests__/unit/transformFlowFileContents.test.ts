@@ -51,6 +51,9 @@ import type {
   NodeKey,
   TextNode,
 } from 'lexical';
+export type {YEvent} from 'yjs';
+export type {AnyLexicalExtension, AnyLexicalExtensionArgument} from 'lexical';
+export {configExtension, defineExtension} from 'lexical';
 `.trim() + '\n';
 
 const IMPORTS_AFTER =
@@ -68,6 +71,9 @@ import type {
   NodeKey,
   TextNode,
 } from 'Lexical';
+export type {YEvent} from 'yjs';
+export type {AnyLexicalExtension, AnyLexicalExtensionArgument} from 'Lexical';
+export {configExtension, defineExtension} from 'Lexical';
 `.trim() + '\n';
 
 const EXTRA_BLOCK_COMMENT =

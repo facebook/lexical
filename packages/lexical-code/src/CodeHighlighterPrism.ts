@@ -58,6 +58,7 @@ import {
   Prism,
 } from './FacadePrism';
 import {
+  $getCodeLineDirection,
   $getEndOfCodeInLine,
   $getFirstCodeNodeOfLine,
   $getLastCodeNodeOfLine,
@@ -148,6 +149,7 @@ function codeNodeTransform(
   tokenizer: Tokenizer,
 ) {
   const nodeKey = node.getKey();
+  const cacheKey = editor.getKey() + '/' + nodeKey;
 
   // When new code block inserted it might not have language selected
   if (node.getLanguage() === undefined) {
@@ -167,11 +169,11 @@ function codeNodeTransform(
     return;
   }
 
-  if (nodesCurrentlyHighlighting.has(nodeKey)) {
+  if (nodesCurrentlyHighlighting.has(cacheKey)) {
     return;
   }
 
-  nodesCurrentlyHighlighting.add(nodeKey);
+  nodesCurrentlyHighlighting.add(cacheKey);
 
   // Using nested update call to pass `skipTransforms` since we don't want
   // each individual CodeHighlightNode to be transformed again as it's already
@@ -210,7 +212,7 @@ function codeNodeTransform(
     },
     {
       onUpdate: () => {
-        nodesCurrentlyHighlighting.delete(nodeKey);
+        nodesCurrentlyHighlighting.delete(cacheKey);
       },
       skipTransforms: true,
     },
@@ -726,8 +728,12 @@ function $handleMoveTo(
     return false;
   }
 
-  if (isMoveToStart) {
-    const start = $getStartOfCodeInLine(focusNode, focus.offset);
+  const focusLineNode = focusNode as CodeHighlightNode | TabNode;
+  const direction = $getCodeLineDirection(focusLineNode);
+  const moveToStart = direction === 'rtl' ? !isMoveToStart : isMoveToStart;
+
+  if (moveToStart) {
+    const start = $getStartOfCodeInLine(focusLineNode, focus.offset);
     if (start !== null) {
       const {node, offset} = start;
       if ($isLineBreakNode(node)) {
@@ -736,10 +742,10 @@ function $handleMoveTo(
         selection.setTextNodeRange(node, offset, node, offset);
       }
     } else {
-      focusNode.getParentOrThrow().selectStart();
+      focusLineNode.getParentOrThrow().selectStart();
     }
   } else {
-    const node = $getEndOfCodeInLine(focusNode);
+    const node = $getEndOfCodeInLine(focusLineNode);
     node.select();
   }
 

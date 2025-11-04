@@ -120,4 +120,4 @@ editor.registerCommand(
 );
 ```
 
-Note that the same `KEY_TAB_COMMAND` command is registered by [`LexicalTableSelectionHelpers.ts`](https://github.com/facebook/lexical/blob/main/packages/lexical-table/src/LexicalTableSelectionHelpers.ts), which handles moving focus to the next or previous cell within a `TableNode`, but the priority is the highest it can be (`COMMAND_PRIORITY_CRITICAL`) because this behavior is very important.
+Note that the same `KEY_TAB_COMMAND` command is registered by [`LexicalTableSelectionHelpers.ts`](https://github.com/facebook/lexical/blob/main/packages/lexical-table/src/LexicalTableSelectionHelpers.ts), which handles moving focus to the next or previous cell within a `TableNode`, but the priority is high (`COMMAND_PRIORITY_HIGH`) because this behavior is very important.

@@ -73,10 +73,12 @@ function $convertToMarkdownString(
   transformers: Array<Transformer> = TRANSFORMERS,
   node?: ElementNode,
   shouldPreserveNewLines: boolean = false,
+  shouldPreserveWhitespaces: boolean = false,
 ): string {
   const exportMarkdown = createMarkdownExport(
     transformers,
     shouldPreserveNewLines,
+    shouldPreserveWhitespaces
   );
   return exportMarkdown(node);
 }

@@ -31,6 +31,7 @@ import {isEmptyParagraph, transformersByType} from './utils';
 export function createMarkdownExport(
   transformers: Array<Transformer>,
   shouldPreserveNewLines: boolean = false,
+  shouldPreserveWhitespaces: boolean = false,
 ): (node?: ElementNode) => string {
   const byType = transformersByType(transformers);
   const elementTransformers = [...byType.multilineElement, ...byType.element];
@@ -60,6 +61,7 @@ export function createMarkdownExport(
         elementTransformers,
         textFormatTransformers,
         byType.textMatch,
+        shouldPreserveWhitespaces,
       );
 
       if (result != null) {
@@ -85,6 +87,7 @@ function exportTopLevelElements(
   elementTransformers: Array<ElementTransformer | MultilineElementTransformer>,
   textTransformersIndex: Array<TextFormatTransformer>,
   textMatchTransformers: Array<TextMatchTransformer>,
+  shouldPreserveWhitespaces: boolean = false,
 ): string | null {
   for (const transformer of elementTransformers) {
     if (!transformer.export) {
@@ -100,7 +103,7 @@ function exportTopLevelElements(
   }
 
   if ($isElementNode(node)) {
-    return exportChildren(node, textTransformersIndex, textMatchTransformers);
+    return exportChildren(node, textTransformersIndex, textMatchTransformers, undefined, undefined, shouldPreserveWhitespaces);
   } else if ($isDecoratorNode(node)) {
     return node.getTextContent();
   } else {
@@ -114,6 +117,7 @@ function exportChildren(
   textMatchTransformers: Array<TextMatchTransformer>,
   unclosedTags?: Array<{format: TextFormatType; tag: string}>,
   unclosableTags?: Array<{format: TextFormatType; tag: string}>,
+  shouldPreserveWhitespaces: boolean = false,
 ): string {
   const output = [];
   const children = node.getChildren();
@@ -145,6 +149,7 @@ function exportChildren(
             // is invalid markdown, as the closing ** is inside the link.
             //
             [...unclosableTags, ...unclosedTags],
+            shouldPreserveWhitespaces,
           ),
         (textNode, textContent) =>
           exportTextFormat(
@@ -153,6 +158,7 @@ function exportChildren(
             textTransformersIndex,
             unclosedTags,
             unclosableTags,
+            shouldPreserveWhitespaces,
           ),
       );
 
@@ -172,6 +178,7 @@ function exportChildren(
           textTransformersIndex,
           unclosedTags,
           unclosableTags,
+          shouldPreserveWhitespaces,
         ),
       );
     } else if ($isElementNode(child)) {
@@ -183,6 +190,7 @@ function exportChildren(
           textMatchTransformers,
           unclosedTags,
           unclosableTags,
+          shouldPreserveWhitespaces,
         ),
       );
     } else if ($isDecoratorNode(child)) {
@@ -200,6 +208,7 @@ function exportTextFormat(
   // unclosed tags include the markdown tags that haven't been closed yet, and their associated formats
   unclosedTags: Array<{format: TextFormatType; tag: string}>,
   unclosableTags?: Array<{format: TextFormatType; tag: string}>,
+  shouldPreserveWhitespaces: boolean = false,
 ): string {
   // This function handles the case of a string looking like this: "   foo   "
   // Where it would be invalid markdown to generate: "**   foo   **"
@@ -207,7 +216,7 @@ function exportTextFormat(
   // Otherwise, we escape leading and trailing whitespaces to their corresponding code points,
   // ensuring the returned string maintains its original formatting, e.g., "**&#32;&#32;&#32;foo&#32;&#32;&#32;**".
   let output =
-    node.getFormat() === 0
+    node.getFormat() === 0 && !shouldPreserveWhitespaces
       ? textContent
       : escapeLeadingAndTrailingWhitespaces(textContent);
 

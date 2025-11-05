@@ -78,7 +78,7 @@ function $convertToMarkdownString(
   const exportMarkdown = createMarkdownExport(
     transformers,
     shouldPreserveNewLines,
-    shouldPreserveWhitespaces
+    shouldPreserveWhitespaces,
   );
   return exportMarkdown(node);
 }

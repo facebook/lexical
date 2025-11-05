@@ -103,7 +103,14 @@ function exportTopLevelElements(
   }
 
   if ($isElementNode(node)) {
-    return exportChildren(node, textTransformersIndex, textMatchTransformers, undefined, undefined, shouldPreserveWhitespaces);
+    return exportChildren(
+      node,
+      textTransformersIndex,
+      textMatchTransformers,
+      undefined,
+      undefined,
+      shouldPreserveWhitespaces,
+    );
   } else if ($isDecoratorNode(node)) {
     return node.getTextContent();
   } else {
@@ -216,7 +223,7 @@ function exportTextFormat(
   // Otherwise, we escape leading and trailing whitespaces to their corresponding code points,
   // ensuring the returned string maintains its original formatting, e.g., "**&#32;&#32;&#32;foo&#32;&#32;&#32;**".
   let output =
-    node.getFormat() === 0 && !shouldPreserveWhitespaces
+    node.getFormat() === 0 || shouldPreserveWhitespaces
       ? textContent
       : escapeLeadingAndTrailingWhitespaces(textContent);
 

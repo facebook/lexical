@@ -1,7 +1,7 @@
 {
   "name": "@lexical/node-replacement-example",
   "private": true,
-  "version": "0.38.2",
+  "version": "0.38.3-nightly.20251106.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,8 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@lexical/react": "0.38.2",
-    "lexical": "0.38.2",
+    "@lexical/react": "0.38.3-nightly.20251106.0",
+    "lexical": "0.38.3-nightly.20251106.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },

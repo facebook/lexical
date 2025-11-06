@@ -8,7 +8,7 @@
     "overflow"
   ],
   "license": "MIT",
-  "version": "0.38.2",
+  "version": "0.38.3-nightly.20251106.0",
   "main": "LexicalOverflow.js",
   "types": "index.d.ts",
   "repository": {
@@ -36,6 +36,6 @@
     }
   },
   "dependencies": {
-    "lexical": "0.38.2"
+    "lexical": "0.38.3-nightly.20251106.0"
   }
 }

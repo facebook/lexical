@@ -106,7 +106,7 @@ export type ClickableLinkConfig = {
   disabled: boolean;
 }
 
-type AddEventListenerOptions = Exclude<EventListenerOptionsOrUseCapture, boolean>;
+type AddEventListenerOptions = Exclude<AddEventListenerOptionsOrUseCapture, boolean>;
 
 declare export function registerClickableLink(
   editor: LexicalEditor,

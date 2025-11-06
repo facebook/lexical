@@ -1048,7 +1048,7 @@ function onCompositionStart(
   event: CompositionEvent,
   editor: LexicalEditor,
 ): void {
-  dispatchCommand(editor, COMPOSITION_START_COMMAND, event as CompositionEvent);
+  dispatchCommand(editor, COMPOSITION_START_COMMAND, event);
 }
 
 function $handleCompositionStart(event: CompositionEvent): boolean {

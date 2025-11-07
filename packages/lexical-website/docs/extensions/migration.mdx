@@ -456,7 +456,7 @@ export function KeywordsPlugin(): JSX.Element | null {
 // We only need to add metadata so that you can easily use this extension!
 export const KeywordsExtension = defineExtension({
   name: '@lexical/example/LexicalKeywords',
-  nodes: [KeywordNode],
+  nodes: () => [KeywordNode],
   dependencies: [
     configExtension(ReactExtension, {decorators: [<KeywordsPlugin />]}),
   ],
@@ -557,7 +557,7 @@ function $convertToKeywordNode(textNode: TextNode) {
 // Oh wait, we don't even have a React dependency anymore!
 export const KeywordsExtension = defineExtension({
   name: "@lexical/example/LexicalKeywords",
-  nodes: [KeywordNode],
+  nodes: () => [KeywordNode],
   config: safeCast<KeywordsConfig>({ className: "keyword" }),
   register(editor) {
     return registerLexicalTextEntity(

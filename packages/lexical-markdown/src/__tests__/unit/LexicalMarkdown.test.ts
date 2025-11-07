@@ -740,6 +740,11 @@ describe('Markdown', () => {
       md: '_foo_bar',
       mdAfterExport: '\\_foo\\_bar',
     },
+    {
+      html: '<p><b><strong style="white-space: pre-wrap;"> </strong></b></p>',
+      md: ' ',
+      skipImport: true,
+    },
   ];
 
   for (const {

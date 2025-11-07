@@ -1,5 +1,5 @@
-// flow-typed signature: 2872ddd56ba4b4bfefacac38ebdc6087
-// flow-typed version: 3e51657e95/dom/flow_>=v0.261.x
+// flow-typed signature: c126209a0e678d121655f21a36219841
+// flow-typed version: f998bd7c46/dom/flow_>=v0.261.x
 
 /* Files */
 
@@ -154,34 +154,41 @@ type StorageEventTypes = 'storage';
 type SecurityPolicyViolationEventTypes = 'securitypolicyviolation';
 type USBConnectionEventTypes = 'connect' | 'disconnect';
 type ToggleEventTypes = 'beforetoggle' | 'toggle';
-type EventListenerOptionsOrUseCapture = boolean | {
-       capture?: boolean,
-       once?: boolean,
-       passive?: boolean,
-       signal?: AbortSignal,
-       ...
-};
+
+type AddEventListenerOptionsOrUseCapture =
+  | boolean
+  | $ReadOnly<{
+      capture?: boolean,
+      once?: boolean,
+      passive?: boolean,
+      signal?: AbortSignal,
+    }>;
+type EventListenerOptionsOrUseCapture =
+  | boolean
+  | $ReadOnly<{
+      capture?: boolean,
+    }>;
 
 declare class EventTarget {
-  addEventListener(type: MouseEventTypes, listener: MouseEventListener, optionsOrUseCapture?: EventListenerOptionsOrUseCapture): void;
-  addEventListener(type: FocusEventTypes, listener: FocusEventListener, optionsOrUseCapture?: EventListenerOptionsOrUseCapture): void;
-  addEventListener(type: KeyboardEventTypes, listener: KeyboardEventListener, optionsOrUseCapture?: EventListenerOptionsOrUseCapture): void;
-  addEventListener(type: InputEventTypes, listener: InputEventListener, optionsOrUseCapture?: EventListenerOptionsOrUseCapture): void;
-  addEventListener(type: TouchEventTypes, listener: TouchEventListener, optionsOrUseCapture?: EventListenerOptionsOrUseCapture): void;
-  addEventListener(type: WheelEventTypes, listener: WheelEventListener, optionsOrUseCapture?: EventListenerOptionsOrUseCapture): void;
-  addEventListener(type: AbortProgressEventTypes, listener: AbortProgressEventListener, optionsOrUseCapture?: EventListenerOptionsOrUseCapture): void;
-  addEventListener(type: ProgressEventTypes, listener: ProgressEventListener, optionsOrUseCapture?: EventListenerOptionsOrUseCapture): void;
-  addEventListener(type: DragEventTypes, listener: DragEventListener, optionsOrUseCapture?: EventListenerOptionsOrUseCapture): void;
-  addEventListener(type: PointerEventTypes, listener: PointerEventListener, optionsOrUseCapture?: EventListenerOptionsOrUseCapture): void;
-  addEventListener(type: AnimationEventTypes, listener: AnimationEventListener, optionsOrUseCapture?: EventListenerOptionsOrUseCapture): void;
-  addEventListener(type: ClipboardEventTypes, listener: ClipboardEventListener, optionsOrUseCapture?: EventListenerOptionsOrUseCapture): void;
-  addEventListener(type: TransitionEventTypes, listener: TransitionEventListener, optionsOrUseCapture?: EventListenerOptionsOrUseCapture): void;
-  addEventListener(type: MessageEventTypes, listener: MessageEventListener, optionsOrUseCapture?: EventListenerOptionsOrUseCapture): void;
-  addEventListener(type: BeforeUnloadEventTypes, listener: BeforeUnloadEventListener, optionsOrUseCapture?: EventListenerOptionsOrUseCapture): void;
-  addEventListener(type: StorageEventTypes, listener: StorageEventListener, optionsOrUseCapture?: EventListenerOptionsOrUseCapture): void;
-  addEventListener(type: SecurityPolicyViolationEventTypes, listener: SecurityPolicyViolationEventListener, optionsOrUseCapture?: EventListenerOptionsOrUseCapture): void;
-  addEventListener(type: USBConnectionEventTypes, listener: USBConnectionEventListener, optionsOrUseCapture?: EventListenerOptionsOrUseCapture): void;
-  addEventListener(type: string, listener: EventListener, optionsOrUseCapture?: EventListenerOptionsOrUseCapture): void;
+  addEventListener(type: MouseEventTypes, listener: MouseEventListener, optionsOrUseCapture?: AddEventListenerOptionsOrUseCapture): void;
+  addEventListener(type: FocusEventTypes, listener: FocusEventListener, optionsOrUseCapture?: AddEventListenerOptionsOrUseCapture): void;
+  addEventListener(type: KeyboardEventTypes, listener: KeyboardEventListener, optionsOrUseCapture?: AddEventListenerOptionsOrUseCapture): void;
+  addEventListener(type: InputEventTypes, listener: InputEventListener, optionsOrUseCapture?: AddEventListenerOptionsOrUseCapture): void;
+  addEventListener(type: TouchEventTypes, listener: TouchEventListener, optionsOrUseCapture?: AddEventListenerOptionsOrUseCapture): void;
+  addEventListener(type: WheelEventTypes, listener: WheelEventListener, optionsOrUseCapture?: AddEventListenerOptionsOrUseCapture): void;
+  addEventListener(type: AbortProgressEventTypes, listener: AbortProgressEventListener, optionsOrUseCapture?: AddEventListenerOptionsOrUseCapture): void;
+  addEventListener(type: ProgressEventTypes, listener: ProgressEventListener, optionsOrUseCapture?: AddEventListenerOptionsOrUseCapture): void;
+  addEventListener(type: DragEventTypes, listener: DragEventListener, optionsOrUseCapture?: AddEventListenerOptionsOrUseCapture): void;
+  addEventListener(type: PointerEventTypes, listener: PointerEventListener, optionsOrUseCapture?: AddEventListenerOptionsOrUseCapture): void;
+  addEventListener(type: AnimationEventTypes, listener: AnimationEventListener, optionsOrUseCapture?: AddEventListenerOptionsOrUseCapture): void;
+  addEventListener(type: ClipboardEventTypes, listener: ClipboardEventListener, optionsOrUseCapture?: AddEventListenerOptionsOrUseCapture): void;
+  addEventListener(type: TransitionEventTypes, listener: TransitionEventListener, optionsOrUseCapture?: AddEventListenerOptionsOrUseCapture): void;
+  addEventListener(type: MessageEventTypes, listener: MessageEventListener, optionsOrUseCapture?: AddEventListenerOptionsOrUseCapture): void;
+  addEventListener(type: BeforeUnloadEventTypes, listener: BeforeUnloadEventListener, optionsOrUseCapture?: AddEventListenerOptionsOrUseCapture): void;
+  addEventListener(type: StorageEventTypes, listener: StorageEventListener, optionsOrUseCapture?: AddEventListenerOptionsOrUseCapture): void;
+  addEventListener(type: SecurityPolicyViolationEventTypes, listener: SecurityPolicyViolationEventListener, optionsOrUseCapture?: AddEventListenerOptionsOrUseCapture): void;
+  addEventListener(type: USBConnectionEventTypes, listener: USBConnectionEventListener, optionsOrUseCapture?: AddEventListenerOptionsOrUseCapture): void;
+  addEventListener(type: string, listener: EventListener, optionsOrUseCapture?: AddEventListenerOptionsOrUseCapture): void;
 
   removeEventListener(type: MouseEventTypes, listener: MouseEventListener, optionsOrUseCapture?: EventListenerOptionsOrUseCapture): void;
   removeEventListener(type: FocusEventTypes, listener: FocusEventListener, optionsOrUseCapture?: EventListenerOptionsOrUseCapture): void;
@@ -824,6 +831,28 @@ declare class SecurityPolicyViolationEvent extends Event {
   +lineNumber: number;
   +columnNumber: number;
 };
+
+// https://developer.mozilla.org/en-US/docs/Web/API/Scheduler
+declare class TaskSignal extends AbortSignal {
+  +priority: number;
+}
+
+type SchedulerPostTaskOptions = {
+  priority?: "user-blocking" | "user-visible" | "background",
+  signal?: TaskSignal | AbortSignal,
+  delay?: number,
+};
+
+declare class Scheduler {
+  postTask<T>(
+    callback: () => T,
+    options?: SchedulerPostTaskOptions,
+  ): Promise<T>;
+  yield(): Promise<void>;
+}
+
+// https://developer.mozilla.org/en-US/docs/Web/API/Window/structuredClone
+declare function structuredClone<T>(value: T, options?: {| transfer: any[] |}): T;
 
 // https://developer.mozilla.org/en-US/docs/Web/API/USBConnectionEvent
 declare class USBConnectionEvent extends Event {

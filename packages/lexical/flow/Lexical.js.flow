@@ -1633,13 +1633,13 @@ export type LexicalExtensionArgument<
 > =
   | LexicalExtension<Config, Name, Output, Init>
   | NormalizedLexicalExtensionArgument<Config, Name, Output, Init>;
-export type LexicalExtensionConfig<Extension: AnyLexicalExtension> =
+export type LexicalExtensionConfig<+Extension: AnyLexicalExtension> =
   $NonMaybeType<Extension[typeof configTypeSymbol]>;
 export interface LexicalExtensionDependency<
   +Dependency: AnyLexicalExtension,
 > {
-  config: LexicalExtensionConfig<Dependency>;
-  output: LexicalExtensionOutput<Dependency>;
+  +config: LexicalExtensionConfig<Dependency>;
+  +output: LexicalExtensionOutput<Dependency>;
 }
 export type LexicalExtensionInit<Extension: AnyLexicalExtension> =
   $NonMaybeType<Extension[typeof initTypeSymbol]>;
@@ -1656,7 +1656,7 @@ interface LexicalExtensionInternalOutput<Output> {
 export type LexicalExtensionName<Extension: AnyLexicalExtension> =
   Extension['name'];
 
-export type LexicalExtensionOutput<Extension: AnyLexicalExtension> =
+export type LexicalExtensionOutput<+Extension: AnyLexicalExtension> =
   $NonMaybeType<Extension[typeof outputTypeSymbol]>;
 declare export const peerDependencySymbol: symbol;
 export type NormalizedLexicalExtensionArgument<

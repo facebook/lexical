@@ -205,6 +205,7 @@ function exportTextFormat(
   // Where it would be invalid markdown to generate: "**   foo   **"
   // We instead want to trim the whitespace out, apply formatting, and then
   // bring the whitespace back. So our returned string looks like this: "   **foo**   "
+  // However, we do not want to export any formatting if the string is just whitespace: " "
   const frozenString = textContent.trim();
   let output = frozenString;
 
@@ -285,7 +286,7 @@ function exportTextFormat(
     break;
   }
 
-  output = openingTags + output + closingTagsAfter;
+  output = output ? openingTags + output + closingTagsAfter : output;
   // Replace trimmed version of textContent ensuring surrounding whitespace is not modified
   return closingTagsBefore + textContent.replace(frozenString, () => output);
 }

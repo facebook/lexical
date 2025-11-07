@@ -693,6 +693,11 @@ describe('Markdown', () => {
       html: '<p><span style="white-space: pre-wrap;">[](https://lexical.dev)</span></p>',
       md: '[](https://lexical.dev)',
     },
+    {
+      html: '<p><b><strong style="white-space: pre-wrap;"> </strong></b></p>',
+      md: ' ',
+      skipImport: true,
+    },
   ];
 
   for (const {

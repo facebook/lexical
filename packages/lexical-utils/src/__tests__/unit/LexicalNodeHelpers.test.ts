@@ -246,13 +246,13 @@ describe('LexicalNodeHelpers tests', () => {
           //   │     └── word2
           //   ├── elementNode2
           //   │     └── word3
-          const elementNode1 = 
-          $createTestElementNode().append(
+          const elementNode1 = $createTestElementNode().append(
             $createTextNode('word1'),
-            $createTextNode('word2')
+            $createTextNode('word2'),
           );
-          const elementNode2 = 
-            $createTestElementNode().append($createTextNode('word3'));
+          const elementNode2 = $createTestElementNode().append(
+            $createTextNode('word3'),
+          );
 
           root.clear().append(elementNode1, elementNode2);
 

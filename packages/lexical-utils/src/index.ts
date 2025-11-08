@@ -272,12 +272,13 @@ function $dfsCaretIterator<D extends CaretDirection>(
   let endCaret = $getEndCaret(start, direction);
   if (endNode) {
     endCaret = $getAdjacentChildCaret(
-      $getChildCaretOrSelf($getSiblingCaret(endNode, direction))
+      $getChildCaretOrSelf($getSiblingCaret(endNode, direction)),
     );
     if (endCaret === null) {
-      endCaret = $getAdjacentSiblingOrParentSiblingCaret(
+      const next = $getAdjacentSiblingOrParentSiblingCaret(
         $getSiblingCaret(endNode, direction),
-      )?.[0] ?? null;
+      );
+      endCaret = next && next[0];
     }
   }
   let depth = startDepth;

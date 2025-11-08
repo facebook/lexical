@@ -269,11 +269,17 @@ function $dfsCaretIterator<D extends CaretDirection>(
     ? $getChildCaret(start, direction)
     : $getSiblingCaret(start, direction);
   const startDepth = $getDepth(start);
-  const endCaret = endNode
-    ? $getAdjacentChildCaret(
-        $getChildCaretOrSelf($getSiblingCaret(endNode, direction)),
-      )
-    : $getEndCaret(start, direction);
+  let endCaret = $getEndCaret(start, direction);
+  if (endNode) {
+    endCaret = $getAdjacentChildCaret(
+      $getChildCaretOrSelf($getSiblingCaret(endNode, direction))
+    );
+    if (endCaret === null) {
+      endCaret = $getAdjacentSiblingOrParentSiblingCaret(
+        $getSiblingCaret(endNode, direction),
+      )?.[0] ?? null;
+    }
+  }
   let depth = startDepth;
   return makeStepwiseIterator({
     hasNext: (state): state is NodeCaret<'next'> => state !== null,

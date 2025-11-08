@@ -198,8 +198,8 @@ export interface DFSNode {
  * before backtracking and finding a new path. Consider solving a maze by hugging either wall, moving down a
  * branch until you hit a dead-end (leaf) and backtracking to find the nearest branching path and repeat.
  * It will then return all the nodes found in the search in an array of objects.
- * @param startNode - The node to start the search, if omitted, it will start at the root node.
- * @param endNode - The node to end the search, if omitted, it will find all descendants of the startingNode.
+ * @param startNode - The node to start the search (inclusive), if omitted, it will start at the root node.
+ * @param endNode - The node to end the search (inclusive), if omitted, it will find all descendants of the startingNode.
  * @returns An array of objects of all the nodes found by the search, including their depth into the tree.
  * \\{depth: number, node: LexicalNode\\} It will always return at least 1 node (the start node).
  */
@@ -237,8 +237,8 @@ export function $reverseDfs(
 
 /**
  * $dfs iterator (left to right). Tree traversal is done on the fly as new values are requested with O(1) memory.
- * @param startNode - The node to start the search, if omitted, it will start at the root node.
- * @param endNode - The node to end the search, if omitted, it will find all descendants of the startingNode.
+ * @param startNode - The node to start the search (inclusive), if omitted, it will start at the root node.
+ * @param endNode - The node to end the search (inclusive), if omitted, it will find all descendants of the startingNode.
  * @returns An iterator, each yielded value is a DFSNode. It will always return at least 1 node (the start node).
  */
 export function $dfsIterator(
@@ -269,18 +269,11 @@ function $dfsCaretIterator<D extends CaretDirection>(
     ? $getChildCaret(start, direction)
     : $getSiblingCaret(start, direction);
   const startDepth = $getDepth(start);
-  let endCaret = $getEndCaret(start, direction);
-  if (endNode) {
-    endCaret = $getAdjacentChildCaret(
-      $getChildCaretOrSelf($getSiblingCaret(endNode, direction)),
-    );
-    if (endCaret === null) {
-      const next = $getAdjacentSiblingOrParentSiblingCaret(
-        $getSiblingCaret(endNode, direction),
-      );
-      endCaret = next && next[0];
-    }
-  }
+  const endCaret = endNode
+    ? $getAdjacentChildCaret(
+        $getChildCaretOrSelf($getSiblingCaret(endNode, direction)),
+      ) || $getEndCaret(endNode, direction)
+    : $getEndCaret(start, direction);
   let depth = startDepth;
   return makeStepwiseIterator({
     hasNext: (state): state is NodeCaret<'next'> => state !== null,

@@ -195,7 +195,7 @@
     "ts-node": "^10.9.1",
     "typedoc": "^0.28.10",
     "typescript": "^5.9.2",
-    "vite": "^7.1.4",
+    "vite": "^7.1.11",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.2.4"
   },

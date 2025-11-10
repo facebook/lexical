@@ -201,6 +201,7 @@
   },
   "dependencies": {
     "brace-expansion": "^1.1.12",
+    "cookie": "^0.7.0",
     "happy-dom": "^20.0.2",
     "semver": "^7.7.2",
     "yjs": "^13.6.27"

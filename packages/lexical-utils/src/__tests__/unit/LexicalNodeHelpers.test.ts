@@ -269,6 +269,48 @@ describe('LexicalNodeHelpers tests', () => {
       });
     });
 
+    test('DFS with endNode as ElementNode should stop at the ElementNode, not include children', async () => {
+      const editor: LexicalEditor = testEnv.editor;
+      editor.update(() => {
+        const root = $getRoot();
+
+        // Create structure:
+        // root
+        //   ├── elementNode
+        //   │     ├── word1
+        //   │     └── word2
+        //   ├── elementNode2
+        //   │     └── word3
+        const elementNode1 = $createTestElementNode().append(
+          $createTextNode('word1'),
+          $createTextNode('word2'),
+        );
+        const elementNode2 = $createTestElementNode().append(
+          $createTextNode('word3'),
+        );
+
+        root.clear().append(elementNode1, elementNode2);
+        expect($dfs(undefined, elementNode2)).toEqual([
+          {depth: 0, node: $getRoot()},
+          {depth: 1, node: elementNode1},
+          {depth: 2, node: elementNode1.getFirstDescendant()},
+          {depth: 2, node: elementNode1.getLastDescendant()},
+          {depth: 1, node: elementNode2},
+        ]);
+
+        expect($dfs(elementNode1, elementNode2)).toEqual([
+          {depth: 1, node: elementNode1},
+          {depth: 2, node: elementNode1.getFirstDescendant()},
+          {depth: 2, node: elementNode1.getLastDescendant()},
+          {depth: 1, node: elementNode2},
+        ]);
+
+        expect($dfs(elementNode1, elementNode1)).toEqual([
+          {depth: 1, node: elementNode1},
+        ]);
+      });
+    });
+
     test('DFS triggers getLatest()', async () => {
       const editor: LexicalEditor = testEnv.editor;
       let rootKey: string;

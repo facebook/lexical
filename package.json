@@ -200,6 +200,7 @@
     "vitest": "^3.2.4"
   },
   "dependencies": {
+    "happy-dom": "^20.0.2",
     "semver": "^7.7.2",
     "yjs": "^13.6.27"
   }

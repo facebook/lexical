@@ -17,7 +17,6 @@ import {
   TableNode,
 } from './LexicalTableNode';
 import {
-  registerPreventNestedTablesHandlers,
   registerTableCellUnmergeTransform,
   registerTablePlugin,
   registerTableSelectionObserver,
@@ -69,6 +68,7 @@ export const TableExtension = defineExtension({
   nodes: () => [TableNode, TableRowNode, TableCellNode],
   register(editor, config, state) {
     const stores = state.getOutput();
+    const {hasNestedTables} = stores;
     return mergeRegister(
       effect(() => {
         const hasHorizontalScroll = stores.hasHorizontalScroll.value;
@@ -80,7 +80,7 @@ export const TableExtension = defineExtension({
           editor.registerNodeTransform(TableNode, () => {})();
         }
       }),
-      registerTablePlugin(editor),
+      registerTablePlugin(editor, {hasNestedTables}),
       effect(() =>
         registerTableSelectionObserver(editor, stores.hasTabHandler.value),
       ),
@@ -97,11 +97,6 @@ export const TableExtension = defineExtension({
                 node.setBackgroundColor(null);
               }
             }),
-      ),
-      effect(() =>
-        stores.hasNestedTables.value
-          ? undefined
-          : registerPreventNestedTablesHandlers(editor),
       ),
     );
   },

@@ -29,7 +29,7 @@ import {
   defineExtension,
   LexicalEditor,
 } from 'lexical';
-import {beforeEach, describe, expect, it, test} from 'vitest';
+import {assert, beforeEach, describe, expect, it, test} from 'vitest';
 
 describe('TableExtension', () => {
   let editor: LexicalEditor;
@@ -108,17 +108,11 @@ describe('TableExtension', () => {
     editor.getEditorState().read(() => {
       const root = $getRoot();
       const table = root.getFirstChild();
-      if (!$isTableNode(table)) {
-        throw new Error('Expected table node');
-      }
+      assert($isTableNode(table), 'Expected table node');
       const row = table.getFirstChild();
-      if (!$isElementNode(row)) {
-        throw new Error('Expected row node');
-      }
+      assert($isElementNode(row), 'Expected row node');
       const cell = row.getFirstChild();
-      if (!$isElementNode(cell)) {
-        throw new Error('Expected cell node');
-      }
+      assert($isElementNode(cell), 'Expected cell node');
       const cellChildren = cell.getChildren();
       expect(cellChildren.some($isTableNode)).toBe(false);
     });
@@ -157,17 +151,11 @@ describe('TableExtension', () => {
     editor.getEditorState().read(() => {
       const root = $getRoot();
       const table = root.getFirstChild();
-      if (!$isTableNode(table)) {
-        throw new Error('Expected table node');
-      }
+      assert($isTableNode(table), 'Expected table node');
       const row = table.getFirstChild();
-      if (!$isElementNode(row)) {
-        throw new Error('Expected row node');
-      }
+      assert($isElementNode(row), 'Expected row node');
       const cell = row.getFirstChild();
-      if (!$isElementNode(cell)) {
-        throw new Error('Expected cell node');
-      }
+      assert($isElementNode(cell), 'Expected cell node');
       const cellChildren = cell.getChildren();
       expect(cellChildren.some($isTableNode)).toBe(true);
     });
@@ -208,17 +196,11 @@ describe('TableExtension', () => {
       editor.getEditorState().read(() => {
         const root = $getRoot();
         const table = root.getFirstChild();
-        if (!$isTableNode(table)) {
-          throw new Error('Expected table node');
-        }
+        assert($isTableNode(table), 'Expected table node');
         const row = table.getFirstChild();
-        if (!$isElementNode(row)) {
-          throw new Error('Expected row node');
-        }
+        assert($isElementNode(row), 'Expected row node');
         const cell = row.getFirstChild();
-        if (!$isElementNode(cell)) {
-          throw new Error('Expected cell node');
-        }
+        assert($isElementNode(cell), 'Expected cell node');
         const cellChildren = cell.getChildren();
         expect(cellChildren.some($isTableNode)).toBe(false);
       });
@@ -264,17 +246,11 @@ describe('TableExtension', () => {
       editor.getEditorState().read(() => {
         const root = $getRoot();
         const table = root.getFirstChild();
-        if (!$isTableNode(table)) {
-          throw new Error('Expected table node');
-        }
+        assert($isTableNode(table), 'Expected table node');
         const row = table.getFirstChild();
-        if (!$isElementNode(row)) {
-          throw new Error('Expected row node');
-        }
+        assert($isElementNode(row), 'Expected row node');
         const cell = row.getFirstChild();
-        if (!$isElementNode(cell)) {
-          throw new Error('Expected cell node');
-        }
+        assert($isElementNode(cell), 'Expected cell node');
         const cellChildren = cell.getChildren();
         expect(cellChildren.some($isTableNode)).toBe(true);
       });

@@ -6,6 +6,7 @@
  *
  */
 
+import {Signal, signal} from '@lexical/extension';
 import {
   $findMatchingParent,
   $insertFirst,
@@ -23,7 +24,6 @@ import {
   $isTextNode,
   CLICK_COMMAND,
   COMMAND_PRIORITY_EDITOR,
-  COMMAND_PRIORITY_LOW,
   ElementNode,
   isDOMNode,
   LexicalEditor,
@@ -57,13 +57,17 @@ import {
   $getNodeTriplet,
 } from './LexicalTableUtils';
 
-function $insertTableCommandListener({
-  rows,
-  columns,
-  includeHeaders,
-}: InsertTableCommandPayload): boolean {
+function $insertTable(
+  {rows, columns, includeHeaders}: InsertTableCommandPayload,
+  hasNestedTables: boolean,
+): boolean {
   const selection = $getSelection() || $getPreviousSelection();
   if (!selection || !$isRangeSelection(selection)) {
+    return false;
+  }
+
+  // Prevent nested tables by checking if we're already inside a table
+  if (!hasNestedTables && $findTableNode(selection.anchor.getNode())) {
     return false;
   }
 
@@ -224,37 +228,6 @@ export function registerTableCellUnmergeTransform(
   });
 }
 
-export function registerPreventNestedTablesHandlers(
-  editor: LexicalEditor,
-): () => void {
-  return mergeRegister(
-    editor.registerCommand(
-      INSERT_TABLE_COMMAND,
-      () => {
-        const selection = $getSelection() || $getPreviousSelection();
-        if (!selection || !$isRangeSelection(selection)) {
-          return false;
-        }
-        // Prevent nested tables by checking if we're already inside a table
-        return $findTableNode(selection.anchor.getNode()) !== null;
-      },
-      COMMAND_PRIORITY_LOW,
-    ),
-    editor.registerCommand(
-      SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
-      ({nodes, selection}, dispatchEditor) => {
-        if (editor !== dispatchEditor || !$isRangeSelection(selection)) {
-          return false;
-        }
-        const isInsideTableCell =
-          $findTableNode(selection.anchor.getNode()) !== null;
-        return isInsideTableCell && nodes.some($isTableNode);
-      },
-      COMMAND_PRIORITY_EDITOR,
-    ),
-  );
-}
-
 export function registerTableSelectionObserver(
   editor: LexicalEditor,
   hasTabHandler: boolean = true,
@@ -329,15 +302,38 @@ export function registerTableSelectionObserver(
  * @param editor The editor
  * @returns An unregister callback
  */
-export function registerTablePlugin(editor: LexicalEditor): () => void {
+export function registerTablePlugin(
+  editor: LexicalEditor,
+  options?: {hasNestedTables?: Signal<boolean>},
+): () => void {
   if (!editor.hasNodes([TableNode])) {
     invariant(false, 'TablePlugin: TableNode is not registered on editor');
   }
 
+  const {hasNestedTables = signal(false)} = options ?? {};
+
   return mergeRegister(
     editor.registerCommand(
       INSERT_TABLE_COMMAND,
-      $insertTableCommandListener,
+      (payload) => {
+        return $insertTable(payload, hasNestedTables.peek());
+      },
+      COMMAND_PRIORITY_EDITOR,
+    ),
+    editor.registerCommand(
+      SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
+      ({nodes, selection}, dispatchEditor) => {
+        if (
+          hasNestedTables.peek() ||
+          editor !== dispatchEditor ||
+          !$isRangeSelection(selection)
+        ) {
+          return false;
+        }
+        const isInsideTableCell =
+          $findTableNode(selection.anchor.getNode()) !== null;
+        return isInsideTableCell && nodes.some($isTableNode);
+      },
       COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(

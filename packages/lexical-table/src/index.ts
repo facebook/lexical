@@ -31,6 +31,7 @@ export {
 export type {TableDOMCell} from './LexicalTableObserver';
 export {$getTableAndElementByKey, TableObserver} from './LexicalTableObserver';
 export {
+  registerPreventNestedTablesHandlers,
   registerTableCellUnmergeTransform,
   registerTablePlugin,
   registerTableSelectionObserver,

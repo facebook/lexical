@@ -23,6 +23,7 @@ import {
   $isTextNode,
   CLICK_COMMAND,
   COMMAND_PRIORITY_EDITOR,
+  COMMAND_PRIORITY_LOW,
   ElementNode,
   isDOMNode,
   LexicalEditor,
@@ -63,11 +64,6 @@ function $insertTableCommandListener({
 }: InsertTableCommandPayload): boolean {
   const selection = $getSelection() || $getPreviousSelection();
   if (!selection || !$isRangeSelection(selection)) {
-    return false;
-  }
-
-  // Prevent nested tables by checking if we're already inside a table
-  if ($findTableNode(selection.anchor.getNode())) {
     return false;
   }
 
@@ -228,6 +224,37 @@ export function registerTableCellUnmergeTransform(
   });
 }
 
+export function registerPreventNestedTablesHandlers(
+  editor: LexicalEditor,
+): () => void {
+  return mergeRegister(
+    editor.registerCommand(
+      INSERT_TABLE_COMMAND,
+      () => {
+        const selection = $getSelection() || $getPreviousSelection();
+        if (!selection || !$isRangeSelection(selection)) {
+          return false;
+        }
+        // Prevent nested tables by checking if we're already inside a table
+        return $findTableNode(selection.anchor.getNode()) !== null;
+      },
+      COMMAND_PRIORITY_LOW,
+    ),
+    editor.registerCommand(
+      SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
+      ({nodes, selection}, dispatchEditor) => {
+        if (editor !== dispatchEditor || !$isRangeSelection(selection)) {
+          return false;
+        }
+        const isInsideTableCell =
+          $findTableNode(selection.anchor.getNode()) !== null;
+        return isInsideTableCell && nodes.some($isTableNode);
+      },
+      COMMAND_PRIORITY_EDITOR,
+    ),
+  );
+}
+
 export function registerTableSelectionObserver(
   editor: LexicalEditor,
   hasTabHandler: boolean = true,
@@ -311,18 +338,6 @@ export function registerTablePlugin(editor: LexicalEditor): () => void {
     editor.registerCommand(
       INSERT_TABLE_COMMAND,
       $insertTableCommandListener,
-      COMMAND_PRIORITY_EDITOR,
-    ),
-    editor.registerCommand(
-      SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
-      ({nodes, selection}, dispatchEditor) => {
-        if (editor !== dispatchEditor || !$isRangeSelection(selection)) {
-          return false;
-        }
-        const isInsideTableCell =
-          $findTableNode(selection.anchor.getNode()) !== null;
-        return isInsideTableCell && nodes.some($isTableNode);
-      },
       COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(

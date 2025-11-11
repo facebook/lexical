@@ -17,6 +17,7 @@ import {
   TableNode,
 } from './LexicalTableNode';
 import {
+  registerPreventNestedTablesHandlers,
   registerTableCellUnmergeTransform,
   registerTablePlugin,
   registerTableSelectionObserver,
@@ -41,6 +42,12 @@ export interface TableConfig {
    * When `true` (default `true`), tables will be wrapped in a `<div>` to enable horizontal scrolling
    */
   hasHorizontalScroll: boolean;
+  /**
+   * When `true` (default `false`), nested tables will be allowed.
+   *
+   * @experimental Nested tables are not officially supported.
+   */
+  hasNestedTables: boolean;
 }
 
 /**
@@ -55,6 +62,7 @@ export const TableExtension = defineExtension({
     hasCellBackgroundColor: true,
     hasCellMerge: true,
     hasHorizontalScroll: true,
+    hasNestedTables: false,
     hasTabHandler: true,
   }),
   name: '@lexical/table/Table',
@@ -89,6 +97,11 @@ export const TableExtension = defineExtension({
                 node.setBackgroundColor(null);
               }
             }),
+      ),
+      effect(() =>
+        stores.hasNestedTables.value
+          ? undefined
+          : registerPreventNestedTablesHandlers(editor),
       ),
     );
   },

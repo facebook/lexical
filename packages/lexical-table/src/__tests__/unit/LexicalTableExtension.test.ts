@@ -5,8 +5,15 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {buildEditorFromExtensions} from '@lexical/extension';
+import {$insertGeneratedNodes} from '@lexical/clipboard';
 import {
+  buildEditorFromExtensions,
+  getExtensionDependencyFromEditor,
+} from '@lexical/extension';
+import {
+  $createTableCellNode,
+  $createTableNode,
+  $createTableRowNode,
   $isTableCellNode,
   $isTableNode,
   $isTableRowNode,
@@ -14,18 +21,30 @@ import {
   TableExtension,
   type TableNode,
 } from '@lexical/table';
-import {$getRoot, defineExtension} from 'lexical';
-import {describe, expect, it} from 'vitest';
+import {
+  $createParagraphNode,
+  $getRoot,
+  $getSelection,
+  $isElementNode,
+  defineExtension,
+  LexicalEditor,
+} from 'lexical';
+import {beforeEach, describe, expect, it, test} from 'vitest';
 
-describe('Table', () => {
-  it('Creates a table with INSERT_TABLE_COMMAND', () => {
-    const editor = buildEditorFromExtensions(
+describe('TableExtension', () => {
+  let editor: LexicalEditor;
+
+  beforeEach(() => {
+    editor = buildEditorFromExtensions(
       defineExtension({
         dependencies: [TableExtension],
         name: 'table-test',
         theme: {tableScrollableWrapper: 'table-scrollable-wrapper'},
       }),
     );
+  });
+
+  it('Creates a table with INSERT_TABLE_COMMAND', () => {
     editor.update(
       () => {
         $getRoot().selectEnd();
@@ -59,28 +78,34 @@ describe('Table', () => {
     });
   });
 
-  test('INSERT_TABLE_COMMAND handler prevents nested tables', async () => {
-    await editor.update(() => {
-      const root = $getRoot();
-      const table = $createTableNode();
-      const row = $createTableRowNode();
-      const cell = $createTableCellNode();
-      row.append(cell);
-      table.append(row);
-      root.append(table);
-      cell.select();
-    });
+  it('Prevents nested tables by default', async () => {
+    editor.update(
+      () => {
+        const root = $getRoot().clear();
+        const table = $createTableNode();
+        const row = $createTableRowNode();
+        const cell = $createTableCellNode();
+        row.append(cell);
+        table.append(row);
+        root.append(table);
+        cell.select();
+      },
+      {discrete: true},
+    );
 
     // Try to insert a table inside the cell
-    await editor.update(() => {
-      editor.dispatchCommand(INSERT_TABLE_COMMAND, {
-        columns: '2',
-        rows: '2',
-      });
-    });
+    editor.update(
+      () => {
+        editor.dispatchCommand(INSERT_TABLE_COMMAND, {
+          columns: '2',
+          rows: '2',
+        });
+      },
+      {discrete: true},
+    );
 
     // Verify no nested table was created
-    await editor.getEditorState().read(() => {
+    editor.getEditorState().read(() => {
       const root = $getRoot();
       const table = root.getFirstChild();
       if (!$isTableNode(table)) {
@@ -99,33 +124,37 @@ describe('Table', () => {
     });
   });
 
-  test('SELECTION_INSERT_CLIPBOARD_NODES_COMMAND handler prevents pasting tables in cells', async () => {
-    await editor.update(() => {
-      const root = $getRoot();
-      const table = $createTableNode();
-      const row = $createTableRowNode();
-      const cell = $createTableCellNode();
-      row.append(cell);
-      table.append(row);
-      root.append(table);
-      cell.select();
-    });
+  it('Allows nested tables when hasNestedTables is true', async () => {
+    const extension = getExtensionDependencyFromEditor(editor, TableExtension);
+    extension.output.hasNestedTables.value = true;
 
-    // Try to paste a table inside the cell
-    await editor.update(() => {
-      const tableNode = $createTableNode();
-      const selection = $getSelection();
-      if (selection === null) {
-        throw new Error('Expected valid selection');
-      }
-      editor.dispatchCommand(SELECTION_INSERT_CLIPBOARD_NODES_COMMAND, {
-        nodes: [tableNode],
-        selection,
-      });
-    });
+    editor.update(
+      () => {
+        const root = $getRoot().clear();
+        const table = $createTableNode();
+        const row = $createTableRowNode();
+        const cell = $createTableCellNode();
+        row.append(cell);
+        table.append(row);
+        root.append(table);
+        cell.select();
+      },
+      {discrete: true},
+    );
 
-    // Verify no nested table was created
-    await editor.getEditorState().read(() => {
+    // Try to insert a table inside the cell
+    editor.update(
+      () => {
+        editor.dispatchCommand(INSERT_TABLE_COMMAND, {
+          columns: '2',
+          rows: '2',
+        });
+      },
+      {discrete: true},
+    );
+
+    // Verify nested table was created
+    editor.getEditorState().read(() => {
       const root = $getRoot();
       const table = root.getFirstChild();
       if (!$isTableNode(table)) {
@@ -140,7 +169,115 @@ describe('Table', () => {
         throw new Error('Expected cell node');
       }
       const cellChildren = cell.getChildren();
-      expect(cellChildren.some($isTableNode)).toBe(false);
+      expect(cellChildren.some($isTableNode)).toBe(true);
+    });
+  });
+
+  describe('$insertGeneratedNodes', () => {
+    test('SELECTION_INSERT_CLIPBOARD_NODES_COMMAND handler prevents pasting tables in cells by default', () => {
+      editor.update(
+        () => {
+          const root = $getRoot().clear();
+          const table = $createTableNode();
+          const row = $createTableRowNode();
+          const cell = $createTableCellNode();
+          const paragraph = $createParagraphNode();
+          cell.append(paragraph);
+          row.append(cell);
+          table.append(row);
+          root.append(table);
+          paragraph.select();
+        },
+        {discrete: true},
+      );
+
+      // Try to paste a table inside the cell
+      editor.update(
+        () => {
+          const tableNode = $createTableNode();
+          const selection = $getSelection();
+          if (selection === null) {
+            throw new Error('Expected valid selection');
+          }
+          $insertGeneratedNodes(editor, [tableNode], selection);
+        },
+        {discrete: true},
+      );
+
+      // Verify no nested table was created
+      editor.getEditorState().read(() => {
+        const root = $getRoot();
+        const table = root.getFirstChild();
+        if (!$isTableNode(table)) {
+          throw new Error('Expected table node');
+        }
+        const row = table.getFirstChild();
+        if (!$isElementNode(row)) {
+          throw new Error('Expected row node');
+        }
+        const cell = row.getFirstChild();
+        if (!$isElementNode(cell)) {
+          throw new Error('Expected cell node');
+        }
+        const cellChildren = cell.getChildren();
+        expect(cellChildren.some($isTableNode)).toBe(false);
+      });
+    });
+
+    test('SELECTION_INSERT_CLIPBOARD_NODES_COMMAND handler allows pasting tables in cells when hasNestedTables is true', () => {
+      const extension = getExtensionDependencyFromEditor(
+        editor,
+        TableExtension,
+      );
+      extension.output.hasNestedTables.value = true;
+
+      editor.update(
+        () => {
+          const root = $getRoot().clear();
+          const table = $createTableNode();
+          const row = $createTableRowNode();
+          const cell = $createTableCellNode();
+          const paragraph = $createParagraphNode();
+          cell.append(paragraph);
+          row.append(cell);
+          table.append(row);
+          root.append(table);
+          paragraph.select();
+        },
+        {discrete: true},
+      );
+
+      // Try to paste a table inside the cell
+      editor.update(
+        () => {
+          const tableNode = $createTableNode();
+          const selection = $getSelection();
+          if (selection === null) {
+            throw new Error('Expected valid selection');
+          }
+          $insertGeneratedNodes(editor, [tableNode], selection);
+        },
+        {discrete: true},
+      );
+
+      // Verify no nested table was created
+      editor.getEditorState().read(() => {
+        const root = $getRoot();
+        const table = root.getFirstChild();
+        if (!$isTableNode(table)) {
+          throw new Error('Expected table node');
+        }
+        const row = table.getFirstChild();
+        if (!$isElementNode(row)) {
+          throw new Error('Expected row node');
+        }
+        const cell = row.getFirstChild();
+        if (!$isElementNode(cell)) {
+          throw new Error('Expected cell node');
+        }
+        const cellChildren = cell.getChildren();
+        expect(cellChildren.some($isTableNode)).toBe(true);
+      });
     });
   });
 });

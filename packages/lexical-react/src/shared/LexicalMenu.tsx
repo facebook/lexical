@@ -45,7 +45,7 @@ export class MenuOption {
   key: string;
   ref?: RefObject<HTMLElement | null>;
   icon?: JSX.Element;
-  title?: string | null;
+  title?: JSX.Element | string | null;
 
   constructor(key: string) {
     this.key = key;

@@ -563,7 +563,6 @@ function getPossibleQueryMatch(text: string): MenuTextMatch | null {
 class MentionTypeaheadOption extends MenuOption {
   name: string;
   picture: JSX.Element;
-  title: JSX.Element;
 
   constructor(name: string, picture: JSX.Element) {
     super(name);

@@ -141,6 +141,22 @@ function $tableTransform(node: TableNode) {
       rowNode.append(newCell);
     }
   }
+  const colWidths = node.getColWidths();
+  const columnCount = node.getColumnCount();
+  if (colWidths && colWidths.length !== columnCount) {
+    let newColWidths: number[] | undefined = undefined;
+    if (columnCount < colWidths.length) {
+      newColWidths = colWidths.slice(0, columnCount);
+    } else if (colWidths.length > 0) {
+      // Repeat the last column width.
+      const fillWidth = colWidths[colWidths.length - 1];
+      newColWidths = [
+        ...colWidths,
+        ...Array(columnCount - colWidths.length).fill(fillWidth),
+      ];
+    }
+    node.setColWidths(newColWidths);
+  }
 }
 
 function $tableClickCommand(event: MouseEvent): boolean {

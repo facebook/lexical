@@ -256,4 +256,72 @@ describe('TableExtension', () => {
       });
     });
   });
+
+  describe('colWidths', () => {
+    it('removes colWidths if it is an empty array', () => {
+      editor.update(
+        () => {
+          const root = $getRoot();
+          root.clear().selectStart();
+          editor.dispatchCommand(INSERT_TABLE_COMMAND, {
+            columns: '2',
+            rows: '2',
+          });
+          const table = root.getFirstChildOrThrow<TableNode>();
+          table.setColWidths([]);
+        },
+        {discrete: true},
+      );
+
+      editor.getEditorState().read(() => {
+        const root = $getRoot();
+        const table = root.getFirstChildOrThrow<TableNode>();
+        expect(table.getColWidths()).toBe(undefined);
+      });
+    });
+
+    it('uses the last column width if the column count is greater than the number of column widths', () => {
+      editor.update(
+        () => {
+          const root = $getRoot();
+          root.clear().selectStart();
+          editor.dispatchCommand(INSERT_TABLE_COMMAND, {
+            columns: '3',
+            rows: '2',
+          });
+          const table = root.getFirstChildOrThrow<TableNode>();
+          table.setColWidths([10, 20]);
+        },
+        {discrete: true},
+      );
+
+      editor.getEditorState().read(() => {
+        const root = $getRoot();
+        const table = root.getFirstChildOrThrow<TableNode>();
+        expect(table.getColWidths()).toEqual([10, 20, 20]);
+      });
+    });
+
+    it('shortens the colWidths if the column count is less than the number of column widths', () => {
+      editor.update(
+        () => {
+          const root = $getRoot();
+          root.clear().selectStart();
+          editor.dispatchCommand(INSERT_TABLE_COMMAND, {
+            columns: '2',
+            rows: '2',
+          });
+          const table = root.getFirstChildOrThrow<TableNode>();
+          table.setColWidths([10, 20, 30]);
+        },
+        {discrete: true},
+      );
+
+      editor.getEditorState().read(() => {
+        const root = $getRoot();
+        const table = root.getFirstChildOrThrow<TableNode>();
+        expect(table.getColWidths()).toEqual([10, 20]);
+      });
+    });
+  });
 });

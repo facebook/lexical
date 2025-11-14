@@ -1328,6 +1328,18 @@ export class LexicalNode {
     writableNodeToInsert.__next = nextKey;
     writableNodeToInsert.__prev = writableSelf.__key;
     writableNodeToInsert.__parent = writableSelf.__parent;
+    // Check invariant: if node requires a parent, verify it has the correct parent type
+    if (writableNodeToInsert.isParentRequired()) {
+      const requiredParentType =
+        writableNodeToInsert.createParentElementNode().constructor;
+      invariant(
+        writableParent instanceof requiredParentType,
+        'insertAfter: node %s requires a parent of type %s, but got %s',
+        writableNodeToInsert.constructor.name,
+        requiredParentType.name,
+        writableParent.constructor.name,
+      );
+    }
     if (restoreSelection && $isRangeSelection(selection)) {
       const index = this.getIndexWithinParent();
       $updateElementSelectionOnCreateDeleteNode(
@@ -1379,6 +1391,18 @@ export class LexicalNode {
     writableNodeToInsert.__prev = prevKey;
     writableNodeToInsert.__next = writableSelf.__key;
     writableNodeToInsert.__parent = writableSelf.__parent;
+    // Check invariant: if node requires a parent, verify it has the correct parent type
+    if (writableNodeToInsert.isParentRequired()) {
+      const requiredParentType =
+        writableNodeToInsert.createParentElementNode().constructor;
+      invariant(
+        writableParent instanceof requiredParentType,
+        'insertAfter: node %s requires a parent of type %s, but got %s',
+        writableNodeToInsert.constructor.name,
+        requiredParentType.name,
+        writableParent.constructor.name,
+      );
+    }
     const selection = $getSelection();
     if (restoreSelection && $isRangeSelection(selection)) {
       const parent = this.getParentOrThrow();

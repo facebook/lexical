@@ -34,7 +34,6 @@ import {
   TextNode,
 } from 'lexical';
 import {useCallback, useMemo, useState} from 'react';
-import * as ReactDOM from 'react-dom';
 
 import useModal from '../../hooks/useModal';
 import catTypingGif from '../../images/cat-typing.gif';
@@ -77,40 +76,6 @@ class ComponentPickerOption extends MenuOption {
     this.keyboardShortcut = options.keyboardShortcut;
     this.onSelect = options.onSelect.bind(this);
   }
-}
-
-function ComponentPickerMenuItem({
-  index,
-  isSelected,
-  onClick,
-  onMouseEnter,
-  option,
-}: {
-  index: number;
-  isSelected: boolean;
-  onClick: () => void;
-  onMouseEnter: () => void;
-  option: ComponentPickerOption;
-}) {
-  let className = 'item';
-  if (isSelected) {
-    className += ' selected';
-  }
-  return (
-    <li
-      key={option.key}
-      tabIndex={-1}
-      className={className}
-      ref={option.setRefElement}
-      role="option"
-      aria-selected={isSelected}
-      id={'typeahead-item-' + index}
-      onMouseEnter={onMouseEnter}
-      onClick={onClick}>
-      {option.icon}
-      <span className="text">{option.title}</span>
-    </li>
-  );
 }
 
 function getDynamicOptions(editor: LexicalEditor, queryString: string) {
@@ -406,35 +371,6 @@ export default function ComponentPickerMenuPlugin(): JSX.Element {
         onSelectOption={onSelectOption}
         triggerFn={checkForTriggerMatch}
         options={options}
-        menuRenderFn={(
-          anchorElementRef,
-          {selectedIndex, selectOptionAndCleanUp, setHighlightedIndex},
-        ) =>
-          anchorElementRef.current && options.length
-            ? ReactDOM.createPortal(
-                <div className="typeahead-popover component-picker-menu">
-                  <ul>
-                    {options.map((option, i: number) => (
-                      <ComponentPickerMenuItem
-                        index={i}
-                        isSelected={selectedIndex === i}
-                        onClick={() => {
-                          setHighlightedIndex(i);
-                          selectOptionAndCleanUp(option);
-                        }}
-                        onMouseEnter={() => {
-                          setHighlightedIndex(i);
-                        }}
-                        key={option.key}
-                        option={option}
-                      />
-                    ))}
-                  </ul>
-                </div>,
-                anchorElementRef.current,
-              )
-            : null
-        }
       />
     </>
   );

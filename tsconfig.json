@@ -81,9 +81,6 @@
       "@lexical/react/LexicalContentEditable": [
         "./packages/lexical-react/src/LexicalContentEditable.tsx"
       ],
-      "@lexical/react/LexicalContextMenuPlugin": [
-        "./packages/lexical-react/src/LexicalContextMenuPlugin.tsx"
-      ],
       "@lexical/react/LexicalDecoratorBlockNode": [
         "./packages/lexical-react/src/LexicalDecoratorBlockNode.ts"
       ],

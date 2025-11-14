@@ -15,6 +15,7 @@ import {
   CAN_USE_BEFORE_INPUT,
   IS_ANDROID_CHROME,
   IS_APPLE_WEBKIT,
+  IS_CHROME,
   IS_FIREFOX,
   IS_IOS,
   IS_SAFARI,
@@ -31,6 +32,7 @@ import {
   $isRangeSelection,
   $isRootNode,
   $isTextNode,
+  $normalizeSelectionByPosition,
   $setCompositionKey,
   BLUR_COMMAND,
   CLICK_COMMAND,
@@ -87,7 +89,6 @@ import {
 } from './LexicalSelection';
 import {getActiveEditor, updateEditorSync} from './LexicalUpdates';
 import {
-  $findMatchingParent,
   $flushMutations,
   $getAdjacentNode,
   $getNodeByKey,
@@ -509,21 +510,17 @@ function onClick(event: PointerEvent, editor: LexicalEditor): void {
         ) {
           domSelection.removeAllRanges();
           selection.dirty = true;
-        } else if (event.detail === 3 && !selection.isCollapsed()) {
+        } else if (
+          !selection.isCollapsed() &&
+          (event.detail === 3 || (event.detail > 3 && (IS_CHROME || IS_SAFARI)))
+        ) {
           // Triple click causing selection to overflow into the nearest element. In that
           // case visually it looks like a single element content is selected, focus node
           // is actually at the beginning of the next element (if present) and any manipulations
           // with selection (formatting) are affecting second element as well
-          const focus = selection.focus;
-          const focusNode = focus.getNode();
-          if (anchorNode !== focusNode) {
-            const parentNode = $findMatchingParent(
-              anchorNode,
-              (node) => $isElementNode(node) && !node.isInline(),
-            );
-            if ($isElementNode(parentNode)) {
-              parentNode.select(0);
-            }
+
+          if (selection) {
+            $normalizeSelectionByPosition(selection);
           }
         }
       } else if (event.pointerType === 'touch' || event.pointerType === 'pen') {

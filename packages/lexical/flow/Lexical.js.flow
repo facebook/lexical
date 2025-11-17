@@ -309,6 +309,12 @@ export type EditorThemeClasses = {
     base?: EditorThemeClassName,
     focus?: EditorThemeClassName,
   },
+  menu?: {
+    container?: EditorThemeClassName,
+    item?: EditorThemeClassName,
+    itemSelected?: EditorThemeClassName,
+    itemText?: EditorThemeClassName,
+  },
   // Handle other generic values
   [string]: EditorThemeClassName | {[string]: EditorThemeClassName},
 };

@@ -87,6 +87,12 @@ const theme: EditorThemeClasses = {
   },
   mark: 'PlaygroundEditorTheme__mark',
   markOverlap: 'PlaygroundEditorTheme__markOverlap',
+  menu: {
+    container: 'typeahead-popover',
+    item: 'PlaygroundEditorTheme__menuItem',
+    itemSelected: 'PlaygroundEditorTheme__menuItemSelected',
+    itemText: 'PlaygroundEditorTheme__menuItemText',
+  },
   paragraph: 'PlaygroundEditorTheme__paragraph',
   quote: 'PlaygroundEditorTheme__quote',
   specialText: 'PlaygroundEditorTheme__specialText',

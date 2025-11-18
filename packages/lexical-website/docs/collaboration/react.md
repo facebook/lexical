@@ -20,7 +20,7 @@ This guide is based on [examples/react-rich](https://github.com/facebook/lexical
 
 **Install minimal set of the required dependencies:**
 ```bash
-$ npm i -S @lexical/react @lexical/yjs lexical react react-dom y-websocket yjs
+$ npm i -S @lexical/react @lexical/yjs lexical react react-dom y-websocket @y/websocket-server yjs
 ```
 
 :::note

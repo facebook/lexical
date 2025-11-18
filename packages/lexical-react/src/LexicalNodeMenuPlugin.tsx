@@ -31,6 +31,7 @@ export type NodeMenuPluginProps<TOption extends MenuOption> = {
     matchingString: string,
   ) => void;
   options: Array<TOption>;
+  containerClassName?: string;
   nodeKey: NodeKey | null;
   onClose?: () => void;
   onOpen?: (resolution: MenuResolution) => void;
@@ -41,6 +42,7 @@ export type NodeMenuPluginProps<TOption extends MenuOption> = {
 
 export function LexicalNodeMenuPlugin<TOption extends MenuOption>({
   options,
+  containerClassName,
   nodeKey,
   onClose,
   onOpen,
@@ -118,6 +120,7 @@ export function LexicalNodeMenuPlugin<TOption extends MenuOption>({
       editor={editor}
       anchorElementRef={anchorElementRef}
       options={options}
+      className={containerClassName}
       onSelectOption={onSelectOption}
       commandPriority={commandPriority}
     />

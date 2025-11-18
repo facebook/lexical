@@ -356,10 +356,6 @@ pre::-webkit-scrollbar-thumb {
   background-position: center;
 }
 
-.mentions-menu {
-  width: 250px;
-}
-
 i.palette {
   background-image: url(images/icons/palette.svg);
 }

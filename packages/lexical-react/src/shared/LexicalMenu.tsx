@@ -302,6 +302,7 @@ export function LexicalMenu<TOption extends MenuOption>({
   close,
   editor,
   anchorElementRef,
+  className: classNameProp,
   resolution,
   options,
   onSelectOption,
@@ -312,6 +313,7 @@ export function LexicalMenu<TOption extends MenuOption>({
   close: () => void;
   editor: LexicalEditor;
   anchorElementRef: RefObject<HTMLElement | null>;
+  className?: string;
   resolution: MenuResolution;
   options: Array<TOption>;
   shouldSplitNodeWithQuery?: boolean;
@@ -379,10 +381,13 @@ export function LexicalMenu<TOption extends MenuOption>({
       themeClasses != null && themeClasses.menu != null
         ? themeClasses.menu
         : null;
-    const containerClassName =
+    const containerThemeClassName =
       menuTheme != null && menuTheme.container != null
         ? menuTheme.container
-        : 'typeahead-popover mentions-menu';
+        : null;
+    const containerClassName = [classNameProp, containerThemeClassName]
+      .filter(Boolean)
+      .join(' ');
 
     return anchorElementRef.current && options.length
       ? ReactDOM.createPortal(
@@ -411,6 +416,7 @@ export function LexicalMenu<TOption extends MenuOption>({
       : null;
   }, [
     anchorElementRef,
+    classNameProp,
     options,
     selectedIndex,
     selectOptionAndCleanUp,

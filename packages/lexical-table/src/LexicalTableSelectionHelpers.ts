@@ -1045,11 +1045,11 @@ export function applyTableHandlers(
               );
               const firstCell = tableMap[0][0].cell;
               const lastCell = tableMap[tableMap.length - 1].at(-1)!.cell;
+              // When backward, focus should be at START of first cell (0)
+              // When forward, focus should be at END of last cell (getChildrenSize)
               newSelection.focus.set(
                 isBackward ? firstCell.getKey() : lastCell.getKey(),
-                isBackward
-                  ? firstCell.getChildrenSize()
-                  : lastCell.getChildrenSize(),
+                isBackward ? 0 : lastCell.getChildrenSize(),
                 'element',
               );
             } else if (isAnchorInside) {

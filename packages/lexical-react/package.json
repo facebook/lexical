@@ -460,6 +460,36 @@
         "default": "./LexicalContentEditable.js"
       }
     },
+    "./LexicalContextMenuPlugin": {
+      "import": {
+        "types": "./LexicalContextMenuPlugin.d.ts",
+        "development": "./LexicalContextMenuPlugin.dev.mjs",
+        "production": "./LexicalContextMenuPlugin.prod.mjs",
+        "node": "./LexicalContextMenuPlugin.node.mjs",
+        "default": "./LexicalContextMenuPlugin.mjs"
+      },
+      "require": {
+        "types": "./LexicalContextMenuPlugin.d.ts",
+        "development": "./LexicalContextMenuPlugin.dev.js",
+        "production": "./LexicalContextMenuPlugin.prod.js",
+        "default": "./LexicalContextMenuPlugin.js"
+      }
+    },
+    "./LexicalContextMenuPlugin.js": {
+      "import": {
+        "types": "./LexicalContextMenuPlugin.d.ts",
+        "development": "./LexicalContextMenuPlugin.dev.mjs",
+        "production": "./LexicalContextMenuPlugin.prod.mjs",
+        "node": "./LexicalContextMenuPlugin.node.mjs",
+        "default": "./LexicalContextMenuPlugin.mjs"
+      },
+      "require": {
+        "types": "./LexicalContextMenuPlugin.d.ts",
+        "development": "./LexicalContextMenuPlugin.dev.js",
+        "production": "./LexicalContextMenuPlugin.prod.js",
+        "default": "./LexicalContextMenuPlugin.js"
+      }
+    },
     "./LexicalDecoratorBlockNode": {
       "import": {
         "types": "./LexicalDecoratorBlockNode.d.ts",

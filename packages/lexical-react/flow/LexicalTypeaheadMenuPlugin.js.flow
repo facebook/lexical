@@ -36,6 +36,17 @@ declare export var SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND: LexicalCommand<{
   option: MenuOption,
 }>;
 
+export type MenuRenderFn<TOption> = (
+  anchorElementRef: {current: HTMLElement | null},
+  itemProps: {
+    selectedIndex: number | null,
+    selectOptionAndCleanUp: (option: TOption) => void,
+    setHighlightedIndex: (index: number) => void,
+    options: Array<TOption>,
+  },
+  matchingString: string,
+) => React.Portal | React.MixedElement | null;
+
 declare export function getScrollParent(
   element: HTMLElement,
   includeHidden: boolean,
@@ -55,6 +66,7 @@ export type TypeaheadMenuPluginProps<TOption> = {
     matchingString: string,
   ) => void,
   options: Array<TOption>,
+  menuRenderFn: MenuRenderFn<TOption>,
   triggerFn: TriggerFn,
   onOpen?: (resolution: MenuResolution) => void,
   onClose?: () => void,

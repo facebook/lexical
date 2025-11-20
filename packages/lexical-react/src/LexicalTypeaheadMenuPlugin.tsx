@@ -201,6 +201,7 @@ export type TypeaheadMenuPluginProps<TOption extends MenuOption> = {
     matchingString: string,
   ) => void;
   options: Array<TOption>;
+  containerClassName?: string;
   triggerFn: TriggerFn;
   onOpen?: (resolution: MenuResolution) => void;
   onClose?: () => void;
@@ -213,6 +214,7 @@ export type TypeaheadMenuPluginProps<TOption extends MenuOption> = {
 
 export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
   options,
+  containerClassName,
   onQueryChange,
   onSelectOption,
   onOpen,
@@ -339,6 +341,7 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
       editor={editor}
       anchorElementRef={anchorElementRef}
       options={options}
+      className={containerClassName}
       shouldSplitNodeWithQuery={true}
       onSelectOption={onSelectOption}
       commandPriority={commandPriority}

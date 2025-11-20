@@ -8,7 +8,10 @@
 
 import type {JSX} from 'react';
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {
+  type LexicalComposerContextWithEditor,
+  useLexicalComposerContext,
+} from '@lexical/react/LexicalComposerContext';
 import {mergeRegister} from '@lexical/utils';
 import {
   $getSelection,
@@ -249,16 +252,34 @@ function MenuItem({
   onClick,
   onMouseEnter,
   option,
+  theme,
 }: {
   index: number;
   isSelected: boolean;
   onClick: () => void;
   onMouseEnter: () => void;
   option: MenuOption;
+  theme: LexicalComposerContextWithEditor[1]['getTheme'];
 }) {
-  let className = 'item';
+  const themeClasses = theme();
+  const menuTheme =
+    themeClasses != null && themeClasses.menu != null
+      ? themeClasses.menu
+      : null;
+  const itemClassName =
+    menuTheme != null && menuTheme.item != null ? menuTheme.item : 'item';
+  const itemSelectedClassName =
+    menuTheme != null && menuTheme.itemSelected != null
+      ? menuTheme.itemSelected
+      : 'selected';
+  const itemTextClassName =
+    menuTheme != null && menuTheme.itemText != null
+      ? menuTheme.itemText
+      : 'text';
+
+  let className = itemClassName;
   if (isSelected) {
-    className += ' selected';
+    className += ` ${itemSelectedClassName}`;
   }
   return (
     <li
@@ -272,7 +293,7 @@ function MenuItem({
       onMouseEnter={onMouseEnter}
       onClick={onClick}>
       {option.icon}
-      <span className="text">{option.title}</span>
+      <span className={itemTextClassName}>{option.title}</span>
     </li>
   );
 }
@@ -281,6 +302,7 @@ export function LexicalMenu<TOption extends MenuOption>({
   close,
   editor,
   anchorElementRef,
+  className: classNameProp,
   resolution,
   options,
   onSelectOption,
@@ -291,6 +313,7 @@ export function LexicalMenu<TOption extends MenuOption>({
   close: () => void;
   editor: LexicalEditor;
   anchorElementRef: RefObject<HTMLElement | null>;
+  className?: string;
   resolution: MenuResolution;
   options: Array<TOption>;
   shouldSplitNodeWithQuery?: boolean;
@@ -303,6 +326,7 @@ export function LexicalMenu<TOption extends MenuOption>({
   commandPriority?: CommandListenerPriority;
   preselectFirstItem?: boolean;
 }): JSX.Element | null {
+  const [, {getTheme}] = useLexicalComposerContext();
   const [rawSelectedIndex, setHighlightedIndex] = useState<null | number>(null);
   // Clamp highlighted index if options list shrinks
   const selectedIndex =
@@ -352,9 +376,22 @@ export function LexicalMenu<TOption extends MenuOption>({
   );
 
   const menuRenderFn = useCallback(() => {
+    const themeClasses = getTheme();
+    const menuTheme =
+      themeClasses != null && themeClasses.menu != null
+        ? themeClasses.menu
+        : null;
+    const containerThemeClassName =
+      menuTheme != null && menuTheme.container != null
+        ? menuTheme.container
+        : null;
+    const containerClassName = [classNameProp, containerThemeClassName]
+      .filter(Boolean)
+      .join(' ');
+
     return anchorElementRef.current && options.length
       ? ReactDOM.createPortal(
-          <div className="typeahead-popover mentions-menu">
+          <div className={containerClassName}>
             <ul>
               {options.map((option, i: number) => (
                 <MenuItem
@@ -369,6 +406,7 @@ export function LexicalMenu<TOption extends MenuOption>({
                   }}
                   key={option.key}
                   option={option}
+                  theme={getTheme}
                 />
               ))}
             </ul>
@@ -378,10 +416,12 @@ export function LexicalMenu<TOption extends MenuOption>({
       : null;
   }, [
     anchorElementRef,
+    classNameProp,
     options,
     selectedIndex,
     selectOptionAndCleanUp,
     setHighlightedIndex,
+    getTheme,
   ]);
 
   useEffect(() => {

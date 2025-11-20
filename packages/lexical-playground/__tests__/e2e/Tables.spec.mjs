@@ -777,7 +777,7 @@ test.describe.parallel('Tables', () => {
 
       await waitForSelector(
         page,
-        `div[class="typeahead-popover mentions-menu"] ul li:first-child.selected`,
+        `div[class="typeahead-popover"] ul li:first-child.PlaygroundEditorTheme__menuItemSelected`,
       );
 
       await moveDown(page, 1);
@@ -790,7 +790,7 @@ test.describe.parallel('Tables', () => {
 
       await waitForSelector(
         page,
-        'div[class="typeahead-popover mentions-menu"] ul li:nth-child(2).selected',
+        'div[class="typeahead-popover"] ul li:nth-child(2).PlaygroundEditorTheme__menuItemSelected',
       );
     });
   });

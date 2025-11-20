@@ -188,6 +188,12 @@ export type EditorThemeClasses = {
     focus?: EditorThemeClassName;
   };
   indent?: EditorThemeClassName;
+  menu?: {
+    container?: EditorThemeClassName;
+    item?: EditorThemeClassName;
+    itemSelected?: EditorThemeClassName;
+    itemText?: EditorThemeClassName;
+  };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 };

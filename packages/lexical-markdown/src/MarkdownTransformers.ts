@@ -633,7 +633,7 @@ export const INDENT: TextMatchTransformer = {
     if (
       !$isParagraphNode(parentNode) ||
       !$isTextNode(node) ||
-      parentNode.getFirstChild() !== node
+      !node.is(parentNode.getFirstChild())
     ) {
       return null;
     }

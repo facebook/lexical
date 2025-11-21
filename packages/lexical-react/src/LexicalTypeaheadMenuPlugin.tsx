@@ -202,6 +202,10 @@ export type TypeaheadMenuPluginProps<TOption extends MenuOption> = {
     matchingString: string,
   ) => void;
   options: Array<TOption>;
+  /**
+   * @deprecated Use NodeContextMenuPlugin instead. Here is an example for using NodeContextMenuPlugin:
+   * https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/plugins/ContextMenuPlugin/index.tsx
+   */
   menuRenderFn: MenuRenderFn<TOption>;
   triggerFn: TriggerFn;
   onOpen?: (resolution: MenuResolution) => void;

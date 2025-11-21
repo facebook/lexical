@@ -45,6 +45,9 @@ export type LexicalContextMenuPluginProps<TOption extends MenuOption> = {
   onClose?: () => void;
   onWillOpen?: (event: MouseEvent) => void;
   onOpen?: (resolution: MenuResolution) => void;
+  /**
+   * @deprecated Use NodeContextMenuPlugin instead.
+   */
   menuRenderFn: ContextMenuRenderFn<TOption>;
   anchorClassName?: string;
   commandPriority?: CommandListenerPriority;
@@ -54,7 +57,8 @@ export type LexicalContextMenuPluginProps<TOption extends MenuOption> = {
 const PRE_PORTAL_DIV_SIZE = 1;
 
 /**
- * @deprecated Use LexicalNodeContextMenuPlugin instead.
+ * @deprecated Use LexicalNodeContextMenuPlugin instead. Here is an example for using NodeContextMenuPlugin:
+ * https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/plugins/ContextMenuPlugin/index.tsx
  */
 export function LexicalContextMenuPlugin<TOption extends MenuOption>({
   options,

@@ -15,7 +15,7 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
-  getDOMSelection,
+  getDOMSelectionForEditor,
 } from 'lexical';
 import * as React from 'react';
 import {useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
@@ -172,7 +172,7 @@ function useTestRecorder(
 
   const generateTestContent = useCallback(() => {
     const rootElement = editor.getRootElement();
-    const browserSelection = getDOMSelection(editor._window);
+    const browserSelection = getDOMSelectionForEditor(editor);
 
     if (
       rootElement == null ||
@@ -327,7 +327,7 @@ ${steps.map(formatStep).join(`\n`)}
             dirtyElements.size === 0 &&
             !skipNextSelectionChange
           ) {
-            const browserSelection = getDOMSelection(editor._window);
+            const browserSelection = getDOMSelectionForEditor(editor);
             if (
               browserSelection &&
               (browserSelection.anchorNode == null ||
@@ -384,7 +384,7 @@ ${steps.map(formatStep).join(`\n`)}
     if (!isRecording) {
       return;
     }
-    const browserSelection = getDOMSelection(getCurrentEditor()._window);
+    const browserSelection = getDOMSelectionForEditor(getCurrentEditor());
     if (
       browserSelection === null ||
       browserSelection.anchorNode == null ||

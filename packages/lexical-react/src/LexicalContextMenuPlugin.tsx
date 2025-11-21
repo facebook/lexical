@@ -58,7 +58,7 @@ export type LexicalContextMenuPluginProps<TOption extends MenuOption> = {
 const PRE_PORTAL_DIV_SIZE = 1;
 
 /**
- * @deprecated Use LexicalNodeContextMenuPlugin instead. It will be removed soon
+ * @deprecated Use LexicalNodeContextMenuPlugin instead. It will be removed soon.
  * Here is an example for using NodeContextMenuPlugin:
  * https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/plugins/ContextMenuPlugin/index.tsx
  */

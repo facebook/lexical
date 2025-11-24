@@ -13,6 +13,7 @@ import {MenuOption} from '@lexical/react/LexicalTypeaheadMenuPlugin';
 import type {LexicalCommand, LexicalEditor, NodeKey, TextNode} from 'lexical';
 import * as React from 'react';
 import {createCommand} from 'lexical';
+import type {MenuRenderFn} from './LexicalTypeaheadMenuPlugin';
 
 export type EmbedMatchResult = {
   url: string,
@@ -42,6 +43,7 @@ type LexicalAutoEmbedPluginProps<TEmbedConfig> = {
     embedFn: () => void,
     dismissFn: () => void,
   ) => Array<AutoEmbedOption>,
+  menuRenderFn: MenuRenderFn<AutoEmbedOption>,
 };
 
 declare export class AutoEmbedOption extends MenuOption {

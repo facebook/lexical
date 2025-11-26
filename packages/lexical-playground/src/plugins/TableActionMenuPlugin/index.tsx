@@ -41,7 +41,7 @@ import {
   $isTextNode,
   $setSelection,
   COMMAND_PRIORITY_CRITICAL,
-  getDOMSelection,
+  getDOMSelectionForEditor,
   isDOMNode,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
@@ -729,7 +729,7 @@ function TableCellActionMenuContainer({
   const $moveMenu = useCallback(() => {
     const menu = menuButtonRef.current;
     const selection = $getSelection();
-    const nativeSelection = getDOMSelection(editor._window);
+    const nativeSelection = getDOMSelectionForEditor(editor);
     const activeElement = document.activeElement;
     function disable() {
       if (menu) {

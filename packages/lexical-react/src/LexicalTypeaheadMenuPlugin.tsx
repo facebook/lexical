@@ -22,7 +22,7 @@ import {
   COMMAND_PRIORITY_LOW,
   CommandListenerPriority,
   createCommand,
-  getDOMSelection,
+  getDOMSelectionForEditor,
   LexicalCommand,
   LexicalEditor,
   RangeSelection,
@@ -52,9 +52,9 @@ function getTextUpToAnchor(selection: RangeSelection): string | null {
 function tryToPositionRange(
   leadOffset: number,
   range: Range,
-  editorWindow: Window,
+  editor: LexicalEditor,
 ): boolean {
-  const domSelection = getDOMSelection(editorWindow);
+  const domSelection = getDOMSelectionForEditor(editor);
   if (domSelection === null || !domSelection.isCollapsed) {
     return false;
   }
@@ -292,7 +292,7 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
           const isRangePositioned = tryToPositionRange(
             match.leadOffset,
             range,
-            editorWindow,
+            editor,
           );
           if (isRangePositioned !== null) {
             startTransition(() =>

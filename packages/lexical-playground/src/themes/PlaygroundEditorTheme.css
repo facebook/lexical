@@ -193,6 +193,17 @@
   overflow-x: auto;
   margin: 0px 25px 30px 0px;
 }
+.PlaygroundEditorTheme__tableScrollRight {
+  box-shadow: inset -10px 0 10px rgba(0, 0, 0, 0.15);
+}
+.PlaygroundEditorTheme__tableScrollLeft {
+  box-shadow: inset 10px 0 10px rgba(0, 0, 0, 0.15);
+}
+.PlaygroundEditorTheme__tableScrollMiddle {
+  box-shadow:
+    inset 10px 0 10px rgba(0, 0, 0, 0.15),
+    inset -10px 0 10px rgba(0, 0, 0, 0.15);
+}
 .PlaygroundEditorTheme__tableScrollableWrapper > .PlaygroundEditorTheme__table {
   /* Remove the table's vertical margin and put it on the wrapper */
   margin-top: 0;

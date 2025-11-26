@@ -107,6 +107,31 @@ DOM reconciliation, etc. have already run), any pending `editor.update` mutation
 
 :::
 
+:::warning Editor Context Limitation
+
+`editor.read()` provides editor context (allowing functions like `$getEditor()` to work),
+while `editor.getEditorState().read()` does **not** provide editor context by default. If you need editor context
+with `editorState.read()`, you must explicitly provide it:
+
+```js
+// ❌ This will throw "Unable to find an active editor"
+editor.getEditorState().read(() => {
+  const editor = $getEditor(); // Error!
+});
+
+// ✅ This works - editor context provided
+editor.getEditorState().read(() => {
+  const editor = $getEditor(); // Works!
+}, { editor });
+
+// ✅ This also works - editor.read() provides context automatically
+editor.read(() => {
+  const editor = $getEditor(); // Works!
+});
+```
+
+:::
+
 ### DOM Reconciler
 
 Lexical has its own DOM reconciler that takes a set of Editor States (always the "current" and the "pending") and applies a "diff"

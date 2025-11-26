@@ -156,3 +156,38 @@ also should call `event.preventDefault()` unless your command relies on the
 browser's native processing of that event.
 
 :::
+
+## Why does `$getEditor()` throw "Unable to find an active editor" in `editorState.read()`?
+
+This is a common gotcha! The issue is that `editor.getEditorState().read()` does not provide editor context by default, 
+while `editor.read()` does.
+
+**The Problem:**
+```js
+// ❌ This fails
+editor.getEditorState().read(() => {
+  const editor = $getEditor(); // Throws: "Unable to find an active editor"
+});
+```
+
+**Solutions:**
+
+1. **Use `editor.read()` instead** (recommended for most cases):
+```js
+// ✅ This works
+editor.read(() => {
+  const editor = $getEditor(); // Works!
+});
+```
+
+2. **Explicitly provide editor context**:
+```js
+// ✅ This also works
+editor.getEditorState().read(() => {
+  const editor = $getEditor(); // Works!
+}, {editor: editor});
+```
+
+**When to use which:**
+- Use `editor.read()` when you want the latest state including pending updates
+- Use `editor.getEditorState().read()` when you want to read from a specific historical state or when called from an update listener

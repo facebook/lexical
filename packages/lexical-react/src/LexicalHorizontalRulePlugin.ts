@@ -25,7 +25,7 @@ export function HorizontalRulePlugin(): null {
   useEffect(() => {
     return editor.registerCommand(
       INSERT_HORIZONTAL_RULE_COMMAND,
-      (type) => {
+      () => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {

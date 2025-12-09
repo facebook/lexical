@@ -8,13 +8,13 @@
     "link"
   ],
   "license": "MIT",
-  "version": "0.38.2",
+  "version": "0.38.3-nightly.20251209.0",
   "main": "LexicalLink.js",
   "types": "index.d.ts",
   "dependencies": {
-    "@lexical/extension": "0.38.2",
-    "@lexical/utils": "0.38.2",
-    "lexical": "0.38.2"
+    "@lexical/extension": "0.38.3-nightly.20251209.0",
+    "@lexical/utils": "0.38.3-nightly.20251209.0",
+    "lexical": "0.38.3-nightly.20251209.0"
   },
   "repository": {
     "type": "git",

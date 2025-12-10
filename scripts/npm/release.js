@@ -18,6 +18,9 @@ const argv = require('minimist')(process.argv.slice(2));
 const nonInteractive = argv['non-interactive'];
 const dryRun = argv['dry-run'];
 const ignorePreviouslyPublished = argv['ignore-previously-published'];
+if (ignorePreviouslyPublished) {
+  console.info('[debug] Running with --ignore-previously-published');
+}
 const channel = argv.channel;
 const validChannels = new Set(['next', 'latest', 'nightly', 'dev']);
 if (!validChannels.has(channel)) {
@@ -43,6 +46,8 @@ async function publish() {
       await exec(
         `cd ./packages/${pkg.getDirectoryName()}/npm && npm publish --access public --tag ${channel}`,
       ).catch((err) => {
+        console.info('[debug] stderr:');
+        console.info(err.stderr);
         if (
           ignorePreviouslyPublished &&
           err &&

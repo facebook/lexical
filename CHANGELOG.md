@@ -1,3 +1,30 @@
+## v0.39.0 (2025-12-11)
+
+- lexical-selection Fix applying styles for empty table cells (#8003) Ivaylo Pavlov
+- lexical-playground Shadows when table is scrollable (#8002) Ivaylo Pavlov
+- lexical-markflowchore Add flowfix me after flow 0.292.0 was deployed to www. This fixes the  sync between github and www (#8019) Michael
+- Doc nit (#8010) Gerard Rovira
+- lexical-table Bug Fix include first cell contents in partial backwards table selection (#7998) Patrick Moody
+- lexical-website Documentation Update Add missing getDocFromMap fn to docs (#8000) mattcline
+- Revert lexical-react lexical-playground Remove old ContextMenu, consolidate LexicalMenu render (#7997) Ivaylo Pavlov
+- lexical-website Documentation Update Add ywebsocket-server package dependency (#7996) mattcline
+- lexical-yjs Bug fix dont rewrite unchanged non-primitive propertystate values to yjs in collab v2 (#7990) James Fitzsimmons
+- lexical-react lexical-playground Remove old ContextMenu, consolidate LexicalMenu render (#7984) Ivaylo Pavlov
+- lexical-table Bug Fix ensure colWidths has length equal to number of columns (#7986) James Fitzsimmons
+- lexical-react lexical-playground Bug Fix Prevent typeahead menu from closing during IME composition (#7985) (#7987) kykim00
+- lexical-table Feature add config for opting in to nested tables (#7983) James Fitzsimmons
+- lexical Bug fix dfsCaretIterator should be able to stop at its last descendant (#7978) Nigel Gutzmann
+- lexical Chore Update flow-bin (to 0.290.0) and fix incompatible-variance issues (#7975) Daniel Teo
+- lexical Feature add commands for beforeinput, input, compositionstartend events (#7964) James Fitzsimmons
+- lexical Chore Update flow-bin (to 0.289.0) and LexicalLink Flow types (#7973) Daniel Teo
+- lexical-extensionlexical- Bug Fix Defer node class references to potentially work around webpack issues (#7961) Bob Ippolito
+- lexical Feature Only serialize ElementNode textFormat and textStyle when necessary (#7971) Bob Ippolito
+- lexical-code Bug fix Add editor key in highlighted nodes cache (#7970) Daniel Teo
+- examples Chore Update examples for v0.38.2 (#7963) Bob Ippolito
+- scripts Allow export-froms in Flow files to be transformed for www build (#7967) Daniel Teo
+- v0.38.2 (#7962) Bob Ippolito
+- v0.38.2 Lexical GitHub Actions Bot
+
 ## v0.38.2 (2025-10-31)
 
 - lexical-markdown Code backslash fix (#7958) MarekKuncik

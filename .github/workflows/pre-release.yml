@@ -1,5 +1,12 @@
 name: Publish to NPM
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+    inputs:
+      ignore-previously-published:
+        description: Ignore 403 errors for 'You cannot publish over the previously published versions'
+        required: true
+        default: false
+        type: boolean
 
 jobs:
   release:
@@ -8,6 +15,7 @@ jobs:
       ref: main
       dry-run: false
       channel: latest
+      ignore-previously-published: ${{ inputs.ignore-previously-published }}
     secrets:
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
   post-release:

@@ -312,7 +312,7 @@ function $onDragover(event: DragEvent): boolean {
   if (!canDropImage(event)) {
     event.preventDefault();
   }
-  return true;
+  return false;
 }
 
 function $onDrop(event: DragEvent, editor: LexicalEditor): boolean {

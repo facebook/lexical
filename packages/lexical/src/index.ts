@@ -237,6 +237,7 @@ export {
   $isBlockElementNode,
   $isNodeSelection,
   $isRangeSelection,
+  $normalizeSelectionByPosition,
 } from './LexicalSelection';
 export {$parseSerializedNode, isCurrentlyReadOnlyMode} from './LexicalUpdates';
 export {

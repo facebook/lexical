@@ -149,7 +149,12 @@ export function $isSelectionCapturedInDecorator(node: Node): boolean {
 }
 
 export function isSelectionCapturedInDecoratorInput(anchorDOM: Node): boolean {
-  const activeElement = document.activeElement;
+  const editor = getNearestEditorFromDOMNode(anchorDOM);
+
+  const rootElement = editor ? editor.getRootElement() : null;
+  const activeElement = rootElement
+    ? getActiveElement(rootElement)
+    : document.activeElement;
 
   if (!isHTMLElement(activeElement)) {
     return false;
@@ -721,7 +726,7 @@ export function $updateSelectedTextFromDOM(
   data?: string,
 ): void {
   // Update the text content with the latest composition text
-  const domSelection = getDOMSelection(getWindow(editor));
+  const domSelection = getDOMSelectionForEditor(editor);
   if (domSelection === null) {
     return;
   }
@@ -1335,11 +1340,25 @@ export function getElementByKeyOrThrow(
   return element;
 }
 
+/**
+ * Type guard function that checks if a node is a ShadowRoot. This function performs
+ * runtime validation to safely narrow types and enable type-safe Shadow DOM operations.
+ * It checks both the nodeType and the presence of the 'host' property to distinguish
+ * ShadowRoot from regular DocumentFragment nodes.
+ *
+ * @param node - The Node to check (can be null)
+ * @returns True if the node is a ShadowRoot, false otherwise. When true, TypeScript
+ *   will narrow the type to ShadowRoot for subsequent operations.
+ */
+export function isShadowRoot(node: Node | null): node is ShadowRoot {
+  return isDocumentFragment(node) && 'host' in node;
+}
+
 export function getParentElement(node: Node): HTMLElement | null {
   const parentElement =
     (node as HTMLSlotElement).assignedSlot || node.parentElement;
-  return isDocumentFragment(parentElement)
-    ? ((parentElement as unknown as ShadowRoot).host as HTMLElement)
+  return isShadowRoot(parentElement)
+    ? (parentElement.host as HTMLElement)
     : parentElement;
 }
 
@@ -1469,7 +1488,7 @@ export function getDefaultView(domElem: EventTarget | null): Window | null {
 }
 
 export function getWindow(editor: LexicalEditor): Window {
-  const windowObj = editor._window;
+  const windowObj = editor._window || window;
   if (windowObj === null) {
     invariant(false, 'window object not found');
   }
@@ -1654,7 +1673,7 @@ export function updateDOMBlockCursorElement(
     $isRangeSelection(nextSelection) &&
     nextSelection.isCollapsed() &&
     nextSelection.anchor.type === 'element' &&
-    rootElement.contains(document.activeElement)
+    rootElement.contains(getActiveElement(rootElement))
   ) {
     const anchor = nextSelection.anchor;
     const elementNode = anchor.getNode();
@@ -1702,25 +1721,322 @@ export function updateDOMBlockCursorElement(
 }
 
 /**
- * Returns the selection for the given window, or the global window if null.
- * Will return null if {@link CAN_USE_DOM} is false.
+ * Returns a Selection object from a ShadowRoot using the best available API.
  *
- * @param targetWindow The window to get the selection from
- * @returns a Selection or null
+ * This function attempts to get selection from Shadow DOM contexts using modern
+ * getComposedRanges API when available. If the API is not supported or returns
+ * empty ranges, it falls back to the global window selection.
+ *
+ * **Selection Proxy:**
+ * When getComposedRanges returns valid ranges, this function creates a Selection proxy
+ * that properly handles text selection across Shadow DOM boundaries. The proxy
+ * provides all standard Selection methods while ensuring correct behavior with
+ * composed ranges.
+ *
+ * **Browser Support:**
+ * - Modern browsers with getComposedRanges: Full Shadow DOM selection support
+ * - Older browsers: Falls back to window.getSelection()
+ *
+ * @param shadowRoot - The ShadowRoot to get selection from
+ * @returns A Selection object (either a proxy with composed ranges or the global selection),
+ *          or null if no selection is available
  */
-export function getDOMSelection(targetWindow: null | Window): null | Selection {
-  return !CAN_USE_DOM ? null : (targetWindow || window).getSelection();
+export function getDOMSelectionFromShadowRoot(
+  shadowRoot: ShadowRoot,
+): null | Selection {
+  const globalSelection = window.getSelection();
+  if (!globalSelection) {
+    return null;
+  }
+
+  if ('getComposedRanges' in Selection.prototype) {
+    const ranges = globalSelection.getComposedRanges({
+      shadowRoots: [shadowRoot],
+    });
+    if (ranges.length > 0) {
+      return createSelectionWithComposedRanges(globalSelection, ranges);
+    }
+  }
+
+  return globalSelection;
 }
 
 /**
- * Returns the selection for the defaultView of the ownerDocument of given EventTarget.
+ * Returns the selection for the given window, with Shadow DOM support.
  *
- * @param eventTarget The node to get the selection from
- * @returns a Selection or null
+ * This function provides a unified API for getting selections in both regular DOM
+ * and Shadow DOM contexts. When a rootElement is provided, it checks if the element
+ * is within a Shadow DOM and uses the appropriate selection API.
+ *
+ * **Behavior:**
+ * - If CAN_USE_DOM is false: Returns null
+ * - If rootElement is in Shadow DOM: Uses getDOMSelectionFromShadowRoot
+ * - Otherwise: Returns window.getSelection() from the target or global window
+ *
+ * @param targetWindow - The window to get the selection from (defaults to global window if null)
+ * @param rootElement - Optional root element to check for Shadow DOM context
+ * @returns A Selection object appropriate for the context, or null if selection is unavailable
+ */
+export function getDOMSelection(
+  targetWindow: null | Window,
+  rootElement?: HTMLElement | null,
+): null | Selection {
+  if (!CAN_USE_DOM) {
+    return null;
+  }
+
+  // Check if we're inside a shadow DOM
+  if (rootElement) {
+    const shadowRoot = getShadowRootOrDocument(rootElement);
+    if (shadowRoot && isShadowRoot(shadowRoot)) {
+      return getDOMSelectionFromShadowRoot(shadowRoot);
+    }
+  }
+
+  return (targetWindow || window).getSelection();
+}
+
+/**
+ * Creates a Selection-like proxy object that properly handles StaticRange objects
+ * from the getComposedRanges API for Shadow DOM compatibility.
+ *
+ * This function creates a proxy that:
+ * - Provides all standard Selection properties and methods
+ * - Correctly handles anchor/focus nodes from StaticRange data
+ * - Implements the `type` property ('None', 'Caret', or 'Range')
+ * - Converts StaticRange to Range objects in getRangeAt method
+ * - Delegates other methods to the base Selection object
+ *
+ * **Validation:**
+ * The function validates that composedRanges is a non-empty array with valid
+ * StaticRange objects before creating the proxy. If validation fails, it
+ * returns the base selection unchanged.
+ *
+ * @param baseSelection - The base Selection object to enhance
+ * @param composedRanges - Array of StaticRange objects from getComposedRanges
+ * @returns A proxy Selection object that correctly handles Shadow DOM ranges,
+ *          or the base selection if composedRanges is invalid
+ */
+
+export function createSelectionWithComposedRanges(
+  baseSelection: Selection,
+  composedRanges: StaticRange[],
+): Selection {
+  if (composedRanges.length === 0) {
+    return baseSelection;
+  }
+
+  const firstRange = composedRanges[0];
+  const selectionLike = Object.create(Selection.prototype);
+
+  // Copy all methods and properties from base selection
+  const descriptors = Object.getOwnPropertyDescriptors(Selection.prototype);
+  Object.keys(descriptors).forEach((prop) => {
+    if (prop === 'constructor') {
+      return;
+    }
+
+    const descriptor = descriptors[prop];
+    if (descriptor.value && typeof descriptor.value === 'function') {
+      // It's a method - bind it to base selection
+      const method = baseSelection[prop as keyof Selection];
+      if (typeof method === 'function') {
+        selectionLike[prop] = method.bind(baseSelection);
+      }
+    } else if (!descriptor.get) {
+      // It's a regular property, not a getter - copy the value from base selection
+      const value = baseSelection[prop as keyof Selection];
+      if (value !== undefined) {
+        selectionLike[prop] = value;
+      }
+    }
+  });
+
+  // Override specific properties with composed ranges data
+  Object.defineProperty(selectionLike, 'anchorNode', {
+    enumerable: true,
+    get: () => firstRange.startContainer,
+  });
+
+  Object.defineProperty(selectionLike, 'anchorOffset', {
+    enumerable: true,
+    get: () => firstRange.startOffset,
+  });
+
+  Object.defineProperty(selectionLike, 'focusNode', {
+    enumerable: true,
+    get: () => firstRange.endContainer,
+  });
+
+  Object.defineProperty(selectionLike, 'focusOffset', {
+    enumerable: true,
+    get: () => firstRange.endOffset,
+  });
+
+  Object.defineProperty(selectionLike, 'isCollapsed', {
+    enumerable: true,
+    get: () => firstRange.collapsed,
+  });
+
+  Object.defineProperty(selectionLike, 'rangeCount', {
+    enumerable: true,
+    get: () => composedRanges.length,
+  });
+
+  Object.defineProperty(selectionLike, 'type', {
+    enumerable: true,
+    get: () => {
+      const range = composedRanges[0];
+      if (!range) {
+        return 'None';
+      }
+      return range.collapsed ? 'Caret' : 'Range';
+    },
+  });
+
+  // Override getRangeAt to return a proper Range object from StaticRange
+  selectionLike.getRangeAt = function (index: number): Range {
+    if (index < 0 || index >= composedRanges.length) {
+      throw new DOMException('Index out of range', 'IndexSizeError');
+    }
+    const staticRange = composedRanges[index];
+    const range = document.createRange();
+    range.setStart(staticRange.startContainer, staticRange.startOffset);
+    range.setEnd(staticRange.endContainer, staticRange.endOffset);
+    return range;
+  };
+
+  // If the original selection has getComposedRanges, preserve it
+  if ('getComposedRanges' in baseSelection) {
+    selectionLike.getComposedRanges = function () {
+      return composedRanges;
+    };
+  }
+
+  return selectionLike as Selection;
+}
+
+export function getDOMSelectionForEditor(
+  editor: LexicalEditor,
+): null | Selection {
+  return getDOMSelection(getWindow(editor), editor.getRootElement());
+}
+
+/**
+ * Traverses up the DOM tree to find a ShadowRoot if the element is inside a shadow DOM.
+ * This function helps determine whether the given element is rendered within Shadow DOM
+ * encapsulation.
+ *
+ * @param element - The HTMLElement to start traversing from
+ * @returns The ShadowRoot if found, or Document if the element is not in shadow DOM
+ */
+export function getShadowRootOrDocument(
+  element: HTMLElement,
+): ShadowRoot | Document {
+  const shadowRoot = element.getRootNode({composed: false});
+
+  if (isShadowRoot(shadowRoot)) {
+    return shadowRoot;
+  }
+
+  return document;
+}
+
+/**
+ * Checks if the Lexical editor is running within a Shadow DOM context.
+ *
+ * This function determines whether the editor's root element is contained within
+ * a ShadowRoot, which is essential for enabling Shadow DOM-specific functionality
+ * like specialized deletion commands and selection handling.
+ *
+ * @param editor - The Lexical editor instance to check
+ * @returns `true` if the editor is in Shadow DOM, `false` otherwise
+ */
+export function $isInShadowDOMContext(editor: LexicalEditor): boolean {
+  const rootElement = editor.getRootElement();
+  return rootElement
+    ? isShadowRoot(getShadowRootOrDocument(rootElement))
+    : false;
+}
+
+/**
+ * Gets the appropriate Document object for an element, accounting for shadow DOM.
+ * Returns the ownerDocument of the ShadowRoot if the element is in shadow DOM,
+ * otherwise returns the element's ownerDocument or the global document.
+ *
+ * @param element - The HTMLElement to get the document for
+ * @returns The Document object that should be used for DOM operations
+ */
+export function getDocumentFromElement(element: null | HTMLElement): Document {
+  if (!element || !CAN_USE_DOM) {
+    return document;
+  }
+
+  const rootNode = element.getRootNode({composed: true});
+
+  // If the element is not connected to a document, return the default document
+  if (rootNode === element || rootNode.nodeType !== Node.DOCUMENT_NODE) {
+    return element.ownerDocument || document;
+  }
+
+  return rootNode as Document;
+}
+
+/**
+ * Gets the currently active (focused) element, accounting for shadow DOM encapsulation.
+ * In shadow DOM, the activeElement is tracked separately within the ShadowRoot.
+ * Falls back to the document's activeElement if not in shadow DOM.
+ *
+ * @param rootElement - The root element to check for shadow DOM context
+ * @returns The currently active Element or null if no element is focused
+ */
+export function getActiveElement(rootElement: HTMLElement): Element | null {
+  const shadowRoot = getShadowRootOrDocument(rootElement);
+
+  if (shadowRoot && isShadowRoot(shadowRoot) && shadowRoot.activeElement) {
+    return shadowRoot.activeElement;
+  }
+  return getDocumentFromElement(rootElement).activeElement;
+}
+
+/**
+ * Returns the selection for the defaultView of the ownerDocument of given EventTarget,
+ * with full Shadow DOM support.
+ *
+ * This function determines the appropriate selection context based on whether the
+ * EventTarget is within a Shadow DOM or regular DOM:
+ *
+ * **Shadow DOM Elements:**
+ * Uses getDOMSelectionFromShadowRoot to get a selection that properly handles
+ * Shadow DOM boundaries using the getComposedRanges API when available.
+ *
+ * **Regular DOM Elements:**
+ * Returns the standard window.getSelection() from the element's defaultView.
+ *
+ * **Edge Cases:**
+ * - Returns null for null EventTarget
+ * - Returns null for EventTargets without a valid defaultView
+ * - Handles non-HTML EventTargets gracefully
+ *
+ * @param eventTarget - The EventTarget (typically a DOM node) to get the selection from
+ * @returns A Selection object from the appropriate context or null if unavailable
  */
 export function getDOMSelectionFromTarget(
   eventTarget: null | EventTarget,
 ): null | Selection {
+  if (!eventTarget) {
+    return null;
+  }
+
+  // Check if eventTarget is in shadow DOM
+  if (isHTMLElement(eventTarget)) {
+    const shadowRoot = getShadowRootOrDocument(eventTarget);
+
+    if (shadowRoot && isShadowRoot(shadowRoot)) {
+      return getDOMSelectionFromShadowRoot(shadowRoot);
+    }
+  }
+
   const defaultView = getDefaultView(eventTarget);
   return defaultView ? defaultView.getSelection() : null;
 }

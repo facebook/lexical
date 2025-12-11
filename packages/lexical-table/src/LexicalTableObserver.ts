@@ -23,7 +23,7 @@ import {
   $isParagraphNode,
   $isRootNode,
   $setSelection,
-  getDOMSelection,
+  getDOMSelectionForEditor,
   INSERT_PARAGRAPH_COMMAND,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
@@ -320,7 +320,7 @@ export class TableObserver {
   /** @internal */
   updateDOMSelection() {
     if (this.anchorCell !== null && this.focusCell !== null) {
-      const domSelection = getDOMSelection(this.editor._window);
+      const domSelection = getDOMSelectionForEditor(this.editor);
       // We are not using a native selection for tables, and if we
       // set one then the reconciler will undo it.
       // TODO - it would make sense to have one so that native

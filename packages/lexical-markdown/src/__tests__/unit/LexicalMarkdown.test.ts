@@ -1047,6 +1047,78 @@ describe('Markdown', () => {
   });
 });
 
+describe('whitespace preservation in export', () => {
+  it('exports leading/trailing whitespaces as HTML code points by default', () => {
+    const editor = createHeadlessEditor({
+      nodes: [
+        HeadingNode,
+        ListNode,
+        ListItemNode,
+        QuoteNode,
+        CodeNode,
+        LinkNode,
+      ],
+    });
+
+    const html =
+      '<p><b><strong style="white-space: pre-wrap;">   Hello   </strong></b></p>';
+
+    editor.update(
+      () => {
+        const parser = new DOMParser();
+        const dom = parser.parseFromString(html, 'text/html');
+        const nodes = $generateNodesFromDOM(editor, dom);
+        $getRoot().select();
+        $insertNodes(nodes);
+      },
+      {discrete: true},
+    );
+
+    const exported = editor
+      .getEditorState()
+      .read(() =>
+        $convertToMarkdownString([...TRANSFORMERS], undefined, false, false),
+      );
+
+    expect(exported).toBe('**&#32;&#32;&#32;Hello&#32;&#32;&#32;**');
+  });
+
+  it('preserves leading/trailing whitespaces when shouldPreserveWhitespaces=true', () => {
+    const editor = createHeadlessEditor({
+      nodes: [
+        HeadingNode,
+        ListNode,
+        ListItemNode,
+        QuoteNode,
+        CodeNode,
+        LinkNode,
+      ],
+    });
+
+    const html =
+      '<p><b><strong style="white-space: pre-wrap;">   Hello   </strong></b></p>';
+
+    editor.update(
+      () => {
+        const parser = new DOMParser();
+        const dom = parser.parseFromString(html, 'text/html');
+        const nodes = $generateNodesFromDOM(editor, dom);
+        $getRoot().select();
+        $insertNodes(nodes);
+      },
+      {discrete: true},
+    );
+
+    const exported = editor
+      .getEditorState()
+      .read(() =>
+        $convertToMarkdownString([...TRANSFORMERS], undefined, false, true),
+      );
+
+    expect(exported).toBe('**   Hello   **');
+  });
+});
+
 describe('normalizeMarkdown - shouldMergeAdjacentLines = true', () => {
   it('should combine lines separated by a single \n unless they are in a codeblock', () => {
     const markdown = `

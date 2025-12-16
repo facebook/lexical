@@ -98,14 +98,14 @@ npm run test-e2e-chromium
 npm run ci-check
 ```
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for detailed development guidelines.
+See [CONTRIBUTING.md](https://github.com/facebook/lexical/blob/main/CONTRIBUTING.md) for detailed development guidelines.
 
 ## Documentation
 
 - **User Guide**: [lexical.dev/docs](https://lexical.dev/docs)
 - **API Reference**: [lexical.dev/docs/api](https://lexical.dev/docs/api/modules/lexical)
-- **Developer Guide**: [AGENTS.md](./AGENTS.md) - Architecture and development workflows
-- **Examples**: [examples/](./examples) - Sample implementations
+- **Developer Guide**: [AGENTS.md](https://github.com/facebook/lexical/blob/main/AGENTS.md) - Architecture and development workflows
+- **Examples**: [examples/](https://github.com/facebook/lexical/tree/main/examples) - Sample implementations
 
 ## Community & Support
 
@@ -124,8 +124,8 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for detailed development guidelines.
 
 ## Contributing
 
-We welcome contributions! Please read our [Contributing Guide](./CONTRIBUTING.md) to learn about our development process and how to propose bugfixes and improvements.
+We welcome contributions! Please read our [Contributing Guide](https://github.com/facebook/lexical/blob/main/CONTRIBUTING.md) to learn about our development process and how to propose bugfixes and improvements.
 
 ## License
 
-[MIT](./LICENSE) License © Meta Platforms, Inc.
+[MIT](https://github.com/facebook/lexical/blob/main/LICENSE) License © Meta Platforms, Inc.

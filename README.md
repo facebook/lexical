@@ -1,10 +1,7 @@
 <p align="center">
   <a href="https://lexical.dev">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://lexical.dev/img/logo-dark.svg">
-      <source media="(prefers-color-scheme: light)" srcset="https://lexical.dev/img/logo.svg">
-      <img src="https://lexical.dev/img/logo.svg" alt="Lexical" height="150">
-    </picture>
+    <img src="https://lexical.dev/img/logo.svg#gh-light-mode-only" alt="Lexical" height="150">
+    <img src="https://lexical.dev/img/logo-dark.svg#gh-dark-mode-only" alt="Lexical" height="150">
   </a>
 </p>
 

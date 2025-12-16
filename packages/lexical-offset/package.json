@@ -8,12 +8,12 @@
     "offset"
   ],
   "license": "MIT",
-  "version": "0.38.2",
+  "version": "0.39.0",
   "main": "LexicalOffset.js",
   "types": "index.d.ts",
   "repository": {
     "type": "git",
-    "url": "https://github.com/facebook/lexical",
+    "url": "git+https://github.com/facebook/lexical.git",
     "directory": "packages/lexical-offset"
   },
   "module": "LexicalOffset.mjs",
@@ -36,6 +36,6 @@
     }
   },
   "dependencies": {
-    "lexical": "0.38.2"
+    "lexical": "0.39.0"
   }
 }

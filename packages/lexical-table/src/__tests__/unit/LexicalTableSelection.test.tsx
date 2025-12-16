@@ -24,6 +24,8 @@ import {
   $createTextNode,
   $getRoot,
   $getSelection,
+  $isParagraphNode,
+  $isTextNode,
   $setSelection,
 } from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
@@ -83,6 +85,39 @@ describe('table selection', () => {
                 .getAllTextNodes()
                 .map((node) => node.getStyle()),
             ).toEqual(Array.from({length}, () => 'color: red;'));
+          },
+          {discrete: true},
+        );
+      });
+
+      test('$patchStyleText applies styles to empty table cells', () => {
+        testEnv.editor.update(
+          () => {
+            const selection = $getSelection();
+            expect($isTableSelection(selection)).toBe(true);
+
+            const emptyCell = tableMap.at(0)!.at(0)!.cell;
+            const emptyParagraph = emptyCell.getFirstChild();
+            if (!$isParagraphNode(emptyParagraph)) {
+              throw new Error('Expected paragraph node in empty cell');
+            }
+            emptyParagraph.clear();
+            expect(emptyParagraph.getChildrenSize()).toBe(0);
+
+            $patchStyleText(selection!, {color: 'blue'});
+
+            const filledCell = tableMap.at(0)!.at(1)!.cell;
+            const filledParagraph = filledCell.getFirstChild();
+            if (!$isParagraphNode(filledParagraph)) {
+              throw new Error('Expected paragraph node in filled cell');
+            }
+            const textNode = filledParagraph.getFirstChild();
+            if (!$isTextNode(textNode)) {
+              throw new Error('Expected text node inside filled cell');
+            }
+
+            expect(textNode.getStyle()).toBe('color: blue;');
+            expect(emptyParagraph.getTextStyle()).toBe('color: blue;');
           },
           {discrete: true},
         );

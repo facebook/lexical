@@ -333,6 +333,26 @@ export function $patchStyleText(
   $forEachSelectedTextNode((textNode) => {
     $patchStyle(textNode, patch);
   });
+
+  const nodes = selection.getNodes();
+  if (nodes.length > 0) {
+    const patchedElementKeys = new Set<NodeKey>();
+    for (const node of nodes) {
+      if (
+        !$isElementNode(node) ||
+        !node.canBeEmpty() ||
+        node.getChildrenSize() !== 0
+      ) {
+        continue;
+      }
+      const key = node.getKey();
+      if (patchedElementKeys.has(key)) {
+        continue;
+      }
+      patchedElementKeys.add(key);
+      $patchStyle(node, patch);
+    }
+  }
 }
 
 export function $forEachSelectedTextNode(

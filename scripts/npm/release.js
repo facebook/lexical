@@ -17,6 +17,7 @@ const argv = require('minimist')(process.argv.slice(2));
 
 const nonInteractive = argv['non-interactive'];
 const dryRun = argv['dry-run'];
+const ignorePreviouslyPublished = argv['ignore-previously-published'];
 const channel = argv.channel;
 const validChannels = new Set(['next', 'latest', 'nightly', 'dev']);
 if (!validChannels.has(channel)) {
@@ -41,7 +42,20 @@ async function publish() {
     if (dryRun === undefined || dryRun === 0) {
       await exec(
         `cd ./packages/${pkg.getDirectoryName()}/npm && npm publish --access public --tag ${channel}`,
-      );
+      ).catch((err) => {
+        if (
+          ignorePreviouslyPublished &&
+          err &&
+          typeof err.stderr === 'string' &&
+          /You cannot publish over the previously published version/.test(
+            err.stderr,
+          )
+        ) {
+          console.info(`Ignoring previously published error`);
+          return null;
+        }
+        return err;
+      });
       console.info(`Done!`);
     } else {
       console.info(`Dry run - skipping publish step.`);

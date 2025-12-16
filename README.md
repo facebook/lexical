@@ -31,7 +31,7 @@
   <a href="https://lexical.dev/docs/">Documentation</a> | <a href="https://lexical.dev/docs/getting-started/">Getting Started</a> | <a href="https://playground.lexical.dev">Playground</a> | <a href="https://lexical.dev/docs/concepts/editor-state">Core Concepts</a>
 </p>
 
-<br>
+<br />
 
 ## Features
 

@@ -10,14 +10,22 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  $setState,
+  createState,
   ParagraphNode,
   TextNode,
   UNDO_COMMAND,
 } from 'lexical';
+import {act} from 'react';
 import {afterEach, beforeEach, describe, expect, it} from 'vitest';
 import * as Y from 'yjs';
 
-import {Client, createTestConnection, waitForReact} from './utils';
+import {
+  Client,
+  createTestConnection,
+  TestConnection,
+  waitForReact,
+} from './utils';
 
 describe('Collaboration', () => {
   let container: null | HTMLDivElement = null;
@@ -500,5 +508,56 @@ describe('Collaboration', () => {
 
     client1.stop();
     client2.stop();
+  });
+
+  describe('collab v2', () => {
+    let connector: TestConnection;
+
+    beforeEach(() => {
+      connector = createTestConnection(true);
+    });
+
+    it('Should not sync state with object value if value is deep equal to previous value', async () => {
+      const client = connector.createClient('1');
+      client.start(container!);
+      const editor = client.getEditor();
+
+      const state = createState('foo', {
+        parse: (value) => (value as {foo: string}) || {foo: 'foo'},
+      });
+
+      act(() => {
+        editor.update(
+          () => {
+            const root = $getRoot().clear();
+            const paragraph = $createParagraphNode();
+            const text = $createTextNode('Hello');
+            $setState(paragraph, state, {foo: 'foo'});
+            paragraph.append(text);
+            root.append(paragraph);
+          },
+          {discrete: true},
+        );
+      });
+
+      const yDoc = client.getDoc();
+      const paragraphYElement = yDoc
+        .get('root-v2', Y.XmlElement)
+        .toArray()[0] as Y.XmlElement;
+      let updated = false;
+      paragraphYElement.observe(() => (updated = true));
+
+      editor.update(
+        () => {
+          const paragraph = $getRoot().getFirstChildOrThrow<ParagraphNode>();
+          $setState(paragraph, state, {foo: 'foo'});
+          // Include another update otherwise equalYTypePNode would return true
+          paragraph.append($createTextNode('!'));
+        },
+        {discrete: true},
+      );
+
+      expect(updated).toBe(false);
+    });
   });
 });

@@ -77,6 +77,7 @@ import TableCellActionMenuPlugin from './plugins/TableActionMenuPlugin';
 import TableCellResizer from './plugins/TableCellResizer';
 import TableHoverActionsPlugin from './plugins/TableHoverActionsPlugin';
 import TableOfContentsPlugin from './plugins/TableOfContentsPlugin';
+import TableScrollShadowPlugin from './plugins/TableScrollShadowPlugin';
 import ToolbarPlugin from './plugins/ToolbarPlugin';
 import TreeViewPlugin from './plugins/TreeViewPlugin';
 import TwitterPlugin from './plugins/TwitterPlugin';
@@ -102,6 +103,7 @@ export default function Editor(): JSX.Element {
       isMaxLength,
       isCharLimit,
       hasLinkAttributes,
+      hasNestedTables,
       isCharLimitUtf8,
       isRichText,
       showTreeView,
@@ -237,8 +239,10 @@ export default function Editor(): JSX.Element {
               hasCellMerge={tableCellMerge}
               hasCellBackgroundColor={tableCellBackgroundColor}
               hasHorizontalScroll={tableHorizontalScroll}
+              hasNestedTables={hasNestedTables}
             />
             <TableCellResizer />
+            <TableScrollShadowPlugin />
             <ImagesPlugin />
             <LinkPlugin hasLinkAttributes={hasLinkAttributes} />
             <PollPlugin />

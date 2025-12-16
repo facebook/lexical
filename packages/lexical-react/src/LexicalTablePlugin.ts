@@ -8,6 +8,7 @@
 
 import type {JSX} from 'react';
 
+import {signal} from '@lexical/extension';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $isScrollableTablesActive,
@@ -18,7 +19,7 @@ import {
   TableCellNode,
   TableNode,
 } from '@lexical/table';
-import {useEffect} from 'react';
+import {useEffect, useMemo} from 'react';
 
 export interface TablePluginProps {
   /**
@@ -38,6 +39,12 @@ export interface TablePluginProps {
    * When `true` (default `false`), tables will be wrapped in a `<div>` to enable horizontal scrolling
    */
   hasHorizontalScroll?: boolean;
+  /**
+   * When `true` (default `false`), nested tables will be allowed.
+   *
+   * @experimental Nested tables are not officially supported.
+   */
+  hasNestedTables?: boolean;
 }
 
 /**
@@ -51,6 +58,7 @@ export function TablePlugin({
   hasCellBackgroundColor = true,
   hasTabHandler = true,
   hasHorizontalScroll = false,
+  hasNestedTables = false,
 }: TablePluginProps): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
 
@@ -64,7 +72,15 @@ export function TablePlugin({
     }
   }, [editor, hasHorizontalScroll]);
 
-  useEffect(() => registerTablePlugin(editor), [editor]);
+  const hasNestedTablesSignal = useMemo(() => signal(false), []);
+  if (hasNestedTablesSignal.peek() !== hasNestedTables) {
+    hasNestedTablesSignal.value = hasNestedTables;
+  }
+
+  useEffect(
+    () => registerTablePlugin(editor, {hasNestedTables: hasNestedTablesSignal}),
+    [editor, hasNestedTablesSignal],
+  );
 
   useEffect(
     () => registerTableSelectionObserver(editor, hasTabHandler),

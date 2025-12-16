@@ -1499,7 +1499,7 @@ test.describe.parallel('Selection', () => {
     await assertSelection(page, {
       anchorOffset: 0,
       anchorPath: [2],
-      focusOffset: 1,
+      focusOffset: 0,
       focusPath: [1, 1, 0],
     });
   });
@@ -1544,7 +1544,7 @@ test.describe.parallel('Selection', () => {
       await assertSelection(page, {
         anchorOffset: 0,
         anchorPath: [1],
-        focusOffset: 1,
+        focusOffset: 0,
         focusPath: [0, 1, 0],
       });
     },
@@ -1659,7 +1659,7 @@ test.describe.parallel('Selection', () => {
     await assertSelection(page, {
       anchorOffset: 0,
       anchorPath: [2],
-      focusOffset: 1,
+      focusOffset: 0,
       focusPath: [1, 1, 0],
     });
   });

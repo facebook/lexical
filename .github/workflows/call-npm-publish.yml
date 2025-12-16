@@ -11,6 +11,9 @@ on:
       channel:
         required: true
         type: string
+      ignore-previously-published:
+        required: true
+        type: boolean
     secrets:
       NPM_TOKEN:
         required: true
@@ -20,6 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DRY_RUN_ARG: ${{ inputs.dry-run && '--dry-run' || '' }}
+      IGNORE_PREVIOUSLY_PUBLISHED_ARG: ${{ inputs.ignore-previously-published && '--ignore-previously-published' || '' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -31,6 +35,6 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
       - run: npm ci
       - run: npm run prepare-release
-      - run: node ./scripts/npm/release.js --non-interactive $DRY_RUN_ARG --channel='${{ inputs.channel }}'
+      - run: node ./scripts/npm/release.js --non-interactive $DRY_RUN_ARG $IGNORE_PREVIOUSLY_PUBLISHED_ARG --channel='${{ inputs.channel }}'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

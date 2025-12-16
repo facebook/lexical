@@ -20,7 +20,7 @@ This guide is based on [examples/react-rich](https://github.com/facebook/lexical
 
 **Install minimal set of the required dependencies:**
 ```bash
-$ npm i -S @lexical/react @lexical/yjs lexical react react-dom y-websocket yjs
+$ npm i -S @lexical/react @lexical/yjs lexical react react-dom y-websocket @y/websocket-server yjs
 ```
 
 :::note
@@ -40,6 +40,8 @@ $ HOST=localhost PORT=1234 YPERSISTENCE=./yjs-wss-db npx y-websocket
 **Get basic collaborative Lexical setup:**
 
 ```tsx
+import { useCallback } from 'react';
+
 import {$getRoot, $createParagraphNode, $createTextNode} from 'lexical';
 import {LexicalCollaboration} from '@lexical/react/LexicalCollaborationContext';
 import {LexicalComposer} from '@lexical/react/LexicalComposer';
@@ -65,6 +67,19 @@ function Editor() {
     theme: {},
   };
 
+  const getDocFromMap = (id: string, yjsDocMap: Map<string, Y.Doc>): Y.Doc => {
+    let doc = yjsDocMap.get(id);
+  
+    if (doc === undefined) {
+      doc = new Y.Doc();
+      yjsDocMap.set(id, doc);
+    } else {
+      doc.load();
+    }
+
+    return doc;
+  }
+
   const providerFactory = useCallback(
     (id: string, yjsDocMap: Map<string, Y.Doc>) => {
       const doc = getDocFromMap(id, yjsDocMap);
@@ -88,7 +103,7 @@ function Editor() {
           providerFactory={providerFactory}
         />
       </LexicalComposer>
-    <LexicalCollaboration>
+    </LexicalCollaboration>
   );
 }
 ```

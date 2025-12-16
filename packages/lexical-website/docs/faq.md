@@ -132,7 +132,7 @@ import {KEY_ENTER_COMMAND, COMMAND_PRIORITY_LOW} from 'lexical';
 editor.registerCommand(KEY_ENTER_COMMAND, (event: KeyboardEvent) => {
   // Handle enter key presses here
   return false;
-}, COMMAND_PRIORITY_LOW)
+}, COMMAND_PRIORITY_LOW);
 ```
 
 You can use the generic `KEY_DOWN_COMMAND` command to listen

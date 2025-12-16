@@ -288,7 +288,7 @@ export class Client implements Provider {
   }
 }
 
-class TestConnection {
+export class TestConnection {
   _clients = new Map<string, Client>();
 
   constructor(readonly _useCollabV2: boolean) {}

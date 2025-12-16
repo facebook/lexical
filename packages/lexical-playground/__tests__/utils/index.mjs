@@ -81,6 +81,7 @@ export async function initialize({
   isCharLimitUtf8,
   isMaxLength,
   hasLinkAttributes,
+  hasNestedTables,
   showNestedEditorTreeView,
   tableCellMerge,
   tableCellBackgroundColor,
@@ -115,6 +116,7 @@ export async function initialize({
   appSettings.isCharLimitUtf8 = !!isCharLimitUtf8;
   appSettings.isMaxLength = !!isMaxLength;
   appSettings.hasLinkAttributes = !!hasLinkAttributes;
+  appSettings.hasNestedTables = !!hasNestedTables;
   if (tableCellMerge !== undefined) {
     appSettings.tableCellMerge = tableCellMerge;
   }

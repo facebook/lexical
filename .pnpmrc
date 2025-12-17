@@ -1,6 +1,3 @@
-# Deduplicate peer dependencies to avoid multiple React instances
-dedupe-peer-dependents=true
-
-# Hoist React and related packages to avoid hook errors
-public-hoist-pattern[]=*react*
-public-hoist-pattern[]=*@testing-library/*
+# Hoist React to make jsx-runtime accessible to Vite
+public-hoist-pattern[]=react
+public-hoist-pattern[]=react-dom

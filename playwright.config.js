@@ -44,7 +44,9 @@ const config = {
     ? {
         command: 'pnpm run start-test-server',
         port: 4000,
-        reuseExistingServer: true,
+        reuseExistingServer: false,
+        stderr: 'pipe',
+        stdout: 'pipe',
         timeout: 120 * 1000,
       }
     : undefined,

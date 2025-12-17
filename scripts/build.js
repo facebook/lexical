@@ -29,10 +29,13 @@ const headerTemplate = fs.readFileSync(
   'utf8',
 );
 
-const isProduction = argv.prod;
-const isRelease = argv.release;
-const isWWW = argv.www;
-const extractCodes = argv.codes;
+// pnpm passes arguments differently than npm
+// npm: --www becomes argv.www = true
+// pnpm: --www becomes argv._ = ['--www']
+const isProduction = argv.prod || argv._.includes('--prod');
+const isRelease = argv.release || argv._.includes('--release');
+const isWWW = argv.www || argv._.includes('--www');
+const extractCodes = argv.codes || argv._.includes('--codes');
 
 const modulePackageMappings = Object.fromEntries(
   packagesManager.getPublicPackages().flatMap((pkg) => {
@@ -332,6 +335,8 @@ async function build(
     file: outputFile,
     format, // change between es and cjs modules
     freeze: false,
+    // pnpm's module resolution causes Rollup to detect dynamic imports that
+    // npm's flat structure didn't. Inline them to avoid code-splitting.
     inlineDynamicImports: true,
     interop: format === 'esm' ? 'esModule' : undefined,
     paths: format === 'esm' ? resolveExternalEsm : undefined,

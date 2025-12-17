@@ -102,11 +102,13 @@ import {
   doesContainSurrogatePair,
   getAnchorTextFromDOM,
   getDOMSelection,
+  getDOMSelectionForEditor,
   getDOMSelectionFromTarget,
   getDOMTextNode,
   getEditorPropertyFromDOMNode,
   getEditorsToPropagate,
   getNearestEditorFromDOMNode,
+  getShadowRootOrDocument,
   getWindow,
   isBackspace,
   isBold,
@@ -185,8 +187,8 @@ let lastBeforeInputInsertTextTimeStamp = 0;
 let unprocessedBeforeInputData: null | string = null;
 // Node can be moved between documents (for example using createPortal), so we
 // need to track the document each root element was originally registered on.
-const rootElementToDocument = new WeakMap<HTMLElement, Document>();
-const rootElementsRegistered = new WeakMap<Document, number>();
+const rootElementToDocument = new WeakMap<HTMLElement, Document | ShadowRoot>();
+const rootElementsRegistered = new WeakMap<Document | ShadowRoot, number>();
 let isSelectionChangeFromDOMUpdate = false;
 let isSelectionChangeFromMouseDown = false;
 let isInsertLineBreak = false;
@@ -219,7 +221,7 @@ function $shouldPreventDefaultAndInsertText(
   const focus = selection.focus;
   const anchorNode = anchor.getNode();
   const editor = getActiveEditor();
-  const domSelection = getDOMSelection(getWindow(editor));
+  const domSelection = getDOMSelectionForEditor(editor);
   const domAnchorNode = domSelection !== null ? domSelection.anchorNode : null;
   const anchorKey = anchor.key;
   const backingAnchorElement = editor.getElementByKey(anchorKey);
@@ -489,7 +491,7 @@ function $updateSelectionFormatStyleFromElementNode(
 function onClick(event: PointerEvent, editor: LexicalEditor): void {
   updateEditorSync(editor, () => {
     const selection = $getSelection();
-    const domSelection = getDOMSelection(getWindow(editor));
+    const domSelection = getDOMSelectionForEditor(editor);
     const lastSelection = $getPreviousSelection();
 
     if (domSelection) {
@@ -1378,7 +1380,7 @@ export function addRootElementEvents(
 ): void {
   // We only want to have a single global selectionchange event handler, shared
   // between all editor instances.
-  const doc = rootElement.ownerDocument;
+  const doc = getShadowRootOrDocument(rootElement);
   rootElementToDocument.set(rootElement, doc);
   const documentRootElementsCount = rootElementsRegistered.get(doc) ?? 0;
   if (documentRootElementsCount < 1) {
@@ -1483,7 +1485,7 @@ const rootElementNotRegisteredWarning = warnOnlyOnce(
 );
 
 export function removeRootElementEvents(rootElement: HTMLElement): void {
-  const doc = rootElementToDocument.get(rootElement);
+  const doc = getShadowRootOrDocument(rootElement);
   if (doc === undefined) {
     rootElementNotRegisteredWarning();
     return;

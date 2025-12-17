@@ -80,10 +80,10 @@ import {
   $isTokenOrTab,
   $setCompositionKey,
   doesContainSurrogatePair,
-  getDOMSelection,
+  getActiveElement,
+  getDOMSelectionForEditor,
   getDOMTextNode,
   getElementByKeyOrThrow,
-  getWindow,
   INTERNAL_$isBlock,
   isHTMLElement,
   isSelectionCapturedInDecoratorInput,
@@ -1575,7 +1575,7 @@ export class RangeSelection implements BaseSelection {
     const collapse = alter === 'move';
 
     const editor = getActiveEditor();
-    const domSelection = getDOMSelection(getWindow(editor));
+    const domSelection = getDOMSelectionForEditor(editor);
 
     if (!domSelection) {
       return;
@@ -1698,11 +1698,12 @@ export class RangeSelection implements BaseSelection {
   }
   /**
    * Helper for handling forward character and word deletion that prevents element nodes
-   * like a table, columns layout being destroyed
+   * like a table, columns layout being destroyed. Also prevents deletion into shadow roots.
    *
    * @param anchor the anchor
    * @param anchorNode the anchor node in the selection
    * @param isBackward whether or not selection is backwards
+   * @returns true if deletion should be prevented
    */
   forwardDeletion(
     anchor: PointType,
@@ -1744,6 +1745,7 @@ export class RangeSelection implements BaseSelection {
       if (this.forwardDeletion(anchor, anchorNode, isBackward)) {
         return;
       }
+
       const direction = isBackward ? 'previous' : 'next';
       const initialCaret = $caretFromPoint(anchor, direction);
       const initialRange = $extendCaretToRange(initialCaret);
@@ -1848,7 +1850,37 @@ export class RangeSelection implements BaseSelection {
 
       // Handle the deletion around decorators.
       const focus = this.focus;
+      const initialAnchorKey = anchor.key;
+      const initialAnchorOffset = anchor.offset;
+      const initialFocusKey = focus.key;
+      const initialFocusOffset = focus.offset;
+
       this.modify('extend', isBackward, 'character');
+
+      // Check if modify actually changed the selection (it might not in shadow DOM)
+      const selectionChanged =
+        this.anchor.key !== initialAnchorKey ||
+        this.anchor.offset !== initialAnchorOffset ||
+        this.focus.key !== initialFocusKey ||
+        this.focus.offset !== initialFocusOffset;
+
+      if (
+        !selectionChanged &&
+        anchor.type === 'text' &&
+        $isTextNode(anchorNode)
+      ) {
+        // Fallback for environments where modify doesn't work (e.g., shadow DOM)
+        const textContent = anchorNode.getTextContent();
+        const offset = anchor.offset;
+
+        if (isBackward && offset > 0) {
+          // Select the character before cursor
+          this.anchor.set(anchor.key, offset - 1, 'text');
+        } else if (!isBackward && offset < textContent.length) {
+          // Select the character after cursor
+          this.focus.set(focus.key, offset + 1, 'text');
+        }
+      }
 
       if (!this.isCollapsed()) {
         const focusNode = focus.type === 'text' ? focus.getNode() : null;
@@ -1912,7 +1944,38 @@ export class RangeSelection implements BaseSelection {
    */
   deleteLine(isBackward: boolean): void {
     if (this.isCollapsed()) {
+      const anchor = this.anchor;
+      const focus = this.focus;
+      const initialAnchorKey = anchor.key;
+      const initialAnchorOffset = anchor.offset;
+      const initialFocusKey = focus.key;
+      const initialFocusOffset = focus.offset;
+
       this.modify('extend', isBackward, 'lineboundary');
+
+      // Check if modify actually changed the selection (it might not in shadow DOM)
+      const selectionChanged =
+        this.anchor.key !== initialAnchorKey ||
+        this.anchor.offset !== initialAnchorOffset ||
+        this.focus.key !== initialFocusKey ||
+        this.focus.offset !== initialFocusOffset;
+
+      if (!selectionChanged && anchor.type === 'text') {
+        // Fallback for environments where modify doesn't work (e.g., shadow DOM)
+        const anchorNode = anchor.getNode();
+        if ($isTextNode(anchorNode)) {
+          const textContent = anchorNode.getTextContent();
+          const offset = anchor.offset;
+
+          if (isBackward && offset > 0) {
+            // Delete from beginning of line to cursor
+            this.anchor.set(anchor.key, 0, 'text');
+          } else if (!isBackward && offset < textContent.length) {
+            // Delete from cursor to end of line
+            this.focus.set(focus.key, textContent.length, 'text');
+          }
+        }
+      }
     }
     if (this.isCollapsed()) {
       // If the selection was already collapsed at the lineboundary,
@@ -1922,6 +1985,59 @@ export class RangeSelection implements BaseSelection {
     } else {
       this.removeText();
     }
+  }
+
+  /**
+   * Helper function to determine if a character is a word boundary (whitespace).
+   * @param char the character to check
+   * @returns true if the character is a word boundary
+   */
+  private isWordBoundary(char: string): boolean {
+    return char === ' ' || char === '\t' || char === '\n' || char === '\r';
+  }
+
+  /**
+   * Find the start of a word going backward from the given offset in text.
+   * @param text the text to search in
+   * @param offset the starting offset
+   * @returns the offset of the word start
+   */
+  private findWordStart(text: string, offset: number): number {
+    let position = offset - 1;
+
+    // Skip spaces
+    while (position >= 0 && this.isWordBoundary(text[position])) {
+      position--;
+    }
+
+    // Find word start
+    while (position > 0 && !this.isWordBoundary(text[position - 1])) {
+      position--;
+    }
+
+    return position >= 0 ? position : 0;
+  }
+
+  /**
+   * Find the end of a word going forward from the given offset in text.
+   * @param text the text to search in
+   * @param offset the starting offset
+   * @returns the offset of the word end
+   */
+  private findWordEnd(text: string, offset: number): number {
+    let position = offset;
+
+    // Skip spaces
+    while (position < text.length && this.isWordBoundary(text[position])) {
+      position++;
+    }
+
+    // Find word end
+    while (position < text.length && !this.isWordBoundary(text[position])) {
+      position++;
+    }
+
+    return position;
   }
 
   /**
@@ -1937,7 +2053,87 @@ export class RangeSelection implements BaseSelection {
       if (this.forwardDeletion(anchor, anchorNode, isBackward)) {
         return;
       }
+
+      const initialAnchorKey = anchor.key;
+      const initialAnchorOffset = anchor.offset;
+      const focus = this.focus;
+      const initialFocusKey = focus.key;
+      const initialFocusOffset = focus.offset;
+
       this.modify('extend', isBackward, 'word');
+
+      // Check if modify actually changed the selection (it might not in shadow DOM)
+      const selectionChanged =
+        this.anchor.key !== initialAnchorKey ||
+        this.anchor.offset !== initialAnchorOffset ||
+        this.focus.key !== initialFocusKey ||
+        this.focus.offset !== initialFocusOffset;
+
+      if (
+        !selectionChanged &&
+        anchor.type === 'text' &&
+        $isTextNode(anchorNode)
+      ) {
+        // Fallback for environments where modify doesn't work (e.g., shadow DOM)
+        const textContent = anchorNode.getTextContent();
+        const offset = anchor.offset;
+
+        if (isBackward) {
+          // Backward: find start of word before cursor
+          if (offset === 0) {
+            // At node start, check previous sibling
+            const prevSibling = anchorNode.getPreviousSibling();
+            if ($isTextNode(prevSibling)) {
+              const prevText = prevSibling.getTextContent();
+              const position = this.findWordStart(prevText, prevText.length);
+              this.anchor.set(prevSibling.__key, position, 'text');
+            }
+          } else {
+            const position = this.findWordStart(textContent, offset);
+            if (position === 0 && this.isWordBoundary(textContent[0])) {
+              // Only spaces in this node, try previous sibling
+              const prevSibling = anchorNode.getPreviousSibling();
+              if ($isTextNode(prevSibling)) {
+                const prevText = prevSibling.getTextContent();
+                const prevPosition = this.findWordStart(
+                  prevText,
+                  prevText.length,
+                );
+                this.anchor.set(prevSibling.__key, prevPosition, 'text');
+                return;
+              }
+            }
+            this.anchor.set(anchor.key, position, 'text');
+          }
+        } else {
+          // Forward: find end of word after cursor
+          if (offset === textContent.length) {
+            // At node end, check next sibling
+            const nextSibling = anchorNode.getNextSibling();
+            if ($isTextNode(nextSibling)) {
+              const nextText = nextSibling.getTextContent();
+              const position = this.findWordEnd(nextText, 0);
+              this.focus.set(nextSibling.__key, position, 'text');
+            }
+          } else {
+            const position = this.findWordEnd(textContent, offset);
+            if (
+              position === textContent.length &&
+              this.isWordBoundary(textContent[textContent.length - 1])
+            ) {
+              // Only spaces in this node, try next sibling
+              const nextSibling = anchorNode.getNextSibling();
+              if ($isTextNode(nextSibling)) {
+                const nextText = nextSibling.getTextContent();
+                const nextPosition = this.findWordEnd(nextText, 0);
+                this.focus.set(nextSibling.__key, nextPosition, 'text');
+                return;
+              }
+            }
+            this.focus.set(focus.key, position, 'text');
+          }
+        }
+      }
     }
     this.removeText();
   }
@@ -2589,7 +2785,7 @@ export function $internalCreateSelection(
 ): null | BaseSelection {
   const currentEditorState = editor.getEditorState();
   const lastSelection = currentEditorState._selection;
-  const domSelection = getDOMSelection(getWindow(editor));
+  const domSelection = getDOMSelectionForEditor(editor);
 
   if ($isRangeSelection(lastSelection) || lastSelection == null) {
     return $internalCreateRangeSelection(
@@ -2980,7 +3176,7 @@ export function updateDOMSelection(
   const focusDOMNode = domSelection.focusNode;
   const anchorOffset = domSelection.anchorOffset;
   const focusOffset = domSelection.focusOffset;
-  const activeElement = document.activeElement;
+  const activeElement = getActiveElement(rootElement);
 
   // TODO: make this not hard-coded, and add another config option
   // that makes this configurable.

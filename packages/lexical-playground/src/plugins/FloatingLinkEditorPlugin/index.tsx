@@ -27,7 +27,7 @@ import {
   COMMAND_PRIORITY_CRITICAL,
   COMMAND_PRIORITY_HIGH,
   COMMAND_PRIORITY_LOW,
-  getDOMSelection,
+  getDOMSelectionForEditor,
   KEY_ESCAPE_COMMAND,
   LexicalEditor,
   SELECTION_CHANGE_COMMAND,
@@ -104,7 +104,7 @@ function FloatingLinkEditor({
     }
 
     const editorElem = editorRef.current;
-    const nativeSelection = getDOMSelection(editor._window);
+    const nativeSelection = getDOMSelectionForEditor(editor);
     const activeElement = document.activeElement;
 
     if (editorElem === null) {

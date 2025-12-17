@@ -113,7 +113,7 @@ See [CONTRIBUTING.md](https://github.com/facebook/lexical/blob/main/CONTRIBUTING
 | Safari  | 11+     |
 | Edge    | 79+     |
 
-### Contributors
+## Contributors
 
 We welcome contributions! Please read our [Contributing Guide](https://github.com/facebook/lexical/blob/main/CONTRIBUTING.md) to learn about our development process and how to propose bugfixes and improvements.
 

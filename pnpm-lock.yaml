@@ -102,6 +102,9 @@ importers:
       '@typescript-eslint/parser':
         specifier: ^8.39.1
         version: 8.42.0(eslint@8.57.0)(typescript@5.9.2)
+      baseline-browser-mapping:
+        specifier: ^2.9.9
+        version: 2.9.9
       child-process-promise:
         specifier: ^2.2.1
         version: 2.2.1
@@ -5498,10 +5501,6 @@ packages:
 
   base64-js@1.5.1:
     resolution: {integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==}
-
-  baseline-browser-mapping@2.8.17:
-    resolution: {integrity: sha512-j5zJcx6golJYTG6c05LUZ3Z8Gi+M62zRT/ycz4Xq4iCOdpcxwg7ngEYD4KA0eWZC7U17qh/Smq8bYbACJ0ipBA==}
-    hasBin: true
 
   baseline-browser-mapping@2.9.9:
     resolution: {integrity: sha512-V8fbOCSeOFvlDj7LLChUcqbZrdKD9RU/VR260piF1790vT0mfLSwGc/Qzxv3IqiTukOpNtItePa0HBpMAj7MDg==}
@@ -18802,8 +18801,6 @@ snapshots:
 
   base64-js@1.5.1: {}
 
-  baseline-browser-mapping@2.8.17: {}
-
   baseline-browser-mapping@2.9.9: {}
 
   batch@0.6.1: {}
@@ -18892,7 +18889,7 @@ snapshots:
 
   browserslist@4.26.3:
     dependencies:
-      baseline-browser-mapping: 2.8.17
+      baseline-browser-mapping: 2.9.9
       caniuse-lite: 1.0.30001751
       electron-to-chromium: 1.5.237
       node-releases: 2.0.21

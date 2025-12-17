@@ -332,6 +332,7 @@ async function build(
     file: outputFile,
     format, // change between es and cjs modules
     freeze: false,
+    inlineDynamicImports: true,
     interop: format === 'esm' ? 'esModule' : undefined,
     paths: format === 'esm' ? resolveExternalEsm : undefined,
   };

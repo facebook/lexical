@@ -891,6 +891,9 @@ importers:
       '@docusaurus/preset-classic':
         specifier: ^3.9.2
         version: 3.9.2(@algolia/client-search@5.46.0)(@docusaurus/faster@3.9.2(@docusaurus/types@3.9.2(@swc/core@1.15.5)(react-dom@19.2.3(react@19.1.1))(react@19.1.1)))(@mdx-js/react@3.1.1(@types/react@19.1.13)(react@19.1.1))(@rspack/core@1.6.8)(@swc/core@1.15.5)(@types/react@19.1.13)(lightningcss@1.30.2)(react-dom@19.2.3(react@19.1.1))(react@19.1.1)(search-insights@2.17.3)(typescript@5.9.2)
+      '@docusaurus/theme-common':
+        specifier: ^3.9.2
+        version: 3.9.2(@docusaurus/plugin-content-docs@3.9.2(@docusaurus/faster@3.9.2(@docusaurus/types@3.9.2(@swc/core@1.15.5)(react-dom@19.2.3(react@19.1.1))(react@19.1.1)))(@mdx-js/react@3.1.1(@types/react@19.1.13)(react@19.1.1))(@rspack/core@1.6.8)(@swc/core@1.15.5)(lightningcss@1.30.2)(react-dom@19.2.3(react@19.1.1))(react@19.1.1)(typescript@5.9.2))(@swc/core@1.15.5)(react-dom@19.2.3(react@19.1.1))(react@19.1.1)
       '@docusaurus/theme-mermaid':
         specifier: ^3.9.2
         version: 3.9.2(@docusaurus/faster@3.9.2(@docusaurus/types@3.9.2(@swc/core@1.15.5)(react-dom@19.2.3(react@19.1.1))(react@19.1.1)))(@docusaurus/plugin-content-docs@3.9.2(@docusaurus/faster@3.9.2(@docusaurus/types@3.9.2(@swc/core@1.15.5)(react-dom@19.2.3(react@19.1.1))(react@19.1.1)))(@mdx-js/react@3.1.1(@types/react@19.1.13)(react@19.1.1))(@rspack/core@1.6.8)(@swc/core@1.15.5)(lightningcss@1.30.2)(react-dom@19.2.3(react@19.1.1))(react@19.1.1)(typescript@5.9.2))(@mdx-js/react@3.1.1(@types/react@19.1.13)(react@19.1.1))(@mermaid-js/layout-elk@0.2.0(mermaid@11.12.2))(@rspack/core@1.6.8)(@swc/core@1.15.5)(lightningcss@1.30.2)(react-dom@19.2.3(react@19.1.1))(react@19.1.1)(typescript@5.9.2)

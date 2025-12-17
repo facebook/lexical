@@ -191,6 +191,8 @@
     "prettier-plugin-organize-attributes": "^0.0.5",
     "prettier-plugin-tailwindcss": "^0.4.1",
     "proper-lockfile": "^4.1.2",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
     "react-test-renderer": "^19.1.1",
     "rollup": "^4.22.4",
     "tmp": "^0.2.1",

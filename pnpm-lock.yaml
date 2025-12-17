@@ -72,6 +72,9 @@ importers:
       '@types/child-process-promise':
         specifier: ^2.2.6
         version: 2.2.6
+      '@types/fs-extra':
+        specifier: ^8.1.5
+        version: 8.1.5
       '@types/jest':
         specifier: ^29.5.12
         version: 29.5.12
@@ -15828,7 +15831,7 @@ snapshots:
   '@jest/console@29.7.0':
     dependencies:
       '@jest/types': 29.6.3
-      '@types/node': 20.19.17
+      '@types/node': 17.0.45
       chalk: 4.1.2
       jest-message-util: 29.7.0
       jest-util: 29.7.0
@@ -15915,7 +15918,7 @@ snapshots:
       '@jest/transform': 29.7.0
       '@jest/types': 29.6.3
       '@jridgewell/trace-mapping': 0.3.30
-      '@types/node': 20.19.17
+      '@types/node': 17.0.45
       chalk: 4.1.2
       collect-v8-coverage: 1.0.2
       exit: 0.1.2
@@ -17629,7 +17632,7 @@ snapshots:
     dependencies:
       '@types/http-cache-semantics': 4.0.4
       '@types/keyv': 3.1.4
-      '@types/node': 20.19.17
+      '@types/node': 17.0.45
       '@types/responselike': 1.0.3
 
   '@types/chai@5.2.2':
@@ -17986,7 +17989,7 @@ snapshots:
 
   '@types/responselike@1.0.3':
     dependencies:
-      '@types/node': 20.19.17
+      '@types/node': 17.0.45
 
   '@types/retry@0.12.2': {}
 
@@ -22157,7 +22160,7 @@ snapshots:
       '@jest/expect': 29.7.0
       '@jest/test-result': 29.7.0
       '@jest/types': 29.6.3
-      '@types/node': 20.19.17
+      '@types/node': 17.0.45
       chalk: 4.1.2
       co: 4.6.0
       dedent: 1.5.3(babel-plugin-macros@3.1.0)
@@ -22299,7 +22302,7 @@ snapshots:
       '@jest/environment': 29.7.0
       '@jest/fake-timers': 29.7.0
       '@jest/types': 29.6.3
-      '@types/node': 20.19.17
+      '@types/node': 17.0.45
       jest-mock: 29.7.0
       jest-util: 29.7.0
 
@@ -22309,7 +22312,7 @@ snapshots:
     dependencies:
       '@jest/types': 29.6.3
       '@types/graceful-fs': 4.1.9
-      '@types/node': 20.19.17
+      '@types/node': 17.0.45
       anymatch: 3.1.2
       fb-watchman: 2.0.2
       graceful-fs: 4.2.11
@@ -22390,7 +22393,7 @@ snapshots:
       '@jest/test-result': 29.7.0
       '@jest/transform': 29.7.0
       '@jest/types': 29.6.3
-      '@types/node': 20.19.17
+      '@types/node': 17.0.45
       chalk: 4.1.2
       emittery: 0.13.1
       graceful-fs: 4.2.11
@@ -22418,7 +22421,7 @@ snapshots:
       '@jest/test-result': 29.7.0
       '@jest/transform': 29.7.0
       '@jest/types': 29.6.3
-      '@types/node': 20.19.17
+      '@types/node': 17.0.45
       chalk: 4.1.2
       cjs-module-lexer: 1.3.1
       collect-v8-coverage: 1.0.2
@@ -22483,7 +22486,7 @@ snapshots:
     dependencies:
       '@jest/test-result': 29.7.0
       '@jest/types': 29.6.3
-      '@types/node': 20.19.17
+      '@types/node': 17.0.45
       ansi-escapes: 4.3.2
       chalk: 4.1.2
       emittery: 0.13.1

@@ -21,6 +21,7 @@ function lexicalTestMocks(): Plugin {
             'shared/warnOnlyOnce':
               'packages/shared/src/__mocks__/warnOnlyOnce.ts',
           },
+          dedupe: ['react', 'react-dom'],
         },
       });
     },

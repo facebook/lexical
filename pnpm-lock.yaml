@@ -117,6 +117,9 @@ importers:
       '@typescript-eslint/parser':
         specifier: ^8.39.1
         version: 8.42.0(eslint@8.57.0)(typescript@5.9.2)
+      '@vitejs/plugin-react':
+        specifier: ^5.0.3
+        version: 5.1.2(vite@7.1.6(@types/node@20.19.17)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(yaml@2.8.1))
       baseline-browser-mapping:
         specifier: ^2.9.9
         version: 2.9.9

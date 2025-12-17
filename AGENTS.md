@@ -50,7 +50,7 @@ Lexical is built around several key architectural concepts that work together:
 - A selection object (current cursor/selection state)
 - Fully serializable to/from JSON
 
-**$ Functions Convention** - Functions prefixed with `$` (e.g., `$getRoot()`, `$getSelection()`) can ONLY be called within:
+**`$` Functions Convention** - Functions prefixed with `$` (e.g., `$getRoot()`, `$getSelection()`) can ONLY be called within:
 - `editor.update(() => {...})` - for mutations
 - `editor.read(() => {...})` - for read-only access
 - Node transforms and command handlers (which have implicit update context)

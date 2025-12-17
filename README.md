@@ -1,8 +1,9 @@
 <p align="center">
-  <a href="https://lexical.dev">
-    <img src="https://lexical.dev/img/logo.svg#gh-light-mode-only" alt="Lexical" height="60" />
-    <img src="https://lexical.dev/img/logo-dark.svg#gh-dark-mode-only" alt="Lexical" height="60" />
-  </a>
+  <a href="https://lexical.dev"><picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://lexical.dev/img/logo-dark.svg" />
+  <source media="(prefers-color-scheme: light)" srcset="https://lexical.dev/img/logo.svg" />
+  <img alt="Lexical" src="https://lexical.dev/img/logo.svg" height="60" />
+</picture></a>
 </p>
 
 <p align="center">
@@ -10,25 +11,15 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/lexical">
-    <img alt="NPM Version" src="https://img.shields.io/npm/v/lexical?color=729B1B&label="/>
-  </a>
-  <a href="https://www.npmjs.com/package/lexical">
-    <img alt="NPM Downloads" src="https://img.shields.io/npm/dm/lexical?color=729B1B"/>
-  </a>
-  <a href="https://github.com/facebook/lexical/actions/workflows/tests.yml">
-    <img alt="Build Status" src="https://img.shields.io/github/actions/workflow/status/facebook/lexical/tests.yml"/>
-  </a>
-  <a href="https://discord.gg/KmG4wQnnD9">
-    <img alt="Discord" src="https://img.shields.io/discord/953974421008293909"/>
-  </a>
-  <a href="https://x.com/intent/follow?screen_name=lexicaljs">
-    <img alt="Twitter Follow" src="https://img.shields.io/twitter/follow/lexicaljs?style=social"/>
-  </a>
+  <a href="https://www.npmjs.com/package/lexical"><img alt="NPM Version" src="https://img.shields.io/npm/v/lexical?color=43be15&label="/></a>
+  <a href="https://www.npmjs.com/package/lexical"><img alt="NPM Downloads" src="https://img.shields.io/npm/dw/lexical"/></a>
+  <a href="https://github.com/facebook/lexical/actions/workflows/tests.yml"><img alt="Build Status" src="https://img.shields.io/github/actions/workflow/status/facebook/lexical/tests.yml"/></a>
+  <a href="https://discord.gg/KmG4wQnnD9"><img alt="Discord" src="https://img.shields.io/discord/953974421008293909"/></a>
+  <a href="https://x.com/intent/follow?screen_name=lexicaljs"><img alt="Twitter Follow" src="https://img.shields.io/twitter/follow/lexicaljs"/></a>
 </p>
 
 <p align="center">
-  <a href="https://lexical.dev/docs/">Documentation</a> | <a href="https://lexical.dev/docs/getting-started/">Getting Started</a> | <a href="https://playground.lexical.dev">Playground</a> | <a href="https://lexical.dev/docs/concepts/editor-state">Core Concepts</a>
+  <a href="https://lexical.dev/docs/intro">Documentation</a> | <a href="https://lexical.dev/docs/getting-started/quick-start">Getting Started</a> | <a href="https://playground.lexical.dev">Playground</a> | <a href="https://lexical.dev/gallery">Gallery</a>
 </p>
 
 <br />

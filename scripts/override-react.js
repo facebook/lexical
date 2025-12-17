@@ -44,7 +44,7 @@ async function main() {
       fs.writeJsonSync(fn, json, {spaces: 2});
     }
   });
-  const cmd = `pnpm add ${packages.map((pkg) => `${pkg}@${version}`).join(' ')}`;
+  const cmd = `pnpm add -w ${packages.map((pkg) => `${pkg}@${version}`).join(' ')}`;
   console.log(cmd);
   await exec(cmd);
   await exec(

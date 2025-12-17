@@ -615,6 +615,9 @@ importers:
       '@excalidraw/excalidraw':
         specifier: ^0.18.0
         version: 0.18.0(@types/react-dom@19.1.9(@types/react@19.1.13))(@types/react@19.1.13)(react-dom@19.2.3(react@19.1.1))(react@19.1.1)
+      '@floating-ui/react':
+        specifier: ^0.27.16
+        version: 0.27.16(react-dom@19.2.3(react@19.1.1))(react@19.1.1)
       '@lexical/clipboard':
         specifier: 0.39.0
         version: 0.39.0

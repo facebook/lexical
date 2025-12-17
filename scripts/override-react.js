@@ -44,11 +44,11 @@ async function main() {
       fs.writeJsonSync(fn, json, {spaces: 2});
     }
   });
-  const cmd = `npm i ${packages.map((pkg) => `${pkg}@${version}`).join(' ')}`;
+  const cmd = `pnpm add ${packages.map((pkg) => `${pkg}@${version}`).join(' ')}`;
   console.log(cmd);
   await exec(cmd);
   await exec(
-    `git checkout package-lock.json package.json packages/*/package.json`,
+    `git checkout pnpm-lock.yaml package.json packages/*/package.json`,
   );
 }
 

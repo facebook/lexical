@@ -25,6 +25,7 @@
     "@mermaid-js/layout-elk": "^0.2.0",
     "@radix-ui/react-tabs": "^1.1.13",
     "@vercel/analytics": "^1.5.0",
+    "clsx": "^2.1.1",
     "docusaurus-plugin-internaldocs-fb": "1.19.2",
     "docusaurus-plugin-typedoc": "^1.4.2",
     "fs-extra": "^11.3.2",

@@ -912,6 +912,9 @@ importers:
       '@vercel/analytics':
         specifier: ^1.5.0
         version: 1.6.1(react@19.1.1)
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
       docusaurus-plugin-internaldocs-fb:
         specifier: 1.19.2
         version: 1.19.2(62a0bdcb4b1f2bc95d8525f14ef6f72a)

@@ -47,12 +47,6 @@
     "typescript": "^5.9.2",
     "webpack": "^5.101.3"
   },
-  "pnpm": {
-    "overrides": {
-      "react": "19.1.1",
-      "react-dom": "19.1.1"
-    }
-  },
   "browserslist": {
     "production": [
       ">0.5%",

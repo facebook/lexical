@@ -46,6 +46,7 @@
     "@prettier/sync": "^0.6.1",
     "@rollup/plugin-babel": "^6.0.4",
     "@rollup/plugin-commonjs": "^25.0.7",
+    "@types/lodash": "^4.14.182",
     "@types/lodash-es": "^4.14.182",
     "@vitejs/plugin-react": "^5.0.2",
     "rollup-plugin-copy": "^3.5.0",

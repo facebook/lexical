@@ -43,7 +43,8 @@
     }
   },
   "devDependencies": {
-    "@types/eslint": "^8.56.9"
+    "@types/eslint": "^8.56.9",
+    "@types/estree": "^1.0.6"
   },
   "module": "LexicalEslintPlugin.mjs"
 }

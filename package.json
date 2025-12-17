@@ -17,7 +17,7 @@
     "start:website": "pnpm -C packages/lexical-website run start -- --port 3001",
     "start:playground": "pnpm run start-test-server",
     "dev": "pnpm -C packages/lexical-playground run dev --",
-    "start-test-server": "pnpm -C packages/lexical-playground run preview -- --port 4000",
+    "start-test-server": "pnpm -C packages/lexical-playground run preview",
     "build": "node scripts/build.js",
     "build-prod": "pnpm run clean && pnpm run build -- --prod",
     "build-playground-dev": "pnpm run build && pnpm -C packages/lexical-playground run build-dev",

@@ -20,14 +20,14 @@ This file provides detailed guidance for AI agents and automated tools working w
 - `npm run debug-test-unit` - Debug unit tests with inspector
 
 For E2E testing workflow:
-1. Start the dev server: `npm run start` (or `npm run dev` if you don't need collab)
-2. In another terminal: `npm run test-e2e-chromium`
+1. Start the dev server: `pnpm run start` (or `pnpm run dev` if you don't need collab)
+2. In another terminal: `pnpm run test-e2e-chromium`
 
 ### Development Servers
-- `npm run start` - Start playground dev server + collab server (http://localhost:3000)
-- `npm run dev` - Start only the playground dev server (no collab)
-- `npm run start:website` - Start Docusaurus website (http://localhost:3001)
-- `npm run collab` - Start collab server on localhost:1234
+- `pnpm run start` - Start playground dev server + collab server (http://localhost:3000)
+- `pnpm run dev` - Start only the playground dev server (no collab)
+- `pnpm run start:website` - Start Docusaurus website (http://localhost:3001)
+- `pnpm run collab` - Start collab server on localhost:1234
 
 ### Code Quality
 - `npm run lint` - Run ESLint on all files

@@ -29,13 +29,11 @@ const headerTemplate = fs.readFileSync(
   'utf8',
 );
 
-// pnpm passes arguments differently than npm
-// npm: --www becomes argv.www = true
-// pnpm: --www becomes argv._ = ['--www']
-const isProduction = argv.prod || argv._.includes('--prod');
-const isRelease = argv.release || argv._.includes('--release');
-const isWWW = argv.www || argv._.includes('--www');
-const extractCodes = argv.codes || argv._.includes('--codes');
+// pnpm passes arguments as positional args in argv._
+const isProduction = argv._.includes('--prod');
+const isRelease = argv._.includes('--release');
+const isWWW = argv._.includes('--www');
+const extractCodes = argv._.includes('--codes');
 
 const modulePackageMappings = Object.fromEntries(
   packagesManager.getPublicPackages().flatMap((pkg) => {

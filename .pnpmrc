@@ -1,4 +1,0 @@
-# Use shamefully-hoist for testing compatibility
-# Packages don't declare React as a dependency (they're runtime libraries)
-# but test files need access to react/jsx-dev-runtime
-shamefully-hoist=true

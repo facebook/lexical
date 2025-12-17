@@ -6,6 +6,7 @@
  *
  */
 
+import react from '@vitejs/plugin-react';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import {defineConfig, mergeConfig, Plugin} from 'vitest/config';
 
@@ -42,6 +43,7 @@ export default defineConfig({
         },
         extends: true,
         plugins: [
+          react(),
           tsconfigPaths({projects: ['./tsconfig.test.json']}),
           lexicalTestMocks(),
         ],

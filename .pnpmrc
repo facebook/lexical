@@ -1,3 +1,4 @@
-# Hoist React to make jsx-runtime accessible to Vite
+# Hoist React to make jsx-runtime accessible to Vite in all packages
+# Without this, packages without React in their package.json can't resolve react/jsx-dev-runtime during testing
 public-hoist-pattern[]=react
 public-hoist-pattern[]=react-dom

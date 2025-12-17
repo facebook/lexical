@@ -32,14 +32,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ inputs.node-version }}
-          cache: npm
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
       - name: Install required ubuntu-latest packages
         if: inputs.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
           sudo apt-get install xvfb
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
       - name: Install React ${{ inputs.override-react-version }}
         if: inputs.override-react-version != ''
         # This should be safe since we are caching ~/.npm and not node_modules
@@ -51,7 +53,7 @@ jobs:
         id: playwright-cache
         with:
           path: ${{ env.cache_playwright_path }}
-          key: playwright-${{ inputs.node-version }}-${{ runner.os }}-${{ runner.arch }}-v${{ secrets.CACHE_VERSION }}-${{ hashFiles('package-lock.json') }}
+          key: playwright-${{ inputs.node-version }}-${{ runner.os }}-${{ runner.arch }}-v${{ secrets.CACHE_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
       - name: Install playwright
         run: npx playwright install
       - name: Save playwright to cache
@@ -61,7 +63,7 @@ jobs:
           path: ${{ env.cache_playwright_path }}
           key: ${{ steps.playwright-cache.outputs.cache-primary-key }}
       - name: Run tests
-        run: npm run ${{ env.test_script }}
+        run: pnpm run ${{ env.test_script }}
       - name: Upload Artifacts
         if: failure()
         uses: actions/upload-artifact@v4

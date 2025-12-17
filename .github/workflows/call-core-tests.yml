@@ -17,12 +17,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: npm
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
       - name: Install dependencies
-        run: npm ci
-      - run: npm run ci-check
-      - run: npm run build
-      - run: npm run build-www
+        run: pnpm install --frozen-lockfile
+      - run: pnpm run ci-check
+      - run: pnpm run build
+      - run: pnpm run build-www
 
   unit:
     runs-on: ubuntu-latest
@@ -38,13 +40,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: npm
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
       - name: Install React ${{ matrix.override-react-version }}
         if: matrix.override-react-version != ''
         # This should be safe since we are caching ~/.npm and not node_modules
         run: |
           node ./scripts/override-react.js --version=${{ matrix.override-react-version }}
           grep version node_modules/{react,react-dom}/package.json
-      - run: npm run test-unit
+      - run: pnpm run test-unit

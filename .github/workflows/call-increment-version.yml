@@ -40,7 +40,10 @@ jobs:
         with:
           node-version: 20.x
           registry-url: 'https://registry.npmjs.org'
-      - run: npm ci
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - run: pnpm install --frozen-lockfile
       - run: |
           git config user.name "Lexical GitHub Actions Bot"
           git config user.email "<>"
@@ -51,7 +54,7 @@ jobs:
           repo: lexical
           excludes: draft
       - id: increment-version
-        run: npm run increment-version
+        run: pnpm run increment-version
         env:
           # These are passed in the environment as they are used by
           # the postversion script

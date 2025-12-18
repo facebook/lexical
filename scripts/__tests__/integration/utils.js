@@ -100,7 +100,7 @@ async function buildExample({packageJson, exampleDir}) {
   );
   await withCwd(exampleDir, async () => {
     await expectSuccessfulExec(
-      `pnpm add ${installDeps.map((fn) => `'${fn}'`).join(' ')}`,
+      `pnpm install ${installDeps.map((fn) => `'${fn}'`).join(' ')}`,
     );
     await expectSuccessfulExec('pnpm run build');
     if (hasPlaywright) {

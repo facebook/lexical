@@ -57,7 +57,7 @@ In that scenario, there should be no `index.ts` entrypoint file and every module
 at the top-level should be an entrypoint. All entrypoints should be a
 TypeScript file, not a subdirectory containing an index.ts file.
 
-The [update-packages](#npm-run-update-packages) script will ensure that the
+The [update-packages](#pnpm-run-update-packages) script will ensure that the
 exports match the files on disk.
 
 ## Creating a new package

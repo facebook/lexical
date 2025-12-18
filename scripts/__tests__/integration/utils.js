@@ -99,9 +99,18 @@ async function buildExample({packageJson, exampleDir}) {
     (cleanDir) => fs.removeSync(path.resolve(exampleDir, cleanDir)),
   );
   await withCwd(exampleDir, async () => {
+    // Backup package.json before installing tarballs to prevent modification
+    // (pnpm doesn't support --no-save like npm does)
+    const pkgJsonPath = path.resolve('package.json');
+    const originalPkgJson = fs.readFileSync(pkgJsonPath, 'utf8');
+
     await expectSuccessfulExec(
       `pnpm install ${installDeps.map((fn) => `'${fn}'`).join(' ')}`,
     );
+
+    // Restore package.json to prevent dependency conflicts
+    fs.writeFileSync(pkgJsonPath, originalPkgJson);
+
     await expectSuccessfulExec('pnpm run build');
     if (hasPlaywright) {
       await expectSuccessfulExec('pnpm exec playwright install');

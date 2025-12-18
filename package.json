@@ -69,7 +69,7 @@
     "run-all": "npm-run-all 'test-e2e-* -- {1}' --",
     "debug-test-e2e": "cross-env playwright test --debug",
     "debug-test-e2e-chromium": "cross-env E2E_BROWSER=chromium playwright test --debug --project=\"chromium\"",
-    "debug-test-e2e-prod-chromium": "cross-env E2E_BROWSER=chromium E2E_PORT=4173 playwright test --debug --project=\"chromium\"",
+    "debug-test-e2e-prod-chromium": "cross-env E2E_BROWSER=chromium E2E_PORT=4000 playwright test --debug --project=\"chromium\"",
     "debug-test-e2e-firefox": "cross-env E2E_BROWSER=firefox playwright test --debug --project=\"firefox\"",
     "debug-test-e2e-webkit": "cross-env E2E_BROWSER=webkit playwright test --debug --project=\"webkit\"",
     "debug-test-e2e-legacy": "cross-env playwright test --debug",

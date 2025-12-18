@@ -99,17 +99,26 @@ async function buildExample({packageJson, exampleDir}) {
     (cleanDir) => fs.removeSync(path.resolve(exampleDir, cleanDir)),
   );
   await withCwd(exampleDir, async () => {
-    // Backup package.json before installing tarballs to prevent modification
+    // Backup package.json and lockfile before installing tarballs
     // (pnpm doesn't support --no-save like npm does)
     const pkgJsonPath = path.resolve('package.json');
+    const lockfilePath = path.resolve('pnpm-lock.yaml');
     const originalPkgJson = fs.readFileSync(pkgJsonPath, 'utf8');
+    const originalLockfile = fs.existsSync(lockfilePath)
+      ? fs.readFileSync(lockfilePath, 'utf8')
+      : null;
 
     await expectSuccessfulExec(
       `pnpm install ${installDeps.map((fn) => `'${fn}'`).join(' ')}`,
     );
 
-    // Restore package.json to prevent dependency conflicts
+    // Restore package.json and lockfile to prevent dependency conflicts
     fs.writeFileSync(pkgJsonPath, originalPkgJson);
+    if (originalLockfile) {
+      fs.writeFileSync(lockfilePath, originalLockfile);
+    } else {
+      fs.removeSync(lockfilePath);
+    }
 
     await expectSuccessfulExec('pnpm run build');
     if (hasPlaywright) {

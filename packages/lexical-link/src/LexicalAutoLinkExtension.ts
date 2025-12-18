@@ -8,6 +8,7 @@
 
 import type {ElementNode, LexicalEditor, LexicalNode} from 'lexical';
 
+import {$isCodeNode} from '@lexical/code';
 import {mergeRegister} from '@lexical/utils';
 import {
   $createTextNode,
@@ -475,7 +476,7 @@ export function registerAutoLink(
       const previous = textNode.getPreviousSibling();
       if ($isAutoLinkNode(parent) && !parent.getIsUnlinked()) {
         handleLinkEdit(parent, matchers, onChange);
-      } else if (!$isLinkNode(parent)) {
+      } else if (!$isLinkNode(parent) && !$isCodeNode(parent)) {
         if (
           textNode.isSimpleText() &&
           (startsWithSeparator(textNode.getTextContent()) ||

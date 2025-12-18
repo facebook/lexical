@@ -18,6 +18,7 @@ import {
 import {
   assertHTML,
   click,
+  expect,
   focusEditor,
   html,
   initialize,
@@ -747,6 +748,38 @@ test.describe.parallel('Auto Links', () => {
           </a>
           <span data-lexical-text="true">test</span>
         </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  test('Does not convert URLs inside code blocks to links', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+
+    await page.keyboard.type('``` http://example.com');
+
+    await assertHTML(
+      page,
+      html`
+        <code
+          dir="auto"
+          spellcheck="false"
+          data-gutter="1"
+          data-highlight-language="javascript"
+          data-language="javascript">
+          <span data-lexical-text="true">http</span>
+          <span data-lexical-text="true">:</span>
+          <span data-lexical-text="true">/</span>
+          <span data-lexical-text="true">/</span>
+          <span data-lexical-text="true">example</span>
+          <span data-lexical-text="true">.</span>
+          <span data-lexical-text="true">com</span>
+        </code>
       `,
       undefined,
       {ignoreClasses: true},

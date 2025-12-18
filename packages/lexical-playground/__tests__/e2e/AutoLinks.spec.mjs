@@ -18,7 +18,6 @@ import {
 import {
   assertHTML,
   click,
-  expect,
   focusEditor,
   html,
   initialize,

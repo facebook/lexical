@@ -32,7 +32,7 @@ function validateTscTypes() {
   const dtsFiles = glob.sync(dtsFilesPattern, {windowsPathsNoEscape: true});
   if (dtsFiles.length === 0) {
     console.error(
-      `Missing ${dtsFilesPattern}, \`npm run build-prod\` or \`npm run build-release\` first`,
+      `Missing ${dtsFilesPattern}, \`pnpm run build-prod\` or \`pnpm run build-release\` first`,
     );
     process.exit(1);
   }

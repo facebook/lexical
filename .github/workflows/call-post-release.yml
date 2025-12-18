@@ -31,8 +31,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22.x
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
       - run: |
-          npm i && npm run update-examples
+          pnpm install && pnpm run update-examples
       - uses: stefanzweifel/git-auto-commit-action@v6
         with:
           commit_message: 'Update examples for ${{ steps.latest.outputs.release }}'

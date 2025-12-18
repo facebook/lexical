@@ -18,11 +18,11 @@ const {npm_package_version, CHANNEL, GITHUB_OUTPUT} = process.env;
 // following (in one line):
 //
 //   git checkout -b ${npm_package_version}__release && \
-//   npm run update-version && \
-//   npm install && \
-//   npm run update-packages && \
-//   npm run extract-codes && \
-//   npm run update-changelog && \
+//   pnpm run update-version && \
+//   pnpm install && \
+//   pnpm run update-packages && \
+//   pnpm run extract-codes && \
+//   pnpm run update-changelog && \
 //   git add -A && \
 //   git commit -m v${npm_package_version} && \
 //   git tag -a v${npm_package_version} -m v${npm_package_version}
@@ -42,14 +42,14 @@ async function main() {
     // Create or force update the channel branch to build the docs site from
     ['git', 'checkout', '-B', `${CHANNEL}__release`],
     // Update all package.json versions in the monorepo
-    `npm run update-version`,
+    `pnpm run update-version`,
     // Update package-lock.json
-    `npm install`,
+    `pnpm install`,
     // Fix up all package.json files
-    `npm run update-packages`,
+    `pnpm run update-packages`,
     // Extract error codes and update changelog, but only in production
     ...(CHANNEL === 'latest'
-      ? [`npm run extract-codes`, `npm run update-changelog`]
+      ? [`pnpm run extract-codes`, `pnpm run update-changelog`]
       : []),
     `git add -A`,
     ['git', 'commit', '-m', `v${npm_package_version}`],

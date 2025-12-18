@@ -44,7 +44,7 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Install React ${{ inputs.override-react-version }}
         if: inputs.override-react-version != ''
-        # This should be safe since we are caching ~/.npm and not node_modules
+        # This should be safe since we are caching pnpm store and not node_modules
         run: |
           node ./scripts/override-react.js --version=${{ inputs.override-react-version }}
           grep version node_modules/{react,react-dom}/package.json

@@ -43,7 +43,7 @@ async function main() {
     ['git', 'checkout', '-B', `${CHANNEL}__release`],
     // Update all package.json versions in the monorepo
     `pnpm run update-version`,
-    // Update package-lock.json
+    // Update pnpm-lock.yaml
     `pnpm install`,
     // Fix up all package.json files
     `pnpm run update-packages`,

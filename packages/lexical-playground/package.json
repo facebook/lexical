@@ -8,7 +8,7 @@
     "build-dev": "vite build",
     "build-prod": "vite build --mode production",
     "build-vercel": "(cd ../../ && node ./scripts/build.js) && pnpm run build-dev",
-    "preview": "vite preview"
+    "preview": "vite preview --port 4000 --host"
   },
   "dependencies": {
     "@excalidraw/excalidraw": "^0.18.0",

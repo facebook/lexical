@@ -285,6 +285,9 @@ importers:
       vitest:
         specifier: ^3.2.4
         version: 3.2.4(@types/debug@4.1.12)(@types/node@20.19.17)(happy-dom@20.0.11)(jiti@2.6.1)(jsdom@24.0.0)(lightningcss@1.30.2)(terser@5.44.0)(yaml@2.8.1)
+      y-websocket:
+        specifier: ^1.5.4
+        version: 1.5.4(yjs@13.6.27)
 
   packages/lexical: {}
 

@@ -204,7 +204,8 @@
     "typescript": "^5.9.2",
     "vite": "^7.1.4",
     "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "y-websocket": "^1.5.4"
   },
   "dependencies": {
     "semver": "^7.7.2",

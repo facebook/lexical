@@ -97,7 +97,7 @@ const distModuleResolution = (
               `ERROR: Missing ./${path.relative(
                 '../..',
                 replacements[1],
-              )}. Did you run \`npm run build\` in the monorepo first?`,
+              )}. Did you run \`pnpm run build\` in the monorepo first?`,
             );
           }
           return {

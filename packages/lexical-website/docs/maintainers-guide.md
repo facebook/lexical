@@ -9,9 +9,9 @@ configurations.
 ### Workspaces
 
 The top-level `package.json` uses
-[npm workspaces](https://docs.npmjs.com/cli/v10/using-npm/workspaces) to
+[pnpm workspaces](https://pnpm.io/workspaces) to
 configure the monorepo. This mostly means that all packages share a
-top-level `package-lock.json` and `npm run {command} -w {package}` is often
+top-level `pnpm-lock.yaml` and `pnpm -C {package} run {command}` is often
 used to run a command from a nested package's package.json.
 
 ### Private
@@ -62,21 +62,19 @@ exports match the files on disk.
 
 ## Creating a new package
 
-The first step in creating a new package is to create the workspace, there
-is a [npm-init](https://docs.npmjs.com/cli/v10/commands/npm-init) template
-that will fill in some of the defaults for you based on conventions.
-
-The example we will use is the steps that were used to create the
-`lexical-eslint-plugin`, which will be published to npm as
+The first step in creating a new package is to create the workspace directory
+and package.json file. The example we will use is the steps that were used
+to create the `lexical-eslint-plugin`, which will be published to npm as
 `@lexical/eslint-plugin`.
 
 ### Create the workspace
 
-```
-npm init -w packages/lexical-eslint-plugin
+```bash
+mkdir -p packages/lexical-eslint-plugin
 ```
 
-This only automates the first step, creating a single file:
+Create the initial `package.json` file (you can base it on an existing package
+or use the template below):
 
 <details><summary>
 
@@ -144,7 +142,7 @@ export default plugin;
 ### Run update-packages to generate boilerplate docs & config
 
 ```
-npm run update-packages
+pnpm run update-packages
 ```
 
 This will set up the tsconfig, flow, etc. configuration to recognize your
@@ -179,7 +177,7 @@ describe('LexicalEslintPlugin', () => {
 
 ## Scripts for development
 
-### npm run update-packages
+### pnpm run update-packages
 
 This script runs: update-version, update-tsconfig, update-flowconfig,
 create-docs, and create-www-stubs. This is safe to do at any time and will
@@ -190,7 +188,7 @@ various defaults are filled in.
 These scripts can be run individually, but unless you're working on one
 of these scripts you might as well run them all.
 
-### npm run prepare-release
+### pnpm run prepare-release
 
 This runs all of the pre-release steps and will let you inspect the artifacts
 that would be uploaded to npm. Each public package will have a npm directory, e.g.
@@ -200,35 +198,35 @@ This will also update scripts/error-codes/codes.json, the mapping of
 production error codes to error messages. It's imperative to commit the result
 of this before tagging a release.
 
-### npm run ci-check
+### pnpm run ci-check
 
 Check flow, TypeScript, prettier and eslint for issues. A good command to run
 after committing (which will auto-fix most prettier issues) and before pushing
 a PR.
 
-### npm run flow
+### pnpm run flow
 
 Check the Flow types
 
-### npm run tsc
+### pnpm run tsc
 
 Check the TypeScript types
 
-### npm run tsc-extension
+### pnpm run tsc-extension
 
 Check the TypeScript types of the lexical-devtools extension
 
-### npm run test-unit
+### pnpm run test-unit
 
 Run the unit tests
 
-### npm run lint
+### pnpm run lint
 
 Run eslint
 
 ## Scripts for release managers
 
-### npm run extract-codes
+### pnpm run extract-codes
 
 This will run a build that also extracts the generated error codes.json file.
 
@@ -243,28 +241,28 @@ as a failsafe to ensure that these codes are up to date in a release.
 This command runs a development build to extract the codes which is much
 faster as it is not doing any optimization/minification steps.
 
-### npm run increment-version
+### pnpm run increment-version
 
 Increment the monorepo version. The `-i` argument must be one of
 `minor` | `patch` | `prerelease`.
 
 The postversion script will:
 - Create a local `${npm_package_version}__release` branch
-- `npm run update-version` to update example and sub-package monorepo dependencies
-- `npm install` to update the package-lock.json
-- `npm run update-packages` to update other generated config
-- `npm run extract-codes` to extract the error codes
-- `npm run update-changelog` to update the changelog (if it's not a prerelease)
+- `pnpm run update-version` to update example and sub-package monorepo dependencies
+- `pnpm install` to update the pnpm-lock.yaml
+- `pnpm run update-packages` to update other generated config
+- `pnpm run extract-codes` to extract the error codes
+- `pnpm run update-changelog` to update the changelog (if it's not a prerelease)
 - Create a version commit and tag from the branch
 
 This is typically executed through the `version.yml` GitHub Workflow which
 will also push the tag and branch.
 
-### npm run changelog
+### pnpm run changelog
 
 Update the changelog from git history.
 
-### npm run release
+### pnpm run release
 
 *Prerequisites:* all of the previous release manager scripts,
 plus creating a tag in git, and likely other steps.

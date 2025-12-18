@@ -55,7 +55,7 @@ jobs:
           path: ${{ env.cache_playwright_path }}
           key: playwright-${{ inputs.node-version }}-${{ runner.os }}-${{ runner.arch }}-v${{ secrets.CACHE_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
       - name: Install playwright
-        run: npx playwright install
+        run: pnpm exec playwright install
       - name: Save playwright to cache
         uses: actions/cache/save@v4
         if: steps.playwright-cache.outputs.cache-hit != 'true'

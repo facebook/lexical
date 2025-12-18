@@ -18,7 +18,9 @@ const {PackageMetadata} = require('../shared/PackageMetadata');
 
 const lexicalPkg = new PackageMetadata('packages/lexical/package.json');
 
-// npm doesn't give us a way to discover the -w argument so
+// NOTE: This script is legacy from when npm workspaces were used.
+// With pnpm, create packages manually using mkdir and a package.json template.
+// See the maintainers guide for the current recommended workflow.
 const workspace = argv.w || argv.workspace;
 if (
   !Array.isArray(argv._) ||
@@ -27,7 +29,7 @@ if (
   !/^packages\/[^/]+$/.test(workspace)
 ) {
   throw new Error(
-    'Expecting to be called as npm init -w packages/PACKAGE_NAME',
+    'Legacy script: npm init -w is from npm workspaces era. With pnpm, create packages manually.',
   );
 }
 const pkgDirName = path.basename(workspace);

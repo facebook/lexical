@@ -13,6 +13,8 @@ on:
       flaky: {required: false, type: boolean} # Defaults to false: dont run flaky
       override-react-version: {required: false, type: string}
 
+permissions: {}
+
 jobs:
   e2e-test:
     runs-on: ${{ inputs.os }}

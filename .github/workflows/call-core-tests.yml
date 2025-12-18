@@ -3,6 +3,8 @@ name: Lexical Core Tests
 on:
   workflow_call:
 
+permissions: {}
+
 jobs:
   integrity:
     runs-on: ubuntu-latest

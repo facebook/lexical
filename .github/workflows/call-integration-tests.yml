@@ -3,6 +3,8 @@ name: Lexical Integration Tests
 on:
   workflow_call:
 
+permissions: {}
+
 jobs:
   integration:
     runs-on: ubuntu-latest

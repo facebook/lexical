@@ -3,6 +3,8 @@ name: Lexical e2e canary test
 on:
   workflow_call:
 
+permissions: {}
+
 jobs:
   canary:
     strategy:

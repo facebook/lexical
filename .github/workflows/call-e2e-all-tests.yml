@@ -3,6 +3,8 @@ name: Lexical e2e tests
 on:
   workflow_call:
 
+permissions: {}
+
 jobs:
   mac-rich:
     strategy:

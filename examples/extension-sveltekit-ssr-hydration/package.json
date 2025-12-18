@@ -27,7 +27,7 @@
     "@lexical/table": "0.39.0",
     "@lexical/tailwind": "0.39.0",
     "@lexical/utils": "0.39.0",
-    "@playwright/test": "^1.49.1",
+    "@playwright/test": "^1.51.1",
     "@sveltejs/adapter-auto": "^6.0.0",
     "@sveltejs/kit": "^2.22.0",
     "@sveltejs/vite-plugin-svelte": "^6.0.0",

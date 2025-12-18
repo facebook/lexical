@@ -7,8 +7,16 @@ possible.
 
 We actively welcome your pull requests.
 
+This project uses [pnpm](https://pnpm.io/) as its package manager. If you don't have it installed:
+
+```bash
+npm install -g pnpm
+# or if you have Node.js 16.13+
+corepack enable
+```
+
 1. Fork the repo and create your branch from `main`.
-2. Run `npm install` to install dependencies.
+2. Run `pnpm install` to install dependencies.
 3. If you've added code that should be tested, add tests.
 4. If you've changed APIs, update the documentation.
 5. Ensure the test suite passes.
@@ -17,19 +25,19 @@ We actively welcome your pull requests.
 
 Note that the local server needs to be running in order to run the e2e tests.
 
-- `npm run start`
-- `npm run test-e2e-chromium` (to run only chromium e2e tests)
+- `pnpm run start`
+- `pnpm run test-e2e-chromium` (to run only chromium e2e tests)
 
-`npm run start` will start both the dev server and collab server. If you don't need collab, use `npm run dev` to start just the dev server.
+`pnpm run start` will start both the dev server and collab server. If you don't need collab, use `pnpm run dev` to start just the dev server.
 
 If you're contributing to the website or documentation, you can run docusaurus
 with:
 
-- `npm run start:website`
+- `pnpm run start:website`
 
 A full build of the website can be done with:
 
-- `npm -w packages/lexical-website run build`
+- `pnpm -C packages/lexical-website run build`
 
 ## Contributor License Agreement ("CLA")
 

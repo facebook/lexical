@@ -5,19 +5,19 @@ This file provides detailed guidance for AI agents and automated tools working w
 ## Build, Test, and Development Commands
 
 ### Building
-- `npm run build` - Build all packages in development mode
-- `npm run build-prod` - Clean and build all packages in production mode
-- `npm run build-release` - Build production release with error codes
-- `npm run build-types` - Build TypeScript type definitions and validate them
+- `pnpm run build` - Build all packages in development mode
+- `pnpm run build-prod` - Clean and build all packages in production mode
+- `pnpm run build-release` - Build production release with error codes
+- `pnpm run build-types` - Build TypeScript type definitions and validate them
 
 ### Testing
-- `npm run test-unit` - Run all unit tests (Vitest)
-- `npm run test-unit-watch` - Run unit tests in watch mode
-- `npm run test-e2e-chromium` - Run E2E tests in Chromium (requires dev server running)
-- `npm run test-e2e-firefox` - Run E2E tests in Firefox
-- `npm run test-e2e-webkit` - Run E2E tests in WebKit
-- `npm run debug-test-e2e-chromium` - Run E2E tests in debug mode (headed)
-- `npm run debug-test-unit` - Debug unit tests with inspector
+- `pnpm run test-unit` - Run all unit tests (Vitest)
+- `pnpm run test-unit-watch` - Run unit tests in watch mode
+- `pnpm run test-e2e-chromium` - Run E2E tests in Chromium (requires dev server running)
+- `pnpm run test-e2e-firefox` - Run E2E tests in Firefox
+- `pnpm run test-e2e-webkit` - Run E2E tests in WebKit
+- `pnpm run debug-test-e2e-chromium` - Run E2E tests in debug mode (headed)
+- `pnpm run debug-test-unit` - Debug unit tests with inspector
 
 For E2E testing workflow:
 1. Start the dev server: `pnpm run start` (or `pnpm run dev` if you don't need collab)
@@ -30,12 +30,12 @@ For E2E testing workflow:
 - `pnpm run collab` - Start collab server on localhost:1234
 
 ### Code Quality
-- `npm run lint` - Run ESLint on all files
-- `npm run prettier` - Check code formatting
-- `npm run prettier:fix` - Auto-fix formatting issues
-- `npm run flow` - Run Flow type checker
-- `npm run tsc` - Run TypeScript compiler
-- `npm run ci-check` - Run all checks (TypeScript, Flow, Prettier, ESLint)
+- `pnpm run lint` - Run ESLint on all files
+- `pnpm run prettier` - Check code formatting
+- `pnpm run prettier:fix` - Auto-fix formatting issues
+- `pnpm run flow` - Run Flow type checker
+- `pnpm run tsc` - Run TypeScript compiler
+- `pnpm run ci-check` - Run all checks (TypeScript, Flow, Prettier, ESLint)
 
 ## High-Level Architecture
 
@@ -122,9 +122,9 @@ function MyPlugin() {
 This codebase uses **both TypeScript and Flow**:
 - Source files are primarily TypeScript (`.ts`, `.tsx`)
 - Flow type definitions are generated in `packages/*/flow/` directories
-- Run `npm run flow` to check Flow types
-- Run `npm run tsc` to check TypeScript types
-- Both are checked in CI via `npm run ci-check`
+- Run `pnpm run flow` to check Flow types
+- Run `pnpm run tsc` to check TypeScript types
+- Both are checked in CI via `pnpm run ci-check`
 
 When adding/modifying APIs, types must be maintained for both systems.
 
@@ -144,7 +144,7 @@ Always access node properties/methods within read/update context. Nodes automati
 - **Unit tests** - Vitest, located in `packages/**/__tests__/unit/**/*.test.{ts,tsx}`
 - **E2E tests** - Playwright, located in `packages/lexical-playground/__tests__/e2e/**/*.spec.{ts,mjs}`
 - E2E tests require the playground dev server running
-- Use `npm run debug-test-e2e-chromium` to debug E2E tests with browser UI
+- Use `pnpm run debug-test-e2e-chromium` to debug E2E tests with browser UI
 
 ### Custom Nodes
 When creating custom nodes:

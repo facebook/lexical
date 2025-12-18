@@ -1734,15 +1734,16 @@ export class RangeSelection implements BaseSelection {
       const direction = isBackward ? 'previous' : 'next';
       const initialCaret = $caretFromPoint(anchor, direction);
       const initialRange = $extendCaretToRange(initialCaret);
-      const elementBefore =
-        anchorNode.__prev && $getNodeByKey(anchorNode.__prev);
+      const elementBefore = anchorNode.getPreviousSibling();
       if (
         initialRange
           .getTextSlices()
           .every((slice) => slice === null || slice.distance === 0)
       ) {
         // There's no text in the direction of the deletion so we can explore our options
-        if (elementBefore && elementBefore.__type === 'table') {
+
+        // Case where we prevent the deletion of paragraph just before table
+        if (elementBefore && elementBefore.getType() === 'table') {
           return;
         }
         let state:

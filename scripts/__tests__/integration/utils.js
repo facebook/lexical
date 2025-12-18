@@ -100,13 +100,13 @@ async function buildExample({packageJson, exampleDir}) {
   );
   await withCwd(exampleDir, async () => {
     await expectSuccessfulExec(
-      `npm install --prefix=./ --no-save ${installDeps
+      `pnpm install --prefix=./ --no-save ${installDeps
         .map((fn) => `'${fn}'`)
         .join(' ')}`,
     );
-    await expectSuccessfulExec('npm run build');
+    await expectSuccessfulExec('pnpm run build');
     if (hasPlaywright) {
-      await expectSuccessfulExec('npx playwright install');
+      await expectSuccessfulExec('pnpm exec playwright install');
     }
   });
   return depsMap;
@@ -153,7 +153,9 @@ function describeExample(packageJsonPath, bodyFun = undefined) {
       test(
         'tests pass',
         async () => {
-          await withCwd(exampleDir, () => expectSuccessfulExec('npm run test'));
+          await withCwd(exampleDir, () =>
+            expectSuccessfulExec('pnpm run test'),
+          );
         },
         LONG_TIMEOUT,
       );

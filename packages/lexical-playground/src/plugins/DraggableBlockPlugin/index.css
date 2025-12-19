@@ -9,6 +9,9 @@
   will-change: transform;
   display: flex;
   gap: 2px;
+  transition:
+    transform 140ms ease-out,
+    opacity 120ms ease-in-out;
 }
 
 .draggable-block-menu .icon {

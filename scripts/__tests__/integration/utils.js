@@ -44,11 +44,28 @@ function expectSuccessfulExec(cmd) {
   // clear out parts of the environment that would confuse
   // node, npm and playwright.
   const env = Object.fromEntries(
-    Object.entries(process.env).filter(
-      ([k]) => !(k === 'JEST_WORKER_ID' || /^(NODE|npm)/.test(k)),
-    ),
+    Object.entries(process.env).filter(([k]) => k !== 'JEST_WORKER_ID'),
   );
-  return exec(cmd, {capture: ['stdout', 'stderr'], env}).catch((err) => {
+  // Ensure PATH includes node binary directory
+  if (
+    process.execPath &&
+    env.PATH &&
+    !env.PATH.includes(path.dirname(process.execPath))
+  ) {
+    env.PATH = `${path.dirname(process.execPath)}:${env.PATH}`;
+  } else if (process.execPath && !env.PATH) {
+    env.PATH = path.dirname(process.execPath);
+  }
+  // Prevent npm from trying to be interactive
+  env.CI = 'true';
+  env.npm_config_yes = 'true';
+
+  return exec(cmd, {
+    capture: ['stdout', 'stderr'],
+    env,
+    // Provide empty stdin to prevent hanging on input
+    stdio: ['ignore', 'pipe', 'pipe'],
+  }).catch((err) => {
     expect(
       Object.fromEntries(
         ['code', 'stdout', 'stderr'].map((prop) => [prop, err[prop]]),
@@ -98,21 +115,42 @@ async function buildExample({packageJson, exampleDir}) {
   ['node_modules', 'dist', 'build', '.next', '.svelte-kit'].forEach(
     (cleanDir) => fs.removeSync(path.resolve(exampleDir, cleanDir)),
   );
-  await withCwd(exampleDir, async () => {
-    // First install regular dependencies from package.json
-    // This ensures optional dependencies like @rollup/rollup-linux-x64-gnu are installed
-    // See https://github.com/npm/cli/issues/4828
-    await expectSuccessfulExec('npm install');
 
-    // Then install tarballs without modifying package.json
-    await expectSuccessfulExec(
-      `npm install --no-save ${installDeps.map((fn) => `'${fn}'`).join(' ')}`,
-    );
-    await expectSuccessfulExec('npm run build');
-    if (hasPlaywright) {
-      await expectSuccessfulExec('npx playwright install');
-    }
-  });
+  const packageJsonPath = path.resolve(exampleDir, 'package.json');
+  const packageJsonBackup = fs.readFileSync(packageJsonPath, 'utf8');
+
+  try {
+    await withCwd(exampleDir, async () => {
+      console.log(`[${exampleDir}] Starting npm install...`);
+      // First install regular dependencies from package.json
+      // This ensures optional dependencies like @rollup/rollup-linux-x64-gnu are installed
+      await expectSuccessfulExec('npm install');
+      console.log(`[${exampleDir}] npm install complete`);
+
+      console.log(`[${exampleDir}] Installing tarballs...`);
+      // Install tarballs (will modify package.json, but we'll restore it)
+      // Not using --no-save to avoid npm bug with optional dependencies
+      // See https://github.com/npm/cli/issues/4828
+      await expectSuccessfulExec(
+        `npm install ${installDeps.map((fn) => `'${fn}'`).join(' ')}`,
+      );
+      console.log(`[${exampleDir}] Tarballs installed`);
+
+      console.log(`[${exampleDir}] Running build...`);
+      await expectSuccessfulExec('npm run build');
+      console.log(`[${exampleDir}] Build complete`);
+
+      if (hasPlaywright) {
+        console.log(`[${exampleDir}] Installing Playwright...`);
+        await expectSuccessfulExec('npx playwright install');
+        console.log(`[${exampleDir}] Playwright installed`);
+      }
+    });
+  } finally {
+    // Restore package.json to original state
+    console.log(`[${exampleDir}] Restoring package.json`);
+    fs.writeFileSync(packageJsonPath, packageJsonBackup);
+  }
   return depsMap;
 }
 

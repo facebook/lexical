@@ -188,7 +188,6 @@ function setMenuPosition(
     return;
   }
 
-  floatingElem.style.display = 'flex';
   const targetRect = targetElem.getBoundingClientRect();
   const targetStyle = window.getComputedStyle(targetElem);
   const floatingElemRect = floatingElem.getBoundingClientRect();

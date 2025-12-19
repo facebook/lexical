@@ -99,6 +99,12 @@ async function buildExample({packageJson, exampleDir}) {
     (cleanDir) => fs.removeSync(path.resolve(exampleDir, cleanDir)),
   );
   await withCwd(exampleDir, async () => {
+    // First install regular dependencies from package.json
+    // This ensures optional dependencies like @rollup/rollup-linux-x64-gnu are installed
+    // See https://github.com/npm/cli/issues/4828
+    await expectSuccessfulExec('npm install');
+
+    // Then install tarballs without modifying package.json
     await expectSuccessfulExec(
       `npm install --no-save ${installDeps.map((fn) => `'${fn}'`).join(' ')}`,
     );

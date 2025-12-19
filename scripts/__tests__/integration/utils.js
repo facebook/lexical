@@ -41,7 +41,11 @@ exports.withCwd = withCwd;
  * @returns {Promise<string>}
  */
 function expectSuccessfulExec(cmd) {
-  return exec(cmd, {capture: ['stdout', 'stderr']}).catch((err) => {
+  // Filter out JEST_WORKER_ID to prevent Playwright from detecting Jest environment
+  const env = Object.fromEntries(
+    Object.entries(process.env).filter(([k]) => k !== 'JEST_WORKER_ID'),
+  );
+  return exec(cmd, {capture: ['stdout', 'stderr'], env}).catch((err) => {
     expect(
       Object.fromEntries(
         ['code', 'stdout', 'stderr'].map((prop) => [prop, err[prop]]),

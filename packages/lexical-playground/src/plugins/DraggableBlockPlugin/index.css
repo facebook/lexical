@@ -6,12 +6,12 @@
   position: absolute;
   left: 0;
   top: 0;
-  will-change: transform;
+  will-change: transform, opacity;
   display: flex;
   gap: 2px;
   transition:
-    transform 140ms ease-out,
-    opacity 120ms ease-in-out;
+    transform 140ms ease-in-out,
+    opacity 160ms ease-in-out;
 }
 
 .draggable-block-menu .icon {

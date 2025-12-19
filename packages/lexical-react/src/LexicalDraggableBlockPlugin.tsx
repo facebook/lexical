@@ -185,10 +185,11 @@ function setMenuPosition(
 ) {
   if (!targetElem) {
     floatingElem.style.opacity = '0';
-    floatingElem.style.transform = 'translate(-10000px, -10000px)';
+    floatingElem.style.display = 'none';
     return;
   }
 
+  floatingElem.style.display = 'flex';
   const targetRect = targetElem.getBoundingClientRect();
   const targetStyle = window.getComputedStyle(targetElem);
   const floatingElemRect = floatingElem.getBoundingClientRect();

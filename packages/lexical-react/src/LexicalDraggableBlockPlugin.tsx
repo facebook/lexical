@@ -184,12 +184,10 @@ function setMenuPosition(
   anchorElem: HTMLElement,
 ) {
   if (!targetElem) {
-    floatingElem.style.opacity = '0';
     floatingElem.style.display = 'none';
     return;
   }
 
-  floatingElem.style.display = 'flex';
   const targetRect = targetElem.getBoundingClientRect();
   const targetStyle = window.getComputedStyle(targetElem);
   const floatingElemRect = floatingElem.getBoundingClientRect();
@@ -209,6 +207,7 @@ function setMenuPosition(
 
   const left = SPACE;
 
+  floatingElem.style.display = 'flex';
   floatingElem.style.opacity = '1';
   floatingElem.style.transform = `translate(${left}px, ${top}px)`;
 }

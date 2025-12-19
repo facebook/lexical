@@ -52,5 +52,8 @@
     "vite-plugin-devtools-json": "^1.0.0",
     "vitest": "^3.2.3",
     "vitest-browser-svelte": "^0.1.0"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "4.6.1"
   }
 }

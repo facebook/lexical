@@ -26,5 +26,8 @@
   "devDependencies": {
     "@playwright/test": "^1.51.1",
     "typescript": "^5.9.2"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "4.6.1"
   }
 }

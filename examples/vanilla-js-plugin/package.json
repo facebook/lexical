@@ -10,25 +10,16 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@lexical/clipboard": "file:../../npm/lexical-clipboard-0.39.0.tgz",
-    "@lexical/dragon": "file:../../npm/lexical-dragon-0.39.0.tgz",
-    "@lexical/extension": "file:../../npm/lexical-extension-0.39.0.tgz",
-    "@lexical/history": "file:../../npm/lexical-history-0.39.0.tgz",
-    "@lexical/html": "file:../../npm/lexical-html-0.39.0.tgz",
-    "@lexical/list": "file:../../npm/lexical-list-0.39.0.tgz",
-    "@lexical/rich-text": "file:../../npm/lexical-rich-text-0.39.0.tgz",
-    "@lexical/selection": "file:../../npm/lexical-selection-0.39.0.tgz",
-    "@lexical/table": "file:../../npm/lexical-table-0.39.0.tgz",
-    "@lexical/utils": "file:../../npm/lexical-utils-0.39.0.tgz",
+    "@lexical/dragon": "0.39.0",
+    "@lexical/history": "0.39.0",
+    "@lexical/rich-text": "0.39.0",
+    "@lexical/utils": "0.39.0",
     "emoji-datasource-facebook": "15.1.2",
-    "lexical": "file:../../npm/lexical-0.39.0.tgz"
+    "lexical": "0.39.0"
   },
   "devDependencies": {
     "cross-env": "^7.0.3",
     "typescript": "^5.9.2",
     "vite": "^7.1.4"
-  },
-  "optionalDependencies": {
-    "@rollup/rollup-linux-x64-gnu": "4.6.1"
   }
 }

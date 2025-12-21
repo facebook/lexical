@@ -48,7 +48,7 @@ async function main() {
   console.log(cmd);
   await exec(cmd);
   await exec(
-    `git checkout pnpm-lock.yaml package.json packages/*/package.json`,
+    `git checkout package-lock.json package.json packages/*/package.json`,
   );
 }
 

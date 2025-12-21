@@ -149,9 +149,7 @@ function describeExample(packageJsonPath, bodyFun = undefined) {
       test(
         'tests pass',
         async () => {
-          await withCwd(exampleDir, () =>
-            expectSuccessfulExec('pnpm run test'),
-          );
+          await withCwd(exampleDir, () => expectSuccessfulExec('npm run test'));
         },
         LONG_TIMEOUT,
       );

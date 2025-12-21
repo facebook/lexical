@@ -11,8 +11,8 @@ This project uses [pnpm](https://pnpm.io/) as its package manager. If you don't 
 
 ```bash
 npm install -g pnpm
-# or if you have Node.js 16.13+
-corepack enable
+# or use corepack (works with all Node.js versions)
+npx corepack@latest enable
 ```
 
 1. Fork the repo and create your branch from `main`.

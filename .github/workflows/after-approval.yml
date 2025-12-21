@@ -4,6 +4,8 @@ on:
   pull_request_review:
     types: [submitted]
 
+permissions: {}
+
 jobs:
   pre_job:
     if: (github.event.review.state == 'approved' && !contains(github.event.pull_request.labels.*.name, 'extended-tests'))

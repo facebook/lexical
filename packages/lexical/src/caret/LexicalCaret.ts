@@ -445,7 +445,7 @@ abstract class AbstractCaret<
     // TODO: Optimize this to work directly with node internals
     for (const node of nodeIter) {
       if (nodesToRemove.size > 0) {
-        // For some reason `npm run tsc-extension` needs this annotation?
+        // For some reason `pnpm run tsc-extension` needs this annotation?
         const target: null | LexicalNode = caret.getNodeAtCaret();
         if (target) {
           nodesToRemove.delete(target.getKey());

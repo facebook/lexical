@@ -29,11 +29,11 @@ const headerTemplate = fs.readFileSync(
   'utf8',
 );
 
-// pnpm passes arguments as positional args in argv._
-const isProduction = argv._.includes('--prod');
-const isRelease = argv._.includes('--release');
-const isWWW = argv._.includes('--www');
-const extractCodes = argv._.includes('--codes');
+// Arguments are parsed as flags by minimist
+const isProduction = argv.prod;
+const isRelease = argv.release;
+const isWWW = argv.www;
+const extractCodes = argv.codes;
 
 const modulePackageMappings = Object.fromEntries(
   packagesManager.getPublicPackages().flatMap((pkg) => {

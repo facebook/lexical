@@ -19,5 +19,6 @@ jobs:
       ref: ${{ needs.increment-version.outputs.tag-ref }}
       dry-run: false
       channel: nightly
+      ignore-previously-published: true
     secrets:
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

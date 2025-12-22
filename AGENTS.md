@@ -2,6 +2,12 @@
 
 This file provides detailed guidance for AI agents and automated tools working with the Lexical codebase.
 
+## Documentation
+
+For specialized topics, see the [`docs/`](./docs/) directory:
+
+- **[GitHub Actions Security & Architecture](./docs/github-actions.md)** - Guidelines for CI/CD workflows, security practices, permissions, and secrets management
+
 ## Build, Test, and Development Commands
 
 ### Building
@@ -129,6 +135,23 @@ This codebase uses **both TypeScript and Flow**:
 When adding/modifying APIs, types must be maintained for both systems.
 
 ## Important Development Notes
+
+### Package Manager Usage
+
+This repository uses different package managers for different contexts:
+
+**Development and CI workflows** - Use `pnpm`:
+- The monorepo is managed with pnpm workspaces
+- All CI/CD workflows use pnpm
+- Run `pnpm install` to install dependencies
+- Run `pnpm run <script>` for development commands
+
+**Example projects and integration tests** - Use `npm`:
+- Examples are user-facing and should be package-manager agnostic
+- Integration tests simulate real user workflows with npm
+- Examples have their own `package.json` and may use `npm` or `package-lock.json`
+
+See [docs/github-actions.md](./docs/github-actions.md#package-manager-usage) for detailed rationale.
 
 ### Reconciliation and Updates
 - `editor.read()` flushes pending updates first, then provides consistent reconciled state

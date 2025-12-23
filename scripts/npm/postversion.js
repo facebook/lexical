@@ -44,7 +44,7 @@ async function main() {
     // Update all package.json versions in the monorepo
     `pnpm run update-version`,
     // Update pnpm-lock.yaml
-    `pnpm install`,
+    `pnpm install --no-frozen-lockfile`,
     // Fix up all package.json files
     `pnpm run update-packages`,
     // Extract error codes and update changelog, but only in production

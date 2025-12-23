@@ -115,7 +115,7 @@ class PackageMetadata {
     // All our packages should have exports if update-version has been run
     if (!this.packageJson.exports) {
       throw new Error(
-        'This package should have exports, try `npm run update-version` first',
+        'This package should have exports, try `pnpm run update-version` first',
       );
     }
     /** @type {Array<NpmModuleExportEntry>} */

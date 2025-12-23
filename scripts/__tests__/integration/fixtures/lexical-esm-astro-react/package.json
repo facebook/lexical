@@ -24,7 +24,13 @@
   },
   "sideEffects": false,
   "devDependencies": {
-    "@playwright/test": "^1.45.0",
+    "@playwright/test": "^1.51.1",
     "typescript": "^5.9.2"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "4.52.0",
+    "@rollup/rollup-darwin-arm64": "4.52.0",
+    "@rollup/rollup-win32-x64-msvc": "4.52.0",
+    "@rollup/wasm-node": "4.52.0"
   }
 }

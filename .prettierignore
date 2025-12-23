@@ -25,3 +25,4 @@ flow-typed
 /playwright-report
 test-results
 /libdefs/*.js
+pnpm-lock.yaml

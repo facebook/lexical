@@ -7,11 +7,12 @@
     "dev": "vite --host --port 3000",
     "build-dev": "vite build",
     "build-prod": "vite build --mode production",
-    "build-vercel": "(cd ../../ && node ./scripts/build.js) && npm run build-dev",
-    "preview": "vite preview"
+    "build-vercel": "(cd ../../ && node ./scripts/build.js) && pnpm run build-dev",
+    "preview": "vite preview --port 4000 --host"
   },
   "dependencies": {
     "@excalidraw/excalidraw": "^0.18.0",
+    "@floating-ui/react": "^0.27.16",
     "@lexical/clipboard": "0.39.0",
     "@lexical/code": "0.39.0",
     "@lexical/code-shiki": "0.39.0",
@@ -45,6 +46,7 @@
     "@prettier/sync": "^0.6.1",
     "@rollup/plugin-babel": "^6.0.4",
     "@rollup/plugin-commonjs": "^25.0.7",
+    "@types/lodash": "^4.14.182",
     "@types/lodash-es": "^4.14.182",
     "@vitejs/plugin-react": "^5.0.2",
     "rollup-plugin-copy": "^3.5.0",

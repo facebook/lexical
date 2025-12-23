@@ -76,17 +76,17 @@ Try it yourself:
 
 ```bash
 # Install dependencies
-npm install
+pnpm install
 
 # Start playground dev server
-npm run start
+pnpm run start
 
 # Run tests
-npm run test-unit
-npm run test-e2e-chromium
+pnpm run test-unit
+pnpm run test-e2e-chromium
 
 # Lint and type check
-npm run ci-check
+pnpm run ci-check
 ```
 
 See [CONTRIBUTING.md](https://github.com/facebook/lexical/blob/main/CONTRIBUTING.md) for detailed development guidelines.

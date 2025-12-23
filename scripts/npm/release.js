@@ -41,7 +41,7 @@ async function publish() {
     console.info(`Publishing ${pkg.getNpmName()}...`);
     if (dryRun === undefined || dryRun === 0) {
       await exec(
-        `cd ./packages/${pkg.getDirectoryName()}/npm && npm publish --access public --tag ${channel}`,
+        `cd ./packages/${pkg.getDirectoryName()}/npm && pnpm publish --access public --tag ${channel}`,
       ).catch((err) => {
         if (
           ignorePreviouslyPublished &&

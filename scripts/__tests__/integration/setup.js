@@ -29,18 +29,18 @@ module.exports = async function (globalConfig, projectConfig) {
     );
   if (!needsBuild) {
     console.log(
-      '\nWARNING: Running integration tests with cached build artifacts from a previous `npm run prepare-release`.',
+      '\nWARNING: Running integration tests with cached build artifacts from a previous `pnpm run prepare-release`.',
     );
     return;
   }
-  await exec('npm run prepare-release');
+  await exec('pnpm run prepare-release');
   const packDest = path.resolve('./npm');
   fs.mkdirpSync(packDest);
   for (const pkg of packagesManager.getPublicPackages()) {
     const cwd = process.cwd();
     try {
       process.chdir(pkg.resolve('npm'));
-      await exec(`npm pack --pack-destination ${packDest}`);
+      await exec(`pnpm pack --pack-destination ${packDest}`);
     } finally {
       process.chdir(cwd);
     }

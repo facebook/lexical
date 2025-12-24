@@ -43,6 +43,8 @@ async function main() {
     ['git', 'checkout', '-B', `${CHANNEL}__release`],
     // Update all package.json versions in the monorepo
     `pnpm run update-version`,
+    // Update pnpm-lock.yaml (offline mode prevents fetching from npm)
+    `pnpm install --offline --no-frozen-lockfile`,
     // Fix up all package.json files
     `pnpm run update-packages`,
     // Extract error codes and update changelog, but only in production

@@ -3,4 +3,5 @@
 # with pnpm's default symlinked structure
 node-linker=hoisted
 
-
+# Prefer workspace packages over registry packages
+link-workspace-packages=true

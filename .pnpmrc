@@ -3,5 +3,7 @@
 # with pnpm's default symlinked structure
 node-linker=hoisted
 
-# Prefer workspace packages over registry packages
-link-workspace-packages=true
+# Prefer workspace packages over registry, even when versions don't match exactly
+# This is needed during version bumps when workspace packages reference versions
+# that don't exist in npm yet
+prefer-workspace-packages=true

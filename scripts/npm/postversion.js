@@ -43,7 +43,7 @@ async function main() {
     ['git', 'checkout', '-B', `${CHANNEL}__release`],
     // Update all package.json versions in the monorepo
     `pnpm run update-version`,
-    // Update pnpm-lock.yaml (workspace packages will be linked automatically)
+    // Update pnpm-lock.yaml
     `pnpm install --no-frozen-lockfile`,
     // Fix up all package.json files
     `pnpm run update-packages`,

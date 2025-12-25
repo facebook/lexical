@@ -15,6 +15,10 @@ const glob = require('glob');
 const path = require('node:path');
 const {packagesManager} = require('../shared/packagesManager');
 
+const monorepoPackageJson = require('../shared/readMonorepoPackageJson')();
+
+const version = monorepoPackageJson.version;
+
 /**
  * Cleans the npm dir from the package and constructs it with:
  * - All the files from the pkg dist (recursively)
@@ -45,6 +49,24 @@ function preparePackage(pkg) {
   ['package.json', 'README.md'].forEach((fn) =>
     fs.copySync(pkg.resolve(fn), pkg.resolve('npm', fn)),
   );
+
+  // Replace workspace:* with actual version in npm/package.json
+  const npmPackageJsonPath = pkg.resolve('npm', 'package.json');
+  const npmPackageJson = fs.readJsonSync(npmPackageJsonPath);
+
+  // Replace workspace:* in dependencies and devDependencies
+  ['dependencies', 'devDependencies'].forEach((depType) => {
+    if (npmPackageJson[depType]) {
+      Object.keys(npmPackageJson[depType]).forEach((dep) => {
+        if (npmPackageJson[depType][dep] === 'workspace:*') {
+          npmPackageJson[depType][dep] = version;
+        }
+      });
+    }
+  });
+
+  fs.writeJsonSync(npmPackageJsonPath, npmPackageJson, {spaces: 2});
+
   fs.copySync('LICENSE', pkg.resolve('npm', 'LICENSE'));
 }
 

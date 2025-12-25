@@ -22,7 +22,7 @@ const publicNpmNames = new Set(
   packagesManager.getPublicPackages().map((pkg) => pkg.getNpmName()),
 );
 
-describe('public package.json audits (`npm run update-packages` to fix most issues)', () => {
+describe('public package.json audits (`pnpm run update-packages` to fix most issues)', () => {
   packagesManager.getPublicPackages().forEach((pkg) => {
     const npmName = pkg.getNpmName();
     const packageJson = pkg.packageJson;
@@ -98,7 +98,7 @@ describe('public package.json audits (`npm run update-packages` to fix most issu
   });
 });
 
-describe('documentation audits (`npm run update-packages` to fix most issues)', () => {
+describe('documentation audits (`pnpm run update-packages` to fix most issues)', () => {
   packagesManager.getPublicPackages().forEach((pkg) => {
     const npmName = pkg.getNpmName();
     describe(npmName, () => {
@@ -118,7 +118,7 @@ describe('documentation audits (`npm run update-packages` to fix most issues)', 
   });
 });
 
-describe('www public package audits (`npm run update-packages` to fix most issues)', () => {
+describe('www public package audits (`pnpm run update-packages` to fix most issues)', () => {
   packagesManager.getPublicPackages().forEach((pkg) => {
     const npmName = pkg.getNpmName();
     const wwwEntrypoint = `${npmToWwwName(npmName)}.js`;

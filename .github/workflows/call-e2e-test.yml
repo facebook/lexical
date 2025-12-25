@@ -13,6 +13,8 @@ on:
       flaky: {required: false, type: boolean} # Defaults to false: dont run flaky
       override-react-version: {required: false, type: string}
 
+permissions: {}
+
 jobs:
   e2e-test:
     runs-on: ${{ inputs.os }}
@@ -25,24 +27,26 @@ jobs:
       OVERRIDE_REACT_VERSION: ${{ inputs.override-react-version }}
       cache_playwright_path: ${{ inputs.os == 'macos-latest' && '~/Library/Caches/ms-playwright' || inputs.os == 'windows-latest' && 'C:\Users\runneradmin\AppData\Local\ms-playwright' || '~/.cache/ms-playwright' }}
       test_results_path: 'test-results/'
-      test_script: test-e2e-${{ inputs.editor-mode == 'rich-text-with-collab' && 'collab-' || '' }}${{ inputs.prod && 'prod-' || '' }}ci-${{ inputs.browser }} ${{ inputs.flaky && '-- -- --grep "@flaky"' || '-- -- --grep-invert "@flaky"' }}
+      test_script: test-e2e-${{ inputs.editor-mode == 'rich-text-with-collab' && 'collab-' || '' }}${{ inputs.prod && 'prod-' || '' }}ci-${{ inputs.browser }}
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js ${{ inputs.node-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ inputs.node-version }}
-          cache: npm
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
       - name: Install required ubuntu-latest packages
         if: inputs.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
           sudo apt-get install xvfb
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
       - name: Install React ${{ inputs.override-react-version }}
         if: inputs.override-react-version != ''
-        # This should be safe since we are caching ~/.npm and not node_modules
+        # This should be safe since we are caching pnpm store and not node_modules
         run: |
           node ./scripts/override-react.js --version=${{ inputs.override-react-version }}
           grep version node_modules/{react,react-dom}/package.json
@@ -51,9 +55,9 @@ jobs:
         id: playwright-cache
         with:
           path: ${{ env.cache_playwright_path }}
-          key: playwright-${{ inputs.node-version }}-${{ runner.os }}-${{ runner.arch }}-v${{ secrets.CACHE_VERSION }}-${{ hashFiles('package-lock.json') }}
+          key: playwright-${{ inputs.node-version }}-${{ runner.os }}-${{ runner.arch }}-v${{ secrets.CACHE_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
       - name: Install playwright
-        run: npx playwright install
+        run: pnpm exec playwright install
       - name: Save playwright to cache
         uses: actions/cache/save@v4
         if: steps.playwright-cache.outputs.cache-hit != 'true'
@@ -61,7 +65,7 @@ jobs:
           path: ${{ env.cache_playwright_path }}
           key: ${{ steps.playwright-cache.outputs.cache-primary-key }}
       - name: Run tests
-        run: npm run ${{ env.test_script }}
+        run: pnpm run ${{ env.test_script }}
       - name: Upload Artifacts
         if: failure()
         uses: actions/upload-artifact@v4

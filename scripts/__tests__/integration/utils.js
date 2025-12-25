@@ -41,12 +41,9 @@ exports.withCwd = withCwd;
  * @returns {Promise<string>}
  */
 function expectSuccessfulExec(cmd) {
-  // clear out parts of the environment that would confuse
-  // node, npm and playwright.
+  // Filter out JEST_WORKER_ID to prevent Playwright from detecting Jest environment
   const env = Object.fromEntries(
-    Object.entries(process.env).filter(
-      ([k]) => !(k === 'JEST_WORKER_ID' || /^(NODE|npm)/.test(k)),
-    ),
+    Object.entries(process.env).filter(([k]) => k !== 'JEST_WORKER_ID'),
   );
   return exec(cmd, {capture: ['stdout', 'stderr'], env}).catch((err) => {
     expect(
@@ -98,11 +95,10 @@ async function buildExample({packageJson, exampleDir}) {
   ['node_modules', 'dist', 'build', '.next', '.svelte-kit'].forEach(
     (cleanDir) => fs.removeSync(path.resolve(exampleDir, cleanDir)),
   );
+
   await withCwd(exampleDir, async () => {
     await expectSuccessfulExec(
-      `npm install --prefix=./ --no-save ${installDeps
-        .map((fn) => `'${fn}'`)
-        .join(' ')}`,
+      `npm install --no-save ${installDeps.map((fn) => `'${fn}'`).join(' ')}`,
     );
     await expectSuccessfulExec('npm run build');
     if (hasPlaywright) {

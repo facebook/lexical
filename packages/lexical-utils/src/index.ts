@@ -683,10 +683,14 @@ function needsManualZoom(): boolean {
  * css zoom property. For browsers that implement standardized CSS
  * zoom (Firefox, Chrome >= 128), this will always return 1.
  * @param element
+ * @param useManualZoom - If true, always use zoom level will be calculated manually, otherwise it will be calculated on as needed basis.
  */
-export function calculateZoomLevel(element: Element | null): number {
+export function calculateZoomLevel(
+  element: Element | null,
+  useManualZoom: boolean = false,
+): number {
   let zoom = 1;
-  if (needsManualZoom()) {
+  if (needsManualZoom() || useManualZoom) {
     while (element) {
       zoom *= Number(window.getComputedStyle(element).getPropertyValue('zoom'));
       element = element.parentElement;

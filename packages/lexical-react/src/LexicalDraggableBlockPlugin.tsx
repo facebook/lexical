@@ -192,6 +192,7 @@ function setMenuPosition(
   const targetStyle = window.getComputedStyle(targetElem);
   const floatingElemRect = floatingElem.getBoundingClientRect();
   const anchorElementRect = anchorElem.getBoundingClientRect();
+  const zoomLevel = calculateZoomLevel(targetElem, true);
 
   // top left
   let targetCalculateHeight: number = parseInt(targetStyle.lineHeight, 10);
@@ -200,12 +201,13 @@ function setMenuPosition(
     targetCalculateHeight = targetRect.bottom - targetRect.top;
   }
   const top =
-    targetRect.top +
-    (targetCalculateHeight -
-      (floatingElemRect.height || targetCalculateHeight)) /
-      2 -
-    anchorElementRect.top +
-    anchorElem.scrollTop;
+    (targetRect.top +
+      (targetCalculateHeight -
+        (floatingElemRect.height || targetCalculateHeight)) /
+        2 -
+      anchorElementRect.top +
+      anchorElem.scrollTop) /
+    zoomLevel;
 
   const left = SPACE;
 

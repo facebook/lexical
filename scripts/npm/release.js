@@ -54,6 +54,8 @@ async function publish() {
           console.info(`Ignoring previously published error`);
           return null;
         }
+        console.error(`\nFailed to publish ${pkg.getNpmName()}:`);
+        console.error(err);
         return err;
       });
       console.info(`Done!`);

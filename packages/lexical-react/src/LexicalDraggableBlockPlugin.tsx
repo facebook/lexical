@@ -184,8 +184,7 @@ function setMenuPosition(
   anchorElem: HTMLElement,
 ) {
   if (!targetElem) {
-    floatingElem.style.opacity = '0';
-    floatingElem.style.transform = 'translate(-10000px, -10000px)';
+    floatingElem.style.display = 'none';
     return;
   }
 
@@ -202,12 +201,15 @@ function setMenuPosition(
   }
   const top =
     targetRect.top +
-    (targetCalculateHeight - floatingElemRect.height) / 2 -
+    (targetCalculateHeight -
+      (floatingElemRect.height || targetCalculateHeight)) /
+      2 -
     anchorElementRect.top +
     anchorElem.scrollTop;
 
   const left = SPACE;
 
+  floatingElem.style.display = 'flex';
   floatingElem.style.opacity = '1';
   floatingElem.style.transform = `translate(${left}px, ${top}px)`;
 }

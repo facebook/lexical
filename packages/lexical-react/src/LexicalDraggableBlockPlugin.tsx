@@ -201,7 +201,9 @@ function setMenuPosition(
   }
   const top =
     targetRect.top +
-    (targetCalculateHeight - floatingElemRect.height) / 2 -
+    (targetCalculateHeight -
+      (floatingElemRect.height || targetCalculateHeight)) /
+      2 -
     anchorElementRect.top +
     anchorElem.scrollTop;
 

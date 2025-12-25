@@ -2,7 +2,3 @@
 # This is needed because test files use ESM (.mjs) which has issues
 # with pnpm's default symlinked structure
 node-linker=hoisted
-
-# Link workspace packages instead of downloading from registry
-# This is critical for version bumps where new versions don't exist in npm yet
-link-workspace-packages=true

@@ -36,7 +36,7 @@ jobs:
       - uses: pnpm/action-setup@v4
         with:
           version: 9
-      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm install
       - run: pnpm run prepare-release
       - run: node ./scripts/npm/release.js --non-interactive $DRY_RUN_ARG $IGNORE_PREVIOUSLY_PUBLISHED_ARG --channel='${{ inputs.channel }}'
         env:

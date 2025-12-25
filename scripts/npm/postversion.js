@@ -43,8 +43,8 @@ async function main() {
     ['git', 'checkout', '-B', `${CHANNEL}__release`],
     // Update all package.json versions in the monorepo
     `pnpm run update-version`,
-    // Update pnpm-lock.yaml with new version references
-    `node ./scripts/npm/update-lockfile-versions.js`,
+    // Update pnpm-lock.yaml
+    `pnpm install`,
     // Fix up all package.json files
     `pnpm run update-packages`,
     // Extract error codes and update changelog, but only in production

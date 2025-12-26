@@ -26,7 +26,7 @@
 
 ## Features
 
-- **Framework Agnostic Core** - Works with any UI framework, with official [React bindings](https://lexical.dev/docs/react/getting-started)
+- **Framework Agnostic Core** - Works with any UI framework, with official [React bindings](https://lexical.dev/docs/getting-started/react)
 - **Reliable & Accessible** - Built-in accessibility support and WCAG compliance
 - **Extensible** - Plugin-based architecture with powerful extension points
 - **Immutable State Model** - Time-travel ready with built-in undo/redo
@@ -93,7 +93,7 @@ See [CONTRIBUTING.md](https://github.com/facebook/lexical/blob/main/CONTRIBUTING
 
 ## Documentation
 
-- **User Guide**: [lexical.dev/docs](https://lexical.dev/docs)
+- **User Guide**: [lexical.dev/docs](https://lexical.dev/docs/intro)
 - **API Reference**: [lexical.dev/docs/api](https://lexical.dev/docs/api/modules/lexical)
 - **Developer Guide**: [AGENTS.md](https://github.com/facebook/lexical/blob/main/AGENTS.md) - Architecture and development workflows
 - **Examples**: [examples/](https://github.com/facebook/lexical/tree/main/examples) - Sample implementations

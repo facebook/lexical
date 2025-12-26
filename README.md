@@ -93,7 +93,7 @@ See [CONTRIBUTING.md](https://github.com/facebook/lexical/blob/main/CONTRIBUTING
 
 ## Documentation
 
-- **User Guide**: [lexical.dev/docs](https://lexical.dev/docs/intro)
+- **User Guide**: [lexical.dev/docs/intro](https://lexical.dev/docs/intro)
 - **API Reference**: [lexical.dev/docs/api](https://lexical.dev/docs/api/modules/lexical)
 - **Developer Guide**: [AGENTS.md](https://github.com/facebook/lexical/blob/main/AGENTS.md) - Architecture and development workflows
 - **Examples**: [examples/](https://github.com/facebook/lexical/tree/main/examples) - Sample implementations

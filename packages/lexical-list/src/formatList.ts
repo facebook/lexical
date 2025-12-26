@@ -196,6 +196,22 @@ function $createListOrMerge(node: ElementNode, listType: ListType): ListNode {
   // listItem needs to be attached to root prior to setting indent
   listItem.setFormat(node.getFormatType());
   listItem.setIndent(node.getIndent());
+
+  // Preserve element-anchored selections by updating them to anchor to the listItem instead of the listNode.
+  const selection = $getSelection();
+  if ($isRangeSelection(selection)) {
+    if (targetList.getKey() === selection.anchor.key) {
+      selection.anchor.set(
+        listItem.getKey(),
+        selection.anchor.offset,
+        'element',
+      );
+    }
+    if (targetList.getKey() === selection.focus.key) {
+      selection.focus.set(listItem.getKey(), selection.focus.offset, 'element');
+    }
+  }
+
   node.remove();
 
   return targetList;

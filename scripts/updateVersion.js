@@ -211,7 +211,7 @@ function updateDependencies(pkg) {
   [dependencies, devDependencies].forEach((deps) => {
     Object.keys(deps).forEach((dep) => {
       if (publicNpmNames.has(dep)) {
-        deps[dep] = version;
+        deps[dep] = 'workspace:*';
       }
     });
   });
@@ -220,7 +220,7 @@ function updateDependencies(pkg) {
   Object.keys(peerDependencies).forEach((peerDep) => {
     if (publicNpmNames.has(peerDep)) {
       delete peerDependencies[peerDep];
-      dependencies[peerDep] = version;
+      dependencies[peerDep] = 'workspace:*';
     }
   });
   pkg

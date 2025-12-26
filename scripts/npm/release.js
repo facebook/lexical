@@ -41,7 +41,7 @@ async function publish() {
     console.info(`Publishing ${pkg.getNpmName()}...`);
     if (dryRun === undefined || dryRun === 0) {
       await exec(
-        `cd ./packages/${pkg.getDirectoryName()}/npm && pnpm publish --access public --tag ${channel}`,
+        `cd ./packages/${pkg.getDirectoryName()}/npm && pnpm publish --access public --tag ${channel} --no-git-checks`,
       ).catch((err) => {
         if (
           ignorePreviouslyPublished &&
@@ -54,6 +54,8 @@ async function publish() {
           console.info(`Ignoring previously published error`);
           return null;
         }
+        console.error(`\nFailed to publish ${pkg.getNpmName()}:`);
+        console.error(err);
         return err;
       });
       console.info(`Done!`);

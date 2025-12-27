@@ -14,9 +14,12 @@ import {
   TableRowNode,
 } from '@lexical/table';
 import {
+  $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  $getSelection,
+  $isRangeSelection,
   $nodesOfType,
   $selectAll,
 } from 'lexical';
@@ -24,7 +27,7 @@ import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 import {describe, expect, test} from 'vitest';
 
 import {$insertList} from '../../formatList';
-import {$createListItemNode} from '../../LexicalListItemNode';
+import {$createListItemNode, $isListItemNode} from '../../LexicalListItemNode';
 import {$createListNode, $isListNode, ListNode} from '../../LexicalListNode';
 
 describe('insertList', () => {
@@ -129,6 +132,50 @@ describe('insertList', () => {
           (node) => node.getListType() === 'number',
         );
         expect(lists.length).toBe(2);
+      });
+    });
+
+    test('preserves element-anchored selection when converting paragraph with linebreak to list', async () => {
+      const {editor} = testEnv;
+
+      // Create a paragraph with text followed by a linebreak node and select the paragraph
+      await editor.update(() => {
+        const paragraph = $createParagraphNode();
+        const textNode = $createTextNode('Item 1');
+        const lineBreak = $createLineBreakNode();
+
+        paragraph.append(textNode, lineBreak);
+        $getRoot().append(paragraph);
+
+        paragraph.select();
+      });
+
+      // Convert to list
+      await editor.update(() => {
+        $insertList('bullet');
+      });
+
+      // Verify the list was created and selection is correctly preserved
+      editor.read(() => {
+        const selection = $getSelection();
+        const list = $getRoot().getFirstChildOrThrow();
+
+        expect($isListNode(list)).toBe(true);
+
+        if ($isListNode(list)) {
+          const listItem = list.getFirstChildOrThrow();
+          expect($isListItemNode(listItem)).toBe(true);
+
+          // Verify selection is valid and anchored to the listItem, not the list
+          if ($isRangeSelection(selection)) {
+            expect(selection.anchor.key).toBe(listItem.getKey());
+            expect(selection.focus.key).toBe(listItem.getKey());
+            expect(selection.anchor.offset).toBe(2);
+            expect(selection.focus.offset).toBe(2);
+            expect(selection.anchor.type).toBe('element');
+            expect(selection.focus.type).toBe('element');
+          }
+        }
       });
     });
   });

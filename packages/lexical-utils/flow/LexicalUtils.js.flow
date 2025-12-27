@@ -132,7 +132,7 @@ declare export function $splitNode(
   offset: number,
 ): [ElementNode | null, ElementNode];
 
-declare export function calculateZoomLevel(element: Element | null, useManualZoom: boolean = false): number;
+declare export function calculateZoomLevel(element: Element | null, useManualZoom?: boolean): number;
 
 declare export function $isEditorIsNestedEditor(editor: LexicalEditor): boolean;
 

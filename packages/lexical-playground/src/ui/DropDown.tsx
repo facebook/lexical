@@ -8,6 +8,7 @@
 
 import type {JSX} from 'react';
 
+import {calculateZoomLevel} from '@lexical/utils';
 import {isDOMNode} from 'lexical';
 import * as React from 'react';
 import {
@@ -189,14 +190,13 @@ export default function DropDown({
   useEffect(() => {
     const button = buttonRef.current;
     const dropDown = dropDownRef.current;
-
+    const zoom = calculateZoomLevel(dropDown, true);
     if (showDropDown && button !== null && dropDown !== null) {
       const {top, left} = button.getBoundingClientRect();
-      dropDown.style.top = `${top + button.offsetHeight + dropDownPadding}px`;
-      dropDown.style.left = `${Math.min(
-        left,
-        window.innerWidth - dropDown.offsetWidth - 20,
-      )}px`;
+      dropDown.style.top = `${top / zoom + button.offsetHeight + dropDownPadding}px`;
+      dropDown.style.left = `${
+        Math.min(left, window.innerWidth - dropDown.offsetWidth - 20) / zoom
+      }px`;
     }
   }, [dropDownRef, buttonRef, showDropDown]);
 

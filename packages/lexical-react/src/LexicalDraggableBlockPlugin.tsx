@@ -182,6 +182,7 @@ function setMenuPosition(
   targetElem: HTMLElement | null,
   floatingElem: HTMLElement,
   anchorElem: HTMLElement,
+  zoomLevel: number,
 ) {
   if (!targetElem) {
     floatingElem.style.display = 'none';
@@ -200,12 +201,13 @@ function setMenuPosition(
     targetCalculateHeight = targetRect.bottom - targetRect.top;
   }
   const top =
-    targetRect.top +
-    (targetCalculateHeight -
-      (floatingElemRect.height || targetCalculateHeight)) /
-      2 -
-    anchorElementRect.top +
-    anchorElem.scrollTop;
+    (targetRect.top +
+      (targetCalculateHeight -
+        (floatingElemRect.height || targetCalculateHeight)) /
+        2 -
+      anchorElementRect.top +
+      anchorElem.scrollTop) /
+    zoomLevel;
 
   const left = SPACE;
 
@@ -327,8 +329,17 @@ function useDraggableBlockMenu(
   }, [scrollerElem, anchorElem, editor, isOnMenu, setDraggableBlockElem]);
 
   useEffect(() => {
+    const zoomLevel = calculateZoomLevel(
+      document.getElementsByClassName('ContentEditable__root')[0],
+      true,
+    );
     if (menuRef.current) {
-      setMenuPosition(draggableBlockElem, menuRef.current, anchorElem);
+      setMenuPosition(
+        draggableBlockElem,
+        menuRef.current,
+        anchorElem,
+        zoomLevel,
+      );
     }
   }, [anchorElem, draggableBlockElem, menuRef]);
 

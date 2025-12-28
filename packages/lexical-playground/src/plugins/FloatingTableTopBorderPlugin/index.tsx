@@ -7,21 +7,32 @@
  */
 
 import type {VirtualElement} from '@floating-ui/react';
-import type {CSSProperties, JSX} from 'react';
+import type {JSX} from 'react';
+
+import './index.css';
 
 import {autoUpdate, offset, shift, useFloating} from '@floating-ui/react';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
-import {EditorThemeClasses, isHTMLElement} from 'lexical';
-import {useEffect, useMemo, useRef, useState} from 'react';
+import {
+  $insertTableColumnAtSelection,
+  $insertTableRowAtSelection,
+  $isTableCellNode,
+} from '@lexical/table';
+import {
+  $getNearestNodeFromDOMNode,
+  EditorThemeClasses,
+  isHTMLElement,
+} from 'lexical';
+import {useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 
 import {getThemeSelector} from '../../utils/getThemeSelector';
 
-const INDICATOR_WIDTH_PX = 24;
-const INDICATOR_HEIGHT_PX = 12;
-const SIDE_INDICATOR_WIDTH_PX = 12;
-const SIDE_INDICATOR_HEIGHT_PX = 24;
+const INDICATOR_SIZE_PX = 18;
+const SIDE_INDICATOR_SIZE_PX = 18;
+const TOP_BUTTON_OVERHANG = INDICATOR_SIZE_PX / 2;
+const LEFT_BUTTON_OVERHANG = SIDE_INDICATOR_SIZE_PX / 2;
 
 function getTableFromMouseEvent(
   event: MouseEvent,
@@ -47,13 +58,17 @@ function getTableFromMouseEvent(
 function getClosestTopCellPosition(
   tableElement: HTMLTableElement,
   clientX: number,
-): {centerX: number; top: number} | null {
+): {centerX: number; top: number; cell: HTMLTableCellElement} | null {
   const firstRow = tableElement.rows[0];
   if (!firstRow) {
     return null;
   }
 
-  let closest: {centerX: number; top: number} | null = null;
+  let closest: {
+    cell: HTMLTableCellElement;
+    centerX: number;
+    top: number;
+  } | null = null;
   let smallestDelta = Number.POSITIVE_INFINITY;
 
   for (const cell of Array.from(firstRow.cells)) {
@@ -62,7 +77,7 @@ function getClosestTopCellPosition(
     const delta = Math.abs(centerX - clientX);
     if (delta < smallestDelta) {
       smallestDelta = delta;
-      closest = {centerX, top: rect.top};
+      closest = {cell, centerX, top: rect.top};
     }
   }
 
@@ -78,6 +93,8 @@ function FloatingTableTopBorder({
   const isEditable = useLexicalEditable();
   const [isVisible, setIsVisible] = useState(false);
   const [isLeftVisible, setIsLeftVisible] = useState(false);
+  const [isTopHovering, setIsTopHovering] = useState(false);
+  const [isLeftHovering, setIsLeftHovering] = useState(false);
   const virtualRef = useRef<VirtualElement>({
     getBoundingClientRect: () => new DOMRect(),
   });
@@ -86,6 +103,8 @@ function FloatingTableTopBorder({
   });
   const floatingElemRef = useRef<HTMLElement | null>(null);
   const leftFloatingElemRef = useRef<HTMLElement | null>(null);
+  const hoveredLeftCellRef = useRef<HTMLTableCellElement | null>(null);
+  const hoveredTopCellRef = useRef<HTMLTableCellElement | null>(null);
   const handleMouseLeaveRef = useRef<((event: MouseEvent) => void) | null>(
     null,
   );
@@ -95,7 +114,7 @@ function FloatingTableTopBorder({
       reference: virtualRef.current as unknown as Element,
     },
     middleware: [
-      offset(-1),
+      offset({mainAxis: -TOP_BUTTON_OVERHANG}),
       shift({
         padding: 8,
       }),
@@ -114,7 +133,7 @@ function FloatingTableTopBorder({
       reference: leftVirtualRef.current as unknown as Element,
     },
     middleware: [
-      offset(-1),
+      offset({mainAxis: -LEFT_BUTTON_OVERHANG}),
       shift({
         padding: 8,
       }),
@@ -123,34 +142,6 @@ function FloatingTableTopBorder({
     strategy: 'fixed',
     whileElementsMounted: autoUpdate,
   });
-
-  const indicatorStyle: CSSProperties = useMemo(
-    () => ({
-      border: '1px solid red',
-      borderRadius: 2,
-      boxSizing: 'border-box',
-      height: INDICATOR_HEIGHT_PX,
-      pointerEvents: 'auto',
-      transition: 'opacity 80ms ease',
-      width: INDICATOR_WIDTH_PX,
-      zIndex: 10,
-    }),
-    [],
-  );
-
-  const leftIndicatorStyle: CSSProperties = useMemo(
-    () => ({
-      border: '1px solid red',
-      borderRadius: 2,
-      boxSizing: 'border-box',
-      height: SIDE_INDICATOR_HEIGHT_PX,
-      pointerEvents: 'auto',
-      transition: 'opacity 80ms ease',
-      width: SIDE_INDICATOR_WIDTH_PX,
-      zIndex: 10,
-    }),
-    [],
-  );
 
   useEffect(() => {
     if (!isEditable) {
@@ -177,48 +168,56 @@ function FloatingTableTopBorder({
         return;
       }
 
+      const cellSelector = `td${getThemeSelector(getTheme, 'tableCell')}, th${getThemeSelector(getTheme, 'tableCell')}`;
+      const hoveredCell = isHTMLElement(event.target)
+        ? event.target.closest<HTMLTableCellElement>(cellSelector)
+        : null;
+
+      if (!hoveredCell) {
+        setIsVisible(false);
+        setIsLeftVisible(false);
+        hoveredTopCellRef.current = null;
+        hoveredLeftCellRef.current = null;
+        return;
+      }
+
+      const rowIndex =
+        hoveredCell.parentElement instanceof HTMLTableRowElement
+          ? hoveredCell.parentElement.rowIndex
+          : -1;
+      const colIndex = hoveredCell.cellIndex ?? -1;
+
       const closestTopCell = getClosestTopCellPosition(
         tableElement,
         event.clientX,
       );
 
-      if (!closestTopCell) {
+      if (!closestTopCell || rowIndex !== 0) {
         setIsVisible(false);
-        setIsLeftVisible(false);
-        return;
+        hoveredTopCellRef.current = null;
+      } else {
+        hoveredTopCellRef.current = closestTopCell.cell;
+        virtualRef.current.getBoundingClientRect = () =>
+          new DOMRect(closestTopCell.centerX, closestTopCell.top, 0, 0);
+        refs.setReference(virtualRef.current as unknown as Element);
+        setIsVisible(true);
+        update?.();
       }
 
       const tableRect = tableElement.getBoundingClientRect();
-      let closestRowCenterY: number | null = null;
-
-      for (const row of Array.from(tableElement.rows)) {
-        const rect = row.getBoundingClientRect();
-        const centerY = rect.top + rect.height / 2;
-        if (
-          closestRowCenterY === null ||
-          Math.abs(centerY - event.clientY) <
-            Math.abs(closestRowCenterY - event.clientY)
-        ) {
-          closestRowCenterY = centerY;
-        }
-      }
-
-      if (closestRowCenterY === null) {
+      if (colIndex !== 0) {
         setIsLeftVisible(false);
+        hoveredLeftCellRef.current = null;
       } else {
+        const {top, height} = hoveredCell.getBoundingClientRect();
+        const centerY = top + height / 2;
+        hoveredLeftCellRef.current = hoveredCell;
         leftVirtualRef.current.getBoundingClientRect = () =>
-          new DOMRect(tableRect.left, closestRowCenterY, 0, 0);
+          new DOMRect(tableRect.left, centerY, 0, 0);
         leftRefs.setReference(leftVirtualRef.current as unknown as Element);
         setIsLeftVisible(true);
         updateLeft?.();
       }
-
-      virtualRef.current.getBoundingClientRect = () =>
-        new DOMRect(closestTopCell.centerX, closestTopCell.top, 0, 0);
-
-      refs.setReference(virtualRef.current as unknown as Element);
-      setIsVisible(true);
-      update?.();
     };
 
     document.addEventListener('mousemove', handleMouseMove);
@@ -269,29 +268,69 @@ function FloatingTableTopBorder({
     return null;
   }
 
+  const handleTopButtonClick = () => {
+    const targetCell = hoveredTopCellRef.current;
+    if (!targetCell) {
+      return;
+    }
+    editor.update(() => {
+      const maybeCellNode = $getNearestNodeFromDOMNode(targetCell);
+      if ($isTableCellNode(maybeCellNode)) {
+        maybeCellNode.selectEnd();
+        $insertTableColumnAtSelection();
+      }
+    });
+  };
+
+  const handleLeftButtonClick = () => {
+    const targetCell = hoveredLeftCellRef.current;
+    if (!targetCell) {
+      return;
+    }
+    editor.update(() => {
+      const maybeCellNode = $getNearestNodeFromDOMNode(targetCell);
+      if ($isTableCellNode(maybeCellNode)) {
+        maybeCellNode.selectEnd();
+        $insertTableRowAtSelection();
+      }
+    });
+  };
+
   return (
     <>
-      <div
+      <button
         ref={(node) => {
           floatingElemRef.current = node;
           refs.setFloating(node);
         }}
         style={{
           ...floatingStyles,
-          ...indicatorStyle,
+          backgroundColor: isTopHovering ? '#f3f3f3' : 'white',
           opacity: isVisible ? 1 : 0,
         }}
+        className="floating-table-top-border-indicator"
+        aria-label="Add column"
+        type="button"
+        onClick={handleTopButtonClick}
+        onMouseEnter={() => setIsTopHovering(true)}
+        onMouseLeave={() => setIsTopHovering(false)}
       />
-      <div
+      <button
         ref={(node) => {
           leftFloatingElemRef.current = node;
           leftRefs.setFloating(node);
         }}
         style={{
           ...leftFloatingStyles,
-          ...leftIndicatorStyle,
+          backgroundColor: isLeftHovering ? '#f3f3f3' : 'white',
           opacity: isLeftVisible ? 1 : 0,
         }}
+        className="floating-table-top-border-indicator-left"
+        aria-label="Add row"
+        type="button"
+        onClick={handleLeftButtonClick}
+        onMouseEnter={() => setIsLeftHovering(true)}
+        onMouseLeave={() => setIsLeftHovering(false)}
       />
     </>
   );

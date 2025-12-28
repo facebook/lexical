@@ -1,0 +1,47 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
+.floating-table-top-border-indicator {
+  background-image: url(../../images/icons/plus.svg);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 12px 12px;
+  border: 1px solid #d0d0d0;
+  border-radius: 2px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  box-sizing: border-box;
+  height: 18px;
+  pointer-events: auto;
+  transition: opacity 80ms ease;
+  width: 18px;
+  z-index: 10;
+}
+
+.floating-table-top-border-indicator:hover {
+  background-color: #f3f3f3;
+}
+
+.floating-table-top-border-indicator-left {
+  background-image: url(../../images/icons/plus.svg);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 12px 12px;
+  border: 1px solid #d0d0d0;
+  border-radius: 2px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  box-sizing: border-box;
+  height: 18px;
+  pointer-events: auto;
+  transition: opacity 80ms ease;
+  width: 18px;
+  z-index: 10;
+}
+
+.floating-table-top-border-indicator-left:hover {
+  background-color: #f3f3f3;
+}

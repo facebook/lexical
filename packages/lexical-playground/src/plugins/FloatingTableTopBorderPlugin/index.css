@@ -8,6 +8,7 @@
 
 .floating-table-top-border-indicator {
   background-image: url(../../images/icons/plus.svg);
+  background-color: #ffffff;
   background-position: center;
   background-repeat: no-repeat;
   background-size: 12px 12px;
@@ -28,6 +29,7 @@
 
 .floating-table-top-border-indicator-left {
   background-image: url(../../images/icons/plus.svg);
+  background-color: #ffffff;
   background-position: center;
   background-repeat: no-repeat;
   background-size: 12px 12px;

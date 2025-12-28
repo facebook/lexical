@@ -93,8 +93,6 @@ function FloatingTableTopBorder({
   const isEditable = useLexicalEditable();
   const [isVisible, setIsVisible] = useState(false);
   const [isLeftVisible, setIsLeftVisible] = useState(false);
-  const [isTopHovering, setIsTopHovering] = useState(false);
-  const [isLeftHovering, setIsLeftHovering] = useState(false);
   const virtualRef = useRef<VirtualElement>({
     getBoundingClientRect: () => new DOMRect(),
   });
@@ -305,15 +303,12 @@ function FloatingTableTopBorder({
         }}
         style={{
           ...floatingStyles,
-          backgroundColor: isTopHovering ? '#f3f3f3' : 'white',
           opacity: isVisible ? 1 : 0,
         }}
         className="floating-table-top-border-indicator"
         aria-label="Add column"
         type="button"
         onClick={handleTopButtonClick}
-        onMouseEnter={() => setIsTopHovering(true)}
-        onMouseLeave={() => setIsTopHovering(false)}
       />
       <button
         ref={(node) => {
@@ -322,15 +317,12 @@ function FloatingTableTopBorder({
         }}
         style={{
           ...leftFloatingStyles,
-          backgroundColor: isLeftHovering ? '#f3f3f3' : 'white',
           opacity: isLeftVisible ? 1 : 0,
         }}
         className="floating-table-top-border-indicator-left"
         aria-label="Add row"
         type="button"
         onClick={handleLeftButtonClick}
-        onMouseEnter={() => setIsLeftHovering(true)}
-        onMouseLeave={() => setIsLeftHovering(false)}
       />
     </>
   );

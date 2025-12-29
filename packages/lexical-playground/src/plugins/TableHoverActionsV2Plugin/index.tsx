@@ -5,19 +5,26 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
-import type {VirtualElement} from '@floating-ui/react';
 import type {JSX} from 'react';
 
 import './index.css';
 
-import {autoUpdate, offset, shift, useFloating} from '@floating-ui/react';
+// eslint-disable-next-line import/order
+import {
+  autoUpdate,
+  offset,
+  shift,
+  useFloating,
+  type VirtualElement,
+} from '@floating-ui/react';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
 import {
   $insertTableColumnAtSelection,
   $insertTableRowAtSelection,
   $isTableCellNode,
+  $isTableRowNode,
+  type TableRowNode,
 } from '@lexical/table';
 import {
   $getNearestNodeFromDOMNode,
@@ -27,6 +34,7 @@ import {
 import {useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 
+import DropDown, {DropDownItem} from '../../ui/DropDown';
 import {getThemeSelector} from '../../utils/getThemeSelector';
 
 const INDICATOR_SIZE_PX = 18;
@@ -148,8 +156,12 @@ function TableHoverActionsV2({
 
     const handleMouseMove = (event: MouseEvent) => {
       if (
-        event.target === floatingElemRef.current ||
-        event.target === leftFloatingElemRef.current
+        (floatingElemRef.current &&
+          event.target instanceof Node &&
+          floatingElemRef.current.contains(event.target)) ||
+        (leftFloatingElemRef.current &&
+          event.target instanceof Node &&
+          leftFloatingElemRef.current.contains(event.target))
       ) {
         return;
       }
@@ -294,9 +306,66 @@ function TableHoverActionsV2({
     });
   };
 
+  const handleSortColumn = (direction: 'asc' | 'desc') => {
+    const targetCell = hoveredTopCellRef.current;
+    if (!targetCell) {
+      return;
+    }
+
+    editor.update(() => {
+      const cellNode = $getNearestNodeFromDOMNode(targetCell);
+      if (!$isTableCellNode(cellNode)) {
+        return;
+      }
+
+      const rowNode = cellNode.getParent();
+      if (!rowNode || !$isTableRowNode(rowNode)) {
+        return;
+      }
+
+      const tableNode = rowNode.getParent();
+      if (!tableNode) {
+        return;
+      }
+
+      const colIndex = cellNode.getIndexWithinParent();
+      const rows = tableNode.getChildren();
+
+      if (rows.length <= 1) {
+        return;
+      }
+
+      const headerRow = $isTableRowNode(rows[0])
+        ? (rows[0] as TableRowNode)
+        : null;
+      const bodyRows: Array<TableRowNode> = rows
+        .slice(1)
+        .filter((row): row is TableRowNode => $isTableRowNode(row));
+
+      if (!headerRow || bodyRows.length === 0) {
+        return;
+      }
+
+      bodyRows.forEach((row) => row.remove());
+
+      bodyRows.sort((a, b) => {
+        const aCell = a.getChildAtIndex(colIndex);
+        const bCell = b.getChildAtIndex(colIndex);
+        const aText = aCell ? aCell.getTextContent() : '';
+        const bText = bCell ? bCell.getTextContent() : '';
+        const result = aText.localeCompare(bText, undefined, {numeric: true});
+        return direction === 'asc' ? result : -result;
+      });
+
+      for (const bodyRow of bodyRows) {
+        headerRow.insertAfter(bodyRow);
+      }
+    });
+  };
+
   return (
     <>
-      <button
+      <div
         ref={(node) => {
           floatingElemRef.current = node;
           refs.setFloating(node);
@@ -305,11 +374,29 @@ function TableHoverActionsV2({
           ...floatingStyles,
           opacity: isVisible ? 1 : 0,
         }}
-        className="floating-add-indicator"
-        aria-label="Add column"
-        type="button"
-        onClick={handleAddColumn}
-      />
+        className="floating-top-actions">
+        <button
+          className="floating-add-indicator"
+          aria-label="Add column"
+          type="button"
+          onClick={handleAddColumn}
+        />
+        <DropDown
+          buttonAriaLabel="Sort column"
+          buttonClassName="floating-filter-indicator"
+          hideChevron={true}>
+          <DropDownItem
+            className="floating-sort-menu__item"
+            onClick={() => handleSortColumn('asc')}>
+            Sort Ascending
+          </DropDownItem>
+          <DropDownItem
+            className="floating-sort-menu__item"
+            onClick={() => handleSortColumn('desc')}>
+            Sort Descending
+          </DropDownItem>
+        </DropDown>
+      </div>
       <button
         ref={(node) => {
           leftFloatingElemRef.current = node;

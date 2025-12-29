@@ -166,6 +166,7 @@ export default function DropDown({
   buttonIconClassName,
   children,
   stopCloseOnClickSelf,
+  hideChevron,
 }: {
   disabled?: boolean;
   buttonAriaLabel?: string;
@@ -174,6 +175,7 @@ export default function DropDown({
   buttonLabel?: string;
   children: ReactNode;
   stopCloseOnClickSelf?: boolean;
+  hideChevron?: boolean;
 }): JSX.Element {
   const dropDownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -272,7 +274,7 @@ export default function DropDown({
         {buttonLabel && (
           <span className="text dropdown-button-text">{buttonLabel}</span>
         )}
-        <i className="chevron-down" />
+        {!hideChevron && <i className="chevron-down" />}
       </button>
 
       {showDropDown &&

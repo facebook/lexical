@@ -84,7 +84,7 @@ function getClosestTopCellPosition(
   return closest;
 }
 
-function FloatingTableTopBorder({
+function TableHoverActionsV2({
   anchorElem,
 }: {
   anchorElem: HTMLElement;
@@ -266,7 +266,7 @@ function FloatingTableTopBorder({
     return null;
   }
 
-  const handleTopButtonClick = () => {
+  const handleAddColumn = () => {
     const targetCell = hoveredTopCellRef.current;
     if (!targetCell) {
       return;
@@ -280,7 +280,7 @@ function FloatingTableTopBorder({
     });
   };
 
-  const handleLeftButtonClick = () => {
+  const handleAddRow = () => {
     const targetCell = hoveredLeftCellRef.current;
     if (!targetCell) {
       return;
@@ -305,10 +305,10 @@ function FloatingTableTopBorder({
           ...floatingStyles,
           opacity: isVisible ? 1 : 0,
         }}
-        className="floating-table-top-border-indicator"
+        className="floating-add-indicator"
         aria-label="Add column"
         type="button"
-        onClick={handleTopButtonClick}
+        onClick={handleAddColumn}
       />
       <button
         ref={(node) => {
@@ -319,16 +319,16 @@ function FloatingTableTopBorder({
           ...leftFloatingStyles,
           opacity: isLeftVisible ? 1 : 0,
         }}
-        className="floating-table-top-border-indicator-left"
+        className="floating-add-indicator"
         aria-label="Add row"
         type="button"
-        onClick={handleLeftButtonClick}
+        onClick={handleAddRow}
       />
     </>
   );
 }
 
-export default function FloatingTableTopBorderPlugin({
+export default function TableHoverActionsV2Plugin({
   anchorElem = document.body,
 }: {
   anchorElem?: HTMLElement;
@@ -336,9 +336,6 @@ export default function FloatingTableTopBorderPlugin({
   const isEditable = useLexicalEditable();
 
   return isEditable
-    ? createPortal(
-        <FloatingTableTopBorder anchorElem={anchorElem} />,
-        anchorElem,
-      )
+    ? createPortal(<TableHoverActionsV2 anchorElem={anchorElem} />, anchorElem)
     : null;
 }

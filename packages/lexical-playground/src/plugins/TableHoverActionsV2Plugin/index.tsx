@@ -20,6 +20,7 @@ import {
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
 import {
+  $computeTableMapSkipCellCheck,
   $insertTableColumnAtSelection,
   $insertTableRowAtSelection,
   $isTableCellNode,
@@ -346,13 +347,26 @@ function TableHoverActionsV2({
         return;
       }
 
+      const [tableMap] = $computeTableMapSkipCellCheck(
+        tableNode,
+        cellNode,
+        cellNode,
+      );
+
       bodyRows.forEach((row) => row.remove());
 
       bodyRows.sort((a, b) => {
-        const aCell = a.getChildAtIndex(colIndex);
-        const bCell = b.getChildAtIndex(colIndex);
-        const aText = aCell ? aCell.getTextContent() : '';
-        const bText = bCell ? bCell.getTextContent() : '';
+        const aRowIndex = rows.indexOf(a);
+        const bRowIndex = rows.indexOf(b);
+
+        const aMapRow = tableMap[aRowIndex] ?? [];
+        const bMapRow = tableMap[bRowIndex] ?? [];
+
+        const aCellValue = aMapRow[colIndex];
+        const bCellValue = bMapRow[colIndex];
+
+        const aText = aCellValue?.cell.getTextContent() ?? '';
+        const bText = bCellValue?.cell.getTextContent() ?? '';
         const result = aText.localeCompare(bText, undefined, {numeric: true});
         return direction === 'asc' ? result : -result;
       });

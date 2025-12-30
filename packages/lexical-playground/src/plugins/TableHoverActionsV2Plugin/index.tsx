@@ -28,6 +28,7 @@ import {
   type TableRowNode,
 } from '@lexical/table';
 import {
+  $getChildCaret,
   $getNearestNodeFromDOMNode,
   $getSiblingCaret,
   EditorThemeClasses,
@@ -368,20 +369,9 @@ function TableHoverActionsV2({
       }
 
       const colIndex = cellNode.getIndexWithinParent();
-      const rows = tableNode.getChildren();
-
-      if (rows.length <= 1) {
-        return;
-      }
-
-      const headerRow = $isTableRowNode(rows[0]) ? rows[0] : null;
-      const bodyRows: Array<TableRowNode> = rows
-        .slice(1)
+      const rows = tableNode
+        .getChildren()
         .filter((row): row is TableRowNode => $isTableRowNode(row));
-
-      if (!headerRow || bodyRows.length === 0) {
-        return;
-      }
 
       const [tableMap] = $computeTableMapSkipCellCheck(
         tableNode as TableNode,
@@ -389,7 +379,16 @@ function TableHoverActionsV2({
         cellNode,
       );
 
-      bodyRows.sort((a, b) => {
+      const headerCell = tableMap[0]?.[colIndex]?.cell;
+      const shouldSkipTopRow = headerCell?.hasHeader() ?? false;
+
+      const sortableRows = shouldSkipTopRow ? rows.slice(1) : rows;
+
+      if (sortableRows.length <= 1) {
+        return;
+      }
+
+      sortableRows.sort((a, b) => {
         const aRowIndex = rows.indexOf(a);
         const bRowIndex = rows.indexOf(b);
 
@@ -405,7 +404,11 @@ function TableHoverActionsV2({
         return direction === 'asc' ? -result : result;
       });
 
-      $getSiblingCaret(headerRow, 'next').splice(0, bodyRows);
+      const insertionCaret = shouldSkipTopRow
+        ? $getSiblingCaret(rows[0], 'next')
+        : $getChildCaret(tableNode as TableNode, 'next');
+
+      insertionCaret?.splice(0, sortableRows);
     });
   };
 

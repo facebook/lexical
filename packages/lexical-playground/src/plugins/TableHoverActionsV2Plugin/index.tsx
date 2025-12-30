@@ -375,27 +375,27 @@ function TableHoverActionsV2({
           opacity: isVisible ? 1 : 0,
         }}
         className="floating-top-actions">
+        <DropDown
+          buttonAriaLabel="Sort column"
+          buttonClassName="floating-filter-indicator"
+          hideChevron={true}>
+          <DropDownItem
+            className="item"
+            onClick={() => handleSortColumn('desc')}>
+            Sort Ascending
+          </DropDownItem>
+          <DropDownItem
+            className="item"
+            onClick={() => handleSortColumn('asc')}>
+            Sort Descending
+          </DropDownItem>
+        </DropDown>
         <button
           className="floating-add-indicator"
           aria-label="Add column"
           type="button"
           onClick={handleAddColumn}
         />
-        <DropDown
-          buttonAriaLabel="Sort column"
-          buttonClassName="floating-filter-indicator"
-          hideChevron={true}>
-          <DropDownItem
-            className="floating-sort-menu__item"
-            onClick={() => handleSortColumn('asc')}>
-            Sort Ascending
-          </DropDownItem>
-          <DropDownItem
-            className="floating-sort-menu__item"
-            onClick={() => handleSortColumn('desc')}>
-            Sort Descending
-          </DropDownItem>
-        </DropDown>
       </div>
       <button
         ref={(node) => {

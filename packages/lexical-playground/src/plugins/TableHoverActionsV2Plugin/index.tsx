@@ -9,7 +9,6 @@ import type {JSX} from 'react';
 
 import './index.css';
 
-// eslint-disable-next-line import/order
 import {
   autoUpdate,
   offset,
@@ -25,10 +24,12 @@ import {
   $insertTableRowAtSelection,
   $isTableCellNode,
   $isTableRowNode,
+  TableNode,
   type TableRowNode,
 } from '@lexical/table';
 import {
   $getNearestNodeFromDOMNode,
+  $getSiblingCaret,
   EditorThemeClasses,
   isHTMLElement,
 } from 'lexical';
@@ -42,6 +43,39 @@ const INDICATOR_SIZE_PX = 18;
 const SIDE_INDICATOR_SIZE_PX = 18;
 const TOP_BUTTON_OVERHANG = INDICATOR_SIZE_PX / 2;
 const LEFT_BUTTON_OVERHANG = SIDE_INDICATOR_SIZE_PX / 2;
+
+/**
+ * Checks if the table does not have any merged cells.
+ *
+ * @param table Table to check for if it has any merged cells.
+ * @returns True if the table does not have any merged cells, false otherwise.
+ */
+function $isSimpleTable(table: TableNode): boolean {
+  const rows = table.getChildren();
+  let columns: null | number = null;
+  for (const row of rows as TableRowNode[]) {
+    if (!$isTableRowNode(row)) {
+      return false;
+    }
+    if (columns === null) {
+      columns = (row as TableRowNode).getChildrenSize();
+    }
+    if ((row as TableRowNode).getChildrenSize() !== columns) {
+      return false;
+    }
+    const cells = (row as TableRowNode).getChildren();
+    for (const cell of cells) {
+      if (
+        !$isTableCellNode(cell) ||
+        cell.getRowSpan() !== 1 ||
+        cell.getColSpan() !== 1
+      ) {
+        return false;
+      }
+    }
+  }
+  return (columns || 0) > 0;
+}
 
 function getTableFromMouseEvent(
   event: MouseEvent,
@@ -329,6 +363,10 @@ function TableHoverActionsV2({
         return;
       }
 
+      if (!$isSimpleTable(tableNode as TableNode)) {
+        return;
+      }
+
       const colIndex = cellNode.getIndexWithinParent();
       const rows = tableNode.getChildren();
 
@@ -336,9 +374,7 @@ function TableHoverActionsV2({
         return;
       }
 
-      const headerRow = $isTableRowNode(rows[0])
-        ? (rows[0] as TableRowNode)
-        : null;
+      const headerRow = $isTableRowNode(rows[0]) ? rows[0] : null;
       const bodyRows: Array<TableRowNode> = rows
         .slice(1)
         .filter((row): row is TableRowNode => $isTableRowNode(row));
@@ -348,12 +384,10 @@ function TableHoverActionsV2({
       }
 
       const [tableMap] = $computeTableMapSkipCellCheck(
-        tableNode,
+        tableNode as TableNode,
         cellNode,
         cellNode,
       );
-
-      bodyRows.forEach((row) => row.remove());
 
       bodyRows.sort((a, b) => {
         const aRowIndex = rows.indexOf(a);
@@ -368,12 +402,10 @@ function TableHoverActionsV2({
         const aText = aCellValue?.cell.getTextContent() ?? '';
         const bText = bCellValue?.cell.getTextContent() ?? '';
         const result = aText.localeCompare(bText, undefined, {numeric: true});
-        return direction === 'asc' ? result : -result;
+        return direction === 'asc' ? -result : result;
       });
 
-      for (const bodyRow of bodyRows) {
-        headerRow.insertAfter(bodyRow);
-      }
+      $getSiblingCaret(headerRow, 'next').splice(0, bodyRows);
     });
   };
 

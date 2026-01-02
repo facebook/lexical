@@ -23,15 +23,15 @@ import {
   $insertTableColumnAtSelection,
   $insertTableRowAtSelection,
   $isTableCellNode,
+  $isTableNode,
   $isTableRowNode,
-  TableNode,
-  type TableRowNode,
+  type TableNode,
 } from '@lexical/table';
 import {
   $getChildCaret,
   $getNearestNodeFromDOMNode,
   $getSiblingCaret,
-  EditorThemeClasses,
+  type EditorThemeClasses,
   isHTMLElement,
 } from 'lexical';
 import {useEffect, useRef, useState} from 'react';
@@ -54,17 +54,17 @@ const LEFT_BUTTON_OVERHANG = SIDE_INDICATOR_SIZE_PX / 2;
 function $isSimpleTable(table: TableNode): boolean {
   const rows = table.getChildren();
   let columns: null | number = null;
-  for (const row of rows as TableRowNode[]) {
+  for (const row of rows) {
     if (!$isTableRowNode(row)) {
       return false;
     }
     if (columns === null) {
-      columns = (row as TableRowNode).getChildrenSize();
+      columns = row.getChildrenSize();
     }
-    if ((row as TableRowNode).getChildrenSize() !== columns) {
+    if (row.getChildrenSize() !== columns) {
       return false;
     }
-    const cells = (row as TableRowNode).getChildren();
+    const cells = row.getChildren();
     for (const cell of cells) {
       if (
         !$isTableCellNode(cell) ||
@@ -360,21 +360,15 @@ function TableHoverActionsV2({
       }
 
       const tableNode = rowNode.getParent();
-      if (!tableNode) {
-        return;
-      }
-
-      if (!$isSimpleTable(tableNode as TableNode)) {
+      if (!$isTableNode(tableNode) || !$isSimpleTable(tableNode)) {
         return;
       }
 
       const colIndex = cellNode.getIndexWithinParent();
-      const rows = tableNode
-        .getChildren()
-        .filter((row): row is TableRowNode => $isTableRowNode(row));
+      const rows = tableNode.getChildren().filter($isTableRowNode);
 
       const [tableMap] = $computeTableMapSkipCellCheck(
-        tableNode as TableNode,
+        tableNode,
         cellNode,
         cellNode,
       );
@@ -406,7 +400,7 @@ function TableHoverActionsV2({
 
       const insertionCaret = shouldSkipTopRow
         ? $getSiblingCaret(rows[0], 'next')
-        : $getChildCaret(tableNode as TableNode, 'next');
+        : $getChildCaret(tableNode, 'next');
 
       insertionCaret?.splice(0, sortableRows);
     });

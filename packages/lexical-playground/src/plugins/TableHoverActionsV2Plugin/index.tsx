@@ -5,34 +5,78 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
-import type {VirtualElement} from '@floating-ui/react';
 import type {JSX} from 'react';
 
 import './index.css';
 
-import {autoUpdate, offset, shift, useFloating} from '@floating-ui/react';
+import {
+  autoUpdate,
+  offset,
+  shift,
+  useFloating,
+  type VirtualElement,
+} from '@floating-ui/react';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
 import {
+  $computeTableMapSkipCellCheck,
   $insertTableColumnAtSelection,
   $insertTableRowAtSelection,
   $isTableCellNode,
+  $isTableNode,
+  $isTableRowNode,
+  type TableNode,
 } from '@lexical/table';
 import {
+  $getChildCaret,
   $getNearestNodeFromDOMNode,
-  EditorThemeClasses,
+  $getSiblingCaret,
+  type EditorThemeClasses,
   isHTMLElement,
 } from 'lexical';
 import {useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 
+import DropDown, {DropDownItem} from '../../ui/DropDown';
 import {getThemeSelector} from '../../utils/getThemeSelector';
 
 const INDICATOR_SIZE_PX = 18;
 const SIDE_INDICATOR_SIZE_PX = 18;
 const TOP_BUTTON_OVERHANG = INDICATOR_SIZE_PX / 2;
 const LEFT_BUTTON_OVERHANG = SIDE_INDICATOR_SIZE_PX / 2;
+
+/**
+ * Checks if the table does not have any merged cells.
+ *
+ * @param table Table to check for if it has any merged cells.
+ * @returns True if the table does not have any merged cells, false otherwise.
+ */
+function $isSimpleTable(table: TableNode): boolean {
+  const rows = table.getChildren();
+  let columns: null | number = null;
+  for (const row of rows) {
+    if (!$isTableRowNode(row)) {
+      return false;
+    }
+    if (columns === null) {
+      columns = row.getChildrenSize();
+    }
+    if (row.getChildrenSize() !== columns) {
+      return false;
+    }
+    const cells = row.getChildren();
+    for (const cell of cells) {
+      if (
+        !$isTableCellNode(cell) ||
+        cell.getRowSpan() !== 1 ||
+        cell.getColSpan() !== 1
+      ) {
+        return false;
+      }
+    }
+  }
+  return (columns || 0) > 0;
+}
 
 function getTableFromMouseEvent(
   event: MouseEvent,
@@ -148,8 +192,12 @@ function TableHoverActionsV2({
 
     const handleMouseMove = (event: MouseEvent) => {
       if (
-        event.target === floatingElemRef.current ||
-        event.target === leftFloatingElemRef.current
+        (floatingElemRef.current &&
+          event.target instanceof Node &&
+          floatingElemRef.current.contains(event.target)) ||
+        (leftFloatingElemRef.current &&
+          event.target instanceof Node &&
+          leftFloatingElemRef.current.contains(event.target))
       ) {
         return;
       }
@@ -294,9 +342,73 @@ function TableHoverActionsV2({
     });
   };
 
+  const handleSortColumn = (direction: 'asc' | 'desc') => {
+    const targetCell = hoveredTopCellRef.current;
+    if (!targetCell) {
+      return;
+    }
+
+    editor.update(() => {
+      const cellNode = $getNearestNodeFromDOMNode(targetCell);
+      if (!$isTableCellNode(cellNode)) {
+        return;
+      }
+
+      const rowNode = cellNode.getParent();
+      if (!rowNode || !$isTableRowNode(rowNode)) {
+        return;
+      }
+
+      const tableNode = rowNode.getParent();
+      if (!$isTableNode(tableNode) || !$isSimpleTable(tableNode)) {
+        return;
+      }
+
+      const colIndex = cellNode.getIndexWithinParent();
+      const rows = tableNode.getChildren().filter($isTableRowNode);
+
+      const [tableMap] = $computeTableMapSkipCellCheck(
+        tableNode,
+        cellNode,
+        cellNode,
+      );
+
+      const headerCell = tableMap[0]?.[colIndex]?.cell;
+      const shouldSkipTopRow = headerCell?.hasHeader() ?? false;
+
+      const sortableRows = shouldSkipTopRow ? rows.slice(1) : rows;
+
+      if (sortableRows.length <= 1) {
+        return;
+      }
+
+      sortableRows.sort((a, b) => {
+        const aRowIndex = rows.indexOf(a);
+        const bRowIndex = rows.indexOf(b);
+
+        const aMapRow = tableMap[aRowIndex] ?? [];
+        const bMapRow = tableMap[bRowIndex] ?? [];
+
+        const aCellValue = aMapRow[colIndex];
+        const bCellValue = bMapRow[colIndex];
+
+        const aText = aCellValue?.cell.getTextContent() ?? '';
+        const bText = bCellValue?.cell.getTextContent() ?? '';
+        const result = aText.localeCompare(bText, undefined, {numeric: true});
+        return direction === 'asc' ? -result : result;
+      });
+
+      const insertionCaret = shouldSkipTopRow
+        ? $getSiblingCaret(rows[0], 'next')
+        : $getChildCaret(tableNode, 'next');
+
+      insertionCaret?.splice(0, sortableRows);
+    });
+  };
+
   return (
     <>
-      <button
+      <div
         ref={(node) => {
           floatingElemRef.current = node;
           refs.setFloating(node);
@@ -305,11 +417,29 @@ function TableHoverActionsV2({
           ...floatingStyles,
           opacity: isVisible ? 1 : 0,
         }}
-        className="floating-add-indicator"
-        aria-label="Add column"
-        type="button"
-        onClick={handleAddColumn}
-      />
+        className="floating-top-actions">
+        <DropDown
+          buttonAriaLabel="Sort column"
+          buttonClassName="floating-filter-indicator"
+          hideChevron={true}>
+          <DropDownItem
+            className="item"
+            onClick={() => handleSortColumn('desc')}>
+            Sort Ascending
+          </DropDownItem>
+          <DropDownItem
+            className="item"
+            onClick={() => handleSortColumn('asc')}>
+            Sort Descending
+          </DropDownItem>
+        </DropDown>
+        <button
+          className="floating-add-indicator"
+          aria-label="Add column"
+          type="button"
+          onClick={handleAddColumn}
+        />
+      </div>
       <button
         ref={(node) => {
           leftFloatingElemRef.current = node;

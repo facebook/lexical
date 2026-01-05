@@ -52,7 +52,7 @@ export type ProviderAwareness = {
   getStates: () => Map<number, UserState>;
   off: (type: 'update', cb: () => void) => void;
   on: (type: 'update', cb: () => void) => void;
-  setLocalState: (arg0: UserState) => void;
+  setLocalState: (arg0: UserState | null) => void;
   setLocalStateField: (field: string, value: unknown) => void;
 };
 declare interface Provider {

@@ -47,3 +47,17 @@
   opacity: 0;
   will-change: transform;
 }
+
+.draggable-block-component-picker {
+  max-width: 260px;
+}
+
+.draggable-block-component-picker .component-picker-search {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 0;
+  outline: none;
+  font-size: 14px;
+  border-radius: 8px 8px 0 0;
+}

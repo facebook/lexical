@@ -1,7 +1,7 @@
 {
   "name": "@lexical/extension-react-table-example",
   "private": true,
-  "version": "0.39.0",
+  "version": "0.39.1-nightly.20260105.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,10 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@lexical/extension": "0.39.0",
-    "@lexical/react": "0.39.0",
-    "@lexical/tailwind": "0.39.0",
-    "lexical": "0.39.0",
+    "@lexical/extension": "workspace:*",
+    "@lexical/react": "workspace:*",
+    "@lexical/tailwind": "workspace:*",
+    "lexical": "workspace:*",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },

@@ -12,6 +12,7 @@ import type {NodeKey} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextFormatType} from './nodes/LexicalTextNode';
 
+import {IS_FIREFOX} from 'shared/environment';
 import invariant from 'shared/invariant';
 
 import {
@@ -3095,6 +3096,50 @@ export function updateDOMSelection(
     nextFocusNode,
     nextFocusOffset,
   );
+
+  // Firefox-specific fix: After setting DOM selection, ensure root element has focus
+  // to maintain cursor visibility. Firefox requires focus to be on the root element
+  // for the cursor to be visible, especially after operations like drag that may
+  // cause focus loss. This is critical for collapsed selections (cursor).
+  if (
+    IS_FIREFOX &&
+    nextSelection.isCollapsed() &&
+    rootElement !== null &&
+    !tags.has(SKIP_SELECTION_FOCUS_TAG) &&
+    (document.activeElement === null ||
+      !rootElement.contains(document.activeElement))
+  ) {
+    // Restore focus immediately to ensure cursor visibility
+    rootElement.focus({preventScroll: true});
+    // Immediately re-apply selection after focus to ensure Firefox shows cursor
+    // Firefox sometimes loses the selection when focus is restored, so we need to
+    // explicitly set it again right after focus
+    try {
+      // Use requestAnimationFrame to ensure this happens in the next frame after focus
+      requestAnimationFrame(() => {
+        try {
+          if (
+            domSelection.rangeCount === 0 ||
+            !domSelection.getRangeAt(0).collapsed
+          ) {
+            // Re-apply selection if it was lost or incorrect
+            setDOMSelectionBaseAndExtent(
+              domSelection,
+              nextAnchorNode,
+              nextAnchorOffset,
+              nextFocusNode,
+              nextFocusOffset,
+            );
+          }
+        } catch (_error) {
+          // Ignore errors, selection might already be correct
+        }
+      });
+    } catch (_error) {
+      // Ignore errors
+    }
+  }
+
   if (
     !tags.has(SKIP_SCROLL_INTO_VIEW_TAG) &&
     nextSelection.isCollapsed() &&

@@ -1458,6 +1458,33 @@ export function addRootElementEvents(
                 );
 
               case 'blur': {
+                // Firefox-specific fix: When blur is caused by clicking on the drag handle,
+                // immediately restore focus to prevent cursor from disappearing. Firefox fires
+                // blur before dragstart, causing focus loss. We detect this by checking if
+                // the relatedTarget (where focus is moving to) is the drag handle element.
+                if (IS_FIREFOX && isEditable) {
+                  const relatedTarget = (event as FocusEvent).relatedTarget;
+                  if (
+                    relatedTarget &&
+                    relatedTarget instanceof HTMLElement &&
+                    (relatedTarget.classList.contains('draggable-block-menu') ||
+                      relatedTarget.closest('.draggable-block-menu') !== null)
+                  ) {
+                    // Blur is caused by clicking on drag handle - restore focus immediately
+                    // to prevent cursor from disappearing. This must be synchronous to work.
+                    // Restore focus synchronously - don't dispatch BLUR_COMMAND
+                    rootElement.focus({preventScroll: true});
+                    // Force selection update to ensure cursor is visible
+                    editor.update(() => {
+                      const selection = $getSelection();
+                      if (selection !== null && !selection.dirty) {
+                        selection.dirty = true;
+                      }
+                    });
+                    return false; // Prevent BLUR_COMMAND from being dispatched
+                  }
+                }
+
                 return (
                   isEditable &&
                   dispatchCommand(editor, BLUR_COMMAND, event as FocusEvent)

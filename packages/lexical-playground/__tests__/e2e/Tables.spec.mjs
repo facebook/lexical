@@ -904,13 +904,17 @@ test.describe.parallel('Tables', () => {
             <col style="width: 92px" />
           </colgroup>
           <tr>
-            <th class="PlaygroundEditorTheme__tableCellSelected">
+            <th
+              class="PlaygroundEditorTheme__tableCellSelected"
+              data-drop-target-for-element="true">
               <p><span data-lexical-text="true">a</span></p>
             </th>
-            <th class="PlaygroundEditorTheme__tableCellSelected">
+            <th
+              class="PlaygroundEditorTheme__tableCellSelected"
+              data-drop-target-for-element="true">
               <p><span data-lexical-text="true">bb</span></p>
             </th>
-            <th>
+            <th data-drop-target-for-element="true">
               <p><span data-lexical-text="true">cc</span></p>
             </th>
           </tr>

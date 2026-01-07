@@ -513,14 +513,30 @@ export function $handleListInsertParagraph(): boolean {
   if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
     return false;
   }
-  // Only run this code on empty list items
+  // Only run this code on empty list items (including whitespace-only)
   const anchor = selection.anchor.getNode();
 
-  if (!$isListItemNode(anchor) || anchor.getChildrenSize() !== 0) {
+  let listItem: ListItemNode | null = null;
+
+  if ($isListItemNode(anchor) && anchor.getChildrenSize() === 0) {
+    listItem = anchor;
+  } else {
+    // List item with only whitespace text content
+    const parentListItem = anchor.getParent();
+    if (
+      $isListItemNode(parentListItem) &&
+      parentListItem.getTextContent().trim() === ''
+    ) {
+      listItem = parentListItem;
+    }
+  }
+
+  if (listItem === null) {
     return false;
   }
-  const topListNode = $getTopListNode(anchor);
-  const parent = anchor.getParent();
+
+  const topListNode = $getTopListNode(listItem);
+  const parent = listItem.getParent();
 
   invariant(
     $isListNode(parent),
@@ -545,7 +561,7 @@ export function $handleListInsertParagraph(): boolean {
     .setTextFormat(selection.format)
     .select();
 
-  const nextSiblings = anchor.getNextSiblings();
+  const nextSiblings = listItem.getNextSiblings();
 
   if (nextSiblings.length > 0) {
     const newList = $createListNode(parent.getListType());
@@ -560,7 +576,7 @@ export function $handleListInsertParagraph(): boolean {
   }
 
   // Don't leave hanging nested empty lists
-  $removeHighestEmptyListParent(anchor);
+  $removeHighestEmptyListParent(listItem);
 
   return true;
 }

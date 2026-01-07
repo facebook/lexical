@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import {registerRichText} from '@lexical/rich-text';
 import {
   $createTableCellNode,
   $createTableNode,
@@ -19,13 +20,16 @@ import {
   $createTextNode,
   $getRoot,
   $getSelection,
+  $isParagraphNode,
   $isRangeSelection,
   $nodesOfType,
   $selectAll,
+  INSERT_PARAGRAPH_COMMAND,
 } from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 import {describe, expect, test} from 'vitest';
 
+import {registerList} from '../../';
 import {$insertList} from '../../formatList';
 import {$createListItemNode, $isListItemNode} from '../../LexicalListItemNode';
 import {$createListNode, $isListNode, ListNode} from '../../LexicalListNode';
@@ -175,6 +179,86 @@ describe('insertList', () => {
             expect(selection.anchor.type).toBe('element');
             expect(selection.focus.type).toBe('element');
           }
+        }
+      });
+    });
+  });
+});
+
+describe('$handleListInsertParagraph', () => {
+  initializeUnitTest((testEnv) => {
+    test('exits list when list item is completely empty', async () => {
+      const {editor} = testEnv;
+      registerList(editor);
+
+      await editor.update(() => {
+        const listItemWithContent = $createListItemNode();
+        const listItemEmpty = $createListItemNode();
+        const listNode = $createListNode('bullet');
+        listItemWithContent.append($createTextNode('item'));
+        listNode.append(listItemWithContent, listItemEmpty);
+        $getRoot().append(listNode);
+        listItemEmpty.select();
+        editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND, undefined);
+      });
+
+      editor.read(() => {
+        const children = $getRoot().getChildren();
+        expect(children.length).toBe(2);
+        expect($isListNode(children[0])).toBe(true);
+        expect($isParagraphNode(children[1])).toBe(true);
+      });
+    });
+
+    test('exits list when list item contains only whitespace', async () => {
+      const {editor} = testEnv;
+      registerList(editor);
+
+      await editor.update(() => {
+        const listItemWithContent = $createListItemNode();
+        const listItemWhitespace = $createListItemNode();
+        const whitespaceTextNode = $createTextNode(' ');
+        const listNode = $createListNode('bullet');
+        listItemWithContent.append($createTextNode('item'));
+        listItemWhitespace.append(whitespaceTextNode);
+        listNode.append(listItemWithContent, listItemWhitespace);
+        $getRoot().append(listNode);
+        whitespaceTextNode.select();
+        editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND, undefined);
+      });
+
+      editor.read(() => {
+        const children = $getRoot().getChildren();
+        expect(children.length).toBe(2);
+        expect($isListNode(children[0])).toBe(true);
+        expect($isParagraphNode(children[1])).toBe(true);
+      });
+    });
+
+    test('extends list when list item contains non-whitespace content', async () => {
+      const {editor} = testEnv;
+      registerRichText(editor);
+      registerList(editor);
+
+      await editor.update(() => {
+        const listItem1 = $createListItemNode();
+        listItem1.append($createTextNode('item 1'));
+        const listItem2 = $createListItemNode();
+        const textNode = $createTextNode('item 2');
+        listItem2.append(textNode);
+        const listNode = $createListNode('bullet');
+        listNode.append(listItem1, listItem2);
+        $getRoot().append(listNode);
+        textNode.selectEnd();
+        editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND, undefined);
+      });
+
+      editor.read(() => {
+        const children = $getRoot().getChildren();
+        expect(children.length).toBe(1);
+        expect($isListNode(children[0])).toBe(true);
+        if ($isListNode(children[0])) {
+          expect(children[0].getChildrenSize()).toBe(3);
         }
       });
     });

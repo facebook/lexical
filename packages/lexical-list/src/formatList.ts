@@ -15,6 +15,7 @@ import {
   $isLeafNode,
   $isRangeSelection,
   $isRootOrShadowRoot,
+  $isTextNode,
   $normalizeCaret,
   $setPointFromCaret,
   ElementNode,
@@ -519,14 +520,12 @@ export function $handleListInsertParagraph(): boolean {
   let listItem: ListItemNode | null = null;
 
   if ($isListItemNode(anchor) && anchor.getChildrenSize() === 0) {
+    // Truly empty list item (element selection)
     listItem = anchor;
-  } else {
-    // List item with only whitespace text content
+  } else if ($isTextNode(anchor) && anchor.getTextContent().trim() === '') {
+    // Whitespace-only TextNode
     const parentListItem = anchor.getParent();
-    if (
-      $isListItemNode(parentListItem) &&
-      parentListItem.getTextContent().trim() === ''
-    ) {
+    if ($isListItemNode(parentListItem)) {
       listItem = parentListItem;
     }
   }

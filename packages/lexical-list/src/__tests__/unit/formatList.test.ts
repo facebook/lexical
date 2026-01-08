@@ -18,6 +18,7 @@ import {
   $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
+  $getNodeByKey,
   $getRoot,
   $getSelection,
   $isParagraphNode,
@@ -194,9 +195,11 @@ describe('$handleListInsertParagraph', () => {
       const {editor} = testEnv;
       registerList(editor);
 
+      let emptyListItemKey: string;
       await editor.update(() => {
         const listItemWithContent = $createListItemNode();
         const listItemEmpty = $createListItemNode();
+        emptyListItemKey = listItemEmpty.getKey();
         const listNode = $createListNode('bullet');
         listItemWithContent.append($createTextNode('item'));
         listNode.append(listItemWithContent, listItemEmpty);
@@ -210,6 +213,8 @@ describe('$handleListInsertParagraph', () => {
         expect(children.length).toBe(2);
         expect($isListNode(children[0])).toBe(true);
         expect($isParagraphNode(children[1])).toBe(true);
+        expect((children[0] as ListNode).getChildrenSize()).toBe(1);
+        expect($getNodeByKey(emptyListItemKey)).toBeNull();
       });
     });
 
@@ -217,9 +222,11 @@ describe('$handleListInsertParagraph', () => {
       const {editor} = testEnv;
       registerList(editor);
 
+      let whitespaceListItemKey: string;
       await editor.update(() => {
         const listItemWithContent = $createListItemNode();
         const listItemWhitespace = $createListItemNode();
+        whitespaceListItemKey = listItemWhitespace.getKey();
         const whitespaceTextNode = $createTextNode(' ');
         const listNode = $createListNode('bullet');
         listItemWithContent.append($createTextNode('item'));
@@ -235,6 +242,8 @@ describe('$handleListInsertParagraph', () => {
         expect(children.length).toBe(2);
         expect($isListNode(children[0])).toBe(true);
         expect($isParagraphNode(children[1])).toBe(true);
+        expect((children[0] as ListNode).getChildrenSize()).toBe(1);
+        expect($getNodeByKey(whitespaceListItemKey)).toBeNull();
       });
     });
 
@@ -260,9 +269,7 @@ describe('$handleListInsertParagraph', () => {
         const children = $getRoot().getChildren();
         expect(children.length).toBe(1);
         expect($isListNode(children[0])).toBe(true);
-        if ($isListNode(children[0])) {
-          expect(children[0].getChildrenSize()).toBe(3);
-        }
+        expect((children[0] as ListNode).getChildrenSize()).toBe(3);
       });
     });
 
@@ -288,9 +295,7 @@ describe('$handleListInsertParagraph', () => {
         const children = $getRoot().getChildren();
         expect(children.length).toBe(1);
         expect($isListNode(children[0])).toBe(true);
-        if ($isListNode(children[0])) {
-          expect(children[0].getChildrenSize()).toBe(3);
-        }
+        expect((children[0] as ListNode).getChildrenSize()).toBe(3);
       });
     });
   });

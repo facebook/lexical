@@ -26,7 +26,10 @@ import {
   $selectAll,
   INSERT_PARAGRAPH_COMMAND,
 } from 'lexical';
-import {initializeUnitTest} from 'lexical/src/__tests__/utils';
+import {
+  $createTestDecoratorNode,
+  initializeUnitTest,
+} from 'lexical/src/__tests__/utils';
 import {describe, expect, test} from 'vitest';
 
 import {registerList} from '../../';
@@ -250,6 +253,34 @@ describe('$handleListInsertParagraph', () => {
         listNode.append(listItem1, listItem2);
         $getRoot().append(listNode);
         textNode.selectEnd();
+        editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND, undefined);
+      });
+
+      editor.read(() => {
+        const children = $getRoot().getChildren();
+        expect(children.length).toBe(1);
+        expect($isListNode(children[0])).toBe(true);
+        if ($isListNode(children[0])) {
+          expect(children[0].getChildrenSize()).toBe(3);
+        }
+      });
+    });
+
+    test('extends list when list item contains a decorator node', async () => {
+      const {editor} = testEnv;
+      registerRichText(editor);
+      registerList(editor);
+
+      await editor.update(() => {
+        const listItem1 = $createListItemNode();
+        listItem1.append($createTextNode('item 1'));
+        const listItem2 = $createListItemNode();
+        const decoratorNode = $createTestDecoratorNode();
+        listItem2.append(decoratorNode);
+        const listNode = $createListNode('bullet');
+        listNode.append(listItem1, listItem2);
+        $getRoot().append(listNode);
+        listItem2.select();
         editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND, undefined);
       });
 

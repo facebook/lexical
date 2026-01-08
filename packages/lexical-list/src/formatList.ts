@@ -522,10 +522,14 @@ export function $handleListInsertParagraph(): boolean {
   if ($isListItemNode(anchor) && anchor.getChildrenSize() === 0) {
     // Truly empty list item (element selection)
     listItem = anchor;
-  } else if ($isTextNode(anchor) && anchor.getTextContent().trim() === '') {
-    // Whitespace-only TextNode
+  } else if ($isTextNode(anchor)) {
+    // Check if the entire list item contains only whitespace text nodes
     const parentListItem = anchor.getParent();
-    if ($isListItemNode(parentListItem)) {
+    if (
+      $isListItemNode(parentListItem) &&
+      parentListItem.getChildren().every($isTextNode) &&
+      parentListItem.getTextContent().trim() === ''
+    ) {
       listItem = parentListItem;
     }
   }

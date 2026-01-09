@@ -3111,33 +3111,9 @@ export function updateDOMSelection(
   ) {
     // Restore focus immediately to ensure cursor visibility
     rootElement.focus({preventScroll: true});
-    // Immediately re-apply selection after focus to ensure Firefox shows cursor
-    // Firefox sometimes loses the selection when focus is restored, so we need to
-    // explicitly set it again right after focus
-    try {
-      // Use requestAnimationFrame to ensure this happens in the next frame after focus
-      requestAnimationFrame(() => {
-        try {
-          if (
-            domSelection.rangeCount === 0 ||
-            !domSelection.getRangeAt(0).collapsed
-          ) {
-            // Re-apply selection if it was lost or incorrect
-            setDOMSelectionBaseAndExtent(
-              domSelection,
-              nextAnchorNode,
-              nextAnchorOffset,
-              nextFocusNode,
-              nextFocusOffset,
-            );
-          }
-        } catch (_error) {
-          // Ignore errors, selection might already be correct
-        }
-      });
-    } catch (_error) {
-      // Ignore errors
-    }
+    // Note: We rely on the normal selection update mechanism to ensure the cursor
+    // is visible. Using requestAnimationFrame here could cause race conditions where
+    // another update changes the selection before the rAF callback executes.
   }
 
   if (

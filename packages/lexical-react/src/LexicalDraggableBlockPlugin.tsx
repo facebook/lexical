@@ -16,6 +16,7 @@ import {
   $getNodeByKey,
   $getRoot,
   $getSelection,
+  $onUpdate,
   BLUR_COMMAND,
   COMMAND_PRIORITY_HIGH,
   COMMAND_PRIORITY_LOW,
@@ -419,8 +420,8 @@ function useDraggableBlockMenu(
       // Firefox-specific fix: Use editor.focus() after drop to properly restore
       // both focus and selection. This ensures cursor visibility immediately.
       if (IS_FIREFOX) {
-        // Use a microtask to ensure this happens after the drop update completes
-        Promise.resolve().then(() => {
+        // Using $onUpdate ensures this happens after the current update cycle finishes
+        $onUpdate(() => {
           editor.focus();
         });
       }

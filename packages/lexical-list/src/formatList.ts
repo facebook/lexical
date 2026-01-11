@@ -527,8 +527,11 @@ export function $handleListInsertParagraph(): boolean {
     const parentListItem = anchor.getParent();
     if (
       $isListItemNode(parentListItem) &&
-      parentListItem.getChildren().every($isTextNode) &&
-      parentListItem.getTextContent().trim() === ''
+      parentListItem
+        .getChildren()
+        .every(
+          (node) => $isTextNode(node) && node.getTextContent().trim() === '',
+        )
     ) {
       listItem = parentListItem;
     }

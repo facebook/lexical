@@ -432,11 +432,13 @@ function handleBadNeighbors(
   if ($isAutoLinkNode(previousSibling) && !previousSibling.getIsUnlinked()) {
     // Check if the textNode is still a sibling (hasn't been moved) to prevent loops
     const currentPreviousSibling = textNode.getPreviousSibling();
+    const currentParent = textNode.getParent();
     if (
       currentPreviousSibling === previousSibling &&
-      textNode.getParent() === previousSibling.getParent()
+      currentParent === previousSibling.getParent()
     ) {
       // If text doesn't start with separator, link should be unwrapped
+      // because non-separator after link makes the boundary invalid
       if (!startsWithSeparator(text)) {
         // Non-separator after link - unwrap the link
         replaceWithChildren(previousSibling);
@@ -467,9 +469,10 @@ function handleBadNeighbors(
   ) {
     // Check if the nextSibling is still a sibling (hasn't been moved) to prevent loops
     const currentNextSibling = textNode.getNextSibling();
+    const currentParent = textNode.getParent();
     if (
       currentNextSibling === nextSibling &&
-      textNode.getParent() === nextSibling.getParent()
+      currentParent === nextSibling.getParent()
     ) {
       replaceWithChildren(nextSibling);
       onChange(null, nextSibling.getURL());

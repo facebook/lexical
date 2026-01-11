@@ -437,19 +437,15 @@ function handleBadNeighbors(
       textNode.getParent() === previousSibling.getParent()
     ) {
       // If text doesn't start with separator, link should be unwrapped
-      // OR if text starts with separator but not valid TLD continuation
       if (!startsWithSeparator(text)) {
         // Non-separator after link - unwrap the link
         replaceWithChildren(previousSibling);
         onChange(null, previousSibling.getURL());
-      } else if (
-        startsWithSeparator(text) &&
-        !startsWithTLD(text, previousSibling.isEmailURI())
-      ) {
-        // Separator that doesn't form valid TLD - unwrap the link
-        replaceWithChildren(previousSibling);
-        onChange(null, previousSibling.getURL());
-      } else if (startsWithTLD(text, previousSibling.isEmailURI())) {
+        return; // Early return after unwrapping to avoid further processing
+      }
+
+      // If text starts with separator, check if it's valid TLD continuation
+      if (startsWithTLD(text, previousSibling.isEmailURI())) {
         // Valid TLD continuation - try to append
         const combinedText = previousSibling.getTextContent() + text;
         const match = findFirstMatch(combinedText, matchers);
@@ -459,6 +455,7 @@ function handleBadNeighbors(
           onChange(null, previousSibling.getURL());
         }
       }
+      // If starts with separator but not valid TLD, do nothing (link stays valid)
     }
   }
 

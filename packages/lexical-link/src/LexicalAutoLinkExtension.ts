@@ -416,40 +416,53 @@ function handleBadNeighbors(
   matchers: Array<LinkMatcher>,
   onChange: ChangeHandler,
 ): void {
-  // Skip if textNode is already part of an AutoLinkNode (idempotency check)
   const parent = textNode.getParent();
-  if ($isAutoLinkNode(parent) && !parent.getIsUnlinked()) {
-    return;
-  }
-
   const previousSibling = textNode.getPreviousSibling();
   const nextSibling = textNode.getNextSibling();
   const text = textNode.getTextContent();
 
-  if (
-    $isAutoLinkNode(previousSibling) &&
-    !previousSibling.getIsUnlinked() &&
-    (!startsWithSeparator(text) ||
-      startsWithTLD(text, previousSibling.isEmailURI()))
-  ) {
+  // Skip if textNode is already part of an AutoLinkNode (idempotency check)
+  // The handleLinkEdit on the parent will handle unwrapping if needed
+  if ($isAutoLinkNode(parent) && !parent.getIsUnlinked()) {
+    return;
+  }
+
+  // Handle case: textNode added AFTER a link, making link invalid
+  // Check if previousSibling is a link and adding this textNode makes it invalid
+  if ($isAutoLinkNode(previousSibling) && !previousSibling.getIsUnlinked()) {
     // Check if the textNode is still a sibling (hasn't been moved) to prevent loops
     const currentPreviousSibling = textNode.getPreviousSibling();
     if (
       currentPreviousSibling === previousSibling &&
       textNode.getParent() === previousSibling.getParent()
     ) {
-      // Before appending, check if the combined text would still match a matcher
-      // to prevent creating invalid links that will be immediately unwrapped
-      const combinedText = previousSibling.getTextContent() + text;
-      const match = findFirstMatch(combinedText, matchers);
-      if (match !== null && match.text === combinedText) {
-        previousSibling.append(textNode);
-        handleLinkEdit(previousSibling, matchers, onChange);
+      // If text doesn't start with separator, link should be unwrapped
+      // OR if text starts with separator but not valid TLD continuation
+      if (!startsWithSeparator(text)) {
+        // Non-separator after link - unwrap the link
+        replaceWithChildren(previousSibling);
         onChange(null, previousSibling.getURL());
+      } else if (
+        startsWithSeparator(text) &&
+        !startsWithTLD(text, previousSibling.isEmailURI())
+      ) {
+        // Separator that doesn't form valid TLD - unwrap the link
+        replaceWithChildren(previousSibling);
+        onChange(null, previousSibling.getURL());
+      } else if (startsWithTLD(text, previousSibling.isEmailURI())) {
+        // Valid TLD continuation - try to append
+        const combinedText = previousSibling.getTextContent() + text;
+        const match = findFirstMatch(combinedText, matchers);
+        if (match !== null && match.text === combinedText) {
+          previousSibling.append(textNode);
+          handleLinkEdit(previousSibling, matchers, onChange);
+          onChange(null, previousSibling.getURL());
+        }
       }
     }
   }
 
+  // Handle case: textNode added BEFORE a link, making link invalid
   if (
     $isAutoLinkNode(nextSibling) &&
     !nextSibling.getIsUnlinked() &&
@@ -462,7 +475,6 @@ function handleBadNeighbors(
       textNode.getParent() === nextSibling.getParent()
     ) {
       replaceWithChildren(nextSibling);
-      handleLinkEdit(nextSibling, matchers, onChange);
       onChange(null, nextSibling.getURL());
     }
   }

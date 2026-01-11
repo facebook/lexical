@@ -12,6 +12,7 @@ import type {NodeKey} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextFormatType} from './nodes/LexicalTextNode';
 
+import {IS_FIREFOX} from 'shared/environment';
 import invariant from 'shared/invariant';
 
 import {
@@ -3095,6 +3096,26 @@ export function updateDOMSelection(
     nextFocusNode,
     nextFocusOffset,
   );
+
+  // Firefox-specific fix: After setting DOM selection, ensure root element has focus
+  // to maintain cursor visibility. Firefox requires focus to be on the root element
+  // for the cursor to be visible, especially after operations like drag that may
+  // cause focus loss. This is critical for collapsed selections (cursor).
+  if (
+    IS_FIREFOX &&
+    nextSelection.isCollapsed() &&
+    rootElement !== null &&
+    !tags.has(SKIP_SELECTION_FOCUS_TAG) &&
+    (document.activeElement === null ||
+      !rootElement.contains(document.activeElement))
+  ) {
+    // Restore focus immediately to ensure cursor visibility
+    rootElement.focus({preventScroll: true});
+    // Note: We rely on the normal selection update mechanism to ensure the cursor
+    // is visible. Using requestAnimationFrame here could cause race conditions where
+    // another update changes the selection before the rAF callback executes.
+  }
+
   if (
     !tags.has(SKIP_SCROLL_INTO_VIEW_TAG) &&
     nextSelection.isCollapsed() &&

@@ -284,6 +284,14 @@ function $handleLinkCreation(
   matchers: Array<LinkMatcher>,
   onChange: ChangeHandler,
 ): void {
+  // Early return if any node is already part of an AutoLinkNode (idempotency check)
+  for (const node of nodes) {
+    const parent = node.getParent();
+    if ($isAutoLinkNode(parent) && !parent.getIsUnlinked()) {
+      return;
+    }
+  }
+
   let currentNodes = [...nodes];
   const initialText = currentNodes
     .map((node) => node.getTextContent())
@@ -310,6 +318,21 @@ function $handleLinkCreation(
           invalidMatchEnd + matchStart,
           invalidMatchEnd + matchEnd,
         );
+
+      // Skip if matching nodes are already part of an AutoLinkNode
+      let alreadyLinked = false;
+      for (const node of matchingNodes) {
+        const parent = node.getParent();
+        if ($isAutoLinkNode(parent) && !parent.getIsUnlinked()) {
+          alreadyLinked = true;
+          break;
+        }
+      }
+      if (alreadyLinked) {
+        invalidMatchEnd += matchEnd;
+        text = text.substring(matchEnd);
+        continue;
+      }
 
       const actualMatchStart = invalidMatchEnd + matchStart - matchingOffset;
       const actualMatchEnd = invalidMatchEnd + matchEnd - matchingOffset;
@@ -393,6 +416,12 @@ function handleBadNeighbors(
   matchers: Array<LinkMatcher>,
   onChange: ChangeHandler,
 ): void {
+  // Skip if textNode is already part of an AutoLinkNode (idempotency check)
+  const parent = textNode.getParent();
+  if ($isAutoLinkNode(parent) && !parent.getIsUnlinked()) {
+    return;
+  }
+
   const previousSibling = textNode.getPreviousSibling();
   const nextSibling = textNode.getNextSibling();
   const text = textNode.getTextContent();
@@ -403,9 +432,22 @@ function handleBadNeighbors(
     (!startsWithSeparator(text) ||
       startsWithTLD(text, previousSibling.isEmailURI()))
   ) {
-    previousSibling.append(textNode);
-    handleLinkEdit(previousSibling, matchers, onChange);
-    onChange(null, previousSibling.getURL());
+    // Check if the textNode is still a sibling (hasn't been moved) to prevent loops
+    const currentPreviousSibling = textNode.getPreviousSibling();
+    if (
+      currentPreviousSibling === previousSibling &&
+      textNode.getParent() === previousSibling.getParent()
+    ) {
+      // Before appending, check if the combined text would still match a matcher
+      // to prevent creating invalid links that will be immediately unwrapped
+      const combinedText = previousSibling.getTextContent() + text;
+      const match = findFirstMatch(combinedText, matchers);
+      if (match !== null && match.text === combinedText) {
+        previousSibling.append(textNode);
+        handleLinkEdit(previousSibling, matchers, onChange);
+        onChange(null, previousSibling.getURL());
+      }
+    }
   }
 
   if (
@@ -413,9 +455,16 @@ function handleBadNeighbors(
     !nextSibling.getIsUnlinked() &&
     !endsWithSeparator(text)
   ) {
-    replaceWithChildren(nextSibling);
-    handleLinkEdit(nextSibling, matchers, onChange);
-    onChange(null, nextSibling.getURL());
+    // Check if the nextSibling is still a sibling (hasn't been moved) to prevent loops
+    const currentNextSibling = textNode.getNextSibling();
+    if (
+      currentNextSibling === nextSibling &&
+      textNode.getParent() === nextSibling.getParent()
+    ) {
+      replaceWithChildren(nextSibling);
+      handleLinkEdit(nextSibling, matchers, onChange);
+      onChange(null, nextSibling.getURL());
+    }
   }
 }
 
@@ -476,16 +525,20 @@ export function registerAutoLink(
       if ($isAutoLinkNode(parent) && !parent.getIsUnlinked()) {
         handleLinkEdit(parent, matchers, onChange);
       } else if (!$isLinkNode(parent)) {
-        if (
-          textNode.isSimpleText() &&
-          (startsWithSeparator(textNode.getTextContent()) ||
-            !$isAutoLinkNode(previous))
-        ) {
-          const textNodesToMatch = getTextNodesToMatch(textNode);
-          $handleLinkCreation(textNodesToMatch, matchers, onChange);
-        }
+        // Only process if textNode is not already part of an AutoLinkNode
+        const currentParent = textNode.getParent();
+        if (!$isAutoLinkNode(currentParent)) {
+          if (
+            textNode.isSimpleText() &&
+            (startsWithSeparator(textNode.getTextContent()) ||
+              !$isAutoLinkNode(previous))
+          ) {
+            const textNodesToMatch = getTextNodesToMatch(textNode);
+            $handleLinkCreation(textNodesToMatch, matchers, onChange);
+          }
 
-        handleBadNeighbors(textNode, matchers, onChange);
+          handleBadNeighbors(textNode, matchers, onChange);
+        }
       }
     }),
     editor.registerCommand(

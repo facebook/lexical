@@ -431,11 +431,9 @@ function handleBadNeighbors(
   // Check if previousSibling is a link and adding this textNode makes it invalid
   if ($isAutoLinkNode(previousSibling) && !previousSibling.getIsUnlinked()) {
     // Check if the textNode is still a sibling (hasn't been moved) to prevent loops
-    const currentPreviousSibling = textNode.getPreviousSibling();
-    const currentParent = textNode.getParent();
     if (
-      currentPreviousSibling === previousSibling &&
-      currentParent === previousSibling.getParent()
+      previousSibling.is(textNode.getPreviousSibling()) &&
+      textNode.getParent() === previousSibling.getParent()
     ) {
       // If text doesn't start with separator, link should be unwrapped
       // because non-separator after link makes the boundary invalid
@@ -468,11 +466,9 @@ function handleBadNeighbors(
     !endsWithSeparator(text)
   ) {
     // Check if the nextSibling is still a sibling (hasn't been moved) to prevent loops
-    const currentNextSibling = textNode.getNextSibling();
-    const currentParent = textNode.getParent();
     if (
-      currentNextSibling === nextSibling &&
-      currentParent === nextSibling.getParent()
+      nextSibling.is(textNode.getNextSibling()) &&
+      textNode.getParent() === nextSibling.getParent()
     ) {
       replaceWithChildren(nextSibling);
       onChange(null, nextSibling.getURL());
@@ -537,20 +533,16 @@ export function registerAutoLink(
       if ($isAutoLinkNode(parent) && !parent.getIsUnlinked()) {
         handleLinkEdit(parent, matchers, onChange);
       } else if (!$isLinkNode(parent)) {
-        // Only process if textNode is not already part of an AutoLinkNode
-        const currentParent = textNode.getParent();
-        if (!$isAutoLinkNode(currentParent)) {
-          if (
-            textNode.isSimpleText() &&
-            (startsWithSeparator(textNode.getTextContent()) ||
-              !$isAutoLinkNode(previous))
-          ) {
-            const textNodesToMatch = getTextNodesToMatch(textNode);
-            $handleLinkCreation(textNodesToMatch, matchers, onChange);
-          }
-
-          handleBadNeighbors(textNode, matchers, onChange);
+        if (
+          textNode.isSimpleText() &&
+          (startsWithSeparator(textNode.getTextContent()) ||
+            !$isAutoLinkNode(previous))
+        ) {
+          const textNodesToMatch = getTextNodesToMatch(textNode);
+          $handleLinkCreation(textNodesToMatch, matchers, onChange);
         }
+
+        handleBadNeighbors(textNode, matchers, onChange);
       }
     }),
     editor.registerCommand(

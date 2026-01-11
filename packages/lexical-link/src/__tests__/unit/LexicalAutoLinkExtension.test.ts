@@ -59,32 +59,16 @@ describe('LexicalAutoLinkExtension tests', () => {
         root.append(paragraph);
       });
 
-      // Wait for transforms to settle
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
-      // Verify no infinite transform error was thrown
+      // Verify content is correct
       const state = editor.getEditorState();
-      let transformErrorThrown = false;
-      try {
-        state.read(() => {
-          const root = $getRoot();
-          const paragraph = root.getFirstChild();
-          if (paragraph) {
-            const textContent = paragraph.getTextContent();
-            expect(textContent).toBe('#1234.Another');
-          }
-        });
-      } catch (error: unknown) {
-        if (
-          error instanceof Error &&
-          error.message.includes('infinite transform')
-        ) {
-          transformErrorThrown = true;
+      state.read(() => {
+        const root = $getRoot();
+        const paragraph = root.getFirstChild();
+        if (paragraph) {
+          const textContent = paragraph.getTextContent();
+          expect(textContent).toBe('#1234.Another');
         }
-        throw error;
-      }
-
-      expect(transformErrorThrown).toBe(false);
+      });
 
       unregister();
     });

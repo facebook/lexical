@@ -1651,3 +1651,27 @@ describe('Regression #3181', () => {
     });
   });
 });
+
+describe('Regression #8067', () => {
+  initializeUnitTest((testEnv) => {
+    test('Formatting issue when replacing text with format', () => {
+      testEnv.editor.update(
+        () => {
+          const root = $getRoot();
+          const paragraph = $createParagraphNode();
+          const firstNode = $createTextNode('hello');
+          firstNode.toggleFormat('bold');
+          const lastNode = $createTextNode(' world!');
+          paragraph.append(firstNode, lastNode);
+          root.clear().append(paragraph);
+          const selection = $selectAll();
+          selection.insertText('hello');
+          const children = paragraph.getChildren()[0] as TextNode;
+          expect(children.getTextContent()).toBe('hello');
+          expect(children.hasFormat('bold')).toBe(true);
+        },
+        {discrete: true},
+      );
+    });
+  });
+});

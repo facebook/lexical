@@ -9,6 +9,13 @@ import type {JSX} from 'react';
 
 import './index.css';
 
+import DropIndicator from '@atlaskit/drag-and-drop-indicator/box';
+import {
+  draggable,
+  dropTargetForElements,
+  type ElementDragPayload,
+} from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import {reorder} from '@atlaskit/pragmatic-drag-and-drop/reorder';
 import {
   autoUpdate,
   offset,
@@ -128,6 +135,46 @@ function getClosestTopCellPosition(
   return closest;
 }
 
+function isTableFromEditor(
+  tableElement: HTMLTableElement | null,
+  editor: ReturnType<typeof useLexicalComposerContext>[0],
+): boolean {
+  const root = editor.getRootElement();
+  return !!root && !!tableElement && root.contains(tableElement);
+}
+
+type ColumnDragData = {
+  columnIndex: number;
+  tableKey: string | null;
+  type: 'table-column';
+};
+
+type DropIndicatorState = {
+  edge: 'left' | 'right';
+  height: number;
+  left: number;
+  top: number;
+};
+
+function getBoundaryIndex(cell: HTMLTableCellElement, clientX: number): number {
+  const rect = cell.getBoundingClientRect();
+  const isRightHalf = clientX > rect.left + rect.width / 2;
+  const cellIndex = cell.cellIndex ?? 0;
+  return cellIndex + (isRightHalf ? 1 : 0);
+}
+
+function isColumnDrag(
+  source: ElementDragPayload,
+  tableKey: string | null,
+): source is ElementDragPayload & {data: ColumnDragData} {
+  const data = source?.data as ColumnDragData | undefined;
+  return data?.type === 'table-column' && data.tableKey === tableKey;
+}
+
+function getTableKey(tableElement: HTMLTableElement | null): string | null {
+  return tableElement?.getAttribute('data-lexical-key') ?? null;
+}
+
 function TableHoverActionsV2({
   anchorElem,
 }: {
@@ -145,16 +192,24 @@ function TableHoverActionsV2({
   });
   const floatingElemRef = useRef<HTMLElement | null>(null);
   const leftFloatingElemRef = useRef<HTMLElement | null>(null);
+  const dragHandleRef = useRef<HTMLButtonElement | null>(null);
   const hoveredLeftCellRef = useRef<HTMLTableCellElement | null>(null);
   const hoveredTopCellRef = useRef<HTMLTableCellElement | null>(null);
   const handleMouseLeaveRef = useRef<((event: MouseEvent) => void) | null>(
     null,
   );
+  const dropIndicatorCleanupRef = useRef<Array<() => void>>([]);
+  const [hoveredTable, setHoveredTable] = useState<HTMLTableElement | null>(
+    null,
+  );
+  const [hoveredColumnIndex, setHoveredColumnIndex] = useState<number | null>(
+    null,
+  );
+  const [canReorder, setCanReorder] = useState(false);
+  const [dropIndicatorState, setDropIndicatorState] =
+    useState<DropIndicatorState | null>(null);
 
   const {refs, floatingStyles, update} = useFloating({
-    elements: {
-      reference: virtualRef.current as unknown as Element,
-    },
     middleware: [
       offset({mainAxis: -TOP_BUTTON_OVERHANG}),
       shift({
@@ -171,9 +226,6 @@ function TableHoverActionsV2({
     floatingStyles: leftFloatingStyles,
     update: updateLeft,
   } = useFloating({
-    elements: {
-      reference: leftVirtualRef.current as unknown as Element,
-    },
     middleware: [
       offset({mainAxis: -LEFT_BUTTON_OVERHANG}),
       shift({
@@ -211,6 +263,9 @@ function TableHoverActionsV2({
       ) {
         setIsVisible(false);
         setIsLeftVisible(false);
+        setHoveredTable(null);
+        setHoveredColumnIndex(null);
+        setDropIndicatorState(null);
         return;
       }
 
@@ -241,11 +296,15 @@ function TableHoverActionsV2({
       if (!closestTopCell || rowIndex !== 0) {
         setIsVisible(false);
         hoveredTopCellRef.current = null;
+        setHoveredTable(null);
+        setHoveredColumnIndex(null);
       } else {
         hoveredTopCellRef.current = closestTopCell.cell;
+        setHoveredTable(tableElement);
+        setHoveredColumnIndex(closestTopCell.cell.cellIndex ?? null);
         virtualRef.current.getBoundingClientRect = () =>
           new DOMRect(closestTopCell.centerX, closestTopCell.top, 0, 0);
-        refs.setReference(virtualRef.current as unknown as Element);
+        refs.setPositionReference(virtualRef.current);
         setIsVisible(true);
         update?.();
       }
@@ -260,7 +319,7 @@ function TableHoverActionsV2({
         hoveredLeftCellRef.current = hoveredCell;
         leftVirtualRef.current.getBoundingClientRect = () =>
           new DOMRect(tableRect.left, centerY, 0, 0);
-        leftRefs.setReference(leftVirtualRef.current as unknown as Element);
+        leftRefs.setPositionReference(leftVirtualRef.current);
         setIsLeftVisible(true);
         updateLeft?.();
       }
@@ -309,6 +368,178 @@ function TableHoverActionsV2({
       }
     });
   }, [editor]);
+
+  useEffect(() => {
+    if (!hoveredTable) {
+      setCanReorder(false);
+      return;
+    }
+    if (!isTableFromEditor(hoveredTable, editor)) {
+      setCanReorder(false);
+      return;
+    }
+    editor.getEditorState().read(
+      () => {
+        const tableNode = $getNearestNodeFromDOMNode(hoveredTable);
+        setCanReorder($isTableNode(tableNode) && $isSimpleTable(tableNode));
+      },
+      {editor},
+    );
+  }, [editor, hoveredTable]);
+
+  useEffect(() => {
+    const handle = dragHandleRef.current;
+    const tableElement = hoveredTable;
+    const columnIndex = hoveredColumnIndex;
+    if (!handle || tableElement == null || columnIndex == null || !canReorder) {
+      return;
+    }
+
+    const cleanup = draggable({
+      canDrag: () => canReorder,
+      element: handle,
+      getInitialData: () => ({
+        columnIndex,
+        tableKey: getTableKey(tableElement),
+        type: 'table-column',
+      }),
+      onDrop: () => setDropIndicatorState(null),
+    });
+
+    return cleanup;
+  }, [canReorder, hoveredColumnIndex, hoveredTable]);
+
+  useEffect(() => {
+    dropIndicatorCleanupRef.current.forEach((cleanup) => cleanup());
+    dropIndicatorCleanupRef.current = [];
+    if (!hoveredTable || !canReorder) {
+      return;
+    }
+    const headerRow = hoveredTable.rows[0];
+    if (!headerRow) {
+      return;
+    }
+    if (!isTableFromEditor(hoveredTable, editor)) {
+      return;
+    }
+    const tableKey = getTableKey(hoveredTable);
+    const registerDropTarget = (cell: HTMLTableCellElement) =>
+      dropTargetForElements({
+        canDrop: ({source}) => isColumnDrag(source, tableKey),
+        element: cell,
+        getData: ({input}) => ({
+          boundaryIndex: getBoundaryIndex(cell, input.clientX),
+        }),
+        onDrag: ({location, source}) => {
+          if (!isColumnDrag(source, tableKey)) {
+            return;
+          }
+          const tableRect = hoveredTable.getBoundingClientRect();
+          const rect = cell.getBoundingClientRect();
+          const edge =
+            location.current.input.clientX > rect.left + rect.width / 2
+              ? 'right'
+              : 'left';
+          setDropIndicatorState({
+            edge,
+            height: tableRect.height,
+            left: edge === 'left' ? rect.left : rect.right,
+            top: tableRect.top,
+          });
+        },
+        onDragEnter: ({location, source}) => {
+          if (!isColumnDrag(source, tableKey)) {
+            return;
+          }
+          const rect = cell.getBoundingClientRect();
+          const edge =
+            location.current.input.clientX > rect.left + rect.width / 2
+              ? 'right'
+              : 'left';
+          setDropIndicatorState((current) => {
+            if (!current) {
+              return current;
+            }
+            return {
+              ...current,
+              edge,
+              left: edge === 'left' ? rect.left : rect.right,
+            };
+          });
+        },
+        onDragLeave: () => setDropIndicatorState(null),
+        onDrop: ({location, source}) => {
+          setDropIndicatorState(null);
+          const data = (source?.data ?? {}) as ColumnDragData;
+          if (data.columnIndex == null) {
+            return;
+          }
+          const boundaryIndex = getBoundaryIndex(
+            cell,
+            location.current.input.clientX,
+          );
+          const targetTable = cell.closest('table');
+          if (!isHTMLElement(targetTable) || !isColumnDrag(source, tableKey)) {
+            return;
+          }
+          editor.update(() => {
+            const tableNode = $getNearestNodeFromDOMNode(targetTable);
+            if (!$isTableNode(tableNode) || !$isSimpleTable(tableNode)) {
+              return;
+            }
+            const columnCount = tableNode.getColumnCount();
+            const clampedBoundary = Math.max(
+              0,
+              Math.min(boundaryIndex, columnCount),
+            );
+            const startIndex = data.columnIndex;
+            if (
+              clampedBoundary === startIndex ||
+              clampedBoundary === startIndex + 1 ||
+              startIndex < 0 ||
+              startIndex >= columnCount
+            ) {
+              return;
+            }
+            const finishIndex =
+              clampedBoundary > startIndex
+                ? clampedBoundary - 1
+                : clampedBoundary;
+            const rows = tableNode.getChildren().filter($isTableRowNode);
+            const order = Array.from({length: columnCount}, (_, i) => i);
+            const nextOrder = reorder({
+              finishIndex,
+              list: order,
+              startIndex,
+            });
+            rows.forEach((row) => {
+              const cells = row.getChildren();
+              const reorderedCells = nextOrder.map((idx) => cells[idx]);
+              row.splice(0, cells.length, reorderedCells);
+            });
+            const colWidths = tableNode.getColWidths();
+            if (colWidths && colWidths.length === columnCount) {
+              const reorderedWidths = reorder({
+                finishIndex,
+                list: [...colWidths],
+                startIndex,
+              });
+              tableNode.setColWidths(reorderedWidths);
+            }
+          });
+        },
+      });
+
+    dropIndicatorCleanupRef.current = Array.from(headerRow.cells).map((cell) =>
+      registerDropTarget(cell),
+    );
+
+    return () => {
+      dropIndicatorCleanupRef.current.forEach((cleanup) => cleanup());
+      dropIndicatorCleanupRef.current = [];
+      setDropIndicatorState(null);
+    };
+  }, [canReorder, editor, hoveredTable]);
 
   if (!isEditable) {
     return null;
@@ -418,6 +649,12 @@ function TableHoverActionsV2({
           opacity: isVisible ? 1 : 0,
         }}
         className="floating-top-actions">
+        <button
+          ref={dragHandleRef}
+          className="floating-drag-indicator"
+          aria-label="Drag to reorder column"
+          type="button"
+        />
         <DropDown
           buttonAriaLabel="Sort column"
           buttonClassName="floating-filter-indicator"
@@ -454,6 +691,20 @@ function TableHoverActionsV2({
         type="button"
         onClick={handleAddRow}
       />
+      {dropIndicatorState ? (
+        <div
+          style={{
+            height: dropIndicatorState.height,
+            left: dropIndicatorState.left,
+            pointerEvents: 'none',
+            position: 'fixed',
+            top: dropIndicatorState.top,
+            width: 2,
+            zIndex: 20,
+          }}>
+          <DropIndicator edge={dropIndicatorState.edge} />
+        </div>
+      ) : null}
     </>
   );
 }

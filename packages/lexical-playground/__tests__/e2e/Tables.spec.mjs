@@ -901,13 +901,17 @@ test.describe.parallel('Tables', () => {
             <col style="width: 92px" />
           </colgroup>
           <tr>
-            <th class="PlaygroundEditorTheme__tableCellSelected">
+            <th
+              class="PlaygroundEditorTheme__tableCellSelected"
+              data-drop-target-for-element="true">
               <p><span data-lexical-text="true">a</span></p>
             </th>
-            <th class="PlaygroundEditorTheme__tableCellSelected">
+            <th
+              class="PlaygroundEditorTheme__tableCellSelected"
+              data-drop-target-for-element="true">
               <p><span data-lexical-text="true">bb</span></p>
             </th>
-            <th>
+            <th data-drop-target-for-element="true">
               <p><span data-lexical-text="true">cc</span></p>
             </th>
           </tr>
@@ -1042,13 +1046,13 @@ test.describe.parallel('Tables', () => {
             <col style="width: 92px" />
           </colgroup>
           <tr>
-            <th>
+            <th data-drop-target-for-element="true">
               <p><strong data-lexical-text="true">a</strong></p>
             </th>
-            <th>
+            <th data-drop-target-for-element="true">
               <p><strong data-lexical-text="true">bb</strong></p>
             </th>
-            <th>
+            <th data-drop-target-for-element="true">
               <p><strong data-lexical-text="true">cc</strong></p>
             </th>
           </tr>
@@ -1114,13 +1118,13 @@ test.describe.parallel('Tables', () => {
             <col style="width: 92px" />
           </colgroup>
           <tr>
-            <th>
+            <th data-drop-target-for-element="true">
               <p><span data-lexical-text="true">aa</span></p>
             </th>
-            <th>
+            <th data-drop-target-for-element="true">
               <p><span data-lexical-text="true">bb</span></p>
             </th>
-            <th>
+            <th data-drop-target-for-element="true">
               <p><span data-lexical-text="true">cc</span></p>
             </th>
           </tr>
@@ -1594,13 +1598,15 @@ test.describe.parallel('Tables', () => {
           </colgroup>
           <tr>
             <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+              data-drop-target-for-element="true">
               <p class="PlaygroundEditorTheme__paragraph">
                 <span data-lexical-text="true">cell one</span>
               </p>
             </th>
             <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+              data-drop-target-for-element="true">
               <p class="PlaygroundEditorTheme__paragraph">
                 <span data-lexical-text="true">first line</span>
               </p>
@@ -1626,13 +1632,15 @@ test.describe.parallel('Tables', () => {
           </colgroup>
           <tr>
             <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+              data-drop-target-for-element="true">
               <p class="PlaygroundEditorTheme__paragraph">
                 <span data-lexical-text="true">cell one</span>
               </p>
             </th>
             <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+              data-drop-target-for-element="true">
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </th>
           </tr>
@@ -5923,10 +5931,10 @@ test.describe.parallel('Tables', () => {
             <col style="width: 92px" />
           </colgroup>
           <tr>
-            <th>
+            <th data-drop-target-for-element="true">
               <p><br /></p>
             </th>
-            <th>
+            <th data-drop-target-for-element="true">
               <p><br /></p>
             </th>
           </tr>

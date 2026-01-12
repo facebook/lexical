@@ -7,6 +7,7 @@
  */
 
 import {
+  $isAutoLinkNode,
   AutoLinkNode,
   createLinkMatcherWithRegExp,
   registerAutoLink,
@@ -15,6 +16,8 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  $isParagraphNode,
+  $isTextNode,
   ParagraphNode,
   TextNode,
 } from 'lexical/src';
@@ -59,15 +62,32 @@ describe('LexicalAutoLinkExtension tests', () => {
         root.append(paragraph);
       });
 
-      // Verify content is correct
-      const state = editor.getEditorState();
-      state.read(() => {
+      // Verify content is correct and that #1234 was converted to an AutoLinkNode
+      editor.read(() => {
         const root = $getRoot();
         const paragraph = root.getFirstChild();
-        if (paragraph) {
-          const textContent = paragraph.getTextContent();
-          expect(textContent).toBe('#1234.Another');
-        }
+
+        // Verify paragraph exists (not empty root) and is an ElementNode
+        expect(paragraph).not.toBeNull();
+        expect($isParagraphNode(paragraph)).toBe(true);
+
+        const paragraphNode = paragraph as ParagraphNode;
+        expect(paragraphNode.getTextContent()).toBe('#1234.Another');
+
+        // Verify that #1234 was converted to an AutoLinkNode
+        const firstChild = paragraphNode.getFirstChild();
+        expect(firstChild).not.toBeNull();
+        expect($isAutoLinkNode(firstChild)).toBe(true);
+
+        // The AutoLinkNode should contain "#1234" only (the matched portion)
+        const autoLinkNode = firstChild as AutoLinkNode;
+        expect(autoLinkNode.getTextContent()).toBe('#1234');
+
+        // Verify that ".Another" is separate text after the link (unmatched portion)
+        const nextSibling = autoLinkNode.getNextSibling();
+        expect(nextSibling).not.toBeNull();
+        expect($isTextNode(nextSibling)).toBe(true);
+        expect((nextSibling as TextNode).getTextContent()).toBe('.Another');
       });
 
       unregister();

@@ -305,7 +305,9 @@ function isDomChecklist(domNode: HTMLElement) {
   if (
     domNode.getAttribute('__lexicallisttype') === 'check' ||
     // is github checklist
-    domNode.classList.contains('contains-task-list')
+    domNode.classList.contains('contains-task-list') ||
+    // is joplin checklist
+    domNode.getAttribute('data-is-checklist') === '1'
   ) {
     return true;
   }

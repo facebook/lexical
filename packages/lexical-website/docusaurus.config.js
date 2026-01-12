@@ -130,9 +130,20 @@ const sidebarItemsGenerator = async ({
             // here, and the default labels come from the page titles which
             // are parsed at a later stage of the pipeline.
             const label = idToModuleName(item.id);
+            const lastItem = groupedItems.at(-1);
+            if (
+              lastItem &&
+              lastItem.type === 'category' &&
+              lastItem.label === label
+            ) {
+              lastItem.link = {
+                id: item.id,
+                type: 'doc',
+              };
+              continue;
+            }
             const m = /^(@lexical\/[^/]+)\/(.*)$/.exec(label);
             if (m) {
-              const lastItem = groupedItems[groupedItems.length - 1];
               const groupedItem = {...item, label: m[2]};
               if (
                 (lastItem && lastItem.type === 'category') ||
@@ -153,6 +164,11 @@ const sidebarItemsGenerator = async ({
             groupedItems.push({
               ...item,
               label: classOrInterfaceIdToLabel(item.id),
+            });
+          } else if (item.type === 'category') {
+            groupedItems.push({
+              ...item,
+              label: idToModuleName(item.label),
             });
           } else {
             groupedItems.push(item);

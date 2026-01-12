@@ -10,15 +10,22 @@ import {$createCodeNode, CodeNode} from '@lexical/code';
 import {createHeadlessEditor} from '@lexical/headless';
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
 import {$createLinkNode, LinkNode} from '@lexical/link';
-import {ListItemNode, ListNode} from '@lexical/list';
+import {
+  $createListItemNode,
+  $createListNode,
+  ListItemNode,
+  ListNode,
+} from '@lexical/list';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
   $getSelection,
+  $getState,
   $insertNodes,
   $isRangeSelection,
+  $setState,
 } from 'lexical';
 import {describe, expect, it} from 'vitest';
 
@@ -31,13 +38,23 @@ import {
   Transformer,
 } from '../..';
 import {
+  CHECK_LIST,
   CODE,
   ElementTransformer,
   HEADING,
+  listMarkerState,
   MultilineElementTransformer,
   normalizeMarkdown,
   TRANSFORMERS,
 } from '../../MarkdownTransformers';
+
+const HIGHLIGHT_TEXT_MATCH_IMPORT: TextMatchTransformer = {
+  ...LINK,
+  importRegExp: /\$([^$]+?)\$/,
+  replace: (textNode, match) => {
+    textNode.toggleFormat('highlight');
+  },
+};
 
 const SIMPLE_INLINE_JSX_MATCHER: TextMatchTransformer = {
   dependencies: [LinkNode],
@@ -277,7 +294,7 @@ describe('Markdown', () => {
     },
     {
       // Multiline paragraphs: https://spec.commonmark.org/dingus/?text=Hello%0Aworld%0A!
-      html: '<p><span style="white-space: pre-wrap;">Helloworld!</span></p>',
+      html: '<p><span style="white-space: pre-wrap;">Hello world !</span></p>',
       md: ['Hello', 'world', '!'].join('\n'),
       shouldMergeAdjacentLines: true,
       skipExport: true,
@@ -303,7 +320,7 @@ describe('Markdown', () => {
     // },
     {
       // Multiline list items: https://spec.commonmark.org/dingus/?text=-%20Hello%0A-%20world%0A!%0A!
-      html: '<ul><li value="1"><span style="white-space: pre-wrap;">Hello</span></li><li value="2"><span style="white-space: pre-wrap;">world!!</span></li></ul>',
+      html: '<ul><li value="1"><span style="white-space: pre-wrap;">Hello</span></li><li value="2"><span style="white-space: pre-wrap;">world ! !</span></li></ul>',
       md: '- Hello\n- world\n!\n!',
       shouldMergeAdjacentLines: true,
       skipExport: true,
@@ -353,6 +370,14 @@ describe('Markdown', () => {
       md: '`Hello` world',
     },
     {
+      html: '<p><code spellcheck="false" style="white-space: pre-wrap;"><span>Backtick\\</span></code><span style="white-space: pre-wrap;"> after backslash</span></p>',
+      md: '`Backtick\\` after backslash',
+    },
+    {
+      html: '<p><code spellcheck="false" style="white-space: pre-wrap;"><span>Backtick</span></code><span style="white-space: pre-wrap;">\\ before backslash</span></p>',
+      md: '`Backtick`\\\\ before backslash',
+    },
+    {
       html: '<p><s><span style="white-space: pre-wrap;">Hello</span></s><span style="white-space: pre-wrap;"> world</span></p>',
       md: '~~Hello~~ world',
     },
@@ -396,7 +421,7 @@ describe('Markdown', () => {
       mdAfterExport: '*Hello&#32;**world**!*',
     },
     {
-      html: '<p><span style="white-space: pre-wrap;">helloworld</span></p>',
+      html: '<p><span style="white-space: pre-wrap;">hello world</span></p>',
       md: 'hello\nworld',
       shouldMergeAdjacentLines: true,
       skipExport: true,
@@ -504,7 +529,7 @@ describe('Markdown', () => {
     },
     {
       // https://spec.commonmark.org/dingus/?text=%3E%20Hello%0Aworld%0A!
-      html: '<blockquote><span style="white-space: pre-wrap;">Helloworld!</span></blockquote>',
+      html: '<blockquote><span style="white-space: pre-wrap;">Hello world !</span></blockquote>',
       md: '> Hello\nworld\n!',
       shouldMergeAdjacentLines: true,
       skipExport: true,
@@ -529,7 +554,7 @@ describe('Markdown', () => {
     },
     {
       customTransformers: [MDX_HTML_TRANSFORMER],
-      html: '<p><span style="white-space: pre-wrap;">Some HTML in mdx:</span></p><pre spellcheck="false" data-language="MyComponent"><span style="white-space: pre-wrap;">From HTML: Line 1Some Text</span></pre>',
+      html: '<p><span style="white-space: pre-wrap;">Some HTML in mdx:</span></p><pre spellcheck="false" data-language="MyComponent"><span style="white-space: pre-wrap;">From HTML: Line 1 Some Text</span></pre>',
       md: 'Some HTML in mdx:\n\n<MyComponent>Line 1\nSome Text</MyComponent>',
       shouldMergeAdjacentLines: true,
       skipExport: true,
@@ -604,6 +629,14 @@ describe('Markdown', () => {
       md: '[link](https://lexical.dev)[link2](https://lexical.dev)',
     },
     {
+      // Import only: <mark>...</mark> is exported as ==...== in markdown.
+      // Use HIGHLIGHT_TEXT_MATCH_IMPORT as custom transformer even though it is included later to ensure it runs before LINK.
+      customTransformers: [HIGHLIGHT_TEXT_MATCH_IMPORT],
+      html: '<p><span style="white-space: pre-wrap;">Multiple </span><a href="https://lexical.dev"><code spellcheck="false" style="white-space: pre-wrap;"><span>TextMatchTransformer</span></code><span style="white-space: pre-wrap;">s</span></a><s><mark style="white-space: pre-wrap;"><span>$ with formatting$</span></mark></s></p>',
+      md: 'Multiple [`TextMatchTransformer`s](https://lexical.dev)~~$ with formatting$~~',
+      skipExport: true,
+    },
+    {
       html: '<p><b><code spellcheck="false" style="white-space: pre-wrap;"><strong>Bold Code</strong></code></b></p>',
       md: '**`Bold Code`**',
     },
@@ -669,15 +702,11 @@ describe('Markdown', () => {
       html: '<p><span style="white-space: pre-wrap;">[h</span><a href="https://lexical.dev"><span style="white-space: pre-wrap;">ello</span></a><a href="https://lexical.dev"><span style="white-space: pre-wrap;">world</span></a></p>',
       md: '[h[ello](https://lexical.dev)[world](https://lexical.dev)',
     },
-  ];
-
-  const HIGHLIGHT_TEXT_MATCH_IMPORT: TextMatchTransformer = {
-    ...LINK,
-    importRegExp: /\$([^$]+?)\$/,
-    replace: (textNode) => {
-      textNode.setFormat('highlight');
+    {
+      html: '<p><span style="white-space: pre-wrap;">[](https://lexical.dev)</span></p>',
+      md: '[](https://lexical.dev)',
     },
-  };
+  ];
 
   for (const {
     html,
@@ -916,6 +945,106 @@ describe('Markdown', () => {
       '<h1><br></h1>',
     );
   });
+
+  describe('list marker', () => {
+    it('should remember marker used on import', () => {
+      const editor = createHeadlessEditor({
+        nodes: [ListNode, ListItemNode],
+      });
+      editor.update(
+        () =>
+          $convertFromMarkdownString(
+            '+ hello',
+            [...TRANSFORMERS],
+            undefined,
+            true,
+            false,
+          ),
+        {discrete: true},
+      );
+      editor.getEditorState().read(() => {
+        const node = $getRoot().getFirstChild();
+        expect(node).toBeInstanceOf(ListNode);
+        const marker = node ? $getState(node, listMarkerState) : undefined;
+        expect(marker).toBe('+');
+      });
+    });
+    it('should not use [ as a marker for an implicit check list', () => {
+      const editor = createHeadlessEditor({
+        nodes: [ListNode, ListItemNode],
+      });
+      registerMarkdownShortcuts(editor, [CHECK_LIST]);
+      editor.update(
+        () =>
+          $getRoot()
+            .clear()
+            .append($createParagraphNode())
+            .selectEnd()
+            .insertText('[]'),
+        {discrete: true},
+      );
+      editor.update(() => $getSelection()!.insertText(' '), {
+        discrete: true,
+      });
+      editor.read(() => {
+        const node = $getRoot().getFirstChild();
+        expect(node).toBeInstanceOf(ListNode);
+        const marker = node ? $getState(node, listMarkerState) : undefined;
+        expect(marker).toBe('-');
+      });
+    });
+    it('should remember the marker for checkbox with an explicit marker', () => {
+      const editor = createHeadlessEditor({
+        nodes: [ListNode, ListItemNode],
+      });
+      registerMarkdownShortcuts(editor, [CHECK_LIST]);
+      editor.update(
+        () =>
+          $getRoot()
+            .clear()
+            .append($createParagraphNode())
+            .selectEnd()
+            .insertText('* []'),
+        {discrete: true},
+      );
+      editor.update(() => $getSelection()!.insertText(' '), {
+        discrete: true,
+      });
+      editor.read(() => {
+        const node = $getRoot().getFirstChild();
+        expect(node).toBeInstanceOf(ListNode);
+        const marker = node ? $getState(node, listMarkerState) : undefined;
+        expect(marker).toBe('*');
+      });
+    });
+
+    it('should remember marker used on export', () => {
+      const editor = createHeadlessEditor({
+        nodes: [ListNode, ListItemNode],
+      });
+      editor.update(
+        () => {
+          const listNode = $createListNode();
+          $setState(listNode, listMarkerState, '+');
+          const listItemNode = $createListItemNode();
+          listItemNode.append($createTextNode('hello'));
+          listNode.append(listItemNode);
+          listNode.setListType('bullet');
+          $getRoot().select();
+          $insertNodes([listNode]);
+        },
+        {discrete: true},
+      );
+      editor.getEditorState().read(() => {
+        const markdownString = $convertToMarkdownString(
+          [...TRANSFORMERS],
+          undefined,
+          true,
+        );
+        expect(markdownString).toBe('+ hello');
+      });
+    });
+  });
 });
 
 describe('normalizeMarkdown - shouldMergeAdjacentLines = true', () => {
@@ -953,7 +1082,7 @@ E2
 E3
 `;
     expect(normalizeMarkdown(markdown, true)).toBe(`
-A1A2
+A1 A2
 
 A3
 
@@ -964,7 +1093,7 @@ B2
 B3
 \`\`\`
 
-C1C2
+C1 C2
 
 C3
 
@@ -977,7 +1106,7 @@ D3
 
 \`\`\`single line code\`\`\`
 
-E1E2
+E1 E2
 
 E3
 `);
@@ -990,6 +1119,51 @@ E3
 | c | d |
 `;
     expect(normalizeMarkdown(markdown, true)).toBe(markdown);
+  });
+
+  it('merges adjacent plain text lines with a single space', () => {
+    const md = `Hello
+world`;
+    expect(normalizeMarkdown(md, true)).toBe(`Hello world`);
+  });
+
+  it('merges while trimming the next line and inserting a single space', () => {
+    const md = `Hello
+   world   `;
+    expect(normalizeMarkdown(md, true)).toBe(`Hello world`);
+  });
+
+  it('does not merge across HTML-like tags (opening, content, closing, after)', () => {
+    const md = `<div>
+content
+</div>
+after`;
+    // Nothing should be merged
+    expect(normalizeMarkdown(md, true)).toBe(md);
+  });
+
+  it('does not merge the fence line with the first line after a code block', () => {
+    const md = '```\ncode\n```\nNext line';
+    // The closing ``` must remain on its own line; "Next line" must not be glued to it
+    expect(normalizeMarkdown(md, true)).toBe('```\ncode\n```\nNext line');
+  });
+
+  it('treats whitespace-only lines as empty separators (no merge across them)', () => {
+    const md = `A1
+     
+A2`;
+    // The middle line is spaces only; should be treated as an empty separator
+    expect(normalizeMarkdown(md, true)).toBe(`A1
+
+A2`);
+  });
+
+  it('mdx start tag followed by content, than closing tag preceded by content', () => {
+    const md = `<MyComponent>Line 1
+Some Text</MyComponent>`;
+    expect(normalizeMarkdown(md, true)).toBe(
+      `<MyComponent>Line 1 Some Text</MyComponent>`,
+    );
   });
 });
 

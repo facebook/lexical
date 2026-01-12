@@ -37,7 +37,7 @@ export type ProviderAwareness = {
   getStates: () => Map<number, UserState>,
   off: (type: 'update', cb: () => void) => void,
   on: (type: 'update', cb: () => void) => void,
-  setLocalState: (UserState) => void,
+  setLocalState: (UserState | null) => void,
 };
 
 declare interface Provider {
@@ -106,7 +106,7 @@ export type Binding = {
   docMap: Map<string, Doc>,
   editor: LexicalEditor,
   id: string,
-  nodeProperties: Map<string, Array<string>>,
+  nodeProperties: Map<string, {[property: string]: mixed}>,
   root: CollabElementNode,
 };
 

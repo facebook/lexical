@@ -7,7 +7,7 @@
  */
 
 import type {LexicalComposerContextType} from '@lexical/react/LexicalComposerContext';
-import type {EditableListener, KlassConstructor, Transform} from 'lexical';
+import type {EditableListener} from 'lexical';
 import type {JSX} from 'react';
 
 import {CollaborationContext} from '@lexical/react/LexicalCollaborationContext';
@@ -19,7 +19,7 @@ import {
   createSharedNodeState,
   EditorThemeClasses,
   getRegisteredNode,
-  getStaticNodeConfig,
+  getTransformSetFromKlass,
   Klass,
   LexicalEditor,
   LexicalNode,
@@ -29,24 +29,6 @@ import * as React from 'react';
 import {ReactNode, useContext, useEffect, useMemo, useRef} from 'react';
 import invariant from 'shared/invariant';
 import warnOnlyOnce from 'shared/warnOnlyOnce';
-
-function getTransformSetFromKlass(
-  klass: KlassConstructor<typeof LexicalNode>,
-): Set<Transform<LexicalNode>> {
-  const transforms = new Set<Transform<LexicalNode>>();
-  const {ownNodeConfig} = getStaticNodeConfig(klass);
-  const transform = klass.transform();
-  if (ownNodeConfig) {
-    const $transform = ownNodeConfig.$transform;
-    if ($transform) {
-      transforms.add($transform);
-    }
-  }
-  if (transform) {
-    transforms.add(transform);
-  }
-  return transforms;
-}
 
 export interface LexicalNestedComposerProps {
   /**

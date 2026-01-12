@@ -6,6 +6,8 @@
  *
  */
 
+import type {LexicalEditor} from 'lexical';
+
 import {
   $createCodeHighlightNode,
   $createCodeNode,
@@ -509,6 +511,76 @@ describe('LexicalCodeNode tests', () => {
     });
 
     describe('arrows', () => {
+      describe('rtl code lines', () => {
+        const RTL_TEXT = 'تجربة';
+
+        async function setupRTLCode(editor: LexicalEditor) {
+          registerRichText(editor);
+          registerTabIndentation(editor);
+          registerCodeHighlighting(editor);
+          await editor.update(() => {
+            const root = $getRoot();
+            const code = $createCodeNode('plaintext');
+            root.append(code);
+            code.selectStart();
+            $getSelection()!.insertRawText(RTL_TEXT);
+          });
+          await editor.update(() => {
+            const highlightNode = $dfs().find(({node}) =>
+              $isCodeHighlightNode(node),
+            )!.node;
+            invariant($isTextNode(highlightNode));
+            highlightNode.select(1, 1);
+          });
+        }
+
+        test('MOVE_TO_END moves caret to visual right', async () => {
+          const {editor} = testEnv;
+          await setupRTLCode(editor);
+
+          await editor.dispatchCommand(
+            MOVE_TO_END,
+            new KeyboardEventMock('keydown'),
+          );
+
+          await editor.update(() => {
+            const selection = $getSelection();
+            invariant(
+              $isRangeSelection(selection),
+              'Expected selection to be RangeSelection',
+            );
+            expect(selection.isCollapsed()).toBe(true);
+            const anchorNode = selection.anchor.getNode();
+            invariant($isTextNode(anchorNode));
+            expect(selection.anchor.offset).toBe(0);
+          });
+        });
+
+        test('MOVE_TO_START moves caret to visual left', async () => {
+          const {editor} = testEnv;
+          await setupRTLCode(editor);
+
+          await editor.dispatchCommand(
+            MOVE_TO_START,
+            new KeyboardEventMock('keydown'),
+          );
+
+          await editor.update(() => {
+            const selection = $getSelection();
+            invariant(
+              $isRangeSelection(selection),
+              'Expected selection to be RangeSelection',
+            );
+            expect(selection.isCollapsed()).toBe(true);
+            const anchorNode = selection.anchor.getNode();
+            invariant($isTextNode(anchorNode));
+            expect(selection.anchor.offset).toBe(
+              anchorNode.getTextContentSize(),
+            );
+          });
+        });
+      });
+
       for (const moveTo of ['start', 'end']) {
         for (const tabOrSpaces of ['tab', 'spaces']) {
           // eslint-disable-next-line no-inner-declarations

@@ -290,7 +290,12 @@ export function LexicalMenu<TOption extends MenuOption>({
   commandPriority?: CommandListenerPriority;
   preselectFirstItem?: boolean;
 }): JSX.Element | null {
-  const [selectedIndex, setHighlightedIndex] = useState<null | number>(null);
+  const [rawSelectedIndex, setHighlightedIndex] = useState<null | number>(null);
+  // Clamp highlighted index if options list shrinks
+  const selectedIndex =
+    rawSelectedIndex !== null
+      ? Math.min(options.length - 1, rawSelectedIndex)
+      : null;
 
   const matchingString = resolution.match && resolution.match.matchingString;
 
@@ -380,9 +385,18 @@ export function LexicalMenu<TOption extends MenuOption>({
                 : selectedIndex !== options.length - 1
                   ? selectedIndex + 1
                   : 0;
+
             updateSelectedIndex(newSelectedIndex);
+
             const option = options[newSelectedIndex];
-            if (option.ref != null && option.ref.current) {
+            if (!option) {
+              updateSelectedIndex(-1);
+              event.preventDefault();
+              event.stopImmediatePropagation();
+              return true;
+            }
+
+            if (option.ref && option.ref.current) {
               editor.dispatchCommand(
                 SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND,
                 {
@@ -409,9 +423,18 @@ export function LexicalMenu<TOption extends MenuOption>({
                 : selectedIndex !== 0
                   ? selectedIndex - 1
                   : options.length - 1;
+
             updateSelectedIndex(newSelectedIndex);
+
             const option = options[newSelectedIndex];
-            if (option.ref != null && option.ref.current) {
+            if (!option) {
+              updateSelectedIndex(-1);
+              event.preventDefault();
+              event.stopImmediatePropagation();
+              return true;
+            }
+
+            if (option.ref && option.ref.current) {
               scrollIntoViewIfNeeded(option.ref.current);
             }
             event.preventDefault();

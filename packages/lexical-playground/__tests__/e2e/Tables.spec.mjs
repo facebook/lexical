@@ -29,12 +29,13 @@ import {
   dragMouse,
   expect,
   focusEditor,
+  getExpectedDateTimeHtml,
   getPageOrFrame,
   html,
   initialize,
   insertCollapsible,
+  insertDateTime,
   insertHorizontalRule,
-  insertSampleImage,
   insertTable,
   insertTableColumnBefore,
   insertTableRowAbove,
@@ -46,7 +47,6 @@ import {
   LEGACY_EVENTS,
   mergeTableCells,
   pasteFromClipboard,
-  SAMPLE_IMAGE_URL,
   selectCellFromTableCoord,
   selectCellsFromTableCords,
   selectFromAdditionalStylesDropdown,
@@ -268,9 +268,62 @@ test.describe.parallel('Tables', () => {
       });
     });
 
-    // Note: Tests for nested table navigation ("Can exit the first/last cell of a nested table into the parent table cell")
-    // have been removed since nested tables are no longer supported.
-    // See: https://github.com/facebook/lexical/issues/7154
+    test(`Can exit the first cell of a nested table into the parent table cell`, async ({
+      page,
+      isPlainText,
+      isCollab,
+    }) => {
+      test.skip(isPlainText);
+      await initialize({hasNestedTables: true, isCollab, page});
+
+      await focusEditor(page);
+      await insertTable(page, 2, 2);
+      await insertTable(page, 2, 2);
+
+      await assertSelection(page, {
+        anchorOffset: 0,
+        anchorPath: [1, ...WRAPPER, 1, 0, 1, ...WRAPPER, 1, 0, 0],
+        focusOffset: 0,
+        focusPath: [1, ...WRAPPER, 1, 0, 1, ...WRAPPER, 1, 0, 0],
+      });
+
+      await moveLeft(page, 1);
+      await assertSelection(page, {
+        anchorOffset: 0,
+        anchorPath: [1, ...WRAPPER, 1, 0, 0],
+        focusOffset: 0,
+        focusPath: [1, ...WRAPPER, 1, 0, 0],
+      });
+    });
+
+    test(`Can exit the last cell of a nested table into the parent table cell`, async ({
+      page,
+      isPlainText,
+      isCollab,
+    }) => {
+      test.skip(isPlainText);
+      await initialize({hasNestedTables: true, isCollab, page});
+
+      await focusEditor(page);
+      await insertTable(page, 2, 2);
+      await insertTable(page, 2, 2);
+
+      await moveRight(page, 3);
+      await assertSelection(page, {
+        anchorOffset: 0,
+        anchorPath: [1, ...WRAPPER, 1, 0, 1, ...WRAPPER, 2, 1, 0],
+        focusOffset: 0,
+        focusPath: [1, ...WRAPPER, 1, 0, 1, ...WRAPPER, 2, 1, 0],
+      });
+
+      await moveRight(page, 1);
+      await assertSelection(page, {
+        anchorOffset: 0,
+        anchorPath: [1, ...WRAPPER, 1, 0, 2],
+        focusOffset: 0,
+        focusPath: [1, ...WRAPPER, 1, 0, 2],
+      });
+    });
   });
 
   test(`Can insert a paragraph after a table, that is the last node, with the "Enter" key`, async ({
@@ -1356,7 +1409,7 @@ test.describe.parallel('Tables', () => {
     await focusEditor(page);
     await page.keyboard.type('Text before');
     await page.keyboard.press('Enter');
-    await insertSampleImage(page);
+    await insertDateTime(page);
     await page.keyboard.press('Enter');
     await page.keyboard.type('Text after');
     await insertTable(page, 2, 3);
@@ -1448,7 +1501,7 @@ test.describe.parallel('Tables', () => {
   });
 
   test(
-    'Table selection: can select multiple cells and insert an image',
+    'Table selection: can select multiple cells and insert a decorator',
     {
       tag: '@flaky',
     },
@@ -1468,10 +1521,8 @@ test.describe.parallel('Tables', () => {
       await page.keyboard.press('ArrowDown');
       await page.keyboard.up('Shift');
 
-      await insertSampleImage(page);
+      await insertDateTime(page);
       await page.keyboard.type(' <- it works!');
-
-      await waitForSelector(page, '.editor-image img');
 
       await assertHTML(
         page,
@@ -1501,18 +1552,7 @@ test.describe.parallel('Tables', () => {
               </th>
               <td class="PlaygroundEditorTheme__tableCell">
                 <p class="PlaygroundEditorTheme__paragraph">
-                  <span
-                    class="editor-image"
-                    contenteditable="false"
-                    data-lexical-decorator="true">
-                    <div draggable="false">
-                      <img
-                        alt="Yellow flower in tilt shift lens"
-                        draggable="false"
-                        src="${SAMPLE_IMAGE_URL}"
-                        style="height: inherit; max-width: 500px; width: inherit" />
-                    </div>
-                  </span>
+                  ${getExpectedDateTimeHtml()}
                   <span data-lexical-text="true">&lt;- it works!</span>
                 </p>
               </td>
@@ -6701,6 +6741,8 @@ test.describe.parallel('Tables', () => {
       false,
     );
     // undo is used so we need to wait for history
+    await sleep(1050);
+
     await sleep(1050);
 
     await withExclusiveClipboardAccess(async () => {

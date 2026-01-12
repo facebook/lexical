@@ -321,5 +321,16 @@
   "319": "useCollaborationContext: no context provider found",
   "320": "LexicalBuilder: @lexical/react legacy text plugins conflict with the %s extension. Remove the legacy <RichTextPlugin/> or <PlainTextPlugin/> component.",
   "321": "No ReactProviderExtension detected. You must use ReactPluginHostExtension or LexicalExtensionComposer to host React extensions. The following extensions depend on ReactExtension: %s",
-  "322": "ReactPluginHostExtension: Root is already mounted"
+  "322": "ReactPluginHostExtension: Root is already mounted",
+  "323": "internalMarkNodeAsDirty: Ephemeral nodes must not be marked as dirty (key %s type %s)",
+  "324": "ElementNode.splice: Ephemeral nodes can not mutate their children (key %s type %s)",
+  "325": "GC must be disabled to render snapshot",
+  "326": "Text point must be a text node",
+  "327": "Expected XmlElement parent for XmlText",
+  "328": "Expected xml or text event",
+  "329": "XmlHook is not supported",
+  "330": "Node properties for %s not initialized for sync",
+  "331": "Text nodes must be mapped as an array",
+  "332": "Element nodes must be mapped as a single node",
+  "333": "Text nodes must be mapped to XmlText"
 }

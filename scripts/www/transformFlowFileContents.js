@@ -61,6 +61,16 @@ module.exports = async function transformFlowFileContents(source) {
     await transform(
       wrapCode(source),
       (context) => ({
+        ExportNamedDeclaration(node) {
+          const exportSource = node.source;
+          if (!exportSource) {
+            return;
+          }
+          const value = wwwMappings[exportSource.value];
+          if (value) {
+            context.replaceNode(node.source, t.StringLiteral({value}));
+          }
+        },
         ImportDeclaration(node) {
           const value = wwwMappings[node.source.value];
           if (value) {

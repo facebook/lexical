@@ -16,7 +16,13 @@ import type {
 } from 'lexical';
 
 import {$getAdjacentCaret} from '@lexical/utils';
-import {$getSiblingCaret, $isLineBreakNode, $isTabNode} from 'lexical';
+import {
+  $getSiblingCaret,
+  $isElementNode,
+  $isLineBreakNode,
+  $isTabNode,
+  getTextDirection,
+} from 'lexical';
 import invariant from 'shared/invariant';
 
 import {$isCodeHighlightNode} from './CodeHighlightNode';
@@ -49,6 +55,47 @@ export function $getLastCodeNodeOfLine(
   anchor: CodeHighlightNode | TabNode | LineBreakNode,
 ): CodeHighlightNode | TabNode | LineBreakNode {
   return $getLastMatchingCodeNode(anchor, 'next');
+}
+
+/**
+ * Determines the visual writing direction of a code line.
+ *
+ * Scans the line segments (CodeHighlightNode/TabNode) from start to end
+ * and returns the first strong direction found ("ltr" or "rtl").
+ * If no strong character is found, falls back to the parent element's
+ * direction. Returns null if indeterminate.
+ */
+export function $getCodeLineDirection(
+  anchor: CodeHighlightNode | TabNode | LineBreakNode,
+): 'ltr' | 'rtl' | null {
+  const start = $getFirstCodeNodeOfLine(anchor);
+  const end = $getLastCodeNodeOfLine(anchor);
+  let node: null | LexicalNode = start;
+
+  while (node !== null) {
+    if ($isCodeHighlightNode(node)) {
+      const direction = getTextDirection(node.getTextContent());
+      if (direction !== null) {
+        return direction;
+      }
+    }
+
+    if (node === end) {
+      break;
+    }
+
+    node = node.getNextSibling();
+  }
+
+  const parent = start.getParent();
+  if ($isElementNode(parent)) {
+    const parentDirection = parent.getDirection();
+    if (parentDirection === 'ltr' || parentDirection === 'rtl') {
+      return parentDirection;
+    }
+  }
+
+  return null;
 }
 
 export function $getStartOfCodeInLine(

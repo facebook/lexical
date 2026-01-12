@@ -1285,6 +1285,55 @@ test.describe('Composition', () => {
 
       expect(isFloatingToolbarDisplayed).toEqual(true);
     });
+
+    test('Typeahead menu should not close during IME composition', async ({
+      page,
+      browserName,
+    }) => {
+      // We don't yet support FF.
+      test.skip(browserName !== 'chromium');
+
+      await focusEditor(page);
+      await enableCompositionKeyEvents(page);
+
+      await page.keyboard.type('@Luke');
+      await waitForSelector(page, '#typeahead-menu ul li');
+
+      const client = await page.context().newCDPSession(page);
+
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 5,
+        selectionEnd: 6,
+        text: 'ｓ',
+      });
+
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 5,
+        selectionEnd: 6,
+        text: 'す',
+      });
+
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 5,
+        selectionEnd: 7,
+        text: 'すｓ',
+      });
+
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 5,
+        selectionEnd: 8,
+        text: 'すｓｈ',
+      });
+
+      const isTypeaheadMenuDisplayedDuringIMEComposition = await evaluate(
+        page,
+        () => {
+          return !!document.querySelector('#typeahead-menu');
+        },
+      );
+
+      expect(isTypeaheadMenuDisplayedDuringIMEComposition).toBe(true);
+    });
   });
   /* eslint-enable sort-keys-fix/sort-keys-fix */
 });

@@ -106,12 +106,20 @@ export class ParagraphNode extends ElementNode {
   }
 
   exportJSON(): SerializedParagraphNode {
-    return {
-      ...super.exportJSON(),
-      // These are included explicitly for backwards compatibility
-      textFormat: this.getTextFormat(),
-      textStyle: this.getTextStyle(),
-    };
+    const json = super.exportJSON();
+    // Provide backwards compatible values, see #7971
+    if (json.textFormat === undefined || json.textStyle === undefined) {
+      // Compute the same value that the reconciler would
+      const firstTextNode = this.getChildren().find($isTextNode);
+      if (firstTextNode) {
+        json.textFormat = firstTextNode.getFormat();
+        json.textStyle = firstTextNode.getStyle();
+      } else {
+        json.textFormat = this.getTextFormat();
+        json.textStyle = this.getTextStyle();
+      }
+    }
+    return json as SerializedParagraphNode;
   }
 
   // Mutation

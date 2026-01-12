@@ -6,7 +6,7 @@
  *
  */
 
-import type {Binding, YjsNode} from '.';
+import type {BaseBinding, Binding, YjsNode} from '.';
 
 import {
   $getNodeByKey,
@@ -29,6 +29,7 @@ import {
 import invariant from 'shared/invariant';
 import {Doc, Map as YMap, XmlElement, XmlText} from 'yjs';
 
+import {isBindingV1} from './Bindings';
 import {
   $createCollabDecoratorNode,
   CollabDecoratorNode,
@@ -58,7 +59,7 @@ const textExcludedProperties = new Set<string>(['__text']);
 function isExcludedProperty(
   name: string,
   node: LexicalNode,
-  binding: Binding,
+  binding: BaseBinding,
 ): boolean {
   if (
     baseExcludedProperties.has(name) ||
@@ -83,6 +84,37 @@ function isExcludedProperty(
   const nodeKlass = node.constructor;
   const excludedProperties = binding.excludedProperties.get(nodeKlass);
   return excludedProperties != null && excludedProperties.has(name);
+}
+
+export function initializeNodeProperties(binding: BaseBinding): void {
+  const {editor, nodeProperties} = binding;
+  editor.update(() => {
+    editor._nodes.forEach((nodeInfo) => {
+      const node = new nodeInfo.klass();
+      const defaultProperties: {[property: string]: unknown} = {};
+      for (const [property, value] of Object.entries(node)) {
+        if (!isExcludedProperty(property, node, binding)) {
+          defaultProperties[property] = value;
+        }
+      }
+      nodeProperties.set(node.__type, Object.freeze(defaultProperties));
+    });
+  });
+}
+
+export function getDefaultNodeProperties(
+  node: LexicalNode,
+  binding: BaseBinding,
+): {[property: string]: unknown} {
+  const type = node.__type;
+  const {nodeProperties} = binding;
+  const properties = nodeProperties.get(type);
+  invariant(
+    properties !== undefined,
+    'Node properties for %s not initialized for sync',
+    type,
+  );
+  return properties;
 }
 
 export function getIndexOfYjsNode(
@@ -255,8 +287,13 @@ export function createLexicalNodeFromCollabNode(
 }
 
 export function $syncPropertiesFromYjs(
-  binding: Binding,
-  sharedType: XmlText | YMap<unknown> | XmlElement,
+  binding: BaseBinding,
+  sharedType:
+    | XmlText
+    | YMap<unknown>
+    | XmlElement
+    // v2
+    | Record<string, unknown>,
   lexicalNode: LexicalNode,
   keysChanged: null | Set<string>,
 ): void {
@@ -264,18 +301,20 @@ export function $syncPropertiesFromYjs(
     keysChanged === null
       ? sharedType instanceof YMap
         ? Array.from(sharedType.keys())
-        : Object.keys(sharedType.getAttributes())
+        : sharedType instanceof XmlText || sharedType instanceof XmlElement
+          ? Object.keys(sharedType.getAttributes())
+          : Object.keys(sharedType)
       : Array.from(keysChanged);
   let writableNode: LexicalNode | undefined;
 
   for (let i = 0; i < properties.length; i++) {
     const property = properties[i];
     if (isExcludedProperty(property, lexicalNode, binding)) {
-      if (property === '__state') {
+      if (property === '__state' && isBindingV1(binding)) {
         if (!writableNode) {
           writableNode = lexicalNode.getWritable();
         }
-        $syncNodeStateToLexical(binding, sharedType, writableNode);
+        $syncNodeStateToLexical(sharedType, writableNode);
       }
       continue;
     }
@@ -310,13 +349,18 @@ export function $syncPropertiesFromYjs(
 }
 
 function sharedTypeGet(
-  sharedType: XmlText | YMap<unknown> | XmlElement,
+  sharedType: XmlText | YMap<unknown> | XmlElement | Record<string, unknown>,
   property: string,
 ): unknown {
   if (sharedType instanceof YMap) {
     return sharedType.get(property);
-  } else {
+  } else if (
+    sharedType instanceof XmlText ||
+    sharedType instanceof XmlElement
+  ) {
     return sharedType.getAttribute(property);
+  } else {
+    return sharedType[property];
   }
 }
 
@@ -333,8 +377,7 @@ function sharedTypeSet(
 }
 
 function $syncNodeStateToLexical(
-  binding: Binding,
-  sharedType: XmlText | YMap<unknown> | XmlElement,
+  sharedType: XmlText | YMap<unknown> | XmlElement | Record<string, unknown>,
   lexicalNode: LexicalNode,
 ): void {
   const existingState = sharedTypeGet(sharedType, '__state');
@@ -392,15 +435,9 @@ export function syncPropertiesFromLexical(
   prevLexicalNode: null | LexicalNode,
   nextLexicalNode: LexicalNode,
 ): void {
-  const type = nextLexicalNode.__type;
-  const nodeProperties = binding.nodeProperties;
-  let properties = nodeProperties.get(type);
-  if (properties === undefined) {
-    properties = Object.keys(nextLexicalNode).filter((property) => {
-      return !isExcludedProperty(property, nextLexicalNode, binding);
-    });
-    nodeProperties.set(type, properties);
-  }
+  const properties = Object.keys(
+    getDefaultNodeProperties(nextLexicalNode, binding),
+  );
 
   const EditorClass = binding.editor.constructor;
 
@@ -554,7 +591,10 @@ export function doesSelectionNeedRecovering(
   return recoveryNeeded;
 }
 
-export function syncWithTransaction(binding: Binding, fn: () => void): void {
+export function syncWithTransaction(
+  binding: BaseBinding,
+  fn: () => void,
+): void {
   binding.doc.transact(fn, binding);
 }
 

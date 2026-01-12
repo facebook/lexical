@@ -1,12 +1,4 @@
 /**
- * @jest-environment <rootDir>/packages/lexical-playground/__tests__/unit/jsdom-with-compression-environment
- */
-
-// Jest environment should be at the very top of the file. overriding environment for this test
-// because jest-environment-jsdom does not have compression APIs
-
-/* eslint-disable header/header */
-/**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the

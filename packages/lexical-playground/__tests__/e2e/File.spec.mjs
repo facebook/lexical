@@ -14,6 +14,7 @@ import {
   html,
   initialize,
   insertUploadImage,
+  IS_COLLAB_V2,
   sleep,
   test,
   waitForSelector,
@@ -24,7 +25,8 @@ test.describe('File', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
 
   test(`Can import/export`, async ({page, isPlainText}) => {
-    test.skip(isPlainText);
+    // TODO(collab-v2): nested editors are not supported yet
+    test.skip(isPlainText || IS_COLLAB_V2);
     await focusEditor(page);
     await toggleBold(page);
     await page.keyboard.type('Hello');

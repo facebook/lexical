@@ -19,7 +19,6 @@ import type {
 import {$sliceSelectedTextNodeContent} from '@lexical/selection';
 import {isBlockDomNode, isHTMLElement} from '@lexical/utils';
 import {
-  $cloneWithProperties,
   $createLineBreakNode,
   $createParagraphNode,
   $getRoot,
@@ -104,13 +103,8 @@ function $appendNodesToHTML(
     $isElementNode(currentNode) && currentNode.excludeFromCopy('html');
   let target = currentNode;
 
-  if (selection !== null) {
-    let clone = $cloneWithProperties(currentNode);
-    clone =
-      $isTextNode(clone) && selection !== null
-        ? $sliceSelectedTextNodeContent(selection, clone)
-        : clone;
-    target = clone;
+  if (selection !== null && $isTextNode(currentNode)) {
+    target = $sliceSelectedTextNodeContent(selection, currentNode, 'clone');
   }
   const children = $isElementNode(target) ? target.getChildren() : [];
   const registeredNode = getRegisteredNode(editor, target.getType());

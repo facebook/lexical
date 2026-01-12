@@ -26,6 +26,7 @@ import {
   TableCellNode,
   TableRowNode,
 } from '@lexical/table';
+import {JSDOM} from 'jsdom';
 import {
   $createLineBreakNode,
   $createNodeSelection,
@@ -1934,41 +1935,28 @@ describe('LexicalEditor tests', () => {
       COMMAND_PRIORITY_EDITOR,
     );
 
-    expect(editor._commands).toEqual(
-      new Map([
-        [
-          command,
-          [
-            new Set([commandListener, commandListenerTwo]),
-            new Set(),
-            new Set(),
-            new Set(),
-            new Set(),
-          ],
-        ],
-      ]),
-    );
+    expect(editor._commands.has(command)).toEqual(true);
+    expect(editor._commands.get(command)).toEqual([
+      new Set([commandListener, commandListenerTwo]),
+      new Set(),
+      new Set(),
+      new Set(),
+      new Set(),
+    ]);
 
     removeCommandListener();
 
-    expect(editor._commands).toEqual(
-      new Map([
-        [
-          command,
-          [
-            new Set([commandListenerTwo]),
-            new Set(),
-            new Set(),
-            new Set(),
-            new Set(),
-          ],
-        ],
-      ]),
-    );
+    expect(editor._commands.get(command)).toEqual([
+      new Set([commandListenerTwo]),
+      new Set(),
+      new Set(),
+      new Set(),
+      new Set(),
+    ]);
 
     removeCommandListenerTwo();
 
-    expect(editor._commands).toEqual(new Map());
+    expect(editor._commands.has(command)).toEqual(false);
   });
 
   it('can register transforms before updates', async () => {
@@ -3192,20 +3180,45 @@ describe('LexicalEditor tests', () => {
     expect(ParagraphNode.importDOM).toHaveBeenCalledTimes(1);
   });
 
-  it('root element count is always positive', () => {
-    const newEditor1 = createTestEditor();
-    const newEditor2 = createTestEditor();
+  describe('setRootElement', () => {
+    it('root element count is always positive', () => {
+      const newEditor1 = createTestEditor();
+      const newEditor2 = createTestEditor();
 
-    const container1 = document.createElement('div');
-    const container2 = document.createElement('div');
+      const container1 = document.createElement('div');
+      const container2 = document.createElement('div');
 
-    newEditor1.setRootElement(container1);
-    newEditor1.setRootElement(null);
+      newEditor1.setRootElement(container1);
+      newEditor1.setRootElement(null);
 
-    newEditor1.setRootElement(container1);
-    newEditor2.setRootElement(container2);
-    newEditor1.setRootElement(null);
-    newEditor2.setRootElement(null);
+      newEditor1.setRootElement(container1);
+      newEditor2.setRootElement(container2);
+      newEditor1.setRootElement(null);
+      newEditor2.setRootElement(null);
+    });
+
+    it('should handle root element moving between documents', () => {
+      const origEditor = createTestEditor();
+      origEditor.setRootElement(container);
+
+      // Register and unregister editor in jsdom document, so that root element
+      // count is non-zero.
+      const jsdom = new JSDOM();
+      const jsdomDocument = jsdom.window.document;
+      const jsdomContainer = jsdomDocument.createElement('div');
+      const jsdomEditor = createTestEditor();
+      jsdomEditor.setRootElement(jsdomContainer);
+      jsdomEditor.setRootElement(null);
+
+      // Move container from original document to jsdom document
+      jsdomDocument.body.appendChild(container);
+
+      // Ensure that cleanup still works
+      origEditor.setRootElement(null);
+
+      // Move node back to the original document so afterEach works
+      document.body.appendChild(container);
+    });
   });
 
   describe('html config', () => {

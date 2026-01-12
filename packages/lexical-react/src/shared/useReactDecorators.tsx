@@ -27,7 +27,7 @@ export function useReactDecorators(
       ] as const,
     [editor],
   );
-  const decorators = useSyncExternalStore(subscribe, getSnapshot);
+  const decorators = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
   // Return decorators defined as React Portals
   return useMemo(() => {

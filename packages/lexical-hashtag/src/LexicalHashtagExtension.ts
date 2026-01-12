@@ -298,6 +298,6 @@ export interface HashtagConfig {
 export const HashtagExtension = defineExtension({
   config: defaultHashtagConfig,
   name: '@lexical/hashtag/Hashtag',
-  nodes: [HashtagNode],
+  nodes: () => [HashtagNode],
   register: registerLexicalHashtag,
 });

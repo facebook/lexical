@@ -35,7 +35,7 @@ After:
 const appExtension = defineExtension({
   name: 'MyEditor',
   namespace: 'MyEditor',
-  nodes: [QuoteNode, HeadingNode],
+  nodes: () => [QuoteNode, HeadingNode],
   theme,
   $initialEditorState,
 });

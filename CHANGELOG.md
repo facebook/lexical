@@ -1,3 +1,101 @@
+## v0.39.0 (2025-12-11)
+
+- lexical-selection Fix applying styles for empty table cells (#8003) Ivaylo Pavlov
+- lexical-playground Shadows when table is scrollable (#8002) Ivaylo Pavlov
+- lexical-markflowchore Add flowfix me after flow 0.292.0 was deployed to www. This fixes the  sync between github and www (#8019) Michael
+- Doc nit (#8010) Gerard Rovira
+- lexical-table Bug Fix include first cell contents in partial backwards table selection (#7998) Patrick Moody
+- lexical-website Documentation Update Add missing getDocFromMap fn to docs (#8000) mattcline
+- Revert lexical-react lexical-playground Remove old ContextMenu, consolidate LexicalMenu render (#7997) Ivaylo Pavlov
+- lexical-website Documentation Update Add ywebsocket-server package dependency (#7996) mattcline
+- lexical-yjs Bug fix dont rewrite unchanged non-primitive propertystate values to yjs in collab v2 (#7990) James Fitzsimmons
+- lexical-react lexical-playground Remove old ContextMenu, consolidate LexicalMenu render (#7984) Ivaylo Pavlov
+- lexical-table Bug Fix ensure colWidths has length equal to number of columns (#7986) James Fitzsimmons
+- lexical-react lexical-playground Bug Fix Prevent typeahead menu from closing during IME composition (#7985) (#7987) kykim00
+- lexical-table Feature add config for opting in to nested tables (#7983) James Fitzsimmons
+- lexical Bug fix dfsCaretIterator should be able to stop at its last descendant (#7978) Nigel Gutzmann
+- lexical Chore Update flow-bin (to 0.290.0) and fix incompatible-variance issues (#7975) Daniel Teo
+- lexical Feature add commands for beforeinput, input, compositionstartend events (#7964) James Fitzsimmons
+- lexical Chore Update flow-bin (to 0.289.0) and LexicalLink Flow types (#7973) Daniel Teo
+- lexical-extensionlexical- Bug Fix Defer node class references to potentially work around webpack issues (#7961) Bob Ippolito
+- lexical Feature Only serialize ElementNode textFormat and textStyle when necessary (#7971) Bob Ippolito
+- lexical-code Bug fix Add editor key in highlighted nodes cache (#7970) Daniel Teo
+- examples Chore Update examples for v0.38.2 (#7963) Bob Ippolito
+- scripts Allow export-froms in Flow files to be transformed for www build (#7967) Daniel Teo
+- v0.38.2 (#7962) Bob Ippolito
+- v0.38.2 Lexical GitHub Actions Bot
+
+## v0.38.2 (2025-10-31)
+
+- lexical-markdown Code backslash fix (#7958) MarekKuncik
+- Update codeowners (#7957) Gerard Rovira
+- Update examples for v0.38.1 (#7952) Bob Ippolito
+- v0.38.1 (#7951) Bob Ippolito
+- v0.38.1 Lexical GitHub Actions Bot
+
+## v0.38.1 (2025-10-27)
+
+- v0.38.0 Lexical GitHub Actions Bot
+
+## v0.38.0 (2025-10-27)
+
+- lexical-list Bug Fix fix pasting checklist from joplin (#7946) Antonella Sgarlatta
+- lexical Bug Fix update block cursor if selection has changed (#7947) Maksim Horbachevsky
+- lexical-link Feature Enable Selective Removal Within Linked Text (#7944) Christopher Norman
+- Fix Log exceptions in clipboard paste handler (fixes #7940) (#7942) Nikhil Sharma
+- lexical Bug Fix retain selection during updates on unfocused editor (#7941) Maksim Horbachevsky
+- lexical-table Chore Lower table handler command priority (#7933) Patrick Moody
+- lexical-linklexical-code-shikiexamples Feature Implement mergeConfig for LinkExtension and flatten config for CodeHighlighterShikiExtension (#7936) Bob Ippolito
+- lexical-react Bug Fix Add getServerSnapshot for RSC compatibility (#7935) Elias Rhouzlane
+- lexical-website Documentation Update change setText to setTextContent (#7932) bbertold
+- lexical-extension Feature Allow nodes config to be deferred for circular dependency reasons (#7930) Bob Ippolito
+- lexicallexical-list Bug Fix Apply static transform and config transform from all superclasses (#7926) Bob Ippolito
+- lexical-markdown Bug Fix Fix implicit checklist marker export regression (#7928) Bob Ippolito
+- lexical-website Chore Update docusuarus and add contributing docs (#7931) Bob Ippolito
+- lexical-markdown Bug Fix Prevent Markdown links with empty string link text from being automatically removed (#7923) Adam Bolcsfoldi
+- lexical-playground Bug Fix Fix image caption overflow issue (#7920) Ritoban Dutta
+- lexical-markdown Fix bugs in normalizeMarkdown (#7812) German Jablonski
+- lexical-code Bug Fix Respect RTL when moving to line startend in code blocks (#7921) Shehab
+- lexical-yjs Fix skip elements that were added and removed between snapshots (#7922) James Fitzsimmons
+- Documentation Chore Update bounty program link in CONTRIBUTING.md (#7915) Mustkeem K
+- Update examples for v0.37.0 (#7911) Bob Ippolito
+- v0.37.0 (#7910) Bob Ippolito
+- v0.37.0 Lexical GitHub Actions Bot
+
+## v0.37.0 (2025-10-11)
+
+- lexical-yjs Chore fix imports of Yjs XML types (#7908) James Fitzsimmons
+- lexical-react Chore make shouldBootstrapUnsafe prop optional (#7907) James Fitzsimmons
+- lexical-playground Bug Fix Export ParagraphNode as div roleparagraph when it contains block DOM (#7906) Bob Ippolito
+- lexicallexical-clipboardlexical-htmllexical-selection Feature Add an internal ephemeral node concept (#7904) Bob Ippolito
+- lexical-yjslexical-react Feature commands for diffing two yjs snapshots in collab v2 (#7903) James Fitzsimmons
+- lexicallexical-clipboardlexical-playground Feature ImageNode caption support for exportDOM and importDOM (#7900) Mehmet Can Ertan
+- lexical-rich-text Bug fix updown arrows for node selection (#7902) Maksim Horbachevsky
+- lexical-listlexical-markdown Feature Keep list marker for markdown round-trip (#7892) Simon
+- lexical-yjslexical-react Feature initial implementation of collab v2 (#7616) James Fitzsimmons
+- lexical-react Bug Fix LexicalMenu guard against undefined option when list shrinks (#7899) MRADUL TRIPATHI
+- examples Feature sveltekit ssr example (#7879) Bob Ippolito
+- Update examples for v0.36.2 (#7896) Bob Ippolito
+- v0.36.2 (#7894) Bob Ippolito
+- v0.36.2 Lexical GitHub Actions Bot
+
+## v0.36.2 (2025-09-30)
+
+- docs Chore Export DOMConversion types so that they are in the docs (#7893) Bob Ippolito
+- lexical-markdown Bug Fix Ensure First Match is Used in importTextMatchTransformer (#7890) River
+- lexical-react Fix ensure selection listeners cleaned up from original owner document (#7843) James Fitzsimmons
+- lexical-clipboard Preventing copying empty string (#7880) Nikhil Sharma
+- lexical-website Chore Update to docusaurus v3.9.1 (#7881) Bob Ippolito
+- lexical-headlesslexical-html Bug Fix Fix entrypoint for lexicalheadlessdom and generalize generateNodesFromDOM (#7859) Bob Ippolito
+- lexical-table Bug Fix Handle accessing table selection following table deletion (#7864) Patrick Moody
+- lexical-headless Bug Fix Fix types for lexicalheadlessdom and simplify npmToWwwName workaround (#7873) Bob Ippolito
+- Update examples for v0.36.1 (#7872) Bob Ippolito
+- lexical-playground Bug Fix Table add-row button no longer hides horizontal scroll (#7847) Nikhil Sharma
+- lexical-website Chore add example for how to bootstrap collab ydoc on the server (#7830) James Fitzsimmons
+-  Bug Fix devInvariant should warn in prod even if not in codes.json (#7870) Bob Ippolito
+- v0.36.1 (#7871) Bob Ippolito
+- v0.36.1 Lexical GitHub Actions Bot
+
 ## v0.36.1 (2025-09-25)
 
 -  Bug Fix Update examples and fix package.json for v0.36.0 (will need a patch release) (#7867) Bob Ippolito

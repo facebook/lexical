@@ -262,6 +262,10 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
           return;
         }
 
+        if (editor.isComposing()) {
+          return;
+        }
+
         const editorWindow = editor._window || window;
         const range = editorWindow.document.createRange();
         const selection = $getSelection();

@@ -14,6 +14,7 @@ import {
   LexicalBuilder,
   safeCast,
 } from '@lexical/extension';
+import {$create, $createParagraphNode, $getRoot, TextNode} from 'lexical';
 import {assert, describe, expect, it} from 'vitest';
 
 const InitialStateExtensionName = '@lexical/extension/InitialState';
@@ -99,6 +100,46 @@ describe('LexicalBuilder', () => {
     expect(() => buildEditorFromExtensions(ExtensionA)).toThrowError(
       'LexicalBuilder: Circular dependency detected for Extension A from B',
     );
+  });
+  describe('nodes configuration', () => {
+    const ExtDefer = defineExtension({
+      name: 'A',
+      nodes: () => [NodeA],
+    });
+    class NodeA extends TextNode {
+      $config() {
+        return this.config('node-a', {extends: TextNode});
+      }
+    }
+    class NodeB extends TextNode {
+      $config() {
+        return this.config('node-b', {extends: TextNode});
+      }
+    }
+    const ExtDirect = defineExtension({
+      name: 'B',
+      nodes: [NodeB],
+    });
+    it('can mix deferred and direct node config', () => {
+      const editor = buildEditorFromExtensions(ExtDefer, ExtDirect, {
+        $initialEditorState() {
+          $getRoot().append(
+            $createParagraphNode().append(
+              $create(NodeA).setTextContent('defer'),
+              $create(NodeB).setTextContent('direct'),
+            ),
+          );
+        },
+        name: 'state',
+      });
+      editor.read(() => {
+        expect(
+          $getRoot()
+            .getAllTextNodes()
+            .map((node) => ({[node.getType()]: node.getTextContent()})),
+        ).toEqual([{'node-a': 'defer'}, {'node-b': 'direct'}]);
+      });
+    });
   });
   describe('handles peer dependency configuration', () => {
     const ExtensionA = defineExtension({

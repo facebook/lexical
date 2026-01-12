@@ -6,7 +6,7 @@
  *
  */
 import {$createLinkNode, $isLinkNode, LinkNode} from '@lexical/link';
-import {$getRoot, ParagraphNode, TextNode} from 'lexical';
+import {$createTextNode, $getRoot, ParagraphNode, TextNode} from 'lexical';
 import {
   expectHtmlToBeEqual,
   html,
@@ -425,4 +425,95 @@ describe('LexicalListNode tests', () => {
       });
     });
   });
+});
+
+describe('LexicalListNode subclassing tests ($config)', () => {
+  class ListNodeConfig extends ListNode {
+    $config() {
+      return this.config('list-$config', {extends: ListNode});
+    }
+  }
+  function $initialState($createListNodeFn = $createListNode) {
+    $getRoot()
+      .clear()
+      .append(
+        $createListNodeFn().append(
+          $createListItemNode().append($createTextNode('first')),
+          $createListItemNode().append($createTextNode('second')),
+        ),
+      );
+  }
+  function $getListItemValues() {
+    return $getRoot()
+      .getAllTextNodes()
+      .map((node) => {
+        const parent = node.getParent();
+        return parent && $isListItemNode(parent) ? parent.getValue() : null;
+      });
+  }
+  class ListNodeSubclass extends ListNode {
+    static getType() {
+      return 'list-subclass';
+    }
+    static clone(node: ListNodeSubclass) {
+      return new ListNodeSubclass(node.__listType, node.__start, node.__key);
+    }
+  }
+  describe('ListNode as-is', () =>
+    initializeUnitTest(
+      (testEnv) => {
+        test('applies transform', () => {
+          const {editor} = testEnv;
+          editor.update(
+            () => {
+              $initialState($createListNode);
+              expect($getListItemValues()).toEqual([1, 1]);
+            },
+            {discrete: true},
+          );
+          editor.read(() => {
+            expect($getListItemValues()).toEqual([1, 2]);
+          });
+        });
+      },
+      {nodes: []},
+    ));
+  describe('ListNodeConfig (no replacement)', () =>
+    initializeUnitTest(
+      (testEnv) => {
+        test('applies transform', () => {
+          const {editor} = testEnv;
+          editor.update(
+            () => {
+              $initialState(() => new ListNodeConfig());
+              expect($getListItemValues()).toEqual([1, 1]);
+            },
+            {discrete: true},
+          );
+          editor.read(() => {
+            expect($getListItemValues()).toEqual([1, 2]);
+          });
+        });
+      },
+      {nodes: [ListNodeConfig]},
+    ));
+  describe('ListNodeSubclass (no replacement)', () =>
+    initializeUnitTest(
+      (testEnv) => {
+        test('applies transform', () => {
+          const {editor} = testEnv;
+          editor.update(
+            () => {
+              $initialState(() => new ListNodeSubclass());
+              expect($getListItemValues()).toEqual([1, 1]);
+            },
+            {discrete: true},
+          );
+          editor.read(() => {
+            expect($getListItemValues()).toEqual([1, 2]);
+          });
+        });
+      },
+      {nodes: [ListNodeSubclass]},
+    ));
 });

@@ -29,6 +29,7 @@ const headerTemplate = fs.readFileSync(
   'utf8',
 );
 
+// Arguments are parsed as flags by minimist
 const isProduction = argv.prod;
 const isRelease = argv.release;
 const isWWW = argv.www;
@@ -332,6 +333,9 @@ async function build(
     file: outputFile,
     format, // change between es and cjs modules
     freeze: false,
+    // pnpm's module resolution causes Rollup to detect dynamic imports that
+    // npm's flat structure didn't. Inline them to avoid code-splitting.
+    inlineDynamicImports: true,
     interop: format === 'esm' ? 'esModule' : undefined,
     paths: format === 'esm' ? resolveExternalEsm : undefined,
   };

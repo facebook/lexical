@@ -1019,6 +1019,7 @@ i.page-break,
   display: inline-block;
   position: relative;
   user-select: none;
+  overflow: hidden;
 }
 
 .editor-shell .editor-image img {
@@ -1057,6 +1058,9 @@ i.page-break,
   min-width: 100px;
   color: #000;
   overflow: hidden;
+  box-sizing: border-box;
+  max-width: 100%;
+  word-wrap: break-word;
 }
 
 .editor-shell .editor-image .image-caption-button {
@@ -1273,6 +1277,10 @@ i.page-break,
   background-image: url(images/icons/plug-fill.svg);
 }
 
+.actions i.versions {
+  background-image: url(images/icons/clock-history.svg);
+}
+
 .table-cell-action-button-container {
   position: absolute;
   z-index: 3;
@@ -1436,6 +1444,10 @@ button.action-button:disabled {
   top: 0;
   z-index: 2;
   overflow-y: hidden; /* disable vertical scroll*/
+}
+
+.toolbar .toolbar-item:focus {
+  outline: 2px solid rgb(60, 132, 244);
 }
 
 button.toolbar-item {

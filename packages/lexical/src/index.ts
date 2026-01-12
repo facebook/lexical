@@ -67,12 +67,15 @@ export {
   type SplitAtPointCaretNextOptions,
 } from './caret/LexicalCaretUtils';
 export {
+  BEFORE_INPUT_COMMAND,
   BLUR_COMMAND,
   CAN_REDO_COMMAND,
   CAN_UNDO_COMMAND,
   CLEAR_EDITOR_COMMAND,
   CLEAR_HISTORY_COMMAND,
   CLICK_COMMAND,
+  COMPOSITION_END_COMMAND,
+  COMPOSITION_START_COMMAND,
   CONTROLLED_TEXT_INSERTION_COMMAND,
   COPY_COMMAND,
   createCommand,
@@ -88,6 +91,7 @@ export {
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
   INDENT_CONTENT_COMMAND,
+  INPUT_COMMAND,
   INSERT_LINE_BREAK_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
   INSERT_TAB_COMMAND,
@@ -162,6 +166,7 @@ export {
   COMMAND_PRIORITY_LOW,
   COMMAND_PRIORITY_NORMAL,
   createEditor,
+  getTransformSetFromKlass,
 } from './LexicalEditor';
 export type {
   EditorState,
@@ -177,6 +182,9 @@ export type {
   DOMConversionFn,
   DOMConversionMap,
   DOMConversionOutput,
+  DOMConversionProp,
+  DOMConversionPropByTagName,
+  DOMConversionTagNameMap,
   DOMExportOutput,
   DOMExportOutputMap,
   LexicalExportJSON,
@@ -235,6 +243,7 @@ export {
   $addUpdateTag,
   $applyNodeReplacement,
   $cloneWithProperties,
+  $cloneWithPropertiesEphemeral,
   $copyNode,
   $create,
   $findMatchingParent,
@@ -268,6 +277,7 @@ export {
   getRegisteredNode,
   getRegisteredNodeOrThrow,
   getStaticNodeConfig,
+  getTextDirection,
   INTERNAL_$isBlock,
   isBlockDomNode,
   isDocumentFragment,
@@ -329,6 +339,7 @@ export {
   SKIP_COLLAB_TAG,
   SKIP_DOM_SELECTION_TAG,
   SKIP_SCROLL_INTO_VIEW_TAG,
+  SKIP_SELECTION_FOCUS_TAG,
   type UpdateTag,
 } from './LexicalUpdateTags';
 

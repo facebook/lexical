@@ -548,7 +548,11 @@ export class ColoredNode extends TextNode {
 export function $createColoredNode(text: string, color: string): ColoredNode {
   // Since our constructor has 0 arguments, we set all of its properties
   // after construction.
-  return $setState($create(ColoredNode).setText(text), colorState, color);
+  return $setState(
+    $create(ColoredNode).setTextContent(text),
+    colorState,
+    color,
+  );
 }
 // highlight-end
 

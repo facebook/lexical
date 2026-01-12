@@ -8,17 +8,17 @@
     "code"
   ],
   "license": "MIT",
-  "version": "0.36.1",
+  "version": "0.39.0",
   "main": "LexicalCode.js",
   "types": "index.d.ts",
   "dependencies": {
-    "@lexical/utils": "0.36.1",
-    "lexical": "0.36.1",
+    "@lexical/utils": "0.39.0",
+    "lexical": "0.39.0",
     "prismjs": "^1.30.0"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/facebook/lexical",
+    "url": "git+https://github.com/facebook/lexical.git",
     "directory": "packages/lexical-code"
   },
   "devDependencies": {

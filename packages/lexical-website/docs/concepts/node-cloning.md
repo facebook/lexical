@@ -163,7 +163,7 @@ test('node modification', async () => {
 ## Related Concepts
 
 - [Editor State](editor-state.md) - How cloning affects editor state
-- [Nodes](nodes.md) - Core concepts about Lexical nodes
+- [Nodes](nodes.mdx) - Core concepts about Lexical nodes
 
 ## Common Questions
 

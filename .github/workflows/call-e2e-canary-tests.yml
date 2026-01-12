@@ -3,12 +3,14 @@ name: Lexical e2e canary test
 on:
   workflow_call:
 
+permissions: {}
+
 jobs:
   canary:
     strategy:
       matrix:
         os: ['ubuntu-latest']
-        node-version: [18.18.0]
+        node-version: [22.x]
         browser: ['chromium']
         editor-mode: ['rich-text']
         events-mode: ['modern-events']

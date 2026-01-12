@@ -8,6 +8,7 @@
 
 import type {JSX} from 'react';
 
+import {calculateZoomLevel} from '@lexical/utils';
 import {isDOMNode} from 'lexical';
 import * as React from 'react';
 import {
@@ -20,8 +21,10 @@ import {
 } from 'react';
 import {createPortal} from 'react-dom';
 
+import {focusNearestDescendant, isKeyboardInput} from '../utils/focusUtils';
+
 type DropDownContextType = {
-  registerItem: (ref: React.RefObject<HTMLButtonElement>) => void;
+  registerItem: (ref: React.RefObject<null | HTMLButtonElement>) => void;
 };
 
 const DropDownContext = React.createContext<DropDownContextType | null>(null);
@@ -39,7 +42,7 @@ export function DropDownItem({
   onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
   title?: string;
 }) {
-  const ref = useRef<HTMLButtonElement>(null);
+  const ref = useRef<null | HTMLButtonElement>(null);
 
   const dropDownContext = React.useContext(DropDownContext);
 
@@ -71,28 +74,33 @@ function DropDownItems({
   children,
   dropDownRef,
   onClose,
+  autofocus,
 }: {
   children: React.ReactNode;
-  dropDownRef: React.Ref<HTMLDivElement>;
+  dropDownRef: React.RefObject<HTMLDivElement | null>;
   onClose: () => void;
+  autofocus: boolean;
 }) {
-  const [items, setItems] = useState<React.RefObject<HTMLButtonElement>[]>();
+  const [items, setItems] =
+    useState<React.RefObject<null | HTMLButtonElement>[]>();
   const [highlightedItem, setHighlightedItem] =
-    useState<React.RefObject<HTMLButtonElement>>();
+    useState<React.RefObject<null | HTMLButtonElement>>();
 
   const registerItem = useCallback(
-    (itemRef: React.RefObject<HTMLButtonElement>) => {
+    (itemRef: React.RefObject<null | HTMLButtonElement>) => {
       setItems((prev) => (prev ? [...prev, itemRef] : [itemRef]));
     },
     [setItems],
   );
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    const key = event.key;
+    if (key === 'Escape') {
+      onClose();
+    }
     if (!items) {
       return;
     }
-
-    const key = event.key;
 
     if (['Escape', 'ArrowUp', 'ArrowDown', 'Tab'].includes(key)) {
       event.preventDefault();
@@ -135,6 +143,12 @@ function DropDownItems({
     }
   }, [items, highlightedItem]);
 
+  useEffect(() => {
+    if (autofocus && dropDownRef.current) {
+      focusNearestDescendant(dropDownRef.current);
+    }
+  }, [autofocus, dropDownRef]);
+
   return (
     <DropDownContext.Provider value={contextValue}>
       <div className="dropdown" ref={dropDownRef} onKeyDown={handleKeyDown}>
@@ -152,6 +166,7 @@ export default function DropDown({
   buttonIconClassName,
   children,
   stopCloseOnClickSelf,
+  hideChevron,
 }: {
   disabled?: boolean;
   buttonAriaLabel?: string;
@@ -160,10 +175,12 @@ export default function DropDown({
   buttonLabel?: string;
   children: ReactNode;
   stopCloseOnClickSelf?: boolean;
+  hideChevron?: boolean;
 }): JSX.Element {
   const dropDownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [showDropDown, setShowDropDown] = useState(false);
+  const [shouldAutofocus, setShouldAutofocus] = useState(false);
 
   const handleClose = () => {
     setShowDropDown(false);
@@ -175,14 +192,13 @@ export default function DropDown({
   useEffect(() => {
     const button = buttonRef.current;
     const dropDown = dropDownRef.current;
-
+    const zoom = calculateZoomLevel(dropDown, true);
     if (showDropDown && button !== null && dropDown !== null) {
       const {top, left} = button.getBoundingClientRect();
-      dropDown.style.top = `${top + button.offsetHeight + dropDownPadding}px`;
-      dropDown.style.left = `${Math.min(
-        left,
-        window.innerWidth - dropDown.offsetWidth - 20,
-      )}px`;
+      dropDown.style.top = `${top / zoom + button.offsetHeight + dropDownPadding}px`;
+      dropDown.style.left = `${
+        Math.min(left, window.innerWidth - dropDown.offsetWidth - 20) / zoom
+      }px`;
     }
   }, [dropDownRef, buttonRef, showDropDown]);
 
@@ -190,18 +206,24 @@ export default function DropDown({
     const button = buttonRef.current;
 
     if (button !== null && showDropDown) {
-      const handle = (event: MouseEvent) => {
+      const handle = (event: PointerEvent) => {
         const target = event.target;
         if (!isDOMNode(target)) {
           return;
         }
-        if (stopCloseOnClickSelf) {
-          if (dropDownRef.current && dropDownRef.current.contains(target)) {
-            return;
-          }
+
+        const targetIsDropDownItem =
+          dropDownRef.current && dropDownRef.current.contains(target);
+        if (stopCloseOnClickSelf && targetIsDropDownItem) {
+          return;
         }
+
         if (!button.contains(target)) {
           setShowDropDown(false);
+
+          if (targetIsDropDownItem && isKeyboardInput(event)) {
+            button.focus();
+          }
         }
       };
       document.addEventListener('click', handle);
@@ -234,6 +256,11 @@ export default function DropDown({
     };
   }, [buttonRef, dropDownRef, showDropDown]);
 
+  const handleOnClick = (e: React.MouseEvent) => {
+    setShowDropDown(!showDropDown);
+    setShouldAutofocus(isKeyboardInput(e));
+  };
+
   return (
     <>
       <button
@@ -241,18 +268,21 @@ export default function DropDown({
         disabled={disabled}
         aria-label={buttonAriaLabel || buttonLabel}
         className={buttonClassName}
-        onClick={() => setShowDropDown(!showDropDown)}
+        onClick={handleOnClick}
         ref={buttonRef}>
         {buttonIconClassName && <span className={buttonIconClassName} />}
         {buttonLabel && (
           <span className="text dropdown-button-text">{buttonLabel}</span>
         )}
-        <i className="chevron-down" />
+        {!hideChevron && <i className="chevron-down" />}
       </button>
 
       {showDropDown &&
         createPortal(
-          <DropDownItems dropDownRef={dropDownRef} onClose={handleClose}>
+          <DropDownItems
+            dropDownRef={dropDownRef}
+            onClose={handleClose}
+            autofocus={shouldAutofocus}>
             {children}
           </DropDownItems>,
           document.body,

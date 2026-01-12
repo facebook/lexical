@@ -11,8 +11,8 @@ import {
   $getRoot,
   $isParagraphNode,
   ParagraphNode,
-  RangeSelection,
 } from 'lexical';
+import {describe, expect, test} from 'vitest';
 
 import {initializeUnitTest} from '../../../__tests__/utils';
 
@@ -110,19 +110,16 @@ describe('LexicalParagraphNode tests', () => {
       });
 
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p><br></p></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><br></p></div>',
       );
 
       await editor.update(() => {
         const selection = paragraphNode.select();
-        const result = paragraphNode.insertNewAfter(
-          selection as RangeSelection,
-          false,
-        );
+        const result = paragraphNode.insertNewAfter(selection, false);
         expect(result).toBeInstanceOf(ParagraphNode);
         expect(result.getDirection()).toEqual(paragraphNode.getDirection());
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p><br></p></div>',
+          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><br></p></div>',
         );
       });
     });

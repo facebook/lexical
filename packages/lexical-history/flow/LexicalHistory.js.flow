@@ -6,7 +6,8 @@
  *
  * @flow strict
  */
-import type {EditorState, BaseSelection, LexicalEditor} from 'lexical';
+import type {LexicalExtension, ExtensionConfigBase, EditorState, BaseSelection, LexicalEditor} from 'lexical';
+import type {NamedSignalsOutput} from '@lexical/extension';
 
 export type HistoryStateEntry = {
   editor: LexicalEditor,
@@ -24,3 +25,15 @@ declare export function registerHistory(
   delay: number,
 ): () => void;
 declare export function createEmptyHistoryState(): HistoryState;
+
+export type HistoryConfig = {
+  delay: number;
+  createInitialHistoryState: (editor: LexicalEditor) => HistoryState;
+  disabled: boolean;
+}
+declare export var HistoryExtension: LexicalExtension<HistoryConfig, "@lexical/history/History", NamedSignalsOutput<{
+    delay: number;
+    disabled: boolean;
+    historyState: HistoryState;
+}>, void>;
+declare export var SharedHistoryExtension: LexicalExtension<ExtensionConfigBase, "@lexical/history/SharedHistory", void, void>;

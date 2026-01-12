@@ -315,7 +315,7 @@ export function $insertTableRowAtNode(
     for (let i = 0; i < columnCount; i++) {
       const {cell, startRow} = insertAfterEndRowMap[i];
       if (startRow + cell.__rowSpan - 1 <= insertAfterEndRow) {
-        const currentCell = insertAfterEndRowMap[i].cell as TableCellNode;
+        const currentCell = insertAfterEndRowMap[i].cell;
         const currentCellHeaderState = currentCell.__headerState;
 
         const headerState = getHeaderState(
@@ -344,7 +344,7 @@ export function $insertTableRowAtNode(
     for (let i = 0; i < columnCount; i++) {
       const {cell, startRow} = insertBeforeStartRowMap[i];
       if (startRow === insertBeforeStartRow) {
-        const currentCell = insertBeforeStartRowMap[i].cell as TableCellNode;
+        const currentCell = insertBeforeStartRowMap[i].cell;
         const currentCellHeaderState = currentCell.__headerState;
 
         const headerState = getHeaderState(
@@ -523,10 +523,8 @@ export function $insertTableColumnAtNode(
     }
     const rowMap = gridMap[i];
 
-    const currentCellHeaderState = (
-      rowMap[insertAfterColumn < 0 ? 0 : insertAfterColumn]
-        .cell as TableCellNode
-    ).__headerState;
+    const currentCellHeaderState =
+      rowMap[insertAfterColumn < 0 ? 0 : insertAfterColumn].cell.__headerState;
 
     const headerState = getHeaderState(
       currentCellHeaderState,

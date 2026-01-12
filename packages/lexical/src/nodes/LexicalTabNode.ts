@@ -8,6 +8,7 @@
 
 import type {DOMConversionMap, NodeKey} from '../LexicalNode';
 
+import devInvariant from 'shared/devInvariant';
 import invariant from 'shared/invariant';
 
 import {IS_UNMERGEABLE} from '../LexicalConstants';
@@ -58,11 +59,25 @@ export class TabNode extends TextNode {
   }
 
   setTextContent(text: string): this {
-    invariant(
+    devInvariant(
       text === '\t' || text === '',
       'TabNode does not support setTextContent',
     );
-    return super.setTextContent(text);
+    return super.setTextContent('\t');
+  }
+
+  spliceText(
+    offset: number,
+    delCount: number,
+    newText: string,
+    moveSelection?: boolean,
+  ): TextNode {
+    invariant(
+      (newText === '' && delCount === 0) ||
+        (newText === '\t' && delCount === 1),
+      'TabNode does not support spliceText',
+    );
+    return this;
   }
 
   setDetail(detail: TextDetailType | number): this {

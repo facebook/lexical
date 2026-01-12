@@ -29,13 +29,17 @@ export const E2E_BROWSER = process.env.E2E_BROWSER;
 export const IS_MAC = process.platform === 'darwin';
 export const IS_WINDOWS = process.platform === 'win32';
 export const IS_LINUX = !IS_MAC && !IS_WINDOWS;
-export const IS_COLLAB =
+export const IS_COLLAB_V1 =
   process.env.E2E_EDITOR_MODE === 'rich-text-with-collab';
+export const IS_COLLAB_V2 =
+  process.env.E2E_EDITOR_MODE === 'rich-text-with-collab-v2';
+export const IS_COLLAB = IS_COLLAB_V1 || IS_COLLAB_V2;
 const IS_RICH_TEXT = process.env.E2E_EDITOR_MODE !== 'plain-text';
 const IS_PLAIN_TEXT = process.env.E2E_EDITOR_MODE === 'plain-text';
 export const LEGACY_EVENTS = process.env.E2E_EVENTS_MODE === 'legacy-events';
 export const IS_TABLE_HORIZONTAL_SCROLL =
   process.env.E2E_TABLE_MODE !== 'legacy';
+export const SAMPLE_SVG_URL = '/logo.svg';
 export const SAMPLE_IMAGE_URL =
   E2E_PORT === 3000
     ? '/src/images/yellow-flower.jpg'
@@ -58,12 +62,12 @@ export function wrapTableHtml(expected, {ignoreClasses = false} = {}) {
   return html`
     ${expected
       .replace(
-        /<table/g,
-        `<div${
+        /<table([^>]*)(dir="\w+")([^>]*)>/g,
+        `<div $2${
           ignoreClasses
             ? ''
             : ' class="PlaygroundEditorTheme__tableScrollableWrapper"'
-        }><table`,
+        }><table$1$3>`,
       )
       .replace(/<\/table>/g, '</table></div>')}
   `;
@@ -77,6 +81,7 @@ export async function initialize({
   isCharLimitUtf8,
   isMaxLength,
   hasLinkAttributes,
+  hasNestedTables,
   showNestedEditorTreeView,
   tableCellMerge,
   tableCellBackgroundColor,
@@ -99,7 +104,8 @@ export async function initialize({
   appSettings.tableHorizontalScroll =
     tableHorizontalScroll ?? IS_TABLE_HORIZONTAL_SCROLL;
   if (isCollab) {
-    appSettings.isCollab = isCollab;
+    appSettings.isCollab = !!isCollab;
+    appSettings.useCollabV2 = isCollab === 2;
     appSettings.collabId = randomUUID();
   }
   if (showNestedEditorTreeView === undefined) {
@@ -110,6 +116,7 @@ export async function initialize({
   appSettings.isCharLimitUtf8 = !!isCharLimitUtf8;
   appSettings.isMaxLength = !!isMaxLength;
   appSettings.hasLinkAttributes = !!hasLinkAttributes;
+  appSettings.hasNestedTables = !!hasNestedTables;
   if (tableCellMerge !== undefined) {
     appSettings.tableCellMerge = tableCellMerge;
   }
@@ -156,7 +163,7 @@ async function exposeLexicalEditor(page) {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
       `,
     );
   }
@@ -173,7 +180,8 @@ export const test = base.extend({
   hasLinkAttributes: false,
   isCharLimit: false,
   isCharLimitUtf8: false,
-  isCollab: IS_COLLAB,
+  /** @type {number | false} */
+  isCollab: IS_COLLAB_V1 ? 1 : IS_COLLAB_V2 ? 2 : false,
   isMaxLength: false,
   isPlainText: IS_PLAIN_TEXT,
   isRichText: IS_RICH_TEXT,
@@ -525,6 +533,7 @@ export async function copyToClipboard(page) {
 async function pasteWithClipboardDataFromPageOrFrame(
   pageOrFrame,
   clipboardData,
+  editorSelector,
 ) {
   const canUseBeforeInput = await supportsBeforeInput(pageOrFrame);
   await pageOrFrame.evaluate(
@@ -563,7 +572,10 @@ async function pasteWithClipboardDataFromPageOrFrame(
         };
       }
 
-      const editor = document.querySelector('div[contenteditable="true"]');
+      const editor =
+        document.activeElement && document.activeElement.isContentEditable
+          ? document.activeElement
+          : document.querySelector(editorSelector);
       const pasteEvent = new ClipboardEvent('paste', {
         bubbles: true,
         cancelable: true,
@@ -595,7 +607,11 @@ async function pasteWithClipboardDataFromPageOrFrame(
 /**
  * @param {import('@playwright/test').Page} page
  */
-export async function pasteFromClipboard(page, clipboardData) {
+export async function pasteFromClipboard(
+  page,
+  clipboardData,
+  editorSelector = 'div[contenteditable="true"]',
+) {
   if (clipboardData === undefined) {
     await keyDownCtrlOrMeta(page);
     await page.keyboard.press('v');
@@ -605,6 +621,7 @@ export async function pasteFromClipboard(page, clipboardData) {
   await pasteWithClipboardDataFromPageOrFrame(
     getPageOrFrame(page),
     clipboardData,
+    editorSelector,
   );
 }
 
@@ -736,6 +753,29 @@ export async function insertYouTubeEmbed(page, url) {
 
 export async function insertHorizontalRule(page) {
   await selectFromInsertDropdown(page, '.horizontal-rule');
+}
+
+export async function insertDateTime(page) {
+  await selectFromInsertDropdown(page, '.calendar');
+  await sleep(500);
+}
+
+export function getExpectedDateTimeHtml({selected = false} = {}) {
+  const now = new Date();
+  const date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return html`
+    <span
+      contenteditable="false"
+      style="display: inline-block;"
+      data-lexical-datetime="${date.toString()}"
+      data-lexical-decorator="true">
+      <div
+        class="dateTimePill ${selected ? 'selected' : ''}"
+        style="cursor: pointer; width: fit-content;">
+        ${date.toDateString()}
+      </div>
+    </span>
+  `;
 }
 
 export async function insertImageCaption(page, caption) {

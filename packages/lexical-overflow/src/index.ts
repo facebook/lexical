@@ -13,27 +13,22 @@ import type {
   SerializedElementNode,
 } from 'lexical';
 
-import {$applyNodeReplacement, ElementNode} from 'lexical';
-import invariant from 'shared/invariant';
+import {$applyNodeReplacement, defineExtension, ElementNode} from 'lexical';
 
 export type SerializedOverflowNode = SerializedElementNode;
 
 /** @noInheritDoc */
 export class OverflowNode extends ElementNode {
-  static getType(): string {
-    return 'overflow';
-  }
-
-  static clone(node: OverflowNode): OverflowNode {
-    return new OverflowNode(node.__key);
-  }
-
-  static importJSON(serializedNode: SerializedOverflowNode): OverflowNode {
-    return $createOverflowNode().updateFromJSON(serializedNode);
-  }
-
-  static importDOM(): null {
-    return null;
+  /** @internal */
+  $config() {
+    return this.config('overflow', {
+      $transform(node: OverflowNode) {
+        if (node.isEmpty()) {
+          node.remove();
+        }
+      },
+      extends: ElementNode,
+    });
   }
 
   createDOM(config: EditorConfig): HTMLElement {
@@ -60,15 +55,6 @@ export class OverflowNode extends ElementNode {
   excludeFromCopy(): boolean {
     return true;
   }
-
-  static transform(): (node: LexicalNode) => void {
-    return (node: LexicalNode) => {
-      invariant($isOverflowNode(node), 'node is not a OverflowNode');
-      if (node.isEmpty()) {
-        node.remove();
-      }
-    };
-  }
 }
 
 export function $createOverflowNode(): OverflowNode {
@@ -80,3 +66,11 @@ export function $isOverflowNode(
 ): node is OverflowNode {
   return node instanceof OverflowNode;
 }
+
+/**
+ * Configures {@link OverflowNode}
+ */
+export const OverflowExtension = defineExtension({
+  name: '@lexical/overflow',
+  nodes: () => [OverflowNode],
+});

@@ -55,8 +55,10 @@ export function importTextTransformers(
   if (foundTextFormat && foundTextMatch) {
     // Find the outermost transformer
     if (
-      foundTextFormat.startIndex <= foundTextMatch.startIndex &&
-      foundTextFormat.endIndex >= foundTextMatch.endIndex
+      (foundTextFormat.startIndex <= foundTextMatch.startIndex &&
+        foundTextFormat.endIndex >= foundTextMatch.endIndex) ||
+      // foundTextMatch is not contained within foundTextFormat
+      foundTextMatch.startIndex > foundTextFormat.endIndex
     ) {
       // foundTextFormat wraps foundTextMatch - apply foundTextFormat by setting foundTextMatch to null
       foundTextMatch = null;

@@ -15,9 +15,12 @@ export const DEFAULT_SETTINGS = {
   disableBeforeInput: false,
   emptyEditor: isDevPlayground,
   hasLinkAttributes: false,
+  hasNestedTables: false,
   isAutocomplete: false,
   isCharLimit: false,
   isCharLimitUtf8: false,
+  isCodeHighlighted: true,
+  isCodeShiki: false,
   isCollab: false,
   isMaxLength: false,
   isRichText: true,
@@ -33,6 +36,7 @@ export const DEFAULT_SETTINGS = {
   tableCellBackgroundColor: true,
   tableCellMerge: true,
   tableHorizontalScroll: true,
+  useCollabV2: false,
 } as const;
 
 // These are mutated in setupEnv

@@ -13,7 +13,7 @@ We've changed the name to match the terms used in the implementation.
 
 :::tip
 
-If your use case only requires adding ad-hoc data to existing nodes, you may be able to use the [NodeState](/docs/concepts/node-state) API instead of subclassing and node replacement.
+If your use case only requires adding ad-hoc data to existing nodes, you may be able to use the [NodeState](node-state.md) API instead of subclassing and node replacement.
 
 :::
 

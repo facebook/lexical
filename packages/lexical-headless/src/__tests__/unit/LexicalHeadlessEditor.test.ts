@@ -18,6 +18,7 @@
 
 import type {EditorState, LexicalEditor, RangeSelection} from 'lexical';
 
+import {withDOM} from '@lexical/headless/dom';
 import {$generateHtmlFromNodes} from '@lexical/html';
 import {JSDOM} from 'jsdom';
 import {
@@ -29,8 +30,10 @@ import {
   CONTROLLED_TEXT_INSERTION_COMMAND,
   ParagraphNode,
 } from 'lexical';
+import {beforeEach, describe, expect, it, vi} from 'vitest';
 
 import {createHeadlessEditor} from '../..';
+import {isEmptyNavigator} from '../utils';
 
 describe('LexicalHeadlessEditor', () => {
   let editor: LexicalEditor;
@@ -62,7 +65,7 @@ describe('LexicalHeadlessEditor', () => {
   it('should be headless environment', async () => {
     expect(typeof window === 'undefined').toBe(true);
     expect(typeof document === 'undefined').toBe(true);
-    expect(typeof navigator === 'undefined').toBe(true);
+    expect(typeof navigator === 'undefined' || isEmptyNavigator()).toBe(true);
   });
 
   it('can update editor', async () => {
@@ -123,10 +126,10 @@ describe('LexicalHeadlessEditor', () => {
   });
 
   it('can register listeners', async () => {
-    const onUpdate = jest.fn();
-    const onCommand = jest.fn();
-    const onTransform = jest.fn();
-    const onTextContent = jest.fn();
+    const onUpdate = vi.fn();
+    const onCommand = vi.fn();
+    const onTransform = vi.fn();
+    const onTextContent = vi.fn();
 
     editor.registerUpdateListener(onUpdate);
     editor.registerCommand(
@@ -147,12 +150,12 @@ describe('LexicalHeadlessEditor', () => {
       editor.dispatchCommand(CONTROLLED_TEXT_INSERTION_COMMAND, 'foo');
     });
 
-    expect(onUpdate).toBeCalled();
-    expect(onCommand).toBeCalledWith('foo', expect.anything());
-    expect(onTransform).toBeCalledWith(
+    expect(onUpdate).toHaveBeenCalled();
+    expect(onCommand).toHaveBeenCalledWith('foo', expect.anything());
+    expect(onTransform).toHaveBeenCalledWith(
       expect.objectContaining({__type: 'paragraph'}),
     );
-    expect(onTextContent).toBeCalledWith('Helloworld');
+    expect(onTextContent).toHaveBeenCalledWith('Helloworld');
   });
 
   it('can preserve selection for pending editor state (within update loop)', async () => {
@@ -208,5 +211,32 @@ describe('LexicalHeadlessEditor', () => {
     expect(html).toBe(
       '<p dir="ltr"><span style="white-space: pre-wrap;">hello world</span></p>',
     );
+  });
+
+  describe('withDOM', () => {
+    it('uses happy-dom from node', () => {
+      expect(typeof window).toBe('undefined');
+      withDOM(() => {
+        expect(typeof window).toBe('object');
+        expect('happyDOM' in window && typeof window.happyDOM).toBe('object');
+      });
+    });
+    it('can generate html withDOM', () => {
+      editor.setEditorState(
+        // "hello world"
+        editor.parseEditorState(
+          `{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"hello world","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"paragraph","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`,
+        ),
+      );
+      const html = withDOM(() =>
+        editor
+          .getEditorState()
+          .read(() => $generateHtmlFromNodes(editor, null)),
+      );
+
+      expect(html).toBe(
+        '<p dir="ltr"><span style="white-space: pre-wrap;">hello world</span></p>',
+      );
+    });
   });
 });

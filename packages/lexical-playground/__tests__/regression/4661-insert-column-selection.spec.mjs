@@ -48,8 +48,8 @@ test.describe('Regression test #4661', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-        <table class="PlaygroundEditorTheme__table">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <table class="PlaygroundEditorTheme__table" dir="auto">
           <colgroup>
             <col style="width: 92px" />
             <col style="width: 92px" />
@@ -90,7 +90,7 @@ test.describe('Regression test #4661', () => {
             </td>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
       `,
     );
   });
@@ -120,8 +120,8 @@ test.describe('Regression test #4661', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-        <table class="PlaygroundEditorTheme__table">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <table class="PlaygroundEditorTheme__table" dir="auto">
           <colgroup>
             <col style="width: 92px" />
             <col style="width: 92px" />
@@ -162,7 +162,7 @@ test.describe('Regression test #4661', () => {
             </td>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
       `,
     );
   });

@@ -6,7 +6,7 @@ Sometimes, when working with Lexical, it might be necessary or useful for you to
 
 ## 1. Event Delegation
 
-One way to handle events inside the editor is to set a listener on the editor root element (the contentEditable Lexical attaches to). You can do this using a [Root Listener](https://lexical.dev/docs/concepts/listeners).
+One way to handle events inside the editor is to set a listener on the editor root element (the contentEditable Lexical attaches to). You can do this using a [Root Listener](listeners.md).
 
 ```js
 function myListener(event) {
@@ -30,7 +30,7 @@ This can be a simple, efficient way to handle some use cases, since it's not nec
 
 ## 2. Directly Attach Handlers
 
-In some cases, it may be better to attach an event handler directly to the underlying DOM node of each specific node. With this approach, you generally don't need to filter the event target in the handler, which can make it a bit simpler. It will also guarantee that your handler isn't running for events that you don't care about. This approach is implemented via a [Mutation Listener](https://lexical.dev/docs/concepts/listeners).
+In some cases, it may be better to attach an event handler directly to the underlying DOM node of each specific node. With this approach, you generally don't need to filter the event target in the handler, which can make it a bit simpler. It will also guarantee that your handler isn't running for events that you don't care about. This approach is implemented via a [Mutation Listener](listeners.md).
 
 ```js
 const registeredElements: WeakSet<HTMLElement> = new WeakSet();

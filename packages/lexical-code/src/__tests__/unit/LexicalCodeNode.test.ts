@@ -6,6 +6,8 @@
  *
  */
 
+import type {LexicalEditor} from 'lexical';
+
 import {
   $createCodeHighlightNode,
   $createCodeNode,
@@ -37,12 +39,14 @@ import {
   MOVE_TO_START,
 } from 'lexical';
 import {
+  expectHtmlToBeEqual,
   initializeUnitTest,
   invariant,
   KeyboardEventMock,
   shiftTabKeyboardEvent,
   tabKeyboardEvent,
 } from 'lexical/src/__tests__/utils';
+import {describe, expect, test} from 'vitest';
 
 const editorConfig = Object.freeze({
   namespace: '',
@@ -119,6 +123,7 @@ describe('LexicalCodeNode tests', () => {
           format: '',
           indent: 0,
           language: 'javascript',
+          theme: undefined,
           type: 'code',
           version: 1,
         });
@@ -146,7 +151,7 @@ describe('LexicalCodeNode tests', () => {
         });
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span>foo</span></p></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span>foo</span></p></div>',
       );
 
       await editor.update(() => {
@@ -185,7 +190,7 @@ describe('LexicalCodeNode tests', () => {
       });
       await editor.dispatchCommand(KEY_TAB_COMMAND, tabKeyboardEvent());
       expect(testEnv.innerHTML).toBe(
-        '<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1"><span data-lexical-text="true">function</span><span data-lexical-text="true">\t</span></code>',
+        '<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="auto" data-gutter="1"><span data-lexical-text="true">function</span><span data-lexical-text="true">\t</span></code>',
       );
 
       // CodeNode should only render diffs, make sure that the TabNode is not cloned when
@@ -203,7 +208,7 @@ describe('LexicalCodeNode tests', () => {
         }),
       );
       expect(testEnv.innerHTML).toBe(
-        '<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1"><span data-lexical-text="true">function</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">foo</span></code>',
+        '<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="auto" data-gutter="1"><span data-lexical-text="true">function</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">foo</span></code>',
       );
     });
 
@@ -227,7 +232,7 @@ describe('LexicalCodeNode tests', () => {
       });
       await editor.dispatchCommand(KEY_TAB_COMMAND, tabKeyboardEvent());
       expect(testEnv.innerHTML).toBe(
-        '<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1"><span data-lexical-text="true">f</span><span data-lexical-text="true">\t</span></code>',
+        '<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="auto" data-gutter="1"><span data-lexical-text="true">f</span><span data-lexical-text="true">\t</span></code>',
       );
     });
 
@@ -255,19 +260,19 @@ describe('LexicalCodeNode tests', () => {
 
       await editor.dispatchCommand(KEY_TAB_COMMAND, tabKeyboardEvent());
       expect(testEnv.innerHTML).toBe(
-        `<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1">${HTMLTabNode}${HTMLTextNode}</code>`,
+        `<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="auto" data-gutter="1">${HTMLTabNode}${HTMLTextNode}</code>`,
       );
 
       // test 2nd Tab Keypress (cf github issue #7541)
       await editor.dispatchCommand(KEY_TAB_COMMAND, tabKeyboardEvent());
       expect(testEnv.innerHTML).toBe(
-        `<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1">${HTMLTabNode}${HTMLTabNode}${HTMLTextNode}</code>`,
+        `<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="auto" data-gutter="1">${HTMLTabNode}${HTMLTabNode}${HTMLTextNode}</code>`,
       );
 
       await editor.dispatchCommand(KEY_TAB_COMMAND, shiftTabKeyboardEvent());
       await editor.dispatchCommand(KEY_TAB_COMMAND, shiftTabKeyboardEvent());
       expect(testEnv.innerHTML).toBe(
-        `<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1">${HTMLTextNode}</code>`,
+        `<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="auto" data-gutter="1">${HTMLTextNode}</code>`,
       );
     });
 
@@ -295,19 +300,19 @@ describe('LexicalCodeNode tests', () => {
 
       await editor.dispatchCommand(KEY_TAB_COMMAND, tabKeyboardEvent());
       expect(testEnv.innerHTML).toBe(
-        `<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1">${HTMLTabNode}${HTMLTextNode}</code>`,
+        `<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="auto" data-gutter="1">${HTMLTabNode}${HTMLTextNode}</code>`,
       );
 
       // test 2nd Tab Keypress (cf github issue #7541)
       await editor.dispatchCommand(KEY_TAB_COMMAND, tabKeyboardEvent());
       expect(testEnv.innerHTML).toBe(
-        `<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1">${HTMLTabNode}${HTMLTabNode}${HTMLTextNode}</code>`,
+        `<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="auto" data-gutter="1">${HTMLTabNode}${HTMLTabNode}${HTMLTextNode}</code>`,
       );
 
       await editor.dispatchCommand(KEY_TAB_COMMAND, shiftTabKeyboardEvent());
       await editor.dispatchCommand(KEY_TAB_COMMAND, shiftTabKeyboardEvent());
       expect(testEnv.innerHTML).toBe(
-        `<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1">${HTMLTextNode}</code>`,
+        `<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="auto" data-gutter="1">${HTMLTextNode}</code>`,
       );
     });
 
@@ -331,7 +336,7 @@ describe('LexicalCodeNode tests', () => {
       });
       await editor.dispatchCommand(KEY_TAB_COMMAND, tabKeyboardEvent());
       expect(testEnv.innerHTML).toBe(
-        '<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1"><span data-lexical-text="true">\t</span><span data-lexical-text="true">function</span></code>',
+        '<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="auto" data-gutter="1"><span data-lexical-text="true">\t</span><span data-lexical-text="true">function</span></code>',
       );
 
       await editor.update(() => {
@@ -345,7 +350,7 @@ describe('LexicalCodeNode tests', () => {
       });
       await editor.dispatchCommand(KEY_TAB_COMMAND, shiftTabKeyboardEvent());
       expect(testEnv.innerHTML).toBe(
-        '<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1"><span data-lexical-text="true">function</span></code>',
+        '<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="auto" data-gutter="1"><span data-lexical-text="true">function</span></code>',
       );
     });
 
@@ -372,13 +377,13 @@ describe('LexicalCodeNode tests', () => {
       });
       await editor.dispatchCommand(KEY_TAB_COMMAND, tabKeyboardEvent());
       expect(testEnv.innerHTML).toBe(
-        `<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1
+        `<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="auto" data-gutter="1
 2"><span data-lexical-text="true">\t</span><span data-lexical-text="true">hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span><br><span data-lexical-text="true">\t</span><span data-lexical-text="true">hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span></code>`,
       );
 
       await editor.dispatchCommand(KEY_TAB_COMMAND, shiftTabKeyboardEvent());
       expect(testEnv.innerHTML).toBe(
-        `<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1
+        `<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="auto" data-gutter="1
 2"><span data-lexical-text="true">hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span><br><span data-lexical-text="true">hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span></code>`,
       );
     });
@@ -397,7 +402,7 @@ describe('LexicalCodeNode tests', () => {
       });
       await editor.dispatchCommand(KEY_TAB_COMMAND, tabKeyboardEvent());
       expect(testEnv.innerHTML)
-        .toBe(`<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1
+        .toBe(`<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="auto" data-gutter="1
 2"><span data-lexical-text="true">hello</span><br><span data-lexical-text="true">\t</span></code>`);
     });
 
@@ -423,7 +428,7 @@ describe('LexicalCodeNode tests', () => {
       });
       await editor.dispatchCommand(INDENT_CONTENT_COMMAND, undefined);
       expect(testEnv.innerHTML)
-        .toBe(`<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1
+        .toBe(`<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="auto" data-gutter="1
 2"><br><span data-lexical-text="true">\t</span><span data-lexical-text="true">hello</span></code>`);
     });
 
@@ -447,7 +452,7 @@ describe('LexicalCodeNode tests', () => {
       });
       await editor.dispatchCommand(KEY_TAB_COMMAND, shiftTabKeyboardEvent());
       expect(testEnv.innerHTML).toBe(
-        '<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1"><span data-lexical-text="true">hello</span></code>',
+        '<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="auto" data-gutter="1"><span data-lexical-text="true">hello</span></code>',
       );
     });
 
@@ -467,7 +472,7 @@ describe('LexicalCodeNode tests', () => {
       keyEvent.altKey = true;
       await editor.dispatchCommand(KEY_ARROW_UP_COMMAND, keyEvent);
       expect(testEnv.innerHTML)
-        .toBe(`<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1
+        .toBe(`<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="auto" data-gutter="1
 2"><span data-lexical-text="true">ghi</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">jkl</span><br><span data-lexical-text="true">abc</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">def</span></code>`);
     });
 
@@ -500,12 +505,82 @@ describe('LexicalCodeNode tests', () => {
       keyEvent.altKey = true;
       await editor.dispatchCommand(KEY_ARROW_DOWN_COMMAND, keyEvent);
       expect(testEnv.innerHTML)
-        .toBe(`<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1
+        .toBe(`<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="auto" data-gutter="1
 2
 3"><span data-lexical-text="true">mno</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">pqr</span><br><span data-lexical-text="true">abc</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">def</span><br><span data-lexical-text="true">ghi</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">jkl</span></code>`);
     });
 
     describe('arrows', () => {
+      describe('rtl code lines', () => {
+        const RTL_TEXT = 'تجربة';
+
+        async function setupRTLCode(editor: LexicalEditor) {
+          registerRichText(editor);
+          registerTabIndentation(editor);
+          registerCodeHighlighting(editor);
+          await editor.update(() => {
+            const root = $getRoot();
+            const code = $createCodeNode('plaintext');
+            root.append(code);
+            code.selectStart();
+            $getSelection()!.insertRawText(RTL_TEXT);
+          });
+          await editor.update(() => {
+            const highlightNode = $dfs().find(({node}) =>
+              $isCodeHighlightNode(node),
+            )!.node;
+            invariant($isTextNode(highlightNode));
+            highlightNode.select(1, 1);
+          });
+        }
+
+        test('MOVE_TO_END moves caret to visual right', async () => {
+          const {editor} = testEnv;
+          await setupRTLCode(editor);
+
+          await editor.dispatchCommand(
+            MOVE_TO_END,
+            new KeyboardEventMock('keydown'),
+          );
+
+          await editor.update(() => {
+            const selection = $getSelection();
+            invariant(
+              $isRangeSelection(selection),
+              'Expected selection to be RangeSelection',
+            );
+            expect(selection.isCollapsed()).toBe(true);
+            const anchorNode = selection.anchor.getNode();
+            invariant($isTextNode(anchorNode));
+            expect(selection.anchor.offset).toBe(0);
+          });
+        });
+
+        test('MOVE_TO_START moves caret to visual left', async () => {
+          const {editor} = testEnv;
+          await setupRTLCode(editor);
+
+          await editor.dispatchCommand(
+            MOVE_TO_START,
+            new KeyboardEventMock('keydown'),
+          );
+
+          await editor.update(() => {
+            const selection = $getSelection();
+            invariant(
+              $isRangeSelection(selection),
+              'Expected selection to be RangeSelection',
+            );
+            expect(selection.isCollapsed()).toBe(true);
+            const anchorNode = selection.anchor.getNode();
+            invariant($isTextNode(anchorNode));
+            expect(selection.anchor.offset).toBe(
+              anchorNode.getTextContentSize(),
+            );
+          });
+        });
+      });
+
       for (const moveTo of ['start', 'end']) {
         for (const tabOrSpaces of ['tab', 'spaces']) {
           // eslint-disable-next-line no-inner-declarations
@@ -944,15 +1019,16 @@ describe('LexicalCodeNode tests', () => {
         );
         // before transform
         expect(testEnv.innerHTML).toBe(
-          '<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr"><span data-lexical-text="true">const lexical = "awesome"</span></code>',
+          '<code spellcheck="false" data-language="javascript" dir="auto"><span data-lexical-text="true">const lexical = "awesome"</span></code>',
         );
         registerRichText(editor);
         registerTabIndentation(editor);
         registerCodeHighlighting(editor);
         await Promise.resolve(undefined);
         // after transforms
-        expect(testEnv.innerHTML).toBe(
-          '<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="ltr" data-gutter="1"><span data-lexical-text="true">const</span><span data-lexical-text="true"> lexical </span><span data-lexical-text="true">=</span><span data-lexical-text="true"> </span><span data-lexical-text="true">"awesome"</span></code>',
+        expectHtmlToBeEqual(
+          testEnv.innerHTML,
+          '<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="auto" data-gutter="1"><span data-lexical-text="true">const</span><span data-lexical-text="true"> lexical </span><span data-lexical-text="true">=</span><span data-lexical-text="true"> </span><span data-lexical-text="true">"awesome"</span></code>',
         );
       });
     });

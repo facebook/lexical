@@ -10,7 +10,9 @@ import {
   $caretFromPoint,
   $cloneWithProperties,
   $createParagraphNode,
+  $findMatchingParent,
   $getAdjacentChildCaret,
+  $getAdjacentSiblingOrParentSiblingCaret,
   $getCaretInDirection,
   $getChildCaret,
   $getChildCaretOrSelf,
@@ -41,7 +43,6 @@ import {
   type NodeCaret,
   type NodeKey,
   PointCaret,
-  RootMode,
   type SiblingCaret,
   SplitAtPointCaretNextOptions,
   StateConfig,
@@ -69,6 +70,8 @@ export {default as mergeRegister} from './mergeRegister';
 export {default as positionNodeOnRange} from './positionNodeOnRange';
 export {default as selectionAlwaysOnDisplay} from './selectionAlwaysOnDisplay';
 export {
+  $findMatchingParent,
+  $getAdjacentSiblingOrParentSiblingCaret,
   $splitNode,
   isBlockDomNode,
   isHTMLAnchorElement,
@@ -195,8 +198,10 @@ export interface DFSNode {
  * before backtracking and finding a new path. Consider solving a maze by hugging either wall, moving down a
  * branch until you hit a dead-end (leaf) and backtracking to find the nearest branching path and repeat.
  * It will then return all the nodes found in the search in an array of objects.
- * @param startNode - The node to start the search, if omitted, it will start at the root node.
- * @param endNode - The node to end the search, if omitted, it will find all descendants of the startingNode.
+ * Preorder traversal is used, meaning that nodes are listed in the order of when they are FIRST encountered.
+ * @param startNode - The node to start the search (inclusive), if omitted, it will start at the root node.
+ * @param endNode - The node to end the search (inclusive), if omitted, it will find all descendants of the startingNode. If endNode
+ * is an ElementNode, it will stop before visiting any of its children.
  * @returns An array of objects of all the nodes found by the search, including their depth into the tree.
  * \\{depth: number, node: LexicalNode\\} It will always return at least 1 node (the start node).
  */
@@ -234,8 +239,10 @@ export function $reverseDfs(
 
 /**
  * $dfs iterator (left to right). Tree traversal is done on the fly as new values are requested with O(1) memory.
- * @param startNode - The node to start the search, if omitted, it will start at the root node.
- * @param endNode - The node to end the search, if omitted, it will find all descendants of the startingNode.
+ * Preorder traversal is used, meaning that nodes are iterated over in the order of when they are FIRST encountered.
+ * @param startNode - The node to start the search (inclusive), if omitted, it will start at the root node.
+ * @param endNode - The node to end the search (inclusive), if omitted, it will find all descendants of the startingNode.
+ * If endNode is an ElementNode, the iterator will end as soon as it reaches the endNode (no children will be visited).
  * @returns An iterator, each yielded value is a DFSNode. It will always return at least 1 node (the start node).
  */
 export function $dfsIterator(
@@ -269,7 +276,7 @@ function $dfsCaretIterator<D extends CaretDirection>(
   const endCaret = endNode
     ? $getAdjacentChildCaret(
         $getChildCaretOrSelf($getSiblingCaret(endNode, direction)),
-      )
+      ) || $getEndCaret(endNode, direction)
     : $getEndCaret(start, direction);
   let depth = startDepth;
   return makeStepwiseIterator({
@@ -405,40 +412,6 @@ export type DOMNodeToLexicalConversionMap = Record<
   string,
   DOMNodeToLexicalConversion
 >;
-
-/**
- * Starts with a node and moves up the tree (toward the root node) to find a matching node based on
- * the search parameters of the findFn. (Consider JavaScripts' .find() function where a testing function must be
- * passed as an argument. eg. if( (node) => node.__type === 'div') ) return true; otherwise return false
- * @param startingNode - The node where the search starts.
- * @param findFn - A testing function that returns true if the current node satisfies the testing parameters.
- * @returns A parent node that matches the findFn parameters, or null if one wasn't found.
- */
-export const $findMatchingParent: {
-  <T extends LexicalNode>(
-    startingNode: LexicalNode,
-    findFn: (node: LexicalNode) => node is T,
-  ): T | null;
-  (
-    startingNode: LexicalNode,
-    findFn: (node: LexicalNode) => boolean,
-  ): LexicalNode | null;
-} = (
-  startingNode: LexicalNode,
-  findFn: (node: LexicalNode) => boolean,
-): LexicalNode | null => {
-  let curr: ElementNode | LexicalNode | null = startingNode;
-
-  while (curr !== $getRoot() && curr != null) {
-    if (findFn(curr)) {
-      return curr;
-    }
-
-    curr = curr.getParent();
-  }
-
-  return null;
-};
 
 /**
  * Attempts to resolve nested element nodes of the same type into a single node of that type.
@@ -710,10 +683,14 @@ function needsManualZoom(): boolean {
  * css zoom property. For browsers that implement standardized CSS
  * zoom (Firefox, Chrome >= 128), this will always return 1.
  * @param element
+ * @param useManualZoom - If true, always use zoom level will be calculated manually, otherwise it will be calculated on as needed basis.
  */
-export function calculateZoomLevel(element: Element | null): number {
+export function calculateZoomLevel(
+  element: Element | null,
+  useManualZoom: boolean = false,
+): number {
   let zoom = 1;
-  if (needsManualZoom()) {
+  if (needsManualZoom() || useManualZoom) {
     while (element) {
       zoom *= Number(window.getComputedStyle(element).getPropertyValue('zoom'));
       element = element.parentElement;
@@ -870,35 +847,6 @@ export function $unwrapNode(node: ElementNode): void {
     1,
     node.getChildren(),
   );
-}
-
-/**
- * Returns the Node sibling when this exists, otherwise the closest parent sibling. For example
- * R -> P -> T1, T2
- *   -> P2
- * returns T2 for node T1, P2 for node T2, and null for node P2.
- * @param node LexicalNode.
- * @returns An array (tuple) containing the found Lexical node and the depth difference, or null, if this node doesn't exist.
- */
-export function $getAdjacentSiblingOrParentSiblingCaret<
-  D extends CaretDirection,
->(
-  startCaret: NodeCaret<D>,
-  rootMode: RootMode = 'root',
-): null | [NodeCaret<D>, number] {
-  let depthDiff = 0;
-  let caret = startCaret;
-  let nextCaret = $getAdjacentChildCaret(caret);
-  while (nextCaret === null) {
-    depthDiff--;
-    nextCaret = caret.getParentCaret(rootMode);
-    if (!nextCaret) {
-      return null;
-    }
-    caret = nextCaret;
-    nextCaret = $getAdjacentChildCaret(caret);
-  }
-  return nextCaret && [nextCaret, depthDiff];
 }
 
 /**

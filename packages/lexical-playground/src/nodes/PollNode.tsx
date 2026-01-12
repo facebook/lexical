@@ -8,16 +8,19 @@
 
 import type {JSX} from 'react';
 
-import {makeStateWrapper} from '@lexical/utils';
 import {
+  $getState,
+  $setState,
+  buildImportMap,
   createState,
   DecoratorNode,
-  DOMConversionMap,
   DOMConversionOutput,
   DOMExportOutput,
   LexicalNode,
   SerializedLexicalNode,
   Spread,
+  StateConfigValue,
+  type StateValueOrUpdater,
 } from 'lexical';
 import * as React from 'react';
 
@@ -26,7 +29,7 @@ export type Options = ReadonlyArray<Option>;
 export type Option = Readonly<{
   text: string;
   uid: string;
-  votes: Array<number>;
+  votes: Array<string>;
 }>;
 
 const PollComponent = React.lazy(() => import('./PollComponent'));
@@ -49,7 +52,7 @@ export function createPollOption(text = ''): Option {
 function cloneOption(
   option: Option,
   text: string,
-  votes?: Array<number>,
+  votes?: Array<string>,
 ): Option {
   return {
     text,
@@ -66,7 +69,9 @@ export type SerializedPollNode = Spread<
   SerializedLexicalNode
 >;
 
-function $convertPollElement(domNode: HTMLElement): DOMConversionOutput | null {
+function $convertPollElement(
+  domNode: HTMLSpanElement,
+): DOMConversionOutput | null {
   const question = domNode.getAttribute('data-lexical-poll-question');
   const options = domNode.getAttribute('data-lexical-poll-options');
   if (question !== null && options !== null) {
@@ -85,7 +90,7 @@ function parseOptions(json: unknown): Options {
         typeof row.text === 'string' &&
         typeof row.uid === 'string' &&
         Array.isArray(row.votes) &&
-        row.votes.every((v: unknown) => typeof v === 'number')
+        row.votes.every((v: unknown) => typeof v === 'string')
       ) {
         options.push(row);
       }
@@ -94,39 +99,47 @@ function parseOptions(json: unknown): Options {
   return options;
 }
 
-const questionState = makeStateWrapper(
-  createState('question', {
-    parse: (v) => (typeof v === 'string' ? v : ''),
-  }),
-);
-const optionsState = makeStateWrapper(
-  createState('options', {
-    isEqual: (a, b) =>
-      a.length === b.length && JSON.stringify(a) === JSON.stringify(b),
-    parse: parseOptions,
-  }),
-);
+const questionState = createState('question', {
+  parse: (v) => (typeof v === 'string' ? v : ''),
+});
+const optionsState = createState('options', {
+  isEqual: (a, b) =>
+    a.length === b.length && JSON.stringify(a) === JSON.stringify(b),
+  parse: parseOptions,
+});
 
 export class PollNode extends DecoratorNode<JSX.Element> {
-  static getType(): string {
-    return 'poll';
+  $config() {
+    return this.config('poll', {
+      extends: DecoratorNode,
+      importDOM: buildImportMap({
+        span: (domNode) =>
+          domNode.getAttribute('data-lexical-poll-question') !== null
+            ? {
+                conversion: $convertPollElement,
+                priority: 2,
+              }
+            : null,
+      }),
+      stateConfigs: [
+        {flat: true, stateConfig: questionState},
+        {flat: true, stateConfig: optionsState},
+      ],
+    });
   }
 
-  static clone(node: PollNode): PollNode {
-    return new PollNode(node.__key);
+  getQuestion(): StateConfigValue<typeof questionState> {
+    return $getState(this, questionState);
   }
-
-  static importJSON(serializedNode: SerializedPollNode): PollNode {
-    return $createPollNode(
-      serializedNode.question,
-      serializedNode.options,
-    ).updateFromJSON(serializedNode);
+  setQuestion(valueOrUpdater: StateValueOrUpdater<typeof questionState>): this {
+    return $setState(this, questionState, valueOrUpdater);
   }
-
-  getQuestion = questionState.makeGetterMethod<this>();
-  setQuestion = questionState.makeSetterMethod<this>();
-  getOptions = optionsState.makeGetterMethod<this>();
-  setOptions = optionsState.makeSetterMethod<this>();
+  getOptions(): StateConfigValue<typeof optionsState> {
+    return $getState(this, optionsState);
+  }
+  setOptions(valueOrUpdater: StateValueOrUpdater<typeof optionsState>): this {
+    return $setState(this, optionsState, valueOrUpdater);
+  }
 
   addOption(option: Option): this {
     return this.setOptions((options) => [...options, option]);
@@ -154,7 +167,7 @@ export class PollNode extends DecoratorNode<JSX.Element> {
     });
   }
 
-  toggleVote(option: Option, clientID: number): this {
+  toggleVote(option: Option, username: string): this {
     return this.setOptions((prevOptions) => {
       const index = prevOptions.indexOf(option);
       if (index === -1) {
@@ -162,9 +175,9 @@ export class PollNode extends DecoratorNode<JSX.Element> {
       }
       const votes = option.votes;
       const votesClone = Array.from(votes);
-      const voteIndex = votes.indexOf(clientID);
+      const voteIndex = votes.indexOf(username);
       if (voteIndex === -1) {
-        votesClone.push(clientID);
+        votesClone.push(username);
       } else {
         votesClone.splice(voteIndex, 1);
       }
@@ -173,20 +186,6 @@ export class PollNode extends DecoratorNode<JSX.Element> {
       options[index] = clonedOption;
       return options;
     });
-  }
-
-  static importDOM(): DOMConversionMap | null {
-    return {
-      span: (domNode: HTMLElement) => {
-        if (!domNode.hasAttribute('data-lexical-poll-question')) {
-          return null;
-        }
-        return {
-          conversion: $convertPollElement,
-          priority: 2,
-        };
-      },
-    };
   }
 
   exportDOM(): DOMExportOutput {

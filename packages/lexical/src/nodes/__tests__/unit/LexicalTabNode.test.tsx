@@ -18,16 +18,22 @@ import {
   $createRangeSelection,
   $createTabNode,
   $createTextNode,
+  $getCaretRange,
+  $getCaretRangeInDirection,
   $getRoot,
   $getSelection,
+  $getTextPointCaret,
   $insertNodes,
   $isElementNode,
   $isRangeSelection,
   $isTabNode,
   $isTextNode,
+  $selectAll,
   $setSelection,
+  $setSelectionFromCaretRange,
   KEY_TAB_COMMAND,
 } from 'lexical';
+import {beforeEach, describe, expect, test} from 'vitest';
 
 import {
   DataTransferMock,
@@ -57,7 +63,7 @@ describe('LexicalTabNode tests', () => {
         $insertDataTransferForPlainText(dataTransfer, selection);
       });
       expect(testEnv.innerHTML).toBe(
-        '<p dir="ltr"><span data-lexical-text="true">hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span><br><span data-lexical-text="true">hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span></p>',
+        '<p dir="auto"><span data-lexical-text="true">hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span><br><span data-lexical-text="true">hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span></p>',
       );
     });
 
@@ -71,7 +77,7 @@ describe('LexicalTabNode tests', () => {
         $insertDataTransferForRichText(dataTransfer, selection, editor);
       });
       expect(testEnv.innerHTML).toBe(
-        '<p dir="ltr"><span data-lexical-text="true">hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span></p><p dir="ltr"><span data-lexical-text="true">hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span></p>',
+        '<p dir="auto"><span data-lexical-text="true">hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span></p><p dir="auto"><span data-lexical-text="true">hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span></p>',
       );
     });
 
@@ -91,7 +97,7 @@ describe('LexicalTabNode tests', () => {
     //         $insertDataTransferForRichText(dataTransfer, selection, editor);
     //       });
     //       expect(testEnv.innerHTML).toBe(
-    //         '<p dir="ltr"><span data-lexical-text="true">hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span><br><span data-lexical-text="true">hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span></p>',
+    //         '<p dir="auto"><span data-lexical-text="true">hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span><br><span data-lexical-text="true">hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span></p>',
     //       );
     // });
 
@@ -109,7 +115,7 @@ describe('LexicalTabNode tests', () => {
         $insertDataTransferForRichText(dataTransfer, selection, editor);
       });
       expect(testEnv.innerHTML).toBe(
-        '<p dir="ltr"><span data-lexical-text="true">Hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span></p><p dir="ltr"><span data-lexical-text="true">Hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span></p>',
+        '<p dir="auto"><span data-lexical-text="true">Hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span></p><p dir="auto"><span data-lexical-text="true">Hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span></p>',
       );
     });
 
@@ -127,7 +133,7 @@ describe('LexicalTabNode tests', () => {
         new KeyboardEvent('keydown'),
       );
       expect(testEnv.innerHTML).toBe(
-        '<p dir="ltr" style="padding-inline-start: calc(1 * 40px);"><span data-lexical-text="true">foo</span></p>',
+        '<p dir="auto" style="padding-inline-start: calc(1 * 40px);"><span data-lexical-text="true">foo</span></p>',
       );
     });
 
@@ -160,7 +166,9 @@ describe('LexicalTabNode tests', () => {
         new KeyboardEvent('keydown'),
       );
       expect(testEnv.innerHTML).toBe(
-        '<p dir="ltr" style="padding-inline-start: calc(1 * 40px);"><span data-lexical-text="true">foo</span></p><h1 dir="ltr" style="padding-inline-start: calc(1 * 40px);"><span data-lexical-text="true">bar</span></h1><ol><li value="1"><ol><li value="1" dir="ltr"><span data-lexical-text="true">xyz</span></li></ol></li></ol>',
+        '<p dir="auto" style="padding-inline-start: calc(1 * 40px);"><span data-lexical-text="true">foo</span></p>' +
+          '<h1 dir="auto" style="padding-inline-start: calc(1 * 40px);"><span data-lexical-text="true">bar</span></h1>' +
+          '<ol dir="auto"><li value="1"><ol><li value="1"><span data-lexical-text="true">xyz</span></li></ol></li></ol>',
       );
     });
 
@@ -176,7 +184,7 @@ describe('LexicalTabNode tests', () => {
         new KeyboardEvent('keydown'),
       );
       expect(testEnv.innerHTML).toBe(
-        '<p dir="ltr"><span data-lexical-text="true">foo</span><span data-lexical-text="true">\t</span></p>',
+        '<p dir="auto"><span data-lexical-text="true">foo</span><span data-lexical-text="true">\t</span></p>',
       );
     });
 
@@ -195,7 +203,7 @@ describe('LexicalTabNode tests', () => {
         new KeyboardEvent('keydown'),
       );
       expect(testEnv.innerHTML).toBe(
-        '<p dir="ltr"><span data-lexical-text="true">f</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">oo</span></p>',
+        '<p dir="auto"><span data-lexical-text="true">f</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">oo</span></p>',
       );
     });
 
@@ -214,7 +222,7 @@ describe('LexicalTabNode tests', () => {
         new KeyboardEvent('keydown'),
       );
       expect(testEnv.innerHTML).toBe(
-        '<p dir="ltr"><span data-lexical-text="true">f</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">o</span></p>',
+        '<p dir="auto"><span data-lexical-text="true">f</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">o</span></p>',
       );
     });
 
@@ -237,7 +245,7 @@ describe('LexicalTabNode tests', () => {
         new KeyboardEvent('keydown'),
       );
       expect(testEnv.innerHTML).toBe(
-        '<p dir="ltr"><span data-lexical-text="true">hell</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">rld</span></p>',
+        '<p dir="auto"><span data-lexical-text="true">hell</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">rld</span></p>',
       );
     });
 
@@ -251,7 +259,7 @@ describe('LexicalTabNode tests', () => {
         $getSelection()!.insertText('f');
       });
       expect(testEnv.innerHTML).toBe(
-        '<p dir="ltr"><span data-lexical-text="true">\t</span><span data-lexical-text="true">f</span><span data-lexical-text="true">\t</span></p>',
+        '<p dir="auto"><span data-lexical-text="true">\t</span><span data-lexical-text="true">f</span><span data-lexical-text="true">\t</span></p>',
       );
     });
 
@@ -277,6 +285,46 @@ describe('LexicalTabNode tests', () => {
         const textNodes = $getRoot().getAllTextNodes();
         expect(textNodes).toHaveLength(1);
         expect($isTabNode(textNodes[0])).toBe(true);
+      });
+    });
+
+    describe('TabNode at selection boundaries with normal TextNode sibling (#7602)', () => {
+      const input = 'x\tx';
+      (['next', 'previous'] as const).forEach((direction) => {
+        [
+          {output: 'yx', start: 0},
+          {output: 'xy', start: 1},
+        ].forEach(({output, start}) => {
+          test(`TabNode ${JSON.stringify(input)} to ${JSON.stringify(
+            output,
+          )} at ${start} (${direction})`, () => {
+            const {editor} = testEnv;
+            editor.update(
+              () => {
+                $selectAll().insertRawText(input);
+                const textNodes = $getRoot().getAllTextNodes();
+                expect(textNodes.map($isTabNode)).toEqual([false, true, false]);
+                const caretRange = $getCaretRange(
+                  $getTextPointCaret(textNodes[start], 'next', 0),
+                  $getTextPointCaret(textNodes[start + 1], 'next', 'next'),
+                );
+                const range = $setSelectionFromCaretRange(
+                  $getCaretRangeInDirection(caretRange, direction),
+                );
+                range.insertRawText('y');
+              },
+              {discrete: true},
+            );
+            // Using read here because we want to see the post-normalization merged state
+            editor.read(() => {
+              const expectNodes = $getRoot().getAllTextNodes();
+              expect(expectNodes.map((node) => node.getTextContent())).toEqual([
+                output,
+              ]);
+              expect(expectNodes.map($isTabNode)).toEqual([false]);
+            });
+          });
+        });
       });
     });
   });

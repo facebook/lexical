@@ -25,7 +25,7 @@ import type {
   TextFormatType,
 } from 'lexical';
 
-import {IS_IOS, IS_SAFARI} from 'shared/environment';
+import {IS_APPLE_WEBKIT, IS_IOS, IS_SAFARI} from 'shared/environment';
 import invariant from 'shared/invariant';
 
 import {$isTextNode, TextNode} from '../index';
@@ -35,7 +35,7 @@ import {
   ELEMENT_TYPE_TO_FORMAT,
   TEXT_TYPE_TO_FORMAT,
 } from '../LexicalConstants';
-import {LexicalNode} from '../LexicalNode';
+import {$isEphemeral, LexicalNode} from '../LexicalNode';
 import {
   $getSelection,
   $internalMakeRangeSelection,
@@ -191,7 +191,9 @@ export class ElementDOMSlot<T extends HTMLElement = HTMLElement> {
     if (lineBreakType === null) {
       this.removeManagedLineBreak();
     } else {
-      const webkitHack = lineBreakType === 'decorator' && (IS_IOS || IS_SAFARI);
+      const webkitHack =
+        lineBreakType === 'decorator' &&
+        (IS_APPLE_WEBKIT || IS_IOS || IS_SAFARI);
       this.insertManagedLineBreak(webkitHack);
     }
   }
@@ -307,7 +309,8 @@ export function indexPath(root: HTMLElement, child: Node): number[] {
 /** @noInheritDoc */
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class ElementNode extends LexicalNode {
-  ['constructor']!: KlassConstructor<typeof ElementNode>;
+  /** @internal */
+  declare ['constructor']: KlassConstructor<typeof ElementNode>;
   /** @internal */
   __first: null | NodeKey;
   /** @internal */
@@ -342,9 +345,11 @@ export class ElementNode extends LexicalNode {
 
   afterCloneFrom(prevNode: this) {
     super.afterCloneFrom(prevNode);
-    this.__first = prevNode.__first;
-    this.__last = prevNode.__last;
-    this.__size = prevNode.__size;
+    if (this.__key === prevNode.__key) {
+      this.__first = prevNode.__first;
+      this.__last = prevNode.__last;
+      this.__size = prevNode.__size;
+    }
     this.__indent = prevNode.__indent;
     this.__format = prevNode.__format;
     this.__style = prevNode.__style;
@@ -680,7 +685,12 @@ export class ElementNode extends LexicalNode {
     deleteCount: number,
     nodesToInsert: Array<LexicalNode>,
   ): this {
-    const nodesToInsertLength = nodesToInsert.length;
+    invariant(
+      !$isEphemeral(this),
+      'ElementNode.splice: Ephemeral nodes can not mutate their children (key %s type %s)',
+      this.__key,
+      this.__type,
+    );
     const oldSize = this.getChildrenSize();
     const writableSelf = this.getWritable();
     invariant(
@@ -695,7 +705,7 @@ export class ElementNode extends LexicalNode {
     const nodesToRemoveKeys = [];
     const nodeAfterRange = this.getChildAtIndex(start + deleteCount);
     let nodeBeforeRange = null;
-    let newSize = oldSize - deleteCount + nodesToInsertLength;
+    let newSize = oldSize - deleteCount + nodesToInsert.length;
 
     if (start !== 0) {
       if (start === oldSize) {
@@ -727,8 +737,7 @@ export class ElementNode extends LexicalNode {
     }
 
     let prevNode = nodeBeforeRange;
-    for (let i = 0; i < nodesToInsertLength; i++) {
-      const nodeToInsert = nodesToInsert[i];
+    for (const nodeToInsert of nodesToInsert) {
       if (prevNode !== null && nodeToInsert.is(prevNode)) {
         nodeBeforeRange = prevNode = prevNode.getPreviousSibling();
       }
@@ -859,11 +868,19 @@ export class ElementNode extends LexicalNode {
     };
     const textFormat = this.getTextFormat();
     const textStyle = this.getTextStyle();
-    if (textFormat !== 0) {
-      json.textFormat = textFormat;
-    }
-    if (textStyle !== '') {
-      json.textStyle = textStyle;
+    // Only persist for cases when there are no TextNode children from which
+    // these would be set on reconcile (#7968)
+    if (
+      (textFormat !== 0 || textStyle !== '') &&
+      !$isRootOrShadowRoot(this) &&
+      !this.getChildren().some($isTextNode)
+    ) {
+      if (textFormat !== 0) {
+        json.textFormat = textFormat;
+      }
+      if (textStyle !== '') {
+        json.textStyle = textStyle;
+      }
     }
     return json;
   }

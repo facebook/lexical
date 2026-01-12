@@ -19,7 +19,10 @@ import type {
   TextFormatType,
   LexicalCommand,
   ElementDOMSlot,
+  SerializedElementNode,
+  LexicalExtension,
 } from 'lexical';
+import type {NamedSignalsOutput} from '@lexical/extension';
 
 import {
   ElementNode,
@@ -432,3 +435,39 @@ declare export function registerTablePlugin(editor: LexicalEditor): () => void;
 
 declare export function registerTableSelectionObserver(editor: LexicalEditor, hasTabHandler?: boolean): () => void;
 
+
+export type SerializedTableCellNode = {
+  ...SerializedElementNode;
+  colSpan?: number;
+  rowSpan?: number;
+  headerState: TableCellHeaderState;
+  width?: number;
+  backgroundColor?: null | string;
+  verticalAlign?: string;
+  ...
+};
+export type SerializedTableNode = {
+  ...SerializedElementNode,
+  colWidths?: $ReadOnlyArray<number>;
+  rowStriping?: boolean;
+  frozenColumnCount?: number;
+  frozenRowCount?: number;
+  ...
+};
+export type SerializedTableRowNode = {
+  ...SerializedElementNode;
+  height?: number;
+  ...
+};
+
+export type TableConfig = {
+  hasCellMerge: boolean;
+  hasCellBackgroundColor: boolean;
+  hasTabHandler: boolean;
+  hasHorizontalScroll: boolean;
+};
+
+
+declare export var TableExtension: LexicalExtension<TableConfig, "@lexical/table/Table", NamedSignalsOutput<TableConfig>, void>;
+
+declare export function $mergeCells(cellNodes: TableCellNode[]): TableCellNode | null;

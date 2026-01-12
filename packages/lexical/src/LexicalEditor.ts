@@ -20,9 +20,14 @@ import invariant from 'shared/invariant';
 import {$getRoot, $getSelection, TextNode} from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
 import {cloneEditorState, createEmptyEditorState} from './LexicalEditorState';
-import {addRootElementEvents, removeRootElementEvents} from './LexicalEvents';
+import {
+  addRootElementEvents,
+  registerDefaultCommandHandlers,
+  removeRootElementEvents,
+} from './LexicalEvents';
 import {flushRootMutations, initMutationObserver} from './LexicalMutations';
 import {LexicalNode} from './LexicalNode';
+import {createSharedNodeState, SharedNodeState} from './LexicalNodeState';
 import {
   $commitPendingUpdates,
   internalGetActiveEditor,
@@ -42,10 +47,12 @@ import {
   getCachedTypeToNodeMap,
   getDefaultView,
   getDOMSelection,
+  getStaticNodeConfig,
+  hasOwnExportDOM,
+  hasOwnStaticMethod,
   markNodesWithTypesAsDirty,
 } from './LexicalUtils';
 import {ArtificialNode__DO_NOT_USE} from './nodes/ArtificialNode';
-import {$isDecoratorNode} from './nodes/LexicalDecoratorNode';
 import {LineBreakNode} from './nodes/LexicalLineBreakNode';
 import {ParagraphNode} from './nodes/LexicalParagraphNode';
 import {RootNode} from './nodes/LexicalRootNode';
@@ -60,11 +67,10 @@ export type KlassConstructor<Cls extends GenericConstructor<any>> =
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type GenericConstructor<T> = new (...args: any[]) => T;
 
-export type Klass<T extends LexicalNode> = InstanceType<
-  T['constructor']
-> extends T
-  ? T['constructor']
-  : GenericConstructor<T> & T['constructor'];
+export type Klass<T extends LexicalNode> =
+  InstanceType<T['constructor']> extends T
+    ? T['constructor']
+    : GenericConstructor<T> & T['constructor'];
 
 export type EditorThemeClassName = string;
 
@@ -86,9 +92,25 @@ export type TextNodeThemeClasses = {
 };
 
 export type EditorUpdateOptions = {
+  /**
+   * A function to run once the update is complete. See also {@link $onUpdate}.
+   */
   onUpdate?: () => void;
+  /**
+   * Setting this to true will suppress all node
+   * transforms for this update cycle.
+   * Useful for synchronizing updates in some cases.
+   */
   skipTransforms?: true;
+  /**
+   * A tag to identify this update, in an update listener, for instance.
+   * See also {@link $addUpdateTag}.
+   */
   tag?: UpdateTag | UpdateTag[];
+  /**
+   * If true, prevents this update from being batched, forcing it to
+   * run synchronously.
+   */
   discrete?: true;
   /** @internal */
   event?: undefined | UIEvent | Event | null;
@@ -98,9 +120,13 @@ export type EditorSetOptions = {
   tag?: string;
 };
 
-export type EditorFocusOptions = {
+export interface EditorFocusOptions {
+  /**
+   * Where to move selection when the editor is
+   * focused. Can be rootStart, rootEnd, or undefined. Defaults to rootEnd.
+   */
   defaultSelection?: 'rootStart' | 'rootEnd';
-};
+}
 
 export type EditorThemeClasses = {
   blockCursor?: EditorThemeClassName;
@@ -186,11 +212,16 @@ export type HTMLConfig = {
   import?: DOMConversionMap;
 };
 
+/**
+ * A LexicalNode class or LexicalNodeReplacement configuration
+ */
+export type LexicalNodeConfig = Klass<LexicalNode> | LexicalNodeReplacement;
+
 export type CreateEditorArgs = {
   disableEvents?: boolean;
   editorState?: EditorState;
   namespace?: string;
-  nodes?: ReadonlyArray<Klass<LexicalNode> | LexicalNodeReplacement>;
+  nodes?: ReadonlyArray<LexicalNodeConfig>;
   onError?: ErrorHandler;
   parentEditor?: LexicalEditor;
   editable?: boolean;
@@ -209,13 +240,14 @@ export type RegisteredNode = {
     editor: LexicalEditor,
     targetNode: LexicalNode,
   ) => DOMExportOutput;
+  sharedNodeState: SharedNodeState;
 };
 
 export type Transform<T extends LexicalNode> = (node: T) => void;
 
 export type ErrorHandler = (error: Error) => void;
 
-export type MutationListeners = Map<MutationListener, Klass<LexicalNode>>;
+export type MutationListeners = Map<MutationListener, Set<Klass<LexicalNode>>>;
 
 export type MutatedNodes = Map<Klass<LexicalNode>, Map<NodeKey, NodeMutation>>;
 
@@ -466,6 +498,40 @@ function initializeConversionCache(
   return conversionCache;
 }
 
+/** @internal */
+export function getTransformSetFromKlass(
+  klass: KlassConstructor<typeof LexicalNode>,
+): Set<Transform<LexicalNode>> {
+  const transforms = new Set<Transform<LexicalNode>>();
+  const staticTransforms = new Set<(typeof klass)['transform']>();
+  let currentKlass: undefined | typeof klass = klass;
+  while (currentKlass) {
+    const {ownNodeConfig} = getStaticNodeConfig(currentKlass);
+    const staticTransform = currentKlass.transform;
+    if (!staticTransforms.has(staticTransform)) {
+      staticTransforms.add(staticTransform);
+      const transform = currentKlass.transform();
+      if (transform) {
+        transforms.add(transform);
+      }
+    }
+    if (ownNodeConfig) {
+      const $transform = ownNodeConfig.$transform;
+      if ($transform) {
+        transforms.add($transform);
+      }
+      currentKlass = ownNodeConfig.extends;
+    } else {
+      const parent = Object.getPrototypeOf(currentKlass);
+      currentKlass =
+        parent.prototype instanceof LexicalNode && parent !== LexicalNode
+          ? parent
+          : undefined;
+    }
+  }
+  return transforms;
+}
+
 /**
  * Creates a new LexicalEditor attached to a single contentEditable (provided in the config). This is
  * the lowest-level initialization API for a LexicalEditor. If you're using React or another framework,
@@ -513,13 +579,15 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
         replace = options.with;
         replaceWithKlass = options.withKlass || null;
       }
+      // For the side-effect of filling in the static methods
+      void getStaticNodeConfig(klass);
+
       // Ensure custom nodes implement required methods and replaceWithKlass is instance of base klass.
       if (__DEV__) {
         // ArtificialNode__DO_NOT_USE can get renamed, so we use the type
-        const nodeType =
-          Object.prototype.hasOwnProperty.call(klass, 'getType') &&
-          klass.getType();
         const name = klass.name;
+        const nodeType =
+          hasOwnStaticMethod(klass, 'getType') && klass.getType();
 
         if (replaceWithKlass) {
           invariant(
@@ -528,42 +596,34 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
             replaceWithKlass.name,
             name,
           );
+        } else if (replace) {
+          console.warn(
+            `Override for ${name} specifies 'replace' without 'withKlass'. 'withKlass' will be required in a future version.`,
+          );
         }
-
         if (
           name !== 'RootNode' &&
           nodeType !== 'root' &&
-          nodeType !== 'artificial'
+          nodeType !== 'artificial' &&
+          // This is mostly for the unit test suite which
+          // uses LexicalNode in an otherwise incorrect way
+          // by mocking its static getType
+          klass !== LexicalNode
         ) {
-          const proto = klass.prototype;
-          ['getType', 'clone'].forEach((method) => {
-            // eslint-disable-next-line no-prototype-builtins
-            if (!klass.hasOwnProperty(method)) {
+          (['getType', 'clone'] as const).forEach((method) => {
+            if (!hasOwnStaticMethod(klass, method)) {
               console.warn(`${name} must implement static "${method}" method`);
             }
           });
           if (
-            // eslint-disable-next-line no-prototype-builtins
-            !klass.hasOwnProperty('importDOM') &&
-            // eslint-disable-next-line no-prototype-builtins
-            klass.hasOwnProperty('exportDOM')
+            !hasOwnStaticMethod(klass, 'importDOM') &&
+            hasOwnExportDOM(klass)
           ) {
             console.warn(
               `${name} should implement "importDOM" if using a custom "exportDOM" method to ensure HTML serialization (important for copy & paste) works as expected`,
             );
           }
-          if ($isDecoratorNode(proto)) {
-            // eslint-disable-next-line no-prototype-builtins
-            if (!proto.hasOwnProperty('decorate')) {
-              console.warn(
-                `${proto.constructor.name} must implement "decorate" method`,
-              );
-            }
-          }
-          if (
-            // eslint-disable-next-line no-prototype-builtins
-            !klass.hasOwnProperty('importJSON')
-          ) {
+          if (!hasOwnStaticMethod(klass, 'importJSON')) {
             console.warn(
               `${name} should implement "importJSON" method to ensure JSON and default HTML serialization works as expected`,
             );
@@ -571,16 +631,13 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
         }
       }
       const type = klass.getType();
-      const transform = klass.transform();
-      const transforms = new Set<Transform<LexicalNode>>();
-      if (transform !== null) {
-        transforms.add(transform);
-      }
+      const transforms = getTransformSetFromKlass(klass);
       registeredNodes.set(type, {
         exportDOM: html && html.export ? html.export.get(klass) : undefined,
         klass,
         replace,
         replaceWithKlass,
+        sharedNodeState: createSharedNodeState(nodes[i]),
         transforms,
       });
     }
@@ -605,10 +662,14 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
     editor._dirtyType = FULL_RECONCILE;
   }
 
+  registerDefaultCommandHandlers(editor);
+
   return editor;
 }
+
 export class LexicalEditor {
-  ['constructor']!: KlassConstructor<typeof LexicalEditor>;
+  /** @internal */
+  declare ['constructor']: KlassConstructor<typeof LexicalEditor>;
 
   /** The version with build identifiers for this editor (since 0.17.1) */
   static version: string | undefined;
@@ -922,7 +983,12 @@ export class LexicalEditor {
       this.getRegisteredNode(klass),
     ).klass;
     const mutations = this._listeners.mutation;
-    mutations.set(listener, klassToMutate);
+    let klassSet = mutations.get(listener);
+    if (klassSet === undefined) {
+      klassSet = new Set();
+      mutations.set(listener, klassSet);
+    }
+    klassSet.add(klassToMutate);
     const skipInitialization = options && options.skipInitialization;
     if (
       !(skipInitialization === undefined
@@ -933,12 +999,15 @@ export class LexicalEditor {
     }
 
     return () => {
-      mutations.delete(listener);
+      klassSet.delete(klassToMutate);
+      if (klassSet.size === 0) {
+        mutations.delete(listener);
+      }
     };
   }
 
   /** @internal */
-  private getRegisteredNode(klass: Klass<LexicalNode>): RegisteredNode {
+  getRegisteredNode(klass: Klass<LexicalNode>): RegisteredNode {
     const registeredNode = this._nodes.get(klass.getType());
 
     if (registeredNode === undefined) {
@@ -953,7 +1022,7 @@ export class LexicalEditor {
   }
 
   /** @internal */
-  private resolveRegisteredNodeAfterReplacements(
+  resolveRegisteredNodeAfterReplacements(
     registeredNode: RegisteredNode,
   ): RegisteredNode {
     while (registeredNode.replaceWithKlass) {
@@ -1276,14 +1345,6 @@ export class LexicalEditor {
    * where Lexical editor state can be safely mutated.
    * @param updateFn - A function that has access to writable editor state.
    * @param options - A bag of options to control the behavior of the update.
-   * @param options.onUpdate - A function to run once the update is complete.
-   * Useful for synchronizing updates in some cases.
-   * @param options.skipTransforms - Setting this to true will suppress all node
-   * transforms for this update cycle.
-   * @param options.tag - A tag to identify this update, in an update listener, for instance.
-   * Some tags are reserved by the core and control update behavior in different ways.
-   * @param options.discrete - If true, prevents this update from being batched, forcing it to
-   * run synchronously.
    */
   update(updateFn: () => void, options?: EditorUpdateOptions): void {
     updateEditor(this, updateFn, options);
@@ -1297,8 +1358,6 @@ export class LexicalEditor {
    *
    * @param callbackFn - A function to run after the editor is focused.
    * @param options - A bag of options
-   * @param options.defaultSelection - Where to move selection when the editor is
-   * focused. Can be rootStart, rootEnd, or undefined. Defaults to rootEnd.
    */
   focus(callbackFn?: () => void, options: EditorFocusOptions = {}): void {
     const rootElement = this._rootElement;

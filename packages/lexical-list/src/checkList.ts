@@ -181,7 +181,8 @@ function handleCheckItemEvent(event: PointerEvent, callback: () => void) {
   }
 
   const rect = target.getBoundingClientRect();
-  const pageX = event.pageX / calculateZoomLevel(target);
+  const zoom = calculateZoomLevel(target);
+  const clientX = (event as MouseEvent | PointerEvent).clientX / zoom;
 
   // Use getComputedStyle if available, otherwise fallback to 0px width
   const beforeStyles = window.getComputedStyle
@@ -189,10 +190,16 @@ function handleCheckItemEvent(event: PointerEvent, callback: () => void) {
     : ({width: '0px'} as CSSStyleDeclaration);
   const beforeWidthInPixels = parseFloat(beforeStyles.width);
 
+  // Make click area slightly larger for touch devices to improve accessibility
+  const isTouchEvent = event.pointerType === 'touch';
+  const clickAreaPadding = isTouchEvent ? 32 : 0; // Add 32px padding for touch events
+
   if (
     target.dir === 'rtl'
-      ? pageX < rect.right && pageX > rect.right - beforeWidthInPixels
-      : pageX > rect.left && pageX < rect.left + beforeWidthInPixels
+      ? clientX < rect.right + clickAreaPadding &&
+        clientX > rect.right - beforeWidthInPixels - clickAreaPadding
+      : clientX > rect.left - clickAreaPadding &&
+        clientX < rect.left + beforeWidthInPixels + clickAreaPadding
   ) {
     callback();
   }

@@ -69,7 +69,7 @@ function tryToPositionRange(
   try {
     range.setStart(anchorNode, startOffset);
     range.setEnd(anchorNode, endOffset);
-  } catch (error) {
+  } catch (_error) {
     return false;
   }
 
@@ -259,6 +259,10 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
         // Check if editor is in read-only mode
         if (!editor.isEditable()) {
           closeTypeahead();
+          return;
+        }
+
+        if (editor.isComposing()) {
           return;
         }
 

@@ -19,7 +19,6 @@ import {
   focusEditor,
   html,
   initialize,
-  IS_MAC,
   sleep,
   test,
 } from '../utils/index.mjs';
@@ -38,7 +37,7 @@ test.describe('Collaboration', () => {
     isCollab,
     browserName,
   }) => {
-    test.skip(!isCollab || IS_MAC);
+    test.skip(!isCollab);
 
     await focusEditor(page);
     await page.keyboard.type('hello');
@@ -52,19 +51,13 @@ test.describe('Collaboration', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">hello</span>
         </p>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">hello world again</span>
         </p>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">world</span>
         </p>
       `,
@@ -81,17 +74,13 @@ test.describe('Collaboration', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">hello</span>
         </p>
-        <p class="PlaygroundEditorTheme__paragraph">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <br />
         </p>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">world</span>
         </p>
       `,
@@ -112,15 +101,14 @@ test.describe('Collaboration', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">hello</span>
         </p>
-        <ul class="PlaygroundEditorTheme__ul PlaygroundEditorTheme__checklist">
+        <ul
+          class="PlaygroundEditorTheme__ul PlaygroundEditorTheme__checklist"
+          dir="auto">
           <li
-            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked PlaygroundEditorTheme__ltr"
-            dir="ltr"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked"
             role="checkbox"
             tabindex="-1"
             value="1"
@@ -128,8 +116,7 @@ test.describe('Collaboration', () => {
             <span data-lexical-text="true">a</span>
           </li>
           <li
-            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked PlaygroundEditorTheme__ltr"
-            dir="ltr"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked"
             role="checkbox"
             tabindex="-1"
             value="2"
@@ -145,9 +132,7 @@ test.describe('Collaboration', () => {
             <br />
           </li>
         </ul>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">world</span>
         </p>
       `,
@@ -164,27 +149,32 @@ test.describe('Collaboration', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">hello</span>
         </p>
-        <p class="PlaygroundEditorTheme__paragraph">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <br />
         </p>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">world</span>
         </p>
       `,
     );
-    await assertSelection(page, {
-      anchorOffset: 5,
-      anchorPath: [0, 0, 0],
-      focusOffset: 5,
-      focusPath: [0, 0, 0],
-    });
+    if (isCollab === 1) {
+      await assertSelection(page, {
+        anchorOffset: 5,
+        anchorPath: [0, 0, 0],
+        focusOffset: 5,
+        focusPath: [0, 0, 0],
+      });
+    } else {
+      await assertSelection(page, {
+        anchorOffset: 1,
+        anchorPath: [0],
+        focusOffset: 1,
+        focusPath: [0],
+      });
+    }
 
     await page.keyboard.press('ArrowDown');
     await page.keyboard.type('Some bold text');
@@ -200,14 +190,10 @@ test.describe('Collaboration', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">hello</span>
         </p>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Some</span>
           <strong
             class="PlaygroundEditorTheme__textBold"
@@ -216,9 +202,7 @@ test.describe('Collaboration', () => {
           </strong>
           <span data-lexical-text="true">text</span>
         </p>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">world</span>
         </p>
       `,
@@ -259,14 +243,10 @@ test.describe('Collaboration', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Line 1</span>
         </p>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">This is a test. Word</span>
         </p>
       `,
@@ -281,12 +261,10 @@ test.describe('Collaboration', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Line 1</span>
         </p>
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
       `,
     );
 
@@ -301,12 +279,10 @@ test.describe('Collaboration', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Line 1</span>
         </p>
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
       `,
     );
   });
@@ -325,9 +301,7 @@ test.describe('Collaboration', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">normal</span>
         </p>
       `,
@@ -339,9 +313,7 @@ test.describe('Collaboration', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">normal</span>
           <strong
             class="PlaygroundEditorTheme__textBold"
@@ -351,7 +323,6 @@ test.describe('Collaboration', () => {
         </p>
       `,
     );
-    const boldSleep = sleep(1050);
 
     // Right collaborator types at the end of the paragraph.
     await page
@@ -364,9 +335,7 @@ test.describe('Collaboration', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">normal</span>
           <strong
             class="PlaygroundEditorTheme__textBold"
@@ -378,7 +347,7 @@ test.describe('Collaboration', () => {
     );
 
     // Left collaborator undoes their bold text.
-    await boldSleep;
+    await sleep(1050);
     await page.frameLocator('iframe[name="left"]').getByLabel('Undo').click();
 
     // The undo also removed bold the text node from YJS.
@@ -386,9 +355,7 @@ test.describe('Collaboration', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">normalBOLD</span>
         </p>
       `,
@@ -405,9 +372,7 @@ test.describe('Collaboration', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">normalBOLD</span>
         </p>
       `,
@@ -433,9 +398,7 @@ test.describe('Collaboration', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">normal</span>
           <strong
             class="PlaygroundEditorTheme__textBold"
@@ -459,9 +422,7 @@ test.describe('Collaboration', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">normal</span>
           <strong
             class="PlaygroundEditorTheme__textBold"
@@ -475,17 +436,27 @@ test.describe('Collaboration', () => {
     // Left collaborator undoes their bold text.
     await page.frameLocator('iframe[name="left"]').getByLabel('Undo').click();
 
-    // The undo causes the text to be appended to the original string, like in the above test.
-    await assertHTML(
-      page,
-      html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">normal boldBOLD</span>
-        </p>
-      `,
-    );
+    if (isCollab === 1) {
+      // The undo causes the text to be appended to the original string, like in the above test.
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">normal boldBOLD</span>
+          </p>
+        `,
+      );
+    } else {
+      // In v2, the text is not moved.
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">normal boBOLDld</span>
+          </p>
+        `,
+      );
+    }
 
     // Left collaborator redoes the bold text.
     await page.frameLocator('iframe[name="left"]').getByLabel('Redo').click();
@@ -494,9 +465,7 @@ test.describe('Collaboration', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">normal</span>
           <strong
             class="PlaygroundEditorTheme__textBold"
@@ -523,9 +492,7 @@ test.describe('Collaboration', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">normal</span>
           <strong
             class="PlaygroundEditorTheme__textBold"
@@ -561,13 +528,10 @@ test.describe('Collaboration', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Check out the</span>
           <a
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
+            class="PlaygroundEditorTheme__link"
             href="https://"
             rel="noreferrer">
             <span data-lexical-text="true">website</span>
@@ -589,13 +553,10 @@ test.describe('Collaboration', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Check out the</span>
           <a
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
+            class="PlaygroundEditorTheme__link"
             href="https://"
             rel="noreferrer">
             <span data-lexical-text="true">website</span>
@@ -608,17 +569,27 @@ test.describe('Collaboration', () => {
     // Left collaborator undoes the link.
     await page.frameLocator('iframe[name="left"]').getByLabel('Undo').click();
 
-    // The undo causes the text to be appended to the original string, like in the above test.
-    await assertHTML(
-      page,
-      html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">Check out the website! now</span>
-        </p>
-      `,
-    );
+    if (isCollab === 1) {
+      // The undo causes the text to be appended to the original string, like in the above test.
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">Check out the website! now</span>
+          </p>
+        `,
+      );
+    } else {
+      // The undo causes the YText node to be removed.
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">Check out the website!</span>
+          </p>
+        `,
+      );
+    }
 
     // Left collaborator redoes the link.
     await page.frameLocator('iframe[name="left"]').getByLabel('Redo').click();
@@ -627,13 +598,10 @@ test.describe('Collaboration', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Check out the</span>
           <a
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
+            class="PlaygroundEditorTheme__link"
             href="https://"
             rel="noreferrer">
             <span data-lexical-text="true">website</span>
@@ -654,13 +622,10 @@ test.describe('Collaboration', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Check out the</span>
           <a
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
+            class="PlaygroundEditorTheme__link"
             href="https://"
             rel="noreferrer">
             <span data-lexical-text="true">website</span>
@@ -691,9 +656,7 @@ test.describe('Collaboration', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">A</span>
           <strong
             class="PlaygroundEditorTheme__textBold"
@@ -705,7 +668,7 @@ test.describe('Collaboration', () => {
       `,
     );
 
-    // Right collaborator deletes A, left deletes B.
+    // Left collaborator deletes A, right deletes B.
     await sleep(1050);
     await page.keyboard.press('Delete');
     await sleep(50);
@@ -718,9 +681,7 @@ test.describe('Collaboration', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">C</span>
         </p>
       `,
@@ -733,9 +694,7 @@ test.describe('Collaboration', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">AC</span>
         </p>
       `,

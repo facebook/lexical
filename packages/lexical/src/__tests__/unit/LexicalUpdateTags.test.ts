@@ -20,6 +20,7 @@ import {
   SKIP_DOM_SELECTION_TAG,
   SKIP_SCROLL_INTO_VIEW_TAG,
 } from 'lexical';
+import {describe, expect, test, vi} from 'vitest';
 
 import {initializeUnitTest} from '../utils';
 
@@ -103,7 +104,7 @@ describe('LexicalUpdateTags tests', () => {
       const {editor} = testEnv;
 
       // Test that skip-dom-selection prevents selection updates
-      const updateListener = jest.fn();
+      const updateListener = vi.fn();
       editor.registerUpdateListener(({tags}: {tags: Set<string>}) => {
         updateListener(Array.from(tags));
       });

@@ -22,19 +22,12 @@
   --ifm-color-primary-lighter: #aed4ff;
   --ifm-color-primary-lightest: #e6f2ff;
   --ifm-code-font-size: 95%;
-
   --ifm-footer-padding-vertical: 4rem;
+  --docusaurus-highlighted-code-line-bg: rgba(255, 255, 0, 0.3);
 }
 
-.docusaurus-highlight-code-line {
-  background-color: rgba(0, 0, 0, 0.1);
-  display: block;
-  margin: 0 calc(-1 * var(--ifm-pre-padding));
-  padding: 0 var(--ifm-pre-padding);
-}
-
-html[data-theme='dark'] .docusaurus-highlight-code-line {
-  background-color: rgba(0, 0, 0, 0.3);
+[data-theme='dark'] {
+  --docusaurus-highlighted-code-line-bg: rgba(255, 255, 0, 0.3);
 }
 
 .footer__links {

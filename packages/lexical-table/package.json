@@ -8,17 +8,18 @@
     "table"
   ],
   "license": "MIT",
-  "version": "0.32.0",
+  "version": "0.39.0",
   "main": "LexicalTable.js",
   "types": "index.d.ts",
   "dependencies": {
-    "@lexical/clipboard": "0.32.0",
-    "@lexical/utils": "0.32.0",
-    "lexical": "0.32.0"
+    "@lexical/clipboard": "0.39.0",
+    "@lexical/extension": "0.39.0",
+    "@lexical/utils": "0.39.0",
+    "lexical": "0.39.0"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/facebook/lexical",
+    "url": "git+https://github.com/facebook/lexical.git",
     "directory": "packages/lexical-table"
   },
   "module": "LexicalTable.mjs",

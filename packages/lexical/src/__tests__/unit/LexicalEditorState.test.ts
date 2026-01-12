@@ -14,6 +14,7 @@ import {
   ParagraphNode,
   TextNode,
 } from 'lexical';
+import {describe, expect, test} from 'vitest';
 
 import {EditorState} from '../../LexicalEditorState';
 import {$createRootNode, RootNode} from '../../nodes/LexicalRootNode';
@@ -52,7 +53,7 @@ describe('LexicalEditorState tests', () => {
 
       expect(root).toEqual({
         __cachedText: 'foo',
-        __dir: 'ltr',
+        __dir: null,
         __first: '1',
         __format: 0,
         __indent: 0,
@@ -68,7 +69,7 @@ describe('LexicalEditorState tests', () => {
         __type: 'root',
       });
       expect(paragraph).toEqual({
-        __dir: 'ltr',
+        __dir: null,
         __first: '2',
         __format: 0,
         __indent: 0,
@@ -115,7 +116,7 @@ describe('LexicalEditorState tests', () => {
       });
 
       expect(JSON.stringify(editor.getEditorState().toJSON())).toEqual(
-        `{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"Hello world","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"paragraph","version":1,"textFormat":0,"textStyle":""}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`,
+        `{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"Hello world","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"paragraph","version":1,"textFormat":0,"textStyle":""}],"direction":null,"format":"","indent":0,"type":"root","version":1}}`,
       );
     });
 

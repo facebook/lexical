@@ -26,7 +26,7 @@ History package handles `UNDO_COMMAND`, `REDO_COMMAND` and `CLEAR_HISTORY_COMMAN
 import {UNDO_COMMAND, REDO_COMMAND} from 'lexical';
 
 <Toolbar>
-  <Button onClick={() => editor.dispatchCommand(UNDO_COMMAND)}>Undo</Button>
-  <Button onClick={() => editor.dispatchCommand(REDO_COMMAND)}>Redo</Button>
+  <Button onClick={() => editor.dispatchCommand(UNDO_COMMAND, undefined)}>Undo</Button>
+  <Button onClick={() => editor.dispatchCommand(REDO_COMMAND, undefined)}>Redo</Button>
 </Toolbar>;
 ```

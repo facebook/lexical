@@ -30,6 +30,7 @@ import {
 import * as React from 'react';
 import {createRoot, Root} from 'react-dom/client';
 import * as ReactTestUtils from 'shared/react-test-utils';
+import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
 const RICH_TEXT_NODES = [
   HeadingNode,
@@ -59,7 +60,7 @@ describe('LexicalNodeHelpers tests', () => {
     document.body.removeChild(container!);
     container = null;
 
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   for (const plugin of ['PlainTextPlugin', 'RichTextPlugin']) {
@@ -84,8 +85,8 @@ describe('LexicalNodeHelpers tests', () => {
               editorState: $initialEditorState,
               namespace: '',
               nodes: plugin === 'PlainTextPlugin' ? [] : RICH_TEXT_NODES,
-              onError: () => {
-                throw Error();
+              onError: (err) => {
+                throw err;
               },
               theme: {},
             }}>
@@ -135,8 +136,8 @@ describe('LexicalNodeHelpers tests', () => {
               editorState: initialEditorStateJson,
               namespace: '',
               nodes: plugin === 'PlainTextPlugin' ? [] : RICH_TEXT_NODES,
-              onError: () => {
-                throw Error();
+              onError: (err) => {
+                throw err;
               },
               theme: {},
             }}>
@@ -194,8 +195,8 @@ describe('LexicalNodeHelpers tests', () => {
             initialConfig={{
               namespace: '',
               nodes: plugin === 'PlainTextPlugin' ? [] : RICH_TEXT_NODES,
-              onError: () => {
-                throw Error();
+              onError: (err) => {
+                throw err;
               },
               theme: {},
             }}>

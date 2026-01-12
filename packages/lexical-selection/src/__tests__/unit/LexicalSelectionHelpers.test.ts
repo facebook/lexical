@@ -42,6 +42,7 @@ import {
   invariant,
   TestDecoratorNode,
 } from 'lexical/src/__tests__/utils';
+import {afterEach, describe, expect, it, test, vi} from 'vitest';
 
 import {$setAnchorPoint, $setFocusPoint} from '../utils';
 
@@ -1827,7 +1828,7 @@ describe('LexicalSelectionHelpers tests', () => {
         });
 
         expect(element.innerHTML).toBe(
-          '<p dir="ltr"><span data-lexical-text="true">foo</span></p>',
+          '<p dir="auto"><span data-lexical-text="true">foo</span></p>',
         );
       });
 
@@ -1868,7 +1869,7 @@ describe('LexicalSelectionHelpers tests', () => {
         });
 
         expect(element.innerHTML).toBe(
-          '<p dir="ltr"><span data-lexical-text="true">foobar</span></p>',
+          '<p dir="auto"><span data-lexical-text="true">foobar</span></p>',
         );
       });
 
@@ -1913,7 +1914,7 @@ describe('LexicalSelectionHelpers tests', () => {
         });
 
         expect(element.innerHTML).toBe(
-          '<p dir="ltr"><span data-lexical-text="true">h</span><a href="https://" dir="ltr"><span data-lexical-text="true">ello worl</span></a><span data-lexical-text="true">d</span></p>',
+          '<p dir="auto"><span data-lexical-text="true">h</span><a href="https://"><span data-lexical-text="true">ello worl</span></a><span data-lexical-text="true">d</span></p>',
         );
       });
 
@@ -1956,7 +1957,7 @@ describe('LexicalSelectionHelpers tests', () => {
         });
 
         expect(element.innerHTML).toBe(
-          '<h1 dir="ltr"><span data-lexical-text="true">foo</span></h1>',
+          '<h1 dir="auto"><span data-lexical-text="true">foo</span></h1>',
         );
       });
     });
@@ -1999,7 +2000,7 @@ describe('LexicalSelectionHelpers tests', () => {
         });
 
         expect(element.innerHTML).toBe(
-          '<p dir="ltr"><span data-lexical-text="true">Existing text...foo</span></p>',
+          '<p dir="auto"><span data-lexical-text="true">Existing text...foo</span></p>',
         );
       });
 
@@ -2044,7 +2045,7 @@ describe('LexicalSelectionHelpers tests', () => {
         });
 
         expect(element.innerHTML).toBe(
-          '<p dir="ltr"><span data-lexical-text="true">Existing text...foobar</span></p>',
+          '<p dir="auto"><span data-lexical-text="true">Existing text...foobar</span></p>',
         );
       });
 
@@ -2091,7 +2092,7 @@ describe('LexicalSelectionHelpers tests', () => {
         });
 
         expect(element.innerHTML).toBe(
-          '<p dir="ltr"><span data-lexical-text="true">Existing text...foo</span></p>',
+          '<p dir="auto"><span data-lexical-text="true">Existing text...foo</span></p>',
         );
       });
 
@@ -2162,7 +2163,7 @@ describe('LexicalSelectionHelpers tests', () => {
         });
 
         expect(element.innerHTML).toBe(
-          '<p dir="ltr"><span data-lexical-text="true">AB</span><em data-lexical-text="true">C</em><span data-lexical-text="true">DE</span></p>',
+          '<p dir="auto"><span data-lexical-text="true">AB</span><em data-lexical-text="true">C</em><span data-lexical-text="true">DE</span></p>',
         );
       });
     });
@@ -2205,7 +2206,7 @@ describe('LexicalSelectionHelpers tests', () => {
         });
 
         expect(element.innerHTML).toBe(
-          '<p dir="ltr"><span data-lexical-text="true">foo</span></p>',
+          '<p dir="auto"><span data-lexical-text="true">foo</span></p>',
         );
       });
     });
@@ -2252,7 +2253,7 @@ describe('LexicalSelectionHelpers tests', () => {
         });
 
         expect(element.innerHTML).toBe(
-          '<p dir="ltr"><span data-lexical-text="true">foo</span><a href="https://" dir="ltr"><span data-lexical-text="true">link</span></a></p>',
+          '<p dir="auto"><span data-lexical-text="true">foo</span><a href="https://"><span data-lexical-text="true">link</span></a></p>',
         );
       });
     });
@@ -2299,12 +2300,12 @@ describe('LexicalSelectionHelpers tests', () => {
         });
 
         expect(element.innerHTML).toBe(
-          '<p dir="ltr"><a href="https://" dir="ltr"><span data-lexical-text="true">link</span></a><span data-lexical-text="true">foo</span></p>',
+          '<p dir="auto"><a href="https://"><span data-lexical-text="true">link</span></a><span data-lexical-text="true">foo</span></p>',
         );
       });
     });
 
-    test.skip('can insert a linebreak node before an inline element node', async () => {
+    test('can insert a linebreak node before an inline element node', async () => {
       const editor = createTestEditor();
       const element = document.createElement('div');
       editor.setRootElement(element);
@@ -2324,7 +2325,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
       // TODO #5109 ElementNode should have a way to control when other nodes can be inserted inside
       expect(element.innerHTML).toBe(
-        '<p><a href="https://lexical.dev/" dir="ltr"><br><span data-lexical-text="true">Lexical</span></a></p>',
+        '<p dir="auto"><br><a href="https://lexical.dev/"><span data-lexical-text="true">Lexical</span></a></p>',
       );
     });
   });
@@ -2371,7 +2372,7 @@ describe('LexicalSelectionHelpers tests', () => {
         });
 
         expect(element.innerHTML).toBe(
-          '<p dir="ltr"><span data-lexical-text="true">foo</span></p>',
+          '<p dir="auto"><span data-lexical-text="true">foo</span></p>',
         );
       });
     });
@@ -2421,7 +2422,7 @@ describe('LexicalSelectionHelpers tests', () => {
         });
 
         expect(element.innerHTML).toBe(
-          '<p dir="ltr"><span data-lexical-text="true">foo</span><a href="https://" dir="ltr"><span data-lexical-text="true">link</span></a></p>',
+          '<p dir="auto"><span data-lexical-text="true">foo</span><a href="https://"><span data-lexical-text="true">link</span></a></p>',
         );
       });
     });
@@ -2471,7 +2472,7 @@ describe('LexicalSelectionHelpers tests', () => {
         });
 
         expect(element.innerHTML).toBe(
-          '<p dir="ltr"><a href="https://" dir="ltr"><span data-lexical-text="true">link</span></a><span data-lexical-text="true">foo</span></p>',
+          '<p dir="auto"><a href="https://"><span data-lexical-text="true">link</span></a><span data-lexical-text="true">foo</span></p>',
         );
       });
     });
@@ -2491,7 +2492,7 @@ describe('LexicalSelectionHelpers tests', () => {
         $insertNodes([linkNode]);
       });
       expect(element.innerHTML).toBe(
-        '<p><a href="https://lexical.dev" dir="ltr"><span data-lexical-text="true">Lexical</span></a></p>',
+        '<p dir="auto"><a href="https://lexical.dev"><span data-lexical-text="true">Lexical</span></a></p>',
       );
     });
 
@@ -2511,7 +2512,7 @@ describe('LexicalSelectionHelpers tests', () => {
         $insertNodes([linkNode, textNode2]);
       });
       expect(element.innerHTML).toBe(
-        '<p><a href="https://lexical.dev" dir="ltr"><span data-lexical-text="true">Lexical</span></a><span data-lexical-text="true">...</span></p>',
+        '<p dir="auto"><a href="https://lexical.dev"><span data-lexical-text="true">Lexical</span></a><span data-lexical-text="true">...</span></p>',
       );
     });
 
@@ -2530,8 +2531,8 @@ describe('LexicalSelectionHelpers tests', () => {
         $insertNodes([element1, element2]);
       });
       expect([
-        '<div><br></div><div><br></div>',
-        '<div><br></div><p><br></p>',
+        '<div dir="auto"><br></div><div dir="auto"><br></div>',
+        '<div dir="auto"><br></div><p dir="auto"><br></p>',
       ]).toContain(element.innerHTML);
     });
   });
@@ -2576,7 +2577,7 @@ describe('extract', () => {
 
 describe('insertNodes', () => {
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('can insert element next to top level decorator node', async () => {
@@ -2584,7 +2585,7 @@ describe('insertNodes', () => {
     const element = document.createElement('div');
     editor.setRootElement(element);
 
-    jest.spyOn(TestDecoratorNode.prototype, 'isInline').mockReturnValue(false);
+    vi.spyOn(TestDecoratorNode.prototype, 'isInline').mockReturnValue(false);
 
     await editor.update(() => {
       $getRoot().append(
@@ -2604,9 +2605,9 @@ describe('insertNodes', () => {
     });
 
     expect(element.innerHTML).toBe(
-      '<p dir="ltr"><span data-lexical-text="true">Text before</span></p>' +
+      '<p dir="auto"><span data-lexical-text="true">Text before</span></p>' +
         '<span data-lexical-decorator="true" contenteditable="false"></span>' +
-        '<p dir="ltr"><span data-lexical-text="true">Text after</span></p>',
+        '<p dir="auto"><span data-lexical-text="true">Text after</span></p>',
     );
   });
 
@@ -2678,7 +2679,7 @@ describe('insertNodes', () => {
     });
     editor.getEditorState().read(() => {
       expect(element.innerHTML).toBe(
-        '<h1 dir="ltr"><span data-lexical-text="true">heading</span></h1><p><br></p>',
+        '<h1 dir="auto"><span data-lexical-text="true">heading</span></h1><p dir="auto"><br></p>',
       );
       const selectedNode = ($getSelection() as RangeSelection).anchor.getNode();
       expect($isParagraphNode(selectedNode)).toBeTruthy();
@@ -2736,8 +2737,8 @@ describe('$patchStyleText', () => {
     });
 
     expect(element.innerHTML).toBe(
-      '<p dir="ltr"><span data-lexical-text="true">a</span>' +
-        '<a href="https://" dir="ltr">' +
+      '<p dir="auto"><span data-lexical-text="true">a</span>' +
+        '<a href="https://">' +
         '<span style="text-emphasis: filled;" data-lexical-text="true">link</span>' +
         '</a>' +
         '<span style="text-emphasis: filled;" data-lexical-text="true">b</span></p>',
@@ -2789,8 +2790,8 @@ describe('$patchStyleText', () => {
     });
 
     expect(element.innerHTML).toBe(
-      '<p dir="ltr"><span data-lexical-text="true">a</span></p>' +
-        '<p dir="ltr"><span style="text-emphasis: filled;" data-lexical-text="true">b</span></p>',
+      '<p dir="auto"><span data-lexical-text="true">a</span></p>' +
+        '<p dir="auto"><span style="text-emphasis: filled;" data-lexical-text="true">b</span></p>',
     );
   });
 
@@ -2838,9 +2839,9 @@ describe('$patchStyleText', () => {
     });
 
     expect(element.innerHTML).toBe(
-      '<p dir="ltr">' +
+      '<p dir="auto">' +
         '<span style="text-emphasis: filled;" data-lexical-text="true">a</span>' +
-        '<a href="https://" dir="ltr">' +
+        '<a href="https://">' +
         '<span style="text-emphasis: filled;" data-lexical-text="true">link</span>' +
         '</a>' +
         '</p>',
@@ -2891,9 +2892,9 @@ describe('$patchStyleText', () => {
     });
 
     expect(element.innerHTML).toBe(
-      '<p dir="ltr">' +
+      '<p dir="auto">' +
         '<span style="text-emphasis: filled;" data-lexical-text="true">a</span>' +
-        '<a href="https://" dir="ltr">' +
+        '<a href="https://">' +
         '<span style="text-emphasis: filled;" data-lexical-text="true">link</span>' +
         '</a>' +
         '</p>',
@@ -2934,8 +2935,8 @@ describe('$patchStyleText', () => {
     });
 
     expect(element.innerHTML).toBe(
-      '<p>' +
-        '<a href="https://" dir="ltr">' +
+      '<p dir="auto">' +
+        '<a href="https://">' +
         '<span style="text-emphasis: filled;" data-lexical-text="true">link</span>' +
         '</a>' +
         '</p>',
@@ -2976,7 +2977,7 @@ describe('$patchStyleText', () => {
     });
 
     expect(element.innerHTML).toBe(
-      '<p dir="ltr"><span data-lexical-text="true">text</span></p>',
+      '<p dir="auto"><span data-lexical-text="true">text</span></p>',
     );
   });
 
@@ -3115,7 +3116,7 @@ describe('$patchStyleText', () => {
       });
 
       expect(element.innerHTML).toBe(
-        '<p dir="ltr">' +
+        '<p dir="auto">' +
           '<strong data-lexical-text="true">fir</strong>' +
           '<strong style="font-size: 15px;" data-lexical-text="true">st</strong>' +
           '<span style="font-size: 15px;" data-lexical-text="true">second</span>' +

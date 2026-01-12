@@ -6,8 +6,14 @@
  *
  */
 import {$createLinkNode, $isLinkNode, LinkNode} from '@lexical/link';
-import {$getRoot, ParagraphNode, TextNode} from 'lexical';
-import {initializeUnitTest} from 'lexical/src/__tests__/utils';
+import {$createTextNode, $getRoot, ParagraphNode, TextNode} from 'lexical';
+import {
+  expectHtmlToBeEqual,
+  html,
+  initializeUnitTest,
+} from 'lexical/src/__tests__/utils';
+import {waitForReact} from 'packages/lexical-react/src/__tests__/unit/utils';
+import {describe, expect, test} from 'vitest';
 
 import {
   $createListItemNode,
@@ -300,6 +306,90 @@ describe('LexicalListNode tests', () => {
       });
     });
 
+    test('Should update list children when switching from checklist to bullet', async () => {
+      const {editor} = testEnv;
+
+      await waitForReact(() => {
+        editor.update(() => {
+          const root = $getRoot().clear();
+          root.append($createListNode('check').append($createListItemNode()));
+        });
+      });
+
+      expect(testEnv.innerHTML).toEqual(
+        '<ul dir="auto"><li role="checkbox" tabindex="-1" aria-checked="false" value="1"><br></li></ul>',
+      );
+
+      await waitForReact(() => {
+        editor.update(() => {
+          const listNode = $getRoot().getFirstChildOrThrow<ListNode>();
+          listNode.setListType('bullet');
+        });
+      });
+
+      expect(testEnv.innerHTML).toEqual(
+        '<ul dir="auto"><li value="1"><br></li></ul>',
+      );
+    });
+
+    test('Should clear checklist attributes when nesting lists', async () => {
+      const {editor} = testEnv;
+
+      await waitForReact(() => {
+        editor.update(() => {
+          const root = $getRoot().clear();
+          root.append(
+            $createListNode('check').append(
+              $createListItemNode(),
+              $createListItemNode(),
+            ),
+          );
+        });
+      });
+
+      expectHtmlToBeEqual(
+        testEnv.innerHTML,
+        html`
+          <ul dir="auto">
+            <li role="checkbox" tabindex="-1" value="1" aria-checked="false">
+              <br />
+            </li>
+            <li role="checkbox" tabindex="-1" value="2" aria-checked="false">
+              <br />
+            </li>
+          </ul>
+        `,
+      );
+
+      await waitForReact(() => {
+        editor.update(() => {
+          const listNode = $getRoot().getFirstChildOrThrow<ListNode>();
+          const listItemNode = listNode.getChildAtIndex<ListItemNode>(1)!;
+          listItemNode.append(
+            $createListNode('bullet').append($createListItemNode()),
+          );
+        });
+      });
+
+      expectHtmlToBeEqual(
+        testEnv.innerHTML,
+        html`
+          <ul dir="auto">
+            <li role="checkbox" tabindex="-1" value="1" aria-checked="false">
+              <br />
+            </li>
+            <li value="2">
+              <ul>
+                <li value="1">
+                  <br />
+                </li>
+              </ul>
+            </li>
+          </ul>
+        `,
+      );
+    });
+
     test('$createListNode()', async () => {
       const {editor} = testEnv;
 
@@ -334,24 +424,96 @@ describe('LexicalListNode tests', () => {
         expect(bulletList.__listType).toBe('bullet');
       });
     });
-
-    test('ListNode.clone() without list type (backward compatibility)', async () => {
-      const {editor} = testEnv;
-
-      await editor.update(() => {
-        const olNode = ListNode.clone({
-          __key: '1',
-          __start: 1,
-          __tag: 'ol',
-        } as unknown as ListNode);
-        const ulNode = ListNode.clone({
-          __key: '1',
-          __start: 1,
-          __tag: 'ul',
-        } as unknown as ListNode);
-        expect(olNode.__listType).toBe('number');
-        expect(ulNode.__listType).toBe('bullet');
-      });
-    });
   });
+});
+
+describe('LexicalListNode subclassing tests ($config)', () => {
+  class ListNodeConfig extends ListNode {
+    $config() {
+      return this.config('list-$config', {extends: ListNode});
+    }
+  }
+  function $initialState($createListNodeFn = $createListNode) {
+    $getRoot()
+      .clear()
+      .append(
+        $createListNodeFn().append(
+          $createListItemNode().append($createTextNode('first')),
+          $createListItemNode().append($createTextNode('second')),
+        ),
+      );
+  }
+  function $getListItemValues() {
+    return $getRoot()
+      .getAllTextNodes()
+      .map((node) => {
+        const parent = node.getParent();
+        return parent && $isListItemNode(parent) ? parent.getValue() : null;
+      });
+  }
+  class ListNodeSubclass extends ListNode {
+    static getType() {
+      return 'list-subclass';
+    }
+    static clone(node: ListNodeSubclass) {
+      return new ListNodeSubclass(node.__listType, node.__start, node.__key);
+    }
+  }
+  describe('ListNode as-is', () =>
+    initializeUnitTest(
+      (testEnv) => {
+        test('applies transform', () => {
+          const {editor} = testEnv;
+          editor.update(
+            () => {
+              $initialState($createListNode);
+              expect($getListItemValues()).toEqual([1, 1]);
+            },
+            {discrete: true},
+          );
+          editor.read(() => {
+            expect($getListItemValues()).toEqual([1, 2]);
+          });
+        });
+      },
+      {nodes: []},
+    ));
+  describe('ListNodeConfig (no replacement)', () =>
+    initializeUnitTest(
+      (testEnv) => {
+        test('applies transform', () => {
+          const {editor} = testEnv;
+          editor.update(
+            () => {
+              $initialState(() => new ListNodeConfig());
+              expect($getListItemValues()).toEqual([1, 1]);
+            },
+            {discrete: true},
+          );
+          editor.read(() => {
+            expect($getListItemValues()).toEqual([1, 2]);
+          });
+        });
+      },
+      {nodes: [ListNodeConfig]},
+    ));
+  describe('ListNodeSubclass (no replacement)', () =>
+    initializeUnitTest(
+      (testEnv) => {
+        test('applies transform', () => {
+          const {editor} = testEnv;
+          editor.update(
+            () => {
+              $initialState(() => new ListNodeSubclass());
+              expect($getListItemValues()).toEqual([1, 1]);
+            },
+            {discrete: true},
+          );
+          editor.read(() => {
+            expect($getListItemValues()).toEqual([1, 2]);
+          });
+        });
+      },
+      {nodes: [ListNodeSubclass]},
+    ));
 });

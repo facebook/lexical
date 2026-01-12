@@ -9,6 +9,7 @@
 import {$createQuoteNode, QuoteNode} from '@lexical/rich-text';
 import {$createRangeSelection, $getRoot, ParagraphNode} from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
+import {describe, expect, test} from 'vitest';
 
 const editorConfig = Object.freeze({
   namespace: '',
@@ -71,7 +72,7 @@ describe('LexicalQuoteNode tests', () => {
         root.append(quoteNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><blockquote><br></blockquote></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><blockquote dir="auto"><br></blockquote></div>',
       );
       await editor.update(() => {
         const result = quoteNode.insertNewAfter($createRangeSelection());
@@ -79,7 +80,7 @@ describe('LexicalQuoteNode tests', () => {
         expect(result.getDirection()).toEqual(quoteNode.getDirection());
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><blockquote><br></blockquote><p><br></p></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><blockquote dir="auto"><br></blockquote><p dir="auto"><br></p></div>',
       );
     });
 

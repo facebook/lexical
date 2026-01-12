@@ -10,10 +10,12 @@ import type {JSX} from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
-import * as React from 'react';
 
+import {
+  type ErrorBoundaryType,
+  LegacyDecorators,
+} from './shared/LegacyDecorators';
 import {useCanShowPlaceholder} from './shared/useCanShowPlaceholder';
-import {ErrorBoundaryType, useDecorators} from './shared/useDecorators';
 import {useRichTextSetup} from './shared/useRichTextSetup';
 
 export function RichTextPlugin({
@@ -30,14 +32,13 @@ export function RichTextPlugin({
   ErrorBoundary: ErrorBoundaryType;
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();
-  const decorators = useDecorators(editor, ErrorBoundary);
   useRichTextSetup(editor);
 
   return (
     <>
       {contentEditable}
       <Placeholder content={placeholder} />
-      {decorators}
+      <LegacyDecorators editor={editor} ErrorBoundary={ErrorBoundary} />
     </>
   );
 }

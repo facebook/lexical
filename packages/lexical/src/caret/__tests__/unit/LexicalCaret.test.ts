@@ -52,6 +52,7 @@ import {
   SiblingCaret,
   TextNode,
 } from 'lexical';
+import {beforeEach, describe, expect, test} from 'vitest';
 
 import {
   $assertRangeSelection,
@@ -1205,8 +1206,8 @@ describe('LexicalCaret', () => {
                     anchorBias === 'outside' && focusBias === 'outside'
                       ? []
                       : (anchorBias === 'inside') === (direction === 'next')
-                      ? [{caret: {offset: 0}, distance: size}]
-                      : [{caret: {offset: size}, distance: -size}],
+                        ? [{caret: {offset: 0}, distance: size}]
+                        : [{caret: {offset: size}, distance: -size}],
                   );
                   const resultRange = $removeTextFromCaretRange(range);
                   $setSelection(null);
@@ -1943,7 +1944,7 @@ describe('LexicalSelectionHelpers', () => {
         });
 
         expect(testEnv.innerHTML).toBe(
-          '<p dir="ltr"><a href="https://" dir="ltr"><span data-lexical-text="true">link</span></a><span data-lexical-text="true">foo</span></p>',
+          '<p dir="auto"><a href="https://"><span data-lexical-text="true">link</span></a><span data-lexical-text="true">foo</span></p>',
         );
       });
     });

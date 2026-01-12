@@ -7,6 +7,7 @@
  */
 import {
   $caretRangeFromSelection,
+  $cloneWithPropertiesEphemeral,
   $createTextNode,
   $getCharacterOffsets,
   $getNodeByKey,
@@ -40,17 +41,18 @@ import {
  * it to be generated into the new TextNode.
  * @param selection - The selection containing the node whose TextNode is to be edited.
  * @param textNode - The TextNode to be edited.
- * @returns The updated TextNode.
+ * @param mutates - 'clone' to return a clone before mutating, 'self' to update in-place
+ * @returns The updated TextNode or clone.
  */
-export function $sliceSelectedTextNodeContent(
+export function $sliceSelectedTextNodeContent<T extends TextNode>(
   selection: BaseSelection,
-  textNode: TextNode,
-): LexicalNode {
+  textNode: T,
+  mutates: 'clone' | 'self' = 'self',
+): T {
   const anchorAndFocus = selection.getStartEndPoints();
   if (
     textNode.isSelected(selection) &&
-    !textNode.isSegmented() &&
-    !textNode.isToken() &&
+    !$isTokenOrSegmented(textNode) &&
     anchorAndFocus !== null
   ) {
     const [anchor, focus] = anchorAndFocus;
@@ -81,8 +83,16 @@ export function $sliceSelectedTextNodeContent(
         endOffset = offset;
       }
 
-      textNode.__text = textNode.__text.slice(startOffset, endOffset);
-      return textNode;
+      // NOTE: This mutates __text directly because the primary use case is to
+      // modify a $cloneWithProperties node that should never be added
+      // to the EditorState so we must not call getWritable via setTextContent
+      const text = textNode.__text.slice(startOffset, endOffset);
+      if (text !== textNode.__text) {
+        if (mutates === 'clone') {
+          textNode = $cloneWithPropertiesEphemeral(textNode);
+        }
+        textNode.__text = text;
+      }
     }
   }
   return textNode;
@@ -269,8 +279,8 @@ export function $patchStyle(
     $isRangeSelection(target)
       ? target.style
       : $isTextNode(target)
-      ? target.getStyle()
-      : target.getTextStyle(),
+        ? target.getStyle()
+        : target.getTextStyle(),
   );
   const newStyles = Object.entries(patch).reduce<Record<string, string>>(
     (styles, [key, value]) => {
@@ -323,6 +333,26 @@ export function $patchStyleText(
   $forEachSelectedTextNode((textNode) => {
     $patchStyle(textNode, patch);
   });
+
+  const nodes = selection.getNodes();
+  if (nodes.length > 0) {
+    const patchedElementKeys = new Set<NodeKey>();
+    for (const node of nodes) {
+      if (
+        !$isElementNode(node) ||
+        !node.canBeEmpty() ||
+        node.getChildrenSize() !== 0
+      ) {
+        continue;
+      }
+      const key = node.getKey();
+      if (patchedElementKeys.has(key)) {
+        continue;
+      }
+      patchedElementKeys.add(key);
+      $patchStyle(node, patch);
+    }
+  }
 }
 
 export function $forEachSelectedTextNode(

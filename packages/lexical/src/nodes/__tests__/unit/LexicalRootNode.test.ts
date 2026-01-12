@@ -17,6 +17,7 @@ import {
   RootNode,
   TextNode,
 } from 'lexical';
+import {beforeEach, describe, expect, test} from 'vitest';
 
 import {
   $createTestDecoratorNode,

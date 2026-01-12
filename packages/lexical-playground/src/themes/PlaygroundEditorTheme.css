@@ -6,12 +6,6 @@
  *
  *
  */
-.PlaygroundEditorTheme__ltr {
-  text-align: left;
-}
-.PlaygroundEditorTheme__rtl {
-  text-align: right;
-}
 .PlaygroundEditorTheme__paragraph {
   margin: 0;
   position: relative;
@@ -198,6 +192,17 @@
 .PlaygroundEditorTheme__tableScrollableWrapper {
   overflow-x: auto;
   margin: 0px 25px 30px 0px;
+}
+.PlaygroundEditorTheme__tableScrollRight {
+  box-shadow: inset -10px 0 10px rgba(0, 0, 0, 0.15);
+}
+.PlaygroundEditorTheme__tableScrollLeft {
+  box-shadow: inset 10px 0 10px rgba(0, 0, 0, 0.15);
+}
+.PlaygroundEditorTheme__tableScrollMiddle {
+  box-shadow:
+    inset 10px 0 10px rgba(0, 0, 0, 0.15),
+    inset -10px 0 10px rgba(0, 0, 0, 0.15);
 }
 .PlaygroundEditorTheme__tableScrollableWrapper > .PlaygroundEditorTheme__table {
   /* Remove the table's vertical margin and put it on the wrapper */
@@ -534,6 +539,18 @@
 .PlaygroundEditorTheme__tokenComment {
   color: slategray;
 }
+.PlaygroundEditorTheme__tokenDeleted {
+  border-image: linear-gradient(to right, #ffcecb 50%, #ffebe9 50%) fill 0/0/0
+    100vw;
+}
+.PlaygroundEditorTheme__tokenInserted {
+  border-image: linear-gradient(to right, #aceebb 50%, #dafbe1 50%) fill 0/0/0
+    100vw;
+}
+.PlaygroundEditorTheme__tokenUnchanged {
+  border-image: linear-gradient(to right, #ddd 50%, #f0f2f5 50%) fill 0/0/0
+    100vw;
+}
 .PlaygroundEditorTheme__tokenPunctuation {
   color: #999;
 }
@@ -634,7 +651,7 @@
 }
 .PlaygroundEditorTheme__contextMenuItem {
   display: flex;
-  justify-content: space-between;
+  justify-content: left;
   width: 100%;
   background-color: #fff;
   color: #050505;
@@ -644,6 +661,7 @@
   text-align: left;
   line-height: 20px;
   padding: 8px;
+  padding-right: 14px;
   outline: 0;
   cursor: pointer;
 }
@@ -658,4 +676,10 @@
   background: #fff;
   color: #aaa;
   cursor: not-allowed;
+}
+.PlaygroundEditorTheme__contextMenuItemIcon {
+  width: 20px;
+  margin-right: 8px;
+  background-repeat: no-repeat;
+  background-size: contain;
 }

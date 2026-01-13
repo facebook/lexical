@@ -22,7 +22,7 @@ import {
   TextNode,
 } from 'lexical/src';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
-import {describe, expect, test} from 'vitest';
+import {assert, describe, expect, test} from 'vitest';
 
 const editorConfig = Object.freeze({
   namespace: '',
@@ -65,29 +65,27 @@ describe('LexicalAutoLinkExtension tests', () => {
       // Verify content is correct and that #1234 was converted to an AutoLinkNode
       editor.read(() => {
         const root = $getRoot();
-        const paragraph = root.getFirstChild();
-
-        // Verify paragraph exists (not empty root) and is an ElementNode
-        expect(paragraph).not.toBeNull();
-        expect($isParagraphNode(paragraph)).toBe(true);
-
-        const paragraphNode = paragraph as ParagraphNode;
+        const paragraphNode = root.getFirstChild();
+        assert(
+          $isParagraphNode(paragraphNode),
+          'first root child must be a ParagraphNode',
+        );
         expect(paragraphNode.getTextContent()).toBe('#1234.Another');
 
         // Verify that #1234 was converted to an AutoLinkNode
-        const firstChild = paragraphNode.getFirstChild();
-        expect(firstChild).not.toBeNull();
-        expect($isAutoLinkNode(firstChild)).toBe(true);
+        const autoLinkNode = paragraphNode.getFirstChild();
+        assert(
+          $isAutoLinkNode(autoLinkNode),
+          'first child must be an AutoLinkNode',
+        );
 
         // The AutoLinkNode should contain "#1234" only (the matched portion)
-        const autoLinkNode = firstChild as AutoLinkNode;
         expect(autoLinkNode.getTextContent()).toBe('#1234');
 
         // Verify that ".Another" is separate text after the link (unmatched portion)
         const nextSibling = autoLinkNode.getNextSibling();
-        expect(nextSibling).not.toBeNull();
-        expect($isTextNode(nextSibling)).toBe(true);
-        expect((nextSibling as TextNode).getTextContent()).toBe('.Another');
+        assert($isTextNode(nextSibling), 'next sibling must be a TextNode');
+        expect(nextSibling.getTextContent()).toBe('.Another');
       });
 
       unregister();

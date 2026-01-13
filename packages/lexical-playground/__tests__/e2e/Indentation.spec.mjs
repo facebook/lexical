@@ -105,6 +105,7 @@ test.describe('Identation', () => {
             </ul>
           </li>
         </ul>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
         <code
           class="PlaygroundEditorTheme__code"
           dir="auto"
@@ -114,6 +115,7 @@ test.describe('Identation', () => {
           data-language="javascript">
           <span data-lexical-text="true">code</span>
         </code>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
         <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
         <table
           class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection"

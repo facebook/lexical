@@ -191,7 +191,6 @@ export default function Editor(): JSX.Element {
         <SpeechToTextPlugin />
         <AutoLinkPlugin />
         <DateTimePlugin />
-        <CodePlugin />
         {!(isCollab && useCollabV2) && (
           <CommentPlugin
             providerFactory={isCollab ? createWebsocketProvider : undefined}
@@ -199,6 +198,7 @@ export default function Editor(): JSX.Element {
         )}
         {isRichText ? (
           <>
+            <CodePlugin />
             {isCollab ? (
               useCollabV2 ? (
                 <>

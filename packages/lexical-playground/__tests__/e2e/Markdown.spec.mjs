@@ -106,7 +106,7 @@ test.describe.parallel('Markdown', () => {
     },
     {
       expectation:
-        '<code class="PlaygroundEditorTheme__code" dir="auto" spellcheck="false" data-gutter="1" data-language="javascript" data-highlight-language="javascript"><br></code>',
+        '<p class="PlaygroundEditorTheme__paragraph" dir="auto"><br></p><code class="PlaygroundEditorTheme__code" dir="auto" spellcheck="false" data-gutter="1" data-language="javascript" data-highlight-language="javascript"><br></code><p class="PlaygroundEditorTheme__paragraph" dir="auto"><br></p>',
       importExpectation: '',
       isBlockTest: true,
       markdownImport: '',

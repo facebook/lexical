@@ -19,16 +19,26 @@ export default function CodePlugin(): null {
     }
 
     return editor.registerNodeTransform(CodeNode, (codeNode) => {
-      // This is to ensure that there is a paragraph node always present after the code node
+      // Skip if not a direct child of root
       if (codeNode.getParent() !== $getRoot()) {
         return codeNode;
       }
 
+      // Skip if this is markdown mode (single CodeNode with language 'markdown')
+      if (codeNode.getLanguage() === 'markdown') {
+        const root = $getRoot();
+        const children = root.getChildren();
+        if (children.length === 1) {
+          return codeNode;
+        }
+      }
+
+      // Ensure there is a paragraph node after the code node
       if (!codeNode.getNextSibling()) {
         codeNode.insertAfter($createParagraphNode());
       }
 
-      // This is to ensure that there is a paragraph node always present before the code node
+      // Ensure there is a paragraph node before the code node
       if (!codeNode.getPreviousSibling()) {
         codeNode.insertBefore($createParagraphNode());
       }

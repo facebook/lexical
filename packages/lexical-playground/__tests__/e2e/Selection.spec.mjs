@@ -156,6 +156,7 @@ test.describe.parallel('Selection', () => {
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Line1</span>
         </p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
         <code
           class="PlaygroundEditorTheme__code"
           dir="auto"
@@ -165,6 +166,7 @@ test.describe.parallel('Selection', () => {
           data-language="javascript">
           <span data-lexical-text="true">Line2</span>
         </code>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
       `,
     );
   });

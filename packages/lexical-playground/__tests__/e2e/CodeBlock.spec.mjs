@@ -38,13 +38,14 @@ test.describe('CodeBlock', () => {
     if (isRichText) {
       await assertSelection(page, {
         anchorOffset: 1,
-        anchorPath: [0, 4, 0],
+        anchorPath: [1, 4, 0],
         focusOffset: 1,
-        focusPath: [0, 4, 0],
+        focusPath: [1, 4, 0],
       });
       await assertHTML(
         page,
         html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
           <code
             class="PlaygroundEditorTheme__code"
             dir="auto"
@@ -78,11 +79,13 @@ test.describe('CodeBlock', () => {
               ;
             </span>
           </code>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
         `,
       );
 
       // Remove code block (back to a normal paragraph) and check that highlights are converted into regular text
       await moveToEditorBeginning(page);
+      await page.keyboard.press('ArrowRight');
       await page.keyboard.press('Backspace');
       await assertHTML(
         page,
@@ -90,6 +93,7 @@ test.describe('CodeBlock', () => {
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">alert(1);</span>
           </p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
         `,
       );
     } else {
@@ -115,13 +119,14 @@ test.describe('CodeBlock', () => {
     if (isRichText) {
       await assertSelection(page, {
         anchorOffset: 0,
-        anchorPath: [0, 0, 0],
+        anchorPath: [1, 0, 0],
         focusOffset: 0,
-        focusPath: [0, 0, 0],
+        focusPath: [1, 0, 0],
       });
       await assertHTML(
         page,
         html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
           <code
             class="PlaygroundEditorTheme__code"
             dir="auto"
@@ -155,6 +160,7 @@ test.describe('CodeBlock', () => {
               ;
             </span>
           </code>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
         `,
       );
     } else {
@@ -210,6 +216,7 @@ test.describe('CodeBlock', () => {
     await assertHTML(
       page,
       html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
         <code
           class="PlaygroundEditorTheme__code"
           dir="auto"
@@ -226,6 +233,7 @@ test.describe('CodeBlock', () => {
           <br />
           <span data-lexical-text="true">meh</span>
         </code>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
       `,
     );
   });
@@ -292,6 +300,7 @@ test.describe('CodeBlock', () => {
           <br />
           <span data-lexical-text="true">meh</span>
         </code>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
       `,
     );
   });
@@ -306,6 +315,7 @@ test.describe('CodeBlock', () => {
       await assertHTML(
         page,
         html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
           <code
             class="PlaygroundEditorTheme__code"
             dir="auto"
@@ -321,6 +331,7 @@ test.describe('CodeBlock', () => {
             </span>
             <span data-lexical-text="true">from users</span>
           </code>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
         `,
       );
       await click(page, '.toolbar-item.code-language');
@@ -328,6 +339,7 @@ test.describe('CodeBlock', () => {
       await assertHTML(
         page,
         html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
           <code
             class="PlaygroundEditorTheme__code"
             dir="auto"
@@ -354,6 +366,7 @@ test.describe('CodeBlock', () => {
             </span>
             <span data-lexical-text="true">users</span>
           </code>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
         `,
       );
     } else {
@@ -385,6 +398,7 @@ test.describe('CodeBlock', () => {
     await assertHTML(
       page,
       html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
         <code
           class="PlaygroundEditorTheme__code"
           dir="auto"
@@ -456,6 +470,7 @@ test.describe('CodeBlock', () => {
             ;
           </span>
         </code>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
       `,
     );
   });
@@ -481,6 +496,7 @@ test.describe('CodeBlock', () => {
     await assertHTML(
       page,
       html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
         <code
           class="PlaygroundEditorTheme__code"
           dir="auto"
@@ -544,6 +560,7 @@ test.describe('CodeBlock', () => {
             ;
           </span>
         </code>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
       `,
     );
   });
@@ -566,6 +583,7 @@ test.describe('CodeBlock', () => {
     await assertHTML(
       page,
       html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
         <code
           class="PlaygroundEditorTheme__code"
           dir="auto"
@@ -627,6 +645,7 @@ test.describe('CodeBlock', () => {
             }
           </span>
         </code>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
       `,
     );
     await page.keyboard.down('Shift');
@@ -640,6 +659,7 @@ test.describe('CodeBlock', () => {
     await assertHTML(
       page,
       html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
         <code
           class="PlaygroundEditorTheme__code"
           dir="auto"
@@ -719,6 +739,7 @@ test.describe('CodeBlock', () => {
             }
           </span>
         </code>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
       `,
     );
     await page.keyboard.down('Shift');
@@ -728,6 +749,7 @@ test.describe('CodeBlock', () => {
     await assertHTML(
       page,
       html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
         <code
           class="PlaygroundEditorTheme__code"
           dir="auto"
@@ -798,6 +820,7 @@ test.describe('CodeBlock', () => {
             }
           </span>
         </code>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
       `,
     );
     await click(page, '.toolbar-item.alignment');
@@ -807,6 +830,7 @@ test.describe('CodeBlock', () => {
     await assertHTML(
       page,
       html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
         <code
           class="PlaygroundEditorTheme__code"
           dir="auto"
@@ -865,6 +889,7 @@ test.describe('CodeBlock', () => {
             }
           </span>
         </code>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
       `,
     );
   });
@@ -875,6 +900,7 @@ test.describe('CodeBlock', () => {
   }) => {
     test.skip(isPlainText);
     const abcHTML = html`
+      <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
       <code
         class="PlaygroundEditorTheme__code"
         dir="auto"
@@ -945,8 +971,10 @@ test.describe('CodeBlock', () => {
           ;
         </span>
       </code>
+      <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
     `;
     const bcaHTML = html`
+      <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
       <code
         class="PlaygroundEditorTheme__code"
         dir="auto"
@@ -1017,18 +1045,19 @@ test.describe('CodeBlock', () => {
           ;
         </span>
       </code>
+      <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
     `;
     const endOfFirstLine = {
       anchorOffset: 1,
-      anchorPath: [0, 3, 0],
+      anchorPath: [1, 3, 0],
       focusOffset: 1,
-      focusPath: [0, 3, 0],
+      focusPath: [1, 3, 0],
     };
     const endOfLastLine = {
       anchorOffset: 1,
-      anchorPath: [0, 13, 0],
+      anchorPath: [1, 13, 0],
       focusOffset: 1,
-      focusPath: [0, 13, 0],
+      focusPath: [1, 13, 0],
     };
     await focusEditor(page);
     await page.keyboard.type('``` a();\nb();\nc();');
@@ -1072,9 +1101,9 @@ test.describe('CodeBlock', () => {
     await page.keyboard.press('ArrowUp');
     await assertSelection(page, {
       anchorOffset: 0,
-      anchorPath: [0, 0, 0],
+      anchorPath: [1, 0, 0],
       focusOffset: 0,
-      focusPath: [0, 0, 0],
+      focusPath: [1, 0, 0],
     });
 
     // Test 2: Typing at start stays within code block
@@ -1083,6 +1112,7 @@ test.describe('CodeBlock', () => {
     await assertHTML(
       page,
       html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
         <code
           class="PlaygroundEditorTheme__code"
           dir="auto"
@@ -1128,15 +1158,16 @@ test.describe('CodeBlock', () => {
             ;
           </span>
         </code>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
       `,
     );
 
     // Let's verify the cursor position after typing the start comment
     await assertSelection(page, {
       anchorOffset: 0,
-      anchorPath: [0, 2, 0],
+      anchorPath: [1, 2, 0],
       focusOffset: 0,
-      focusPath: [0, 2, 0],
+      focusPath: [1, 2, 0],
     });
 
     // Test 3: Selection stays at end when pressing down
@@ -1145,6 +1176,7 @@ test.describe('CodeBlock', () => {
     await assertHTML(
       page,
       html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
         <code
           class="PlaygroundEditorTheme__code"
           dir="auto"
@@ -1196,20 +1228,21 @@ test.describe('CodeBlock', () => {
             // end
           </span>
         </code>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
       `,
     );
 
     await page.keyboard.press('ArrowDown');
     await assertSelection(page, {
       anchorOffset: 6,
-      anchorPath: [0, 10, 0],
+      anchorPath: [1, 10, 0],
       focusOffset: 6,
-      focusPath: [0, 10, 0],
+      focusPath: [1, 10, 0],
     });
 
     // Verify no content escaped the code block
     const paragraphs = await page.$$('p');
-    expect(paragraphs.length).toBe(0);
+    expect(paragraphs.length).toBe(2); // Should have 2 paragraphs (before and after code block)
   });
 
   test('When pressing CMD/Ctrl + Left, CMD/Ctrl + Right, the cursor should go to the start of the code', async ({
@@ -1230,6 +1263,7 @@ test.describe('CodeBlock', () => {
     await assertHTML(
       page,
       `
+      <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
       <code
         class="PlaygroundEditorTheme__code"
         dir="auto"
@@ -1243,55 +1277,56 @@ test.describe('CodeBlock', () => {
         <span class="PlaygroundEditorTheme__tabNode" data-lexical-text="true"></span>
         <span data-lexical-text="true">c d</span>
       </code>
+      <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
     `,
     );
 
     await selectCharacters(page, 'left', 11);
     await assertSelection(page, {
       anchorOffset: 5,
-      anchorPath: [0, 4, 0],
+      anchorPath: [1, 4, 0],
       focusOffset: 1,
-      focusPath: [0, 1, 0],
+      focusPath: [1, 1, 0],
     });
 
     await moveToStart(page);
     await assertSelection(page, {
       anchorOffset: 0,
-      anchorPath: [0, 0, 0],
+      anchorPath: [1, 0, 0],
       focusOffset: 0,
-      focusPath: [0, 0, 0],
+      focusPath: [1, 0, 0],
     });
 
     await moveToEnd(page);
     await assertSelection(page, {
       anchorOffset: 5,
-      anchorPath: [0, 1, 0],
+      anchorPath: [1, 1, 0],
       focusOffset: 5,
-      focusPath: [0, 1, 0],
+      focusPath: [1, 1, 0],
     });
 
     await moveToStart(page);
     await assertSelection(page, {
       anchorOffset: 1,
-      anchorPath: [0, 1, 0],
+      anchorPath: [1, 1, 0],
       focusOffset: 1,
-      focusPath: [0, 1, 0],
+      focusPath: [1, 1, 0],
     });
 
     await selectCharacters(page, 'right', 11);
     await assertSelection(page, {
       anchorOffset: 1,
-      anchorPath: [0, 1, 0],
+      anchorPath: [1, 1, 0],
       focusOffset: 5,
-      focusPath: [0, 4, 0],
+      focusPath: [1, 4, 0],
     });
 
     await moveToEnd(page);
     await assertSelection(page, {
       anchorOffset: 5,
-      anchorPath: [0, 4, 0],
+      anchorPath: [1, 4, 0],
       focusOffset: 5,
-      focusPath: [0, 4, 0],
+      focusPath: [1, 4, 0],
     });
   });
 
@@ -1307,6 +1342,7 @@ test.describe('CodeBlock', () => {
       await assertHTML(
         page,
         html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
           <code
             class="PlaygroundEditorTheme__code"
             dir="auto"
@@ -1335,6 +1371,7 @@ test.describe('CodeBlock', () => {
               data-lexical-text="true"></span>
             <span data-lexical-text="true">let d = 4;</span>
           </code>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
         `,
       );
     } else {
@@ -1367,6 +1404,7 @@ test.describe('CodeBlock', () => {
       await assertHTML(
         page,
         html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
           <code
             class="PlaygroundEditorTheme__code"
             dir="auto"

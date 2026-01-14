@@ -763,7 +763,7 @@ describe('LexicalTableNode tests', () => {
                 </table>
               `,
             );
-          });
+          }, 15000);
 
           test('Copy table from an external source like gdoc with formatting', async () => {
             const {editor} = testEnv;

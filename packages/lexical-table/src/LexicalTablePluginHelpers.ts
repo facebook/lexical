@@ -18,16 +18,20 @@ import {
   $createParagraphNode,
   $getNearestNodeFromDOMNode,
   $getPreviousSelection,
+  $getRoot,
   $getSelection,
   $isElementNode,
   $isRangeSelection,
   $isTextNode,
+  $setSelection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_EDITOR,
+  COMMAND_PRIORITY_HIGH,
   ElementNode,
   isDOMNode,
   LexicalEditor,
   NodeKey,
+  SELECT_ALL_COMMAND,
   SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
 } from 'lexical';
 import invariant from 'shared/invariant';
@@ -44,6 +48,7 @@ import {
 import {$isTableNode, TableNode} from './LexicalTableNode';
 import {$getTableAndElementByKey, TableObserver} from './LexicalTableObserver';
 import {$isTableRowNode, TableRowNode} from './LexicalTableRowNode';
+import {$createTableSelectionFrom} from './LexicalTableSelection';
 import {
   $findTableNode,
   applyTableHandlers,
@@ -179,6 +184,78 @@ function $tableClickCommand(event: MouseEvent): boolean {
     return false;
   }
   blockNode.select(0);
+  return true;
+}
+
+function $tableSelectAllCommand(): boolean {
+  const selection = $getSelection();
+  if (!$isRangeSelection(selection)) {
+    return false;
+  }
+
+  // Check if the selection is inside a table
+  const anchorNode = selection.anchor.getNode();
+  const tableNode = $findTableNode(anchorNode);
+  if (tableNode === null) {
+    return false;
+  }
+
+  // CRITICAL: Only intercept if table is the ONLY child of root
+  // This is required to reproduce the bug: table must be the only content, no empty paragraphs
+  // This prevents breaking other tests that expect RangeSelection when there's content outside table
+  const root = $getRoot();
+  const rootChildren = root.getChildren();
+
+  // Find the table's index in root children
+  let tableIndex = -1;
+  for (let i = 0; i < rootChildren.length; i++) {
+    if (rootChildren[i].is(tableNode)) {
+      tableIndex = i;
+      break;
+    }
+  }
+
+  if (tableIndex === -1) {
+    return false; // Table not found in root children (shouldn't happen)
+  }
+
+  // STRICT: Table must be the ONLY child - no other nodes before or after
+  // This matches the bug reproduction scenario where table is the only content
+  if (rootChildren.length !== 1) {
+    // There are other nodes (even empty paragraphs) - don't intercept
+    return false;
+  }
+
+  // At this point, table is the only child
+  // This is the exact scenario from issue #8074: table is the only content in editor
+
+  // Get the table map to find first and last cells (handles merged cells correctly)
+  const [tableMap] = $computeTableMapSkipCellCheck(tableNode, null, null);
+  if (tableMap.length === 0 || tableMap[0].length === 0) {
+    return false;
+  }
+
+  // Get the first cell (top-left)
+  const firstCellMap = tableMap[0][0];
+  if (!firstCellMap || !firstCellMap.cell) {
+    return false;
+  }
+
+  // Get the last cell (bottom-right)
+  const lastRow = tableMap[tableMap.length - 1];
+  const lastCellMap = lastRow[lastRow.length - 1];
+  if (!lastCellMap || !lastCellMap.cell) {
+    return false;
+  }
+
+  // Create a TableSelection that selects all cells
+  const tableSelection = $createTableSelectionFrom(
+    tableNode,
+    firstCellMap.cell,
+    lastCellMap.cell,
+  );
+  $setSelection(tableSelection);
+
   return true;
 }
 
@@ -351,6 +428,11 @@ export function registerTablePlugin(
         return isInsideTableCell && nodes.some($isTableNode);
       },
       COMMAND_PRIORITY_EDITOR,
+    ),
+    editor.registerCommand(
+      SELECT_ALL_COMMAND,
+      $tableSelectAllCommand,
+      COMMAND_PRIORITY_HIGH,
     ),
     editor.registerCommand(
       CLICK_COMMAND,

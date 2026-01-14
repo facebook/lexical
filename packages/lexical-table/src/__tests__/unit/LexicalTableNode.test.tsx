@@ -595,6 +595,8 @@ describe('LexicalTableNode tests', () => {
             );
           });
 
+          // Increased timeout to 15s as this test can be slow due to clipboard operations
+          // and HTML parsing, preventing flaky test failures
           test('Copy table with caption from an external source', async () => {
             const {editor} = testEnv;
 

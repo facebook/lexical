@@ -26,7 +26,7 @@ import {
   $setSelection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_EDITOR,
-  COMMAND_PRIORITY_HIGH,
+  COMMAND_PRIORITY_LOW,
   ElementNode,
   isDOMNode,
   LexicalEditor,
@@ -204,25 +204,7 @@ function $tableSelectAllCommand(): boolean {
   // This is required to reproduce the bug: table must be the only content, no empty paragraphs
   // This prevents breaking other tests that expect RangeSelection when there's content outside table
   const root = $getRoot();
-  const rootChildren = root.getChildren();
-
-  // Find the table's index in root children
-  let tableIndex = -1;
-  for (let i = 0; i < rootChildren.length; i++) {
-    if (rootChildren[i].is(tableNode)) {
-      tableIndex = i;
-      break;
-    }
-  }
-
-  if (tableIndex === -1) {
-    return false; // Table not found in root children (shouldn't happen)
-  }
-
-  // STRICT: Table must be the ONLY child - no other nodes before or after
-  // This matches the bug reproduction scenario where table is the only content
-  if (rootChildren.length !== 1) {
-    // There are other nodes (even empty paragraphs) - don't intercept
+  if (!root.is(tableNode.getParent()) || root.getChildrenSize() !== 1) {
     return false;
   }
 
@@ -432,7 +414,7 @@ export function registerTablePlugin(
     editor.registerCommand(
       SELECT_ALL_COMMAND,
       $tableSelectAllCommand,
-      COMMAND_PRIORITY_HIGH,
+      COMMAND_PRIORITY_LOW,
     ),
     editor.registerCommand(
       CLICK_COMMAND,

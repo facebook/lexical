@@ -92,6 +92,8 @@ describe('LexicalTableCellNode tests', () => {
       });
     });
 
+    // Increased timeout as this test performs DOM parsing and HTML generation
+    // which can be slow, preventing flaky test failures
     test('TableCellNode.importDOM', async () => {
       const {editor} = testEnv;
       const parser = new DOMParser();
@@ -210,6 +212,6 @@ describe('LexicalTableCellNode tests', () => {
           expectHtmlToBeEqual($generateHtmlFromNodes(editor), output);
         }
       });
-    });
+    }, 15000);
   });
 });

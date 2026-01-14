@@ -34,6 +34,7 @@ import {
   $isRangeSelection,
   defineExtension,
   LexicalEditor,
+  NodeKey,
   SELECT_ALL_COMMAND,
 } from 'lexical';
 import {assert, beforeEach, describe, expect, it, test} from 'vitest';
@@ -505,7 +506,7 @@ describe('TableExtension', () => {
         const uniqueCellKeys = new Set(
           selectedNodes.map((node) => node.getKey()),
         );
-        const totalUniqueCells = new Set<string>();
+        const totalUniqueCells = new Set<NodeKey>();
         tableMap.forEach((row) => {
           row.forEach((cellMap) => {
             if (cellMap && cellMap.cell) {

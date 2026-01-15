@@ -15,6 +15,9 @@ import {
   $getNearestNodeFromDOMNode,
   $getNodeByKey,
   $getRoot,
+  $getSelection,
+  $onUpdate,
+  BLUR_COMMAND,
   COMMAND_PRIORITY_HIGH,
   COMMAND_PRIORITY_LOW,
   DRAGOVER_COMMAND,
@@ -30,6 +33,7 @@ import {
   useState,
 } from 'react';
 import {createPortal} from 'react-dom';
+import {IS_FIREFOX} from 'shared/environment';
 
 import {Point} from './shared/point';
 import {Rectangle} from './shared/rect';
@@ -399,6 +403,10 @@ function useDraggableBlockMenu(
         return false;
       }
       if (targetNode === draggedNode) {
+        // Firefox-specific fix: Even when no move occurs, restore focus to ensure cursor visibility
+        if (IS_FIREFOX) {
+          editor.focus();
+        }
         return true;
       }
       const targetBlockElemTop = targetBlockElem.getBoundingClientRect().top;
@@ -408,6 +416,15 @@ function useDraggableBlockMenu(
         targetNode.insertBefore(draggedNode);
       }
       setDraggableBlockElem(null);
+
+      // Firefox-specific fix: Use editor.focus() after drop to properly restore
+      // both focus and selection. This ensures cursor visibility immediately.
+      if (IS_FIREFOX) {
+        // Using $onUpdate ensures this happens after the current update cycle finishes
+        $onUpdate(() => {
+          editor.focus();
+        });
+      }
 
       return true;
     }
@@ -430,11 +447,83 @@ function useDraggableBlockMenu(
     );
   }, [anchorElem, editor, targetLineRef, setDraggableBlockElem]);
 
+  // Firefox-specific: Prevent blur when clicking on drag handle to maintain cursor visibility.
+  // Firefox fires blur before dragstart, causing focus loss. We detect this by checking if
+  // the blur's relatedTarget is on the menu using isOnMenu, then restore focus synchronously.
+  useEffect(() => {
+    if (!IS_FIREFOX || !isEditable) {
+      return;
+    }
+
+    return mergeRegister(
+      editor.registerRootListener((rootElement, prevRootElement) => {
+        function onBlur(event: FocusEvent) {
+          const relatedTarget = event.relatedTarget;
+          if (
+            relatedTarget &&
+            relatedTarget instanceof HTMLElement &&
+            isOnMenu(relatedTarget)
+          ) {
+            // Blur is caused by clicking on drag handle - restore focus immediately
+            // to prevent cursor from disappearing. This must be synchronous to work.
+            if (rootElement) {
+              rootElement.focus({preventScroll: true});
+              // Force selection update to ensure cursor is visible
+              editor.update(() => {
+                const selection = $getSelection();
+                if (selection !== null && !selection.dirty) {
+                  selection.dirty = true;
+                }
+              });
+            }
+            // Prevent the event from propagating to LexicalEvents handler
+            event.stopImmediatePropagation();
+          }
+        }
+
+        if (rootElement) {
+          rootElement.addEventListener('blur', onBlur, true);
+        }
+
+        if (prevRootElement) {
+          prevRootElement.removeEventListener('blur', onBlur, true);
+        }
+      }),
+      // Intercept BLUR_COMMAND if focus is on the menu (fallback in case event propagation wasn't stopped)
+      editor.registerCommand(
+        BLUR_COMMAND,
+        () => {
+          const rootElement = editor.getRootElement();
+          const activeElement = document.activeElement;
+          if (
+            rootElement &&
+            activeElement &&
+            activeElement instanceof HTMLElement &&
+            isOnMenu(activeElement)
+          ) {
+            // Focus is on menu - restore to root and prevent blur command
+            rootElement.focus({preventScroll: true});
+            editor.update(() => {
+              const selection = $getSelection();
+              if (selection !== null && !selection.dirty) {
+                selection.dirty = true;
+              }
+            });
+            return true; // Prevent command from propagating
+          }
+          return false;
+        },
+        COMMAND_PRIORITY_HIGH,
+      ),
+    );
+  }, [editor, isEditable, isOnMenu]);
+
   function onDragStart(event: ReactDragEvent<HTMLDivElement>): void {
     const dataTransfer = event.dataTransfer;
     if (!dataTransfer || !draggableBlockElem) {
       return;
     }
+
     setDragImage(dataTransfer, draggableBlockElem);
     let nodeKey = '';
     editor.update(() => {
@@ -445,11 +534,37 @@ function useDraggableBlockMenu(
     });
     isDraggingBlockRef.current = true;
     dataTransfer.setData(DRAG_DATA_FORMAT, nodeKey);
+
+    // Firefox-specific: Restore focus synchronously after drag starts to prevent cursor loss.
+    // The blur handler should have already restored focus, but we do it here as a fallback
+    // and to ensure selection is properly maintained during drag.
+    if (IS_FIREFOX) {
+      const rootElement = editor.getRootElement();
+      if (rootElement !== null && document.activeElement !== rootElement) {
+        // Restore focus synchronously - don't use requestAnimationFrame as blur already happened
+        // and we need immediate focus restoration to maintain cursor visibility
+        rootElement.focus({preventScroll: true});
+        // Force selection update to ensure cursor is visible
+        editor.update(() => {
+          const selection = $getSelection();
+          if (selection !== null && !selection.dirty) {
+            selection.dirty = true;
+          }
+        });
+      }
+    }
   }
 
   function onDragEnd(): void {
     isDraggingBlockRef.current = false;
     hideTargetLine(targetLineRef.current);
+
+    // Firefox-specific fix: Use editor.focus() to properly restore both focus and
+    // selection after drag ends. This ensures cursor visibility immediately.
+    if (IS_FIREFOX) {
+      // editor.focus() handles both focus restoration and selection update properly
+      editor.focus();
+    }
   }
   return createPortal(
     <>

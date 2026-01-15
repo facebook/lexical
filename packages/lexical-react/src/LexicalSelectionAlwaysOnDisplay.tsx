@@ -10,11 +10,15 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {selectionAlwaysOnDisplay} from '@lexical/utils';
 import {useEffect} from 'react';
 
-export function SelectionAlwaysOnDisplay(): null {
+type Props = Readonly<{
+  onReposition?: (node: Array<HTMLElement>) => void;
+}>;
+
+export function SelectionAlwaysOnDisplay({onReposition}: Props): null {
   const [editor] = useLexicalComposerContext();
   useEffect(() => {
-    return selectionAlwaysOnDisplay(editor);
-  }, [editor]);
+    return selectionAlwaysOnDisplay(editor, onReposition);
+  }, [editor, onReposition]);
 
   return null;
 }

@@ -868,7 +868,7 @@ test.describe.parallel('Tables', () => {
   }) => {
     test.skip(isPlainText);
     await initialize({isCollab, page});
-    await page.mouse.move(0, 0);
+
     await focusEditor(page);
     await insertTable(page, 3, 3);
 
@@ -1018,7 +1018,7 @@ test.describe.parallel('Tables', () => {
   }) => {
     test.skip(isPlainText);
     await initialize({isCollab, page});
-    await page.mouse.move(0, 0);
+
     await focusEditor(page);
     await insertTable(page, 2, 3);
     await selectAll(page);
@@ -1081,7 +1081,7 @@ test.describe.parallel('Tables', () => {
   }) => {
     test.skip(isPlainText);
     await initialize({isCollab, page});
-    await page.mouse.move(0, 0);
+
     await focusEditor(page);
     await insertTable(page, 2, 3);
 
@@ -1574,7 +1574,7 @@ test.describe.parallel('Tables', () => {
   }) => {
     test.skip(isPlainText);
     await initialize({isCollab, page});
-    await page.mouse.move(0, 0);
+
     await focusEditor(page);
 
     await insertTable(page, 1, 2);
@@ -5898,7 +5898,7 @@ test.describe.parallel('Tables', () => {
   }) => {
     test.skip(isPlainText);
     await initialize({isCollab, page});
-    await page.mouse.move(0, 0);
+
     await focusEditor(page);
 
     // Create and copy a table

@@ -163,6 +163,43 @@ function getBoundaryIndex(cell: HTMLTableCellElement, clientX: number): number {
   return cellIndex + (isRightHalf ? 1 : 0);
 }
 
+function getDropIndicatorState(
+  headerRow: HTMLTableRowElement,
+  tableRect: DOMRect,
+  boundaryIndex: number,
+): DropIndicatorState | null {
+  const cellCount = headerRow.cells.length;
+  if (cellCount === 0) {
+    return null;
+  }
+  const clampedIndex = Math.max(0, Math.min(boundaryIndex, cellCount));
+  if (clampedIndex === 0) {
+    const firstRect = headerRow.cells[0].getBoundingClientRect();
+    return {
+      edge: 'left',
+      height: tableRect.height,
+      left: firstRect.left,
+      top: tableRect.top,
+    };
+  }
+  if (clampedIndex === cellCount) {
+    const lastRect = headerRow.cells[cellCount - 1].getBoundingClientRect();
+    return {
+      edge: 'right',
+      height: tableRect.height,
+      left: lastRect.right,
+      top: tableRect.top,
+    };
+  }
+  const targetRect = headerRow.cells[clampedIndex].getBoundingClientRect();
+  return {
+    edge: 'left',
+    height: tableRect.height,
+    left: targetRect.left,
+    top: tableRect.top,
+  };
+}
+
 function isColumnDrag(
   source: ElementDragPayload,
   tableKey: string | null,
@@ -434,38 +471,27 @@ function TableHoverActionsV2({
           if (!isColumnDrag(source, tableKey)) {
             return;
           }
+          const boundaryIndex = getBoundaryIndex(
+            cell,
+            location.current.input.clientX,
+          );
           const tableRect = hoveredTable.getBoundingClientRect();
-          const rect = cell.getBoundingClientRect();
-          const edge =
-            location.current.input.clientX > rect.left + rect.width / 2
-              ? 'right'
-              : 'left';
-          setDropIndicatorState({
-            edge,
-            height: tableRect.height,
-            left: edge === 'left' ? rect.left : rect.right,
-            top: tableRect.top,
-          });
+          setDropIndicatorState(
+            getDropIndicatorState(headerRow, tableRect, boundaryIndex),
+          );
         },
         onDragEnter: ({location, source}) => {
           if (!isColumnDrag(source, tableKey)) {
             return;
           }
-          const rect = cell.getBoundingClientRect();
-          const edge =
-            location.current.input.clientX > rect.left + rect.width / 2
-              ? 'right'
-              : 'left';
-          setDropIndicatorState((current) => {
-            if (!current) {
-              return current;
-            }
-            return {
-              ...current,
-              edge,
-              left: edge === 'left' ? rect.left : rect.right,
-            };
-          });
+          const boundaryIndex = getBoundaryIndex(
+            cell,
+            location.current.input.clientX,
+          );
+          const tableRect = hoveredTable.getBoundingClientRect();
+          setDropIndicatorState(
+            getDropIndicatorState(headerRow, tableRect, boundaryIndex),
+          );
         },
         onDragLeave: () => setDropIndicatorState(null),
         onDrop: ({location, source}) => {

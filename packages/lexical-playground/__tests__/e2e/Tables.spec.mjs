@@ -12,6 +12,7 @@ import {
   moveLeft,
   moveRight,
   moveToEditorBeginning,
+  moveToEditorEnd,
   moveUp,
   pressBackspace,
   selectAll,
@@ -21,6 +22,7 @@ import {
 import {
   assertSelection,
   assertTableHTML as assertHTML,
+  assertTableSelectionCoordinates,
   click,
   clickSelectors,
   copyToClipboard,
@@ -7089,6 +7091,66 @@ test.describe.parallel('Tables', () => {
         <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
       `,
     );
+  });
+
+  test('Ctrl+A selects all cells in table with merged cells when table is only content', async ({
+    page,
+    isPlainText,
+    isCollab,
+    browserName,
+  }) => {
+    test.skip(isPlainText);
+    await initialize({isCollab, page});
+
+    await focusEditor(page);
+
+    // Insert a 3x3 table
+    await insertTable(page, 3, 3);
+
+    // Remove all other nodes, leaving only the table
+    // First, select all and delete to clear everything
+    await selectAll(page);
+    await page.keyboard.press('Backspace');
+
+    // Insert table again
+    await insertTable(page, 3, 3);
+
+    // Merge two cells in the last column (merge cells in row 0 and row 1, column 2)
+    // Do this BEFORE removing paragraphs to avoid navigation issues
+    await selectCellsFromTableCords(
+      page,
+      {x: 2, y: 0},
+      {x: 2, y: 1},
+      true,
+      false,
+    );
+    await mergeTableCells(page);
+
+    // CRITICAL: Remove ALL paragraphs (before and after table) to ensure table is the ONLY content
+    // This matches the bug reproduction: "Remove all other nodes from the editor, leaving only the table"
+    // Empty paragraphs (even one) will prevent the bug from reproducing
+    // Following the exact pattern from Selection.spec.mjs test "shift+arrowup into a table, when the table is the only node"
+
+    // Delete the paragraph before the table
+    await moveToEditorBeginning(page);
+    await deleteBackward(page);
+
+    // Delete the paragraph after the table
+    await moveToEditorEnd(page);
+    await deleteBackward(page);
+
+    // Place cursor inside any cell of the table
+    await selectCellFromTableCoord(page, {x: 0, y: 0}, true);
+
+    // Press Ctrl+A
+    await selectAll(page);
+
+    // Verify that all cells are selected by checking table selection coordinates
+    // The selection should span from first cell (0,0) to last cell (2,2)
+    await assertTableSelectionCoordinates(page, {
+      anchor: {x: 0, y: 0},
+      focus: {x: 2, y: 2},
+    });
   });
 });
 

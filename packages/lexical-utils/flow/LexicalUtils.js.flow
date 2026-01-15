@@ -84,6 +84,7 @@ declare export function positionNodeOnRange(
 ): () => void;
 declare export function selectionAlwaysOnDisplay(
   editor: LexicalEditor,
+  onReposition?: (node: Array<HTMLElement>) => void,
 ): () => void;
 declare export function $getNearestBlockElementAncestorOrThrow(
   startNode: LexicalNode,

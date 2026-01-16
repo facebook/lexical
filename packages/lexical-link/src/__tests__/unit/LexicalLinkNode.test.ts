@@ -15,6 +15,7 @@ import {
   SerializedLinkNode,
 } from '@lexical/link';
 import {$createMarkNode, $isMarkNode} from '@lexical/mark';
+import {$createHeadingNode} from '@lexical/rich-text';
 import {
   $createLineBreakNode,
   $createParagraphNode,
@@ -522,6 +523,57 @@ describe('LexicalLinkNode tests', () => {
           expect(markNode.getIDs()).toEqual(['knetk']);
           expect(markNode.getTextContent()).toBe('text');
         }
+      });
+    });
+
+    test('$toggleLink correctly removes link when link contains heading', async () => {
+      // This tests the structure: link > heading > text
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const paragraph = $createParagraphNode();
+        const linkNode = $createLinkNode('https://example.com/foo');
+        const headingNode = $createHeadingNode('h3');
+        const textNode = $createTextNode('Example Link');
+
+        headingNode.append(textNode);
+        linkNode.append(headingNode);
+        paragraph.append(linkNode);
+        $getRoot().append(paragraph);
+      });
+
+      // Verify initial structure: paragraph > link > heading > text
+      editor.read(() => {
+        const paragraph = $getRoot().getFirstChild() as ParagraphNode;
+        const linkNode = paragraph.getFirstChild();
+
+        expect($isLinkNode(linkNode)).toBe(true);
+        if ($isLinkNode(linkNode)) {
+          expect(linkNode.getURL()).toBe('https://example.com/foo');
+          const headingNode = linkNode.getFirstChild();
+          expect(headingNode?.getType()).toBe('heading');
+          expect(headingNode?.getTextContent()).toBe('Example Link');
+        }
+      });
+
+      // Select all and remove link
+      await editor.update(() => {
+        $selectAll();
+        $toggleLink(null);
+      });
+
+      // Verify structure after link removal: paragraph > heading > text
+      editor.read(() => {
+        const paragraph = $getRoot().getFirstChild() as ParagraphNode;
+        const children = paragraph.getChildren();
+
+        // Link should be removed, heading should be moved up to paragraph level
+        expect(children.length).toBe(1);
+        const headingNode = children[0];
+        expect(headingNode.getType()).toBe('heading');
+        expect(headingNode.getTextContent()).toBe('Example Link');
+
+        // Verify no link nodes remain
+        expect($isLinkNode(headingNode)).toBe(false);
       });
     });
 

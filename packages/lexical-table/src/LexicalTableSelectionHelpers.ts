@@ -116,6 +116,25 @@ const isPointerDownOnEvent = (event: PointerEvent) => {
   return (event.buttons & 1) === 1;
 };
 
+type TableSelectionLike = BaseSelection & {
+  anchor: RangeSelection['anchor'];
+  focus: RangeSelection['focus'];
+  tableKey: NodeKey;
+};
+
+function isTableSelectionLike(
+  selection: BaseSelection,
+): selection is TableSelectionLike {
+  return (
+    $isTableSelection(selection) ||
+    (typeof selection === 'object' &&
+      selection !== null &&
+      'tableKey' in selection &&
+      'anchor' in selection &&
+      'focus' in selection)
+  );
+}
+
 export function isHTMLTableElement(el: unknown): el is HTMLTableElement {
   return isHTMLElement(el) && el.nodeName === 'TABLE';
 }
@@ -164,12 +183,9 @@ export function $insertTableNodesFromClipboard(
   nodes: Array<LexicalNode>,
   selection: BaseSelection,
 ): boolean {
-  const isTableSelection = $isTableSelection(selection);
-  const isTableSelectionLike =
-    isTableSelection ||
-    ('tableKey' in selection && selection.anchor && selection.focus);
+  const isTableSelectionLikeSelection = isTableSelectionLike(selection);
   const isRangeSelection = $isRangeSelection(selection);
-  const anchorAndFocus = isTableSelectionLike
+  const anchorAndFocus = isTableSelectionLikeSelection
     ? [selection.anchor, selection.focus]
     : isRangeSelection
       ? selection.getStartEndPoints()
@@ -183,7 +199,7 @@ export function $insertTableNodesFromClipboard(
       $findMatchingParent(selection.focus.getNode(), (n) =>
         $isTableCellNode(n),
       ) !== null) ||
-    isTableSelectionLike;
+    isTableSelectionLikeSelection;
   const templateGrid = nodes.find(
     (node): node is TableNode =>
       $isTableNode(node) || node.getType() === 'table',
@@ -196,7 +212,7 @@ export function $insertTableNodesFromClipboard(
     !isSelectionInsideOfGrid ||
     anchorAndFocus === null ||
     templateGrid === undefined ||
-    (!isTableSelectionLike && !hasOnlyTableNodes)
+    (!isTableSelectionLikeSelection && !hasOnlyTableNodes)
   ) {
     return false;
   }
@@ -236,7 +252,7 @@ export function $insertTableNodesFromClipboard(
   let affectedRowCount = templateGridMap.length;
   let affectedColCount = affectedRowCount > 0 ? templateGridMap[0].length : 0;
 
-  if (isTableSelectionLike) {
+  if (isTableSelectionLikeSelection) {
     // If we have a table selection, we'll only modify the cells within
     // the selection boundary.
     const selectionBoundary = $computeTableCellRectBoundary(
@@ -347,7 +363,7 @@ export function $insertTableNodesFromClipboard(
     }
   }
 
-  if (isTableSelectionLike && didPerformMergeOperations) {
+  if (isTableSelectionLikeSelection && didPerformMergeOperations) {
     // reset the table selection in case the anchor or focus cell was
     // removed via merge operations
     const [finalGridMap] = $computeTableMapSkipCellCheck(

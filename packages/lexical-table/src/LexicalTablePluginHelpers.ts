@@ -54,6 +54,7 @@ import {
   applyTableHandlers,
   getTableElement,
   HTMLTableElementWithWithTableSelectionState,
+  insertTableNodesFromClipboard,
 } from './LexicalTableSelectionHelpers';
 import {
   $computeTableMap,
@@ -398,11 +399,13 @@ export function registerTablePlugin(
     editor.registerCommand(
       SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
       ({nodes, selection}, dispatchEditor) => {
-        if (
-          hasNestedTables.peek() ||
-          editor !== dispatchEditor ||
-          !$isRangeSelection(selection)
-        ) {
+        if (hasNestedTables.peek() || editor !== dispatchEditor) {
+          return false;
+        }
+        if (insertTableNodesFromClipboard(nodes, selection)) {
+          return true;
+        }
+        if (!$isRangeSelection(selection)) {
           return false;
         }
         const isInsideTableCell =

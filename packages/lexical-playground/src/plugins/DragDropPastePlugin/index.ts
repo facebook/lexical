@@ -12,6 +12,7 @@ import {isMimeType, mediaFileReader} from '@lexical/utils';
 import {COMMAND_PRIORITY_LOW} from 'lexical';
 import {useEffect} from 'react';
 
+import {INSERT_ATTACHMENT_COMMAND} from '../AttachmentPlugin';
 import {INSERT_IMAGE_COMMAND} from '../ImagesPlugin';
 
 const ACCEPTABLE_IMAGE_TYPES = [
@@ -22,6 +23,30 @@ const ACCEPTABLE_IMAGE_TYPES = [
   'image/webp',
 ];
 
+// Acceptable attachment types (keep same as AttachmentPlugin)
+const ACCEPTABLE_ATTACHMENT_TYPES = [
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-powerpoint',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'application/zip',
+  'application/x-rar-compressed',
+  'text/plain',
+  'text/csv',
+  'video/mp4',
+  'video/x-msvideo',
+  'video/quicktime',
+  'audio/mpeg',
+  'audio/wav',
+  'audio/flac',
+];
+
+// Maximum attachment size (3MB)
+const MAX_ATTACHMENT_SIZE_MB = 3;
+
 export default function DragDropPaste(): null {
   const [editor] = useLexicalComposerContext();
   useEffect(() => {
@@ -29,15 +54,30 @@ export default function DragDropPaste(): null {
       DRAG_DROP_PASTE,
       (files) => {
         (async () => {
-          const filesResult = await mediaFileReader(
-            files,
-            [ACCEPTABLE_IMAGE_TYPES].flatMap((x) => x),
-          );
+          const filesResult = await mediaFileReader(files, [
+            ...ACCEPTABLE_IMAGE_TYPES,
+            ...ACCEPTABLE_ATTACHMENT_TYPES,
+          ]);
           for (const {file, result} of filesResult) {
             if (isMimeType(file, ACCEPTABLE_IMAGE_TYPES)) {
               editor.dispatchCommand(INSERT_IMAGE_COMMAND, {
                 altText: file.name,
                 src: result,
+              });
+            } else if (isMimeType(file, ACCEPTABLE_ATTACHMENT_TYPES)) {
+              // Check file size
+              if (file.size > MAX_ATTACHMENT_SIZE_MB * 1024 * 1024) {
+                console.warn(
+                  `File size exceeds ${MAX_ATTACHMENT_SIZE_MB}MB limit`,
+                );
+                continue;
+              }
+              editor.dispatchCommand(INSERT_ATTACHMENT_COMMAND, {
+                base64Data: result,
+                fileName: file.name,
+                fileSize: file.size,
+                fileType: file.type,
+                fileUrl: URL.createObjectURL(file),
               });
             }
           }

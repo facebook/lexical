@@ -12,6 +12,7 @@ import {isMimeType, mediaFileReader} from '@lexical/utils';
 import {COMMAND_PRIORITY_LOW} from 'lexical';
 import {useEffect} from 'react';
 
+import {useAttachmentStore} from '../../context/AttachmentStoreContext';
 import {INSERT_ATTACHMENT_COMMAND} from '../AttachmentPlugin';
 import {INSERT_IMAGE_COMMAND} from '../ImagesPlugin';
 
@@ -49,6 +50,8 @@ const MAX_ATTACHMENT_SIZE_MB = 3;
 
 export default function DragDropPaste(): null {
   const [editor] = useLexicalComposerContext();
+  const {store} = useAttachmentStore();
+
   useEffect(() => {
     return editor.registerCommand(
       DRAG_DROP_PASTE,
@@ -72,13 +75,36 @@ export default function DragDropPaste(): null {
                 );
                 continue;
               }
-              editor.dispatchCommand(INSERT_ATTACHMENT_COMMAND, {
-                base64Data: result,
-                fileName: file.name,
-                fileSize: file.size,
-                fileType: file.type,
-                fileUrl: URL.createObjectURL(file),
-              });
+
+              // Upload file using the store
+              try {
+                const stored = await store.upload({
+                  file,
+                  fileName: file.name,
+                  fileSize: file.size,
+                  fileType: file.type,
+                });
+
+                // Get base64 data if the store supports it (for serialization)
+                let base64Data: string | undefined;
+                if (store.getConfig().serializeAsBase64) {
+                  const base64 = await store.toBase64(stored.id);
+                  if (base64) {
+                    base64Data = base64;
+                  }
+                }
+
+                editor.dispatchCommand(INSERT_ATTACHMENT_COMMAND, {
+                  attachmentId: stored.id,
+                  base64Data,
+                  fileName: stored.fileName,
+                  fileSize: stored.fileSize,
+                  fileType: stored.fileType,
+                  fileUrl: stored.url,
+                });
+              } catch (error) {
+                console.error('Failed to upload attachment:', error);
+              }
             }
           }
         })();
@@ -86,6 +112,6 @@ export default function DragDropPaste(): null {
       },
       COMMAND_PRIORITY_LOW,
     );
-  }, [editor]);
+  }, [editor, store]);
   return null;
 }

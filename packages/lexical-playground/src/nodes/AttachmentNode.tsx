@@ -104,6 +104,7 @@ export interface AttachmentPayload {
   fileUrl: string;
   key?: NodeKey;
   base64Data?: string;
+  attachmentId?: string;
 }
 
 export type SerializedAttachmentNode = Spread<
@@ -112,6 +113,7 @@ export type SerializedAttachmentNode = Spread<
     fileSize: number;
     fileType: string;
     fileUrl: string;
+    attachmentId?: string;
   },
   SerializedLexicalNode
 >;
@@ -167,6 +169,7 @@ export class AttachmentNode extends DecoratorNode<JSX.Element> {
   __fileType: string;
   __fileUrl: string;
   __base64Data?: string; // Store base64 data for serialization
+  __attachmentId?: string; // ID from AttachmentStore
 
   static getType(): string {
     return 'attachment';
@@ -181,11 +184,13 @@ export class AttachmentNode extends DecoratorNode<JSX.Element> {
       node.__key,
     );
     cloned.__base64Data = node.__base64Data;
+    cloned.__attachmentId = node.__attachmentId;
     return cloned;
   }
 
   static importJSON(serializedNode: SerializedAttachmentNode): AttachmentNode {
-    const {fileName, fileSize, fileType, fileUrl} = serializedNode;
+    const {fileName, fileSize, fileType, fileUrl, attachmentId} =
+      serializedNode;
 
     // Convert base64 data to object URL for editor use
     const convertedFileUrl = fileUrl.startsWith('data:')
@@ -193,6 +198,7 @@ export class AttachmentNode extends DecoratorNode<JSX.Element> {
       : fileUrl;
 
     const node = $createAttachmentNode({
+      attachmentId,
       fileName,
       fileSize,
       fileType,
@@ -262,6 +268,7 @@ export class AttachmentNode extends DecoratorNode<JSX.Element> {
 
     return {
       ...super.exportJSON(),
+      attachmentId: this.__attachmentId,
       fileName: this.getFileName(),
       fileSize: this.getFileSize(),
       fileType: this.getFileType(),
@@ -330,6 +337,15 @@ export class AttachmentNode extends DecoratorNode<JSX.Element> {
     writable.__base64Data = base64Data;
   }
 
+  getAttachmentId(): string | undefined {
+    return this.__attachmentId;
+  }
+
+  setAttachmentId(attachmentId: string | undefined): void {
+    const writable = this.getWritable();
+    writable.__attachmentId = attachmentId;
+  }
+
   // Convert current object URL to base64 and store it
   async convertToBase64(): Promise<void> {
     if (this.__fileUrl.startsWith('blob:')) {
@@ -365,6 +381,7 @@ export function $createAttachmentNode({
   fileType,
   fileUrl,
   base64Data,
+  attachmentId,
   key,
 }: AttachmentPayload): AttachmentNode {
   const node = $applyNodeReplacement(
@@ -374,6 +391,11 @@ export function $createAttachmentNode({
   // Set base64 data if provided
   if (base64Data) {
     node.__base64Data = base64Data;
+  }
+
+  // Set attachment ID if provided
+  if (attachmentId) {
+    node.__attachmentId = attachmentId;
   }
 
   return node;

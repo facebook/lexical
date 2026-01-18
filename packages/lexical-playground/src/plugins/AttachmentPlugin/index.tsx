@@ -45,6 +45,7 @@ import {
 } from 'lexical';
 import {useEffect, useRef, useState} from 'react';
 
+import {useAttachmentStore} from '../../context/AttachmentStoreContext';
 import {
   $createAttachmentNode,
   $isAttachmentNode,
@@ -91,7 +92,9 @@ export function InsertAttachmentUploadedDialogBody({
 }: {
   onClick: (payload: InsertAttachmentPayload) => void;
 }) {
+  const {store, showDemoWarning} = useAttachmentStore();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const loadFile = (files: FileList | null) => {
     if (!files || !files[0]) {
@@ -119,33 +122,55 @@ export function InsertAttachmentUploadedDialogBody({
     setSelectedFile(file);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (selectedFile) {
-      const fileType =
-        selectedFile.type || getFileTypeFromName(selectedFile.name);
-      const fileUrl = URL.createObjectURL(selectedFile);
+      setIsUploading(true);
+      try {
+        const fileType =
+          selectedFile.type || getFileTypeFromName(selectedFile.name);
 
-      // Convert file to base64 for serialization
-      const reader = new FileReader();
-      reader.onload = () => {
-        const base64Data = reader.result as string;
-
-        onClick({
-          base64Data,
+        // Upload file using the store
+        const stored = await store.upload({
+          file: selectedFile,
           fileName: selectedFile.name,
           fileSize: selectedFile.size,
           fileType,
-          fileUrl,
         });
-      };
-      reader.readAsDataURL(selectedFile);
+
+        // Get base64 data if the store supports it (for serialization)
+        let base64Data: string | undefined;
+        if (store.getConfig().serializeAsBase64) {
+          const base64 = await store.toBase64(stored.id);
+          if (base64) {
+            base64Data = base64;
+          }
+        }
+
+        onClick({
+          attachmentId: stored.id,
+          base64Data,
+          fileName: stored.fileName,
+          fileSize: stored.fileSize,
+          fileType: stored.fileType,
+          fileUrl: stored.url,
+        });
+      } catch (error) {
+        console.error('Failed to upload attachment:', error);
+      } finally {
+        setIsUploading(false);
+      }
     }
   };
 
-  const isDisabled = !selectedFile;
+  const isDisabled = !selectedFile || isUploading;
 
   return (
     <>
+      {showDemoWarning && (
+        <div className="AttachmentPlugin__demoWarning">
+          Demo mode: Files will be lost on page reload
+        </div>
+      )}
       <FileInput
         label="File Upload"
         onChange={loadFile}
@@ -164,7 +189,7 @@ export function InsertAttachmentUploadedDialogBody({
           data-test-id="attachment-modal-file-upload-btn"
           disabled={isDisabled}
           onClick={handleSubmit}>
-          Confirm
+          {isUploading ? 'Uploading...' : 'Confirm'}
         </Button>
       </DialogActions>
     </>

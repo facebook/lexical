@@ -175,6 +175,9 @@
   overflow-x: auto;
   position: relative;
   tab-size: 2;
+  white-space: pre;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 .PlaygroundEditorTheme__code:before {
   content: attr(data-gutter);
@@ -182,6 +185,7 @@
   background-color: #eee;
   left: 0;
   top: 0;
+  min-height: 100%;
   border-right: 1px solid #ccc;
   padding: 8px;
   color: #777;

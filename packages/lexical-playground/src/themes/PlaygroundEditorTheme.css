@@ -166,9 +166,9 @@
   background-color: rgb(240, 242, 245);
   font-family: Menlo, Consolas, Monaco, monospace;
   display: block;
-  padding: 8px 8px 8px 52px;
   line-height: 1.53;
   font-size: 13px;
+  padding-top: 8px;
   margin: 0;
   margin-top: 8px;
   margin-bottom: 8px;
@@ -181,10 +181,12 @@
 }
 .PlaygroundEditorTheme__code:before {
   content: attr(data-gutter);
-  position: absolute;
+  position: sticky;
   background-color: #eee;
-  left: 0;
+  left: 0px;
+  float: left;
   top: 0;
+  z-index: 3;
   min-height: 100%;
   border-right: 1px solid #ccc;
   padding: 8px;
@@ -192,6 +194,9 @@
   white-space: pre-wrap;
   text-align: right;
   min-width: 25px;
+  margin-right: 10px;
+  margin-top: -8px;
+  padding: 8px;
 }
 .PlaygroundEditorTheme__tableScrollableWrapper {
   overflow-x: auto;

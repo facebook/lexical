@@ -190,10 +190,19 @@ export function applyTableHandlers(
     detachTableObserverFromTableElement(tableElement, tableObserver),
   );
 
-  const createPointerHandlers = () => {
+  const createPointerHandlers = (startingCell: TableDOMCell | null) => {
     if (tableObserver.isSelecting) {
       return;
     }
+    tableObserver.isSelecting = true;
+
+    // Set anchor immediately if starting cell provided (handles direct drag without click)
+    if (startingCell !== null && tableObserver.anchorCell === null) {
+      editor.update(() => {
+        tableObserver.$setAnchorCellForSelection(startingCell);
+      });
+    }
+
     const onPointerUp = () => {
       tableObserver.isSelecting = false;
       editorWindow.removeEventListener('pointerup', onPointerUp);
@@ -227,16 +236,23 @@ export function applyTableHandlers(
           }
         }
       }
-      if (
-        focusCell &&
-        (tableObserver.focusCell === null ||
-          focusCell.elem !== tableObserver.focusCell.elem)
-      ) {
-        tableObserver.setNextFocus({focusCell, override});
-        editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+      if (focusCell) {
+        const anchorCell = focusCell;
+        // Fallback: set anchor if still missing (handles race conditions)
+        if (tableObserver.anchorCell === null) {
+          editor.update(() => {
+            tableObserver.$setAnchorCellForSelection(anchorCell);
+          });
+        }
+        if (
+          tableObserver.focusCell === null ||
+          focusCell.elem !== tableObserver.focusCell.elem
+        ) {
+          tableObserver.setNextFocus({focusCell, override});
+          editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+        }
       }
     };
-    tableObserver.isSelecting = true;
     editorWindow.addEventListener(
       'pointerup',
       onPointerUp,
@@ -302,7 +318,9 @@ export function applyTableHandlers(
       });
     }
 
-    createPointerHandlers();
+    // Pass the target cell to createPointerHandlers so it can be used as anchor
+    // if user drags directly without clicking first
+    createPointerHandlers(targetCell);
   };
   tableElement.addEventListener(
     'pointerdown',
@@ -768,10 +786,17 @@ export function applyTableHandlers(
             }
           } else if (
             focusCell !== tableObserver.anchorCell &&
-            $isSelectionInTable(selection, tableNode)
+            tableObserver.anchorCell !== null &&
+            tableObserver.anchorCellNodeKey !== null &&
+            tableObserver.tableSelection !== null
           ) {
             // The selection has crossed cells
-            tableObserver.$setFocusCellForSelection(focusCell);
+            // If we have an anchor cell set and tableSelection initialized,
+            // we have all the necessary state to create the selection.
+            // The presence of nextFocus means we're dragging, so process it.
+            // Use ignoreStart=true to ensure isHighlightingCells is set correctly
+            // on the first drag attempt, especially when switching columns.
+            tableObserver.$setFocusCellForSelection(focusCell, true);
             return true;
           }
         }

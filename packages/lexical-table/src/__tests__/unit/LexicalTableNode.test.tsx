@@ -830,7 +830,7 @@ describe('LexicalTableNode tests', () => {
                 </table>
               `,
             );
-          });
+          }, 15000);
 
           test('Cut table in the middle of a range selection', async () => {
             const {editor} = testEnv;

@@ -121,6 +121,7 @@
     "@babel/eslint-parser": "^7.24.5",
     "@babel/helper-module-imports": "^7.24.1",
     "@babel/plugin-transform-optional-catch-binding": "^7.24.1",
+    "@babel/preset-env": "^7.28.6",
     "@babel/preset-flow": "^7.24.1",
     "@babel/preset-react": "^7.24.1",
     "@babel/preset-typescript": "^7.24.1",

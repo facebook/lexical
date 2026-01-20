@@ -6,8 +6,6 @@
  *
  */
 
-import type {LexicalEditor, NodeKey, TextFormatType} from 'lexical';
-
 import {
   addClassNamesToElement,
   removeClassNamesFromElement,
@@ -25,7 +23,10 @@ import {
   $setSelection,
   getDOMSelection,
   INSERT_PARAGRAPH_COMMAND,
+  type LexicalEditor,
+  type NodeKey,
   SELECTION_CHANGE_COMMAND,
+  type TextFormatType,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
@@ -33,7 +34,6 @@ import {$isTableCellNode, TableCellNode} from './LexicalTableCellNode';
 import {$isTableNode, TableNode} from './LexicalTableNode';
 import {$isTableRowNode} from './LexicalTableRowNode';
 import {
-  $createTableSelection,
   $createTableSelectionFrom,
   $isTableSelection,
   type TableSelection,
@@ -340,13 +340,28 @@ export class TableObserver {
     const cellY = cell.y;
     this.focusCell = cell;
 
+    // Enable highlighting if: ignoreStart is true, or anchor differs from focus,
+    // or we have valid tableSelection with anchor (for first drag after column switch)
+    if (!this.isHighlightingCells) {
+      const shouldEnable =
+        ignoreStart ||
+        this.anchorX !== cellX ||
+        this.anchorY !== cellY ||
+        (this.tableSelection != null && this.anchorCellNodeKey != null);
+      if (shouldEnable) {
+        this.isHighlightingCells = true;
+        this.$disableHighlightStyle();
+      }
+    }
+
+    // Skip if we're trying to select the same cell we already have selected
+    // But only if focusX/focusY are valid (not -1, which means not reset)
     if (
-      !this.isHighlightingCells &&
-      (this.anchorX !== cellX || this.anchorY !== cellY || ignoreStart)
+      this.focusX !== -1 &&
+      this.focusY !== -1 &&
+      cellX === this.focusX &&
+      cellY === this.focusY
     ) {
-      this.isHighlightingCells = true;
-      this.$disableHighlightStyle();
-    } else if (cellX === this.focusX && cellY === this.focusY) {
       return false;
     }
 
@@ -359,24 +374,32 @@ export class TableObserver {
         cell.elem,
       );
 
-      if (
-        this.tableSelection != null &&
-        this.anchorCellNodeKey != null &&
-        focusTableCellNode !== null
-      ) {
-        this.focusCellNodeKey = focusTableCellNode.getKey();
-        this.tableSelection = $createTableSelectionFrom(
-          tableNode,
-          this.$getAnchorTableCellOrThrow(),
-          focusTableCellNode,
-        );
+      if (this.tableSelection != null && this.anchorCellNodeKey != null) {
+        let targetCellNode = focusTableCellNode;
 
-        $setSelection(this.tableSelection);
+        // Fallback: use coordinates if DOM lookup failed (handles timing issues on first drag)
+        if (targetCellNode === null && ignoreStart) {
+          targetCellNode = tableNode.getCellNodeFromCords(
+            cellX,
+            cellY,
+            this.table,
+          );
+        }
 
-        editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+        if (targetCellNode !== null) {
+          const anchorTableCell = this.$getAnchorTableCellOrThrow();
+          this.focusCellNodeKey = targetCellNode.getKey();
+          this.tableSelection = $createTableSelectionFrom(
+            tableNode,
+            anchorTableCell,
+            targetCellNode,
+          );
 
-        $updateDOMForSelection(editor, this.table, this.tableSelection);
-        return true;
+          $setSelection(this.tableSelection);
+          editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+          $updateDOMForSelection(editor, this.table, this.tableSelection);
+          return true;
+        }
       }
     }
     return false;
@@ -411,6 +434,11 @@ export class TableObserver {
     this.anchorCell = cell;
     this.anchorX = cell.x;
     this.anchorY = cell.y;
+    // Reset focus state to prevent stale values from previous selections
+    this.focusX = -1;
+    this.focusY = -1;
+    this.focusCell = null;
+    this.focusCellNodeKey = null;
 
     const {tableNode} = this.$lookup();
     const anchorTableCellNode = $getNearestTableCellInTableFromDOMNode(
@@ -420,10 +448,20 @@ export class TableObserver {
 
     if (anchorTableCellNode !== null) {
       const anchorNodeKey = anchorTableCellNode.getKey();
-      this.tableSelection =
-        this.tableSelection != null
-          ? this.tableSelection.clone()
-          : $createTableSelection();
+      if (this.tableSelection != null) {
+        this.tableSelection = this.tableSelection.clone();
+        this.tableSelection.set(
+          tableNode.getKey(),
+          anchorNodeKey,
+          anchorNodeKey,
+        );
+      } else {
+        this.tableSelection = $createTableSelectionFrom(
+          tableNode,
+          anchorTableCellNode,
+          anchorTableCellNode,
+        );
+      }
       this.anchorCellNodeKey = anchorNodeKey;
     }
   }

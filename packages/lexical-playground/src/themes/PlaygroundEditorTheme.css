@@ -183,7 +183,7 @@
   content: attr(data-gutter);
   position: sticky;
   background-color: #eee;
-  left: 0px;
+  left: 0;
   float: left;
   top: 0;
   z-index: 3;

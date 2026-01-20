@@ -410,16 +410,16 @@ export function registerTablePlugin(
         if (editor !== dispatchEditor) {
           return false;
         }
-        const {nodes, selection} = selectionPayload;
+        if ($tableSelectionInsertClipboardNodesCommand(selectionPayload)) {
+          return true;
+        }
+        const {selection, nodes} = selectionPayload;
         if (
           hasNestedTables.peek() ||
           editor !== dispatchEditor ||
           !$isRangeSelection(selection)
         ) {
-          return $tableSelectionInsertClipboardNodesCommand(
-            selectionPayload,
-            dispatchEditor,
-          );
+          return false;
         }
         const isInsideTableCell =
           $findTableNode(selection.anchor.getNode()) !== null;
@@ -447,7 +447,6 @@ function $tableSelectionInsertClipboardNodesCommand(
   selectionPayload: CommandPayloadType<
     typeof SELECTION_INSERT_CLIPBOARD_NODES_COMMAND
   >,
-  dispatchEditor: LexicalEditor,
 ) {
   const {nodes, selection} = selectionPayload;
   const anchorAndFocus = selection.getStartEndPoints();

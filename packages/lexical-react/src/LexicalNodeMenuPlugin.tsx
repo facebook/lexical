@@ -34,6 +34,10 @@ export type NodeMenuPluginProps<TOption extends MenuOption> = {
   nodeKey: NodeKey | null;
   onClose?: () => void;
   onOpen?: (resolution: MenuResolution) => void;
+  /**
+   * @deprecated Use NodeContextMenuPlugin instead. Here is an example for using NodeContextMenuPlugin:
+   * https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/plugins/ContextMenuPlugin/index.tsx
+   */
   menuRenderFn: MenuRenderFn<TOption>;
   anchorClassName?: string;
   commandPriority?: CommandListenerPriority;

@@ -31,6 +31,7 @@ import {
   $getRoot,
   $getSelection,
   $isElementNode,
+  $isParagraphNode,
   $isRangeSelection,
   defineExtension,
   LexicalEditor,
@@ -214,7 +215,7 @@ describe('TableExtension', () => {
       });
     });
 
-    test('SELECTION_INSERT_CLIPBOARD_NODES_COMMAND handler allows pasting tables in cells when hasNestedTables is true', () => {
+    test('SELECTION_INSERT_CLIPBOARD_NODES_COMMAND handler allows extending table when hasNestedTables is true', () => {
       const extension = getExtensionDependencyFromEditor(
         editor,
         TableExtension,
@@ -237,10 +238,17 @@ describe('TableExtension', () => {
         {discrete: true},
       );
 
-      // Try to paste a table inside the cell
+      // Try to paste a wider table inside the cell
       editor.update(
         () => {
           const tableNode = $createTableNode();
+          const row = $createTableRowNode();
+          const cell = $createTableCellNode();
+          cell.append($createParagraphNode().append($createTextNode('a')));
+          const cell2 = $createTableCellNode();
+          cell2.append($createParagraphNode().append($createTextNode('b')));
+          row.append(cell, cell2);
+          tableNode.append(row);
           const selection = $getSelection();
           if (selection === null) {
             throw new Error('Expected valid selection');
@@ -250,17 +258,32 @@ describe('TableExtension', () => {
         {discrete: true},
       );
 
-      // Verify no nested table was created
+      // Verify the table was extended
       editor.getEditorState().read(() => {
         const root = $getRoot();
         const table = root.getFirstChild();
         assert($isTableNode(table), 'Expected table node');
         const row = table.getFirstChild();
         assert($isElementNode(row), 'Expected row node');
-        const cell = row.getFirstChild();
-        assert($isElementNode(cell), 'Expected cell node');
-        const cellChildren = cell.getChildren();
-        expect(cellChildren.some($isTableNode)).toBe(true);
+        assert(row.getChildren().length === 2, 'Expected 2 children in row');
+        const [cell, cell2] = row.getChildren();
+        assert($isTableCellNode(cell), 'Expected first cell to be a cell node');
+        assert(
+          $isTableCellNode(cell2),
+          'Expected second cell to be a cell node',
+        );
+        const cellChild = cell.getFirstChild();
+        assert(
+          $isParagraphNode(cellChild),
+          'Expected first cell child to be a paragraph node',
+        );
+        expect(cellChild.getTextContent()).toBe('a');
+        const cell2Child = cell2.getFirstChild();
+        assert(
+          $isParagraphNode(cell2Child),
+          'Expected second cell child to be a paragraph node',
+        );
+        expect(cell2Child.getTextContent()).toBe('b');
       });
     });
   });

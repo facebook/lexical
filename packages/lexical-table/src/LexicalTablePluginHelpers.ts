@@ -32,6 +32,7 @@ import {
   isDOMNode,
   LexicalEditor,
   NodeKey,
+  RangeSelection,
   SELECT_ALL_COMMAND,
   SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
 } from 'lexical';
@@ -52,6 +53,7 @@ import {$isTableRowNode, TableRowNode} from './LexicalTableRowNode';
 import {
   $createTableSelectionFrom,
   $isTableSelection,
+  TableSelection,
 } from './LexicalTableSelection';
 import {
   $findTableNode,
@@ -406,24 +408,14 @@ export function registerTablePlugin(
     ),
     editor.registerCommand(
       SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
-      (selectionPayload, dispatchEditor) => {
+      (payload, dispatchEditor) => {
         if (editor !== dispatchEditor) {
           return false;
         }
-        if ($tableSelectionInsertClipboardNodesCommand(selectionPayload)) {
-          return true;
-        }
-        const {selection, nodes} = selectionPayload;
-        if (
-          hasNestedTables.peek() ||
-          editor !== dispatchEditor ||
-          !$isRangeSelection(selection)
-        ) {
-          return false;
-        }
-        const isInsideTableCell =
-          $findTableNode(selection.anchor.getNode()) !== null;
-        return isInsideTableCell && nodes.some($isTableNode);
+        return $tableSelectionInsertClipboardNodesCommand(
+          payload,
+          hasNestedTables,
+        );
       },
       COMMAND_PRIORITY_EDITOR,
     ),
@@ -447,9 +439,9 @@ function $tableSelectionInsertClipboardNodesCommand(
   selectionPayload: CommandPayloadType<
     typeof SELECTION_INSERT_CLIPBOARD_NODES_COMMAND
   >,
+  hasNestedTables: Signal<boolean>,
 ) {
   const {nodes, selection} = selectionPayload;
-  const anchorAndFocus = selection.getStartEndPoints();
   const isTableSelection = $isTableSelection(selection);
   const isRangeSelection = $isRangeSelection(selection);
   const isSelectionInsideOfGrid =
@@ -462,12 +454,30 @@ function $tableSelectionInsertClipboardNodesCommand(
       ) !== null) ||
     isTableSelection;
 
-  if (
-    nodes.length !== 1 ||
-    !$isTableNode(nodes[0]) ||
-    !isSelectionInsideOfGrid ||
-    anchorAndFocus === null
-  ) {
+  if (!isSelectionInsideOfGrid) {
+    // Not pasting in a grid - no special handling required.
+    return false;
+  }
+
+  if (nodes.length === 1 && $isTableNode(nodes[0])) {
+    return $insertTableSelectionIntoGrid(nodes[0], selection);
+  }
+
+  return (
+    isSelectionInsideOfGrid &&
+    nodes.some($isTableNode) &&
+    !hasNestedTables.peek()
+  );
+}
+
+function $insertTableSelectionIntoGrid(
+  tableNode: TableNode,
+  selection: RangeSelection | TableSelection,
+) {
+  const anchorAndFocus = selection.getStartEndPoints();
+  const isTableSelection = $isTableSelection(selection); // TODO: always true?
+
+  if (anchorAndFocus === null) {
     return false;
   }
 
@@ -486,14 +496,13 @@ function $tableSelectionInsertClipboardNodesCommand(
     return false;
   }
 
-  const templateGrid = nodes[0];
   const [initialGridMap, anchorCellMap, focusCellMap] = $computeTableMap(
     gridNode,
     anchorCellNode,
     focusCellNode,
   );
   const [templateGridMap] = $computeTableMapSkipCellCheck(
-    templateGrid,
+    tableNode,
     null,
     null,
   );

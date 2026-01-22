@@ -442,6 +442,12 @@ function $tableSelectionInsertClipboardNodesCommand(
   hasNestedTables: Signal<boolean>,
 ) {
   const {nodes, selection} = selectionPayload;
+
+  if (!nodes.some($isTableNode)) {
+    // Not pasting a table - no special handling required.
+    return false;
+  }
+
   const isTableSelection = $isTableSelection(selection);
   const isRangeSelection = $isRangeSelection(selection);
   const isSelectionInsideOfGrid =
@@ -459,15 +465,17 @@ function $tableSelectionInsertClipboardNodesCommand(
     return false;
   }
 
+  // When pasting from a table, flatten the table on the destination table, even when nested tables are allowed.
   if (nodes.length === 1 && $isTableNode(nodes[0])) {
     return $insertTableSelectionIntoGrid(nodes[0], selection);
   }
 
-  return (
-    isSelectionInsideOfGrid &&
-    nodes.some($isTableNode) &&
-    !hasNestedTables.peek()
-  );
+  // Allow pasting inside a grid if nested tables are allowed.
+  if (hasNestedTables.peek()) {
+    return $insertRangeSelectionIntoCells(selectionPayload);
+  }
+
+  return false;
 }
 
 function $insertTableSelectionIntoGrid(
@@ -641,4 +649,14 @@ function $insertTableSelectionIntoGrid(
   }
 
   return true;
+}
+
+function $insertRangeSelectionIntoCells(
+  selectionPayload: CommandPayloadType<
+    typeof SELECTION_INSERT_CLIPBOARD_NODES_COMMAND
+  >,
+) {
+  const {selection} = selectionPayload;
+  // Any tables in the selection will need to be resized to fit the shadow root.
+  return false;
 }

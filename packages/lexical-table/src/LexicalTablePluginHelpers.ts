@@ -8,6 +8,7 @@
 
 import {Signal, signal} from '@lexical/extension';
 import {
+  $dfs,
   $findMatchingParent,
   $insertFirst,
   $insertNodeToNearestRoot,
@@ -31,6 +32,7 @@ import {
   ElementNode,
   isDOMNode,
   LexicalEditor,
+  LexicalNode,
   NodeKey,
   RangeSelection,
   SELECT_ALL_COMMAND,
@@ -67,6 +69,8 @@ import {
   $computeTableMapSkipCellCheck,
   $createTableNodeWithDimensions,
   $getNodeTriplet,
+  $getTableColumnIndexFromTableCellNode,
+  $getTableNodeFromLexicalNodeOrThrow,
   $insertTableColumnAtNode,
   $insertTableRowAtNode,
   $mergeCells,
@@ -443,7 +447,10 @@ function $tableSelectionInsertClipboardNodesCommand(
 ) {
   const {nodes, selection} = selectionPayload;
 
-  if (!nodes.some($isTableNode)) {
+  const hasTables = nodes.some(
+    (n) => $isTableNode(n) || $dfs(n).some((d) => $isTableNode(d.node)),
+  );
+  if (!hasTables) {
     // Not pasting a table - no special handling required.
     return false;
   }
@@ -465,25 +472,26 @@ function $tableSelectionInsertClipboardNodesCommand(
     return false;
   }
 
-  // When pasting from a table, flatten the table on the destination table, even when nested tables are allowed.
+  // When pasting just a table, flatten the table on the destination table, even when nested tables are allowed.
   if (nodes.length === 1 && $isTableNode(nodes[0])) {
-    return $insertTableSelectionIntoGrid(nodes[0], selection);
+    return $insertTableIntoGrid(nodes[0], selection);
   }
 
-  // Allow pasting inside a grid if nested tables are allowed.
-  if (hasNestedTables.peek()) {
-    return $insertRangeSelectionIntoCells(selectionPayload);
+  // When pasting multiple nodes (including tables) into a cell, update the table to fit.
+  if (isRangeSelection && hasNestedTables.peek()) {
+    return $insertTableNodesIntoCells(nodes, selection);
   }
 
-  return false;
+  // If we reached this point, there's a table in the clipboard and nested tables are not allowed - reject the paste.
+  return true;
 }
 
-function $insertTableSelectionIntoGrid(
+function $insertTableIntoGrid(
   tableNode: TableNode,
   selection: RangeSelection | TableSelection,
 ) {
   const anchorAndFocus = selection.getStartEndPoints();
-  const isTableSelection = $isTableSelection(selection); // TODO: always true?
+  const isTableSelection = $isTableSelection(selection);
 
   if (anchorAndFocus === null) {
     return false;
@@ -651,12 +659,71 @@ function $insertTableSelectionIntoGrid(
   return true;
 }
 
-function $insertRangeSelectionIntoCells(
-  selectionPayload: CommandPayloadType<
-    typeof SELECTION_INSERT_CLIPBOARD_NODES_COMMAND
-  >,
+// Inserts the given nodes (which will include TableNodes) into the table at the given selection.
+function $insertTableNodesIntoCells(
+  nodes: LexicalNode[],
+  selection: TableSelection | RangeSelection,
 ) {
-  const {selection} = selectionPayload;
-  // Any tables in the selection will need to be resized to fit the shadow root.
+  // Currently only support pasting into a single cell. In other cases we reject the insertion.
+  const isMultiCellTableSelection =
+    $isTableSelection(selection) &&
+    !selection.focus.getNode().is(selection.anchor.getNode());
+  const isMultiCellRangeSelection =
+    $isRangeSelection(selection) &&
+    $isTableCellNode(selection.anchor.getNode()) &&
+    !selection.anchor.getNode().is(selection.focus.getNode());
+  if (isMultiCellTableSelection || isMultiCellRangeSelection) {
+    return true;
+  }
+
+  // Determine the width of the cell being pasted into.
+  const destinationCellNode = $findMatchingParent(
+    selection.focus.getNode(),
+    $isTableCellNode,
+  );
+  if (!destinationCellNode) {
+    return false;
+  }
+  const destinationTableNode =
+    $getTableNodeFromLexicalNodeOrThrow(destinationCellNode);
+
+  const columnIndex =
+    $getTableColumnIndexFromTableCellNode(destinationCellNode);
+  let cellWidth = destinationCellNode.getWidth();
+  const colWidths = destinationTableNode.getColWidths();
+  if (colWidths) {
+    cellWidth = colWidths[columnIndex];
+  }
+  if (cellWidth === undefined) {
+    return false;
+  }
+
+  // Recursively find all table nodes in the nodes array (including nested tables)
+  const tablesToResize: TableNode[] = [];
+
+  function collectTables(node: LexicalNode): void {
+    if ($isTableNode(node)) {
+      tablesToResize.push(node);
+    }
+    // Recursively check children for nested tables
+    if ($isElementNode(node)) {
+      for (const child of node.getChildren()) {
+        collectTables(child);
+      }
+    }
+  }
+
+  // Collect all tables from the nodes being pasted
+  for (const node of nodes) {
+    collectTables(node);
+  }
+
+  // Clear column widths on all tables so they fit their container
+  // When column widths are undefined, tables will auto-size to fit their container
+  for (const table of tablesToResize) {
+    table.setColWidths(undefined);
+  }
+
+  // Return false to let normal insertion proceed with the modified nodes
   return false;
 }

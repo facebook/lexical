@@ -16,6 +16,8 @@ import {
   $createTableNode,
   $createTableNodeWithDimensions,
   $createTableRowNode,
+  $createTableSelection,
+  $createTableSelectionFrom,
   $isTableCellNode,
   $isTableNode,
   $isTableRowNode,
@@ -23,11 +25,14 @@ import {
   $mergeCells,
   INSERT_TABLE_COMMAND,
   TableExtension,
+  TableRowNode,
   type TableNode,
 } from '@lexical/table';
 import {
   $createParagraphNode,
+  $createRangeSelection,
   $createTextNode,
+  $getNodeByKey,
   $getRoot,
   $getSelection,
   $isElementNode,
@@ -171,7 +176,60 @@ describe('TableExtension', () => {
   });
 
   describe('$insertGeneratedNodes', () => {
-    test('SELECTION_INSERT_CLIPBOARD_NODES_COMMAND handler prevents pasting tables in cells by default', () => {
+    test('SELECTION_INSERT_CLIPBOARD_NODES_COMMAND handler prevents pasting whole table into cells by default', () => {
+      editor.update(
+        () => {
+          const root = $getRoot().clear();
+          const table = $createTableNode();
+          const row = $createTableRowNode();
+          const cell = $createTableCellNode();
+          const paragraph = $createParagraphNode();
+          cell.append(paragraph);
+          row.append(cell);
+          table.append(row);
+          root.append(table);
+          paragraph.select();
+        },
+        {discrete: true},
+      );
+
+      // Try to paste a table inside the cell. Whole table paste (as opposed to a table merge) is done by having multiple nodes
+      // on the clipboard.
+      editor.update(
+        () => {
+          const tableNode = $createTableNode();
+          const selection = $getSelection();
+          assert($isRangeSelection(selection), 'Expected range selection');
+          $insertGeneratedNodes(
+            editor,
+            [tableNode, $createParagraphNode()],
+            selection,
+          );
+        },
+        {discrete: true},
+      );
+
+      // Verify no nested table was created
+      editor.getEditorState().read(() => {
+        const root = $getRoot();
+        const table = root.getFirstChild();
+        assert($isTableNode(table), 'Expected table node');
+        const row = table.getFirstChild();
+        assert($isElementNode(row), 'Expected row node');
+        const cell = row.getFirstChild();
+        assert($isElementNode(cell), 'Expected cell node');
+        const cellChildren = cell.getChildren();
+        expect(cellChildren.some($isTableNode)).toBe(false);
+      });
+    });
+
+    test('SELECTION_INSERT_CLIPBOARD_NODES_COMMAND handler allows pasting whole table into a single cell when hasNestedTables is true', () => {
+      const extension = getExtensionDependencyFromEditor(
+        editor,
+        TableExtension,
+      );
+      extension.output.hasNestedTables.value = true;
+
       editor.update(
         () => {
           const root = $getRoot().clear();
@@ -193,15 +251,17 @@ describe('TableExtension', () => {
         () => {
           const tableNode = $createTableNode();
           const selection = $getSelection();
-          if (selection === null) {
-            throw new Error('Expected valid selection');
-          }
-          $insertGeneratedNodes(editor, [tableNode], selection);
+          assert($isRangeSelection(selection), 'Expected range selection');
+          $insertGeneratedNodes(
+            editor,
+            [tableNode, $createParagraphNode()],
+            selection,
+          );
         },
         {discrete: true},
       );
 
-      // Verify no nested table was created
+      // Verify a nested table was created
       editor.getEditorState().read(() => {
         const root = $getRoot();
         const table = root.getFirstChild();
@@ -211,9 +271,13 @@ describe('TableExtension', () => {
         const cell = row.getFirstChild();
         assert($isElementNode(cell), 'Expected cell node');
         const cellChildren = cell.getChildren();
-        expect(cellChildren.some($isTableNode)).toBe(false);
+        expect(cellChildren.some($isTableNode)).toBe(true);
       });
     });
+
+    test.todo(
+      'SELECTION_INSERT_CLIPBOARD_NODES_COMMAND handler allows pasting whole table into multiple cells when hasNestedTables is true',
+    );
 
     test('SELECTION_INSERT_CLIPBOARD_NODES_COMMAND handler allows extending table when hasNestedTables is true', () => {
       const extension = getExtensionDependencyFromEditor(
@@ -221,6 +285,7 @@ describe('TableExtension', () => {
         TableExtension,
       );
       extension.output.hasNestedTables.value = true;
+      let destCellKey: string | null = null;
 
       editor.update(
         () => {
@@ -228,6 +293,7 @@ describe('TableExtension', () => {
           const table = $createTableNode();
           const row = $createTableRowNode();
           const cell = $createTableCellNode();
+          destCellKey = cell.getKey();
           const paragraph = $createParagraphNode();
           cell.append(paragraph);
           row.append(cell);
@@ -352,6 +418,69 @@ describe('TableExtension', () => {
         const root = $getRoot();
         const table = root.getFirstChildOrThrow<TableNode>();
         expect(table.getColWidths()).toEqual([10, 20]);
+      });
+    });
+
+    test('proportionally adjusts colWidths of inner table when pasting a table into another table (with hasNestedTables)', () => {
+      const extension = getExtensionDependencyFromEditor(
+        editor,
+        TableExtension,
+      );
+      extension.output.hasNestedTables.value = true;
+
+      editor.update(
+        () => {
+          const root = $getRoot().clear();
+          const table = $createTableNode();
+          const row = $createTableRowNode();
+          const cell = $createTableCellNode();
+          const paragraph = $createParagraphNode();
+          cell.append(paragraph);
+          row.append(cell);
+          table.append(row);
+          root.append(table);
+          paragraph.select();
+
+          table.setColWidths([500]);
+        },
+        {discrete: true},
+      );
+
+      editor.update(
+        () => {
+          const tableNode = $createTableNode();
+          const row = $createTableRowNode();
+          const cell = $createTableCellNode();
+          cell.append($createParagraphNode());
+          row.append(cell);
+          tableNode.append(row);
+
+          // Larger than the destination cell.
+          tableNode.setColWidths([500, 500]);
+
+          const selection = $getSelection();
+          assert($isRangeSelection(selection), 'Expected range selection');
+          $insertGeneratedNodes(
+            editor,
+            [tableNode, $createParagraphNode()],
+            selection,
+          );
+        },
+        {discrete: true},
+      );
+
+      // Verify a nested table was created
+      editor.getEditorState().read(() => {
+        const root = $getRoot();
+        const table = root.getFirstChild();
+        assert($isTableNode(table), 'Expected outer table node');
+        const row = table.getFirstChild();
+        assert($isElementNode(row), 'Expected outer row node');
+        const cell = row.getFirstChild();
+        assert($isElementNode(cell), 'Expected outer cell node');
+        const [tableNode] = cell.getChildren();
+        assert($isTableNode(tableNode), 'Expected inner table node');
+        expect(tableNode.getColWidths()).toEqual([250, 250]);
       });
     });
   });

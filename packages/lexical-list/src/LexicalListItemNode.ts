@@ -235,7 +235,13 @@ export class ListItemNode extends ElementNode {
         nextSibling = nextSibling.getNextSibling();
       }
 
-      const newStart = list.getStart() + this.getIndexWithinParent();
+      const listType = list.getListType();
+      let newStart = 1;
+
+      if (listType === 'number') {
+        newStart = list.getStart() + this.getIndexWithinParent();
+      }
+
       const newList = $createListNode(list.getListType(), newStart);
 
       nextSiblings.forEach((sibling) => newList.append(sibling));
@@ -280,9 +286,13 @@ export class ListItemNode extends ElementNode {
 
     if (siblings.length !== 0) {
       const listStart = listNode.getStart();
-
+      const listType = listNode.getListType();
       //siblings array contains the items beings moved to the new list
-      const newStart = listStart + this.getIndexWithinParent() + 1;
+      let newStart = 1;
+
+      if (listType === 'number') {
+        newStart = listStart + this.getIndexWithinParent() + 1;
+      }
       const newListNode = $createListNode(listNode.getListType(), newStart);
 
       siblings.forEach((sibling) => newListNode.append(sibling));

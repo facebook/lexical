@@ -570,7 +570,13 @@ export function $handleListInsertParagraph(): boolean {
   const nextSiblings = listItem.getNextSiblings();
 
   if (nextSiblings.length > 0) {
-    const newStart = parent.getStart() + listItem.getIndexWithinParent();
+    const listType = parent.getListType();
+    let newStart = 1;
+
+    if (listType === 'number') {
+      newStart = parent.getStart() + listItem.getIndexWithinParent();
+    }
+
     const newList = $createListNode(parent.getListType(), newStart);
 
     if ($isListItemNode(replacementNode)) {

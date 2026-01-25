@@ -227,14 +227,19 @@ export class ListItemNode extends ElementNode {
     } else if (list.__last === this.getKey()) {
       list.insertAfter(replaceWithNode);
     } else {
-      // Split the list
-      const newList = $createListNode(list.getListType());
+      // Split the list and calculate the new start index
       let nextSibling = this.getNextSibling();
+      const nextSiblings = [];
       while (nextSibling) {
-        const nodeToAppend = nextSibling;
+        nextSiblings.push(nextSibling);
         nextSibling = nextSibling.getNextSibling();
-        newList.append(nodeToAppend);
       }
+
+      const newStart = list.getStart() + this.getIndexWithinParent();
+      const newList = $createListNode(list.getListType(), newStart);
+
+      nextSiblings.forEach((sibling) => newList.append(sibling));
+
       list.insertAfter(replaceWithNode);
       replaceWithNode.insertAfter(newList);
     }
@@ -274,7 +279,11 @@ export class ListItemNode extends ElementNode {
     listNode.insertAfter(node, restoreSelection);
 
     if (siblings.length !== 0) {
-      const newListNode = $createListNode(listNode.getListType());
+      const listStart = listNode.getStart();
+
+      //siblings array contains the items beings moved to the new list
+      const newStart = listStart + this.getIndexWithinParent() + 1;
+      const newListNode = $createListNode(listNode.getListType(), newStart);
 
       siblings.forEach((sibling) => newListNode.append(sibling));
 

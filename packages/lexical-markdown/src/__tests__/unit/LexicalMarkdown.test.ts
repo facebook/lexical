@@ -707,14 +707,43 @@ describe('Markdown', () => {
       md: '[](https://lexical.dev)',
     },
     {
-      html: '<p><a href="https://lexical.dev"><b><strong style="white-space: pre-wrap;">link</strong></b></a><b><strong style="white-space: pre-wrap;"> text</strong></b></p>',
-      md: '[**link**](https://lexical.dev)** text**',
-      mdAfterExport: '[**link**](https://lexical.dev)**&#32;text**',
+      html: '<p><a href="https://lexical.dev"><b><strong style="white-space: pre-wrap;">link</strong></b></a><b><strong style="white-space: pre-wrap;">text</strong></b></p>',
+      md: '[**link**](https://lexical.dev)**text**',
+      mdAfterExport: '[**link**](https://lexical.dev)**text**',
     },
     {
       html: '<p><b><strong style="white-space: pre-wrap;">text </strong></b><a href="https://lexical.dev"><b><strong style="white-space: pre-wrap;">link</strong></b></a></p>',
       md: '**text [link](https://lexical.dev)**',
       mdAfterExport: '**text&#32;**[**link**](https://lexical.dev)',
+    },
+    {
+      html: '<p><i><em style="white-space: pre-wrap;">text</em></i><i><b><strong style="white-space: pre-wrap;">text</strong></b></i></p>',
+      md: '*text**text***',
+    },
+    {
+      html: '<p><i><em style="white-space: pre-wrap;">foo**bar</em></i></p>',
+      md: '*foo**bar*',
+      mdAfterExport: '*foo\\*\\*bar*',
+    },
+    {
+      html: '<p><b><strong style="white-space: pre-wrap;">foo </strong></b><a href="/url"><i><b><strong style="white-space: pre-wrap;">bar</strong></b></i></a></p>',
+      md: '**foo [*bar*](/url)**',
+      mdAfterExport: '**foo&#32;**[***bar***](/url)',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">*foo </span><i><em style="white-space: pre-wrap;">bar baz</em></i></p>',
+      md: '*foo *bar baz*',
+      mdAfterExport: '\\*foo *bar baz*',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">*a </span><code spellcheck="false" style="white-space: pre-wrap;"><span>*</span></code><span style="white-space: pre-wrap;">*</span></p>',
+      md: '*a `*`*',
+      mdAfterExport: '\\*a `*`\\*',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">_foo_bar</span></p>',
+      md: '_foo_bar',
+      mdAfterExport: '\\_foo\\_bar',
     },
   ];
 

@@ -10,7 +10,17 @@ import type {TextFormatTransformersIndex} from './MarkdownImport';
 import type {TextFormatTransformer} from './MarkdownTransformers';
 import type {TextNode} from 'lexical';
 
-import {PUNCTUATION_OR_SPACE} from './utils';
+import {PUNCTUATION, WHITESPACE} from './utils';
+
+interface Delimiter {
+  index: number;
+  char: string;
+  length: number;
+  originalLength: number;
+  canOpen: boolean;
+  canClose: boolean;
+  active: boolean;
+}
 
 export function findOutermostTextFormatTransformer(
   textNode: TextNode,
@@ -22,69 +32,280 @@ export function findOutermostTextFormatTransformer(
   match: RegExpMatchArray;
 } | null {
   const textContent = textNode.getTextContent();
-  const match = findOutermostMatch(textContent, textFormatTransformersIndex);
 
-  if (!match) {
+  // Find code span first. Emphasis delimiters inside inline elements (e.g., code spans)
+  // should not be processed. Currently only code spans are handled; other inline elements
+  // (e.g., links, raw HTML) may need similar treatment in the future.
+  const codeRegex = textFormatTransformersIndex.fullMatchRegExpByTag['`'];
+  const codeTransformer = textFormatTransformersIndex.transformersByTag['`'];
+  const codeRegexMatch = codeRegex.exec(textContent);
+  const codeMatch = codeRegexMatch
+    ? {
+        content: codeRegexMatch[2],
+        endIndex: codeRegexMatch.index + codeRegexMatch[0].length,
+        startIndex: codeRegexMatch.index,
+        tag: '`',
+      }
+    : null;
+
+  const delimiters = scanDelimiters(textContent, textFormatTransformersIndex);
+  const emphasisMatch =
+    delimiters.length > 0
+      ? processEmphasis(textContent, delimiters, textFormatTransformersIndex)
+      : null;
+
+  let resultMatch = null;
+  let resultTransformer = null;
+
+  if (codeMatch && emphasisMatch) {
+    if (
+      emphasisMatch.startIndex <= codeMatch.startIndex &&
+      emphasisMatch.endIndex >= codeMatch.endIndex
+    ) {
+      resultMatch = emphasisMatch;
+      resultTransformer =
+        textFormatTransformersIndex.transformersByTag[emphasisMatch.tag];
+    } else {
+      resultMatch = codeMatch;
+      resultTransformer = codeTransformer;
+    }
+  } else if (codeMatch) {
+    resultMatch = codeMatch;
+    resultTransformer = codeTransformer;
+  } else if (emphasisMatch) {
+    resultMatch = emphasisMatch;
+    resultTransformer =
+      textFormatTransformersIndex.transformersByTag[emphasisMatch.tag];
+  }
+
+  if (!resultMatch || !resultTransformer) {
     return null;
   }
 
-  const textFormatMatchStart: number = match.index || 0;
-  const textFormatMatchEnd = textFormatMatchStart + match[0].length;
-
-  const transformer: TextFormatTransformer =
-    textFormatTransformersIndex.transformersByTag[match[1]];
+  const regexMatch = [
+    textContent.slice(resultMatch.startIndex, resultMatch.endIndex),
+    resultMatch.tag,
+    resultMatch.content,
+  ] as RegExpMatchArray;
+  regexMatch.index = resultMatch.startIndex;
+  regexMatch.input = textContent;
 
   return {
-    endIndex: textFormatMatchEnd,
-    match,
-    startIndex: textFormatMatchStart,
-    transformer,
+    endIndex: resultMatch.endIndex,
+    match: regexMatch,
+    startIndex: resultMatch.startIndex,
+    transformer: resultTransformer,
   };
 }
 
-// Finds first "<tag>content<tag>" match that is not nested into another tag
-function findOutermostMatch(
-  textContent: string,
-  textTransformersIndex: TextFormatTransformersIndex,
-): RegExpMatchArray | null {
-  const openTagsMatch = textContent.match(textTransformersIndex.openTagsRegExp);
+function scanDelimiters(
+  text: string,
+  transformersIndex: TextFormatTransformersIndex,
+): Delimiter[] {
+  const delimiters: Delimiter[] = [];
+  const delimiterChars = new Set(
+    Object.keys(transformersIndex.transformersByTag)
+      .filter((tag) => tag[0] !== '`')
+      .map((tag) => tag[0]),
+  );
 
-  if (openTagsMatch == null) {
-    return null;
-  }
+  let i = 0;
+  while (i < text.length) {
+    const char = text[i];
 
-  for (const match of openTagsMatch) {
-    // Open tags reg exp might capture leading space so removing it
-    // before using match to find transformer
-    const tag = match.replace(/^\s/, '');
-    const fullMatchRegExp = textTransformersIndex.fullMatchRegExpByTag[tag];
-    if (fullMatchRegExp == null) {
+    if (!delimiterChars.has(char) || isEscaped(text, i)) {
+      i++;
       continue;
     }
 
-    const fullMatch = textContent.match(fullMatchRegExp);
-    const transformer = textTransformersIndex.transformersByTag[tag];
-    if (fullMatch != null && transformer != null) {
-      if (transformer.intraword !== false) {
-        return fullMatch;
-      }
+    let len = 1;
+    while (i + len < text.length && text[i + len] === char) {
+      len++;
+    }
 
-      // For non-intraword transformers checking if it's within a word
-      // or surrounded with space/punctuation/newline
-      const {index = 0} = fullMatch;
-      const beforeChar = textContent[index - 1];
-      const afterChar = textContent[index + fullMatch[0].length];
+    const canOpen = canEmphasis(char, text, i, len, true);
+    const canClose = canEmphasis(char, text, i, len, false);
+
+    if (canOpen || canClose) {
+      delimiters.push({
+        active: true,
+        canClose,
+        canOpen,
+        char,
+        index: i,
+        length: len,
+        originalLength: len,
+      });
+    }
+
+    i += len;
+  }
+
+  return delimiters;
+}
+
+function processEmphasis(
+  text: string,
+  delimiters: Delimiter[],
+  transformersIndex: TextFormatTransformersIndex,
+): {
+  startIndex: number;
+  endIndex: number;
+  tag: string;
+  content: string;
+} | null {
+  const openersBottom: Record<string, number> = {};
+  let currentPos = 0;
+  let result = null;
+
+  while (currentPos < delimiters.length) {
+    const closer = delimiters[currentPos];
+
+    if (!closer.active || !closer.canClose || closer.length === 0) {
+      currentPos++;
+      continue;
+    }
+
+    const bottomKey = `${closer.char}${closer.canOpen}`;
+    const bottom = openersBottom[bottomKey] ?? -1;
+    let foundOpener = false;
+
+    for (let openIdx = currentPos - 1; openIdx > bottom; openIdx--) {
+      const opener = delimiters[openIdx];
 
       if (
-        (!beforeChar || PUNCTUATION_OR_SPACE.test(beforeChar)) &&
-        (!afterChar || PUNCTUATION_OR_SPACE.test(afterChar))
+        !opener.active ||
+        !opener.canOpen ||
+        opener.length === 0 ||
+        opener.char !== closer.char
       ) {
-        return fullMatch;
+        continue;
       }
+
+      // Rule of 3
+      if (opener.canClose || closer.canOpen) {
+        const sum = opener.originalLength + closer.originalLength;
+        if (
+          sum % 3 === 0 &&
+          opener.originalLength % 3 !== 0 &&
+          closer.originalLength % 3 !== 0
+        ) {
+          continue;
+        }
+      }
+
+      const maxLen = Math.min(opener.length, closer.length);
+      const matchedTag = Object.keys(transformersIndex.transformersByTag)
+        .filter((t) => t[0] === opener.char && t.length <= maxLen)
+        .sort((a, b) => b.length - a.length)[0];
+
+      if (!matchedTag) {
+        continue;
+      }
+
+      foundOpener = true;
+      const matchLen = matchedTag.length;
+      const match = {
+        content: text.slice(opener.index + opener.length, closer.index),
+        endIndex: closer.index + matchLen,
+        startIndex: opener.index + (opener.length - matchLen),
+        tag: matchedTag,
+      };
+
+      if (
+        !result ||
+        match.startIndex < result.startIndex ||
+        (match.startIndex === result.startIndex &&
+          match.endIndex > result.endIndex)
+      ) {
+        result = match;
+      }
+
+      for (let j = openIdx + 1; j < currentPos; j++) {
+        delimiters[j].active = false;
+      }
+
+      opener.length -= matchLen;
+      closer.length -= matchLen;
+      opener.active = opener.length > 0;
+
+      if (closer.length > 0) {
+        closer.index += matchLen;
+      } else {
+        closer.active = false;
+        currentPos++;
+      }
+
+      break;
+    }
+
+    if (!foundOpener) {
+      openersBottom[bottomKey] = currentPos - 1;
+      if (!closer.canOpen) {
+        closer.active = false;
+      }
+      currentPos++;
     }
   }
 
-  return null;
+  return result;
+}
+
+function canEmphasis(
+  char: string,
+  text: string,
+  index: number,
+  length: number,
+  isOpen: boolean,
+): boolean {
+  if (!isFlanking(text, index, length, isOpen)) {
+    return false;
+  }
+  if (char === '*') {
+    return true;
+  }
+  if (char === '_') {
+    if (!isFlanking(text, index, length, !isOpen)) {
+      return true;
+    }
+    const adjacentChar = isOpen ? text[index - 1] : text[index + length];
+    return adjacentChar !== undefined && PUNCTUATION.test(adjacentChar);
+  }
+  return true;
+}
+
+function isFlanking(
+  text: string,
+  index: number,
+  length: number,
+  isLeft: boolean,
+): boolean {
+  const charBefore = text[index - 1];
+  const charAfter = text[index + length];
+
+  const [primary, secondary] = isLeft
+    ? [charAfter, charBefore]
+    : [charBefore, charAfter];
+
+  if (primary === undefined || WHITESPACE.test(primary)) {
+    return false;
+  }
+  if (!PUNCTUATION.test(primary)) {
+    return true;
+  }
+  return (
+    secondary === undefined ||
+    WHITESPACE.test(secondary) ||
+    PUNCTUATION.test(secondary)
+  );
+}
+
+function isEscaped(text: string, index: number): boolean {
+  let count = 0;
+  for (let i = index - 1; i >= 0 && text[i] === '\\'; i--) {
+    count++;
+  }
+  return count % 2 === 1;
 }
 
 export function importTextFormatTransformer(

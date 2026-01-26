@@ -747,8 +747,8 @@ test.describe('Lists CopyAndPaste', () => {
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">Worldur</span>
           </p>
-          <ul class="PlaygroundEditorTheme__ul" dir="auto">
-            <li class="PlaygroundEditorTheme__listItem" value="1">
+          <ul class="PlaygroundEditorTheme__ul" dir="auto" start="2">
+            <li class="PlaygroundEditorTheme__listItem" value="2">
               <span data-lexical-text="true">five</span>
             </li>
           </ul>

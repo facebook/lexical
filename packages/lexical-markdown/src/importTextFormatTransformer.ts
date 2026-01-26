@@ -38,21 +38,38 @@ export function findOutermostTextFormatTransformer(
   // (e.g., links, raw HTML) may need similar treatment in the future.
   const codeRegex = textFormatTransformersIndex.fullMatchRegExpByTag['`'];
   const codeTransformer = textFormatTransformersIndex.transformersByTag['`'];
+
+  const excludeRanges: Array<{start: number; end: number}> = [];
   let codeMatch = null;
   if (codeRegex && codeTransformer) {
-    codeRegex.lastIndex = 0;
-    const codeRegexMatch = codeRegex.exec(textContent);
-    codeMatch = codeRegexMatch
-      ? {
-          content: codeRegexMatch[2],
-          endIndex: codeRegexMatch.index + codeRegexMatch[0].length,
-          startIndex: codeRegexMatch.index,
+    const globalRegex = new RegExp(codeRegex.source, 'g');
+    const matches = Array.from(textContent.matchAll(globalRegex));
+
+    for (const match of matches) {
+      const startIndex = match.index!;
+      const endIndex = startIndex + match[0].length;
+
+      if (!codeMatch) {
+        codeMatch = {
+          content: match[2],
+          endIndex,
+          startIndex,
           tag: '`',
-        }
-      : null;
+        };
+      }
+
+      excludeRanges.push({
+        end: endIndex,
+        start: startIndex,
+      });
+    }
   }
 
-  const delimiters = scanDelimiters(textContent, textFormatTransformersIndex);
+  const delimiters = scanDelimiters(
+    textContent,
+    textFormatTransformersIndex,
+    excludeRanges,
+  );
   const emphasisMatch =
     delimiters.length > 0
       ? processEmphasis(textContent, delimiters, textFormatTransformersIndex)
@@ -105,6 +122,7 @@ export function findOutermostTextFormatTransformer(
 function scanDelimiters(
   text: string,
   transformersIndex: TextFormatTransformersIndex,
+  excludeRanges: Array<{start: number; end: number}> = [],
 ): Delimiter[] {
   const delimiters: Delimiter[] = [];
   const delimiterChars = new Set(
@@ -113,11 +131,25 @@ function scanDelimiters(
       .map((tag) => tag[0]),
   );
 
+  const isEscaped = (index: number): boolean => {
+    let count = 0;
+    for (let i = index - 1; i >= 0 && text[i] === '\\'; i--) {
+      count++;
+    }
+    return count % 2 === 1;
+  };
+
+  const isInExcludedRange = (index: number): boolean => {
+    return excludeRanges.some(
+      (range) => index >= range.start && index < range.end,
+    );
+  };
+
   let i = 0;
   while (i < text.length) {
     const char = text[i];
 
-    if (!delimiterChars.has(char) || isEscaped(text, i)) {
+    if (!delimiterChars.has(char) || isEscaped(i) || isInExcludedRange(i)) {
       i++;
       continue;
     }
@@ -302,14 +334,6 @@ function isFlanking(
     WHITESPACE.test(secondary) ||
     PUNCTUATION.test(secondary)
   );
-}
-
-function isEscaped(text: string, index: number): boolean {
-  let count = 0;
-  for (let i = index - 1; i >= 0 && text[i] === '\\'; i--) {
-    count++;
-  }
-  return count % 2 === 1;
 }
 
 export function importTextFormatTransformer(

@@ -14,6 +14,7 @@ export const isDevPlayground: boolean =
 export const DEFAULT_SETTINGS = {
   disableBeforeInput: false,
   emptyEditor: isDevPlayground,
+  hasFitNestedTables: false,
   hasLinkAttributes: false,
   hasNestedTables: false,
   isAutocomplete: false,
@@ -35,7 +36,6 @@ export const DEFAULT_SETTINGS = {
   showTreeView: true,
   tableCellBackgroundColor: true,
   tableCellMerge: true,
-  tableHorizontalScroll: true,
   useCollabV2: false,
 } as const;
 

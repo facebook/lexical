@@ -16,8 +16,6 @@ import {
   $createTableNode,
   $createTableNodeWithDimensions,
   $createTableRowNode,
-  $createTableSelection,
-  $createTableSelectionFrom,
   $isTableCellNode,
   $isTableNode,
   $isTableRowNode,
@@ -25,14 +23,11 @@ import {
   $mergeCells,
   INSERT_TABLE_COMMAND,
   TableExtension,
-  TableRowNode,
   type TableNode,
 } from '@lexical/table';
 import {
   $createParagraphNode,
-  $createRangeSelection,
   $createTextNode,
-  $getNodeByKey,
   $getRoot,
   $getSelection,
   $isElementNode,
@@ -285,7 +280,6 @@ describe('TableExtension', () => {
         TableExtension,
       );
       extension.output.hasNestedTables.value = true;
-      let destCellKey: string | null = null;
 
       editor.update(
         () => {
@@ -293,7 +287,6 @@ describe('TableExtension', () => {
           const table = $createTableNode();
           const row = $createTableRowNode();
           const cell = $createTableCellNode();
-          destCellKey = cell.getKey();
           const paragraph = $createParagraphNode();
           cell.append(paragraph);
           row.append(cell);
@@ -421,12 +414,13 @@ describe('TableExtension', () => {
       });
     });
 
-    test('proportionally adjusts colWidths of inner table when pasting a table into another table (with hasNestedTables)', () => {
+    test('preserves colWidths of inner table when pasting a table into another table (with hasNestedTables=true and hasFitNestedTables=false)', () => {
       const extension = getExtensionDependencyFromEditor(
         editor,
         TableExtension,
       );
       extension.output.hasNestedTables.value = true;
+      extension.output.hasFitNestedTables.value = false;
 
       editor.update(
         () => {
@@ -451,12 +445,13 @@ describe('TableExtension', () => {
           const tableNode = $createTableNode();
           const row = $createTableRowNode();
           const cell = $createTableCellNode();
+          const cell2 = $createTableCellNode();
           cell.append($createParagraphNode());
-          row.append(cell);
+          row.append(cell, cell2);
           tableNode.append(row);
 
-          // Larger than the destination cell.
-          tableNode.setColWidths([500, 500]);
+          // The sum is wider than the destination cell.
+          tableNode.setColWidths([750, 250]);
 
           const selection = $getSelection();
           assert($isRangeSelection(selection), 'Expected range selection');
@@ -469,7 +464,7 @@ describe('TableExtension', () => {
         {discrete: true},
       );
 
-      // Verify a nested table was created
+      // Verify a nested table was created, with colWidths preserved.
       editor.getEditorState().read(() => {
         const root = $getRoot();
         const table = root.getFirstChild();
@@ -478,9 +473,74 @@ describe('TableExtension', () => {
         assert($isElementNode(row), 'Expected outer row node');
         const cell = row.getFirstChild();
         assert($isElementNode(cell), 'Expected outer cell node');
-        const [tableNode] = cell.getChildren();
-        assert($isTableNode(tableNode), 'Expected inner table node');
-        expect(tableNode.getColWidths()).toEqual([250, 250]);
+        const [innerTableNode] = cell.getChildren();
+        assert($isTableNode(innerTableNode), 'Expected inner table node');
+        expect(innerTableNode.getColWidths()).toEqual([750, 250]);
+      });
+    });
+
+    test('proportionally adjusts colWidths of inner table when pasting a table into another table (with hasNestedTables=true and hasFitNestedTables=true)', () => {
+      const extension = getExtensionDependencyFromEditor(
+        editor,
+        TableExtension,
+      );
+      extension.output.hasNestedTables.value = true;
+      extension.output.hasFitNestedTables.value = true;
+
+      editor.update(
+        () => {
+          const root = $getRoot().clear();
+          const table = $createTableNode();
+          const row = $createTableRowNode();
+          const cell = $createTableCellNode();
+          const paragraph = $createParagraphNode();
+          cell.append(paragraph);
+          row.append(cell);
+          table.append(row);
+          root.append(table);
+          paragraph.select();
+
+          table.setColWidths([500]);
+        },
+        {discrete: true},
+      );
+
+      editor.update(
+        () => {
+          const tableNode = $createTableNode();
+          const row = $createTableRowNode();
+          const cell = $createTableCellNode();
+          const cell2 = $createTableCellNode();
+          cell.append($createParagraphNode());
+          row.append(cell, cell2);
+          tableNode.append(row);
+
+          // The sum is wider than the destination cell.
+          tableNode.setColWidths([750, 250]);
+
+          const selection = $getSelection();
+          assert($isRangeSelection(selection), 'Expected range selection');
+          $insertGeneratedNodes(
+            editor,
+            [tableNode, $createParagraphNode()],
+            selection,
+          );
+        },
+        {discrete: true},
+      );
+
+      // Verify a nested table was created, with colWidths updated.
+      editor.getEditorState().read(() => {
+        const root = $getRoot();
+        const table = root.getFirstChild();
+        assert($isTableNode(table), 'Expected outer table node');
+        const row = table.getFirstChild();
+        assert($isElementNode(row), 'Expected outer row node');
+        const cell = row.getFirstChild();
+        assert($isElementNode(cell), 'Expected outer cell node');
+        const [innerTableNode] = cell.getChildren();
+        assert($isTableNode(innerTableNode), 'Expected inner table node');
+        expect(innerTableNode.getColWidths()).toEqual([375, 125]);
       });
     });
   });

@@ -6,7 +6,7 @@
  *
  */
 
-import {Signal, signal} from '@lexical/extension';
+import {NamedSignalsOutput, Signal, signal} from '@lexical/extension';
 import {
   $dfs,
   $findMatchingParent,
@@ -17,6 +17,7 @@ import {
 } from '@lexical/utils';
 import {
   $createParagraphNode,
+  $getEditor,
   $getNearestNodeFromDOMNode,
   $getPreviousSelection,
   $getRoot,
@@ -40,6 +41,7 @@ import {
 } from 'lexical';
 import invariant from 'shared/invariant';
 
+import {PIXEL_VALUE_REG_EXP} from './constants';
 import {
   $createTableCellNode,
   $isTableCellNode,
@@ -49,6 +51,7 @@ import {
   INSERT_TABLE_COMMAND,
   InsertTableCommandPayload,
 } from './LexicalTableCommands';
+import {TableConfig} from './LexicalTableExtension';
 import {$isTableNode, TableNode} from './LexicalTableNode';
 import {$getTableAndElementByKey, TableObserver} from './LexicalTableObserver';
 import {$isTableRowNode, TableRowNode} from './LexicalTableRowNode';
@@ -394,13 +397,17 @@ export function registerTableSelectionObserver(
  */
 export function registerTablePlugin(
   editor: LexicalEditor,
-  options?: {hasNestedTables?: Signal<boolean>},
+  options?: Pick<
+    NamedSignalsOutput<TableConfig>,
+    'hasNestedTables' | 'hasFitNestedTables'
+  >,
 ): () => void {
   if (!editor.hasNodes([TableNode])) {
     invariant(false, 'TablePlugin: TableNode is not registered on editor');
   }
 
-  const {hasNestedTables = signal(false)} = options ?? {};
+  const {hasNestedTables = signal(false), hasFitNestedTables = signal(false)} =
+    options ?? {};
 
   return mergeRegister(
     editor.registerCommand(
@@ -419,6 +426,7 @@ export function registerTablePlugin(
         return $tableSelectionInsertClipboardNodesCommand(
           payload,
           hasNestedTables,
+          hasFitNestedTables,
         );
       },
       COMMAND_PRIORITY_EDITOR,
@@ -444,6 +452,7 @@ function $tableSelectionInsertClipboardNodesCommand(
     typeof SELECTION_INSERT_CLIPBOARD_NODES_COMMAND
   >,
   hasNestedTables: Signal<boolean>,
+  hasFitNestedTables: Signal<boolean>,
 ) {
   const {nodes, selection} = selectionPayload;
 
@@ -479,10 +488,14 @@ function $tableSelectionInsertClipboardNodesCommand(
 
   // When pasting multiple nodes (including tables) into a cell, update the table to fit.
   if (isRangeSelection && hasNestedTables.peek()) {
-    return $insertTableNodesIntoCells(nodes, selection);
+    return $insertTableNodesIntoCells(
+      nodes,
+      selection,
+      hasFitNestedTables.peek(),
+    );
   }
 
-  // If we reached this point, there's a table in the clipboard and nested tables are not allowed - reject the paste.
+  // If we reached this point, there's a table in the selection and nested tables are not allowed - reject the paste.
   return true;
 }
 
@@ -663,6 +676,7 @@ function $insertTableIntoGrid(
 function $insertTableNodesIntoCells(
   nodes: LexicalNode[],
   selection: TableSelection | RangeSelection,
+  hasFitNestedTables: boolean,
 ) {
   // Currently only support pasting into a single cell. In other cases we reject the insertion.
   const isMultiCellTableSelection =
@@ -676,54 +690,134 @@ function $insertTableNodesIntoCells(
     return true;
   }
 
-  // Determine the width of the cell being pasted into.
-  const destinationCellNode = $findMatchingParent(
-    selection.focus.getNode(),
-    $isTableCellNode,
-  );
-  if (!destinationCellNode) {
+  if (!hasFitNestedTables) {
     return false;
   }
-  const destinationTableNode =
-    $getTableNodeFromLexicalNodeOrThrow(destinationCellNode);
 
-  const columnIndex =
-    $getTableColumnIndexFromTableCellNode(destinationCellNode);
-  let cellWidth = destinationCellNode.getWidth();
+  const focusNode = selection.focus.getNode();
+  const parentCell = $findMatchingParent(focusNode, $isTableCellNode);
+  if (!parentCell) {
+    return false;
+  }
+
+  const contentBoxWidth = $getCellContentBoxWidth(parentCell);
+  if (contentBoxWidth === undefined) {
+    return false;
+  }
+  $resizeTablesToFitWidth(nodes, contentBoxWidth);
+
+  return false;
+}
+
+/**
+ * Return the width of a specific cell, preferring to use the table-level column widths if possible.
+ */
+function $getCellWidth(cell: TableCellNode) {
+  const destinationTableNode = $getTableNodeFromLexicalNodeOrThrow(cell);
+
+  const columnIndex = $getTableColumnIndexFromTableCellNode(cell);
+  // prefer to use table-level colWidths
   const colWidths = destinationTableNode.getColWidths();
   if (colWidths) {
-    cellWidth = colWidths[columnIndex];
+    return colWidths[columnIndex];
   }
-  if (cellWidth === undefined) {
-    return false;
+  return cell.getWidth();
+}
+
+/**
+ * Returns the content box width (that is, not including padding or border width) of a given cell.
+ *
+ * TODO: merged cells?
+ */
+function $getCellContentBoxWidth(cell: TableCellNode) {
+  const destinationCellWidth = $getCellWidth(cell);
+  if (destinationCellWidth === undefined) {
+    return undefined;
   }
 
-  // Recursively find all table nodes in the nodes array (including nested tables)
-  const tablesToResize: TableNode[] = [];
+  const cellDOM = $getEditor().getElementByKey(cell.getKey());
+  if (cellDOM === null) {
+    // no DOM, return full width of cell.
+    return destinationCellWidth;
+  }
+  const paddingLeft =
+    window.getComputedStyle(cellDOM).getPropertyValue('padding-left') || '0px';
+  const paddingRight =
+    window.getComputedStyle(cellDOM).getPropertyValue('padding-right') || '0px';
+  const borderLeftWidth =
+    window.getComputedStyle(cellDOM).getPropertyValue('border-left-width') ||
+    '0px';
+  const borderRightWidth =
+    window.getComputedStyle(cellDOM).getPropertyValue('padding-right-width') ||
+    '0px';
 
-  function collectTables(node: LexicalNode): void {
-    if ($isTableNode(node)) {
-      tablesToResize.push(node);
+  if (
+    !PIXEL_VALUE_REG_EXP.test(paddingLeft) ||
+    !PIXEL_VALUE_REG_EXP.test(paddingRight) ||
+    !PIXEL_VALUE_REG_EXP.test(borderLeftWidth) ||
+    !PIXEL_VALUE_REG_EXP.test(borderRightWidth)
+  ) {
+    return undefined;
+  }
+  const paddingLeftPx = parseFloat(paddingLeft);
+  const paddingRightPx = parseFloat(paddingRight);
+  const borderLeftWidthPx = parseFloat(borderLeftWidth);
+  const borderRightWidthPx = parseFloat(borderRightWidth);
+
+  return (
+    cellDOM.getBoundingClientRect().width -
+    paddingLeftPx -
+    paddingRightPx -
+    borderLeftWidthPx -
+    borderRightWidthPx
+  );
+}
+
+function $getTableWidth(table: TableNode) {
+  const colWidths = table.getColWidths();
+  if (colWidths) {
+    return colWidths.reduce((curWidth, width) => curWidth + width, 0);
+  }
+  const tableRow = table.getFirstChild();
+
+  invariant(
+    $isTableRowNode(tableRow),
+    'Expected first child of a Table to be a TableRowNode',
+  );
+
+  // TODO merged cells?
+  return tableRow
+    .getChildren()
+    .filter($isTableCellNode)
+    .reduce((curWidth, cell) => curWidth + (cell.getWidth() ?? 92), 0); // TODO no width
+}
+
+/**
+ * Recursively resizes table cells to fit a given width.
+ * @param nodes the
+ * @param width
+ * @returns
+ */
+function $resizeTablesToFitWidth(nodes: LexicalNode[], maximumWidth: number) {
+  return nodes.map((node) => {
+    if (!$isTableNode(node)) {
+      return node;
     }
-    // Recursively check children for nested tables
-    if ($isElementNode(node)) {
-      for (const child of node.getChildren()) {
-        collectTables(child);
-      }
+    const tableWidth = $getTableWidth(node);
+    if (tableWidth <= maximumWidth) {
+      return node;
     }
-  }
 
-  // Collect all tables from the nodes being pasted
-  for (const node of nodes) {
-    collectTables(node);
-  }
+    const proportionalWidth = maximumWidth / tableWidth;
+    const oldColWidths = node.getColWidths();
+    if (oldColWidths) {
+      node.setColWidths(oldColWidths.map((width) => width * proportionalWidth));
+    }
 
-  // Clear column widths on all tables so they fit their container
-  // When column widths are undefined, tables will auto-size to fit their container
-  for (const table of tablesToResize) {
-    table.setColWidths(undefined);
-  }
+    if (node.getChildren().some($isTableCellNode)) {
+      $resizeTablesToFitWidth(node.getChildren(), maximumWidth);
+    }
 
-  // Return false to let normal insertion proceed with the modified nodes
-  return false;
+    return node;
+  });
 }

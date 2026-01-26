@@ -338,10 +338,22 @@ export function $convertTableCellNodeElement(
     width = parseFloat(domNode_.style.width);
   }
 
+  // Determine header state based on the 'scope' attribute
+  let headerState = TableCellHeaderStates.NO_STATUS;
+
+  if (nodeName === 'th') {
+    const scope = domNode_.getAttribute('scope');
+    if (scope === 'col') {
+      headerState = TableCellHeaderStates.COLUMN;
+    } else if (scope === 'row') {
+      headerState = TableCellHeaderStates.ROW;
+    } else {
+      headerState = TableCellHeaderStates.ROW;
+    }
+  }
+
   const tableCellNode = $createTableCellNode(
-    nodeName === 'th'
-      ? TableCellHeaderStates.ROW
-      : TableCellHeaderStates.NO_STATUS,
+    headerState,
     domNode_.colSpan,
     width,
   );

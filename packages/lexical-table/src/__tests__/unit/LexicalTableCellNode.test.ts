@@ -16,6 +16,11 @@ import {
 } from 'lexical/src/__tests__/utils';
 import {describe, expect, test} from 'vitest';
 
+import {
+  $convertTableCellNodeElement,
+  TableCellNode,
+} from '../../LexicalTableCellNode';
+
 const editorConfig = Object.freeze({
   namespace: '',
   theme: {
@@ -213,5 +218,53 @@ describe('LexicalTableCellNode tests', () => {
         }
       });
     }, 15000);
+
+    test('DOM Conversion: <th> with scope="col" becomes COLUMN header', async () => {
+      const {editor} = testEnv;
+
+      await editor.update(() => {
+        const th = document.createElement('th');
+        th.setAttribute('scope', 'col');
+
+        const result = $convertTableCellNodeElement(th);
+        const node = result.node as TableCellNode;
+
+        expect(
+          (node as TableCellNode & {__headerState: number}).__headerState,
+        ).toBe(TableCellHeaderStates.COLUMN);
+      });
+    });
+
+    test('DOM Conversion: <th> with scope="row" becomes ROW header', async () => {
+      const {editor} = testEnv;
+
+      await editor.update(() => {
+        const th = document.createElement('th');
+        th.setAttribute('scope', 'row');
+
+        const result = $convertTableCellNodeElement(th);
+        const node = result.node as TableCellNode;
+
+        expect(
+          (node as TableCellNode & {__headerState: number}).__headerState,
+        ).toBe(TableCellHeaderStates.ROW);
+      });
+    });
+
+    test('DOM Conversion: <th> without scope defaults to ROW header', async () => {
+      const {editor} = testEnv;
+
+      await editor.update(() => {
+        const th = document.createElement('th');
+        // No scope attribute set
+
+        const result = $convertTableCellNodeElement(th);
+        const node = result.node as TableCellNode;
+
+        expect(
+          (node as TableCellNode & {__headerState: number}).__headerState,
+        ).toBe(TableCellHeaderStates.ROW);
+      });
+    });
   });
 });

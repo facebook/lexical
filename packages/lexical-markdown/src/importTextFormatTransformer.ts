@@ -38,15 +38,19 @@ export function findOutermostTextFormatTransformer(
   // (e.g., links, raw HTML) may need similar treatment in the future.
   const codeRegex = textFormatTransformersIndex.fullMatchRegExpByTag['`'];
   const codeTransformer = textFormatTransformersIndex.transformersByTag['`'];
-  const codeRegexMatch = codeRegex.exec(textContent);
-  const codeMatch = codeRegexMatch
-    ? {
-        content: codeRegexMatch[2],
-        endIndex: codeRegexMatch.index + codeRegexMatch[0].length,
-        startIndex: codeRegexMatch.index,
-        tag: '`',
-      }
-    : null;
+  let codeMatch = null;
+  if (codeRegex && codeTransformer) {
+    codeRegex.lastIndex = 0;
+    const codeRegexMatch = codeRegex.exec(textContent);
+    codeMatch = codeRegexMatch
+      ? {
+          content: codeRegexMatch[2],
+          endIndex: codeRegexMatch.index + codeRegexMatch[0].length,
+          startIndex: codeRegexMatch.index,
+          tag: '`',
+        }
+      : null;
+  }
 
   const delimiters = scanDelimiters(textContent, textFormatTransformersIndex);
   const emphasisMatch =
@@ -82,11 +86,11 @@ export function findOutermostTextFormatTransformer(
     return null;
   }
 
-  const regexMatch = [
+  const regexMatch: RegExpMatchArray = [
     textContent.slice(resultMatch.startIndex, resultMatch.endIndex),
     resultMatch.tag,
     resultMatch.content,
-  ] as RegExpMatchArray;
+  ];
   regexMatch.index = resultMatch.startIndex;
   regexMatch.input = textContent;
 

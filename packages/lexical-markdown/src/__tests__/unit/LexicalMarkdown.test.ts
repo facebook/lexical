@@ -736,9 +736,9 @@ describe('Markdown', () => {
       mdAfterExport: '\\*foo *bar baz*',
     },
     {
-      html: '<p><span style="white-space: pre-wrap;">*a </span><code spellcheck="false" style="white-space: pre-wrap;"><span>*</span></code><span style="white-space: pre-wrap;">*</span></p>',
-      md: '*a `*`*',
-      mdAfterExport: '\\*a `*`\\*',
+      html: '<p><span style="white-space: pre-wrap;">*a </span><code spellcheck="false" style="white-space: pre-wrap;"><span>*</span></code><span style="white-space: pre-wrap;"> b </span><code spellcheck="false" style="white-space: pre-wrap;"><span>x</span></code><span style="white-space: pre-wrap;">*</span></p>',
+      md: '*a `*` b `x`*',
+      mdAfterExport: '\\*a `*` b `x`\\*',
     },
     {
       html: '<p><span style="white-space: pre-wrap;">_foo_bar</span></p>',

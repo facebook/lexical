@@ -22,6 +22,7 @@ import type {
   LexicalCommand,
   LexicalEditor,
   LexicalNode,
+  NodeKey,
   PointCaret,
   RangeSelection,
   SiblingCaret,

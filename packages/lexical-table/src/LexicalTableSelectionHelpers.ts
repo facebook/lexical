@@ -22,7 +22,6 @@ import type {
   LexicalCommand,
   LexicalEditor,
   LexicalNode,
-  NodeKey,
   PointCaret,
   RangeSelection,
   SiblingCaret,
@@ -82,7 +81,6 @@ import {
   KEY_ESCAPE_COMMAND,
   KEY_TAB_COMMAND,
   SELECTION_CHANGE_COMMAND,
-  SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
 } from 'lexical';
 import {IS_FIREFOX} from 'shared/environment';
 import invariant from 'shared/invariant';
@@ -101,12 +99,7 @@ import {
   $computeTableCellRectBoundary,
   $computeTableCellRectSpans,
   $computeTableMap,
-  $computeTableMapSkipCellCheck,
   $getNodeTriplet,
-  $insertTableColumnAtNode,
-  $insertTableRowAtNode,
-  $mergeCells,
-  $unmergeCellNode,
   TableCellRectBoundary,
 } from './LexicalTableUtils';
 

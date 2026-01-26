@@ -51,8 +51,7 @@ import {$getTableAndElementByKey, TableObserver} from './LexicalTableObserver';
 import {$isTableRowNode, TableRowNode} from './LexicalTableRowNode';
 import {
   $createTableSelectionFrom,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  $isTableSelection, // Imported from main, kept for consistency
+  $isTableSelection,
 } from './LexicalTableSelection';
 import {
   $findTableNode,
@@ -412,8 +411,12 @@ export function registerTablePlugin(
         if (editor !== dispatchEditor) {
           return false;
         }
+        // Try to handle table selection paste first (from main)
+        if ($tableSelectionInsertClipboardNodesCommand(selectionPayload)) {
+          return true;
+        }
         const {nodes, selection} = selectionPayload;
-        // Try to extend table first (this handles table-to-table paste)
+        // Try to extend table (this handles table-to-table paste) - from HEAD
         if (insertTableNodesFromClipboard(nodes, selection)) {
           return true;
         }
@@ -448,7 +451,6 @@ export function registerTablePlugin(
   );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function $tableSelectionInsertClipboardNodesCommand(
   selectionPayload: CommandPayloadType<
     typeof SELECTION_INSERT_CLIPBOARD_NODES_COMMAND

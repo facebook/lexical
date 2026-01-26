@@ -36,6 +36,7 @@ import {
 import {ListType} from './LexicalListNode';
 import {
   $getAllListItems,
+  $getNewListStart,
   $getTopListNode,
   $removeHighestEmptyListParent,
   isNestedListNode,
@@ -570,12 +571,7 @@ export function $handleListInsertParagraph(): boolean {
   const nextSiblings = listItem.getNextSiblings();
 
   if (nextSiblings.length > 0) {
-    const listType = parent.getListType();
-    let newStart = 1;
-
-    if (listType === 'number') {
-      newStart = parent.getStart() + listItem.getIndexWithinParent();
-    }
+    const newStart = $getNewListStart(parent, listItem);
 
     const newList = $createListNode(parent.getListType(), newStart);
 

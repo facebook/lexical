@@ -9,6 +9,7 @@
 import {
   $createParagraphNode,
   $createRangeSelection,
+  $createTextNode,
   $getRoot,
   TextNode,
 } from 'lexical';
@@ -1409,6 +1410,48 @@ describe('LexicalListItemNode tests', () => {
         // Check if marker style was inherited
         expect(parentListItem.getTextStyle()).toBe('font-size: 19px;');
       });
+    });
+
+    test('Splitting a numbered list maintains numbering continuity', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const root = $getRoot();
+        const list = $createListNode('number');
+        const item1 = $createListItemNode();
+        const item2 = $createListItemNode();
+        const item3 = $createListItemNode();
+
+        item1.append($createTextNode('A'));
+        item2.append($createTextNode('B'));
+        item3.append($createTextNode('C'));
+
+        list.append(item1, item2, item3);
+        root.append(list);
+      });
+
+      // split the list at item 2 by inserting a paragraph
+      await editor.update(() => {
+        const root = $getRoot();
+        const list = root.getFirstChild() as ListNode;
+        const item2 = list.getChildAtIndex(1) as ListItemNode;
+
+        const paragraph = $createParagraphNode();
+        item2.insertAfter(paragraph);
+      });
+
+      expect(testEnv.container.innerHTML).toBe(
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true">' +
+          '<ol dir="auto">' +
+          '<li value="1"><span data-lexical-text="true">A</span></li>' +
+          '<li value="2"><span data-lexical-text="true">B</span></li>' +
+          '</ol>' +
+          '<p dir="auto"><br></p>' +
+          // Does the new line start at 3 ?
+          '<ol start="3" dir="auto">' +
+          '<li value="3"><span data-lexical-text="true">C</span></li>' +
+          '</ol>' +
+          '</div>',
+      );
     });
   });
 });

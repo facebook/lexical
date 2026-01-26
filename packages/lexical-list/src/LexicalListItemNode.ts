@@ -42,7 +42,7 @@ import normalizeClassNames from 'shared/normalizeClassNames';
 
 import {$createListNode, $isListNode} from './';
 import {$handleIndent, $handleOutdent, mergeLists} from './formatList';
-import {isNestedListNode} from './utils';
+import {$getNewListStart, isNestedListNode} from './utils';
 
 export type SerializedListItemNode = Spread<
   {
@@ -228,23 +228,13 @@ export class ListItemNode extends ElementNode {
       list.insertAfter(replaceWithNode);
     } else {
       // Split the list and calculate the new start index
-      let nextSibling = this.getNextSibling();
-      const nextSiblings = [];
-      while (nextSibling) {
-        nextSiblings.push(nextSibling);
-        nextSibling = nextSibling.getNextSibling();
-      }
+      const nextSiblings = this.getNextSiblings();
 
-      const listType = list.getListType();
-      let newStart = 1;
-
-      if (listType === 'number') {
-        newStart = list.getStart() + this.getIndexWithinParent();
-      }
-
+      // We pass 'this' because index is relative to where we split.
+      const newStart = $getNewListStart(list, this);
       const newList = $createListNode(list.getListType(), newStart);
 
-      nextSiblings.forEach((sibling) => newList.append(sibling));
+      newList.append(...nextSiblings);
 
       list.insertAfter(replaceWithNode);
       replaceWithNode.insertAfter(newList);
@@ -281,22 +271,15 @@ export class ListItemNode extends ElementNode {
 
     const siblings = this.getNextSiblings();
 
-    // Split the lists and insert the node in between them
+    // split the lists and insert the node in between them
     listNode.insertAfter(node, restoreSelection);
 
     if (siblings.length !== 0) {
-      const listStart = listNode.getStart();
-      const listType = listNode.getListType();
-      //siblings array contains the items beings moved to the new list
-      let newStart = 1;
+      // Because we are keeping 'this' node in the first list, we add 1 to the calculated start.
+      const newStart = $getNewListStart(listNode, this) + 1;
 
-      if (listType === 'number') {
-        newStart = listStart + this.getIndexWithinParent() + 1;
-      }
       const newListNode = $createListNode(listNode.getListType(), newStart);
-
-      siblings.forEach((sibling) => newListNode.append(sibling));
-
+      newListNode.append(...siblings);
       node.insertAfter(newListNode, restoreSelection);
     }
 

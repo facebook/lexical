@@ -17,13 +17,11 @@ import type {
   BaseSelection,
   CaretDirection,
   ChildCaret,
-  CommandPayloadType,
   EditorState,
   ElementNode,
   LexicalCommand,
   LexicalEditor,
   LexicalNode,
-  NodeKey,
   PointCaret,
   RangeSelection,
   SiblingCaret,
@@ -351,7 +349,7 @@ export function $insertTableNodesFromClipboard(
 
       const {cell} = interimGridMap[row][col];
       const originalChildren = cell.getChildren();
-      templateCell.getChildren().forEach((child: LexicalNode) => {
+      templateCell.getChildren().forEach((child) => {
         if ($isTextNode(child)) {
           const paragraphNode = $createParagraphNode();
           paragraphNode.append(child);
@@ -360,7 +358,7 @@ export function $insertTableNodesFromClipboard(
           cell.append(child);
         }
       });
-      originalChildren.forEach((n: LexicalNode) => n.remove());
+      originalChildren.forEach((n) => n.remove());
     }
   }
 
@@ -993,12 +991,7 @@ export function applyTableHandlers(
   tableObserver.listenersToRemove.add(
     editor.registerCommand(
       SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
-      (
-        selectionPayload: CommandPayloadType<
-          typeof SELECTION_INSERT_CLIPBOARD_NODES_COMMAND
-        >,
-        dispatchEditor,
-      ) => {
+      (selectionPayload, dispatchEditor) => {
         if (editor !== dispatchEditor) {
           return false;
         }

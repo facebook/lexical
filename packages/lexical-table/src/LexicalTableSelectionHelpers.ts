@@ -17,11 +17,13 @@ import type {
   BaseSelection,
   CaretDirection,
   ChildCaret,
+  CommandPayloadType,
   EditorState,
   ElementNode,
   LexicalCommand,
   LexicalEditor,
   LexicalNode,
+  NodeKey,
   PointCaret,
   RangeSelection,
   SiblingCaret,
@@ -81,6 +83,7 @@ import {
   KEY_ESCAPE_COMMAND,
   KEY_TAB_COMMAND,
   SELECTION_CHANGE_COMMAND,
+  SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
 } from 'lexical';
 import {IS_FIREFOX} from 'shared/environment';
 import invariant from 'shared/invariant';
@@ -99,7 +102,12 @@ import {
   $computeTableCellRectBoundary,
   $computeTableCellRectSpans,
   $computeTableMap,
+  $computeTableMapSkipCellCheck,
   $getNodeTriplet,
+  $insertTableColumnAtNode,
+  $insertTableRowAtNode,
+  $mergeCells,
+  $unmergeCellNode,
   TableCellRectBoundary,
 } from './LexicalTableUtils';
 
@@ -343,7 +351,7 @@ export function $insertTableNodesFromClipboard(
 
       const {cell} = interimGridMap[row][col];
       const originalChildren = cell.getChildren();
-      templateCell.getChildren().forEach((child) => {
+      templateCell.getChildren().forEach((child: LexicalNode) => {
         if ($isTextNode(child)) {
           const paragraphNode = $createParagraphNode();
           paragraphNode.append(child);
@@ -352,7 +360,7 @@ export function $insertTableNodesFromClipboard(
           cell.append(child);
         }
       });
-      originalChildren.forEach((n) => n.remove());
+      originalChildren.forEach((n: LexicalNode) => n.remove());
     }
   }
 
@@ -985,7 +993,12 @@ export function applyTableHandlers(
   tableObserver.listenersToRemove.add(
     editor.registerCommand(
       SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
-      (selectionPayload, dispatchEditor) => {
+      (
+        selectionPayload: CommandPayloadType<
+          typeof SELECTION_INSERT_CLIPBOARD_NODES_COMMAND
+        >,
+        dispatchEditor,
+      ) => {
         if (editor !== dispatchEditor) {
           return false;
         }

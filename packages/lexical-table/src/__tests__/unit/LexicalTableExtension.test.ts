@@ -525,7 +525,7 @@ describe('TableExtension', () => {
         {discrete: true},
       );
 
-      // Verify a nested table was created, with colWidths updated.
+      // Verify a nested table was created, with colWidths updated. Note: due to no DOM, insets are not calculated.
       editor.getEditorState().read(() => {
         const root = $getRoot();
         const table = root.getFirstChild();
@@ -536,7 +536,91 @@ describe('TableExtension', () => {
         assert($isElementNode(cell), 'Expected outer cell node');
         const [innerTableNode] = cell.getChildren();
         assert($isTableNode(innerTableNode), 'Expected inner table node');
+        // Fitting 750, 250 into a 500-wide cell.
         expect(innerTableNode.getColWidths()).toEqual([375, 125]);
+      });
+    });
+
+    test('proportionally adjusts colWidths of all nested inner tables when pasting a table into another table (with hasNestedTables=true and hasFitNestedTables=true)', () => {
+      const extension = getExtensionDependencyFromEditor(
+        editor,
+        TableExtension,
+      );
+      extension.output.hasNestedTables.value = true;
+      extension.output.hasFitNestedTables.value = true;
+
+      editor.update(
+        () => {
+          const root = $getRoot().clear();
+          const table = $createTableNode();
+          const row = $createTableRowNode();
+          const cell = $createTableCellNode();
+          const paragraph = $createParagraphNode();
+          cell.append(paragraph);
+          row.append(cell);
+          table.append(row);
+          root.append(table);
+          paragraph.select();
+
+          table.setColWidths([500]);
+        },
+        {discrete: true},
+      );
+
+      editor.update(
+        () => {
+          const tableNode = $createTableNode();
+          const row = $createTableRowNode();
+          const cell = $createTableCellNode();
+          const cell2 = $createTableCellNode();
+          row.append(cell, cell2);
+          tableNode.append(row);
+
+          // The sum is wider than the destination cell.
+          tableNode.setColWidths([750, 250]);
+
+          const deepTableNode = $createTableNode();
+          const deepRow = $createTableRowNode();
+          const deepCell = $createTableCellNode();
+          const deepCell2 = $createTableCellNode();
+          deepRow.append(deepCell, deepCell2);
+          deepTableNode.append(deepRow);
+
+          deepTableNode.setColWidths([500, 250]);
+          cell.append(deepTableNode);
+
+          const selection = $getSelection();
+          assert($isRangeSelection(selection), 'Expected range selection');
+          $insertGeneratedNodes(
+            editor,
+            [tableNode, $createParagraphNode()],
+            selection,
+          );
+        },
+        {discrete: true},
+      );
+
+      // Verify a nested table was created, with colWidths updated. Note: due to no DOM, insets are not calculated.
+      editor.getEditorState().read(() => {
+        const root = $getRoot();
+        const table = root.getFirstChild();
+        assert($isTableNode(table), 'Expected outer table node');
+        const row = table.getFirstChild();
+        assert($isElementNode(row), 'Expected outer row node');
+        const cell = row.getFirstChild();
+        assert($isElementNode(cell), 'Expected outer cell node');
+        const [middleTableNode] = cell.getChildren();
+        assert($isTableNode(middleTableNode), 'Expected middle table node');
+        // Fitting 750, 250 into a 500-wide cell.
+        expect(middleTableNode.getColWidths()).toEqual([375, 125]);
+        const middleTableRow = middleTableNode.getFirstChild();
+        assert($isTableRowNode(middleTableRow), 'Expected middle row node');
+        const middleCell = middleTableRow.getFirstChild();
+        assert($isTableCellNode(middleCell), 'Expected middle cell node');
+        const [deepTableNode] = middleCell.getChildren();
+        assert($isTableNode(deepTableNode), 'Expected deep table node');
+        // Fitting 500, 250 into what is now a 375-wide cell.
+        expect(deepTableNode.getColWidths()).toEqual([250, 125]);
       });
     });
   });

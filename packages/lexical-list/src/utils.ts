@@ -200,3 +200,20 @@ export function $wrapInListItem(node: LexicalNode): ListItemNode {
   const listItemWrapper = $createListItemNode();
   return listItemWrapper.append(node);
 }
+
+/**
+ * Calculates the start value of a new list when splitting an existig list.
+ * @param list - The original list node.
+ * @param firstChild - The first item will be in the new list.
+ */
+export function $getNewListStart(
+  list: ListNode,
+  firstChild: ListItemNode,
+): number {
+  if (list.getListType() === 'number') {
+    // The new list starts when the prev one left off.
+    // We add the index of the split item to the original start value.
+    return list.getStart() + firstChild.getIndexWithinParent();
+  }
+  return 1;
+}

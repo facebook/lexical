@@ -42,7 +42,7 @@ import normalizeClassNames from 'shared/normalizeClassNames';
 
 import {$createListNode, $isListNode} from './';
 import {$handleIndent, $handleOutdent, mergeLists} from './formatList';
-import {isNestedListNode} from './utils';
+import {$getNewListStart, isNestedListNode} from './utils';
 
 export type SerializedListItemNode = Spread<
   {
@@ -227,14 +227,15 @@ export class ListItemNode extends ElementNode {
     } else if (list.__last === this.getKey()) {
       list.insertAfter(replaceWithNode);
     } else {
-      // Split the list
-      const newList = $createListNode(list.getListType());
-      let nextSibling = this.getNextSibling();
-      while (nextSibling) {
-        const nodeToAppend = nextSibling;
-        nextSibling = nextSibling.getNextSibling();
-        newList.append(nodeToAppend);
-      }
+      // Split the list and calculate the new start index
+      const nextSiblings = this.getNextSiblings();
+
+      // We pass 'this' because index is relative to where we split.
+      const newStart = $getNewListStart(list, this);
+      const newList = $createListNode(list.getListType(), newStart);
+
+      newList.append(...nextSiblings);
+
       list.insertAfter(replaceWithNode);
       replaceWithNode.insertAfter(newList);
     }
@@ -270,14 +271,15 @@ export class ListItemNode extends ElementNode {
 
     const siblings = this.getNextSiblings();
 
-    // Split the lists and insert the node in between them
+    // split the lists and insert the node in between them
     listNode.insertAfter(node, restoreSelection);
 
     if (siblings.length !== 0) {
-      const newListNode = $createListNode(listNode.getListType());
+      // Because we are keeping 'this' node in the first list, we add 1 to the calculated start.
+      const newStart = $getNewListStart(listNode, this) + 1;
 
-      siblings.forEach((sibling) => newListNode.append(sibling));
-
+      const newListNode = $createListNode(listNode.getListType(), newStart);
+      newListNode.append(...siblings);
       node.insertAfter(newListNode, restoreSelection);
     }
 

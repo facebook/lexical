@@ -195,6 +195,7 @@ test.describe('CodeActionMenu', () => {
     await assertHTML(
       page,
       `
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
         <code
           class="PlaygroundEditorTheme__code"
           dir="auto"
@@ -215,6 +216,7 @@ test.describe('CodeActionMenu', () => {
             'Hello World'
           </span>
         </code>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
       `,
     );
 
@@ -226,6 +228,7 @@ test.describe('CodeActionMenu', () => {
     await assertHTML(
       page,
       `
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
         <code
         class="PlaygroundEditorTheme__code"
         dir="auto"
@@ -252,6 +255,7 @@ test.describe('CodeActionMenu', () => {
           <br />
           <br />
         </code>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
       `,
     );
   });
@@ -271,6 +275,7 @@ test.describe('CodeActionMenu', () => {
     await assertHTML(
       page,
       `
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
         <code
           class="PlaygroundEditorTheme__code"
           dir="auto"
@@ -287,6 +292,7 @@ test.describe('CodeActionMenu', () => {
             'Hello World'
           </span>
         </code>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
       `,
     );
 

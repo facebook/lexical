@@ -36,6 +36,7 @@ export const DEFAULT_SETTINGS = {
   showTreeView: true,
   tableCellBackgroundColor: true,
   tableCellMerge: true,
+  tableHorizontalScroll: true,
   useCollabV2: false,
 } as const;
 

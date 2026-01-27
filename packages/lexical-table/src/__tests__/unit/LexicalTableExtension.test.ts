@@ -270,10 +270,6 @@ describe('TableExtension', () => {
       });
     });
 
-    test.todo(
-      'SELECTION_INSERT_CLIPBOARD_NODES_COMMAND handler allows pasting whole table into multiple cells when hasNestedTables is true',
-    );
-
     test('SELECTION_INSERT_CLIPBOARD_NODES_COMMAND handler allows extending table when hasNestedTables is true', () => {
       const extension = getExtensionDependencyFromEditor(
         editor,

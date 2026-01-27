@@ -700,11 +700,16 @@ function $insertTableNodesIntoCells(
     return false;
   }
 
-  const contentBoxWidth = $getCellContentBoxWidth(parentCell);
-  if (contentBoxWidth === undefined) {
+  const cellWidth = $getCellWidth(parentCell);
+  const borderBoxInsets = $calculateCellInsets(parentCell);
+  if (cellWidth === undefined) {
     return false;
   }
-  $resizeTablesToFitWidth(nodes, contentBoxWidth);
+  const tables = nodes.filter($isTableNode);
+  for (const table of tables) {
+    // Note: here we assume the inset is consistent for cells at all nesting levels.
+    $resizeTableToFitCell(table, cellWidth, borderBoxInsets);
+  }
 
   return false;
 }
@@ -725,20 +730,14 @@ function $getCellWidth(cell: TableCellNode) {
 }
 
 /**
- * Returns the content box width (that is, not including padding or border width) of a given cell.
+ * Returns horizontal insets of the given cell (padding + border).
  *
  * TODO: merged cells?
  */
-function $getCellContentBoxWidth(cell: TableCellNode) {
-  const destinationCellWidth = $getCellWidth(cell);
-  if (destinationCellWidth === undefined) {
-    return undefined;
-  }
-
+function $calculateCellInsets(cell: TableCellNode) {
   const cellDOM = $getEditor().getElementByKey(cell.getKey());
   if (cellDOM === null) {
-    // no DOM, return full width of cell.
-    return destinationCellWidth;
+    return 0;
   }
   const paddingLeft =
     window.getComputedStyle(cellDOM).getPropertyValue('padding-left') || '0px';
@@ -757,7 +756,7 @@ function $getCellContentBoxWidth(cell: TableCellNode) {
     !PIXEL_VALUE_REG_EXP.test(borderLeftWidth) ||
     !PIXEL_VALUE_REG_EXP.test(borderRightWidth)
   ) {
-    return undefined;
+    return 0;
   }
   const paddingLeftPx = parseFloat(paddingLeft);
   const paddingRightPx = parseFloat(paddingRight);
@@ -765,15 +764,11 @@ function $getCellContentBoxWidth(cell: TableCellNode) {
   const borderRightWidthPx = parseFloat(borderRightWidth);
 
   return (
-    cellDOM.getBoundingClientRect().width -
-    paddingLeftPx -
-    paddingRightPx -
-    borderLeftWidthPx -
-    borderRightWidthPx
+    paddingLeftPx + paddingRightPx + borderLeftWidthPx + borderRightWidthPx
   );
 }
 
-function $getTableWidth(table: TableNode) {
+function $getTotalTableWidth(table: TableNode) {
   const colWidths = table.getColWidths();
   if (colWidths) {
     return colWidths.reduce((curWidth, width) => curWidth + width, 0);
@@ -794,30 +789,39 @@ function $getTableWidth(table: TableNode) {
 
 /**
  * Recursively resizes table cells to fit a given width.
- * @param nodes the
- * @param width
- * @returns
+ *
+ * @param node the table node to resize
+ * @param parentCellWidth the width of the parent cell
+ * @param borderBoxInsets the insets of the parent cell (padding + border)
  */
-function $resizeTablesToFitWidth(nodes: LexicalNode[], maximumWidth: number) {
-  return nodes.map((node) => {
-    if (!$isTableNode(node)) {
-      return node;
-    }
-    const tableWidth = $getTableWidth(node);
-    if (tableWidth <= maximumWidth) {
-      return node;
-    }
-
-    const proportionalWidth = maximumWidth / tableWidth;
-    const oldColWidths = node.getColWidths();
-    if (oldColWidths) {
-      node.setColWidths(oldColWidths.map((width) => width * proportionalWidth));
-    }
-
-    if (node.getChildren().some($isTableCellNode)) {
-      $resizeTablesToFitWidth(node.getChildren(), maximumWidth);
-    }
-
+function $resizeTableToFitCell(
+  node: TableNode,
+  parentCellWidth: number,
+  borderBoxInsets: number,
+) {
+  const usableWidth = parentCellWidth - borderBoxInsets;
+  const tableWidth = $getTotalTableWidth(node);
+  if (tableWidth <= usableWidth) {
     return node;
-  });
+  }
+
+  const proportionalWidth = usableWidth / tableWidth;
+  const oldColWidths = node.getColWidths();
+  if (oldColWidths) {
+    node.setColWidths(oldColWidths.map((width) => width * proportionalWidth));
+  }
+
+  const rowChildren = node.getChildren().filter($isTableRowNode);
+  for (const rowChild of rowChildren) {
+    const cellChildren = rowChild.getChildren().filter($isTableCellNode);
+    for (const cellChild of cellChildren) {
+      const cellWidth = $getCellWidth(cellChild);
+      if (cellWidth === undefined) {
+        continue;
+      }
+      for (const table of cellChild.getChildren().filter($isTableNode)) {
+        $resizeTableToFitCell(table, cellWidth, borderBoxInsets);
+      }
+    }
+  }
 }

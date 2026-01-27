@@ -158,20 +158,18 @@ export class OffsetView {
         startKey = sibling.__key;
       }
     } else if (startOffsetNode.type === 'inline') {
-      startKey = startNode.getParentOrThrow().getKey();
-      startOffset =
-        end > startOffsetNode.start
-          ? startOffsetNode.end
-          : startOffsetNode.start;
+      const parent = startNode.getParentOrThrow();
+      startKey = parent.getKey();
+      startOffset = startNode.getIndexWithinParent();
     }
 
     if (endOffsetNode.type === 'text') {
       endOffset = end - endOffsetNode.start;
       endType = 'text';
     } else if (endOffsetNode.type === 'inline') {
-      endKey = endNode.getParentOrThrow().getKey();
-      endOffset =
-        end > endOffsetNode.start ? endOffsetNode.end : endOffsetNode.start;
+      const parent = endNode.getParentOrThrow();
+      endKey = parent.getKey();
+      endOffset = endNode.getIndexWithinParent();
     }
 
     const selection = $createRangeSelection();

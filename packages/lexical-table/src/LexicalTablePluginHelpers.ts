@@ -58,6 +58,7 @@ import {
   applyTableHandlers,
   getTableElement,
   HTMLTableElementWithWithTableSelectionState,
+  insertTableNodesFromClipboard,
 } from './LexicalTableSelectionHelpers';
 import {
   $computeTableCellRectBoundary,
@@ -379,7 +380,7 @@ export function registerTableSelectionObserver(
 }
 
 /**
- * Register table command listeners and the table integrity transforms. The
+ * Register the INSERT_TABLE_COMMAND listener and the table integrity transforms. The
  * table selection observer should be registered separately after this with
  * {@link registerTableSelectionObserver}.
  *
@@ -410,19 +411,26 @@ export function registerTablePlugin(
         if (editor !== dispatchEditor) {
           return false;
         }
+        // Try to handle table selection paste first (from main branch)
         if ($tableSelectionInsertClipboardNodesCommand(selectionPayload)) {
           return true;
         }
         const {selection, nodes} = selectionPayload;
-        if (
-          hasNestedTables.peek() ||
-          editor !== dispatchEditor ||
-          !$isRangeSelection(selection)
-        ) {
+        // Try to extend the table (works for both hasNestedTables true and false)
+        if (insertTableNodesFromClipboard(nodes, selection)) {
+          return true;
+        }
+        // When hasNestedTables is true, allow mixed-node clipboards to insert
+        // into cells (nested tables) rather than blocking paste
+        if (hasNestedTables.peek()) {
+          return false;
+        }
+        if (!$isRangeSelection(selection)) {
           return false;
         }
         const isInsideTableCell =
           $findTableNode(selection.anchor.getNode()) !== null;
+        // Block pasting tables into cells when nested tables are disabled
         return isInsideTableCell && nodes.some($isTableNode);
       },
       COMMAND_PRIORITY_EDITOR,

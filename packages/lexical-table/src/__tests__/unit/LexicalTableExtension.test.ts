@@ -16,6 +16,7 @@ import {
   $createTableNode,
   $createTableNodeWithDimensions,
   $createTableRowNode,
+  $createTableSelectionFrom,
   $isTableCellNode,
   $isTableNode,
   $isTableRowNode,
@@ -33,6 +34,7 @@ import {
   $isElementNode,
   $isParagraphNode,
   $isRangeSelection,
+  $setSelection,
   defineExtension,
   LexicalEditor,
   NodeKey,
@@ -212,6 +214,79 @@ describe('TableExtension', () => {
         assert($isElementNode(cell), 'Expected cell node');
         const cellChildren = cell.getChildren();
         expect(cellChildren.some($isTableNode)).toBe(false);
+      });
+    });
+
+    test('SELECTION_INSERT_CLIPBOARD_NODES_COMMAND uses table node when clipboard has mixed nodes', () => {
+      editor.update(
+        () => {
+          const root = $getRoot().clear();
+          const table = $createTableNodeWithDimensions(2, 2, false);
+          table.getAllTextNodes().forEach((node, index) => {
+            node.setTextContent(`source-${index + 1}`);
+          });
+          root.append(table);
+
+          const firstRow = table.getFirstChild();
+          assert($isTableRowNode(firstRow), 'Expected first row');
+          const firstCell = firstRow.getFirstChild();
+          assert($isTableCellNode(firstCell), 'Expected first cell');
+          const lastRow = table.getLastChild();
+          assert($isTableRowNode(lastRow), 'Expected last row');
+          const lastCell = lastRow.getLastChild();
+          assert($isTableCellNode(lastCell), 'Expected last cell');
+
+          const selection = $createTableSelectionFrom(
+            table,
+            firstCell,
+            lastCell,
+          );
+          $setSelection(selection);
+        },
+        {discrete: true},
+      );
+
+      editor.update(
+        () => {
+          const selection = $getSelection();
+          assert(
+            $isTableSelection(selection),
+            'Expected table selection for paste',
+          );
+          const templateTable = $createTableNodeWithDimensions(2, 2, false);
+          templateTable.getAllTextNodes().forEach((node, index) => {
+            node.setTextContent(`paste-${index + 1}`);
+          });
+          const ignoredParagraph = $createParagraphNode().append(
+            $createTextNode('ignored'),
+          );
+          $insertGeneratedNodes(
+            editor,
+            [ignoredParagraph, templateTable],
+            selection,
+          );
+        },
+        {discrete: true},
+      );
+
+      editor.getEditorState().read(() => {
+        const root = $getRoot();
+        const table = root.getFirstChild();
+        if (!$isTableNode(table)) {
+          throw new Error('Expected table node');
+        }
+        const row = table.getFirstChild();
+        if (!$isTableRowNode(row)) {
+          throw new Error('Expected table row');
+        }
+        const cell = row.getFirstChild();
+        if (!$isTableCellNode(cell)) {
+          throw new Error('Expected table cell');
+        }
+        const cellChildren = cell.getChildren();
+        expect(cellChildren.some($isTableNode)).toBe(false);
+        const cellText = cell.getTextContent();
+        expect(cellText).toBe('paste-1');
       });
     });
 

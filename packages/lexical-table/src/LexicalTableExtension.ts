@@ -47,6 +47,12 @@ export interface TableConfig {
    * @experimental Nested tables are not officially supported.
    */
   hasNestedTables: boolean;
+  /**
+   * When `true` (default `false`), nested tables will be resized to fit the width of the parent table cell.
+   *
+   * @experimental Nested tables are not officially supported.
+   */
+  hasFitNestedTables: boolean;
 }
 
 /**
@@ -60,6 +66,7 @@ export const TableExtension = defineExtension({
   config: safeCast<TableConfig>({
     hasCellBackgroundColor: true,
     hasCellMerge: true,
+    hasFitNestedTables: false,
     hasHorizontalScroll: true,
     hasNestedTables: false,
     hasTabHandler: true,
@@ -68,7 +75,6 @@ export const TableExtension = defineExtension({
   nodes: () => [TableNode, TableRowNode, TableCellNode],
   register(editor, config, state) {
     const stores = state.getOutput();
-    const {hasNestedTables} = stores;
     return mergeRegister(
       effect(() => {
         const hasHorizontalScroll = stores.hasHorizontalScroll.value;
@@ -80,7 +86,7 @@ export const TableExtension = defineExtension({
           editor.registerNodeTransform(TableNode, () => {})();
         }
       }),
-      registerTablePlugin(editor, {hasNestedTables}),
+      registerTablePlugin(editor, stores),
       effect(() =>
         registerTableSelectionObserver(editor, stores.hasTabHandler.value),
       ),

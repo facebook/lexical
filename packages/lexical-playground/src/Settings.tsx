@@ -24,6 +24,7 @@ export default function Settings(): JSX.Element {
       isCollab,
       isRichText,
       hasNestedTables,
+      hasFitNestedTables,
       isMaxLength,
       hasLinkAttributes,
       isCharLimit,
@@ -36,7 +37,6 @@ export default function Settings(): JSX.Element {
       shouldUseLexicalContextMenu,
       shouldPreserveNewLinesInMarkdown,
       shouldAllowHighlightingWithBrackets,
-      // tableHorizontalScroll,
       selectionAlwaysOnDisplay,
       isCodeHighlighted,
       isCodeShiki,
@@ -124,6 +124,13 @@ export default function Settings(): JSX.Element {
             text="Nested Tables"
           />
           <Switch
+            onClick={() => {
+              setOption('hasFitNestedTables', !hasFitNestedTables);
+            }}
+            checked={hasFitNestedTables}
+            text="Fit nested tables"
+          />
+          <Switch
             onClick={() => setOption('isCharLimit', !isCharLimit)}
             checked={isCharLimit}
             text="Char Limit"
@@ -183,13 +190,6 @@ export default function Settings(): JSX.Element {
             checked={shouldPreserveNewLinesInMarkdown}
             text="Preserve newlines in Markdown"
           />
-          {/* <Switch
-            onClick={() => {
-              setOption('tableHorizontalScroll', !tableHorizontalScroll);
-            }}
-            checked={tableHorizontalScroll}
-            text="Tables have horizontal scroll"
-          /> */}
           <Switch
             onClick={() => {
               setOption(

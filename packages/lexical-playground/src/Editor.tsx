@@ -104,6 +104,7 @@ export default function Editor(): JSX.Element {
       isCharLimit,
       hasLinkAttributes,
       hasNestedTables,
+      hasFitNestedTables,
       isCharLimitUtf8,
       isRichText,
       showTreeView,
@@ -239,6 +240,7 @@ export default function Editor(): JSX.Element {
               hasCellMerge={tableCellMerge}
               hasCellBackgroundColor={tableCellBackgroundColor}
               hasHorizontalScroll={tableHorizontalScroll}
+              hasFitNestedTables={hasFitNestedTables}
               hasNestedTables={hasNestedTables}
             />
             <TableCellResizer />

@@ -8,7 +8,7 @@
 
 import type {JSX} from 'react';
 
-import {signal} from '@lexical/extension';
+import {Signal, signal} from '@lexical/extension';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $isScrollableTablesActive,
@@ -45,6 +45,12 @@ export interface TablePluginProps {
    * @experimental Nested tables are not officially supported.
    */
   hasNestedTables?: boolean;
+  /**
+   * When `true` (default `false`), nested tables will be resized to fit the width of the parent table cell.
+   *
+   * @experimental Nested tables are not officially supported.
+   */
+  hasFitNestedTables?: boolean;
 }
 
 /**
@@ -59,6 +65,7 @@ export function TablePlugin({
   hasTabHandler = true,
   hasHorizontalScroll = false,
   hasNestedTables = false,
+  hasFitNestedTables = false,
 }: TablePluginProps): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
 
@@ -72,14 +79,16 @@ export function TablePlugin({
     }
   }, [editor, hasHorizontalScroll]);
 
-  const hasNestedTablesSignal = useMemo(() => signal(false), []);
-  if (hasNestedTablesSignal.peek() !== hasNestedTables) {
-    hasNestedTablesSignal.value = hasNestedTables;
-  }
+  const hasNestedTablesSignal = usePropSignal(hasNestedTables);
+  const hasFitNestedTablesSignal = usePropSignal(hasFitNestedTables);
 
   useEffect(
-    () => registerTablePlugin(editor, {hasNestedTables: hasNestedTablesSignal}),
-    [editor, hasNestedTablesSignal],
+    () =>
+      registerTablePlugin(editor, {
+        hasFitNestedTables: hasFitNestedTablesSignal,
+        hasNestedTables: hasNestedTablesSignal,
+      }),
+    [editor, hasNestedTablesSignal, hasFitNestedTablesSignal],
   );
 
   useEffect(
@@ -107,4 +116,12 @@ export function TablePlugin({
   }, [editor, hasCellBackgroundColor, hasCellMerge]);
 
   return null;
+}
+
+function usePropSignal<T>(value: T): Signal<T> {
+  const configSignal = useMemo(() => signal(value), [value]);
+  if (configSignal.peek() !== value) {
+    configSignal.value = value;
+  }
+  return configSignal;
 }

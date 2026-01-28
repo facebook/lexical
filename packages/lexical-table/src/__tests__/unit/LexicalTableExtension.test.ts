@@ -623,6 +623,74 @@ describe('TableExtension', () => {
         expect(deepTableNode.getColWidths()).toEqual([250, 125]);
       });
     });
+
+    test('proportionally adjusts colWidths of inner table when pasting a table into a merged cell (with hasNestedTables=true and hasFitNestedTables=true)', () => {
+      const extension = getExtensionDependencyFromEditor(
+        editor,
+        TableExtension,
+      );
+      extension.output.hasNestedTables.value = true;
+      extension.output.hasFitNestedTables.value = true;
+
+      editor.update(
+        () => {
+          const root = $getRoot().clear();
+          const table = $createTableNode();
+          const row = $createTableRowNode();
+          const cell = $createTableCellNode();
+          const cell2 = $createTableCellNode();
+          const paragraph = $createParagraphNode();
+          cell.append(paragraph);
+          row.append(cell, cell2);
+          table.append(row);
+          root.append(table);
+          paragraph.select();
+
+          table.setColWidths([250, 250]);
+          $mergeCells([cell, cell2]);
+        },
+        {discrete: true},
+      );
+
+      editor.update(
+        () => {
+          const tableNode = $createTableNode();
+          const row = $createTableRowNode();
+          const cell = $createTableCellNode();
+          const cell2 = $createTableCellNode();
+          cell.append($createParagraphNode());
+          row.append(cell, cell2);
+          tableNode.append(row);
+
+          // The sum is wider than the destination cell.
+          tableNode.setColWidths([750, 250]);
+
+          const selection = $getSelection();
+          assert($isRangeSelection(selection), 'Expected range selection');
+          $insertGeneratedNodes(
+            editor,
+            [tableNode, $createParagraphNode()],
+            selection,
+          );
+        },
+        {discrete: true},
+      );
+
+      // Verify a nested table was created, with colWidths updated. Note: due to no DOM, insets are not calculated.
+      editor.getEditorState().read(() => {
+        const root = $getRoot();
+        const table = root.getFirstChild();
+        assert($isTableNode(table), 'Expected outer table node');
+        const row = table.getFirstChild();
+        assert($isElementNode(row), 'Expected outer row node');
+        const cell = row.getFirstChild();
+        assert($isElementNode(cell), 'Expected outer cell node');
+        const [innerTableNode] = cell.getChildren();
+        assert($isTableNode(innerTableNode), 'Expected inner table node');
+        // Fitting 750, 250 into a 500-wide cell.
+        expect(innerTableNode.getColWidths()).toEqual([375, 125]);
+      });
+    });
   });
 
   describe('SELECT_ALL_COMMAND', () => {

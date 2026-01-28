@@ -72,7 +72,7 @@ import {
   $computeTableMapSkipCellCheck,
   $createTableNodeWithDimensions,
   $getNodeTriplet,
-  $getTableColumnIndexFromTableCellNode,
+  $getTableCellNodeRect,
   $getTableNodeFromLexicalNodeOrThrow,
   $insertTableColumnAtNode,
   $insertTableRowAtNode,
@@ -701,10 +701,10 @@ function $insertTableNodesIntoCells(
   }
 
   const cellWidth = $getCellWidth(parentCell);
-  const borderBoxInsets = $calculateCellInsets(parentCell);
   if (cellWidth === undefined) {
     return false;
   }
+  const borderBoxInsets = $calculateCellInsets(parentCell);
   const tables = nodes.filter($isTableNode);
   for (const table of tables) {
     // Note: here we assume the inset is consistent for cells at all nesting levels.
@@ -715,24 +715,26 @@ function $insertTableNodesIntoCells(
 }
 
 /**
- * Return the width of a specific cell, preferring to use the table-level column widths if possible.
+ * Return the width of a specific cell, using the table-level colWidths.
  */
 function $getCellWidth(cell: TableCellNode) {
   const destinationTableNode = $getTableNodeFromLexicalNodeOrThrow(cell);
 
-  const columnIndex = $getTableColumnIndexFromTableCellNode(cell);
-  // prefer to use table-level colWidths
+  const cellRect = $getTableCellNodeRect(cell);
   const colWidths = destinationTableNode.getColWidths();
-  if (colWidths) {
-    return colWidths[columnIndex];
+  if (!cellRect || !colWidths) {
+    return undefined;
   }
-  return cell.getWidth();
+  const {columnIndex, colSpan} = cellRect;
+  let totalWidth = 0;
+  for (let i = columnIndex; i < columnIndex + colSpan; i++) {
+    totalWidth += colWidths[i];
+  }
+  return totalWidth;
 }
 
 /**
  * Returns horizontal insets of the given cell (padding + border).
- *
- * TODO: merged cells?
  */
 function $calculateCellInsets(cell: TableCellNode) {
   const cellDOM = $getEditor().getElementByKey(cell.getKey());
@@ -770,27 +772,14 @@ function $calculateCellInsets(cell: TableCellNode) {
 
 function $getTotalTableWidth(table: TableNode) {
   const colWidths = table.getColWidths();
-  if (colWidths) {
-    return colWidths.reduce((curWidth, width) => curWidth + width, 0);
-  }
-  const tableRow = table.getFirstChild();
-
-  invariant(
-    $isTableRowNode(tableRow),
-    'Expected first child of a Table to be a TableRowNode',
-  );
-
-  // TODO merged cells?
-  return tableRow
-    .getChildren()
-    .filter($isTableCellNode)
-    .reduce((curWidth, cell) => curWidth + (cell.getWidth() ?? 92), 0); // TODO no width
+  invariant(!!colWidths, 'Tables without colWidths are not supported');
+  return colWidths.reduce((curWidth, width) => curWidth + width, 0);
 }
 
 /**
  * Recursively resizes table cells to fit a given width.
  *
- * @param node the table node to resize
+ * @param node the table node to resize. The table must have colWidths to be resized.
  * @param parentCellWidth the width of the parent cell
  * @param borderBoxInsets the insets of the parent cell (padding + border)
  */
@@ -799,6 +788,10 @@ function $resizeTableToFitCell(
   parentCellWidth: number,
   borderBoxInsets: number,
 ) {
+  if (node.getColWidths() === undefined) {
+    return node;
+  }
+
   const usableWidth = parentCellWidth - borderBoxInsets;
   const tableWidth = $getTotalTableWidth(node);
   if (tableWidth <= usableWidth) {

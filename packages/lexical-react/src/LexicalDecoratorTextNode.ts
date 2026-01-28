@@ -1,0 +1,137 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
+import type {
+  LexicalNode,
+  LexicalUpdateJSON,
+  NodeKey,
+  SerializedLexicalNode,
+  Spread,
+  TextFormatType,
+} from 'lexical';
+import type {JSX} from 'react';
+
+import {
+  $applyNodeReplacement,
+  DecoratorNode,
+  TEXT_TYPE_TO_FORMAT,
+} from 'lexical';
+
+function toggleTextFormatType(
+  format: number,
+  type: TextFormatType,
+  alignWithFormat: null | number,
+): number {
+  const activeFormat = TEXT_TYPE_TO_FORMAT[type];
+  if (
+    alignWithFormat !== null &&
+    (format & activeFormat) === (alignWithFormat & activeFormat)
+  ) {
+    return format;
+  }
+  let newFormat = format ^ activeFormat;
+  if (type === 'subscript') {
+    newFormat &= ~TEXT_TYPE_TO_FORMAT.superscript;
+  } else if (type === 'superscript') {
+    newFormat &= ~TEXT_TYPE_TO_FORMAT.subscript;
+  } else if (type === 'lowercase') {
+    newFormat &= ~TEXT_TYPE_TO_FORMAT.uppercase;
+    newFormat &= ~TEXT_TYPE_TO_FORMAT.capitalize;
+  } else if (type === 'uppercase') {
+    newFormat &= ~TEXT_TYPE_TO_FORMAT.lowercase;
+    newFormat &= ~TEXT_TYPE_TO_FORMAT.capitalize;
+  } else if (type === 'capitalize') {
+    newFormat &= ~TEXT_TYPE_TO_FORMAT.lowercase;
+    newFormat &= ~TEXT_TYPE_TO_FORMAT.uppercase;
+  }
+  return newFormat;
+}
+
+export type SerializedDecoratorTextNode = Spread<
+  {
+    format: number;
+  },
+  SerializedLexicalNode
+>;
+
+export class DecoratorTextNode extends DecoratorNode<JSX.Element> {
+  __format: number;
+
+  constructor(key?: NodeKey) {
+    super(key);
+    this.__format = 0;
+  }
+
+  getFormat(): number {
+    const self = this.getLatest();
+    return self.__format;
+  }
+
+  getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number {
+    const self = this.getLatest();
+    const format = self.__format;
+    return toggleTextFormatType(format, type, alignWithFormat);
+  }
+
+  hasFormat(type: TextFormatType): boolean {
+    const formatFlag = TEXT_TYPE_TO_FORMAT[type];
+    return (this.getFormat() & formatFlag) !== 0;
+  }
+
+  setFormat(type: number): this {
+    const self = this.getWritable();
+    self.__format = type;
+    return self;
+  }
+
+  isInline(): true {
+    return true;
+  }
+
+  exportJSON(): SerializedDecoratorTextNode {
+    return {
+      ...super.exportJSON(),
+      format: this.__format || 0,
+    };
+  }
+
+  static importJSON(serializedNode: SerializedDecoratorTextNode) {
+    return $createDecoratorTextNode().updateFromJSON(serializedNode);
+  }
+
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<SerializedDecoratorTextNode>,
+  ): this {
+    return super
+      .updateFromJSON(serializedNode)
+      .setFormat(serializedNode.format || 0);
+  }
+
+  afterCloneFrom(prevNode: this) {
+    super.afterCloneFrom(prevNode);
+    this.__format = prevNode.__format;
+  }
+
+  createDOM(): HTMLElement {
+    return document.createElement('span');
+  }
+
+  updateDOM(): false {
+    return false;
+  }
+}
+
+export function $createDecoratorTextNode() {
+  return $applyNodeReplacement(new DecoratorTextNode());
+}
+
+export function $isDecoratorTextNode(
+  node: LexicalNode | null | undefined,
+): node is DecoratorTextNode {
+  return node instanceof DecoratorTextNode;
+}

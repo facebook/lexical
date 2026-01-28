@@ -78,6 +78,9 @@
       "@lexical/react/LexicalDecoratorBlockNode": [
         "../lexical-react/src/LexicalDecoratorBlockNode.ts"
       ],
+      "@lexical/react/LexicalDecoratorTextNode": [
+        "../lexical-react/src/LexicalDecoratorTextNode.ts"
+      ],
       "@lexical/react/LexicalDraggableBlockPlugin": [
         "../lexical-react/src/LexicalDraggableBlockPlugin.tsx"
       ],
@@ -143,6 +146,9 @@
       ],
       "@lexical/react/LexicalTablePlugin": [
         "../lexical-react/src/LexicalTablePlugin.ts"
+      ],
+      "@lexical/react/LexicalTextWithFormattedContents": [
+        "../lexical-react/src/LexicalTextWithFormattedContents.tsx"
       ],
       "@lexical/react/LexicalTreeView": [
         "../lexical-react/src/LexicalTreeView.tsx"

@@ -1315,7 +1315,7 @@ export function dispatchCommand<TCommand extends LexicalCommand<unknown>>(
 export function $textContentRequiresDoubleLinebreakAtEnd(
   node: ElementNode,
 ): boolean {
-  return !$isRootNode(node) && !node.isLastChild() && !node.isInline();
+  return !$isRootNode(node) && !node.isInline() && !node.isLastChild();
 }
 
 export function getElementByKeyOrThrow(

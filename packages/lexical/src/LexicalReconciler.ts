@@ -14,8 +14,9 @@ import type {
   RegisteredNodes,
 } from './LexicalEditor';
 import type {LexicalPrivateDOM, NodeKey, NodeMap} from './LexicalNode';
-import type {ElementDOMSlot, ElementNode} from './nodes/LexicalElementNode';
+import type {ElementDOMSlot} from './nodes/LexicalElementNode';
 
+import devInvariant from 'shared/devInvariant';
 import invariant from 'shared/invariant';
 
 import {
@@ -24,6 +25,7 @@ import {
   $isLineBreakNode,
   $isRootNode,
   $isTextNode,
+  ElementNode,
 } from '.';
 import {
   DOUBLE_LINE_BREAK,
@@ -622,6 +624,16 @@ function $reconcileNode(
     // Cache the latest text content.
     const nextRootNode = nextNode.getWritable();
     nextRootNode.__cachedText = editorTextContent;
+    if (__DEV__) {
+      const computedTextContent =
+        ElementNode.prototype.getTextContent.call(nextRootNode);
+      devInvariant(
+        computedTextContent === editorTextContent,
+        'LexicalReconciler: Computed nextRootNode.getTextContent() does not match nextRootNode.__cachedText %s !== %s',
+        JSON.stringify(computedTextContent),
+        JSON.stringify(editorTextContent),
+      );
+    }
     nextNode = nextRootNode;
   }
 

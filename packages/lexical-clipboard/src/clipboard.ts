@@ -18,6 +18,7 @@ import {
   $getRoot,
   $getSelection,
   $isElementNode,
+  $isParagraphNode,
   $isRangeSelection,
   $isTextNode,
   $isTextPointCaret,
@@ -29,6 +30,7 @@ import {
   isSelectionWithinEditor,
   LexicalEditor,
   LexicalNode,
+  ParagraphNode,
   SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
   SerializedElementNode,
 } from 'lexical';
@@ -388,6 +390,74 @@ export function $generateJSONFromSelectedNodes<
     const topLevelNode = topLevelChildren[i];
     $appendNodesToJSON(editor, selection, topLevelNode, nodes);
   }
+
+  if (selection !== null && $isRangeSelection(selection)) {
+    const anchorNode = selection.anchor.getNode();
+    const focusNode = selection.focus.getNode();
+
+    let anchorParagraph: LexicalNode | null = anchorNode;
+    while (anchorParagraph !== null && !$isParagraphNode(anchorParagraph)) {
+      anchorParagraph = anchorParagraph.getParent();
+    }
+
+    let focusParagraph: LexicalNode | null = focusNode;
+    while (focusParagraph !== null && !$isParagraphNode(focusParagraph)) {
+      focusParagraph = focusParagraph.getParent();
+    }
+
+    if (
+      anchorParagraph !== null &&
+      focusParagraph === anchorParagraph &&
+      nodes.length > 0
+    ) {
+      const paragraph = anchorParagraph as ParagraphNode;
+      let wrappedChildren = nodes as Array<BaseSerializedNode>;
+      let direction = paragraph.getDirection();
+      let format = paragraph.getFormatType();
+      let indent = paragraph.getIndent();
+      let textFormat = paragraph.getTextFormat();
+      let textStyle = paragraph.getTextStyle();
+
+      if (nodes.length === 1 && nodes[0].type === 'paragraph') {
+        const paragraphNode = nodes[0] as SerializedElementNode;
+        if (Array.isArray(paragraphNode.children)) {
+          wrappedChildren = paragraphNode.children as Array<BaseSerializedNode>;
+        }
+        if (paragraphNode.direction !== undefined) {
+          direction = paragraphNode.direction;
+        }
+        if (paragraphNode.format !== undefined && paragraphNode.format !== '') {
+          format = paragraphNode.format;
+        }
+        if (paragraphNode.indent !== undefined) {
+          indent = paragraphNode.indent;
+        }
+        if (paragraphNode.textFormat !== undefined) {
+          textFormat = paragraphNode.textFormat;
+        }
+        if (paragraphNode.textStyle !== undefined) {
+          textStyle = paragraphNode.textStyle;
+        }
+      }
+
+      const wrapped = {
+        children: wrappedChildren,
+        direction,
+        format,
+        indent,
+        textFormat,
+        textStyle,
+        type: 'paragraph',
+        version: 1,
+      } as unknown as SerializedNode;
+
+      return {
+        namespace: editor._config.namespace,
+        nodes: [wrapped],
+      };
+    }
+  }
+
   return {
     namespace: editor._config.namespace,
     nodes,

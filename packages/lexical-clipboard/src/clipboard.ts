@@ -283,6 +283,15 @@ export interface BaseSerializedNode {
   version: number;
 }
 
+function isSerializedParagraphNode(
+  node: BaseSerializedNode,
+): node is SerializedElementNode {
+  return (
+    node.type === 'paragraph' &&
+    Array.isArray((node as {children?: unknown}).children)
+  );
+}
+
 function exportNodeToJSON<T extends LexicalNode>(node: T): BaseSerializedNode {
   const serializedNode = node.exportJSON();
   const nodeClass = node.constructor;
@@ -418,11 +427,9 @@ export function $generateJSONFromSelectedNodes<
       let textFormat = paragraph.getTextFormat();
       let textStyle = paragraph.getTextStyle();
 
-      if (nodes.length === 1 && nodes[0].type === 'paragraph') {
-        const paragraphNode = nodes[0] as SerializedElementNode;
-        if (Array.isArray(paragraphNode.children)) {
-          wrappedChildren = paragraphNode.children as Array<BaseSerializedNode>;
-        }
+      if (nodes.length === 1 && isSerializedParagraphNode(nodes[0])) {
+        const paragraphNode = nodes[0];
+        wrappedChildren = paragraphNode.children as Array<BaseSerializedNode>;
         if (paragraphNode.direction !== undefined) {
           direction = paragraphNode.direction;
         }

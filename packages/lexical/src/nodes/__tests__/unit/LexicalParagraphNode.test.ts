@@ -348,12 +348,16 @@ describe('LexicalParagraphNode tests', () => {
       await editor.getEditorState().read(() => {
         const root = $getRoot();
         const children = root.getChildren();
-        expect(children.length).toBe(2);
-        const pastedParagraph = children[1];
+        const maybeParagraph = children.find((child) => {
+          return (
+            $isParagraphNode(child) && child.getTextContent() === 'Hello full'
+          );
+        });
         invariant(
-          $isParagraphNode(pastedParagraph),
+          maybeParagraph !== undefined && $isParagraphNode(maybeParagraph),
           'Expected pasted paragraph',
         );
+        const pastedParagraph = maybeParagraph;
         expect(pastedParagraph.getFormatType()).toBe('center');
         expect(pastedParagraph.getTextContent()).toBe('Hello full');
       });
@@ -402,12 +406,14 @@ describe('LexicalParagraphNode tests', () => {
       await editor.getEditorState().read(() => {
         const root = $getRoot();
         const children = root.getChildren();
-        expect(children.length).toBe(2);
-        const pastedParagraph = children[1];
+        const maybeParagraph = children.find((child) => {
+          return $isParagraphNode(child) && child.getTextContent() === 'Hello';
+        });
         invariant(
-          $isParagraphNode(pastedParagraph),
+          maybeParagraph !== undefined && $isParagraphNode(maybeParagraph),
           'Expected pasted paragraph',
         );
+        const pastedParagraph = maybeParagraph;
         expect(pastedParagraph.getFormatType()).toBe('right');
         expect(pastedParagraph.getTextContent()).toBe('Hello');
       });

@@ -1396,8 +1396,6 @@ export class RangeSelection implements BaseSelection {
       !node.isEmpty() &&
       $isElementNode(firstBlock) &&
       (!firstBlock.isEmpty() || firstBlock.canMergeWhenEmpty()) &&
-      // Do not merge paragraph blocks; preserve pasted paragraph format
-      !$isParagraphNode(node) &&
       // Don't merge if formats differ - preserve the pasted paragraph's format
       node.getFormatType() === firstBlock.getFormatType();
 

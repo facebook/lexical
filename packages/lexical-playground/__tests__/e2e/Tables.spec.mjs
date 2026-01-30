@@ -6264,7 +6264,7 @@ test.describe.parallel('Tables', () => {
         page,
         'table > tr:nth-of-type(4) > *:nth-child(4)',
       ),
-      {mouseDown: true, mouseUp: false, slow: true},
+      {mouseDown: true, mouseUp: false, steps: 5},
     );
 
     await assertHTML(
@@ -6399,7 +6399,7 @@ test.describe.parallel('Tables', () => {
         page,
         'table > tr:nth-of-type(3) > *:nth-child(5)',
       ),
-      {mouseDown: false, mouseUp: true, slow: true},
+      {mouseDown: false, mouseUp: true, steps: 5},
     );
     await assertHTML(
       page,
@@ -7367,6 +7367,31 @@ test.describe.parallel('Tables', () => {
       'table:first-of-type > tr:nth-of-type(2) > th:nth-child(1)',
     );
 
+    const dragAndAssertSelection = async (fromBox, toBox, expected) => {
+      await dragMouse(page, fromBox, toBox, {steps: 5});
+      if (await waitForTableSelectionCoordinates(page, expected)) {
+        return;
+      }
+      const start = {
+        x: fromBox.x + fromBox.width / 2,
+        y: fromBox.y + fromBox.height / 2,
+      };
+      const end = {
+        x: toBox.x + toBox.width / 2,
+        y: toBox.y + toBox.height / 2,
+      };
+      await dispatchPointerDrag(page, start, end);
+      if (await waitForTableSelectionCoordinates(page, expected)) {
+        return;
+      }
+      const coords = await readTableSelectionCoordinates(page);
+      throw new Error(
+        `Expected table selection ${JSON.stringify(
+          expected,
+        )} but got ${JSON.stringify(coords)}`,
+      );
+    };
+
     await dragAndAssertSelection(page, firstColTop, firstColBottom, {
       anchor: {x: 0, y: 0},
       focus: {x: 0, y: 1},
@@ -7386,6 +7411,166 @@ test.describe.parallel('Tables', () => {
     await dragAndAssertSelection(page, secondColTop, secondColBottom, {
       anchor: {x: 1, y: 0},
       focus: {x: 1, y: 1},
+    });
+  });
+
+  test('Drag-select before table into table selects entire table', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+    await initialize({isCollab, page});
+
+    await focusEditor(page);
+
+    await page.keyboard.insertText('textBefore');
+    await insertTable(page, 2, 2);
+
+    await page.waitForSelector(
+      'table:first-of-type td, table:first-of-type th',
+    );
+
+    const firstParagraph = await selectorBoundingBox(
+      page,
+      'p:has-text("textBefore")',
+    );
+    const firstCell = await selectorBoundingBox(
+      page,
+      'table:first-of-type > tr:first-of-type > th:first-of-type',
+    );
+
+    await dragMouse(page, firstParagraph, firstCell, {
+      positionStart: 'start',
+      slow: true,
+    });
+
+    // selection starts in the text and ends in the last cell of the table
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [0, 0, 0],
+      focusOffset: 1,
+      focusPath: [1, 0, 2, 1],
+    });
+  });
+
+  test('Drag-select from first cell to before table selects entire table', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+    await initialize({isCollab, page});
+
+    await focusEditor(page);
+
+    await page.keyboard.insertText('textBefore');
+    await insertTable(page, 2, 2);
+
+    await page.waitForSelector(
+      'table:first-of-type td, table:first-of-type th',
+    );
+
+    const firstParagraph = await selectorBoundingBox(
+      page,
+      'p:has-text("textBefore")',
+    );
+    const firstCell = await selectorBoundingBox(
+      page,
+      'table:first-of-type > tr:first-of-type > th:first-of-type',
+    );
+
+    await dragMouse(page, firstCell, firstParagraph, {
+      positionEnd: 'start',
+      steps: 5,
+    });
+
+    // selection starts in the text and ends in the last cell of the table
+    await assertSelection(page, {
+      anchorOffset: 1,
+      anchorPath: [1, 0, 2, 1],
+      focusOffset: 0,
+      focusPath: [0, 0, 0],
+    });
+  });
+
+  test('Drag-select after table into table selects entire table', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+    await initialize({isCollab, page});
+
+    await focusEditor(page);
+
+    await insertTable(page, 2, 2);
+    await moveToEditorEnd(page);
+    await page.keyboard.insertText('textAfter');
+
+    await page.waitForSelector(
+      'table:first-of-type td, table:first-of-type th',
+    );
+
+    const lastParagraph = await selectorBoundingBox(
+      page,
+      'p:has-text("textAfter")',
+    );
+    const lastCell = await selectorBoundingBox(
+      page,
+      'table:first-of-type > tr:last-of-type > td:first-of-type',
+    );
+    await dragMouse(page, lastParagraph, lastCell, {
+      positionStart: 'start',
+      steps: 5,
+    });
+
+    // selection starts in the text and ends in the first cell of the table
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [2, 0, 0],
+      focusOffset: 0,
+      focusPath: [1, 0, 1, 0],
+    });
+  });
+
+  test('Drag-select from last cell to after table selects entire table', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+    await initialize({isCollab, page});
+
+    await focusEditor(page);
+
+    await insertTable(page, 2, 2);
+    await moveToEditorEnd(page);
+    await page.keyboard.insertText('textAfter');
+
+    await page.waitForSelector(
+      'table:first-of-type td, table:first-of-type th',
+    );
+
+    const lastParagraph = await selectorBoundingBox(
+      page,
+      'p:has-text("textAfter")',
+    );
+    const lastCell = await selectorBoundingBox(
+      page,
+      'table:first-of-type > tr:last-of-type > td:first-of-type',
+    );
+    await dragMouse(page, lastCell, lastParagraph, {
+      positionEnd: 'start',
+      steps: 5,
+    });
+
+    // selection starts in the text and ends in the first cell of the table
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [1, 0, 1, 0],
+      focusOffset: 0,
+      focusPath: [2, 0, 0],
     });
   });
 });
@@ -7535,30 +7720,5 @@ const dispatchPointerDrag = async (pageOrFrame, dragStart, dragEnd) => {
       return true;
     },
     {endPoint: dragEnd, startPoint: dragStart},
-  );
-};
-
-const dragAndAssertSelection = async (page, fromBox, toBox, expected) => {
-  await dragMouse(page, fromBox, toBox, {slow: true});
-  if (await waitForTableSelectionCoordinates(page, expected)) {
-    return;
-  }
-  const start = {
-    x: fromBox.x + fromBox.width / 2,
-    y: fromBox.y + fromBox.height / 2,
-  };
-  const end = {
-    x: toBox.x + toBox.width / 2,
-    y: toBox.y + toBox.height / 2,
-  };
-  await dispatchPointerDrag(page, start, end);
-  if (await waitForTableSelectionCoordinates(page, expected)) {
-    return;
-  }
-  const coords = await readTableSelectionCoordinates(page);
-  throw new Error(
-    `Expected table selection ${JSON.stringify(
-      expected,
-    )} but got ${JSON.stringify(coords)}`,
   );
 };

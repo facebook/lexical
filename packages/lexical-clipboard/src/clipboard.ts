@@ -30,7 +30,6 @@ import {
   isSelectionWithinEditor,
   LexicalEditor,
   LexicalNode,
-  ParagraphNode,
   SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
   SerializedElementNode,
 } from 'lexical';
@@ -283,13 +282,10 @@ export interface BaseSerializedNode {
   version: number;
 }
 
-function isSerializedParagraphNode(
+function isSerializedElementNode(
   node: BaseSerializedNode,
 ): node is SerializedElementNode {
-  return (
-    node.type === 'paragraph' &&
-    Array.isArray((node as {children?: unknown}).children)
-  );
+  return Array.isArray((node as {children?: unknown}).children);
 }
 
 function exportNodeToJSON<T extends LexicalNode>(node: T): BaseSerializedNode {
@@ -383,16 +379,14 @@ function $appendNodesToJSON(
  * @param selection Selection to get the JSON content from.
  * @returns an object with the editor namespace and a list of serializable nodes as JavaScript objects.
  */
-export function $generateJSONFromSelectedNodes<
-  SerializedNode extends BaseSerializedNode,
->(
+export function $generateJSONFromSelectedNodes(
   editor: LexicalEditor,
   selection: BaseSelection | null,
 ): {
   namespace: string;
-  nodes: Array<SerializedNode>;
+  nodes: Array<BaseSerializedNode>;
 } {
-  const nodes: Array<SerializedNode> = [];
+  const nodes: Array<BaseSerializedNode> = [];
   const root = $getRoot();
   const topLevelChildren = root.getChildren();
   for (let i = 0; i < topLevelChildren.length; i++) {
@@ -419,49 +413,21 @@ export function $generateJSONFromSelectedNodes<
       focusParagraph === anchorParagraph &&
       nodes.length > 0
     ) {
-      const paragraph = anchorParagraph as ParagraphNode;
       let wrappedChildren = nodes as Array<BaseSerializedNode>;
-      let direction = paragraph.getDirection();
-      let format = paragraph.getFormatType();
-      let indent = paragraph.getIndent();
-      let textFormat = paragraph.getTextFormat();
-      let textStyle = paragraph.getTextStyle();
-
-      if (nodes.length === 1 && isSerializedParagraphNode(nodes[0])) {
-        const paragraphNode = nodes[0];
-        wrappedChildren = paragraphNode.children as Array<BaseSerializedNode>;
-        if (paragraphNode.direction !== undefined) {
-          direction = paragraphNode.direction;
-        }
-        if (paragraphNode.format !== undefined && paragraphNode.format !== '') {
-          format = paragraphNode.format;
-        }
-        if (paragraphNode.indent !== undefined) {
-          indent = paragraphNode.indent;
-        }
-        if (paragraphNode.textFormat !== undefined) {
-          textFormat = paragraphNode.textFormat;
-        }
-        if (paragraphNode.textStyle !== undefined) {
-          textStyle = paragraphNode.textStyle;
-        }
+      if (nodes.length === 1 && isSerializedElementNode(nodes[0])) {
+        wrappedChildren = nodes[0].children as Array<BaseSerializedNode>;
       }
 
-      const wrapped = {
-        children: wrappedChildren,
-        direction,
-        format,
-        indent,
-        textFormat,
-        textStyle,
-        type: 'paragraph',
-        version: 1,
-      } as unknown as SerializedNode;
+      const paragraphJSON = anchorParagraph.exportJSON();
+      if (isSerializedElementNode(paragraphJSON)) {
+        const wrapped = paragraphJSON as SerializedElementNode;
+        wrapped.children = wrappedChildren as Array<BaseSerializedNode>;
 
-      return {
-        namespace: editor._config.namespace,
-        nodes: [wrapped],
-      };
+        return {
+          namespace: editor._config.namespace,
+          nodes: [wrapped],
+        };
+      }
     }
   }
 

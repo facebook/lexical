@@ -57,14 +57,12 @@ interface BaseSerializedNode {
   version: number;
 }
 
-declare export function $generateJSONFromSelectedNodes<
-  SerializedNode: BaseSerializedNode,
->(
+declare export function $generateJSONFromSelectedNodes(
   editor: LexicalEditor,
   selection: BaseSelection | null,
 ): {
   namespace: string,
-  nodes: Array<SerializedNode>,
+  nodes: Array<BaseSerializedNode>,
 };
 
 declare export function $generateNodesFromSerializedNodes(

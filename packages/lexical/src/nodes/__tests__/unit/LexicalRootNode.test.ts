@@ -213,20 +213,26 @@ describe('LexicalRootNode tests', () => {
       });
     });
 
-    test('RootNode __cachedText incremental update #8096', async () => {
+    test('RootNode __cachedText incremental update #8096', () => {
       const {editor} = testEnv;
 
-      await editor.update(() => {
-        $getRoot().append(
-          $createParagraphNode().append($createTextNode('a')),
-          $createParagraphNode(),
-          $createParagraphNode().append($createTextNode('b')),
-        );
-      });
+      editor.update(
+        () => {
+          $getRoot().append(
+            $createParagraphNode().append($createTextNode('a')),
+            $createParagraphNode(),
+            $createParagraphNode().append($createTextNode('b')),
+          );
+        },
+        {discrete: true},
+      );
       expectRootTextContentToBe('a\n\n\n\nb');
-      await editor.update(() => {
-        $getRoot().selectEnd().insertRawText('.');
-      });
+      editor.update(
+        () => {
+          $getRoot().selectEnd().insertRawText('.');
+        },
+        {discrete: true},
+      );
       expectRootTextContentToBe('a\n\n\n\nb.');
     });
 

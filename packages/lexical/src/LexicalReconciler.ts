@@ -14,9 +14,8 @@ import type {
   RegisteredNodes,
 } from './LexicalEditor';
 import type {LexicalPrivateDOM, NodeKey, NodeMap} from './LexicalNode';
-import type {ElementDOMSlot} from './nodes/LexicalElementNode';
+import type {ElementDOMSlot, ElementNode} from './nodes/LexicalElementNode';
 
-import devInvariant from 'shared/devInvariant';
 import invariant from 'shared/invariant';
 
 import {
@@ -25,7 +24,6 @@ import {
   $isLineBreakNode,
   $isRootNode,
   $isTextNode,
-  ElementNode,
 } from '.';
 import {
   DOUBLE_LINE_BREAK,
@@ -210,9 +208,11 @@ function $createNode(key: NodeKey, slot: ElementDOMSlot | null): HTMLElement {
     if (indent !== 0) {
       setElementIndent(dom, indent);
     }
-    const endIndex = childrenSize - 1;
-    const children = createChildrenArray(node, activeNextNodeMap);
-    $createChildren(children, node, 0, endIndex, node.getDOMSlot(dom));
+    if (childrenSize !== 0) {
+      const endIndex = childrenSize - 1;
+      const children = createChildrenArray(node, activeNextNodeMap);
+      $createChildren(children, node, 0, endIndex, node.getDOMSlot(dom));
+    }
 
     const format = node.__format;
 
@@ -389,7 +389,6 @@ function $reconcileChildren(
   const nextChildrenSize = nextElement.__size;
   subTreeTextContent = '';
   const dom: HTMLElement & LexicalPrivateDOM = slot.element;
-  dom.__lexicalTextContent = undefined;
 
   if (prevChildrenSize === 1 && nextChildrenSize === 1) {
     const prevFirstChildKey: NodeKey = prevElement.__first!;
@@ -625,17 +624,18 @@ function $reconcileNode(
     // Cache the latest text content.
     const nextRootNode = nextNode.getWritable();
     nextRootNode.__cachedText = subTreeTextContent;
-    if (__DEV__) {
-      const computedTextContent =
-        ElementNode.prototype.getTextContent.call(nextRootNode);
-      devInvariant(
-        computedTextContent === subTreeTextContent,
-        'LexicalReconciler: Computed nextRootNode.getTextContent() does not match nextRootNode.__cachedText %s !== %s (dom.__lexicalTextContent %s)',
-        JSON.stringify(computedTextContent),
-        JSON.stringify(subTreeTextContent),
-        JSON.stringify(dom.__lexicalTextContent),
-      );
-    }
+    // This invariant from #8099 is left commented out for performance reasons
+    // if (__DEV__) {
+    //   const computedTextContent =
+    //     ElementNode.prototype.getTextContent.call(nextRootNode);
+    //   devInvariant(
+    //     computedTextContent === subTreeTextContent,
+    //     'LexicalReconciler: Computed nextRootNode.getTextContent() does not match nextRootNode.__cachedText %s !== %s (dom.__lexicalTextContent %s)',
+    //     JSON.stringify(computedTextContent),
+    //     JSON.stringify(subTreeTextContent),
+    //     JSON.stringify(dom.__lexicalTextContent),
+    //   );
+    // }
     nextNode = nextRootNode;
   }
 
@@ -712,11 +712,12 @@ function $reconcileNodeChildren(
       if (prevChildrenSet === undefined) {
         prevChildrenSet = childrenSet(prevChildren, prevIndex);
       } else if (!prevChildrenSet.has(prevKey)) {
+        // continue if prevKey has already been moved
         prevIndex++;
         continue;
       }
       if (!nextChildrenSet.has(prevKey)) {
-        // Remove prev
+        // Remove prev and continue
         siblingDOM = getNextSibling(getPrevElementByKeyOrThrow(prevKey));
         destroyNode(prevKey, slot.element);
         prevIndex++;

@@ -25,22 +25,40 @@ import {
   useRole,
 } from '@floating-ui/react';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
+import {TextWithFormattedContents} from '@lexical/react/LexicalTextWithFormattedContents';
 import {setHours, setMinutes} from 'date-fns';
-import {$getNodeByKey, NodeKey} from 'lexical';
+import {
+  $getNodeByKey,
+  IS_BOLD,
+  IS_HIGHLIGHT,
+  IS_ITALIC,
+  IS_STRIKETHROUGH,
+  IS_UNDERLINE,
+  NodeKey,
+} from 'lexical';
 import * as React from 'react';
 import {useEffect, useRef, useState} from 'react';
 import {DayPicker} from 'react-day-picker';
 
 import {$isDateTimeNode, type DateTimeNode} from './DateTimeNode';
 
+const formatClassMap = {
+  [IS_BOLD]: 'bold',
+  [IS_HIGHLIGHT]: 'highlight',
+  [IS_ITALIC]: 'italic',
+  [IS_STRIKETHROUGH]: 'strikethrough',
+  [IS_UNDERLINE]: 'underline',
+};
+
 const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 export default function DateTimeComponent({
   dateTime,
+  format,
   nodeKey,
 }: {
   dateTime: Date | undefined;
+  format: number;
   nodeKey: NodeKey;
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();
@@ -68,9 +86,6 @@ export default function DateTimeComponent({
     }
     return '00:00';
   });
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [isNodeSelected, setNodeSelected, clearNodeSelection] =
-    useLexicalNodeSelection(nodeKey);
 
   const {refs, floatingStyles, context} = useFloating({
     elements: {
@@ -181,67 +196,75 @@ export default function DateTimeComponent({
     });
   };
 
+  const classNames = [
+    'dateTimePill',
+    ...Object.entries(formatClassMap)
+      .filter(([flag]) => format & Number(flag))
+      .map(([, className]) => className),
+  ];
+
   return (
-    <div
-      className={`dateTimePill ${isNodeSelected ? 'selected' : ''}`}
-      ref={ref}
-      style={{cursor: 'pointer', width: 'fit-content'}}>
-      {dateTime?.toDateString() + (includeTime ? ' ' + timeValue : '') ||
-        'Invalid Date'}
-      {isOpen && (
-        <FloatingPortal>
-          <FloatingOverlay lockScroll={true}>
-            <FloatingFocusManager context={context} initialFocus={-1}>
-              <div
-                className={'dateTimePicker'}
-                ref={refs.setFloating}
-                style={floatingStyles}
-                {...getFloatingProps()}>
-                <DayPicker
-                  captionLayout="dropdown"
-                  navLayout="after"
-                  fixedWeeks={false}
-                  showOutsideDays={false}
-                  mode="single"
-                  selected={selected}
-                  required={true}
-                  // timeZone="BST" TODO: Support time zone selection
-                  onSelect={handleDaySelect}
-                  startMonth={new Date(1925, 0)}
-                  endMonth={new Date(2042, 7)}
-                />
-                <form style={{marginBlockEnd: '1em'}}>
-                  <div
-                    style={{
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                      width: '300px',
-                    }}>
-                    <input
-                      type="checkbox"
-                      id="option1"
-                      name="option1"
-                      value="value1"
-                      checked={includeTime}
-                      onChange={handleCheckboxChange}
-                    />
-                    <label>
+    <TextWithFormattedContents
+      className={{base: classNames.join(' '), focus: 'selected'}}
+      nodeKey={nodeKey}>
+      <div ref={ref} style={{cursor: 'pointer', width: 'fit-content'}}>
+        {dateTime?.toDateString() + (includeTime ? ' ' + timeValue : '') ||
+          'Invalid Date'}
+        {isOpen && (
+          <FloatingPortal>
+            <FloatingOverlay lockScroll={true}>
+              <FloatingFocusManager context={context} initialFocus={-1}>
+                <div
+                  className={'dateTimePicker'}
+                  ref={refs.setFloating}
+                  style={floatingStyles}
+                  {...getFloatingProps()}>
+                  <DayPicker
+                    captionLayout="dropdown"
+                    navLayout="after"
+                    fixedWeeks={false}
+                    showOutsideDays={false}
+                    mode="single"
+                    selected={selected}
+                    required={true}
+                    // timeZone="BST" TODO: Support time zone selection
+                    onSelect={handleDaySelect}
+                    startMonth={new Date(1925, 0)}
+                    endMonth={new Date(2042, 7)}
+                  />
+                  <form style={{marginBlockEnd: '1em'}}>
+                    <div
+                      style={{
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        width: '300px',
+                      }}>
                       <input
-                        type="time"
-                        value={timeValue}
-                        onChange={handleTimeChange}
-                        disabled={!includeTime}
+                        type="checkbox"
+                        id="option1"
+                        name="option1"
+                        value="value1"
+                        checked={includeTime}
+                        onChange={handleCheckboxChange}
                       />
-                    </label>
-                    <span> {userTimeZone}</span>
-                  </div>
-                </form>
-              </div>
-            </FloatingFocusManager>
-          </FloatingOverlay>
-        </FloatingPortal>
-      )}
-    </div>
+                      <label>
+                        <input
+                          type="time"
+                          value={timeValue}
+                          onChange={handleTimeChange}
+                          disabled={!includeTime}
+                        />
+                      </label>
+                      <span> {userTimeZone}</span>
+                    </div>
+                  </form>
+                </div>
+              </FloatingFocusManager>
+            </FloatingOverlay>
+          </FloatingPortal>
+        )}
+      </div>
+    </TextWithFormattedContents>
   );
 }

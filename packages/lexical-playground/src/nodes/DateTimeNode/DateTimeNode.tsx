@@ -8,12 +8,12 @@
 
 import type {JSX} from 'react';
 
+import {DecoratorTextNode} from '@lexical/react/LexicalDecoratorTextNode';
 import {
   $getState,
   $setState,
   buildImportMap,
   createState,
-  DecoratorNode,
   DOMConversionOutput,
   DOMExportOutput,
   LexicalNode,
@@ -75,10 +75,10 @@ const dateTimeState = createState('dateTime', {
   unparse: (v) => v.toISOString(),
 });
 
-export class DateTimeNode extends DecoratorNode<JSX.Element> {
+export class DateTimeNode extends DecoratorTextNode {
   $config() {
     return this.config('datetime', {
-      extends: DecoratorNode,
+      extends: DecoratorTextNode,
       importDOM: buildImportMap({
         span: (domNode) =>
           domNode.getAttribute('data-lexical-datetime') !== null ||
@@ -133,13 +133,13 @@ export class DateTimeNode extends DecoratorNode<JSX.Element> {
     return false;
   }
 
-  isInline(): boolean {
-    return true;
-  }
-
   decorate(): JSX.Element {
     return (
-      <DateTimeComponent dateTime={this.getDateTime()} nodeKey={this.__key} />
+      <DateTimeComponent
+        dateTime={this.getDateTime()}
+        format={this.__format}
+        nodeKey={this.__key}
+      />
     );
   }
 }

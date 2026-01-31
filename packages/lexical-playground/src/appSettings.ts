@@ -29,6 +29,7 @@ export const DEFAULT_SETTINGS = {
   measureTypingPerf: false,
   selectionAlwaysOnDisplay: false,
   shouldAllowHighlightingWithBrackets: false,
+  shouldDisableFocusOnClickChecklist: true,
   shouldPreserveNewLinesInMarkdown: false,
   shouldUseLexicalContextMenu: false,
   showNestedEditorTreeView: false,

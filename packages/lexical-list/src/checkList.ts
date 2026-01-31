@@ -40,13 +40,26 @@ export const INSERT_CHECK_LIST_COMMAND: LexicalCommand<void> = createCommand(
   'INSERT_CHECK_LIST_COMMAND',
 );
 
-let preventFocusOnCheckListItemClick = false;
+let disableTakeFocusOnClick = false;
 
-export function setPreventFocusOnCheckListItemClick(prevent: boolean): void {
-  preventFocusOnCheckListItemClick = prevent;
-}
-
-export function registerCheckList(editor: LexicalEditor) {
+/**
+ * Registers the checklist plugin with the editor.
+ * @param editor The LexicalEditor instance.
+ * @param options Optional configuration.
+ *   - disableTakeFocusOnClick: If true, clicking a checklist item will not focus the editor (useful for mobile).
+ */
+export function registerCheckList(
+  editor: LexicalEditor,
+  options?: {disableTakeFocusOnClick?: boolean},
+) {
+  // These weird nested if functions are necessary because of the strict lint rules. (e.g. Avoid using optional chaining)
+  if (options) {
+    if (options.disableTakeFocusOnClick) {
+      disableTakeFocusOnClick = options.disableTakeFocusOnClick;
+    }
+  } else {
+    disableTakeFocusOnClick = false;
+  }
   return mergeRegister(
     editor.registerCommand(
       INSERT_CHECK_LIST_COMMAND,
@@ -263,7 +276,7 @@ function handleClick(event: Event) {
       if (editor != null && editor.isEditable()) {
         // The skip tags are critical to prevent the editor from focusing/moving selection
         const tags = [];
-        if (preventFocusOnCheckListItemClick === true) {
+        if (disableTakeFocusOnClick === true) {
           tags.push(SKIP_SELECTION_FOCUS_TAG);
           tags.push(SKIP_DOM_SELECTION_TAG);
         }
@@ -290,7 +303,7 @@ function handleClick(event: Event) {
  *
  */
 function handleSelectDefaults(event: Event) {
-  if (preventFocusOnCheckListItemClick === true) {
+  if (disableTakeFocusOnClick === true) {
     handleCheckItemEvent(event, () => {
       event.preventDefault();
       event.stopPropagation();

@@ -413,6 +413,17 @@ export function $generateJSONFromSelectedNodes(
       focusParagraph === anchorParagraph &&
       nodes.length > 0
     ) {
+      const formatType = anchorParagraph.getFormatType();
+      if (
+        formatType === '' ||
+        formatType === 'left' ||
+        formatType === 'start'
+      ) {
+        return {
+          namespace: editor._config.namespace,
+          nodes,
+        };
+      }
       let wrappedChildren = nodes as Array<BaseSerializedNode>;
       if (nodes.length === 1 && isSerializedElementNode(nodes[0])) {
         wrappedChildren = nodes[0].children as Array<BaseSerializedNode>;

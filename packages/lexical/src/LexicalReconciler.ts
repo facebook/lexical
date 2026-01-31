@@ -37,7 +37,6 @@ import {
 } from './LexicalConstants';
 import {EditorState} from './LexicalEditorState';
 import {
-  $textContentRequiresDoubleLinebreakAtEnd,
   cloneDecorators,
   getElementByKeyOrThrow,
   setMutatedNode,
@@ -49,7 +48,6 @@ type IntentionallyMarkedAsDirtyElement = boolean;
 let subTreeTextContent = '';
 let subTreeTextFormat: number | null = null;
 let subTreeTextStyle: string | null = null;
-let editorTextContent = '';
 let activeEditorConfig: EditorConfig;
 let activeEditor: LexicalEditor;
 let activeEditorNodes: RegisteredNodes;
@@ -101,9 +99,7 @@ function destroyChildren(
   endIndex: number,
   dom: null | HTMLElement,
 ): void {
-  let startIndex = _startIndex;
-
-  for (; startIndex <= endIndex; ++startIndex) {
+  for (let startIndex = _startIndex; startIndex <= endIndex; ++startIndex) {
     const child = children[startIndex];
 
     if (child !== undefined) {
@@ -217,6 +213,7 @@ function $createNode(key: NodeKey, slot: ElementDOMSlot | null): HTMLElement {
       const children = createChildrenArray(node, activeNextNodeMap);
       $createChildren(children, node, 0, endIndex, node.getDOMSlot(dom));
     }
+
     const format = node.__format;
 
     if (format !== 0) {
@@ -224,10 +221,6 @@ function $createNode(key: NodeKey, slot: ElementDOMSlot | null): HTMLElement {
     }
     if (!node.isInline()) {
       reconcileElementTerminatingLineBreak(null, node, dom);
-    }
-    if ($textContentRequiresDoubleLinebreakAtEnd(node)) {
-      subTreeTextContent += DOUBLE_LINE_BREAK;
-      editorTextContent += DOUBLE_LINE_BREAK;
     }
   } else {
     const text = node.getTextContent();
@@ -242,7 +235,6 @@ function $createNode(key: NodeKey, slot: ElementDOMSlot | null): HTMLElement {
       dom.contentEditable = 'false';
     }
     subTreeTextContent += text;
-    editorTextContent += text;
   }
 
   if (slot !== null) {
@@ -266,7 +258,7 @@ function $createNode(key: NodeKey, slot: ElementDOMSlot | null): HTMLElement {
 
 function $createChildren(
   children: Array<NodeKey>,
-  element: ElementNode & LexicalPrivateDOM,
+  element: ElementNode,
   _startIndex: number,
   endIndex: number,
   slot: ElementDOMSlot,
@@ -283,10 +275,14 @@ function $createChildren(
         subTreeTextFormat = node.getFormat();
         subTreeTextStyle = node.getStyle();
       }
+    } else if (
+      // inline $textContentRequiresDoubleLinebreakAtEnd
+      $isElementNode(node) &&
+      startIndex < endIndex &&
+      !node.isInline()
+    ) {
+      subTreeTextContent += DOUBLE_LINE_BREAK;
     }
-  }
-  if ($textContentRequiresDoubleLinebreakAtEnd(element)) {
-    subTreeTextContent += DOUBLE_LINE_BREAK;
   }
   const dom: HTMLElement & LexicalPrivateDOM = slot.element;
   dom.__lexicalTextContent = subTreeTextContent;
@@ -480,10 +476,6 @@ function $reconcileChildren(
     }
   }
 
-  if ($textContentRequiresDoubleLinebreakAtEnd(nextElement)) {
-    subTreeTextContent += DOUBLE_LINE_BREAK;
-  }
-
   dom.__lexicalTextContent = subTreeTextContent;
   subTreeTextContent = previousSubTreeTextContent + subTreeTextContent;
 }
@@ -515,18 +507,19 @@ function $reconcileNode(
   // and isn't dirty, we just update the text content cache
   // and return the existing DOM Node.
   if (prevNode === nextNode && !isDirty) {
+    let text: string;
     if ($isElementNode(prevNode)) {
       const previousSubTreeTextContent = dom.__lexicalTextContent;
-
-      if (previousSubTreeTextContent !== undefined) {
-        subTreeTextContent += previousSubTreeTextContent;
-        editorTextContent += previousSubTreeTextContent;
+      if (typeof previousSubTreeTextContent === 'string') {
+        text = previousSubTreeTextContent;
+      } else {
+        text = prevNode.getTextContent();
+        dom.__lexicalTextContent = text;
       }
     } else {
-      const text = prevNode.getTextContent();
-      editorTextContent += text;
-      subTreeTextContent += text;
+      text = prevNode.getTextContent();
     }
+    subTreeTextContent += text;
 
     return dom;
   }
@@ -555,7 +548,12 @@ function $reconcileNode(
     return replacementDOM;
   }
 
-  if ($isElementNode(prevNode) && $isElementNode(nextNode)) {
+  if ($isElementNode(prevNode)) {
+    invariant(
+      $isElementNode(nextNode),
+      'Node with key %s changed from ElementNode to !ElementNode',
+      key,
+    );
     const nextIndent = nextNode.__indent;
 
     if (treatAllNodesAsDirty || nextIndent !== prevNode.__indent) {
@@ -572,11 +570,16 @@ function $reconcileNode(
       if (!$isRootNode(nextNode) && !nextNode.isInline()) {
         reconcileElementTerminatingLineBreak(prevNode, nextNode, dom);
       }
-    }
-
-    if ($textContentRequiresDoubleLinebreakAtEnd(nextNode)) {
-      subTreeTextContent += DOUBLE_LINE_BREAK;
-      editorTextContent += DOUBLE_LINE_BREAK;
+    } else {
+      const previousSubTreeTextContent = dom.__lexicalTextContent;
+      let text: string;
+      if (typeof previousSubTreeTextContent === 'string') {
+        text = previousSubTreeTextContent;
+      } else {
+        text = prevNode.getTextContent();
+        dom.__lexicalTextContent = text;
+      }
+      subTreeTextContent += text;
     }
 
     if (treatAllNodesAsDirty || nextNode.__dir !== prevNode.__dir) {
@@ -611,17 +614,28 @@ function $reconcileNode(
     }
 
     subTreeTextContent += text;
-    editorTextContent += text;
   }
 
   if (
     !activeEditorStateReadOnly &&
     $isRootNode(nextNode) &&
-    nextNode.__cachedText !== editorTextContent
+    nextNode.__cachedText !== subTreeTextContent
   ) {
     // Cache the latest text content.
     const nextRootNode = nextNode.getWritable();
-    nextRootNode.__cachedText = editorTextContent;
+    nextRootNode.__cachedText = subTreeTextContent;
+    // This invariant from #8099 is left commented out for performance reasons
+    // if (__DEV__) {
+    //   const computedTextContent =
+    //     ElementNode.prototype.getTextContent.call(nextRootNode);
+    //   devInvariant(
+    //     computedTextContent === subTreeTextContent,
+    //     'LexicalReconciler: Computed nextRootNode.getTextContent() does not match nextRootNode.__cachedText %s !== %s (dom.__lexicalTextContent %s)',
+    //     JSON.stringify(computedTextContent),
+    //     JSON.stringify(subTreeTextContent),
+    //     JSON.stringify(dom.__lexicalTextContent),
+    //   );
+    // }
     nextNode = nextRootNode;
   }
 
@@ -659,6 +673,14 @@ function getNextSibling(element: HTMLElement): Node | null {
   return nextSibling;
 }
 
+function childrenSet(children: Array<NodeKey>, start: number): Set<NodeKey> {
+  const s = new Set<NodeKey>();
+  for (let i = start; i < children.length; i++) {
+    s.add(children[i]);
+  }
+  return s;
+}
+
 function $reconcileNodeChildren(
   nextElement: ElementNode,
   prevChildren: Array<NodeKey>,
@@ -684,36 +706,35 @@ function $reconcileNodeChildren(
       prevIndex++;
       nextIndex++;
     } else {
-      if (prevChildrenSet === undefined) {
-        prevChildrenSet = new Set(prevChildren);
-      }
-
       if (nextChildrenSet === undefined) {
-        nextChildrenSet = new Set(nextChildren);
+        nextChildrenSet = childrenSet(nextChildren, nextIndex);
       }
-
-      const nextHasPrevKey = nextChildrenSet.has(prevKey);
-      const prevHasNextKey = prevChildrenSet.has(nextKey);
-
-      if (!nextHasPrevKey) {
-        // Remove prev
+      if (prevChildrenSet === undefined) {
+        prevChildrenSet = childrenSet(prevChildren, prevIndex);
+      } else if (!prevChildrenSet.has(prevKey)) {
+        // continue if prevKey has already been moved
+        prevIndex++;
+        continue;
+      }
+      if (!nextChildrenSet.has(prevKey)) {
+        // Remove prev and continue
         siblingDOM = getNextSibling(getPrevElementByKeyOrThrow(prevKey));
         destroyNode(prevKey, slot.element);
         prevIndex++;
-      } else if (!prevHasNextKey) {
+        prevChildrenSet.delete(prevKey);
+        continue;
+      }
+      if (!prevChildrenSet.has(nextKey)) {
         // Create next
         $createNode(nextKey, slot.withBefore(siblingDOM));
         nextIndex++;
       } else {
         // Move next
         const childDOM = getElementByKeyOrThrow(activeEditor, nextKey);
-
-        if (childDOM === siblingDOM) {
-          siblingDOM = getNextSibling($reconcileNode(nextKey, slot.element));
-        } else {
+        if (childDOM !== siblingDOM) {
           slot.withBefore(siblingDOM).insertChild(childDOM);
-          $reconcileNode(nextKey, slot.element);
         }
+        siblingDOM = getNextSibling($reconcileNode(nextKey, slot.element));
 
         prevIndex++;
         nextIndex++;
@@ -726,6 +747,13 @@ function $reconcileNodeChildren(
         subTreeTextFormat = node.getFormat();
         subTreeTextStyle = node.getStyle();
       }
+    } else if (
+      // inline $textContentRequiresDoubleLinebreakAtEnd
+      $isElementNode(node) &&
+      nextIndex <= nextEndIndex &&
+      !node.isInline()
+    ) {
+      subTreeTextContent += DOUBLE_LINE_BREAK;
     }
   }
 
@@ -761,7 +789,6 @@ export function $reconcileRoot(
   // We cache text content to make retrieval more efficient.
   // The cache must be rebuilt during reconciliation to account for any changes.
   subTreeTextContent = '';
-  editorTextContent = '';
   // Rather than pass around a load of arguments through the stack recursively
   // we instead set them as bindings within the scope of the module.
   treatAllNodesAsDirty = dirtyType === FULL_RECONCILE;

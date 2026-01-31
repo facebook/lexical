@@ -769,27 +769,30 @@ describe('LexicalNode tests', () => {
         let bazParagraphNode: ParagraphNode;
         let bazTextNode: TextNode;
 
-        await editor.update(() => {
-          const rootNode = $getRoot();
-          barParagraphNode = new ParagraphNode();
-          barTextNode = new TextNode('bar');
-          barTextNode.toggleUnmergeable();
-          bazParagraphNode = new ParagraphNode();
-          bazTextNode = new TextNode('baz');
-          bazTextNode.toggleUnmergeable();
-          expect(bazTextNode.getCommonAncestor(bazTextNode)).toBe(null);
-          quxTextNode = new TextNode('qux');
-          quxTextNode.toggleUnmergeable();
-          paragraphNode.append(quxTextNode);
-          expect(barTextNode.getCommonAncestor(bazTextNode)).toBe(null);
-          barParagraphNode.append(barTextNode);
-          bazParagraphNode.append(bazTextNode);
-          expect(barTextNode.getCommonAncestor(bazTextNode)).toBe(null);
-          expect(bazTextNode.getCommonAncestor(bazTextNode)).toBe(
-            bazParagraphNode,
-          );
-          rootNode.append(barParagraphNode, bazParagraphNode);
-        });
+        editor.update(
+          () => {
+            const rootNode = $getRoot();
+            barParagraphNode = new ParagraphNode();
+            barTextNode = new TextNode('bar');
+            barTextNode.toggleUnmergeable();
+            bazParagraphNode = new ParagraphNode();
+            bazTextNode = new TextNode('baz');
+            bazTextNode.toggleUnmergeable();
+            expect(bazTextNode.getCommonAncestor(bazTextNode)).toBe(null);
+            quxTextNode = new TextNode('qux');
+            quxTextNode.toggleUnmergeable();
+            paragraphNode.append(quxTextNode);
+            expect(barTextNode.getCommonAncestor(bazTextNode)).toBe(null);
+            barParagraphNode.append(barTextNode);
+            bazParagraphNode.append(bazTextNode);
+            expect(barTextNode.getCommonAncestor(bazTextNode)).toBe(null);
+            expect(bazTextNode.getCommonAncestor(bazTextNode)).toBe(
+              bazParagraphNode,
+            );
+            rootNode.append(barParagraphNode, bazParagraphNode);
+          },
+          {discrete: true},
+        );
 
         expect(testEnv.outerHTML).toBe(
           '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">foo</span><span data-lexical-text="true">qux</span></p><p dir="auto"><span data-lexical-text="true">bar</span></p><p dir="auto"><span data-lexical-text="true">baz</span></p></div>',

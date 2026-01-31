@@ -1312,12 +1312,6 @@ export function dispatchCommand<TCommand extends LexicalCommand<unknown>>(
   return triggerCommandListeners(editor, command, payload);
 }
 
-export function $textContentRequiresDoubleLinebreakAtEnd(
-  node: ElementNode,
-): boolean {
-  return !$isRootNode(node) && !node.isLastChild() && !node.isInline();
-}
-
 export function getElementByKeyOrThrow(
   editor: LexicalEditor,
   key: NodeKey,

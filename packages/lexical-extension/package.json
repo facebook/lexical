@@ -23,9 +23,9 @@
   "sideEffects": false,
   "module": "LexicalExtension.mjs",
   "dependencies": {
-    "@lexical/utils": "0.39.0",
+    "@lexical/utils": "workspace:*",
     "@preact/signals-core": "^1.11.0",
-    "lexical": "0.39.0"
+    "lexical": "workspace:*"
   },
   "exports": {
     ".": {

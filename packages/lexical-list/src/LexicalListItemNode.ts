@@ -36,9 +36,9 @@ import {
   buildImportMap,
   ElementNode,
   LexicalEditor,
+  normalizeClassNames,
 } from 'lexical';
 import invariant from 'shared/invariant';
-import normalizeClassNames from 'shared/normalizeClassNames';
 
 import {$createListNode, $isListNode} from './';
 import {$handleIndent, $handleOutdent, mergeLists} from './formatList';

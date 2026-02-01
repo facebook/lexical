@@ -25,10 +25,10 @@ import {
   LexicalNode,
   LexicalUpdateJSON,
   NodeKey,
+  normalizeClassNames,
   SerializedElementNode,
   Spread,
 } from 'lexical';
-import normalizeClassNames from 'shared/normalizeClassNames';
 
 import {$createListItemNode, $isListItemNode, ListItemNode} from '.';
 import {

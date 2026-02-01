@@ -9,6 +9,7 @@
 'use strict';
 
 const fs = require('fs-extra');
+const path = require('path');
 const glob = require('glob');
 const {packagesManager} = require('./shared/packagesManager');
 const {PackageMetadata} = require('./shared/PackageMetadata');
@@ -202,6 +203,10 @@ function updatePublicPackage(pkg) {
  * @param {PackageMetadata} pkg
  */
 function updateDependencies(pkg) {
+  // examples should use exact versions since they
+  // are not currently in the workspace
+  const depVersion =
+    path.basename(pkg.resolve('..')) !== 'packages' ? version : 'workspace:*';
   const {packageJson} = pkg;
   const {
     dependencies = {},
@@ -211,7 +216,7 @@ function updateDependencies(pkg) {
   [dependencies, devDependencies].forEach((deps) => {
     Object.keys(deps).forEach((dep) => {
       if (publicNpmNames.has(dep)) {
-        deps[dep] = 'workspace:*';
+        deps[dep] = depVersion;
       }
     });
   });
@@ -220,7 +225,7 @@ function updateDependencies(pkg) {
   Object.keys(peerDependencies).forEach((peerDep) => {
     if (publicNpmNames.has(peerDep)) {
       delete peerDependencies[peerDep];
-      dependencies[peerDep] = 'workspace:*';
+      dependencies[peerDep] = depVersion;
     }
   });
   pkg

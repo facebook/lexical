@@ -30,7 +30,6 @@ import type {RootNode} from './nodes/LexicalRootNode';
 import {CAN_USE_DOM} from 'shared/canUseDOM';
 import {IS_APPLE, IS_APPLE_WEBKIT, IS_IOS, IS_SAFARI} from 'shared/environment';
 import invariant from 'shared/invariant';
-import normalizeClassNames from 'shared/normalizeClassNames';
 
 import {
   $createTextNode,
@@ -48,6 +47,7 @@ import {
   ElementNode,
   HISTORY_MERGE_TAG,
   LineBreakNode,
+  normalizeClassNames,
   UpdateTag,
 } from '.';
 import {

@@ -12,7 +12,9 @@ import {useEffect} from 'react';
 
 export function CheckListPlugin({
   disableTakeFocusOnClick = false,
-}: {disableTakeFocusOnClick?: boolean} = {}): null {
+}: {
+  disableTakeFocusOnClick?: boolean;
+}): null {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {

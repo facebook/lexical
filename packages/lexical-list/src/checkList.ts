@@ -40,8 +40,6 @@ export const INSERT_CHECK_LIST_COMMAND: LexicalCommand<void> = createCommand(
   'INSERT_CHECK_LIST_COMMAND',
 );
 
-let disableTakeFocusOnClick = false;
-
 /**
  * Registers the checklist plugin with the editor.
  * @param editor The LexicalEditor instance.
@@ -52,14 +50,19 @@ export function registerCheckList(
   editor: LexicalEditor,
   options?: {disableTakeFocusOnClick?: boolean},
 ) {
-  // These weird nested if functions are necessary because of the strict lint rules. (e.g. Avoid using optional chaining)
+  let disableTakeFocusOnClick = false;
   if (options) {
-    if (options.disableTakeFocusOnClick) {
-      disableTakeFocusOnClick = options.disableTakeFocusOnClick;
+    if (options.disableTakeFocusOnClick === true) {
+      disableTakeFocusOnClick = true;
     }
-  } else {
-    disableTakeFocusOnClick = false;
   }
+
+  const configHandleClick = (event: Event) => {
+    handleClick(event, disableTakeFocusOnClick);
+  };
+  const configHandleSelectDefaults = (event: Event) => {
+    handleSelectDefaults(event, disableTakeFocusOnClick);
+  };
   return mergeRegister(
     editor.registerCommand(
       INSERT_CHECK_LIST_COMMAND,
@@ -163,36 +166,53 @@ export function registerCheckList(
       },
       COMMAND_PRIORITY_LOW,
     ),
+
     editor.registerRootListener((rootElement, prevElement) => {
       if (rootElement !== null) {
-        rootElement.addEventListener('click', handleClick);
+        rootElement.addEventListener('click', configHandleClick);
         // Use capture so we run before other listeners that might move focus.
-        rootElement.addEventListener('pointerdown', handleSelectDefaults, {
-          capture: true,
-        });
+        rootElement.addEventListener(
+          'pointerdown',
+          configHandleSelectDefaults,
+          {
+            capture: true,
+          },
+        );
         // Some browsers / integrations still generate mousedown events; handle them too.
-        rootElement.addEventListener('mousedown', handleSelectDefaults, {
+        rootElement.addEventListener('mousedown', configHandleSelectDefaults, {
           capture: true,
         });
         // Intercept touchstart to stop the mobile browser from placing the caret
         // and opening the keyboard when tapping the checklist marker.
-        rootElement.addEventListener('touchstart', handleSelectDefaults, {
+        rootElement.addEventListener('touchstart', configHandleSelectDefaults, {
           capture: true,
           passive: false,
         });
       }
 
       if (prevElement !== null) {
-        prevElement.removeEventListener('click', handleClick);
-        prevElement.removeEventListener('pointerdown', handleSelectDefaults, {
-          capture: true,
-        });
-        prevElement.removeEventListener('mousedown', handleSelectDefaults, {
-          capture: true,
-        });
-        prevElement.removeEventListener('touchstart', handleSelectDefaults, {
-          capture: true,
-        });
+        prevElement.removeEventListener('click', configHandleClick);
+        prevElement.removeEventListener(
+          'pointerdown',
+          configHandleSelectDefaults,
+          {
+            capture: true,
+          },
+        );
+        prevElement.removeEventListener(
+          'mousedown',
+          configHandleSelectDefaults,
+          {
+            capture: true,
+          },
+        );
+        prevElement.removeEventListener(
+          'touchstart',
+          configHandleSelectDefaults,
+          {
+            capture: true,
+          },
+        );
       }
     }),
   );
@@ -267,7 +287,7 @@ function handleCheckItemEvent(event: Event, callback: () => void) {
   }
 }
 
-function handleClick(event: Event) {
+function handleClick(event: Event, disableFocusOnClick: boolean = false) {
   handleCheckItemEvent(event, () => {
     if (isHTMLElement(event.target)) {
       const domNode = event.target;
@@ -275,8 +295,8 @@ function handleClick(event: Event) {
 
       if (editor != null && editor.isEditable()) {
         // The skip tags are critical to prevent the editor from focusing/moving selection
-        const tags = [];
-        if (disableTakeFocusOnClick === true) {
+        const tags: string[] = [];
+        if (disableFocusOnClick === true) {
           tags.push(SKIP_SELECTION_FOCUS_TAG);
           tags.push(SKIP_DOM_SELECTION_TAG);
         }
@@ -286,6 +306,9 @@ function handleClick(event: Event) {
             const node = $getNearestNodeFromDOMNode(domNode);
 
             if ($isListItemNode(node)) {
+              if (disableFocusOnClick) {
+                domNode.focus();
+              }
               node.toggleChecked();
             }
           },
@@ -302,7 +325,10 @@ function handleClick(event: Event) {
  * @param event might be of type PointerEvent, MouseEvent, or TouchEvent, hence the generic Event type
  *
  */
-function handleSelectDefaults(event: Event) {
+function handleSelectDefaults(
+  event: Event,
+  disableTakeFocusOnClick: boolean = false,
+) {
   if (disableTakeFocusOnClick === true) {
     handleCheckItemEvent(event, () => {
       event.preventDefault();

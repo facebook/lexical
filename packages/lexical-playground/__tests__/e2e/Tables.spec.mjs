@@ -7392,7 +7392,7 @@ test.describe.parallel('Tables', () => {
       );
     };
 
-    await dragAndAssertSelection(page, firstColTop, firstColBottom, {
+    await dragAndAssertSelection(firstColTop, firstColBottom, {
       anchor: {x: 0, y: 0},
       focus: {x: 0, y: 1},
     });
@@ -7408,7 +7408,7 @@ test.describe.parallel('Tables', () => {
       'table:first-of-type > tr:nth-of-type(2) > td:nth-child(2)',
     );
 
-    await dragAndAssertSelection(page, secondColTop, secondColBottom, {
+    await dragAndAssertSelection(secondColTop, secondColBottom, {
       anchor: {x: 1, y: 0},
       focus: {x: 1, y: 1},
     });

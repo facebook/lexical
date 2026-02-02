@@ -127,13 +127,18 @@ function setElementIndent(dom: HTMLElement, indent: number): void {
     }
   }
 
+  if (indent === 0) {
+    dom.style.setProperty('padding-inline-start', '');
+    return;
+  }
+
   const indentationBaseValue =
     getComputedStyle(dom).getPropertyValue('--lexical-indent-base-value') ||
     DEFAULT_INDENT_VALUE;
 
   dom.style.setProperty(
     'padding-inline-start',
-    indent === 0 ? '' : `calc(${indent} * ${indentationBaseValue})`,
+    `calc(${indent} * ${indentationBaseValue})`,
   );
 }
 

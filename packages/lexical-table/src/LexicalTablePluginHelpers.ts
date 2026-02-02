@@ -741,16 +741,13 @@ function $calculateCellInsets(cell: TableCellNode) {
   if (cellDOM === null) {
     return 0;
   }
-  const paddingLeft =
-    window.getComputedStyle(cellDOM).getPropertyValue('padding-left') || '0px';
-  const paddingRight =
-    window.getComputedStyle(cellDOM).getPropertyValue('padding-right') || '0px';
+  const computedStyle = window.getComputedStyle(cellDOM);
+  const paddingLeft = computedStyle.getPropertyValue('padding-left') || '0px';
+  const paddingRight = computedStyle.getPropertyValue('padding-right') || '0px';
   const borderLeftWidth =
-    window.getComputedStyle(cellDOM).getPropertyValue('border-left-width') ||
-    '0px';
+    computedStyle.getPropertyValue('border-left-width') || '0px';
   const borderRightWidth =
-    window.getComputedStyle(cellDOM).getPropertyValue('padding-right-width') ||
-    '0px';
+    computedStyle.getPropertyValue('padding-right-width') || '0px';
 
   if (
     !PIXEL_VALUE_REG_EXP.test(paddingLeft) ||

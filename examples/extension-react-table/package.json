@@ -11,8 +11,12 @@
   },
   "dependencies": {
     "@lexical/extension": "0.40.0",
+    "@lexical/history": "0.40.0",
     "@lexical/react": "0.40.0",
+    "@lexical/rich-text": "0.40.0",
+    "@lexical/table": "0.40.0",
     "@lexical/tailwind": "0.40.0",
+    "@lexical/utils": "0.40.0",
     "lexical": "0.40.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"

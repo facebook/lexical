@@ -17,6 +17,7 @@
   "devDependencies": {
     "@eslint/compat": "^1.2.5",
     "@eslint/js": "^9.22.0",
+    "@lexical/clipboard": "0.40.0",
     "@lexical/extension": "0.40.0",
     "@lexical/headless": "0.40.0",
     "@lexical/history": "0.40.0",

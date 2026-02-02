@@ -53,6 +53,7 @@ async function main() {
       try {
         await spawn('pnpm', args, {
           cwd: pkg.resolve(),
+          env: {...process.env, PNPM_SCRIPT_SRC_DIR: pkg.resolve()},
           stdio: 'inherit',
         });
       } catch (err) {
@@ -62,7 +63,7 @@ async function main() {
         );
       }
     };
-    await pnpm('i');
+    await pnpm('--ignore-workspace', 'i');
     if (hasUnreleasedDependency) {
       console.log(
         'Unreleased lexical dependencies required, removing local versions',

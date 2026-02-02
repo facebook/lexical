@@ -767,9 +767,7 @@ function $calculateCellInsets(cell: TableCellNode) {
   );
 }
 
-function $getTotalTableWidth(table: TableNode) {
-  const colWidths = table.getColWidths();
-  invariant(!!colWidths, 'Tables without colWidths are not supported');
+function $getTotalTableWidth(colWidths: readonly number[]) {
   return colWidths.reduce((curWidth, width) => curWidth + width, 0);
 }
 
@@ -785,21 +783,19 @@ function $resizeTableToFitCell(
   parentCellWidth: number,
   borderBoxInsets: number,
 ) {
-  if (node.getColWidths() === undefined) {
+  const oldColWidths = node.getColWidths();
+  if (!oldColWidths) {
     return node;
   }
 
   const usableWidth = parentCellWidth - borderBoxInsets;
-  const tableWidth = $getTotalTableWidth(node);
+  const tableWidth = $getTotalTableWidth(oldColWidths);
   if (tableWidth <= usableWidth) {
     return node;
   }
 
   const proportionalWidth = usableWidth / tableWidth;
-  const oldColWidths = node.getColWidths();
-  if (oldColWidths) {
-    node.setColWidths(oldColWidths.map((width) => width * proportionalWidth));
-  }
+  node.setColWidths(oldColWidths.map((width) => width * proportionalWidth));
 
   const rowChildren = node.getChildren().filter($isTableRowNode);
   for (const rowChild of rowChildren) {

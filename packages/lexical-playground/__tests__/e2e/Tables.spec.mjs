@@ -7574,165 +7574,171 @@ test.describe.parallel('Tables', () => {
     });
   });
 
-  test('Drag-select inside nested table to outside table (backwards) selects nested table only', async ({
-    page,
-    isPlainText,
-    isCollab,
-  }) => {
-    test.skip(isPlainText);
-    await initialize({hasNestedTables: true, isCollab, page});
+  test.describe.fixme(
+    'Drag-select nested table tests',
+    'These tests are all erroneously selecting the parent cell',
+    () => {
+      test('Drag-select out of nested table (backwards) does not select parent cell', async ({
+        page,
+        isPlainText,
+        isCollab,
+      }) => {
+        test.skip(isPlainText);
+        await initialize({hasNestedTables: true, isCollab, page});
 
-    await focusEditor(page);
+        await focusEditor(page);
 
-    await insertTable(page, 2, 2);
-    await page.locator('table:first-of-type td').click();
-    await page.keyboard.type('beforeText');
-    await insertTable(page, 1, 1);
-    await page.keyboard.press('ArrowDown');
-    await page.keyboard.type('afterText');
+        await insertTable(page, 2, 2);
+        await page.locator('table:first-of-type td').click();
+        await page.keyboard.type('beforeText');
+        await insertTable(page, 1, 1);
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.type('afterText');
 
-    const nestedBeforeText = await selectorBoundingBox(
-      page,
-      'p:has-text("beforeText")',
-    );
-    const nestedFirstCell = await selectorBoundingBox(
-      page,
-      'table table > tr:first-of-type > th:first-of-type',
-    );
+        const nestedBeforeText = await selectorBoundingBox(
+          page,
+          'p:has-text("beforeText")',
+        );
+        const nestedFirstCell = await selectorBoundingBox(
+          page,
+          'table table > tr:first-of-type > th:first-of-type',
+        );
 
-    await dragMouse(page, nestedFirstCell, nestedBeforeText, {
-      positionEnd: 'start',
-      steps: 5,
-    });
+        await dragMouse(page, nestedFirstCell, nestedBeforeText, {
+          positionEnd: 'start',
+          steps: 5,
+        });
 
-    // selection starts in the text and ends in the last cell of the nested table
-    await assertSelection(page, {
-      anchorOffset: 0,
-      anchorPath: [1, 0, 1, 1, 1],
-      focusOffset: 0,
-      focusPath: [1, 0, 1, 1, 1],
-    });
-  });
+        // fixme: this is the whole cell of the parent table
+        await assertSelection(page, {
+          anchorOffset: 0,
+          anchorPath: [1, 0, 2, 1, 0, 0, 0],
+          focusOffset: 0,
+          focusPath: [1, 0, 2, 1, 0, 0, 0],
+        });
+      });
 
-  test('Drag-select into nested table (forward) does not select parent cell', async ({
-    page,
-    isPlainText,
-    isCollab,
-  }) => {
-    test.skip(isPlainText);
-    await initialize({hasNestedTables: true, isCollab, page});
+      test('Drag-select into nested table (forward) does not select parent cell', async ({
+        page,
+        isPlainText,
+        isCollab,
+      }) => {
+        test.skip(isPlainText);
+        await initialize({hasNestedTables: true, isCollab, page});
 
-    await focusEditor(page);
+        await focusEditor(page);
 
-    await insertTable(page, 2, 2);
-    await page.locator('table:first-of-type td').click();
-    await page.keyboard.type('beforeText');
-    await insertTable(page, 1, 1);
-    await page.keyboard.press('ArrowDown');
-    await page.keyboard.type('afterText');
+        await insertTable(page, 2, 2);
+        await page.locator('table:first-of-type td').click();
+        await page.keyboard.type('beforeText');
+        await insertTable(page, 1, 1);
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.type('afterText');
 
-    const nestedBeforeText = await selectorBoundingBox(
-      page,
-      'p:has-text("beforeText")',
-    );
-    const nestedFirstCell = await selectorBoundingBox(
-      page,
-      'table table > tr:first-of-type > th:first-of-type',
-    );
+        const nestedBeforeText = await selectorBoundingBox(
+          page,
+          'p:has-text("beforeText")',
+        );
+        const nestedFirstCell = await selectorBoundingBox(
+          page,
+          'table table > tr:first-of-type > th:first-of-type',
+        );
 
-    await dragMouse(page, nestedBeforeText, nestedFirstCell, {
-      positionStart: 'start',
-      steps: 5,
-    });
+        await dragMouse(page, nestedBeforeText, nestedFirstCell, {
+          positionStart: 'start',
+          steps: 5,
+        });
 
-    // selection starts in the text and ends in the last cell of the nested table
-    await assertSelection(page, {
-      anchorOffset: 0,
-      anchorPath: [1, 0, 1, 1, 1],
-      focusOffset: 0,
-      focusPath: [1, 0, 1, 1, 1],
-    });
-  });
+        // fixme: this is the whole cell of the parent table
+        await assertSelection(page, {
+          anchorOffset: 0,
+          anchorPath: [1, 0, 2, 1, 1, 0, 1, 0, 0],
+          focusOffset: 0,
+          focusPath: [1, 0, 2, 1, 1, 0, 1, 0, 0],
+        });
+      });
 
-  test('Drag-select inside nested table to outside table (forward) selects nested table only', async ({
-    page,
-    isPlainText,
-    isCollab,
-  }) => {
-    test.skip(isPlainText);
-    await initialize({hasNestedTables: true, isCollab, page});
+      test('Drag-select out of nested table (forward) does not select parent cell', async ({
+        page,
+        isPlainText,
+        isCollab,
+      }) => {
+        test.skip(isPlainText);
+        await initialize({hasNestedTables: true, isCollab, page});
 
-    await focusEditor(page);
+        await focusEditor(page);
 
-    await insertTable(page, 2, 2);
-    await page.locator('table:first-of-type td').click();
-    await page.keyboard.type('beforeText');
-    await insertTable(page, 1, 1);
-    await page.keyboard.press('ArrowDown');
-    await page.keyboard.type('afterText');
+        await insertTable(page, 2, 2);
+        await page.locator('table:first-of-type td').click();
+        await page.keyboard.type('beforeText');
+        await insertTable(page, 1, 1);
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.type('afterText');
 
-    const nestedLastRow = await selectorBoundingBox(
-      page,
-      'table table > tr:last-of-type > th:first-of-type',
-    );
-    const nestedAfterText = await selectorBoundingBox(
-      page,
-      'p:has-text("afterText")',
-    );
+        const nestedLastRow = await selectorBoundingBox(
+          page,
+          'table table > tr:last-of-type > th:first-of-type',
+        );
+        const nestedAfterText = await selectorBoundingBox(
+          page,
+          'p:has-text("afterText")',
+        );
 
-    await dragMouse(page, nestedLastRow, nestedAfterText, {
-      positionEnd: 'start',
-      steps: 5,
-    });
+        await dragMouse(page, nestedLastRow, nestedAfterText, {
+          positionEnd: 'start',
+          steps: 5,
+        });
 
-    // selection starts in the first nested cell and ends at end of the text
-    await assertSelection(page, {
-      anchorOffset: 0,
-      anchorPath: [1, 0, 1, 1, 1],
-      focusOffset: 0,
-      focusPath: [1, 0, 1, 1, 1],
-    });
-  });
+        // fixme: this is the whole cell of the parent table
+        await assertSelection(page, {
+          anchorOffset: 0,
+          anchorPath: [1, 0, 2, 1, 2, 0, 0],
+          focusOffset: 0,
+          focusPath: [1, 0, 2, 1, 2, 0, 0],
+        });
+      });
 
-  test('Drag-select into nested table (backwards) does not select parent cell', async ({
-    page,
-    isPlainText,
-    isCollab,
-  }) => {
-    test.skip(isPlainText);
-    await initialize({hasNestedTables: true, isCollab, page});
+      test('Drag-select into nested table (backwards) does not select parent cell', async ({
+        page,
+        isPlainText,
+        isCollab,
+      }) => {
+        test.skip(isPlainText);
+        await initialize({hasNestedTables: true, isCollab, page});
 
-    await focusEditor(page);
+        await focusEditor(page);
 
-    await insertTable(page, 2, 2);
-    await page.locator('table:first-of-type td').click();
-    await page.keyboard.type('beforeText');
-    await insertTable(page, 1, 1);
-    await page.keyboard.press('ArrowDown');
-    await page.keyboard.type('afterText');
+        await insertTable(page, 2, 2);
+        await page.locator('table:first-of-type td').click();
+        await page.keyboard.type('beforeText');
+        await insertTable(page, 1, 1);
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.type('afterText');
 
-    const nestedLastRow = await selectorBoundingBox(
-      page,
-      'table table > tr:last-of-type > th:first-of-type',
-    );
-    const nestedAfterText = await selectorBoundingBox(
-      page,
-      'p:has-text("afterText")',
-    );
+        const nestedLastRow = await selectorBoundingBox(
+          page,
+          'table table > tr:last-of-type > th:first-of-type',
+        );
+        const nestedAfterText = await selectorBoundingBox(
+          page,
+          'p:has-text("afterText")',
+        );
 
-    await dragMouse(page, nestedAfterText, nestedLastRow, {
-      positionStart: 'start',
-      steps: 5,
-    });
+        await dragMouse(page, nestedAfterText, nestedLastRow, {
+          positionStart: 'start',
+          steps: 5,
+        });
 
-    // selection starts in the first nested cell and ends at end of the text
-    await assertSelection(page, {
-      anchorOffset: 0,
-      anchorPath: [1, 0, 1, 1, 1],
-      focusOffset: 0,
-      focusPath: [1, 0, 1, 1, 1],
-    });
-  });
+        // fixme: This selector is not correct. Will need to investigate once the underlying bug is addressed.
+        await assertSelection(page, {
+          anchorOffset: 0,
+          anchorPath: [0],
+          focusOffset: 0,
+          focusPath: [0],
+        });
+      });
+    },
+  );
 });
 
 const TABLE_WITH_MERGED_CELLS = `

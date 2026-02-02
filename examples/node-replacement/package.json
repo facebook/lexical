@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@lexical/react": "0.40.0",
+    "@lexical/utils": "0.40.0",
     "lexical": "0.40.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"

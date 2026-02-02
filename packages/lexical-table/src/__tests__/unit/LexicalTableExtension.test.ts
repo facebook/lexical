@@ -119,9 +119,9 @@ describe('TableExtension', () => {
       const table = root.getFirstChild();
       assert($isTableNode(table), 'Expected table node');
       const row = table.getFirstChild();
-      assert($isElementNode(row), 'Expected row node');
+      assert($isTableRowNode(row), 'Expected row node');
       const cell = row.getFirstChild();
-      assert($isElementNode(cell), 'Expected cell node');
+      assert($isTableCellNode(cell), 'Expected cell node');
       const cellChildren = cell.getChildren();
       expect(cellChildren.some($isTableNode)).toBe(false);
     });
@@ -162,9 +162,9 @@ describe('TableExtension', () => {
       const table = root.getFirstChild();
       assert($isTableNode(table), 'Expected table node');
       const row = table.getFirstChild();
-      assert($isElementNode(row), 'Expected row node');
+      assert($isTableRowNode(row), 'Expected row node');
       const cell = row.getFirstChild();
-      assert($isElementNode(cell), 'Expected cell node');
+      assert($isTableCellNode(cell), 'Expected cell node');
       const cellChildren = cell.getChildren();
       expect(cellChildren.some($isTableNode)).toBe(true);
     });
@@ -210,9 +210,9 @@ describe('TableExtension', () => {
         const table = root.getFirstChild();
         assert($isTableNode(table), 'Expected table node');
         const row = table.getFirstChild();
-        assert($isElementNode(row), 'Expected row node');
+        assert($isTableRowNode(row), 'Expected row node');
         const cell = row.getFirstChild();
-        assert($isElementNode(cell), 'Expected cell node');
+        assert($isTableCellNode(cell), 'Expected cell node');
         const cellChildren = cell.getChildren();
         expect(cellChildren.some($isTableNode)).toBe(false);
       });
@@ -262,9 +262,9 @@ describe('TableExtension', () => {
         const table = root.getFirstChild();
         assert($isTableNode(table), 'Expected table node');
         const row = table.getFirstChild();
-        assert($isElementNode(row), 'Expected row node');
+        assert($isTableRowNode(row), 'Expected row node');
         const cell = row.getFirstChild();
-        assert($isElementNode(cell), 'Expected cell node');
+        assert($isTableCellNode(cell), 'Expected cell node');
         const cellChildren = cell.getChildren();
         expect(cellChildren.some($isTableNode)).toBe(true);
       });
@@ -466,9 +466,9 @@ describe('TableExtension', () => {
         const table = root.getFirstChild();
         assert($isTableNode(table), 'Expected outer table node');
         const row = table.getFirstChild();
-        assert($isElementNode(row), 'Expected outer row node');
+        assert($isTableRowNode(row), 'Expected outer row node');
         const cell = row.getFirstChild();
-        assert($isElementNode(cell), 'Expected outer cell node');
+        assert($isTableCellNode(cell), 'Expected outer cell node');
         const [innerTableNode] = cell.getChildren();
         assert($isTableNode(innerTableNode), 'Expected inner table node');
         expect(innerTableNode.getColWidths()).toEqual([750, 250]);
@@ -531,9 +531,9 @@ describe('TableExtension', () => {
         const table = root.getFirstChild();
         assert($isTableNode(table), 'Expected outer table node');
         const row = table.getFirstChild();
-        assert($isElementNode(row), 'Expected outer row node');
+        assert($isTableRowNode(row), 'Expected outer row node');
         const cell = row.getFirstChild();
-        assert($isElementNode(cell), 'Expected outer cell node');
+        assert($isTableCellNode(cell), 'Expected outer cell node');
         const [innerTableNode] = cell.getChildren();
         assert($isTableNode(innerTableNode), 'Expected inner table node');
         // Fitting 750, 250 into a 500-wide cell.
@@ -606,9 +606,9 @@ describe('TableExtension', () => {
         const table = root.getFirstChild();
         assert($isTableNode(table), 'Expected outer table node');
         const row = table.getFirstChild();
-        assert($isElementNode(row), 'Expected outer row node');
+        assert($isTableRowNode(row), 'Expected outer row node');
         const cell = row.getFirstChild();
-        assert($isElementNode(cell), 'Expected outer cell node');
+        assert($isTableCellNode(cell), 'Expected outer cell node');
         const [middleTableNode] = cell.getChildren();
         assert($isTableNode(middleTableNode), 'Expected middle table node');
         // Fitting 750, 250 into a 500-wide cell.
@@ -682,9 +682,9 @@ describe('TableExtension', () => {
         const table = root.getFirstChild();
         assert($isTableNode(table), 'Expected outer table node');
         const row = table.getFirstChild();
-        assert($isElementNode(row), 'Expected outer row node');
+        assert($isTableRowNode(row), 'Expected outer row node');
         const cell = row.getFirstChild();
-        assert($isElementNode(cell), 'Expected outer cell node');
+        assert($isTableCellNode(cell), 'Expected outer cell node');
         const [innerTableNode] = cell.getChildren();
         assert($isTableNode(innerTableNode), 'Expected inner table node');
         // Fitting 750, 250 into a 500-wide cell.
@@ -707,7 +707,7 @@ describe('TableExtension', () => {
           const firstCell = firstRow.getFirstChild();
           assert($isTableCellNode(firstCell), 'Expected first cell');
           const paragraph = firstCell.getFirstChild();
-          assert($isElementNode(paragraph), 'Expected paragraph in cell');
+          assert($isParagraphNode(paragraph), 'Expected paragraph in cell');
           paragraph.selectStart();
         },
         {discrete: true},

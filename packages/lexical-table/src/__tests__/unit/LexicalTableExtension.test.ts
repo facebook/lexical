@@ -192,7 +192,11 @@ describe('TableExtension', () => {
       // on the clipboard.
       editor.update(
         () => {
-          const tableNode = $createTableNode();
+          const tableNode = $createTableNode().append(
+            $createTableRowNode().append(
+              $createTableCellNode().append($createParagraphNode()),
+            ),
+          );
           const selection = $getSelection();
           assert($isRangeSelection(selection), 'Expected range selection');
           $insertGeneratedNodes(
@@ -244,7 +248,11 @@ describe('TableExtension', () => {
       // Try to paste a table inside the cell
       editor.update(
         () => {
-          const tableNode = $createTableNode();
+          const tableNode = $createTableNode().append(
+            $createTableRowNode().append(
+              $createTableCellNode().append($createParagraphNode()),
+            ),
+          );
           const selection = $getSelection();
           assert($isRangeSelection(selection), 'Expected range selection');
           $insertGeneratedNodes(

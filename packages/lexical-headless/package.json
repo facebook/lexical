@@ -55,6 +55,6 @@
   },
   "dependencies": {
     "happy-dom": "^20.0.0",
-    "lexical": "0.39.0"
+    "lexical": "workspace:*"
   }
 }

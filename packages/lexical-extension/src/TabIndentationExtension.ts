@@ -8,11 +8,7 @@
 
 import type {LexicalCommand, LexicalEditor, RangeSelection} from 'lexical';
 
-import {
-  $filter,
-  $getNearestBlockElementAncestorOrThrow,
-  mergeRegister,
-} from '@lexical/utils';
+import {$getNearestBlockElementAncestorOrThrow} from '@lexical/utils';
 import {
   $createRangeSelection,
   $getSelection,
@@ -25,6 +21,7 @@ import {
   INDENT_CONTENT_COMMAND,
   INSERT_TAB_COMMAND,
   KEY_TAB_COMMAND,
+  mergeRegister,
   OUTDENT_CONTENT_COMMAND,
   safeCast,
 } from 'lexical';
@@ -35,12 +32,9 @@ import {effect, type ReadonlySignal} from './signals';
 function $indentOverTab(selection: RangeSelection): boolean {
   // const handled = new Set();
   const nodes = selection.getNodes();
-  const canIndentBlockNodes = $filter(nodes, (node) => {
-    if ($isBlockElementNode(node) && node.canIndent()) {
-      return node;
-    }
-    return null;
-  });
+  const canIndentBlockNodes = nodes.filter(
+    (node) => $isBlockElementNode(node) && node.canIndent(),
+  );
   // 1. If selection spans across canIndent block nodes: indent
   if (canIndentBlockNodes.length > 0) {
     return true;

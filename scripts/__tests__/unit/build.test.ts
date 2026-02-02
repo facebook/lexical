@@ -65,10 +65,10 @@ describe('public package.json audits (`pnpm run update-packages` to fix most iss
           ),
         ).toEqual([]);
       });
-      it('monorepo dependencies must use the exact monorepo version', () => {
+      it('monorepo dependencies must use workspace:* as the version', () => {
         Object.entries(dependencies).forEach(([dep, version]) => {
           if (publicNpmNames.has(dep)) {
-            expect([dep, version]).toEqual([dep, monorepoPackageJson.version]);
+            expect([dep, version]).toEqual([dep, 'workspace:*']);
           }
         });
       });

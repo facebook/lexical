@@ -19,7 +19,7 @@ import {
   TableCellNode,
   TableNode,
 } from '@lexical/table';
-import {useEffect, useMemo} from 'react';
+import {useEffect, useState} from 'react';
 
 export interface TablePluginProps {
   /**
@@ -119,7 +119,7 @@ export function TablePlugin({
 }
 
 function usePropSignal<T>(value: T): Signal<T> {
-  const configSignal = useMemo(() => signal(value), [value]);
+  const [configSignal] = useState(() => signal(value));
   if (configSignal.peek() !== value) {
     configSignal.value = value;
   }

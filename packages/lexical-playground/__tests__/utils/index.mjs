@@ -98,6 +98,7 @@ export async function initialize({
   hasNestedTables,
   hasFitNestedTables,
   shouldDisableFocusOnClickChecklist,
+  hasFitNestedTables,
   showNestedEditorTreeView,
   tableCellMerge,
   tableCellBackgroundColor,

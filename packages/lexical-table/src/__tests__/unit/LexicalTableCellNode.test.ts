@@ -7,7 +7,11 @@
  */
 
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
-import {$createTableCellNode, TableCellHeaderStates} from '@lexical/table';
+import {
+  $createTableCellNode,
+  TableCellHeaderStates,
+  TableCellNode,
+} from '@lexical/table';
 import {$getRoot} from 'lexical';
 import {
   expectHtmlToBeEqual,
@@ -15,11 +19,6 @@ import {
   initializeUnitTest,
 } from 'lexical/src/__tests__/utils';
 import {describe, expect, test} from 'vitest';
-
-import {
-  $convertTableCellNodeElement,
-  TableCellNode,
-} from '../../LexicalTableCellNode';
 
 const editorConfig = Object.freeze({
   namespace: '',
@@ -219,6 +218,23 @@ describe('LexicalTableCellNode tests', () => {
       });
     }, 15000);
 
+    // Simulates the Lexical Paste Engine finding and running the converter
+    const convertHTMLTag = (element: HTMLElement) => {
+      const importDOMMap = TableCellNode.importDOM();
+
+      // look up tag name (e.g., 'th') in the import map
+      const handler = importDOMMap![element.tagName.toLowerCase()];
+      if (!handler) {
+        throw new Error(`No handler found for tag ${element.tagName}`);
+      }
+
+      const specs = handler(element);
+      if (!specs) {
+        throw new Error(`Handler returned null for tag ${element.tagName}`);
+      }
+      return specs.conversion(element);
+    };
+
     test('DOM Conversion: <th> with scope="col" becomes COLUMN header', async () => {
       const {editor} = testEnv;
 
@@ -226,8 +242,9 @@ describe('LexicalTableCellNode tests', () => {
         const th = document.createElement('th');
         th.setAttribute('scope', 'col');
 
-        const result = $convertTableCellNodeElement(th);
-        const node = result.node as TableCellNode;
+        const result = convertHTMLTag(th);
+
+        const node = result!.node as TableCellNode;
 
         expect(
           (node as TableCellNode & {__headerState: number}).__headerState,
@@ -242,8 +259,9 @@ describe('LexicalTableCellNode tests', () => {
         const th = document.createElement('th');
         th.setAttribute('scope', 'row');
 
-        const result = $convertTableCellNodeElement(th);
-        const node = result.node as TableCellNode;
+        const result = convertHTMLTag(th);
+
+        const node = result!.node as TableCellNode;
 
         expect(
           (node as TableCellNode & {__headerState: number}).__headerState,
@@ -257,9 +275,9 @@ describe('LexicalTableCellNode tests', () => {
       await editor.update(() => {
         const th = document.createElement('th');
         // No scope attribute set
+        const result = convertHTMLTag(th);
 
-        const result = $convertTableCellNodeElement(th);
-        const node = result.node as TableCellNode;
+        const node = result!.node;
 
         expect(
           (node as TableCellNode & {__headerState: number}).__headerState,

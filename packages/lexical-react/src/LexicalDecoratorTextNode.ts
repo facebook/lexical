@@ -89,6 +89,12 @@ export class DecoratorTextNode extends DecoratorNode<JSX.Element> {
     return self;
   }
 
+  toggleFormat(type: TextFormatType): this {
+    const format = this.getFormat();
+    const newFormat = toggleTextFormatType(format, type, null);
+    return this.setFormat(newFormat);
+  }
+
   isInline(): true {
     return true;
   }

@@ -332,9 +332,9 @@ export const ListExtension = defineExtension({
   },
 });
 
-export type CheckListConfig = {
-  disableTakeFocusOnClick?: boolean;
-};
+export interface CheckListConfig {
+  disableTakeFocusOnClick: boolean;
+}
 
 /**
  * Registers checklist functionality for {@link ListNode} and

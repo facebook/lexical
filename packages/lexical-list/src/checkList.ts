@@ -16,6 +16,7 @@ import {
   mergeRegister,
 } from '@lexical/utils';
 import {
+  $addUpdateTag,
   $getNearestNodeFromDOMNode,
   $getSelection,
   $isElementNode,
@@ -50,17 +51,13 @@ export function registerCheckList(
   editor: LexicalEditor,
   options?: {disableTakeFocusOnClick?: boolean},
 ) {
-  let disableTakeFocusOnClick = false;
-  if (options) {
-    if (options.disableTakeFocusOnClick === true) {
-      disableTakeFocusOnClick = true;
-    }
-  }
+  const disableTakeFocusOnClick =
+    (options && options.disableTakeFocusOnClick) || false;
 
-  const configHandleClick = (event: Event) => {
+  const configHandleClick = (event: MouseEvent | TouchEvent) => {
     handleClick(event, disableTakeFocusOnClick);
   };
-  const configHandleSelectDefaults = (event: Event) => {
+  const configHandleSelectDefaults = (event: MouseEvent | TouchEvent) => {
     handleSelectDefaults(event, disableTakeFocusOnClick);
   };
   return mergeRegister(
@@ -218,7 +215,10 @@ export function registerCheckList(
   );
 }
 
-function handleCheckItemEvent(event: Event, callback: () => void) {
+function handleCheckItemEvent(
+  event: MouseEvent | TouchEvent,
+  callback: () => void,
+) {
   const target = event.target;
 
   if (!isHTMLElement(target)) {
@@ -245,9 +245,9 @@ function handleCheckItemEvent(event: Event, callback: () => void) {
   let pointerType: string | null = null;
 
   if ('clientX' in event) {
-    clientX = (event as MouseEvent).clientX;
+    clientX = event.clientX;
   } else if ('touches' in event) {
-    const touches = (event as TouchEvent).touches;
+    const touches = event.touches;
     if (touches.length > 0) {
       clientX = touches[0].clientX;
       pointerType = 'touch';
@@ -287,33 +287,28 @@ function handleCheckItemEvent(event: Event, callback: () => void) {
   }
 }
 
-function handleClick(event: Event, disableFocusOnClick: boolean = false) {
+function handleClick(
+  event: MouseEvent | TouchEvent,
+  disableFocusOnClick: boolean,
+) {
   handleCheckItemEvent(event, () => {
     if (isHTMLElement(event.target)) {
       const domNode = event.target;
       const editor = getNearestEditorFromDOMNode(domNode);
 
       if (editor != null && editor.isEditable()) {
-        // The skip tags are critical to prevent the editor from focusing/moving selection
-        const tags: string[] = [];
-        if (disableFocusOnClick === true) {
-          tags.push(SKIP_SELECTION_FOCUS_TAG);
-          tags.push(SKIP_DOM_SELECTION_TAG);
-        }
+        editor.update(() => {
+          const node = $getNearestNodeFromDOMNode(domNode);
 
-        editor.update(
-          () => {
-            const node = $getNearestNodeFromDOMNode(domNode);
-
-            if ($isListItemNode(node)) {
-              if (disableFocusOnClick) {
-                domNode.focus();
-              }
-              node.toggleChecked();
+          if ($isListItemNode(node)) {
+            if (disableFocusOnClick) {
+              $addUpdateTag(SKIP_SELECTION_FOCUS_TAG);
+              $addUpdateTag(SKIP_DOM_SELECTION_TAG);
+              domNode.focus();
             }
-          },
-          {tag: tags},
-        );
+            node.toggleChecked();
+          }
+        });
       }
     }
   });
@@ -326,10 +321,10 @@ function handleClick(event: Event, disableFocusOnClick: boolean = false) {
  *
  */
 function handleSelectDefaults(
-  event: Event,
-  disableTakeFocusOnClick: boolean = false,
+  event: MouseEvent | TouchEvent,
+  disableTakeFocusOnClick: boolean,
 ) {
-  if (disableTakeFocusOnClick === true) {
+  if (disableTakeFocusOnClick) {
     handleCheckItemEvent(event, () => {
       event.preventDefault();
       event.stopPropagation();

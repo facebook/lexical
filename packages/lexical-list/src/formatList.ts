@@ -36,6 +36,7 @@ import {
 import {ListType} from './LexicalListNode';
 import {
   $getAllListItems,
+  $getNewListStart,
   $getTopListNode,
   $removeHighestEmptyListParent,
   isNestedListNode,
@@ -508,7 +509,9 @@ export function $handleOutdent(listItemNode: ListItemNode): void {
  * @returns true if a ParagraphNode was inserted successfully, false if there is no selection
  * or the selection does not contain a ListItemNode or the node already holds text.
  */
-export function $handleListInsertParagraph(): boolean {
+export function $handleListInsertParagraph(
+  restoreNumbering: boolean = false,
+): boolean {
   const selection = $getSelection();
 
   if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
@@ -570,7 +573,9 @@ export function $handleListInsertParagraph(): boolean {
   const nextSiblings = listItem.getNextSiblings();
 
   if (nextSiblings.length > 0) {
-    const newList = $createListNode(parent.getListType());
+    const newStart = restoreNumbering ? $getNewListStart(parent, listItem) : 1;
+    const newList = $createListNode(parent.getListType(), newStart);
+
     if ($isListItemNode(replacementNode)) {
       const newListItem = $createListItemNode();
       newListItem.append(newList);

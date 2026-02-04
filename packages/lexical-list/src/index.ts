@@ -76,7 +76,14 @@ export const REMOVE_LIST_COMMAND: LexicalCommand<void> = createCommand(
   'REMOVE_LIST_COMMAND',
 );
 
-export function registerList(editor: LexicalEditor): () => void {
+export type RegisterListOptions = {
+  restoreNumbering?: boolean;
+};
+
+export function registerList(
+  editor: LexicalEditor,
+  options?: RegisterListOptions,
+): () => void {
   const removeListener = mergeRegister(
     editor.registerCommand(
       INSERT_ORDERED_LIST_COMMAND,
@@ -120,7 +127,10 @@ export function registerList(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand(
       INSERT_PARAGRAPH_COMMAND,
-      () => $handleListInsertParagraph(),
+      () => {
+        const shouldRestore = options && options.restoreNumbering;
+        return $handleListInsertParagraph(!!shouldRestore);
+      },
       COMMAND_PRIORITY_LOW,
     ),
     editor.registerNodeTransform(ListItemNode, (node) => {

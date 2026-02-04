@@ -255,7 +255,9 @@ test.describe('Collaboration', () => {
     );
 
     // Left collaborator undoes their text in the second paragraph.
-    const undoButton = page.frameLocator('iframe[name="left"]').getByLabel('Undo');
+    const undoButton = page
+      .frameLocator('iframe[name="left"]')
+      .getByLabel('Undo');
     await expect(undoButton).toBeEnabled();
     await undoButton.click();
 

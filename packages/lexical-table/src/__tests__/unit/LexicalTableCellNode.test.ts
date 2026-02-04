@@ -9,14 +9,16 @@
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
 import {
   $createTableCellNode,
+  $isTableCellNode,
   TableCellHeaderStates,
   TableCellNode,
 } from '@lexical/table';
-import {$getRoot} from 'lexical';
+import {$getRoot, DOMConversionOutput} from 'lexical';
 import {
   expectHtmlToBeEqual,
   html,
   initializeUnitTest,
+  invariant,
 } from 'lexical/src/__tests__/utils';
 import {describe, expect, test} from 'vitest';
 
@@ -235,6 +237,21 @@ describe('LexicalTableCellNode tests', () => {
       return specs.conversion(element);
     };
 
+    const expectTableCellNode = (result: DOMConversionOutput | null) => {
+      const node = result?.node;
+
+      if (Array.isArray(node)) {
+        throw new Error('Expected a single node, but got an array');
+      }
+
+      invariant(
+        $isTableCellNode(node),
+        'Expected result.node to be a TableCellNode',
+      );
+
+      return node;
+    };
+
     test('DOM Conversion: <th> with scope="col" becomes COLUMN header', async () => {
       const {editor} = testEnv;
 
@@ -244,11 +261,9 @@ describe('LexicalTableCellNode tests', () => {
 
         const result = convertHTMLTag(th);
 
-        const node = result!.node as TableCellNode;
+        const node = expectTableCellNode(result);
 
-        expect(
-          (node as TableCellNode & {__headerState: number}).__headerState,
-        ).toBe(TableCellHeaderStates.COLUMN);
+        expect(node.getHeaderStyles()).toBe(TableCellHeaderStates.COLUMN);
       });
     });
 
@@ -261,11 +276,9 @@ describe('LexicalTableCellNode tests', () => {
 
         const result = convertHTMLTag(th);
 
-        const node = result!.node as TableCellNode;
+        const node = expectTableCellNode(result);
 
-        expect(
-          (node as TableCellNode & {__headerState: number}).__headerState,
-        ).toBe(TableCellHeaderStates.ROW);
+        expect(node.getHeaderStyles()).toBe(TableCellHeaderStates.ROW);
       });
     });
 
@@ -277,11 +290,9 @@ describe('LexicalTableCellNode tests', () => {
         // No scope attribute set
         const result = convertHTMLTag(th);
 
-        const node = result!.node;
+        const node = expectTableCellNode(result);
 
-        expect(
-          (node as TableCellNode & {__headerState: number}).__headerState,
-        ).toBe(TableCellHeaderStates.ROW);
+        expect(node.getHeaderStyles()).toBe(TableCellHeaderStates.ROW);
       });
     });
   });

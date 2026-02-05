@@ -20,37 +20,8 @@ import {
   $applyNodeReplacement,
   DecoratorNode,
   TEXT_TYPE_TO_FORMAT,
+  toggleTextFormatType,
 } from 'lexical';
-
-function toggleTextFormatType(
-  format: number,
-  type: TextFormatType,
-  alignWithFormat: null | number,
-): number {
-  const activeFormat = TEXT_TYPE_TO_FORMAT[type];
-  if (
-    alignWithFormat !== null &&
-    (format & activeFormat) === (alignWithFormat & activeFormat)
-  ) {
-    return format;
-  }
-  let newFormat = format ^ activeFormat;
-  if (type === 'subscript') {
-    newFormat &= ~TEXT_TYPE_TO_FORMAT.superscript;
-  } else if (type === 'superscript') {
-    newFormat &= ~TEXT_TYPE_TO_FORMAT.subscript;
-  } else if (type === 'lowercase') {
-    newFormat &= ~TEXT_TYPE_TO_FORMAT.uppercase;
-    newFormat &= ~TEXT_TYPE_TO_FORMAT.capitalize;
-  } else if (type === 'uppercase') {
-    newFormat &= ~TEXT_TYPE_TO_FORMAT.lowercase;
-    newFormat &= ~TEXT_TYPE_TO_FORMAT.capitalize;
-  } else if (type === 'capitalize') {
-    newFormat &= ~TEXT_TYPE_TO_FORMAT.lowercase;
-    newFormat &= ~TEXT_TYPE_TO_FORMAT.uppercase;
-  }
-  return newFormat;
-}
 
 export type SerializedDecoratorTextNode = Spread<
   {

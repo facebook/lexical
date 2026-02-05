@@ -14,6 +14,7 @@ import {
 } from '@lexical/react/LexicalDecoratorTextNode';
 import {
   $getState,
+  $isTextNode,
   $setState,
   buildImportMap,
   createState,
@@ -23,7 +24,6 @@ import {
   Spread,
   StateConfigValue,
   StateValueOrUpdater,
-  TextFormatType,
 } from 'lexical';
 import * as React from 'react';
 
@@ -61,48 +61,9 @@ function wrapElementWith(
   return el;
 }
 
-const nodeNameToTextFormat: Record<string, TextFormatType> = {
-  code: 'code',
-  em: 'italic',
-  i: 'italic',
-  mark: 'highlight',
-  s: 'strikethrough',
-  strong: 'bold',
-  sub: 'subscript',
-  sup: 'superscript',
-  u: 'underline',
-};
-
-function convertBringAttentionToElement(
-  domNode: HTMLElement,
-): DOMConversionOutput {
-  // domNode is a <b> since we matched it by nodeName
-  const b = domNode;
-  // Google Docs wraps all copied HTML in a <b> with font-weight normal
-  const hasNormalFontWeight = b.style.fontWeight === 'normal';
-
-  return {
-    forChild: applyTextFormatFromStyle(
-      b.style,
-      hasNormalFontWeight ? undefined : 'bold',
-    ),
-    node: null,
-  };
-}
-function convertFormatElement(domNode: HTMLElement): DOMConversionOutput {
-  const format = nodeNameToTextFormat[domNode.nodeName.toLowerCase()];
-  if (format === undefined) {
-    return {node: null};
-  }
-  return {
-    forChild: applyTextFormatFromStyle(domNode.style, format),
-    node: null,
-  };
-}
-
-function applyTextFormatFromStyle(
+function applyFormatFromStyle(
+  lexicalNode: DateTimeNode,
   style: CSSStyleDeclaration,
-  shouldApply?: TextFormatType,
 ) {
   const fontWeight = style.fontWeight;
   const textDecoration = style.textDecoration.split(' ');
@@ -112,43 +73,18 @@ function applyTextFormatFromStyle(
   const hasLinethroughTextDecoration = textDecoration.includes('line-through');
   // Google Docs uses span tags + font-style for italic text
   const hasItalicFontStyle = style.fontStyle === 'italic';
-  // Google Docs uses span tags + text-decoration: underline for underline text
-  const hasUnderlineTextDecoration = textDecoration.includes('underline');
-  // Google Docs uses span tags + vertical-align to specify subscript and superscript
-  const verticalAlign = style.verticalAlign;
 
-  return (lexicalNode: LexicalNode) => {
-    if (!$isDateTimeNode(lexicalNode)) {
-      return lexicalNode;
-    }
-    if (hasBoldFontWeight && !lexicalNode.hasFormat('bold')) {
-      lexicalNode.toggleFormat('bold');
-    }
-    if (
-      hasLinethroughTextDecoration &&
-      !lexicalNode.hasFormat('strikethrough')
-    ) {
-      lexicalNode.toggleFormat('strikethrough');
-    }
-    if (hasItalicFontStyle && !lexicalNode.hasFormat('italic')) {
-      lexicalNode.toggleFormat('italic');
-    }
-    if (hasUnderlineTextDecoration && !lexicalNode.hasFormat('underline')) {
-      lexicalNode.toggleFormat('underline');
-    }
-    if (verticalAlign === 'sub' && !lexicalNode.hasFormat('subscript')) {
-      lexicalNode.toggleFormat('subscript');
-    }
-    if (verticalAlign === 'super' && !lexicalNode.hasFormat('superscript')) {
-      lexicalNode.toggleFormat('superscript');
-    }
+  if (hasBoldFontWeight && !lexicalNode.hasFormat('bold')) {
+    lexicalNode.toggleFormat('bold');
+  }
+  if (hasLinethroughTextDecoration && !lexicalNode.hasFormat('strikethrough')) {
+    lexicalNode.toggleFormat('strikethrough');
+  }
+  if (hasItalicFontStyle && !lexicalNode.hasFormat('italic')) {
+    lexicalNode.toggleFormat('italic');
+  }
 
-    if (shouldApply && !lexicalNode.hasFormat(shouldApply)) {
-      lexicalNode.toggleFormat(shouldApply);
-    }
-
-    return lexicalNode;
-  };
+  return lexicalNode;
 }
 
 function $convertDateTimeElement(
@@ -157,7 +93,17 @@ function $convertDateTimeElement(
   const dateTimeValue = domNode.getAttribute('data-lexical-datetime');
   if (dateTimeValue) {
     const node = $createDateTimeNode(new Date(Date.parse(dateTimeValue)));
-    return {node};
+    return {
+      after: (childLexicalNodes) => {
+        // exportDOM returns only one child text, so only the first node of the array is taken
+        const firstChild = childLexicalNodes[0];
+        if ($isTextNode(firstChild)) {
+          node.setFormat(firstChild.getFormat());
+        }
+        return childLexicalNodes;
+      },
+      node,
+    };
   }
   const gDocsDateTimePayload = domNode.getAttribute('data-rich-links');
   if (!gDocsDateTimePayload) {
@@ -171,9 +117,7 @@ function $convertDateTimeElement(
     return null;
   }
   const dateTimeNode = $createDateTimeNode(new Date(parsedDate));
-  // The format is applied directly to DateTimeNode cause it is a terminal node and cannot contain children
-  const formattedNode = applyTextFormatFromStyle(domNode.style)(dateTimeNode);
-  return {forChild: () => null, node: formattedNode};
+  return {node: applyFormatFromStyle(dateTimeNode, domNode.style)};
 }
 
 const dateTimeState = createState('dateTime', {
@@ -186,26 +130,6 @@ export class DateTimeNode extends DecoratorTextNode {
     return this.config('datetime', {
       extends: DecoratorTextNode,
       importDOM: buildImportMap({
-        b: () => ({
-          conversion: convertBringAttentionToElement,
-          priority: 2,
-        }),
-        em: () => ({
-          conversion: convertFormatElement,
-          priority: 2,
-        }),
-        i: () => ({
-          conversion: convertFormatElement,
-          priority: 2,
-        }),
-        mark: () => ({
-          conversion: convertFormatElement,
-          priority: 2,
-        }),
-        s: () => ({
-          conversion: convertFormatElement,
-          priority: 2,
-        }),
         span: (domNode) =>
           domNode.getAttribute('data-lexical-datetime') !== null ||
           // GDocs Support
@@ -217,14 +141,6 @@ export class DateTimeNode extends DecoratorTextNode {
                 priority: 2,
               }
             : null,
-        strong: () => ({
-          conversion: convertFormatElement,
-          priority: 2,
-        }),
-        u: () => ({
-          conversion: convertFormatElement,
-          priority: 2,
-        }),
       }),
       stateConfigs: [{flat: true, stateConfig: dateTimeState}],
     });
@@ -244,28 +160,31 @@ export class DateTimeNode extends DecoratorTextNode {
   }
 
   exportDOM(): DOMExportOutput {
-    let element = document.createElement('span');
-    element.textContent = getDateTimeText(this.getDateTime());
+    const element = document.createElement('span');
+    let textDom: HTMLElement | Text = document.createTextNode(
+      getDateTimeText(this.getDateTime()),
+    );
     element.setAttribute(
       'data-lexical-datetime',
       this.getDateTime()?.toString() || '',
     );
 
     if (this.hasFormat('highlight')) {
-      element = wrapElementWith(element, 'mark');
+      textDom = wrapElementWith(textDom, 'mark');
     }
     if (this.hasFormat('bold')) {
-      element = wrapElementWith(element, 'b');
+      textDom = wrapElementWith(textDom, 'b');
     }
     if (this.hasFormat('italic')) {
-      element = wrapElementWith(element, 'i');
+      textDom = wrapElementWith(textDom, 'i');
     }
     if (this.hasFormat('strikethrough')) {
-      element = wrapElementWith(element, 's');
+      textDom = wrapElementWith(textDom, 's');
     }
     if (this.hasFormat('underline')) {
-      element = wrapElementWith(element, 'u');
+      textDom = wrapElementWith(textDom, 'u');
     }
+    element.appendChild(textDom);
 
     return {element};
   }

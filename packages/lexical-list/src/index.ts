@@ -76,9 +76,9 @@ export const REMOVE_LIST_COMMAND: LexicalCommand<void> = createCommand(
   'REMOVE_LIST_COMMAND',
 );
 
-export type RegisterListOptions = {
+export interface RegisterListOptions {
   restoreNumbering?: boolean;
-};
+}
 
 export function registerList(
   editor: LexicalEditor,
@@ -298,6 +298,7 @@ export interface ListConfig {
    * When `false` (default), indentation is more flexible.
    */
   hasStrictIndent: boolean;
+  shouldPreserveNumbering: boolean;
 }
 
 /**
@@ -308,13 +309,20 @@ export const ListExtension = defineExtension({
   build(editor, config, state) {
     return namedSignals(config);
   },
-  config: safeCast<ListConfig>({hasStrictIndent: false}),
+  config: safeCast<ListConfig>({
+    hasStrictIndent: false,
+    shouldPreserveNumbering: false,
+  }),
   name: '@lexical/list/List',
   nodes: () => [ListNode, ListItemNode],
   register(editor, config, state) {
     const stores = state.getOutput();
     return mergeRegister(
-      registerList(editor),
+      effect(() => {
+        return registerList(editor, {
+          restoreNumbering: stores.shouldPreserveNumbering.value,
+        });
+      }),
       effect(() =>
         stores.hasStrictIndent.value
           ? registerListStrictIndentTransform(editor)

@@ -208,7 +208,5 @@ export function $getNewListStart(
   list: ListNode,
   listItem: ListItemNode,
 ): number {
-  const children = list.getChildren();
-  const index = children.indexOf(listItem);
-  return list.getStart() + index;
+  return list.getStart() + listItem.getIndexWithinParent();
 }

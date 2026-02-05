@@ -985,6 +985,79 @@ describe('Markdown', () => {
     );
   });
 
+  it('can round-trip nested fenced code blocks (4 backticks wrapping 3 backticks)', () => {
+    const markdown =
+      '````markdown\n' +
+      '# Example\n' +
+      '\n' +
+      'Run this:\n' +
+      '```bash\n' +
+      'npm install\n' +
+      '```\n' +
+      '````';
+
+    const editor = createHeadlessEditor({
+      nodes: [
+        HeadingNode,
+        ListNode,
+        ListItemNode,
+        QuoteNode,
+        CodeNode,
+        LinkNode,
+      ],
+    });
+
+    editor.update(
+      () => {
+        $convertFromMarkdownString(markdown, TRANSFORMERS);
+      },
+      {discrete: true},
+    );
+
+    expect(
+      editor
+        .getEditorState()
+        .read(() => $convertToMarkdownString(TRANSFORMERS)),
+    ).toBe(markdown);
+  });
+
+  it('can round-trip deeply nested fenced code blocks (5 backticks wrapping 4 backticks)', () => {
+    const markdown =
+      '`````text\n' +
+      'Top Level 5 ticks\n' +
+      '````markdown\n' +
+      'Level 2 (4 ticks)\n' +
+      '```javascript\n' +
+      'console.log("Deepest (3 ticks)");\n' +
+      '```\n' +
+      '````\n' +
+      '`````';
+
+    const editor = createHeadlessEditor({
+      nodes: [
+        HeadingNode,
+        ListNode,
+        ListItemNode,
+        QuoteNode,
+        CodeNode,
+        LinkNode,
+      ],
+    });
+
+    editor.update(
+      () => {
+        $convertFromMarkdownString(markdown, TRANSFORMERS);
+      },
+      {discrete: true},
+    );
+
+    expect(
+      editor
+        .getEditorState()
+        .read(() => $convertToMarkdownString(TRANSFORMERS)),
+    ).toBe(markdown);
+  });
+
   describe('list marker', () => {
     it('should remember marker used on import', () => {
       const editor = createHeadlessEditor({

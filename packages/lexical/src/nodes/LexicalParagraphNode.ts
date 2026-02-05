@@ -170,6 +170,15 @@ function $convertParagraphElement(element: HTMLElement): DOMConversionOutput {
     node.setFormat(element.style.textAlign as ElementFormatType);
     setNodeIndentFromDOM(element, node);
   }
+
+  // Check legacy 'align' attribute
+  // Only use this if no format was set by CSS
+  if (node.getFormatType() === '') {
+    const align = element.getAttribute('align');
+    if (align) {
+      node.setFormat(align as ElementFormatType);
+    }
+  }
   return {node};
 }
 

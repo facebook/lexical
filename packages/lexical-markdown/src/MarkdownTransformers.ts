@@ -206,7 +206,7 @@ const UNORDERED_LIST_REGEX = /^(\s*)[-*+]\s/;
 const CHECK_LIST_REGEX = /^(\s*)(?:[-*+]\s)?\s?(\[(\s|x)?\])\s/i;
 const HEADING_REGEX = /^(#{1,6})\s/;
 const QUOTE_REGEX = /^>\s/;
-const CODE_START_REGEX = /^([ \t]*`{3,})(?:[ \t]*)([^`\s]+)?/;
+const CODE_START_REGEX = /^([ \t]*`{3,})([\w-]+)?[ \t]?/;
 const CODE_END_REGEX = /^[ \t]*`{3,}$/;
 const CODE_SINGLE_LINE_REGEX =
   /^[ \t]*```[^`]+(?:(?:`{1,2}|`{4,})[^`]+)*```(?:[^`]|$)/;
@@ -553,11 +553,7 @@ export const CODE: MultilineElementTransformer = {
       rootNode.append(codeBlockNode);
     } else if (children) {
       createBlockNode((match) => {
-        const createdNode = $createCodeNode(match ? match[2] : undefined);
-        if (match && match[1]) {
-          $setState(createdNode, codeFenceState, match[1].trim());
-        }
-        return createdNode;
+        return $createCodeNode(match ? match[2] : undefined);
       })(rootNode, children, startMatch, isImport);
     }
   },

@@ -24,6 +24,7 @@ import type {
   SerializedElementNode,
 } from './LexicalElementNode';
 
+import {ELEMENT_TYPE_TO_FORMAT} from '../LexicalConstants';
 import {
   $applyNodeReplacement,
   getCachedClassNameArray,
@@ -176,7 +177,9 @@ function $convertParagraphElement(element: HTMLElement): DOMConversionOutput {
   if (node.getFormatType() === '') {
     const align = element.getAttribute('align');
     if (align) {
-      node.setFormat(align as ElementFormatType);
+      if (align && align in ELEMENT_TYPE_TO_FORMAT) {
+        node.setFormat(align as ElementFormatType);
+      }
     }
   }
   return {node};

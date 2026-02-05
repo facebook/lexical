@@ -201,6 +201,15 @@ describe('LexicalParagraphNode tests', () => {
 
         const nodeConflict = expectParagraphNode(convertParagraph(pConflict));
         expect(nodeConflict.getFormatType()).toBe('left');
+
+        // Case 4: Invalid align attribute is ignored
+        // <p align="super-weird-stuff"> -> Should remain default (empty/left)
+        const pInvalid = document.createElement('p');
+        pInvalid.setAttribute('align', 'super-weird-stuff');
+
+        const nodeInvalid = expectParagraphNode(convertParagraph(pInvalid));
+        // Should NOT be 'super-weird-stuff' or undefined
+        expect(nodeInvalid.getFormatType()).toBe('');
       });
     });
   });

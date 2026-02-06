@@ -5898,6 +5898,7 @@ test.describe.parallel('Tables', () => {
   }) => {
     test.skip(isPlainText);
     await initialize({isCollab, page});
+
     await focusEditor(page);
 
     // Create and copy a table

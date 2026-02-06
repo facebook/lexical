@@ -18,7 +18,6 @@ import {
   $getRoot,
   $getSelection,
   $isElementNode,
-  $isParagraphNode,
   $isRangeSelection,
   $isTextNode,
   $isTextPointCaret,
@@ -282,12 +281,6 @@ export interface BaseSerializedNode {
   version: number;
 }
 
-function isSerializedElementNode(
-  node: BaseSerializedNode,
-): node is SerializedElementNode {
-  return Array.isArray((node as {children?: unknown}).children);
-}
-
 function exportNodeToJSON<T extends LexicalNode>(node: T): BaseSerializedNode {
   const serializedNode = node.exportJSON();
   const nodeClass = node.constructor;
@@ -379,69 +372,22 @@ function $appendNodesToJSON(
  * @param selection Selection to get the JSON content from.
  * @returns an object with the editor namespace and a list of serializable nodes as JavaScript objects.
  */
-export function $generateJSONFromSelectedNodes(
+export function $generateJSONFromSelectedNodes<
+  SerializedNode extends BaseSerializedNode,
+>(
   editor: LexicalEditor,
   selection: BaseSelection | null,
 ): {
   namespace: string;
-  nodes: Array<BaseSerializedNode>;
+  nodes: Array<SerializedNode>;
 } {
-  const nodes: Array<BaseSerializedNode> = [];
+  const nodes: Array<SerializedNode> = [];
   const root = $getRoot();
   const topLevelChildren = root.getChildren();
   for (let i = 0; i < topLevelChildren.length; i++) {
     const topLevelNode = topLevelChildren[i];
     $appendNodesToJSON(editor, selection, topLevelNode, nodes);
   }
-
-  if (selection !== null && $isRangeSelection(selection)) {
-    const anchorNode = selection.anchor.getNode();
-    const focusNode = selection.focus.getNode();
-
-    let anchorParagraph: LexicalNode | null = anchorNode;
-    while (anchorParagraph !== null && !$isParagraphNode(anchorParagraph)) {
-      anchorParagraph = anchorParagraph.getParent();
-    }
-
-    let focusParagraph: LexicalNode | null = focusNode;
-    while (focusParagraph !== null && !$isParagraphNode(focusParagraph)) {
-      focusParagraph = focusParagraph.getParent();
-    }
-
-    if (
-      anchorParagraph !== null &&
-      focusParagraph === anchorParagraph &&
-      nodes.length > 0
-    ) {
-      const formatType = anchorParagraph.getFormatType();
-      if (
-        formatType === '' ||
-        formatType === 'left' ||
-        formatType === 'start'
-      ) {
-        return {
-          namespace: editor._config.namespace,
-          nodes,
-        };
-      }
-      let wrappedChildren = nodes as Array<BaseSerializedNode>;
-      if (nodes.length === 1 && isSerializedElementNode(nodes[0])) {
-        wrappedChildren = nodes[0].children as Array<BaseSerializedNode>;
-      }
-
-      const paragraphJSON = anchorParagraph.exportJSON();
-      if (isSerializedElementNode(paragraphJSON)) {
-        const wrapped = paragraphJSON as SerializedElementNode;
-        wrapped.children = wrappedChildren as Array<BaseSerializedNode>;
-
-        return {
-          namespace: editor._config.namespace,
-          nodes: [wrapped],
-        };
-      }
-    }
-  }
-
   return {
     namespace: editor._config.namespace,
     nodes,

@@ -18,7 +18,7 @@ import type {
   DOMExportOutput,
   LexicalNode,
 } from '../LexicalNode';
-import type {RangeSelection} from '../LexicalSelection';
+import type {BaseSelection, RangeSelection} from '../LexicalSelection';
 import type {
   ElementFormatType,
   SerializedElementNode,
@@ -120,6 +120,15 @@ export class ParagraphNode extends ElementNode {
       }
     }
     return json as SerializedParagraphNode;
+  }
+
+  extractWithChild(
+    child: LexicalNode,
+    selection: BaseSelection | null,
+    destination: 'clone' | 'html',
+  ): boolean {
+    const formatType = this.getFormatType();
+    return formatType !== '' && formatType !== 'left' && formatType !== 'start';
   }
 
   // Mutation

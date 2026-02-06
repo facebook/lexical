@@ -8,6 +8,8 @@
  */
 
 .dateTimePill {
+  cursor: 'pointer';
+  width: 'fit-content';
   background: #ddd;
   border: 1px solid #ddd;
   border-radius: 8px;

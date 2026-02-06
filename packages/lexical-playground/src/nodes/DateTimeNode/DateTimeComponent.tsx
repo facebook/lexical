@@ -207,7 +207,7 @@ export default function DateTimeComponent({
     <TextWithFormattedContents
       className={{base: classNames.join(' '), focus: 'selected'}}
       nodeKey={nodeKey}>
-      <div ref={ref} style={{cursor: 'pointer', width: 'fit-content'}}>
+      <span ref={ref}>
         {dateTime?.toDateString() + (includeTime ? ' ' + timeValue : '') ||
           'Invalid Date'}
         {isOpen && (
@@ -264,7 +264,7 @@ export default function DateTimeComponent({
             </FloatingOverlay>
           </FloatingPortal>
         )}
-      </div>
+      </span>
     </TextWithFormattedContents>
   );
 }

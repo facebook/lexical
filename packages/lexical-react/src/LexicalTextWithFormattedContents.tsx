@@ -23,7 +23,7 @@ import {
   FORMAT_TEXT_COMMAND,
 } from 'lexical';
 import * as React from 'react';
-import {ReactNode, useEffect, useRef} from 'react';
+import {ReactNode, useEffect} from 'react';
 
 type Props = Readonly<{
   children: ReactNode;
@@ -40,9 +40,7 @@ export function TextWithFormattedContents({
   className,
 }: Props): JSX.Element {
   const [editor] = useLexicalComposerContext();
-
   const [isSelected] = useLexicalNodeSelection(nodeKey);
-  const ref = useRef(null);
 
   useEffect(() => {
     return mergeRegister(
@@ -56,27 +54,21 @@ export function TextWithFormattedContents({
               const node = $getNodeByKey(nodeKey);
 
               if ($isDecoratorTextNode(node)) {
-                const newFormat = node.getFormatFlags(formatType, null);
-                node.setFormat(newFormat);
+                node.toggleFormat(formatType);
               }
             } else if ($isRangeSelection(selection)) {
               const nodes = selection.getNodes();
 
               for (const node of nodes) {
                 if ($isDecoratorTextNode(node)) {
-                  const newFormat = node.getFormatFlags(formatType, null);
-                  node.setFormat(newFormat);
+                  node.toggleFormat(formatType);
                 } else {
                   const decoratorText = $findMatchingParent(
                     node,
                     $isDecoratorTextNode,
                   );
                   if (decoratorText !== null) {
-                    const newFormat = decoratorText.getFormatFlags(
-                      formatType,
-                      null,
-                    );
-                    decoratorText.setFormat(newFormat);
+                    decoratorText.toggleFormat(formatType);
                   }
                 }
               }
@@ -94,8 +86,7 @@ export function TextWithFormattedContents({
     <div
       className={[className.base, isSelected ? className.focus : null]
         .filter(Boolean)
-        .join(' ')}
-      ref={ref}>
+        .join(' ')}>
       {children}
     </div>
   );

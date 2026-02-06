@@ -417,7 +417,7 @@ export const CODE: MultilineElementTransformer = {
       return null;
     }
     const textContent = node.getTextContent();
-    let fence = $getState(node, codeFenceState) || '```';
+    let fence = $getState(node, codeFenceState);
 
     if (textContent.indexOf(fence) > -1) {
       const backticks = textContent.match(/`{3,}/g);

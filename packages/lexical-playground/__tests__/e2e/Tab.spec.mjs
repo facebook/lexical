@@ -101,6 +101,7 @@ test.describe('Tab', () => {
     await assertHTML(
       page,
       html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
         <code
           class="PlaygroundEditorTheme__code"
           dir="auto"
@@ -117,6 +118,7 @@ test.describe('Tab', () => {
             function
           </span>
         </code>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
       `,
     );
   });

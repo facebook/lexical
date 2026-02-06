@@ -1058,6 +1058,33 @@ describe('Markdown', () => {
     ).toBe(markdown);
   });
 
+  it('computes fence dynamically when code block content contains backticks', () => {
+    const editor = createHeadlessEditor({
+      nodes: [CodeNode],
+    });
+
+    editor.update(
+      () => {
+        // Create a CodeNode without setting fence state (uses default ```)
+        const codeBlockNode = $createCodeNode('markdown');
+        // Content contains ``` which conflicts with default fence
+        const textNode = $createTextNode('```js\nconsole.log("hello");\n```');
+        codeBlockNode.append(textNode);
+        $getRoot().append(codeBlockNode);
+      },
+      {discrete: true},
+    );
+
+    // Export should compute fence to be ```` (4 backticks) since content contains ```
+    const exported = editor
+      .getEditorState()
+      .read(() => $convertToMarkdownString(TRANSFORMERS));
+
+    expect(exported).toBe(
+      '````markdown\n```js\nconsole.log("hello");\n```\n````',
+    );
+  });
+
   describe('list marker', () => {
     it('should remember marker used on import', () => {
       const editor = createHeadlessEditor({

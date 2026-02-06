@@ -223,7 +223,7 @@ export const listMarkerState = createState('mdListMarker', {
 
 export const codeFenceState = createState<string, string>('mdCodeFence', {
   parse: (val) => {
-    if (typeof val === 'string' && val.startsWith('`')) {
+    if (typeof val === 'string' && /^`{3,}$/.test(val)) {
       return val;
     }
     return '```';
@@ -417,7 +417,15 @@ export const CODE: MultilineElementTransformer = {
       return null;
     }
     const textContent = node.getTextContent();
-    const fence = $getState(node, codeFenceState) || '```';
+    let fence = $getState(node, codeFenceState) || '```';
+
+    if (textContent.indexOf(fence) > -1) {
+      const backticks = textContent.match(/`{3,}/g);
+      if (backticks) {
+        const maxLength = Math.max(...backticks.map((b) => b.length));
+        fence = '`'.repeat(maxLength + 1);
+      }
+    }
     return (
       fence +
       (node.getLanguage() || '') +
@@ -445,7 +453,7 @@ export const CODE: MultilineElementTransformer = {
       const endMatch = afterFence.match(singleLineEndRegex);
       const content = afterFence.slice(0, afterFence.lastIndexOf(endMatch![0]));
 
-      const fakeStartMatch = [...startMatch];
+      const fakeStartMatch = [...startMatch] as RegExpMatchArray;
       fakeStartMatch[2] = '';
 
       CODE.replace(

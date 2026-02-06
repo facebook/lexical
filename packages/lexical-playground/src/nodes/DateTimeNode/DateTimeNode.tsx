@@ -9,15 +9,18 @@
 import type {JSX} from 'react';
 
 import {
+  DecoratorTextNode,
+  SerializedDecoratorTextNode,
+} from '@lexical/react/LexicalDecoratorTextNode';
+import {
   $getState,
+  $isTextNode,
   $setState,
   buildImportMap,
   createState,
-  DecoratorNode,
   DOMConversionOutput,
   DOMExportOutput,
   LexicalNode,
-  SerializedLexicalNode,
   Spread,
   StateConfigValue,
   StateValueOrUpdater,
@@ -46,8 +49,43 @@ export type SerializedDateTimeNode = Spread<
   {
     dateTime?: string;
   },
-  SerializedLexicalNode
+  SerializedDecoratorTextNode
 >;
+
+function wrapElementWith(
+  element: HTMLElement | Text,
+  tag: string,
+): HTMLElement {
+  const el = document.createElement(tag);
+  el.appendChild(element);
+  return el;
+}
+
+function applyFormatFromStyle(
+  lexicalNode: DateTimeNode,
+  style: CSSStyleDeclaration,
+) {
+  const fontWeight = style.fontWeight;
+  const textDecoration = style.textDecoration.split(' ');
+  // Google Docs uses span tags + font-weight for bold text
+  const hasBoldFontWeight = fontWeight === '700' || fontWeight === 'bold';
+  // Google Docs uses span tags + text-decoration: line-through for strikethrough text
+  const hasLinethroughTextDecoration = textDecoration.includes('line-through');
+  // Google Docs uses span tags + font-style for italic text
+  const hasItalicFontStyle = style.fontStyle === 'italic';
+
+  if (hasBoldFontWeight && !lexicalNode.hasFormat('bold')) {
+    lexicalNode.toggleFormat('bold');
+  }
+  if (hasLinethroughTextDecoration && !lexicalNode.hasFormat('strikethrough')) {
+    lexicalNode.toggleFormat('strikethrough');
+  }
+  if (hasItalicFontStyle && !lexicalNode.hasFormat('italic')) {
+    lexicalNode.toggleFormat('italic');
+  }
+
+  return lexicalNode;
+}
 
 function $convertDateTimeElement(
   domNode: HTMLElement,
@@ -55,19 +93,31 @@ function $convertDateTimeElement(
   const dateTimeValue = domNode.getAttribute('data-lexical-datetime');
   if (dateTimeValue) {
     const node = $createDateTimeNode(new Date(Date.parse(dateTimeValue)));
-    return {node};
+    return {
+      after: (childLexicalNodes) => {
+        // exportDOM returns only one child text, so only the first node of the array is taken
+        const firstChild = childLexicalNodes[0];
+        if ($isTextNode(firstChild)) {
+          node.setFormat(firstChild.getFormat());
+        }
+        return childLexicalNodes;
+      },
+      node,
+    };
   }
   const gDocsDateTimePayload = domNode.getAttribute('data-rich-links');
   if (!gDocsDateTimePayload) {
     return null;
   }
   const parsed = JSON.parse(gDocsDateTimePayload);
-  const parsedDate = Date.parse(parsed?.dat_df?.dfie_dt || '');
+  const parsedDate =
+    parsed?.dat_df?.dfie_ts.tv.tv_s * 1000 ||
+    Date.parse(parsed?.dat_df?.dfie_dt || '');
   if (isNaN(parsedDate)) {
     return null;
   }
-  const node = $createDateTimeNode(new Date(parsedDate));
-  return {node};
+  const dateTimeNode = $createDateTimeNode(new Date(parsedDate));
+  return {node: applyFormatFromStyle(dateTimeNode, domNode.style)};
 }
 
 const dateTimeState = createState('dateTime', {
@@ -75,10 +125,10 @@ const dateTimeState = createState('dateTime', {
   unparse: (v) => v.toISOString(),
 });
 
-export class DateTimeNode extends DecoratorNode<JSX.Element> {
+export class DateTimeNode extends DecoratorTextNode {
   $config() {
     return this.config('datetime', {
-      extends: DecoratorNode,
+      extends: DecoratorTextNode,
       importDOM: buildImportMap({
         span: (domNode) =>
           domNode.getAttribute('data-lexical-datetime') !== null ||
@@ -111,11 +161,31 @@ export class DateTimeNode extends DecoratorNode<JSX.Element> {
 
   exportDOM(): DOMExportOutput {
     const element = document.createElement('span');
-    element.textContent = getDateTimeText(this.getDateTime());
+    let textDom: HTMLElement | Text = document.createTextNode(
+      getDateTimeText(this.getDateTime()),
+    );
     element.setAttribute(
       'data-lexical-datetime',
       this.getDateTime()?.toString() || '',
     );
+
+    if (this.hasFormat('highlight')) {
+      textDom = wrapElementWith(textDom, 'mark');
+    }
+    if (this.hasFormat('bold')) {
+      textDom = wrapElementWith(textDom, 'b');
+    }
+    if (this.hasFormat('italic')) {
+      textDom = wrapElementWith(textDom, 'i');
+    }
+    if (this.hasFormat('strikethrough')) {
+      textDom = wrapElementWith(textDom, 's');
+    }
+    if (this.hasFormat('underline')) {
+      textDom = wrapElementWith(textDom, 'u');
+    }
+    element.appendChild(textDom);
+
     return {element};
   }
 
@@ -133,13 +203,13 @@ export class DateTimeNode extends DecoratorNode<JSX.Element> {
     return false;
   }
 
-  isInline(): boolean {
-    return true;
-  }
-
   decorate(): JSX.Element {
     return (
-      <DateTimeComponent dateTime={this.getDateTime()} nodeKey={this.__key} />
+      <DateTimeComponent
+        dateTime={this.getDateTime()}
+        format={this.__format}
+        nodeKey={this.__key}
+      />
     );
   }
 }

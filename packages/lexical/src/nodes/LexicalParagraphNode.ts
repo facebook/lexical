@@ -24,6 +24,7 @@ import type {
   SerializedElementNode,
 } from './LexicalElementNode';
 
+import {ELEMENT_TYPE_TO_FORMAT} from '../LexicalConstants';
 import {
   $applyNodeReplacement,
   getCachedClassNameArray,
@@ -169,6 +170,17 @@ function $convertParagraphElement(element: HTMLElement): DOMConversionOutput {
   if (element.style) {
     node.setFormat(element.style.textAlign as ElementFormatType);
     setNodeIndentFromDOM(element, node);
+  }
+
+  // Check legacy 'align' attribute
+  // Only use this if no format was set by CSS
+  if (node.getFormatType() === '') {
+    const align = element.getAttribute('align');
+    if (align) {
+      if (align && align in ELEMENT_TYPE_TO_FORMAT) {
+        node.setFormat(align as ElementFormatType);
+      }
+    }
   }
   return {node};
 }

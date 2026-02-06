@@ -38,6 +38,9 @@ describe('LexicalRootNode tests', () => {
 
         expect(root.__cachedText).toBe(text);
 
+        expect(root.__cachedText).toBe(
+          ElementNode.prototype.getTextContent.call(root),
+        );
         // Copy root to remove __cachedText because it's frozen
         const rootCopy = Object.assign({}, root);
         rootCopy.__cachedText = null;
@@ -208,6 +211,29 @@ describe('LexicalRootNode tests', () => {
       await editor.update(() => {
         expect($getSelection()).toBe(null);
       });
+    });
+
+    test('RootNode __cachedText incremental update #8096', () => {
+      const {editor} = testEnv;
+
+      editor.update(
+        () => {
+          $getRoot().append(
+            $createParagraphNode().append($createTextNode('a')),
+            $createParagraphNode(),
+            $createParagraphNode().append($createTextNode('b')),
+          );
+        },
+        {discrete: true},
+      );
+      expectRootTextContentToBe('a\n\n\n\nb');
+      editor.update(
+        () => {
+          $getRoot().selectEnd().insertRawText('.');
+        },
+        {discrete: true},
+      );
+      expectRootTextContentToBe('a\n\n\n\nb.');
     });
 
     test('RootNode __cachedText', async () => {

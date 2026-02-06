@@ -19,23 +19,21 @@ import type {
 } from 'lexical';
 
 import {
-  addClassNamesToElement,
-  mergeRegister,
-  removeClassNamesFromElement,
-} from '@lexical/utils';
-import {
   $create,
   $createNodeSelection,
   $getNodeFromDOMNode,
   $getSelection,
   $isNodeSelection,
   $setSelection,
+  addClassNamesToElement,
   CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
   createCommand,
   DecoratorNode,
   defineExtension,
   isDOMNode,
+  mergeRegister,
+  removeClassNamesFromElement,
 } from 'lexical';
 
 import {EditorStateExtension} from './EditorStateExtension';

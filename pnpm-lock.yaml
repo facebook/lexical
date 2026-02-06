@@ -297,29 +297,29 @@ importers:
   packages/lexical-clipboard:
     dependencies:
       '@lexical/html':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-html
       '@lexical/list':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-list
       '@lexical/selection':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-selection
       '@lexical/utils':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-utils
       lexical:
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical
 
   packages/lexical-code:
     dependencies:
       '@lexical/utils':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-utils
       lexical:
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical
       prismjs:
         specifier: ^1.30.0
         version: 1.30.0
@@ -331,11 +331,11 @@ importers:
   packages/lexical-code-shiki:
     dependencies:
       '@lexical/code':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-code
       '@lexical/utils':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-utils
       '@shikijs/core':
         specifier: ^3.7.0
         version: 3.20.0
@@ -349,8 +349,8 @@ importers:
         specifier: ^3.7.0
         version: 3.12.2
       lexical:
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical
       shiki:
         specifier: ^3.7.0
         version: 3.20.0
@@ -399,8 +399,8 @@ importers:
         specifier: ^7.24.7
         version: 7.25.9(@babel/core@7.28.5)
       '@lexical/devtools-core':
-        specifier: 0.39.0
-        version: 0.39.0(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+        specifier: workspace:*
+        version: link:../lexical-devtools-core
       '@rollup/plugin-babel':
         specifier: ^6.0.4
         version: 6.0.4(@babel/core@7.28.5)(@types/babel__core@7.20.5)(rollup@4.52.0)
@@ -414,8 +414,8 @@ importers:
         specifier: ^5.0.2
         version: 5.1.2(vite@7.1.6(@types/node@20.19.17)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(yaml@2.8.1))
       lexical:
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical
       typescript:
         specifier: ^5.9.2
         version: 5.9.2
@@ -429,23 +429,23 @@ importers:
   packages/lexical-devtools-core:
     dependencies:
       '@lexical/html':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-html
       '@lexical/link':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-link
       '@lexical/mark':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-mark
       '@lexical/table':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-table
       '@lexical/utils':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-utils
       lexical:
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical
       react:
         specifier: 19.1.1
         version: 19.1.1
@@ -456,11 +456,11 @@ importers:
   packages/lexical-dragon:
     dependencies:
       '@lexical/extension':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-extension
       lexical:
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical
 
   packages/lexical-eslint-plugin:
     dependencies:
@@ -484,32 +484,32 @@ importers:
   packages/lexical-extension:
     dependencies:
       '@lexical/utils':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-utils
       '@preact/signals-core':
         specifier: ^1.11.0
         version: 1.12.1
       lexical:
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical
 
   packages/lexical-file:
     dependencies:
       lexical:
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical
 
   packages/lexical-hashtag:
     dependencies:
       '@lexical/text':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-text
       '@lexical/utils':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-utils
       lexical:
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical
 
   packages/lexical-headless:
     dependencies:
@@ -517,122 +517,122 @@ importers:
         specifier: ^20.0.0
         version: 20.0.11
       lexical:
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical
 
   packages/lexical-history:
     dependencies:
       '@lexical/extension':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-extension
       '@lexical/utils':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-utils
       lexical:
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical
 
   packages/lexical-html:
     dependencies:
       '@lexical/selection':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-selection
       '@lexical/utils':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-utils
       lexical:
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical
 
   packages/lexical-link:
     dependencies:
       '@lexical/extension':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-extension
       '@lexical/utils':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-utils
       lexical:
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical
 
   packages/lexical-list:
     dependencies:
       '@lexical/extension':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-extension
       '@lexical/selection':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-selection
       '@lexical/utils':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-utils
       lexical:
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical
 
   packages/lexical-mark:
     dependencies:
       '@lexical/utils':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-utils
       lexical:
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical
 
   packages/lexical-markdown:
     dependencies:
       '@lexical/code':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-code
       '@lexical/link':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-link
       '@lexical/list':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-list
       '@lexical/rich-text':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-rich-text
       '@lexical/text':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-text
       '@lexical/utils':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-utils
       lexical:
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical
 
   packages/lexical-offset:
     dependencies:
       lexical:
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical
 
   packages/lexical-overflow:
     dependencies:
       lexical:
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical
 
   packages/lexical-plain-text:
     dependencies:
       '@lexical/clipboard':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-clipboard
       '@lexical/dragon':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-dragon
       '@lexical/selection':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-selection
       '@lexical/utils':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-utils
       lexical:
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical
 
   packages/lexical-playground:
     dependencies:
@@ -643,50 +643,50 @@ importers:
         specifier: ^0.27.16
         version: 0.27.16(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       '@lexical/clipboard':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-clipboard
       '@lexical/code':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-code
       '@lexical/code-shiki':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-code-shiki
       '@lexical/file':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-file
       '@lexical/hashtag':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-hashtag
       '@lexical/link':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-link
       '@lexical/list':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-list
       '@lexical/mark':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-mark
       '@lexical/overflow':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-overflow
       '@lexical/plain-text':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-plain-text
       '@lexical/react':
-        specifier: 0.39.0
-        version: 0.39.0(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(yjs@13.6.27)
+        specifier: workspace:*
+        version: link:../lexical-react
       '@lexical/rich-text':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-rich-text
       '@lexical/selection':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-selection
       '@lexical/table':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-table
       '@lexical/utils':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-utils
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
@@ -694,8 +694,8 @@ importers:
         specifier: ^0.16.10
         version: 0.16.27
       lexical:
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical
       lodash-es:
         specifier: ^4.17.21
         version: 4.17.22
@@ -761,56 +761,56 @@ importers:
         specifier: ^0.27.16
         version: 0.27.16(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       '@lexical/devtools-core':
-        specifier: 0.39.0
-        version: 0.39.0(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+        specifier: workspace:*
+        version: link:../lexical-devtools-core
       '@lexical/dragon':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-dragon
       '@lexical/extension':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-extension
       '@lexical/hashtag':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-hashtag
       '@lexical/history':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-history
       '@lexical/link':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-link
       '@lexical/list':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-list
       '@lexical/mark':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-mark
       '@lexical/markdown':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-markdown
       '@lexical/overflow':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-overflow
       '@lexical/plain-text':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-plain-text
       '@lexical/rich-text':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-rich-text
       '@lexical/table':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-table
       '@lexical/text':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-text
       '@lexical/utils':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-utils
       '@lexical/yjs':
-        specifier: 0.39.0
-        version: 0.39.0(yjs@13.6.27)
+        specifier: workspace:*
+        version: link:../lexical-yjs
       lexical:
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical
       react:
         specifier: 19.1.1
         version: 19.1.1
@@ -831,50 +831,50 @@ importers:
   packages/lexical-rich-text:
     dependencies:
       '@lexical/clipboard':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-clipboard
       '@lexical/dragon':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-dragon
       '@lexical/selection':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-selection
       '@lexical/utils':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-utils
       lexical:
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical
 
   packages/lexical-selection:
     dependencies:
       lexical:
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical
 
   packages/lexical-table:
     dependencies:
       '@lexical/clipboard':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-clipboard
       '@lexical/extension':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-extension
       '@lexical/utils':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-utils
       lexical:
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical
 
   packages/lexical-tailwind:
     dependencies:
       '@lexical/extension':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-extension
       lexical:
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical
     devDependencies:
       '@tailwindcss/cli':
         specifier: ^4.1.13
@@ -889,23 +889,17 @@ importers:
   packages/lexical-text:
     dependencies:
       lexical:
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical
 
   packages/lexical-utils:
     dependencies:
-      '@lexical/list':
-        specifier: 0.39.0
-        version: 0.39.0
       '@lexical/selection':
-        specifier: 0.39.0
-        version: 0.39.0
-      '@lexical/table':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-selection
       lexical:
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical
 
   packages/lexical-website:
     dependencies:
@@ -1004,14 +998,14 @@ importers:
   packages/lexical-yjs:
     dependencies:
       '@lexical/offset':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-offset
       '@lexical/selection':
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical-selection
       lexical:
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical
       yjs:
         specifier: '>=13.5.22'
         version: 13.6.27
@@ -1019,8 +1013,8 @@ importers:
   packages/shared:
     dependencies:
       lexical:
-        specifier: 0.39.0
-        version: 0.39.0
+        specifier: workspace:*
+        version: link:../lexical
 
 packages:
 
@@ -3312,86 +3306,6 @@ packages:
   '@leichtgewicht/ip-codec@2.0.5':
     resolution: {integrity: sha512-Vo+PSpZG2/fmgmiNzYK9qWRh8h/CHrwD0mo1h1DzL4yzHNSfWYujGTYsWGreD000gcgmZ7K4Ys6Tx9TxtsKdDw==}
 
-  '@lexical/clipboard@0.39.0':
-    resolution: {integrity: sha512-ylrHy8M+I5EH4utwqivslugqQhvgLTz9VEJdrb2RjbhKQEXwMcqKCRWh6cRfkYx64onE2YQE0nRIdzHhExEpLQ==}
-
-  '@lexical/code-shiki@0.39.0':
-    resolution: {integrity: sha512-2fdGtoaOVQLpZM24C1eeRpZpHdHgQB/dEC/9JcFer+cwD8qZHBBcpIudKCF0sGtsl3yKgf7QSM2XdYj+Y9B1rQ==}
-
-  '@lexical/code@0.39.0':
-    resolution: {integrity: sha512-3tqFOOzP5Z9nRkZPHZYmIyLXd28gMMrlAD3k2zxiH5vGnAqiYTezR24CpRDw1BaF2c8vCgY/9CNobZzjXivpIA==}
-
-  '@lexical/devtools-core@0.39.0':
-    resolution: {integrity: sha512-2ET2nFeRhcc2YMrn184wxoEOTLl3UOlugi8ozuZFa6F4UDMXPq7nZRhiQNgYzhE6Z7NLMFrcmghvx652JbEowg==}
-    peerDependencies:
-      react: 19.1.1
-      react-dom: 19.1.1
-
-  '@lexical/dragon@0.39.0':
-    resolution: {integrity: sha512-JkcBAYPZGzfs29gtkePeJG9US1uwKW6PkUt8G4QZkMTt4QMDnadqXauFE+30rbpvRdeNcR7s+/jOuRHd5SurDQ==}
-
-  '@lexical/extension@0.39.0':
-    resolution: {integrity: sha512-mp/WcF8E53FWPiUHgHQz382J7u7C4+cELYNkC00dKaymf8NhS6M65Y8tyDikNGNUcLXSzaluwK0HkiKjTYGhVQ==}
-
-  '@lexical/file@0.39.0':
-    resolution: {integrity: sha512-wdXcn5zb06HS2Gbw56Ue7d29YDUrSw7+ck/EwosCK0+67d+4TK9aB8WiZWlNcaH9B/gfzmScP2KeTewmvhPXZg==}
-
-  '@lexical/hashtag@0.39.0':
-    resolution: {integrity: sha512-CFLNB74a607nC2GGcjKNPbo/ZnehnR3zz9+S5bfUg5dblSGKdCfxHiyr2cDwHY3dfOTu+qtimfh2Zqxz4dfghA==}
-
-  '@lexical/history@0.39.0':
-    resolution: {integrity: sha512-kuctleDime0tRDxQNDW8i5d6D/ys5Npp2yoCBmdKS8HfS/jz7uPumfZcX7wvUvNAEVExh+bY9IxqIexyGkNUtA==}
-
-  '@lexical/html@0.39.0':
-    resolution: {integrity: sha512-7VLWP5DpzBg3kKctpNK6PbhymKAtU6NAnKieopCfCIWlMW+EqpldteiIXGqSqrMRK0JWTmF1gKgr9nnQyOOsXw==}
-
-  '@lexical/link@0.39.0':
-    resolution: {integrity: sha512-L1jSF2BVRHDqIQbKYFcQt3CqtVIphRA3QAW2VooYPNlKeaAb/yfFS+C60GX1cj96b0rMlHKrNC17ik2aEBZKLQ==}
-
-  '@lexical/list@0.39.0':
-    resolution: {integrity: sha512-mxgSxUrakTCHtC+gF30BChQBJTsCMiMgfC2H5VvhcFwXMgsKE/aK9+a+C/sSvvzCmPXqzYsuAcGkJcrY3e5xlw==}
-
-  '@lexical/mark@0.39.0':
-    resolution: {integrity: sha512-wVs5498dWYOQ07FAHaFW6oYgNG3moBargf6es7+gHPzjlaoZ6Hd8sbvJtlT8F2RRlw+U+kUh4s8SjFuMSEJp0w==}
-
-  '@lexical/markdown@0.39.0':
-    resolution: {integrity: sha512-mPaKH2FSwRwU2bDbMiMtdOridaEvSLU3Q5l7bqYE+TW799C/1EEtiv4xSkI01SjV9YOxNf24VNOipAMymPueKA==}
-
-  '@lexical/offset@0.39.0':
-    resolution: {integrity: sha512-8p+16AgFsG8ecZVQlFO6TQ+zHHHg7LKPNdm9BkklkJux41Y1+9rlPO12Mgbi4x2Hy2pRA8Gd/Su3hySGqEEVlA==}
-
-  '@lexical/overflow@0.39.0':
-    resolution: {integrity: sha512-BLtF4MNDrTNQFgryw6MPWh2Fj4GMjqC/6p9bbnZ9fdwMWKGSbsSNcK9PLlBwg3IzEK3XiibFDHUbsETwUd/bfw==}
-
-  '@lexical/plain-text@0.39.0':
-    resolution: {integrity: sha512-Ep0PGF7GlBNgiJJh/DBEPLt1WXyHUb7bCYZ4MUbD31AiJdG0p5a/g9dVTUr4QtNlCIXBCZjuatHyp6e2mzMacg==}
-
-  '@lexical/react@0.39.0':
-    resolution: {integrity: sha512-6ySVb5xv99GIkVzio4qqOBxkPgOSSeFAB4o9bVqtg72JbCoEKZPnWq5VVurGe1uiRJM8jvqTseM9mo2zTvUfXQ==}
-    peerDependencies:
-      react: 19.1.1
-      react-dom: 19.1.1
-
-  '@lexical/rich-text@0.39.0':
-    resolution: {integrity: sha512-UoSgRi09nLP/mmD3ijdZycr9icnqlb761rzHC1gicuPDdTu0ruxAFbGanSE2h36ihSu0IUHwkpf4gBpgPPqWBw==}
-
-  '@lexical/selection@0.39.0':
-    resolution: {integrity: sha512-j0cgNuTKDCdf/4MzRnAUwEqG6C/WQp18k2WKmX5KIVZJlhnGIJmlgSBrxjo8AuZ16DIHxTm2XNB4cUDCgZNuPA==}
-
-  '@lexical/table@0.39.0':
-    resolution: {integrity: sha512-1eH11kV4bJ0fufCYl8DpE19kHwqUI8Ev5CZwivfAtC3ntwyNkeEpjCc0pqeYYIWN/4rTZ5jgB3IJV4FntyfCzw==}
-
-  '@lexical/text@0.39.0':
-    resolution: {integrity: sha512-fcIgejtIgfMAkxio6BO1eLA2eb4oRIFoUVA2jAXdCaLVHrG/cizitbygPrgWnWd8nt1WlMuS4lxa0PJl7h7Lqg==}
-
-  '@lexical/utils@0.39.0':
-    resolution: {integrity: sha512-8YChidpMJpwQc4nex29FKUeuZzC++QCS/Jt46lPuy1GS/BZQoPHFKQ5hyVvM9QVhc5CEs4WGNoaCZvZIVN8bQw==}
-
-  '@lexical/yjs@0.39.0':
-    resolution: {integrity: sha512-peBrzIDoRWeyX9XTilKVdeJua6A+RZ24CG7lgGLEhmNSGCqpj9FqlC1Wtrul4wTSh85KlDeI1Nq30gnyeNKWYA==}
-    peerDependencies:
-      yjs: '>=13.5.22'
-
   '@mdx-js/mdx@2.3.0':
     resolution: {integrity: sha512-jLuwRlz8DQfQNiUCJR50Y09CGPq3fLtmtUQfVrj79E0JWu3dvsVcxVIcfhR5h0iXu+/z++zDrYeiJqifRynJkA==}
 
@@ -3485,24 +3399,28 @@ packages:
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
+    libc: [glibc]
 
   '@node-rs/jieba-linux-arm64-musl@1.10.4':
     resolution: {integrity: sha512-Y/tiJ1+HeS5nnmLbZOE+66LbsPOHZ/PUckAYVeLlQfpygLEpLYdlh0aPpS5uiaWMjAXYZYdFkpZHhxDmSLpwpw==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
+    libc: [musl]
 
   '@node-rs/jieba-linux-x64-gnu@1.10.4':
     resolution: {integrity: sha512-WZO8ykRJpWGE9MHuZpy1lu3nJluPoeB+fIJJn5CWZ9YTVhNDWoCF4i/7nxz1ntulINYGQ8VVuCU9LD86Mek97g==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
 
   '@node-rs/jieba-linux-x64-musl@1.10.4':
     resolution: {integrity: sha512-uBBD4S1rGKcgCyAk6VCKatEVQb6EDD5I40v/DxODi5CuZVCANi9m5oee/MQbAoaX7RydA2f0OSCE9/tcwXEwUg==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
+    libc: [musl]
 
   '@node-rs/jieba-wasm32-wasi@1.10.4':
     resolution: {integrity: sha512-Y2umiKHjuIJy0uulNDz9SDYHdfq5Hmy7jY5nORO99B4pySKkcrMjpeVrmWXJLIsEKLJwcCXHxz8tjwU5/uhz0A==}
@@ -3618,36 +3536,42 @@ packages:
     engines: {node: '>= 10.0.0'}
     cpu: [arm]
     os: [linux]
+    libc: [glibc]
 
   '@parcel/watcher-linux-arm-musl@2.5.1':
     resolution: {integrity: sha512-6E+m/Mm1t1yhB8X412stiKFG3XykmgdIOqhjWj+VL8oHkKABfu/gjFj8DvLrYVHSBNC+/u5PeNrujiSQ1zwd1Q==}
     engines: {node: '>= 10.0.0'}
     cpu: [arm]
     os: [linux]
+    libc: [musl]
 
   '@parcel/watcher-linux-arm64-glibc@2.5.1':
     resolution: {integrity: sha512-LrGp+f02yU3BN9A+DGuY3v3bmnFUggAITBGriZHUREfNEzZh/GO06FF5u2kx8x+GBEUYfyTGamol4j3m9ANe8w==}
     engines: {node: '>= 10.0.0'}
     cpu: [arm64]
     os: [linux]
+    libc: [glibc]
 
   '@parcel/watcher-linux-arm64-musl@2.5.1':
     resolution: {integrity: sha512-cFOjABi92pMYRXS7AcQv9/M1YuKRw8SZniCDw0ssQb/noPkRzA+HBDkwmyOJYp5wXcsTrhxO0zq1U11cK9jsFg==}
     engines: {node: '>= 10.0.0'}
     cpu: [arm64]
     os: [linux]
+    libc: [musl]
 
   '@parcel/watcher-linux-x64-glibc@2.5.1':
     resolution: {integrity: sha512-GcESn8NZySmfwlTsIur+49yDqSny2IhPeZfXunQi48DMugKeZ7uy1FX83pO0X22sHntJ4Ub+9k34XQCX+oHt2A==}
     engines: {node: '>= 10.0.0'}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
 
   '@parcel/watcher-linux-x64-musl@2.5.1':
     resolution: {integrity: sha512-n0E2EQbatQ3bXhcH2D1XIAANAcTZkQICBPVaxMeaCVBtOpBZpWJuf7LwyWPSBDITb7In8mqQgJ7gH8CILCURXg==}
     engines: {node: '>= 10.0.0'}
     cpu: [x64]
     os: [linux]
+    libc: [musl]
 
   '@parcel/watcher-win32-arm64@2.5.1':
     resolution: {integrity: sha512-RFzklRvmc3PkjKjry3hLF9wD7ppR4AKcWNzH7kXR7GUe0Igb3Nz8fyPwtZCSquGrhU5HhUNDr/mKBqj7tqA2Vw==}
@@ -4250,56 +4174,67 @@ packages:
     resolution: {integrity: sha512-aL6hRwu0k7MTUESgkg7QHY6CoqPgr6gdQXRJI1/VbFlUMwsSzPGSR7sG5d+MCbYnJmJwThc2ol3nixj1fvI/zQ==}
     cpu: [arm]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-arm-musleabihf@4.52.0':
     resolution: {integrity: sha512-BTs0M5s1EJejgIBJhCeiFo7GZZ2IXWkFGcyZhxX4+8usnIo5Mti57108vjXFIQmmJaRyDwmV59Tw64Ap1dkwMw==}
     cpu: [arm]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-linux-arm64-gnu@4.52.0':
     resolution: {integrity: sha512-uj672IVOU9m08DBGvoPKPi/J8jlVgjh12C9GmjjBxCTQc3XtVmRkRKyeHSmIKQpvJ7fIm1EJieBUcnGSzDVFyw==}
     cpu: [arm64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-arm64-musl@4.52.0':
     resolution: {integrity: sha512-/+IVbeDMDCtB/HP/wiWsSzduD10SEGzIZX2945KSgZRNi4TSkjHqRJtNTVtVb8IRwhJ65ssI56krlLik+zFWkw==}
     cpu: [arm64]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-linux-loong64-gnu@4.52.0':
     resolution: {integrity: sha512-U1vVzvSWtSMWKKrGoROPBXMh3Vwn93TA9V35PldokHGqiUbF6erSzox/5qrSMKp6SzakvyjcPiVF8yB1xKr9Pg==}
     cpu: [loong64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-ppc64-gnu@4.52.0':
     resolution: {integrity: sha512-X/4WfuBAdQRH8cK3DYl8zC00XEE6aM472W+QCycpQJeLWVnHfkv7RyBFVaTqNUMsTgIX8ihMjCvFF9OUgeABzw==}
     cpu: [ppc64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-riscv64-gnu@4.52.0':
     resolution: {integrity: sha512-xIRYc58HfWDBZoLmWfWXg2Sq8VCa2iJ32B7mqfWnkx5mekekl0tMe7FHpY8I72RXEcUkaWawRvl3qA55og+cwQ==}
     cpu: [riscv64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-riscv64-musl@4.52.0':
     resolution: {integrity: sha512-mbsoUey05WJIOz8U1WzNdf+6UMYGwE3fZZnQqsM22FZ3wh1N887HT6jAOjXs6CNEK3Ntu2OBsyQDXfIjouI4dw==}
     cpu: [riscv64]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-linux-s390x-gnu@4.52.0':
     resolution: {integrity: sha512-qP6aP970bucEi5KKKR4AuPFd8aTx9EF6BvutvYxmZuWLJHmnq4LvBfp0U+yFDMGwJ+AIJEH5sIP+SNypauMWzg==}
     cpu: [s390x]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-x64-gnu@4.52.0':
     resolution: {integrity: sha512-nmSVN+F2i1yKZ7rJNKO3G7ZzmxJgoQBQZ/6c4MuS553Grmr7WqR7LLDcYG53Z2m9409z3JLt4sCOhLdbKQ3HmA==}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-x64-musl@4.52.0':
     resolution: {integrity: sha512-2d0qRo33G6TfQVjaMR71P+yJVGODrt5V6+T0BDYH4EMfGgdC/2HWDVjSSFw888GSzAZUwuska3+zxNUCDco6rQ==}
     cpu: [x64]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-openharmony-arm64@4.52.0':
     resolution: {integrity: sha512-A1JalX4MOaFAAyGgpO7XP5khquv/7xKzLIyLmhNrbiCxWpMlnsTYr8dnsWM7sEeotNmxvSOEL7F65j0HXFcFsw==}
@@ -4340,21 +4275,25 @@ packages:
     resolution: {integrity: sha512-fvZX6xZPvBT8qipSpvkKMX5M7yd2BSpZNCZXcefw6gA3uC7LI3gu+er0LrDXY1PtPzVuHTyDx+abwWpagV3PiQ==}
     cpu: [arm64]
     os: [linux]
+    libc: [glibc]
 
   '@rspack/binding-linux-arm64-musl@1.6.8':
     resolution: {integrity: sha512-++XMKcMNrt59HcFBLnRaJcn70k3X0GwkAegZBVpel8xYIAgvoXT5+L8P1ExId/yTFxqedaz8DbcxQnNmMozviw==}
     cpu: [arm64]
     os: [linux]
+    libc: [musl]
 
   '@rspack/binding-linux-x64-gnu@1.6.8':
     resolution: {integrity: sha512-tv3BWkTE1TndfX+DsE1rSTg8fBevCxujNZ3MlfZ22Wfy9x1FMXTJlWG8VIOXmaaJ1wUHzv8S7cE2YUUJ2LuiCg==}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
 
   '@rspack/binding-linux-x64-musl@1.6.8':
     resolution: {integrity: sha512-DCGgZ5/in1O3FjHWqXnDsncRy+48cMhfuUAAUyl0yDj1NpsZu9pP+xfGLvGcQTiYrVl7IH9Aojf1eShP/77WGA==}
     cpu: [x64]
     os: [linux]
+    libc: [musl]
 
   '@rspack/binding-wasm32-wasi@1.6.8':
     resolution: {integrity: sha512-VUwdhl/lI4m6o1OGCZ9JwtMjTV/yLY5VZTQdEPKb40JMTlmZ5MBlr5xk7ByaXXYHr6I+qnqEm73iMKQvg6iknw==}
@@ -4559,24 +4498,28 @@ packages:
     engines: {node: '>=10'}
     cpu: [arm64]
     os: [linux]
+    libc: [glibc]
 
   '@swc/core-linux-arm64-musl@1.15.5':
     resolution: {integrity: sha512-Of+wmVh5h47tTpN9ghHVjfL0CJrgn99XmaJjmzWFW7agPdVY6gTDgkk6zQ6q4hcDQ7hXb0BGw6YFpuanBzNPow==}
     engines: {node: '>=10'}
     cpu: [arm64]
     os: [linux]
+    libc: [musl]
 
   '@swc/core-linux-x64-gnu@1.15.5':
     resolution: {integrity: sha512-98kuPS0lZVgjmc/2uTm39r1/OfwKM0PM13ZllOAWi5avJVjRd/j1xA9rKeUzHDWt+ocH9mTCQsAT1jjKSq45bg==}
     engines: {node: '>=10'}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
 
   '@swc/core-linux-x64-musl@1.15.5':
     resolution: {integrity: sha512-Rk+OtNQP3W/dZExL74LlaakXAQn6/vbrgatmjFqJPO4RZkq+nLo5g7eDUVjyojuERh7R2yhqNvZ/ZZQe8JQqqA==}
     engines: {node: '>=10'}
     cpu: [x64]
     os: [linux]
+    libc: [musl]
 
   '@swc/core-win32-arm64-msvc@1.15.5':
     resolution: {integrity: sha512-e3RTdJ769+PrN25iCAlxmsljEVu6iIWS7sE21zmlSiipftBQvSAOWuCDv2A8cH9lm5pSbZtwk8AUpIYCNsj2oQ==}
@@ -4631,24 +4574,28 @@ packages:
     engines: {node: '>=10'}
     cpu: [arm64]
     os: [linux]
+    libc: [glibc]
 
   '@swc/html-linux-arm64-musl@1.15.5':
     resolution: {integrity: sha512-jnegOAGqeSlrFTNRGGHCLHszpuy/tFLDlSXNBkX9ZJ6ZCKAO4h/iH0V/RCaVF2S2QKWgV08OjHHo4BDAiv+34Q==}
     engines: {node: '>=10'}
     cpu: [arm64]
     os: [linux]
+    libc: [musl]
 
   '@swc/html-linux-x64-gnu@1.15.5':
     resolution: {integrity: sha512-I+QwzKH/e6WiOMr0bwXiSbmikYFBUm8dCNDHzysooNOEGRM9Q8sOi4Hu5kCB+t+zGz/NycAbslvFf5AX63INOQ==}
     engines: {node: '>=10'}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
 
   '@swc/html-linux-x64-musl@1.15.5':
     resolution: {integrity: sha512-8M1bIXXWrJaJUfU2tTGr+6GS7VcYigJj6WJg+d4aeJDFoIWiAq8946LIXa7OwILVPqDo7oeHiakoRpiZBMJKFA==}
     engines: {node: '>=10'}
     cpu: [x64]
     os: [linux]
+    libc: [musl]
 
   '@swc/html-win32-arm64-msvc@1.15.5':
     resolution: {integrity: sha512-O7IqdUlpIZGQ5T12+2nk3QuK6fpvzzzQo+MasuZnceHEren+G903N3QLZs0zlNMcsJJkyecSVAV3bp/+LDF69A==}
@@ -4725,24 +4672,28 @@ packages:
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
+    libc: [glibc]
 
   '@tailwindcss/oxide-linux-arm64-musl@4.1.18':
     resolution: {integrity: sha512-1px92582HkPQlaaCkdRcio71p8bc8i/ap5807tPRDK/uw953cauQBT8c5tVGkOwrHMfc2Yh6UuxaH4vtTjGvHg==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
+    libc: [musl]
 
   '@tailwindcss/oxide-linux-x64-gnu@4.1.18':
     resolution: {integrity: sha512-v3gyT0ivkfBLoZGF9LyHmts0Isc8jHZyVcbzio6Wpzifg/+5ZJpDiRiUhDLkcr7f/r38SWNe7ucxmGW3j3Kb/g==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
 
   '@tailwindcss/oxide-linux-x64-musl@4.1.18':
     resolution: {integrity: sha512-bhJ2y2OQNlcRwwgOAGMY0xTFStt4/wyU6pvI6LSuZpRgKQwxTec0/3Scu91O8ir7qCR3AuepQKLU/kX99FouqQ==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
+    libc: [musl]
 
   '@tailwindcss/oxide-wasm32-wasi@4.1.18':
     resolution: {integrity: sha512-LffYTvPjODiP6PT16oNeUQJzNVyJl1cjIebq/rWWBF+3eDst5JGEFSc5cWxyRCJ0Mxl+KyIkqRxk1XPEs9x8TA==}
@@ -9048,9 +8999,6 @@ packages:
     resolution: {integrity: sha512-+bT2uH4E5LGE7h/n3evcS/sQlJXCpIp6ym8OWJ5eV6+67Dsql/LaaT7qJBAt2rzfoa/5QBGBhxDix1dMt2kQKQ==}
     engines: {node: '>= 0.8.0'}
 
-  lexical@0.39.0:
-    resolution: {integrity: sha512-lpLv7MEJH5QDujEDlYqettL3ATVtNYjqyimzqgrm0RvCm3AO9WXSdsgTxuN7IAZRu88xkxCDeYubeUf4mNZVdg==}
-
   lib0@0.2.114:
     resolution: {integrity: sha512-gcxmNFzA4hv8UYi8j43uPlQ7CGcyMJ2KQb5kZASw6SnAKAf10hK12i2fjrS3Cl/ugZa5Ui6WwIu1/6MIXiHttQ==}
     engines: {node: '>=16'}
@@ -9097,24 +9045,28 @@ packages:
     engines: {node: '>= 12.0.0'}
     cpu: [arm64]
     os: [linux]
+    libc: [glibc]
 
   lightningcss-linux-arm64-musl@1.30.2:
     resolution: {integrity: sha512-5Vh9dGeblpTxWHpOx8iauV02popZDsCYMPIgiuw97OJ5uaDsL86cnqSFs5LZkG3ghHoX5isLgWzMs+eD1YzrnA==}
     engines: {node: '>= 12.0.0'}
     cpu: [arm64]
     os: [linux]
+    libc: [musl]
 
   lightningcss-linux-x64-gnu@1.30.2:
     resolution: {integrity: sha512-Cfd46gdmj1vQ+lR6VRTTadNHu6ALuw2pKR9lYq4FnhvgBc4zWY1EtZcAc6EffShbb1MFrIPfLDXD6Xprbnni4w==}
     engines: {node: '>= 12.0.0'}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
 
   lightningcss-linux-x64-musl@1.30.2:
     resolution: {integrity: sha512-XJaLUUFXb6/QG2lGIW6aIk6jKdtjtcffUT0NKvIqhSBY3hh9Ch+1LCeH80dR9q9LBjG3ewbDjnumefsLsP6aiA==}
     engines: {node: '>= 12.0.0'}
     cpu: [x64]
     os: [linux]
+    libc: [musl]
 
   lightningcss-win32-arm64-msvc@1.30.2:
     resolution: {integrity: sha512-FZn+vaj7zLv//D/192WFFVA0RgHawIcHqLX9xuWiQt7P0PtdFEVaxgF9rjM/IRYHQXNnk61/H/gb2Ei+kUQ4xQ==}
@@ -16715,182 +16667,6 @@ snapshots:
 
   '@leichtgewicht/ip-codec@2.0.5': {}
 
-  '@lexical/clipboard@0.39.0':
-    dependencies:
-      '@lexical/html': 0.39.0
-      '@lexical/list': 0.39.0
-      '@lexical/selection': 0.39.0
-      '@lexical/utils': 0.39.0
-      lexical: 0.39.0
-
-  '@lexical/code-shiki@0.39.0':
-    dependencies:
-      '@lexical/code': 0.39.0
-      '@lexical/utils': 0.39.0
-      '@shikijs/core': 3.20.0
-      '@shikijs/engine-javascript': 3.20.0
-      '@shikijs/langs': 3.12.2
-      '@shikijs/themes': 3.12.2
-      lexical: 0.39.0
-      shiki: 3.20.0
-
-  '@lexical/code@0.39.0':
-    dependencies:
-      '@lexical/utils': 0.39.0
-      lexical: 0.39.0
-      prismjs: 1.30.0
-
-  '@lexical/devtools-core@0.39.0(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@lexical/html': 0.39.0
-      '@lexical/link': 0.39.0
-      '@lexical/mark': 0.39.0
-      '@lexical/table': 0.39.0
-      '@lexical/utils': 0.39.0
-      lexical: 0.39.0
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
-
-  '@lexical/dragon@0.39.0':
-    dependencies:
-      '@lexical/extension': 0.39.0
-      lexical: 0.39.0
-
-  '@lexical/extension@0.39.0':
-    dependencies:
-      '@lexical/utils': 0.39.0
-      '@preact/signals-core': 1.12.1
-      lexical: 0.39.0
-
-  '@lexical/file@0.39.0':
-    dependencies:
-      lexical: 0.39.0
-
-  '@lexical/hashtag@0.39.0':
-    dependencies:
-      '@lexical/text': 0.39.0
-      '@lexical/utils': 0.39.0
-      lexical: 0.39.0
-
-  '@lexical/history@0.39.0':
-    dependencies:
-      '@lexical/extension': 0.39.0
-      '@lexical/utils': 0.39.0
-      lexical: 0.39.0
-
-  '@lexical/html@0.39.0':
-    dependencies:
-      '@lexical/selection': 0.39.0
-      '@lexical/utils': 0.39.0
-      lexical: 0.39.0
-
-  '@lexical/link@0.39.0':
-    dependencies:
-      '@lexical/extension': 0.39.0
-      '@lexical/utils': 0.39.0
-      lexical: 0.39.0
-
-  '@lexical/list@0.39.0':
-    dependencies:
-      '@lexical/extension': 0.39.0
-      '@lexical/selection': 0.39.0
-      '@lexical/utils': 0.39.0
-      lexical: 0.39.0
-
-  '@lexical/mark@0.39.0':
-    dependencies:
-      '@lexical/utils': 0.39.0
-      lexical: 0.39.0
-
-  '@lexical/markdown@0.39.0':
-    dependencies:
-      '@lexical/code': 0.39.0
-      '@lexical/link': 0.39.0
-      '@lexical/list': 0.39.0
-      '@lexical/rich-text': 0.39.0
-      '@lexical/text': 0.39.0
-      '@lexical/utils': 0.39.0
-      lexical: 0.39.0
-
-  '@lexical/offset@0.39.0':
-    dependencies:
-      lexical: 0.39.0
-
-  '@lexical/overflow@0.39.0':
-    dependencies:
-      lexical: 0.39.0
-
-  '@lexical/plain-text@0.39.0':
-    dependencies:
-      '@lexical/clipboard': 0.39.0
-      '@lexical/dragon': 0.39.0
-      '@lexical/selection': 0.39.0
-      '@lexical/utils': 0.39.0
-      lexical: 0.39.0
-
-  '@lexical/react@0.39.0(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(yjs@13.6.27)':
-    dependencies:
-      '@floating-ui/react': 0.27.16(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@lexical/devtools-core': 0.39.0(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@lexical/dragon': 0.39.0
-      '@lexical/extension': 0.39.0
-      '@lexical/hashtag': 0.39.0
-      '@lexical/history': 0.39.0
-      '@lexical/link': 0.39.0
-      '@lexical/list': 0.39.0
-      '@lexical/mark': 0.39.0
-      '@lexical/markdown': 0.39.0
-      '@lexical/overflow': 0.39.0
-      '@lexical/plain-text': 0.39.0
-      '@lexical/rich-text': 0.39.0
-      '@lexical/table': 0.39.0
-      '@lexical/text': 0.39.0
-      '@lexical/utils': 0.39.0
-      '@lexical/yjs': 0.39.0(yjs@13.6.27)
-      lexical: 0.39.0
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
-      react-error-boundary: 6.0.0(react@19.1.1)
-    transitivePeerDependencies:
-      - yjs
-
-  '@lexical/rich-text@0.39.0':
-    dependencies:
-      '@lexical/clipboard': 0.39.0
-      '@lexical/dragon': 0.39.0
-      '@lexical/selection': 0.39.0
-      '@lexical/utils': 0.39.0
-      lexical: 0.39.0
-
-  '@lexical/selection@0.39.0':
-    dependencies:
-      lexical: 0.39.0
-
-  '@lexical/table@0.39.0':
-    dependencies:
-      '@lexical/clipboard': 0.39.0
-      '@lexical/extension': 0.39.0
-      '@lexical/utils': 0.39.0
-      lexical: 0.39.0
-
-  '@lexical/text@0.39.0':
-    dependencies:
-      lexical: 0.39.0
-
-  '@lexical/utils@0.39.0':
-    dependencies:
-      '@lexical/list': 0.39.0
-      '@lexical/selection': 0.39.0
-      '@lexical/table': 0.39.0
-      lexical: 0.39.0
-
-  '@lexical/yjs@0.39.0(yjs@13.6.27)':
-    dependencies:
-      '@lexical/offset': 0.39.0
-      '@lexical/selection': 0.39.0
-      lexical: 0.39.0
-      yjs: 13.6.27
-
   '@mdx-js/mdx@2.3.0':
     dependencies:
       '@types/estree-jsx': 1.0.5
@@ -23395,8 +23171,6 @@ snapshots:
     dependencies:
       prelude-ls: 1.2.1
       type-check: 0.4.0
-
-  lexical@0.39.0: {}
 
   lib0@0.2.114:
     dependencies:

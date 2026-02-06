@@ -18,6 +18,7 @@ import {
   $getSelection,
   $isParagraphNode,
   $isRangeSelection,
+  DOMConversionOutput,
   ParagraphNode,
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
@@ -416,6 +417,71 @@ describe('LexicalParagraphNode tests', () => {
         const pastedParagraph = maybeParagraph;
         expect(pastedParagraph.getFormatType()).toBe('right');
         expect(pastedParagraph.getTextContent()).toBe('Hello');
+      });
+    });
+
+    test('ParagraphNode.importDOM handles both CSS text-align and legacy align attribute', async () => {
+      const {editor} = testEnv;
+
+      const convertParagraph = (element: HTMLElement) => {
+        const importDOMMap = ParagraphNode.importDOM();
+        const handler = importDOMMap![element.tagName.toLowerCase()];
+        if (!handler) {
+          throw new Error(`No handler found for tag: ${element.tagName}`);
+        }
+        const specs = handler(element);
+        if (!specs) {
+          return null;
+        }
+        return specs.conversion(element);
+      };
+
+      const expectParagraphNode = (result: DOMConversionOutput | null) => {
+        const node = result ? result.node : null;
+
+        if (Array.isArray(node)) {
+          throw new Error('Expected a single node, but got an array');
+        }
+
+        invariant(
+          $isParagraphNode(node),
+          'Expected node to be a ParagraphNode',
+        );
+        return node;
+      };
+
+      await editor.update(() => {
+        // Case 1: Legacy <p align="right">
+        const pAlign = document.createElement('p');
+        pAlign.setAttribute('align', 'right');
+
+        const nodeAlign = expectParagraphNode(convertParagraph(pAlign));
+        expect(nodeAlign.getFormatType()).toBe('right');
+
+        // Case 2: Modern <p style="text-align: center">
+        const pStyle = document.createElement('p');
+        pStyle.style.textAlign = 'center';
+
+        const nodeStyle = expectParagraphNode(convertParagraph(pStyle));
+        expect(nodeStyle.getFormatType()).toBe('center');
+
+        // Case 3: CSS takes priority over Attribute
+        // <p align="right" style="text-align: left"> -> Should be LEFT
+        const pConflict = document.createElement('p');
+        pConflict.setAttribute('align', 'right');
+        pConflict.style.textAlign = 'left';
+
+        const nodeConflict = expectParagraphNode(convertParagraph(pConflict));
+        expect(nodeConflict.getFormatType()).toBe('left');
+
+        // Case 4: Invalid align attribute is ignored
+        // <p align="super-weird-stuff"> -> Should remain default (empty/left)
+        const pInvalid = document.createElement('p');
+        pInvalid.setAttribute('align', 'super-weird-stuff');
+
+        const nodeInvalid = expectParagraphNode(convertParagraph(pInvalid));
+        // Should NOT be 'super-weird-stuff' or undefined
+        expect(nodeInvalid.getFormatType()).toBe('');
       });
     });
   });

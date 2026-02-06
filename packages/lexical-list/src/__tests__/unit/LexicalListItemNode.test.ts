@@ -9,6 +9,7 @@
 import {
   $createParagraphNode,
   $createRangeSelection,
+  $createTextNode,
   $getRoot,
   TextNode,
 } from 'lexical';
@@ -26,7 +27,7 @@ import {
   ListItemNode,
   ListNode,
 } from '../..';
-import {$handleIndent} from '../../formatList';
+import {$handleIndent, $handleListInsertParagraph} from '../../formatList';
 
 const editorConfig = Object.freeze({
   namespace: '',
@@ -1409,6 +1410,85 @@ describe('LexicalListItemNode tests', () => {
         // Check if marker style was inherited
         expect(parentListItem.getTextStyle()).toBe('font-size: 19px;');
       });
+    });
+
+    test('Default: Splitting a list resets numbering to 1 (Backward Compatibility)', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const root = $getRoot();
+        const list = $createListNode('number');
+        const item1 = $createListItemNode();
+        const item2 = $createListItemNode();
+        const emptyItem = $createListItemNode();
+        const item3 = $createListItemNode();
+
+        item1.append($createTextNode('A'));
+        item2.append($createTextNode('B'));
+        // emptyItem has NO text
+        item3.append($createTextNode('C'));
+
+        list.append(item1, item2, emptyItem, item3);
+        root.append(list);
+
+        emptyItem.select();
+      });
+
+      await editor.update(() => {
+        $handleListInsertParagraph();
+      });
+
+      // Expectation: List 1 (A, B) -> Paragraph -> List 2 (C) starting at 1
+      expect(testEnv.container.innerHTML).toBe(
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true">' +
+          '<ol dir="auto">' +
+          '<li value="1"><span data-lexical-text="true">A</span></li>' +
+          '<li value="2"><span data-lexical-text="true">B</span></li>' +
+          '</ol>' +
+          '<p dir="auto"><br></p>' +
+          '<ol dir="auto">' + // Reset to 1 (Default)
+          '<li value="1"><span data-lexical-text="true">C</span></li>' +
+          '</ol>' +
+          '</div>',
+      );
+    });
+
+    test('Option Enabled: Splitting a list preserves numbering (Smart Behavior)', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const root = $getRoot();
+        const list = $createListNode('number');
+        const item1 = $createListItemNode();
+        const item2 = $createListItemNode();
+        const emptyItem = $createListItemNode();
+        const item3 = $createListItemNode();
+
+        item1.append($createTextNode('A'));
+        item2.append($createTextNode('B'));
+        item3.append($createTextNode('C'));
+
+        list.append(item1, item2, emptyItem, item3);
+        root.append(list);
+
+        emptyItem.select();
+      });
+
+      await editor.update(() => {
+        $handleListInsertParagraph(true);
+      });
+
+      // Expectation: List 1 (A, B) -> Paragraph -> List 2 (C) starting at 3
+      expect(testEnv.container.innerHTML).toBe(
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true">' +
+          '<ol dir="auto">' +
+          '<li value="1"><span data-lexical-text="true">A</span></li>' +
+          '<li value="2"><span data-lexical-text="true">B</span></li>' +
+          '</ol>' +
+          '<p dir="auto"><br></p>' +
+          '<ol start="3" dir="auto">' +
+          '<li value="3"><span data-lexical-text="true">C</span></li>' +
+          '</ol>' +
+          '</div>',
+      );
     });
   });
 });

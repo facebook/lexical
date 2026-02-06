@@ -7,6 +7,33 @@
  * @flow strict
  */
 
-/**
- * LexicalDecoratorTextNode
- */
+import type {
+  LexicalNode,
+  NodeKey,
+  SerializedLexicalNode,
+  TextFormatType,
+} from 'lexical';
+
+import {DecoratorNode} from 'lexical';
+
+declare export class DecoratorTextNode<T> extends DecoratorNode<T> {
+  __format: ?number;
+  constructor(key?: NodeKey): void;
+  createDOM(): HTMLElement;
+  getFormat(): number;
+  getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number;
+  hasFormat(type: TextFormatType): boolean;
+  setFormat(type: number): this;
+  toggleFormat(type: TextFormatType): this;
+  isInline(): true;
+}
+
+declare export function $isDecoratorTextNode(
+  node: ?LexicalNode,
+): node is DecoratorTextNode<{...}>;
+
+export type SerializedDecoratorTextNode = {
+  ...SerializedLexicalNode, 
+  format: number,
+  ...
+};

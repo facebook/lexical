@@ -7,6 +7,20 @@
  * @flow strict
  */
 
-/**
- * LexicalTextWithFormattedContents
- */
+import type {
+  LexicalEditor,
+  EditorThemeClasses,
+  LexicalNode,
+  NodeKey,
+} from 'lexical';
+
+type Props = $ReadOnly<{
+  children: React.Node,
+  nodeKey: NodeKey,
+  className: $ReadOnly<{
+    base: string,
+    focus: string,
+  }>,
+}>;
+
+declare export function TextWithFormattedContents(Props): React.Node;

@@ -14,12 +14,12 @@ import {
   ElementNode,
   getDOMTextNode,
   type LexicalEditor,
+  mergeRegister,
   Point,
   type RangeSelection,
   TextNode,
 } from 'lexical';
 
-import mergeRegister from './mergeRegister';
 import positionNodeOnRange from './positionNodeOnRange';
 import px from './px';
 

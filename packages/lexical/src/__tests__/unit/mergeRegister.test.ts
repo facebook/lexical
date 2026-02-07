@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {mergeRegister} from '@lexical/utils';
+import {mergeRegister} from 'lexical';
 import {describe, expect, it, vi} from 'vitest';
 
 describe('mergeRegister', () => {

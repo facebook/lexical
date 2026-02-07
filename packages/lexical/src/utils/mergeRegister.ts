@@ -6,8 +6,6 @@
  *
  */
 
-type Func = () => void;
-
 /**
  * Returns a function that will execute all functions passed when called. It is generally used
  * to register multiple lexical listeners and then tear them down with a single function call, such
@@ -33,7 +31,7 @@ type Func = () => void;
  * @param func - An array of cleanup functions meant to be executed by the returned function.
  * @returns the function which executes all the passed cleanup functions.
  */
-export default function mergeRegister(...func: Array<Func>): () => void {
+export function mergeRegister(...func: Array<() => void>): () => void {
   return () => {
     for (let i = func.length - 1; i >= 0; i--) {
       func[i]();

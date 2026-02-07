@@ -1681,3 +1681,14 @@ declare export function shallowMergeConfig<T: ExtensionConfigBase>(
 declare export function getTransformSetFromKlass(
   klass: Class<typeof LexicalNode>,
 ): Set<Transform<LexicalNode>>;
+
+declare export function addClassNamesToElement(
+  element: HTMLElement,
+  ...classNames: Array<typeof undefined | boolean | null | string>
+): void;
+declare export function removeClassNamesFromElement(
+  element: HTMLElement,
+  ...classNames: Array<typeof undefined | boolean | null | string>
+): void;
+declare export function mergeRegister(...func: Array<() => void>): () => void;
+declare export function normalizeClassNames(...classNames: Array<typeof undefined | boolean | null | string>): Array<string>;

@@ -54,7 +54,7 @@ import {
   SKIP_SCROLL_INTO_VIEW_TAG,
   TextNode,
 } from '.';
-import {TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
+import {COMPOSITION_START_CHAR, TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
 import {
   markCollapsedSelectionFormat,
   markSelectionChangeFromDOMUpdate,
@@ -965,7 +965,11 @@ export class RangeSelection implements BaseSelection {
           }
           // When composing, we need to adjust the anchor offset so that
           // we correctly replace that right range.
-          if (textNode.isComposing() && this.anchor.type === 'text') {
+          if (
+            textNode.isComposing() &&
+            this.anchor.type === 'text' &&
+            text !== COMPOSITION_START_CHAR
+          ) {
             this.anchor.offset -= text.length;
           }
           return;
@@ -986,7 +990,11 @@ export class RangeSelection implements BaseSelection {
       if (firstNode.getTextContent() === '') {
         firstNode.remove();
       } else if (this.anchor.type === 'text') {
-        if (firstNode.isComposing()) {
+        if (
+          firstNode.isComposing() &&
+          text !== COMPOSITION_START_CHAR &&
+          firstNode.getTextContent() !== COMPOSITION_START_CHAR
+        ) {
           // When composing, we need to adjust the anchor offset so that
           // we correctly replace that right range.
           this.anchor.offset -= text.length;
@@ -1135,7 +1143,7 @@ export class RangeSelection implements BaseSelection {
         if (firstNode.getTextContent() === '') {
           firstNode.remove();
         } else if (this.anchor.type === 'text') {
-          if (firstNode.isComposing()) {
+          if (firstNode.isComposing() && text !== COMPOSITION_START_CHAR) {
             // When composing, we need to adjust the anchor offset so that
             // we correctly replace that right range.
             this.anchor.offset -= text.length;

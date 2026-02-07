@@ -304,7 +304,6 @@ function handleClick(
             if (disableFocusOnClick) {
               $addUpdateTag(SKIP_SELECTION_FOCUS_TAG);
               $addUpdateTag(SKIP_DOM_SELECTION_TAG);
-              domNode.focus();
             }
             node.toggleChecked();
           }

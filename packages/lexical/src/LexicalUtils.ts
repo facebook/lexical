@@ -765,11 +765,28 @@ export function $updateTextNodeFromDOMContent(
     const isComposing = node.isComposing();
     let normalizedTextContent = textContent;
 
-    if (
-      (isComposing || compositionEnd) &&
-      textContent[textContent.length - 1] === COMPOSITION_SUFFIX
-    ) {
-      normalizedTextContent = textContent.slice(0, -1);
+    if (isComposing || compositionEnd) {
+      if (normalizedTextContent.endsWith(COMPOSITION_SUFFIX)) {
+        normalizedTextContent = normalizedTextContent.slice(0, -1);
+      }
+      if (compositionEnd) {
+        let index;
+        while (
+          (index = normalizedTextContent.indexOf(COMPOSITION_SUFFIX)) !== -1
+        ) {
+          normalizedTextContent =
+            normalizedTextContent.slice(0, index) +
+            normalizedTextContent.slice(index + 1);
+
+          if (anchorOffset !== null && anchorOffset > index) {
+            anchorOffset--;
+          }
+
+          if (focusOffset !== null && focusOffset > index) {
+            focusOffset--;
+          }
+        }
+      }
     }
     const prevTextContent = node.getTextContent();
 

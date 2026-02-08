@@ -6,9 +6,10 @@
  *
  */
 
-import type {ElementNode, Klass} from 'lexical';
-
-import {registerTabIndentation} from '@lexical/extension';
+import {
+  type CanIndentPredicate,
+  registerTabIndentation,
+} from '@lexical/extension';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useEffect} from 'react';
 
@@ -21,19 +22,19 @@ export {registerTabIndentation};
  */
 export function TabIndentationPlugin({
   maxIndent,
-  allowedNodes,
+  $canIndent = (node) => node.canIndent(),
 }: {
   maxIndent?: number;
   /**
    * By default, indents are set on all elements for which the {@link ElementNode.canIndent} returns true.
-   * This option allows you to set indents for specific classes without overriding the method for others.
+   * This option allows you to set indents for specific nodes without overriding the method for others.
    */
-  allowedNodes?: Array<Klass<ElementNode>>;
+  $canIndent?: CanIndentPredicate;
 }): null {
   const [editor] = useLexicalComposerContext();
   useEffect(() => {
-    return registerTabIndentation(editor, maxIndent, allowedNodes);
-  }, [editor, maxIndent, allowedNodes]);
+    return registerTabIndentation(editor, maxIndent, $canIndent);
+  }, [editor, maxIndent, $canIndent]);
 
   return null;
 }

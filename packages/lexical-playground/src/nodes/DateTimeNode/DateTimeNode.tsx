@@ -111,7 +111,7 @@ function $convertDateTimeElement(
   }
   const parsed = JSON.parse(gDocsDateTimePayload);
   const parsedDate =
-    parsed?.dat_df?.dfie_ts.tv.tv_s * 1000 ||
+    parsed?.dat_df?.dfie_ts?.tv?.tv_s * 1000 ||
     Date.parse(parsed?.dat_df?.dfie_dt || '');
   if (isNaN(parsedDate)) {
     return null;

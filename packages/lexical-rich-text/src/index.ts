@@ -514,6 +514,13 @@ export function eventFiles(
   return [hasFiles, Array.from(dataTransfer.files), hasContent];
 }
 
+/**
+ * Applies the provided callback to each indentable block element in the Selection
+ *
+ * @param indentOrOutdent callback for performing the indent or outdent action
+ * on a given block element.
+ * @returns true if at least one block was handled, false otherwise.
+ */
 export function $handleIndentAndOutdent(
   indentOrOutdent: (block: ElementNode) => void,
 ): boolean {

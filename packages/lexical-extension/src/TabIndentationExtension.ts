@@ -67,12 +67,16 @@ function $indentOverTab(selection: RangeSelection): boolean {
 
 export type CanIndentPredicate = (node: ElementNode) => boolean;
 
+function $defaultCanIndent(node: ElementNode) {
+  return node.canBeEmpty();
+}
+
 export function registerTabIndentation(
   editor: LexicalEditor,
   maxIndent?: number | ReadonlySignal<null | number>,
-  $canIndent: CanIndentPredicate | ReadonlySignal<CanIndentPredicate> = (
-    node,
-  ) => node.canIndent(),
+  $canIndent:
+    | CanIndentPredicate
+    | ReadonlySignal<CanIndentPredicate> = $defaultCanIndent,
 ) {
   return mergeRegister(
     editor.registerCommand<KeyboardEvent>(
@@ -145,7 +149,7 @@ export const TabIndentationExtension = defineExtension({
     return namedSignals(config);
   },
   config: safeCast<TabIndentationConfig>({
-    $canIndent: (node) => node.canIndent(),
+    $canIndent: $defaultCanIndent,
     disabled: false,
     maxIndent: null,
   }),

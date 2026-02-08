@@ -22,7 +22,7 @@ export {registerTabIndentation};
  */
 export function TabIndentationPlugin({
   maxIndent,
-  $canIndent = (node) => node.canIndent(),
+  $canIndent,
 }: {
   maxIndent?: number;
   /**

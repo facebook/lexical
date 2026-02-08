@@ -483,9 +483,6 @@ importers:
 
   packages/lexical-extension:
     dependencies:
-      '@lexical/rich-text':
-        specifier: workspace:*
-        version: link:../lexical-rich-text
       '@lexical/utils':
         specifier: workspace:*
         version: link:../lexical-utils

@@ -617,6 +617,46 @@ export function $filter<T>(
   }
   return result;
 }
+
+/**
+ * Applies the provided callback to each indentable block element in the Selection
+ *
+ * @param indentOrOutdent callback for performing the indent or outdent action
+ * on a given block element.
+ * @returns true if at least one block was handled, false otherwise.
+ */
+export function $handleIndentAndOutdent(
+  indentOrOutdent: (block: ElementNode) => void,
+): boolean {
+  const selection = $getSelection();
+  if (!$isRangeSelection(selection)) {
+    return false;
+  }
+  const alreadyHandled = new Set();
+  const nodes = selection.getNodes();
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i];
+    const key = node.getKey();
+    if (alreadyHandled.has(key)) {
+      continue;
+    }
+    const parentBlock = $findMatchingParent(
+      node,
+      (parentNode): parentNode is ElementNode =>
+        $isElementNode(parentNode) && !parentNode.isInline(),
+    );
+    if (parentBlock === null) {
+      continue;
+    }
+    const parentKey = parentBlock.getKey();
+    if (parentBlock.canIndent() && !alreadyHandled.has(parentKey)) {
+      alreadyHandled.add(parentKey);
+      indentOrOutdent(parentBlock);
+    }
+  }
+  return alreadyHandled.size > 0;
+}
+
 /**
  * Appends the node before the first child of the parent node
  * @param parent A parent node

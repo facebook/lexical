@@ -13,8 +13,10 @@ import type {
   RangeSelection,
 } from 'lexical';
 
-import {$handleIndentAndOutdent} from '@lexical/rich-text';
-import {$getNearestBlockElementAncestorOrThrow} from '@lexical/utils';
+import {
+  $getNearestBlockElementAncestorOrThrow,
+  $handleIndentAndOutdent,
+} from '@lexical/utils';
 import {
   $createRangeSelection,
   $getSelection,

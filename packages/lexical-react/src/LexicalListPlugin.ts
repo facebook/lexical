@@ -9,9 +9,11 @@
 import {
   ListItemNode,
   ListNode,
+  registerList,
   registerListStrictIndentTransform,
 } from '@lexical/list';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {mergeRegister} from 'lexical';
 import {useEffect} from 'react';
 
 import {useList} from './shared/useList';
@@ -22,9 +24,17 @@ export interface ListPluginProps {
    * When `false` (default), indentation is more flexible.
    */
   hasStrictIndent?: boolean;
+  /**
+   * When `true`, splitting a numbered list will preserve the numbering continuity.
+   * When `false` (default), the new split list resets to 1.
+   */
+  shouldPreserveNumbering?: boolean;
 }
 
-export function ListPlugin({hasStrictIndent = false}: ListPluginProps): null {
+export function ListPlugin({
+  hasStrictIndent = false,
+  shouldPreserveNumbering = false,
+}: ListPluginProps): null {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
@@ -36,12 +46,13 @@ export function ListPlugin({hasStrictIndent = false}: ListPluginProps): null {
   }, [editor]);
 
   useEffect(() => {
-    if (!hasStrictIndent) {
-      return;
-    }
-
-    return registerListStrictIndentTransform(editor);
-  }, [editor, hasStrictIndent]);
+    return mergeRegister(
+      registerList(editor, {
+        restoreNumbering: shouldPreserveNumbering,
+      }),
+      hasStrictIndent ? registerListStrictIndentTransform(editor) : () => {},
+    );
+  }, [editor, hasStrictIndent, shouldPreserveNumbering]);
 
   useList(editor);
 

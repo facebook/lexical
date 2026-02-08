@@ -98,7 +98,6 @@ export async function initialize({
   hasNestedTables,
   hasFitNestedTables,
   shouldDisableFocusOnClickChecklist,
-  hasFitNestedTables,
   showNestedEditorTreeView,
   tableCellMerge,
   tableCellBackgroundColor,
@@ -135,7 +134,8 @@ export async function initialize({
   appSettings.hasLinkAttributes = !!hasLinkAttributes;
   appSettings.hasNestedTables = !!hasNestedTables;
   appSettings.hasFitNestedTables = !!hasFitNestedTables;
-  appSettings.shouldDisableFocusOnClickChecklist = !!shouldDisableFocusOnClickChecklist;
+  appSettings.shouldDisableFocusOnClickChecklist =
+    !!shouldDisableFocusOnClickChecklist;
   if (tableCellMerge !== undefined) {
     appSettings.tableCellMerge = tableCellMerge;
   }

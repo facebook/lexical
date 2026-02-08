@@ -49,6 +49,7 @@ export {
   untracked,
 } from './signals';
 export {
+  type CanIndentPredicate,
   registerTabIndentation,
   type TabIndentationConfig,
   TabIndentationExtension,

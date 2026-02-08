@@ -33,7 +33,6 @@ import {
   $isTableNode,
   $isTableRowNode,
   $moveTableColumn,
-  type TableNode,
 } from '@lexical/table';
 import {
   $getChildCaret,

@@ -947,7 +947,7 @@ importers:
         version: 2.1.1
       docusaurus-plugin-internaldocs-fb:
         specifier: 1.19.2
-        version: 1.19.2(yx6vk5fx7a57ucxth6gqmura4a)
+        version: 1.19.2(62eb37513ee458c9f00fe497c6bcc9c4)
       docusaurus-plugin-typedoc:
         specifier: ^1.4.2
         version: 1.4.2(typedoc-plugin-markdown@4.9.0(typedoc@0.28.13(typescript@5.9.2)))
@@ -20539,7 +20539,7 @@ snapshots:
       unified: 9.2.2
       unist-util-is: 4.1.0
 
-  docusaurus-plugin-internaldocs-fb@1.19.2(yx6vk5fx7a57ucxth6gqmura4a):
+  docusaurus-plugin-internaldocs-fb@1.19.2(62eb37513ee458c9f00fe497c6bcc9c4):
     dependencies:
       '@docusaurus/core': 3.9.2(@docusaurus/faster@3.9.2(@docusaurus/types@3.9.2(@swc/core@1.15.5)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)))(@mdx-js/react@3.1.1(@types/react@19.1.13)(react@19.1.1))(@rspack/core@1.6.8)(@swc/core@1.15.5)(debug@4.4.3)(lightningcss@1.30.2)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(typescript@5.9.2)
       '@docusaurus/preset-classic': 3.9.2(@algolia/client-search@5.46.0)(@docusaurus/faster@3.9.2(@docusaurus/types@3.9.2(@swc/core@1.15.5)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)))(@mdx-js/react@3.1.1(@types/react@19.1.13)(react@19.1.1))(@rspack/core@1.6.8)(@swc/core@1.15.5)(@types/react@19.1.13)(lightningcss@1.30.2)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(search-insights@2.17.3)(typescript@5.9.2)

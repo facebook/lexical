@@ -1068,9 +1068,10 @@ describe('Markdown', () => {
         // Create a CodeNode without setting fence state (uses default ```)
         const codeBlockNode = $createCodeNode('markdown');
         // Content contains ``` which conflicts with default fence
-        const textNode = $createTextNode('```js\nconsole.log("hello");\n```');
-        codeBlockNode.append(textNode);
-        $getRoot().append(codeBlockNode);
+        $getRoot()
+          .append(codeBlockNode)
+          .selectEnd()
+          .insertRawText('```js\nconsole.log("hello");\n```');
       },
       {discrete: true},
     );

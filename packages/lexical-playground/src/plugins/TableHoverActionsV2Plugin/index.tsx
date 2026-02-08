@@ -15,7 +15,6 @@ import {
   dropTargetForElements,
   type ElementDragPayload,
 } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import {reorder} from '@atlaskit/pragmatic-drag-and-drop/reorder';
 import {
   autoUpdate,
   offset,
@@ -29,9 +28,11 @@ import {
   $computeTableMapSkipCellCheck,
   $insertTableColumnAtSelection,
   $insertTableRowAtSelection,
+  $isSimpleTable,
   $isTableCellNode,
   $isTableNode,
   $isTableRowNode,
+  $moveTableColumn,
   type TableNode,
 } from '@lexical/table';
 import {
@@ -51,39 +52,6 @@ const INDICATOR_SIZE_PX = 18;
 const SIDE_INDICATOR_SIZE_PX = 18;
 const TOP_BUTTON_OVERHANG = INDICATOR_SIZE_PX / 2;
 const LEFT_BUTTON_OVERHANG = SIDE_INDICATOR_SIZE_PX / 2;
-
-/**
- * Checks if the table does not have any merged cells.
- *
- * @param table Table to check for if it has any merged cells.
- * @returns True if the table does not have any merged cells, false otherwise.
- */
-function $isSimpleTable(table: TableNode): boolean {
-  const rows = table.getChildren();
-  let columns: null | number = null;
-  for (const row of rows) {
-    if (!$isTableRowNode(row)) {
-      return false;
-    }
-    if (columns === null) {
-      columns = row.getChildrenSize();
-    }
-    if (row.getChildrenSize() !== columns) {
-      return false;
-    }
-    const cells = row.getChildren();
-    for (const cell of cells) {
-      if (
-        !$isTableCellNode(cell) ||
-        cell.getRowSpan() !== 1 ||
-        cell.getColSpan() !== 1
-      ) {
-        return false;
-      }
-    }
-  }
-  return (columns || 0) > 0;
-}
 
 function getTableFromMouseEvent(
   event: MouseEvent,
@@ -510,7 +478,7 @@ function TableHoverActionsV2({
           }
           editor.update(() => {
             const tableNode = $getNearestNodeFromDOMNode(targetTable);
-            if (!$isTableNode(tableNode) || !$isSimpleTable(tableNode)) {
+            if (!$isTableNode(tableNode)) {
               return;
             }
             const columnCount = tableNode.getColumnCount();
@@ -531,27 +499,7 @@ function TableHoverActionsV2({
               clampedBoundary > startIndex
                 ? clampedBoundary - 1
                 : clampedBoundary;
-            const rows = tableNode.getChildren().filter($isTableRowNode);
-            const order = Array.from({length: columnCount}, (_, i) => i);
-            const nextOrder = reorder({
-              finishIndex,
-              list: order,
-              startIndex,
-            });
-            rows.forEach((row) => {
-              const cells = row.getChildren();
-              const reorderedCells = nextOrder.map((idx) => cells[idx]);
-              row.splice(0, cells.length, reorderedCells);
-            });
-            const colWidths = tableNode.getColWidths();
-            if (colWidths && colWidths.length === columnCount) {
-              const reorderedWidths = reorder({
-                finishIndex,
-                list: [...colWidths],
-                startIndex,
-              });
-              tableNode.setColWidths(reorderedWidths);
-            }
+            $moveTableColumn(tableNode, startIndex, finishIndex);
           });
         },
       });

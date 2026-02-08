@@ -6,8 +6,15 @@
  *
  */
 
-import type {LexicalCommand, LexicalEditor, RangeSelection} from 'lexical';
+import type {
+  ElementNode,
+  Klass,
+  LexicalCommand,
+  LexicalEditor,
+  RangeSelection,
+} from 'lexical';
 
+import {$handleIndentAndOutdent} from '@lexical/rich-text';
 import {$getNearestBlockElementAncestorOrThrow} from '@lexical/utils';
 import {
   $createRangeSelection,
@@ -62,6 +69,9 @@ function $indentOverTab(selection: RangeSelection): boolean {
 export function registerTabIndentation(
   editor: LexicalEditor,
   maxIndent?: number | ReadonlySignal<null | number>,
+  allowedNodes?:
+    | Array<Klass<ElementNode>>
+    | ReadonlySignal<null | Array<Klass<ElementNode>>>,
 ) {
   return mergeRegister(
     editor.registerCommand<KeyboardEvent>(
@@ -92,12 +102,29 @@ export function registerTabIndentation(
               ? maxIndent.peek()
               : null;
 
-        if (currentMaxIndent == null) {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) {
           return false;
         }
 
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
+        const currentAllowedNodes = Array.isArray(allowedNodes)
+          ? allowedNodes
+          : allowedNodes
+            ? allowedNodes.peek()
+            : null;
+        if (currentAllowedNodes && currentAllowedNodes.length > 0) {
+          $handleIndentAndOutdent((block) => {
+            if (currentAllowedNodes.some((klass) => block instanceof klass)) {
+              const newIndent = block.getIndent() + 1;
+              if (!currentMaxIndent || newIndent < currentMaxIndent) {
+                block.setIndent(newIndent);
+              }
+            }
+          });
+          return true;
+        }
+
+        if (currentMaxIndent == null) {
           return false;
         }
 
@@ -117,6 +144,11 @@ export function registerTabIndentation(
 export interface TabIndentationConfig {
   disabled: boolean;
   maxIndent: null | number;
+  /**
+   * By default, indents are set on all elements for which the {@link ElementNode.canIndent} returns true.
+   * This option allows you to set indents for specific classes without overriding the method for others.
+   */
+  allowedNodes: Array<Klass<ElementNode>>;
 }
 
 /**
@@ -128,13 +160,17 @@ export const TabIndentationExtension = defineExtension({
   build(editor, config, state) {
     return namedSignals(config);
   },
-  config: safeCast<TabIndentationConfig>({disabled: false, maxIndent: null}),
+  config: safeCast<TabIndentationConfig>({
+    allowedNodes: [],
+    disabled: false,
+    maxIndent: null,
+  }),
   name: '@lexical/extension/TabIndentation',
   register(editor, config, state) {
-    const {disabled, maxIndent} = state.getOutput();
+    const {disabled, maxIndent, allowedNodes} = state.getOutput();
     return effect(() => {
       if (!disabled.value) {
-        return registerTabIndentation(editor, maxIndent);
+        return registerTabIndentation(editor, maxIndent, allowedNodes);
       }
     });
   },

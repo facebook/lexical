@@ -514,7 +514,7 @@ export function eventFiles(
   return [hasFiles, Array.from(dataTransfer.files), hasContent];
 }
 
-function $handleIndentAndOutdent(
+export function $handleIndentAndOutdent(
   indentOrOutdent: (block: ElementNode) => void,
 ): boolean {
   const selection = $getSelection();

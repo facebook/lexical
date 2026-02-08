@@ -985,6 +985,107 @@ describe('Markdown', () => {
     );
   });
 
+  it('can round-trip nested fenced code blocks (4 backticks wrapping 3 backticks)', () => {
+    const markdown =
+      '````markdown\n' +
+      '# Example\n' +
+      '\n' +
+      'Run this:\n' +
+      '```bash\n' +
+      'npm install\n' +
+      '```\n' +
+      '````';
+
+    const editor = createHeadlessEditor({
+      nodes: [
+        HeadingNode,
+        ListNode,
+        ListItemNode,
+        QuoteNode,
+        CodeNode,
+        LinkNode,
+      ],
+    });
+
+    editor.update(
+      () => {
+        $convertFromMarkdownString(markdown, TRANSFORMERS);
+      },
+      {discrete: true},
+    );
+
+    expect(
+      editor
+        .getEditorState()
+        .read(() => $convertToMarkdownString(TRANSFORMERS)),
+    ).toBe(markdown);
+  });
+
+  it('can round-trip deeply nested fenced code blocks (5 backticks wrapping 4 backticks)', () => {
+    const markdown =
+      '`````text\n' +
+      'Top Level 5 ticks\n' +
+      '````markdown\n' +
+      'Level 2 (4 ticks)\n' +
+      '```javascript\n' +
+      'console.log("Deepest (3 ticks)");\n' +
+      '```\n' +
+      '````\n' +
+      '`````';
+
+    const editor = createHeadlessEditor({
+      nodes: [
+        HeadingNode,
+        ListNode,
+        ListItemNode,
+        QuoteNode,
+        CodeNode,
+        LinkNode,
+      ],
+    });
+
+    editor.update(
+      () => {
+        $convertFromMarkdownString(markdown, TRANSFORMERS);
+      },
+      {discrete: true},
+    );
+
+    expect(
+      editor
+        .getEditorState()
+        .read(() => $convertToMarkdownString(TRANSFORMERS)),
+    ).toBe(markdown);
+  });
+
+  it('computes fence dynamically when code block content contains backticks', () => {
+    const editor = createHeadlessEditor({
+      nodes: [CodeNode],
+    });
+
+    editor.update(
+      () => {
+        // Create a CodeNode without setting fence state (uses default ```)
+        const codeBlockNode = $createCodeNode('markdown');
+        // Content contains ``` which conflicts with default fence
+        $getRoot()
+          .append(codeBlockNode)
+          .selectEnd()
+          .insertRawText('```js\nconsole.log("hello");\n```');
+      },
+      {discrete: true},
+    );
+
+    // Export should compute fence to be ```` (4 backticks) since content contains ```
+    const exported = editor
+      .getEditorState()
+      .read(() => $convertToMarkdownString(TRANSFORMERS));
+
+    expect(exported).toBe(
+      '````markdown\n```js\nconsole.log("hello");\n```\n````',
+    );
+  });
+
   describe('list marker', () => {
     it('should remember marker used on import', () => {
       const editor = createHeadlessEditor({

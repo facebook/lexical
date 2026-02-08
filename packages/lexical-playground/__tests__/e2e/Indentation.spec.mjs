@@ -778,6 +778,7 @@ test.describe('Identation', () => {
 
     await clickIndentButton(page, 3);
 
+    // the "side" item and the one following it remain at maximum nesting, while the others are indented
     await assertHTML(
       page,
       html`
@@ -790,22 +791,19 @@ test.describe('Identation', () => {
                 class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
                 value="1">
                 <ul class="PlaygroundEditorTheme__ul">
-                  <li class="PlaygroundEditorTheme__listItem" value="1">
-                    <span data-lexical-text="true">Hello</span>
-                  </li>
                   <li
                     class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
-                    value="2">
+                    value="1">
                     <ul class="PlaygroundEditorTheme__ul">
                       <li class="PlaygroundEditorTheme__listItem" value="1">
-                        <span data-lexical-text="true">from</span>
+                        <span data-lexical-text="true">Hello</span>
                       </li>
                       <li
                         class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
                         value="2">
                         <ul class="PlaygroundEditorTheme__ul">
                           <li class="PlaygroundEditorTheme__listItem" value="1">
-                            <span data-lexical-text="true">the</span>
+                            <span data-lexical-text="true">from</span>
                           </li>
                           <li
                             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
@@ -814,7 +812,7 @@ test.describe('Identation', () => {
                               <li
                                 class="PlaygroundEditorTheme__listItem"
                                 value="1">
-                                <span data-lexical-text="true">other</span>
+                                <span data-lexical-text="true">the</span>
                               </li>
                               <li
                                 class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
@@ -823,11 +821,93 @@ test.describe('Identation', () => {
                                   <li
                                     class="PlaygroundEditorTheme__listItem"
                                     value="1">
-                                    <span data-lexical-text="true">side</span>
+                                    <span data-lexical-text="true">other</span>
                                   </li>
                                   <li
                                     class="PlaygroundEditorTheme__listItem"
                                     value="2">
+                                    <span data-lexical-text="true">side</span>
+                                  </li>
+                                  <li
+                                    class="PlaygroundEditorTheme__listItem"
+                                    value="3">
+                                    <br />
+                                  </li>
+                                </ul>
+                              </li>
+                            </ul>
+                          </li>
+                        </ul>
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      `,
+    );
+
+    await clickIndentButton(page, 3);
+
+    // all items have reached maximum nesting depth
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul" dir="auto">
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
+            value="1">
+            <ul class="PlaygroundEditorTheme__ul">
+              <li
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
+                value="1">
+                <ul class="PlaygroundEditorTheme__ul">
+                  <li
+                    class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
+                    value="1">
+                    <ul class="PlaygroundEditorTheme__ul">
+                      <li
+                        class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
+                        value="1">
+                        <ul class="PlaygroundEditorTheme__ul">
+                          <li
+                            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
+                            value="1">
+                            <ul class="PlaygroundEditorTheme__ul">
+                              <li
+                                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
+                                value="1">
+                                <ul class="PlaygroundEditorTheme__ul">
+                                  <li
+                                    class="PlaygroundEditorTheme__listItem"
+                                    value="1">
+                                    <span data-lexical-text="true">Hello</span>
+                                  </li>
+                                  <li
+                                    class="PlaygroundEditorTheme__listItem"
+                                    value="2">
+                                    <span data-lexical-text="true">from</span>
+                                  </li>
+                                  <li
+                                    class="PlaygroundEditorTheme__listItem"
+                                    value="3">
+                                    <span data-lexical-text="true">the</span>
+                                  </li>
+                                  <li
+                                    class="PlaygroundEditorTheme__listItem"
+                                    value="4">
+                                    <span data-lexical-text="true">other</span>
+                                  </li>
+                                  <li
+                                    class="PlaygroundEditorTheme__listItem"
+                                    value="5">
+                                    <span data-lexical-text="true">side</span>
+                                  </li>
+                                  <li
+                                    class="PlaygroundEditorTheme__listItem"
+                                    value="6">
                                     <br />
                                   </li>
                                 </ul>
@@ -861,44 +941,50 @@ test.describe('Identation', () => {
                 class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
                 value="1">
                 <ul class="PlaygroundEditorTheme__ul">
-                  <li class="PlaygroundEditorTheme__listItem" value="1">
-                    <span data-lexical-text="true">Hello</span>
-                  </li>
                   <li
                     class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
-                    value="2">
+                    value="1">
                     <ul class="PlaygroundEditorTheme__ul">
-                      <li class="PlaygroundEditorTheme__listItem" value="1">
-                        <span data-lexical-text="true">from</span>
-                      </li>
                       <li
                         class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
-                        value="2">
+                        value="1">
                         <ul class="PlaygroundEditorTheme__ul">
-                          <li class="PlaygroundEditorTheme__listItem" value="1">
-                            <span data-lexical-text="true">the</span>
-                          </li>
                           <li
                             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
-                            value="2">
+                            value="1">
                             <ul class="PlaygroundEditorTheme__ul">
                               <li
-                                class="PlaygroundEditorTheme__listItem"
-                                value="1">
-                                <span data-lexical-text="true">other</span>
-                              </li>
-                              <li
                                 class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
-                                value="2">
+                                value="1">
                                 <ul class="PlaygroundEditorTheme__ul">
                                   <li
                                     class="PlaygroundEditorTheme__listItem"
                                     value="1">
-                                    <span data-lexical-text="true">side</span>
+                                    <span data-lexical-text="true">Hello</span>
                                   </li>
                                   <li
                                     class="PlaygroundEditorTheme__listItem"
                                     value="2">
+                                    <span data-lexical-text="true">from</span>
+                                  </li>
+                                  <li
+                                    class="PlaygroundEditorTheme__listItem"
+                                    value="3">
+                                    <span data-lexical-text="true">the</span>
+                                  </li>
+                                  <li
+                                    class="PlaygroundEditorTheme__listItem"
+                                    value="4">
+                                    <span data-lexical-text="true">other</span>
+                                  </li>
+                                  <li
+                                    class="PlaygroundEditorTheme__listItem"
+                                    value="5">
+                                    <span data-lexical-text="true">side</span>
+                                  </li>
+                                  <li
+                                    class="PlaygroundEditorTheme__listItem"
+                                    value="6">
                                     <br />
                                   </li>
                                 </ul>

@@ -179,7 +179,7 @@ export class TableCellNode extends ElementNode {
       if (this.__rowSpan > 1) {
         element.rowSpan = this.__rowSpan;
       }
-      element.style.width = `${this.getWidth() || COLUMN_WIDTH}px`;
+      element.style.width = `${editor.getElementByKey(this.getKey())?.clientWidth || COLUMN_WIDTH}px`;
 
       element.style.verticalAlign = this.getVerticalAlign() || 'top';
       element.style.textAlign = 'start';

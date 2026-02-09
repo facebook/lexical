@@ -830,34 +830,19 @@ test.describe('Composition', () => {
         text: 'もじあ',
       });
 
-      if (browserName === 'webkit') {
-        await assertHTML(
-          page,
-          html`
-            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-              <span data-lexical-text="true">
-                Luke &nbsp;すし もじあSkywalker
-              </span>
-            </p>
-          `,
-        );
-      }
-      /* eslint-disable no-irregular-whitespace */
-      if (browserName === 'chromium') {
-        await assertHTML(
-          page,
-          html`
-            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-              <span data-lexical-text="true">Luke ​すし もじあSkywalker</span>
-            </p>
-          `,
-        );
-      }
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">Luke すし もじあSkywalker</span>
+          </p>
+        `,
+      );
 
       await assertSelection(page, {
-        anchorOffset: 12,
+        anchorOffset: 11,
         anchorPath: [0, 0, 0],
-        focusOffset: 12,
+        focusOffset: 11,
         focusPath: [0, 0, 0],
       });
     });

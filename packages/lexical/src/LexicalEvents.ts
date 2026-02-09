@@ -28,6 +28,7 @@ import {
   $getSelection,
   $isDecoratorNode,
   $isElementNode,
+  $isNodeSelection,
   $isRangeSelection,
   $isRootNode,
   $isTextNode,
@@ -47,6 +48,9 @@ import {
   DROP_COMMAND,
   FOCUS_COMMAND,
   FORMAT_TEXT_COMMAND,
+  HISTORIC_TAG,
+  HISTORY_MERGE_TAG,
+  HISTORY_PUSH_TAG,
   INSERT_LINE_BREAK_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
@@ -1005,7 +1009,16 @@ function $handleInput(event: InputEvent): boolean {
         anchorNode.getTextContent().slice(startOffset + endOffset) !==
         getAnchorTextFromDOM(domSelection.anchorNode)
     ) {
-      dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, data);
+      if (editor.isComposing()) {
+        editor.update(
+          () => {
+            dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, data);
+          },
+          {tag: HISTORY_PUSH_TAG},
+        );
+      } else {
+        dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, data);
+      }
     }
 
     const textLength = data.length;
@@ -1058,7 +1071,6 @@ function $handleCompositionStart(event: CompositionEvent): boolean {
   if ($isRangeSelection(selection) && !editor.isComposing()) {
     const anchor = selection.anchor;
     const node = selection.anchor.getNode();
-    $setCompositionKey(anchor.key);
 
     if (
       // If it has been 30ms since the last keydown, then we should
@@ -1076,11 +1088,21 @@ function $handleCompositionStart(event: CompositionEvent): boolean {
       // to get inserted into the new node we create. If
       // we don't do this, Safari will fail on us because
       // there is no text node matching the selection.
-      dispatchCommand(
-        editor,
-        CONTROLLED_TEXT_INSERTION_COMMAND,
-        COMPOSITION_START_CHAR,
+
+      // Use HISTORIC_TAG so this placeholder update is ignored by undo history.
+      editor.update(
+        () => {
+          $setCompositionKey(anchor.key);
+          dispatchCommand(
+            editor,
+            CONTROLLED_TEXT_INSERTION_COMMAND,
+            COMPOSITION_START_CHAR,
+          );
+        },
+        {tag: HISTORIC_TAG},
       );
+    } else {
+      $setCompositionKey(anchor.key);
     }
   }
 
@@ -1089,13 +1111,17 @@ function $handleCompositionStart(event: CompositionEvent): boolean {
 
 function $handleCompositionEnd(event: CompositionEvent): boolean {
   const editor = getActiveEditor();
-  $onCompositionEndImpl(editor, event.data);
+  editor.update(
+    () => {
+      $onCompositionEndImpl(editor, event.data);
+    },
+    {tag: HISTORY_MERGE_TAG},
+  );
   return true;
 }
 
 function $onCompositionEndImpl(editor: LexicalEditor, data?: string): void {
   const compositionKey = editor._compositionKey;
-  $setCompositionKey(null);
 
   // Handle termination of composition.
   if (compositionKey !== null && data != null) {
@@ -1103,42 +1129,52 @@ function $onCompositionEndImpl(editor: LexicalEditor, data?: string): void {
     // So check for the empty case.
     if (data === '') {
       const node = $getNodeByKey(compositionKey);
-      const textNode = getDOMTextNode(editor.getElementByKey(compositionKey));
+      const domElement = editor.getElementByKey(compositionKey);
+      const textNode = getDOMTextNode(domElement);
 
       if (
         textNode !== null &&
         textNode.nodeValue !== null &&
         $isTextNode(node)
       ) {
+        const domSelection = getDOMSelection(getWindow(editor));
+        let anchorOffset = null;
+        let focusOffset = null;
+
+        if (domSelection !== null && domSelection.anchorNode === textNode) {
+          anchorOffset = domSelection.anchorOffset;
+          focusOffset = domSelection.focusOffset;
+        }
+
         $updateTextNodeFromDOMContent(
           node,
           textNode.nodeValue,
-          null,
-          null,
+          anchorOffset,
+          focusOffset,
           true,
         );
       }
-
+      $setCompositionKey(null);
       return;
-    }
-
-    // Composition can sometimes be that of a new line. In which case, we need to
-    // handle that accordingly.
-    if (data[data.length - 1] === '\n') {
+    } else if (data[data.length - 1] === '\n') {
       const selection = $getSelection();
 
-      if ($isRangeSelection(selection)) {
+      if ($isRangeSelection(selection) || $isNodeSelection(selection)) {
         // If the last character is a line break, we also need to insert
         // a line break.
-        const focus = selection.focus;
-        selection.anchor.set(focus.key, focus.offset, focus.type);
+        if ($isRangeSelection(selection)) {
+          const focus = selection.focus;
+          selection.anchor.set(focus.key, focus.offset, focus.type);
+        }
         dispatchCommand(editor, KEY_ENTER_COMMAND, null);
+        $setCompositionKey(null);
         return;
       }
     }
   }
 
   $updateSelectedTextFromDOM(true, editor, data);
+  $setCompositionKey(null);
 }
 
 function onCompositionEnd(

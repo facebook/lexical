@@ -51,6 +51,7 @@ import {
   UpdateTag,
 } from '.';
 import {
+  COMPOSITION_START_CHAR,
   COMPOSITION_SUFFIX,
   DOM_DOCUMENT_FRAGMENT_TYPE,
   DOM_DOCUMENT_TYPE,
@@ -732,7 +733,11 @@ export function $updateSelectedTextFromDOM(
     const node = $getNearestNodeFromDOMNode(anchorNode);
     if (textContent !== null && $isTextNode(node)) {
       // Data is intentionally truthy, as we check for boolean, null and empty string.
-      if (textContent === COMPOSITION_SUFFIX && data) {
+      if (
+        (textContent === COMPOSITION_SUFFIX ||
+          textContent === COMPOSITION_START_CHAR) &&
+        data
+      ) {
         const offset = data.length;
         textContent = data;
         anchorOffset = offset;
@@ -767,23 +772,27 @@ export function $updateTextNodeFromDOMContent(
 
     if (isComposing || compositionEnd) {
       if (normalizedTextContent.endsWith(COMPOSITION_SUFFIX)) {
-        normalizedTextContent = normalizedTextContent.slice(0, -1);
+        normalizedTextContent = normalizedTextContent.slice(
+          0,
+          -COMPOSITION_SUFFIX.length,
+        );
       }
       if (compositionEnd) {
-        let index;
-        while (
-          (index = normalizedTextContent.indexOf(COMPOSITION_SUFFIX)) !== -1
-        ) {
-          normalizedTextContent =
-            normalizedTextContent.slice(0, index) +
-            normalizedTextContent.slice(index + 1);
+        const charsToStrip = [COMPOSITION_START_CHAR, COMPOSITION_SUFFIX];
+        for (const char of charsToStrip) {
+          let index;
+          while ((index = normalizedTextContent.indexOf(char)) !== -1) {
+            normalizedTextContent =
+              normalizedTextContent.slice(0, index) +
+              normalizedTextContent.slice(index + char.length);
 
-          if (anchorOffset !== null && anchorOffset > index) {
-            anchorOffset--;
-          }
+            if (anchorOffset !== null && anchorOffset > index) {
+              anchorOffset = Math.max(index, anchorOffset - char.length);
+            }
 
-          if (focusOffset !== null && focusOffset > index) {
-            focusOffset--;
+            if (focusOffset !== null && focusOffset > index) {
+              focusOffset = Math.max(index, focusOffset - char.length);
+            }
           }
         }
       }

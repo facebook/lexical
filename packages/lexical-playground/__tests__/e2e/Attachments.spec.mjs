@@ -31,6 +31,12 @@ const SAMPLE_ATTACHMENT_PATH =
 async function insertAttachment(page, filePath) {
   await selectFromInsertDropdown(page, '.attachment');
 
+  // Wait for the modal to fully mount before interacting
+  await waitForSelector(
+    page,
+    'input[data-test-id="attachment-modal-file-upload"]',
+  );
+
   const frame = getPageOrFrame(page);
   await frame.setInputFiles(
     'input[data-test-id="attachment-modal-file-upload"]',

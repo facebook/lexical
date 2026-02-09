@@ -35,6 +35,7 @@ import {
   COMMAND_PRIORITY_LOW,
   createCommand,
   DRAGSTART_COMMAND,
+  KEY_BACKSPACE_COMMAND,
   KEY_DELETE_COMMAND,
   KEY_ENTER_COMMAND,
   KEY_ESCAPE_COMMAND,
@@ -225,16 +226,16 @@ export default function AttachmentComponent({
           setSelected(true);
         }
 
-        // Toggle floating toolbar on click
+        // Show floating toolbar when selecting
         if (isEditable) {
-          setShowFloatingToolbar(!showFloatingToolbar);
+          setShowFloatingToolbar(true);
         }
         return true;
       }
 
       return false;
     },
-    [isSelected, setSelected, clearSelection, isEditable, showFloatingToolbar],
+    [isSelected, setSelected, clearSelection, isEditable],
   );
 
   const handleDelete = useCallback(() => {
@@ -288,6 +289,11 @@ export default function AttachmentComponent({
       editor.registerCommand(
         KEY_ESCAPE_COMMAND,
         $onEscape,
+        COMMAND_PRIORITY_LOW,
+      ),
+      editor.registerCommand(
+        KEY_BACKSPACE_COMMAND,
+        $onDelete,
         COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand(
@@ -378,7 +384,7 @@ export default function AttachmentComponent({
       </div>
 
       {/* Floating Toolbar */}
-      {isSelected && (
+      {isSelected && showFloatingToolbar && (
         <FloatingPortal>
           <div
             ref={refs.setFloating}

@@ -359,8 +359,14 @@ export default function AttachmentPlugin(): JSX.Element | null {
 
 const TRANSPARENT_IMAGE =
   'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-const img = document.createElement('img');
-img.src = TRANSPARENT_IMAGE;
+let img: HTMLImageElement;
+function getDragImage(): HTMLImageElement {
+  if (!img) {
+    img = document.createElement('img');
+    img.src = TRANSPARENT_IMAGE;
+  }
+  return img;
+}
 
 function $onDragStart(event: DragEvent): boolean {
   const node = $getAttachmentNodeInSelection();
@@ -372,7 +378,7 @@ function $onDragStart(event: DragEvent): boolean {
     return false;
   }
   dataTransfer.setData('text/plain', '_');
-  dataTransfer.setDragImage(img, 0, 0);
+  dataTransfer.setDragImage(getDragImage(), 0, 0);
   dataTransfer.setData(
     'application/x-lexical-drag',
     JSON.stringify({

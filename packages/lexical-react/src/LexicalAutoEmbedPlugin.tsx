@@ -84,10 +84,6 @@ type LexicalAutoEmbedPluginProps<TEmbedConfig extends EmbedConfig> = {
     embedFn: () => void,
     dismissFn: () => void,
   ) => Array<AutoEmbedOption>;
-  /**
-   * @deprecated Use NodeContextMenuPlugin instead. Here is an example for using NodeContextMenuPlugin:
-   * https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/plugins/ContextMenuPlugin/index.tsx
-   */
   menuRenderFn: MenuRenderFn<AutoEmbedOption>;
   menuCommandPriority?: CommandListenerPriority;
 };

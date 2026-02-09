@@ -8,6 +8,7 @@
 
 import type {JSX} from 'react';
 
+import {$isCodeNode} from '@lexical/code';
 import {
   AutoLinkPlugin,
   createLinkMatcherWithRegExp,
@@ -30,5 +31,5 @@ const MATCHERS = [
 ];
 
 export default function LexicalAutoLinkPlugin(): JSX.Element {
-  return <AutoLinkPlugin matchers={MATCHERS} />;
+  return <AutoLinkPlugin matchers={MATCHERS} excludeParents={[$isCodeNode]} />;
 }

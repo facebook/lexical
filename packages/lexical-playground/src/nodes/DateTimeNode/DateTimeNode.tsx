@@ -9,6 +9,8 @@
 import type {JSX} from 'react';
 
 import {
+  applyFormatFromStyle,
+  applyFormatToDom,
   DecoratorTextNode,
   SerializedDecoratorTextNode,
 } from '@lexical/react/LexicalDecoratorTextNode';
@@ -28,6 +30,14 @@ import {
 import * as React from 'react';
 
 const DateTimeComponent = React.lazy(() => import('./DateTimeComponent'));
+
+const tagToFormat = {
+  b: 'bold',
+  i: 'italic',
+  mark: 'highlight',
+  s: 'strikethrough',
+  u: 'underline',
+} as const;
 
 const getDateTimeText = (dateTime: Date) => {
   if (dateTime === undefined) {
@@ -51,41 +61,6 @@ export type SerializedDateTimeNode = Spread<
   },
   SerializedDecoratorTextNode
 >;
-
-function wrapElementWith(
-  element: HTMLElement | Text,
-  tag: string,
-): HTMLElement {
-  const el = document.createElement(tag);
-  el.appendChild(element);
-  return el;
-}
-
-function applyFormatFromStyle(
-  lexicalNode: DateTimeNode,
-  style: CSSStyleDeclaration,
-) {
-  const fontWeight = style.fontWeight;
-  const textDecoration = style.textDecoration.split(' ');
-  // Google Docs uses span tags + font-weight for bold text
-  const hasBoldFontWeight = fontWeight === '700' || fontWeight === 'bold';
-  // Google Docs uses span tags + text-decoration: line-through for strikethrough text
-  const hasLinethroughTextDecoration = textDecoration.includes('line-through');
-  // Google Docs uses span tags + font-style for italic text
-  const hasItalicFontStyle = style.fontStyle === 'italic';
-
-  if (hasBoldFontWeight && !lexicalNode.hasFormat('bold')) {
-    lexicalNode.toggleFormat('bold');
-  }
-  if (hasLinethroughTextDecoration && !lexicalNode.hasFormat('strikethrough')) {
-    lexicalNode.toggleFormat('strikethrough');
-  }
-  if (hasItalicFontStyle && !lexicalNode.hasFormat('italic')) {
-    lexicalNode.toggleFormat('italic');
-  }
-
-  return lexicalNode;
-}
 
 function $convertDateTimeElement(
   domNode: HTMLElement,
@@ -169,21 +144,7 @@ export class DateTimeNode extends DecoratorTextNode {
       this.getDateTime()?.toString() || '',
     );
 
-    if (this.hasFormat('highlight')) {
-      textDom = wrapElementWith(textDom, 'mark');
-    }
-    if (this.hasFormat('bold')) {
-      textDom = wrapElementWith(textDom, 'b');
-    }
-    if (this.hasFormat('italic')) {
-      textDom = wrapElementWith(textDom, 'i');
-    }
-    if (this.hasFormat('strikethrough')) {
-      textDom = wrapElementWith(textDom, 's');
-    }
-    if (this.hasFormat('underline')) {
-      textDom = wrapElementWith(textDom, 'u');
-    }
+    textDom = applyFormatToDom(this, textDom, tagToFormat);
     element.appendChild(textDom);
 
     return {element};

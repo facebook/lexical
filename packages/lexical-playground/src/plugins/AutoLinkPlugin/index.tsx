@@ -30,6 +30,10 @@ const MATCHERS = [
   }),
 ];
 
+const EXCLUDE_PARENTS = [$isCodeNode];
+
 export default function LexicalAutoLinkPlugin(): JSX.Element {
-  return <AutoLinkPlugin matchers={MATCHERS} excludeParents={[$isCodeNode]} />;
+  return (
+    <AutoLinkPlugin matchers={MATCHERS} excludeParents={EXCLUDE_PARENTS} />
+  );
 }

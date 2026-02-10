@@ -14,12 +14,6 @@ importers:
 
   .:
     dependencies:
-      '@atlaskit/drag-and-drop-indicator':
-        specifier: ^0.11.1
-        version: 0.11.1(@types/react@19.1.13)(react@19.1.1)
-      '@atlaskit/pragmatic-drag-and-drop':
-        specifier: ^1.7.7
-        version: 1.7.7
       semver:
         specifier: ^7.7.2
         version: 7.7.2
@@ -642,6 +636,12 @@ importers:
 
   packages/lexical-playground:
     dependencies:
+      '@atlaskit/drag-and-drop-indicator':
+        specifier: ^0.11.1
+        version: 0.11.1(@types/react@19.1.13)(react@19.1.1)
+      '@atlaskit/pragmatic-drag-and-drop':
+        specifier: ^1.7.7
+        version: 1.7.7
       '@excalidraw/excalidraw':
         specifier: ^0.18.0
         version: 0.18.0(@types/react-dom@19.1.9(@types/react@19.1.13))(@types/react@19.1.13)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
@@ -13412,8 +13412,8 @@ snapshots:
       '@atlaskit/ds-lib': 2.7.0(@types/react@19.1.13)(react@19.1.1)
       '@atlaskit/platform-feature-flags': 0.3.0
       '@babel/runtime': 7.28.2
-      '@babel/traverse': 7.28.5
-      '@babel/types': 7.28.5
+      '@babel/traverse': 7.28.6
+      '@babel/types': 7.28.6
       bind-event-listener: 3.0.0
       react: 19.1.1
     transitivePeerDependencies:

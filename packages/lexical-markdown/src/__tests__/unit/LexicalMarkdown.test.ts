@@ -630,6 +630,11 @@ describe('Markdown', () => {
       md: '[link](https://lexical.dev)[link2](https://lexical.dev)',
     },
     {
+      // Test that importRegExp is not too greedy when there are multiple link patterns
+      html: '<p><a href="https://a.example.com"><span style="white-space: pre-wrap;">a</span></a><span style="white-space: pre-wrap;"> </span><a href="https://b.example.com"><span style="white-space: pre-wrap;">b</span></a></p>',
+      md: '[a](https://a.example.com) [b](https://b.example.com)',
+    },
+    {
       // Import only: <mark>...</mark> is exported as ==...== in markdown.
       // Use HIGHLIGHT_TEXT_MATCH_IMPORT as custom transformer even though it is included later to ensure it runs before LINK.
       customTransformers: [HIGHLIGHT_TEXT_MATCH_IMPORT],

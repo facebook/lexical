@@ -422,24 +422,17 @@ export class AutoLinkNode extends LinkNode {
   }
 
   insertNewAfter(
-    selection: RangeSelection,
+    _: RangeSelection,
     restoreSelection = true,
   ): null | ElementNode {
-    const element = this.getParentOrThrow().insertNewAfter(
-      selection,
-      restoreSelection,
-    );
-    if ($isElementNode(element)) {
-      const linkNode = $createAutoLinkNode(this.__url, {
-        isUnlinked: this.__isUnlinked,
-        rel: this.__rel,
-        target: this.__target,
-        title: this.__title,
-      });
-      element.append(linkNode);
-      return linkNode;
-    }
-    return null;
+    const linkNode = $createAutoLinkNode(this.__url, {
+      isUnlinked: this.__isUnlinked,
+      rel: this.__rel,
+      target: this.__target,
+      title: this.__title,
+    });
+    this.insertAfter(linkNode, restoreSelection);
+    return linkNode;
   }
 }
 

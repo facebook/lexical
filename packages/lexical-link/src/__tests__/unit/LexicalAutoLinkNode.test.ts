@@ -14,6 +14,8 @@ import {
   SerializedAutoLinkNode,
 } from '@lexical/link';
 import {
+  $createParagraphNode,
+  $createRangeSelection,
   $getRoot,
   $selectAll,
   ParagraphNode,
@@ -500,6 +502,29 @@ describe('LexicalAutoAutoLinkNode tests', () => {
         .children[0] as SerializedParagraphNode;
       const link = paragraph.children[0] as SerializedAutoLinkNode;
       expect(link.title).toBe('Lexical Website');
+    });
+
+    test('AutoLinkNode.insertNewAfter does not create new paragraph', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const root = $getRoot();
+        root.clear();
+        const paragraph = $createParagraphNode();
+        const autoLink = $createAutoLinkNode('https://example.com');
+        const textNode = new TextNode('https://example.com');
+        autoLink.append(textNode);
+        paragraph.append(autoLink);
+        root.append(paragraph);
+
+        const selection = $createRangeSelection();
+        const newNode = autoLink.insertNewAfter(selection, false);
+        // Should create a sibling AutoLinkNode in the same paragraph
+        expect($isAutoLinkNode(newNode)).toBe(true);
+        // The original paragraph should now contain two AutoLinkNodes
+        expect(paragraph.getChildrenSize()).toBe(2);
+        // No new paragraph should be created
+        expect(root.getChildrenSize()).toBe(1);
+      });
     });
   });
 });

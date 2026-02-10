@@ -509,10 +509,12 @@ function getTextNodesToMatch(textNode: TextNode): TextNode[] {
 export interface AutoLinkConfig {
   matchers: LinkMatcher[];
   changeHandlers: ChangeHandler[];
+  excludeParents: Array<(parent: ElementNode) => boolean>;
 }
 
 const defaultConfig: AutoLinkConfig = {
   changeHandlers: [],
+  excludeParents: [],
   matchers: [],
 };
 
@@ -520,7 +522,7 @@ export function registerAutoLink(
   editor: LexicalEditor,
   config: AutoLinkConfig = defaultConfig,
 ): () => void {
-  const {matchers, changeHandlers} = config;
+  const {matchers, changeHandlers, excludeParents} = config;
   const onChange: ChangeHandler = (url, prevUrl) => {
     for (const handler of changeHandlers) {
       handler(url, prevUrl);
@@ -532,7 +534,10 @@ export function registerAutoLink(
       const previous = textNode.getPreviousSibling();
       if ($isAutoLinkNode(parent) && !parent.getIsUnlinked()) {
         handleLinkEdit(parent, matchers, onChange);
-      } else if (!$isLinkNode(parent)) {
+      } else if (
+        !$isLinkNode(parent) &&
+        !excludeParents.some((pred) => pred(parent))
+      ) {
         if (
           textNode.isSimpleText() &&
           (startsWithSeparator(textNode.getTextContent()) ||
@@ -585,7 +590,7 @@ export const AutoLinkExtension = defineExtension({
   dependencies: [LinkExtension],
   mergeConfig(config, overrides) {
     const merged = shallowMergeConfig(config, overrides);
-    for (const k of ['matchers', 'changeHandlers'] as const) {
+    for (const k of ['matchers', 'changeHandlers', 'excludeParents'] as const) {
       const v = overrides[k];
       if (Array.isArray(v)) {
         (merged[k] as unknown[]) = [...config[k], ...v];

@@ -347,14 +347,10 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
     // remove empty parent node even if parent node is canBeEmpty
     let parent = focusBlock.getParent();
     focusBlock.remove(true);
-    while (parent) {
-      if (parent.isEmpty()) {
-        const element = parent;
-        parent = parent.getParent();
-        element.remove(true);
-      } else {
-        break;
-      }
+    while (parent && parent.isEmpty()) {
+      const element = parent;
+      parent = parent.getParent();
+      element.remove(true);
     }
   }
 

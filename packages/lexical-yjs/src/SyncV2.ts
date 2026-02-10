@@ -382,12 +382,14 @@ const $createTypeFromTextOrElementNode = (
     ? $createTypeFromTextNodes(node, meta)
     : createTypeFromElementNode(node, meta);
 
-const isObject = (val: unknown): val is Record<string, unknown> =>
+const isObject = (
+  val: unknown,
+): val is Record<string | number | symbol, unknown> =>
   typeof val === 'object' && val != null;
 
 const equalAttrs = (
-  pattrs: Record<string, unknown>,
-  yattrs: Record<string, unknown> | null,
+  pattrs: Record<string | number | symbol, unknown>,
+  yattrs: Record<string | number | symbol, unknown> | null,
 ) => {
   const keys = Object.keys(pattrs).filter((key) => pattrs[key] !== null);
   if (yattrs == null) {
@@ -705,7 +707,13 @@ export const $updateYFragment = (
     };
     for (const key in lexicalAttrs) {
       if (lexicalAttrs[key] != null) {
-        if (yDomAttrs[key] !== lexicalAttrs[key] && key !== 'ychange') {
+        const isEqual =
+          yDomAttrs[key] === lexicalAttrs[key] ||
+          // deep equality check so we don't sync properties/state with object values every update
+          (isObject(yDomAttrs[key]) &&
+            isObject(lexicalAttrs[key]) &&
+            equalAttrs(yDomAttrs[key], lexicalAttrs[key]));
+        if (!isEqual && key !== 'ychange') {
           // TODO(collab-v2): typing for XmlElement generic
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           yDomFragment.setAttribute(key, lexicalAttrs[key] as any);

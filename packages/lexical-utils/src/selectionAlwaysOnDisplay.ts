@@ -12,6 +12,7 @@ import markSelection from './markSelection';
 
 export default function selectionAlwaysOnDisplay(
   editor: LexicalEditor,
+  onReposition?: (node: Array<HTMLElement>) => void,
 ): () => void {
   let removeSelectionMark: (() => void) | null = null;
 
@@ -32,7 +33,7 @@ export default function selectionAlwaysOnDisplay(
       }
     } else {
       if (removeSelectionMark === null) {
-        removeSelectionMark = markSelection(editor);
+        removeSelectionMark = markSelection(editor, onReposition);
       }
     }
   };

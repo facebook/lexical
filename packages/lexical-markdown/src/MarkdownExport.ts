@@ -293,47 +293,11 @@ function exportTextFormat(
   return closingTagsBefore + output;
 }
 
-// Get next or previous text sibling a text node, including cases
-// when it's a child of inline element (e.g. link)
 function getTextSibling(node: TextNode, backward: boolean): TextNode | null {
-  let sibling = backward ? node.getPreviousSibling() : node.getNextSibling();
+  const sibling = backward ? node.getPreviousSibling() : node.getNextSibling();
 
-  if (!sibling) {
-    const parent = node.getParentOrThrow();
-
-    if (parent.isInline()) {
-      sibling = backward
-        ? parent.getPreviousSibling()
-        : parent.getNextSibling();
-    }
-  }
-
-  while (sibling) {
-    if ($isElementNode(sibling)) {
-      if (!sibling.isInline()) {
-        break;
-      }
-
-      const descendant = backward
-        ? sibling.getLastDescendant()
-        : sibling.getFirstDescendant();
-
-      if ($isTextNode(descendant)) {
-        return descendant;
-      } else {
-        sibling = backward
-          ? sibling.getPreviousSibling()
-          : sibling.getNextSibling();
-      }
-    }
-
-    if ($isTextNode(sibling)) {
-      return sibling;
-    }
-
-    if (!$isElementNode(sibling)) {
-      return null;
-    }
+  if ($isTextNode(sibling)) {
+    return sibling;
   }
 
   return null;

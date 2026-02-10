@@ -99,7 +99,7 @@ export class Client implements Provider {
     getStates: () => Map<number, UserState>;
     off(): void;
     on(): void;
-    setLocalState: (state: UserState) => void;
+    setLocalState: (state: UserState | null) => void;
     setLocalStateField: (field: string, value: unknown) => void;
   };
 
@@ -121,7 +121,7 @@ export class Client implements Provider {
         // TODO
       },
 
-      setLocalState: (state) => {
+      setLocalState: (state: UserState | null) => {
         this._awarenessState = state;
       },
       setLocalStateField: (field: string, value: unknown) => {
@@ -288,7 +288,7 @@ export class Client implements Provider {
   }
 }
 
-class TestConnection {
+export class TestConnection {
   _clients = new Map<string, Client>();
 
   constructor(readonly _useCollabV2: boolean) {}

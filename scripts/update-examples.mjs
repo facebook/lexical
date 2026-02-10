@@ -29,7 +29,7 @@ async function main() {
   )) {
     const pkg = new PackageMetadata(fn);
     console.log(`\nUpdating example ${path.dirname(fn)}\n`);
-    // assume that npm run update-packages has already updated the version and lexical deps
+    // assume that pnpm run update-packages has already updated the version and lexical deps
     const json = pkg.packageJson;
     const {lexicalUnreleasedDependencies = {}} = json;
     let hasUnreleasedDependency = false;
@@ -48,11 +48,12 @@ async function main() {
         lexicalUnreleasedDependencies,
       )
       .writeSync();
-    const npm = async (...args) => {
-      console.log(['>', 'npm', ...args].join(' '));
+    const pnpm = async (...args) => {
+      console.log(['>', 'pnpm', ...args].join(' '));
       try {
-        await spawn('npm', args, {
+        await spawn('pnpm', args, {
           cwd: pkg.resolve(),
+          env: {...process.env, PNPM_SCRIPT_SRC_DIR: pkg.resolve()},
           stdio: 'inherit',
         });
       } catch (err) {
@@ -62,7 +63,7 @@ async function main() {
         );
       }
     };
-    await npm('i');
+    await pnpm('--ignore-workspace', 'i');
     if (hasUnreleasedDependency) {
       console.log(
         'Unreleased lexical dependencies required, removing local versions',
@@ -74,7 +75,7 @@ async function main() {
         fs.rmSync(dir, {force: true, recursive: true});
       }
     }
-    await npm(
+    await pnpm(
       'run',
       'build',
       ...(hasUnreleasedDependency

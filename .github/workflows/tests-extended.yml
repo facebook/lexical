@@ -7,6 +7,8 @@ on:
       - 'packages/lexical-website/**'
       - 'packages/*/README.md'
 
+permissions: {}
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true

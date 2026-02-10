@@ -8,6 +8,7 @@
 
 import type {JSX} from 'react';
 
+import {Signal, signal} from '@lexical/extension';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $isScrollableTablesActive,
@@ -18,7 +19,7 @@ import {
   TableCellNode,
   TableNode,
 } from '@lexical/table';
-import {useEffect} from 'react';
+import {useEffect, useState} from 'react';
 
 export interface TablePluginProps {
   /**
@@ -38,6 +39,18 @@ export interface TablePluginProps {
    * When `true` (default `false`), tables will be wrapped in a `<div>` to enable horizontal scrolling
    */
   hasHorizontalScroll?: boolean;
+  /**
+   * When `true` (default `false`), nested tables will be allowed.
+   *
+   * @experimental Nested tables are not officially supported.
+   */
+  hasNestedTables?: boolean;
+  /**
+   * When `true` (default `false`), nested tables will be resized to fit the width of the parent table cell.
+   *
+   * @experimental Nested tables are not officially supported.
+   */
+  hasFitNestedTables?: boolean;
 }
 
 /**
@@ -51,6 +64,8 @@ export function TablePlugin({
   hasCellBackgroundColor = true,
   hasTabHandler = true,
   hasHorizontalScroll = false,
+  hasNestedTables = false,
+  hasFitNestedTables = false,
 }: TablePluginProps): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
 
@@ -64,7 +79,17 @@ export function TablePlugin({
     }
   }, [editor, hasHorizontalScroll]);
 
-  useEffect(() => registerTablePlugin(editor), [editor]);
+  const hasNestedTablesSignal = usePropSignal(hasNestedTables);
+  const hasFitNestedTablesSignal = usePropSignal(hasFitNestedTables);
+
+  useEffect(
+    () =>
+      registerTablePlugin(editor, {
+        hasFitNestedTables: hasFitNestedTablesSignal,
+        hasNestedTables: hasNestedTablesSignal,
+      }),
+    [editor, hasNestedTablesSignal, hasFitNestedTablesSignal],
+  );
 
   useEffect(
     () => registerTableSelectionObserver(editor, hasTabHandler),
@@ -91,4 +116,12 @@ export function TablePlugin({
   }, [editor, hasCellBackgroundColor, hasCellMerge]);
 
   return null;
+}
+
+function usePropSignal<T>(value: T): Signal<T> {
+  const [configSignal] = useState(() => signal(value));
+  if (configSignal.peek() !== value) {
+    configSignal.value = value;
+  }
+  return configSignal;
 }

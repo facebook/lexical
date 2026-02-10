@@ -6,7 +6,6 @@
  *
  */
 
-import {mergeRegister} from '@lexical/utils';
 import {
   type AnyLexicalExtension,
   type AnyLexicalExtensionArgument,
@@ -21,6 +20,7 @@ import {
   type LexicalEditorWithDispose,
   type LexicalExtensionConfig,
   type LexicalNode,
+  mergeRegister,
 } from 'lexical';
 import invariant from 'shared/invariant';
 

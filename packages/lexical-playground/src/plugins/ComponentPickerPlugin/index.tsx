@@ -49,7 +49,7 @@ import {INSERT_PAGE_BREAK} from '../PageBreakPlugin';
 import {InsertPollDialog} from '../PollPlugin';
 import {InsertTableDialog} from '../TablePlugin';
 
-class ComponentPickerOption extends MenuOption {
+export class ComponentPickerOption extends MenuOption {
   // What shows up in the editor
   title: string;
   // Icon for display
@@ -79,7 +79,7 @@ class ComponentPickerOption extends MenuOption {
   }
 }
 
-function ComponentPickerMenuItem({
+export function ComponentPickerMenuItem({
   index,
   isSelected,
   onClick,
@@ -113,7 +113,7 @@ function ComponentPickerMenuItem({
   );
 }
 
-function getDynamicOptions(editor: LexicalEditor, queryString: string) {
+export function getDynamicOptions(editor: LexicalEditor, queryString: string) {
   const options: Array<ComponentPickerOption> = [];
 
   if (queryString == null) {
@@ -144,9 +144,9 @@ function getDynamicOptions(editor: LexicalEditor, queryString: string) {
   return options;
 }
 
-type ShowModal = ReturnType<typeof useModal>[1];
+export type ShowModal = ReturnType<typeof useModal>[1];
 
-function getBaseOptions(editor: LexicalEditor, showModal: ShowModal) {
+export function getBaseOptions(editor: LexicalEditor, showModal: ShowModal) {
   return [
     new ComponentPickerOption('Paragraph', {
       icon: <i className="icon paragraph" />,

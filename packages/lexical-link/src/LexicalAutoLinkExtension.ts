@@ -284,6 +284,14 @@ function $handleLinkCreation(
   matchers: Array<LinkMatcher>,
   onChange: ChangeHandler,
 ): void {
+  // Early return if any node is already part of an AutoLinkNode (idempotency check)
+  for (const node of nodes) {
+    const parent = node.getParent();
+    if ($isAutoLinkNode(parent) && !parent.getIsUnlinked()) {
+      return;
+    }
+  }
+
   let currentNodes = [...nodes];
   const initialText = currentNodes
     .map((node) => node.getTextContent())
@@ -310,6 +318,21 @@ function $handleLinkCreation(
           invalidMatchEnd + matchStart,
           invalidMatchEnd + matchEnd,
         );
+
+      // Skip if matching nodes are already part of an AutoLinkNode
+      let alreadyLinked = false;
+      for (const node of matchingNodes) {
+        const parent = node.getParent();
+        if ($isAutoLinkNode(parent) && !parent.getIsUnlinked()) {
+          alreadyLinked = true;
+          break;
+        }
+      }
+      if (alreadyLinked) {
+        invalidMatchEnd += matchEnd;
+        text = text.substring(matchEnd);
+        continue;
+      }
 
       const actualMatchStart = invalidMatchEnd + matchStart - matchingOffset;
       const actualMatchEnd = invalidMatchEnd + matchEnd - matchingOffset;
@@ -393,29 +416,63 @@ function handleBadNeighbors(
   matchers: Array<LinkMatcher>,
   onChange: ChangeHandler,
 ): void {
+  const parent = textNode.getParent();
   const previousSibling = textNode.getPreviousSibling();
   const nextSibling = textNode.getNextSibling();
   const text = textNode.getTextContent();
 
-  if (
-    $isAutoLinkNode(previousSibling) &&
-    !previousSibling.getIsUnlinked() &&
-    (!startsWithSeparator(text) ||
-      startsWithTLD(text, previousSibling.isEmailURI()))
-  ) {
-    previousSibling.append(textNode);
-    handleLinkEdit(previousSibling, matchers, onChange);
-    onChange(null, previousSibling.getURL());
+  // Skip if textNode is already part of an AutoLinkNode (idempotency check)
+  // The handleLinkEdit on the parent will handle unwrapping if needed
+  if ($isAutoLinkNode(parent) && !parent.getIsUnlinked()) {
+    return;
   }
 
+  // Handle case: textNode added AFTER a link, making link invalid
+  // Check if previousSibling is a link and adding this textNode makes it invalid
+  if ($isAutoLinkNode(previousSibling) && !previousSibling.getIsUnlinked()) {
+    // Check if the textNode is still a sibling (hasn't been moved) to prevent loops
+    if (
+      previousSibling.is(textNode.getPreviousSibling()) &&
+      textNode.getParent() === previousSibling.getParent()
+    ) {
+      // If text doesn't start with separator, link should be unwrapped
+      // because non-separator after link makes the boundary invalid
+      if (!startsWithSeparator(text)) {
+        // Non-separator after link - unwrap the link
+        replaceWithChildren(previousSibling);
+        onChange(null, previousSibling.getURL());
+        return; // Early return after unwrapping to avoid further processing
+      }
+
+      // If text starts with separator, check if it's valid TLD continuation
+      if (startsWithTLD(text, previousSibling.isEmailURI())) {
+        // Valid TLD continuation - try to append
+        const combinedText = previousSibling.getTextContent() + text;
+        const match = findFirstMatch(combinedText, matchers);
+        if (match !== null && match.text === combinedText) {
+          previousSibling.append(textNode);
+          handleLinkEdit(previousSibling, matchers, onChange);
+          onChange(null, previousSibling.getURL());
+        }
+      }
+      // If starts with separator but not valid TLD, do nothing (link stays valid)
+    }
+  }
+
+  // Handle case: textNode added BEFORE a link, making link invalid
   if (
     $isAutoLinkNode(nextSibling) &&
     !nextSibling.getIsUnlinked() &&
     !endsWithSeparator(text)
   ) {
-    replaceWithChildren(nextSibling);
-    handleLinkEdit(nextSibling, matchers, onChange);
-    onChange(null, nextSibling.getURL());
+    // Check if the nextSibling is still a sibling (hasn't been moved) to prevent loops
+    if (
+      nextSibling.is(textNode.getNextSibling()) &&
+      textNode.getParent() === nextSibling.getParent()
+    ) {
+      replaceWithChildren(nextSibling);
+      onChange(null, nextSibling.getURL());
+    }
   }
 }
 

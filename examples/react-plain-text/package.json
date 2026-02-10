@@ -1,7 +1,7 @@
 {
   "name": "@lexical/react-plain-text-example",
   "private": true,
-  "version": "0.38.2",
+  "version": "0.40.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,8 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@lexical/react": "0.38.2",
-    "lexical": "0.38.2",
+    "@lexical/react": "0.40.0",
+    "lexical": "0.40.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },
@@ -22,5 +22,11 @@
     "cross-env": "^7.0.3",
     "typescript": "^5.9.2",
     "vite": "^7.1.4"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "4.52.0",
+    "@rollup/rollup-darwin-arm64": "4.52.0",
+    "@rollup/rollup-win32-x64-msvc": "4.52.0",
+    "@rollup/wasm-node": "4.52.0"
   }
 }

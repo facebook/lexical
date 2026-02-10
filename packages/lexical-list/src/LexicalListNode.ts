@@ -25,10 +25,10 @@ import {
   LexicalNode,
   LexicalUpdateJSON,
   NodeKey,
+  normalizeClassNames,
   SerializedElementNode,
   Spread,
 } from 'lexical';
-import normalizeClassNames from 'shared/normalizeClassNames';
 
 import {$createListItemNode, $isListItemNode, ListItemNode} from '.';
 import {
@@ -145,6 +145,10 @@ export class ListNode extends ElementNode {
     }
 
     $setListThemeClassNames(dom, config.theme, this);
+
+    if (prevNode.__start !== this.__start) {
+      dom.setAttribute('start', String(this.__start));
+    }
 
     return false;
   }

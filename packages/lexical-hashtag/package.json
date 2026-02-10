@@ -8,17 +8,17 @@
     "hashtag"
   ],
   "license": "MIT",
-  "version": "0.38.2",
+  "version": "0.40.0",
   "main": "LexicalHashtag.js",
   "types": "index.d.ts",
   "dependencies": {
-    "@lexical/text": "0.38.2",
-    "@lexical/utils": "0.38.2",
-    "lexical": "0.38.2"
+    "@lexical/text": "workspace:*",
+    "@lexical/utils": "workspace:*",
+    "lexical": "workspace:*"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/facebook/lexical",
+    "url": "git+https://github.com/facebook/lexical.git",
     "directory": "packages/lexical-hashtag"
   },
   "module": "LexicalHashtag.mjs",

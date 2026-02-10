@@ -604,25 +604,25 @@ describe('Markdown', () => {
       html: '<p><span style="white-space: pre-wrap;">Text </span><b><strong style="white-space: pre-wrap;">boldstart </strong></b><a href="https://lexical.dev"><b><strong style="white-space: pre-wrap;">text</strong></b></a><b><strong style="white-space: pre-wrap;"> boldend</strong></b><span style="white-space: pre-wrap;"> text</span></p>',
       md: 'Text **boldstart [text](https://lexical.dev) boldend** text',
       mdAfterExport:
-        'Text **boldstart&#32;[text](https://lexical.dev)&#32;boldend** text',
+        'Text **boldstart&#32;**[**text**](https://lexical.dev)**&#32;boldend** text',
     },
     {
       html: '<p><span style="white-space: pre-wrap;">Text </span><b><strong style="white-space: pre-wrap;">boldstart </strong></b><a href="https://lexical.dev"><b><code spellcheck="false" style="white-space: pre-wrap;"><strong>text</strong></code></b></a><b><strong style="white-space: pre-wrap;"> boldend</strong></b><span style="white-space: pre-wrap;"> text</span></p>',
       md: 'Text **boldstart [`text`](https://lexical.dev) boldend** text',
       mdAfterExport:
-        'Text **boldstart&#32;[`text`](https://lexical.dev)&#32;boldend** text',
+        'Text **boldstart&#32;**[**`text`**](https://lexical.dev)**&#32;boldend** text',
     },
     {
       html: '<p><span style="white-space: pre-wrap;">It </span><s><i><b><strong style="white-space: pre-wrap;">works </strong></b></i></s><a href="https://lexical.io"><s><i><b><strong style="white-space: pre-wrap;">with links</strong></b></i></s></a><span style="white-space: pre-wrap;"> too</span></p>',
       md: 'It ~~___works [with links](https://lexical.io)___~~ too',
       mdAfterExport:
-        'It ***~~works&#32;[with links](https://lexical.io)~~*** too',
+        'It ***~~works&#32;~~***[***~~with links~~***](https://lexical.io) too',
     },
     {
       html: '<p><span style="white-space: pre-wrap;">It </span><s><i><b><strong style="white-space: pre-wrap;">works </strong></b></i></s><a href="https://lexical.io"><s><i><b><strong style="white-space: pre-wrap;">with links</strong></b></i></s></a><s><i><b><strong style="white-space: pre-wrap;"> too</strong></b></i></s><span style="white-space: pre-wrap;">!</span></p>',
       md: 'It ~~___works [with links](https://lexical.io) too___~~!',
       mdAfterExport:
-        'It ***~~works&#32;[with links](https://lexical.io)&#32;too~~***!',
+        'It ***~~works&#32;~~***[***~~with links~~***](https://lexical.io)***~~&#32;too~~***!',
     },
     {
       html: '<p><a href="https://lexical.dev"><span style="white-space: pre-wrap;">link</span></a><a href="https://lexical.dev"><span style="white-space: pre-wrap;">link2</span></a></p>',
@@ -705,6 +705,45 @@ describe('Markdown', () => {
     {
       html: '<p><span style="white-space: pre-wrap;">[](https://lexical.dev)</span></p>',
       md: '[](https://lexical.dev)',
+    },
+    {
+      html: '<p><a href="https://lexical.dev"><b><strong style="white-space: pre-wrap;">link</strong></b></a><b><strong style="white-space: pre-wrap;">text</strong></b></p>',
+      md: '[**link**](https://lexical.dev)**text**',
+      mdAfterExport: '[**link**](https://lexical.dev)**text**',
+    },
+    {
+      html: '<p><b><strong style="white-space: pre-wrap;">text </strong></b><a href="https://lexical.dev"><b><strong style="white-space: pre-wrap;">link</strong></b></a></p>',
+      md: '**text [link](https://lexical.dev)**',
+      mdAfterExport: '**text&#32;**[**link**](https://lexical.dev)',
+    },
+    {
+      html: '<p><i><em style="white-space: pre-wrap;">text</em></i><i><b><strong style="white-space: pre-wrap;">text</strong></b></i></p>',
+      md: '*text**text***',
+    },
+    {
+      html: '<p><i><em style="white-space: pre-wrap;">foo**bar</em></i></p>',
+      md: '*foo**bar*',
+      mdAfterExport: '*foo\\*\\*bar*',
+    },
+    {
+      html: '<p><b><strong style="white-space: pre-wrap;">foo </strong></b><a href="/url"><i><b><strong style="white-space: pre-wrap;">bar</strong></b></i></a></p>',
+      md: '**foo [*bar*](/url)**',
+      mdAfterExport: '**foo&#32;**[***bar***](/url)',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">*foo </span><i><em style="white-space: pre-wrap;">bar baz</em></i></p>',
+      md: '*foo *bar baz*',
+      mdAfterExport: '\\*foo *bar baz*',
+    },
+    {
+      html: '<p><i><em style="white-space: pre-wrap;">a </em></i><i><code spellcheck="false" style="white-space: pre-wrap;"><em>*</em></code></i><i><em style="white-space: pre-wrap;"> b </em></i><i><code spellcheck="false" style="white-space: pre-wrap;"><em>x</em></code></i></p>',
+      md: '*a `*` b `x`*',
+      mdAfterExport: '*a&#32;`*`&#32;b&#32;`x`*',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">_foo_bar</span></p>',
+      md: '_foo_bar',
+      mdAfterExport: '\\_foo\\_bar',
     },
   ];
 
@@ -943,6 +982,107 @@ describe('Markdown', () => {
 
     expect(editor.read(() => $generateHtmlFromNodes(editor))).toBe(
       '<h1><br></h1>',
+    );
+  });
+
+  it('can round-trip nested fenced code blocks (4 backticks wrapping 3 backticks)', () => {
+    const markdown =
+      '````markdown\n' +
+      '# Example\n' +
+      '\n' +
+      'Run this:\n' +
+      '```bash\n' +
+      'npm install\n' +
+      '```\n' +
+      '````';
+
+    const editor = createHeadlessEditor({
+      nodes: [
+        HeadingNode,
+        ListNode,
+        ListItemNode,
+        QuoteNode,
+        CodeNode,
+        LinkNode,
+      ],
+    });
+
+    editor.update(
+      () => {
+        $convertFromMarkdownString(markdown, TRANSFORMERS);
+      },
+      {discrete: true},
+    );
+
+    expect(
+      editor
+        .getEditorState()
+        .read(() => $convertToMarkdownString(TRANSFORMERS)),
+    ).toBe(markdown);
+  });
+
+  it('can round-trip deeply nested fenced code blocks (5 backticks wrapping 4 backticks)', () => {
+    const markdown =
+      '`````text\n' +
+      'Top Level 5 ticks\n' +
+      '````markdown\n' +
+      'Level 2 (4 ticks)\n' +
+      '```javascript\n' +
+      'console.log("Deepest (3 ticks)");\n' +
+      '```\n' +
+      '````\n' +
+      '`````';
+
+    const editor = createHeadlessEditor({
+      nodes: [
+        HeadingNode,
+        ListNode,
+        ListItemNode,
+        QuoteNode,
+        CodeNode,
+        LinkNode,
+      ],
+    });
+
+    editor.update(
+      () => {
+        $convertFromMarkdownString(markdown, TRANSFORMERS);
+      },
+      {discrete: true},
+    );
+
+    expect(
+      editor
+        .getEditorState()
+        .read(() => $convertToMarkdownString(TRANSFORMERS)),
+    ).toBe(markdown);
+  });
+
+  it('computes fence dynamically when code block content contains backticks', () => {
+    const editor = createHeadlessEditor({
+      nodes: [CodeNode],
+    });
+
+    editor.update(
+      () => {
+        // Create a CodeNode without setting fence state (uses default ```)
+        const codeBlockNode = $createCodeNode('markdown');
+        // Content contains ``` which conflicts with default fence
+        $getRoot()
+          .append(codeBlockNode)
+          .selectEnd()
+          .insertRawText('```js\nconsole.log("hello");\n```');
+      },
+      {discrete: true},
+    );
+
+    // Export should compute fence to be ```` (4 backticks) since content contains ```
+    const exported = editor
+      .getEditorState()
+      .read(() => $convertToMarkdownString(TRANSFORMERS));
+
+    expect(exported).toBe(
+      '````markdown\n```js\nconsole.log("hello");\n```\n````',
     );
   });
 

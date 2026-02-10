@@ -41,6 +41,18 @@ export interface TableConfig {
    * When `true` (default `true`), tables will be wrapped in a `<div>` to enable horizontal scrolling
    */
   hasHorizontalScroll: boolean;
+  /**
+   * When `true` (default `false`), nested tables will be allowed.
+   *
+   * @experimental Nested tables are not officially supported.
+   */
+  hasNestedTables: boolean;
+  /**
+   * When `true` (default `false`), nested tables will be resized to fit the width of the parent table cell.
+   *
+   * @experimental Nested tables are not officially supported.
+   */
+  hasFitNestedTables: boolean;
 }
 
 /**
@@ -54,7 +66,9 @@ export const TableExtension = defineExtension({
   config: safeCast<TableConfig>({
     hasCellBackgroundColor: true,
     hasCellMerge: true,
+    hasFitNestedTables: false,
     hasHorizontalScroll: true,
+    hasNestedTables: false,
     hasTabHandler: true,
   }),
   name: '@lexical/table/Table',
@@ -72,7 +86,7 @@ export const TableExtension = defineExtension({
           editor.registerNodeTransform(TableNode, () => {})();
         }
       }),
-      registerTablePlugin(editor),
+      registerTablePlugin(editor, stores),
       effect(() =>
         registerTableSelectionObserver(editor, stores.hasTabHandler.value),
       ),

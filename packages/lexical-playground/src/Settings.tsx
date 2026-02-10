@@ -23,6 +23,8 @@ export default function Settings(): JSX.Element {
       measureTypingPerf,
       isCollab,
       isRichText,
+      hasNestedTables,
+      hasFitNestedTables,
       isMaxLength,
       hasLinkAttributes,
       isCharLimit,
@@ -35,7 +37,6 @@ export default function Settings(): JSX.Element {
       shouldUseLexicalContextMenu,
       shouldPreserveNewLinesInMarkdown,
       shouldAllowHighlightingWithBrackets,
-      // tableHorizontalScroll,
       selectionAlwaysOnDisplay,
       isCodeHighlighted,
       isCodeShiki,
@@ -61,6 +62,7 @@ export default function Settings(): JSX.Element {
     <>
       <button
         id="options-button"
+        data-test-id="options-button"
         className={`editor-dev-button ${showSettings ? 'active' : ''}`}
         onClick={() => setShowSettings(!showSettings)}
       />
@@ -113,6 +115,20 @@ export default function Settings(): JSX.Element {
             }}
             checked={isRichText}
             text="Rich Text"
+          />
+          <Switch
+            onClick={() => {
+              setOption('hasNestedTables', !hasNestedTables);
+            }}
+            checked={hasNestedTables}
+            text="Nested Tables"
+          />
+          <Switch
+            onClick={() => {
+              setOption('hasFitNestedTables', !hasFitNestedTables);
+            }}
+            checked={hasFitNestedTables}
+            text="Fit nested tables"
           />
           <Switch
             onClick={() => setOption('isCharLimit', !isCharLimit)}
@@ -174,13 +190,6 @@ export default function Settings(): JSX.Element {
             checked={shouldPreserveNewLinesInMarkdown}
             text="Preserve newlines in Markdown"
           />
-          {/* <Switch
-            onClick={() => {
-              setOption('tableHorizontalScroll', !tableHorizontalScroll);
-            }}
-            checked={tableHorizontalScroll}
-            text="Tables have horizontal scroll"
-          /> */}
           <Switch
             onClick={() => {
               setOption(

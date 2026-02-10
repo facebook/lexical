@@ -9,6 +9,12 @@ import type {JSX} from 'react';
 
 import './index.css';
 
+import DropIndicator from '@atlaskit/drag-and-drop-indicator/box';
+import {
+  draggable,
+  dropTargetForElements,
+  type ElementDragPayload,
+} from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import {
   autoUpdate,
   offset,
@@ -22,10 +28,11 @@ import {
   $computeTableMapSkipCellCheck,
   $insertTableColumnAtSelection,
   $insertTableRowAtSelection,
+  $isSimpleTable,
   $isTableCellNode,
   $isTableNode,
   $isTableRowNode,
-  type TableNode,
+  $moveTableColumn,
 } from '@lexical/table';
 import {
   $getChildCaret,
@@ -44,39 +51,6 @@ const INDICATOR_SIZE_PX = 18;
 const SIDE_INDICATOR_SIZE_PX = 18;
 const TOP_BUTTON_OVERHANG = INDICATOR_SIZE_PX / 2;
 const LEFT_BUTTON_OVERHANG = SIDE_INDICATOR_SIZE_PX / 2;
-
-/**
- * Checks if the table does not have any merged cells.
- *
- * @param table Table to check for if it has any merged cells.
- * @returns True if the table does not have any merged cells, false otherwise.
- */
-function $isSimpleTable(table: TableNode): boolean {
-  const rows = table.getChildren();
-  let columns: null | number = null;
-  for (const row of rows) {
-    if (!$isTableRowNode(row)) {
-      return false;
-    }
-    if (columns === null) {
-      columns = row.getChildrenSize();
-    }
-    if (row.getChildrenSize() !== columns) {
-      return false;
-    }
-    const cells = row.getChildren();
-    for (const cell of cells) {
-      if (
-        !$isTableCellNode(cell) ||
-        cell.getRowSpan() !== 1 ||
-        cell.getColSpan() !== 1
-      ) {
-        return false;
-      }
-    }
-  }
-  return (columns || 0) > 0;
-}
 
 function getTableFromMouseEvent(
   event: MouseEvent,
@@ -128,6 +102,83 @@ function getClosestTopCellPosition(
   return closest;
 }
 
+function isTableFromEditor(
+  tableElement: HTMLTableElement | null,
+  editor: ReturnType<typeof useLexicalComposerContext>[0],
+): boolean {
+  const root = editor.getRootElement();
+  return !!root && !!tableElement && root.contains(tableElement);
+}
+
+type ColumnDragData = {
+  columnIndex: number;
+  tableKey: string | null;
+  type: 'table-column';
+};
+
+type DropIndicatorState = {
+  edge: 'left' | 'right';
+  height: number;
+  left: number;
+  top: number;
+};
+
+function getBoundaryIndex(cell: HTMLTableCellElement, clientX: number): number {
+  const rect = cell.getBoundingClientRect();
+  const isRightHalf = clientX > rect.left + rect.width / 2;
+  const cellIndex = cell.cellIndex ?? 0;
+  return cellIndex + (isRightHalf ? 1 : 0);
+}
+
+function getDropIndicatorState(
+  headerRow: HTMLTableRowElement,
+  tableRect: DOMRect,
+  boundaryIndex: number,
+): DropIndicatorState | null {
+  const cellCount = headerRow.cells.length;
+  if (cellCount === 0) {
+    return null;
+  }
+  const clampedIndex = Math.max(0, Math.min(boundaryIndex, cellCount));
+  if (clampedIndex === 0) {
+    const firstRect = headerRow.cells[0].getBoundingClientRect();
+    return {
+      edge: 'left',
+      height: tableRect.height,
+      left: firstRect.left,
+      top: tableRect.top,
+    };
+  }
+  if (clampedIndex === cellCount) {
+    const lastRect = headerRow.cells[cellCount - 1].getBoundingClientRect();
+    return {
+      edge: 'right',
+      height: tableRect.height,
+      left: lastRect.right,
+      top: tableRect.top,
+    };
+  }
+  const targetRect = headerRow.cells[clampedIndex].getBoundingClientRect();
+  return {
+    edge: 'left',
+    height: tableRect.height,
+    left: targetRect.left,
+    top: tableRect.top,
+  };
+}
+
+function isColumnDrag(
+  source: ElementDragPayload,
+  tableKey: string | null,
+): source is ElementDragPayload & {data: ColumnDragData} {
+  const data = source?.data as ColumnDragData | undefined;
+  return data?.type === 'table-column' && data.tableKey === tableKey;
+}
+
+function getTableKey(tableElement: HTMLTableElement | null): string | null {
+  return tableElement?.getAttribute('data-lexical-key') ?? null;
+}
+
 function TableHoverActionsV2({
   anchorElem,
 }: {
@@ -145,16 +196,24 @@ function TableHoverActionsV2({
   });
   const floatingElemRef = useRef<HTMLElement | null>(null);
   const leftFloatingElemRef = useRef<HTMLElement | null>(null);
+  const dragHandleRef = useRef<HTMLButtonElement | null>(null);
   const hoveredLeftCellRef = useRef<HTMLTableCellElement | null>(null);
   const hoveredTopCellRef = useRef<HTMLTableCellElement | null>(null);
   const handleMouseLeaveRef = useRef<((event: MouseEvent) => void) | null>(
     null,
   );
+  const dropIndicatorCleanupRef = useRef<Array<() => void>>([]);
+  const [hoveredTable, setHoveredTable] = useState<HTMLTableElement | null>(
+    null,
+  );
+  const [hoveredColumnIndex, setHoveredColumnIndex] = useState<number | null>(
+    null,
+  );
+  const [canReorder, setCanReorder] = useState(false);
+  const [dropIndicatorState, setDropIndicatorState] =
+    useState<DropIndicatorState | null>(null);
 
   const {refs, floatingStyles, update} = useFloating({
-    elements: {
-      reference: virtualRef.current as unknown as Element,
-    },
     middleware: [
       offset({mainAxis: -TOP_BUTTON_OVERHANG}),
       shift({
@@ -171,9 +230,6 @@ function TableHoverActionsV2({
     floatingStyles: leftFloatingStyles,
     update: updateLeft,
   } = useFloating({
-    elements: {
-      reference: leftVirtualRef.current as unknown as Element,
-    },
     middleware: [
       offset({mainAxis: -LEFT_BUTTON_OVERHANG}),
       shift({
@@ -211,6 +267,9 @@ function TableHoverActionsV2({
       ) {
         setIsVisible(false);
         setIsLeftVisible(false);
+        setHoveredTable(null);
+        setHoveredColumnIndex(null);
+        setDropIndicatorState(null);
         return;
       }
 
@@ -241,11 +300,15 @@ function TableHoverActionsV2({
       if (!closestTopCell || rowIndex !== 0) {
         setIsVisible(false);
         hoveredTopCellRef.current = null;
+        setHoveredTable(null);
+        setHoveredColumnIndex(null);
       } else {
         hoveredTopCellRef.current = closestTopCell.cell;
+        setHoveredTable(tableElement);
+        setHoveredColumnIndex(closestTopCell.cell.cellIndex ?? null);
         virtualRef.current.getBoundingClientRect = () =>
           new DOMRect(closestTopCell.centerX, closestTopCell.top, 0, 0);
-        refs.setReference(virtualRef.current as unknown as Element);
+        refs.setPositionReference(virtualRef.current);
         setIsVisible(true);
         update?.();
       }
@@ -260,7 +323,7 @@ function TableHoverActionsV2({
         hoveredLeftCellRef.current = hoveredCell;
         leftVirtualRef.current.getBoundingClientRect = () =>
           new DOMRect(tableRect.left, centerY, 0, 0);
-        leftRefs.setReference(leftVirtualRef.current as unknown as Element);
+        leftRefs.setPositionReference(leftVirtualRef.current);
         setIsLeftVisible(true);
         updateLeft?.();
       }
@@ -309,6 +372,147 @@ function TableHoverActionsV2({
       }
     });
   }, [editor]);
+
+  useEffect(() => {
+    if (!hoveredTable) {
+      setCanReorder(false);
+      return;
+    }
+    if (!isTableFromEditor(hoveredTable, editor)) {
+      setCanReorder(false);
+      return;
+    }
+    editor.getEditorState().read(
+      () => {
+        const tableNode = $getNearestNodeFromDOMNode(hoveredTable);
+        setCanReorder($isTableNode(tableNode) && $isSimpleTable(tableNode));
+      },
+      {editor},
+    );
+  }, [editor, hoveredTable]);
+
+  useEffect(() => {
+    const handle = dragHandleRef.current;
+    const tableElement = hoveredTable;
+    const columnIndex = hoveredColumnIndex;
+    if (!handle || tableElement == null || columnIndex == null || !canReorder) {
+      return;
+    }
+
+    const cleanup = draggable({
+      canDrag: () => canReorder,
+      element: handle,
+      getInitialData: () => ({
+        columnIndex,
+        tableKey: getTableKey(tableElement),
+        type: 'table-column',
+      }),
+      onDrop: () => setDropIndicatorState(null),
+    });
+
+    return cleanup;
+  }, [canReorder, hoveredColumnIndex, hoveredTable]);
+
+  useEffect(() => {
+    dropIndicatorCleanupRef.current.forEach((cleanup) => cleanup());
+    dropIndicatorCleanupRef.current = [];
+    if (!hoveredTable || !canReorder) {
+      return;
+    }
+    const headerRow = hoveredTable.rows[0];
+    if (!headerRow) {
+      return;
+    }
+    if (!isTableFromEditor(hoveredTable, editor)) {
+      return;
+    }
+    const tableKey = getTableKey(hoveredTable);
+    const registerDropTarget = (cell: HTMLTableCellElement) =>
+      dropTargetForElements({
+        canDrop: ({source}) => isColumnDrag(source, tableKey),
+        element: cell,
+        getData: ({input}) => ({
+          boundaryIndex: getBoundaryIndex(cell, input.clientX),
+        }),
+        onDrag: ({location, source}) => {
+          if (!isColumnDrag(source, tableKey)) {
+            return;
+          }
+          const boundaryIndex = getBoundaryIndex(
+            cell,
+            location.current.input.clientX,
+          );
+          const tableRect = hoveredTable.getBoundingClientRect();
+          setDropIndicatorState(
+            getDropIndicatorState(headerRow, tableRect, boundaryIndex),
+          );
+        },
+        onDragEnter: ({location, source}) => {
+          if (!isColumnDrag(source, tableKey)) {
+            return;
+          }
+          const boundaryIndex = getBoundaryIndex(
+            cell,
+            location.current.input.clientX,
+          );
+          const tableRect = hoveredTable.getBoundingClientRect();
+          setDropIndicatorState(
+            getDropIndicatorState(headerRow, tableRect, boundaryIndex),
+          );
+        },
+        onDragLeave: () => setDropIndicatorState(null),
+        onDrop: ({location, source}) => {
+          setDropIndicatorState(null);
+          const data = (source?.data ?? {}) as ColumnDragData;
+          if (data.columnIndex == null) {
+            return;
+          }
+          const boundaryIndex = getBoundaryIndex(
+            cell,
+            location.current.input.clientX,
+          );
+          const targetTable = cell.closest('table');
+          if (!isHTMLElement(targetTable) || !isColumnDrag(source, tableKey)) {
+            return;
+          }
+          editor.update(() => {
+            const tableNode = $getNearestNodeFromDOMNode(targetTable);
+            if (!$isTableNode(tableNode)) {
+              return;
+            }
+            const columnCount = tableNode.getColumnCount();
+            const clampedBoundary = Math.max(
+              0,
+              Math.min(boundaryIndex, columnCount),
+            );
+            const startIndex = data.columnIndex;
+            if (
+              clampedBoundary === startIndex ||
+              clampedBoundary === startIndex + 1 ||
+              startIndex < 0 ||
+              startIndex >= columnCount
+            ) {
+              return;
+            }
+            const finishIndex =
+              clampedBoundary > startIndex
+                ? clampedBoundary - 1
+                : clampedBoundary;
+            $moveTableColumn(tableNode, startIndex, finishIndex);
+          });
+        },
+      });
+
+    dropIndicatorCleanupRef.current = Array.from(headerRow.cells).map((cell) =>
+      registerDropTarget(cell),
+    );
+
+    return () => {
+      dropIndicatorCleanupRef.current.forEach((cleanup) => cleanup());
+      dropIndicatorCleanupRef.current = [];
+      setDropIndicatorState(null);
+    };
+  }, [canReorder, editor, hoveredTable]);
 
   if (!isEditable) {
     return null;
@@ -418,6 +622,12 @@ function TableHoverActionsV2({
           opacity: isVisible ? 1 : 0,
         }}
         className="floating-top-actions">
+        <button
+          ref={dragHandleRef}
+          className="floating-drag-indicator"
+          aria-label="Drag to reorder column"
+          type="button"
+        />
         <DropDown
           buttonAriaLabel="Sort column"
           buttonClassName="floating-filter-indicator"
@@ -454,6 +664,20 @@ function TableHoverActionsV2({
         type="button"
         onClick={handleAddRow}
       />
+      {dropIndicatorState ? (
+        <div
+          style={{
+            height: dropIndicatorState.height,
+            left: dropIndicatorState.left,
+            pointerEvents: 'none',
+            position: 'fixed',
+            top: dropIndicatorState.top,
+            width: 2,
+            zIndex: 20,
+          }}>
+          <DropIndicator edge={dropIndicatorState.edge} />
+        </div>
+      ) : null}
     </>
   );
 }

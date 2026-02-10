@@ -83,7 +83,9 @@ export {
   $insertTableRow,
   $insertTableRow__EXPERIMENTAL,
   $insertTableRowAtSelection,
+  $isSimpleTable,
   $mergeCells,
+  $moveTableColumn,
   $removeTableRowAtIndex,
   $unmergeCell,
 } from './LexicalTableUtils';

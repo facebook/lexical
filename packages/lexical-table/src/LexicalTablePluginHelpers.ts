@@ -642,6 +642,10 @@ function $insertTableIntoGrid(
       }
 
       const {cell} = interimGridMap[row][col];
+      const backgroundColor = templateCell.getBackgroundColor();
+      if (backgroundColor !== null && backgroundColor !== undefined) {
+        cell.setBackgroundColor(backgroundColor);
+      }
       const originalChildren = cell.getChildren();
       templateCell.getChildren().forEach((child) => {
         if ($isTextNode(child)) {

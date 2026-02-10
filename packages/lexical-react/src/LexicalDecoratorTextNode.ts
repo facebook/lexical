@@ -8,16 +8,18 @@
 
 import type {
   LexicalNode,
-  LexicalUpdateJSON,
-  NodeKey,
   SerializedLexicalNode,
   Spread,
+  StateConfigValue,
+  StateValueOrUpdater,
   TextFormatType,
 } from 'lexical';
 import type {JSX} from 'react';
 
 import {
-  $applyNodeReplacement,
+  $getState,
+  $setState,
+  createState,
   DecoratorNode,
   TEXT_TYPE_TO_FORMAT,
   toggleTextFormatType,
@@ -30,23 +32,24 @@ export type SerializedDecoratorTextNode = Spread<
   SerializedLexicalNode
 >;
 
-export class DecoratorTextNode extends DecoratorNode<JSX.Element> {
-  __format: number;
+const formatState = createState('format', {
+  parse: (value) => (typeof value === 'number' ? value : 0),
+});
 
-  constructor(key?: NodeKey) {
-    super(key);
-    this.__format = 0;
+export class DecoratorTextNode extends DecoratorNode<JSX.Element> {
+  $config() {
+    return this.config('decorator-text', {
+      extends: DecoratorNode,
+      stateConfigs: [{flat: true, stateConfig: formatState}],
+    });
   }
 
-  getFormat(): number {
-    const self = this.getLatest();
-    return self.__format;
+  getFormat(): StateConfigValue<typeof formatState> {
+    return $getState(this, formatState);
   }
 
   getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number {
-    const self = this.getLatest();
-    const format = self.__format;
-    return toggleTextFormatType(format, type, alignWithFormat);
+    return toggleTextFormatType(this.getFormat(), type, alignWithFormat);
   }
 
   hasFormat(type: TextFormatType): boolean {
@@ -54,10 +57,8 @@ export class DecoratorTextNode extends DecoratorNode<JSX.Element> {
     return (this.getFormat() & formatFlag) !== 0;
   }
 
-  setFormat(type: number): this {
-    const self = this.getWritable();
-    self.__format = type;
-    return self;
+  setFormat(type: StateValueOrUpdater<typeof formatState>): this {
+    return $setState(this, formatState, type);
   }
 
   toggleFormat(type: TextFormatType): this {
@@ -70,30 +71,6 @@ export class DecoratorTextNode extends DecoratorNode<JSX.Element> {
     return true;
   }
 
-  exportJSON(): SerializedDecoratorTextNode {
-    return {
-      ...super.exportJSON(),
-      format: this.__format || 0,
-    };
-  }
-
-  static importJSON(serializedNode: SerializedDecoratorTextNode) {
-    return $createDecoratorTextNode().updateFromJSON(serializedNode);
-  }
-
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedDecoratorTextNode>,
-  ): this {
-    return super
-      .updateFromJSON(serializedNode)
-      .setFormat(serializedNode.format || 0);
-  }
-
-  afterCloneFrom(prevNode: this) {
-    super.afterCloneFrom(prevNode);
-    this.__format = prevNode.__format;
-  }
-
   createDOM(): HTMLElement {
     return document.createElement('span');
   }
@@ -101,10 +78,6 @@ export class DecoratorTextNode extends DecoratorNode<JSX.Element> {
   updateDOM(): false {
     return false;
   }
-}
-
-export function $createDecoratorTextNode() {
-  return $applyNodeReplacement(new DecoratorTextNode());
 }
 
 export function $isDecoratorTextNode(

@@ -136,16 +136,14 @@ export class DateTimeNode extends DecoratorTextNode {
 
   exportDOM(): DOMExportOutput {
     const element = document.createElement('span');
-    let textDom: HTMLElement | Text = document.createTextNode(
+    const textDom: HTMLElement | Text = document.createTextNode(
       getDateTimeText(this.getDateTime()),
     );
     element.setAttribute(
       'data-lexical-datetime',
       this.getDateTime()?.toString() || '',
     );
-
-    textDom = applyFormatToDom(this, textDom, tagToFormat);
-    element.appendChild(textDom);
+    element.appendChild(applyFormatToDom(this, textDom, tagToFormat));
 
     return {element};
   }
@@ -168,7 +166,7 @@ export class DateTimeNode extends DecoratorTextNode {
     return (
       <DateTimeComponent
         dateTime={this.getDateTime()}
-        format={this.__format}
+        format={this.getFormat()}
         nodeKey={this.__key}
       />
     );

@@ -12,6 +12,7 @@ import {
   moveLeft,
   moveRight,
   moveToEditorBeginning,
+  moveToEditorEnd,
   moveUp,
   pressBackspace,
   selectAll,
@@ -21,6 +22,7 @@ import {
 import {
   assertSelection,
   assertTableHTML as assertHTML,
+  assertTableSelectionCoordinates,
   click,
   clickSelectors,
   copyToClipboard,
@@ -47,6 +49,7 @@ import {
   LEGACY_EVENTS,
   mergeTableCells,
   pasteFromClipboard,
+  resizeTableCell,
   selectCellFromTableCoord,
   selectCellsFromTableCords,
   selectFromAdditionalStylesDropdown,
@@ -5946,6 +5949,185 @@ test.describe.parallel('Tables', () => {
     );
   });
 
+  test(`Can paste tables inside table cells (with hasNestedTables)`, async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+    await initialize({hasNestedTables: true, isCollab, page});
+    await focusEditor(page);
+
+    // Create and copy a table
+    await insertTable(page, 2, 2);
+    await page.keyboard.type('test inner table');
+    await selectAll(page);
+    await withExclusiveClipboardAccess(async () => {
+      const clipboard = await copyToClipboard(page);
+      await page.keyboard.press('Backspace');
+      await moveToEditorBeginning(page);
+
+      // Create another table and try to paste the first table into a cell
+      await insertTable(page, 2, 2);
+      await click(page, '.PlaygroundEditorTheme__tableCell:first-child');
+      await pasteFromClipboard(page, clipboard);
+    });
+
+    // Verify that a nested table was pasted into the cell
+    await assertHTML(
+      page,
+      html`
+        <p><br /></p>
+        <table>
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
+          <tr>
+            <th>
+              <p><br /></p>
+              <table>
+                <colgroup>
+                  <col style="width: 92px" />
+                  <col style="width: 92px" />
+                </colgroup>
+                <tr>
+                  <th>
+                    <p>
+                      <span data-lexical-text="true">test inner table</span>
+                    </p>
+                  </th>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                </tr>
+                <tr>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                  <td>
+                    <p><br /></p>
+                  </td>
+                </tr>
+              </table>
+              <p><br /></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+        </table>
+        <p><br /></p>
+      `,
+      undefined,
+      {ignoreClasses: true, ignoreDir: true},
+    );
+  });
+
+  test(`Can paste and autofit tables inside table cells (with hasNestedTables, hasFitNestedTables)`, async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+    await initialize({
+      hasFitNestedTables: true,
+      hasNestedTables: true,
+      isCollab,
+      page,
+    });
+    await focusEditor(page);
+
+    // Create and copy a table
+    await insertTable(page, 2, 2);
+
+    await page.keyboard.type('test inner table');
+
+    await selectAll(page);
+    await withExclusiveClipboardAccess(async () => {
+      const clipboard = await copyToClipboard(page);
+      await page.keyboard.press('Backspace');
+      await moveToEditorBeginning(page);
+
+      // Create another table and try to paste the first table into a cell
+      await insertTable(page, 2, 2);
+      // Resize outer table cell (92px default + 50px = 142px)
+      await resizeTableCell(page, 'tr:nth-child(2) > th:nth-child(1)', 50);
+      await click(
+        page,
+        'tr:nth-child(2) > th:nth-child(1) > .PlaygroundEditorTheme__paragraph',
+      );
+
+      await pasteFromClipboard(page, clipboard);
+    });
+
+    // Verify that a nested table was pasted into the cell
+    await assertHTML(
+      page,
+      html`
+        <p><br /></p>
+        <table>
+          <colgroup>
+            <col style="width: 142px" />
+            <col style="width: 92px" />
+          </colgroup>
+          <tr>
+            <th>
+              <p><br /></p>
+              <table>
+                <colgroup>
+                  <col style="width: 62.5px" />
+                  <col style="width: 62.5px" />
+                </colgroup>
+                <tr>
+                  <th>
+                    <p>
+                      <span data-lexical-text="true">test inner table</span>
+                    </p>
+                  </th>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                </tr>
+                <tr>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                  <td>
+                    <p><br /></p>
+                  </td>
+                </tr>
+              </table>
+              <p><br /></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+        </table>
+        <p><br /></p>
+      `,
+      undefined,
+      {ignoreClasses: true, ignoreDir: true},
+    );
+  });
+
   test(`Click and drag to create selection in Firefox #7245`, async ({
     page,
     isPlainText,
@@ -7089,6 +7271,247 @@ test.describe.parallel('Tables', () => {
         <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
       `,
     );
+  });
+
+  test('Ctrl+A selects all cells in table with merged cells when table is only content', async ({
+    page,
+    isPlainText,
+    isCollab,
+    browserName,
+  }) => {
+    test.skip(isPlainText);
+    await initialize({isCollab, page});
+
+    await focusEditor(page);
+
+    // Insert a 3x3 table
+    await insertTable(page, 3, 3);
+
+    // Remove all other nodes, leaving only the table
+    // First, select all and delete to clear everything
+    await selectAll(page);
+    await page.keyboard.press('Backspace');
+
+    // Insert table again
+    await insertTable(page, 3, 3);
+
+    // Merge two cells in the last column (merge cells in row 0 and row 1, column 2)
+    // Do this BEFORE removing paragraphs to avoid navigation issues
+    await selectCellsFromTableCords(
+      page,
+      {x: 2, y: 0},
+      {x: 2, y: 1},
+      true,
+      false,
+    );
+    await mergeTableCells(page);
+
+    // CRITICAL: Remove ALL paragraphs (before and after table) to ensure table is the ONLY content
+    // This matches the bug reproduction: "Remove all other nodes from the editor, leaving only the table"
+    // Empty paragraphs (even one) will prevent the bug from reproducing
+    // Following the exact pattern from Selection.spec.mjs test "shift+arrowup into a table, when the table is the only node"
+
+    // Delete the paragraph before the table
+    await moveToEditorBeginning(page);
+    await deleteBackward(page);
+
+    // Delete the paragraph after the table
+    await moveToEditorEnd(page);
+    await deleteBackward(page);
+
+    // Place cursor inside any cell of the table
+    await selectCellFromTableCoord(page, {x: 0, y: 0}, true);
+
+    // Press Ctrl+A
+    await selectAll(page);
+
+    // Verify that all cells are selected by checking table selection coordinates
+    // The selection should span from first cell (0,0) to last cell (2,2)
+    await assertTableSelectionCoordinates(page, {
+      anchor: {x: 0, y: 0},
+      focus: {x: 2, y: 2},
+    });
+  });
+
+  test('Drag-select column in 2x2 table selects all cells in that column', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+    await initialize({isCollab, page});
+
+    await focusEditor(page);
+
+    // Insert a 2x2 table
+    await insertTable(page, 2, 2);
+    const pageOrFrame = getPageOrFrame(page);
+
+    await pageOrFrame.waitForFunction(() => {
+      const cell = document.querySelector(
+        'table:first-of-type td, table:first-of-type th',
+      );
+      // eslint-disable-next-line no-underscore-dangle
+      return Boolean(cell && cell._cell);
+    });
+
+    const readTableSelectionCoordinates = async () => {
+      return await pageOrFrame.evaluate(() => {
+        const editor = window.lexicalEditor;
+        if (!editor) {
+          return null;
+        }
+        const selection = editor.getEditorState()._selection;
+        if (!selection || selection.tableKey == null) {
+          return null;
+        }
+        const anchorElement = editor.getElementByKey(selection.anchor.key);
+        const focusElement = editor.getElementByKey(selection.focus.key);
+        const anchorCell = anchorElement?._cell;
+        const focusCell = focusElement?._cell;
+        if (!anchorCell || !focusCell) {
+          return null;
+        }
+        return {
+          anchor: {x: anchorCell.x, y: anchorCell.y},
+          focus: {x: focusCell.x, y: focusCell.y},
+        };
+      });
+    };
+
+    const matchesExpected = (coords, expected) => {
+      if (!coords) {
+        return false;
+      }
+      const anchorMatches =
+        expected.anchor == null ||
+        ((expected.anchor.x === undefined ||
+          coords.anchor.x === expected.anchor.x) &&
+          (expected.anchor.y === undefined ||
+            coords.anchor.y === expected.anchor.y));
+      const focusMatches =
+        expected.focus == null ||
+        ((expected.focus.x === undefined ||
+          coords.focus.x === expected.focus.x) &&
+          (expected.focus.y === undefined ||
+            coords.focus.y === expected.focus.y));
+      return anchorMatches && focusMatches;
+    };
+
+    const waitForTableSelectionCoordinates = async (expected) => {
+      for (let i = 0; i < 20; i++) {
+        const coords = await readTableSelectionCoordinates();
+        if (matchesExpected(coords, expected)) {
+          return true;
+        }
+        await sleep(50);
+      }
+      return false;
+    };
+
+    const dispatchPointerDrag = async (dragStart, dragEnd) => {
+      return await pageOrFrame.evaluate(
+        ({endPoint, startPoint}) => {
+          const startTarget = document.elementFromPoint(
+            startPoint.x,
+            startPoint.y,
+          );
+          const endTarget = document.elementFromPoint(endPoint.x, endPoint.y);
+          if (!startTarget || !endTarget) {
+            return false;
+          }
+          const baseEvent = {
+            bubbles: true,
+            button: 0,
+            buttons: 1,
+            isPrimary: true,
+            pointerId: 1,
+            pointerType: 'mouse',
+          };
+          startTarget.dispatchEvent(
+            new PointerEvent('pointerdown', {
+              ...baseEvent,
+              clientX: startPoint.x,
+              clientY: startPoint.y,
+            }),
+          );
+          endTarget.dispatchEvent(
+            new PointerEvent('pointermove', {
+              ...baseEvent,
+              clientX: endPoint.x,
+              clientY: endPoint.y,
+            }),
+          );
+          endTarget.dispatchEvent(
+            new PointerEvent('pointerup', {
+              ...baseEvent,
+              buttons: 0,
+              clientX: endPoint.x,
+              clientY: endPoint.y,
+            }),
+          );
+          return true;
+        },
+        {endPoint: dragEnd, startPoint: dragStart},
+      );
+    };
+
+    const dragAndAssertSelection = async (fromBox, toBox, expected) => {
+      await dragMouse(page, fromBox, toBox, {slow: true});
+      if (await waitForTableSelectionCoordinates(expected)) {
+        return;
+      }
+      const start = {
+        x: fromBox.x + fromBox.width / 2,
+        y: fromBox.y + fromBox.height / 2,
+      };
+      const end = {
+        x: toBox.x + toBox.width / 2,
+        y: toBox.y + toBox.height / 2,
+      };
+      await dispatchPointerDrag(start, end);
+      if (await waitForTableSelectionCoordinates(expected)) {
+        return;
+      }
+      const coords = await readTableSelectionCoordinates();
+      throw new Error(
+        `Expected table selection ${JSON.stringify(
+          expected,
+        )} but got ${JSON.stringify(coords)}`,
+      );
+    };
+
+    // Test first column: straight drag from top to bottom (no click first)
+    // This tests the fix for issue #8079 - straight drag should work
+    const firstColTop = await selectorBoundingBox(
+      page,
+      'table:first-of-type > tr:nth-of-type(1) > th:nth-child(1)',
+    );
+    const firstColBottom = await selectorBoundingBox(
+      page,
+      'table:first-of-type > tr:nth-of-type(2) > th:nth-child(1)',
+    );
+
+    await dragAndAssertSelection(firstColTop, firstColBottom, {
+      anchor: {x: 0, y: 0},
+      focus: {x: 0, y: 1},
+    });
+
+    // Test second column: straight drag from top to bottom on FIRST attempt
+    // This was the bug: first drag missed top cell, subsequent drags worked
+    const secondColTop = await selectorBoundingBox(
+      page,
+      'table:first-of-type > tr:nth-of-type(1) > th:nth-child(2)',
+    );
+    const secondColBottom = await selectorBoundingBox(
+      page,
+      'table:first-of-type > tr:nth-of-type(2) > td:nth-child(2)',
+    );
+
+    await dragAndAssertSelection(secondColTop, secondColBottom, {
+      anchor: {x: 1, y: 0},
+      focus: {x: 1, y: 1},
+    });
   });
 });
 

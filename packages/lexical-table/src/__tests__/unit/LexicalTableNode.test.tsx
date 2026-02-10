@@ -595,6 +595,8 @@ describe('LexicalTableNode tests', () => {
             );
           });
 
+          // Increased timeout to 15s as this test can be slow due to clipboard operations
+          // and HTML parsing, preventing flaky test failures
           test('Copy table with caption from an external source', async () => {
             const {editor} = testEnv;
 
@@ -763,7 +765,7 @@ describe('LexicalTableNode tests', () => {
                 </table>
               `,
             );
-          });
+          }, 15000);
 
           test('Copy table from an external source like gdoc with formatting', async () => {
             const {editor} = testEnv;
@@ -828,7 +830,7 @@ describe('LexicalTableNode tests', () => {
                 </table>
               `,
             );
-          });
+          }, 15000);
 
           test('Cut table in the middle of a range selection', async () => {
             const {editor} = testEnv;

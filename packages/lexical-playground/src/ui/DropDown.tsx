@@ -8,6 +8,7 @@
 
 import type {JSX} from 'react';
 
+import {calculateZoomLevel} from '@lexical/utils';
 import {isDOMNode} from 'lexical';
 import * as React from 'react';
 import {
@@ -165,6 +166,7 @@ export default function DropDown({
   buttonIconClassName,
   children,
   stopCloseOnClickSelf,
+  hideChevron,
 }: {
   disabled?: boolean;
   buttonAriaLabel?: string;
@@ -173,6 +175,7 @@ export default function DropDown({
   buttonLabel?: string;
   children: ReactNode;
   stopCloseOnClickSelf?: boolean;
+  hideChevron?: boolean;
 }): JSX.Element {
   const dropDownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -189,14 +192,13 @@ export default function DropDown({
   useEffect(() => {
     const button = buttonRef.current;
     const dropDown = dropDownRef.current;
-
+    const zoom = calculateZoomLevel(dropDown, true);
     if (showDropDown && button !== null && dropDown !== null) {
       const {top, left} = button.getBoundingClientRect();
-      dropDown.style.top = `${top + button.offsetHeight + dropDownPadding}px`;
-      dropDown.style.left = `${Math.min(
-        left,
-        window.innerWidth - dropDown.offsetWidth - 20,
-      )}px`;
+      dropDown.style.top = `${top / zoom + button.offsetHeight + dropDownPadding}px`;
+      dropDown.style.left = `${
+        Math.min(left, window.innerWidth - dropDown.offsetWidth - 20) / zoom
+      }px`;
     }
   }, [dropDownRef, buttonRef, showDropDown]);
 
@@ -272,7 +274,7 @@ export default function DropDown({
         {buttonLabel && (
           <span className="text dropdown-button-text">{buttonLabel}</span>
         )}
-        <i className="chevron-down" />
+        {!hideChevron && <i className="chevron-down" />}
       </button>
 
       {showDropDown &&

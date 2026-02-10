@@ -6,6 +6,7 @@
  *
  */
 
+import react from '@vitejs/plugin-react';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import {defineConfig, mergeConfig, Plugin} from 'vitest/config';
 
@@ -21,6 +22,8 @@ function lexicalTestMocks(): Plugin {
             'shared/warnOnlyOnce':
               'packages/shared/src/__mocks__/warnOnlyOnce.ts',
           },
+          conditions: ['development', 'import', 'module', 'browser', 'default'],
+          dedupe: ['react', 'react-dom'],
         },
       });
     },
@@ -40,6 +43,7 @@ export default defineConfig({
         },
         extends: true,
         plugins: [
+          react(),
           tsconfigPaths({projects: ['./tsconfig.test.json']}),
           lexicalTestMocks(),
         ],

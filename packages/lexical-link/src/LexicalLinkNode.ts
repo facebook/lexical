@@ -549,9 +549,16 @@ function $splitLinkAtSelection(
   );
 
   const allChildren = parentLink.getChildren();
-  const extractedChildren = allChildren.filter((child) =>
-    extractedKeys.has(child.getKey()),
-  );
+  // Check if a child is an extracted node OR contains an extracted node
+  // This handles nested structures like LinkNode > HeadingNode > TextNode
+  const isExtractedChild = (child: LexicalNode): boolean =>
+    extractedKeys.has(child.getKey()) ||
+    ($isElementNode(child) &&
+      extractedNodes.some(
+        (n) => parentLink.isParentOf(n) && child.isParentOf(n),
+      ));
+
+  const extractedChildren = allChildren.filter(isExtractedChild);
 
   if (extractedChildren.length === allChildren.length) {
     allChildren.forEach((child) => parentLink.insertBefore(child));
@@ -559,12 +566,8 @@ function $splitLinkAtSelection(
     return;
   }
 
-  const firstExtractedIndex = allChildren.findIndex((child) =>
-    extractedKeys.has(child.getKey()),
-  );
-  const lastExtractedIndex = allChildren.findLastIndex((child) =>
-    extractedKeys.has(child.getKey()),
-  );
+  const firstExtractedIndex = allChildren.findIndex(isExtractedChild);
+  const lastExtractedIndex = allChildren.findLastIndex(isExtractedChild);
 
   const isAtStart = firstExtractedIndex === 0;
   const isAtEnd = lastExtractedIndex === allChildren.length - 1;
@@ -676,9 +679,13 @@ export function $toggleLink(
     const processedLinks = new Set<NodeKey>();
 
     nodes.forEach((node) => {
-      const parentLink = node.getParent();
+      const parentLink = $findMatchingParent(
+        node,
+        (parent): parent is LinkNode =>
+          !$isAutoLinkNode(parent) && $isLinkNode(parent),
+      );
 
-      if ($isLinkNode(parentLink) && !$isAutoLinkNode(parentLink)) {
+      if (parentLink !== null) {
         const linkKey = parentLink.getKey();
 
         if (processedLinks.has(linkKey)) {

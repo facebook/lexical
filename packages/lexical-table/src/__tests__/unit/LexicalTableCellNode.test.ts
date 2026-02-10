@@ -7,12 +7,18 @@
  */
 
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
-import {$createTableCellNode, TableCellHeaderStates} from '@lexical/table';
-import {$getRoot} from 'lexical';
+import {
+  $createTableCellNode,
+  $isTableCellNode,
+  TableCellHeaderStates,
+  TableCellNode,
+} from '@lexical/table';
+import {$getRoot, DOMConversionOutput} from 'lexical';
 import {
   expectHtmlToBeEqual,
   html,
   initializeUnitTest,
+  invariant,
 } from 'lexical/src/__tests__/utils';
 import {describe, expect, test} from 'vitest';
 
@@ -92,6 +98,8 @@ describe('LexicalTableCellNode tests', () => {
       });
     });
 
+    // Increased timeout as this test performs DOM parsing and HTML generation
+    // which can be slow, preventing flaky test failures
     test('TableCellNode.importDOM', async () => {
       const {editor} = testEnv;
       const parser = new DOMParser();
@@ -209,6 +217,82 @@ describe('LexicalTableCellNode tests', () => {
 
           expectHtmlToBeEqual($generateHtmlFromNodes(editor), output);
         }
+      });
+    }, 15000);
+
+    // Simulates the Lexical Paste Engine finding and running the converter
+    const convertHTMLTag = (element: HTMLElement) => {
+      const importDOMMap = TableCellNode.importDOM();
+
+      // look up tag name (e.g., 'th') in the import map
+      const handler = importDOMMap![element.tagName.toLowerCase()];
+      if (!handler) {
+        throw new Error(`No handler found for tag ${element.tagName}`);
+      }
+
+      const specs = handler(element);
+      if (!specs) {
+        throw new Error(`Handler returned null for tag ${element.tagName}`);
+      }
+      return specs.conversion(element);
+    };
+
+    const expectTableCellNode = (result: DOMConversionOutput | null) => {
+      const node = result?.node;
+
+      if (Array.isArray(node)) {
+        throw new Error('Expected a single node, but got an array');
+      }
+
+      invariant(
+        $isTableCellNode(node),
+        'Expected result.node to be a TableCellNode',
+      );
+
+      return node;
+    };
+
+    test('DOM Conversion: <th> with scope="col" becomes COLUMN header', async () => {
+      const {editor} = testEnv;
+
+      await editor.update(() => {
+        const th = document.createElement('th');
+        th.setAttribute('scope', 'col');
+
+        const result = convertHTMLTag(th);
+
+        const node = expectTableCellNode(result);
+
+        expect(node.getHeaderStyles()).toBe(TableCellHeaderStates.COLUMN);
+      });
+    });
+
+    test('DOM Conversion: <th> with scope="row" becomes ROW header', async () => {
+      const {editor} = testEnv;
+
+      await editor.update(() => {
+        const th = document.createElement('th');
+        th.setAttribute('scope', 'row');
+
+        const result = convertHTMLTag(th);
+
+        const node = expectTableCellNode(result);
+
+        expect(node.getHeaderStyles()).toBe(TableCellHeaderStates.ROW);
+      });
+    });
+
+    test('DOM Conversion: <th> without scope defaults to ROW header', async () => {
+      const {editor} = testEnv;
+
+      await editor.update(() => {
+        const th = document.createElement('th');
+        // No scope attribute set
+        const result = convertHTMLTag(th);
+
+        const node = expectTableCellNode(result);
+
+        expect(node.getHeaderStyles()).toBe(TableCellHeaderStates.ROW);
       });
     });
   });

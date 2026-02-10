@@ -125,6 +125,10 @@ declare export function $filter<T>(
   filterFn: (node: LexicalNode) => null | T,
 ): Array<T>;
 
+declare export function $handleIndentAndOutdent(
+  indentOrOutdent: (block: ElementNode) => void,
+): boolean;
+
 declare export function $insertFirst(parent: ElementNode, node: LexicalNode): void;
 
 declare export function $splitNode(

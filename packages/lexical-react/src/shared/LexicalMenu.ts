@@ -26,6 +26,7 @@ import {
   TextNode,
 } from 'lexical';
 import {
+  createElement,
   ReactPortal,
   RefObject,
   useCallback,
@@ -34,8 +35,11 @@ import {
   useRef,
   useState,
 } from 'react';
+import ReactDOM from 'react-dom';
 import {CAN_USE_DOM} from 'shared/canUseDOM';
 import useLayoutEffect from 'shared/useLayoutEffect';
+
+import {MenuItem} from './LexicalMenuItem';
 
 export type MenuTextMatch = {
   leadOffset: number;
@@ -54,6 +58,8 @@ export const PUNCTUATION =
 export class MenuOption {
   key: string;
   ref?: RefObject<HTMLElement | null>;
+  icon?: JSX.Element;
+  title?: JSX.Element | string | null;
 
   constructor(key: string) {
     this.key = key;
@@ -273,6 +279,8 @@ export function LexicalMenu<TOption extends MenuOption>({
   shouldSplitNodeWithQuery = false,
   commandPriority = COMMAND_PRIORITY_LOW,
   preselectFirstItem = true,
+  menuClassName,
+  menuItemClassName,
 }: {
   close: () => void;
   editor: LexicalEditor;
@@ -280,7 +288,7 @@ export function LexicalMenu<TOption extends MenuOption>({
   resolution: MenuResolution;
   options: Array<TOption>;
   shouldSplitNodeWithQuery?: boolean;
-  menuRenderFn: MenuRenderFn<TOption>;
+  menuRenderFn?: MenuRenderFn<TOption>;
   onSelectOption: (
     option: TOption,
     textNodeContainingQuery: TextNode | null,
@@ -289,6 +297,8 @@ export function LexicalMenu<TOption extends MenuOption>({
   ) => void;
   commandPriority?: CommandListenerPriority;
   preselectFirstItem?: boolean;
+  menuClassName?: string;
+  menuItemClassName?: string;
 }): JSX.Element | null {
   const [rawSelectedIndex, setHighlightedIndex] = useState<null | number>(null);
   // Clamp highlighted index if options list shrinks
@@ -513,11 +523,44 @@ export function LexicalMenu<TOption extends MenuOption>({
     [selectOptionAndCleanUp, selectedIndex, options],
   );
 
-  return menuRenderFn(
-    anchorElementRef,
-    listItemProps,
-    resolution.match ? resolution.match.matchingString : '',
-  );
+  if (menuRenderFn) {
+    return menuRenderFn(
+      anchorElementRef,
+      listItemProps,
+      resolution.match ? resolution.match.matchingString : '',
+    );
+  }
+
+  // Built-in rendering when menuRenderFn is omitted
+  return anchorElementRef.current && options.length
+    ? (ReactDOM.createPortal(
+        createElement(
+          'div',
+          {className: menuClassName ?? 'typeahead-popover'},
+          createElement(
+            'ul',
+            null,
+            options.map((option, i) =>
+              createElement(MenuItem, {
+                className: menuItemClassName,
+                index: i,
+                isSelected: selectedIndex === i,
+                key: option.key,
+                onClick: () => {
+                  setHighlightedIndex(i);
+                  selectOptionAndCleanUp(option);
+                },
+                onMouseEnter: () => {
+                  setHighlightedIndex(i);
+                },
+                option,
+              }),
+            ),
+          ),
+        ),
+        anchorElementRef.current,
+      ) as JSX.Element)
+    : null;
 }
 
 function setContainerDivAttributes(

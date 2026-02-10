@@ -202,7 +202,7 @@ export type TypeaheadMenuPluginProps<TOption extends MenuOption> = {
     matchingString: string,
   ) => void;
   options: Array<TOption>;
-  menuRenderFn: MenuRenderFn<TOption>;
+  menuRenderFn?: MenuRenderFn<TOption>;
   triggerFn: TriggerFn;
   onOpen?: (resolution: MenuResolution) => void;
   onClose?: () => void;
@@ -211,6 +211,8 @@ export type TypeaheadMenuPluginProps<TOption extends MenuOption> = {
   parent?: HTMLElement;
   preselectFirstItem?: boolean;
   ignoreEntityBoundary?: boolean;
+  menuClassName?: string;
+  menuItemClassName?: string;
 };
 
 export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
@@ -226,6 +228,8 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
   parent,
   preselectFirstItem = true,
   ignoreEntityBoundary = false,
+  menuClassName,
+  menuItemClassName,
 }: TypeaheadMenuPluginProps<TOption>): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
   const [resolution, setResolution] = useState<MenuResolution | null>(null);
@@ -347,6 +351,8 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
       onSelectOption={onSelectOption}
       commandPriority={commandPriority}
       preselectFirstItem={preselectFirstItem}
+      menuClassName={menuClassName}
+      menuItemClassName={menuItemClassName}
     />
   );
 }

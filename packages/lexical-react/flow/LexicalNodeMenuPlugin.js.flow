@@ -24,6 +24,8 @@ export type MenuResolution = {
 declare export class MenuOption {
   key: string;
   ref: {current: HTMLElement | null};
+  icon?: React.MixedElement;
+  title?: React.MixedElement | string | null;
   constructor(key: string): void;
   setRefElement(element: HTMLElement | null): void;
 }
@@ -55,8 +57,10 @@ type NodeMenuPluginProps<TOption> = {
   nodeKey: NodeKey | null,
   onClose?: () => void,
   onOpen?: (resolution: MenuResolution) => void,
-  menuRenderFn: MenuRenderFn<TOption>,
+  menuRenderFn?: MenuRenderFn<TOption>,
   anchorClassName?: string,
+  menuClassName?: string,
+  menuItemClassName?: string,
 };
 
 declare export function LexicalNodeMenuPlugin<TOption>(

@@ -43,17 +43,17 @@ type LexicalAutoEmbedPluginProps<TEmbedConfig> = {
     embedFn: () => void,
     dismissFn: () => void,
   ) => Array<AutoEmbedOption>,
-  menuRenderFn: MenuRenderFn<AutoEmbedOption>,
+  menuRenderFn?: MenuRenderFn<AutoEmbedOption>,
+  menuClassName?: string,
+  menuItemClassName?: string,
 };
 
 declare export class AutoEmbedOption extends MenuOption {
   title: string;
-  icon: React.MixedElement;
   onSelect: (targetNode: LexicalNode | null) => void;
   constructor(
     title: string,
     options: {
-      icon: React.MixedElement,
       onSelect: (targetNode: LexicalNode | null) => void,
     },
   ): void;

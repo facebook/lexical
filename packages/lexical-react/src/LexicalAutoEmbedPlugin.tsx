@@ -84,8 +84,10 @@ type LexicalAutoEmbedPluginProps<TEmbedConfig extends EmbedConfig> = {
     embedFn: () => void,
     dismissFn: () => void,
   ) => Array<AutoEmbedOption>;
-  menuRenderFn: MenuRenderFn<AutoEmbedOption>;
+  menuRenderFn?: MenuRenderFn<AutoEmbedOption>;
   menuCommandPriority?: CommandListenerPriority;
+  menuClassName?: string;
+  menuItemClassName?: string;
 };
 
 export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
@@ -94,6 +96,8 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
   getMenuOptions,
   menuRenderFn,
   menuCommandPriority = COMMAND_PRIORITY_LOW,
+  menuClassName,
+  menuItemClassName,
 }: LexicalAutoEmbedPluginProps<TEmbedConfig>): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
 
@@ -237,6 +241,8 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
       options={options}
       menuRenderFn={menuRenderFn}
       commandPriority={menuCommandPriority}
+      menuClassName={menuClassName}
+      menuItemClassName={menuItemClassName}
     />
   ) : null;
 }

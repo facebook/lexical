@@ -34,10 +34,12 @@ export type NodeMenuPluginProps<TOption extends MenuOption> = {
   nodeKey: NodeKey | null;
   onClose?: () => void;
   onOpen?: (resolution: MenuResolution) => void;
-  menuRenderFn: MenuRenderFn<TOption>;
+  menuRenderFn?: MenuRenderFn<TOption>;
   anchorClassName?: string;
   commandPriority?: CommandListenerPriority;
   parent?: HTMLElement;
+  menuClassName?: string;
+  menuItemClassName?: string;
 };
 
 export function LexicalNodeMenuPlugin<TOption extends MenuOption>({
@@ -50,6 +52,8 @@ export function LexicalNodeMenuPlugin<TOption extends MenuOption>({
   anchorClassName,
   commandPriority = COMMAND_PRIORITY_LOW,
   parent,
+  menuClassName,
+  menuItemClassName,
 }: NodeMenuPluginProps<TOption>): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
   const [resolution, setResolution] = useState<MenuResolution | null>(null);
@@ -123,6 +127,8 @@ export function LexicalNodeMenuPlugin<TOption extends MenuOption>({
       menuRenderFn={menuRenderFn}
       onSelectOption={onSelectOption}
       commandPriority={commandPriority}
+      menuClassName={menuClassName}
+      menuItemClassName={menuItemClassName}
     />
   );
 }

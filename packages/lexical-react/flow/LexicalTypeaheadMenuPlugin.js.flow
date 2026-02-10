@@ -27,6 +27,8 @@ export const PUNCTUATION: string =
 declare export class MenuOption {
   key: string;
   ref: {current: HTMLElement | null};
+  icon?: React.MixedElement;
+  title?: React.MixedElement | string | null;
   constructor(key: string): void;
   setRefElement(element: HTMLElement | null): void;
 }
@@ -66,11 +68,13 @@ export type TypeaheadMenuPluginProps<TOption> = {
     matchingString: string,
   ) => void,
   options: Array<TOption>,
-  menuRenderFn: MenuRenderFn<TOption>,
+  menuRenderFn?: MenuRenderFn<TOption>,
   triggerFn: TriggerFn,
   onOpen?: (resolution: MenuResolution) => void,
   onClose?: () => void,
   anchorClassName?: string,
+  menuClassName?: string,
+  menuItemClassName?: string,
 };
 
 export type TriggerFn = (

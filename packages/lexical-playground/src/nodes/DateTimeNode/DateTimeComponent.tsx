@@ -24,8 +24,11 @@ import {
   useInteractions,
   useRole,
 } from '@floating-ui/react';
+import {
+  DecoratorTextExtension,
+  getExtensionDependencyFromEditor,
+} from '@lexical/extension';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {TextWithFormattedContents} from '@lexical/react/LexicalTextWithFormattedContents';
 import {setHours, setMinutes} from 'date-fns';
 import {
   $getNodeByKey,
@@ -196,75 +199,78 @@ export default function DateTimeComponent({
     });
   };
 
-  const classNames = [
-    'dateTimePill',
-    ...Object.entries(formatClassMap)
-      .filter(([flag]) => format & Number(flag))
-      .map(([, className]) => className),
-  ];
+  useEffect(() => {
+    const cn = [
+      'dateTimePill',
+      ...Object.entries(formatClassMap)
+        .filter(([flag]) => format & Number(flag))
+        .map(([, className]) => className),
+    ];
+    const {className} = getExtensionDependencyFromEditor(
+      editor,
+      DecoratorTextExtension,
+    ).output;
+    className.value = {base: cn.join(' ')};
+  }, [editor, format]);
 
   return (
-    <TextWithFormattedContents
-      className={{base: classNames.join(' '), focus: 'selected'}}
-      nodeKey={nodeKey}>
-      <span ref={ref}>
-        {dateTime?.toDateString() + (includeTime ? ' ' + timeValue : '') ||
-          'Invalid Date'}
-        {isOpen && (
-          <FloatingPortal>
-            <FloatingOverlay lockScroll={true}>
-              <FloatingFocusManager context={context} initialFocus={-1}>
-                <div
-                  className={'dateTimePicker'}
-                  ref={refs.setFloating}
-                  style={floatingStyles}
-                  {...getFloatingProps()}>
-                  <DayPicker
-                    captionLayout="dropdown"
-                    navLayout="after"
-                    fixedWeeks={false}
-                    showOutsideDays={false}
-                    mode="single"
-                    selected={selected}
-                    required={true}
-                    // timeZone="BST" TODO: Support time zone selection
-                    onSelect={handleDaySelect}
-                    startMonth={new Date(1925, 0)}
-                    endMonth={new Date(2042, 7)}
-                  />
-                  <form style={{marginBlockEnd: '1em'}}>
-                    <div
-                      style={{
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                        width: '300px',
-                      }}>
+    <div ref={ref}>
+      {dateTime?.toDateString() + (includeTime ? ' ' + timeValue : '') ||
+        'Invalid Date'}
+      {isOpen && (
+        <FloatingPortal>
+          <FloatingOverlay lockScroll={true}>
+            <FloatingFocusManager context={context} initialFocus={-1}>
+              <div
+                className={'dateTimePicker'}
+                ref={refs.setFloating}
+                style={floatingStyles}
+                {...getFloatingProps()}>
+                <DayPicker
+                  captionLayout="dropdown"
+                  navLayout="after"
+                  fixedWeeks={false}
+                  showOutsideDays={false}
+                  mode="single"
+                  selected={selected}
+                  required={true}
+                  // timeZone="BST" TODO: Support time zone selection
+                  onSelect={handleDaySelect}
+                  startMonth={new Date(1925, 0)}
+                  endMonth={new Date(2042, 7)}
+                />
+                <form style={{marginBlockEnd: '1em'}}>
+                  <div
+                    style={{
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      width: '300px',
+                    }}>
+                    <input
+                      type="checkbox"
+                      id="option1"
+                      name="option1"
+                      value="value1"
+                      checked={includeTime}
+                      onChange={handleCheckboxChange}
+                    />
+                    <label>
                       <input
-                        type="checkbox"
-                        id="option1"
-                        name="option1"
-                        value="value1"
-                        checked={includeTime}
-                        onChange={handleCheckboxChange}
+                        type="time"
+                        value={timeValue}
+                        onChange={handleTimeChange}
+                        disabled={!includeTime}
                       />
-                      <label>
-                        <input
-                          type="time"
-                          value={timeValue}
-                          onChange={handleTimeChange}
-                          disabled={!includeTime}
-                        />
-                      </label>
-                      <span> {userTimeZone}</span>
-                    </div>
-                  </form>
-                </div>
-              </FloatingFocusManager>
-            </FloatingOverlay>
-          </FloatingPortal>
-        )}
-      </span>
-    </TextWithFormattedContents>
+                    </label>
+                    <span> {userTimeZone}</span>
+                  </div>
+                </form>
+              </div>
+            </FloatingFocusManager>
+          </FloatingOverlay>
+        </FloatingPortal>
+      )}
+    </div>
   );
 }

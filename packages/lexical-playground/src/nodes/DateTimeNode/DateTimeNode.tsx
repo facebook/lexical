@@ -13,7 +13,7 @@ import {
   applyFormatToDom,
   DecoratorTextNode,
   SerializedDecoratorTextNode,
-} from '@lexical/react/LexicalDecoratorTextNode';
+} from '@lexical/extension';
 import {
   $getState,
   $isTextNode,

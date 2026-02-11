@@ -28,7 +28,13 @@ import type {
 import type {RootNode} from './nodes/LexicalRootNode';
 
 import {CAN_USE_DOM} from 'shared/canUseDOM';
-import {IS_APPLE, IS_APPLE_WEBKIT, IS_IOS, IS_SAFARI} from 'shared/environment';
+import {
+  IS_APPLE,
+  IS_APPLE_WEBKIT,
+  IS_FIREFOX,
+  IS_IOS,
+  IS_SAFARI,
+} from 'shared/environment';
 import invariant from 'shared/invariant';
 
 import {
@@ -770,29 +776,21 @@ export function $updateTextNodeFromDOMContent(
     const isComposing = node.isComposing();
     let normalizedTextContent = textContent;
 
-    if (isComposing || compositionEnd) {
-      if (normalizedTextContent.endsWith(COMPOSITION_SUFFIX)) {
-        normalizedTextContent = normalizedTextContent.slice(
-          0,
-          -COMPOSITION_SUFFIX.length,
-        );
-      }
-      if (compositionEnd) {
-        const charsToStrip = [COMPOSITION_START_CHAR, COMPOSITION_SUFFIX];
-        for (const char of charsToStrip) {
-          let index;
-          while ((index = normalizedTextContent.indexOf(char)) !== -1) {
-            normalizedTextContent =
-              normalizedTextContent.slice(0, index) +
-              normalizedTextContent.slice(index + char.length);
+    if (IS_FIREFOX || compositionEnd) {
+      const charsToStrip = [COMPOSITION_START_CHAR, COMPOSITION_SUFFIX];
+      for (const char of charsToStrip) {
+        let index;
+        while ((index = normalizedTextContent.indexOf(char)) !== -1) {
+          normalizedTextContent =
+            normalizedTextContent.slice(0, index) +
+            normalizedTextContent.slice(index + char.length);
 
-            if (anchorOffset !== null && anchorOffset > index) {
-              anchorOffset = Math.max(index, anchorOffset - char.length);
-            }
+          if (anchorOffset !== null && anchorOffset > index) {
+            anchorOffset = Math.max(index, anchorOffset - char.length);
+          }
 
-            if (focusOffset !== null && focusOffset > index) {
-              focusOffset = Math.max(index, focusOffset - char.length);
-            }
+          if (focusOffset !== null && focusOffset > index) {
+            focusOffset = Math.max(index, focusOffset - char.length);
           }
         }
       }

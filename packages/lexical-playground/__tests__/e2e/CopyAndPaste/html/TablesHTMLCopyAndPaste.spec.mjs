@@ -342,14 +342,14 @@ test.describe('HTML Tables CopyAndPaste', () => {
           </colgroup>
           <tr>
             <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected"
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               style="background-color: rgb(242, 243, 245)">
               <p class="PlaygroundEditorTheme__paragraph">
                 <span data-lexical-text="true">a</span>
               </p>
             </th>
             <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected"
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               style="background-color: rgb(242, 243, 245)">
               <p class="PlaygroundEditorTheme__paragraph">
                 <span data-lexical-text="true">b</span>
@@ -366,7 +366,7 @@ test.describe('HTML Tables CopyAndPaste', () => {
           </tr>
           <tr>
             <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected"
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               style="background-color: rgb(242, 243, 245)">
               <p class="PlaygroundEditorTheme__paragraph">
                 <span data-lexical-text="true">c</span>

@@ -7,7 +7,7 @@
     "rich-text"
   ],
   "license": "MIT",
-  "version": "0.39.0",
+  "version": "0.40.0",
   "main": "LexicalRichText.js",
   "types": "index.d.ts",
   "repository": {
@@ -35,10 +35,10 @@
     }
   },
   "dependencies": {
-    "@lexical/clipboard": "0.39.0",
-    "@lexical/dragon": "0.39.0",
-    "@lexical/selection": "0.39.0",
-    "@lexical/utils": "0.39.0",
-    "lexical": "0.39.0"
+    "@lexical/clipboard": "workspace:*",
+    "@lexical/dragon": "workspace:*",
+    "@lexical/selection": "workspace:*",
+    "@lexical/utils": "workspace:*",
+    "lexical": "workspace:*"
   }
 }

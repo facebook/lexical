@@ -8,7 +8,7 @@
     "html"
   ],
   "license": "MIT",
-  "version": "0.39.0",
+  "version": "0.40.0",
   "main": "LexicalHtml.js",
   "types": "index.d.ts",
   "repository": {
@@ -17,9 +17,9 @@
     "directory": "packages/lexical-html"
   },
   "dependencies": {
-    "@lexical/selection": "0.39.0",
-    "@lexical/utils": "0.39.0",
-    "lexical": "0.39.0"
+    "@lexical/selection": "workspace:*",
+    "@lexical/utils": "workspace:*",
+    "lexical": "workspace:*"
   },
   "module": "LexicalHtml.mjs",
   "sideEffects": false,

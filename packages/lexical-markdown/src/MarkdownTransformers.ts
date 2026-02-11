@@ -681,7 +681,13 @@ export const LINK: TextMatchTransformer = {
     /(?:\[(.+?)\])(?:\((?:([^()\s]+)(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))$/,
   replace: (textNode, match) => {
     const [, linkText, linkUrl, linkTitle] = match;
-    const localMatchIndex = match.index || 0;
+    const matchText = match[0];
+
+    const textContent = textNode.getTextContent();
+    const localMatchIndex = textContent.indexOf(matchText);
+    if (localMatchIndex === -1) {
+      return;
+    }
 
     //split only if necessary
     if (localMatchIndex > 0) {

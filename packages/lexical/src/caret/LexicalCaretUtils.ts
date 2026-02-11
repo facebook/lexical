@@ -344,7 +344,14 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
     // always merge blocks later in the document with
     // blocks earlier in the document
     $getChildCaret(anchorBlock, 'previous').splice(0, focusBlock.getChildren());
-    focusBlock.remove();
+    // remove empty parent node even if parent node is canBeEmpty
+    let parent = focusBlock.getParent();
+    focusBlock.remove(true);
+    while (parent && parent.isEmpty()) {
+      const element = parent;
+      parent = parent.getParent();
+      element.remove(true);
+    }
   }
 
   // note this caret can be in either direction

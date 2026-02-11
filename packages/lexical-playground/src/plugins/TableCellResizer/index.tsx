@@ -384,7 +384,7 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
       const zoneWidth = 16; // Pixel width of the zone where you can drag the edge
       const styles: Record<string, CSSProperties> = {
         bottom: {
-          backgroundColor: 'none',
+          backgroundColor: 'transparent',
           cursor: 'row-resize',
           height: `${zoneWidth}px`,
           left: `${window.scrollX + left}px`,
@@ -392,7 +392,7 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
           width: `${width}px`,
         },
         right: {
-          backgroundColor: 'none',
+          backgroundColor: 'transparent',
           cursor: 'col-resize',
           height: `${height}px`,
           left: `${window.scrollX + left + width - zoneWidth / 2}px`,
@@ -428,7 +428,7 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
         const halfZoneWidth = zoneWidth / 2;
         const highlightWidth = 2;
         const highlightStart = halfZoneWidth - highlightWidth / 2;
-        styles.right.background = `linear-gradient(90deg, transparent ${highlightStart}px, ${ACTIVE_RESIZER_COLOR} ${highlightStart}px, ${ACTIVE_RESIZER_COLOR} ${
+        styles.right.backgroundImage = `linear-gradient(90deg, transparent ${highlightStart}px, ${ACTIVE_RESIZER_COLOR} ${highlightStart}px, ${ACTIVE_RESIZER_COLOR} ${
           highlightStart + highlightWidth
         }px, transparent ${highlightStart + highlightWidth}px)`;
         styles.right.mixBlendMode = 'unset';

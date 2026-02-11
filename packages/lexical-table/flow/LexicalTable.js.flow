@@ -470,4 +470,12 @@ export type TableConfig = {
 
 declare export var TableExtension: LexicalExtension<TableConfig, "@lexical/table/Table", NamedSignalsOutput<TableConfig>, void>;
 
+declare export function $isSimpleTable(table: TableNode): boolean;
+
+declare export function $moveTableColumn(
+  tableNode: TableNode,
+  originColumn: number,
+  targetColumn: number,
+): void;
+
 declare export function $mergeCells(cellNodes: TableCellNode[]): TableCellNode | null;

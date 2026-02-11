@@ -752,4 +752,50 @@ test.describe.parallel('Auto Links', () => {
       {ignoreClasses: true},
     );
   });
+
+  test('Pressing Enter inside an AutoLinkNode does not insert extra paragraph', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type('http://example.com');
+
+    // Wait for auto-link to be created
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <a href="http://example.com">
+            <span data-lexical-text="true">http://example.com</span>
+          </a>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+
+    // Move cursor one character to the left (before the 'm')
+    await moveLeft(page, 1);
+
+    // Press Enter to split the link
+    await page.keyboard.press('Enter');
+
+    // Should produce exactly 2 paragraphs, not 3
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <a href="http://example.co">
+            <span data-lexical-text="true">http://example.co</span>
+          </a>
+        </p>
+        <p dir="auto">
+          <span data-lexical-text="true">m</span>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
 });

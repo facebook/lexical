@@ -8,12 +8,14 @@
     "utils"
   ],
   "license": "MIT",
-  "version": "0.40.0",
+  "version": "0.39.0",
   "main": "LexicalUtils.js",
   "types": "index.d.ts",
   "dependencies": {
-    "@lexical/selection": "workspace:*",
-    "lexical": "workspace:*"
+    "@lexical/list": "0.39.0",
+    "@lexical/selection": "0.39.0",
+    "@lexical/table": "0.39.0",
+    "lexical": "0.39.0"
   },
   "repository": {
     "type": "git",

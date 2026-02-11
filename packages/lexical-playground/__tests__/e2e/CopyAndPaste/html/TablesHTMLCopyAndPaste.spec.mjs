@@ -342,86 +342,77 @@ test.describe('HTML Tables CopyAndPaste', () => {
           </colgroup>
           <tr>
             <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected"
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               style="background-color: rgb(242, 243, 245)">
               <p class="PlaygroundEditorTheme__paragraph">
                 <span data-lexical-text="true">a</span>
               </p>
             </th>
             <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected"
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               style="background-color: rgb(242, 243, 245)">
               <p class="PlaygroundEditorTheme__paragraph">
                 <span data-lexical-text="true">b</span>
               </p>
             </th>
             <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected">
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </th>
             <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected">
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </th>
           </tr>
           <tr>
             <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected"
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               style="background-color: rgb(242, 243, 245)">
               <p class="PlaygroundEditorTheme__paragraph">
                 <span data-lexical-text="true">c</span>
               </p>
             </th>
-            <td
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected">
+            <td class="PlaygroundEditorTheme__tableCell">
               <p
                 class="PlaygroundEditorTheme__paragraph"
                 style="text-align: start">
                 <span data-lexical-text="true">d</span>
               </p>
             </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected">
+            <td class="PlaygroundEditorTheme__tableCell">
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected">
+            <td class="PlaygroundEditorTheme__tableCell">
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </td>
           </tr>
           <tr>
             <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected">
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </th>
-            <td
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected">
+            <td class="PlaygroundEditorTheme__tableCell">
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected">
+            <td class="PlaygroundEditorTheme__tableCell">
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected">
+            <td class="PlaygroundEditorTheme__tableCell">
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </td>
           </tr>
           <tr>
             <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected">
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </th>
-            <td
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected">
+            <td class="PlaygroundEditorTheme__tableCell">
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected">
+            <td class="PlaygroundEditorTheme__tableCell">
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected">
+            <td class="PlaygroundEditorTheme__tableCell">
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </td>
           </tr>

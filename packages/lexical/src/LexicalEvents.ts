@@ -48,9 +48,7 @@ import {
   DROP_COMMAND,
   FOCUS_COMMAND,
   FORMAT_TEXT_COMMAND,
-  HISTORIC_TAG,
   HISTORY_MERGE_TAG,
-  HISTORY_PUSH_TAG,
   INSERT_LINE_BREAK_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
@@ -1014,7 +1012,7 @@ function $handleInput(event: InputEvent): boolean {
           () => {
             dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, data);
           },
-          {tag: HISTORY_PUSH_TAG},
+          {tag: HISTORY_MERGE_TAG},
         );
       } else {
         dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, data);
@@ -1089,18 +1087,14 @@ function $handleCompositionStart(event: CompositionEvent): boolean {
       // we don't do this, Safari will fail on us because
       // there is no text node matching the selection.
 
-      // Use HISTORIC_TAG so this placeholder update is ignored by undo history.
-      editor.update(
-        () => {
-          $setCompositionKey(anchor.key);
-          dispatchCommand(
-            editor,
-            CONTROLLED_TEXT_INSERTION_COMMAND,
-            COMPOSITION_START_CHAR,
-          );
-        },
-        {tag: HISTORIC_TAG},
-      );
+      editor.update(() => {
+        $setCompositionKey(anchor.key);
+        dispatchCommand(
+          editor,
+          CONTROLLED_TEXT_INSERTION_COMMAND,
+          COMPOSITION_START_CHAR,
+        );
+      });
     } else {
       $setCompositionKey(anchor.key);
     }
@@ -1122,6 +1116,7 @@ function $handleCompositionEnd(event: CompositionEvent): boolean {
 
 function $onCompositionEndImpl(editor: LexicalEditor, data?: string): void {
   const compositionKey = editor._compositionKey;
+  $setCompositionKey(null);
 
   // Handle termination of composition.
   if (compositionKey !== null && data != null) {
@@ -1154,7 +1149,6 @@ function $onCompositionEndImpl(editor: LexicalEditor, data?: string): void {
           true,
         );
       }
-      $setCompositionKey(null);
       return;
     } else if (data[data.length - 1] === '\n') {
       const selection = $getSelection();
@@ -1167,14 +1161,12 @@ function $onCompositionEndImpl(editor: LexicalEditor, data?: string): void {
           selection.anchor.set(focus.key, focus.offset, focus.type);
         }
         dispatchCommand(editor, KEY_ENTER_COMMAND, null);
-        $setCompositionKey(null);
         return;
       }
     }
   }
 
   $updateSelectedTextFromDOM(true, editor, data);
-  $setCompositionKey(null);
 }
 
 function onCompositionEnd(

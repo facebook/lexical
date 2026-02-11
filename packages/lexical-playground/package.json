@@ -11,6 +11,8 @@
     "preview": "vite preview --port 4000 --host"
   },
   "dependencies": {
+    "@atlaskit/drag-and-drop-indicator": "^0.11.1",
+    "@atlaskit/pragmatic-drag-and-drop": "^1.7.7",
     "@excalidraw/excalidraw": "^0.18.0",
     "@floating-ui/react": "^0.27.16",
     "@lexical/clipboard": "workspace:*",

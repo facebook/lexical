@@ -1028,7 +1028,7 @@ function $handleInput(event: InputEvent): boolean {
     }
 
     // This ensures consistency on Android.
-    if (!IS_SAFARI && !IS_IOS && !IS_APPLE_WEBKIT && editor.isComposing()) {
+    if (IS_ANDROID_CHROME && editor.isComposing()) {
       lastKeyDownTimeStamp = 0;
       $setCompositionKey(null);
     }

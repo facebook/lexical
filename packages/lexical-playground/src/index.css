@@ -1442,7 +1442,7 @@ button.action-button:disabled {
   height: 36px;
   position: sticky;
   top: 0;
-  z-index: 2;
+  z-index: 20;
   overflow-y: hidden; /* disable vertical scroll*/
 }
 

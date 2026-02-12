@@ -133,8 +133,9 @@ function setElementIndent(dom: HTMLElement, indent: number): void {
   }
 
   const indentationBaseValue =
-    getComputedStyle(dom).getPropertyValue('--lexical-indent-base-value') ||
-    DEFAULT_INDENT_VALUE;
+    getComputedStyle(activeEditor._rootElement || dom).getPropertyValue(
+      '--lexical-indent-base-value',
+    ) || DEFAULT_INDENT_VALUE;
 
   dom.style.setProperty(
     'padding-inline-start',

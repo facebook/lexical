@@ -28,6 +28,7 @@ import {
   $getSelection,
   $isDecoratorNode,
   $isElementNode,
+  $isNodeSelection,
   $isRangeSelection,
   $isRootNode,
   $isTextNode,
@@ -47,6 +48,7 @@ import {
   DROP_COMMAND,
   FOCUS_COMMAND,
   FORMAT_TEXT_COMMAND,
+  HISTORY_MERGE_TAG,
   INSERT_LINE_BREAK_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
@@ -87,6 +89,7 @@ import {
 } from './LexicalSelection';
 import {getActiveEditor, updateEditorSync} from './LexicalUpdates';
 import {
+  $addUpdateTag,
   $findMatchingParent,
   $flushMutations,
   $getAdjacentNode,
@@ -1006,6 +1009,9 @@ function $handleInput(event: InputEvent): boolean {
         getAnchorTextFromDOM(domSelection.anchorNode)
     ) {
       dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, data);
+      if (editor.isComposing()) {
+        $addUpdateTag(HISTORY_MERGE_TAG);
+      }
     }
 
     const textLength = data.length;
@@ -1022,7 +1028,7 @@ function $handleInput(event: InputEvent): boolean {
     }
 
     // This ensures consistency on Android.
-    if (!IS_SAFARI && !IS_IOS && !IS_APPLE_WEBKIT && editor.isComposing()) {
+    if (IS_ANDROID_CHROME && editor.isComposing()) {
       lastKeyDownTimeStamp = 0;
       $setCompositionKey(null);
     }
@@ -1090,6 +1096,7 @@ function $handleCompositionStart(event: CompositionEvent): boolean {
 function $handleCompositionEnd(event: CompositionEvent): boolean {
   const editor = getActiveEditor();
   $onCompositionEndImpl(editor, event.data);
+  $addUpdateTag(HISTORY_MERGE_TAG);
   return true;
 }
 
@@ -1103,35 +1110,42 @@ function $onCompositionEndImpl(editor: LexicalEditor, data?: string): void {
     // So check for the empty case.
     if (data === '') {
       const node = $getNodeByKey(compositionKey);
-      const textNode = getDOMTextNode(editor.getElementByKey(compositionKey));
+      const domElement = editor.getElementByKey(compositionKey);
+      const textNode = getDOMTextNode(domElement);
 
       if (
         textNode !== null &&
         textNode.nodeValue !== null &&
         $isTextNode(node)
       ) {
+        const domSelection = getDOMSelection(getWindow(editor));
+        let anchorOffset = null;
+        let focusOffset = null;
+
+        if (domSelection !== null && domSelection.anchorNode === textNode) {
+          anchorOffset = domSelection.anchorOffset;
+          focusOffset = domSelection.focusOffset;
+        }
+
         $updateTextNodeFromDOMContent(
           node,
           textNode.nodeValue,
-          null,
-          null,
+          anchorOffset,
+          focusOffset,
           true,
         );
       }
-
       return;
-    }
-
-    // Composition can sometimes be that of a new line. In which case, we need to
-    // handle that accordingly.
-    if (data[data.length - 1] === '\n') {
+    } else if (data[data.length - 1] === '\n') {
       const selection = $getSelection();
 
-      if ($isRangeSelection(selection)) {
+      if ($isRangeSelection(selection) || $isNodeSelection(selection)) {
         // If the last character is a line break, we also need to insert
         // a line break.
-        const focus = selection.focus;
-        selection.anchor.set(focus.key, focus.offset, focus.type);
+        if ($isRangeSelection(selection)) {
+          const focus = selection.focus;
+          selection.anchor.set(focus.key, focus.offset, focus.type);
+        }
         dispatchCommand(editor, KEY_ENTER_COMMAND, null);
         return;
       }

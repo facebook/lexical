@@ -6,6 +6,9 @@
  *
  *
  */
+:root {
+  --lexical-indent-base-value: 40px;
+}
 .PlaygroundEditorTheme__paragraph {
   margin: 0;
   position: relative;
@@ -38,9 +41,6 @@
   font-size: 12px;
   margin: 0;
   text-transform: uppercase;
-}
-.PlaygroundEditorTheme__indent {
-  --lexical-indent-base-value: 40px;
 }
 .PlaygroundEditorTheme__textBold {
   font-weight: bold;

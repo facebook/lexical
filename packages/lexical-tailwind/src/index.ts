@@ -86,7 +86,6 @@ const theme: EditorThemeClasses = {
   ),
   hrSelected: 'outline-[2px] outline-solid outline-[rgb(60,132,244)]',
   // image: 'editor-image',
-  indent: '[--lexical-indent-base-value:40px]',
   // inlineImage: 'inline-editor-image',
   // layoutContainer: 'PlaygroundEditorTheme__layoutContainer',
   // layoutItem: 'PlaygroundEditorTheme__layoutItem',

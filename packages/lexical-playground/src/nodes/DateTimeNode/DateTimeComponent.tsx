@@ -24,11 +24,8 @@ import {
   useInteractions,
   useRole,
 } from '@floating-ui/react';
-import {
-  DecoratorTextExtension,
-  getExtensionDependencyFromEditor,
-} from '@lexical/extension';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
 import {setHours, setMinutes} from 'date-fns';
 import {
   $getNodeByKey,
@@ -89,6 +86,9 @@ export default function DateTimeComponent({
     }
     return '00:00';
   });
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [isNodeSelected, setNodeSelected, clearNodeSelection] =
+    useLexicalNodeSelection(nodeKey);
 
   const {refs, floatingStyles, context} = useFloating({
     elements: {
@@ -199,22 +199,18 @@ export default function DateTimeComponent({
     });
   };
 
-  useEffect(() => {
-    const cn = [
-      'dateTimePill',
-      ...Object.entries(formatClassMap)
-        .filter(([flag]) => format & Number(flag))
-        .map(([, className]) => className),
-    ];
-    const {className} = getExtensionDependencyFromEditor(
-      editor,
-      DecoratorTextExtension,
-    ).output;
-    className.value = {base: cn.join(' ')};
-  }, [editor, format]);
+  const classNames = [
+    'dateTimePill',
+    ...Object.entries(formatClassMap)
+      .filter(([flag]) => format & Number(flag))
+      .map(([, className]) => className),
+  ];
+  if (isNodeSelected) {
+    classNames.push('selected');
+  }
 
   return (
-    <div ref={ref}>
+    <div className={classNames.join(' ')} ref={ref}>
       {dateTime?.toDateString() + (includeTime ? ' ' + timeValue : '') ||
         'Invalid Date'}
       {isOpen && (

@@ -39,9 +39,7 @@ test.describe('DateTime', () => {
             contenteditable="false"
             data-lexical-datetime="*"
             data-lexical-decorator="true">
-            <div class="dateTimePill">
-              <span>*</span>
-            </div>
+            <div class="dateTimePill">*</div>
           </span>
           <br />
         </p>
@@ -51,7 +49,7 @@ test.describe('DateTime', () => {
       // Custom modification: replace the date text and data-lexical-datetime value with wildcards for matching
       (actualHtml) =>
         actualHtml
-          .replace(/(<span[^>]*>)(.*?)(<\/span>)/, '$1*$3')
+          .replace(/(<div[^>]*>)(.*?)(<\/div>)/, '$1*$3')
           .replace(
             /data-lexical-datetime="[^"]*"/,
             'data-lexical-datetime="*"',

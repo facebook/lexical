@@ -8,7 +8,6 @@
 
 import type {
   LexicalNode,
-  NodeKey,
   SerializedLexicalNode,
   Spread,
   StateConfigValue,
@@ -19,7 +18,6 @@ import type {JSX} from 'react';
 
 import {
   $findMatchingParent,
-  $getNodeByKey,
   $getSelection,
   $getState,
   $isNodeSelection,
@@ -30,16 +28,9 @@ import {
   DecoratorNode,
   defineExtension,
   FORMAT_TEXT_COMMAND,
-  mergeRegister,
-  safeCast,
   TEXT_TYPE_TO_FORMAT,
   toggleTextFormatType,
 } from 'lexical';
-
-import {EditorStateExtension} from './EditorStateExtension';
-import {namedSignals} from './namedSignals';
-import {NodeSelectionExtension} from './NodeSelectionExtension';
-import {batch, effect, ReadonlySignal, Signal, signal} from './signals';
 
 export type SerializedDecoratorTextNode = Spread<
   {
@@ -199,136 +190,46 @@ const DEFAULT_TAG_NAME_TO_FORMAT: {[key: string]: TextFormatType} = {
   u: 'underline',
 };
 
-const DEFAULT_FOCUS_CLASSNAME = 'selected';
-
-export interface DecoratorTextConfig {
-  className: {
-    base?: string;
-    /** The class that is set when the node is selected. Default is "selected". */
-    focus?: string;
-  };
-}
-
 /**
  * An extension for DecoratorTextNode that sets the format for the node and CSS classes for the DOM container.
  * The base class is always set, and the focus class is set when the node is selected.
  */
 export const DecoratorTextExtension = defineExtension({
-  build(editor, config, state) {
-    return namedSignals(config);
-  },
-  config: safeCast<DecoratorTextConfig>({
-    className: {base: '', focus: DEFAULT_FOCUS_CLASSNAME},
-  }),
-  dependencies: [EditorStateExtension, NodeSelectionExtension],
   name: '@lexical/extension/DecoratorText',
   nodes: () => [DecoratorTextNode],
   register(editor, config, state) {
-    const {className} = state.getOutput();
-    const {watchNodeKey} = state.getDependency(NodeSelectionExtension).output;
-    const nodeSelectionStore = signal({
-      nodeSelections: new Map<
-        NodeKey,
-        {
-          domNode: Signal<null | HTMLElement>;
-          selectedSignal: ReadonlySignal<boolean>;
-        }
-      >(),
-    });
+    return editor.registerCommand<TextFormatType>(
+      FORMAT_TEXT_COMMAND,
+      (formatType) => {
+        const selection = $getSelection();
 
-    return mergeRegister(
-      editor.registerCommand<TextFormatType>(
-        FORMAT_TEXT_COMMAND,
-        (formatType) => {
-          const {nodeSelections} = nodeSelectionStore.peek();
-          nodeSelections.forEach(({selectedSignal}, nodeKey) => {
-            const isSelected = selectedSignal.peek();
-            if (!isSelected) {
-              return;
-            }
-
-            const selection = $getSelection();
-
-            if ($isNodeSelection(selection)) {
-              const node = $getNodeByKey(nodeKey);
-
-              if ($isDecoratorTextNode(node)) {
-                node.toggleFormat(formatType);
-              }
-            } else if ($isRangeSelection(selection)) {
-              const nodes = selection.getNodes();
-
-              for (const node of nodes) {
-                if ($isDecoratorTextNode(node)) {
-                  node.toggleFormat(formatType);
-                } else {
-                  const decoratorText = $findMatchingParent(
-                    node,
-                    $isDecoratorTextNode,
-                  );
-                  if (decoratorText !== null) {
-                    decoratorText.toggleFormat(formatType);
-                  }
-                }
-              }
+        if ($isNodeSelection(selection)) {
+          selection.getNodes().forEach((node) => {
+            if ($isDecoratorTextNode(node)) {
+              node.toggleFormat(formatType);
             }
           });
+        } else if ($isRangeSelection(selection)) {
+          const nodes = selection.getNodes();
 
-          return false;
-        },
-        COMMAND_PRIORITY_LOW,
-      ),
-      editor.registerMutationListener(DecoratorTextNode, (nodes, payload) => {
-        batch(() => {
-          let didChange = false;
-          const {nodeSelections} = nodeSelectionStore.peek();
-          for (const [k, v] of nodes.entries()) {
-            if (v === 'destroyed') {
-              nodeSelections.delete(k);
-              didChange = true;
+          for (const node of nodes) {
+            if ($isDecoratorTextNode(node)) {
+              node.toggleFormat(formatType);
             } else {
-              const prev = nodeSelections.get(k);
-              const dom = editor.getElementByKey(k);
-              if (prev) {
-                prev.domNode.value = dom;
-              } else {
-                didChange = true;
-                nodeSelections.set(k, {
-                  domNode: signal(dom),
-                  selectedSignal: watchNodeKey(k),
-                });
+              const decoratorText = $findMatchingParent(
+                node,
+                $isDecoratorTextNode,
+              );
+              if (decoratorText !== null) {
+                decoratorText.toggleFormat(formatType);
               }
             }
           }
-          if (didChange) {
-            nodeSelectionStore.value = {nodeSelections};
-          }
-        });
-      }),
-      effect(() => {
-        const effects = [];
-        for (const {
-          domNode,
-          selectedSignal,
-        } of nodeSelectionStore.value.nodeSelections.values()) {
-          effects.push(
-            effect(() => {
-              const dom = domNode.value;
-              if (dom) {
-                const {base, focus} = className.value;
-                const isSelected = selectedSignal.value;
-                if (base !== undefined) {
-                  dom.className = base;
-                }
-                if (isSelected) {
-                  dom.classList.add(focus ?? DEFAULT_FOCUS_CLASSNAME);
-                }
-              }
-            }),
-          );
         }
-        return mergeRegister(...effects);
-      }),
+
+        return false;
+      },
+      COMMAND_PRIORITY_LOW,
     );
   },
 });

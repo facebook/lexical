@@ -805,7 +805,7 @@ export function getExpectedDateTimeHtml({selected = false, formats = []} = {}) {
         class="dateTimePill ${selected ? 'selected' : ''} ${formats
           .map((f) => formatToClassname[f] || '')
           .join(' ')}">
-        <span>${date.toDateString()}</span>
+        ${date.toDateString()}
       </div>
     </span>
   `;

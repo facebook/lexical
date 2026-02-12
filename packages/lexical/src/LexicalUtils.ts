@@ -28,13 +28,7 @@ import type {
 import type {RootNode} from './nodes/LexicalRootNode';
 
 import {CAN_USE_DOM} from 'shared/canUseDOM';
-import {
-  IS_APPLE,
-  IS_APPLE_WEBKIT,
-  IS_FIREFOX,
-  IS_IOS,
-  IS_SAFARI,
-} from 'shared/environment';
+import {IS_APPLE, IS_APPLE_WEBKIT, IS_IOS, IS_SAFARI} from 'shared/environment';
 import invariant from 'shared/invariant';
 
 import {
@@ -776,9 +770,15 @@ export function $updateTextNodeFromDOMContent(
     const isComposing = node.isComposing();
     let normalizedTextContent = textContent;
 
-    if (IS_FIREFOX || compositionEnd) {
-      const charsToStrip = [COMPOSITION_START_CHAR, COMPOSITION_SUFFIX];
-      for (const char of charsToStrip) {
+    if (isComposing || compositionEnd) {
+      if (textContent.endsWith(COMPOSITION_SUFFIX)) {
+        normalizedTextContent = textContent.slice(
+          0,
+          -COMPOSITION_SUFFIX.length,
+        );
+      }
+      if (compositionEnd) {
+        const char = COMPOSITION_START_CHAR;
         let index;
         while ((index = normalizedTextContent.indexOf(char)) !== -1) {
           normalizedTextContent =

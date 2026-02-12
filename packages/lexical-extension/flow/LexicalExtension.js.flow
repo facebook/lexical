@@ -205,14 +205,7 @@ declare export function $isDecoratorTextNode(
   node: ?LexicalNode,
 ): node is DecoratorTextNode<{...}>;
 
-export type DecoratorTextConfig = {
-  className: {
-    base: string;
-    focus: string;
-  };
-}
-
-declare export var DecoratorTextExtension: LexicalExtension<DecoratorTextConfig, "@lexical/extension/DecoratorText", NamedSignalsOutput<DecoratorTextConfig>, void>;
+declare export var DecoratorTextExtension: LexicalExtension<ExtensionConfigBase, "@lexical/extension/DecoratorText", void, void>;
 
 declare export function registerClearEditor(
   editor: LexicalEditor,

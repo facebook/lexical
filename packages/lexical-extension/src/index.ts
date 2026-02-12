@@ -17,7 +17,6 @@ export {
   $isDecoratorTextNode,
   applyFormatFromStyle,
   applyFormatToDom,
-  type DecoratorTextConfig,
   DecoratorTextExtension,
   DecoratorTextNode,
   type SerializedDecoratorTextNode,

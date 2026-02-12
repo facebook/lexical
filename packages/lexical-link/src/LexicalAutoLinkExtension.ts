@@ -599,5 +599,6 @@ export const AutoLinkExtension = defineExtension({
     return merged;
   },
   name: '@lexical/link/AutoLink',
+  nodes: [AutoLinkNode],
   register: registerAutoLink,
 });

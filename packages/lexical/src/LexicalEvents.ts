@@ -89,6 +89,7 @@ import {
 } from './LexicalSelection';
 import {getActiveEditor, updateEditorSync} from './LexicalUpdates';
 import {
+  $addUpdateTag,
   $findMatchingParent,
   $flushMutations,
   $getAdjacentNode,
@@ -1007,15 +1008,9 @@ function $handleInput(event: InputEvent): boolean {
         anchorNode.getTextContent().slice(startOffset + endOffset) !==
         getAnchorTextFromDOM(domSelection.anchorNode)
     ) {
+      dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, data);
       if (editor.isComposing()) {
-        editor.update(
-          () => {
-            dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, data);
-          },
-          {tag: HISTORY_MERGE_TAG},
-        );
-      } else {
-        dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, data);
+        $addUpdateTag(HISTORY_MERGE_TAG);
       }
     }
 
@@ -1069,6 +1064,7 @@ function $handleCompositionStart(event: CompositionEvent): boolean {
   if ($isRangeSelection(selection) && !editor.isComposing()) {
     const anchor = selection.anchor;
     const node = selection.anchor.getNode();
+    $setCompositionKey(anchor.key);
 
     if (
       // If it has been 30ms since the last keydown, then we should
@@ -1086,17 +1082,11 @@ function $handleCompositionStart(event: CompositionEvent): boolean {
       // to get inserted into the new node we create. If
       // we don't do this, Safari will fail on us because
       // there is no text node matching the selection.
-
-      editor.update(() => {
-        $setCompositionKey(anchor.key);
-        dispatchCommand(
-          editor,
-          CONTROLLED_TEXT_INSERTION_COMMAND,
-          COMPOSITION_START_CHAR,
-        );
-      });
-    } else {
-      $setCompositionKey(anchor.key);
+      dispatchCommand(
+        editor,
+        CONTROLLED_TEXT_INSERTION_COMMAND,
+        COMPOSITION_START_CHAR,
+      );
     }
   }
 
@@ -1105,12 +1095,8 @@ function $handleCompositionStart(event: CompositionEvent): boolean {
 
 function $handleCompositionEnd(event: CompositionEvent): boolean {
   const editor = getActiveEditor();
-  editor.update(
-    () => {
-      $onCompositionEndImpl(editor, event.data);
-    },
-    {tag: HISTORY_MERGE_TAG},
-  );
+  $onCompositionEndImpl(editor, event.data);
+  $addUpdateTag(HISTORY_MERGE_TAG);
   return true;
 }
 

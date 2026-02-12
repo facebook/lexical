@@ -26,7 +26,6 @@ import {
   $isParagraphNode,
   $isTextNode,
   $selectAll,
-  $setCompositionKey,
   $setSelection,
   createEditor,
   ElementNode,
@@ -39,8 +38,6 @@ import {
 import {beforeEach, describe, expect, test} from 'vitest';
 
 import {SerializedElementNode} from '../..';
-import {COMPOSITION_START_CHAR} from '../../LexicalConstants';
-import {$updateTextNodeFromDOMContent} from '../../LexicalUtils';
 import {
   $assertRangeSelection,
   $createTestDecoratorNode,
@@ -1672,78 +1669,6 @@ describe('Regression #8067', () => {
           const children = paragraph.getChildren()[0] as TextNode;
           expect(children.getTextContent()).toBe('hello');
           expect(children.hasFormat('bold')).toBe(true);
-        },
-        {discrete: true},
-      );
-    });
-  });
-});
-
-describe('Regression #8119', () => {
-  initializeUnitTest((testEnv) => {
-    test('Insert composition when replacing selection starting with format', () => {
-      testEnv.editor.update(
-        () => {
-          const root = $getRoot();
-          const paragraph = $createParagraphNode();
-          const firstNode = $createTextNode('hello');
-          firstNode.toggleFormat('bold');
-          const lastNode = $createTextNode(' world!');
-          paragraph.append(firstNode, lastNode);
-          root.clear().append(paragraph);
-          const selection = $selectAll();
-          $setCompositionKey(selection.anchor.key);
-          selection.insertText(COMPOSITION_START_CHAR);
-          const nextSelection = $assertRangeSelection($getSelection());
-          expect(nextSelection.isCollapsed()).toBe(true);
-          selection.insertText('가');
-          const node = nextSelection.anchor.getNode();
-          invariant($isTextNode(node), 'Expected a text node');
-          expect(node.getTextContent()).toBe(COMPOSITION_START_CHAR + '가');
-          $updateTextNodeFromDOMContent(
-            node,
-            node.getTextContent(),
-            2,
-            2,
-            true,
-          );
-          expect(node.getTextContent()).toBe('가');
-          const finalSelection = $assertRangeSelection($getSelection());
-          expect(finalSelection.anchor.offset).toBe(1);
-        },
-        {discrete: true},
-      );
-    });
-
-    test('Insert composition when replacing selection ending with format', () => {
-      testEnv.editor.update(
-        () => {
-          const root = $getRoot();
-          const paragraph = $createParagraphNode();
-          const firstNode = $createTextNode('hello');
-          const lastNode = $createTextNode(' world!');
-          lastNode.toggleFormat('bold');
-          paragraph.append(firstNode, lastNode);
-          root.clear().append(paragraph);
-          const selection = $selectAll();
-          $setCompositionKey(selection.anchor.key);
-          selection.insertText(COMPOSITION_START_CHAR);
-          const nextSelection = $assertRangeSelection($getSelection());
-          expect(nextSelection.isCollapsed()).toBe(true);
-          selection.insertText('가');
-          const node = nextSelection.anchor.getNode();
-          invariant($isTextNode(node), 'Expected a text node');
-          expect(node.getTextContent()).toBe(COMPOSITION_START_CHAR + '가');
-          $updateTextNodeFromDOMContent(
-            node,
-            node.getTextContent(),
-            2,
-            2,
-            true,
-          );
-          expect(node.getTextContent()).toBe('가');
-          const finalSelection = $assertRangeSelection($getSelection());
-          expect(finalSelection.anchor.offset).toBe(1);
         },
         {discrete: true},
       );

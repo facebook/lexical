@@ -685,7 +685,14 @@ export function $toggleLink(
           return;
         }
 
-        $splitLinkAtSelection(parentLink, nodes);
+        if (selection.isCollapsed()) {
+          parentLink.getChildren().forEach((child) => {
+            parentLink.insertBefore(child);
+          });
+          parentLink.remove();
+        } else {
+          $splitLinkAtSelection(parentLink, nodes);
+        }
         processedLinks.add(linkKey);
       }
     });

@@ -666,8 +666,7 @@ export function $toggleLink(
   }
 
   if (selection.isCollapsed() && url === null) {
-    const node = selection.getNodes()[0];
-    if (node) {
+    for (const node of selection.getNodes()) {
       const parentLink = $findMatchingParent(
         node,
         (parent): parent is LinkNode =>

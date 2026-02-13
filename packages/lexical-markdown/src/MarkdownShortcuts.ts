@@ -25,7 +25,9 @@ import {
   $isTextNode,
   $setSelection,
   COLLABORATION_TAG,
+  COMMAND_PRIORITY_NORMAL,
   HISTORIC_TAG,
+  KEY_ENTER_COMMAND,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
@@ -127,6 +129,51 @@ function runMultilineElementTransformers(
     ) {
       const nextSiblings = anchorNode.getNextSiblings();
       const [leadingNode, remainderNode] = anchorNode.splitText(anchorOffset);
+      const siblings = remainderNode
+        ? [remainderNode, ...nextSiblings]
+        : nextSiblings;
+
+      if (replace(parentNode, siblings, match, null, null, false) !== false) {
+        leadingNode.remove();
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+function runMultilineElementTransformersOnEnter(
+  parentNode: ElementNode,
+  anchorNode: TextNode,
+  elementTransformers: ReadonlyArray<MultilineElementTransformer>,
+): boolean {
+  const grandParentNode = parentNode.getParent();
+
+  if (
+    !$isRootOrShadowRoot(grandParentNode) ||
+    parentNode.getFirstChild() !== anchorNode
+  ) {
+    return false;
+  }
+
+  const textContent = anchorNode.getTextContent();
+
+  for (const {regExpStart, replace, regExpEnd} of elementTransformers) {
+    if (
+      (regExpEnd && !('optional' in regExpEnd)) ||
+      (regExpEnd && 'optional' in regExpEnd && !regExpEnd.optional)
+    ) {
+      continue;
+    }
+
+    const match = textContent.match(regExpStart);
+
+    if (match && match[0].length === textContent.length) {
+      const nextSiblings = anchorNode.getNextSiblings();
+      const [leadingNode, remainderNode] = anchorNode.splitText(
+        textContent.length,
+      );
       const siblings = remainderNode
         ? [remainderNode, ...nextSiblings]
         : nextSiblings;
@@ -471,7 +518,7 @@ export function registerMarkdownShortcuts(
     );
   };
 
-  return editor.registerUpdateListener(
+  const removeUpdateListener = editor.registerUpdateListener(
     ({tags, dirtyLeaves, editorState, prevEditorState}) => {
       // Ignore updates from collaboration and undo/redo (as changes already calculated)
       if (tags.has(COLLABORATION_TAG) || tags.has(HISTORIC_TAG)) {
@@ -525,4 +572,63 @@ export function registerMarkdownShortcuts(
       });
     },
   );
+
+  const removeEnterListener = editor.registerCommand(
+    KEY_ENTER_COMMAND,
+    (event) => {
+      if (event !== null && event.shiftKey) {
+        return false;
+      }
+
+      const selection = $getSelection();
+
+      if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
+        return false;
+      }
+
+      const anchorOffset = selection.anchor.offset;
+      const anchorNode = selection.anchor.getNode();
+
+      if (!$isTextNode(anchorNode)) {
+        return false;
+      }
+
+      if (!canContainTransformableMarkdown(anchorNode)) {
+        return false;
+      }
+
+      const parentNode = anchorNode.getParent();
+
+      if (parentNode === null || $isCodeNode(parentNode)) {
+        return false;
+      }
+
+      const textContent = anchorNode.getTextContent();
+
+      if (anchorOffset !== textContent.length) {
+        return false;
+      }
+
+      if (
+        runMultilineElementTransformersOnEnter(
+          parentNode,
+          anchorNode,
+          byType.multilineElement,
+        )
+      ) {
+        if (event !== null) {
+          event.preventDefault();
+        }
+        return true;
+      }
+
+      return false;
+    },
+    COMMAND_PRIORITY_NORMAL,
+  );
+
+  return () => {
+    removeUpdateListener();
+    removeEnterListener();
+  };
 }

@@ -665,6 +665,24 @@ export function $toggleLink(
     return;
   }
 
+  if (selection.isCollapsed() && url === null) {
+    const node = selection.getNodes()[0];
+    if (node) {
+      const parentLink = $findMatchingParent(
+        node,
+        (parent): parent is LinkNode =>
+          !$isAutoLinkNode(parent) && $isLinkNode(parent),
+      );
+      if (parentLink !== null) {
+        parentLink.getChildren().forEach((child) => {
+          parentLink.insertBefore(child);
+        });
+        parentLink.remove();
+      }
+      return;
+    }
+  }
+
   // Handle RangeSelection
   const nodes = selection.extract();
 
@@ -685,14 +703,7 @@ export function $toggleLink(
           return;
         }
 
-        if (selection.isCollapsed()) {
-          parentLink.getChildren().forEach((child) => {
-            parentLink.insertBefore(child);
-          });
-          parentLink.remove();
-        } else {
-          $splitLinkAtSelection(parentLink, nodes);
-        }
+        $splitLinkAtSelection(parentLink, nodes);
         processedLinks.add(linkKey);
       }
     });

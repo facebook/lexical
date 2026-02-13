@@ -127,9 +127,8 @@ function runMultilineElementTransformers(
     const match = textContent.match(regExpStart);
 
     if (match) {
-      const matchLength = triggerOnEnter
-        ? textContent.length
-        : match[0].endsWith(' ')
+      const matchLength =
+        triggerOnEnter || match[0].endsWith(' ')
           ? anchorOffset
           : anchorOffset - 1;
 
@@ -137,9 +136,8 @@ function runMultilineElementTransformers(
         continue;
       }
 
-      const splitOffset = triggerOnEnter ? textContent.length : anchorOffset;
       const nextSiblings = anchorNode.getNextSiblings();
-      const [leadingNode, remainderNode] = anchorNode.splitText(splitOffset);
+      const [leadingNode, remainderNode] = anchorNode.splitText(anchorOffset);
       const siblings = remainderNode
         ? [remainderNode, ...nextSiblings]
         : nextSiblings;

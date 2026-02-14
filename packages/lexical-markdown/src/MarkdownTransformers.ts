@@ -36,6 +36,8 @@ import {
   $createLineBreakNode,
   $createTextNode,
   $getState,
+  $isParagraphNode,
+  $isTextNode,
   $setState,
   createState,
   ElementNode,
@@ -216,6 +218,7 @@ const TAG_START_REGEX = /^<[a-z_][\w-]*(?:\s[^<>]*)?\/?>/i;
 const TAG_END_REGEX = /^<\/[a-z_][\w-]*\s*>/i;
 const ENDS_WITH = (regex: RegExp) =>
   new RegExp(`(?:${regex.source})$`, regex.flags);
+const INDENT_REGEX = /^\t+/;
 
 export const listMarkerState = createState('mdListMarker', {
   parse: (v) => (typeof v === 'string' && /^[-*+]$/.test(v) ? v : '-'),
@@ -704,6 +707,37 @@ export const LINK: TextMatchTransformer = {
     return linkTextNode;
   },
   trigger: ')',
+  type: 'text-match',
+};
+
+export const INDENT: TextMatchTransformer = {
+  dependencies: [],
+  export: (node, exportChildren, exportFormat) => {
+    const parentNode = node.getParent();
+    const textContent = node.getTextContent();
+    if (
+      !$isParagraphNode(parentNode) ||
+      !$isTextNode(node) ||
+      !node.is(parentNode.getFirstChild())
+    ) {
+      return null;
+    }
+    const indent = parentNode.getIndent();
+    const textWithFormat = exportFormat(node, textContent);
+    return textWithFormat ? '\t'.repeat(indent) + textWithFormat : null;
+  },
+  importRegExp: INDENT_REGEX,
+  regExp: INDENT_REGEX,
+  replace: (textNode, match) => {
+    const [indents] = match;
+    const parentNode = textNode.getParent();
+    if (!parentNode || !$isParagraphNode(parentNode)) {
+      return;
+    }
+    parentNode.setIndent(indents.length);
+    textNode.setTextContent(textNode.getTextContent().replace(/^\t+/, ''));
+    return textNode;
+  },
   type: 'text-match',
 };
 

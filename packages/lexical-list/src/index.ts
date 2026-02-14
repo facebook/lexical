@@ -332,6 +332,10 @@ export const ListExtension = defineExtension({
   },
 });
 
+export interface CheckListConfig {
+  disableTakeFocusOnClick: boolean;
+}
+
 /**
  * Registers checklist functionality for {@link ListNode} and
  * {@link ListItemNode} with a
@@ -340,6 +344,9 @@ export const ListExtension = defineExtension({
  * checkboxes.
  */
 export const CheckListExtension = defineExtension({
+  config: safeCast<CheckListConfig>({
+    disableTakeFocusOnClick: false,
+  }),
   dependencies: [ListExtension],
   name: '@lexical/list/CheckList',
   register: registerCheckList,

@@ -17,7 +17,6 @@ import type {
 import type {JSX} from 'react';
 
 import {
-  $findMatchingParent,
   $getSelection,
   $getState,
   $isNodeSelection,
@@ -202,27 +201,10 @@ export const DecoratorTextExtension = defineExtension({
       FORMAT_TEXT_COMMAND,
       (formatType) => {
         const selection = $getSelection();
-
-        if ($isNodeSelection(selection)) {
-          selection.getNodes().forEach((node) => {
+        if ($isNodeSelection(selection) || $isRangeSelection(selection)) {
+          for (const node of selection.getNodes()) {
             if ($isDecoratorTextNode(node)) {
               node.toggleFormat(formatType);
-            }
-          });
-        } else if ($isRangeSelection(selection)) {
-          const nodes = selection.getNodes();
-
-          for (const node of nodes) {
-            if ($isDecoratorTextNode(node)) {
-              node.toggleFormat(formatType);
-            } else {
-              const decoratorText = $findMatchingParent(
-                node,
-                $isDecoratorTextNode,
-              );
-              if (decoratorText !== null) {
-                decoratorText.toggleFormat(formatType);
-              }
             }
           }
         }

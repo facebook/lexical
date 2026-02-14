@@ -42,7 +42,7 @@ import {DayPicker} from 'react-day-picker';
 
 import {$isDateTimeNode, type DateTimeNode} from './DateTimeNode';
 
-const formatClassMap = {
+const FORMAT_CLASSES = {
   [IS_BOLD]: 'bold',
   [IS_HIGHLIGHT]: 'highlight',
   [IS_ITALIC]: 'italic',
@@ -199,12 +199,12 @@ export default function DateTimeComponent({
     });
   };
 
-  const classNames = [
-    'dateTimePill',
-    ...Object.entries(formatClassMap)
-      .filter(([flag]) => format & Number(flag))
-      .map(([, className]) => className),
-  ];
+  const classNames = ['dateTimePill'];
+  for (const [flag, className] of Object.entries(FORMAT_CLASSES)) {
+    if (format & Number(flag)) {
+      classNames.push(className);
+    }
+  }
   if (isNodeSelected) {
     classNames.push('selected');
   }

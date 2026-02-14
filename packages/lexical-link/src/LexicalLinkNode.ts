@@ -665,6 +665,23 @@ export function $toggleLink(
     return;
   }
 
+  if (selection.isCollapsed() && url === null) {
+    for (const node of selection.getNodes()) {
+      const parentLink = $findMatchingParent(
+        node,
+        (parent): parent is LinkNode =>
+          !$isAutoLinkNode(parent) && $isLinkNode(parent),
+      );
+      if (parentLink !== null) {
+        parentLink.getChildren().forEach((child) => {
+          parentLink.insertBefore(child);
+        });
+        parentLink.remove();
+      }
+      return;
+    }
+  }
+
   // Handle RangeSelection
   const nodes = selection.extract();
 

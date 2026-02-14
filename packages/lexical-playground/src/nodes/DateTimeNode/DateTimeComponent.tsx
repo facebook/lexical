@@ -42,13 +42,13 @@ import {DayPicker} from 'react-day-picker';
 
 import {$isDateTimeNode, type DateTimeNode} from './DateTimeNode';
 
-const FORMAT_CLASSES = {
-  [IS_BOLD]: 'bold',
-  [IS_HIGHLIGHT]: 'highlight',
-  [IS_ITALIC]: 'italic',
-  [IS_STRIKETHROUGH]: 'strikethrough',
-  [IS_UNDERLINE]: 'underline',
-};
+const FORMAT_CLASSES = [
+  [IS_BOLD, 'bold'],
+  [IS_HIGHLIGHT, 'highlight'],
+  [IS_ITALIC, 'italic'],
+  [IS_STRIKETHROUGH, 'strikethrough'],
+  [IS_UNDERLINE, 'underline'],
+] as const;
 
 const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
@@ -200,8 +200,8 @@ export default function DateTimeComponent({
   };
 
   const classNames = ['dateTimePill'];
-  for (const [flag, className] of Object.entries(FORMAT_CLASSES)) {
-    if (format & Number(flag)) {
+  for (const [flag, className] of FORMAT_CLASSES) {
+    if (format & flag) {
       classNames.push(className);
     }
   }

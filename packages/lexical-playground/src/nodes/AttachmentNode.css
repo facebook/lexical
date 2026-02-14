@@ -1,0 +1,168 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ *
+ */
+
+.AttachmentNode__contentEditable {
+  min-height: 20px;
+  border: 0px;
+  resize: none;
+  cursor: text;
+  caret-color: rgb(5, 5, 5);
+  display: block;
+  position: relative;
+  outline: 0px;
+  padding: 10px;
+  user-select: text;
+  font-size: 12px;
+  width: calc(100% - 20px);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.AttachmentNode__placeholder {
+  font-size: 12px;
+  color: #888;
+  overflow: hidden;
+  position: absolute;
+  text-overflow: ellipsis;
+  top: 10px;
+  left: 10px;
+  user-select: none;
+  white-space: nowrap;
+  display: inline-block;
+  pointer-events: none;
+}
+
+.AttachmentNode__container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 4px;
+  padding: 12px;
+  min-width: 200px;
+  max-width: 400px;
+  border: 1px solid #e1e5e9;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.AttachmentNode__container.selected {
+  border-color: #1976d2;
+}
+
+.AttachmentNode__container:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.AttachmentNode__container.draggable {
+  cursor: grab;
+}
+
+.AttachmentNode__container.draggable:active {
+  cursor: grabbing;
+}
+
+.AttachmentNode__container.dragging {
+  opacity: 0.6;
+  transform: rotate(2deg);
+  cursor: grabbing;
+}
+
+.AttachmentNode__icon {
+  font-size: 24px;
+  min-width: 24px;
+  text-align: center;
+}
+
+.AttachmentNode__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.AttachmentNode__filename {
+  font-weight: 500;
+  font-size: 14px;
+  color: #1c1e21;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.AttachmentNode__filesize {
+  font-size: 12px;
+  color: #65676b;
+  margin-top: 2px;
+}
+
+.AttachmentNode__floatingToolbar {
+  display: flex;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 10;
+  background-color: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  padding: 4px;
+  gap: 2px;
+  opacity: 1;
+  transition: opacity 0.2s ease;
+  will-change: transform;
+  border: 1px solid #e1e5e9;
+  transform: translateX(-50%);
+}
+
+.AttachmentNode__toolbarButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #65676b;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.AttachmentNode__toolbarButton:hover {
+  background-color: #f2f3f5;
+  color: #1c1e21;
+}
+
+.AttachmentNode__toolbarButton:active {
+  background-color: #e4e6ea;
+  transform: scale(0.95);
+}
+
+.AttachmentNode__toolbarButton--delete:hover {
+  background-color: #ffebee;
+  color: #d32f2f;
+}
+
+.AttachmentNode__toolbarButton--delete:active {
+  background-color: #ffcdd2;
+}
+
+.AttachmentNode__toolbarButton i {
+  display: block;
+  width: 16px;
+  height: 16px;
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.AttachmentNode__container--resizing {
+  touch-action: none;
+}

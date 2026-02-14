@@ -34,14 +34,12 @@
 - **Serialization** - Import/export from JSON, Markdown, and HTML
 - **Rich Content** - Support for tables, lists, code blocks, images, and custom nodes
 - **Cross-browser** - Firefox 115+, Safari 15+, Chrome 86+ (see [Supported Browsers](https://lexical.dev/docs/getting-started/supported-browsers))
-
 - **Type Safe** - Written in TypeScript with comprehensive type definitions
 
 ## Quick Start
 
 ```bash
 npm install lexical @lexical/react
-```
 
 ```jsx
 import { $getRoot, $getSelection } from 'lexical';
@@ -94,32 +92,30 @@ See [CONTRIBUTING.md](https://github.com/facebook/lexical/blob/main/CONTRIBUTING
 
 ## Documentation
 
-- **User Guide**: [lexical.dev/docs/intro](https://lexical.dev/docs/intro)
-- **API Reference**: [lexical.dev/docs/api](https://lexical.dev/docs/api/modules/lexical)
-- **Developer Guide**: [AGENTS.md](https://github.com/facebook/lexical/blob/main/AGENTS.md) - Architecture and development workflows
-- **Examples**: [examples/](https://github.com/facebook/lexical/tree/main/examples) - Sample implementations
+- User Guide: lexical.dev/docs/intro
+- API Reference: lexical.dev/docs/api
+- Developer Guide: AGENTS.md - Architecture and development workflows
+- Examples: examples/ - Sample implementations
 
 ## Community & Support
 
-- **Discord**: Join our [Discord server](https://discord.gg/KmG4wQnnD9) for questions and discussions
-- **Twitter**: Follow [@lexicaljs](https://x.com/lexicaljs) for updates
-- **Issues**: Report bugs and request features on [GitHub Issues](https://github.com/facebook/lexical/issues)
+- Discord: Join our Discord server for questions and discussions
+- Twitter: Follow @lexicaljs for updates
+- Issues: Report bugs and request features on GitHub Issues
 
 ## Browser Support
 
-| Browser | Version |
-|---------|---------|
-| Chrome  | 49+     |
-| Firefox | 52+     |
-| Safari  | 11+     |
-| Edge    | 79+     |
+|Browser | Version|
+|--------|--------|
+| Chrome |   86+  |
+|Firefox |  115+  |
+| Safari |   15+  |
+|  Edge  |   86+  |
 
 ## Contributors
-
-We welcome contributions! Please read our [Contributing Guide](https://github.com/facebook/lexical/blob/main/CONTRIBUTING.md) to learn about our development process and how to propose bugfixes and improvements.
+We welcome contributions! Please read our Contributing Guide to learn about our development process and how to propose bugfixes and improvements.
 
 <a href="https://github.com/facebook/lexical/graphs/contributors"><img src="https://contrib.rocks/image?repo=facebook/lexical" /></a>
 
 ## License
-
-[MIT](https://github.com/facebook/lexical/blob/main/LICENSE) License © Meta Platforms, Inc.
+MIT License © Meta Platforms, Inc.

@@ -6,6 +6,7 @@
  *
  */
 
+import {DecoratorTextExtension} from '@lexical/extension';
 import {$createLinkNode} from '@lexical/link';
 import {$createListItemNode, $createListNode} from '@lexical/list';
 import {LexicalCollaboration} from '@lexical/react/LexicalCollaborationContext';
@@ -133,6 +134,7 @@ function App(): JSX.Element {
           : emptyEditor
             ? undefined
             : $prepopulatedRichText,
+        dependencies: [DecoratorTextExtension],
         html: buildHTMLConfig(),
         name: '@lexical/playground',
         namespace: 'Playground',

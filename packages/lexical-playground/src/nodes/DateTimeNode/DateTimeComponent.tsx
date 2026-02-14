@@ -27,20 +27,38 @@ import {
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
 import {setHours, setMinutes} from 'date-fns';
-import {$getNodeByKey, NodeKey} from 'lexical';
+import {
+  $getNodeByKey,
+  IS_BOLD,
+  IS_HIGHLIGHT,
+  IS_ITALIC,
+  IS_STRIKETHROUGH,
+  IS_UNDERLINE,
+  NodeKey,
+} from 'lexical';
 import * as React from 'react';
 import {useEffect, useRef, useState} from 'react';
 import {DayPicker} from 'react-day-picker';
 
 import {$isDateTimeNode, type DateTimeNode} from './DateTimeNode';
 
+const FORMAT_CLASSES = [
+  [IS_BOLD, 'bold'],
+  [IS_HIGHLIGHT, 'highlight'],
+  [IS_ITALIC, 'italic'],
+  [IS_STRIKETHROUGH, 'strikethrough'],
+  [IS_UNDERLINE, 'underline'],
+] as const;
+
 const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 export default function DateTimeComponent({
   dateTime,
+  format,
   nodeKey,
 }: {
   dateTime: Date | undefined;
+  format: number;
   nodeKey: NodeKey;
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();
@@ -181,11 +199,18 @@ export default function DateTimeComponent({
     });
   };
 
+  const classNames = ['dateTimePill'];
+  for (const [flag, className] of FORMAT_CLASSES) {
+    if (format & flag) {
+      classNames.push(className);
+    }
+  }
+  if (isNodeSelected) {
+    classNames.push('selected');
+  }
+
   return (
-    <div
-      className={`dateTimePill ${isNodeSelected ? 'selected' : ''}`}
-      ref={ref}
-      style={{cursor: 'pointer', width: 'fit-content'}}>
+    <div className={classNames.join(' ')} ref={ref}>
       {dateTime?.toDateString() + (includeTime ? ' ' + timeValue : '') ||
         'Invalid Date'}
       {isOpen && (

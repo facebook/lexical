@@ -25,6 +25,8 @@ import {
   CLEAR_EDITOR_COMMAND,
   CLEAR_HISTORY_COMMAND,
   COMMAND_PRIORITY_EDITOR,
+  COMPOSITION_END_TAG,
+  COMPOSITION_START_TAG,
   configExtension,
   defineExtension,
   HISTORIC_TAG,
@@ -244,6 +246,9 @@ function createMergeActionGetter(
 ) => MergeAction {
   let prevChangeTime = Date.now();
   let prevChangeType = OTHER;
+  let compositionStartTime = Date.now();
+  let compositionStartChangeType = OTHER;
+  let compositionStartState: EditorState | null = null;
 
   return (
     prevEditorState,
@@ -255,12 +260,25 @@ function createMergeActionGetter(
   ) => {
     const changeTime = Date.now();
 
+    if (tags.has(COMPOSITION_START_TAG)) {
+      compositionStartTime = prevChangeTime;
+      compositionStartChangeType = prevChangeType;
+      compositionStartState = prevEditorState;
+    }
+
     // If applying changes from history stack there's no need
     // to run history logic again, as history entries already calculated
     if (tags.has(HISTORIC_TAG)) {
       prevChangeType = OTHER;
       prevChangeTime = changeTime;
       return DISCARD_HISTORY_CANDIDATE;
+    }
+
+    const isCompositionEnd = tags.has(COMPOSITION_END_TAG);
+    if (isCompositionEnd && compositionStartState) {
+      prevChangeTime = compositionStartTime;
+      prevChangeType = compositionStartChangeType;
+      prevEditorState = compositionStartState;
     }
 
     const changeType = getChangeType(
@@ -280,6 +298,10 @@ function createMergeActionGetter(
 
       if (shouldMergeHistory) {
         return HISTORY_MERGE;
+      }
+
+      if (changeType === COMPOSING_CHARACTER) {
+        return DISCARD_HISTORY_CANDIDATE;
       }
 
       if (prevEditorState === null) {

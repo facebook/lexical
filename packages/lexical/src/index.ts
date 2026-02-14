@@ -333,6 +333,8 @@ export {$createTextNode, $isTextNode, TextNode} from './nodes/LexicalTextNode';
 // Update Tags
 export {
   COLLABORATION_TAG,
+  COMPOSITION_END_TAG,
+  COMPOSITION_START_TAG,
   HISTORIC_TAG,
   HISTORY_MERGE_TAG,
   HISTORY_PUSH_TAG,

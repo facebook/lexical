@@ -6264,7 +6264,7 @@ test.describe.parallel('Tables', () => {
         page,
         'table > tr:nth-of-type(4) > *:nth-child(4)',
       ),
-      {mouseDown: true, mouseUp: false, slow: true},
+      {mouseDown: true, mouseUp: false, steps: 5},
     );
 
     await assertHTML(
@@ -6399,7 +6399,7 @@ test.describe.parallel('Tables', () => {
         page,
         'table > tr:nth-of-type(3) > *:nth-child(5)',
       ),
-      {mouseDown: false, mouseUp: true, slow: true},
+      {mouseDown: false, mouseUp: true, steps: 5},
     );
     await assertHTML(
       page,
@@ -7356,132 +7356,6 @@ test.describe.parallel('Tables', () => {
       return Boolean(cell && cell._cell);
     });
 
-    const readTableSelectionCoordinates = async () => {
-      return await pageOrFrame.evaluate(() => {
-        const editor = window.lexicalEditor;
-        if (!editor) {
-          return null;
-        }
-        const selection = editor.getEditorState()._selection;
-        if (!selection || selection.tableKey == null) {
-          return null;
-        }
-        const anchorElement = editor.getElementByKey(selection.anchor.key);
-        const focusElement = editor.getElementByKey(selection.focus.key);
-        const anchorCell = anchorElement?._cell;
-        const focusCell = focusElement?._cell;
-        if (!anchorCell || !focusCell) {
-          return null;
-        }
-        return {
-          anchor: {x: anchorCell.x, y: anchorCell.y},
-          focus: {x: focusCell.x, y: focusCell.y},
-        };
-      });
-    };
-
-    const matchesExpected = (coords, expected) => {
-      if (!coords) {
-        return false;
-      }
-      const anchorMatches =
-        expected.anchor == null ||
-        ((expected.anchor.x === undefined ||
-          coords.anchor.x === expected.anchor.x) &&
-          (expected.anchor.y === undefined ||
-            coords.anchor.y === expected.anchor.y));
-      const focusMatches =
-        expected.focus == null ||
-        ((expected.focus.x === undefined ||
-          coords.focus.x === expected.focus.x) &&
-          (expected.focus.y === undefined ||
-            coords.focus.y === expected.focus.y));
-      return anchorMatches && focusMatches;
-    };
-
-    const waitForTableSelectionCoordinates = async (expected) => {
-      for (let i = 0; i < 20; i++) {
-        const coords = await readTableSelectionCoordinates();
-        if (matchesExpected(coords, expected)) {
-          return true;
-        }
-        await sleep(50);
-      }
-      return false;
-    };
-
-    const dispatchPointerDrag = async (dragStart, dragEnd) => {
-      return await pageOrFrame.evaluate(
-        ({endPoint, startPoint}) => {
-          const startTarget = document.elementFromPoint(
-            startPoint.x,
-            startPoint.y,
-          );
-          const endTarget = document.elementFromPoint(endPoint.x, endPoint.y);
-          if (!startTarget || !endTarget) {
-            return false;
-          }
-          const baseEvent = {
-            bubbles: true,
-            button: 0,
-            buttons: 1,
-            isPrimary: true,
-            pointerId: 1,
-            pointerType: 'mouse',
-          };
-          startTarget.dispatchEvent(
-            new PointerEvent('pointerdown', {
-              ...baseEvent,
-              clientX: startPoint.x,
-              clientY: startPoint.y,
-            }),
-          );
-          endTarget.dispatchEvent(
-            new PointerEvent('pointermove', {
-              ...baseEvent,
-              clientX: endPoint.x,
-              clientY: endPoint.y,
-            }),
-          );
-          endTarget.dispatchEvent(
-            new PointerEvent('pointerup', {
-              ...baseEvent,
-              buttons: 0,
-              clientX: endPoint.x,
-              clientY: endPoint.y,
-            }),
-          );
-          return true;
-        },
-        {endPoint: dragEnd, startPoint: dragStart},
-      );
-    };
-
-    const dragAndAssertSelection = async (fromBox, toBox, expected) => {
-      await dragMouse(page, fromBox, toBox, {slow: true});
-      if (await waitForTableSelectionCoordinates(expected)) {
-        return;
-      }
-      const start = {
-        x: fromBox.x + fromBox.width / 2,
-        y: fromBox.y + fromBox.height / 2,
-      };
-      const end = {
-        x: toBox.x + toBox.width / 2,
-        y: toBox.y + toBox.height / 2,
-      };
-      await dispatchPointerDrag(start, end);
-      if (await waitForTableSelectionCoordinates(expected)) {
-        return;
-      }
-      const coords = await readTableSelectionCoordinates();
-      throw new Error(
-        `Expected table selection ${JSON.stringify(
-          expected,
-        )} but got ${JSON.stringify(coords)}`,
-      );
-    };
-
     // Test first column: straight drag from top to bottom (no click first)
     // This tests the fix for issue #8079 - straight drag should work
     const firstColTop = await selectorBoundingBox(
@@ -7492,6 +7366,31 @@ test.describe.parallel('Tables', () => {
       page,
       'table:first-of-type > tr:nth-of-type(2) > th:nth-child(1)',
     );
+
+    const dragAndAssertSelection = async (fromBox, toBox, expected) => {
+      await dragMouse(page, fromBox, toBox, {steps: 5});
+      if (await waitForTableSelectionCoordinates(page, expected)) {
+        return;
+      }
+      const start = {
+        x: fromBox.x + fromBox.width / 2,
+        y: fromBox.y + fromBox.height / 2,
+      };
+      const end = {
+        x: toBox.x + toBox.width / 2,
+        y: toBox.y + toBox.height / 2,
+      };
+      await dispatchPointerDrag(page, start, end);
+      if (await waitForTableSelectionCoordinates(page, expected)) {
+        return;
+      }
+      const coords = await readTableSelectionCoordinates(page);
+      throw new Error(
+        `Expected table selection ${JSON.stringify(
+          expected,
+        )} but got ${JSON.stringify(coords)}`,
+      );
+    };
 
     await dragAndAssertSelection(firstColTop, firstColBottom, {
       anchor: {x: 0, y: 0},
@@ -7514,6 +7413,332 @@ test.describe.parallel('Tables', () => {
       focus: {x: 1, y: 1},
     });
   });
+
+  test('Drag-select before table into table selects entire table', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+    await initialize({isCollab, page});
+
+    await focusEditor(page);
+
+    await page.keyboard.insertText('textBefore');
+    await insertTable(page, 2, 2);
+
+    await page.waitForSelector(
+      'table:first-of-type td, table:first-of-type th',
+    );
+
+    const firstParagraph = await selectorBoundingBox(
+      page,
+      'p:has-text("textBefore")',
+    );
+    const firstCell = await selectorBoundingBox(
+      page,
+      'table:first-of-type > tr:first-of-type > th:first-of-type',
+    );
+
+    await dragMouse(page, firstParagraph, firstCell, {
+      positionStart: 'start',
+      slow: true,
+    });
+
+    // selection starts in the text and ends in the last cell of the table
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [0, 0, 0],
+      focusOffset: 1,
+      focusPath: [1, 0, 2, 1],
+    });
+  });
+
+  test('Drag-select from first cell to before table selects entire table', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+    await initialize({isCollab, page});
+
+    await focusEditor(page);
+
+    await page.keyboard.insertText('textBefore');
+    await insertTable(page, 2, 2);
+
+    await page.waitForSelector(
+      'table:first-of-type td, table:first-of-type th',
+    );
+
+    const firstParagraph = await selectorBoundingBox(
+      page,
+      'p:has-text("textBefore")',
+    );
+    const firstCell = await selectorBoundingBox(
+      page,
+      'table:first-of-type > tr:first-of-type > th:first-of-type',
+    );
+
+    await dragMouse(page, firstCell, firstParagraph, {
+      positionEnd: 'start',
+      steps: 5,
+    });
+
+    // selection starts in the text and ends in the last cell of the table
+    await assertSelection(page, {
+      anchorOffset: 1,
+      anchorPath: [1, 0, 2, 1],
+      focusOffset: 0,
+      focusPath: [0, 0, 0],
+    });
+  });
+
+  test('Drag-select after table into table selects entire table', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+    await initialize({isCollab, page});
+
+    await focusEditor(page);
+
+    await insertTable(page, 2, 2);
+    await moveToEditorEnd(page);
+    await page.keyboard.insertText('textAfter');
+
+    await page.waitForSelector(
+      'table:first-of-type td, table:first-of-type th',
+    );
+
+    const lastParagraph = await selectorBoundingBox(
+      page,
+      'p:has-text("textAfter")',
+    );
+    const lastCell = await selectorBoundingBox(
+      page,
+      'table:first-of-type > tr:last-of-type > td:first-of-type',
+    );
+    await dragMouse(page, lastParagraph, lastCell, {
+      positionStart: 'start',
+      steps: 5,
+    });
+
+    // selection starts in the text and ends in the first cell of the table
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [2, 0, 0],
+      focusOffset: 0,
+      focusPath: [1, 0, 1, 0],
+    });
+  });
+
+  test('Drag-select from last cell to after table selects entire table', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+    await initialize({isCollab, page});
+
+    await focusEditor(page);
+
+    await insertTable(page, 2, 2);
+    await moveToEditorEnd(page);
+    await page.keyboard.insertText('textAfter');
+
+    await page.waitForSelector(
+      'table:first-of-type td, table:first-of-type th',
+    );
+
+    const lastParagraph = await selectorBoundingBox(
+      page,
+      'p:has-text("textAfter")',
+    );
+    const lastCell = await selectorBoundingBox(
+      page,
+      'table:first-of-type > tr:last-of-type > td:first-of-type',
+    );
+    await dragMouse(page, lastCell, lastParagraph, {
+      positionEnd: 'start',
+      steps: 5,
+    });
+
+    // selection starts in the text and ends in the first cell of the table
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [1, 0, 1, 0],
+      focusOffset: 0,
+      focusPath: [2, 0, 0],
+    });
+  });
+
+  test.describe.fixme(
+    'Drag-select nested table tests',
+    'These tests are all erroneously selecting the parent cell',
+    () => {
+      test('Drag-select out of nested table (backwards) does not select parent cell', async ({
+        page,
+        isPlainText,
+        isCollab,
+      }) => {
+        test.skip(isPlainText);
+        await initialize({hasNestedTables: true, isCollab, page});
+
+        await focusEditor(page);
+
+        await insertTable(page, 2, 2);
+        await page.locator('table:first-of-type td').click();
+        await page.keyboard.type('beforeText');
+        await insertTable(page, 1, 1);
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.type('afterText');
+
+        const nestedBeforeText = await selectorBoundingBox(
+          page,
+          'p:has-text("beforeText")',
+        );
+        const nestedFirstCell = await selectorBoundingBox(
+          page,
+          'table table > tr:first-of-type > th:first-of-type',
+        );
+
+        await dragMouse(page, nestedFirstCell, nestedBeforeText, {
+          positionEnd: 'start',
+          steps: 5,
+        });
+
+        // fixme: this is the whole cell of the parent table
+        await assertSelection(page, {
+          anchorOffset: 0,
+          anchorPath: [1, 0, 2, 1, 0, 0, 0],
+          focusOffset: 0,
+          focusPath: [1, 0, 2, 1, 0, 0, 0],
+        });
+      });
+
+      test('Drag-select into nested table (forward) does not select parent cell', async ({
+        page,
+        isPlainText,
+        isCollab,
+      }) => {
+        test.skip(isPlainText);
+        await initialize({hasNestedTables: true, isCollab, page});
+
+        await focusEditor(page);
+
+        await insertTable(page, 2, 2);
+        await page.locator('table:first-of-type td').click();
+        await page.keyboard.type('beforeText');
+        await insertTable(page, 1, 1);
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.type('afterText');
+
+        const nestedBeforeText = await selectorBoundingBox(
+          page,
+          'p:has-text("beforeText")',
+        );
+        const nestedFirstCell = await selectorBoundingBox(
+          page,
+          'table table > tr:first-of-type > th:first-of-type',
+        );
+
+        await dragMouse(page, nestedBeforeText, nestedFirstCell, {
+          positionStart: 'start',
+          steps: 5,
+        });
+
+        // fixme: this is the whole cell of the parent table
+        await assertSelection(page, {
+          anchorOffset: 0,
+          anchorPath: [1, 0, 2, 1, 1, 0, 1, 0, 0],
+          focusOffset: 0,
+          focusPath: [1, 0, 2, 1, 1, 0, 1, 0, 0],
+        });
+      });
+
+      test('Drag-select out of nested table (forward) does not select parent cell', async ({
+        page,
+        isPlainText,
+        isCollab,
+      }) => {
+        test.skip(isPlainText);
+        await initialize({hasNestedTables: true, isCollab, page});
+
+        await focusEditor(page);
+
+        await insertTable(page, 2, 2);
+        await page.locator('table:first-of-type td').click();
+        await page.keyboard.type('beforeText');
+        await insertTable(page, 1, 1);
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.type('afterText');
+
+        const nestedLastRow = await selectorBoundingBox(
+          page,
+          'table table > tr:last-of-type > th:first-of-type',
+        );
+        const nestedAfterText = await selectorBoundingBox(
+          page,
+          'p:has-text("afterText")',
+        );
+
+        await dragMouse(page, nestedLastRow, nestedAfterText, {
+          positionEnd: 'start',
+          steps: 5,
+        });
+
+        // fixme: this is the whole cell of the parent table
+        await assertSelection(page, {
+          anchorOffset: 0,
+          anchorPath: [1, 0, 2, 1, 2, 0, 0],
+          focusOffset: 0,
+          focusPath: [1, 0, 2, 1, 2, 0, 0],
+        });
+      });
+
+      test('Drag-select into nested table (backwards) does not select parent cell', async ({
+        page,
+        isPlainText,
+        isCollab,
+      }) => {
+        test.skip(isPlainText);
+        await initialize({hasNestedTables: true, isCollab, page});
+
+        await focusEditor(page);
+
+        await insertTable(page, 2, 2);
+        await page.locator('table:first-of-type td').click();
+        await page.keyboard.type('beforeText');
+        await insertTable(page, 1, 1);
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.type('afterText');
+
+        const nestedLastRow = await selectorBoundingBox(
+          page,
+          'table table > tr:last-of-type > th:first-of-type',
+        );
+        const nestedAfterText = await selectorBoundingBox(
+          page,
+          'p:has-text("afterText")',
+        );
+
+        await dragMouse(page, nestedAfterText, nestedLastRow, {
+          positionStart: 'start',
+          steps: 5,
+        });
+
+        // fixme: This selector is not correct. Will need to investigate once the underlying bug is addressed.
+        await assertSelection(page, {
+          anchorOffset: 0,
+          anchorPath: [0],
+          focusOffset: 0,
+          focusPath: [0],
+        });
+      });
+    },
+  );
 });
 
 const TABLE_WITH_MERGED_CELLS = `
@@ -7567,3 +7792,99 @@ const TABLE_WITH_MERGED_CELLS = `
     </tr>
   </tbody>
 </table>`;
+
+const readTableSelectionCoordinates = async (pageOrFrame) => {
+  return await pageOrFrame.evaluate(() => {
+    const editor = window.lexicalEditor;
+    if (!editor) {
+      return null;
+    }
+    const selection = editor.getEditorState()._selection;
+    if (!selection || selection.tableKey == null) {
+      return null;
+    }
+    const anchorElement = editor.getElementByKey(selection.anchor.key);
+    const focusElement = editor.getElementByKey(selection.focus.key);
+    const anchorCell = anchorElement?._cell;
+    const focusCell = focusElement?._cell;
+    if (!anchorCell || !focusCell) {
+      return null;
+    }
+    return {
+      anchor: {x: anchorCell.x, y: anchorCell.y},
+      focus: {x: focusCell.x, y: focusCell.y},
+    };
+  });
+};
+
+const matchesExpected = (coords, expected) => {
+  if (!coords) {
+    return false;
+  }
+  const anchorMatches =
+    expected.anchor == null ||
+    ((expected.anchor.x === undefined ||
+      coords.anchor.x === expected.anchor.x) &&
+      (expected.anchor.y === undefined ||
+        coords.anchor.y === expected.anchor.y));
+  const focusMatches =
+    expected.focus == null ||
+    ((expected.focus.x === undefined || coords.focus.x === expected.focus.x) &&
+      (expected.focus.y === undefined || coords.focus.y === expected.focus.y));
+  return anchorMatches && focusMatches;
+};
+
+const waitForTableSelectionCoordinates = async (pageOrFrame, expected) => {
+  for (let i = 0; i < 20; i++) {
+    const coords = await readTableSelectionCoordinates(pageOrFrame);
+    if (matchesExpected(coords, expected)) {
+      return true;
+    }
+    await sleep(50);
+  }
+  return false;
+};
+
+const dispatchPointerDrag = async (pageOrFrame, dragStart, dragEnd) => {
+  return await pageOrFrame.evaluate(
+    ({endPoint, startPoint}) => {
+      const startTarget = document.elementFromPoint(startPoint.x, startPoint.y);
+      const endTarget = document.elementFromPoint(endPoint.x, endPoint.y);
+      if (!startTarget || !endTarget) {
+        return false;
+      }
+      const baseEvent = {
+        bubbles: true,
+        button: 0,
+        buttons: 1,
+        isPrimary: true,
+        pointerId: 1,
+        pointerType: 'mouse',
+      };
+      startTarget.dispatchEvent(
+        new PointerEvent('pointerdown', {
+          ...baseEvent,
+          clientX: startPoint.x,
+          clientY: startPoint.y,
+        }),
+      );
+      endTarget.dispatchEvent(
+        new PointerEvent('pointermove', {
+          ...baseEvent,
+          clientX: endPoint.x,
+          clientY: endPoint.y,
+        }),
+      );
+      endTarget.dispatchEvent(
+        new PointerEvent('pointerup', {
+          ...baseEvent,
+          buttons: 0,
+          clientX: endPoint.x,
+          clientY: endPoint.y,
+        }),
+      );
+      return true;
+    },
+    {endPoint: dragEnd, startPoint: dragStart},
+  );
+};

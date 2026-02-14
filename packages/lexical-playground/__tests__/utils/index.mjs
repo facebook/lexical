@@ -843,7 +843,7 @@ export async function dragMouse(
     positionEnd = 'middle',
     mouseDown = true,
     mouseUp = true,
-    slow = false,
+    steps = 1,
   } = opts;
   let fromX = fromBoundingBox.x;
   let fromY = fromBoundingBox.y;
@@ -868,7 +868,7 @@ export async function dragMouse(
   if (mouseDown) {
     await page.mouse.down();
   }
-  await page.mouse.move(toX, toY, slow ? 10 : 1);
+  await page.mouse.move(toX, toY, {steps});
   if (mouseUp) {
     await page.mouse.up();
   }
@@ -1044,7 +1044,7 @@ export async function selectCellsFromTableCords(
 
   // const firstBox = await firstRowFirstColumnCell.boundingBox();
   // const secondBox = await secondRowSecondCell.boundingBox();
-  // await dragMouse(page, firstBox, secondBox, {slow: true});
+  // await dragMouse(page, firstBox, secondBox, {steps: 5});
 }
 
 export async function clickTableCellActiveButton(page) {

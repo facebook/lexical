@@ -329,13 +329,15 @@ const config = {
       },
     ],
   ].filter((plugin) => plugin != null),
+
   presets: [
     [
-      require.resolve('docusaurus-plugin-internaldocs-fb/docusaurus-preset'),
-      {
+      '@docusaurus/preset-classic',
+      /** @type {import('@docusaurus/preset-classic').Options} */
+      ({
         blog: {
           editUrl: `${GITHUB_REPO_URL}/tree/main/packages/lexical-website/blog/`,
-          showReadingTime: true, // TODO: Update when directory finalized
+          showReadingTime: true,
         },
         docs: {
           beforeDefaultRemarkPlugins: [slugifyPlugin],
@@ -347,11 +349,10 @@ const config = {
         gtag: {
           trackingID: 'G-7C6YYBYBBT',
         },
-        staticDocsProject: 'lexical',
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
         },
-      },
+      }),
     ],
   ],
 

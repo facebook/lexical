@@ -330,10 +330,7 @@ const config = {
     ],
   ].filter((plugin) => plugin != null),
 
-  // --- PERUBAHAN UTAMA DI SINI ---
-  // Menggunakan 'preset-classic' untuk publik, tapi tetap menjaga konfigurasi path
-  // agar tidak error TS2307
-      presets: [
+  presets: [
     [
       '@docusaurus/preset-classic',
       /** @type {import('@docusaurus/preset-classic').Options} */
@@ -358,7 +355,6 @@ const config = {
       }),
     ],
   ],
-  // -------------------------------
 
   // Usually your GitHub org/user name.
   projectName: 'lexical',

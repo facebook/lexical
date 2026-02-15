@@ -26,6 +26,7 @@ import type {
   EditorSetOptions,
   InitialEditorConfig,
   SerializedLexicalNode,
+  TextFormatType
 } from 'lexical';
 import {DecoratorNode} from 'lexical';
 export type {
@@ -184,6 +185,27 @@ declare export function watchedSignal<T>(
   getSnapshot: () => T,
   register: (self: Signal<T>) => () => void,
 ): Signal<T>;
+
+export type SerializedDecoratorTextNode = {
+  ...SerializedLexicalNode, 
+  format: number,
+  ...
+};
+declare export class DecoratorTextNode<T> extends DecoratorNode<T> {
+  createDOM(): HTMLElement;
+  getFormat(): number;
+  getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number;
+  hasFormat(type: TextFormatType): boolean;
+  setFormat(type: number): this;
+  toggleFormat(type: TextFormatType): this;
+  isInline(): true;
+};
+
+declare export function $isDecoratorTextNode(
+  node: ?LexicalNode,
+): node is DecoratorTextNode<{...}>;
+
+declare export var DecoratorTextExtension: LexicalExtension<ExtensionConfigBase, "@lexical/extension/DecoratorText", void, void>;
 
 declare export function registerClearEditor(
   editor: LexicalEditor,

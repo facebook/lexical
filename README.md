@@ -34,7 +34,6 @@
 - **Serialization** - Import/export from JSON, Markdown, and HTML
 - **Rich Content** - Support for tables, lists, code blocks, images, and custom nodes
 - **Cross-browser** - Firefox 115+, Safari 15+, Chrome 86+ (see [Supported Browsers](https://lexical.dev/docs/getting-started/supported-browsers))
-
 - **Type Safe** - Written in TypeScript with comprehensive type definitions
 
 ## Quick Start
@@ -109,10 +108,10 @@ See [CONTRIBUTING.md](https://github.com/facebook/lexical/blob/main/CONTRIBUTING
 
 | Browser | Version |
 |---------|---------|
-| Chrome  | 49+     |
-| Firefox | 52+     |
-| Safari  | 11+     |
-| Edge    | 79+     |
+| Chrome  | 86+     |
+| Firefox | 115+    |
+| Safari  | 15+     |
+| Edge    | 86+     |
 
 ## Contributors
 

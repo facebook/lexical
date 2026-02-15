@@ -26,6 +26,7 @@ import {
   $insertNodes,
   $isRangeSelection,
   $setState,
+  KEY_ENTER_COMMAND,
 } from 'lexical';
 import {describe, expect, it} from 'vitest';
 
@@ -1183,6 +1184,141 @@ describe('Markdown', () => {
         );
         expect(markdownString).toBe('+ hello');
       });
+    });
+  });
+
+  describe('Enter key triggers', () => {
+    it('should create an empty code block when ``` is typed and Enter is pressed', () => {
+      const editor = createHeadlessEditor({
+        nodes: [
+          HeadingNode,
+          ListNode,
+          ListItemNode,
+          QuoteNode,
+          CodeNode,
+          LinkNode,
+        ],
+      });
+
+      registerMarkdownShortcuts(editor, TRANSFORMERS);
+
+      editor.update(
+        () => {
+          const root = $getRoot();
+          const paragraph = $createParagraphNode();
+          root.append(paragraph);
+          paragraph.selectEnd();
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            selection.insertText('```');
+          }
+        },
+        {discrete: true},
+      );
+
+      editor.update(
+        () => {
+          editor.dispatchCommand(KEY_ENTER_COMMAND, null);
+        },
+        {discrete: true},
+      );
+
+      expect(editor.read(() => $generateHtmlFromNodes(editor))).toBe(
+        '<pre spellcheck="false"></pre>',
+      );
+    });
+
+    it('should create a code block with language when ```javascript is typed and Enter is pressed', () => {
+      const editor = createHeadlessEditor({
+        nodes: [
+          HeadingNode,
+          ListNode,
+          ListItemNode,
+          QuoteNode,
+          CodeNode,
+          LinkNode,
+        ],
+      });
+
+      registerMarkdownShortcuts(editor, TRANSFORMERS);
+
+      editor.update(
+        () => {
+          const root = $getRoot();
+          const paragraph = $createParagraphNode();
+          root.append(paragraph);
+          paragraph.selectEnd();
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            selection.insertText('```javascript');
+          }
+        },
+        {discrete: true},
+      );
+
+      editor.update(
+        () => {
+          editor.dispatchCommand(KEY_ENTER_COMMAND, null);
+        },
+        {discrete: true},
+      );
+
+      expect(editor.read(() => $generateHtmlFromNodes(editor))).toBe(
+        '<pre spellcheck="false" data-language="javascript"></pre>',
+      );
+    });
+
+    it('should not transform on Enter when replace returns false', () => {
+      const CANCELED_CODE: MultilineElementTransformer = {
+        dependencies: [CodeNode],
+        regExpEnd: {
+          optional: true,
+          regExp: /^[ \t]*`{3,}$/,
+        },
+        regExpStart: /^`{3,}(\w+)?/,
+        replace: () => {
+          return false;
+        },
+        type: 'multiline-element',
+      };
+
+      const editor = createHeadlessEditor({
+        nodes: [
+          HeadingNode,
+          ListNode,
+          ListItemNode,
+          QuoteNode,
+          CodeNode,
+          LinkNode,
+        ],
+      });
+
+      registerMarkdownShortcuts(editor, [CANCELED_CODE]);
+
+      editor.update(
+        () => {
+          const root = $getRoot();
+          const paragraph = $createParagraphNode();
+          root.append(paragraph);
+          paragraph.selectEnd();
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            selection.insertText('```');
+          }
+        },
+        {discrete: true},
+      );
+
+      editor.update(
+        () => {
+          editor.dispatchCommand(KEY_ENTER_COMMAND, null);
+        },
+        {discrete: true},
+      );
+
+      expect(editor.read(() => $generateHtmlFromNodes(editor))).toBe(
+        '<p><span style="white-space: pre-wrap;">```</span></p>',
+      );
     });
   });
 });

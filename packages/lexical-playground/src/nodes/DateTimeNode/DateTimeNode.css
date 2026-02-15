@@ -8,6 +8,8 @@
  */
 
 .dateTimePill {
+  cursor: pointer;
+  width: fit-content;
   background: #ddd;
   border: 1px solid #ddd;
   border-radius: 8px;
@@ -15,6 +17,24 @@
 }
 .dateTimePill.selected {
   outline: 2px solid rgb(60, 132, 244);
+}
+.dateTimePill.bold {
+  font-weight: bold;
+}
+.dateTimePill.italic {
+  font-style: italic;
+}
+.dateTimePill.underline {
+  text-decoration: underline;
+}
+.dateTimePill.strikethrough {
+  text-decoration: line-through;
+}
+.dateTimePill.underline.strikethrough {
+  text-decoration: underline line-through;
+}
+.dateTimePill.highlight {
+  background: rgba(255, 212, 0, 0.14);
 }
 .dateTimePill:hover {
   background: #f2f2f2;

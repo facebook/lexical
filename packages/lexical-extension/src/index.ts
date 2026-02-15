@@ -13,6 +13,14 @@ export {
   registerClearEditor,
 } from './ClearEditorExtension';
 export {getKnownTypesAndNodes, type KnownTypesAndNodes} from './config';
+export {
+  $isDecoratorTextNode,
+  applyFormatFromStyle,
+  applyFormatToDom,
+  DecoratorTextExtension,
+  DecoratorTextNode,
+  type SerializedDecoratorTextNode,
+} from './DecoratorTextExtension';
 export {EditorStateExtension} from './EditorStateExtension';
 export {getExtensionDependencyFromEditor} from './getExtensionDependencyFromEditor';
 export {

@@ -59,7 +59,6 @@ function categoryOrder(lowercaseLabel) {
  * @param {string} label
  */
 function capitalizeLabel(label) {
-  // modules, classes, interfaces -> Modules, Classes, Interfaces
   return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
@@ -68,8 +67,6 @@ function capitalizeLabel(label) {
  * @param {NormalizedSidebarItem} b
  */
 function sidebarSort(a, b) {
-  // Categories always come last and have their own defined sort order
-  // Otherwise leave the sort as-is
   if (a.type === 'category' && b.type === 'category') {
     return categoryOrder(a.label) - categoryOrder(b.label);
   } else if (a.type === 'category') {
@@ -81,12 +78,6 @@ function sidebarSort(a, b) {
   }
 }
 
-/**
- * Map an 'api/modules/...' id back to the original module name without
- * loading the markdown and parsing the frontmatter.
- *
- * @param {string} id
- */
 function idToModuleName(id) {
   return id
     .replace(/^api\/modules\//i, '')
@@ -95,12 +86,6 @@ function idToModuleName(id) {
     .replace(/_/g, '-');
 }
 
-/**
- * Map an 'api/{category}/{fileId}.ClassName' to the class or interface name.
- * These are already capitalized and always preceded by a '.'.
- *
- * @param {string} id
- */
 function classOrInterfaceIdToLabel(id) {
   return id.replace(/^[^.]+./, '');
 }
@@ -125,10 +110,6 @@ const sidebarItemsGenerator = async ({
         const groupedItems = [];
         for (const item of sidebarItem.items) {
           if (item.type === 'doc' && item.id.match(/^api\/modules\//i)) {
-            // autoConfiguration is disabled because the frontmatter
-            // sidebar_label otherwise takes precedence over anything we do
-            // here, and the default labels come from the page titles which
-            // are parsed at a later stage of the pipeline.
             const label = idToModuleName(item.id);
             const lastItem = groupedItems.at(-1);
             if (
@@ -242,7 +223,6 @@ const GIT_COMMIT_REF = process.env.VERCEL_GIT_COMMIT_REF || 'main';
 const GIT_REPO_OWNER = process.env.VERCEL_GIT_REPO_OWNER || 'facebook';
 const GIT_REPO_SLUG = process.env.VERCEL_GIT_REPO_SLUG || 'lexical';
 const STACKBLITZ_PREFIX = `https://stackblitz.com/github/${GIT_REPO_OWNER}/${GIT_REPO_SLUG}/tree/${
-  // Vercel does not set owner and slug correctly for fork PRs so we can't trust the ref by default
   (GIT_COMMIT_REF === 'main' && !process.env.VERCEL_GIT_PULL_REQUEST_ID) ||
   GIT_COMMIT_REF.endsWith('__release')
     ? GIT_COMMIT_REF
@@ -263,10 +243,9 @@ const config = {
   favicon: 'img/favicon.ico',
 
   future: {
-    // See https://docusaurus.io/blog/releases/3.8
     experimental_faster: true,
     v4: {
-      removeLegacyPostBuildHeadAttribute: true, // required
+      removeLegacyPostBuildHeadAttribute: true,
     },
   },
 
@@ -284,7 +263,6 @@ const config = {
   },
 
   onBrokenAnchors: 'throw',
-  // These are false positives when linking from API docs
   onBrokenLinks: 'ignore',
   organizationName: 'facebook',
   plugins: [
@@ -292,7 +270,6 @@ const config = {
       ? null
       : [
           './plugins/package-docs',
-          /** @type {import('./plugins/package-docs').PackageDocsPluginOptions} */
           {
             baseDir: path.resolve(__dirname, '..'),
             editUrl: `${GITHUB_REPO_URL}/tree/main/packages/`,
@@ -331,11 +308,11 @@ const config = {
   ].filter((plugin) => plugin != null),
   presets: [
     [
-      require.resolve('docusaurus-plugin-internaldocs-fb/docusaurus-preset'),
+      require.resolve('@docusaurus/preset-classic'),
       {
         blog: {
           editUrl: `${GITHUB_REPO_URL}/tree/main/packages/lexical-website/blog/`,
-          showReadingTime: true, // TODO: Update when directory finalized
+          showReadingTime: true,
         },
         docs: {
           beforeDefaultRemarkPlugins: [slugifyPlugin],
@@ -346,8 +323,8 @@ const config = {
         },
         gtag: {
           trackingID: 'G-7C6YYBYBBT',
+          anonymizeIP: true,
         },
-        staticDocsProject: 'lexical',
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
         },
@@ -355,13 +332,10 @@ const config = {
     ],
   ],
 
-  // Usually your GitHub org/user name.
   projectName: 'lexical',
-
   tagline: 'An extensible text editor framework that does things differently',
 
   themeConfig:
-    /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
       docs: {
         sidebar: {
@@ -373,57 +347,26 @@ const config = {
         copyright: `Copyright © ${new Date().getFullYear()} Meta Platforms, Inc. Built with Docusaurus.`,
         links: [
           {
-            items: [
-              {
-                label: 'Introduction',
-                to: '/docs/intro',
-              },
-            ],
+            items: [{label: 'Introduction', to: '/docs/intro'}],
             title: 'Docs',
           },
           {
             items: [
-              {
-                href: 'https://discord.gg/KmG4wQnnD9',
-                label: 'Discord',
-              },
-              {
-                href: 'https://stackoverflow.com/questions/tagged/lexicaljs',
-                label: 'Stack Overflow',
-              },
-              {
-                href: 'https://twitter.com/lexicaljs',
-                label: 'Twitter',
-              },
+              {href: 'https://discord.gg/KmG4wQnnD9', label: 'Discord'},
+              {href: 'https://stackoverflow.com/questions/tagged/lexicaljs', label: 'Stack Overflow'},
+              {href: 'https://twitter.com/lexicaljs', label: 'Twitter'},
             ],
             title: 'Community',
           },
           {
-            items: [
-              {
-                href: 'https://github.com/facebook/lexical',
-                label: 'GitHub',
-              },
-            ],
+            items: [{href: 'https://github.com/facebook/lexical', label: 'GitHub'}],
             title: 'More',
           },
           {
-            // Please do not remove the privacy and terms, it's a legal requirement.
             items: [
-              {
-                href: 'https://opensource.facebook.com/legal/privacy/',
-                label: 'Privacy',
-                rel: 'noreferrer noopener',
-                target: '_blank',
-              },
-              {
-                href: 'https://opensource.facebook.com/legal/terms/',
-                label: 'Terms',
-                rel: 'noreferrer noopener',
-                target: '_blank',
-              },
+              {href: 'https://opensource.facebook.com/legal/privacy/', label: 'Privacy', rel: 'noreferrer noopener', target: '_blank'},
+              {href: 'https://opensource.facebook.com/legal/terms/', label: 'Terms', rel: 'noreferrer noopener', target: '_blank'},
             ],
-
             title: 'Legal',
           },
         ],
@@ -431,51 +374,16 @@ const config = {
       },
       navbar: {
         items: [
-          {
-            label: 'Playground',
-            position: 'left',
-            to: 'https://playground.lexical.dev/',
-          },
-          {
-            label: 'Docs',
-            position: 'left',
-            sidebarId: 'docs',
-            type: 'docSidebar',
-          },
+          {label: 'Playground', position: 'left', to: 'https://playground.lexical.dev/'},
+          {label: 'Docs', position: 'left', sidebarId: 'docs', type: 'docSidebar'},
           process.env.FB_INTERNAL
-            ? {
-                href: 'https://lexical.dev/docs/api/',
-                label: 'API',
-                position: 'left',
-              }
-            : {
-                label: 'API',
-                position: 'left',
-                sidebarId: 'api',
-                type: 'docSidebar',
-              },
-
+            ? {href: 'https://lexical.dev/docs/api/', label: 'API', position: 'left'}
+            : {label: 'API', position: 'left', sidebarId: 'api', type: 'docSidebar'},
           {label: 'Community', position: 'left', to: '/community'},
-          {
-            href: 'https://facebook.github.io/lexical-ios/',
-            label: 'iOS',
-            position: 'left',
-          },
-          {
-            label: 'Gallery',
-            position: 'left',
-            to: '/gallery',
-          },
-          {
-            href: GITHUB_REPO_URL,
-            label: 'GitHub',
-            position: 'right',
-          },
-          {
-            href: IOS_GITHUB_REPO_URL,
-            label: 'iOS GitHub',
-            position: 'right',
-          },
+          {href: 'https://facebook.github.io/lexical-ios/', label: 'iOS', position: 'left'},
+          {label: 'Gallery', position: 'left', to: '/gallery'},
+          {href: GITHUB_REPO_URL, label: 'GitHub', position: 'right'},
+          {href: IOS_GITHUB_REPO_URL, label: 'iOS GitHub', position: 'right'},
         ].filter((item) => item != null),
         logo: {
           alt: 'Lexical',
@@ -493,10 +401,7 @@ const config = {
     '@docusaurus/theme-mermaid',
     [
       require.resolve('@easyops-cn/docusaurus-search-local'),
-      /** @type {import("@easyops-cn/docusaurus-search-local").PluginOptions} */
       ({
-        // ... Your options.
-        // `hashed` is recommended as long-term-cache of index file is possible.
         hashed: true,
         indexBlog: false,
         language: ['en'],

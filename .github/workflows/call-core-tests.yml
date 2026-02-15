@@ -27,6 +27,7 @@ jobs:
       - run: pnpm run ci-check
       - run: pnpm run build
       - run: pnpm run build-www
+      - run: pnpm run --filter @lexical/website build
 
   unit:
     runs-on: ubuntu-latest

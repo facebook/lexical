@@ -333,7 +333,7 @@ const config = {
   // --- PERUBAHAN UTAMA DI SINI ---
   // Menggunakan 'preset-classic' untuk publik, tapi tetap menjaga konfigurasi path
   // agar tidak error TS2307
-    presets: [
+      presets: [
     [
       '@docusaurus/preset-classic',
       /** @type {import('@docusaurus/preset-classic').Options} */
@@ -349,7 +349,6 @@ const config = {
           sidebarItemsGenerator,
           sidebarPath: require.resolve('./sidebars.js'),
         },
-        // GTAG SEKARANG DI ATAS THEME BIAR SESUAI ABJAD
         gtag: {
           trackingID: 'G-7C6YYBYBBT',
         },

@@ -284,8 +284,8 @@ const config = {
   },
 
   onBrokenAnchors: 'throw',
-  // These are false positives when linking from API docs
-  onBrokenLinks: 'ignore',
+  // Use 'warn' to let the build pass even with legacy link issues
+  onBrokenLinks: 'warn',
   organizationName: 'facebook',
   plugins: [
     process.env.FB_INTERNAL
@@ -344,13 +344,13 @@ const config = {
           editUrl: `${GITHUB_REPO_URL}/tree/main/packages/lexical-website/`,
           path: 'docs',
           sidebarItemsGenerator,
-          sidebarPath: require.resolve('./sidebars.js'),
+          sidebarPath: './sidebars.js',
         },
         gtag: {
           trackingID: 'G-7C6YYBYBBT',
         },
         theme: {
-          customCss: require.resolve('./src/css/custom.css'),
+          customCss: './src/css/custom.css',
         },
       }),
     ],

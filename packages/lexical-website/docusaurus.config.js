@@ -143,7 +143,8 @@ const sidebarItemsGenerator = async ({
               const groupedItem = {...item, label: m[2]};
               if (
                 lastItem &&
-                (lastItem.type === 'category' || lastItem.label === m[1])
+                lastItem.type === 'category' &&
+                lastItem.label === m[1]
               ) {
                 lastItem.items.push(groupedItem);
               } else {

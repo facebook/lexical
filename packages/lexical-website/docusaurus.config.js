@@ -330,13 +330,14 @@ const config = {
     ],
   ].filter((plugin) => plugin != null),
 
-    presets: [
+  presets: [
     [
       '@docusaurus/preset-classic',
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         blog: {
-          editUrl: GITHUB_REPO_URL + '/tree/main/packages/lexical-website/blog/',
+          editUrl:
+            GITHUB_REPO_URL + '/tree/main/packages/lexical-website/blog/',
           showReadingTime: true,
         },
         docs: {

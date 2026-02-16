@@ -2473,18 +2473,6 @@ function $normalizeSelectionPointsForBoundaries(
     if (isCollapsed) {
       focus.set(anchor.key, anchor.offset, anchor.type);
     }
-    const editor = getActiveEditor();
-
-    if (
-      editor.isComposing() &&
-      editor._compositionKey !== anchor.key &&
-      $isRangeSelection(lastSelection)
-    ) {
-      const lastAnchor = lastSelection.anchor;
-      const lastFocus = lastSelection.focus;
-      anchor.set(lastAnchor.key, lastAnchor.offset, lastAnchor.type, true);
-      focus.set(lastFocus.key, lastFocus.offset, lastFocus.type, true);
-    }
   }
 }
 
@@ -2687,11 +2675,29 @@ export function $internalCreateRangeSelection(
     return null;
   }
   const [resolvedAnchorPoint, resolvedFocusPoint] = resolvedSelectionPoints;
+  let format = 0;
+  let style = '';
+  if ($isRangeSelection(lastSelection)) {
+    const lastAnchor = lastSelection.anchor;
+    if (resolvedAnchorPoint.key === lastAnchor.key) {
+      format = lastSelection.format;
+      style = lastSelection.style;
+    } else {
+      const anchorNode = resolvedAnchorPoint.getNode();
+      if ($isTextNode(anchorNode)) {
+        format = anchorNode.getFormat();
+        style = anchorNode.getStyle();
+      } else if ($isElementNode(anchorNode)) {
+        format = anchorNode.getTextFormat();
+        style = anchorNode.getTextStyle();
+      }
+    }
+  }
   return new RangeSelection(
     resolvedAnchorPoint,
     resolvedFocusPoint,
-    !$isRangeSelection(lastSelection) ? 0 : lastSelection.format,
-    !$isRangeSelection(lastSelection) ? '' : lastSelection.style,
+    format,
+    style,
   );
 }
 

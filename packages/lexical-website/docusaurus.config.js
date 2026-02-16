@@ -143,8 +143,7 @@ const sidebarItemsGenerator = async ({
               const groupedItem = {...item, label: m[2]};
               if (
                 lastItem &&
-                (lastItem.type === 'category' ||
-                  (lastItem && lastItem.label === m[1]))
+                (lastItem.type === 'category' || lastItem.label === m[1])
               ) {
                 lastItem.items.push(groupedItem);
               } else {
@@ -325,8 +324,7 @@ const config = {
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         blog: {
-          editUrl:
-            GITHUB_REPO_URL + '/tree/main/packages/lexical-website/blog/',
+          editUrl: GITHUB_REPO_URL + '/tree/main/packages/lexical-website/blog/',
           showReadingTime: true,
         },
         docs: {

@@ -25,7 +25,10 @@ import {
   $isTextNode,
   $setSelection,
   COLLABORATION_TAG,
+  COMMAND_PRIORITY_LOW,
   HISTORIC_TAG,
+  KEY_ENTER_COMMAND,
+  mergeRegister,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
@@ -88,6 +91,7 @@ function runMultilineElementTransformers(
   anchorNode: TextNode,
   anchorOffset: number,
   elementTransformers: ReadonlyArray<MultilineElementTransformer>,
+  triggerOnEnter?: boolean,
 ): boolean {
   const grandParentNode = parentNode.getParent();
 
@@ -100,14 +104,16 @@ function runMultilineElementTransformers(
 
   const textContent = anchorNode.getTextContent();
 
-  // Checking for anchorOffset position to prevent any checks for cases when caret is too far
-  // from a line start to be a part of block-level markdown trigger.
-  //
-  // TODO:
-  // Can have a quick check if caret is close enough to the beginning of the string (e.g. offset less than 10-20)
-  // since otherwise it won't be a markdown shortcut, but tables are exception
-  if (textContent[anchorOffset - 1] !== ' ') {
-    return false;
+  if (!triggerOnEnter) {
+    // Checking for anchorOffset position to prevent any checks for cases when caret is too far
+    // from a line start to be a part of block-level markdown trigger.
+    //
+    // TODO:
+    // Can have a quick check if caret is close enough to the beginning of the string (e.g. offset less than 10-20)
+    // since otherwise it won't be a markdown shortcut, but tables are exception
+    if (textContent[anchorOffset - 1] !== ' ') {
+      return false;
+    }
   }
 
   for (const {regExpStart, replace, regExpEnd} of elementTransformers) {
@@ -120,11 +126,16 @@ function runMultilineElementTransformers(
 
     const match = textContent.match(regExpStart);
 
-    if (
-      match &&
-      match[0].length ===
-        (match[0].endsWith(' ') ? anchorOffset : anchorOffset - 1)
-    ) {
+    if (match) {
+      const matchLength =
+        triggerOnEnter || match[0].endsWith(' ')
+          ? anchorOffset
+          : anchorOffset - 1;
+
+      if (match[0].length !== matchLength) {
+        continue;
+      }
+
       const nextSiblings = anchorNode.getNextSiblings();
       const [leadingNode, remainderNode] = anchorNode.splitText(anchorOffset);
       const siblings = remainderNode
@@ -471,58 +482,114 @@ export function registerMarkdownShortcuts(
     );
   };
 
-  return editor.registerUpdateListener(
-    ({tags, dirtyLeaves, editorState, prevEditorState}) => {
-      // Ignore updates from collaboration and undo/redo (as changes already calculated)
-      if (tags.has(COLLABORATION_TAG) || tags.has(HISTORIC_TAG)) {
-        return;
-      }
-
-      // If editor is still composing (i.e. backticks) we must wait before the user confirms the key
-      if (editor.isComposing()) {
-        return;
-      }
-
-      const selection = editorState.read($getSelection);
-      const prevSelection = prevEditorState.read($getSelection);
-
-      // We expect selection to be a collapsed range and not match previous one (as we want
-      // to trigger transforms only as user types)
-      if (
-        !$isRangeSelection(prevSelection) ||
-        !$isRangeSelection(selection) ||
-        !selection.isCollapsed() ||
-        selection.is(prevSelection)
-      ) {
-        return;
-      }
-
-      const anchorKey = selection.anchor.key;
-      const anchorOffset = selection.anchor.offset;
-
-      const anchorNode = editorState._nodeMap.get(anchorKey);
-
-      if (
-        !$isTextNode(anchorNode) ||
-        !dirtyLeaves.has(anchorKey) ||
-        (anchorOffset !== 1 && anchorOffset > prevSelection.anchor.offset + 1)
-      ) {
-        return;
-      }
-
-      editor.update(() => {
-        if (!canContainTransformableMarkdown(anchorNode)) {
+  return mergeRegister(
+    editor.registerUpdateListener(
+      ({tags, dirtyLeaves, editorState, prevEditorState}) => {
+        // Ignore updates from collaboration and undo/redo (as changes already calculated)
+        if (tags.has(COLLABORATION_TAG) || tags.has(HISTORIC_TAG)) {
           return;
+        }
+
+        // If editor is still composing (i.e. backticks) we must wait before the user confirms the key
+        if (editor.isComposing()) {
+          return;
+        }
+
+        const selection = editorState.read($getSelection);
+        const prevSelection = prevEditorState.read($getSelection);
+
+        // We expect selection to be a collapsed range and not match previous one (as we want
+        // to trigger transforms only as user types)
+        if (
+          !$isRangeSelection(prevSelection) ||
+          !$isRangeSelection(selection) ||
+          !selection.isCollapsed() ||
+          selection.is(prevSelection)
+        ) {
+          return;
+        }
+
+        const anchorKey = selection.anchor.key;
+        const anchorOffset = selection.anchor.offset;
+
+        const anchorNode = editorState._nodeMap.get(anchorKey);
+
+        if (
+          !$isTextNode(anchorNode) ||
+          !dirtyLeaves.has(anchorKey) ||
+          (anchorOffset !== 1 && anchorOffset > prevSelection.anchor.offset + 1)
+        ) {
+          return;
+        }
+
+        editor.update(() => {
+          if (!canContainTransformableMarkdown(anchorNode)) {
+            return;
+          }
+
+          const parentNode = anchorNode.getParent();
+
+          if (parentNode === null || $isCodeNode(parentNode)) {
+            return;
+          }
+
+          $transform(parentNode, anchorNode, selection.anchor.offset);
+        });
+      },
+    ),
+    editor.registerCommand(
+      KEY_ENTER_COMMAND,
+      (event) => {
+        if (event !== null && event.shiftKey) {
+          return false;
+        }
+
+        const selection = $getSelection();
+
+        if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
+          return false;
+        }
+
+        const anchorOffset = selection.anchor.offset;
+        const anchorNode = selection.anchor.getNode();
+
+        if (
+          !$isTextNode(anchorNode) ||
+          !canContainTransformableMarkdown(anchorNode)
+        ) {
+          return false;
         }
 
         const parentNode = anchorNode.getParent();
 
         if (parentNode === null || $isCodeNode(parentNode)) {
-          return;
+          return false;
         }
 
-        $transform(parentNode, anchorNode, selection.anchor.offset);
-      });
-    },
+        const textContent = anchorNode.getTextContent();
+
+        if (anchorOffset !== textContent.length) {
+          return false;
+        }
+
+        if (
+          runMultilineElementTransformers(
+            parentNode,
+            anchorNode,
+            anchorOffset,
+            byType.multilineElement,
+            true,
+          )
+        ) {
+          if (event !== null) {
+            event.preventDefault();
+          }
+          return true;
+        }
+
+        return false;
+      },
+      COMMAND_PRIORITY_LOW,
+    ),
   );
 }

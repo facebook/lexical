@@ -6,6 +6,9 @@
  *
  *
  */
+:root {
+  --lexical-indent-base-value: 40px;
+}
 .PlaygroundEditorTheme__paragraph {
   margin: 0;
   position: relative;
@@ -38,9 +41,6 @@
   font-size: 12px;
   margin: 0;
   text-transform: uppercase;
-}
-.PlaygroundEditorTheme__indent {
-  --lexical-indent-base-value: 40px;
 }
 .PlaygroundEditorTheme__textBold {
   font-weight: bold;
@@ -200,7 +200,7 @@
 }
 .PlaygroundEditorTheme__tableScrollableWrapper {
   overflow-x: auto;
-  margin: 0px 25px 30px 0px;
+  margin: 0px 0px 5px 0px;
 }
 .PlaygroundEditorTheme__tableScrollRight {
   box-shadow: inset -10px 0 10px rgba(0, 0, 0, 0.15);

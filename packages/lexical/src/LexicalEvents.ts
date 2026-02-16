@@ -267,8 +267,8 @@ function $shouldPreventDefaultAndInsertText(
         domTargetRange.startOffset !== domSelection.anchorOffset)) ||
     // Check if we're changing from bold to italics, or some other format.
     (!anchorNode.isComposing() &&
-      anchorNode.getFormat() !== selection.format) ||
-    (!anchorNode.isComposing() && anchorNode.getStyle() !== selection.style) ||
+      (anchorNode.getFormat() !== selection.format ||
+        anchorNode.getStyle() !== selection.style)) ||
     // One last set of heuristics to check against.
     $shouldInsertTextAfterOrBeforeTextNode(selection, anchorNode)
   );

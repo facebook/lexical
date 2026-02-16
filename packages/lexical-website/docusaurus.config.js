@@ -125,10 +125,6 @@ const sidebarItemsGenerator = async ({
         const groupedItems = [];
         for (const item of sidebarItem.items) {
           if (item.type === 'doc' && item.id.match(/^api\/modules\//i)) {
-            // autoConfiguration is disabled because the frontmatter
-            // sidebar_label otherwise takes precedence over anything we do
-            // here, and the default labels come from the page titles which
-            // are parsed at a later stage of the pipeline.
             const label = idToModuleName(item.id);
             const lastItem = groupedItems.at(-1);
             if (
@@ -145,10 +141,10 @@ const sidebarItemsGenerator = async ({
             const m = /^(@lexical\/[^/]+)\/(.*)$/.exec(label);
             if (m) {
               const groupedItem = {...item, label: m[2]};
-              // FIX: Menambahkan pengecekan yang lebih aman untuk menghindari "reading property of undefined"
               if (
-                lastItem && 
-                (lastItem.type === 'category' || (lastItem && lastItem.label === m[1]))
+                lastItem &&
+                (lastItem.type === 'category' ||
+                  (lastItem && lastItem.label === m[1]))
               ) {
                 lastItem.items.push(groupedItem);
               } else {
@@ -212,18 +208,13 @@ const docusaurusPluginTypedocConfig = {
   customAnchorsFormat: 'curlyBrace',
   entryPoints: process.env.FB_INTERNAL
     ? []
-    : packagesManager
-        .getPublicPackages()
-        .flatMap((pkg) =>
-          pkg
-            .getExportedNpmModuleEntries()
-            .map((entry) =>
-              path.relative(
-                __dirname,
-                pkg.resolve('src', entry.sourceFileName),
-              ),
-            ),
-        ),
+    : packagesManager.getPublicPackages().flatMap((pkg) =>
+        pkg
+          .getExportedNpmModuleEntries()
+          .map((entry) =>
+            path.relative(__dirname, pkg.resolve('src', entry.sourceFileName)),
+          ),
+      ),
   excludeInternal: true,
   plugin: [
     'typedoc-plugin-no-inherit',
@@ -243,7 +234,6 @@ const GIT_COMMIT_REF = process.env.VERCEL_GIT_COMMIT_REF || 'main';
 const GIT_REPO_OWNER = process.env.VERCEL_GIT_REPO_OWNER || 'facebook';
 const GIT_REPO_SLUG = process.env.VERCEL_GIT_REPO_SLUG || 'lexical';
 const STACKBLITZ_PREFIX = `https://stackblitz.com/github/${GIT_REPO_OWNER}/${GIT_REPO_SLUG}/tree/${
-  // Vercel does not set owner and slug correctly for fork PRs so we can't trust the ref by default
   (GIT_COMMIT_REF === 'main' && !process.env.VERCEL_GIT_PULL_REQUEST_ID) ||
   GIT_COMMIT_REF.endsWith('__release')
     ? GIT_COMMIT_REF
@@ -264,10 +254,9 @@ const config = {
   favicon: 'img/favicon.ico',
 
   future: {
-    // See https://docusaurus.io/blog/releases/3.8
     experimental_faster: true,
     v4: {
-      removeLegacyPostBuildHeadAttribute: true, // required
+      removeLegacyPostBuildHeadAttribute: true,
     },
   },
 
@@ -285,7 +274,6 @@ const config = {
   },
 
   onBrokenAnchors: 'throw',
-  // Use 'warn' to prevent Vercel build failures during transition
   onBrokenLinks: 'warn',
   organizationName: 'facebook',
   plugins: [
@@ -358,7 +346,6 @@ const config = {
     ],
   ],
 
-  // Usually your GitHub org/user name.
   projectName: 'lexical',
 
   tagline: 'An extensible text editor framework that does things differently',
@@ -411,7 +398,6 @@ const config = {
             title: 'More',
           },
           {
-            // Please do not remove the privacy and terms, it's a legal requirement.
             items: [
               {
                 href: 'https://opensource.facebook.com/legal/privacy/',
@@ -426,7 +412,6 @@ const config = {
                 target: '_blank',
               },
             ],
-
             title: 'Legal',
           },
         ],
@@ -457,7 +442,6 @@ const config = {
                 sidebarId: 'api',
                 type: 'docSidebar',
               },
-
           {label: 'Community', position: 'left', to: '/community'},
           {
             href: 'https://facebook.github.io/lexical-ios/',
@@ -498,8 +482,6 @@ const config = {
       require.resolve('@easyops-cn/docusaurus-search-local'),
       /** @type {import("@easyops-cn/docusaurus-search-local").PluginOptions} */
       ({
-        // ... Your options.
-        // `hashed` is recommended as long-term-cache of index file is possible.
         hashed: true,
         indexBlog: false,
         language: ['en'],

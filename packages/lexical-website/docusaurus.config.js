@@ -145,9 +145,10 @@ const sidebarItemsGenerator = async ({
             const m = /^(@lexical\/[^/]+)\/(.*)$/.exec(label);
             if (m) {
               const groupedItem = {...item, label: m[2]};
+              // FIX: Menambahkan pengecekan yang lebih aman untuk menghindari "reading property of undefined"
               if (
-                (lastItem && lastItem.type === 'category') ||
-                lastItem.label === m[1]
+                lastItem && 
+                (lastItem.type === 'category' || (lastItem && lastItem.label === m[1]))
               ) {
                 lastItem.items.push(groupedItem);
               } else {

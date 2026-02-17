@@ -36,6 +36,8 @@ import {
   BLUR_COMMAND,
   CLICK_COMMAND,
   COMMAND_PRIORITY_EDITOR,
+  COMPOSITION_END_TAG,
+  COMPOSITION_START_TAG,
   CONTROLLED_TEXT_INSERTION_COMMAND,
   COPY_COMMAND,
   CUT_COMMAND,
@@ -48,7 +50,6 @@ import {
   DROP_COMMAND,
   FOCUS_COMMAND,
   FORMAT_TEXT_COMMAND,
-  HISTORY_MERGE_TAG,
   INSERT_LINE_BREAK_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
@@ -265,8 +266,9 @@ function $shouldPreventDefaultAndInsertText(
         domTargetRange.startContainer !== domSelection.anchorNode ||
         domTargetRange.startOffset !== domSelection.anchorOffset)) ||
     // Check if we're changing from bold to italics, or some other format.
-    anchorNode.getFormat() !== selection.format ||
-    anchorNode.getStyle() !== selection.style ||
+    (!anchorNode.isComposing() &&
+      (anchorNode.getFormat() !== selection.format ||
+        anchorNode.getStyle() !== selection.style)) ||
     // One last set of heuristics to check against.
     $shouldInsertTextAfterOrBeforeTextNode(selection, anchorNode)
   );
@@ -1009,9 +1011,6 @@ function $handleInput(event: InputEvent): boolean {
         getAnchorTextFromDOM(domSelection.anchorNode)
     ) {
       dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, data);
-      if (editor.isComposing()) {
-        $addUpdateTag(HISTORY_MERGE_TAG);
-      }
     }
 
     const textLength = data.length;
@@ -1065,6 +1064,7 @@ function $handleCompositionStart(event: CompositionEvent): boolean {
     const anchor = selection.anchor;
     const node = selection.anchor.getNode();
     $setCompositionKey(anchor.key);
+    $addUpdateTag(COMPOSITION_START_TAG);
 
     if (
       // If it has been 30ms since the last keydown, then we should
@@ -1096,7 +1096,7 @@ function $handleCompositionStart(event: CompositionEvent): boolean {
 function $handleCompositionEnd(event: CompositionEvent): boolean {
   const editor = getActiveEditor();
   $onCompositionEndImpl(editor, event.data);
-  $addUpdateTag(HISTORY_MERGE_TAG);
+  $addUpdateTag(COMPOSITION_END_TAG);
   return true;
 }
 

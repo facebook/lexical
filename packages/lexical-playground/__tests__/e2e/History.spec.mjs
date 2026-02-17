@@ -580,6 +580,9 @@ test.describe('History - IME', () => {
       selectionEnd: 2,
       text: 'もj',
     });
+
+    await sleep(1050);
+
     // await page.keyboard.imeSetComposition('もじ', 2, 2);
     await client.send('Input.imeSetComposition', {
       selectionStart: 2,
@@ -722,6 +725,226 @@ test.describe('History - IME', () => {
         focusPath: [0, 0, 0],
       });
     }
+  });
+
+  test('Cancel composition not push undo stack', async ({
+    page,
+    browserName,
+    isCollab,
+    isPlainText,
+  }) => {
+    // We don't yet support FF.
+    test.skip(isCollab || isPlainText || browserName !== 'chromium');
+
+    await focusEditor(page);
+    await enableCompositionKeyEvents(page);
+
+    const client = await page.context().newCDPSession(page);
+
+    await client.send('Input.insertText', {
+      text: 'a',
+    });
+
+    await sleep(1050);
+
+    await client.send('Input.imeSetComposition', {
+      selectionStart: 1,
+      selectionEnd: 1,
+      text: 'ｓ',
+    });
+    await client.send('Input.imeSetComposition', {
+      selectionStart: 1,
+      selectionEnd: 1,
+      text: '',
+    });
+    // Escape would fire here
+    await page.keyboard.insertText('');
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">a</span>
+        </p>
+      `,
+    );
+
+    await undo(page);
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+      `,
+    );
+  });
+
+  test('Merge IME input when less delay', async ({
+    page,
+    browserName,
+    isCollab,
+    isPlainText,
+  }) => {
+    // We don't yet support FF.
+    test.skip(isCollab || isPlainText || browserName !== 'chromium');
+
+    await focusEditor(page);
+    await enableCompositionKeyEvents(page);
+
+    const client = await page.context().newCDPSession(page);
+
+    await client.send('Input.insertText', {
+      text: 'a',
+    });
+
+    await client.send('Input.imeSetComposition', {
+      selectionStart: 1,
+      selectionEnd: 1,
+      text: 'ｓ',
+    });
+    // await page.keyboard.imeSetComposition('す', 1, 1);
+    await client.send('Input.imeSetComposition', {
+      selectionStart: 1,
+      selectionEnd: 1,
+      text: 'す',
+    });
+
+    await client.send('Input.insertText', {
+      selectionStart: 1,
+      selectionEnd: 1,
+      text: 'す',
+    });
+
+    await undo(page);
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+      `,
+    );
+
+    await client.send('Input.insertText', {
+      text: 'a',
+    });
+
+    await sleep(1050);
+
+    await client.send('Input.imeSetComposition', {
+      selectionStart: 2,
+      selectionEnd: 2,
+      text: 'ｓ',
+    });
+
+    await client.send('Input.imeSetComposition', {
+      selectionStart: 2,
+      selectionEnd: 2,
+      text: 'す',
+    });
+
+    await client.send('Input.insertText', {
+      selectionStart: 2,
+      selectionEnd: 2,
+      text: 'す',
+    });
+
+    await client.send('Input.imeSetComposition', {
+      selectionStart: 2,
+      selectionEnd: 2,
+      text: 'ｓ',
+    });
+
+    await client.send('Input.imeSetComposition', {
+      selectionStart: 2,
+      selectionEnd: 2,
+      text: 'す',
+    });
+
+    await client.send('Input.insertText', {
+      selectionStart: 2,
+      selectionEnd: 2,
+      text: 'す',
+    });
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">aすす</span>
+        </p>
+      `,
+    );
+
+    await undo(page);
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">a</span>
+        </p>
+      `,
+    );
+  });
+
+  test('RangeSelection should be retained when undo IME', async ({
+    page,
+    browserName,
+    isCollab,
+    isPlainText,
+  }) => {
+    // We don't yet support FF.
+    test.skip(isCollab || isPlainText || browserName !== 'chromium');
+
+    await focusEditor(page);
+    await enableCompositionKeyEvents(page);
+
+    const client = await page.context().newCDPSession(page);
+
+    await client.send('Input.insertText', {
+      text: 'ab',
+    });
+    await sleep(1050);
+
+    await page.keyboard.down('Shift');
+    await moveLeft(page, 1);
+    await page.keyboard.up('Shift');
+
+    await client.send('Input.imeSetComposition', {
+      selectionStart: 1,
+      selectionEnd: 1,
+      text: 'ｓ',
+    });
+    // await page.keyboard.imeSetComposition('す', 1, 1);
+    await client.send('Input.imeSetComposition', {
+      selectionStart: 1,
+      selectionEnd: 1,
+      text: 'す',
+    });
+
+    await client.send('Input.insertText', {
+      selectionStart: 1,
+      selectionEnd: 1,
+      text: 'す',
+    });
+
+    await undo(page);
+
+    assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">ab</span>
+        </p>
+      `,
+    );
+
+    await assertSelection(page, {
+      anchorOffset: 2,
+      anchorPath: [0, 0, 0],
+      focusOffset: 1,
+      focusPath: [0, 0, 0],
+    });
   });
 });
 /* eslint-enable sort-keys-fix/sort-keys-fix */

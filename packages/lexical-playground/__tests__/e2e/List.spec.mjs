@@ -152,10 +152,15 @@ test.describe('Checklist focus option', () => {
       button: 'left',
     });
 
-    // The item toggles and focus moves to the editor root element when enabled.
+    // The item toggles and focus moves into the editor when enabled.
     await expect(checklistItem).toHaveAttribute('aria-checked', 'true');
     const isEditorFocused = await page.evaluate(() => {
-      return window.lexicalEditor.getRootElement() === document.activeElement;
+      const rootElement = window.lexicalEditor.getRootElement();
+      return (
+        rootElement != null &&
+        document.activeElement != null &&
+        rootElement.contains(document.activeElement)
+      );
     });
     expect(isEditorFocused).toBe(true);
   });

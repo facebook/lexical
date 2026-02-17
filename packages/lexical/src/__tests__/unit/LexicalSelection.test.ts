@@ -29,6 +29,7 @@ import {
   $setSelection,
   createEditor,
   ElementNode,
+  getDOMSelection,
   LexicalEditor,
   type LexicalNode,
   ParagraphNode,
@@ -38,6 +39,7 @@ import {
 import {beforeEach, describe, expect, test} from 'vitest';
 
 import {SerializedElementNode} from '../..';
+import {$internalCreateRangeSelection} from '../../LexicalSelection';
 import {
   $assertRangeSelection,
   $createTestDecoratorNode,
@@ -1669,6 +1671,52 @@ describe('Regression #8067', () => {
           const children = paragraph.getChildren()[0] as TextNode;
           expect(children.getTextContent()).toBe('hello');
           expect(children.hasFormat('bold')).toBe(true);
+        },
+        {discrete: true},
+      );
+    });
+  });
+});
+
+describe('Regression #8098', () => {
+  initializeUnitTest((testEnv) => {
+    test('Do not apply format and style when moving to different node', async () => {
+      const {editor} = testEnv;
+      let normalTextKey: string;
+
+      await editor.update(
+        () => {
+          const root = $getRoot();
+          const paragraph = $createParagraphNode();
+          const firstNode = $createTextNode('가다');
+          firstNode.toggleFormat('bold');
+          const lastNode = $createTextNode('라바');
+          paragraph.append(firstNode, lastNode);
+          root.clear().append(paragraph);
+          firstNode.select(0, 0).format = 1;
+          normalTextKey = lastNode.getKey();
+        },
+        {discrete: true},
+      );
+
+      const domSelection = getDOMSelection(editor._window ?? window);
+      const range = document.createRange();
+      range.setStart(editor.getElementByKey(normalTextKey!)!.firstChild!, 1);
+      range.collapse(true);
+      domSelection?.removeAllRanges();
+      domSelection?.addRange(range);
+
+      await editor.update(
+        () => {
+          const selection = $internalCreateRangeSelection(
+            $getSelection(),
+            domSelection,
+            editor,
+            {type: 'selectionchange'} as Event,
+          );
+          expect(selection).not.toBeNull();
+          expect(selection!.format).toBe(0);
+          expect(selection!.style).toBe('');
         },
         {discrete: true},
       );

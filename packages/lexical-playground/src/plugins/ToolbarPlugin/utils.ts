@@ -25,10 +25,18 @@ import {$getNearestBlockElementAncestorOrThrow} from '@lexical/utils';
 import {
   $addUpdateTag,
   $createParagraphNode,
+  $createRangeSelection,
   $getSelection,
+  $isElementNode,
+  $isLineBreakNode,
+  $isParagraphNode,
   $isRangeSelection,
   $isTextNode,
+  $setSelection,
+  $splitNode,
+  ElementNode,
   LexicalEditor,
+  RangeSelection,
   SKIP_DOM_SELECTION_TAG,
   SKIP_SELECTION_FOCUS_TAG,
 } from 'lexical';
@@ -236,6 +244,64 @@ export const formatQuote = (editor: LexicalEditor, blockType: string) => {
   }
 };
 
+function $splitParagraphsByLineBreaks(selection: RangeSelection): void {
+  const blocks: Set<ElementNode> = new Set();
+  for (const node of selection.getNodes()) {
+    const block = $isParagraphNode(node) ? node : $findParagraphParent(node);
+    if (block !== null) {
+      blocks.add(block);
+    }
+  }
+  for (const point of [selection.anchor, selection.focus]) {
+    const block = $findParagraphParent(point.getNode());
+    if (block !== null) {
+      blocks.add(block);
+    }
+  }
+
+  const anchorKey = selection.anchor.key;
+  const anchorOffset = selection.anchor.offset;
+  const anchorType = selection.anchor.type;
+  const focusKey = selection.focus.key;
+  const focusOffset = selection.focus.offset;
+  const focusType = selection.focus.type;
+
+  for (const block of blocks) {
+    const children = block.getChildren();
+    const lbIndices: number[] = [];
+    for (let i = 0; i < children.length; i++) {
+      if ($isLineBreakNode(children[i])) {
+        lbIndices.push(i);
+      }
+    }
+    if (lbIndices.length === 0) {
+      continue;
+    }
+    for (let j = lbIndices.length - 1; j >= 0; j--) {
+      const [, rightBlock] = $splitNode(block, lbIndices[j]);
+      const firstChild = rightBlock.getFirstChild();
+      if ($isLineBreakNode(firstChild)) {
+        firstChild.remove();
+      }
+    }
+  }
+
+  const newSelection = $createRangeSelection();
+  newSelection.anchor.set(anchorKey, anchorOffset, anchorType);
+  newSelection.focus.set(focusKey, focusOffset, focusType);
+  $setSelection(newSelection);
+}
+
+function $findParagraphParent(
+  node: import('lexical').LexicalNode,
+): ElementNode | null {
+  if ($isParagraphNode(node)) {
+    return node;
+  }
+  const parent = node.getParent();
+  return $isElementNode(parent) && $isParagraphNode(parent) ? parent : null;
+}
+
 export const formatCode = (editor: LexicalEditor, blockType: string) => {
   if (blockType !== 'code') {
     editor.update(() => {
@@ -247,6 +313,11 @@ export const formatCode = (editor: LexicalEditor, blockType: string) => {
       if (!$isRangeSelection(selection) || selection.isCollapsed()) {
         $setBlocksType(selection, () => $createCodeNode());
       } else {
+        $splitParagraphsByLineBreaks(selection);
+        selection = $getSelection();
+        if (!$isRangeSelection(selection)) {
+          return;
+        }
         const textContent = selection.getTextContent();
         const codeNode = $createCodeNode();
         selection.insertNodes([codeNode]);

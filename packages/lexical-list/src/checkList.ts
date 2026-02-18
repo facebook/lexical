@@ -304,6 +304,8 @@ function handleClick(
             if (disableFocusOnClick) {
               $addUpdateTag(SKIP_SELECTION_FOCUS_TAG);
               $addUpdateTag(SKIP_DOM_SELECTION_TAG);
+            } else {
+              domNode.focus();
             }
             node.toggleChecked();
           }
@@ -323,12 +325,13 @@ function handleSelectDefaults(
   event: MouseEvent | TouchEvent,
   disableTakeFocusOnClick: boolean,
 ) {
-  if (disableTakeFocusOnClick) {
-    handleCheckItemEvent(event, () => {
-      event.preventDefault();
+  handleCheckItemEvent(event, () => {
+    // Prevents caret moving when clicking on check mark.
+    event.preventDefault();
+    if (disableTakeFocusOnClick) {
       event.stopPropagation();
-    });
-  }
+    }
+  });
 }
 
 function getActiveCheckListItem(): HTMLElement | null {

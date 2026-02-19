@@ -934,7 +934,7 @@ export function $shouldInsertTextAfterOrBeforeTextNode(
  */
 export type KeyboardEventModifiers = Pick<
   KeyboardEvent,
-  'key' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey'
+  'key' | 'code' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey'
 >;
 
 /**
@@ -992,10 +992,25 @@ export function isExactShortcutMatch(
   expectedKey: string,
   mask: KeyboardEventModifierMask,
 ): boolean {
-  return (
-    isModifierMatch(event, mask) &&
-    event.key.toLowerCase() === expectedKey.toLowerCase()
-  );
+  if (!isModifierMatch(event, mask)) {
+    return false;
+  }
+
+  if (event.key.toLowerCase() === expectedKey.toLowerCase()) {
+    // For special keys like Enter, Tab, ArrowUp, etc.
+    // For default keys with English-based keyboard layout.
+    return true;
+  }
+
+  if (expectedKey.length > 1) {
+    // If the non English-based keyboard layout but the key is a special key, we must not match it by `event.code`.
+    return false;
+  }
+
+  const expectedCode = 'Key' + expectedKey.toUpperCase();
+
+  // For default keys with not English-based keyboard layout.
+  return event.code === expectedCode;
 }
 
 const CONTROL_OR_META = {ctrlKey: !IS_APPLE, metaKey: IS_APPLE};

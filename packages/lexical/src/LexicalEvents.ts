@@ -1179,13 +1179,17 @@ function $handleKeyDown(event: KeyboardEvent): boolean {
   if (event.key == null) {
     return true;
   }
-  if (isSafariEndingComposition && isBackspace(event)) {
-    updateEditorSync(editor, () => {
-      $onCompositionEndImpl(editor, safariEndCompositionEventData);
-    });
+  if (isSafariEndingComposition) {
+    if (isBackspace(event)) {
+      updateEditorSync(editor, () => {
+        $onCompositionEndImpl(editor, safariEndCompositionEventData);
+      });
+      isSafariEndingComposition = false;
+      safariEndCompositionEventData = '';
+      return true;
+    }
     isSafariEndingComposition = false;
     safariEndCompositionEventData = '';
-    return true;
   }
 
   if (isMoveForward(event)) {

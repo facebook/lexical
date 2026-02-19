@@ -36,6 +36,7 @@ import {
   $splitNode,
   ElementNode,
   LexicalEditor,
+  LexicalNode,
   RangeSelection,
   SKIP_DOM_SELECTION_TAG,
   SKIP_SELECTION_FOCUS_TAG,
@@ -292,9 +293,7 @@ function $splitParagraphsByLineBreaks(selection: RangeSelection): void {
   $setSelection(newSelection);
 }
 
-function $findParagraphParent(
-  node: import('lexical').LexicalNode,
-): ElementNode | null {
+function $findParagraphParent(node: LexicalNode): ElementNode | null {
   if ($isParagraphNode(node)) {
     return node;
   }

@@ -234,7 +234,10 @@ export default function Editor(): JSX.Element {
               ) : (
                 <CodeHighlightPrismPlugin />
               ))}
-            <ListPlugin hasStrictIndent={listStrictIndent} />
+            <ListPlugin
+              hasStrictIndent={listStrictIndent}
+              shouldPreserveNumbering={false}
+            />
             <CheckListPlugin />
             <TablePlugin
               hasCellMerge={tableCellMerge}

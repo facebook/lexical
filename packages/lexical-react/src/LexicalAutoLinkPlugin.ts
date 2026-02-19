@@ -7,7 +7,7 @@
  */
 
 import type {ChangeHandler, LinkMatcher} from '@lexical/link';
-import type {LexicalEditor} from 'lexical';
+import type {ElementNode, LexicalEditor} from 'lexical';
 import type {JSX} from 'react';
 
 import {AutoLinkNode, registerAutoLink} from '@lexical/link';
@@ -25,6 +25,7 @@ function useAutoLink(
   editor: LexicalEditor,
   matchers: Array<LinkMatcher>,
   onChange?: ChangeHandler,
+  excludeParents?: Array<(parent: ElementNode) => boolean>,
 ): void {
   useEffect(() => {
     if (!editor.hasNodes([AutoLinkNode])) {
@@ -37,21 +38,24 @@ function useAutoLink(
   useEffect(() => {
     return registerAutoLink(editor, {
       changeHandlers: onChange ? [onChange] : [],
+      excludeParents: excludeParents ?? [],
       matchers,
     });
-  }, [editor, matchers, onChange]);
+  }, [editor, matchers, onChange, excludeParents]);
 }
 
 export function AutoLinkPlugin({
   matchers,
   onChange,
+  excludeParents,
 }: {
   matchers: Array<LinkMatcher>;
   onChange?: ChangeHandler;
+  excludeParents?: Array<(parent: ElementNode) => boolean>;
 }): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
 
-  useAutoLink(editor, matchers, onChange);
+  useAutoLink(editor, matchers, onChange, excludeParents);
 
   return null;
 }

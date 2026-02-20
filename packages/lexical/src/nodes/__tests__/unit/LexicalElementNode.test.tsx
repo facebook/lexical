@@ -785,6 +785,28 @@ describe('getDOMSlot tests', () => {
       `<main dir="auto"><section><br></section></main>`,
     );
   });
+
+  test('DOM selection uses getDOMSlot element for element selections', () => {
+    editor.update(
+      () => {
+        const wrapper = $createWrapperElementNode().append(
+          $createParagraphNode().append($createTextNode('A')),
+          $createParagraphNode().append($createTextNode('B')),
+          $createParagraphNode().append($createTextNode('C')),
+        );
+        $getRoot().clear().append(wrapper);
+        // Create element-type selection on wrapper
+        wrapper.select(0, wrapper.getChildrenSize());
+      },
+      {discrete: true},
+    );
+
+    const domSelection = window.getSelection();
+    expect(domSelection!.anchorNode!.nodeName).toBe('SECTION');
+    expect(domSelection!.anchorOffset).toBe(0);
+    expect(domSelection!.focusNode!.nodeName).toBe('SECTION');
+    expect(domSelection!.focusOffset).toBe(3);
+  });
 });
 
 describe('indexPath', () => {

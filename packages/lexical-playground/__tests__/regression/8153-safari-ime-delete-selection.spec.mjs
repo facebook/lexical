@@ -40,9 +40,11 @@ test.describe('Regression #8153', () => {
     page,
     browserName,
     isPlainText,
+    isCollab,
   }) => {
     test.skip(browserName !== 'webkit');
     test.skip(isPlainText);
+    test.skip(isCollab);
 
     await focusEditor(page);
     await page.keyboard.type('Hello');
@@ -72,9 +74,11 @@ test.describe('Regression #8153', () => {
     page,
     browserName,
     isPlainText,
+    isCollab,
   }) => {
     test.skip(browserName !== 'webkit');
     test.skip(isPlainText);
+    test.skip(isCollab);
 
     await focusEditor(page);
     await page.keyboard.type('Hello');

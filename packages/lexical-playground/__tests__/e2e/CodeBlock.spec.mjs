@@ -11,6 +11,7 @@ import {
   moveToEditorBeginning,
   moveToEnd,
   moveToStart,
+  pressShiftEnter,
   selectAll,
   selectCharacters,
 } from '../keyboardShortcuts/index.mjs';
@@ -292,6 +293,57 @@ test.describe('CodeBlock', () => {
           <br />
           <span data-lexical-text="true">meh</span>
         </code>
+      `,
+    );
+  });
+
+  test('Can select a line within line breaks and convert to code block', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type('aaa');
+    await pressShiftEnter(page);
+    await page.keyboard.type('bbb');
+    await pressShiftEnter(page);
+    await page.keyboard.type('ccc');
+    await moveLeft(page, 4);
+    await selectCharacters(page, 'left', 3);
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">aaa</span>
+          <br />
+          <span data-lexical-text="true">bbb</span>
+          <br />
+          <span data-lexical-text="true">ccc</span>
+        </p>
+      `,
+    );
+
+    await toggleCodeBlock(page);
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">aaa</span>
+        </p>
+        <code
+          class="PlaygroundEditorTheme__code"
+          dir="auto"
+          spellcheck="false"
+          data-gutter="1"
+          data-highlight-language="javascript"
+          data-language="javascript">
+          <span data-lexical-text="true">bbb</span>
+        </code>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">ccc</span>
+        </p>
       `,
     );
   });

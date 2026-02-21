@@ -1728,7 +1728,7 @@ describe('Regression #8098', () => {
 
 describe('Regression #8083', () => {
   initializeUnitTest((testEnv) => {
-    test('insertParagraph does not insert inside an inline ancestor', () => {
+    test('insertParagraph does not insert inside an inline ancestor (HeadingNode)', () => {
       testEnv.editor.update(
         () => {
           const root = $getRoot();
@@ -1740,6 +1740,33 @@ describe('Regression #8083', () => {
           const paragraph = $createParagraphNode();
           paragraph.append(link);
           root.clear().append(paragraph);
+
+          text.select(7, 7);
+          const selection = $getSelection();
+          invariant($isRangeSelection(selection), 'Expected RangeSelection');
+          selection.insertParagraph();
+
+          const children = root.getChildren();
+          expect(children.length).toBe(2);
+          expect($isParagraphNode(children[0])).toBe(true);
+          expect($isParagraphNode(children[1])).toBe(true);
+        },
+        {discrete: true},
+      );
+    });
+
+    test('insertParagraph does not insert inside an inline ancestor (ParagraphNode)', () => {
+      testEnv.editor.update(
+        () => {
+          const root = $getRoot();
+          const text = $createTextNode('Lexical');
+          const innerParagraph = $createParagraphNode();
+          innerParagraph.append(text);
+          const link = $createLinkNode('https://lexical.dev');
+          link.append(innerParagraph);
+          const outerParagraph = $createParagraphNode();
+          outerParagraph.append(link);
+          root.clear().append(outerParagraph);
 
           text.select(7, 7);
           const selection = $getSelection();

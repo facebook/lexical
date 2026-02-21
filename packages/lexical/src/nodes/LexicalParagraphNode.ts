@@ -27,11 +27,13 @@ import type {
 import {ELEMENT_TYPE_TO_FORMAT} from '../LexicalConstants';
 import {
   $applyNodeReplacement,
+  $findMatchingParent,
+  $isRootOrShadowRoot,
   getCachedClassNameArray,
   isHTMLElement,
   setNodeIndentFromDOM,
 } from '../LexicalUtils';
-import {ElementNode} from './LexicalElementNode';
+import {$isElementNode, ElementNode} from './LexicalElementNode';
 import {$isTextNode} from './LexicalTextNode';
 
 export type SerializedParagraphNode = Spread<
@@ -136,6 +138,16 @@ export class ParagraphNode extends ElementNode {
     newElement.setDirection(direction);
     newElement.setFormat(this.getFormatType());
     newElement.setStyle(this.getStyle());
+    const parent = this.getParent();
+    if ($isElementNode(parent) && parent.isInline()) {
+      const topBlock = $findMatchingParent(parent, (node) =>
+        $isRootOrShadowRoot(node.getParent()),
+      );
+      if (topBlock) {
+        topBlock.insertAfter(newElement, restoreSelection);
+        return newElement;
+      }
+    }
     this.insertAfter(newElement, restoreSelection);
     return newElement;
   }

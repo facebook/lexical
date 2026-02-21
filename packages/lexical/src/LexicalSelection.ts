@@ -1473,18 +1473,6 @@ export class RangeSelection implements BaseSelection {
     const newBlock = block.insertNewAfter(this, false) as ElementNode | null;
     if (newBlock) {
       newBlock.append(...nodesToInsert);
-
-      const newBlockParent = newBlock.getParentOrThrow();
-      if ($isElementNode(newBlockParent) && newBlockParent.isInline()) {
-        const topBlock = $findMatchingParent(newBlockParent, (node) => {
-          const parent = node.getParent();
-          return parent !== null && $isRootOrShadowRoot(parent);
-        });
-        if (topBlock) {
-          topBlock.insertAfter(newBlock);
-        }
-      }
-
       newBlock.selectStart();
       return newBlock;
     }

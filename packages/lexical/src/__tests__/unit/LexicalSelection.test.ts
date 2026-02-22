@@ -6,7 +6,12 @@
  *
  */
 
-import {$createLinkNode, $isLinkNode, LinkNode} from '@lexical/link';
+import {
+  $createLinkNode,
+  $isLinkNode,
+  $linkNodeTransform,
+  LinkNode,
+} from '@lexical/link';
 import {
   $createListItemNode,
   $createListNode,
@@ -24,8 +29,8 @@ import {
   $getCaretInDirection,
   $getRoot,
   $getSelection,
+  $isElementNode,
   $isParagraphNode,
-  $isRangeSelection,
   $isTextNode,
   $selectAll,
   $setSelection,
@@ -1728,7 +1733,7 @@ describe('Regression #8098', () => {
 
 describe('Regression #8083', () => {
   initializeUnitTest((testEnv) => {
-    test('insertParagraph does not insert inside an inline ancestor (HeadingNode)', () => {
+    test('$linkNodeTransform extracts block child (HeadingNode) from link', () => {
       testEnv.editor.update(
         () => {
           const root = $getRoot();
@@ -1741,21 +1746,23 @@ describe('Regression #8083', () => {
           paragraph.append(link);
           root.clear().append(paragraph);
 
-          text.select(7, 7);
-          const selection = $getSelection();
-          invariant($isRangeSelection(selection), 'Expected RangeSelection');
-          selection.insertParagraph();
+          $linkNodeTransform(link);
 
           const children = root.getChildren();
-          expect(children.length).toBe(2);
-          expect($isParagraphNode(children[0])).toBe(true);
-          expect($isParagraphNode(children[1])).toBe(true);
+          expect(children.length).toBe(1);
+          const headingChild = children[0];
+          expect(headingChild.getType()).toBe('heading');
+          invariant($isElementNode(headingChild));
+          const headingChildren = headingChild.getChildren();
+          expect(headingChildren.length).toBe(1);
+          expect($isLinkNode(headingChildren[0])).toBe(true);
+          expect(headingChildren[0].getTextContent()).toBe('Lexical');
         },
         {discrete: true},
       );
     });
 
-    test('insertParagraph does not insert inside an inline ancestor (ParagraphNode)', () => {
+    test('$linkNodeTransform extracts block child (ParagraphNode) from link', () => {
       testEnv.editor.update(
         () => {
           const root = $getRoot();
@@ -1768,15 +1775,47 @@ describe('Regression #8083', () => {
           outerParagraph.append(link);
           root.clear().append(outerParagraph);
 
-          text.select(7, 7);
-          const selection = $getSelection();
-          invariant($isRangeSelection(selection), 'Expected RangeSelection');
-          selection.insertParagraph();
+          $linkNodeTransform(link);
+
+          const children = root.getChildren();
+          expect(children.length).toBe(1);
+          expect($isParagraphNode(children[0])).toBe(true);
+          invariant($isElementNode(children[0]));
+          const paraChildren = children[0].getChildren();
+          expect(paraChildren.length).toBe(1);
+          expect($isLinkNode(paraChildren[0])).toBe(true);
+          expect(paraChildren[0].getTextContent()).toBe('Lexical');
+        },
+        {discrete: true},
+      );
+    });
+
+    test('$linkNodeTransform handles siblings after block child', () => {
+      testEnv.editor.update(
+        () => {
+          const root = $getRoot();
+          const headingText = $createTextNode('Heading');
+          const heading = $createHeadingNode('h1');
+          heading.append(headingText);
+          const afterText = $createTextNode(' after');
+          const link = $createLinkNode('https://lexical.dev');
+          link.append(heading, afterText);
+          const paragraph = $createParagraphNode();
+          paragraph.append(link);
+          root.clear().append(paragraph);
+
+          $linkNodeTransform(link);
 
           const children = root.getChildren();
           expect(children.length).toBe(2);
-          expect($isParagraphNode(children[0])).toBe(true);
+          expect(children[0].getType()).toBe('heading');
           expect($isParagraphNode(children[1])).toBe(true);
+          const trailingPara = children[1];
+          invariant($isElementNode(trailingPara));
+          const trailingChildren = trailingPara.getChildren();
+          expect(trailingChildren.length).toBe(1);
+          expect($isLinkNode(trailingChildren[0])).toBe(true);
+          expect(trailingChildren[0].getTextContent()).toBe(' after');
         },
         {discrete: true},
       );

@@ -60,7 +60,6 @@ import {
   $isNodeSelection,
   $isRangeSelection,
   $isRootNode,
-  $isRootOrShadowRoot,
   $isTextNode,
   $normalizeSelection__EXPERIMENTAL,
   $selectAll,
@@ -189,16 +188,6 @@ export class QuoteNode extends ElementNode {
     const newBlock = $createParagraphNode();
     const direction = this.getDirection();
     newBlock.setDirection(direction);
-    const parent = this.getParent();
-    if ($isElementNode(parent) && parent.isInline()) {
-      const topBlock = $findMatchingParent(parent, (node) =>
-        $isRootOrShadowRoot(node.getParent()),
-      );
-      if (topBlock) {
-        topBlock.insertAfter(newBlock, restoreSelection);
-        return newBlock;
-      }
-    }
     this.insertAfter(newBlock, restoreSelection);
     return newBlock;
   }
@@ -389,17 +378,7 @@ export class HeadingNode extends ElementNode {
         : $createHeadingNode(this.getTag());
     const direction = this.getDirection();
     newElement.setDirection(direction);
-    let insertAfterNode: LexicalNode = this;
-    const parent = this.getParent();
-    if ($isElementNode(parent) && parent.isInline()) {
-      const topBlock = $findMatchingParent(parent, (node) =>
-        $isRootOrShadowRoot(node.getParent()),
-      );
-      if (topBlock) {
-        insertAfterNode = topBlock;
-      }
-    }
-    insertAfterNode.insertAfter(newElement, restoreSelection);
+    this.insertAfter(newElement, restoreSelection);
     if (anchorOffet === 0 && !this.isEmpty() && selection) {
       const paragraph = $createParagraphNode();
       paragraph.select();

@@ -27,10 +27,12 @@ import {
 } from '@lexical/utils';
 import {
   $applyNodeReplacement,
+  $createParagraphNode,
   $getSelection,
   $isElementNode,
   $isNodeSelection,
   $isRangeSelection,
+  $isRootOrShadowRoot,
   $normalizeSelection__EXPERIMENTAL,
   $setSelection,
   createCommand,
@@ -283,6 +285,66 @@ export class LinkNode extends ElementNode {
     return (
       this.__url.startsWith('https://') || this.__url.startsWith('http://')
     );
+  }
+}
+
+/**
+ * Extracts block-level children from a LinkNode, wrapping their
+ * contents with a cloned link to preserve the URL. Handles one
+ * block child per pass; transforms re-trigger for the rest.
+ * @param link - The LinkNode to normalize
+ */
+export function $linkNodeTransform(link: LinkNode): void {
+  const children = link.getChildren();
+  let blockChild: ElementNode | null = null;
+  for (const child of children) {
+    if ($isElementNode(child) && !child.isInline()) {
+      blockChild = child;
+      break;
+    }
+  }
+  if (blockChild === null) {
+    return;
+  }
+
+  const topBlock = $findMatchingParent(link, (n) =>
+    $isRootOrShadowRoot(n.getParent()),
+  );
+  if (topBlock === null) {
+    return;
+  }
+
+  const nextSiblings = blockChild.getNextSiblings();
+  if (nextSiblings.length > 0) {
+    const clonedLink = $createLinkNode(link.__url, {
+      rel: link.__rel,
+      target: link.__target,
+      title: link.__title,
+    });
+    const newParagraph = $createParagraphNode();
+    clonedLink.append(...nextSiblings);
+    newParagraph.append(clonedLink);
+    topBlock.insertAfter(newParagraph);
+  }
+
+  const blockChildren = blockChild.getChildren();
+  if (blockChildren.length > 0) {
+    const innerLink = $createLinkNode(link.__url, {
+      rel: link.__rel,
+      target: link.__target,
+      title: link.__title,
+    });
+    innerLink.append(...blockChildren);
+    blockChild.append(innerLink);
+  }
+
+  topBlock.insertAfter(blockChild);
+
+  if (link.getChildrenSize() === 0) {
+    link.remove();
+  }
+  if ($isElementNode(topBlock) && topBlock.isEmpty()) {
+    topBlock.remove();
   }
 }
 

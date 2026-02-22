@@ -20,6 +20,7 @@ import {
 } from 'lexical';
 
 import {
+  $linkNodeTransform,
   $toggleLink,
   LinkAttributes,
   LinkNode,
@@ -56,6 +57,7 @@ export function registerLink(
   stores: NamedSignalsOutput<LinkConfig>,
 ) {
   return mergeRegister(
+    editor.registerNodeTransform(LinkNode, $linkNodeTransform),
     effect(() =>
       editor.registerCommand(
         TOGGLE_LINK_COMMAND,

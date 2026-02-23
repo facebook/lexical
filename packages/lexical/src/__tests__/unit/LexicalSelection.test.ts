@@ -1750,10 +1750,9 @@ describe('Regression #8083', () => {
 
           const children = root.getChildren();
           expect(children.length).toBe(1);
-          const headingChild = children[0];
-          expect(headingChild.getType()).toBe('heading');
-          invariant($isElementNode(headingChild));
-          const headingChildren = headingChild.getChildren();
+          expect(children[0].getType()).toBe('heading');
+          invariant($isElementNode(children[0]));
+          const headingChildren = children[0].getChildren();
           expect(headingChildren.length).toBe(1);
           expect($isLinkNode(headingChildren[0])).toBe(true);
           expect(headingChildren[0].getTextContent()).toBe('Lexical');
@@ -1809,6 +1808,9 @@ describe('Regression #8083', () => {
           const children = root.getChildren();
           expect(children.length).toBe(2);
           expect(children[0].getType()).toBe('heading');
+          invariant($isElementNode(children[0]));
+          expect($isLinkNode(children[0].getChildren()[0])).toBe(true);
+          expect(children[0].getTextContent()).toBe('Heading');
           expect($isParagraphNode(children[1])).toBe(true);
           const trailingPara = children[1];
           invariant($isElementNode(trailingPara));

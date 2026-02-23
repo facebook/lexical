@@ -35,6 +35,7 @@ import {
 import {
   $createLineBreakNode,
   $createTextNode,
+  $findMatchingParent,
   $getState,
   $setState,
   createState,
@@ -681,6 +682,9 @@ export const LINK: TextMatchTransformer = {
     /(?:\[([^[\]]*(?:\[[^[\]]*\][^[\]]*)*)\])(?:\((?:([^()\s]+)(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))$/,
   replace: (textNode, match) => {
     // https://spec.commonmark.org/0.31.2/#inline-link
+    if ($findMatchingParent(textNode, $isLinkNode)) {
+      return;
+    }
     const [, linkText, linkUrl, linkTitle] = match;
     const linkNode = $createLinkNode(linkUrl, {title: linkTitle});
     const openBracketAmount = linkText.split('[').length - 1;

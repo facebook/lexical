@@ -7,11 +7,13 @@
  */
 import {CodeExtension} from '@lexical/code';
 import {buildEditorFromExtensions} from '@lexical/extension';
-import {$isLinkNode, LinkExtension} from '@lexical/link';
+import {$createLinkNode, $isLinkNode, LinkExtension} from '@lexical/link';
 import {ListExtension} from '@lexical/list';
 import {registerMarkdownShortcuts} from '@lexical/markdown';
 import {RichTextExtension} from '@lexical/rich-text';
 import {
+  $createParagraphNode,
+  $createTextNode,
   $getRoot,
   $getSelection,
   $isParagraphNode,
@@ -40,7 +42,7 @@ function typeMarkdown(editor: LexicalEditor, text: string) {
     }
   });
   for (const char of text) {
-    editor.update(() => $getSelection()?.insertRawText(char), {discrete: true});
+    editor.update(() => $getSelection()?.insertText(char), {discrete: true});
   }
   // Markdown shortcuts issues a cascading update that is not
   // discrete, so force sync reconciliation with a read.
@@ -115,6 +117,42 @@ describe('LINK', () => {
       assert($isLinkNode(linkNode), 'Second child must be a LinkNode');
       expect(linkNode.getTextContent()).toBe('b');
       expect(linkNode.getURL()).toBe('https://b.example.com');
+    });
+  });
+
+  test('markdown link should not be created inside another link.', async () => {
+    const editor = buildEditorFromExtensions([MarkdownShortcutTestExtension]);
+    editor.update(
+      () => {
+        $getRoot()
+          .selectEnd()
+          .insertNodes([
+            $createParagraphNode().append(
+              $createLinkNode('link').append($createTextNode('hello')),
+            ),
+          ]);
+      },
+      {discrete: true},
+    );
+
+    // moves the cursor inside the link text: hell‸o
+    editor.update(() => $getRoot().getAllTextNodes()[0].select(4, 4), {
+      discrete: true,
+    });
+
+    typeMarkdown(editor, '[world](www)');
+
+    editor.read(() => {
+      const paragraph = $getRoot().getFirstChildOrThrow();
+      assert($isParagraphNode(paragraph), 'Root child must be a paragraph');
+      const children = paragraph.getChildren();
+
+      expect(children.length).toBe(1);
+
+      const linkNode = children[0];
+      assert($isLinkNode(linkNode), 'First child must be a LinkNode');
+      expect(linkNode.getTextContent()).toBe('hell[world](www)o');
+      expect(linkNode.getURL()).toBe('link');
     });
   });
 });

@@ -217,7 +217,8 @@
       "@shikijs/types": "3.20.0",
       "react": "19.1.1",
       "react-dom": "19.1.1",
-      "@types/node": "20.19.17"
+      "@types/node": "20.19.17",
+      "@isaacs/brace-expansion": ">=5.0.1"
     }
   }
 }

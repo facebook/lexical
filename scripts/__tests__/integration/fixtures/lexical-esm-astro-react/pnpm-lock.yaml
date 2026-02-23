@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  yaml-language-server: '>=1.20.0'
+
 importers:
 
   .:
@@ -1376,9 +1379,6 @@ packages:
     engines: {node: '>=16'}
     hasBin: true
 
-  lodash@4.17.21:
-    resolution: {integrity: sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==}
-
   longest-streak@3.1.0:
     resolution: {integrity: sha512-9Ri+o0JYgehTaVBBDoMqIl8GXtbWg711O3srftcHhZ0dqnETqLaoIK0x17fUw9rFSlK/0NlsKe0Ahhyl5pXE2g==}
 
@@ -2139,8 +2139,8 @@ packages:
   yallist@3.1.1:
     resolution: {integrity: sha512-a4UGQaWPH59mOXUYnAG2ewncQS4i4F43Tv3JoAM+s2VDAmS9NsK8GpDMLrCHPksFT7h3K6TOoUNn2pb7RoXx4g==}
 
-  yaml-language-server@1.19.2:
-    resolution: {integrity: sha512-9F3myNmJzUN/679jycdMxqtydPSDRAarSj3wPiF7pchEPnO9Dg07Oc+gIYLqXR4L+g+FSEVXXv2+mr54StLFOg==}
+  yaml-language-server@1.20.0:
+    resolution: {integrity: sha512-qhjK/bzSRZ6HtTvgeFvjNPJGWdZ0+x5NREV/9XZWFjIGezew2b4r5JPy66IfOhd5OA7KeFwk1JfmEbnTvev0cA==}
     hasBin: true
 
   yaml@2.7.1:
@@ -3631,8 +3631,6 @@ snapshots:
     dependencies:
       isomorphic.js: 0.2.5
 
-  lodash@4.17.21: {}
-
   longest-streak@3.1.0: {}
 
   lru-cache@11.2.5: {}
@@ -4520,7 +4518,7 @@ snapshots:
   volar-service-yaml@0.0.68(@volar/language-service@2.4.28):
     dependencies:
       vscode-uri: 3.1.0
-      yaml-language-server: 1.19.2
+      yaml-language-server: 1.20.0
     optionalDependencies:
       '@volar/language-service': 2.4.28
 
@@ -4591,12 +4589,11 @@ snapshots:
 
   yallist@3.1.1: {}
 
-  yaml-language-server@1.19.2:
+  yaml-language-server@1.20.0:
     dependencies:
       '@vscode/l10n': 0.0.18
       ajv: 8.17.1
       ajv-draft-04: 1.0.0(ajv@8.17.1)
-      lodash: 4.17.21
       prettier: 3.8.1
       request-light: 0.5.8
       vscode-json-languageservice: 4.1.8

@@ -986,13 +986,12 @@ export class RangeSelection implements BaseSelection {
       if (firstNode.getTextContent() === '') {
         firstNode.remove();
       } else if (this.anchor.type === 'text') {
+        this.format = firstNodeFormat;
+        this.style = firstNodeStyle;
         if (firstNode.isComposing()) {
           // When composing, we need to adjust the anchor offset so that
           // we correctly replace that right range.
           this.anchor.offset -= text.length;
-        } else {
-          this.format = firstNodeFormat;
-          this.style = firstNodeStyle;
         }
       }
     } else {
@@ -1135,13 +1134,12 @@ export class RangeSelection implements BaseSelection {
         if (firstNode.getTextContent() === '') {
           firstNode.remove();
         } else if (this.anchor.type === 'text') {
+          this.format = firstNode.getFormat();
+          this.style = firstNode.getStyle();
           if (firstNode.isComposing()) {
             // When composing, we need to adjust the anchor offset so that
             // we correctly replace that right range.
             this.anchor.offset -= text.length;
-          } else {
-            this.format = firstNode.getFormat();
-            this.style = firstNode.getStyle();
           }
         }
       } else if (startOffset === firstNodeTextLength) {

@@ -532,7 +532,7 @@ export function registerAutoLink(
     editor.registerNodeTransform(TextNode, (textNode: TextNode) => {
       const parent = textNode.getParentOrThrow();
       const previous = textNode.getPreviousSibling();
-      if ($isAutoLinkNode(parent) && !parent.getIsUnlinked()) {
+      if ($isAutoLinkNode(parent)) {
         handleLinkEdit(parent, matchers, onChange);
       } else if (
         !$isLinkNode(parent) &&

@@ -28,6 +28,7 @@ import {
 } from '@lexical/utils';
 import {
   $applyNodeReplacement,
+  $copyNode,
   $getChildCaret,
   $getSelection,
   $isElementNode,
@@ -300,11 +301,7 @@ export function $linkNodeTransform(link: LinkNode): void {
     if ($isElementNode(node) && !node.isInline()) {
       const blockChildren = node.getChildren();
       if (blockChildren.length > 0) {
-        const innerLink = $createLinkNode(link.__url, {
-          rel: link.__rel,
-          target: link.__target,
-          title: link.__title,
-        });
+        const innerLink = $copyNode(link);
         innerLink.append(...blockChildren);
         node.append(innerLink);
       }
@@ -313,10 +310,10 @@ export function $linkNodeTransform(link: LinkNode): void {
       });
     }
   }
-  if (link.getChildrenSize() === 0) {
+  if (link.isEmpty()) {
     const parent = link.getParent();
     link.remove();
-    if ($isElementNode(parent) && parent.isEmpty()) {
+    if (parent && parent.isEmpty()) {
       parent.remove();
     }
   }

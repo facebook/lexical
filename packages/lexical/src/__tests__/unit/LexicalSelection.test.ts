@@ -6,19 +6,13 @@
  *
  */
 
-import {
-  $createLinkNode,
-  $isLinkNode,
-  $linkNodeTransform,
-  LinkNode,
-} from '@lexical/link';
+import {$createLinkNode, $isLinkNode, LinkNode} from '@lexical/link';
 import {
   $createListItemNode,
   $createListNode,
   ListItemNode,
   ListNode,
 } from '@lexical/list';
-import {$createHeadingNode} from '@lexical/rich-text';
 import {
   $caretRangeFromSelection,
   $comparePointCaretNext,
@@ -29,7 +23,6 @@ import {
   $getCaretInDirection,
   $getRoot,
   $getSelection,
-  $isElementNode,
   $isParagraphNode,
   $isTextNode,
   $selectAll,
@@ -1724,100 +1717,6 @@ describe('Regression #8098', () => {
           expect(selection).not.toBeNull();
           expect(selection!.format).toBe(0);
           expect(selection!.style).toBe('');
-        },
-        {discrete: true},
-      );
-    });
-  });
-});
-
-describe('Regression #8083', () => {
-  initializeUnitTest((testEnv) => {
-    test('$linkNodeTransform extracts block child (HeadingNode) from link', () => {
-      testEnv.editor.update(
-        () => {
-          const root = $getRoot();
-          const text = $createTextNode('Lexical');
-          const heading = $createHeadingNode('h1');
-          heading.append(text);
-          const link = $createLinkNode('https://lexical.dev');
-          link.append(heading);
-          const paragraph = $createParagraphNode();
-          paragraph.append(link);
-          root.clear().append(paragraph);
-
-          $linkNodeTransform(link);
-
-          const children = root.getChildren();
-          expect(children.length).toBe(1);
-          expect(children[0].getType()).toBe('heading');
-          invariant($isElementNode(children[0]));
-          const headingChildren = children[0].getChildren();
-          expect(headingChildren.length).toBe(1);
-          expect($isLinkNode(headingChildren[0])).toBe(true);
-          expect(headingChildren[0].getTextContent()).toBe('Lexical');
-        },
-        {discrete: true},
-      );
-    });
-
-    test('$linkNodeTransform extracts block child (ParagraphNode) from link', () => {
-      testEnv.editor.update(
-        () => {
-          const root = $getRoot();
-          const text = $createTextNode('Lexical');
-          const innerParagraph = $createParagraphNode();
-          innerParagraph.append(text);
-          const link = $createLinkNode('https://lexical.dev');
-          link.append(innerParagraph);
-          const outerParagraph = $createParagraphNode();
-          outerParagraph.append(link);
-          root.clear().append(outerParagraph);
-
-          $linkNodeTransform(link);
-
-          const children = root.getChildren();
-          expect(children.length).toBe(1);
-          expect($isParagraphNode(children[0])).toBe(true);
-          invariant($isElementNode(children[0]));
-          const paraChildren = children[0].getChildren();
-          expect(paraChildren.length).toBe(1);
-          expect($isLinkNode(paraChildren[0])).toBe(true);
-          expect(paraChildren[0].getTextContent()).toBe('Lexical');
-        },
-        {discrete: true},
-      );
-    });
-
-    test('$linkNodeTransform handles siblings after block child', () => {
-      testEnv.editor.update(
-        () => {
-          const root = $getRoot();
-          const headingText = $createTextNode('Heading');
-          const heading = $createHeadingNode('h1');
-          heading.append(headingText);
-          const afterText = $createTextNode(' after');
-          const link = $createLinkNode('https://lexical.dev');
-          link.append(heading, afterText);
-          const paragraph = $createParagraphNode();
-          paragraph.append(link);
-          root.clear().append(paragraph);
-
-          $linkNodeTransform(link);
-
-          const children = root.getChildren();
-          expect(children.length).toBe(2);
-          expect(children[0].getType()).toBe('heading');
-          invariant($isElementNode(children[0]));
-          expect($isLinkNode(children[0].getChildren()[0])).toBe(true);
-          expect(children[0].getTextContent()).toBe('Heading');
-          expect($isParagraphNode(children[1])).toBe(true);
-          const trailingPara = children[1];
-          invariant($isElementNode(trailingPara));
-          const trailingChildren = trailingPara.getChildren();
-          expect(trailingChildren.length).toBe(1);
-          expect($isLinkNode(trailingChildren[0])).toBe(true);
-          expect(trailingChildren[0].getTextContent()).toBe(' after');
         },
         {discrete: true},
       );

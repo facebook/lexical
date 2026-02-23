@@ -9,6 +9,7 @@
 import {
   $createLinkNode,
   $isLinkNode,
+  $linkNodeTransform,
   $toggleLink,
   formatUrl,
   LinkNode,
@@ -24,7 +25,9 @@ import {
   $getNodeByKey,
   $getRoot,
   $getSelection,
+  $isElementNode,
   $isLineBreakNode,
+  $isParagraphNode,
   $isRangeSelection,
   $isTextNode,
   $selectAll,
@@ -882,5 +885,155 @@ describe('formatUrl', () => {
     expect(formatUrl('subdomain.example.com/path')).toBe(
       'https://subdomain.example.com/path',
     );
+  });
+});
+
+describe('$linkNodeTransform (Regression #8083)', () => {
+  initializeUnitTest((testEnv) => {
+    test('extracts block child (HeadingNode) from link via registered transform', async () => {
+      const {editor} = testEnv;
+      const removeTransform = editor.registerNodeTransform(
+        LinkNode,
+        $linkNodeTransform,
+      );
+
+      await editor.update(() => {
+        const root = $getRoot();
+        const text = $createTextNode('Lexical');
+        const heading = $createHeadingNode('h1');
+        heading.append(text);
+        const link = $createLinkNode('https://lexical.dev');
+        link.append(heading);
+        const paragraph = $createParagraphNode();
+        paragraph.append(link);
+        root.clear().append(paragraph);
+      });
+
+      editor.read(() => {
+        const root = $getRoot();
+        const children = root.getChildren();
+        expect(children.length).toBe(1);
+        expect(children[0].getType()).toBe('heading');
+        expect($isElementNode(children[0])).toBe(true);
+        if ($isElementNode(children[0])) {
+          const headingChildren = children[0].getChildren();
+          expect(headingChildren.length).toBe(1);
+          expect($isLinkNode(headingChildren[0])).toBe(true);
+          expect(headingChildren[0].getTextContent()).toBe('Lexical');
+        }
+      });
+
+      removeTransform();
+    });
+
+    test('extracts block child (ParagraphNode) from link via registered transform', async () => {
+      const {editor} = testEnv;
+      const removeTransform = editor.registerNodeTransform(
+        LinkNode,
+        $linkNodeTransform,
+      );
+
+      await editor.update(() => {
+        const root = $getRoot();
+        const text = $createTextNode('Lexical');
+        const innerParagraph = $createParagraphNode();
+        innerParagraph.append(text);
+        const link = $createLinkNode('https://lexical.dev');
+        link.append(innerParagraph);
+        const outerParagraph = $createParagraphNode();
+        outerParagraph.append(link);
+        root.clear().append(outerParagraph);
+      });
+
+      editor.read(() => {
+        const root = $getRoot();
+        const children = root.getChildren();
+        expect(children.length).toBe(1);
+        expect($isParagraphNode(children[0])).toBe(true);
+        if ($isElementNode(children[0])) {
+          const paraChildren = children[0].getChildren();
+          expect(paraChildren.length).toBe(1);
+          expect($isLinkNode(paraChildren[0])).toBe(true);
+          expect(paraChildren[0].getTextContent()).toBe('Lexical');
+        }
+      });
+
+      removeTransform();
+    });
+
+    test('handles siblings after block child via registered transform', async () => {
+      const {editor} = testEnv;
+      const removeTransform = editor.registerNodeTransform(
+        LinkNode,
+        $linkNodeTransform,
+      );
+
+      await editor.update(() => {
+        const root = $getRoot();
+        const headingText = $createTextNode('Heading');
+        const heading = $createHeadingNode('h1');
+        heading.append(headingText);
+        const afterText = $createTextNode(' after');
+        const link = $createLinkNode('https://lexical.dev');
+        link.append(heading, afterText);
+        const paragraph = $createParagraphNode();
+        paragraph.append(link);
+        root.clear().append(paragraph);
+      });
+
+      editor.read(() => {
+        const root = $getRoot();
+        const children = root.getChildren();
+        expect(children.length).toBe(2);
+        expect(children[0].getType()).toBe('heading');
+        if ($isElementNode(children[0])) {
+          expect($isLinkNode(children[0].getChildren()[0])).toBe(true);
+          expect(children[0].getTextContent()).toBe('Heading');
+        }
+        expect($isParagraphNode(children[1])).toBe(true);
+        if ($isElementNode(children[1])) {
+          const trailingChildren = children[1].getChildren();
+          expect(trailingChildren.length).toBe(1);
+          expect($isLinkNode(trailingChildren[0])).toBe(true);
+          expect(trailingChildren[0].getTextContent()).toBe(' after');
+        }
+      });
+
+      removeTransform();
+    });
+
+    test('preserves selection after transform extracts block child', async () => {
+      const {editor} = testEnv;
+      const removeTransform = editor.registerNodeTransform(
+        LinkNode,
+        $linkNodeTransform,
+      );
+
+      await editor.update(() => {
+        const root = $getRoot();
+        const text = $createTextNode('Lexical');
+        const heading = $createHeadingNode('h1');
+        heading.append(text);
+        const link = $createLinkNode('https://lexical.dev');
+        link.append(heading);
+        const paragraph = $createParagraphNode();
+        paragraph.append(link);
+        root.clear().append(paragraph);
+        text.select(3, 3);
+      });
+
+      editor.read(() => {
+        const selection = $getSelection();
+        expect($isRangeSelection(selection)).toBe(true);
+        if ($isRangeSelection(selection)) {
+          const anchorNode = selection.anchor.getNode();
+          expect($isTextNode(anchorNode)).toBe(true);
+          expect(anchorNode.getTextContent()).toBe('Lexical');
+          expect(selection.anchor.offset).toBe(3);
+        }
+      });
+
+      removeTransform();
+    });
   });
 });

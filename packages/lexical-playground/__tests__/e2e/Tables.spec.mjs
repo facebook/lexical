@@ -49,6 +49,7 @@ import {
   LEGACY_EVENTS,
   mergeTableCells,
   pasteFromClipboard,
+  resizeTableCell,
   selectCellFromTableCoord,
   selectCellsFromTableCords,
   selectFromAdditionalStylesDropdown,
@@ -5897,6 +5898,7 @@ test.describe.parallel('Tables', () => {
   }) => {
     test.skip(isPlainText);
     await initialize({isCollab, page});
+
     await focusEditor(page);
 
     // Create and copy a table
@@ -5945,6 +5947,185 @@ test.describe.parallel('Tables', () => {
       `,
       undefined,
       {ignoreClasses: true},
+    );
+  });
+
+  test(`Can paste tables inside table cells (with hasNestedTables)`, async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+    await initialize({hasNestedTables: true, isCollab, page});
+    await focusEditor(page);
+
+    // Create and copy a table
+    await insertTable(page, 2, 2);
+    await page.keyboard.type('test inner table');
+    await selectAll(page);
+    await withExclusiveClipboardAccess(async () => {
+      const clipboard = await copyToClipboard(page);
+      await page.keyboard.press('Backspace');
+      await moveToEditorBeginning(page);
+
+      // Create another table and try to paste the first table into a cell
+      await insertTable(page, 2, 2);
+      await click(page, '.PlaygroundEditorTheme__tableCell:first-child');
+      await pasteFromClipboard(page, clipboard);
+    });
+
+    // Verify that a nested table was pasted into the cell
+    await assertHTML(
+      page,
+      html`
+        <p><br /></p>
+        <table>
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
+          <tr>
+            <th>
+              <p><br /></p>
+              <table>
+                <colgroup>
+                  <col style="width: 92px" />
+                  <col style="width: 92px" />
+                </colgroup>
+                <tr>
+                  <th>
+                    <p>
+                      <span data-lexical-text="true">test inner table</span>
+                    </p>
+                  </th>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                </tr>
+                <tr>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                  <td>
+                    <p><br /></p>
+                  </td>
+                </tr>
+              </table>
+              <p><br /></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+        </table>
+        <p><br /></p>
+      `,
+      undefined,
+      {ignoreClasses: true, ignoreDir: true},
+    );
+  });
+
+  test(`Can paste and autofit tables inside table cells (with hasNestedTables, hasFitNestedTables)`, async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+    await initialize({
+      hasFitNestedTables: true,
+      hasNestedTables: true,
+      isCollab,
+      page,
+    });
+    await focusEditor(page);
+
+    // Create and copy a table
+    await insertTable(page, 2, 2);
+
+    await page.keyboard.type('test inner table');
+
+    await selectAll(page);
+    await withExclusiveClipboardAccess(async () => {
+      const clipboard = await copyToClipboard(page);
+      await page.keyboard.press('Backspace');
+      await moveToEditorBeginning(page);
+
+      // Create another table and try to paste the first table into a cell
+      await insertTable(page, 2, 2);
+      // Resize outer table cell (92px default + 50px = 142px)
+      await resizeTableCell(page, 'tr:nth-child(2) > th:nth-child(1)', 50);
+      await click(
+        page,
+        'tr:nth-child(2) > th:nth-child(1) > .PlaygroundEditorTheme__paragraph',
+      );
+
+      await pasteFromClipboard(page, clipboard);
+    });
+
+    // Verify that a nested table was pasted into the cell
+    await assertHTML(
+      page,
+      html`
+        <p><br /></p>
+        <table>
+          <colgroup>
+            <col style="width: 142px" />
+            <col style="width: 92px" />
+          </colgroup>
+          <tr>
+            <th>
+              <p><br /></p>
+              <table>
+                <colgroup>
+                  <col style="width: 62.5px" />
+                  <col style="width: 62.5px" />
+                </colgroup>
+                <tr>
+                  <th>
+                    <p>
+                      <span data-lexical-text="true">test inner table</span>
+                    </p>
+                  </th>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                </tr>
+                <tr>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                  <td>
+                    <p><br /></p>
+                  </td>
+                </tr>
+              </table>
+              <p><br /></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+        </table>
+        <p><br /></p>
+      `,
+      undefined,
+      {ignoreClasses: true, ignoreDir: true},
     );
   });
 

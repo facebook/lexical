@@ -104,6 +104,7 @@ export default function Editor(): JSX.Element {
       isCharLimit,
       hasLinkAttributes,
       hasNestedTables,
+      hasFitNestedTables,
       isCharLimitUtf8,
       isRichText,
       showTreeView,
@@ -116,6 +117,7 @@ export default function Editor(): JSX.Element {
       shouldAllowHighlightingWithBrackets,
       selectionAlwaysOnDisplay,
       listStrictIndent,
+      shouldDisableFocusOnClickChecklist,
     },
   } = useSettings();
   const isEditable = useLexicalEditable();
@@ -233,12 +235,18 @@ export default function Editor(): JSX.Element {
               ) : (
                 <CodeHighlightPrismPlugin />
               ))}
-            <ListPlugin hasStrictIndent={listStrictIndent} />
-            <CheckListPlugin />
+            <ListPlugin
+              hasStrictIndent={listStrictIndent}
+              shouldPreserveNumbering={false}
+            />
+            <CheckListPlugin
+              disableTakeFocusOnClick={shouldDisableFocusOnClickChecklist}
+            />
             <TablePlugin
               hasCellMerge={tableCellMerge}
               hasCellBackgroundColor={tableCellBackgroundColor}
               hasHorizontalScroll={tableHorizontalScroll}
+              hasFitNestedTables={hasFitNestedTables}
               hasNestedTables={hasNestedTables}
             />
             <TableCellResizer />

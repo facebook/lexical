@@ -76,7 +76,14 @@ export const REMOVE_LIST_COMMAND: LexicalCommand<void> = createCommand(
   'REMOVE_LIST_COMMAND',
 );
 
-export function registerList(editor: LexicalEditor): () => void {
+export interface RegisterListOptions {
+  restoreNumbering?: boolean;
+}
+
+export function registerList(
+  editor: LexicalEditor,
+  options?: RegisterListOptions,
+): () => void {
   const removeListener = mergeRegister(
     editor.registerCommand(
       INSERT_ORDERED_LIST_COMMAND,
@@ -120,7 +127,10 @@ export function registerList(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand(
       INSERT_PARAGRAPH_COMMAND,
-      () => $handleListInsertParagraph(),
+      () => {
+        const shouldRestore = options && options.restoreNumbering;
+        return $handleListInsertParagraph(!!shouldRestore);
+      },
       COMMAND_PRIORITY_LOW,
     ),
     editor.registerNodeTransform(ListItemNode, (node) => {
@@ -288,6 +298,7 @@ export interface ListConfig {
    * When `false` (default), indentation is more flexible.
    */
   hasStrictIndent: boolean;
+  shouldPreserveNumbering: boolean;
 }
 
 /**
@@ -298,13 +309,20 @@ export const ListExtension = defineExtension({
   build(editor, config, state) {
     return namedSignals(config);
   },
-  config: safeCast<ListConfig>({hasStrictIndent: false}),
+  config: safeCast<ListConfig>({
+    hasStrictIndent: false,
+    shouldPreserveNumbering: false,
+  }),
   name: '@lexical/list/List',
   nodes: () => [ListNode, ListItemNode],
   register(editor, config, state) {
     const stores = state.getOutput();
     return mergeRegister(
-      registerList(editor),
+      effect(() => {
+        return registerList(editor, {
+          restoreNumbering: stores.shouldPreserveNumbering.value,
+        });
+      }),
       effect(() =>
         stores.hasStrictIndent.value
           ? registerListStrictIndentTransform(editor)
@@ -314,6 +332,10 @@ export const ListExtension = defineExtension({
   },
 });
 
+export interface CheckListConfig {
+  disableTakeFocusOnClick: boolean;
+}
+
 /**
  * Registers checklist functionality for {@link ListNode} and
  * {@link ListItemNode} with a
@@ -322,6 +344,9 @@ export const ListExtension = defineExtension({
  * checkboxes.
  */
 export const CheckListExtension = defineExtension({
+  config: safeCast<CheckListConfig>({
+    disableTakeFocusOnClick: false,
+  }),
   dependencies: [ListExtension],
   name: '@lexical/list/CheckList',
   register: registerCheckList,

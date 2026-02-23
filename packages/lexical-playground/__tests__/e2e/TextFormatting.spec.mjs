@@ -1211,7 +1211,7 @@ test.describe.parallel('TextFormatting', () => {
         html`
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">A</span>
-            ${getExpectedDateTimeHtml()}
+            ${getExpectedDateTimeHtml({formats: ['bold']})}
             <strong
               class="PlaygroundEditorTheme__textBold"
               data-lexical-text="true">
@@ -1224,10 +1224,12 @@ test.describe.parallel('TextFormatting', () => {
       await toggleBold(page);
       await assertHTML(
         page,
+        // After formatting the text, the selection will be reset from the decorator node,
+        // so it will retain its previous format when toggleBold is triggered again
         html`
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">A</span>
-            ${getExpectedDateTimeHtml()}
+            ${getExpectedDateTimeHtml({formats: ['bold']})}
             <span data-lexical-text="true">BC</span>
           </p>
         `,

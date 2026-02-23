@@ -19,6 +19,7 @@ import {$createHeadingNode} from '@lexical/rich-text';
 import {
   $createLineBreakNode,
   $createParagraphNode,
+  $createRangeSelection,
   $createTextNode,
   $getNodeByKey,
   $getRoot,
@@ -27,6 +28,7 @@ import {
   $isRangeSelection,
   $isTextNode,
   $selectAll,
+  $setSelection,
   ParagraphNode,
   RangeSelection,
   SerializedParagraphNode,
@@ -817,6 +819,31 @@ describe('LexicalLinkNode tests', () => {
           expect(trailingSpaceLink.getTextContent()).toBe(' ');
           expect(trailingSpaceLink.getURL()).toBe('https://example.com');
         }
+      });
+    });
+
+    test('$toggleLink removes link when selection is collapsed', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const p = $createParagraphNode();
+        const textNode = $createTextNode('textboldtext');
+        p.append(textNode);
+        $getRoot().append(p);
+        $selectAll();
+        $toggleLink('https://lexical.dev/', {title: 'Lexical Website'});
+
+        const linkNode = p.getFirstChild() as LinkNode;
+        textNode.select(4, 8).formatText('bold');
+        const sel = $createRangeSelection();
+        const key = linkNode.getChildAtIndex(1)!.getKey();
+        sel.anchor.set(key, 4, 'text');
+        sel.focus.set(key, 4, 'text');
+        $setSelection(sel);
+        $toggleLink(null);
+
+        const children = p.getChildren();
+        expect(children.length).toBe(3);
+        children.forEach((child) => expect($isTextNode(child)).toBe(true));
       });
     });
   });

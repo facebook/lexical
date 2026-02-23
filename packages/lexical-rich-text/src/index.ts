@@ -39,6 +39,7 @@ import {
 import {
   $findMatchingParent,
   $getNearestBlockElementAncestorOrThrow,
+  $handleIndentAndOutdent,
   addClassNamesToElement,
   isHTMLElement,
   mergeRegister,
@@ -514,38 +515,6 @@ export function eventFiles(
   return [hasFiles, Array.from(dataTransfer.files), hasContent];
 }
 
-function $handleIndentAndOutdent(
-  indentOrOutdent: (block: ElementNode) => void,
-): boolean {
-  const selection = $getSelection();
-  if (!$isRangeSelection(selection)) {
-    return false;
-  }
-  const alreadyHandled = new Set();
-  const nodes = selection.getNodes();
-  for (let i = 0; i < nodes.length; i++) {
-    const node = nodes[i];
-    const key = node.getKey();
-    if (alreadyHandled.has(key)) {
-      continue;
-    }
-    const parentBlock = $findMatchingParent(
-      node,
-      (parentNode): parentNode is ElementNode =>
-        $isElementNode(parentNode) && !parentNode.isInline(),
-    );
-    if (parentBlock === null) {
-      continue;
-    }
-    const parentKey = parentBlock.getKey();
-    if (parentBlock.canIndent() && !alreadyHandled.has(parentKey)) {
-      alreadyHandled.add(parentKey);
-      indentOrOutdent(parentBlock);
-    }
-  }
-  return alreadyHandled.size > 0;
-}
-
 function $isTargetWithinDecorator(target: HTMLElement): boolean {
   const node = $getNearestNodeFromDOMNode(target);
   return $isDecoratorNode(node);
@@ -745,7 +714,13 @@ export function registerRichText(editor: LexicalEditor): () => void {
     editor.registerCommand(
       INSERT_TAB_COMMAND,
       () => {
-        $insertNodes([$createTabNode()]);
+        const tabNode = $createTabNode();
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          tabNode.setFormat(selection.format);
+          tabNode.setStyle(selection.style);
+        }
+        $insertNodes([tabNode]);
         return true;
       },
       COMMAND_PRIORITY_EDITOR,

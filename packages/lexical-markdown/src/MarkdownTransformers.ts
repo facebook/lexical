@@ -206,8 +206,8 @@ const UNORDERED_LIST_REGEX = /^(\s*)[-*+]\s/;
 const CHECK_LIST_REGEX = /^(\s*)(?:[-*+]\s)?\s?(\[(\s|x)?\])\s/i;
 const HEADING_REGEX = /^(#{1,6})\s/;
 const QUOTE_REGEX = /^>\s/;
-const CODE_START_REGEX = /^[ \t]*```([\w-]+)?/;
-const CODE_END_REGEX = /[ \t]*```$/;
+const CODE_START_REGEX = /^([ \t]*`{3,})([\w-]+)?[ \t]?/;
+const CODE_END_REGEX = /^[ \t]*`{3,}$/;
 const CODE_SINGLE_LINE_REGEX =
   /^[ \t]*```[^`]+(?:(?:`{1,2}|`{4,})[^`]+)*```(?:[^`]|$)/;
 const TABLE_ROW_REG_EXP = /^(?:\|)(.+)(?:\|)\s?$/;
@@ -219,6 +219,15 @@ const ENDS_WITH = (regex: RegExp) =>
 
 export const listMarkerState = createState('mdListMarker', {
   parse: (v) => (typeof v === 'string' && /^[-*+]$/.test(v) ? v : '-'),
+});
+
+export const codeFenceState = createState<string, string>('mdCodeFence', {
+  parse: (val) => {
+    if (typeof val === 'string' && /^`{3,}$/.test(val)) {
+      return val;
+    }
+    return '```';
+  },
 });
 
 const createBlockNode = (
@@ -402,24 +411,103 @@ export const QUOTE: ElementTransformer = {
 
 export const CODE: MultilineElementTransformer = {
   dependencies: [CodeNode],
+
   export: (node: LexicalNode) => {
     if (!$isCodeNode(node)) {
       return null;
     }
     const textContent = node.getTextContent();
+    let fence = $getState(node, codeFenceState);
+
+    if (textContent.indexOf(fence) > -1) {
+      const backticks = textContent.match(/`{3,}/g);
+      if (backticks) {
+        const maxLength = Math.max(...backticks.map((b) => b.length));
+        fence = '`'.repeat(maxLength + 1);
+      }
+    }
     return (
-      '```' +
+      fence +
       (node.getLanguage() || '') +
       (textContent ? '\n' + textContent : '') +
       '\n' +
-      '```'
+      fence
     );
+  },
+
+  handleImportAfterStartMatch: ({
+    lines,
+    rootNode,
+    startLineIndex,
+    startMatch,
+  }) => {
+    const fence = startMatch[1];
+    const fenceLength = fence.trim().length;
+    const currentLine = lines[startLineIndex];
+    const afterFenceIndex = startMatch.index! + fence.length;
+    const afterFence = currentLine.slice(afterFenceIndex);
+
+    const singleLineEndRegex = new RegExp(`\`{${fenceLength},}$`);
+
+    if (singleLineEndRegex.test(afterFence)) {
+      const endMatch = afterFence.match(singleLineEndRegex);
+      const content = afterFence.slice(0, afterFence.lastIndexOf(endMatch![0]));
+
+      const fakeStartMatch = [...startMatch] as RegExpMatchArray;
+      fakeStartMatch[2] = '';
+
+      CODE.replace(
+        rootNode,
+        null,
+        fakeStartMatch as RegExpMatchArray,
+        endMatch,
+        [content],
+        true,
+      );
+      return [true, startLineIndex];
+    }
+
+    const multilineEndRegex = new RegExp(`^[ \\t]*\`{${fenceLength},}$`);
+
+    for (let i = startLineIndex + 1; i < lines.length; i++) {
+      const line = lines[i];
+      if (multilineEndRegex.test(line)) {
+        const endMatch = line.match(multilineEndRegex);
+        const linesInBetween = lines.slice(startLineIndex + 1, i);
+
+        const afterFullMatch = currentLine.slice(startMatch[0].length);
+        if (afterFullMatch.length > 0) {
+          linesInBetween.unshift(afterFullMatch);
+        }
+
+        CODE.replace(
+          rootNode,
+          null,
+          startMatch,
+          endMatch,
+          linesInBetween,
+          true,
+        );
+        return [true, i];
+      }
+    }
+
+    const linesInBetween = lines.slice(startLineIndex + 1);
+    const afterFullMatch = currentLine.slice(startMatch[0].length);
+    if (afterFullMatch.length > 0) {
+      linesInBetween.unshift(afterFullMatch);
+    }
+
+    CODE.replace(rootNode, null, startMatch, null, linesInBetween, true);
+    return [true, lines.length - 1];
   },
   regExpEnd: {
     optional: true,
     regExp: CODE_END_REGEX,
   },
+
   regExpStart: CODE_START_REGEX,
+
   replace: (
     rootNode,
     children,
@@ -431,37 +519,31 @@ export const CODE: MultilineElementTransformer = {
     let codeBlockNode: CodeNode;
     let code: string;
 
+    const fence = startMatch[1] ? startMatch[1].trim() : '```';
+    const language = startMatch[2] || undefined;
+
     if (!children && linesInBetween) {
       if (linesInBetween.length === 1) {
-        // Single-line code blocks
         if (endMatch) {
-          // End match on same line. Example: ```markdown hello```. markdown should not be considered the language here.
-          codeBlockNode = $createCodeNode();
-          code = startMatch[1] + linesInBetween[0];
+          codeBlockNode = $createCodeNode(language);
+          code = linesInBetween[0];
         } else {
-          // No end match. We should assume the language is next to the backticks and that code will be typed on the next line in the future
-          codeBlockNode = $createCodeNode(startMatch[1]);
+          codeBlockNode = $createCodeNode(language);
           code = linesInBetween[0].startsWith(' ')
             ? linesInBetween[0].slice(1)
             : linesInBetween[0];
         }
       } else {
-        // Treat multi-line code blocks as if they always have an end match
-        codeBlockNode = $createCodeNode(startMatch[1]);
+        codeBlockNode = $createCodeNode(language);
 
-        if (linesInBetween[0].trim().length === 0) {
-          // Filter out all start and end lines that are length 0 until we find the first line with content
-          while (linesInBetween.length > 0 && !linesInBetween[0].length) {
+        if (linesInBetween.length > 0) {
+          if (linesInBetween[0].trim().length === 0) {
             linesInBetween.shift();
+          } else if (linesInBetween[0].startsWith(' ')) {
+            linesInBetween[0] = linesInBetween[0].slice(1);
           }
-        } else {
-          // The first line already has content => Remove the first space of the line if it exists
-          linesInBetween[0] = linesInBetween[0].startsWith(' ')
-            ? linesInBetween[0].slice(1)
-            : linesInBetween[0];
         }
 
-        // Filter out all end lines that are length 0 until we find the last line with content
         while (
           linesInBetween.length > 0 &&
           !linesInBetween[linesInBetween.length - 1].length
@@ -471,12 +553,15 @@ export const CODE: MultilineElementTransformer = {
 
         code = linesInBetween.join('\n');
       }
+
+      $setState(codeBlockNode, codeFenceState, fence);
+
       const textNode = $createTextNode(code);
       codeBlockNode.append(textNode);
       rootNode.append(codeBlockNode);
     } else if (children) {
       createBlockNode((match) => {
-        return $createCodeNode(match ? match[1] : undefined);
+        return $createCodeNode(match ? match[2] : undefined);
       })(rootNode, children, startMatch, isImport);
     }
   },
@@ -593,8 +678,9 @@ export const LINK: TextMatchTransformer = {
   importRegExp:
     /(?:\[(.+?)\])(?:\((?:([^()\s]+)(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))/,
   regExp:
-    /(?:\[(.+?)\])(?:\((?:([^()\s]+)(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))$/,
+    /(?:\[([^[\]]*(?:\[[^[\]]*\][^[\]]*)*)\])(?:\((?:([^()\s]+)(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))$/,
   replace: (textNode, match) => {
+    // https://spec.commonmark.org/0.31.2/#inline-link
     const [, linkText, linkUrl, linkTitle] = match;
     const linkNode = $createLinkNode(linkUrl, {title: linkTitle});
     const openBracketAmount = linkText.split('[').length - 1;

@@ -6,6 +6,8 @@
  *
  */
 
+import {expect} from '@playwright/test';
+
 import {
   moveLeft,
   selectCharacters,
@@ -253,8 +255,11 @@ test.describe('Collaboration', () => {
     );
 
     // Left collaborator undoes their text in the second paragraph.
-    await sleep(50);
-    await page.frameLocator('iframe[name="left"]').getByLabel('Undo').click();
+    const undoButton = page
+      .frameLocator('iframe[name="left"]')
+      .getByLabel('Undo');
+    await expect(undoButton).toBeEnabled();
+    await undoButton.click();
 
     // The undo also removed the text node from YJS.
     // Check that the dangling text from right user was also removed.
@@ -671,7 +676,19 @@ test.describe('Collaboration', () => {
     // Left collaborator deletes A, right deletes B.
     await sleep(1050);
     await page.keyboard.press('Delete');
-    await sleep(50);
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true">
+            B
+          </strong>
+          <span data-lexical-text="true">C</span>
+        </p>
+      `,
+    );
     await page
       .frameLocator('iframe[name="right"]')
       .locator('[data-lexical-editor="true"]')

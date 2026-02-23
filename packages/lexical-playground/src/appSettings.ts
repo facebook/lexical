@@ -14,6 +14,7 @@ export const isDevPlayground: boolean =
 export const DEFAULT_SETTINGS = {
   disableBeforeInput: false,
   emptyEditor: isDevPlayground,
+  hasFitNestedTables: false,
   hasLinkAttributes: false,
   hasNestedTables: false,
   isAutocomplete: false,
@@ -28,6 +29,7 @@ export const DEFAULT_SETTINGS = {
   measureTypingPerf: false,
   selectionAlwaysOnDisplay: false,
   shouldAllowHighlightingWithBrackets: false,
+  shouldDisableFocusOnClickChecklist: false,
   shouldPreserveNewLinesInMarkdown: false,
   shouldUseLexicalContextMenu: false,
   showNestedEditorTreeView: false,

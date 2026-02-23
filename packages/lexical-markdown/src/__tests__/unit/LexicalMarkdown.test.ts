@@ -26,6 +26,7 @@ import {
   $insertNodes,
   $isRangeSelection,
   $setState,
+  KEY_ENTER_COMMAND,
 } from 'lexical';
 import {describe, expect, it} from 'vitest';
 
@@ -629,6 +630,11 @@ describe('Markdown', () => {
       md: '[link](https://lexical.dev)[link2](https://lexical.dev)',
     },
     {
+      // Test that importRegExp is not too greedy when there are multiple link patterns
+      html: '<p><a href="https://a.example.com"><span style="white-space: pre-wrap;">a</span></a><span style="white-space: pre-wrap;"> </span><a href="https://b.example.com"><span style="white-space: pre-wrap;">b</span></a></p>',
+      md: '[a](https://a.example.com) [b](https://b.example.com)',
+    },
+    {
       // Import only: <mark>...</mark> is exported as ==...== in markdown.
       // Use HIGHLIGHT_TEXT_MATCH_IMPORT as custom transformer even though it is included later to ensure it runs before LINK.
       customTransformers: [HIGHLIGHT_TEXT_MATCH_IMPORT],
@@ -985,6 +991,107 @@ describe('Markdown', () => {
     );
   });
 
+  it('can round-trip nested fenced code blocks (4 backticks wrapping 3 backticks)', () => {
+    const markdown =
+      '````markdown\n' +
+      '# Example\n' +
+      '\n' +
+      'Run this:\n' +
+      '```bash\n' +
+      'npm install\n' +
+      '```\n' +
+      '````';
+
+    const editor = createHeadlessEditor({
+      nodes: [
+        HeadingNode,
+        ListNode,
+        ListItemNode,
+        QuoteNode,
+        CodeNode,
+        LinkNode,
+      ],
+    });
+
+    editor.update(
+      () => {
+        $convertFromMarkdownString(markdown, TRANSFORMERS);
+      },
+      {discrete: true},
+    );
+
+    expect(
+      editor
+        .getEditorState()
+        .read(() => $convertToMarkdownString(TRANSFORMERS)),
+    ).toBe(markdown);
+  });
+
+  it('can round-trip deeply nested fenced code blocks (5 backticks wrapping 4 backticks)', () => {
+    const markdown =
+      '`````text\n' +
+      'Top Level 5 ticks\n' +
+      '````markdown\n' +
+      'Level 2 (4 ticks)\n' +
+      '```javascript\n' +
+      'console.log("Deepest (3 ticks)");\n' +
+      '```\n' +
+      '````\n' +
+      '`````';
+
+    const editor = createHeadlessEditor({
+      nodes: [
+        HeadingNode,
+        ListNode,
+        ListItemNode,
+        QuoteNode,
+        CodeNode,
+        LinkNode,
+      ],
+    });
+
+    editor.update(
+      () => {
+        $convertFromMarkdownString(markdown, TRANSFORMERS);
+      },
+      {discrete: true},
+    );
+
+    expect(
+      editor
+        .getEditorState()
+        .read(() => $convertToMarkdownString(TRANSFORMERS)),
+    ).toBe(markdown);
+  });
+
+  it('computes fence dynamically when code block content contains backticks', () => {
+    const editor = createHeadlessEditor({
+      nodes: [CodeNode],
+    });
+
+    editor.update(
+      () => {
+        // Create a CodeNode without setting fence state (uses default ```)
+        const codeBlockNode = $createCodeNode('markdown');
+        // Content contains ``` which conflicts with default fence
+        $getRoot()
+          .append(codeBlockNode)
+          .selectEnd()
+          .insertRawText('```js\nconsole.log("hello");\n```');
+      },
+      {discrete: true},
+    );
+
+    // Export should compute fence to be ```` (4 backticks) since content contains ```
+    const exported = editor
+      .getEditorState()
+      .read(() => $convertToMarkdownString(TRANSFORMERS));
+
+    expect(exported).toBe(
+      '````markdown\n```js\nconsole.log("hello");\n```\n````',
+    );
+  });
+
   describe('list marker', () => {
     it('should remember marker used on import', () => {
       const editor = createHeadlessEditor({
@@ -1082,6 +1189,141 @@ describe('Markdown', () => {
         );
         expect(markdownString).toBe('+ hello');
       });
+    });
+  });
+
+  describe('Enter key triggers', () => {
+    it('should create an empty code block when ``` is typed and Enter is pressed', () => {
+      const editor = createHeadlessEditor({
+        nodes: [
+          HeadingNode,
+          ListNode,
+          ListItemNode,
+          QuoteNode,
+          CodeNode,
+          LinkNode,
+        ],
+      });
+
+      registerMarkdownShortcuts(editor, TRANSFORMERS);
+
+      editor.update(
+        () => {
+          const root = $getRoot();
+          const paragraph = $createParagraphNode();
+          root.append(paragraph);
+          paragraph.selectEnd();
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            selection.insertText('```');
+          }
+        },
+        {discrete: true},
+      );
+
+      editor.update(
+        () => {
+          editor.dispatchCommand(KEY_ENTER_COMMAND, null);
+        },
+        {discrete: true},
+      );
+
+      expect(editor.read(() => $generateHtmlFromNodes(editor))).toBe(
+        '<pre spellcheck="false"></pre>',
+      );
+    });
+
+    it('should create a code block with language when ```javascript is typed and Enter is pressed', () => {
+      const editor = createHeadlessEditor({
+        nodes: [
+          HeadingNode,
+          ListNode,
+          ListItemNode,
+          QuoteNode,
+          CodeNode,
+          LinkNode,
+        ],
+      });
+
+      registerMarkdownShortcuts(editor, TRANSFORMERS);
+
+      editor.update(
+        () => {
+          const root = $getRoot();
+          const paragraph = $createParagraphNode();
+          root.append(paragraph);
+          paragraph.selectEnd();
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            selection.insertText('```javascript');
+          }
+        },
+        {discrete: true},
+      );
+
+      editor.update(
+        () => {
+          editor.dispatchCommand(KEY_ENTER_COMMAND, null);
+        },
+        {discrete: true},
+      );
+
+      expect(editor.read(() => $generateHtmlFromNodes(editor))).toBe(
+        '<pre spellcheck="false" data-language="javascript"></pre>',
+      );
+    });
+
+    it('should not transform on Enter when replace returns false', () => {
+      const CANCELED_CODE: MultilineElementTransformer = {
+        dependencies: [CodeNode],
+        regExpEnd: {
+          optional: true,
+          regExp: /^[ \t]*`{3,}$/,
+        },
+        regExpStart: /^`{3,}(\w+)?/,
+        replace: () => {
+          return false;
+        },
+        type: 'multiline-element',
+      };
+
+      const editor = createHeadlessEditor({
+        nodes: [
+          HeadingNode,
+          ListNode,
+          ListItemNode,
+          QuoteNode,
+          CodeNode,
+          LinkNode,
+        ],
+      });
+
+      registerMarkdownShortcuts(editor, [CANCELED_CODE]);
+
+      editor.update(
+        () => {
+          const root = $getRoot();
+          const paragraph = $createParagraphNode();
+          root.append(paragraph);
+          paragraph.selectEnd();
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            selection.insertText('```');
+          }
+        },
+        {discrete: true},
+      );
+
+      editor.update(
+        () => {
+          editor.dispatchCommand(KEY_ENTER_COMMAND, null);
+        },
+        {discrete: true},
+      );
+
+      expect(editor.read(() => $generateHtmlFromNodes(editor))).toBe(
+        '<p><span style="white-space: pre-wrap;">```</span></p>',
+      );
     });
   });
 });

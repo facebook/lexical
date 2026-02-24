@@ -205,6 +205,34 @@ describe('LexicalUtils tests', () => {
       ).toBe(true);
     });
 
+    test('isExactShortcutMatch() matches to event.key for ASCII remapped layout (English (US) Dvorak)', () => {
+      const eventWithoutUppercase = new KeyboardEvent('keydown', {
+        code: 'KeyB',
+        ctrlKey: true,
+        key: 'x',
+      });
+
+      expect(
+        isExactShortcutMatch(eventWithoutUppercase, 'x', {ctrlKey: true}),
+      ).toBe(true);
+      expect(
+        isExactShortcutMatch(eventWithoutUppercase, 'b', {ctrlKey: true}),
+      ).toBe(false);
+
+      const eventWithUppercase = new KeyboardEvent('keydown', {
+        code: 'KeyB',
+        ctrlKey: true,
+        key: 'X',
+      });
+
+      expect(
+        isExactShortcutMatch(eventWithUppercase, 'x', {ctrlKey: true}),
+      ).toBe(true);
+      expect(
+        isExactShortcutMatch(eventWithUppercase, 'b', {ctrlKey: true}),
+      ).toBe(false);
+    });
+
     test('isExactShortcutMatch() fallback to event.code for single-letter in event.key via non-English layout', () => {
       const eventWithoutUppercase = new KeyboardEvent('keydown', {
         code: 'KeyZ',

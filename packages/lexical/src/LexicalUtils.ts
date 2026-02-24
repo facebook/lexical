@@ -1003,13 +1003,18 @@ export function isExactShortcutMatch(
   }
 
   if (expectedKey.length > 1) {
-    // If the non English-based keyboard layout but the key is a special key, we must not match it by `event.code`.
+    // For non English-based keyboard layout but the key is a special key, we must not match it by `event.code`.
+    return false;
+  }
+
+  if (event.key.length === 1 && event.key.charCodeAt(0) <= 127) {
+    // For ASCII keys we must not match it by `event.code` because it would break remapped layouts (English (US) Dvorak, etc.).
     return false;
   }
 
   const expectedCode = 'Key' + expectedKey.toUpperCase();
 
-  // For default keys with not English-based keyboard layout.
+  // For default keys with not English-based keyboard layouts where `event.key` is non-ASCII, match by `event.code`.
   return event.code === expectedCode;
 }
 
@@ -1098,7 +1103,11 @@ export function isUndo(event: KeyboardEventModifiers): boolean {
 
 export function isRedo(event: KeyboardEventModifiers): boolean {
   if (IS_APPLE) {
-    return isExactShortcutMatch(event, 'z', {metaKey: true, shiftKey: true});
+    // Accept both Cmd+Shift+Z and Cmd+Y on macOS (some apps and users expect Cmd+Y).
+    return (
+      isExactShortcutMatch(event, 'z', {metaKey: true, shiftKey: true}) ||
+      isExactShortcutMatch(event, 'y', {metaKey: true})
+    );
   }
   return (
     isExactShortcutMatch(event, 'y', {ctrlKey: true}) ||

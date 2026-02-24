@@ -16,6 +16,7 @@ import {
   mergeRegister,
 } from '@lexical/utils';
 import {
+  $addUpdateTag,
   $getNearestNodeFromDOMNode,
   $getSelection,
   $isElementNode,
@@ -28,6 +29,8 @@ import {
   KEY_ARROW_UP_COMMAND,
   KEY_ESCAPE_COMMAND,
   KEY_SPACE_COMMAND,
+  SKIP_DOM_SELECTION_TAG,
+  SKIP_SELECTION_FOCUS_TAG,
 } from 'lexical';
 
 import {$insertList} from './formatList';
@@ -38,7 +41,25 @@ export const INSERT_CHECK_LIST_COMMAND: LexicalCommand<void> = createCommand(
   'INSERT_CHECK_LIST_COMMAND',
 );
 
-export function registerCheckList(editor: LexicalEditor) {
+/**
+ * Registers the checklist plugin with the editor.
+ * @param editor The LexicalEditor instance.
+ * @param options Optional configuration.
+ *   - disableTakeFocusOnClick: If true, clicking a checklist item will not focus the editor (useful for mobile).
+ */
+export function registerCheckList(
+  editor: LexicalEditor,
+  options?: {disableTakeFocusOnClick?: boolean},
+) {
+  const disableTakeFocusOnClick =
+    (options && options.disableTakeFocusOnClick) || false;
+
+  const configHandleClick = (event: MouseEvent | TouchEvent) => {
+    handleClick(event, disableTakeFocusOnClick);
+  };
+  const configHandleSelectDefaults = (event: MouseEvent | TouchEvent) => {
+    handleSelectDefaults(event, disableTakeFocusOnClick);
+  };
   return mergeRegister(
     editor.registerCommand(
       INSERT_CHECK_LIST_COMMAND,
@@ -142,21 +163,62 @@ export function registerCheckList(editor: LexicalEditor) {
       },
       COMMAND_PRIORITY_LOW,
     ),
+
     editor.registerRootListener((rootElement, prevElement) => {
       if (rootElement !== null) {
-        rootElement.addEventListener('click', handleClick);
-        rootElement.addEventListener('pointerdown', handlePointerDown);
+        rootElement.addEventListener('click', configHandleClick);
+        // Use capture so we run before other listeners that might move focus.
+        rootElement.addEventListener(
+          'pointerdown',
+          configHandleSelectDefaults,
+          {
+            capture: true,
+          },
+        );
+        // Some browsers / integrations still generate mousedown events; handle them too.
+        rootElement.addEventListener('mousedown', configHandleSelectDefaults, {
+          capture: true,
+        });
+        // Intercept touchstart to stop the mobile browser from placing the caret
+        // and opening the keyboard when tapping the checklist marker.
+        rootElement.addEventListener('touchstart', configHandleSelectDefaults, {
+          capture: true,
+          passive: false,
+        });
       }
 
       if (prevElement !== null) {
-        prevElement.removeEventListener('click', handleClick);
-        prevElement.removeEventListener('pointerdown', handlePointerDown);
+        prevElement.removeEventListener('click', configHandleClick);
+        prevElement.removeEventListener(
+          'pointerdown',
+          configHandleSelectDefaults,
+          {
+            capture: true,
+          },
+        );
+        prevElement.removeEventListener(
+          'mousedown',
+          configHandleSelectDefaults,
+          {
+            capture: true,
+          },
+        );
+        prevElement.removeEventListener(
+          'touchstart',
+          configHandleSelectDefaults,
+          {
+            capture: true,
+          },
+        );
       }
     }),
   );
 }
 
-function handleCheckItemEvent(event: PointerEvent, callback: () => void) {
+function handleCheckItemEvent(
+  event: MouseEvent | TouchEvent,
+  callback: () => void,
+) {
   const target = event.target;
 
   if (!isHTMLElement(target)) {
@@ -179,10 +241,27 @@ function handleCheckItemEvent(event: PointerEvent, callback: () => void) {
   if (!parentNode || parentNode.__lexicalListType !== 'check') {
     return;
   }
+  let clientX: number | null = null;
+  let pointerType: string | null = null;
+
+  if ('clientX' in event) {
+    clientX = event.clientX;
+  } else if ('touches' in event) {
+    const touches = event.touches;
+    if (touches.length > 0) {
+      clientX = touches[0].clientX;
+      pointerType = 'touch';
+    }
+  }
+
+  // If we couldn't resolve a clientX (unexpected input), bail out.
+  if (clientX == null) {
+    return;
+  }
 
   const rect = target.getBoundingClientRect();
   const zoom = calculateZoomLevel(target);
-  const clientX = (event as MouseEvent | PointerEvent).clientX / zoom;
+  const clientXInPixels = clientX / zoom;
 
   // Use getComputedStyle if available, otherwise fallback to 0px width
   const beforeStyles = window.getComputedStyle
@@ -191,22 +270,28 @@ function handleCheckItemEvent(event: PointerEvent, callback: () => void) {
   const beforeWidthInPixels = parseFloat(beforeStyles.width);
 
   // Make click area slightly larger for touch devices to improve accessibility
-  const isTouchEvent = event.pointerType === 'touch';
+  // Determine whether this is a touch event; some environments may supply
+  // pointerType on PointerEvent while touch events use the `touches` API above.
+  const isTouchEvent =
+    pointerType === 'touch' || (event as PointerEvent).pointerType === 'touch';
   const clickAreaPadding = isTouchEvent ? 32 : 0; // Add 32px padding for touch events
 
   if (
     target.dir === 'rtl'
-      ? clientX < rect.right + clickAreaPadding &&
-        clientX > rect.right - beforeWidthInPixels - clickAreaPadding
-      : clientX > rect.left - clickAreaPadding &&
-        clientX < rect.left + beforeWidthInPixels + clickAreaPadding
+      ? clientXInPixels < rect.right + clickAreaPadding &&
+        clientXInPixels > rect.right - beforeWidthInPixels - clickAreaPadding
+      : clientXInPixels > rect.left - clickAreaPadding &&
+        clientXInPixels < rect.left + beforeWidthInPixels + clickAreaPadding
   ) {
     callback();
   }
 }
 
-function handleClick(event: Event) {
-  handleCheckItemEvent(event as PointerEvent, () => {
+function handleClick(
+  event: MouseEvent | TouchEvent,
+  disableFocusOnClick: boolean,
+) {
+  handleCheckItemEvent(event, () => {
     if (isHTMLElement(event.target)) {
       const domNode = event.target;
       const editor = getNearestEditorFromDOMNode(domNode);
@@ -216,7 +301,12 @@ function handleClick(event: Event) {
           const node = $getNearestNodeFromDOMNode(domNode);
 
           if ($isListItemNode(node)) {
-            domNode.focus();
+            if (disableFocusOnClick) {
+              $addUpdateTag(SKIP_SELECTION_FOCUS_TAG);
+              $addUpdateTag(SKIP_DOM_SELECTION_TAG);
+            } else {
+              domNode.focus();
+            }
             node.toggleChecked();
           }
         });
@@ -225,10 +315,22 @@ function handleClick(event: Event) {
   });
 }
 
-function handlePointerDown(event: PointerEvent) {
+/**
+ * Prevents default focus switch behavior
+ *
+ * @param event might be of type PointerEvent, MouseEvent, or TouchEvent, hence the generic Event type
+ *
+ */
+function handleSelectDefaults(
+  event: MouseEvent | TouchEvent,
+  disableTakeFocusOnClick: boolean,
+) {
   handleCheckItemEvent(event, () => {
-    // Prevents caret moving when clicking on check mark
+    // Prevents caret moving when clicking on check mark.
     event.preventDefault();
+    if (disableTakeFocusOnClick) {
+      event.stopPropagation();
+    }
   });
 }
 

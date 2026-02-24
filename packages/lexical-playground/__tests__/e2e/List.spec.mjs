@@ -75,6 +75,97 @@ test.beforeEach(({isPlainText}) => {
   test.skip(isPlainText);
 });
 
+test.describe('Checklist focus option', () => {
+  test('(shouldDisableFocusOnClickChecklist: true) Keeps focus outside the editor when clicking a checklist item', async ({
+    isCollab,
+    page,
+  }) => {
+    test.skip(isCollab);
+    await initialize({
+      isCollab,
+      page,
+      shouldDisableFocusOnClickChecklist: true,
+    });
+
+    await toggleCheckList(page);
+    await page.keyboard.type('Task');
+
+    const checklistItem = page.locator('li[role="checkbox"]').first();
+
+    // Force focus outside the editor to verify it does not switch on click.
+    await page.evaluate(() => {
+      document.body.tabIndex = -1;
+      document.body.focus();
+    });
+    expect(
+      await page.evaluate(
+        () =>
+          document.activeElement === document.body ||
+          document.activeElement === document.documentElement,
+      ),
+    ).toBe(true);
+
+    // Click on the checkbox marker area (left side of the item)
+    const box = await checklistItem.boundingBox();
+    await page.mouse.click(box.x + 10, box.y + box.height / 2);
+
+    // The item toggles, but focus remains on the body when disabled.
+    await expect(checklistItem).toHaveAttribute('aria-checked', 'true');
+    const isBodyFocused = await page.evaluate(
+      () => document.activeElement === document.body,
+    );
+    expect(isBodyFocused).toBe(true);
+  });
+
+  test('(shouldDisableFocusOnClickChecklist: false) Moves focus into the editor/listItem when clicking a checklist item', async ({
+    isCollab,
+    page,
+  }) => {
+    test.skip(isCollab);
+    await initialize({
+      isCollab,
+      page,
+      shouldDisableFocusOnClickChecklist: false,
+    });
+
+    await toggleCheckList(page);
+    await page.keyboard.type('Task');
+
+    const checklistItem = page.locator('li[role="checkbox"]').first();
+
+    // Force focus outside the editor to verify it switches on click.
+    await page.evaluate(() => {
+      document.body.tabIndex = -1;
+      document.body.focus();
+    });
+    expect(
+      await page.evaluate(
+        () =>
+          document.activeElement === document.body ||
+          document.activeElement === document.documentElement,
+      ),
+    ).toBe(true);
+
+    // Click on the checkbox marker area (left side of the item)
+    const box = await checklistItem.boundingBox();
+    await page.mouse.click(box.x + 10, box.y + box.height / 2, {
+      button: 'left',
+    });
+
+    // The item toggles and focus moves into the editor when enabled.
+    await expect(checklistItem).toHaveAttribute('aria-checked', 'true');
+    const isEditorFocused = await page.evaluate(() => {
+      const rootElement = window.lexicalEditor.getRootElement();
+      return (
+        rootElement != null &&
+        document.activeElement != null &&
+        rootElement.contains(document.activeElement)
+      );
+    });
+    expect(isEditorFocused).toBe(true);
+  });
+});
+
 test.describe.parallel('Nested List', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
 

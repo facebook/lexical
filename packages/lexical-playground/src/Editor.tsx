@@ -117,6 +117,7 @@ export default function Editor(): JSX.Element {
       shouldAllowHighlightingWithBrackets,
       selectionAlwaysOnDisplay,
       listStrictIndent,
+      shouldDisableFocusOnClickChecklist,
     },
   } = useSettings();
   const isEditable = useLexicalEditable();
@@ -238,7 +239,9 @@ export default function Editor(): JSX.Element {
               hasStrictIndent={listStrictIndent}
               shouldPreserveNumbering={false}
             />
-            <CheckListPlugin />
+            <CheckListPlugin
+              disableTakeFocusOnClick={shouldDisableFocusOnClickChecklist}
+            />
             <TablePlugin
               hasCellMerge={tableCellMerge}
               hasCellBackgroundColor={tableCellBackgroundColor}

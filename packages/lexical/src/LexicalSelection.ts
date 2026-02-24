@@ -986,13 +986,12 @@ export class RangeSelection implements BaseSelection {
       if (firstNode.getTextContent() === '') {
         firstNode.remove();
       } else if (this.anchor.type === 'text') {
+        this.format = firstNodeFormat;
+        this.style = firstNodeStyle;
         if (firstNode.isComposing()) {
           // When composing, we need to adjust the anchor offset so that
           // we correctly replace that right range.
           this.anchor.offset -= text.length;
-        } else {
-          this.format = firstNodeFormat;
-          this.style = firstNodeStyle;
         }
       }
     } else {
@@ -1135,13 +1134,12 @@ export class RangeSelection implements BaseSelection {
         if (firstNode.getTextContent() === '') {
           firstNode.remove();
         } else if (this.anchor.type === 'text') {
+          this.format = firstNode.getFormat();
+          this.style = firstNode.getStyle();
           if (firstNode.isComposing()) {
             // When composing, we need to adjust the anchor offset so that
             // we correctly replace that right range.
             this.anchor.offset -= text.length;
-          } else {
-            this.format = firstNode.getFormat();
-            this.style = firstNode.getStyle();
           }
         }
       } else if (startOffset === firstNodeTextLength) {
@@ -2979,6 +2977,19 @@ function setDOMSelectionBaseAndExtent(
   }
 }
 
+function getElementAndOffsetForPoint(
+  editor: LexicalEditor,
+  node: LexicalNode,
+  offset: number,
+): [HTMLElement, number] {
+  const element = getElementByKeyOrThrow(editor, node.getKey());
+  if ($isElementNode(node)) {
+    const slot = node.getDOMSlot(element);
+    return [slot.element, offset + slot.getFirstChildOffset()];
+  }
+  return [element, offset];
+}
+
 export function updateDOMSelection(
   prevSelection: BaseSelection | null,
   nextSelection: BaseSelection | null,
@@ -3021,12 +3032,18 @@ export function updateDOMSelection(
 
   const anchor = nextSelection.anchor;
   const focus = nextSelection.focus;
-  const anchorKey = anchor.key;
-  const focusKey = focus.key;
-  const anchorDOM = getElementByKeyOrThrow(editor, anchorKey);
-  const focusDOM = getElementByKeyOrThrow(editor, focusKey);
-  const nextAnchorOffset = anchor.offset;
-  const nextFocusOffset = focus.offset;
+  const anchorNode = anchor.getNode();
+  const focusNode = focus.getNode();
+  const [anchorDOM, nextAnchorOffset] = getElementAndOffsetForPoint(
+    editor,
+    anchorNode,
+    anchor.offset,
+  );
+  const [focusDOM, nextFocusOffset] = getElementAndOffsetForPoint(
+    editor,
+    focusNode,
+    focus.offset,
+  );
   const nextFormat = nextSelection.format;
   const nextStyle = nextSelection.style;
   const isCollapsed = nextSelection.isCollapsed();
@@ -3036,7 +3053,6 @@ export function updateDOMSelection(
 
   if (anchor.type === 'text') {
     nextAnchorNode = getDOMTextNode(anchorDOM);
-    const anchorNode = anchor.getNode();
     anchorFormatOrStyleChanged =
       anchorNode.getFormat() !== nextFormat ||
       anchorNode.getStyle() !== nextStyle;
@@ -3069,7 +3085,7 @@ export function updateDOMSelection(
       nextFormat,
       nextStyle,
       nextAnchorOffset,
-      anchorKey,
+      anchor.key,
       performance.now(),
     );
   }

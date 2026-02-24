@@ -714,7 +714,13 @@ export function registerRichText(editor: LexicalEditor): () => void {
     editor.registerCommand(
       INSERT_TAB_COMMAND,
       () => {
-        $insertNodes([$createTabNode()]);
+        const tabNode = $createTabNode();
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          tabNode.setFormat(selection.format);
+          tabNode.setStyle(selection.style);
+        }
+        $insertNodes([tabNode]);
         return true;
       },
       COMMAND_PRIORITY_EDITOR,

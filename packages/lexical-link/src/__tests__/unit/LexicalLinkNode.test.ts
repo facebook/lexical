@@ -17,7 +17,11 @@ import {
   SerializedLinkNode,
 } from '@lexical/link';
 import {$createMarkNode, $isMarkNode} from '@lexical/mark';
-import {$createHeadingNode, RichTextExtension} from '@lexical/rich-text';
+import {
+  $createHeadingNode,
+  $isHeadingNode,
+  RichTextExtension,
+} from '@lexical/rich-text';
 import {
   $createLineBreakNode,
   $createParagraphNode,
@@ -26,7 +30,6 @@ import {
   $getNodeByKey,
   $getRoot,
   $getSelection,
-  $isElementNode,
   $isLineBreakNode,
   $isParagraphNode,
   $isRangeSelection,
@@ -38,7 +41,7 @@ import {
   SerializedParagraphNode,
 } from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
-import {describe, expect, it, test} from 'vitest';
+import {assert, describe, expect, it, test} from 'vitest';
 
 const editorConfig = Object.freeze({
   namespace: '',
@@ -897,7 +900,6 @@ describe('LinkNode transform (Regression #8083)', () => {
 
   test('extracts block child (HeadingNode) from link', () => {
     const editor = buildEditorFromExtensions(transformExtension);
-
     editor.update(
       () => {
         const root = $getRoot();
@@ -912,27 +914,21 @@ describe('LinkNode transform (Regression #8083)', () => {
       },
       {discrete: true},
     );
-
     editor.read(() => {
       const root = $getRoot();
       const children = root.getChildren();
       expect(children.length).toBe(1);
-      expect(children[0].getType()).toBe('heading');
-      expect($isElementNode(children[0])).toBe(true);
-      if ($isElementNode(children[0])) {
-        const headingChildren = children[0].getChildren();
-        expect(headingChildren.length).toBe(1);
-        expect($isLinkNode(headingChildren[0])).toBe(true);
-        expect(headingChildren[0].getTextContent()).toBe('Lexical');
-      }
+      const heading = children[0];
+      assert($isHeadingNode(heading), 'First child must be a HeadingNode');
+      expect(heading.getChildrenSize()).toBe(1);
+      const headingChild = heading.getFirstChild();
+      assert($isLinkNode(headingChild), 'Heading child must be a LinkNode');
+      expect(headingChild.getTextContent()).toBe('Lexical');
     });
-
-    editor.dispose();
   });
 
   test('extracts block child (ParagraphNode) from link', () => {
     const editor = buildEditorFromExtensions(transformExtension);
-
     editor.update(
       () => {
         const root = $getRoot();
@@ -947,26 +943,21 @@ describe('LinkNode transform (Regression #8083)', () => {
       },
       {discrete: true},
     );
-
     editor.read(() => {
       const root = $getRoot();
       const children = root.getChildren();
       expect(children.length).toBe(1);
-      expect($isParagraphNode(children[0])).toBe(true);
-      if ($isElementNode(children[0])) {
-        const paraChildren = children[0].getChildren();
-        expect(paraChildren.length).toBe(1);
-        expect($isLinkNode(paraChildren[0])).toBe(true);
-        expect(paraChildren[0].getTextContent()).toBe('Lexical');
-      }
+      const para = children[0];
+      assert($isParagraphNode(para), 'First child must be a ParagraphNode');
+      expect(para.getChildrenSize()).toBe(1);
+      const paraChild = para.getFirstChild();
+      assert($isLinkNode(paraChild), 'Paragraph child must be a LinkNode');
+      expect(paraChild.getTextContent()).toBe('Lexical');
     });
-
-    editor.dispose();
   });
 
   test('handles siblings after block child', () => {
     const editor = buildEditorFromExtensions(transformExtension);
-
     editor.update(
       () => {
         const root = $getRoot();
@@ -982,31 +973,31 @@ describe('LinkNode transform (Regression #8083)', () => {
       },
       {discrete: true},
     );
-
     editor.read(() => {
       const root = $getRoot();
       const children = root.getChildren();
       expect(children.length).toBe(2);
-      expect(children[0].getType()).toBe('heading');
-      if ($isElementNode(children[0])) {
-        expect($isLinkNode(children[0].getChildren()[0])).toBe(true);
-        expect(children[0].getTextContent()).toBe('Heading');
-      }
-      expect($isParagraphNode(children[1])).toBe(true);
-      if ($isElementNode(children[1])) {
-        const trailingChildren = children[1].getChildren();
-        expect(trailingChildren.length).toBe(1);
-        expect($isLinkNode(trailingChildren[0])).toBe(true);
-        expect(trailingChildren[0].getTextContent()).toBe(' after');
-      }
+      const heading = children[0];
+      assert($isHeadingNode(heading), 'First child must be a HeadingNode');
+      const headingLink = heading.getFirstChild();
+      assert($isLinkNode(headingLink), 'Heading child must be a LinkNode');
+      expect(headingLink.getTextContent()).toBe('Heading');
+      const trailingPara = children[1];
+      assert(
+        $isParagraphNode(trailingPara),
+        'Second child must be a ParagraphNode',
+      );
+      const trailingLink = trailingPara.getFirstChild();
+      assert(
+        $isLinkNode(trailingLink),
+        'Trailing paragraph child must be a LinkNode',
+      );
+      expect(trailingLink.getTextContent()).toBe(' after');
     });
-
-    editor.dispose();
   });
 
   test('fixes element selection in paragraph split to the right of LinkNode', () => {
     const editor = buildEditorFromExtensions(transformExtension);
-
     editor.update(
       () => {
         const root = $getRoot();
@@ -1020,35 +1011,28 @@ describe('LinkNode transform (Regression #8083)', () => {
         const paragraph = $createParagraphNode();
         paragraph.append(textBefore, link, textAfter);
         root.clear().append(paragraph);
-        const selection = $createRangeSelection();
-        selection.anchor.set(paragraph.getKey(), 2, 'element');
-        selection.focus.set(paragraph.getKey(), 2, 'element');
-        $setSelection(selection);
+        paragraph.select(2, 2);
       },
       {discrete: true},
     );
-
     editor.read(() => {
       const root = $getRoot();
       const children = root.getChildren();
       expect(children.length).toBe(3);
       expect(children[2].getTextContent()).toBe('after');
-
       const selection = $getSelection();
-      expect($isRangeSelection(selection)).toBe(true);
-      if ($isRangeSelection(selection)) {
-        expect(selection.anchor.type).toBe('element');
-        expect(selection.anchor.key).toBe(children[2].getKey());
-        expect(selection.anchor.offset).toBe(0);
-      }
+      assert(
+        $isRangeSelection(selection),
+        'Selection must be a RangeSelection',
+      );
+      expect(selection.anchor.type).toBe('element');
+      expect(selection.anchor.key).toBe(children[2].getKey());
+      expect(selection.anchor.offset).toBe(0);
     });
-
-    editor.dispose();
   });
 
   test('fixes element selection in LinkNode to the right of non-inline node', () => {
     const editor = buildEditorFromExtensions(transformExtension);
-
     editor.update(
       () => {
         const root = $getRoot();
@@ -1061,40 +1045,37 @@ describe('LinkNode transform (Regression #8083)', () => {
         const paragraph = $createParagraphNode();
         paragraph.append(link);
         root.clear().append(paragraph);
-        const selection = $createRangeSelection();
-        selection.anchor.set(link.getKey(), 1, 'element');
-        selection.focus.set(link.getKey(), 1, 'element');
-        $setSelection(selection);
+        link.select(1, 1);
       },
       {discrete: true},
     );
-
     editor.read(() => {
       const root = $getRoot();
       const children = root.getChildren();
       expect(children.length).toBe(2);
-      expect($isParagraphNode(children[1])).toBe(true);
-
+      const trailingPara = children[1];
+      assert(
+        $isParagraphNode(trailingPara),
+        'Second child must be a ParagraphNode',
+      );
+      const trailingLink = trailingPara.getFirstChild();
+      assert(
+        $isLinkNode(trailingLink),
+        'Trailing paragraph child must be a LinkNode',
+      );
       const selection = $getSelection();
-      expect($isRangeSelection(selection)).toBe(true);
-      if ($isRangeSelection(selection)) {
-        const trailingPara = children[1];
-        if ($isElementNode(trailingPara)) {
-          const trailingLink = trailingPara.getChildren()[0];
-          expect($isLinkNode(trailingLink)).toBe(true);
-          expect(selection.anchor.type).toBe('element');
-          expect(selection.anchor.key).toBe(trailingLink.getKey());
-          expect(selection.anchor.offset).toBe(0);
-        }
-      }
+      assert(
+        $isRangeSelection(selection),
+        'Selection must be a RangeSelection',
+      );
+      expect(selection.anchor.type).toBe('element');
+      expect(selection.anchor.key).toBe(trailingLink.getKey());
+      expect(selection.anchor.offset).toBe(0);
     });
-
-    editor.dispose();
   });
 
   test('fixes element selection with multiple non-inline siblings', () => {
     const editor = buildEditorFromExtensions(transformExtension);
-
     editor.update(
       () => {
         const root = $getRoot();
@@ -1112,23 +1093,21 @@ describe('LinkNode transform (Regression #8083)', () => {
       },
       {discrete: true},
     );
-
     editor.read(() => {
       const root = $getRoot();
       const children = root.getChildren();
       expect(children.length).toBe(2);
-      expect(children[0].getType()).toBe('heading');
-      expect(children[0].getTextContent()).toBe('First');
-      expect(children[1].getType()).toBe('heading');
-      expect(children[1].getTextContent()).toBe('Second');
+      const first = children[0];
+      assert($isHeadingNode(first), 'First child must be a HeadingNode');
+      expect(first.getTextContent()).toBe('First');
+      const second = children[1];
+      assert($isHeadingNode(second), 'Second child must be a HeadingNode');
+      expect(second.getTextContent()).toBe('Second');
     });
-
-    editor.dispose();
   });
 
   test('fixes element selection when no siblings to the right of LinkNode', () => {
     const editor = buildEditorFromExtensions(transformExtension);
-
     editor.update(
       () => {
         const root = $getRoot();
@@ -1140,25 +1119,19 @@ describe('LinkNode transform (Regression #8083)', () => {
         const paragraph = $createParagraphNode();
         paragraph.append(link);
         root.clear().append(paragraph);
-        const selection = $createRangeSelection();
-        selection.anchor.set(paragraph.getKey(), 1, 'element');
-        selection.focus.set(paragraph.getKey(), 1, 'element');
-        $setSelection(selection);
+        paragraph.select(1, 1);
       },
       {discrete: true},
     );
-
     editor.read(() => {
       const root = $getRoot();
       const children = root.getChildren();
       expect(children.length).toBe(1);
-      expect(children[0].getType()).toBe('heading');
-      if ($isElementNode(children[0])) {
-        expect($isLinkNode(children[0].getChildren()[0])).toBe(true);
-        expect(children[0].getTextContent()).toBe('Heading');
-      }
+      const heading = children[0];
+      assert($isHeadingNode(heading), 'First child must be a HeadingNode');
+      const headingChild = heading.getFirstChild();
+      assert($isLinkNode(headingChild), 'Heading child must be a LinkNode');
+      expect(headingChild.getTextContent()).toBe('Heading');
     });
-
-    editor.dispose();
   });
 });

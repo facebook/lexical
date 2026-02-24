@@ -28,6 +28,7 @@ import {
 } from '@lexical/utils';
 import {
   $applyNodeReplacement,
+  $caretFromPoint,
   $copyNode,
   $getChildCaret,
   $getSelection,
@@ -298,10 +299,10 @@ export class LinkNode extends ElementNode {
 export function $linkNodeTransform(link: LinkNode): void {
   const selection = $getSelection();
   const anchorChild = $isRangeSelection(selection)
-    ? $getChildAtElementPoint(selection.anchor)
+    ? $getNodeAtPoint(selection.anchor)
     : null;
   const focusChild = $isRangeSelection(selection)
-    ? $getChildAtElementPoint(selection.focus)
+    ? $getNodeAtPoint(selection.focus)
     : null;
 
   for (const caret of $getChildCaret(link, 'next')) {
@@ -332,15 +333,8 @@ export function $linkNodeTransform(link: LinkNode): void {
   }
 }
 
-function $getChildAtElementPoint(point: Point): LexicalNode | null {
-  if (point.type !== 'element') {
-    return null;
-  }
-  const node = point.getNode();
-  if ($isElementNode(node)) {
-    return node.getChildAtIndex(point.offset) || null;
-  }
-  return null;
+function $getNodeAtPoint(point: Point): LexicalNode | null {
+  return $caretFromPoint(point, 'next').getNodeAtCaret();
 }
 
 function $fixSplitElementPoint(

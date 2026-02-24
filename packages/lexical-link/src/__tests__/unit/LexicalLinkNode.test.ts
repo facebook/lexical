@@ -1002,7 +1002,7 @@ describe('$linkNodeTransform (Regression #8083)', () => {
       removeTransform();
     });
 
-    test('preserves selection after transform extracts block child', async () => {
+    test('fixes element selection after split moves content to right side', async () => {
       const {editor} = testEnv;
       const removeTransform = editor.registerNodeTransform(
         LinkNode,
@@ -1011,25 +1011,34 @@ describe('$linkNodeTransform (Regression #8083)', () => {
 
       await editor.update(() => {
         const root = $getRoot();
-        const text = $createTextNode('Lexical');
+        const textBefore = $createTextNode('before');
+        const headingText = $createTextNode('Heading');
         const heading = $createHeadingNode('h1');
-        heading.append(text);
+        heading.append(headingText);
         const link = $createLinkNode('https://lexical.dev');
         link.append(heading);
+        const textAfter = $createTextNode('after');
         const paragraph = $createParagraphNode();
-        paragraph.append(link);
+        paragraph.append(textBefore, link, textAfter);
         root.clear().append(paragraph);
-        text.select(3, 3);
+        const selection = $createRangeSelection();
+        selection.anchor.set(paragraph.getKey(), 2, 'element');
+        selection.focus.set(paragraph.getKey(), 2, 'element');
+        $setSelection(selection);
       });
 
       editor.read(() => {
+        const root = $getRoot();
+        const children = root.getChildren();
+        expect(children.length).toBe(3);
+        expect(children[2].getTextContent()).toBe('after');
+
         const selection = $getSelection();
         expect($isRangeSelection(selection)).toBe(true);
         if ($isRangeSelection(selection)) {
-          const anchorNode = selection.anchor.getNode();
-          expect($isTextNode(anchorNode)).toBe(true);
-          expect(anchorNode.getTextContent()).toBe('Lexical');
-          expect(selection.anchor.offset).toBe(3);
+          expect(selection.anchor.type).toBe('element');
+          expect(selection.anchor.key).toBe(children[2].getKey());
+          expect(selection.anchor.offset).toBe(0);
         }
       });
 

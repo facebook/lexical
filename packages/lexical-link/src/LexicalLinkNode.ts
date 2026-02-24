@@ -296,6 +296,14 @@ export class LinkNode extends ElementNode {
  * @param link - The LinkNode to normalize
  */
 export function $linkNodeTransform(link: LinkNode): void {
+  const selection = $getSelection();
+  const anchorChild = $isRangeSelection(selection)
+    ? $getChildAtElementPoint(selection.anchor)
+    : null;
+  const focusChild = $isRangeSelection(selection)
+    ? $getChildAtElementPoint(selection.focus)
+    : null;
+
   for (const caret of $getChildCaret(link, 'next')) {
     const node = caret.origin;
     if ($isElementNode(node) && !node.isInline()) {
@@ -316,6 +324,35 @@ export function $linkNodeTransform(link: LinkNode): void {
     if (parent && parent.isEmpty()) {
       parent.remove();
     }
+  }
+
+  if ($isRangeSelection(selection)) {
+    $fixSplitElementPoint(selection.anchor, anchorChild);
+    $fixSplitElementPoint(selection.focus, focusChild);
+  }
+}
+
+function $getChildAtElementPoint(point: Point): LexicalNode | null {
+  if (point.type !== 'element') {
+    return null;
+  }
+  const node = point.getNode();
+  if ($isElementNode(node)) {
+    return node.getChildAtIndex(point.offset) || null;
+  }
+  return null;
+}
+
+function $fixSplitElementPoint(
+  point: Point,
+  savedChild: LexicalNode | null,
+): void {
+  if (savedChild === null || point.type !== 'element') {
+    return;
+  }
+  const newParent = savedChild.getParent();
+  if (newParent && newParent.getKey() !== point.key) {
+    point.set(newParent.getKey(), savedChild.getIndexWithinParent(), 'element');
   }
 }
 

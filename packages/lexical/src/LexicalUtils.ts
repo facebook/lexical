@@ -1103,11 +1103,7 @@ export function isUndo(event: KeyboardEventModifiers): boolean {
 
 export function isRedo(event: KeyboardEventModifiers): boolean {
   if (IS_APPLE) {
-    // Accept both Cmd+Shift+Z and Cmd+Y on macOS (some apps and users expect Cmd+Y).
-    return (
-      isExactShortcutMatch(event, 'z', {metaKey: true, shiftKey: true}) ||
-      isExactShortcutMatch(event, 'y', {metaKey: true})
-    );
+    return isExactShortcutMatch(event, 'z', {metaKey: true, shiftKey: true});
   }
   return (
     isExactShortcutMatch(event, 'y', {ctrlKey: true}) ||

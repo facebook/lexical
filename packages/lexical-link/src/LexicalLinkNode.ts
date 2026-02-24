@@ -28,7 +28,6 @@ import {
 } from '@lexical/utils';
 import {
   $applyNodeReplacement,
-  $caretFromPoint,
   $copyNode,
   $getChildCaret,
   $getSelection,
@@ -291,6 +290,54 @@ export class LinkNode extends ElementNode {
   }
 }
 
+type PointBracket = {
+  leftNode: LexicalNode | null;
+  rightNode: LexicalNode | null;
+};
+
+function $savePointBracket(point: Point): PointBracket | null {
+  if (point.type !== 'element') {
+    return null;
+  }
+  const parent = point.getNode();
+  if (!$isElementNode(parent)) {
+    return null;
+  }
+  const children = parent.getChildren();
+  return {
+    leftNode: point.offset > 0 ? children[point.offset - 1] : null,
+    rightNode: point.offset < children.length ? children[point.offset] : null,
+  };
+}
+
+function $restorePointFromBracket(
+  point: Point,
+  bracket: PointBracket | null,
+): void {
+  if (bracket === null) {
+    return;
+  }
+  const {rightNode, leftNode} = bracket;
+  if (rightNode !== null && rightNode.isAttached()) {
+    const parent = rightNode.getParent();
+    if (parent) {
+      point.set(parent.getKey(), rightNode.getIndexWithinParent(), 'element');
+      return;
+    }
+  }
+  if (leftNode !== null && leftNode.isAttached()) {
+    const parent = leftNode.getParent();
+    if (parent) {
+      point.set(
+        parent.getKey(),
+        leftNode.getIndexWithinParent() + 1,
+        'element',
+      );
+      return;
+    }
+  }
+}
+
 /**
  * Extracts block-level children from a LinkNode, splitting
  * ancestor nodes as needed to maintain a valid document structure.
@@ -298,12 +345,12 @@ export class LinkNode extends ElementNode {
  */
 export function $linkNodeTransform(link: LinkNode): void {
   const selection = $getSelection();
-  const anchorChild = $isRangeSelection(selection)
-    ? $getNodeAtPoint(selection.anchor)
-    : null;
-  const focusChild = $isRangeSelection(selection)
-    ? $getNodeAtPoint(selection.focus)
-    : null;
+  let anchorBracket: PointBracket | null = null;
+  let focusBracket: PointBracket | null = null;
+  if ($isRangeSelection(selection)) {
+    anchorBracket = $savePointBracket(selection.anchor);
+    focusBracket = $savePointBracket(selection.focus);
+  }
 
   for (const caret of $getChildCaret(link, 'next')) {
     const node = caret.origin;
@@ -328,28 +375,9 @@ export function $linkNodeTransform(link: LinkNode): void {
   }
 
   if ($isRangeSelection(selection)) {
-    $fixSplitElementPoint(selection.anchor, anchorChild);
-    $fixSplitElementPoint(selection.focus, focusChild);
-  }
-}
-
-function $getNodeAtPoint(point: Point): LexicalNode | null {
-  return $caretFromPoint(point, 'next').getNodeAtCaret();
-}
-
-function $fixSplitElementPoint(
-  point: Point,
-  savedChild: LexicalNode | null,
-): void {
-  if (savedChild === null || point.type !== 'element') {
-    return;
-  }
-  const newParent = savedChild.getParent();
-  if (newParent) {
-    const newOffset = savedChild.getIndexWithinParent();
-    if (newParent.getKey() !== point.key || newOffset !== point.offset) {
-      point.set(newParent.getKey(), newOffset, 'element');
-    }
+    $restorePointFromBracket(selection.anchor, anchorBracket);
+    $restorePointFromBracket(selection.focus, focusBracket);
+    $normalizeSelection__EXPERIMENTAL(selection);
   }
 }
 

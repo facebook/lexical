@@ -16,6 +16,8 @@ import type {
   LexicalUpdateJSON,
   NodeKey,
   Point,
+  PointCaret,
+  PointType,
   RangeSelection,
   SerializedElementNode,
 } from 'lexical';
@@ -28,14 +30,17 @@ import {
 } from '@lexical/utils';
 import {
   $applyNodeReplacement,
+  $caretFromPoint,
   $copyNode,
   $getChildCaret,
   $getSelection,
   $isElementNode,
   $isNodeSelection,
   $isRangeSelection,
+  $normalizeCaret,
   $normalizeSelection__EXPERIMENTAL,
   $rewindSiblingCaret,
+  $setPointFromCaret,
   $setSelection,
   createCommand,
   ElementNode,
@@ -290,49 +295,18 @@ export class LinkNode extends ElementNode {
   }
 }
 
-type PointBracket = {
-  leftNode: LexicalNode | null;
-  rightNode: LexicalNode | null;
-};
+type CaretPair = [PointCaret<'next'>, PointCaret<'previous'>];
 
-function $savePointBracket(point: Point): PointBracket | null {
-  if (point.type !== 'element') {
-    return null;
-  }
-  const parent = point.getNode();
-  if (!$isElementNode(parent)) {
-    return null;
-  }
-  const children = parent.getChildren();
-  return {
-    leftNode: point.offset > 0 ? children[point.offset - 1] : null,
-    rightNode: point.offset < children.length ? children[point.offset] : null,
-  };
+function $saveCaretPair(point: PointType): CaretPair {
+  const next = $caretFromPoint(point, 'next');
+  return [next, next.getFlipped()];
 }
 
-function $restorePointFromBracket(
-  point: Point,
-  bracket: PointBracket | null,
-): void {
-  if (bracket === null) {
-    return;
-  }
-  const {rightNode, leftNode} = bracket;
-  if (rightNode !== null && rightNode.isAttached()) {
-    const parent = rightNode.getParent();
-    if (parent) {
-      point.set(parent.getKey(), rightNode.getIndexWithinParent(), 'element');
-      return;
-    }
-  }
-  if (leftNode !== null && leftNode.isAttached()) {
-    const parent = leftNode.getParent();
-    if (parent) {
-      point.set(
-        parent.getKey(),
-        leftNode.getIndexWithinParent() + 1,
-        'element',
-      );
+function $restoreCaretPair(point: PointType, pair: CaretPair): void {
+  for (const caret of pair) {
+    if (caret.origin.isAttached()) {
+      const normalized = $normalizeCaret(caret);
+      $setPointFromCaret(point, normalized);
       return;
     }
   }
@@ -345,11 +319,11 @@ function $restorePointFromBracket(
  */
 export function $linkNodeTransform(link: LinkNode): void {
   const selection = $getSelection();
-  let anchorBracket: PointBracket | null = null;
-  let focusBracket: PointBracket | null = null;
+  let anchorPair: CaretPair | null = null;
+  let focusPair: CaretPair | null = null;
   if ($isRangeSelection(selection)) {
-    anchorBracket = $savePointBracket(selection.anchor);
-    focusBracket = $savePointBracket(selection.focus);
+    anchorPair = $saveCaretPair(selection.anchor);
+    focusPair = $saveCaretPair(selection.focus);
   }
 
   for (const caret of $getChildCaret(link, 'next')) {
@@ -375,8 +349,8 @@ export function $linkNodeTransform(link: LinkNode): void {
   }
 
   if ($isRangeSelection(selection)) {
-    $restorePointFromBracket(selection.anchor, anchorBracket);
-    $restorePointFromBracket(selection.focus, focusBracket);
+    $restoreCaretPair(selection.anchor, anchorPair!);
+    $restoreCaretPair(selection.focus, focusPair!);
     $normalizeSelection__EXPERIMENTAL(selection);
   }
 }

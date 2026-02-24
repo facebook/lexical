@@ -893,6 +893,65 @@ test.describe.parallel('Auto Links', () => {
     );
   });
 
+  test('Can destruct unlinked the autolink if add emoji inside', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+    await page.keyboard.type('http://example.com');
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <a href="http://example.com">
+            <span data-lexical-text="true">http://example.com</span>
+          </a>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+
+    await focusEditor(page);
+    await click(page, 'a[href="http://example.com"]');
+    await click(page, 'div.link-editor div.link-trash');
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <span>
+            <span data-lexical-text="true">http://example.com</span>
+          </span>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+
+    // type emoji
+    await moveToLineEnd(page);
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.type(':)');
+    // ':', ')' — is valid chars for link but inserting an emoji
+    // should break the link by splitting it into two text nodes
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <span data-lexical-text="true">http://example.co</span>
+          <span class="emoji happysmile" data-lexical-text="true">
+            <span class="emoji-inner">🙂</span>
+          </span>
+          <span data-lexical-text="true">m</span>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
   test('Pressing Enter inside an AutoLinkNode does not insert extra paragraph', async ({
     page,
     isPlainText,

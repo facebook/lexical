@@ -27,7 +27,6 @@ export {
   $createLinkNode,
   $isAutoLinkNode,
   $isLinkNode,
-  $linkNodeTransform,
   $toggleLink,
   type AutoLinkAttributes,
   AutoLinkNode,

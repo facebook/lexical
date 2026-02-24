@@ -351,8 +351,11 @@ function $fixSplitElementPoint(
     return;
   }
   const newParent = savedChild.getParent();
-  if (newParent && newParent.getKey() !== point.key) {
-    point.set(newParent.getKey(), savedChild.getIndexWithinParent(), 'element');
+  if (newParent) {
+    const newOffset = savedChild.getIndexWithinParent();
+    if (newParent.getKey() !== point.key || newOffset !== point.offset) {
+      point.set(newParent.getKey(), newOffset, 'element');
+    }
   }
 }
 

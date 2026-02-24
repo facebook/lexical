@@ -6,17 +6,18 @@
  *
  */
 
+import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
 import {
   $createLinkNode,
   $isLinkNode,
-  $linkNodeTransform,
   $toggleLink,
   formatUrl,
+  LinkExtension,
   LinkNode,
   SerializedLinkNode,
 } from '@lexical/link';
 import {$createMarkNode, $isMarkNode} from '@lexical/mark';
-import {$createHeadingNode} from '@lexical/rich-text';
+import {$createHeadingNode, RichTextExtension} from '@lexical/rich-text';
 import {
   $createLineBreakNode,
   $createParagraphNode,
@@ -888,16 +889,17 @@ describe('formatUrl', () => {
   });
 });
 
-describe('$linkNodeTransform (Regression #8083)', () => {
-  initializeUnitTest((testEnv) => {
-    test('extracts block child (HeadingNode) from link via registered transform', async () => {
-      const {editor} = testEnv;
-      const removeTransform = editor.registerNodeTransform(
-        LinkNode,
-        $linkNodeTransform,
-      );
+describe('LinkNode transform (Regression #8083)', () => {
+  const transformExtension = defineExtension({
+    dependencies: [LinkExtension, RichTextExtension],
+    name: '[test-link-transform]',
+  });
 
-      await editor.update(() => {
+  test('extracts block child (HeadingNode) from link', () => {
+    const editor = buildEditorFromExtensions(transformExtension);
+
+    editor.update(
+      () => {
         const root = $getRoot();
         const text = $createTextNode('Lexical');
         const heading = $createHeadingNode('h1');
@@ -907,33 +909,32 @@ describe('$linkNodeTransform (Regression #8083)', () => {
         const paragraph = $createParagraphNode();
         paragraph.append(link);
         root.clear().append(paragraph);
-      });
+      },
+      {discrete: true},
+    );
 
-      editor.read(() => {
-        const root = $getRoot();
-        const children = root.getChildren();
-        expect(children.length).toBe(1);
-        expect(children[0].getType()).toBe('heading');
-        expect($isElementNode(children[0])).toBe(true);
-        if ($isElementNode(children[0])) {
-          const headingChildren = children[0].getChildren();
-          expect(headingChildren.length).toBe(1);
-          expect($isLinkNode(headingChildren[0])).toBe(true);
-          expect(headingChildren[0].getTextContent()).toBe('Lexical');
-        }
-      });
-
-      removeTransform();
+    editor.read(() => {
+      const root = $getRoot();
+      const children = root.getChildren();
+      expect(children.length).toBe(1);
+      expect(children[0].getType()).toBe('heading');
+      expect($isElementNode(children[0])).toBe(true);
+      if ($isElementNode(children[0])) {
+        const headingChildren = children[0].getChildren();
+        expect(headingChildren.length).toBe(1);
+        expect($isLinkNode(headingChildren[0])).toBe(true);
+        expect(headingChildren[0].getTextContent()).toBe('Lexical');
+      }
     });
 
-    test('extracts block child (ParagraphNode) from link via registered transform', async () => {
-      const {editor} = testEnv;
-      const removeTransform = editor.registerNodeTransform(
-        LinkNode,
-        $linkNodeTransform,
-      );
+    editor.dispose();
+  });
 
-      await editor.update(() => {
+  test('extracts block child (ParagraphNode) from link', () => {
+    const editor = buildEditorFromExtensions(transformExtension);
+
+    editor.update(
+      () => {
         const root = $getRoot();
         const text = $createTextNode('Lexical');
         const innerParagraph = $createParagraphNode();
@@ -943,32 +944,31 @@ describe('$linkNodeTransform (Regression #8083)', () => {
         const outerParagraph = $createParagraphNode();
         outerParagraph.append(link);
         root.clear().append(outerParagraph);
-      });
+      },
+      {discrete: true},
+    );
 
-      editor.read(() => {
-        const root = $getRoot();
-        const children = root.getChildren();
-        expect(children.length).toBe(1);
-        expect($isParagraphNode(children[0])).toBe(true);
-        if ($isElementNode(children[0])) {
-          const paraChildren = children[0].getChildren();
-          expect(paraChildren.length).toBe(1);
-          expect($isLinkNode(paraChildren[0])).toBe(true);
-          expect(paraChildren[0].getTextContent()).toBe('Lexical');
-        }
-      });
-
-      removeTransform();
+    editor.read(() => {
+      const root = $getRoot();
+      const children = root.getChildren();
+      expect(children.length).toBe(1);
+      expect($isParagraphNode(children[0])).toBe(true);
+      if ($isElementNode(children[0])) {
+        const paraChildren = children[0].getChildren();
+        expect(paraChildren.length).toBe(1);
+        expect($isLinkNode(paraChildren[0])).toBe(true);
+        expect(paraChildren[0].getTextContent()).toBe('Lexical');
+      }
     });
 
-    test('handles siblings after block child via registered transform', async () => {
-      const {editor} = testEnv;
-      const removeTransform = editor.registerNodeTransform(
-        LinkNode,
-        $linkNodeTransform,
-      );
+    editor.dispose();
+  });
 
-      await editor.update(() => {
+  test('handles siblings after block child', () => {
+    const editor = buildEditorFromExtensions(transformExtension);
+
+    editor.update(
+      () => {
         const root = $getRoot();
         const headingText = $createTextNode('Heading');
         const heading = $createHeadingNode('h1');
@@ -979,37 +979,36 @@ describe('$linkNodeTransform (Regression #8083)', () => {
         const paragraph = $createParagraphNode();
         paragraph.append(link);
         root.clear().append(paragraph);
-      });
+      },
+      {discrete: true},
+    );
 
-      editor.read(() => {
-        const root = $getRoot();
-        const children = root.getChildren();
-        expect(children.length).toBe(2);
-        expect(children[0].getType()).toBe('heading');
-        if ($isElementNode(children[0])) {
-          expect($isLinkNode(children[0].getChildren()[0])).toBe(true);
-          expect(children[0].getTextContent()).toBe('Heading');
-        }
-        expect($isParagraphNode(children[1])).toBe(true);
-        if ($isElementNode(children[1])) {
-          const trailingChildren = children[1].getChildren();
-          expect(trailingChildren.length).toBe(1);
-          expect($isLinkNode(trailingChildren[0])).toBe(true);
-          expect(trailingChildren[0].getTextContent()).toBe(' after');
-        }
-      });
-
-      removeTransform();
+    editor.read(() => {
+      const root = $getRoot();
+      const children = root.getChildren();
+      expect(children.length).toBe(2);
+      expect(children[0].getType()).toBe('heading');
+      if ($isElementNode(children[0])) {
+        expect($isLinkNode(children[0].getChildren()[0])).toBe(true);
+        expect(children[0].getTextContent()).toBe('Heading');
+      }
+      expect($isParagraphNode(children[1])).toBe(true);
+      if ($isElementNode(children[1])) {
+        const trailingChildren = children[1].getChildren();
+        expect(trailingChildren.length).toBe(1);
+        expect($isLinkNode(trailingChildren[0])).toBe(true);
+        expect(trailingChildren[0].getTextContent()).toBe(' after');
+      }
     });
 
-    test('fixes element selection after split moves content to right side', async () => {
-      const {editor} = testEnv;
-      const removeTransform = editor.registerNodeTransform(
-        LinkNode,
-        $linkNodeTransform,
-      );
+    editor.dispose();
+  });
 
-      await editor.update(() => {
+  test('fixes element selection in paragraph split to the right of LinkNode', () => {
+    const editor = buildEditorFromExtensions(transformExtension);
+
+    editor.update(
+      () => {
         const root = $getRoot();
         const textBefore = $createTextNode('before');
         const headingText = $createTextNode('Heading');
@@ -1025,24 +1024,141 @@ describe('$linkNodeTransform (Regression #8083)', () => {
         selection.anchor.set(paragraph.getKey(), 2, 'element');
         selection.focus.set(paragraph.getKey(), 2, 'element');
         $setSelection(selection);
-      });
+      },
+      {discrete: true},
+    );
 
-      editor.read(() => {
+    editor.read(() => {
+      const root = $getRoot();
+      const children = root.getChildren();
+      expect(children.length).toBe(3);
+      expect(children[2].getTextContent()).toBe('after');
+
+      const selection = $getSelection();
+      expect($isRangeSelection(selection)).toBe(true);
+      if ($isRangeSelection(selection)) {
+        expect(selection.anchor.type).toBe('element');
+        expect(selection.anchor.key).toBe(children[2].getKey());
+        expect(selection.anchor.offset).toBe(0);
+      }
+    });
+
+    editor.dispose();
+  });
+
+  test('fixes element selection in LinkNode to the right of non-inline node', () => {
+    const editor = buildEditorFromExtensions(transformExtension);
+
+    editor.update(
+      () => {
         const root = $getRoot();
-        const children = root.getChildren();
-        expect(children.length).toBe(3);
-        expect(children[2].getTextContent()).toBe('after');
+        const headingText = $createTextNode('Heading');
+        const heading = $createHeadingNode('h1');
+        heading.append(headingText);
+        const afterText = $createTextNode(' after');
+        const link = $createLinkNode('https://lexical.dev');
+        link.append(heading, afterText);
+        const paragraph = $createParagraphNode();
+        paragraph.append(link);
+        root.clear().append(paragraph);
+        const selection = $createRangeSelection();
+        selection.anchor.set(link.getKey(), 1, 'element');
+        selection.focus.set(link.getKey(), 1, 'element');
+        $setSelection(selection);
+      },
+      {discrete: true},
+    );
 
-        const selection = $getSelection();
-        expect($isRangeSelection(selection)).toBe(true);
-        if ($isRangeSelection(selection)) {
+    editor.read(() => {
+      const root = $getRoot();
+      const children = root.getChildren();
+      expect(children.length).toBe(2);
+      expect($isParagraphNode(children[1])).toBe(true);
+
+      const selection = $getSelection();
+      expect($isRangeSelection(selection)).toBe(true);
+      if ($isRangeSelection(selection)) {
+        const trailingPara = children[1];
+        if ($isElementNode(trailingPara)) {
+          const trailingLink = trailingPara.getChildren()[0];
+          expect($isLinkNode(trailingLink)).toBe(true);
           expect(selection.anchor.type).toBe('element');
-          expect(selection.anchor.key).toBe(children[2].getKey());
+          expect(selection.anchor.key).toBe(trailingLink.getKey());
           expect(selection.anchor.offset).toBe(0);
         }
-      });
-
-      removeTransform();
+      }
     });
+
+    editor.dispose();
+  });
+
+  test('fixes element selection with multiple non-inline siblings', () => {
+    const editor = buildEditorFromExtensions(transformExtension);
+
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const heading1Text = $createTextNode('First');
+        const heading1 = $createHeadingNode('h1');
+        heading1.append(heading1Text);
+        const heading2Text = $createTextNode('Second');
+        const heading2 = $createHeadingNode('h2');
+        heading2.append(heading2Text);
+        const link = $createLinkNode('https://lexical.dev');
+        link.append(heading1, heading2);
+        const paragraph = $createParagraphNode();
+        paragraph.append(link);
+        root.clear().append(paragraph);
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const root = $getRoot();
+      const children = root.getChildren();
+      expect(children.length).toBe(2);
+      expect(children[0].getType()).toBe('heading');
+      expect(children[0].getTextContent()).toBe('First');
+      expect(children[1].getType()).toBe('heading');
+      expect(children[1].getTextContent()).toBe('Second');
+    });
+
+    editor.dispose();
+  });
+
+  test('fixes element selection when no siblings to the right of LinkNode', () => {
+    const editor = buildEditorFromExtensions(transformExtension);
+
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const headingText = $createTextNode('Heading');
+        const heading = $createHeadingNode('h1');
+        heading.append(headingText);
+        const link = $createLinkNode('https://lexical.dev');
+        link.append(heading);
+        const paragraph = $createParagraphNode();
+        paragraph.append(link);
+        root.clear().append(paragraph);
+        const selection = $createRangeSelection();
+        selection.anchor.set(paragraph.getKey(), 1, 'element');
+        selection.focus.set(paragraph.getKey(), 1, 'element');
+        $setSelection(selection);
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const root = $getRoot();
+      const children = root.getChildren();
+      expect(children.length).toBe(1);
+      expect(children[0].getType()).toBe('heading');
+      if ($isElementNode(children[0])) {
+        expect($isLinkNode(children[0].getChildren()[0])).toBe(true);
+        expect(children[0].getTextContent()).toBe('Heading');
+      }
+    });
+
+    editor.dispose();
   });
 });

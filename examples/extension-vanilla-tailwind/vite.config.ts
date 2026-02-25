@@ -6,22 +6,20 @@
  *
  */
 import tailwindcss from '@tailwindcss/vite';
-import copy from 'rollup-plugin-copy';
 import {defineConfig} from 'vite';
+import {viteStaticCopy} from 'vite-plugin-static-copy';
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
     // This is a workaround for https://github.com/tailwindlabs/tailwindcss/issues/18418
-    copy({
-      hook: 'writeBundle',
+    ...viteStaticCopy({
       targets: [
         {
           dest: './src/stackblitz-workaround/',
           src: '../../packages/lexical-tailwind/src/*.ts',
         },
       ],
-      verbose: true,
     }),
     tailwindcss(),
   ],

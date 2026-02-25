@@ -390,7 +390,7 @@ function onSelectionChange(
             ) {
               $updateSelectionFormatStyleFromElementNode(selection, lastNode);
             } else {
-              $updateSelectionFormatStyle(selection, 0, '');
+              $updateSelectionFormatStyle(selection, selection.format, '');
             }
           }
         }

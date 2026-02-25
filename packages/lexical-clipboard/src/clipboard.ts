@@ -225,60 +225,14 @@ export function $insertGeneratedNodes(
   nodes: Array<LexicalNode>,
   selection: BaseSelection,
 ): void {
-  // If the selection is entirely within a link,
-  // we want to insert the text content of the nodes into the link
-  function isSameLinkParent(sel: BaseSelection): boolean {
-    const points = sel.getStartEndPoints();
-    if (points == null) {
-      return false;
-    }
-
-    const startPoint = points[0];
-    const endPoint = points[1];
-
-    if (startPoint == null || endPoint == null) {
-      return false;
-    }
-
-    const startNode = startPoint.getNode();
-    const endNode = endPoint.getNode();
-
-    if (startNode == null || endNode == null) {
-      return false;
-    }
-
-    const parentElementBefore = startNode.getParent();
-    const parentElementAfter = endNode.getParent();
-
-    if (parentElementBefore == null || parentElementAfter == null) {
-      return false;
-    }
-
-    return (
-      parentElementAfter.getType() === 'link' &&
-      parentElementAfter.getType() === parentElementBefore.getType()
-    );
-  }
-
   if (
     !editor.dispatchCommand(SELECTION_INSERT_CLIPBOARD_NODES_COMMAND, {
       nodes,
       selection,
     })
   ) {
-    if (isSameLinkParent(selection)) {
-      // Only insert the content of the first text node
-      const textNodes = nodes.filter((node) => $isTextNode(node));
-
-      if (textNodes.length > 0) {
-        const firstText = textNodes[0];
-        selection.insertText(firstText.getTextContent());
-        $updateSelectionOnInsert(selection);
-      }
-    } else {
-      selection.insertNodes(nodes);
-      $updateSelectionOnInsert(selection);
-    }
+    selection.insertNodes(nodes);
+    $updateSelectionOnInsert(selection);
   }
 
   return;

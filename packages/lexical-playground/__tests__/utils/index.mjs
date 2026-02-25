@@ -29,13 +29,17 @@ export const E2E_BROWSER = process.env.E2E_BROWSER;
 export const IS_MAC = process.platform === 'darwin';
 export const IS_WINDOWS = process.platform === 'win32';
 export const IS_LINUX = !IS_MAC && !IS_WINDOWS;
-export const IS_COLLAB =
+export const IS_COLLAB_V1 =
   process.env.E2E_EDITOR_MODE === 'rich-text-with-collab';
+export const IS_COLLAB_V2 =
+  process.env.E2E_EDITOR_MODE === 'rich-text-with-collab-v2';
+export const IS_COLLAB = IS_COLLAB_V1 || IS_COLLAB_V2;
 const IS_RICH_TEXT = process.env.E2E_EDITOR_MODE !== 'plain-text';
 const IS_PLAIN_TEXT = process.env.E2E_EDITOR_MODE === 'plain-text';
 export const LEGACY_EVENTS = process.env.E2E_EVENTS_MODE === 'legacy-events';
 export const IS_TABLE_HORIZONTAL_SCROLL =
   process.env.E2E_TABLE_MODE !== 'legacy';
+export const SAMPLE_SVG_URL = '/logo.svg';
 export const SAMPLE_IMAGE_URL =
   E2E_PORT === 3000
     ? '/src/images/yellow-flower.jpg'
@@ -54,17 +58,31 @@ function wrapAndSlowDown(method, delay) {
   };
 }
 
-export function wrapTableHtml(expected, {ignoreClasses = false} = {}) {
+export function wrapTableHtml(
+  expected,
+  {ignoreClasses = false, ignoreDir = false} = {},
+) {
   return html`
     ${expected
-      .replace(
-        /<table/g,
-        `<div${
-          ignoreClasses
-            ? ''
-            : ' class="PlaygroundEditorTheme__tableScrollableWrapper"'
-        }><table`,
-      )
+      .replace(/<table(\s[^>]*)?>/g, (match, rawAttrs = '') => {
+        const attrs = [...rawAttrs.matchAll(/(\w+)=["']([^"']*)["']/g)].map(
+          (m) => [m[1], m[2]],
+        );
+        const dirAttr = attrs.find(([k]) => k === 'dir');
+        const divAttrs = [
+          dirAttr,
+          !ignoreClasses && [
+            'class',
+            'PlaygroundEditorTheme__tableScrollableWrapper',
+          ],
+        ]
+          .filter(Boolean)
+          .map(([k, v]) => `${k}="${v}"`);
+        const tableAttrs = attrs
+          .filter(([k]) => k !== 'dir')
+          .map(([k, v]) => `${k}="${v}"`);
+        return `<div ${divAttrs.join(' ')}><table ${tableAttrs.join(' ')}>`;
+      })
       .replace(/<\/table>/g, '</table></div>')}
   `;
 }
@@ -77,6 +95,9 @@ export async function initialize({
   isCharLimitUtf8,
   isMaxLength,
   hasLinkAttributes,
+  hasNestedTables,
+  hasFitNestedTables,
+  shouldDisableFocusOnClickChecklist,
   showNestedEditorTreeView,
   tableCellMerge,
   tableCellBackgroundColor,
@@ -99,7 +120,8 @@ export async function initialize({
   appSettings.tableHorizontalScroll =
     tableHorizontalScroll ?? IS_TABLE_HORIZONTAL_SCROLL;
   if (isCollab) {
-    appSettings.isCollab = isCollab;
+    appSettings.isCollab = !!isCollab;
+    appSettings.useCollabV2 = isCollab === 2;
     appSettings.collabId = randomUUID();
   }
   if (showNestedEditorTreeView === undefined) {
@@ -110,6 +132,10 @@ export async function initialize({
   appSettings.isCharLimitUtf8 = !!isCharLimitUtf8;
   appSettings.isMaxLength = !!isMaxLength;
   appSettings.hasLinkAttributes = !!hasLinkAttributes;
+  appSettings.hasNestedTables = !!hasNestedTables;
+  appSettings.hasFitNestedTables = !!hasFitNestedTables;
+  appSettings.shouldDisableFocusOnClickChecklist =
+    !!shouldDisableFocusOnClickChecklist;
   if (tableCellMerge !== undefined) {
     appSettings.tableCellMerge = tableCellMerge;
   }
@@ -156,7 +182,7 @@ async function exposeLexicalEditor(page) {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
       `,
     );
   }
@@ -173,7 +199,8 @@ export const test = base.extend({
   hasLinkAttributes: false,
   isCharLimit: false,
   isCharLimitUtf8: false,
-  isCollab: IS_COLLAB,
+  /** @type {number | false} */
+  isCollab: IS_COLLAB_V1 ? 1 : IS_COLLAB_V2 ? 2 : false,
   isMaxLength: false,
   isPlainText: IS_PLAIN_TEXT,
   isRichText: IS_RICH_TEXT,
@@ -214,6 +241,10 @@ function removeSafariLinebreakImgHack(actualHtml) {
     : actualHtml;
 }
 
+function removeDropTargetAttributes(actualHtml) {
+  return actualHtml.replaceAll(/ data-drop-target-for-element="true"/g, '');
+}
+
 /**
  * @param {import('@playwright/test').Page | import('@playwright/test').Frame} pageOrFrame
  */
@@ -222,22 +253,27 @@ async function assertHTMLOnPageOrFrame(
   expectedHtml,
   ignoreClasses,
   ignoreInlineStyles,
+  ignoreDir,
   frameName,
   actualHtmlModificationsCallback = (actualHtml) => actualHtml,
 ) {
   const expected = await prettifyHTML(expectedHtml.replace(/\n/gm, ''), {
     ignoreClasses,
+    ignoreDir,
     ignoreInlineStyles,
   });
   return await expect(async () => {
-    const actualHtml = removeSafariLinebreakImgHack(
-      await pageOrFrame
-        .locator('div[contenteditable="true"]')
-        .first()
-        .innerHTML(),
+    const actualHtml = removeDropTargetAttributes(
+      removeSafariLinebreakImgHack(
+        await pageOrFrame
+          .locator('div[contenteditable="true"]')
+          .first()
+          .innerHTML(),
+      ),
     );
     let actual = await prettifyHTML(actualHtml.replace(/\n/gm, ''), {
       ignoreClasses,
+      ignoreDir,
       ignoreInlineStyles,
     });
 
@@ -275,7 +311,7 @@ export async function assertHTML(
   page,
   expectedHtml,
   expectedHtmlFrameRight = expectedHtml,
-  {ignoreClasses = false, ignoreInlineStyles = false} = {},
+  {ignoreClasses = false, ignoreInlineStyles = false, ignoreDir = false} = {},
   actualHtmlModificationsCallback,
 ) {
   if (IS_COLLAB) {
@@ -285,6 +321,7 @@ export async function assertHTML(
         expectedHtml,
         ignoreClasses,
         ignoreInlineStyles,
+        ignoreDir,
         'left frame',
         actualHtmlModificationsCallback,
       ),
@@ -293,6 +330,7 @@ export async function assertHTML(
         expectedHtmlFrameRight,
         ignoreClasses,
         ignoreInlineStyles,
+        ignoreDir,
         'right frame',
         actualHtmlModificationsCallback,
       ),
@@ -303,6 +341,7 @@ export async function assertHTML(
       expectedHtml,
       ignoreClasses,
       ignoreInlineStyles,
+      ignoreDir,
       'page',
       actualHtmlModificationsCallback,
     );
@@ -747,6 +786,40 @@ export async function insertHorizontalRule(page) {
   await selectFromInsertDropdown(page, '.horizontal-rule');
 }
 
+export async function insertDateTime(page) {
+  await selectFromInsertDropdown(page, '.calendar');
+  await sleep(500);
+}
+
+export function getExpectedDateTimeHtml({selected = false, formats = []} = {}) {
+  const now = new Date();
+  const date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  // DateTimeNode displays a limited set of formats
+  const formatToClassname = {
+    bold: 'bold',
+    highlight: 'highlight',
+    italic: 'italic',
+    strikethrough: 'strikethrough',
+    underline: 'underline',
+  };
+
+  return html`
+    <span
+      contenteditable="false"
+      style="display: inline-block;"
+      data-lexical-datetime="${date.toString()}"
+      data-lexical-decorator="true">
+      <div
+        class="dateTimePill ${selected ? 'selected' : ''} ${formats
+          .map((f) => formatToClassname[f] || '')
+          .join(' ')}">
+        ${date.toDateString()}
+      </div>
+    </span>
+  `;
+}
+
 export async function insertImageCaption(page, caption) {
   await click(page, '.editor-image img');
   await click(page, '.image-caption-button');
@@ -820,7 +893,7 @@ export async function dragImage(
 
 export async function prettifyHTML(
   string,
-  {ignoreClasses, ignoreInlineStyles} = {},
+  {ignoreClasses, ignoreInlineStyles, ignoreDir} = {},
 ) {
   let output = string;
 
@@ -830,6 +903,10 @@ export async function prettifyHTML(
 
   if (ignoreInlineStyles) {
     output = output.replace(/\sstyle="([^"]*)"/g, '');
+  }
+
+  if (ignoreDir) {
+    output = output.replace(/\sdir="([^"]*)"/g, '');
   }
 
   output = output.replace(/\s__playwright_target__="[^"]+"/, '');
@@ -998,6 +1075,20 @@ export async function insertTableColumnBefore(page) {
 export async function insertTableColumnAfter(page) {
   await clickTableCellActiveButton(page);
   await click(page, '.item[data-test-id="table-insert-column-after"]');
+}
+
+export async function resizeTableCell(page, selector, width = 0, height = 0) {
+  await click(page, selector);
+  const resizerBoundingBox = await selectorBoundingBox(
+    page,
+    '.TableCellResizer__resizer:first-child',
+  );
+  const x = resizerBoundingBox.x + resizerBoundingBox.width / 2;
+  const y = resizerBoundingBox.y + resizerBoundingBox.height / 2;
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  await page.mouse.move(x + width, y + height);
+  await page.mouse.up();
 }
 
 export async function mergeTableCells(page) {

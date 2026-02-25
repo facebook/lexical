@@ -25,11 +25,9 @@ export default {
     ol: 'editor-list-ol',
     ul: 'editor-list-ul',
   },
-  ltr: 'ltr',
   paragraph: 'editor-paragraph',
   placeholder: 'editor-placeholder',
   quote: 'editor-quote',
-  rtl: 'rtl',
   text: {
     bold: 'editor-text-bold',
     code: 'editor-text-code',

@@ -24,6 +24,7 @@ import {
   ParagraphNode,
 } from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
+import {describe, expect, it} from 'vitest';
 
 import {$mergePrevious} from '../../shared/useCharacterLimit';
 

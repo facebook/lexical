@@ -6,7 +6,7 @@
  *
  */
 
-export default function prodWarningMessage(
+export default function formatProdWarningMessage(
   code: string,
   ...args: string[]
 ): void {

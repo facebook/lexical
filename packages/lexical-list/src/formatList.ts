@@ -15,6 +15,7 @@ import {
   $isLeafNode,
   $isRangeSelection,
   $isRootOrShadowRoot,
+  $isTextNode,
   $normalizeCaret,
   $setPointFromCaret,
   ElementNode,
@@ -35,6 +36,7 @@ import {
 import {ListType} from './LexicalListNode';
 import {
   $getAllListItems,
+  $getNewListStart,
   $getTopListNode,
   $removeHighestEmptyListParent,
   isNestedListNode,
@@ -124,8 +126,8 @@ export function $insertList(listType: ListType): void {
       let parent = $isLeafNode(node)
         ? node.getParent()
         : $isListItemNode(node) && node.isEmpty()
-        ? node
-        : null;
+          ? node
+          : null;
 
       while (parent != null) {
         const parentKey = parent.getKey();
@@ -196,6 +198,22 @@ function $createListOrMerge(node: ElementNode, listType: ListType): ListNode {
   // listItem needs to be attached to root prior to setting indent
   listItem.setFormat(node.getFormatType());
   listItem.setIndent(node.getIndent());
+
+  // Preserve element-anchored selections by updating them to anchor to the listItem instead of the listNode.
+  const selection = $getSelection();
+  if ($isRangeSelection(selection)) {
+    if (targetList.getKey() === selection.anchor.key) {
+      selection.anchor.set(
+        listItem.getKey(),
+        selection.anchor.offset,
+        'element',
+      );
+    }
+    if (targetList.getKey() === selection.focus.key) {
+      selection.focus.set(listItem.getKey(), selection.focus.offset, 'element');
+    }
+  }
+
   node.remove();
 
   return targetList;
@@ -491,20 +509,43 @@ export function $handleOutdent(listItemNode: ListItemNode): void {
  * @returns true if a ParagraphNode was inserted successfully, false if there is no selection
  * or the selection does not contain a ListItemNode or the node already holds text.
  */
-export function $handleListInsertParagraph(): boolean {
+export function $handleListInsertParagraph(
+  restoreNumbering: boolean = false,
+): boolean {
   const selection = $getSelection();
 
   if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
     return false;
   }
-  // Only run this code on empty list items
+  // Only run this code on empty list items (including whitespace-only)
   const anchor = selection.anchor.getNode();
 
-  if (!$isListItemNode(anchor) || anchor.getChildrenSize() !== 0) {
+  let listItem: ListItemNode | null = null;
+
+  if ($isListItemNode(anchor) && anchor.getChildrenSize() === 0) {
+    // Truly empty list item (element selection)
+    listItem = anchor;
+  } else if ($isTextNode(anchor)) {
+    // Check if the entire list item contains only whitespace text nodes
+    const parentListItem = anchor.getParent();
+    if (
+      $isListItemNode(parentListItem) &&
+      parentListItem
+        .getChildren()
+        .every(
+          (node) => $isTextNode(node) && node.getTextContent().trim() === '',
+        )
+    ) {
+      listItem = parentListItem;
+    }
+  }
+
+  if (listItem === null) {
     return false;
   }
-  const topListNode = $getTopListNode(anchor);
-  const parent = anchor.getParent();
+
+  const topListNode = $getTopListNode(listItem);
+  const parent = listItem.getParent();
 
   invariant(
     $isListNode(parent),
@@ -529,10 +570,12 @@ export function $handleListInsertParagraph(): boolean {
     .setTextFormat(selection.format)
     .select();
 
-  const nextSiblings = anchor.getNextSiblings();
+  const nextSiblings = listItem.getNextSiblings();
 
   if (nextSiblings.length > 0) {
-    const newList = $createListNode(parent.getListType());
+    const newStart = restoreNumbering ? $getNewListStart(parent, listItem) : 1;
+    const newList = $createListNode(parent.getListType(), newStart);
+
     if ($isListItemNode(replacementNode)) {
       const newListItem = $createListItemNode();
       newListItem.append(newList);
@@ -544,7 +587,7 @@ export function $handleListInsertParagraph(): boolean {
   }
 
   // Don't leave hanging nested empty lists
-  $removeHighestEmptyListParent(anchor);
+  $removeHighestEmptyListParent(listItem);
 
   return true;
 }

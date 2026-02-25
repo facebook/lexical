@@ -9,6 +9,7 @@
 import {
   $createParagraphNode,
   $createRangeSelection,
+  $createTextNode,
   $getRoot,
   TextNode,
 } from 'lexical';
@@ -17,6 +18,7 @@ import {
   html,
   initializeUnitTest,
 } from 'lexical/src/__tests__/utils';
+import {beforeEach, describe, expect, it, test} from 'vitest';
 
 import {
   $createListItemNode,
@@ -25,7 +27,7 @@ import {
   ListItemNode,
   ListNode,
 } from '../..';
-import {$handleIndent} from '../../formatList';
+import {$handleIndent, $handleListInsertParagraph} from '../../formatList';
 
 const editorConfig = Object.freeze({
   namespace: '',
@@ -185,14 +187,14 @@ describe('LexicalListItemNode tests', () => {
               contenteditable="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word;"
               data-lexical-editor="true">
-              <ul>
-                <li dir="ltr" value="1">
+              <ul dir="auto">
+                <li value="1">
                   <span data-lexical-text="true">one</span>
                 </li>
-                <li dir="ltr" value="2">
+                <li value="2">
                   <span data-lexical-text="true">two</span>
                 </li>
-                <li dir="ltr" value="3">
+                <li value="3">
                   <span data-lexical-text="true">three</span>
                 </li>
               </ul>
@@ -218,14 +220,14 @@ describe('LexicalListItemNode tests', () => {
               contenteditable="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word;"
               data-lexical-editor="true">
-              <ul>
-                <li dir="ltr" value="1">
+              <ul dir="auto">
+                <li value="1">
                   <span data-lexical-text="true">bar</span>
                 </li>
-                <li dir="ltr" value="2">
+                <li value="2">
                   <span data-lexical-text="true">two</span>
                 </li>
-                <li dir="ltr" value="3">
+                <li value="3">
                   <span data-lexical-text="true">three</span>
                 </li>
               </ul>
@@ -248,14 +250,14 @@ describe('LexicalListItemNode tests', () => {
               contenteditable="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word;"
               data-lexical-editor="true">
-              <ul>
-                <li dir="ltr" value="1">
+              <ul dir="auto">
+                <li value="1">
                   <span data-lexical-text="true">one</span>
                 </li>
-                <li dir="ltr" value="2">
+                <li value="2">
                   <span data-lexical-text="true">two</span>
                 </li>
-                <li dir="ltr" value="3">
+                <li value="3">
                   <span data-lexical-text="true">three</span>
                 </li>
               </ul>
@@ -275,12 +277,12 @@ describe('LexicalListItemNode tests', () => {
               contenteditable="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word;"
               data-lexical-editor="true">
-              <p><br /></p>
-              <ul>
-                <li dir="ltr" value="1">
+              <p dir="auto"><br /></p>
+              <ul dir="auto">
+                <li value="1">
                   <span data-lexical-text="true">two</span>
                 </li>
-                <li dir="ltr" value="2">
+                <li value="2">
                   <span data-lexical-text="true">three</span>
                 </li>
               </ul>
@@ -304,15 +306,15 @@ describe('LexicalListItemNode tests', () => {
               contenteditable="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word;"
               data-lexical-editor="true">
-              <ul>
-                <li dir="ltr" value="1">
+              <ul dir="auto">
+                <li value="1">
                   <span data-lexical-text="true">one</span>
                 </li>
-                <li dir="ltr" value="2">
+                <li value="2">
                   <span data-lexical-text="true">two</span>
                 </li>
               </ul>
-              <p><br /></p>
+              <p dir="auto"><br /></p>
             </div>
           `,
         );
@@ -333,14 +335,14 @@ describe('LexicalListItemNode tests', () => {
               contenteditable="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word;"
               data-lexical-editor="true">
-              <ul>
-                <li dir="ltr" value="1">
+              <ul dir="auto">
+                <li value="1">
                   <span data-lexical-text="true">one</span>
                 </li>
               </ul>
-              <p><br /></p>
-              <ul>
-                <li dir="ltr" value="1">
+              <p dir="auto"><br /></p>
+              <ul dir="auto">
+                <li value="1">
                   <span data-lexical-text="true">three</span>
                 </li>
               </ul>
@@ -364,8 +366,8 @@ describe('LexicalListItemNode tests', () => {
               contenteditable="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word;"
               data-lexical-editor="true">
-              <ul>
-                <li dir="ltr" value="1">
+              <ul dir="auto">
+                <li value="1">
                   <span data-lexical-text="true">one</span>
                 </li>
               </ul>
@@ -385,7 +387,7 @@ describe('LexicalListItemNode tests', () => {
               contenteditable="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word;"
               data-lexical-editor="true">
-              <p><br /></p>
+              <p dir="auto"><br /></p>
             </div>
           `,
         );
@@ -424,14 +426,14 @@ describe('LexicalListItemNode tests', () => {
               contenteditable="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word;"
               data-lexical-editor="true">
-              <ul>
-                <li dir="ltr" value="1">
+              <ul dir="auto">
+                <li value="1">
                   <span data-lexical-text="true">A</span>
                 </li>
-                <li dir="ltr" value="2">
+                <li value="2">
                   <span data-lexical-text="true">x</span>
                 </li>
-                <li dir="ltr" value="3">
+                <li value="3">
                   <span data-lexical-text="true">B</span>
                 </li>
               </ul>
@@ -448,11 +450,11 @@ describe('LexicalListItemNode tests', () => {
               contenteditable="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word;"
               data-lexical-editor="true">
-              <ul>
-                <li dir="ltr" value="1">
+              <ul dir="auto">
+                <li value="1">
                   <span data-lexical-text="true">A</span>
                 </li>
-                <li dir="ltr" value="2">
+                <li value="2">
                   <span data-lexical-text="true">B</span>
                 </li>
               </ul>
@@ -496,18 +498,18 @@ describe('LexicalListItemNode tests', () => {
               contenteditable="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word;"
               data-lexical-editor="true">
-              <ul>
+              <ul dir="auto">
                 <li value="1">
                   <ul>
-                    <li dir="ltr" value="1">
+                    <li value="1">
                       <span data-lexical-text="true">A</span>
                     </li>
                   </ul>
                 </li>
-                <li dir="ltr" value="1">
+                <li value="1">
                   <span data-lexical-text="true">x</span>
                 </li>
-                <li dir="ltr" value="2">
+                <li value="2">
                   <span data-lexical-text="true">B</span>
                 </li>
               </ul>
@@ -524,15 +526,15 @@ describe('LexicalListItemNode tests', () => {
               contenteditable="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word;"
               data-lexical-editor="true">
-              <ul>
+              <ul dir="auto">
                 <li value="1">
                   <ul>
-                    <li dir="ltr" value="1">
+                    <li value="1">
                       <span data-lexical-text="true">A</span>
                     </li>
                   </ul>
                 </li>
-                <li dir="ltr" value="1">
+                <li value="1">
                   <span data-lexical-text="true">B</span>
                 </li>
               </ul>
@@ -576,16 +578,16 @@ describe('LexicalListItemNode tests', () => {
               contenteditable="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word;"
               data-lexical-editor="true">
-              <ul>
-                <li dir="ltr" value="1">
+              <ul dir="auto">
+                <li value="1">
                   <span data-lexical-text="true">A</span>
                 </li>
-                <li dir="ltr" value="2">
+                <li value="2">
                   <span data-lexical-text="true">x</span>
                 </li>
                 <li value="3">
                   <ul>
-                    <li dir="ltr" value="1">
+                    <li value="1">
                       <span data-lexical-text="true">B</span>
                     </li>
                   </ul>
@@ -604,13 +606,13 @@ describe('LexicalListItemNode tests', () => {
               contenteditable="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word;"
               data-lexical-editor="true">
-              <ul>
-                <li dir="ltr" value="1">
+              <ul dir="auto">
+                <li value="1">
                   <span data-lexical-text="true">A</span>
                 </li>
                 <li value="2">
                   <ul>
-                    <li dir="ltr" value="1">
+                    <li value="1">
                       <span data-lexical-text="true">B</span>
                     </li>
                   </ul>
@@ -660,20 +662,20 @@ describe('LexicalListItemNode tests', () => {
               contenteditable="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word;"
               data-lexical-editor="true">
-              <ul>
+              <ul dir="auto">
                 <li value="1">
                   <ul>
-                    <li dir="ltr" value="1">
+                    <li value="1">
                       <span data-lexical-text="true">A</span>
                     </li>
                   </ul>
                 </li>
-                <li dir="ltr" value="1">
+                <li value="1">
                   <span data-lexical-text="true">x</span>
                 </li>
                 <li value="2">
                   <ul>
-                    <li dir="ltr" value="1">
+                    <li value="1">
                       <span data-lexical-text="true">B</span>
                     </li>
                   </ul>
@@ -692,13 +694,13 @@ describe('LexicalListItemNode tests', () => {
               contenteditable="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word;"
               data-lexical-editor="true">
-              <ul>
+              <ul dir="auto">
                 <li value="1">
                   <ul>
-                    <li dir="ltr" value="1">
+                    <li value="1">
                       <span data-lexical-text="true">A</span>
                     </li>
-                    <li dir="ltr" value="2">
+                    <li value="2">
                       <span data-lexical-text="true">B</span>
                     </li>
                   </ul>
@@ -756,27 +758,27 @@ describe('LexicalListItemNode tests', () => {
               contenteditable="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word;"
               data-lexical-editor="true">
-              <ul>
+              <ul dir="auto">
                 <li value="1">
                   <ul>
-                    <li dir="ltr" value="1">
+                    <li value="1">
                       <span data-lexical-text="true">A1</span>
                     </li>
                     <li value="2">
                       <ul>
-                        <li dir="ltr" value="1">
+                        <li value="1">
                           <span data-lexical-text="true">A2</span>
                         </li>
                       </ul>
                     </li>
                   </ul>
                 </li>
-                <li dir="ltr" value="1">
+                <li value="1">
                   <span data-lexical-text="true">x</span>
                 </li>
                 <li value="2">
                   <ul>
-                    <li dir="ltr" value="1">
+                    <li value="1">
                       <span data-lexical-text="true">B</span>
                     </li>
                   </ul>
@@ -795,20 +797,20 @@ describe('LexicalListItemNode tests', () => {
               contenteditable="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word;"
               data-lexical-editor="true">
-              <ul>
+              <ul dir="auto">
                 <li value="1">
                   <ul>
-                    <li dir="ltr" value="1">
+                    <li value="1">
                       <span data-lexical-text="true">A1</span>
                     </li>
                     <li value="2">
                       <ul>
-                        <li dir="ltr" value="1">
+                        <li value="1">
                           <span data-lexical-text="true">A2</span>
                         </li>
                       </ul>
                     </li>
-                    <li dir="ltr" value="2">
+                    <li value="2">
                       <span data-lexical-text="true">B</span>
                     </li>
                   </ul>
@@ -866,27 +868,27 @@ describe('LexicalListItemNode tests', () => {
               contenteditable="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word;"
               data-lexical-editor="true">
-              <ul>
+              <ul dir="auto">
                 <li value="1">
                   <ul>
-                    <li dir="ltr" value="1">
+                    <li value="1">
                       <span data-lexical-text="true">A</span>
                     </li>
                   </ul>
                 </li>
-                <li dir="ltr" value="1">
+                <li value="1">
                   <span data-lexical-text="true">x</span>
                 </li>
                 <li value="2">
                   <ul>
                     <li value="1">
                       <ul>
-                        <li dir="ltr" value="1">
+                        <li value="1">
                           <span data-lexical-text="true">B1</span>
                         </li>
                       </ul>
                     </li>
-                    <li dir="ltr" value="1">
+                    <li value="1">
                       <span data-lexical-text="true">B2</span>
                     </li>
                   </ul>
@@ -905,20 +907,20 @@ describe('LexicalListItemNode tests', () => {
               contenteditable="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word;"
               data-lexical-editor="true">
-              <ul>
+              <ul dir="auto">
                 <li value="1">
                   <ul>
-                    <li dir="ltr" value="1">
+                    <li value="1">
                       <span data-lexical-text="true">A</span>
                     </li>
                     <li value="2">
                       <ul>
-                        <li dir="ltr" value="1">
+                        <li value="1">
                           <span data-lexical-text="true">B1</span>
                         </li>
                       </ul>
                     </li>
-                    <li dir="ltr" value="2">
+                    <li value="2">
                       <span data-lexical-text="true">B2</span>
                     </li>
                   </ul>
@@ -984,34 +986,34 @@ describe('LexicalListItemNode tests', () => {
               contenteditable="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word;"
               data-lexical-editor="true">
-              <ul>
+              <ul dir="auto">
                 <li value="1">
                   <ul>
-                    <li dir="ltr" value="1">
+                    <li value="1">
                       <span data-lexical-text="true">A1</span>
                     </li>
                     <li value="2">
                       <ul>
-                        <li dir="ltr" value="1">
+                        <li value="1">
                           <span data-lexical-text="true">A2</span>
                         </li>
                       </ul>
                     </li>
                   </ul>
                 </li>
-                <li dir="ltr" value="1">
+                <li value="1">
                   <span data-lexical-text="true">x</span>
                 </li>
                 <li value="2">
                   <ul>
                     <li value="1">
                       <ul>
-                        <li dir="ltr" value="1">
+                        <li value="1">
                           <span data-lexical-text="true">B1</span>
                         </li>
                       </ul>
                     </li>
-                    <li dir="ltr" value="1">
+                    <li value="1">
                       <span data-lexical-text="true">B2</span>
                     </li>
                   </ul>
@@ -1030,23 +1032,23 @@ describe('LexicalListItemNode tests', () => {
               contenteditable="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word;"
               data-lexical-editor="true">
-              <ul>
+              <ul dir="auto">
                 <li value="1">
                   <ul>
-                    <li dir="ltr" value="1">
+                    <li value="1">
                       <span data-lexical-text="true">A1</span>
                     </li>
                     <li value="2">
                       <ul>
-                        <li dir="ltr" value="1">
+                        <li value="1">
                           <span data-lexical-text="true">A2</span>
                         </li>
-                        <li dir="ltr" value="2">
+                        <li value="2">
                           <span data-lexical-text="true">B1</span>
                         </li>
                       </ul>
                     </li>
-                    <li dir="ltr" value="2">
+                    <li value="2">
                       <span data-lexical-text="true">B2</span>
                     </li>
                   </ul>
@@ -1090,14 +1092,14 @@ describe('LexicalListItemNode tests', () => {
               contenteditable="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word;"
               data-lexical-editor="true">
-              <ul>
-                <li dir="ltr" value="1">
+              <ul dir="auto">
+                <li value="1">
                   <span data-lexical-text="true">one</span>
                 </li>
-                <li dir="ltr" value="2">
+                <li value="2">
                   <span data-lexical-text="true">two</span>
                 </li>
-                <li dir="ltr" value="3">
+                <li value="3">
                   <span data-lexical-text="true">three</span>
                 </li>
               </ul>
@@ -1120,15 +1122,15 @@ describe('LexicalListItemNode tests', () => {
               contenteditable="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word;"
               data-lexical-editor="true">
-              <ul>
-                <li dir="ltr" value="1">
+              <ul dir="auto">
+                <li value="1">
                   <span data-lexical-text="true">one</span>
                 </li>
                 <li value="2"><br /></li>
-                <li dir="ltr" value="3">
+                <li value="3">
                   <span data-lexical-text="true">two</span>
                 </li>
-                <li dir="ltr" value="4">
+                <li value="4">
                   <span data-lexical-text="true">three</span>
                 </li>
               </ul>
@@ -1151,14 +1153,14 @@ describe('LexicalListItemNode tests', () => {
               contenteditable="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word;"
               data-lexical-editor="true">
-              <ul>
-                <li dir="ltr" value="1">
+              <ul dir="auto">
+                <li value="1">
                   <span data-lexical-text="true">one</span>
                 </li>
-                <li dir="ltr" value="2">
+                <li value="2">
                   <span data-lexical-text="true">two</span>
                 </li>
-                <li dir="ltr" value="3">
+                <li value="3">
                   <span data-lexical-text="true">three</span>
                 </li>
                 <li value="4"><br /></li>
@@ -1182,14 +1184,14 @@ describe('LexicalListItemNode tests', () => {
               contenteditable="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word;"
               data-lexical-editor="true">
-              <ul>
-                <li dir="ltr" value="1">
+              <ul dir="auto">
+                <li value="1">
                   <span data-lexical-text="true">one</span>
                 </li>
-                <li dir="ltr" value="2">
+                <li value="2">
                   <span data-lexical-text="true">two</span>
                 </li>
-                <li dir="ltr" value="3">
+                <li value="3">
                   <span data-lexical-text="true">three</span>
                 </li>
                 <li value="4"><br /></li>
@@ -1214,8 +1216,8 @@ describe('LexicalListItemNode tests', () => {
               contenteditable="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word;"
               data-lexical-editor="true">
-              <ul>
-                <li dir="ltr" value="1">
+              <ul dir="auto">
+                <li value="1">
                   <span data-lexical-text="true">one</span>
                 </li>
               </ul>
@@ -1234,8 +1236,8 @@ describe('LexicalListItemNode tests', () => {
               contenteditable="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word;"
               data-lexical-editor="true">
-              <ul>
-                <li dir="ltr" value="1">
+              <ul dir="auto">
+                <li value="1">
                   <span data-lexical-text="true">one</span>
                 </li>
                 <li value="2"><br /></li>
@@ -1305,14 +1307,14 @@ describe('LexicalListItemNode tests', () => {
         expectHtmlToBeEqual(
           editor.getRootElement()!.innerHTML,
           html`
-            <ul>
+            <ul dir="auto">
               <li value="1">
                 <ul>
                   <li value="1">
                     <ul>
                       <li value="1">
                         <ul>
-                          <li dir="ltr" value="1">
+                          <li value="1">
                             <span data-lexical-text="true">one</span>
                           </li>
                         </ul>
@@ -1321,7 +1323,7 @@ describe('LexicalListItemNode tests', () => {
                   </li>
                 </ul>
               </li>
-              <li dir="ltr" value="1">
+              <li value="1">
                 <span data-lexical-text="true">two</span>
               </li>
             </ul>
@@ -1339,11 +1341,11 @@ describe('LexicalListItemNode tests', () => {
         expectHtmlToBeEqual(
           editor.getRootElement()!.innerHTML,
           html`
-            <ul>
-              <li dir="ltr" value="1">
+            <ul dir="auto">
+              <li value="1">
                 <span data-lexical-text="true">one</span>
               </li>
-              <li dir="ltr" value="2">
+              <li value="2">
                 <span data-lexical-text="true">two</span>
               </li>
             </ul>
@@ -1383,139 +1385,6 @@ describe('LexicalListItemNode tests', () => {
       });
     });
 
-    describe('ListItemNode RTL behavior', () => {
-      let listNode: ListNode;
-      let listItemNode1: ListItemNode;
-      let listItemNode2: ListItemNode;
-
-      beforeEach(async () => {
-        const {editor} = testEnv;
-
-        await editor.update(() => {
-          const root = $getRoot();
-          listNode = new ListNode('bullet', 1);
-          listItemNode1 = new ListItemNode();
-          listItemNode2 = new ListItemNode();
-
-          root.append(listNode);
-          listNode.append(listItemNode1, listItemNode2);
-
-          // Add Arabic text to test RTL
-          listItemNode1.append(new TextNode('مرحبا'));
-          listItemNode2.append(new TextNode('العالم'));
-        });
-      });
-
-      test('list items with RTL content have correct direction in editor', async () => {
-        expectHtmlToBeEqual(
-          testEnv.outerHTML,
-          html`
-            <div
-              contenteditable="true"
-              dir="rtl"
-              style="user-select: text; white-space: pre-wrap; word-break: break-word;"
-              data-lexical-editor="true">
-              <ul dir="rtl">
-                <li dir="rtl" value="1">
-                  <span data-lexical-text="true">مرحبا</span>
-                </li>
-                <li dir="rtl" value="2">
-                  <span data-lexical-text="true">العالم</span>
-                </li>
-              </ul>
-            </div>
-          `,
-        );
-      });
-
-      test('list items preserve RTL direction in exported HTML', async () => {
-        const {editor} = testEnv;
-
-        await editor.update(() => {
-          const exportedHTML = listItemNode1.exportDOM(editor);
-          const element = exportedHTML.element as HTMLElement;
-
-          expect(element.dir).toBe('rtl');
-          expect(element.tagName.toLowerCase()).toBe('li');
-        });
-
-        await editor.update(() => {
-          const exportedHTML = listItemNode2.exportDOM(editor);
-          const element = exportedHTML.element as HTMLElement;
-
-          expect(element.dir).toBe('rtl');
-          expect(element.tagName.toLowerCase()).toBe('li');
-        });
-      });
-
-      test('list items handle mixed LTR and RTL content', async () => {
-        const {editor} = testEnv;
-
-        await editor.update(() => {
-          // Add mixed direction content
-          listItemNode1.clear();
-          listItemNode1.append(new TextNode('Hello مرحبا'));
-        });
-
-        expectHtmlToBeEqual(
-          testEnv.outerHTML,
-          html`
-            <div
-              contenteditable="true"
-              dir="rtl"
-              style="user-select: text; white-space: pre-wrap; word-break: break-word;"
-              data-lexical-editor="true">
-              <ul dir="rtl">
-                <li dir="ltr" value="1">
-                  <span data-lexical-text="true">Hello مرحبا</span>
-                </li>
-                <li dir="rtl" value="2">
-                  <span data-lexical-text="true">العالم</span>
-                </li>
-              </ul>
-            </div>
-          `,
-        );
-      });
-
-      test('nested list items preserve RTL direction', async () => {
-        const {editor} = testEnv;
-
-        await editor.update(() => {
-          const nestedList = new ListNode('bullet', 1);
-          const nestedItem = new ListItemNode();
-          nestedItem.append(new TextNode('فرعي')); // "Sub" in Arabic
-          nestedList.append(nestedItem);
-          listItemNode1.append(nestedList);
-        });
-
-        expectHtmlToBeEqual(
-          testEnv.outerHTML,
-          html`
-            <div
-              contenteditable="true"
-              dir="rtl"
-              style="user-select: text; white-space: pre-wrap; word-break: break-word;"
-              data-lexical-editor="true">
-              <ul dir="rtl">
-                <li dir="rtl" value="1">
-                  <span data-lexical-text="true">مرحبا</span>
-                  <ul dir="rtl">
-                    <li dir="rtl" value="1">
-                      <span data-lexical-text="true">فرعي</span>
-                    </li>
-                  </ul>
-                </li>
-                <li dir="rtl" value="2">
-                  <span data-lexical-text="true">العالم</span>
-                </li>
-              </ul>
-            </div>
-          `,
-        );
-      });
-    });
-
     test('ListItemNode marker style inheritance on indent', async () => {
       const {editor} = testEnv;
 
@@ -1541,6 +1410,85 @@ describe('LexicalListItemNode tests', () => {
         // Check if marker style was inherited
         expect(parentListItem.getTextStyle()).toBe('font-size: 19px;');
       });
+    });
+
+    test('Default: Splitting a list resets numbering to 1 (Backward Compatibility)', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const root = $getRoot();
+        const list = $createListNode('number');
+        const item1 = $createListItemNode();
+        const item2 = $createListItemNode();
+        const emptyItem = $createListItemNode();
+        const item3 = $createListItemNode();
+
+        item1.append($createTextNode('A'));
+        item2.append($createTextNode('B'));
+        // emptyItem has NO text
+        item3.append($createTextNode('C'));
+
+        list.append(item1, item2, emptyItem, item3);
+        root.append(list);
+
+        emptyItem.select();
+      });
+
+      await editor.update(() => {
+        $handleListInsertParagraph();
+      });
+
+      // Expectation: List 1 (A, B) -> Paragraph -> List 2 (C) starting at 1
+      expect(testEnv.container.innerHTML).toBe(
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true">' +
+          '<ol dir="auto">' +
+          '<li value="1"><span data-lexical-text="true">A</span></li>' +
+          '<li value="2"><span data-lexical-text="true">B</span></li>' +
+          '</ol>' +
+          '<p dir="auto"><br></p>' +
+          '<ol dir="auto">' + // Reset to 1 (Default)
+          '<li value="1"><span data-lexical-text="true">C</span></li>' +
+          '</ol>' +
+          '</div>',
+      );
+    });
+
+    test('Option Enabled: Splitting a list preserves numbering (Smart Behavior)', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const root = $getRoot();
+        const list = $createListNode('number');
+        const item1 = $createListItemNode();
+        const item2 = $createListItemNode();
+        const emptyItem = $createListItemNode();
+        const item3 = $createListItemNode();
+
+        item1.append($createTextNode('A'));
+        item2.append($createTextNode('B'));
+        item3.append($createTextNode('C'));
+
+        list.append(item1, item2, emptyItem, item3);
+        root.append(list);
+
+        emptyItem.select();
+      });
+
+      await editor.update(() => {
+        $handleListInsertParagraph(true);
+      });
+
+      // Expectation: List 1 (A, B) -> Paragraph -> List 2 (C) starting at 3
+      expect(testEnv.container.innerHTML).toBe(
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true">' +
+          '<ol dir="auto">' +
+          '<li value="1"><span data-lexical-text="true">A</span></li>' +
+          '<li value="2"><span data-lexical-text="true">B</span></li>' +
+          '</ol>' +
+          '<p dir="auto"><br></p>' +
+          '<ol start="3" dir="auto">' +
+          '<li value="3"><span data-lexical-text="true">C</span></li>' +
+          '</ol>' +
+          '</div>',
+      );
     });
   });
 });

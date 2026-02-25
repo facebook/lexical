@@ -298,9 +298,16 @@ function createTextFormatTransformersIndex(
 
     // Single-char tag (e.g. "*"),
     if (tag.length === 1) {
-      fullMatchRegExpByTag[tag] = new RegExp(
-        `(?<![\\\\${tagRegExp}])(${tagRegExp})((\\\\${tagRegExp})?.*?[^${tagRegExp}\\s](\\\\${tagRegExp})?)((?<!\\\\)|(?<=\\\\\\\\))(${tagRegExp})(?![\\\\${tagRegExp}])`,
-      );
+      if (tag === '`') {
+        // Special handling for backticks - match content with escaped backticks
+        fullMatchRegExpByTag[tag] = new RegExp(
+          `(?<![\\\\\`])(\`)((?:\\\\\`|[^\`])+?)(\`)(?!\`)`,
+        );
+      } else {
+        fullMatchRegExpByTag[tag] = new RegExp(
+          `(?<![\\\\${tagRegExp}])(${tagRegExp})((\\\\${tagRegExp})?.*?[^${tagRegExp}\\s](\\\\${tagRegExp})?)((?<!\\\\)|(?<=\\\\\\\\))(${tagRegExp})(?![\\\\${tagRegExp}])`,
+        );
+      }
     } else {
       // Multi‐char tags (e.g. "**")
       fullMatchRegExpByTag[tag] = new RegExp(

@@ -20,7 +20,11 @@ import invariant from 'shared/invariant';
 import {$getRoot, $getSelection, TextNode} from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
 import {cloneEditorState, createEmptyEditorState} from './LexicalEditorState';
-import {addRootElementEvents, removeRootElementEvents} from './LexicalEvents';
+import {
+  addRootElementEvents,
+  registerDefaultCommandHandlers,
+  removeRootElementEvents,
+} from './LexicalEvents';
 import {flushRootMutations, initMutationObserver} from './LexicalMutations';
 import {LexicalNode} from './LexicalNode';
 import {createSharedNodeState, SharedNodeState} from './LexicalNodeState';
@@ -49,7 +53,6 @@ import {
   markNodesWithTypesAsDirty,
 } from './LexicalUtils';
 import {ArtificialNode__DO_NOT_USE} from './nodes/ArtificialNode';
-import {$isDecoratorNode, DecoratorNode} from './nodes/LexicalDecoratorNode';
 import {LineBreakNode} from './nodes/LexicalLineBreakNode';
 import {ParagraphNode} from './nodes/LexicalParagraphNode';
 import {RootNode} from './nodes/LexicalRootNode';
@@ -64,11 +67,10 @@ export type KlassConstructor<Cls extends GenericConstructor<any>> =
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type GenericConstructor<T> = new (...args: any[]) => T;
 
-export type Klass<T extends LexicalNode> = InstanceType<
-  T['constructor']
-> extends T
-  ? T['constructor']
-  : GenericConstructor<T> & T['constructor'];
+export type Klass<T extends LexicalNode> =
+  InstanceType<T['constructor']> extends T
+    ? T['constructor']
+    : GenericConstructor<T> & T['constructor'];
 
 export type EditorThemeClassName = string;
 
@@ -496,6 +498,40 @@ function initializeConversionCache(
   return conversionCache;
 }
 
+/** @internal */
+export function getTransformSetFromKlass(
+  klass: KlassConstructor<typeof LexicalNode>,
+): Set<Transform<LexicalNode>> {
+  const transforms = new Set<Transform<LexicalNode>>();
+  const staticTransforms = new Set<(typeof klass)['transform']>();
+  let currentKlass: undefined | typeof klass = klass;
+  while (currentKlass) {
+    const {ownNodeConfig} = getStaticNodeConfig(currentKlass);
+    const staticTransform = currentKlass.transform;
+    if (!staticTransforms.has(staticTransform)) {
+      staticTransforms.add(staticTransform);
+      const transform = currentKlass.transform();
+      if (transform) {
+        transforms.add(transform);
+      }
+    }
+    if (ownNodeConfig) {
+      const $transform = ownNodeConfig.$transform;
+      if ($transform) {
+        transforms.add($transform);
+      }
+      currentKlass = ownNodeConfig.extends;
+    } else {
+      const parent = Object.getPrototypeOf(currentKlass);
+      currentKlass =
+        parent.prototype instanceof LexicalNode && parent !== LexicalNode
+          ? parent
+          : undefined;
+    }
+  }
+  return transforms;
+}
+
 /**
  * Creates a new LexicalEditor attached to a single contentEditable (provided in the config). This is
  * the lowest-level initialization API for a LexicalEditor. If you're using React or another framework,
@@ -543,7 +579,9 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
         replace = options.with;
         replaceWithKlass = options.withKlass || null;
       }
-      const {ownNodeConfig} = getStaticNodeConfig(klass);
+      // For the side-effect of filling in the static methods
+      void getStaticNodeConfig(klass);
+
       // Ensure custom nodes implement required methods and replaceWithKlass is instance of base klass.
       if (__DEV__) {
         // ArtificialNode__DO_NOT_USE can get renamed, so we use the type
@@ -572,7 +610,6 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
           // by mocking its static getType
           klass !== LexicalNode
         ) {
-          const proto = klass.prototype;
           (['getType', 'clone'] as const).forEach((method) => {
             if (!hasOwnStaticMethod(klass, method)) {
               console.warn(`${name} must implement static "${method}" method`);
@@ -586,13 +623,6 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
               `${name} should implement "importDOM" if using a custom "exportDOM" method to ensure HTML serialization (important for copy & paste) works as expected`,
             );
           }
-          if ($isDecoratorNode(proto)) {
-            if (proto.decorate === DecoratorNode.prototype.decorate) {
-              console.warn(
-                `${proto.constructor.name} must implement "decorate" method`,
-              );
-            }
-          }
           if (!hasOwnStaticMethod(klass, 'importJSON')) {
             console.warn(
               `${name} should implement "importJSON" method to ensure JSON and default HTML serialization works as expected`,
@@ -601,14 +631,7 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
         }
       }
       const type = klass.getType();
-      const transform = klass.transform();
-      const transforms = new Set<Transform<LexicalNode>>();
-      if (ownNodeConfig && ownNodeConfig.$transform) {
-        transforms.add(ownNodeConfig.$transform);
-      }
-      if (transform !== null) {
-        transforms.add(transform);
-      }
+      const transforms = getTransformSetFromKlass(klass);
       registeredNodes.set(type, {
         exportDOM: html && html.export ? html.export.get(klass) : undefined,
         klass,
@@ -639,11 +662,14 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
     editor._dirtyType = FULL_RECONCILE;
   }
 
+  registerDefaultCommandHandlers(editor);
+
   return editor;
 }
 
 export class LexicalEditor {
-  ['constructor']!: KlassConstructor<typeof LexicalEditor>;
+  /** @internal */
+  declare ['constructor']: KlassConstructor<typeof LexicalEditor>;
 
   /** The version with build identifiers for this editor (since 0.17.1) */
   static version: string | undefined;

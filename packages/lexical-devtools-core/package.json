@@ -8,16 +8,16 @@
     "utils"
   ],
   "license": "MIT",
-  "version": "0.33.1",
+  "version": "0.40.0",
   "main": "LexicalDevtoolsCore.js",
   "types": "index.d.ts",
   "dependencies": {
-    "@lexical/html": "0.33.1",
-    "@lexical/link": "0.33.1",
-    "@lexical/mark": "0.33.1",
-    "@lexical/table": "0.33.1",
-    "@lexical/utils": "0.33.1",
-    "lexical": "0.33.1"
+    "@lexical/html": "workspace:*",
+    "@lexical/link": "workspace:*",
+    "@lexical/mark": "workspace:*",
+    "@lexical/table": "workspace:*",
+    "@lexical/utils": "workspace:*",
+    "lexical": "workspace:*"
   },
   "peerDependencies": {
     "react": ">=17.x",
@@ -25,7 +25,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/facebook/lexical",
+    "url": "git+https://github.com/facebook/lexical.git",
     "directory": "packages/lexical-devtools-core"
   },
   "module": "LexicalDevtoolsCore.mjs",

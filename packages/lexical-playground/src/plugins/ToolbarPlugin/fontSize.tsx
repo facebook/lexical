@@ -15,6 +15,7 @@ import {
   MAX_ALLOWED_FONT_SIZE,
   MIN_ALLOWED_FONT_SIZE,
 } from '../../context/ToolbarContext';
+import {isKeyboardInput} from '../../utils/focusUtils';
 import {SHORTCUTS} from '../ShortcutsPlugin/shortcuts';
 import {
   updateFontSize,
@@ -22,15 +23,41 @@ import {
   UpdateFontSizeType,
 } from './utils';
 
-export function parseAllowedFontSize(input: string): string {
-  const match = input.match(/^(\d+(?:\.\d+)?)px$/);
-  if (match) {
-    const n = Number(match[1]);
-    if (n >= MIN_ALLOWED_FONT_SIZE && n <= MAX_ALLOWED_FONT_SIZE) {
-      return input;
-    }
+function parseFontSize(input: string): [number, string] | null {
+  const match = input.match(/^(\d+(?:\.\d+)?)(px|pt)$/);
+  return match ? [Number(match[1]), match[2]] : null;
+}
+
+function normalizeToPx(fontSize: number, unit: string): number {
+  return unit === 'pt' ? Math.round((fontSize * 4) / 3) : fontSize;
+}
+
+function isValidFontSize(fontSizePx: number): boolean {
+  return (
+    fontSizePx >= MIN_ALLOWED_FONT_SIZE && fontSizePx <= MAX_ALLOWED_FONT_SIZE
+  );
+}
+
+export function parseFontSizeForToolbar(input: string): string {
+  const parsed = parseFontSize(input);
+  if (!parsed) {
+    return '';
   }
-  return '';
+
+  const [fontSize, unit] = parsed;
+  const fontSizePx = normalizeToPx(fontSize, unit);
+  return `${fontSizePx}px`;
+}
+
+export function parseAllowedFontSize(input: string): string {
+  const parsed = parseFontSize(input);
+  if (!parsed) {
+    return '';
+  }
+
+  const [fontSize, unit] = parsed;
+  const fontSizePx = normalizeToPx(fontSize, unit);
+  return isValidFontSize(fontSizePx) ? input : '';
 }
 
 export default function FontSize({
@@ -44,6 +71,7 @@ export default function FontSize({
 }) {
   const [inputValue, setInputValue] = React.useState<string>(selectionFontSize);
   const [inputChangeFlag, setInputChangeFlag] = React.useState<boolean>(false);
+  const [isMouseMode, setIsMouseMode] = React.useState(false);
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     const inputValueNumber = Number(inputValue);
@@ -60,18 +88,27 @@ export default function FontSize({
     if (e.key === 'Enter' || e.key === 'Escape') {
       e.preventDefault();
 
-      updateFontSizeByInputValue(inputValueNumber);
+      updateFontSizeByInputValue(inputValueNumber, !isMouseMode);
     }
   };
 
   const handleInputBlur = () => {
+    setIsMouseMode(false);
+
     if (inputValue !== '' && inputChangeFlag) {
       const inputValueNumber = Number(inputValue);
       updateFontSizeByInputValue(inputValueNumber);
     }
   };
 
-  const updateFontSizeByInputValue = (inputValueNumber: number) => {
+  const handleClick = (e: React.MouseEvent) => {
+    setIsMouseMode(true);
+  };
+
+  const updateFontSizeByInputValue = (
+    inputValueNumber: number,
+    skipRefocus: boolean = false,
+  ) => {
     let updatedFontSize = inputValueNumber;
     if (inputValueNumber > MAX_ALLOWED_FONT_SIZE) {
       updatedFontSize = MAX_ALLOWED_FONT_SIZE;
@@ -80,7 +117,12 @@ export default function FontSize({
     }
 
     setInputValue(String(updatedFontSize));
-    updateFontSizeInSelection(editor, String(updatedFontSize) + 'px', null);
+    updateFontSizeInSelection(
+      editor,
+      String(updatedFontSize) + 'px',
+      null,
+      skipRefocus,
+    );
     setInputChangeFlag(false);
   };
 
@@ -97,9 +139,14 @@ export default function FontSize({
           (selectionFontSize !== '' &&
             Number(inputValue) <= MIN_ALLOWED_FONT_SIZE)
         }
-        onClick={() =>
-          updateFontSize(editor, UpdateFontSizeType.decrement, inputValue)
-        }
+        onClick={(e) => {
+          updateFontSize(
+            editor,
+            UpdateFontSizeType.decrement,
+            inputValue,
+            isKeyboardInput(e),
+          );
+        }}
         className="toolbar-item font-decrement"
         aria-label="Decrease font size"
         title={`Decrease font size (${SHORTCUTS.DECREASE_FONT_SIZE})`}>
@@ -115,6 +162,7 @@ export default function FontSize({
         min={MIN_ALLOWED_FONT_SIZE}
         max={MAX_ALLOWED_FONT_SIZE}
         onChange={(e) => setInputValue(e.target.value)}
+        onClick={handleClick}
         onKeyDown={handleKeyPress}
         onBlur={handleInputBlur}
       />
@@ -126,9 +174,14 @@ export default function FontSize({
           (selectionFontSize !== '' &&
             Number(inputValue) >= MAX_ALLOWED_FONT_SIZE)
         }
-        onClick={() =>
-          updateFontSize(editor, UpdateFontSizeType.increment, inputValue)
-        }
+        onClick={(e) => {
+          updateFontSize(
+            editor,
+            UpdateFontSizeType.increment,
+            inputValue,
+            isKeyboardInput(e),
+          );
+        }}
         className="toolbar-item font-increment"
         aria-label="Increase font size"
         title={`Increase font size (${SHORTCUTS.INCREASE_FONT_SIZE})`}>

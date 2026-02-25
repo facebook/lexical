@@ -315,7 +315,7 @@ export function $insertTableRowAtNode(
     for (let i = 0; i < columnCount; i++) {
       const {cell, startRow} = insertAfterEndRowMap[i];
       if (startRow + cell.__rowSpan - 1 <= insertAfterEndRow) {
-        const currentCell = insertAfterEndRowMap[i].cell as TableCellNode;
+        const currentCell = insertAfterEndRowMap[i].cell;
         const currentCellHeaderState = currentCell.__headerState;
 
         const headerState = getHeaderState(
@@ -344,7 +344,7 @@ export function $insertTableRowAtNode(
     for (let i = 0; i < columnCount; i++) {
       const {cell, startRow} = insertBeforeStartRowMap[i];
       if (startRow === insertBeforeStartRow) {
-        const currentCell = insertBeforeStartRowMap[i].cell as TableCellNode;
+        const currentCell = insertBeforeStartRowMap[i].cell;
         const currentCellHeaderState = currentCell.__headerState;
 
         const headerState = getHeaderState(
@@ -523,10 +523,8 @@ export function $insertTableColumnAtNode(
     }
     const rowMap = gridMap[i];
 
-    const currentCellHeaderState = (
-      rowMap[insertAfterColumn < 0 ? 0 : insertAfterColumn]
-        .cell as TableCellNode
-    ).__headerState;
+    const currentCellHeaderState =
+      rowMap[insertAfterColumn < 0 ? 0 : insertAfterColumn].cell.__headerState;
 
     const headerState = getHeaderState(
       currentCellHeaderState,
@@ -1253,6 +1251,82 @@ export function $computeTableCellRectBoundary(
     minColumn,
     minRow,
   };
+}
+
+/**
+ * Checks if the table does not have any merged cells.
+ *
+ * @param table Table to check for if it has any merged cells.
+ * @returns True if the table does not have any merged cells, false otherwise.
+ */
+export function $isSimpleTable(table: TableNode): boolean {
+  const rows = table.getChildren();
+  let columns: null | number = null;
+  for (const row of rows) {
+    if (!$isTableRowNode(row)) {
+      return false;
+    }
+    if (columns === null) {
+      columns = row.getChildrenSize();
+    }
+    if (row.getChildrenSize() !== columns) {
+      return false;
+    }
+    const cells = row.getChildren();
+    for (const cell of cells) {
+      if (
+        !$isTableCellNode(cell) ||
+        cell.getRowSpan() !== 1 ||
+        cell.getColSpan() !== 1
+      ) {
+        return false;
+      }
+    }
+  }
+  return (columns || 0) > 0;
+}
+
+/**
+ * Moves a column from one position to another within a simple (non-merged) table.
+ *
+ * @param tableNode The table node to modify.
+ * @param originColumn The index of the column to move.
+ * @param targetColumn The index to move the column to.
+ */
+export function $moveTableColumn(
+  tableNode: TableNode,
+  originColumn: number,
+  targetColumn: number,
+): void {
+  if (originColumn === targetColumn) {
+    return;
+  }
+  const columnCount = tableNode.getColumnCount();
+  if (
+    originColumn < 0 ||
+    originColumn >= columnCount ||
+    targetColumn < 0 ||
+    targetColumn >= columnCount
+  ) {
+    return;
+  }
+  if (!$isSimpleTable(tableNode)) {
+    return;
+  }
+  const rows = tableNode.getChildren().filter($isTableRowNode);
+  rows.forEach((row) => {
+    const cells = row.getChildren();
+    const [moved] = cells.splice(originColumn, 1);
+    cells.splice(targetColumn, 0, moved);
+    row.splice(0, cells.length, cells);
+  });
+  const colWidths = tableNode.getColWidths();
+  if (colWidths && colWidths.length === columnCount) {
+    const newWidths = [...colWidths];
+    const [movedWidth] = newWidths.splice(originColumn, 1);
+    newWidths.splice(targetColumn, 0, movedWidth);
+    tableNode.setColWidths(newWidths);
+  }
 }
 
 export function $getTableCellNodeRect(tableCellNode: TableCellNode): {

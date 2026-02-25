@@ -13,7 +13,7 @@ const fs = require('fs-extra');
 const ErrorMap = require('./ErrorMap');
 const evalToString = require('./evalToString');
 const helperModuleImports = require('@babel/helper-module-imports');
-const prettier = require('prettier');
+const prettier = require('@prettier/sync');
 
 /** @type {Map<string, ErrorMap>} */
 const errorMaps = new Map();
@@ -29,7 +29,7 @@ function getErrorMap(filepath) {
   let errorMap = errorMaps.get(filepath);
   if (!errorMap) {
     const prettierConfig = {
-      ...(prettier.resolveConfig.sync('./') || {}),
+      ...(prettier.resolveConfig(__filename) || {}),
       filepath,
     };
     errorMap = new ErrorMap(fs.readJsonSync(filepath), (newErrorMap) =>
@@ -55,18 +55,20 @@ const invariantExpressions = [
     dev: 'formatDevErrorMessage',
     name: 'invariant',
     prod: 'formatProdErrorMessage',
+    prodNoCode: 'formatDevErrorMessage',
   },
   {
     dev: 'formatDevErrorMessage',
     name: 'devInvariant',
     prod: 'formatProdWarningMessage',
+    prodNoCode: 'formatDevWarningMessage',
   },
 ];
 
 /**
  * @param {import('@babel/core')} babel
  * @param {Partial<TransformErrorMessagesOptions>} opts
- * @returns {import('@babel/core').PluginObj}
+ * @returns {Promise<import('@babel/core').PluginObj>}
  */
 module.exports = function (babel, opts) {
   const t = babel.types;
@@ -79,7 +81,7 @@ module.exports = function (babel, opts) {
         const node = path.node;
         const {extractCodes, noMinify} =
           /** @type Partial<TransformErrorMessagesOptions> */ (file.opts);
-        for (const {name, dev, prod} of invariantExpressions) {
+        for (const {name, dev, prod, prodNoCode} of invariantExpressions) {
           if (path.get('callee').isIdentifier({name})) {
             // Turns this code:
             //
@@ -137,9 +139,11 @@ module.exports = function (babel, opts) {
               //   if (!condition) {
               //     formatDevErrorMessage(`A ${adj} message that contains ${noun}`);
               //   }
+              const moduleName =
+                prodErrorId === undefined && !noMinify ? prodNoCode : dev;
               const formatDevErrorMessageIdentifier =
-                helperModuleImports.addDefault(path, `shared/${dev}`, {
-                  nameHint: dev,
+                helperModuleImports.addDefault(path, `shared/${moduleName}`, {
+                  nameHint: moduleName,
                 });
               callExpression = t.callExpression(
                 formatDevErrorMessageIdentifier,

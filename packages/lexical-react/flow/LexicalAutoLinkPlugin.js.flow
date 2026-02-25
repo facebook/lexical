@@ -7,24 +7,10 @@
  * @flow strict
  */
 
-import type {LinkAttributes} from '@lexical/link';
-
-type ChangeHandler = (url: string | null, prevUrl: string | null) => void;
-
-type LinkMatcherResult = {
-  attributes?: LinkAttributes,
-  index: number,
-  length: number,
-  text: string,
-  url: string,
-};
-
-export type LinkMatcher = (text: string) => LinkMatcherResult | null;
-
-declare export function createLinkMatcherWithRegExp(
-  regExp: RegExp,
-  urlTransformer?: (text: string) => string,
-): LinkMatcher;
+import type {LinkAttributes, ChangeHandler, LinkMatcher} from '@lexical/link';
+import {createLinkMatcherWithRegExp} from '@lexical/link';
+export {createLinkMatcherWithRegExp};
+export type {ChangeHandler, LinkMatcher};
 
 declare export function AutoLinkPlugin(props: {
   matchers: Array<LinkMatcher>,

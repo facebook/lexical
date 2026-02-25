@@ -42,7 +42,7 @@ const config = {
   },
   webServer: IS_CI
     ? {
-        command: 'npm run start-test-server',
+        command: 'pnpm run start-test-server',
         port: 4000,
         reuseExistingServer: true,
         timeout: 120 * 1000,

@@ -20,6 +20,7 @@ import {
   ParagraphNode,
   RangeSelection,
 } from 'lexical';
+import {describe, expect, test} from 'vitest';
 
 describe('HTML', () => {
   type Input = Array<{

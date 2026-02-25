@@ -28,55 +28,53 @@ test.describe('Autocomplete', () => {
   test.beforeEach(({isCollab, page}) =>
     initialize({isAutocomplete: true, isCollab, page}),
   );
-  test('Can autocomplete a word', async ({page, isPlainText}) => {
-    await focusEditor(page);
-    await page.keyboard.type('Sort by alpha');
-    await sleep(500);
-    await assertHTML(
-      page,
-      html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">Sort by alpha</span>
-          <span
-            class="PlaygroundEditorTheme__autocomplete"
-            style="font-size: 15px"
-            data-lexical-text="true">
-            betical (TAB)
-          </span>
-        </p>
-      `,
-      html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">Sort by alpha</span>
-          <span
-            class="PlaygroundEditorTheme__autocomplete"
-            style="font-size: 15px; display: none"
-            data-lexical-text="true">
-            betical (TAB)
-          </span>
-        </p>
-      `,
-    );
-    await page.keyboard.press('Tab');
-    await page.keyboard.type(' order:');
-    await assertHTML(
-      page,
-      html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">Sort by alpha</span>
-          <span style="font-size: 15px" data-lexical-text="true">
-            betical order:
-          </span>
-        </p>
-      `,
-    );
-  });
+  test(
+    'Can autocomplete a word',
+    {tag: '@flaky'},
+    async ({page, isPlainText}) => {
+      await focusEditor(page);
+      await page.keyboard.type('Sort by alpha');
+      await sleep(500);
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">Sort by alpha</span>
+            <span
+              class="PlaygroundEditorTheme__autocomplete"
+              style="font-size: 15px"
+              data-lexical-text="true">
+              betical (TAB)
+            </span>
+          </p>
+        `,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">Sort by alpha</span>
+            <span
+              class="PlaygroundEditorTheme__autocomplete"
+              style="font-size: 15px; display: none"
+              data-lexical-text="true">
+              betical (TAB)
+            </span>
+          </p>
+        `,
+      );
+      await page.keyboard.press('Tab');
+      await page.keyboard.type(' order:');
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">Sort by alpha</span>
+            <span style="font-size: 15px" data-lexical-text="true">
+              betical order:
+            </span>
+          </p>
+        `,
+      );
+    },
+  );
 
   test('Can autocomplete in the same format as the original text', async ({
     page,
@@ -96,9 +94,7 @@ test.describe('Autocomplete', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <strong
             class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
             style="font-size: 17px;"
@@ -114,9 +110,7 @@ test.describe('Autocomplete', () => {
         </p>
       `,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <strong
             class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
             style="font-size: 17px;"
@@ -146,9 +140,7 @@ test.describe('Autocomplete', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <strong
             class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
             style="font-size: 17px;"
@@ -187,9 +179,7 @@ test.describe('Autocomplete', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <strong
             class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
             style="font-size: 17px;"
@@ -205,9 +195,7 @@ test.describe('Autocomplete', () => {
         </p>
       `,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <strong
             class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
             style="font-size: 17px;"
@@ -229,9 +217,7 @@ test.describe('Autocomplete', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <strong
             class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
             style="font-size: 17px;"
@@ -247,9 +233,7 @@ test.describe('Autocomplete', () => {
         </p>
       `,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <strong
             class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
             style="font-size: 17px;"
@@ -271,9 +255,7 @@ test.describe('Autocomplete', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <strong
             class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
             style="font-size: 17px;"
@@ -289,9 +271,7 @@ test.describe('Autocomplete', () => {
         </p>
       `,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <strong
             class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
             style="font-size: 17px;"

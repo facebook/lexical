@@ -21,6 +21,7 @@ import {
   $createTestInlineElementNode,
   initializeUnitTest,
 } from 'lexical/src/__tests__/utils';
+import {beforeEach, describe, expect, test} from 'vitest';
 
 describe('LexicalMarkNode tests', () => {
   initializeUnitTest((testEnv) => {

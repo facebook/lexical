@@ -53,9 +53,25 @@ export const SKIP_SCROLL_INTO_VIEW_TAG = 'skip-scroll-into-view';
 export const SKIP_DOM_SELECTION_TAG = 'skip-dom-selection';
 
 /**
+ * Indicates that after changing the selection, the editor should not focus itself
+ * This tag is ignored if {@link SKIP_DOM_SELECTION_TAG} is used
+ */
+export const SKIP_SELECTION_FOCUS_TAG = 'skip-selection-focus';
+
+/**
  * The update was triggered by editor.focus()
  */
 export const FOCUS_TAG = 'focus';
+
+/**
+ * The update was triggered by composition-start
+ */
+export const COMPOSITION_START_TAG = 'composition-start';
+
+/**
+ * The update was triggered by composition-end
+ */
+export const COMPOSITION_END_TAG = 'composition-end';
 
 /**
  * The set of known update tags to help with TypeScript suggestions.
@@ -70,5 +86,6 @@ export type UpdateTag =
   | typeof SKIP_COLLAB_TAG
   | typeof SKIP_DOM_SELECTION_TAG
   | typeof SKIP_SCROLL_INTO_VIEW_TAG
-  // eslint-disable-next-line @typescript-eslint/ban-types
+  | typeof COMPOSITION_START_TAG
+  | typeof COMPOSITION_END_TAG
   | (string & {});

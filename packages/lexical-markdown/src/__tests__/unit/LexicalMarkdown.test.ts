@@ -409,17 +409,14 @@ describe('Markdown', () => {
     {
       html: '<p><b><strong style="white-space: pre-wrap;">Hello </strong></b><s><b><strong style="white-space: pre-wrap;">world</strong></b></s><span style="white-space: pre-wrap;">!</span></p>',
       md: '**Hello ~~world~~**!',
-      mdAfterExport: '**Hello ~~world~~**!',
     },
     {
       html: '<p><s><b><strong style="white-space: pre-wrap;">Hello </strong></b></s><s><i><b><strong style="white-space: pre-wrap;">world</strong></b></i></s><s><span style="white-space: pre-wrap;">!</span></s></p>',
       md: '**~~Hello *world*~~**~~!~~',
-      mdAfterExport: '**~~Hello *world*~~**~~!~~',
     },
     {
       html: '<p><i><em style="white-space: pre-wrap;">Hello </em></i><i><b><strong style="white-space: pre-wrap;">world</strong></b></i><i><em style="white-space: pre-wrap;">!</em></i></p>',
       md: '*Hello **world**!*',
-      mdAfterExport: '*Hello **world**!*',
     },
     {
       html: '<p><span style="white-space: pre-wrap;">hello world</span></p>',
@@ -720,7 +717,6 @@ describe('Markdown', () => {
     {
       html: '<p><a href="https://lexical.dev"><b><strong style="white-space: pre-wrap;">link</strong></b></a><b><strong style="white-space: pre-wrap;">text</strong></b></p>',
       md: '[**link**](https://lexical.dev)**text**',
-      mdAfterExport: '[**link**](https://lexical.dev)**text**',
     },
     {
       html: '<p><b><strong style="white-space: pre-wrap;">text </strong></b><a href="https://lexical.dev"><b><strong style="white-space: pre-wrap;">link</strong></b></a></p>',
@@ -749,7 +745,6 @@ describe('Markdown', () => {
     {
       html: '<p><i><em style="white-space: pre-wrap;">a </em></i><i><code spellcheck="false" style="white-space: pre-wrap;"><em>*</em></code></i><i><em style="white-space: pre-wrap;"> b </em></i><i><code spellcheck="false" style="white-space: pre-wrap;"><em>x</em></code></i></p>',
       md: '*a `*` b `x`*',
-      mdAfterExport: '*a `*` b `x`*',
     },
     {
       html: '<p><span style="white-space: pre-wrap;">_foo_bar</span></p>',

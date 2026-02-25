@@ -212,19 +212,6 @@ function exportTextFormat(
   // and satisfies CommonMark flanking rules by ensuring tags wrap text, not spaces.
   const isWhitespaceOnly = /^\s*$/.test(textContent);
 
-  const checkHasFormat = (n: TextNode | null, f: TextFormatType) => {
-    if (!hasFormat(n, f)) {
-      return false;
-    }
-    if (f === 'code') {
-      return true;
-    }
-    if (n && /^\s*$/.test(n.getTextContent())) {
-      return false;
-    }
-    return true;
-  };
-
   let output = textContent;
   if (!node.hasFormat('code')) {
     // Escape any markdown characters in the text content
@@ -340,4 +327,17 @@ function hasFormat(
   format: TextFormatType,
 ): boolean {
   return $isTextNode(node) && node.hasFormat(format);
+}
+
+function checkHasFormat(n: TextNode | null, f: TextFormatType): boolean {
+  if (!hasFormat(n, f)) {
+    return false;
+  }
+  if (f === 'code') {
+    return true;
+  }
+  if (n && /^\s*$/.test(n.getTextContent())) {
+    return false;
+  }
+  return true;
 }

@@ -16,22 +16,31 @@ import type {
   LexicalUpdateJSON,
   NodeKey,
   Point,
+  PointCaret,
+  PointType,
   RangeSelection,
   SerializedElementNode,
 } from 'lexical';
 
 import {
   $findMatchingParent,
+  $insertNodeToNearestRootAtCaret,
   addClassNamesToElement,
   isHTMLAnchorElement,
 } from '@lexical/utils';
 import {
   $applyNodeReplacement,
+  $caretFromPoint,
+  $copyNode,
+  $getChildCaret,
   $getSelection,
   $isElementNode,
   $isNodeSelection,
   $isRangeSelection,
+  $normalizeCaret,
   $normalizeSelection__EXPERIMENTAL,
+  $rewindSiblingCaret,
+  $setPointFromCaret,
   $setSelection,
   createCommand,
   ElementNode,
@@ -283,6 +292,66 @@ export class LinkNode extends ElementNode {
     return (
       this.__url.startsWith('https://') || this.__url.startsWith('http://')
     );
+  }
+}
+
+type CaretPair = [PointCaret<'next'>, PointCaret<'previous'>];
+
+function $saveCaretPair(point: PointType): CaretPair {
+  const next = $caretFromPoint(point, 'next');
+  return [next, next.getFlipped()];
+}
+
+function $restoreCaretPair(point: PointType, pair: CaretPair): void {
+  for (const caret of pair) {
+    if (caret.origin.isAttached()) {
+      const normalized = $normalizeCaret(caret);
+      $setPointFromCaret(point, normalized);
+      return;
+    }
+  }
+}
+
+/**
+ * Extracts block-level children from a LinkNode, splitting
+ * ancestor nodes as needed to maintain a valid document structure.
+ * @param link - The LinkNode to normalize
+ */
+export function $linkNodeTransform(link: LinkNode): void {
+  const selection = $getSelection();
+  let anchorPair: CaretPair | null = null;
+  let focusPair: CaretPair | null = null;
+  if ($isRangeSelection(selection)) {
+    anchorPair = $saveCaretPair(selection.anchor);
+    focusPair = $saveCaretPair(selection.focus);
+  }
+
+  for (const caret of $getChildCaret(link, 'next')) {
+    const node = caret.origin;
+    if ($isElementNode(node) && !node.isInline()) {
+      const blockChildren = node.getChildren();
+      if (blockChildren.length > 0) {
+        const innerLink = $copyNode(link);
+        innerLink.append(...blockChildren);
+        node.append(innerLink);
+      }
+      $insertNodeToNearestRootAtCaret(node, $rewindSiblingCaret(caret), {
+        $shouldSplit: () => false,
+      });
+    }
+  }
+  if (link.isEmpty()) {
+    const parent = link.getParent();
+    link.remove();
+    if (parent && parent.isEmpty()) {
+      parent.remove();
+    }
+  }
+
+  if ($isRangeSelection(selection)) {
+    $restoreCaretPair(selection.anchor, anchorPair!);
+    $restoreCaretPair(selection.focus, focusPair!);
+    $normalizeSelection__EXPERIMENTAL(selection);
   }
 }
 

@@ -6,16 +6,22 @@
  *
  */
 
+import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
 import {
   $createLinkNode,
   $isLinkNode,
   $toggleLink,
   formatUrl,
+  LinkExtension,
   LinkNode,
   SerializedLinkNode,
 } from '@lexical/link';
 import {$createMarkNode, $isMarkNode} from '@lexical/mark';
-import {$createHeadingNode} from '@lexical/rich-text';
+import {
+  $createHeadingNode,
+  $isHeadingNode,
+  RichTextExtension,
+} from '@lexical/rich-text';
 import {
   $createLineBreakNode,
   $createParagraphNode,
@@ -25,6 +31,7 @@ import {
   $getRoot,
   $getSelection,
   $isLineBreakNode,
+  $isParagraphNode,
   $isRangeSelection,
   $isTextNode,
   $selectAll,
@@ -34,7 +41,7 @@ import {
   SerializedParagraphNode,
 } from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
-import {describe, expect, it, test} from 'vitest';
+import {assert, describe, expect, it, test} from 'vitest';
 
 const editorConfig = Object.freeze({
   namespace: '',
@@ -882,5 +889,381 @@ describe('formatUrl', () => {
     expect(formatUrl('subdomain.example.com/path')).toBe(
       'https://subdomain.example.com/path',
     );
+  });
+});
+
+describe('LinkNode transform (Regression #8083)', () => {
+  const transformExtension = defineExtension({
+    dependencies: [LinkExtension, RichTextExtension],
+    name: '[test-link-transform]',
+  });
+
+  test('extracts block child (HeadingNode) from link', () => {
+    const editor = buildEditorFromExtensions(transformExtension);
+    let textKey: string;
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const text = $createTextNode('Lexical');
+        textKey = text.getKey();
+        const heading = $createHeadingNode('h1');
+        heading.append(text);
+        const link = $createLinkNode('https://lexical.dev');
+        link.append(heading);
+        const paragraph = $createParagraphNode();
+        paragraph.append(link);
+        root.clear().append(paragraph);
+        text.select(3, 3);
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      const root = $getRoot();
+      const children = root.getChildren();
+      expect(children.length).toBe(1);
+      const heading = children[0];
+      assert($isHeadingNode(heading), 'First child must be a HeadingNode');
+      expect(heading.getChildrenSize()).toBe(1);
+      const headingChild = heading.getFirstChild();
+      assert($isLinkNode(headingChild), 'Heading child must be a LinkNode');
+      expect(headingChild.getTextContent()).toBe('Lexical');
+      const selection = $getSelection();
+      assert(
+        $isRangeSelection(selection),
+        'Selection must be a RangeSelection',
+      );
+      expect(selection.anchor.type).toBe('text');
+      expect(selection.anchor.key).toBe(textKey);
+      expect(selection.anchor.offset).toBe(3);
+    });
+  });
+
+  test('extracts block child (ParagraphNode) from link', () => {
+    const editor = buildEditorFromExtensions(transformExtension);
+    let textKey: string;
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const text = $createTextNode('Lexical');
+        textKey = text.getKey();
+        const innerParagraph = $createParagraphNode();
+        innerParagraph.append(text);
+        const link = $createLinkNode('https://lexical.dev');
+        link.append(innerParagraph);
+        const outerParagraph = $createParagraphNode();
+        outerParagraph.append(link);
+        root.clear().append(outerParagraph);
+        text.select(0, 7);
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      const root = $getRoot();
+      const children = root.getChildren();
+      expect(children.length).toBe(1);
+      const para = children[0];
+      assert($isParagraphNode(para), 'First child must be a ParagraphNode');
+      expect(para.getChildrenSize()).toBe(1);
+      const paraChild = para.getFirstChild();
+      assert($isLinkNode(paraChild), 'Paragraph child must be a LinkNode');
+      expect(paraChild.getTextContent()).toBe('Lexical');
+      const selection = $getSelection();
+      assert(
+        $isRangeSelection(selection),
+        'Selection must be a RangeSelection',
+      );
+      expect(selection.anchor.type).toBe('text');
+      expect(selection.anchor.key).toBe(textKey);
+      expect(selection.anchor.offset).toBe(0);
+      expect(selection.focus.type).toBe('text');
+      expect(selection.focus.key).toBe(textKey);
+      expect(selection.focus.offset).toBe(7);
+    });
+  });
+
+  test('handles siblings after block child', () => {
+    const editor = buildEditorFromExtensions(transformExtension);
+    let afterTextKey: string;
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const headingText = $createTextNode('Heading');
+        const heading = $createHeadingNode('h1');
+        heading.append(headingText);
+        const afterText = $createTextNode(' after');
+        afterTextKey = afterText.getKey();
+        const link = $createLinkNode('https://lexical.dev');
+        link.append(heading, afterText);
+        const paragraph = $createParagraphNode();
+        paragraph.append(link);
+        root.clear().append(paragraph);
+        afterText.select(2, 5);
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      const root = $getRoot();
+      const children = root.getChildren();
+      expect(children.length).toBe(2);
+      const heading = children[0];
+      assert($isHeadingNode(heading), 'First child must be a HeadingNode');
+      const headingLink = heading.getFirstChild();
+      assert($isLinkNode(headingLink), 'Heading child must be a LinkNode');
+      expect(headingLink.getTextContent()).toBe('Heading');
+      const trailingPara = children[1];
+      assert(
+        $isParagraphNode(trailingPara),
+        'Second child must be a ParagraphNode',
+      );
+      const trailingLink = trailingPara.getFirstChild();
+      assert(
+        $isLinkNode(trailingLink),
+        'Trailing paragraph child must be a LinkNode',
+      );
+      expect(trailingLink.getTextContent()).toBe(' after');
+      const selection = $getSelection();
+      assert(
+        $isRangeSelection(selection),
+        'Selection must be a RangeSelection',
+      );
+      expect(selection.anchor.type).toBe('text');
+      expect(selection.anchor.key).toBe(afterTextKey);
+      expect(selection.anchor.offset).toBe(2);
+      expect(selection.focus.type).toBe('text');
+      expect(selection.focus.key).toBe(afterTextKey);
+      expect(selection.focus.offset).toBe(5);
+    });
+  });
+
+  test('fixes element selection in paragraph split to the right of LinkNode', () => {
+    const editor = buildEditorFromExtensions(transformExtension);
+    let afterTextKey: string;
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const textBefore = $createTextNode('before');
+        const headingText = $createTextNode('Heading');
+        const heading = $createHeadingNode('h1');
+        heading.append(headingText);
+        const link = $createLinkNode('https://lexical.dev');
+        link.append(heading);
+        const textAfter = $createTextNode('after');
+        afterTextKey = textAfter.getKey();
+        const paragraph = $createParagraphNode();
+        paragraph.append(textBefore, link, textAfter);
+        root.clear().append(paragraph);
+        paragraph.select(2, 2);
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      const root = $getRoot();
+      const children = root.getChildren();
+      expect(children.length).toBe(3);
+      expect(children[2].getTextContent()).toBe('after');
+      const selection = $getSelection();
+      assert(
+        $isRangeSelection(selection),
+        'Selection must be a RangeSelection',
+      );
+      expect(selection.anchor.type).toBe('text');
+      expect(selection.anchor.key).toBe(afterTextKey);
+      expect(selection.anchor.offset).toBe(0);
+    });
+  });
+
+  test('fixes element selection in LinkNode to the right of non-inline node', () => {
+    const editor = buildEditorFromExtensions(transformExtension);
+    let afterTextKey: string;
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const headingText = $createTextNode('Heading');
+        const heading = $createHeadingNode('h1');
+        heading.append(headingText);
+        const afterText = $createTextNode(' after');
+        afterTextKey = afterText.getKey();
+        const link = $createLinkNode('https://lexical.dev');
+        link.append(heading, afterText);
+        const paragraph = $createParagraphNode();
+        paragraph.append(link);
+        root.clear().append(paragraph);
+        link.select(1, 1);
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      const root = $getRoot();
+      const children = root.getChildren();
+      expect(children.length).toBe(2);
+      const trailingPara = children[1];
+      assert(
+        $isParagraphNode(trailingPara),
+        'Second child must be a ParagraphNode',
+      );
+      const trailingLink = trailingPara.getFirstChild();
+      assert(
+        $isLinkNode(trailingLink),
+        'Trailing paragraph child must be a LinkNode',
+      );
+      const selection = $getSelection();
+      assert(
+        $isRangeSelection(selection),
+        'Selection must be a RangeSelection',
+      );
+      expect(selection.anchor.type).toBe('text');
+      expect(selection.anchor.key).toBe(afterTextKey);
+      expect(selection.anchor.offset).toBe(0);
+    });
+  });
+
+  test('fixes element selection with multiple non-inline siblings', () => {
+    const editor = buildEditorFromExtensions(transformExtension);
+    let heading2TextKey: string;
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const heading1Text = $createTextNode('First');
+        const heading1 = $createHeadingNode('h1');
+        heading1.append(heading1Text);
+        const heading2Text = $createTextNode('Second');
+        heading2TextKey = heading2Text.getKey();
+        const heading2 = $createHeadingNode('h2');
+        heading2.append(heading2Text);
+        const link = $createLinkNode('https://lexical.dev');
+        link.append(heading1, heading2);
+        const paragraph = $createParagraphNode();
+        paragraph.append(link);
+        root.clear().append(paragraph);
+        link.select(1, 1);
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      const root = $getRoot();
+      const children = root.getChildren();
+      expect(children.length).toBe(2);
+      const first = children[0];
+      assert($isHeadingNode(first), 'First child must be a HeadingNode');
+      expect(first.getTextContent()).toBe('First');
+      const second = children[1];
+      assert($isHeadingNode(second), 'Second child must be a HeadingNode');
+      expect(second.getTextContent()).toBe('Second');
+      const selection = $getSelection();
+      assert(
+        $isRangeSelection(selection),
+        'Selection must be a RangeSelection',
+      );
+      expect(selection.anchor.type).toBe('text');
+      expect(selection.anchor.key).toBe(heading2TextKey);
+      expect(selection.anchor.offset).toBe(0);
+    });
+  });
+
+  test('fixes element selection when no siblings to the right of LinkNode', () => {
+    const editor = buildEditorFromExtensions(transformExtension);
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const headingText = $createTextNode('Heading');
+        const heading = $createHeadingNode('h1');
+        heading.append(headingText);
+        const link = $createLinkNode('https://lexical.dev');
+        link.append(heading);
+        const paragraph = $createParagraphNode();
+        paragraph.append(link);
+        root.clear().append(paragraph);
+        paragraph.select(1, 1);
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      const root = $getRoot();
+      const children = root.getChildren();
+      expect(children.length).toBe(1);
+      const heading = children[0];
+      assert($isHeadingNode(heading), 'First child must be a HeadingNode');
+      const headingChild = heading.getFirstChild();
+      assert($isLinkNode(headingChild), 'Heading child must be a LinkNode');
+      expect(headingChild.getTextContent()).toBe('Heading');
+      const selection = $getSelection();
+      assert(
+        $isRangeSelection(selection),
+        'Selection must be a RangeSelection',
+      );
+    });
+  });
+
+  test('selection in paragraph right of link with trailing text in link', () => {
+    const editor = buildEditorFromExtensions(transformExtension);
+    let afterTextKey: string;
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const before = $createTextNode('before');
+        const headingText = $createTextNode('Heading');
+        const heading = $createHeadingNode('h1');
+        heading.append(headingText);
+        const trailingText = $createTextNode(' trailing');
+        const link = $createLinkNode('https://lexical.dev');
+        link.append(heading, trailingText);
+        const after = $createTextNode('after');
+        afterTextKey = after.getKey();
+        const paragraph = $createParagraphNode();
+        paragraph.append(before, link, after);
+        root.clear().append(paragraph);
+        paragraph.select(2, 2);
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      const root = $getRoot();
+      const children = root.getChildren();
+      expect(children.length).toBe(3);
+      const selection = $getSelection();
+      assert(
+        $isRangeSelection(selection),
+        'Selection must be a RangeSelection',
+      );
+      expect(selection.anchor.type).toBe('text');
+      expect(selection.anchor.key).toBe(afterTextKey);
+      expect(selection.anchor.offset).toBe(0);
+    });
+  });
+
+  test('selection at end of link with heading only child', () => {
+    const editor = buildEditorFromExtensions(transformExtension);
+    let headingTextKey: string;
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const headingText = $createTextNode('Heading');
+        headingTextKey = headingText.getKey();
+        const heading = $createHeadingNode('h1');
+        heading.append(headingText);
+        const link = $createLinkNode('https://lexical.dev');
+        link.append(heading);
+        const paragraph = $createParagraphNode();
+        paragraph.append(link);
+        root.clear().append(paragraph);
+        link.select(1, 1);
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      const root = $getRoot();
+      const children = root.getChildren();
+      expect(children.length).toBe(1);
+      const heading = children[0];
+      assert($isHeadingNode(heading), 'First child must be a HeadingNode');
+      const selection = $getSelection();
+      assert(
+        $isRangeSelection(selection),
+        'Selection must be a RangeSelection',
+      );
+      expect(selection.anchor.type).toBe('text');
+      expect(selection.anchor.key).toBe(headingTextKey);
+      expect(selection.anchor.offset).toBe(7);
+    });
   });
 });

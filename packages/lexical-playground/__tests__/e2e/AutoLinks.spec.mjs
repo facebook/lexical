@@ -790,6 +790,8 @@ test.describe.parallel('Auto Links', () => {
     );
 
     // Add non-url text after the link
+    await focusEditor(page);
+    await moveToLineEnd(page);
     await page.keyboard.type('!');
     await assertHTML(
       page,

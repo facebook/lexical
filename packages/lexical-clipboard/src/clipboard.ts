@@ -234,7 +234,6 @@ export function $insertGeneratedNodes(
     selection.insertNodes(nodes);
     $updateSelectionOnInsert(selection);
   }
-
   return;
 }
 

@@ -1,3 +1,48 @@
+## v0.41.0 (2026-02-25)
+
+- lexical Bug Fix Move new paragraph outside inline element in insertParagraph (#8158) Achal Jhawar
+- lexical-markdown Bug Fix Prevent nesting links creation (#8164) Sergey Gorbachev
+- tests Chore Update yaml-language-server in lexical-esm-astro-react integration fixture (#8163) PikkaPikkachu
+- lexical Bug Fix Maintain format when replace multiple formatted text nodes with composition text (#8162) kimseongyu
+- lexical-markdown Fix Prevent markdown shortcut link transformer from being too greedy (#8161) Bob Ippolito
+- feat add focus event option for the checklist extension (#8105) Tulio
+- lexical Bug Fix Fix selected text not properly deleted after IME input on Safari (macOS) (#8154) Kawashima Shota (shiba)
+-  lexical-core Bug fix support dom selection for elements with slots (#8159) Maksim Horbachevsky
+- lexical-rich-text Bug Fix Inherit format and style when inserting tab (#8152) kimseongyu
+- lexical-playground Bug Fix Code block formatting in unintended adjacent lines  (#8149) Achal Jhawar
+- lexical Bug Fix Do not apply format and style when moving to different node in composition (#8148) kimseongyu
+- lexical-history Bug Fix History not record composing character (#8142) Senasiko
+- lexical-website Chore Add a website build step to Github Actions in CI (#8146) Bob Ippolito
+- docs fix formatting and update browser support table (#8144) IkyssOffc
+- lexical-extension Feature Implement DecoratorTextExtension applying format to DecoratorTextNode (#8114) Sergey Gorbachev
+- lexical-markdown Feature Support Enter key after  to create code block (#8140) Achal Jhawar
+- lexical-link Bug Fix toggleLink removes link when selection is collapsed (#8138) Senasiko
+- lexical-website Chore Update supported browsers list to Safari 15, Chrome 86, Firefox 115 (#8141) Bob Ippolito
+- lexical-playground Clean up old Table Hover Actions (#8139) Ivaylo Pavlov
+- lexical-link Bug Fix Add AutoLinkNode to AutoLinkExtension node dependencies (#8137) Bob Ippolito
+- lexical-playground Fix Increase toolbar z-index to prevent content overlap (#8134) Sa-Te
+- Breaking Changelexical Bug Fix Fix --lexical-indent-base-value CSS variable override  (#8132) Achal Jhawar
+- lexical-code Bug Fix Allow moving caret outside code block (#7918) Simon
+- lexical-table Fix Preserve Background Color when pasting table rows inside table. (#8131) Sa-Te
+- lexical Bug Fix Do not move anchor when inserting composition start char (#8121) kimseongyu
+- lexical-react Annotate deprecated to menuRenderFn  with NodeContext (#8001) Michael
+- lexical-playgroundlexical-link Bug Fix Prevent AutoLinkNode from creating extra paragraphs (#8127) Sebastian
+- lexical-playground Rearrange table columns (#8063) Ivaylo Pavlov
+- lexical-link Bug Fix Prevent AutoLink from linking URLs inside code blocks (#8123) Achal Jhawar
+- lexical-extensionlexical-rich-textlexical-react Feature Support configuration of indentable nodes (#8122) Sergey Gorbachev
+- lexical Bug Fix Remove empty parent node in nested list (#8118) Senasiko
+- lexical-playground tests for ComponentPickerMenuPlugin (#8128) Syed Umar Anis
+- lexical-markdown Bug Fix Fix nested fenced code blocks parsing and export (#8116) Abdul Alim
+- lexical-list Feature Preserve ordered list numbering when split by blocks or paragraphs (#8092) Sa-Te
+- lexical Feature Support legacy align attribute in ParagraphNode importDOM (#8115) Sa-Te
+- Fix(table) Support scope attribute in HTML import. (#8094) Sa-Te
+- lexical Chore Stabilize playground collab WebKit E2E test waits (#8113) Szymon Rczka
+- lexical-tablelexical-playground Feature Implement fit nested tables for nested table pasting (#8097) Randal
+- Update examples for v0.40.0 and pnpm (#8110) Bob Ippolito
+- lexical Bug Fix Prevent layout thrashing when setting element indent for no indent case (#8111) InanBerkin
+- v0.40.0 (#8104) Bob Ippolito
+- v0.40.0 Lexical GitHub Actions Bot
+
 ## v0.40.0 (2026-02-01)
 
 - lexical Bug Fix Refactor RootNode.cachedText computation for coherency (#8099) Bob Ippolito

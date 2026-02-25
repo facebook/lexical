@@ -63,7 +63,7 @@ async function main() {
         );
       }
     };
-    await pnpm('--ignore-workspace', 'i');
+    await pnpm('--ignore-workspace', '--no-frozen-lockfile', 'i');
     if (hasUnreleasedDependency) {
       console.log(
         'Unreleased lexical dependencies required, removing local versions',

@@ -10,7 +10,9 @@ import {
   moveLeft,
   moveToLineBeginning,
   pressBackspace,
+  selectAll,
   selectCharacters,
+  toggleBold,
 } from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
@@ -38,9 +40,7 @@ test.describe('Composition', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">も</span>
         </p>
       `,
@@ -57,7 +57,7 @@ test.describe('Composition', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
       `,
     );
     await assertSelection(page, {
@@ -72,9 +72,7 @@ test.describe('Composition', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">もじ</span>
         </p>
       `,
@@ -94,9 +92,7 @@ test.describe('Composition', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__rtl"
-          dir="rtl">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">هَ</span>
         </p>
       `,
@@ -112,9 +108,7 @@ test.describe('Composition', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__rtl"
-          dir="rtl">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">ه</span>
         </p>
       `,
@@ -131,7 +125,7 @@ test.describe('Composition', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
       `,
     );
 
@@ -139,9 +133,7 @@ test.describe('Composition', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__rtl"
-          dir="rtl">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">هَ</span>
         </p>
       `,
@@ -165,9 +157,7 @@ test.describe('Composition', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__rtl"
-          dir="rtl">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">ه</span>
         </p>
       `,
@@ -252,9 +242,7 @@ test.describe('Composition', () => {
       await assertHTML(
         page,
         html`
-          <p
-            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr">
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">すし もじあ</span>
           </p>
         `,
@@ -364,9 +352,7 @@ test.describe('Composition', () => {
       await assertHTML(
         page,
         html`
-          <p
-            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr">
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <br />
             <span data-lexical-text="true">すし もじあ</span>
             <br />
@@ -438,9 +424,7 @@ test.describe('Composition', () => {
       await assertHTML(
         page,
         html`
-          <p
-            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr">
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">Hello</span>
             <strong
               class="PlaygroundEditorTheme__textBold"
@@ -544,9 +528,7 @@ test.describe('Composition', () => {
       await assertHTML(
         page,
         html`
-          <p
-            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr">
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span class="emoji happysmile" data-lexical-text="true">
               <span class="emoji-inner">🙂</span>
             </span>
@@ -568,9 +550,7 @@ test.describe('Composition', () => {
       await assertHTML(
         page,
         html`
-          <p
-            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr">
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span class="emoji happysmile" data-lexical-text="true">
               <span class="emoji-inner">🙂</span>
             </span>
@@ -635,9 +615,7 @@ test.describe('Composition', () => {
       await assertHTML(
         page,
         html`
-          <p
-            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr">
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span class="emoji happysmile" data-lexical-text="true">
               <span class="emoji-inner">🙂</span>
             </span>
@@ -745,9 +723,7 @@ test.describe('Composition', () => {
       await assertHTML(
         page,
         html`
-          <p
-            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr">
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span
               class="mention"
               spellcheck="false"
@@ -856,38 +832,19 @@ test.describe('Composition', () => {
         text: 'もじあ',
       });
 
-      if (browserName === 'webkit') {
-        await assertHTML(
-          page,
-          html`
-            <p
-              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-              dir="ltr">
-              <span data-lexical-text="true">
-                Luke &nbsp;すし もじあSkywalker
-              </span>
-            </p>
-          `,
-        );
-      }
-      /* eslint-disable no-irregular-whitespace */
-      if (browserName === 'chromium') {
-        await assertHTML(
-          page,
-          html`
-            <p
-              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-              dir="ltr">
-              <span data-lexical-text="true">Luke ​すし もじあSkywalker</span>
-            </p>
-          `,
-        );
-      }
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">Luke すし もじあSkywalker</span>
+          </p>
+        `,
+      );
 
       await assertSelection(page, {
-        anchorOffset: 12,
+        anchorOffset: 11,
         anchorPath: [0, 0, 0],
-        focusOffset: 12,
+        focusOffset: 11,
         focusPath: [0, 0, 0],
       });
     });
@@ -946,9 +903,7 @@ test.describe('Composition', () => {
       await assertHTML(
         page,
         html`
-          <p
-            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr">
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span
               class="mention"
               spellcheck="false"
@@ -1050,9 +1005,7 @@ test.describe('Composition', () => {
       await assertHTML(
         page,
         html`
-          <p
-            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr">
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span
               class="PlaygroundEditorTheme__hashtag"
               data-lexical-text="true">
@@ -1109,9 +1062,7 @@ test.describe('Composition', () => {
       await assertHTML(
         page,
         html`
-          <p
-            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr">
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">すし#すし もじあ</span>
           </p>
         `,
@@ -1183,7 +1134,7 @@ test.describe('Composition', () => {
       await assertHTML(
         page,
         html`
-          <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
         `,
       );
       await assertSelection(page, {
@@ -1244,7 +1195,7 @@ test.describe('Composition', () => {
       await assertHTML(
         page,
         html`
-          <p class="PlaygroundEditorTheme__paragraph">
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true"></span>
           </p>
         `,
@@ -1297,6 +1248,8 @@ test.describe('Composition', () => {
       // await page.keyboard.imeSetComposition('すｓｈ', 0, 4);
       await client.send('Input.imeSetComposition', {
         selectionStart: 0,
+        // The fourth character in the DOM is a zero-width space
+        // which is not represented in the lexical document (or this string)
         selectionEnd: 4,
         text: 'すｓｈ',
       });
@@ -1318,6 +1271,126 @@ test.describe('Composition', () => {
       });
 
       expect(isFloatingToolbarDisplayed).toEqual(true);
+    });
+
+    test('Typeahead menu should not close during IME composition', async ({
+      page,
+      browserName,
+    }) => {
+      // We don't yet support FF.
+      test.skip(browserName !== 'chromium');
+
+      await focusEditor(page);
+      await enableCompositionKeyEvents(page);
+
+      await page.keyboard.type('@Luke');
+      await waitForSelector(page, '#typeahead-menu ul li');
+
+      const client = await page.context().newCDPSession(page);
+
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 5,
+        selectionEnd: 6,
+        text: 'ｓ',
+      });
+
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 5,
+        selectionEnd: 6,
+        text: 'す',
+      });
+
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 5,
+        selectionEnd: 7,
+        text: 'すｓ',
+      });
+
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 5,
+        selectionEnd: 8,
+        text: 'すｓｈ',
+      });
+
+      const isTypeaheadMenuDisplayedDuringIMEComposition = await evaluate(
+        page,
+        () => {
+          return !!document.querySelector('#typeahead-menu');
+        },
+      );
+
+      expect(isTypeaheadMenuDisplayedDuringIMEComposition).toBe(true);
+    });
+
+    test('Can replace multiple formatted text nodes with IME composition (Korean)', async ({
+      page,
+      browserName,
+      isPlainText,
+    }) => {
+      // We don't yet support FF.
+      test.skip(browserName !== 'chromium' || isPlainText);
+
+      await focusEditor(page);
+      await enableCompositionKeyEvents(page);
+
+      await page.keyboard.type('helloworld');
+
+      await moveLeft(page, 10);
+      await selectCharacters(page, 'right', 5);
+      await toggleBold(page);
+
+      await selectAll(page);
+
+      const client = await page.context().newCDPSession(page);
+
+      await client.send('Input.imeSetComposition', {
+        selectionEnd: 1,
+        selectionStart: 1,
+        text: 'ㄱ',
+      });
+      await client.send('Input.imeSetComposition', {
+        selectionEnd: 1,
+        selectionStart: 1,
+        text: '가',
+      });
+      await client.send('Input.insertText', {text: '가'});
+
+      await client.send('Input.imeSetComposition', {
+        selectionEnd: 2,
+        selectionStart: 2,
+        text: '가ㄴ',
+      });
+      await client.send('Input.imeSetComposition', {
+        selectionEnd: 2,
+        selectionStart: 2,
+        text: '가나',
+      });
+      await client.send('Input.insertText', {text: '나'});
+
+      await client.send('Input.imeSetComposition', {
+        selectionEnd: 3,
+        selectionStart: 3,
+        text: '가나ㄷ',
+      });
+      await client.send('Input.imeSetComposition', {
+        selectionEnd: 3,
+        selectionStart: 3,
+        text: '가나다',
+      });
+      await client.send('Input.insertText', {text: '다'});
+
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <strong
+              class="PlaygroundEditorTheme__textBold"
+              data-lexical-text="true">
+              가나다
+            </strong>
+          </p>
+        `,
+      );
     });
   });
   /* eslint-enable sort-keys-fix/sort-keys-fix */

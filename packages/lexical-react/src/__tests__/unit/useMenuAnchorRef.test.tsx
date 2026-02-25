@@ -10,28 +10,29 @@ import {createTestEditor} from 'lexical/src/__tests__/utils';
 import * as React from 'react';
 import {createRoot, Root} from 'react-dom/client';
 import * as ReactTestUtils from 'shared/react-test-utils';
+import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
 import {useMenuAnchorRef} from '../../shared/LexicalMenu';
-
-jest.mock('@lexical/react/LexicalComposerContext', () => ({
-  useLexicalComposerContext: () => [createTestEditor()],
-}));
-
-jest.mock('shared/canUseDOM', () => ({
-  CAN_USE_DOM: false,
-}));
 
 describe('useMenuAnchorRef', () => {
   let container: HTMLDivElement | null = null;
   let reactRoot: Root;
 
   beforeEach(() => {
+    vi.mock('@lexical/react/LexicalComposerContext', () => ({
+      useLexicalComposerContext: () => [createTestEditor()],
+    }));
+
+    vi.mock('shared/canUseDOM', () => ({
+      CAN_USE_DOM: false,
+    }));
+
     container = document.createElement('div');
     reactRoot = createRoot(container);
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should return null if CAN_USE_DOM is false', async () => {
@@ -39,7 +40,7 @@ describe('useMenuAnchorRef', () => {
 
     function App() {
       const resolution = null;
-      const setResolution = jest.fn();
+      const setResolution = vi.fn();
       const anchorClassName = 'some-class';
       const parent = undefined;
       const shouldIncludePageYOffset__EXPERIMENTAL = true;

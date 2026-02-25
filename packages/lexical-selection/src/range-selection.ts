@@ -21,7 +21,7 @@ import {
   $caretFromPoint,
   $createRangeSelection,
   $extendCaretToRange,
-  $getEditor,
+  $findMatchingParent,
   $getPreviousSelection,
   $getSelection,
   $hasAncestor,
@@ -31,7 +31,6 @@ import {
   $isExtendableTextPointCaret,
   $isLeafNode,
   $isRangeSelection,
-  $isRootNode,
   $isRootOrShadowRoot,
   $isTextNode,
   $setSelection,
@@ -39,7 +38,11 @@ import {
 } from 'lexical';
 import invariant from 'shared/invariant';
 
-import {getStyleObjectFromCSS} from './utils';
+import {
+  $getComputedStyleForElement,
+  $getComputedStyleForParent,
+  getStyleObjectFromCSS,
+} from './utils';
 
 export function $copyBlockFormatIndent(
   srcNode: ElementNode,
@@ -82,8 +85,11 @@ export function $setBlocksType<T extends ElementNode>(
     newSelection = $createRangeSelection();
     newSelection.anchor.set(anchor.key, anchor.offset, anchor.type);
     newSelection.focus.set(focus.key, focus.offset, focus.type);
-    const anchorBlock = $getAncestor(anchor.getNode(), INTERNAL_$isBlock);
-    const focusBlock = $getAncestor(focus.getNode(), INTERNAL_$isBlock);
+    const anchorBlock = $findMatchingParent(
+      anchor.getNode(),
+      INTERNAL_$isBlock,
+    );
+    const focusBlock = $findMatchingParent(focus.getNode(), INTERNAL_$isBlock);
     if ($isElementNode(anchorBlock)) {
       blockMap.set(anchorBlock.getKey(), anchorBlock);
     }
@@ -95,7 +101,7 @@ export function $setBlocksType<T extends ElementNode>(
     if ($isElementNode(node) && INTERNAL_$isBlock(node)) {
       blockMap.set(node.getKey(), node);
     } else if (anchorAndFocus === null) {
-      const ancestorBlock = $getAncestor(node, INTERNAL_$isBlock);
+      const ancestorBlock = $findMatchingParent(node, INTERNAL_$isBlock);
       if ($isElementNode(ancestorBlock)) {
         blockMap.set(ancestorBlock.getKey(), ancestorBlock);
       }
@@ -427,24 +433,24 @@ export function $wrapNodesImpl(
  * @param selection - The selection whose parent to test.
  * @returns true if the selection's parent has vertical writing mode (writing-mode: vertical-rl), false otherwise.
  */
-export function $isEditorVerticalOrientation(
+function $isEditorVerticalOrientation(selection: RangeSelection): boolean {
+  const computedStyle = $getComputedStyle(selection);
+  return computedStyle !== null && computedStyle.writingMode === 'vertical-rl';
+}
+
+/**
+ * Gets the computed DOM styles of the parent of the selection's anchor node.
+ * @param selection - The selection to check the styles for.
+ * @returns the computed styles of the node or null if there is no DOM element or no default view for the document.
+ */
+function $getComputedStyle(
   selection: RangeSelection,
-): boolean {
+): CSSStyleDeclaration | null {
   const anchorNode = selection.anchor.getNode();
-  const parent = $isRootNode(anchorNode)
-    ? anchorNode
-    : anchorNode.getParentOrThrow();
-  const editor = $getEditor();
-  const domElement = editor.getElementByKey(parent.getKey());
-  if (domElement === null) {
-    return false;
+  if ($isElementNode(anchorNode)) {
+    return $getComputedStyleForElement(anchorNode);
   }
-  const view = domElement.ownerDocument.defaultView;
-  if (view === null) {
-    return false;
-  }
-  const computedStyle = view.getComputedStyle(domElement);
-  return computedStyle.writingMode === 'vertical-rl';
+  return $getComputedStyleForParent(anchorNode);
 }
 
 /**
@@ -509,12 +515,8 @@ export function $moveCaretSelection(
  * @returns true if the selections' parent element has a direction of 'rtl' (right to left), false otherwise.
  */
 export function $isParentElementRTL(selection: RangeSelection): boolean {
-  const anchorNode = selection.anchor.getNode();
-  const parent = $isRootNode(anchorNode)
-    ? anchorNode
-    : anchorNode.getParentOrThrow();
-
-  return parent.getDirection() === 'rtl';
+  const computedStyle = $getComputedStyle(selection);
+  return computedStyle !== null && computedStyle.direction === 'rtl';
 }
 
 /**
@@ -642,15 +644,4 @@ export function $getSelectionStyleValueForProperty(
   }
 
   return styleValue === null ? defaultValue : styleValue;
-}
-
-export function $getAncestor<NodeType extends LexicalNode = LexicalNode>(
-  node: LexicalNode,
-  predicate: (ancestor: LexicalNode) => ancestor is NodeType,
-) {
-  let parent = node;
-  while (parent !== null && parent.getParent() !== null && !predicate(parent)) {
-    parent = parent.getParentOrThrow();
-  }
-  return predicate(parent) ? parent : null;
 }

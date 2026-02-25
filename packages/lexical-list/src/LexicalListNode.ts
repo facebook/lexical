@@ -25,10 +25,10 @@ import {
   LexicalNode,
   LexicalUpdateJSON,
   NodeKey,
+  normalizeClassNames,
   SerializedElementNode,
   Spread,
 } from 'lexical';
-import normalizeClassNames from 'shared/normalizeClassNames';
 
 import {$createListItemNode, $isListItemNode, ListItemNode} from '.';
 import {
@@ -137,11 +137,18 @@ export class ListNode extends ElementNode {
   }
 
   updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
-    if (prevNode.__tag !== this.__tag) {
+    if (
+      prevNode.__tag !== this.__tag ||
+      prevNode.__listType !== this.__listType
+    ) {
       return true;
     }
 
     $setListThemeClassNames(dom, config.theme, this);
+
+    if (prevNode.__start !== this.__start) {
+      dom.setAttribute('start', String(this.__start));
+    }
 
     return false;
   }
@@ -302,7 +309,9 @@ function isDomChecklist(domNode: HTMLElement) {
   if (
     domNode.getAttribute('__lexicallisttype') === 'check' ||
     // is github checklist
-    domNode.classList.contains('contains-task-list')
+    domNode.classList.contains('contains-task-list') ||
+    // is joplin checklist
+    domNode.getAttribute('data-is-checklist') === '1'
   ) {
     return true;
   }

@@ -1,3 +1,294 @@
+## v0.41.0 (2026-02-25)
+
+- lexical Bug Fix Move new paragraph outside inline element in insertParagraph (#8158) Achal Jhawar
+- lexical-markdown Bug Fix Prevent nesting links creation (#8164) Sergey Gorbachev
+- tests Chore Update yaml-language-server in lexical-esm-astro-react integration fixture (#8163) PikkaPikkachu
+- lexical Bug Fix Maintain format when replace multiple formatted text nodes with composition text (#8162) kimseongyu
+- lexical-markdown Fix Prevent markdown shortcut link transformer from being too greedy (#8161) Bob Ippolito
+- feat add focus event option for the checklist extension (#8105) Tulio
+- lexical Bug Fix Fix selected text not properly deleted after IME input on Safari (macOS) (#8154) Kawashima Shota (shiba)
+-  lexical-core Bug fix support dom selection for elements with slots (#8159) Maksim Horbachevsky
+- lexical-rich-text Bug Fix Inherit format and style when inserting tab (#8152) kimseongyu
+- lexical-playground Bug Fix Code block formatting in unintended adjacent lines  (#8149) Achal Jhawar
+- lexical Bug Fix Do not apply format and style when moving to different node in composition (#8148) kimseongyu
+- lexical-history Bug Fix History not record composing character (#8142) Senasiko
+- lexical-website Chore Add a website build step to Github Actions in CI (#8146) Bob Ippolito
+- docs fix formatting and update browser support table (#8144) IkyssOffc
+- lexical-extension Feature Implement DecoratorTextExtension applying format to DecoratorTextNode (#8114) Sergey Gorbachev
+- lexical-markdown Feature Support Enter key after  to create code block (#8140) Achal Jhawar
+- lexical-link Bug Fix toggleLink removes link when selection is collapsed (#8138) Senasiko
+- lexical-website Chore Update supported browsers list to Safari 15, Chrome 86, Firefox 115 (#8141) Bob Ippolito
+- lexical-playground Clean up old Table Hover Actions (#8139) Ivaylo Pavlov
+- lexical-link Bug Fix Add AutoLinkNode to AutoLinkExtension node dependencies (#8137) Bob Ippolito
+- lexical-playground Fix Increase toolbar z-index to prevent content overlap (#8134) Sa-Te
+- Breaking Changelexical Bug Fix Fix --lexical-indent-base-value CSS variable override  (#8132) Achal Jhawar
+- lexical-code Bug Fix Allow moving caret outside code block (#7918) Simon
+- lexical-table Fix Preserve Background Color when pasting table rows inside table. (#8131) Sa-Te
+- lexical Bug Fix Do not move anchor when inserting composition start char (#8121) kimseongyu
+- lexical-react Annotate deprecated to menuRenderFn  with NodeContext (#8001) Michael
+- lexical-playgroundlexical-link Bug Fix Prevent AutoLinkNode from creating extra paragraphs (#8127) Sebastian
+- lexical-playground Rearrange table columns (#8063) Ivaylo Pavlov
+- lexical-link Bug Fix Prevent AutoLink from linking URLs inside code blocks (#8123) Achal Jhawar
+- lexical-extensionlexical-rich-textlexical-react Feature Support configuration of indentable nodes (#8122) Sergey Gorbachev
+- lexical Bug Fix Remove empty parent node in nested list (#8118) Senasiko
+- lexical-playground tests for ComponentPickerMenuPlugin (#8128) Syed Umar Anis
+- lexical-markdown Bug Fix Fix nested fenced code blocks parsing and export (#8116) Abdul Alim
+- lexical-list Feature Preserve ordered list numbering when split by blocks or paragraphs (#8092) Sa-Te
+- lexical Feature Support legacy align attribute in ParagraphNode importDOM (#8115) Sa-Te
+- Fix(table) Support scope attribute in HTML import. (#8094) Sa-Te
+- lexical Chore Stabilize playground collab WebKit E2E test waits (#8113) Szymon Rczka
+- lexical-tablelexical-playground Feature Implement fit nested tables for nested table pasting (#8097) Randal
+- Update examples for v0.40.0 and pnpm (#8110) Bob Ippolito
+- lexical Bug Fix Prevent layout thrashing when setting element indent for no indent case (#8111) InanBerkin
+- v0.40.0 (#8104) Bob Ippolito
+- v0.40.0 Lexical GitHub Actions Bot
+
+## v0.40.0 (2026-02-01)
+
+- lexical Bug Fix Refactor RootNode.cachedText computation for coherency (#8099) Bob Ippolito
+- lexical-markdown Bug Fix Replace regex-based format matching with  (#8093) kimseongyu
+- Fix(Playground) Prevent code block line wrapping to keep line number (#8087) Sa-Te
+- lexical-table Chore Fix test for nested table pasting (#8088) Randal
+- lexicallexicaltable Bug Fix Fix inconsistent multi-cell selection in 2x2 tables (#8081) Aldo Lata Soba
+- lexical-markdown Bug Fix Fix incorrect format tag placement at link boundaries (#8085) kimseongyu
+- lexical-link Bug Fix Toggle links with nested children (#8078) Patrick Moody
+- lexical-react Chore Expose onReposition prop on SelectionAlwaysOnDisplay (#8071) Daniel Teo
+- lexicallexicaltable Fix CtrlA to select all cells in table with merged cells #8074 (#8076) Aldo Lata Soba
+- lexicallexicallink Bug Fix Fix infinite transform loop in AutoLinkPlugin (#8070) Aldo Lata Soba
+- lexical-list Bug Fix Treat whitespace-only list items as empty when pressing Enter (#8068) Michael Shafer
+- lexical Bug Fix format removed on multi selection after replace (#8069) kimseongyu
+- lexicallexicalreact Bug Fix Fix cursor disappearing in Firefox when dragging blocks (#8065) Aldo Lata Soba
+- lexical-playground Add button shows the Component Picker (#8066) Ivaylo Pavlov
+- lexical-react Bug Fix Clear remote cursor immediately on collaborator refresh (#8062) Aldo Lata Soba
+- lexical-playground Column Sort for Basic Table (#8060) Ivaylo Pavlov
+- lexical-playground New Table Hover Actions Plugin (#8057) Ivaylo Pavlov
+- lexical-playground Draggable handle and dropdown CSS zoom fix (#8052) Ivaylo Pavlov
+- docs Documentation Update Fix incorrect and broken links in README (#8055) Haafiz
+- lexical-list Bug Fix fix selection issue from list transform on linebreak (#8049) Miklos Ballo
+- Allow publish to run on detached head (#8054) Gerard Rovira
+- lexical-playground Draggable block handle gliding effect (#8042) Ivaylo Pavlov
+- Override workspace with actual version on npm bundle (#8051) Gerard Rovira
+- Use PNPM workspace feature for publish (#8050) Gerard Rovira
+- lexical-playground Color table resize handle (#8043) Ivaylo Pavlov
+- Nightlies fix frozen lockfile (#8048) Gerard Rovira
+- Nightlies publish param (#8045) Gerard Rovira
+- npm - pnpm (#8035) Gerard Rovira
+- README tweaks (#8033) Gerard Rovira
+- Agent documentation (#8031) Gerard Rovira
+- Chore Update examples for v0.39.0 (#8024) Bob Ippolito
+- Chore Add an ignore-previously-published arg to the publish action (#8023) Bob Ippolito
+- v0.39.0 (#8021) Bob Ippolito
+- v0.39.0 Lexical GitHub Actions Bot
+
+## v0.39.0 (2025-12-11)
+
+- lexical-selection Fix applying styles for empty table cells (#8003) Ivaylo Pavlov
+- lexical-playground Shadows when table is scrollable (#8002) Ivaylo Pavlov
+- lexical-markflowchore Add flowfix me after flow 0.292.0 was deployed to www. This fixes the  sync between github and www (#8019) Michael
+- Doc nit (#8010) Gerard Rovira
+- lexical-table Bug Fix include first cell contents in partial backwards table selection (#7998) Patrick Moody
+- lexical-website Documentation Update Add missing getDocFromMap fn to docs (#8000) mattcline
+- Revert lexical-react lexical-playground Remove old ContextMenu, consolidate LexicalMenu render (#7997) Ivaylo Pavlov
+- lexical-website Documentation Update Add ywebsocket-server package dependency (#7996) mattcline
+- lexical-yjs Bug fix dont rewrite unchanged non-primitive propertystate values to yjs in collab v2 (#7990) James Fitzsimmons
+- lexical-react lexical-playground Remove old ContextMenu, consolidate LexicalMenu render (#7984) Ivaylo Pavlov
+- lexical-table Bug Fix ensure colWidths has length equal to number of columns (#7986) James Fitzsimmons
+- lexical-react lexical-playground Bug Fix Prevent typeahead menu from closing during IME composition (#7985) (#7987) kykim00
+- lexical-table Feature add config for opting in to nested tables (#7983) James Fitzsimmons
+- lexical Bug fix dfsCaretIterator should be able to stop at its last descendant (#7978) Nigel Gutzmann
+- lexical Chore Update flow-bin (to 0.290.0) and fix incompatible-variance issues (#7975) Daniel Teo
+- lexical Feature add commands for beforeinput, input, compositionstartend events (#7964) James Fitzsimmons
+- lexical Chore Update flow-bin (to 0.289.0) and LexicalLink Flow types (#7973) Daniel Teo
+- lexical-extensionlexical- Bug Fix Defer node class references to potentially work around webpack issues (#7961) Bob Ippolito
+- lexical Feature Only serialize ElementNode textFormat and textStyle when necessary (#7971) Bob Ippolito
+- lexical-code Bug fix Add editor key in highlighted nodes cache (#7970) Daniel Teo
+- examples Chore Update examples for v0.38.2 (#7963) Bob Ippolito
+- scripts Allow export-froms in Flow files to be transformed for www build (#7967) Daniel Teo
+- v0.38.2 (#7962) Bob Ippolito
+- v0.38.2 Lexical GitHub Actions Bot
+
+## v0.38.2 (2025-10-31)
+
+- lexical-markdown Code backslash fix (#7958) MarekKuncik
+- Update codeowners (#7957) Gerard Rovira
+- Update examples for v0.38.1 (#7952) Bob Ippolito
+- v0.38.1 (#7951) Bob Ippolito
+- v0.38.1 Lexical GitHub Actions Bot
+
+## v0.38.1 (2025-10-27)
+
+- v0.38.0 Lexical GitHub Actions Bot
+
+## v0.38.0 (2025-10-27)
+
+- lexical-list Bug Fix fix pasting checklist from joplin (#7946) Antonella Sgarlatta
+- lexical Bug Fix update block cursor if selection has changed (#7947) Maksim Horbachevsky
+- lexical-link Feature Enable Selective Removal Within Linked Text (#7944) Christopher Norman
+- Fix Log exceptions in clipboard paste handler (fixes #7940) (#7942) Nikhil Sharma
+- lexical Bug Fix retain selection during updates on unfocused editor (#7941) Maksim Horbachevsky
+- lexical-table Chore Lower table handler command priority (#7933) Patrick Moody
+- lexical-linklexical-code-shikiexamples Feature Implement mergeConfig for LinkExtension and flatten config for CodeHighlighterShikiExtension (#7936) Bob Ippolito
+- lexical-react Bug Fix Add getServerSnapshot for RSC compatibility (#7935) Elias Rhouzlane
+- lexical-website Documentation Update change setText to setTextContent (#7932) bbertold
+- lexical-extension Feature Allow nodes config to be deferred for circular dependency reasons (#7930) Bob Ippolito
+- lexicallexical-list Bug Fix Apply static transform and config transform from all superclasses (#7926) Bob Ippolito
+- lexical-markdown Bug Fix Fix implicit checklist marker export regression (#7928) Bob Ippolito
+- lexical-website Chore Update docusuarus and add contributing docs (#7931) Bob Ippolito
+- lexical-markdown Bug Fix Prevent Markdown links with empty string link text from being automatically removed (#7923) Adam Bolcsfoldi
+- lexical-playground Bug Fix Fix image caption overflow issue (#7920) Ritoban Dutta
+- lexical-markdown Fix bugs in normalizeMarkdown (#7812) German Jablonski
+- lexical-code Bug Fix Respect RTL when moving to line startend in code blocks (#7921) Shehab
+- lexical-yjs Fix skip elements that were added and removed between snapshots (#7922) James Fitzsimmons
+- Documentation Chore Update bounty program link in CONTRIBUTING.md (#7915) Mustkeem K
+- Update examples for v0.37.0 (#7911) Bob Ippolito
+- v0.37.0 (#7910) Bob Ippolito
+- v0.37.0 Lexical GitHub Actions Bot
+
+## v0.37.0 (2025-10-11)
+
+- lexical-yjs Chore fix imports of Yjs XML types (#7908) James Fitzsimmons
+- lexical-react Chore make shouldBootstrapUnsafe prop optional (#7907) James Fitzsimmons
+- lexical-playground Bug Fix Export ParagraphNode as div roleparagraph when it contains block DOM (#7906) Bob Ippolito
+- lexicallexical-clipboardlexical-htmllexical-selection Feature Add an internal ephemeral node concept (#7904) Bob Ippolito
+- lexical-yjslexical-react Feature commands for diffing two yjs snapshots in collab v2 (#7903) James Fitzsimmons
+- lexicallexical-clipboardlexical-playground Feature ImageNode caption support for exportDOM and importDOM (#7900) Mehmet Can Ertan
+- lexical-rich-text Bug fix updown arrows for node selection (#7902) Maksim Horbachevsky
+- lexical-listlexical-markdown Feature Keep list marker for markdown round-trip (#7892) Simon
+- lexical-yjslexical-react Feature initial implementation of collab v2 (#7616) James Fitzsimmons
+- lexical-react Bug Fix LexicalMenu guard against undefined option when list shrinks (#7899) MRADUL TRIPATHI
+- examples Feature sveltekit ssr example (#7879) Bob Ippolito
+- Update examples for v0.36.2 (#7896) Bob Ippolito
+- v0.36.2 (#7894) Bob Ippolito
+- v0.36.2 Lexical GitHub Actions Bot
+
+## v0.36.2 (2025-09-30)
+
+- docs Chore Export DOMConversion types so that they are in the docs (#7893) Bob Ippolito
+- lexical-markdown Bug Fix Ensure First Match is Used in importTextMatchTransformer (#7890) River
+- lexical-react Fix ensure selection listeners cleaned up from original owner document (#7843) James Fitzsimmons
+- lexical-clipboard Preventing copying empty string (#7880) Nikhil Sharma
+- lexical-website Chore Update to docusaurus v3.9.1 (#7881) Bob Ippolito
+- lexical-headlesslexical-html Bug Fix Fix entrypoint for lexicalheadlessdom and generalize generateNodesFromDOM (#7859) Bob Ippolito
+- lexical-table Bug Fix Handle accessing table selection following table deletion (#7864) Patrick Moody
+- lexical-headless Bug Fix Fix types for lexicalheadlessdom and simplify npmToWwwName workaround (#7873) Bob Ippolito
+- Update examples for v0.36.1 (#7872) Bob Ippolito
+- lexical-playground Bug Fix Table add-row button no longer hides horizontal scroll (#7847) Nikhil Sharma
+- lexical-website Chore add example for how to bootstrap collab ydoc on the server (#7830) James Fitzsimmons
+-  Bug Fix devInvariant should warn in prod even if not in codes.json (#7870) Bob Ippolito
+- v0.36.1 (#7871) Bob Ippolito
+- v0.36.1 Lexical GitHub Actions Bot
+
+## v0.36.1 (2025-09-25)
+
+-  Bug Fix Update examples and fix package.json for v0.36.0 (will need a patch release) (#7867) Bob Ippolito
+- Make ref optional in ContentEditable flow (#7866) Gerard Rovira
+- v0.36.0 (#7861) Bob Ippolito
+- lexical Bug Fix account for Apple WebView in setManagedLineBreak (#7854) Matsuoka
+- lexical-headless Bug Fix Replace happy-dom with jsdom in www and map react-domclient (#7858) Bob Ippolito
+-  Bug Fix npmToWwwName ensures lexical prefix (#7857) Bob Ippolito
+- lexical-headless Feature lexicalheadlessdom module for easier SSR (#7833) Bob Ippolito
+- lexical Chore Change TabNode.setTextContent invariant to devInvariant (#7855) Aman Harwara
+- lexical-extensiondocs Chore Add experimental to extension functions (#7853) Bob Ippolito
+- lexicallexical-extension Feature Lexical Extension (#7706) Bob Ippolito
+- lexical-react Bug Fix Include react-error-boundary and floating-uireact in WWW bundle (#7852) Bob Ippolito
+- lexical-react Bug Fix Add visibility margin to isTriggerVisibleInNearestScrollContainer to prevent popover from wrongfully closing (#7844) David
+- lexicallexical-reactlexical-playground Chore Update from React 18 to React 19 (#7802) Bob Ippolito
+- lexical-playground Chore remove InlineImageNode and InlineImagePlugun (#7839) Bob Ippolito
+-  Bug Fix Relocate internal eslint plugin to packageslexical-eslint-plugin-internal (#7834) Bob Ippolito
+- lexical Bug Fix Fix cache coherency issue with RangeSelection#extract (#7836) River
+- lexical-clipboard Bug Fix Update Lexical Clipboard with Empty Selection (#7835) River
+- lexical-markdown Refactor Remove MarkdownShortcuts.ts Dependency on index.ts (#7832) River
+- lexical-react Breaking change enforce use of collab context provider (#7818) James Fitzsimmons
+- lexical-yjslexical-playground Breaking change remove clientID from collab context (#7816) James Fitzsimmons
+- lexical-clipboard Fix copy correct selection when editor in different windowdocument (#7822) James Fitzsimmons
+- lexical Chore Improve error message when a node is registered from a foreign lexical module (#7821) Bob Ippolito
+- lexicallexical-selectionlexical-utils Refactor Consolidate ancestor lookup via findMatchingParent (#7814) Chase Naples
+- lexical-markdown Update Flow types to match TypeScript (#7813) Daniel Teo
+- lexical-website Bug Fix Replace broken algolia search with easyops-cndocusaurus-search-local (#7810) Bob Ippolito
+- lexical-list Fix clear li checklist attributes when inserting nested list (#7805) James Fitzsimmons
+-  Chore Port scripts unit tests to vitest and fix test include match pattern (#7807) Bob Ippolito
+- lexical-react Fix Use explicit key attr in NodeContextMenuPlugin (#7803) Bob Ippolito
+- lexical-list Fix updating list type tofrom check type updates child DOM elements (#7800) James Fitzsimmons
+- lexical-playground DatetimeNode DOM updates (#7786) Ivaylo Pavlov
+- examples Chore Update examples for v0.35.0 (#7799) Bob Ippolito
+- lexical-website Chore Update docusaurus-plugin-typedoc (#7766) Bob Ippolito
+- v0.35.0 (#7797) Bob Ippolito
+- v0.35.0 Lexical GitHub Actions Bot
+
+## v0.36.0 (2025-09-25)
+
+- lexical-headless Bug Fix Replace happy-dom with jsdom in www and map react-domclient (#7858) Bob Ippolito
+-  Bug Fix npmToWwwName ensures lexical prefix (#7857) Bob Ippolito
+- lexical-headless Feature lexicalheadlessdom module for easier SSR (#7833) Bob Ippolito
+- lexical Chore Change TabNode.setTextContent invariant to devInvariant (#7855) Aman Harwara
+- lexical-extensiondocs Chore Add experimental to extension functions (#7853) Bob Ippolito
+- lexicallexical-extension Feature Lexical Extension (#7706) Bob Ippolito
+- lexical-react Bug Fix Include react-error-boundary and floating-uireact in WWW bundle (#7852) Bob Ippolito
+- lexical-react Bug Fix Add visibility margin to isTriggerVisibleInNearestScrollContainer to prevent popover from wrongfully closing (#7844) David
+- lexicallexical-reactlexical-playground Chore Update from React 18 to React 19 (#7802) Bob Ippolito
+- lexical-playground Chore remove InlineImageNode and InlineImagePlugun (#7839) Bob Ippolito
+-  Bug Fix Relocate internal eslint plugin to packageslexical-eslint-plugin-internal (#7834) Bob Ippolito
+- lexical Bug Fix Fix cache coherency issue with RangeSelection#extract (#7836) River
+- lexical-clipboard Bug Fix Update Lexical Clipboard with Empty Selection (#7835) River
+- lexical-markdown Refactor Remove MarkdownShortcuts.ts Dependency on index.ts (#7832) River
+- lexical-react Breaking change enforce use of collab context provider (#7818) James Fitzsimmons
+- lexical-yjslexical-playground Breaking change remove clientID from collab context (#7816) James Fitzsimmons
+- lexical-clipboard Fix copy correct selection when editor in different windowdocument (#7822) James Fitzsimmons
+- lexical Chore Improve error message when a node is registered from a foreign lexical module (#7821) Bob Ippolito
+- lexicallexical-selectionlexical-utils Refactor Consolidate ancestor lookup via findMatchingParent (#7814) Chase Naples
+- lexical-markdown Update Flow types to match TypeScript (#7813) Daniel Teo
+- lexical-website Bug Fix Replace broken algolia search with easyops-cndocusaurus-search-local (#7810) Bob Ippolito
+- lexical-list Fix clear li checklist attributes when inserting nested list (#7805) James Fitzsimmons
+-  Chore Port scripts unit tests to vitest and fix test include match pattern (#7807) Bob Ippolito
+- lexical-react Fix Use explicit key attr in NodeContextMenuPlugin (#7803) Bob Ippolito
+- lexical-list Fix updating list type tofrom check type updates child DOM elements (#7800) James Fitzsimmons
+- lexical-playground DatetimeNode DOM updates (#7786) Ivaylo Pavlov
+- examples Chore Update examples for v0.35.0 (#7799) Bob Ippolito
+- lexical-website Chore Update docusaurus-plugin-typedoc (#7766) Bob Ippolito
+- v0.35.0 (#7797) Bob Ippolito
+- v0.35.0 Lexical GitHub Actions Bot
+
+## v0.35.0 (2025-09-04)
+
+- lexical-history Add Missing Argument for DispatchCommand in UndoRedo Docs Example (#7795) Lithika Damnod
+- lexical-markdown Bug Fix Allow any characters in markdown link text (#7735) Simon
+- lexical Fix insert into existing paragraph node if selection is on parent element (#7794) James Fitzsimmons
+- lexical Chore Update flow-bin to 0.280.0 (#7785) Daniel Teo
+- lexical Bug Fix Correct exit direction from decorator nodes in RTL (#7772) Noam Zaks
+- lexical-react Fix the context menu event listener element (#7778) Ivaylo Pavlov
+- Chore Update flow suppressions to use error code (#7770) Sam Zhou
+- lexical-markdown Formatted textmatch fix (#7769) MarekKuncik
+- lexical Feature allow ElementNode direction to be overridden (#7727) James Fitzsimmons
+- lexicallexical-code Refactor remove unnecessary assertion (#7760) Noritaka Kobayashi
+- lexical-playgroundlexical-reactlexical-table Refactor remove unnecessary assertion (#7761) Noritaka Kobayashi
+- lexical-code-shiki Refactor remove unnecessary assertion (#7762) Noritaka Kobayashi
+- lexical-playground Refactor remove unnecessary await in e2e test (#7759) Noritaka Kobayashi
+- lexical-react Bug Fix Add config transform inheritance to LexicalNestedComposer (#7757) Bob Ippolito
+- lexical-playgroundexamples Refactor remove redundant fragment (#7755) Noritaka Kobayashi
+- Update examples for v0.34.0 (#7747) Bob Ippolito
+- v0.34.0 monthly release (#7746) Bob Ippolito
+- v0.34.0 Lexical GitHub Actions Bot
+
+## v0.34.0 (2025-08-07)
+
+-  Chore Add a post-release action to update the examples (#7744) Bob Ippolito
+- lexical-examples  Bug Fix missing dependency lexicalutils at examplesreact-rich-collab (#7743) debuggingfuture (Vincent)
+- lexical-playground DateTime Plugin (#7707) Ivaylo Pavlov
+- lexical-utils fix Backward selection was not being retained (#7737) Jash Vithlani
+- Fix Key Arrow Down Documentation (#7733) zamorai
+- lexical-playground Bug Fix include font sizes in pt as well in parseAllowedFontSize (#7719) Harshkumar Metkel
+- lexical-react Bug Fix prevent race condition in CollaborationPlugin during rapid mountunmount cycles (#7723) Tobias Andersen
+- lexical Bug Fix Clamp DOM selection offsets to valid lexical TextNode offsets in internalResolveSelectionPoint (#7725) Bob Ippolito
+- Fix trigger reconcilation on nested read (#7724) Gerard Rovira
+- lexical-playgroundBug Fix Image links lose link state when dragged (#7693) Yuncheng Lu
+- lexical-websitedocs Documentation Update Fix typo  (#7713) JT
+- lexical-react feat Context Menu icons (#7697) Ivaylo Pavlov
+- lexical-react Clean up old mouseup events from context menu (#7705) Ivaylo Pavlov
+- lexical-codelexical-code-shikilexical-markdownlexical-playgroundlexical-devtools Feature Experimental Shiki support for code highlighting (#7662) jeromew
+- lexical-selection Bug Fix Correct backward inversion for RTL (#7686) Noam Zaks
+- v0.33.1 (#7684) Bob Ippolito
+- v0.33.1 Lexical GitHub Actions Bot
+
 ## v0.33.1 (2025-07-10)
 
 - Add a setter for the format property on RangeSelection (#5829) Omar A.

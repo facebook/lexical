@@ -6,8 +6,14 @@
  *
  */
 
-import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
-import {CollaborationPlugin} from '@lexical/react/LexicalCollaborationPlugin';
+import {
+  LexicalCollaboration,
+  useCollaborationContext,
+} from '@lexical/react/LexicalCollaborationContext';
+import {
+  CollaborationPlugin,
+  CollaborationPluginV2__EXPERIMENTAL,
+} from '@lexical/react/LexicalCollaborationPlugin';
 import {LexicalComposer} from '@lexical/react/LexicalComposer';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
@@ -16,9 +22,9 @@ import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {Provider, UserState} from '@lexical/yjs';
 import {LexicalEditor} from 'lexical';
 import * as React from 'react';
-import {Container} from 'react-dom';
-import {createRoot, Root} from 'react-dom/client';
+import {type Container, createRoot, type Root} from 'react-dom/client';
 import * as ReactTestUtils from 'shared/react-test-utils';
+import {expect} from 'vitest';
 import * as Y from 'yjs';
 
 function Editor({
@@ -27,12 +33,14 @@ function Editor({
   setEditor,
   awarenessData,
   shouldBootstrapEditor = true,
+  useCollabV2 = false,
 }: {
   doc: Y.Doc;
   provider: Provider;
   setEditor: (editor: LexicalEditor) => void;
   awarenessData?: object | undefined;
   shouldBootstrapEditor?: boolean;
+  useCollabV2?: boolean;
 }) {
   const context = useCollaborationContext();
 
@@ -46,12 +54,22 @@ function Editor({
 
   return (
     <>
-      <CollaborationPlugin
-        id="main"
-        providerFactory={() => provider}
-        shouldBootstrap={shouldBootstrapEditor}
-        awarenessData={awarenessData}
-      />
+      {useCollabV2 ? (
+        <CollaborationPluginV2__EXPERIMENTAL
+          id="main"
+          doc={doc}
+          provider={provider}
+          awarenessData={awarenessData}
+          __shouldBootstrapUnsafe={shouldBootstrapEditor}
+        />
+      ) : (
+        <CollaborationPlugin
+          id="main"
+          providerFactory={() => provider}
+          shouldBootstrap={shouldBootstrapEditor}
+          awarenessData={awarenessData}
+        />
+      )}
       <RichTextPlugin
         contentEditable={<ContentEditable />}
         placeholder={<></>}
@@ -68,9 +86,10 @@ export class Client implements Provider {
   _editor: LexicalEditor | null = null;
   _connection: {
     _clients: Map<string, Client>;
+    _useCollabV2: boolean;
   };
   _connected: boolean = false;
-  _doc: Y.Doc = new Y.Doc();
+  _doc: Y.Doc = new Y.Doc({gc: false});
 
   _listeners = new Map<string, Set<(data: unknown) => void>>();
   _updates: Uint8Array[] = [];
@@ -80,7 +99,7 @@ export class Client implements Provider {
     getStates: () => Map<number, UserState>;
     off(): void;
     on(): void;
-    setLocalState: (state: UserState) => void;
+    setLocalState: (state: UserState | null) => void;
     setLocalStateField: (field: string, value: unknown) => void;
   };
 
@@ -102,7 +121,7 @@ export class Client implements Provider {
         // TODO
       },
 
-      setLocalState: (state) => {
+      setLocalState: (state: UserState | null) => {
         this._awarenessState = state;
       },
       setLocalStateField: (field: string, value: unknown) => {
@@ -171,22 +190,25 @@ export class Client implements Provider {
 
     ReactTestUtils.act(() => {
       reactRoot.render(
-        <LexicalComposer
-          initialConfig={{
-            editorState: null,
-            namespace: '',
-            onError: (e) => {
-              throw e;
-            },
-          }}>
-          <Editor
-            provider={this}
-            doc={this._doc}
-            setEditor={(editor) => (this._editor = editor)}
-            awarenessData={awarenessData}
-            shouldBootstrapEditor={options.shouldBootstrapEditor}
-          />
-        </LexicalComposer>,
+        <LexicalCollaboration>
+          <LexicalComposer
+            initialConfig={{
+              editorState: null,
+              namespace: '',
+              onError: (e) => {
+                throw e;
+              },
+            }}>
+            <Editor
+              provider={this}
+              doc={this._doc}
+              setEditor={(editor) => (this._editor = editor)}
+              awarenessData={awarenessData}
+              shouldBootstrapEditor={options.shouldBootstrapEditor}
+              useCollabV2={this._connection._useCollabV2}
+            />
+          </LexicalComposer>
+        </LexicalCollaboration>,
       );
     });
   }
@@ -266,8 +288,10 @@ export class Client implements Provider {
   }
 }
 
-class TestConnection {
+export class TestConnection {
   _clients = new Map<string, Client>();
+
+  constructor(readonly _useCollabV2: boolean) {}
 
   createClient(id: string) {
     const client = new Client(id, this);
@@ -278,8 +302,8 @@ class TestConnection {
   }
 }
 
-export function createTestConnection() {
-  return new TestConnection();
+export function createTestConnection(useCollabV2: boolean) {
+  return new TestConnection(useCollabV2);
 }
 
 export async function waitForReact(cb: () => void) {

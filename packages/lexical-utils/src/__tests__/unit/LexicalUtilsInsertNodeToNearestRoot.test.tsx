@@ -19,6 +19,7 @@ import {
   $createTestDecoratorNode,
   createTestEditor,
 } from 'lexical/src/__tests__/utils';
+import {beforeEach, describe, expect, it} from 'vitest';
 
 import {$insertNodeToNearestRoot} from '../..';
 

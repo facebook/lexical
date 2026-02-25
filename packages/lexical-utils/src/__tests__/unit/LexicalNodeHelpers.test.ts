@@ -23,6 +23,7 @@ import {
   initializeUnitTest,
   invariant,
 } from 'lexical/src/__tests__/utils';
+import {beforeEach, describe, expect, test} from 'vitest';
 
 import {
   $dfs,
@@ -231,6 +232,82 @@ describe('LexicalNodeHelpers tests', () => {
             {depth: 3, node: textNodes[0]},
           ]);
         });
+      });
+
+      test('DFS with endNode as last descendant should not include parent siblings', async () => {
+        const editor: LexicalEditor = testEnv.editor;
+        editor.update(() => {
+          const root = $getRoot();
+
+          // Create structure:
+          // root
+          //   ├── elementNode
+          //   │     ├── word1
+          //   │     └── word2
+          //   ├── elementNode2
+          //   │     └── word3
+          const elementNode1 = $createTestElementNode().append(
+            $createTextNode('word1'),
+            $createTextNode('word2'),
+          );
+          const elementNode2 = $createTestElementNode().append(
+            $createTextNode('word3'),
+          );
+
+          root.clear().append(elementNode1, elementNode2);
+
+          const results = $dfs(elementNode1, elementNode1.getLastDescendant()!);
+
+          // Should include: elementNode1, word1, word2
+          // Should NOT include: elementNode2, word3 (parent's sibling)
+          expect(results).toEqual([
+            {depth: 1, node: elementNode1},
+            {depth: 2, node: elementNode1.getFirstDescendant()},
+            {depth: 2, node: elementNode1.getLastDescendant()},
+          ]);
+        });
+      });
+    });
+
+    test('DFS with endNode as ElementNode should stop at the ElementNode, not include children', async () => {
+      const editor: LexicalEditor = testEnv.editor;
+      editor.update(() => {
+        const root = $getRoot();
+
+        // Create structure:
+        // root
+        //   ├── elementNode
+        //   │     ├── word1
+        //   │     └── word2
+        //   ├── elementNode2
+        //   │     └── word3
+        const elementNode1 = $createTestElementNode().append(
+          $createTextNode('word1'),
+          $createTextNode('word2'),
+        );
+        const elementNode2 = $createTestElementNode().append(
+          $createTextNode('word3'),
+        );
+
+        root.clear().append(elementNode1, elementNode2);
+        expect($dfs(undefined, elementNode2)).toEqual([
+          {depth: 0, node: $getRoot()},
+          {depth: 1, node: elementNode1},
+          {depth: 2, node: elementNode1.getFirstDescendant()},
+          {depth: 2, node: elementNode1.getLastDescendant()},
+          {depth: 1, node: elementNode2},
+        ]);
+
+        expect($dfs(elementNode1, elementNode2)).toEqual([
+          {depth: 1, node: elementNode1},
+          {depth: 2, node: elementNode1.getFirstDescendant()},
+          {depth: 2, node: elementNode1.getLastDescendant()},
+          {depth: 1, node: elementNode2},
+        ]);
+
+        expect($dfs(elementNode1, elementNode1)).toEqual([
+          {depth: 1, node: elementNode1},
+        ]);
       });
     });
 

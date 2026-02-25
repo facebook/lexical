@@ -37,9 +37,10 @@ test('Layout - removes layout completely when both columns are empty and backspa
   await assertHTML(
     page,
     html`
-      <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
       <div
         class="PlaygroundEditorTheme__layoutContainer"
+        dir="auto"
         style="grid-template-columns: 1fr 1fr">
         <div
           class="PlaygroundEditorTheme__layoutItem"
@@ -52,7 +53,7 @@ test('Layout - removes layout completely when both columns are empty and backspa
           <p class="PlaygroundEditorTheme__paragraph"><br /></p>
         </div>
       </div>
-      <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
     `,
   );
 
@@ -65,8 +66,8 @@ test('Layout - removes layout completely when both columns are empty and backspa
   await assertHTML(
     page,
     html`
-      <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-      <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+      <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
     `,
   );
 });

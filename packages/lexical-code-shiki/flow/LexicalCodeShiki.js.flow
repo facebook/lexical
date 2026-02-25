@@ -1,0 +1,27 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @flow strict
+ */
+import type {
+  LexicalExtension,
+  LexicalNode,
+  ExtensionConfigBase,
+} from 'lexical';
+import type {CodeNode} from '@lexical/code';
+
+/**
+ * LexicalCodeShiki
+ */
+
+export type Tokenizer = {
+  defaultLanguage: string;
+  defaultTheme: string;
+  $tokenize: (codeNode: CodeNode, language?: string) => LexicalNode[];
+}
+export type CodeHighlighterShikiConfig = Tokenizer;
+declare export var ShikiTokenizer: Tokenizer;
+declare export var CodeHighlighterShikiExtension: LexicalExtension<CodeHighlighterShikiConfig, "@lexical/code-shiki", void, void>;

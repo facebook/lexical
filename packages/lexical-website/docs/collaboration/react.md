@@ -20,7 +20,7 @@ This guide is based on [examples/react-rich](https://github.com/facebook/lexical
 
 **Install minimal set of the required dependencies:**
 ```bash
-$ npm i -S @lexical/react @lexical/yjs lexical react react-dom y-websocket yjs
+$ npm i -S @lexical/react @lexical/yjs lexical react react-dom y-websocket @y/websocket-server yjs
 ```
 
 :::note
@@ -40,7 +40,10 @@ $ HOST=localhost PORT=1234 YPERSISTENCE=./yjs-wss-db npx y-websocket
 **Get basic collaborative Lexical setup:**
 
 ```tsx
+import { useCallback } from 'react';
+
 import {$getRoot, $createParagraphNode, $createTextNode} from 'lexical';
+import {LexicalCollaboration} from '@lexical/react/LexicalCollaborationContext';
 import {LexicalComposer} from '@lexical/react/LexicalComposer';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
@@ -64,6 +67,19 @@ function Editor() {
     theme: {},
   };
 
+  const getDocFromMap = (id: string, yjsDocMap: Map<string, Y.Doc>): Y.Doc => {
+    let doc = yjsDocMap.get(id);
+  
+    if (doc === undefined) {
+      doc = new Y.Doc();
+      yjsDocMap.set(id, doc);
+    } else {
+      doc.load();
+    }
+
+    return doc;
+  }
+
   const providerFactory = useCallback(
     (id: string, yjsDocMap: Map<string, Y.Doc>) => {
       const doc = getDocFromMap(id, yjsDocMap);
@@ -75,25 +91,54 @@ function Editor() {
   );
 
   return (
-    <LexicalComposer initialConfig={initialConfig}>
-      <RichTextPlugin
-        contentEditable={<ContentEditable className="editor-input" />}
-        placeholder={<div className="editor-placeholder">Enter some rich text...</div>}
-        ErrorBoundary={LexicalErrorBoundary}
-      />
-      <CollaborationPlugin
-        id="lexical/react-rich-collab"
-        providerFactory={providerFactory}
-        // Optional initial editor state in case collaborative Y.Doc won't
-        // have any existing data on server. Then it'll use this value to populate editor.
-        // It accepts same type of values as LexicalComposer editorState
-        // prop (json string, state object, or a function)
-        initialEditorState={$initialEditorState}
-        shouldBootstrap={true}
-      />
-    </LexicalComposer>
+    <LexicalCollaboration>
+      <LexicalComposer initialConfig={initialConfig}>
+        <RichTextPlugin
+          contentEditable={<ContentEditable className="editor-input" />}
+          placeholder={<div className="editor-placeholder">Enter some rich text...</div>}
+          ErrorBoundary={LexicalErrorBoundary}
+        />
+        <CollaborationPlugin
+          id="lexical/react-rich-collab"
+          providerFactory={providerFactory}
+        />
+      </LexicalComposer>
+    </LexicalCollaboration>
   );
 }
+```
+
+**Initial editor content:**
+
+In a production environment, you should bootstrap the editor's initial content on the server. If bootstrapping was left to the client and two clients connected at the same time, they could both try to initialize the content resulting in document corruption.
+
+Using the `withHeadlessCollaborationEditor` function from the [FAQ](faq.md) page, you can create a bootstrapped `Y.Doc` with the following:
+
+```tsx
+import type {CreateEditorArgs} from 'lexical';
+
+import {$getRoot, $createParagraphNode} from 'lexical';
+import {Doc} from 'yjs';
+
+import {withHeadlessCollaborationEditor} from './withHeadlessCollaborationEditor';
+
+function createBootstrappedYDoc(nodes: CreateEditorArgs['nodes']): Doc {
+  return withHeadlessCollaborationEditor(nodes, (editor) => {
+    const yDoc = new Doc();
+    editor.update(() => {
+      $getRoot().append($createParagraphNode());
+    }, {discrete: true});
+    return yDoc;
+  });
+}
+```
+
+If you're simply following the above example to play around in a local dev environment, then you can add the following props to `CollaborationPlugin` to initialize the editor state client-side:
+
+```tsx
+// Dev-testing only, do not use in real-world cases.
+initialEditorState={$initialEditorState}
+shouldBootstrap={true}
 ```
 
 ## See it in action

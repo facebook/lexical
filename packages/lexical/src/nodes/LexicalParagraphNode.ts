@@ -24,6 +24,7 @@ import type {
   SerializedElementNode,
 } from './LexicalElementNode';
 
+import {ELEMENT_TYPE_TO_FORMAT} from '../LexicalConstants';
 import {
   $applyNodeReplacement,
   getCachedClassNameArray,
@@ -43,7 +44,8 @@ export type SerializedParagraphNode = Spread<
 
 /** @noInheritDoc */
 export class ParagraphNode extends ElementNode {
-  ['constructor']!: KlassConstructor<typeof ParagraphNode>;
+  /** @internal */
+  declare ['constructor']: KlassConstructor<typeof ParagraphNode>;
 
   static getType(): string {
     return 'paragraph';
@@ -105,12 +107,20 @@ export class ParagraphNode extends ElementNode {
   }
 
   exportJSON(): SerializedParagraphNode {
-    return {
-      ...super.exportJSON(),
-      // These are included explicitly for backwards compatibility
-      textFormat: this.getTextFormat(),
-      textStyle: this.getTextStyle(),
-    };
+    const json = super.exportJSON();
+    // Provide backwards compatible values, see #7971
+    if (json.textFormat === undefined || json.textStyle === undefined) {
+      // Compute the same value that the reconciler would
+      const firstTextNode = this.getChildren().find($isTextNode);
+      if (firstTextNode) {
+        json.textFormat = firstTextNode.getFormat();
+        json.textStyle = firstTextNode.getStyle();
+      } else {
+        json.textFormat = this.getTextFormat();
+        json.textStyle = this.getTextStyle();
+      }
+    }
+    return json as SerializedParagraphNode;
   }
 
   // Mutation
@@ -160,6 +170,17 @@ function $convertParagraphElement(element: HTMLElement): DOMConversionOutput {
   if (element.style) {
     node.setFormat(element.style.textAlign as ElementFormatType);
     setNodeIndentFromDOM(element, node);
+  }
+
+  // Check legacy 'align' attribute
+  // Only use this if no format was set by CSS
+  if (node.getFormatType() === '') {
+    const align = element.getAttribute('align');
+    if (align) {
+      if (align && align in ELEMENT_TYPE_TO_FORMAT) {
+        node.setFormat(align as ElementFormatType);
+      }
+    }
   }
   return {node};
 }

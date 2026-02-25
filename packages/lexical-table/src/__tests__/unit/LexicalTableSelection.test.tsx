@@ -13,6 +13,7 @@ import {
   $createTableNode,
   $createTableRowNode,
   $createTableSelectionFrom,
+  $deleteTableRowAtSelection,
   $isTableSelection,
   TableMapType,
   TableNode,
@@ -23,9 +24,12 @@ import {
   $createTextNode,
   $getRoot,
   $getSelection,
+  $isParagraphNode,
+  $isTextNode,
   $setSelection,
 } from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
+import {beforeEach, describe, expect, test} from 'vitest';
 
 describe('table selection', () => {
   initializeUnitTest((testEnv) => {
@@ -84,6 +88,82 @@ describe('table selection', () => {
           },
           {discrete: true},
         );
+      });
+
+      test('$patchStyleText applies styles to empty table cells', () => {
+        testEnv.editor.update(
+          () => {
+            const selection = $getSelection();
+            expect($isTableSelection(selection)).toBe(true);
+
+            const emptyCell = tableMap.at(0)!.at(0)!.cell;
+            const emptyParagraph = emptyCell.getFirstChild();
+            if (!$isParagraphNode(emptyParagraph)) {
+              throw new Error('Expected paragraph node in empty cell');
+            }
+            emptyParagraph.clear();
+            expect(emptyParagraph.getChildrenSize()).toBe(0);
+
+            $patchStyleText(selection!, {color: 'blue'});
+
+            const filledCell = tableMap.at(0)!.at(1)!.cell;
+            const filledParagraph = filledCell.getFirstChild();
+            if (!$isParagraphNode(filledParagraph)) {
+              throw new Error('Expected paragraph node in filled cell');
+            }
+            const textNode = filledParagraph.getFirstChild();
+            if (!$isTextNode(textNode)) {
+              throw new Error('Expected text node inside filled cell');
+            }
+
+            expect(textNode.getStyle()).toBe('color: blue;');
+            expect(emptyParagraph.getTextStyle()).toBe('color: blue;');
+          },
+          {discrete: true},
+        );
+      });
+    });
+
+    describe('regression #7140', () => {
+      test('selection points to missing nodes after deleting table rows', () => {
+        testEnv.editor.update(() => {
+          const root = $getRoot();
+          root.clear();
+          const paragraph = $createParagraphNode().append(
+            $createTextNode('Before table'),
+          );
+          root.append(paragraph);
+          root.append(tableNode);
+
+          const newTableMap = $computeTableMapSkipCellCheck(
+            tableNode,
+            null,
+            null,
+          )[0];
+          const newTableSelection = $createTableSelectionFrom(
+            tableNode,
+            newTableMap.at(0)!.at(0)!.cell,
+            newTableMap.at(-1)!.at(-1)!.cell,
+          );
+          $setSelection(newTableSelection);
+        });
+
+        // Delete table rows
+        testEnv.editor.update(() => {
+          const selection = $getSelection();
+          expect($isTableSelection(selection)).toBe(true);
+          $deleteTableRowAtSelection();
+        });
+
+        // Try to access the selection after deletion
+        testEnv.editor.update(() => {
+          const selection = $getSelection();
+          if (selection && $isTableSelection(selection)) {
+            expect(selection.isValid()).toBe(false);
+            const nodes = selection.getNodes();
+            expect(nodes).toEqual([]);
+          }
+        });
       });
     });
   });

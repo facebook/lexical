@@ -7,10 +7,10 @@
  */
 
 import type {LexicalEditor} from 'lexical';
-import type {JSX} from 'react';
+import type {ForwardedRef, JSX, RefCallback} from 'react';
 
 import * as React from 'react';
-import {forwardRef, Ref, useCallback, useMemo, useState} from 'react';
+import {forwardRef, useCallback, useMemo, useState} from 'react';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
 import {mergeRefs} from './mergeRefs';
@@ -58,12 +58,12 @@ function ContentEditableElementImpl(
     'data-testid': testid,
     ...rest
   }: ContentEditableElementProps,
-  ref: Ref<HTMLDivElement>,
+  ref: ForwardedRef<HTMLDivElement>,
 ): JSX.Element {
   const [isEditable, setEditable] = useState(editor.isEditable());
 
-  const handleRef = useCallback(
-    (rootElement: null | HTMLElement) => {
+  const handleRef = useCallback<RefCallback<HTMLDivElement>>(
+    (rootElement) => {
       // defaultView is required for a root element.
       // In multi-window setups, the defaultView may not exist at certain points.
       if (

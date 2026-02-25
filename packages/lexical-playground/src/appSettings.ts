@@ -14,10 +14,14 @@ export const isDevPlayground: boolean =
 export const DEFAULT_SETTINGS = {
   disableBeforeInput: false,
   emptyEditor: isDevPlayground,
+  hasFitNestedTables: false,
   hasLinkAttributes: false,
+  hasNestedTables: false,
   isAutocomplete: false,
   isCharLimit: false,
   isCharLimitUtf8: false,
+  isCodeHighlighted: true,
+  isCodeShiki: false,
   isCollab: false,
   isMaxLength: false,
   isRichText: true,
@@ -25,6 +29,7 @@ export const DEFAULT_SETTINGS = {
   measureTypingPerf: false,
   selectionAlwaysOnDisplay: false,
   shouldAllowHighlightingWithBrackets: false,
+  shouldDisableFocusOnClickChecklist: false,
   shouldPreserveNewLinesInMarkdown: false,
   shouldUseLexicalContextMenu: false,
   showNestedEditorTreeView: false,
@@ -33,6 +38,7 @@ export const DEFAULT_SETTINGS = {
   tableCellBackgroundColor: true,
   tableCellMerge: true,
   tableHorizontalScroll: true,
+  useCollabV2: false,
 } as const;
 
 // These are mutated in setupEnv

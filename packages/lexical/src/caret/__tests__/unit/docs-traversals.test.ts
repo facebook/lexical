@@ -24,6 +24,7 @@ import {
   SiblingCaret,
   TextNode,
 } from 'lexical';
+import {beforeEach, describe, expect, test} from 'vitest';
 
 import {initializeUnitTest} from '../../../__tests__/utils';
 
@@ -170,8 +171,7 @@ describe('traversals.md', () => {
                   // If there is a sibling, try and get a ChildCaret from it
                   (nextCaret && nextCaret.getChildCaret()) ||
                   // Return the sibling if there is one
-                  nextCaret ||
-                  // Return a SiblingCaret of the parent, if there is one
+                  nextCaret || // Return a SiblingCaret of the parent, if there is one
                   prevCaret.getParentCaret('root')
                 );
               }

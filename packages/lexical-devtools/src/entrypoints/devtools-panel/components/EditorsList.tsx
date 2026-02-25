@@ -71,7 +71,11 @@ export function EditorsList({tabID, setErrorMessage}: Props) {
       allowMultiple={true}
       allowToggle={true}>
       {Object.entries(states).map(([key, state], idx) => (
-        <AccordionItem key={key} ref={(el) => tabRefs.current.set(idx, el)}>
+        <AccordionItem
+          key={key}
+          ref={(el) => {
+            tabRefs.current.set(idx, el);
+          }}>
           <h2>
             <AccordionButton>
               <Box as="span" flex="1" textAlign="left">

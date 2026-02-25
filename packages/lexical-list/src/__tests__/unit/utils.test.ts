@@ -7,6 +7,7 @@
  */
 import {$createParagraphNode, $getRoot} from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
+import {describe, expect, test} from 'vitest';
 
 import {$createListItemNode, $createListNode} from '../..';
 import {$getListDepth, $getTopListNode, $isLastItemInList} from '../../utils';

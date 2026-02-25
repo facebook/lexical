@@ -65,7 +65,6 @@ declare module 'yjs' {
     unobserveDeep(fn: Function): void;
   }
 
-  // $FlowFixMe: needs fixing
   declare type YMapEventKeyChanges = any;
 
   declare type Operation = {
@@ -644,8 +643,7 @@ declare module 'yjs' {
   };
 
   declare type StackItem = {
-    // $FlowFixMe: perhaps add generic typing instead of mixed
-    meta: Map<mixed, mixed>,
+    meta: Map,
     type: 'undo' | 'redo',
   };
 

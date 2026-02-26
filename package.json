@@ -194,7 +194,7 @@
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-test-renderer": "^19.1.1",
-    "rollup": "^4.22.4",
+    "rollup": "^4.59.0",
     "tmp": "^0.2.1",
     "ts-jest": "^29.1.2",
     "ts-morph": "^25.0.1",

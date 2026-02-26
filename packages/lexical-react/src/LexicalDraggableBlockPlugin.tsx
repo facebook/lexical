@@ -5,9 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import type {JSX} from 'react';
 
+import {$createListNode, $isListItemNode, $isListNode} from '@lexical/list';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {eventFiles} from '@lexical/rich-text';
 import {calculateZoomLevel, isHTMLElement, mergeRegister} from '@lexical/utils';
@@ -95,11 +95,59 @@ function getCollapsedMargins(elem: HTMLElement): {
   return {marginBottom: collapsedBottomMargin, marginTop: collapsedTopMargin};
 }
 
+function getNestedDraggableBlock(
+  elem: HTMLElement,
+  point: Point,
+  anchorElementRect: DOMRect,
+): HTMLElement | null {
+  if (elem.tagName === 'UL' || elem.tagName === 'OL') {
+    const children = Array.from(elem.children);
+    for (let i = 0; i < children.length; i++) {
+      const child = children[i];
+      if (child instanceof HTMLElement) {
+        const domRect = Rectangle.fromDOM(child);
+        const {marginTop, marginBottom} = getCollapsedMargins(child);
+
+        // Expand the child's hit area horizontally to match the editor's full width.
+        // This ensures the drag handle doesn't vanish when the mouse moves left to grab it!
+        const childRect = domRect.generateNewRect({
+          bottom: domRect.bottom + marginBottom,
+          left: anchorElementRect.left,
+          right: anchorElementRect.right,
+          top: domRect.top - marginTop,
+        });
+        if (childRect.contains(point).result) {
+          const nestedChildren = Array.from(child.children);
+          for (let j = 0; j < nestedChildren.length; j++) {
+            const nestedChild = nestedChildren[j];
+            if (
+              nestedChild instanceof HTMLElement &&
+              (nestedChild.tagName === 'UL' || nestedChild.tagName === 'OL')
+            ) {
+              const deeplyNestedBlock = getNestedDraggableBlock(
+                nestedChild,
+                point,
+                anchorElementRect,
+              );
+              if (deeplyNestedBlock !== null) {
+                return deeplyNestedBlock;
+              }
+            }
+          }
+          return child;
+        }
+      }
+    }
+  }
+  return null;
+}
+
 function getBlockElement(
   anchorElem: HTMLElement,
   editor: LexicalEditor,
   event: MouseEvent,
   useEdgeAsDefault = false,
+  draggedNodeKey: string | null = null,
 ): HTMLElement | null {
   const anchorElementRect = anchorElem.getBoundingClientRect();
   const topLevelNodeKeys = getTopLevelNodeKeys(editor);
@@ -159,7 +207,22 @@ function getBlockElement(
       } = rect.contains(point);
 
       if (result) {
-        blockElem = elem;
+        let isDraggingListItem = false;
+        if (draggedNodeKey !== null) {
+          const draggedNode = $getNodeByKey(draggedNodeKey);
+          isDraggingListItem = $isListItemNode(draggedNode);
+        }
+
+        if (draggedNodeKey == null || isDraggingListItem) {
+          const nestedBlock = getNestedDraggableBlock(
+            elem,
+            point,
+            anchorElementRect,
+          );
+          blockElem = nestedBlock || elem;
+        } else {
+          blockElem = elem;
+        }
         prevIndex = index;
         break;
       }
@@ -287,6 +350,7 @@ function useDraggableBlockMenu(
   const isDraggingBlockRef = useRef<boolean>(false);
   const [draggableBlockElem, setDraggableBlockElemState] =
     useState<HTMLElement | null>(null);
+  const draggedNodeKeyRef = useRef<string | null>(null);
 
   const setDraggableBlockElem = useCallback(
     (elem: HTMLElement | null) => {
@@ -360,7 +424,13 @@ function useDraggableBlockMenu(
       if (!isHTMLElement(target)) {
         return false;
       }
-      const targetBlockElem = getBlockElement(anchorElem, editor, event, true);
+      const targetBlockElem = getBlockElement(
+        anchorElem,
+        editor,
+        event,
+        true,
+        draggedNodeKeyRef.current,
+      );
       const targetLineElem = targetLineRef.current;
       if (targetBlockElem === null || targetLineElem === null) {
         return false;
@@ -394,7 +464,13 @@ function useDraggableBlockMenu(
       if (!isHTMLElement(target)) {
         return false;
       }
-      const targetBlockElem = getBlockElement(anchorElem, editor, event, true);
+      const targetBlockElem = getBlockElement(
+        anchorElem,
+        editor,
+        event,
+        true,
+        draggedNodeKeyRef.current,
+      );
       if (!targetBlockElem) {
         return false;
       }
@@ -410,10 +486,36 @@ function useDraggableBlockMenu(
         return true;
       }
       const targetBlockElemTop = targetBlockElem.getBoundingClientRect().top;
-      if (pageY / calculateZoomLevel(target) >= targetBlockElemTop) {
-        targetNode.insertAfter(draggedNode);
+      const isInsertAfter =
+        pageY / calculateZoomLevel(target) >= targetBlockElemTop;
+
+      let insertTarget = targetNode;
+      let nodeToInsert = draggedNode;
+
+      //  Dragging a non-list-item (like a Paragraph) onto a list-item.
+      // We must elevate the target to the parent List so we don't put a <p> inside a <ul>.
+      if (!$isListItemNode(draggedNode) && $isListItemNode(targetNode)) {
+        insertTarget = targetNode.getParentOrThrow();
+      }
+
+      //  Dragging a list-item out of a list and dropping it onto a non-list-item.
+      // We must wrap the item in a brand new List so it isn't orphaned.
+      if ($isListItemNode(draggedNode) && !$isListItemNode(targetNode)) {
+        const parentList = draggedNode.getParent();
+        // Match the original list type (bullet, number, etc.)
+        const listType = $isListNode(parentList)
+          ? parentList.getListType()
+          : 'bullet';
+
+        const newList = $createListNode(listType);
+        newList.append(draggedNode);
+        nodeToInsert = newList;
+      }
+
+      if (isInsertAfter) {
+        insertTarget.insertAfter(nodeToInsert);
       } else {
-        targetNode.insertBefore(draggedNode);
+        insertTarget.insertBefore(nodeToInsert);
       }
       setDraggableBlockElem(null);
 
@@ -533,6 +635,7 @@ function useDraggableBlockMenu(
       }
     });
     isDraggingBlockRef.current = true;
+    draggedNodeKeyRef.current = nodeKey;
     dataTransfer.setData(DRAG_DATA_FORMAT, nodeKey);
 
     // Firefox-specific: Restore focus synchronously after drag starts to prevent cursor loss.
@@ -557,6 +660,7 @@ function useDraggableBlockMenu(
 
   function onDragEnd(): void {
     isDraggingBlockRef.current = false;
+    draggedNodeKeyRef.current = null;
     hideTargetLine(targetLineRef.current);
 
     // Firefox-specific fix: Use editor.focus() to properly restore both focus and

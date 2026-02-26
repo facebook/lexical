@@ -191,7 +191,7 @@
     "prettier": "^3.6.2",
     "prettier-plugin-hermes-parser": "^0.26.0",
     "prettier-plugin-organize-attributes": "^0.0.5",
-    "prettier-plugin-tailwindcss": "^0.4.1",
+    "prettier-plugin-tailwindcss": "^0.7.2",
     "proper-lockfile": "^4.1.2",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",

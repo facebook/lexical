@@ -4,6 +4,7 @@ pnpm-lock.yaml
 yarn.lock
 bun.lock
 bun.lockb
+package.json
 
 # Miscellaneous
 /static/

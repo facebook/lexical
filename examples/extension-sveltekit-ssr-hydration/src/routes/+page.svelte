@@ -6,7 +6,6 @@
 	import * as extension from '@lexical/extension';
 
 	let editorRef: HTMLElement;
-	let exportJson = $state('');
 	let initialState = browser ? null : buildEditor.$initialEditorStateServer;
 	const editor = buildEditor.buildEditor(initialState, browser ? import.meta.hot : undefined);
 	// preact signals comply with the svelte store API so we can use these reactively with $ prefixes
@@ -25,10 +24,8 @@
 			editor.setRootElement(editorRef);
 		}
 	});
-	$effect(() => {
-		// Only compute this on the client
-		exportJson = JSON.stringify($stateSignal, null, 2);
-	});
+	// Only compute this on the client
+	let exportJson = $derived(browser ? JSON.stringify($stateSignal, null, 2) : '');
 </script>
 
 <svelte:head>
@@ -53,7 +50,8 @@
 			bind:this={editorRef}
 			contenteditable={$editableSignal}
 		>
-			<!-- svelte-ignore hydration_html_changed -->
+			<!-- eslint-disable-next-line svelte/no-unused-svelte-ignore -->
+			<!-- eslint-disable-next-line svelte/no-at-html-tags --><!-- svelte-ignore hydration_html_changed -->
 			{@html browser ? '<!-- server hydrated -->' : buildEditor.prerenderHtml(editor)}
 		</div>
 	</div>

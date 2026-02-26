@@ -10,7 +10,7 @@
 
 'use strict';
 
-const {exec} = require('child-process-promise');
+const {exec} = require('../shared/childProcess');
 
 const isPrerelease = process.env.npm_package_version.indexOf('-') !== -1;
 

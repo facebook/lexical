@@ -207,11 +207,6 @@ function exportTextFormat(
   // Otherwise, we escape leading and trailing whitespaces to their corresponding code points,
   // ensuring the returned string maintains its original formatting, e.g., "**&#32;&#32;&#32;foo&#32;&#32;&#32;**".
 
-  // Treat whitespace-only nodes as unformatted (except for code).
-  // This prevents generating empty markdown tags (e.g., ****) for bold whitespaces,
-  // and satisfies CommonMark flanking rules by ensuring tags wrap text, not spaces.
-  const isWhitespaceOnly = /^\s*$/.test(textContent);
-
   let output = textContent;
   if (!node.hasFormat('code')) {
     // Escape any markdown characters in the text content
@@ -224,6 +219,7 @@ function exportTextFormat(
   const leadingSpace = match[1];
   const trimmedOutput = match[2];
   const trailingSpace = match[3];
+  const isWhitespaceOnly = trimmedOutput === '';
 
   // the opening tags to be added to the result
   let openingTags = '';

@@ -8,13 +8,13 @@
 
 // @ts-check
 /* eslint-disable no-console */
-import {spawn} from 'child-process-promise';
 import {sync as globSync} from 'glob';
 import minimist from 'minimist';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import {gt as semverGt} from 'semver';
 
+import {spawn} from './shared/childProcess.js';
 import {PackageMetadata} from './shared/PackageMetadata.js';
 
 async function main() {

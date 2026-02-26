@@ -11,7 +11,7 @@
 'use strict';
 
 const readline = require('readline');
-const {exec} = require('child-process-promise');
+const {exec} = require('../shared/childProcess');
 const {packagesManager} = require('../shared/packagesManager');
 const argv = require('minimist')(process.argv.slice(2));
 

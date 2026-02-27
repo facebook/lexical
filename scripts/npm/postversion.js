@@ -10,7 +10,7 @@
 
 'use strict';
 
-const {spawn} = require('child-process-promise');
+const {spawn} = require('../shared/childProcess');
 
 const {npm_package_version, CHANNEL, GITHUB_OUTPUT} = process.env;
 

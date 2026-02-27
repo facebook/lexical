@@ -8,7 +8,7 @@
 // @ts-check
 'use strict';
 
-const {exec} = require('child-process-promise');
+const {exec} = require('../../shared/childProcess');
 const {packagesManager} = require('../../shared/packagesManager');
 const fs = require('fs-extra');
 const path = require('node:path');
@@ -45,7 +45,7 @@ function expectSuccessfulExec(cmd) {
   const env = Object.fromEntries(
     Object.entries(process.env).filter(([k]) => k !== 'JEST_WORKER_ID'),
   );
-  return exec(cmd, {capture: ['stdout', 'stderr'], env}).catch((err) => {
+  return exec(cmd, {env}).catch((err) => {
     expect(
       Object.fromEntries(
         ['code', 'stdout', 'stderr'].map((prop) => [prop, err[prop]]),

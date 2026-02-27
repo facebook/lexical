@@ -35,6 +35,7 @@ import {
   getCachedTypeToNodeMap,
   getTextDirection,
   isArray,
+  isExactShortcutMatch,
   scheduleMicroTask,
 } from '../../LexicalUtils';
 import {initializeUnitTest} from '../utils';
@@ -180,6 +181,142 @@ describe('LexicalUtils tests', () => {
       expect(getTextDirection(`\uFDFD`)).toBe('rtl');
       expect(getTextDirection(`\uFE70`)).toBe('rtl');
       expect(getTextDirection(`\uFEFC`)).toBe('rtl');
+    });
+
+    test('isExactShortcutMatch() matches by event.key for single-letter', () => {
+      const eventWithoutUppercase = new KeyboardEvent('keydown', {
+        code: 'KeyZ',
+        ctrlKey: true,
+        key: 'z',
+      });
+
+      expect(
+        isExactShortcutMatch(eventWithoutUppercase, 'z', {ctrlKey: true}),
+      ).toBe(true);
+
+      const eventWithUppercase = new KeyboardEvent('keydown', {
+        code: 'KeyZ',
+        ctrlKey: true,
+        key: 'Z',
+      });
+
+      expect(
+        isExactShortcutMatch(eventWithUppercase, 'z', {ctrlKey: true}),
+      ).toBe(true);
+    });
+
+    test('isExactShortcutMatch() matches to event.key for ASCII remapped layout (English (US) Dvorak)', () => {
+      const eventWithoutUppercase = new KeyboardEvent('keydown', {
+        code: 'KeyB',
+        ctrlKey: true,
+        key: 'x',
+      });
+
+      expect(
+        isExactShortcutMatch(eventWithoutUppercase, 'x', {ctrlKey: true}),
+      ).toBe(true);
+      expect(
+        isExactShortcutMatch(eventWithoutUppercase, 'b', {ctrlKey: true}),
+      ).toBe(false);
+
+      const eventWithUppercase = new KeyboardEvent('keydown', {
+        code: 'KeyB',
+        ctrlKey: true,
+        key: 'X',
+      });
+
+      expect(
+        isExactShortcutMatch(eventWithUppercase, 'x', {ctrlKey: true}),
+      ).toBe(true);
+      expect(
+        isExactShortcutMatch(eventWithUppercase, 'b', {ctrlKey: true}),
+      ).toBe(false);
+    });
+
+    test('isExactShortcutMatch() fallback to event.code for single-letter in event.key via non-English layout', () => {
+      const eventWithoutUppercase = new KeyboardEvent('keydown', {
+        code: 'KeyZ',
+        ctrlKey: true,
+        key: 'я',
+      });
+
+      expect(
+        isExactShortcutMatch(eventWithoutUppercase, 'z', {ctrlKey: true}),
+      ).toBe(true);
+
+      const eventWithUppercase = new KeyboardEvent('keydown', {
+        code: 'KeyZ',
+        ctrlKey: true,
+        key: 'Я',
+      });
+
+      expect(
+        isExactShortcutMatch(eventWithUppercase, 'z', {ctrlKey: true}),
+      ).toBe(true);
+    });
+
+    test('isExactShortcutMatch() matches special keys', () => {
+      const eventWithEnter = new KeyboardEvent('keydown', {
+        ctrlKey: true,
+        key: 'Enter',
+      });
+
+      expect(
+        isExactShortcutMatch(eventWithEnter, 'Enter', {ctrlKey: true}),
+      ).toBe(true);
+
+      const eventWithTab = new KeyboardEvent('keydown', {
+        ctrlKey: true,
+        key: 'Tab',
+      });
+
+      expect(isExactShortcutMatch(eventWithTab, 'Tab', {ctrlKey: true})).toBe(
+        true,
+      );
+
+      const eventWithDelete = new KeyboardEvent('keydown', {
+        ctrlKey: true,
+        key: 'Delete',
+      });
+
+      expect(
+        isExactShortcutMatch(eventWithDelete, 'Delete', {ctrlKey: true}),
+      ).toBe(true);
+    });
+
+    test('isExactShortcutMatch() matches optional keys', () => {
+      const eventWithCtrl = new KeyboardEvent('keydown', {
+        ctrlKey: true,
+        key: 'a',
+      });
+
+      expect(isExactShortcutMatch(eventWithCtrl, 'a', {ctrlKey: true})).toBe(
+        true,
+      );
+
+      const eventWithShift = new KeyboardEvent('keydown', {
+        key: 'a',
+        shiftKey: true,
+      });
+
+      expect(isExactShortcutMatch(eventWithShift, 'a', {shiftKey: true})).toBe(
+        true,
+      );
+
+      const eventWithMeta = new KeyboardEvent('keydown', {
+        key: 'a',
+        metaKey: true,
+      });
+
+      expect(isExactShortcutMatch(eventWithMeta, 'a', {metaKey: true})).toBe(
+        true,
+      );
+
+      const eventWithoutCtrl = new KeyboardEvent('keydown', {key: 'a'});
+
+      expect(isExactShortcutMatch(eventWithoutCtrl, 'a', {ctrlKey: true})).toBe(
+        false,
+      );
     });
 
     test('isTokenOrSegmented()', async () => {

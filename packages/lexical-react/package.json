@@ -8,7 +8,7 @@
     "rich-text"
   ],
   "license": "MIT",
-  "version": "0.40.0",
+  "version": "0.41.0",
   "dependencies": {
     "@floating-ui/react": "^0.27.16",
     "@lexical/devtools-core": "workspace:*",

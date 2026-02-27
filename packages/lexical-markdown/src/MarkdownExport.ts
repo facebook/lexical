@@ -206,15 +206,20 @@ function exportTextFormat(
   // If the node has no format, we use the original text.
   // Otherwise, we escape leading and trailing whitespaces to their corresponding code points,
   // ensuring the returned string maintains its original formatting, e.g., "**&#32;&#32;&#32;foo&#32;&#32;&#32;**".
-  let output =
-    node.getFormat() === 0
-      ? textContent
-      : escapeLeadingAndTrailingWhitespaces(textContent);
 
+  let output = textContent;
   if (!node.hasFormat('code')) {
     // Escape any markdown characters in the text content
     output = output.replace(/([*_`~\\])/g, '\\$1');
   }
+
+  // Extract leading and trailing whitespaces.
+  // CommonMark flanking rules require formatting tags to be adjacent to non-whitespace characters.
+  const match = output.match(/^(\s*)(.*?)(\s*)$/s) || ['', '', output, ''];
+  const leadingSpace = match[1];
+  const trimmedOutput = match[2];
+  const trailingSpace = match[3];
+  const isWhitespaceOnly = trimmedOutput === '';
 
   // the opening tags to be added to the result
   let openingTags = '';
@@ -232,14 +237,13 @@ function exportTextFormat(
     const tag = transformer.tag;
 
     // dedup applied formats
-    if (hasFormat(node, format) && !applied.has(format)) {
-      // Multiple tags might be used for the same format (*, _)
+    if (checkHasFormat(node, format) && !applied.has(format)) {
       applied.add(format);
 
       // append the tag to openingTags, if it's not applied to the previous nodes,
       // or the nodes before that (which would result in an unclosed tag)
       if (
-        !hasFormat(prevNode, format) ||
+        !checkHasFormat(prevNode, format) ||
         !unclosedTags.find((element) => element.tag === tag)
       ) {
         unclosedTags.push({format, tag});
@@ -287,10 +291,21 @@ function exportTextFormat(
     }
     break;
   }
+  // If the node is entirely whitespace, we don't apply opening/closing tags around it.
+  // However, it must still output closing tags from previous nodes.
+  if (isWhitespaceOnly && !node.hasFormat('code')) {
+    return closingTagsBefore + output;
+  }
 
-  output = openingTags + output + closingTagsAfter;
-  // Replace trimmed version of textContent ensuring surrounding whitespace is not modified
-  return closingTagsBefore + output;
+  // Flanking Compliance: Notice how openingTags and closingTagsAfter are placed INSIDE the whitespace boundaries!
+  return (
+    closingTagsBefore +
+    leadingSpace +
+    openingTags +
+    trimmedOutput +
+    closingTagsAfter +
+    trailingSpace
+  );
 }
 
 function getTextSibling(node: TextNode, backward: boolean): TextNode | null {
@@ -310,8 +325,15 @@ function hasFormat(
   return $isTextNode(node) && node.hasFormat(format);
 }
 
-function escapeLeadingAndTrailingWhitespaces(textContent: string) {
-  return textContent.replace(/^\s+|\s+$/g, (match) => {
-    return [...match].map((char) => '&#' + char.codePointAt(0) + ';').join('');
-  });
+function checkHasFormat(n: TextNode | null, f: TextFormatType): boolean {
+  if (!hasFormat(n, f)) {
+    return false;
+  }
+  if (f === 'code') {
+    return true;
+  }
+  if (n && /^\s*$/.test(n.getTextContent())) {
+    return false;
+  }
+  return true;
 }

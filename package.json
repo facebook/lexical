@@ -1,7 +1,7 @@
 {
   "name": "@lexical/monorepo",
   "description": "Lexical is an extensible text editor framework that provides excellent reliability, accessibility and performance.",
-  "version": "0.40.0",
+  "version": "0.41.0",
   "license": "MIT",
   "private": true,
   "workspaces": [
@@ -136,7 +136,6 @@
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-replace": "^5.0.5",
     "@rollup/plugin-terser": "^0.4.4",
-    "@types/child-process-promise": "^2.2.6",
     "@types/fs-extra": "^8.1.5",
     "@types/jest": "^29.5.12",
     "@types/jsdom": "^21.1.6",
@@ -152,7 +151,6 @@
     "@typescript-eslint/parser": "^8.39.1",
     "@vitejs/plugin-react": "^5.0.3",
     "baseline-browser-mapping": "^2.9.9",
-    "child-process-promise": "^2.2.1",
     "chokidar": "^3.5.2",
     "concurrently": "^8.2.2",
     "confusing-browser-globals": "^1.0.10",
@@ -191,12 +189,12 @@
     "prettier": "^3.6.2",
     "prettier-plugin-hermes-parser": "^0.26.0",
     "prettier-plugin-organize-attributes": "^0.0.5",
-    "prettier-plugin-tailwindcss": "^0.4.1",
+    "prettier-plugin-tailwindcss": "^0.7.2",
     "proper-lockfile": "^4.1.2",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-test-renderer": "^19.1.1",
-    "rollup": "^4.22.4",
+    "rollup": "^4.59.0",
     "tmp": "^0.2.1",
     "ts-jest": "^29.1.2",
     "ts-morph": "^25.0.1",
@@ -217,7 +215,10 @@
       "@shikijs/types": "3.20.0",
       "react": "19.1.1",
       "react-dom": "19.1.1",
-      "@types/node": "20.19.17"
+      "@types/node": "20.19.17",
+      "qs": ">=6.14.2",
+      "form-data": ">=4.0.4",
+      "@isaacs/brace-expansion": ">=5.0.1"
     }
   }
 }

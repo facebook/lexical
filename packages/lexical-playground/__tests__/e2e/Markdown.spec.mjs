@@ -1259,7 +1259,7 @@ This is *italic*, _italic_, **bold**, __bold__, ~~strikethrough~~ text
 This is *__~~bold italic strikethrough~~__* text,
 ___~~this one too~~___
 
-It ~~___works [with links](https://lexical.io)___~~ too
+It ***~~works~~*** and [***~~with links~~***](https://lexical.io) too
 
 Links [with underscores](https://lexical.io/tag_here_and__here__and___here___too) and ([parenthesis](https://lexical.dev))
 
@@ -1354,6 +1354,7 @@ const IMPORTED_MARKDOWN_HTML = html`
       data-lexical-text="true">
       works
     </strong>
+    <span data-lexical-text="true">and</span>
     <a class="PlaygroundEditorTheme__link" href="https://lexical.io">
       <strong
         class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic PlaygroundEditorTheme__textStrikethrough"

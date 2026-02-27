@@ -33,7 +33,6 @@ import {
   ElementNode,
   isDOMNode,
   LexicalEditor,
-  LexicalNode,
   NodeKey,
   RangeSelection,
   SELECT_ALL_COMMAND,
@@ -449,7 +448,7 @@ export function registerTablePlugin(
       }
       const parentCell = $findMatchingParent(node, $isTableCellNode);
       if (parentCell) {
-        $fitNestedTablesIntoCell(parentCell, [node]);
+        $fitNestedTableIntoCell(parentCell, node);
       }
     }),
   );
@@ -702,19 +701,16 @@ function $isMultiCellTableSelection(
   return false;
 }
 
-function $fitNestedTablesIntoCell(
+function $fitNestedTableIntoCell(
   parentCell: TableCellNode,
-  nodes: LexicalNode[],
+  tableNode: TableNode,
 ) {
   const cellWidth = $getCellWidth(parentCell);
   if (cellWidth === undefined) {
     return false;
   }
   const borderBoxInsets = $calculateCellHorizontalInsets(parentCell);
-  const tables = nodes.filter($isTableNode);
-  for (const table of tables) {
-    $resizeTableToFitCell(table, cellWidth, borderBoxInsets);
-  }
+  $resizeTableToFitCell(tableNode, cellWidth, borderBoxInsets);
 
   return false;
 }

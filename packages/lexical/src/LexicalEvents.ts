@@ -1112,7 +1112,6 @@ function $onCompositionEndImpl(editor: LexicalEditor, data?: string): void {
       const node = $getNodeByKey(compositionKey);
       const domElement = editor.getElementByKey(compositionKey);
       const textNode = getDOMTextNode(domElement);
-
       if (
         textNode !== null &&
         textNode.nodeValue !== null &&

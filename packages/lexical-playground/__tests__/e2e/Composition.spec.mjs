@@ -1392,6 +1392,138 @@ test.describe('Composition', () => {
         `,
       );
     });
+
+    test('Can type Chinese pinyin via IME on empty editor and confirm', async ({
+      page,
+      browserName,
+    }) => {
+      // We don't yet support FF.
+      test.skip(browserName !== 'chromium');
+
+      await focusEditor(page);
+      await enableCompositionKeyEvents(page);
+
+      const client = await page.context().newCDPSession(page);
+
+      // Simulate Chinese IME: user types pinyin on an initially empty editor.
+      // This triggers the COMPOSITION_START_CHAR insertion because anchor.type === 'element'.
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 1,
+        selectionEnd: 1,
+        text: 'n',
+      });
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 2,
+        selectionEnd: 2,
+        text: 'ni',
+      });
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 3,
+        selectionEnd: 3,
+        text: 'nih',
+      });
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 5,
+        selectionEnd: 5,
+        text: 'nihao',
+      });
+
+      // User selects a candidate (e.g. 你好)
+      await client.send('Input.insertText', {text: '你好'});
+
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">你好</span>
+          </p>
+        `,
+      );
+      await assertSelection(page, {
+        anchorOffset: 2,
+        anchorPath: [0, 0, 0],
+        focusOffset: 2,
+        focusPath: [0, 0, 0],
+      });
+
+      // Verify the editor is still functional after the composition
+      await page.keyboard.type('world');
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">你好world</span>
+          </p>
+        `,
+      );
+    });
+
+    test('Can cancel Chinese pinyin IME on empty editor and preserve raw input via insertText', async ({
+      page,
+      browserName,
+    }) => {
+      // We don't yet support FF.
+      test.skip(browserName !== 'chromium');
+
+      await focusEditor(page);
+      await enableCompositionKeyEvents(page);
+
+      const client = await page.context().newCDPSession(page);
+
+      // Simulate Chinese IME: user types pinyin "ceshi" on an initially empty editor.
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 1,
+        selectionEnd: 1,
+        text: 'c',
+      });
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 2,
+        selectionEnd: 2,
+        text: 'ce',
+      });
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 5,
+        selectionEnd: 5,
+        text: 'ceshi',
+      });
+
+      // User presses Enter to dismiss/cancel the IME without selecting a candidate.
+      // On macOS Chrome with the native Chinese IME, the browser fires:
+      //   1. compositionend(data='') — clears the composition text from the DOM
+      //   2. insertText(data='ceshi') — restores the raw pinyin as committed text
+      // We simulate this two-step sequence here.
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 0,
+        selectionEnd: 0,
+        text: '',
+      });
+      await page.keyboard.insertText('');
+      // The browser restores raw pinyin via a separate insertText event.
+      await page.keyboard.insertText('ceshi');
+
+      // Wait for the deferred setTimeout(20ms) in $updateTextNodeFromDOMContent to complete.
+      await page.waitForTimeout(50);
+
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">ceshi</span>
+          </p>
+        `,
+      );
+
+      // Verify the editor is still functional after the cancelled composition
+      await page.keyboard.type('!');
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">ceshi!</span>
+          </p>
+        `,
+      );
+    });
   });
   /* eslint-enable sort-keys-fix/sort-keys-fix */
 });

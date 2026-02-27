@@ -801,11 +801,25 @@ export function $updateTextNodeFromDOMContent(
       if (normalizedTextContent === '') {
         $setCompositionKey(null);
         if (!IS_SAFARI && !IS_IOS && !IS_APPLE_WEBKIT) {
-          // For composition (mainly Android), we have to remove the node on a later update
+          // For composition (mainly Android), we have to remove the node on a later update.
+          // We defer removal to allow the browser to finish processing the
+          // compositionend event. Some browsers (e.g. Chrome on macOS) fire an
+          // additional `insertText` event after compositionend that restores the
+          // user's raw IME input (e.g. pinyin letters). If we remove the node
+          // synchronously, that restored text is lost.
+          //
+          // We also clear the node's text content immediately so that any
+          // subsequent insertText event from the browser inserts into a clean
+          // node rather than appending to stale composition text.
           const editor = getActiveEditor();
+          node.setTextContent('');
           setTimeout(() => {
             editor.update(() => {
               if (node.isAttached()) {
+                const currentText = node.getTextContent();
+                if (currentText !== '') {
+                  return;
+                }
                 node.remove();
               }
             });

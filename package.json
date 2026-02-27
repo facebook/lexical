@@ -217,7 +217,8 @@
       "react-dom": "19.1.1",
       "@types/node": "20.19.17",
       "qs": ">=6.14.2",
-      "form-data": ">=4.0.4"
+      "form-data": ">=4.0.4",
+      "@isaacs/brace-expansion": ">=5.0.1"
     }
   }
 }

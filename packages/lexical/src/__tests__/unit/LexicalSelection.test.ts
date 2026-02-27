@@ -24,6 +24,7 @@ import {
   $getRoot,
   $getSelection,
   $isParagraphNode,
+  $isRangeSelection,
   $isTextNode,
   $selectAll,
   $setSelection,
@@ -1334,6 +1335,54 @@ describe('getNodes()', () => {
             focus: {key: emptyListItem.getKey(), offset: 0, type: 'element'},
           });
           expect(selection.getNodes()).toEqual([emptyListItem]);
+        },
+        {discrete: true},
+      );
+    });
+    test('format is preserved after inserting multiple line breaks', () => {
+      testEnv.editor.update(
+        () => {
+          // Create paragraph with bold "hello"
+          const paragraph = $createParagraphNode();
+          const textNode = $createTextNode('hello');
+          textNode.toggleFormat('bold');
+          paragraph.append(textNode);
+          $getRoot().append(paragraph);
+
+          // Place cursor between "he" and "llo"
+          const selection = $createRangeSelection();
+          selection.anchor.set(textNode.getKey(), 2, 'text');
+          selection.focus.set(textNode.getKey(), 2, 'text');
+          $setSelection(selection);
+
+          // Insert two line breaks
+          selection.insertLineBreak();
+          selection.insertLineBreak();
+
+          // Get updated selection
+          const newSelection = $getSelection();
+          expect($isRangeSelection(newSelection)).toBe(true);
+
+          if (!$isRangeSelection(newSelection)) {
+            throw new Error('Expected RangeSelection');
+          }
+
+          // Type a character between the line breaks
+          newSelection.insertText('X');
+
+          // Get inserted node
+          const nodes = newSelection.getNodes();
+          expect(nodes.length).toBeGreaterThan(0);
+
+          const insertedNode = nodes[0];
+          expect($isTextNode(insertedNode)).toBe(true);
+
+          if (!$isTextNode(insertedNode)) {
+            throw new Error('Expected TextNode');
+          }
+
+          // Assert bold format is preserved
+          expect(insertedNode.hasFormat('bold')).toBe(true);
         },
         {discrete: true},
       );

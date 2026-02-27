@@ -104,6 +104,17 @@ describe('HTMLCopyAndPaste tests', () => {
           pastedHTML: `<strong>hello</strong>`,
           plainTextInsert: ' world',
         },
+        {
+          expectedHTML: `<blockquote dir="auto"><ul><li value="1"><span data-lexical-text="true">Item A</span></li><li value="2"><span data-lexical-text="true">Item B</span></li><li value="3"><span data-lexical-text="true">Item C</span></li></ul></blockquote>`,
+          name: 'invalid list node correction',
+          pastedHTML: `
+            <blockquote>
+              <li>Item A</li>
+              <li>Item B</li>
+              <li>Item C</li>
+            </blockquote>
+          `,
+        },
       ];
 
       HTML_COPY_PASTING_TESTS.forEach((testCase, i) => {

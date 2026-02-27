@@ -309,9 +309,46 @@ function $createNodesFromDOM(
     }
   } else {
     if ($isElementNode(currentLexicalNode)) {
-      // If the current node is a ElementNode after conversion,
-      // we can append all the children to it.
-      currentLexicalNode.append(...childLexicalNodes);
+      // If the current node is a ElementNode after conversion, we should be able to append all the
+      // children to it. However, we still need to ensure that children requiring specific parents
+      // have the correct parent type. Group children by their required parent type.
+      let requiredParent: ElementNode | null = null;
+      for (const child of childLexicalNodes) {
+        // console.log(requiredParent, child, child.isParentRequired());
+        const desiredParent = child.createParentElementNode();
+        if (
+          child.isParentRequired() &&
+          !(currentLexicalNode instanceof desiredParent.constructor)
+        ) {
+          if (
+            requiredParent === null ||
+            !(requiredParent instanceof desiredParent.constructor)
+          ) {
+            // CASE 1: We have a child that needs a parent, but the existing parent either doesn't
+            // exist or can't house this child. So, create a new parent to house this child.
+            requiredParent = desiredParent;
+            requiredParent.append(child);
+            // Typescript gets a little confused here, so help it along
+            (currentLexicalNode as ElementNode).append(requiredParent);
+          } else {
+            // CASE 2: We have a child in need of a parent, and the parent we've already been
+            // adding to can do the job.
+            requiredParent.append(child);
+          }
+        } else {
+          if (requiredParent === null) {
+            // CASE 3: We have a child that doesn't need a parent, and no existing parent, so we can
+            // add like normal.
+            currentLexicalNode.append(child);
+          } else {
+            // CASE 4: We have a child that doesn't need a parent, but there is an existing parent.
+            // To make it so that children always appear in the correct order, we should remove the
+            // parent before continuing.
+            requiredParent = null;
+            currentLexicalNode.append(child);
+          }
+        }
+      }
     }
   }
 

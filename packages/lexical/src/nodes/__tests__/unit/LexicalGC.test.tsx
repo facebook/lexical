@@ -13,6 +13,7 @@ import {
   $getRoot,
   $isElementNode,
 } from 'lexical';
+import {describe, expect, test} from 'vitest';
 
 import {
   $createTestElementNode,

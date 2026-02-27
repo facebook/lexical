@@ -12,6 +12,7 @@ import type {
   LexicalNode,
   LexicalCommand,
   NodeKey,
+  SerializedDecoratorNode
 } from 'lexical';
 
 import {DecoratorNode} from 'lexical';
@@ -26,3 +27,9 @@ declare export class DecoratorBlockNode<T> extends DecoratorNode<T> {
 declare export function $isDecoratorBlockNode(
   node: ?LexicalNode,
 ): node is DecoratorBlockNode<{...}>;
+
+export type SerializedDecoratorBlockNode = {
+  ...SerializedDecoratorNode, 
+  format: ElementFormatType,
+  ...
+};

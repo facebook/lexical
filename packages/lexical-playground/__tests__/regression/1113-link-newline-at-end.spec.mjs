@@ -30,13 +30,8 @@ test.describe('Regression test #1113', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <a
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr"
-            href="https://www.example.com">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <a class="PlaygroundEditorTheme__link" href="https://www.example.com">
             <span data-lexical-text="true">https://www.example.com</span>
           </a>
           <br />

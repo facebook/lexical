@@ -14,6 +14,16 @@ import type {TextFormatType} from './nodes/LexicalTextNode';
 
 export type PasteCommandType = ClipboardEvent | InputEvent | KeyboardEvent;
 
+/**
+ * Crete a command that can be used with `editor.dispatchCommand` and
+ * `editor.registerCommand`. Commands are used by unique reference, not by
+ * name.
+ *
+ * @param type A string to identify the command, very helpful for debugging
+ * @returns A new LexicalCommand
+ *
+ * @__NO_SIDE_EFFECTS__
+ */
 export function createCommand<T>(type?: string): LexicalCommand<T> {
   return {type};
 }
@@ -27,6 +37,15 @@ export const SELECTION_INSERT_CLIPBOARD_NODES_COMMAND: LexicalCommand<{
 }> = createCommand('SELECTION_INSERT_CLIPBOARD_NODES_COMMAND');
 export const CLICK_COMMAND: LexicalCommand<MouseEvent> =
   createCommand('CLICK_COMMAND');
+export const BEFORE_INPUT_COMMAND: LexicalCommand<InputEvent> = createCommand(
+  'BEFORE_INPUT_COMMAND',
+);
+export const INPUT_COMMAND: LexicalCommand<InputEvent> =
+  createCommand('INPUT_COMMAND');
+export const COMPOSITION_START_COMMAND: LexicalCommand<CompositionEvent> =
+  createCommand('COMPOSITION_START_COMMAND');
+export const COMPOSITION_END_COMMAND: LexicalCommand<CompositionEvent> =
+  createCommand('COMPOSITION_END_COMMAND');
 /**
  * Dispatched to delete a character, the payload will be `true` if the deletion
  * is backwards (backspace or delete on macOS) and `false` if forwards
@@ -118,7 +137,7 @@ export const MOVE_TO_START: LexicalCommand<KeyboardEvent> =
 export const KEY_ARROW_UP_COMMAND: LexicalCommand<KeyboardEvent> =
   createCommand('KEY_ARROW_UP_COMMAND');
 /**
- * Dispatched when the `'ArrowUp'` key is pressed.
+ * Dispatched when the `'ArrowDown'` key is pressed.
  * The shift and/or alt (option) modifier keys may also be down.
  */
 export const KEY_ARROW_DOWN_COMMAND: LexicalCommand<KeyboardEvent> =

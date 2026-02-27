@@ -11,6 +11,7 @@ import type {ElementNode, LexicalEditor} from 'lexical';
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
 import {$getRoot, $isElementNode} from 'lexical';
 import {createTestEditor} from 'lexical/src/__tests__/utils';
+import {beforeEach, describe, expect, it} from 'vitest';
 
 import {$splitNode} from '../../index';
 

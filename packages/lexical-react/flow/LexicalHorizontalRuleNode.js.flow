@@ -7,10 +7,9 @@
  * @flow strict
  */
 
-import type {LexicalNode, LexicalCommand} from 'lexical';
-
+import type {LexicalNode, LexicalCommand, SerializedLexicalNode} from 'lexical';
 import {DecoratorNode} from 'lexical';
-
+export type SerializedHorizontalRuleNode = SerializedLexicalNode;
 declare export class HorizontalRuleNode extends DecoratorNode<React.Node> {
   static getType(): string;
   static clone(node: HorizontalRuleNode): HorizontalRuleNode;

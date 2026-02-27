@@ -12,6 +12,7 @@ import {
   $getRoot,
   RangeSelection,
 } from 'lexical';
+import {describe, expect, test} from 'vitest';
 
 import {$normalizeSelection} from '../../LexicalNormalization';
 import {

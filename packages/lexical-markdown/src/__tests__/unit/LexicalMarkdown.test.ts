@@ -10,16 +10,25 @@ import {$createCodeNode, CodeNode} from '@lexical/code';
 import {createHeadlessEditor} from '@lexical/headless';
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
 import {$createLinkNode, LinkNode} from '@lexical/link';
-import {ListItemNode, ListNode} from '@lexical/list';
+import {
+  $createListItemNode,
+  $createListNode,
+  ListItemNode,
+  ListNode,
+} from '@lexical/list';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
   $getSelection,
+  $getState,
   $insertNodes,
   $isRangeSelection,
+  $setState,
+  KEY_ENTER_COMMAND,
 } from 'lexical';
+import {describe, expect, it} from 'vitest';
 
 import {
   $convertFromMarkdownString,
@@ -28,15 +37,25 @@ import {
   registerMarkdownShortcuts,
   TextMatchTransformer,
   Transformer,
-  TRANSFORMERS,
 } from '../..';
 import {
+  CHECK_LIST,
   CODE,
   ElementTransformer,
   HEADING,
+  listMarkerState,
   MultilineElementTransformer,
   normalizeMarkdown,
+  TRANSFORMERS,
 } from '../../MarkdownTransformers';
+
+const HIGHLIGHT_TEXT_MATCH_IMPORT: TextMatchTransformer = {
+  ...LINK,
+  importRegExp: /\$([^$]+?)\$/,
+  replace: (textNode, match) => {
+    textNode.toggleFormat('highlight');
+  },
+};
 
 const SIMPLE_INLINE_JSX_MATCHER: TextMatchTransformer = {
   dependencies: [LinkNode],
@@ -276,7 +295,7 @@ describe('Markdown', () => {
     },
     {
       // Multiline paragraphs: https://spec.commonmark.org/dingus/?text=Hello%0Aworld%0A!
-      html: '<p><span style="white-space: pre-wrap;">Helloworld!</span></p>',
+      html: '<p><span style="white-space: pre-wrap;">Hello world !</span></p>',
       md: ['Hello', 'world', '!'].join('\n'),
       shouldMergeAdjacentLines: true,
       skipExport: true,
@@ -302,7 +321,7 @@ describe('Markdown', () => {
     // },
     {
       // Multiline list items: https://spec.commonmark.org/dingus/?text=-%20Hello%0A-%20world%0A!%0A!
-      html: '<ul><li value="1"><span style="white-space: pre-wrap;">Hello</span></li><li value="2"><span style="white-space: pre-wrap;">world!!</span></li></ul>',
+      html: '<ul><li value="1"><span style="white-space: pre-wrap;">Hello</span></li><li value="2"><span style="white-space: pre-wrap;">world ! !</span></li></ul>',
       md: '- Hello\n- world\n!\n!',
       shouldMergeAdjacentLines: true,
       skipExport: true,
@@ -352,6 +371,14 @@ describe('Markdown', () => {
       md: '`Hello` world',
     },
     {
+      html: '<p><code spellcheck="false" style="white-space: pre-wrap;"><span>Backtick\\</span></code><span style="white-space: pre-wrap;"> after backslash</span></p>',
+      md: '`Backtick\\` after backslash',
+    },
+    {
+      html: '<p><code spellcheck="false" style="white-space: pre-wrap;"><span>Backtick</span></code><span style="white-space: pre-wrap;">\\ before backslash</span></p>',
+      md: '`Backtick`\\\\ before backslash',
+    },
+    {
       html: '<p><s><span style="white-space: pre-wrap;">Hello</span></s><span style="white-space: pre-wrap;"> world</span></p>',
       md: '~~Hello~~ world',
     },
@@ -395,7 +422,7 @@ describe('Markdown', () => {
       mdAfterExport: '*Hello&#32;**world**!*',
     },
     {
-      html: '<p><span style="white-space: pre-wrap;">helloworld</span></p>',
+      html: '<p><span style="white-space: pre-wrap;">hello world</span></p>',
       md: 'hello\nworld',
       shouldMergeAdjacentLines: true,
       skipExport: true,
@@ -450,13 +477,13 @@ describe('Markdown', () => {
       skipExport: true, // Export will fail, as the code transformer will add new lines to the code block to make it multi-line. This is expected though, as the lexical code block is a block node and cannot be inline.
     },
     {
-      html: '<pre spellcheck="false" data-language="javascript" data-highlight-language="javascript"><span style="white-space: pre-wrap;">Incomplete tag</span></pre>',
+      html: '<pre spellcheck="false" data-language="javascript"><span style="white-space: pre-wrap;">Incomplete tag</span></pre>',
       md: '```javascript Incomplete tag',
       skipExport: true,
     },
     {
       html:
-        '<pre spellcheck="false" data-language="javascript" data-highlight-language="javascript"><span style="white-space: pre-wrap;">Incomplete multiline\n' +
+        '<pre spellcheck="false" data-language="javascript"><span style="white-space: pre-wrap;">Incomplete multiline\n' +
         '\n' +
         'Tag</span></pre>',
       md: '```javascript Incomplete multiline\n\nTag',
@@ -467,7 +494,7 @@ describe('Markdown', () => {
       md: '```\nCode\n```',
     },
     {
-      html: '<pre spellcheck="false" data-language="javascript" data-highlight-language="javascript"><span style="white-space: pre-wrap;">Code</span></pre>',
+      html: '<pre spellcheck="false" data-language="javascript"><span style="white-space: pre-wrap;">Code</span></pre>',
       md: '```javascript\nCode\n```',
     },
     {
@@ -488,7 +515,7 @@ describe('Markdown', () => {
       skipExport: true,
     },
     {
-      html: `<h3><span style="white-space: pre-wrap;">Code blocks</span></h3><pre spellcheck="false" data-language="javascript" data-highlight-language="javascript"><span style="white-space: pre-wrap;">1 + 1 = 2;</span></pre>`,
+      html: `<h3><span style="white-space: pre-wrap;">Code blocks</span></h3><pre spellcheck="false" data-language="javascript"><span style="white-space: pre-wrap;">1 + 1 = 2;</span></pre>`,
       md: `### Code blocks
 
 \`\`\`javascript
@@ -503,7 +530,7 @@ describe('Markdown', () => {
     },
     {
       // https://spec.commonmark.org/dingus/?text=%3E%20Hello%0Aworld%0A!
-      html: '<blockquote><span style="white-space: pre-wrap;">Helloworld!</span></blockquote>',
+      html: '<blockquote><span style="white-space: pre-wrap;">Hello world !</span></blockquote>',
       md: '> Hello\nworld\n!',
       shouldMergeAdjacentLines: true,
       skipExport: true,
@@ -528,7 +555,7 @@ describe('Markdown', () => {
     },
     {
       customTransformers: [MDX_HTML_TRANSFORMER],
-      html: '<p><span style="white-space: pre-wrap;">Some HTML in mdx:</span></p><pre spellcheck="false" data-language="MyComponent"><span style="white-space: pre-wrap;">From HTML: Line 1Some Text</span></pre>',
+      html: '<p><span style="white-space: pre-wrap;">Some HTML in mdx:</span></p><pre spellcheck="false" data-language="MyComponent"><span style="white-space: pre-wrap;">From HTML: Line 1 Some Text</span></pre>',
       md: 'Some HTML in mdx:\n\n<MyComponent>Line 1\nSome Text</MyComponent>',
       shouldMergeAdjacentLines: true,
       skipExport: true,
@@ -536,7 +563,7 @@ describe('Markdown', () => {
     {
       customTransformers: [CODE_TAG_COUNTER_EXAMPLE],
       // Ensure special ``` code block supports nested code blocks
-      html: '<pre spellcheck="false" data-language="ts" data-highlight-language="ts"><span style="white-space: pre-wrap;">Code\n```ts\nSub Code\n```</span></pre>',
+      html: '<pre spellcheck="false" data-language="ts"><span style="white-space: pre-wrap;">Code\n```ts\nSub Code\n```</span></pre>',
       md: '```ts\nCode\n```ts\nSub Code\n```\n```',
       skipExport: true,
     },
@@ -571,32 +598,53 @@ describe('Markdown', () => {
       md: '**Bold** [`text **Bold in code**`](https://lexical.dev) **Bold 3**',
     },
     {
+      html: '<p><b><strong style="white-space: pre-wrap;">Bold</strong></b><span style="white-space: pre-wrap;"> </span><code spellcheck="false" style="white-space: pre-wrap;"><span>[text](https://lexical.dev)</span></code><span style="white-space: pre-wrap;"> </span><b><strong style="white-space: pre-wrap;">Bold 3</strong></b></p>',
+      md: '**Bold** `[text](https://lexical.dev)` **Bold 3**',
+    },
+    {
       html: '<p><span style="white-space: pre-wrap;">Text </span><b><strong style="white-space: pre-wrap;">boldstart </strong></b><a href="https://lexical.dev"><b><strong style="white-space: pre-wrap;">text</strong></b></a><b><strong style="white-space: pre-wrap;"> boldend</strong></b><span style="white-space: pre-wrap;"> text</span></p>',
       md: 'Text **boldstart [text](https://lexical.dev) boldend** text',
       mdAfterExport:
-        'Text **boldstart&#32;[text](https://lexical.dev)&#32;boldend** text',
+        'Text **boldstart&#32;**[**text**](https://lexical.dev)**&#32;boldend** text',
     },
     {
       html: '<p><span style="white-space: pre-wrap;">Text </span><b><strong style="white-space: pre-wrap;">boldstart </strong></b><a href="https://lexical.dev"><b><code spellcheck="false" style="white-space: pre-wrap;"><strong>text</strong></code></b></a><b><strong style="white-space: pre-wrap;"> boldend</strong></b><span style="white-space: pre-wrap;"> text</span></p>',
       md: 'Text **boldstart [`text`](https://lexical.dev) boldend** text',
       mdAfterExport:
-        'Text **boldstart&#32;[`text`](https://lexical.dev)&#32;boldend** text',
+        'Text **boldstart&#32;**[**`text`**](https://lexical.dev)**&#32;boldend** text',
     },
     {
       html: '<p><span style="white-space: pre-wrap;">It </span><s><i><b><strong style="white-space: pre-wrap;">works </strong></b></i></s><a href="https://lexical.io"><s><i><b><strong style="white-space: pre-wrap;">with links</strong></b></i></s></a><span style="white-space: pre-wrap;"> too</span></p>',
       md: 'It ~~___works [with links](https://lexical.io)___~~ too',
       mdAfterExport:
-        'It ***~~works&#32;[with links](https://lexical.io)~~*** too',
+        'It ***~~works&#32;~~***[***~~with links~~***](https://lexical.io) too',
     },
     {
       html: '<p><span style="white-space: pre-wrap;">It </span><s><i><b><strong style="white-space: pre-wrap;">works </strong></b></i></s><a href="https://lexical.io"><s><i><b><strong style="white-space: pre-wrap;">with links</strong></b></i></s></a><s><i><b><strong style="white-space: pre-wrap;"> too</strong></b></i></s><span style="white-space: pre-wrap;">!</span></p>',
       md: 'It ~~___works [with links](https://lexical.io) too___~~!',
       mdAfterExport:
-        'It ***~~works&#32;[with links](https://lexical.io)&#32;too~~***!',
+        'It ***~~works&#32;~~***[***~~with links~~***](https://lexical.io)***~~&#32;too~~***!',
     },
     {
       html: '<p><a href="https://lexical.dev"><span style="white-space: pre-wrap;">link</span></a><a href="https://lexical.dev"><span style="white-space: pre-wrap;">link2</span></a></p>',
       md: '[link](https://lexical.dev)[link2](https://lexical.dev)',
+    },
+    {
+      // Test that importRegExp is not too greedy when there are multiple link patterns
+      html: '<p><a href="https://a.example.com"><span style="white-space: pre-wrap;">a</span></a><span style="white-space: pre-wrap;"> </span><a href="https://b.example.com"><span style="white-space: pre-wrap;">b</span></a></p>',
+      md: '[a](https://a.example.com) [b](https://b.example.com)',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">[foo </span><a href="/uri"><span style="white-space: pre-wrap;">bar</span></a><span style="white-space: pre-wrap;">](/uri)</span></p>',
+      md: '[foo [bar](/uri)](/uri)',
+    },
+    {
+      // Import only: <mark>...</mark> is exported as ==...== in markdown.
+      // Use HIGHLIGHT_TEXT_MATCH_IMPORT as custom transformer even though it is included later to ensure it runs before LINK.
+      customTransformers: [HIGHLIGHT_TEXT_MATCH_IMPORT],
+      html: '<p><span style="white-space: pre-wrap;">Multiple </span><a href="https://lexical.dev"><code spellcheck="false" style="white-space: pre-wrap;"><span>TextMatchTransformer</span></code><span style="white-space: pre-wrap;">s</span></a><s><mark style="white-space: pre-wrap;"><span>$ with formatting$</span></mark></s></p>',
+      md: 'Multiple [`TextMatchTransformer`s](https://lexical.dev)~~$ with formatting$~~',
+      skipExport: true,
     },
     {
       html: '<p><b><code spellcheck="false" style="white-space: pre-wrap;"><strong>Bold Code</strong></code></b></p>',
@@ -648,15 +696,66 @@ describe('Markdown', () => {
       html: '<p><b><strong style="white-space: pre-wrap;">&nbsp;</strong></b></p>',
       md: '**&#160;**',
     },
-  ];
-
-  const HIGHLIGHT_TEXT_MATCH_IMPORT: TextMatchTransformer = {
-    ...LINK,
-    importRegExp: /\$([^$]+?)\$/,
-    replace: (textNode) => {
-      textNode.setFormat('highlight');
+    {
+      html: '<p><a href="https://lexical.dev"><span style="white-space: pre-wrap;">[h]ello</span></a><a href="https://lexical.dev"><span style="white-space: pre-wrap;">h[e]llo</span></a></p>',
+      md: '[[h]ello](https://lexical.dev)[h[e]llo](https://lexical.dev)',
     },
-  };
+    {
+      html: '<p><a href="https://lexical.dev"><span style="white-space: pre-wrap;">h[e[ll]]o</span></a><a href="https://lexical.dev"><span style="white-space: pre-wrap;">world</span></a></p>',
+      md: '[h[e[ll]]o](https://lexical.dev)[world](https://lexical.dev)',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">[hello]](https://lexical.dev)</span><a href="https://lexical.dev"><span style="white-space: pre-wrap;">world</span></a></p>',
+      md: '[hello]](https://lexical.dev)[world](https://lexical.dev)',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">[h</span><a href="https://lexical.dev"><span style="white-space: pre-wrap;">ello</span></a><a href="https://lexical.dev"><span style="white-space: pre-wrap;">world</span></a></p>',
+      md: '[h[ello](https://lexical.dev)[world](https://lexical.dev)',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">[](https://lexical.dev)</span></p>',
+      md: '[](https://lexical.dev)',
+    },
+    {
+      html: '<p><a href="https://lexical.dev"><b><strong style="white-space: pre-wrap;">link</strong></b></a><b><strong style="white-space: pre-wrap;">text</strong></b></p>',
+      md: '[**link**](https://lexical.dev)**text**',
+      mdAfterExport: '[**link**](https://lexical.dev)**text**',
+    },
+    {
+      html: '<p><b><strong style="white-space: pre-wrap;">text </strong></b><a href="https://lexical.dev"><b><strong style="white-space: pre-wrap;">link</strong></b></a></p>',
+      md: '**text [link](https://lexical.dev)**',
+      mdAfterExport: '**text&#32;**[**link**](https://lexical.dev)',
+    },
+    {
+      html: '<p><i><em style="white-space: pre-wrap;">text</em></i><i><b><strong style="white-space: pre-wrap;">text</strong></b></i></p>',
+      md: '*text**text***',
+    },
+    {
+      html: '<p><i><em style="white-space: pre-wrap;">foo**bar</em></i></p>',
+      md: '*foo**bar*',
+      mdAfterExport: '*foo\\*\\*bar*',
+    },
+    {
+      html: '<p><b><strong style="white-space: pre-wrap;">foo </strong></b><a href="/url"><i><b><strong style="white-space: pre-wrap;">bar</strong></b></i></a></p>',
+      md: '**foo [*bar*](/url)**',
+      mdAfterExport: '**foo&#32;**[***bar***](/url)',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">*foo </span><i><em style="white-space: pre-wrap;">bar baz</em></i></p>',
+      md: '*foo *bar baz*',
+      mdAfterExport: '\\*foo *bar baz*',
+    },
+    {
+      html: '<p><i><em style="white-space: pre-wrap;">a </em></i><i><code spellcheck="false" style="white-space: pre-wrap;"><em>*</em></code></i><i><em style="white-space: pre-wrap;"> b </em></i><i><code spellcheck="false" style="white-space: pre-wrap;"><em>x</em></code></i></p>',
+      md: '*a `*` b `x`*',
+      mdAfterExport: '*a&#32;`*`&#32;b&#32;`x`*',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">_foo_bar</span></p>',
+      md: '_foo_bar',
+      mdAfterExport: '\\_foo\\_bar',
+    },
+  ];
 
   for (const {
     html,
@@ -895,6 +994,342 @@ describe('Markdown', () => {
       '<h1><br></h1>',
     );
   });
+
+  it('can round-trip nested fenced code blocks (4 backticks wrapping 3 backticks)', () => {
+    const markdown =
+      '````markdown\n' +
+      '# Example\n' +
+      '\n' +
+      'Run this:\n' +
+      '```bash\n' +
+      'npm install\n' +
+      '```\n' +
+      '````';
+
+    const editor = createHeadlessEditor({
+      nodes: [
+        HeadingNode,
+        ListNode,
+        ListItemNode,
+        QuoteNode,
+        CodeNode,
+        LinkNode,
+      ],
+    });
+
+    editor.update(
+      () => {
+        $convertFromMarkdownString(markdown, TRANSFORMERS);
+      },
+      {discrete: true},
+    );
+
+    expect(
+      editor
+        .getEditorState()
+        .read(() => $convertToMarkdownString(TRANSFORMERS)),
+    ).toBe(markdown);
+  });
+
+  it('can round-trip deeply nested fenced code blocks (5 backticks wrapping 4 backticks)', () => {
+    const markdown =
+      '`````text\n' +
+      'Top Level 5 ticks\n' +
+      '````markdown\n' +
+      'Level 2 (4 ticks)\n' +
+      '```javascript\n' +
+      'console.log("Deepest (3 ticks)");\n' +
+      '```\n' +
+      '````\n' +
+      '`````';
+
+    const editor = createHeadlessEditor({
+      nodes: [
+        HeadingNode,
+        ListNode,
+        ListItemNode,
+        QuoteNode,
+        CodeNode,
+        LinkNode,
+      ],
+    });
+
+    editor.update(
+      () => {
+        $convertFromMarkdownString(markdown, TRANSFORMERS);
+      },
+      {discrete: true},
+    );
+
+    expect(
+      editor
+        .getEditorState()
+        .read(() => $convertToMarkdownString(TRANSFORMERS)),
+    ).toBe(markdown);
+  });
+
+  it('computes fence dynamically when code block content contains backticks', () => {
+    const editor = createHeadlessEditor({
+      nodes: [CodeNode],
+    });
+
+    editor.update(
+      () => {
+        // Create a CodeNode without setting fence state (uses default ```)
+        const codeBlockNode = $createCodeNode('markdown');
+        // Content contains ``` which conflicts with default fence
+        $getRoot()
+          .append(codeBlockNode)
+          .selectEnd()
+          .insertRawText('```js\nconsole.log("hello");\n```');
+      },
+      {discrete: true},
+    );
+
+    // Export should compute fence to be ```` (4 backticks) since content contains ```
+    const exported = editor
+      .getEditorState()
+      .read(() => $convertToMarkdownString(TRANSFORMERS));
+
+    expect(exported).toBe(
+      '````markdown\n```js\nconsole.log("hello");\n```\n````',
+    );
+  });
+
+  describe('list marker', () => {
+    it('should remember marker used on import', () => {
+      const editor = createHeadlessEditor({
+        nodes: [ListNode, ListItemNode],
+      });
+      editor.update(
+        () =>
+          $convertFromMarkdownString(
+            '+ hello',
+            [...TRANSFORMERS],
+            undefined,
+            true,
+            false,
+          ),
+        {discrete: true},
+      );
+      editor.getEditorState().read(() => {
+        const node = $getRoot().getFirstChild();
+        expect(node).toBeInstanceOf(ListNode);
+        const marker = node ? $getState(node, listMarkerState) : undefined;
+        expect(marker).toBe('+');
+      });
+    });
+    it('should not use [ as a marker for an implicit check list', () => {
+      const editor = createHeadlessEditor({
+        nodes: [ListNode, ListItemNode],
+      });
+      registerMarkdownShortcuts(editor, [CHECK_LIST]);
+      editor.update(
+        () =>
+          $getRoot()
+            .clear()
+            .append($createParagraphNode())
+            .selectEnd()
+            .insertText('[]'),
+        {discrete: true},
+      );
+      editor.update(() => $getSelection()!.insertText(' '), {
+        discrete: true,
+      });
+      editor.read(() => {
+        const node = $getRoot().getFirstChild();
+        expect(node).toBeInstanceOf(ListNode);
+        const marker = node ? $getState(node, listMarkerState) : undefined;
+        expect(marker).toBe('-');
+      });
+    });
+    it('should remember the marker for checkbox with an explicit marker', () => {
+      const editor = createHeadlessEditor({
+        nodes: [ListNode, ListItemNode],
+      });
+      registerMarkdownShortcuts(editor, [CHECK_LIST]);
+      editor.update(
+        () =>
+          $getRoot()
+            .clear()
+            .append($createParagraphNode())
+            .selectEnd()
+            .insertText('* []'),
+        {discrete: true},
+      );
+      editor.update(() => $getSelection()!.insertText(' '), {
+        discrete: true,
+      });
+      editor.read(() => {
+        const node = $getRoot().getFirstChild();
+        expect(node).toBeInstanceOf(ListNode);
+        const marker = node ? $getState(node, listMarkerState) : undefined;
+        expect(marker).toBe('*');
+      });
+    });
+
+    it('should remember marker used on export', () => {
+      const editor = createHeadlessEditor({
+        nodes: [ListNode, ListItemNode],
+      });
+      editor.update(
+        () => {
+          const listNode = $createListNode();
+          $setState(listNode, listMarkerState, '+');
+          const listItemNode = $createListItemNode();
+          listItemNode.append($createTextNode('hello'));
+          listNode.append(listItemNode);
+          listNode.setListType('bullet');
+          $getRoot().select();
+          $insertNodes([listNode]);
+        },
+        {discrete: true},
+      );
+      editor.getEditorState().read(() => {
+        const markdownString = $convertToMarkdownString(
+          [...TRANSFORMERS],
+          undefined,
+          true,
+        );
+        expect(markdownString).toBe('+ hello');
+      });
+    });
+  });
+
+  describe('Enter key triggers', () => {
+    it('should create an empty code block when ``` is typed and Enter is pressed', () => {
+      const editor = createHeadlessEditor({
+        nodes: [
+          HeadingNode,
+          ListNode,
+          ListItemNode,
+          QuoteNode,
+          CodeNode,
+          LinkNode,
+        ],
+      });
+
+      registerMarkdownShortcuts(editor, TRANSFORMERS);
+
+      editor.update(
+        () => {
+          const root = $getRoot();
+          const paragraph = $createParagraphNode();
+          root.append(paragraph);
+          paragraph.selectEnd();
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            selection.insertText('```');
+          }
+        },
+        {discrete: true},
+      );
+
+      editor.update(
+        () => {
+          editor.dispatchCommand(KEY_ENTER_COMMAND, null);
+        },
+        {discrete: true},
+      );
+
+      expect(editor.read(() => $generateHtmlFromNodes(editor))).toBe(
+        '<pre spellcheck="false"></pre>',
+      );
+    });
+
+    it('should create a code block with language when ```javascript is typed and Enter is pressed', () => {
+      const editor = createHeadlessEditor({
+        nodes: [
+          HeadingNode,
+          ListNode,
+          ListItemNode,
+          QuoteNode,
+          CodeNode,
+          LinkNode,
+        ],
+      });
+
+      registerMarkdownShortcuts(editor, TRANSFORMERS);
+
+      editor.update(
+        () => {
+          const root = $getRoot();
+          const paragraph = $createParagraphNode();
+          root.append(paragraph);
+          paragraph.selectEnd();
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            selection.insertText('```javascript');
+          }
+        },
+        {discrete: true},
+      );
+
+      editor.update(
+        () => {
+          editor.dispatchCommand(KEY_ENTER_COMMAND, null);
+        },
+        {discrete: true},
+      );
+
+      expect(editor.read(() => $generateHtmlFromNodes(editor))).toBe(
+        '<pre spellcheck="false" data-language="javascript"></pre>',
+      );
+    });
+
+    it('should not transform on Enter when replace returns false', () => {
+      const CANCELED_CODE: MultilineElementTransformer = {
+        dependencies: [CodeNode],
+        regExpEnd: {
+          optional: true,
+          regExp: /^[ \t]*`{3,}$/,
+        },
+        regExpStart: /^`{3,}(\w+)?/,
+        replace: () => {
+          return false;
+        },
+        type: 'multiline-element',
+      };
+
+      const editor = createHeadlessEditor({
+        nodes: [
+          HeadingNode,
+          ListNode,
+          ListItemNode,
+          QuoteNode,
+          CodeNode,
+          LinkNode,
+        ],
+      });
+
+      registerMarkdownShortcuts(editor, [CANCELED_CODE]);
+
+      editor.update(
+        () => {
+          const root = $getRoot();
+          const paragraph = $createParagraphNode();
+          root.append(paragraph);
+          paragraph.selectEnd();
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            selection.insertText('```');
+          }
+        },
+        {discrete: true},
+      );
+
+      editor.update(
+        () => {
+          editor.dispatchCommand(KEY_ENTER_COMMAND, null);
+        },
+        {discrete: true},
+      );
+
+      expect(editor.read(() => $generateHtmlFromNodes(editor))).toBe(
+        '<p><span style="white-space: pre-wrap;">```</span></p>',
+      );
+    });
+  });
 });
 
 describe('normalizeMarkdown - shouldMergeAdjacentLines = true', () => {
@@ -932,7 +1367,7 @@ E2
 E3
 `;
     expect(normalizeMarkdown(markdown, true)).toBe(`
-A1A2
+A1 A2
 
 A3
 
@@ -943,7 +1378,7 @@ B2
 B3
 \`\`\`
 
-C1C2
+C1 C2
 
 C3
 
@@ -956,7 +1391,7 @@ D3
 
 \`\`\`single line code\`\`\`
 
-E1E2
+E1 E2
 
 E3
 `);
@@ -969,6 +1404,51 @@ E3
 | c | d |
 `;
     expect(normalizeMarkdown(markdown, true)).toBe(markdown);
+  });
+
+  it('merges adjacent plain text lines with a single space', () => {
+    const md = `Hello
+world`;
+    expect(normalizeMarkdown(md, true)).toBe(`Hello world`);
+  });
+
+  it('merges while trimming the next line and inserting a single space', () => {
+    const md = `Hello
+   world   `;
+    expect(normalizeMarkdown(md, true)).toBe(`Hello world`);
+  });
+
+  it('does not merge across HTML-like tags (opening, content, closing, after)', () => {
+    const md = `<div>
+content
+</div>
+after`;
+    // Nothing should be merged
+    expect(normalizeMarkdown(md, true)).toBe(md);
+  });
+
+  it('does not merge the fence line with the first line after a code block', () => {
+    const md = '```\ncode\n```\nNext line';
+    // The closing ``` must remain on its own line; "Next line" must not be glued to it
+    expect(normalizeMarkdown(md, true)).toBe('```\ncode\n```\nNext line');
+  });
+
+  it('treats whitespace-only lines as empty separators (no merge across them)', () => {
+    const md = `A1
+     
+A2`;
+    // The middle line is spaces only; should be treated as an empty separator
+    expect(normalizeMarkdown(md, true)).toBe(`A1
+
+A2`);
+  });
+
+  it('mdx start tag followed by content, than closing tag preceded by content', () => {
+    const md = `<MyComponent>Line 1
+Some Text</MyComponent>`;
+    expect(normalizeMarkdown(md, true)).toBe(
+      `<MyComponent>Line 1 Some Text</MyComponent>`,
+    );
   });
 });
 

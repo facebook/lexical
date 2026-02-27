@@ -444,6 +444,8 @@ export function transformersByType(transformers: Array<Transformer>): Readonly<{
 }
 
 export const PUNCTUATION_OR_SPACE = /[!-/:-@[-`{-~\s]/;
+export const WHITESPACE = /[ \t\n\r\f]/;
+export const PUNCTUATION = /[!"#$%&'()*+,\-./:;<=>?@[\]^_`{|}~]/;
 
 const MARKDOWN_EMPTY_LINE_REG_EXP = /^\s{0,3}$/;
 

@@ -67,12 +67,15 @@ export {
   type SplitAtPointCaretNextOptions,
 } from './caret/LexicalCaretUtils';
 export {
+  BEFORE_INPUT_COMMAND,
   BLUR_COMMAND,
   CAN_REDO_COMMAND,
   CAN_UNDO_COMMAND,
   CLEAR_EDITOR_COMMAND,
   CLEAR_HISTORY_COMMAND,
   CLICK_COMMAND,
+  COMPOSITION_END_COMMAND,
+  COMPOSITION_START_COMMAND,
   CONTROLLED_TEXT_INSERTION_COMMAND,
   COPY_COMMAND,
   createCommand,
@@ -88,6 +91,7 @@ export {
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
   INDENT_CONTENT_COMMAND,
+  INPUT_COMMAND,
   INSERT_LINE_BREAK_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
   INSERT_TAB_COMMAND,
@@ -162,12 +166,14 @@ export {
   COMMAND_PRIORITY_LOW,
   COMMAND_PRIORITY_NORMAL,
   createEditor,
+  getTransformSetFromKlass,
 } from './LexicalEditor';
 export type {
   EditorState,
   EditorStateReadOptions,
   SerializedEditorState,
 } from './LexicalEditorState';
+export {$isEditorState} from './LexicalEditorState';
 export type {EventHandler} from './LexicalEvents';
 export type {
   BaseStaticNodeConfig,
@@ -176,6 +182,9 @@ export type {
   DOMConversionFn,
   DOMConversionMap,
   DOMConversionOutput,
+  DOMConversionProp,
+  DOMConversionPropByTagName,
+  DOMConversionTagNameMap,
   DOMExportOutput,
   DOMExportOutputMap,
   LexicalExportJSON,
@@ -234,14 +243,17 @@ export {
   $addUpdateTag,
   $applyNodeReplacement,
   $cloneWithProperties,
+  $cloneWithPropertiesEphemeral,
   $copyNode,
   $create,
+  $findMatchingParent,
   $getAdjacentNode,
   $getEditor,
   $getNearestNodeFromDOMNode,
   $getNearestRootOrShadowRoot,
   $getNodeByKey,
   $getNodeByKeyOrThrow,
+  $getNodeFromDOMNode,
   $getRoot,
   $hasAncestor,
   $hasUpdateTag,
@@ -264,6 +276,8 @@ export {
   getNearestEditorFromDOMNode,
   getRegisteredNode,
   getRegisteredNodeOrThrow,
+  getStaticNodeConfig,
+  getTextDirection,
   INTERNAL_$isBlock,
   isBlockDomNode,
   isDocumentFragment,
@@ -283,6 +297,7 @@ export {
   resetRandomKey,
   setDOMUnmanaged,
   setNodeIndentFromDOM,
+  toggleTextFormatType,
 } from './LexicalUtils';
 export {ArtificialNode__DO_NOT_USE} from './nodes/ArtificialNode';
 export {$isDecoratorNode, DecoratorNode} from './nodes/LexicalDecoratorNode';
@@ -318,6 +333,8 @@ export {$createTextNode, $isTextNode, TextNode} from './nodes/LexicalTextNode';
 // Update Tags
 export {
   COLLABORATION_TAG,
+  COMPOSITION_END_TAG,
+  COMPOSITION_START_TAG,
   HISTORIC_TAG,
   HISTORY_MERGE_TAG,
   HISTORY_PUSH_TAG,
@@ -325,5 +342,45 @@ export {
   SKIP_COLLAB_TAG,
   SKIP_DOM_SELECTION_TAG,
   SKIP_SCROLL_INTO_VIEW_TAG,
+  SKIP_SELECTION_FOCUS_TAG,
   type UpdateTag,
 } from './LexicalUpdateTags';
+
+// LexicalExtension
+export {
+  type AnyLexicalExtension,
+  type AnyLexicalExtensionArgument,
+  type AnyNormalizedLexicalExtensionArgument,
+  configExtension,
+  type configTypeSymbol,
+  declarePeerDependency,
+  defineExtension,
+  type ExtensionBuildState,
+  type ExtensionConfigBase,
+  type ExtensionInitState,
+  type ExtensionRegisterState,
+  type InitialEditorConfig,
+  type InitialEditorStateType,
+  type initTypeSymbol,
+  type LexicalEditorWithDispose,
+  type LexicalExtension,
+  type LexicalExtensionArgument,
+  type LexicalExtensionConfig,
+  type LexicalExtensionDependency,
+  type LexicalExtensionInit,
+  type LexicalExtensionInternal,
+  type LexicalExtensionName,
+  type LexicalExtensionOutput,
+  type NormalizedLexicalExtensionArgument,
+  type NormalizedPeerDependency,
+  type OutputComponentExtension,
+  type outputTypeSymbol,
+  safeCast,
+  shallowMergeConfig,
+} from './extension-core';
+export {
+  addClassNamesToElement,
+  normalizeClassNames,
+  removeClassNamesFromElement,
+} from './utils/classNames';
+export {mergeRegister} from './utils/mergeRegister';

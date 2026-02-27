@@ -23,6 +23,7 @@ import {
   html,
   initialize,
   insertSampleImage,
+  IS_COLLAB_V2,
   SAMPLE_IMAGE_URL,
   selectFromAlignDropdown,
   selectFromInsertDropdown,
@@ -45,7 +46,8 @@ test.describe('Toolbar', () => {
       tag: '@flaky',
     },
     async ({page, isPlainText}) => {
-      test.skip(isPlainText);
+      // TODO(collab-v2): nested editors are not supported yet
+      test.skip(isPlainText || IS_COLLAB_V2);
       await focusEditor(page);
 
       // Add caption
@@ -54,7 +56,7 @@ test.describe('Toolbar', () => {
       await assertHTML(
         page,
         html`
-          <p>
+          <p dir="auto">
             <span contenteditable="false" data-lexical-decorator="true">
               <div draggable="false">
                 <img
@@ -79,7 +81,7 @@ test.describe('Toolbar', () => {
       await assertHTML(
         page,
         html`
-          <p>
+          <p dir="auto">
             <span contenteditable="false" data-lexical-decorator="true">
               <div draggable="false">
                 <img
@@ -94,7 +96,7 @@ test.describe('Toolbar', () => {
                   spellcheck="true"
                   aria-placeholder="Enter a caption..."
                   data-lexical-editor="true">
-                  <p dir="ltr">
+                  <p dir="auto">
                     <span data-lexical-text="true">
                       Yellow flower in tilt shift lens
                     </span>
@@ -111,18 +113,18 @@ test.describe('Toolbar', () => {
           ignoreInlineStyles: true,
         },
         (actualHtml) =>
-          // flaky fix: remove the extra <p><br /></p> that appears occasionally in CI runs
+          // flaky fix: remove the extra <p dir="auto"><br /></p> that appears occasionally in CI runs
           actualHtml.replace(
             html`
-              <p dir="ltr">
+              <p dir="auto">
                 <span data-lexical-text="true">
                   Yellow flower in tilt shift lens
                 </span>
               </p>
-              <p><br /></p>
+              <p dir="auto"><br /></p>
             `,
             html`
-              <p dir="ltr">
+              <p dir="auto">
                 <span data-lexical-text="true">
                   Yellow flower in tilt shift lens
                 </span>
@@ -142,7 +144,7 @@ test.describe('Toolbar', () => {
       await assertHTML(
         page,
         html`
-          <p><br /></p>
+          <p dir="auto"><br /></p>
         `,
         undefined,
         {
@@ -158,10 +160,10 @@ test.describe('Toolbar', () => {
       await assertHTML(
         page,
         html`
-          <p>
+          <p dir="auto">
             <br />
           </p>
-          <table>
+          <table dir="auto">
             <colgroup>
               <col style="width: 92px" />
               <col style="width: 92px" />
@@ -255,7 +257,7 @@ test.describe('Toolbar', () => {
               </td>
             </tr>
           </table>
-          <p><br /></p>
+          <p dir="auto"><br /></p>
         `,
         undefined,
         {
@@ -276,7 +278,7 @@ test.describe('Toolbar', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span
             class="editor-image"
             contenteditable="false"
@@ -312,7 +314,10 @@ test.describe('Toolbar', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" style="text-align: center">
+        <p
+          class="PlaygroundEditorTheme__paragraph"
+          dir="auto"
+          style="text-align: center">
           <span
             class="editor-image"
             contenteditable="false"

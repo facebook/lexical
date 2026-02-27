@@ -6,10 +6,6 @@ sidebar_position: 4
 
 > Note: Lexical does not support Internet Explorer or legacy versions of Edge.
 
-- Firefox 52+
-- Chrome 49+
-- Edge 79+ (when Edge switched to Chromium)
-- Safari 11+
-- iOS 11+ (Safari)
-- iPad OS 13+ (Safari)
-- Android Chrome 72+
+- Firefox 115+
+- Chrome 86+ (and other browsers based on Chrome 86+ such as Android Chrome 86+, Edge 86+ and Opera 72+)
+- Safari 15+ (iOS 15+, iPad OS 15+)

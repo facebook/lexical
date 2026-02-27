@@ -8,16 +8,16 @@
     "mark"
   ],
   "license": "MIT",
-  "version": "0.33.1",
+  "version": "0.41.0",
   "main": "LexicalMark.js",
   "types": "index.d.ts",
   "dependencies": {
-    "@lexical/utils": "0.33.1",
-    "lexical": "0.33.1"
+    "@lexical/utils": "workspace:*",
+    "lexical": "workspace:*"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/facebook/lexical",
+    "url": "git+https://github.com/facebook/lexical.git",
     "directory": "packages/lexical-mark"
   },
   "module": "LexicalMark.mjs",

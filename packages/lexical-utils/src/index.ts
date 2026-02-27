@@ -10,7 +10,9 @@ import {
   $caretFromPoint,
   $cloneWithProperties,
   $createParagraphNode,
+  $findMatchingParent,
   $getAdjacentChildCaret,
+  $getAdjacentSiblingOrParentSiblingCaret,
   $getCaretInDirection,
   $getChildCaret,
   $getChildCaretOrSelf,
@@ -41,7 +43,6 @@ import {
   type NodeCaret,
   type NodeKey,
   PointCaret,
-  RootMode,
   type SiblingCaret,
   SplitAtPointCaretNextOptions,
   StateConfig,
@@ -62,18 +63,21 @@ import {
   IS_SAFARI as IS_SAFARI_,
 } from 'shared/environment';
 import invariant from 'shared/invariant';
-import normalizeClassNames from 'shared/normalizeClassNames';
 
 export {default as markSelection} from './markSelection';
-export {default as mergeRegister} from './mergeRegister';
 export {default as positionNodeOnRange} from './positionNodeOnRange';
 export {default as selectionAlwaysOnDisplay} from './selectionAlwaysOnDisplay';
 export {
+  $findMatchingParent,
+  $getAdjacentSiblingOrParentSiblingCaret,
   $splitNode,
+  addClassNamesToElement,
   isBlockDomNode,
   isHTMLAnchorElement,
   isHTMLElement,
   isInlineDomNode,
+  mergeRegister,
+  removeClassNamesFromElement,
 } from 'lexical';
 // Hotfix to export these with inlined types #5918
 export const CAN_USE_BEFORE_INPUT: boolean = CAN_USE_BEFORE_INPUT_;
@@ -86,42 +90,6 @@ export const IS_CHROME: boolean = IS_CHROME_;
 export const IS_FIREFOX: boolean = IS_FIREFOX_;
 export const IS_IOS: boolean = IS_IOS_;
 export const IS_SAFARI: boolean = IS_SAFARI_;
-
-/**
- * Takes an HTML element and adds the classNames passed within an array,
- * ignoring any non-string types. A space can be used to add multiple classes
- * eg. addClassNamesToElement(element, ['element-inner active', true, null])
- * will add both 'element-inner' and 'active' as classes to that element.
- * @param element - The element in which the classes are added
- * @param classNames - An array defining the class names to add to the element
- */
-export function addClassNamesToElement(
-  element: HTMLElement,
-  ...classNames: Array<typeof undefined | boolean | null | string>
-): void {
-  const classesToAdd = normalizeClassNames(...classNames);
-  if (classesToAdd.length > 0) {
-    element.classList.add(...classesToAdd);
-  }
-}
-
-/**
- * Takes an HTML element and removes the classNames passed within an array,
- * ignoring any non-string types. A space can be used to remove multiple classes
- * eg. removeClassNamesFromElement(element, ['active small', true, null])
- * will remove both the 'active' and 'small' classes from that element.
- * @param element - The element in which the classes are removed
- * @param classNames - An array defining the class names to remove from the element
- */
-export function removeClassNamesFromElement(
-  element: HTMLElement,
-  ...classNames: Array<typeof undefined | boolean | null | string>
-): void {
-  const classesToRemove = normalizeClassNames(...classNames);
-  if (classesToRemove.length > 0) {
-    element.classList.remove(...classesToRemove);
-  }
-}
 
 /**
  * Returns true if the file type matches the types passed within the acceptableMimeTypes array, false otherwise.
@@ -195,8 +163,10 @@ export interface DFSNode {
  * before backtracking and finding a new path. Consider solving a maze by hugging either wall, moving down a
  * branch until you hit a dead-end (leaf) and backtracking to find the nearest branching path and repeat.
  * It will then return all the nodes found in the search in an array of objects.
- * @param startNode - The node to start the search, if omitted, it will start at the root node.
- * @param endNode - The node to end the search, if omitted, it will find all descendants of the startingNode.
+ * Preorder traversal is used, meaning that nodes are listed in the order of when they are FIRST encountered.
+ * @param startNode - The node to start the search (inclusive), if omitted, it will start at the root node.
+ * @param endNode - The node to end the search (inclusive), if omitted, it will find all descendants of the startingNode. If endNode
+ * is an ElementNode, it will stop before visiting any of its children.
  * @returns An array of objects of all the nodes found by the search, including their depth into the tree.
  * \\{depth: number, node: LexicalNode\\} It will always return at least 1 node (the start node).
  */
@@ -234,8 +204,10 @@ export function $reverseDfs(
 
 /**
  * $dfs iterator (left to right). Tree traversal is done on the fly as new values are requested with O(1) memory.
- * @param startNode - The node to start the search, if omitted, it will start at the root node.
- * @param endNode - The node to end the search, if omitted, it will find all descendants of the startingNode.
+ * Preorder traversal is used, meaning that nodes are iterated over in the order of when they are FIRST encountered.
+ * @param startNode - The node to start the search (inclusive), if omitted, it will start at the root node.
+ * @param endNode - The node to end the search (inclusive), if omitted, it will find all descendants of the startingNode.
+ * If endNode is an ElementNode, the iterator will end as soon as it reaches the endNode (no children will be visited).
  * @returns An iterator, each yielded value is a DFSNode. It will always return at least 1 node (the start node).
  */
 export function $dfsIterator(
@@ -269,7 +241,7 @@ function $dfsCaretIterator<D extends CaretDirection>(
   const endCaret = endNode
     ? $getAdjacentChildCaret(
         $getChildCaretOrSelf($getSiblingCaret(endNode, direction)),
-      )
+      ) || $getEndCaret(endNode, direction)
     : $getEndCaret(start, direction);
   let depth = startDepth;
   return makeStepwiseIterator({
@@ -405,40 +377,6 @@ export type DOMNodeToLexicalConversionMap = Record<
   string,
   DOMNodeToLexicalConversion
 >;
-
-/**
- * Starts with a node and moves up the tree (toward the root node) to find a matching node based on
- * the search parameters of the findFn. (Consider JavaScripts' .find() function where a testing function must be
- * passed as an argument. eg. if( (node) => node.__type === 'div') ) return true; otherwise return false
- * @param startingNode - The node where the search starts.
- * @param findFn - A testing function that returns true if the current node satisfies the testing parameters.
- * @returns A parent node that matches the findFn parameters, or null if one wasn't found.
- */
-export const $findMatchingParent: {
-  <T extends LexicalNode>(
-    startingNode: LexicalNode,
-    findFn: (node: LexicalNode) => node is T,
-  ): T | null;
-  (
-    startingNode: LexicalNode,
-    findFn: (node: LexicalNode) => boolean,
-  ): LexicalNode | null;
-} = (
-  startingNode: LexicalNode,
-  findFn: (node: LexicalNode) => boolean,
-): LexicalNode | null => {
-  let curr: ElementNode | LexicalNode | null = startingNode;
-
-  while (curr !== $getRoot() && curr != null) {
-    if (findFn(curr)) {
-      return curr;
-    }
-
-    curr = curr.getParent();
-  }
-
-  return null;
-};
 
 /**
  * Attempts to resolve nested element nodes of the same type into a single node of that type.
@@ -658,6 +596,8 @@ export function objectKlassEquals<T>(
 }
 
 /**
+ * @deprecated Use Array filter or flatMap
+ *
  * Filter the nodes
  * @param nodes Array of nodes that needs to be filtered
  * @param filterFn A filter function that returns node if the current node satisfies the condition otherwise null
@@ -677,6 +617,46 @@ export function $filter<T>(
   }
   return result;
 }
+
+/**
+ * Applies the provided callback to each indentable block element in the Selection
+ *
+ * @param indentOrOutdent callback for performing the indent or outdent action
+ * on a given block element.
+ * @returns true if at least one block was handled, false otherwise.
+ */
+export function $handleIndentAndOutdent(
+  indentOrOutdent: (block: ElementNode) => void,
+): boolean {
+  const selection = $getSelection();
+  if (!$isRangeSelection(selection)) {
+    return false;
+  }
+  const alreadyHandled = new Set();
+  const nodes = selection.getNodes();
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i];
+    const key = node.getKey();
+    if (alreadyHandled.has(key)) {
+      continue;
+    }
+    const parentBlock = $findMatchingParent(
+      node,
+      (parentNode): parentNode is ElementNode =>
+        $isElementNode(parentNode) && !parentNode.isInline(),
+    );
+    if (parentBlock === null) {
+      continue;
+    }
+    const parentKey = parentBlock.getKey();
+    if (parentBlock.canIndent() && !alreadyHandled.has(parentKey)) {
+      alreadyHandled.add(parentKey);
+      indentOrOutdent(parentBlock);
+    }
+  }
+  return alreadyHandled.size > 0;
+}
+
 /**
  * Appends the node before the first child of the parent node
  * @param parent A parent node
@@ -710,10 +690,14 @@ function needsManualZoom(): boolean {
  * css zoom property. For browsers that implement standardized CSS
  * zoom (Firefox, Chrome >= 128), this will always return 1.
  * @param element
+ * @param useManualZoom - If true, always use zoom level will be calculated manually, otherwise it will be calculated on as needed basis.
  */
-export function calculateZoomLevel(element: Element | null): number {
+export function calculateZoomLevel(
+  element: Element | null,
+  useManualZoom: boolean = false,
+): number {
   let zoom = 1;
-  if (needsManualZoom()) {
+  if (needsManualZoom() || useManualZoom) {
     while (element) {
       zoom *= Number(window.getComputedStyle(element).getPropertyValue('zoom'));
       element = element.parentElement;
@@ -870,35 +854,6 @@ export function $unwrapNode(node: ElementNode): void {
     1,
     node.getChildren(),
   );
-}
-
-/**
- * Returns the Node sibling when this exists, otherwise the closest parent sibling. For example
- * R -> P -> T1, T2
- *   -> P2
- * returns T2 for node T1, P2 for node T2, and null for node P2.
- * @param node LexicalNode.
- * @returns An array (tuple) containing the found Lexical node and the depth difference, or null, if this node doesn't exist.
- */
-export function $getAdjacentSiblingOrParentSiblingCaret<
-  D extends CaretDirection,
->(
-  startCaret: NodeCaret<D>,
-  rootMode: RootMode = 'root',
-): null | [NodeCaret<D>, number] {
-  let depthDiff = 0;
-  let caret = startCaret;
-  let nextCaret = $getAdjacentChildCaret(caret);
-  while (nextCaret === null) {
-    depthDiff--;
-    nextCaret = caret.getParentCaret(rootMode);
-    if (!nextCaret) {
-      return null;
-    }
-    caret = nextCaret;
-    nextCaret = $getAdjacentChildCaret(caret);
-  }
-  return nextCaret && [nextCaret, depthDiff];
 }
 
 /**

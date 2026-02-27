@@ -8,6 +8,7 @@
 
 import {
   $applyNodeReplacement,
+  $createParagraphNode,
   $createTextNode,
   $getRoot,
   $getSelection,
@@ -23,6 +24,7 @@ import * as React from 'react';
 import {createRef, useEffect} from 'react';
 import {createRoot} from 'react-dom/client';
 import * as ReactTestUtils from 'shared/react-test-utils';
+import {afterEach, beforeEach, describe, expect, it, test} from 'vitest';
 
 import {
   $createTestElementNode,
@@ -51,7 +53,9 @@ describe('LexicalElementNode tests', () => {
     return Promise.resolve().then();
   }
 
-  function useLexicalEditor(rootElementRef: React.RefObject<HTMLDivElement>) {
+  function useLexicalEditor(
+    rootElementRef: React.RefObject<null | HTMLDivElement>,
+  ) {
     const editor = React.useMemo(() => createTestEditor(), []);
 
     useEffect(() => {
@@ -112,6 +116,65 @@ describe('LexicalElementNode tests', () => {
           version: 1,
         });
       });
+    });
+    test('serializes only the first TextNode style and format', async () => {
+      await update(() => {
+        $getRoot()
+          .clear()
+          .append(
+            $createParagraphNode().append(
+              $createTextNode('a').toggleFormat('bold'),
+              $createTextNode('b').setStyle('color:green;'),
+            ),
+          );
+      });
+      editor.read(() => {
+        expect(editor.toJSON().editorState.root.children[0]).toEqual({
+          children: [
+            {
+              detail: 0,
+              format: 1,
+              mode: 'normal',
+              style: '',
+              text: 'a',
+              type: 'text',
+              version: 1,
+            },
+            {
+              detail: 0,
+              format: 0,
+              mode: 'normal',
+              style: 'color:green;',
+              text: 'b',
+              type: 'text',
+              version: 1,
+            },
+          ],
+          direction: null,
+          format: '',
+          indent: 0,
+          textFormat: 1,
+          textStyle: '',
+          type: 'paragraph',
+          version: 1,
+        });
+      });
+    });
+    test('serializes the same way without a root element', async () => {
+      function $initialState() {
+        $getRoot()
+          .clear()
+          .append(
+            $createParagraphNode().append(
+              $createTextNode('a').toggleFormat('bold'),
+              $createTextNode('b').setStyle('color:green;'),
+            ),
+          );
+      }
+      await update($initialState);
+      const headless = createEditor();
+      headless.update($initialState, {discrete: true});
+      expect(headless.toJSON()).toEqual(editor.toJSON());
     });
   });
 
@@ -701,7 +764,7 @@ describe('getDOMSlot tests', () => {
       {discrete: true},
     );
     expect(container.innerHTML).toBe(
-      `<main dir="ltr"><section><span data-lexical-text="true">test text</span></section></main>`,
+      `<main dir="auto"><section><span data-lexical-text="true">test text</span></section></main>`,
     );
     editor.update(
       () => {
@@ -710,7 +773,7 @@ describe('getDOMSlot tests', () => {
       {discrete: true},
     );
     expect(container.innerHTML).toBe(
-      `<main dir="ltr"><section><span data-lexical-text="true">test text</span><span data-lexical-text="true">more text</span></section></main>`,
+      `<main dir="auto"><section><span data-lexical-text="true">test text</span><span data-lexical-text="true">more text</span></section></main>`,
     );
     editor.update(
       () => {
@@ -718,7 +781,31 @@ describe('getDOMSlot tests', () => {
       },
       {discrete: true},
     );
-    expect(container.innerHTML).toBe(`<main><section><br></section></main>`);
+    expect(container.innerHTML).toBe(
+      `<main dir="auto"><section><br></section></main>`,
+    );
+  });
+
+  test('DOM selection uses getDOMSlot element for element selections', () => {
+    editor.update(
+      () => {
+        const wrapper = $createWrapperElementNode().append(
+          $createParagraphNode().append($createTextNode('A')),
+          $createParagraphNode().append($createTextNode('B')),
+          $createParagraphNode().append($createTextNode('C')),
+        );
+        $getRoot().clear().append(wrapper);
+        // Create element-type selection on wrapper
+        wrapper.select(0, wrapper.getChildrenSize());
+      },
+      {discrete: true},
+    );
+
+    const domSelection = window.getSelection();
+    expect(domSelection!.anchorNode!.nodeName).toBe('SECTION');
+    expect(domSelection!.anchorOffset).toBe(0);
+    expect(domSelection!.focusNode!.nodeName).toBe('SECTION');
+    expect(domSelection!.focusOffset).toBe(3);
   });
 });
 

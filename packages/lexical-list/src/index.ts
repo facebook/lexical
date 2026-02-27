@@ -14,6 +14,7 @@ import type {
 } from './LexicalListNode';
 import type {LexicalCommand, LexicalEditor, NodeKey} from 'lexical';
 
+import {effect, namedSignals} from '@lexical/extension';
 import {$findMatchingParent, mergeRegister} from '@lexical/utils';
 import {
   $getNodeByKey,
@@ -22,7 +23,9 @@ import {
   $isTextNode,
   COMMAND_PRIORITY_LOW,
   createCommand,
+  defineExtension,
   INSERT_PARAGRAPH_COMMAND,
+  safeCast,
   TextNode,
 } from 'lexical';
 
@@ -73,7 +76,14 @@ export const REMOVE_LIST_COMMAND: LexicalCommand<void> = createCommand(
   'REMOVE_LIST_COMMAND',
 );
 
-export function registerList(editor: LexicalEditor): () => void {
+export interface RegisterListOptions {
+  restoreNumbering?: boolean;
+}
+
+export function registerList(
+  editor: LexicalEditor,
+  options?: RegisterListOptions,
+): () => void {
   const removeListener = mergeRegister(
     editor.registerCommand(
       INSERT_ORDERED_LIST_COMMAND,
@@ -117,7 +127,10 @@ export function registerList(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand(
       INSERT_PARAGRAPH_COMMAND,
-      () => $handleListInsertParagraph(),
+      () => {
+        const shouldRestore = options && options.restoreNumbering;
+        return $handleListInsertParagraph(!!shouldRestore);
+      },
       COMMAND_PRIORITY_LOW,
     ),
     editor.registerNodeTransform(ListItemNode, (node) => {
@@ -278,3 +291,63 @@ export function insertList(editor: LexicalEditor, listType: ListType): void {
 export function removeList(editor: LexicalEditor): void {
   editor.update(() => $removeList());
 }
+
+export interface ListConfig {
+  /**
+   * When `true`, enforces strict indentation rules for list items, ensuring consistent structure.
+   * When `false` (default), indentation is more flexible.
+   */
+  hasStrictIndent: boolean;
+  shouldPreserveNumbering: boolean;
+}
+
+/**
+ * Configures {@link ListNode}, {@link ListItemNode} and registers
+ * the strict indent transform if `hasStrictIndent` is true (default false).
+ */
+export const ListExtension = defineExtension({
+  build(editor, config, state) {
+    return namedSignals(config);
+  },
+  config: safeCast<ListConfig>({
+    hasStrictIndent: false,
+    shouldPreserveNumbering: false,
+  }),
+  name: '@lexical/list/List',
+  nodes: () => [ListNode, ListItemNode],
+  register(editor, config, state) {
+    const stores = state.getOutput();
+    return mergeRegister(
+      effect(() => {
+        return registerList(editor, {
+          restoreNumbering: stores.shouldPreserveNumbering.value,
+        });
+      }),
+      effect(() =>
+        stores.hasStrictIndent.value
+          ? registerListStrictIndentTransform(editor)
+          : undefined,
+      ),
+    );
+  },
+});
+
+export interface CheckListConfig {
+  disableTakeFocusOnClick: boolean;
+}
+
+/**
+ * Registers checklist functionality for {@link ListNode} and
+ * {@link ListItemNode} with a
+ * {@link INSERT_CHECK_LIST_COMMAND} listener and
+ * the expected keyboard and mouse interactions for
+ * checkboxes.
+ */
+export const CheckListExtension = defineExtension({
+  config: safeCast<CheckListConfig>({
+    disableTakeFocusOnClick: false,
+  }),
+  dependencies: [ListExtension],
+  name: '@lexical/list/CheckList',
+  register: registerCheckList,
+});

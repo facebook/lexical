@@ -52,11 +52,9 @@ function incrementArgs() {
 
 async function incrementVersion() {
   const commandArr = [
-    'npm',
+    'pnpm',
     'version',
     '--no-git-tag-version',
-    '--include-workspace-root',
-    'true',
     ...incrementArgs(),
   ];
   console.log(commandArr.join(' '));

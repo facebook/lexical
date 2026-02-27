@@ -22,12 +22,14 @@ const terser = require('@rollup/plugin-terser');
 const {exec} = require('child-process-promise');
 const {packagesManager} = require('./shared/packagesManager');
 const npmToWwwName = require('./www/npmToWwwName');
+const glob = require('glob');
 
 const headerTemplate = fs.readFileSync(
   path.resolve(__dirname, 'www', 'headerTemplate.js'),
   'utf8',
 );
 
+// Arguments are parsed as flags by minimist
 const isProduction = argv.prod;
 const isRelease = argv.release;
 const isWWW = argv.www;
@@ -40,10 +42,35 @@ const modulePackageMappings = Object.fromEntries(
   }),
 );
 
+function getShikiAssets(assetType) {
+  return glob
+    .sync(
+      path.resolve(
+        path.dirname(__dirname),
+        'node_modules/@shikijs/' + assetType + '/dist/*.mjs',
+      ),
+      {windowsPathsNoEscape: true},
+    )
+    .map((p) => path.basename(p.replaceAll('\\', '/'), '.mjs'));
+}
+
 const wwwMappings = {
   ...Object.fromEntries(
     Object.keys(modulePackageMappings).map((npm) => [npm, npmToWwwName(npm)]),
   ),
+  ...Object.fromEntries(
+    getShikiAssets('langs').map((name) => [
+      `@shikijs/langs/${name}`,
+      `shikijs-langs-${name}`,
+    ]),
+  ),
+  ...Object.fromEntries(
+    getShikiAssets('themes').map((name) => [
+      `@shikijs/themes/${name}`,
+      `shikijs-themes-${name}`,
+    ]),
+  ),
+  'happy-dom': 'jsdom',
   'prismjs/components/prism-c': 'prism-c',
   'prismjs/components/prism-clike': 'prism-clike',
   'prismjs/components/prism-core': 'prismjs',
@@ -61,6 +88,7 @@ const wwwMappings = {
   'prismjs/components/prism-swift': 'prism-swift',
   'prismjs/components/prism-typescript': 'prism-typescript',
   'react-dom': 'ReactDOM',
+  'react-dom/client': 'ReactDOM',
   // The react entrypoint in fb includes the jsx runtime
   'react/jsx-runtime': 'react',
 };
@@ -86,7 +114,17 @@ function resolveExternalEsm(id) {
  * in the bundles.
  */
 const monorepoExternalsSet = new Set(Object.entries(wwwMappings).flat());
-const thirdPartyExternals = ['react', 'react-dom', 'yjs', 'y-websocket'];
+const thirdPartyExternals = [
+  'react',
+  'react-dom',
+  'yjs',
+  'y-websocket',
+  'happy-dom',
+  'jsdom',
+  ...(isWWW
+    ? [':server-only-hack:.*']
+    : ['react-error-boundary', '@floating-ui/react']),
+];
 const thirdPartyExternalsRegExp = new RegExp(
   `^(${thirdPartyExternals.join('|')})(\\/|$)`,
 );
@@ -169,6 +207,12 @@ async function build(
         warning.message.endsWith(`Can't resolve original location of error.`)
       ) {
         // Ignored
+      } else if (
+        isWWW &&
+        warning.code === 'MODULE_LEVEL_DIRECTIVE' &&
+        /"use client"/.test(warning.message)
+      ) {
+        // Ignored in WWW
       } else if (typeof warning.code === 'string') {
         console.error(warning);
         // This is a warning coming from Rollup itself.
@@ -185,13 +229,36 @@ async function build(
       }
     },
     plugins: [
+      ...(isWWW
+        ? [
+            /* in www we do not use export conditions so we build a virtual fork module instead */
+            {
+              name: 'server-only-hack',
+              renderChunk(source) {
+                // Ugly hack to effectively undo the hoist of require('jsdom')
+                const m = source.match(
+                  /require\(':server-only-hack:([^']+)'\);/,
+                );
+                if (m) {
+                  return (
+                    source.slice(0, m.index) +
+                    `typeof window === 'undefined' ? require('${m[1]}') : undefined;` +
+                    source.slice(m.index + m[0].length)
+                  );
+                }
+              },
+            },
+          ]
+        : []),
       alias({
         entries: [
           {find: 'shared', replacement: path.resolve('packages/shared/src')},
+          {find: 'buffer', replacement: 'buffer'},
         ],
       }),
       nodeResolve({
         extensions,
+        preferBuiltins: false,
       }),
       babel({
         babelHelpers: 'bundled',
@@ -210,6 +277,7 @@ async function build(
           [
             '@babel/preset-typescript',
             {
+              allowDeclareFields: true,
               tsconfig: path.resolve('./tsconfig.build.json'),
             },
           ],
@@ -246,8 +314,12 @@ async function build(
         },
       },
     ],
-    // This ensures PrismJS imports get included in the bundle
-    treeshake: name !== 'Lexical Code' ? 'smallest' : false,
+    // Lexical Code: this ensures PrismJS imports get included in the bundle
+    // Lexical Code Shiki: 'recommended' preset has treeshake.tryCatchDeoptimization: true which avoids
+    //                     feature detection of oniguruma-to-es to be optimized out and cause a bug
+    treeshake: ['smallest', false, 'recommended'][
+      1 + ['Lexical Code', 'Lexical Code Shiki'].indexOf(name)
+    ],
   };
   /** @type {import('rollup').OutputOptions} */
   const outputOptions = {
@@ -261,6 +333,9 @@ async function build(
     file: outputFile,
     format, // change between es and cjs modules
     freeze: false,
+    // pnpm's module resolution causes Rollup to detect dynamic imports that
+    // npm's flat structure didn't. Inline them to avoid code-splitting.
+    inlineDynamicImports: true,
     interop: format === 'esm' ? 'esModule' : undefined,
     paths: format === 'esm' ? resolveExternalEsm : undefined,
   };
@@ -403,13 +478,22 @@ async function buildAll() {
   const formats = isWWW ? ['cjs'] : ['cjs', 'esm'];
   for (const pkg of packagesManager.getPublicPackages()) {
     const {name, sourcePath, outputPath, packageName, modules} =
-      pkg.getPackageBuildDefinition();
+      pkg.getPackageBuildDefinition({consolidateBrowserSource: isWWW});
     const {version} = pkg.packageJson;
     for (const module of modules) {
       for (const format of formats) {
         const {sourceFileName, outputFileName} = module;
-        const inputFile = path.resolve(sourcePath, sourceFileName);
-
+        let inputFile = path.resolve(sourcePath, sourceFileName);
+        if (
+          isWWW &&
+          module.browserSourceFileName &&
+          module.sourceFileName.endsWith('.ts')
+        ) {
+          const wwwCjs = inputFile.replace(/\.ts$/, '.www.cjs');
+          if (fs.existsSync(wwwCjs)) {
+            inputFile = wwwCjs;
+          }
+        }
         await build(
           `${name}${module.name ? '-' + module.name : ''}`,
           inputFile,

@@ -89,7 +89,7 @@ NodeState value from the given node, or the default if that key was never
 set on the node.
 
 ```ts
-const question = $getValue(pollNode, questionState);
+const question = $getState(pollNode, questionState);
 ```
 
 See also
@@ -104,7 +104,7 @@ an update listener or mutation listener).
 NodeState value on the given node.
 
 ```ts
-const question = $setValue(
+const question = $setState(
   pollNode,
   questionState,
   'Are you planning to use NodeState?',

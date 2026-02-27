@@ -45,6 +45,7 @@ import {
 import {createTestEditor, TestComposer} from 'lexical/src/__tests__/utils';
 import {createRoot, Root} from 'react-dom/client';
 import * as ReactTestUtils from 'shared/react-test-utils';
+import {afterEach, beforeEach, describe, expect, test, vi} from 'vitest';
 
 type SerializedCustomTextNode = Spread<
   {type: string; classes: string[]},
@@ -52,7 +53,8 @@ type SerializedCustomTextNode = Spread<
 >;
 
 class CustomTextNode extends TextNode {
-  ['constructor']!: KlassConstructor<typeof CustomTextNode>;
+  /** @internal */
+  declare ['constructor']: KlassConstructor<typeof CustomTextNode>;
 
   __classes: Set<string>;
   constructor(text: string, classes: Iterable<string>, key?: NodeKey) {
@@ -121,7 +123,7 @@ describe('LexicalHistory tests', () => {
     }
     container = null;
 
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   // Shared instance across tests

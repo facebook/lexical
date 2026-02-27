@@ -160,7 +160,7 @@ const isDropdownItemActive = async (page, dropdownItemIndex) => {
         )
         .click();
 
-      const isActive = await document
+      const isActive = document
         .querySelector('.dropdown')
         .children[_dropdownItemIndex].classList.contains('active');
 
@@ -286,9 +286,7 @@ test.describe('Keyboard shortcuts', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <sub data-lexical-text="true">
             <strong
               class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic PlaygroundEditorTheme__textSubscript">
@@ -304,9 +302,7 @@ test.describe('Keyboard shortcuts', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">abc</span>
         </p>
       `,
@@ -348,8 +344,8 @@ test.describe('Keyboard shortcuts', () => {
       page,
       html`
         <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr PlaygroundEditorTheme__indent"
-          dir="ltr"
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
+          dir="auto"
           style="padding-inline-start: calc(120px);">
           <span data-lexical-text="true">abc</span>
         </p>
@@ -362,8 +358,8 @@ test.describe('Keyboard shortcuts', () => {
       page,
       html`
         <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr PlaygroundEditorTheme__indent"
-          dir="ltr"
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
+          dir="auto"
           style="padding-inline-start: calc(40px);">
           <span data-lexical-text="true">abc</span>
         </p>
@@ -375,10 +371,7 @@ test.describe('Keyboard shortcuts', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-          style="">
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto" style="">
           <span data-lexical-text="true">abc</span>
         </p>
       `,

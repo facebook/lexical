@@ -52,6 +52,7 @@ import {
   SiblingCaret,
   TextNode,
 } from 'lexical';
+import {beforeEach, describe, expect, test} from 'vitest';
 
 import {
   $assertRangeSelection,
@@ -1205,8 +1206,8 @@ describe('LexicalCaret', () => {
                     anchorBias === 'outside' && focusBias === 'outside'
                       ? []
                       : (anchorBias === 'inside') === (direction === 'next')
-                      ? [{caret: {offset: 0}, distance: size}]
-                      : [{caret: {offset: size}, distance: -size}],
+                        ? [{caret: {offset: 0}, distance: size}]
+                        : [{caret: {offset: size}, distance: -size}],
                   );
                   const resultRange = $removeTextFromCaretRange(range);
                   $setSelection(null);
@@ -1648,6 +1649,46 @@ describe('LexicalCaret', () => {
             });
           }
         });
+        test('remove range between list and nested list', () => {
+          testEnv.editor.update(
+            () => {
+              const listTextNode = $createTextNode('list node');
+              const listNode = $createListNode().append(
+                $createListItemNode().append(listTextNode),
+              );
+
+              const nestedTextNode = $createTextNode('be nested');
+              const nestedListNode = $createListNode().append(
+                $createListItemNode().append(nestedTextNode),
+              );
+              listNode.append($createListItemNode().append(nestedListNode));
+
+              $getRoot().clear().append(listNode);
+              const sel = $createRangeSelection();
+              sel.anchor.set(listTextNode.getKey(), 'list'.length, 'text');
+              sel.focus.set(nestedTextNode.getKey(), 'be '.length, 'text');
+              $setSelection(sel);
+              const resultRange = $removeTextFromCaretRange(
+                $caretRangeFromSelection(sel),
+              );
+              $setSelectionFromCaretRange(resultRange);
+              expect(
+                $getRoot()
+                  .getAllTextNodes()
+                  .map((node) => node.getTextContent()),
+              ).toEqual(['list', 'nested']);
+              expect(listNode.getLatest().getChildren().length).toEqual(1);
+            },
+            {discrete: true},
+          );
+          testEnv.editor.getEditorState().read(() => {
+            const allTextNodes = $getRoot().getAllTextNodes();
+            // These should get merged in reconciliation
+            expect(allTextNodes.map((node) => node.getTextContent())).toEqual([
+              'listnested',
+            ]);
+          });
+        });
       });
     });
     describe('Ordering', () => {
@@ -1943,7 +1984,7 @@ describe('LexicalSelectionHelpers', () => {
         });
 
         expect(testEnv.innerHTML).toBe(
-          '<p dir="ltr"><a href="https://" dir="ltr"><span data-lexical-text="true">link</span></a><span data-lexical-text="true">foo</span></p>',
+          '<p dir="auto"><a href="https://"><span data-lexical-text="true">link</span></a><span data-lexical-text="true">foo</span></p>',
         );
       });
     });

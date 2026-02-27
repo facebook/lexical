@@ -7,12 +7,12 @@
     "plain-text"
   ],
   "license": "MIT",
-  "version": "0.33.1",
+  "version": "0.41.0",
   "main": "LexicalPlainText.js",
   "types": "index.d.ts",
   "repository": {
     "type": "git",
-    "url": "https://github.com/facebook/lexical",
+    "url": "git+https://github.com/facebook/lexical.git",
     "directory": "packages/lexical-plain-text"
   },
   "module": "LexicalPlainText.mjs",
@@ -35,9 +35,10 @@
     }
   },
   "dependencies": {
-    "@lexical/clipboard": "0.33.1",
-    "@lexical/selection": "0.33.1",
-    "@lexical/utils": "0.33.1",
-    "lexical": "0.33.1"
+    "@lexical/clipboard": "workspace:*",
+    "@lexical/dragon": "workspace:*",
+    "@lexical/selection": "workspace:*",
+    "@lexical/utils": "workspace:*",
+    "lexical": "workspace:*"
   }
 }

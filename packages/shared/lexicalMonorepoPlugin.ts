@@ -26,8 +26,9 @@ export default function lexicalMonorepoPlugin(): Plugin {
               env.mode === 'production'
                 ? 'production'
                 : env.command === 'serve'
-                ? 'source'
-                : 'development',
+                  ? 'source'
+                  : 'development',
+              env.isSsrBuild,
             ),
           },
         }),

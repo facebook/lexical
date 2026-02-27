@@ -9,12 +9,12 @@
     "accessibility"
   ],
   "license": "MIT",
-  "version": "0.33.1",
+  "version": "0.41.0",
   "main": "LexicalDragon.js",
   "types": "index.d.ts",
   "repository": {
     "type": "git",
-    "url": "https://github.com/facebook/lexical",
+    "url": "git+https://github.com/facebook/lexical.git",
     "directory": "packages/lexical-dragon"
   },
   "module": "LexicalDragon.mjs",
@@ -37,6 +37,7 @@
     }
   },
   "dependencies": {
-    "lexical": "0.33.1"
+    "@lexical/extension": "workspace:*",
+    "lexical": "workspace:*"
   }
 }

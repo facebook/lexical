@@ -426,7 +426,6 @@ export function registerTablePlugin(
         return $tableSelectionInsertClipboardNodesCommand(
           payload,
           hasNestedTables,
-          hasFitNestedTables,
         );
       },
       COMMAND_PRIORITY_EDITOR,
@@ -444,6 +443,15 @@ export function registerTablePlugin(
     editor.registerNodeTransform(TableNode, $tableTransform),
     editor.registerNodeTransform(TableRowNode, $tableRowTransform),
     editor.registerNodeTransform(TableCellNode, $tableCellTransform),
+    editor.registerNodeTransform(TableNode, (node) => {
+      if (!hasFitNestedTables.peek()) {
+        return;
+      }
+      const parentCell = $findMatchingParent(node, $isTableCellNode);
+      if (parentCell) {
+        $fitNestedTablesIntoCell(parentCell, [node]);
+      }
+    }),
   );
 }
 
@@ -452,7 +460,6 @@ function $tableSelectionInsertClipboardNodesCommand(
     typeof SELECTION_INSERT_CLIPBOARD_NODES_COMMAND
   >,
   hasNestedTables: Signal<boolean>,
-  hasFitNestedTables: Signal<boolean>,
 ) {
   const {nodes, selection} = selectionPayload;
 
@@ -486,13 +493,13 @@ function $tableSelectionInsertClipboardNodesCommand(
     return $insertTableIntoGrid(nodes[0], selection);
   }
 
-  // When pasting multiple nodes (including tables) into a cell, update the table to fit.
-  if (isRangeSelection && hasNestedTables.peek()) {
-    return $insertTableNodesIntoCells(
-      nodes,
-      selection,
-      hasFitNestedTables.peek(),
-    );
+  // If nested tables are enabled, allow pasting a table into a single cell.
+  if (
+    isRangeSelection &&
+    hasNestedTables.peek() &&
+    !$isMultiCellTableSelection(selection)
+  ) {
+    return false;
   }
 
   // If we reached this point, there's a table in the selection and nested tables are not allowed - reject the paste.
@@ -676,42 +683,36 @@ function $insertTableIntoGrid(
   return true;
 }
 
-// Inserts the given nodes (which will include TableNodes) into the table at the given selection.
-function $insertTableNodesIntoCells(
-  nodes: LexicalNode[],
+function $isMultiCellTableSelection(
   selection: TableSelection | RangeSelection,
-  hasFitNestedTables: boolean,
 ) {
-  // Currently only support pasting into a single cell. In other cases we reject the insertion.
-  const isMultiCellTableSelection =
+  if (
     $isTableSelection(selection) &&
-    !selection.focus.getNode().is(selection.anchor.getNode());
-  const isMultiCellRangeSelection =
-    $isRangeSelection(selection) &&
-    $isTableCellNode(selection.anchor.getNode()) &&
-    !selection.anchor.getNode().is(selection.focus.getNode());
-  if (isMultiCellTableSelection || isMultiCellRangeSelection) {
+    !selection.focus.getNode().is(selection.anchor.getNode())
+  ) {
     return true;
   }
-
-  if (!hasFitNestedTables) {
-    return false;
+  if (
+    $isRangeSelection(selection) &&
+    $isTableCellNode(selection.anchor.getNode()) &&
+    !selection.anchor.getNode().is(selection.focus.getNode())
+  ) {
+    return true;
   }
+  return false;
+}
 
-  const focusNode = selection.focus.getNode();
-  const parentCell = $findMatchingParent(focusNode, $isTableCellNode);
-  if (!parentCell) {
-    return false;
-  }
-
+function $fitNestedTablesIntoCell(
+  parentCell: TableCellNode,
+  nodes: LexicalNode[],
+) {
   const cellWidth = $getCellWidth(parentCell);
   if (cellWidth === undefined) {
     return false;
   }
-  const borderBoxInsets = $calculateCellInsets(parentCell);
+  const borderBoxInsets = $calculateCellHorizontalInsets(parentCell);
   const tables = nodes.filter($isTableNode);
   for (const table of tables) {
-    // Note: here we assume the inset is consistent for cells at all nesting levels.
     $resizeTableToFitCell(table, cellWidth, borderBoxInsets);
   }
 
@@ -719,7 +720,10 @@ function $insertTableNodesIntoCells(
 }
 
 /**
- * Return the width of a specific cell, using the table-level colWidths.
+ * Return the total width of a specific cell, using the table-level colWidths. Accounts for column spans.
+ *
+ * @param cell - The cell to get the width of.
+ * @returns The total width of the cell, in pixels.
  */
 function $getCellWidth(cell: TableCellNode) {
   const destinationTableNode = $getTableNodeFromLexicalNodeOrThrow(cell);
@@ -739,8 +743,11 @@ function $getCellWidth(cell: TableCellNode) {
 
 /**
  * Returns horizontal insets of the given cell (padding + border).
+ *
+ * @param cell - The cell to calculate the horizontal insets for.
+ * @returns The horizontal insets of the cell, in pixels.
  */
-function $calculateCellInsets(cell: TableCellNode) {
+function $calculateCellHorizontalInsets(cell: TableCellNode) {
   const cellDOM = $getEditor().getElementByKey(cell.getKey());
   if (cellDOM === null) {
     return 0;
@@ -800,18 +807,4 @@ function $resizeTableToFitCell(
 
   const proportionalWidth = usableWidth / tableWidth;
   node.setColWidths(oldColWidths.map((width) => width * proportionalWidth));
-
-  const rowChildren = node.getChildren().filter($isTableRowNode);
-  for (const rowChild of rowChildren) {
-    const cellChildren = rowChild.getChildren().filter($isTableCellNode);
-    for (const cellChild of cellChildren) {
-      const cellWidth = $getCellWidth(cellChild);
-      if (cellWidth === undefined) {
-        continue;
-      }
-      for (const table of cellChild.getChildren().filter($isTableNode)) {
-        $resizeTableToFitCell(table, cellWidth, borderBoxInsets);
-      }
-    }
-  }
 }

@@ -525,6 +525,6 @@ export default function TableCellResizerPlugin({
             document.body,
           )
         : null,
-    [editor, isEditable],
+    [editor, isEditable, hasFitNestedTables],
   );
 }

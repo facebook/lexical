@@ -18,12 +18,13 @@ import {
   $getTableNodeFromLexicalNodeOrThrow,
   $getTableRowIndexFromTableCellNode,
   $isTableCellNode,
+  $isTableNode,
   $isTableRowNode,
   getDOMCellFromTarget,
   getTableElement,
   TableNode,
 } from '@lexical/table';
-import {calculateZoomLevel, mergeRegister} from '@lexical/utils';
+import {$dfs, calculateZoomLevel, mergeRegister} from '@lexical/utils';
 import {
   $getNearestNodeFromDOMNode,
   isHTMLElement,
@@ -53,7 +54,13 @@ const MIN_ROW_HEIGHT = 33;
 const MIN_COLUMN_WIDTH = 92;
 const ACTIVE_RESIZER_COLOR = '#76b6ff';
 
-function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
+function TableCellResizer({
+  editor,
+  hasFitNestedTables,
+}: {
+  editor: LexicalEditor;
+  hasFitNestedTables: boolean;
+}): JSX.Element {
   const targetRef = useRef<HTMLElement | null>(null);
   const resizerRef = useRef<HTMLDivElement | null>(null);
   const tableRectRef = useRef<ClientRect | null>(null);
@@ -310,11 +317,19 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
           const newWidth = Math.max(width + widthChange, MIN_COLUMN_WIDTH);
           newColWidths[columnIndex] = newWidth;
           tableNode.setColWidths(newColWidths);
+          if (hasFitNestedTables) {
+            // Marking all child tables as dirty forces them to recalculate their widths.
+            $dfs(tableNode)
+              .filter((n) => $isTableNode(n.node))
+              .forEach((n) => {
+                n.node.markDirty();
+              });
+          }
         },
         {tag: SKIP_SCROLL_INTO_VIEW_TAG},
       );
     },
-    [activeCell, editor],
+    [activeCell, editor, hasFitNestedTables],
   );
 
   const pointerUpHandler = useCallback(
@@ -491,14 +506,24 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
   );
 }
 
-export default function TableCellResizerPlugin(): null | ReactPortal {
+export default function TableCellResizerPlugin({
+  hasFitNestedTables,
+}: {
+  hasFitNestedTables: boolean;
+}): null | ReactPortal {
   const [editor] = useLexicalComposerContext();
   const isEditable = useLexicalEditable();
 
   return useMemo(
     () =>
       isEditable
-        ? createPortal(<TableCellResizer editor={editor} />, document.body)
+        ? createPortal(
+            <TableCellResizer
+              editor={editor}
+              hasFitNestedTables={hasFitNestedTables}
+            />,
+            document.body,
+          )
         : null,
     [editor, isEditable],
   );

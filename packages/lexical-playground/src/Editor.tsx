@@ -249,7 +249,7 @@ export default function Editor(): JSX.Element {
               hasFitNestedTables={hasFitNestedTables}
               hasNestedTables={hasNestedTables}
             />
-            <TableCellResizer />
+            <TableCellResizer hasFitNestedTables={hasFitNestedTables} />
             <TableScrollShadowPlugin />
             <ImagesPlugin />
             <LinkPlugin hasLinkAttributes={hasLinkAttributes} />

@@ -22,17 +22,17 @@
     "lexical": "0.41.0"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.1.13",
+    "@tailwindcss/vite": "^4.2.1",
     "cross-env": "^7.0.3",
-    "vite-plugin-static-copy": "^3.2.0",
-    "tailwindcss": "^4.1.13",
+    "tailwindcss": "^4.2.1",
     "typescript": "5.4.5",
-    "vite": "^7.1.4",
+    "vite": "^7.3.1",
+    "vite-plugin-static-copy": "^3.2.0",
     "vite-tsconfig-paths": "^5.1.4"
   },
   "optionalDependencies": {
-    "@rollup/rollup-linux-x64-gnu": "4.52.0",
     "@rollup/rollup-darwin-arm64": "4.52.0",
+    "@rollup/rollup-linux-x64-gnu": "4.52.0",
     "@rollup/rollup-win32-x64-msvc": "4.52.0",
     "@rollup/wasm-node": "4.52.0"
   }

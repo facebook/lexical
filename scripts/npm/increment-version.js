@@ -10,7 +10,7 @@
 
 'use strict';
 
-const {spawn} = require('child-process-promise');
+const {spawn} = require('../shared/childProcess');
 const argv = require('minimist')(process.argv.slice(2));
 
 const increment = argv.i || process.env.INCREMENT;

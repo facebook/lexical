@@ -11,7 +11,7 @@
 const glob = require('glob');
 const fs = require('fs-extra');
 const argv = require('minimist')(process.argv.slice(2));
-const {exec} = require('child-process-promise');
+const {exec} = require('./shared/childProcess');
 
 async function main() {
   const {version} = argv;

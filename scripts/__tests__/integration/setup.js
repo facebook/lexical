@@ -10,7 +10,7 @@
 
 const path = require('node:path');
 const fs = require('fs-extra');
-const {exec} = require('child-process-promise');
+const {exec} = require('../../shared/childProcess');
 const {packagesManager} = require('../../shared/packagesManager');
 const {version} = require('../../shared/readMonorepoPackageJson')();
 

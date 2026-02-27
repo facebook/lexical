@@ -171,8 +171,7 @@ function TableOfContentsList({
                   <li
                     className={`normal-heading ${
                       selectedKey === key ? 'selected-heading' : ''
-                    }
-                    `}>
+                    } `}>
                     {('' + text).length > 27
                       ? text.substring(0, 27) + '...'
                       : text}

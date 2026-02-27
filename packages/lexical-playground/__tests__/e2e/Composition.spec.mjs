@@ -1392,6 +1392,71 @@ test.describe('Composition', () => {
         `,
       );
     });
+
+    test('Can type Chinese pinyin via IME on empty editor and confirm', async ({
+      page,
+      browserName,
+    }) => {
+      // We don't yet support FF.
+      test.skip(browserName !== 'chromium');
+
+      await focusEditor(page);
+      await enableCompositionKeyEvents(page);
+
+      const client = await page.context().newCDPSession(page);
+
+      // Simulate Chinese IME: user types pinyin on an initially empty editor
+      // This triggers the COMPOSITION_START_CHAR insertion because anchor.type === 'element'
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 1,
+        selectionEnd: 1,
+        text: 'n',
+      });
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 2,
+        selectionEnd: 2,
+        text: 'ni',
+      });
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 3,
+        selectionEnd: 3,
+        text: 'nih',
+      });
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 5,
+        selectionEnd: 5,
+        text: 'nihao',
+      });
+
+      // User selects a candidate (e.g. 你好)
+      await client.send('Input.insertText', {text: '你好'});
+
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">你好</span>
+          </p>
+        `,
+      );
+      await assertSelection(page, {
+        anchorOffset: 2,
+        anchorPath: [0, 0, 0],
+        focusOffset: 2,
+        focusPath: [0, 0, 0],
+      });
+
+      // Now type more text after the Chinese input to verify editor is functional
+      await page.keyboard.type('world');
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">你好world</span>
+          </p>
+        `,
+      );
+    });
   });
   /* eslint-enable sort-keys-fix/sort-keys-fix */
 });

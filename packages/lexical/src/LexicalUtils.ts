@@ -803,9 +803,42 @@ export function $updateTextNodeFromDOMContent(
         if (!IS_SAFARI && !IS_IOS && !IS_APPLE_WEBKIT) {
           // For composition (mainly Android), we have to remove the node on a later update
           const editor = getActiveEditor();
+          const nodeKey = node.getKey();
+          const hadTextBeforeComposition = prevTextContent !== '';
           setTimeout(() => {
             editor.update(() => {
               if (node.isAttached()) {
+                // When the node had no text before composition started (i.e. the
+                // composition began on an empty/new node), re-check the DOM text
+                // content before removing. Some browsers (e.g. Chrome on Android)
+                // restore the user's raw IME input (e.g. pinyin letters) into the
+                // DOM after compositionend fires. If we still remove the node at
+                // this point, the restored text is lost.
+                //
+                // We only do this when the node was previously empty to avoid
+                // interfering with the normal cancel-composition flow where the
+                // user deliberately deleted all composed text.
+                if (!hadTextBeforeComposition) {
+                  const domElement = editor.getElementByKey(nodeKey);
+                  const domTextNode = getDOMTextNode(domElement);
+                  if (domTextNode !== null && domTextNode.nodeValue !== null) {
+                    const currentDOMText = domTextNode.nodeValue
+                      .replaceAll(COMPOSITION_SUFFIX, '')
+                      .replaceAll(COMPOSITION_START_CHAR, '');
+                    if (currentDOMText !== '') {
+                      // DOM has actual text content — do not remove the node.
+                      // Instead, sync the Lexical node with the DOM content.
+                      $updateTextNodeFromDOMContent(
+                        node,
+                        domTextNode.nodeValue,
+                        null,
+                        null,
+                        true,
+                      );
+                      return;
+                    }
+                  }
+                }
                 node.remove();
               }
             });

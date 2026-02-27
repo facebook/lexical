@@ -621,6 +621,11 @@ i.page-break,
   background-image: url(images/icons/scissors.svg);
 }
 
+i.attachment,
+.icon.attachment {
+  background-image: url(images/icons/paperclip.svg);
+}
+
 .link-editor .button.active,
 .toolbar .button.active {
   background-color: rgb(223, 232, 250);

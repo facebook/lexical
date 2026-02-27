@@ -22,6 +22,7 @@ import {type JSX, useMemo} from 'react';
 
 import {isDevPlayground} from './appSettings';
 import {buildHTMLConfig} from './buildHTMLConfig';
+import {AttachmentStoreProvider} from './context/AttachmentStoreContext';
 import {FlashMessageContext} from './context/FlashMessageContext';
 import {SettingsContext, useSettings} from './context/SettingsContext';
 import {SharedHistoryContext} from './context/SharedHistoryContext';
@@ -176,7 +177,9 @@ export default function PlaygroundApp(): JSX.Element {
   return (
     <SettingsContext>
       <FlashMessageContext>
-        <App />
+        <AttachmentStoreProvider>
+          <App />
+        </AttachmentStoreProvider>
       </FlashMessageContext>
       <a
         href="https://github.com/facebook/lexical/tree/main/packages/lexical-playground"

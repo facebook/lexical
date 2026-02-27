@@ -81,6 +81,7 @@ import DropdownColorPicker from '../../ui/DropdownColorPicker';
 import {isKeyboardInput} from '../../utils/focusUtils';
 import {getSelectedNode} from '../../utils/getSelectedNode';
 import {sanitizeUrl} from '../../utils/url';
+import {InsertAttachmentDialog} from '../AttachmentPlugin';
 import {EmbedConfigs} from '../AutoEmbedPlugin';
 import {INSERT_COLLAPSIBLE_COMMAND} from '../CollapsiblePlugin';
 import {INSERT_DATETIME_COMMAND} from '../DateTimePlugin';
@@ -1280,6 +1281,19 @@ export default function ToolbarPlugin({
                   className="item">
                   <i className="icon page-break" />
                   <span className="text">Page Break</span>
+                </DropDownItem>
+                <DropDownItem
+                  onClick={() => {
+                    showModal('Insert Attachment', (onClose) => (
+                      <InsertAttachmentDialog
+                        activeEditor={activeEditor}
+                        onClose={onClose}
+                      />
+                    ));
+                  }}
+                  className="item">
+                  <i className="icon attachment" />
+                  <span className="text">Attachment</span>
                 </DropDownItem>
                 <DropDownItem
                   onClick={() => {

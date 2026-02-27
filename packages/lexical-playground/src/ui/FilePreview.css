@@ -1,0 +1,28 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ *
+ */
+
+.FilePreview__container {
+  background-color: #f5f5f5;
+  border-radius: 4px;
+  margin-top: 10px;
+  padding: 10px;
+}
+
+.FilePreview__item {
+  margin-bottom: 4px;
+}
+
+.FilePreview__item:last-child {
+  margin-bottom: 0;
+}
+
+.FilePreview__item strong {
+  color: #333;
+  margin-right: 8px;
+}

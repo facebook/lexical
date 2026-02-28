@@ -8,13 +8,13 @@
 
 // @ts-check
 /* eslint-disable no-console */
-import {spawn} from 'child-process-promise';
 import {sync as globSync} from 'glob';
 import minimist from 'minimist';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import {gt as semverGt} from 'semver';
 
+import {spawn} from './shared/childProcess.js';
 import {PackageMetadata} from './shared/PackageMetadata.js';
 
 async function main() {
@@ -63,7 +63,7 @@ async function main() {
         );
       }
     };
-    await pnpm('--ignore-workspace', 'i');
+    await pnpm('--ignore-workspace', '--no-frozen-lockfile', 'i');
     if (hasUnreleasedDependency) {
       console.log(
         'Unreleased lexical dependencies required, removing local versions',

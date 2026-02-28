@@ -1394,7 +1394,7 @@ describe('getNodes()', () => {
 
           // Get inserted node
           const nodes = newSelection.getNodes();
-          expect(nodes.length).toBeGreaterThan(0);
+          expect(nodes).toHaveLength(1);
 
           const insertedNode = nodes[0];
           assert($isTextNode(insertedNode), 'Expected TextNode');

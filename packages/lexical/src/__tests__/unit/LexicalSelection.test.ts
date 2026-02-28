@@ -1397,11 +1397,7 @@ describe('getNodes()', () => {
           expect(nodes.length).toBeGreaterThan(0);
 
           const insertedNode = nodes[0];
-          expect($isTextNode(insertedNode)).toBe(true);
-
-          if (!$isTextNode(insertedNode)) {
-            throw new Error('Expected TextNode');
-          }
+          assert($isTextNode(insertedNode), 'Expected TextNode');
 
           // Assert bold format is preserved
           expect(insertedNode.hasFormat('bold')).toBe(true);

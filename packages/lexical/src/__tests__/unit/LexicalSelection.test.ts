@@ -1379,10 +1379,7 @@ describe('getNodes()', () => {
           $getRoot().append(paragraph);
 
           // Place cursor between "he" and "llo"
-          const selection = $createRangeSelection();
-          selection.anchor.set(textNode.getKey(), 2, 'text');
-          selection.focus.set(textNode.getKey(), 2, 'text');
-          $setSelection(selection);
+          const selection = textNode.select(2, 2);
 
           // Insert two line breaks
           selection.insertLineBreak();

@@ -1387,11 +1387,7 @@ describe('getNodes()', () => {
 
           // Get updated selection
           const newSelection = $getSelection();
-          expect($isRangeSelection(newSelection)).toBe(true);
-
-          if (!$isRangeSelection(newSelection)) {
-            throw new Error('Expected RangeSelection');
-          }
+          assert($isRangeSelection(newSelection), 'Expected RangeSelection');
 
           // Type a character between the line breaks
           newSelection.insertText('X');

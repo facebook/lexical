@@ -140,7 +140,6 @@ function LazyImage({
   width: 'inherit' | number;
   onError: () => void;
 }): JSX.Element {
-  const isSVGImage = isSVG(src);
   const status = useSuspenseImage(src);
 
   useEffect(() => {
@@ -155,7 +154,19 @@ function LazyImage({
 
   // Calculate final dimensions with proper scaling
   const calculateDimensions = () => {
-    if (!isSVGImage) {
+    if (width !== 'inherit' && height !== 'inherit') {
+      return {
+        height,
+        maxWidth,
+        width,
+      };
+    }
+
+    const isActuallySVG =
+      isSVG(src) || src.toLowerCase().startsWith('data:image/svg+xml');
+
+    // For standard images, Lexical expects 'inherit'
+    if (!isActuallySVG) {
       return {
         height,
         maxWidth,
@@ -167,8 +178,9 @@ function LazyImage({
     const naturalWidth = status.width;
     const naturalHeight = status.height;
 
-    let finalWidth = naturalWidth;
-    let finalHeight = naturalHeight;
+    //  If SVG has no intrinsic dimensions (0), fallback to a sensible default (maxWidth)
+    let finalWidth = naturalWidth || maxWidth;
+    let finalHeight = naturalHeight || finalWidth;
 
     // Scale down if width exceeds maxWidth while maintaining aspect ratio
     if (finalWidth > maxWidth) {

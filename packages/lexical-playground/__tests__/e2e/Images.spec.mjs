@@ -819,4 +819,44 @@ test.describe('Images', () => {
       `,
     );
   });
+
+  test('Dimensionless SVG renders with a visible bounding box instead of collapsing', async ({
+    page,
+    isRichText,
+  }) => {
+    test.skip(!isRichText);
+    await initialize({page});
+    await focusEditor(page);
+
+    // 1. Create a raw SVG without width/height attributes
+    const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="red"/></svg>`;
+    const base64Svg = Buffer.from(svgContent).toString('base64');
+    const htmlContent = `<img src="data:image/svg+xml;base64,${base64Svg}" alt="dimensionless-svg" />`;
+
+    // 2. Simulate pasting the image into the editor
+    await page.evaluate((htmlPage) => {
+      const clipboardData = new DataTransfer();
+      clipboardData.setData('text/html', htmlPage);
+      const event = new ClipboardEvent('paste', {
+        bubbles: true,
+        cancelable: true,
+        clipboardData,
+      });
+      document.querySelector('[data-lexical-editor]')?.dispatchEvent(event);
+    }, htmlContent);
+
+    // 3. Wait for the image to be mounted in the DOM
+    const imageLocator = page.locator(
+      '[data-lexical-editor] img[alt="dimensionless-svg"]',
+    );
+    await imageLocator.waitFor({state: 'attached'});
+
+    // 4. Verification: The bounding box should NOT be 0x0
+    const boundingBox = await imageLocator.boundingBox();
+    expect(boundingBox).not.toBeNull();
+
+    // On the current main branch, this will FAIL because width/height collapse to 0
+    expect(boundingBox.width).toBeGreaterThan(0);
+    expect(boundingBox.height).toBeGreaterThan(0);
+  });
 });

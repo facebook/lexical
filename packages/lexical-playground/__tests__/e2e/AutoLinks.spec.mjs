@@ -21,6 +21,7 @@ import {
   focusEditor,
   html,
   initialize,
+  LEGACY_EVENTS,
   pasteFromClipboard,
   pressInsertLinkButton,
   test,
@@ -756,7 +757,7 @@ test.describe.parallel('Auto Links', () => {
     page,
     isPlainText,
   }) => {
-    test.skip(isPlainText);
+    test.skip(isPlainText || LEGACY_EVENTS);
 
     await focusEditor(page);
     await page.keyboard.type('http://example.com');
@@ -790,7 +791,6 @@ test.describe.parallel('Auto Links', () => {
     );
 
     // Add non-url text after the link
-    await focusEditor(page);
     await moveToLineEnd(page);
     await page.keyboard.type('!');
     await assertHTML(

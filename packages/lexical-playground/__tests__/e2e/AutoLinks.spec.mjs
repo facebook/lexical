@@ -21,6 +21,7 @@ import {
   focusEditor,
   html,
   initialize,
+  LEGACY_EVENTS,
   pasteFromClipboard,
   pressInsertLinkButton,
   test,
@@ -734,8 +735,7 @@ test.describe.parallel('Auto Links', () => {
     );
 
     await click(page, 'span:has-text("http://www.example.com")');
-
-    pressInsertLinkButton(page);
+    await pressInsertLinkButton(page);
 
     await assertHTML(
       page,
@@ -746,6 +746,206 @@ test.describe.parallel('Auto Links', () => {
             <span data-lexical-text="true">http://www.example.com</span>
           </a>
           <span data-lexical-text="true">test</span>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  test('Unlinked the autolink should not destruct if add non-spacing text in front or right after it', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText || LEGACY_EVENTS);
+
+    await focusEditor(page);
+    await page.keyboard.type('http://example.com');
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <a href="http://example.com">
+            <span data-lexical-text="true">http://example.com</span>
+          </a>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+
+    await focusEditor(page);
+    await click(page, 'a[href="http://example.com"]');
+    await click(page, 'div.link-editor div.link-trash');
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <span>
+            <span data-lexical-text="true">http://example.com</span>
+          </span>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+
+    // Add non-url text after the link
+    await moveToLineEnd(page);
+    await page.keyboard.type('!');
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <span>
+            <span data-lexical-text="true">http://example.com</span>
+          </span>
+          <span data-lexical-text="true">!</span>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+
+    await page.keyboard.press('Backspace');
+
+    // Add non-url text before the link
+    await moveToLineBeginning(page);
+    await page.keyboard.type('!');
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <span data-lexical-text="true">!</span>
+          <span>
+            <span data-lexical-text="true">http://example.com</span>
+          </span>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+    await page.keyboard.press('Backspace');
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <span>
+            <span data-lexical-text="true">http://example.com</span>
+          </span>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  test('Can destruct unlinked the autolink if add an invalid character inside', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+    await page.keyboard.type('http://example.com');
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <a href="http://example.com">
+            <span data-lexical-text="true">http://example.com</span>
+          </a>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+
+    await focusEditor(page);
+    await click(page, 'a[href="http://example.com"]');
+    await click(page, 'div.link-editor div.link-trash');
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <span>
+            <span data-lexical-text="true">http://example.com</span>
+          </span>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+
+    // break autolink
+    await moveToLineEnd(page);
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.type('[');
+    // plain text without wrapper
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <span data-lexical-text="true">http://example.co[m</span>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  test('Can destruct unlinked the autolink if add emoji inside', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+    await page.keyboard.type('http://example.com');
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <a href="http://example.com">
+            <span data-lexical-text="true">http://example.com</span>
+          </a>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+
+    await focusEditor(page);
+    await click(page, 'a[href="http://example.com"]');
+    await click(page, 'div.link-editor div.link-trash');
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <span>
+            <span data-lexical-text="true">http://example.com</span>
+          </span>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+
+    // type emoji
+    await moveToLineEnd(page);
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.type(':)');
+    // ':', ')' — is valid chars for link but inserting an emoji
+    // should break the link by splitting it into two text nodes
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <span data-lexical-text="true">http://example.co</span>
+          <span class="emoji happysmile" data-lexical-text="true">
+            <span class="emoji-inner">🙂</span>
+          </span>
+          <span data-lexical-text="true">m</span>
         </p>
       `,
       undefined,

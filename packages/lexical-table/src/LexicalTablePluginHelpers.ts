@@ -413,8 +413,10 @@ export function registerTableSelectionObserver(
       const selection = $getSelection();
       if ($isTableSelection(selection) && rootElement.contains(target)) {
         for (const [, [observer]] of tableSelections) {
-          observer.$clearHighlight();
+          observer.$clearHighlight(false);
         }
+        $setSelection(null);
+        editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
       }
     });
   };

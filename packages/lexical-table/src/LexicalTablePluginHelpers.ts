@@ -17,7 +17,6 @@ import {
 } from '@lexical/utils';
 import {
   $createParagraphNode,
-  $getEditor,
   $getNearestNodeFromDOMNode,
   $getPreviousSelection,
   $getRoot,
@@ -40,7 +39,6 @@ import {
 } from 'lexical';
 import invariant from 'shared/invariant';
 
-import {PIXEL_VALUE_REG_EXP} from './constants';
 import {
   $createTableCellNode,
   $isTableCellNode,
@@ -70,9 +68,8 @@ import {
   $computeTableMap,
   $computeTableMapSkipCellCheck,
   $createTableNodeWithDimensions,
+  $getCellWidth,
   $getNodeTriplet,
-  $getTableCellNodeRect,
-  $getTableNodeFromLexicalNodeOrThrow,
   $insertTableColumnAtNode,
   $insertTableRowAtNode,
   $mergeCells,
@@ -398,15 +395,18 @@ export function registerTablePlugin(
   editor: LexicalEditor,
   options?: Pick<
     NamedSignalsOutput<TableConfig>,
-    'hasNestedTables' | 'hasFitNestedTables'
+    'hasNestedTables' | 'hasFitNestedTables' | 'getCellHorizontalInsets'
   >,
 ): () => void {
   if (!editor.hasNodes([TableNode])) {
     invariant(false, 'TablePlugin: TableNode is not registered on editor');
   }
 
-  const {hasNestedTables = signal(false), hasFitNestedTables = signal(false)} =
-    options ?? {};
+  const {
+    hasNestedTables = signal(false),
+    hasFitNestedTables = signal(false),
+    getCellHorizontalInsets = signal(() => 0),
+  } = options ?? {};
 
   return mergeRegister(
     editor.registerCommand(
@@ -443,12 +443,16 @@ export function registerTablePlugin(
     editor.registerNodeTransform(TableRowNode, $tableRowTransform),
     editor.registerNodeTransform(TableCellNode, $tableCellTransform),
     editor.registerNodeTransform(TableNode, (node) => {
-      if (!hasFitNestedTables.peek()) {
+      if (!hasFitNestedTables.peek() || !getCellHorizontalInsets.peek()) {
         return;
       }
       const parentCell = $findMatchingParent(node, $isTableCellNode);
       if (parentCell) {
-        $fitNestedTableIntoCell(parentCell, node);
+        $fitNestedTableIntoCell(
+          parentCell,
+          node,
+          getCellHorizontalInsets.peek(),
+        );
       }
     }),
   );
@@ -704,74 +708,16 @@ function $isMultiCellTableSelection(
 function $fitNestedTableIntoCell(
   parentCell: TableCellNode,
   tableNode: TableNode,
+  getTableCellHorizontalInsets: (cell: TableCellNode) => number,
 ) {
   const cellWidth = $getCellWidth(parentCell);
   if (cellWidth === undefined) {
     return false;
   }
-  const borderBoxInsets = $calculateCellHorizontalInsets(parentCell);
+  const borderBoxInsets = getTableCellHorizontalInsets(parentCell);
   $resizeTableToFitCell(tableNode, cellWidth, borderBoxInsets);
 
   return false;
-}
-
-/**
- * Return the total width of a specific cell, using the table-level colWidths. Accounts for column spans.
- *
- * @param cell - The cell to get the width of.
- * @returns The total width of the cell, in pixels.
- */
-function $getCellWidth(cell: TableCellNode) {
-  const destinationTableNode = $getTableNodeFromLexicalNodeOrThrow(cell);
-
-  const cellRect = $getTableCellNodeRect(cell);
-  const colWidths = destinationTableNode.getColWidths();
-  if (!cellRect || !colWidths) {
-    return undefined;
-  }
-  const {columnIndex, colSpan} = cellRect;
-  let totalWidth = 0;
-  for (let i = columnIndex; i < columnIndex + colSpan; i++) {
-    totalWidth += colWidths[i];
-  }
-  return totalWidth;
-}
-
-/**
- * Returns horizontal insets of the given cell (padding + border).
- *
- * @param cell - The cell to calculate the horizontal insets for.
- * @returns The horizontal insets of the cell, in pixels.
- */
-function $calculateCellHorizontalInsets(cell: TableCellNode) {
-  const cellDOM = $getEditor().getElementByKey(cell.getKey());
-  if (cellDOM === null) {
-    return 0;
-  }
-  const computedStyle = window.getComputedStyle(cellDOM);
-  const paddingLeft = computedStyle.getPropertyValue('padding-left') || '0px';
-  const paddingRight = computedStyle.getPropertyValue('padding-right') || '0px';
-  const borderLeftWidth =
-    computedStyle.getPropertyValue('border-left-width') || '0px';
-  const borderRightWidth =
-    computedStyle.getPropertyValue('padding-right-width') || '0px';
-
-  if (
-    !PIXEL_VALUE_REG_EXP.test(paddingLeft) ||
-    !PIXEL_VALUE_REG_EXP.test(paddingRight) ||
-    !PIXEL_VALUE_REG_EXP.test(borderLeftWidth) ||
-    !PIXEL_VALUE_REG_EXP.test(borderRightWidth)
-  ) {
-    return 0;
-  }
-  const paddingLeftPx = parseFloat(paddingLeft);
-  const paddingRightPx = parseFloat(paddingRight);
-  const borderLeftWidthPx = parseFloat(borderLeftWidth);
-  const borderRightWidthPx = parseFloat(borderRightWidth);
-
-  return (
-    paddingLeftPx + paddingRightPx + borderLeftWidthPx + borderRightWidthPx
-  );
 }
 
 function $getTotalTableWidth(colWidths: readonly number[]) {

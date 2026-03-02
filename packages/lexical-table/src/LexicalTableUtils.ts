@@ -1384,3 +1384,25 @@ export function $getTableCellNodeRect(tableCellNode: TableCellNode): {
 
   return null;
 }
+
+/**
+ * Return the total width of a specific cell, using the table-level colWidths. Accounts for column spans.
+ *
+ * @param cell - The cell to get the width of.
+ * @returns The total width of the cell, in pixels.
+ */
+export function $getCellWidth(cell: TableCellNode) {
+  const destinationTableNode = $getTableNodeFromLexicalNodeOrThrow(cell);
+
+  const cellRect = $getTableCellNodeRect(cell);
+  const colWidths = destinationTableNode.getColWidths();
+  if (!cellRect || !colWidths) {
+    return undefined;
+  }
+  const {columnIndex, colSpan} = cellRect;
+  let totalWidth = 0;
+  for (let i = columnIndex; i < columnIndex + colSpan; i++) {
+    totalWidth += colWidths[i];
+  }
+  return totalWidth;
+}

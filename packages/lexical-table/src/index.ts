@@ -70,6 +70,7 @@ export {
   $deleteTableColumnAtSelection,
   $deleteTableRow__EXPERIMENTAL,
   $deleteTableRowAtSelection,
+  $getCellWidth,
   $getNodeTriplet,
   $getTableCellNodeFromLexicalNode,
   $getTableCellNodeRect,

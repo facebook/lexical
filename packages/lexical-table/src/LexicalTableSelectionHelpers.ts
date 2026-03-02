@@ -22,6 +22,7 @@ import type {
   LexicalCommand,
   LexicalEditor,
   LexicalNode,
+  NodeKey,
   PointCaret,
   RangeSelection,
   SiblingCaret,
@@ -763,22 +764,6 @@ export function applyTableHandlers(
 
   tableObserver.listenersToRemove.add(
     editor.registerCommand(
-      SELECTION_CHANGE_COMMAND,
-      () => {
-        // Temporarily moved out (to reduce diff)
-        return $__tmpHandleSelectionChangeCommand(
-          tableObserver,
-          tableNode,
-          editor,
-          editorWindow,
-        );
-      },
-      COMMAND_PRIORITY_HIGH,
-    ),
-  );
-
-  tableObserver.listenersToRemove.add(
-    editor.registerCommand(
       INSERT_PARAGRAPH_COMMAND,
       () => {
         const selection = $getSelection();
@@ -807,12 +792,13 @@ export function applyTableHandlers(
   return tableObserver;
 }
 
-function $__tmpHandleSelectionChangeCommand(
+/** @internal */
+export function $handleTableSelectionChangeCommand(
   tableObserver: TableObserver,
   tableNode: TableNode,
   editor: LexicalEditor,
-  editorWindow: Window,
 ) {
+  const editorWindow = getEditorWindow(editor);
   const selection = $getSelection();
   const prevSelection = $getPreviousSelection();
   const nextFocus = tableObserver.getAndClearNextFocus();
@@ -1041,6 +1027,46 @@ function $__tmpHandleSelectionChangeCommand(
   }
 
   return false;
+}
+
+/**
+ * Returns the node key of the (innermost) table that should own the given
+ * selection for table selection handling. Used so only one table's observer
+ * runs for nested tables.
+ */
+export function $getTableKeyForSelection(
+  selection: BaseSelection | null,
+): NodeKey | null {
+  if (selection === null) {
+    return null;
+  }
+  if ($isTableSelection(selection)) {
+    return selection.tableKey;
+  }
+  if (!$isRangeSelection(selection)) {
+    return null;
+  }
+  const anchorCellNode = $findCellNode(selection.anchor.getNode());
+  const focusCellNode = $findCellNode(selection.focus.getNode());
+  const anchorTable = anchorCellNode ? $findTableNode(anchorCellNode) : null;
+  const focusTable = focusCellNode ? $findTableNode(focusCellNode) : null;
+  if (!anchorTable && !focusTable) {
+    return null;
+  }
+  if (!anchorTable) {
+    return focusTable!.getKey();
+  }
+  if (!focusTable) {
+    return anchorTable.getKey();
+  }
+  // For nested tables, use the innermost table (the one that is a descendant of the other).
+  if (anchorTable.isParentOf(focusTable)) {
+    return focusTable.getKey();
+  }
+  if (focusTable.isParentOf(anchorTable)) {
+    return anchorTable.getKey();
+  }
+  return anchorTable.getKey();
 }
 
 export type HTMLTableElementWithWithTableSelectionState = HTMLTableElement & {

@@ -19,6 +19,7 @@ import {
   $createParagraphNode,
   $getEditor,
   $getNearestNodeFromDOMNode,
+  $getNodeByKey,
   $getPreviousSelection,
   $getRoot,
   $getSelection,
@@ -28,6 +29,7 @@ import {
   $setSelection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_EDITOR,
+  COMMAND_PRIORITY_HIGH,
   COMMAND_PRIORITY_LOW,
   CommandPayloadType,
   ElementNode,
@@ -37,6 +39,7 @@ import {
   NodeKey,
   RangeSelection,
   SELECT_ALL_COMMAND,
+  SELECTION_CHANGE_COMMAND,
   SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
 } from 'lexical';
 import invariant from 'shared/invariant';
@@ -62,6 +65,8 @@ import {
 } from './LexicalTableSelection';
 import {
   $findTableNode,
+  $getTableKeyForSelection,
+  $handleTableSelectionChangeCommand,
   applyTableHandlers,
   getTableElement,
   HTMLTableElementWithWithTableSelectionState,
@@ -377,7 +382,34 @@ export function registerTableSelectionObserver(
     {skipInitialization: false},
   );
 
+  const unregisterSelectionChange = editor.registerCommand(
+    SELECTION_CHANGE_COMMAND,
+    () => {
+      const selection = $getSelection();
+      const tableKey = $getTableKeyForSelection(selection);
+      if (tableKey === null) {
+        return false;
+      }
+      const entry = tableSelections.get(tableKey);
+      if (entry === undefined) {
+        return false;
+      }
+      const [tableObserver] = entry;
+      const tableNode = $getNodeByKey(tableKey);
+      if (tableNode === null || !$isTableNode(tableNode)) {
+        return false;
+      }
+      return $handleTableSelectionChangeCommand(
+        tableObserver,
+        tableNode,
+        editor,
+      );
+    },
+    COMMAND_PRIORITY_HIGH,
+  );
+
   return () => {
+    unregisterSelectionChange();
     unregisterMutationListener();
     // Hook might be called multiple times so cleaning up tables listeners as well,
     // as it'll be reinitialized during recurring call

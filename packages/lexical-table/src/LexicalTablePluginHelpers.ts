@@ -27,7 +27,6 @@ import {
   $isRangeSelection,
   $isTextNode,
   $setSelection,
-  BaseSelection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_HIGH,
@@ -66,7 +65,6 @@ import {
 } from './LexicalTableSelection';
 import {
   $findTableNode,
-  $getTableKeyForSelection,
   $handleTableSelectionChangeCommand,
   applyTableHandlers,
   getTableElement,
@@ -389,37 +387,18 @@ export function registerTableSelectionObserver(
     {skipInitialization: false},
   );
 
-  function $getTableForSelection(selection: BaseSelection | null) {
-    const tableKey = $getTableKeyForSelection(selection);
-    if (tableKey === null) {
-      return null;
-    }
-    const entry = tableSelections.get(tableKey);
-    if (entry === undefined) {
-      return null;
-    }
-    const [tableObserver] = entry;
-    const tableNode = $getNodeByKey(tableKey);
-    if (tableNode === null || !$isTableNode(tableNode)) {
-      return null;
-    }
-    return {tableNode, tableObserver};
-  }
-
   const unregisterSelectionChange = editor.registerCommand(
     SELECTION_CHANGE_COMMAND,
     () => {
-      const selection = $getSelection();
-      const nodeAndObserver = $getTableForSelection(selection);
-      if (!nodeAndObserver) {
-        return false;
+      for (const [, [tableObserver]] of tableSelections) {
+        const tableNode = $getNodeByKey<TableNode>(tableObserver.tableNodeKey)!;
+        if (
+          $handleTableSelectionChangeCommand(tableObserver, tableNode, editor)
+        ) {
+          return true;
+        }
       }
-      const {tableNode, tableObserver} = nodeAndObserver;
-      return $handleTableSelectionChangeCommand(
-        tableObserver,
-        tableNode,
-        editor,
-      );
+      return false;
     },
     COMMAND_PRIORITY_HIGH,
   );

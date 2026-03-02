@@ -51,6 +51,13 @@ export interface TablePluginProps {
    * @experimental Nested tables are not officially supported.
    */
   hasFitNestedTables?: boolean;
+  /**
+   * Callback that returns the total horizontal insets of the given cell (padding + border), in pixels.
+   * Required for `hasFitNestedTables` to be able to correctly calculate the usable width of a given cell.
+   *
+   * @experimental Nested tables are not officially supported.
+   */
+  getCellHorizontalInsets?: (cell: TableCellNode) => number;
 }
 
 /**
@@ -66,6 +73,7 @@ export function TablePlugin({
   hasHorizontalScroll = false,
   hasNestedTables = false,
   hasFitNestedTables = false,
+  getCellHorizontalInsets = () => 0,
 }: TablePluginProps): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
 
@@ -81,10 +89,12 @@ export function TablePlugin({
 
   const hasNestedTablesSignal = usePropSignal(hasNestedTables);
   const hasFitNestedTablesSignal = usePropSignal(hasFitNestedTables);
+  const getCellHorizontalInsetsSignal = usePropSignal(getCellHorizontalInsets);
 
   useEffect(
     () =>
       registerTablePlugin(editor, {
+        getCellHorizontalInsets: getCellHorizontalInsetsSignal,
         hasFitNestedTables: hasFitNestedTablesSignal,
         hasNestedTables: hasNestedTablesSignal,
       }),

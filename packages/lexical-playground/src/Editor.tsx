@@ -248,8 +248,11 @@ export default function Editor(): JSX.Element {
               hasHorizontalScroll={tableHorizontalScroll}
               hasFitNestedTables={hasFitNestedTables}
               hasNestedTables={hasNestedTables}
+              getCellHorizontalInsets={
+                () => 17 /* 8px horizontal padding (each side) + 1px border */
+              }
             />
-            <TableCellResizer />
+            <TableCellResizer hasFitNestedTables={hasFitNestedTables} />
             <TableScrollShadowPlugin />
             <ImagesPlugin />
             <LinkPlugin hasLinkAttributes={hasLinkAttributes} />

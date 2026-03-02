@@ -53,6 +53,13 @@ export interface TableConfig {
    * @experimental Nested tables are not officially supported.
    */
   hasFitNestedTables: boolean;
+  /**
+   * Callback that returns the total horizontal insets of the given cell (padding + border), in pixels.
+   * Required for `hasFitNestedTables` to be able to correctly calculate the usable width of a given cell.
+   *
+   * @experimental Nested tables are not officially supported.
+   */
+  getCellHorizontalInsets: (cell: TableCellNode) => number;
 }
 
 /**
@@ -64,6 +71,7 @@ export const TableExtension = defineExtension({
     return namedSignals(config);
   },
   config: safeCast<TableConfig>({
+    getCellHorizontalInsets: () => 0,
     hasCellBackgroundColor: true,
     hasCellMerge: true,
     hasFitNestedTables: false,

@@ -699,6 +699,76 @@ describe('TableExtension', () => {
         expect(innerTableNode.getColWidths()).toEqual([375, 125]);
       });
     });
+
+    it('resizes inner table when expanding larger than parent table cell (with hasNestedTables, hasFitNestedTables)', () => {
+      const extension = getExtensionDependencyFromEditor(
+        editor,
+        TableExtension,
+      );
+      extension.output.hasNestedTables.value = true;
+      extension.output.hasFitNestedTables.value = true;
+
+      editor.update(
+        () => {
+          const root = $getRoot().clear();
+
+          // Outer table is a single 200-wide cell. Inner table is initially two 100-wide cells.
+          const outerTable = $createTableNode();
+          outerTable.setColWidths([200]);
+          const outerRow = $createTableRowNode();
+          const outerCell = $createTableCellNode();
+
+          const innerTable = $createTableNode();
+          innerTable.setColWidths([100, 100]);
+          const innerRow = $createTableRowNode();
+          const innerCell1 = $createTableCellNode();
+          const innerCell2 = $createTableCellNode();
+
+          innerCell1.append($createParagraphNode());
+          innerCell2.append($createParagraphNode());
+          innerRow.append(innerCell1, innerCell2);
+          innerTable.append(innerRow);
+
+          outerCell.append(innerTable);
+          outerRow.append(outerCell);
+          outerTable.append(outerRow);
+          root.append(outerTable);
+        },
+        {discrete: true},
+      );
+
+      editor.update(
+        () => {
+          // Resize the inner table cell to 900 (9x the width of its sibling)
+          const root = $getRoot();
+          const outerTable = root.getFirstChild();
+          assert($isTableNode(outerTable), 'Expected table node');
+          const outerRow = outerTable.getFirstChild();
+          assert($isTableRowNode(outerRow), 'Expected table row');
+          const outerCell = outerRow.getFirstChild();
+          assert($isTableCellNode(outerCell), 'Expected outer table cell');
+          const innerTable = outerCell.getFirstChild();
+          assert($isTableNode(innerTable), 'Expected nested inner table');
+          innerTable.setColWidths([900, 100]);
+        },
+        {discrete: true},
+      );
+
+      editor.getEditorState().read(() => {
+        const root = $getRoot();
+        const outerTable = root.getFirstChild();
+        assert($isTableNode(outerTable), 'Expected table node');
+        const outerRow = outerTable.getFirstChild();
+        assert($isTableRowNode(outerRow), 'Expected table row');
+        const outerCell = outerRow.getFirstChild();
+        assert($isTableCellNode(outerCell), 'Expected outer table cell');
+        const innerTable = outerCell.getFirstChild();
+        assert($isTableNode(innerTable), 'Expected nested inner table');
+
+        // Verify the inner cell was rescaled (still 9x the width, but total size still fits in 200)
+        expect(innerTable.getColWidths()).toEqual([180, 20]);
+      });
+    });
   });
 
   describe('SELECT_ALL_COMMAND', () => {

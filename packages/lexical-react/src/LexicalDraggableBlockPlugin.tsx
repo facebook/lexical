@@ -22,7 +22,9 @@ import {
   COMMAND_PRIORITY_LOW,
   DRAGOVER_COMMAND,
   DROP_COMMAND,
+  INDENT_CONTENT_COMMAND,
   LexicalEditor,
+  OUTDENT_CONTENT_COMMAND,
 } from 'lexical';
 import {
   DragEvent as ReactDragEvent,
@@ -41,7 +43,8 @@ import {Rectangle} from './shared/rect';
 const SPACE = 4;
 const TARGET_LINE_HALF_HEIGHT = 2;
 const DRAG_DATA_FORMAT = 'application/x-lexical-drag-block';
-const TEXT_BOX_HORIZONTAL_PADDING = 28;
+//const TEXT_BOX_HORIZONTAL_PADDING = 28;
+const INDENT_STEP = 20;
 
 const Downward = 1;
 const Upward = -1;
@@ -95,51 +98,35 @@ function getCollapsedMargins(elem: HTMLElement): {
   return {marginBottom: collapsedBottomMargin, marginTop: collapsedTopMargin};
 }
 
-function getNestedDraggableBlock(
+function getDeepestBlockElement(
   elem: HTMLElement,
   point: Point,
   anchorElementRect: DOMRect,
-): HTMLElement | null {
-  if (elem.tagName === 'UL' || elem.tagName === 'OL') {
-    const children = Array.from(elem.children);
-    for (let i = 0; i < children.length; i++) {
-      const child = children[i];
-      if (child instanceof HTMLElement) {
-        const domRect = Rectangle.fromDOM(child);
-        const {marginTop, marginBottom} = getCollapsedMargins(child);
+): HTMLElement {
+  const children = Array.from(elem.children);
+  for (let i = 0; i < children.length; i++) {
+    const child = children[i];
 
-        // Expand the child's hit area horizontally to match the editor's full width.
-        // This ensures the drag handle doesn't vanish when the mouse moves left to grab it!
-        const childRect = domRect.generateNewRect({
-          bottom: domRect.bottom + marginBottom,
-          left: anchorElementRect.left,
-          right: anchorElementRect.right,
-          top: domRect.top - marginTop,
-        });
-        if (childRect.contains(point).result) {
-          const nestedChildren = Array.from(child.children);
-          for (let j = 0; j < nestedChildren.length; j++) {
-            const nestedChild = nestedChildren[j];
-            if (
-              nestedChild instanceof HTMLElement &&
-              (nestedChild.tagName === 'UL' || nestedChild.tagName === 'OL')
-            ) {
-              const deeplyNestedBlock = getNestedDraggableBlock(
-                nestedChild,
-                point,
-                anchorElementRect,
-              );
-              if (deeplyNestedBlock !== null) {
-                return deeplyNestedBlock;
-              }
-            }
-          }
-          return child;
-        }
+    if (
+      child instanceof HTMLElement &&
+      !child.hasAttribute('data-lexical-text') &&
+      window.getComputedStyle(child).display !== 'inline'
+    ) {
+      const domRect = Rectangle.fromDOM(child);
+      const {marginTop, marginBottom} = getCollapsedMargins(child);
+      const childRect = domRect.generateNewRect({
+        bottom: domRect.bottom + marginBottom,
+        left: anchorElementRect.left,
+        right: anchorElementRect.right,
+        top: domRect.top - marginTop,
+      });
+
+      if (childRect.contains(point).result) {
+        return getDeepestBlockElement(child, point, anchorElementRect);
       }
     }
   }
-  return null;
+  return elem;
 }
 
 function getBlockElement(
@@ -207,22 +194,7 @@ function getBlockElement(
       } = rect.contains(point);
 
       if (result) {
-        let isDraggingListItem = false;
-        if (draggedNodeKey !== null) {
-          const draggedNode = $getNodeByKey(draggedNodeKey);
-          isDraggingListItem = $isListItemNode(draggedNode);
-        }
-
-        if (draggedNodeKey == null || isDraggingListItem) {
-          const nestedBlock = getNestedDraggableBlock(
-            elem,
-            point,
-            anchorElementRect,
-          );
-          blockElem = nestedBlock || elem;
-        } else {
-          blockElem = elem;
-        }
+        blockElem = getDeepestBlockElement(elem, point, anchorElementRect);
         prevIndex = index;
         break;
       }
@@ -302,13 +274,19 @@ function setTargetLine(
   targetLineElem: HTMLElement,
   targetBlockElem: HTMLElement,
   mouseY: number,
+  mouseX: number,
   anchorElem: HTMLElement,
-) {
+): number {
   const {top: targetBlockElemTop, height: targetBlockElemHeight} =
     targetBlockElem.getBoundingClientRect();
-  const {top: anchorTop, width: anchorWidth} =
-    anchorElem.getBoundingClientRect();
+  const {
+    top: anchorTop,
+    left: anchorLeft,
+    width: anchorWidth,
+  } = anchorElem.getBoundingClientRect();
   const {marginTop, marginBottom} = getCollapsedMargins(targetBlockElem);
+
+  // Calculate Y-axis
   let lineTop = targetBlockElemTop;
   if (mouseY >= targetBlockElemTop) {
     lineTop += targetBlockElemHeight + marginBottom / 2;
@@ -318,13 +296,29 @@ function setTargetLine(
 
   const top =
     lineTop - anchorTop - TARGET_LINE_HALF_HEIGHT + anchorElem.scrollTop;
-  const left = TEXT_BOX_HORIZONTAL_PADDING - SPACE;
+
+  // Calculate X-axis
+  const targetRect = targetBlockElem.getBoundingClientRect();
+  let left = targetRect.left - anchorLeft;
+
+  // Calculate how far the mouse is from the left edge of the text block
+  const mouseXOffset = mouseX - targetRect.left;
+  let indentLevel = 0;
+
+  // Require a deliberate drag to the left/right to trigger nesting
+  if (mouseXOffset > INDENT_STEP && mouseXOffset < 150) {
+    indentLevel = 1;
+  } else if (mouseXOffset < -INDENT_STEP && mouseXOffset > -150) {
+    indentLevel = -1;
+  }
+
+  left += indentLevel * INDENT_STEP;
 
   targetLineElem.style.transform = `translate(${left}px, ${top}px)`;
-  targetLineElem.style.width = `${
-    anchorWidth - (TEXT_BOX_HORIZONTAL_PADDING - SPACE) * 2
-  }px`;
+  targetLineElem.style.width = `${anchorWidth - left}px`;
   targetLineElem.style.opacity = '.4';
+
+  return indentLevel;
 }
 
 function hideTargetLine(targetLineElem: HTMLElement | null) {
@@ -351,6 +345,7 @@ function useDraggableBlockMenu(
   const [draggableBlockElem, setDraggableBlockElemState] =
     useState<HTMLElement | null>(null);
   const draggedNodeKeyRef = useRef<string | null>(null);
+  const indentLevelRef = useRef<number>(0);
 
   const setDraggableBlockElem = useCallback(
     (elem: HTMLElement | null) => {
@@ -420,7 +415,7 @@ function useDraggableBlockMenu(
       if (isFileTransfer) {
         return false;
       }
-      const {pageY, target} = event;
+      const {pageY, pageX, target} = event;
       if (!isHTMLElement(target)) {
         return false;
       }
@@ -435,12 +430,15 @@ function useDraggableBlockMenu(
       if (targetBlockElem === null || targetLineElem === null) {
         return false;
       }
-      setTargetLine(
+      const level = setTargetLine(
         targetLineElem,
         targetBlockElem,
         pageY / calculateZoomLevel(target),
+        pageX / calculateZoomLevel(target),
         anchorElem,
       );
+      indentLevelRef.current = level;
+
       // Prevent default event to be able to trigger onDrop events
       event.preventDefault();
       return true;
@@ -517,7 +515,28 @@ function useDraggableBlockMenu(
       } else {
         insertTarget.insertBefore(nodeToInsert);
       }
+
+      const level = indentLevelRef.current;
+      if (level !== 0) {
+        const nodeKey = nodeToInsert.getKey();
+        // Run this in a fresh update cycle immediately after the drop finishes
+        setTimeout(() => {
+          editor.update(() => {
+            const node = $getNodeByKey(nodeKey);
+            if (node) {
+              node.selectEnd(); // Focus the dropped node
+
+              if (level > 0) {
+                editor.dispatchCommand(INDENT_CONTENT_COMMAND, undefined);
+              } else if (level < 0) {
+                editor.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined);
+              }
+            }
+          });
+        }, 0);
+      }
       setDraggableBlockElem(null);
+      indentLevelRef.current = 0;
 
       // Firefox-specific fix: Use editor.focus() after drop to properly restore
       // both focus and selection. This ensures cursor visibility immediately.

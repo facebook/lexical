@@ -168,7 +168,7 @@ test.describe('DraggableBlock', () => {
 
     await mouseMoveToSelector(page, 'p:has-text("Paragraph 1")');
     await page.pause();
-    await dragDraggableMenuTo(page, '.ContentEditable__root');
+    await dragDraggableMenuTo(page, '.ContentEditable__root', 'middle');
 
     await assertHTML(
       page,
@@ -391,6 +391,53 @@ test.describe('DraggableBlock', () => {
             </ul>
           </li>
         </ul>
+      `,
+    );
+  });
+
+  test('Elements can be reordered around generic containers like Quote blocks', async ({
+    page,
+    isPlainText,
+    browserName,
+    isCollab,
+  }) => {
+    test.skip(isCollab);
+    test.skip(isPlainText);
+    test.skip(browserName === 'firefox');
+
+    await focusEditor(page);
+
+    // 1. Setup: Create a Quote block
+    await page.keyboard.type('> Quote text');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter'); // Exit the quote
+
+    // 2. Setup: Create a Paragraph below it
+    await page.keyboard.type('Paragraph text');
+
+    // 3. Hover over the Paragraph
+    await mouseMoveToSelector(page, 'p:has-text("Paragraph text")');
+    await page.waitForTimeout(200);
+
+    // 4. Drag the Paragraph ABOVE the Quote block
+    await dragDraggableMenuTo(
+      page,
+      'blockquote', // Target the generic container!
+      'middle',
+      'start', // Drop at the top
+    );
+
+    // 5. Expectation: Paragraph is now above the Quote
+    await assertHTML(
+      page,
+      `
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto" style="">
+          <span data-lexical-text="true">Paragraph text</span>
+        </p>
+        <blockquote class="PlaygroundEditorTheme__quote" dir="auto">
+          <span data-lexical-text="true">Quote text</span>
+        </blockquote>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br></p>
       `,
     );
   });

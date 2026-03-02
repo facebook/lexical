@@ -753,7 +753,7 @@ test.describe.parallel('Auto Links', () => {
     );
   });
 
-  test('Unlinked the autolink should not destruct if add non-spacing text in front or right after it', async ({
+  test('Unlinked autolink is preserved when adding punctuation before or after it', async ({
     page,
     isPlainText,
   }) => {
@@ -840,7 +840,7 @@ test.describe.parallel('Auto Links', () => {
     );
   });
 
-  test('Can destruct unlinked the autolink if add an invalid character inside', async ({
+  test('Adding an invalid character will destruct an unlinked autolink', async ({
     page,
     isPlainText,
   }) => {
@@ -894,7 +894,7 @@ test.describe.parallel('Auto Links', () => {
     );
   });
 
-  test('Can destruct unlinked the autolink if add emoji inside', async ({
+  test('Adding an emoji inside an unlinked autolink will destruct it', async ({
     page,
     isPlainText,
   }) => {

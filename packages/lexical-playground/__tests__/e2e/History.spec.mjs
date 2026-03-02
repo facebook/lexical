@@ -512,7 +512,6 @@ test.describe('History - IME', () => {
     browserName,
     isCollab,
     isPlainText,
-    legacyEvents,
   }) => {
     // We don't yet support FF.
     test.skip(isCollab || isPlainText || browserName !== 'chromium');
@@ -647,7 +646,7 @@ test.describe('History - IME', () => {
       `,
     );
 
-    if (browserName === 'webkit' && !legacyEvents) {
+    if (browserName === 'webkit') {
       await assertSelection(page, {
         anchorOffset: 3,
         anchorPath: [0, 0, 0],
@@ -665,7 +664,7 @@ test.describe('History - IME', () => {
 
     await undo(page);
 
-    if (browserName === 'webkit' && !legacyEvents) {
+    if (browserName === 'webkit') {
       await assertHTML(
         page,
         html`
@@ -683,7 +682,7 @@ test.describe('History - IME', () => {
       );
     }
 
-    if (browserName === 'webkit' && !legacyEvents) {
+    if (browserName === 'webkit') {
       await assertSelection(page, {
         anchorOffset: 2,
         anchorPath: [0, 0, 0],
@@ -710,7 +709,7 @@ test.describe('History - IME', () => {
       `,
     );
 
-    if (browserName === 'webkit' && !legacyEvents) {
+    if (browserName === 'webkit') {
       await assertSelection(page, {
         anchorOffset: 3,
         anchorPath: [0, 0, 0],

@@ -1173,13 +1173,8 @@ test.describe.parallel('Selection', () => {
     isPlainText,
     isCollab,
     browserName,
-    legacyEvents,
   }) => {
     test.skip(isPlainText);
-    test.fixme(
-      legacyEvents && browserName === 'chromium' && IS_WINDOWS,
-      'Flaky on Windows + Chromium + legacy events',
-    );
 
     await focusEditor(page);
     await insertTable(page, 1, 2);
@@ -1201,7 +1196,6 @@ test.describe.parallel('Selection', () => {
     isPlainText,
     isCollab,
     browserName,
-    legacyEvents,
   }) => {
     test.skip(isPlainText || isCollab);
 
@@ -1257,7 +1251,6 @@ test.describe.parallel('Selection', () => {
     isPlainText,
     isCollab,
     browserName,
-    legacyEvents,
   }) => {
     test.skip(isPlainText || isCollab);
 
@@ -1459,12 +1452,9 @@ test.describe.parallel('Selection', () => {
     isPlainText,
     isCollab,
     browserName,
-    legacyEvents,
   }) => {
     test.skip(isPlainText);
-    test.fixme(
-      browserName === 'firefox' || IS_LINUX || (legacyEvents && IS_WINDOWS),
-    );
+    test.fixme(browserName === 'firefox' || IS_LINUX);
     await focusEditor(page);
     await insertTable(page, 2, 2);
     await moveToEditorBeginning(page);
@@ -1484,12 +1474,9 @@ test.describe.parallel('Selection', () => {
     isPlainText,
     isCollab,
     browserName,
-    legacyEvents,
   }) => {
     test.skip(isPlainText);
-    test.fixme(
-      browserName === 'firefox' || IS_LINUX || (legacyEvents && IS_WINDOWS),
-    );
+    test.fixme(browserName === 'firefox' || IS_LINUX);
     await focusEditor(page);
     await insertTable(page, 2, 2);
     await moveToEditorEnd(page);
@@ -1507,9 +1494,8 @@ test.describe.parallel('Selection', () => {
   test(
     'shift+arrowdown into a table, when the table is the last node, selects the whole table',
     {tag: '@flaky'},
-    async ({page, isPlainText, isCollab, browserName, legacyEvents}) => {
+    async ({page, isPlainText, isCollab, browserName}) => {
       test.skip(isPlainText);
-      test.fixme(browserName === 'chromium' && legacyEvents);
       await focusEditor(page);
       await insertTable(page, 2, 2);
       await moveToEditorEnd(page);
@@ -1530,9 +1516,8 @@ test.describe.parallel('Selection', () => {
   test(
     'shift+arrowup into a table, when the table is the first node, selects the whole table',
     {tag: '@flaky'},
-    async ({page, isPlainText, isCollab, browserName, legacyEvents}) => {
+    async ({page, isPlainText, isCollab, browserName}) => {
       test.skip(isPlainText);
-      test.fixme(browserName === 'chromium' && legacyEvents);
       await focusEditor(page);
       await insertTable(page, 2, 2);
       await moveToEditorBeginning(page);
@@ -1553,9 +1538,8 @@ test.describe.parallel('Selection', () => {
   test(
     'shift+arrowdown into a table, when the table is the only node, selects the whole table',
     {tag: '@flaky'},
-    async ({page, isPlainText, isCollab, legacyEvents, browserName}) => {
+    async ({page, isPlainText, isCollab, browserName}) => {
       test.skip(isPlainText);
-      test.fixme(browserName === 'chromium' && legacyEvents);
       await focusEditor(page);
       await insertTable(page, 2, 2);
       await moveToEditorBeginning(page);
@@ -1584,11 +1568,9 @@ test.describe.parallel('Selection', () => {
     page,
     isPlainText,
     isCollab,
-    legacyEvents,
     browserName,
   }) => {
     test.skip(isPlainText);
-    test.fixme(browserName === 'chromium' && legacyEvents);
     await focusEditor(page);
     await insertTable(page, 2, 2);
     // delete the paragraph before the table
@@ -1617,7 +1599,6 @@ test.describe.parallel('Selection', () => {
     page,
     isPlainText,
     isCollab,
-    legacyEvents,
     browserName,
   }) => {
     test.skip(isPlainText);
@@ -1643,7 +1624,6 @@ test.describe.parallel('Selection', () => {
     page,
     isPlainText,
     isCollab,
-    legacyEvents,
     browserName,
   }) => {
     test.skip(isPlainText);

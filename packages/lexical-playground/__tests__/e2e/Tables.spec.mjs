@@ -46,7 +46,6 @@ import {
   IS_LINUX,
   IS_TABLE_HORIZONTAL_SCROLL,
   IS_WINDOWS,
-  LEGACY_EVENTS,
   mergeTableCells,
   pasteFromClipboard,
   resizeTableCell,
@@ -334,15 +333,9 @@ test.describe.parallel('Tables', () => {
     isPlainText,
     isCollab,
     browserName,
-    legacyEvents,
   }) => {
     test.skip(isPlainText);
     await initialize({isCollab, page});
-
-    test.fixme(
-      legacyEvents && browserName === 'chromium' && IS_WINDOWS,
-      'Flaky on Windows + Chromium + legacy events',
-    );
 
     await focusEditor(page);
     await insertTable(page, 2, 2);
@@ -449,8 +442,6 @@ test.describe.parallel('Tables', () => {
     browserName,
   }) => {
     test.skip(isPlainText);
-    // After typing, the dom selection gets set back to the internal previous selection during the update.
-    test.fixme(LEGACY_EVENTS);
 
     await initialize({isCollab, page});
 
@@ -508,7 +499,7 @@ test.describe.parallel('Tables', () => {
     isCollab,
     browserName,
   }) => {
-    test.skip(isPlainText || LEGACY_EVENTS);
+    test.skip(isPlainText);
 
     await initialize({isCollab, page});
 

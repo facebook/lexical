@@ -36,7 +36,6 @@ export const IS_COLLAB_V2 =
 export const IS_COLLAB = IS_COLLAB_V1 || IS_COLLAB_V2;
 const IS_RICH_TEXT = process.env.E2E_EDITOR_MODE !== 'plain-text';
 const IS_PLAIN_TEXT = process.env.E2E_EDITOR_MODE === 'plain-text';
-export const LEGACY_EVENTS = process.env.E2E_EVENTS_MODE === 'legacy-events';
 export const IS_TABLE_HORIZONTAL_SCROLL =
   process.env.E2E_TABLE_MODE !== 'legacy';
 export const SAMPLE_SVG_URL = '/logo.svg';
@@ -106,17 +105,9 @@ export async function initialize({
   shouldAllowHighlightingWithBrackets,
   selectionAlwaysOnDisplay,
 }) {
-  // Tests with legacy events often fail to register keypress, so
-  // slowing it down to reduce flakiness
-  if (LEGACY_EVENTS) {
-    page.keyboard.type = wrapAndSlowDown(page.keyboard.type, 50);
-    page.keyboard.press = wrapAndSlowDown(page.keyboard.press, 50);
-  }
-
   const appSettings = {};
   appSettings.isRichText = IS_RICH_TEXT;
   appSettings.emptyEditor = true;
-  appSettings.disableBeforeInput = LEGACY_EVENTS;
   appSettings.tableHorizontalScroll =
     tableHorizontalScroll ?? IS_TABLE_HORIZONTAL_SCROLL;
   if (isCollab) {
@@ -204,7 +195,6 @@ export const test = base.extend({
   isMaxLength: false,
   isPlainText: IS_PLAIN_TEXT,
   isRichText: IS_RICH_TEXT,
-  legacyEvents: LEGACY_EVENTS,
   selectionAlwaysOnDisplay: false,
   shouldAllowHighlightingWithBrackets: false,
   shouldUseLexicalContextMenu: false,

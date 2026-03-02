@@ -219,7 +219,6 @@ test.describe('Keywords', () => {
     browserName,
     isCollab,
     isPlainText,
-    legacyEvents,
   }) => {
     test.skip(isPlainText);
     await focusEditor(page);
@@ -344,7 +343,7 @@ test.describe('Keywords', () => {
       );
     }
 
-    if (browserName === 'firefox' && legacyEvents) {
+    if (browserName === 'firefox') {
       await assertSelection(page, {
         anchorOffset: 1,
         anchorPath: [0, 2, 0],

@@ -13,11 +13,9 @@ jobs:
         node-version: [22.x]
         browser: ['chromium']
         editor-mode: ['rich-text']
-        events-mode: ['modern-events']
     uses: ./.github/workflows/call-e2e-test.yml
     with:
       os: ${{ matrix.os }}
       node-version: ${{ matrix.node-version }}
       browser: ${{ matrix.browser }}
       editor-mode: ${{ matrix.editor-mode }}
-      events-mode: ${{ matrix.events-mode }}

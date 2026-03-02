@@ -12,14 +12,12 @@ jobs:
         node-version: [22.x]
         browser: ['webkit', 'chromium', 'firefox']
         editor-mode: ['rich-text']
-        events-mode: ['modern-events']
     uses: ./.github/workflows/call-e2e-test.yml
     with:
       os: 'macos-latest'
       node-version: ${{ matrix.node-version }}
       browser: ${{ matrix.browser }}
       editor-mode: ${{ matrix.editor-mode }}
-      events-mode: ${{ matrix.events-mode }}
 
   mac-plain:
     strategy:
@@ -27,14 +25,12 @@ jobs:
         node-version: [22.x]
         browser: ['webkit']
         editor-mode: ['plain-text']
-        events-mode: ['modern-events']
     uses: ./.github/workflows/call-e2e-test.yml
     with:
       os: 'macos-latest'
       node-version: ${{ matrix.node-version }}
       browser: ${{ matrix.browser }}
       editor-mode: ${{ matrix.editor-mode }}
-      events-mode: ${{ matrix.events-mode }}
 
   linux:
     strategy:
@@ -42,14 +38,12 @@ jobs:
         node-version: [22.x]
         browser: ['chromium', 'firefox']
         editor-mode: ['rich-text', 'plain-text']
-        events-mode: ['modern-events']
     uses: ./.github/workflows/call-e2e-test.yml
     with:
       os: 'ubuntu-latest'
       node-version: ${{ matrix.node-version }}
       browser: ${{ matrix.browser }}
       editor-mode: ${{ matrix.editor-mode }}
-      events-mode: ${{ matrix.events-mode }}
 
   windows:
     strategy:
@@ -57,17 +51,12 @@ jobs:
         node-version: [22.x]
         browser: ['chromium', 'firefox']
         editor-mode: ['rich-text', 'plain-text']
-        events-mode: ['legacy-events', 'modern-events']
-        exclude:
-          - events-mode: 'legacy-events'
-            browser: 'firefox'
     uses: ./.github/workflows/call-e2e-test.yml
     with:
       os: 'windows-latest'
       node-version: ${{ matrix.node-version }}
       browser: ${{ matrix.browser }}
       editor-mode: ${{ matrix.editor-mode }}
-      events-mode: ${{ matrix.events-mode }}
 
   collab-mac:
     strategy:
@@ -80,7 +69,6 @@ jobs:
       node-version: ${{ matrix.node-version }}
       browser: ${{ matrix.browser }}
       editor-mode: 'rich-text-with-collab'
-      events-mode: 'modern-events'
 
   collab-linux:
     strategy:
@@ -93,7 +81,6 @@ jobs:
       node-version: ${{ matrix.node-version }}
       browser: ${{ matrix.browser }}
       editor-mode: 'rich-text-with-collab'
-      events-mode: 'modern-events'
 
   collab-windows:
     strategy:
@@ -106,7 +93,6 @@ jobs:
       node-version: ${{ matrix.node-version }}
       browser: ${{ matrix.browser }}
       editor-mode: 'rich-text-with-collab'
-      events-mode: 'modern-events'
 
   prod:
     strategy:
@@ -115,7 +101,6 @@ jobs:
         node-version: [22.x]
         browser: ['chromium']
         editor-mode: ['rich-text']
-        events-mode: ['modern-events']
     uses: ./.github/workflows/call-e2e-test.yml
     with:
       prod: true
@@ -123,7 +108,6 @@ jobs:
       node-version: ${{ matrix.node-version }}
       browser: ${{ matrix.browser }}
       editor-mode: ${{ matrix.editor-mode }}
-      events-mode: ${{ matrix.events-mode }}
 
   collab-prod:
     strategy:
@@ -132,7 +116,6 @@ jobs:
         node-version: [22.x]
         browser: ['chromium']
         editor-mode: ['rich-text-with-collab']
-        events-mode: ['modern-events']
     uses: ./.github/workflows/call-e2e-test.yml
     with:
       prod: true
@@ -140,7 +123,6 @@ jobs:
       node-version: ${{ matrix.node-version }}
       browser: ${{ matrix.browser }}
       editor-mode: ${{ matrix.editor-mode }}
-      events-mode: ${{ matrix.events-mode }}
 
   # This has been stalling in GitHub CI for unknown reasons, disable for now
   # react-beta:
@@ -155,7 +137,6 @@ jobs:
   #     os: 'ubuntu-latest'
   #     browser: 'chromium'
   #     node-version: 22.x
-  #     events-mode: 'modern-events'
   #     editor-mode: ${{ matrix.editor-mode }}
   #     prod: ${{ matrix.prod }}
   #     override-react-version: beta
@@ -166,7 +147,6 @@ jobs:
         node-version: [22.x]
         browser: ['chromium', 'firefox']
         editor-mode: ['rich-text', 'plain-text', 'rich-text-with-collab']
-        events-mode: ['modern-events']
     uses: ./.github/workflows/call-e2e-test.yml
     with:
       os: 'ubuntu-latest'
@@ -174,4 +154,3 @@ jobs:
       node-version: ${{ matrix.node-version }}
       browser: ${{ matrix.browser }}
       editor-mode: ${{ matrix.editor-mode }}
-      events-mode: ${{ matrix.events-mode }}

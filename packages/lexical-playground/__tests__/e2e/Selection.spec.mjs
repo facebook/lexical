@@ -45,7 +45,6 @@ import {
   IS_COLLAB_V2,
   IS_LINUX,
   IS_MAC,
-  IS_WINDOWS,
   pasteFromClipboard,
   pressToggleBold,
   pressToggleItalic,

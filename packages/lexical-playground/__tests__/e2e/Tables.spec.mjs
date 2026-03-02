@@ -45,7 +45,6 @@ import {
   IS_COLLAB,
   IS_LINUX,
   IS_TABLE_HORIZONTAL_SCROLL,
-  IS_WINDOWS,
   mergeTableCells,
   pasteFromClipboard,
   resizeTableCell,

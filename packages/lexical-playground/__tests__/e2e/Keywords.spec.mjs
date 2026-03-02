@@ -343,21 +343,12 @@ test.describe('Keywords', () => {
       );
     }
 
-    if (browserName === 'firefox') {
-      await assertSelection(page, {
-        anchorOffset: 1,
-        anchorPath: [0, 2, 0],
-        focusOffset: 1,
-        focusPath: [0, 2, 0],
-      });
-    } else {
-      await assertSelection(page, {
-        anchorOffset: 1,
-        anchorPath: [0, 1, 0],
-        focusOffset: 1,
-        focusPath: [0, 1, 0],
-      });
-    }
+    await assertSelection(page, {
+      anchorOffset: 1,
+      anchorPath: [0, 1, 0],
+      focusOffset: 1,
+      focusPath: [0, 1, 0],
+    });
   });
 
   test('Can type "Everyone congrats!" where "Everyone " and "!" are bold', async ({

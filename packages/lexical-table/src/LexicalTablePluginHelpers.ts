@@ -27,6 +27,7 @@ import {
   $isRangeSelection,
   $isTextNode,
   $setSelection,
+  BaseSelection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_HIGH,
@@ -330,6 +331,12 @@ export function registerTableSelectionObserver(
   editor: LexicalEditor,
   hasTabHandler: boolean = true,
 ): () => void {
+  const editorWindow = editor._window;
+  const rootElement = editor.getRootElement();
+  invariant(
+    editorWindow !== null && rootElement !== null,
+    'registerSelectionHandlers: editor has no window or root element',
+  );
   const tableSelections = new Map<
     NodeKey,
     [TableObserver, HTMLTableElementWithWithTableSelectionState]
@@ -382,23 +389,32 @@ export function registerTableSelectionObserver(
     {skipInitialization: false},
   );
 
+  function $getTableForSelection(selection: BaseSelection | null) {
+    const tableKey = $getTableKeyForSelection(selection);
+    if (tableKey === null) {
+      return null;
+    }
+    const entry = tableSelections.get(tableKey);
+    if (entry === undefined) {
+      return null;
+    }
+    const [tableObserver] = entry;
+    const tableNode = $getNodeByKey(tableKey);
+    if (tableNode === null || !$isTableNode(tableNode)) {
+      return null;
+    }
+    return {tableNode, tableObserver};
+  }
+
   const unregisterSelectionChange = editor.registerCommand(
     SELECTION_CHANGE_COMMAND,
     () => {
       const selection = $getSelection();
-      const tableKey = $getTableKeyForSelection(selection);
-      if (tableKey === null) {
+      const nodeAndObserver = $getTableForSelection(selection);
+      if (!nodeAndObserver) {
         return false;
       }
-      const entry = tableSelections.get(tableKey);
-      if (entry === undefined) {
-        return false;
-      }
-      const [tableObserver] = entry;
-      const tableNode = $getNodeByKey(tableKey);
-      if (tableNode === null || !$isTableNode(tableNode)) {
-        return false;
-      }
+      const {tableNode, tableObserver} = nodeAndObserver;
       return $handleTableSelectionChangeCommand(
         tableObserver,
         tableNode,
@@ -407,8 +423,27 @@ export function registerTableSelectionObserver(
     },
     COMMAND_PRIORITY_HIGH,
   );
+  // Clear all table selections when clicking outside of the DOM.
+  const pointerDownCallback = (event: PointerEvent) => {
+    const target = event.target;
+    if (event.button !== 0 || !isDOMNode(target)) {
+      return;
+    }
+
+    editor.update(() => {
+      const selection = $getSelection();
+      if ($isTableSelection(selection) && rootElement.contains(target)) {
+        for (const [, [observer]] of tableSelections) {
+          observer.$clearHighlight();
+        }
+      }
+    });
+  };
+
+  editorWindow.addEventListener('pointerdown', pointerDownCallback);
 
   return () => {
+    editorWindow.removeEventListener('pointerdown', pointerDownCallback);
     unregisterSelectionChange();
     unregisterMutationListener();
     // Hook might be called multiple times so cleaning up tables listeners as well,

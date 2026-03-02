@@ -349,34 +349,6 @@ export function applyTableHandlers(
     tableElement.removeEventListener('mousedown', onTripleClick);
   });
 
-  // Clear selection when clicking outside of dom.
-  const pointerDownCallback = (event: PointerEvent) => {
-    const target = event.target;
-    if (event.button !== 0 || !isDOMNode(target)) {
-      return;
-    }
-
-    editor.update(() => {
-      const selection = $getSelection();
-      if (
-        $isTableSelection(selection) &&
-        selection.tableKey === tableObserver.tableNodeKey &&
-        rootElement.contains(target)
-      ) {
-        tableObserver.$clearHighlight();
-      }
-    });
-  };
-
-  editorWindow.addEventListener(
-    'pointerdown',
-    pointerDownCallback,
-    tableObserver.listenerOptions,
-  );
-  tableObserver.listenersToRemove.add(() => {
-    editorWindow.removeEventListener('pointerdown', pointerDownCallback);
-  });
-
   for (const [command, direction] of ARROW_KEY_COMMANDS_WITH_DIRECTION) {
     tableObserver.listenersToRemove.add(
       editor.registerCommand(

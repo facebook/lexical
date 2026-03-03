@@ -17,13 +17,14 @@ import {
 } from '@lexical/utils';
 import {
   $createParagraphNode,
-  $getEditor,
   $getNearestNodeFromDOMNode,
+  $getNodeByKey,
   $getPreviousSelection,
   $getRoot,
   $getSelection,
   $isElementNode,
   $isRangeSelection,
+  $isRootOrShadowRoot,
   $isTextNode,
   $setSelection,
   CLICK_COMMAND,
@@ -33,7 +34,6 @@ import {
   ElementNode,
   isDOMNode,
   LexicalEditor,
-  LexicalNode,
   NodeKey,
   RangeSelection,
   SELECT_ALL_COMMAND,
@@ -72,8 +72,6 @@ import {
   $computeTableMapSkipCellCheck,
   $createTableNodeWithDimensions,
   $getNodeTriplet,
-  $getTableCellNodeRect,
-  $getTableNodeFromLexicalNodeOrThrow,
   $insertTableColumnAtNode,
   $insertTableRowAtNode,
   $mergeCells,
@@ -443,13 +441,45 @@ export function registerTablePlugin(
     editor.registerNodeTransform(TableNode, $tableTransform),
     editor.registerNodeTransform(TableRowNode, $tableRowTransform),
     editor.registerNodeTransform(TableCellNode, $tableCellTransform),
-    editor.registerNodeTransform(TableNode, (node) => {
+    editor.registerMutationListener(TableNode, (nodeMutations) => {
       if (!hasFitNestedTables.peek()) {
         return;
       }
-      const parentCell = $findMatchingParent(node, $isTableCellNode);
-      if (parentCell) {
-        $fitNestedTablesIntoCell(parentCell, [node]);
+      for (const [nodeKey, mutation] of nodeMutations) {
+        if (mutation === 'created' || mutation === 'updated') {
+          editor.getEditorState().read(() => {
+            const tableNode = $getNodeByKey<TableNode>(nodeKey);
+            if (!tableNode) {
+              return;
+            }
+            const tableParent = tableNode.getParent();
+            if (!tableParent) {
+              return;
+            }
+            const parentShadowRoot = $findMatchingParent(
+              tableParent,
+              $isRootOrShadowRoot,
+            );
+            const fitContainer = parentShadowRoot
+              ? editor.getElementByKey(parentShadowRoot.getKey())
+              : editor.getRootElement();
+            if (!fitContainer) {
+              return;
+            }
+            const availableWidth = fitContainer.getBoundingClientRect().width;
+            const tableElement = editor.getElementByKey(nodeKey);
+            if (!tableElement) {
+              return;
+            }
+            const insets = $calculateHorizontalInsets(fitContainer);
+            resizeDomWidthsToFit(
+              tableNode,
+              tableElement,
+              availableWidth,
+              insets,
+            );
+          });
+        }
       }
     }),
   );
@@ -702,57 +732,14 @@ function $isMultiCellTableSelection(
   return false;
 }
 
-function $fitNestedTablesIntoCell(
-  parentCell: TableCellNode,
-  nodes: LexicalNode[],
-) {
-  const cellWidth = $getCellWidth(parentCell);
-  if (cellWidth === undefined) {
-    return false;
-  }
-  const borderBoxInsets = $calculateCellHorizontalInsets(parentCell);
-  const tables = nodes.filter($isTableNode);
-  for (const table of tables) {
-    $resizeTableToFitCell(table, cellWidth, borderBoxInsets);
-  }
-
-  return false;
-}
-
 /**
- * Return the total width of a specific cell, using the table-level colWidths. Accounts for column spans.
+ * Returns horizontal insets of the given node (padding + border).
  *
- * @param cell - The cell to get the width of.
- * @returns The total width of the cell, in pixels.
+ * @param dom - The DOM element to calculate the horizontal insets for.
+ * @returns The horizontal insets of the node, in pixels.
  */
-function $getCellWidth(cell: TableCellNode) {
-  const destinationTableNode = $getTableNodeFromLexicalNodeOrThrow(cell);
-
-  const cellRect = $getTableCellNodeRect(cell);
-  const colWidths = destinationTableNode.getColWidths();
-  if (!cellRect || !colWidths) {
-    return undefined;
-  }
-  const {columnIndex, colSpan} = cellRect;
-  let totalWidth = 0;
-  for (let i = columnIndex; i < columnIndex + colSpan; i++) {
-    totalWidth += colWidths[i];
-  }
-  return totalWidth;
-}
-
-/**
- * Returns horizontal insets of the given cell (padding + border).
- *
- * @param cell - The cell to calculate the horizontal insets for.
- * @returns The horizontal insets of the cell, in pixels.
- */
-function $calculateCellHorizontalInsets(cell: TableCellNode) {
-  const cellDOM = $getEditor().getElementByKey(cell.getKey());
-  if (cellDOM === null) {
-    return 0;
-  }
-  const computedStyle = window.getComputedStyle(cellDOM);
+function $calculateHorizontalInsets(dom: HTMLElement) {
+  const computedStyle = window.getComputedStyle(dom);
   const paddingLeft = computedStyle.getPropertyValue('padding-left') || '0px';
   const paddingRight = computedStyle.getPropertyValue('padding-right') || '0px';
   const borderLeftWidth =
@@ -778,33 +765,31 @@ function $calculateCellHorizontalInsets(cell: TableCellNode) {
   );
 }
 
-function $getTotalTableWidth(colWidths: readonly number[]) {
+function getTotalTableWidth(colWidths: readonly number[]) {
   return colWidths.reduce((curWidth, width) => curWidth + width, 0);
 }
 
 /**
- * Recursively resizes table cells to fit a given width.
+ * Reduces the colWidths in the DOM to fit the parent cell.
  *
  * @param node the table node to resize. The table must have colWidths to be resized.
  * @param parentCellWidth the width of the parent cell
  * @param borderBoxInsets the insets of the parent cell (padding + border)
  */
-function $resizeTableToFitCell(
+function resizeDomWidthsToFit(
   node: TableNode,
+  element: HTMLElement,
   parentCellWidth: number,
   borderBoxInsets: number,
 ) {
   const oldColWidths = node.getColWidths();
   if (!oldColWidths) {
-    return node;
+    return;
   }
 
   const usableWidth = parentCellWidth - borderBoxInsets;
-  const tableWidth = $getTotalTableWidth(oldColWidths);
-  if (tableWidth <= usableWidth) {
-    return node;
-  }
+  const tableWidth = getTotalTableWidth(oldColWidths);
 
-  const proportionalWidth = usableWidth / tableWidth;
-  node.setColWidths(oldColWidths.map((width) => width * proportionalWidth));
+  const proportionalWidth = Math.min(1, usableWidth / tableWidth);
+  node.scaleDOMColWidths(element, proportionalWidth);
 }

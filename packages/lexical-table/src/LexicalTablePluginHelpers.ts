@@ -329,12 +329,6 @@ export function registerTableSelectionObserver(
   editor: LexicalEditor,
   hasTabHandler: boolean = true,
 ): () => void {
-  const editorWindow = editor._window;
-  const rootElement = editor.getRootElement();
-  invariant(
-    editorWindow !== null && rootElement !== null,
-    'registerSelectionHandlers: editor has no window or root element',
-  );
   const tableSelections = new Map<
     NodeKey,
     [TableObserver, HTMLTableElementWithWithTableSelectionState]
@@ -402,29 +396,45 @@ export function registerTableSelectionObserver(
     },
     COMMAND_PRIORITY_HIGH,
   );
-  // Clear all table selections when clicking outside of the DOM.
-  const pointerDownCallback = (event: PointerEvent) => {
-    const target = event.target;
-    if (event.button !== 0 || !isDOMNode(target)) {
-      return;
+
+  function applyWindowHandlers() {
+    const editorWindow = editor._window;
+    if (!editorWindow) {
+      return () => {};
     }
-
-    editor.update(() => {
-      const selection = $getSelection();
-      if ($isTableSelection(selection) && rootElement.contains(target)) {
-        for (const [, [observer]] of tableSelections) {
-          observer.$clearHighlight(false);
-        }
-        $setSelection(null);
-        editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+    // Clear all table selections when clicking outside of the DOM.
+    const pointerDownCallback = (event: PointerEvent) => {
+      const target = event.target;
+      if (event.button !== 0 || !isDOMNode(target)) {
+        return;
       }
-    });
-  };
 
-  editorWindow.addEventListener('pointerdown', pointerDownCallback);
+      const rootElement = editor.getRootElement();
+      if (!rootElement) {
+        return;
+      }
+      editor.update(() => {
+        const selection = $getSelection();
+        if ($isTableSelection(selection) && rootElement.contains(target)) {
+          for (const [, [observer]] of tableSelections) {
+            observer.$clearHighlight(false);
+          }
+          $setSelection(null);
+          editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+        }
+      });
+    };
+
+    editorWindow.addEventListener('pointerdown', pointerDownCallback);
+    return () => {
+      editorWindow.removeEventListener('pointerdown', pointerDownCallback);
+    };
+  }
+
+  const unregisterWindowHandlers = applyWindowHandlers();
 
   return () => {
-    editorWindow.removeEventListener('pointerdown', pointerDownCallback);
+    unregisterWindowHandlers();
     unregisterSelectionChange();
     unregisterMutationListener();
     // Hook might be called multiple times so cleaning up tables listeners as well,

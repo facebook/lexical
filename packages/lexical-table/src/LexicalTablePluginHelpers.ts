@@ -452,32 +452,7 @@ export function registerTablePlugin(
             if (!tableNode) {
               return;
             }
-            const tableParent = tableNode.getParent();
-            if (!tableParent) {
-              return;
-            }
-            const parentShadowRoot = $findMatchingParent(
-              tableParent,
-              $isRootOrShadowRoot,
-            );
-            const fitContainer = parentShadowRoot
-              ? editor.getElementByKey(parentShadowRoot.getKey())
-              : editor.getRootElement();
-            if (!fitContainer) {
-              return;
-            }
-            const availableWidth = fitContainer.getBoundingClientRect().width;
-            const tableElement = editor.getElementByKey(nodeKey);
-            if (!tableElement) {
-              return;
-            }
-            const insets = $calculateHorizontalInsets(fitContainer);
-            resizeDomWidthsToFit(
-              tableNode,
-              tableElement,
-              availableWidth,
-              insets,
-            );
+            $resizeDOMColWidthsToFit(editor, tableNode);
           });
         }
       }
@@ -770,26 +745,48 @@ function getTotalTableWidth(colWidths: readonly number[]) {
 }
 
 /**
- * Reduces the colWidths in the DOM to fit the parent cell.
+ * Recursively scales the DOM colWidths of all tables starting from the given node.
+ * Each table will be scaled to fit the nearest root or shadow root.
  *
- * @param node the table node to resize. The table must have colWidths to be resized.
- * @param parentCellWidth the width of the parent cell
- * @param borderBoxInsets the insets of the parent cell (padding + border)
+ * @param editor the editor instance
+ * @param node the table node to resize. The table must have colWidths to be resized
  */
-function resizeDomWidthsToFit(
-  node: TableNode,
-  element: HTMLElement,
-  parentCellWidth: number,
-  borderBoxInsets: number,
-) {
-  const oldColWidths = node.getColWidths();
-  if (!oldColWidths) {
-    return;
+function $resizeDOMColWidthsToFit(editor: LexicalEditor, node: TableNode) {
+  const allNestedTables = $dfs(node)
+    .map((n) => n.node)
+    .filter($isTableNode);
+  for (const table of allNestedTables) {
+    const element = editor.getElementByKey(table.getKey());
+    if (!element) {
+      continue;
+    }
+    const tableParent = table.getParent();
+    if (!tableParent) {
+      continue;
+    }
+    const parentShadowRoot = $findMatchingParent(
+      tableParent,
+      $isRootOrShadowRoot,
+    );
+    const fitContainer = parentShadowRoot
+      ? editor.getElementByKey(parentShadowRoot.getKey())
+      : editor.getRootElement();
+    if (!fitContainer) {
+      continue;
+    }
+
+    const oldColWidths = table.getColWidths();
+    if (!oldColWidths) {
+      continue;
+    }
+
+    const availableWidth = fitContainer.getBoundingClientRect().width;
+    const horizontalInsets = $calculateHorizontalInsets(fitContainer);
+    const usableWidth = availableWidth - horizontalInsets;
+    const tableWidth = getTotalTableWidth(oldColWidths);
+
+    const proportionalWidth = Math.min(1, usableWidth / tableWidth);
+
+    table.scaleDOMColWidths(element, proportionalWidth);
   }
-
-  const usableWidth = parentCellWidth - borderBoxInsets;
-  const tableWidth = getTotalTableWidth(oldColWidths);
-
-  const proportionalWidth = Math.min(1, usableWidth / tableWidth);
-  node.scaleDOMColWidths(element, proportionalWidth);
 }

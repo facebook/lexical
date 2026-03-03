@@ -18,7 +18,7 @@ jobs:
   e2e-test:
     runs-on: ${{ inputs.os }}
     continue-on-error: ${{ inputs.flaky }}
-    if: (inputs.browser != 'webkit' || inputs.os == 'macos-latest') && (inputs.editor-mode != 'rich-text-with-collab')
+    if: (inputs.browser != 'webkit' || inputs.os == 'macos-latest')
     env:
       CI: true
       E2E_EDITOR_MODE: ${{ inputs.editor-mode }}

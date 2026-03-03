@@ -21,7 +21,6 @@ import {
   focusEditor,
   html,
   initialize,
-  LEGACY_EVENTS,
   pasteFromClipboard,
   pressInsertLinkButton,
   test,
@@ -757,7 +756,7 @@ test.describe.parallel('Auto Links', () => {
     page,
     isPlainText,
   }) => {
-    test.skip(isPlainText || LEGACY_EVENTS);
+    test.skip(isPlainText);
 
     await focusEditor(page);
     await page.keyboard.type('http://example.com');

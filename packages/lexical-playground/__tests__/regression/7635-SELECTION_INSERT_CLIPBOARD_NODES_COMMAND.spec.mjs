@@ -16,7 +16,6 @@ import {
   html,
   initialize,
   insertSampleImage,
-  LEGACY_EVENTS,
   pasteFromClipboard,
   SAMPLE_IMAGE_URL,
   test,
@@ -38,7 +37,7 @@ test.describe('Regression #7635', () => {
   );
 
   test('Paste into image caption', async ({page, isPlainText, isCollab}) => {
-    test.skip(isPlainText || isCollab || LEGACY_EVENTS);
+    test.skip(isPlainText || isCollab);
 
     await focusEditor(page);
     await insertSampleImage(page);

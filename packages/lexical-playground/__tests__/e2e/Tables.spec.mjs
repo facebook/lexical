@@ -6039,6 +6039,7 @@ test.describe.parallel('Tables', () => {
     isCollab,
   }) => {
     test.skip(isPlainText);
+    test.skip(IS_TABLE_HORIZONTAL_SCROLL); // hasFitNestedTables disables horizontally scrollable tables
     await initialize({
       hasFitNestedTables: true,
       hasNestedTables: true,

@@ -445,17 +445,17 @@ export function registerTablePlugin(
       if (!hasFitNestedTables.peek()) {
         return;
       }
-      for (const [nodeKey, mutation] of nodeMutations) {
-        if (mutation === 'created' || mutation === 'updated') {
-          editor.getEditorState().read(() => {
+      editor.getEditorState().read(() => {
+        for (const [nodeKey, mutation] of nodeMutations) {
+          if (mutation === 'created' || mutation === 'updated') {
             const tableNode = $getNodeByKey<TableNode>(nodeKey);
             if (!tableNode) {
               return;
             }
             $resizeDOMColWidthsToFit(editor, tableNode);
-          });
+          }
         }
-      }
+      });
     }),
   );
 }

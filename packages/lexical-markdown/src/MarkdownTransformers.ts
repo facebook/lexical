@@ -666,9 +666,12 @@ export const LINK: TextMatchTransformer = {
     if (!$isLinkNode(node) || $isAutoLinkNode(node)) {
       return null;
     }
-    const title = node.getTitle();
-
     const textContent = exportChildren(node);
+    let title = node.getTitle();
+
+    if (title != null) {
+      title = title.replace(/([\\"])/g, '\\$1');
+    }
 
     const linkContent = title
       ? `[${textContent}](${node.getURL()} "${title}")`
@@ -685,7 +688,26 @@ export const LINK: TextMatchTransformer = {
     if ($findMatchingParent(textNode, $isLinkNode)) {
       return;
     }
-    const [, linkText, linkUrl, linkTitle] = match;
+    const [, linkText, rawLinkUrl, rawLinkTitle] = match;
+
+    const unescapeMarkdown = (
+      value: string | undefined | null,
+    ): string | undefined => {
+      if (value == null) {
+        return undefined;
+      }
+      return (
+        value
+          // eslint-disable-next-line no-useless-escape
+          .replace(/\\([!-/:-@\[-`{-~])/g, '$1')
+          .replace(/&#(\d+);/g, (_, codePoint) =>
+            String.fromCodePoint(Number(codePoint)),
+          )
+      );
+    };
+
+    const linkUrl = unescapeMarkdown(rawLinkUrl) ?? '';
+    const linkTitle = unescapeMarkdown(rawLinkTitle);
     const linkNode = $createLinkNode(linkUrl, {title: linkTitle});
     const openBracketAmount = linkText.split('[').length - 1;
     const closeBracketAmount = linkText.split(']').length - 1;

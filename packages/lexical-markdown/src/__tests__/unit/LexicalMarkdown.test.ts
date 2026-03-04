@@ -766,6 +766,21 @@ describe('Markdown', () => {
       md: '**~~Hello&#32;*world*~~**~~!~~',
       mdAfterExport: '**~~Hello *world*~~**~~!~~',
     },
+    {
+      html: '<p><span style="white-space: pre-wrap;">!"#$%&amp;\'()*+,-./:;&lt;=&gt;?@[\\]^_`{|}~</span></p>',
+      md: '\\!\\"\\#\\$\\%\\&\\\'\\(\\)\\*\\+\\,\\-\\.\\/\\:\\;\\<\\=\\>\\?\\@\\[\\\\\\]\\^\\_\\`\\{\\|\\}\\~',
+      mdAfterExport: '!"#$%&\'()\\*+,-./:;<=>?@[\\\\]^\\_\\`{|}\\~',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">\\→\\A\\a\\ \\3\\φ\\«</span></p>',
+      md: '\\→\\A\\a\\ \\3\\φ\\«',
+      mdAfterExport: '\\\\→\\\\A\\\\a\\\\ \\\\3\\\\φ\\\\«',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">foo</span><br><span style="white-space: pre-wrap;">bar</span></p>',
+      md: 'foo\\\nbar',
+      mdAfterExport: 'foo\nbar',
+    },
   ];
 
   for (const {

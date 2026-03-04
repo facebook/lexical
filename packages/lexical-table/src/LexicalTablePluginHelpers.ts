@@ -34,6 +34,7 @@ import {
   ElementNode,
   isDOMNode,
   LexicalEditor,
+  LexicalNode,
   NodeKey,
   RangeSelection,
   SELECT_ALL_COMMAND,
@@ -445,16 +446,20 @@ export function registerTablePlugin(
       if (!hasFitNestedTables.peek()) {
         return;
       }
+
       editor.getEditorState().read(() => {
-        for (const [nodeKey, mutation] of nodeMutations) {
-          if (mutation === 'created' || mutation === 'updated') {
-            const tableNode = $getNodeByKey<TableNode>(nodeKey);
-            if (!tableNode) {
-              return;
-            }
-            $resizeDOMColWidthsToFit(editor, tableNode);
-          }
-        }
+        const modifiedTables = nodeMutations
+          .entries()
+          .filter(
+            ([, mutation]) => mutation === 'created' || mutation === 'updated',
+          )
+          .map(([nodeKey]) => $getNodeByKey<TableNode>(nodeKey))
+          .filter((table) => table !== null)
+          .toArray();
+        const resizeRoots = $calculateResizeRootTables(modifiedTables);
+        resizeRoots.forEach((root) => {
+          $resizeDOMColWidthsToFit(editor, root);
+        });
       });
     }),
   );
@@ -746,6 +751,22 @@ export function $calculateHorizontalInsets(
 
 function getTotalTableWidth(colWidths: readonly number[]) {
   return colWidths.reduce((curWidth, width) => curWidth + width, 0);
+}
+
+// Returns the subset of tables that are not contained by any of the other tables in
+// the input.
+function $calculateResizeRootTables(tables: TableNode[]) {
+  const inputTables = new Set<LexicalNode>(tables);
+  const roots: TableNode[] = [];
+  for (const table of tables) {
+    if (
+      $findMatchingParent(table, (n) => n !== table && inputTables.has(n)) ===
+      null
+    ) {
+      roots.push(table);
+    }
+  }
+  return roots;
 }
 
 /**

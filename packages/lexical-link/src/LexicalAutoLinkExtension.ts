@@ -83,6 +83,9 @@ function findFirstMatch(
 
 const PUNCTUATION_OR_SPACE = /[.,;\s]/;
 
+const DEFAULT_IS_SEPARATOR: (char: string) => boolean =
+  PUNCTUATION_OR_SPACE.test.bind(PUNCTUATION_OR_SPACE);
+
 function endsWithSeparator(
   textContent: string,
   isSeparator: (char: string) => boolean,
@@ -527,13 +530,13 @@ export interface AutoLinkConfig {
   matchers: LinkMatcher[];
   changeHandlers: ChangeHandler[];
   excludeParents: Array<(parent: ElementNode) => boolean>;
-  isSeparator: (char: string) => boolean;
+  isSeparator?: (char: string) => boolean;
 }
 
 const defaultConfig: AutoLinkConfig = {
   changeHandlers: [],
   excludeParents: [],
-  isSeparator: PUNCTUATION_OR_SPACE.test.bind(PUNCTUATION_OR_SPACE),
+  isSeparator: DEFAULT_IS_SEPARATOR,
   matchers: [],
 };
 
@@ -541,7 +544,8 @@ export function registerAutoLink(
   editor: LexicalEditor,
   config: AutoLinkConfig = defaultConfig,
 ): () => void {
-  const {matchers, changeHandlers, excludeParents, isSeparator} = config;
+  const {matchers, changeHandlers, excludeParents} = config;
+  const isSeparator = config.isSeparator ?? DEFAULT_IS_SEPARATOR;
   const onChange: ChangeHandler = (url, prevUrl) => {
     for (const handler of changeHandlers) {
       handler(url, prevUrl);

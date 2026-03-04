@@ -86,6 +86,10 @@ async function fillTablePartiallyWithText(page) {
 }
 
 const WRAPPER = IS_TABLE_HORIZONTAL_SCROLL ? [0] : [];
+const nthTableSelector = (nth) =>
+  IS_TABLE_HORIZONTAL_SCROLL
+    ? `div.PlaygroundEditorTheme__tableScrollableWrapper:nth-of-type(${nth}) > table`
+    : `table:nth-of-type(${nth})`;
 
 test.describe.parallel('Tables', () => {
   test(`Can a table be inserted from the toolbar`, async ({
@@ -7513,6 +7517,65 @@ test.describe.parallel('Tables', () => {
       anchor: {x: 1, y: 0},
       focus: {x: 1, y: 1},
     });
+  });
+
+  test('Can clear table selection in table by selecting cell in another table', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+    await initialize({isCollab, page});
+
+    await focusEditor(page);
+
+    // Insert two tables.
+    await insertTable(page, 2, 2);
+    await moveToEditorEnd(page);
+    await insertTable(page, 2, 2);
+
+    const pageOrFrame = getPageOrFrame(page);
+
+    // Select all cells in the first table via shift-click
+    const firstTableFirstCell = pageOrFrame.locator(
+      `${nthTableSelector(1)} > :nth-match(tr, 1) > th:nth-child(1)`,
+    );
+    const firstTableLastCell = pageOrFrame.locator(
+      `${nthTableSelector(1)} > :nth-match(tr, 2) > td:nth-child(2)`,
+    );
+    await firstTableFirstCell.click();
+    await page.keyboard.down('Shift');
+    await firstTableLastCell.click();
+    await page.keyboard.up('Shift');
+
+    // Verify the first table has selected cells
+    await pageOrFrame
+      .locator(
+        `${nthTableSelector(1)} > :nth-match(tr, 1) > th.PlaygroundEditorTheme__tableCellSelected:nth-child(1)`,
+      )
+      .waitFor();
+    await pageOrFrame
+      .locator(
+        `${nthTableSelector(1)} > :nth-match(tr, 2) > td.PlaygroundEditorTheme__tableCellSelected:nth-child(2)`,
+      )
+      .waitFor();
+
+    // Click a cell in the second table
+    await pageOrFrame
+      .locator(`${nthTableSelector(2)} > tr:first-of-type > th:first-of-type`)
+      .click();
+
+    // Verify the first table no longer has any selected cells
+    await expect(
+      pageOrFrame.locator(
+        `${nthTableSelector(1)} > :nth-match(tr, 1) > th.PlaygroundEditorTheme__tableCellSelected:nth-child(1)`,
+      ),
+    ).toHaveCount(0);
+    await expect(
+      pageOrFrame.locator(
+        `${nthTableSelector(1)} > :nth-match(tr, 2) > td.PlaygroundEditorTheme__tableCellSelected:nth-child(2)`,
+      ),
+    ).toHaveCount(0);
   });
 });
 

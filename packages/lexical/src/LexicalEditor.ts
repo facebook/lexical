@@ -74,7 +74,7 @@ export type Klass<T extends LexicalNode> =
 
 export type EditorThemeClassName = string;
 
-export type TextNodeThemeClasses = {
+export interface TextNodeThemeClasses {
   base?: EditorThemeClassName;
   bold?: EditorThemeClassName;
   code?: EditorThemeClassName;
@@ -89,7 +89,7 @@ export type TextNodeThemeClasses = {
   underline?: EditorThemeClassName;
   underlineStrikethrough?: EditorThemeClassName;
   [key: string]: EditorThemeClassName | undefined;
-};
+}
 
 export type EditorUpdateOptions = {
   /**
@@ -128,7 +128,7 @@ export interface EditorFocusOptions {
   defaultSelection?: 'rootStart' | 'rootEnd';
 }
 
-export type EditorThemeClasses = {
+export interface EditorThemeClasses {
   blockCursor?: EditorThemeClassName;
   characterLimit?: EditorThemeClassName;
   code?: EditorThemeClassName;
@@ -190,7 +190,7 @@ export type EditorThemeClasses = {
   indent?: EditorThemeClassName;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
-};
+}
 
 export type EditorConfig = {
   disableEvents?: boolean;

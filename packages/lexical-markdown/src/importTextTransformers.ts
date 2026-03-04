@@ -136,8 +136,7 @@ export function importTextTransformers(
   // Handle escape characters
   const textContent = textNode.getTextContent();
   const unescapedText = textContent
-    // eslint-disable-next-line no-useless-escape
-    .replace(/\\([!-/:-@\[-`{-~])/g, '$1')
+    .replace(/\\([!-/:-@[-`{-~])/g, '$1')
     .replace(/&#(\d+);/g, (_, codePoint) => {
       return String.fromCodePoint(codePoint);
     });

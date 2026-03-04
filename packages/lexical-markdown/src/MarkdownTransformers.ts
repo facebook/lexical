@@ -696,14 +696,11 @@ export const LINK: TextMatchTransformer = {
       if (value == null) {
         return undefined;
       }
-      return (
-        value
-          // eslint-disable-next-line no-useless-escape
-          .replace(/\\([!-/:-@\[-`{-~])/g, '$1')
-          .replace(/&#(\d+);/g, (_, codePoint) =>
-            String.fromCodePoint(Number(codePoint)),
-          )
-      );
+      return value
+        .replace(/\\([!-/:-@[-`{-~])/g, '$1')
+        .replace(/&#(\d+);/g, (_, codePoint) =>
+          String.fromCodePoint(Number(codePoint)),
+        );
     };
 
     const linkUrl = unescapeMarkdown(rawLinkUrl) ?? '';

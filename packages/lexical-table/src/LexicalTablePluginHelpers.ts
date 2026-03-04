@@ -711,10 +711,14 @@ function $isMultiCellTableSelection(
  * Returns horizontal insets of the given node (padding + border).
  *
  * @param dom - The DOM element to calculate the horizontal insets for.
+ * @param editorWindow - The window object of the editor.
  * @returns The horizontal insets of the node, in pixels.
  */
-function $calculateHorizontalInsets(dom: HTMLElement) {
-  const computedStyle = window.getComputedStyle(dom);
+export function $calculateHorizontalInsets(
+  dom: HTMLElement,
+  editorWindow: Window,
+) {
+  const computedStyle = editorWindow.getComputedStyle(dom);
   const paddingLeft = computedStyle.getPropertyValue('padding-left') || '0px';
   const paddingRight = computedStyle.getPropertyValue('padding-right') || '0px';
   const borderLeftWidth =
@@ -752,6 +756,10 @@ function getTotalTableWidth(colWidths: readonly number[]) {
  * @param node the table node to resize. The table must have colWidths to be resized
  */
 function $resizeDOMColWidthsToFit(editor: LexicalEditor, node: TableNode) {
+  const editorWindow = editor._window;
+  if (!editorWindow) {
+    return;
+  }
   const allNestedTables = $dfs(node)
     .map((n) => n.node)
     .filter($isTableNode);
@@ -781,7 +789,10 @@ function $resizeDOMColWidthsToFit(editor: LexicalEditor, node: TableNode) {
     }
 
     const availableWidth = fitContainer.getBoundingClientRect().width;
-    const horizontalInsets = $calculateHorizontalInsets(fitContainer);
+    const horizontalInsets = $calculateHorizontalInsets(
+      fitContainer,
+      editorWindow,
+    );
     const usableWidth = availableWidth - horizontalInsets;
     const tableWidth = getTotalTableWidth(oldColWidths);
 

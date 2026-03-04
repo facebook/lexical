@@ -57,7 +57,7 @@ const TestLexicalAutoLinkExtension = defineExtension({
 });
 
 const URL_MATCHER = createLinkMatcherWithRegExp(
-  /https?:\/\/[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/,
+  /https?:\/\/([a-zA-Z0-9.-]+)\.[a-zA-Z]{2,}/,
 );
 
 // Simulates the GH-12345 use-case: a custom tag matcher
@@ -179,8 +179,8 @@ describe('LexicalAutoLinkExtension tests', () => {
     });
   });
 
-  describe('separators config option', () => {
-    test('default separators: colon after match prevents link creation', () => {
+  describe('isSeparator config option', () => {
+    test('default isSeparator: colon after match prevents link creation', () => {
       const editor = buildEditorFromExtensions({
         $initialEditorState() {
           $getRoot().append(
@@ -207,8 +207,7 @@ describe('LexicalAutoLinkExtension tests', () => {
       });
     });
 
-    test('custom separators including colon: link created when followed by colon', () => {
-      // With separators: /[.,;:\s]/, the colon IS a valid separator, so "GH-123:" SHOULD result in an AutoLinkNode for "GH-123" and a trailing ":".
+    test('custom isSeparator including colon: link created when followed by colon', () => {
       const editor = buildEditorFromExtensions({
         $initialEditorState() {
           $getRoot().append(
@@ -218,8 +217,8 @@ describe('LexicalAutoLinkExtension tests', () => {
         dependencies: [
           TestLexicalAutoLinkExtension,
           configExtension(AutoLinkExtension, {
+            isSeparator: (char) => /[.,;:\s]/.test(char),
             matchers: [GH_TAG_MATCHER],
-            separators: /[.,;:\s]/,
           }),
         ],
         name: '[test override]',
@@ -247,7 +246,7 @@ describe('LexicalAutoLinkExtension tests', () => {
       });
     });
 
-    test('custom separators: link preceded by colon is created', () => {
+    test('custom isSeparator: link preceded by colon is created', () => {
       // "In :GH-123 we fixed a bug" — colon before the match is a separator with the custom config, so the link should be created.
       const editor = buildEditorFromExtensions({
         $initialEditorState() {
@@ -260,8 +259,8 @@ describe('LexicalAutoLinkExtension tests', () => {
         dependencies: [
           TestLexicalAutoLinkExtension,
           configExtension(AutoLinkExtension, {
+            isSeparator: (char) => /[.,;:\s]/.test(char),
             matchers: [GH_TAG_MATCHER],
-            separators: /[.,;:\s]/,
           }),
         ],
         name: '[test override]',
@@ -283,7 +282,7 @@ describe('LexicalAutoLinkExtension tests', () => {
       });
     });
 
-    test('custom separators: typical weekly-report pattern "GH-123:\\n- item" creates link', () => {
+    test('custom isSeparator: typical weekly-report pattern "GH-123:\n- item" creates link', () => {
       // Primary motivation from issue #8189: "GH-12345:\n* investigated..." should link GH-12345.
       const editor = buildEditorFromExtensions({
         $initialEditorState() {
@@ -294,8 +293,8 @@ describe('LexicalAutoLinkExtension tests', () => {
         dependencies: [
           TestLexicalAutoLinkExtension,
           configExtension(AutoLinkExtension, {
+            isSeparator: (char) => /[.,;:\s]/.test(char),
             matchers: [GH_TAG_MATCHER],
-            separators: /[.,;:\s]/,
           }),
         ],
         name: '[test override]',
@@ -316,7 +315,7 @@ describe('LexicalAutoLinkExtension tests', () => {
       });
     });
 
-    test('custom separators: link still created when followed by space (default behaviour preserved)', () => {
+    test('custom isSeparator: link still created when followed by space (default behaviour preserved)', () => {
       const editor = buildEditorFromExtensions({
         $initialEditorState() {
           $getRoot().append(
@@ -326,8 +325,8 @@ describe('LexicalAutoLinkExtension tests', () => {
         dependencies: [
           TestLexicalAutoLinkExtension,
           configExtension(AutoLinkExtension, {
+            isSeparator: (char) => /[.,;:\s]/.test(char),
             matchers: [GH_TAG_MATCHER],
-            separators: /[.,;:\s]/,
           }),
         ],
         name: '[test override]',
@@ -344,7 +343,7 @@ describe('LexicalAutoLinkExtension tests', () => {
       });
     });
 
-    test('custom separators: link still created when followed by period (default behaviour preserved)', () => {
+    test('custom isSeparator: link still created when followed by period (default behaviour preserved)', () => {
       const editor = buildEditorFromExtensions({
         $initialEditorState() {
           $getRoot().append(
@@ -354,8 +353,8 @@ describe('LexicalAutoLinkExtension tests', () => {
         dependencies: [
           TestLexicalAutoLinkExtension,
           configExtension(AutoLinkExtension, {
+            isSeparator: (char) => /[.,;:\s]/.test(char),
             matchers: [GH_TAG_MATCHER],
-            separators: /[.,;:\s]/,
           }),
         ],
         name: '[test override]',
@@ -375,8 +374,8 @@ describe('LexicalAutoLinkExtension tests', () => {
       });
     });
 
-    test('custom separators: link NOT created when followed by a non-separator character', () => {
-      // "GH-123abc" — 'a' is not a separator even with custom separators
+    test('custom isSeparator: link NOT created when followed by a non-separator character', () => {
+      // "GH-123abc" — 'a' is not a separator even with custom isSeparator
       const editor = buildEditorFromExtensions({
         $initialEditorState() {
           $getRoot().append(
@@ -386,8 +385,8 @@ describe('LexicalAutoLinkExtension tests', () => {
         dependencies: [
           TestLexicalAutoLinkExtension,
           configExtension(AutoLinkExtension, {
+            isSeparator: (char) => /[.,;:\s]/.test(char),
             matchers: [GH_TAG_MATCHER],
-            separators: /[.,;:\s]/,
           }),
         ],
         name: '[test override]',
@@ -404,7 +403,7 @@ describe('LexicalAutoLinkExtension tests', () => {
       });
     });
 
-    test('custom separators: multiple matches in one paragraph all linked', () => {
+    test('custom isSeparator: multiple matches in one paragraph all linked', () => {
       // "GH-1: fixed, GH-2: resolved" — both should be linked
       const editor = buildEditorFromExtensions({
         $initialEditorState() {
@@ -417,8 +416,8 @@ describe('LexicalAutoLinkExtension tests', () => {
         dependencies: [
           TestLexicalAutoLinkExtension,
           configExtension(AutoLinkExtension, {
+            isSeparator: (char) => /[.,;:\s]/.test(char),
             matchers: [GH_TAG_MATCHER],
-            separators: /[.,;:\s]/,
           }),
         ],
         name: '[test override]',
@@ -436,7 +435,7 @@ describe('LexicalAutoLinkExtension tests', () => {
       });
     });
 
-    test('custom separators: link is unwrapped when a non-separator is typed after it', async () => {
+    test('custom isSeparator: link is unwrapped when a non-separator is typed after it', async () => {
       // Start with "GH-123:" — linked. Then programmatically update the text to "GH-123x" (non-separator). The link should be destroyed.
       const editor = buildEditorFromExtensions({
         $initialEditorState() {
@@ -447,8 +446,8 @@ describe('LexicalAutoLinkExtension tests', () => {
         dependencies: [
           TestLexicalAutoLinkExtension,
           configExtension(AutoLinkExtension, {
+            isSeparator: (char) => /[.,;:\s]/.test(char),
             matchers: [GH_TAG_MATCHER],
-            separators: /[.,;:\s]/,
           }),
         ],
         name: '[test override]',

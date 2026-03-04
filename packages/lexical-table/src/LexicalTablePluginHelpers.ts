@@ -349,55 +349,7 @@ export function registerTableSelectionObserver(
     tableSelections.set(nodeKey, [tableSelection, tableElement]);
   };
 
-  const unregisterMutationListener = editor.registerMutationListener(
-    TableNode,
-    (nodeMutations) => {
-      editor.getEditorState().read(
-        () => {
-          for (const [nodeKey, mutation] of nodeMutations) {
-            const tableSelection = tableSelections.get(nodeKey);
-            if (mutation === 'created' || mutation === 'updated') {
-              const {tableNode, tableElement} =
-                $getTableAndElementByKey(nodeKey);
-              if (tableSelection === undefined) {
-                initializeTableNode(tableNode, nodeKey, tableElement);
-              } else if (tableElement !== tableSelection[1]) {
-                // The update created a new DOM node, destroy the existing TableObserver
-                tableSelection[0].removeListeners();
-                tableSelections.delete(nodeKey);
-                initializeTableNode(tableNode, nodeKey, tableElement);
-              }
-            } else if (mutation === 'destroyed') {
-              if (tableSelection !== undefined) {
-                tableSelection[0].removeListeners();
-                tableSelections.delete(nodeKey);
-              }
-            }
-          }
-        },
-        {editor},
-      );
-    },
-    {skipInitialization: false},
-  );
-
-  const unregisterSelectionChange = editor.registerCommand(
-    SELECTION_CHANGE_COMMAND,
-    () => {
-      for (const [, [tableObserver]] of tableSelections) {
-        const tableNode = $getNodeByKey<TableNode>(tableObserver.tableNodeKey)!;
-        if (
-          $handleTableSelectionChangeCommand(tableObserver, tableNode, editor)
-        ) {
-          return true;
-        }
-      }
-      return false;
-    },
-    COMMAND_PRIORITY_HIGH,
-  );
-
-  function applyWindowHandlers() {
+  function registerWindowHandlers() {
     const editorWindow = editor._window;
     if (!editorWindow) {
       return () => {};
@@ -416,7 +368,7 @@ export function registerTableSelectionObserver(
       editor.update(() => {
         const selection = $getSelection();
         if ($isTableSelection(selection) && rootElement.contains(target)) {
-          for (const [, [observer]] of tableSelections) {
+          for (const [observer] of tableSelections.values()) {
             observer.$clearHighlight(false);
           }
           $setSelection(null);
@@ -431,18 +383,64 @@ export function registerTableSelectionObserver(
     };
   }
 
-  const unregisterWindowHandlers = applyWindowHandlers();
-
-  return () => {
-    unregisterWindowHandlers();
-    unregisterSelectionChange();
-    unregisterMutationListener();
-    // Hook might be called multiple times so cleaning up tables listeners as well,
-    // as it'll be reinitialized during recurring call
-    for (const [, [tableSelection]] of tableSelections) {
-      tableSelection.removeListeners();
-    }
-  };
+  return mergeRegister(
+    registerWindowHandlers(),
+    editor.registerCommand(
+      SELECTION_CHANGE_COMMAND,
+      () => {
+        for (const [tableObserver] of tableSelections.values()) {
+          const tableNode = $getNodeByKey<TableNode>(
+            tableObserver.tableNodeKey,
+          )!;
+          if (
+            $handleTableSelectionChangeCommand(tableObserver, tableNode, editor)
+          ) {
+            return true;
+          }
+        }
+        return false;
+      },
+      COMMAND_PRIORITY_HIGH,
+    ),
+    editor.registerMutationListener(
+      TableNode,
+      (nodeMutations) => {
+        editor.getEditorState().read(
+          () => {
+            for (const [nodeKey, mutation] of nodeMutations) {
+              const tableSelection = tableSelections.get(nodeKey);
+              if (mutation === 'created' || mutation === 'updated') {
+                const {tableNode, tableElement} =
+                  $getTableAndElementByKey(nodeKey);
+                if (tableSelection === undefined) {
+                  initializeTableNode(tableNode, nodeKey, tableElement);
+                } else if (tableElement !== tableSelection[1]) {
+                  // The update created a new DOM node, destroy the existing TableObserver
+                  tableSelection[0].removeListeners();
+                  tableSelections.delete(nodeKey);
+                  initializeTableNode(tableNode, nodeKey, tableElement);
+                }
+              } else if (mutation === 'destroyed') {
+                if (tableSelection !== undefined) {
+                  tableSelection[0].removeListeners();
+                  tableSelections.delete(nodeKey);
+                }
+              }
+            }
+          },
+          {editor},
+        );
+      },
+      {skipInitialization: false},
+    ),
+    () => {
+      // Hook might be called multiple times so cleaning up tables listeners as well,
+      // as it'll be reinitialized during recurring call
+      for (const [, [tableSelection]] of tableSelections) {
+        tableSelection.removeListeners();
+      }
+    },
+  );
 }
 
 /**

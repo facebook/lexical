@@ -69,6 +69,7 @@ import {
   applyTableHandlers,
   getTableElement,
   HTMLTableElementWithWithTableSelectionState,
+  registerTableWindowHandlers,
 } from './LexicalTableSelectionHelpers';
 import {
   $computeTableCellRectBoundary,
@@ -347,42 +348,8 @@ export function registerTableSelectionObserver(
     tableSelections.set(nodeKey, [tableSelection, tableElement]);
   };
 
-  function registerWindowHandlers() {
-    const editorWindow = editor._window;
-    if (!editorWindow) {
-      return () => {};
-    }
-    // Clear all table selections when clicking outside of the DOM.
-    const pointerDownCallback = (event: PointerEvent) => {
-      const target = event.target;
-      if (event.button !== 0 || !isDOMNode(target)) {
-        return;
-      }
-
-      const rootElement = editor.getRootElement();
-      if (!rootElement) {
-        return;
-      }
-      editor.update(() => {
-        const selection = $getSelection();
-        if ($isTableSelection(selection) && rootElement.contains(target)) {
-          for (const [observer] of tableSelections.values()) {
-            observer.$clearHighlight(false);
-          }
-          $setSelection(null);
-          editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
-        }
-      });
-    };
-
-    editorWindow.addEventListener('pointerdown', pointerDownCallback);
-    return () => {
-      editorWindow.removeEventListener('pointerdown', pointerDownCallback);
-    };
-  }
-
   return mergeRegister(
-    registerWindowHandlers(),
+    registerTableWindowHandlers(editor, tableSelections),
     editor.registerCommand(
       SELECTION_CHANGE_COMMAND,
       () => {

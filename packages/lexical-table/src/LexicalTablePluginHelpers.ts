@@ -448,15 +448,18 @@ export function registerTablePlugin(
       }
 
       editor.getEditorState().read(() => {
-        const modifiedTables = nodeMutations
-          .entries()
-          .filter(
-            ([, mutation]) => mutation === 'created' || mutation === 'updated',
-          )
-          .map(([nodeKey]) => $getNodeByKey<TableNode>(nodeKey))
-          .filter((table) => table !== null)
-          .toArray();
-        const resizeRoots = $calculateResizeRootTables(modifiedTables);
+        const modifiedTables = new Set<TableNode>();
+        for (const [nodeKey, mutation] of nodeMutations) {
+          if (mutation === 'created' || mutation === 'updated') {
+            const tableNode = $getNodeByKey<TableNode>(nodeKey);
+            if (tableNode) {
+              modifiedTables.add(tableNode);
+            }
+          }
+        }
+        const resizeRoots = $calculateResizeRootTables(
+          Array.from(modifiedTables),
+        );
         resizeRoots.forEach((root) => {
           $resizeDOMColWidthsToFit(editor, root);
         });

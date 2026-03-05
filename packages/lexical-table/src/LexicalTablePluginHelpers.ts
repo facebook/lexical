@@ -17,7 +17,6 @@ import {
 } from '@lexical/utils';
 import {
   $createParagraphNode,
-  $getEditor,
   $getNearestNodeFromDOMNode,
   $getNodeByKey,
   $getPreviousSelection,
@@ -25,6 +24,7 @@ import {
   $getSelection,
   $isElementNode,
   $isRangeSelection,
+  $isRootOrShadowRoot,
   $isTextNode,
   $setSelection,
   CLICK_COMMAND,
@@ -77,8 +77,6 @@ import {
   $computeTableMapSkipCellCheck,
   $createTableNodeWithDimensions,
   $getNodeTriplet,
-  $getTableCellNodeRect,
-  $getTableNodeFromLexicalNodeOrThrow,
   $insertTableColumnAtNode,
   $insertTableRowAtNode,
   $mergeCells,
@@ -449,7 +447,6 @@ export function registerTablePlugin(
         return $tableSelectionInsertClipboardNodesCommand(
           payload,
           hasNestedTables,
-          hasFitNestedTables,
         );
       },
       COMMAND_PRIORITY_EDITOR,
@@ -467,6 +464,27 @@ export function registerTablePlugin(
     editor.registerNodeTransform(TableNode, $tableTransform),
     editor.registerNodeTransform(TableRowNode, $tableRowTransform),
     editor.registerNodeTransform(TableCellNode, $tableCellTransform),
+    editor.registerMutationListener(TableNode, (nodeMutations) => {
+      if (!hasFitNestedTables.peek()) {
+        return;
+      }
+
+      editor.getEditorState().read(() => {
+        const modifiedTables = new Set<TableNode>();
+        for (const [nodeKey, mutation] of nodeMutations) {
+          if (mutation === 'created' || mutation === 'updated') {
+            const tableNode = $getNodeByKey<TableNode>(nodeKey);
+            if (tableNode) {
+              modifiedTables.add(tableNode);
+            }
+          }
+        }
+        const resizeRoots = $calculateResizeRootTables(modifiedTables);
+        resizeRoots.forEach((root) => {
+          $resizeDOMColWidthsToFit(editor, root);
+        });
+      });
+    }),
   );
 }
 
@@ -475,7 +493,6 @@ function $tableSelectionInsertClipboardNodesCommand(
     typeof SELECTION_INSERT_CLIPBOARD_NODES_COMMAND
   >,
   hasNestedTables: Signal<boolean>,
-  hasFitNestedTables: Signal<boolean>,
 ) {
   const {nodes, selection} = selectionPayload;
 
@@ -509,13 +526,13 @@ function $tableSelectionInsertClipboardNodesCommand(
     return $insertTableIntoGrid(nodes[0], selection);
   }
 
-  // When pasting multiple nodes (including tables) into a cell, update the table to fit.
-  if (isRangeSelection && hasNestedTables.peek()) {
-    return $insertTableNodesIntoCells(
-      nodes,
-      selection,
-      hasFitNestedTables.peek(),
-    );
+  // If nested tables are enabled, allow pasting a table into a single cell.
+  if (
+    isRangeSelection &&
+    hasNestedTables.peek() &&
+    !$isMultiCellTableSelection(selection)
+  ) {
+    return false;
   }
 
   // If we reached this point, there's a table in the selection and nested tables are not allowed - reject the paste.
@@ -699,76 +716,37 @@ function $insertTableIntoGrid(
   return true;
 }
 
-// Inserts the given nodes (which will include TableNodes) into the table at the given selection.
-function $insertTableNodesIntoCells(
-  nodes: LexicalNode[],
+function $isMultiCellTableSelection(
   selection: TableSelection | RangeSelection,
-  hasFitNestedTables: boolean,
 ) {
-  // Currently only support pasting into a single cell. In other cases we reject the insertion.
-  const isMultiCellTableSelection =
+  if (
     $isTableSelection(selection) &&
-    !selection.focus.getNode().is(selection.anchor.getNode());
-  const isMultiCellRangeSelection =
-    $isRangeSelection(selection) &&
-    $isTableCellNode(selection.anchor.getNode()) &&
-    !selection.anchor.getNode().is(selection.focus.getNode());
-  if (isMultiCellTableSelection || isMultiCellRangeSelection) {
+    !selection.focus.getNode().is(selection.anchor.getNode())
+  ) {
     return true;
   }
-
-  if (!hasFitNestedTables) {
-    return false;
+  if (
+    $isRangeSelection(selection) &&
+    $isTableCellNode(selection.anchor.getNode()) &&
+    !selection.anchor.getNode().is(selection.focus.getNode())
+  ) {
+    return true;
   }
-
-  const focusNode = selection.focus.getNode();
-  const parentCell = $findMatchingParent(focusNode, $isTableCellNode);
-  if (!parentCell) {
-    return false;
-  }
-
-  const cellWidth = $getCellWidth(parentCell);
-  if (cellWidth === undefined) {
-    return false;
-  }
-  const borderBoxInsets = $calculateCellInsets(parentCell);
-  const tables = nodes.filter($isTableNode);
-  for (const table of tables) {
-    // Note: here we assume the inset is consistent for cells at all nesting levels.
-    $resizeTableToFitCell(table, cellWidth, borderBoxInsets);
-  }
-
   return false;
 }
 
 /**
- * Return the width of a specific cell, using the table-level colWidths.
+ * Returns horizontal insets of the given node (padding + border).
+ *
+ * @param dom - The DOM element to calculate the horizontal insets for.
+ * @param editorWindow - The window object of the editor.
+ * @returns The horizontal insets of the node, in pixels.
  */
-function $getCellWidth(cell: TableCellNode) {
-  const destinationTableNode = $getTableNodeFromLexicalNodeOrThrow(cell);
-
-  const cellRect = $getTableCellNodeRect(cell);
-  const colWidths = destinationTableNode.getColWidths();
-  if (!cellRect || !colWidths) {
-    return undefined;
-  }
-  const {columnIndex, colSpan} = cellRect;
-  let totalWidth = 0;
-  for (let i = columnIndex; i < columnIndex + colSpan; i++) {
-    totalWidth += colWidths[i];
-  }
-  return totalWidth;
-}
-
-/**
- * Returns horizontal insets of the given cell (padding + border).
- */
-function $calculateCellInsets(cell: TableCellNode) {
-  const cellDOM = $getEditor().getElementByKey(cell.getKey());
-  if (cellDOM === null) {
-    return 0;
-  }
-  const computedStyle = window.getComputedStyle(cellDOM);
+export function $calculateHorizontalInsets(
+  dom: HTMLElement,
+  editorWindow: Window,
+) {
+  const computedStyle = editorWindow.getComputedStyle(dom);
   const paddingLeft = computedStyle.getPropertyValue('padding-left') || '0px';
   const paddingRight = computedStyle.getPropertyValue('padding-right') || '0px';
   const borderLeftWidth =
@@ -794,47 +772,76 @@ function $calculateCellInsets(cell: TableCellNode) {
   );
 }
 
-function $getTotalTableWidth(colWidths: readonly number[]) {
+function getTotalTableWidth(colWidths: readonly number[]) {
   return colWidths.reduce((curWidth, width) => curWidth + width, 0);
 }
 
-/**
- * Recursively resizes table cells to fit a given width.
- *
- * @param node the table node to resize. The table must have colWidths to be resized.
- * @param parentCellWidth the width of the parent cell
- * @param borderBoxInsets the insets of the parent cell (padding + border)
- */
-function $resizeTableToFitCell(
-  node: TableNode,
-  parentCellWidth: number,
-  borderBoxInsets: number,
-) {
-  const oldColWidths = node.getColWidths();
-  if (!oldColWidths) {
-    return node;
-  }
-
-  const usableWidth = parentCellWidth - borderBoxInsets;
-  const tableWidth = $getTotalTableWidth(oldColWidths);
-  if (tableWidth <= usableWidth) {
-    return node;
-  }
-
-  const proportionalWidth = usableWidth / tableWidth;
-  node.setColWidths(oldColWidths.map((width) => width * proportionalWidth));
-
-  const rowChildren = node.getChildren().filter($isTableRowNode);
-  for (const rowChild of rowChildren) {
-    const cellChildren = rowChild.getChildren().filter($isTableCellNode);
-    for (const cellChild of cellChildren) {
-      const cellWidth = $getCellWidth(cellChild);
-      if (cellWidth === undefined) {
-        continue;
-      }
-      for (const table of cellChild.getChildren().filter($isTableNode)) {
-        $resizeTableToFitCell(table, cellWidth, borderBoxInsets);
-      }
+// Returns the subset of tables that are not contained by any of the other tables in
+// the input.
+function $calculateResizeRootTables(tables: ReadonlySet<TableNode>) {
+  const inputTables: ReadonlySet<LexicalNode> = tables;
+  const roots: TableNode[] = [];
+  for (const table of tables) {
+    if (
+      $findMatchingParent(table, (n) => n !== table && inputTables.has(n)) ===
+      null
+    ) {
+      roots.push(table);
     }
+  }
+  return roots;
+}
+
+/**
+ * Recursively scales the DOM colWidths of all tables starting from the given node.
+ * Each table will be scaled to fit the nearest root or shadow root.
+ *
+ * @param editor the editor instance
+ * @param node the table node to resize. The table must have colWidths to be resized
+ */
+function $resizeDOMColWidthsToFit(editor: LexicalEditor, node: TableNode) {
+  const editorWindow = editor._window;
+  if (!editorWindow) {
+    return;
+  }
+  const allNestedTables = $dfs(node)
+    .map((n) => n.node)
+    .filter($isTableNode);
+  for (const table of allNestedTables) {
+    const element = editor.getElementByKey(table.getKey());
+    if (!element) {
+      continue;
+    }
+    const tableParent = table.getParent();
+    if (!tableParent) {
+      continue;
+    }
+    const parentShadowRoot = $findMatchingParent(
+      tableParent,
+      $isRootOrShadowRoot,
+    );
+    const fitContainer = parentShadowRoot
+      ? editor.getElementByKey(parentShadowRoot.getKey())
+      : editor.getRootElement();
+    if (!fitContainer) {
+      continue;
+    }
+
+    const oldColWidths = table.getColWidths();
+    if (!oldColWidths) {
+      continue;
+    }
+
+    const availableWidth = fitContainer.getBoundingClientRect().width;
+    const horizontalInsets = $calculateHorizontalInsets(
+      fitContainer,
+      editorWindow,
+    );
+    const usableWidth = availableWidth - horizontalInsets;
+    const tableWidth = getTotalTableWidth(oldColWidths);
+
+    const proportionalWidth = Math.min(1, usableWidth / tableWidth);
+
+    table.scaleDOMColWidths(element, proportionalWidth);
   }
 }

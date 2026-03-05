@@ -18,6 +18,7 @@ import {
   findOutermostTextMatchTransformer,
   importFoundTextMatchTransformer,
 } from './importTextMatchTransformer';
+import {unescapeText} from './utils';
 
 /**
  * Returns true if the node can contain transformable markdown.
@@ -135,10 +136,6 @@ export function importTextTransformers(
 
   // Handle escape characters
   const textContent = textNode.getTextContent();
-  const unescapedText = textContent
-    .replace(/\\([!-/:-@[-`{-~])/g, '$1')
-    .replace(/&#(\d+);/g, (_, codePoint) => {
-      return String.fromCodePoint(codePoint);
-    });
+  const unescapedText = unescapeText(textContent) ?? '';
   textNode.setTextContent(unescapedText);
 }

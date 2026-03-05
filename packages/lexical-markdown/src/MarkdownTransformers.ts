@@ -46,6 +46,8 @@ import {
   TextNode,
 } from 'lexical';
 
+import {unescapeText} from './utils';
+
 export type Transformer =
   | ElementTransformer
   | MultilineElementTransformer
@@ -690,21 +692,8 @@ export const LINK: TextMatchTransformer = {
     }
     const [, linkText, rawLinkUrl, rawLinkTitle] = match;
 
-    const unescapeMarkdown = (
-      value: string | undefined | null,
-    ): string | undefined => {
-      if (value == null) {
-        return undefined;
-      }
-      return value
-        .replace(/\\([!-/:-@[-`{-~])/g, '$1')
-        .replace(/&#(\d+);/g, (_, codePoint) =>
-          String.fromCodePoint(Number(codePoint)),
-        );
-    };
-
-    const linkUrl = unescapeMarkdown(rawLinkUrl) ?? '';
-    const linkTitle = unescapeMarkdown(rawLinkTitle);
+    const linkUrl = unescapeText(rawLinkUrl);
+    const linkTitle = unescapeText(rawLinkTitle ?? '');
     const linkNode = $createLinkNode(linkUrl, {title: linkTitle});
     const openBracketAmount = linkText.split('[').length - 1;
     const closeBracketAmount = linkText.split(']').length - 1;

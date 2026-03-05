@@ -457,9 +457,7 @@ export function registerTablePlugin(
             }
           }
         }
-        const resizeRoots = $calculateResizeRootTables(
-          Array.from(modifiedTables),
-        );
+        const resizeRoots = $calculateResizeRootTables(modifiedTables);
         resizeRoots.forEach((root) => {
           $resizeDOMColWidthsToFit(editor, root);
         });
@@ -758,8 +756,8 @@ function getTotalTableWidth(colWidths: readonly number[]) {
 
 // Returns the subset of tables that are not contained by any of the other tables in
 // the input.
-function $calculateResizeRootTables(tables: TableNode[]) {
-  const inputTables = new Set<LexicalNode>(tables);
+function $calculateResizeRootTables(tables: ReadonlySet<TableNode>) {
+  const inputTables: ReadonlySet<LexicalNode> = tables;
   const roots: TableNode[] = [];
   for (const table of tables) {
     if (

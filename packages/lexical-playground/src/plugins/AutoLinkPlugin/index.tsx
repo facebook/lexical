@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import type {JSX} from 'react';
 
 import {$isCodeNode} from '@lexical/code';
@@ -21,6 +20,8 @@ const URL_REGEX =
 const EMAIL_REGEX =
   /(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))/;
 
+const GH_TAG_REGEX = /GH-\d+/;
+
 const MATCHERS = [
   createLinkMatcherWithRegExp(URL_REGEX, (text) => {
     return text.startsWith('http') ? text : `https://${text}`;
@@ -28,12 +29,21 @@ const MATCHERS = [
   createLinkMatcherWithRegExp(EMAIL_REGEX, (text) => {
     return `mailto:${text}`;
   }),
+  createLinkMatcherWithRegExp(GH_TAG_REGEX, (text) => {
+    return `https://github.com/facebook/lexical/issues/${text.slice(3)}`;
+  }),
 ];
 
 const EXCLUDE_PARENTS = [$isCodeNode];
 
+const IS_SEPARATOR = (char: string) => /[.,;:\s]/.test(char);
+
 export default function LexicalAutoLinkPlugin(): JSX.Element {
   return (
-    <AutoLinkPlugin matchers={MATCHERS} excludeParents={EXCLUDE_PARENTS} />
+    <AutoLinkPlugin
+      matchers={MATCHERS}
+      excludeParents={EXCLUDE_PARENTS}
+      isSeparator={IS_SEPARATOR}
+    />
   );
 }

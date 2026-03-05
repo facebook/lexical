@@ -83,15 +83,20 @@ function findFirstMatch(
 
 const PUNCTUATION_OR_SPACE = /[.,;\s]/;
 
-function isSeparator(char: string): boolean {
-  return PUNCTUATION_OR_SPACE.test(char);
-}
+const DEFAULT_IS_SEPARATOR: (char: string) => boolean =
+  PUNCTUATION_OR_SPACE.test.bind(PUNCTUATION_OR_SPACE);
 
-function endsWithSeparator(textContent: string): boolean {
+function endsWithSeparator(
+  textContent: string,
+  isSeparator: (char: string) => boolean,
+): boolean {
   return isSeparator(textContent[textContent.length - 1]);
 }
 
-function startsWithSeparator(textContent: string): boolean {
+function startsWithSeparator(
+  textContent: string,
+  isSeparator: (char: string) => boolean,
+): boolean {
   return isSeparator(textContent[0]);
 }
 
@@ -110,7 +115,10 @@ function startsWithTLD(textContent: string, isEmail: boolean): boolean {
   }
 }
 
-function isPreviousNodeValid(node: LexicalNode): boolean {
+function isPreviousNodeValid(
+  node: LexicalNode,
+  isSeparator: (char: string) => boolean,
+): boolean {
   let previousNode = node.getPreviousSibling();
   if ($isElementNode(previousNode)) {
     previousNode = previousNode.getLastDescendant();
@@ -119,11 +127,14 @@ function isPreviousNodeValid(node: LexicalNode): boolean {
     previousNode === null ||
     $isLineBreakNode(previousNode) ||
     ($isTextNode(previousNode) &&
-      endsWithSeparator(previousNode.getTextContent()))
+      endsWithSeparator(previousNode.getTextContent(), isSeparator))
   );
 }
 
-function isNextNodeValid(node: LexicalNode): boolean {
+function isNextNodeValid(
+  node: LexicalNode,
+  isSeparator: (char: string) => boolean,
+): boolean {
   let nextNode = node.getNextSibling();
   if ($isElementNode(nextNode)) {
     nextNode = nextNode.getFirstDescendant();
@@ -131,7 +142,8 @@ function isNextNodeValid(node: LexicalNode): boolean {
   return (
     nextNode === null ||
     $isLineBreakNode(nextNode) ||
-    ($isTextNode(nextNode) && startsWithSeparator(nextNode.getTextContent()))
+    ($isTextNode(nextNode) &&
+      startsWithSeparator(nextNode.getTextContent(), isSeparator))
   );
 }
 
@@ -140,11 +152,12 @@ function isContentAroundIsValid(
   matchEnd: number,
   text: string,
   nodes: TextNode[],
+  isSeparator: (char: string) => boolean,
 ): boolean {
   const contentBeforeIsValid =
     matchStart > 0
       ? isSeparator(text[matchStart - 1])
-      : isPreviousNodeValid(nodes[0]);
+      : isPreviousNodeValid(nodes[0], isSeparator);
   if (!contentBeforeIsValid) {
     return false;
   }
@@ -152,7 +165,7 @@ function isContentAroundIsValid(
   const contentAfterIsValid =
     matchEnd < text.length
       ? isSeparator(text[matchEnd])
-      : isNextNodeValid(nodes[nodes.length - 1]);
+      : isNextNodeValid(nodes[nodes.length - 1], isSeparator);
   return contentAfterIsValid;
 }
 
@@ -283,6 +296,7 @@ function $handleLinkCreation(
   nodes: TextNode[],
   matchers: Array<LinkMatcher>,
   onChange: ChangeHandler,
+  isSeparator: (char: string) => boolean,
 ): void {
   // Early return if any node is already part of an AutoLinkNode (idempotency check)
   for (const node of nodes) {
@@ -309,6 +323,7 @@ function $handleLinkCreation(
       invalidMatchEnd + matchEnd,
       initialText,
       currentNodes,
+      isSeparator,
     );
 
     if (isValid) {
@@ -359,6 +374,7 @@ function handleLinkEdit(
   linkNode: AutoLinkNode,
   matchers: Array<LinkMatcher>,
   onChange: ChangeHandler,
+  isSeparator: (char: string) => boolean,
 ): void {
   // Check children are simple text
   const children = linkNode.getChildren();
@@ -382,7 +398,10 @@ function handleLinkEdit(
   }
 
   // Check neighbors
-  if (!isPreviousNodeValid(linkNode) || !isNextNodeValid(linkNode)) {
+  if (
+    !isPreviousNodeValid(linkNode, isSeparator) ||
+    !isNextNodeValid(linkNode, isSeparator)
+  ) {
     replaceWithChildren(linkNode);
     onChange(null, linkNode.getURL());
     return;
@@ -415,6 +434,7 @@ function handleBadNeighbors(
   textNode: TextNode,
   matchers: Array<LinkMatcher>,
   onChange: ChangeHandler,
+  isSeparator: (char: string) => boolean,
 ): void {
   const parent = textNode.getParent();
   const previousSibling = textNode.getPreviousSibling();
@@ -437,7 +457,7 @@ function handleBadNeighbors(
     ) {
       // If text doesn't start with separator, link should be unwrapped
       // because non-separator after link makes the boundary invalid
-      if (!startsWithSeparator(text)) {
+      if (!startsWithSeparator(text, isSeparator)) {
         // Non-separator after link - unwrap the link
         replaceWithChildren(previousSibling);
         onChange(null, previousSibling.getURL());
@@ -451,7 +471,7 @@ function handleBadNeighbors(
         const match = findFirstMatch(combinedText, matchers);
         if (match !== null && match.text === combinedText) {
           previousSibling.append(textNode);
-          handleLinkEdit(previousSibling, matchers, onChange);
+          handleLinkEdit(previousSibling, matchers, onChange, isSeparator);
           onChange(null, previousSibling.getURL());
         }
       }
@@ -463,7 +483,7 @@ function handleBadNeighbors(
   if (
     $isAutoLinkNode(nextSibling) &&
     !nextSibling.getIsUnlinked() &&
-    !endsWithSeparator(text)
+    !endsWithSeparator(text, isSeparator)
   ) {
     // Check if the nextSibling is still a sibling (hasn't been moved) to prevent loops
     if (
@@ -510,11 +530,13 @@ export interface AutoLinkConfig {
   matchers: LinkMatcher[];
   changeHandlers: ChangeHandler[];
   excludeParents: Array<(parent: ElementNode) => boolean>;
+  isSeparator?: (char: string) => boolean;
 }
 
 const defaultConfig: AutoLinkConfig = {
   changeHandlers: [],
   excludeParents: [],
+  isSeparator: DEFAULT_IS_SEPARATOR,
   matchers: [],
 };
 
@@ -523,6 +545,7 @@ export function registerAutoLink(
   config: AutoLinkConfig = defaultConfig,
 ): () => void {
   const {matchers, changeHandlers, excludeParents} = config;
+  const isSeparator = config.isSeparator ?? DEFAULT_IS_SEPARATOR;
   const onChange: ChangeHandler = (url, prevUrl) => {
     for (const handler of changeHandlers) {
       handler(url, prevUrl);
@@ -533,21 +556,26 @@ export function registerAutoLink(
       const parent = textNode.getParentOrThrow();
       const previous = textNode.getPreviousSibling();
       if ($isAutoLinkNode(parent)) {
-        handleLinkEdit(parent, matchers, onChange);
+        handleLinkEdit(parent, matchers, onChange, isSeparator);
       } else if (
         !$isLinkNode(parent) &&
         !excludeParents.some((pred) => pred(parent))
       ) {
         if (
           textNode.isSimpleText() &&
-          (startsWithSeparator(textNode.getTextContent()) ||
+          (startsWithSeparator(textNode.getTextContent(), isSeparator) ||
             !$isAutoLinkNode(previous))
         ) {
           const textNodesToMatch = getTextNodesToMatch(textNode);
-          $handleLinkCreation(textNodesToMatch, matchers, onChange);
+          $handleLinkCreation(
+            textNodesToMatch,
+            matchers,
+            onChange,
+            isSeparator,
+          );
         }
 
-        handleBadNeighbors(textNode, matchers, onChange);
+        handleBadNeighbors(textNode, matchers, onChange, isSeparator);
       }
     }),
     editor.registerCommand(

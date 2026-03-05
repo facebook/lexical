@@ -178,17 +178,70 @@ export function registerTableWindowHandlers(
     [TableObserver, HTMLTableElementWithWithTableSelectionState]
   >,
 ) {
-  const editorWindow = editor._window;
   const rootElement = editor.getRootElement();
-  if (!editorWindow || !rootElement) {
+  const editorWindow = editor._window;
+  if (!rootElement || !editorWindow) {
     return () => {};
   }
 
-  const createPointerHandlers = (
-    startingCell: TableDOMCell | null,
-    tableObserver: TableObserver,
-    tableElement: HTMLTableElementWithWithTableSelectionState,
-  ) => {
+  const pointerDownCallback = (event: PointerEvent) => {
+    const target = event.target;
+    if (
+      event.button !== 0 ||
+      !isDOMNode(target) ||
+      !rootElement.contains(target)
+    ) {
+      return;
+    }
+    const selectionInfo = getTableObserverFromCellNode(target);
+
+    editor.update(() => {
+      // Clear highlights from all non-selected tables.
+      const selection = $getSelection();
+      if ($isTableSelection(selection)) {
+        for (const [observer] of tableObservers.values()) {
+          if (
+            selectionInfo === null ||
+            selectionInfo.tableObserver !== observer
+          ) {
+            observer.$clearHighlight(false);
+          }
+        }
+        $setSelection(null);
+        editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+      }
+      if (!selectionInfo) {
+        return;
+      }
+      const {tableObserver, tableElement, cellElement} = selectionInfo;
+      $handleTableClick(
+        editor,
+        event,
+        cellElement,
+        tableElement,
+        tableObserver,
+      );
+    });
+  };
+
+  editorWindow.addEventListener('pointerdown', pointerDownCallback);
+  return () => {
+    editorWindow.removeEventListener('pointerdown', pointerDownCallback);
+  };
+}
+
+function $handleTableClick(
+  editor: LexicalEditor,
+  event: PointerEvent,
+  selectedDOMCell: TableDOMCell,
+  tableElement: HTMLTableElementWithWithTableSelectionState,
+  tableObserver: TableObserver,
+) {
+  const editorWindow = editor._window;
+  if (!editorWindow) {
+    return;
+  }
+  const createPointerHandlers = (startingCell: TableDOMCell | null) => {
     if (tableObserver.isSelecting) {
       return;
     }
@@ -263,87 +316,50 @@ export function registerTableWindowHandlers(
     );
   };
 
-  const pointerDownCallback = (event: PointerEvent) => {
-    const target = event.target;
-    if (event.button !== 0 || !isDOMNode(target)) {
-      return;
-    }
-    // Clear all table selections for other tables.
-    editor.update(() => {
-      const selection = $getSelection();
-      if ($isTableSelection(selection) && rootElement.contains(target)) {
-        for (const [observer] of tableObservers.values()) {
-          observer.$clearHighlight(false);
-        }
-        $setSelection(null);
-        editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
-      }
-    });
-
-    const selectedDOMCell = getDOMCellFromTarget(target);
-    if (!selectedDOMCell) {
-      return;
-    }
-    const selectedTable =
-      getTableWithObserverFromTableCellElement(selectedDOMCell);
-    if (!selectedTable) {
-      return;
-    }
-    const [tableObserver, tableElement] = selectedTable;
-    tableObserver.pointerType = event.pointerType;
-    editor.update(() => {
-      const tableNode = $getNodeByKeyOrThrow<TableNode>(
-        tableObserver.tableNodeKey,
+  tableObserver.pointerType = event.pointerType;
+  const tableNode = $getNodeByKeyOrThrow<TableNode>(tableObserver.tableNodeKey);
+  const prevSelection = $getPreviousSelection();
+  // We can't trust Firefox to do the right thing with the selection and
+  // we don't have a proper state machine to do this "correctly" but
+  // if we go ahead and make the table selection now it will work
+  if (
+    IS_FIREFOX &&
+    event.shiftKey &&
+    $isSelectionInTable(prevSelection, tableNode) &&
+    ($isRangeSelection(prevSelection) || $isTableSelection(prevSelection))
+  ) {
+    const prevAnchorNode = prevSelection.anchor.getNode();
+    const prevAnchorCell = $findParentTableCellNodeInTable(
+      tableNode,
+      prevSelection.anchor.getNode(),
+    );
+    if (prevAnchorCell) {
+      tableObserver.$setAnchorCellForSelection(
+        $getObserverCellFromCellNodeOrThrow(tableObserver, prevAnchorCell),
       );
-      const prevSelection = $getPreviousSelection();
-      // We can't trust Firefox to do the right thing with the selection and
-      // we don't have a proper state machine to do this "correctly" but
-      // if we go ahead and make the table selection now it will work
-      if (
-        IS_FIREFOX &&
-        event.shiftKey &&
-        $isSelectionInTable(prevSelection, tableNode) &&
-        ($isRangeSelection(prevSelection) || $isTableSelection(prevSelection))
-      ) {
-        const prevAnchorNode = prevSelection.anchor.getNode();
-        const prevAnchorCell = $findParentTableCellNodeInTable(
-          tableNode,
-          prevSelection.anchor.getNode(),
-        );
-        if (prevAnchorCell) {
-          tableObserver.$setAnchorCellForSelection(
-            $getObserverCellFromCellNodeOrThrow(tableObserver, prevAnchorCell),
-          );
-          tableObserver.$setFocusCellForSelection(selectedDOMCell);
-          stopEvent(event);
-        } else {
-          const newSelection = tableNode.isBefore(prevAnchorNode)
-            ? tableNode.selectStart()
-            : tableNode.selectEnd();
-          newSelection.anchor.set(
-            prevSelection.anchor.key,
-            prevSelection.anchor.offset,
-            prevSelection.anchor.type,
-          );
-        }
-      } else {
-        // Only set anchor cell for selection if this is not a simple touch tap
-        // Touch taps should not initiate table selection mode
-        if (event.pointerType !== 'touch') {
-          tableObserver.$setAnchorCellForSelection(selectedDOMCell);
-        }
-      }
-    });
+      tableObserver.$setFocusCellForSelection(selectedDOMCell);
+      stopEvent(event);
+    } else {
+      const newSelection = tableNode.isBefore(prevAnchorNode)
+        ? tableNode.selectStart()
+        : tableNode.selectEnd();
+      newSelection.anchor.set(
+        prevSelection.anchor.key,
+        prevSelection.anchor.offset,
+        prevSelection.anchor.type,
+      );
+    }
+  } else {
+    // Only set anchor cell for selection if this is not a simple touch tap
+    // Touch taps should not initiate table selection mode
+    if (event.pointerType !== 'touch') {
+      tableObserver.$setAnchorCellForSelection(selectedDOMCell);
+    }
+  }
 
-    // Pass the target cell to createPointerHandlers so it can be used as anchor
-    // if user drags directly without clicking first
-    createPointerHandlers(selectedDOMCell, tableObserver, tableElement);
-  };
-
-  editorWindow.addEventListener('pointerdown', pointerDownCallback);
-  return () => {
-    editorWindow.removeEventListener('pointerdown', pointerDownCallback);
-  };
+  // Pass the target cell to createPointerHandlers so it can be used as anchor
+  // if user drags directly without clicking first
+  createPointerHandlers(selectedDOMCell);
 }
 
 export function applyTableHandlers(
@@ -1066,10 +1082,16 @@ export function getTableObserverFromTableElement(
   return tableElement[LEXICAL_ELEMENT_KEY] || null;
 }
 
-function getTableWithObserverFromTableCellElement(
-  element: TableDOMCell,
-): [TableObserver, HTMLTableElementWithWithTableSelectionState] | null {
-  let currentNode: ParentNode | Node | null = element.elem;
+function getTableObserverFromCellNode(node: null | Node): {
+  tableObserver: TableObserver;
+  tableElement: HTMLTableElementWithWithTableSelectionState;
+  cellElement: TableDOMCell;
+} | null {
+  const cellNode = getDOMCellFromTarget(node);
+  if (cellNode === null) {
+    return null;
+  }
+  let currentNode: ParentNode | Node | null = cellNode.elem;
   while (currentNode != null) {
     const nodeName = currentNode.nodeName;
     if (
@@ -1077,10 +1099,12 @@ function getTableWithObserverFromTableCellElement(
       LEXICAL_ELEMENT_KEY in currentNode &&
       !!currentNode[LEXICAL_ELEMENT_KEY]
     ) {
-      return [
-        currentNode[LEXICAL_ELEMENT_KEY] as TableObserver,
-        currentNode as HTMLTableElementWithWithTableSelectionState,
-      ];
+      return {
+        cellElement: cellNode,
+        tableElement:
+          currentNode as HTMLTableElementWithWithTableSelectionState,
+        tableObserver: currentNode[LEXICAL_ELEMENT_KEY] as TableObserver,
+      };
     }
     currentNode = currentNode.parentNode;
   }

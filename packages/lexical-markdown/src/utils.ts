@@ -463,12 +463,7 @@ export function isEmptyParagraph(node: LexicalNode): boolean {
   );
 }
 
-export function unescapeText(
-  value: string | undefined | null,
-): string | undefined {
-  if (value == null) {
-    return undefined;
-  }
+export function unescapeText(value: string): string {
   return value
     .replace(/\\([!-/:-@[-`{-~])/g, '$1')
     .replace(/&#(\d+);/g, (_, codePoint) =>

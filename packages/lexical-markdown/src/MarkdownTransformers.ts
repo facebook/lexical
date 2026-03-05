@@ -692,8 +692,8 @@ export const LINK: TextMatchTransformer = {
     }
     const [, linkText, rawLinkUrl, rawLinkTitle] = match;
 
-    const linkUrl = unescapeText(rawLinkUrl);
-    const linkTitle = unescapeText(rawLinkTitle ?? '');
+    const linkUrl = rawLinkUrl != null ? unescapeText(rawLinkUrl) : undefined;
+    const linkTitle = rawLinkTitle != null ? unescapeText(rawLinkTitle) : undefined;
     const linkNode = $createLinkNode(linkUrl, {title: linkTitle});
     const openBracketAmount = linkText.split('[').length - 1;
     const closeBracketAmount = linkText.split(']').length - 1;

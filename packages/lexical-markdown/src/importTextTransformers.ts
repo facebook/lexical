@@ -136,6 +136,6 @@ export function importTextTransformers(
 
   // Handle escape characters
   const textContent = textNode.getTextContent();
-  const unescapedText = unescapeText(textContent) ?? '';
+  const unescapedText = unescapeText(textContent);
   textNode.setTextContent(unescapedText);
 }

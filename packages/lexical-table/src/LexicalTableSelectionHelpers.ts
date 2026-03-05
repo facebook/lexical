@@ -22,6 +22,7 @@ import type {
   LexicalCommand,
   LexicalEditor,
   LexicalNode,
+  NodeKey,
   PointCaret,
   RangeSelection,
   SiblingCaret,
@@ -168,6 +169,46 @@ const DELETE_KEY_COMMANDS = [
   KEY_BACKSPACE_COMMAND,
   KEY_DELETE_COMMAND,
 ] as const;
+
+export function registerTableWindowHandlers(
+  editor: LexicalEditor,
+  tableObservers: Map<
+    NodeKey,
+    [TableObserver, HTMLTableElementWithWithTableSelectionState]
+  >,
+) {
+  const editorWindow = editor._window;
+  if (!editorWindow) {
+    return () => {};
+  }
+  // Clear all table selections when clicking outside of the DOM.
+  const pointerDownCallback = (event: PointerEvent) => {
+    const target = event.target;
+    if (event.button !== 0 || !isDOMNode(target)) {
+      return;
+    }
+
+    const rootElement = editor.getRootElement();
+    if (!rootElement) {
+      return;
+    }
+    editor.update(() => {
+      const selection = $getSelection();
+      if ($isTableSelection(selection) && rootElement.contains(target)) {
+        for (const [observer] of tableObservers.values()) {
+          observer.$clearHighlight(false);
+        }
+        $setSelection(null);
+        editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+      }
+    });
+  };
+
+  editorWindow.addEventListener('pointerdown', pointerDownCallback);
+  return () => {
+    editorWindow.removeEventListener('pointerdown', pointerDownCallback);
+  };
+}
 
 export function applyTableHandlers(
   tableNode: TableNode,

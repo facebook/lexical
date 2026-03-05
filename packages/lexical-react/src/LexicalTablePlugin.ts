@@ -46,7 +46,9 @@ export interface TablePluginProps {
    */
   hasNestedTables?: boolean;
   /**
-   * When `true` (default `false`), nested tables will be resized to fit the width of the parent table cell.
+   * When `true` (default `false`), nested tables will be visually resized to fit the width of the nearest
+   * root or shadow root (including table cells). This only affects the rendered table, underlying column widths
+   * are not modified.
    *
    * @experimental Nested tables are not officially supported.
    */

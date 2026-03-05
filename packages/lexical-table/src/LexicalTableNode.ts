@@ -61,7 +61,6 @@ export type SerializedTableNode = Spread<
 
 function updateColgroup(
   dom: HTMLTableElement,
-  config: EditorConfig,
   colCount: number,
   colWidths?: number[] | readonly number[],
 ) {
@@ -328,12 +327,14 @@ export class TableNode extends ElementNode {
     if (this.__rowStriping !== (prevNode ? prevNode.__rowStriping : false)) {
       setRowStriping(tableElement, config, this.__rowStriping);
     }
-    updateColgroup(
-      tableElement,
-      config,
-      this.getColumnCount(),
-      this.getColWidths(),
-    );
+    const prevColCount = prevNode ? prevNode.getColumnCount() : 0;
+    const prevColWidths = prevNode ? prevNode.__colWidths : undefined;
+    if (
+      this.getColumnCount() !== prevColCount ||
+      this.getColWidths() !== prevColWidths
+    ) {
+      updateColgroup(tableElement, this.getColumnCount(), this.getColWidths());
+    }
     alignTableElement(tableElement, config, this.getFormatType());
   }
 
@@ -348,6 +349,20 @@ export class TableNode extends ElementNode {
     }
     this.updateTableElement(prevNode, tableElement, config);
     return false;
+  }
+
+  scaleDOMColWidths(dom: HTMLElement, scale: number): void {
+    const colWidths = this.getColWidths();
+    if (!colWidths) {
+      return;
+    }
+    const slot = this.getDOMSlot(dom);
+    const tableElement = slot.element;
+    updateColgroup(
+      tableElement,
+      this.getColumnCount(),
+      colWidths.map((width) => width * scale),
+    );
   }
 
   exportDOM(editor: LexicalEditor): DOMExportOutput {

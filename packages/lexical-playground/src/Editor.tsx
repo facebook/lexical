@@ -245,7 +245,7 @@ export default function Editor(): JSX.Element {
             <TablePlugin
               hasCellMerge={tableCellMerge}
               hasCellBackgroundColor={tableCellBackgroundColor}
-              hasHorizontalScroll={tableHorizontalScroll}
+              hasHorizontalScroll={tableHorizontalScroll && !hasFitNestedTables}
               hasFitNestedTables={hasFitNestedTables}
               hasNestedTables={hasNestedTables}
             />

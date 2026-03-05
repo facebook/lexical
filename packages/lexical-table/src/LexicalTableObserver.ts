@@ -204,7 +204,7 @@ export class TableObserver {
     );
   }
 
-  $clearHighlight(): void {
+  $clearHighlight(setEmptySelection: boolean = true): void {
     const editor = this.editor;
     this.isHighlightingCells = false;
     this.anchorX = -1;
@@ -223,7 +223,7 @@ export class TableObserver {
     const {tableNode, tableElement} = this.$lookup();
     const grid = getTable(tableNode, tableElement);
     $updateDOMForSelection(editor, grid, null);
-    if ($getSelection() !== null) {
+    if (setEmptySelection && $getSelection() !== null) {
       $setSelection(null);
       editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
     }

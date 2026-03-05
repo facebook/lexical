@@ -462,3 +462,11 @@ export function isEmptyParagraph(node: LexicalNode): boolean {
       MARKDOWN_EMPTY_LINE_REG_EXP.test(firstChild.getTextContent()))
   );
 }
+
+export function unescapeText(value: string): string {
+  return value
+    .replace(/\\([!-/:-@[-`{-~])/g, '$1')
+    .replace(/&#(\d+);/g, (_, codePoint) =>
+      String.fromCodePoint(Number(codePoint)),
+    );
+}

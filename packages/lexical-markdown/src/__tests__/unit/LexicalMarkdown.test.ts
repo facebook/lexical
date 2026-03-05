@@ -399,7 +399,7 @@ describe('Markdown', () => {
       md: '[Hello](https://lexical.dev "Hello world") world',
     },
     {
-      html: '<p><a href="https://lexical.dev" title="Title with \\&quot; escaped character"><span style="white-space: pre-wrap;">Hello</span></a><span style="white-space: pre-wrap;"> world</span></p>',
+      html: '<p><a href="https://lexical.dev" title="Title with &quot; escaped character"><span style="white-space: pre-wrap;">Hello</span></a><span style="white-space: pre-wrap;"> world</span></p>',
       md: '[Hello](https://lexical.dev "Title with \\" escaped character") world',
     },
     {
@@ -765,6 +765,21 @@ describe('Markdown', () => {
       html: '<p><s><b><strong style="white-space: pre-wrap;">Hello </strong></b></s><s><i><b><strong style="white-space: pre-wrap;">world</strong></b></i></s><s><span style="white-space: pre-wrap;">!</span></s></p>',
       md: '**~~Hello&#32;*world*~~**~~!~~',
       mdAfterExport: '**~~Hello *world*~~**~~!~~',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">!"#$%&amp;\'()*+,-./:;&lt;=&gt;?@[\\]^_`{|}~</span></p>',
+      md: '\\!\\"\\#\\$\\%\\&\\\'\\(\\)\\*\\+\\,\\-\\.\\/\\:\\;\\<\\=\\>\\?\\@\\[\\\\\\]\\^\\_\\`\\{\\|\\}\\~',
+      mdAfterExport: '!"#$%&\'()\\*+,-./:;<=>?@[\\\\]^\\_\\`{|}\\~',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">\\→\\A\\a\\ \\3\\φ\\«</span></p>',
+      md: '\\→\\A\\a\\ \\3\\φ\\«',
+      mdAfterExport: '\\\\→\\\\A\\\\a\\\\ \\\\3\\\\φ\\\\«',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">foo</span><br><span style="white-space: pre-wrap;">bar</span></p>',
+      md: 'foo\\\nbar',
+      mdAfterExport: 'foo\nbar',
     },
   ];
 

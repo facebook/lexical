@@ -24,6 +24,7 @@ import {
   $getRoot,
   $getSelection,
   $isParagraphNode,
+  $isTextNode,
   ElementNode,
 } from 'lexical';
 
@@ -272,6 +273,14 @@ function $importBlocks(
       }
 
       if (targetNode != null && targetNode.getTextContentSize() > 0) {
+        const lastChild = targetNode.getLastChild();
+        if ($isTextNode(lastChild)) {
+          const lastText = lastChild.getTextContent();
+          if (lastText.endsWith('\\')) {
+            lastChild.setTextContent(lastText.slice(0, -1));
+          }
+        }
+
         targetNode.splice(targetNode.getChildrenSize(), 0, [
           $createLineBreakNode(),
           ...elementNode.getChildren(),

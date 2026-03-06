@@ -127,6 +127,7 @@ declare export var CHECK_LIST: ElementTransformer;
 declare export var ORDERED_LIST: ElementTransformer;
 
 declare export var LINK: TextMatchTransformer;
+declare export var INDENT: TextMatchTransformer;
 
 declare export var TRANSFORMERS: Array<Transformer>;
 declare export var ELEMENT_TRANSFORMERS: Array<ElementTransformer>;

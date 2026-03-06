@@ -44,6 +44,7 @@ test.describe('Regression test #1384', () => {
     await assertHTML(
       page,
       html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
         <code
           class="PlaygroundEditorTheme__code"
           dir="auto"
@@ -149,6 +150,7 @@ test.describe('Regression test #1384', () => {
             ;
           </span>
         </code>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
       `,
     );
   });

@@ -22,6 +22,27 @@ editor.update(() => {
 });
 ```
 
+### Code Fence Composition
+
+For code-fence support (` ``` ` blocks), compose a code transformer explicitly:
+```js
+import {
+  TRANSFORMERS,
+  createMarkdownCodeBlockTransformer,
+} from '@lexical/markdown';
+import {$createCodeNode, $isCodeNode, CodeNode} from '@lexical/code';
+
+const CODE = createMarkdownCodeBlockTransformer({
+  $createCodeNode,
+  $isCodeNode,
+  dependencies: [CodeNode],
+});
+
+const transformers = [...TRANSFORMERS, CODE];
+```
+
+Use `transformers` for markdown import/export and markdown shortcut registration.
+
 It can also be used for initializing editor's state from markdown string. Here's an example with react `<RichTextPlugin>`
 ```jsx
 <LexicalComposer initialConfig={{
@@ -59,7 +80,6 @@ are processed during import, export or while typing. `@lexical/markdown` package
 ```js
 // Element transformers
 UNORDERED_LIST
-CODE
 HEADING
 ORDERED_LIST
 QUOTE
@@ -84,6 +104,8 @@ And bundles of commonly used transformers:
 - `MULTILINE_ELEMENT_TRANSFORMERS` - all built-in multiline element transformers
 - `TEXT_FORMAT_TRANSFORMERS` - all built-in text format transformers
 - `TEXT_MATCH_TRANSFORMERS` - all built-in text match transformers
+
+Code-fence transformers can be composed with `createMarkdownCodeBlockTransformer`.
 
 Transformers are explicitly passed to markdown API allowing application-specific subset of markdown or custom transformers.
 

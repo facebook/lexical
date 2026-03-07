@@ -169,10 +169,23 @@ Adds `clearEditor` command support to clear editor's content.
 
 ### `LexicalMarkdownShortcutPlugin`
 
-Adds markdown shortcut support: headings, lists, code blocks, quotes, links and inline styles (bold, italic, strikethrough).
+Adds markdown shortcut support: headings, lists, quotes, links and inline styles (bold, italic, strikethrough). Code-block shortcuts require composing a code transformer and passing it via `transformers`.
 
 ```jsx
-<MarkdownShortcutPlugin />
+import {
+  TRANSFORMERS,
+  createMarkdownCodeBlockTransformer,
+} from '@lexical/markdown';
+import {$createCodeNode, $isCodeNode, CodeNode} from '@lexical/code';
+
+const CODE = createMarkdownCodeBlockTransformer({
+  $createCodeNode,
+  $isCodeNode,
+  dependencies: [CodeNode],
+});
+const transformers = [...TRANSFORMERS, CODE];
+
+<MarkdownShortcutPlugin transformers={transformers} />
 ```
 
 ### `LexicalTableOfContentsPlugin`

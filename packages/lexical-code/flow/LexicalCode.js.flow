@@ -52,22 +52,6 @@ declare export function getStartOfCodeInLine(
   offset: number,
 };
 
-type TokenContent = string | Token | (string | Token)[];
-export interface Token {
-  type: string;
-  content: TokenContent;
-}
-export interface Tokenizer {
-  defaultLanguage: string;
-  tokenize(code: string, language?: string): (string | Token)[];
-}
-declare export var PrismTokenizer: Tokenizer;
-
-declare export function registerCodeHighlighting(
-  editor: LexicalEditor,
-  tokenizer?: Tokenizer,
-): () => void;
-
 /**
  * CodeHighlightNode
  */
@@ -81,9 +65,6 @@ declare export function $isCodeHighlightNode(
   node: ?LexicalNode,
 ): node is CodeHighlightNode;
 
-declare export var CODE_LANGUAGE_FRIENDLY_NAME_MAP: {[string]: string};
-declare export var CODE_LANGUAGE_MAP: {[string]: string};
-
 declare export class CodeHighlightNode extends TextNode {
   __highlightType: ?string;
   constructor(text: string, highlightType?: string, key?: NodeKey): void;
@@ -95,7 +76,6 @@ declare export class CodeHighlightNode extends TextNode {
 
 declare export var DEFAULT_CODE_LANGUAGE: string;
 
-declare export var getCodeLanguages: () => Array<string>;
 declare export var getDefaultCodeLanguage: () => string;
 
 declare export function $getFirstCodeNodeOfLine(
@@ -106,8 +86,6 @@ declare export function getFirstCodeNodeOfLine(
   anchor: CodeHighlightNode | TabNode | LineBreakNode,
 ): null | CodeHighlightNode | TabNode | LineBreakNode;
 
-declare export function getLanguageFriendlyName(lang: string): string;
-
 declare export function $getLastCodeNodeOfLine(
   anchor: CodeHighlightNode | TabNode | LineBreakNode,
 ): CodeHighlightNode | TabNode | LineBreakNode;
@@ -115,8 +93,6 @@ declare export function $getLastCodeNodeOfLine(
 declare export function getLastCodeNodeOfLine(
   anchor: CodeHighlightNode | TabNode | LineBreakNode,
 ): CodeHighlightNode | TabNode | LineBreakNode;
-
-declare export function normalizeCodeLang(lang: string): string;
 
 /**
  * CodeNode

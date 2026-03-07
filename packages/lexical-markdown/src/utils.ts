@@ -8,7 +8,7 @@
 
 import type {ListNode} from '@lexical/list';
 
-import {$isCodeNode} from '@lexical/code';
+import {$isCodeNode} from '@lexical/code/node';
 import {$isListItemNode, $isListNode} from '@lexical/list';
 import {$isHeadingNode, $isQuoteNode} from '@lexical/rich-text';
 import {

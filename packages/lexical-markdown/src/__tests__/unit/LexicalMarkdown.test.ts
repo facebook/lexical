@@ -6,7 +6,7 @@
  *
  */
 
-import {$createCodeNode, CodeNode} from '@lexical/code';
+import {$createCodeNode, $isCodeNode, CodeNode} from '@lexical/code';
 import {createHeadlessEditor} from '@lexical/headless';
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
 import {$createLinkNode, LinkNode} from '@lexical/link';
@@ -33,21 +33,28 @@ import {describe, expect, it} from 'vitest';
 import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
+  createMarkdownCodeBlockTransformer,
   LINK,
   registerMarkdownShortcuts,
   TextMatchTransformer,
   Transformer,
+  TRANSFORMERS,
 } from '../..';
 import {
   CHECK_LIST,
-  CODE,
   ElementTransformer,
   HEADING,
   listMarkerState,
   MultilineElementTransformer,
   normalizeMarkdown,
-  TRANSFORMERS,
 } from '../../MarkdownTransformers';
+
+const CODE = createMarkdownCodeBlockTransformer({
+  $createCodeNode,
+  $isCodeNode,
+  dependencies: [CodeNode],
+});
+const TRANSFORMERS_WITH_CODE = [...TRANSFORMERS, CODE];
 
 const HIGHLIGHT_TEXT_MATCH_IMPORT: TextMatchTransformer = {
   ...LINK,
@@ -813,7 +820,7 @@ describe('Markdown', () => {
             md,
             [
               ...(customTransformers || []),
-              ...TRANSFORMERS,
+              ...TRANSFORMERS_WITH_CODE,
               HIGHLIGHT_TEXT_MATCH_IMPORT,
             ],
             undefined,
@@ -873,7 +880,7 @@ describe('Markdown', () => {
           .getEditorState()
           .read(() =>
             $convertToMarkdownString(
-              [...(customTransformers || []), ...TRANSFORMERS],
+              [...(customTransformers || []), ...TRANSFORMERS_WITH_CODE],
               undefined,
               shouldPreserveNewLines,
             ),
@@ -911,7 +918,7 @@ describe('Markdown', () => {
             md,
             [
               ...(customTransformers || []),
-              ...TRANSFORMERS,
+              ...TRANSFORMERS_WITH_CODE,
               HIGHLIGHT_TEXT_MATCH_IMPORT,
             ],
             undefined,
@@ -1045,7 +1052,7 @@ describe('Markdown', () => {
 
     editor.update(
       () => {
-        $convertFromMarkdownString(markdown, TRANSFORMERS);
+        $convertFromMarkdownString(markdown, TRANSFORMERS_WITH_CODE);
       },
       {discrete: true},
     );
@@ -1053,7 +1060,7 @@ describe('Markdown', () => {
     expect(
       editor
         .getEditorState()
-        .read(() => $convertToMarkdownString(TRANSFORMERS)),
+        .read(() => $convertToMarkdownString(TRANSFORMERS_WITH_CODE)),
     ).toBe(markdown);
   });
 
@@ -1082,7 +1089,7 @@ describe('Markdown', () => {
 
     editor.update(
       () => {
-        $convertFromMarkdownString(markdown, TRANSFORMERS);
+        $convertFromMarkdownString(markdown, TRANSFORMERS_WITH_CODE);
       },
       {discrete: true},
     );
@@ -1090,7 +1097,7 @@ describe('Markdown', () => {
     expect(
       editor
         .getEditorState()
-        .read(() => $convertToMarkdownString(TRANSFORMERS)),
+        .read(() => $convertToMarkdownString(TRANSFORMERS_WITH_CODE)),
     ).toBe(markdown);
   });
 
@@ -1115,7 +1122,7 @@ describe('Markdown', () => {
     // Export should compute fence to be ```` (4 backticks) since content contains ```
     const exported = editor
       .getEditorState()
-      .read(() => $convertToMarkdownString(TRANSFORMERS));
+      .read(() => $convertToMarkdownString(TRANSFORMERS_WITH_CODE));
 
     expect(exported).toBe(
       '````markdown\n```js\nconsole.log("hello");\n```\n````',
@@ -1131,7 +1138,7 @@ describe('Markdown', () => {
         () =>
           $convertFromMarkdownString(
             '+ hello',
-            [...TRANSFORMERS],
+            [...TRANSFORMERS_WITH_CODE],
             undefined,
             true,
             false,
@@ -1213,7 +1220,7 @@ describe('Markdown', () => {
       );
       editor.getEditorState().read(() => {
         const markdownString = $convertToMarkdownString(
-          [...TRANSFORMERS],
+          [...TRANSFORMERS_WITH_CODE],
           undefined,
           true,
         );
@@ -1235,7 +1242,7 @@ describe('Markdown', () => {
         ],
       });
 
-      registerMarkdownShortcuts(editor, TRANSFORMERS);
+      registerMarkdownShortcuts(editor, TRANSFORMERS_WITH_CODE);
 
       editor.update(
         () => {
@@ -1275,7 +1282,7 @@ describe('Markdown', () => {
         ],
       });
 
-      registerMarkdownShortcuts(editor, TRANSFORMERS);
+      registerMarkdownShortcuts(editor, TRANSFORMERS_WITH_CODE);
 
       editor.update(
         () => {

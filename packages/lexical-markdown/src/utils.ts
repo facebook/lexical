@@ -8,7 +8,6 @@
 
 import type {ListNode} from '@lexical/list';
 
-import {$isCodeNode} from '@lexical/code';
 import {$isListItemNode, $isListNode} from '@lexical/list';
 import {$isHeadingNode, $isQuoteNode} from '@lexical/rich-text';
 import {
@@ -388,19 +387,26 @@ function blockQuoteExport(
   return $isQuoteNode(node) ? '> ' + exportChildren(node) : null;
 }
 
+type CodeLikeNode = LexicalNode & {
+  getLanguage: () => string | null | undefined;
+};
+
+function isCodeLikeNode(node: LexicalNode): node is CodeLikeNode {
+  const hasCodeType = node.getType() === 'code';
+  const hasGetLanguage =
+    'getLanguage' in node && typeof node.getLanguage === 'function';
+  return hasCodeType && hasGetLanguage;
+}
+
 function codeBlockExport(node: LexicalNode) {
-  if (!$isCodeNode(node)) {
+  if (!isCodeLikeNode(node)) {
     return null;
   }
 
   const textContent = node.getTextContent();
-  return (
-    '```' +
-    (node.getLanguage() || '') +
-    (textContent ? '\n' + textContent : '') +
-    '\n' +
-    '```'
-  );
+  const language = node.getLanguage() || '';
+  const content = textContent ? '\n' + textContent : '';
+  return '```' + language + content + '\n' + '```';
 }
 
 export function indexBy<T>(

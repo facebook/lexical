@@ -9,6 +9,8 @@
     "test": "playwright test"
   },
   "dependencies": {
+    "@lexical/code": "0.41.0",
+    "@lexical/code-prism": "0.41.0",
     "@lexical/plain-text": "0.41.0",
     "@lexical/react": "0.41.0",
     "lexical": "0.41.0",

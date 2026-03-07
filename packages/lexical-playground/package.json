@@ -17,6 +17,7 @@
     "@floating-ui/react": "^0.27.16",
     "@lexical/clipboard": "workspace:*",
     "@lexical/code": "workspace:*",
+    "@lexical/code-prism": "workspace:*",
     "@lexical/code-shiki": "workspace:*",
     "@lexical/file": "workspace:*",
     "@lexical/hashtag": "workspace:*",

@@ -43,6 +43,7 @@ export type MultilineElementTransformer = {
     node: LexicalNode,
     traverseChildren: (node: ElementNode) => string,
   ) => string | null;
+  isNode?: (node: LexicalNode | null | void) => boolean;
   handleImportAfterStartMatch?: (args: {
     lines: Array<string>;
     rootNode: ElementNode;
@@ -90,6 +91,20 @@ export type TextMatchTransformer = $ReadOnly<{
   type: 'text-match',
 }>;
 
+export type MarkdownCodeNode = ElementNode & {
+  getLanguage: () => string | null | void,
+};
+
+export type MarkdownCodeNodeTransformerConfig<
+  TCodeNode: MarkdownCodeNode = MarkdownCodeNode,
+> = $ReadOnly<{
+  $createCodeNode: (language?: string) => TCodeNode,
+  $isCodeNode: (
+    node: LexicalNode | null | void,
+  ) => boolean,
+  dependencies: Array<Class<LexicalNode>>,
+}>;
+
 declare export function registerMarkdownShortcuts(
   editor: LexicalEditor,
   transformers?: Array<Transformer>,
@@ -121,7 +136,6 @@ declare export var ITALIC_UNDERSCORE: TextFormatTransformer;
 
 declare export var HEADING: ElementTransformer;
 declare export var QUOTE: ElementTransformer;
-declare export var CODE: MultilineElementTransformer;
 declare export var UNORDERED_LIST: ElementTransformer;
 declare export var CHECK_LIST: ElementTransformer;
 declare export var ORDERED_LIST: ElementTransformer;
@@ -133,3 +147,8 @@ declare export var ELEMENT_TRANSFORMERS: Array<ElementTransformer>;
 declare export var MULTILINE_ELEMENT_TRANSFORMERS: Array<MultilineElementTransformer>;
 declare export var TEXT_FORMAT_TRANSFORMERS: Array<TextFormatTransformer>;
 declare export var TEXT_MATCH_TRANSFORMERS: Array<TextFormatTransformer>;
+declare export function createMarkdownCodeBlockTransformer<
+  TCodeNode: MarkdownCodeNode = MarkdownCodeNode,
+>(
+  config: MarkdownCodeNodeTransformerConfig<TCodeNode>,
+): MultilineElementTransformer;

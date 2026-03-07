@@ -13,6 +13,8 @@
   "dependencies": {
     "@astrojs/check": "^0.9.4",
     "@astrojs/react": "^4.3.1",
+    "@lexical/code": "0.41.0",
+    "@lexical/code-prism": "0.41.0",
     "@lexical/react": "0.41.0",
     "@lexical/utils": "0.41.0",
     "@types/react": "^19.1.12",

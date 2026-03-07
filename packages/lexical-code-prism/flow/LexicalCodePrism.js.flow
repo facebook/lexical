@@ -1,0 +1,40 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @flow strict
+ */
+
+import type {CodeNode} from '@lexical/code';
+import type {LexicalEditor, LexicalNode} from 'lexical';
+
+type TokenContent = string | Token | (string | Token)[];
+export type Token = {
+  type: string,
+  content: TokenContent,
+};
+
+export type Tokenizer = {
+  defaultLanguage: string,
+  tokenize(code: string, language?: string): (string | Token)[],
+  $tokenize(codeNode: CodeNode, language?: string): LexicalNode[],
+};
+
+declare export var PrismTokenizer: Tokenizer;
+
+declare export function registerCodeHighlighting(
+  editor: LexicalEditor,
+  tokenizer?: Tokenizer,
+): () => void;
+
+declare export var CODE_LANGUAGE_FRIENDLY_NAME_MAP: {[string]: string};
+declare export var CODE_LANGUAGE_MAP: {[string]: string};
+
+declare export function getCodeLanguageOptions(): [string, string][];
+declare export function getCodeLanguages(): Array<string>;
+declare export function getCodeThemeOptions(): [string, string][];
+declare export function getLanguageFriendlyName(lang: string): string;
+declare export function normalizeCodeLang(lang: string): string;
+declare export function normalizeCodeLanguage(lang: string): string;

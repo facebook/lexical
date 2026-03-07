@@ -14,7 +14,6 @@ import {
 } from './FlatStructureUtils';
 
 export {CodeExtension} from './CodeExtension';
-export {PrismTokenizer, registerCodeHighlighting} from './CodeHighlighterPrism';
 export {
   $createCodeHighlightNode,
   $isCodeHighlightNode,
@@ -28,16 +27,6 @@ export {
   DEFAULT_CODE_LANGUAGE,
   getDefaultCodeLanguage,
 } from './CodeNode';
-export {
-  CODE_LANGUAGE_FRIENDLY_NAME_MAP,
-  CODE_LANGUAGE_MAP,
-  getCodeLanguageOptions,
-  getCodeLanguages,
-  getCodeThemeOptions,
-  getLanguageFriendlyName,
-  normalizeCodeLang,
-  normalizeCodeLang as normalizeCodeLanguage,
-} from './FacadePrism';
 export {
   $getCodeLineDirection,
   $getEndOfCodeInLine,

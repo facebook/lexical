@@ -1,6 +1,6 @@
 {
   "name": "@lexical/code",
-  "description": "This package contains the functionality for the code blocks and code highlighting for Lexical.",
+  "description": "This package contains the functionality for Lexical code blocks and code nodes.",
   "keywords": [
     "lexical",
     "editor",
@@ -13,19 +13,15 @@
   "types": "index.d.ts",
   "dependencies": {
     "@lexical/utils": "workspace:*",
-    "lexical": "workspace:*",
-    "prismjs": "^1.30.0"
+    "lexical": "workspace:*"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/facebook/lexical.git",
     "directory": "packages/lexical-code"
   },
-  "devDependencies": {
-    "@types/prismjs": "^1.26.0"
-  },
   "module": "LexicalCode.mjs",
-  "sideEffects": true,
+  "sideEffects": false,
   "exports": {
     ".": {
       "import": {

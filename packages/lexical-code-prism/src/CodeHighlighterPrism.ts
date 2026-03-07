@@ -16,6 +16,18 @@ import type {
   RangeSelection,
 } from 'lexical';
 
+import {
+  $getCodeLineDirection,
+  $getEndOfCodeInLine,
+  $getFirstCodeNodeOfLine,
+  $getLastCodeNodeOfLine,
+  $getStartOfCodeInLine,
+  $isCodeHighlightNode,
+  $isCodeNode,
+  CodeHighlightNode,
+  CodeNode,
+  DEFAULT_CODE_LANGUAGE,
+} from '@lexical/code';
 import {mergeRegister} from '@lexical/utils';
 import {
   $createLineBreakNode,
@@ -50,21 +62,12 @@ import {
 } from 'lexical';
 import invariant from 'shared/invariant';
 
-import {$isCodeHighlightNode, CodeHighlightNode} from './CodeHighlightNode';
-import {$isCodeNode, CodeNode, DEFAULT_CODE_LANGUAGE} from './CodeNode';
 import {
   $getHighlightNodes,
   isCodeLanguageLoaded,
   loadCodeLanguage,
   Prism,
 } from './FacadePrism';
-import {
-  $getCodeLineDirection,
-  $getEndOfCodeInLine,
-  $getFirstCodeNodeOfLine,
-  $getLastCodeNodeOfLine,
-  $getStartOfCodeInLine,
-} from './FlatStructureUtils';
 
 type TokenContent = string | Token | (string | Token)[];
 

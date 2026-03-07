@@ -12,8 +12,8 @@ import {
   $createCodeHighlightNode,
   $createCodeNode,
   $isCodeHighlightNode,
-  registerCodeHighlighting,
 } from '@lexical/code';
+import {registerCodeHighlighting} from '@lexical/code-prism';
 import {registerTabIndentation} from '@lexical/react/LexicalTabIndentationPlugin';
 import {registerRichText} from '@lexical/rich-text';
 import {$dfs} from '@lexical/utils';

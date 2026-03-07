@@ -14,9 +14,11 @@ import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import {
   CodeHighlightNode,
   CodeNode,
+} from "@lexical/code";
+import {
   getCodeLanguages,
   registerCodeHighlighting,
-} from "@lexical/code";
+} from "@lexical/code-prism";
 
 // import * as React from 'react';
 

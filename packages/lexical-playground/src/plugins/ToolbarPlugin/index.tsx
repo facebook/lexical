@@ -8,11 +8,11 @@
 
 import type {JSX} from 'react';
 
+import {$isCodeNode} from '@lexical/code';
 import {
-  $isCodeNode,
   getCodeLanguageOptions as getCodeLanguageOptionsPrism,
   normalizeCodeLanguage as normalizeCodeLanguagePrism,
-} from '@lexical/code';
+} from '@lexical/code-prism';
 import {
   getCodeLanguageOptions as getCodeLanguageOptionsShiki,
   getCodeThemeOptions as getCodeThemeOptionsShiki,

@@ -6,7 +6,7 @@
  *
  */
 
-import type {CodeNode} from './CodeNode';
+import type {CodeNode} from '@lexical/code';
 import type {LexicalEditor, LexicalNode, NodeKey} from 'lexical';
 import type {Token, TokenStream} from 'prismjs';
 
@@ -29,9 +29,8 @@ import 'prismjs/components/prism-typescript';
 import 'prismjs/components/prism-java';
 import 'prismjs/components/prism-cpp';
 
+import {$createCodeHighlightNode} from '@lexical/code';
 import {$createLineBreakNode, $createTabNode} from 'lexical';
-
-import {$createCodeHighlightNode} from './CodeHighlightNode';
 
 declare global {
   interface Window {

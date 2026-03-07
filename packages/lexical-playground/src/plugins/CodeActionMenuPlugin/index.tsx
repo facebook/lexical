@@ -10,12 +10,8 @@ import type {JSX} from 'react';
 
 import './index.css';
 
-import {
-  $isCodeNode,
-  CodeNode,
-  getLanguageFriendlyName,
-  normalizeCodeLang,
-} from '@lexical/code';
+import {$isCodeNode, CodeNode} from '@lexical/code';
+import {getLanguageFriendlyName, normalizeCodeLang} from '@lexical/code-prism';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$getNearestNodeFromDOMNode, isHTMLElement} from 'lexical';
 import {useEffect, useRef, useState} from 'react';

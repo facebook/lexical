@@ -6,13 +6,14 @@
  *
  */
 
+import {$createCodeNode, $isCodeNode, CodeNode} from '@lexical/code';
 import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
   CHECK_LIST,
+  createMarkdownCodeBlockTransformer,
   ELEMENT_TRANSFORMERS,
   ElementTransformer,
-  MULTILINE_ELEMENT_TRANSFORMERS,
   TEXT_FORMAT_TRANSFORMERS,
   TEXT_MATCH_TRANSFORMERS,
   TextMatchTransformer,
@@ -50,6 +51,12 @@ import {
 import {$createImageNode, $isImageNode, ImageNode} from '../../nodes/ImageNode';
 import {$createTweetNode, $isTweetNode, TweetNode} from '../../nodes/TweetNode';
 import emojiList from '../../utils/emoji-list';
+
+const CODE = createMarkdownCodeBlockTransformer({
+  $createCodeNode,
+  $isCodeNode,
+  dependencies: [CodeNode],
+});
 
 export const HR: ElementTransformer = {
   dependencies: [HorizontalRuleNode],
@@ -315,8 +322,8 @@ export const PLAYGROUND_TRANSFORMERS: Array<Transformer> = [
   EQUATION,
   TWEET,
   CHECK_LIST,
+  CODE,
   ...ELEMENT_TRANSFORMERS,
-  ...MULTILINE_ELEMENT_TRANSFORMERS,
   ...TEXT_FORMAT_TRANSFORMERS,
   ...TEXT_MATCH_TRANSFORMERS,
 ];

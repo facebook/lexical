@@ -317,6 +317,18 @@ importers:
       lexical:
         specifier: workspace:*
         version: link:../lexical
+
+  packages/lexical-code-prism:
+    dependencies:
+      '@lexical/code':
+        specifier: workspace:*
+        version: link:../lexical-code
+      '@lexical/utils':
+        specifier: workspace:*
+        version: link:../lexical-utils
+      lexical:
+        specifier: workspace:*
+        version: link:../lexical
       prismjs:
         specifier: ^1.30.0
         version: 1.30.0
@@ -579,9 +591,6 @@ importers:
 
   packages/lexical-markdown:
     dependencies:
-      '@lexical/code':
-        specifier: workspace:*
-        version: link:../lexical-code
       '@lexical/link':
         specifier: workspace:*
         version: link:../lexical-link
@@ -651,6 +660,9 @@ importers:
       '@lexical/code':
         specifier: workspace:*
         version: link:../lexical-code
+      '@lexical/code-prism':
+        specifier: workspace:*
+        version: link:../lexical-code-prism
       '@lexical/code-shiki':
         specifier: workspace:*
         version: link:../lexical-code-shiki

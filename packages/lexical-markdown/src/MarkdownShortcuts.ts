@@ -15,7 +15,6 @@ import type {
 } from './MarkdownTransformers';
 import type {ElementNode, LexicalEditor, TextNode} from 'lexical';
 
-import {$isCodeNode} from '@lexical/code';
 import {
   $createRangeSelection,
   $getSelection,
@@ -35,6 +34,20 @@ import invariant from 'shared/invariant';
 import {canContainTransformableMarkdown} from './importTextTransformers';
 import {TRANSFORMERS} from './MarkdownTransformers';
 import {indexBy, PUNCTUATION_OR_SPACE, transformersByType} from './utils';
+
+function shouldSkipParentNodeTransform(
+  parentNode: ElementNode,
+  multilineElementTransformers: ReadonlyArray<MultilineElementTransformer>,
+): boolean {
+  for (const transformer of multilineElementTransformers) {
+    const isNode = transformer.isNode;
+    if (isNode !== undefined && isNode(parentNode)) {
+      return true;
+    }
+  }
+
+  return false;
+}
 
 function runElementTransformers(
   parentNode: ElementNode,
@@ -528,8 +541,13 @@ export function registerMarkdownShortcuts(
           }
 
           const parentNode = anchorNode.getParent();
+          if (parentNode === null) {
+            return;
+          }
 
-          if (parentNode === null || $isCodeNode(parentNode)) {
+          if (
+            shouldSkipParentNodeTransform(parentNode, byType.multilineElement)
+          ) {
             return;
           }
 
@@ -561,8 +579,13 @@ export function registerMarkdownShortcuts(
         }
 
         const parentNode = anchorNode.getParent();
+        if (parentNode === null) {
+          return false;
+        }
 
-        if (parentNode === null || $isCodeNode(parentNode)) {
+        if (
+          shouldSkipParentNodeTransform(parentNode, byType.multilineElement)
+        ) {
           return false;
         }
 

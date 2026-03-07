@@ -8,6 +8,7 @@
 
 import type {
   ElementTransformer,
+  MarkdownCodeNodeTransformerConfig,
   MultilineElementTransformer,
   TextFormatTransformer,
   TextMatchTransformer,
@@ -24,7 +25,7 @@ import {
   BOLD_STAR,
   BOLD_UNDERSCORE,
   CHECK_LIST,
-  CODE,
+  createMarkdownCodeBlockTransformer,
   ELEMENT_TRANSFORMERS,
   HEADING,
   HIGHLIGHT,
@@ -89,7 +90,7 @@ export {
   BOLD_STAR,
   BOLD_UNDERSCORE,
   CHECK_LIST,
-  CODE,
+  createMarkdownCodeBlockTransformer,
   ELEMENT_TRANSFORMERS,
   type ElementTransformer,
   HEADING,
@@ -98,6 +99,7 @@ export {
   ITALIC_STAR,
   ITALIC_UNDERSCORE,
   LINK,
+  type MarkdownCodeNodeTransformerConfig,
   MULTILINE_ELEMENT_TRANSFORMERS,
   type MultilineElementTransformer,
   ORDERED_LIST,

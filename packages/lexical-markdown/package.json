@@ -12,7 +12,6 @@
   "main": "LexicalMarkdown.js",
   "types": "index.d.ts",
   "dependencies": {
-    "@lexical/code": "workspace:*",
     "@lexical/link": "workspace:*",
     "@lexical/list": "workspace:*",
     "@lexical/rich-text": "workspace:*",

@@ -9,7 +9,6 @@
 import type {ListType} from '@lexical/list';
 import type {HeadingTagType} from '@lexical/rich-text';
 
-import {$createCodeNode, $isCodeNode, CodeNode} from '@lexical/code';
 import {
   $createLinkNode,
   $isAutoLinkNode,
@@ -109,6 +108,11 @@ export type MultilineElementTransformer = {
     // eslint-disable-next-line no-shadow
     traverseChildren: (node: ElementNode) => string,
   ) => string | null;
+  /**
+   * Optional predicate used by markdown shortcuts to detect whether a parent node
+   * should be excluded from inline markdown transforms.
+   */
+  isNode?: (node: LexicalNode | null | undefined) => boolean;
   /**
    * This regex determines when to start matching
    */
@@ -412,164 +416,190 @@ export const QUOTE: ElementTransformer = {
   type: 'element',
 };
 
-export const CODE: MultilineElementTransformer = {
-  dependencies: [CodeNode],
+type MarkdownCodeNode = ElementNode & {
+  getLanguage(): string | null | undefined;
+};
 
-  export: (node: LexicalNode) => {
-    if (!$isCodeNode(node)) {
-      return null;
-    }
-    const textContent = node.getTextContent();
-    let fence = $getState(node, codeFenceState);
+export type MarkdownCodeNodeTransformerConfig<
+  TCodeNode extends MarkdownCodeNode = MarkdownCodeNode,
+> = Readonly<{
+  $createCodeNode: (language?: string) => TCodeNode;
+  $isCodeNode: (node: LexicalNode | null | undefined) => node is TCodeNode;
+  dependencies: Array<Klass<LexicalNode>>;
+}>;
 
-    if (textContent.indexOf(fence) > -1) {
-      const backticks = textContent.match(/`{3,}/g);
-      if (backticks) {
-        const maxLength = Math.max(...backticks.map((b) => b.length));
-        fence = '`'.repeat(maxLength + 1);
+export function createMarkdownCodeBlockTransformer<
+  TCodeNode extends MarkdownCodeNode = MarkdownCodeNode,
+>({
+  $createCodeNode,
+  $isCodeNode,
+  dependencies,
+}: MarkdownCodeNodeTransformerConfig<TCodeNode>): MultilineElementTransformer {
+  const CODE: MultilineElementTransformer = {
+    dependencies,
+
+    export: (node: LexicalNode) => {
+      if (!$isCodeNode(node)) {
+        return null;
       }
-    }
-    return (
-      fence +
-      (node.getLanguage() || '') +
-      (textContent ? '\n' + textContent : '') +
-      '\n' +
-      fence
-    );
-  },
+      const textContent = node.getTextContent();
+      let fence = $getState(node, codeFenceState);
 
-  handleImportAfterStartMatch: ({
-    lines,
-    rootNode,
-    startLineIndex,
-    startMatch,
-  }) => {
-    const fence = startMatch[1];
-    const fenceLength = fence.trim().length;
-    const currentLine = lines[startLineIndex];
-    const afterFenceIndex = startMatch.index! + fence.length;
-    const afterFence = currentLine.slice(afterFenceIndex);
-
-    const singleLineEndRegex = new RegExp(`\`{${fenceLength},}$`);
-
-    if (singleLineEndRegex.test(afterFence)) {
-      const endMatch = afterFence.match(singleLineEndRegex);
-      const content = afterFence.slice(0, afterFence.lastIndexOf(endMatch![0]));
-
-      const fakeStartMatch = [...startMatch] as RegExpMatchArray;
-      fakeStartMatch[2] = '';
-
-      CODE.replace(
-        rootNode,
-        null,
-        fakeStartMatch as RegExpMatchArray,
-        endMatch,
-        [content],
-        true,
-      );
-      return [true, startLineIndex];
-    }
-
-    const multilineEndRegex = new RegExp(`^[ \\t]*\`{${fenceLength},}$`);
-
-    for (let i = startLineIndex + 1; i < lines.length; i++) {
-      const line = lines[i];
-      if (multilineEndRegex.test(line)) {
-        const endMatch = line.match(multilineEndRegex);
-        const linesInBetween = lines.slice(startLineIndex + 1, i);
-
-        const afterFullMatch = currentLine.slice(startMatch[0].length);
-        if (afterFullMatch.length > 0) {
-          linesInBetween.unshift(afterFullMatch);
+      if (textContent.indexOf(fence) > -1) {
+        const backticks = textContent.match(/`{3,}/g);
+        if (backticks) {
+          const maxLength = Math.max(...backticks.map((b) => b.length));
+          fence = '`'.repeat(maxLength + 1);
         }
+      }
+      return (
+        fence +
+        (node.getLanguage() || '') +
+        (textContent ? '\n' + textContent : '') +
+        '\n' +
+        fence
+      );
+    },
+
+    handleImportAfterStartMatch: ({
+      lines,
+      rootNode,
+      startLineIndex,
+      startMatch,
+    }) => {
+      const fence = startMatch[1];
+      const fenceLength = fence.trim().length;
+      const currentLine = lines[startLineIndex];
+      const afterFenceIndex = startMatch.index! + fence.length;
+      const afterFence = currentLine.slice(afterFenceIndex);
+
+      const singleLineEndRegex = new RegExp(`\`{${fenceLength},}$`);
+
+      if (singleLineEndRegex.test(afterFence)) {
+        const endMatch = afterFence.match(singleLineEndRegex);
+        const content = afterFence.slice(
+          0,
+          afterFence.lastIndexOf(endMatch![0]),
+        );
+
+        const fakeStartMatch = [...startMatch] as RegExpMatchArray;
+        fakeStartMatch[2] = '';
 
         CODE.replace(
           rootNode,
           null,
-          startMatch,
+          fakeStartMatch as RegExpMatchArray,
           endMatch,
-          linesInBetween,
+          [content],
           true,
         );
-        return [true, i];
+        return [true, startLineIndex];
       }
-    }
 
-    const linesInBetween = lines.slice(startLineIndex + 1);
-    const afterFullMatch = currentLine.slice(startMatch[0].length);
-    if (afterFullMatch.length > 0) {
-      linesInBetween.unshift(afterFullMatch);
-    }
+      const multilineEndRegex = new RegExp(`^[ \\t]*\`{${fenceLength},}$`);
 
-    CODE.replace(rootNode, null, startMatch, null, linesInBetween, true);
-    return [true, lines.length - 1];
-  },
-  regExpEnd: {
-    optional: true,
-    regExp: CODE_END_REGEX,
-  },
+      for (let i = startLineIndex + 1; i < lines.length; i++) {
+        const line = lines[i];
+        if (multilineEndRegex.test(line)) {
+          const endMatch = line.match(multilineEndRegex);
+          const linesInBetween = lines.slice(startLineIndex + 1, i);
 
-  regExpStart: CODE_START_REGEX,
+          const afterFullMatch = currentLine.slice(startMatch[0].length);
+          if (afterFullMatch.length > 0) {
+            linesInBetween.unshift(afterFullMatch);
+          }
 
-  replace: (
-    rootNode,
-    children,
-    startMatch,
-    endMatch,
-    linesInBetween,
-    isImport,
-  ) => {
-    let codeBlockNode: CodeNode;
-    let code: string;
+          CODE.replace(
+            rootNode,
+            null,
+            startMatch,
+            endMatch,
+            linesInBetween,
+            true,
+          );
+          return [true, i];
+        }
+      }
 
-    const fence = startMatch[1] ? startMatch[1].trim() : '```';
-    const language = startMatch[2] || undefined;
+      const linesInBetween = lines.slice(startLineIndex + 1);
+      const afterFullMatch = currentLine.slice(startMatch[0].length);
+      if (afterFullMatch.length > 0) {
+        linesInBetween.unshift(afterFullMatch);
+      }
 
-    if (!children && linesInBetween) {
-      if (linesInBetween.length === 1) {
-        if (endMatch) {
-          codeBlockNode = $createCodeNode(language);
-          code = linesInBetween[0];
+      CODE.replace(rootNode, null, startMatch, null, linesInBetween, true);
+      return [true, lines.length - 1];
+    },
+    isNode: (node) => $isCodeNode(node),
+    regExpEnd: {
+      optional: true,
+      regExp: CODE_END_REGEX,
+    },
+
+    regExpStart: CODE_START_REGEX,
+
+    replace: (
+      rootNode,
+      children,
+      startMatch,
+      endMatch,
+      linesInBetween,
+      isImport,
+    ) => {
+      let codeBlockNode: TCodeNode;
+      let code: string;
+
+      const fence = startMatch[1] ? startMatch[1].trim() : '```';
+      const language = startMatch[2] || undefined;
+
+      if (!children && linesInBetween) {
+        if (linesInBetween.length === 1) {
+          if (endMatch) {
+            codeBlockNode = $createCodeNode(language);
+            code = linesInBetween[0];
+          } else {
+            codeBlockNode = $createCodeNode(language);
+            code = linesInBetween[0].startsWith(' ')
+              ? linesInBetween[0].slice(1)
+              : linesInBetween[0];
+          }
         } else {
           codeBlockNode = $createCodeNode(language);
-          code = linesInBetween[0].startsWith(' ')
-            ? linesInBetween[0].slice(1)
-            : linesInBetween[0];
-        }
-      } else {
-        codeBlockNode = $createCodeNode(language);
 
-        if (linesInBetween.length > 0) {
-          if (linesInBetween[0].trim().length === 0) {
-            linesInBetween.shift();
-          } else if (linesInBetween[0].startsWith(' ')) {
-            linesInBetween[0] = linesInBetween[0].slice(1);
+          if (linesInBetween.length > 0) {
+            if (linesInBetween[0].trim().length === 0) {
+              linesInBetween.shift();
+            } else if (linesInBetween[0].startsWith(' ')) {
+              linesInBetween[0] = linesInBetween[0].slice(1);
+            }
           }
+
+          while (
+            linesInBetween.length > 0 &&
+            !linesInBetween[linesInBetween.length - 1].length
+          ) {
+            linesInBetween.pop();
+          }
+
+          code = linesInBetween.join('\n');
         }
 
-        while (
-          linesInBetween.length > 0 &&
-          !linesInBetween[linesInBetween.length - 1].length
-        ) {
-          linesInBetween.pop();
-        }
+        $setState(codeBlockNode, codeFenceState, fence);
 
-        code = linesInBetween.join('\n');
+        const textNode = $createTextNode(code);
+        codeBlockNode.append(textNode);
+        rootNode.append(codeBlockNode);
+      } else if (children) {
+        createBlockNode((match) => {
+          return $createCodeNode(match ? match[2] : undefined);
+        })(rootNode, children, startMatch, isImport);
       }
+    },
+    type: 'multiline-element',
+  };
 
-      $setState(codeBlockNode, codeFenceState, fence);
-
-      const textNode = $createTextNode(code);
-      codeBlockNode.append(textNode);
-      rootNode.append(codeBlockNode);
-    } else if (children) {
-      createBlockNode((match) => {
-        return $createCodeNode(match ? match[2] : undefined);
-      })(rootNode, children, startMatch, isImport);
-    }
-  },
-  type: 'multiline-element',
-};
+  return CODE;
+}
 
 export const UNORDERED_LIST: ElementTransformer = {
   dependencies: [ListNode, ListItemNode],
@@ -729,7 +759,7 @@ export const ELEMENT_TRANSFORMERS: Array<ElementTransformer> = [
 ];
 
 export const MULTILINE_ELEMENT_TRANSFORMERS: Array<MultilineElementTransformer> =
-  [CODE];
+  [];
 
 // Order of text format transformers matters:
 //

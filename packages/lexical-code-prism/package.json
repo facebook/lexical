@@ -1,0 +1,48 @@
+{
+  "name": "@lexical/code-prism",
+  "description": "This package contains the Prism code highlighter for Lexical code blocks.",
+  "keywords": [
+    "lexical",
+    "editor",
+    "rich-text",
+    "code",
+    "prism"
+  ],
+  "license": "MIT",
+  "version": "0.41.0",
+  "main": "LexicalCodePrism.js",
+  "types": "index.d.ts",
+  "dependencies": {
+    "@lexical/code": "workspace:*",
+    "@lexical/utils": "workspace:*",
+    "lexical": "workspace:*",
+    "prismjs": "^1.30.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/facebook/lexical.git",
+    "directory": "packages/lexical-code-prism"
+  },
+  "devDependencies": {
+    "@types/prismjs": "^1.26.0"
+  },
+  "module": "LexicalCodePrism.mjs",
+  "sideEffects": true,
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./index.d.ts",
+        "development": "./LexicalCodePrism.dev.mjs",
+        "production": "./LexicalCodePrism.prod.mjs",
+        "node": "./LexicalCodePrism.node.mjs",
+        "default": "./LexicalCodePrism.mjs"
+      },
+      "require": {
+        "types": "./index.d.ts",
+        "development": "./LexicalCodePrism.dev.js",
+        "production": "./LexicalCodePrism.prod.js",
+        "default": "./LexicalCodePrism.js"
+      }
+    }
+  }
+}

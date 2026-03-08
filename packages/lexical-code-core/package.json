@@ -12,7 +12,8 @@
   "main": "LexicalCodeCore.js",
   "types": "index.d.ts",
   "dependencies": {
-    "lexical": "workspace:*"
+    "lexical": "workspace:*",
+    "@lexical/utils": "workspace:*"
   },
   "repository": {
     "type": "git",

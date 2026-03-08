@@ -14,6 +14,7 @@ import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import {
   CodeHighlightNode,
   CodeNode,
+  // TODO: Using deprecated re-exports from @lexical/code-prism to test #8198, this can be refactored after that release
   getCodeLanguages,
   registerCodeHighlighting,
 } from "@lexical/code";

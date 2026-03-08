@@ -10,3 +10,29 @@
 /**
  * LexicalCodePrism
  */
+
+import type {LexicalEditor} from 'lexical';
+
+type TokenContent = string | Token | (string | Token)[];
+export interface Token {
+  type: string;
+  content: TokenContent;
+}
+export interface Tokenizer {
+  defaultLanguage: string;
+  tokenize(code: string, language?: string): (string | Token)[];
+}
+declare export var PrismTokenizer: Tokenizer;
+
+declare export function registerCodeHighlighting(
+  editor: LexicalEditor,
+  tokenizer?: Tokenizer,
+): () => void;
+
+declare export function normalizeCodeLanguage(lang: string): string;
+
+declare export var getCodeLanguages: () => Array<string>;
+declare export function getLanguageFriendlyName(lang: string): string;
+
+declare export var CODE_LANGUAGE_FRIENDLY_NAME_MAP: {[string]: string};
+declare export var CODE_LANGUAGE_MAP: {[string]: string};

@@ -22,7 +22,7 @@
     "directory": "packages/lexical-code-prism"
   },
   "devDependencies": {
-    "@types/prismjs": "^1.26.0"
+    "@types/prismjs": "^1.26.6"
   },
   "module": "LexicalCodePrism.mjs",
   "sideEffects": true,

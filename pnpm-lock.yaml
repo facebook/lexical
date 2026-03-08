@@ -100,8 +100,8 @@ importers:
         specifier: ^2.7.3
         version: 2.7.3
       '@types/prismjs':
-        specifier: ^1.26.0
-        version: 1.26.0
+        specifier: ^1.26.6
+        version: 1.26.6
       '@types/proper-lockfile':
         specifier: ^4.1.4
         version: 4.1.4
@@ -320,10 +320,6 @@ importers:
       lexical:
         specifier: workspace:*
         version: link:../lexical
-    devDependencies:
-      '@types/prismjs':
-        specifier: ^1.26.0
-        version: 1.26.0
 
   packages/lexical-code-core:
     dependencies:
@@ -344,8 +340,8 @@ importers:
         version: 1.30.0
     devDependencies:
       '@types/prismjs':
-        specifier: ^1.26.0
-        version: 1.26.0
+        specifier: ^1.26.6
+        version: 1.26.6
 
   packages/lexical-code-shiki:
     dependencies:
@@ -598,9 +594,9 @@ importers:
 
   packages/lexical-markdown:
     dependencies:
-      '@lexical/code':
+      '@lexical/code-core':
         specifier: workspace:*
-        version: link:../lexical-code
+        version: link:../lexical-code-core
       '@lexical/link':
         specifier: workspace:*
         version: link:../lexical-link
@@ -670,6 +666,9 @@ importers:
       '@lexical/code':
         specifier: workspace:*
         version: link:../lexical-code
+      '@lexical/code-prism':
+        specifier: workspace:*
+        version: link:../lexical-code-prism
       '@lexical/code-shiki':
         specifier: workspace:*
         version: link:../lexical-code-shiki
@@ -5101,8 +5100,8 @@ packages:
   '@types/prettier@2.7.3':
     resolution: {integrity: sha512-+68kP9yzs4LMp7VNh8gdzMSPZFL44MLGqiHWvttYJe+6qnuVr4Ek9wSBQoveqY/r+LwjCcU29kNVkidwim+kYA==}
 
-  '@types/prismjs@1.26.0':
-    resolution: {integrity: sha512-ZTaqn/qSqUuAq1YwvOFQfVW1AR/oQJlLSZVustdjwI+GZ8kr0MSHBj0tsXPW1EqHubx50gtBEjbPGsdZwQwCjQ==}
+  '@types/prismjs@1.26.6':
+    resolution: {integrity: sha512-vqlvI7qlMvcCBbVe0AKAb4f97//Hy0EBTaiW8AalRnG/xAN5zOiWWyrNqNXeq8+KAuvRewjCVY1+IPxk4RdNYw==}
 
   '@types/proper-lockfile@4.1.4':
     resolution: {integrity: sha512-uo2ABllncSqg9F1D4nugVl9v93RmjxF6LJzQLMLDdPaXCUIDPeOJ21Gbqi43xNKzBi/WQ0Q0dICqufzQbMjipQ==}
@@ -18432,7 +18431,7 @@ snapshots:
 
   '@types/prettier@2.7.3': {}
 
-  '@types/prismjs@1.26.0': {}
+  '@types/prismjs@1.26.6': {}
 
   '@types/proper-lockfile@4.1.4':
     dependencies:
@@ -25663,7 +25662,7 @@ snapshots:
 
   prism-react-renderer@2.4.1(react@19.1.1):
     dependencies:
-      '@types/prismjs': 1.26.0
+      '@types/prismjs': 1.26.6
       clsx: 2.1.1
       react: 19.1.1
 

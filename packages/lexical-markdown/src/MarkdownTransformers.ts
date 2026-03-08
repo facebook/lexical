@@ -9,7 +9,7 @@
 import type {ListType} from '@lexical/list';
 import type {HeadingTagType} from '@lexical/rich-text';
 
-import {$createCodeNode, $isCodeNode, CodeNode} from '@lexical/code';
+import {$createCodeNode, $isCodeNode, CodeNode} from '@lexical/code-core';
 import {
   $createLinkNode,
   $isAutoLinkNode,

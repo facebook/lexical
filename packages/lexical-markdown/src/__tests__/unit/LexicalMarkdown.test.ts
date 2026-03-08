@@ -6,7 +6,7 @@
  *
  */
 
-import {$createCodeNode, CodeNode} from '@lexical/code';
+import {$createCodeNode, CodeNode} from '@lexical/code-core';
 import {createHeadlessEditor} from '@lexical/headless';
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
 import {$createLinkNode, LinkNode} from '@lexical/link';

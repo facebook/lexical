@@ -28,8 +28,7 @@ import {
   CodeHighlightNode,
   CodeNode,
   DEFAULT_CODE_LANGUAGE,
-} from '@lexical/code';
-import {mergeRegister} from '@lexical/utils';
+} from '@lexical/code-core';
 import {
   $createLineBreakNode,
   $createPoint,
@@ -55,6 +54,7 @@ import {
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_UP_COMMAND,
   KEY_TAB_COMMAND,
+  mergeRegister,
   MOVE_TO_END,
   MOVE_TO_START,
   OUTDENT_CONTENT_COMMAND,

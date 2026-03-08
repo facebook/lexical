@@ -15,7 +15,6 @@ import type {
   TabNode,
 } from 'lexical';
 
-import {$getAdjacentCaret} from '@lexical/utils';
 import {
   $getSiblingCaret,
   $isElementNode,
@@ -38,7 +37,7 @@ function $getLastMatchingCodeNode<D extends CaretDirection>(
       direction,
     );
     caret && ($isCodeHighlightNode(caret.origin) || $isTabNode(caret.origin));
-    caret = $getAdjacentCaret(caret)
+    caret = caret.getAdjacentCaret()
   ) {
     matchingNode = caret.origin;
   }

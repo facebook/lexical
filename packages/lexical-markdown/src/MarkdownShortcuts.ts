@@ -15,7 +15,7 @@ import type {
 } from './MarkdownTransformers';
 import type {ElementNode, LexicalEditor, TextNode} from 'lexical';
 
-import {$isCodeNode} from '@lexical/code';
+import {$isCodeNode} from '@lexical/code-core';
 import {
   $createRangeSelection,
   $getSelection,

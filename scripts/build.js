@@ -318,7 +318,7 @@ async function build(
     // Lexical Code Shiki: 'recommended' preset has treeshake.tryCatchDeoptimization: true which avoids
     //                     feature detection of oniguruma-to-es to be optimized out and cause a bug
     treeshake: ['smallest', false, 'recommended'][
-      1 + ['Lexical Code', 'Lexical Code Shiki'].indexOf(name)
+      1 + ['Lexical Code Prism', 'Lexical Code Shiki'].indexOf(name)
     ],
   };
   /** @type {import('rollup').OutputOptions} */

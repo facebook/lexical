@@ -6,11 +6,11 @@
  *
  */
 
-import type {CodeNode} from '@lexical/code';
+import type {CodeNode} from '@lexical/code-core';
 import type {ThemedToken, TokensResult} from '@shikijs/types';
 import type {LexicalEditor, LexicalNode, NodeKey} from 'lexical';
 
-import {$createCodeHighlightNode, $isCodeNode} from '@lexical/code';
+import {$createCodeHighlightNode, $isCodeNode} from '@lexical/code-core';
 import {
   createHighlighterCoreSync,
   getTokenStyleObject,

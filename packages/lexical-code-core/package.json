@@ -1,0 +1,41 @@
+{
+  "name": "@lexical/code-core",
+  "description": "This package contains the base functionality code blocks for Lexical, it is a transitional package for internal use while the @lexical/code API is cleaned up.",
+  "keywords": [
+    "lexical",
+    "editor",
+    "rich-text",
+    "code"
+  ],
+  "license": "MIT",
+  "version": "0.41.0",
+  "main": "LexicalCodeCore.js",
+  "types": "index.d.ts",
+  "dependencies": {
+    "lexical": "workspace:*"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/facebook/lexical.git",
+    "directory": "packages/lexical-code-core"
+  },
+  "module": "LexicalCodeCore.mjs",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./index.d.ts",
+        "development": "./LexicalCodeCore.dev.mjs",
+        "production": "./LexicalCodeCore.prod.mjs",
+        "node": "./LexicalCodeCore.node.mjs",
+        "default": "./LexicalCodeCore.mjs"
+      },
+      "require": {
+        "types": "./index.d.ts",
+        "development": "./LexicalCodeCore.dev.js",
+        "production": "./LexicalCodeCore.prod.js",
+        "default": "./LexicalCodeCore.js"
+      }
+    }
+  }
+}

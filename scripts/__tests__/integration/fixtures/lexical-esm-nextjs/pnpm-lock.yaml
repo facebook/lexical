@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@lexical/code':
+        specifier: 0.41.0
+        version: 0.41.0
       '@lexical/plain-text':
         specifier: 0.41.0
         version: 0.41.0

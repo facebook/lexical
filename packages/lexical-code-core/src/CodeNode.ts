@@ -23,7 +23,6 @@ import type {
   TabNode,
 } from 'lexical';
 
-import {addClassNamesToElement, isHTMLElement} from '@lexical/utils';
 import {
   $create,
   $createLineBreakNode,
@@ -31,7 +30,9 @@ import {
   $createTabNode,
   $isTabNode,
   $isTextNode,
+  addClassNamesToElement,
   ElementNode,
+  isHTMLElement,
 } from 'lexical';
 
 import {

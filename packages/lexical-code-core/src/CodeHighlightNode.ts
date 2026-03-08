@@ -17,10 +17,12 @@ import type {
 } from 'lexical';
 
 import {
+  $applyNodeReplacement,
   addClassNamesToElement,
+  ElementNode,
   removeClassNamesFromElement,
-} from '@lexical/utils';
-import {$applyNodeReplacement, ElementNode, TextNode} from 'lexical';
+  TextNode,
+} from 'lexical';
 
 import {$createCodeNode} from './CodeNode';
 

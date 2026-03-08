@@ -323,9 +323,6 @@ importers:
 
   packages/lexical-code-core:
     dependencies:
-      '@lexical/utils':
-        specifier: workspace:*
-        version: link:../lexical-utils
       lexical:
         specifier: workspace:*
         version: link:../lexical

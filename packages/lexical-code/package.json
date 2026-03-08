@@ -12,17 +12,14 @@
   "main": "LexicalCode.js",
   "types": "index.d.ts",
   "dependencies": {
-    "@lexical/utils": "workspace:*",
-    "lexical": "workspace:*",
-    "prismjs": "^1.30.0"
+    "@lexical/code-core": "workspace:*",
+    "@lexical/code-prism": "workspace:*",
+    "lexical": "workspace:*"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/facebook/lexical.git",
     "directory": "packages/lexical-code"
-  },
-  "devDependencies": {
-    "@types/prismjs": "^1.26.0"
   },
   "module": "LexicalCode.mjs",
   "sideEffects": true,

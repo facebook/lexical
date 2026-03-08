@@ -6,51 +6,45 @@
  *
  */
 
-import {
-  $getEndOfCodeInLine,
-  $getFirstCodeNodeOfLine,
-  $getLastCodeNodeOfLine,
-  $getStartOfCodeInLine,
-} from './FlatStructureUtils';
+import * as LexicalCodePrism from '@lexical/code-prism';
 
-export {CodeExtension} from './CodeExtension';
-export {PrismTokenizer, registerCodeHighlighting} from './CodeHighlighterPrism';
+export type {SerializedCodeNode} from '@lexical/code-core';
 export {
   $createCodeHighlightNode,
-  $isCodeHighlightNode,
-  CodeHighlightNode,
-} from './CodeHighlightNode';
-export type {SerializedCodeNode} from './CodeNode';
-export {
   $createCodeNode,
-  $isCodeNode,
-  CodeNode,
-  DEFAULT_CODE_LANGUAGE,
-  getDefaultCodeLanguage,
-} from './CodeNode';
-export {
-  CODE_LANGUAGE_FRIENDLY_NAME_MAP,
-  CODE_LANGUAGE_MAP,
-  getCodeLanguageOptions,
-  getCodeLanguages,
-  getCodeThemeOptions,
-  getLanguageFriendlyName,
-  normalizeCodeLang,
-  normalizeCodeLang as normalizeCodeLanguage,
-} from './FacadePrism';
-export {
   $getCodeLineDirection,
   $getEndOfCodeInLine,
   $getFirstCodeNodeOfLine,
   $getLastCodeNodeOfLine,
   $getStartOfCodeInLine,
-} from './FlatStructureUtils';
+  $isCodeHighlightNode,
+  $isCodeNode,
+  CodeExtension,
+  CodeHighlightNode,
+  CodeNode,
+  DEFAULT_CODE_LANGUAGE,
+  getDefaultCodeLanguage,
+} from '@lexical/code-core';
 
-/** @deprecated renamed to {@link $getFirstCodeNodeOfLine} by @lexical/eslint-plugin rules-of-lexical */
-export const getFirstCodeNodeOfLine = $getFirstCodeNodeOfLine;
-/** @deprecated renamed to {@link $getLastCodeNodeOfLine} by @lexical/eslint-plugin rules-of-lexical */
-export const getLastCodeNodeOfLine = $getLastCodeNodeOfLine;
-/** @deprecated renamed to {@link $getEndOfCodeInLine} by @lexical/eslint-plugin rules-of-lexical */
-export const getEndOfCodeInLine = $getEndOfCodeInLine;
-/** @deprecated renamed to {@link $getStartOfCodeInLine} by @lexical/eslint-plugin rules-of-lexical */
-export const getStartOfCodeInLine = $getStartOfCodeInLine;
+/** @deprecated moved to `@lexical/code-prism` */
+export const CODE_LANGUAGE_FRIENDLY_NAME_MAP =
+  LexicalCodePrism.CODE_LANGUAGE_FRIENDLY_NAME_MAP;
+/** @deprecated moved to `@lexical/code-prism` */
+export const CODE_LANGUAGE_MAP = LexicalCodePrism.CODE_LANGUAGE_MAP;
+/** @deprecated moved to `@lexical/code-prism` */
+export const getCodeLanguageOptions = LexicalCodePrism.getCodeLanguageOptions;
+/** @deprecated moved to `@lexical/code-prism` */
+export const getCodeLanguages = LexicalCodePrism.getCodeLanguages;
+/** @deprecated moved to `@lexical/code-prism` */
+export const getCodeThemeOptions = LexicalCodePrism.getCodeThemeOptions;
+/** @deprecated moved to `@lexical/code-prism` */
+export const getLanguageFriendlyName = LexicalCodePrism.getLanguageFriendlyName;
+/** @deprecated renamed to `normalizeCodeLanguage` and moved to `@lexical/code-prism` */
+export const normalizeCodeLang = LexicalCodePrism.normalizeCodeLanguage;
+/** @deprecated moved to `@lexical/code-prism` */
+export const normalizeCodeLanguage = LexicalCodePrism.normalizeCodeLanguage;
+/** @deprecated moved to `@lexical/code-prism` */
+export const PrismTokenizer = LexicalCodePrism.PrismTokenizer;
+/** @deprecated moved to `@lexical/code-prism` */
+export const registerCodeHighlighting =
+  LexicalCodePrism.registerCodeHighlighting;

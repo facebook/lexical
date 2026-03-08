@@ -6,7 +6,7 @@
  *
  */
 
-import type {CodeNode} from './CodeNode';
+import type {CodeNode} from '@lexical/code-core';
 import type {LexicalEditor, LexicalNode, NodeKey} from 'lexical';
 import type {Token, TokenStream} from 'prismjs';
 
@@ -29,9 +29,8 @@ import 'prismjs/components/prism-typescript';
 import 'prismjs/components/prism-java';
 import 'prismjs/components/prism-cpp';
 
+import {$createCodeHighlightNode} from '@lexical/code-core';
 import {$createLineBreakNode, $createTabNode} from 'lexical';
-
-import {$createCodeHighlightNode} from './CodeHighlightNode';
 
 declare global {
   interface Window {
@@ -73,12 +72,12 @@ export const CODE_LANGUAGE_MAP: Record<string, string> = {
   ts: 'typescript',
 };
 
-export function normalizeCodeLang(lang: string) {
+export function normalizeCodeLanguage(lang: string) {
   return CODE_LANGUAGE_MAP[lang] || lang;
 }
 
 export function getLanguageFriendlyName(lang: string) {
-  const _lang = normalizeCodeLang(lang);
+  const _lang = normalizeCodeLanguage(lang);
   return CODE_LANGUAGE_FRIENDLY_NAME_MAP[_lang] || _lang;
 }
 

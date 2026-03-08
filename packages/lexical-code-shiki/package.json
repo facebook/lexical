@@ -12,8 +12,7 @@
   "main": "LexicalCodeShiki.js",
   "types": "index.d.ts",
   "dependencies": {
-    "@lexical/code": "workspace:*",
-    "@lexical/utils": "workspace:*",
+    "@lexical/code-core": "workspace:*",
     "@shikijs/core": "^3.7.0",
     "@shikijs/engine-javascript": "^3.7.0",
     "@shikijs/langs": "^3.7.0",

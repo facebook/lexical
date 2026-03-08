@@ -20,6 +20,5 @@ export {
   getLanguageFriendlyName,
   isCodeLanguageLoaded,
   loadCodeLanguage,
-  normalizeCodeLang,
-  normalizeCodeLang as normalizeCodeLanguage,
+  normalizeCodeLanguage,
 } from './FacadePrism';

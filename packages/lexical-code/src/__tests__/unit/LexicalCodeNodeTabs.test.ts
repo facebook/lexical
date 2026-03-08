@@ -9,11 +9,8 @@
 import type {CodeHighlightNode, CodeNode} from '@lexical/code';
 import type {LexicalCommand, LineBreakNode, TabNode} from 'lexical';
 
-import {
-  $createCodeNode,
-  $isCodeNode,
-  registerCodeHighlighting,
-} from '@lexical/code';
+import {$createCodeNode, $isCodeNode} from '@lexical/code';
+import {registerCodeHighlighting} from '@lexical/code-prism';
 import {registerTabIndentation} from '@lexical/react/LexicalTabIndentationPlugin';
 import {registerRichText} from '@lexical/rich-text';
 import {

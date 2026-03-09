@@ -36,6 +36,7 @@ import logo from './images/logo.svg';
 import {ImageExtension} from './nodes/ImageNode';
 import {KeywordsExtension} from './nodes/KeywordNode';
 import PlaygroundNodes from './nodes/PlaygroundNodes';
+import {DateTimeExtension} from './plugins/DateTimeExtension';
 import DocsPlugin from './plugins/DocsPlugin';
 import PasteLogPlugin from './plugins/PasteLogPlugin';
 import {TableContext} from './plugins/TablePlugin';
@@ -136,6 +137,7 @@ const AppExtension = defineExtension({
     HashtagExtension,
     ImageExtension,
     HorizontalRuleExtension,
+    DateTimeExtension,
   ],
   html: buildHTMLConfig(),
   name: '@lexical/playground',

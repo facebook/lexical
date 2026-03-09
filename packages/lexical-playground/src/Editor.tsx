@@ -47,7 +47,6 @@ import CollapsiblePlugin from './plugins/CollapsiblePlugin';
 import CommentPlugin from './plugins/CommentPlugin';
 import ComponentPickerPlugin from './plugins/ComponentPickerPlugin';
 import ContextMenuPlugin from './plugins/ContextMenuPlugin';
-import DateTimePlugin from './plugins/DateTimePlugin';
 import DragDropPaste from './plugins/DragDropPastePlugin';
 import DraggableBlockPlugin from './plugins/DraggableBlockPlugin';
 import EmojiPickerPlugin from './plugins/EmojiPickerPlugin';
@@ -184,7 +183,6 @@ export default function Editor(): JSX.Element {
         <EmojisPlugin />
         <SpeechToTextPlugin />
         <AutoLinkPlugin />
-        <DateTimePlugin />
         {!(isCollab && useCollabV2) && (
           <CommentPlugin
             providerFactory={isCollab ? createWebsocketProvider : undefined}

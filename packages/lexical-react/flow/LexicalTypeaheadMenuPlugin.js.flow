@@ -27,14 +27,10 @@ export const PUNCTUATION: string =
 declare export class MenuOption {
   key: string;
   ref: {current: HTMLElement | null};
+  title: string;
   constructor(key: string): void;
   setRefElement(element: HTMLElement | null): void;
 }
-
-declare export var SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND: LexicalCommand<{
-  index: number,
-  option: MenuOption,
-}>;
 
 export type MenuRenderFn<TOption> = (
   anchorElementRef: {current: HTMLElement | null},
@@ -45,7 +41,12 @@ export type MenuRenderFn<TOption> = (
     options: Array<TOption>,
   },
   matchingString: string,
-) => React.Portal | React.MixedElement | null;
+) => React$Portal | React.MixedElement | null;
+
+declare export var SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND: LexicalCommand<{
+  index: number,
+  option: MenuOption,
+}>;
 
 declare export function getScrollParent(
   element: HTMLElement,
@@ -66,8 +67,8 @@ export type TypeaheadMenuPluginProps<TOption> = {
     matchingString: string,
   ) => void,
   options: Array<TOption>,
-  menuRenderFn: MenuRenderFn<TOption>,
   triggerFn: TriggerFn,
+  menuRenderFn?: MenuRenderFn<TOption>,
   onOpen?: (resolution: MenuResolution) => void,
   onClose?: () => void,
   anchorClassName?: string,

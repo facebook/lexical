@@ -50,6 +50,7 @@ import {
   $getAdjacentChildCaret,
   $getChildCaret,
   $getNearestNodeFromDOMNode,
+  $getNodeByKey,
   $getNodeByKeyOrThrow,
   $getPreviousSelection,
   $getSelection,
@@ -912,12 +913,11 @@ export function $handleTableSelectionChangeCommand(
     tableKey,
     [tableObserver],
   ] of tableObservers.observers.entries()) {
-    const tableNode = $getNodeByKeyOrThrow<TableNode>(tableKey);
-    if (
-      $legacyHandleTableSelectionChangeCommand(editor, tableNode, tableObserver)
-    ) {
-      return true;
+    const tableNode = $getNodeByKey<TableNode>(tableKey);
+    if (!tableNode) {
+      continue;
     }
+    $legacyHandleTableSelectionChangeCommand(editor, tableNode, tableObserver);
   }
   return false;
 }
@@ -1079,7 +1079,6 @@ function $legacyHandleTableSelectionChangeCommand(
     ) {
       tableObserver.$updateTableTableSelection(null);
     }
-    return false;
   }
 
   if (tableObserver.hasHijackedSelectionStyles && !tableNode.isSelected()) {
@@ -1090,8 +1089,6 @@ function $legacyHandleTableSelectionChangeCommand(
   ) {
     $addHighlightStyleToTable(editor, tableObserver);
   }
-
-  return false;
 }
 
 export type HTMLTableElementWithWithTableSelectionState = HTMLTableElement & {

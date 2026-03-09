@@ -14,9 +14,14 @@ import {HashtagExtension} from '@lexical/hashtag';
 import {HistoryExtension} from '@lexical/history';
 import {$createLinkNode} from '@lexical/link';
 import {$createListItemNode, $createListNode} from '@lexical/list';
+import {PlainTextExtension} from '@lexical/plain-text';
 import {LexicalCollaboration} from '@lexical/react/LexicalCollaborationContext';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
-import {$createHeadingNode, $createQuoteNode} from '@lexical/rich-text';
+import {
+  $createHeadingNode,
+  $createQuoteNode,
+  RichTextExtension,
+} from '@lexical/rich-text';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -26,7 +31,7 @@ import {
 } from 'lexical';
 import {type JSX, useMemo} from 'react';
 
-import {isDevPlayground} from './appSettings';
+import {isDevPlayground, SettingName} from './appSettings';
 import {buildHTMLConfig} from './buildHTMLConfig';
 import {FlashMessageContext} from './context/FlashMessageContext';
 import {SettingsContext, useSettings} from './context/SettingsContext';
@@ -146,26 +151,38 @@ const AppExtension = defineExtension({
   theme: PlaygroundEditorTheme,
 });
 
+/**
+ * This is not a recommended pattern, extensions should be as static as
+ * possible, but this is a special case where we build fundamentally
+ * different editor configurations based on the query string.
+ */
+function buildExtensionFromSettings(settings: {
+  readonly [prop in SettingName]?: boolean;
+}) {
+  const {isCollab, emptyEditor, isRichText} = settings;
+  return defineExtension({
+    $initialEditorState: isCollab
+      ? null
+      : emptyEditor
+        ? undefined
+        : $prepopulatedRichText,
+    dependencies: [
+      AppExtension,
+      configExtension(HistoryExtension, {disabled: isCollab}),
+      isRichText ? RichTextExtension : PlainTextExtension,
+    ],
+    html: buildHTMLConfig(),
+    name: '@lexical/playground/dynamic-config',
+  });
+}
+
 function App(): JSX.Element {
   const {
     settings: {isCollab, emptyEditor, measureTypingPerf},
   } = useSettings();
 
   const app = useMemo(
-    () =>
-      defineExtension({
-        $initialEditorState: isCollab
-          ? null
-          : emptyEditor
-            ? undefined
-            : $prepopulatedRichText,
-        dependencies: [
-          AppExtension,
-          configExtension(HistoryExtension, {disabled: isCollab}),
-        ],
-        html: buildHTMLConfig(),
-        name: '@lexical/playground/dynamic-config',
-      }),
+    () => buildExtensionFromSettings({emptyEditor, isCollab}),
     [emptyEditor, isCollab],
   );
 

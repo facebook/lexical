@@ -18,11 +18,8 @@ import {
   CollaborationPluginV2__EXPERIMENTAL,
 } from '@lexical/react/LexicalCollaborationPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {HorizontalRulePlugin} from '@lexical/react/LexicalHorizontalRulePlugin';
 import {ListPlugin} from '@lexical/react/LexicalListPlugin';
-import {PlainTextPlugin} from '@lexical/react/LexicalPlainTextPlugin';
-import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {SelectionAlwaysOnDisplay} from '@lexical/react/LexicalSelectionAlwaysOnDisplay';
 import {TabIndentationPlugin} from '@lexical/react/LexicalTabIndentationPlugin';
 import {TablePlugin} from '@lexical/react/LexicalTablePlugin';
@@ -207,16 +204,11 @@ export default function Editor(): JSX.Element {
                 />
               )
             ) : null}
-            <RichTextPlugin
-              contentEditable={
-                <div className="editor-scroller">
-                  <div className="editor" ref={onRef}>
-                    <ContentEditable placeholder={placeholder} />
-                  </div>
-                </div>
-              }
-              ErrorBoundary={LexicalErrorBoundary}
-            />
+            <div className="editor-scroller">
+              <div className="editor" ref={onRef}>
+                <ContentEditable placeholder={placeholder} />
+              </div>
+            </div>
             <MarkdownShortcutPlugin />
             {isCodeHighlighted &&
               (isCodeShiki ? (
@@ -281,12 +273,7 @@ export default function Editor(): JSX.Element {
             )}
           </>
         ) : (
-          <>
-            <PlainTextPlugin
-              contentEditable={<ContentEditable placeholder={placeholder} />}
-              ErrorBoundary={LexicalErrorBoundary}
-            />
-          </>
+          <ContentEditable placeholder={placeholder} />
         )}
         {(isCharLimit || isCharLimitUtf8) && (
           <CharacterLimitPlugin

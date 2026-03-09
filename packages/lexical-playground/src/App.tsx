@@ -31,7 +31,7 @@ import {
 } from 'lexical';
 import {type JSX, useMemo} from 'react';
 
-import {isDevPlayground, SettingName} from './appSettings';
+import {isDevPlayground} from './appSettings';
 import {buildHTMLConfig} from './buildHTMLConfig';
 import {FlashMessageContext} from './context/FlashMessageContext';
 import {SettingsContext, useSettings} from './context/SettingsContext';
@@ -156,9 +156,9 @@ const AppExtension = defineExtension({
  * possible, but this is a special case where we build fundamentally
  * different editor configurations based on the query string.
  */
-function buildExtensionFromSettings(settings: {
-  readonly [prop in SettingName]?: boolean;
-}) {
+function buildExtensionFromSettings(
+  settings: Record<'isCollab' | 'emptyEditor' | 'isRichText', boolean>,
+) {
   const {isCollab, emptyEditor, isRichText} = settings;
   return defineExtension({
     $initialEditorState: isCollab
@@ -178,12 +178,12 @@ function buildExtensionFromSettings(settings: {
 
 function App(): JSX.Element {
   const {
-    settings: {isCollab, emptyEditor, measureTypingPerf},
+    settings: {isCollab, emptyEditor, isRichText, measureTypingPerf},
   } = useSettings();
 
   const app = useMemo(
-    () => buildExtensionFromSettings({emptyEditor, isCollab}),
-    [emptyEditor, isCollab],
+    () => buildExtensionFromSettings({emptyEditor, isCollab, isRichText}),
+    [emptyEditor, isCollab, isRichText],
   );
 
   return (

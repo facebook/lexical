@@ -7609,13 +7609,13 @@ test.describe.parallel('Tables', () => {
 
     // Click a cell in the same table
     await dragMouse(
-      pageOrFrame,
+      page,
       await selectorBoundingBox(
-        pageOrFrame,
+        page,
         `${nthTableSelector(1)} > tr:first-of-type > th:first-of-type`,
       ),
       await selectorBoundingBox(
-        pageOrFrame,
+        page,
         `${nthTableSelector(1)} > tr:first-of-type > th:first-of-type`,
       ),
       {offsetEnd: {x: 10}},

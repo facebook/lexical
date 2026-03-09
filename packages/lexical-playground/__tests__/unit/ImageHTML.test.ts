@@ -7,89 +7,87 @@
  */
 
 import {$insertGeneratedNodes} from '@lexical/clipboard';
+import {buildEditorFromExtensions} from '@lexical/extension';
 import {$generateHtmlFromNodes} from '@lexical/html';
-import {$selectAll, $setSelection} from 'lexical';
-import {
-  expectHtmlToBeEqual,
-  html,
-  initializeUnitTest,
-} from 'lexical/src/__tests__/utils';
-import {buildHTMLConfig} from 'packages/lexical-playground/src/buildHTMLConfig';
+import {$selectAll, $setSelection, defineExtension} from 'lexical';
+import {expectHtmlToBeEqual, html} from 'lexical/src/__tests__/utils';
 import {describe, it} from 'vitest';
 
-import {$createImageNode, ImageNode} from '../../src/nodes/ImageNode';
+import {buildHTMLConfig} from '../../src/buildHTMLConfig';
+import {$createImageNode, ImageExtension} from '../../src/nodes/ImageNode';
+
+const ImageTestExtension = defineExtension({
+  dependencies: [ImageExtension],
+  html: buildHTMLConfig(),
+  name: '[test]',
+});
 
 describe('ImageNode HTML serialization', () => {
-  initializeUnitTest(
-    (testEnv) => {
-      describe('ImageNode export', () => {
-        it('with no caption', async () => {
-          const {editor} = testEnv;
-          editor.update(
+  describe('ImageNode export', () => {
+    it('with no caption', async () => {
+      const editor = buildEditorFromExtensions(ImageTestExtension);
+      editor.update(
+        () => {
+          const imageNode = $createImageNode({
+            altText: '',
+            src: '/test/image.jpg',
+          });
+          $insertGeneratedNodes(editor, [imageNode], $selectAll());
+        },
+        {discrete: true},
+      );
+      const doc = editor.read(() => $generateHtmlFromNodes(editor, null));
+      expectHtmlToBeEqual(
+        doc,
+        html`
+          <p>
+            <img
+              alt=""
+              height="inherit"
+              src="/test/image.jpg"
+              width="inherit" />
+          </p>
+        `,
+      );
+    });
+    it('with plain text caption', async () => {
+      const editor = buildEditorFromExtensions(ImageTestExtension);
+      editor.update(
+        () => {
+          const imageNode = $createImageNode({
+            altText: '',
+            showCaption: true,
+            src: '/test/image.jpg',
+          });
+          imageNode.__caption.update(
             () => {
-              const imageNode = $createImageNode({
-                altText: '',
-                src: '/test/image.jpg',
-              });
-              $insertGeneratedNodes(editor, [imageNode], $selectAll());
+              $selectAll().insertRawText('caption text');
+              $setSelection(null);
             },
             {discrete: true},
           );
-          const doc = editor.read(() => $generateHtmlFromNodes(editor, null));
-          expectHtmlToBeEqual(
-            doc,
-            html`
-              <p>
-                <img
-                  alt=""
-                  height="inherit"
-                  src="/test/image.jpg"
-                  width="inherit" />
-              </p>
-            `,
-          );
-        });
-        it('with plain text caption', async () => {
-          const {editor} = testEnv;
-          editor.update(
-            () => {
-              const imageNode = $createImageNode({
-                altText: '',
-                showCaption: true,
-                src: '/test/image.jpg',
-              });
-              imageNode.__caption.update(
-                () => {
-                  $selectAll().insertRawText('caption text');
-                  $setSelection(null);
-                },
-                {discrete: true},
-              );
-              $insertGeneratedNodes(editor, [imageNode], $selectAll());
-            },
-            {discrete: true},
-          );
-          const doc = editor.read(() => $generateHtmlFromNodes(editor, null));
-          expectHtmlToBeEqual(
-            doc,
-            html`
-              <div role="paragraph">
-                <figure>
-                  <img
-                    alt=""
-                    height="inherit"
-                    src="/test/image.jpg"
-                    width="inherit" />
-                  <figcaption>
-                    <span style="white-space: pre-wrap">caption text</span>
-                  </figcaption>
-                </figure>
-              </div>
-            `,
-          );
-        });
-      });
-    },
-    {html: buildHTMLConfig(), nodes: [ImageNode]},
-  );
+          $insertGeneratedNodes(editor, [imageNode], $selectAll());
+        },
+        {discrete: true},
+      );
+      const doc = editor.read(() => $generateHtmlFromNodes(editor, null));
+      expectHtmlToBeEqual(
+        doc,
+        html`
+          <div role="paragraph">
+            <figure>
+              <img
+                alt=""
+                height="inherit"
+                src="/test/image.jpg"
+                width="inherit" />
+              <figcaption>
+                <span style="white-space: pre-wrap">caption text</span>
+              </figcaption>
+            </figure>
+          </div>
+        `,
+      );
+    });
+  });
 });

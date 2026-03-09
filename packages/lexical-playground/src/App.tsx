@@ -7,6 +7,8 @@
  */
 
 import {DecoratorTextExtension} from '@lexical/extension';
+import {HashtagExtension} from '@lexical/hashtag';
+import {HistoryExtension} from '@lexical/history';
 import {$createLinkNode} from '@lexical/link';
 import {$createListItemNode, $createListNode} from '@lexical/list';
 import {LexicalCollaboration} from '@lexical/react/LexicalCollaborationContext';
@@ -16,6 +18,7 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  configExtension,
   defineExtension,
 } from 'lexical';
 import {type JSX, useMemo} from 'react';
@@ -24,10 +27,11 @@ import {isDevPlayground} from './appSettings';
 import {buildHTMLConfig} from './buildHTMLConfig';
 import {FlashMessageContext} from './context/FlashMessageContext';
 import {SettingsContext, useSettings} from './context/SettingsContext';
-import {SharedHistoryContext} from './context/SharedHistoryContext';
 import {ToolbarContext} from './context/ToolbarContext';
 import Editor from './Editor';
 import logo from './images/logo.svg';
+import {ImageExtension} from './nodes/ImageNode';
+import {KeywordsExtension} from './nodes/KeywordNode';
 import PlaygroundNodes from './nodes/PlaygroundNodes';
 import DocsPlugin from './plugins/DocsPlugin';
 import PasteLogPlugin from './plugins/PasteLogPlugin';
@@ -121,6 +125,21 @@ function $prepopulatedRichText() {
   }
 }
 
+const AppExtension = defineExtension({
+  dependencies: [
+    DecoratorTextExtension,
+    HistoryExtension,
+    KeywordsExtension,
+    HashtagExtension,
+    ImageExtension,
+  ],
+  html: buildHTMLConfig(),
+  name: '@lexical/playground',
+  namespace: 'Playground',
+  nodes: PlaygroundNodes,
+  theme: PlaygroundEditorTheme,
+});
+
 function App(): JSX.Element {
   const {
     settings: {isCollab, emptyEditor, measureTypingPerf},
@@ -134,12 +153,12 @@ function App(): JSX.Element {
           : emptyEditor
             ? undefined
             : $prepopulatedRichText,
-        dependencies: [DecoratorTextExtension],
+        dependencies: [
+          AppExtension,
+          configExtension(HistoryExtension, {disabled: isCollab}),
+        ],
         html: buildHTMLConfig(),
-        name: '@lexical/playground',
-        namespace: 'Playground',
-        nodes: PlaygroundNodes,
-        theme: PlaygroundEditorTheme,
+        name: '@lexical/playground-dynamic',
       }),
     [emptyEditor, isCollab],
   );
@@ -147,26 +166,24 @@ function App(): JSX.Element {
   return (
     <LexicalCollaboration>
       <LexicalExtensionComposer extension={app} contentEditable={null}>
-        <SharedHistoryContext>
-          <TableContext>
-            <ToolbarContext>
-              <header>
-                <a href="https://lexical.dev" target="_blank" rel="noreferrer">
-                  <img src={logo} alt="Lexical Logo" />
-                </a>
-              </header>
-              <div className="editor-shell">
-                <Editor />
-              </div>
-              <Settings />
-              {isDevPlayground ? <DocsPlugin /> : null}
-              {isDevPlayground ? <PasteLogPlugin /> : null}
-              {isDevPlayground ? <TestRecorderPlugin /> : null}
+        <TableContext>
+          <ToolbarContext>
+            <header>
+              <a href="https://lexical.dev" target="_blank" rel="noreferrer">
+                <img src={logo} alt="Lexical Logo" />
+              </a>
+            </header>
+            <div className="editor-shell">
+              <Editor />
+            </div>
+            <Settings />
+            {isDevPlayground ? <DocsPlugin /> : null}
+            {isDevPlayground ? <PasteLogPlugin /> : null}
+            {isDevPlayground ? <TestRecorderPlugin /> : null}
 
-              {measureTypingPerf ? <TypingPerfPlugin /> : null}
-            </ToolbarContext>
-          </TableContext>
-        </SharedHistoryContext>
+            {measureTypingPerf ? <TypingPerfPlugin /> : null}
+          </ToolbarContext>
+        </TableContext>
       </LexicalExtensionComposer>
     </LexicalCollaboration>
   );

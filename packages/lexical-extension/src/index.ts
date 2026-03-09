@@ -45,6 +45,7 @@ export {
   type NamedSignalsOptions,
   type NamedSignalsOutput,
 } from './namedSignals';
+export {NestedEditorExtension} from './NestedEditorExtension';
 export {NodeSelectionExtension} from './NodeSelectionExtension';
 export {
   batch,

@@ -19,8 +19,6 @@ import {
 } from '@lexical/react/LexicalCollaborationPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
-import {HashtagPlugin} from '@lexical/react/LexicalHashtagPlugin';
-import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import {HorizontalRulePlugin} from '@lexical/react/LexicalHorizontalRulePlugin';
 import {ListPlugin} from '@lexical/react/LexicalListPlugin';
 import {PlainTextPlugin} from '@lexical/react/LexicalPlainTextPlugin';
@@ -38,7 +36,6 @@ import {
   createWebsocketProviderWithDoc,
 } from './collaboration';
 import {useSettings} from './context/SettingsContext';
-import {useSharedHistoryContext} from './context/SharedHistoryContext';
 import ActionsPlugin from './plugins/ActionsPlugin';
 import AutocompletePlugin from './plugins/AutocompletePlugin';
 import AutoEmbedPlugin from './plugins/AutoEmbedPlugin';
@@ -61,7 +58,6 @@ import FigmaPlugin from './plugins/FigmaPlugin';
 import FloatingLinkEditorPlugin from './plugins/FloatingLinkEditorPlugin';
 import FloatingTextFormatToolbarPlugin from './plugins/FloatingTextFormatToolbarPlugin';
 import ImagesPlugin from './plugins/ImagesPlugin';
-import KeywordsPlugin from './plugins/KeywordsPlugin';
 import {LayoutPlugin} from './plugins/LayoutPlugin/LayoutPlugin';
 import LinkPlugin from './plugins/LinkPlugin';
 import MarkdownShortcutPlugin from './plugins/MarkdownShortcutPlugin';
@@ -92,7 +88,6 @@ const skipCollaborationInit =
   window.parent != null && window.parent.frames.right === window;
 
 export default function Editor(): JSX.Element {
-  const {historyState} = useSharedHistoryContext();
   const {
     settings: {
       isCodeHighlighted,
@@ -187,8 +182,6 @@ export default function Editor(): JSX.Element {
         <AutoEmbedPlugin />
         <MentionsPlugin />
         <EmojisPlugin />
-        <HashtagPlugin />
-        <KeywordsPlugin />
         <SpeechToTextPlugin />
         <AutoLinkPlugin />
         <DateTimePlugin />
@@ -215,9 +208,7 @@ export default function Editor(): JSX.Element {
                   shouldBootstrap={!skipCollaborationInit}
                 />
               )
-            ) : (
-              <HistoryPlugin externalHistoryState={historyState} />
-            )}
+            ) : null}
             <RichTextPlugin
               contentEditable={
                 <div className="editor-scroller">
@@ -297,7 +288,6 @@ export default function Editor(): JSX.Element {
               contentEditable={<ContentEditable placeholder={placeholder} />}
               ErrorBoundary={LexicalErrorBoundary}
             />
-            <HistoryPlugin externalHistoryState={historyState} />
           </>
         )}
         {(isCharLimit || isCharLimitUtf8) && (

@@ -590,35 +590,43 @@ function getHistoryPeer(editor: LexicalEditor | null | undefined) {
     : null;
 }
 
+export interface SharedHistoryConfig {
+  /**
+   * Whether shared history is disabled or not
+   */
+  disabled: boolean;
+}
+
 /**
  * Registers necessary listeners to manage undo/redo history stack and related
  * editor commands, via the \@lexical/history module, only if the parent editor
  * has a history plugin implementation.
  */
 export const SharedHistoryExtension = defineExtension({
+  build: (editor, {disabled}) => namedSignals({disabled}),
+  config: safeCast<SharedHistoryConfig>({disabled: false}),
   dependencies: [
     configExtension(HistoryExtension, {
-      createInitialHistoryState: () => {
-        throw new Error('SharedHistory did not inherit parent history');
-      },
       disabled: true,
     }),
   ],
   name: '@lexical/history/SharedHistory',
   register(editor, _config, state) {
-    const {output} = state.getDependency(HistoryExtension);
-    const parentPeer = getHistoryPeer(editor._parentEditor);
-    if (!parentPeer) {
-      return () => {};
-    }
-    const parentOutput = parentPeer.output;
-    return effect(() =>
-      batch(() => {
-        output.delay.value = parentOutput.delay.value;
-        output.historyState.value = parentOutput.historyState.value;
-        // Note that toggling the parent history will force this to be changed
-        output.disabled.value = parentOutput.disabled.value;
-      }),
-    );
+    return effect(() => {
+      if (!state.getOutput().disabled.value) {
+        const {output} = state.getDependency(HistoryExtension);
+        const parentPeer = getHistoryPeer(editor._parentEditor);
+        if (!parentPeer) {
+          return;
+        }
+        const parentOutput = parentPeer.output;
+        batch(() => {
+          output.delay.value = parentOutput.delay.value;
+          output.historyState.value = parentOutput.historyState.value;
+          // Note that toggling the parent history will force this to be changed
+          output.disabled.value = parentOutput.disabled.value;
+        });
+      }
+    });
   },
 });

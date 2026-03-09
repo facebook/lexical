@@ -640,6 +640,36 @@
         "default": "./LexicalExtensionComposer.js"
       }
     },
+    "./LexicalExtensionEditorComposer": {
+      "import": {
+        "types": "./LexicalExtensionEditorComposer.d.ts",
+        "development": "./LexicalExtensionEditorComposer.dev.mjs",
+        "production": "./LexicalExtensionEditorComposer.prod.mjs",
+        "node": "./LexicalExtensionEditorComposer.node.mjs",
+        "default": "./LexicalExtensionEditorComposer.mjs"
+      },
+      "require": {
+        "types": "./LexicalExtensionEditorComposer.d.ts",
+        "development": "./LexicalExtensionEditorComposer.dev.js",
+        "production": "./LexicalExtensionEditorComposer.prod.js",
+        "default": "./LexicalExtensionEditorComposer.js"
+      }
+    },
+    "./LexicalExtensionEditorComposer.js": {
+      "import": {
+        "types": "./LexicalExtensionEditorComposer.d.ts",
+        "development": "./LexicalExtensionEditorComposer.dev.mjs",
+        "production": "./LexicalExtensionEditorComposer.prod.mjs",
+        "node": "./LexicalExtensionEditorComposer.node.mjs",
+        "default": "./LexicalExtensionEditorComposer.mjs"
+      },
+      "require": {
+        "types": "./LexicalExtensionEditorComposer.d.ts",
+        "development": "./LexicalExtensionEditorComposer.dev.js",
+        "production": "./LexicalExtensionEditorComposer.prod.js",
+        "default": "./LexicalExtensionEditorComposer.js"
+      }
+    },
     "./LexicalHashtagPlugin": {
       "import": {
         "types": "./LexicalHashtagPlugin.d.ts",

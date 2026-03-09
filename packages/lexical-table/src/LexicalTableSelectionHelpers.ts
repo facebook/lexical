@@ -50,7 +50,6 @@ import {
   $getAdjacentChildCaret,
   $getChildCaret,
   $getNearestNodeFromDOMNode,
-  $getNodeByKey,
   $getNodeByKeyOrThrow,
   $getPreviousSelection,
   $getSelection,
@@ -908,27 +907,39 @@ export function $handleTableSelectionChangeCommand(
     }
   }
 
-  // Legacy selection logic: runs across all tables in sequence.
-  for (const [
-    tableKey,
-    [tableObserver],
-  ] of tableObservers.observers.entries()) {
-    const tableNode = $getNodeByKey<TableNode>(tableKey);
-    if (!tableNode) {
-      continue;
-    }
-    $legacyHandleTableSelectionChangeCommand(editor, tableNode, tableObserver);
+  if ($isTableSelection(selection)) {
+    $fixTableSelectionForSelectedTable(editor, selection);
   }
+
+  // Generic selection logic that runs across every table observer when the selection changes.
+  // Note: the selection might have changed in the code above, which re-dispatches the selection change command
+  // and gets handled here on the second pass. This should be refactored.
+  const tableNodesAndObservers = tableObservers.observers
+    .entries()
+    .map(([tableKey, [tableObserver]]) => ({
+      tableNode: $getNodeByKeyOrThrow<TableNode>(tableKey),
+      tableObserver,
+    }))
+    .toArray();
+
+  for (const {tableNode, tableObserver} of tableNodesAndObservers) {
+    if ($isRangeSelection(selection)) {
+      $fixRangeSelectionForTable(selection, tableNode, tableObserver);
+    }
+  }
+
+  for (const {tableNode, tableObserver} of tableNodesAndObservers) {
+    $syncTableSelectionState(editor, tableNode, tableObserver);
+  }
+
   return false;
 }
 
-function $legacyHandleTableSelectionChangeCommand(
-  editor: LexicalEditor,
+function $fixRangeSelectionForTable(
+  selection: RangeSelection,
   tableNode: TableNode,
   tableObserver: TableObserver,
 ) {
-  const editorWindow = getEditorWindow(editor);
-  const selection = $getSelection();
   const prevSelection = $getPreviousSelection();
   if ($isRangeSelection(selection)) {
     const {anchor, focus} = selection;
@@ -949,6 +960,7 @@ function $legacyHandleTableSelectionChangeCommand(
     const isBackward = selection.isBackward();
 
     if (isPartiallyWithinTable) {
+      // Handle moving the anchor or focus to the first/last cell, when a range selection enters or leaves the table.
       const newSelection = selection.clone();
       if (isFocusInside) {
         const [tableMap] = $computeTableMap(
@@ -986,10 +998,10 @@ function $legacyHandleTableSelectionChangeCommand(
         );
       }
       $setSelection(newSelection);
-      $addHighlightStyleToTable(editor, tableObserver);
     } else if (isWithinTable) {
       // Handle case when selection spans across multiple cells but still
       // has range selection, then we convert it into table selection
+      // For example, this fires when dragging up from first cell, outside of the table.
       if (!anchorCellNode.is(focusCellNode)) {
         tableObserver.$setAnchorCellForSelection(
           $getObserverCellFromCellNodeOrThrow(tableObserver, anchorCellNode),
@@ -1030,36 +1042,51 @@ function $legacyHandleTableSelectionChangeCommand(
         }
       }
     }
-  } else if (
-    selection &&
-    $isTableSelection(selection) &&
-    selection.is(prevSelection) &&
-    selection.tableKey === tableNode.getKey()
-  ) {
-    // if selection goes outside of the table we need to change it to Range selection
-    const domSelection = getDOMSelection(editorWindow);
-    if (domSelection && domSelection.anchorNode && domSelection.focusNode) {
-      const focusNode = $getNearestNodeFromDOMNode(domSelection.focusNode);
-      const isFocusOutside = focusNode && !tableNode.isParentOf(focusNode);
+  }
+}
 
-      const anchorNode = $getNearestNodeFromDOMNode(domSelection.anchorNode);
-      const isAnchorInside = anchorNode && tableNode.isParentOf(anchorNode);
+function $fixTableSelectionForSelectedTable(
+  editor: LexicalEditor,
+  selection: TableSelection,
+) {
+  const editorWindow = getEditorWindow(editor);
+  const prevSelection = $getPreviousSelection();
+  if (!selection.is(prevSelection)) {
+    return;
+  }
+  const tableNode = $getNodeByKeyOrThrow<TableNode>(selection.tableKey);
+  // if selection goes outside of the table we need to change it to Range selection
+  const domSelection = getDOMSelection(editorWindow);
+  if (domSelection && domSelection.anchorNode && domSelection.focusNode) {
+    const focusNode = $getNearestNodeFromDOMNode(domSelection.focusNode);
+    const isFocusOutside = focusNode && !tableNode.isParentOf(focusNode);
 
-      if (isFocusOutside && isAnchorInside && domSelection.rangeCount > 0) {
-        const newSelection = $createRangeSelectionFromDom(domSelection, editor);
-        if (newSelection) {
-          newSelection.anchor.set(
-            tableNode.getKey(),
-            selection.isBackward() ? tableNode.getChildrenSize() : 0,
-            'element',
-          );
-          domSelection.removeAllRanges();
-          $setSelection(newSelection);
-        }
+    const anchorNode = $getNearestNodeFromDOMNode(domSelection.anchorNode);
+    const isAnchorInside = anchorNode && tableNode.isParentOf(anchorNode);
+
+    if (isFocusOutside && isAnchorInside && domSelection.rangeCount > 0) {
+      const newSelection = $createRangeSelectionFromDom(domSelection, editor);
+      if (newSelection) {
+        newSelection.anchor.set(
+          tableNode.getKey(),
+          selection.isBackward() ? tableNode.getChildrenSize() : 0,
+          'element',
+        );
+        domSelection.removeAllRanges();
+        $setSelection(newSelection);
       }
     }
   }
+}
 
+// Handle keeping the table observer/DOM in sync with the selection.
+function $syncTableSelectionState(
+  editor: LexicalEditor,
+  tableNode: TableNode,
+  tableObserver: TableObserver,
+) {
+  const selection = $getSelection();
+  const prevSelection = $getPreviousSelection();
   if (
     selection &&
     !selection.is(prevSelection) &&

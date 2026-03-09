@@ -7,7 +7,11 @@
  */
 
 import type {TableCellNode} from './LexicalTableCellNode';
-import type {TableDOMCell, TableDOMRows} from './LexicalTableObserver';
+import type {
+  TableDOMCell,
+  TableDOMRows,
+  TableObservers,
+} from './LexicalTableObserver';
 import type {
   TableMapType,
   TableMapValueType,
@@ -22,7 +26,6 @@ import type {
   LexicalCommand,
   LexicalEditor,
   LexicalNode,
-  NodeKey,
   PointCaret,
   RangeSelection,
   SiblingCaret,
@@ -173,10 +176,7 @@ const DELETE_KEY_COMMANDS = [
 
 export function registerTableWindowHandlers(
   editor: LexicalEditor,
-  tableObservers: Map<
-    NodeKey,
-    [TableObserver, HTMLTableElementWithWithTableSelectionState]
-  >,
+  tableObservers: TableObservers,
 ) {
   const rootElement = editor.getRootElement();
   const editorWindow = editor._window;
@@ -199,7 +199,7 @@ export function registerTableWindowHandlers(
       // Clear highlights from all tables (even one we're actively clicking on)
       const selection = $getSelection();
       if ($isTableSelection(selection)) {
-        for (const [observer] of tableObservers.values()) {
+        for (const [observer] of tableObservers.observers.values()) {
           observer.$clearHighlight(false);
         }
         $setSelection(null);
@@ -215,6 +215,7 @@ export function registerTableWindowHandlers(
         cellElement,
         tableElement,
         tableObserver,
+        tableObservers,
       );
     });
   };
@@ -231,6 +232,7 @@ function $handleTableClick(
   selectedDOMCell: TableDOMCell,
   tableElement: HTMLTableElementWithWithTableSelectionState,
   tableObserver: TableObserver,
+  tableObservers: TableObservers,
 ) {
   const editorWindow = editor._window;
   if (!editorWindow) {
@@ -294,7 +296,11 @@ function $handleTableClick(
           tableObserver.focusCell === null ||
           focusCell.elem !== tableObserver.focusCell.elem
         ) {
-          tableObserver.setNextFocus({focusCell, override});
+          tableObservers.setNextFocus({
+            focusCell,
+            override,
+            tableKey: tableObserver.tableNodeKey,
+          });
           editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
         }
       }
@@ -362,6 +368,7 @@ export function applyTableHandlers(
   element: HTMLElement,
   editor: LexicalEditor,
   hasTabHandler: boolean,
+  tableObservers: TableObservers,
 ): TableObserver {
   const rootElement = editor.getRootElement();
   const editorWindow = getEditorWindow(editor);
@@ -400,7 +407,14 @@ export function applyTableHandlers(
       editor.registerCommand(
         command,
         (event) =>
-          $handleArrowKey(editor, event, direction, tableNode, tableObserver),
+          $handleArrowKey(
+            editor,
+            event,
+            direction,
+            tableNode,
+            tableObserver,
+            tableObservers,
+          ),
         COMMAND_PRIORITY_HIGH,
       ),
     );
@@ -812,16 +826,22 @@ export function applyTableHandlers(
 
 /** @internal */
 export function $handleTableSelectionChangeCommand(
-  tableObserver: TableObserver,
-  tableNode: TableNode,
+  tableObservers: TableObservers,
   editor: LexicalEditor,
 ) {
-  const editorWindow = getEditorWindow(editor);
   const selection = $getSelection();
   const prevSelection = $getPreviousSelection();
-  const nextFocus = tableObserver.getAndClearNextFocus();
+
+  const nextFocus = tableObservers.getAndClearNextFocus();
   if (nextFocus !== null) {
-    const {focusCell} = nextFocus;
+    const {tableKey, focusCell} = nextFocus;
+    const observerAndTable = tableObservers.observers.get(tableKey);
+    invariant(
+      !!observerAndTable,
+      'tableObserver not found for tableKey: %s',
+      tableKey,
+    );
+    const [tableObserver] = observerAndTable;
     if (
       $isTableSelection(selection) &&
       selection.tableKey === tableObserver.tableNodeKey
@@ -852,16 +872,20 @@ export function $handleTableSelectionChangeCommand(
       return true;
     }
   }
-  const shouldCheckSelection = tableObserver.getAndClearShouldCheckSelection();
+  const shouldCheckSelectionForTable =
+    tableObservers.getAndClearShouldCheckSelectionForTable();
   // If they pressed the down arrow with the selection outside of the
   // table, and then the selection ends up in the table but not in the
   // first cell, then move the selection to the first cell.
   if (
-    shouldCheckSelection &&
+    !!shouldCheckSelectionForTable &&
     $isRangeSelection(prevSelection) &&
     $isRangeSelection(selection) &&
     selection.isCollapsed()
   ) {
+    const tableNode = $getNodeByKeyOrThrow<TableNode>(
+      shouldCheckSelectionForTable,
+    );
     const anchor = selection.anchor.getNode();
     const firstRow = tableNode.getFirstChild();
     const anchorCell = $findCellNode(anchor);
@@ -883,6 +907,29 @@ export function $handleTableSelectionChangeCommand(
     }
   }
 
+  // Legacy selection logic: runs across all tables in sequence.
+  for (const [
+    tableKey,
+    [tableObserver],
+  ] of tableObservers.observers.entries()) {
+    const tableNode = $getNodeByKeyOrThrow<TableNode>(tableKey);
+    if (
+      $legacyHandleTableSelectionChangeCommand(editor, tableNode, tableObserver)
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function $legacyHandleTableSelectionChangeCommand(
+  editor: LexicalEditor,
+  tableNode: TableNode,
+  tableObserver: TableObserver,
+) {
+  const editorWindow = getEditorWindow(editor);
+  const selection = $getSelection();
+  const prevSelection = $getPreviousSelection();
   if ($isRangeSelection(selection)) {
     const {anchor, focus} = selection;
     const anchorNode = anchor.getNode();
@@ -1807,6 +1854,7 @@ function $handleArrowKey(
   direction: Direction,
   tableNode: TableNode,
   tableObserver: TableObserver,
+  tableObservers: TableObservers,
 ): boolean {
   if (
     (direction === 'up' || direction === 'down') &&
@@ -1988,7 +2036,7 @@ function $handleArrowKey(
     }
     if (direction === 'down' && $isScrollableTablesActive(editor)) {
       // Enable Firefox workaround
-      tableObserver.setShouldCheckSelection();
+      tableObservers.setShouldCheckSelectionForTable(tableNode.getKey());
     }
     return false;
   }
@@ -2040,6 +2088,7 @@ function $handleArrowKey(
             direction,
             anchorCellTable,
             tableObserver,
+            tableObservers,
           );
         }
       }

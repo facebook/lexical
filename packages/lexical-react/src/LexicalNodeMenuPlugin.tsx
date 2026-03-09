@@ -32,9 +32,9 @@ export type NodeMenuPluginProps<TOption extends MenuOption> = {
   ) => void;
   options: Array<TOption>;
   nodeKey: NodeKey | null;
+  menuRenderFn?: MenuRenderFn<TOption>;
   onClose?: () => void;
   onOpen?: (resolution: MenuResolution) => void;
-  menuRenderFn: MenuRenderFn<TOption>;
   anchorClassName?: string;
   commandPriority?: CommandListenerPriority;
   parent?: HTMLElement;

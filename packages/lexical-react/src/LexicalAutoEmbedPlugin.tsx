@@ -17,7 +17,7 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   LexicalNodeMenuPlugin,
   MenuOption,
-  MenuRenderFn,
+  type MenuRenderFn,
 } from '@lexical/react/LexicalNodeMenuPlugin';
 import {mergeRegister} from '@lexical/utils';
 import {
@@ -33,7 +33,6 @@ import {
   TextNode,
 } from 'lexical';
 import {useCallback, useEffect, useMemo, useState} from 'react';
-import * as React from 'react';
 
 export type EmbedMatchResult<TEmbedMatchResult = unknown> = {
   url: string;
@@ -84,7 +83,7 @@ type LexicalAutoEmbedPluginProps<TEmbedConfig extends EmbedConfig> = {
     embedFn: () => void,
     dismissFn: () => void,
   ) => Array<AutoEmbedOption>;
-  menuRenderFn: MenuRenderFn<AutoEmbedOption>;
+  menuRenderFn?: MenuRenderFn<AutoEmbedOption>;
   menuCommandPriority?: CommandListenerPriority;
 };
 

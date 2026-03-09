@@ -196,16 +196,11 @@ export function registerTableWindowHandlers(
     const selectionInfo = getTableObserverFromCellNode(target);
 
     editor.update(() => {
-      // Clear highlights from all non-selected tables.
+      // Clear highlights from all tables (even one we're actively clicking on)
       const selection = $getSelection();
       if ($isTableSelection(selection)) {
         for (const [observer] of tableObservers.values()) {
-          if (
-            selectionInfo === null ||
-            selectionInfo.tableObserver !== observer
-          ) {
-            observer.$clearHighlight(false);
-          }
+          observer.$clearHighlight(false);
         }
         $setSelection(null);
         editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
@@ -842,9 +837,9 @@ export function $handleTableSelectionChangeCommand(
         return true;
       }
     } else if (
-      focusCell !== tableObserver.anchorCell &&
       tableObserver.anchorCell !== null &&
       tableObserver.anchorCellNodeKey !== null &&
+      focusCell.elem !== tableObserver.anchorCell.elem &&
       tableObserver.tableSelection !== null
     ) {
       // The selection has crossed cells

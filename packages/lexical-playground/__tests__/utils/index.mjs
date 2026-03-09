@@ -827,6 +827,7 @@ export async function dragMouse(
   const {
     positionStart = 'middle',
     positionEnd = 'middle',
+    offsetEnd = {x: 0, y: 0},
     mouseDown = true,
     mouseUp = true,
     slow = false,
@@ -840,8 +841,8 @@ export async function dragMouse(
     fromX += fromBoundingBox.width;
     fromY += fromBoundingBox.height;
   }
-  let toX = toBoundingBox.x;
-  let toY = toBoundingBox.y;
+  let toX = toBoundingBox.x + (offsetEnd.x ?? 0);
+  let toY = toBoundingBox.y + (offsetEnd.y ?? 0);
   if (positionEnd === 'middle') {
     toX += toBoundingBox.width / 2;
     toY += toBoundingBox.height / 2;

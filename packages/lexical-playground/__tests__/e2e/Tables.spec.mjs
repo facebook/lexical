@@ -7568,6 +7568,71 @@ test.describe.parallel('Tables', () => {
       ),
     ).toHaveCount(0);
   });
+
+  test('Table selection is properly cleared when clicking and dragging a cell in the same table', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+    await initialize({isCollab, page});
+
+    await focusEditor(page);
+
+    await insertTable(page, 2, 2);
+
+    const pageOrFrame = getPageOrFrame(page);
+
+    // Select all cells in the first table via shift-click
+    const firstTableFirstCell = pageOrFrame.locator(
+      `${nthTableSelector(1)} > :nth-match(tr, 1) > th:nth-child(1)`,
+    );
+    const firstTableLastCell = pageOrFrame.locator(
+      `${nthTableSelector(1)} > :nth-match(tr, 2) > td:nth-child(2)`,
+    );
+    await firstTableFirstCell.click();
+    await page.keyboard.down('Shift');
+    await firstTableLastCell.click();
+    await page.keyboard.up('Shift');
+
+    // Verify the table has selected cells
+    await pageOrFrame
+      .locator(
+        `${nthTableSelector(1)} > :nth-match(tr, 1) > th.PlaygroundEditorTheme__tableCellSelected:nth-child(1)`,
+      )
+      .waitFor();
+    await pageOrFrame
+      .locator(
+        `${nthTableSelector(1)} > :nth-match(tr, 2) > td.PlaygroundEditorTheme__tableCellSelected:nth-child(2)`,
+      )
+      .waitFor();
+
+    // Click a cell in the same table
+    await dragMouse(
+      page,
+      await selectorBoundingBox(
+        page,
+        `${nthTableSelector(1)} > tr:first-of-type > th:first-of-type`,
+      ),
+      await selectorBoundingBox(
+        page,
+        `${nthTableSelector(1)} > tr:first-of-type > th:first-of-type`,
+      ),
+      {offsetEnd: {x: 10}},
+    );
+
+    // Verify the first table no longer has any selected cells
+    await expect(
+      pageOrFrame.locator(
+        `${nthTableSelector(1)} > :nth-match(tr, 1) > th.PlaygroundEditorTheme__tableCellSelected:nth-child(1)`,
+      ),
+    ).toHaveCount(0);
+    await expect(
+      pageOrFrame.locator(
+        `${nthTableSelector(1)} > :nth-match(tr, 2) > td.PlaygroundEditorTheme__tableCellSelected:nth-child(2)`,
+      ),
+    ).toHaveCount(0);
+  });
 });
 
 const TABLE_WITH_MERGED_CELLS = `

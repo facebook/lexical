@@ -18,10 +18,10 @@ import {
   getCodeThemeOptions as getCodeThemeOptionsShiki,
   normalizeCodeLanguage as normalizeCodeLanguageShiki,
 } from '@lexical/code-shiki';
+import {INSERT_HORIZONTAL_RULE_COMMAND} from '@lexical/extension';
 import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
 import {$isListNode, ListNode} from '@lexical/list';
 import {INSERT_EMBED_COMMAND} from '@lexical/react/LexicalAutoEmbedPlugin';
-import {INSERT_HORIZONTAL_RULE_COMMAND} from '@lexical/react/LexicalHorizontalRuleNode';
 import {$isHeadingNode} from '@lexical/rich-text';
 import {
   $getSelectionStyleValueForProperty,

@@ -6,7 +6,10 @@
  *
  */
 
-import {DecoratorTextExtension} from '@lexical/extension';
+import {
+  DecoratorTextExtension,
+  HorizontalRuleExtension,
+} from '@lexical/extension';
 import {HashtagExtension} from '@lexical/hashtag';
 import {HistoryExtension} from '@lexical/history';
 import {$createLinkNode} from '@lexical/link';
@@ -132,6 +135,7 @@ const AppExtension = defineExtension({
     KeywordsExtension,
     HashtagExtension,
     ImageExtension,
+    HorizontalRuleExtension,
   ],
   html: buildHTMLConfig(),
   name: '@lexical/playground',
@@ -158,7 +162,7 @@ function App(): JSX.Element {
           configExtension(HistoryExtension, {disabled: isCollab}),
         ],
         html: buildHTMLConfig(),
-        name: '@lexical/playground-dynamic',
+        name: '@lexical/playground/dynamic-config',
       }),
     [emptyEditor, isCollab],
   );

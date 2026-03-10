@@ -149,9 +149,10 @@ export class TableObservers {
    * @internal
    */
   getAndClearShouldCheckSelectionForTable(): NodeKey | null {
-    if (this.shouldCheckSelectionForTable) {
+    const {shouldCheckSelectionForTable} = this;
+    if (shouldCheckSelectionForTable) {
       this.shouldCheckSelectionForTable = null;
-      return this.shouldCheckSelectionForTable;
+      return shouldCheckSelectionForTable;
     }
     return null;
   }

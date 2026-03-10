@@ -266,7 +266,6 @@ function TableActionMenu({
         $selectLastDescendant(targetCell);
         onClose();
       }
-      clearTableSelection();
     });
   };
 

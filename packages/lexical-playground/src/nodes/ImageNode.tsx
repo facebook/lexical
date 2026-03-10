@@ -22,7 +22,6 @@ import type {
 } from 'lexical';
 import type {JSX} from 'react';
 
-import {$insertGeneratedNodes} from '@lexical/clipboard';
 import {
   buildEditorFromExtensions,
   NestedEditorExtension,
@@ -39,7 +38,6 @@ import {
   $createRangeSelection,
   $extendCaretToRange,
   $getChildCaret,
-  $getEditor,
   $getRoot,
   $isElementNode,
   $isParagraphNode,
@@ -260,11 +258,8 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
                   imgNode.setShowCaption(true);
                   imgNode.__caption.update(
                     () => {
-                      const editor = $getEditor();
-                      $insertGeneratedNodes(
-                        editor,
-                        $generateNodesFromDOM(editor, figcaption),
-                        $selectAll(),
+                      $selectAll().insertNodes(
+                        $generateNodesFromDOM(imgNode.__caption, figcaption),
                       );
                       $setSelection(null);
                     },

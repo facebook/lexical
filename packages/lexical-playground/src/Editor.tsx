@@ -18,7 +18,6 @@ import {
   CollaborationPluginV2__EXPERIMENTAL,
 } from '@lexical/react/LexicalCollaborationPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {HorizontalRulePlugin} from '@lexical/react/LexicalHorizontalRulePlugin';
 import {ListPlugin} from '@lexical/react/LexicalListPlugin';
 import {SelectionAlwaysOnDisplay} from '@lexical/react/LexicalSelectionAlwaysOnDisplay';
 import {TabIndentationPlugin} from '@lexical/react/LexicalTabIndentationPlugin';
@@ -237,7 +236,6 @@ export default function Editor(): JSX.Element {
             <YouTubePlugin />
             <FigmaPlugin />
             <ClickableLinkPlugin disabled={isEditable} />
-            <HorizontalRulePlugin />
             <EquationsPlugin />
             <ExcalidrawPlugin />
             <TabFocusPlugin />

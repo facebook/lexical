@@ -19,6 +19,9 @@ import {
 } from 'lexical';
 import {useEffect} from 'react';
 
+/**
+ * @deprecated A pure Lexical implementation is available in `@lexical/extension` as HorizontalRuleExtension
+ */
 export function HorizontalRulePlugin(): null {
   const [editor] = useLexicalComposerContext();
 

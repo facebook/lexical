@@ -1724,7 +1724,7 @@ describe('Regression #8098', () => {
   });
 });
 
-describe('Regression #TODO', () => {
+describe('Regression #8205', () => {
   class InlineEmptyableElementNode extends ElementNode {
     static clone(
       prevNode: InlineEmptyableElementNode,

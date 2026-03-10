@@ -1851,6 +1851,38 @@ export class RangeSelection implements BaseSelection {
         }
       }
 
+      // Handle backspace inside an empty inline element that is the
+      // only child of a block - remove the inline element, then
+      // remove the now-empty block and select end of previous sibling
+      if (isBackward) {
+        anchorNode = anchor.getNode();
+        if (
+          $isElementNode(anchorNode) &&
+          anchorNode.isInline() &&
+          anchorNode.isEmpty() &&
+          anchorNode.getPreviousSibling() === null &&
+          anchorNode.getNextSibling() === null
+        ) {
+          const parent = anchorNode.getParent();
+          if (parent !== null && !$isRootOrShadowRoot(parent)) {
+            anchorNode.remove();
+            const prevSibling = parent.getPreviousSibling();
+            if (prevSibling !== null && $isElementNode(prevSibling)) {
+              parent.remove();
+              prevSibling.selectEnd();
+              return;
+            }
+            // No previous element sibling - use collapseAtStart
+            anchor.set(parent.getKey(), 0, 'element');
+            this.focus.set(parent.getKey(), 0, 'element');
+            if ($collapseAtStart(this, parent)) {
+              return;
+            }
+            return;
+          }
+        }
+      }
+
       // Handle the deletion around decorators.
       const focus = this.focus;
       this.modify('extend', isBackward, 'character');

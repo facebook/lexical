@@ -23,7 +23,10 @@ import type {
 import type {JSX} from 'react';
 
 import {$insertGeneratedNodes} from '@lexical/clipboard';
-import {buildEditorFromExtensions} from '@lexical/extension';
+import {
+  buildEditorFromExtensions,
+  NestedEditorExtension,
+} from '@lexical/extension';
 import {HashtagExtension} from '@lexical/hashtag';
 import {HistoryExtension} from '@lexical/history';
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
@@ -61,14 +64,8 @@ const CaptionEditorExtension = defineExtension({
   dependencies: [
     // FIXME - The current playground has tests that assume that image captions don't have shared history
     // SharedHistoryExtension,
-    // FIXME - There's a bad interaction in one of the commands that bubbles up to the parent editor if we use NestedEditorExtension directly
-    defineExtension({
-      init: (editorConfig, config, state) => {
-        editorConfig.theme = editorConfig.theme || $getEditor()._config.theme;
-      },
-      name: '@lexical/playground/NestedEditorWorkaround',
-    }),
     HistoryExtension,
+    NestedEditorExtension,
     ReactProviderExtension,
     RichTextExtension,
     HashtagExtension,

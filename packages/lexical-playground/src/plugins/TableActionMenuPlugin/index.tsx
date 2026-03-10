@@ -159,8 +159,11 @@ function TableActionMenu({
       if ($isTableSelection(selection)) {
         const currentSelectionCounts = computeSelectionCount(selection);
         updateSelectionCounts(computeSelectionCount(selection));
+        const isCollapsedTableSelection = selection.anchor.is(selection.focus);
         setCanMergeCells(
-          currentSelectionCounts.columns > 1 || currentSelectionCounts.rows > 1,
+          !isCollapsedTableSelection &&
+            (currentSelectionCounts.columns > 1 ||
+              currentSelectionCounts.rows > 1),
         );
       }
       // Unmerge cell
@@ -263,6 +266,7 @@ function TableActionMenu({
         $selectLastDescendant(targetCell);
         onClose();
       }
+      clearTableSelection();
     });
   };
 
@@ -270,6 +274,7 @@ function TableActionMenu({
     editor.update(() => {
       $unmergeCell();
     });
+    clearTableSelection();
   };
 
   const insertTableRowAtSelection = useCallback(

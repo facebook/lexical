@@ -43,7 +43,7 @@ import {INSERT_COLLAPSIBLE_COMMAND} from '../CollapsiblePlugin';
 import {INSERT_DATETIME_COMMAND} from '../DateTimeExtension';
 import {InsertEquationDialog} from '../EquationsPlugin';
 import {INSERT_EXCALIDRAW_COMMAND} from '../ExcalidrawPlugin';
-import {INSERT_IMAGE_COMMAND, InsertImageDialog} from '../ImagesPlugin';
+import {INSERT_IMAGE_COMMAND, InsertImageDialog} from '../ImagesExtension';
 import InsertLayoutDialog from '../LayoutPlugin/InsertLayoutDialog';
 import {INSERT_PAGE_BREAK} from '../PageBreakPlugin';
 import {InsertPollDialog} from '../PollPlugin';

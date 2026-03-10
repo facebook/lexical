@@ -595,6 +595,12 @@ export interface SharedHistoryConfig {
    * Whether shared history is disabled or not
    */
   disabled: boolean;
+  /**
+   * The parentEditor to use, by default it is derived from
+   * `config.parentEditor` which can be provided by
+   * NestedEditorExtension
+   */
+  parentEditor: LexicalEditor | null;
 }
 
 /**
@@ -603,8 +609,15 @@ export interface SharedHistoryConfig {
  * has a history plugin implementation.
  */
 export const SharedHistoryExtension = defineExtension({
-  build: (editor, {disabled}) => namedSignals({disabled}),
-  config: safeCast<SharedHistoryConfig>({disabled: false}),
+  build: (editor, {disabled, parentEditor}) =>
+    namedSignals({
+      disabled,
+      parentEditor: parentEditor || editor._parentEditor,
+    }),
+  config: safeCast<SharedHistoryConfig>({
+    disabled: false,
+    parentEditor: null,
+  }),
   dependencies: [
     configExtension(HistoryExtension, {
       disabled: true,
@@ -613,9 +626,10 @@ export const SharedHistoryExtension = defineExtension({
   name: '@lexical/history/SharedHistory',
   register(editor, _config, state) {
     return effect(() => {
-      if (!state.getOutput().disabled.value) {
+      const {disabled, parentEditor} = state.getOutput();
+      if (!disabled.value) {
         const {output} = state.getDependency(HistoryExtension);
-        const parentPeer = getHistoryPeer(editor._parentEditor);
+        const parentPeer = getHistoryPeer(parentEditor.value);
         if (!parentPeer) {
           return;
         }

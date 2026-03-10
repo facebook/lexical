@@ -23,12 +23,9 @@ import type {
 import type {JSX} from 'react';
 
 import {$insertGeneratedNodes} from '@lexical/clipboard';
-import {
-  buildEditorFromExtensions,
-  NestedEditorExtension,
-} from '@lexical/extension';
+import {buildEditorFromExtensions} from '@lexical/extension';
 import {HashtagExtension} from '@lexical/hashtag';
-import {SharedHistoryExtension} from '@lexical/history';
+import {HistoryExtension} from '@lexical/history';
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
 import {LinkExtension} from '@lexical/link';
 import {ReactExtension} from '@lexical/react/ReactExtension';
@@ -62,13 +59,21 @@ const ImageComponent = React.lazy(() => import('./ImageComponent'));
 
 const CaptionEditorExtension = defineExtension({
   dependencies: [
-    SharedHistoryExtension,
+    // FIXME - The current playground has tests that assume that image captions don't have shared history
+    // SharedHistoryExtension,
+    // FIXME - There's a bad interaction in one of the commands that bubbles up to the parent editor if we use NestedEditorExtension directly
+    defineExtension({
+      init: (editorConfig, config, state) => {
+        editorConfig.theme = editorConfig.theme || $getEditor()._config.theme;
+      },
+      name: '@lexical/playground/NestedEditorWorkaround',
+    }),
+    HistoryExtension,
     ReactProviderExtension,
     RichTextExtension,
     HashtagExtension,
     LinkExtension,
     KeywordsExtension,
-    NestedEditorExtension,
     configExtension(ReactExtension, {
       contentEditable: (
         <ContentEditable
@@ -304,7 +309,7 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     this.__showCaption = showCaption || false;
     this.__caption =
       caption || buildEditorFromExtensions(CaptionEditorExtension);
-    this.__captionsEnabled = captionsEnabled || captionsEnabled === undefined;
+    this.__captionsEnabled = captionsEnabled !== false;
   }
 
   exportJSON(): SerializedImageNode {
@@ -407,8 +412,3 @@ export function $isImageNode(
 ): node is ImageNode {
   return node instanceof ImageNode;
 }
-
-export const ImageExtension = defineExtension({
-  name: '@lexical/playground/Image',
-  nodes: [ImageNode],
-});

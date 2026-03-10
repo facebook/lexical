@@ -38,11 +38,11 @@ import {SettingsContext, useSettings} from './context/SettingsContext';
 import {ToolbarContext} from './context/ToolbarContext';
 import Editor from './Editor';
 import logo from './images/logo.svg';
-import {ImageExtension} from './nodes/ImageNode';
 import {KeywordsExtension} from './nodes/KeywordNode';
 import PlaygroundNodes from './nodes/PlaygroundNodes';
 import {DateTimeExtension} from './plugins/DateTimeExtension';
 import DocsPlugin from './plugins/DocsPlugin';
+import {ImagesExtension} from './plugins/ImagesExtension';
 import PasteLogPlugin from './plugins/PasteLogPlugin';
 import {TableContext} from './plugins/TablePlugin';
 import TestRecorderPlugin from './plugins/TestRecorderPlugin';
@@ -140,7 +140,7 @@ const AppExtension = defineExtension({
     HistoryExtension,
     KeywordsExtension,
     HashtagExtension,
-    ImageExtension,
+    ImagesExtension,
     HorizontalRuleExtension,
     DateTimeExtension,
   ],

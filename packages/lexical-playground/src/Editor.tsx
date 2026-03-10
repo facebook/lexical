@@ -53,7 +53,6 @@ import ExcalidrawPlugin from './plugins/ExcalidrawPlugin';
 import FigmaPlugin from './plugins/FigmaPlugin';
 import FloatingLinkEditorPlugin from './plugins/FloatingLinkEditorPlugin';
 import FloatingTextFormatToolbarPlugin from './plugins/FloatingTextFormatToolbarPlugin';
-import ImagesPlugin from './plugins/ImagesPlugin';
 import {LayoutPlugin} from './plugins/LayoutPlugin/LayoutPlugin';
 import LinkPlugin from './plugins/LinkPlugin';
 import MarkdownShortcutPlugin from './plugins/MarkdownShortcutPlugin';
@@ -232,7 +231,6 @@ export default function Editor(): JSX.Element {
             />
             <TableCellResizer />
             <TableScrollShadowPlugin />
-            <ImagesPlugin />
             <LinkPlugin hasLinkAttributes={hasLinkAttributes} />
             <PollPlugin />
             <TwitterPlugin />

@@ -90,7 +90,7 @@ import {
   INSERT_IMAGE_COMMAND,
   InsertImageDialog,
   InsertImagePayload,
-} from '../ImagesPlugin';
+} from '../ImagesExtension';
 import InsertLayoutDialog from '../LayoutPlugin/InsertLayoutDialog';
 import {INSERT_PAGE_BREAK} from '../PageBreakPlugin';
 import {InsertPollDialog} from '../PollPlugin';

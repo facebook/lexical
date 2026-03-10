@@ -14,10 +14,11 @@ import {expectHtmlToBeEqual, html} from 'lexical/src/__tests__/utils';
 import {describe, it} from 'vitest';
 
 import {buildHTMLConfig} from '../../src/buildHTMLConfig';
-import {$createImageNode, ImageExtension} from '../../src/nodes/ImageNode';
+import {$createImageNode} from '../../src/nodes/ImageNode';
+import {ImagesExtension} from '../../src/plugins/ImagesExtension';
 
 const ImageTestExtension = defineExtension({
-  dependencies: [ImageExtension],
+  dependencies: [ImagesExtension],
   html: buildHTMLConfig(),
   name: '[test]',
 });

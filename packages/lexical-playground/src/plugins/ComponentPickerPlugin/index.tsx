@@ -34,7 +34,6 @@ import {
   TextNode,
 } from 'lexical';
 import {useCallback, useMemo, useState} from 'react';
-import * as ReactDOM from 'react-dom';
 
 import useModal from '../../hooks/useModal';
 import catTypingGif from '../../images/cat-typing.gif';
@@ -406,35 +405,6 @@ export default function ComponentPickerMenuPlugin(): JSX.Element {
         onSelectOption={onSelectOption}
         triggerFn={checkForTriggerMatch}
         options={options}
-        menuRenderFn={(
-          anchorElementRef,
-          {selectedIndex, selectOptionAndCleanUp, setHighlightedIndex},
-        ) =>
-          anchorElementRef.current && options.length
-            ? ReactDOM.createPortal(
-                <div className="typeahead-popover component-picker-menu">
-                  <ul>
-                    {options.map((option, i: number) => (
-                      <ComponentPickerMenuItem
-                        index={i}
-                        isSelected={selectedIndex === i}
-                        onClick={() => {
-                          setHighlightedIndex(i);
-                          selectOptionAndCleanUp(option);
-                        }}
-                        onMouseEnter={() => {
-                          setHighlightedIndex(i);
-                        }}
-                        key={option.key}
-                        option={option}
-                      />
-                    ))}
-                  </ul>
-                </div>,
-                anchorElementRef.current,
-              )
-            : null
-        }
       />
     </>
   );

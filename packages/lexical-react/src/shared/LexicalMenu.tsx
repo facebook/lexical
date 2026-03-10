@@ -34,6 +34,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import ReactDOM from 'react-dom';
 import {CAN_USE_DOM} from 'shared/canUseDOM';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
@@ -48,12 +49,11 @@ export type MenuResolution = {
   getRect: () => DOMRect;
 };
 
-export const PUNCTUATION =
-  '\\.,\\+\\*\\?\\$\\@\\|#{}\\(\\)\\^\\-\\[\\]\\\\/!%\'"~=<>_:;';
-
 export class MenuOption {
   key: string;
   ref?: RefObject<HTMLElement | null>;
+  icon?: JSX.Element;
+  title?: JSX.Element | string;
 
   constructor(key: string) {
     this.key = key;
@@ -74,7 +74,7 @@ export type MenuRenderFn<TOption extends MenuOption> = (
     setHighlightedIndex: (index: number) => void;
     options: Array<TOption>;
   },
-  matchingString: string | null,
+  matchingString: string,
 ) => ReactPortal | JSX.Element | null;
 
 const scrollIntoViewIfNeeded = (target: HTMLElement) => {
@@ -262,13 +262,47 @@ export const SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND: LexicalCommand<{
   option: MenuOption;
 }> = createCommand('SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND');
 
+function MenuItem({
+  index,
+  isSelected,
+  onClick,
+  onMouseEnter,
+  option,
+}: {
+  index: number;
+  isSelected: boolean;
+  onClick: () => void;
+  onMouseEnter: () => void;
+  option: MenuOption;
+}) {
+  let className = 'item';
+  if (isSelected) {
+    className += ' selected';
+  }
+  return (
+    <li
+      key={option.key}
+      tabIndex={-1}
+      className={className}
+      ref={option.setRefElement}
+      role="option"
+      aria-selected={isSelected}
+      id={'typeahead-item-' + index}
+      onMouseEnter={onMouseEnter}
+      onClick={onClick}>
+      {option.icon}
+      <span className="text">{option.title}</span>
+    </li>
+  );
+}
+
 export function LexicalMenu<TOption extends MenuOption>({
   close,
   editor,
   anchorElementRef,
   resolution,
   options,
-  menuRenderFn,
+  menuRenderFn: menuRenderFnProp,
   onSelectOption,
   shouldSplitNodeWithQuery = false,
   commandPriority = COMMAND_PRIORITY_LOW,
@@ -280,7 +314,7 @@ export function LexicalMenu<TOption extends MenuOption>({
   resolution: MenuResolution;
   options: Array<TOption>;
   shouldSplitNodeWithQuery?: boolean;
-  menuRenderFn: MenuRenderFn<TOption>;
+  menuRenderFn?: MenuRenderFn<TOption>;
   onSelectOption: (
     option: TOption,
     textNodeContainingQuery: TextNode | null,
@@ -337,6 +371,39 @@ export function LexicalMenu<TOption extends MenuOption>({
     },
     [editor],
   );
+
+  const defaultMenuRenderFn = useCallback(() => {
+    return anchorElementRef.current && options.length
+      ? ReactDOM.createPortal(
+          <div className="typeahead-popover mentions-menu">
+            <ul>
+              {options.map((option, i: number) => (
+                <MenuItem
+                  index={i}
+                  isSelected={selectedIndex === i}
+                  onClick={() => {
+                    setHighlightedIndex(i);
+                    selectOptionAndCleanUp(option);
+                  }}
+                  onMouseEnter={() => {
+                    setHighlightedIndex(i);
+                  }}
+                  key={option.key}
+                  option={option}
+                />
+              ))}
+            </ul>
+          </div>,
+          anchorElementRef.current,
+        )
+      : null;
+  }, [
+    anchorElementRef,
+    options,
+    selectedIndex,
+    selectOptionAndCleanUp,
+    setHighlightedIndex,
+  ]);
 
   useEffect(() => {
     return () => {
@@ -513,11 +580,15 @@ export function LexicalMenu<TOption extends MenuOption>({
     [selectOptionAndCleanUp, selectedIndex, options],
   );
 
-  return menuRenderFn(
-    anchorElementRef,
-    listItemProps,
-    resolution.match ? resolution.match.matchingString : '',
-  );
+  if (menuRenderFnProp != null) {
+    return menuRenderFnProp(
+      anchorElementRef,
+      listItemProps,
+      resolution.match ? resolution.match.matchingString : '',
+    );
+  }
+
+  return defaultMenuRenderFn();
 }
 
 function setContainerDivAttributes(

@@ -24,6 +24,7 @@ export type MenuResolution = {
 declare export class MenuOption {
   key: string;
   ref: {current: HTMLElement | null};
+  title: string;
   constructor(key: string): void;
   setRefElement(element: HTMLElement | null): void;
 }
@@ -37,7 +38,7 @@ export type MenuRenderFn<TOption> = (
     options: Array<TOption>,
   },
   matchingString: string,
-) => React.Portal | React.MixedElement | null;
+) => React$Portal | React.MixedElement | null;
 
 export type TriggerFn = (
   text: string,
@@ -53,9 +54,9 @@ type NodeMenuPluginProps<TOption> = {
   ) => void,
   options: Array<TOption>,
   nodeKey: NodeKey | null,
+  menuRenderFn?: MenuRenderFn<TOption>,
   onClose?: () => void,
   onOpen?: (resolution: MenuResolution) => void,
-  menuRenderFn: MenuRenderFn<TOption>,
   anchorClassName?: string,
 };
 

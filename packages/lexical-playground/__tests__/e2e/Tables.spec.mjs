@@ -4712,6 +4712,8 @@ test.describe.parallel('Tables', () => {
       page.setViewportSize({height: 1000, width: 3000});
     }
 
+    const pageOrFrame = getPageOrFrame(page);
+
     await focusEditor(page);
 
     await insertTable(page, 3, 3);
@@ -4784,7 +4786,10 @@ test.describe.parallel('Tables', () => {
       const clipboard = await copyToClipboard(page);
 
       // move caret to the first position of the editor
-      await page.locator('.PlaygroundEditorTheme__paragraph').first().click();
+      await pageOrFrame
+        .locator('.PlaygroundEditorTheme__paragraph')
+        .first()
+        .click();
 
       // move caret to the table cell (2,2)
       await page.keyboard.press('ArrowDown');

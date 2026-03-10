@@ -9,11 +9,15 @@
 import type {JSX} from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$wrapNodeInElement, mergeRegister} from '@lexical/utils';
+import {
+  $insertNodeIntoLeaf,
+  $wrapNodeInElement,
+  mergeRegister,
+} from '@lexical/utils';
 import {
   $createParagraphNode,
-  $insertNodes,
   $isRootOrShadowRoot,
+  $isTextNode,
   COMMAND_PRIORITY_EDITOR,
   createCommand,
   LexicalCommand,
@@ -47,7 +51,11 @@ export default function DateTimePlugin(): JSX.Element | null {
           const {dateTime} = payload;
           const dateTimeNode = $createDateTimeNode(dateTime);
 
-          $insertNodes([dateTimeNode]);
+          $insertNodeIntoLeaf(dateTimeNode, (previousCaretNode) => {
+            if ($isTextNode(previousCaretNode)) {
+              dateTimeNode.setFormat(previousCaretNode.getFormat());
+            }
+          });
           if ($isRootOrShadowRoot(dateTimeNode.getParentOrThrow())) {
             $wrapNodeInElement(dateTimeNode, $createParagraphNode).selectEnd();
           }

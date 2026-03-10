@@ -8,12 +8,15 @@
 
 import {
   $caretFromPoint,
+  $caretRangeFromSelection,
   $cloneWithProperties,
   $createParagraphNode,
   $findMatchingParent,
   $getAdjacentChildCaret,
   $getAdjacentSiblingOrParentSiblingCaret,
   $getCaretInDirection,
+  $getCaretRange,
+  $getCaretRangeInDirection,
   $getChildCaret,
   $getChildCaretOrSelf,
   $getCollapsedCaretRange,
@@ -28,6 +31,7 @@ import {
   $isSiblingCaret,
   $isTextPointCaret,
   $normalizeCaret,
+  $removeTextFromCaretRange,
   $rewindSiblingCaret,
   $setSelection,
   $setSelectionFromCaretRange,
@@ -560,6 +564,44 @@ export function $insertNodeToNearestRootAtCaret<
     $getSiblingCaret(node.getLatest(), 'next'),
     caret.direction,
   );
+}
+
+/**
+ * Inserts a node into leaf — the deepest accessible node at the carriage position
+ * @param node - The node to be inserted
+ * @param fn - Callback to which sibling leaf nodes are passed relative to the inserted node
+ */
+export function $insertNodeIntoLeaf(
+  node: LexicalNode,
+  fn?: (
+    previousCaretNode: LexicalNode | null,
+    nextCaretNode: LexicalNode | null,
+  ) => void,
+): void {
+  const selection = $getSelection();
+  if (!$isRangeSelection(selection)) {
+    return;
+  }
+  const caretRange = $caretRangeFromSelection(selection);
+  let insertCaret = $getCaretRangeInDirection(
+    $removeTextFromCaretRange(caretRange),
+    'next',
+  ).anchor;
+  if ($isTextPointCaret(insertCaret)) {
+    const nextAnchor = $splitAtPointCaretNext(insertCaret);
+    if (!nextAnchor) {
+      return;
+    }
+    insertCaret = nextAnchor;
+  }
+  const focus = insertCaret.getFlipped();
+
+  if (fn) {
+    fn(focus.getNodeAtCaret(), insertCaret.getNodeAtCaret());
+  }
+
+  focus.insert(node);
+  $setSelectionFromCaretRange($getCaretRange(focus, focus));
 }
 
 /**

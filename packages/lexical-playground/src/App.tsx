@@ -7,6 +7,8 @@
  */
 
 import {
+  AutoFocusExtension,
+  ClearEditorExtension,
   DecoratorTextExtension,
   HorizontalRuleExtension,
 } from '@lexical/extension';
@@ -44,6 +46,7 @@ import {PlaygroundAutoLinkExtension} from './plugins/AutoLinkExtension';
 import {DateTimeExtension} from './plugins/DateTimeExtension';
 import DocsPlugin from './plugins/DocsPlugin';
 import {DragDropPasteExtension} from './plugins/DragDropPasteExtension';
+import {EmojisExtension} from './plugins/EmojisExtension';
 import {ImagesExtension} from './plugins/ImagesExtension';
 import {MaxLengthExtension} from './plugins/MaxLengthPlugin';
 import PasteLogPlugin from './plugins/PasteLogPlugin';
@@ -140,6 +143,8 @@ function $prepopulatedRichText() {
 
 const AppExtension = defineExtension({
   dependencies: [
+    AutoFocusExtension,
+    ClearEditorExtension,
     DecoratorTextExtension,
     HistoryExtension,
     KeywordsExtension,
@@ -151,6 +156,7 @@ const AppExtension = defineExtension({
     MaxLengthExtension,
     configExtension(LinkExtension, {validateUrl}),
     DragDropPasteExtension,
+    EmojisExtension,
   ],
   html: buildHTMLConfig(),
   name: '@lexical/playground',

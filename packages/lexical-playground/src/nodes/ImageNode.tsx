@@ -50,7 +50,7 @@ import {
 } from 'lexical';
 import * as React from 'react';
 
-import EmojisPlugin from '../plugins/EmojisPlugin';
+import {EmojisExtension} from '../plugins/EmojisExtension';
 import MentionsPlugin from '../plugins/MentionsPlugin';
 import ContentEditable from '../ui/ContentEditable';
 import {EmojiNode} from './EmojiNode';
@@ -69,6 +69,7 @@ const CaptionEditorExtension = defineExtension({
     HashtagExtension,
     LinkExtension,
     KeywordsExtension,
+    EmojisExtension,
     configExtension(ReactExtension, {
       contentEditable: (
         <ContentEditable
@@ -77,7 +78,7 @@ const CaptionEditorExtension = defineExtension({
           className="ImageNode__contentEditable"
         />
       ),
-      decorators: [<MentionsPlugin />, <EmojisPlugin />],
+      decorators: [<MentionsPlugin />],
     }),
   ],
   name: '@lexical/playground/ImageNodeCaption',

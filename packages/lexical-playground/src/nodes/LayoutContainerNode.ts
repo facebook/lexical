@@ -31,8 +31,7 @@ export type SerializedLayoutContainerNode = Spread<
 function $convertLayoutContainerElement(
   domNode: HTMLElement,
 ): DOMConversionOutput | null {
-  const styleAttributes = window.getComputedStyle(domNode);
-  const templateColumns = styleAttributes.getPropertyValue(
+  const templateColumns = domNode.style.getPropertyValue(
     'grid-template-columns',
   );
   if (templateColumns) {

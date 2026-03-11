@@ -300,7 +300,7 @@ function $importBlocks(
   }
 }
 
-// Look in node ode for '\t' and create a TabNode for each occurrence.
+// Look in node for '\t' and create a TabNode for each occurrence.
 function $createTabInNode(node: LexicalNode): void {
   const parts = node.getTextContent().split(/(\t)/).filter(Boolean);
   if (parts.length <= 1) {

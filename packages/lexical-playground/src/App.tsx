@@ -14,7 +14,11 @@ import {
 } from '@lexical/extension';
 import {HashtagExtension} from '@lexical/hashtag';
 import {HistoryExtension} from '@lexical/history';
-import {$createLinkNode, LinkExtension} from '@lexical/link';
+import {
+  $createLinkNode,
+  ClickableLinkExtension,
+  LinkExtension,
+} from '@lexical/link';
 import {
   $createListItemNode,
   $createListNode,
@@ -147,6 +151,22 @@ function $prepopulatedRichText() {
   }
 }
 
+// These are only enabled for rich-text mode
+const PlaygroundRichTextExtension = defineExtension({
+  dependencies: [
+    RichTextExtension,
+    ImagesExtension,
+    HorizontalRuleExtension,
+    configExtension(ListExtension, {shouldPreserveNumbering: false}),
+    CheckListExtension,
+    PlaygroundMarkdownShortcutsExtension,
+    configExtension(LinkExtension, {validateUrl}),
+    PlaygroundAutoLinkExtension,
+    ClickableLinkExtension,
+  ],
+  name: '@lexical/playground/RichText',
+});
+
 const AppExtension = defineExtension({
   dependencies: [
     AutoFocusExtension,
@@ -155,17 +175,10 @@ const AppExtension = defineExtension({
     HistoryExtension,
     KeywordsExtension,
     HashtagExtension,
-    ImagesExtension,
-    HorizontalRuleExtension,
     DateTimeExtension,
-    PlaygroundAutoLinkExtension,
     MaxLengthExtension,
-    configExtension(LinkExtension, {validateUrl}),
     DragDropPasteExtension,
     EmojisExtension,
-    configExtension(ListExtension, {shouldPreserveNumbering: false}),
-    CheckListExtension,
-    PlaygroundMarkdownShortcutsExtension,
   ],
   html: buildHTMLConfig(),
   name: '@lexical/playground',
@@ -192,7 +205,7 @@ function buildExtensionFromSettings(
     dependencies: [
       AppExtension,
       configExtension(HistoryExtension, {disabled: isCollab}),
-      isRichText ? RichTextExtension : PlainTextExtension,
+      isRichText ? PlaygroundRichTextExtension : PlainTextExtension,
     ],
     html: buildHTMLConfig(),
     name: '@lexical/playground/dynamic-config',

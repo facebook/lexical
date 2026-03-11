@@ -9,10 +9,13 @@
 import type {JSX} from 'react';
 
 import {Signal} from '@lexical/extension';
-import {LinkAttributes, LinkExtension} from '@lexical/link';
+import {
+  ClickableLinkExtension,
+  LinkAttributes,
+  LinkExtension,
+} from '@lexical/link';
 import {CheckListExtension, ListExtension} from '@lexical/list';
 import {CharacterLimitPlugin} from '@lexical/react/LexicalCharacterLimitPlugin';
-import {ClickableLinkPlugin} from '@lexical/react/LexicalClickableLinkPlugin';
 import {
   CollaborationPlugin,
   CollaborationPluginV2__EXPERIMENTAL,
@@ -21,7 +24,7 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {SelectionAlwaysOnDisplay} from '@lexical/react/LexicalSelectionAlwaysOnDisplay';
 import {TabIndentationPlugin} from '@lexical/react/LexicalTabIndentationPlugin';
 import {TablePlugin} from '@lexical/react/LexicalTablePlugin';
-import {useExtensionDependency} from '@lexical/react/useExtensionComponent';
+import {useOptionalExtensionDependency} from '@lexical/react/useExtensionComponent';
 import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
 import {CAN_USE_DOM} from '@lexical/utils';
 import {OutputExtension} from 'lexical';
@@ -82,9 +85,11 @@ export function useSyncExtensionSignal<
   V,
   Output extends {[Key in K]: Signal<V>},
 >(extension: OutputExtension<Output>, prop: K, value: V) {
-  const signal = useExtensionDependency(extension).output[prop];
+  const signal = useOptionalExtensionDependency(extension)?.output[prop];
   useEffect(() => {
-    signal.value = value;
+    if (signal) {
+      signal.value = value;
+    }
   }, [signal, value]);
 }
 
@@ -153,6 +158,7 @@ export default function Editor(): JSX.Element {
     'disableTakeFocusOnClick',
     shouldDisableFocusOnClickChecklist,
   );
+  useSyncExtensionSignal(ClickableLinkExtension, 'disabled', isEditable);
 
   useEffect(() => {
     const updateViewPortWidth = () => {
@@ -245,7 +251,6 @@ export default function Editor(): JSX.Element {
             <TwitterPlugin />
             <YouTubePlugin />
             <FigmaPlugin />
-            <ClickableLinkPlugin disabled={isEditable} />
             <EquationsPlugin />
             <ExcalidrawPlugin />
             <TabFocusPlugin />

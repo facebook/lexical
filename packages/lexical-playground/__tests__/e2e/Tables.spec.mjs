@@ -4712,6 +4712,8 @@ test.describe.parallel('Tables', () => {
       page.setViewportSize({height: 1000, width: 3000});
     }
 
+    const pageOrFrame = getPageOrFrame(page);
+
     await focusEditor(page);
 
     await insertTable(page, 3, 3);
@@ -4773,13 +4775,9 @@ test.describe.parallel('Tables', () => {
 
     await unmergeTableCell(page);
 
+    // move caret to the last paragraph
     await focusEditor(page);
-
-    // move caret to the end of the editor
-    await page.keyboard.press('ArrowDown');
-    await page.keyboard.press('ArrowDown');
-    await page.keyboard.press('ArrowDown');
-    await page.keyboard.press('ArrowDown');
+    await moveToEditorEnd(page);
 
     await page.keyboard.type('Hello');
     await selectCharacters(page, 'left', 'Hello'.length);
@@ -4788,7 +4786,10 @@ test.describe.parallel('Tables', () => {
       const clipboard = await copyToClipboard(page);
 
       // move caret to the first position of the editor
-      await click(page, '.PlaygroundEditorTheme__paragraph');
+      await pageOrFrame
+        .locator('.PlaygroundEditorTheme__paragraph')
+        .first()
+        .click();
 
       // move caret to the table cell (2,2)
       await page.keyboard.press('ArrowDown');

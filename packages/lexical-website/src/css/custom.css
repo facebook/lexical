@@ -7,6 +7,7 @@
  */
 
 @import url('navbar.css');
+@import url('tailwind.css');
 
 /**
  * Any CSS included here will be global. The classic template
@@ -43,4 +44,11 @@ html[data-theme='dark'] .button--outline:hover {
 
 html[data-theme='dark'] .button--text:hover {
   color: rgba(0, 0, 0, 0.5);
+}
+
+.text-gradient {
+  background: linear-gradient(to right, #76b6ff, #00c896);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }

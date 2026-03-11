@@ -53,7 +53,7 @@ import DocsPlugin from './plugins/DocsPlugin';
 import {DragDropPasteExtension} from './plugins/DragDropPasteExtension';
 import {EmojisExtension} from './plugins/EmojisExtension';
 import {ImagesExtension} from './plugins/ImagesExtension';
-import {PlaygroundMarkdownShortcutExtension} from './plugins/MarkdownShortcutExtension';
+import {PlaygroundMarkdownShortcutsExtension} from './plugins/MarkdownShortcutsExtension';
 import {MaxLengthExtension} from './plugins/MaxLengthPlugin';
 import PasteLogPlugin from './plugins/PasteLogPlugin';
 import {TableContext} from './plugins/TablePlugin';
@@ -165,7 +165,7 @@ const AppExtension = defineExtension({
     EmojisExtension,
     configExtension(ListExtension, {shouldPreserveNumbering: false}),
     CheckListExtension,
-    PlaygroundMarkdownShortcutExtension,
+    PlaygroundMarkdownShortcutsExtension,
   ],
   html: buildHTMLConfig(),
   name: '@lexical/playground',

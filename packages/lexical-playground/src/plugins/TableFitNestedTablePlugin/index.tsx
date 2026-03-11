@@ -10,7 +10,7 @@ import type {LexicalNode} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$isTableNode, TableNode} from '@lexical/table';
-import {$dfs,$findMatchingParent} from '@lexical/utils';
+import {$dfs, $findMatchingParent} from '@lexical/utils';
 import {$getNodeByKey, $isRootOrShadowRoot, LexicalEditor} from 'lexical';
 import {useEffect} from 'react';
 
@@ -66,7 +66,10 @@ function $calculateResizeRootTables(
   return roots;
 }
 
-function $resizeDOMColWidthsToFit(editor: LexicalEditor, node: TableNode): void {
+function $resizeDOMColWidthsToFit(
+  editor: LexicalEditor,
+  node: TableNode,
+): void {
   const editorWindow = editor._window;
   if (!editorWindow) {
     return;

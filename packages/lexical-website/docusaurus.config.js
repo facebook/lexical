@@ -454,28 +454,19 @@ const config = {
 
           {label: 'Community', position: 'left', to: '/community'},
           {
-            href: 'https://facebook.github.io/lexical-ios/',
-            label: 'iOS',
-            position: 'left',
-          },
-          {
-            label: 'Gallery',
+            label: 'Demos',
             position: 'left',
             to: '/gallery',
           },
           {
-            href: GITHUB_REPO_URL,
             label: 'GitHub',
-            position: 'right',
-          },
-          {
-            href: IOS_GITHUB_REPO_URL,
-            label: 'iOS GitHub',
-            position: 'right',
+            position: 'left',
+            to: GITHUB_REPO_URL,
           },
         ].filter((item) => item != null),
         logo: {
           alt: 'Lexical',
+          height: 12,
           src: 'img/logo.svg',
           srcDark: 'img/logo-dark.svg',
         },

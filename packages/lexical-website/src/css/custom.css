@@ -6,6 +6,8 @@
  *
  */
 
+@import url('navbar.css');
+
 /**
  * Any CSS included here will be global. The classic template
  * bundles Infima by default. Infima is a CSS framework designed to
@@ -22,6 +24,7 @@
   --ifm-color-primary-lighter: #aed4ff;
   --ifm-color-primary-lightest: #e6f2ff;
   --ifm-code-font-size: 95%;
+  --ifm-navbar-height: 5rem;
   --ifm-footer-padding-vertical: 4rem;
   --docusaurus-highlighted-code-line-bg: rgba(255, 255, 0, 0.3);
 }

@@ -9,6 +9,7 @@
 import type {ListItemNode} from './LexicalListItemNode';
 import type {LexicalCommand, LexicalEditor} from 'lexical';
 
+import {Signal} from '@lexical/extension';
 import {
   $findMatchingParent,
   calculateZoomLevel,
@@ -49,16 +50,20 @@ export const INSERT_CHECK_LIST_COMMAND: LexicalCommand<void> = createCommand(
  */
 export function registerCheckList(
   editor: LexicalEditor,
-  options?: {disableTakeFocusOnClick?: boolean},
+  options?: {disableTakeFocusOnClick?: boolean | Signal<boolean>},
 ) {
   const disableTakeFocusOnClick =
     (options && options.disableTakeFocusOnClick) || false;
+  const peekDisableTakeFocusOnClick =
+    typeof disableTakeFocusOnClick === 'boolean'
+      ? () => disableTakeFocusOnClick
+      : disableTakeFocusOnClick.peek.bind(disableTakeFocusOnClick);
 
   const configHandleClick = (event: MouseEvent | TouchEvent) => {
-    handleClick(event, disableTakeFocusOnClick);
+    handleClick(event, peekDisableTakeFocusOnClick());
   };
   const configHandleSelectDefaults = (event: MouseEvent | TouchEvent) => {
-    handleSelectDefaults(event, disableTakeFocusOnClick);
+    handleSelectDefaults(event, peekDisableTakeFocusOnClick());
   };
   return mergeRegister(
     editor.registerCommand(

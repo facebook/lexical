@@ -10,15 +10,14 @@ import type {JSX} from 'react';
 
 import {Signal} from '@lexical/extension';
 import {LinkAttributes, LinkExtension} from '@lexical/link';
+import {CheckListExtension, ListExtension} from '@lexical/list';
 import {CharacterLimitPlugin} from '@lexical/react/LexicalCharacterLimitPlugin';
-import {CheckListPlugin} from '@lexical/react/LexicalCheckListPlugin';
 import {ClickableLinkPlugin} from '@lexical/react/LexicalClickableLinkPlugin';
 import {
   CollaborationPlugin,
   CollaborationPluginV2__EXPERIMENTAL,
 } from '@lexical/react/LexicalCollaborationPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {ListPlugin} from '@lexical/react/LexicalListPlugin';
 import {SelectionAlwaysOnDisplay} from '@lexical/react/LexicalSelectionAlwaysOnDisplay';
 import {TabIndentationPlugin} from '@lexical/react/LexicalTabIndentationPlugin';
 import {TablePlugin} from '@lexical/react/LexicalTablePlugin';
@@ -52,7 +51,6 @@ import FigmaPlugin from './plugins/FigmaPlugin';
 import FloatingLinkEditorPlugin from './plugins/FloatingLinkEditorPlugin';
 import FloatingTextFormatToolbarPlugin from './plugins/FloatingTextFormatToolbarPlugin';
 import {LayoutPlugin} from './plugins/LayoutPlugin/LayoutPlugin';
-import MarkdownShortcutPlugin from './plugins/MarkdownShortcutPlugin';
 import {MaxLengthExtension} from './plugins/MaxLengthPlugin';
 import MentionsPlugin from './plugins/MentionsPlugin';
 import PageBreakPlugin from './plugins/PageBreakPlugin';
@@ -149,6 +147,12 @@ export default function Editor(): JSX.Element {
     'attributes',
     hasLinkAttributes ? DEFAULT_LINK_ATTRIBUTES : undefined,
   );
+  useSyncExtensionSignal(ListExtension, 'hasStrictIndent', listStrictIndent);
+  useSyncExtensionSignal(
+    CheckListExtension,
+    'disableTakeFocusOnClick',
+    shouldDisableFocusOnClickChecklist,
+  );
 
   useEffect(() => {
     const updateViewPortWidth = () => {
@@ -222,20 +226,12 @@ export default function Editor(): JSX.Element {
                 <ContentEditable placeholder={placeholder} />
               </div>
             </div>
-            <MarkdownShortcutPlugin />
             {isCodeHighlighted &&
               (isCodeShiki ? (
                 <CodeHighlightShikiPlugin />
               ) : (
                 <CodeHighlightPrismPlugin />
               ))}
-            <ListPlugin
-              hasStrictIndent={listStrictIndent}
-              shouldPreserveNumbering={false}
-            />
-            <CheckListPlugin
-              disableTakeFocusOnClick={shouldDisableFocusOnClickChecklist}
-            />
             <TablePlugin
               hasCellMerge={tableCellMerge}
               hasCellBackgroundColor={tableCellBackgroundColor}

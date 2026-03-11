@@ -15,7 +15,12 @@ import {
 import {HashtagExtension} from '@lexical/hashtag';
 import {HistoryExtension} from '@lexical/history';
 import {$createLinkNode, LinkExtension} from '@lexical/link';
-import {$createListItemNode, $createListNode} from '@lexical/list';
+import {
+  $createListItemNode,
+  $createListNode,
+  CheckListExtension,
+  ListExtension,
+} from '@lexical/list';
 import {PlainTextExtension} from '@lexical/plain-text';
 import {LexicalCollaboration} from '@lexical/react/LexicalCollaborationContext';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
@@ -48,6 +53,7 @@ import DocsPlugin from './plugins/DocsPlugin';
 import {DragDropPasteExtension} from './plugins/DragDropPasteExtension';
 import {EmojisExtension} from './plugins/EmojisExtension';
 import {ImagesExtension} from './plugins/ImagesExtension';
+import {PlaygroundMarkdownShortcutExtension} from './plugins/MarkdownShortcutExtension';
 import {MaxLengthExtension} from './plugins/MaxLengthPlugin';
 import PasteLogPlugin from './plugins/PasteLogPlugin';
 import {TableContext} from './plugins/TablePlugin';
@@ -157,6 +163,9 @@ const AppExtension = defineExtension({
     configExtension(LinkExtension, {validateUrl}),
     DragDropPasteExtension,
     EmojisExtension,
+    configExtension(ListExtension, {shouldPreserveNumbering: false}),
+    CheckListExtension,
+    PlaygroundMarkdownShortcutExtension,
   ],
   html: buildHTMLConfig(),
   name: '@lexical/playground',

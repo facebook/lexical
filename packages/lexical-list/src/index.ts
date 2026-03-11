@@ -344,10 +344,12 @@ export interface CheckListConfig {
  * checkboxes.
  */
 export const CheckListExtension = defineExtension({
+  build: (editor, config) => namedSignals(config),
   config: safeCast<CheckListConfig>({
     disableTakeFocusOnClick: false,
   }),
   dependencies: [ListExtension],
   name: '@lexical/list/CheckList',
-  register: registerCheckList,
+  register: (editor, config, state) =>
+    registerCheckList(editor, state.getOutput()),
 });

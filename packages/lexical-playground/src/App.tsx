@@ -12,7 +12,7 @@ import {
 } from '@lexical/extension';
 import {HashtagExtension} from '@lexical/hashtag';
 import {HistoryExtension} from '@lexical/history';
-import {$createLinkNode} from '@lexical/link';
+import {$createLinkNode, LinkExtension} from '@lexical/link';
 import {$createListItemNode, $createListNode} from '@lexical/list';
 import {PlainTextExtension} from '@lexical/plain-text';
 import {LexicalCollaboration} from '@lexical/react/LexicalCollaborationContext';
@@ -40,15 +40,19 @@ import Editor from './Editor';
 import logo from './images/logo.svg';
 import {KeywordsExtension} from './nodes/KeywordNode';
 import PlaygroundNodes from './nodes/PlaygroundNodes';
+import {PlaygroundAutoLinkExtension} from './plugins/AutoLinkExtension';
 import {DateTimeExtension} from './plugins/DateTimeExtension';
 import DocsPlugin from './plugins/DocsPlugin';
+import {DragDropPasteExtension} from './plugins/DragDropPasteExtension';
 import {ImagesExtension} from './plugins/ImagesExtension';
+import {MaxLengthExtension} from './plugins/MaxLengthPlugin';
 import PasteLogPlugin from './plugins/PasteLogPlugin';
 import {TableContext} from './plugins/TablePlugin';
 import TestRecorderPlugin from './plugins/TestRecorderPlugin';
 import TypingPerfPlugin from './plugins/TypingPerfPlugin';
 import Settings from './Settings';
 import PlaygroundEditorTheme from './themes/PlaygroundEditorTheme';
+import {validateUrl} from './utils/url';
 
 console.warn(
   'If you are profiling the playground app, please ensure you turn off the debug view. You can disable it by pressing on the settings control in the bottom-left of your screen and toggling the debug view setting.',
@@ -143,6 +147,10 @@ const AppExtension = defineExtension({
     ImagesExtension,
     HorizontalRuleExtension,
     DateTimeExtension,
+    PlaygroundAutoLinkExtension,
+    MaxLengthExtension,
+    configExtension(LinkExtension, {validateUrl}),
+    DragDropPasteExtension,
   ],
   html: buildHTMLConfig(),
   name: '@lexical/playground',

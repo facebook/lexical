@@ -6,11 +6,9 @@
  *
  */
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {DRAG_DROP_PASTE} from '@lexical/rich-text';
 import {isMimeType, mediaFileReader} from '@lexical/utils';
-import {COMMAND_PRIORITY_LOW} from 'lexical';
-import {useEffect} from 'react';
+import {COMMAND_PRIORITY_LOW, defineExtension} from 'lexical';
 
 import {INSERT_IMAGE_COMMAND} from '../ImagesExtension';
 
@@ -22,10 +20,10 @@ const ACCEPTABLE_IMAGE_TYPES = [
   'image/webp',
 ];
 
-export default function DragDropPaste(): null {
-  const [editor] = useLexicalComposerContext();
-  useEffect(() => {
-    return editor.registerCommand(
+export const DragDropPasteExtension = defineExtension({
+  name: '@lexical/playground/DragDropPaste',
+  register: (editor) =>
+    editor.registerCommand(
       DRAG_DROP_PASTE,
       (files) => {
         (async () => {
@@ -45,7 +43,5 @@ export default function DragDropPaste(): null {
         return true;
       },
       COMMAND_PRIORITY_LOW,
-    );
-  }, [editor]);
-  return null;
-}
+    ),
+});

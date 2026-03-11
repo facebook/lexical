@@ -313,12 +313,19 @@ export type LexicalExtensionInit<Extension extends AnyLexicalExtension> =
 /**
  * An Extension that has an OutputComponent of the given type (e.g. React.ComponentType)
  */
-export type OutputComponentExtension<ComponentType> = LexicalExtension<
+export type OutputComponentExtension<ComponentType> = OutputExtension<{
+  Component: ComponentType;
+}>;
+
+/**
+ * An Extension that has an Output of the given type
+ */
+export type OutputExtension<Output> = LexicalExtension<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- any config
   any,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- any name
   any,
-  {Component: ComponentType},
+  Output,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- any init
   any
 >;

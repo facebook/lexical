@@ -8,6 +8,8 @@
 
 import type {JSX} from 'react';
 
+import {Signal} from '@lexical/extension';
+import {LinkAttributes, LinkExtension} from '@lexical/link';
 import {AutoFocusPlugin} from '@lexical/react/LexicalAutoFocusPlugin';
 import {CharacterLimitPlugin} from '@lexical/react/LexicalCharacterLimitPlugin';
 import {CheckListPlugin} from '@lexical/react/LexicalCheckListPlugin';
@@ -22,8 +24,10 @@ import {ListPlugin} from '@lexical/react/LexicalListPlugin';
 import {SelectionAlwaysOnDisplay} from '@lexical/react/LexicalSelectionAlwaysOnDisplay';
 import {TabIndentationPlugin} from '@lexical/react/LexicalTabIndentationPlugin';
 import {TablePlugin} from '@lexical/react/LexicalTablePlugin';
+import {useExtensionDependency} from '@lexical/react/useExtensionComponent';
 import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
 import {CAN_USE_DOM} from '@lexical/utils';
+import {OutputExtension} from 'lexical';
 import {useEffect, useMemo, useState} from 'react';
 import {Doc} from 'yjs';
 
@@ -35,7 +39,6 @@ import {useSettings} from './context/SettingsContext';
 import ActionsPlugin from './plugins/ActionsPlugin';
 import AutocompletePlugin from './plugins/AutocompletePlugin';
 import AutoEmbedPlugin from './plugins/AutoEmbedPlugin';
-import AutoLinkPlugin from './plugins/AutoLinkPlugin';
 import CodeActionMenuPlugin from './plugins/CodeActionMenuPlugin';
 import CodeHighlightPrismPlugin from './plugins/CodeHighlightPrismPlugin';
 import CodeHighlightShikiPlugin from './plugins/CodeHighlightShikiPlugin';
@@ -43,7 +46,6 @@ import CollapsiblePlugin from './plugins/CollapsiblePlugin';
 import CommentPlugin from './plugins/CommentPlugin';
 import ComponentPickerPlugin from './plugins/ComponentPickerPlugin';
 import ContextMenuPlugin from './plugins/ContextMenuPlugin';
-import DragDropPaste from './plugins/DragDropPastePlugin';
 import DraggableBlockPlugin from './plugins/DraggableBlockPlugin';
 import EmojiPickerPlugin from './plugins/EmojiPickerPlugin';
 import EmojisPlugin from './plugins/EmojisPlugin';
@@ -53,9 +55,8 @@ import FigmaPlugin from './plugins/FigmaPlugin';
 import FloatingLinkEditorPlugin from './plugins/FloatingLinkEditorPlugin';
 import FloatingTextFormatToolbarPlugin from './plugins/FloatingTextFormatToolbarPlugin';
 import {LayoutPlugin} from './plugins/LayoutPlugin/LayoutPlugin';
-import LinkPlugin from './plugins/LinkPlugin';
 import MarkdownShortcutPlugin from './plugins/MarkdownShortcutPlugin';
-import {MaxLengthPlugin} from './plugins/MaxLengthPlugin';
+import {MaxLengthExtension} from './plugins/MaxLengthPlugin';
 import MentionsPlugin from './plugins/MentionsPlugin';
 import PageBreakPlugin from './plugins/PageBreakPlugin';
 import PollPlugin from './plugins/PollPlugin';
@@ -80,6 +81,22 @@ const COLLAB_DOC_ID = 'main';
 const skipCollaborationInit =
   // @ts-expect-error
   window.parent != null && window.parent.frames.right === window;
+
+export function useSyncExtensionSignal<
+  K extends string,
+  V,
+  Output extends {[Key in K]: Signal<V>},
+>(extension: OutputExtension<Output>, prop: K, value: V) {
+  const signal = useExtensionDependency(extension).output[prop];
+  useEffect(() => {
+    signal.value = value;
+  }, [signal, value]);
+}
+
+const DEFAULT_LINK_ATTRIBUTES: LinkAttributes = {
+  rel: 'noopener noreferrer',
+  target: '_blank',
+};
 
 export default function Editor(): JSX.Element {
   const {
@@ -129,6 +146,13 @@ export default function Editor(): JSX.Element {
     }
   };
 
+  useSyncExtensionSignal(MaxLengthExtension, 'disabled', !isMaxLength);
+  useSyncExtensionSignal(
+    LinkExtension,
+    'attributes',
+    hasLinkAttributes ? DEFAULT_LINK_ATTRIBUTES : undefined,
+  );
+
   useEffect(() => {
     const updateViewPortWidth = () => {
       const isNextSmallWidthViewport =
@@ -166,8 +190,6 @@ export default function Editor(): JSX.Element {
         className={`editor-container ${showTreeView ? 'tree-view' : ''} ${
           !isRichText ? 'plain-text' : ''
         }`}>
-        {isMaxLength && <MaxLengthPlugin maxLength={30} />}
-        <DragDropPaste />
         <AutoFocusPlugin />
         {selectionAlwaysOnDisplay && <SelectionAlwaysOnDisplay />}
         <ClearEditorPlugin />
@@ -177,7 +199,6 @@ export default function Editor(): JSX.Element {
         <MentionsPlugin />
         <EmojisPlugin />
         <SpeechToTextPlugin />
-        <AutoLinkPlugin />
         {!(isCollab && useCollabV2) && (
           <CommentPlugin
             providerFactory={isCollab ? createWebsocketProvider : undefined}
@@ -230,7 +251,6 @@ export default function Editor(): JSX.Element {
             />
             <TableCellResizer />
             <TableScrollShadowPlugin />
-            <LinkPlugin hasLinkAttributes={hasLinkAttributes} />
             <PollPlugin />
             <TwitterPlugin />
             <YouTubePlugin />

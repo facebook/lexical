@@ -20,12 +20,14 @@ import {$findMatchingParent} from '@lexical/utils';
 import {
   $createLineBreakNode,
   $createParagraphNode,
+  $createTabNode,
   $createTextNode,
   $getRoot,
   $getSelection,
   $isParagraphNode,
   $isTextNode,
   ElementNode,
+  LexicalNode,
 } from 'lexical';
 
 import {importTextTransformers} from './importTextTransformers';
@@ -84,17 +86,24 @@ export function createMarkdownImport(
       );
     }
 
-    // By default, removing empty paragraphs as md does not really
-    // allow empty lines and uses them as delimiter.
-    // If you need empty lines set shouldPreserveNewLines = true.
     const children = root.getChildren();
     for (const child of children) {
+      // By default, removing empty paragraphs as md does not really
+      // allow empty lines and uses them as delimiter.
+      // If you need empty lines set shouldPreserveNewLines = true.
       if (
         !shouldPreserveNewLines &&
         isEmptyParagraph(child) &&
         root.getChildrenSize() > 1
       ) {
         child.remove();
+        continue;
+      }
+      // Convert all '\t' into TabNode.
+      if ($isParagraphNode(child) && child.getTextContent().includes('\t')) {
+        for (const paragraphChild of child.getChildren()) {
+          $createTabInNode(paragraphChild);
+        }
       }
     }
 
@@ -289,6 +298,24 @@ function $importBlocks(
       }
     }
   }
+}
+
+// Look in node ode for '\t' and create a TabNode for each occurrence.
+function $createTabInNode(node: LexicalNode): void {
+  const parts = node.getTextContent().split(/(\t)/).filter(Boolean);
+  if (parts.length <= 1) {
+    return;
+  }
+
+  const nodes = parts.map((part) =>
+    part === '\t' ? $createTabNode() : $createTextNode(part),
+  );
+
+  node.replace(nodes[0]);
+  nodes.reduce((prev, curr) => {
+    prev.insertAfter(curr);
+    return curr;
+  });
 }
 
 function createTextFormatTransformersIndex(

@@ -87,6 +87,77 @@ export function $getTableAndElementByKey(
   return {tableElement, tableNode};
 }
 
+export type TableNextFocus = {
+  tableKey: NodeKey;
+  focusCell: TableDOMCell;
+  override: boolean;
+};
+
+/**
+ * Tracks table selection state that sits across all tables.
+ */
+export class TableObservers {
+  observers: Map<
+    NodeKey,
+    [TableObserver, HTMLTableElementWithWithTableSelectionState]
+  >;
+  nextFocus: TableNextFocus | null;
+  shouldCheckSelectionForTable: NodeKey | null;
+
+  constructor() {
+    this.observers = new Map<
+      NodeKey,
+      [TableObserver, HTMLTableElementWithWithTableSelectionState]
+    >();
+    this.nextFocus = null;
+    this.shouldCheckSelectionForTable = null;
+  }
+
+  /**
+   * @internal
+   * When handling mousemove events we track what the focus cell should be, but
+   * the DOM selection may end up somewhere else entirely. We don't have an elegant
+   * way to handle this after the DOM selection has been resolved in a
+   * SELECTION_CHANGE_COMMAND callback.
+   */
+  setNextFocus(nextFocus: TableNextFocus | null): void {
+    this.nextFocus = nextFocus;
+  }
+
+  /** @internal */
+  getAndClearNextFocus(): TableNextFocus | null {
+    const {nextFocus} = this;
+    if (nextFocus !== null) {
+      this.nextFocus = null;
+    }
+    return nextFocus;
+  }
+
+  /**
+   * @internal
+   * Firefox has a strange behavior where pressing the down arrow key from
+   * above the table will move the caret after the table and then lexical
+   * will select the last cell instead of the first.
+   * We do still want to let the browser handle caret movement but we will
+   * use this property to "tag" the update so that we can recheck the
+   * selection after the event is processed.
+   */
+  setShouldCheckSelectionForTable(tableKey: NodeKey): void {
+    this.shouldCheckSelectionForTable = tableKey;
+  }
+  /**
+   * @internal
+   */
+  getAndClearShouldCheckSelectionForTable(): NodeKey | null {
+    const {shouldCheckSelectionForTable} = this;
+    if (shouldCheckSelectionForTable) {
+      this.shouldCheckSelectionForTable = null;
+      return shouldCheckSelectionForTable;
+    }
+    return null;
+  }
+}
+
 export class TableObserver {
   focusX: number;
   focusY: number;
@@ -105,10 +176,8 @@ export class TableObserver {
   hasHijackedSelectionStyles: boolean;
   isSelecting: boolean;
   pointerType: string | null;
-  shouldCheckSelection: boolean;
   abortController: AbortController;
   listenerOptions: {signal: AbortSignal};
-  nextFocus: {focusCell: TableDOMCell; override: boolean} | null;
 
   constructor(editor: LexicalEditor, tableNodeKey: string) {
     this.isHighlightingCells = false;
@@ -132,10 +201,8 @@ export class TableObserver {
     this.hasHijackedSelectionStyles = false;
     this.isSelecting = false;
     this.pointerType = null;
-    this.shouldCheckSelection = false;
     this.abortController = new AbortController();
     this.listenerOptions = {signal: this.abortController.signal};
-    this.nextFocus = null;
     this.trackTable();
   }
 
@@ -267,54 +334,6 @@ export class TableObserver {
     } else {
       this.$clearHighlight();
     }
-  }
-
-  /**
-   * @internal
-   * Firefox has a strange behavior where pressing the down arrow key from
-   * above the table will move the caret after the table and then lexical
-   * will select the last cell instead of the first.
-   * We do still want to let the browser handle caret movement but we will
-   * use this property to "tag" the update so that we can recheck the
-   * selection after the event is processed.
-   */
-  setShouldCheckSelection(): void {
-    this.shouldCheckSelection = true;
-  }
-  /**
-   * @internal
-   */
-  getAndClearShouldCheckSelection(): boolean {
-    if (this.shouldCheckSelection) {
-      this.shouldCheckSelection = false;
-      return true;
-    }
-    return false;
-  }
-
-  /**
-   * @internal
-   * When handling mousemove events we track what the focus cell should be, but
-   * the DOM selection may end up somewhere else entirely. We don't have an elegant
-   * way to handle this after the DOM selection has been resolved in a
-   * SELECTION_CHANGE_COMMAND callback.
-   */
-  setNextFocus(
-    nextFocus: null | {focusCell: TableDOMCell; override: boolean},
-  ): void {
-    this.nextFocus = nextFocus;
-  }
-
-  /** @internal */
-  getAndClearNextFocus(): {
-    focusCell: TableDOMCell;
-    override: boolean;
-  } | null {
-    const {nextFocus} = this;
-    if (nextFocus !== null) {
-      this.nextFocus = null;
-    }
-    return nextFocus;
   }
 
   /** @internal */

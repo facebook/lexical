@@ -333,10 +333,7 @@ const config = {
     [
       require.resolve('docusaurus-plugin-internaldocs-fb/docusaurus-preset'),
       {
-        blog: {
-          editUrl: `${GITHUB_REPO_URL}/tree/main/packages/lexical-website/blog/`,
-          showReadingTime: true, // TODO: Update when directory finalized
-        },
+        blog: false,
         docs: {
           beforeDefaultRemarkPlugins: [slugifyPlugin],
           editUrl: `${GITHUB_REPO_URL}/tree/main/packages/lexical-website/`,

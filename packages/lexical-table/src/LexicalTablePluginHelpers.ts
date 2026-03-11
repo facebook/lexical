@@ -56,7 +56,7 @@ import {
 } from './LexicalTableCommands';
 import {TableConfig} from './LexicalTableExtension';
 import {$isTableNode, TableNode} from './LexicalTableNode';
-import {$getTableAndElementByKey, TableObserver} from './LexicalTableObserver';
+import {$getTableAndElementByKey, TableObservers} from './LexicalTableObserver';
 import {$isTableRowNode, TableRowNode} from './LexicalTableRowNode';
 import {
   $createTableSelectionFrom,
@@ -68,7 +68,6 @@ import {
   $handleTableSelectionChangeCommand,
   applyTableHandlers,
   getTableElement,
-  HTMLTableElementWithWithTableSelectionState,
   registerTableWindowHandlers,
 } from './LexicalTableSelectionHelpers';
 import {
@@ -328,10 +327,7 @@ export function registerTableSelectionObserver(
   editor: LexicalEditor,
   hasTabHandler: boolean = true,
 ): () => void {
-  const tableSelections = new Map<
-    NodeKey,
-    [TableObserver, HTMLTableElementWithWithTableSelectionState]
-  >();
+  const tableObservers = new TableObservers();
 
   const initializeTableNode = (
     tableNode: TableNode,
@@ -344,26 +340,17 @@ export function registerTableSelectionObserver(
       tableElement,
       editor,
       hasTabHandler,
+      tableObservers,
     );
-    tableSelections.set(nodeKey, [tableSelection, tableElement]);
+    tableObservers.observers.set(nodeKey, [tableSelection, tableElement]);
   };
 
   return mergeRegister(
-    registerTableWindowHandlers(editor, tableSelections),
+    registerTableWindowHandlers(editor, tableObservers),
     editor.registerCommand(
       SELECTION_CHANGE_COMMAND,
       () => {
-        for (const [tableObserver] of tableSelections.values()) {
-          const tableNode = $getNodeByKey<TableNode>(
-            tableObserver.tableNodeKey,
-          )!;
-          if (
-            $handleTableSelectionChangeCommand(tableObserver, tableNode, editor)
-          ) {
-            return true;
-          }
-        }
-        return false;
+        return $handleTableSelectionChangeCommand(tableObservers, editor);
       },
       COMMAND_PRIORITY_HIGH,
     ),
@@ -373,7 +360,7 @@ export function registerTableSelectionObserver(
         editor.getEditorState().read(
           () => {
             for (const [nodeKey, mutation] of nodeMutations) {
-              const tableSelection = tableSelections.get(nodeKey);
+              const tableSelection = tableObservers.observers.get(nodeKey);
               if (mutation === 'created' || mutation === 'updated') {
                 const {tableNode, tableElement} =
                   $getTableAndElementByKey(nodeKey);
@@ -382,13 +369,13 @@ export function registerTableSelectionObserver(
                 } else if (tableElement !== tableSelection[1]) {
                   // The update created a new DOM node, destroy the existing TableObserver
                   tableSelection[0].removeListeners();
-                  tableSelections.delete(nodeKey);
+                  tableObservers.observers.delete(nodeKey);
                   initializeTableNode(tableNode, nodeKey, tableElement);
                 }
               } else if (mutation === 'destroyed') {
                 if (tableSelection !== undefined) {
                   tableSelection[0].removeListeners();
-                  tableSelections.delete(nodeKey);
+                  tableObservers.observers.delete(nodeKey);
                 }
               }
             }
@@ -401,7 +388,7 @@ export function registerTableSelectionObserver(
     () => {
       // Hook might be called multiple times so cleaning up tables listeners as well,
       // as it'll be reinitialized during recurring call
-      for (const [, [tableSelection]] of tableSelections) {
+      for (const [, [tableSelection]] of tableObservers.observers) {
         tableSelection.removeListeners();
       }
     },

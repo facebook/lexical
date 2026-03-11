@@ -16,8 +16,9 @@ import {
 } from '@lexical/utils';
 import {
   $createParagraphNode,
+  $getSelection,
+  $isRangeSelection,
   $isRootOrShadowRoot,
-  $isTextNode,
   COMMAND_PRIORITY_EDITOR,
   createCommand,
   LexicalCommand,
@@ -51,11 +52,11 @@ export default function DateTimePlugin(): JSX.Element | null {
           const {dateTime} = payload;
           const dateTimeNode = $createDateTimeNode(dateTime);
 
-          $insertNodeIntoLeaf(dateTimeNode, (previousCaretNode) => {
-            if ($isTextNode(previousCaretNode)) {
-              dateTimeNode.setFormat(previousCaretNode.getFormat());
-            }
-          });
+          $insertNodeIntoLeaf(dateTimeNode);
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            dateTimeNode.setFormat(selection.format);
+          }
           if ($isRootOrShadowRoot(dateTimeNode.getParentOrThrow())) {
             $wrapNodeInElement(dateTimeNode, $createParagraphNode).selectEnd();
           }

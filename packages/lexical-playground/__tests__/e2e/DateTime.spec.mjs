@@ -111,17 +111,14 @@ test.describe('DateTime', () => {
     );
   });
 
-  test('Datetime must follow the text format when pasting', async ({
+  test('Datetime should apply the current selection format', async ({
     page,
     isPlainText,
   }) => {
     test.skip(isPlainText);
     await focusEditor(page);
     await toggleBold(page);
-    await page.keyboard.type('Hello world');
 
-    // Move caret to end of link
-    await page.keyboard.press('ArrowRight');
     // Insert DateTime using the Insert dropdown
     await selectFromInsertDropdown(page, '.item .calendar');
 
@@ -129,7 +126,6 @@ test.describe('DateTime', () => {
       page,
       html`
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <strong data-lexical-text="true">Hello world</strong>
           <span
             class="PlaygroundEditorTheme__dateTime"
             contenteditable="false"

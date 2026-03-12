@@ -8,6 +8,7 @@
 import {
   buildEditorFromExtensions,
   configExtension,
+  getExtensionDependencyFromEditor,
   NestedEditorExtension,
 } from '@lexical/extension';
 import {describe, expect, test} from 'vitest';
@@ -62,5 +63,49 @@ describe('NestedEditorExtension', () => {
     );
     expect(childEditor._config.theme.text?.bold).toBe(undefined);
     expect(childEditor._config.theme.text?.italic).toBe('child-italic');
+  });
+  test('inheritEditableFromParent defaults false but can be enabled later', () => {
+    const editor = buildEditorFromExtensions({
+      name: 'parent',
+    });
+    const childEditor = editor.read(() =>
+      buildEditorFromExtensions({
+        dependencies: [NestedEditorExtension],
+        editable: false,
+        name: 'child',
+      }),
+    );
+    expect(editor.isEditable()).toBe(true);
+    expect(childEditor.isEditable()).toBe(false);
+    getExtensionDependencyFromEditor(
+      childEditor,
+      NestedEditorExtension,
+    ).output.inheritEditableFromParent.value = true;
+    expect(childEditor.isEditable()).toBe(true);
+    editor.setEditable(false);
+    expect(editor.isEditable()).toBe(false);
+    expect(childEditor.isEditable()).toBe(false);
+  });
+  test('inheritEditableFromParent works when configured true', () => {
+    const editor = buildEditorFromExtensions({
+      editable: false,
+      name: 'parent',
+    });
+    const childEditor = editor.read(() =>
+      buildEditorFromExtensions({
+        dependencies: [
+          configExtension(NestedEditorExtension, {
+            inheritEditableFromParent: true,
+          }),
+        ],
+        editable: false,
+        name: 'child',
+      }),
+    );
+    expect(editor.isEditable()).toBe(false);
+    expect(childEditor.isEditable()).toBe(false);
+    editor.setEditable(true);
+    expect(editor.isEditable()).toBe(true);
+    expect(childEditor.isEditable()).toBe(true);
   });
 });

@@ -18,7 +18,7 @@ export interface LexicalExtensionEditorComposerProps {
   /**
    * Any children will have access to useLexicalComposerContext (e.g. for React plug-ins or UX)
    */
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 /**
@@ -27,7 +27,7 @@ export interface LexicalExtensionEditorComposerProps {
  *
  * Make sure that your initialEditor argument is stable (e.g. using module scope or useMemo) so
  * that you are not re-creating the editor on every render! The editor should be built with
- * ReactProvider and ReactExtension.
+ * ReactProviderExtension and ReactExtension dependencies.
  */
 export function LexicalExtensionEditorComposer({
   initialEditor: editor,

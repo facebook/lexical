@@ -6,11 +6,16 @@
  *
  */
 
+import {useColorMode} from '@docusaurus/theme-common';
 import Translate from '@docusaurus/Translate';
 
 const FeatureList = [
   {
-    Svg: require('@site/static/img/feature-reliable.svg').default,
+    Svg: require('@site/static/img/reliable.svg').default,
+    cardBg: '#eef3ff',
+    cardBgDark: '#1a2240',
+    cardBorder: '1px solid #c5d5f5',
+    cardBorderDark: '1px solid #2a3a60',
     description: (
       <Translate
         id="page.home.features.reliable"
@@ -20,10 +25,15 @@ const FeatureList = [
         and pending states of the editor at any given time.
       </Translate>
     ),
+    iconGradient: 'linear-gradient(135deg, #60a5fa, #3b5bdb)',
     title: 'Reliable',
   },
   {
-    Svg: require('@site/static/img/feature-accessible.svg').default,
+    Svg: require('@site/static/img/accessible.svg').default,
+    cardBg: '#fdf4ff',
+    cardBgDark: '#201228',
+    cardBorder: '1px solid #e8cdf8',
+    cardBorderDark: '1px solid #3a1f50',
     description: (
       <Translate
         id="page.home.features.accessible"
@@ -33,10 +43,15 @@ const FeatureList = [
         technologies.
       </Translate>
     ),
+    iconGradient: 'linear-gradient(135deg, #c084fc, #7c3aed)',
     title: 'Accessible',
   },
   {
-    Svg: require('@site/static/img/feature-fast.svg').default,
+    Svg: require('@site/static/img/fast.svg').default,
+    cardBg: '#f0faf0',
+    cardBgDark: '#142214',
+    cardBorder: '1px solid #bfe8bf',
+    cardBorderDark: '1px solid #1f3d1f',
     description: (
       <Translate
         id="page.home.features.fast"
@@ -46,42 +61,48 @@ const FeatureList = [
         these features can be included via a plugin interface.
       </Translate>
     ),
+    iconGradient: 'linear-gradient(135deg, #86efac, #16a34a)',
     title: 'Fast',
-  },
-  {
-    Svg: require('@site/static/img/feature-cross-platform.svg').default,
-    description: (
-      <Translate
-        id="page.home.features.crossplatform"
-        description="short description of why Lexical is cross platform (web/iOS)">
-        Lexical is available as a JavaScript framework for use in web browsers,
-        as well as a Swift framework for native iOS development.
-      </Translate>
-    ),
-    title: 'Cross Platform',
   },
 ];
 
-function Feature({Svg, title, description}) {
+function Feature({
+  Svg,
+  title,
+  description,
+  cardBg,
+  cardBgDark,
+  cardBorder,
+  cardBorderDark,
+  iconGradient,
+}) {
+  const {colorMode} = useColorMode();
+  const isDark = colorMode === 'dark';
   return (
-    <div className="text-center">
-      <Svg className="h-[200px] w-[200px]" alt={title} />
-
-      <div>
-        <h3>{title}</h3>
-        <p>{description}</p>
+    <div
+      className="rounded-2xl p-6"
+      style={{
+        backgroundColor: isDark ? cardBgDark : cardBg,
+        border: isDark ? cardBorderDark : cardBorder,
+      }}>
+      <div
+        className="relative mb-4 flex h-16 w-16 items-center justify-center overflow-hidden rounded-full"
+        style={{background: iconGradient}}>
+        <div className="absolute -bottom-1 flex h-11 w-11 justify-center rounded-md bg-white py-1.5">
+          <Svg className="h-6 w-6 text-black" alt={title} />
+        </div>
       </div>
+      <h3 className="mb-2 font-bold">{title}</h3>
+      <p className="text-sm">{description}</p>
     </div>
   );
 }
 
 export default function HomepageFeatures() {
   return (
-    <section className="mx-auto grid gap-10 py-8 lg:grid-cols-3">
+    <section className="mx-10 grid gap-4 py-8 lg:mx-auto lg:grid-cols-3">
       {FeatureList.map((props, idx) => (
-        <div key={idx}>
-          <Feature {...props} />
-        </div>
+        <Feature key={idx} {...props} />
       ))}
     </section>
   );

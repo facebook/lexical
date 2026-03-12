@@ -24,10 +24,11 @@ import {
   $createTextNode,
   $getRoot,
   $getSelection,
+  $isElementNode,
   $isParagraphNode,
   $isTextNode,
   ElementNode,
-  LexicalNode,
+  TextNode,
 } from 'lexical';
 
 import {importTextTransformers} from './importTextTransformers';
@@ -100,9 +101,9 @@ export function createMarkdownImport(
         continue;
       }
       // Convert all '\t' into TabNode.
-      if ($isParagraphNode(child) && child.getTextContent().includes('\t')) {
-        for (const paragraphChild of child.getChildren()) {
-          $createTabInNode(paragraphChild);
+      if ($isElementNode(child)) {
+        for (const textNode of child.getAllTextNodes()) {
+          $normalizeMarkdownTextNode(textNode);
         }
       }
     }
@@ -301,21 +302,22 @@ function $importBlocks(
 }
 
 // Look in node for '\t' and create a TabNode for each occurrence.
-function $createTabInNode(node: LexicalNode): void {
-  const parts = node.getTextContent().split(/(\t)/).filter(Boolean);
-  if (parts.length <= 1) {
-    return;
+function $normalizeMarkdownTextNode(textNode: TextNode): void {
+  let currNode = textNode;
+  let tabOffset = textNode.getTextContent().indexOf('\t');
+
+  // Split TextNode into 3 and replace the one containing '\t' by a TabNode.
+  // Repeat the operation until no more '\t' is found.
+  while (tabOffset !== -1) {
+    const splitNodes = currNode.splitText(tabOffset, tabOffset + 1);
+    splitNodes.forEach((node) => {
+      if (node.getTextContent() === '\t') {
+        node.replace($createTabNode());
+      }
+    });
+    currNode = splitNodes[splitNodes.length - 1];
+    tabOffset = currNode.getTextContent().indexOf('\t');
   }
-
-  const nodes = parts.map((part) =>
-    part === '\t' ? $createTabNode() : $createTextNode(part),
-  );
-
-  node.replace(nodes[0]);
-  nodes.reduce((prev, curr) => {
-    prev.insertAfter(curr);
-    return curr;
-  });
 }
 
 function createTextFormatTransformersIndex(

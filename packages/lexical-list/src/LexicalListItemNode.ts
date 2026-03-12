@@ -13,6 +13,7 @@ import type {
   DOMExportOutput,
   EditorConfig,
   EditorThemeClasses,
+  KlassConstructor,
   LexicalNode,
   LexicalUpdateJSON,
   NodeKey,
@@ -29,7 +30,6 @@ import {
 } from '@lexical/utils';
 import {
   $applyNodeReplacement,
-  $copyNode,
   $createParagraphNode,
   $isElementNode,
   $isParagraphNode,
@@ -75,6 +75,8 @@ function applyMarkerStyles(
 
 /** @noInheritDoc */
 export class ListItemNode extends ElementNode {
+  /** @internal */
+  declare ['constructor']: KlassConstructor<typeof ListItemNode>;
   /** @internal */
   __value: number;
   /** @internal */
@@ -229,7 +231,7 @@ export class ListItemNode extends ElementNode {
       list.insertAfter(replaceWithNode);
     } else {
       // Split the list
-      const newList = $copyNode(list).setStart(1);
+      const newList = new list.constructor(list.getListType());
       let nextSibling = this.getNextSibling();
       while (nextSibling) {
         const nodeToAppend = nextSibling;
@@ -275,7 +277,7 @@ export class ListItemNode extends ElementNode {
     listNode.insertAfter(node, restoreSelection);
 
     if (siblings.length !== 0) {
-      const newListNode = $copyNode(listNode).setStart(1);
+      const newListNode = new listNode.constructor(listNode.getListType());
 
       siblings.forEach((sibling) => newListNode.append(sibling));
 
@@ -312,7 +314,9 @@ export class ListItemNode extends ElementNode {
     _: RangeSelection,
     restoreSelection = true,
   ): ListItemNode | ParagraphNode {
-    const newElement = $copyNode(this);
+    const newElement = new this.constructor()
+      .updateFromJSON(this.exportJSON())
+      .setChecked(this.getChecked() ? false : undefined);
 
     this.insertAfter(newElement, restoreSelection);
 

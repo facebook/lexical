@@ -13,7 +13,6 @@ import {
 } from '@lexical/utils';
 import {
   $applyNodeReplacement,
-  $copyNode,
   $createTextNode,
   $isElementNode,
   buildImportMap,
@@ -22,6 +21,7 @@ import {
   EditorConfig,
   EditorThemeClasses,
   ElementNode,
+  KlassConstructor,
   LexicalEditor,
   LexicalNode,
   LexicalUpdateJSON,
@@ -30,9 +30,8 @@ import {
   SerializedElementNode,
   Spread,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
-import {$isListItemNode, ListItemNode} from '.';
+import {$createListItemNode, $isListItemNode, ListItemNode} from '.';
 import {
   mergeNextSiblingListIfSameType,
   updateChildrenListItemValue,
@@ -54,6 +53,8 @@ export type ListNodeTagType = 'ul' | 'ol';
 
 /** @noInheritDoc */
 export class ListNode extends ElementNode {
+  /** @internal */
+  declare ['constructor']: KlassConstructor<typeof ListNode>;
   /** @internal */
   __tag: ListNodeTagType;
   /** @internal */
@@ -199,11 +200,10 @@ export class ListNode extends ElementNode {
     deleteCount: number,
     nodesToInsert: LexicalNode[],
   ): this {
-    const listItem = this.getChildren().find($isListItemNode);
-    invariant(
-      $isListItemNode(listItem),
-      "splice: ListNode doesn't have any ListItemNode in children",
-    );
+    const listItem =
+      nodesToInsert.find($isListItemNode) ??
+      this.getChildren().find($isListItemNode) ??
+      $createListItemNode();
 
     let listItemNodesToInsert = nodesToInsert;
     for (let i = 0; i < nodesToInsert.length; i++) {
@@ -212,7 +212,7 @@ export class ListNode extends ElementNode {
         if (listItemNodesToInsert === nodesToInsert) {
           listItemNodesToInsert = [...nodesToInsert];
         }
-        listItemNodesToInsert[i] = $copyNode(listItem).append(
+        listItemNodesToInsert[i] = new listItem.constructor().append(
           $isElementNode(node) && !($isListNode(node) || node.isInline())
             ? $createTextNode(node.getTextContent())
             : node,

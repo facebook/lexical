@@ -15,6 +15,8 @@ import HomepageSetup from '@site/src/components/HomepageSetup';
 import Layout from '@theme/Layout';
 import {inject} from '@vercel/analytics';
 
+import HomepageContribute from '../components/HomepageContribute';
+
 // activate analytics
 inject();
 
@@ -34,9 +36,7 @@ function LandingHero() {
           like lists, links and tables.
         </p>
         <div className="flex gap-4">
-          <Link
-            className="rounded-md bg-[var(--ifm-color-primary-dark)] px-6 py-2 text-sm font-bold text-black transition-colors duration-300 hover:bg-[var(--ifm-color-primary)] hover:text-black/60 hover:no-underline"
-            to="/docs/intro">
+          <Link className="styled-button px-6 py-2" to="/docs/intro">
             Get Started
           </Link>
         </div>
@@ -61,6 +61,7 @@ export default function Home() {
       <main className="mx-auto max-w-[82rem] space-y-12 px-4">
         <HomepageFeatures />
         <HomepageSetup />
+        <HomepageContribute />
       </main>
     </Layout>
   );

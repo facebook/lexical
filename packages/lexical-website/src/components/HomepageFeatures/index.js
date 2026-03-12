@@ -80,13 +80,13 @@ function Feature({
   const isDark = colorMode === 'dark';
   return (
     <div
-      className="rounded-2xl p-6"
+      className="rounded-2xl px-6"
       style={{
         backgroundColor: isDark ? cardBgDark : cardBg,
         border: isDark ? cardBorderDark : cardBorder,
       }}>
       <div
-        className="relative mb-4 flex h-16 w-16 items-center justify-center overflow-hidden rounded-full"
+        className="relative mb-4 mt-6 flex h-16 w-16 items-center justify-center overflow-hidden rounded-full"
         style={{background: iconGradient}}>
         <div className="absolute -bottom-1 flex h-11 w-11 justify-center rounded-md bg-white py-1.5">
           <Svg className="h-6 w-6 text-black" alt={title} />
@@ -100,7 +100,7 @@ function Feature({
 
 export default function HomepageFeatures() {
   return (
-    <section className="mx-10 grid gap-4 py-8 lg:mx-auto lg:grid-cols-3">
+    <section className="mx-4 grid gap-4 py-8 sm:mx-10 lg:mx-auto lg:grid-cols-3">
       {FeatureList.map((props, idx) => (
         <Feature key={idx} {...props} />
       ))}

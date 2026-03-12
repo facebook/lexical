@@ -10,8 +10,8 @@ import '../css/custom.css';
 
 import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
-import HomepageExamples from '@site/src/components/HomepageExamples';
 import HomepageFeatures from '@site/src/components/HomepageFeatures';
+import HomepageSetup from '@site/src/components/HomepageSetup';
 import Layout from '@theme/Layout';
 import {inject} from '@vercel/analytics';
 
@@ -58,15 +58,9 @@ export default function Home() {
   return (
     <Layout description={siteConfig.tagline}>
       <LandingHero />
-
-      <main className="mx-auto max-w-[82rem] px-4">
-        <div className="my-8">
-          <HomepageFeatures />
-        </div>
-
-        <div className="my-8">
-          <HomepageExamples />
-        </div>
+      <main className="mx-auto max-w-[82rem] space-y-12 px-4">
+        <HomepageFeatures />
+        <HomepageSetup />
       </main>
     </Layout>
   );

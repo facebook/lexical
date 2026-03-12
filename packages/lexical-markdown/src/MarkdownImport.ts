@@ -303,21 +303,23 @@ function $importBlocks(
 
 // Look in node for '\t' and create a TabNode for each occurrence.
 function $normalizeMarkdownTextNode(textNode: TextNode): void {
-  let currNode = textNode;
-  let tabOffset = textNode.getTextContent().indexOf('\t');
+  const tabOffsets = [];
+  const text = textNode.getTextContent();
+  let index = text.indexOf('\t');
 
-  // Split TextNode into 3 and replace the one containing '\t' by a TabNode.
-  // Repeat the operation until no more '\t' is found.
-  while (tabOffset !== -1) {
-    const splitNodes = currNode.splitText(tabOffset, tabOffset + 1);
-    splitNodes.forEach((node) => {
-      if (node.getTextContent() === '\t') {
-        node.replace($createTabNode());
-      }
-    });
-    currNode = splitNodes[splitNodes.length - 1];
-    tabOffset = currNode.getTextContent().indexOf('\t');
+  // Find all tab occurrences
+  while (index !== -1) {
+    tabOffsets.push(index, index + 1);
+    index = text.indexOf('\t', index + 1);
   }
+
+  // Split node to isolate each tab then replace '\t' into TabNode
+  const splitNodes = textNode.splitText(...tabOffsets);
+  splitNodes.forEach((node) => {
+    if (node.getTextContent() === '\t') {
+      node.replace($createTabNode());
+    }
+  });
 }
 
 function createTextFormatTransformersIndex(

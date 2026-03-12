@@ -13,7 +13,6 @@ import type {
   DOMExportOutput,
   EditorConfig,
   EditorThemeClasses,
-  KlassConstructor,
   LexicalNode,
   LexicalUpdateJSON,
   NodeKey,
@@ -75,8 +74,6 @@ function applyMarkerStyles(
 
 /** @noInheritDoc */
 export class ListItemNode extends ElementNode {
-  /** @internal */
-  declare ['constructor']: KlassConstructor<typeof ListItemNode>;
   /** @internal */
   __value: number;
   /** @internal */
@@ -314,7 +311,7 @@ export class ListItemNode extends ElementNode {
     _: RangeSelection,
     restoreSelection = true,
   ): ListItemNode | ParagraphNode {
-    const newElement = new this.constructor()
+    const newElement = this.create()
       .updateFromJSON(this.exportJSON())
       .setChecked(this.getChecked() ? false : undefined);
 

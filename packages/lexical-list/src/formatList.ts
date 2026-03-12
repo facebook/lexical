@@ -415,10 +415,13 @@ export function $handleIndent(listItemNode: ListItemNode): void {
     // otherwise, we need to create a new nested ListNode
 
     if ($isListNode(parent)) {
-      const newListItem = new listItemNode.constructor()
+      const newListItem = listItemNode
+        .create()
         .setTextFormat(listItemNode.getTextFormat())
         .setTextStyle(listItemNode.getTextStyle());
-      const newList = new parent.constructor(parent.getListType())
+      const newList = parent
+        .create()
+        .setListType(parent.getListType())
         .setTextFormat(parent.getTextFormat())
         .setTextStyle(parent.getTextStyle());
       newListItem.append(newList);
@@ -481,14 +484,14 @@ export function $handleOutdent(listItemNode: ListItemNode): void {
     } else {
       // otherwise, we need to split the siblings into two new nested lists
       const listType = parentList.getListType();
-      const previousSiblingsListItem = new listItemNode.constructor();
-      const previousSiblingsList = new parentList.constructor(listType);
+      const previousSiblingsListItem = listItemNode.create();
+      const previousSiblingsList = parentList.create().setListType(listType);
       previousSiblingsListItem.append(previousSiblingsList);
       listItemNode
         .getPreviousSiblings()
         .forEach((sibling) => previousSiblingsList.append(sibling));
-      const nextSiblingsListItem = new listItemNode.constructor();
-      const nextSiblingsList = new parentList.constructor(listType);
+      const nextSiblingsListItem = listItemNode.create();
+      const nextSiblingsList = parentList.create().setListType(listType);
       nextSiblingsListItem.append(nextSiblingsList);
       append(nextSiblingsList, listItemNode.getNextSiblings());
       // put the sibling nested lists on either side of the grandparent list item in the great grandparent.
@@ -560,7 +563,7 @@ export function $handleListInsertParagraph(
     replacementNode = $createParagraphNode();
     topListNode.insertAfter(replacementNode);
   } else if ($isListItemNode(grandparent)) {
-    replacementNode = new grandparent.constructor();
+    replacementNode = grandparent.create();
     grandparent.insertAfter(replacementNode);
   } else {
     return false;
@@ -574,12 +577,13 @@ export function $handleListInsertParagraph(
 
   if (nextSiblings.length > 0) {
     const newStart = restoreNumbering ? $getNewListStart(parent, listItem) : 1;
-    const newList = new parent.constructor(parent.getListType()).setStart(
-      newStart,
-    );
+    const newList = parent
+      .create()
+      .setListType(parent.getListType())
+      .setStart(newStart);
 
     if ($isListItemNode(replacementNode)) {
-      const newListItem = new replacementNode.constructor();
+      const newListItem = replacementNode.create();
       newListItem.append(newList);
       replacementNode.insertAfter(newListItem);
     } else {

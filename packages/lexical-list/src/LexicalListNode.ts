@@ -21,7 +21,6 @@ import {
   EditorConfig,
   EditorThemeClasses,
   ElementNode,
-  KlassConstructor,
   LexicalEditor,
   LexicalNode,
   LexicalUpdateJSON,
@@ -53,8 +52,6 @@ export type ListNodeTagType = 'ul' | 'ol';
 
 /** @noInheritDoc */
 export class ListNode extends ElementNode {
-  /** @internal */
-  declare ['constructor']: KlassConstructor<typeof ListNode>;
   /** @internal */
   __tag: ListNodeTagType;
   /** @internal */

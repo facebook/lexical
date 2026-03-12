@@ -13,6 +13,7 @@ import {
 } from '@lexical/utils';
 import {
   $applyNodeReplacement,
+  $copyNode,
   $createTextNode,
   $isElementNode,
   buildImportMap,
@@ -29,8 +30,9 @@ import {
   SerializedElementNode,
   Spread,
 } from 'lexical';
+import invariant from 'shared/invariant';
 
-import {$createListItemNode, $isListItemNode, ListItemNode} from '.';
+import {$isListItemNode, ListItemNode} from '.';
 import {
   mergeNextSiblingListIfSameType,
   updateChildrenListItemValue,
@@ -197,6 +199,12 @@ export class ListNode extends ElementNode {
     deleteCount: number,
     nodesToInsert: LexicalNode[],
   ): this {
+    const listItem = this.getChildren().find($isListItemNode);
+    invariant(
+      $isListItemNode(listItem),
+      "splice: ListNode doesn't have any ListItemNode in children",
+    );
+
     let listItemNodesToInsert = nodesToInsert;
     for (let i = 0; i < nodesToInsert.length; i++) {
       const node = nodesToInsert[i];
@@ -204,7 +212,7 @@ export class ListNode extends ElementNode {
         if (listItemNodesToInsert === nodesToInsert) {
           listItemNodesToInsert = [...nodesToInsert];
         }
-        listItemNodesToInsert[i] = $createListItemNode().append(
+        listItemNodesToInsert[i] = $copyNode(listItem).append(
           $isElementNode(node) && !($isListNode(node) || node.isInline())
             ? $createTextNode(node.getTextContent())
             : node,

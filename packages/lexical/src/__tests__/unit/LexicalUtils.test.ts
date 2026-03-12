@@ -525,14 +525,14 @@ describe('LexicalUtils tests', () => {
         doc.documentElement.style.scrollPaddingTop = '0px';
         window.scrollBy = vi.fn((x: number, y: number) => {
           scrollAmountWithoutPadding = y;
-        });
+        }) as unknown as typeof window.scrollBy;
         scrollIntoViewIfNeeded(editor, selectionRect, rootElement);
 
         // Test WITH scroll-padding
         doc.documentElement.style.scrollPaddingTop = '60px';
         window.scrollBy = vi.fn((x: number, y: number) => {
           scrollAmountWithPadding = y;
-        });
+        }) as unknown as typeof window.scrollBy;
         scrollIntoViewIfNeeded(editor, selectionRect, rootElement);
 
         // With scroll-padding-top of 60px, the effective targetTop is 60

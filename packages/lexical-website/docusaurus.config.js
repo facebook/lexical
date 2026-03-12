@@ -364,66 +364,6 @@ const config = {
           hideable: true,
         },
       },
-      footer: {
-        copyright: `Copyright © ${new Date().getFullYear()} Meta Platforms, Inc. Built with Docusaurus.`,
-        links: [
-          {
-            items: [
-              {
-                label: 'Introduction',
-                to: '/docs/intro',
-              },
-            ],
-            title: 'Docs',
-          },
-          {
-            items: [
-              {
-                href: 'https://discord.gg/KmG4wQnnD9',
-                label: 'Discord',
-              },
-              {
-                href: 'https://stackoverflow.com/questions/tagged/lexicaljs',
-                label: 'Stack Overflow',
-              },
-              {
-                href: 'https://twitter.com/lexicaljs',
-                label: 'Twitter',
-              },
-            ],
-            title: 'Community',
-          },
-          {
-            items: [
-              {
-                href: 'https://github.com/facebook/lexical',
-                label: 'GitHub',
-              },
-            ],
-            title: 'More',
-          },
-          {
-            // Please do not remove the privacy and terms, it's a legal requirement.
-            items: [
-              {
-                href: 'https://opensource.facebook.com/legal/privacy/',
-                label: 'Privacy',
-                rel: 'noreferrer noopener',
-                target: '_blank',
-              },
-              {
-                href: 'https://opensource.facebook.com/legal/terms/',
-                label: 'Terms',
-                rel: 'noreferrer noopener',
-                target: '_blank',
-              },
-            ],
-
-            title: 'Legal',
-          },
-        ],
-        style: 'dark',
-      },
       navbar: {
         items: [
           {

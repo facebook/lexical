@@ -57,6 +57,29 @@ function rangeFromPoints(
   range.setEnd(...rangeTargetFromPoint(end, endNode, endDOM));
   return range;
 }
+
+function defaultOnReposition(domNodes: readonly HTMLElement[]): void {
+  for (const domNode of domNodes) {
+    const domNodeStyle = domNode.style;
+
+    if (domNodeStyle.background !== 'Highlight') {
+      domNodeStyle.background = 'Highlight';
+    }
+    if (domNodeStyle.color !== 'HighlightText') {
+      domNodeStyle.color = 'HighlightText';
+    }
+    if (domNodeStyle.marginTop !== px(-1.5)) {
+      domNodeStyle.marginTop = px(-1.5);
+    }
+    if (domNodeStyle.paddingTop !== px(4)) {
+      domNodeStyle.paddingTop = px(4);
+    }
+    if (domNodeStyle.paddingBottom !== px(0)) {
+      domNodeStyle.paddingBottom = px(0);
+    }
+  }
+}
+
 /**
  * Place one or multiple newly created Nodes at the current selection. Multiple
  * nodes will only be created when the selection spans multiple lines (aka
@@ -67,7 +90,7 @@ function rangeFromPoints(
  */
 export default function markSelection(
   editor: LexicalEditor,
-  onReposition?: (node: Array<HTMLElement>) => void,
+  onReposition: (node: readonly HTMLElement[]) => void = defaultOnReposition,
 ): () => void {
   let previousAnchorNode: null | TextNode | ElementNode = null;
   let previousAnchorNodeDOM: null | HTMLElement = null;
@@ -123,31 +146,7 @@ export default function markSelection(
           currentEndNodeDOM,
         );
         removeRangeListener();
-        removeRangeListener = positionNodeOnRange(editor, range, (domNodes) => {
-          if (onReposition === undefined) {
-            for (const domNode of domNodes) {
-              const domNodeStyle = domNode.style;
-
-              if (domNodeStyle.background !== 'Highlight') {
-                domNodeStyle.background = 'Highlight';
-              }
-              if (domNodeStyle.color !== 'HighlightText') {
-                domNodeStyle.color = 'HighlightText';
-              }
-              if (domNodeStyle.marginTop !== px(-1.5)) {
-                domNodeStyle.marginTop = px(-1.5);
-              }
-              if (domNodeStyle.paddingTop !== px(4)) {
-                domNodeStyle.paddingTop = px(4);
-              }
-              if (domNodeStyle.paddingBottom !== px(0)) {
-                domNodeStyle.paddingBottom = px(0);
-              }
-            }
-          } else {
-            onReposition(domNodes);
-          }
-        });
+        removeRangeListener = positionNodeOnRange(editor, range, onReposition);
       }
       previousAnchorNode = currentStartNode;
       previousAnchorNodeDOM = currentStartNodeDOM;

@@ -47,6 +47,7 @@ export {
 } from './namedSignals';
 export {NestedEditorExtension} from './NestedEditorExtension';
 export {NodeSelectionExtension} from './NodeSelectionExtension';
+export {SelectionAlwaysOnDisplayExtension} from './SelectionAlwaysOnDisplayExtension';
 export {
   batch,
   computed,

@@ -11,6 +11,7 @@ import {
   ClearEditorExtension,
   DecoratorTextExtension,
   HorizontalRuleExtension,
+  SelectionAlwaysOnDisplayExtension,
 } from '@lexical/extension';
 import {HashtagExtension} from '@lexical/hashtag';
 import {HistoryExtension} from '@lexical/history';
@@ -179,6 +180,7 @@ const AppExtension = defineExtension({
     configExtension(LinkExtension, {validateUrl}),
     PlaygroundAutoLinkExtension,
     ClickableLinkExtension,
+    SelectionAlwaysOnDisplayExtension,
   ],
   html: buildHTMLConfig(),
   name: '@lexical/playground',

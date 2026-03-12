@@ -6,13 +6,15 @@
  *
  */
 
-import {LexicalEditor} from 'lexical';
+import {LexicalEditor, mergeRegister} from 'lexical';
 
 import markSelection from './markSelection';
 
+function noop() {}
+
 export default function selectionAlwaysOnDisplay(
   editor: LexicalEditor,
-  onReposition?: (node: Array<HTMLElement>) => void,
+  onReposition?: (node: readonly HTMLElement[]) => void,
 ): () => void {
   let removeSelectionMark: (() => void) | null = null;
 
@@ -38,12 +40,23 @@ export default function selectionAlwaysOnDisplay(
     }
   };
 
-  document.addEventListener('selectionchange', onSelectionChange);
-
-  return () => {
-    if (removeSelectionMark !== null) {
-      removeSelectionMark();
-    }
-    document.removeEventListener('selectionchange', onSelectionChange);
-  };
+  let unregister = noop;
+  return mergeRegister(
+    editor.registerRootListener((rootElement) => {
+      unregister();
+      unregister = noop;
+      if (rootElement) {
+        const document = rootElement.ownerDocument;
+        document.addEventListener('selectionchange', onSelectionChange);
+        onSelectionChange();
+        unregister = () => {
+          if (removeSelectionMark !== null) {
+            removeSelectionMark();
+          }
+          document.removeEventListener('selectionchange', onSelectionChange);
+        };
+      }
+    }),
+    () => unregister(),
+  );
 }

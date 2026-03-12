@@ -11,7 +11,7 @@ import {selectionAlwaysOnDisplay} from '@lexical/utils';
 import {useEffect} from 'react';
 
 type Props = Readonly<{
-  onReposition?: (node: Array<HTMLElement>) => void;
+  onReposition?: (node: readonly HTMLElement[]) => void;
 }>;
 
 export function SelectionAlwaysOnDisplay({onReposition}: Props): null {

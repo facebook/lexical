@@ -8,7 +8,10 @@
 
 import type {JSX} from 'react';
 
-import {Signal} from '@lexical/extension';
+import {
+  SelectionAlwaysOnDisplayExtension,
+  type Signal,
+} from '@lexical/extension';
 import {
   ClickableLinkExtension,
   LinkAttributes,
@@ -21,7 +24,6 @@ import {
   CollaborationPluginV2__EXPERIMENTAL,
 } from '@lexical/react/LexicalCollaborationPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {SelectionAlwaysOnDisplay} from '@lexical/react/LexicalSelectionAlwaysOnDisplay';
 import {TabIndentationPlugin} from '@lexical/react/LexicalTabIndentationPlugin';
 import {TablePlugin} from '@lexical/react/LexicalTablePlugin';
 import {useOptionalExtensionDependency} from '@lexical/react/useExtensionComponent';
@@ -159,6 +161,11 @@ export default function Editor(): JSX.Element {
     shouldDisableFocusOnClickChecklist,
   );
   useSyncExtensionSignal(ClickableLinkExtension, 'disabled', isEditable);
+  useSyncExtensionSignal(
+    SelectionAlwaysOnDisplayExtension,
+    'disabled',
+    !selectionAlwaysOnDisplay,
+  );
 
   useEffect(() => {
     const updateViewPortWidth = () => {
@@ -197,7 +204,6 @@ export default function Editor(): JSX.Element {
         className={`editor-container ${showTreeView ? 'tree-view' : ''} ${
           !isRichText ? 'plain-text' : ''
         }`}>
-        {selectionAlwaysOnDisplay && <SelectionAlwaysOnDisplay />}
         <ComponentPickerPlugin />
         <EmojiPickerPlugin />
         <AutoEmbedPlugin />

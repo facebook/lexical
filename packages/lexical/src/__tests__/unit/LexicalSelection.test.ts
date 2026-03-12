@@ -1383,6 +1383,8 @@ describe('getNodes()', () => {
 
           const newSelection = $assertRangeSelection($getSelection());
 
+          newSelection.formatText('bold');
+
           newSelection.insertText('X');
 
           const nodes = newSelection.getNodes();

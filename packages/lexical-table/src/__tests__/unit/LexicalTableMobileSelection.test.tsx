@@ -40,7 +40,7 @@ interface PointerEventInit extends EventInit {
     constructor(type: string, options: PointerEventInit = {}) {
       super(type, options);
       this.button = options.button || 0;
-      this.buttons = options.buttons || 1;
+      this.buttons = options.buttons ?? 1;
       this.pointerType = options.pointerType || 'mouse';
     }
   };
@@ -266,6 +266,53 @@ describe('LexicalTableMobileSelection', () => {
       await testEnv.editor.getEditorState().read(() => {
         // Should handle mixed input gracefully without errors
         expect(true).toBe(true);
+      });
+    });
+
+    test('mouse leaving browser window during selection should stop selection', async () => {
+      await testEnv.editor.update(() => {
+        const root = $getRoot();
+        const {tableNode, cells} = $createTestTable();
+        root.clear().append(tableNode);
+
+        // Select first cell
+        cells[0][0].selectStart();
+      });
+
+      // Get the DOM elements
+      const firstCellElement =
+        testEnv.container.querySelector('td:nth-child(1)')!;
+      const secondCellElement =
+        testEnv.container.querySelector('td:nth-child(2)')!;
+
+      expect(firstCellElement).not.toBeNull();
+      expect(secondCellElement).not.toBeNull();
+
+      // Step 1: Start a mouse drag selection (pointerdown with buttons: 1)
+      simulatePointerEvent(firstCellElement, 'pointerdown', {
+        buttons: 1,
+        pointerType: 'mouse',
+      });
+
+      // Step 2: Move to another cell (normal drag, buttons: 1)
+      simulatePointerEvent(secondCellElement, 'pointermove', {
+        buttons: 1,
+        pointerType: 'mouse',
+      });
+
+      // Step 3: Simulate mouse re-entering window after leaving
+      // When mouse leaves and re-enters, buttons will be 0 (button state lost)
+      // This should trigger the selection cleanup code path
+      simulatePointerEvent(secondCellElement, 'pointermove', {
+        buttons: 0,
+        pointerType: 'mouse',
+      });
+
+      await testEnv.editor.getEditorState().read(() => {
+        const selection = $getSelection();
+        // After mouse re-enters with buttons: 0, selection should be cleaned up
+        // and should not be a table selection (drag was interrupted)
+        expect($isTableSelection(selection)).toBe(false);
       });
     });
   });

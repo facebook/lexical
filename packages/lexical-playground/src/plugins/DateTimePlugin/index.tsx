@@ -52,11 +52,11 @@ export default function DateTimePlugin(): JSX.Element | null {
           const {dateTime} = payload;
           const dateTimeNode = $createDateTimeNode(dateTime);
 
-          $insertNodeIntoLeaf(dateTimeNode);
           const selection = $getSelection();
           if ($isRangeSelection(selection)) {
             dateTimeNode.setFormat(selection.format);
           }
+          $insertNodeIntoLeaf(dateTimeNode);
           if ($isRootOrShadowRoot(dateTimeNode.getParentOrThrow())) {
             $wrapNodeInElement(dateTimeNode, $createParagraphNode).selectEnd();
           }

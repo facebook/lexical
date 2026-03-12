@@ -55,9 +55,7 @@ export default function HomepageSetup() {
               {paragraph}
             </p>
           ))}
-          <Link
-            to="/docs/packages/lexical"
-            className="w-fit rounded-md bg-[var(--ifm-color-primary-dark)] px-4 py-3 text-sm font-bold text-black transition-colors duration-300 hover:bg-[var(--ifm-color-primary)] hover:text-black/60 hover:no-underline">
+          <Link to="/docs/packages/lexical" className="styled-button px-4 py-3">
             View all packages
           </Link>
         </div>

@@ -39,11 +39,9 @@ const CommunityList = [
 
 function CommunityCard({Svg, DarkSvg, title, buttonText, url}) {
   const {colorMode} = useColorMode();
-  const isDark = colorMode === 'dark';
-
   return (
     <div className="flex w-fit flex-col items-center rounded-2xl p-6 text-center">
-      {isDark && DarkSvg ? (
+      {colorMode === 'dark' && DarkSvg ? (
         <DarkSvg className="mb-4 h-16 w-16" alt={title} />
       ) : (
         <Svg className="mb-4 h-16 w-16" alt={title} />

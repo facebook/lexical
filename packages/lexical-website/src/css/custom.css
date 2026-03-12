@@ -34,18 +34,6 @@
   --docusaurus-highlighted-code-line-bg: rgba(255, 255, 0, 0.3);
 }
 
-.footer__links {
-  margin-bottom: 3rem;
-}
-
-html[data-theme='dark'] .button--outline:hover {
-  color: white;
-}
-
-html[data-theme='dark'] .button--text:hover {
-  color: rgba(0, 0, 0, 0.5);
-}
-
 .text-gradient {
   background: linear-gradient(to right, #76b6ff, #00c896);
   -webkit-background-clip: text;

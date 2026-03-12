@@ -21,7 +21,6 @@ import HomepageContribute from '../components/HomepageContribute';
 inject();
 
 function LandingHero() {
-  const {siteConfig} = useDocusaurusContext();
   return (
     <header className="flex w-screen flex-col items-center justify-center gap-10 p-10 lg:h-[75vh] lg:flex-row lg:justify-around">
       <div className="w-full space-y-6 lg:min-w-[20rem] lg:max-w-[40rem]">
@@ -58,7 +57,7 @@ export default function Home() {
   return (
     <Layout description={siteConfig.tagline}>
       <LandingHero />
-      <main className="mx-auto max-w-[82rem] space-y-12 px-4">
+      <main className="mx-auto mb-12 max-w-[82rem] space-y-12 px-4">
         <HomepageFeatures />
         <HomepageSetup />
         <HomepageContribute />

@@ -76,4 +76,80 @@ describe('LexicalEditor listeners', () => {
       ]);
     });
   });
+
+  describe('registerEditableListener', () => {
+    test('can return a function that is called when unregistered', () => {
+      const editor = buildEditorFromExtensions({name: '@test'});
+      const editableListenerCallback = vi.fn();
+      const editableListener = vi
+        .fn()
+        .mockImplementation(() => editableListenerCallback);
+      const unregister = editor.registerEditableListener(editableListener);
+      expect(editor._listeners.editable.has(editableListener)).toBe(true);
+      // Not called immediately on registration
+      expect(editableListener).toHaveBeenCalledTimes(0);
+      expect(editableListenerCallback).toHaveBeenCalledTimes(0);
+      editor.setEditable(false);
+      // Called on first change
+      expect(editableListener).toHaveBeenCalledTimes(1);
+      expect(editableListenerCallback).toHaveBeenCalledTimes(0);
+      unregister();
+      // Called on unregister
+      expect(editableListener).toHaveBeenCalledTimes(1);
+      expect(editableListenerCallback).toHaveBeenCalledTimes(1);
+      expect(editor._listeners.editable.has(editableListener)).toBe(false);
+    });
+    test('updates the function on each call', () => {
+      const editor = buildEditorFromExtensions({name: '@test'});
+      const editableListenerCallback = vi.fn();
+      const editableListener = vi
+        .fn()
+        .mockImplementationOnce(() => editableListenerCallback);
+      const unregister = editor.registerEditableListener(editableListener);
+      // Not called immediately
+      expect(editableListener).toHaveBeenCalledTimes(0);
+      expect(editableListenerCallback).toHaveBeenCalledTimes(0);
+      editor.setEditable(false);
+      expect(editableListener).toHaveBeenCalledTimes(1);
+      expect(editableListener).toHaveBeenLastCalledWith(false);
+      expect(editableListenerCallback).toHaveBeenCalledTimes(0);
+      editor.setEditable(true);
+      expect(editableListener).toHaveBeenCalledTimes(2);
+      expect(editableListener).toHaveBeenLastCalledWith(true);
+      // Only the first call returns the function
+      expect(editableListenerCallback).toHaveBeenCalledTimes(1);
+      unregister();
+      // Only the first call returns the function
+      expect(editableListenerCallback).toHaveBeenCalledTimes(1);
+    });
+    test('works when editable state changes', () => {
+      const editor = buildEditorFromExtensions({name: '@test'});
+      const editableListenerCallback = vi.fn();
+      const editableListener = vi
+        .fn()
+        .mockImplementation((editable) =>
+          editableListenerCallback.bind(null, editable),
+        );
+      const unregister = editor.registerEditableListener(editableListener);
+      // Not called on registration
+      expect(editableListener).toHaveBeenCalledTimes(0);
+      expect(editableListenerCallback).toHaveBeenCalledTimes(0);
+      editor.setEditable(false);
+      expect(editableListener).toHaveBeenCalledTimes(1);
+      expect(editableListenerCallback).toHaveBeenCalledTimes(0);
+      editor.setEditable(true);
+      expect(editableListener).toHaveBeenCalledTimes(2);
+      // Previous callback is called when state changes
+      expect(editableListenerCallback.mock.calls).toEqual([[false]]);
+      editor.setEditable(false);
+      expect(editableListenerCallback.mock.calls).toEqual([[false], [true]]);
+      unregister();
+      // Final callback is called on unregister
+      expect(editableListenerCallback.mock.calls).toEqual([
+        [false],
+        [true],
+        [false],
+      ]);
+    });
+  });
 });

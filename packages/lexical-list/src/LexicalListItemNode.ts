@@ -29,6 +29,7 @@ import {
 } from '@lexical/utils';
 import {
   $applyNodeReplacement,
+  $copyNode,
   $createParagraphNode,
   $isElementNode,
   $isParagraphNode,
@@ -300,13 +301,18 @@ export class ListItemNode extends ElementNode {
     }
   }
 
+  resetOnCopyFrom(original: this): void {
+    super.resetOnCopyFrom(original);
+    if (original.getChecked()) {
+      this.setChecked(false);
+    }
+  }
+
   insertNewAfter(
     _: RangeSelection,
     restoreSelection = true,
   ): ListItemNode | ParagraphNode {
-    const newElement = $createListItemNode()
-      .updateFromJSON(this.exportJSON())
-      .setChecked(this.getChecked() ? false : undefined);
+    const newElement = $copyNode(this);
 
     this.insertAfter(newElement, restoreSelection);
 

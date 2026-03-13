@@ -1571,6 +1571,7 @@ export function $copyNode<T extends LexicalNode>(node: T): T {
   const copy = node.constructor.clone(node) as T;
   $setNodeKey(copy, null);
   copy.afterCloneFrom(node);
+  copy.resetOnCopyFrom(node);
   return copy;
 }
 

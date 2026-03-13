@@ -552,6 +552,17 @@ export class LexicalNode {
     }
   }
 
+  /**
+   * Reset state in this copy of originalNode, if necessary
+   *
+   * @param originalNode
+   */
+  resetOnCopyFrom(originalNode: this): void {
+    if (this.__state) {
+      this.__state = this.__state.getWritable(this).resetOnCopy();
+    }
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   static importDOM?: () => DOMConversionMap<any> | null;
 

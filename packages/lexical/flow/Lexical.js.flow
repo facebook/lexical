@@ -1340,6 +1340,7 @@ declare export class StateConfig<K: string, V> {
   +unparse: (value: V) => mixed;
   +isEqual: (a: V, b: V) => boolean;
   +defaultValue: V;
+  +resetOnCopy: boolean;
   constructor(key: K, stateValueConfig: StateValueConfig<V>): this;
 }
 
@@ -1347,6 +1348,7 @@ export type StateValueConfig<V> = {
   parse: (jsonValue: mixed) => V;
   unparse?: (parsed: V) => mixed;
   isEqual?: (a: V, b: V) => boolean;
+  resetOnCopy?: boolean;
 }
 
 export type UnionToIntersection<T> = (

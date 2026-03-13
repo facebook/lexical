@@ -17,7 +17,7 @@ import type {
 
 import invariant from 'shared/invariant';
 
-import {$getRoot, $getSelection, TextNode} from '.';
+import {$getRoot, $getSelection, mergeRegister, TextNode} from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
 import {cloneEditorState, createEmptyEditorState} from './LexicalEditorState';
 import {
@@ -330,7 +330,7 @@ export type DecoratorListener<T = never> = (
 export type RootListener = (
   rootElement: null | HTMLElement,
   prevRootElement: null | HTMLElement,
-) => void;
+) => void | (() => void);
 
 export type TextContentListener = (text: string) => void;
 
@@ -345,7 +345,7 @@ export type MutationListener = (
 
 export type CommandListener<P> = (payload: P, editor: LexicalEditor) => boolean;
 
-export type EditableListener = (editable: boolean) => void;
+export type EditableListener = (editable: boolean) => void | (() => void);
 
 export type CommandListenerPriority = 0 | 1 | 2 | 3 | 4;
 
@@ -388,23 +388,29 @@ type Commands = Map<
   Array<Set<CommandListener<unknown>>>
 >;
 
+export type ListenerMap<T> = Map<T, undefined | (() => void)>;
+
 export interface Listeners {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  decorator: Set<DecoratorListener<any>>;
+  decorator: ListenerMap<DecoratorListener<any>>;
   mutation: MutationListeners;
-  editable: Set<EditableListener>;
-  root: Set<RootListener>;
-  textcontent: Set<TextContentListener>;
-  update: Set<UpdateListener>;
+  editable: ListenerMap<EditableListener>;
+  root: ListenerMap<RootListener>;
+  textcontent: ListenerMap<TextContentListener>;
+  update: ListenerMap<UpdateListener>;
 }
 
-export type SetListeners = {
-  [K in keyof Listeners as Listeners[K] extends Set<
+export type MapListeners = {
+  [K in keyof Listeners as Listeners[K] extends Map<
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (...args: any[]) => void
+    (...args: any[]) => void | undefined | (() => void),
+    undefined | (() => void)
   >
     ? K
-    : never]: Listeners[K] extends Set<(...args: infer Args) => void>
+    : never]: Listeners[K] extends Map<
+    (...args: infer Args) => void | undefined | (() => void),
+    undefined | (() => void)
+  >
     ? Args
     : never;
 };
@@ -667,6 +673,35 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
   return editor;
 }
 
+function triggerListener<
+  T extends (...args_: Args) => void | undefined | (() => void),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  Args extends any[],
+>(listenerMap: ListenerMap<T>, listener: T, args: Args) {
+  const unregister = listenerMap.get(listener);
+  if (unregister) {
+    unregister();
+  }
+  listenerMap.set(listener, listener(...args) || undefined);
+}
+
+function unregisterListener<T>(listenerMap: ListenerMap<T>, listener: T): void {
+  const unregister = listenerMap.get(listener);
+  listenerMap.delete(listener);
+  if (unregister) {
+    unregister();
+  }
+}
+
+function registerListener<T>(
+  listenerMap: ListenerMap<T>,
+  listener: T,
+  unregister?: undefined | (() => void),
+): () => void {
+  listenerMap.set(listener, unregister);
+  return unregisterListener.bind(null, listenerMap, listener);
+}
+
 export class LexicalEditor {
   /** @internal */
   declare ['constructor']: KlassConstructor<typeof LexicalEditor>;
@@ -763,12 +798,12 @@ export class LexicalEditor {
     this._updating = false;
     // Listeners
     this._listeners = {
-      decorator: new Set(),
-      editable: new Set(),
+      decorator: new Map(),
+      editable: new Map(),
       mutation: new Map(),
-      root: new Set(),
-      textcontent: new Set(),
-      update: new Set(),
+      root: new Map(),
+      textcontent: new Map(),
+      update: new Map(),
     };
     // Commands
     this._commands = new Map();
@@ -815,11 +850,7 @@ export class LexicalEditor {
    * @returns a teardown function that can be used to cleanup the listener.
    */
   registerUpdateListener(listener: UpdateListener): () => void {
-    const listenerSetOrMap = this._listeners.update;
-    listenerSetOrMap.add(listener);
-    return () => {
-      listenerSetOrMap.delete(listener);
-    };
+    return registerListener(this._listeners.update, listener);
   }
   /**
    * Registers a listener for for when the editor changes between editable and non-editable states.
@@ -829,11 +860,7 @@ export class LexicalEditor {
    * @returns a teardown function that can be used to cleanup the listener.
    */
   registerEditableListener(listener: EditableListener): () => void {
-    const listenerSetOrMap = this._listeners.editable;
-    listenerSetOrMap.add(listener);
-    return () => {
-      listenerSetOrMap.delete(listener);
-    };
+    return registerListener(this._listeners.editable, listener);
   }
   /**
    * Registers a listener for when the editor's decorator object changes. The decorator object contains
@@ -845,11 +872,7 @@ export class LexicalEditor {
    * @returns a teardown function that can be used to cleanup the listener.
    */
   registerDecoratorListener<T>(listener: DecoratorListener<T>): () => void {
-    const listenerSetOrMap = this._listeners.decorator;
-    listenerSetOrMap.add(listener);
-    return () => {
-      listenerSetOrMap.delete(listener);
-    };
+    return registerListener(this._listeners.decorator, listener);
   }
   /**
    * Registers a listener for when Lexical commits an update to the DOM and the text content of
@@ -862,11 +885,7 @@ export class LexicalEditor {
    * @returns a teardown function that can be used to cleanup the listener.
    */
   registerTextContentListener(listener: TextContentListener): () => void {
-    const listenerSetOrMap = this._listeners.textcontent;
-    listenerSetOrMap.add(listener);
-    return () => {
-      listenerSetOrMap.delete(listener);
-    };
+    return registerListener(this._listeners.textcontent, listener);
   }
   /**
    * Registers a listener for when the editor's root DOM element (the content editable
@@ -880,13 +899,15 @@ export class LexicalEditor {
    * @returns a teardown function that can be used to cleanup the listener.
    */
   registerRootListener(listener: RootListener): () => void {
-    const listenerSetOrMap = this._listeners.root;
-    listener(this._rootElement, null);
-    listenerSetOrMap.add(listener);
-    return () => {
-      listener(null, this._rootElement);
-      listenerSetOrMap.delete(listener);
-    };
+    const listenerMap = this._listeners.root;
+    return mergeRegister(
+      registerListener(
+        listenerMap,
+        listener,
+        listener(this._rootElement, null) || undefined,
+      ),
+      () => triggerListener(listenerMap, listener, [null, this._rootElement]),
+    );
   }
   /**
    * Registers a listener that will trigger anytime the provided command

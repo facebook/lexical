@@ -23,10 +23,10 @@ import {
   EditorUpdateOptions,
   LexicalCommand,
   LexicalEditor,
+  MapListeners,
   MutatedNodes,
   RegisteredNodes,
   resetEditor,
-  SetListeners,
   Transform,
 } from './LexicalEditor';
 import {
@@ -748,21 +748,31 @@ function triggerMutationListeners(
   }
 }
 
-export function triggerListeners<T extends keyof SetListeners>(
+export function triggerListeners<T extends keyof MapListeners>(
   type: T,
   editor: LexicalEditor,
   isCurrentlyEnqueuingUpdates: boolean,
-  ...payload: SetListeners[T]
+  ...payload: MapListeners[T]
 ): void {
   const previouslyUpdating = editor._updating;
   editor._updating = isCurrentlyEnqueuingUpdates;
 
   try {
-    const listeners = Array.from(
-      editor._listeners[type] as Set<(...args: SetListeners[T]) => void>,
-    );
-    for (let i = 0; i < listeners.length; i++) {
-      listeners[i].apply(null, payload);
+    const listenerMap = editor._listeners[type] as Map<
+      (...args: MapListeners[T]) => void | undefined | (() => void),
+      void | undefined | (() => void)
+    >;
+    const listeners = Array.from(listenerMap);
+    for (const [listener, unregister] of listeners) {
+      if (unregister) {
+        unregister();
+      }
+      const nextUnregister = listener(...payload);
+      if (listenerMap.has(listener)) {
+        listenerMap.set(listener, nextUnregister);
+      } else if (nextUnregister) {
+        nextUnregister();
+      }
     }
   } finally {
     editor._updating = previouslyUpdating;

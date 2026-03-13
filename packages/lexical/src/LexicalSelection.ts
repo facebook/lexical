@@ -1943,7 +1943,14 @@ export class RangeSelection implements BaseSelection {
       }
       this.modify('extend', isBackward, 'word');
     }
-    this.removeText();
+    if (this.isCollapsed()) {
+      // If the selection was already collapsed at the lineboundary,
+      // use the deleteCharacter operation to handle all of the logic associated
+      // with navigating through the parent element
+      this.deleteCharacter(isBackward);
+    } else {
+      this.removeText();
+    }
   }
 
   /**

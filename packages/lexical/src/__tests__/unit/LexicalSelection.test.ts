@@ -1372,18 +1372,38 @@ describe('getNodes()', () => {
         () => {
           const paragraph = $createParagraphNode();
           const textNode = $createTextNode('hello');
-          textNode.toggleFormat('bold');
+
           paragraph.append(textNode);
           $getRoot().append(paragraph);
 
-          const selection = textNode.select(2, 2);
+          // Select entire text and apply bold formatting
+          const selection = textNode.select(0, textNode.getTextContentSize());
+          selection.formatText('bold');
 
-          selection.insertLineBreak();
-          selection.insertLineBreak();
+          // Move cursor after "he"
+          textNode.select(2, 2);
+
+          const selection2 = $assertRangeSelection($getSelection());
+
+          selection2.insertLineBreak();
+          selection2.insertLineBreak();
 
           const newSelection = $assertRangeSelection($getSelection());
 
-          newSelection.formatText('bold');
+          const anchorNode = newSelection.anchor.getNode();
+
+          if ($isTextNode(anchorNode)) {
+            const prev = anchorNode.getPreviousSibling();
+
+            if ($isTextNode(prev)) {
+              newSelection.setTextNodeRange(
+                prev,
+                prev.getTextContentSize(),
+                prev,
+                prev.getTextContentSize(),
+              );
+            }
+          }
 
           newSelection.insertText('X');
 

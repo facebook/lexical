@@ -640,6 +640,16 @@ describe('LexicalNode state', () => {
               expect($getState(node, resetState)).toBe(100);
               expect($getState(node, persistState)).toBe('hello');
               expect($getState(node, defaultState)).toBe(true);
+
+              const fullCopy = $copyNode(node, true);
+              // Original node should be unchanged
+              expect($getState(node, resetState)).toBe(100);
+              expect($getState(node, persistState)).toBe('hello');
+              expect($getState(node, defaultState)).toBe(true);
+              // Full copy should match all properties
+              expect($getState(fullCopy, resetState)).toBe(100);
+              expect($getState(fullCopy, persistState)).toBe('hello');
+              expect($getState(fullCopy, defaultState)).toBe(true);
             },
             {discrete: true},
           );

@@ -1565,13 +1565,19 @@ export function $isRootOrShadowRoot(
  * separately added to the document, and it will not have any children.
  *
  * @param node - The node to be copied.
+ * @param skipReset - If true (default false) skip the call to resetOnCopyNodeFrom
  * @returns The copy of the node.
  */
-export function $copyNode<T extends LexicalNode>(node: T): T {
+export function $copyNode<T extends LexicalNode>(
+  node: T,
+  skipReset = false,
+): T {
   const copy = node.constructor.clone(node) as T;
   $setNodeKey(copy, null);
   copy.afterCloneFrom(node);
-  copy.resetOnCopyNodeFrom(node);
+  if (!skipReset) {
+    copy.resetOnCopyNodeFrom(node);
+  }
   return copy;
 }
 

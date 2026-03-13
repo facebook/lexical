@@ -29,6 +29,7 @@ import {afterEach, beforeEach, describe, expect, it, test} from 'vitest';
 import {
   $createTestElementNode,
   createTestEditor,
+  TestElementNode,
 } from '../../../__tests__/utils';
 import {indexPath, SerializedElementNode} from '../../LexicalElementNode';
 
@@ -96,6 +97,17 @@ describe('LexicalElementNode tests', () => {
       $getRoot().append(block);
     });
   }
+
+  describe('create()', () => {
+    test('should return a new instance of the same type class', async () => {
+      await update(() => {
+        const node = $createTestElementNode();
+        const newNode = node.create();
+        expect(node).toBeInstanceOf(TestElementNode);
+        expect(newNode).toBeInstanceOf(TestElementNode);
+      });
+    });
+  });
 
   describe('exportJSON()', () => {
     test('should return and object conforming to the expected schema', async () => {

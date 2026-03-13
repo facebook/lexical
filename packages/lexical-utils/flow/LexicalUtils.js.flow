@@ -110,6 +110,8 @@ declare export function $restoreEditorState(
 declare export function $insertNodeToNearestRoot<T: LexicalNode>(node: T): T;
 declare export function $insertNodeToNearestRootAtCaret<T: LexicalNode>(node: T, caret: PointCaret<CaretDirection>, options?: SplitAtPointCaretNextOptions): T;
 
+declare export function $insertNodeIntoLeaf(node: LexicalNode): void
+
 declare export function $wrapNodeInElement(
   node: LexicalNode,
   createElementNode: () => ElementNode,

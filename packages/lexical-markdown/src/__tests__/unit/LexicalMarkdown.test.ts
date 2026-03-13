@@ -791,6 +791,11 @@ describe('Markdown', () => {
       md: 'foo\t \tbar\n\tbaz',
       skipExport: true,
     },
+    {
+      html: '<p><span style="white-space: pre-wrap;">Hello</span><span style="white-space: pre-wrap;">\t</span><span style="white-space: pre-wrap;">\t</span><span style="white-space: pre-wrap;">World</span></p>',
+      md: 'Hello\t\tWorld',
+      skipExport: true,
+    },
   ];
 
   for (const {

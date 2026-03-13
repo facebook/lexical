@@ -303,13 +303,14 @@ function $importBlocks(
 
 // Look in node for '\t' and create a TabNode for each occurrence.
 function $normalizeMarkdownTextNode(textNode: TextNode): void {
-  const tabOffsets = [];
+  const tabOffsets: Set<number> = new Set();
   const text = textNode.getTextContent();
   let index = text.indexOf('\t');
 
   // Find all tab occurrences
   while (index !== -1) {
-    tabOffsets.push(index, index + 1);
+    tabOffsets.add(index);
+    tabOffsets.add(index + 1);
     index = text.indexOf('\t', index + 1);
   }
 

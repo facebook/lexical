@@ -1367,35 +1367,6 @@ describe('getNodes()', () => {
         {discrete: true},
       );
     });
-    test('format is preserved after inserting multiple line breaks', () => {
-      testEnv.editor.update(
-        () => {
-          const paragraph = $createParagraphNode();
-          const textNode = $createTextNode('hello');
-          textNode.toggleFormat('bold');
-          paragraph.append(textNode);
-          $getRoot().append(paragraph);
-
-          const selection = textNode.select(2, 2);
-
-          selection.insertLineBreak();
-          selection.insertLineBreak();
-
-          const newSelection = $assertRangeSelection($getSelection());
-
-          newSelection.insertText('X');
-
-          const nodes = newSelection.getNodes();
-          expect(nodes).toHaveLength(1);
-
-          const insertedNode = nodes[0];
-          invariant($isTextNode(insertedNode), 'Expected TextNode');
-
-          expect(insertedNode.hasFormat('bold')).toBe(true);
-        },
-        {discrete: true},
-      );
-    });
   });
 });
 

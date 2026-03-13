@@ -1412,16 +1412,6 @@ export function scrollIntoViewIfNeeded(
     if (isBodyElement) {
       targetTop = 0;
       targetBottom = getWindow(editor).innerHeight;
-      // Account for CSS scroll-padding on the document element
-      const computedStyle = defaultView.getComputedStyle(doc.documentElement);
-      const scrollPaddingTop = parseFloat(computedStyle.scrollPaddingTop);
-      const scrollPaddingBottom = parseFloat(computedStyle.scrollPaddingBottom);
-      if (isFinite(scrollPaddingTop)) {
-        targetTop += scrollPaddingTop;
-      }
-      if (isFinite(scrollPaddingBottom)) {
-        targetBottom -= scrollPaddingBottom;
-      }
     } else {
       const targetRect = element.getBoundingClientRect();
       targetTop = targetRect.top;

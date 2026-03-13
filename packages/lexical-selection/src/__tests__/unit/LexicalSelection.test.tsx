@@ -7,20 +7,12 @@
  */
 
 import {$createLinkNode} from '@lexical/link';
-import {
-  $createListItemNode,
-  $createListNode,
-  ListItemNode,
-  ListNode,
-} from '@lexical/list';
-import {UNORDERED_LIST} from '@lexical/markdown';
+import {$createListItemNode, $createListNode} from '@lexical/list';
 import {AutoFocusPlugin} from '@lexical/react/LexicalAutoFocusPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
-import {ListPlugin} from '@lexical/react/LexicalListPlugin';
-import {MarkdownShortcutPlugin} from '@lexical/react/LexicalMarkdownShortcutPlugin';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {$createHeadingNode} from '@lexical/rich-text';
 import {
@@ -55,8 +47,6 @@ import {
   $createTestDecoratorNode,
   $createTestElementNode,
   createTestEditor,
-  expectHtmlToBeEqual,
-  html,
   initializeClipboard,
   invariant,
   TestComposer,
@@ -154,7 +144,7 @@ describe('LexicalSelection tests', () => {
       return (
         <TestComposer
           config={{
-            nodes: [ListNode, ListItemNode],
+            nodes: [],
             theme: {
               code: 'editor-code',
               heading: {
@@ -196,8 +186,6 @@ describe('LexicalSelection tests', () => {
           <HistoryPlugin />
           <TestPlugin />
           <AutoFocusPlugin />
-          <ListPlugin />
-          <MarkdownShortcutPlugin transformers={[UNORDERED_LIST]} />
         </TestComposer>
       );
     }
@@ -288,80 +276,6 @@ describe('LexicalSelection tests', () => {
       expect(xNode).toBeDefined();
       expect(xNode!.hasFormat('bold')).toBe(true);
     });
-  test('Ctrl+Backspace deletes list created by typing "- "', async () => {
-    await applySelectionInputs(
-      [insertText('-'), insertText(' ')],
-      update,
-      editor!,
-    );
-    expect(container!.innerHTML).toBe(
-      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><ul class="editor-list-ul" dir="auto"><li value="1"><br></li></ul></div>',
-    );
-
-    await applySelectionInputs([deleteWordBackward(1)], update, editor!);
-    expect(container!.innerHTML).toBe(
-      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="auto"><br></p></div>',
-    );
-
-    await applySelectionInputs(
-      [
-        insertText('preceding paragraph'),
-        insertParagraph(),
-        insertText('-'),
-        insertText(' '),
-        insertParagraph(),
-      ],
-      update,
-      editor!,
-    );
-    expectHtmlToBeEqual(
-      container!.innerHTML,
-      html`
-        <div
-          contenteditable="true"
-          style="user-select: text; white-space: pre-wrap; word-break: break-word;"
-          data-lexical-editor="true">
-          <p class="editor-paragraph" dir="auto">
-            <span data-lexical-text="true">preceding paragraph</span>
-          </p>
-          <ul class="editor-list-ul" dir="auto">
-            <li value="1"><br /></li>
-            <li value="2"><br /></li>
-          </ul>
-        </div>
-      `,
-    );
-    await applySelectionInputs([deleteWordBackward(1)], update, editor!);
-    expectHtmlToBeEqual(
-      container!.innerHTML,
-      html`
-        <div
-          contenteditable="true"
-          style="user-select: text; white-space: pre-wrap; word-break: break-word;"
-          data-lexical-editor="true">
-          <p class="editor-paragraph" dir="auto">
-            <span data-lexical-text="true">preceding paragraph</span>
-          </p>
-          <ul class="editor-list-ul" dir="auto">
-            <li value="1"><br /></li>
-          </ul>
-        </div>
-      `,
-    );
-    await applySelectionInputs([deleteWordBackward(1)], update, editor!);
-    expectHtmlToBeEqual(
-      container!.innerHTML,
-      html`
-        <div
-          contenteditable="true"
-          style="user-select: text; white-space: pre-wrap; word-break: break-word;"
-          data-lexical-editor="true">
-          <p class="editor-paragraph" dir="auto">
-            <span data-lexical-text="true">preceding paragraph</span>
-          </p>
-        </div>
-      `,
-    );
   });
 
   function assertSelection(

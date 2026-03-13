@@ -327,6 +327,11 @@ export type DecoratorListener<T = never> = (
   decorator: Record<NodeKey, T>,
 ) => void;
 
+/**
+ * A listener that is called when {@link LexicalEditor.setRootElement} changes the
+ * element that the editor is attached to. If this callback returns a function,
+ * that function will be called before the next value update or unregister.
+ */
 export type RootListener = (
   rootElement: null | HTMLElement,
   prevRootElement: null | HTMLElement,
@@ -345,6 +350,11 @@ export type MutationListener = (
 
 export type CommandListener<P> = (payload: P, editor: LexicalEditor) => boolean;
 
+/**
+ * A listener that is called when {@link LexicalEditor.setEditable} changes the
+ * editable state of the editor. If this callback returns a function,
+ * that function will be called before the next value update or unregister.
+ */
 export type EditableListener = (editable: boolean) => void | (() => void);
 
 export type CommandListenerPriority = 0 | 1 | 2 | 3 | 4;
@@ -857,6 +867,9 @@ export class LexicalEditor {
    * Will trigger the provided callback each time the editor transitions between these states until the
    * teardown function is called.
    *
+   * If the listener returns a function, that function will be called before the next transition or
+   * teardown.
+   *
    * @returns a teardown function that can be used to cleanup the listener.
    */
   registerEditableListener(listener: EditableListener): () => void {
@@ -895,6 +908,9 @@ export class LexicalEditor {
    *
    * Will trigger the provided callback each time the editor transitions between these states until the
    * teardown function is called.
+   *
+   * If the listener returns a function, that function will be called before the next transition or
+   * teardown.
    *
    * @returns a teardown function that can be used to cleanup the listener.
    */

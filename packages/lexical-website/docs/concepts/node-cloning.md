@@ -60,6 +60,9 @@ function $duplicateNode(node: MyCustomNode) {
 ### What is `$copyNode`?
 
 `$copyNode` is the public API for creating a copy of a node with a new key. Use this when you need to create a duplicate node.
+By default, all properties and `NodeState` will be copied to the new node, and then `resetOnCopyNodeFrom` will be called to
+allow the node to optionally reset certain properties (and NodeState configured with `resetOnCopyNode: true`) to defaults
+(such as the checked state of a `ListItemNode`).
 
 ```typescript
 // ✅ Correct: Using $copyNode

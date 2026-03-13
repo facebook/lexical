@@ -457,6 +457,8 @@ declare export class LexicalNode {
   selectNext(anchorOffset?: number, focusOffset?: number): RangeSelection;
   markDirty(): void;
   reconcileObservedMutation(dom: HTMLElement, editor: LexicalEditor): void;
+  afterCloneFrom(prevNode: this): void;
+  resetOnCopyNodeFrom(original: this): void;
 }
 export type NodeMap = Map<NodeKey, LexicalNode>;
 
@@ -941,10 +943,7 @@ declare export function $hasAncestor(
   targetNode: LexicalNode,
 ): boolean;
 declare export function $cloneWithProperties<T: LexicalNode>(node: T): T;
-declare export function $copyNode(
-  node: ElementNode,
-  offset: number,
-): [ElementNode, ElementNode];
+declare export function $copyNode<T: LexicalNode>(node: T, skipReset?: boolean): T;
 declare export function $getEditor(): LexicalEditor;
 
 /**
@@ -1340,6 +1339,7 @@ declare export class StateConfig<K: string, V> {
   +unparse: (value: V) => mixed;
   +isEqual: (a: V, b: V) => boolean;
   +defaultValue: V;
+  +resetOnCopyNode: boolean;
   constructor(key: K, stateValueConfig: StateValueConfig<V>): this;
 }
 
@@ -1347,6 +1347,7 @@ export type StateValueConfig<V> = {
   parse: (jsonValue: mixed) => V;
   unparse?: (parsed: V) => mixed;
   isEqual?: (a: V, b: V) => boolean;
+  resetOnCopyNode?: boolean;
 }
 
 export type UnionToIntersection<T> = (

@@ -457,6 +457,8 @@ declare export class LexicalNode {
   selectNext(anchorOffset?: number, focusOffset?: number): RangeSelection;
   markDirty(): void;
   reconcileObservedMutation(dom: HTMLElement, editor: LexicalEditor): void;
+  afterCloneFrom(prevNode: this): void;
+  resetOnCopyFrom(original: this): void;
 }
 export type NodeMap = Map<NodeKey, LexicalNode>;
 

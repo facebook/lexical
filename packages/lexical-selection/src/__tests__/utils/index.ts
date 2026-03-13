@@ -115,19 +115,21 @@ if (!Selection.prototype.modify) {
           let prevSibling = anchorNode.previousSibling;
 
           if (prevSibling === null) {
-            prevSibling = anchorNode.parentElement.previousSibling.lastChild;
+            prevSibling =
+              anchorNode.parentElement.previousSibling?.lastChild ?? null;
           }
+          if (prevSibling) {
+            if (prevSibling.nodeName === 'P') {
+              prevSibling = prevSibling.firstChild;
+            }
 
-          if (prevSibling.nodeName === 'P') {
-            prevSibling = prevSibling.firstChild;
-          }
-
-          if (prevSibling.nodeName === 'BR') {
-            anchor.node = prevSibling;
-            anchor.offset = 0;
-          } else {
-            anchor.node = prevSibling.firstChild;
-            anchor.offset = anchor.node.nodeValue.length - 1;
+            if (prevSibling.nodeName === 'BR') {
+              anchor.node = prevSibling;
+              anchor.offset = 0;
+            } else {
+              anchor.node = prevSibling.firstChild;
+              anchor.offset = anchor.node.nodeValue.length - 1;
+            }
           }
         } else if (!_$isTextNode) {
           anchor.node = anchorNode.childNodes[anchorOffset - 1];

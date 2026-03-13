@@ -343,15 +343,6 @@ export class ElementNode extends LexicalNode {
     this.__textStyle = '';
   }
 
-  /**
-   * Creates a new instance of the same class as the current object.
-   * Useful in class hierarchies so that method can return an object of the same specific type.
-   * @returns A new instance of the current class.
-   */
-  create<T extends this>(): T {
-    return new this.constructor() as T;
-  }
-
   afterCloneFrom(prevNode: this) {
     super.afterCloneFrom(prevNode);
     if (this.__key === prevNode.__key) {

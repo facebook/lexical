@@ -8,6 +8,7 @@
 
 import {$getNearestNodeOfType} from '@lexical/utils';
 import {
+  $copyNode,
   $createParagraphNode,
   $getChildCaret,
   $getSelection,
@@ -415,12 +416,10 @@ export function $handleIndent(listItemNode: ListItemNode): void {
     // otherwise, we need to create a new nested ListNode
 
     if ($isListNode(parent)) {
-      const newListItem = listItemNode
-        .create()
+      const newListItem = $copyNode(listItemNode)
         .setTextFormat(listItemNode.getTextFormat())
         .setTextStyle(listItemNode.getTextStyle());
-      const newList = parent
-        .create()
+      const newList = $copyNode(parent)
         .setListType(parent.getListType())
         .setTextFormat(parent.getTextFormat())
         .setTextStyle(parent.getTextStyle());
@@ -484,14 +483,14 @@ export function $handleOutdent(listItemNode: ListItemNode): void {
     } else {
       // otherwise, we need to split the siblings into two new nested lists
       const listType = parentList.getListType();
-      const previousSiblingsListItem = listItemNode.create();
-      const previousSiblingsList = parentList.create().setListType(listType);
+      const previousSiblingsListItem = $copyNode(listItemNode);
+      const previousSiblingsList = $copyNode(parentList).setListType(listType);
       previousSiblingsListItem.append(previousSiblingsList);
       listItemNode
         .getPreviousSiblings()
         .forEach((sibling) => previousSiblingsList.append(sibling));
-      const nextSiblingsListItem = listItemNode.create();
-      const nextSiblingsList = parentList.create().setListType(listType);
+      const nextSiblingsListItem = $copyNode(listItemNode);
+      const nextSiblingsList = $copyNode(parentList).setListType(listType);
       nextSiblingsListItem.append(nextSiblingsList);
       append(nextSiblingsList, listItemNode.getNextSiblings());
       // put the sibling nested lists on either side of the grandparent list item in the great grandparent.
@@ -563,7 +562,7 @@ export function $handleListInsertParagraph(
     replacementNode = $createParagraphNode();
     topListNode.insertAfter(replacementNode);
   } else if ($isListItemNode(grandparent)) {
-    replacementNode = grandparent.create();
+    replacementNode = $copyNode(grandparent);
     grandparent.insertAfter(replacementNode);
   } else {
     return false;
@@ -577,13 +576,12 @@ export function $handleListInsertParagraph(
 
   if (nextSiblings.length > 0) {
     const newStart = restoreNumbering ? $getNewListStart(parent, listItem) : 1;
-    const newList = parent
-      .create()
+    const newList = $copyNode(parent)
       .setListType(parent.getListType())
       .setStart(newStart);
 
     if ($isListItemNode(replacementNode)) {
-      const newListItem = replacementNode.create();
+      const newListItem = $copyNode(replacementNode);
       newListItem.append(newList);
       replacementNode.insertAfter(newListItem);
     } else {

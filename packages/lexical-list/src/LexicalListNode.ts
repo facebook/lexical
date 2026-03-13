@@ -13,6 +13,7 @@ import {
 } from '@lexical/utils';
 import {
   $applyNodeReplacement,
+  $copyNode,
   $createTextNode,
   $isElementNode,
   buildImportMap,
@@ -197,10 +198,12 @@ export class ListNode extends ElementNode {
     deleteCount: number,
     nodesToInsert: LexicalNode[],
   ): this {
-    const listItem =
+    const exampleListItem =
       nodesToInsert.find($isListItemNode) ??
-      this.getChildren().find($isListItemNode) ??
-      $createListItemNode();
+      this.getChildren().find($isListItemNode);
+    const newListItem = exampleListItem
+      ? $copyNode(exampleListItem)
+      : $createListItemNode();
 
     let listItemNodesToInsert = nodesToInsert;
     for (let i = 0; i < nodesToInsert.length; i++) {
@@ -209,7 +212,7 @@ export class ListNode extends ElementNode {
         if (listItemNodesToInsert === nodesToInsert) {
           listItemNodesToInsert = [...nodesToInsert];
         }
-        listItemNodesToInsert[i] = new listItem.constructor().append(
+        listItemNodesToInsert[i] = newListItem.append(
           $isElementNode(node) && !($isListNode(node) || node.isInline())
             ? $createTextNode(node.getTextContent())
             : node,

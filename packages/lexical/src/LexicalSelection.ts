@@ -1942,6 +1942,10 @@ export class RangeSelection implements BaseSelection {
         return;
       }
       this.modify('extend', isBackward, 'word');
+      if (isBackward && anchor.offset === 0) {
+        // Special handling around rich text nodes
+        $collapseAtStart(this, anchor.getNode());
+      }
     }
     this.removeText();
   }

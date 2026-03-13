@@ -513,9 +513,9 @@ describe('LexicalUtils tests', () => {
       const doc = rootElement.ownerDocument;
 
       // Mock scrollBy to capture scroll amounts
-      const originalScrollBy = window.scrollBy;
       let scrollAmountWithPadding = 0;
       let scrollAmountWithoutPadding = 0;
+      const scrollBySpy = vi.spyOn(window, 'scrollBy');
 
       // Create a selection rect near the top of the viewport
       const selectionRect = new DOMRect(100, 30, 10, 20);
@@ -523,16 +523,16 @@ describe('LexicalUtils tests', () => {
       try {
         // Test WITHOUT scroll-padding
         doc.documentElement.style.scrollPaddingTop = '0px';
-        window.scrollBy = vi.fn((x: number, y: number) => {
+        scrollBySpy.mockImplementation((x: number, y: number) => {
           scrollAmountWithoutPadding = y;
-        }) as unknown as typeof window.scrollBy;
+        });
         scrollIntoViewIfNeeded(editor, selectionRect, rootElement);
 
         // Test WITH scroll-padding
         doc.documentElement.style.scrollPaddingTop = '60px';
-        window.scrollBy = vi.fn((x: number, y: number) => {
+        scrollBySpy.mockImplementation((x: number, y: number) => {
           scrollAmountWithPadding = y;
-        }) as unknown as typeof window.scrollBy;
+        });
         scrollIntoViewIfNeeded(editor, selectionRect, rootElement);
 
         // With scroll-padding-top of 60px, the effective targetTop is 60
@@ -541,7 +541,7 @@ describe('LexicalUtils tests', () => {
         // The difference should be the scroll-padding amount
         expect(scrollAmountWithPadding - scrollAmountWithoutPadding).toBe(-60);
       } finally {
-        window.scrollBy = originalScrollBy;
+        scrollBySpy.mockRestore();
         doc.documentElement.style.scrollPaddingTop = '';
       }
     });

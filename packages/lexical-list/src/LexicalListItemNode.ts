@@ -301,8 +301,8 @@ export class ListItemNode extends ElementNode {
     }
   }
 
-  resetOnCopyFrom(original: this): void {
-    super.resetOnCopyFrom(original);
+  resetOnCopyNodeFrom(original: this): void {
+    super.resetOnCopyNodeFrom(original);
     if (original.getChecked()) {
       this.setChecked(false);
     }

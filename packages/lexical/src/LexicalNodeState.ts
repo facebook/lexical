@@ -227,7 +227,7 @@ export interface StateValueConfig<V> {
    * When a node is copied with {@link $copyNode} (not cloned), reset this
    * value to the default.
    */
-  resetOnCopy?: boolean;
+  resetOnCopyNode?: boolean;
 }
 
 /**
@@ -256,7 +256,7 @@ export class StateConfig<K extends string, V> {
    * the `defaultValue`, it will not be serialized to JSON.
    */
   readonly defaultValue: V;
-  readonly resetOnCopy: boolean;
+  readonly resetOnCopyNode: boolean;
   constructor(key: K, stateValueConfig: StateValueConfig<V>) {
     this.key = key;
     this.parse = stateValueConfig.parse.bind(stateValueConfig);
@@ -267,7 +267,7 @@ export class StateConfig<K extends string, V> {
       stateValueConfig,
     );
     this.defaultValue = this.parse(undefined);
-    this.resetOnCopy = stateValueConfig.resetOnCopy || false;
+    this.resetOnCopyNode = stateValueConfig.resetOnCopyNode || false;
   }
 }
 
@@ -700,9 +700,9 @@ export class NodeState<T extends LexicalNode> {
   }
 
   /** @internal */
-  resetOnCopy(): this {
+  resetOnCopyNode(): this {
     for (const stateConfig of this.knownState.keys()) {
-      if (stateConfig.resetOnCopy) {
+      if (stateConfig.resetOnCopyNode) {
         this.knownState.set(stateConfig, stateConfig.defaultValue);
       }
     }

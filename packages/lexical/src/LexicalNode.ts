@@ -557,9 +557,9 @@ export class LexicalNode {
    *
    * @param originalNode
    */
-  resetOnCopyFrom(originalNode: this): void {
+  resetOnCopyNodeFrom(originalNode: this): void {
     if (this.__state) {
-      this.__state = this.__state.getWritable(this).resetOnCopy();
+      this.__state = this.__state.getWritable(this).resetOnCopyNode();
     }
   }
 

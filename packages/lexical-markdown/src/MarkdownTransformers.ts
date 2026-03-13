@@ -222,7 +222,7 @@ const ENDS_WITH = (regex: RegExp) =>
 
 export const listMarkerState = createState('mdListMarker', {
   parse: (v) => (typeof v === 'string' && /^[-*+]$/.test(v) ? v : '-'),
-  resetOnCopy: true,
+  resetOnCopyNode: true,
 });
 
 export const codeFenceState = createState('mdCodeFence', {
@@ -232,7 +232,7 @@ export const codeFenceState = createState('mdCodeFence', {
     }
     return '```';
   },
-  resetOnCopy: true,
+  resetOnCopyNode: true,
 });
 
 const createBlockNode = (

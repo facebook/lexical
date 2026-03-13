@@ -1367,57 +1367,6 @@ describe('getNodes()', () => {
         {discrete: true},
       );
     });
-    test('format is preserved after inserting multiple line breaks', () => {
-      testEnv.editor.update(
-        () => {
-          const paragraph = $createParagraphNode();
-          const textNode = $createTextNode('hello');
-
-          paragraph.append(textNode);
-          $getRoot().append(paragraph);
-
-          // Select entire text and apply bold formatting
-          const selection = textNode.select(0, textNode.getTextContentSize());
-          selection.formatText('bold');
-
-          // Move cursor after "he"
-          textNode.select(2, 2);
-
-          const selection2 = $assertRangeSelection($getSelection());
-
-          selection2.insertLineBreak();
-          selection2.insertLineBreak();
-
-          const newSelection = $assertRangeSelection($getSelection());
-
-          const anchorNode = newSelection.anchor.getNode();
-
-          if ($isTextNode(anchorNode)) {
-            const prev = anchorNode.getPreviousSibling();
-
-            if ($isTextNode(prev)) {
-              newSelection.setTextNodeRange(
-                prev,
-                prev.getTextContentSize(),
-                prev,
-                prev.getTextContentSize(),
-              );
-            }
-          }
-
-          newSelection.insertText('X');
-
-          const nodes = newSelection.getNodes();
-          expect(nodes).toHaveLength(1);
-
-          const insertedNode = nodes[0];
-          invariant($isTextNode(insertedNode), 'Expected TextNode');
-
-          expect(insertedNode.hasFormat('bold')).toBe(true);
-        },
-        {discrete: true},
-      );
-    });
   });
 });
 

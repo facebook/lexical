@@ -218,6 +218,66 @@ describe('LexicalSelection tests', () => {
     );
   });
 
+  test('Bold format preserved when typing between consecutive line breaks', async () => {
+    await applySelectionInputs(
+      [formatBold(), insertText('hello')],
+      update,
+      editor!,
+    );
+
+    // Move cursor between "he" and "llo"
+    await update(() => {
+      const paragraph = $getRoot().getFirstChildOrThrow();
+      invariant($isElementNode(paragraph));
+      const textNode = paragraph.getFirstChildOrThrow();
+      invariant($isTextNode(textNode));
+      textNode.select(2, 2);
+    });
+
+    // Shift+Enter twice (logical line breaks)
+    await update(() => {
+      const selection = $getSelection();
+      if ($isRangeSelection(selection)) {
+        selection.insertLineBreak();
+        selection.insertLineBreak();
+      }
+    });
+
+    // Move cursor between the two <br> nodes in the paragraph
+    await update(() => {
+      const paragraph = $getRoot().getFirstChildOrThrow();
+      invariant($isElementNode(paragraph));
+      const children = paragraph.getChildren();
+      let betweenOffset: null | number = null;
+
+      for (let i = 0; i < children.length - 1; i++) {
+        if (
+          children[i].getType() === 'linebreak' &&
+          children[i + 1].getType() === 'linebreak'
+        ) {
+          betweenOffset = i + 1;
+          break;
+        }
+      }
+
+      if (betweenOffset === null) {
+        throw new Error('Expected to find consecutive line breaks');
+      }
+
+      paragraph.select(betweenOffset, betweenOffset);
+    });
+
+    await applySelectionInputs([insertText('x')], update, editor!);
+
+    editor!.getEditorState().read(() => {
+      const xNode = $getRoot()
+        .getAllTextNodes()
+        .find((node) => node.getTextContent() === 'x');
+      expect(xNode).toBeDefined();
+      expect(xNode!.hasFormat('bold')).toBe(true);
+    });
+  });
+
   function assertSelection(
     rootElement: HTMLElement,
     expectedSelection: ExpectedSelection,

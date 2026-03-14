@@ -111,6 +111,14 @@ export class LinkNode extends ElementNode {
     this.__title = title;
   }
 
+  afterCloneFrom(prevNode: this): void {
+    super.afterCloneFrom(prevNode);
+    this.__url = prevNode.__url;
+    this.__rel = prevNode.__rel;
+    this.__target = prevNode.__target;
+    this.__title = prevNode.__target;
+  }
+
   createDOM(config: EditorConfig): LinkHTMLElementType {
     const element = document.createElement('a');
     this.updateLinkDOM(null, element, config);
@@ -418,6 +426,11 @@ export class AutoLinkNode extends LinkNode {
       attributes.isUnlinked !== undefined && attributes.isUnlinked !== null
         ? attributes.isUnlinked
         : false;
+  }
+
+  afterCloneFrom(prevNode: this): void {
+    super.afterCloneFrom(prevNode);
+    this.__isUnlinked = prevNode.__isUnlinked;
   }
 
   static getType(): string {

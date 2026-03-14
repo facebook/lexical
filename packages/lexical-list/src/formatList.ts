@@ -420,7 +420,6 @@ export function $handleIndent(listItemNode: ListItemNode): void {
         .setTextFormat(listItemNode.getTextFormat())
         .setTextStyle(listItemNode.getTextStyle());
       const newList = $copyNode(parent)
-        .setListType(parent.getListType())
         .setTextFormat(parent.getTextFormat())
         .setTextStyle(parent.getTextStyle());
       newListItem.append(newList);
@@ -482,15 +481,14 @@ export function $handleOutdent(listItemNode: ListItemNode): void {
       }
     } else {
       // otherwise, we need to split the siblings into two new nested lists
-      const listType = parentList.getListType();
       const previousSiblingsListItem = $copyNode(listItemNode);
-      const previousSiblingsList = $copyNode(parentList).setListType(listType);
+      const previousSiblingsList = $copyNode(parentList);
       previousSiblingsListItem.append(previousSiblingsList);
       listItemNode
         .getPreviousSiblings()
         .forEach((sibling) => previousSiblingsList.append(sibling));
       const nextSiblingsListItem = $copyNode(listItemNode);
-      const nextSiblingsList = $copyNode(parentList).setListType(listType);
+      const nextSiblingsList = $copyNode(parentList);
       nextSiblingsListItem.append(nextSiblingsList);
       append(nextSiblingsList, listItemNode.getNextSiblings());
       // put the sibling nested lists on either side of the grandparent list item in the great grandparent.
@@ -576,9 +574,7 @@ export function $handleListInsertParagraph(
 
   if (nextSiblings.length > 0) {
     const newStart = restoreNumbering ? $getNewListStart(parent, listItem) : 1;
-    const newList = $copyNode(parent)
-      .setListType(parent.getListType())
-      .setStart(newStart);
+    const newList = $copyNode(parent).setStart(newStart);
 
     if ($isListItemNode(replacementNode)) {
       const newListItem = $copyNode(replacementNode);

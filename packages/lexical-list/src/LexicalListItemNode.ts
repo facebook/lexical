@@ -229,7 +229,7 @@ export class ListItemNode extends ElementNode {
       list.insertAfter(replaceWithNode);
     } else {
       // Split the list
-      const newList = $copyNode(list).setListType(list.getListType());
+      const newList = $copyNode(list);
       let nextSibling = this.getNextSibling();
       while (nextSibling) {
         const nodeToAppend = nextSibling;
@@ -275,9 +275,7 @@ export class ListItemNode extends ElementNode {
     listNode.insertAfter(node, restoreSelection);
 
     if (siblings.length !== 0) {
-      const newListNode = $copyNode(listNode).setListType(
-        listNode.getListType(),
-      );
+      const newListNode = $copyNode(listNode);
 
       siblings.forEach((sibling) => newListNode.append(sibling));
 

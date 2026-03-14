@@ -277,21 +277,16 @@ ${steps.map(formatStep).join(`\n`)}
       }
     };
 
-    return editor.registerRootListener(
-      (
-        rootElement: null | HTMLElement,
-        prevRootElement: null | HTMLElement,
-      ) => {
-        if (prevRootElement !== null) {
-          prevRootElement.removeEventListener('keydown', onKeyDown);
-          prevRootElement.removeEventListener('keyup', onKeyUp);
-        }
-        if (rootElement !== null) {
-          rootElement.addEventListener('keydown', onKeyDown);
-          rootElement.addEventListener('keyup', onKeyUp);
-        }
-      },
-    );
+    return editor.registerRootListener((rootElement) => {
+      if (rootElement) {
+        rootElement.addEventListener('keydown', onKeyDown);
+        rootElement.addEventListener('keyup', onKeyUp);
+        return () => {
+          rootElement.removeEventListener('keydown', onKeyDown);
+          rootElement.removeEventListener('keyup', onKeyUp);
+        };
+      }
+    });
   }, [editor, isRecording, pushStep]);
 
   useLayoutEffect(() => {

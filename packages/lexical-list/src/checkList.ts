@@ -169,7 +169,7 @@ export function registerCheckList(
       COMMAND_PRIORITY_LOW,
     ),
 
-    editor.registerRootListener((rootElement, prevElement) => {
+    editor.registerRootListener((rootElement) => {
       if (rootElement !== null) {
         rootElement.addEventListener('click', configHandleClick);
         // Use capture so we run before other listeners that might move focus.
@@ -190,31 +190,30 @@ export function registerCheckList(
           capture: true,
           passive: false,
         });
-      }
-
-      if (prevElement !== null) {
-        prevElement.removeEventListener('click', configHandleClick);
-        prevElement.removeEventListener(
-          'pointerdown',
-          configHandleSelectDefaults,
-          {
-            capture: true,
-          },
-        );
-        prevElement.removeEventListener(
-          'mousedown',
-          configHandleSelectDefaults,
-          {
-            capture: true,
-          },
-        );
-        prevElement.removeEventListener(
-          'touchstart',
-          configHandleSelectDefaults,
-          {
-            capture: true,
-          },
-        );
+        return () => {
+          rootElement.removeEventListener('click', configHandleClick);
+          rootElement.removeEventListener(
+            'pointerdown',
+            configHandleSelectDefaults,
+            {
+              capture: true,
+            },
+          );
+          rootElement.removeEventListener(
+            'mousedown',
+            configHandleSelectDefaults,
+            {
+              capture: true,
+            },
+          );
+          rootElement.removeEventListener(
+            'touchstart',
+            configHandleSelectDefaults,
+            {
+              capture: true,
+            },
+          );
+        };
       }
     }),
   );

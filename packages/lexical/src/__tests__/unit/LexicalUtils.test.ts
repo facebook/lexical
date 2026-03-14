@@ -37,6 +37,7 @@ import {
   isArray,
   isExactShortcutMatch,
   scheduleMicroTask,
+  scrollIntoViewIfNeeded,
 } from '../../LexicalUtils';
 import {initializeUnitTest} from '../utils';
 
@@ -504,6 +505,45 @@ describe('LexicalUtils tests', () => {
       expect(
         [...textMap.values()].map((node) => (node as TextNode).__text),
       ).toEqual(expect.arrayContaining(['a', 'b']));
+    });
+
+    test('scrollIntoViewIfNeeded respects scroll-padding on document element', () => {
+      const {editor} = testEnv;
+      const rootElement = editor.getRootElement()!;
+      const doc = rootElement.ownerDocument;
+
+      // Mock scrollBy to capture scroll amounts
+      let scrollAmountWithPadding = 0;
+      let scrollAmountWithoutPadding = 0;
+      const scrollBySpy = vi.spyOn(window, 'scrollBy');
+
+      // Create a selection rect near the top of the viewport
+      const selectionRect = new DOMRect(100, 30, 10, 20);
+
+      try {
+        // Test WITHOUT scroll-padding
+        doc.documentElement.style.scrollPaddingTop = '0px';
+        scrollBySpy.mockImplementation((x: number, y: number) => {
+          scrollAmountWithoutPadding = y;
+        });
+        scrollIntoViewIfNeeded(editor, selectionRect, rootElement);
+
+        // Test WITH scroll-padding
+        doc.documentElement.style.scrollPaddingTop = '60px';
+        scrollBySpy.mockImplementation((x: number, y: number) => {
+          scrollAmountWithPadding = y;
+        });
+        scrollIntoViewIfNeeded(editor, selectionRect, rootElement);
+
+        // With scroll-padding-top of 60px, the effective targetTop is 60
+        // So when selection is at top=30, it should scroll more (or differently)
+        // than without scroll-padding where targetTop is 0
+        // The difference should be the scroll-padding amount
+        expect(scrollAmountWithPadding - scrollAmountWithoutPadding).toBe(-60);
+      } finally {
+        scrollBySpy.mockRestore();
+        doc.documentElement.style.scrollPaddingTop = '';
+      }
     });
   });
 });

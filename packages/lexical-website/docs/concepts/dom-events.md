@@ -15,12 +15,12 @@ function myListener(event) {
     alert('Nice!');
 }
 
-const removeRootListener = editor.registerRootListener((rootElement, prevRootElement) => {
+const removeRootListener = editor.registerRootListener((rootElement) => {
     // add the listener to the current root element
     rootElement.addEventListener('click', myListener);
     // remove the listener from the old root element - make sure the ref to myListener
     // is stable so the removal works and you avoid a memory leak.
-    prevRootElement.removeEventListener('click', myListener);
+    return () => rootElement.removeEventListener('click', myListener);
 });
 
 // teardown the listener - return this from your useEffect callback if you're using React.

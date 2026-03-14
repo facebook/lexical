@@ -94,16 +94,12 @@ export default function StickyComponent({
       }
     });
 
-    const removeRootListener = editor.registerRootListener(
-      (nextRootElem, prevRootElem) => {
-        if (prevRootElem !== null) {
-          resizeObserver.unobserve(prevRootElem);
-        }
-        if (nextRootElem !== null) {
-          resizeObserver.observe(nextRootElem);
-        }
-      },
-    );
+    const removeRootListener = editor.registerRootListener((nextRootElem) => {
+      if (nextRootElem !== null) {
+        resizeObserver.observe(nextRootElem);
+        return () => resizeObserver.unobserve(nextRootElem);
+      }
+    });
 
     const handleWindowResize = () => {
       const rootElement = editor.getRootElement();

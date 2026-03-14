@@ -232,8 +232,6 @@ function BrokenImage(): JSX.Element {
   );
 }
 
-function noop() {}
-
 export default function ImageComponent({
   src,
   altText,
@@ -392,7 +390,6 @@ export default function ImageComponent({
     );
   }, [editor]);
   useEffect(() => {
-    let rootCleanup = noop;
     return mergeRegister(
       editor.registerCommand<MouseEvent>(
         CLICK_COMMAND,
@@ -411,15 +408,12 @@ export default function ImageComponent({
         COMMAND_PRIORITY_LOW,
       ),
       editor.registerRootListener((rootElement) => {
-        rootCleanup();
-        rootCleanup = noop;
         if (rootElement) {
           rootElement.addEventListener('contextmenu', onRightClick);
-          rootCleanup = () =>
+          return () =>
             rootElement.removeEventListener('contextmenu', onRightClick);
         }
       }),
-      () => rootCleanup(),
     );
   }, [editor, $onEnter, $onEscape, onClick, onRightClick]);
 

@@ -118,7 +118,7 @@ export const EQUATION: TextMatchTransformer = {
       return null;
     }
 
-    if (!node.__inline) {
+    if (!node.isInline()) {
       return `$$${node.getEquation()}$$`;
     }
 

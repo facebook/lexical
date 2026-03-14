@@ -109,7 +109,7 @@ type DecoratorListener = (decorator: {
 type RootListener = (
   rootElement: null | HTMLElement,
   prevRootElement: null | HTMLElement,
-) => void;
+) => void | (() => void);
 type TextContentListener = (text: string) => void;
 type ErrorHandler = (error: Error) => void;
 export type MutationListener = (
@@ -123,13 +123,13 @@ export type MutationListener = (
 export type MutationListenerOptions = {
   skipInitialization?: boolean;
 };
-export type EditableListener = (editable: boolean) => void;
+export type EditableListener = (editable: boolean) => void | (() => void);
 type Listeners = {
-  decorator: Set<DecoratorListener>,
+  decorator: Map<DecoratorListener, void | (() => void)>,
   mutation: MutationListeners,
-  textcontent: Set<TextContentListener>,
-  root: Set<RootListener>,
-  update: Set<UpdateListener>,
+  textcontent: Map<TextContentListener, void | (() => void)>,
+  root: Map<RootListener, void | (() => void)>,
+  update: Map<UpdateListener, void | (() => void)>,
 };
 export type CommandListener<P> = (payload: P, editor: LexicalEditor) => boolean;
 // $FlowFixMe[unclear-type]

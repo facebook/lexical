@@ -406,7 +406,7 @@ function onSelectionChange(
             ) {
               $updateSelectionFormatStyleFromElementNode(selection, lastNode);
             } else {
-              $updateSelectionFormatStyle(selection, selection.format, '');
+              $updateSelectionFormatStyle(selection, 0, '');
             }
           }
         }

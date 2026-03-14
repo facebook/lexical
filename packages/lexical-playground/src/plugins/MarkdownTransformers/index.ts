@@ -118,6 +118,10 @@ export const EQUATION: TextMatchTransformer = {
       return null;
     }
 
+    if (!node.__inline) {
+      return `$$${node.getEquation()}$$`;
+    }
+
     return `$${node.getEquation()}$`;
   },
   importRegExp: /\$([^$]+?)\$/,

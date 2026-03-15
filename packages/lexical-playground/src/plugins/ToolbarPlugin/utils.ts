@@ -349,18 +349,18 @@ export const clearFormatting = (
 
       extractedNodes.forEach((node) => {
         if ($isTextNode(node)) {
-          if (node.__style !== '') {
+          if (node.getStyle() !== '') {
             node.setStyle('');
           }
-          if (node.__format !== 0) {
+          if (node.getFormat() !== 0) {
             node.setFormat(0);
           }
           const nearestBlockElement =
             $getNearestBlockElementAncestorOrThrow(node);
-          if (nearestBlockElement.__format !== 0) {
+          if (nearestBlockElement.getFormat() !== 0) {
             nearestBlockElement.setFormat('');
           }
-          if (nearestBlockElement.__indent !== 0) {
+          if (nearestBlockElement.getIndent() !== 0) {
             nearestBlockElement.setIndent(0);
           }
         } else if ($isHeadingNode(node) || $isQuoteNode(node)) {

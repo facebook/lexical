@@ -20,7 +20,7 @@ const path = require('node:path');
 
 const TITLE = 'Lexical';
 const GITHUB_REPO_URL = 'https://github.com/facebook/lexical'; // TODO: Update when repo name updated
-const IOS_GITHUB_REPO_URL = 'https://github.com/facebook/lexical-ios';
+const DISCORD_URL = 'https://discord.gg/KmG4wQnnD9';
 
 function sourceLinkOptions() {
   const sourceLinkTemplate = `${GITHUB_REPO_URL}/tree/{gitRevision}/{path}#L{line}`;
@@ -397,9 +397,16 @@ const config = {
             to: '/gallery',
           },
           {
-            label: 'GitHub',
-            position: 'left',
+            'aria-label': 'GitHub',
+            className: 'icon-link icon-link-mask icon-link-github',
+            position: 'right',
             to: GITHUB_REPO_URL,
+          },
+          {
+            'aria-label': 'Discord',
+            className: 'icon-link icon-link-mask icon-link-discord',
+            position: 'right',
+            to: DISCORD_URL,
           },
         ].filter((item) => item != null),
         logo: {

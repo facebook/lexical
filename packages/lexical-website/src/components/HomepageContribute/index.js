@@ -7,52 +7,8 @@
  */
 
 import Link from '@docusaurus/Link';
-import {useColorMode} from '@docusaurus/theme-common';
 
-const StackOverflowSvg = require('@site/static/img/stack-overflow.svg').default;
-const GithubDarkSvg = require('@site/static/img/github-mark-dark.svg').default;
-const GithubLightSvg =
-  require('@site/static/img/github-mark-light.svg').default;
 const DiscordSvg = require('@site/static/img/discord-logo-color.svg').default;
-
-const CommunityList = [
-  {
-    Svg: StackOverflowSvg,
-    buttonText: 'View questions',
-    title: 'Stack Overflow',
-    url: 'https://stackoverflow.com/questions/tagged/lexicaljs',
-  },
-  {
-    DarkSvg: GithubDarkSvg,
-    Svg: GithubLightSvg,
-    buttonText: 'Repository',
-    title: 'Github',
-    url: 'https://github.com/facebook/lexical',
-  },
-  {
-    Svg: DiscordSvg,
-    buttonText: 'Join server',
-    title: 'Discord',
-    url: 'https://discord.gg/KmG4wQnnD9',
-  },
-];
-
-function CommunityCard({Svg, DarkSvg, title, buttonText, url}) {
-  const {colorMode} = useColorMode();
-  return (
-    <div className="flex w-fit flex-col items-center rounded-2xl p-6 text-center">
-      {colorMode === 'dark' && DarkSvg ? (
-        <DarkSvg className="mb-4 h-16 w-16" alt={title} />
-      ) : (
-        <Svg className="mb-4 h-16 w-16" alt={title} />
-      )}
-      <h3 className="text-xl font-bold">{title}</h3>
-      <Link className="styled-button px-6 py-2" to={url}>
-        {buttonText}
-      </Link>
-    </div>
-  );
-}
 
 export default function HomepageContribute() {
   return (
@@ -64,14 +20,22 @@ export default function HomepageContribute() {
         </h1>
         <p className="max-w-xl text-sm font-light">
           We are deeply committed to being open-source. That means openly
-          helping each other in improving Lexical. We've listed some
-          Lexical-related communities that you can check out.
+          helping each other in improving Lexical.
         </p>
-      </div>
-      <div className="flex flex-col items-center justify-center gap-2 sm:flex-row lg:gap-8">
-        {CommunityList.map((props, idx) => (
-          <CommunityCard key={idx} {...props} />
-        ))}
+        <Link
+          to="https://discord.gg/KmG4wQnnD9"
+          className="group mt-2 flex w-full max-w-md items-center gap-5 rounded-2xl border border-solid border-black/10 bg-white p-5 text-current shadow-md transition-all duration-300 hover:text-current hover:no-underline hover:opacity-70 dark:border-white/10 dark:bg-[#272A36] dark:shadow-lg dark:shadow-white/10">
+          <DiscordSvg className="h-14 w-14 shrink-0" alt="Discord" />
+          <div className="flex flex-col items-start text-left">
+            <span className="font-semibold">Join our Discord</span>
+            <span className="text-sm font-light opacity-70">
+              Ask questions, share your work and connect with other users
+            </span>
+          </div>
+          <span className="text-xl opacity-40 transition-transform duration-150 group-hover:translate-x-1">
+            →
+          </span>
+        </Link>
       </div>
     </section>
   );

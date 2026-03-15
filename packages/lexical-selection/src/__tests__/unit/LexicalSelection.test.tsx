@@ -264,8 +264,8 @@ describe('LexicalSelection tests', () => {
 
       for (let i = 0; i < children.length - 1; i++) {
         if (
-          children[i].getType() === 'linebreak' &&
-          children[i + 1].getType() === 'linebreak'
+          $isLineBreakNode(children[i]) &&
+          $isLineBreakNode(children[i + 1])
         ) {
           betweenOffset = i + 1;
           break;

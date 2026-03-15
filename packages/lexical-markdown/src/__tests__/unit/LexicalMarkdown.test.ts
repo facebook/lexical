@@ -781,6 +781,21 @@ describe('Markdown', () => {
       md: 'foo\\\nbar',
       mdAfterExport: 'foo\nbar',
     },
+    {
+      html: '<p><span style="white-space: pre-wrap;">foo </span><a href="https://lexical.dev"><span style="white-space: pre-wrap;">bar</span></a><span style="white-space: pre-wrap;">\t</span><span style="white-space: pre-wrap;">baz</span></p>',
+      md: 'foo [bar](https://lexical.dev)\tbaz',
+      skipExport: true,
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">foo</span><span style="white-space: pre-wrap;">\t</span><span style="white-space: pre-wrap;"> </span><span style="white-space: pre-wrap;">\t</span><span style="white-space: pre-wrap;">bar</span><br><span style="white-space: pre-wrap;">\t</span><span style="white-space: pre-wrap;">baz</span></p>',
+      md: 'foo\t \tbar\n\tbaz',
+      skipExport: true,
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">Hello</span><span style="white-space: pre-wrap;">\t</span><span style="white-space: pre-wrap;">\t</span><span style="white-space: pre-wrap;">World</span></p>',
+      md: 'Hello\t\tWorld',
+      skipExport: true,
+    },
   ];
 
   for (const {

@@ -347,7 +347,7 @@ export const clearFormatting = (
         return;
       }
 
-      extractedNodes.forEach((node, idx) => {
+      extractedNodes.forEach((node) => {
         if ($isTextNode(node)) {
           if (node.__style !== '') {
             node.setStyle('');

@@ -5,9 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import type {JSX} from 'react';
 
+import {$createListNode, $isListItemNode, $isListNode} from '@lexical/list';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {eventFiles} from '@lexical/rich-text';
 import {calculateZoomLevel, isHTMLElement, mergeRegister} from '@lexical/utils';
@@ -22,7 +22,9 @@ import {
   COMMAND_PRIORITY_LOW,
   DRAGOVER_COMMAND,
   DROP_COMMAND,
+  INDENT_CONTENT_COMMAND,
   LexicalEditor,
+  OUTDENT_CONTENT_COMMAND,
 } from 'lexical';
 import {
   DragEvent as ReactDragEvent,
@@ -41,7 +43,8 @@ import {Rectangle} from './shared/rect';
 const SPACE = 4;
 const TARGET_LINE_HALF_HEIGHT = 2;
 const DRAG_DATA_FORMAT = 'application/x-lexical-drag-block';
-const TEXT_BOX_HORIZONTAL_PADDING = 28;
+//const TEXT_BOX_HORIZONTAL_PADDING = 28;
+const INDENT_STEP = 20;
 
 const Downward = 1;
 const Upward = -1;
@@ -95,11 +98,43 @@ function getCollapsedMargins(elem: HTMLElement): {
   return {marginBottom: collapsedBottomMargin, marginTop: collapsedTopMargin};
 }
 
+function getDeepestBlockElement(
+  elem: HTMLElement,
+  point: Point,
+  anchorElementRect: DOMRect,
+): HTMLElement {
+  const children = Array.from(elem.children);
+  for (let i = 0; i < children.length; i++) {
+    const child = children[i];
+
+    if (
+      child instanceof HTMLElement &&
+      !child.hasAttribute('data-lexical-text') &&
+      window.getComputedStyle(child).display !== 'inline'
+    ) {
+      const domRect = Rectangle.fromDOM(child);
+      const {marginTop, marginBottom} = getCollapsedMargins(child);
+      const childRect = domRect.generateNewRect({
+        bottom: domRect.bottom + marginBottom,
+        left: anchorElementRect.left,
+        right: anchorElementRect.right,
+        top: domRect.top - marginTop,
+      });
+
+      if (childRect.contains(point).result) {
+        return getDeepestBlockElement(child, point, anchorElementRect);
+      }
+    }
+  }
+  return elem;
+}
+
 function getBlockElement(
   anchorElem: HTMLElement,
   editor: LexicalEditor,
   event: MouseEvent,
   useEdgeAsDefault = false,
+  draggedNodeKey: string | null = null,
 ): HTMLElement | null {
   const anchorElementRect = anchorElem.getBoundingClientRect();
   const topLevelNodeKeys = getTopLevelNodeKeys(editor);
@@ -159,7 +194,7 @@ function getBlockElement(
       } = rect.contains(point);
 
       if (result) {
-        blockElem = elem;
+        blockElem = getDeepestBlockElement(elem, point, anchorElementRect);
         prevIndex = index;
         break;
       }
@@ -239,13 +274,19 @@ function setTargetLine(
   targetLineElem: HTMLElement,
   targetBlockElem: HTMLElement,
   mouseY: number,
+  mouseX: number,
   anchorElem: HTMLElement,
-) {
+): number {
   const {top: targetBlockElemTop, height: targetBlockElemHeight} =
     targetBlockElem.getBoundingClientRect();
-  const {top: anchorTop, width: anchorWidth} =
-    anchorElem.getBoundingClientRect();
+  const {
+    top: anchorTop,
+    left: anchorLeft,
+    width: anchorWidth,
+  } = anchorElem.getBoundingClientRect();
   const {marginTop, marginBottom} = getCollapsedMargins(targetBlockElem);
+
+  // Calculate Y-axis
   let lineTop = targetBlockElemTop;
   if (mouseY >= targetBlockElemTop) {
     lineTop += targetBlockElemHeight + marginBottom / 2;
@@ -255,13 +296,29 @@ function setTargetLine(
 
   const top =
     lineTop - anchorTop - TARGET_LINE_HALF_HEIGHT + anchorElem.scrollTop;
-  const left = TEXT_BOX_HORIZONTAL_PADDING - SPACE;
+
+  // Calculate X-axis
+  const targetRect = targetBlockElem.getBoundingClientRect();
+  let left = targetRect.left - anchorLeft;
+
+  // Calculate how far the mouse is from the left edge of the text block
+  const mouseXOffset = mouseX - targetRect.left;
+  let indentLevel = 0;
+
+  // Require a deliberate drag to the left/right to trigger nesting
+  if (mouseXOffset > INDENT_STEP && mouseXOffset < 150) {
+    indentLevel = 1;
+  } else if (mouseXOffset < -INDENT_STEP && mouseXOffset > -150) {
+    indentLevel = -1;
+  }
+
+  left += indentLevel * INDENT_STEP;
 
   targetLineElem.style.transform = `translate(${left}px, ${top}px)`;
-  targetLineElem.style.width = `${
-    anchorWidth - (TEXT_BOX_HORIZONTAL_PADDING - SPACE) * 2
-  }px`;
+  targetLineElem.style.width = `${anchorWidth - left}px`;
   targetLineElem.style.opacity = '.4';
+
+  return indentLevel;
 }
 
 function hideTargetLine(targetLineElem: HTMLElement | null) {
@@ -287,6 +344,8 @@ function useDraggableBlockMenu(
   const isDraggingBlockRef = useRef<boolean>(false);
   const [draggableBlockElem, setDraggableBlockElemState] =
     useState<HTMLElement | null>(null);
+  const draggedNodeKeyRef = useRef<string | null>(null);
+  const indentLevelRef = useRef<number>(0);
 
   const setDraggableBlockElem = useCallback(
     (elem: HTMLElement | null) => {
@@ -356,21 +415,30 @@ function useDraggableBlockMenu(
       if (isFileTransfer) {
         return false;
       }
-      const {pageY, target} = event;
+      const {pageY, pageX, target} = event;
       if (!isHTMLElement(target)) {
         return false;
       }
-      const targetBlockElem = getBlockElement(anchorElem, editor, event, true);
+      const targetBlockElem = getBlockElement(
+        anchorElem,
+        editor,
+        event,
+        true,
+        draggedNodeKeyRef.current,
+      );
       const targetLineElem = targetLineRef.current;
       if (targetBlockElem === null || targetLineElem === null) {
         return false;
       }
-      setTargetLine(
+      const level = setTargetLine(
         targetLineElem,
         targetBlockElem,
         pageY / calculateZoomLevel(target),
+        pageX / calculateZoomLevel(target),
         anchorElem,
       );
+      indentLevelRef.current = level;
+
       // Prevent default event to be able to trigger onDrop events
       event.preventDefault();
       return true;
@@ -394,7 +462,13 @@ function useDraggableBlockMenu(
       if (!isHTMLElement(target)) {
         return false;
       }
-      const targetBlockElem = getBlockElement(anchorElem, editor, event, true);
+      const targetBlockElem = getBlockElement(
+        anchorElem,
+        editor,
+        event,
+        true,
+        draggedNodeKeyRef.current,
+      );
       if (!targetBlockElem) {
         return false;
       }
@@ -410,12 +484,59 @@ function useDraggableBlockMenu(
         return true;
       }
       const targetBlockElemTop = targetBlockElem.getBoundingClientRect().top;
-      if (pageY / calculateZoomLevel(target) >= targetBlockElemTop) {
-        targetNode.insertAfter(draggedNode);
+      const isInsertAfter =
+        pageY / calculateZoomLevel(target) >= targetBlockElemTop;
+
+      let insertTarget = targetNode;
+      let nodeToInsert = draggedNode;
+
+      //  Dragging a non-list-item (like a Paragraph) onto a list-item.
+      // We must elevate the target to the parent List so we don't put a <p> inside a <ul>.
+      if (!$isListItemNode(draggedNode) && $isListItemNode(targetNode)) {
+        insertTarget = targetNode.getParentOrThrow();
+      }
+
+      //  Dragging a list-item out of a list and dropping it onto a non-list-item.
+      // We must wrap the item in a brand new List so it isn't orphaned.
+      if ($isListItemNode(draggedNode) && !$isListItemNode(targetNode)) {
+        const parentList = draggedNode.getParent();
+        // Match the original list type (bullet, number, etc.)
+        const listType = $isListNode(parentList)
+          ? parentList.getListType()
+          : 'bullet';
+
+        const newList = $createListNode(listType);
+        newList.append(draggedNode);
+        nodeToInsert = newList;
+      }
+
+      if (isInsertAfter) {
+        insertTarget.insertAfter(nodeToInsert);
       } else {
-        targetNode.insertBefore(draggedNode);
+        insertTarget.insertBefore(nodeToInsert);
+      }
+
+      const level = indentLevelRef.current;
+      if (level !== 0) {
+        const nodeKey = nodeToInsert.getKey();
+        // Run this in a fresh update cycle immediately after the drop finishes
+        setTimeout(() => {
+          editor.update(() => {
+            const node = $getNodeByKey(nodeKey);
+            if (node) {
+              node.selectEnd(); // Focus the dropped node
+
+              if (level > 0) {
+                editor.dispatchCommand(INDENT_CONTENT_COMMAND, undefined);
+              } else if (level < 0) {
+                editor.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined);
+              }
+            }
+          });
+        }, 0);
       }
       setDraggableBlockElem(null);
+      indentLevelRef.current = 0;
 
       // Firefox-specific fix: Use editor.focus() after drop to properly restore
       // both focus and selection. This ensures cursor visibility immediately.
@@ -530,6 +651,7 @@ function useDraggableBlockMenu(
       }
     });
     isDraggingBlockRef.current = true;
+    draggedNodeKeyRef.current = nodeKey;
     dataTransfer.setData(DRAG_DATA_FORMAT, nodeKey);
 
     // Firefox-specific: Restore focus synchronously after drag starts to prevent cursor loss.
@@ -554,6 +676,7 @@ function useDraggableBlockMenu(
 
   function onDragEnd(): void {
     isDraggingBlockRef.current = false;
+    draggedNodeKeyRef.current = null;
     hideTargetLine(targetLineRef.current);
 
     // Firefox-specific fix: Use editor.focus() to properly restore both focus and

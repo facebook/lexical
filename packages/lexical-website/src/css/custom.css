@@ -35,10 +35,7 @@
 }
 
 .text-gradient {
-  background: linear-gradient(to right, #76b6ff, #00c896);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  @apply bg-gradient-to-r from-[#76b6ff] to-[#00c896] bg-clip-text text-transparent;
 }
 
 .styled-button {

@@ -355,8 +355,6 @@ const config = {
   // Usually your GitHub org/user name.
   projectName: 'lexical',
 
-  tagline: 'An extensible text editor framework that does things differently',
-
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
@@ -365,66 +363,6 @@ const config = {
           autoCollapseCategories: true,
           hideable: true,
         },
-      },
-      footer: {
-        copyright: `Copyright © ${new Date().getFullYear()} Meta Platforms, Inc. Built with Docusaurus.`,
-        links: [
-          {
-            items: [
-              {
-                label: 'Introduction',
-                to: '/docs/intro',
-              },
-            ],
-            title: 'Docs',
-          },
-          {
-            items: [
-              {
-                href: 'https://discord.gg/KmG4wQnnD9',
-                label: 'Discord',
-              },
-              {
-                href: 'https://stackoverflow.com/questions/tagged/lexicaljs',
-                label: 'Stack Overflow',
-              },
-              {
-                href: 'https://twitter.com/lexicaljs',
-                label: 'Twitter',
-              },
-            ],
-            title: 'Community',
-          },
-          {
-            items: [
-              {
-                href: 'https://github.com/facebook/lexical',
-                label: 'GitHub',
-              },
-            ],
-            title: 'More',
-          },
-          {
-            // Please do not remove the privacy and terms, it's a legal requirement.
-            items: [
-              {
-                href: 'https://opensource.facebook.com/legal/privacy/',
-                label: 'Privacy',
-                rel: 'noreferrer noopener',
-                target: '_blank',
-              },
-              {
-                href: 'https://opensource.facebook.com/legal/terms/',
-                label: 'Terms',
-                rel: 'noreferrer noopener',
-                target: '_blank',
-              },
-            ],
-
-            title: 'Legal',
-          },
-        ],
-        style: 'dark',
       },
       navbar: {
         items: [
@@ -454,28 +392,19 @@ const config = {
 
           {label: 'Community', position: 'left', to: '/community'},
           {
-            href: 'https://facebook.github.io/lexical-ios/',
-            label: 'iOS',
-            position: 'left',
-          },
-          {
-            label: 'Gallery',
+            label: 'Demos',
             position: 'left',
             to: '/gallery',
           },
           {
-            href: GITHUB_REPO_URL,
             label: 'GitHub',
-            position: 'right',
-          },
-          {
-            href: IOS_GITHUB_REPO_URL,
-            label: 'iOS GitHub',
-            position: 'right',
+            position: 'left',
+            to: GITHUB_REPO_URL,
           },
         ].filter((item) => item != null),
         logo: {
           alt: 'Lexical',
+          height: 12,
           src: 'img/logo.svg',
           srcDark: 'img/logo-dark.svg',
         },

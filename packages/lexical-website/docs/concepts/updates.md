@@ -56,9 +56,9 @@ editor.registerUpdateListener(({tags}) => {
   }
 });
 
-editor.registerMutationListener(MyNode, (mutations) => {
+editor.registerMutationListener(MyNode, (mutatedNodes, { updateTags }) => {
   // updateTags contains tags from the current update
-  if (mutations.updateTags.has(HISTORIC_TAG)) {
+  if (updateTags.has(HISTORIC_TAG)) {
     // Handle mutations with historic tag
   }
 });

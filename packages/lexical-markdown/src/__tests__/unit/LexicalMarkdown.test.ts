@@ -33,6 +33,7 @@ import {describe, expect, it} from 'vitest';
 import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
+  INDENT,
   LINK,
   registerMarkdownShortcuts,
   TextMatchTransformer,
@@ -722,6 +723,26 @@ describe('Markdown', () => {
       html: '<p><b><strong style="white-space: pre-wrap;">text </strong></b><a href="https://lexical.dev"><b><strong style="white-space: pre-wrap;">link</strong></b></a></p>',
       md: '**text [link](https://lexical.dev)**',
       mdAfterExport: '**text** [**link**](https://lexical.dev)',
+    },
+    {
+      customTransformers: [INDENT],
+      html: '<p style="padding-inline-start: 40px;"><span style="white-space: pre-wrap;">Hello Word</span></p>',
+      md: '\tHello Word',
+    },
+    {
+      customTransformers: [INDENT],
+      html: '<p style="padding-inline-start: 80px;"><span style="white-space: pre-wrap;">Hello Word</span></p>',
+      md: '\t\tHello Word',
+    },
+    {
+      customTransformers: [INDENT],
+      html: '<p><span style="white-space: pre-wrap;">Hello\t Word</span></p>',
+      md: 'Hello\t Word',
+    },
+    {
+      customTransformers: [INDENT],
+      html: '<p style="padding-inline-start: 40px;"><i><em style="white-space: pre-wrap;">Hello</em></i><span style="white-space: pre-wrap;"> Word</span></p>',
+      md: '\t*Hello* Word',
     },
     {
       html: '<p><i><em style="white-space: pre-wrap;">text</em></i><i><b><strong style="white-space: pre-wrap;">text</strong></b></i></p>',

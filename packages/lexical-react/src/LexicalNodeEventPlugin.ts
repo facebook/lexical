@@ -56,13 +56,11 @@ export function NodeEventPlugin({
       });
     };
 
-    return editor.registerRootListener((rootElement, prevRootElement) => {
+    return editor.registerRootListener((rootElement) => {
       if (rootElement) {
         rootElement.addEventListener(eventType, onEvent, isCaptured);
-      }
-
-      if (prevRootElement) {
-        prevRootElement.removeEventListener(eventType, onEvent, isCaptured);
+        return () =>
+          rootElement.removeEventListener(eventType, onEvent, isCaptured);
       }
     });
     // We intentionally don't respect changes to eventType.

@@ -456,7 +456,7 @@ function useDraggableBlockMenu(
     }
 
     return mergeRegister(
-      editor.registerRootListener((rootElement, prevRootElement) => {
+      editor.registerRootListener((rootElement) => {
         function onBlur(event: FocusEvent) {
           const relatedTarget = event.relatedTarget;
           if (
@@ -483,10 +483,7 @@ function useDraggableBlockMenu(
 
         if (rootElement) {
           rootElement.addEventListener('blur', onBlur, true);
-        }
-
-        if (prevRootElement) {
-          prevRootElement.removeEventListener('blur', onBlur, true);
+          return () => rootElement.removeEventListener('blur', onBlur, true);
         }
       }),
       // Intercept BLUR_COMMAND if focus is on the menu (fallback in case event propagation wasn't stopped)

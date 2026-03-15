@@ -20,12 +20,15 @@ import {$findMatchingParent} from '@lexical/utils';
 import {
   $createLineBreakNode,
   $createParagraphNode,
+  $createTabNode,
   $createTextNode,
   $getRoot,
   $getSelection,
+  $isElementNode,
   $isParagraphNode,
   $isTextNode,
   ElementNode,
+  TextNode,
 } from 'lexical';
 
 import {importTextTransformers} from './importTextTransformers';
@@ -84,17 +87,24 @@ export function createMarkdownImport(
       );
     }
 
-    // By default, removing empty paragraphs as md does not really
-    // allow empty lines and uses them as delimiter.
-    // If you need empty lines set shouldPreserveNewLines = true.
     const children = root.getChildren();
     for (const child of children) {
+      // By default, removing empty paragraphs as md does not really
+      // allow empty lines and uses them as delimiter.
+      // If you need empty lines set shouldPreserveNewLines = true.
       if (
         !shouldPreserveNewLines &&
         isEmptyParagraph(child) &&
         root.getChildrenSize() > 1
       ) {
         child.remove();
+        continue;
+      }
+      // Convert all '\t' into TabNode.
+      if ($isElementNode(child)) {
+        for (const textNode of child.getAllTextNodes()) {
+          $normalizeMarkdownTextNode(textNode);
+        }
       }
     }
 
@@ -289,6 +299,28 @@ function $importBlocks(
       }
     }
   }
+}
+
+// Look in node for '\t' and create a TabNode for each occurrence.
+function $normalizeMarkdownTextNode(textNode: TextNode): void {
+  const tabOffsets: Set<number> = new Set();
+  const text = textNode.getTextContent();
+  let index = text.indexOf('\t');
+
+  // Find all tab occurrences
+  while (index !== -1) {
+    tabOffsets.add(index);
+    tabOffsets.add(index + 1);
+    index = text.indexOf('\t', index + 1);
+  }
+
+  // Split node to isolate each tab then replace '\t' into TabNode
+  const splitNodes = textNode.splitText(...tabOffsets);
+  splitNodes.forEach((node) => {
+    if (node.getTextContent() === '\t') {
+      node.replace($createTabNode());
+    }
+  });
 }
 
 function createTextFormatTransformersIndex(

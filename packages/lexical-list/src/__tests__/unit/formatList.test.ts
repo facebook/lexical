@@ -5,6 +5,17 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import {
+  $createListItemNode,
+  $createListNode,
+  $insertList,
+  $isListItemNode,
+  $isListNode,
+  ListItemNode,
+  ListNode,
+  ListType,
+  registerList,
+} from '@lexical/list';
 import {registerRichText} from '@lexical/rich-text';
 import {
   $createTableCellNode,
@@ -34,19 +45,7 @@ import {
 } from 'lexical/src/__tests__/utils';
 import {describe, expect, test} from 'vitest';
 
-import {registerList} from '../../';
-import {$handleIndent, $handleOutdent, $insertList} from '../../formatList';
-import {
-  $createListItemNode,
-  $isListItemNode,
-  ListItemNode,
-} from '../../LexicalListItemNode';
-import {
-  $createListNode,
-  $isListNode,
-  ListNode,
-  ListType,
-} from '../../LexicalListNode';
+import {$handleIndent, $handleOutdent} from '../../formatList';
 
 class ExtendedTestListNode extends ListNode {
   $config() {

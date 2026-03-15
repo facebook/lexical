@@ -6,15 +6,6 @@
  *
  */
 import {$createLinkNode, $isLinkNode, LinkNode} from '@lexical/link';
-import {$createTextNode, $getRoot, ParagraphNode, TextNode} from 'lexical';
-import {
-  expectHtmlToBeEqual,
-  html,
-  initializeUnitTest,
-} from 'lexical/src/__tests__/utils';
-import {waitForReact} from 'packages/lexical-react/src/__tests__/unit/utils';
-import {describe, expect, test} from 'vitest';
-
 import {
   $createListItemNode,
   $createListNode,
@@ -22,7 +13,15 @@ import {
   $isListNode,
   ListItemNode,
   ListNode,
-} from '../..';
+} from '@lexical/list';
+import {$createTextNode, $getRoot, ParagraphNode, TextNode} from 'lexical';
+import {
+  expectHtmlToBeEqual,
+  html,
+  initializeUnitTest,
+} from 'lexical/src/__tests__/utils';
+import {waitForReact} from 'packages/lexical-react/src/__tests__/unit/utils';
+import {assert, describe, expect, test} from 'vitest';
 
 const editorConfig = Object.freeze({
   namespace: '',
@@ -303,6 +302,39 @@ describe('LexicalListNode tests', () => {
             expect($isListItemNode(firstChild)).toBe(true);
           }
         }
+      });
+    });
+
+    test('ListNode.splice() should wrap multiple non-ListItem nodes in individual ListItem nodes', async () => {
+      const {editor} = testEnv;
+
+      await editor.update(() => {
+        const list = $createListNode('bullet').append(
+          $createListItemNode().append($createTextNode('A')),
+          $createListItemNode().append($createTextNode('D')),
+        );
+        const root = $getRoot();
+        root.append(list);
+
+        const textA = $createTextNode('B');
+        const textB = $createTextNode('C');
+
+        list.splice(1, 0, [textA, textB]);
+      });
+
+      await editor.read(() => {
+        const list = $getRoot().getFirstChild();
+        assert($isListNode(list), 'First child must be a ListNode');
+
+        const children = list.getChildren();
+        expect(children).toHaveLength(4);
+
+        // Each child must be its own ListItemNode, not the same instance
+        expect($isListItemNode(children[1])).toBe(true);
+        expect($isListItemNode(children[2])).toBe(true);
+        expect(children[1]).not.toBe(children[2]);
+        expect(children[1].getTextContent()).toBe('B');
+        expect(children[2].getTextContent()).toBe('C');
       });
     });
 

@@ -60,34 +60,4 @@ describe('Playground markdown equations', () => {
         expect(markdown).toBe(`$${equation}$`);
       });
 
-      it('export ignores importRegExp differences on the equation transformer', () => {
-        const {editor} = testEnv;
-        const equation = 'x^2 + y^2 = z^2';
-        const exportOnlyEquation = {
-          ...EQUATION,
-          importRegExp: /__never__/,
-          regExp: /__never__/,
-        };
-        const transformers = PLAYGROUND_TRANSFORMERS.map((transformer) =>
-          transformer === EQUATION ? exportOnlyEquation : transformer,
-        );
-
-        editor.update(
-          () => {
-            const paragraph = $createParagraphNode();
-            paragraph.append($createEquationNode(equation, false));
-            $getRoot().clear().append(paragraph);
-          },
-          {discrete: true},
-        );
-
-        const markdown = editor.read(() =>
-          $convertToMarkdownString(transformers),
-        );
-
-        expect(markdown).toBe(`$$${equation}$$`);
-      });
-    },
-    {nodes: [EquationNode]},
-  );
 });

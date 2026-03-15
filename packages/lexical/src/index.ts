@@ -374,6 +374,7 @@ export {
   type NormalizedLexicalExtensionArgument,
   type NormalizedPeerDependency,
   type OutputComponentExtension,
+  type OutputExtension,
   type outputTypeSymbol,
   safeCast,
   shallowMergeConfig,

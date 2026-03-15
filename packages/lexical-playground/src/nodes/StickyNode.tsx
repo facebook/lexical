@@ -9,6 +9,7 @@
 import type {
   EditorConfig,
   LexicalEditor,
+  LexicalEditorWithDispose,
   LexicalNode,
   LexicalUpdateJSON,
   NodeKey,
@@ -18,9 +19,25 @@ import type {
 } from 'lexical';
 import type {JSX} from 'react';
 
-import {$setSelection, createEditor, DecoratorNode} from 'lexical';
+import {
+  buildEditorFromExtensions,
+  NestedEditorExtension,
+} from '@lexical/extension';
+import {SharedHistoryExtension} from '@lexical/history';
+import {PlainTextExtension} from '@lexical/plain-text';
+import {ReactExtension} from '@lexical/react/ReactExtension';
+import {ReactProviderExtension} from '@lexical/react/ReactProviderExtension';
+import {
+  $setSelection,
+  configExtension,
+  DecoratorNode,
+  defineExtension,
+} from 'lexical';
 import * as React from 'react';
 import {createPortal} from 'react-dom';
+
+import StickyEditorTheme from '../themes/StickyEditorTheme';
+import ContentEditable from '../ui/ContentEditable';
 
 const StickyComponent = React.lazy(() => import('./StickyComponent'));
 
@@ -36,11 +53,32 @@ export type SerializedStickyNode = Spread<
   SerializedLexicalNode
 >;
 
+const StickyEditorExtension = defineExtension({
+  dependencies: [
+    SharedHistoryExtension,
+    PlainTextExtension,
+    ReactProviderExtension,
+    NestedEditorExtension,
+    configExtension(ReactExtension, {
+      contentEditable: (
+        <ContentEditable
+          placeholder="What's up?"
+          placeholderClassName="StickyNode__placeholder"
+          className="StickyNode__contentEditable"
+        />
+      ),
+    }),
+  ],
+  name: '@lexical/playground/StickyEditor',
+  namespace: '@lexical/playground/StickyEditor',
+  theme: StickyEditorTheme,
+});
+
 export class StickyNode extends DecoratorNode<JSX.Element> {
   __x: number;
   __y: number;
   __color: StickyNoteColor;
-  __caption: LexicalEditor;
+  __caption: LexicalEditorWithDispose;
 
   static getType(): string {
     return 'sticky';
@@ -80,13 +118,14 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
     x: number,
     y: number,
     color: 'pink' | 'yellow',
-    caption?: LexicalEditor,
+    caption?: LexicalEditorWithDispose,
     key?: NodeKey,
   ) {
     super(key);
     this.__x = x;
     this.__y = y;
-    this.__caption = caption || createEditor();
+    this.__caption =
+      caption || buildEditorFromExtensions(StickyEditorExtension);
     this.__color = color;
   }
 

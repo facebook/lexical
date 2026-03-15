@@ -7,6 +7,11 @@
  */
 
 import {
+  $createHorizontalRuleNode,
+  $isHorizontalRuleNode,
+  HorizontalRuleNode,
+} from '@lexical/extension';
+import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
   CHECK_LIST,
@@ -18,11 +23,6 @@ import {
   TextMatchTransformer,
   Transformer,
 } from '@lexical/markdown';
-import {
-  $createHorizontalRuleNode,
-  $isHorizontalRuleNode,
-  HorizontalRuleNode,
-} from '@lexical/react/LexicalHorizontalRuleNode';
 import {
   $createTableCellNode,
   $createTableNode,

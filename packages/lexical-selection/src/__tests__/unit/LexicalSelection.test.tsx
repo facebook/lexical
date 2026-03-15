@@ -38,6 +38,7 @@ import {
   $getRoot,
   $getSelection,
   $isElementNode,
+  $isLineBreakNode,
   $isRangeSelection,
   $isTextNode,
   $setSelection,

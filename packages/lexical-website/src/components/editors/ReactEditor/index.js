@@ -14,7 +14,6 @@ import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
-import {isMacOs, isMobile, isTablet} from 'react-device-detect';
 
 const theme = {
   paragraph: 'editor-paragraph',
@@ -30,6 +29,12 @@ function onError(error) {
 }
 
 export default function ReactEditor() {
+  const isMobile =
+    /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(
+      navigator.userAgent,
+    );
+  const isTablet = /iPad|Tablet|PlayBook/i.test(navigator.userAgent);
+  const isMacOs = /Macintosh/i.test(navigator.userAgent);
   const initialConfig = {
     namespace: 'ReactEditor',
     nodes: [HeadingNode, QuoteNode],

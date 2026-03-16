@@ -111,6 +111,7 @@ module.exports = {
     },
     {
       files: [
+        'scripts/__tests__/**',
         'packages/**/src/__tests__/**',
         'packages/lexical-playground/**',
         'packages/lexical-devtools/**',

@@ -9,7 +9,7 @@
 import fs from 'fs-extra';
 import {glob} from 'glob';
 import path from 'node:path';
-import {describe, expect,test} from 'vitest';
+import {describe, expect, test} from 'vitest';
 
 import {packagesManager} from '../../shared/packagesManager.js';
 import {describeExample} from './utils.mjs';

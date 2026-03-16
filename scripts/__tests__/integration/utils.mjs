@@ -8,7 +8,7 @@
 // @ts-check
 import fs from 'fs-extra';
 import path from 'node:path';
-import {beforeAll, describe, expect,test} from 'vitest';
+import {beforeAll, describe, expect, test} from 'vitest';
 
 import {exec} from '../../shared/childProcess.js';
 import {packagesManager} from '../../shared/packagesManager.js';
@@ -158,4 +158,4 @@ function describeExample(packageJsonPath, bodyFun = undefined) {
   });
 }
 
-export {describeExample,expectSuccessfulExec, withCwd};
+export {describeExample, expectSuccessfulExec, withCwd};

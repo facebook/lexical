@@ -100,7 +100,7 @@ function Feature({
 
 export default function HomepageFeatures() {
   return (
-    <section className="mx-4 grid gap-4 py-8 sm:mx-10 lg:mx-auto lg:grid-cols-3">
+    <section className="mx-4 grid gap-4 py-8 sm:mx-10 lg:mx-16 lg:grid-cols-3">
       {FeatureList.map((props, idx) => (
         <Feature key={idx} {...props} />
       ))}

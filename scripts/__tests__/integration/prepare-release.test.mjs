@@ -6,13 +6,13 @@
  *
  */
 // @ts-check
-'use strict';
+import fs from 'fs-extra';
+import {glob} from 'glob';
+import path from 'node:path';
+import {describe, expect, test} from 'vitest';
 
-const fs = require('fs-extra');
-const glob = require('glob');
-const {packagesManager} = require('../../shared/packagesManager');
-const path = require('node:path');
-const {describeExample} = require('./utils');
+import {packagesManager} from '../../shared/packagesManager.js';
+import {describeExample} from './utils.mjs';
 
 describe('prepare-release tests', () => {
   for (const pkg of packagesManager.getPublicPackages()) {

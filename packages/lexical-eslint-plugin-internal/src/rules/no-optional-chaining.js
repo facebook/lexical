@@ -15,7 +15,9 @@
 /** @type {import('eslint').Rule.RuleModule} */
 module.exports = {
   create(context) {
-    const sourceCode = context.getSourceCode();
+    // ESLint 9+ provides sourceCode directly on context (required in ESLint 10+)
+    // ESLint 7-8 requires calling getSourceCode() method
+    const sourceCode = context.sourceCode || context.getSourceCode();
 
     /**
      * Checks if the given token is a `?.` token or not.

@@ -111,6 +111,7 @@ module.exports = {
     },
     {
       files: [
+        'scripts/__tests__/**',
         'packages/**/src/__tests__/**',
         'packages/lexical-playground/**',
         'packages/lexical-devtools/**',
@@ -166,7 +167,6 @@ module.exports = {
 
     // import helps to configure simple-import-sort
     'import',
-    'jest',
     'no-function-declare-after-return',
     'react',
     'no-only-tests',

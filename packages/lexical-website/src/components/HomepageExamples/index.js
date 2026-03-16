@@ -6,109 +6,85 @@
  *
  */
 
-import Link from '@docusaurus/Link';
-import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
-import * as Tabs from '@radix-ui/react-tabs';
-import {useState} from 'react';
+import ChatInputEditor from '@site/src/components/editors/ChatInputEditor';
+import NotionLikeEditor from '@site/src/components/editors/NotionLikeEditor';
+import RichInputEditor from '@site/src/components/editors/RichInputEditor';
+import ToolbarEditor from '@site/src/components/editors/ToolbarEditor';
 
-const EXAMPLES = [
+const SECTIONS = [
   {
-    content: (
+    description:
+      'A familiar full rich text editor with formatting controls for headings, quotes, and text styles.',
+    editor: <ToolbarEditor />,
+    title: (
       <>
-        It's super easy to get started with Lexical in any environment. Lexical
-        is framework agnostic, but provides a set of bindings for React to help
-        you get off the ground even quicker. After the initial setup,
-        delightfully ergonomic APIs make building custom functionality
-        straightforward and downright fun!
+        Standard <span className="text-gradient">rich text</span> + toolbar
       </>
     ),
-    id: 'example-feature-1',
-    label: 'Simple Setup',
-    src: 'vanilla-js?embed=1&file=src%2Fmain.ts&terminalHeight=0&ctl=1',
   },
   {
-    content: (
+    description:
+      'A block-first writing flow inspired by Notion, with slash commands and drag handles for reorganizing content.',
+    editor: <NotionLikeEditor />,
+    title: (
       <>
-        At its core, Lexical is a text-editing engine - a platform for building
-        feature-rich editors for the web. At the same time, we believe users
-        shouldn't have to rewrite the same rich text functionality over and over
-        in every implementation. Lexical exposes a set of individual, modular
-        packages that can be used to add common features like lists, links, and
-        tables.
+        Notion-like <span className="text-gradient">block editor</span>
       </>
     ),
-    id: 'example-feature-2',
-    label: 'Powerful Features',
-    src: 'react-rich?embed=1&file=src%2FApp.tsx&terminalHeight=0&ctl=1',
   },
   {
-    content: (
+    description:
+      'A lightweight chat composer for conversational products like support tools, AI assistants, and chat apps.',
+    editor: <ChatInputEditor />,
+    title: (
       <>
-        Lexical emphasizes extensibility. Nodes can be extended to add or change
-        behavior and simple, imperative APIs make it a breeze to build for
-        custom use cases.
+        Compact <span className="text-gradient">chat input</span>
       </>
     ),
-    id: 'example-feature-3',
-    label: 'Built to Extend',
-    src: 'vanilla-js-plugin?embed=1&file=src%2Femoji-plugin%2FEmojiPlugin.ts&terminalHeight=0&ctl=1',
+  },
+  {
+    description:
+      'A stripped-down, single-field editor that behaves like a text input but still supports rich features like bold, italic, underline and hashtags.',
+    editor: <RichInputEditor />,
+    title: (
+      <>
+        Rich <span className="text-gradient">input field</span>
+      </>
+    ),
   },
 ];
 
-export default function HomepageExamples() {
-  const [activeItemID, setActiveItemID] = useState(EXAMPLES[0].id);
-  const {
-    siteConfig: {customFields},
-  } = useDocusaurusContext();
-
+function ExampleSection({title, description, children}) {
   return (
-    <Tabs.Root
-      value={activeItemID}
-      orientation="horizontal"
-      onValueChange={setActiveItemID}>
-      <Tabs.List asChild={true} className="flex gap-1 pl-0" loop={true}>
-        <ul>
-          {EXAMPLES.map(({id, label}) => (
-            <Tabs.Trigger asChild={true} value={id} key={id}>
-              <li
-                className={`button--text cursor-pointer list-none rounded-md px-4 py-1 font-bold transition-colors hover:bg-[#f2f2f2] ${
-                  activeItemID === id && 'pills__item--active'
-                }`}
-                tabIndex={0}
-                role="tab">
-                {label}
-              </li>
-            </Tabs.Trigger>
-          ))}
-        </ul>
-      </Tabs.List>
+    <section className="flex flex-col gap-6 p-8">
+      <div className="space-y-4 text-center">
+        <h2 className="mx-auto text-3xl font-bold lg:max-w-xl lg:text-4xl">
+          {title}
+        </h2>
+        <p className="mx-auto max-w-2xl text-sm font-light opacity-70">
+          {description}
+        </p>
+      </div>
 
-      {EXAMPLES.map(({id, content, src, label}) => (
-        <Tabs.Content asChild={true} value={id} key={id}>
-          <div className="grid gap-6 lg:grid-cols-[1fr_2fr]">
-            <div className="flex flex-col gap-6">
-              <div>{content}</div>
+      <div className="flex w-full flex-col gap-6 md:flex-row md:items-start md:justify-center">
+        <div className="w-full md:max-w-xl lg:max-w-2xl">{children}</div>
+      </div>
+    </section>
+  );
+}
 
-              <div>
-                <Link
-                  className="whitespace-nowrap rounded-md bg-blue-500 px-6 py-2 text-sm font-bold text-white transition-opacity hover:text-white hover:no-underline hover:opacity-90"
-                  to="/docs/intro">
-                  Get Started
-                </Link>
-              </div>
-            </div>
-
-            <div>
-              <iframe
-                className="h-[500px] w-full overflow-hidden"
-                src={`${customFields.STACKBLITZ_PREFIX}examples/${src}`}
-                title={label}
-                sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-presentation allow-same-origin allow-scripts"
-              />
-            </div>
-          </div>
-        </Tabs.Content>
+export default function HomepageExamples() {
+  return (
+    <div className="space-y-16 sm:space-y-36">
+      {SECTIONS.map((section, index) => (
+        <ExampleSection
+          key={index}
+          title={section.title}
+          description={section.description}
+          tabs={section.tabs}>
+          {section.editor}
+        </ExampleSection>
       ))}
-    </Tabs.Root>
+    </div>
   );
 }

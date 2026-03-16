@@ -17,6 +17,53 @@ const {packagesManager} = process.env.FB_INTERNAL
   ? {}
   : require('../../scripts/shared/packagesManager');
 const path = require('node:path');
+const fs = require('node:fs');
+
+/**
+ * Build webpack resolve.alias entries that map each lexical package's module
+ * name to the corresponding pre-built dist file.
+ *
+ * Requires `pnpm run build` to have been run first (dist/ files must exist).
+ *
+ * @returns {Record<string, string>}
+ */
+function buildLexicalWebpackAliases() {
+  if (process.env.FB_INTERNAL) {
+    return {};
+  }
+  /** @type {Record<string, string>} */
+  const aliases = {};
+
+  for (const pkg of packagesManager.getPublicPackages()) {
+    for (const [
+      name,
+      moduleExports,
+    ] of pkg.getNormalizedNpmModuleExportEntries()) {
+      const candidates = [
+        moduleExports.import.development,
+        moduleExports.import.default,
+        moduleExports.require.development,
+        moduleExports.require.default,
+      ].flatMap((fn) => {
+        if (!fn) {
+          return [];
+        }
+        const rel = fn.replace(/^\.\//, '');
+        return [pkg.resolve('dist', rel), pkg.resolve(rel)];
+      });
+      const resolved = candidates.find((f) => fs.existsSync(f));
+      if (!resolved) {
+        throw new Error(
+          `Missing dist file for ${name}. Run \`pnpm run build\` first.\n` +
+            `Tried: ${candidates.join(', ')}`,
+        );
+      }
+      aliases[`${name}$`] = resolved;
+    }
+  }
+
+  return aliases;
+}
 
 const TITLE = 'Lexical';
 const GITHUB_REPO_URL = 'https://github.com/facebook/lexical'; // TODO: Update when repo name updated
@@ -232,6 +279,7 @@ const docusaurusPluginTypedocConfig = {
   ],
   router: 'legacy',
   sidebar: {pretty: true},
+  skipErrorChecking: true,
   tsconfig: '../../tsconfig.build.json',
   useCustomAnchors: true,
   watch: process.env.TYPEDOC_WATCH === 'true',
@@ -306,6 +354,18 @@ const config = {
           },
         ],
     './plugins/webpack-buffer',
+    async function webpackLexicalModules() {
+      return {
+        configureWebpack() {
+          return {
+            resolve: {
+              alias: buildLexicalWebpackAliases(),
+            },
+          };
+        },
+        name: 'webpack-lexical-modules',
+      };
+    },
     ['docusaurus-plugin-typedoc', docusaurusPluginTypedocConfig],
     async function tailwindcss() {
       return {

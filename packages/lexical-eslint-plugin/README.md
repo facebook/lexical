@@ -180,6 +180,21 @@ These \$functions are considered safe to call from anywhere, generally
 these functions are runtime type checks that do not depend on any other
 state.
 
+## Testing
+
+To verify that the plugin works with different ESLint versions, run the integration tests:
+
+```bash
+node packages/lexical-eslint-plugin/__tests__/integration-test.js
+```
+
+This will test:
+- ✓ ESLint 8 with legacy `.eslintrc.json` configuration
+- ✓ ESLint 10 with flat `eslint.config.js` configuration
+- ✓ Legacy config name aliases (`recommended` vs `legacy-recommended`)
+
+The tests use `pnpm dlx` to run different ESLint versions without modifying `package.json` or `pnpm-lock.yaml`.
+
 ## Valid and Invalid Examples
 
 ### Valid Examples

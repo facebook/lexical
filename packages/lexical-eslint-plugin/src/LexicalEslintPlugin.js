@@ -15,7 +15,7 @@ const {rulesOfLexical} = require('./rules/rules-of-lexical.js');
 const legacyAll = {
   plugins: ['@lexical'],
   rules: {
-    '@lexical/rules-of-lexical': 'warn',
+    '@lexical/rules-of-lexical': /** @type {'warn'|'error'|'off'}*/ ('warn'),
   },
 };
 
@@ -23,6 +23,9 @@ const plugin = {
   configs: {
     // Legacy configs (ESLint 7-8) - available under multiple names for compatibility
     all: legacyAll,
+    // Flat configs (ESLint 9-10+) - placeholders, will be set below
+    'flat/all': /** @type {any} */ (null),
+    'flat/recommended': /** @type {any} */ (null),
     'legacy-all': legacyAll,
     'legacy-recommended': legacyAll,
     recommended: legacyAll,
@@ -34,12 +37,13 @@ const plugin = {
 };
 
 // Flat config format (ESLint 9-10+)
+// Must be created after plugin is defined to avoid circular reference
 const flatAll = {
   plugins: {
     '@lexical': plugin,
   },
   rules: {
-    '@lexical/rules-of-lexical': 'warn',
+    '@lexical/rules-of-lexical': 'warn' /** @type {'warn'|'error'|'off'}*/,
   },
 };
 

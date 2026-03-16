@@ -13,7 +13,7 @@
 
 import type {Rule} from 'eslint';
 
-import * as plugin from './LexicalEslintPlugin.js';
+import * as jsPlugin from './LexicalEslintPlugin.js';
 
 export type {RulesOfLexicalOptions} from './rules/rules-of-lexical.js';
 
@@ -54,6 +54,8 @@ export interface Plugin {
     'flat/recommended': FlatConfig;
   };
 }
+
+const plugin: Plugin = jsPlugin;
 
 // eslint-disable-next-line no-restricted-exports
 export default plugin;

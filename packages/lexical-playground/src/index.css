@@ -1703,10 +1703,6 @@ span.editor-equation {
   display: inline-block;
 }
 
-div.editor-equation {
-  display: block;
-}
-
 .editor-equation.focused {
   outline: 2px solid rgb(60, 132, 244);
 }

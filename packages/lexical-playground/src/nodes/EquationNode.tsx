@@ -58,10 +58,16 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
     return new EquationNode(node.__equation, node.__inline, node.__key);
   }
 
-  constructor(equation: string, inline?: boolean, key?: NodeKey) {
+  constructor(equation: string = '', inline?: boolean, key?: NodeKey) {
     super(key);
     this.__equation = equation;
     this.__inline = inline ?? false;
+  }
+
+  afterCloneFrom(prevNode: this): void {
+    super.afterCloneFrom(prevNode);
+    this.__equation = prevNode.__equation;
+    this.__inline = prevNode.__inline;
   }
 
   static importJSON(serializedNode: SerializedEquationNode): EquationNode {
@@ -75,7 +81,7 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
     return {
       ...super.exportJSON(),
       equation: this.getEquation(),
-      inline: this.__inline,
+      inline: this.isInline(),
     };
   }
 
@@ -132,16 +138,21 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
   }
 
   getTextContent(): string {
-    return this.__equation;
+    return this.getEquation();
+  }
+
+  isInline(): boolean {
+    return this.getLatest().__inline;
   }
 
   getEquation(): string {
-    return this.__equation;
+    return this.getLatest().__equation;
   }
 
-  setEquation(equation: string): void {
+  setEquation(equation: string): this {
     const writable = this.getWritable();
     writable.__equation = equation;
+    return this;
   }
 
   decorate(): JSX.Element {

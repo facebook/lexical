@@ -477,7 +477,7 @@ importers:
   packages/lexical-eslint-plugin:
     dependencies:
       eslint:
-        specifier: '>=7.31.0 || ^8.0.0'
+        specifier: '>=7.31.0'
         version: 8.57.0
     devDependencies:
       '@types/eslint':
@@ -490,7 +490,7 @@ importers:
   packages/lexical-eslint-plugin-internal:
     dependencies:
       eslint:
-        specifier: ^7.31.0 || ^8.0.0
+        specifier: '>=7.31.0'
         version: 8.57.0
 
   packages/lexical-extension:

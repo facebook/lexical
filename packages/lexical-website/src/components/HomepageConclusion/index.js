@@ -1,0 +1,73 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
+import Link from '@docusaurus/Link';
+
+const DiscordSvg = require('@site/static/img/discord-logo-color.svg').default;
+const DocsSvg = require('@site/static/img/documentation.svg').default;
+
+function Card({icon, title, description, linkLabel, to, href, external}) {
+  return (
+    <Link
+      to={to}
+      href={href}
+      className="group flex flex-1 flex-col gap-4 rounded-2xl p-8 backdrop-blur-sm transition-transform duration-200 hover:-translate-y-1 hover:no-underline"
+      style={{
+        color: 'inherit',
+      }}>
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center">
+          {icon}
+        </div>
+        <h3 className="m-0 text-lg font-bold">{title}</h3>
+      </div>
+      <p className="m-0 text-sm font-light opacity-70">{description}</p>
+      <span className="mt-auto flex items-center gap-1.5 text-sm font-semibold text-[var(--ifm-color-primary-dark)]">
+        {linkLabel}
+        <span className="transition-transform duration-150 group-hover:translate-x-1">
+          →
+        </span>
+      </span>
+    </Link>
+  );
+}
+
+export default function HomepageConclusion() {
+  return (
+    <section className="px-4 py-12 sm:px-10">
+      <div className="mx-auto flex max-w-4xl flex-col items-center gap-12">
+        <div className="space-y-3 text-center">
+          <p className="text-sm font-light uppercase tracking-widest opacity-50">
+            What's next?
+          </p>
+          <h2 className="text-3xl font-light lg:text-4xl">
+            You've seen a{' '}
+            <span className="text-gradient font-bold">glimpse</span> of what
+            Lexical can do.
+          </h2>
+        </div>
+        <div className="flex w-full flex-col gap-4 sm:flex-row">
+          <Card
+            icon={<DocsSvg className="h-8 w-8" alt="Documentation" />}
+            title="Documentation"
+            description="Guides, API references, and recipes to help you build anything from a simple input to a fully-featured editor."
+            linkLabel="Read the docs"
+            to="/docs/intro"
+          />
+          <Card
+            icon={<DiscordSvg className="h-8 w-8" alt="Discord" />}
+            title="Community"
+            description="Have a question? Found a bug? Want to share something you built? The discord server is the place to go to."
+            linkLabel="Join our Discord"
+            href="https://discord.gg/KmG4wQnnD9"
+          />
+        </div>
+      </div>
+    </section>
+  );
+}

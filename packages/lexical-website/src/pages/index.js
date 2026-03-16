@@ -11,7 +11,7 @@ import '../css/custom.css';
 import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import LandingHeroEditor from '@site/src/components/editors/LandingHeroEditor';
-import HomepageContribute from '@site/src/components/HomepageContribute';
+import HomepageConclusion from '@site/src/components/HomepageConclusion';
 import HomepageExamples from '@site/src/components/HomepageExamples';
 import HomepageFeatures from '@site/src/components/HomepageFeatures';
 import Layout from '@theme/Layout';
@@ -52,7 +52,7 @@ export default function Home() {
         <LandingHero />
         <HomepageFeatures />
         <HomepageExamples />
-        <HomepageContribute />
+        <HomepageConclusion />
       </main>
     </Layout>
   );

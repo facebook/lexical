@@ -334,6 +334,7 @@ export function $linkNodeTransform(link: LinkNode): void {
     focusPair = $saveCaretPair(selection.focus);
   }
 
+  let transformed = false;
   for (const caret of $getChildCaret(link, 'next')) {
     const node = caret.origin;
     if ($isElementNode(node) && !node.isInline()) {
@@ -342,11 +343,15 @@ export function $linkNodeTransform(link: LinkNode): void {
         const innerLink = $copyNode(link);
         innerLink.append(...blockChildren);
         node.append(innerLink);
+        transformed ||= true;
       }
       $insertNodeToNearestRootAtCaret(node, $rewindSiblingCaret(caret), {
         $shouldSplit: () => false,
       });
     }
+  }
+  if (!transformed) {
+    return;
   }
   if (link.isEmpty()) {
     const parent = link.getParent();

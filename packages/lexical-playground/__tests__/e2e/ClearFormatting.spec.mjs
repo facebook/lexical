@@ -13,7 +13,6 @@ import {
   outdent,
   rightAlign,
   selectAll,
-  selectPrevWord,
   toggleBold,
   toggleItalic,
   toggleUnderline,

@@ -11,7 +11,7 @@ import type {JSX} from 'react';
 import 'katex/dist/katex.css';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$wrapNodeInElement} from '@lexical/utils';
+import {$insertNodeToNearestRoot, $wrapNodeInElement} from '@lexical/utils';
 import {
   $createParagraphNode,
   $insertNodes,
@@ -69,9 +69,13 @@ export default function EquationsPlugin(): JSX.Element | null {
         const {equation, inline} = payload;
         const equationNode = $createEquationNode(equation, inline);
 
-        $insertNodes([equationNode]);
-        if ($isRootOrShadowRoot(equationNode.getParentOrThrow())) {
-          $wrapNodeInElement(equationNode, $createParagraphNode).selectEnd();
+        if (inline) {
+          $insertNodes([equationNode]);
+          if ($isRootOrShadowRoot(equationNode.getParentOrThrow())) {
+            $wrapNodeInElement(equationNode, $createParagraphNode).selectEnd();
+          }
+        } else {
+          $insertNodeToNearestRoot(equationNode);
         }
 
         return true;

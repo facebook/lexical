@@ -1267,7 +1267,7 @@ describe('LinkNode transform (Regression #8083)', () => {
     });
   });
 
-  test('an empty link is not deleted if the transformation did not occurred', () => {
+  test('an empty link is not deleted if the transformation did not occur', () => {
     const editor = buildEditorFromExtensions(transformExtension);
     let linkKey: string;
     editor.update(

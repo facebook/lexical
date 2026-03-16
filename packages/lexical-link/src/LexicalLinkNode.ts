@@ -339,7 +339,7 @@ export function $linkNodeTransform(link: LinkNode): void {
         const innerLink = $copyNode(link);
         innerLink.append(...blockChildren);
         node.append(innerLink);
-        transformed ||= true;
+        transformed = true;
       }
       $insertNodeToNearestRootAtCaret(node, $rewindSiblingCaret(caret), {
         $shouldSplit: () => false,
@@ -349,7 +349,7 @@ export function $linkNodeTransform(link: LinkNode): void {
   if (!transformed) {
     return;
   }
-  if (link.isEmpty()) {
+  if (!link.canBeEmpty() && link.isEmpty()) {
     const parent = link.getParent();
     link.remove();
     if (parent && parent.isEmpty()) {

@@ -248,11 +248,7 @@ export class LinkNode extends ElementNode {
     _: RangeSelection,
     restoreSelection = true,
   ): null | ElementNode {
-    const linkNode = $createLinkNode(this.__url, {
-      rel: this.__rel,
-      target: this.__target,
-      title: this.__title,
-    });
+    const linkNode = $copyNode(this);
     this.insertAfter(linkNode, restoreSelection);
     return linkNode;
   }
@@ -265,7 +261,7 @@ export class LinkNode extends ElementNode {
     return false;
   }
 
-  canBeEmpty(): false {
+  canBeEmpty(): boolean {
     return false;
   }
 
@@ -665,11 +661,7 @@ function $splitLinkAtSelection(
 
     const trailingChildren = allChildren.slice(lastExtractedIndex + 1);
     if (trailingChildren.length > 0) {
-      const newLink = $createLinkNode(parentLink.getURL(), {
-        rel: parentLink.getRel(),
-        target: parentLink.getTarget(),
-        title: parentLink.getTitle(),
-      });
+      const newLink = $copyNode(parentLink);
 
       extractedChildren[extractedChildren.length - 1].insertAfter(newLink);
       trailingChildren.forEach((child) => newLink.append(child));

@@ -6,18 +6,19 @@
  *
  */
 // @ts-check
-'use strict';
+import fs from 'fs-extra';
+import path from 'node:path';
 
-const path = require('node:path');
-const fs = require('fs-extra');
-const {exec} = require('../../shared/childProcess');
-const {packagesManager} = require('../../shared/packagesManager');
-const {version} = require('../../shared/readMonorepoPackageJson')();
+import {exec} from '../../shared/childProcess.js';
+import {packagesManager} from '../../shared/packagesManager.js';
+import readMonorepoPackageJson from '../../shared/readMonorepoPackageJson.js';
+
+const {version} = readMonorepoPackageJson();
 
 /**
  * Vitest global setup function
  */
-module.exports = async function () {
+export default async function () {
   const needsBuild = packagesManager
     .getPublicPackages()
     .some(
@@ -27,6 +28,7 @@ module.exports = async function () {
         ),
     );
   if (!needsBuild) {
+    // eslint-disable-next-line no-console
     console.log(
       '\nWARNING: Running integration tests with cached build artifacts from a previous `pnpm run prepare-release`.',
     );
@@ -44,4 +46,4 @@ module.exports = async function () {
       process.chdir(cwd);
     }
   }
-};
+}

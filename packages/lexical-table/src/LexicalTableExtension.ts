@@ -47,14 +47,6 @@ export interface TableConfig {
    * @experimental Nested tables are not officially supported.
    */
   hasNestedTables: boolean;
-  /**
-   * When `true` (default `false`), nested tables will be visually resized to fit the width of the nearest
-   * root or shadow root (including table cells). This only affects the rendered table, underlying column widths
-   * are not modified.
-   *
-   * @experimental Nested tables are not officially supported.
-   */
-  hasFitNestedTables: boolean;
 }
 
 /**
@@ -68,7 +60,6 @@ export const TableExtension = defineExtension({
   config: safeCast<TableConfig>({
     hasCellBackgroundColor: true,
     hasCellMerge: true,
-    hasFitNestedTables: false,
     hasHorizontalScroll: true,
     hasNestedTables: false,
     hasTabHandler: true,

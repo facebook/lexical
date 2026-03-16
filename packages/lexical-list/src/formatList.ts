@@ -8,6 +8,7 @@
 
 import {$getNearestNodeOfType} from '@lexical/utils';
 import {
+  $copyNode,
   $createParagraphNode,
   $getChildCaret,
   $getSelection,
@@ -415,12 +416,8 @@ export function $handleIndent(listItemNode: ListItemNode): void {
     // otherwise, we need to create a new nested ListNode
 
     if ($isListNode(parent)) {
-      const newListItem = $createListItemNode()
-        .setTextFormat(listItemNode.getTextFormat())
-        .setTextStyle(listItemNode.getTextStyle());
-      const newList = $createListNode(parent.getListType())
-        .setTextFormat(parent.getTextFormat())
-        .setTextStyle(parent.getTextStyle());
+      const newListItem = $copyNode(listItemNode);
+      const newList = $copyNode(parent);
       newListItem.append(newList);
       newList.append(listItemNode);
 
@@ -480,15 +477,14 @@ export function $handleOutdent(listItemNode: ListItemNode): void {
       }
     } else {
       // otherwise, we need to split the siblings into two new nested lists
-      const listType = parentList.getListType();
-      const previousSiblingsListItem = $createListItemNode();
-      const previousSiblingsList = $createListNode(listType);
+      const previousSiblingsListItem = $copyNode(listItemNode);
+      const previousSiblingsList = $copyNode(parentList);
       previousSiblingsListItem.append(previousSiblingsList);
       listItemNode
         .getPreviousSiblings()
         .forEach((sibling) => previousSiblingsList.append(sibling));
-      const nextSiblingsListItem = $createListItemNode();
-      const nextSiblingsList = $createListNode(listType);
+      const nextSiblingsListItem = $copyNode(listItemNode);
+      const nextSiblingsList = $copyNode(parentList);
       nextSiblingsListItem.append(nextSiblingsList);
       append(nextSiblingsList, listItemNode.getNextSiblings());
       // put the sibling nested lists on either side of the grandparent list item in the great grandparent.
@@ -560,7 +556,7 @@ export function $handleListInsertParagraph(
     replacementNode = $createParagraphNode();
     topListNode.insertAfter(replacementNode);
   } else if ($isListItemNode(grandparent)) {
-    replacementNode = $createListItemNode();
+    replacementNode = $copyNode(grandparent);
     grandparent.insertAfter(replacementNode);
   } else {
     return false;
@@ -574,10 +570,10 @@ export function $handleListInsertParagraph(
 
   if (nextSiblings.length > 0) {
     const newStart = restoreNumbering ? $getNewListStart(parent, listItem) : 1;
-    const newList = $createListNode(parent.getListType(), newStart);
+    const newList = $copyNode(parent).setStart(newStart);
 
     if ($isListItemNode(replacementNode)) {
-      const newListItem = $createListItemNode();
+      const newListItem = $copyNode(replacementNode);
       newListItem.append(newList);
       replacementNode.insertAfter(newListItem);
     } else {

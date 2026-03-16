@@ -5,6 +5,17 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import {
+  $createListItemNode,
+  $createListNode,
+  $insertList,
+  $isListItemNode,
+  $isListNode,
+  ListItemNode,
+  ListNode,
+  ListType,
+  registerList,
+} from '@lexical/list';
 import {registerRichText} from '@lexical/rich-text';
 import {
   $createTableCellNode,
@@ -26,6 +37,7 @@ import {
   $nodesOfType,
   $selectAll,
   INSERT_PARAGRAPH_COMMAND,
+  LexicalNode,
 } from 'lexical';
 import {
   $createTestDecoratorNode,
@@ -33,10 +45,39 @@ import {
 } from 'lexical/src/__tests__/utils';
 import {describe, expect, test} from 'vitest';
 
-import {registerList} from '../../';
-import {$insertList} from '../../formatList';
-import {$createListItemNode, $isListItemNode} from '../../LexicalListItemNode';
-import {$createListNode, $isListNode, ListNode} from '../../LexicalListNode';
+import {$handleIndent, $handleOutdent} from '../../formatList';
+
+class ExtendedTestListNode extends ListNode {
+  $config() {
+    return this.config('extended-test-list', {extends: ListNode});
+  }
+}
+
+function $createExtendedTestListNode(listType: ListType): ExtendedTestListNode {
+  return new ExtendedTestListNode(listType);
+}
+
+function $isExtendedTestListNode(node?: LexicalNode | null) {
+  return node instanceof ExtendedTestListNode;
+}
+
+class ExtendedTestListItemNode extends ListItemNode {
+  $config() {
+    return this.config('extended-test-list-item', {extends: ListItemNode});
+  }
+}
+
+function $createExtendedTestListItemNode(): ExtendedTestListItemNode {
+  return new ExtendedTestListItemNode();
+}
+
+function $isExtendedTestListItemNode(node?: LexicalNode | null) {
+  return node instanceof ExtendedTestListItemNode;
+}
+
+const initOptions = {
+  nodes: [ExtendedTestListNode, ExtendedTestListItemNode],
+};
 
 describe('insertList', () => {
   initializeUnitTest((testEnv) => {
@@ -298,5 +339,114 @@ describe('$handleListInsertParagraph', () => {
         expect((children[0] as ListNode).getChildrenSize()).toBe(3);
       });
     });
-  });
+
+    test('splits list when the empty element is not the last one', async () => {
+      const {editor} = testEnv;
+      registerList(editor);
+
+      let emptyListItemKey: string;
+      await editor.update(() => {
+        const firstListItemWithContent = $createExtendedTestListItemNode();
+        const secondListItemWithContent = $createExtendedTestListItemNode();
+        const listItemEmpty = $createExtendedTestListItemNode();
+        emptyListItemKey = listItemEmpty.getKey();
+        const listNode = $createExtendedTestListNode('bullet');
+        firstListItemWithContent.append($createTextNode('item1'));
+        secondListItemWithContent.append($createTextNode('item2'));
+        listNode.append(
+          firstListItemWithContent,
+          listItemEmpty,
+          secondListItemWithContent,
+        );
+        $getRoot().append(listNode);
+        listItemEmpty.select();
+        editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND, undefined);
+      });
+
+      editor.read(() => {
+        const children = $getRoot().getChildren();
+        const firstList = children[0] as ExtendedTestListNode;
+        const secondList = children[2] as ExtendedTestListNode;
+
+        expect(children.length).toBe(3);
+        expect($isListNode(children[0])).toBe(true);
+        expect($isParagraphNode(children[1])).toBe(true);
+        expect($isListNode(children[2])).toBe(true);
+        expect(firstList.getChildrenSize()).toBe(1);
+        expect(secondList.getChildrenSize()).toBe(1);
+        expect($getNodeByKey(emptyListItemKey)).toBeNull();
+        // check that the new list is of the same type
+        expect(secondList).toBeInstanceOf(firstList.constructor);
+        expect(firstList.getListType()).toBe(secondList.getListType());
+      });
+    });
+  }, initOptions);
+});
+
+describe('$handleIndent', () => {
+  initializeUnitTest(
+    (testEnv) => {
+      test('creates a new nested sublist', async () => {
+        const {editor} = testEnv;
+
+        await editor.update(() => {
+          const root = $getRoot();
+          const listNode = $createExtendedTestListNode('bullet');
+          const listItem1 = $createExtendedTestListItemNode();
+          const listItem2 = $createExtendedTestListItemNode();
+
+          listNode.append(listItem1, listItem2);
+          root.append(listNode);
+
+          $handleIndent(listItem2);
+
+          // new item keeps the same type
+          const newListItem2 =
+            listNode.getChildren()[1] as ExtendedTestListItemNode;
+          expect($isExtendedTestListItemNode(newListItem2)).toBe(true);
+          expect(newListItem2.getChildren().length).toBe(1);
+
+          // nested list contains the original list item
+          const nestedList =
+            newListItem2.getChildren()[0] as ExtendedTestListNode;
+          expect($isExtendedTestListNode(nestedList)).toBe(true);
+          expect(nestedList.getChildren().length).toBe(1);
+          expect(nestedList.getChildren()[0].is(listItem2)).toBe(true);
+        });
+      });
+    },
+    {nodes: [ExtendedTestListNode, ExtendedTestListItemNode]},
+  );
+});
+
+describe('$handleOutdent', () => {
+  initializeUnitTest((testEnv) => {
+    test('removes the nested list and replaces list item', async () => {
+      const {editor} = testEnv;
+
+      await editor.update(() => {
+        const root = $getRoot();
+        const listNode = $createExtendedTestListNode('bullet');
+        const listItem1 = $createExtendedTestListItemNode();
+        const listItem2 = $createExtendedTestListItemNode();
+        const indentedListItem = $createExtendedTestListItemNode();
+
+        listNode.append(
+          listItem1,
+          listItem2.append(
+            $createExtendedTestListNode('bullet').append(indentedListItem),
+          ),
+        );
+        root.append(listNode);
+
+        $handleOutdent(indentedListItem);
+
+        const children = listNode.getChildren();
+        // item is outdented and doesn't have nested list
+        expect(children.length).toBe(2);
+        expect(children[1].is(indentedListItem)).toBe(true);
+        expect(indentedListItem.getChildren().length).toBe(0);
+      });
+    });
+  }, initOptions);
 });

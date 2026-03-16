@@ -166,7 +166,6 @@ module.exports = {
 
     // import helps to configure simple-import-sort
     'import',
-    'jest',
     'no-function-declare-after-return',
     'react',
     'no-only-tests',

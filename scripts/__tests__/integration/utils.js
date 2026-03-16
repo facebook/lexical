@@ -41,9 +41,9 @@ exports.withCwd = withCwd;
  * @returns {Promise<string>}
  */
 function expectSuccessfulExec(cmd) {
-  // Filter out JEST_WORKER_ID to prevent Playwright from detecting Jest environment
+  // Filter out VITEST_WORKER_ID to prevent Playwright from detecting Vitest environment
   const env = Object.fromEntries(
-    Object.entries(process.env).filter(([k]) => k !== 'JEST_WORKER_ID'),
+    Object.entries(process.env).filter(([k]) => k !== 'VITEST_WORKER_ID'),
   );
   return exec(cmd, {env}).catch((err) => {
     expect(

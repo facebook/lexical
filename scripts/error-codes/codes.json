@@ -333,5 +333,6 @@
   "331": "Text nodes must be mapped as an array",
   "332": "Element nodes must be mapped as a single node",
   "333": "Text nodes must be mapped to XmlText",
-  "334": "Node with key %s changed from ElementNode to !ElementNode"
+  "334": "Node with key %s changed from ElementNode to !ElementNode",
+  "335": "tableObserver not found for tableKey: %s"
 }

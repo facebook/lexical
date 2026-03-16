@@ -15,10 +15,9 @@ const {packagesManager} = require('../../shared/packagesManager');
 const {version} = require('../../shared/readMonorepoPackageJson')();
 
 /**
- * @param {import('@jest/types').Config.GlobalConfig} globalConfig
- * @param {import('@jest/types').Config.ProjectConfig} projectConfig
+ * Vitest global setup function
  */
-module.exports = async function (globalConfig, projectConfig) {
+module.exports = async function () {
   const needsBuild = packagesManager
     .getPublicPackages()
     .some(

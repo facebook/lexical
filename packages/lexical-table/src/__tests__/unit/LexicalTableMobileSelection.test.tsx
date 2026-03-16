@@ -24,7 +24,7 @@ import {
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 import {describe, expect, test} from 'vitest';
 
-// Polyfill PointerEvent for Jest environment
+// Polyfill PointerEvent for test environment
 interface PointerEventInit extends EventInit {
   button?: number;
   buttons?: number;

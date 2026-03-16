@@ -70,6 +70,16 @@ export default defineConfig({
           name: 'scripts-unit',
         },
       },
+      {
+        extends: true,
+        test: {
+          environment: 'node',
+          globalSetup: './scripts/__tests__/integration/setup.js',
+          globals: true,
+          include: ['scripts/__tests__/integration/**/*.test.js'],
+          name: 'integration',
+        },
+      },
     ],
   },
 });

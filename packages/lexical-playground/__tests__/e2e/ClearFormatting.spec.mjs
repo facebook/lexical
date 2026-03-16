@@ -286,6 +286,7 @@ test.describe('Clear All Formatting', () => {
     await page.keyboard.type('baz qux');
     await selectAll(page);
     await toggleBold(page);
+    await page.keyboard.press('ArrowRight');
     await moveToPrevWord(page);
     await page.keyboard.down('Shift');
     await page.keyboard.press('ArrowUp');

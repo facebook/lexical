@@ -58,12 +58,13 @@ function equationHtml(inline = true) {
 }
 
 test.describe('EquationNode', () => {
-  test.beforeEach(({isCollab, page}) =>
-    initialize({
+  test.beforeEach(({isCollab, isPlainText, page}) => {
+    test.skip(isPlainText);
+    return initialize({
       isCollab,
       page,
-    }),
-  );
+    });
+  });
   test('inline EquationNode is wrapped in a paragraph', async ({
     page,
     isCollab,

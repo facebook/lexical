@@ -23,7 +23,7 @@
   "homepage": "https://lexical.dev/docs/packages/lexical-eslint-plugin",
   "sideEffects": false,
   "peerDependencies": {
-    "eslint": ">=7.31.0 || ^8.0.0"
+    "eslint": ">=7.31.0"
   },
   "exports": {
     ".": {

@@ -1266,4 +1266,25 @@ describe('LinkNode transform (Regression #8083)', () => {
       expect(selection.anchor.offset).toBe(7);
     });
   });
+
+  test('an empty link is not deleted if the transformation did not occur', () => {
+    const editor = buildEditorFromExtensions(transformExtension);
+    let linkKey: string;
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const link = $createLinkNode('https://lexical.dev');
+        linkKey = link.getKey();
+        const paragraph = $createParagraphNode();
+        paragraph.append(link);
+        root.clear().append(paragraph);
+        link.select();
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      const linkNode = $getNodeByKey(linkKey);
+      expect(linkNode).not.toBe(null);
+    });
+  });
 });

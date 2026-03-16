@@ -83,6 +83,7 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
     const element = document.createElement(this.__inline ? 'span' : 'div');
     // EquationNodes should implement `user-action:none` in their CSS to avoid issues with deletion on Android.
     element.className = 'editor-equation';
+    element.style.display = this.__inline ? 'inline-block' : 'block';
     return element;
   }
 

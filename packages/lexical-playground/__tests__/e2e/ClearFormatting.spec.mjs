@@ -288,9 +288,9 @@ test.describe('Clear All Formatting', () => {
     await selectAll(page);
     await toggleBold(page);
     await moveToPrevWord(page);
-    await selectPrevWord(page);
-    await selectPrevWord(page);
-    await selectPrevWord(page);
+    await page.keyboard.down('Shift');
+    await page.keyboard.press('ArrowUp');
+    await page.keyboard.up('Shift');
     await selectFromAdditionalStylesDropdown(page, '.clear');
     await assertHTML(
       page,

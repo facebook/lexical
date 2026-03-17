@@ -12,7 +12,7 @@ import markSelection from './markSelection';
 
 export default function selectionAlwaysOnDisplay(
   editor: LexicalEditor,
-  onReposition?: (node: Array<HTMLElement>) => void,
+  onReposition?: (node: readonly HTMLElement[]) => void,
 ): () => void {
   let removeSelectionMark: (() => void) | null = null;
 
@@ -38,12 +38,17 @@ export default function selectionAlwaysOnDisplay(
     }
   };
 
-  document.addEventListener('selectionchange', onSelectionChange);
-
-  return () => {
-    if (removeSelectionMark !== null) {
-      removeSelectionMark();
+  return editor.registerRootListener((rootElement) => {
+    if (rootElement) {
+      const document = rootElement.ownerDocument;
+      document.addEventListener('selectionchange', onSelectionChange);
+      onSelectionChange();
+      return () => {
+        if (removeSelectionMark !== null) {
+          removeSelectionMark();
+        }
+        document.removeEventListener('selectionchange', onSelectionChange);
+      };
     }
-    document.removeEventListener('selectionchange', onSelectionChange);
-  };
+  });
 }

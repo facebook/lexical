@@ -14,7 +14,6 @@ import {
   LinkNode,
   TOGGLE_LINK_COMMAND,
 } from '@lexical/link';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $findMatchingParent,
   $wrapNodeInElement,
@@ -32,6 +31,7 @@ import {
   COMMAND_PRIORITY_HIGH,
   COMMAND_PRIORITY_LOW,
   createCommand,
+  defineExtension,
   DRAGOVER_COMMAND,
   DRAGSTART_COMMAND,
   DROP_COMMAND,
@@ -41,7 +41,6 @@ import {
   LexicalEditor,
 } from 'lexical';
 import {useEffect, useRef, useState} from 'react';
-import * as React from 'react';
 
 import landscapeImage from '../../images/landscape.jpg';
 import yellowFlowerImage from '../../images/yellow-flower.jpg';
@@ -215,19 +214,11 @@ export function InsertImageDialog({
   );
 }
 
-export default function ImagesPlugin({
-  captionsEnabled,
-}: {
-  captionsEnabled?: boolean;
-}): JSX.Element | null {
-  const [editor] = useLexicalComposerContext();
-
-  useEffect(() => {
-    if (!editor.hasNodes([ImageNode])) {
-      throw new Error('ImagesPlugin: ImageNode not registered on editor');
-    }
-
-    return mergeRegister(
+export const ImagesExtension = defineExtension({
+  name: '@lexical/playground/Images',
+  nodes: [ImageNode],
+  register: (editor) =>
+    mergeRegister(
       editor.registerCommand<InsertImagePayload>(
         INSERT_IMAGE_COMMAND,
         (payload) => {
@@ -243,30 +234,21 @@ export default function ImagesPlugin({
       ),
       editor.registerCommand<DragEvent>(
         DRAGSTART_COMMAND,
-        (event) => {
-          return $onDragStart(event);
-        },
+        (event) => $onDragStart(event),
         COMMAND_PRIORITY_HIGH,
       ),
       editor.registerCommand<DragEvent>(
         DRAGOVER_COMMAND,
-        (event) => {
-          return $onDragover(event);
-        },
+        (event) => $onDragover(event),
         COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand<DragEvent>(
         DROP_COMMAND,
-        (event) => {
-          return $onDrop(event, editor);
-        },
+        (event) => $onDrop(event, editor),
         COMMAND_PRIORITY_HIGH,
       ),
-    );
-  }, [captionsEnabled, editor]);
-
-  return null;
-}
+    ),
+});
 
 const TRANSPARENT_IMAGE =
   'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';

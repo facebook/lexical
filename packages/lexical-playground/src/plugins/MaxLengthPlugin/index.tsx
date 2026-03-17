@@ -6,48 +6,63 @@
  *
  */
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {effect, namedSignals} from '@lexical/extension';
 import {$trimTextContentFromAnchor} from '@lexical/selection';
 import {$restoreEditorState} from '@lexical/utils';
-import {$getSelection, $isRangeSelection, EditorState, RootNode} from 'lexical';
-import {useEffect} from 'react';
+import {
+  $getSelection,
+  $isRangeSelection,
+  defineExtension,
+  EditorState,
+  RootNode,
+  safeCast,
+} from 'lexical';
 
-export function MaxLengthPlugin({maxLength}: {maxLength: number}): null {
-  const [editor] = useLexicalComposerContext();
+export interface MaxLengthConfig {
+  disabled: boolean;
+  maxLength: number;
+}
 
-  useEffect(() => {
-    let lastRestoredEditorState: EditorState | null = null;
-
-    return editor.registerNodeTransform(RootNode, (rootNode: RootNode) => {
-      const selection = $getSelection();
-      if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
+export const MaxLengthExtension = defineExtension({
+  build: (editor, config) => namedSignals(config),
+  config: safeCast<MaxLengthConfig>({disabled: true, maxLength: 30}),
+  name: '@lexical/playground/MaxLength',
+  register: (editor, config, state) =>
+    effect(() => {
+      const output = state.getOutput();
+      if (output.disabled.value) {
         return;
       }
-      const prevEditorState = editor.getEditorState();
-      const prevTextContentSize = prevEditorState.read(() =>
-        rootNode.getTextContentSize(),
-      );
-      const textContentSize = rootNode.getTextContentSize();
-      if (prevTextContentSize !== textContentSize) {
-        const delCount = textContentSize - maxLength;
-        const anchor = selection.anchor;
+      const maxLength = output.maxLength.value;
+      let lastRestoredEditorState: EditorState | null = null;
+      return editor.registerNodeTransform(RootNode, (rootNode: RootNode) => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
+          return;
+        }
+        const prevEditorState = editor.getEditorState();
+        const prevTextContentSize = prevEditorState.read(() =>
+          rootNode.getTextContentSize(),
+        );
+        const textContentSize = rootNode.getTextContentSize();
+        if (prevTextContentSize !== textContentSize) {
+          const delCount = textContentSize - maxLength;
+          const anchor = selection.anchor;
 
-        if (delCount > 0) {
-          // Restore the old editor state instead if the last
-          // text content was already at the limit.
-          if (
-            prevTextContentSize === maxLength &&
-            lastRestoredEditorState !== prevEditorState
-          ) {
-            lastRestoredEditorState = prevEditorState;
-            $restoreEditorState(editor, prevEditorState);
-          } else {
-            $trimTextContentFromAnchor(editor, anchor, delCount);
+          if (delCount > 0) {
+            // Restore the old editor state instead if the last
+            // text content was already at the limit.
+            if (
+              prevTextContentSize === maxLength &&
+              lastRestoredEditorState !== prevEditorState
+            ) {
+              lastRestoredEditorState = prevEditorState;
+              $restoreEditorState(editor, prevEditorState);
+            } else {
+              $trimTextContentFromAnchor(editor, anchor, delCount);
+            }
           }
         }
-      }
-    });
-  }, [editor, maxLength]);
-
-  return null;
-}
+      });
+    }),
+});

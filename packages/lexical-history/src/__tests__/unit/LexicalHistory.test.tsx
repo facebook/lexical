@@ -8,7 +8,17 @@
 
 import type {JSX} from 'react';
 
-import {createEmptyHistoryState, registerHistory} from '@lexical/history';
+import {
+  buildEditorFromExtensions,
+  getExtensionDependencyFromEditor,
+  NestedEditorExtension,
+} from '@lexical/extension';
+import {
+  createEmptyHistoryState,
+  HistoryExtension,
+  registerHistory,
+  SharedHistoryExtension,
+} from '@lexical/history';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
@@ -19,20 +29,31 @@ import {$setBlocksType} from '@lexical/selection';
 import {$restoreEditorState} from '@lexical/utils';
 import {
   $applyNodeReplacement,
+  $create,
   $createNodeSelection,
   $createParagraphNode,
   $createRangeSelection,
   $createTextNode,
+  $getNodeByKey,
   $getRoot,
+  $getState,
   $isNodeSelection,
+  $selectAll,
   $setSelection,
+  $setState,
   CAN_REDO_COMMAND,
   CAN_UNDO_COMMAND,
   CLEAR_HISTORY_COMMAND,
   COMMAND_PRIORITY_CRITICAL,
+  configExtension,
+  createState,
+  DecoratorNode,
+  defineExtension,
+  EditorConfig,
   HISTORY_MERGE_TAG,
   type KlassConstructor,
   LexicalEditor,
+  LexicalEditorWithDispose,
   LexicalNode,
   type NodeKey,
   REDO_COMMAND,
@@ -42,10 +63,27 @@ import {
   TextNode,
   UNDO_COMMAND,
 } from 'lexical';
-import {createTestEditor, TestComposer} from 'lexical/src/__tests__/utils';
+import {
+  createTestEditor,
+  expectHtmlToBeEqual,
+  html,
+  TestComposer,
+} from 'lexical/src/__tests__/utils';
 import {createRoot, Root} from 'react-dom/client';
 import * as ReactTestUtils from 'shared/react-test-utils';
-import {afterEach, beforeEach, describe, expect, test, vi} from 'vitest';
+import {
+  afterEach,
+  assert,
+  beforeEach,
+  describe,
+  expect,
+  test,
+  vi,
+} from 'vitest';
+
+function $createParagraphNodeWithText(text: string) {
+  return $createParagraphNode().append($createTextNode(text));
+}
 
 type SerializedCustomTextNode = Spread<
   {type: string; classes: string[]},
@@ -106,6 +144,63 @@ function $isCustomTextNode(
 ): node is CustomTextNode {
   return node instanceof CustomTextNode;
 }
+
+const EditorKey = createState('editor', {
+  parse: (): null | LexicalEditorWithDispose => null,
+});
+
+class ChildEditorNode extends DecoratorNode<null> {
+  $config() {
+    return this.config('child-editor', {extends: DecoratorNode});
+  }
+  createDOM(_config: EditorConfig, _editor: LexicalEditor): HTMLElement {
+    return document.createElement('div');
+  }
+  isInline(): boolean {
+    return false;
+  }
+  updateDOM(prevNode: this) {
+    return false;
+  }
+  getOrResetEditor(): LexicalEditorWithDispose {
+    const prevEditor = $getState(this, EditorKey);
+    if (prevEditor) {
+      return prevEditor;
+    }
+    const editor = buildEditorFromExtensions({
+      dependencies: [SharedHistoryExtension, NestedEditorExtension],
+      name: 'ChildEditorNode',
+    });
+    $setState(this, EditorKey, editor);
+    return editor;
+  }
+}
+
+const ChildEditorExtension = defineExtension({
+  name: '@lexical/test/ChildEditor',
+  nodes: [ChildEditorNode],
+  register: (editor) =>
+    editor.registerMutationListener(
+      ChildEditorNode,
+      (nodes, {prevEditorState}) => {
+        const curEditorState = editor.getEditorState();
+        for (const key of nodes.keys()) {
+          const dom = editor.getElementByKey(key);
+          const prevNode = $getNodeByKey(key, prevEditorState);
+          const curNode = $getNodeByKey(key, curEditorState);
+          const prevEditor =
+            prevNode && $getState(prevNode, EditorKey, 'direct');
+          const curEditor = curNode && $getState(curNode, EditorKey, 'direct');
+          if (prevEditor && prevEditor !== curEditor) {
+            prevEditor.setRootElement(null);
+          }
+          if (curEditor) {
+            curEditor.setRootElement(dom);
+          }
+        }
+      },
+    ),
+});
 
 describe('LexicalHistory tests', () => {
   let container: HTMLDivElement | null = null;
@@ -443,10 +538,128 @@ describe('LexicalHistory tests', () => {
   });
 });
 
-const $createParagraphNodeWithText = (text: string) => {
-  const paragraph = $createParagraphNode();
-  const textNode = $createTextNode(text);
+describe('SharedHistoryExtension', () => {
+  test('can create a parent editor', async () => {
+    const clock = Date.now();
+    let step = -1;
+    function artificialNow() {
+      return clock + 1000 * ++step;
+    }
+    const editor = buildEditorFromExtensions({
+      dependencies: [
+        configExtension(HistoryExtension, {delay: 0, now: artificialNow}),
+        ChildEditorExtension,
+      ],
+      name: 'parent',
+    });
+    const dom = document.createElement('div');
+    editor.setRootElement(dom);
+    editor.update(
+      () => $selectAll().insertNodes([$createTextNode('parent editor')]),
+      {discrete: true},
+    );
+    const $getChildEditor = () => {
+      const child = $getRoot().getChildAtIndex(1);
+      assert(child instanceof ChildEditorNode, 'Expecting ChildEditorNode');
+      return child.getOrResetEditor();
+    };
+    expectHtmlToBeEqual(
+      dom.innerHTML,
+      html`
+        <p dir="auto"><span data-lexical-text="true">parent editor</span></p>
+      `,
+    );
+    editor.update(
+      () => {
+        const child = $create(ChildEditorNode);
+        child.getOrResetEditor().update(
+          () => {
+            $selectAll().insertText('Child editor');
+            $setSelection(null);
+          },
+          {discrete: true},
+        );
+        $getRoot().selectEnd().insertNodes([child]);
+      },
+      {discrete: true},
+    );
+    expectHtmlToBeEqual(
+      dom.innerHTML,
+      html`
+        <p dir="auto"><span data-lexical-text="true">parent editor</span></p>
+        <div
+          style="user-select: text; white-space: pre-wrap; word-break: break-word"
+          data-lexical-decorator="true"
+          data-lexical-editor="true">
+          <p dir="auto"><span data-lexical-text="true">Child editor</span></p>
+        </div>
+        <p dir="auto"><br /></p>
+      `,
+    );
+    editor.read(() => {
+      $getChildEditor().update(
+        () => {
+          $getRoot().selectEnd().insertText('. Updated!');
+          $setSelection(null);
+        },
+        {discrete: true},
+      );
+    });
+    expectHtmlToBeEqual(
+      dom.innerHTML,
+      html`
+        <p dir="auto"><span data-lexical-text="true">parent editor</span></p>
+        <div
+          style="user-select: text; white-space: pre-wrap; word-break: break-word"
+          data-lexical-decorator="true"
+          data-lexical-editor="true">
+          <p dir="auto">
+            <span data-lexical-text="true">Child editor. Updated!</span>
+          </p>
+        </div>
+        <p dir="auto"><br /></p>
+      `,
+    );
+    expect(
+      getExtensionDependencyFromEditor(
+        editor.read($getChildEditor),
+        HistoryExtension,
+      ).output.historyState.peek(),
+    ).toBe(
+      getExtensionDependencyFromEditor(
+        editor,
+        HistoryExtension,
+      ).output.historyState.peek(),
+    );
 
-  paragraph.append(textNode);
-  return paragraph;
-};
+    editor.dispatchCommand(UNDO_COMMAND, undefined);
+    editor.dispatchCommand(UNDO_COMMAND, undefined);
+    editor.read(() => {
+      expect($getChildEditor().read(() => $getRoot().getTextContent())).toEqual(
+        'Child editor',
+      );
+    });
+    expectHtmlToBeEqual(
+      dom.innerHTML,
+      html`
+        <p dir="auto"><span data-lexical-text="true">parent editor</span></p>
+        <div
+          style="user-select: text; white-space: pre-wrap; word-break: break-word"
+          data-lexical-decorator="true"
+          data-lexical-editor="true">
+          <p dir="auto"><span data-lexical-text="true">Child editor</span></p>
+        </div>
+        <p dir="auto"><br /></p>
+      `,
+    );
+    editor.update(() => editor.dispatchCommand(UNDO_COMMAND, undefined), {
+      discrete: true,
+    });
+    expectHtmlToBeEqual(
+      dom.innerHTML,
+      html`
+        <p dir="auto"><span data-lexical-text="true">parent editor</span></p>
+      `,
+    );
+  });
+});

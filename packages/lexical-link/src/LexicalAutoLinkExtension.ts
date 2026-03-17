@@ -569,6 +569,7 @@ export function registerAutoLink(
         });
         return false;
       },
+      // Has to be higher than TOGGLE_LINK_COMMAND in LinkExtension
       COMMAND_PRIORITY_LOW,
     ),
   );

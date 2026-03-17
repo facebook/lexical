@@ -9,13 +9,13 @@
 import type {ElementTransformer, Transformer} from '@lexical/markdown';
 import type {LexicalNode} from 'lexical';
 
-import {registerMarkdownShortcuts, TRANSFORMERS} from '@lexical/markdown';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $createHorizontalRuleNode,
   $isHorizontalRuleNode,
   HorizontalRuleNode,
-} from '@lexical/react/LexicalHorizontalRuleNode';
+} from '@lexical/extension';
+import {registerMarkdownShortcuts, TRANSFORMERS} from '@lexical/markdown';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useEffect} from 'react';
 
 const HR: ElementTransformer = {

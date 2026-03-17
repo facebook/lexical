@@ -12,6 +12,7 @@ import {
   $getSelection,
   $isElementNode,
   $isRangeSelection,
+  COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_LOW,
   defineExtension,
   LexicalEditor,
@@ -58,34 +59,32 @@ export function registerLink(
 ) {
   return mergeRegister(
     editor.registerNodeTransform(LinkNode, $linkNodeTransform),
-    effect(() =>
-      editor.registerCommand(
-        TOGGLE_LINK_COMMAND,
-        (payload) => {
-          const validateUrl = stores.validateUrl.peek();
-          const attributes = stores.attributes.peek();
-          if (payload === null) {
-            $toggleLink(null);
-            return true;
-          } else if (typeof payload === 'string') {
-            if (validateUrl === undefined || validateUrl(payload)) {
-              $toggleLink(payload, attributes);
-              return true;
-            }
-            return false;
-          } else {
-            const {url, target, rel, title} = payload;
-            $toggleLink(url, {
-              ...attributes,
-              rel,
-              target,
-              title,
-            });
+    editor.registerCommand(
+      TOGGLE_LINK_COMMAND,
+      (payload) => {
+        const validateUrl = stores.validateUrl.peek();
+        const attributes = stores.attributes.peek();
+        if (payload === null) {
+          $toggleLink(null);
+          return true;
+        } else if (typeof payload === 'string') {
+          if (validateUrl === undefined || validateUrl(payload)) {
+            $toggleLink(payload, attributes);
             return true;
           }
-        },
-        COMMAND_PRIORITY_LOW,
-      ),
+          return false;
+        } else {
+          const {url, target, rel, title} = payload;
+          $toggleLink(url, {
+            ...attributes,
+            rel,
+            target,
+            title,
+          });
+          return true;
+        }
+      },
+      COMMAND_PRIORITY_EDITOR,
     ),
     effect(() => {
       const validateUrl = stores.validateUrl.value;

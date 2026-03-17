@@ -560,11 +560,13 @@ export const KeywordsExtension = defineExtension({
   nodes: () => [KeywordNode],
   config: safeCast<KeywordsConfig>({ className: "keyword" }),
   register(editor) {
-    return registerLexicalTextEntity(
-      editor,
-      getKeywordMatch,
-      KeywordNode,
-      $convertToKeywordNode,
+    return mergeRegister(
+      ...registerLexicalTextEntity(
+        editor,
+        getKeywordMatch,
+        KeywordNode,
+        $convertToKeywordNode,
+      )
     );
   },
 });

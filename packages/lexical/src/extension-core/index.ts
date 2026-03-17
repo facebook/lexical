@@ -40,4 +40,5 @@ export {
   type NormalizedLexicalExtensionArgument,
   type NormalizedPeerDependency,
   type OutputComponentExtension,
+  type OutputExtension,
 } from './types';

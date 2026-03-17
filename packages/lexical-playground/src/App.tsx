@@ -61,7 +61,6 @@ import {ImagesExtension} from './plugins/ImagesExtension';
 import {PlaygroundMarkdownShortcutsExtension} from './plugins/MarkdownShortcutsExtension';
 import {MaxLengthExtension} from './plugins/MaxLengthPlugin';
 import PasteLogPlugin from './plugins/PasteLogPlugin';
-import {TableContext} from './plugins/TablePlugin';
 import TestRecorderPlugin from './plugins/TestRecorderPlugin';
 import TypingPerfPlugin from './plugins/TypingPerfPlugin';
 import Settings from './Settings';
@@ -227,24 +226,22 @@ function App(): JSX.Element {
   return (
     <LexicalCollaboration>
       <LexicalExtensionComposer extension={app} contentEditable={null}>
-        <TableContext>
-          <ToolbarContext>
-            <header>
-              <a href="https://lexical.dev" target="_blank" rel="noreferrer">
-                <img src={logo} alt="Lexical Logo" />
-              </a>
-            </header>
-            <div className="editor-shell">
-              <Editor />
-            </div>
-            <Settings />
-            {isDevPlayground ? <DocsPlugin /> : null}
-            {isDevPlayground ? <PasteLogPlugin /> : null}
-            {isDevPlayground ? <TestRecorderPlugin /> : null}
+        <ToolbarContext>
+          <header>
+            <a href="https://lexical.dev" target="_blank" rel="noreferrer">
+              <img src={logo} alt="Lexical Logo" />
+            </a>
+          </header>
+          <div className="editor-shell">
+            <Editor />
+          </div>
+          <Settings />
+          {isDevPlayground ? <DocsPlugin /> : null}
+          {isDevPlayground ? <PasteLogPlugin /> : null}
+          {isDevPlayground ? <TestRecorderPlugin /> : null}
 
-            {measureTypingPerf ? <TypingPerfPlugin /> : null}
-          </ToolbarContext>
-        </TableContext>
+          {measureTypingPerf ? <TypingPerfPlugin /> : null}
+        </ToolbarContext>
       </LexicalExtensionComposer>
     </LexicalCollaboration>
   );

@@ -45,6 +45,11 @@ export class MarkNode extends ElementNode {
     return new MarkNode(node.__ids, node.__key);
   }
 
+  afterCloneFrom(prevNode: this): void {
+    super.afterCloneFrom(prevNode);
+    this.__ids = prevNode.__ids;
+  }
+
   static importDOM(): null {
     return null;
   }

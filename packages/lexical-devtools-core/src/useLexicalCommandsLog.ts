@@ -9,11 +9,13 @@
 import type {LexicalEditor} from 'lexical';
 
 import {COMMAND_PRIORITY_CRITICAL, LexicalCommand} from 'lexical';
-import {useEffect, useMemo, useState} from 'react';
+import {useEffect, useState} from 'react';
 
-export type LexicalCommandLog = ReadonlyArray<
-  {index: number} & LexicalCommand<unknown> & {payload: unknown}
->;
+export type LexicalCommandEntry = {index: number} & LexicalCommand<unknown> & {
+    payload: unknown;
+  };
+
+export type LexicalCommandLog = ReadonlyArray<LexicalCommandEntry>;
 
 export function registerLexicalCommandLogger(
   editor: LexicalEditor,
@@ -21,29 +23,20 @@ export function registerLexicalCommandLogger(
     v: (oldValue: LexicalCommandLog) => LexicalCommandLog,
   ) => void,
 ): () => void {
-  const unregisterCommandListeners = new Set<() => void>();
-  let i = 0;
-  for (const [command] of editor._commands) {
-    unregisterCommandListeners.add(
+  const unregisterCommandListeners: (() => void)[] = [];
+  let index = 0;
+  for (const command of editor._commands.keys()) {
+    unregisterCommandListeners.push(
       editor.registerCommand(
         command,
         (payload) => {
-          setLoggedCommands((state) => {
-            i += 1;
-            const newState = [...state];
-            newState.push({
-              index: i,
-              payload,
-              type: command.type ? command.type : 'UNKNOWN',
-            });
-
-            if (newState.length > 10) {
-              newState.shift();
-            }
-
-            return newState;
-          });
-
+          index += 1;
+          const entry: LexicalCommandEntry = {
+            index,
+            payload,
+            type: command.type ? command.type : 'UNKNOWN',
+          };
+          setLoggedCommands((state) => [...state.slice(-9), entry]);
           return false;
         },
         COMMAND_PRIORITY_CRITICAL,
@@ -59,9 +52,10 @@ export function useLexicalCommandsLog(
 ): LexicalCommandLog {
   const [loggedCommands, setLoggedCommands] = useState<LexicalCommandLog>([]);
 
-  useEffect(() => {
-    return registerLexicalCommandLogger(editor, setLoggedCommands);
-  }, [editor]);
+  useEffect(
+    () => registerLexicalCommandLogger(editor, setLoggedCommands),
+    [editor],
+  );
 
-  return useMemo(() => loggedCommands, [loggedCommands]);
+  return loggedCommands;
 }

@@ -44,7 +44,7 @@ export class TableRowNode extends ElementNode {
   }
 
   afterCloneFrom(prevNode: this): void {
-    super.afterCloneFrom(this);
+    super.afterCloneFrom(prevNode);
     this.__height = prevNode.__height;
   }
 

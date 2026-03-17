@@ -53,18 +53,18 @@ export default function HomepageConclusion() {
         </div>
         <div className="flex w-full flex-col gap-4 sm:flex-row">
           <Card
-            icon={<DocsSvg className="h-8 w-8" alt="Documentation" />}
-            title="Documentation"
-            description="Guides, API references, and recipes to help you build anything from a simple input to a fully-featured editor."
-            linkLabel="Read the docs"
-            to="/docs/intro"
-          />
-          <Card
             icon={<DiscordSvg className="h-8 w-8" alt="Discord" />}
             title="Community"
-            description="Have a question? Found a bug? Want to share something you built? The discord server is the place to go to."
+            description="Have a question? Found a bug? Want to share something you built? The discord server is the right place to go to."
             linkLabel="Join our Discord"
             href="https://discord.gg/KmG4wQnnD9"
+          />
+          <Card
+            icon={<DocsSvg className="h-8 w-8" alt="Documentation" />}
+            title="Documentation"
+            description="Guides and API references to help you build anything from a simple input to a fully-featured editor."
+            linkLabel="Read the docs"
+            to="/docs/intro"
           />
         </div>
       </div>

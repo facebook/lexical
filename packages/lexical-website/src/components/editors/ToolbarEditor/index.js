@@ -53,10 +53,6 @@ const theme = {
   },
 };
 
-// ---------------------------------------------------------------------------
-// ToolbarPlugin — imperative per-button state approach
-// ---------------------------------------------------------------------------
-
 function applyBlockType(editor, type) {
   const factories = {
     h1: () => $createHeadingNode('h1'),

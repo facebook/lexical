@@ -1,4 +1,0 @@
-{
-  "buildCommand": "cd ../.. && pnpm run build-docs",
-  "outputDirectory": "build"
-}

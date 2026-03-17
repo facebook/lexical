@@ -64,7 +64,6 @@ function applyBlockType(editor, type) {
   } else if (type === 'quote') {
     formatQuote(editor);
   } else {
-    // h1, h2, h3
     formatHeading(editor, type);
   }
 }
@@ -86,7 +85,6 @@ export function ToolbarPlugin() {
   const $updateToolbar = useCallback(() => {
     const selection = $getSelection();
     if ($isRangeSelection(selection)) {
-      // Detect block type of the current selection anchor
       const anchorNode = selection.anchor.getNode();
       let topLevelElement = $findMatchingParent(anchorNode, (e) => {
         const parent = e.getParent();
@@ -97,12 +95,10 @@ export function ToolbarPlugin() {
       }
 
       if ($isHeadingNode(topLevelElement)) {
-        setBlockType(topLevelElement.getTag()); // 'h1' | 'h2' | 'h3' ...
+        setBlockType(topLevelElement.getTag());
       } else {
-        setBlockType(topLevelElement.getType()); // 'paragraph' | 'quote' | ...
+        setBlockType(topLevelElement.getType());
       }
-
-      // Update text format
       setIsBold(selection.hasFormat('bold'));
       setIsItalic(selection.hasFormat('italic'));
       setIsUnderline(selection.hasFormat('underline'));
@@ -148,7 +144,6 @@ export function ToolbarPlugin() {
 
   return (
     <div className="toolbar" ref={toolbarRef}>
-      {/* Block type dropdown */}
       <select
         className="block-type-select"
         value={blockType}

@@ -21,16 +21,9 @@ const fs = require('node:fs');
 
 /**
  * Build webpack resolve.alias entries that map each lexical package's module
- * name to the corresponding pre-built dist file. Using pre-built bundles
- * avoids circular-dependency issues in the Rspack SSR bundle that arise when
- * pointing directly at individual TypeScript source files.
+ * name to the corresponding pre-built dist file.
  *
  * Requires `pnpm run build` to have been run first (dist/ files must exist).
- * In CI the monorepo build runs before the website build. For Vercel the
- * root `build-docs` script (or the vercel.json buildCommand) ensures this.
- *
- * TypeDoc entry points are kept on src/ via getExportedNpmModuleEntries() so
- * the API docs are generated from source, independently of the dist/ files.
  *
  * @returns {Record<string, string>}
  */
@@ -46,9 +39,6 @@ function buildLexicalWebpackAliases() {
       name,
       moduleExports,
     ] of pkg.getNormalizedNpmModuleExportEntries()) {
-      // Prefer the ESM development build, then ESM default, then CJS default.
-      // All relative paths are relative to the package root; after
-      // `pnpm run build` they are found under dist/.
       const candidates = [
         moduleExports.import.development,
         moduleExports.import.default,

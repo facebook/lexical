@@ -43,6 +43,11 @@ export class TableRowNode extends ElementNode {
     return new TableRowNode(node.__height, node.__key);
   }
 
+  afterCloneFrom(prevNode: this): void {
+    super.afterCloneFrom(prevNode);
+    this.__height = prevNode.__height;
+  }
+
   static importDOM(): DOMConversionMap | null {
     return {
       tr: (node: Node) => ({

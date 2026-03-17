@@ -88,6 +88,9 @@ export class TableCellNode extends ElementNode {
     this.__rowSpan = node.__rowSpan;
     this.__backgroundColor = node.__backgroundColor;
     this.__verticalAlign = node.__verticalAlign;
+    this.__colSpan = node.__colSpan;
+    this.__headerState = node.__headerState;
+    this.__width = node.__width;
   }
 
   static importDOM(): DOMConversionMap | null {

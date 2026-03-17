@@ -116,7 +116,7 @@ export class LinkNode extends ElementNode {
     this.__url = prevNode.__url;
     this.__rel = prevNode.__rel;
     this.__target = prevNode.__target;
-    this.__title = prevNode.__target;
+    this.__title = prevNode.__title;
   }
 
   createDOM(config: EditorConfig): LinkHTMLElementType {

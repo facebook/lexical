@@ -316,6 +316,15 @@ function $restoreCaretPair(point: PointType, pair: CaretPair): void {
   }
 }
 
+function $haveSameLinkAttributes(linkA: LinkNode, linkB: LinkNode): boolean {
+  return (
+    linkA.__url === linkB.__url &&
+    linkA.__target === linkB.__target &&
+    linkA.__rel === linkB.__rel &&
+    linkA.__title === linkB.__title
+  );
+}
+
 /**
  * Extracts block-level children from a LinkNode, splitting
  * ancestor nodes as needed to maintain a valid document structure.
@@ -344,6 +353,17 @@ export function $linkNodeTransform(link: LinkNode): void {
       $insertNodeToNearestRootAtCaret(node, $rewindSiblingCaret(caret), {
         $shouldSplit: () => false,
       });
+    }
+  }
+  if (link.isAttached() && !$isAutoLinkNode(link)) {
+    const nextSibling = link.getNextSibling();
+    if (
+      $isLinkNode(nextSibling) &&
+      !$isAutoLinkNode(nextSibling) &&
+      $haveSameLinkAttributes(link, nextSibling)
+    ) {
+      link.append(...nextSibling.getChildren());
+      nextSibling.remove();
     }
   }
   if (!transformed) {

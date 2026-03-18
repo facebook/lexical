@@ -111,6 +111,14 @@ export class LinkNode extends ElementNode {
     this.__title = title;
   }
 
+  afterCloneFrom(prevNode: this): void {
+    super.afterCloneFrom(prevNode);
+    this.__url = prevNode.__url;
+    this.__rel = prevNode.__rel;
+    this.__target = prevNode.__target;
+    this.__title = prevNode.__title;
+  }
+
   createDOM(config: EditorConfig): LinkHTMLElementType {
     const element = document.createElement('a');
     this.updateLinkDOM(null, element, config);
@@ -240,11 +248,7 @@ export class LinkNode extends ElementNode {
     _: RangeSelection,
     restoreSelection = true,
   ): null | ElementNode {
-    const linkNode = $createLinkNode(this.__url, {
-      rel: this.__rel,
-      target: this.__target,
-      title: this.__title,
-    });
+    const linkNode = $copyNode(this);
     this.insertAfter(linkNode, restoreSelection);
     return linkNode;
   }
@@ -257,7 +261,7 @@ export class LinkNode extends ElementNode {
     return false;
   }
 
-  canBeEmpty(): false {
+  canBeEmpty(): boolean {
     return false;
   }
 
@@ -326,6 +330,7 @@ export function $linkNodeTransform(link: LinkNode): void {
     focusPair = $saveCaretPair(selection.focus);
   }
 
+  let transformed = false;
   for (const caret of $getChildCaret(link, 'next')) {
     const node = caret.origin;
     if ($isElementNode(node) && !node.isInline()) {
@@ -334,13 +339,17 @@ export function $linkNodeTransform(link: LinkNode): void {
         const innerLink = $copyNode(link);
         innerLink.append(...blockChildren);
         node.append(innerLink);
+        transformed = true;
       }
       $insertNodeToNearestRootAtCaret(node, $rewindSiblingCaret(caret), {
         $shouldSplit: () => false,
       });
     }
   }
-  if (link.isEmpty()) {
+  if (!transformed) {
+    return;
+  }
+  if (!link.canBeEmpty() && link.isEmpty()) {
     const parent = link.getParent();
     link.remove();
     if (parent && parent.isEmpty()) {
@@ -418,6 +427,11 @@ export class AutoLinkNode extends LinkNode {
       attributes.isUnlinked !== undefined && attributes.isUnlinked !== null
         ? attributes.isUnlinked
         : false;
+  }
+
+  afterCloneFrom(prevNode: this): void {
+    super.afterCloneFrom(prevNode);
+    this.__isUnlinked = prevNode.__isUnlinked;
   }
 
   static getType(): string {
@@ -647,11 +661,7 @@ function $splitLinkAtSelection(
 
     const trailingChildren = allChildren.slice(lastExtractedIndex + 1);
     if (trailingChildren.length > 0) {
-      const newLink = $createLinkNode(parentLink.getURL(), {
-        rel: parentLink.getRel(),
-        target: parentLink.getTarget(),
-        title: parentLink.getTitle(),
-      });
+      const newLink = $copyNode(parentLink);
 
       extractedChildren[extractedChildren.length - 1].insertAfter(newLink);
       trailingChildren.forEach((child) => newLink.append(child));

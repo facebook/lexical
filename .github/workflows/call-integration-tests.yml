@@ -25,3 +25,4 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - run: pnpm run test-integration
+      - run: pnpm run test-eslint-integration

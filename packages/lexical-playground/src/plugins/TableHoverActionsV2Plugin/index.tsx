@@ -199,9 +199,6 @@ function TableHoverActionsV2({
   const dragHandleRef = useRef<HTMLButtonElement | null>(null);
   const hoveredLeftCellRef = useRef<HTMLTableCellElement | null>(null);
   const hoveredTopCellRef = useRef<HTMLTableCellElement | null>(null);
-  const handleMouseLeaveRef = useRef<((event: MouseEvent) => void) | null>(
-    null,
-  );
   const dropIndicatorCleanupRef = useRef<Array<() => void>>([]);
   const [hoveredTable, setHoveredTable] = useState<HTMLTableElement | null>(
     null,
@@ -358,17 +355,12 @@ function TableHoverActionsV2({
       setIsVisible(false);
       setIsLeftVisible(false);
     };
-    handleMouseLeaveRef.current = handleMouseLeave;
 
-    return editor.registerRootListener((rootElement, prevRootElement) => {
-      if (prevRootElement && handleMouseLeaveRef.current) {
-        prevRootElement.removeEventListener(
-          'mouseleave',
-          handleMouseLeaveRef.current,
-        );
-      }
-      if (rootElement && handleMouseLeaveRef.current) {
-        rootElement.addEventListener('mouseleave', handleMouseLeaveRef.current);
+    return editor.registerRootListener((rootElement) => {
+      if (rootElement) {
+        rootElement.addEventListener('mouseleave', handleMouseLeave);
+        return () =>
+          rootElement.removeEventListener('mouseleave', handleMouseLeave);
       }
     });
   }, [editor]);

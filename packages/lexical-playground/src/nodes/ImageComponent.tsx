@@ -6,7 +6,12 @@
  *
  */
 
-import type {LexicalCommand, LexicalEditor, NodeKey} from 'lexical';
+import type {
+  LexicalCommand,
+  LexicalEditor,
+  LexicalEditorWithDispose,
+  NodeKey,
+} from 'lexical';
 import type {JSX} from 'react';
 
 import './ImageNode.css';
@@ -14,11 +19,7 @@ import './ImageNode.css';
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
 import {CollaborationPlugin} from '@lexical/react/LexicalCollaborationPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
-import {HashtagPlugin} from '@lexical/react/LexicalHashtagPlugin';
-import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
-import {LexicalNestedComposer} from '@lexical/react/LexicalNestedComposer';
-import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
+import {LexicalExtensionEditorComposer} from '@lexical/react/LexicalExtensionEditorComposer';
 import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
 import {mergeRegister} from '@lexical/utils';
@@ -51,14 +52,8 @@ import {
 
 import {createWebsocketProvider} from '../collaboration';
 import {useSettings} from '../context/SettingsContext';
-import {useSharedHistoryContext} from '../context/SharedHistoryContext';
 import brokenImage from '../images/image-broken.svg';
-import EmojisPlugin from '../plugins/EmojisPlugin';
-import KeywordsPlugin from '../plugins/KeywordsPlugin';
-import LinkPlugin from '../plugins/LinkPlugin';
-import MentionsPlugin from '../plugins/MentionsPlugin';
 import TreeViewPlugin from '../plugins/TreeViewPlugin';
-import ContentEditable from '../ui/ContentEditable';
 import ImageResizer from '../ui/ImageResizer';
 import {$isCaptionEditorEmpty, $isImageNode} from './ImageNode';
 
@@ -237,8 +232,6 @@ function BrokenImage(): JSX.Element {
   );
 }
 
-function noop() {}
-
 export default function ImageComponent({
   src,
   altText,
@@ -252,7 +245,7 @@ export default function ImageComponent({
   captionsEnabled,
 }: {
   altText: string;
-  caption: LexicalEditor;
+  caption: LexicalEditorWithDispose;
   height: 'inherit' | number;
   maxWidth: number;
   nodeKey: NodeKey;
@@ -397,7 +390,6 @@ export default function ImageComponent({
     );
   }, [editor]);
   useEffect(() => {
-    let rootCleanup = noop;
     return mergeRegister(
       editor.registerCommand<MouseEvent>(
         CLICK_COMMAND,
@@ -416,15 +408,12 @@ export default function ImageComponent({
         COMMAND_PRIORITY_LOW,
       ),
       editor.registerRootListener((rootElement) => {
-        rootCleanup();
-        rootCleanup = noop;
         if (rootElement) {
           rootElement.addEventListener('contextmenu', onRightClick);
-          rootCleanup = () =>
+          return () =>
             rootElement.removeEventListener('contextmenu', onRightClick);
         }
       }),
-      () => rootCleanup(),
     );
   }, [editor, $onEnter, $onEscape, onClick, onRightClick]);
 
@@ -465,7 +454,6 @@ export default function ImageComponent({
     setIsResizing(true);
   };
 
-  const {historyState} = useSharedHistoryContext();
   const {
     settings: {showNestedEditorTreeView},
   } = useSettings();
@@ -498,34 +486,17 @@ export default function ImageComponent({
 
         {showCaption && (
           <div className="image-caption-container">
-            <LexicalNestedComposer initialEditor={caption}>
+            <LexicalExtensionEditorComposer initialEditor={caption}>
               <DisableCaptionOnBlur setShowCaption={setShowCaption} />
-              <MentionsPlugin />
-              <LinkPlugin />
-              <EmojisPlugin />
-              <HashtagPlugin />
-              <KeywordsPlugin />
               {isCollabActive ? (
                 <CollaborationPlugin
                   id={caption.getKey()}
                   providerFactory={createWebsocketProvider}
                   shouldBootstrap={true}
                 />
-              ) : (
-                <HistoryPlugin externalHistoryState={historyState} />
-              )}
-              <RichTextPlugin
-                contentEditable={
-                  <ContentEditable
-                    placeholder="Enter a caption..."
-                    placeholderClassName="ImageNode__placeholder"
-                    className="ImageNode__contentEditable"
-                  />
-                }
-                ErrorBoundary={LexicalErrorBoundary}
-              />
+              ) : null}
               {showNestedEditorTreeView === true ? <TreeViewPlugin /> : null}
-            </LexicalNestedComposer>
+            </LexicalExtensionEditorComposer>
           </div>
         )}
         {resizable && isInNodeSelection && isFocused && (

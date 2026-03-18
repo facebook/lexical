@@ -43,7 +43,12 @@ export default function KatexEquationAlterer({
     <>
       <div className="KatexEquationAlterer_defaultRow">
         Inline
-        <input type="checkbox" checked={inline} onChange={onCheckboxChange} />
+        <input
+          type="checkbox"
+          checked={inline}
+          onChange={onCheckboxChange}
+          data-test-id="equation-inline-checkbox"
+        />
       </div>
       <div className="KatexEquationAlterer_defaultRow">Equation </div>
       <div className="KatexEquationAlterer_centerRow">
@@ -54,6 +59,7 @@ export default function KatexEquationAlterer({
             }}
             value={equation}
             className="KatexEquationAlterer_textArea"
+            data-test-id="equation-input"
           />
         ) : (
           <textarea
@@ -62,6 +68,7 @@ export default function KatexEquationAlterer({
             }}
             value={equation}
             className="KatexEquationAlterer_textArea"
+            data-test-id="equation-input"
           />
         )}
       </div>
@@ -76,7 +83,9 @@ export default function KatexEquationAlterer({
         </ErrorBoundary>
       </div>
       <div className="KatexEquationAlterer_dialogActions">
-        <Button onClick={onClick}>Confirm</Button>
+        <Button onClick={onClick} data-test-id="equation-submit-btn">
+          Confirm
+        </Button>
       </div>
     </>
   );

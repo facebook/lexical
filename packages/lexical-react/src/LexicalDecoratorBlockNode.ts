@@ -33,6 +33,11 @@ export class DecoratorBlockNode extends DecoratorNode<JSX.Element> {
     this.__format = format || '';
   }
 
+  afterCloneFrom(prevNode: this): void {
+    super.afterCloneFrom(prevNode);
+    this.__format = prevNode.__format;
+  }
+
   exportJSON(): SerializedDecoratorBlockNode {
     return {
       ...super.exportJSON(),

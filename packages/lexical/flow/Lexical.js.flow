@@ -109,7 +109,7 @@ type DecoratorListener = (decorator: {
 type RootListener = (
   rootElement: null | HTMLElement,
   prevRootElement: null | HTMLElement,
-) => void;
+) => void | (() => void);
 type TextContentListener = (text: string) => void;
 type ErrorHandler = (error: Error) => void;
 export type MutationListener = (
@@ -123,13 +123,13 @@ export type MutationListener = (
 export type MutationListenerOptions = {
   skipInitialization?: boolean;
 };
-export type EditableListener = (editable: boolean) => void;
+export type EditableListener = (editable: boolean) => void | (() => void);
 type Listeners = {
-  decorator: Set<DecoratorListener>,
+  decorator: Map<DecoratorListener, void | (() => void)>,
   mutation: MutationListeners,
-  textcontent: Set<TextContentListener>,
-  root: Set<RootListener>,
-  update: Set<UpdateListener>,
+  textcontent: Map<TextContentListener, void | (() => void)>,
+  root: Map<RootListener, void | (() => void)>,
+  update: Map<UpdateListener, void | (() => void)>,
 };
 export type CommandListener<P> = (payload: P, editor: LexicalEditor) => boolean;
 // $FlowFixMe[unclear-type]
@@ -457,6 +457,8 @@ declare export class LexicalNode {
   selectNext(anchorOffset?: number, focusOffset?: number): RangeSelection;
   markDirty(): void;
   reconcileObservedMutation(dom: HTMLElement, editor: LexicalEditor): void;
+  afterCloneFrom(prevNode: this): void;
+  resetOnCopyNodeFrom(original: this): void;
 }
 export type NodeMap = Map<NodeKey, LexicalNode>;
 
@@ -941,10 +943,7 @@ declare export function $hasAncestor(
   targetNode: LexicalNode,
 ): boolean;
 declare export function $cloneWithProperties<T: LexicalNode>(node: T): T;
-declare export function $copyNode(
-  node: ElementNode,
-  offset: number,
-): [ElementNode, ElementNode];
+declare export function $copyNode<T: LexicalNode>(node: T, skipReset?: boolean): T;
 declare export function $getEditor(): LexicalEditor;
 
 /**
@@ -1340,6 +1339,7 @@ declare export class StateConfig<K: string, V> {
   +unparse: (value: V) => mixed;
   +isEqual: (a: V, b: V) => boolean;
   +defaultValue: V;
+  +resetOnCopyNode: boolean;
   constructor(key: K, stateValueConfig: StateValueConfig<V>): this;
 }
 
@@ -1347,6 +1347,7 @@ export type StateValueConfig<V> = {
   parse: (jsonValue: mixed) => V;
   unparse?: (parsed: V) => mixed;
   isEqual?: (a: V, b: V) => boolean;
+  resetOnCopyNode?: boolean;
 }
 
 export type UnionToIntersection<T> = (

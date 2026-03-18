@@ -11,7 +11,7 @@ import type {
   DOMConversionOutput,
   DOMExportOutput,
   EditorConfig,
-  LexicalEditor,
+  LexicalEditorWithDispose,
   LexicalNode,
   LexicalUpdateJSON,
   NodeKey,
@@ -22,39 +22,73 @@ import type {
 } from 'lexical';
 import type {JSX} from 'react';
 
-import {$insertGeneratedNodes} from '@lexical/clipboard';
-import {HashtagNode} from '@lexical/hashtag';
+import {
+  buildEditorFromExtensions,
+  NestedEditorExtension,
+} from '@lexical/extension';
+import {HashtagExtension} from '@lexical/hashtag';
+import {HistoryExtension} from '@lexical/history';
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
-import {LinkNode} from '@lexical/link';
+import {LinkExtension} from '@lexical/link';
+import {ReactExtension} from '@lexical/react/ReactExtension';
+import {ReactProviderExtension} from '@lexical/react/ReactProviderExtension';
+import {RichTextExtension} from '@lexical/rich-text';
 import {
   $applyNodeReplacement,
   $createRangeSelection,
   $extendCaretToRange,
   $getChildCaret,
-  $getEditor,
   $getRoot,
   $isElementNode,
   $isParagraphNode,
   $selectAll,
   $setSelection,
-  createEditor,
+  configExtension,
   DecoratorNode,
-  LineBreakNode,
-  ParagraphNode,
-  RootNode,
+  defineExtension,
   SKIP_DOM_SELECTION_TAG,
-  TextNode,
 } from 'lexical';
 import * as React from 'react';
 
+import {EmojisExtension} from '../plugins/EmojisExtension';
+import MentionsPlugin from '../plugins/MentionsPlugin';
+import ContentEditable from '../ui/ContentEditable';
 import {EmojiNode} from './EmojiNode';
-import {KeywordNode} from './KeywordNode';
+import {KeywordsExtension} from './KeywordNode';
 
 const ImageComponent = React.lazy(() => import('./ImageComponent'));
 
+const CaptionEditorExtension = defineExtension({
+  dependencies: [
+    // FIXME - The current playground has tests that assume that image captions don't have shared history
+    // SharedHistoryExtension,
+    HistoryExtension,
+    NestedEditorExtension,
+    ReactProviderExtension,
+    RichTextExtension,
+    HashtagExtension,
+    LinkExtension,
+    KeywordsExtension,
+    EmojisExtension,
+    configExtension(ReactExtension, {
+      contentEditable: (
+        <ContentEditable
+          placeholder="Enter a caption..."
+          placeholderClassName="ImageNode__placeholder"
+          className="ImageNode__contentEditable"
+        />
+      ),
+      decorators: [<MentionsPlugin />],
+    }),
+  ],
+  name: '@lexical/playground/ImageNodeCaption',
+  namespace: 'Playground/ImageNodeCaption',
+  nodes: [EmojiNode],
+});
+
 export interface ImagePayload {
   altText: string;
-  caption?: LexicalEditor;
+  caption?: LexicalEditorWithDispose;
   height?: number;
   key?: NodeKey;
   maxWidth?: number;
@@ -117,7 +151,7 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
   __height: 'inherit' | number;
   __maxWidth: number;
   __showCaption: boolean;
-  __caption: LexicalEditor;
+  __caption: LexicalEditorWithDispose;
   // Captions cannot yet be used within editor cells
   __captionsEnabled: boolean;
 
@@ -225,11 +259,8 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
                   imgNode.setShowCaption(true);
                   imgNode.__caption.update(
                     () => {
-                      const editor = $getEditor();
-                      $insertGeneratedNodes(
-                        editor,
-                        $generateNodesFromDOM(editor, figcaption),
-                        $selectAll(),
+                      $selectAll().insertNodes(
+                        $generateNodesFromDOM(imgNode.__caption, figcaption),
                       );
                       $setSelection(null);
                     },
@@ -258,7 +289,7 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     width?: 'inherit' | number,
     height?: 'inherit' | number,
     showCaption?: boolean,
-    caption?: LexicalEditor,
+    caption?: LexicalEditorWithDispose,
     captionsEnabled?: boolean,
     key?: NodeKey,
   ) {
@@ -270,21 +301,8 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     this.__height = height || 'inherit';
     this.__showCaption = showCaption || false;
     this.__caption =
-      caption ||
-      createEditor({
-        namespace: 'Playground/ImageNodeCaption',
-        nodes: [
-          RootNode,
-          TextNode,
-          LineBreakNode,
-          ParagraphNode,
-          LinkNode,
-          EmojiNode,
-          HashtagNode,
-          KeywordNode,
-        ],
-      });
-    this.__captionsEnabled = captionsEnabled || captionsEnabled === undefined;
+      caption || buildEditorFromExtensions(CaptionEditorExtension);
+    this.__captionsEnabled = captionsEnabled !== false;
   }
 
   exportJSON(): SerializedImageNode {

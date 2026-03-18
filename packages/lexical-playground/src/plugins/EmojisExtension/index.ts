@@ -6,14 +6,9 @@
  *
  */
 
-import type {LexicalEditor} from 'lexical';
-import type {JSX} from 'react';
+import {defineExtension, TextNode} from 'lexical';
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {TextNode} from 'lexical';
-import {useEffect} from 'react';
-
-import {$createEmojiNode, EmojiNode} from '../../nodes/EmojiNode';
+import {$createEmojiNode} from '../../nodes/EmojiNode';
 
 const emojis: Map<string, [string, string]> = new Map([
   [':)', ['emoji happysmile', '🙂']],
@@ -59,18 +54,8 @@ function $textNodeTransform(node: TextNode): void {
   }
 }
 
-function useEmojis(editor: LexicalEditor): void {
-  useEffect(() => {
-    if (!editor.hasNodes([EmojiNode])) {
-      throw new Error('EmojisPlugin: EmojiNode not registered on editor');
-    }
-
-    return editor.registerNodeTransform(TextNode, $textNodeTransform);
-  }, [editor]);
-}
-
-export default function EmojisPlugin(): JSX.Element | null {
-  const [editor] = useLexicalComposerContext();
-  useEmojis(editor);
-  return null;
-}
+export const EmojisExtension = defineExtension({
+  name: '@lexical/playground/Emojis',
+  register: (editor) =>
+    editor.registerNodeTransform(TextNode, $textNodeTransform),
+});

@@ -112,14 +112,14 @@ export function registerClickableLink(
     }
   };
 
-  return editor.registerRootListener((rootElement, prevRootElement) => {
-    if (prevRootElement !== null) {
-      prevRootElement.removeEventListener('click', onClick);
-      prevRootElement.removeEventListener('mouseup', onMouseUp);
-    }
-    if (rootElement !== null) {
+  return editor.registerRootListener((rootElement) => {
+    if (rootElement) {
       rootElement.addEventListener('click', onClick, eventOptions);
       rootElement.addEventListener('mouseup', onMouseUp, eventOptions);
+      return () => {
+        rootElement.removeEventListener('click', onClick);
+        rootElement.removeEventListener('mouseup', onMouseUp);
+      };
     }
   });
 }

@@ -90,6 +90,9 @@
       "@lexical/react/LexicalExtensionComposer": [
         "./packages/lexical-react/src/LexicalExtensionComposer.tsx"
       ],
+      "@lexical/react/LexicalExtensionEditorComposer": [
+        "./packages/lexical-react/src/LexicalExtensionEditorComposer.tsx"
+      ],
       "@lexical/react/LexicalHashtagPlugin": [
         "./packages/lexical-react/src/LexicalHashtagPlugin.ts"
       ],

@@ -5,7 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {getExtensionDependencyFromEditor} from '@lexical/extension';
+import {
+  getExtensionDependencyFromEditor,
+  getPeerDependencyFromEditor,
+} from '@lexical/extension';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   type AnyLexicalExtension,
@@ -19,6 +22,23 @@ export function useExtensionDependency<Extension extends AnyLexicalExtension>(
   return getExtensionDependencyFromEditor(
     useLexicalComposerContext()[0],
     extension,
+  );
+}
+
+export function useOptionalExtensionDependency<
+  Extension extends AnyLexicalExtension,
+>(extension: Extension): undefined | LexicalExtensionDependency<Extension> {
+  return usePeerExtensionDependency<typeof extension>(extension.name);
+}
+
+export function usePeerExtensionDependency<
+  Extension extends AnyLexicalExtension,
+>(
+  extensionName: Extension['name'],
+): undefined | LexicalExtensionDependency<Extension> {
+  return getPeerDependencyFromEditor(
+    useLexicalComposerContext()[0],
+    extensionName,
   );
 }
 

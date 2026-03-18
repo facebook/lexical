@@ -6,7 +6,7 @@
  *
  */
 
-import type {LexicalEditor, NodeKey} from 'lexical';
+import type {LexicalEditorWithDispose, NodeKey} from 'lexical';
 import type {JSX} from 'react';
 
 import './StickyNode.css';
@@ -14,19 +14,13 @@ import './StickyNode.css';
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
 import {CollaborationPlugin} from '@lexical/react/LexicalCollaborationPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
-import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
-import {LexicalNestedComposer} from '@lexical/react/LexicalNestedComposer';
-import {PlainTextPlugin} from '@lexical/react/LexicalPlainTextPlugin';
+import {LexicalExtensionEditorComposer} from '@lexical/react/LexicalExtensionEditorComposer';
 import {calculateZoomLevel} from '@lexical/utils';
 import {$getNodeByKey} from 'lexical';
 import * as React from 'react';
 import {useEffect, useLayoutEffect, useRef} from 'react';
 
 import {createWebsocketProvider} from '../collaboration';
-import {useSharedHistoryContext} from '../context/SharedHistoryContext';
-import StickyEditorTheme from '../themes/StickyEditorTheme';
-import ContentEditable from '../ui/ContentEditable';
 import {$isStickyNode} from './StickyNode';
 
 type Positioning = {
@@ -57,7 +51,7 @@ export default function StickyComponent({
   color,
   caption,
 }: {
-  caption: LexicalEditor;
+  caption: LexicalEditorWithDispose;
   color: 'pink' | 'yellow';
   nodeKey: NodeKey;
   x: number;
@@ -100,16 +94,12 @@ export default function StickyComponent({
       }
     });
 
-    const removeRootListener = editor.registerRootListener(
-      (nextRootElem, prevRootElem) => {
-        if (prevRootElem !== null) {
-          resizeObserver.unobserve(prevRootElem);
-        }
-        if (nextRootElem !== null) {
-          resizeObserver.observe(nextRootElem);
-        }
-      },
-    );
+    const removeRootListener = editor.registerRootListener((nextRootElem) => {
+      if (nextRootElem !== null) {
+        resizeObserver.observe(nextRootElem);
+        return () => resizeObserver.unobserve(nextRootElem);
+      }
+    });
 
     const handleWindowResize = () => {
       const rootElement = editor.getRootElement();
@@ -195,8 +185,6 @@ export default function StickyComponent({
     });
   };
 
-  const {historyState} = useSharedHistoryContext();
-
   return (
     <div ref={stickyContainerRef} className="sticky-note-container">
       <div
@@ -239,29 +227,15 @@ export default function StickyComponent({
           title="Color">
           <i className="bucket" />
         </button>
-        <LexicalNestedComposer
-          initialEditor={caption}
-          initialTheme={StickyEditorTheme}>
+        <LexicalExtensionEditorComposer initialEditor={caption}>
           {isCollabActive ? (
             <CollaborationPlugin
               id={caption.getKey()}
               providerFactory={createWebsocketProvider}
               shouldBootstrap={true}
             />
-          ) : (
-            <HistoryPlugin externalHistoryState={historyState} />
-          )}
-          <PlainTextPlugin
-            contentEditable={
-              <ContentEditable
-                placeholder="What's up?"
-                placeholderClassName="StickyNode__placeholder"
-                className="StickyNode__contentEditable"
-              />
-            }
-            ErrorBoundary={LexicalErrorBoundary}
-          />
-        </LexicalNestedComposer>
+          ) : null}
+        </LexicalExtensionEditorComposer>
       </div>
     </div>
   );

@@ -22,7 +22,7 @@ export interface LexicalExtensionComposerProps {
   /**
    * Any children will have access to useLexicalComposerContext (e.g. for React plug-ins or UX)
    */
-  children: React.ReactNode;
+  children?: React.ReactNode;
   /**
    * Override the default ContentEditable that is rendered as the first child of the
    * composer. If this is null, then it is your responsibility to render a ContentEditable

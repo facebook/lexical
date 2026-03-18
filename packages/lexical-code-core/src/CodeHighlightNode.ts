@@ -59,6 +59,11 @@ export class CodeHighlightNode extends TextNode {
     );
   }
 
+  afterCloneFrom(prevNode: this): void {
+    super.afterCloneFrom(prevNode);
+    this.__highlightType = prevNode.__highlightType;
+  }
+
   getHighlightType(): string | null | undefined {
     const self = this.getLatest();
     return self.__highlightType;

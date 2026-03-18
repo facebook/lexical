@@ -6,15 +6,15 @@
  *
  */
 // @ts-check
-'use strict';
+import fs from 'fs-extra';
+import path from 'node:path';
+import {beforeAll, describe, expect, test} from 'vitest';
 
-const {exec} = require('../../shared/childProcess');
-const {packagesManager} = require('../../shared/packagesManager');
-const fs = require('fs-extra');
-const path = require('node:path');
+import {exec} from '../../shared/childProcess.js';
+import {packagesManager} from '../../shared/packagesManager.js';
+import readMonorepoPackageJson from '../../shared/readMonorepoPackageJson.js';
 
-const monorepoVersion = require('../../shared/readMonorepoPackageJson')()
-  .version;
+const monorepoVersion = readMonorepoPackageJson().version;
 
 const LONG_TIMEOUT = 240 * 1000;
 
@@ -34,16 +34,15 @@ async function withCwd(dir, cb) {
     process.chdir(cwd);
   }
 }
-exports.withCwd = withCwd;
 
 /**
  * @param {string} cmd
  * @returns {Promise<string>}
  */
 function expectSuccessfulExec(cmd) {
-  // Filter out JEST_WORKER_ID to prevent Playwright from detecting Jest environment
+  // Filter out VITEST_WORKER_ID to prevent Playwright from detecting Vitest environment
   const env = Object.fromEntries(
-    Object.entries(process.env).filter(([k]) => k !== 'JEST_WORKER_ID'),
+    Object.entries(process.env).filter(([k]) => k !== 'VITEST_WORKER_ID'),
   );
   return exec(cmd, {env}).catch((err) => {
     expect(
@@ -54,7 +53,6 @@ function expectSuccessfulExec(cmd) {
     throw err;
   });
 }
-exports.expectSuccessfulExec = expectSuccessfulExec;
 
 /**
  * @typedef {Object} ExampleContext
@@ -160,4 +158,4 @@ function describeExample(packageJsonPath, bodyFun = undefined) {
   });
 }
 
-exports.describeExample = describeExample;
+export {describeExample, expectSuccessfulExec, withCwd};

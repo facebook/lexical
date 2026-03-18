@@ -9,6 +9,7 @@
 import type {ListItemNode} from './LexicalListItemNode';
 import type {LexicalCommand, LexicalEditor} from 'lexical';
 
+import {Signal} from '@lexical/extension';
 import {
   $findMatchingParent,
   calculateZoomLevel,
@@ -49,16 +50,20 @@ export const INSERT_CHECK_LIST_COMMAND: LexicalCommand<void> = createCommand(
  */
 export function registerCheckList(
   editor: LexicalEditor,
-  options?: {disableTakeFocusOnClick?: boolean},
+  options?: {disableTakeFocusOnClick?: boolean | Signal<boolean>},
 ) {
   const disableTakeFocusOnClick =
     (options && options.disableTakeFocusOnClick) || false;
+  const peekDisableTakeFocusOnClick =
+    typeof disableTakeFocusOnClick === 'boolean'
+      ? () => disableTakeFocusOnClick
+      : disableTakeFocusOnClick.peek.bind(disableTakeFocusOnClick);
 
   const configHandleClick = (event: MouseEvent | TouchEvent) => {
-    handleClick(event, disableTakeFocusOnClick);
+    handleClick(event, peekDisableTakeFocusOnClick());
   };
   const configHandleSelectDefaults = (event: MouseEvent | TouchEvent) => {
-    handleSelectDefaults(event, disableTakeFocusOnClick);
+    handleSelectDefaults(event, peekDisableTakeFocusOnClick());
   };
   return mergeRegister(
     editor.registerCommand(
@@ -164,7 +169,7 @@ export function registerCheckList(
       COMMAND_PRIORITY_LOW,
     ),
 
-    editor.registerRootListener((rootElement, prevElement) => {
+    editor.registerRootListener((rootElement) => {
       if (rootElement !== null) {
         rootElement.addEventListener('click', configHandleClick);
         // Use capture so we run before other listeners that might move focus.
@@ -185,31 +190,30 @@ export function registerCheckList(
           capture: true,
           passive: false,
         });
-      }
-
-      if (prevElement !== null) {
-        prevElement.removeEventListener('click', configHandleClick);
-        prevElement.removeEventListener(
-          'pointerdown',
-          configHandleSelectDefaults,
-          {
-            capture: true,
-          },
-        );
-        prevElement.removeEventListener(
-          'mousedown',
-          configHandleSelectDefaults,
-          {
-            capture: true,
-          },
-        );
-        prevElement.removeEventListener(
-          'touchstart',
-          configHandleSelectDefaults,
-          {
-            capture: true,
-          },
-        );
+        return () => {
+          rootElement.removeEventListener('click', configHandleClick);
+          rootElement.removeEventListener(
+            'pointerdown',
+            configHandleSelectDefaults,
+            {
+              capture: true,
+            },
+          );
+          rootElement.removeEventListener(
+            'mousedown',
+            configHandleSelectDefaults,
+            {
+              capture: true,
+            },
+          );
+          rootElement.removeEventListener(
+            'touchstart',
+            configHandleSelectDefaults,
+            {
+              capture: true,
+            },
+          );
+        };
       }
     }),
   );

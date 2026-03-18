@@ -18,15 +18,18 @@ import type {
   SerializedLexicalNode,
 } from 'lexical';
 
+import {$insertNodeToNearestRoot} from '@lexical/utils';
 import {
   $create,
   $createNodeSelection,
   $getNodeFromDOMNode,
   $getSelection,
   $isNodeSelection,
+  $isRangeSelection,
   $setSelection,
   addClassNamesToElement,
   CLICK_COMMAND,
+  COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_LOW,
   createCommand,
   DecoratorNode,
@@ -149,6 +152,26 @@ export const HorizontalRuleExtension = defineExtension({
     const isSelectedClassName = editor._config.theme.hrSelected ?? 'selected';
 
     return mergeRegister(
+      editor.registerCommand(
+        INSERT_HORIZONTAL_RULE_COMMAND,
+        (type) => {
+          const selection = $getSelection();
+
+          if (!$isRangeSelection(selection)) {
+            return false;
+          }
+
+          const focusNode = selection.focus.getNode();
+
+          if (focusNode !== null) {
+            const horizontalRuleNode = $createHorizontalRuleNode();
+            $insertNodeToNearestRoot(horizontalRuleNode);
+          }
+
+          return true;
+        },
+        COMMAND_PRIORITY_EDITOR,
+      ),
       editor.registerCommand(
         CLICK_COMMAND,
         (event: MouseEvent) => {

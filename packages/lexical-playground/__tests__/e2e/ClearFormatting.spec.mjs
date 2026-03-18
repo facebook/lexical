@@ -9,6 +9,7 @@
 import {
   centerAlign,
   indent,
+  moveToPrevWord,
   outdent,
   rightAlign,
   selectAll,
@@ -270,6 +271,45 @@ test.describe('Clear All Formatting', () => {
       html`
         <p class="PlaygroundEditorTheme__paragraph" dir="auto" style="">
           <span data-lexical-text="true">Hello World Test</span>
+        </p>
+      `,
+    );
+  });
+
+  test(`Should clear formatting of selected text which spans over 1 paragraph`, async ({
+    page,
+  }) => {
+    await focusEditor(page);
+
+    await page.keyboard.type('Foo bar');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('baz qux');
+    await selectAll(page);
+    await toggleBold(page);
+    await page.keyboard.press('ArrowRight');
+    await moveToPrevWord(page);
+    await page.keyboard.down('Shift');
+    await page.keyboard.press('ArrowUp');
+    await page.keyboard.up('Shift');
+    await selectFromAdditionalStylesDropdown(page, '.clear');
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true">
+            Foo
+          </strong>
+          <span data-lexical-text="true">bar</span>
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">baz</span>
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true">
+            qux
+          </strong>
         </p>
       `,
     );

@@ -696,11 +696,16 @@ export function doesContainSurrogatePair(str: string): boolean {
 export function getEditorsToPropagate(
   editor: LexicalEditor,
 ): Array<LexicalEditor> {
-  const editorsToPropagate = [];
-  let currentEditor: LexicalEditor | null = editor;
-  while (currentEditor !== null) {
+  const editorsToPropagate: LexicalEditor[] = [];
+  for (
+    let currentEditor: LexicalEditor | null = editor;
+    currentEditor !== null;
+    // Do not propagate commands to parent editors that are
+    // currently updating as that will trigger an early commit
+    // and can corrupt the nodeMap by doing GC too early
+    currentEditor = currentEditor._updating ? null : currentEditor._parentEditor
+  ) {
     editorsToPropagate.push(currentEditor);
-    currentEditor = currentEditor._parentEditor;
   }
   return editorsToPropagate;
 }
@@ -1565,12 +1570,19 @@ export function $isRootOrShadowRoot(
  * separately added to the document, and it will not have any children.
  *
  * @param node - The node to be copied.
+ * @param skipReset - If true (default false) skip the call to resetOnCopyNodeFrom
  * @returns The copy of the node.
  */
-export function $copyNode<T extends LexicalNode>(node: T): T {
+export function $copyNode<T extends LexicalNode>(
+  node: T,
+  skipReset = false,
+): T {
   const copy = node.constructor.clone(node) as T;
   $setNodeKey(copy, null);
   copy.afterCloneFrom(node);
+  if (!skipReset) {
+    copy.resetOnCopyNodeFrom(node);
+  }
   return copy;
 }
 

@@ -236,6 +236,7 @@ function isTextNodeUnchanged(
 function createMergeActionGetter(
   editor: LexicalEditor,
   delayOrStore: number | ReadonlySignal<number>,
+  dateNow: () => number,
 ): (
   prevEditorState: null | EditorState,
   nextEditorState: EditorState,
@@ -244,9 +245,9 @@ function createMergeActionGetter(
   dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
   tags: Set<string>,
 ) => MergeAction {
-  let prevChangeTime = Date.now();
+  let prevChangeTime = dateNow();
   let prevChangeType = OTHER;
-  let compositionStartTime = Date.now();
+  let compositionStartTime = prevChangeTime;
   let compositionStartChangeType = OTHER;
   let compositionStartState: EditorState | null = null;
 
@@ -258,7 +259,7 @@ function createMergeActionGetter(
     dirtyElements,
     tags,
   ) => {
-    const changeTime = Date.now();
+    const changeTime = dateNow();
 
     if (tags.has(COMPOSITION_START_TAG)) {
       compositionStartTime = prevChangeTime;
@@ -427,8 +428,9 @@ export function registerHistory(
   editor: LexicalEditor,
   historyState: HistoryState,
   delay: number | ReadonlySignal<number>,
+  dateNow: () => number = Date.now,
 ): () => void {
-  const getMergeAction = createMergeActionGetter(editor, delay);
+  const getMergeAction = createMergeActionGetter(editor, delay, dateNow);
 
   const applyChange = ({
     editorState,
@@ -484,7 +486,7 @@ export function registerHistory(
     };
   };
 
-  const unregister = mergeRegister(
+  return mergeRegister(
     editor.registerCommand(
       UNDO_COMMAND,
       () => {
@@ -521,8 +523,6 @@ export function registerHistory(
     ),
     editor.registerUpdateListener(applyChange),
   );
-
-  return unregister;
 }
 
 /**
@@ -551,6 +551,10 @@ export interface HistoryConfig {
    * Whether history is disabled or not
    */
   disabled: boolean;
+  /**
+   * The now() function, defaults to Date.now.
+   */
+  now: () => number;
 }
 
 /**
@@ -559,16 +563,18 @@ export interface HistoryConfig {
  */
 
 export const HistoryExtension = defineExtension({
-  build: (editor, {delay, createInitialHistoryState, disabled}) =>
+  build: (editor, {delay, createInitialHistoryState, disabled, now}) =>
     namedSignals({
       delay,
       disabled,
       historyState: createInitialHistoryState(editor),
+      now,
     }),
   config: safeCast<HistoryConfig>({
     createInitialHistoryState: createEmptyHistoryState,
     delay: 300,
     disabled: typeof window === 'undefined',
+    now: Date.now,
   }),
   name: '@lexical/history/History',
   register: (editor, config, state) => {
@@ -576,7 +582,9 @@ export const HistoryExtension = defineExtension({
     return effect(() =>
       stores.disabled.value
         ? undefined
-        : registerHistory(editor, stores.historyState.value, stores.delay),
+        : registerHistory(editor, stores.historyState.value, stores.delay, () =>
+            stores.now.peek()(),
+          ),
     );
   },
 });
@@ -590,35 +598,58 @@ function getHistoryPeer(editor: LexicalEditor | null | undefined) {
     : null;
 }
 
+export interface SharedHistoryConfig {
+  /**
+   * Whether shared history is disabled or not
+   */
+  disabled: boolean;
+  /**
+   * The parentEditor to use, by default it is derived from
+   * `config.parentEditor` which can be provided by
+   * NestedEditorExtension
+   */
+  parentEditor: LexicalEditor | null;
+}
+
 /**
  * Registers necessary listeners to manage undo/redo history stack and related
  * editor commands, via the \@lexical/history module, only if the parent editor
  * has a history plugin implementation.
  */
 export const SharedHistoryExtension = defineExtension({
+  build: (editor, {disabled, parentEditor}) =>
+    namedSignals({
+      disabled,
+      parentEditor: parentEditor || editor._parentEditor,
+    }),
+  config: safeCast<SharedHistoryConfig>({
+    disabled: false,
+    parentEditor: null,
+  }),
   dependencies: [
     configExtension(HistoryExtension, {
-      createInitialHistoryState: () => {
-        throw new Error('SharedHistory did not inherit parent history');
-      },
       disabled: true,
     }),
   ],
   name: '@lexical/history/SharedHistory',
   register(editor, _config, state) {
-    const {output} = state.getDependency(HistoryExtension);
-    const parentPeer = getHistoryPeer(editor._parentEditor);
-    if (!parentPeer) {
-      return () => {};
-    }
-    const parentOutput = parentPeer.output;
-    return effect(() =>
-      batch(() => {
-        output.delay.value = parentOutput.delay.value;
-        output.historyState.value = parentOutput.historyState.value;
-        // Note that toggling the parent history will force this to be changed
-        output.disabled.value = parentOutput.disabled.value;
-      }),
-    );
+    return effect(() => {
+      const {disabled, parentEditor} = state.getOutput();
+      if (!disabled.value) {
+        const {output} = state.getDependency(HistoryExtension);
+        const parentPeer = getHistoryPeer(parentEditor.value);
+        if (!parentPeer) {
+          return;
+        }
+        const parentOutput = parentPeer.output;
+        batch(() => {
+          output.delay.value = parentOutput.delay.value;
+          output.historyState.value = parentOutput.historyState.value;
+          output.now.value = parentOutput.now.value;
+          // Note that toggling the parent history will force this to be changed
+          output.disabled.value = parentOutput.disabled.value;
+        });
+      }
+    });
   },
 });

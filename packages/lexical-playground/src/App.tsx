@@ -6,16 +6,39 @@
  *
  */
 
-import {DecoratorTextExtension} from '@lexical/extension';
-import {$createLinkNode} from '@lexical/link';
-import {$createListItemNode, $createListNode} from '@lexical/list';
+import {
+  AutoFocusExtension,
+  ClearEditorExtension,
+  DecoratorTextExtension,
+  HorizontalRuleExtension,
+  SelectionAlwaysOnDisplayExtension,
+} from '@lexical/extension';
+import {HashtagExtension} from '@lexical/hashtag';
+import {HistoryExtension} from '@lexical/history';
+import {
+  $createLinkNode,
+  ClickableLinkExtension,
+  LinkExtension,
+} from '@lexical/link';
+import {
+  $createListItemNode,
+  $createListNode,
+  CheckListExtension,
+  ListExtension,
+} from '@lexical/list';
+import {PlainTextExtension} from '@lexical/plain-text';
 import {LexicalCollaboration} from '@lexical/react/LexicalCollaborationContext';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
-import {$createHeadingNode, $createQuoteNode} from '@lexical/rich-text';
+import {
+  $createHeadingNode,
+  $createQuoteNode,
+  RichTextExtension,
+} from '@lexical/rich-text';
 import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  configExtension,
   defineExtension,
 } from 'lexical';
 import {type JSX, useMemo} from 'react';
@@ -24,18 +47,25 @@ import {isDevPlayground} from './appSettings';
 import {buildHTMLConfig} from './buildHTMLConfig';
 import {FlashMessageContext} from './context/FlashMessageContext';
 import {SettingsContext, useSettings} from './context/SettingsContext';
-import {SharedHistoryContext} from './context/SharedHistoryContext';
 import {ToolbarContext} from './context/ToolbarContext';
 import Editor from './Editor';
 import logo from './images/logo.svg';
+import {KeywordsExtension} from './nodes/KeywordNode';
 import PlaygroundNodes from './nodes/PlaygroundNodes';
+import {PlaygroundAutoLinkExtension} from './plugins/AutoLinkExtension';
+import {DateTimeExtension} from './plugins/DateTimeExtension';
 import DocsPlugin from './plugins/DocsPlugin';
+import {DragDropPasteExtension} from './plugins/DragDropPasteExtension';
+import {EmojisExtension} from './plugins/EmojisExtension';
+import {ImagesExtension} from './plugins/ImagesExtension';
+import {PlaygroundMarkdownShortcutsExtension} from './plugins/MarkdownShortcutsExtension';
+import {MaxLengthExtension} from './plugins/MaxLengthPlugin';
 import PasteLogPlugin from './plugins/PasteLogPlugin';
-import {TableContext} from './plugins/TablePlugin';
 import TestRecorderPlugin from './plugins/TestRecorderPlugin';
 import TypingPerfPlugin from './plugins/TypingPerfPlugin';
 import Settings from './Settings';
 import PlaygroundEditorTheme from './themes/PlaygroundEditorTheme';
+import {validateUrl} from './utils/url';
 
 console.warn(
   'If you are profiling the playground app, please ensure you turn off the debug view. You can disable it by pressing on the settings control in the bottom-left of your screen and toggling the debug view setting.',
@@ -121,52 +151,97 @@ function $prepopulatedRichText() {
   }
 }
 
+// These are only enabled for rich-text mode
+const PlaygroundRichTextExtension = defineExtension({
+  dependencies: [
+    RichTextExtension,
+    ImagesExtension,
+    HorizontalRuleExtension,
+    configExtension(ListExtension, {shouldPreserveNumbering: false}),
+    CheckListExtension,
+    PlaygroundMarkdownShortcutsExtension,
+  ],
+  name: '@lexical/playground/RichText',
+});
+
+const AppExtension = defineExtension({
+  dependencies: [
+    AutoFocusExtension,
+    ClearEditorExtension,
+    DecoratorTextExtension,
+    HistoryExtension,
+    KeywordsExtension,
+    HashtagExtension,
+    DateTimeExtension,
+    MaxLengthExtension,
+    DragDropPasteExtension,
+    EmojisExtension,
+    configExtension(LinkExtension, {validateUrl}),
+    PlaygroundAutoLinkExtension,
+    ClickableLinkExtension,
+    SelectionAlwaysOnDisplayExtension,
+  ],
+  html: buildHTMLConfig(),
+  name: '@lexical/playground',
+  namespace: 'Playground',
+  nodes: PlaygroundNodes,
+  theme: PlaygroundEditorTheme,
+});
+
+/**
+ * This is not a recommended pattern, extensions should be as static as
+ * possible, but this is a special case where we build fundamentally
+ * different editor configurations based on the query string.
+ */
+function buildExtensionFromSettings(
+  settings: Record<'isCollab' | 'emptyEditor' | 'isRichText', boolean>,
+) {
+  const {isCollab, emptyEditor, isRichText} = settings;
+  return defineExtension({
+    $initialEditorState: isCollab
+      ? null
+      : emptyEditor
+        ? undefined
+        : $prepopulatedRichText,
+    dependencies: [
+      AppExtension,
+      configExtension(HistoryExtension, {disabled: isCollab}),
+      isRichText ? PlaygroundRichTextExtension : PlainTextExtension,
+    ],
+    html: buildHTMLConfig(),
+    name: '@lexical/playground/dynamic-config',
+  });
+}
+
 function App(): JSX.Element {
   const {
-    settings: {isCollab, emptyEditor, measureTypingPerf},
+    settings: {isCollab, emptyEditor, isRichText, measureTypingPerf},
   } = useSettings();
 
   const app = useMemo(
-    () =>
-      defineExtension({
-        $initialEditorState: isCollab
-          ? null
-          : emptyEditor
-            ? undefined
-            : $prepopulatedRichText,
-        dependencies: [DecoratorTextExtension],
-        html: buildHTMLConfig(),
-        name: '@lexical/playground',
-        namespace: 'Playground',
-        nodes: PlaygroundNodes,
-        theme: PlaygroundEditorTheme,
-      }),
-    [emptyEditor, isCollab],
+    () => buildExtensionFromSettings({emptyEditor, isCollab, isRichText}),
+    [emptyEditor, isCollab, isRichText],
   );
 
   return (
     <LexicalCollaboration>
       <LexicalExtensionComposer extension={app} contentEditable={null}>
-        <SharedHistoryContext>
-          <TableContext>
-            <ToolbarContext>
-              <header>
-                <a href="https://lexical.dev" target="_blank" rel="noreferrer">
-                  <img src={logo} alt="Lexical Logo" />
-                </a>
-              </header>
-              <div className="editor-shell">
-                <Editor />
-              </div>
-              <Settings />
-              {isDevPlayground ? <DocsPlugin /> : null}
-              {isDevPlayground ? <PasteLogPlugin /> : null}
-              {isDevPlayground ? <TestRecorderPlugin /> : null}
+        <ToolbarContext>
+          <header>
+            <a href="https://lexical.dev" target="_blank" rel="noreferrer">
+              <img src={logo} alt="Lexical Logo" />
+            </a>
+          </header>
+          <div className="editor-shell">
+            <Editor />
+          </div>
+          <Settings />
+          {isDevPlayground ? <DocsPlugin /> : null}
+          {isDevPlayground ? <PasteLogPlugin /> : null}
+          {isDevPlayground ? <TestRecorderPlugin /> : null}
 
-              {measureTypingPerf ? <TypingPerfPlugin /> : null}
-            </ToolbarContext>
-          </TableContext>
-        </SharedHistoryContext>
+          {measureTypingPerf ? <TypingPerfPlugin /> : null}
+        </ToolbarContext>
       </LexicalExtensionComposer>
     </LexicalCollaboration>
   );

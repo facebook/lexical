@@ -170,6 +170,18 @@ describe('LexicalHeadingNode tests', () => {
       );
     });
 
+    test('HeadingNode.setTag()', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const root = $getRoot();
+        const headingNode = $createHeadingNode('h1');
+        root.append(headingNode);
+        expect(headingNode.getTag()).toBe('h1');
+        headingNode.setTag('h2');
+        expect(headingNode.getTag()).toBe('h2');
+      });
+    });
+
     test('$createHeadingNode()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {

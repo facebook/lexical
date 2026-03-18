@@ -246,7 +246,7 @@ export class HeadingNode extends ElementNode {
 
   setTag(tag: HeadingTagType): this {
     const self = this.getWritable();
-    this.__tag = tag;
+    self.__tag = tag;
     return self;
   }
 

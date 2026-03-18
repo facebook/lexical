@@ -241,7 +241,7 @@ export class HeadingNode extends ElementNode {
   }
 
   getTag(): HeadingTagType {
-    return this.__tag;
+    return this.getLatest().__tag;
   }
 
   setTag(tag: HeadingTagType): this {

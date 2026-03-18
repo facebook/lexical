@@ -187,8 +187,8 @@ describe('LexicalHeadingNode tests', () => {
         () => {
           const heading = $getRoot().getFirstChildOrThrow<HeadingNode>();
           expect(heading.getTag()).toBe('h1');
-          const writable = heading.setTag('h2');
-          expect(writable.getTag()).toBe('h2');
+          heading.setTag('h2');
+          expect(heading.getTag()).toBe('h2');
         },
         {discrete: true},
       );

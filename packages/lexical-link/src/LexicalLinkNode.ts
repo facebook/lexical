@@ -298,12 +298,13 @@ export class LinkNode extends ElementNode {
     );
   }
 
-  $shouldMergeAdjacentLink(otherLink: LinkNode): boolean {
+  shouldMergeAdjacentLink(otherLink: LinkNode): boolean {
     return (
       this.getType() === otherLink.getType() &&
-      !$isAutoLinkNode(this) &&
-      !$isAutoLinkNode(otherLink) &&
-      $haveSameLinkAttributes(this, otherLink)
+      this.__url === otherLink.__url &&
+      this.__target === otherLink.__target &&
+      this.__rel === otherLink.__rel &&
+      this.__title === otherLink.__title
     );
   }
 }
@@ -325,15 +326,6 @@ function $restoreCaretPair(point: PointType, pair: CaretPair): void {
   }
 }
 
-function $haveSameLinkAttributes(linkA: LinkNode, linkB: LinkNode): boolean {
-  return (
-    linkA.__url === linkB.__url &&
-    linkA.__target === linkB.__target &&
-    linkA.__rel === linkB.__rel &&
-    linkA.__title === linkB.__title
-  );
-}
-
 /**
  * Extracts block-level children from a LinkNode, splitting
  * ancestor nodes as needed to maintain a valid document structure.
@@ -346,6 +338,13 @@ export function $linkNodeTransform(link: LinkNode): void {
   if ($isRangeSelection(selection)) {
     anchorPair = $saveCaretPair(selection.anchor);
     focusPair = $saveCaretPair(selection.focus);
+  }
+  function $restoreSelection(): void {
+    if ($isRangeSelection(selection)) {
+      $restoreCaretPair(selection.anchor, anchorPair!);
+      $restoreCaretPair(selection.focus, focusPair!);
+      $normalizeSelection__EXPERIMENTAL(selection);
+    }
   }
 
   let transformed = false;
@@ -366,31 +365,17 @@ export function $linkNodeTransform(link: LinkNode): void {
   }
   if (link.isAttached()) {
     const prevSibling = link.getPreviousSibling();
-    if (
-      $isLinkNode(prevSibling) &&
-      prevSibling.$shouldMergeAdjacentLink(link)
-    ) {
+    if ($isLinkNode(prevSibling) && prevSibling.shouldMergeAdjacentLink(link)) {
       prevSibling.append(...link.getChildren());
       link.remove();
-      if ($isRangeSelection(selection)) {
-        $restoreCaretPair(selection.anchor, anchorPair!);
-        $restoreCaretPair(selection.focus, focusPair!);
-        $normalizeSelection__EXPERIMENTAL(selection);
-      }
+      $restoreSelection();
       return;
     }
     const nextSibling = link.getNextSibling();
-    if (
-      $isLinkNode(nextSibling) &&
-      link.$shouldMergeAdjacentLink(nextSibling)
-    ) {
+    if ($isLinkNode(nextSibling) && link.shouldMergeAdjacentLink(nextSibling)) {
       link.append(...nextSibling.getChildren());
       nextSibling.remove();
-      if (!transformed && $isRangeSelection(selection)) {
-        $restoreCaretPair(selection.anchor, anchorPair!);
-        $restoreCaretPair(selection.focus, focusPair!);
-        $normalizeSelection__EXPERIMENTAL(selection);
-      }
+      transformed = true;
     }
   }
   if (!transformed) {
@@ -404,11 +389,7 @@ export function $linkNodeTransform(link: LinkNode): void {
     }
   }
 
-  if ($isRangeSelection(selection)) {
-    $restoreCaretPair(selection.anchor, anchorPair!);
-    $restoreCaretPair(selection.focus, focusPair!);
-    $normalizeSelection__EXPERIMENTAL(selection);
-  }
+  $restoreSelection();
 }
 
 function $convertAnchorElement(domNode: Node): DOMConversionOutput {
@@ -496,6 +477,10 @@ export class AutoLinkNode extends LinkNode {
       },
       node.__key,
     );
+  }
+
+  shouldMergeAdjacentLink(): boolean {
+    return false;
   }
 
   getIsUnlinked(): boolean {

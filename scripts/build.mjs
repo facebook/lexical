@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+// @ts-check
 
 import alias from '@rollup/plugin-alias';
 import babel from '@rollup/plugin-babel';

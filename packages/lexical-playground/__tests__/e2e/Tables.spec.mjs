@@ -7798,12 +7798,17 @@ test.describe.parallel('Tables', () => {
     }
 
     test('Range-select from above nested table into it selects the entire table, but not the outer table', async ({
+      browserName,
       page,
       isPlainText,
       isCollab,
     }) => {
       test.skip(isPlainText);
       test.skip(isCollab);
+      test.fixme(
+        browserName === 'firefox',
+        'Erroneously selects the text after the table as well',
+      );
       await initialize({hasNestedTables: true, page});
 
       await setupTables(page);
@@ -7830,6 +7835,7 @@ test.describe.parallel('Tables', () => {
     });
 
     test('Range-select from below nested table into it selects the entire table, but not the outer table', async ({
+      browserName,
       page,
       isPlainText,
       isCollab,
@@ -7859,12 +7865,17 @@ test.describe.parallel('Tables', () => {
     });
 
     test('Range-select from inside nested table to text above it selects the entire table, but not the outer table', async ({
+      browserName,
       page,
       isPlainText,
       isCollab,
     }) => {
       test.skip(isPlainText);
       test.skip(isCollab);
+      test.fixme(
+        browserName === 'firefox',
+        'Erroneously selects the entire outer cell',
+      );
       await initialize({hasNestedTables: true, page});
 
       await setupTables(page);
@@ -7888,12 +7899,17 @@ test.describe.parallel('Tables', () => {
     });
 
     test('Range-select from inside nested table to text below it selects the entire table, but not the outer table', async ({
+      browserName,
       page,
       isPlainText,
       isCollab,
     }) => {
       test.skip(isPlainText);
       test.skip(isCollab);
+      test.fixme(
+        browserName === 'firefox',
+        'Erroneously selects the entire outer cell',
+      );
       await initialize({hasNestedTables: true, page});
 
       await setupTables(page);

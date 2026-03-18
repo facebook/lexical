@@ -21,11 +21,11 @@ import {
   $createTextNode,
   $getRoot,
   $getSelection,
+  $isParagraphNode,
   $isRangeSelection,
-  ElementNode,
   TextNode,
 } from 'lexical';
-import {describe, expect, it} from 'vitest';
+import {assert, describe, expect, it} from 'vitest';
 
 describe('Link', () => {
   const extension = defineExtension({
@@ -75,7 +75,8 @@ describe('Link', () => {
       const editor = buildEditorFromExtensions(extension);
       editor.update(
         () => {
-          const p = $getRoot().getFirstChild<ElementNode>()!;
+          const p = $getRoot().getFirstChild();
+          assert($isParagraphNode(p), 'Expecting a ParagraphNode in the root');
           p.clear();
           const link1 = $createLinkNode('https://lexical.dev/', {
             rel: 'noreferrer',
@@ -94,7 +95,8 @@ describe('Link', () => {
         {discrete: true},
       );
       editor.read(() => {
-        const p = $getRoot().getFirstChild<ElementNode>()!;
+        const p = $getRoot().getFirstChild();
+        assert($isParagraphNode(p), 'Expecting a ParagraphNode in the root');
         const children = p.getChildren();
         expect(children.length).toBe(1);
         expect($isLinkNode(children[0])).toBe(true);
@@ -112,7 +114,8 @@ describe('Link', () => {
       const editor = buildEditorFromExtensions(extension);
       editor.update(
         () => {
-          const p = $getRoot().getFirstChild<ElementNode>()!;
+          const p = $getRoot().getFirstChild();
+          assert($isParagraphNode(p), 'Expecting a ParagraphNode in the root');
           p.clear();
           const link1 = $createLinkNode('https://lexical.dev/');
           link1.append($createTextNode('Hello '));
@@ -123,7 +126,8 @@ describe('Link', () => {
         {discrete: true},
       );
       editor.read(() => {
-        const p = $getRoot().getFirstChild<ElementNode>()!;
+        const p = $getRoot().getFirstChild();
+        assert($isParagraphNode(p), 'Expecting a ParagraphNode in the root');
         expect(p.getChildren().length).toBe(2);
       });
       editor.dispose();
@@ -143,7 +147,8 @@ describe('Link', () => {
       const editor = buildEditorFromExtensions(autoLinkExtension);
       editor.update(
         () => {
-          const p = $getRoot().getFirstChild<ElementNode>()!;
+          const p = $getRoot().getFirstChild();
+          assert($isParagraphNode(p), 'Expecting a ParagraphNode in the root');
           p.clear();
           const link = $createLinkNode('https://lexical.dev/');
           link.append($createTextNode('Hello '));
@@ -154,7 +159,8 @@ describe('Link', () => {
         {discrete: true},
       );
       editor.read(() => {
-        const p = $getRoot().getFirstChild<ElementNode>()!;
+        const p = $getRoot().getFirstChild();
+        assert($isParagraphNode(p), 'Expecting a ParagraphNode in the root');
         expect(p.getChildren().length).toBe(2);
       });
       editor.dispose();
@@ -164,7 +170,8 @@ describe('Link', () => {
       const editor = buildEditorFromExtensions(extension);
       editor.update(
         () => {
-          const p = $getRoot().getFirstChild<ElementNode>()!;
+          const p = $getRoot().getFirstChild();
+          assert($isParagraphNode(p), 'Expecting a ParagraphNode in the root');
           p.clear();
           const link1 = $createLinkNode('https://lexical.dev/', {
             rel: 'noreferrer',
@@ -179,7 +186,8 @@ describe('Link', () => {
         {discrete: true},
       );
       editor.read(() => {
-        const p = $getRoot().getFirstChild<ElementNode>()!;
+        const p = $getRoot().getFirstChild();
+        assert($isParagraphNode(p), 'Expecting a ParagraphNode in the root');
         expect(p.getChildren().length).toBe(2);
       });
       editor.dispose();
@@ -189,7 +197,8 @@ describe('Link', () => {
       const editor = buildEditorFromExtensions(extension);
       editor.update(
         () => {
-          const p = $getRoot().getFirstChild<ElementNode>()!;
+          const p = $getRoot().getFirstChild();
+          assert($isParagraphNode(p), 'Expecting a ParagraphNode in the root');
           p.clear();
           const link1 = $createLinkNode('https://lexical.dev/');
           link1.append($createTextNode('A'));
@@ -202,7 +211,8 @@ describe('Link', () => {
         {discrete: true},
       );
       editor.read(() => {
-        const p = $getRoot().getFirstChild<ElementNode>()!;
+        const p = $getRoot().getFirstChild();
+        assert($isParagraphNode(p), 'Expecting a ParagraphNode in the root');
         const children = p.getChildren();
         expect(children.length).toBe(1);
         expect($isLinkNode(children[0])).toBe(true);
@@ -215,7 +225,8 @@ describe('Link', () => {
       const editor = buildEditorFromExtensions(extension);
       editor.update(
         () => {
-          const p = $getRoot().getFirstChild<ElementNode>()!;
+          const p = $getRoot().getFirstChild();
+          assert($isParagraphNode(p), 'Expecting a ParagraphNode in the root');
           p.clear();
           const link1 = $createLinkNode('https://lexical.dev/');
           link1.append($createTextNode('Hello '));
@@ -228,7 +239,97 @@ describe('Link', () => {
         {discrete: true},
       );
       editor.read(() => {
-        const p = $getRoot().getFirstChild<ElementNode>()!;
+        const p = $getRoot().getFirstChild();
+        assert($isParagraphNode(p), 'Expecting a ParagraphNode in the root');
+        const children = p.getChildren();
+        expect(children.length).toBe(1);
+        expect(children[0].getTextContent()).toBe('Hello World');
+        const selection = $getSelection();
+        expect($isRangeSelection(selection)).toBe(true);
+        if ($isRangeSelection(selection)) {
+          expect(selection.anchor.offset).toBe(8);
+          expect(selection.anchor.getNode().getTextContent()).toBe(
+            'Hello World',
+          );
+          expect($isLinkNode(selection.anchor.getNode().getParent())).toBe(
+            true,
+          );
+        }
+      });
+      editor.dispose();
+    });
+
+    it('merges when only the second link is changed to match the first', () => {
+      const editor = buildEditorFromExtensions(extension);
+      editor.update(
+        () => {
+          const p = $getRoot().getFirstChild();
+          assert($isParagraphNode(p), 'Expecting a ParagraphNode in the root');
+          p.clear();
+          const link1 = $createLinkNode('https://lexical.dev/');
+          link1.append($createTextNode('Hello '));
+          const link2 = $createLinkNode('https://other.dev/');
+          link2.append($createTextNode('World'));
+          p.append(link1, link2);
+        },
+        {discrete: true},
+      );
+      editor.read(() => {
+        const p = $getRoot().getFirstChild();
+        assert($isParagraphNode(p), 'Expecting a ParagraphNode in the root');
+        expect(p.getChildren().length).toBe(2);
+      });
+      editor.update(
+        () => {
+          const p = $getRoot().getFirstChild();
+          assert($isParagraphNode(p), 'Expecting a ParagraphNode in the root');
+          const link2 = p.getChildren()[1];
+          assert($isLinkNode(link2), 'Expected LinkNode');
+          link2.setURL('https://lexical.dev/');
+        },
+        {discrete: true},
+      );
+      editor.read(() => {
+        const p = $getRoot().getFirstChild();
+        assert($isParagraphNode(p), 'Expecting a ParagraphNode in the root');
+        const children = p.getChildren();
+        expect(children.length).toBe(1);
+        expect($isLinkNode(children[0])).toBe(true);
+        expect(children[0].getTextContent()).toBe('Hello World');
+      });
+      editor.dispose();
+    });
+
+    it('preserves selection when cursor is in a link that merges into its left neighbor', () => {
+      const editor = buildEditorFromExtensions(extension);
+      editor.update(
+        () => {
+          const p = $getRoot().getFirstChild();
+          assert($isParagraphNode(p), 'Expecting a ParagraphNode in the root');
+          p.clear();
+          const link1 = $createLinkNode('https://lexical.dev/');
+          link1.append($createTextNode('Hello '));
+          const link2 = $createLinkNode('https://other.dev/');
+          const text2 = $createTextNode('World');
+          link2.append(text2);
+          p.append(link1, link2);
+          text2.select(2, 2);
+        },
+        {discrete: true},
+      );
+      editor.update(
+        () => {
+          const p = $getRoot().getFirstChild();
+          assert($isParagraphNode(p), 'Expecting a ParagraphNode in the root');
+          const link2 = p.getChildren()[1];
+          assert($isLinkNode(link2), 'Expected LinkNode');
+          link2.setURL('https://lexical.dev/');
+        },
+        {discrete: true},
+      );
+      editor.read(() => {
+        const p = $getRoot().getFirstChild();
+        assert($isParagraphNode(p), 'Expecting a ParagraphNode in the root');
         const children = p.getChildren();
         expect(children.length).toBe(1);
         expect(children[0].getTextContent()).toBe('Hello World');

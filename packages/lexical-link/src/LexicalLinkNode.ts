@@ -297,6 +297,15 @@ export class LinkNode extends ElementNode {
       this.__url.startsWith('https://') || this.__url.startsWith('http://')
     );
   }
+
+  $shouldMergeAdjacentLink(otherLink: LinkNode): boolean {
+    return (
+      this.getType() === otherLink.getType() &&
+      !$isAutoLinkNode(this) &&
+      !$isAutoLinkNode(otherLink) &&
+      $haveSameLinkAttributes(this, otherLink)
+    );
+  }
 }
 
 type CaretPair = [PointCaret<'next'>, PointCaret<'previous'>];
@@ -355,15 +364,33 @@ export function $linkNodeTransform(link: LinkNode): void {
       });
     }
   }
-  if (link.isAttached() && !$isAutoLinkNode(link)) {
+  if (link.isAttached()) {
+    const prevSibling = link.getPreviousSibling();
+    if (
+      $isLinkNode(prevSibling) &&
+      prevSibling.$shouldMergeAdjacentLink(link)
+    ) {
+      prevSibling.append(...link.getChildren());
+      link.remove();
+      if ($isRangeSelection(selection)) {
+        $restoreCaretPair(selection.anchor, anchorPair!);
+        $restoreCaretPair(selection.focus, focusPair!);
+        $normalizeSelection__EXPERIMENTAL(selection);
+      }
+      return;
+    }
     const nextSibling = link.getNextSibling();
     if (
       $isLinkNode(nextSibling) &&
-      !$isAutoLinkNode(nextSibling) &&
-      $haveSameLinkAttributes(link, nextSibling)
+      link.$shouldMergeAdjacentLink(nextSibling)
     ) {
       link.append(...nextSibling.getChildren());
       nextSibling.remove();
+      if (!transformed && $isRangeSelection(selection)) {
+        $restoreCaretPair(selection.anchor, anchorPair!);
+        $restoreCaretPair(selection.focus, focusPair!);
+        $normalizeSelection__EXPERIMENTAL(selection);
+      }
     }
   }
   if (!transformed) {

@@ -911,6 +911,10 @@ export function $handleTableSelectionChangeCommand(
     $fixTableSelectionForSelectedTable(editor, selection);
   }
 
+  if ($isRangeSelection(selection)) {
+    $fixRangeSelectionForSelectedTable(selection, tableObservers);
+  }
+
   // Generic selection logic that runs across every table observer when the selection changes.
   // Note: the selection might have changed in the code above, which re-dispatches the selection change command
   // and gets handled here on the second pass. This should be refactored.
@@ -921,13 +925,6 @@ export function $handleTableSelectionChangeCommand(
       tableObserver,
     }))
     .toArray();
-
-  for (const {tableNode, tableObserver} of tableNodesAndObservers) {
-    if ($isRangeSelection(selection)) {
-      $fixRangeSelectionForTable(selection, tableNode, tableObserver);
-    }
-  }
-
   for (const {tableNode, tableObserver} of tableNodesAndObservers) {
     $syncTableSelectionState(editor, tableNode, tableObserver);
   }
@@ -935,116 +932,132 @@ export function $handleTableSelectionChangeCommand(
   return false;
 }
 
-function $fixRangeSelectionForTable(
+/**
+ * Handles cases where range selections cross into, out of, or within tables.
+ */
+function $fixRangeSelectionForSelectedTable(
   selection: RangeSelection,
-  tableNode: TableNode,
-  tableObserver: TableObserver,
+  tableObservers: TableObservers,
 ) {
   const prevSelection = $getPreviousSelection();
-  if ($isRangeSelection(selection)) {
-    const {anchor, focus} = selection;
-    const anchorNode = anchor.getNode();
-    const focusNode = focus.getNode();
-    // Using explicit comparison with table node to ensure it's not a nested table
-    // as in that case we'll leave selection resolving to that table
-    const anchorCellNode = $findCellNode(anchorNode);
-    const focusCellNode = $findCellNode(focusNode);
-    const isAnchorInside = !!(
-      anchorCellNode && tableNode.is($findTableNode(anchorCellNode))
-    );
-    const isFocusInside = !!(
-      focusCellNode && tableNode.is($findTableNode(focusCellNode))
-    );
-    const isPartiallyWithinTable = isAnchorInside !== isFocusInside;
-    const isWithinTable = isAnchorInside && isFocusInside;
-    const isBackward = selection.isBackward();
+  const {anchor, focus} = selection;
+  const anchorNode = anchor.getNode();
+  const focusNode = focus.getNode();
+  // Using explicit comparison with table node to ensure it's not a nested table
+  // as in that case we'll leave selection resolving to that table
+  const anchorCellNode = $findCellNode(anchorNode);
+  const focusCellNode = $findCellNode(focusNode);
+  const anchorCellTable = anchorCellNode
+    ? $findTableNode(anchorCellNode)
+    : null;
+  const focusCellTable = focusCellNode ? $findTableNode(focusCellNode) : null;
+  const isBackward = selection.isBackward();
 
-    if (isPartiallyWithinTable) {
-      // Handle moving the anchor or focus to the first/last cell, when a range selection enters or leaves the table.
-      const newSelection = selection.clone();
-      if (isFocusInside) {
-        const [tableMap] = $computeTableMap(
-          tableNode,
-          focusCellNode,
-          focusCellNode,
-        );
-        const firstCell = tableMap[0][0].cell;
-        const lastCell = tableMap[tableMap.length - 1].at(-1)!.cell;
-        // When backward, focus should be at START of first cell (0)
-        // When forward, focus should be at END of last cell (getChildrenSize)
-        newSelection.focus.set(
-          isBackward ? firstCell.getKey() : lastCell.getKey(),
-          isBackward ? 0 : lastCell.getChildrenSize(),
-          'element',
-        );
-      } else if (isAnchorInside) {
-        const [tableMap] = $computeTableMap(
-          tableNode,
-          anchorCellNode,
-          anchorCellNode,
-        );
-        const firstCell = tableMap[0][0].cell;
-        const lastCell = tableMap[tableMap.length - 1].at(-1)!.cell;
-        /**
-         * If isBackward, set the anchor to be at the end of the table so that when the cursor moves outside of
-         * the table in the backward direction, the entire table will be selected from its end.
-         * Otherwise, if forward, set the anchor to be at the start of the table so that when the focus is dragged
-         * outside th end of the table, it will start from the beginning of the table.
-         */
-        newSelection.anchor.set(
-          isBackward ? lastCell.getKey() : firstCell.getKey(),
-          isBackward ? lastCell.getChildrenSize() : 0,
-          'element',
-        );
-      }
-      $setSelection(newSelection);
-    } else if (isWithinTable) {
-      // Handle case when selection spans across multiple cells but still
-      // has range selection, then we convert it into table selection
-      // For example, this fires when dragging up from first cell, outside of the table.
-      if (!anchorCellNode.is(focusCellNode)) {
+  const isSameTable =
+    anchorCellNode &&
+    focusCellNode &&
+    anchorCellTable &&
+    focusCellTable &&
+    anchorCellTable.is(focusCellTable);
+
+  // The focus should be moved (to cover the whole focus table) if it is moved outside of the anchor's table.
+  // For example, when dragging from outside a table into it.
+  const shouldMoveFocus =
+    focusCellTable &&
+    (!anchorCellTable || anchorCellTable.isParentOf(focusCellTable));
+  // The anchor should be moved (to cover the whole anchor table) if the focus is moved outside of the anchor table.
+  // For example, when dragging from inside a table out of it.
+  const shouldMoveAnchor =
+    anchorCellTable &&
+    (!focusCellTable || focusCellTable.isParentOf(anchorCellTable));
+
+  if (shouldMoveFocus) {
+    // Select the whole focus table.
+    const newSelection = selection.clone();
+    const [tableMap] = $computeTableMap(
+      focusCellTable,
+      focusCellNode!,
+      focusCellNode!,
+    );
+    const firstCell = tableMap[0][0].cell;
+    const lastCell = tableMap[tableMap.length - 1].at(-1)!.cell;
+    newSelection.focus.set(
+      isBackward ? firstCell.getKey() : lastCell.getKey(),
+      isBackward ? 0 : lastCell.getChildrenSize(),
+      'element',
+    );
+    $setSelection(newSelection);
+  } else if (shouldMoveAnchor) {
+    // Select the whole anchor table.
+    const newSelection = selection.clone();
+    const [tableMap] = $computeTableMap(
+      anchorCellTable,
+      anchorCellNode!,
+      anchorCellNode!,
+    );
+    const firstCell = tableMap[0][0].cell;
+    const lastCell = tableMap[tableMap.length - 1].at(-1)!.cell;
+    newSelection.anchor.set(
+      isBackward ? lastCell.getKey() : firstCell.getKey(),
+      isBackward ? lastCell.getChildrenSize() : 0,
+      'element',
+    );
+    $setSelection(newSelection);
+  } else if (isSameTable) {
+    // Handle case when selection spans across multiple cells but still
+    // has range selection, then we convert it into table selection
+    // For example, this fires when dragging up from first cell, outside of the table, or when clicking a cell
+    // then shift-clicking another cell.
+    const observerInfo = tableObservers.observers.get(anchorCellTable.getKey());
+    invariant(
+      !!observerInfo,
+      'tableObserver not found for tableKey: %s',
+      anchorCellTable.getKey(),
+    );
+    const [tableObserver] = observerInfo;
+    if (!anchorCellNode.is(focusCellNode)) {
+      tableObserver.$setAnchorCellForSelection(
+        $getObserverCellFromCellNodeOrThrow(tableObserver, anchorCellNode),
+      );
+      tableObserver.$setFocusCellForSelection(
+        $getObserverCellFromCellNodeOrThrow(tableObserver, focusCellNode),
+        true,
+      );
+    }
+
+    // Handle case when the pointer type is touch and the current and
+    // previous selection are collapsed, and the previous anchor and current
+    // focus cell nodes are different, then we convert it into table selection
+    // However, only do this if the table observer is actively selecting (user dragging)
+    // to prevent unwanted selections when simply tapping between cells on mobile
+    if (
+      tableObserver.pointerType === 'touch' &&
+      tableObserver.isSelecting &&
+      selection.isCollapsed() &&
+      $isRangeSelection(prevSelection) &&
+      prevSelection.isCollapsed()
+    ) {
+      const prevAnchorCellNode = $findCellNode(prevSelection.anchor.getNode());
+      if (prevAnchorCellNode && !prevAnchorCellNode.is(focusCellNode)) {
         tableObserver.$setAnchorCellForSelection(
-          $getObserverCellFromCellNodeOrThrow(tableObserver, anchorCellNode),
+          $getObserverCellFromCellNodeOrThrow(
+            tableObserver,
+            prevAnchorCellNode,
+          ),
         );
         tableObserver.$setFocusCellForSelection(
           $getObserverCellFromCellNodeOrThrow(tableObserver, focusCellNode),
           true,
         );
-      }
-
-      // Handle case when the pointer type is touch and the current and
-      // previous selection are collapsed, and the previous anchor and current
-      // focus cell nodes are different, then we convert it into table selection
-      // However, only do this if the table observer is actively selecting (user dragging)
-      // to prevent unwanted selections when simply tapping between cells on mobile
-      if (
-        tableObserver.pointerType === 'touch' &&
-        tableObserver.isSelecting &&
-        selection.isCollapsed() &&
-        $isRangeSelection(prevSelection) &&
-        prevSelection.isCollapsed()
-      ) {
-        const prevAnchorCellNode = $findCellNode(
-          prevSelection.anchor.getNode(),
-        );
-        if (prevAnchorCellNode && !prevAnchorCellNode.is(focusCellNode)) {
-          tableObserver.$setAnchorCellForSelection(
-            $getObserverCellFromCellNodeOrThrow(
-              tableObserver,
-              prevAnchorCellNode,
-            ),
-          );
-          tableObserver.$setFocusCellForSelection(
-            $getObserverCellFromCellNodeOrThrow(tableObserver, focusCellNode),
-            true,
-          );
-          tableObserver.pointerType = null;
-        }
+        tableObserver.pointerType = null;
       }
     }
   }
 }
 
+/**
+ * Ensures that a TableSelection is automatically changed to a RangeSelection when the selection goes outside of the table.
+ */
 function $fixTableSelectionForSelectedTable(
   editor: LexicalEditor,
   selection: TableSelection,

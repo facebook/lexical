@@ -35,9 +35,11 @@ import {
   $moveTableColumn,
 } from '@lexical/table';
 import {
+  $createRangeSelection,
   $getChildCaret,
   $getNearestNodeFromDOMNode,
   $getSiblingCaret,
+  $setSelection,
   type EditorThemeClasses,
   isHTMLElement,
 } from 'lexical';
@@ -602,6 +604,32 @@ function TableHoverActionsV2({
     });
   };
 
+  const handleSelectTable = () => {
+    if (!hoveredTable) {
+      return;
+    }
+    // Prepares a Range Selection that perfectly wraps the table. This is the intended way to select and copy a table.
+    editor.update(() => {
+      const tableNode = $getNearestNodeFromDOMNode(hoveredTable);
+      if (!$isTableNode(tableNode)) {
+        return;
+      }
+      const tableParent = tableNode.getParent();
+      if (!tableParent) {
+        return;
+      }
+      const indexInParent = tableNode.getIndexWithinParent();
+      const rangeSelection = $createRangeSelection();
+      rangeSelection.anchor.set(tableParent.getKey(), indexInParent, 'element');
+      rangeSelection.focus.set(
+        tableParent.getKey(),
+        indexInParent + 1,
+        'element',
+      );
+      $setSelection(rangeSelection);
+    });
+  };
+
   return (
     <>
       <div
@@ -614,6 +642,12 @@ function TableHoverActionsV2({
           opacity: isVisible ? 1 : 0,
         }}
         className="floating-top-actions">
+        <button
+          className="floating-select-indicator"
+          aria-label="Select table"
+          type="button"
+          onClick={handleSelectTable}
+        />
         <button
           ref={dragHandleRef}
           className="floating-drag-indicator"

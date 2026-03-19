@@ -38,7 +38,15 @@ import {
   NodeKey,
   SELECT_ALL_COMMAND,
 } from 'lexical';
-import {assert, beforeEach, describe, expect, it, test} from 'vitest';
+import {
+  afterEach,
+  assert,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  test,
+} from 'vitest';
 
 describe('TableExtension', () => {
   let editor: LexicalEditorWithDispose;

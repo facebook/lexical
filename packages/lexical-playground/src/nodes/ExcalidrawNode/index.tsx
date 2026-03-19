@@ -154,27 +154,30 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
     return {element};
   }
 
-  setData(data: string): void {
+  setData(data: string): this {
     const self = this.getWritable();
     self.__data = data;
+    return self;
   }
 
   getWidth(): Dimension {
     return this.getLatest().__width;
   }
 
-  setWidth(width: Dimension): void {
+  setWidth(width: Dimension): this {
     const self = this.getWritable();
     self.__width = width;
+    return self;
   }
 
   getHeight(): Dimension {
     return this.getLatest().__height;
   }
 
-  setHeight(height: Dimension): void {
+  setHeight(height: Dimension): this {
     const self = this.getWritable();
     self.__height = height;
+    return self;
   }
 
   decorate(editor: LexicalEditor, config: EditorConfig): JSX.Element {

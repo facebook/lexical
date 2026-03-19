@@ -7634,6 +7634,302 @@ test.describe.parallel('Tables', () => {
       ),
     ).toHaveCount(0);
   });
+
+  test.describe('shift-selection tests', () => {
+    test('Range-select from above table into it selects the entire table', async ({
+      page,
+      isPlainText,
+      isCollab,
+    }) => {
+      test.skip(isPlainText);
+      await initialize({isCollab, page});
+
+      await focusEditor(page);
+
+      await page.keyboard.type('before');
+      await insertTable(page, 2, 2);
+      await moveToEditorEnd(page);
+      await page.keyboard.type('after');
+
+      const pageOrFrame = getPageOrFrame(page);
+
+      await pageOrFrame.locator('p').filter({hasText: 'before'}).click();
+      await page.keyboard.down('Shift');
+      await pageOrFrame
+        .locator('table > tr:first-of-type > th:first-of-type')
+        .click();
+      await page.keyboard.up('Shift');
+
+      // Entire table should be selected.
+      await expect(
+        pageOrFrame.locator(
+          'table th.PlaygroundEditorTheme__tableCellSelected',
+        ),
+      ).toHaveCount(3);
+      await expect(
+        pageOrFrame.locator(
+          'table td.PlaygroundEditorTheme__tableCellSelected',
+        ),
+      ).toHaveCount(1);
+    });
+
+    test('Range-select from below table into it selects the entire table', async ({
+      page,
+      isPlainText,
+      isCollab,
+    }) => {
+      test.skip(isPlainText);
+      await initialize({isCollab, page});
+
+      await focusEditor(page);
+
+      await page.keyboard.type('before');
+      await insertTable(page, 2, 2);
+      await moveToEditorEnd(page);
+      await page.keyboard.type('after');
+
+      const pageOrFrame = getPageOrFrame(page);
+
+      await pageOrFrame.locator('p').filter({hasText: 'after'}).click();
+      await page.keyboard.down('Shift');
+      await pageOrFrame.locator('table > tr > td').click();
+      await page.keyboard.up('Shift');
+
+      // Entire table should be selected.
+      await expect(
+        pageOrFrame.locator(
+          'table th.PlaygroundEditorTheme__tableCellSelected',
+        ),
+      ).toHaveCount(3);
+      await expect(
+        pageOrFrame.locator(
+          'table td.PlaygroundEditorTheme__tableCellSelected',
+        ),
+      ).toHaveCount(1);
+    });
+
+    test('Range-select from inside table to text above it selects the entire table', async ({
+      page,
+      isPlainText,
+      isCollab,
+    }) => {
+      test.skip(isPlainText);
+      await initialize({isCollab, page});
+
+      await focusEditor(page);
+
+      await page.keyboard.type('before');
+      await insertTable(page, 2, 2);
+      await moveToEditorEnd(page);
+      await page.keyboard.type('after');
+
+      const pageOrFrame = getPageOrFrame(page);
+      await pageOrFrame
+        .locator('table > tr:first-of-type > th:first-of-type')
+        .click();
+      await page.keyboard.down('Shift');
+      await pageOrFrame.locator('p').filter({hasText: 'before'}).click();
+      await page.keyboard.up('Shift');
+
+      // Entire table should be selected.
+      await expect(
+        pageOrFrame.locator(
+          'table th.PlaygroundEditorTheme__tableCellSelected',
+        ),
+      ).toHaveCount(3);
+      await expect(
+        pageOrFrame.locator(
+          'table td.PlaygroundEditorTheme__tableCellSelected',
+        ),
+      ).toHaveCount(1);
+    });
+
+    test('Range-select from inside table to text below it selects the entire table', async ({
+      page,
+      isPlainText,
+      isCollab,
+    }) => {
+      test.skip(isPlainText);
+      await initialize({isCollab, page});
+
+      await focusEditor(page);
+
+      await page.keyboard.type('before');
+      await insertTable(page, 2, 2);
+      await moveToEditorEnd(page);
+      await page.keyboard.type('after');
+
+      const pageOrFrame = getPageOrFrame(page);
+      await pageOrFrame.locator('table > tr > td').click();
+      await page.keyboard.down('Shift');
+      await pageOrFrame.locator('p').filter({hasText: 'after'}).click();
+      await page.keyboard.up('Shift');
+
+      // Entire table should be selected.
+      await expect(
+        pageOrFrame.locator(
+          'table th.PlaygroundEditorTheme__tableCellSelected',
+        ),
+      ).toHaveCount(3);
+      await expect(
+        pageOrFrame.locator(
+          'table td.PlaygroundEditorTheme__tableCellSelected',
+        ),
+      ).toHaveCount(1);
+    });
+  });
+
+  test.describe('nested table shift-selection tests', () => {
+    const END_OF_INNER_TABLE = [1, ...WRAPPER, 2, 1, 1, 0, 2, 1]; // paragraph in the last cell
+    const START_OF_INNER_TABLE = [1, ...WRAPPER, 2, 1, 1, 0, 1, 0]; // paragraph in the first cell
+    const TEXT_BEFORE_NESTED_TABLE = [1, ...WRAPPER, 2, 1, 0, 0, 0]; // the word "before"
+    const TEXT_AFTER_NESTED_TABLE = [1, ...WRAPPER, 2, 1, 2, 0, 0]; // the word "after"
+
+    async function setupTables(page) {
+      const pageOrFrame = getPageOrFrame(page);
+      await focusEditor(page);
+      await insertTable(page, 2, 2);
+      await pageOrFrame.locator('table td').click();
+      await page.keyboard.type('before');
+      await insertTable(page, 2, 2);
+      await page.keyboard.press('ArrowDown');
+      await page.keyboard.press('ArrowDown');
+      await page.keyboard.type('after');
+    }
+
+    test('Range-select from above nested table into it selects the entire table, but not the outer table', async ({
+      browserName,
+      page,
+      isPlainText,
+      isCollab,
+    }) => {
+      test.skip(isPlainText);
+      test.skip(isCollab);
+      test.fixme(
+        browserName === 'firefox',
+        'Erroneously selects the text after the table as well',
+      );
+      await initialize({hasNestedTables: true, page});
+
+      await setupTables(page);
+
+      const pageOrFrame = getPageOrFrame(page);
+
+      await pageOrFrame
+        .locator('p')
+        .filter({hasText: 'before'})
+        .click({force: true}); // `force` to ignore playwright blocking due to TableCellResizer interception
+      await page.keyboard.down('Shift');
+      await pageOrFrame
+        .locator('table table > tr:first-of-type > th:first-of-type')
+        .click();
+      await page.keyboard.up('Shift');
+
+      // Assert the selection is a range selection solely within the cell containing the nested table.
+      await assertSelection(page, {
+        anchorOffset: 5, // at the end of the word "before"
+        anchorPath: TEXT_BEFORE_NESTED_TABLE,
+        focusOffset: 1,
+        focusPath: END_OF_INNER_TABLE,
+      });
+    });
+
+    test('Range-select from below nested table into it selects the entire table, but not the outer table', async ({
+      browserName,
+      page,
+      isPlainText,
+      isCollab,
+    }) => {
+      test.skip(isPlainText);
+      test.skip(isCollab);
+      await initialize({hasNestedTables: true, page});
+
+      await setupTables(page);
+
+      const pageOrFrame = getPageOrFrame(page);
+
+      await pageOrFrame.locator('p').filter({hasText: 'after'});
+      await page.keyboard.down('Shift');
+      await pageOrFrame
+        .locator('table table > tr:last-of-type > th')
+        .click({force: true, timeout: 100}); // `force` to ignore playwright blocking due to TableCellResizer interception
+      await page.keyboard.up('Shift');
+
+      // Assert the selection is a range selection solely within the cell containing the nested table.
+      await assertSelection(page, {
+        anchorOffset: 5, // at the end of the word "after"
+        anchorPath: TEXT_AFTER_NESTED_TABLE,
+        focusOffset: 0,
+        focusPath: START_OF_INNER_TABLE,
+      });
+    });
+
+    test('Range-select from inside nested table to text above it selects the entire table, but not the outer table', async ({
+      browserName,
+      page,
+      isPlainText,
+      isCollab,
+    }) => {
+      test.skip(isPlainText);
+      test.skip(isCollab);
+      test.fixme(
+        browserName === 'firefox',
+        'Erroneously selects the entire outer cell',
+      );
+      await initialize({hasNestedTables: true, page});
+
+      await setupTables(page);
+
+      const pageOrFrame = getPageOrFrame(page);
+
+      await pageOrFrame
+        .locator('table table > tr:first-of-type > th:first-of-type')
+        .click();
+      await page.keyboard.down('Shift');
+      await pageOrFrame.locator('p').filter({hasText: 'before'}).click();
+      await page.keyboard.up('Shift');
+
+      // Assert the selection is a range selection solely within the cell containing the nested table.
+      await assertSelection(page, {
+        anchorOffset: 1, // anchor moves to the end of the table
+        anchorPath: END_OF_INNER_TABLE,
+        focusOffset: 5,
+        focusPath: TEXT_BEFORE_NESTED_TABLE,
+      });
+    });
+
+    test('Range-select from inside nested table to text below it selects the entire table, but not the outer table', async ({
+      browserName,
+      page,
+      isPlainText,
+      isCollab,
+    }) => {
+      test.skip(isPlainText);
+      test.skip(isCollab);
+      test.fixme(
+        browserName === 'firefox',
+        'Erroneously selects the entire outer cell',
+      );
+      await initialize({hasNestedTables: true, page});
+
+      await setupTables(page);
+
+      const pageOrFrame = getPageOrFrame(page);
+
+      await pageOrFrame.locator('table table td').click();
+      await page.keyboard.down('Shift');
+      await pageOrFrame.locator('p').filter({hasText: 'after'}).click();
+      await page.keyboard.up('Shift');
+
+      // Assert the selection is a range selection solely within the cell containing the nested table.
+      await assertSelection(page, {
+        anchorOffset: 0, // anchor moves to the start of the table
+        anchorPath: START_OF_INNER_TABLE,
+        focusOffset: 5,
+        focusPath: TEXT_AFTER_NESTED_TABLE,
+      });
+    });
+  });
 });
 
 const TABLE_WITH_MERGED_CELLS = `

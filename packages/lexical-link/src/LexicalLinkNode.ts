@@ -479,7 +479,7 @@ export class AutoLinkNode extends LinkNode {
     );
   }
 
-  shouldMergeAdjacentLink(): boolean {
+  shouldMergeAdjacentLink(_otherLink: LinkNode): boolean {
     return false;
   }
 

@@ -113,8 +113,6 @@ describe('CheckListExtension', () => {
       // Item 1 stays in List 1. Item 2 moves to List 2.
       expect(secondList.getStart()).toBe(2);
     });
-
-    editor.dispose();
   });
 
   it('Creates the list', () => {

@@ -152,7 +152,7 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
   setEquation(equation: string): this {
     const writable = this.getWritable();
     writable.__equation = equation;
-    return this;
+    return writable;
   }
 
   decorate(): JSX.Element {

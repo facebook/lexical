@@ -37,6 +37,7 @@ import {
   $createTextNode,
   $findMatchingParent,
   $getState,
+  $isParagraphNode,
   $setState,
   createState,
   ElementNode,
@@ -241,7 +242,12 @@ const createBlockNode = (
   return (parentNode, children, match, isImport) => {
     const node = createNode(match);
     node.append(...children);
-    parentNode.replace(node);
+    if (!isImport && !$isParagraphNode(parentNode)) {
+      parentNode.clear();
+      parentNode.append(node);
+    } else {
+      parentNode.replace(node);
+    }
     if (!isImport) {
       node.select(0, 0);
     }

@@ -10,7 +10,11 @@ import {buildEditorFromExtensions} from '@lexical/extension';
 import {$createLinkNode, $isLinkNode, LinkExtension} from '@lexical/link';
 import {ListExtension} from '@lexical/list';
 import {registerMarkdownShortcuts} from '@lexical/markdown';
-import {RichTextExtension} from '@lexical/rich-text';
+import {
+  $isHeadingNode,
+  $isQuoteNode,
+  RichTextExtension,
+} from '@lexical/rich-text';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -153,6 +157,22 @@ describe('LINK', () => {
       assert($isLinkNode(linkNode), 'First child must be a LinkNode');
       expect(linkNode.getTextContent()).toBe('hell[world](www)o');
       expect(linkNode.getURL()).toBe('link');
+    });
+  });
+});
+
+describe('BLOCK QUOTE + HEADING', () => {
+  test('typing "> # SOME HEADER" creates a heading inside a quote (issue #7407)', () => {
+    const editor = buildEditorFromExtensions([MarkdownShortcutTestExtension]);
+    typeMarkdown(editor, '> # SOME HEADER');
+    editor.read(() => {
+      const root = $getRoot();
+      const firstChild = root.getFirstChildOrThrow();
+      assert($isQuoteNode(firstChild), 'Root child must be a QuoteNode');
+      const quoteChild = firstChild.getFirstChildOrThrow();
+      assert($isHeadingNode(quoteChild), 'Quote child must be a HeadingNode');
+      expect(quoteChild.getTag()).toBe('h1');
+      expect(quoteChild.getTextContent()).toBe('SOME HEADER');
     });
   });
 });

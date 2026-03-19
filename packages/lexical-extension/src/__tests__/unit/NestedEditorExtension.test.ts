@@ -15,7 +15,7 @@ import {describe, expect, test} from 'vitest';
 
 describe('NestedEditorExtension', () => {
   test('it sets _parentEditor implicitly', () => {
-    const editor = buildEditorFromExtensions({name: 'parent'});
+    using editor = buildEditorFromExtensions({name: 'parent'});
     const childEditor = editor.read(() =>
       buildEditorFromExtensions({
         dependencies: [NestedEditorExtension],
@@ -25,7 +25,7 @@ describe('NestedEditorExtension', () => {
     expect(childEditor._parentEditor).toBe(editor);
   });
   test('$getParentEditor can be overridden', () => {
-    const editor = buildEditorFromExtensions({name: 'parent'});
+    using editor = buildEditorFromExtensions({name: 'parent'});
     const childEditor = buildEditorFromExtensions({
       dependencies: [
         configExtension(NestedEditorExtension, {
@@ -50,7 +50,7 @@ describe('NestedEditorExtension', () => {
     expect(childEditor._config.theme.text?.bold).toBe('bold');
   });
   test('If the child has a theme it is not inherited', () => {
-    const editor = buildEditorFromExtensions({
+    using editor = buildEditorFromExtensions({
       name: 'parent',
       theme: {text: {bold: 'bold', italic: 'italic'}},
     });
@@ -65,7 +65,7 @@ describe('NestedEditorExtension', () => {
     expect(childEditor._config.theme.text?.italic).toBe('child-italic');
   });
   test('inheritEditableFromParent defaults false but can be enabled later', () => {
-    const editor = buildEditorFromExtensions({
+    using editor = buildEditorFromExtensions({
       name: 'parent',
     });
     const childEditor = editor.read(() =>
@@ -87,7 +87,7 @@ describe('NestedEditorExtension', () => {
     expect(childEditor.isEditable()).toBe(false);
   });
   test('inheritEditableFromParent works when configured true', () => {
-    const editor = buildEditorFromExtensions({
+    using editor = buildEditorFromExtensions({
       editable: false,
       name: 'parent',
     });

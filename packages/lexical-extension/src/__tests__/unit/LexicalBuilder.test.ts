@@ -121,7 +121,7 @@ describe('LexicalBuilder', () => {
       nodes: [NodeB],
     });
     it('can mix deferred and direct node config', () => {
-      const editor = buildEditorFromExtensions(ExtDefer, ExtDirect, {
+      using editor = buildEditorFromExtensions(ExtDefer, ExtDirect, {
         $initialEditorState() {
           $getRoot().append(
             $createParagraphNode().append(

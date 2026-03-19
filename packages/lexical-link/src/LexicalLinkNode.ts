@@ -297,6 +297,16 @@ export class LinkNode extends ElementNode {
       this.__url.startsWith('https://') || this.__url.startsWith('http://')
     );
   }
+
+  shouldMergeAdjacentLink(otherLink: LinkNode): boolean {
+    return (
+      this.getType() === otherLink.getType() &&
+      this.__url === otherLink.__url &&
+      this.__target === otherLink.__target &&
+      this.__rel === otherLink.__rel &&
+      this.__title === otherLink.__title
+    );
+  }
 }
 
 type CaretPair = [PointCaret<'next'>, PointCaret<'previous'>];
@@ -329,6 +339,13 @@ export function $linkNodeTransform(link: LinkNode): void {
     anchorPair = $saveCaretPair(selection.anchor);
     focusPair = $saveCaretPair(selection.focus);
   }
+  function $restoreSelection(): void {
+    if ($isRangeSelection(selection)) {
+      $restoreCaretPair(selection.anchor, anchorPair!);
+      $restoreCaretPair(selection.focus, focusPair!);
+      $normalizeSelection__EXPERIMENTAL(selection);
+    }
+  }
 
   let transformed = false;
   for (const caret of $getChildCaret(link, 'next')) {
@@ -346,6 +363,21 @@ export function $linkNodeTransform(link: LinkNode): void {
       });
     }
   }
+  if (link.isAttached()) {
+    const prevSibling = link.getPreviousSibling();
+    if ($isLinkNode(prevSibling) && prevSibling.shouldMergeAdjacentLink(link)) {
+      prevSibling.append(...link.getChildren());
+      link.remove();
+      $restoreSelection();
+      return;
+    }
+    const nextSibling = link.getNextSibling();
+    if ($isLinkNode(nextSibling) && link.shouldMergeAdjacentLink(nextSibling)) {
+      link.append(...nextSibling.getChildren());
+      nextSibling.remove();
+      transformed = true;
+    }
+  }
   if (!transformed) {
     return;
   }
@@ -357,11 +389,7 @@ export function $linkNodeTransform(link: LinkNode): void {
     }
   }
 
-  if ($isRangeSelection(selection)) {
-    $restoreCaretPair(selection.anchor, anchorPair!);
-    $restoreCaretPair(selection.focus, focusPair!);
-    $normalizeSelection__EXPERIMENTAL(selection);
-  }
+  $restoreSelection();
 }
 
 function $convertAnchorElement(domNode: Node): DOMConversionOutput {
@@ -449,6 +477,10 @@ export class AutoLinkNode extends LinkNode {
       },
       node.__key,
     );
+  }
+
+  shouldMergeAdjacentLink(_otherLink: LinkNode): boolean {
+    return false;
   }
 
   getIsUnlinked(): boolean {

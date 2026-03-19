@@ -958,10 +958,7 @@ test.describe.parallel('Markdown', () => {
       html`
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <a class="PlaygroundEditorTheme__link" href="https://lexical.dev">
-            <span data-lexical-text="true">link</span>
-          </a>
-          <a class="PlaygroundEditorTheme__link" href="https://lexical.dev">
-            <span data-lexical-text="true">link</span>
+            <span data-lexical-text="true">linklink</span>
           </a>
           <span
             class="editor-image"

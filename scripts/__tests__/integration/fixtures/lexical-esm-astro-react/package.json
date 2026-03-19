@@ -15,7 +15,6 @@
     "@astrojs/react": "^4.3.1",
     "@lexical/code": "0.42.0",
     "@lexical/react": "0.42.0",
-    "@lexical/utils": "0.42.0",
     "@types/react": "^19.1.12",
     "@types/react-dom": "^19.1.9",
     "astro": "^5.13.7",

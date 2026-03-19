@@ -280,6 +280,7 @@ function TableHoverActionsV2({
       if (!hoveredCell) {
         setIsVisible(false);
         setIsLeftVisible(false);
+        setHoveredColumnIndex(null);
         hoveredTopCellRef.current = null;
         hoveredLeftCellRef.current = null;
         return;
@@ -334,6 +335,7 @@ function TableHoverActionsV2({
       document.removeEventListener('mousemove', handleMouseMove);
       setIsVisible(false);
       setIsLeftVisible(false);
+      setHoveredColumnIndex(null);
     };
   }, [anchorElem, getTheme, isEditable, leftRefs, refs, update, updateLeft]);
 
@@ -356,6 +358,7 @@ function TableHoverActionsV2({
       }
       setIsVisible(false);
       setIsLeftVisible(false);
+      setHoveredColumnIndex(null);
     };
 
     return editor.registerRootListener((rootElement) => {
@@ -642,12 +645,14 @@ function TableHoverActionsV2({
           opacity: isVisible ? 1 : 0,
         }}
         className="floating-top-actions">
-        <button
-          className="floating-select-indicator"
-          aria-label="Select table"
-          type="button"
-          onClick={handleSelectTable}
-        />
+        {hoveredColumnIndex === 0 ? (
+          <button
+            className="floating-select-indicator"
+            aria-label="Select table"
+            type="button"
+            onClick={handleSelectTable}
+          />
+        ) : null}
         <button
           ref={dragHandleRef}
           className="floating-drag-indicator"

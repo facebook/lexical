@@ -13,7 +13,7 @@
     "@lexical/plain-text": "0.42.0",
     "@lexical/react": "0.42.0",
     "lexical": "0.42.0",
-    "next": "^16.1.7",
+    "next": "^15.5.14",
     "react": "^19",
     "react-dom": "^19"
   },

@@ -20,7 +20,7 @@ import {clearFormatting} from '../../src/plugins/ToolbarPlugin/utils';
 
 describe('ToolbarPlugin clearFormatting', () => {
   initializeUnitTest((testEnv) => {
-    it('clears block alignment for a collapsed selection without text formatting', () => {
+    it('does NOT clear block alignment for a collapsed selection without full selection', () => {
       const {editor} = testEnv;
 
       editor.update(
@@ -33,6 +33,7 @@ describe('ToolbarPlugin clearFormatting', () => {
           paragraph.append(text);
           $getRoot().append(paragraph);
 
+          // collapsed cursor (not full selection)
           text.select(1, 1);
         },
         {discrete: true},
@@ -47,12 +48,14 @@ describe('ToolbarPlugin clearFormatting', () => {
           return;
         }
 
-        expect(paragraph.getFormatType()).toBe('');
-        expect(paragraph.getIndent()).toBe(0);
+        // ✅ Block formatting should remain
+        expect(paragraph.getFormatType()).toBe('center');
+        expect(paragraph.getIndent()).toBe(2);
 
         const text = paragraph.getFirstChild();
         expect(text).not.toBeNull();
         if ($isTextNode(text)) {
+          // ✅ No text formatting to clear anyway
           expect(text.getFormat()).toBe(0);
           expect(text.getStyle()).toBe('');
         }

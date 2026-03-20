@@ -339,22 +339,32 @@ export const clearFormatting = (
     }
     const selection = $getSelection();
     if ($isRangeSelection(selection) || $isTableSelection(selection)) {
+      const anchor = selection.anchor;
+      const focus = selection.focus;
       const extractedNodes = selection.extract();
 
-      if (extractedNodes.length === 0) {
+      if (anchor.key === focus.key && anchor.offset === focus.offset) {
         return;
       }
 
       extractedNodes.forEach((node) => {
         if ($isTextNode(node)) {
+          const nearestBlockElement =
+            $getNearestBlockElementAncestorOrThrow(node);
+          const textnodes = nearestBlockElement.getAllTextNodes();
+          const aggregatedtextSize = textnodes.reduce(
+            (acc, textNode) => acc + textNode.getTextContentSize(),
+            0,
+          );
+          if (aggregatedtextSize !== focus.offset - anchor.offset) {
+            return;
+          }
           if (node.getStyle() !== '') {
             node.setStyle('');
           }
           if (node.getFormat() !== 0) {
             node.setFormat(0);
           }
-          const nearestBlockElement =
-            $getNearestBlockElementAncestorOrThrow(node);
           if (nearestBlockElement.getFormat() !== 0) {
             nearestBlockElement.setFormat('');
           }

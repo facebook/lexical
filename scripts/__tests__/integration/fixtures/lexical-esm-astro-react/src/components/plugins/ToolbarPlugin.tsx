@@ -6,7 +6,6 @@
  *
  */
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {mergeRegister} from '@lexical/utils';
 import {
   $getSelection,
   $isRangeSelection,
@@ -18,6 +17,7 @@ import {
   REDO_COMMAND,
   SELECTION_CHANGE_COMMAND,
   UNDO_COMMAND,
+  mergeRegister,
 } from 'lexical';
 import {useCallback, useEffect, useRef, useState} from 'react';
 // import * as React from 'react';

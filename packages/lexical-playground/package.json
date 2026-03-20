@@ -1,13 +1,13 @@
 {
   "name": "lexical-playground",
-  "version": "0.41.0",
+  "version": "0.42.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite --host --port 3000",
     "build-dev": "vite build",
     "build-prod": "vite build --mode production",
-    "build-vercel": "(cd ../../ && node ./scripts/build.js) && pnpm run build-dev",
+    "build-vercel": "(cd ../../ && node ./scripts/build.mjs) && pnpm run build-dev",
     "preview": "vite preview --port 4000 --host"
   },
   "dependencies": {
@@ -47,8 +47,8 @@
     "@babel/plugin-transform-flow-strip-types": "^7.24.7",
     "@babel/preset-react": "^7.24.7",
     "@prettier/sync": "^0.6.1",
-    "@rollup/plugin-babel": "^6.0.4",
-    "@rollup/plugin-commonjs": "^25.0.7",
+    "@rollup/plugin-babel": "^7.0.0",
+    "@rollup/plugin-commonjs": "^29.0.2",
     "@types/lodash": "^4.14.182",
     "@types/lodash-es": "^4.14.182",
     "@vitejs/plugin-react": "^5.0.2",

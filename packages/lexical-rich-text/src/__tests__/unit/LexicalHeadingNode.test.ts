@@ -170,6 +170,33 @@ describe('LexicalHeadingNode tests', () => {
       );
     });
 
+    test('HeadingNode.setTag()', async () => {
+      const {editor} = testEnv;
+      await editor.update(
+        () => {
+          const root = $getRoot();
+          const headingNode = $createHeadingNode('h1');
+          root.append(headingNode);
+        },
+        {discrete: true},
+      );
+      expect(testEnv.outerHTML).toBe(
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><h1 dir="auto"><br></h1></div>',
+      );
+      await editor.update(
+        () => {
+          const heading = $getRoot().getFirstChildOrThrow<HeadingNode>();
+          expect(heading.getTag()).toBe('h1');
+          heading.setTag('h2');
+          expect(heading.getTag()).toBe('h2');
+        },
+        {discrete: true},
+      );
+      expect(testEnv.outerHTML).toBe(
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><h2 dir="auto"><br></h2></div>',
+      );
+    });
+
     test('$createHeadingNode()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {

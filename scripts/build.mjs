@@ -5,24 +5,34 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+// @ts-check
 
-'use strict';
+import alias from '@rollup/plugin-alias';
+import babel from '@rollup/plugin-babel';
+import commonjs from '@rollup/plugin-commonjs';
+import json from '@rollup/plugin-json';
+import nodeResolve from '@rollup/plugin-node-resolve';
+import replace from '@rollup/plugin-replace';
+import terser from '@rollup/plugin-terser';
+import fs from 'fs-extra';
+import {glob} from 'glob';
+import minimist from 'minimist';
+import {createRequire} from 'module';
+import path from 'path';
+import {rollup} from 'rollup';
+import {fileURLToPath} from 'url';
 
-const rollup = require('rollup');
-const fs = require('fs-extra');
-const path = require('path');
-const argv = require('minimist')(process.argv.slice(2));
-const babel = require('@rollup/plugin-babel').default;
-const nodeResolve = require('@rollup/plugin-node-resolve').default;
-const commonjs = require('@rollup/plugin-commonjs');
-const replace = require('@rollup/plugin-replace');
-const json = require('@rollup/plugin-json');
-const alias = require('@rollup/plugin-alias');
-const terser = require('@rollup/plugin-terser');
-const {exec} = require('./shared/childProcess');
-const {packagesManager} = require('./shared/packagesManager');
-const npmToWwwName = require('./www/npmToWwwName');
-const glob = require('glob');
+import {exec} from './shared/childProcess.js';
+import {packagesManager} from './shared/packagesManager.js';
+import npmToWwwName from './www/npmToWwwName.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Create require for loading CJS modules
+const require = createRequire(import.meta.url);
+
+const argv = minimist(process.argv.slice(2));
 
 const headerTemplate = fs.readFileSync(
   path.resolve(__dirname, 'www', 'headerTemplate.js'),
@@ -153,7 +163,7 @@ function getExtension(format) {
  * @param {boolean} isProd
  * @param {'cjs'|'esm'} format
  * @param {string} version
- * @param {import('./shared/PackageMetadata').PackageMetadata} pkg
+ * @param {import('./shared/PackageMetadata.js').PackageMetadata} pkg
  * @returns {Promise<Array<string>>} the exports of the built module
  */
 async function build(
@@ -302,7 +312,12 @@ async function build(
       // terser is used because @ampproject/rollup-plugin-closure-compiler
       // doesn't compile `export default function X()` correctly and hasn't
       // been updated since Aug 2021
-      isProd && terser({ecma: 2019, module: format === 'esm'}),
+      isProd &&
+        terser({
+          ecma: 2019,
+          format: {ascii_only: true},
+          module: format === 'esm',
+        }),
       {
         renderChunk(source) {
           // Assets pipeline might use "export" word in the beginning of the line
@@ -339,7 +354,7 @@ async function build(
     interop: format === 'esm' ? 'esModule' : undefined,
     paths: format === 'esm' ? resolveExternalEsm : undefined,
   };
-  const result = await rollup.rollup(inputOptions);
+  const result = await rollup(inputOptions);
   const {output} = await result.write(outputOptions);
   return output[0].exports;
 }

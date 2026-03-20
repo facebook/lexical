@@ -9,23 +9,23 @@ importers:
   .:
     dependencies:
       '@lexical/dragon':
-        specifier: 0.41.0
-        version: 0.41.0
+        specifier: 0.42.0
+        version: 0.42.0
       '@lexical/history':
-        specifier: 0.41.0
-        version: 0.41.0
+        specifier: 0.42.0
+        version: 0.42.0
       '@lexical/rich-text':
-        specifier: 0.41.0
-        version: 0.41.0
+        specifier: 0.42.0
+        version: 0.42.0
       '@lexical/utils':
-        specifier: 0.41.0
-        version: 0.41.0
+        specifier: 0.42.0
+        version: 0.42.0
       emoji-datasource-facebook:
         specifier: 15.1.2
         version: 15.1.2
       lexical:
-        specifier: 0.41.0
-        version: 0.41.0
+        specifier: 0.42.0
+        version: 0.42.0
     devDependencies:
       cross-env:
         specifier: ^7.0.3
@@ -208,32 +208,32 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@lexical/clipboard@0.41.0':
-    resolution: {integrity: sha512-Ex5lPkb4NBBX1DCPzOAIeHBJFH1bJcmATjREaqpnTfxCbuOeQkt44wchezUA0oDl+iAxNZ3+pLLWiUju9icoSA==}
+  '@lexical/clipboard@0.42.0':
+    resolution: {integrity: sha512-D3K2ID0zew/+CKpwxnUTTh/N46yU4IK8bFWV9Htz+g1vFhgUF9UnDOQCmqpJbdP7z+9U1F8rk3fzf9OmP2Fm2w==}
 
-  '@lexical/dragon@0.41.0':
-    resolution: {integrity: sha512-gBEqkk8Q6ZPruvDaRcOdF1EK9suCVBODzOCcR+EnoJTaTjfDkCM7pkPAm4w90Wa1wCZEtFHvCfas+jU9MDSumg==}
+  '@lexical/dragon@0.42.0':
+    resolution: {integrity: sha512-/TQzP+7PLJMqq9+MlgQWiJsxS9GOOa8Gp0svCD8vNIOciYmXfd28TR1Go+ZnBWwr7k/2W++3XUYVQU2KUcQsDQ==}
 
-  '@lexical/extension@0.41.0':
-    resolution: {integrity: sha512-sF4SPiP72yXvIGchmmIZ7Yg2XZTxNLOpFEIIzdqG7X/1fa1Ham9P/T7VbrblWpF6Ei5LJtK9JgNVB0hb4l3o1g==}
+  '@lexical/extension@0.42.0':
+    resolution: {integrity: sha512-rkZq/h8d1BenKRqU4t/zQUVfY/RinMX1Tz7t+Ee3ss0sk+kzP4W+URXNAxpn7r39Vn6wrFBqmCziah3dLAIqPw==}
 
-  '@lexical/history@0.41.0':
-    resolution: {integrity: sha512-kGoVWsiOn62+RMjRolRa+NXZl8jFwxav6GNDiHH8yzivtoaH8n1SwUfLJELXCzeqzs81HySqD4q30VLJVTGoDg==}
+  '@lexical/history@0.42.0':
+    resolution: {integrity: sha512-YfCZ1ICUt6BCg2ncJWFMuS4yftnB7FEHFRf3qqTSTf6oGZ4IZfzabMNEy47xybUuf7FXBbdaCKJrc/zOM+wGxw==}
 
-  '@lexical/html@0.41.0':
-    resolution: {integrity: sha512-3RyZy+H/IDKz2D66rNN/NqYx87xVFrngfEbyu1OWtbY963RUFnopiVHCQvsge/8kT04QSZ7U/DzjVFqeNS6clg==}
+  '@lexical/html@0.42.0':
+    resolution: {integrity: sha512-KgBUDLXehufCsXW3w0XsuoI2xecIhouOishnaNOH4zIA7dAtnNAfdPN/kWrWs0s83gz44OrnqccP+Bprw3UDEQ==}
 
-  '@lexical/list@0.41.0':
-    resolution: {integrity: sha512-RXvB+xcbzVoQLGRDOBRCacztG7V+bI95tdoTwl8pz5xvgPtAaRnkZWMDP+yMNzMJZsqEChdtpxbf0NgtMkun6g==}
+  '@lexical/list@0.42.0':
+    resolution: {integrity: sha512-TIezILnmIVuvfqEEbcMnsT4xQRlswI6ysHISqsvKL6l5EBhs1gqmNYjHa/Yrfzaq5y52TM1PAtxbFts+G7N6kg==}
 
-  '@lexical/rich-text@0.41.0':
-    resolution: {integrity: sha512-yUcr7ZaaVTZNi8bow4CK1M8jy2qyyls1Vr+5dVjwBclVShOL/F/nFyzBOSb6RtXXRbd3Ahuk9fEleppX/RNIdw==}
+  '@lexical/rich-text@0.42.0':
+    resolution: {integrity: sha512-v4YgiM3oK3FZcRrfB+LetvLbQ5aee9MRO9tHf0EFweXg19XnSjHV0cfPAW7TyPxRELzB69+K0Q3AybRlTMjG4Q==}
 
-  '@lexical/selection@0.41.0':
-    resolution: {integrity: sha512-1s7/kNyRzcv5uaTwsUL28NpiisqTf5xZ1zNukLsCN1xY+TWbv9RE9OxIv+748wMm4pxNczQe/UbIBODkbeknLw==}
+  '@lexical/selection@0.42.0':
+    resolution: {integrity: sha512-iWTjLA5BSEuUnvWe9Xwu9FSdZFl3Yi0NqalabXKI+7KgCIlIVXE74y4NvWPUSLkSCB/Z1RPKiHmZqZ1vyu/yGQ==}
 
-  '@lexical/utils@0.41.0':
-    resolution: {integrity: sha512-Wlsokr5NQCq83D+7kxZ9qs5yQ3dU3Qaf2M+uXxLRoPoDaXqW8xTWZq1+ZFoEzsHzx06QoPa4Vu/40BZR91uQPg==}
+  '@lexical/utils@0.42.0':
+    resolution: {integrity: sha512-wGNdCW3QWEyVdFiSTLZfFPtiASPyYLcekIiYYZmoRVxVimT/jY+QPfnkO4JYgkO7Z70g/dsg9OhqyQSChQfvkQ==}
 
   '@preact/signals-core@1.13.0':
     resolution: {integrity: sha512-slT6XeTCAbdql61GVLlGU4x7XHI7kCZV5Um5uhE4zLX4ApgiiXc0UYFvVOKq06xcovzp7p+61l68oPi563ARKg==}
@@ -277,71 +277,85 @@ packages:
     resolution: {integrity: sha512-t4ONHboXi/3E0rT6OZl1pKbl2Vgxf9vJfWgmUoCEVQVxhW6Cw/c8I6hbbu7DAvgp82RKiH7TpLwxnJeKv2pbsw==}
     cpu: [arm]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-arm-musleabihf@4.59.0':
     resolution: {integrity: sha512-CikFT7aYPA2ufMD086cVORBYGHffBo4K8MQ4uPS/ZnY54GKj36i196u8U+aDVT2LX4eSMbyHtyOh7D7Zvk2VvA==}
     cpu: [arm]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-linux-arm64-gnu@4.59.0':
     resolution: {integrity: sha512-jYgUGk5aLd1nUb1CtQ8E+t5JhLc9x5WdBKew9ZgAXg7DBk0ZHErLHdXM24rfX+bKrFe+Xp5YuJo54I5HFjGDAA==}
     cpu: [arm64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-arm64-musl@4.59.0':
     resolution: {integrity: sha512-peZRVEdnFWZ5Bh2KeumKG9ty7aCXzzEsHShOZEFiCQlDEepP1dpUl/SrUNXNg13UmZl+gzVDPsiCwnV1uI0RUA==}
     cpu: [arm64]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-linux-loong64-gnu@4.59.0':
     resolution: {integrity: sha512-gbUSW/97f7+r4gHy3Jlup8zDG190AuodsWnNiXErp9mT90iCy9NKKU0Xwx5k8VlRAIV2uU9CsMnEFg/xXaOfXg==}
     cpu: [loong64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-loong64-musl@4.59.0':
     resolution: {integrity: sha512-yTRONe79E+o0FWFijasoTjtzG9EBedFXJMl888NBEDCDV9I2wGbFFfJQQe63OijbFCUZqxpHz1GzpbtSFikJ4Q==}
     cpu: [loong64]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-linux-ppc64-gnu@4.59.0':
     resolution: {integrity: sha512-sw1o3tfyk12k3OEpRddF68a1unZ5VCN7zoTNtSn2KndUE+ea3m3ROOKRCZxEpmT9nsGnogpFP9x6mnLTCaoLkA==}
     cpu: [ppc64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-ppc64-musl@4.59.0':
     resolution: {integrity: sha512-+2kLtQ4xT3AiIxkzFVFXfsmlZiG5FXYW7ZyIIvGA7Bdeuh9Z0aN4hVyXS/G1E9bTP/vqszNIN/pUKCk/BTHsKA==}
     cpu: [ppc64]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-linux-riscv64-gnu@4.59.0':
     resolution: {integrity: sha512-NDYMpsXYJJaj+I7UdwIuHHNxXZ/b/N2hR15NyH3m2qAtb/hHPA4g4SuuvrdxetTdndfj9b1WOmy73kcPRoERUg==}
     cpu: [riscv64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-riscv64-musl@4.59.0':
     resolution: {integrity: sha512-nLckB8WOqHIf1bhymk+oHxvM9D3tyPndZH8i8+35p/1YiVoVswPid2yLzgX7ZJP0KQvnkhM4H6QZ5m0LzbyIAg==}
     cpu: [riscv64]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-linux-s390x-gnu@4.59.0':
     resolution: {integrity: sha512-oF87Ie3uAIvORFBpwnCvUzdeYUqi2wY6jRFWJAy1qus/udHFYIkplYRW+wo+GRUP4sKzYdmE1Y3+rY5Gc4ZO+w==}
     cpu: [s390x]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-x64-gnu@4.52.0':
     resolution: {integrity: sha512-nmSVN+F2i1yKZ7rJNKO3G7ZzmxJgoQBQZ/6c4MuS553Grmr7WqR7LLDcYG53Z2m9409z3JLt4sCOhLdbKQ3HmA==}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-x64-gnu@4.59.0':
     resolution: {integrity: sha512-3AHmtQq/ppNuUspKAlvA8HtLybkDflkMuLK4DPo77DfthRb71V84/c4MlWJXixZz4uruIH4uaa07IqoAkG64fg==}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-x64-musl@4.59.0':
     resolution: {integrity: sha512-2UdiwS/9cTAx7qIUZB/fWtToJwvt0Vbo0zmnYt7ED35KPg13Q0ym1g442THLC7VyI6JfYTP4PiSOWyoMdV2/xg==}
     cpu: [x64]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-openbsd-x64@4.59.0':
     resolution: {integrity: sha512-M3bLRAVk6GOwFlPTIxVBSYKUaqfLrn8l0psKinkCFxl4lQvOSz8ZrKDz2gxcBwHFpci0B6rttydI4IpS4IS/jQ==}
@@ -420,8 +434,8 @@ packages:
   isexe@2.0.0:
     resolution: {integrity: sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw==}
 
-  lexical@0.41.0:
-    resolution: {integrity: sha512-pNIm5+n+hVnJHB9gYPDYsIO5Y59dNaDU9rJmPPsfqQhP2ojKFnUoPbcRnrI9FJLXB14sSumcY8LUw7Sq70TZqA==}
+  lexical@0.42.0:
+    resolution: {integrity: sha512-GY9Lg3YEIU7nSFaiUlLspZ1fm4NfIcfABaxy9nT+fRVDkX7iV005T5Swil83gXUmxFUNKGal3j+hUxHOUDr+Aw==}
 
   nanoid@3.3.11:
     resolution: {integrity: sha512-N8SpfPUnUp1bK+PMYW8qSWdl9U+wwNWI4QKxOYDy9JAro3WMX7p2OeVRF9v+347pnakNevPmiHhNmZ2HbFA76w==}
@@ -594,60 +608,60 @@ snapshots:
   '@esbuild/win32-x64@0.27.3':
     optional: true
 
-  '@lexical/clipboard@0.41.0':
+  '@lexical/clipboard@0.42.0':
     dependencies:
-      '@lexical/html': 0.41.0
-      '@lexical/list': 0.41.0
-      '@lexical/selection': 0.41.0
-      '@lexical/utils': 0.41.0
-      lexical: 0.41.0
+      '@lexical/html': 0.42.0
+      '@lexical/list': 0.42.0
+      '@lexical/selection': 0.42.0
+      '@lexical/utils': 0.42.0
+      lexical: 0.42.0
 
-  '@lexical/dragon@0.41.0':
+  '@lexical/dragon@0.42.0':
     dependencies:
-      '@lexical/extension': 0.41.0
-      lexical: 0.41.0
+      '@lexical/extension': 0.42.0
+      lexical: 0.42.0
 
-  '@lexical/extension@0.41.0':
+  '@lexical/extension@0.42.0':
     dependencies:
-      '@lexical/utils': 0.41.0
+      '@lexical/utils': 0.42.0
       '@preact/signals-core': 1.13.0
-      lexical: 0.41.0
+      lexical: 0.42.0
 
-  '@lexical/history@0.41.0':
+  '@lexical/history@0.42.0':
     dependencies:
-      '@lexical/extension': 0.41.0
-      '@lexical/utils': 0.41.0
-      lexical: 0.41.0
+      '@lexical/extension': 0.42.0
+      '@lexical/utils': 0.42.0
+      lexical: 0.42.0
 
-  '@lexical/html@0.41.0':
+  '@lexical/html@0.42.0':
     dependencies:
-      '@lexical/selection': 0.41.0
-      '@lexical/utils': 0.41.0
-      lexical: 0.41.0
+      '@lexical/selection': 0.42.0
+      '@lexical/utils': 0.42.0
+      lexical: 0.42.0
 
-  '@lexical/list@0.41.0':
+  '@lexical/list@0.42.0':
     dependencies:
-      '@lexical/extension': 0.41.0
-      '@lexical/selection': 0.41.0
-      '@lexical/utils': 0.41.0
-      lexical: 0.41.0
+      '@lexical/extension': 0.42.0
+      '@lexical/selection': 0.42.0
+      '@lexical/utils': 0.42.0
+      lexical: 0.42.0
 
-  '@lexical/rich-text@0.41.0':
+  '@lexical/rich-text@0.42.0':
     dependencies:
-      '@lexical/clipboard': 0.41.0
-      '@lexical/dragon': 0.41.0
-      '@lexical/selection': 0.41.0
-      '@lexical/utils': 0.41.0
-      lexical: 0.41.0
+      '@lexical/clipboard': 0.42.0
+      '@lexical/dragon': 0.42.0
+      '@lexical/selection': 0.42.0
+      '@lexical/utils': 0.42.0
+      lexical: 0.42.0
 
-  '@lexical/selection@0.41.0':
+  '@lexical/selection@0.42.0':
     dependencies:
-      lexical: 0.41.0
+      lexical: 0.42.0
 
-  '@lexical/utils@0.41.0':
+  '@lexical/utils@0.42.0':
     dependencies:
-      '@lexical/selection': 0.41.0
-      lexical: 0.41.0
+      '@lexical/selection': 0.42.0
+      lexical: 0.42.0
 
   '@preact/signals-core@1.13.0': {}
 
@@ -794,7 +808,7 @@ snapshots:
 
   isexe@2.0.0: {}
 
-  lexical@0.41.0: {}
+  lexical@0.42.0: {}
 
   nanoid@3.3.11: {}
 

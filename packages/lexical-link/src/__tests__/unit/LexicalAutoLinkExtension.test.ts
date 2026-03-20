@@ -65,7 +65,7 @@ describe('LexicalAutoLinkExtension tests', () => {
     // Register AutoLink with a hashtag matcher that matches # followed by digits
     const hashtagMatcher = createLinkMatcherWithRegExp(/#\d+/);
 
-    const editor = buildEditorFromExtensions({
+    using editor = buildEditorFromExtensions({
       $initialEditorState() {
         // Initialize content with #1234.Another - this should not cause an infinite loop
         $getRoot().append(
@@ -109,7 +109,7 @@ describe('LexicalAutoLinkExtension tests', () => {
   });
 
   test('excludeParents prevents auto-linking inside excluded parent nodes', async () => {
-    const editor = buildEditorFromExtensions({
+    using editor = buildEditorFromExtensions({
       $initialEditorState() {
         $getRoot().append(
           $create(ExcludedParentNode).append(
@@ -141,7 +141,7 @@ describe('LexicalAutoLinkExtension tests', () => {
   });
 
   test('excludeParents does not prevent auto-linking in non-excluded parents', async () => {
-    const editor = buildEditorFromExtensions({
+    using editor = buildEditorFromExtensions({
       $initialEditorState() {
         $getRoot().append(
           $createParagraphNode().append($createTextNode('https://example.com')),

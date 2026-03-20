@@ -34,7 +34,7 @@ describe('ListExtension', () => {
     name: '[root]',
   });
   it('Creates the list', () => {
-    const editor = buildEditorFromExtensions(extension);
+    using editor = buildEditorFromExtensions(extension);
     editor.update(
       () => {
         const ol = $getRoot().getFirstChildOrThrow();
@@ -42,7 +42,6 @@ describe('ListExtension', () => {
       },
       {discrete: true},
     );
-    editor.dispose();
   });
 });
 describe('CheckListExtension', () => {
@@ -81,7 +80,7 @@ describe('CheckListExtension', () => {
       name: '[root-configured]',
     });
 
-    const editor = buildEditorFromExtensions(configuredExtension);
+    using editor = buildEditorFromExtensions(configuredExtension);
 
     editor.update(() => {
       const root = $getRoot();
@@ -114,12 +113,10 @@ describe('CheckListExtension', () => {
       // Item 1 stays in List 1. Item 2 moves to List 2.
       expect(secondList.getStart()).toBe(2);
     });
-
-    editor.dispose();
   });
 
   it('Creates the list', () => {
-    const editor = buildEditorFromExtensions(extension);
+    using editor = buildEditorFromExtensions(extension);
     editor.update(
       () => {
         const ul = $getRoot().getFirstChildOrThrow();
@@ -127,6 +124,5 @@ describe('CheckListExtension', () => {
       },
       {discrete: true},
     );
-    editor.dispose();
   });
 });

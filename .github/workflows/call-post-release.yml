@@ -25,18 +25,18 @@ jobs:
           owner: facebook
           repo: lexical
           excludes: draft
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: ${{ inputs.ref }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: 22.x
+          node-version: 24.x
       - uses: pnpm/action-setup@v4
         with:
           version: 9
       - run: |
           pnpm install && pnpm run update-examples
-      - uses: stefanzweifel/git-auto-commit-action@v6
+      - uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: 'Update examples for ${{ steps.latest.outputs.release }}'
           commit_user_name: 'Lexical GitHub Actions Bot'

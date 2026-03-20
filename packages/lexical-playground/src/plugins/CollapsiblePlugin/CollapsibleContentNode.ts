@@ -52,7 +52,7 @@ export class CollapsibleContentNode extends ElementNode {
             'Expected parent node to be a CollapsibleContainerNode',
           );
         }
-        if (!containerNode.__open) {
+        if (!containerNode.getOpen()) {
           setDomHiddenUntilFound(dom);
         }
       });
@@ -64,7 +64,7 @@ export class CollapsibleContentNode extends ElementNode {
               'Expected parent node to be a CollapsibleContainerNode',
             );
           }
-          if (!containerNode.__open) {
+          if (!containerNode.getOpen()) {
             containerNode.toggleOpen();
           }
         });

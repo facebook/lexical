@@ -163,17 +163,18 @@ export class CollapsibleContainerNode extends ElementNode {
     };
   }
 
-  setOpen(open: boolean): void {
+  setOpen(open: boolean): this {
     const writable = this.getWritable();
     writable.__open = open;
+    return writable;
   }
 
   getOpen(): boolean {
     return this.getLatest().__open;
   }
 
-  toggleOpen(): void {
-    this.setOpen(!this.getOpen());
+  toggleOpen(): this {
+    return this.setOpen(!this.getOpen());
   }
 }
 

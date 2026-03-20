@@ -96,7 +96,7 @@ export class FigmaNode extends DecoratorBlockNode {
   }
 
   getId(): string {
-    return this.__id;
+    return this.getLatest().__id;
   }
 
   getTextContent(

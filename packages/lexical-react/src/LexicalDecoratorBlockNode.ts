@@ -71,6 +71,10 @@ export class DecoratorBlockNode extends DecoratorNode<JSX.Element> {
     return self;
   }
 
+  getFormat(): ElementFormatType {
+    return this.getLatest().__format;
+  }
+
   isInline(): false {
     return false;
   }

@@ -156,7 +156,7 @@ When creating custom nodes:
 
 ### Build System
 - Uses Rollup for bundling
-- Build script: `scripts/build.js`
+- Build script: `scripts/build.mjs`
 - Supports multiple build modes: development, production, www (Meta internal)
 - TypeScript source → compiled to CommonJS and ESM
 - Package manager logic in `scripts/shared/packagesManager.js`

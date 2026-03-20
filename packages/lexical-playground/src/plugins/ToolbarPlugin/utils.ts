@@ -317,6 +317,12 @@ export const formatCode = (editor: LexicalEditor, blockType: string) => {
         if (!$isRangeSelection(selection)) {
           return;
         }
+        if (
+          $isTextNode(selection.anchor.getNode()) &&
+          !isTextNodeFullySelected(selection.anchor.getNode(), selection)
+        ) {
+          return;
+        }
         const textContent = selection.getTextContent();
         const codeNode = $createCodeNode();
         selection.insertNodes([codeNode]);
@@ -339,9 +345,11 @@ export const clearFormatting = (
     }
     const selection = $getSelection();
     if ($isRangeSelection(selection) || $isTableSelection(selection)) {
+      const anchor = selection.anchor;
+      const focus = selection.focus;
       const extractedNodes = selection.extract();
 
-      if (extractedNodes.length === 0) {
+      if (anchor.key === focus.key && anchor.offset === focus.offset) {
         return;
       }
 
@@ -370,3 +378,35 @@ export const clearFormatting = (
     }
   });
 };
+
+function isTextNodeFullySelected(
+  node: LexicalNode,
+  selection: RangeSelection,
+): boolean {
+  if (!$isTextNode(node)) {
+    return false;
+  }
+  const points = selection.getStartEndPoints();
+  if (points == null) {
+    return false;
+  }
+
+  const [anchor, focus] = points;
+  const [start, end] = selection.isBackward()
+    ? [focus, anchor]
+    : [anchor, focus];
+
+  const key = node.getKey();
+  const size = node.getTextContentSize();
+
+  if (start.key === key && end.key === key) {
+    return start.offset === 0 && end.offset === size;
+  }
+  if (start.key === key) {
+    return start.offset === 0;
+  }
+  if (end.key === key) {
+    return end.offset === size;
+  }
+  return true;
+}

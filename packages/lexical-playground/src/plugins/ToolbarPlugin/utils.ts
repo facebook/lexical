@@ -339,24 +339,23 @@ export const clearFormatting = (
     }
     const selection = $getSelection();
     if ($isRangeSelection(selection) || $isTableSelection(selection)) {
-      const anchor = selection.anchor;
-      const focus = selection.focus;
+      const rangeSelection = $isRangeSelection(selection) ? selection : null;
+      const fullySelectedTextNodeKeys =
+        rangeSelection && !rangeSelection.isCollapsed()
+          ? getFullySelectedTextNodeKeys(rangeSelection)
+          : null;
       const extractedNodes = selection.extract();
 
-      if (anchor.key === focus.key && anchor.offset === focus.offset) {
+      if (extractedNodes.length === 0) {
         return;
       }
 
       extractedNodes.forEach((node) => {
         if ($isTextNode(node)) {
-          const nearestBlockElement =
-            $getNearestBlockElementAncestorOrThrow(node);
-          const textnodes = nearestBlockElement.getAllTextNodes();
-          const aggregatedtextSize = textnodes.reduce(
-            (acc, textNode) => acc + textNode.getTextContentSize(),
-            0,
-          );
-          if (aggregatedtextSize !== node.getTextContentSize()) {
+          if (
+            fullySelectedTextNodeKeys &&
+            !fullySelectedTextNodeKeys.has(node.getKey())
+          ) {
             return;
           }
           if (node.getStyle() !== '') {
@@ -365,6 +364,8 @@ export const clearFormatting = (
           if (node.getFormat() !== 0) {
             node.setFormat(0);
           }
+          const nearestBlockElement =
+            $getNearestBlockElementAncestorOrThrow(node);
           if (nearestBlockElement.getFormat() !== 0) {
             nearestBlockElement.setFormat('');
           }
@@ -380,3 +381,49 @@ export const clearFormatting = (
     }
   });
 };
+
+function getFullySelectedTextNodeKeys(selection: RangeSelection): Set<string> {
+  const points = selection.getStartEndPoints();
+  if (points === null) {
+    return new Set();
+  }
+
+  const [anchor, focus] = points;
+  const [start, end] = selection.isBackward()
+    ? [focus, anchor]
+    : [anchor, focus];
+  const fullySelectedKeys = new Set<string>();
+
+  for (const node of selection.getNodes()) {
+    if (!$isTextNode(node)) {
+      continue;
+    }
+    const nodeKey = node.getKey();
+    const textLength = node.getTextContentSize();
+
+    if (start.key === nodeKey && end.key === nodeKey) {
+      if (start.offset === 0 && end.offset === textLength) {
+        fullySelectedKeys.add(nodeKey);
+      }
+      continue;
+    }
+
+    if (start.key === nodeKey) {
+      if (start.offset === 0) {
+        fullySelectedKeys.add(nodeKey);
+      }
+      continue;
+    }
+
+    if (end.key === nodeKey) {
+      if (end.offset === textLength) {
+        fullySelectedKeys.add(nodeKey);
+      }
+      continue;
+    }
+
+    fullySelectedKeys.add(nodeKey);
+  }
+
+  return fullySelectedKeys;
+}

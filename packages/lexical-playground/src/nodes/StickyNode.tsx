@@ -149,16 +149,18 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
     return false;
   }
 
-  setPosition(x: number, y: number): void {
+  setPosition(x: number, y: number): this {
     const writable = this.getWritable();
     writable.__x = x;
     writable.__y = y;
     $setSelection(null);
+    return writable;
   }
 
-  toggleColor(): void {
+  toggleColor(): this {
     const writable = this.getWritable();
     writable.__color = writable.__color === 'pink' ? 'yellow' : 'pink';
+    return writable;
   }
 
   decorate(editor: LexicalEditor, config: EditorConfig): JSX.Element {

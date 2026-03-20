@@ -356,7 +356,7 @@ export const clearFormatting = (
             (acc, textNode) => acc + textNode.getTextContentSize(),
             0,
           );
-          if (aggregatedtextSize !== focus.offset - anchor.offset) {
+          if (aggregatedtextSize !== node.getTextContentSize()) {
             return;
           }
           if (node.getStyle() !== '') {

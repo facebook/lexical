@@ -16,6 +16,7 @@ import {
   $applyNodeReplacement,
   $getEditor,
   $getNearestNodeFromDOMNode,
+  $isRangeSelection,
   BaseSelection,
   DOMConversionMap,
   DOMConversionOutput,
@@ -236,15 +237,20 @@ export class TableNode extends ElementNode {
     this.__colWidths = undefined;
   }
 
-  exportJSON(): SerializedTableNode {
+  exportJSON(selection: BaseSelection | null = null): SerializedTableNode {
     return {
       ...super.exportJSON(),
+      // TODO: export appropriate colWidths based on the selection.
       colWidths: this.getColWidths(),
       frozenColumnCount: this.__frozenColumnCount
         ? this.__frozenColumnCount
         : undefined,
       frozenRowCount: this.__frozenRowCount ? this.__frozenRowCount : undefined,
       rowStriping: this.__rowStriping ? this.__rowStriping : undefined,
+      wholeTable:
+        $isRangeSelection(selection) &&
+        selection.anchor.getNode().isParentOf(this) &&
+        selection.focus.getNode().isParentOf(this),
     };
   }
 

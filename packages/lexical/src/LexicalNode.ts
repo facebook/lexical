@@ -1133,7 +1133,7 @@ export class LexicalNode {
    * See [Serialization & Deserialization](https://lexical.dev/docs/concepts/serialization#lexical---html).
    *
    * */
-  exportJSON(): SerializedLexicalNode {
+  exportJSON(selection: BaseSelection | null = null): SerializedLexicalNode {
     // eslint-disable-next-line dot-notation
     const state = this.__state ? this.__state.toJSON() : undefined;
     return {

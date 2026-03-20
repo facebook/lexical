@@ -281,8 +281,11 @@ export interface BaseSerializedNode {
   version: number;
 }
 
-function exportNodeToJSON<T extends LexicalNode>(node: T): BaseSerializedNode {
-  const serializedNode = node.exportJSON();
+function exportNodeToJSON<T extends LexicalNode>(
+  node: T,
+  selection: BaseSelection | null,
+): BaseSerializedNode {
+  const serializedNode = node.exportJSON(selection);
   const nodeClass = node.constructor;
 
   if (serializedNode.type !== nodeClass.getType()) {
@@ -325,7 +328,7 @@ function $appendNodesToJSON(
   }
   const children = $isElementNode(target) ? target.getChildren() : [];
 
-  const serializedNode = exportNodeToJSON(target);
+  const serializedNode = exportNodeToJSON(target, selection);
   if ($isTextNode(target) && target.getTextContentSize() === 0) {
     // If an uncollapsed selection ends or starts at the end of a line of specialized,
     // TextNodes, such as code tokens, we will get a 'blank' TextNode here, i.e., one

@@ -34,14 +34,22 @@ import {
   $isParagraphNode,
   $isRangeSelection,
   defineExtension,
-  LexicalEditor,
+  LexicalEditorWithDispose,
   NodeKey,
   SELECT_ALL_COMMAND,
 } from 'lexical';
-import {assert, beforeEach, describe, expect, it, test} from 'vitest';
+import {
+  afterEach,
+  assert,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  test,
+} from 'vitest';
 
 describe('TableExtension', () => {
-  let editor: LexicalEditor;
+  let editor: LexicalEditorWithDispose;
 
   beforeEach(() => {
     editor = buildEditorFromExtensions(
@@ -51,6 +59,9 @@ describe('TableExtension', () => {
         theme: {tableScrollableWrapper: 'table-scrollable-wrapper'},
       }),
     );
+  });
+  afterEach(() => {
+    editor.dispose();
   });
 
   it('Creates a table with INSERT_TABLE_COMMAND', () => {

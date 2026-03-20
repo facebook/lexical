@@ -38,7 +38,7 @@ describe('Link', () => {
     name: '[root]',
   });
   it('can convert a text node to a link with $toggleLink', () => {
-    const editor = buildEditorFromExtensions(extension);
+    using editor = buildEditorFromExtensions(extension);
     editor.update(
       () => {
         const textNode: TextNode = $getRoot().getLastDescendant()!;
@@ -67,12 +67,11 @@ describe('Link', () => {
       },
       {discrete: true},
     );
-    editor.dispose();
   });
 
   describe('merge adjacent LinkNodes', () => {
     it('merges adjacent LinkNodes with identical attributes', () => {
-      const editor = buildEditorFromExtensions(extension);
+      using editor = buildEditorFromExtensions(extension);
       editor.update(
         () => {
           const p = $getRoot().getFirstChild();
@@ -107,11 +106,10 @@ describe('Link', () => {
         expect(link.getTitle()).toBe('Lexical');
         expect(link.getTextContent()).toBe('Hello World');
       });
-      editor.dispose();
     });
 
     it('does not merge LinkNodes with different URLs', () => {
-      const editor = buildEditorFromExtensions(extension);
+      using editor = buildEditorFromExtensions(extension);
       editor.update(
         () => {
           const p = $getRoot().getFirstChild();
@@ -130,7 +128,6 @@ describe('Link', () => {
         assert($isParagraphNode(p), 'Expecting a ParagraphNode in the root');
         expect(p.getChildren().length).toBe(2);
       });
-      editor.dispose();
     });
 
     it('does not merge LinkNode with AutoLinkNode', () => {
@@ -144,7 +141,7 @@ describe('Link', () => {
         name: '[root-autolink]',
         nodes: () => [AutoLinkNode],
       });
-      const editor = buildEditorFromExtensions(autoLinkExtension);
+      using editor = buildEditorFromExtensions(autoLinkExtension);
       editor.update(
         () => {
           const p = $getRoot().getFirstChild();
@@ -163,11 +160,10 @@ describe('Link', () => {
         assert($isParagraphNode(p), 'Expecting a ParagraphNode in the root');
         expect(p.getChildren().length).toBe(2);
       });
-      editor.dispose();
     });
 
     it('does not merge LinkNodes with different rel', () => {
-      const editor = buildEditorFromExtensions(extension);
+      using editor = buildEditorFromExtensions(extension);
       editor.update(
         () => {
           const p = $getRoot().getFirstChild();
@@ -190,11 +186,10 @@ describe('Link', () => {
         assert($isParagraphNode(p), 'Expecting a ParagraphNode in the root');
         expect(p.getChildren().length).toBe(2);
       });
-      editor.dispose();
     });
 
     it('merges three adjacent identical links into one', () => {
-      const editor = buildEditorFromExtensions(extension);
+      using editor = buildEditorFromExtensions(extension);
       editor.update(
         () => {
           const p = $getRoot().getFirstChild();
@@ -218,11 +213,10 @@ describe('Link', () => {
         expect($isLinkNode(children[0])).toBe(true);
         expect(children[0].getTextContent()).toBe('ABC');
       });
-      editor.dispose();
     });
 
     it('preserves selection when cursor is in the second link during merge', () => {
-      const editor = buildEditorFromExtensions(extension);
+      using editor = buildEditorFromExtensions(extension);
       editor.update(
         () => {
           const p = $getRoot().getFirstChild();
@@ -256,11 +250,10 @@ describe('Link', () => {
           );
         }
       });
-      editor.dispose();
     });
 
     it('merges when only the second link is changed to match the first', () => {
-      const editor = buildEditorFromExtensions(extension);
+      using editor = buildEditorFromExtensions(extension);
       editor.update(
         () => {
           const p = $getRoot().getFirstChild();
@@ -297,11 +290,10 @@ describe('Link', () => {
         expect($isLinkNode(children[0])).toBe(true);
         expect(children[0].getTextContent()).toBe('Hello World');
       });
-      editor.dispose();
     });
 
     it('preserves selection when cursor is in a link that merges into its left neighbor', () => {
-      const editor = buildEditorFromExtensions(extension);
+      using editor = buildEditorFromExtensions(extension);
       editor.update(
         () => {
           const p = $getRoot().getFirstChild();
@@ -345,7 +337,6 @@ describe('Link', () => {
           );
         }
       });
-      editor.dispose();
     });
   });
 });

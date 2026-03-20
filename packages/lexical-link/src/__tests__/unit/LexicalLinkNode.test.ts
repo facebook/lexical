@@ -899,7 +899,7 @@ describe('LinkNode transform (Regression #8083)', () => {
   });
 
   test('extracts block child (HeadingNode) from link', () => {
-    const editor = buildEditorFromExtensions(transformExtension);
+    using editor = buildEditorFromExtensions(transformExtension);
     let textKey: string;
     editor.update(
       () => {
@@ -939,7 +939,7 @@ describe('LinkNode transform (Regression #8083)', () => {
   });
 
   test('extracts block child (ParagraphNode) from link', () => {
-    const editor = buildEditorFromExtensions(transformExtension);
+    using editor = buildEditorFromExtensions(transformExtension);
     let textKey: string;
     editor.update(
       () => {
@@ -982,7 +982,7 @@ describe('LinkNode transform (Regression #8083)', () => {
   });
 
   test('handles siblings after block child', () => {
-    const editor = buildEditorFromExtensions(transformExtension);
+    using editor = buildEditorFromExtensions(transformExtension);
     let afterTextKey: string;
     editor.update(
       () => {
@@ -1036,7 +1036,7 @@ describe('LinkNode transform (Regression #8083)', () => {
   });
 
   test('fixes element selection in paragraph split to the right of LinkNode', () => {
-    const editor = buildEditorFromExtensions(transformExtension);
+    using editor = buildEditorFromExtensions(transformExtension);
     let afterTextKey: string;
     editor.update(
       () => {
@@ -1073,7 +1073,7 @@ describe('LinkNode transform (Regression #8083)', () => {
   });
 
   test('fixes element selection in LinkNode to the right of non-inline node', () => {
-    const editor = buildEditorFromExtensions(transformExtension);
+    using editor = buildEditorFromExtensions(transformExtension);
     let afterTextKey: string;
     editor.update(
       () => {
@@ -1118,7 +1118,7 @@ describe('LinkNode transform (Regression #8083)', () => {
   });
 
   test('fixes element selection with multiple non-inline siblings', () => {
-    const editor = buildEditorFromExtensions(transformExtension);
+    using editor = buildEditorFromExtensions(transformExtension);
     let heading2TextKey: string;
     editor.update(
       () => {
@@ -1161,7 +1161,7 @@ describe('LinkNode transform (Regression #8083)', () => {
   });
 
   test('fixes element selection when no siblings to the right of LinkNode', () => {
-    const editor = buildEditorFromExtensions(transformExtension);
+    using editor = buildEditorFromExtensions(transformExtension);
     editor.update(
       () => {
         const root = $getRoot();
@@ -1195,7 +1195,7 @@ describe('LinkNode transform (Regression #8083)', () => {
   });
 
   test('selection in paragraph right of link with trailing text in link', () => {
-    const editor = buildEditorFromExtensions(transformExtension);
+    using editor = buildEditorFromExtensions(transformExtension);
     let afterTextKey: string;
     editor.update(
       () => {
@@ -1232,7 +1232,7 @@ describe('LinkNode transform (Regression #8083)', () => {
   });
 
   test('selection at end of link with heading only child', () => {
-    const editor = buildEditorFromExtensions(transformExtension);
+    using editor = buildEditorFromExtensions(transformExtension);
     let headingTextKey: string;
     editor.update(
       () => {
@@ -1268,7 +1268,7 @@ describe('LinkNode transform (Regression #8083)', () => {
   });
 
   test('an empty link is not deleted if the transformation did not occur', () => {
-    const editor = buildEditorFromExtensions(transformExtension);
+    using editor = buildEditorFromExtensions(transformExtension);
     let linkKey: string;
     editor.update(
       () => {

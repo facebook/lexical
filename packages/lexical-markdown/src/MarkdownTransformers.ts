@@ -242,12 +242,7 @@ const createBlockNode = (
   return (parentNode, children, match, isImport) => {
     const node = createNode(match);
     node.append(...children);
-    if (!isImport && !$isParagraphNode(parentNode)) {
-      parentNode.clear();
-      parentNode.append(node);
-    } else {
-      parentNode.replace(node);
-    }
+    parentNode.replace(node);
     if (!isImport) {
       node.select(0, 0);
     }
@@ -419,6 +414,62 @@ export const QUOTE: ElementTransformer = {
   },
   type: 'element',
 };
+
+export function nestHeadingInBlockquote(
+  transformers: Array<Transformer> = TRANSFORMERS,
+): Array<Transformer> {
+  const BLOCKQUOTE_HEADING_REGEX = /^(?:>\s)?(#{1,6})\s/;
+
+  const headingTransformer: ElementTransformer = {
+    dependencies: [HeadingNode, QuoteNode],
+    export: HEADING.export,
+    regExp: BLOCKQUOTE_HEADING_REGEX,
+    replace: (parentNode, children, match, isImport) => {
+      const tag = ('h' + match[1].length) as HeadingTagType;
+      const headingNode = $createHeadingNode(tag);
+      headingNode.append(...children);
+
+      const hasBlockquotePrefix = match[0].startsWith('>');
+
+      if (hasBlockquotePrefix) {
+        const quoteNode = $createQuoteNode();
+        quoteNode.append(headingNode);
+        parentNode.replace(quoteNode);
+      } else if (!isImport && !$isParagraphNode(parentNode)) {
+        parentNode.append(headingNode);
+      } else {
+        parentNode.replace(headingNode);
+      }
+
+      if (!isImport) {
+        headingNode.select(0, 0);
+      }
+    },
+    type: 'element',
+  };
+
+  const quoteTransformer: ElementTransformer = {
+    ...QUOTE,
+    export: (node, exportChildren) => {
+      if (!$isQuoteNode(node)) {
+        return null;
+      }
+
+      const firstChild = node.getFirstChild();
+      if ($isHeadingNode(firstChild) && node.getChildrenSize() === 1) {
+        const level = Number(firstChild.getTag().slice(1));
+        const text = exportChildren(firstChild);
+        return '> ' + '#'.repeat(level) + ' ' + text;
+      }
+
+      return QUOTE.export!(node, exportChildren);
+    },
+  };
+
+  return transformers.map((t) =>
+    t === HEADING ? headingTransformer : t === QUOTE ? quoteTransformer : t,
+  );
+}
 
 export const CODE: MultilineElementTransformer = {
   dependencies: [CodeNode],

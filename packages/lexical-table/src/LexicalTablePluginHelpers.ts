@@ -482,11 +482,8 @@ function $tableSelectionInsertClipboardNodesCommand(
   // When pasting just a table, flatten the table on the destination table.
   if (nodes.length === 1 && $isTableNode(nodes[0])) {
     const firstTableNode = nodes[0];
-    const selectionWrapsTable =
-      selection.anchor.getNode().isParentOf(firstTableNode) &&
-      selection.focus.getNode().isParentOf(firstTableNode);
     // However, for range selections that wrap the table (not _inside_ the table), allow pasting the table inside.
-    if (!selectionWrapsTable || !hasNestedTables.peek()) {
+    if (!hasNestedTables.peek() || !firstTableNode.getWholeTable()) {
       return $insertTableIntoGrid(nodes[0], selection);
     }
   }

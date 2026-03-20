@@ -13,7 +13,10 @@ import {ListExtension} from '@lexical/list';
 import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
-  nestHeadingInBlockquote,
+  HEADING,
+  HEADING_BLOCKQUOTE,
+  QUOTE,
+  QUOTE_BLOCKQUOTE,
   registerMarkdownShortcuts,
   TRANSFORMERS,
 } from '@lexical/markdown';
@@ -174,7 +177,9 @@ describe('LINK', () => {
 });
 
 describe('BLOCK QUOTE + HEADING', () => {
-  const nestableTransformers = nestHeadingInBlockquote(TRANSFORMERS);
+  const nestableTransformers = TRANSFORMERS.map((t) =>
+    t === HEADING ? HEADING_BLOCKQUOTE : t === QUOTE ? QUOTE_BLOCKQUOTE : t,
+  );
 
   const NestableHeadingExtension = defineExtension({
     dependencies: [
@@ -188,7 +193,7 @@ describe('BLOCK QUOTE + HEADING', () => {
       registerMarkdownShortcuts(editor_, nestableTransformers),
   });
 
-  test('typing "> # SOME HEADER" creates a heading inside a quote when nestHeadingInBlockquote is used (issue #7407)', () => {
+  test('typing "> # SOME HEADER" creates a heading inside a quote when HEADING_BLOCKQUOTE is used (issue #7407)', () => {
     const editor = buildEditorFromExtensions([NestableHeadingExtension]);
     typeMarkdown(editor, '> # SOME HEADER');
     editor.read(() => {

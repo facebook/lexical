@@ -10,6 +10,7 @@ import {$insertNodeIntoLeaf, $wrapNodeInElement} from '@lexical/utils';
 import {
   $createParagraphNode,
   $getSelection,
+  $insertNodes,
   $isRangeSelection,
   $isRootOrShadowRoot,
   COMMAND_PRIORITY_EDITOR,
@@ -44,7 +45,11 @@ export const DateTimeExtension = defineExtension({
         if ($isRangeSelection(selection)) {
           dateTimeNode.setFormat(selection.format);
         }
-        $insertNodeIntoLeaf(dateTimeNode);
+        if ($isRangeSelection(selection)) {
+          $insertNodeIntoLeaf(dateTimeNode);
+        } else {
+          $insertNodes([dateTimeNode]);
+        }
         if ($isRootOrShadowRoot(dateTimeNode.getParentOrThrow())) {
           $wrapNodeInElement(dateTimeNode, $createParagraphNode).selectEnd();
         }

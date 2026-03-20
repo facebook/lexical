@@ -339,11 +339,6 @@ export const clearFormatting = (
     }
     const selection = $getSelection();
     if ($isRangeSelection(selection) || $isTableSelection(selection)) {
-      const rangeSelection = $isRangeSelection(selection) ? selection : null;
-      const fullySelectedTextNodeKeys =
-        rangeSelection && !rangeSelection.isCollapsed()
-          ? getFullySelectedTextNodeKeys(rangeSelection)
-          : null;
       const extractedNodes = selection.extract();
 
       if (extractedNodes.length === 0) {
@@ -352,12 +347,6 @@ export const clearFormatting = (
 
       extractedNodes.forEach((node) => {
         if ($isTextNode(node)) {
-          if (
-            fullySelectedTextNodeKeys &&
-            !fullySelectedTextNodeKeys.has(node.getKey())
-          ) {
-            return;
-          }
           if (node.getStyle() !== '') {
             node.setStyle('');
           }
@@ -381,49 +370,3 @@ export const clearFormatting = (
     }
   });
 };
-
-function getFullySelectedTextNodeKeys(selection: RangeSelection): Set<string> {
-  const points = selection.getStartEndPoints();
-  if (points === null) {
-    return new Set();
-  }
-
-  const [anchor, focus] = points;
-  const [start, end] = selection.isBackward()
-    ? [focus, anchor]
-    : [anchor, focus];
-  const fullySelectedKeys = new Set<string>();
-
-  for (const node of selection.getNodes()) {
-    if (!$isTextNode(node)) {
-      continue;
-    }
-    const nodeKey = node.getKey();
-    const textLength = node.getTextContentSize();
-
-    if (start.key === nodeKey && end.key === nodeKey) {
-      if (start.offset === 0 && end.offset === textLength) {
-        fullySelectedKeys.add(nodeKey);
-      }
-      continue;
-    }
-
-    if (start.key === nodeKey) {
-      if (start.offset === 0) {
-        fullySelectedKeys.add(nodeKey);
-      }
-      continue;
-    }
-
-    if (end.key === nodeKey) {
-      if (end.offset === textLength) {
-        fullySelectedKeys.add(nodeKey);
-      }
-      continue;
-    }
-
-    fullySelectedKeys.add(nodeKey);
-  }
-
-  return fullySelectedKeys;
-}

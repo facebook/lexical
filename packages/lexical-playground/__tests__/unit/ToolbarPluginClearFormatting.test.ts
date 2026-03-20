@@ -33,7 +33,6 @@ describe('ToolbarPlugin clearFormatting', () => {
           paragraph.append(text);
           $getRoot().append(paragraph);
 
-          // collapsed cursor (not full selection)
           text.select(1, 1);
         },
         {discrete: true},
@@ -48,14 +47,12 @@ describe('ToolbarPlugin clearFormatting', () => {
           return;
         }
 
-        // ✅ Block formatting should remain
         expect(paragraph.getFormatType()).toBe('');
         expect(paragraph.getIndent()).toBe(0);
 
         const text = paragraph.getFirstChild();
         expect(text).not.toBeNull();
         if ($isTextNode(text)) {
-          // ✅ No text formatting to clear anyway
           expect(text.getFormat()).toBe(0);
           expect(text.getStyle()).toBe('');
         }

@@ -19,6 +19,8 @@ import {createMarkdownExport} from './MarkdownExport';
 import {createMarkdownImport} from './MarkdownImport';
 import {registerMarkdownShortcuts} from './MarkdownShortcuts';
 import {
+  $createHeadingTransformer,
+  $createQuoteTransformer,
   BOLD_ITALIC_STAR,
   BOLD_ITALIC_UNDERSCORE,
   BOLD_STAR,
@@ -27,7 +29,6 @@ import {
   CODE,
   ELEMENT_TRANSFORMERS,
   HEADING,
-  HEADING_BLOCKQUOTE,
   HIGHLIGHT,
   INLINE_CODE,
   ITALIC_STAR,
@@ -37,7 +38,6 @@ import {
   normalizeMarkdown,
   ORDERED_LIST,
   QUOTE,
-  QUOTE_BLOCKQUOTE,
   STRIKETHROUGH,
   TEXT_FORMAT_TRANSFORMERS,
   TEXT_MATCH_TRANSFORMERS,
@@ -86,6 +86,8 @@ function $convertToMarkdownString(
 export {
   $convertFromMarkdownString,
   $convertToMarkdownString,
+  $createHeadingTransformer,
+  $createQuoteTransformer,
   BOLD_ITALIC_STAR,
   BOLD_ITALIC_UNDERSCORE,
   BOLD_STAR,
@@ -95,7 +97,6 @@ export {
   ELEMENT_TRANSFORMERS,
   type ElementTransformer,
   HEADING,
-  HEADING_BLOCKQUOTE,
   HIGHLIGHT,
   INLINE_CODE,
   ITALIC_STAR,
@@ -105,7 +106,6 @@ export {
   type MultilineElementTransformer,
   ORDERED_LIST,
   QUOTE,
-  QUOTE_BLOCKQUOTE,
   registerMarkdownShortcuts,
   STRIKETHROUGH,
   TEXT_FORMAT_TRANSFORMERS,

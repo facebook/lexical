@@ -37,7 +37,6 @@ import {
   $createTextNode,
   $findMatchingParent,
   $getState,
-  $isParagraphNode,
   $setState,
   createState,
   ElementNode,
@@ -360,106 +359,123 @@ const $listExport = (
   return output.join('\n');
 };
 
-export const HEADING: ElementTransformer = {
-  dependencies: [HeadingNode],
-  export: (node, exportChildren) => {
-    if (!$isHeadingNode(node)) {
-      return null;
-    }
-    const level = Number(node.getTag().slice(1));
-    return '#'.repeat(level) + ' ' + exportChildren(node);
-  },
-  regExp: HEADING_REGEX,
-  replace: createBlockNode((match) => {
-    const tag = ('h' + match[1].length) as HeadingTagType;
-    return $createHeadingNode(tag);
-  }),
-  type: 'element',
-};
+export function $createHeadingTransformer(options?: {
+  nestInBlockquote?: boolean;
+}): ElementTransformer {
+  const nestInBlockquote =
+    (options != null && options.nestInBlockquote) || false;
+  return {
+    dependencies: nestInBlockquote ? [HeadingNode, QuoteNode] : [HeadingNode],
+    export: (node, exportChildren) => {
+      if (!$isHeadingNode(node)) {
+        return null;
+      }
+      const level = Number(node.getTag().slice(1));
+      return '#'.repeat(level) + ' ' + exportChildren(node);
+    },
+    regExp: HEADING_REGEX,
+    replace: (parentNode, children, match, isImport) => {
+      const tag = ('h' + match[1].length) as HeadingTagType;
+      const headingNode = $createHeadingNode(tag);
+      headingNode.append(...children);
 
-export const QUOTE: ElementTransformer = {
-  dependencies: [QuoteNode],
-  export: (node, exportChildren) => {
-    if (!$isQuoteNode(node)) {
-      return null;
-    }
+      if (nestInBlockquote && $isQuoteNode(parentNode)) {
+        parentNode.append(headingNode);
+      } else {
+        parentNode.replace(headingNode);
+      }
 
-    const lines = exportChildren(node).split('\n');
-    const output = [];
-    for (const line of lines) {
-      output.push('> ' + line);
-    }
-    return output.join('\n');
-  },
-  regExp: QUOTE_REGEX,
-  replace: (parentNode, children, _match, isImport) => {
-    if (isImport) {
-      const previousNode = parentNode.getPreviousSibling();
-      if ($isQuoteNode(previousNode)) {
-        previousNode.splice(previousNode.getChildrenSize(), 0, [
-          $createLineBreakNode(),
-          ...children,
-        ]);
-        parentNode.remove();
+      if (!isImport) {
+        headingNode.select(0, 0);
+      }
+    },
+    type: 'element',
+  };
+}
+
+export const HEADING: ElementTransformer = $createHeadingTransformer();
+
+const QUOTE_WITH_HEADING_REGEX = /^>\s(?:(#{1,6})\s)?/;
+
+export function $createQuoteTransformer(options?: {
+  handleNestedHeadings?: boolean;
+}): ElementTransformer {
+  const handleNestedHeadings =
+    (options != null && options.handleNestedHeadings) || false;
+  return {
+    dependencies: handleNestedHeadings ? [QuoteNode, HeadingNode] : [QuoteNode],
+    export: (node, exportChildren) => {
+      if (!$isQuoteNode(node)) {
+        return null;
+      }
+
+      if (handleNestedHeadings) {
+        const firstChild = node.getFirstChild();
+        if ($isHeadingNode(firstChild) && node.getChildrenSize() === 1) {
+          const level = Number(firstChild.getTag().slice(1));
+          return '> ' + '#'.repeat(level) + ' ' + exportChildren(firstChild);
+        }
+      }
+
+      const lines = exportChildren(node).split('\n');
+      const output = [];
+      for (const line of lines) {
+        output.push('> ' + line);
+      }
+      return output.join('\n');
+    },
+    regExp: handleNestedHeadings ? QUOTE_WITH_HEADING_REGEX : QUOTE_REGEX,
+    replace: (parentNode, children, match, isImport) => {
+      if (handleNestedHeadings && match[1]) {
+        const tag = ('h' + match[1].length) as HeadingTagType;
+        const headingNode = $createHeadingNode(tag);
+        headingNode.append(...children);
+
+        if (isImport) {
+          const previousNode = parentNode.getPreviousSibling();
+          if ($isQuoteNode(previousNode)) {
+            previousNode.splice(previousNode.getChildrenSize(), 0, [
+              $createLineBreakNode(),
+              headingNode,
+            ]);
+            parentNode.remove();
+            return;
+          }
+        }
+
+        const quoteNode = $createQuoteNode();
+        quoteNode.append(headingNode);
+        parentNode.replace(quoteNode);
+        if (!isImport) {
+          headingNode.select(0, 0);
+        }
         return;
       }
-    }
 
-    const node = $createQuoteNode();
-    node.append(...children);
-    parentNode.replace(node);
-    if (!isImport) {
-      node.select(0, 0);
-    }
-  },
-  type: 'element',
-};
+      if (isImport) {
+        const previousNode = parentNode.getPreviousSibling();
+        if ($isQuoteNode(previousNode)) {
+          previousNode.splice(previousNode.getChildrenSize(), 0, [
+            $createLineBreakNode(),
+            ...children,
+          ]);
+          parentNode.remove();
+          return;
+        }
+      }
 
-export const HEADING_BLOCKQUOTE: ElementTransformer = {
-  dependencies: [HeadingNode, QuoteNode],
-  export: HEADING.export,
-  regExp: /^(?:>\s)?(#{1,6})\s/,
-  replace: (parentNode, children, match, isImport) => {
-    const tag = ('h' + match[1].length) as HeadingTagType;
-    const headingNode = $createHeadingNode(tag);
-    headingNode.append(...children);
+      const node = $createQuoteNode();
+      node.append(...children);
+      parentNode.replace(node);
+      if (!isImport) {
+        node.select(0, 0);
+      }
+    },
+    type: 'element',
+  };
+}
 
-    const hasBlockquotePrefix = match[0].startsWith('>');
-
-    if (hasBlockquotePrefix) {
-      const quoteNode = $createQuoteNode();
-      quoteNode.append(headingNode);
-      parentNode.replace(quoteNode);
-    } else if (!isImport && !$isParagraphNode(parentNode)) {
-      parentNode.append(headingNode);
-    } else {
-      parentNode.replace(headingNode);
-    }
-
-    if (!isImport) {
-      headingNode.select(0, 0);
-    }
-  },
-  type: 'element',
-};
-
-export const QUOTE_BLOCKQUOTE: ElementTransformer = {
-  ...QUOTE,
-  export: (node, exportChildren) => {
-    if (!$isQuoteNode(node)) {
-      return null;
-    }
-
-    const firstChild = node.getFirstChild();
-    if ($isHeadingNode(firstChild) && node.getChildrenSize() === 1) {
-      const level = Number(firstChild.getTag().slice(1));
-      const text = exportChildren(firstChild);
-      return '> ' + '#'.repeat(level) + ' ' + text;
-    }
-
-    return QUOTE.export!(node, exportChildren);
-  },
-};
+export const QUOTE: ElementTransformer = $createQuoteTransformer();
 
 export const CODE: MultilineElementTransformer = {
   dependencies: [CodeNode],

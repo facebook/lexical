@@ -8,20 +8,14 @@
 
 import './styles.css';
 
-import {AutoFocusPlugin} from '@lexical/react/LexicalAutoFocusPlugin';
-import {LexicalComposer} from '@lexical/react/LexicalComposer';
+import {AutoFocusExtension, TabIndentationExtension} from '@lexical/extension';
+import {HistoryExtension} from '@lexical/history';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
-import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
-import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
-import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
-import {TabIndentationPlugin} from '@lexical/react/LexicalTabIndentationPlugin';
-import {HeadingNode, QuoteNode} from '@lexical/rich-text';
+import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
+import {RichTextExtension} from '@lexical/rich-text';
+import {defineExtension} from 'lexical';
 
 import {ToolbarPlugin} from './ToolbarPlugin';
-
-function onError(error) {
-  console.error(error);
-}
 
 const theme = {
   heading: {
@@ -38,35 +32,33 @@ const theme = {
   },
 };
 
-export default function LandingHeroEditor() {
-  const initialConfig = {
-    nodes: [HeadingNode, QuoteNode],
-    onError,
-    theme,
-  };
+const landingHeroExtension = defineExtension({
+  dependencies: [
+    RichTextExtension,
+    HistoryExtension,
+    AutoFocusExtension,
+    TabIndentationExtension,
+  ],
+  name: '@lexical/website/landing-hero-editor',
+  namespace: '@lexical/website/landing-hero-editor',
+  theme,
+});
 
+export default function LandingHeroEditor() {
   return (
-    <LexicalComposer initialConfig={initialConfig}>
+    <LexicalExtensionComposer extension={landingHeroExtension}>
       <div className="editor-container">
         <ToolbarPlugin />
         <div className="editor-inner">
-          <RichTextPlugin
-            ErrorBoundary={LexicalErrorBoundary}
-            contentEditable={
-              <ContentEditable
-                className="editor-input"
-                aria-placeholder={'Enter some text...'}
-              />
-            }
+          <ContentEditable
+            className="editor-input"
+            aria-placeholder="Enter some text..."
             placeholder={
               <div className="editor-placeholder">Enter some text...</div>
             }
           />
-          <TabIndentationPlugin />
-          <HistoryPlugin />
-          <AutoFocusPlugin />
         </div>
       </div>
-    </LexicalComposer>
+    </LexicalExtensionComposer>
   );
 }

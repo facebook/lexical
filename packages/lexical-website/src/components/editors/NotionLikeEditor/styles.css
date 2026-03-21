@@ -1,0 +1,366 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
+/* ── Editor shell ──────────────────────────────────────────── */
+
+.nle-editor {
+  position: relative;
+  border: 1px solid #e4e4e7;
+  border-radius: 8px;
+  height: 400px;
+  width: 100%;
+  overflow-y: auto;
+  background: #fff;
+}
+
+@media (max-width: 996px) {
+  .nle-editor {
+    height: 260px;
+  }
+}
+
+html[data-theme='dark'] .nle-editor {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: #1f1f21;
+}
+
+.nle-editor-inner {
+  position: relative;
+  min-height: 100%;
+}
+
+.nle-editor-input {
+  min-height: 100%;
+  padding: 20px 56px 20px;
+  outline: none;
+}
+
+.nle-editor-placeholder {
+  position: absolute;
+  top: 22px;
+  left: 56px;
+  pointer-events: none;
+  user-select: none;
+  color: #a1a1aa;
+  font-size: 0.95rem;
+}
+
+/* ── Content styles ─────────────────────────────────────────── */
+
+.nle-paragraph {
+  margin: 0;
+  padding: 2px 0;
+  line-height: 1.6;
+}
+
+.nle-h1 {
+  margin: 0.5rem 0 0.2rem;
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.nle-h2 {
+  margin: 0.5rem 0 0.15rem;
+  font-size: 1.3rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.nle-h3 {
+  margin: 0.4rem 0 0.1rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.nle-quote {
+  margin: 0.4rem 0;
+  padding-left: 14px;
+  border-left: 3px solid #d4d4d8;
+  color: #71717a;
+  font-style: italic;
+}
+
+html[data-theme='dark'] .nle-quote {
+  border-left-color: #3f3f46;
+  color: #a1a1aa;
+}
+
+.nle-list-ul,
+.nle-list-ol {
+  margin: 0.2rem 0 0.2rem 1.25rem;
+  padding: 0;
+}
+
+.nle-listitem {
+  margin: 0.1rem 0;
+  line-height: 1.6;
+}
+
+.nle-text-bold {
+  font-weight: 700;
+}
+
+.nle-text-italic {
+  font-style: italic;
+}
+
+.nle-text-code {
+  background: rgba(135, 131, 120, 0.15);
+  border-radius: 3px;
+  padding: 0.1em 0.3em;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 0.875em;
+}
+
+html[data-theme='dark'] .nle-text-code {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* ── Drag menu ──────────────────────────────────────────────── */
+
+.nle-drag-menu {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 4px;
+  cursor: grab;
+  opacity: 0;
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  will-change: transform, opacity;
+  transition:
+    transform 140ms ease-in-out,
+    opacity 160ms ease-in-out;
+}
+
+.nle-drag-menu:active {
+  cursor: grabbing;
+}
+
+.nle-drag-add,
+.nle-drag-handle {
+  width: 18px;
+  height: 18px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background-color: transparent;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 14px 14px;
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+
+.nle-drag-add {
+  background-image: url(/img/plus.svg);
+}
+
+.nle-drag-handle {
+  background-image: url(/img/draggable-block-menu.svg);
+  cursor: grab;
+}
+
+.nle-drag-add:hover,
+.nle-drag-handle:hover {
+  background-color: #f4f4f5;
+  opacity: 1;
+}
+
+html[data-theme='dark'] .nle-drag-add:hover,
+html[data-theme='dark'] .nle-drag-handle:hover {
+  background-color: #ffffdd;
+}
+
+/* Invert icons in dark mode */
+html[data-theme='dark'] .nle-drag-add,
+html[data-theme='dark'] .nle-drag-handle {
+  filter: invert(1);
+}
+
+.nle-target-line {
+  pointer-events: none;
+  background: #60a5fa;
+  height: 3px;
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  will-change: transform;
+}
+
+/* ── Block picker (from + button) ───────────────────────────── */
+
+.nle-block-picker {
+  width: 230px;
+  border: 1px solid #e4e4e7;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+}
+
+html[data-theme='dark'] .nle-block-picker {
+  border-color: #3f3f46;
+  background: #232325;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.nle-block-picker-search {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  border: none;
+  border-bottom: 1px solid #e4e4e7;
+  background: transparent;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  outline: none;
+  color: inherit;
+}
+
+html[data-theme='dark'] .nle-block-picker-search {
+  border-bottom-color: #3f3f46;
+}
+
+.nle-block-picker ul {
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.nle-block-picker-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font-size: 0.875rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.nle-block-picker-item:hover,
+.nle-block-picker-item.selected {
+  background: #f4f4f5;
+}
+
+html[data-theme='dark'] .nle-block-picker-item:hover,
+html[data-theme='dark'] .nle-block-picker-item.selected {
+  background: #3a3a3c;
+}
+
+/* ── Slash command menu ─────────────────────────────────────── */
+
+.nle-slash-menu {
+  width: 220px;
+  background: #fff;
+  border: 1px solid #e4e4e7;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+}
+
+html[data-theme='dark'] .nle-slash-menu {
+  border-color: #3f3f46;
+  background: #232325;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.nle-slash-menu ul {
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.nle-slash-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  color: inherit;
+}
+
+html[data-theme='dark'] .nle-slash-item {
+  color: #e4e4e7;
+}
+
+.nle-slash-item:hover,
+.nle-slash-item.selected {
+  background: #f4f4f5;
+}
+
+html[data-theme='dark'] .nle-slash-item:hover,
+html[data-theme='dark'] .nle-slash-item.selected {
+  background: #3a3a3c;
+}
+
+.nle-slash-label {
+  flex: 1;
+}
+
+/* ── Block icons (shared by both menus) ─────────────────────── */
+
+.nle-icon {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+html[data-theme='dark'] .nle-icon {
+  filter: invert(1);
+}
+
+.nle-icon-paragraph {
+  background-image: url(/img/text-paragraph.svg);
+}
+
+.nle-icon-h1 {
+  background-image: url(/img/type-h1.svg);
+}
+
+.nle-icon-h2 {
+  background-image: url(/img/type-h2.svg);
+}
+
+.nle-icon-h3 {
+  background-image: url(/img/type-h3.svg);
+}
+
+.nle-icon-bullet {
+  background-image: url(/img/list-ul.svg);
+}
+
+.nle-icon-number {
+  background-image: url(/img/list-ol.svg);
+}
+
+.nle-icon-quote {
+  background-image: url(/img/chat-square-quote.svg);
+}

@@ -5886,7 +5886,7 @@ test.describe.parallel('Tables', () => {
     );
   });
 
-  test(`Cannot paste tables inside table cells`, async ({
+  test(`Cannot paste tables inside table cells (without hasNestedTables)`, async ({
     page,
     isPlainText,
     isCollab,
@@ -5945,7 +5945,7 @@ test.describe.parallel('Tables', () => {
     );
   });
 
-  test(`Can paste tables inside table cells (with hasNestedTables)`, async ({
+  test(`Can paste tables inside table cells using cmd-A (with hasNestedTables)`, async ({
     page,
     isPlainText,
     isCollab,
@@ -6021,6 +6021,91 @@ test.describe.parallel('Tables', () => {
             </td>
           </tr>
         </table>
+        <p><br /></p>
+      `,
+      undefined,
+      {ignoreClasses: true, ignoreDir: true},
+    );
+  });
+
+  test(`Can paste tables inside table cells using select-table (with hasNestedTables)`, async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+    await initialize({hasNestedTables: true, isCollab, page});
+    await focusEditor(page);
+
+    // Create and copy a table
+    await insertTable(page, 2, 2);
+    await page.keyboard.type('test inner table');
+
+    await click(page, '.PlaygroundEditorTheme__tableCell:first-child');
+    await page.getByRole('button', {name: 'Select table'}).click();
+
+    await withExclusiveClipboardAccess(async () => {
+      const clipboard = await copyToClipboard(page);
+      await page.keyboard.press('Backspace');
+      await moveToEditorBeginning(page);
+
+      // Create another table and try to paste the first table into a cell
+      await insertTable(page, 2, 2);
+      await click(page, '.PlaygroundEditorTheme__tableCell:first-child');
+      await pasteFromClipboard(page, clipboard);
+    });
+
+    // Verify that a nested table was pasted into the cell (without a trailing paragraph from the original copy)
+    await assertHTML(
+      page,
+      html`
+        <p><br /></p>
+        <table>
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
+          <tr>
+            <th>
+              <table>
+                <colgroup>
+                  <col style="width: 92px" />
+                  <col style="width: 92px" />
+                </colgroup>
+                <tr>
+                  <th>
+                    <p>
+                      <span data-lexical-text="true">test inner table</span>
+                    </p>
+                  </th>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                </tr>
+                <tr>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                  <td>
+                    <p><br /></p>
+                  </td>
+                </tr>
+              </table>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+        </table>
+        <p><br /></p>
         <p><br /></p>
       `,
       undefined,

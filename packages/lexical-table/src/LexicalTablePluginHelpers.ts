@@ -479,9 +479,13 @@ function $tableSelectionInsertClipboardNodesCommand(
     return false;
   }
 
-  // When pasting just a table, flatten the table on the destination table, even when nested tables are allowed.
+  // When pasting just a table, flatten the table on the destination table.
   if (nodes.length === 1 && $isTableNode(nodes[0])) {
-    return $insertTableIntoGrid(nodes[0], selection);
+    const firstTableNode = nodes[0];
+    // However, for range selections that wrap the table (not _inside_ the table), allow pasting the table inside.
+    if (!hasNestedTables.peek() || !firstTableNode.getWholeTable()) {
+      return $insertTableIntoGrid(nodes[0], selection);
+    }
   }
 
   // If nested tables are enabled, allow pasting a table into a single cell.

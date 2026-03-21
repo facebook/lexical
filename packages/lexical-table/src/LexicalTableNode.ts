@@ -16,6 +16,7 @@ import {
   $applyNodeReplacement,
   $getEditor,
   $getNearestNodeFromDOMNode,
+  $isRangeSelection,
   BaseSelection,
   DOMConversionMap,
   DOMConversionOutput,
@@ -55,6 +56,7 @@ export type SerializedTableNode = Spread<
     rowStriping?: boolean;
     frozenColumnCount?: number;
     frozenRowCount?: number;
+    wholeTable?: boolean;
   },
   SerializedElementNode
 >;
@@ -176,6 +178,7 @@ export class TableNode extends ElementNode {
   __frozenColumnCount: number;
   __frozenRowCount: number;
   __colWidths?: readonly number[];
+  __wholeTable?: boolean; // ephemeral
 
   static getType(): string {
     return 'table';
@@ -225,7 +228,8 @@ export class TableNode extends ElementNode {
       .setRowStriping(serializedNode.rowStriping || false)
       .setFrozenColumns(serializedNode.frozenColumnCount || 0)
       .setFrozenRows(serializedNode.frozenRowCount || 0)
-      .setColWidths(serializedNode.colWidths);
+      .setColWidths(serializedNode.colWidths)
+      .setWholeTable(serializedNode.wholeTable || false);
   }
 
   constructor(key?: NodeKey) {
@@ -236,15 +240,20 @@ export class TableNode extends ElementNode {
     this.__colWidths = undefined;
   }
 
-  exportJSON(): SerializedTableNode {
+  exportJSON(selection: BaseSelection | null = null): SerializedTableNode {
     return {
       ...super.exportJSON(),
+      // TODO: export appropriate colWidths based on the selection.
       colWidths: this.getColWidths(),
       frozenColumnCount: this.__frozenColumnCount
         ? this.__frozenColumnCount
         : undefined,
       frozenRowCount: this.__frozenRowCount ? this.__frozenRowCount : undefined,
       rowStriping: this.__rowStriping ? this.__rowStriping : undefined,
+      wholeTable:
+        $isRangeSelection(selection) &&
+        selection.anchor.getNode().isParentOf(this) &&
+        selection.focus.getNode().isParentOf(this),
     };
   }
 
@@ -608,6 +617,16 @@ export class TableNode extends ElementNode {
     });
 
     return columnCount;
+  }
+
+  setWholeTable(wholeTable: boolean): this {
+    const self = this.getWritable();
+    self.__wholeTable = wholeTable;
+    return self;
+  }
+
+  getWholeTable(): boolean {
+    return Boolean(this.getLatest().__wholeTable);
   }
 }
 

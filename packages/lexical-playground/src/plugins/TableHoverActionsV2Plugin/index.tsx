@@ -35,9 +35,11 @@ import {
   $moveTableColumn,
 } from '@lexical/table';
 import {
+  $createRangeSelection,
   $getChildCaret,
   $getNearestNodeFromDOMNode,
   $getSiblingCaret,
+  $setSelection,
   type EditorThemeClasses,
   isHTMLElement,
 } from 'lexical';
@@ -278,6 +280,7 @@ function TableHoverActionsV2({
       if (!hoveredCell) {
         setIsVisible(false);
         setIsLeftVisible(false);
+        setHoveredColumnIndex(null);
         hoveredTopCellRef.current = null;
         hoveredLeftCellRef.current = null;
         return;
@@ -332,6 +335,7 @@ function TableHoverActionsV2({
       document.removeEventListener('mousemove', handleMouseMove);
       setIsVisible(false);
       setIsLeftVisible(false);
+      setHoveredColumnIndex(null);
     };
   }, [anchorElem, getTheme, isEditable, leftRefs, refs, update, updateLeft]);
 
@@ -354,6 +358,7 @@ function TableHoverActionsV2({
       }
       setIsVisible(false);
       setIsLeftVisible(false);
+      setHoveredColumnIndex(null);
     };
 
     return editor.registerRootListener((rootElement) => {
@@ -602,6 +607,32 @@ function TableHoverActionsV2({
     });
   };
 
+  const handleSelectTable = () => {
+    if (!hoveredTable) {
+      return;
+    }
+    // Prepares a Range Selection that perfectly wraps the table. This is the intended way to select and copy a table.
+    editor.update(() => {
+      const tableNode = $getNearestNodeFromDOMNode(hoveredTable);
+      if (!$isTableNode(tableNode)) {
+        return;
+      }
+      const tableParent = tableNode.getParent();
+      if (!tableParent) {
+        return;
+      }
+      const indexInParent = tableNode.getIndexWithinParent();
+      const rangeSelection = $createRangeSelection();
+      rangeSelection.anchor.set(tableParent.getKey(), indexInParent, 'element');
+      rangeSelection.focus.set(
+        tableParent.getKey(),
+        indexInParent + 1,
+        'element',
+      );
+      $setSelection(rangeSelection);
+    });
+  };
+
   return (
     <>
       <div
@@ -614,6 +645,14 @@ function TableHoverActionsV2({
           opacity: isVisible ? 1 : 0,
         }}
         className="floating-top-actions">
+        {hoveredColumnIndex === 0 ? (
+          <button
+            className="floating-select-indicator"
+            aria-label="Select table"
+            type="button"
+            onClick={handleSelectTable}
+          />
+        ) : null}
         <button
           ref={dragHandleRef}
           className="floating-drag-indicator"

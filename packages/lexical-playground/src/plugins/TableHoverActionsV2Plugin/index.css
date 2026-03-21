@@ -60,6 +60,24 @@
   cursor: grab;
 }
 
+.floating-select-indicator {
+  background-image: url(../../images/icons/table.svg);
+  background-color: #ffffff;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 12px 12px;
+  border: 1px solid #d0d0d0;
+  border-radius: 2px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  box-sizing: border-box;
+  height: 18px;
+  pointer-events: auto;
+  transition: opacity 80ms ease;
+  width: 18px;
+  z-index: 10;
+  cursor: pointer;
+}
+
 .floating-filter-indicator:hover {
   background-color: #f3f3f3;
 }
@@ -73,6 +91,10 @@
 }
 
 .floating-add-indicator:hover {
+  background-color: #f3f3f3;
+}
+
+.floating-select-indicator:hover {
   background-color: #f3f3f3;
 }
 

@@ -3,7 +3,7 @@ name: Lexical e2e test runner
 on:
   workflow_call:
     inputs:
-      # Make sure that all of these are present in the name of the actions/upload-artifact@v4 action below
+      # Make sure that all of these are present in the name of the actions/upload-artifact@v7 action below
       os: {required: true, type: string}
       node-version: {required: true, type: string}
       browser: {required: true, type: string}
@@ -27,9 +27,9 @@ jobs:
       test_results_path: 'test-results/'
       test_script: test-e2e-${{ inputs.editor-mode == 'rich-text-with-collab' && 'collab-' || '' }}${{ inputs.prod && 'prod-' || '' }}ci-${{ inputs.browser }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Use Node.js ${{ inputs.node-version }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ inputs.node-version }}
       - uses: pnpm/action-setup@v4
@@ -49,7 +49,7 @@ jobs:
           node ./scripts/override-react.js --version=${{ inputs.override-react-version }}
           grep version node_modules/{react,react-dom}/package.json
       - name: Restore playwright from cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         id: playwright-cache
         with:
           path: ${{ env.cache_playwright_path }}
@@ -57,7 +57,7 @@ jobs:
       - name: Install playwright
         run: pnpm exec playwright install
       - name: Save playwright to cache
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         if: steps.playwright-cache.outputs.cache-hit != 'true'
         with:
           path: ${{ env.cache_playwright_path }}
@@ -66,7 +66,7 @@ jobs:
         run: pnpm run ${{ env.test_script }}
       - name: Upload Artifacts
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: Test Results ${{ inputs.os }}-${{ inputs.browser }}-${{ inputs.editor-mode }}-${{ inputs.prod && 'prod' || 'dev' }}-${{ inputs.node-version }}-${{ inputs.override-react-version }}-${{ inputs.flaky && 'flaky' || ''}}
           path: ${{ env.test_results_path }}

@@ -70,7 +70,7 @@ function typeMarkdown(editor: LexicalEditor, text: string) {
 
 describe('LINK', () => {
   test('text before a markdown link is preserved', () => {
-    const editor = buildEditorFromExtensions([MarkdownShortcutTestExtension]);
+    using editor = buildEditorFromExtensions([MarkdownShortcutTestExtension]);
     typeMarkdown(editor, 'Start [test](url)');
     editor.read(() => {
       const paragraph = $getRoot().getFirstChildOrThrow();
@@ -85,7 +85,7 @@ describe('LINK', () => {
   });
 
   test('formatted text before a markdown link is preserved', () => {
-    const editor = buildEditorFromExtensions([MarkdownShortcutTestExtension]);
+    using editor = buildEditorFromExtensions([MarkdownShortcutTestExtension]);
     typeMarkdown(editor, '**Bold** [Link](url)');
 
     editor.read(() => {
@@ -108,7 +108,7 @@ describe('LINK', () => {
 
   test('LINK is not too greedy if there is a preceding match that was not processed', () => {
     // https://github.com/facebook/lexical/issues/8129
-    const editor = buildEditorFromExtensions([MarkdownShortcutTestExtension]);
+    using editor = buildEditorFromExtensions([MarkdownShortcutTestExtension]);
     // Set up initial condition, since we are not typing a character at a time
     // it's not handled by markdown shortcuts in this update
     editor.update(
@@ -140,7 +140,7 @@ describe('LINK', () => {
   });
 
   test('markdown link should not be created inside another link.', async () => {
-    const editor = buildEditorFromExtensions([MarkdownShortcutTestExtension]);
+    using editor = buildEditorFromExtensions([MarkdownShortcutTestExtension]);
     editor.update(
       () => {
         $getRoot()

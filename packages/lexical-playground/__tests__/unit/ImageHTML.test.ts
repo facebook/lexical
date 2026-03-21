@@ -26,7 +26,7 @@ const ImageTestExtension = defineExtension({
 describe('ImageNode HTML serialization', () => {
   describe('ImageNode export', () => {
     it('with no caption', async () => {
-      const editor = buildEditorFromExtensions(ImageTestExtension);
+      using editor = buildEditorFromExtensions(ImageTestExtension);
       editor.update(
         () => {
           const imageNode = $createImageNode({
@@ -52,7 +52,7 @@ describe('ImageNode HTML serialization', () => {
       );
     });
     it('with plain text caption', async () => {
-      const editor = buildEditorFromExtensions(ImageTestExtension);
+      using editor = buildEditorFromExtensions(ImageTestExtension);
       editor.update(
         () => {
           const imageNode = $createImageNode({

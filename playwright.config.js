@@ -21,7 +21,7 @@ const config = {
       use: {
         ...devices['Desktop Chrome'],
         launchOptions: {
-          slowMo: 10, // 10ms delay between actions
+          slowMo: 20,
         },
       },
     },
@@ -31,7 +31,7 @@ const config = {
       use: {
         ...devices['Desktop Firefox'],
         launchOptions: {
-          slowMo: 10, // 10ms delay between actions
+          slowMo: 20,
         },
       },
     },
@@ -41,7 +41,7 @@ const config = {
       use: {
         ...devices['Desktop Safari'],
         launchOptions: {
-          slowMo: 10, // 10ms delay between actions
+          slowMo: 20,
         },
       },
     },

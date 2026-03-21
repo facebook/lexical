@@ -1393,7 +1393,9 @@ export class RangeSelection implements BaseSelection {
       INTERNAL_$isBlock(node) &&
       !node.isEmpty() &&
       $isElementNode(firstBlock) &&
-      (!firstBlock.isEmpty() || firstBlock.canMergeWhenEmpty());
+      (!firstBlock.isEmpty() || firstBlock.canMergeWhenEmpty()) &&
+      // Don't merge if formats differ - preserve the pasted paragraph's format
+      node.getFormatType() === firstBlock.getFormatType();
 
     const shouldInsert = !$isElementNode(firstBlock) || !firstBlock.isEmpty();
     const insertedParagraph = shouldInsert ? this.insertParagraph() : null;

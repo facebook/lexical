@@ -68,8 +68,23 @@ function applyBlockType(editor, type) {
   }
 }
 
+function maskStyle(url) {
+  return {
+    WebkitMaskImage: `url('${url}')`,
+    WebkitMaskPosition: 'center',
+    WebkitMaskRepeat: 'no-repeat',
+    WebkitMaskSize: 'contain',
+    maskImage: `url('${url}')`,
+    maskPosition: 'center',
+    maskRepeat: 'no-repeat',
+    maskSize: 'contain',
+  };
+}
+
 function Divider() {
-  return <div className="divider" />;
+  return (
+    <div className="mx-1 w-px self-stretch bg-zinc-200 dark:bg-zinc-600" />
+  );
 }
 
 export function ToolbarPlugin() {
@@ -142,10 +157,17 @@ export function ToolbarPlugin() {
     );
   }, [editor, $updateToolbar]);
 
+  const btnBase =
+    'group flex cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-1.5 text-zinc-700 transition-colors duration-150 enabled:hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500 dark:text-zinc-200 dark:enabled:hover:bg-zinc-700';
+  const iconBase =
+    'flex h-[18px] w-[18px] shrink-0 bg-current group-hover:opacity-100';
+
   return (
-    <div className="toolbar" ref={toolbarRef}>
+    <div
+      className="sticky top-0 z-10 flex flex-wrap items-center gap-0.5 overflow-x-auto border-b border-b-black/10 bg-zinc-50 px-2 py-1.5 [border-bottom-style:solid] dark:border-b-white/10 dark:bg-zinc-800 md:justify-evenly"
+      ref={toolbarRef}>
       <select
-        className="block-type-select"
+        className="cursor-pointer appearance-none rounded-md border border-solid border-transparent bg-transparent px-2 py-1 text-sm font-medium text-zinc-700 transition-colors duration-150 hover:bg-zinc-200 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500 dark:text-zinc-200 dark:hover:bg-zinc-700"
         value={blockType}
         onChange={(e) => applyBlockType(editor, e.target.value)}
         aria-label="Block type">
@@ -161,76 +183,106 @@ export function ToolbarPlugin() {
         onClick={() => {
           editor.dispatchCommand(UNDO_COMMAND, undefined);
         }}
-        className="toolbar-item spaced"
+        className={`${btnBase} mr-0.5`}
         aria-label="Undo">
-        <i className="format undo" />
+        <i
+          className={`${iconBase} opacity-70`}
+          style={maskStyle('/img/undo.svg')}
+        />
       </button>
       <button
         disabled={!canRedo}
         onClick={() => {
           editor.dispatchCommand(REDO_COMMAND, undefined);
         }}
-        className="toolbar-item"
+        className={btnBase}
         aria-label="Redo">
-        <i className="format redo" />
+        <i
+          className={`${iconBase} opacity-70`}
+          style={maskStyle('/img/redo.svg')}
+        />
       </button>
       <Divider />
       <button
         onClick={() => {
           editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold');
         }}
-        className={'toolbar-item spaced ' + (isBold ? 'active' : '')}
-        aria-label="Format Bold">
-        <i className="format bold" />
+        className={`${btnBase} mr-0.5 ${isBold ? 'bg-blue-200 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400' : ''}`}
+        aria-label="Format Bold"
+        aria-pressed={isBold}>
+        <i
+          className={`${iconBase} ${isBold ? 'opacity-100' : 'opacity-70'}`}
+          style={maskStyle('/img/bold.svg')}
+        />
       </button>
       <button
         onClick={() => {
           editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'italic');
         }}
-        className={'toolbar-item spaced ' + (isItalic ? 'active' : '')}
-        aria-label="Format Italics">
-        <i className="format italic" />
+        className={`${btnBase} mr-0.5 ${isItalic ? 'bg-blue-200 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400' : ''}`}
+        aria-label="Format Italics"
+        aria-pressed={isItalic}>
+        <i
+          className={`${iconBase} ${isItalic ? 'opacity-100' : 'opacity-70'}`}
+          style={maskStyle('/img/italic.svg')}
+        />
       </button>
       <button
         onClick={() => {
           editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'underline');
         }}
-        className={'toolbar-item spaced ' + (isUnderline ? 'active' : '')}
-        aria-label="Format Underline">
-        <i className="format underline" />
+        className={`${btnBase} mr-0.5 ${isUnderline ? 'bg-blue-200 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400' : ''}`}
+        aria-label="Format Underline"
+        aria-pressed={isUnderline}>
+        <i
+          className={`${iconBase} ${isUnderline ? 'opacity-100' : 'opacity-70'}`}
+          style={maskStyle('/img/underline.svg')}
+        />
       </button>
       <Divider />
       <button
         onClick={() => {
           editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'left');
         }}
-        className="toolbar-item spaced"
+        className={`${btnBase} mr-0.5`}
         aria-label="Left Align">
-        <i className="format left-align" />
+        <i
+          className={`${iconBase} opacity-70`}
+          style={maskStyle('/img/text-align-start.svg')}
+        />
       </button>
       <button
         onClick={() => {
           editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'center');
         }}
-        className="toolbar-item spaced"
+        className={`${btnBase} mr-0.5`}
         aria-label="Center Align">
-        <i className="format center-align" />
+        <i
+          className={`${iconBase} opacity-70`}
+          style={maskStyle('/img/text-align-center.svg')}
+        />
       </button>
       <button
         onClick={() => {
           editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'right');
         }}
-        className="toolbar-item spaced"
+        className={`${btnBase} mr-0.5`}
         aria-label="Right Align">
-        <i className="format right-align" />
+        <i
+          className={`${iconBase} opacity-70`}
+          style={maskStyle('/img/text-align-end.svg')}
+        />
       </button>
       <button
         onClick={() => {
           editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'justify');
         }}
-        className="toolbar-item"
+        className={btnBase}
         aria-label="Justify Align">
-        <i className="format justify-align" />
+        <i
+          className={`${iconBase} opacity-70`}
+          style={maskStyle('/img/text-align-justify.svg')}
+        />
       </button>
     </div>
   );

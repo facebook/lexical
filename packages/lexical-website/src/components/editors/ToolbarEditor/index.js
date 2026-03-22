@@ -6,9 +6,6 @@
  *
  */
 
-import './styles.css';
-
-import {AutoFocusExtension} from '@lexical/extension';
 import {HistoryExtension} from '@lexical/history';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
@@ -19,21 +16,22 @@ import ToolbarPlugin from './ToolbarPlugin';
 
 const toolbarTheme = {
   heading: {
-    h1: 'editor-heading-h1',
-    h2: 'editor-heading-h2',
-    h3: 'editor-heading-h3',
+    h1: 'mb-2 text-[1.875rem] font-bold',
+    h2: 'mb-2 text-2xl font-bold',
+    h3: 'mb-1 text-[1.25rem] font-semibold',
   },
-  paragraph: 'editor-paragraph',
-  quote: 'editor-quote',
+  paragraph: 'm-0',
+  quote:
+    'my-2 border-l-4 [border-left-style:solid] border-zinc-300 pl-4 italic text-zinc-500 dark:border-zinc-500 dark:text-zinc-400',
   text: {
-    bold: 'editor-textBold',
-    italic: 'editor-textItalic',
-    underline: 'editor-textUnderline',
+    bold: 'font-bold',
+    italic: 'italic',
+    underline: 'underline',
   },
 };
 
 const toolbarEditorExtension = defineExtension({
-  dependencies: [RichTextExtension, AutoFocusExtension, HistoryExtension],
+  dependencies: [RichTextExtension, HistoryExtension],
   name: '@lexical/website/toolbar-editor',
   namespace: '@lexical/website/toolbar-editor',
   theme: toolbarTheme,
@@ -42,14 +40,17 @@ const toolbarEditorExtension = defineExtension({
 export default function ToolbarEditor() {
   return (
     <LexicalExtensionComposer extension={toolbarEditorExtension}>
-      <div className="toolbar-editor">
+      <div className="relative h-[400px] w-full overflow-y-scroll rounded-lg border border-solid border-zinc-300 dark:border-white/[0.15] max-[996px]:h-[200px]">
         <ToolbarPlugin />
-        <div className="editor-inner">
+        <div className="relative h-[88%]">
           <ContentEditable
-            className="editor-input"
+            className="h-full p-4 outline-none"
+            aria-label="Rich text editor"
             aria-placeholder="Enter some text..."
             placeholder={
-              <div className="editor-placeholder">Enter some text...</div>
+              <div className="pointer-events-none absolute left-4 top-4 select-none text-[#999]">
+                Enter some text...
+              </div>
             }
           />
         </div>

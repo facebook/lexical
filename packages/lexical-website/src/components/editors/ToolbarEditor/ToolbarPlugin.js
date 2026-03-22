@@ -102,9 +102,13 @@ export default function ToolbarPlugin() {
     );
   }, [editor, $updateToolbar]);
 
+  const btnBase =
+    'flex h-7 min-w-[28px] cursor-pointer items-center justify-center rounded-md border-0 bg-transparent px-1.5 py-1 text-sm font-semibold text-inherit transition-colors duration-150 enabled:hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-30 dark:enabled:hover:bg-[#3a3a3c]';
+
   return (
-    <div className="toolbar">
+    <div className="flex flex-wrap items-center gap-1 border-b border-zinc-200 bg-[#fafafa] px-2 py-1.5 [border-bottom-style:solid] dark:border-white/10 dark:bg-[#2a2a2c]">
       <select
+        className="cursor-pointer rounded-md border border-solid border-transparent bg-transparent px-2 py-1 text-sm font-medium text-inherit hover:bg-zinc-200 focus:outline-none dark:hover:bg-[#3a3a3c]"
         value={blockType}
         onChange={(e) => applyBlockType(editor, e.target.value)}>
         <option value="paragraph">Normal</option>
@@ -114,39 +118,44 @@ export default function ToolbarPlugin() {
         <option value="quote">Quote</option>
       </select>
 
-      <div className="divider" />
+      <div className="mx-1 w-px self-stretch bg-zinc-200 dark:bg-white/15" />
 
       <button
         disabled={!canUndo}
         onClick={() => editor.dispatchCommand(UNDO_COMMAND, undefined)}
+        className={btnBase}
         title="Undo">
         ↩
       </button>
       <button
         disabled={!canRedo}
         onClick={() => editor.dispatchCommand(REDO_COMMAND, undefined)}
+        className={btnBase}
         title="Redo">
         ↪
       </button>
 
-      <div className="divider" />
+      <div className="mx-1 w-px self-stretch bg-zinc-200 dark:bg-white/15" />
 
       <button
-        className={isBold ? 'active' : ''}
+        className={`${btnBase} ${isBold ? 'bg-blue-200 text-blue-600 dark:bg-blue-500/25 dark:text-blue-400' : ''}`}
         onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold')}
+        aria-pressed={isBold}
         title="Bold">
         B
       </button>
       <button
-        className={isItalic ? 'active' : ''}
+        className={`${btnBase} ${isItalic ? 'bg-blue-200 text-blue-600 dark:bg-blue-500/25 dark:text-blue-400' : ''}`}
         onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'italic')}
+        aria-pressed={isItalic}
         title="Italic"
         style={{fontStyle: 'italic'}}>
         I
       </button>
       <button
-        className={isUnderline ? 'active' : ''}
+        className={`${btnBase} ${isUnderline ? 'bg-blue-200 text-blue-600 dark:bg-blue-500/25 dark:text-blue-400' : ''}`}
         onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'underline')}
+        aria-pressed={isUnderline}
         title="Underline"
         style={{textDecoration: 'underline'}}>
         U

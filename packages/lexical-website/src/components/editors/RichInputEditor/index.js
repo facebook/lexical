@@ -6,9 +6,6 @@
  *
  */
 
-import './styles.css';
-
-import {AutoFocusExtension} from '@lexical/extension';
 import {HashtagExtension} from '@lexical/hashtag';
 import {HistoryExtension} from '@lexical/history';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
@@ -19,22 +16,18 @@ import {$getRoot, defineExtension} from 'lexical';
 import {useEffect, useState} from 'react';
 
 const richInputTheme = {
-  hashtag: 'ri-hashtag',
-  paragraph: 'ri-paragraph',
+  hashtag:
+    'rounded-[3px] bg-indigo-500/[0.08] px-0.5 text-indigo-600 dark:bg-indigo-300/[0.12] dark:text-indigo-300',
+  paragraph: 'm-0',
   text: {
-    bold: 'ri-text-bold',
-    italic: 'ri-text-italic',
-    underline: 'ri-text-underline',
+    bold: 'font-bold',
+    italic: 'italic',
+    underline: 'underline',
   },
 };
 
 const richInputExtension = defineExtension({
-  dependencies: [
-    RichTextExtension,
-    HistoryExtension,
-    HashtagExtension,
-    AutoFocusExtension,
-  ],
+  dependencies: [RichTextExtension, HistoryExtension, HashtagExtension],
   name: '@lexical/website/rich-input-editor',
   namespace: '@lexical/website/rich-input-editor',
   theme: richInputTheme,
@@ -71,31 +64,43 @@ export default function RichInputEditor() {
 
   return (
     <LexicalExtensionComposer extension={richInputExtension}>
-      <div className="ri-shell">
-        <div className="ri-editor-wrap">
+      <div className="relative rounded-[10px] border border-solid border-zinc-200 bg-white transition-[border-color] duration-150 dark:border-white/[0.12] dark:bg-[#1f1f21]">
+        <div className="relative">
           <ContentEditable
-            className="ri-editor"
+            className="max-h-[160px] min-h-[80px] overflow-y-auto break-words px-3.5 py-3 text-[0.9375rem] leading-[1.55] outline-none"
+            aria-label="Rich text input"
             aria-placeholder="How are you feeling? Use #hashtags too."
             placeholder={
-              <div className="ri-placeholder">
+              <div className="pointer-events-none absolute left-3.5 top-3 select-none text-[0.9375rem] text-zinc-400">
                 How are you feeling? Use #hashtags too.
               </div>
             }
           />
         </div>
-        <div className="ri-footer">
-          <div className="ri-shortcuts">
-            <span className="ri-shortcut">
-              <kbd>{modKey}B</kbd> Bold
+        <div className="flex items-center justify-between gap-2 border-t border-[#f0f0f2] px-3 pb-2 pt-1.5 [border-top-style:solid] dark:border-white/[0.07]">
+          <div className="hidden flex-wrap items-center gap-2.5 min-[997px]:flex">
+            <span className="flex items-center gap-1 whitespace-nowrap text-xs text-zinc-500 dark:text-zinc-400">
+              <kbd className="inline-flex items-center justify-center whitespace-nowrap rounded-[4px] border border-solid border-zinc-300 bg-zinc-100 px-[5px] py-0.5 font-[inherit] text-[0.7rem] font-medium leading-none text-zinc-600 dark:border-zinc-600 dark:bg-[#2e2e32] dark:text-zinc-300">
+                {modKey}B
+              </kbd>{' '}
+              Bold
             </span>
-            <span className="ri-shortcut">
-              <kbd>{modKey}I</kbd> Italic
+            <span className="flex items-center gap-1 whitespace-nowrap text-xs text-zinc-500 dark:text-zinc-400">
+              <kbd className="inline-flex items-center justify-center whitespace-nowrap rounded-[4px] border border-solid border-zinc-300 bg-zinc-100 px-[5px] py-0.5 font-[inherit] text-[0.7rem] font-medium leading-none text-zinc-600 dark:border-zinc-600 dark:bg-[#2e2e32] dark:text-zinc-300">
+                {modKey}I
+              </kbd>{' '}
+              Italic
             </span>
-            <span className="ri-shortcut">
-              <kbd>{modKey}U</kbd> Underline
+            <span className="flex items-center gap-1 whitespace-nowrap text-xs text-zinc-500 dark:text-zinc-400">
+              <kbd className="inline-flex items-center justify-center whitespace-nowrap rounded-[4px] border border-solid border-zinc-300 bg-zinc-100 px-[5px] py-0.5 font-[inherit] text-[0.7rem] font-medium leading-none text-zinc-600 dark:border-zinc-600 dark:bg-[#2e2e32] dark:text-zinc-300">
+                {modKey}U
+              </kbd>{' '}
+              Underline
             </span>
           </div>
-          <span className="ri-count">{characterCount}</span>
+          <span className="ml-auto shrink-0 text-xs tabular-nums text-zinc-400">
+            {characterCount}
+          </span>
         </div>
         <CharacterCountPlugin setCount={setCharacterCount} />
       </div>

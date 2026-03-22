@@ -6,8 +6,6 @@
  *
  */
 
-import './styles.css';
-
 import {TabIndentationExtension} from '@lexical/extension';
 import {HistoryExtension} from '@lexical/history';
 import {
@@ -46,21 +44,22 @@ import * as ReactDOM from 'react-dom';
 
 const theme = {
   heading: {
-    h1: 'nle-h1',
-    h2: 'nle-h2',
-    h3: 'nle-h3',
+    h1: 'mt-2 mb-1 text-[1.75rem] font-bold leading-[1.25]',
+    h2: 'mt-2 mb-[0.15rem] text-[1.3rem] font-semibold leading-[1.3]',
+    h3: 'mt-[0.4rem] mb-[0.1rem] text-[1.1rem] font-semibold leading-[1.35]',
   },
   list: {
-    listitem: 'nle-listitem',
-    ol: 'nle-list-ol',
-    ul: 'nle-list-ul',
+    listitem: 'my-[0.1rem] leading-[1.6]',
+    ol: 'my-[0.2rem] ml-5 p-0',
+    ul: 'my-[0.2rem] ml-5 p-0',
   },
-  paragraph: 'nle-paragraph',
-  quote: 'nle-quote',
+  paragraph: 'my-0 py-0.5 leading-[1.6]',
+  quote:
+    'my-[0.4rem] border-l-[3px] [border-left-style:solid] border-zinc-300 pl-3.5 italic text-zinc-500 dark:border-zinc-700 dark:text-zinc-400',
   text: {
-    bold: 'nle-text-bold',
-    code: 'nle-text-code',
-    italic: 'nle-text-italic',
+    bold: 'font-bold',
+    code: 'rounded-[3px] bg-[rgba(135,131,120,0.15)] px-[0.3em] py-[0.1em] font-mono text-[0.875em] dark:bg-white/10',
+    italic: 'italic',
   },
 };
 
@@ -77,6 +76,16 @@ const editorExtension = defineExtension({
 });
 
 const DRAG_MENU_CLASSNAME = 'nle-drag-menu';
+
+const ICON_URLS = {
+  bullet: '/img/list-ul.svg',
+  h1: '/img/type-h1.svg',
+  h2: '/img/type-h2.svg',
+  h3: '/img/type-h3.svg',
+  number: '/img/list-ol.svg',
+  paragraph: '/img/text-paragraph.svg',
+  quote: '/img/chat-square-quote.svg',
+};
 
 class BlockOption extends MenuOption {
   constructor(title, {icon, keywords = [], onSelect}) {
@@ -205,23 +214,28 @@ function SlashMenuPlugin() {
       ) =>
         anchorRef.current
           ? ReactDOM.createPortal(
-              <div className="nle-slash-menu">
-                <ul>
+              <div className="w-[220px] overflow-hidden rounded-lg border border-solid border-zinc-200 bg-white shadow-[0_8px_24px_rgba(0,0,0,0.12)] dark:border-zinc-700 dark:bg-[#232325] dark:shadow-[0_8px_24px_rgba(0,0,0,0.4)]">
+                <ul className="m-0 max-h-[220px] list-none overflow-y-auto p-1">
                   {options.map((option, i) => (
                     <li
                       key={option.key}
                       ref={option.setRefElement}
                       role="option"
                       aria-selected={selectedIndex === i}
-                      className={`nle-slash-item${selectedIndex === i ? ' selected' : ''}`}
+                      className={`flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-inherit ${selectedIndex === i ? 'bg-zinc-100 dark:bg-[#3a3a3c]' : 'hover:bg-zinc-100 dark:hover:bg-[#3a3a3c]'} dark:text-zinc-200`}
                       tabIndex={-1}
                       onMouseEnter={() => setHighlightedIndex(i)}
                       onClick={() => {
                         setHighlightedIndex(i);
                         selectOptionAndCleanUp(option);
                       }}>
-                      <span className={`nle-icon nle-icon-${option.icon}`} />
-                      <span className="nle-slash-label">{option.title}</span>
+                      <span
+                        className="inline-block h-4 w-4 shrink-0 bg-center bg-no-repeat opacity-70 [background-size:contain] dark:invert"
+                        style={{
+                          backgroundImage: `url('${ICON_URLS[option.icon]}')`,
+                        }}
+                      />
+                      <span className="flex-1">{option.title}</span>
                     </li>
                   ))}
                 </ul>
@@ -404,7 +418,7 @@ function DragPlugin({anchorElem}) {
         ? ReactDOM.createPortal(
             <div
               ref={pickerRef}
-              className="nle-block-picker"
+              className="w-[230px] overflow-hidden rounded-lg border border-solid border-zinc-200 bg-white shadow-[0_8px_24px_rgba(0,0,0,0.12)] dark:border-zinc-700 dark:bg-[#232325] dark:shadow-[0_8px_24px_rgba(0,0,0,0.4)]"
               style={{
                 left: pickerPosition.left,
                 position: 'absolute',
@@ -413,20 +427,25 @@ function DragPlugin({anchorElem}) {
               }}>
               <input
                 ref={searchInputRef}
-                className="nle-block-picker-search"
+                className="block w-full border-0 border-b border-zinc-200 bg-transparent px-3 py-2 text-[0.85rem] text-inherit outline-none [border-bottom-style:solid] dark:border-zinc-700"
                 placeholder="Filter blocks..."
                 value={queryString}
                 onChange={(e) => setQueryString(e.target.value)}
               />
-              <ul>
+              <ul className="m-0 max-h-[220px] list-none overflow-y-auto p-1">
                 {options.map((option, i) => (
                   <li key={option.key}>
                     <button
                       type="button"
-                      className={`nle-block-picker-item${highlightedIndex === i ? ' selected' : ''}`}
+                      className={`flex w-full cursor-pointer items-center gap-2 rounded-md border-0 bg-transparent px-2 py-1.5 text-left text-sm text-inherit ${highlightedIndex === i ? 'bg-zinc-100 dark:bg-[#3a3a3c]' : 'hover:bg-zinc-100 dark:hover:bg-[#3a3a3c]'}`}
                       onMouseEnter={() => setHighlightedIndex(i)}
                       onClick={() => selectOption(option)}>
-                      <span className={`nle-icon nle-icon-${option.icon}`} />
+                      <span
+                        className="inline-block h-4 w-4 shrink-0 bg-center bg-no-repeat opacity-70 [background-size:contain] dark:invert"
+                        style={{
+                          backgroundImage: `url('${ICON_URLS[option.icon]}')`,
+                        }}
+                      />
                       {option.title}
                     </button>
                   </li>
@@ -441,10 +460,17 @@ function DragPlugin({anchorElem}) {
         menuRef={menuRef}
         targetLineRef={targetLineRef}
         menuComponent={
-          <div ref={menuRef} className={DRAG_MENU_CLASSNAME}>
+          <div
+            ref={menuRef}
+            className={`${DRAG_MENU_CLASSNAME} absolute left-0 top-0 z-[1] flex cursor-grab items-center gap-0.5 rounded-sm p-0.5 opacity-0 [will-change:transform,opacity] active:cursor-grabbing`}
+            style={{
+              transition:
+                'transform 140ms ease-in-out, opacity 160ms ease-in-out',
+            }}>
             <button
               type="button"
-              className="nle-drag-add"
+              className="flex h-[18px] w-[18px] shrink-0 cursor-pointer items-center justify-center rounded-sm border-none bg-transparent bg-center bg-no-repeat opacity-50 [background-size:14px_14px] hover:bg-zinc-100 hover:opacity-100 dark:invert dark:hover:bg-[#ffffdd]"
+              style={{backgroundImage: "url('/img/plus.svg')"}}
               title="Click to add below (Alt/Option to add above)"
               onMouseDown={(e) => {
                 e.preventDefault();
@@ -452,11 +478,17 @@ function DragPlugin({anchorElem}) {
               }}
               onClick={openPicker}
             />
-            <div className="nle-drag-handle" />
+            <div
+              className="h-[18px] w-[18px] cursor-grab bg-center bg-no-repeat opacity-50 [background-size:14px_14px] hover:bg-zinc-100 hover:opacity-100 dark:invert dark:hover:bg-[#ffffdd]"
+              style={{backgroundImage: "url('/img/draggable-block-menu.svg')"}}
+            />
           </div>
         }
         targetLineComponent={
-          <div ref={targetLineRef} className="nle-target-line" />
+          <div
+            ref={targetLineRef}
+            className="pointer-events-none absolute left-0 top-0 h-[3px] bg-blue-400 opacity-0 [will-change:transform]"
+          />
         }
         isOnMenu={isOnMenu}
         onElementChanged={setDraggableElement}
@@ -470,13 +502,14 @@ export default function NotionLikeEditor() {
 
   return (
     <LexicalExtensionComposer extension={editorExtension}>
-      <div className="nle-editor">
-        <div className="nle-editor-inner" ref={setAnchorElem}>
+      <div className="relative h-[400px] w-full overflow-y-auto rounded-lg border border-solid border-zinc-200 bg-white dark:border-white/[0.12] dark:bg-[#1f1f21] max-[996px]:h-[260px]">
+        <div className="relative min-h-full" ref={setAnchorElem}>
           <ContentEditable
-            className="nle-editor-input"
+            className="min-h-full px-14 py-5 outline-none"
+            aria-label="Rich text editor"
             aria-placeholder="Type '/' for commands..."
             placeholder={
-              <div className="nle-editor-placeholder">
+              <div className="pointer-events-none absolute left-14 top-[22px] select-none text-[0.95rem] text-zinc-400">
                 Type &apos;/&apos; for commands...
               </div>
             }

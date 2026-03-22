@@ -6,9 +6,7 @@
  *
  */
 
-import './styles.css';
-
-import {AutoFocusExtension, TabIndentationExtension} from '@lexical/extension';
+import {TabIndentationExtension} from '@lexical/extension';
 import {HistoryExtension} from '@lexical/history';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
@@ -19,26 +17,22 @@ import {ToolbarPlugin} from './ToolbarPlugin';
 
 const theme = {
   heading: {
-    h1: 'editor-heading-h1',
-    h2: 'editor-heading-h2',
-    h3: 'editor-heading-h3',
+    h1: 'mb-2 text-3xl font-bold',
+    h2: 'mb-2 text-2xl font-bold',
+    h3: 'mb-1 text-xl font-semibold',
   },
-  paragraph: 'editor-paragraph',
-  quote: 'editor-quote',
+  paragraph: 'my-0',
+  quote:
+    'my-2 border-l-4 [border-left-style:solid] border-zinc-300 pl-4 italic text-zinc-500 dark:border-zinc-600 dark:text-zinc-400',
   text: {
-    bold: 'editor-textBold',
-    italic: 'editor-textItalic',
-    underline: 'editor-textUnderline',
+    bold: 'font-bold',
+    italic: 'italic',
+    underline: 'underline',
   },
 };
 
 const landingHeroExtension = defineExtension({
-  dependencies: [
-    RichTextExtension,
-    HistoryExtension,
-    AutoFocusExtension,
-    TabIndentationExtension,
-  ],
+  dependencies: [RichTextExtension, HistoryExtension, TabIndentationExtension],
   name: '@lexical/website/landing-hero-editor',
   namespace: '@lexical/website/landing-hero-editor',
   theme,
@@ -47,14 +41,17 @@ const landingHeroExtension = defineExtension({
 export default function LandingHeroEditor() {
   return (
     <LexicalExtensionComposer extension={landingHeroExtension}>
-      <div className="editor-container">
+      <div className="max-h-[400px] overflow-scroll rounded-2xl border border-solid border-black/10 dark:border-white/10 dark:bg-stone-800 md:w-[530px] lg:min-h-[300px] lg:min-w-[460px]">
         <ToolbarPlugin />
-        <div className="editor-inner">
+        <div className="relative">
           <ContentEditable
-            className="editor-input"
+            className="min-h-[150px] text-wrap p-4 text-base leading-relaxed outline-none"
+            aria-label="Rich text editor"
             aria-placeholder="Enter some text..."
             placeholder={
-              <div className="editor-placeholder">Enter some text...</div>
+              <div className="pointer-events-none absolute left-4 top-4 select-none text-zinc-400">
+                Enter some text...
+              </div>
             }
           />
         </div>

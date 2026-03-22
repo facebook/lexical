@@ -930,6 +930,36 @@ importers:
       '@easyops-cn/docusaurus-search-local':
         specifier: ^0.52.1
         version: 0.52.2(@docusaurus/faster@3.9.2(@docusaurus/types@3.9.2(@swc/core@1.15.5)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)))(@docusaurus/theme-common@3.9.2(@docusaurus/plugin-content-docs@3.9.2(@docusaurus/faster@3.9.2(@docusaurus/types@3.9.2(@swc/core@1.15.5)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)))(@mdx-js/react@3.1.1(@types/react@19.1.13)(react@19.1.1))(@rspack/core@1.6.8)(@swc/core@1.15.5)(lightningcss@1.30.2)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(typescript@5.9.2))(@swc/core@1.15.5)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(@mdx-js/react@3.1.1(@types/react@19.1.13)(react@19.1.1))(@rspack/core@1.6.8)(@swc/core@1.15.5)(lightningcss@1.30.2)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(typescript@5.9.2)
+      '@lexical/extension':
+        specifier: workspace:*
+        version: link:../lexical-extension
+      '@lexical/hashtag':
+        specifier: workspace:*
+        version: link:../lexical-hashtag
+      '@lexical/history':
+        specifier: workspace:*
+        version: link:../lexical-history
+      '@lexical/list':
+        specifier: workspace:*
+        version: link:../lexical-list
+      '@lexical/overflow':
+        specifier: workspace:*
+        version: link:../lexical-overflow
+      '@lexical/plain-text':
+        specifier: workspace:*
+        version: link:../lexical-plain-text
+      '@lexical/react':
+        specifier: workspace:*
+        version: link:../lexical-react
+      '@lexical/rich-text':
+        specifier: workspace:*
+        version: link:../lexical-rich-text
+      '@lexical/selection':
+        specifier: workspace:*
+        version: link:../lexical-selection
+      '@lexical/utils':
+        specifier: workspace:*
+        version: link:../lexical-utils
       '@mdx-js/react':
         specifier: ^3.1.1
         version: 3.1.1(@types/react@19.1.13)(react@19.1.1)
@@ -954,6 +984,9 @@ importers:
       fs-extra:
         specifier: ^11.3.2
         version: 11.3.2
+      lexical:
+        specifier: workspace:*
+        version: link:../lexical
       mermaid:
         specifier: ^11.12.0
         version: 11.12.2

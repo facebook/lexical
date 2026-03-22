@@ -33,7 +33,11 @@ const richInputExtension = defineExtension({
   theme: richInputTheme,
 });
 
-function CharacterCountPlugin({setCount}) {
+interface CharacterCountPluginProps {
+  setCount: (count: number) => void;
+}
+
+function CharacterCountPlugin({setCount}: CharacterCountPluginProps) {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
@@ -63,7 +67,9 @@ export default function RichInputEditor() {
   }, []);
 
   return (
-    <LexicalExtensionComposer extension={richInputExtension}>
+    <LexicalExtensionComposer
+      extension={richInputExtension}
+      contentEditable={null}>
       <div className="relative rounded-[10px] border border-solid border-zinc-200 bg-white transition-[border-color] duration-150 dark:border-white/[0.12] dark:bg-[#1f1f21]">
         <div className="relative">
           <ContentEditable

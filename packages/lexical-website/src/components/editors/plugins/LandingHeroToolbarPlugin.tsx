@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $createHeadingNode,
@@ -23,11 +24,12 @@ import {
   COMMAND_PRIORITY_LOW,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
+  LexicalEditor,
   REDO_COMMAND,
   SELECTION_CHANGE_COMMAND,
   UNDO_COMMAND,
 } from 'lexical';
-import {useCallback, useEffect, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 
 const BLOCK_TYPES = [
   {label: 'Normal', value: 'paragraph'},
@@ -37,38 +39,38 @@ const BLOCK_TYPES = [
   {label: 'Quote', value: 'quote'},
 ];
 
-function formatParagraph(editor) {
+function formatParagraph(editor: LexicalEditor) {
   editor.update(() => {
     const selection = $getSelection();
     $setBlocksType(selection, () => $createParagraphNode());
   });
 }
 
-function formatHeading(editor, headingTag) {
+function formatHeading(editor: LexicalEditor, headingTag: 'h1' | 'h2' | 'h3') {
   editor.update(() => {
     const selection = $getSelection();
     $setBlocksType(selection, () => $createHeadingNode(headingTag));
   });
 }
 
-function formatQuote(editor) {
+function formatQuote(editor: LexicalEditor) {
   editor.update(() => {
     const selection = $getSelection();
     $setBlocksType(selection, () => $createQuoteNode());
   });
 }
 
-function applyBlockType(editor, type) {
+function applyBlockType(editor: LexicalEditor, type: string) {
   if (type === 'paragraph') {
     formatParagraph(editor);
   } else if (type === 'quote') {
     formatQuote(editor);
   } else {
-    formatHeading(editor, type);
+    formatHeading(editor, type as 'h1' | 'h2' | 'h3');
   }
 }
 
-function maskStyle(url) {
+function maskStyle(url: string): React.CSSProperties {
   return {
     WebkitMaskImage: `url('${url}')`,
     WebkitMaskPosition: 'center',
@@ -87,9 +89,9 @@ function Divider() {
   );
 }
 
-export function ToolbarPlugin() {
+export function LandingHeroToolbarPlugin() {
   const [editor] = useLexicalComposerContext();
-  const toolbarRef = useRef(null);
+  const toolbarRef = useRef<HTMLDivElement>(null);
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
   const [blockType, setBlockType] = useState('paragraph');

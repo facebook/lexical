@@ -13,7 +13,7 @@ import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer'
 import {RichTextExtension} from '@lexical/rich-text';
 import {defineExtension} from 'lexical';
 
-import {ToolbarPlugin} from './ToolbarPlugin';
+import {LandingHeroToolbarPlugin} from './plugins/LandingHeroToolbarPlugin';
 
 const theme = {
   heading: {
@@ -40,9 +40,11 @@ const landingHeroExtension = defineExtension({
 
 export default function LandingHeroEditor() {
   return (
-    <LexicalExtensionComposer extension={landingHeroExtension}>
+    <LexicalExtensionComposer
+      extension={landingHeroExtension}
+      contentEditable={null}>
       <div className="max-h-[400px] overflow-scroll rounded-2xl border border-solid border-black/10 dark:border-white/10 dark:bg-stone-800 md:w-[530px] lg:min-h-[300px] lg:min-w-[460px]">
-        <ToolbarPlugin />
+        <LandingHeroToolbarPlugin />
         <div className="relative">
           <ContentEditable
             className="min-h-[150px] text-wrap p-4 text-base leading-relaxed outline-none"

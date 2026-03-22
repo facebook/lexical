@@ -31,20 +31,25 @@ export default function ErrorCodePage() {
   );
 }
 
+type ErrorCodes = Record<string, string>;
+
+interface ErrorInfo {
+  code: string;
+  description: string;
+}
+
 function ErrorFinder() {
-  const [codes, setCodes] = useState(null);
+  const [codes, setCodes] = useState<ErrorCodes | null>(null);
 
   useEffect(() => {
-    try {
-      if (!process.env.FB_INTERNAL) {
-        import('../../../../scripts/error-codes/codes.json').then(setCodes);
-      }
-    } catch (e) {
-      throw e;
+    if (!process.env.FB_INTERNAL) {
+      import('../../../../scripts/error-codes/codes.json').then((module) =>
+        setCodes(module as unknown as ErrorCodes),
+      );
     }
   }, []);
 
-  const error = useMemo(() => {
+  const error = useMemo<ErrorInfo | null>(() => {
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
     if (code === null) {

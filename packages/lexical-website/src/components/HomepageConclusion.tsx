@@ -7,11 +7,20 @@
  */
 
 import Link from '@docusaurus/Link';
+import DiscordSvg from '@site/static/img/discord-logo-color.svg';
+import DocsSvg from '@site/static/img/documentation.svg';
+import React from 'react';
 
-const DiscordSvg = require('@site/static/img/discord-logo-color.svg').default;
-const DocsSvg = require('@site/static/img/documentation.svg').default;
+interface CardProps {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  linkLabel: string;
+  to?: string;
+  href?: string;
+}
 
-function Card({icon, title, description, linkLabel, to, href, external}) {
+function Card({icon, title, description, linkLabel, to, href}: CardProps) {
   return (
     <Link
       to={to}
@@ -42,7 +51,7 @@ export default function HomepageConclusion() {
     <section className="px-4 py-12 sm:px-10">
       <div className="mx-auto flex max-w-4xl flex-col items-center gap-12">
         <div className="space-y-3 text-center">
-          <p className="text-sm font-light uppercase tracking-widest opacity-50">
+          <p className="text-sm font-light uppercase tracking-widest opacity-70">
             What's next?
           </p>
           <h2 className="text-3xl font-light lg:text-4xl">
@@ -53,14 +62,14 @@ export default function HomepageConclusion() {
         </div>
         <div className="flex w-full flex-col gap-4 sm:flex-row">
           <Card
-            icon={<DiscordSvg className="h-8 w-8" alt="Discord" />}
+            icon={<DiscordSvg className="h-8 w-8" aria-label="Discord" />}
             title="Community"
             description="Have a question? Found a bug? Want to share something you built? The discord server is the right place to go to."
             linkLabel="Join our Discord"
             href="https://discord.gg/KmG4wQnnD9"
           />
           <Card
-            icon={<DocsSvg className="h-8 w-8" alt="Documentation" />}
+            icon={<DocsSvg className="h-8 w-8" aria-label="Documentation" />}
             title="Documentation"
             description="Guides and API references to help you build anything from a simple input to a fully-featured editor."
             linkLabel="Read the docs"

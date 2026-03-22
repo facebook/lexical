@@ -65,9 +65,7 @@ export default function CommunityHowToContribute() {
           description="Phrase inviting users to join us as contributors after agreeing to the guidelines">
           Once you've read over those, we invite you to join us on the
         </Translate>{' '}
-        <Link
-          to="https://github.com/facebook/lexical"
-          description="Hyperlink to GitHub repo">
+        <Link to="https://github.com/facebook/lexical">
           <Translate id="pages.community.contributors.joinUsRepoLink">
             Lexical GitHub repository
           </Translate>

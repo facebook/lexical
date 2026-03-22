@@ -22,15 +22,17 @@ import {
   CAN_REDO_COMMAND,
   CAN_UNDO_COMMAND,
   COMMAND_PRIORITY_LOW,
+  ElementNode,
   FORMAT_TEXT_COMMAND,
+  LexicalEditor,
   REDO_COMMAND,
   SELECTION_CHANGE_COMMAND,
   UNDO_COMMAND,
 } from 'lexical';
 import {useCallback, useEffect, useState} from 'react';
 
-function applyBlockType(editor, type) {
-  const factories = {
+function applyBlockType(editor: LexicalEditor, type: string) {
+  const factories: Record<string, () => ElementNode> = {
     h1: () => $createHeadingNode('h1'),
     h2: () => $createHeadingNode('h2'),
     h3: () => $createHeadingNode('h3'),

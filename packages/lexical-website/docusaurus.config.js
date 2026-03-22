@@ -415,6 +415,8 @@ const config = {
   // Usually your GitHub org/user name.
   projectName: 'lexical',
 
+  tagline: 'A text editor framework that does things differently',
+
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({

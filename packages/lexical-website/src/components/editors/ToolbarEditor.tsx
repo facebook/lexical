@@ -12,7 +12,7 @@ import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer'
 import {RichTextExtension} from '@lexical/rich-text';
 import {defineExtension} from 'lexical';
 
-import ToolbarPlugin from './ToolbarPlugin';
+import ToolbarPlugin from './plugins/ToolbarPlugin';
 
 const toolbarTheme = {
   heading: {
@@ -39,7 +39,9 @@ const toolbarEditorExtension = defineExtension({
 
 export default function ToolbarEditor() {
   return (
-    <LexicalExtensionComposer extension={toolbarEditorExtension}>
+    <LexicalExtensionComposer
+      extension={toolbarEditorExtension}
+      contentEditable={null}>
       <div className="relative h-[400px] w-full overflow-y-scroll rounded-lg border border-solid border-zinc-300 dark:border-white/[0.15] max-[996px]:h-[200px]">
         <ToolbarPlugin />
         <div className="relative h-[88%]">

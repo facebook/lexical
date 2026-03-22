@@ -7,8 +7,14 @@
  */
 
 import {useColorMode} from '@docusaurus/theme-common';
+import React from 'react';
 
-export default function ImageSwitcher({light, dark}) {
+interface ImageSwitcherProps {
+  light: React.ComponentType;
+  dark: React.ComponentType;
+}
+
+export default function ImageSwitcher({light, dark}: ImageSwitcherProps) {
   const Light = light;
   const Dark = dark;
   const {isDarkTheme} = useColorMode();

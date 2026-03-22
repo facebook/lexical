@@ -8,7 +8,7 @@
     "packages/*"
   ],
   "engines": {
-    "node": ">=18.0.0 <23.0.0",
+    "node": ">=18.0.0",
     "pnpm": ">=9.0.0"
   },
   "engineStrict": true,
@@ -114,7 +114,7 @@
     "@babel/preset-typescript": "^7.24.1",
     "@lexical/eslint-plugin": "file:./packages/lexical-eslint-plugin",
     "@lexical/eslint-plugin-internal": "file:./packages/lexical-eslint-plugin-internal",
-    "@playwright/test": "^1.51.1",
+    "@playwright/test": "^1.56.1",
     "@prettier/sync": "^0.6.1",
     "@rollup/plugin-alias": "^6.0.0",
     "@rollup/plugin-babel": "^7.0.0",

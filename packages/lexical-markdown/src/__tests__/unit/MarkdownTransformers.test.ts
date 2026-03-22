@@ -7,11 +7,30 @@
  */
 import {CodeExtension} from '@lexical/code-core';
 import {buildEditorFromExtensions} from '@lexical/extension';
+import {createHeadlessEditor} from '@lexical/headless';
 import {$createLinkNode, $isLinkNode, LinkExtension} from '@lexical/link';
 import {ListExtension} from '@lexical/list';
-import {registerMarkdownShortcuts} from '@lexical/markdown';
-import {RichTextExtension} from '@lexical/rich-text';
 import {
+  $convertFromMarkdownString,
+  $convertToMarkdownString,
+  $createHeadingTransformer,
+  $createQuoteTransformer,
+  HEADING,
+  QUOTE,
+  registerMarkdownShortcuts,
+  TRANSFORMERS,
+} from '@lexical/markdown';
+import {
+  $createHeadingNode,
+  $createQuoteNode,
+  $isHeadingNode,
+  $isQuoteNode,
+  HeadingNode,
+  QuoteNode,
+  RichTextExtension,
+} from '@lexical/rich-text';
+import {
+  $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
   $getRoot,
@@ -154,5 +173,182 @@ describe('LINK', () => {
       expect(linkNode.getTextContent()).toBe('hell[world](www)o');
       expect(linkNode.getURL()).toBe('link');
     });
+  });
+});
+
+describe('BLOCK QUOTE + HEADING', () => {
+  const headingWithNesting = $createHeadingTransformer({
+    nestInBlockquote: true,
+  });
+  const quoteWithNesting = $createQuoteTransformer({
+    handleNestedHeadings: true,
+  });
+  const nestableTransformers = TRANSFORMERS.map((t) =>
+    t === HEADING ? headingWithNesting : t === QUOTE ? quoteWithNesting : t,
+  );
+
+  const NestableHeadingExtension = defineExtension({
+    dependencies: [
+      LinkExtension,
+      RichTextExtension,
+      ListExtension,
+      CodeExtension,
+    ],
+    name: 'NestableHeadingTest',
+    register: (editor_) =>
+      registerMarkdownShortcuts(editor_, nestableTransformers),
+  });
+
+  test('typing "> # SOME HEADER" creates a heading inside a quote when nestInBlockquote is enabled (issue #7407)', () => {
+    const editor = buildEditorFromExtensions([NestableHeadingExtension]);
+    typeMarkdown(editor, '> # SOME HEADER');
+    editor.read(() => {
+      const root = $getRoot();
+      const firstChild = root.getFirstChildOrThrow();
+      assert($isQuoteNode(firstChild), 'Root child must be a QuoteNode');
+      const quoteChild = firstChild.getFirstChildOrThrow();
+      assert($isHeadingNode(quoteChild), 'Quote child must be a HeadingNode');
+      expect(quoteChild.getTag()).toBe('h1');
+      expect(quoteChild.getTextContent()).toBe('SOME HEADER');
+    });
+  });
+
+  test('typing "> # SOME HEADER" replaces the quote with a heading by default', () => {
+    const editor = buildEditorFromExtensions([MarkdownShortcutTestExtension]);
+    typeMarkdown(editor, '> # SOME HEADER');
+    editor.read(() => {
+      const root = $getRoot();
+      const firstChild = root.getFirstChildOrThrow();
+      assert(
+        $isHeadingNode(firstChild),
+        'Root child must be a HeadingNode (default behavior)',
+      );
+      expect(firstChild.getTag()).toBe('h1');
+      expect(firstChild.getTextContent()).toBe('SOME HEADER');
+    });
+  });
+
+  test('import: "> # heading" produces a HeadingNode inside a QuoteNode', () => {
+    const editor = createHeadlessEditor({
+      nodes: [HeadingNode, QuoteNode],
+    });
+
+    editor.update(
+      () => {
+        $convertFromMarkdownString('> # SOME HEADER', nestableTransformers);
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const root = $getRoot();
+      const firstChild = root.getFirstChildOrThrow();
+      assert($isQuoteNode(firstChild), 'Root child must be a QuoteNode');
+      const quoteChild = firstChild.getFirstChildOrThrow();
+      assert($isHeadingNode(quoteChild), 'Quote child must be a HeadingNode');
+      expect(quoteChild.getTag()).toBe('h1');
+      expect(quoteChild.getTextContent()).toBe('SOME HEADER');
+    });
+  });
+
+  test('export: HeadingNode inside QuoteNode produces "> # heading"', () => {
+    const editor = createHeadlessEditor({
+      nodes: [HeadingNode, QuoteNode],
+    });
+
+    editor.update(
+      () => {
+        const heading = $createHeadingNode('h2').append(
+          $createTextNode('SOME HEADER'),
+        );
+        const quote = $createQuoteNode().append(heading);
+        $getRoot().clear().append(quote);
+      },
+      {discrete: true},
+    );
+
+    const markdown = editor
+      .getEditorState()
+      .read(() => $convertToMarkdownString(nestableTransformers));
+
+    expect(markdown).toBe('> ## SOME HEADER');
+  });
+
+  test('round-trip: import then export preserves "> # heading"', () => {
+    const editor = createHeadlessEditor({
+      nodes: [HeadingNode, QuoteNode],
+    });
+
+    const input = '> ### SOME HEADER';
+
+    editor.update(
+      () => {
+        $convertFromMarkdownString(input, nestableTransformers);
+      },
+      {discrete: true},
+    );
+
+    const output = editor
+      .getEditorState()
+      .read(() => $convertToMarkdownString(nestableTransformers));
+
+    expect(output).toBe(input);
+  });
+
+  test('import: "> # heading" followed by "> text" produces correct structure', () => {
+    const editor = createHeadlessEditor({
+      nodes: [HeadingNode, QuoteNode],
+    });
+
+    editor.update(
+      () => {
+        $convertFromMarkdownString(
+          '> # HEADING\n> some text',
+          nestableTransformers,
+        );
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const root = $getRoot();
+      const firstChild = root.getFirstChildOrThrow();
+      assert($isQuoteNode(firstChild), 'First child must be a QuoteNode');
+      const quoteChild = firstChild.getFirstChildOrThrow();
+      assert(
+        $isHeadingNode(quoteChild),
+        'First quote child must be a HeadingNode',
+      );
+      expect(quoteChild.getTag()).toBe('h1');
+      expect(quoteChild.getTextContent()).toBe('HEADING');
+      expect(firstChild.getTextContent()).toContain('some text');
+    });
+  });
+
+  test('export: QuoteNode with heading and text falls back to default quote export', () => {
+    const editor = createHeadlessEditor({
+      nodes: [HeadingNode, QuoteNode],
+    });
+
+    editor.update(
+      () => {
+        const heading = $createHeadingNode('h1').append(
+          $createTextNode('HEADING'),
+        );
+        const quote = $createQuoteNode().append(
+          heading,
+          $createLineBreakNode(),
+          $createTextNode('some text'),
+        );
+        $getRoot().clear().append(quote);
+      },
+      {discrete: true},
+    );
+
+    const markdown = editor
+      .getEditorState()
+      .read(() => $convertToMarkdownString(nestableTransformers));
+
+    expect(markdown).toBe('> HEADING\n> some text');
   });
 });

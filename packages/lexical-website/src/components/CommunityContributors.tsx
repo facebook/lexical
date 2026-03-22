@@ -8,7 +8,13 @@
 
 import Translate from '@docusaurus/Translate';
 
-const CONTRIBUTORS = [
+interface Contributor {
+  imageUrl: string;
+  link: string;
+  name: string;
+}
+
+const CONTRIBUTORS: Contributor[] = [
   {
     imageUrl: 'https://github.com/trueadm.png',
     link: 'https://github.com/trueadm',

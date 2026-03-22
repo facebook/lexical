@@ -6,12 +6,20 @@
  *
  */
 
-import ChatInputEditor from '@site/src/components/editors/ChatInputEditor';
-import NotionLikeEditor from '@site/src/components/editors/NotionLikeEditor';
-import RichInputEditor from '@site/src/components/editors/RichInputEditor';
-import ToolbarEditor from '@site/src/components/editors/ToolbarEditor';
+import React from 'react';
 
-const SECTIONS = [
+import ChatInputEditor from './editors/ChatInputEditor';
+import NotionLikeEditor from './editors/NotionLikeEditor';
+import RichInputEditor from './editors/RichInputEditor';
+import ToolbarEditor from './editors/ToolbarEditor';
+
+interface Section {
+  description: string;
+  editor: React.ReactNode;
+  title: React.ReactNode;
+}
+
+const SECTIONS: Section[] = [
   {
     description:
       'A familiar full rich text editor with formatting controls for headings, quotes, and text styles.',
@@ -54,7 +62,13 @@ const SECTIONS = [
   },
 ];
 
-function ExampleSection({title, description, children}) {
+interface ExampleSectionProps {
+  title: React.ReactNode;
+  description: string;
+  children: React.ReactNode;
+}
+
+function ExampleSection({title, description, children}: ExampleSectionProps) {
   return (
     <section className="flex flex-col gap-6 p-8">
       <div className="space-y-4 text-center">
@@ -80,8 +94,7 @@ export default function HomepageExamples() {
         <ExampleSection
           key={index}
           title={section.title}
-          description={section.description}
-          tabs={section.tabs}>
+          description={section.description}>
           {section.editor}
         </ExampleSection>
       ))}

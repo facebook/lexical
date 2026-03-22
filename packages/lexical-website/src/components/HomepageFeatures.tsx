@@ -8,10 +8,27 @@
 
 import {useColorMode} from '@docusaurus/theme-common';
 import Translate from '@docusaurus/Translate';
+import AccessibleSvg from '@site/static/img/accessible.svg';
+import FastSvg from '@site/static/img/fast.svg';
+import ReliableSvg from '@site/static/img/reliable.svg';
+import React from 'react';
 
-const FeatureList = [
+type SvgComponent = React.ComponentType<React.SVGProps<SVGSVGElement>>;
+
+interface FeatureItem {
+  Svg: SvgComponent;
+  cardBg: string;
+  cardBgDark: string;
+  cardBorder: string;
+  cardBorderDark: string;
+  description: React.ReactNode;
+  iconGradient: string;
+  title: string;
+}
+
+const FeatureList: FeatureItem[] = [
   {
-    Svg: require('@site/static/img/reliable.svg').default,
+    Svg: ReliableSvg,
     cardBg: '#eef3ff',
     cardBgDark: '#1a2240',
     cardBorder: '1px solid #c5d5f5',
@@ -29,7 +46,7 @@ const FeatureList = [
     title: 'Reliable',
   },
   {
-    Svg: require('@site/static/img/accessible.svg').default,
+    Svg: AccessibleSvg,
     cardBg: '#fdf4ff',
     cardBgDark: '#201228',
     cardBorder: '1px solid #e8cdf8',
@@ -47,7 +64,7 @@ const FeatureList = [
     title: 'Accessible',
   },
   {
-    Svg: require('@site/static/img/fast.svg').default,
+    Svg: FastSvg,
     cardBg: '#f0faf0',
     cardBgDark: '#142214',
     cardBorder: '1px solid #bfe8bf',
@@ -75,7 +92,7 @@ function Feature({
   cardBorder,
   cardBorderDark,
   iconGradient,
-}) {
+}: FeatureItem) {
   const {colorMode} = useColorMode();
   const isDark = colorMode === 'dark';
   return (
@@ -89,7 +106,7 @@ function Feature({
         className="relative mb-4 mt-6 flex h-16 w-16 items-center justify-center overflow-hidden rounded-full"
         style={{background: iconGradient}}>
         <div className="absolute -bottom-1 flex h-11 w-11 justify-center rounded-md bg-white py-1.5">
-          <Svg className="h-6 w-6 text-black" alt={title} />
+          <Svg className="h-6 w-6 text-black" aria-label={title} />
         </div>
       </div>
       <h3 className="mb-2 font-bold">{title}</h3>

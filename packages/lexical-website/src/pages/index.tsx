@@ -10,12 +10,13 @@ import '../css/custom.css';
 
 import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
-import LandingHeroEditor from '@site/src/components/editors/LandingHeroEditor';
-import HomepageConclusion from '@site/src/components/HomepageConclusion';
-import HomepageExamples from '@site/src/components/HomepageExamples';
-import HomepageFeatures from '@site/src/components/HomepageFeatures';
 import Layout from '@theme/Layout';
 import {inject} from '@vercel/analytics';
+
+import LandingHeroEditor from '../components/editors/LandingHeroEditor';
+import HomepageConclusion from '../components/HomepageConclusion';
+import HomepageExamples from '../components/HomepageExamples';
+import HomepageFeatures from '../components/HomepageFeatures';
 
 // activate analytics
 inject();

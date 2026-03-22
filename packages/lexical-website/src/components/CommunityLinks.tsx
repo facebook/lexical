@@ -8,10 +8,22 @@
 
 import Link from '@docusaurus/Link';
 import Translate from '@docusaurus/Translate';
+import DiscordLogoSvg from '@site/static/img/discord-logo-color.svg';
+import GithubDarkSvg from '@site/static/img/github-mark-dark.svg';
+import GithubLightSvg from '@site/static/img/github-mark-light.svg';
+import StackOverflowSvg from '@site/static/img/stack-overflow.svg';
+import React from 'react';
 
-import ImageSwitcher from '../ImageSwitcher';
+import ImageSwitcher from './ImageSwitcher';
 
-const links = [
+interface CommunityLinkData {
+  description: React.ReactNode;
+  image: React.ReactNode;
+  title: React.ReactNode;
+  url: string;
+}
+
+const links: CommunityLinkData[] = [
   {
     description: (
       <Translate
@@ -21,12 +33,7 @@ const links = [
         raise an issue.
       </Translate>
     ),
-    image: (
-      <ImageSwitcher
-        light={require('@site/static/img/github-mark-light.svg').default}
-        dark={require('@site/static/img/github-mark-dark.svg').default}
-      />
-    ),
+    image: <ImageSwitcher light={GithubLightSvg} dark={GithubDarkSvg} />,
     title: (
       <Translate
         id="pages.community.links.github.title"
@@ -44,12 +51,7 @@ const links = [
         Having trouble using Lexical? Just shoot us a question.
       </Translate>
     ),
-    image: (
-      <ImageSwitcher
-        light={require('@site/static/img/stack-overflow.svg').default}
-        dark={require('@site/static/img/stack-overflow.svg').default}
-      />
-    ),
+    image: <ImageSwitcher light={StackOverflowSvg} dark={StackOverflowSvg} />,
     title: (
       <Translate
         id="pages.community.links.stackoverflow.title"
@@ -67,12 +69,7 @@ const links = [
         Let's discuss upcoming features and plans together.
       </Translate>
     ),
-    image: (
-      <ImageSwitcher
-        light={require('@site/static/img/discord-logo-color.svg').default}
-        dark={require('@site/static/img/discord-logo-color.svg').default}
-      />
-    ),
+    image: <ImageSwitcher light={DiscordLogoSvg} dark={DiscordLogoSvg} />,
     title: (
       <Translate
         id="pages.community.links.discord.title"
@@ -84,7 +81,14 @@ const links = [
   },
 ];
 
-function CommunityLink({title, url, description, image}) {
+interface CommunityLinkProps {
+  title: React.ReactNode;
+  url: string;
+  description: React.ReactNode;
+  image: React.ReactNode;
+}
+
+function CommunityLink({title, url, description, image}: CommunityLinkProps) {
   return (
     <div className="grid gap-4 lg:grid-cols-[min-content_auto] lg:gap-20 lg:pl-20">
       <div className="flex h-24 w-24 justify-center overflow-hidden">

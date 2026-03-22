@@ -26,7 +26,6 @@ import {
   $addUpdateTag,
   $createParagraphNode,
   $createRangeSelection,
-  $createTextNode,
   $getSelection,
   $isElementNode,
   $isLineBreakNode,
@@ -322,23 +321,8 @@ export const formatCode = (editor: LexicalEditor, blockType: string) => {
         const codeNode = $createCodeNode();
         selection.insertNodes([codeNode]);
         selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return;
-        }
-        selection.anchor.set(selection.anchor.key, 0, selection.anchor.type);
-        const textContentAfterSelection = selection.getTextContent();
-        if (!selection.isCollapsed()) {
-          selection.removeText();
-        }
-        selection.focus.set(selection.focus.key, 0, selection.focus.type);
-        selection.insertRawText(textContent);
-        if (textContentAfterSelection !== '') {
-          const paragraphNode = $createParagraphNode();
-          paragraphNode.append($createTextNode(textContentAfterSelection));
-          const topLevelNode = selection.anchor
-            .getNode()
-            .getTopLevelElementOrThrow();
-          topLevelNode.insertAfter(paragraphNode);
+        if ($isRangeSelection(selection)) {
+          selection.insertRawText(textContent);
         }
       }
     });

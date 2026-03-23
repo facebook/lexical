@@ -817,6 +817,10 @@ export function registerCodeHighlighting(
       TextNode,
       $textNodeTransform.bind(null, editor, tokenizer, transformState),
     ),
+    editor.registerNodeTransform(
+      CodeHighlightNode,
+      $textNodeTransform.bind(null, editor, tokenizer, transformState),
+    ),
     editor.registerCommand(
       KEY_TAB_COMMAND,
       (event) => {

@@ -171,7 +171,6 @@ function $codeNodeTransform(
   }
 
   nodesCurrentlyHighlighting.add(nodeKey);
-
   if (!transformState.didTransform) {
     transformState.didTransform = true;
     $onUpdate(() => {
@@ -179,6 +178,7 @@ function $codeNodeTransform(
       nodesCurrentlyHighlighting.clear();
     });
   }
+
   $updateAndRetainSelection(nodeKey, () => {
     const currentNode = $getNodeByKey(nodeKey);
 
@@ -799,6 +799,10 @@ export function registerCodeHighlighting(
     ),
     editor.registerNodeTransform(
       TextNode,
+      $textNodeTransform.bind(null, editor, tokenizer, transformState),
+    ),
+    editor.registerNodeTransform(
+      CodeHighlightNode,
       $textNodeTransform.bind(null, editor, tokenizer, transformState),
     ),
     editor.registerCommand(

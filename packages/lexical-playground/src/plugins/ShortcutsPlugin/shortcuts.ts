@@ -175,14 +175,14 @@ export function isInsertCodeBlock(event: KeyboardEvent): boolean {
 }
 
 export function isIncreaseFontSize(event: KeyboardEvent): boolean {
-  return isExactShortcutMatch(event, '.', {
+  return isExactShortcutMatch(event, '>', {
     ...CONTROL_OR_META,
     shiftKey: true,
   });
 }
 
 export function isDecreaseFontSize(event: KeyboardEvent): boolean {
-  return isExactShortcutMatch(event, ',', {
+  return isExactShortcutMatch(event, '<', {
     ...CONTROL_OR_META,
     shiftKey: true,
   });

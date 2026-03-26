@@ -351,7 +351,24 @@ export function $convertTableCellNodeElement(
     } else if (scope === 'row') {
       headerState = TableCellHeaderStates.ROW;
     } else {
-      headerState = TableCellHeaderStates.ROW;
+      // Infer header state from position when no scope is specified
+      const parentRow = domNode_.parentElement;
+      const isFirstRow =
+        parentRow instanceof HTMLTableRowElement &&
+        (parentRow.parentElement?.nodeName.toLowerCase() === 'thead' ||
+          parentRow.rowIndex === 0);
+      const isFirstColumn = domNode_.cellIndex === 0;
+
+      if (isFirstRow) {
+        headerState |= TableCellHeaderStates.ROW;
+      }
+      if (isFirstColumn) {
+        headerState |= TableCellHeaderStates.COLUMN;
+      }
+      // Fallback for detached elements
+      if (headerState === TableCellHeaderStates.NO_STATUS) {
+        headerState = TableCellHeaderStates.ROW;
+      }
     }
   }
 

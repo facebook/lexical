@@ -3079,6 +3079,67 @@ describe('$patchStyleText', () => {
     });
   });
 
+  test('$getSelectionStyleValueForProperty returns consistent value regardless of selection direction', async () => {
+    const editor = createTestEditor();
+    const element = document.createElement('div');
+    editor.setRootElement(element);
+
+    await editor.update(() => {
+      const root = $getRoot();
+      const paragraph = $createParagraphNode();
+      root.append(paragraph);
+
+      const unstyled = $createTextNode('plain');
+      const styled = $createTextNode('colored');
+      styled.setStyle('color: red');
+
+      paragraph.append(unstyled);
+      paragraph.append(styled);
+
+      // Forward selection: unstyled -> styled
+      $setAnchorPoint({
+        key: unstyled.getKey(),
+        offset: 0,
+        type: 'text',
+      });
+      $setFocusPoint({
+        key: styled.getKey(),
+        offset: 'colored'.length,
+        type: 'text',
+      });
+
+      const forwardValue = $getSelectionStyleValueForProperty(
+        $getSelection() as RangeSelection,
+        'color',
+        '',
+      );
+
+      // Backward selection: styled -> unstyled
+      $setAnchorPoint({
+        key: styled.getKey(),
+        offset: 'colored'.length,
+        type: 'text',
+      });
+      $setFocusPoint({
+        key: unstyled.getKey(),
+        offset: 0,
+        type: 'text',
+      });
+
+      const backwardValue = $getSelectionStyleValueForProperty(
+        $getSelection() as RangeSelection,
+        'color',
+        '',
+      );
+
+      // Both directions should return empty string since the nodes
+      // have different styles
+      expect(forwardValue).toEqual('');
+      expect(backwardValue).toEqual('');
+      expect(forwardValue).toEqual(backwardValue);
+    });
+  });
+
   test.each<TextModeType>(['token', 'segmented'])(
     'can update style of text node that is in %s mode',
     async (mode) => {

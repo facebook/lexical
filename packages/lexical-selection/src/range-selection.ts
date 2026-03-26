@@ -594,7 +594,8 @@ export function $getSelectionStyleValueForProperty(
   styleProperty: string,
   defaultValue = '',
 ): string {
-  let styleValue: string | null = null;
+  let styleValue = defaultValue;
+  let isFirst = true;
   const nodes = selection.getNodes();
   const anchor = selection.anchor;
   const focus = selection.focus;
@@ -632,8 +633,9 @@ export function $getSelectionStyleValueForProperty(
         defaultValue,
       );
 
-      if (styleValue === null) {
+      if (isFirst) {
         styleValue = nodeStyleValue;
+        isFirst = false;
       } else if (styleValue !== nodeStyleValue) {
         // multiple text nodes are in the selection and they don't all
         // have the same style.
@@ -643,5 +645,5 @@ export function $getSelectionStyleValueForProperty(
     }
   }
 
-  return styleValue === null ? defaultValue : styleValue;
+  return styleValue;
 }

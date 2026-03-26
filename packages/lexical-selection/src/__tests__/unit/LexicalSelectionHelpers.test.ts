@@ -3132,11 +3132,54 @@ describe('$patchStyleText', () => {
         '',
       );
 
-      // Both directions should return empty string since the nodes
-      // have different styles
       expect(forwardValue).toEqual('');
       expect(backwardValue).toEqual('');
       expect(forwardValue).toEqual(backwardValue);
+    });
+  });
+
+  test('$getSelectionStyleValueForProperty ignores nodes with zero characters selected at boundaries', async () => {
+    const editor = createTestEditor();
+    const element = document.createElement('div');
+    editor.setRootElement(element);
+
+    await editor.update(() => {
+      const root = $getRoot();
+      const paragraph = $createParagraphNode();
+      root.append(paragraph);
+
+      const styledA = $createTextNode('aaa');
+      styledA.setStyle('color: red');
+      const styledB = $createTextNode('bbb');
+      styledB.setStyle('color: red');
+      const different = $createTextNode('ccc');
+      different.setStyle('color: blue');
+
+      paragraph.append(styledA);
+      paragraph.append(styledB);
+      paragraph.append(different);
+
+      // Select from end of styledA to start of different
+      // styledA has 0 chars selected (offset at end), different has 0 chars (offset 0)
+      // only styledB is fully selected
+      $setAnchorPoint({
+        key: styledA.getKey(),
+        offset: 'aaa'.length,
+        type: 'text',
+      });
+      $setFocusPoint({
+        key: different.getKey(),
+        offset: 0,
+        type: 'text',
+      });
+
+      const value = $getSelectionStyleValueForProperty(
+        $getSelection() as RangeSelection,
+        'color',
+        '',
+      );
+
+      expect(value).toEqual('red');
     });
   });
 

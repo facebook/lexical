@@ -282,17 +282,22 @@ describe('LexicalTableCellNode tests', () => {
       });
     });
 
-    test('DOM Conversion: detached <th> without scope defaults to ROW header', async () => {
+    test('DOM Conversion: <th> without scope defaults to ROW header', async () => {
       const {editor} = testEnv;
 
       await editor.update(() => {
+        const table = document.createElement('table');
+        const tr = document.createElement('tr');
         const th = document.createElement('th');
-        // No scope attribute set, no parent row/table
+        tr.appendChild(th);
+        table.appendChild(tr);
+
         const result = convertHTMLTag(th);
 
         const node = expectTableCellNode(result);
 
-        expect(node.getHeaderStyles()).toBe(TableCellHeaderStates.ROW);
+        // First row, first column → BOTH (ROW from header row + COLUMN from first column)
+        expect(node.getHeaderStyles()).toBe(TableCellHeaderStates.BOTH);
       });
     });
 

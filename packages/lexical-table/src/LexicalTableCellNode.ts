@@ -351,21 +351,21 @@ export function $convertTableCellNodeElement(
     } else if (scope === 'row') {
       headerState = TableCellHeaderStates.ROW;
     } else {
-      // Infer header state from position when no scope is specified
       const parentRow = domNode_.parentElement;
-      const isFirstRow =
-        parentRow instanceof HTMLTableRowElement &&
-        (parentRow.parentElement?.nodeName.toLowerCase() === 'thead' ||
-          parentRow.rowIndex === 0);
+      const isInHeaderRow =
+        isHTMLElement(parentRow) &&
+        parentRow.nodeName.toLowerCase() === 'tr' &&
+        isHTMLElement(parentRow.parentElement) &&
+        (parentRow.parentElement.nodeName.toLowerCase() === 'thead' ||
+          (parentRow as HTMLTableRowElement).rowIndex === 0);
       const isFirstColumn = domNode_.cellIndex === 0;
 
-      if (isFirstRow) {
+      if (isInHeaderRow) {
         headerState |= TableCellHeaderStates.ROW;
       }
       if (isFirstColumn) {
         headerState |= TableCellHeaderStates.COLUMN;
       }
-      // Fallback for detached elements
       if (headerState === TableCellHeaderStates.NO_STATUS) {
         headerState = TableCellHeaderStates.ROW;
       }

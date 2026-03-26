@@ -282,14 +282,82 @@ describe('LexicalTableCellNode tests', () => {
       });
     });
 
-    test('DOM Conversion: <th> without scope defaults to ROW header', async () => {
+    test('DOM Conversion: detached <th> without scope defaults to ROW header', async () => {
       const {editor} = testEnv;
 
       await editor.update(() => {
         const th = document.createElement('th');
-        // No scope attribute set
+        // No scope attribute set, no parent row/table
         const result = convertHTMLTag(th);
 
+        const node = expectTableCellNode(result);
+
+        expect(node.getHeaderStyles()).toBe(TableCellHeaderStates.ROW);
+      });
+    });
+
+    test('DOM Conversion: <th> in first row without scope becomes ROW header', async () => {
+      const {editor} = testEnv;
+
+      await editor.update(() => {
+        const table = document.createElement('table');
+        const tr = document.createElement('tr');
+        const th = document.createElement('th');
+        const td = document.createElement('td');
+        tr.appendChild(th);
+        tr.appendChild(td);
+        table.appendChild(tr);
+
+        const result = convertHTMLTag(th);
+        const node = expectTableCellNode(result);
+
+        // First row, first column → BOTH
+        expect(node.getHeaderStyles()).toBe(TableCellHeaderStates.BOTH);
+      });
+    });
+
+    test('DOM Conversion: <th> in first column of non-first row becomes COLUMN header', async () => {
+      const {editor} = testEnv;
+
+      await editor.update(() => {
+        const table = document.createElement('table');
+        const tr1 = document.createElement('tr');
+        const tr2 = document.createElement('tr');
+        const th1 = document.createElement('th');
+        const td1 = document.createElement('td');
+        const th2 = document.createElement('th');
+        const td2 = document.createElement('td');
+        tr1.appendChild(th1);
+        tr1.appendChild(td1);
+        tr2.appendChild(th2);
+        tr2.appendChild(td2);
+        table.appendChild(tr1);
+        table.appendChild(tr2);
+
+        const result = convertHTMLTag(th2);
+        const node = expectTableCellNode(result);
+
+        // Non-first row, first column → COLUMN
+        expect(node.getHeaderStyles()).toBe(TableCellHeaderStates.COLUMN);
+      });
+    });
+
+    test('DOM Conversion: <th> in thead without scope becomes ROW header', async () => {
+      const {editor} = testEnv;
+
+      await editor.update(() => {
+        const table = document.createElement('table');
+        const thead = document.createElement('thead');
+        const tr = document.createElement('tr');
+        const th = document.createElement('th');
+        const th2 = document.createElement('th');
+        tr.appendChild(th);
+        tr.appendChild(th2);
+        thead.appendChild(tr);
+        table.appendChild(thead);
+
+        // Second th in thead → ROW (not first column, so only ROW from first row)
+        const result = convertHTMLTag(th2);
         const node = expectTableCellNode(result);
 
         expect(node.getHeaderStyles()).toBe(TableCellHeaderStates.ROW);

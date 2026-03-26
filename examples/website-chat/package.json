@@ -3,9 +3,6 @@
   "private": true,
   "version": "0.42.0",
   "type": "module",
-  "stackblitz": {
-    "startCommand": "npm i && npm run dev"
-  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",

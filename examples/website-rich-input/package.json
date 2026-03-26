@@ -1,5 +1,5 @@
 {
-  "name": "@lexical/website-toolbar-example",
+  "name": "@lexical/website-rich-input-example",
   "private": true,
   "version": "0.42.0",
   "type": "module",
@@ -10,11 +10,10 @@
   },
   "dependencies": {
     "@lexical/extension": "0.42.0",
+    "@lexical/hashtag": "0.42.0",
     "@lexical/history": "0.42.0",
     "@lexical/react": "0.42.0",
     "@lexical/rich-text": "0.42.0",
-    "@lexical/selection": "0.42.0",
-    "@lexical/utils": "0.42.0",
     "lexical": "0.42.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"

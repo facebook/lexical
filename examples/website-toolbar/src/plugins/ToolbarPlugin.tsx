@@ -26,7 +26,6 @@ import {
   FORMAT_TEXT_COMMAND,
   LexicalEditor,
   REDO_COMMAND,
-  SELECTION_CHANGE_COMMAND,
   UNDO_COMMAND,
 } from 'lexical';
 import React, {useCallback, useEffect, useRef, useState} from 'react';
@@ -89,7 +88,7 @@ function Divider() {
   );
 }
 
-export function LandingHeroToolbarPlugin() {
+export function ToolbarPlugin() {
   const [editor] = useLexicalComposerContext();
   const toolbarRef = useRef<HTMLDivElement>(null);
   const [canUndo, setCanUndo] = useState(false);
@@ -132,14 +131,6 @@ export function LandingHeroToolbarPlugin() {
           {editor},
         );
       }),
-      editor.registerCommand(
-        SELECTION_CHANGE_COMMAND,
-        (_payload, _newEditor) => {
-          $updateToolbar();
-          return false;
-        },
-        COMMAND_PRIORITY_LOW,
-      ),
       editor.registerCommand(
         CAN_UNDO_COMMAND,
         (payload) => {

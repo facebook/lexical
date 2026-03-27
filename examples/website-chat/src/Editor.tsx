@@ -6,80 +6,63 @@
  *
  */
 
-import {HistoryExtension} from '@lexical/history';
-import {PlainTextExtension} from '@lexical/plain-text';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {ContentEditable} from '@lexical/react/LexicalContentEditable';
-import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
-import {$getRoot, defineExtension} from 'lexical';
-import {useCallback, useRef, useState} from 'react';
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getRoot,
+  EditorState,
+  LexicalEditor,
+} from 'lexical';
+import {useCallback, useEffect, useRef, useState} from 'react';
 
-import {EmojiPlugin} from './plugins/EmojiPlugin';
-import {clearEditor, SubmitOnEnterPlugin} from './plugins/SubmitOnEnterPlugin';
-
-const chatInputExtension = defineExtension({
-  dependencies: [PlainTextExtension, HistoryExtension],
-  name: '@lexical/website/chat-input-editor',
-  namespace: '@lexical/website/chat-input-editor',
-  theme: {paragraph: 'm-0'},
-});
+import {ChatInput} from './ChatInput';
+import {ChatMessage} from './ChatMessage';
 
 interface Message {
   author: string;
   id: number;
-  text: string;
+  initialState: EditorState | ((editor: LexicalEditor) => void);
+}
+
+function makeTextState(text: string): (editor: LexicalEditor) => void {
+  return (editor: LexicalEditor) => {
+    editor.update(() => {
+      const paragraph = $createParagraphNode();
+      paragraph.append($createTextNode(text));
+      $getRoot().append(paragraph);
+    });
+  };
 }
 
 const INITIAL_MESSAGES: Message[] = [
-  {author: 'buddy', id: 1, text: 'Are you coming to the bar tonight?'},
-  {author: 'buddy', id: 2, text: 'Tony is coming too! 🍺'},
+  {
+    author: 'buddy',
+    id: 1,
+    initialState: makeTextState('Are you coming to the bar tonight?'),
+  },
+  {
+    author: 'buddy',
+    id: 2,
+    initialState: makeTextState('Tony is coming too! 🍺'),
+  },
 ];
 
-interface SendButtonProps {
-  onSubmit: (content: string) => void;
-}
-
-function SendButton({onSubmit}: SendButtonProps) {
-  const [editor] = useLexicalComposerContext();
-
-  const handleClick = useCallback(() => {
-    const content = editor
-      .getEditorState()
-      .read(() => $getRoot().getTextContent().trim());
-    if (content) {
-      onSubmit(content);
-      clearEditor(editor);
-    }
-  }, [editor, onSubmit]);
-
-  return (
-    <button
-      type="button"
-      className="flex h-[34px] w-[34px] shrink-0 cursor-pointer items-center justify-center rounded-full border-none bg-indigo-500 text-white transition-[background-color,transform] duration-150 hover:bg-indigo-600 active:scale-[0.92] dark:bg-indigo-600 dark:hover:bg-indigo-700"
-      title="Send message (Enter)"
-      onClick={handleClick}>
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        width="16"
-        height="16"
-        fill="currentColor">
-        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-      </svg>
-    </button>
-  );
-}
-
-export default function App() {
+export default function Editor() {
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const onSubmit = useCallback((content: string) => {
+  const onSubmit = useCallback((editorState: EditorState) => {
     setMessages((prev) => [
       ...prev,
-      {author: 'me', id: Date.now(), text: content},
+      {author: 'me', id: Date.now(), initialState: editorState},
     ]);
   }, []);
+
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({behavior: 'smooth'});
+    }
+  }, [messages]);
 
   return (
     <div className="flex h-[400px] flex-col overflow-hidden rounded-xl border border-solid border-zinc-200 bg-[#f9f9fb] max-[996px]:h-[340px] dark:border-white/10 dark:bg-[#1a1a1c]">
@@ -108,29 +91,15 @@ export default function App() {
               </div>
             )}
             <div
-              className={`rounded-2xl px-3 py-2 text-sm leading-[1.45] break-words whitespace-pre-wrap ${msg.author === 'buddy' ? 'rounded-bl-[4px] bg-white text-[#18181b] shadow-[0_1px_2px_rgba(0,0,0,0.06)] dark:bg-[#2e2e32] dark:text-zinc-200 dark:shadow-none' : 'rounded-br-[4px] bg-indigo-500 text-white dark:bg-indigo-600'}`}>
-              {msg.text}
+              className={`rounded-2xl px-3 py-2 break-words ${msg.author === 'buddy' ? 'rounded-bl-[4px] bg-white text-[#18181b] shadow-[0_1px_2px_rgba(0,0,0,0.06)] dark:bg-[#2e2e32] dark:text-zinc-200 dark:shadow-none' : 'rounded-br-[4px] bg-indigo-500 text-white dark:bg-indigo-600'}`}>
+              <ChatMessage initialState={msg.initialState} />
             </div>
           </div>
         ))}
         <div ref={messagesEndRef} />
       </div>
 
-      <LexicalExtensionComposer
-        extension={chatInputExtension}
-        contentEditable={null}>
-        <div className="flex shrink-0 items-end gap-2 border-t [border-top-style:solid] border-zinc-200 bg-white px-3 py-2.5 dark:border-white/[0.08] dark:bg-[#232325]">
-          <EmojiPlugin />
-          <ContentEditable
-            className="max-h-[120px] min-h-[36px] flex-1 overflow-y-auto rounded-[20px] border border-solid border-transparent bg-zinc-100 px-2.5 py-1.5 text-sm leading-relaxed transition-[border-color] duration-150 outline-none focus:border-indigo-300 focus:bg-white dark:bg-[#3a3a3c] dark:text-zinc-200 dark:focus:border-indigo-500 dark:focus:bg-[#2e2e32]"
-            aria-label="Message input"
-            aria-placeholder="Type a message…"
-            placeholder={<></>}
-          />
-          <SubmitOnEnterPlugin onSubmit={onSubmit} />
-          <SendButton onSubmit={onSubmit} />
-        </div>
-      </LexicalExtensionComposer>
+      <ChatInput onSubmit={onSubmit} />
     </div>
   );
 }

@@ -43,7 +43,7 @@ function CharacterCountPlugin({setCount}: CharacterCountPluginProps) {
   useEffect(() => {
     return editor.registerUpdateListener(({editorState}) => {
       editorState.read(() => {
-        setCount($getRoot().getTextContent().length);
+        setCount($getRoot().getTextContentSize());
       });
     });
   }, [editor, setCount]);

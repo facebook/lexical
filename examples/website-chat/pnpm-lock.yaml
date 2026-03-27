@@ -14,12 +14,12 @@ importers:
       '@lexical/history':
         specifier: 0.42.0
         version: 0.42.0
-      '@lexical/plain-text':
-        specifier: 0.42.0
-        version: 0.42.0
       '@lexical/react':
         specifier: 0.42.0
         version: 0.42.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(yjs@13.6.30)
+      '@lexical/rich-text':
+        specifier: 0.42.0
+        version: 0.42.0
       lexical:
         specifier: 0.42.0
         version: 0.42.0

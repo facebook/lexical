@@ -51,7 +51,7 @@ const editorExtension = defineExtension({
   theme,
 });
 
-export default function App() {
+export default function Editor() {
   const [anchorElem, setAnchorElem] = useState<HTMLElement | null>(null);
 
   return (

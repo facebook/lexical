@@ -11,7 +11,7 @@
   "dependencies": {
     "@lexical/extension": "0.42.0",
     "@lexical/history": "0.42.0",
-    "@lexical/plain-text": "0.42.0",
+    "@lexical/rich-text": "0.42.0",
     "@lexical/react": "0.42.0",
     "lexical": "0.42.0",
     "react": "^19.1.1",

@@ -7,12 +7,7 @@
  */
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {
-  $createTextNode,
-  $getRoot,
-  $getSelection,
-  $isRangeSelection,
-} from 'lexical';
+import {$createTextNode, $insertNodes} from 'lexical';
 import {useCallback, useEffect, useRef, useState} from 'react';
 
 const EMOJI_CATEGORIES: Record<string, string[]> = {
@@ -174,21 +169,7 @@ export function EmojiPlugin() {
   const insertEmoji = useCallback(
     (emoji: string) => {
       editor.update(() => {
-        const selection = $getSelection();
-        if ($isRangeSelection(selection)) {
-          selection.insertNodes([$createTextNode(emoji)]);
-        } else {
-          // fallback: append to end
-          const root = $getRoot();
-          const lastChild = root.getLastChild();
-          if (lastChild) {
-            lastChild.selectEnd();
-            const sel = $getSelection();
-            if (sel !== null) {
-              sel.insertNodes([$createTextNode(emoji)]);
-            }
-          }
-        }
+        $insertNodes([$createTextNode(emoji)]);
       });
     },
     [editor],

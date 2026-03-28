@@ -13,6 +13,7 @@ import {
   $createRangeSelection,
   $createTextNode,
   $getRoot,
+  $isParagraphNode,
   $setSelection,
   ParagraphNode,
   TextNode,
@@ -23,7 +24,7 @@ import {
   $createTestInlineElementNode,
   initializeUnitTest,
 } from 'lexical/src/__tests__/utils';
-import {beforeEach, describe, expect, test} from 'vitest';
+import {assert, beforeEach, describe, expect, test} from 'vitest';
 
 describe('LexicalMarkNode tests', () => {
   initializeUnitTest((testEnv) => {
@@ -131,32 +132,19 @@ describe('LexicalMarkNode tests', () => {
         const {editor} = testEnv;
 
         editor.update(() => {
-          const paragraphNode =
-            $getRoot().getFirstChildOrThrow<ParagraphNode>();
+          const paragraphNode = $getRoot().getFirstChild();
+          assert($isParagraphNode(paragraphNode), 'Expecting ParagraphNode');
           const textNode = $createTextNode('aaa x^2 bbb');
           paragraphNode.append(textNode);
 
-          const selection = $createRangeSelection();
-          selection.anchor.set(textNode.getKey(), 0, 'text');
-          selection.focus.set(
-            textNode.getKey(),
-            textNode.getTextContent().length,
-            'text',
-          );
+          const selection = textNode.select(0);
           $wrapSelectionInMarkNode(selection, false, 'comment-id');
 
           const markNode = paragraphNode.getFirstChildOrThrow<MarkNode>();
           const markedTextNode = markNode.getFirstChildOrThrow<TextNode>();
-          const equationSelection = $createRangeSelection();
-          equationSelection.anchor.set(
-            markedTextNode.getKey(),
+          const equationSelection = markedTextNode.select(
             'aaa '.length,
-            'text',
-          );
-          equationSelection.focus.set(
-            markedTextNode.getKey(),
             'aaa x^2'.length,
-            'text',
           );
           $setSelection(equationSelection);
 

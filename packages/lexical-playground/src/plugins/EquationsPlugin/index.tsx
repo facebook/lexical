@@ -11,10 +11,13 @@ import type {JSX} from 'react';
 import 'katex/dist/katex.css';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$insertNodeToNearestRoot, $wrapNodeInElement} from '@lexical/utils';
+import {
+  $insertNodeIntoLeaf,
+  $insertNodeToNearestRoot,
+  $wrapNodeInElement,
+} from '@lexical/utils';
 import {
   $createParagraphNode,
-  $insertNodes,
   $isRootOrShadowRoot,
   COMMAND_PRIORITY_EDITOR,
   createCommand,
@@ -70,7 +73,7 @@ export default function EquationsPlugin(): JSX.Element | null {
         const equationNode = $createEquationNode(equation, inline);
 
         if (inline) {
-          $insertNodes([equationNode]);
+          $insertNodeIntoLeaf(equationNode);
           if ($isRootOrShadowRoot(equationNode.getParentOrThrow())) {
             $wrapNodeInElement(equationNode, $createParagraphNode).selectEnd();
           }

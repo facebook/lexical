@@ -6,7 +6,7 @@
  *
  */
 import {$generateNodesFromDOM} from '@lexical/html';
-import {$wrapSelectionInMarkNode, MarkNode} from '@lexical/mark';
+import {$isMarkNode, $wrapSelectionInMarkNode, MarkNode} from '@lexical/mark';
 import {$insertNodeIntoLeaf} from '@lexical/utils';
 import {
   $createParagraphNode,
@@ -14,6 +14,7 @@ import {
   $createTextNode,
   $getRoot,
   $isParagraphNode,
+  $isTextNode,
   $setSelection,
   ParagraphNode,
   TextNode,
@@ -140,8 +141,10 @@ describe('LexicalMarkNode tests', () => {
           const selection = textNode.select(0);
           $wrapSelectionInMarkNode(selection, false, 'comment-id');
 
-          const markNode = paragraphNode.getFirstChildOrThrow<MarkNode>();
-          const markedTextNode = markNode.getFirstChildOrThrow<TextNode>();
+          const markNode = paragraphNode.getFirstChildOrThrow();
+          assert($isMarkNode(markNode), 'Expecting MarkNode');
+          const markedTextNode = markNode.getFirstChildOrThrow();
+          assert($isTextNode(markedTextNode), 'Expecting TextNode');
           const equationSelection = markedTextNode.select(
             'aaa '.length,
             'aaa x^2'.length,
@@ -153,8 +156,8 @@ describe('LexicalMarkNode tests', () => {
           expect(paragraphNode.getChildren().map((c) => c.getType())).toEqual([
             'mark',
           ]);
-          const updatedMarkNode =
-            paragraphNode.getFirstChildOrThrow<MarkNode>();
+          const updatedMarkNode = paragraphNode.getFirstChildOrThrow();
+          assert($isMarkNode(updatedMarkNode), 'Expecting MarkNode');
           expect(updatedMarkNode.getIDs()).toEqual(['comment-id']);
           const markChildren = updatedMarkNode.getChildren();
           expect(markChildren).toHaveLength(3);

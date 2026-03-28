@@ -141,16 +141,9 @@ describe('LexicalMarkNode tests', () => {
 
           const markNode = paragraphNode.getFirstChildOrThrow<MarkNode>();
           const markedTextNode = markNode.getFirstChildOrThrow<TextNode>();
-          const equationSelection = $createRangeSelection();
-          equationSelection.anchor.set(
-            markedTextNode.getKey(),
+          const equationSelection = markedTextNode.select(
             'aaa '.length,
-            'text',
-          );
-          equationSelection.focus.set(
-            markedTextNode.getKey(),
             'aaa x^2'.length,
-            'text',
           );
           $setSelection(equationSelection);
 

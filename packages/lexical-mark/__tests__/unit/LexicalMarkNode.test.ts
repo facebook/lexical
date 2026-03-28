@@ -136,13 +136,7 @@ describe('LexicalMarkNode tests', () => {
           const textNode = $createTextNode('aaa x^2 bbb');
           paragraphNode.append(textNode);
 
-          const selection = $createRangeSelection();
-          selection.anchor.set(textNode.getKey(), 0, 'text');
-          selection.focus.set(
-            textNode.getKey(),
-            textNode.getTextContent().length,
-            'text',
-          );
+          const selection = textNode.select(0);
           $wrapSelectionInMarkNode(selection, false, 'comment-id');
 
           const markNode = paragraphNode.getFirstChildOrThrow<MarkNode>();

@@ -131,8 +131,8 @@ describe('LexicalMarkNode tests', () => {
         const {editor} = testEnv;
 
         editor.update(() => {
-          const paragraphNode =
-            $getRoot().getFirstChildOrThrow<ParagraphNode>();
+          const paragraphNode = $getRoot().getFirstChild();
+          assert($isParagraphNode(paragraphNode), 'Expecting ParagraphNode');
           const textNode = $createTextNode('aaa x^2 bbb');
           paragraphNode.append(textNode);
 

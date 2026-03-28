@@ -3079,6 +3079,110 @@ describe('$patchStyleText', () => {
     });
   });
 
+  test('$getSelectionStyleValueForProperty returns consistent value regardless of selection direction', async () => {
+    const editor = createTestEditor();
+    const element = document.createElement('div');
+    editor.setRootElement(element);
+
+    await editor.update(() => {
+      const root = $getRoot();
+      const paragraph = $createParagraphNode();
+      root.append(paragraph);
+
+      const unstyled = $createTextNode('plain');
+      const styled = $createTextNode('colored');
+      styled.setStyle('color: red');
+
+      paragraph.append(unstyled);
+      paragraph.append(styled);
+
+      // Forward selection: unstyled -> styled
+      $setAnchorPoint({
+        key: unstyled.getKey(),
+        offset: 0,
+        type: 'text',
+      });
+      $setFocusPoint({
+        key: styled.getKey(),
+        offset: 'colored'.length,
+        type: 'text',
+      });
+
+      const forwardValue = $getSelectionStyleValueForProperty(
+        $getSelection() as RangeSelection,
+        'color',
+        '',
+      );
+
+      // Backward selection: styled -> unstyled
+      $setAnchorPoint({
+        key: styled.getKey(),
+        offset: 'colored'.length,
+        type: 'text',
+      });
+      $setFocusPoint({
+        key: unstyled.getKey(),
+        offset: 0,
+        type: 'text',
+      });
+
+      const backwardValue = $getSelectionStyleValueForProperty(
+        $getSelection() as RangeSelection,
+        'color',
+        '',
+      );
+
+      expect(forwardValue).toEqual('');
+      expect(backwardValue).toEqual('');
+      expect(forwardValue).toEqual(backwardValue);
+    });
+  });
+
+  test('$getSelectionStyleValueForProperty ignores nodes with zero characters selected at boundaries', async () => {
+    const editor = createTestEditor();
+    const element = document.createElement('div');
+    editor.setRootElement(element);
+
+    await editor.update(() => {
+      const root = $getRoot();
+      const paragraph = $createParagraphNode();
+      root.append(paragraph);
+
+      const styledA = $createTextNode('aaa');
+      styledA.setStyle('color: red');
+      const styledB = $createTextNode('bbb');
+      styledB.setStyle('color: red');
+      const different = $createTextNode('ccc');
+      different.setStyle('color: blue');
+
+      paragraph.append(styledA);
+      paragraph.append(styledB);
+      paragraph.append(different);
+
+      // Select from end of styledA to start of different
+      // styledA has 0 chars selected (offset at end), different has 0 chars (offset 0)
+      // only styledB is fully selected
+      $setAnchorPoint({
+        key: styledA.getKey(),
+        offset: 'aaa'.length,
+        type: 'text',
+      });
+      $setFocusPoint({
+        key: different.getKey(),
+        offset: 0,
+        type: 'text',
+      });
+
+      const value = $getSelectionStyleValueForProperty(
+        $getSelection() as RangeSelection,
+        'color',
+        '',
+      );
+
+      expect(value).toEqual('red');
+    });
+  });
+
   test.each<TextModeType>(['token', 'segmented'])(
     'can update style of text node that is in %s mode',
     async (mode) => {

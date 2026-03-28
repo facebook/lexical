@@ -46,6 +46,7 @@ import {
   $isTabNode,
   $isTextNode,
   $normalizeCaret,
+  $onUpdate,
   $setSelectionFromCaretRange,
   COMMAND_PRIORITY_LOW,
   defineExtension,
@@ -97,15 +98,16 @@ export const ShikiTokenizer: Tokenizer = {
 };
 
 function $textNodeTransform(
-  node: TextNode,
   editor: LexicalEditor,
   tokenizer: Tokenizer,
+  transformState: TransformState,
+  node: TextNode,
 ): void {
   // Since CodeNode has flat children structure we only need to check
   // if node's parent is a code node and run highlighting if so
   const parentNode = node.getParent();
   if ($isCodeNode(parentNode)) {
-    codeNodeTransform(parentNode, editor, tokenizer);
+    $codeNodeTransform(editor, tokenizer, transformState, parentNode);
   } else if ($isCodeHighlightNode(node)) {
     // When code block converted into paragraph or other element
     // code highlight nodes converted back to normal text
@@ -137,22 +139,23 @@ function updateCodeGutter(node: CodeNode, editor: LexicalEditor): void {
   codeElement.setAttribute('data-gutter', gutter);
 }
 
-// Using `skipTransforms` to prevent extra transforms since reformatting the code
-// will not affect code block content itself.
-//
-// Using extra cache (`nodesCurrentlyHighlighting`) since both CodeNode and CodeHighlightNode
-// transforms might be called at the same time (e.g. new CodeHighlight node inserted) and
-// in both cases we'll rerun whole reformatting over CodeNode, which is redundant.
-// Especially when pasting code into CodeBlock.
+interface TransformState {
+  didTransform: boolean;
+  // Using extra cache (`nodesCurrentlyHighlighting`) since both CodeNode and CodeHighlightNode
+  // transforms might be called at the same time (e.g. new CodeHighlight node inserted) and
+  // in both cases we'll rerun whole reformatting over CodeNode, which is redundant.
+  // Especially when pasting code into CodeBlock.
+  nodesCurrentlyHighlighting: Set<NodeKey>;
+}
 
-const nodesCurrentlyHighlighting = new Set();
-
-function codeNodeTransform(
-  node: CodeNode,
+function $codeNodeTransform(
   editor: LexicalEditor,
   tokenizer: Tokenizer,
+  transformState: TransformState,
+  node: CodeNode,
 ) {
   const nodeKey = node.getKey();
+  const {nodesCurrentlyHighlighting} = transformState;
 
   // When new code block inserted it might not have language selected
   let language = node.getLanguage();
@@ -196,42 +199,33 @@ function codeNodeTransform(
   }
 
   nodesCurrentlyHighlighting.add(nodeKey);
+  if (!transformState.didTransform) {
+    transformState.didTransform = true;
+    $onUpdate(() => {
+      transformState.didTransform = false;
+      nodesCurrentlyHighlighting.clear();
+    });
+  }
 
-  // Using nested update call to pass `skipTransforms` since we don't want
-  // each individual CodeHighlightNode to be transformed again as it's already
-  // in its final state
-  editor.update(
-    () => {
-      $updateAndRetainSelection(nodeKey, () => {
-        const currentNode = $getNodeByKey(nodeKey);
+  $updateAndRetainSelection(nodeKey, () => {
+    const currentNode = $getNodeByKey(nodeKey);
 
-        if (!$isCodeNode(currentNode) || !currentNode.isAttached()) {
-          return false;
-        }
+    if (!$isCodeNode(currentNode) || !currentNode.isAttached()) {
+      return false;
+    }
 
-        const lang = currentNode.getLanguage() || tokenizer.defaultLanguage;
-        const highlightNodes = tokenizer.$tokenize(currentNode, lang);
-        const diffRange = getDiffRange(
-          currentNode.getChildren(),
-          highlightNodes,
-        );
-        const {from, to, nodesForReplacement} = diffRange;
+    const lang = currentNode.getLanguage() || tokenizer.defaultLanguage;
+    const highlightNodes = tokenizer.$tokenize(currentNode, lang);
+    const diffRange = getDiffRange(currentNode.getChildren(), highlightNodes);
+    const {from, to, nodesForReplacement} = diffRange;
 
-        if (from !== to || nodesForReplacement.length) {
-          node.splice(from, to - from, nodesForReplacement);
-          return true;
-        }
+    if (from !== to || nodesForReplacement.length) {
+      node.splice(from, to - from, nodesForReplacement);
+      return true;
+    }
 
-        return false;
-      });
-    },
-    {
-      onUpdate: () => {
-        nodesCurrentlyHighlighting.delete(nodeKey);
-      },
-      skipTransforms: true,
-    },
-  );
+    return false;
+  });
 }
 
 // Wrapping update function into selection retainer, that tries to keep cursor at the same
@@ -809,16 +803,23 @@ export function registerCodeHighlighting(
     );
   }
 
+  const transformState: TransformState = {
+    didTransform: false,
+    nodesCurrentlyHighlighting: new Set(),
+  };
   // Add the rest of the registrations
   registrations.push(
-    editor.registerNodeTransform(CodeNode, (node) =>
-      codeNodeTransform(node, editor, tokenizer),
+    editor.registerNodeTransform(
+      CodeNode,
+      $codeNodeTransform.bind(null, editor, tokenizer, transformState),
     ),
-    editor.registerNodeTransform(TextNode, (node) =>
-      $textNodeTransform(node, editor, tokenizer),
+    editor.registerNodeTransform(
+      TextNode,
+      $textNodeTransform.bind(null, editor, tokenizer, transformState),
     ),
-    editor.registerNodeTransform(CodeHighlightNode, (node) =>
-      $textNodeTransform(node, editor, tokenizer),
+    editor.registerNodeTransform(
+      CodeHighlightNode,
+      $textNodeTransform.bind(null, editor, tokenizer, transformState),
     ),
     editor.registerCommand(
       KEY_TAB_COMMAND,

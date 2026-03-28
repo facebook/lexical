@@ -7,11 +7,13 @@
  */
 import {$generateNodesFromDOM} from '@lexical/html';
 import {$wrapSelectionInMarkNode, MarkNode} from '@lexical/mark';
+import {$insertNodeIntoLeaf} from '@lexical/utils';
 import {
   $createParagraphNode,
   $createRangeSelection,
   $createTextNode,
   $getRoot,
+  $setSelection,
   ParagraphNode,
   TextNode,
 } from 'lexical';
@@ -122,6 +124,55 @@ describe('LexicalMarkNode tests', () => {
             decoratorNode.getKey(),
             textNode.getKey(),
           ]);
+        });
+      });
+
+      test('keeps decorator nodes inside an existing mark', () => {
+        const {editor} = testEnv;
+
+        editor.update(() => {
+          const paragraphNode =
+            $getRoot().getFirstChildOrThrow<ParagraphNode>();
+          const textNode = $createTextNode('aaa x^2 bbb');
+          paragraphNode.append(textNode);
+
+          const selection = $createRangeSelection();
+          selection.anchor.set(textNode.getKey(), 0, 'text');
+          selection.focus.set(
+            textNode.getKey(),
+            textNode.getTextContent().length,
+            'text',
+          );
+          $wrapSelectionInMarkNode(selection, false, 'comment-id');
+
+          const markNode = paragraphNode.getFirstChildOrThrow<MarkNode>();
+          const markedTextNode = markNode.getFirstChildOrThrow<TextNode>();
+          const equationSelection = $createRangeSelection();
+          equationSelection.anchor.set(
+            markedTextNode.getKey(),
+            'aaa '.length,
+            'text',
+          );
+          equationSelection.focus.set(
+            markedTextNode.getKey(),
+            'aaa x^2'.length,
+            'text',
+          );
+          $setSelection(equationSelection);
+
+          $insertNodeIntoLeaf($createTestDecoratorNode());
+
+          expect(paragraphNode.getChildren().map((c) => c.getType())).toEqual([
+            'mark',
+          ]);
+          const updatedMarkNode =
+            paragraphNode.getFirstChildOrThrow<MarkNode>();
+          expect(updatedMarkNode.getIDs()).toEqual(['comment-id']);
+          const markChildren = updatedMarkNode.getChildren();
+          expect(markChildren).toHaveLength(3);
+          expect(markChildren[0].getTextContent()).toBe('aaa ');
+          expect(markChildren[1].getType()).toBe('test_decorator');
+          expect(markChildren[2].getTextContent()).toBe(' bbb');
         });
       });
 

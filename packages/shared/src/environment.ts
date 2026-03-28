@@ -32,9 +32,6 @@ export const CAN_USE_BEFORE_INPUT: boolean =
     ? 'getTargetRanges' in new window.InputEvent('input')
     : false;
 
-export const IS_SAFARI: boolean =
-  CAN_USE_DOM && /Version\/[\d.]+.*Safari/.test(navigator.userAgent);
-
 export const IS_IOS: boolean =
   CAN_USE_DOM &&
   /iPad|iPhone|iPod/.test(navigator.userAgent) &&
@@ -42,6 +39,13 @@ export const IS_IOS: boolean =
 
 export const IS_ANDROID: boolean =
   CAN_USE_DOM && /Android/.test(navigator.userAgent);
+
+// Exclude Android — Android WebView's UA contains "Version/X.X ... Safari/537.36"
+// which falsely matches the Safari regex, activating wrong composition code paths.
+export const IS_SAFARI: boolean =
+  CAN_USE_DOM &&
+  /Version\/[\d.]+.*Safari/.test(navigator.userAgent) &&
+  !IS_ANDROID;
 
 // Keep these in case we need to use them in the future.
 // export const IS_WINDOWS: boolean = CAN_USE_DOM && /Win/.test(navigator.platform);

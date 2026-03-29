@@ -43,11 +43,11 @@ export default function Editor() {
     <LexicalExtensionComposer
       extension={landingHeroExtension}
       contentEditable={null}>
-      <div className="h-[300px] w-full overflow-scroll rounded-2xl border border-solid border-black/10 dark:border-white/10 dark:bg-stone-800">
+      <div className="flex w-full flex-col overflow-hidden rounded-2xl border border-solid border-black/10 dark:border-white/10 dark:bg-stone-800">
         <ToolbarPlugin />
         <div className="relative">
           <ContentEditable
-            className="min-h-[150px] p-4 text-base leading-relaxed text-wrap outline-none"
+            className="h-[220px] overflow-y-auto p-4 text-base leading-relaxed text-wrap outline-none"
             aria-label="Rich text editor"
             aria-placeholder="Enter some text..."
             placeholder={

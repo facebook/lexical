@@ -58,10 +58,10 @@ export default function Editor() {
     <LexicalExtensionComposer
       extension={editorExtension}
       contentEditable={null}>
-      <div className="relative h-[400px] w-full overflow-y-auto rounded-lg border border-solid border-zinc-200 bg-white max-[996px]:h-[260px] dark:border-white/[0.12] dark:bg-[#1f1f21]">
-        <div className="relative min-h-full" ref={setAnchorElem}>
+      <div className="relative w-full overflow-hidden rounded-lg border border-solid border-zinc-200 bg-white dark:border-white/[0.12] dark:bg-[#1f1f21]">
+        <div className="relative" ref={setAnchorElem}>
           <ContentEditable
-            className="min-h-full px-14 py-5 outline-none dark:text-zinc-200"
+            className="h-[400px] overflow-y-auto px-14 py-5 outline-none max-[996px]:h-[260px] dark:text-zinc-200"
             aria-label="Rich text editor"
             aria-placeholder="Type '/' for commands..."
             placeholder={

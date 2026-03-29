@@ -58,7 +58,12 @@ export default function Editor() {
     ]);
   }, []);
 
+  const isInitialMount = useRef(true);
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({behavior: 'smooth'});
     }

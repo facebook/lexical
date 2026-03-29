@@ -43,7 +43,7 @@ export default function Editor() {
     <LexicalExtensionComposer
       extension={landingHeroExtension}
       contentEditable={null}>
-      <div className="max-h-[400px] overflow-scroll rounded-2xl border border-solid border-black/10 md:w-[530px] lg:min-h-[300px] lg:min-w-[460px] dark:border-white/10 dark:bg-stone-800">
+      <div className="h-[300px] w-full overflow-scroll rounded-2xl border border-solid border-black/10 dark:border-white/10 dark:bg-stone-800">
         <ToolbarPlugin />
         <div className="relative">
           <ContentEditable

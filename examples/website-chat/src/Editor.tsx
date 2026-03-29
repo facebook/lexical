@@ -49,7 +49,7 @@ const INITIAL_MESSAGES: Message[] = [
 
 export default function Editor() {
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   const onSubmit = useCallback((editorState: EditorState) => {
     setMessages((prev) => [
@@ -64,8 +64,9 @@ export default function Editor() {
       isInitialMount.current = false;
       return;
     }
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({behavior: 'smooth'});
+    if (messagesContainerRef.current) {
+      const container = messagesContainerRef.current;
+      container.scrollTop = container.scrollHeight;
     }
   }, [messages]);
 
@@ -85,7 +86,9 @@ export default function Editor() {
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col gap-1.5 overflow-y-auto px-3.5 pt-3.5 pb-1.5">
+      <div
+        ref={messagesContainerRef}
+        className="flex flex-1 flex-col gap-1.5 overflow-y-auto px-3.5 pt-3.5 pb-1.5">
         {messages.map((msg) => (
           <div
             key={msg.id}
@@ -101,7 +104,6 @@ export default function Editor() {
             </div>
           </div>
         ))}
-        <div ref={messagesEndRef} />
       </div>
 
       <ChatInput onSubmit={onSubmit} />

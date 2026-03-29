@@ -6,34 +6,26 @@
  *
  */
 
+import ChatEditor from '@examples/website-chat/Editor';
+import NotionEditor from '@examples/website-notion/Editor';
+import RichInputEditor from '@examples/website-rich-input/Editor';
 import React from 'react';
 
-import ChatInputEditor from './editors/ChatInputEditor';
-import NotionLikeEditor from './editors/NotionLikeEditor';
-import RichInputEditor from './editors/RichInputEditor';
-import ToolbarEditor from './editors/ToolbarEditor';
+import StackBlitzButton from './StackBlitzButton';
 
 interface Section {
   description: string;
   editor: React.ReactNode;
+  stackblitzPath: string;
   title: React.ReactNode;
 }
 
 const SECTIONS: Section[] = [
   {
     description:
-      'A familiar full rich text editor with formatting controls for headings, quotes, and text styles.',
-    editor: <ToolbarEditor />,
-    title: (
-      <>
-        Standard <span className="text-gradient">rich text</span> + toolbar
-      </>
-    ),
-  },
-  {
-    description:
       'A block-first writing flow inspired by Notion, with slash commands and drag handles for reorganizing content.',
-    editor: <NotionLikeEditor />,
+    editor: <NotionEditor />,
+    stackblitzPath: 'website-notion',
     title: (
       <>
         Notion-like <span className="text-gradient">block editor</span>
@@ -43,7 +35,8 @@ const SECTIONS: Section[] = [
   {
     description:
       'A lightweight chat composer for conversational products like support tools, AI assistants, and chat apps.',
-    editor: <ChatInputEditor />,
+    editor: <ChatEditor />,
+    stackblitzPath: 'website-chat',
     title: (
       <>
         Compact <span className="text-gradient">chat input</span>
@@ -54,6 +47,7 @@ const SECTIONS: Section[] = [
     description:
       'A stripped-down, single-field editor that behaves like a text input but still supports rich features like bold, italic, underline and hashtags.',
     editor: <RichInputEditor />,
+    stackblitzPath: 'website-rich-input',
     title: (
       <>
         Rich <span className="text-gradient">input field</span>
@@ -65,10 +59,16 @@ const SECTIONS: Section[] = [
 interface ExampleSectionProps {
   title: React.ReactNode;
   description: string;
+  stackblitzPath: string;
   children: React.ReactNode;
 }
 
-function ExampleSection({title, description, children}: ExampleSectionProps) {
+function ExampleSection({
+  title,
+  description,
+  stackblitzPath,
+  children,
+}: ExampleSectionProps) {
   return (
     <section className="flex flex-col gap-6 p-8">
       <div className="space-y-4 text-center">
@@ -81,7 +81,12 @@ function ExampleSection({title, description, children}: ExampleSectionProps) {
       </div>
 
       <div className="flex w-full flex-col gap-6 md:flex-row md:items-start md:justify-center">
-        <div className="w-full md:max-w-xl lg:max-w-2xl">{children}</div>
+        <div className="flex w-full flex-col gap-3 md:max-w-xl lg:max-w-2xl">
+          {children}
+          <div className="flex justify-end">
+            <StackBlitzButton examplePath={stackblitzPath} />
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -94,7 +99,8 @@ export default function HomepageExamples() {
         <ExampleSection
           key={index}
           title={section.title}
-          description={section.description}>
+          description={section.description}
+          stackblitzPath={section.stackblitzPath}>
           {section.editor}
         </ExampleSection>
       ))}

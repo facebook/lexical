@@ -10,13 +10,13 @@ import '../css/custom.css';
 
 import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
+import ToolbarEditor from '@examples/website-toolbar/Editor';
+import HomepageConclusion from '@site/src/components/HomepageConclusion';
+import HomepageExamples from '@site/src/components/HomepageExamples';
+import HomepageFeatures from '@site/src/components/HomepageFeatures';
+import StackBlitzButton from '@site/src/components/StackBlitzButton';
 import Layout from '@theme/Layout';
 import {inject} from '@vercel/analytics';
-
-import LandingHeroEditor from '../components/editors/LandingHeroEditor';
-import HomepageConclusion from '../components/HomepageConclusion';
-import HomepageExamples from '../components/HomepageExamples';
-import HomepageFeatures from '../components/HomepageFeatures';
 
 // activate analytics
 inject();
@@ -24,7 +24,7 @@ inject();
 function LandingHero() {
   return (
     <div className="flex w-screen flex-col items-center justify-start gap-10 p-10 lg:h-[75vh] lg:flex-row lg:justify-around">
-      <div className="w-full space-y-6 lg:min-w-[20rem] lg:max-w-[40rem]">
+      <div className="w-full space-y-6 lg:max-w-[40rem] lg:min-w-[20rem]">
         <p className="text-4xl font-extrabold lg:text-6xl">
           A text editor framework that does things{' '}
           <span className="text-gradient">differently</span>.
@@ -40,7 +40,12 @@ function LandingHero() {
           </Link>
         </div>
       </div>
-      <LandingHeroEditor />
+      <div className="flex flex-col gap-3 md:w-[530px] lg:min-w-[460px]">
+        <ToolbarEditor />
+        <div className="flex lg:justify-end">
+          <StackBlitzButton examplePath="website-toolbar" />
+        </div>
+      </div>
     </div>
   );
 }

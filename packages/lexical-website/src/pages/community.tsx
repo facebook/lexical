@@ -7,12 +7,11 @@
  */
 
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
+import CommunityContributors from '@site/src/components/CommunityContributors';
+import CommunityHeader from '@site/src/components/CommunityHeader';
+import CommunityHowToContribute from '@site/src/components/CommunityHowToContribute';
+import CommunityLinks from '@site/src/components/CommunityLinks';
 import Layout from '@theme/Layout';
-
-import CommunityContributors from '../components/CommunityContributors';
-import CommunityHeader from '../components/CommunityHeader';
-import CommunityHowToContribute from '../components/CommunityHowToContribute';
-import CommunityLinks from '../components/CommunityLinks';
 
 export default function Community() {
   const {siteConfig} = useDocusaurusContext();

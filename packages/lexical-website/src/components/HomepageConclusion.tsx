@@ -36,7 +36,7 @@ function Card({icon, title, description, linkLabel, to, href}: CardProps) {
         <h3 className="m-0 text-lg font-bold">{title}</h3>
       </div>
       <p className="m-0 text-sm font-light opacity-70">{description}</p>
-      <span className="mt-auto flex items-center gap-1.5 text-sm font-semibold text-[var(--ifm-color-primary-dark)]">
+      <span className="mt-auto flex items-center gap-1.5 text-sm font-semibold text-(--ifm-color-primary-dark)">
         {linkLabel}
         <span className="transition-transform duration-150 group-hover:translate-x-1">
           →
@@ -51,7 +51,7 @@ export default function HomepageConclusion() {
     <section className="px-4 py-12 sm:px-10">
       <div className="mx-auto flex max-w-4xl flex-col items-center gap-12">
         <div className="space-y-3 text-center">
-          <p className="text-sm font-light uppercase tracking-widest opacity-70">
+          <p className="text-sm font-light tracking-widest uppercase opacity-70">
             What's next?
           </p>
           <h2 className="text-3xl font-light lg:text-4xl">

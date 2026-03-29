@@ -11,7 +11,7 @@ import {useEffect, useMemo, useState} from 'react';
 
 export default function ErrorCodePage() {
   return (
-    <div className="flex flex-col pb-8 pt-4">
+    <div className="flex flex-col pt-4 pb-8">
       <p>
         In the minified production build of Lexical, we avoid sending down full
         error messages in order to reduce the number of bytes sent over the

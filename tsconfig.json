@@ -273,7 +273,8 @@
       ],
       "@examples/website-toolbar/Editor": [
         "./examples/website-toolbar/src/Editor.tsx"
-      ]
+      ],
+      "@site/*": ["./packages/lexical-website/*"]
     }
   },
   "include": ["./libdefs", "./packages"],

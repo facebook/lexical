@@ -359,7 +359,25 @@ const config = {
         configureWebpack() {
           return {
             resolve: {
-              alias: buildLexicalWebpackAliases(),
+              alias: {
+                ...buildLexicalWebpackAliases(),
+                '@examples/website-chat': path.resolve(
+                  __dirname,
+                  '../../examples/website-chat/src',
+                ),
+                '@examples/website-notion': path.resolve(
+                  __dirname,
+                  '../../examples/website-notion/src',
+                ),
+                '@examples/website-rich-input': path.resolve(
+                  __dirname,
+                  '../../examples/website-rich-input/src',
+                ),
+                '@examples/website-toolbar': path.resolve(
+                  __dirname,
+                  '../../examples/website-toolbar/src',
+                ),
+              },
             },
           };
         },
@@ -370,8 +388,7 @@ const config = {
     async function tailwindcss() {
       return {
         configurePostCss(postcssOptions) {
-          postcssOptions.plugins.push(require('tailwindcss'));
-          postcssOptions.plugins.push(require('autoprefixer'));
+          postcssOptions.plugins.push(require('@tailwindcss/postcss'));
           return postcssOptions;
         },
         name: 'docusaurus-tailwindcss',

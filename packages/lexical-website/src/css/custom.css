@@ -7,7 +7,13 @@
  */
 
 @import url('navbar.css');
-@import url('tailwind.css');
+
+@import 'tailwindcss/theme.css';
+@import 'tailwindcss/utilities.css';
+
+@source '../../../../examples/website-*/src/**/*.{js,jsx,ts,tsx}';
+
+@custom-variant dark (&:is(html[data-theme='dark'] *));
 
 /**
  * Any CSS included here will be global. The classic template
@@ -35,11 +41,11 @@
 }
 
 .text-gradient {
-  @apply bg-gradient-to-r from-[#76b6ff] to-[#00c896] bg-clip-text text-transparent;
+  @apply bg-linear-to-r from-[#76b6ff] to-[#00c896] bg-clip-text text-transparent;
 }
 
 .styled-button {
-  @apply w-fit rounded-md bg-[var(--ifm-color-primary-dark)] text-sm font-bold text-black transition-colors duration-300 hover:bg-[var(--ifm-color-primary)] hover:text-black/60 hover:no-underline;
+  @apply w-fit rounded-md bg-(--ifm-color-primary-dark) text-sm font-bold text-black transition-colors duration-300 hover:bg-(--ifm-color-primary) hover:text-black/60 hover:no-underline;
 }
 
 /* This removes a weird margin that appears when scrolling code blocks until the end. */

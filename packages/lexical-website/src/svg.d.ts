@@ -6,13 +6,8 @@
  *
  */
 
-/* eslint-disable strict */
-
-/** @type {import('tailwindcss').Config} */
-module.exports = {
-  content: ['src/**/*.{js,jsx,ts,tsx}'],
-  plugins: [],
-  theme: {
-    extend: {},
-  },
-};
+declare module '*.svg' {
+  import React from 'react';
+  const ReactComponent: React.FunctionComponent<React.SVGProps<SVGSVGElement>>;
+  export default ReactComponent;
+}

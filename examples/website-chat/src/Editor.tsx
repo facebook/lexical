@@ -49,7 +49,7 @@ const INITIAL_MESSAGES: Message[] = [
 
 export default function Editor() {
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   const onSubmit = useCallback((editorState: EditorState) => {
     setMessages((prev) => [
@@ -58,14 +58,20 @@ export default function Editor() {
     ]);
   }, []);
 
+  const isInitialMount = useRef(true);
   useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({behavior: 'smooth'});
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    if (messagesContainerRef.current) {
+      const container = messagesContainerRef.current;
+      container.scrollTop = container.scrollHeight;
     }
   }, [messages]);
 
   return (
-    <div className="flex h-[400px] flex-col overflow-hidden rounded-xl border border-solid border-zinc-200 bg-[#f9f9fb] max-[996px]:h-[340px] dark:border-white/10 dark:bg-[#1a1a1c]">
+    <div className="flex flex-col overflow-hidden rounded-xl border border-solid border-zinc-200 bg-[#f9f9fb] dark:border-white/10 dark:bg-[#1a1a1c]">
       <div className="flex shrink-0 items-center gap-2.5 border-b [border-bottom-style:solid] border-zinc-200 bg-white px-3.5 py-2.5 dark:border-white/[0.08] dark:bg-[#232325]">
         <div className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#6366f1] to-[#8b5cf6] text-[0.8rem] font-bold text-white select-none">
           Y
@@ -80,7 +86,9 @@ export default function Editor() {
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col gap-1.5 overflow-y-auto px-3.5 pt-3.5 pb-1.5">
+      <div
+        ref={messagesContainerRef}
+        className="flex h-[288px] flex-col gap-1.5 overflow-y-auto px-3.5 pt-3.5 pb-1.5 max-[996px]:h-[228px]">
         {messages.map((msg) => (
           <div
             key={msg.id}
@@ -96,7 +104,6 @@ export default function Editor() {
             </div>
           </div>
         ))}
-        <div ref={messagesEndRef} />
       </div>
 
       <ChatInput onSubmit={onSubmit} />

@@ -8,60 +8,6 @@
 
 import Translate from '@docusaurus/Translate';
 
-interface Contributor {
-  imageUrl: string;
-  link: string;
-  name: string;
-}
-
-const CONTRIBUTORS: Contributor[] = [
-  {
-    imageUrl: 'https://github.com/trueadm.png',
-    link: 'https://github.com/trueadm',
-    name: 'Dominic Gannaway',
-  },
-  {
-    imageUrl: 'https://github.com/zurfyx.png',
-    link: 'https://github.com/zurfyx',
-    name: 'Gerard Rovira',
-  },
-  {
-    imageUrl: 'https://github.com/acywatson.png',
-    link: 'https://github.com/acywatson',
-    name: 'Acy Watson',
-  },
-  {
-    imageUrl: 'https://github.com/fantactuka.png',
-    link: 'https://github.com/fantactuka',
-    name: 'Maksim Horbachevsky',
-  },
-  {
-    imageUrl: 'https://github.com/prontiol.png',
-    link: 'https://github.com/prontiol',
-    name: 'Denys Mikhailenko',
-  },
-  {
-    imageUrl: 'https://github.com/thegreatercurve.png',
-    link: 'https://github.com/thegreatercurve',
-    name: 'John Flockton',
-  },
-  {
-    imageUrl: 'https://github.com/tylerjbainbridge.png',
-    link: 'https://github.com/tylerjbainbridge',
-    name: 'Tyler Bainbridge',
-  },
-  {
-    imageUrl: 'https://github.com/yangshun.png',
-    link: 'https://github.com/yangshun',
-    name: 'Yangshun Tay',
-  },
-  {
-    imageUrl: 'https://github.com/kraisler.png',
-    link: 'https://github.com/kraisler',
-    name: 'Ken Kraisler',
-  },
-];
-
 export default function CommunityContributors() {
   return (
     <div>
@@ -77,7 +23,8 @@ export default function CommunityContributors() {
         <Translate
           id="pages.community.contributors.subtext"
           description="The descriptive text of the header section of the community page">
-          Lexical development is led by small team at Meta. It also receives
+          Lexical development is led by core team of maintainers, which includes
+          representation from Meta and outside contributors. It also receives
           contributions from people all over the world. Here are just a few
           members.
         </Translate>
@@ -91,25 +38,21 @@ export default function CommunityContributors() {
           <Translate
             id="pages.community.contributors.gitHubLink"
             description="Link to GitHub's contribute page for the repository">
-            See the rest of the contributors on Github.
+            See all of the contributors on Github.
           </Translate>
         </a>
       </p>
 
       <div className="mt-12 flex flex-wrap items-stretch gap-10">
-        {CONTRIBUTORS.map(({name, imageUrl, link}, index) => (
-          <div key={index} className="flex w-44 flex-col items-center gap-2">
-            <img className="w-24 rounded-full" alt={name} src={imageUrl} />
-
-            <a
-              href={link}
-              target="_blank"
-              rel="noreferrer"
-              className="text-center font-bold">
-              {name}
-            </a>
-          </div>
-        ))}
+        <a
+          href="https://github.com/facebook/lexical/graphs/contributors"
+          target="_blank"
+          rel="noreferrer">
+          <img
+            src="https://contrib.rocks/image?repo=facebook/lexical"
+            alt="GitHub avatars of Lexical contributors"
+          />
+        </a>
       </div>
     </div>
   );

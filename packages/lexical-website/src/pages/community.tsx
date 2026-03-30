@@ -18,14 +18,14 @@ export default function Community() {
   return (
     <Layout description={siteConfig.tagline}>
       <main>
-        <div className="mx-auto my-20 flex max-w-[55rem] flex-col gap-16 px-4">
+        <div className="mx-auto my-20 flex max-w-220 flex-col gap-16 px-4">
           <CommunityHeader />
 
           <CommunityLinks />
 
-          <CommunityContributors />
-
           <CommunityHowToContribute />
+
+          <CommunityContributors />
         </div>
       </main>
     </Layout>

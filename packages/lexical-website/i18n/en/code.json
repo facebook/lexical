@@ -237,10 +237,6 @@
     "message": "GitHub",
     "description": "Hyperlink to Github"
   },
-  "pages.community.links.stackoverflow.title": {
-    "message": "Stack Overflow",
-    "description": "Hyperlink to Stack Overflow"
-  },
   "pages.community.links.discord.title": {
     "message": "Discord",
     "description": "Hyperlink to Discord"
@@ -262,11 +258,11 @@
     "description": "Subtitle of section on contributors"
   },
   "pages.community.contributors.subtext": {
-    "message": "Lexical development is led by small team at Meta. It also receives contributions from people all over the world. Here are just a few members.",
+    "message": "Lexical development is led by core team of maintainers, which includes representation from Meta and outside contributors. It also welcomes contributions from people all over the world. Here are just a few members.",
     "description": "The descriptive text of the header section of the community page"
   },
   "pages.community.contributors.gitHubLink": {
-    "message": "See the rest of the contributors on Github.",
+    "message": "See all of the contributors on Github.",
     "description": "Link to GitHub's contribute page for the repository"
   },
   "pages.community.howTo.howToSubHeader": {
@@ -274,7 +270,7 @@
     "description": "Subtitle of section on contribution guidelines"
   },
   "pages.community.howTo.beforeParticipating": {
-    "message": "Before participating in React's communities, please read our",
+    "message": "Before participating in Lexical's communities, please read our",
     "description": "Phrase before paragraph listing documents and policies to read before contributing"
   },
   "pages.community.howTo.codeOfConductLink": {
@@ -344,12 +340,8 @@
     "message": "Want to add a new feature or get a bug fixed? Create a pull request or raise an issue.",
     "description": "Description of Github community"
   },
-  "pages.community.links.stackoverflow.description": {
-    "message": "Having trouble using Lexical? Just shoot us a question.",
-    "description": "Description of StackOverflow community"
-  },
   "pages.community.links.discord.description": {
-    "message": "Let's discuss upcoming features and plans together.",
+    "message": "Join our Discord to stay current on announcements, ask questions, and discuss upcoming features and plans together.",
     "description": "Description of Discord community"
   }
 }

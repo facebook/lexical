@@ -24,7 +24,7 @@ export default function CommunityContributors() {
           id="pages.community.contributors.subtext"
           description="The descriptive text of the header section of the community page">
           Lexical development is led by core team of maintainers, which includes
-          representation from Meta and outside contributors. It also receives
+          representation from Meta and outside contributors. It also welcomes
           contributions from people all over the world. Here are just a few
           members.
         </Translate>

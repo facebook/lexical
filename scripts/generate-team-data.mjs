@@ -22,11 +22,17 @@ const __dirname = path.dirname(__filename);
  */
 const TEAM_CONFIG = {
   // People who should be in emeriti if not active
-  emeriti: ['acywatson', 'potatowagon', 'trueadm'],
+  emeriti: [
+    'acywatson',
+    'potatowagon',
+    'trueadm',
+    'tylerjbainbridge',
+    'thegreatercurve',
+  ],
   // Minimum commits in last 12 months to be considered active
   minCommitsForActive: 1,
   // Minimum total contributions to be considered distinguished
-  minContributionsForDistinguished: 10,
+  minContributionsForDistinguished: 11,
   // People who have PR review access (should be core team if active)
   prReviewers: [
     'zurfyx',

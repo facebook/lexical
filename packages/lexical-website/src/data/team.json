@@ -60,15 +60,6 @@
   ],
   "distinguished": [
     {
-      "avatar": "https://avatars.githubusercontent.com/u/35405812?v=4",
-      "links": {
-        "github": "https://github.com/achaljhawar"
-      },
-      "name": "Achal Jhawar",
-      "username": "achaljhawar",
-      "location": "Melbourne, Australia"
-    },
-    {
       "avatar": "https://avatars.githubusercontent.com/u/64399555?v=4",
       "links": {
         "github": "https://github.com/im-adithya"
@@ -100,17 +91,6 @@
       "sponsor": "https://github.com/sponsors/AlessioGr"
     },
     {
-      "avatar": "https://avatars.githubusercontent.com/u/29728044?v=4",
-      "links": {
-        "github": "https://github.com/AlexanderReznik"
-      },
-      "name": "Alex Reznik ",
-      "username": "AlexanderReznik",
-      "location": "London ",
-      "org": "Bloomberg",
-      "orgLink": "https://github.com/bloomberg"
-    },
-    {
       "avatar": "https://avatars.githubusercontent.com/u/8348101?v=4",
       "links": {
         "github": "https://github.com/amanharwara"
@@ -120,15 +100,6 @@
       "org": "Standardnotes",
       "orgLink": "https://github.com/standardnotes",
       "sponsor": "https://github.com/sponsors/amanharwara"
-    },
-    {
-      "avatar": "https://avatars.githubusercontent.com/u/29527680?v=4",
-      "links": {
-        "github": "https://github.com/ChronicLynx"
-      },
-      "name": "Brandon",
-      "username": "ChronicLynx",
-      "location": "USA"
     },
     {
       "avatar": "https://avatars.githubusercontent.com/u/2033914?v=4",
@@ -167,16 +138,6 @@
       "username": "GermanJablo"
     },
     {
-      "avatar": "https://avatars.githubusercontent.com/u/5208565?v=4",
-      "links": {
-        "github": "https://github.com/icrosil"
-      },
-      "name": "Illia Olenchenko",
-      "username": "icrosil",
-      "location": "London",
-      "org": "Meta"
-    },
-    {
       "avatar": "https://avatars.githubusercontent.com/u/119275535?v=4",
       "links": {
         "github": "https://github.com/james-atticus"
@@ -187,17 +148,6 @@
       "org": "Atticus"
     },
     {
-      "avatar": "https://avatars.githubusercontent.com/u/7748470?v=4",
-      "links": {
-        "github": "https://github.com/thegreatercurve"
-      },
-      "name": "John Flockton",
-      "username": "thegreatercurve",
-      "location": "London, UK",
-      "org": "Meta",
-      "orgLink": "https://github.com/facebook"
-    },
-    {
       "avatar": "https://avatars.githubusercontent.com/u/52599529?v=4",
       "links": {
         "github": "https://github.com/karam-qaoud"
@@ -205,14 +155,6 @@
       "name": "Karam Qaoud",
       "username": "karam-qaoud",
       "location": "Krakow, Poland"
-    },
-    {
-      "avatar": "https://avatars.githubusercontent.com/u/47710336?v=4",
-      "links": {
-        "github": "https://github.com/KatsiarynaDzibrova"
-      },
-      "name": "Katsia",
-      "username": "KatsiarynaDzibrova"
     },
     {
       "avatar": "https://avatars.githubusercontent.com/u/1285131?v=4",
@@ -249,16 +191,6 @@
       "name": "Luci",
       "username": "LuciNyan",
       "sponsor": "https://github.com/sponsors/LuciNyan"
-    },
-    {
-      "avatar": "https://avatars.githubusercontent.com/u/16897447?v=4",
-      "links": {
-        "github": "https://github.com/thatmichael85"
-      },
-      "name": "Michael",
-      "username": "thatmichael85",
-      "location": "Singapore",
-      "org": "Meta"
     },
     {
       "avatar": "https://avatars.githubusercontent.com/u/126554055?v=4",
@@ -304,15 +236,6 @@
       "location": "Vancouver, BC"
     },
     {
-      "avatar": "https://avatars.githubusercontent.com/u/13852400?v=4",
-      "links": {
-        "github": "https://github.com/tylerjbainbridge"
-      },
-      "name": "Tyler Bainbridge",
-      "username": "tylerjbainbridge",
-      "location": "Brooklyn"
-    },
-    {
       "avatar": "https://avatars.githubusercontent.com/u/1125900?v=4",
       "links": {
         "github": "https://github.com/StyleT"
@@ -322,16 +245,6 @@
       "location": "Charlotte, NC, USA",
       "org": "Epam",
       "orgLink": "https://github.com/epam"
-    },
-    {
-      "avatar": "https://avatars.githubusercontent.com/u/4361605?v=4",
-      "links": {
-        "github": "https://github.com/noi5e"
-      },
-      "name": "Will",
-      "username": "noi5e",
-      "location": "Oakland, CA",
-      "sponsor": "https://github.com/sponsors/noi5e"
     },
     {
       "avatar": "https://avatars.githubusercontent.com/u/40269597?v=4",
@@ -392,6 +305,18 @@
       "title": "Creator"
     },
     {
+      "avatar": "https://avatars.githubusercontent.com/u/7748470?v=4",
+      "links": {
+        "github": "https://github.com/thegreatercurve"
+      },
+      "name": "John Flockton",
+      "username": "thegreatercurve",
+      "location": "London, UK",
+      "org": "Meta",
+      "orgLink": "https://github.com/facebook",
+      "title": "Core Team Emeritus"
+    },
+    {
       "avatar": "https://avatars.githubusercontent.com/u/19604232?v=4",
       "links": {
         "github": "https://github.com/potatowagon"
@@ -399,7 +324,17 @@
       "name": "Sherry",
       "username": "potatowagon",
       "title": "Core Team Emeritus"
+    },
+    {
+      "avatar": "https://avatars.githubusercontent.com/u/13852400?v=4",
+      "links": {
+        "github": "https://github.com/tylerjbainbridge"
+      },
+      "name": "Tyler Bainbridge",
+      "username": "tylerjbainbridge",
+      "location": "Brooklyn",
+      "title": "Core Team Emeritus"
     }
   ],
-  "generated": "2026-03-31T04:49:47.080Z"
+  "generated": "2026-03-31T14:56:44.410Z"
 }

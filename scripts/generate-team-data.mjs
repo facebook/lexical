@@ -40,7 +40,6 @@ const TEAM_CONFIG = {
     'acywatson',
     'ivailop7',
     'potatowagon',
-    'takuyakanbr',
     'etrepum',
   ],
 };

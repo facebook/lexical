@@ -12,16 +12,6 @@
       "title": "Core Maintainer"
     },
     {
-      "avatar": "https://avatars.githubusercontent.com/u/875036?v=4",
-      "links": {
-        "github": "https://github.com/takuyakanbr"
-      },
-      "name": "Daniel Teo",
-      "username": "takuyakanbr",
-      "location": "Singapore",
-      "title": "Core Maintainer"
-    },
-    {
       "avatar": "https://avatars.githubusercontent.com/u/193447?v=4",
       "links": {
         "github": "https://github.com/zurfyx"
@@ -100,6 +90,15 @@
       "org": "Standardnotes",
       "orgLink": "https://github.com/standardnotes",
       "sponsor": "https://github.com/sponsors/amanharwara"
+    },
+    {
+      "avatar": "https://avatars.githubusercontent.com/u/875036?v=4",
+      "links": {
+        "github": "https://github.com/takuyakanbr"
+      },
+      "name": "Daniel Teo",
+      "username": "takuyakanbr",
+      "location": "Singapore"
     },
     {
       "avatar": "https://avatars.githubusercontent.com/u/2033914?v=4",
@@ -336,5 +335,5 @@
       "title": "Core Team Emeritus"
     }
   ],
-  "generated": "2026-03-31T14:56:44.410Z"
+  "generated": "2026-03-31T19:10:44.440Z"
 }

@@ -305,7 +305,7 @@
     "message": "See all {count} results"
   },
   "theme.SearchBar.label": {
-    "message": "Search",
+    "message": "Search...",
     "description": "The ARIA label and placeholder for search button"
   },
   "theme.SearchPage.documentsFound.plurals": {

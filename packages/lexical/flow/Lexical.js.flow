@@ -438,7 +438,7 @@ declare export class LexicalNode {
   getTextContentSize(includeDirectionless?: boolean): number;
   createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement;
   updateDOM(
-    // $FlowFixMe[unclear-type]
+    // $FlowFixMe[unclear-type] -- Required to be `this`, but that is not generally sound or allowed in flow's variance model
     prevNode: any,
     dom: HTMLElement,
     config: EditorConfig,
@@ -457,8 +457,10 @@ declare export class LexicalNode {
   selectNext(anchorOffset?: number, focusOffset?: number): RangeSelection;
   markDirty(): void;
   reconcileObservedMutation(dom: HTMLElement, editor: LexicalEditor): void;
-  afterCloneFrom(prevNode: this): void;
-  resetOnCopyNodeFrom(original: this): void;
+  // $FlowFixMe[unclear-type] -- Required to be `this`, but that is not generally sound or allowed in flow's variance model
+  afterCloneFrom(prevNode: any): void;
+  // $FlowFixMe[unclear-type] -- Required to be `this`, but that is not generally sound or allowed in flow's variance model
+  resetOnCopyNodeFrom(original: any): void;
 }
 export type NodeMap = Map<NodeKey, LexicalNode>;
 

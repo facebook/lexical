@@ -17,10 +17,57 @@ const {packagesManager} = process.env.FB_INTERNAL
   ? {}
   : require('../../scripts/shared/packagesManager');
 const path = require('node:path');
+const fs = require('node:fs');
+
+/**
+ * Build webpack resolve.alias entries that map each lexical package's module
+ * name to the corresponding pre-built dist file.
+ *
+ * Requires `pnpm run build` to have been run first (dist/ files must exist).
+ *
+ * @returns {Record<string, string>}
+ */
+function buildLexicalWebpackAliases() {
+  if (process.env.FB_INTERNAL) {
+    return {};
+  }
+  /** @type {Record<string, string>} */
+  const aliases = {};
+
+  for (const pkg of packagesManager.getPublicPackages()) {
+    for (const [
+      name,
+      moduleExports,
+    ] of pkg.getNormalizedNpmModuleExportEntries()) {
+      const candidates = [
+        moduleExports.import.development,
+        moduleExports.import.default,
+        moduleExports.require.development,
+        moduleExports.require.default,
+      ].flatMap((fn) => {
+        if (!fn) {
+          return [];
+        }
+        const rel = fn.replace(/^\.\//, '');
+        return [pkg.resolve('dist', rel), pkg.resolve(rel)];
+      });
+      const resolved = candidates.find((f) => fs.existsSync(f));
+      if (!resolved) {
+        throw new Error(
+          `Missing dist file for ${name}. Run \`pnpm run build\` first.\n` +
+            `Tried: ${candidates.join(', ')}`,
+        );
+      }
+      aliases[`${name}$`] = resolved;
+    }
+  }
+
+  return aliases;
+}
 
 const TITLE = 'Lexical';
 const GITHUB_REPO_URL = 'https://github.com/facebook/lexical'; // TODO: Update when repo name updated
-const IOS_GITHUB_REPO_URL = 'https://github.com/facebook/lexical-ios';
+const DISCORD_URL = 'https://discord.gg/KmG4wQnnD9';
 
 function sourceLinkOptions() {
   const sourceLinkTemplate = `${GITHUB_REPO_URL}/tree/{gitRevision}/{path}#L{line}`;
@@ -232,6 +279,7 @@ const docusaurusPluginTypedocConfig = {
   ],
   router: 'legacy',
   sidebar: {pretty: true},
+  skipErrorChecking: true,
   tsconfig: '../../tsconfig.build.json',
   useCustomAnchors: true,
   watch: process.env.TYPEDOC_WATCH === 'true',
@@ -306,12 +354,41 @@ const config = {
           },
         ],
     './plugins/webpack-buffer',
+    async function webpackLexicalModules() {
+      return {
+        configureWebpack() {
+          return {
+            resolve: {
+              alias: {
+                ...buildLexicalWebpackAliases(),
+                '@examples/website-chat': path.resolve(
+                  __dirname,
+                  '../../examples/website-chat/src',
+                ),
+                '@examples/website-notion': path.resolve(
+                  __dirname,
+                  '../../examples/website-notion/src',
+                ),
+                '@examples/website-rich-input': path.resolve(
+                  __dirname,
+                  '../../examples/website-rich-input/src',
+                ),
+                '@examples/website-toolbar': path.resolve(
+                  __dirname,
+                  '../../examples/website-toolbar/src',
+                ),
+              },
+            },
+          };
+        },
+        name: 'webpack-lexical-modules',
+      };
+    },
     ['docusaurus-plugin-typedoc', docusaurusPluginTypedocConfig],
     async function tailwindcss() {
       return {
         configurePostCss(postcssOptions) {
-          postcssOptions.plugins.push(require('tailwindcss'));
-          postcssOptions.plugins.push(require('autoprefixer'));
+          postcssOptions.plugins.push(require('@tailwindcss/postcss'));
           return postcssOptions;
         },
         name: 'docusaurus-tailwindcss',
@@ -355,7 +432,7 @@ const config = {
   // Usually your GitHub org/user name.
   projectName: 'lexical',
 
-  tagline: 'An extensible text editor framework that does things differently',
+  tagline: 'A text editor framework that does things differently',
 
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
@@ -365,66 +442,6 @@ const config = {
           autoCollapseCategories: true,
           hideable: true,
         },
-      },
-      footer: {
-        copyright: `Copyright © ${new Date().getFullYear()} Meta Platforms, Inc. Built with Docusaurus.`,
-        links: [
-          {
-            items: [
-              {
-                label: 'Introduction',
-                to: '/docs/intro',
-              },
-            ],
-            title: 'Docs',
-          },
-          {
-            items: [
-              {
-                href: 'https://discord.gg/KmG4wQnnD9',
-                label: 'Discord',
-              },
-              {
-                href: 'https://stackoverflow.com/questions/tagged/lexicaljs',
-                label: 'Stack Overflow',
-              },
-              {
-                href: 'https://twitter.com/lexicaljs',
-                label: 'Twitter',
-              },
-            ],
-            title: 'Community',
-          },
-          {
-            items: [
-              {
-                href: 'https://github.com/facebook/lexical',
-                label: 'GitHub',
-              },
-            ],
-            title: 'More',
-          },
-          {
-            // Please do not remove the privacy and terms, it's a legal requirement.
-            items: [
-              {
-                href: 'https://opensource.facebook.com/legal/privacy/',
-                label: 'Privacy',
-                rel: 'noreferrer noopener',
-                target: '_blank',
-              },
-              {
-                href: 'https://opensource.facebook.com/legal/terms/',
-                label: 'Terms',
-                rel: 'noreferrer noopener',
-                target: '_blank',
-              },
-            ],
-
-            title: 'Legal',
-          },
-        ],
-        style: 'dark',
       },
       navbar: {
         items: [
@@ -454,28 +471,26 @@ const config = {
 
           {label: 'Community', position: 'left', to: '/community'},
           {
-            href: 'https://facebook.github.io/lexical-ios/',
-            label: 'iOS',
-            position: 'left',
-          },
-          {
-            label: 'Gallery',
+            label: 'Demos',
             position: 'left',
             to: '/gallery',
           },
           {
-            href: GITHUB_REPO_URL,
-            label: 'GitHub',
+            'aria-label': 'GitHub',
+            className: 'icon-link icon-link-mask icon-link-github',
             position: 'right',
+            to: GITHUB_REPO_URL,
           },
           {
-            href: IOS_GITHUB_REPO_URL,
-            label: 'iOS GitHub',
+            'aria-label': 'Discord',
+            className: 'icon-link icon-link-mask icon-link-discord',
             position: 'right',
+            to: DISCORD_URL,
           },
         ].filter((item) => item != null),
         logo: {
           alt: 'Lexical',
+          height: 12,
           src: 'img/logo.svg',
           srcDark: 'img/logo-dark.svg',
         },

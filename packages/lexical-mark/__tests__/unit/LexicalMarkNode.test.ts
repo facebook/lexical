@@ -6,12 +6,16 @@
  *
  */
 import {$generateNodesFromDOM} from '@lexical/html';
-import {$wrapSelectionInMarkNode, MarkNode} from '@lexical/mark';
+import {$isMarkNode, $wrapSelectionInMarkNode, MarkNode} from '@lexical/mark';
+import {$insertNodeIntoLeaf} from '@lexical/utils';
 import {
   $createParagraphNode,
   $createRangeSelection,
   $createTextNode,
   $getRoot,
+  $isParagraphNode,
+  $isTextNode,
+  $setSelection,
   ParagraphNode,
   TextNode,
 } from 'lexical';
@@ -21,7 +25,7 @@ import {
   $createTestInlineElementNode,
   initializeUnitTest,
 } from 'lexical/src/__tests__/utils';
-import {beforeEach, describe, expect, test} from 'vitest';
+import {assert, beforeEach, describe, expect, test} from 'vitest';
 
 describe('LexicalMarkNode tests', () => {
   initializeUnitTest((testEnv) => {
@@ -122,6 +126,44 @@ describe('LexicalMarkNode tests', () => {
             decoratorNode.getKey(),
             textNode.getKey(),
           ]);
+        });
+      });
+
+      test('keeps decorator nodes inside an existing mark', () => {
+        const {editor} = testEnv;
+
+        editor.update(() => {
+          const paragraphNode = $getRoot().getFirstChild();
+          assert($isParagraphNode(paragraphNode), 'Expecting ParagraphNode');
+          const textNode = $createTextNode('aaa x^2 bbb');
+          paragraphNode.append(textNode);
+
+          const selection = textNode.select(0);
+          $wrapSelectionInMarkNode(selection, false, 'comment-id');
+
+          const markNode = paragraphNode.getFirstChildOrThrow();
+          assert($isMarkNode(markNode), 'Expecting MarkNode');
+          const markedTextNode = markNode.getFirstChildOrThrow();
+          assert($isTextNode(markedTextNode), 'Expecting TextNode');
+          const equationSelection = markedTextNode.select(
+            'aaa '.length,
+            'aaa x^2'.length,
+          );
+          $setSelection(equationSelection);
+
+          $insertNodeIntoLeaf($createTestDecoratorNode());
+
+          expect(paragraphNode.getChildren().map((c) => c.getType())).toEqual([
+            'mark',
+          ]);
+          const updatedMarkNode = paragraphNode.getFirstChildOrThrow();
+          assert($isMarkNode(updatedMarkNode), 'Expecting MarkNode');
+          expect(updatedMarkNode.getIDs()).toEqual(['comment-id']);
+          const markChildren = updatedMarkNode.getChildren();
+          expect(markChildren).toHaveLength(3);
+          expect(markChildren[0].getTextContent()).toBe('aaa ');
+          expect(markChildren[1].getType()).toBe('test_decorator');
+          expect(markChildren[2].getTextContent()).toBe(' bbb');
         });
       });
 

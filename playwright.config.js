@@ -18,23 +18,39 @@ const config = {
     {
       name: 'chromium',
       testDir: './packages/lexical-playground/__tests__/',
-      use: {...devices['Desktop Chrome']},
+      use: {
+        ...devices['Desktop Chrome'],
+        launchOptions: {
+          slowMo: 50,
+        },
+      },
     },
     {
       name: 'firefox',
       testDir: './packages/lexical-playground/__tests__/',
-      use: {...devices['Desktop Firefox']},
+      use: {
+        ...devices['Desktop Firefox'],
+        launchOptions: {
+          slowMo: 50,
+        },
+      },
     },
     {
       name: 'webkit',
       testDir: './packages/lexical-playground/__tests__/',
-      use: {...devices['Desktop Safari']},
+      use: {
+        ...devices['Desktop Safari'],
+        launchOptions: {
+          slowMo: 50,
+        },
+      },
     },
   ],
   retries: IS_CI ? 4 : 1,
   testIgnore: /\/__tests__\/unit\//,
   timeout: 150000,
   use: {
+    actionTimeout: 10000, // Max time to wait for actions
     navigationTimeout: 30000,
     // this causes issues in the CI on on current version.
     //trace: 'retain-on-failure',

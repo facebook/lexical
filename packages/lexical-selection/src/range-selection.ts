@@ -599,8 +599,10 @@ export function $getSelectionStyleValueForProperty(
   const anchor = selection.anchor;
   const focus = selection.focus;
   const isBackward = selection.isBackward();
-  const endOffset = isBackward ? focus.offset : anchor.offset;
-  const endNode = isBackward ? focus.getNode() : anchor.getNode();
+  const startNode = isBackward ? focus.getNode() : anchor.getNode();
+  const endNode = isBackward ? anchor.getNode() : focus.getNode();
+  const startOffset = isBackward ? focus.offset : anchor.offset;
+  const endOffset = isBackward ? anchor.offset : focus.offset;
 
   if (
     $isRangeSelection(selection) &&
@@ -618,10 +620,16 @@ export function $getSelectionStyleValueForProperty(
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
 
-    // if no actual characters in the end node are selected, we don't
-    // include it in the selection for purposes of determining style
-    // value
-    if (i !== 0 && endOffset === 0 && node.is(endNode)) {
+    if (
+      i === 0 &&
+      node.is(startNode) &&
+      $isTextNode(node) &&
+      startOffset === node.getTextContentSize()
+    ) {
+      continue;
+    }
+
+    if (i !== 0 && node.is(endNode) && endOffset === 0) {
       continue;
     }
 

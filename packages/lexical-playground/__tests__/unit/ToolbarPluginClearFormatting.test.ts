@@ -8,10 +8,13 @@
 
 import {
   $createParagraphNode,
+  $createRangeSelection,
   $createTextNode,
+  $getNodeByKey,
   $getRoot,
   $isParagraphNode,
   $isTextNode,
+  $setSelection,
 } from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 import {describe, expect, it} from 'vitest';
@@ -20,42 +23,37 @@ import {clearFormatting} from '../../src/plugins/ToolbarPlugin/utils';
 
 describe('ToolbarPlugin clearFormatting', () => {
   initializeUnitTest((testEnv) => {
-    it('clears block alignment for a collapsed selection without text formatting', () => {
+    it('keeps block format when selection is partial', () => {
       const {editor} = testEnv;
+      let paragraphKey = '';
 
       editor.update(
         () => {
           const paragraph = $createParagraphNode();
           paragraph.setFormat('center');
-          paragraph.setIndent(2);
+          paragraph.append($createTextNode('Hello'), $createTextNode('World'));
+          paragraphKey = paragraph.getKey();
+          $getRoot().clear().append(paragraph);
 
-          const text = $createTextNode('Hello');
-          paragraph.append(text);
-          $getRoot().append(paragraph);
-
-          text.select(1, 1);
+          const firstChild = paragraph.getFirstChild();
+          if (!$isTextNode(firstChild)) {
+            throw new Error('Expected first child to be a TextNode.');
+          }
+          const selection = $createRangeSelection();
+          selection.setTextNodeRange(firstChild, 0, firstChild, 3);
+          $setSelection(selection);
         },
         {discrete: true},
       );
 
       clearFormatting(editor);
 
-      editor.read(() => {
-        const paragraph = $getRoot().getFirstChild();
-        expect(paragraph).not.toBeNull();
-        if (!paragraph || !$isParagraphNode(paragraph)) {
-          return;
+      editor.getEditorState().read(() => {
+        const paragraph = $getNodeByKey(paragraphKey);
+        if (!$isParagraphNode(paragraph)) {
+          throw new Error('Expected a ParagraphNode.');
         }
-
-        expect(paragraph.getFormatType()).toBe('');
-        expect(paragraph.getIndent()).toBe(0);
-
-        const text = paragraph.getFirstChild();
-        expect(text).not.toBeNull();
-        if ($isTextNode(text)) {
-          expect(text.getFormat()).toBe(0);
-          expect(text.getStyle()).toBe('');
-        }
+        expect(paragraph.getFormatType()).toBe('center');
       });
     });
   });

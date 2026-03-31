@@ -11,6 +11,7 @@ import CommunityContributors from '@site/src/components/CommunityContributors';
 import CommunityHeader from '@site/src/components/CommunityHeader';
 import CommunityHowToContribute from '@site/src/components/CommunityHowToContribute';
 import CommunityLinks from '@site/src/components/CommunityLinks';
+import CommunityTeam from '@site/src/components/CommunityTeam';
 import Layout from '@theme/Layout';
 
 export default function Community() {
@@ -24,6 +25,8 @@ export default function Community() {
           <CommunityLinks />
 
           <CommunityHowToContribute />
+
+          <CommunityTeam />
 
           <CommunityContributors />
         </div>

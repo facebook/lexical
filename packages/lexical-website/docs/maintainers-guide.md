@@ -4,6 +4,22 @@ This is the grimoire of arcane knowledge covering the overall organization
 of the Lexical monorepo, including its conventions, quirks, and
 configurations.
 
+## Website Team Page
+
+The team page on the Lexical website (lexical.dev/community) displays core team
+members, emeriti, and distinguished contributors. The team data is automatically
+generated from GitHub contributor information.
+
+To update the team page data:
+
+```bash
+pnpm run update-team-data
+```
+
+This fetches the latest contributor data from GitHub and categorizes team members
+based on recent activity (last 12 months). See `packages/lexical-website/src/data/README.md`
+for more details on configuration and team categorization logic.
+
 ## Monorepo Organization
 
 ### Workspaces

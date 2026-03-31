@@ -1,0 +1,392 @@
+{
+  "core": [
+    {
+      "avatar": "https://avatars.githubusercontent.com/u/26596?v=4",
+      "links": {
+        "github": "https://github.com/etrepum"
+      },
+      "name": "Bob Ippolito",
+      "username": "etrepum",
+      "location": "San Francisco, CA",
+      "sponsor": "https://github.com/sponsors/etrepum",
+      "title": "Core Maintainer"
+    },
+    {
+      "avatar": "https://avatars.githubusercontent.com/u/875036?v=4",
+      "links": {
+        "github": "https://github.com/takuyakanbr"
+      },
+      "name": "Daniel Teo",
+      "username": "takuyakanbr",
+      "location": "Singapore",
+      "title": "Core Maintainer"
+    },
+    {
+      "avatar": "https://avatars.githubusercontent.com/u/193447?v=4",
+      "links": {
+        "github": "https://github.com/zurfyx"
+      },
+      "name": "Gerard Rovira",
+      "username": "zurfyx",
+      "location": "New York, New York",
+      "org": "facebook ",
+      "title": "Core Maintainer"
+    },
+    {
+      "avatar": "https://avatars.githubusercontent.com/u/7893468?v=4",
+      "links": {
+        "github": "https://github.com/ivailop7"
+      },
+      "name": "Ivaylo Pavlov",
+      "username": "ivailop7",
+      "location": "London, United Kingdom",
+      "org": "Bloomberg",
+      "title": "Core Maintainer"
+    },
+    {
+      "avatar": "https://avatars.githubusercontent.com/u/132642?v=4",
+      "links": {
+        "github": "https://github.com/fantactuka"
+      },
+      "name": "Maksim Horbachevsky",
+      "username": "fantactuka",
+      "location": "New York, NY",
+      "org": "facebook",
+      "title": "Core Maintainer"
+    }
+  ],
+  "distinguished": [
+    {
+      "avatar": "https://avatars.githubusercontent.com/u/35405812?v=4",
+      "links": {
+        "github": "https://github.com/achaljhawar"
+      },
+      "name": "Achal Jhawar",
+      "username": "achaljhawar",
+      "location": "Melbourne, Australia"
+    },
+    {
+      "avatar": "https://avatars.githubusercontent.com/u/64399555?v=4",
+      "links": {
+        "github": "https://github.com/im-adithya"
+      },
+      "name": "Adithya Vardhan",
+      "username": "im-adithya",
+      "location": "Bangalore, India",
+      "org": "getAlby"
+    },
+    {
+      "avatar": "https://avatars.githubusercontent.com/u/47840436?v=4",
+      "links": {
+        "github": "https://github.com/akmarzhan1"
+      },
+      "name": "akmarzhan1",
+      "username": "akmarzhan1"
+    },
+    {
+      "avatar": "https://avatars.githubusercontent.com/u/70709113?v=4",
+      "links": {
+        "github": "https://github.com/AlessioGr"
+      },
+      "name": "Alessio Gravili",
+      "username": "AlessioGr",
+      "location": "Vancouver",
+      "org": "figma @payloadcms ",
+      "sponsor": "https://github.com/sponsors/AlessioGr"
+    },
+    {
+      "avatar": "https://avatars.githubusercontent.com/u/29728044?v=4",
+      "links": {
+        "github": "https://github.com/AlexanderReznik"
+      },
+      "name": "Alex Reznik ",
+      "username": "AlexanderReznik",
+      "location": "London ",
+      "org": "bloomberg"
+    },
+    {
+      "avatar": "https://avatars.githubusercontent.com/u/8348101?v=4",
+      "links": {
+        "github": "https://github.com/amanharwara"
+      },
+      "name": "Aman Harwara",
+      "username": "amanharwara",
+      "org": "standardnotes",
+      "sponsor": "https://github.com/sponsors/amanharwara"
+    },
+    {
+      "avatar": "https://avatars.githubusercontent.com/u/29527680?v=4",
+      "links": {
+        "github": "https://github.com/ChronicLynx"
+      },
+      "name": "Brandon",
+      "username": "ChronicLynx",
+      "location": "USA"
+    },
+    {
+      "avatar": "https://avatars.githubusercontent.com/u/2033914?v=4",
+      "links": {
+        "github": "https://github.com/prontiol"
+      },
+      "name": "Denys Mikhalenko",
+      "username": "prontiol",
+      "location": "Sunnyvale, CA"
+    },
+    {
+      "avatar": "https://avatars.githubusercontent.com/u/7505359?v=4",
+      "links": {
+        "github": "https://github.com/ebads67"
+      },
+      "name": "Ebad",
+      "username": "ebads67",
+      "location": "London",
+      "org": "Bloomberg"
+    },
+    {
+      "avatar": "https://avatars.githubusercontent.com/u/94334?v=4",
+      "links": {
+        "github": "https://github.com/thorn0"
+      },
+      "name": "Georgii Dolzhykov",
+      "username": "thorn0",
+      "location": "Kyiv, Ukraine"
+    },
+    {
+      "avatar": "https://avatars.githubusercontent.com/u/43938777?v=4",
+      "links": {
+        "github": "https://github.com/GermanJablo"
+      },
+      "name": "German Jablonski",
+      "username": "GermanJablo"
+    },
+    {
+      "avatar": "https://avatars.githubusercontent.com/u/5208565?v=4",
+      "links": {
+        "github": "https://github.com/icrosil"
+      },
+      "name": "Illia Olenchenko",
+      "username": "icrosil",
+      "location": "London",
+      "org": "Meta"
+    },
+    {
+      "avatar": "https://avatars.githubusercontent.com/u/119275535?v=4",
+      "links": {
+        "github": "https://github.com/james-atticus"
+      },
+      "name": "James Fitzsimmons",
+      "username": "james-atticus",
+      "location": "Melbourne, Australia",
+      "org": "Atticus"
+    },
+    {
+      "avatar": "https://avatars.githubusercontent.com/u/7748470?v=4",
+      "links": {
+        "github": "https://github.com/thegreatercurve"
+      },
+      "name": "John Flockton",
+      "username": "thegreatercurve",
+      "location": "London, UK",
+      "org": "meta"
+    },
+    {
+      "avatar": "https://avatars.githubusercontent.com/u/52599529?v=4",
+      "links": {
+        "github": "https://github.com/karam-qaoud"
+      },
+      "name": "Karam Qaoud",
+      "username": "karam-qaoud",
+      "location": "Krakow, Poland"
+    },
+    {
+      "avatar": "https://avatars.githubusercontent.com/u/47710336?v=4",
+      "links": {
+        "github": "https://github.com/KatsiarynaDzibrova"
+      },
+      "name": "Katsia",
+      "username": "KatsiarynaDzibrova"
+    },
+    {
+      "avatar": "https://avatars.githubusercontent.com/u/1285131?v=4",
+      "links": {
+        "github": "https://github.com/mrkev"
+      },
+      "name": "Kevin Chavez",
+      "username": "mrkev",
+      "location": "Guadalajara"
+    },
+    {
+      "avatar": "https://avatars.githubusercontent.com/u/13310363?v=4",
+      "links": {
+        "github": "https://github.com/kirandash"
+      },
+      "name": "Kiran",
+      "username": "kirandash",
+      "location": "Singapore",
+      "sponsor": "https://github.com/sponsors/kirandash"
+    },
+    {
+      "avatar": "https://avatars.githubusercontent.com/u/1952520?v=4",
+      "links": {
+        "github": "https://github.com/kraisler"
+      },
+      "name": "kraisler",
+      "username": "kraisler"
+    },
+    {
+      "avatar": "https://avatars.githubusercontent.com/u/22126563?v=4",
+      "links": {
+        "github": "https://github.com/LuciNyan"
+      },
+      "name": "Luci",
+      "username": "LuciNyan",
+      "sponsor": "https://github.com/sponsors/LuciNyan"
+    },
+    {
+      "avatar": "https://avatars.githubusercontent.com/u/16897447?v=4",
+      "links": {
+        "github": "https://github.com/thatmichael85"
+      },
+      "name": "Michael",
+      "username": "thatmichael85",
+      "location": "Singapore",
+      "org": "Meta"
+    },
+    {
+      "avatar": "https://avatars.githubusercontent.com/u/126554055?v=4",
+      "links": {
+        "github": "https://github.com/randal-atticus"
+      },
+      "name": "Randal",
+      "username": "randal-atticus"
+    },
+    {
+      "avatar": "https://avatars.githubusercontent.com/u/163521239?v=4",
+      "links": {
+        "github": "https://github.com/Sahejkm"
+      },
+      "name": "Sahejkm",
+      "username": "Sahejkm"
+    },
+    {
+      "avatar": "https://avatars.githubusercontent.com/u/64372619?v=4",
+      "links": {
+        "github": "https://github.com/levensta"
+      },
+      "name": "Sergey Gorbachev",
+      "username": "levensta",
+      "location": "Around the World"
+    },
+    {
+      "avatar": "https://avatars.githubusercontent.com/u/33776279?v=4",
+      "links": {
+        "github": "https://github.com/Shubhankerism"
+      },
+      "name": "Shubhanker Srivastava",
+      "username": "Shubhankerism",
+      "location": "London"
+    },
+    {
+      "avatar": "https://avatars.githubusercontent.com/u/13243?v=4",
+      "links": {
+        "github": "https://github.com/steveluscher"
+      },
+      "name": "Steven Luscher",
+      "username": "steveluscher",
+      "location": "Vancouver, BC"
+    },
+    {
+      "avatar": "https://avatars.githubusercontent.com/u/13852400?v=4",
+      "links": {
+        "github": "https://github.com/tylerjbainbridge"
+      },
+      "name": "Tyler Bainbridge",
+      "username": "tylerjbainbridge",
+      "location": "Brooklyn"
+    },
+    {
+      "avatar": "https://avatars.githubusercontent.com/u/1125900?v=4",
+      "links": {
+        "github": "https://github.com/StyleT"
+      },
+      "name": "Vlad Fedosov",
+      "username": "StyleT",
+      "location": "Charlotte, NC, USA",
+      "org": "epam"
+    },
+    {
+      "avatar": "https://avatars.githubusercontent.com/u/4361605?v=4",
+      "links": {
+        "github": "https://github.com/noi5e"
+      },
+      "name": "Will",
+      "username": "noi5e",
+      "location": "Oakland, CA",
+      "sponsor": "https://github.com/sponsors/noi5e"
+    },
+    {
+      "avatar": "https://avatars.githubusercontent.com/u/40269597?v=4",
+      "links": {
+        "github": "https://github.com/2wheeh"
+      },
+      "name": "wnhlee",
+      "username": "2wheeh",
+      "location": "Seoul",
+      "org": "DELIGHT-LABS",
+      "sponsor": "https://github.com/sponsors/2wheeh"
+    },
+    {
+      "avatar": "https://avatars.githubusercontent.com/u/1315101?v=4",
+      "links": {
+        "github": "https://github.com/yangshun"
+      },
+      "name": "Yangshun Tay",
+      "username": "yangshun",
+      "location": "Singapore",
+      "org": "greatfrontend",
+      "sponsor": "https://github.com/sponsors/yangshun"
+    },
+    {
+      "avatar": "https://avatars.githubusercontent.com/u/4734231?v=4",
+      "links": {
+        "github": "https://github.com/lilshady"
+      },
+      "name": "Yuncheng Lu",
+      "username": "lilshady"
+    }
+  ],
+  "emeriti": [
+    {
+      "avatar": "https://avatars.githubusercontent.com/u/14864325?v=4",
+      "links": {
+        "github": "https://github.com/acywatson"
+      },
+      "name": "Acy Watson",
+      "username": "acywatson",
+      "location": "Park City, Utah",
+      "org": "facebook ",
+      "title": "Core Team Emeritus"
+    },
+    {
+      "avatar": "https://avatars.githubusercontent.com/u/1519870?v=4",
+      "links": {
+        "github": "https://github.com/trueadm"
+      },
+      "name": "Dominic Gannaway",
+      "username": "trueadm",
+      "location": "London, United Kingdom",
+      "org": "attio",
+      "title": "Creator"
+    },
+    {
+      "avatar": "https://avatars.githubusercontent.com/u/19604232?v=4",
+      "links": {
+        "github": "https://github.com/potatowagon"
+      },
+      "name": "Sherry",
+      "username": "potatowagon",
+      "title": "Core Team Emeritus"
+    }
+  ],
+  "generated": "2026-03-31T04:25:10.964Z"
+}

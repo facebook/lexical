@@ -1294,7 +1294,7 @@ export class RangeSelection implements BaseSelection {
     }
     firstNode.setFormat(firstNextFormat);
 
-    const lastNextFormat = lastNode.getFormatFlags(formatType, firstNextFormat);
+    const lastNextFormat = lastNode.getFormatFlags(formatType, alignWithFormat);
     // If the offset is 0, it means no actual characters are selected,
     // so we skip formatting the last node altogether.
     if (endOffset > 0) {
@@ -1310,7 +1310,7 @@ export class RangeSelection implements BaseSelection {
     // Process all text nodes in between
     for (let i = firstIndex + 1; i < lastIndex; i++) {
       const textNode = selectedTextNodes[i];
-      const nextFormat = textNode.getFormatFlags(formatType, lastNextFormat);
+      const nextFormat = textNode.getFormatFlags(formatType, alignWithFormat);
       textNode.setFormat(nextFormat);
     }
 

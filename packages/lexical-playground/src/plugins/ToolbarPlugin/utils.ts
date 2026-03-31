@@ -358,7 +358,11 @@ export const clearFormatting = (
           const nearestBlockElement =
             $getNearestBlockElementAncestorOrThrow(node);
           if (nearestBlockElement.getFormat() !== 0) {
-            nearestBlockElement.setFormat('');
+            // Only clear the block format if the block's text was fully selected.
+            const textContent = nearestBlockElement.getTextContent();
+            if (textContent.length === node.getTextContentSize()) {
+              nearestBlockElement.setFormat('');
+            }
           }
           if (nearestBlockElement.getIndent() !== 0) {
             nearestBlockElement.setIndent(0);

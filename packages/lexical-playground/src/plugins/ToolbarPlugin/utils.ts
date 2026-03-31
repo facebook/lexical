@@ -339,9 +339,11 @@ export const clearFormatting = (
     }
     const selection = $getSelection();
     if ($isRangeSelection(selection) || $isTableSelection(selection)) {
+      const anchor = selection.anchor;
+      const focus = selection.focus;
       const extractedNodes = selection.extract();
 
-      if (extractedNodes.length === 0) {
+      if (anchor.key === focus.key && anchor.offset === focus.offset) {
         return;
       }
 

@@ -24,7 +24,10 @@ import {$isTableSelection} from '@lexical/table';
 import {$getNearestBlockElementAncestorOrThrow} from '@lexical/utils';
 import {
   $addUpdateTag,
+  $caretFromPoint,
+  $comparePointCaretNext,
   $createParagraphNode,
+  $createPoint,
   $createRangeSelection,
   $getSelection,
   $isElementNode,
@@ -37,6 +40,7 @@ import {
   ElementNode,
   LexicalEditor,
   LexicalNode,
+  PointType,
   RangeSelection,
   SKIP_DOM_SELECTION_TAG,
   SKIP_SELECTION_FOCUS_TAG,
@@ -301,6 +305,36 @@ function $findParagraphParent(node: LexicalNode): ElementNode | null {
   return $isElementNode(parent) && $isParagraphNode(parent) ? parent : null;
 }
 
+function $isBlockFullySelected(
+  block: ElementNode,
+  selectionStart: PointType,
+  selectionEnd: PointType,
+): boolean {
+  const textNodes = block.getAllTextNodes();
+  const blockStart =
+    textNodes.length > 0
+      ? $createPoint(textNodes[0].getKey(), 0, 'text')
+      : $createPoint(block.getKey(), 0, 'element');
+  const lastTextNode = textNodes[textNodes.length - 1];
+  const blockEnd =
+    lastTextNode !== undefined
+      ? $createPoint(
+          lastTextNode.getKey(),
+          lastTextNode.getTextContentSize(),
+          'text',
+        )
+      : $createPoint(block.getKey(), block.getChildrenSize(), 'element');
+  const startCaret = $caretFromPoint(selectionStart, 'next');
+  const endCaret = $caretFromPoint(selectionEnd, 'next');
+  const blockStartCaret = $caretFromPoint(blockStart, 'next');
+  const blockEndCaret = $caretFromPoint(blockEnd, 'next');
+
+  return (
+    $comparePointCaretNext(startCaret, blockStartCaret) <= 0 &&
+    $comparePointCaretNext(endCaret, blockEndCaret) >= 0
+  );
+}
+
 export const formatCode = (editor: LexicalEditor, blockType: string) => {
   if (blockType !== 'code') {
     editor.update(() => {
@@ -339,6 +373,24 @@ export const clearFormatting = (
     }
     const selection = $getSelection();
     if ($isRangeSelection(selection) || $isTableSelection(selection)) {
+      const startEnd = selection.getStartEndPoints();
+      if (startEnd === null) {
+        return;
+      }
+      const [anchorPoint, focusPoint] = startEnd;
+      const isForward = anchorPoint.isBefore(focusPoint);
+      const startPoint = isForward ? anchorPoint : focusPoint;
+      const endPoint = isForward ? focusPoint : anchorPoint;
+      const selectionStart = $createPoint(
+        startPoint.key,
+        startPoint.offset,
+        startPoint.type,
+      );
+      const selectionEnd = $createPoint(
+        endPoint.key,
+        endPoint.offset,
+        endPoint.type,
+      );
       const anchor = selection.anchor;
       const focus = selection.focus;
       const extractedNodes = selection.extract();
@@ -359,8 +411,13 @@ export const clearFormatting = (
             $getNearestBlockElementAncestorOrThrow(node);
           if (nearestBlockElement.getFormat() !== 0) {
             // Only clear the block format if the block's text was fully selected.
-            const textContent = nearestBlockElement.getTextContent();
-            if (textContent.length === node.getTextContentSize()) {
+            if (
+              $isBlockFullySelected(
+                nearestBlockElement,
+                selectionStart,
+                selectionEnd,
+              )
+            ) {
               nearestBlockElement.setFormat('');
             }
           }

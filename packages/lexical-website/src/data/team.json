@@ -29,7 +29,8 @@
       "name": "Gerard Rovira",
       "username": "zurfyx",
       "location": "New York, New York",
-      "org": "facebook ",
+      "org": "Meta",
+      "orgLink": "https://github.com/facebook",
       "title": "Core Maintainer"
     },
     {
@@ -41,6 +42,7 @@
       "username": "ivailop7",
       "location": "London, United Kingdom",
       "org": "Bloomberg",
+      "orgLink": "https://github.com/Bloomberg",
       "title": "Core Maintainer"
     },
     {
@@ -51,7 +53,8 @@
       "name": "Maksim Horbachevsky",
       "username": "fantactuka",
       "location": "New York, NY",
-      "org": "facebook",
+      "org": "Meta",
+      "orgLink": "https://github.com/facebook",
       "title": "Core Maintainer"
     }
   ],
@@ -73,7 +76,8 @@
       "name": "Adithya Vardhan",
       "username": "im-adithya",
       "location": "Bangalore, India",
-      "org": "getAlby"
+      "org": "getAlby",
+      "orgLink": "https://github.com/getAlby"
     },
     {
       "avatar": "https://avatars.githubusercontent.com/u/47840436?v=4",
@@ -91,7 +95,8 @@
       "name": "Alessio Gravili",
       "username": "AlessioGr",
       "location": "Vancouver",
-      "org": "figma @payloadcms ",
+      "org": "Figma",
+      "orgLink": "https://github.com/figma",
       "sponsor": "https://github.com/sponsors/AlessioGr"
     },
     {
@@ -102,7 +107,8 @@
       "name": "Alex Reznik ",
       "username": "AlexanderReznik",
       "location": "London ",
-      "org": "bloomberg"
+      "org": "Bloomberg",
+      "orgLink": "https://github.com/bloomberg"
     },
     {
       "avatar": "https://avatars.githubusercontent.com/u/8348101?v=4",
@@ -111,7 +117,8 @@
       },
       "name": "Aman Harwara",
       "username": "amanharwara",
-      "org": "standardnotes",
+      "org": "Standardnotes",
+      "orgLink": "https://github.com/standardnotes",
       "sponsor": "https://github.com/sponsors/amanharwara"
     },
     {
@@ -187,7 +194,8 @@
       "name": "John Flockton",
       "username": "thegreatercurve",
       "location": "London, UK",
-      "org": "meta"
+      "org": "Meta",
+      "orgLink": "https://github.com/facebook"
     },
     {
       "avatar": "https://avatars.githubusercontent.com/u/52599529?v=4",
@@ -312,7 +320,8 @@
       "name": "Vlad Fedosov",
       "username": "StyleT",
       "location": "Charlotte, NC, USA",
-      "org": "epam"
+      "org": "Epam",
+      "orgLink": "https://github.com/epam"
     },
     {
       "avatar": "https://avatars.githubusercontent.com/u/4361605?v=4",
@@ -333,6 +342,7 @@
       "username": "2wheeh",
       "location": "Seoul",
       "org": "DELIGHT-LABS",
+      "orgLink": "https://github.com/DELIGHT-LABS",
       "sponsor": "https://github.com/sponsors/2wheeh"
     },
     {
@@ -343,7 +353,8 @@
       "name": "Yangshun Tay",
       "username": "yangshun",
       "location": "Singapore",
-      "org": "greatfrontend",
+      "org": "Greatfrontend",
+      "orgLink": "https://github.com/greatfrontend",
       "sponsor": "https://github.com/sponsors/yangshun"
     },
     {
@@ -364,7 +375,8 @@
       "name": "Acy Watson",
       "username": "acywatson",
       "location": "Park City, Utah",
-      "org": "facebook ",
+      "org": "Meta",
+      "orgLink": "https://github.com/facebook",
       "title": "Core Team Emeritus"
     },
     {
@@ -375,7 +387,8 @@
       "name": "Dominic Gannaway",
       "username": "trueadm",
       "location": "London, United Kingdom",
-      "org": "attio",
+      "org": "Attio",
+      "orgLink": "https://github.com/attio",
       "title": "Creator"
     },
     {
@@ -388,5 +401,5 @@
       "title": "Core Team Emeritus"
     }
   ],
-  "generated": "2026-03-31T04:25:10.964Z"
+  "generated": "2026-03-31T04:49:47.080Z"
 }

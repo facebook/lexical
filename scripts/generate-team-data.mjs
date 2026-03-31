@@ -173,7 +173,46 @@ function buildTeamMember(contributor, profile, hasSponsors, category) {
   }
 
   if (profile && profile.company) {
-    member.org = profile.company.replace(/^@/, ''); // Remove @ prefix if present
+    const orgName = profile.company.trim();
+    // Extract GitHub org handle if it starts with @
+    const githubOrgMatch = orgName.match(/@(\S+)/);
+
+    if (githubOrgMatch) {
+      // Take only the first @org if there are multiple
+      const orgHandle = githubOrgMatch[1].split(/\s/)[0];
+      let orgDisplayName = orgHandle;
+
+      // Special case: facebook should display as Meta
+      if (orgHandle.toLowerCase() === 'facebook') {
+        orgDisplayName = 'Meta';
+      } else if (orgHandle.toLowerCase() === 'meta') {
+        // meta should link to facebook and display as Meta
+        orgDisplayName = 'Meta';
+      } else if (!/[A-Z]/.test(orgDisplayName)) {
+        // If no capital letters, capitalize first letter
+        orgDisplayName =
+          orgDisplayName.charAt(0).toUpperCase() + orgDisplayName.slice(1);
+      }
+
+      member.org = orgDisplayName;
+      // Always link to facebook for Meta references
+      const linkHandle =
+        orgHandle.toLowerCase() === 'meta' ? 'facebook' : orgHandle;
+      member.orgLink = `https://github.com/${linkHandle}`;
+    } else {
+      // Non-GitHub org - take first org if multiple, capitalize if needed
+      const firstOrg = orgName.split(/\s+/)[0];
+      let orgDisplayName = firstOrg;
+
+      if (firstOrg.toLowerCase() === 'facebook') {
+        orgDisplayName = 'Meta';
+      } else if (!/[A-Z]/.test(orgDisplayName)) {
+        orgDisplayName =
+          orgDisplayName.charAt(0).toUpperCase() + orgDisplayName.slice(1);
+      }
+
+      member.org = orgDisplayName;
+    }
   }
 
   if (hasSponsors) {

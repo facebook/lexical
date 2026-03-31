@@ -53,21 +53,14 @@ function TeamMemberCard({member}: {member: TeamMember}) {
           </svg>
           @{member.username}
         </Link>
-        {member.sponsor && (
-          <Link
-            to={member.sponsor}
-            className="rounded bg-pink-100 px-2 py-1 text-xs font-medium text-pink-700 transition-colors hover:bg-pink-200 dark:bg-pink-900 dark:text-pink-200 dark:hover:bg-pink-800"
-            aria-label={`Sponsor ${member.name}`}>
-            💖 Sponsor
-          </Link>
-        )}
         {member.title && (
           <p className="m-0 text-sm text-gray-600 dark:text-gray-400">
             {member.title}
           </p>
         )}
         {member.org && (
-          <p className="m-0 text-sm">
+          <p className="m-0 flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
+            🏢
             {member.orgLink ? (
               <Link
                 to={member.orgLink}
@@ -75,9 +68,7 @@ function TeamMemberCard({member}: {member: TeamMember}) {
                 {member.org}
               </Link>
             ) : (
-              <span className="text-gray-600 dark:text-gray-400">
-                {member.org}
-              </span>
+              <span>{member.org}</span>
             )}
           </p>
         )}
@@ -85,6 +76,14 @@ function TeamMemberCard({member}: {member: TeamMember}) {
           <p className="m-0 text-xs text-gray-500 dark:text-gray-400">
             📍 {member.location}
           </p>
+        )}
+        {member.sponsor && (
+          <Link
+            to={member.sponsor}
+            className="rounded bg-pink-100 px-2 py-1 text-xs font-medium text-pink-700 transition-colors hover:bg-pink-200 dark:bg-pink-900 dark:text-pink-200 dark:hover:bg-pink-800"
+            aria-label={`Sponsor ${member.name}`}>
+            💖 Sponsor
+          </Link>
         )}
       </div>
     </div>

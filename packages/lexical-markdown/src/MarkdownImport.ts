@@ -288,6 +288,8 @@ function $importBlocks(
           const lastText = lastChild.getTextContent();
           if (lastText.endsWith('\\')) {
             lastChild.setTextContent(lastText.slice(0, -1));
+          } else if (/ {2,}$/.test(lastText)) {
+            lastChild.setTextContent(lastText.replace(/ {2,}$/, ''));
           }
         }
 

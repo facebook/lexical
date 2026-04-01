@@ -11,7 +11,6 @@ import Translate from '@docusaurus/Translate';
 import DiscordLogoSvg from '@site/static/img/discord-logo-color.svg';
 import GithubDarkSvg from '@site/static/img/github-mark-dark.svg';
 import GithubLightSvg from '@site/static/img/github-mark-light.svg';
-import StackOverflowSvg from '@site/static/img/stack-overflow.svg';
 import React from 'react';
 
 import ImageSwitcher from './ImageSwitcher';
@@ -46,27 +45,10 @@ const links: CommunityLinkData[] = [
   {
     description: (
       <Translate
-        id="pages.community.links.stackoverflow.description"
-        description="Description of StackOverflow community">
-        Having trouble using Lexical? Just shoot us a question.
-      </Translate>
-    ),
-    image: <ImageSwitcher light={StackOverflowSvg} dark={StackOverflowSvg} />,
-    title: (
-      <Translate
-        id="pages.community.links.stackoverflow.title"
-        description="Hyperlink to Stack Overflow">
-        Stack Overflow
-      </Translate>
-    ),
-    url: 'https://stackoverflow.com/questions/tagged/lexicaljs',
-  },
-  {
-    description: (
-      <Translate
         id="pages.community.links.discord.description"
         description="Description of Discord community">
-        Let's discuss upcoming features and plans together.
+        Join our Discord to stay current on announcements, ask questions, and
+        discuss upcoming features and plans together.
       </Translate>
     ),
     image: <ImageSwitcher light={DiscordLogoSvg} dark={DiscordLogoSvg} />,

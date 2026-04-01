@@ -292,3 +292,20 @@ from main in step 4).
 1. All PRs with breaking changes must have `[Breaking Change]` in the PR's title with documentation of what followup actions consumers of the lexical library need to be aware of.
 2. Monthly releases happen on the last week of the month, with a minor increment (eg. v0.20+1.0).
 3. Anything in between will be a patch increment (eg. 0.20.0+1), unless there is a breaking change. 
+
+## Website Team Page
+
+The [team page](https://lexical.dev/community) displays core team
+members, emeriti, and distinguished contributors. The `team.json` data is
+generated from GitHub contributor information and some predetermined decisions in
+the script to acknowledge emeriti and historically important distinguished contributors.
+
+To update the team page data:
+
+```bash
+pnpm run update-team-data
+```
+
+This fetches the latest contributor data from GitHub and categorizes team members
+based on recent activity (last 12 months). See `packages/lexical-website/src/data/README.md`
+for more details on configuration and team categorization logic.

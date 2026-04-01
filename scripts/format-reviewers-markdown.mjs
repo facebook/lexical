@@ -7,6 +7,12 @@
  */
 /* eslint-disable no-console */
 
+/**
+ * This script was used to seed the initial data for
+ * https://github.com/facebook/lexical/pull/8270
+ * and may be removed later
+ */
+
 import fs from 'fs';
 import {dirname, join} from 'path';
 import {fileURLToPath} from 'url';
@@ -17,6 +23,7 @@ const __dirname = dirname(__filename);
 // ALL historical reviewers from PR scan (hardcoded - this is the complete list)
 // Each entry is {name, username} where name is their GitHub display name
 // Names from team.json will override these values if present
+// This was generated from the find-all-pr-reviewers.mjs script.
 const allHistoricalReviewers = [
   {name: 'Achim Weimert', username: 'a-xin'},
   {name: 'Abhijit Tomar', username: 'abhijitt'},

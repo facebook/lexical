@@ -7,7 +7,7 @@ This directory contains dynamically generated data for the Lexical team page.
 The `team.json` file contains information about:
 - **Core Team**: Active maintainers with PR review access who have contributed in the last 12 months
 - **Core Team Emeriti**: Previous core team members who haven't been active recently but made significant contributions
-- **Distinguished Contributors**: Community members with substantial contributions (75+ total contributions)
+- **Distinguished Contributors**: Community members with substantial contributions (11+ total contributions)
 
 ### Updating Team Data
 
@@ -31,38 +31,14 @@ This script:
 
 ### Configuration
 
-The team categorization logic is configured in `scripts/generate-team-data.js`:
-
-- **`alwaysCoreTeam`**: People who should always be in core team regardless of activity
-- **`prReviewers`**: GitHub users with PR review access
-- **`emeriti`**: Previous core team members who should be honored if inactive
-- **`overrides`**: Manual overrides for names, titles, organizations, etc.
-- **`minCommitsForActive`**: Minimum commits in last 12 months to be considered active (default: 1)
-- **`minContributionsForDistinguished`**: Minimum total contributions for distinguished contributor status (default: 75)
+The team categorization logic is configured in `scripts/generate-team-data.mjs`
 
 ### When to Update
 
 Update the team data:
-- **Monthly** or **quarterly** to reflect recent contributions
+- Occasionally to reflect recent contributions
 - When adding new core team members
 - When team members change roles or organizations
-- Before major releases or announcements
-
-### Manual Overrides
-
-To add manual information (titles, organizations, etc.) for team members, edit the configuration in `scripts/generate-team-data.js`:
-
-```javascript
-overrides: {
-  username: {
-    name: 'Full Name',
-    title: 'Core Maintainer',
-    org: 'Company Name',
-    orgLink: 'https://company.com',
-    twitter: 'twitter_handle',
-  },
-}
-```
 
 ### Requirements
 

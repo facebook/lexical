@@ -8,6 +8,12 @@
 /* eslint-disable no-console */
 // @ts-check
 
+/**
+ * This script was used to seed the initial data for
+ * https://github.com/facebook/lexical/pull/8270
+ * and may be removed later
+ */
+
 import {execSync} from 'child_process';
 
 /**

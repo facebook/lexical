@@ -12,23 +12,23 @@ import teamData from '@site/src/data/team.json';
 import React from 'react';
 
 interface TeamMember {
-  avatar: string;
-  links: {
-    github: string;
+  readonly avatar: string;
+  readonly links: {
+    readonly github: string;
   };
-  location?: string;
-  name: string;
-  org?: string;
-  orgLink?: string;
-  sponsor?: string;
-  title?: string;
-  username: string;
+  readonly location?: string;
+  readonly name: string;
+  readonly org?: string;
+  readonly orgLink?: string;
+  readonly sponsor?: string;
+  readonly title?: string;
+  readonly username: string;
 }
 
 interface TeamSectionProps {
   title: React.ReactNode;
   description: React.ReactNode;
-  members: TeamMember[];
+  members: readonly TeamMember[];
 }
 
 function TeamMemberCard({member}: {member: TeamMember}) {
@@ -56,7 +56,7 @@ function TeamMemberCard({member}: {member: TeamMember}) {
       <img
         src={member.avatar}
         alt={member.name}
-        className="h-16 w-16 flex-shrink-0 rounded-full"
+        className="h-16 w-16 shrink-0 rounded-full"
       />
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <h3 className="m-0 truncate text-base font-semibold">{member.name}</h3>
@@ -122,8 +122,8 @@ function TeamSection({title, description, members}: TeamSectionProps) {
         </p>
       </div>
       <div className="flex flex-1 flex-col gap-3">
-        {members.map((member, index) => (
-          <TeamMemberCard key={index} member={member} />
+        {members.map((member) => (
+          <TeamMemberCard key={member.username} member={member} />
         ))}
       </div>
     </div>
@@ -131,11 +131,6 @@ function TeamSection({title, description, members}: TeamSectionProps) {
 }
 
 export default function CommunityTeam() {
-  const coreTeam: TeamMember[] = teamData.core as TeamMember[];
-  const emeriti: TeamMember[] = teamData.emeriti as TeamMember[];
-  const distinguishedContributors: TeamMember[] =
-    teamData.distinguished as TeamMember[];
-
   return (
     <div>
       <div className="mb-12">
@@ -175,7 +170,7 @@ export default function CommunityTeam() {
             its success and the community.
           </Translate>
         }
-        members={coreTeam}
+        members={teamData.core}
       />
 
       <TeamSection
@@ -194,7 +189,7 @@ export default function CommunityTeam() {
             Lexical into what it is today.
           </Translate>
         }
-        members={emeriti}
+        members={teamData.emeriti}
       />
 
       <TeamSection
@@ -214,7 +209,7 @@ export default function CommunityTeam() {
             community support.
           </Translate>
         }
-        members={distinguishedContributors}
+        members={teamData.distinguished}
       />
     </div>
   );

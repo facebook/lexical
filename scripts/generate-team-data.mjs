@@ -8,6 +8,10 @@
 /* eslint-disable no-console */
 // @ts-check
 
+/**
+ * This requires the GitHub CLI (`gh`) to be installed and authenticated
+ */
+
 import {execSync} from 'child_process';
 import fs from 'fs-extra';
 import path from 'node:path';

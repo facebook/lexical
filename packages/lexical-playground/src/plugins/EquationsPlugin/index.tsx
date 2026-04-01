@@ -74,7 +74,7 @@ export default function EquationsPlugin(): JSX.Element | null {
 
         if (inline) {
           $insertNodeIntoLeaf(equationNode);
-          if ($isRootOrShadowRoot(equationNode.getParentOrThrow())) {
+          if ($isRootOrShadowRoot(equationNode.getParent())) {
             $wrapNodeInElement(equationNode, $createParagraphNode).selectEnd();
           }
         } else {

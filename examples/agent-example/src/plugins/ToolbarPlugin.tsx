@@ -22,7 +22,6 @@ import {
   $getSelection,
   $isRangeSelection,
   $isRootOrShadowRoot,
-  $isTextNode,
   CAN_REDO_COMMAND,
   CAN_UNDO_COMMAND,
   COMMAND_PRIORITY_LOW,
@@ -211,23 +210,21 @@ export function ToolbarPlugin({ai}: {ai: UseAIReturn}) {
     });
 
     // Create a paragraph node to stream tokens into
-    let textNodeKey: string | null = null;
+    let paragraphKey: string | null = null;
     editor.update(() => {
       const root = $getRoot();
       const paragraph = $createParagraphNode();
-      const textNode = $createTextNode('');
-      paragraph.append(textNode);
       root.append(paragraph);
-      textNodeKey = textNode.getKey();
+      paragraphKey = paragraph.getKey();
     });
 
     await generateParagraph(context, (token: string) => {
-      if (textNodeKey) {
+      if (paragraphKey) {
         editor.update(
           () => {
-            const node = $getNodeByKey(textNodeKey!);
-            if ($isTextNode(node)) {
-              node.setTextContent(node.getTextContent() + token);
+            const paragraph = $getNodeByKey(paragraphKey!);
+            if (paragraph) {
+              paragraph.append($createTextNode(token));
             }
           },
           {tag: 'ai-stream'},
@@ -235,12 +232,12 @@ export function ToolbarPlugin({ai}: {ai: UseAIReturn}) {
       }
     });
 
-    // Move selection to end of the generated text
-    if (textNodeKey) {
+    // Move selection to end of the generated paragraph
+    if (paragraphKey) {
       editor.update(() => {
-        const node = $getNodeByKey(textNodeKey!);
-        if ($isTextNode(node)) {
-          node.selectEnd();
+        const paragraph = $getNodeByKey(paragraphKey!);
+        if (paragraph) {
+          paragraph.selectEnd();
         }
       });
     }

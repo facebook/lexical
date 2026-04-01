@@ -573,6 +573,9 @@ export function $insertNodeToNearestRootAtCaret<
 export function $insertNodeIntoLeaf(node: LexicalNode): void {
   const selection = $getSelection();
   if (!$isRangeSelection(selection)) {
+    if (selection) {
+      selection.insertNodes([node]);
+    }
     return;
   }
   const caretRange = $caretRangeFromSelection(selection);

@@ -8,6 +8,7 @@
 
 import type {UseAIReturn} from '../ai/useAI';
 
+import {$createListItemNode, $createListNode} from '@lexical/list';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $createHeadingNode,
@@ -104,7 +105,13 @@ export function ToolbarPlugin({ai}: {ai: UseAIReturn}) {
   const [isItalic, setIsItalic] = useState(false);
   const [isUnderline, setIsUnderline] = useState(false);
 
-  const {abort, generateParagraph, isGenerating, modelStatus, summarize} = ai;
+  const {
+    abort,
+    generateParagraph,
+    isGenerating,
+    makeBulletPoints,
+    modelStatus,
+  } = ai;
 
   // Escape key aborts AI operations
   useEffect(() => {
@@ -173,48 +180,57 @@ export function ToolbarPlugin({ai}: {ai: UseAIReturn}) {
     );
   }, [editor, $updateToolbar]);
 
-  const handleSummarize = useCallback(async () => {
-    let textToSummarize = '';
-    let hasSelection = false;
+  const handleBulletPoints = useCallback(async () => {
+    let textToConvert = '';
 
     editor.getEditorState().read(() => {
       const selection = $getSelection();
       if ($isRangeSelection(selection) && !selection.isCollapsed()) {
-        textToSummarize = selection.getTextContent();
-        hasSelection = true;
+        textToConvert = selection.getTextContent();
       } else {
-        textToSummarize = $getRoot().getTextContent();
-        hasSelection = false;
+        textToConvert = $getRoot().getTextContent();
       }
     });
 
-    if (!textToSummarize.trim()) {
+    if (!textToConvert.trim()) {
       return;
     }
 
-    const result = await summarize(textToSummarize);
+    const result = await makeBulletPoints(textToConvert);
     if (result == null || !result.trim()) {
       return;
     }
 
+    // Parse bullet points from the model output
+    const items = result
+      .split('\n')
+      .map((line) => line.replace(/^[-*•]\s*/, '').trim())
+      .filter((line) => line.length > 0);
+
+    if (items.length === 0) {
+      return;
+    }
+
     editor.update(() => {
-      if (hasSelection) {
-        const selection = $getSelection();
-        if ($isRangeSelection(selection)) {
-          selection.insertRawText(result);
-        }
+      const listNode = $createListNode('bullet');
+      for (const item of items) {
+        const listItem = $createListItemNode();
+        listItem.append($createTextNode(item));
+        listNode.append(listItem);
+      }
+
+      const selection = $getSelection();
+      if ($isRangeSelection(selection) && !selection.isCollapsed()) {
+        // Replace selected content with the list
+        selection.insertNodes([listNode]);
       } else {
+        // Replace entire document with the list
         const root = $getRoot();
         root.clear();
-        const lines = result.split('\n');
-        for (const line of lines) {
-          const paragraph = $createParagraphNode();
-          paragraph.append($createTextNode(line));
-          root.append(paragraph);
-        }
+        root.append(listNode);
       }
     });
-  }, [editor, summarize]);
+  }, [editor, makeBulletPoints]);
 
   const handleGenerate = useCallback(async () => {
     let context = '';
@@ -403,12 +419,12 @@ export function ToolbarPlugin({ai}: {ai: UseAIReturn}) {
       ) : (
         <>
           <button
-            onClick={handleSummarize}
+            onClick={handleBulletPoints}
             disabled={aiDisabled}
             className={aiBtnBase}
-            aria-label="AI Summarize"
-            title="Summarize selected text (or entire document)">
-            Summarize
+            aria-label="AI Bullet Points"
+            title="Convert selected text (or entire document) to bullet points">
+            Bullet Points
           </button>
           <button
             onClick={handleGenerate}

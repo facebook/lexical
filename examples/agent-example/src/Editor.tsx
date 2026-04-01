@@ -8,10 +8,16 @@
 
 import {TabIndentationExtension} from '@lexical/extension';
 import {HistoryExtension} from '@lexical/history';
+import {ListExtension} from '@lexical/list';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
 import {RichTextExtension} from '@lexical/rich-text';
-import {defineExtension} from 'lexical';
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getRoot,
+  defineExtension,
+} from 'lexical';
 
 import {useAI} from './ai/useAI';
 import {ToolbarPlugin} from './plugins/ToolbarPlugin';
@@ -21,6 +27,14 @@ const theme = {
     h1: 'mb-2 text-3xl font-bold',
     h2: 'mb-2 text-2xl font-bold',
     h3: 'mb-1 text-xl font-semibold',
+  },
+  list: {
+    listitem: 'ml-8',
+    nested: {
+      listitem: 'list-none',
+    },
+    ol: 'list-decimal pl-4 my-1',
+    ul: 'list-disc pl-4 my-1',
   },
   paragraph: 'my-0',
   quote:
@@ -32,8 +46,22 @@ const theme = {
   },
 };
 
+const SAMPLE_TEXT =
+  'Lexical is an extensible JavaScript web text-editor framework with an emphasis on reliability, accessibility, and performance. It provides a robust foundation for building rich text editing experiences. Lexical supports features like real-time collaboration, custom nodes, and plugin architectures. The framework is designed to be lightweight and can run in any modern browser including mobile Safari.';
+
 const agentEditorExtension = defineExtension({
-  dependencies: [RichTextExtension, HistoryExtension, TabIndentationExtension],
+  $initialEditorState: () => {
+    const root = $getRoot();
+    const paragraph = $createParagraphNode();
+    paragraph.append($createTextNode(SAMPLE_TEXT));
+    root.append(paragraph);
+  },
+  dependencies: [
+    RichTextExtension,
+    HistoryExtension,
+    TabIndentationExtension,
+    ListExtension,
+  ],
   name: '@lexical/agent-example/editor',
   namespace: '@lexical/agent-example/editor',
   theme,

@@ -23,21 +23,21 @@ export interface UseAIReturn {
   ) => Promise<string | null>;
   isGenerating: boolean;
   loadProgress: number | null;
+  makeBulletPoints: (text: string) => Promise<string | null>;
   modelStatus: ModelStatus;
-  summarize: (text: string) => Promise<string | null>;
 }
 
 let requestCounter = 0;
 
-function buildSummarizeMessages(text: string): ChatMessage[] {
+function buildBulletPointMessages(text: string): ChatMessage[] {
   return [
     {
       content:
-        'You are a summarization assistant. Summarize the text into a shorter version that captures the key points. Return ONLY the summary with no explanations, preamble, or extra commentary.',
+        'You are a writing assistant. Convert the text into a bullet point list. Each bullet point should be a short phrase or sentence starting with "- ". Return ONLY the bullet points, one per line, with no other text.',
       role: 'system',
     },
     {
-      content: `Summarize this text:\n\n${text}`,
+      content: `Convert this text into bullet points:\n\n${text}`,
       role: 'user',
     },
   ];
@@ -199,9 +199,9 @@ export function useAI(): UseAIReturn {
     [getWorker],
   );
 
-  const summarize = useCallback(
+  const makeBulletPoints = useCallback(
     (text: string): Promise<string | null> => {
-      return sendRequest(buildSummarizeMessages(text), 256);
+      return sendRequest(buildBulletPointMessages(text), 256);
     },
     [sendRequest],
   );
@@ -221,7 +221,7 @@ export function useAI(): UseAIReturn {
     generateParagraph,
     isGenerating,
     loadProgress,
+    makeBulletPoints,
     modelStatus,
-    summarize,
   };
 }

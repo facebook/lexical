@@ -78,7 +78,7 @@ declare export class Signal<T = mixed> {
   brand: symbol;
   value: T;
 }
-export interface ReadonlySignal<T = mixed> {
+export interface ReadonlySignal<T = unknown> {
   +value: T;
   peek(): T;
   subscribe(fn: (value: T) => void): () => void;

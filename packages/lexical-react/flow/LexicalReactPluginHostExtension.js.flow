@@ -24,7 +24,7 @@ export type {DecoratorComponentProps};
 
 type Container = DocumentFragment | Element;
 // TODO: Not sure how to import RootType from react-dom/client
-type Root = mixed;
+type Root = unknown;
 
 export interface HostMountCommandArg {
   root: Root;
@@ -37,7 +37,7 @@ export interface MountPluginCommandArg {
 }
 
 declare export function mountReactExtensionComponent<
-  Extension: AnyLexicalExtension,
+  Extension extends AnyLexicalExtension,
 >(
   editor: LexicalEditor,
   opts: {

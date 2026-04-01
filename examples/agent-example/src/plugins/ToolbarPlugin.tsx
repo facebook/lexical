@@ -104,7 +104,7 @@ export function ToolbarPlugin({ai}: {ai: UseAIReturn}) {
   const [isItalic, setIsItalic] = useState(false);
   const [isUnderline, setIsUnderline] = useState(false);
 
-  const {abort, generateParagraph, isGenerating, modelStatus, proofread} = ai;
+  const {abort, generateParagraph, isGenerating, modelStatus, summarize} = ai;
 
   // Escape key aborts AI operations
   useEffect(() => {
@@ -173,26 +173,26 @@ export function ToolbarPlugin({ai}: {ai: UseAIReturn}) {
     );
   }, [editor, $updateToolbar]);
 
-  const handleProofread = useCallback(async () => {
-    let textToProofread = '';
+  const handleSummarize = useCallback(async () => {
+    let textToSummarize = '';
     let hasSelection = false;
 
     editor.getEditorState().read(() => {
       const selection = $getSelection();
       if ($isRangeSelection(selection) && !selection.isCollapsed()) {
-        textToProofread = selection.getTextContent();
+        textToSummarize = selection.getTextContent();
         hasSelection = true;
       } else {
-        textToProofread = $getRoot().getTextContent();
+        textToSummarize = $getRoot().getTextContent();
         hasSelection = false;
       }
     });
 
-    if (!textToProofread.trim()) {
+    if (!textToSummarize.trim()) {
       return;
     }
 
-    const result = await proofread(textToProofread);
+    const result = await summarize(textToSummarize);
     if (result == null || !result.trim()) {
       return;
     }
@@ -214,7 +214,7 @@ export function ToolbarPlugin({ai}: {ai: UseAIReturn}) {
         }
       }
     });
-  }, [editor, proofread]);
+  }, [editor, summarize]);
 
   const handleGenerate = useCallback(async () => {
     let context = '';
@@ -403,12 +403,12 @@ export function ToolbarPlugin({ai}: {ai: UseAIReturn}) {
       ) : (
         <>
           <button
-            onClick={handleProofread}
+            onClick={handleSummarize}
             disabled={aiDisabled}
             className={aiBtnBase}
-            aria-label="AI Proofread"
-            title="Proofread selected text (or entire document)">
-            Proofread
+            aria-label="AI Summarize"
+            title="Summarize selected text (or entire document)">
+            Summarize
           </button>
           <button
             onClick={handleGenerate}

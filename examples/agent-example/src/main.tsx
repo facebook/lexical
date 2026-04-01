@@ -19,7 +19,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <ThemeToggle />
       <h1 className="text-2xl font-bold">Lexical AI Agent Example</h1>
       <p className="max-w-lg text-center text-sm text-zinc-500 dark:text-zinc-400">
-        Rich text editor with AI-powered proofread and paragraph generation
+        Rich text editor with AI-powered summarization and paragraph generation
         using SmolLM2-135M running in the browser via WebAssembly.
       </p>
       <Editor />

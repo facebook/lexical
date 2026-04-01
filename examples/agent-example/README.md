@@ -7,8 +7,9 @@ Based on the [website-toolbar](../website-toolbar) example with added AI capabil
 ## Features
 
 - **Rich text editing** with block types (headings, quotes), formatting (bold, italic, underline), and alignment
-- **AI Proofread** — select text (or use the entire document) and click "Proofread" to fix grammar and spelling
+- **AI Summarize** — select text (or use the entire document) and click "Summarize" to condense it to key points
 - **AI Generate** — click "Generate" to have the AI write a new paragraph, streamed token-by-token into the editor
+- **Abort** — click "Stop" or press Escape to cancel an in-progress AI operation
 - **Dark mode** toggle
 
 ## How it works

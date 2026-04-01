@@ -24,20 +24,20 @@ export interface UseAIReturn {
   isGenerating: boolean;
   loadProgress: number | null;
   modelStatus: ModelStatus;
-  proofread: (text: string) => Promise<string | null>;
+  summarize: (text: string) => Promise<string | null>;
 }
 
 let requestCounter = 0;
 
-function buildProofreadMessages(text: string): ChatMessage[] {
+function buildSummarizeMessages(text: string): ChatMessage[] {
   return [
     {
       content:
-        'You are a proofreading assistant. Fix grammar, spelling, and punctuation errors in the text. Return ONLY the corrected text with no explanations, preamble, or extra commentary.',
+        'You are a summarization assistant. Summarize the text into a shorter version that captures the key points. Return ONLY the summary with no explanations, preamble, or extra commentary.',
       role: 'system',
     },
     {
-      content: `Proofread and correct this text:\n\n${text}`,
+      content: `Summarize this text:\n\n${text}`,
       role: 'user',
     },
   ];
@@ -199,9 +199,9 @@ export function useAI(): UseAIReturn {
     [getWorker],
   );
 
-  const proofread = useCallback(
+  const summarize = useCallback(
     (text: string): Promise<string | null> => {
-      return sendRequest(buildProofreadMessages(text), 512);
+      return sendRequest(buildSummarizeMessages(text), 256);
     },
     [sendRequest],
   );
@@ -222,6 +222,6 @@ export function useAI(): UseAIReturn {
     isGenerating,
     loadProgress,
     modelStatus,
-    proofread,
+    summarize,
   };
 }

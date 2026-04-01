@@ -21,6 +21,7 @@ export interface UseAIReturn {
   loadProgress: number | null;
   modelStatus: ModelStatus;
   proofread: (text: string) => Promise<string>;
+  streamingText: string;
 }
 
 let requestCounter = 0;
@@ -71,6 +72,7 @@ export function useAI(): UseAIReturn {
   const [modelStatus, setModelStatus] = useState<ModelStatus>('idle');
   const [loadProgress, setLoadProgress] = useState<number | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [streamingText, setStreamingText] = useState('');
   const pendingRef = useRef<
     Map<
       string,
@@ -100,8 +102,11 @@ export function useAI(): UseAIReturn {
         } else if (data.status === 'generating') {
           setIsGenerating(true);
         }
+      } else if (data.type === 'token') {
+        setStreamingText((prev) => prev + data.token);
       } else if (data.type === 'done') {
         setIsGenerating(false);
+        setStreamingText('');
         const pending = pendingRef.current.get(data.id);
         if (pending) {
           pending.resolve(data.fullText);
@@ -109,6 +114,7 @@ export function useAI(): UseAIReturn {
         }
       } else if (data.type === 'error') {
         setIsGenerating(false);
+        setStreamingText('');
         setModelStatus('error');
         const pending = pendingRef.current.get(data.id);
         if (pending) {
@@ -134,6 +140,7 @@ export function useAI(): UseAIReturn {
     (messages: ChatMessage[], maxTokens: number): Promise<string> => {
       const worker = getWorker();
       const id = `req_${++requestCounter}`;
+      setStreamingText('');
       return new Promise((resolve, reject) => {
         pendingRef.current.set(id, {reject, resolve});
         worker.postMessage({id, maxTokens, messages, type: 'generate'});
@@ -156,5 +163,5 @@ export function useAI(): UseAIReturn {
     [sendRequest],
   );
 
-  return {generateParagraph, isGenerating, loadProgress, modelStatus, proofread};
+  return {generateParagraph, isGenerating, loadProgress, modelStatus, proofread, streamingText};
 }

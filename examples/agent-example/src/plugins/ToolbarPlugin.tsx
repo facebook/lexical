@@ -24,13 +24,13 @@ import {
 } from 'lexical';
 import {useCallback, useEffect, useRef, useState} from 'react';
 
-import {useAI} from '../ai/useAI';
+import type {UseAIReturn} from '../ai/useAI';
 
 function Divider() {
   return <div className="divider" />;
 }
 
-export default function ToolbarPlugin() {
+export default function ToolbarPlugin({ai}: {ai: UseAIReturn}) {
   const [editor] = useLexicalComposerContext();
   const toolbarRef = useRef(null);
   const [canUndo, setCanUndo] = useState(false);
@@ -40,8 +40,7 @@ export default function ToolbarPlugin() {
   const [isUnderline, setIsUnderline] = useState(false);
   const [isStrikethrough, setIsStrikethrough] = useState(false);
 
-  const {generateParagraph, isGenerating, loadProgress, modelStatus, proofread} =
-    useAI();
+  const {generateParagraph, isGenerating, modelStatus, proofread} = ai;
 
   const $updateToolbar = useCallback(() => {
     const selection = $getSelection();
@@ -259,27 +258,6 @@ export default function ToolbarPlugin() {
         <i className="format justify-align" />
       </button>
       <Divider />
-      {modelStatus === 'loading' && (
-        <span className="toolbar-item ai-status">
-          Loading model{loadProgress !== null ? ` ${loadProgress}%` : '...'}
-          {loadProgress !== null && (
-            <span className="ai-progress-bar">
-              <span
-                className="ai-progress-bar-fill"
-                style={{width: `${loadProgress}%`}}
-              />
-            </span>
-          )}
-        </span>
-      )}
-      {isGenerating && (
-        <span className="toolbar-item ai-status">Generating...</span>
-      )}
-      {aiError && (
-        <span className="toolbar-item ai-error" title={aiError}>
-          Error
-        </span>
-      )}
       <button
         onClick={handleProofread}
         disabled={aiDisabled}

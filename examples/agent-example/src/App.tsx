@@ -25,6 +25,7 @@ import {
   TextNode,
 } from 'lexical';
 
+import {useAI} from './ai/useAI';
 import ExampleTheme from './ExampleTheme';
 import ToolbarPlugin from './plugins/ToolbarPlugin';
 import TreeViewPlugin from './plugins/TreeViewPlugin';
@@ -131,11 +132,53 @@ const editorConfig = {
   theme: ExampleTheme,
 };
 
+function AIOverlay({
+  ai,
+}: {
+  ai: ReturnType<typeof useAI>;
+}) {
+  const {isGenerating, loadProgress, modelStatus, streamingText} = ai;
+  const isActive = modelStatus === 'loading' || isGenerating;
+  if (!isActive) {
+    return null;
+  }
+
+  return (
+    <div className="ai-overlay">
+      <div className="ai-overlay-content">
+        {modelStatus === 'loading' && (
+          <>
+            <span className="ai-overlay-label">
+              Loading model{loadProgress !== null ? ` ${loadProgress}%` : ''}
+            </span>
+            <div className="ai-progress-bar">
+              <div
+                className="ai-progress-bar-fill"
+                style={{width: `${loadProgress ?? 0}%`}}
+              />
+            </div>
+          </>
+        )}
+        {isGenerating && (
+          <>
+            <span className="ai-overlay-label">Generating...</span>
+            {streamingText && (
+              <div className="ai-overlay-preview">{streamingText}</div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
+  const ai = useAI();
+
   return (
     <LexicalComposer initialConfig={editorConfig}>
       <div className="editor-container">
-        <ToolbarPlugin />
+        <ToolbarPlugin ai={ai} />
         <div className="editor-inner">
           <RichTextPlugin
             contentEditable={
@@ -149,6 +192,7 @@ export default function App() {
             }
             ErrorBoundary={LexicalErrorBoundary}
           />
+          <AIOverlay ai={ai} />
           <HistoryPlugin />
           <AutoFocusPlugin />
           <TreeViewPlugin />

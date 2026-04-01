@@ -107,21 +107,6 @@ export function ToolbarPlugin({ai}: {ai: UseAIReturn}) {
   const {abort, generateParagraph, isGenerating, modelStatus, rewrite} = ai;
   const [rewriteStyle, setRewriteStyle] = useState('formal');
 
-  // Escape key aborts AI operations
-  useEffect(() => {
-    if (!isGenerating) {
-      return;
-    }
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        abort();
-      }
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isGenerating, abort]);
-
   const $updateToolbar = useCallback(() => {
     const selection = $getSelection();
     if ($isRangeSelection(selection)) {

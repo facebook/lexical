@@ -18,6 +18,7 @@ import {
   defineExtension,
 } from 'lexical';
 
+import {AIExtension} from './ai/AIExtension';
 import {useAI} from './ai/useAI';
 import {ToolbarPlugin} from './plugins/ToolbarPlugin';
 
@@ -47,7 +48,12 @@ const agentEditorExtension = defineExtension({
     paragraph.append($createTextNode(SAMPLE_TEXT));
     root.append(paragraph);
   },
-  dependencies: [RichTextExtension, HistoryExtension, TabIndentationExtension],
+  dependencies: [
+    RichTextExtension,
+    HistoryExtension,
+    TabIndentationExtension,
+    AIExtension,
+  ],
   name: '@lexical/agent-example/editor',
   namespace: '@lexical/agent-example/editor',
   theme,

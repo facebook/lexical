@@ -11,7 +11,7 @@
  * LexicalCommands
  */
 
-export type LexicalCommand<P> = $ReadOnly<{type?: string}>;
+export type LexicalCommand<P> = Readonly<{type?: string}>;
 
 declare export var SELECTION_CHANGE_COMMAND: LexicalCommand<void>;
 declare export var CLICK_COMMAND: LexicalCommand<MouseEvent>;
@@ -174,10 +174,10 @@ declare export class LexicalEditor {
   _nodes: RegisteredNodes;
   _onError: ErrorHandler;
   _decorators: {
-    [NodeKey]: mixed,
+    [NodeKey]: unknown,
   };
   _pendingDecorators: null | {
-    [NodeKey]: mixed,
+    [NodeKey]: unknown,
   };
   _createEditorArgs?: CreateEditorArgs;
   _config: EditorConfig;
@@ -207,7 +207,7 @@ declare export class LexicalEditor {
     listener: MutationListener,
     options?: MutationListenerOptions,
   ): () => void;
-  registerNodeTransform<T: LexicalNode>(
+  registerNodeTransform<T extends LexicalNode>(
     klass: Class<T>,
     listener: Transform<T>,
   ): () => void;
@@ -343,7 +343,7 @@ declare export function createEditor(editorConfig?: {
   namespace: string,
   theme?: EditorThemeClasses,
   parentEditor?: LexicalEditor,
-  nodes?: $ReadOnlyArray<Class<LexicalNode> | LexicalNodeReplacement>,
+  nodes?: ReadonlyArray<Class<LexicalNode> | LexicalNodeReplacement>,
   onError: (error: Error) => void,
   disableEvents?: boolean,
   editable?: boolean,
@@ -383,7 +383,7 @@ export type DOMChildConversion = (
   parentLexicalNode: ?LexicalNode | null,
 ) => LexicalNode | null | void;
 export type DOMConversionMap = {
-  [NodeName]: <T: HTMLElement>(node: T) => DOMConversion | null,
+  [NodeName]: <T extends HTMLElement>(node: T) => DOMConversion | null,
 };
 type NodeName = string;
 export type DOMConversionOutput = {
@@ -414,26 +414,26 @@ declare export class LexicalNode {
   isSelected(): boolean;
   getKey(): NodeKey;
   getIndexWithinParent(): number;
-  getParent<T: ElementNode>(): T | null;
-  getParentOrThrow<T: ElementNode>(): T;
-  getTopLevelElement(): DecoratorNode<mixed> | ElementNode | null;
-  getTopLevelElementOrThrow(): DecoratorNode<mixed> | ElementNode;
-  getParents<T: ElementNode>(): Array<T>;
+  getParent<T extends ElementNode>(): T | null;
+  getParentOrThrow<T extends ElementNode>(): T;
+  getTopLevelElement(): DecoratorNode<unknown> | ElementNode | null;
+  getTopLevelElementOrThrow(): DecoratorNode<unknown> | ElementNode;
+  getParents<T extends ElementNode>(): Array<T>;
   getParentKeys(): Array<NodeKey>;
-  getPreviousSibling<T: LexicalNode>(): T | null;
-  getPreviousSiblings<T: LexicalNode>(): Array<T>;
-  getNextSibling<T: LexicalNode>(): T | null;
-  getNextSiblings<T: LexicalNode>(): Array<T>;
-  getCommonAncestor<T: ElementNode>(node: LexicalNode): T | null;
+  getPreviousSibling<T extends LexicalNode>(): T | null;
+  getPreviousSiblings<T extends LexicalNode>(): Array<T>;
+  getNextSibling<T extends LexicalNode>(): T | null;
+  getNextSiblings<T extends LexicalNode>(): Array<T>;
+  getCommonAncestor<T extends ElementNode>(node: LexicalNode): T | null;
   is(object: ?LexicalNode): boolean;
   isBefore(targetNode: LexicalNode): boolean;
   isParentOf(targetNode: LexicalNode): boolean;
   getNodesBetween(targetNode: LexicalNode): Array<LexicalNode>;
   isDirty(): boolean;
   // $FlowFixMe[incompatible-type]
-  getLatest<T: LexicalNode>(this: T): T;
+  getLatest<T extends LexicalNode>(this: T): T;
   // $FlowFixMe[incompatible-type]
-  getWritable<T: LexicalNode>(this: T): T;
+  getWritable<T extends LexicalNode>(this: T): T;
   getTextContent(includeDirectionless?: boolean): string;
   getTextContentSize(includeDirectionless?: boolean): number;
   createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement;
@@ -444,7 +444,7 @@ declare export class LexicalNode {
     config: EditorConfig,
   ): boolean;
   remove(preserveEmptyParent?: boolean): void;
-  replace<N: LexicalNode>(replaceWith: N): N;
+  replace<N extends LexicalNode>(replaceWith: N): N;
   insertAfter(
     nodeToInsert: LexicalNode,
     restoreSelection?: boolean,
@@ -741,9 +741,9 @@ declare export class RootNode extends ElementNode {
   getTextContent(): string;
   select(_anchorOffset?: number, _focusOffset?: number): RangeSelection;
   remove(): void;
-  replace<N: LexicalNode>(node: N): N;
-  insertBefore<T: LexicalNode>(nodeToInsert: T): T;
-  insertAfter<T: LexicalNode>(nodeToInsert: T): T;
+  replace<N extends LexicalNode>(node: N): N;
+  insertBefore<T extends LexicalNode>(nodeToInsert: T): T;
+  insertAfter<T extends LexicalNode>(nodeToInsert: T): T;
   append(...nodesToAppend: Array<LexicalNode>): this;
   canBeEmpty(): false;
 }
@@ -775,21 +775,21 @@ declare export class ElementNode extends LexicalNode {
   getFormat(): number;
   getFormatType(): ElementFormatType;
   getIndent(): number;
-  getChildren<T: LexicalNode>(): Array<T>;
-  getChildren<T: Array<LexicalNode>>(): T;
+  getChildren<T extends LexicalNode>(): Array<T>;
+  getChildren<T extends Array<LexicalNode>>(): T;
   getChildrenKeys(): Array<NodeKey>;
   getChildrenSize(): number;
   isEmpty(): boolean;
   isDirty(): boolean;
   getAllTextNodes(): Array<TextNode>;
-  getFirstDescendant<T: LexicalNode>(): null | T;
-  getLastDescendant<T: LexicalNode>(): null | T;
-  getDescendantByIndex<T: LexicalNode>(index: number): null | T;
-  getFirstChild<T: LexicalNode>(): null | T;
-  getFirstChildOrThrow<T: LexicalNode>(): T;
-  getLastChild<T: LexicalNode>(): null | T;
-  getLastChildOrThrow<T: LexicalNode>(): T;
-  getChildAtIndex<T: LexicalNode>(index: number): null | T;
+  getFirstDescendant<T extends LexicalNode>(): null | T;
+  getLastDescendant<T extends LexicalNode>(): null | T;
+  getDescendantByIndex<T extends LexicalNode>(index: number): null | T;
+  getFirstChild<T extends LexicalNode>(): null | T;
+  getFirstChildOrThrow<T extends LexicalNode>(): T;
+  getLastChild<T extends LexicalNode>(): null | T;
+  getLastChildOrThrow<T extends LexicalNode>(): T;
+  getChildAtIndex<T extends LexicalNode>(index: number): null | T;
   getTextContent(): string;
   getDirection(): 'ltr' | 'rtl' | null;
   hasFormat(type: ElementFormatType): boolean;
@@ -836,7 +836,7 @@ declare export function $isElementNode(
 /**
  * ElementDOMSlot
  */
-declare export class ElementDOMSlot<+T: HTMLElement> {
+declare export class ElementDOMSlot<+T extends HTMLElement> {
   +element: HTMLElement;
   +before: Node | null;
   +after: Node | null;
@@ -874,7 +874,7 @@ declare export class DecoratorNode<X> extends LexicalNode {
   isInline(): boolean;
   isKeyboardSelectable(): boolean;
 }
-declare export function $isDecoratorNode<T = mixed>(
+declare export function $isDecoratorNode<T = unknown>(
   node: ?LexicalNode,
 ): node is DecoratorNode<T>;
 
@@ -970,7 +970,7 @@ declare export function $parseSerializedNode(
   serializedNode: InternalSerializedNode,
 ): LexicalNode;
 
-declare export function $applyNodeReplacement<N: LexicalNode>(
+declare export function $applyNodeReplacement<N extends LexicalNode>(
   node: LexicalNode,
 ): N;
 
@@ -1140,7 +1140,7 @@ declare export function makeStepwiseIterator<State, Stop, Value>(
 /**
  * LexicalCaretUtils
  */
-declare export function $caretFromPoint<D: CaretDirection>(
+declare export function $caretFromPoint<D extends CaretDirection>(
   point: PointType,
   direction: D,
 ): PointCaret<D>;
@@ -1500,7 +1500,7 @@ export type LexicalNodeConfig = Class<LexicalNode> | LexicalNodeReplacement;
 declare export function createSharedNodeState(
   nodeConfig: LexicalNodeConfig,
 ): SharedNodeState;
-declare export function createState<K: string, V>(
+declare export function createState<K extends string, V>(
   key: K,
   valueConfig: StateValueConfig<V>,
 ): StateConfig<K, V>;
@@ -1530,14 +1530,14 @@ declare export function configExtension<
 ): NormalizedLexicalExtensionArgument<Config, Name, Output, Init>;
 declare export const configTypeSymbol: symbol;
 declare export function declarePeerDependency<
-  Extension: AnyLexicalExtension = empty,
+  Extension extends AnyLexicalExtension = empty,
 >(
   name: Extension['name'],
   config?: Partial<LexicalExtensionConfig<Extension>>,
 ): NormalizedPeerDependency<Extension>;
 declare export function defineExtension<
-  Config: ExtensionConfigBase,
-  Name: string,
+  Config extends ExtensionConfigBase,
+  Name extends string,
   Output,
   Init,
 >(
@@ -1545,21 +1545,21 @@ declare export function defineExtension<
 ): LexicalExtension<Config, Name, Output, Init>;
 export type ExtensionConfigBase = {...};
 export interface ExtensionInitState {
-  getPeer: <Dependency: AnyLexicalExtension = empty>(
+  getPeer: <Dependency extends AnyLexicalExtension = empty>(
     name: Dependency['name'],
   ) => void | Omit<LexicalExtensionDependency<Dependency>, 'output'>;
-  getDependency: <Dependency: AnyLexicalExtension>(
+  getDependency: <Dependency extends AnyLexicalExtension>(
     dep: Dependency,
   ) => Omit<LexicalExtensionDependency<Dependency>, 'output'>;
-  getDirectDependentNames: () => $ReadOnlySet<string>;
-  getPeerNameSet: () => $ReadOnlySet<string>;
+  getDirectDependentNames: () => ReadonlySet<string>;
+  getPeerNameSet: () => ReadonlySet<string>;
 }
 export interface ExtensionBuildState<Init>
   extends Omit<ExtensionInitState, 'getPeer' | 'getDependency'> {
-  getPeer: <Dependency: AnyLexicalExtension = empty>(
+  getPeer: <Dependency extends AnyLexicalExtension = empty>(
     name: Dependency['name'],
   ) => void | LexicalExtensionDependency<Dependency>;
-  getDependency: <Dependency: AnyLexicalExtension>(
+  getDependency: <Dependency extends AnyLexicalExtension>(
     dep: Dependency,
   ) => LexicalExtensionDependency<Dependency>;
   getInitResult: () => Init;
@@ -1595,8 +1595,8 @@ export interface LexicalEditorWithDispose extends LexicalEditor, Disposable {
   dispose: () => void;
 }
 export interface LexicalExtension<
-  Config: ExtensionConfigBase,
-  Name: string,
+  Config extends ExtensionConfigBase,
+  Name extends string,
   Output,
   Init,
 > extends InitialEditorConfig,
@@ -1656,19 +1656,19 @@ interface LexicalExtensionInternalOutput<Output> {
   [typeof outputTypeSymbol]: Output;
 }
 
-export type LexicalExtensionName<Extension: AnyLexicalExtension> =
+export type LexicalExtensionName<Extension extends AnyLexicalExtension> =
   Extension['name'];
 
-export type LexicalExtensionOutput<+Extension: AnyLexicalExtension> =
-  $NonMaybeType<Extension[typeof outputTypeSymbol]>;
+export type LexicalExtensionOutput<+Extension extends AnyLexicalExtension> =
+  NonNullable<Extension[typeof outputTypeSymbol]>;
 declare export const peerDependencySymbol: symbol;
 export type NormalizedLexicalExtensionArgument<
-  Config: ExtensionConfigBase,
-  Name: string,
+  Config extends ExtensionConfigBase,
+  Name extends string,
   Output,
   Init,
 > = [LexicalExtension<Config, Name, Output, Init>, ...Partial<Config>[]];
-export type NormalizedPeerDependency<Extension: AnyLexicalExtension> = [
+export type NormalizedPeerDependency<Extension extends AnyLexicalExtension> = [
   Extension['name'],
   Partial<LexicalExtensionConfig<Extension>> | void,
 ] & {+[typeof peerDependencySymbol]: Extension};
@@ -1677,7 +1677,7 @@ export type OutputComponentExtension<ComponentType> =
   LexicalExtension<any, any, {Component: ComponentType}, any>;
 declare export const outputTypeSymbol: symbol;
 declare export function safeCast<T>(value: T): T;
-declare export function shallowMergeConfig<T: ExtensionConfigBase>(
+declare export function shallowMergeConfig<T extends ExtensionConfigBase>(
   config: T,
   overrides?: Partial<T>,
 ): T;

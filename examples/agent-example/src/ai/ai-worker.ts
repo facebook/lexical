@@ -6,12 +6,9 @@
  *
  */
 
-import {pipeline, TextStreamer} from '@huggingface/transformers';
+/* eslint-disable no-restricted-globals */
 
-const worker = globalThis as typeof globalThis & {
-  onmessage: ((event: MessageEvent) => void) | null;
-  postMessage: (message: unknown) => void;
-};
+import {pipeline, TextStreamer} from '@huggingface/transformers';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let generator: any = null;
@@ -20,7 +17,7 @@ async function getGenerator() {
   if (generator) {
     return generator;
   }
-  worker.postMessage({status: 'loading-model', type: 'status'});
+  self.postMessage({status: 'loading-model', type: 'status'});
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   generator = await (pipeline as any)(
     'text-generation',
@@ -29,7 +26,7 @@ async function getGenerator() {
       device: 'wasm',
       dtype: 'q4',
       progress_callback: (progress: {progress?: number; status?: string}) => {
-        worker.postMessage({
+        self.postMessage({
           progress: progress.progress ?? null,
           status: progress.status ?? 'loading-model',
           type: 'status',
@@ -37,11 +34,11 @@ async function getGenerator() {
       },
     },
   );
-  worker.postMessage({status: 'model-ready', type: 'status'});
+  self.postMessage({status: 'model-ready', type: 'status'});
   return generator;
 }
 
-worker.onmessage = async (event: MessageEvent) => {
+self.onmessage = async (event: MessageEvent) => {
   const {type, id, messages, maxTokens} = event.data;
 
   if (type !== 'generate') {
@@ -50,11 +47,11 @@ worker.onmessage = async (event: MessageEvent) => {
 
   try {
     const gen = await getGenerator();
-    worker.postMessage({id, status: 'generating', type: 'status'});
+    self.postMessage({id, status: 'generating', type: 'status'});
 
     const streamer = new TextStreamer(gen.tokenizer, {
       callback_function: (token: string) => {
-        worker.postMessage({id, token, type: 'token'});
+        self.postMessage({id, token, type: 'token'});
       },
       skip_prompt: true,
       skip_special_tokens: true,
@@ -78,9 +75,9 @@ worker.onmessage = async (event: MessageEvent) => {
         ? String(lastMessage.content)
         : '';
 
-    worker.postMessage({fullText: fullText.trim(), id, type: 'done'});
+    self.postMessage({fullText: fullText.trim(), id, type: 'done'});
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
-    worker.postMessage({id, message, type: 'error'});
+    self.postMessage({id, message, type: 'error'});
   }
 };

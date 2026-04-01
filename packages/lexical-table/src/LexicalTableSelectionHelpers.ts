@@ -436,6 +436,41 @@ export function applyTableHandlers(
             return true;
           }
         }
+        //If the selection is not a table selection , there might be a case where a table exists between the anchor and focus of a range selection, and the user pressed escape to clear the selection. In this case we should clear the table selection state but not move the cursor.
+        if ($isRangeSelection(selection)) {
+          const isAnchorInside = tableNode.isParentOf(
+            selection.anchor.getNode(),
+          );
+          const isFocusInside = tableNode.isParentOf(selection.focus.getNode());
+
+          // Case 1: One endpoint inside the table, one outside
+          if (
+            (isAnchorInside && !isFocusInside) ||
+            (!isAnchorInside && isFocusInside)
+          ) {
+            tableObserver.$clearHighlight(false);
+            stopEvent(event);
+          }
+
+          // Case 2: Both endpoints outside, but table is between them
+          if (!isAnchorInside && !isFocusInside) {
+            const anchorBeforeTable = selection.anchor
+              .getNode()
+              .isBefore(tableNode);
+            const tableBeforeeFocus = tableNode.isBefore(
+              selection.focus.getNode(),
+            );
+
+            // Table is between if: (anchor < table < focus) OR (focus < table < anchor)
+            if (
+              (anchorBeforeTable && tableBeforeeFocus) ||
+              (!anchorBeforeTable && !tableBeforeeFocus)
+            ) {
+              tableObserver.$clearHighlight(false);
+              stopEvent(event);
+            }
+          }
+        }
 
         return false;
       },

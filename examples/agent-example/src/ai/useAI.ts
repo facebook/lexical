@@ -123,6 +123,18 @@ export function useAI(): UseAIReturn {
             pending.resolve(null);
           }
         }
+      } else if (data.type === 'aborted') {
+        // Worker confirmed abort — clean up if not already done
+        const pending = pendingRef.current.get(data.id);
+        if (pending) {
+          pendingRef.current.delete(data.id);
+          pending.resolve(null);
+        }
+        if (data.id === activeIdRef.current) {
+          setIsGenerating(false);
+          tokenCallbackRef.current = null;
+          activeIdRef.current = null;
+        }
       } else if (data.type === 'error') {
         const pending = pendingRef.current.get(data.id);
         if (pending) {
@@ -154,6 +166,10 @@ export function useAI(): UseAIReturn {
 
   const abort = useCallback(() => {
     if (activeIdRef.current) {
+      // Tell the worker to stop inference
+      if (workerRef.current) {
+        workerRef.current.postMessage({type: 'abort'});
+      }
       const pending = pendingRef.current.get(activeIdRef.current);
       if (pending) {
         pendingRef.current.delete(activeIdRef.current);

@@ -38,20 +38,42 @@ async function getGenerator() {
   return generator;
 }
 
+let activeAbortController: AbortController | null = null;
+
 self.onmessage = async (event: MessageEvent) => {
   const {type, id, messages, maxTokens} = event.data;
+
+  if (type === 'abort') {
+    if (activeAbortController) {
+      activeAbortController.abort();
+      activeAbortController = null;
+    }
+    return;
+  }
 
   if (type !== 'generate') {
     return;
   }
 
+  // Abort any previous in-flight request
+  if (activeAbortController) {
+    activeAbortController.abort();
+  }
+  const abortController = new AbortController();
+  activeAbortController = abortController;
+
   try {
     const gen = await getGenerator();
+    if (abortController.signal.aborted) {
+      return;
+    }
     self.postMessage({id, status: 'generating', type: 'status'});
 
     const streamer = new TextStreamer(gen.tokenizer, {
       callback_function: (token: string) => {
-        self.postMessage({id, token, type: 'token'});
+        if (!abortController.signal.aborted) {
+          self.postMessage({id, token, type: 'token'});
+        }
       },
       skip_prompt: true,
       skip_special_tokens: true,
@@ -63,6 +85,10 @@ self.onmessage = async (event: MessageEvent) => {
       streamer,
       temperature: 0.7,
     });
+
+    if (abortController.signal.aborted) {
+      return;
+    }
 
     const result = Array.isArray(output) ? output[0] : output;
     const generatedMessages = (result as {generated_text: unknown})
@@ -77,7 +103,15 @@ self.onmessage = async (event: MessageEvent) => {
 
     self.postMessage({fullText: fullText.trim(), id, type: 'done'});
   } catch (err: unknown) {
+    if (abortController.signal.aborted) {
+      self.postMessage({id, type: 'aborted'});
+      return;
+    }
     const message = err instanceof Error ? err.message : String(err);
     self.postMessage({id, message, type: 'error'});
+  } finally {
+    if (activeAbortController === abortController) {
+      activeAbortController = null;
+    }
   }
 };

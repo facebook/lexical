@@ -261,7 +261,20 @@
       "@lexical/text/src": ["./packages/lexical-text/src"],
       "@lexical/utils/src": ["./packages/lexical-utils/src"],
       "@lexical/yjs/src": ["./packages/lexical-yjs/src"],
-      "shared/src": ["./packages/shared/src"]
+      "shared/src": ["./packages/shared/src"],
+      "@examples/website-chat/Editor": [
+        "./examples/website-chat/src/Editor.tsx"
+      ],
+      "@examples/website-notion/Editor": [
+        "./examples/website-notion/src/Editor.tsx"
+      ],
+      "@examples/website-rich-input/Editor": [
+        "./examples/website-rich-input/src/Editor.tsx"
+      ],
+      "@examples/website-toolbar/Editor": [
+        "./examples/website-toolbar/src/Editor.tsx"
+      ],
+      "@site/*": ["./packages/lexical-website/*"]
     }
   },
   "include": ["./libdefs", "./packages"],

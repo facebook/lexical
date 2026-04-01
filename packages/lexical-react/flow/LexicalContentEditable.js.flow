@@ -14,11 +14,11 @@ import type {TRefFor} from 'CoreTypes.flow';
 import * as React from 'react';
 
 type InlineStyle = {
-  [key: string]: mixed,
+  [key: string]: unknown,
 };
 
 // Due to Flow limitations, we prefer fixed types over the built-in inexact HTMLElement
-type HTMLDivElementDOMProps = $ReadOnly<{
+type HTMLDivElementDOMProps = Readonly<{
   'aria-label'?: void | string,
   'aria-labeledby'?: void | string,
   'aria-activedescendant'?: void | string,
@@ -44,11 +44,11 @@ type HTMLDivElementDOMProps = $ReadOnly<{
 }>;
 
 export type PlaceholderProps =
-  | $ReadOnly<{
+  | Readonly<{
       'aria-placeholder'?: void,
       placeholder?: null,
     }>
-  | $ReadOnly<{
+  | Readonly<{
       'aria-placeholder': string,
       placeholder:
         | ((isEditable: boolean) => null | React.Node)
@@ -56,7 +56,7 @@ export type PlaceholderProps =
         | React.Node,
     }>;
 
-export type Props = $ReadOnly<{
+export type Props = Readonly<{
   ...HTMLDivElementDOMProps,
   ariaActiveDescendant?: string,
   ariaAutoComplete?: string,

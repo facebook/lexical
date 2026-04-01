@@ -45,7 +45,7 @@ export const DateTimeExtension = defineExtension({
           dateTimeNode.setFormat(selection.format);
         }
         $insertNodeIntoLeaf(dateTimeNode);
-        if ($isRootOrShadowRoot(dateTimeNode.getParentOrThrow())) {
+        if ($isRootOrShadowRoot(dateTimeNode.getParent())) {
           $wrapNodeInElement(dateTimeNode, $createParagraphNode).selectEnd();
         }
 

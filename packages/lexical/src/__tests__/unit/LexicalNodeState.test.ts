@@ -387,6 +387,46 @@ describe('LexicalNode state', () => {
         test('undefined states are equivalent', () => {
           expect(nodeStatesAreEquivalent(undefined, undefined)).toBe(true);
         });
+        test('merges text nodes with different number of default state values', () => {
+          const {editor} = testEnv;
+          // Initialise with non-default state.
+          editor.update(
+            () => {
+              const firstTextNode = $createTextNode('hello');
+              const secondTextNode = $createTextNode('world');
+              $setState(firstTextNode, numberState, 1);
+              $setState(firstTextNode, boolState, true);
+              $setState(secondTextNode, boolState, true);
+              $getRoot()
+                .clear()
+                .append(
+                  $createParagraphNode().append(firstTextNode, secondTextNode),
+                );
+            },
+            {discrete: true},
+          );
+          editor.read(() => {
+            const textNodes = $getRoot().getAllTextNodes();
+            expect(textNodes).toHaveLength(2);
+          });
+          // Revert to default value for number state.
+          editor.update(
+            () => {
+              const paragraph =
+                $getRoot().getFirstChildOrThrow<ParagraphNode>();
+              const [firstTextNode] = paragraph.getChildren();
+              $setState(firstTextNode, numberState, 0);
+            },
+            {discrete: true},
+          );
+          // Test that the text nodes are merged.
+          editor.read(() => {
+            const textNodes = $getRoot().getAllTextNodes();
+            expect(textNodes).toHaveLength(1);
+            expect($getState(textNodes[0], numberState)).toBe(0);
+            expect($getState(textNodes[0], boolState)).toBe(true);
+          });
+        });
         test('TextNode merging only with equivalent state', () => {
           const {editor} = testEnv;
           const classNameState = createState('className', {

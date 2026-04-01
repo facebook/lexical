@@ -8,7 +8,6 @@
 
 import type {UseAIReturn} from '../ai/useAI';
 
-import {$createListItemNode, $createListNode} from '@lexical/list';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $createHeadingNode,
@@ -105,13 +104,8 @@ export function ToolbarPlugin({ai}: {ai: UseAIReturn}) {
   const [isItalic, setIsItalic] = useState(false);
   const [isUnderline, setIsUnderline] = useState(false);
 
-  const {
-    abort,
-    generateParagraph,
-    isGenerating,
-    makeBulletPoints,
-    modelStatus,
-  } = ai;
+  const {abort, generateParagraph, isGenerating, modelStatus, rewrite} = ai;
+  const [rewriteStyle, setRewriteStyle] = useState('formal');
 
   // Escape key aborts AI operations
   useEffect(() => {
@@ -180,57 +174,48 @@ export function ToolbarPlugin({ai}: {ai: UseAIReturn}) {
     );
   }, [editor, $updateToolbar]);
 
-  const handleBulletPoints = useCallback(async () => {
-    let textToConvert = '';
+  const handleRewrite = useCallback(async () => {
+    let textToRewrite = '';
+    let hasSelection = false;
 
     editor.getEditorState().read(() => {
       const selection = $getSelection();
       if ($isRangeSelection(selection) && !selection.isCollapsed()) {
-        textToConvert = selection.getTextContent();
+        textToRewrite = selection.getTextContent();
+        hasSelection = true;
       } else {
-        textToConvert = $getRoot().getTextContent();
+        textToRewrite = $getRoot().getTextContent();
+        hasSelection = false;
       }
     });
 
-    if (!textToConvert.trim()) {
+    if (!textToRewrite.trim()) {
       return;
     }
 
-    const result = await makeBulletPoints(textToConvert);
+    const result = await rewrite(textToRewrite, rewriteStyle);
     if (result == null || !result.trim()) {
       return;
     }
 
-    // Parse bullet points from the model output
-    const items = result
-      .split('\n')
-      .map((line) => line.replace(/^[-*•]\s*/, '').trim())
-      .filter((line) => line.length > 0);
-
-    if (items.length === 0) {
-      return;
-    }
-
     editor.update(() => {
-      const listNode = $createListNode('bullet');
-      for (const item of items) {
-        const listItem = $createListItemNode();
-        listItem.append($createTextNode(item));
-        listNode.append(listItem);
-      }
-
-      const selection = $getSelection();
-      if ($isRangeSelection(selection) && !selection.isCollapsed()) {
-        // Replace selected content with the list
-        selection.insertNodes([listNode]);
+      if (hasSelection) {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          selection.insertRawText(result);
+        }
       } else {
-        // Replace entire document with the list
         const root = $getRoot();
         root.clear();
-        root.append(listNode);
+        const lines = result.split('\n');
+        for (const line of lines) {
+          const paragraph = $createParagraphNode();
+          paragraph.append($createTextNode(line));
+          root.append(paragraph);
+        }
       }
     });
-  }, [editor, makeBulletPoints]);
+  }, [editor, rewrite, rewriteStyle]);
 
   const handleGenerate = useCallback(async () => {
     let context = '';
@@ -418,13 +403,24 @@ export function ToolbarPlugin({ai}: {ai: UseAIReturn}) {
         </button>
       ) : (
         <>
+          <select
+            value={rewriteStyle}
+            onChange={(e) => setRewriteStyle(e.target.value)}
+            disabled={aiDisabled}
+            className="cursor-pointer appearance-none rounded-md border border-solid border-indigo-200 bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700 dark:border-indigo-700 dark:bg-indigo-950 dark:text-indigo-300"
+            aria-label="Rewrite style">
+            <option value="formal">Formal</option>
+            <option value="casual">Casual</option>
+            <option value="concise">Concise</option>
+            <option value="simpler">Simpler</option>
+          </select>
           <button
-            onClick={handleBulletPoints}
+            onClick={handleRewrite}
             disabled={aiDisabled}
             className={aiBtnBase}
-            aria-label="AI Bullet Points"
-            title="Convert selected text (or entire document) to bullet points">
-            Bullet Points
+            aria-label="AI Rewrite"
+            title="Rewrite selected text (or entire document) in the chosen style">
+            Rewrite
           </button>
           <button
             onClick={handleGenerate}

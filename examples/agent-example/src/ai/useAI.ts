@@ -23,21 +23,28 @@ export interface UseAIReturn {
   ) => Promise<string | null>;
   isGenerating: boolean;
   loadProgress: number | null;
-  makeBulletPoints: (text: string) => Promise<string | null>;
   modelStatus: ModelStatus;
+  rewrite: (text: string, style: string) => Promise<string | null>;
 }
 
 let requestCounter = 0;
 
-function buildBulletPointMessages(text: string): ChatMessage[] {
+const REWRITE_STYLES: Record<string, string> = {
+  casual: 'more casual and conversational',
+  concise: 'more concise and to the point',
+  formal: 'more formal and professional',
+  simpler: 'simpler and easier to understand',
+};
+
+function buildRewriteMessages(text: string, style: string): ChatMessage[] {
+  const styleDescription = REWRITE_STYLES[style] || style;
   return [
     {
-      content:
-        'You are a writing assistant. Convert the text into a bullet point list. Each bullet point should be a short phrase or sentence starting with "- ". Return ONLY the bullet points, one per line, with no other text.',
+      content: `You are a writing assistant. Rewrite the text to be ${styleDescription}. Return ONLY the rewritten text with no explanations or preamble.`,
       role: 'system',
     },
     {
-      content: `Convert this text into bullet points:\n\n${text}`,
+      content: `Rewrite this text to be ${styleDescription}:\n\n${text}`,
       role: 'user',
     },
   ];
@@ -199,9 +206,9 @@ export function useAI(): UseAIReturn {
     [getWorker],
   );
 
-  const makeBulletPoints = useCallback(
-    (text: string): Promise<string | null> => {
-      return sendRequest(buildBulletPointMessages(text), 256);
+  const rewrite = useCallback(
+    (text: string, style: string): Promise<string | null> => {
+      return sendRequest(buildRewriteMessages(text, style), 512);
     },
     [sendRequest],
   );
@@ -221,7 +228,7 @@ export function useAI(): UseAIReturn {
     generateParagraph,
     isGenerating,
     loadProgress,
-    makeBulletPoints,
     modelStatus,
+    rewrite,
   };
 }

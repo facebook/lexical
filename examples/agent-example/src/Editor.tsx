@@ -8,7 +8,6 @@
 
 import {TabIndentationExtension} from '@lexical/extension';
 import {HistoryExtension} from '@lexical/history';
-import {ListExtension} from '@lexical/list';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
 import {RichTextExtension} from '@lexical/rich-text';
@@ -27,14 +26,6 @@ const theme = {
     h1: 'mb-2 text-3xl font-bold',
     h2: 'mb-2 text-2xl font-bold',
     h3: 'mb-1 text-xl font-semibold',
-  },
-  list: {
-    listitem: 'ml-8',
-    nested: {
-      listitem: 'list-none',
-    },
-    ol: 'list-decimal pl-4 my-1',
-    ul: 'list-disc pl-4 my-1',
   },
   paragraph: 'my-0',
   quote:
@@ -56,12 +47,7 @@ const agentEditorExtension = defineExtension({
     paragraph.append($createTextNode(SAMPLE_TEXT));
     root.append(paragraph);
   },
-  dependencies: [
-    RichTextExtension,
-    HistoryExtension,
-    TabIndentationExtension,
-    ListExtension,
-  ],
+  dependencies: [RichTextExtension, HistoryExtension, TabIndentationExtension],
   name: '@lexical/agent-example/editor',
   namespace: '@lexical/agent-example/editor',
   theme,

@@ -5,25 +5,30 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "monorepo:dev": "vite -c vite.config.monorepo.ts",
-    "build": "tsc && vite build",
+    "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
     "@huggingface/transformers": "^3.4.0",
+    "@lexical/extension": "0.42.0",
+    "@lexical/history": "0.42.0",
     "@lexical/react": "0.42.0",
+    "@lexical/rich-text": "0.42.0",
+    "@lexical/selection": "0.42.0",
     "@lexical/utils": "0.42.0",
     "lexical": "0.42.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.2.1",
     "@types/react": "^19.1.12",
     "@types/react-dom": "^19.1.9",
     "@vitejs/plugin-react": "^5.0.2",
     "cross-env": "^7.0.3",
+    "tailwindcss": "^4.2.1",
     "typescript": "^5.9.2",
-    "vite": "^7.1.4"
+    "vite": "^7.3.1"
   },
   "optionalDependencies": {
     "@rollup/rollup-linux-x64-gnu": "4.52.0",

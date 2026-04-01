@@ -10,13 +10,19 @@ import './styles.css';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 
-import App from './App.tsx';
+import Editor from './Editor.tsx';
+import {ThemeToggle} from './ThemeToggle.tsx';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <div className="App">
-      <h1>Lexical AI Agent Example</h1>
-      <App />
+    <div className="relative flex min-h-screen flex-col items-center justify-center gap-4 bg-white p-8 text-[#1c1e21] dark:bg-zinc-900 dark:text-[#e3e3e3]">
+      <ThemeToggle />
+      <h1 className="text-2xl font-bold">Lexical AI Agent Example</h1>
+      <p className="max-w-lg text-center text-sm text-zinc-500 dark:text-zinc-400">
+        Rich text editor with AI-powered proofread and paragraph generation
+        using SmolLM2-135M running in the browser via WebAssembly.
+      </p>
+      <Editor />
     </div>
   </React.StrictMode>,
 );

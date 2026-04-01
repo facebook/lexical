@@ -5,50 +5,130 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {mergeRegister} from '@lexical/utils';
+import {
+  $createHeadingNode,
+  $createQuoteNode,
+  $isHeadingNode,
+} from '@lexical/rich-text';
+import {$setBlocksType} from '@lexical/selection';
+import {$findMatchingParent, mergeRegister} from '@lexical/utils';
 import {
   $createParagraphNode,
   $createTextNode,
+  $getNodeByKey,
   $getRoot,
   $getSelection,
   $isRangeSelection,
+  $isRootOrShadowRoot,
+  $isTextNode,
   CAN_REDO_COMMAND,
   CAN_UNDO_COMMAND,
   COMMAND_PRIORITY_LOW,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
+  LexicalEditor,
   REDO_COMMAND,
-  SELECTION_CHANGE_COMMAND,
   UNDO_COMMAND,
 } from 'lexical';
-import {useCallback, useEffect, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 
 import type {UseAIReturn} from '../ai/useAI';
 
-function Divider() {
-  return <div className="divider" />;
+const BLOCK_TYPES = [
+  {label: 'Normal', value: 'paragraph'},
+  {label: 'Heading 1', value: 'h1'},
+  {label: 'Heading 2', value: 'h2'},
+  {label: 'Heading 3', value: 'h3'},
+  {label: 'Quote', value: 'quote'},
+];
+
+function formatParagraph(editor: LexicalEditor) {
+  editor.update(() => {
+    const selection = $getSelection();
+    $setBlocksType(selection, () => $createParagraphNode());
+  });
 }
 
-export default function ToolbarPlugin({ai}: {ai: UseAIReturn}) {
+function formatHeading(
+  editor: LexicalEditor,
+  headingTag: 'h1' | 'h2' | 'h3',
+) {
+  editor.update(() => {
+    const selection = $getSelection();
+    $setBlocksType(selection, () => $createHeadingNode(headingTag));
+  });
+}
+
+function formatQuote(editor: LexicalEditor) {
+  editor.update(() => {
+    const selection = $getSelection();
+    $setBlocksType(selection, () => $createQuoteNode());
+  });
+}
+
+function applyBlockType(editor: LexicalEditor, type: string) {
+  if (type === 'paragraph') {
+    formatParagraph(editor);
+  } else if (type === 'quote') {
+    formatQuote(editor);
+  } else {
+    formatHeading(editor, type as 'h1' | 'h2' | 'h3');
+  }
+}
+
+function maskStyle(url: string): React.CSSProperties {
+  return {
+    WebkitMaskImage: `url('${url}')`,
+    WebkitMaskPosition: 'center',
+    WebkitMaskRepeat: 'no-repeat',
+    WebkitMaskSize: 'contain',
+    maskImage: `url('${url}')`,
+    maskPosition: 'center',
+    maskRepeat: 'no-repeat',
+    maskSize: 'contain',
+  };
+}
+
+function Divider() {
+  return (
+    <div className="mx-1 w-px self-stretch bg-zinc-200 dark:bg-zinc-600" />
+  );
+}
+
+export function ToolbarPlugin({ai}: {ai: UseAIReturn}) {
   const [editor] = useLexicalComposerContext();
-  const toolbarRef = useRef(null);
+  const toolbarRef = useRef<HTMLDivElement>(null);
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
+  const [blockType, setBlockType] = useState('paragraph');
   const [isBold, setIsBold] = useState(false);
   const [isItalic, setIsItalic] = useState(false);
   const [isUnderline, setIsUnderline] = useState(false);
-  const [isStrikethrough, setIsStrikethrough] = useState(false);
 
   const {generateParagraph, isGenerating, modelStatus, proofread} = ai;
 
   const $updateToolbar = useCallback(() => {
     const selection = $getSelection();
     if ($isRangeSelection(selection)) {
+      const anchorNode = selection.anchor.getNode();
+      let topLevelElement = $findMatchingParent(anchorNode, (e) => {
+        const parent = e.getParent();
+        return parent !== null && $isRootOrShadowRoot(parent);
+      });
+      if (topLevelElement === null) {
+        topLevelElement = anchorNode.getTopLevelElementOrThrow();
+      }
+
+      if ($isHeadingNode(topLevelElement)) {
+        setBlockType(topLevelElement.getTag());
+      } else {
+        setBlockType(topLevelElement.getType());
+      }
       setIsBold(selection.hasFormat('bold'));
       setIsItalic(selection.hasFormat('italic'));
       setIsUnderline(selection.hasFormat('underline'));
-      setIsStrikethrough(selection.hasFormat('strikethrough'));
     }
   }, []);
 
@@ -62,14 +142,6 @@ export default function ToolbarPlugin({ai}: {ai: UseAIReturn}) {
           {editor},
         );
       }),
-      editor.registerCommand(
-        SELECTION_CHANGE_COMMAND,
-        () => {
-          $updateToolbar();
-          return false;
-        },
-        COMMAND_PRIORITY_LOW,
-      ),
       editor.registerCommand(
         CAN_UNDO_COMMAND,
         (payload) => {
@@ -89,10 +161,7 @@ export default function ToolbarPlugin({ai}: {ai: UseAIReturn}) {
     );
   }, [editor, $updateToolbar]);
 
-  const [aiError, setAiError] = useState<string | null>(null);
-
   const handleProofread = useCallback(async () => {
-    setAiError(null);
     let textToProofread = '';
     let hasSelection = false;
 
@@ -111,168 +180,231 @@ export default function ToolbarPlugin({ai}: {ai: UseAIReturn}) {
       return;
     }
 
-    try {
-      const result = await proofread(textToProofread);
-      if (!result.trim()) {
-        return;
-      }
-
-      editor.update(() => {
-        if (hasSelection) {
-          const selection = $getSelection();
-          if ($isRangeSelection(selection)) {
-            selection.insertRawText(result);
-          }
-        } else {
-          const root = $getRoot();
-          root.clear();
-          const lines = result.split('\n');
-          for (const line of lines) {
-            const paragraph = $createParagraphNode();
-            paragraph.append($createTextNode(line));
-            root.append(paragraph);
-          }
-        }
-      });
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      setAiError(message);
+    const result = await proofread(textToProofread);
+    if (!result.trim()) {
+      return;
     }
+
+    editor.update(() => {
+      if (hasSelection) {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          selection.insertRawText(result);
+        }
+      } else {
+        const root = $getRoot();
+        root.clear();
+        const lines = result.split('\n');
+        for (const line of lines) {
+          const paragraph = $createParagraphNode();
+          paragraph.append($createTextNode(line));
+          root.append(paragraph);
+        }
+      }
+    });
   }, [editor, proofread]);
 
   const handleGenerate = useCallback(async () => {
-    setAiError(null);
     let context = '';
-
     editor.getEditorState().read(() => {
       context = $getRoot().getTextContent();
     });
 
-    try {
-      const result = await generateParagraph(context);
-      if (!result.trim()) {
-        return;
+    // Create a paragraph node to stream tokens into
+    let textNodeKey: string | null = null;
+    editor.update(() => {
+      const root = $getRoot();
+      const paragraph = $createParagraphNode();
+      const textNode = $createTextNode('');
+      paragraph.append(textNode);
+      root.append(paragraph);
+      textNodeKey = textNode.getKey();
+    });
+
+    await generateParagraph(context, (token: string) => {
+      if (textNodeKey) {
+        editor.update(
+          () => {
+            const node = $getNodeByKey(textNodeKey!);
+            if ($isTextNode(node)) {
+              node.setTextContent(node.getTextContent() + token);
+            }
+          },
+          {tag: 'ai-stream'},
+        );
       }
+    });
 
+    // Move selection to end of the generated text
+    if (textNodeKey) {
       editor.update(() => {
-        const root = $getRoot();
-        const paragraph = $createParagraphNode();
-        paragraph.append($createTextNode(result));
-        root.append(paragraph);
-
-        // Move selection to end of inserted paragraph
-        paragraph.selectEnd();
+        const node = $getNodeByKey(textNodeKey!);
+        if ($isTextNode(node)) {
+          node.selectEnd();
+        }
       });
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      setAiError(message);
     }
   }, [editor, generateParagraph]);
 
   const aiDisabled = isGenerating || modelStatus === 'loading';
 
+  const btnBase =
+    'group flex cursor-pointer items-center justify-center rounded-md border-0 p-1.5 transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500';
+  const btnInactive =
+    'bg-transparent text-zinc-700 enabled:hover:bg-zinc-200 dark:text-zinc-200 dark:enabled:hover:bg-zinc-700';
+  const btnActive =
+    'bg-blue-500 text-white enabled:hover:bg-blue-600 dark:bg-blue-600 dark:enabled:hover:bg-blue-700';
+  const iconBase =
+    'flex h-[18px] w-[18px] shrink-0 bg-current group-hover:opacity-100';
+  const aiBtnBase =
+    'flex cursor-pointer items-center gap-1 rounded-md border border-solid border-indigo-200 bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700 transition-colors duration-150 enabled:hover:bg-indigo-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 dark:enabled:hover:bg-indigo-900';
+
   return (
-    <div className="toolbar" ref={toolbarRef}>
+    <div
+      className="sticky top-0 z-10 flex flex-wrap items-center gap-0.5 overflow-x-auto border-b [border-bottom-style:solid] border-b-black/10 bg-zinc-50 px-2 py-1.5 dark:border-b-white/10 dark:bg-zinc-800"
+      ref={toolbarRef}>
+      <select
+        className="cursor-pointer appearance-none rounded-md border border-solid border-transparent bg-transparent px-2 py-1 text-sm font-medium text-zinc-700 transition-colors duration-150 hover:bg-zinc-200 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500 dark:text-zinc-200 dark:hover:bg-zinc-700"
+        value={blockType}
+        onChange={(e) => applyBlockType(editor, e.target.value)}
+        aria-label="Block type">
+        {BLOCK_TYPES.map(({label, value}) => (
+          <option key={value} value={value}>
+            {label}
+          </option>
+        ))}
+      </select>
+      <Divider />
       <button
         disabled={!canUndo}
         onClick={() => {
           editor.dispatchCommand(UNDO_COMMAND, undefined);
         }}
-        className="toolbar-item spaced"
+        className={`${btnBase} ${btnInactive} mr-0.5`}
         aria-label="Undo">
-        <i className="format undo" />
+        <i
+          className={`${iconBase} opacity-70`}
+          style={maskStyle('/img/undo.svg')}
+        />
       </button>
       <button
         disabled={!canRedo}
         onClick={() => {
           editor.dispatchCommand(REDO_COMMAND, undefined);
         }}
-        className="toolbar-item"
+        className={`${btnBase} ${btnInactive}`}
         aria-label="Redo">
-        <i className="format redo" />
+        <i
+          className={`${iconBase} opacity-70`}
+          style={maskStyle('/img/redo.svg')}
+        />
       </button>
       <Divider />
       <button
         onClick={() => {
           editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold');
         }}
-        className={'toolbar-item spaced ' + (isBold ? 'active' : '')}
-        aria-label="Format Bold">
-        <i className="format bold" />
+        className={`${btnBase} mr-0.5 ${isBold ? btnActive : btnInactive}`}
+        aria-label="Format Bold"
+        aria-pressed={isBold}>
+        <i
+          className={`${iconBase} ${isBold ? 'opacity-100' : 'opacity-70'}`}
+          style={maskStyle('/img/bold.svg')}
+        />
       </button>
       <button
         onClick={() => {
           editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'italic');
         }}
-        className={'toolbar-item spaced ' + (isItalic ? 'active' : '')}
-        aria-label="Format Italics">
-        <i className="format italic" />
+        className={`${btnBase} mr-0.5 ${isItalic ? btnActive : btnInactive}`}
+        aria-label="Format Italics"
+        aria-pressed={isItalic}>
+        <i
+          className={`${iconBase} ${isItalic ? 'opacity-100' : 'opacity-70'}`}
+          style={maskStyle('/img/italic.svg')}
+        />
       </button>
       <button
         onClick={() => {
           editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'underline');
         }}
-        className={'toolbar-item spaced ' + (isUnderline ? 'active' : '')}
-        aria-label="Format Underline">
-        <i className="format underline" />
-      </button>
-      <button
-        onClick={() => {
-          editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'strikethrough');
-        }}
-        className={'toolbar-item spaced ' + (isStrikethrough ? 'active' : '')}
-        aria-label="Format Strikethrough">
-        <i className="format strikethrough" />
+        className={`${btnBase} mr-0.5 ${isUnderline ? btnActive : btnInactive}`}
+        aria-label="Format Underline"
+        aria-pressed={isUnderline}>
+        <i
+          className={`${iconBase} ${isUnderline ? 'opacity-100' : 'opacity-70'}`}
+          style={maskStyle('/img/underline.svg')}
+        />
       </button>
       <Divider />
       <button
         onClick={() => {
           editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'left');
         }}
-        className="toolbar-item spaced"
+        className={`${btnBase} ${btnInactive} mr-0.5`}
         aria-label="Left Align">
-        <i className="format left-align" />
+        <i
+          className={`${iconBase} opacity-70`}
+          style={maskStyle('/img/text-align-start.svg')}
+        />
       </button>
       <button
         onClick={() => {
           editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'center');
         }}
-        className="toolbar-item spaced"
+        className={`${btnBase} ${btnInactive} mr-0.5`}
         aria-label="Center Align">
-        <i className="format center-align" />
+        <i
+          className={`${iconBase} opacity-70`}
+          style={maskStyle('/img/text-align-center.svg')}
+        />
       </button>
       <button
         onClick={() => {
           editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'right');
         }}
-        className="toolbar-item spaced"
+        className={`${btnBase} ${btnInactive} mr-0.5`}
         aria-label="Right Align">
-        <i className="format right-align" />
+        <i
+          className={`${iconBase} opacity-70`}
+          style={maskStyle('/img/text-align-end.svg')}
+        />
       </button>
       <button
         onClick={() => {
           editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'justify');
         }}
-        className="toolbar-item"
+        className={`${btnBase} ${btnInactive}`}
         aria-label="Justify Align">
-        <i className="format justify-align" />
+        <i
+          className={`${iconBase} opacity-70`}
+          style={maskStyle('/img/text-align-justify.svg')}
+        />
       </button>
       <Divider />
       <button
         onClick={handleProofread}
         disabled={aiDisabled}
-        className="toolbar-item spaced ai-button"
+        className={aiBtnBase}
         aria-label="AI Proofread"
         title="Proofread selected text (or entire document)">
-        <span className="ai-button-text">Proofread</span>
+        {isGenerating ? (
+          <span className="animate-pulse">Proofread</span>
+        ) : (
+          'Proofread'
+        )}
       </button>
       <button
         onClick={handleGenerate}
         disabled={aiDisabled}
-        className="toolbar-item ai-button"
+        className={aiBtnBase}
         aria-label="AI Generate Paragraph"
         title="Generate a paragraph at the end of the document">
-        <span className="ai-button-text">Generate</span>
+        {isGenerating ? (
+          <span className="animate-pulse">Generate</span>
+        ) : (
+          'Generate'
+        )}
       </button>
     </div>
   );

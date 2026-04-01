@@ -16,12 +16,14 @@ interface ChatMessage {
 }
 
 export interface UseAIReturn {
-  generateParagraph: (context: string) => Promise<string>;
+  generateParagraph: (
+    context: string,
+    onToken: (token: string) => void,
+  ) => Promise<string>;
   isGenerating: boolean;
   loadProgress: number | null;
   modelStatus: ModelStatus;
   proofread: (text: string) => Promise<string>;
-  streamingText: string;
 }
 
 let requestCounter = 0;
@@ -30,7 +32,7 @@ function buildProofreadMessages(text: string): ChatMessage[] {
   return [
     {
       content:
-        'You are a proofreading assistant. Fix grammar, spelling, and punctuation errors in the text. Return ONLY the corrected text with no explanations or extra commentary.',
+        'You are a proofreading assistant. Fix grammar, spelling, and punctuation errors in the text. Return ONLY the corrected text with no explanations, preamble, or extra commentary.',
       role: 'system',
     },
     {
@@ -72,7 +74,7 @@ export function useAI(): UseAIReturn {
   const [modelStatus, setModelStatus] = useState<ModelStatus>('idle');
   const [loadProgress, setLoadProgress] = useState<number | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [streamingText, setStreamingText] = useState('');
+  const tokenCallbackRef = useRef<((token: string) => void) | null>(null);
   const pendingRef = useRef<
     Map<
       string,
@@ -103,10 +105,10 @@ export function useAI(): UseAIReturn {
           setIsGenerating(true);
         }
       } else if (data.type === 'token') {
-        setStreamingText((prev) => prev + data.token);
+        tokenCallbackRef.current?.(data.token);
       } else if (data.type === 'done') {
         setIsGenerating(false);
-        setStreamingText('');
+        tokenCallbackRef.current = null;
         const pending = pendingRef.current.get(data.id);
         if (pending) {
           pending.resolve(data.fullText);
@@ -114,7 +116,7 @@ export function useAI(): UseAIReturn {
         }
       } else if (data.type === 'error') {
         setIsGenerating(false);
-        setStreamingText('');
+        tokenCallbackRef.current = null;
         setModelStatus('error');
         const pending = pendingRef.current.get(data.id);
         if (pending) {
@@ -137,10 +139,14 @@ export function useAI(): UseAIReturn {
   }, []);
 
   const sendRequest = useCallback(
-    (messages: ChatMessage[], maxTokens: number): Promise<string> => {
+    (
+      messages: ChatMessage[],
+      maxTokens: number,
+      onToken?: (token: string) => void,
+    ): Promise<string> => {
       const worker = getWorker();
       const id = `req_${++requestCounter}`;
-      setStreamingText('');
+      tokenCallbackRef.current = onToken ?? null;
       return new Promise((resolve, reject) => {
         pendingRef.current.set(id, {reject, resolve});
         worker.postMessage({id, maxTokens, messages, type: 'generate'});
@@ -157,11 +163,20 @@ export function useAI(): UseAIReturn {
   );
 
   const generateParagraph = useCallback(
-    (context: string): Promise<string> => {
-      return sendRequest(buildGenerateMessages(context), 256);
+    (
+      context: string,
+      onToken: (token: string) => void,
+    ): Promise<string> => {
+      return sendRequest(buildGenerateMessages(context), 256, onToken);
     },
     [sendRequest],
   );
 
-  return {generateParagraph, isGenerating, loadProgress, modelStatus, proofread, streamingText};
+  return {
+    generateParagraph,
+    isGenerating,
+    loadProgress,
+    modelStatus,
+    proofread,
+  };
 }

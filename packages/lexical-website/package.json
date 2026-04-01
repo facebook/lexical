@@ -1,6 +1,6 @@
 {
   "name": "@lexical/website",
-  "version": "0.42.0",
+  "version": "0.42.1-nightly.20260401.0",
   "private": true,
   "scripts": {
     "docusaurus": "cross-env IGNORE_PEER_DEPENDENCIES=react docusaurus",
@@ -23,9 +23,9 @@
     "@easyops-cn/docusaurus-search-local": "^0.52.1",
     "@lexical/extension": "workspace:*",
     "@lexical/hashtag": "workspace:*",
-    "@lexical/overflow": "workspace:*",
     "@lexical/history": "workspace:*",
     "@lexical/list": "workspace:*",
+    "@lexical/overflow": "workspace:*",
     "@lexical/plain-text": "workspace:*",
     "@lexical/react": "workspace:*",
     "@lexical/rich-text": "workspace:*",
@@ -50,9 +50,9 @@
     "unist-util-visit": "^5.0.0"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.2.1",
     "buffer": "^6.0.3",
     "cross-env": "^7.0.3",
-    "@tailwindcss/postcss": "^4.2.1",
     "prettier-plugin-tailwindcss": "^0.7.2",
     "tailwindcss": "^4.2.1",
     "typedoc": "^0.28.13",

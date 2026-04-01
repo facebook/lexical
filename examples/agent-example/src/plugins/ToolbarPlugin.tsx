@@ -6,6 +6,8 @@
  *
  */
 
+import type {UseAIReturn} from '../ai/useAI';
+
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $createHeadingNode,
@@ -20,6 +22,7 @@ import {
   $getNodeByKey,
   $getRoot,
   $getSelection,
+  $isElementNode,
   $isRangeSelection,
   $isRootOrShadowRoot,
   CAN_REDO_COMMAND,
@@ -32,8 +35,6 @@ import {
   UNDO_COMMAND,
 } from 'lexical';
 import React, {useCallback, useEffect, useRef, useState} from 'react';
-
-import type {UseAIReturn} from '../ai/useAI';
 
 const BLOCK_TYPES = [
   {label: 'Normal', value: 'paragraph'},
@@ -50,10 +51,7 @@ function formatParagraph(editor: LexicalEditor) {
   });
 }
 
-function formatHeading(
-  editor: LexicalEditor,
-  headingTag: 'h1' | 'h2' | 'h3',
-) {
+function formatHeading(editor: LexicalEditor, headingTag: 'h1' | 'h2' | 'h3') {
   editor.update(() => {
     const selection = $getSelection();
     $setBlocksType(selection, () => $createHeadingNode(headingTag));
@@ -223,7 +221,7 @@ export function ToolbarPlugin({ai}: {ai: UseAIReturn}) {
         editor.update(
           () => {
             const paragraph = $getNodeByKey(paragraphKey!);
-            if (paragraph) {
+            if ($isElementNode(paragraph)) {
               paragraph.append($createTextNode(token));
             }
           },
@@ -236,7 +234,7 @@ export function ToolbarPlugin({ai}: {ai: UseAIReturn}) {
     if (paragraphKey) {
       editor.update(() => {
         const paragraph = $getNodeByKey(paragraphKey!);
-        if (paragraph) {
+        if ($isElementNode(paragraph)) {
           paragraph.selectEnd();
         }
       });

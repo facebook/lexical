@@ -76,20 +76,16 @@ export function useAI(): UseAIReturn {
   const [isGenerating, setIsGenerating] = useState(false);
   const tokenCallbackRef = useRef<((token: string) => void) | null>(null);
   const pendingRef = useRef<
-    Map<
-      string,
-      {reject: (err: Error) => void; resolve: (text: string) => void}
-    >
+    Map<string, {reject: (err: Error) => void; resolve: (text: string) => void}>
   >(new Map());
 
   const getWorker = useCallback(() => {
     if (workerRef.current) {
       return workerRef.current;
     }
-    const worker = new Worker(
-      new URL('./ai-worker.ts', import.meta.url),
-      {type: 'module'},
-    );
+    const worker = new Worker(new URL('./ai-worker.ts', import.meta.url), {
+      type: 'module',
+    });
     worker.onmessage = (event: MessageEvent) => {
       const data = event.data;
       if (data.type === 'status') {
@@ -105,7 +101,9 @@ export function useAI(): UseAIReturn {
           setIsGenerating(true);
         }
       } else if (data.type === 'token') {
-        tokenCallbackRef.current?.(data.token);
+        if (tokenCallbackRef.current) {
+          tokenCallbackRef.current(data.token);
+        }
       } else if (data.type === 'done') {
         setIsGenerating(false);
         tokenCallbackRef.current = null;
@@ -163,10 +161,7 @@ export function useAI(): UseAIReturn {
   );
 
   const generateParagraph = useCallback(
-    (
-      context: string,
-      onToken: (token: string) => void,
-    ): Promise<string> => {
+    (context: string, onToken: (token: string) => void): Promise<string> => {
       return sendRequest(buildGenerateMessages(context), 256, onToken);
     },
     [sendRequest],

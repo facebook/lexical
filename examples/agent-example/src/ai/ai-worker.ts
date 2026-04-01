@@ -8,25 +8,28 @@
 
 import {pipeline, TextStreamer} from '@huggingface/transformers';
 
-type TextGenerationPipeline = Awaited<
-  ReturnType<typeof pipeline<'text-generation'>>
->;
+const worker = globalThis as typeof globalThis & {
+  onmessage: ((event: MessageEvent) => void) | null;
+  postMessage: (message: unknown) => void;
+};
 
-let generator: TextGenerationPipeline | null = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let generator: any = null;
 
-async function getGenerator(): Promise<TextGenerationPipeline> {
+async function getGenerator() {
   if (generator) {
     return generator;
   }
-  self.postMessage({type: 'status', status: 'loading-model'});
-  generator = await pipeline(
+  worker.postMessage({status: 'loading-model', type: 'status'});
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  generator = await (pipeline as any)(
     'text-generation',
     'HuggingFaceTB/SmolLM2-135M-Instruct',
     {
-      dtype: 'q4',
       device: 'wasm',
+      dtype: 'q4',
       progress_callback: (progress: {progress?: number; status?: string}) => {
-        self.postMessage({
+        worker.postMessage({
           progress: progress.progress ?? null,
           status: progress.status ?? 'loading-model',
           type: 'status',
@@ -34,11 +37,11 @@ async function getGenerator(): Promise<TextGenerationPipeline> {
       },
     },
   );
-  self.postMessage({type: 'status', status: 'model-ready'});
+  worker.postMessage({status: 'model-ready', type: 'status'});
   return generator;
 }
 
-self.onmessage = async (event: MessageEvent) => {
+worker.onmessage = async (event: MessageEvent) => {
   const {type, id, messages, maxTokens} = event.data;
 
   if (type !== 'generate') {
@@ -47,11 +50,11 @@ self.onmessage = async (event: MessageEvent) => {
 
   try {
     const gen = await getGenerator();
-    self.postMessage({id, status: 'generating', type: 'status'});
+    worker.postMessage({id, status: 'generating', type: 'status'});
 
     const streamer = new TextStreamer(gen.tokenizer, {
       callback_function: (token: string) => {
-        self.postMessage({id, token, type: 'token'});
+        worker.postMessage({id, token, type: 'token'});
       },
       skip_prompt: true,
       skip_special_tokens: true,
@@ -65,17 +68,19 @@ self.onmessage = async (event: MessageEvent) => {
     });
 
     const result = Array.isArray(output) ? output[0] : output;
-    const generatedMessages = result.generated_text;
+    const generatedMessages = (result as {generated_text: unknown})
+      .generated_text;
     const lastMessage = Array.isArray(generatedMessages)
       ? generatedMessages[generatedMessages.length - 1]
       : null;
-    const fullText = lastMessage
-      ? (lastMessage as {content: string}).content
-      : '';
+    const fullText =
+      lastMessage && typeof lastMessage === 'object' && 'content' in lastMessage
+        ? String(lastMessage.content)
+        : '';
 
-    self.postMessage({fullText: fullText.trim(), id, type: 'done'});
+    worker.postMessage({fullText: fullText.trim(), id, type: 'done'});
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
-    self.postMessage({id, message, type: 'error'});
+    worker.postMessage({id, message, type: 'error'});
   }
 };

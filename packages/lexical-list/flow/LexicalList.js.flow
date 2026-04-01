@@ -49,7 +49,7 @@ declare export function insertList(
 ): void;
 declare export class ListItemNode extends ElementNode {
   append(...nodes: LexicalNode[]): this;
-  replace<N: LexicalNode>(replaceWithNode: N): N;
+  replace<N extends LexicalNode>(replaceWithNode: N): N;
   insertAfter(node: LexicalNode, restoreSelection?: boolean): LexicalNode;
   insertNewAfter(
     selection: RangeSelection,

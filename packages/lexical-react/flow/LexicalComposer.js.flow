@@ -22,10 +22,10 @@ export type InitialEditorStateType =
   | EditorState
   | ((editor: LexicalEditor) => void);
 
-export type InitialConfigType = $ReadOnly<{
+export type InitialConfigType = Readonly<{
   editable?: boolean,
   namespace: string,
-  nodes?: $ReadOnlyArray<Class<LexicalNode> | LexicalNodeReplacement>,
+  nodes?: ReadonlyArray<Class<LexicalNode> | LexicalNodeReplacement>,
   theme?: EditorThemeClasses,
   editorState?: InitialEditorStateType,
   onError: (error: Error, editor: LexicalEditor) => void,

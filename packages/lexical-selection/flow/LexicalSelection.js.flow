@@ -89,7 +89,7 @@ declare export function $forEachSelectedTextNode(
   fn: (textNode: TextNode) => void,
 ): void;
 
-declare export function $sliceSelectedTextNodeContent<T: TextNode>(
+declare export function $sliceSelectedTextNodeContent<T extends TextNode>(
   selection: BaseSelection,
   textNode: T,
   mutates?: 'self' | 'clone',

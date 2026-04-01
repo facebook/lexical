@@ -24,7 +24,7 @@ export type CustomPrintNodeFn = (node: LexicalNode, obfuscateText?: boolean) => 
 
 declare export function generateContent(
   editor: LexicalEditor,
-  commandsLog: $ReadOnlyArray<LexicalCommandLog>,
+  commandsLog: ReadonlyArray<LexicalCommandLog>,
   exportDOM: boolean,
   customPrintNode?: CustomPrintNodeFn,
   obfuscateText?: boolean,

@@ -14,7 +14,7 @@ declare export function registerTabIndentation(
   maxIndent?: number,
 ): () => void;
 
-type Props = $ReadOnly<{
+type Props = Readonly<{
   maxIndent?: number,
 }>;
 

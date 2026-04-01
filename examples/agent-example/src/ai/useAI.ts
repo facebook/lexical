@@ -16,14 +16,15 @@ interface ChatMessage {
 }
 
 export interface UseAIReturn {
+  abort: () => void;
   generateParagraph: (
     context: string,
     onToken: (token: string) => void,
-  ) => Promise<string>;
+  ) => Promise<string | null>;
   isGenerating: boolean;
   loadProgress: number | null;
   modelStatus: ModelStatus;
-  proofread: (text: string) => Promise<string>;
+  proofread: (text: string) => Promise<string | null>;
 }
 
 let requestCounter = 0;
@@ -75,8 +76,12 @@ export function useAI(): UseAIReturn {
   const [loadProgress, setLoadProgress] = useState<number | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const tokenCallbackRef = useRef<((token: string) => void) | null>(null);
+  const activeIdRef = useRef<string | null>(null);
   const pendingRef = useRef<
-    Map<string, {reject: (err: Error) => void; resolve: (text: string) => void}>
+    Map<
+      string,
+      {reject: (err: Error) => void; resolve: (text: string | null) => void}
+    >
   >(new Map());
 
   const getWorker = useCallback(() => {
@@ -101,25 +106,36 @@ export function useAI(): UseAIReturn {
           setIsGenerating(true);
         }
       } else if (data.type === 'token') {
-        if (tokenCallbackRef.current) {
+        if (data.id === activeIdRef.current && tokenCallbackRef.current) {
           tokenCallbackRef.current(data.token);
         }
       } else if (data.type === 'done') {
-        setIsGenerating(false);
-        tokenCallbackRef.current = null;
         const pending = pendingRef.current.get(data.id);
         if (pending) {
-          pending.resolve(data.fullText);
           pendingRef.current.delete(data.id);
+          if (data.id === activeIdRef.current) {
+            setIsGenerating(false);
+            tokenCallbackRef.current = null;
+            activeIdRef.current = null;
+            pending.resolve(data.fullText);
+          } else {
+            // Aborted request completed — ignore result
+            pending.resolve(null);
+          }
         }
       } else if (data.type === 'error') {
-        setIsGenerating(false);
-        tokenCallbackRef.current = null;
-        setModelStatus('error');
         const pending = pendingRef.current.get(data.id);
         if (pending) {
-          pending.reject(new Error(data.message));
           pendingRef.current.delete(data.id);
+          if (data.id === activeIdRef.current) {
+            setIsGenerating(false);
+            tokenCallbackRef.current = null;
+            activeIdRef.current = null;
+            setModelStatus('error');
+            pending.reject(new Error(data.message));
+          } else {
+            pending.resolve(null);
+          }
         }
       }
     };
@@ -136,14 +152,28 @@ export function useAI(): UseAIReturn {
     };
   }, []);
 
+  const abort = useCallback(() => {
+    if (activeIdRef.current) {
+      const pending = pendingRef.current.get(activeIdRef.current);
+      if (pending) {
+        pendingRef.current.delete(activeIdRef.current);
+        pending.resolve(null);
+      }
+      activeIdRef.current = null;
+      tokenCallbackRef.current = null;
+      setIsGenerating(false);
+    }
+  }, []);
+
   const sendRequest = useCallback(
     (
       messages: ChatMessage[],
       maxTokens: number,
       onToken?: (token: string) => void,
-    ): Promise<string> => {
+    ): Promise<string | null> => {
       const worker = getWorker();
       const id = `req_${++requestCounter}`;
+      activeIdRef.current = id;
       tokenCallbackRef.current = onToken ?? null;
       return new Promise((resolve, reject) => {
         pendingRef.current.set(id, {reject, resolve});
@@ -154,20 +184,24 @@ export function useAI(): UseAIReturn {
   );
 
   const proofread = useCallback(
-    (text: string): Promise<string> => {
+    (text: string): Promise<string | null> => {
       return sendRequest(buildProofreadMessages(text), 512);
     },
     [sendRequest],
   );
 
   const generateParagraph = useCallback(
-    (context: string, onToken: (token: string) => void): Promise<string> => {
+    (
+      context: string,
+      onToken: (token: string) => void,
+    ): Promise<string | null> => {
       return sendRequest(buildGenerateMessages(context), 256, onToken);
     },
     [sendRequest],
   );
 
   return {
+    abort,
     generateParagraph,
     isGenerating,
     loadProgress,

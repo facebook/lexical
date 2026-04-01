@@ -104,7 +104,22 @@ export function ToolbarPlugin({ai}: {ai: UseAIReturn}) {
   const [isItalic, setIsItalic] = useState(false);
   const [isUnderline, setIsUnderline] = useState(false);
 
-  const {generateParagraph, isGenerating, modelStatus, proofread} = ai;
+  const {abort, generateParagraph, isGenerating, modelStatus, proofread} = ai;
+
+  // Escape key aborts AI operations
+  useEffect(() => {
+    if (!isGenerating) {
+      return;
+    }
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        abort();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isGenerating, abort]);
 
   const $updateToolbar = useCallback(() => {
     const selection = $getSelection();
@@ -178,7 +193,7 @@ export function ToolbarPlugin({ai}: {ai: UseAIReturn}) {
     }
 
     const result = await proofread(textToProofread);
-    if (!result.trim()) {
+    if (result == null || !result.trim()) {
       return;
     }
 
@@ -377,30 +392,34 @@ export function ToolbarPlugin({ai}: {ai: UseAIReturn}) {
         />
       </button>
       <Divider />
-      <button
-        onClick={handleProofread}
-        disabled={aiDisabled}
-        className={aiBtnBase}
-        aria-label="AI Proofread"
-        title="Proofread selected text (or entire document)">
-        {isGenerating ? (
-          <span className="animate-pulse">Proofread</span>
-        ) : (
-          'Proofread'
-        )}
-      </button>
-      <button
-        onClick={handleGenerate}
-        disabled={aiDisabled}
-        className={aiBtnBase}
-        aria-label="AI Generate Paragraph"
-        title="Generate a paragraph at the end of the document">
-        {isGenerating ? (
-          <span className="animate-pulse">Generate</span>
-        ) : (
-          'Generate'
-        )}
-      </button>
+      {isGenerating ? (
+        <button
+          onClick={abort}
+          className="flex cursor-pointer items-center gap-1 rounded-md border border-solid border-red-200 bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700 transition-colors duration-150 hover:bg-red-100 dark:border-red-700 dark:bg-red-950 dark:text-red-300 dark:hover:bg-red-900"
+          aria-label="Stop AI"
+          title="Stop AI generation (Escape)">
+          <span className="animate-pulse">Stop</span>
+        </button>
+      ) : (
+        <>
+          <button
+            onClick={handleProofread}
+            disabled={aiDisabled}
+            className={aiBtnBase}
+            aria-label="AI Proofread"
+            title="Proofread selected text (or entire document)">
+            Proofread
+          </button>
+          <button
+            onClick={handleGenerate}
+            disabled={aiDisabled}
+            className={aiBtnBase}
+            aria-label="AI Generate Paragraph"
+            title="Generate a paragraph at the end of the document">
+            Generate
+          </button>
+        </>
+      )}
     </div>
   );
 }

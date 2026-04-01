@@ -471,13 +471,41 @@ i.justify-align {
   line-height: 20px;
 }
 
+@keyframes ai-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
 .ai-status {
   font-size: 12px;
-  color: #888;
+  color: #556;
   padding: 4px 8px;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   white-space: nowrap;
+  gap: 3px;
+  animation: ai-pulse 1.5s ease-in-out infinite;
+}
+
+.ai-progress-bar {
+  width: 100%;
+  height: 3px;
+  background: #e0e4ee;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.ai-progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #6688cc, #4466bb);
+  border-radius: 2px;
+  transition: width 0.3s ease;
 }
 
 .ai-error {

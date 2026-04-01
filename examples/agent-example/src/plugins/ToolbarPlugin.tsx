@@ -262,6 +262,14 @@ export default function ToolbarPlugin() {
       {modelStatus === 'loading' && (
         <span className="toolbar-item ai-status">
           Loading model{loadProgress !== null ? ` ${loadProgress}%` : '...'}
+          {loadProgress !== null && (
+            <span className="ai-progress-bar">
+              <span
+                className="ai-progress-bar-fill"
+                style={{width: `${loadProgress}%`}}
+              />
+            </span>
+          )}
         </span>
       )}
       {isGenerating && (

@@ -118,9 +118,7 @@ describe('extractEntityNodes', () => {
         root.append(p);
       });
 
-      const result = editor
-        .getEditorState()
-        .read(() => $collectTextNodeOffsets());
+      const result = editor.getEditorState().read($collectTextNodeOffsets);
       expect(result.fullText).toBe('Hello world');
       expect(result.textNodes).toHaveLength(1);
       expect(result.textNodes[0].start).toBe(0);
@@ -138,9 +136,7 @@ describe('extractEntityNodes', () => {
         root.append(p);
       });
 
-      const result = editor
-        .getEditorState()
-        .read(() => $collectTextNodeOffsets());
+      const result = editor.getEditorState().read($collectTextNodeOffsets);
       expect(result.fullText).toBe('Hello world');
       expect(result.textNodes).toHaveLength(2);
       expect(result.textNodes[0]).toMatchObject({length: 6, start: 0});
@@ -157,9 +153,7 @@ describe('extractEntityNodes', () => {
         root.append(p1, p2);
       });
 
-      const result = editor
-        .getEditorState()
-        .read(() => $collectTextNodeOffsets());
+      const result = editor.getEditorState().read($collectTextNodeOffsets);
       // Blocks are joined with a single space (not \n\n from getTextContent)
       expect(result.fullText).toBe('Line one Line two');
       expect(result.textNodes).toHaveLength(2);
@@ -178,9 +172,7 @@ describe('extractEntityNodes', () => {
         root.append(p);
       });
 
-      const textInfo = editor
-        .getEditorState()
-        .read(() => $collectTextNodeOffsets());
+      const textInfo = editor.getEditorState().read($collectTextNodeOffsets);
       const entities: EntitySpan[] = [
         {end: 12, entity: 'LOC', start: 6, text: 'London'},
       ];
@@ -207,9 +199,7 @@ describe('extractEntityNodes', () => {
         root.append(p);
       });
 
-      const textInfo = editor
-        .getEditorState()
-        .read(() => $collectTextNodeOffsets());
+      const textInfo = editor.getEditorState().read($collectTextNodeOffsets);
       const entities: EntitySpan[] = [
         {end: 6, entity: 'LOC', start: 0, text: 'London'},
       ];
@@ -234,9 +224,7 @@ describe('extractEntityNodes', () => {
         root.append(p);
       });
 
-      const textInfo = editor
-        .getEditorState()
-        .read(() => $collectTextNodeOffsets());
+      const textInfo = editor.getEditorState().read($collectTextNodeOffsets);
       const entities: EntitySpan[] = [
         {end: 12, entity: 'LOC', start: 6, text: 'London'},
       ];
@@ -261,9 +249,7 @@ describe('extractEntityNodes', () => {
         root.append(p);
       });
 
-      const textInfo = editor
-        .getEditorState()
-        .read(() => $collectTextNodeOffsets());
+      const textInfo = editor.getEditorState().read($collectTextNodeOffsets);
       const entities: EntitySpan[] = [
         {end: 6, entity: 'LOC', start: 0, text: 'London'},
       ];
@@ -285,9 +271,7 @@ describe('extractEntityNodes', () => {
         root.append(p);
       });
 
-      const textInfo = editor
-        .getEditorState()
-        .read(() => $collectTextNodeOffsets());
+      const textInfo = editor.getEditorState().read($collectTextNodeOffsets);
       const entities: EntitySpan[] = [
         {end: 11, entity: 'LOC', start: 5, text: 'London'},
         {end: 20, entity: 'LOC', start: 15, text: 'Paris'},
@@ -317,9 +301,7 @@ describe('extractEntityNodes', () => {
         root.append(p);
       });
 
-      const textInfo = editor
-        .getEditorState()
-        .read(() => $collectTextNodeOffsets());
+      const textInfo = editor.getEditorState().read($collectTextNodeOffsets);
       const entities: EntitySpan[] = [
         {end: 3, entity: 'PER', start: 0, text: 'Bob'},
         {end: 13, entity: 'LOC', start: 7, text: 'London'},
@@ -351,9 +333,7 @@ describe('extractEntityNodes', () => {
         root.append(p);
       });
 
-      const textInfo = editor
-        .getEditorState()
-        .read(() => $collectTextNodeOffsets());
+      const textInfo = editor.getEditorState().read($collectTextNodeOffsets);
       const entities: EntitySpan[] = [
         {end: 12, entity: 'MISC', start: 6, text: 'London'},
       ];
@@ -375,9 +355,7 @@ describe('extractEntityNodes', () => {
         root.append(p);
       });
 
-      const textInfo = editor
-        .getEditorState()
-        .read(() => $collectTextNodeOffsets());
+      const textInfo = editor.getEditorState().read($collectTextNodeOffsets);
       const entities: EntitySpan[] = [
         {end: 6, entity: 'LOC', start: 0, text: 'London'},
         {end: 11, entity: 'LOC', start: 6, text: 'Paris'},
@@ -405,9 +383,7 @@ describe('extractEntityNodes', () => {
         root.append(p1, p2);
       });
 
-      const textInfo = editor
-        .getEditorState()
-        .read(() => $collectTextNodeOffsets());
+      const textInfo = editor.getEditorState().read($collectTextNodeOffsets);
       // "Visit London See Paris" (blocks joined with single space)
       expect(textInfo.fullText).toBe('Visit London See Paris');
       const entities: EntitySpan[] = [
@@ -435,9 +411,7 @@ describe('extractEntityNodes', () => {
         root.append(p);
       });
 
-      const textInfo = editor
-        .getEditorState()
-        .read(() => $collectTextNodeOffsets());
+      const textInfo = editor.getEditorState().read($collectTextNodeOffsets);
       const entities: EntitySpan[] = [
         {end: 39, entity: 'PER', start: 23, text: 'Dominic Gannaway'},
         {end: 49, entity: 'LOC', start: 43, text: 'London'},

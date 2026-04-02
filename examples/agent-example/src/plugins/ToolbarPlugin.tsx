@@ -105,13 +105,11 @@ function $getToolbarState(): {
     return null;
   }
   const anchorNode = selection.anchor.getNode();
-  let topLevelElement = $findMatchingParent(anchorNode, (e) => {
-    const parent = e.getParent();
-    return parent !== null && $isRootOrShadowRoot(parent);
-  });
-  if (topLevelElement === null) {
-    topLevelElement = anchorNode.getTopLevelElementOrThrow();
-  }
+  const topLevelElement =
+    $findMatchingParent(anchorNode, (e) => {
+      const parent = e.getParent();
+      return parent !== null && $isRootOrShadowRoot(parent);
+    }) || anchorNode.getTopLevelElementOrThrow();
 
   return {
     blockType: $isHeadingNode(topLevelElement)
@@ -125,17 +123,30 @@ function $getToolbarState(): {
 
 function $appendToken(paragraphKey: string, token: string): void {
   const paragraph = $getNodeByKey(paragraphKey);
-  if ($isElementNode(paragraph)) {
-    const parts = token.split(/(\n|\t)/);
-    for (const part of parts) {
-      if (part === '\n') {
-        paragraph.append($createLineBreakNode());
-      } else if (part === '\t') {
-        paragraph.append($createTabNode());
-      } else if (part) {
-        paragraph.append($createTextNode(part));
-      }
+  if (!$isElementNode(paragraph)) {
+    return;
+  }
+  let pos = 0;
+  while (pos < token.length) {
+    const nextN = token.indexOf('\n', pos);
+    const nextT = token.indexOf('\t', pos);
+    let next = token.length;
+    if (nextN !== -1 && nextN < next) {
+      next = nextN;
     }
+    if (nextT !== -1 && nextT < next) {
+      next = nextT;
+    }
+    if (next > pos) {
+      paragraph.append($createTextNode(token.slice(pos, next)));
+    }
+    if (next < token.length) {
+      paragraph.append(
+        token[next] === '\n' ? $createLineBreakNode() : $createTabNode(),
+      );
+      next++;
+    }
+    pos = next;
   }
 }
 
@@ -143,7 +154,7 @@ export const ToolbarExtension = defineExtension({
   build(editor, _config, state) {
     const ai = state.getDependency(AIExtension).output;
 
-    function handleGenerate(): Promise<string | null> {
+    async function handleGenerate(): Promise<string | null> {
       const context = editor
         .getEditorState()
         .read(() => $getRoot().getTextContent());
@@ -156,50 +167,48 @@ export const ToolbarExtension = defineExtension({
         paragraphKey = paragraph.getKey();
       });
 
-      return ai
-        .generateParagraph(context, (token: string) => {
-          if (paragraphKey) {
-            editor.update(() => $appendToken(paragraphKey!, token), {
-              tag: 'ai-stream',
-            });
+      const result = await ai.generateParagraph(context, (token: string) => {
+        if (paragraphKey) {
+          editor.update(() => $appendToken(paragraphKey!, token), {
+            tag: 'ai-stream',
+          });
+        }
+      });
+
+      if (paragraphKey) {
+        editor.update(() => {
+          const paragraph = $getNodeByKey(paragraphKey!);
+          if ($isElementNode(paragraph)) {
+            paragraph.selectEnd();
           }
-        })
-        .then((result) => {
-          if (paragraphKey) {
-            editor.update(() => {
-              const paragraph = $getNodeByKey(paragraphKey!);
-              if ($isElementNode(paragraph)) {
-                paragraph.selectEnd();
-              }
-            });
-          }
-          return result;
         });
-    }
-
-    function handleExtractEntities(): Promise<void> {
-      const textInfo = editor
-        .getEditorState()
-        .read(() => $collectTextNodeOffsets());
-
-      if (!textInfo.fullText.trim()) {
-        return Promise.resolve();
       }
 
-      return ai
-        .extractEntities(textInfo.fullText, ['LOC', 'PER', 'ORG'])
-        .then((entities) => {
-          if (entities.length === 0) {
-            return;
-          }
-          editor.update(() => {
-            $replaceTextWithEntityNodes(textInfo.textNodes, entities, {
-              LOC: $createPlaceNode,
-              ORG: $createOrgNode,
-              PER: $createPersonNode,
-            });
-          });
+      return result;
+    }
+
+    async function handleExtractEntities(): Promise<void> {
+      const textInfo = editor.getEditorState().read($collectTextNodeOffsets);
+
+      if (!textInfo.fullText.trim()) {
+        return;
+      }
+
+      const entities = await ai.extractEntities(textInfo.fullText, [
+        'LOC',
+        'PER',
+        'ORG',
+      ]);
+      if (entities.length === 0) {
+        return;
+      }
+      editor.update(() => {
+        $replaceTextWithEntityNodes(textInfo.textNodes, entities, {
+          LOC: $createPlaceNode,
+          ORG: $createOrgNode,
+          PER: $createPersonNode,
         });
+      });
     }
 
     return {
@@ -266,7 +275,7 @@ function useToolbar() {
   };
 }
 
-export function ToolbarComponent(): JSX.Element {
+export function Toolbar(): JSX.Element {
   const [editor] = useLexicalComposerContext();
   const toolbarRef = useRef<HTMLDivElement>(null);
   const ai = useAI();

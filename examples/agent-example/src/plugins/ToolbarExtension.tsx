@@ -43,10 +43,14 @@ import React, {useRef} from 'react';
 
 import {AIExtension} from '../ai/AIExtension';
 import {useAI, type UseAIReturn} from '../ai/useAI';
-import {$createAICaretNode, $isAICaretNode} from '../nodes/AICaretNode';
-import {$createOrgNode} from '../nodes/OrgNode';
-import {$createPersonNode} from '../nodes/PersonNode';
-import {$createPlaceNode} from '../nodes/PlaceNode';
+import {
+  $createAICaretNode,
+  $isAICaretNode,
+  AICaretNodeExtension,
+} from '../nodes/AICaretNode';
+import {$createOrgNode, OrgNodeExtension} from '../nodes/OrgNode';
+import {$createPersonNode, PersonNodeExtension} from '../nodes/PersonNode';
+import {$createPlaceNode, PlaceNodeExtension} from '../nodes/PlaceNode';
 import {
   $collectTextNodeOffsets,
   $replaceTextWithEntityNodes,
@@ -223,7 +227,13 @@ export const ToolbarExtension = defineExtension({
       isUnderline: signal(false),
     };
   },
-  dependencies: [AIExtension],
+  dependencies: [
+    AIExtension,
+    AICaretNodeExtension,
+    PlaceNodeExtension,
+    PersonNodeExtension,
+    OrgNodeExtension,
+  ],
   name: '@lexical/agent-example/toolbar',
   register(editor, _config, state) {
     const output = state.getOutput();

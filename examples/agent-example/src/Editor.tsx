@@ -19,10 +19,6 @@ import {
 } from 'lexical';
 
 import {AIExtension} from './ai/AIExtension';
-import {AICaretNodeExtension} from './nodes/AICaretNode';
-import {OrgNodeExtension} from './nodes/OrgNode';
-import {PersonNodeExtension} from './nodes/PersonNode';
-import {PlaceNodeExtension} from './nodes/PlaceNode';
 import {Toolbar, ToolbarExtension} from './plugins/ToolbarExtension';
 import {useExtensionSignalValue} from './utils/useExtensionHooks';
 
@@ -57,10 +53,6 @@ const agentEditorExtension = defineExtension({
     HistoryExtension,
     TabIndentationExtension,
     AIExtension,
-    AICaretNodeExtension,
-    PlaceNodeExtension,
-    PersonNodeExtension,
-    OrgNodeExtension,
     ToolbarExtension,
   ],
   name: '@lexical/agent-example/editor',

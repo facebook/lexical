@@ -7,9 +7,8 @@ Based on the [website-toolbar](../website-toolbar) example with added AI capabil
 ## Features
 
 - **Rich text editing** with block types (headings, quotes), formatting (bold, italic, underline), and alignment
-- **AI Rewrite** — select text (or use the entire document) and choose a style (Formal, Casual, Concise, Simpler) to rewrite it
 - **AI Generate** — click "Generate" to have the AI write a new paragraph, streamed token-by-token into the editor
-- **Extract Entities** — detect people, places, and organizations in the text and replace them with interactive decorator nodes (PlaceNode links to Google Maps, PersonNode links to Wikipedia, OrgNode links to Google search)
+- **Extract Entities** — detect people, places, and organizations in the text and replace them with interactive decorator nodes (PlaceNode links to Google Maps, PersonNode and OrgNode link to Google search)
 - **Abort** — click "Stop" or press Escape to cancel an in-progress AI operation
 - **Dark mode** toggle
 
@@ -17,7 +16,7 @@ Based on the [website-toolbar](../website-toolbar) example with added AI capabil
 
 Uses two models running via `@huggingface/transformers` in a Web Worker with the WASM backend for broad compatibility, including Safari on iOS:
 
-- [SmolLM2-135M-Instruct](https://huggingface.co/HuggingFaceTB/SmolLM2-135M-Instruct) (q4 quantized, ~70MB) for text generation and rewriting
+- [SmolLM2-135M-Instruct](https://huggingface.co/HuggingFaceTB/SmolLM2-135M-Instruct) (q4 quantized, ~70MB) for text generation
 - [Xenova/bert-base-NER](https://huggingface.co/Xenova/bert-base-NER) for named entity recognition (people, places, organizations)
 
 Models are loaded lazily on first use. Generated text streams directly into the editor as tokens arrive. Extracted entities are converted into color-coded decorator nodes with contextual links.

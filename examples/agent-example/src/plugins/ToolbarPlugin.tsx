@@ -112,15 +112,8 @@ export function ToolbarPlugin({ai}: {ai: UseAIReturn}) {
   const [isItalic, setIsItalic] = useState(false);
   const [isUnderline, setIsUnderline] = useState(false);
 
-  const {
-    abort,
-    extractEntities,
-    generateParagraph,
-    isGenerating,
-    modelStatus,
-    rewrite,
-  } = ai;
-  const [rewriteStyle, setRewriteStyle] = useState('formal');
+  const {abort, extractEntities, generateParagraph, isGenerating, modelStatus} =
+    ai;
 
   const $updateToolbar = useCallback(() => {
     const selection = $getSelection();
@@ -173,43 +166,6 @@ export function ToolbarPlugin({ai}: {ai: UseAIReturn}) {
       ),
     );
   }, [editor, $updateToolbar]);
-
-  const handleRewrite = useCallback(async () => {
-    const {hasSelection, textToRewrite} = editor.getEditorState().read(() => {
-      const selection = $getSelection();
-      if ($isRangeSelection(selection) && !selection.isCollapsed()) {
-        return {hasSelection: true, textToRewrite: selection.getTextContent()};
-      }
-      return {hasSelection: false, textToRewrite: $getRoot().getTextContent()};
-    });
-
-    if (!textToRewrite.trim()) {
-      return;
-    }
-
-    const result = await rewrite(textToRewrite, rewriteStyle);
-    if (result == null || !result.trim()) {
-      return;
-    }
-
-    editor.update(() => {
-      if (hasSelection) {
-        const selection = $getSelection();
-        if ($isRangeSelection(selection)) {
-          selection.insertRawText(result);
-        }
-      } else {
-        const root = $getRoot();
-        root.clear();
-        const lines = result.split('\n');
-        for (const line of lines) {
-          const paragraph = $createParagraphNode();
-          paragraph.append($createTextNode(line));
-          root.append(paragraph);
-        }
-      }
-    });
-  }, [editor, rewrite, rewriteStyle]);
 
   const handleGenerate = useCallback(async () => {
     const context = editor
@@ -423,25 +379,6 @@ export function ToolbarPlugin({ai}: {ai: UseAIReturn}) {
         </button>
       ) : (
         <>
-          <select
-            value={rewriteStyle}
-            onChange={(e) => setRewriteStyle(e.target.value)}
-            disabled={aiDisabled}
-            className="cursor-pointer appearance-none rounded-md border border-solid border-zinc-300 bg-white px-2 py-1 text-xs font-medium text-zinc-700 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-200"
-            aria-label="Rewrite style">
-            <option value="formal">Formal</option>
-            <option value="casual">Casual</option>
-            <option value="concise">Concise</option>
-            <option value="simpler">Simpler</option>
-          </select>
-          <button
-            onClick={handleRewrite}
-            disabled={aiDisabled}
-            className={aiBtnBase}
-            aria-label="AI Rewrite"
-            title="Rewrite selected text (or entire document) in the chosen style">
-            Rewrite
-          </button>
           <button
             onClick={handleGenerate}
             disabled={aiDisabled}

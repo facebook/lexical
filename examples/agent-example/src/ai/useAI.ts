@@ -27,7 +27,6 @@ export interface UseAIReturn {
   isGenerating: boolean;
   loadProgress: number | null;
   modelStatus: ModelStatus;
-  rewrite: (text: string, style: string) => Promise<string | null>;
 }
 
 export function useAI(): UseAIReturn {
@@ -70,6 +69,5 @@ export function useAI(): UseAIReturn {
     isGenerating,
     loadProgress,
     modelStatus,
-    rewrite: ai.rewrite,
   };
 }

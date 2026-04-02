@@ -19,9 +19,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <ThemeToggle />
       <h1 className="text-2xl font-bold">Lexical AI Agent Example</h1>
       <p className="max-w-lg text-center text-sm text-zinc-500 dark:text-zinc-400">
-        Rich text editor with AI-powered text rewriting, paragraph generation,
-        and named entity extraction using SmolLM2-135M and Xenova/bert-base-NER
-        running in the browser via WebAssembly.
+        Rich text editor with AI-powered paragraph generation and named entity
+        extraction using SmolLM2-135M and Xenova/bert-base-NER running in the
+        browser via WebAssembly.
       </p>
       <Editor />
     </div>

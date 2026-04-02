@@ -29,43 +29,6 @@ interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
 }
 
-const REWRITE_STYLES: Record<string, string> = {
-  casual: 'casual',
-  concise: 'concise',
-  formal: 'formal',
-  simpler: 'simple',
-};
-
-function buildRewriteMessages(text: string, style: string): ChatMessage[] {
-  const styleDescription = REWRITE_STYLES[style] || style;
-  return [
-    {
-      content:
-        'Rewrite text in the requested style. Output only the rewritten text.',
-      role: 'system',
-    },
-    {
-      content: `${styleDescription}:\n${text}`,
-      role: 'user',
-    },
-  ];
-}
-
-/**
- * Strip instruction-like preamble that small models sometimes echo back.
- * For example: "Rewrite this text in a casual tone:\n\nActual rewritten text"
- */
-function cleanRewriteOutput(output: string, originalText: string): string {
-  let cleaned = output;
-  // Strip lines that look like instructions (e.g. "Rewrite this text...")
-  cleaned = cleaned.replace(/^(Here(?:'s| is)[^\n]*:|Rewrite[^\n]*:)\s*/i, '');
-  // If the model returned the original text verbatim, treat as failure
-  if (cleaned.trim() === originalText.trim()) {
-    return '';
-  }
-  return cleaned.trim();
-}
-
 function buildGenerateMessages(context: string): ChatMessage[] {
   if (context.trim()) {
     return [
@@ -242,14 +205,6 @@ function createAIState() {
     });
   }
 
-  async function rewrite(text: string, style: string): Promise<string | null> {
-    const result = await sendRequest(buildRewriteMessages(text, style), 512);
-    if (result == null) {
-      return null;
-    }
-    return cleanRewriteOutput(result, text) || null;
-  }
-
   function generateParagraph(
     context: string,
     onToken: (token: string) => void,
@@ -286,7 +241,6 @@ function createAIState() {
     isGenerating,
     loadProgress,
     modelStatus,
-    rewrite,
   };
 }
 

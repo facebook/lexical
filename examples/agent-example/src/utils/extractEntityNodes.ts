@@ -10,6 +10,7 @@ import {
   $getNodeByKey,
   $getRoot,
   $isElementNode,
+  $isLineBreakNode,
   $isTextNode,
   type ElementNode,
   type LexicalNode,
@@ -50,8 +51,7 @@ export function $collectTextNodeOffsets(): {
   let offset = 0;
 
   const walk = (node: ElementNode, isFirstBlock: {value: boolean}) => {
-    const children = node.getChildren();
-    for (const child of children) {
+    for (const child of node.getChildren()) {
       if ($isTextNode(child)) {
         const content = child.getTextContent();
         const len = content.length;
@@ -60,7 +60,6 @@ export function $collectTextNodeOffsets(): {
         offset += len;
       } else if ($isElementNode(child)) {
         if (!child.isInline()) {
-          // Insert a single space between block-level elements
           if (!isFirstBlock.value) {
             chunks.push(' ');
             offset += 1;
@@ -68,6 +67,18 @@ export function $collectTextNodeOffsets(): {
           isFirstBlock.value = false;
         }
         walk(child, isFirstBlock);
+      } else if ($isLineBreakNode(child)) {
+        chunks.push('\n');
+        offset += 1;
+      } else {
+        // DecoratorNode or other non-text leaf nodes: account for their
+        // text content length so subsequent offsets remain correct, but
+        // don't add them to the textNodes map since they can't be split.
+        const content = child.getTextContent();
+        if (content.length > 0) {
+          chunks.push(content);
+          offset += content.length;
+        }
       }
     }
   };

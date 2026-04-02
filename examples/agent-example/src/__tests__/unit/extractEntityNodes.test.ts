@@ -9,7 +9,9 @@
 import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
 import {
   $create,
+  $createLineBreakNode,
   $createParagraphNode,
+  $createTabNode,
   $createTextNode,
   $getRoot,
   $getState,
@@ -160,6 +162,186 @@ describe('extractEntityNodes', () => {
       expect(result.textNodes[0]).toMatchObject({length: 8, start: 0});
       // After "Line one" (8 chars) + space separator (1 char) = start at 9
       expect(result.textNodes[1]).toMatchObject({length: 8, start: 9});
+    });
+
+    test('accounts for line break nodes', async () => {
+      await editor.update(() => {
+        const root = $getRoot();
+        const p = $createParagraphNode();
+        p.append(
+          $createTextNode('Hello'),
+          $createLineBreakNode(),
+          $createTextNode('world'),
+        );
+        root.append(p);
+      });
+
+      const result = editor.getEditorState().read($collectTextNodeOffsets);
+      expect(result.fullText).toBe('Hello\nworld');
+      expect(result.textNodes).toHaveLength(2);
+      expect(result.textNodes[0]).toMatchObject({length: 5, start: 0});
+      // After "Hello" (5) + "\n" (1) = start at 6
+      expect(result.textNodes[1]).toMatchObject({length: 5, start: 6});
+    });
+
+    test('accounts for tab nodes', async () => {
+      await editor.update(() => {
+        const root = $getRoot();
+        const p = $createParagraphNode();
+        p.append(
+          $createTextNode('col1'),
+          $createTabNode(),
+          $createTextNode('col2'),
+        );
+        root.append(p);
+      });
+
+      const result = editor.getEditorState().read($collectTextNodeOffsets);
+      expect(result.fullText).toBe('col1\tcol2');
+      expect(result.textNodes).toHaveLength(3);
+      expect(result.textNodes[0]).toMatchObject({length: 4, start: 0});
+      // TabNode extends TextNode so it appears in textNodes
+      expect(result.textNodes[1]).toMatchObject({length: 1, start: 4});
+      expect(result.textNodes[2]).toMatchObject({length: 4, start: 5});
+    });
+
+    test('accounts for inline decorator nodes', async () => {
+      await editor.update(() => {
+        const root = $getRoot();
+        const p = $createParagraphNode();
+        p.append(
+          $createTextNode('Visit '),
+          $createTestEntityNode('London'),
+          $createTextNode(' today'),
+        );
+        root.append(p);
+      });
+
+      const result = editor.getEditorState().read($collectTextNodeOffsets);
+      // Decorator text content is included in fullText for correct offsets
+      expect(result.fullText).toBe('Visit London today');
+      // But decorator nodes are not in textNodes (they can't be split)
+      expect(result.textNodes).toHaveLength(2);
+      expect(result.textNodes[0]).toMatchObject({length: 6, start: 0});
+      // After "Visit " (6) + "London" (6) = start at 12
+      expect(result.textNodes[1]).toMatchObject({length: 6, start: 12});
+    });
+
+    test('handles multiple line breaks in sequence', async () => {
+      await editor.update(() => {
+        const root = $getRoot();
+        const p = $createParagraphNode();
+        p.append(
+          $createTextNode('a'),
+          $createLineBreakNode(),
+          $createLineBreakNode(),
+          $createTextNode('b'),
+        );
+        root.append(p);
+      });
+
+      const result = editor.getEditorState().read($collectTextNodeOffsets);
+      expect(result.fullText).toBe('a\n\nb');
+      expect(result.textNodes).toHaveLength(2);
+      expect(result.textNodes[0]).toMatchObject({length: 1, start: 0});
+      expect(result.textNodes[1]).toMatchObject({length: 1, start: 3});
+    });
+
+    test('handles mixed content: text, line breaks, tabs, decorators', async () => {
+      await editor.update(() => {
+        const root = $getRoot();
+        const p = $createParagraphNode();
+        p.append(
+          $createTextNode('Hello'),
+          $createLineBreakNode(),
+          $createTextNode('Visit '),
+          $createTestEntityNode('London'),
+          $createTabNode(),
+          $createTextNode('end'),
+        );
+        root.append(p);
+      });
+
+      const result = editor.getEditorState().read($collectTextNodeOffsets);
+      expect(result.fullText).toBe('Hello\nVisit London\tend');
+      expect(result.textNodes).toHaveLength(4);
+      expect(result.textNodes[0]).toMatchObject({length: 5, start: 0}); // "Hello"
+      expect(result.textNodes[1]).toMatchObject({length: 6, start: 6}); // "Visit "
+      // "London" (decorator, 6 chars) is skipped in textNodes
+      expect(result.textNodes[2]).toMatchObject({length: 1, start: 18}); // "\t" (TabNode)
+      expect(result.textNodes[3]).toMatchObject({length: 3, start: 19}); // "end"
+    });
+
+    test('handles empty document', async () => {
+      const result = editor.getEditorState().read($collectTextNodeOffsets);
+      expect(result.fullText).toBe('');
+      expect(result.textNodes).toHaveLength(0);
+    });
+
+    test('handles paragraph with only a line break', async () => {
+      await editor.update(() => {
+        const root = $getRoot();
+        const p = $createParagraphNode();
+        p.append($createLineBreakNode());
+        root.append(p);
+      });
+
+      const result = editor.getEditorState().read($collectTextNodeOffsets);
+      expect(result.fullText).toBe('\n');
+      expect(result.textNodes).toHaveLength(0);
+    });
+
+    test('handles decorator node at start of paragraph', async () => {
+      await editor.update(() => {
+        const root = $getRoot();
+        const p = $createParagraphNode();
+        p.append($createTestEntityNode('London'), $createTextNode(' is great'));
+        root.append(p);
+      });
+
+      const result = editor.getEditorState().read($collectTextNodeOffsets);
+      expect(result.fullText).toBe('London is great');
+      expect(result.textNodes).toHaveLength(1);
+      // "London" (6) from decorator, then text starts at 6
+      expect(result.textNodes[0]).toMatchObject({length: 9, start: 6});
+    });
+
+    test('handles decorator node at end of paragraph', async () => {
+      await editor.update(() => {
+        const root = $getRoot();
+        const p = $createParagraphNode();
+        p.append($createTextNode('Visit '), $createTestEntityNode('London'));
+        root.append(p);
+      });
+
+      const result = editor.getEditorState().read($collectTextNodeOffsets);
+      expect(result.fullText).toBe('Visit London');
+      expect(result.textNodes).toHaveLength(1);
+      expect(result.textNodes[0]).toMatchObject({length: 6, start: 0});
+    });
+
+    test('handles multiple paragraphs with mixed node types', async () => {
+      await editor.update(() => {
+        const root = $getRoot();
+        const p1 = $createParagraphNode();
+        p1.append(
+          $createTextNode('Hello'),
+          $createLineBreakNode(),
+          $createTextNode('world'),
+        );
+        const p2 = $createParagraphNode();
+        p2.append($createTestEntityNode('London'), $createTextNode(' calling'));
+        root.append(p1, p2);
+      });
+
+      const result = editor.getEditorState().read($collectTextNodeOffsets);
+      // p1: "Hello\nworld" (11), space separator (1), p2: "London calling" (14)
+      expect(result.fullText).toBe('Hello\nworld London calling');
+      expect(result.textNodes).toHaveLength(3);
+      expect(result.textNodes[0]).toMatchObject({length: 5, start: 0}); // "Hello"
+      expect(result.textNodes[1]).toMatchObject({length: 5, start: 6}); // "world"
+      // space (1) + "London" decorator (6) = start at 18
+      expect(result.textNodes[2]).toMatchObject({length: 8, start: 18}); // " calling"
     });
   });
 

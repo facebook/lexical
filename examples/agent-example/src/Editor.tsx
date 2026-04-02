@@ -42,7 +42,7 @@ const theme = {
 };
 
 const SAMPLE_TEXT =
-  'The annual tech conference organized by Google kicked off in San Francisco last week, with Sundar Pichai delivering the opening keynote. Engineers from Microsoft and Apple traveled from London and Tokyo to attend workshops on AI and accessibility. Meanwhile, a team from the European Space Agency in Paris demonstrated new collaboration tools, while researchers from MIT in Cambridge presented advances in real-time text editing.';
+  'Mark Zuckerberg announced at a recent Meta event in Menlo Park that the Lexical framework would expand its open-source partnerships. Engineers from Bloomberg in New York and teams at Microsoft in Seattle have already adopted the editor for production use. Jordan Walke, creator of React, joined a panel in San Francisco alongside Sophie Alpert to discuss the future of web frameworks. Meanwhile, researchers from MIT in Cambridge presented advances in real-time collaboration built on Lexical.';
 
 const agentEditorExtension = defineExtension({
   $initialEditorState: () => {

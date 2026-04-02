@@ -8,9 +8,10 @@
 
 import type {JSX} from 'react';
 
-import {signal} from '@lexical/extension';
+import {type ReadonlySignal, signal} from '@lexical/extension';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {ReactExtension} from '@lexical/react/ReactExtension';
+import {useExtensionDependency} from '@lexical/react/useExtensionComponent';
 import {
   $createHeadingNode,
   $createQuoteNode,
@@ -40,11 +41,10 @@ import {
   REDO_COMMAND,
   UNDO_COMMAND,
 } from 'lexical';
-import React, {useCallback, useRef} from 'react';
+import React, {useCallback, useMemo, useRef, useSyncExternalStore} from 'react';
 
 import {AIExtension} from '../ai/AIExtension';
 import {useAI, type UseAIReturn} from '../ai/useAI';
-import {useExtensionSignalValue} from '../ai/useAI';
 import {$createOrgNode} from '../nodes/OrgNode';
 import {$createPersonNode} from '../nodes/PersonNode';
 import {$createPlaceNode} from '../nodes/PlaceNode';
@@ -123,21 +123,25 @@ function $getToolbarState(): {
   };
 }
 
-function createToolbarState() {
-  return {
-    Component: ToolbarComponent,
-    blockType: signal('paragraph'),
-    canRedo: signal(false),
-    canUndo: signal(false),
-    isBold: signal(false),
-    isItalic: signal(false),
-    isUnderline: signal(false),
-  };
+function useSignalValue<V>(s: ReadonlySignal<V>): V {
+  const [subscribe, getSnapshot] = useMemo(
+    () => [s.subscribe.bind(s), s.peek.bind(s)] as const,
+    [s],
+  );
+  return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
 
 export const ToolbarExtension = defineExtension({
   build() {
-    return createToolbarState();
+    return {
+      Component: ToolbarComponent,
+      blockType: signal('paragraph'),
+      canRedo: signal(false),
+      canUndo: signal(false),
+      isBold: signal(false),
+      isItalic: signal(false),
+      isUnderline: signal(false),
+    };
   },
   dependencies: [ReactExtension, AIExtension],
   name: '@lexical/agent-example/toolbar',
@@ -178,17 +182,18 @@ export const ToolbarExtension = defineExtension({
   },
 });
 
-export function ToolbarComponent(): JSX.Element {
+function ToolbarComponent(): JSX.Element {
   const [editor] = useLexicalComposerContext();
   const toolbarRef = useRef<HTMLDivElement>(null);
   const ai = useAI();
+  const toolbar = useExtensionDependency(ToolbarExtension).output;
 
-  const canUndo = useExtensionSignalValue(ToolbarExtension, 'canUndo');
-  const canRedo = useExtensionSignalValue(ToolbarExtension, 'canRedo');
-  const blockType = useExtensionSignalValue(ToolbarExtension, 'blockType');
-  const isBold = useExtensionSignalValue(ToolbarExtension, 'isBold');
-  const isItalic = useExtensionSignalValue(ToolbarExtension, 'isItalic');
-  const isUnderline = useExtensionSignalValue(ToolbarExtension, 'isUnderline');
+  const canUndo = useSignalValue(toolbar.canUndo);
+  const canRedo = useSignalValue(toolbar.canRedo);
+  const blockType = useSignalValue(toolbar.blockType);
+  const isBold = useSignalValue(toolbar.isBold);
+  const isItalic = useSignalValue(toolbar.isItalic);
+  const isUnderline = useSignalValue(toolbar.isUnderline);
 
   const {abort, extractEntities, generateParagraph, isGenerating, modelStatus} =
     ai;

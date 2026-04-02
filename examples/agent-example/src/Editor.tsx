@@ -16,7 +16,9 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  type AnyLexicalExtension,
   defineExtension,
+  type LexicalExtensionOutput,
 } from 'lexical';
 
 import {AIExtension} from './ai/AIExtension';
@@ -25,6 +27,17 @@ import {OrgNodeExtension} from './nodes/OrgNode';
 import {PersonNodeExtension} from './nodes/PersonNode';
 import {PlaceNodeExtension} from './nodes/PlaceNode';
 import {ToolbarExtension} from './plugins/ToolbarPlugin';
+
+// TODO: submit fix upstream for useExtensionComponent to handle
+// extensions with register (Output invariance due to ExtensionRegisterState)
+function useExtensionComponent<
+  Extension extends AnyLexicalExtension,
+  Output extends LexicalExtensionOutput<Extension> & {
+    Component: React.ComponentType;
+  },
+>(extension: Extension): Output['Component'] {
+  return (useExtensionDependency(extension).output as Output).Component;
+}
 
 const theme = {
   heading: {
@@ -78,7 +91,7 @@ export default function Editor() {
 }
 
 function EditorContent() {
-  const Toolbar = useExtensionDependency(ToolbarExtension).output.Component;
+  const Toolbar = useExtensionComponent(ToolbarExtension);
   const modelStatus = useExtensionSignalValue(AIExtension, 'modelStatus');
   const loadProgress = useExtensionSignalValue(AIExtension, 'loadProgress');
 

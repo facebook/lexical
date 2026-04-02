@@ -41,7 +41,7 @@ async function getGenerator() {
 let activeAbortController: AbortController | null = null;
 
 self.onmessage = async (event: MessageEvent) => {
-  const {type, id, messages, maxTokens} = event.data;
+  const {type, id, messages, maxTokens, stopAt} = event.data;
 
   if (type === 'abort') {
     if (activeAbortController) {
@@ -62,6 +62,10 @@ self.onmessage = async (event: MessageEvent) => {
   const abortController = new AbortController();
   activeAbortController = abortController;
 
+  // Track accumulated text so we can stop early (e.g. after first paragraph)
+  let accumulated = '';
+  let stoppedEarly = false;
+
   try {
     const gen = await getGenerator();
     if (abortController.signal.aborted) {
@@ -71,9 +75,17 @@ self.onmessage = async (event: MessageEvent) => {
 
     const streamer = new TextStreamer(gen.tokenizer, {
       callback_function: (token: string) => {
-        if (!abortController.signal.aborted) {
-          self.postMessage({id, token, type: 'token'});
+        if (abortController.signal.aborted) {
+          return;
         }
+        accumulated += token;
+        // Stop generation when the stop pattern is found (e.g. "\n\n" for single paragraph)
+        if (stopAt && accumulated.includes(stopAt)) {
+          stoppedEarly = true;
+          abortController.abort();
+          return;
+        }
+        self.postMessage({id, token, type: 'token'});
       },
       skip_prompt: true,
       skip_special_tokens: true,
@@ -86,23 +98,42 @@ self.onmessage = async (event: MessageEvent) => {
       temperature: 0.7,
     });
 
-    if (abortController.signal.aborted) {
+    if (abortController.signal.aborted && !stoppedEarly) {
       return;
     }
 
-    const result = Array.isArray(output) ? output[0] : output;
-    const generatedMessages = (result as {generated_text: unknown})
-      .generated_text;
-    const lastMessage = Array.isArray(generatedMessages)
-      ? generatedMessages[generatedMessages.length - 1]
-      : null;
-    const fullText =
-      lastMessage && typeof lastMessage === 'object' && 'content' in lastMessage
-        ? String(lastMessage.content)
-        : '';
+    let fullText: string;
+    if (stoppedEarly) {
+      // Use accumulated text up to the stop pattern
+      const stopIndex = accumulated.indexOf(stopAt);
+      fullText = accumulated.slice(0, stopIndex).trim();
+    } else {
+      const result = Array.isArray(output) ? output[0] : output;
+      const generatedMessages = (result as {generated_text: unknown})
+        .generated_text;
+      const lastMessage = Array.isArray(generatedMessages)
+        ? generatedMessages[generatedMessages.length - 1]
+        : null;
+      fullText =
+        lastMessage &&
+        typeof lastMessage === 'object' &&
+        'content' in lastMessage
+          ? String(lastMessage.content)
+          : '';
+    }
 
     self.postMessage({fullText: fullText.trim(), id, type: 'done'});
   } catch (err: unknown) {
+    if (stoppedEarly) {
+      // Early stop triggers abort which may throw — send the good text
+      const stopIndex = accumulated.indexOf(stopAt);
+      const fullText =
+        stopIndex >= 0
+          ? accumulated.slice(0, stopIndex).trim()
+          : accumulated.trim();
+      self.postMessage({fullText, id, type: 'done'});
+      return;
+    }
     if (abortController.signal.aborted) {
       self.postMessage({id, type: 'aborted'});
       return;

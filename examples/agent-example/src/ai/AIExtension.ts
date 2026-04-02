@@ -188,6 +188,7 @@ function createAIState() {
     messages: ChatMessage[],
     maxTokens: number,
     onToken?: (token: string) => void,
+    stopAt?: string,
   ): Promise<string | null> {
     const w = getWorker();
     const id = `req_${++requestCounter}`;
@@ -195,7 +196,7 @@ function createAIState() {
     tokenCallback = onToken ?? null;
     return new Promise((resolve, reject) => {
       pending.set(id, {reject, resolve});
-      w.postMessage({id, maxTokens, messages, type: 'generate'});
+      w.postMessage({id, maxTokens, messages, stopAt, type: 'generate'});
     });
   }
 
@@ -211,7 +212,8 @@ function createAIState() {
     context: string,
     onToken: (token: string) => void,
   ): Promise<string | null> {
-    return sendRequest(buildGenerateMessages(context), 256, onToken);
+    // Stop after the first paragraph break to prevent the model from rambling
+    return sendRequest(buildGenerateMessages(context), 256, onToken, '\n\n');
   }
 
   function dispose(): void {

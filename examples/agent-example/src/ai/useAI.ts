@@ -33,7 +33,7 @@ export interface UseAIReturn {
 
 type SignalValue<S> = S extends ReadonlySignal<infer V> ? V : never;
 
-function useExtensionSignalValue<
+export function useExtensionSignalValue<
   Extension extends AnyLexicalExtension,
   K extends keyof LexicalExtensionOutput<Extension>,
 >(

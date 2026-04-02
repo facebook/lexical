@@ -6,16 +6,18 @@
  *
  */
 
-import type {UseAIReturn} from '../ai/useAI';
+import type {JSX} from 'react';
 
+import {signal} from '@lexical/extension';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {ReactExtension} from '@lexical/react/ReactExtension';
 import {
   $createHeadingNode,
   $createQuoteNode,
   $isHeadingNode,
 } from '@lexical/rich-text';
 import {$setBlocksType} from '@lexical/selection';
-import {$findMatchingParent, mergeRegister} from '@lexical/utils';
+import {$findMatchingParent} from '@lexical/utils';
 import {
   $createLineBreakNode,
   $createParagraphNode,
@@ -30,14 +32,19 @@ import {
   CAN_REDO_COMMAND,
   CAN_UNDO_COMMAND,
   COMMAND_PRIORITY_LOW,
+  defineExtension,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
   LexicalEditor,
+  mergeRegister,
   REDO_COMMAND,
   UNDO_COMMAND,
 } from 'lexical';
-import React, {useCallback, useEffect, useRef, useState} from 'react';
+import React, {useCallback, useRef} from 'react';
 
+import {AIExtension} from '../ai/AIExtension';
+import {useAI, type UseAIReturn} from '../ai/useAI';
+import {useExtensionSignalValue} from '../ai/useAI';
 import {$createOrgNode} from '../nodes/OrgNode';
 import {$createPersonNode} from '../nodes/PersonNode';
 import {$createPlaceNode} from '../nodes/PlaceNode';
@@ -54,35 +61,18 @@ const BLOCK_TYPES = [
   {label: 'Quote', value: 'quote'},
 ];
 
-function formatParagraph(editor: LexicalEditor) {
-  editor.update(() => {
-    const selection = $getSelection();
-    $setBlocksType(selection, () => $createParagraphNode());
-  });
-}
-
-function formatHeading(editor: LexicalEditor, headingTag: 'h1' | 'h2' | 'h3') {
-  editor.update(() => {
-    const selection = $getSelection();
-    $setBlocksType(selection, () => $createHeadingNode(headingTag));
-  });
-}
-
-function formatQuote(editor: LexicalEditor) {
-  editor.update(() => {
-    const selection = $getSelection();
-    $setBlocksType(selection, () => $createQuoteNode());
-  });
-}
-
 function applyBlockType(editor: LexicalEditor, type: string) {
-  if (type === 'paragraph') {
-    formatParagraph(editor);
-  } else if (type === 'quote') {
-    formatQuote(editor);
-  } else {
-    formatHeading(editor, type as 'h1' | 'h2' | 'h3');
-  }
+  editor.update(() => {
+    const selection = $getSelection();
+    if (type === 'paragraph') {
+      $setBlocksType(selection, $createParagraphNode);
+    } else if (type === 'quote') {
+      $setBlocksType(selection, $createQuoteNode);
+    } else {
+      const headingTag = type as 'h1' | 'h2' | 'h3';
+      $setBlocksType(selection, () => $createHeadingNode(headingTag));
+    }
+  });
 }
 
 function maskStyle(url: string): React.CSSProperties {
@@ -133,30 +123,36 @@ function $getToolbarState(): {
   };
 }
 
-export function ToolbarPlugin({ai}: {ai: UseAIReturn}) {
-  const [editor] = useLexicalComposerContext();
-  const toolbarRef = useRef<HTMLDivElement>(null);
-  const [canUndo, setCanUndo] = useState(false);
-  const [canRedo, setCanRedo] = useState(false);
-  const [blockType, setBlockType] = useState('paragraph');
-  const [isBold, setIsBold] = useState(false);
-  const [isItalic, setIsItalic] = useState(false);
-  const [isUnderline, setIsUnderline] = useState(false);
+function createToolbarState() {
+  return {
+    Component: ToolbarComponent,
+    blockType: signal('paragraph'),
+    canRedo: signal(false),
+    canUndo: signal(false),
+    isBold: signal(false),
+    isItalic: signal(false),
+    isUnderline: signal(false),
+  };
+}
 
-  const {abort, extractEntities, generateParagraph, isGenerating, modelStatus} =
-    ai;
-
-  useEffect(() => {
+export const ToolbarExtension = defineExtension({
+  build() {
+    return createToolbarState();
+  },
+  dependencies: [ReactExtension, AIExtension],
+  name: '@lexical/agent-example/toolbar',
+  register(editor, _config, state) {
+    const output = state.getOutput();
     return mergeRegister(
       editor.registerUpdateListener(({editorState}) => {
         editorState.read(
           () => {
-            const state = $getToolbarState();
-            if (state) {
-              setBlockType(state.blockType);
-              setIsBold(state.isBold);
-              setIsItalic(state.isItalic);
-              setIsUnderline(state.isUnderline);
+            const toolbarState = $getToolbarState();
+            if (toolbarState) {
+              output.blockType.value = toolbarState.blockType;
+              output.isBold.value = toolbarState.isBold;
+              output.isItalic.value = toolbarState.isItalic;
+              output.isUnderline.value = toolbarState.isUnderline;
             }
           },
           {editor},
@@ -165,7 +161,7 @@ export function ToolbarPlugin({ai}: {ai: UseAIReturn}) {
       editor.registerCommand(
         CAN_UNDO_COMMAND,
         (payload) => {
-          setCanUndo(payload);
+          output.canUndo.value = payload;
           return false;
         },
         COMMAND_PRIORITY_LOW,
@@ -173,13 +169,29 @@ export function ToolbarPlugin({ai}: {ai: UseAIReturn}) {
       editor.registerCommand(
         CAN_REDO_COMMAND,
         (payload) => {
-          setCanRedo(payload);
+          output.canRedo.value = payload;
           return false;
         },
         COMMAND_PRIORITY_LOW,
       ),
     );
-  }, [editor]);
+  },
+});
+
+export function ToolbarComponent(): JSX.Element {
+  const [editor] = useLexicalComposerContext();
+  const toolbarRef = useRef<HTMLDivElement>(null);
+  const ai = useAI();
+
+  const canUndo = useExtensionSignalValue(ToolbarExtension, 'canUndo');
+  const canRedo = useExtensionSignalValue(ToolbarExtension, 'canRedo');
+  const blockType = useExtensionSignalValue(ToolbarExtension, 'blockType');
+  const isBold = useExtensionSignalValue(ToolbarExtension, 'isBold');
+  const isItalic = useExtensionSignalValue(ToolbarExtension, 'isItalic');
+  const isUnderline = useExtensionSignalValue(ToolbarExtension, 'isUnderline');
+
+  const {abort, extractEntities, generateParagraph, isGenerating, modelStatus} =
+    ai;
 
   const handleGenerate = useCallback(async () => {
     const context = editor
@@ -392,37 +404,66 @@ export function ToolbarPlugin({ai}: {ai: UseAIReturn}) {
         />
       </button>
       <Divider />
-      {isGenerating ? (
-        <button
-          onClick={abort}
-          className="flex cursor-pointer items-center gap-1 rounded-md border border-solid border-red-200 bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700 transition-colors duration-150 hover:bg-red-100 dark:border-red-700 dark:bg-red-950 dark:text-red-300 dark:hover:bg-red-900"
-          aria-label="Stop AI"
-          title="Stop AI generation (Escape)">
-          <span className="animate-pulse">Stop</span>
-        </button>
-      ) : (
-        <>
-          <button
-            onClick={handleGenerate}
-            disabled={aiDisabled}
-            className={aiBtnBase}
-            aria-label="AI Generate Paragraph"
-            title="Generate a paragraph at the end of the document">
-            Generate
-          </button>
-          <button
-            onClick={handleExtractEntities}
-            disabled={aiDisabled}
-            className="flex cursor-pointer items-center gap-1 rounded-md border border-solid border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 transition-colors duration-150 enabled:hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-300 dark:enabled:hover:bg-amber-900"
-            aria-label="Extract Entities"
-            title="Find places, people, and organizations in the text and convert them to interactive nodes">
-            <svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12">
-              <path d="M8 1.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM5 4.5a1 1 0 1 0 0 2 1 1 0 0 0 0-2zm6 0a1 1 0 1 0 0 2 1 1 0 0 0 0-2zM3.5 8a.5.5 0 0 0-.5.5v1a3.5 3.5 0 0 0 3 3.46V15h4v-2.04A3.5 3.5 0 0 0 13 9.5v-1a.5.5 0 0 0-.5-.5h-9z" />
-            </svg>
-            Extract Entities
-          </button>
-        </>
-      )}
+      <AIButtons
+        abort={abort}
+        aiDisabled={aiDisabled}
+        aiBtnBase={aiBtnBase}
+        handleExtractEntities={handleExtractEntities}
+        handleGenerate={handleGenerate}
+        isGenerating={isGenerating}
+      />
     </div>
+  );
+}
+
+function AIButtons({
+  abort,
+  aiDisabled,
+  aiBtnBase,
+  handleExtractEntities,
+  handleGenerate,
+  isGenerating,
+}: {
+  abort: UseAIReturn['abort'];
+  aiDisabled: boolean;
+  aiBtnBase: string;
+  handleExtractEntities: () => void;
+  handleGenerate: () => void;
+  isGenerating: boolean;
+}) {
+  if (isGenerating) {
+    return (
+      <button
+        onClick={abort}
+        className="flex cursor-pointer items-center gap-1 rounded-md border border-solid border-red-200 bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700 transition-colors duration-150 hover:bg-red-100 dark:border-red-700 dark:bg-red-950 dark:text-red-300 dark:hover:bg-red-900"
+        aria-label="Stop AI"
+        title="Stop AI generation (Escape)">
+        <span className="animate-pulse">Stop</span>
+      </button>
+    );
+  }
+
+  return (
+    <>
+      <button
+        onClick={handleGenerate}
+        disabled={aiDisabled}
+        className={aiBtnBase}
+        aria-label="AI Generate Paragraph"
+        title="Generate a paragraph at the end of the document">
+        Generate
+      </button>
+      <button
+        onClick={handleExtractEntities}
+        disabled={aiDisabled}
+        className="flex cursor-pointer items-center gap-1 rounded-md border border-solid border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 transition-colors duration-150 enabled:hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-300 dark:enabled:hover:bg-amber-900"
+        aria-label="Extract Entities"
+        title="Find places, people, and organizations in the text and convert them to interactive nodes">
+        <svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12">
+          <path d="M8 1.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM5 4.5a1 1 0 1 0 0 2 1 1 0 0 0 0-2zm6 0a1 1 0 1 0 0 2 1 1 0 0 0 0-2zM3.5 8a.5.5 0 0 0-.5.5v1a3.5 3.5 0 0 0 3 3.46V15h4v-2.04A3.5 3.5 0 0 0 13 9.5v-1a.5.5 0 0 0-.5-.5h-9z" />
+        </svg>
+        Extract Entities
+      </button>
+    </>
   );
 }

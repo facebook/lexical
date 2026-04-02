@@ -8,7 +8,7 @@
 
 import type {JSX} from 'react';
 
-import {type ReadonlySignal, signal} from '@lexical/extension';
+import {signal} from '@lexical/extension';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {ReactExtension} from '@lexical/react/ReactExtension';
 import {useExtensionDependency} from '@lexical/react/useExtensionComponent';
@@ -41,7 +41,7 @@ import {
   REDO_COMMAND,
   UNDO_COMMAND,
 } from 'lexical';
-import React, {useCallback, useMemo, useRef, useSyncExternalStore} from 'react';
+import React, {useCallback, useRef} from 'react';
 
 import {AIExtension} from '../ai/AIExtension';
 import {useAI, type UseAIReturn} from '../ai/useAI';
@@ -52,6 +52,7 @@ import {
   $collectTextNodeOffsets,
   $replaceTextWithEntityNodes,
 } from '../utils/extractEntityNodes';
+import {useSignalValue} from '../utils/useExtensionHooks';
 
 const BLOCK_TYPES = [
   {label: 'Normal', value: 'paragraph'},
@@ -121,14 +122,6 @@ function $getToolbarState(): {
     isItalic: selection.hasFormat('italic'),
     isUnderline: selection.hasFormat('underline'),
   };
-}
-
-function useSignalValue<V>(s: ReadonlySignal<V>): V {
-  const [subscribe, getSnapshot] = useMemo(
-    () => [s.subscribe.bind(s), s.peek.bind(s)] as const,
-    [s],
-  );
-  return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
 
 export const ToolbarExtension = defineExtension({

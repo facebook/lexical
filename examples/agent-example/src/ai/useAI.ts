@@ -6,12 +6,9 @@
  *
  */
 
-import type {ReadonlySignal} from '@lexical/extension';
-import type {AnyLexicalExtension, LexicalExtensionOutput} from 'lexical';
-
 import {useExtensionDependency} from '@lexical/react/useExtensionComponent';
-import {useMemo, useSyncExternalStore} from 'react';
 
+import {useSignalValue} from '../utils/useExtensionHooks';
 import {AIExtension, type ExtractedEntity} from './AIExtension';
 
 type ModelStatus = 'idle' | 'loading' | 'ready' | 'error';
@@ -31,30 +28,11 @@ export interface UseAIReturn {
   modelStatus: ModelStatus;
 }
 
-type SignalValue<S> = S extends ReadonlySignal<infer V> ? V : never;
-
-export function useExtensionSignalValue<
-  Extension extends AnyLexicalExtension,
-  K extends keyof LexicalExtensionOutput<Extension>,
->(
-  extension: Extension,
-  prop: K,
-): SignalValue<LexicalExtensionOutput<Extension>[K]> {
-  const signal = useExtensionDependency(extension).output[
-    prop
-  ] as ReadonlySignal<SignalValue<LexicalExtensionOutput<Extension>[K]>>;
-  const [subscribe, getSnapshot] = useMemo(
-    () => [signal.subscribe.bind(signal), signal.peek.bind(signal)] as const,
-    [signal],
-  );
-  return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
-}
-
 export function useAI(): UseAIReturn {
   const ai = useExtensionDependency(AIExtension).output;
-  const isGenerating = useExtensionSignalValue(AIExtension, 'isGenerating');
-  const modelStatus = useExtensionSignalValue(AIExtension, 'modelStatus');
-  const loadProgress = useExtensionSignalValue(AIExtension, 'loadProgress');
+  const isGenerating = useSignalValue(ai.isGenerating);
+  const modelStatus = useSignalValue(ai.modelStatus);
+  const loadProgress = useSignalValue(ai.loadProgress);
 
   return {
     abort: ai.abort,

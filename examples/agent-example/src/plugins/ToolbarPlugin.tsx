@@ -104,6 +104,35 @@ function Divider() {
   );
 }
 
+function $getToolbarState(): {
+  blockType: string;
+  isBold: boolean;
+  isItalic: boolean;
+  isUnderline: boolean;
+} | null {
+  const selection = $getSelection();
+  if (!$isRangeSelection(selection)) {
+    return null;
+  }
+  const anchorNode = selection.anchor.getNode();
+  let topLevelElement = $findMatchingParent(anchorNode, (e) => {
+    const parent = e.getParent();
+    return parent !== null && $isRootOrShadowRoot(parent);
+  });
+  if (topLevelElement === null) {
+    topLevelElement = anchorNode.getTopLevelElementOrThrow();
+  }
+
+  return {
+    blockType: $isHeadingNode(topLevelElement)
+      ? topLevelElement.getTag()
+      : topLevelElement.getType(),
+    isBold: selection.hasFormat('bold'),
+    isItalic: selection.hasFormat('italic'),
+    isUnderline: selection.hasFormat('underline'),
+  };
+}
+
 export function ToolbarPlugin({ai}: {ai: UseAIReturn}) {
   const [editor] = useLexicalComposerContext();
   const toolbarRef = useRef<HTMLDivElement>(null);
@@ -117,35 +146,18 @@ export function ToolbarPlugin({ai}: {ai: UseAIReturn}) {
   const {abort, extractEntities, generateParagraph, isGenerating, modelStatus} =
     ai;
 
-  const $updateToolbar = useCallback(() => {
-    const selection = $getSelection();
-    if ($isRangeSelection(selection)) {
-      const anchorNode = selection.anchor.getNode();
-      let topLevelElement = $findMatchingParent(anchorNode, (e) => {
-        const parent = e.getParent();
-        return parent !== null && $isRootOrShadowRoot(parent);
-      });
-      if (topLevelElement === null) {
-        topLevelElement = anchorNode.getTopLevelElementOrThrow();
-      }
-
-      if ($isHeadingNode(topLevelElement)) {
-        setBlockType(topLevelElement.getTag());
-      } else {
-        setBlockType(topLevelElement.getType());
-      }
-      setIsBold(selection.hasFormat('bold'));
-      setIsItalic(selection.hasFormat('italic'));
-      setIsUnderline(selection.hasFormat('underline'));
-    }
-  }, []);
-
   useEffect(() => {
     return mergeRegister(
       editor.registerUpdateListener(({editorState}) => {
         editorState.read(
           () => {
-            $updateToolbar();
+            const state = $getToolbarState();
+            if (state) {
+              setBlockType(state.blockType);
+              setIsBold(state.isBold);
+              setIsItalic(state.isItalic);
+              setIsUnderline(state.isUnderline);
+            }
           },
           {editor},
         );
@@ -167,7 +179,7 @@ export function ToolbarPlugin({ai}: {ai: UseAIReturn}) {
         COMMAND_PRIORITY_LOW,
       ),
     );
-  }, [editor, $updateToolbar]);
+  }, [editor]);
 
   const handleGenerate = useCallback(async () => {
     const context = editor

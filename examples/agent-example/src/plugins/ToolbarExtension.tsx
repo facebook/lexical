@@ -26,7 +26,6 @@ import {
   $getNodeByKey,
   $getRoot,
   $getSelection,
-  $isElementNode,
   $isRangeSelection,
   $isRootOrShadowRoot,
   CAN_REDO_COMMAND,
@@ -44,6 +43,7 @@ import React, {useRef} from 'react';
 
 import {AIExtension} from '../ai/AIExtension';
 import {useAI, type UseAIReturn} from '../ai/useAI';
+import {$createAICaretNode, $isAICaretNode} from '../nodes/AICaretNode';
 import {$createOrgNode} from '../nodes/OrgNode';
 import {$createPersonNode} from '../nodes/PersonNode';
 import {$createPlaceNode} from '../nodes/PlaceNode';
@@ -123,9 +123,9 @@ function $getToolbarState(): {
 
 const WHITESPACE_RE = /[\n\t]/g;
 
-function $appendToken(paragraphKey: string, token: string): void {
-  const paragraph = $getNodeByKey(paragraphKey);
-  if (!$isElementNode(paragraph)) {
+function $appendTokenBeforeCaret(caretKey: string, token: string): void {
+  const caret = $getNodeByKey(caretKey);
+  if (!$isAICaretNode(caret)) {
     return;
   }
   let pos = 0;
@@ -133,15 +133,23 @@ function $appendToken(paragraphKey: string, token: string): void {
   let match;
   while ((match = WHITESPACE_RE.exec(token)) !== null) {
     if (match.index > pos) {
-      paragraph.append($createTextNode(token.slice(pos, match.index)));
+      caret.insertBefore($createTextNode(token.slice(pos, match.index)));
     }
-    paragraph.append(
+    caret.insertBefore(
       match[0] === '\n' ? $createLineBreakNode() : $createTabNode(),
     );
     pos = WHITESPACE_RE.lastIndex;
   }
   if (pos < token.length) {
-    paragraph.append($createTextNode(token.slice(pos)));
+    caret.insertBefore($createTextNode(token.slice(pos)));
+  }
+}
+
+function $removeAICaret(caretKey: string): void {
+  const caret = $getNodeByKey(caretKey);
+  if ($isAICaretNode(caret) && caret.isAttached()) {
+    caret.selectPrevious();
+    caret.remove();
   }
 }
 
@@ -154,32 +162,30 @@ export const ToolbarExtension = defineExtension({
         .getEditorState()
         .read(() => $getRoot().getTextContent());
 
-      let paragraphKey: string | null = null;
+      let caretKey: string | null = null;
       editor.update(() => {
         const root = $getRoot();
         const paragraph = $createParagraphNode();
+        const caret = $createAICaretNode();
+        paragraph.append(caret);
         root.append(paragraph);
-        paragraphKey = paragraph.getKey();
+        caretKey = caret.getKey();
       });
 
-      const result = await ai.generateParagraph(context, (token: string) => {
-        if (paragraphKey) {
-          editor.update(() => $appendToken(paragraphKey!, token), {
-            tag: 'ai-stream',
-          });
-        }
-      });
-
-      if (paragraphKey) {
-        editor.update(() => {
-          const paragraph = $getNodeByKey(paragraphKey!);
-          if ($isElementNode(paragraph)) {
-            paragraph.selectEnd();
+      try {
+        const result = await ai.generateParagraph(context, (token: string) => {
+          if (caretKey) {
+            editor.update(() => $appendTokenBeforeCaret(caretKey!, token), {
+              tag: 'ai-stream',
+            });
           }
         });
+        return result;
+      } finally {
+        if (caretKey) {
+          editor.update(() => $removeAICaret(caretKey!));
+        }
       }
-
-      return result;
     }
 
     async function handleExtractEntities(): Promise<void> {

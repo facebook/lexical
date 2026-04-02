@@ -251,10 +251,10 @@ export const AIExtension = defineExtension({
     return createAIState();
   },
   name: '@lexical/agent-example/ai',
-  register(_editor, _config, state) {
+  register(editor, _config, state) {
     const output = state.getOutput();
     return mergeRegister(
-      _editor.registerCommand(
+      editor.registerCommand(
         KEY_ESCAPE_COMMAND,
         () => {
           if (output.isGenerating.peek()) {

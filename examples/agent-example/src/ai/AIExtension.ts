@@ -177,11 +177,23 @@ function createAIState() {
           activeId = null;
         }
       } else if (data.type === 'entities') {
+        // eslint-disable-next-line no-console
+        console.log(
+          '[AIExtension] Received entities response:',
+          data.id,
+          data.entities,
+        );
         const ep = entityPending.get(data.id);
         if (ep) {
           entityPending.delete(data.id);
           isGenerating.value = false;
           ep.resolve(data.entities);
+        } else {
+          // eslint-disable-next-line no-console
+          console.warn(
+            '[AIExtension] No pending request for entity id:',
+            data.id,
+          );
         }
       } else if (data.type === 'error') {
         const ep = entityPending.get(data.id);

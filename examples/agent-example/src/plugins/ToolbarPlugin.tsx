@@ -256,15 +256,31 @@ export function ToolbarPlugin({ai}: {ai: UseAIReturn}) {
       .read(() => $collectTextNodeOffsets());
 
     if (!textInfo.fullText.trim()) {
+      // eslint-disable-next-line no-console
+      console.log('[ExtractEntities] No text content, skipping');
       return;
     }
+
+    // eslint-disable-next-line no-console
+    console.log(
+      '[ExtractEntities] Sending text to NER:',
+      textInfo.fullText.slice(0, 100) + '...',
+    );
+    // eslint-disable-next-line no-console
+    console.log('[ExtractEntities] Text nodes:', textInfo.textNodes.length);
 
     const entities = await extractEntities(textInfo.fullText, [
       'LOC',
       'PER',
       'ORG',
     ]);
+
+    // eslint-disable-next-line no-console
+    console.log('[ExtractEntities] Got entities:', entities);
+
     if (entities.length === 0) {
+      // eslint-disable-next-line no-console
+      console.log('[ExtractEntities] No entities found');
       return;
     }
 

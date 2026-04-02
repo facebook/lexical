@@ -139,20 +139,32 @@ self.onmessage = async (event: MessageEvent) => {
 
   if (type === 'extract-entities') {
     const {text, entityTypes} = event.data;
+    // eslint-disable-next-line no-console
+    console.log('[Worker] extract-entities request, text length:', text.length);
     try {
       self.postMessage({id, status: 'generating', type: 'status'});
       const classifier = await getNERClassifier();
+      // eslint-disable-next-line no-console
+      console.log('[Worker] NER classifier ready, running inference...');
       const raw: NERToken[] = await classifier(text, {
         ignore_labels: ['O'],
       });
+      // eslint-disable-next-line no-console
+      console.log('[Worker] Raw NER tokens:', raw);
       const entities = mergeEntities(raw, text);
+      // eslint-disable-next-line no-console
+      console.log('[Worker] Merged entities:', entities);
       const filtered = entityTypes
         ? entities.filter((e: {entity: string}) =>
             entityTypes.includes(e.entity),
           )
         : entities;
+      // eslint-disable-next-line no-console
+      console.log('[Worker] Filtered entities:', filtered);
       self.postMessage({entities: filtered, id, type: 'entities'});
     } catch (err: unknown) {
+      // eslint-disable-next-line no-console
+      console.error('[Worker] NER error:', err);
       const message = err instanceof Error ? err.message : String(err);
       self.postMessage({id, message, type: 'error'});
     }

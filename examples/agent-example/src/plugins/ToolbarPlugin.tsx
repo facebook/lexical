@@ -17,7 +17,9 @@ import {
 import {$setBlocksType} from '@lexical/selection';
 import {$findMatchingParent, mergeRegister} from '@lexical/utils';
 import {
+  $createLineBreakNode,
   $createParagraphNode,
+  $createTabNode,
   $createTextNode,
   $getNodeByKey,
   $getRoot,
@@ -187,7 +189,16 @@ export function ToolbarPlugin({ai}: {ai: UseAIReturn}) {
           () => {
             const paragraph = $getNodeByKey(paragraphKey!);
             if ($isElementNode(paragraph)) {
-              paragraph.append($createTextNode(token));
+              const parts = token.split(/(\n|\t)/);
+              for (const part of parts) {
+                if (part === '\n') {
+                  paragraph.append($createLineBreakNode());
+                } else if (part === '\t') {
+                  paragraph.append($createTabNode());
+                } else if (part) {
+                  paragraph.append($createTextNode(part));
+                }
+              }
             }
           },
           {tag: 'ai-stream'},

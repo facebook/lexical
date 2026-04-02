@@ -79,47 +79,78 @@ export function $replaceTextWithEntityNodes(
   entities: EntitySpan[],
   creators: Record<string, (text: string) => LexicalNode>,
 ): void {
-  // Sort descending by start so replacements don't shift earlier offsets
-  const sorted = [...entities].sort((a, b) => b.start - a.start);
-
-  for (const entity of sorted) {
+  // Group entities by the text node they belong to
+  const entitiesByNode = new Map<string, EntitySpan[]>();
+  for (const entity of entities) {
     const creator = creators[entity.entity];
     if (!creator) {
       continue;
     }
-
     for (const tn of textNodes) {
       const nodeEnd = tn.start + tn.length;
-      // Entity must fall entirely within this text node
       if (entity.start >= tn.start && entity.end <= nodeEnd) {
-        const node = $getNodeByKey(tn.key);
-        if (!$isTextNode(node)) {
-          break;
+        let list = entitiesByNode.get(tn.key);
+        if (!list) {
+          list = [];
+          entitiesByNode.set(tn.key, list);
         }
-
-        const localStart = entity.start - tn.start;
-        const localEnd = entity.end - tn.start;
-
-        // Split the text node to isolate the entity text
-        const splitPoints: number[] = [];
-        if (localEnd < tn.length) {
-          splitPoints.push(localEnd);
-        }
-        if (localStart > 0) {
-          splitPoints.push(localStart);
-        }
-
-        let targetNode = node;
-        if (splitPoints.length > 0) {
-          const parts = node.splitText(...splitPoints);
-          // After splitting, the entity text is at index 1 if we split at
-          // localStart, otherwise index 0
-          targetNode = localStart > 0 ? parts[1] : parts[0];
-        }
-
-        targetNode.replace(creator(entity.text));
+        list.push(entity);
         break;
       }
+    }
+  }
+
+  // For each text node, compute all split points at once, then replace
+  // the entity segments. Process nodes in any order since they're independent.
+  for (const tn of textNodes) {
+    const nodeEntities = entitiesByNode.get(tn.key);
+    if (!nodeEntities) {
+      continue;
+    }
+    const node = $getNodeByKey(tn.key);
+    if (!$isTextNode(node)) {
+      continue;
+    }
+
+    // Sort entities by start offset ascending within this node
+    const sorted = [...nodeEntities].sort((a, b) => a.start - b.start);
+
+    // Collect all unique split points
+    const splitPointSet = new Set<number>();
+    for (const entity of sorted) {
+      const localStart = entity.start - tn.start;
+      const localEnd = entity.end - tn.start;
+      if (localStart > 0) {
+        splitPointSet.add(localStart);
+      }
+      if (localEnd < tn.length) {
+        splitPointSet.add(localEnd);
+      }
+    }
+
+    const splitPoints = [...splitPointSet].sort((a, b) => a - b);
+
+    // Split once to get all segments
+    const parts =
+      splitPoints.length > 0 ? node.splitText(...splitPoints) : [node];
+
+    // Build an offset-to-part-index map: each part starts at a cumulative offset
+    // parts[0] starts at 0, parts[1] starts at splitPoints[0], etc.
+    const partOffsets = [0, ...splitPoints];
+
+    // Replace entity segments (iterate in reverse so indices stay valid)
+    for (let i = sorted.length - 1; i >= 0; i--) {
+      const entity = sorted[i];
+      const localStart = entity.start - tn.start;
+      const partIndex = partOffsets.indexOf(localStart);
+      if (partIndex === -1) {
+        continue;
+      }
+      const creator = creators[entity.entity];
+      if (!creator) {
+        continue;
+      }
+      parts[partIndex].replace(creator(entity.text));
     }
   }
 }

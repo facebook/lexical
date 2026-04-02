@@ -16,6 +16,14 @@ import {
 
 type ModelStatus = 'idle' | 'loading' | 'ready' | 'error';
 
+export interface ExtractedEntity {
+  end: number;
+  entity: string;
+  score: number;
+  start: number;
+  text: string;
+}
+
 interface ChatMessage {
   content: string;
   role: 'system' | 'user' | 'assistant';
@@ -98,6 +106,13 @@ function createAIState() {
     string,
     {reject: (err: Error) => void; resolve: (text: string | null) => void}
   >();
+  const entityPending = new Map<
+    string,
+    {
+      reject: (err: Error) => void;
+      resolve: (entities: ExtractedEntity[]) => void;
+    }
+  >();
 
   function getWorker(): Worker {
     if (worker) {
@@ -117,6 +132,18 @@ function createAIState() {
         } else if (data.status === 'model-ready') {
           modelStatus.value = 'ready';
           loadProgress.value = null;
+        } else if (
+          data.status === 'loading-ner' ||
+          data.status === 'ner-ready'
+        ) {
+          if (data.status === 'loading-ner') {
+            modelStatus.value = 'loading';
+            if (data.progress != null) {
+              loadProgress.value = Math.round(data.progress);
+            }
+          } else {
+            loadProgress.value = null;
+          }
         } else if (data.status === 'generating') {
           isGenerating.value = true;
         }
@@ -148,7 +175,21 @@ function createAIState() {
           tokenCallback = null;
           activeId = null;
         }
+      } else if (data.type === 'entities') {
+        const ep = entityPending.get(data.id);
+        if (ep) {
+          entityPending.delete(data.id);
+          isGenerating.value = false;
+          ep.resolve(data.entities);
+        }
       } else if (data.type === 'error') {
+        const ep = entityPending.get(data.id);
+        if (ep) {
+          entityPending.delete(data.id);
+          isGenerating.value = false;
+          ep.reject(new Error(data.message));
+          return;
+        }
         const p = pending.get(data.id);
         if (p) {
           pending.delete(data.id);
@@ -216,6 +257,19 @@ function createAIState() {
     return sendRequest(buildGenerateMessages(context), 256, onToken, '\n\n');
   }
 
+  function extractEntities(
+    text: string,
+    entityTypes?: string[],
+  ): Promise<ExtractedEntity[]> {
+    const w = getWorker();
+    const id = `ner_${++requestCounter}`;
+    isGenerating.value = true;
+    return new Promise((resolve, reject) => {
+      entityPending.set(id, {reject, resolve});
+      w.postMessage({entityTypes, id, text, type: 'extract-entities'});
+    });
+  }
+
   function dispose(): void {
     if (worker) {
       worker.terminate();
@@ -226,6 +280,7 @@ function createAIState() {
   return {
     abort,
     dispose,
+    extractEntities,
     generateParagraph,
     isGenerating,
     loadProgress,

@@ -10,12 +10,16 @@ import {effect, getExtensionDependencyFromEditor} from '@lexical/extension';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useEffect, useMemo, useState} from 'react';
 
-import {AIExtension} from './AIExtension';
+import {AIExtension, type ExtractedEntity} from './AIExtension';
 
 type ModelStatus = 'idle' | 'loading' | 'ready' | 'error';
 
 export interface UseAIReturn {
   abort: () => void;
+  extractEntities: (
+    text: string,
+    entityTypes?: string[],
+  ) => Promise<ExtractedEntity[]>;
   generateParagraph: (
     context: string,
     onToken: (token: string) => void,
@@ -61,6 +65,7 @@ export function useAI(): UseAIReturn {
 
   return {
     abort: ai.abort,
+    extractEntities: ai.extractEntities,
     generateParagraph: ai.generateParagraph,
     isGenerating,
     loadProgress,

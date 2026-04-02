@@ -20,6 +20,7 @@ import {
 
 import {AIExtension} from './ai/AIExtension';
 import {useAI} from './ai/useAI';
+import {PlaceNodeExtension} from './nodes/PlaceNode';
 import {ToolbarPlugin} from './plugins/ToolbarPlugin';
 
 const theme = {
@@ -39,7 +40,7 @@ const theme = {
 };
 
 const SAMPLE_TEXT =
-  'Lexical is an extensible JavaScript web text-editor framework with an emphasis on reliability, accessibility, and performance. It provides a robust foundation for building rich text editing experiences. Lexical supports features like real-time collaboration, custom nodes, and plugin architectures. The framework is designed to be lightweight and can run in any modern browser including mobile Safari.';
+  'The annual tech conference kicked off in San Francisco last week, drawing thousands of developers from around the world. Keynote speakers from London, Tokyo, and Berlin shared insights on the future of web development. Several attendees traveled from Sydney and São Paulo to attend workshops on real-time collaboration and accessibility. The after-party was held at a rooftop venue overlooking the Golden Gate Bridge, with guests from Paris, Mumbai, and Toronto networking late into the evening.';
 
 const agentEditorExtension = defineExtension({
   $initialEditorState: () => {
@@ -53,6 +54,7 @@ const agentEditorExtension = defineExtension({
     HistoryExtension,
     TabIndentationExtension,
     AIExtension,
+    PlaceNodeExtension,
   ],
   name: '@lexical/agent-example/editor',
   namespace: '@lexical/agent-example/editor',

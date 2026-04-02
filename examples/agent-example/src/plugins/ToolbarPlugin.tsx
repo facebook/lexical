@@ -25,9 +25,11 @@ import {
   $isElementNode,
   $isRangeSelection,
   $isRootOrShadowRoot,
+  $isTextNode,
   CAN_REDO_COMMAND,
   CAN_UNDO_COMMAND,
   COMMAND_PRIORITY_LOW,
+  type ElementNode,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
   LexicalEditor,
@@ -35,6 +37,8 @@ import {
   UNDO_COMMAND,
 } from 'lexical';
 import React, {useCallback, useEffect, useRef, useState} from 'react';
+
+import {$createPlaceNode} from '../nodes/PlaceNode';
 
 const BLOCK_TYPES = [
   {label: 'Normal', value: 'paragraph'},
@@ -104,7 +108,14 @@ export function ToolbarPlugin({ai}: {ai: UseAIReturn}) {
   const [isItalic, setIsItalic] = useState(false);
   const [isUnderline, setIsUnderline] = useState(false);
 
-  const {abort, generateParagraph, isGenerating, modelStatus, rewrite} = ai;
+  const {
+    abort,
+    extractEntities,
+    generateParagraph,
+    isGenerating,
+    modelStatus,
+    rewrite,
+  } = ai;
   const [rewriteStyle, setRewriteStyle] = useState('formal');
 
   const $updateToolbar = useCallback(() => {
@@ -234,6 +245,92 @@ export function ToolbarPlugin({ai}: {ai: UseAIReturn}) {
       });
     }
   }, [editor, generateParagraph]);
+
+  const handleExtractPlaces = useCallback(async () => {
+    // Collect all text nodes with their offsets relative to the full document text
+    const textInfo = editor.getEditorState().read(() => {
+      const root = $getRoot();
+      const fullText = root.getTextContent();
+      const textNodes: Array<{
+        key: string;
+        length: number;
+        start: number;
+      }> = [];
+
+      // Walk all text nodes in document order to map character offsets to nodes
+      let offset = 0;
+      const walk = (node: ElementNode) => {
+        for (const child of node.getChildren()) {
+          if ($isTextNode(child)) {
+            const len = child.getTextContentSize();
+            textNodes.push({key: child.getKey(), length: len, start: offset});
+            offset += len;
+          } else if ($isElementNode(child)) {
+            walk(child);
+            // Element boundaries (e.g. paragraph breaks) add a newline
+            offset += 1;
+          }
+        }
+      };
+      walk(root);
+
+      return {fullText, textNodes};
+    });
+
+    if (!textInfo.fullText.trim()) {
+      return;
+    }
+
+    const entities = await extractEntities(textInfo.fullText, ['LOC']);
+    if (entities.length === 0) {
+      return;
+    }
+
+    // Sort entities by start offset descending so replacements don't shift positions
+    const sorted = [...entities].sort((a, b) => b.start - a.start);
+
+    editor.update(() => {
+      for (const entity of sorted) {
+        // Find the text node(s) that contain this entity span
+        for (const tn of textInfo.textNodes) {
+          const nodeEnd = tn.start + tn.length;
+          // Entity must fall within a single text node for simplicity
+          if (entity.start >= tn.start && entity.end <= nodeEnd) {
+            const node = $getNodeByKey(tn.key);
+            if (!$isTextNode(node)) {
+              break;
+            }
+
+            const localStart = entity.start - tn.start;
+            const localEnd = entity.end - tn.start;
+
+            // Split the text node to isolate the entity text
+            const splitPoints: number[] = [];
+            if (localEnd < tn.length) {
+              splitPoints.push(localEnd);
+            }
+            if (localStart > 0) {
+              splitPoints.push(localStart);
+            }
+
+            let targetNode = node;
+            if (splitPoints.length > 0) {
+              const parts = node.splitText(...splitPoints);
+              // After splitting, the entity text is at index:
+              // - 1 if we split at localStart (localStart > 0)
+              // - 0 if localStart === 0
+              targetNode = localStart > 0 ? parts[1] : parts[0];
+            }
+
+            // Replace the target text node with a PlaceNode
+            const placeNode = $createPlaceNode(entity.text);
+            targetNode.replace(placeNode);
+            break;
+          }
+        }
+      }
+    });
+  }, [editor, extractEntities]);
 
   const aiDisabled = isGenerating || modelStatus === 'loading';
 
@@ -407,6 +504,17 @@ export function ToolbarPlugin({ai}: {ai: UseAIReturn}) {
             aria-label="AI Generate Paragraph"
             title="Generate a paragraph at the end of the document">
             Generate
+          </button>
+          <button
+            onClick={handleExtractPlaces}
+            disabled={aiDisabled}
+            className="flex cursor-pointer items-center gap-1 rounded-md border border-solid border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 transition-colors duration-150 enabled:hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 dark:enabled:hover:bg-emerald-900"
+            aria-label="Extract Places"
+            title="Find place names in the text and convert them to map links">
+            <svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12">
+              <path d="M8 0C5.2 0 3 2.3 3 5.2 3 9.1 8 16 8 16s5-6.9 5-10.8C13 2.3 10.8 0 8 0zm0 7.5a2.2 2.2 0 110-4.4 2.2 2.2 0 010 4.4z" />
+            </svg>
+            Extract Places
           </button>
         </>
       )}

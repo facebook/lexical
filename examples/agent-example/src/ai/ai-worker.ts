@@ -12,6 +12,8 @@ import {pipeline, TextStreamer} from '@huggingface/transformers';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let generator: any = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let nerClassifier: any = null;
 
 async function getGenerator() {
   if (generator) {
@@ -38,10 +40,94 @@ async function getGenerator() {
   return generator;
 }
 
+async function getNERClassifier() {
+  if (nerClassifier) {
+    return nerClassifier;
+  }
+  self.postMessage({status: 'loading-ner', type: 'status'});
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  nerClassifier = await (pipeline as any)(
+    'token-classification',
+    'Xenova/bert-base-NER',
+    {
+      device: 'wasm',
+      dtype: 'q8',
+      progress_callback: (progress: {progress?: number; status?: string}) => {
+        self.postMessage({
+          progress: progress.progress ?? null,
+          status: progress.status ?? 'loading-ner',
+          type: 'status',
+        });
+      },
+    },
+  );
+  self.postMessage({status: 'ner-ready', type: 'status'});
+  return nerClassifier;
+}
+
+interface NERToken {
+  end: number;
+  entity: string;
+  index: number;
+  score: number;
+  start: number;
+  word: string;
+}
+
+/**
+ * Merge BIO-tagged tokens into contiguous entity spans.
+ * e.g. [B-LOC "New", I-LOC "York"] → [{text: "New York", start: 0, end: 8, entity: "LOC"}]
+ */
+function mergeEntities(
+  tokens: NERToken[],
+  text: string,
+): Array<{
+  end: number;
+  entity: string;
+  score: number;
+  start: number;
+  text: string;
+}> {
+  const merged: Array<{
+    end: number;
+    entity: string;
+    minScore: number;
+    start: number;
+  }> = [];
+
+  for (const token of tokens) {
+    const prefix = token.entity.slice(0, 2); // "B-" or "I-"
+    const label = token.entity.slice(2); // "LOC", "PER", etc.
+
+    if (prefix === 'B-') {
+      merged.push({
+        end: token.end,
+        entity: label,
+        minScore: token.score,
+        start: token.start,
+      });
+    } else if (prefix === 'I-' && merged.length > 0) {
+      const last = merged[merged.length - 1];
+      if (last.entity === label) {
+        last.end = token.end;
+        last.minScore = Math.min(last.minScore, token.score);
+      }
+    }
+  }
+
+  return merged.map((m) => ({
+    end: m.end,
+    entity: m.entity,
+    score: m.minScore,
+    start: m.start,
+    text: text.slice(m.start, m.end),
+  }));
+}
+
 let activeAbortController: AbortController | null = null;
 
 self.onmessage = async (event: MessageEvent) => {
-  const {type, id, messages, maxTokens, stopAt} = event.data;
+  const {type, id} = event.data;
 
   if (type === 'abort') {
     if (activeAbortController) {
@@ -51,9 +137,33 @@ self.onmessage = async (event: MessageEvent) => {
     return;
   }
 
+  if (type === 'extract-entities') {
+    const {text, entityTypes} = event.data;
+    try {
+      self.postMessage({id, status: 'generating', type: 'status'});
+      const classifier = await getNERClassifier();
+      const raw: NERToken[] = await classifier(text, {
+        ignore_labels: ['O'],
+      });
+      const entities = mergeEntities(raw, text);
+      const filtered = entityTypes
+        ? entities.filter((e: {entity: string}) =>
+            entityTypes.includes(e.entity),
+          )
+        : entities;
+      self.postMessage({entities: filtered, id, type: 'entities'});
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      self.postMessage({id, message, type: 'error'});
+    }
+    return;
+  }
+
   if (type !== 'generate') {
     return;
   }
+
+  const {messages, maxTokens, stopAt} = event.data;
 
   // Abort any previous in-flight request
   if (activeAbortController) {

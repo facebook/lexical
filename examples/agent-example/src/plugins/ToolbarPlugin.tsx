@@ -121,32 +121,27 @@ function $getToolbarState(): {
   };
 }
 
+const WHITESPACE_RE = /[\n\t]/g;
+
 function $appendToken(paragraphKey: string, token: string): void {
   const paragraph = $getNodeByKey(paragraphKey);
   if (!$isElementNode(paragraph)) {
     return;
   }
   let pos = 0;
-  while (pos < token.length) {
-    const nextN = token.indexOf('\n', pos);
-    const nextT = token.indexOf('\t', pos);
-    let next = token.length;
-    if (nextN !== -1 && nextN < next) {
-      next = nextN;
+  WHITESPACE_RE.lastIndex = 0;
+  let match;
+  while ((match = WHITESPACE_RE.exec(token)) !== null) {
+    if (match.index > pos) {
+      paragraph.append($createTextNode(token.slice(pos, match.index)));
     }
-    if (nextT !== -1 && nextT < next) {
-      next = nextT;
-    }
-    if (next > pos) {
-      paragraph.append($createTextNode(token.slice(pos, next)));
-    }
-    if (next < token.length) {
-      paragraph.append(
-        token[next] === '\n' ? $createLineBreakNode() : $createTabNode(),
-      );
-      next++;
-    }
-    pos = next;
+    paragraph.append(
+      match[0] === '\n' ? $createLineBreakNode() : $createTabNode(),
+    );
+    pos = WHITESPACE_RE.lastIndex;
+  }
+  if (pos < token.length) {
+    paragraph.append($createTextNode(token.slice(pos)));
   }
 }
 

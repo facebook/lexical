@@ -6,9 +6,11 @@
  *
  */
 
-import {effect, getExtensionDependencyFromEditor} from '@lexical/extension';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {useEffect, useMemo, useState} from 'react';
+import type {ReadonlySignal} from '@lexical/extension';
+import type {AnyLexicalExtension, LexicalExtensionOutput} from 'lexical';
+
+import {useExtensionDependency} from '@lexical/react/useExtensionComponent';
+import {useMemo, useSyncExternalStore} from 'react';
 
 import {AIExtension, type ExtractedEntity} from './AIExtension';
 
@@ -29,38 +31,30 @@ export interface UseAIReturn {
   modelStatus: ModelStatus;
 }
 
+type SignalValue<S> = S extends ReadonlySignal<infer V> ? V : never;
+
+function useExtensionSignalValue<
+  Extension extends AnyLexicalExtension,
+  K extends keyof LexicalExtensionOutput<Extension>,
+>(
+  extension: Extension,
+  prop: K,
+): SignalValue<LexicalExtensionOutput<Extension>[K]> {
+  const signal = useExtensionDependency(extension).output[
+    prop
+  ] as ReadonlySignal<SignalValue<LexicalExtensionOutput<Extension>[K]>>;
+  const [subscribe, getSnapshot] = useMemo(
+    () => [signal.subscribe.bind(signal), signal.peek.bind(signal)] as const,
+    [signal],
+  );
+  return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+}
+
 export function useAI(): UseAIReturn {
-  const [editor] = useLexicalComposerContext();
-  const ai = useMemo(
-    () => getExtensionDependencyFromEditor(editor, AIExtension).output,
-    [editor],
-  );
-
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [modelStatus, setModelStatus] = useState<ModelStatus>(() =>
-    ai.modelStatus.peek(),
-  );
-  const [loadProgress, setLoadProgress] = useState<number | null>(() =>
-    ai.loadProgress.peek(),
-  );
-
-  useEffect(() => {
-    return effect(() => {
-      setIsGenerating(ai.isGenerating.value);
-    });
-  }, [ai]);
-
-  useEffect(() => {
-    return effect(() => {
-      setModelStatus(ai.modelStatus.value);
-    });
-  }, [ai]);
-
-  useEffect(() => {
-    return effect(() => {
-      setLoadProgress(ai.loadProgress.value);
-    });
-  }, [ai]);
+  const ai = useExtensionDependency(AIExtension).output;
+  const isGenerating = useExtensionSignalValue(AIExtension, 'isGenerating');
+  const modelStatus = useExtensionSignalValue(AIExtension, 'modelStatus');
+  const loadProgress = useExtensionSignalValue(AIExtension, 'loadProgress');
 
   return {
     abort: ai.abort,

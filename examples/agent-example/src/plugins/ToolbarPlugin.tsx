@@ -385,7 +385,7 @@ export function ToolbarPlugin({ai}: {ai: UseAIReturn}) {
             value={rewriteStyle}
             onChange={(e) => setRewriteStyle(e.target.value)}
             disabled={aiDisabled}
-            className="cursor-pointer appearance-none rounded-md border border-solid border-indigo-200 bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700 dark:border-indigo-700 dark:bg-indigo-950 dark:text-indigo-300"
+            className="cursor-pointer appearance-none rounded-md border border-solid border-zinc-300 bg-white px-2 py-1 text-xs font-medium text-zinc-700 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-200"
             aria-label="Rewrite style">
             <option value="formal">Formal</option>
             <option value="casual">Casual</option>

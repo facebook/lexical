@@ -22,24 +22,40 @@ interface ChatMessage {
 }
 
 const REWRITE_STYLES: Record<string, string> = {
-  casual: 'more casual and conversational',
-  concise: 'more concise and to the point',
-  formal: 'more formal and professional',
-  simpler: 'simpler and easier to understand',
+  casual: 'casual',
+  concise: 'concise',
+  formal: 'formal',
+  simpler: 'simple',
 };
 
 function buildRewriteMessages(text: string, style: string): ChatMessage[] {
   const styleDescription = REWRITE_STYLES[style] || style;
   return [
     {
-      content: `You are a writing assistant. Rewrite the text to be ${styleDescription}. Return ONLY the rewritten text with no explanations or preamble.`,
+      content:
+        'Rewrite text in the requested style. Output only the rewritten text.',
       role: 'system',
     },
     {
-      content: `Rewrite this text to be ${styleDescription}:\n\n${text}`,
+      content: `${styleDescription}:\n${text}`,
       role: 'user',
     },
   ];
+}
+
+/**
+ * Strip instruction-like preamble that small models sometimes echo back.
+ * For example: "Rewrite this text in a casual tone:\n\nActual rewritten text"
+ */
+function cleanRewriteOutput(output: string, originalText: string): string {
+  let cleaned = output;
+  // Strip lines that look like instructions (e.g. "Rewrite this text...")
+  cleaned = cleaned.replace(/^(Here(?:'s| is)[^\n]*:|Rewrite[^\n]*:)\s*/i, '');
+  // If the model returned the original text verbatim, treat as failure
+  if (cleaned.trim() === originalText.trim()) {
+    return '';
+  }
+  return cleaned.trim();
 }
 
 function buildGenerateMessages(context: string): ChatMessage[] {
@@ -183,8 +199,12 @@ function createAIState() {
     });
   }
 
-  function rewrite(text: string, style: string): Promise<string | null> {
-    return sendRequest(buildRewriteMessages(text, style), 512);
+  async function rewrite(text: string, style: string): Promise<string | null> {
+    const result = await sendRequest(buildRewriteMessages(text, style), 512);
+    if (result == null) {
+      return null;
+    }
+    return cleanRewriteOutput(result, text) || null;
   }
 
   function generateParagraph(

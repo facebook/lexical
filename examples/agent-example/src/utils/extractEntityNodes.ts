@@ -29,49 +29,66 @@ export interface EntitySpan {
 }
 
 /**
- * Walk the editor document tree and collect character offsets for every
- * TextNode. Returns the full plain-text content alongside the offset map.
- * Must be called inside editor.getEditorState().read().
+ * Walk the editor tree and build a plain-text string by concatenating
+ * the content of every TextNode with a single space between block-level
+ * boundaries. Returns the concatenated text alongside an offset map that
+ * records where each TextNode's content starts within that string.
+ *
+ * Unlike `$getRoot().getTextContent()` which inserts `\n\n` between
+ * paragraphs, this function joins blocks with a single space so that
+ * NER character offsets map 1-to-1 back to TextNode positions without
+ * fragile separator arithmetic.
+ *
+ * Must be called inside `editor.getEditorState().read()`.
  */
 export function $collectTextNodeOffsets(): {
   fullText: string;
   textNodes: TextNodeOffset[];
 } {
-  const root = $getRoot();
-  const fullText = root.getTextContent();
   const textNodes: TextNodeOffset[] = [];
-
+  const chunks: string[] = [];
   let offset = 0;
-  const walk = (node: ElementNode) => {
-    for (const child of node.getChildren()) {
+
+  const walk = (node: ElementNode, isFirstBlock: {value: boolean}) => {
+    const children = node.getChildren();
+    for (const child of children) {
       if ($isTextNode(child)) {
-        const len = child.getTextContentSize();
+        const content = child.getTextContent();
+        const len = content.length;
         textNodes.push({key: child.getKey(), length: len, start: offset});
+        chunks.push(content);
         offset += len;
       } else if ($isElementNode(child)) {
-        walk(child);
-        // Element boundaries (e.g. paragraph breaks) contribute a newline
-        offset += 1;
+        if (!child.isInline()) {
+          // Insert a single space between block-level elements
+          if (!isFirstBlock.value) {
+            chunks.push(' ');
+            offset += 1;
+          }
+          isFirstBlock.value = false;
+        }
+        walk(child, isFirstBlock);
       }
     }
   };
-  walk(root);
+  walk($getRoot(), {value: true});
 
-  return {fullText, textNodes};
+  return {fullText: chunks.join(''), textNodes};
 }
 
 /**
  * Replace text spans identified by NER entities with structured Lexical nodes.
  *
- * Entities are processed in reverse document order so that earlier offsets
- * remain valid after later splits. Each entity must fall entirely within a
- * single TextNode (cross-node entities are skipped).
+ * Entities are grouped by their parent TextNode and all split points for a
+ * given node are computed at once so that a single `splitText` call produces
+ * stable part references. Replacements within each node are then applied in
+ * reverse order to keep array indices valid.
  *
- * Must be called inside editor.update().
+ * Must be called inside `editor.update()`.
  *
- * @param textNodes  Offset map produced by $collectTextNodeOffsets
+ * @param textNodes  Offset map produced by `$collectTextNodeOffsets`
  * @param entities   Entity spans from the NER model
- * @param creators   Map from entity label (e.g. "LOC") to a factory that
+ * @param creators   Map from entity label (e.g. `"LOC"`) to a factory that
  *                   creates the replacement LexicalNode for a given text.
  */
 export function $replaceTextWithEntityNodes(
@@ -82,8 +99,7 @@ export function $replaceTextWithEntityNodes(
   // Group entities by the text node they belong to
   const entitiesByNode = new Map<string, EntitySpan[]>();
   for (const entity of entities) {
-    const creator = creators[entity.entity];
-    if (!creator) {
+    if (!creators[entity.entity]) {
       continue;
     }
     for (const tn of textNodes) {
@@ -101,7 +117,8 @@ export function $replaceTextWithEntityNodes(
   }
 
   // For each text node, compute all split points at once, then replace
-  // the entity segments. Process nodes in any order since they're independent.
+  // the entity segments. Nodes are independent so processing order is
+  // irrelevant.
   for (const tn of textNodes) {
     const nodeEntities = entitiesByNode.get(tn.key);
     if (!nodeEntities) {
@@ -115,7 +132,7 @@ export function $replaceTextWithEntityNodes(
     // Sort entities by start offset ascending within this node
     const sorted = [...nodeEntities].sort((a, b) => a.start - b.start);
 
-    // Collect all unique split points
+    // Collect all unique split points (local to this text node)
     const splitPointSet = new Set<number>();
     for (const entity of sorted) {
       const localStart = entity.start - tn.start;
@@ -134,8 +151,8 @@ export function $replaceTextWithEntityNodes(
     const parts =
       splitPoints.length > 0 ? node.splitText(...splitPoints) : [node];
 
-    // Build an offset-to-part-index map: each part starts at a cumulative offset
-    // parts[0] starts at 0, parts[1] starts at splitPoints[0], etc.
+    // Build an offset-to-part-index map: parts[0] starts at 0,
+    // parts[1] starts at splitPoints[0], etc.
     const partOffsets = [0, ...splitPoints];
 
     // Replace entity segments (iterate in reverse so indices stay valid)

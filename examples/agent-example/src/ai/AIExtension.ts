@@ -142,6 +142,7 @@ function createAIState() {
               loadProgress.value = Math.round(data.progress);
             }
           } else {
+            modelStatus.value = 'ready';
             loadProgress.value = null;
           }
         } else if (data.status === 'generating') {

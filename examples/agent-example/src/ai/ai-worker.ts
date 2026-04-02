@@ -66,12 +66,51 @@ async function getNERClassifier() {
 }
 
 interface NERToken {
-  end: number;
   entity: string;
   index: number;
   score: number;
-  start: number;
   word: string;
+}
+
+/**
+ * Compute character-level start/end offsets for each NER token.
+ *
+ * The transformers.js token-classification pipeline does not provide
+ * character offsets (it's a TODO in the library). We reconstruct them
+ * by walking the tokens in order and finding each token's `word` in the
+ * original text. WordPiece continuation tokens (prefixed with `##`) are
+ * matched without a preceding word boundary.
+ */
+function computeTokenOffsets(
+  tokens: NERToken[],
+  text: string,
+): Array<NERToken & {end: number; start: number}> {
+  const result: Array<NERToken & {end: number; start: number}> = [];
+  let cursor = 0;
+  const lowerText = text.toLowerCase();
+
+  for (const token of tokens) {
+    const isSubword = token.word.startsWith('##');
+    const stripped = isSubword ? token.word.slice(2) : token.word;
+    const lowerStripped = stripped.toLowerCase();
+
+    // For non-subword tokens, advance past whitespace to the next word
+    // For subword tokens, continue immediately from cursor (no gap)
+    if (!isSubword) {
+      const idx = lowerText.indexOf(lowerStripped, cursor);
+      if (idx === -1) {
+        continue; // skip token if we can't find it
+      }
+      cursor = idx;
+    }
+
+    const start = cursor;
+    const end = cursor + stripped.length;
+    cursor = end;
+
+    result.push({...token, end, start});
+  }
+  return result;
 }
 
 /**
@@ -88,6 +127,8 @@ function mergeEntities(
   start: number;
   text: string;
 }> {
+  const withOffsets = computeTokenOffsets(tokens, text);
+
   const merged: Array<{
     end: number;
     entity: string;
@@ -95,7 +136,7 @@ function mergeEntities(
     start: number;
   }> = [];
 
-  for (const token of tokens) {
+  for (const token of withOffsets) {
     const prefix = token.entity.slice(0, 2); // "B-" or "I-"
     const label = token.entity.slice(2); // "LOC", "PER", etc.
 
@@ -139,32 +180,20 @@ self.onmessage = async (event: MessageEvent) => {
 
   if (type === 'extract-entities') {
     const {text, entityTypes} = event.data;
-    // eslint-disable-next-line no-console
-    console.log('[Worker] extract-entities request, text length:', text.length);
     try {
       self.postMessage({id, status: 'generating', type: 'status'});
       const classifier = await getNERClassifier();
-      // eslint-disable-next-line no-console
-      console.log('[Worker] NER classifier ready, running inference...');
       const raw: NERToken[] = await classifier(text, {
         ignore_labels: ['O'],
       });
-      // eslint-disable-next-line no-console
-      console.log('[Worker] Raw NER tokens:', raw);
       const entities = mergeEntities(raw, text);
-      // eslint-disable-next-line no-console
-      console.log('[Worker] Merged entities:', entities);
       const filtered = entityTypes
         ? entities.filter((e: {entity: string}) =>
             entityTypes.includes(e.entity),
           )
         : entities;
-      // eslint-disable-next-line no-console
-      console.log('[Worker] Filtered entities:', filtered);
       self.postMessage({entities: filtered, id, type: 'entities'});
     } catch (err: unknown) {
-      // eslint-disable-next-line no-console
-      console.error('[Worker] NER error:', err);
       const message = err instanceof Error ? err.message : String(err);
       self.postMessage({id, message, type: 'error'});
     }

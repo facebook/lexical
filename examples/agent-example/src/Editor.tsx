@@ -42,7 +42,7 @@ const theme = {
 };
 
 const SAMPLE_TEXT =
-  'Lexical was created by Dominic Gannaway in London while working at Meta and is now maintained by Bob Ippolito in San Francisco along with Gerard Rovira and Maksim Horbachevsky in New York. Ivaylo Pavlov at Bloomberg in London built the table and drag-and-drop plugins, James Fitzsimmons in Melbourne contributed collaborative editing through Atticus, and Alessio Gravili in Vancouver contributed while working at Figma.';
+  'Lexical was created by Dominic Gannaway in London while working at Meta and is now maintained by Bob Ippolito in San Francisco, Ivaylo Pavlov at Bloomberg in London, and Gerard Rovira and Maksim Horbachevsky at Meta in New York. Ivaylo Pavlov built the table and drag-and-drop plugins, James Fitzsimmons in Melbourne contributed collaborative editing through Atticus, and Alessio Gravili in Vancouver contributed while working at Figma.';
 
 const agentEditorExtension = defineExtension({
   $initialEditorState: () => {

@@ -9,6 +9,7 @@
 import type {JSX} from 'react';
 
 import {DecoratorTextNode} from '@lexical/extension';
+import {ReactExtension} from '@lexical/react/ReactExtension';
 import {
   $create,
   $getState,
@@ -98,6 +99,7 @@ export class OrgNode extends DecoratorTextNode {
 }
 
 export const OrgNodeExtension = defineExtension({
+  dependencies: [ReactExtension],
   name: '@lexical/agent-example/org-node',
   nodes: () => [OrgNode],
 });

@@ -9,6 +9,7 @@
 import type {JSX} from 'react';
 
 import {DecoratorTextNode} from '@lexical/extension';
+import {ReactExtension} from '@lexical/react/ReactExtension';
 import {
   $create,
   $getState,
@@ -102,6 +103,7 @@ export class PlaceNode extends DecoratorTextNode {
 }
 
 export const PlaceNodeExtension = defineExtension({
+  dependencies: [ReactExtension],
   name: '@lexical/agent-example/place-node',
   nodes: () => [PlaceNode],
 });

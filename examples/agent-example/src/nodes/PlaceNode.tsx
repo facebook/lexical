@@ -6,30 +6,22 @@
  *
  */
 
-import type {
-  DOMConversionMap,
-  DOMConversionOutput,
-  EditorConfig,
-  LexicalNode,
-  NodeKey,
-  SerializedLexicalNode,
-  Spread,
-} from 'lexical';
 import type {JSX} from 'react';
 
+import {DecoratorTextNode} from '@lexical/extension';
 import {
-  $applyNodeReplacement,
-  DecoratorNode,
+  $create,
+  $getState,
+  $setState,
+  buildImportMap,
+  createState,
   defineExtension,
+  DOMConversionOutput,
   DOMExportOutput,
+  LexicalNode,
+  StateConfigValue,
+  StateValueOrUpdater,
 } from 'lexical';
-
-export type SerializedPlaceNode = Spread<
-  {
-    placeName: string;
-  },
-  SerializedLexicalNode
->;
 
 function $convertPlaceElement(
   domNode: HTMLElement,
@@ -41,87 +33,53 @@ function $convertPlaceElement(
   return null;
 }
 
-export class PlaceNode extends DecoratorNode<JSX.Element> {
-  __placeName: string;
+const placeNameState = createState('placeName', {
+  parse: (v) => (typeof v === 'string' ? v : ''),
+});
 
-  static getType(): string {
-    return 'place';
+export class PlaceNode extends DecoratorTextNode {
+  $config() {
+    return this.config('place', {
+      extends: DecoratorTextNode,
+      importDOM: buildImportMap({
+        span: (domNode) =>
+          domNode.hasAttribute('data-lexical-place')
+            ? {conversion: $convertPlaceElement, priority: 1}
+            : null,
+      }),
+      stateConfigs: [{flat: true, stateConfig: placeNameState}],
+    });
   }
 
-  static clone(node: PlaceNode): PlaceNode {
-    return new PlaceNode(node.__placeName, node.__key);
+  getPlaceName(): StateConfigValue<typeof placeNameState> {
+    return $getState(this, placeNameState);
   }
 
-  constructor(placeName: string, key?: NodeKey) {
-    super(key);
-    this.__placeName = placeName;
-  }
-
-  afterCloneFrom(prevNode: this): void {
-    super.afterCloneFrom(prevNode);
-    this.__placeName = prevNode.__placeName;
-  }
-
-  static importJSON(serializedNode: SerializedPlaceNode): PlaceNode {
-    return $createPlaceNode(serializedNode.placeName).updateFromJSON(
-      serializedNode,
-    );
-  }
-
-  exportJSON(): SerializedPlaceNode {
-    return {
-      ...super.exportJSON(),
-      placeName: this.__placeName,
-    };
-  }
-
-  createDOM(_config: EditorConfig): HTMLElement {
-    const span = document.createElement('span');
-    span.style.display = 'inline';
-    return span;
-  }
-
-  updateDOM(): boolean {
-    return false;
+  setPlaceName(
+    valueOrUpdater: StateValueOrUpdater<typeof placeNameState>,
+  ): this {
+    return $setState(this, placeNameState, valueOrUpdater);
   }
 
   exportDOM(): DOMExportOutput {
     const element = document.createElement('span');
-    element.setAttribute('data-lexical-place', this.__placeName);
-    element.textContent = this.__placeName;
+    element.setAttribute('data-lexical-place', this.getPlaceName());
+    element.textContent = this.getPlaceName();
     return {element};
   }
 
-  static importDOM(): DOMConversionMap | null {
-    return {
-      span: (domNode: HTMLElement) => {
-        if (!domNode.hasAttribute('data-lexical-place')) {
-          return null;
-        }
-        return {
-          conversion: $convertPlaceElement,
-          priority: 1,
-        };
-      },
-    };
-  }
-
-  isInline(): boolean {
-    return true;
-  }
-
   getTextContent(): string {
-    return this.__placeName;
+    return this.getPlaceName();
   }
 
   decorate(): JSX.Element {
-    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(this.__placeName)}`;
+    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(this.getPlaceName())}`;
     return (
       <a
         href={mapsUrl}
         target="_blank"
         rel="noopener noreferrer"
-        title={`View ${this.__placeName} on Google Maps`}
+        title={`View ${this.getPlaceName()} on Google Maps`}
         className="inline-flex items-center gap-0.5 rounded bg-emerald-50 px-1 py-0.5 text-emerald-700 no-underline transition-colors hover:bg-emerald-100 dark:bg-emerald-950 dark:text-emerald-300 dark:hover:bg-emerald-900"
         style={{
           borderBottom: '1px dashed currentColor',
@@ -137,7 +95,7 @@ export class PlaceNode extends DecoratorNode<JSX.Element> {
           style={{flexShrink: 0, opacity: 0.7}}>
           <path d="M8 0C5.2 0 3 2.3 3 5.2 3 9.1 8 16 8 16s5-6.9 5-10.8C13 2.3 10.8 0 8 0zm0 7.5a2.2 2.2 0 110-4.4 2.2 2.2 0 010 4.4z" />
         </svg>
-        {this.__placeName}
+        {this.getPlaceName()}
       </a>
     );
   }
@@ -149,7 +107,7 @@ export const PlaceNodeExtension = defineExtension({
 });
 
 export function $createPlaceNode(placeName: string): PlaceNode {
-  return $applyNodeReplacement(new PlaceNode(placeName));
+  return $create(PlaceNode).setPlaceName(placeName);
 }
 
 export function $isPlaceNode(

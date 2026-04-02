@@ -192,7 +192,7 @@ describe('extractEntityNodes', () => {
 
       await editor.update(() => {
         $replaceTextWithEntityNodes(textInfo.textNodes, entities, {
-          LOC: (text) => $createTestEntityNode(text),
+          LOC: $createTestEntityNode,
         });
       });
 
@@ -221,7 +221,7 @@ describe('extractEntityNodes', () => {
 
       await editor.update(() => {
         $replaceTextWithEntityNodes(textInfo.textNodes, entities, {
-          LOC: (text) => $createTestEntityNode(text),
+          LOC: $createTestEntityNode,
         });
       });
 
@@ -248,7 +248,7 @@ describe('extractEntityNodes', () => {
 
       await editor.update(() => {
         $replaceTextWithEntityNodes(textInfo.textNodes, entities, {
-          LOC: (text) => $createTestEntityNode(text),
+          LOC: $createTestEntityNode,
         });
       });
 
@@ -275,7 +275,7 @@ describe('extractEntityNodes', () => {
 
       await editor.update(() => {
         $replaceTextWithEntityNodes(textInfo.textNodes, entities, {
-          LOC: (text) => $createTestEntityNode(text),
+          LOC: $createTestEntityNode,
         });
       });
 
@@ -300,7 +300,7 @@ describe('extractEntityNodes', () => {
 
       await editor.update(() => {
         $replaceTextWithEntityNodes(textInfo.textNodes, entities, {
-          LOC: (text) => $createTestEntityNode(text),
+          LOC: $createTestEntityNode,
         });
       });
 
@@ -365,7 +365,7 @@ describe('extractEntityNodes', () => {
 
       await editor.update(() => {
         $replaceTextWithEntityNodes(textInfo.textNodes, entities, {
-          LOC: (text) => $createTestEntityNode(text),
+          LOC: $createTestEntityNode,
         });
       });
 
@@ -390,7 +390,7 @@ describe('extractEntityNodes', () => {
 
       await editor.update(() => {
         $replaceTextWithEntityNodes(textInfo.textNodes, entities, {
-          LOC: (text) => $createTestEntityNode(text),
+          LOC: $createTestEntityNode,
         });
       });
 
@@ -422,7 +422,7 @@ describe('extractEntityNodes', () => {
 
       await editor.update(() => {
         $replaceTextWithEntityNodes(textInfo.textNodes, entities, {
-          LOC: (text) => $createTestEntityNode(text),
+          LOC: $createTestEntityNode,
         });
       });
 
@@ -451,9 +451,9 @@ describe('extractEntityNodes', () => {
 
       await editor.update(() => {
         $replaceTextWithEntityNodes(textInfo.textNodes, entities, {
-          LOC: (text) => $createTestEntityNode(text),
-          ORG: (text) => $createTestEntityNode(text),
-          PER: (text) => $createTestEntityNode(text),
+          LOC: $createTestEntityNode,
+          ORG: $createTestEntityNode,
+          PER: $createTestEntityNode,
         });
       });
 

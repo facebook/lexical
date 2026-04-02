@@ -237,9 +237,9 @@ export function ToolbarPlugin({ai}: {ai: UseAIReturn}) {
 
     editor.update(() => {
       $replaceTextWithEntityNodes(textInfo.textNodes, entities, {
-        LOC: (text) => $createPlaceNode(text),
-        ORG: (text) => $createOrgNode(text),
-        PER: (text) => $createPersonNode(text),
+        LOC: $createPlaceNode,
+        ORG: $createOrgNode,
+        PER: $createPersonNode,
       });
     });
   }, [editor, extractEntities]);

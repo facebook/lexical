@@ -6,30 +6,22 @@
  *
  */
 
-import type {
-  DOMConversionMap,
-  DOMConversionOutput,
-  EditorConfig,
-  LexicalNode,
-  NodeKey,
-  SerializedLexicalNode,
-  Spread,
-} from 'lexical';
 import type {JSX} from 'react';
 
+import {DecoratorTextNode} from '@lexical/extension';
 import {
-  $applyNodeReplacement,
-  DecoratorNode,
+  $create,
+  $getState,
+  $setState,
+  buildImportMap,
+  createState,
   defineExtension,
+  DOMConversionOutput,
   DOMExportOutput,
+  LexicalNode,
+  StateConfigValue,
+  StateValueOrUpdater,
 } from 'lexical';
-
-export type SerializedPersonNode = Spread<
-  {
-    personName: string;
-  },
-  SerializedLexicalNode
->;
 
 function $convertPersonElement(
   domNode: HTMLElement,
@@ -41,87 +33,53 @@ function $convertPersonElement(
   return null;
 }
 
-export class PersonNode extends DecoratorNode<JSX.Element> {
-  __personName: string;
+const personNameState = createState('personName', {
+  parse: (v) => (typeof v === 'string' ? v : ''),
+});
 
-  static getType(): string {
-    return 'person';
+export class PersonNode extends DecoratorTextNode {
+  $config() {
+    return this.config('person', {
+      extends: DecoratorTextNode,
+      importDOM: buildImportMap({
+        span: (domNode) =>
+          domNode.hasAttribute('data-lexical-person')
+            ? {conversion: $convertPersonElement, priority: 1}
+            : null,
+      }),
+      stateConfigs: [{flat: true, stateConfig: personNameState}],
+    });
   }
 
-  static clone(node: PersonNode): PersonNode {
-    return new PersonNode(node.__personName, node.__key);
+  getPersonName(): StateConfigValue<typeof personNameState> {
+    return $getState(this, personNameState);
   }
 
-  constructor(personName: string, key?: NodeKey) {
-    super(key);
-    this.__personName = personName;
-  }
-
-  afterCloneFrom(prevNode: this): void {
-    super.afterCloneFrom(prevNode);
-    this.__personName = prevNode.__personName;
-  }
-
-  static importJSON(serializedNode: SerializedPersonNode): PersonNode {
-    return $createPersonNode(serializedNode.personName).updateFromJSON(
-      serializedNode,
-    );
-  }
-
-  exportJSON(): SerializedPersonNode {
-    return {
-      ...super.exportJSON(),
-      personName: this.__personName,
-    };
-  }
-
-  createDOM(_config: EditorConfig): HTMLElement {
-    const span = document.createElement('span');
-    span.style.display = 'inline';
-    return span;
-  }
-
-  updateDOM(): boolean {
-    return false;
+  setPersonName(
+    valueOrUpdater: StateValueOrUpdater<typeof personNameState>,
+  ): this {
+    return $setState(this, personNameState, valueOrUpdater);
   }
 
   exportDOM(): DOMExportOutput {
     const element = document.createElement('span');
-    element.setAttribute('data-lexical-person', this.__personName);
-    element.textContent = this.__personName;
+    element.setAttribute('data-lexical-person', this.getPersonName());
+    element.textContent = this.getPersonName();
     return {element};
   }
 
-  static importDOM(): DOMConversionMap | null {
-    return {
-      span: (domNode: HTMLElement) => {
-        if (!domNode.hasAttribute('data-lexical-person')) {
-          return null;
-        }
-        return {
-          conversion: $convertPersonElement,
-          priority: 1,
-        };
-      },
-    };
-  }
-
-  isInline(): boolean {
-    return true;
-  }
-
   getTextContent(): string {
-    return this.__personName;
+    return this.getPersonName();
   }
 
   decorate(): JSX.Element {
-    const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(this.__personName)}`;
+    const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(this.getPersonName())}`;
     return (
       <a
         href={searchUrl}
         target="_blank"
         rel="noopener noreferrer"
-        title={`Search for ${this.__personName}`}
+        title={`Search for ${this.getPersonName()}`}
         className="inline-flex items-center gap-0.5 rounded bg-blue-50 px-1 py-0.5 text-blue-700 no-underline transition-colors hover:bg-blue-100 dark:bg-blue-950 dark:text-blue-300 dark:hover:bg-blue-900"
         style={{
           borderBottom: '1px dashed currentColor',
@@ -137,7 +95,7 @@ export class PersonNode extends DecoratorNode<JSX.Element> {
           style={{flexShrink: 0, opacity: 0.7}}>
           <path d="M8 0a3 3 0 1 1 0 6 3 3 0 0 1 0-6zm0 8c-4 0-6 2-6 3.5V13a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-1.5C14 10 12 8 8 8z" />
         </svg>
-        {this.__personName}
+        {this.getPersonName()}
       </a>
     );
   }
@@ -149,7 +107,7 @@ export const PersonNodeExtension = defineExtension({
 });
 
 export function $createPersonNode(personName: string): PersonNode {
-  return $applyNodeReplacement(new PersonNode(personName));
+  return $create(PersonNode).setPersonName(personName);
 }
 
 export function $isPersonNode(

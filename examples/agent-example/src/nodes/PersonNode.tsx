@@ -115,13 +115,13 @@ export class PersonNode extends DecoratorNode<JSX.Element> {
   }
 
   decorate(): JSX.Element {
-    const searchUrl = `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(this.__personName)}`;
+    const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(this.__personName)}`;
     return (
       <a
         href={searchUrl}
         target="_blank"
         rel="noopener noreferrer"
-        title={`Search Wikipedia for ${this.__personName}`}
+        title={`Search for ${this.__personName}`}
         className="inline-flex items-center gap-0.5 rounded bg-blue-50 px-1 py-0.5 text-blue-700 no-underline transition-colors hover:bg-blue-100 dark:bg-blue-950 dark:text-blue-300 dark:hover:bg-blue-900"
         style={{
           borderBottom: '1px dashed currentColor',

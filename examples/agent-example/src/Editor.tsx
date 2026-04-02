@@ -42,7 +42,7 @@ const theme = {
 };
 
 const SAMPLE_TEXT =
-  'Mark Zuckerberg announced at a recent Meta event in Menlo Park that the Lexical framework would expand its open-source partnerships. Engineers from Bloomberg in New York and teams at Microsoft in Seattle have already adopted the editor for production use. Jordan Walke, creator of React, joined a panel in San Francisco alongside Sophie Alpert to discuss the future of web frameworks. Meanwhile, researchers from MIT in Cambridge presented advances in real-time collaboration built on Lexical.';
+  'Lexical was created by Dominic Gannaway in London while working at Meta and is now maintained by Bob Ippolito in San Francisco along with Gerard Rovira and Maksim Horbachevsky in New York. Ivaylo Pavlov at Bloomberg in London built the table and drag-and-drop plugins, James Fitzsimmons in Melbourne contributed collaborative editing through Atticus, and Alessio Gravili in Vancouver contributed while working at Figma.';
 
 const agentEditorExtension = defineExtension({
   $initialEditorState: () => {

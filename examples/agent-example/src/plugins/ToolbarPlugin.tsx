@@ -160,18 +160,12 @@ export function ToolbarPlugin({ai}: {ai: UseAIReturn}) {
   }, [editor, $updateToolbar]);
 
   const handleRewrite = useCallback(async () => {
-    let textToRewrite = '';
-    let hasSelection = false;
-
-    editor.getEditorState().read(() => {
+    const {hasSelection, textToRewrite} = editor.getEditorState().read(() => {
       const selection = $getSelection();
       if ($isRangeSelection(selection) && !selection.isCollapsed()) {
-        textToRewrite = selection.getTextContent();
-        hasSelection = true;
-      } else {
-        textToRewrite = $getRoot().getTextContent();
-        hasSelection = false;
+        return {hasSelection: true, textToRewrite: selection.getTextContent()};
       }
+      return {hasSelection: false, textToRewrite: $getRoot().getTextContent()};
     });
 
     if (!textToRewrite.trim()) {
@@ -203,10 +197,9 @@ export function ToolbarPlugin({ai}: {ai: UseAIReturn}) {
   }, [editor, rewrite, rewriteStyle]);
 
   const handleGenerate = useCallback(async () => {
-    let context = '';
-    editor.getEditorState().read(() => {
-      context = $getRoot().getTextContent();
-    });
+    const context = editor
+      .getEditorState()
+      .read(() => $getRoot().getTextContent());
 
     // Create a paragraph node to stream tokens into
     let paragraphKey: string | null = null;

@@ -20,6 +20,8 @@ import {
 
 import {AIExtension} from './ai/AIExtension';
 import {useAI} from './ai/useAI';
+import {OrgNodeExtension} from './nodes/OrgNode';
+import {PersonNodeExtension} from './nodes/PersonNode';
 import {PlaceNodeExtension} from './nodes/PlaceNode';
 import {ToolbarPlugin} from './plugins/ToolbarPlugin';
 
@@ -40,7 +42,7 @@ const theme = {
 };
 
 const SAMPLE_TEXT =
-  'The annual tech conference kicked off in San Francisco last week, drawing thousands of developers from around the world. Keynote speakers from London, Tokyo, and Berlin shared insights on the future of web development. Several attendees traveled from Sydney and São Paulo to attend workshops on real-time collaboration and accessibility. The after-party was held at a rooftop venue overlooking the Golden Gate Bridge, with guests from Paris, Mumbai, and Toronto networking late into the evening.';
+  'The annual tech conference organized by Google kicked off in San Francisco last week, with Sundar Pichai delivering the opening keynote. Engineers from Microsoft and Apple traveled from London and Tokyo to attend workshops on AI and accessibility. Meanwhile, a team from the European Space Agency in Paris demonstrated new collaboration tools, while researchers from MIT in Cambridge presented advances in real-time text editing.';
 
 const agentEditorExtension = defineExtension({
   $initialEditorState: () => {
@@ -55,6 +57,8 @@ const agentEditorExtension = defineExtension({
     TabIndentationExtension,
     AIExtension,
     PlaceNodeExtension,
+    PersonNodeExtension,
+    OrgNodeExtension,
   ],
   name: '@lexical/agent-example/editor',
   namespace: '@lexical/agent-example/editor',

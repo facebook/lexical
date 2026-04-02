@@ -22,11 +22,8 @@ import {AIExtension} from './ai/AIExtension';
 import {OrgNodeExtension} from './nodes/OrgNode';
 import {PersonNodeExtension} from './nodes/PersonNode';
 import {PlaceNodeExtension} from './nodes/PlaceNode';
-import {ToolbarExtension} from './plugins/ToolbarPlugin';
-import {
-  useExtensionComponent,
-  useExtensionSignalValue,
-} from './utils/useExtensionHooks';
+import {ToolbarComponent, ToolbarExtension} from './plugins/ToolbarPlugin';
+import {useExtensionSignalValue} from './utils/useExtensionHooks';
 
 const theme = {
   heading: {
@@ -80,13 +77,12 @@ export default function Editor() {
 }
 
 function EditorContent() {
-  const Toolbar = useExtensionComponent(ToolbarExtension);
   const modelStatus = useExtensionSignalValue(AIExtension, 'modelStatus');
   const loadProgress = useExtensionSignalValue(AIExtension, 'loadProgress');
 
   return (
     <div className="flex w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-solid border-black/10 shadow-sm dark:border-white/10 dark:bg-stone-800">
-      <Toolbar />
+      <ToolbarComponent />
       <div className="relative">
         <ContentEditable
           className="min-h-[220px] overflow-y-auto p-4 text-base leading-relaxed text-wrap outline-none"

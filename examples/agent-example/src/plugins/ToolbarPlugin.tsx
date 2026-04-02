@@ -10,7 +10,6 @@ import type {JSX} from 'react';
 
 import {signal} from '@lexical/extension';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {ReactExtension} from '@lexical/react/ReactExtension';
 import {useExtensionDependency} from '@lexical/react/useExtensionComponent';
 import {
   $createHeadingNode,
@@ -204,7 +203,6 @@ export const ToolbarExtension = defineExtension({
     }
 
     return {
-      Component: ToolbarComponent,
       blockType: signal('paragraph'),
       canRedo: signal(false),
       canUndo: signal(false),
@@ -215,7 +213,7 @@ export const ToolbarExtension = defineExtension({
       isUnderline: signal(false),
     };
   },
-  dependencies: [ReactExtension, AIExtension],
+  dependencies: [AIExtension],
   name: '@lexical/agent-example/toolbar',
   register(editor, _config, state) {
     const output = state.getOutput();
@@ -254,18 +252,25 @@ export const ToolbarExtension = defineExtension({
   },
 });
 
-function ToolbarComponent(): JSX.Element {
+function useToolbar() {
+  const toolbar = useExtensionDependency(ToolbarExtension).output;
+  return {
+    blockType: useSignalValue(toolbar.blockType),
+    canRedo: useSignalValue(toolbar.canRedo),
+    canUndo: useSignalValue(toolbar.canUndo),
+    handleExtractEntities: toolbar.handleExtractEntities,
+    handleGenerate: toolbar.handleGenerate,
+    isBold: useSignalValue(toolbar.isBold),
+    isItalic: useSignalValue(toolbar.isItalic),
+    isUnderline: useSignalValue(toolbar.isUnderline),
+  };
+}
+
+export function ToolbarComponent(): JSX.Element {
   const [editor] = useLexicalComposerContext();
   const toolbarRef = useRef<HTMLDivElement>(null);
   const ai = useAI();
-  const toolbar = useExtensionDependency(ToolbarExtension).output;
-
-  const canUndo = useSignalValue(toolbar.canUndo);
-  const canRedo = useSignalValue(toolbar.canRedo);
-  const blockType = useSignalValue(toolbar.blockType);
-  const isBold = useSignalValue(toolbar.isBold);
-  const isItalic = useSignalValue(toolbar.isItalic);
-  const isUnderline = useSignalValue(toolbar.isUnderline);
+  const toolbar = useToolbar();
 
   const {abort, isGenerating, modelStatus} = ai;
   const aiDisabled = isGenerating || modelStatus === 'loading';
@@ -287,7 +292,7 @@ function ToolbarComponent(): JSX.Element {
       ref={toolbarRef}>
       <select
         className="cursor-pointer appearance-none rounded-md border border-solid border-transparent bg-transparent px-2 py-1 text-sm font-medium text-zinc-700 transition-colors duration-150 hover:bg-zinc-200 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500 dark:text-zinc-200 dark:hover:bg-zinc-700"
-        value={blockType}
+        value={toolbar.blockType}
         onChange={(e) => applyBlockType(editor, e.target.value)}
         aria-label="Block type">
         {BLOCK_TYPES.map(({label, value}) => (
@@ -298,7 +303,7 @@ function ToolbarComponent(): JSX.Element {
       </select>
       <Divider />
       <button
-        disabled={!canUndo}
+        disabled={!toolbar.canUndo}
         onClick={() => {
           editor.dispatchCommand(UNDO_COMMAND, undefined);
         }}
@@ -310,7 +315,7 @@ function ToolbarComponent(): JSX.Element {
         />
       </button>
       <button
-        disabled={!canRedo}
+        disabled={!toolbar.canRedo}
         onClick={() => {
           editor.dispatchCommand(REDO_COMMAND, undefined);
         }}
@@ -326,11 +331,11 @@ function ToolbarComponent(): JSX.Element {
         onClick={() => {
           editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold');
         }}
-        className={`${btnBase} mr-0.5 ${isBold ? btnActive : btnInactive}`}
+        className={`${btnBase} mr-0.5 ${toolbar.isBold ? btnActive : btnInactive}`}
         aria-label="Format Bold"
-        aria-pressed={isBold}>
+        aria-pressed={toolbar.isBold}>
         <i
-          className={`${iconBase} ${isBold ? 'opacity-100' : 'opacity-70'}`}
+          className={`${iconBase} ${toolbar.isBold ? 'opacity-100' : 'opacity-70'}`}
           style={maskStyle('/img/bold.svg')}
         />
       </button>
@@ -338,11 +343,11 @@ function ToolbarComponent(): JSX.Element {
         onClick={() => {
           editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'italic');
         }}
-        className={`${btnBase} mr-0.5 ${isItalic ? btnActive : btnInactive}`}
+        className={`${btnBase} mr-0.5 ${toolbar.isItalic ? btnActive : btnInactive}`}
         aria-label="Format Italics"
-        aria-pressed={isItalic}>
+        aria-pressed={toolbar.isItalic}>
         <i
-          className={`${iconBase} ${isItalic ? 'opacity-100' : 'opacity-70'}`}
+          className={`${iconBase} ${toolbar.isItalic ? 'opacity-100' : 'opacity-70'}`}
           style={maskStyle('/img/italic.svg')}
         />
       </button>
@@ -350,11 +355,11 @@ function ToolbarComponent(): JSX.Element {
         onClick={() => {
           editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'underline');
         }}
-        className={`${btnBase} mr-0.5 ${isUnderline ? btnActive : btnInactive}`}
+        className={`${btnBase} mr-0.5 ${toolbar.isUnderline ? btnActive : btnInactive}`}
         aria-label="Format Underline"
-        aria-pressed={isUnderline}>
+        aria-pressed={toolbar.isUnderline}>
         <i
-          className={`${iconBase} ${isUnderline ? 'opacity-100' : 'opacity-70'}`}
+          className={`${iconBase} ${toolbar.isUnderline ? 'opacity-100' : 'opacity-70'}`}
           style={maskStyle('/img/underline.svg')}
         />
       </button>

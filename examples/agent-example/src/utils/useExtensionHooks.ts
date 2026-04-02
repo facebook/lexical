@@ -34,14 +34,3 @@ export function useExtensionSignalValue<
   ] as ReadonlySignal<SignalValue<LexicalExtensionOutput<Extension>[K]>>;
   return useSignalValue(signal);
 }
-
-// TODO: submit fix upstream for useExtensionComponent to handle
-// extensions with register (Output invariance due to ExtensionRegisterState)
-export function useExtensionComponent<
-  Extension extends AnyLexicalExtension,
-  Output extends LexicalExtensionOutput<Extension> & {
-    Component: React.ComponentType;
-  },
->(extension: Extension): Output['Component'] {
-  return (useExtensionDependency(extension).output as Output).Component;
-}

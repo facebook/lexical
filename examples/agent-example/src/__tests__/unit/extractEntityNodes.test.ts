@@ -8,15 +8,18 @@
 
 import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
 import {
+  $create,
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  $getState,
   $isElementNode,
   $isTextNode,
+  $setState,
+  createState,
   DecoratorNode,
   LexicalEditor,
   LexicalNode,
-  SerializedLexicalNode,
 } from 'lexical';
 import {beforeEach, describe, expect, test} from 'vitest';
 
@@ -26,37 +29,29 @@ import {
   type EntitySpan,
 } from '../../utils/extractEntityNodes';
 
+const labelState = createState('label', {
+  parse: (v) => (typeof v === 'string' ? v : ''),
+});
+
 // Minimal inline decorator node for testing replacements
 class TestEntityNode extends DecoratorNode<string> {
-  __label: string;
-
-  static getType(): string {
-    return 'test-entity';
+  $config() {
+    return this.config('test-entity', {
+      extends: DecoratorNode,
+      stateConfigs: [{flat: true, stateConfig: labelState}],
+    });
   }
 
-  static clone(node: TestEntityNode): TestEntityNode {
-    return new TestEntityNode(node.__label, node.__key);
+  getLabel(): string {
+    return $getState(this, labelState);
   }
 
-  constructor(label: string, key?: string) {
-    super(key);
-    this.__label = label;
-  }
-
-  static importJSON(_serializedNode: SerializedLexicalNode): TestEntityNode {
-    return new TestEntityNode('');
-  }
-
-  exportJSON(): SerializedLexicalNode {
-    return {...super.exportJSON()};
+  setLabel(label: string): this {
+    return $setState(this, labelState, label);
   }
 
   createDOM(): HTMLElement {
     return document.createElement('span');
-  }
-
-  updateDOM(): boolean {
-    return false;
   }
 
   isInline(): boolean {
@@ -64,16 +59,16 @@ class TestEntityNode extends DecoratorNode<string> {
   }
 
   getTextContent(): string {
-    return this.__label;
+    return this.getLabel();
   }
 
   decorate(): string {
-    return this.__label;
+    return this.getLabel();
   }
 }
 
 function $createTestEntityNode(label: string): TestEntityNode {
-  return new TestEntityNode(label);
+  return $create(TestEntityNode).setLabel(label);
 }
 
 const TestEntityExtension = defineExtension({

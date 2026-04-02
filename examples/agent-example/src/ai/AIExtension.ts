@@ -6,12 +6,11 @@
  *
  */
 
-import {signal} from '@lexical/extension';
+import {effect, signal} from '@lexical/extension';
 import {
   COMMAND_PRIORITY_LOW,
   defineExtension,
   KEY_ESCAPE_COMMAND,
-  mergeRegister,
 } from 'lexical';
 
 type ModelStatus = 'idle' | 'loading' | 'ready' | 'error';
@@ -247,25 +246,25 @@ function createAIState() {
 export type AIExtensionOutput = ReturnType<typeof createAIState>;
 
 export const AIExtension = defineExtension({
-  build() {
-    return createAIState();
-  },
+  build: createAIState,
   name: '@lexical/agent-example/ai',
   register(editor, _config, state) {
     const output = state.getOutput();
-    return mergeRegister(
-      editor.registerCommand(
-        KEY_ESCAPE_COMMAND,
-        () => {
-          if (output.isGenerating.peek()) {
+    const disposeEffect = effect(() => {
+      if (output.isGenerating.value) {
+        return editor.registerCommand(
+          KEY_ESCAPE_COMMAND,
+          () => {
             output.abort();
             return true;
-          }
-          return false;
-        },
-        COMMAND_PRIORITY_LOW,
-      ),
-      () => output.dispose(),
-    );
+          },
+          COMMAND_PRIORITY_LOW,
+        );
+      }
+    });
+    return () => {
+      disposeEffect();
+      output.dispose();
+    };
   },
 });

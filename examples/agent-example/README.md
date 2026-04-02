@@ -23,5 +23,5 @@ The model is loaded lazily on the first AI action. Generated text streams direct
 ## Run it locally
 
 ```bash
-npm i && npm run dev
+pnpm i && pnpm run dev
 ```

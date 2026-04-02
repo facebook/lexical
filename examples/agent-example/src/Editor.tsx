@@ -22,7 +22,7 @@ import {AIExtension} from './ai/AIExtension';
 import {OrgNodeExtension} from './nodes/OrgNode';
 import {PersonNodeExtension} from './nodes/PersonNode';
 import {PlaceNodeExtension} from './nodes/PlaceNode';
-import {Toolbar, ToolbarExtension} from './plugins/ToolbarPlugin';
+import {Toolbar, ToolbarExtension} from './plugins/ToolbarExtension';
 import {useExtensionSignalValue} from './utils/useExtensionHooks';
 
 const theme = {

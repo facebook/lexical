@@ -41,7 +41,7 @@ import {
   REDO_COMMAND,
   UNDO_COMMAND,
 } from 'lexical';
-import React, {useCallback, useRef} from 'react';
+import React, {useRef} from 'react';
 
 import {AIExtension} from '../ai/AIExtension';
 import {useAI, type UseAIReturn} from '../ai/useAI';
@@ -124,13 +124,92 @@ function $getToolbarState(): {
   };
 }
 
+function $appendToken(paragraphKey: string, token: string): void {
+  const paragraph = $getNodeByKey(paragraphKey);
+  if ($isElementNode(paragraph)) {
+    const parts = token.split(/(\n|\t)/);
+    for (const part of parts) {
+      if (part === '\n') {
+        paragraph.append($createLineBreakNode());
+      } else if (part === '\t') {
+        paragraph.append($createTabNode());
+      } else if (part) {
+        paragraph.append($createTextNode(part));
+      }
+    }
+  }
+}
+
 export const ToolbarExtension = defineExtension({
-  build() {
+  build(editor, _config, state) {
+    const ai = state.getDependency(AIExtension).output;
+
+    function handleGenerate(): Promise<string | null> {
+      const context = editor
+        .getEditorState()
+        .read(() => $getRoot().getTextContent());
+
+      let paragraphKey: string | null = null;
+      editor.update(() => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        root.append(paragraph);
+        paragraphKey = paragraph.getKey();
+      });
+
+      return ai
+        .generateParagraph(context, (token: string) => {
+          if (paragraphKey) {
+            editor.update(() => $appendToken(paragraphKey!, token), {
+              tag: 'ai-stream',
+            });
+          }
+        })
+        .then((result) => {
+          if (paragraphKey) {
+            editor.update(() => {
+              const paragraph = $getNodeByKey(paragraphKey!);
+              if ($isElementNode(paragraph)) {
+                paragraph.selectEnd();
+              }
+            });
+          }
+          return result;
+        });
+    }
+
+    function handleExtractEntities(): Promise<void> {
+      const textInfo = editor
+        .getEditorState()
+        .read(() => $collectTextNodeOffsets());
+
+      if (!textInfo.fullText.trim()) {
+        return Promise.resolve();
+      }
+
+      return ai
+        .extractEntities(textInfo.fullText, ['LOC', 'PER', 'ORG'])
+        .then((entities) => {
+          if (entities.length === 0) {
+            return;
+          }
+          editor.update(() => {
+            $replaceTextWithEntityNodes(textInfo.textNodes, entities, {
+              LOC: $createPlaceNode,
+              ORG: $createOrgNode,
+              PER: $createPersonNode,
+            });
+          });
+        });
+    }
+
     return {
       Component: ToolbarComponent,
       blockType: signal('paragraph'),
       canRedo: signal(false),
       canUndo: signal(false),
+      handleExtractEntities,
+      handleGenerate,
       isBold: signal(false),
       isItalic: signal(false),
       isUnderline: signal(false),
@@ -188,84 +267,7 @@ function ToolbarComponent(): JSX.Element {
   const isItalic = useSignalValue(toolbar.isItalic);
   const isUnderline = useSignalValue(toolbar.isUnderline);
 
-  const {abort, extractEntities, generateParagraph, isGenerating, modelStatus} =
-    ai;
-
-  const handleGenerate = useCallback(async () => {
-    const context = editor
-      .getEditorState()
-      .read(() => $getRoot().getTextContent());
-
-    // Create a paragraph node to stream tokens into
-    let paragraphKey: string | null = null;
-    editor.update(() => {
-      const root = $getRoot();
-      const paragraph = $createParagraphNode();
-      root.append(paragraph);
-      paragraphKey = paragraph.getKey();
-    });
-
-    await generateParagraph(context, (token: string) => {
-      if (paragraphKey) {
-        editor.update(
-          () => {
-            const paragraph = $getNodeByKey(paragraphKey!);
-            if ($isElementNode(paragraph)) {
-              const parts = token.split(/(\n|\t)/);
-              for (const part of parts) {
-                if (part === '\n') {
-                  paragraph.append($createLineBreakNode());
-                } else if (part === '\t') {
-                  paragraph.append($createTabNode());
-                } else if (part) {
-                  paragraph.append($createTextNode(part));
-                }
-              }
-            }
-          },
-          {tag: 'ai-stream'},
-        );
-      }
-    });
-
-    // Move selection to end of the generated paragraph
-    if (paragraphKey) {
-      editor.update(() => {
-        const paragraph = $getNodeByKey(paragraphKey!);
-        if ($isElementNode(paragraph)) {
-          paragraph.selectEnd();
-        }
-      });
-    }
-  }, [editor, generateParagraph]);
-
-  const handleExtractEntities = useCallback(async () => {
-    const textInfo = editor
-      .getEditorState()
-      .read(() => $collectTextNodeOffsets());
-
-    if (!textInfo.fullText.trim()) {
-      return;
-    }
-
-    const entities = await extractEntities(textInfo.fullText, [
-      'LOC',
-      'PER',
-      'ORG',
-    ]);
-    if (entities.length === 0) {
-      return;
-    }
-
-    editor.update(() => {
-      $replaceTextWithEntityNodes(textInfo.textNodes, entities, {
-        LOC: $createPlaceNode,
-        ORG: $createOrgNode,
-        PER: $createPersonNode,
-      });
-    });
-  }, [editor, extractEntities]);
-
+  const {abort, isGenerating, modelStatus} = ai;
   const aiDisabled = isGenerating || modelStatus === 'loading';
 
   const btnBase =
@@ -406,8 +408,8 @@ function ToolbarComponent(): JSX.Element {
         abort={abort}
         aiDisabled={aiDisabled}
         aiBtnBase={aiBtnBase}
-        handleExtractEntities={handleExtractEntities}
-        handleGenerate={handleGenerate}
+        handleExtractEntities={toolbar.handleExtractEntities}
+        handleGenerate={toolbar.handleGenerate}
         isGenerating={isGenerating}
       />
     </div>

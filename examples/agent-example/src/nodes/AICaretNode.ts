@@ -39,7 +39,7 @@ export class AICaretNode extends DecoratorNode<unknown> {
     span.ariaHidden = 'true';
     span.dataset.aiCaretNode = 'true';
     span.className =
-      'inline-block h-[1em] w-0.5 translate-y-0.5 animate-pulse rounded-full bg-indigo-500 dark:bg-indigo-400';
+      'inline-block h-[1em] w-0.5 translate-y-0.5 animate-blink rounded-full bg-indigo-500 dark:bg-indigo-400';
     return span;
   }
 

@@ -8,11 +8,16 @@
 
 import type {JSX} from 'react';
 
-import {DecoratorTextNode} from '@lexical/extension';
+import {
+  applyFormatFromStyle,
+  applyFormatToDom,
+  DecoratorTextNode,
+} from '@lexical/extension';
 import {ReactExtension} from '@lexical/react/ReactExtension';
 import {
   $create,
   $getState,
+  $isTextNode,
   $setState,
   buildImportMap,
   createState,
@@ -24,14 +29,28 @@ import {
   StateValueOrUpdater,
 } from 'lexical';
 
+import {EntityLink} from './EntityLink';
+
+const TAG_TO_FORMAT = {b: 'bold', i: 'italic', u: 'underline'} as const;
+
 function $convertPersonElement(
   domNode: HTMLElement,
 ): DOMConversionOutput | null {
   const personName = domNode.getAttribute('data-lexical-person');
-  if (personName) {
-    return {node: $createPersonNode(personName)};
+  if (!personName) {
+    return null;
   }
-  return null;
+  const node = $createPersonNode(personName);
+  return {
+    after: (children) => {
+      const firstChild = children[0];
+      if ($isTextNode(firstChild)) {
+        node.setFormat(firstChild.getFormat());
+      }
+      return children;
+    },
+    node: applyFormatFromStyle(node, domNode.style),
+  };
 }
 
 const personNameState = createState('personName', {
@@ -65,7 +84,13 @@ export class PersonNode extends DecoratorTextNode {
   exportDOM(): DOMExportOutput {
     const element = document.createElement('span');
     element.setAttribute('data-lexical-person', this.getPersonName());
-    element.textContent = this.getPersonName();
+    element.appendChild(
+      applyFormatToDom(
+        this,
+        document.createTextNode(this.getPersonName()),
+        TAG_TO_FORMAT,
+      ),
+    );
     return {element};
   }
 
@@ -74,30 +99,24 @@ export class PersonNode extends DecoratorTextNode {
   }
 
   decorate(): JSX.Element {
-    const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(this.getPersonName())}`;
     return (
-      <a
-        href={searchUrl}
-        target="_blank"
-        rel="noopener noreferrer"
+      <EntityLink
+        href={`https://www.google.com/search?q=${encodeURIComponent(this.getPersonName())}`}
         title={`Search for ${this.getPersonName()}`}
-        className="inline-flex items-center gap-0.5 rounded bg-blue-50 px-1 py-0.5 text-blue-700 no-underline transition-colors hover:bg-blue-100 dark:bg-blue-950 dark:text-blue-300 dark:hover:bg-blue-900"
-        style={{
-          borderBottom: '1px dashed currentColor',
-          cursor: 'pointer',
-          fontSize: 'inherit',
-          lineHeight: 'inherit',
-        }}>
-        <svg
-          viewBox="0 0 16 16"
-          fill="currentColor"
-          width="12"
-          height="12"
-          style={{flexShrink: 0, opacity: 0.7}}>
-          <path d="M8 0a3 3 0 1 1 0 6 3 3 0 0 1 0-6zm0 8c-4 0-6 2-6 3.5V13a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-1.5C14 10 12 8 8 8z" />
-        </svg>
+        className="bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-950 dark:text-blue-300 dark:hover:bg-blue-900"
+        format={this.getFormat()}
+        icon={
+          <svg
+            viewBox="0 0 16 16"
+            fill="currentColor"
+            width="12"
+            height="12"
+            style={{flexShrink: 0, opacity: 0.7}}>
+            <path d="M8 0a3 3 0 1 1 0 6 3 3 0 0 1 0-6zm0 8c-4 0-6 2-6 3.5V13a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-1.5C14 10 12 8 8 8z" />
+          </svg>
+        }>
         {this.getPersonName()}
-      </a>
+      </EntityLink>
     );
   }
 }

@@ -6,7 +6,7 @@
  *
  */
 
-import {buildEditorFromExtensions} from '@lexical/extension';
+import {buildEditorFromExtensions, DecoratorTextNode} from '@lexical/extension';
 import {
   $create,
   $createLineBreakNode,
@@ -19,7 +19,6 @@ import {
   $isTextNode,
   $setState,
   createState,
-  DecoratorNode,
   defineExtension,
   LexicalEditorWithDispose,
   LexicalNode,
@@ -36,10 +35,10 @@ const labelState = createState('label', {
 });
 
 // Minimal inline decorator node for testing replacements
-class TestEntityNode extends DecoratorNode<string> {
+class TestEntityNode extends DecoratorTextNode {
   $config() {
     return this.config('test-entity', {
-      extends: DecoratorNode,
+      extends: DecoratorTextNode,
       stateConfigs: [{flat: true, stateConfig: labelState}],
     });
   }
@@ -52,19 +51,7 @@ class TestEntityNode extends DecoratorNode<string> {
     return $setState(this, labelState, label);
   }
 
-  createDOM(): HTMLElement {
-    return document.createElement('span');
-  }
-
-  isInline(): boolean {
-    return true;
-  }
-
   getTextContent(): string {
-    return this.getLabel();
-  }
-
-  decorate(): string {
     return this.getLabel();
   }
 }

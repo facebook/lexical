@@ -8,11 +8,16 @@
 
 import type {JSX} from 'react';
 
-import {DecoratorTextNode} from '@lexical/extension';
+import {
+  applyFormatFromStyle,
+  applyFormatToDom,
+  DecoratorTextNode,
+} from '@lexical/extension';
 import {ReactExtension} from '@lexical/react/ReactExtension';
 import {
   $create,
   $getState,
+  $isTextNode,
   $setState,
   buildImportMap,
   createState,
@@ -24,12 +29,26 @@ import {
   StateValueOrUpdater,
 } from 'lexical';
 
+import {EntityLink} from './EntityLink';
+
+const TAG_TO_FORMAT = {b: 'bold', i: 'italic', u: 'underline'} as const;
+
 function $convertOrgElement(domNode: HTMLElement): DOMConversionOutput | null {
   const orgName = domNode.getAttribute('data-lexical-org');
-  if (orgName) {
-    return {node: $createOrgNode(orgName)};
+  if (!orgName) {
+    return null;
   }
-  return null;
+  const node = $createOrgNode(orgName);
+  return {
+    after: (children) => {
+      const firstChild = children[0];
+      if ($isTextNode(firstChild)) {
+        node.setFormat(firstChild.getFormat());
+      }
+      return children;
+    },
+    node: applyFormatFromStyle(node, domNode.style),
+  };
 }
 
 const orgNameState = createState('orgName', {
@@ -61,7 +80,13 @@ export class OrgNode extends DecoratorTextNode {
   exportDOM(): DOMExportOutput {
     const element = document.createElement('span');
     element.setAttribute('data-lexical-org', this.getOrgName());
-    element.textContent = this.getOrgName();
+    element.appendChild(
+      applyFormatToDom(
+        this,
+        document.createTextNode(this.getOrgName()),
+        TAG_TO_FORMAT,
+      ),
+    );
     return {element};
   }
 
@@ -70,30 +95,24 @@ export class OrgNode extends DecoratorTextNode {
   }
 
   decorate(): JSX.Element {
-    const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(this.getOrgName())}`;
     return (
-      <a
-        href={searchUrl}
-        target="_blank"
-        rel="noopener noreferrer"
+      <EntityLink
+        href={`https://www.google.com/search?q=${encodeURIComponent(this.getOrgName())}`}
         title={`Search for ${this.getOrgName()}`}
-        className="inline-flex items-center gap-0.5 rounded bg-violet-50 px-1 py-0.5 text-violet-700 no-underline transition-colors hover:bg-violet-100 dark:bg-violet-950 dark:text-violet-300 dark:hover:bg-violet-900"
-        style={{
-          borderBottom: '1px dashed currentColor',
-          cursor: 'pointer',
-          fontSize: 'inherit',
-          lineHeight: 'inherit',
-        }}>
-        <svg
-          viewBox="0 0 16 16"
-          fill="currentColor"
-          width="12"
-          height="12"
-          style={{flexShrink: 0, opacity: 0.7}}>
-          <path d="M3 1a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v14H3V1zm2 2h2v2H5V3zm4 0h2v2H9V3zM5 7h2v2H5V7zm4 0h2v2H9V7zm-2 4h2v4H7v-4z" />
-        </svg>
+        className="bg-violet-50 text-violet-700 hover:bg-violet-100 dark:bg-violet-950 dark:text-violet-300 dark:hover:bg-violet-900"
+        format={this.getFormat()}
+        icon={
+          <svg
+            viewBox="0 0 16 16"
+            fill="currentColor"
+            width="12"
+            height="12"
+            style={{flexShrink: 0, opacity: 0.7}}>
+            <path d="M3 1a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v14H3V1zm2 2h2v2H5V3zm4 0h2v2H9V3zM5 7h2v2H5V7zm4 0h2v2H9V7zm-2 4h2v4H7v-4z" />
+          </svg>
+        }>
         {this.getOrgName()}
-      </a>
+      </EntityLink>
     );
   }
 }

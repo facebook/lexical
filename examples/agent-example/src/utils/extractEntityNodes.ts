@@ -6,13 +6,13 @@
  *
  */
 
+import {type DecoratorTextNode} from '@lexical/extension';
 import {
   $getNodeByKey,
   $getRoot,
   $isElementNode,
   $isTextNode,
   type ElementNode,
-  type LexicalNode,
 } from 'lexical';
 
 export interface TextNodeOffset {
@@ -98,7 +98,7 @@ export function $collectTextNodeOffsets(): {
 export function $replaceTextWithEntityNodes(
   textNodes: TextNodeOffset[],
   entities: EntitySpan[],
-  creators: Record<string, (text: string) => LexicalNode>,
+  creators: Record<string, (text: string) => DecoratorTextNode>,
 ): void {
   // Group entities by the text node they belong to
   const entitiesByNode = new Map<string, EntitySpan[]>();
@@ -163,7 +163,9 @@ export function $replaceTextWithEntityNodes(
       if (partIndex >= 0) {
         const creator = creators[entity.entity];
         if (creator) {
-          parts[partIndex].replace(creator(entity.text));
+          const replacement = creator(entity.text);
+          replacement.setFormat(parts[partIndex].getFormat());
+          parts[partIndex].replace(replacement);
         }
       }
     }

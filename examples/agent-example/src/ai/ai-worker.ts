@@ -25,7 +25,7 @@ async function getGenerator(): Promise<TextGenerationPipeline> {
     return generator;
   }
   self.postMessage({status: 'loading-model', type: 'status'});
-  generator = await pipeline(
+  generator = await pipeline<'text-generation'>(
     'text-generation',
     'HuggingFaceTB/SmolLM2-135M-Instruct',
     {
@@ -49,7 +49,7 @@ async function getNERClassifier(): Promise<TokenClassificationPipeline> {
     return nerClassifier;
   }
   self.postMessage({status: 'loading-ner', type: 'status'});
-  nerClassifier = await pipeline(
+  nerClassifier = await pipeline<'token-classification'>(
     'token-classification',
     'Xenova/bert-base-NER',
     {

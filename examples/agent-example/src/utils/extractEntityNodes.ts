@@ -87,7 +87,7 @@ export function $collectTextNodeOffsets(): {
  * Wrap a DecoratorTextNode factory so it copies the text format from
  * the source TextNode and replaces it in the tree.
  */
-export function $replaceWithEntity(
+export function replaceWithEntity(
   create: (text: string) => DecoratorTextNode,
 ): (textNode: TextNode) => void {
   return (textNode) => {

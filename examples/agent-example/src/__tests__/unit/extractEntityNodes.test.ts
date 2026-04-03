@@ -28,7 +28,7 @@ import {describe, expect, test} from 'vitest';
 import {
   $collectTextNodeOffsets,
   $replaceTextWithEntityNodes,
-  $replaceWithEntity,
+  replaceWithEntity,
 } from '../../utils/extractEntityNodes';
 
 const labelState = createState('label', {
@@ -332,7 +332,7 @@ describe('extractEntityNodes', () => {
           $replaceTextWithEntityNodes(
             textInfo.textNodes,
             [{end: 12, entity: 'LOC', start: 6, text: 'London'}],
-            {LOC: $replaceWithEntity($createTestEntityNode)},
+            {LOC: replaceWithEntity($createTestEntityNode)},
           );
         },
         {discrete: true},
@@ -359,7 +359,7 @@ describe('extractEntityNodes', () => {
           $replaceTextWithEntityNodes(
             textInfo.textNodes,
             [{end: 6, entity: 'LOC', start: 0, text: 'London'}],
-            {LOC: $replaceWithEntity($createTestEntityNode)},
+            {LOC: replaceWithEntity($createTestEntityNode)},
           );
         },
         {discrete: true},
@@ -384,7 +384,7 @@ describe('extractEntityNodes', () => {
           $replaceTextWithEntityNodes(
             textInfo.textNodes,
             [{end: 12, entity: 'LOC', start: 6, text: 'London'}],
-            {LOC: $replaceWithEntity($createTestEntityNode)},
+            {LOC: replaceWithEntity($createTestEntityNode)},
           );
         },
         {discrete: true},
@@ -409,7 +409,7 @@ describe('extractEntityNodes', () => {
           $replaceTextWithEntityNodes(
             textInfo.textNodes,
             [{end: 6, entity: 'LOC', start: 0, text: 'London'}],
-            {LOC: $replaceWithEntity($createTestEntityNode)},
+            {LOC: replaceWithEntity($createTestEntityNode)},
           );
         },
         {discrete: true},
@@ -436,7 +436,7 @@ describe('extractEntityNodes', () => {
               {end: 11, entity: 'LOC', start: 5, text: 'London'},
               {end: 20, entity: 'LOC', start: 15, text: 'Paris'},
             ],
-            {LOC: $replaceWithEntity($createTestEntityNode)},
+            {LOC: replaceWithEntity($createTestEntityNode)},
           );
         },
         {discrete: true},
@@ -472,13 +472,13 @@ describe('extractEntityNodes', () => {
               {end: 21, entity: 'ORG', start: 17, text: 'Meta'},
             ],
             {
-              LOC: $replaceWithEntity((text) =>
+              LOC: replaceWithEntity((text) =>
                 $createTestEntityNode(`loc:${text}`),
               ),
-              ORG: $replaceWithEntity((text) =>
+              ORG: replaceWithEntity((text) =>
                 $createTestEntityNode(`org:${text}`),
               ),
-              PER: $replaceWithEntity((text) =>
+              PER: replaceWithEntity((text) =>
                 $createTestEntityNode(`per:${text}`),
               ),
             },
@@ -509,7 +509,7 @@ describe('extractEntityNodes', () => {
           $replaceTextWithEntityNodes(
             textInfo.textNodes,
             [{end: 12, entity: 'MISC', start: 6, text: 'London'}],
-            {LOC: $replaceWithEntity($createTestEntityNode)},
+            {LOC: replaceWithEntity($createTestEntityNode)},
           );
         },
         {discrete: true},
@@ -534,7 +534,7 @@ describe('extractEntityNodes', () => {
               {end: 6, entity: 'LOC', start: 0, text: 'London'},
               {end: 11, entity: 'LOC', start: 6, text: 'Paris'},
             ],
-            {LOC: $replaceWithEntity($createTestEntityNode)},
+            {LOC: replaceWithEntity($createTestEntityNode)},
           );
         },
         {discrete: true},
@@ -565,7 +565,7 @@ describe('extractEntityNodes', () => {
               {end: 12, entity: 'LOC', start: 6, text: 'London'},
               {end: 22, entity: 'LOC', start: 17, text: 'Paris'},
             ],
-            {LOC: $replaceWithEntity($createTestEntityNode)},
+            {LOC: replaceWithEntity($createTestEntityNode)},
           );
         },
         {discrete: true},
@@ -594,9 +594,9 @@ describe('extractEntityNodes', () => {
               {end: 71, entity: 'ORG', start: 67, text: 'Meta'},
             ],
             {
-              LOC: $replaceWithEntity($createTestEntityNode),
-              ORG: $replaceWithEntity($createTestEntityNode),
-              PER: $replaceWithEntity($createTestEntityNode),
+              LOC: replaceWithEntity($createTestEntityNode),
+              ORG: replaceWithEntity($createTestEntityNode),
+              PER: replaceWithEntity($createTestEntityNode),
             },
           );
         },

@@ -32,7 +32,7 @@ import {$createPlaceNode, PlaceNodeExtension} from '../nodes/PlaceNode';
 import {
   $collectTextNodeOffsets,
   $replaceTextWithEntityNodes,
-  $replaceWithEntity,
+  replaceWithEntity,
 } from '../utils/extractEntityNodes';
 
 type ModelStatus = 'idle' | 'loading' | 'ready' | 'error';
@@ -337,9 +337,9 @@ function createAIState(editor: LexicalEditor) {
     editor.update(
       () => {
         $replaceTextWithEntityNodes(textInfo.textNodes, entities, {
-          LOC: $replaceWithEntity($createPlaceNode),
-          ORG: $replaceWithEntity($createOrgNode),
-          PER: $replaceWithEntity($createPersonNode),
+          LOC: replaceWithEntity($createPlaceNode),
+          ORG: replaceWithEntity($createOrgNode),
+          PER: replaceWithEntity($createPersonNode),
         });
       },
       {tag: AI_ENTITIES_TAG},

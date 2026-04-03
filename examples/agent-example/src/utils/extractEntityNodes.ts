@@ -13,6 +13,7 @@ import {
   $isElementNode,
   $isTextNode,
   type ElementNode,
+  type TextNode,
 } from 'lexical';
 
 export interface TextNodeOffset {
@@ -83,6 +84,20 @@ export function $collectTextNodeOffsets(): {
 }
 
 /**
+ * Wrap a DecoratorTextNode factory so it copies the text format from
+ * the source TextNode and replaces it in the tree.
+ */
+export function $replaceWithEntity(
+  create: (text: string) => DecoratorTextNode,
+): (textNode: TextNode) => void {
+  return (textNode) => {
+    const entity = create(textNode.getTextContent());
+    entity.setFormat(textNode.getFormat());
+    textNode.replace(entity);
+  };
+}
+
+/**
  * Replace text spans identified by NER entities with structured Lexical nodes.
  *
  * Entities are grouped by their parent TextNode and all split points for a
@@ -92,18 +107,19 @@ export function $collectTextNodeOffsets(): {
  *
  * @param textNodes  Offset map produced by `$collectTextNodeOffsets`
  * @param entities   Entity spans from the NER model
- * @param creators   Map from entity label (e.g. `"LOC"`) to a factory that
- *                   creates the replacement LexicalNode for a given text.
+ * @param replacers  Map from entity label (e.g. `"LOC"`) to a function that
+ *                   receives the split TextNode and replaces it in-place.
+ *                   Use `$replaceWithEntity` to create these from a factory.
  */
 export function $replaceTextWithEntityNodes(
   textNodes: TextNodeOffset[],
   entities: EntitySpan[],
-  creators: Record<string, (text: string) => DecoratorTextNode>,
+  replacers: Record<string, (textNode: TextNode) => void>,
 ): void {
   // Group entities by the text node they belong to
   const entitiesByNode = new Map<string, EntitySpan[]>();
   for (const entity of entities) {
-    if (creators[entity.entity]) {
+    if (replacers[entity.entity]) {
       for (const tn of textNodes) {
         const nodeEnd = tn.start + tn.length;
         if (entity.start >= tn.start && entity.end <= nodeEnd) {
@@ -161,11 +177,9 @@ export function $replaceTextWithEntityNodes(
       const localStart = entity.start - tn.start;
       const partIndex = partOffsets.indexOf(localStart);
       if (partIndex >= 0) {
-        const creator = creators[entity.entity];
-        if (creator) {
-          const replacement = creator(entity.text);
-          replacement.setFormat(parts[partIndex].getFormat());
-          parts[partIndex].replace(replacement);
+        const replacer = replacers[entity.entity];
+        if (replacer) {
+          replacer(parts[partIndex]);
         }
       }
     }

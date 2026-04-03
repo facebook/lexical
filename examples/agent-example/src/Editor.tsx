@@ -79,7 +79,7 @@ function EditorContent() {
       <Toolbar />
       <div className="relative">
         <ContentEditable
-          className="min-h-[220px] overflow-y-auto p-4 text-base leading-relaxed text-wrap outline-none"
+          className="min-h-55 overflow-y-auto p-4 text-base leading-relaxed text-wrap outline-none"
           aria-label="Rich text editor"
           aria-placeholder="Enter some text..."
           placeholder={

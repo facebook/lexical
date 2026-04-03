@@ -6,7 +6,7 @@
  *
  */
 
-import {signal} from '@lexical/extension';
+import {$isDecoratorTextNode, signal} from '@lexical/extension';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useExtensionDependency} from '@lexical/react/useExtensionComponent';
 import {
@@ -19,6 +19,7 @@ import {$findMatchingParent} from '@lexical/utils';
 import {
   $createParagraphNode,
   $getSelection,
+  $isNodeSelection,
   $isRangeSelection,
   $isRootOrShadowRoot,
   CAN_REDO_COMMAND,
@@ -82,9 +83,25 @@ function $getToolbarState(): {
   isUnderline: boolean;
 } | null {
   const selection = $getSelection();
+
+  if ($isNodeSelection(selection)) {
+    const nodes = selection.getNodes();
+    const decoratorNode = nodes.find($isDecoratorTextNode);
+    if (decoratorNode) {
+      return {
+        blockType: 'paragraph',
+        isBold: decoratorNode.hasFormat('bold'),
+        isItalic: decoratorNode.hasFormat('italic'),
+        isUnderline: decoratorNode.hasFormat('underline'),
+      };
+    }
+    return null;
+  }
+
   if (!$isRangeSelection(selection)) {
     return null;
   }
+
   const anchorNode = selection.anchor.getNode();
   const topLevelElement =
     $findMatchingParent(anchorNode, (e) => {

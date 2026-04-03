@@ -11,6 +11,7 @@ import type {JSX} from 'react';
 import {
   applyFormatFromStyle,
   applyFormatToDom,
+  DecoratorTextExtension,
   DecoratorTextNode,
 } from '@lexical/extension';
 import {ReactExtension} from '@lexical/react/ReactExtension';
@@ -122,7 +123,7 @@ export class PlaceNode extends DecoratorTextNode {
 }
 
 export const PlaceNodeExtension = defineExtension({
-  dependencies: [ReactExtension],
+  dependencies: [DecoratorTextExtension, ReactExtension],
   name: '@lexical/agent-example/place-node',
   nodes: () => [PlaceNode],
 });

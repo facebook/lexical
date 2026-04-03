@@ -10,7 +10,6 @@ import {
   $getNodeByKey,
   $getRoot,
   $isElementNode,
-  $isLineBreakNode,
   $isTextNode,
   type ElementNode,
   type LexicalNode,
@@ -48,30 +47,28 @@ export function $collectTextNodeOffsets(): {
   const chunks: string[] = [];
   let offset = 0;
 
-  const walk = (node: ElementNode, isFirstBlock: {value: boolean}) => {
+  let isFirstBlock = true;
+  const walk = (node: ElementNode) => {
     for (const child of node.getChildren()) {
       if ($isTextNode(child)) {
         const content = child.getTextContent();
-        const len = content.length;
-        textNodes.push({key: child.getKey(), length: len, start: offset});
+        textNodes.push({
+          key: child.getKey(),
+          length: content.length,
+          start: offset,
+        });
         chunks.push(content);
-        offset += len;
+        offset += content.length;
       } else if ($isElementNode(child)) {
         if (!child.isInline()) {
-          if (!isFirstBlock.value) {
+          if (!isFirstBlock) {
             chunks.push(' ');
             offset += 1;
           }
-          isFirstBlock.value = false;
+          isFirstBlock = false;
         }
-        walk(child, isFirstBlock);
-      } else if ($isLineBreakNode(child)) {
-        chunks.push('\n');
-        offset += 1;
+        walk(child);
       } else {
-        // DecoratorNode or other non-text leaf nodes: account for their
-        // text content length so subsequent offsets remain correct, but
-        // don't add them to the textNodes map since they can't be split.
         const content = child.getTextContent();
         if (content.length > 0) {
           chunks.push(content);
@@ -80,7 +77,7 @@ export function $collectTextNodeOffsets(): {
       }
     }
   };
-  walk($getRoot(), {value: true});
+  walk($getRoot());
 
   return {fullText: chunks.join(''), textNodes};
 }

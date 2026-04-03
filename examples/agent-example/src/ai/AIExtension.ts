@@ -26,9 +26,7 @@ import {
   $isAICaretNode,
   AICaretNodeExtension,
 } from '../nodes/AICaretNode';
-import {$createOrgNode, OrgNodeExtension} from '../nodes/OrgNode';
-import {$createPersonNode, PersonNodeExtension} from '../nodes/PersonNode';
-import {$createPlaceNode, PlaceNodeExtension} from '../nodes/PlaceNode';
+import {$createEntityNode, EntityNodeExtension} from '../nodes/EntityNode';
 import {
   $collectTextNodeOffsets,
   $replaceTextWithEntityNodes,
@@ -337,9 +335,9 @@ function createAIState(editor: LexicalEditor) {
     editor.update(
       () => {
         $replaceTextWithEntityNodes(textInfo.textNodes, entities, {
-          LOC: replaceWithEntity($createPlaceNode),
-          ORG: replaceWithEntity($createOrgNode),
-          PER: replaceWithEntity($createPersonNode),
+          LOC: replaceWithEntity((text) => $createEntityNode('LOC', text)),
+          ORG: replaceWithEntity((text) => $createEntityNode('ORG', text)),
+          PER: replaceWithEntity((text) => $createEntityNode('PER', text)),
         });
       },
       {tag: AI_ENTITIES_TAG},
@@ -361,12 +359,7 @@ export type AIExtensionOutput = ReturnType<typeof createAIState>;
 
 export const AIExtension = defineExtension({
   build: createAIState,
-  dependencies: [
-    AICaretNodeExtension,
-    PlaceNodeExtension,
-    PersonNodeExtension,
-    OrgNodeExtension,
-  ],
+  dependencies: [AICaretNodeExtension, EntityNodeExtension],
   name: '@lexical/agent-example/ai',
   register(editor, _config, state) {
     const output = state.getOutput();

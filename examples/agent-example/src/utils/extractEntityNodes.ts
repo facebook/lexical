@@ -110,19 +110,18 @@ export function $replaceTextWithEntityNodes(
   // Group entities by the text node they belong to
   const entitiesByNode = new Map<string, EntitySpan[]>();
   for (const entity of entities) {
-    if (!creators[entity.entity]) {
-      continue;
-    }
-    for (const tn of textNodes) {
-      const nodeEnd = tn.start + tn.length;
-      if (entity.start >= tn.start && entity.end <= nodeEnd) {
-        let list = entitiesByNode.get(tn.key);
-        if (!list) {
-          list = [];
-          entitiesByNode.set(tn.key, list);
+    if (creators[entity.entity]) {
+      for (const tn of textNodes) {
+        const nodeEnd = tn.start + tn.length;
+        if (entity.start >= tn.start && entity.end <= nodeEnd) {
+          let list = entitiesByNode.get(tn.key);
+          if (!list) {
+            list = [];
+            entitiesByNode.set(tn.key, list);
+          }
+          list.push(entity);
+          break;
         }
-        list.push(entity);
-        break;
       }
     }
   }
@@ -132,11 +131,8 @@ export function $replaceTextWithEntityNodes(
   // irrelevant.
   for (const tn of textNodes) {
     const nodeEntities = entitiesByNode.get(tn.key);
-    if (!nodeEntities) {
-      continue;
-    }
     const node = $getNodeByKey(tn.key);
-    if (!$isTextNode(node)) {
+    if (!nodeEntities || !$isTextNode(node)) {
       continue;
     }
 
@@ -171,14 +167,12 @@ export function $replaceTextWithEntityNodes(
       const entity = sorted[i];
       const localStart = entity.start - tn.start;
       const partIndex = partOffsets.indexOf(localStart);
-      if (partIndex === -1) {
-        continue;
+      if (partIndex >= 0) {
+        const creator = creators[entity.entity];
+        if (creator) {
+          parts[partIndex].replace(creator(entity.text));
+        }
       }
-      const creator = creators[entity.entity];
-      if (!creator) {
-        continue;
-      }
-      parts[partIndex].replace(creator(entity.text));
     }
   }
 }

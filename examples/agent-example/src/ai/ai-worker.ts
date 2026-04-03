@@ -8,22 +8,24 @@
 
 /* eslint-disable no-restricted-globals */
 
-import {pipeline, TextStreamer} from '@huggingface/transformers';
+import {
+  pipeline,
+  TextGenerationPipeline,
+  TextStreamer,
+  TokenClassificationPipeline,
+} from '@huggingface/transformers';
 
 import {mergeEntities, type NERToken} from './mergeEntities';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let generator: any = null;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let nerClassifier: any = null;
+let generator: TextGenerationPipeline | null = null;
+let nerClassifier: TokenClassificationPipeline | null = null;
 
-async function getGenerator() {
+async function getGenerator(): Promise<TextGenerationPipeline> {
   if (generator) {
     return generator;
   }
   self.postMessage({status: 'loading-model', type: 'status'});
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  generator = await (pipeline as any)(
+  generator = await pipeline(
     'text-generation',
     'HuggingFaceTB/SmolLM2-135M-Instruct',
     {
@@ -42,13 +44,12 @@ async function getGenerator() {
   return generator;
 }
 
-async function getNERClassifier() {
+async function getNERClassifier(): Promise<TokenClassificationPipeline> {
   if (nerClassifier) {
     return nerClassifier;
   }
   self.postMessage({status: 'loading-ner', type: 'status'});
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  nerClassifier = await (pipeline as any)(
+  nerClassifier = await pipeline(
     'token-classification',
     'Xenova/bert-base-NER',
     {
@@ -85,10 +86,12 @@ self.onmessage = async (event: MessageEvent) => {
     try {
       self.postMessage({id, status: 'generating', type: 'status'});
       const classifier = await getNERClassifier();
-      const raw: NERToken[] = await classifier(text, {
+      const raw = await classifier(text, {
         ignore_labels: ['O'],
       });
-      const entities = mergeEntities(raw, text);
+      // Handle both single and array results
+      const results = Array.isArray(raw) ? raw : [raw];
+      const entities = mergeEntities(results as NERToken[], text);
       const filtered = entityTypes
         ? entities.filter((e: {entity: string}) =>
             entityTypes.includes(e.entity),

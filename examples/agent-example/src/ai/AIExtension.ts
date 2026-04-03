@@ -11,6 +11,7 @@ import {
   COMMAND_PRIORITY_LOW,
   defineExtension,
   KEY_ESCAPE_COMMAND,
+  mergeRegister,
 } from 'lexical';
 
 type ModelStatus = 'idle' | 'loading' | 'ready' | 'error';
@@ -250,21 +251,20 @@ export const AIExtension = defineExtension({
   name: '@lexical/agent-example/ai',
   register(editor, _config, state) {
     const output = state.getOutput();
-    const disposeEffect = effect(() => {
-      if (output.isGenerating.value) {
-        return editor.registerCommand(
-          KEY_ESCAPE_COMMAND,
-          () => {
-            output.abort();
-            return true;
-          },
-          COMMAND_PRIORITY_LOW,
-        );
-      }
-    });
-    return () => {
-      disposeEffect();
-      output.dispose();
-    };
+    return mergeRegister(
+      output.dispose.bind(output),
+      effect(() => {
+        if (output.isGenerating.value) {
+          return editor.registerCommand(
+            KEY_ESCAPE_COMMAND,
+            () => {
+              output.abort();
+              return true;
+            },
+            COMMAND_PRIORITY_LOW,
+          );
+        }
+      }),
+    );
   },
 });

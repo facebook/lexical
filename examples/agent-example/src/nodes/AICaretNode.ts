@@ -6,16 +6,15 @@
  *
  */
 
-import type {DOMExportOutput} from 'lexical';
-import type {JSX} from 'react';
+import type {DOMExportOutput, EditorConfig} from 'lexical';
 
-import {ReactExtension} from '@lexical/react/ReactExtension';
 import {$create, DecoratorNode, defineExtension, LexicalNode} from 'lexical';
 
-export class AICaretNode extends DecoratorNode<JSX.Element> {
+export class AICaretNode extends DecoratorNode<unknown> {
   $config() {
     return this.config('ai-caret', {
       extends: DecoratorNode,
+      importDOM: {},
     });
   }
 
@@ -27,9 +26,20 @@ export class AICaretNode extends DecoratorNode<JSX.Element> {
     return true;
   }
 
+  updateDOM(
+    _prevNode: unknown,
+    _dom: HTMLElement,
+    _config: EditorConfig,
+  ): boolean {
+    return false;
+  }
+
   createDOM(): HTMLElement {
     const span = document.createElement('span');
-    span.style.display = 'inline';
+    span.ariaHidden = 'true';
+    span.dataset.aiCaretNode = 'true';
+    span.className =
+      'inline-block h-[1em] w-0.5 translate-y-0.5 animate-pulse rounded-full bg-indigo-500 dark:bg-indigo-400';
     return span;
   }
 
@@ -39,15 +49,6 @@ export class AICaretNode extends DecoratorNode<JSX.Element> {
 
   getTextContent(): string {
     return '';
-  }
-
-  decorate(): JSX.Element {
-    return (
-      <span
-        className="inline-block h-[1em] w-[2px] translate-y-[2px] animate-pulse rounded-full bg-indigo-500 dark:bg-indigo-400"
-        aria-hidden="true"
-      />
-    );
   }
 }
 
@@ -62,7 +63,6 @@ export function $isAICaretNode(
 }
 
 export const AICaretNodeExtension = defineExtension({
-  dependencies: [ReactExtension],
   name: '@lexical/agent-example/ai-caret-node',
   nodes: () => [AICaretNode],
 });

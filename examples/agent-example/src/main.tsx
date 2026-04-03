@@ -10,7 +10,7 @@ import './styles.css';
 import {StrictMode} from 'react';
 import {createRoot} from 'react-dom/client';
 
-import Editor from './Editor.tsx';
+import {Editor} from './Editor.tsx';
 import {ThemeToggle} from './ThemeToggle.tsx';
 
 createRoot(document.getElementById('root')!).render(

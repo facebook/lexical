@@ -59,7 +59,7 @@ const agentEditorExtension = defineExtension({
   theme,
 });
 
-export default function Editor() {
+export function Editor() {
   return (
     <LexicalExtensionComposer
       extension={agentEditorExtension}

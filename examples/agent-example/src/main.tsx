@@ -7,14 +7,14 @@
  */
 import './styles.css';
 
-import React from 'react';
-import ReactDOM from 'react-dom/client';
+import {StrictMode} from 'react';
+import {createRoot} from 'react-dom/client';
 
 import Editor from './Editor.tsx';
 import {ThemeToggle} from './ThemeToggle.tsx';
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
     <div className="relative flex min-h-screen flex-col items-center justify-center gap-4 bg-white p-8 text-[#1c1e21] dark:bg-zinc-900 dark:text-[#e3e3e3]">
       <ThemeToggle />
       <h1 className="text-2xl font-bold">Lexical AI Agent Example</h1>
@@ -25,5 +25,5 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       </p>
       <Editor />
     </div>
-  </React.StrictMode>,
+  </StrictMode>,
 );

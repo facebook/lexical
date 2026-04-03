@@ -288,11 +288,8 @@ function createAIState(editor: LexicalEditor) {
     let caretKey: string | null = null;
     editor.update(
       () => {
-        const root = $getRoot();
-        const paragraph = $createParagraphNode();
         const caret = $createAICaretNode();
-        paragraph.append(caret);
-        root.append(paragraph);
+        $getRoot().append($createParagraphNode().append(caret));
         caretKey = caret.getKey();
       },
       {tag: AI_GENERATE_START_TAG},

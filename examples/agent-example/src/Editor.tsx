@@ -43,10 +43,9 @@ const SAMPLE_TEXT =
 
 const agentEditorExtension = defineExtension({
   $initialEditorState: () => {
-    const root = $getRoot();
-    const paragraph = $createParagraphNode();
-    paragraph.append($createTextNode(SAMPLE_TEXT));
-    root.append(paragraph);
+    $getRoot().append(
+      $createParagraphNode().append($createTextNode(SAMPLE_TEXT)),
+    );
   },
   dependencies: [
     RichTextExtension,

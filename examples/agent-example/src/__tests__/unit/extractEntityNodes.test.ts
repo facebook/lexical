@@ -108,8 +108,6 @@ function getChildTypes(editor: LexicalEditor): string[] {
   });
 }
 
-const discrete = {discrete: true};
-
 describe('extractEntityNodes', () => {
   describe('$collectTextNodeOffsets', () => {
     test('collects offsets from a single paragraph', () => {
@@ -339,13 +337,16 @@ describe('extractEntityNodes', () => {
       });
 
       const textInfo = editor.read($collectTextNodeOffsets);
-      editor.update(() => {
-        $replaceTextWithEntityNodes(
-          textInfo.textNodes,
-          [{end: 12, entity: 'LOC', start: 6, text: 'London'}],
-          {LOC: $createTestEntityNode},
-        );
-      }, discrete);
+      editor.update(
+        () => {
+          $replaceTextWithEntityNodes(
+            textInfo.textNodes,
+            [{end: 12, entity: 'LOC', start: 6, text: 'London'}],
+            {LOC: $createTestEntityNode},
+          );
+        },
+        {discrete: true},
+      );
 
       expect(getTextContent(editor)).toBe('Visit London today');
       expect(getChildTypes(editor)).toEqual([
@@ -363,13 +364,16 @@ describe('extractEntityNodes', () => {
       });
 
       const textInfo = editor.read($collectTextNodeOffsets);
-      editor.update(() => {
-        $replaceTextWithEntityNodes(
-          textInfo.textNodes,
-          [{end: 6, entity: 'LOC', start: 0, text: 'London'}],
-          {LOC: $createTestEntityNode},
-        );
-      }, discrete);
+      editor.update(
+        () => {
+          $replaceTextWithEntityNodes(
+            textInfo.textNodes,
+            [{end: 6, entity: 'LOC', start: 0, text: 'London'}],
+            {LOC: $createTestEntityNode},
+          );
+        },
+        {discrete: true},
+      );
 
       expect(getChildTypes(editor)).toEqual([
         'entity:"London"',
@@ -385,13 +389,16 @@ describe('extractEntityNodes', () => {
       });
 
       const textInfo = editor.read($collectTextNodeOffsets);
-      editor.update(() => {
-        $replaceTextWithEntityNodes(
-          textInfo.textNodes,
-          [{end: 12, entity: 'LOC', start: 6, text: 'London'}],
-          {LOC: $createTestEntityNode},
-        );
-      }, discrete);
+      editor.update(
+        () => {
+          $replaceTextWithEntityNodes(
+            textInfo.textNodes,
+            [{end: 12, entity: 'LOC', start: 6, text: 'London'}],
+            {LOC: $createTestEntityNode},
+          );
+        },
+        {discrete: true},
+      );
 
       expect(getChildTypes(editor)).toEqual([
         'text:"Visit "',
@@ -407,13 +414,16 @@ describe('extractEntityNodes', () => {
       });
 
       const textInfo = editor.read($collectTextNodeOffsets);
-      editor.update(() => {
-        $replaceTextWithEntityNodes(
-          textInfo.textNodes,
-          [{end: 6, entity: 'LOC', start: 0, text: 'London'}],
-          {LOC: $createTestEntityNode},
-        );
-      }, discrete);
+      editor.update(
+        () => {
+          $replaceTextWithEntityNodes(
+            textInfo.textNodes,
+            [{end: 6, entity: 'LOC', start: 0, text: 'London'}],
+            {LOC: $createTestEntityNode},
+          );
+        },
+        {discrete: true},
+      );
 
       expect(getChildTypes(editor)).toEqual(['entity:"London"']);
     });
@@ -428,16 +438,19 @@ describe('extractEntityNodes', () => {
       });
 
       const textInfo = editor.read($collectTextNodeOffsets);
-      editor.update(() => {
-        $replaceTextWithEntityNodes(
-          textInfo.textNodes,
-          [
-            {end: 11, entity: 'LOC', start: 5, text: 'London'},
-            {end: 20, entity: 'LOC', start: 15, text: 'Paris'},
-          ],
-          {LOC: $createTestEntityNode},
-        );
-      }, discrete);
+      editor.update(
+        () => {
+          $replaceTextWithEntityNodes(
+            textInfo.textNodes,
+            [
+              {end: 11, entity: 'LOC', start: 5, text: 'London'},
+              {end: 20, entity: 'LOC', start: 15, text: 'Paris'},
+            ],
+            {LOC: $createTestEntityNode},
+          );
+        },
+        {discrete: true},
+      );
 
       expect(getTextContent(editor)).toBe('From London to Paris and back');
       expect(getChildTypes(editor)).toEqual([
@@ -459,21 +472,24 @@ describe('extractEntityNodes', () => {
       });
 
       const textInfo = editor.read($collectTextNodeOffsets);
-      editor.update(() => {
-        $replaceTextWithEntityNodes(
-          textInfo.textNodes,
-          [
-            {end: 3, entity: 'PER', start: 0, text: 'Bob'},
-            {end: 13, entity: 'LOC', start: 7, text: 'London'},
-            {end: 21, entity: 'ORG', start: 17, text: 'Meta'},
-          ],
-          {
-            LOC: (text) => $createTestEntityNode(`loc:${text}`),
-            ORG: (text) => $createTestEntityNode(`org:${text}`),
-            PER: (text) => $createTestEntityNode(`per:${text}`),
-          },
-        );
-      }, discrete);
+      editor.update(
+        () => {
+          $replaceTextWithEntityNodes(
+            textInfo.textNodes,
+            [
+              {end: 3, entity: 'PER', start: 0, text: 'Bob'},
+              {end: 13, entity: 'LOC', start: 7, text: 'London'},
+              {end: 21, entity: 'ORG', start: 17, text: 'Meta'},
+            ],
+            {
+              LOC: (text) => $createTestEntityNode(`loc:${text}`),
+              ORG: (text) => $createTestEntityNode(`org:${text}`),
+              PER: (text) => $createTestEntityNode(`per:${text}`),
+            },
+          );
+        },
+        {discrete: true},
+      );
 
       expect(getChildTypes(editor)).toEqual([
         'entity:"per:Bob"',
@@ -492,13 +508,16 @@ describe('extractEntityNodes', () => {
       });
 
       const textInfo = editor.read($collectTextNodeOffsets);
-      editor.update(() => {
-        $replaceTextWithEntityNodes(
-          textInfo.textNodes,
-          [{end: 12, entity: 'MISC', start: 6, text: 'London'}],
-          {LOC: $createTestEntityNode},
-        );
-      }, discrete);
+      editor.update(
+        () => {
+          $replaceTextWithEntityNodes(
+            textInfo.textNodes,
+            [{end: 12, entity: 'MISC', start: 6, text: 'London'}],
+            {LOC: $createTestEntityNode},
+          );
+        },
+        {discrete: true},
+      );
 
       expect(getChildTypes(editor)).toEqual(['text:"Visit London"']);
     });
@@ -511,16 +530,19 @@ describe('extractEntityNodes', () => {
       });
 
       const textInfo = editor.read($collectTextNodeOffsets);
-      editor.update(() => {
-        $replaceTextWithEntityNodes(
-          textInfo.textNodes,
-          [
-            {end: 6, entity: 'LOC', start: 0, text: 'London'},
-            {end: 11, entity: 'LOC', start: 6, text: 'Paris'},
-          ],
-          {LOC: $createTestEntityNode},
-        );
-      }, discrete);
+      editor.update(
+        () => {
+          $replaceTextWithEntityNodes(
+            textInfo.textNodes,
+            [
+              {end: 6, entity: 'LOC', start: 0, text: 'London'},
+              {end: 11, entity: 'LOC', start: 6, text: 'Paris'},
+            ],
+            {LOC: $createTestEntityNode},
+          );
+        },
+        {discrete: true},
+      );
 
       expect(getChildTypes(editor)).toEqual([
         'entity:"London"',
@@ -539,16 +561,19 @@ describe('extractEntityNodes', () => {
       const textInfo = editor.read($collectTextNodeOffsets);
       expect(textInfo.fullText).toBe('Visit London See Paris');
 
-      editor.update(() => {
-        $replaceTextWithEntityNodes(
-          textInfo.textNodes,
-          [
-            {end: 12, entity: 'LOC', start: 6, text: 'London'},
-            {end: 22, entity: 'LOC', start: 17, text: 'Paris'},
-          ],
-          {LOC: $createTestEntityNode},
-        );
-      }, discrete);
+      editor.update(
+        () => {
+          $replaceTextWithEntityNodes(
+            textInfo.textNodes,
+            [
+              {end: 12, entity: 'LOC', start: 6, text: 'London'},
+              {end: 22, entity: 'LOC', start: 17, text: 'Paris'},
+            ],
+            {LOC: $createTestEntityNode},
+          );
+        },
+        {discrete: true},
+      );
 
       expect(getTextContent(editor)).toBe('Visit London\n\nSee Paris');
     });
@@ -563,21 +588,24 @@ describe('extractEntityNodes', () => {
       });
 
       const textInfo = editor.read($collectTextNodeOffsets);
-      editor.update(() => {
-        $replaceTextWithEntityNodes(
-          textInfo.textNodes,
-          [
-            {end: 39, entity: 'PER', start: 23, text: 'Dominic Gannaway'},
-            {end: 49, entity: 'LOC', start: 43, text: 'London'},
-            {end: 71, entity: 'ORG', start: 67, text: 'Meta'},
-          ],
-          {
-            LOC: $createTestEntityNode,
-            ORG: $createTestEntityNode,
-            PER: $createTestEntityNode,
-          },
-        );
-      }, discrete);
+      editor.update(
+        () => {
+          $replaceTextWithEntityNodes(
+            textInfo.textNodes,
+            [
+              {end: 39, entity: 'PER', start: 23, text: 'Dominic Gannaway'},
+              {end: 49, entity: 'LOC', start: 43, text: 'London'},
+              {end: 71, entity: 'ORG', start: 67, text: 'Meta'},
+            ],
+            {
+              LOC: $createTestEntityNode,
+              ORG: $createTestEntityNode,
+              PER: $createTestEntityNode,
+            },
+          );
+        },
+        {discrete: true},
+      );
 
       expect(getTextContent(editor)).toBe(sampleText);
       expect(getChildTypes(editor)).toEqual([

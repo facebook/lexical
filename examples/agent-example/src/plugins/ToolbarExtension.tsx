@@ -6,8 +6,6 @@
  *
  */
 
-import type {JSX} from 'react';
-
 import {signal} from '@lexical/extension';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useExtensionDependency} from '@lexical/react/useExtensionComponent';
@@ -39,7 +37,7 @@ import {
   REDO_COMMAND,
   UNDO_COMMAND,
 } from 'lexical';
-import React, {useRef} from 'react';
+import {type CSSProperties, type JSX, useRef} from 'react';
 
 import {AIExtension} from '../ai/AIExtension';
 import {useAI, type UseAIReturn} from '../ai/useAI';
@@ -79,7 +77,7 @@ function applyBlockType(editor: LexicalEditor, type: string) {
   });
 }
 
-function maskStyle(url: string): React.CSSProperties {
+function maskStyle(url: string): CSSProperties {
   return {
     WebkitMaskImage: `url('${url}')`,
     WebkitMaskPosition: 'center',
@@ -162,9 +160,7 @@ export const ToolbarExtension = defineExtension({
     const ai = state.getDependency(AIExtension).output;
 
     async function handleGenerate(): Promise<string | null> {
-      const context = editor
-        .getEditorState()
-        .read(() => $getRoot().getTextContent());
+      const context = editor.read(() => $getRoot().getTextContent());
 
       let caretKey: string | null = null;
       editor.update(() => {
@@ -193,7 +189,7 @@ export const ToolbarExtension = defineExtension({
     }
 
     async function handleExtractEntities(): Promise<void> {
-      const textInfo = editor.getEditorState().read($collectTextNodeOffsets);
+      const textInfo = editor.read($collectTextNodeOffsets);
 
       if (!textInfo.fullText.trim()) {
         return;

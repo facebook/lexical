@@ -40,7 +40,7 @@ export interface EntitySpan {
  * NER character offsets map 1-to-1 back to TextNode positions without
  * fragile separator arithmetic.
  *
- * Must be called inside `editor.getEditorState().read()`.
+ * Must be called inside `editor.read()`.
  */
 export function $collectTextNodeOffsets(): {
   fullText: string;

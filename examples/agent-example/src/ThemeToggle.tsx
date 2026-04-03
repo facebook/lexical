@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {useCallback, useState} from 'react';
+import {useState} from 'react';
 
 export function ThemeToggle() {
   const [isDark, setIsDark] = useState(
@@ -14,18 +14,16 @@ export function ThemeToggle() {
       document.documentElement.classList.contains('dark'),
   );
 
-  const toggle = useCallback(() => {
-    setIsDark((prev) => {
-      const next = !prev;
-      document.documentElement.classList.toggle('dark', next);
-      return next;
-    });
-  }, []);
-
   return (
     <button
       type="button"
-      onClick={toggle}
+      onClick={() => {
+        setIsDark((prev) => {
+          const next = !prev;
+          document.documentElement.classList.toggle('dark', next);
+          return next;
+        });
+      }}
       aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
       className="absolute top-4 right-4 flex h-8 w-8 items-center justify-center rounded-full border border-solid border-zinc-200 bg-white text-zinc-500 shadow-sm transition-colors hover:cursor-pointer hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700">
       {isDark ? (

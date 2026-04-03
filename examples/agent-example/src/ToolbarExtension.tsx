@@ -34,9 +34,9 @@ import {
 } from 'lexical';
 import {type CSSProperties, type JSX, useRef} from 'react';
 
-import {AIExtension} from '../ai/AIExtension';
-import {useAI, type UseAIReturn} from '../ai/useAI';
-import {useSignalValue} from '../utils/useExtensionHooks';
+import {AIExtension} from './ai/AIExtension';
+import {useAI, type UseAIReturn} from './ai/useAI';
+import {useSignalValue} from './utils/useExtensionHooks';
 
 const BLOCK_TYPES = [
   {label: 'Normal', value: 'paragraph'},

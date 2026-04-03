@@ -19,7 +19,7 @@ import {
 } from 'lexical';
 
 import {AIExtension} from './ai/AIExtension';
-import {Toolbar, ToolbarExtension} from './plugins/ToolbarExtension';
+import {Toolbar, ToolbarExtension} from './ToolbarExtension';
 import {useExtensionSignalValue} from './utils/useExtensionHooks';
 
 const theme = {

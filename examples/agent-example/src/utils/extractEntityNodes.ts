@@ -39,8 +39,6 @@ export interface EntitySpan {
  * paragraphs, this function joins blocks with a single space so that
  * NER character offsets map 1-to-1 back to TextNode positions without
  * fragile separator arithmetic.
- *
- * Must be called inside `editor.read()`.
  */
 export function $collectTextNodeOffsets(): {
   fullText: string;
@@ -94,8 +92,6 @@ export function $collectTextNodeOffsets(): {
  * given node are computed at once so that a single `splitText` call produces
  * stable part references. Replacements within each node are then applied in
  * reverse order to keep array indices valid.
- *
- * Must be called inside `editor.update()`.
  *
  * @param textNodes  Offset map produced by `$collectTextNodeOffsets`
  * @param entities   Entity spans from the NER model

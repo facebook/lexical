@@ -62,10 +62,6 @@ function applyBlockType(editor: LexicalEditor, type: string) {
 
 function maskStyle(url: string): CSSProperties {
   return {
-    WebkitMaskImage: `url('${url}')`,
-    WebkitMaskPosition: 'center',
-    WebkitMaskRepeat: 'no-repeat',
-    WebkitMaskSize: 'contain',
     maskImage: `url('${url}')`,
     maskPosition: 'center',
     maskRepeat: 'no-repeat',

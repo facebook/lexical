@@ -70,9 +70,6 @@ export function Editor() {
 }
 
 function EditorContent() {
-  const modelStatus = useExtensionSignalValue(AIExtension, 'modelStatus');
-  const loadProgress = useExtensionSignalValue(AIExtension, 'loadProgress');
-
   return (
     <div className="flex w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-solid border-black/10 shadow-sm dark:border-white/10 dark:bg-stone-800">
       <Toolbar />
@@ -88,20 +85,31 @@ function EditorContent() {
           }
         />
       </div>
-      {modelStatus === 'loading' && (
-        <div className="flex items-center gap-2 border-t border-solid border-black/5 bg-zinc-50 px-4 py-2 text-sm text-zinc-500 dark:border-white/5 dark:bg-zinc-800 dark:text-zinc-400">
-          <span className="animate-pulse">
-            Loading model
-            {loadProgress !== null ? ` ${loadProgress}%` : '...'}
-          </span>
-          {loadProgress !== null && (
-            <div className="h-1.5 w-32 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">
-              <div
-                className="h-full rounded-full bg-blue-500 transition-all duration-300"
-                style={{width: `${loadProgress}%`}}
-              />
-            </div>
-          )}
+      <LoadingIndicator />
+    </div>
+  );
+}
+
+function LoadingIndicator() {
+  const modelStatus = useExtensionSignalValue(AIExtension, 'modelStatus');
+  const loadProgress = useExtensionSignalValue(AIExtension, 'loadProgress');
+
+  if (modelStatus !== 'loading') {
+    return null;
+  }
+
+  return (
+    <div className="flex items-center gap-2 border-t border-solid border-black/5 bg-zinc-50 px-4 py-2 text-sm text-zinc-500 dark:border-white/5 dark:bg-zinc-800 dark:text-zinc-400">
+      <span className="animate-pulse">
+        Loading model
+        {loadProgress !== null ? ` ${loadProgress}%` : '...'}
+      </span>
+      {loadProgress !== null && (
+        <div className="h-1.5 w-32 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">
+          <div
+            className="h-full rounded-full bg-blue-500 transition-all duration-300"
+            style={{width: `${loadProgress}%`}}
+          />
         </div>
       )}
     </div>

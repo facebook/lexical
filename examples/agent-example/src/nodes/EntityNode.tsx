@@ -75,13 +75,16 @@ const ENTITY_STYLES = {
 
 export type EntityType = keyof typeof ENTITY_STYLES;
 
+export function isEntityType(v: unknown): v is EntityType {
+  return typeof v === 'string' && v in ENTITY_STYLES;
+}
+
 const entityTextState = createState('entityText', {
   parse: (v) => (typeof v === 'string' ? v : ''),
 });
 
 const entityTypeState = createState('entityType', {
-  parse: (v): EntityType =>
-    typeof v === 'string' && v in ENTITY_STYLES ? (v as EntityType) : 'PER',
+  parse: (v): EntityType => (isEntityType(v) ? v : 'PER'),
 });
 
 const DATA_ATTRIBUTE = 'data-entity-type';
@@ -89,8 +92,8 @@ const DATA_ATTRIBUTE = 'data-entity-type';
 function $convertEntityElement(
   domNode: HTMLElement,
 ): DOMConversionOutput | null {
-  const entityType = domNode.getAttribute(DATA_ATTRIBUTE) as EntityType;
-  if (!entityType) {
+  const entityType = domNode.getAttribute(DATA_ATTRIBUTE);
+  if (!isEntityType(entityType)) {
     return null;
   }
   const text = domNode.textContent || '';

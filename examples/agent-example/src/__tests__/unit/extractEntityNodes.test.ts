@@ -6,7 +6,7 @@
  *
  */
 
-import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
+import {buildEditorFromExtensions} from '@lexical/extension';
 import {
   $create,
   $createLineBreakNode,
@@ -20,10 +20,11 @@ import {
   $setState,
   createState,
   DecoratorNode,
+  defineExtension,
   LexicalEditor,
   LexicalNode,
 } from 'lexical';
-import {beforeEach, describe, expect, test} from 'vitest';
+import {describe, expect, test} from 'vitest';
 
 import {
   $collectTextNodeOffsets,
@@ -77,16 +78,23 @@ const TestEntityExtension = defineExtension({
   nodes: () => [TestEntityNode],
 });
 
-function createTestEditor(): LexicalEditor {
-  return buildEditorFromExtensions(TestEntityExtension);
+function createTestEditor($initialEditorState?: () => void): LexicalEditor {
+  return buildEditorFromExtensions(
+    defineExtension({
+      $initialEditorState,
+      dependencies: [TestEntityExtension],
+      name: 'test-root',
+      namespace: 'test',
+    }),
+  );
 }
 
 function getTextContent(editor: LexicalEditor): string {
-  return editor.getEditorState().read(() => $getRoot().getTextContent());
+  return editor.read(() => $getRoot().getTextContent());
 }
 
 function getChildTypes(editor: LexicalEditor): string[] {
-  return editor.getEditorState().read(() => {
+  return editor.read(() => {
     const paragraph = $getRoot().getFirstChildOrThrow();
     if (!$isElementNode(paragraph)) {
       return [];
@@ -103,24 +111,15 @@ function getChildTypes(editor: LexicalEditor): string[] {
 const discrete = {discrete: true};
 
 describe('extractEntityNodes', () => {
-  let editor: LexicalEditor;
-
-  beforeEach(() => {
-    editor = createTestEditor();
-    editor.update(() => {
-      $getRoot().clear();
-    }, discrete);
-  });
-
   describe('$collectTextNodeOffsets', () => {
     test('collects offsets from a single paragraph', () => {
-      editor.update(() => {
+      const editor = createTestEditor(() => {
         $getRoot().append(
           $createParagraphNode().append($createTextNode('Hello world')),
         );
-      }, discrete);
+      });
 
-      const result = editor.getEditorState().read($collectTextNodeOffsets);
+      const result = editor.read($collectTextNodeOffsets);
       expect(result.fullText).toBe('Hello world');
       expect(result.textNodes).toHaveLength(1);
       expect(result.textNodes[0].start).toBe(0);
@@ -128,16 +127,16 @@ describe('extractEntityNodes', () => {
     });
 
     test('collects offsets across multiple text nodes', () => {
-      editor.update(() => {
+      const editor = createTestEditor(() => {
         $getRoot().append(
           $createParagraphNode().append(
             $createTextNode('Hello '),
             $createTextNode('world').toggleFormat('bold'),
           ),
         );
-      }, discrete);
+      });
 
-      const result = editor.getEditorState().read($collectTextNodeOffsets);
+      const result = editor.read($collectTextNodeOffsets);
       expect(result.fullText).toBe('Hello world');
       expect(result.textNodes).toHaveLength(2);
       expect(result.textNodes[0]).toMatchObject({length: 6, start: 0});
@@ -145,14 +144,14 @@ describe('extractEntityNodes', () => {
     });
 
     test('accounts for paragraph breaks', () => {
-      editor.update(() => {
+      const editor = createTestEditor(() => {
         $getRoot().append(
           $createParagraphNode().append($createTextNode('Line one')),
           $createParagraphNode().append($createTextNode('Line two')),
         );
-      }, discrete);
+      });
 
-      const result = editor.getEditorState().read($collectTextNodeOffsets);
+      const result = editor.read($collectTextNodeOffsets);
       expect(result.fullText).toBe('Line one Line two');
       expect(result.textNodes).toHaveLength(2);
       expect(result.textNodes[0]).toMatchObject({length: 8, start: 0});
@@ -160,7 +159,7 @@ describe('extractEntityNodes', () => {
     });
 
     test('accounts for line break nodes', () => {
-      editor.update(() => {
+      const editor = createTestEditor(() => {
         $getRoot().append(
           $createParagraphNode().append(
             $createTextNode('Hello'),
@@ -168,9 +167,9 @@ describe('extractEntityNodes', () => {
             $createTextNode('world'),
           ),
         );
-      }, discrete);
+      });
 
-      const result = editor.getEditorState().read($collectTextNodeOffsets);
+      const result = editor.read($collectTextNodeOffsets);
       expect(result.fullText).toBe('Hello\nworld');
       expect(result.textNodes).toHaveLength(2);
       expect(result.textNodes[0]).toMatchObject({length: 5, start: 0});
@@ -178,7 +177,7 @@ describe('extractEntityNodes', () => {
     });
 
     test('accounts for tab nodes', () => {
-      editor.update(() => {
+      const editor = createTestEditor(() => {
         $getRoot().append(
           $createParagraphNode().append(
             $createTextNode('col1'),
@@ -186,9 +185,9 @@ describe('extractEntityNodes', () => {
             $createTextNode('col2'),
           ),
         );
-      }, discrete);
+      });
 
-      const result = editor.getEditorState().read($collectTextNodeOffsets);
+      const result = editor.read($collectTextNodeOffsets);
       expect(result.fullText).toBe('col1\tcol2');
       expect(result.textNodes).toHaveLength(3);
       expect(result.textNodes[0]).toMatchObject({length: 4, start: 0});
@@ -197,7 +196,7 @@ describe('extractEntityNodes', () => {
     });
 
     test('accounts for inline decorator nodes', () => {
-      editor.update(() => {
+      const editor = createTestEditor(() => {
         $getRoot().append(
           $createParagraphNode().append(
             $createTextNode('Visit '),
@@ -205,9 +204,9 @@ describe('extractEntityNodes', () => {
             $createTextNode(' today'),
           ),
         );
-      }, discrete);
+      });
 
-      const result = editor.getEditorState().read($collectTextNodeOffsets);
+      const result = editor.read($collectTextNodeOffsets);
       expect(result.fullText).toBe('Visit London today');
       expect(result.textNodes).toHaveLength(2);
       expect(result.textNodes[0]).toMatchObject({length: 6, start: 0});
@@ -215,7 +214,7 @@ describe('extractEntityNodes', () => {
     });
 
     test('handles multiple line breaks in sequence', () => {
-      editor.update(() => {
+      const editor = createTestEditor(() => {
         $getRoot().append(
           $createParagraphNode().append(
             $createTextNode('a'),
@@ -224,9 +223,9 @@ describe('extractEntityNodes', () => {
             $createTextNode('b'),
           ),
         );
-      }, discrete);
+      });
 
-      const result = editor.getEditorState().read($collectTextNodeOffsets);
+      const result = editor.read($collectTextNodeOffsets);
       expect(result.fullText).toBe('a\n\nb');
       expect(result.textNodes).toHaveLength(2);
       expect(result.textNodes[0]).toMatchObject({length: 1, start: 0});
@@ -234,7 +233,7 @@ describe('extractEntityNodes', () => {
     });
 
     test('handles mixed content: text, line breaks, tabs, decorators', () => {
-      editor.update(() => {
+      const editor = createTestEditor(() => {
         $getRoot().append(
           $createParagraphNode().append(
             $createTextNode('Hello'),
@@ -245,9 +244,9 @@ describe('extractEntityNodes', () => {
             $createTextNode('end'),
           ),
         );
-      }, discrete);
+      });
 
-      const result = editor.getEditorState().read($collectTextNodeOffsets);
+      const result = editor.read($collectTextNodeOffsets);
       expect(result.fullText).toBe('Hello\nVisit London\tend');
       expect(result.textNodes).toHaveLength(4);
       expect(result.textNodes[0]).toMatchObject({length: 5, start: 0});
@@ -257,57 +256,58 @@ describe('extractEntityNodes', () => {
     });
 
     test('handles empty document', () => {
-      const result = editor.getEditorState().read($collectTextNodeOffsets);
+      const editor = createTestEditor();
+      const result = editor.read($collectTextNodeOffsets);
       expect(result.fullText).toBe('');
       expect(result.textNodes).toHaveLength(0);
     });
 
     test('handles paragraph with only a line break', () => {
-      editor.update(() => {
+      const editor = createTestEditor(() => {
         $getRoot().append(
           $createParagraphNode().append($createLineBreakNode()),
         );
-      }, discrete);
+      });
 
-      const result = editor.getEditorState().read($collectTextNodeOffsets);
+      const result = editor.read($collectTextNodeOffsets);
       expect(result.fullText).toBe('\n');
       expect(result.textNodes).toHaveLength(0);
     });
 
     test('handles decorator node at start of paragraph', () => {
-      editor.update(() => {
+      const editor = createTestEditor(() => {
         $getRoot().append(
           $createParagraphNode().append(
             $createTestEntityNode('London'),
             $createTextNode(' is great'),
           ),
         );
-      }, discrete);
+      });
 
-      const result = editor.getEditorState().read($collectTextNodeOffsets);
+      const result = editor.read($collectTextNodeOffsets);
       expect(result.fullText).toBe('London is great');
       expect(result.textNodes).toHaveLength(1);
       expect(result.textNodes[0]).toMatchObject({length: 9, start: 6});
     });
 
     test('handles decorator node at end of paragraph', () => {
-      editor.update(() => {
+      const editor = createTestEditor(() => {
         $getRoot().append(
           $createParagraphNode().append(
             $createTextNode('Visit '),
             $createTestEntityNode('London'),
           ),
         );
-      }, discrete);
+      });
 
-      const result = editor.getEditorState().read($collectTextNodeOffsets);
+      const result = editor.read($collectTextNodeOffsets);
       expect(result.fullText).toBe('Visit London');
       expect(result.textNodes).toHaveLength(1);
       expect(result.textNodes[0]).toMatchObject({length: 6, start: 0});
     });
 
     test('handles multiple paragraphs with mixed node types', () => {
-      editor.update(() => {
+      const editor = createTestEditor(() => {
         $getRoot().append(
           $createParagraphNode().append(
             $createTextNode('Hello'),
@@ -319,9 +319,9 @@ describe('extractEntityNodes', () => {
             $createTextNode(' calling'),
           ),
         );
-      }, discrete);
+      });
 
-      const result = editor.getEditorState().read($collectTextNodeOffsets);
+      const result = editor.read($collectTextNodeOffsets);
       expect(result.fullText).toBe('Hello\nworld London calling');
       expect(result.textNodes).toHaveLength(3);
       expect(result.textNodes[0]).toMatchObject({length: 5, start: 0});
@@ -332,13 +332,13 @@ describe('extractEntityNodes', () => {
 
   describe('$replaceTextWithEntityNodes', () => {
     test('replaces a single entity in the middle of text', () => {
-      editor.update(() => {
+      const editor = createTestEditor(() => {
         $getRoot().append(
           $createParagraphNode().append($createTextNode('Visit London today')),
         );
-      }, discrete);
+      });
 
-      const textInfo = editor.getEditorState().read($collectTextNodeOffsets);
+      const textInfo = editor.read($collectTextNodeOffsets);
       editor.update(() => {
         $replaceTextWithEntityNodes(
           textInfo.textNodes,
@@ -356,13 +356,13 @@ describe('extractEntityNodes', () => {
     });
 
     test('replaces entity at the start of text', () => {
-      editor.update(() => {
+      const editor = createTestEditor(() => {
         $getRoot().append(
           $createParagraphNode().append($createTextNode('London is great')),
         );
-      }, discrete);
+      });
 
-      const textInfo = editor.getEditorState().read($collectTextNodeOffsets);
+      const textInfo = editor.read($collectTextNodeOffsets);
       editor.update(() => {
         $replaceTextWithEntityNodes(
           textInfo.textNodes,
@@ -378,13 +378,13 @@ describe('extractEntityNodes', () => {
     });
 
     test('replaces entity at the end of text', () => {
-      editor.update(() => {
+      const editor = createTestEditor(() => {
         $getRoot().append(
           $createParagraphNode().append($createTextNode('Visit London')),
         );
-      }, discrete);
+      });
 
-      const textInfo = editor.getEditorState().read($collectTextNodeOffsets);
+      const textInfo = editor.read($collectTextNodeOffsets);
       editor.update(() => {
         $replaceTextWithEntityNodes(
           textInfo.textNodes,
@@ -400,13 +400,13 @@ describe('extractEntityNodes', () => {
     });
 
     test('replaces entity that spans the entire text node', () => {
-      editor.update(() => {
+      const editor = createTestEditor(() => {
         $getRoot().append(
           $createParagraphNode().append($createTextNode('London')),
         );
-      }, discrete);
+      });
 
-      const textInfo = editor.getEditorState().read($collectTextNodeOffsets);
+      const textInfo = editor.read($collectTextNodeOffsets);
       editor.update(() => {
         $replaceTextWithEntityNodes(
           textInfo.textNodes,
@@ -419,15 +419,15 @@ describe('extractEntityNodes', () => {
     });
 
     test('replaces multiple entities in the same text node', () => {
-      editor.update(() => {
+      const editor = createTestEditor(() => {
         $getRoot().append(
           $createParagraphNode().append(
             $createTextNode('From London to Paris and back'),
           ),
         );
-      }, discrete);
+      });
 
-      const textInfo = editor.getEditorState().read($collectTextNodeOffsets);
+      const textInfo = editor.read($collectTextNodeOffsets);
       editor.update(() => {
         $replaceTextWithEntityNodes(
           textInfo.textNodes,
@@ -450,15 +450,15 @@ describe('extractEntityNodes', () => {
     });
 
     test('replaces multiple entity types', () => {
-      editor.update(() => {
+      const editor = createTestEditor(() => {
         $getRoot().append(
           $createParagraphNode().append(
             $createTextNode('Bob in London at Meta'),
           ),
         );
-      }, discrete);
+      });
 
-      const textInfo = editor.getEditorState().read($collectTextNodeOffsets);
+      const textInfo = editor.read($collectTextNodeOffsets);
       editor.update(() => {
         $replaceTextWithEntityNodes(
           textInfo.textNodes,
@@ -485,13 +485,13 @@ describe('extractEntityNodes', () => {
     });
 
     test('skips entities with unknown labels', () => {
-      editor.update(() => {
+      const editor = createTestEditor(() => {
         $getRoot().append(
           $createParagraphNode().append($createTextNode('Visit London')),
         );
-      }, discrete);
+      });
 
-      const textInfo = editor.getEditorState().read($collectTextNodeOffsets);
+      const textInfo = editor.read($collectTextNodeOffsets);
       editor.update(() => {
         $replaceTextWithEntityNodes(
           textInfo.textNodes,
@@ -504,13 +504,13 @@ describe('extractEntityNodes', () => {
     });
 
     test('handles adjacent entities with no text between them', () => {
-      editor.update(() => {
+      const editor = createTestEditor(() => {
         $getRoot().append(
           $createParagraphNode().append($createTextNode('LondonParis')),
         );
-      }, discrete);
+      });
 
-      const textInfo = editor.getEditorState().read($collectTextNodeOffsets);
+      const textInfo = editor.read($collectTextNodeOffsets);
       editor.update(() => {
         $replaceTextWithEntityNodes(
           textInfo.textNodes,
@@ -529,14 +529,14 @@ describe('extractEntityNodes', () => {
     });
 
     test('handles entities across multiple paragraphs', () => {
-      editor.update(() => {
+      const editor = createTestEditor(() => {
         $getRoot().append(
           $createParagraphNode().append($createTextNode('Visit London')),
           $createParagraphNode().append($createTextNode('See Paris')),
         );
-      }, discrete);
+      });
 
-      const textInfo = editor.getEditorState().read($collectTextNodeOffsets);
+      const textInfo = editor.read($collectTextNodeOffsets);
       expect(textInfo.fullText).toBe('Visit London See Paris');
 
       editor.update(() => {
@@ -556,13 +556,13 @@ describe('extractEntityNodes', () => {
     test('realistic: multiple entity types in one text node', () => {
       const sampleText =
         'Lexical was created by Dominic Gannaway in London while working at Meta';
-      editor.update(() => {
+      const editor = createTestEditor(() => {
         $getRoot().append(
           $createParagraphNode().append($createTextNode(sampleText)),
         );
-      }, discrete);
+      });
 
-      const textInfo = editor.getEditorState().read($collectTextNodeOffsets);
+      const textInfo = editor.read($collectTextNodeOffsets);
       editor.update(() => {
         $replaceTextWithEntityNodes(
           textInfo.textNodes,

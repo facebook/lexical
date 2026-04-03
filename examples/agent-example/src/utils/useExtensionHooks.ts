@@ -20,7 +20,7 @@ export function useSignalValue<V>(s: ReadonlySignal<V>): V {
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
 
-type SignalValue<S> = S extends ReadonlySignal<infer V> ? V : never;
+export type SignalValue<S> = S extends ReadonlySignal<infer V> ? V : never;
 
 export function useExtensionSignalValue<
   Extension extends AnyLexicalExtension,

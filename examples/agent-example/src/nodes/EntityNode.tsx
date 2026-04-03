@@ -46,16 +46,16 @@ const entityTypeState = createState('entityType', {
   parse: (v) => (typeof v === 'string' ? (v as EntityType) : 'PER'),
 });
 
-const DATA_ATTRIBUTE = 'data-lexical-entity';
+const DATA_ATTRIBUTE = 'data-entity-type';
 
 function $convertEntityElement(
   domNode: HTMLElement,
 ): DOMConversionOutput | null {
-  const text = domNode.getAttribute(DATA_ATTRIBUTE);
-  const entityType = domNode.getAttribute('data-entity-type') as EntityType;
-  if (!text || !entityType) {
+  const entityType = domNode.getAttribute(DATA_ATTRIBUTE) as EntityType;
+  if (!entityType) {
     return null;
   }
+  const text = domNode.textContent || '';
   const node = $createEntityNode(entityType, text);
   return {
     after: (children) => {
@@ -108,8 +108,7 @@ export class EntityNode extends DecoratorTextNode {
 
   exportDOM(): DOMExportOutput {
     const element = document.createElement('span');
-    element.setAttribute(DATA_ATTRIBUTE, this.getEntityText());
-    element.setAttribute('data-entity-type', this.getEntityType());
+    element.setAttribute(DATA_ATTRIBUTE, this.getEntityType());
     element.appendChild(
       applyFormatToDom(
         this,

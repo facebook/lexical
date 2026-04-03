@@ -21,7 +21,7 @@ import {
   createState,
   DecoratorNode,
   defineExtension,
-  LexicalEditor,
+  LexicalEditorWithDispose,
   LexicalNode,
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
@@ -78,7 +78,9 @@ const TestEntityExtension = defineExtension({
   nodes: () => [TestEntityNode],
 });
 
-function createTestEditor($initialEditorState?: () => void): LexicalEditor {
+function createTestEditor(
+  $initialEditorState?: () => void,
+): LexicalEditorWithDispose {
   return buildEditorFromExtensions(
     defineExtension({
       $initialEditorState,
@@ -89,11 +91,11 @@ function createTestEditor($initialEditorState?: () => void): LexicalEditor {
   );
 }
 
-function getTextContent(editor: LexicalEditor): string {
+function getTextContent(editor: LexicalEditorWithDispose): string {
   return editor.read(() => $getRoot().getTextContent());
 }
 
-function getChildTypes(editor: LexicalEditor): string[] {
+function getChildTypes(editor: LexicalEditorWithDispose): string[] {
   return editor.read(() => {
     const paragraph = $getRoot().getFirstChildOrThrow();
     if (!$isElementNode(paragraph)) {
@@ -111,7 +113,7 @@ function getChildTypes(editor: LexicalEditor): string[] {
 describe('extractEntityNodes', () => {
   describe('$collectTextNodeOffsets', () => {
     test('collects offsets from a single paragraph', () => {
-      const editor = createTestEditor(() => {
+      using editor = createTestEditor(() => {
         $getRoot().append(
           $createParagraphNode().append($createTextNode('Hello world')),
         );
@@ -125,7 +127,7 @@ describe('extractEntityNodes', () => {
     });
 
     test('collects offsets across multiple text nodes', () => {
-      const editor = createTestEditor(() => {
+      using editor = createTestEditor(() => {
         $getRoot().append(
           $createParagraphNode().append(
             $createTextNode('Hello '),
@@ -142,7 +144,7 @@ describe('extractEntityNodes', () => {
     });
 
     test('accounts for paragraph breaks', () => {
-      const editor = createTestEditor(() => {
+      using editor = createTestEditor(() => {
         $getRoot().append(
           $createParagraphNode().append($createTextNode('Line one')),
           $createParagraphNode().append($createTextNode('Line two')),
@@ -157,7 +159,7 @@ describe('extractEntityNodes', () => {
     });
 
     test('accounts for line break nodes', () => {
-      const editor = createTestEditor(() => {
+      using editor = createTestEditor(() => {
         $getRoot().append(
           $createParagraphNode().append(
             $createTextNode('Hello'),
@@ -175,7 +177,7 @@ describe('extractEntityNodes', () => {
     });
 
     test('accounts for tab nodes', () => {
-      const editor = createTestEditor(() => {
+      using editor = createTestEditor(() => {
         $getRoot().append(
           $createParagraphNode().append(
             $createTextNode('col1'),
@@ -194,7 +196,7 @@ describe('extractEntityNodes', () => {
     });
 
     test('accounts for inline decorator nodes', () => {
-      const editor = createTestEditor(() => {
+      using editor = createTestEditor(() => {
         $getRoot().append(
           $createParagraphNode().append(
             $createTextNode('Visit '),
@@ -212,7 +214,7 @@ describe('extractEntityNodes', () => {
     });
 
     test('handles multiple line breaks in sequence', () => {
-      const editor = createTestEditor(() => {
+      using editor = createTestEditor(() => {
         $getRoot().append(
           $createParagraphNode().append(
             $createTextNode('a'),
@@ -231,7 +233,7 @@ describe('extractEntityNodes', () => {
     });
 
     test('handles mixed content: text, line breaks, tabs, decorators', () => {
-      const editor = createTestEditor(() => {
+      using editor = createTestEditor(() => {
         $getRoot().append(
           $createParagraphNode().append(
             $createTextNode('Hello'),
@@ -254,14 +256,14 @@ describe('extractEntityNodes', () => {
     });
 
     test('handles empty document', () => {
-      const editor = createTestEditor();
+      using editor = createTestEditor();
       const result = editor.read($collectTextNodeOffsets);
       expect(result.fullText).toBe('');
       expect(result.textNodes).toHaveLength(0);
     });
 
     test('handles paragraph with only a line break', () => {
-      const editor = createTestEditor(() => {
+      using editor = createTestEditor(() => {
         $getRoot().append(
           $createParagraphNode().append($createLineBreakNode()),
         );
@@ -273,7 +275,7 @@ describe('extractEntityNodes', () => {
     });
 
     test('handles decorator node at start of paragraph', () => {
-      const editor = createTestEditor(() => {
+      using editor = createTestEditor(() => {
         $getRoot().append(
           $createParagraphNode().append(
             $createTestEntityNode('London'),
@@ -289,7 +291,7 @@ describe('extractEntityNodes', () => {
     });
 
     test('handles decorator node at end of paragraph', () => {
-      const editor = createTestEditor(() => {
+      using editor = createTestEditor(() => {
         $getRoot().append(
           $createParagraphNode().append(
             $createTextNode('Visit '),
@@ -305,7 +307,7 @@ describe('extractEntityNodes', () => {
     });
 
     test('handles multiple paragraphs with mixed node types', () => {
-      const editor = createTestEditor(() => {
+      using editor = createTestEditor(() => {
         $getRoot().append(
           $createParagraphNode().append(
             $createTextNode('Hello'),
@@ -330,7 +332,7 @@ describe('extractEntityNodes', () => {
 
   describe('$replaceTextWithEntityNodes', () => {
     test('replaces a single entity in the middle of text', () => {
-      const editor = createTestEditor(() => {
+      using editor = createTestEditor(() => {
         $getRoot().append(
           $createParagraphNode().append($createTextNode('Visit London today')),
         );
@@ -357,7 +359,7 @@ describe('extractEntityNodes', () => {
     });
 
     test('replaces entity at the start of text', () => {
-      const editor = createTestEditor(() => {
+      using editor = createTestEditor(() => {
         $getRoot().append(
           $createParagraphNode().append($createTextNode('London is great')),
         );
@@ -382,7 +384,7 @@ describe('extractEntityNodes', () => {
     });
 
     test('replaces entity at the end of text', () => {
-      const editor = createTestEditor(() => {
+      using editor = createTestEditor(() => {
         $getRoot().append(
           $createParagraphNode().append($createTextNode('Visit London')),
         );
@@ -407,7 +409,7 @@ describe('extractEntityNodes', () => {
     });
 
     test('replaces entity that spans the entire text node', () => {
-      const editor = createTestEditor(() => {
+      using editor = createTestEditor(() => {
         $getRoot().append(
           $createParagraphNode().append($createTextNode('London')),
         );
@@ -429,7 +431,7 @@ describe('extractEntityNodes', () => {
     });
 
     test('replaces multiple entities in the same text node', () => {
-      const editor = createTestEditor(() => {
+      using editor = createTestEditor(() => {
         $getRoot().append(
           $createParagraphNode().append(
             $createTextNode('From London to Paris and back'),
@@ -463,7 +465,7 @@ describe('extractEntityNodes', () => {
     });
 
     test('replaces multiple entity types', () => {
-      const editor = createTestEditor(() => {
+      using editor = createTestEditor(() => {
         $getRoot().append(
           $createParagraphNode().append(
             $createTextNode('Bob in London at Meta'),
@@ -501,7 +503,7 @@ describe('extractEntityNodes', () => {
     });
 
     test('skips entities with unknown labels', () => {
-      const editor = createTestEditor(() => {
+      using editor = createTestEditor(() => {
         $getRoot().append(
           $createParagraphNode().append($createTextNode('Visit London')),
         );
@@ -523,7 +525,7 @@ describe('extractEntityNodes', () => {
     });
 
     test('handles adjacent entities with no text between them', () => {
-      const editor = createTestEditor(() => {
+      using editor = createTestEditor(() => {
         $getRoot().append(
           $createParagraphNode().append($createTextNode('LondonParis')),
         );
@@ -551,7 +553,7 @@ describe('extractEntityNodes', () => {
     });
 
     test('handles entities across multiple paragraphs', () => {
-      const editor = createTestEditor(() => {
+      using editor = createTestEditor(() => {
         $getRoot().append(
           $createParagraphNode().append($createTextNode('Visit London')),
           $createParagraphNode().append($createTextNode('See Paris')),
@@ -581,7 +583,7 @@ describe('extractEntityNodes', () => {
     test('realistic: multiple entity types in one text node', () => {
       const sampleText =
         'Lexical was created by Dominic Gannaway in London while working at Meta';
-      const editor = createTestEditor(() => {
+      using editor = createTestEditor(() => {
         $getRoot().append(
           $createParagraphNode().append($createTextNode(sampleText)),
         );

@@ -9,20 +9,14 @@
 import {useExtensionDependency} from '@lexical/react/useExtensionComponent';
 
 import {useSignalValue} from '../utils/useExtensionHooks';
-import {AIExtension, type ExtractedEntity} from './AIExtension';
+import {AIExtension} from './AIExtension';
 
 type ModelStatus = 'idle' | 'loading' | 'ready' | 'error';
 
 export interface UseAIReturn {
   abort: () => void;
-  extractEntities: (
-    text: string,
-    entityTypes?: string[],
-  ) => Promise<ExtractedEntity[]>;
-  generateParagraph: (
-    context: string,
-    onToken: (token: string) => void,
-  ) => Promise<string | null>;
+  handleExtractEntities: () => Promise<void>;
+  handleGenerate: () => Promise<string | null>;
   isGenerating: boolean;
   loadProgress: number | null;
   modelStatus: ModelStatus;
@@ -36,8 +30,8 @@ export function useAI(): UseAIReturn {
 
   return {
     abort: ai.abort,
-    extractEntities: ai.extractEntities,
-    generateParagraph: ai.generateParagraph,
+    handleExtractEntities: ai.handleExtractEntities,
+    handleGenerate: ai.handleGenerate,
     isGenerating,
     loadProgress,
     modelStatus,

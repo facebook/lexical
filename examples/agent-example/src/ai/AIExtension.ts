@@ -8,11 +8,31 @@
 
 import {effect, signal} from '@lexical/extension';
 import {
+  $createLineBreakNode,
+  $createParagraphNode,
+  $createTabNode,
+  $createTextNode,
+  $getNodeByKey,
+  $getRoot,
   COMMAND_PRIORITY_LOW,
   defineExtension,
   KEY_ESCAPE_COMMAND,
+  LexicalEditor,
   mergeRegister,
 } from 'lexical';
+
+import {
+  $createAICaretNode,
+  $isAICaretNode,
+  AICaretNodeExtension,
+} from '../nodes/AICaretNode';
+import {$createOrgNode, OrgNodeExtension} from '../nodes/OrgNode';
+import {$createPersonNode, PersonNodeExtension} from '../nodes/PersonNode';
+import {$createPlaceNode, PlaceNodeExtension} from '../nodes/PlaceNode';
+import {
+  $collectTextNodeOffsets,
+  $replaceTextWithEntityNodes,
+} from '../utils/extractEntityNodes';
 
 type ModelStatus = 'idle' | 'loading' | 'ready' | 'error';
 
@@ -61,7 +81,39 @@ function buildGenerateMessages(context: string): ChatMessage[] {
   ];
 }
 
-function createAIState() {
+const WHITESPACE_RE = /[\n\t]/g;
+
+function $appendTokenBeforeCaret(caretKey: string, token: string): void {
+  const caret = $getNodeByKey(caretKey);
+  if (!$isAICaretNode(caret)) {
+    return;
+  }
+  let pos = 0;
+  WHITESPACE_RE.lastIndex = 0;
+  let match;
+  while ((match = WHITESPACE_RE.exec(token)) !== null) {
+    if (match.index > pos) {
+      caret.insertBefore($createTextNode(token.slice(pos, match.index)));
+    }
+    caret.insertBefore(
+      match[0] === '\n' ? $createLineBreakNode() : $createTabNode(),
+    );
+    pos = WHITESPACE_RE.lastIndex;
+  }
+  if (pos < token.length) {
+    caret.insertBefore($createTextNode(token.slice(pos)));
+  }
+}
+
+function $removeAICaret(caretKey: string): void {
+  const caret = $getNodeByKey(caretKey);
+  if ($isAICaretNode(caret) && caret.isAttached()) {
+    caret.selectPrevious();
+    caret.remove();
+  }
+}
+
+function createAIState(editor: LexicalEditor) {
   const isGenerating = signal(false);
   const modelStatus = signal<ModelStatus>('idle');
   const loadProgress = signal<number | null>(null);
@@ -210,15 +262,7 @@ function createAIState() {
     });
   }
 
-  function generateParagraph(
-    context: string,
-    onToken: (token: string) => void,
-  ): Promise<string | null> {
-    // Stop after the first paragraph break to prevent the model from rambling
-    return sendRequest(buildGenerateMessages(context), 256, onToken, '\n\n');
-  }
-
-  function extractEntities(
+  function extractEntitiesFromWorker(
     text: string,
     entityTypes?: string[],
   ): Promise<ExtractedEntity[]> {
@@ -238,11 +282,77 @@ function createAIState() {
     }
   }
 
+  async function handleGenerate(): Promise<string | null> {
+    const context = editor.read(() => $getRoot().getTextContent());
+
+    let caretKey: string | null = null;
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        const caret = $createAICaretNode();
+        paragraph.append(caret);
+        root.append(paragraph);
+        caretKey = caret.getKey();
+      },
+      {tag: AI_GENERATE_START_TAG},
+    );
+
+    try {
+      const result = await sendRequest(
+        buildGenerateMessages(context),
+        256,
+        (token: string) => {
+          if (caretKey) {
+            editor.update(() => $appendTokenBeforeCaret(caretKey!, token), {
+              tag: AI_STREAM_TAG,
+            });
+          }
+        },
+        '\n\n',
+      );
+      return result;
+    } finally {
+      if (caretKey) {
+        editor.update(() => $removeAICaret(caretKey!), {
+          tag: AI_GENERATE_END_TAG,
+        });
+      }
+    }
+  }
+
+  async function handleExtractEntities(): Promise<void> {
+    const textInfo = editor.read($collectTextNodeOffsets);
+
+    if (!textInfo.fullText.trim()) {
+      return;
+    }
+
+    const entities = await extractEntitiesFromWorker(textInfo.fullText, [
+      'LOC',
+      'PER',
+      'ORG',
+    ]);
+    if (entities.length === 0) {
+      return;
+    }
+    editor.update(
+      () => {
+        $replaceTextWithEntityNodes(textInfo.textNodes, entities, {
+          LOC: $createPlaceNode,
+          ORG: $createOrgNode,
+          PER: $createPersonNode,
+        });
+      },
+      {tag: AI_ENTITIES_TAG},
+    );
+  }
+
   return {
     abort,
     dispose,
-    extractEntities,
-    generateParagraph,
+    handleExtractEntities,
+    handleGenerate,
     isGenerating,
     loadProgress,
     modelStatus,
@@ -253,6 +363,12 @@ export type AIExtensionOutput = ReturnType<typeof createAIState>;
 
 export const AIExtension = defineExtension({
   build: createAIState,
+  dependencies: [
+    AICaretNodeExtension,
+    PlaceNodeExtension,
+    PersonNodeExtension,
+    OrgNodeExtension,
+  ],
   name: '@lexical/agent-example/ai',
   register(editor, _config, state) {
     const output = state.getOutput();

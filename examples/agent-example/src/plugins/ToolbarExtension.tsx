@@ -17,12 +17,7 @@ import {
 import {$setBlocksType} from '@lexical/selection';
 import {$findMatchingParent} from '@lexical/utils';
 import {
-  $createLineBreakNode,
   $createParagraphNode,
-  $createTabNode,
-  $createTextNode,
-  $getNodeByKey,
-  $getRoot,
   $getSelection,
   $isRangeSelection,
   $isRootOrShadowRoot,
@@ -39,26 +34,8 @@ import {
 } from 'lexical';
 import {type CSSProperties, type JSX, useRef} from 'react';
 
-import {
-  AI_ENTITIES_TAG,
-  AI_GENERATE_END_TAG,
-  AI_GENERATE_START_TAG,
-  AI_STREAM_TAG,
-  AIExtension,
-} from '../ai/AIExtension';
+import {AIExtension} from '../ai/AIExtension';
 import {useAI, type UseAIReturn} from '../ai/useAI';
-import {
-  $createAICaretNode,
-  $isAICaretNode,
-  AICaretNodeExtension,
-} from '../nodes/AICaretNode';
-import {$createOrgNode, OrgNodeExtension} from '../nodes/OrgNode';
-import {$createPersonNode, PersonNodeExtension} from '../nodes/PersonNode';
-import {$createPlaceNode, PlaceNodeExtension} from '../nodes/PlaceNode';
-import {
-  $collectTextNodeOffsets,
-  $replaceTextWithEntityNodes,
-} from '../utils/extractEntityNodes';
 import {useSignalValue} from '../utils/useExtensionHooks';
 
 const BLOCK_TYPES = [
@@ -129,121 +106,18 @@ function $getToolbarState(): {
   };
 }
 
-const WHITESPACE_RE = /[\n\t]/g;
-
-function $appendTokenBeforeCaret(caretKey: string, token: string): void {
-  const caret = $getNodeByKey(caretKey);
-  if (!$isAICaretNode(caret)) {
-    return;
-  }
-  let pos = 0;
-  WHITESPACE_RE.lastIndex = 0;
-  let match;
-  while ((match = WHITESPACE_RE.exec(token)) !== null) {
-    if (match.index > pos) {
-      caret.insertBefore($createTextNode(token.slice(pos, match.index)));
-    }
-    caret.insertBefore(
-      match[0] === '\n' ? $createLineBreakNode() : $createTabNode(),
-    );
-    pos = WHITESPACE_RE.lastIndex;
-  }
-  if (pos < token.length) {
-    caret.insertBefore($createTextNode(token.slice(pos)));
-  }
-}
-
-function $removeAICaret(caretKey: string): void {
-  const caret = $getNodeByKey(caretKey);
-  if ($isAICaretNode(caret) && caret.isAttached()) {
-    caret.selectPrevious();
-    caret.remove();
-  }
-}
-
 export const ToolbarExtension = defineExtension({
-  build(editor, _config, state) {
-    const ai = state.getDependency(AIExtension).output;
-
-    async function handleGenerate(): Promise<string | null> {
-      const context = editor.read(() => $getRoot().getTextContent());
-
-      let caretKey: string | null = null;
-      editor.update(
-        () => {
-          const root = $getRoot();
-          const paragraph = $createParagraphNode();
-          const caret = $createAICaretNode();
-          paragraph.append(caret);
-          root.append(paragraph);
-          caretKey = caret.getKey();
-        },
-        {tag: AI_GENERATE_START_TAG},
-      );
-
-      try {
-        const result = await ai.generateParagraph(context, (token: string) => {
-          if (caretKey) {
-            editor.update(() => $appendTokenBeforeCaret(caretKey!, token), {
-              tag: AI_STREAM_TAG,
-            });
-          }
-        });
-        return result;
-      } finally {
-        if (caretKey) {
-          editor.update(() => $removeAICaret(caretKey!), {
-            tag: AI_GENERATE_END_TAG,
-          });
-        }
-      }
-    }
-
-    async function handleExtractEntities(): Promise<void> {
-      const textInfo = editor.read($collectTextNodeOffsets);
-
-      if (!textInfo.fullText.trim()) {
-        return;
-      }
-
-      const entities = await ai.extractEntities(textInfo.fullText, [
-        'LOC',
-        'PER',
-        'ORG',
-      ]);
-      if (entities.length === 0) {
-        return;
-      }
-      editor.update(
-        () => {
-          $replaceTextWithEntityNodes(textInfo.textNodes, entities, {
-            LOC: $createPlaceNode,
-            ORG: $createOrgNode,
-            PER: $createPersonNode,
-          });
-        },
-        {tag: AI_ENTITIES_TAG},
-      );
-    }
-
+  build() {
     return {
       blockType: signal('paragraph'),
       canRedo: signal(false),
       canUndo: signal(false),
-      handleExtractEntities,
-      handleGenerate,
       isBold: signal(false),
       isItalic: signal(false),
       isUnderline: signal(false),
     };
   },
-  dependencies: [
-    AIExtension,
-    AICaretNodeExtension,
-    PlaceNodeExtension,
-    PersonNodeExtension,
-    OrgNodeExtension,
-  ],
+  dependencies: [AIExtension],
   name: '@lexical/agent-example/toolbar',
   register(editor, _config, state) {
     const output = state.getOutput();
@@ -288,8 +162,6 @@ function useToolbar() {
     blockType: useSignalValue(toolbar.blockType),
     canRedo: useSignalValue(toolbar.canRedo),
     canUndo: useSignalValue(toolbar.canUndo),
-    handleExtractEntities: toolbar.handleExtractEntities,
-    handleGenerate: toolbar.handleGenerate,
     isBold: useSignalValue(toolbar.isBold),
     isItalic: useSignalValue(toolbar.isItalic),
     isUnderline: useSignalValue(toolbar.isUnderline),
@@ -302,7 +174,13 @@ export function Toolbar(): JSX.Element {
   const ai = useAI();
   const toolbar = useToolbar();
 
-  const {abort, isGenerating, modelStatus} = ai;
+  const {
+    abort,
+    handleExtractEntities,
+    handleGenerate,
+    isGenerating,
+    modelStatus,
+  } = ai;
   const aiDisabled = isGenerating || modelStatus === 'loading';
 
   const btnBase =
@@ -443,8 +321,8 @@ export function Toolbar(): JSX.Element {
         abort={abort}
         aiDisabled={aiDisabled}
         aiBtnBase={aiBtnBase}
-        handleExtractEntities={toolbar.handleExtractEntities}
-        handleGenerate={toolbar.handleGenerate}
+        handleExtractEntities={handleExtractEntities}
+        handleGenerate={handleGenerate}
         isGenerating={isGenerating}
       />
     </div>

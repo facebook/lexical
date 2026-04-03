@@ -16,6 +16,11 @@ import {
 
 type ModelStatus = 'idle' | 'loading' | 'ready' | 'error';
 
+export const AI_GENERATE_START_TAG = 'ai-generate-start';
+export const AI_STREAM_TAG = 'ai-stream';
+export const AI_GENERATE_END_TAG = 'ai-generate-end';
+export const AI_ENTITIES_TAG = 'ai-entities';
+
 export interface ExtractedEntity {
   end: number;
   entity: string;

@@ -39,7 +39,13 @@ import {
 } from 'lexical';
 import {type CSSProperties, type JSX, useRef} from 'react';
 
-import {AIExtension} from '../ai/AIExtension';
+import {
+  AI_ENTITIES_TAG,
+  AI_GENERATE_END_TAG,
+  AI_GENERATE_START_TAG,
+  AI_STREAM_TAG,
+  AIExtension,
+} from '../ai/AIExtension';
 import {useAI, type UseAIReturn} from '../ai/useAI';
 import {
   $createAICaretNode,
@@ -163,27 +169,32 @@ export const ToolbarExtension = defineExtension({
       const context = editor.read(() => $getRoot().getTextContent());
 
       let caretKey: string | null = null;
-      editor.update(() => {
-        const root = $getRoot();
-        const paragraph = $createParagraphNode();
-        const caret = $createAICaretNode();
-        paragraph.append(caret);
-        root.append(paragraph);
-        caretKey = caret.getKey();
-      });
+      editor.update(
+        () => {
+          const root = $getRoot();
+          const paragraph = $createParagraphNode();
+          const caret = $createAICaretNode();
+          paragraph.append(caret);
+          root.append(paragraph);
+          caretKey = caret.getKey();
+        },
+        {tag: AI_GENERATE_START_TAG},
+      );
 
       try {
         const result = await ai.generateParagraph(context, (token: string) => {
           if (caretKey) {
             editor.update(() => $appendTokenBeforeCaret(caretKey!, token), {
-              tag: 'ai-stream',
+              tag: AI_STREAM_TAG,
             });
           }
         });
         return result;
       } finally {
         if (caretKey) {
-          editor.update(() => $removeAICaret(caretKey!));
+          editor.update(() => $removeAICaret(caretKey!), {
+            tag: AI_GENERATE_END_TAG,
+          });
         }
       }
     }
@@ -203,13 +214,16 @@ export const ToolbarExtension = defineExtension({
       if (entities.length === 0) {
         return;
       }
-      editor.update(() => {
-        $replaceTextWithEntityNodes(textInfo.textNodes, entities, {
-          LOC: $createPlaceNode,
-          ORG: $createOrgNode,
-          PER: $createPersonNode,
-        });
-      });
+      editor.update(
+        () => {
+          $replaceTextWithEntityNodes(textInfo.textNodes, entities, {
+            LOC: $createPlaceNode,
+            ORG: $createOrgNode,
+            PER: $createPersonNode,
+          });
+        },
+        {tag: AI_ENTITIES_TAG},
+      );
     }
 
     return {

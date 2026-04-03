@@ -86,11 +86,11 @@ export class EntityNode extends DecoratorTextNode {
     });
   }
 
-  getEntityText(): StateConfigValue<typeof entityTextState> {
+  getTextContent(): StateConfigValue<typeof entityTextState> {
     return $getState(this, entityTextState);
   }
 
-  setEntityText(
+  setTextContent(
     valueOrUpdater: StateValueOrUpdater<typeof entityTextState>,
   ): this {
     return $setState(this, entityTextState, valueOrUpdater);
@@ -112,21 +112,17 @@ export class EntityNode extends DecoratorTextNode {
     element.appendChild(
       applyFormatToDom(
         this,
-        document.createTextNode(this.getEntityText()),
+        document.createTextNode(this.getTextContent()),
         TAG_TO_FORMAT,
       ),
     );
     return {element};
   }
 
-  getTextContent(): string {
-    return this.getEntityText();
-  }
-
   decorate(): JSX.Element {
     return (
       <EntityDecorator
-        text={this.getEntityText()}
+        text={this.getTextContent()}
         entityType={this.getEntityType()}
         format={this.getFormat()}
       />
@@ -144,7 +140,7 @@ export function $createEntityNode(
   entityType: EntityType,
   text: string,
 ): EntityNode {
-  return $create(EntityNode).setEntityType(entityType).setEntityText(text);
+  return $create(EntityNode).setEntityType(entityType).setTextContent(text);
 }
 
 export function $isEntityNode(

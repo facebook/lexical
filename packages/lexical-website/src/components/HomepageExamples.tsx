@@ -6,6 +6,7 @@
  *
  */
 
+import {Editor as AgentEditor} from '@examples/agent-example/Editor';
 import ChatEditor from '@examples/website-chat/Editor';
 import NotionEditor from '@examples/website-notion/Editor';
 import RichInputEditor from '@examples/website-rich-input/Editor';
@@ -51,6 +52,17 @@ const SECTIONS: Section[] = [
     title: (
       <>
         Rich <span className="text-gradient">input field</span>
+      </>
+    ),
+  },
+  {
+    description:
+      'A rich text editor with AI-powered paragraph generation and named entity extraction using SmolLM2 and BERT-NER running in the browser via WebAssembly.',
+    editor: <AgentEditor />,
+    stackblitzPath: 'agent-example',
+    title: (
+      <>
+        AI <span className="text-gradient">agent</span> editor
       </>
     ),
   },

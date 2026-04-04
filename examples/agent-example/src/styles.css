@@ -1,10 +1,6 @@
 @import 'tailwindcss';
 @custom-variant dark (&:where(.dark, .dark *));
 
-@theme {
-  --animate-blink: blink 0.8s step-end infinite;
-}
-
 @keyframes blink {
   0%,
   100% {

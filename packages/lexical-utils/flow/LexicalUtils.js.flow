@@ -35,8 +35,8 @@ declare export function isMimeType(
 declare export function mediaFileReader(
   files: Array<File>,
   acceptableMimeTypes: Array<string>,
-): Promise<Array<$ReadOnly<{file: File, result: string}>>>;
-export type DFSNode = $ReadOnly<{
+): Promise<Array<Readonly<{file: File, result: string}>>>;
+export type DFSNode = Readonly<{
   depth: number,
   node: LexicalNode,
 }>;
@@ -59,7 +59,7 @@ declare export function $getDepth(node: null | LexicalNode): number;
 declare export function $getNextRightPreorderNode(
   startingNode: LexicalNode,
 ): LexicalNode | null;
-declare export function $getNearestNodeOfType<T: LexicalNode>(
+declare export function $getNearestNodeOfType<T extends LexicalNode>(
   node: LexicalNode,
   klass: Class<T>,
 ): T | null;
@@ -89,7 +89,7 @@ declare export function $getNearestBlockElementAncestorOrThrow(
   startNode: LexicalNode,
 ): ElementNode;
 
-declare export function registerNestedElementResolver<N: ElementNode>(
+declare export function registerNestedElementResolver<N extends ElementNode>(
   editor: LexicalEditor,
   targetNode: Class<N>,
   cloneNode: (from: N) => N,
@@ -118,7 +118,7 @@ declare export function $wrapNodeInElement(
 ): ElementNode;
 
 declare export function objectKlassEquals<T>(
-  object: mixed,
+  object: unknown,
   objectClass: Class<T>,
 ): boolean;
 
@@ -153,7 +153,7 @@ declare export function $lastToFirstIterator(node: ElementNode): Iterable<Lexica
 
 declare export function $unwrapNode(node: ElementNode): void;
 
-declare export function $getAdjacentCaret<D: CaretDirection>(
+declare export function $getAdjacentCaret<D extends CaretDirection>(
   caret: null | NodeCaret<D>,
 ): null | SiblingCaret<LexicalNode, D>;
 
@@ -167,7 +167,7 @@ declare export function $reverseDfsIterator(
   endNode?: LexicalNode,
 ): Iterable<DFSNode>;
 
-declare export function $descendantsMatching<T: LexicalNode>(
+declare export function $descendantsMatching<T extends LexicalNode>(
   children: LexicalNode[],
   $predicate: (node: LexicalNode) => node is T,
 ): T[];

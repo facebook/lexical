@@ -438,10 +438,36 @@ export function applyTableHandlers(
         }
         //If the selection is not a table selection , there might be a case where a table exists between the anchor and focus of a range selection, and the user pressed escape to clear the selection. In this case we should clear the table selection state but not move the cursor.
         if ($isRangeSelection(selection)) {
-          const isAnchorInside = tableNode.isParentOf(
-            selection.anchor.getNode(),
-          );
-          const isFocusInside = tableNode.isParentOf(selection.focus.getNode());
+          const anchorNode = selection.anchor.getNode();
+          const focusNode = selection.focus.getNode();
+          const isAnchorInside = tableNode.isParentOf(anchorNode);
+          const isFocusInside = tableNode.isParentOf(focusNode);
+
+          // Find the table nodes that contain the anchor and focus (if any)
+          const anchorCellNode = $findCellNode(anchorNode);
+          const focusCellNode = $findCellNode(focusNode);
+          const anchorCellTable = anchorCellNode
+            ? $findTableNode(anchorCellNode)
+            : null;
+          const focusCellTable = focusCellNode
+            ? $findTableNode(focusCellNode)
+            : null;
+
+          // Skip handling if either endpoint is in a nested table
+          // (a table that is a descendant of the current tableNode)
+          const isAnchorInNestedTable =
+            anchorCellTable &&
+            anchorCellTable !== tableNode &&
+            tableNode.isParentOf(anchorCellTable);
+          const isFocusInNestedTable =
+            focusCellTable &&
+            focusCellTable !== tableNode &&
+            tableNode.isParentOf(focusCellTable);
+
+          if (isAnchorInNestedTable || isFocusInNestedTable) {
+            // Don't interfere with nested table selections
+            return false;
+          }
 
           // Case 1: One endpoint inside the table, one outside
           if (
@@ -454,17 +480,13 @@ export function applyTableHandlers(
 
           // Case 2: Both endpoints outside, but table is between them
           if (!isAnchorInside && !isFocusInside) {
-            const anchorBeforeTable = selection.anchor
-              .getNode()
-              .isBefore(tableNode);
-            const tableBeforeeFocus = tableNode.isBefore(
-              selection.focus.getNode(),
-            );
+            const anchorBeforeTable = anchorNode.isBefore(tableNode);
+            const tableBeforesFocus = tableNode.isBefore(focusNode);
 
             // Table is between if: (anchor < table < focus) OR (focus < table < anchor)
             if (
-              (anchorBeforeTable && tableBeforeeFocus) ||
-              (!anchorBeforeTable && !tableBeforeeFocus)
+              (anchorBeforeTable && tableBeforesFocus) ||
+              (!anchorBeforeTable && !tableBeforesFocus)
             ) {
               tableObserver.$clearHighlight(false);
               stopEvent(event);

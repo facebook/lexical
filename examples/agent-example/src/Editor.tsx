@@ -15,10 +15,16 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  configExtension,
   defineExtension,
 } from 'lexical';
+import {useMemo} from 'react';
 
-import {AIExtension} from './ai/AIExtension';
+import {
+  AIExtension,
+  type AIExtensionConfig,
+  defaultCreateWorker,
+} from './ai/AIExtension';
 import {Toolbar, ToolbarExtension} from './ToolbarExtension';
 import {useExtensionSignalValue} from './utils/useExtensionHooks';
 
@@ -41,29 +47,37 @@ const theme = {
 const SAMPLE_TEXT =
   'Lexical was created by Dominic Gannaway in London while working at Meta and is now maintained by Bob Ippolito in San Francisco, Ivaylo Pavlov at Bloomberg in London, and Gerard Rovira and Maksim Horbachevsky at Meta in New York. Ivaylo Pavlov built the table and drag-and-drop plugins, James Fitzsimmons in Melbourne contributed collaborative editing through Atticus, and Alessio Gravili in Vancouver contributed while working at Figma.';
 
-const agentEditorExtension = defineExtension({
-  $initialEditorState: () => {
-    $getRoot().append(
-      $createParagraphNode().append($createTextNode(SAMPLE_TEXT)),
-    );
-  },
-  dependencies: [
-    RichTextExtension,
-    HistoryExtension,
-    TabIndentationExtension,
-    AIExtension,
-    ToolbarExtension,
-  ],
-  name: '@lexical/agent-example/editor',
-  namespace: '@lexical/agent-example/editor',
-  theme,
-});
+function createEditorExtension(createWorker: () => Worker) {
+  return defineExtension({
+    $initialEditorState: () => {
+      $getRoot().append(
+        $createParagraphNode().append($createTextNode(SAMPLE_TEXT)),
+      );
+    },
+    dependencies: [
+      RichTextExtension,
+      HistoryExtension,
+      TabIndentationExtension,
+      configExtension(AIExtension, {createWorker}),
+      ToolbarExtension,
+    ],
+    name: '@lexical/agent-example/editor',
+    namespace: '@lexical/agent-example/editor',
+    theme,
+  });
+}
 
-export function Editor() {
+export interface EditorProps {
+  createWorker?: AIExtensionConfig['createWorker'];
+}
+
+export function Editor({createWorker = defaultCreateWorker}: EditorProps) {
+  const extension = useMemo(
+    () => createEditorExtension(createWorker),
+    [createWorker],
+  );
   return (
-    <LexicalExtensionComposer
-      extension={agentEditorExtension}
-      contentEditable={null}>
+    <LexicalExtensionComposer extension={extension} contentEditable={null}>
       <EditorContent />
     </LexicalExtensionComposer>
   );

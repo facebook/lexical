@@ -112,7 +112,11 @@ function $removeAICaret(caretKey: string): void {
   }
 }
 
-function createAIState(editor: LexicalEditor) {
+export interface AIExtensionConfig {
+  readonly createWorker: () => Worker;
+}
+
+function createAIState(editor: LexicalEditor, config: AIExtensionConfig) {
   const isGenerating = signal(false);
   const modelStatus = signal<ModelStatus>('idle');
   const loadProgress = signal<number | null>(null);
@@ -137,9 +141,7 @@ function createAIState(editor: LexicalEditor) {
     if (worker) {
       return worker;
     }
-    const w = new Worker(new URL('./ai-worker.ts', import.meta.url), {
-      type: 'module',
-    });
+    const w = config.createWorker();
     w.onmessage = (event: MessageEvent) => {
       const data = event.data;
       if (data.type === 'status') {
@@ -357,8 +359,15 @@ function createAIState(editor: LexicalEditor) {
 
 export type AIExtensionOutput = ReturnType<typeof createAIState>;
 
+export function defaultCreateWorker(): Worker {
+  return new Worker(new URL('./ai-worker.ts', import.meta.url), {
+    type: 'module',
+  });
+}
+
 export const AIExtension = defineExtension({
   build: createAIState,
+  config: {createWorker: defaultCreateWorker} as AIExtensionConfig,
   dependencies: [AICaretNodeExtension, EntityNodeExtension],
   name: '@lexical/agent-example/ai',
   register(editor, _config, state) {

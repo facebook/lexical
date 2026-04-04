@@ -381,6 +381,10 @@ const config = {
                   __dirname,
                   '../../examples/website-toolbar/src',
                 ),
+                '@huggingface/transformers': path.resolve(
+                  __dirname,
+                  'node_modules/@huggingface/transformers/dist/transformers.web.js',
+                ),
                 'onnxruntime-node': false,
               },
             },

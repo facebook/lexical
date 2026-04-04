@@ -13,7 +13,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@huggingface/transformers": "^3.4.0",
+    "@huggingface/transformers": "^4.0.1",
     "@lexical/extension": "0.42.0",
     "@lexical/history": "0.42.0",
     "@lexical/react": "0.42.0",

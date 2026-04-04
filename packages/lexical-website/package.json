@@ -21,7 +21,7 @@
     "@docusaurus/theme-common": "^3.9.2",
     "@docusaurus/theme-mermaid": "^3.9.2",
     "@easyops-cn/docusaurus-search-local": "^0.52.1",
-    "@huggingface/transformers": "^3.4.0",
+    "@huggingface/transformers": "^4.0.1",
     "@lexical/extension": "workspace:*",
     "@lexical/hashtag": "workspace:*",
     "@lexical/overflow": "workspace:*",

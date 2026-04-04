@@ -20,8 +20,6 @@ import {mergeEntities, type NERToken} from './mergeEntities';
 let generator: TextGenerationPipeline | null = null;
 let nerClassifier: TokenClassificationPipeline | null = null;
 
-const device: 'wasm' | 'webgpu' = 'gpu' in self.navigator ? 'webgpu' : 'wasm';
-
 async function getGenerator(): Promise<TextGenerationPipeline> {
   if (generator) {
     return generator;
@@ -31,8 +29,8 @@ async function getGenerator(): Promise<TextGenerationPipeline> {
     'text-generation',
     'HuggingFaceTB/SmolLM2-135M-Instruct',
     {
-      device,
-      dtype: device === 'webgpu' ? 'fp32' : 'q4',
+      device: 'wasm',
+      dtype: 'q4',
       progress_callback: (progress: {progress?: number; status?: string}) => {
         self.postMessage({
           progress: progress.progress ?? null,
@@ -55,8 +53,8 @@ async function getNERClassifier(): Promise<TokenClassificationPipeline> {
     'token-classification',
     'Xenova/bert-base-NER',
     {
-      device,
-      dtype: device === 'webgpu' ? 'fp32' : 'q8',
+      device: 'wasm',
+      dtype: 'q8',
       progress_callback: (progress: {progress?: number; status?: string}) => {
         self.postMessage({
           progress: progress.progress ?? null,

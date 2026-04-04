@@ -21,7 +21,8 @@
 @import 'tailwindcss/theme.css';
 @import 'tailwindcss/utilities.css';
 
-@source '../../../../examples/*/src/**/*.{js,jsx,ts,tsx}';
+@source '../../../../examples/website-*/src/**/*.{js,jsx,ts,tsx}';
+@source '../../../../examples/agent-example/src/**/*.{js,jsx,ts,tsx}';
 
 @custom-variant dark (&:is(html[data-theme='dark'] *));
 

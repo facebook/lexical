@@ -381,7 +381,7 @@ const config = {
                   __dirname,
                   '../../examples/website-toolbar/src',
                 ),
-                '@huggingface/transformers': false,
+                'onnxruntime-node': false,
               },
             },
           };

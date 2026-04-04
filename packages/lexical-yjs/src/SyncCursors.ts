@@ -220,7 +220,7 @@ function createCursorSelection(
   const caret = document.createElement('span');
   if (theme.cursor) {
     caret.className = theme.cursor;
-    caret.style.cssText = `position:absolute;top:0;bottom:0;right:-1px;z-index:10;`;
+    caret.style.cssText = `position:absolute;top:0;bottom:0;right:-1px;`;
     caret.style.setProperty('--lexical-cursor-color', color);
   } else {
     caret.style.cssText = `position:absolute;top:0;bottom:0;right:-1px;width:1px;background-color:${color};z-index:10;`;
@@ -344,7 +344,7 @@ function updateCursor(
 
     const top = selectionRect.top - containerRect.top;
     const left = selectionRect.left - containerRect.left;
-    const posStyle = `position:absolute;top:${top}px;left:${left}px;height:${selectionRect.height}px;width:${selectionRect.width}px;pointer-events:none;z-index:5;`;
+    const posStyle = `position:absolute;top:${top}px;left:${left}px;height:${selectionRect.height}px;width:${selectionRect.width}px;pointer-events:none;`;
 
     if (theme.selection) {
       selection.className = theme.selection;
@@ -355,7 +355,7 @@ function updateCursor(
     } else {
       selection.style.cssText = posStyle;
       (selection.firstChild as HTMLSpanElement).style.cssText =
-        `${posStyle}left:0;top:0;background-color:${color};opacity:0.3;`;
+        `${posStyle}left:0;top:0;background-color:${color};opacity:0.3;z-index:5;`;
     }
 
     if (i === selectionRectsLength - 1) {

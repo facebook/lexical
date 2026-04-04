@@ -214,11 +214,11 @@ function createCursorSelection(
   anchorOffset: number,
   focusKey: NodeKey,
   focusOffset: number,
-  theme?: {cursor?: string; cursorName?: string},
+  theme: {cursor?: string; cursorName?: string} = {},
 ): CursorSelection {
   const color = cursor.color;
   const caret = document.createElement('span');
-  if (theme?.cursor) {
+  if (theme.cursor) {
     caret.className = theme.cursor;
     caret.style.cssText = `position:absolute;top:0;bottom:0;right:-1px;z-index:10;`;
     caret.style.setProperty('--lexical-cursor-color', color);
@@ -227,7 +227,7 @@ function createCursorSelection(
   }
   const name = document.createElement('span');
   name.textContent = cursor.name;
-  if (theme?.cursorName) {
+  if (theme.cursorName) {
     name.className = theme.cursorName;
   } else {
     name.style.cssText = `position:absolute;left:-2px;top:-16px;background-color:${color};color:#fff;line-height:12px;font-size:12px;padding:2px;font-family:Arial;font-weight:bold;white-space:nowrap;`;
@@ -254,7 +254,7 @@ function updateCursor(
   cursor: Cursor,
   nextSelection: null | CursorSelection,
   nodeMap: NodeMap,
-  theme?: {selection?: string; selectionBg?: string},
+  theme: {selection?: string; selectionBg?: string} = {},
 ): void {
   const editor = binding.editor;
   const rootElement = editor.getRootElement();
@@ -335,7 +335,7 @@ function updateCursor(
       selection = document.createElement('span');
       selections[i] = selection;
       const selectionBg = document.createElement('span');
-      if (theme?.selectionBg) {
+      if (theme.selectionBg) {
         selectionBg.className = theme.selectionBg;
       }
       selection.appendChild(selectionBg);
@@ -346,7 +346,7 @@ function updateCursor(
     const left = selectionRect.left - containerRect.left;
     const posStyle = `position:absolute;top:${top}px;left:${left}px;height:${selectionRect.height}px;width:${selectionRect.width}px;pointer-events:none;z-index:5;`;
 
-    if (theme?.selection) {
+    if (theme.selection) {
       selection.className = theme.selection;
       selection.style.cssText = posStyle;
       selection.style.setProperty('--lexical-cursor-color', color);

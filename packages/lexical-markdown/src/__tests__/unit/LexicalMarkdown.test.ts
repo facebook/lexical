@@ -355,6 +355,18 @@ describe('Markdown', () => {
       md: '25. Hello\n26. world',
     },
     {
+      html: '<ul><li value="1"><span style="white-space: pre-wrap;">bullet1</span></li><li value="2"><ol><li value="1"><span style="white-space: pre-wrap;">ordered1</span></li><li value="2"><span style="white-space: pre-wrap;">ordered2</span></li></ol></li><li value="2"><span style="white-space: pre-wrap;">bullet2</span></li></ul>',
+      md: '- bullet1\n    1. ordered1\n    2. ordered2\n- bullet2',
+    },
+    {
+      html: '<ol><li value="1"><span style="white-space: pre-wrap;">ordered1</span></li><li value="2"><ul><li value="1"><span style="white-space: pre-wrap;">bullet1</span></li><li value="2"><span style="white-space: pre-wrap;">bullet2</span></li></ul></li><li value="2"><span style="white-space: pre-wrap;">ordered2</span></li></ol>',
+      md: '1. ordered1\n    - bullet1\n    - bullet2\n2. ordered2',
+    },
+    {
+      html: '<ul><li value="1"><span style="white-space: pre-wrap;">a</span></li><li value="2"><ol><li value="1"><span style="white-space: pre-wrap;">b</span></li><li value="2"><ul><li value="1"><span style="white-space: pre-wrap;">c</span></li><li value="2"><span style="white-space: pre-wrap;">d</span></li></ul></li><li value="2"><span style="white-space: pre-wrap;">e</span></li></ol></li><li value="2"><span style="white-space: pre-wrap;">f</span></li></ul>',
+      md: '- a\n    1. b\n        - c\n        - d\n    2. e\n- f',
+    },
+    {
       html: '<p><i><em style="white-space: pre-wrap;">Hello</em></i><span style="white-space: pre-wrap;"> world</span></p>',
       md: '*Hello* world',
     },

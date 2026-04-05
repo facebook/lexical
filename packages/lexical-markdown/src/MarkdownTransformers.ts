@@ -282,6 +282,7 @@ const listReplace = (listType: ListType): ElementTransformer['replace'] => {
       firstMatchChar === listMarkerState.parse(firstMatchChar)
         ? firstMatchChar
         : undefined;
+    const indent = getIndent(match[1]);
     if ($isListNode(nextNode) && nextNode.getListType() === listType) {
       if (listMarker) {
         $setState(nextNode, listMarkerState, listMarker);
@@ -303,6 +304,9 @@ const listReplace = (listType: ListType): ElementTransformer['replace'] => {
       }
       previousNode.append(listItem);
       parentNode.remove();
+    } else if (indent > 0 && $isListNode(previousNode)) {
+      previousNode.append(listItem);
+      parentNode.remove();
     } else {
       const list = $createListNode(
         listType,
@@ -318,9 +322,12 @@ const listReplace = (listType: ListType): ElementTransformer['replace'] => {
     if (!isImport) {
       listItem.select(0, 0);
     }
-    const indent = getIndent(match[1]);
     if (indent) {
       listItem.setIndent(indent);
+      const parentList = listItem.getParent();
+      if ($isListNode(parentList) && parentList.getListType() !== listType) {
+        parentList.setListType(listType);
+      }
     }
   };
 };

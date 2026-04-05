@@ -54,7 +54,7 @@
     }
   },
   "dependencies": {
-    "happy-dom": "^20.8.8",
+    "happy-dom": "^20.8.9",
     "lexical": "workspace:*"
   }
 }

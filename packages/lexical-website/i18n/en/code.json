@@ -5,7 +5,7 @@
   },
   "theme.ErrorPageContent.tryAgain": {
     "message": "Try again",
-    "description": "The label of the button to try again when the page crashed"
+    "description": "The label of the button to try again rendering when the React error boundary captures an error"
   },
   "theme.NotFound.title": {
     "message": "Page Not Found",
@@ -44,7 +44,7 @@
     "description": "The ARIA label for the link to full blog posts from excerpts"
   },
   "theme.blog.post.readMore": {
-    "message": "Read More",
+    "message": "Read more",
     "description": "The label used in blog post item excerpts to link to full blog posts"
   },
   "theme.blog.paginator.navAriaLabel": {
@@ -52,11 +52,11 @@
     "description": "The ARIA label for the blog pagination"
   },
   "theme.blog.paginator.newerEntries": {
-    "message": "Newer Entries",
+    "message": "Newer entries",
     "description": "The label used to navigate to the newer blog posts page (previous page)"
   },
   "theme.blog.paginator.olderEntries": {
-    "message": "Older Entries",
+    "message": "Older entries",
     "description": "The label used to navigate to the older blog posts page (next page)"
   },
   "theme.blog.sidebar.navAriaLabel": {
@@ -68,11 +68,11 @@
     "description": "The ARIA label for the blog posts pagination"
   },
   "theme.blog.post.paginator.newerPost": {
-    "message": "Newer Post",
+    "message": "Newer post",
     "description": "The blog post button label to navigate to the newer/previous post"
   },
   "theme.blog.post.paginator.olderPost": {
-    "message": "Older Post",
+    "message": "Older post",
     "description": "The blog post button label to navigate to the older/next post"
   },
   "theme.CodeBlock.copyButtonAriaLabel": {
@@ -96,12 +96,8 @@
     "description": "The title of the page for a blog tag"
   },
   "theme.tags.tagsPageLink": {
-    "message": "View All Tags",
+    "message": "View all tags",
     "description": "The label of the link targeting the tag list page"
-  },
-  "theme.docs.DocCard.categoryDescription": {
-    "message": "{count} items",
-    "description": "The default description for a category card in the generated index about how many items this category includes"
   },
   "theme.docs.sidebar.expandButtonTitle": {
     "message": "Expand sidebar",
@@ -119,12 +115,8 @@
     "message": "Collapse sidebar",
     "description": "The title attribute for collapse button of doc sidebar"
   },
-  "theme.DocSidebarItem.toggleCollapsedCategoryAriaLabel": {
-    "message": "Toggle the collapsible sidebar category '{label}'",
-    "description": "The ARIA label to toggle the collapsible sidebar category"
-  },
   "theme.docs.paginator.navAriaLabel": {
-    "message": "Docs pages navigation",
+    "message": "Docs pages",
     "description": "The ARIA label for the docs pagination"
   },
   "theme.docs.paginator.previous": {
@@ -167,7 +159,7 @@
     "description": "The label used for the latest version suggestion link label"
   },
   "theme.common.headingLinkTitle": {
-    "message": "Direct link to heading",
+    "message": "Direct link to {heading}",
     "description": "Title for link to heading"
   },
   "theme.lastUpdated.atDate": {
@@ -208,7 +200,7 @@
   },
   "theme.colorToggle.ariaLabel": {
     "message": "Switch between dark and light mode (currently {mode})",
-    "description": "The ARIA label for the navbar color mode toggle"
+    "description": "The ARIA label for the color mode toggle"
   },
   "theme.colorToggle.ariaLabel.mode.dark": {
     "message": "dark mode",
@@ -227,19 +219,15 @@
     "description": "The title of the header section of the community page"
   },
   "pages.community.header.subtext": {
-    "message": "We are deeply committed to being open-source. That means openly helping each other in improving Lexical. We’ve listed some Lexical-related communities that you should check out.",
+    "message": "We are deeply committed to being open-source. That means openly helping each other in improving Lexical. We've listed some Lexical-related communities that you should check out.",
     "description": "The descriptive text of the header section of the community page"
   },
   "pages.community.contributors.joinUsRepoLink": {
-    "message": "Lexical Github repo"
+    "message": "Lexical GitHub repository"
   },
   "pages.community.links.github.title": {
     "message": "GitHub",
     "description": "Hyperlink to Github"
-  },
-  "pages.community.links.stackoverflow.title": {
-    "message": "Stack Overflow",
-    "description": "Hyperlink to Stack Overflow"
   },
   "pages.community.links.discord.title": {
     "message": "Discord",
@@ -262,11 +250,11 @@
     "description": "Subtitle of section on contributors"
   },
   "pages.community.contributors.subtext": {
-    "message": "Lexical development is led by small team at Meta. It also receives contributions from people all over the world. Here are just a few members.",
+    "message": "Lexical development is led by core team of maintainers, which includes representation from Meta and outside contributors. It also welcomes contributions from people all over the world. Here are just a few members.",
     "description": "The descriptive text of the header section of the community page"
   },
   "pages.community.contributors.gitHubLink": {
-    "message": "See the rest of the contributors on Github.",
+    "message": "See all of the contributors on Github.",
     "description": "Link to GitHub's contribute page for the repository"
   },
   "pages.community.howTo.howToSubHeader": {
@@ -274,7 +262,7 @@
     "description": "Subtitle of section on contribution guidelines"
   },
   "pages.community.howTo.beforeParticipating": {
-    "message": "Before participating in React's communities, please read our",
+    "message": "Before participating in Lexical's communities, please read our",
     "description": "Phrase before paragraph listing documents and policies to read before contributing"
   },
   "pages.community.howTo.codeOfConductLink": {
@@ -302,14 +290,14 @@
     "description": "Phrase inviting users to join us as contributors after agreeing to the guidelines"
   },
   "theme.SearchBar.seeAll": {
-    "message": "See all {count} results"
+    "message": "See all results"
   },
   "theme.SearchBar.label": {
     "message": "Search",
     "description": "The ARIA label and placeholder for search button"
   },
   "theme.SearchPage.documentsFound.plurals": {
-    "message": "One document found|{count} documents found",
+    "message": "1 document found|{count} documents found",
     "description": "Pluralized label for \"{count} documents found\". Use as much plural forms (separated by \"|\") as your language support (see https://www.unicode.org/cldr/cldr-aux/charts/34/supplemental/language_plural_rules.html)"
   },
   "theme.SearchPage.existingResultsTitle": {
@@ -320,36 +308,172 @@
     "message": "Search the documentation",
     "description": "The search page title for empty query"
   },
-  "theme.SearchPage.inputPlaceholder": {
-    "message": "Type your search here",
-    "description": "The placeholder for search page input"
-  },
-  "theme.SearchPage.inputLabel": {
-    "message": "Search",
-    "description": "The ARIA label for search page input"
-  },
-  "theme.SearchPage.algoliaLabel": {
-    "message": "Search by Algolia",
-    "description": "The ARIA label for Algolia mention"
-  },
   "theme.SearchPage.noResultsText": {
-    "message": "No results were found",
+    "message": "No documents were found",
     "description": "The paragraph for empty search result"
-  },
-  "theme.SearchPage.fetchingNewResults": {
-    "message": "Fetching new results...",
-    "description": "The paragraph for fetching new search results"
   },
   "pages.community.links.github.description": {
     "message": "Want to add a new feature or get a bug fixed? Create a pull request or raise an issue.",
     "description": "Description of Github community"
   },
-  "pages.community.links.stackoverflow.description": {
-    "message": "Having trouble using Lexical? Just shoot us a question.",
-    "description": "Description of StackOverflow community"
-  },
   "pages.community.links.discord.description": {
-    "message": "Let's discuss upcoming features and plans together.",
+    "message": "Join our Discord to stay current on announcements, ask questions, and discuss upcoming features and plans together.",
     "description": "Description of Discord community"
+  },
+  "pages.community.team.header": {
+    "message": "Meet the Team",
+    "description": "Header for team section"
+  },
+  "pages.community.team.description": {
+    "message": "The development of Lexical is led by a core team of maintainers from Meta and the open source community. We are grateful for the contributions of all our community members who help make Lexical better every day.",
+    "description": "Description of team section"
+  },
+  "pages.community.team.core.title": {
+    "message": "Core Team",
+    "description": "Core team section title"
+  },
+  "pages.community.team.core.description": {
+    "message": "Core team members actively maintain the project and have made significant contributions to Lexical, with a long-term commitment to its success and the community.",
+    "description": "Core team section description"
+  },
+  "pages.community.team.emeriti.title": {
+    "message": "Core Team Emeriti",
+    "description": "Core team emeriti section title"
+  },
+  "pages.community.team.emeriti.description": {
+    "message": "We honor some no-longer-active core team members who helped shape Lexical into what it is today.",
+    "description": "Core team emeriti section description"
+  },
+  "pages.community.team.distinguished.title": {
+    "message": "Distinguished Contributors",
+    "description": "Distinguished contributors section title"
+  },
+  "pages.community.team.distinguished.description": {
+    "message": "These community members have made exceptional contributions to Lexical through significant code contributions, documentation, or community support.",
+    "description": "Distinguished contributors section description"
+  },
+  "theme.colorToggle.ariaLabel.mode.system": {
+    "message": "system mode",
+    "description": "The name for the system color mode"
+  },
+  "theme.docs.DocCard.categoryDescription.plurals": {
+    "message": "1 item|{count} items",
+    "description": "The default description for a category card in the generated index about how many items this category includes"
+  },
+  "theme.docs.breadcrumbs.navAriaLabel": {
+    "message": "Breadcrumbs",
+    "description": "The ARIA label for the breadcrumbs"
+  },
+  "theme.admonition.caution": {
+    "message": "caution",
+    "description": "The default label used for the Caution admonition (:::caution)"
+  },
+  "theme.admonition.danger": {
+    "message": "danger",
+    "description": "The default label used for the Danger admonition (:::danger)"
+  },
+  "theme.admonition.info": {
+    "message": "info",
+    "description": "The default label used for the Info admonition (:::info)"
+  },
+  "theme.admonition.note": {
+    "message": "note",
+    "description": "The default label used for the Note admonition (:::note)"
+  },
+  "theme.admonition.tip": {
+    "message": "tip",
+    "description": "The default label used for the Tip admonition (:::tip)"
+  },
+  "theme.admonition.warning": {
+    "message": "warning",
+    "description": "The default label used for the Warning admonition (:::warning)"
+  },
+  "theme.DocSidebarItem.expandCategoryAriaLabel": {
+    "message": "Expand sidebar category '{label}'",
+    "description": "The ARIA label to expand the sidebar category"
+  },
+  "theme.DocSidebarItem.collapseCategoryAriaLabel": {
+    "message": "Collapse sidebar category '{label}'",
+    "description": "The ARIA label to collapse the sidebar category"
+  },
+  "theme.IconExternalLink.ariaLabel": {
+    "message": "(opens in new tab)",
+    "description": "The ARIA label for the external link icon"
+  },
+  "theme.NavBar.navAriaLabel": {
+    "message": "Main",
+    "description": "The ARIA label for the main navigation"
+  },
+  "theme.CodeBlock.wordWrapToggle": {
+    "message": "Toggle word wrap",
+    "description": "The title attribute for toggle word wrapping button of code block lines"
+  },
+  "theme.docs.breadcrumbs.home": {
+    "message": "Home page",
+    "description": "The ARIA label for the home page in the breadcrumbs"
+  },
+  "theme.docs.sidebar.navAriaLabel": {
+    "message": "Docs sidebar",
+    "description": "The ARIA label for the sidebar navigation"
+  },
+  "theme.docs.sidebar.closeSidebarButtonAriaLabel": {
+    "message": "Close navigation bar",
+    "description": "The ARIA label for close button of mobile sidebar"
+  },
+  "theme.docs.sidebar.toggleSidebarButtonAriaLabel": {
+    "message": "Toggle navigation bar",
+    "description": "The ARIA label for hamburger menu button of mobile navigation"
+  },
+  "theme.navbar.mobileDropdown.collapseButton.expandAriaLabel": {
+    "message": "Expand the dropdown",
+    "description": "The ARIA label of the button to expand the mobile dropdown navbar item"
+  },
+  "theme.navbar.mobileDropdown.collapseButton.collapseAriaLabel": {
+    "message": "Collapse the dropdown",
+    "description": "The ARIA label of the button to collapse the mobile dropdown navbar item"
+  },
+  "theme.SearchBar.noResultsText": {
+    "message": "No results"
+  },
+  "theme.SearchBar.seeAllOutsideContext": {
+    "message": "See all results outside \"{context}\""
+  },
+  "theme.SearchBar.searchInContext": {
+    "message": "See all results within \"{context}\""
+  },
+  "theme.SearchPage.searchContext.everywhere": {
+    "message": "Everywhere"
+  },
+  "theme.blog.author.pageTitle": {
+    "message": "{authorName} - {nPosts}",
+    "description": "The title of the page for a blog author"
+  },
+  "theme.blog.authorsList.pageTitle": {
+    "message": "Authors",
+    "description": "The title of the authors page"
+  },
+  "theme.blog.authorsList.viewAll": {
+    "message": "View all authors",
+    "description": "The label of the link targeting the blog authors page"
+  },
+  "theme.blog.author.noPosts": {
+    "message": "This author has not written any posts yet.",
+    "description": "The text for authors with 0 blog post"
+  },
+  "theme.contentVisibility.unlistedBanner.title": {
+    "message": "Unlisted page",
+    "description": "The unlisted content banner title"
+  },
+  "theme.contentVisibility.unlistedBanner.message": {
+    "message": "This page is unlisted. Search engines will not index it, and only users having a direct link can access it.",
+    "description": "The unlisted content banner message"
+  },
+  "theme.contentVisibility.draftBanner.title": {
+    "message": "Draft page",
+    "description": "The draft content banner title"
+  },
+  "theme.contentVisibility.draftBanner.message": {
+    "message": "This page is a draft. It will only be visible in dev and be excluded from the production build.",
+    "description": "The draft content banner message"
   }
 }

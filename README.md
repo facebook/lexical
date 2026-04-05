@@ -15,7 +15,6 @@
   <a href="https://www.npmjs.com/package/lexical"><img alt="NPM Downloads" src="https://img.shields.io/npm/dw/lexical"/></a>
   <a href="https://github.com/facebook/lexical/actions/workflows/tests.yml"><img alt="Build Status" src="https://img.shields.io/github/actions/workflow/status/facebook/lexical/tests.yml"/></a>
   <a href="https://discord.gg/KmG4wQnnD9"><img alt="Discord" src="https://img.shields.io/discord/953974421008293909"/></a>
-  <a href="https://x.com/intent/follow?screen_name=lexicaljs"><img alt="Twitter Follow" src="https://img.shields.io/twitter/follow/lexicaljs"/></a>
 </p>
 
 <p align="center">
@@ -100,9 +99,9 @@ See [CONTRIBUTING.md](https://github.com/facebook/lexical/blob/main/CONTRIBUTING
 
 ## Community & Support
 
-- **Discord**: Join our [Discord server](https://discord.gg/KmG4wQnnD9) for questions and discussions
-- **Twitter**: Follow [@lexicaljs](https://x.com/lexicaljs) for updates
+- **Discord**: Join our [Discord server](https://discord.gg/KmG4wQnnD9) for announcements, questions, discussions
 - **Issues**: Report bugs and request features on [GitHub Issues](https://github.com/facebook/lexical/issues)
+- **Release Notes**: Release notes are available in [Github Releases](https://github.com/facebook/lexical/releases)
 
 ## Browser Support
 

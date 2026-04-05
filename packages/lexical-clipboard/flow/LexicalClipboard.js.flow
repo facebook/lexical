@@ -58,7 +58,7 @@ interface BaseSerializedNode {
 }
 
 declare export function $generateJSONFromSelectedNodes<
-  SerializedNode: BaseSerializedNode,
+  SerializedNode extends BaseSerializedNode,
 >(
   editor: LexicalEditor,
   selection: BaseSelection | null,

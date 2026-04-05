@@ -39,7 +39,7 @@ export const TableCellHeaderStates = {
   BOTH: 3,
 };
 
-export type TableCellHeaderState = $Values<typeof TableCellHeaderStates>;
+export type TableCellHeaderState = Values<typeof TableCellHeaderStates>;
 
 declare export class TableCellNode extends ElementNode {
   __colSpan: number;
@@ -202,7 +202,7 @@ declare export function $findTableNode(node: LexicalNode): null | TableNode;
 
 declare export function $findCellNode(node: LexicalNode): null | TableCellNode;
 
-declare export function getTableElement<T: HTMLElement | null>(
+declare export function getTableElement<T extends HTMLElement | null>(
   tableNode: TableNode,
   dom: T,
 ): HTMLTableElementWithWithTableSelectionState | (T & null);

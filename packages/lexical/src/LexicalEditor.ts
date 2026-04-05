@@ -183,6 +183,12 @@ export interface EditorThemeClasses {
   tableSelected?: EditorThemeClassName;
   tableSelection?: EditorThemeClassName;
   text?: TextNodeThemeClasses;
+  collaboration?: {
+    cursor?: EditorThemeClassName;
+    cursorName?: EditorThemeClassName;
+    selection?: EditorThemeClassName;
+    selectionBg?: EditorThemeClassName;
+  };
   embedBlock?: {
     base?: EditorThemeClassName;
     focus?: EditorThemeClassName;

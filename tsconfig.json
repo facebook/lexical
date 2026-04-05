@@ -14,6 +14,22 @@
     "resolveJsonModule": true,
     "allowJs": true,
     "paths": {
+      "@examples/agent-example/Editor": [
+        "./examples/agent-example/src/Editor.tsx"
+      ],
+      "@examples/website-chat/Editor": [
+        "./examples/website-chat/src/Editor.tsx"
+      ],
+      "@examples/website-notion/Editor": [
+        "./examples/website-notion/src/Editor.tsx"
+      ],
+      "@examples/website-rich-input/Editor": [
+        "./examples/website-rich-input/src/Editor.tsx"
+      ],
+      "@examples/website-toolbar/Editor": [
+        "./examples/website-toolbar/src/Editor.tsx"
+      ],
+      "@site/*": ["./packages/lexical-website/*"],
       "lexical": ["./packages/lexical/src/index.ts"],
       "@lexical/clipboard": ["./packages/lexical-clipboard/src/index.ts"],
       "@lexical/code": ["./packages/lexical-code/src/index.ts"],
@@ -261,20 +277,7 @@
       "@lexical/text/src": ["./packages/lexical-text/src"],
       "@lexical/utils/src": ["./packages/lexical-utils/src"],
       "@lexical/yjs/src": ["./packages/lexical-yjs/src"],
-      "shared/src": ["./packages/shared/src"],
-      "@examples/website-chat/Editor": [
-        "./examples/website-chat/src/Editor.tsx"
-      ],
-      "@examples/website-notion/Editor": [
-        "./examples/website-notion/src/Editor.tsx"
-      ],
-      "@examples/website-rich-input/Editor": [
-        "./examples/website-rich-input/src/Editor.tsx"
-      ],
-      "@examples/website-toolbar/Editor": [
-        "./examples/website-toolbar/src/Editor.tsx"
-      ],
-      "@site/*": ["./packages/lexical-website/*"]
+      "shared/src": ["./packages/shared/src"]
     }
   },
   "include": ["./libdefs", "./packages"],

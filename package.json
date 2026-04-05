@@ -95,7 +95,7 @@
     "update-changelog": "node ./scripts/npm/update-changelog",
     "create-docs": "node ./scripts/create-docs",
     "update-version": "node ./scripts/updateVersion",
-    "update-tsconfig": "node ./scripts/update-tsconfig",
+    "update-tsconfig": "node ./scripts/update-tsconfig.mjs",
     "update-flowconfig": "node ./scripts/update-flowconfig",
     "update-examples": "node ./scripts/update-examples.mjs",
     "update-team-data": "node ./scripts/generate-team-data.mjs",

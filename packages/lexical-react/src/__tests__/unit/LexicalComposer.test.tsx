@@ -12,7 +12,10 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  $isEditorState,
+  createEditor,
   LexicalEditor,
+  SerializedEditorState,
 } from 'lexical';
 import * as React from 'react';
 import {createRoot, Root} from 'react-dom/client';
@@ -63,6 +66,165 @@ describe('LexicalComposer tests', () => {
 
     await ReactTestUtils.act(async () => {
       reactRoot.render(<App />);
+    });
+  });
+
+  describe('editorState initialization', () => {
+    function makeTestComposer(
+      editorState: Parameters<
+        typeof LexicalComposer
+      >[0]['initialConfig']['editorState'],
+      onReady: (editor: LexicalEditor) => void,
+    ) {
+      function TestPlugin() {
+        const [editor] = useLexicalComposerContext();
+        onReady(editor);
+        return null;
+      }
+      return (
+        <LexicalComposer
+          initialConfig={{
+            editorState,
+            namespace: '',
+            nodes: [],
+            onError: (err) => {
+              throw err;
+            },
+          }}>
+          <TestPlugin />
+        </LexicalComposer>
+      );
+    }
+
+    it('accepts a SerializedEditorState object', async () => {
+      // Derive the serialized state from a real editor so we never hardcode
+      // the internal shape — if the format ever changes, this test will still
+      // produce a valid payload.
+      const source = createEditor({
+        namespace: '',
+        nodes: [],
+        onError: (err) => {
+          throw err;
+        },
+      });
+      source.update(
+        () => {
+          const paragraph = $createParagraphNode();
+          paragraph.append($createTextNode('hello serialized'));
+          $getRoot().append(paragraph);
+        },
+        {discrete: true},
+      );
+      const serialized: SerializedEditorState = source
+        .getEditorState()
+        .toJSON();
+
+      let capturedEditor: LexicalEditor | null = null;
+
+      await ReactTestUtils.act(async () => {
+        reactRoot.render(
+          makeTestComposer(serialized, (e) => {
+            capturedEditor = e;
+          }),
+        );
+      });
+
+      expect(
+        capturedEditor!
+          .getEditorState()
+          .read(() => $getRoot().getTextContent()),
+      ).toBe('hello serialized');
+    });
+
+    it('accepts an EditorState instance', async () => {
+      // Build an EditorState using a temporary editor, then hand the live
+      // instance directly to LexicalComposer (the instanceof path).
+      const source = createEditor({
+        namespace: '',
+        nodes: [],
+        onError: (err) => {
+          throw err;
+        },
+      });
+      source.update(
+        () => {
+          const paragraph = $createParagraphNode();
+          paragraph.append($createTextNode('hello editor state'));
+          $getRoot().append(paragraph);
+        },
+        {discrete: true},
+      );
+      const editorStateInstance = source.getEditorState();
+      expect($isEditorState(editorStateInstance)).toBe(true);
+
+      let capturedEditor: LexicalEditor | null = null;
+
+      await ReactTestUtils.act(async () => {
+        reactRoot.render(
+          makeTestComposer(editorStateInstance, (e) => {
+            capturedEditor = e;
+          }),
+        );
+      });
+
+      expect(
+        capturedEditor!
+          .getEditorState()
+          .read(() => $getRoot().getTextContent()),
+      ).toBe('hello editor state');
+    });
+
+    it('accepts a JSON string', async () => {
+      const source = createEditor({
+        namespace: '',
+        nodes: [],
+        onError: (err) => {
+          throw err;
+        },
+      });
+      source.update(
+        () => {
+          const paragraph = $createParagraphNode();
+          paragraph.append($createTextNode('hello json string'));
+          $getRoot().append(paragraph);
+        },
+        {discrete: true},
+      );
+      const jsonString = JSON.stringify(source.getEditorState().toJSON());
+
+      let capturedEditor: LexicalEditor | null = null;
+
+      await ReactTestUtils.act(async () => {
+        reactRoot.render(
+          makeTestComposer(jsonString, (e) => {
+            capturedEditor = e;
+          }),
+        );
+      });
+
+      expect(
+        capturedEditor!
+          .getEditorState()
+          .read(() => $getRoot().getTextContent()),
+      ).toBe('hello json string');
+    });
+
+    it('starts with empty state when editorState is null', async () => {
+      let capturedEditor: LexicalEditor | null = null;
+
+      await ReactTestUtils.act(async () => {
+        reactRoot.render(
+          makeTestComposer(null, (e) => {
+            capturedEditor = e;
+          }),
+        );
+      });
+
+      expect(
+        capturedEditor!
+          .getEditorState()
+          .read(() => $getRoot().getTextContent()),
+      ).toBe('');
     });
   });
 

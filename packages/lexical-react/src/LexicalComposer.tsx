@@ -17,6 +17,7 @@ import {
   $createParagraphNode,
   $getRoot,
   $getSelection,
+  $isEditorState,
   createEditor,
   EditorState,
   EditorThemeClasses,
@@ -26,6 +27,7 @@ import {
   LexicalEditor,
   LexicalNode,
   LexicalNodeReplacement,
+  SerializedEditorState,
 } from 'lexical';
 import {useMemo} from 'react';
 import * as React from 'react';
@@ -37,6 +39,7 @@ const HISTORY_MERGE_OPTIONS = {tag: HISTORY_MERGE_TAG};
 export type InitialEditorStateType =
   | null
   | string
+  | SerializedEditorState
   | EditorState
   | ((editor: LexicalEditor) => void);
 
@@ -134,7 +137,12 @@ function initializeEditor(
         break;
       }
       case 'object': {
-        editor.setEditorState(initialEditorState, HISTORY_MERGE_OPTIONS);
+        if ($isEditorState(initialEditorState)) {
+          editor.setEditorState(initialEditorState, HISTORY_MERGE_OPTIONS);
+        } else {
+          const parsedEditorState = editor.parseEditorState(initialEditorState);
+          editor.setEditorState(parsedEditorState, HISTORY_MERGE_OPTIONS);
+        }
         break;
       }
       case 'function': {

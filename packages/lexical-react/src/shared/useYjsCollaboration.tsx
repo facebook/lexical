@@ -39,6 +39,7 @@ import {
   $createParagraphNode,
   $getRoot,
   $getSelection,
+  $isEditorState,
   BLUR_COMMAND,
   CAN_REDO_COMMAND,
   CAN_UNDO_COMMAND,
@@ -608,9 +609,17 @@ function initializeEditor(
               break;
             }
             case 'object': {
-              editor.setEditorState(initialEditorState, {
-                tag: HISTORY_MERGE_TAG,
-              });
+              if ($isEditorState(initialEditorState)) {
+                editor.setEditorState(initialEditorState, {
+                  tag: HISTORY_MERGE_TAG,
+                });
+              } else {
+                const parsedEditorState =
+                  editor.parseEditorState(initialEditorState);
+                editor.setEditorState(parsedEditorState, {
+                  tag: HISTORY_MERGE_TAG,
+                });
+              }
               break;
             }
             case 'function': {

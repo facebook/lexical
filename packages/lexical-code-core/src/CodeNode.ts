@@ -317,7 +317,7 @@ export class CodeNode extends ElementNode {
       let node: null | LexicalNode =
         $getFirstCodeNodeOfLine(firstSelectionNode);
       const insertNodes = [];
-
+       
       while (true) {
         if ($isTabNode(node)) {
           insertNodes.push($createTabNode());

@@ -33,7 +33,6 @@ export function EditorInspectorButton({tabID, setErrorMessage}: Props) {
       .then(() => injectedPegasusService.toggleEditorPicker())
       .catch((err) => {
         setErrorMessage(err.message);
-
         console.error(err);
       });
   };

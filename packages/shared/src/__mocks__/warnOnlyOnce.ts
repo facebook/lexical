@@ -8,6 +8,5 @@
 
 export default function warnOnlyOnce(message: string): () => void {
   // The mock for this warns every time
-
   return () => console.warn(message);
 }

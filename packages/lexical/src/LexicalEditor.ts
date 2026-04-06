@@ -673,7 +673,6 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
       namespace,
       theme,
     },
-
     onError ? onError : console.error,
     initializeConversionCache(registeredNodes, html ? html.import : undefined),
     isEditable,

@@ -19,7 +19,9 @@ const rule = {
     function isQuestionDotToken(token) {
       return (
         token.value === '?.' &&
-        (token.type === 'Punctuator' || sourceCode.getText(token) === '?.')
+        (token.type === 'Punctuator' || // espree has been parsed well.
+          // espree@7.1.0 doesn't parse "?." tokens well. Therefore, get the string from the source code and check it.
+          sourceCode.getText(token) === '?.')
       );
     }
 

@@ -21,7 +21,6 @@ export default defineContentScript({
       .then(() => {
         injectScript('/injected.js');
       })
-
       .catch(console.error);
   },
   matches: ['<all_urls>'],

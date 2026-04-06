@@ -195,7 +195,7 @@ export default [
       'no-array-constructor': ERROR,
       'no-bitwise': OFF,
       'no-caller': ERROR,
-      'no-console': [ERROR, {allow: ['warn', 'error']}],
+      'no-console': [ERROR, {allow: ['warn', 'error', 'time', 'timeEnd']}],
       'no-debugger': ERROR,
       'no-eval': ERROR,
       'no-extend-native': WARN,

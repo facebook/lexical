@@ -82,10 +82,8 @@ function $search(selection: null | BaseSelection): [boolean, string] {
 function useQuery(): (searchText: string) => SearchPromise {
   return useCallback((searchText: string) => {
     const server = new AutocompleteServer();
-    // eslint-disable-next-line no-console
     console.time('query');
     const response = server.query(searchText);
-    // eslint-disable-next-line no-console
     console.timeEnd('query');
     return response;
   }, []);

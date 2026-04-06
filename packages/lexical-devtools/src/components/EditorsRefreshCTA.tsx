@@ -33,7 +33,6 @@ function EditorsRefreshCTA({tabID, setErrorMessage}: Props) {
       .refreshLexicalEditors()
       .catch((err) => {
         setErrorMessage(err.message);
-
         console.error(err);
       })
       .finally(() => setIsRefreshing(false));

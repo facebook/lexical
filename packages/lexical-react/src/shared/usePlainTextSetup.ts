@@ -19,7 +19,5 @@ export function usePlainTextSetup(editor: LexicalEditor): void {
       registerPlainText(editor),
       registerDragonSupport(editor),
     );
-
-    // We only do this for init
   }, [editor]);
 }

@@ -19,7 +19,5 @@ export function useRichTextSetup(editor: LexicalEditor): void {
       registerRichText(editor),
       registerDragonSupport(editor),
     );
-
-    // We only do this for init
   }, [editor]);
 }

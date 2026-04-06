@@ -167,6 +167,9 @@
       "@lexical/react/useExtensionComponent": [
         "../lexical-react/src/useExtensionComponent.tsx"
       ],
+      "@lexical/react/useExtensionSignalValue": [
+        "../lexical-react/src/useExtensionSignalValue.ts"
+      ],
       "@lexical/react/useLexicalEditable": [
         "../lexical-react/src/useLexicalEditable.ts"
       ],

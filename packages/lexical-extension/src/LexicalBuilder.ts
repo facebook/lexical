@@ -358,7 +358,6 @@ export class LexicalBuilder {
           const toRep = this.extensionNameMap.get(toExtensionName);
           if (toRep) {
             for (const config of configs) {
-               
               toRep.configs.add(config);
             }
           }

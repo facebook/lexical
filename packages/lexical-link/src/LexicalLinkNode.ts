@@ -184,7 +184,7 @@ export class LinkNode extends ElementNode {
     url = formatUrl(url);
     try {
       const parsedUrl = new URL(formatUrl(url));
-       
+
       if (!SUPPORTED_URL_PROTOCOLS.has(parsedUrl.protocol)) {
         return 'about:blank';
       }

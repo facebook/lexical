@@ -231,16 +231,14 @@ export class ExtensionRep<Extension extends AnyLexicalExtension> {
   }
 
   mergeConfigs(): LexicalExtensionConfig<Extension> {
-     
     let config: LexicalExtensionConfig<Extension> = this.extension.config || {};
     const mergeConfig = this.extension.mergeConfig
       ? this.extension.mergeConfig.bind(this.extension)
       : shallowMergeConfig;
     for (const cfg of this.configs) {
-       
       config = mergeConfig(config, cfg);
     }
-     
+
     return config;
   }
 
@@ -277,7 +275,7 @@ export class ExtensionRep<Extension extends AnyLexicalExtension> {
         initState,
       ) as LexicalExtensionInit<Extension>;
     }
-     
+
     this.state = applyInitializedState(state, initResult!, buildState);
   }
 
@@ -376,7 +374,7 @@ export class ExtensionRep<Extension extends AnyLexicalExtension> {
       String(state.id),
       String(ExtensionRepStateIds.initialized),
     );
-     
+
     return state.initResult;
   }
 

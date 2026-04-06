@@ -308,11 +308,9 @@ export class CommentStore {
           const shouldConnect = payload;
 
           if (shouldConnect) {
-             
             console.log('Comments connected!');
             connect();
           } else {
-             
             console.log('Comments disconnected!');
             disconnect();
           }

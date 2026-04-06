@@ -6,7 +6,7 @@
  *
  */
 // @ts-check
- 
+
 import {Converter} from 'typedoc';
 import {ModuleRouter} from 'typedoc-plugin-markdown';
 

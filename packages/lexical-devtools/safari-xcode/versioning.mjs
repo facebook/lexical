@@ -20,7 +20,7 @@ const version = JSON.parse(
 // Print to STDERR for user to see
 console.error(`Using version: ${version}`);
 // Print to STDOUT for scripts to pick up
- 
+
 console.log(`${version}`);
 
 fs.writeFileSync(

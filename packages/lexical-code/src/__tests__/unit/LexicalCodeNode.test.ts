@@ -583,7 +583,6 @@ describe('LexicalCodeNode tests', () => {
 
       for (const moveTo of ['start', 'end']) {
         for (const tabOrSpaces of ['tab', 'spaces']) {
-           
           function testMoveTo(
             name: string,
             $beforeFn: () => void,

@@ -1134,7 +1134,6 @@ export class LexicalNode {
    *
    * */
   exportJSON(): SerializedLexicalNode {
-     
     const state = this.__state ? this.__state.toJSON() : undefined;
     return {
       type: this.__type,

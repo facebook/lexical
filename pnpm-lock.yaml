@@ -196,8 +196,8 @@ importers:
         specifier: ^0.34.0
         version: 0.34.0(prettier-plugin-hermes-parser@0.34.1(prettier@3.6.2))(prettier@3.6.2)
       husky:
-        specifier: ^7.0.1
-        version: 7.0.4
+        specifier: ^9.1.7
+        version: 9.1.7
       jsdom:
         specifier: ^24.0.0
         version: 24.0.0
@@ -8460,9 +8460,9 @@ packages:
     resolution: {integrity: sha512-B4FFZ6q/T2jhhksgkbEW3HBvWIfDW85snkQgawt07S7J5QXTk6BkNV+0yAeZrM5QpMAdYlocGoljn0sJ/WQkFw==}
     engines: {node: '>=10.17.0'}
 
-  husky@7.0.4:
-    resolution: {integrity: sha512-vbaCKN2QLtP/vD4yvs6iz6hBEo6wkSzs8HpRah1Z6aGmF2KW5PdYuAd7uX5a+OyBZHBhd+TFLqgjUgytQr4RvQ==}
-    engines: {node: '>=12'}
+  husky@9.1.7:
+    resolution: {integrity: sha512-5gs5ytaNjBrh5Ow3zrvdUUY+0VxIuWVL4i9irt6friV+BqdCfmV11CQTWMiBYWHbXhco+J1kHfTOUkePhCDvMA==}
+    engines: {node: '>=18'}
     hasBin: true
 
   hyperdyperid@1.2.0:
@@ -22557,7 +22557,7 @@ snapshots:
 
   human-signals@2.1.0: {}
 
-  husky@7.0.4: {}
+  husky@9.1.7: {}
 
   hyperdyperid@1.2.0: {}
 

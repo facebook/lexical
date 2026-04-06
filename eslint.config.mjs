@@ -8,6 +8,7 @@
 
 import {fixupPluginRules} from '@eslint/compat';
 import js from '@eslint/js';
+import lexicalInternalPlugin from '@lexical/eslint-plugin-internal';
 import prettierConfig from 'eslint-config-prettier';
 import _headerPlugin from 'eslint-plugin-header';
 import importXPlugin from 'eslint-plugin-import-x';
@@ -25,7 +26,6 @@ import tseslint from 'typescript-eslint';
 // CJS modules that lack proper ESM exports
 const require = createRequire(import.meta.url);
 const lexicalPlugin = require('@lexical/eslint-plugin');
-const lexicalInternalPlugin = require('@lexical/eslint-plugin-internal');
 const restrictedGlobals = require('confusing-browser-globals');
 
 // Wrap legacy plugins that use removed ESLint APIs (context.getScope, etc.)

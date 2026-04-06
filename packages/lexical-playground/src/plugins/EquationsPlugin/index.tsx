@@ -24,8 +24,8 @@ import {
   LexicalCommand,
   LexicalEditor,
 } from 'lexical';
-import {useCallback, useEffect} from 'react';
 import * as React from 'react';
+import {useCallback, useEffect} from 'react';
 
 import {$createEquationNode, EquationNode} from '../../nodes/EquationNode';
 import KatexEquationAlterer from '../../ui/KatexEquationAlterer';

@@ -10,7 +10,6 @@ import type {CodeNode} from '@lexical/code-core';
 import type {LexicalEditor, LexicalNode, NodeKey} from 'lexical';
 import type {Token, TokenStream} from 'prismjs';
 
-// eslint-disable-next-line simple-import-sort/imports
 import 'prismjs';
 import 'prismjs/components/prism-clike';
 import 'prismjs/components/prism-diff';

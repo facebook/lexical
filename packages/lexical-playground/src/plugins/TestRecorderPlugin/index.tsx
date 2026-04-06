@@ -30,7 +30,7 @@ const copy = (text: string | null) => {
   textArea.select();
   try {
     const result = document.execCommand('copy');
-    // eslint-disable-next-line no-console
+
     console.log(result);
   } catch (error) {
     console.error(error);

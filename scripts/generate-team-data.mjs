@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-/* eslint-disable no-console */
+
 // @ts-check
 
 /**
@@ -119,7 +119,7 @@ function fetchSponsorInfo(username) {
         (data.data && data.data.user && data.data.user.hasSponsorsListing) ||
         false
       );
-    } catch (error) {
+    } catch (_error) {
       return false;
     }
   }

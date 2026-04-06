@@ -13,9 +13,33 @@
 const fs = require('fs');
 const path = require('node:path');
 
-const {
-  PackageMetadata,
-} = require('../../../../scripts/shared/PackageMetadata.js');
+/**
+ * Find the monorepo root by walking up from this file's directory
+ * looking for a package.json with a "workspaces" field.
+ * @returns {string}
+ */
+function findMonorepoRoot() {
+  let dir = __dirname;
+  while (dir !== path.dirname(dir)) {
+    const pkgPath = path.join(dir, 'package.json');
+    if (fs.existsSync(pkgPath)) {
+      try {
+        const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+        if (pkg.workspaces) {
+          return dir;
+        }
+      } catch {
+        // ignore
+      }
+    }
+    dir = path.dirname(dir);
+  }
+  throw new Error('Could not find monorepo root');
+}
+
+const {PackageMetadata} = require(
+  path.join(findMonorepoRoot(), 'scripts/shared/PackageMetadata.js'),
+);
 
 /**
  * @param {string} fn

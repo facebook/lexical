@@ -21,7 +21,6 @@ export function buildEditorComponent(
 ) {
   const [editor] = context;
   const rawConfigDecorators = config.decorators.map((El) =>
-    // eslint-disable-next-line react/jsx-key -- wrapped later
     typeof El === 'function' ? <El context={context} /> : El,
   );
   return function EditorComponent(props: Partial<EditorComponentProps>) {
@@ -39,7 +38,6 @@ export function buildEditorComponent(
             onError={(e) => {
               editor._onError(e);
             }}
-            // eslint-disable-next-line react/no-array-index-key -- no natural key
             key={i}>
             <Suspense fallback={null}>{decorator}</Suspense>
           </ErrorBoundary>

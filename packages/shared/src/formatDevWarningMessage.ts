@@ -9,5 +9,6 @@
 // Do not require this module directly! Use normal `invariant` calls.
 
 export default function formatDevWarningMessage(message: string): void {
+  // eslint-disable-next-line no-console
   console.warn(message);
 }

@@ -265,6 +265,7 @@ describe('LexicalLinkNode tests', () => {
           const {editor} = testEnv;
 
           await editor.update(() => {
+             
             const linkNode = $createLinkNode(input);
             expect(linkNode.createDOM(editorConfig).outerHTML).toBe(
               `<a href="${output}" class="my-link-class"></a>`,

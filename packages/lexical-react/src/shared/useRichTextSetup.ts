@@ -21,5 +21,6 @@ export function useRichTextSetup(editor: LexicalEditor): void {
     );
 
     // We only do this for init
+     
   }, [editor]);
 }

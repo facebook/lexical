@@ -145,6 +145,7 @@ export function $insertDataTransferForRichText(
         return $insertGeneratedNodes(editor, nodes, selection);
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error(error);
     }
   }
@@ -165,6 +166,7 @@ export function $insertDataTransferForRichText(
       const nodes = $generateNodesFromDOM(editor, dom);
       return $insertGeneratedNodes(editor, nodes, selection);
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error(error);
     }
   }

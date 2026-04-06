@@ -21,6 +21,7 @@ export function buildEditorComponent(
 ) {
   const [editor] = context;
   const rawConfigDecorators = config.decorators.map((El) =>
+     
     typeof El === 'function' ? <El context={context} /> : El,
   );
   return function EditorComponent(props: Partial<EditorComponentProps>) {
@@ -38,6 +39,7 @@ export function buildEditorComponent(
             onError={(e) => {
               editor._onError(e);
             }}
+             
             key={i}>
             <Suspense fallback={null}>{decorator}</Suspense>
           </ErrorBoundary>

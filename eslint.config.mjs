@@ -190,7 +190,8 @@ export default [
       'no-array-constructor': ERROR,
       'no-bitwise': OFF,
       'no-caller': ERROR,
-      'no-console': [ERROR, {allow: ['warn', 'error']}],
+      'no-console': ERROR,
+      'no-constant-condition': [ERROR, {checkLoops: 'all'}],
       'no-debugger': ERROR,
       'no-eval': ERROR,
       'no-extend-native': WARN,
@@ -298,7 +299,7 @@ export default [
     },
   },
 
-  // Override: Scripts (allow console, no header)
+  // Override: Scripts (no header required, allow console)
   {
     files: ['scripts/**/*.js', 'scripts/**/*.mjs'],
     rules: {
@@ -354,20 +355,31 @@ export default [
         },
       ],
       'header/header': [2, 'scripts/www/headerTemplate.js'],
+      // Ensure no-shadow fires in TS files the same as in the old config
+      'no-shadow': [
+        ERROR,
+        {
+          ignoreFunctionTypeParameterNameValueShadow: false,
+          ignoreTypeValueShadow: false,
+        },
+      ],
       // Disable base rule in favor of @typescript-eslint version
       'no-unused-vars': OFF,
     },
   },
 
-  // Override: ESM files (.mjs)
+  // Override: ESM files (.mjs) - 'use strict' is not relevant to ESM
   {
     files: ['**/*.mjs'],
     languageOptions: {
       sourceType: 'module',
     },
+    rules: {
+      strict: OFF,
+    },
   },
 
-  // Override: DevTools and Playground - allow console
+  // Override: DevTools and Playground - allow console (pre-existing usage)
   {
     files: ['packages/lexical-devtools/**', 'packages/lexical-playground/**'],
     rules: {

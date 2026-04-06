@@ -159,6 +159,7 @@ export function setScrollableTablesActive(
 ): void {
   if (active) {
     if (__DEV__ && !editor._config.theme.tableScrollableWrapper) {
+      // eslint-disable-next-line no-console
       console.warn(
         'TableNode: hasHorizontalScroll is active but theme.tableScrollableWrapper is not defined.',
       );

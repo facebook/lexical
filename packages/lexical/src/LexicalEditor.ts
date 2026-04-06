@@ -619,6 +619,7 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
             name,
           );
         } else if (replace) {
+          // eslint-disable-next-line no-console
           console.warn(
             `Override for ${name} specifies 'replace' without 'withKlass'. 'withKlass' will be required in a future version.`,
           );
@@ -634,6 +635,7 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
         ) {
           (['getType', 'clone'] as const).forEach((method) => {
             if (!hasOwnStaticMethod(klass, method)) {
+              // eslint-disable-next-line no-console
               console.warn(`${name} must implement static "${method}" method`);
             }
           });
@@ -641,11 +643,13 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
             !hasOwnStaticMethod(klass, 'importDOM') &&
             hasOwnExportDOM(klass)
           ) {
+            // eslint-disable-next-line no-console
             console.warn(
               `${name} should implement "importDOM" if using a custom "exportDOM" method to ensure HTML serialization (important for copy & paste) works as expected`,
             );
           }
           if (!hasOwnStaticMethod(klass, 'importJSON')) {
+            // eslint-disable-next-line no-console
             console.warn(
               `${name} should implement "importJSON" method to ensure JSON and default HTML serialization works as expected`,
             );
@@ -673,6 +677,7 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
       namespace,
       theme,
     },
+    // eslint-disable-next-line no-console
     onError ? onError : console.error,
     initializeConversionCache(registeredNodes, html ? html.import : undefined),
     isEditable,
@@ -1261,6 +1266,7 @@ export class LexicalEditor {
               getComputedStyle(nextRootElementParent).display,
             )
           ) {
+            // eslint-disable-next-line no-console
             console.warn(
               `When using "display: flex" or "display: inline-flex" on an element containing content editable, Chrome may have unwanted focusing behavior when clicking outside of it. Consider wrapping the content editable within a non-flex element.`,
             );

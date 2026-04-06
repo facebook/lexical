@@ -28,6 +28,7 @@ export default async function () {
         ),
     );
   if (!needsBuild) {
+     
     console.log(
       '\nWARNING: Running integration tests with cached build artifacts from a previous `pnpm run prepare-release`.',
     );

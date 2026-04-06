@@ -48,6 +48,7 @@ import {
   MIN_ALLOWED_FONT_SIZE,
 } from '../../context/ToolbarContext';
 
+ 
 export enum UpdateFontSizeType {
   increment = 1,
   decrement,

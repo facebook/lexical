@@ -118,7 +118,7 @@ describe('useSignalValue', () => {
 
     // Override subscribe to count calls
     const originalSubscribe = testSignal.subscribe.bind(testSignal);
-    testSignal.subscribe = (callback: () => void) => {
+    testSignal.subscribe = (callback: (value: number) => void) => {
       subscriptionCount++;
       return originalSubscribe(callback);
     };

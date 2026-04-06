@@ -23,9 +23,10 @@ import globals from 'globals';
 import {createRequire} from 'module';
 import tseslint from 'typescript-eslint';
 
-// CJS modules that lack proper ESM exports
+// Direct file path imports for local CJS packages (bypasses package.json exports map)
+import lexicalPlugin from './packages/lexical-eslint-plugin/src/LexicalEslintPlugin.js';
+
 const require = createRequire(import.meta.url);
-const lexicalPlugin = require('@lexical/eslint-plugin');
 const restrictedGlobals = require('confusing-browser-globals');
 
 // Wrap legacy plugins that use removed ESLint APIs (context.getScope, etc.)

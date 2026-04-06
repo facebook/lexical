@@ -25,7 +25,6 @@ const editor = createHeadlessEditor({
   namespace: 'validation',
   nodes: [...PlaygroundNodes],
   onError: (error) => {
-    // eslint-disable-next-line no-console
     console.error(error);
   },
 });

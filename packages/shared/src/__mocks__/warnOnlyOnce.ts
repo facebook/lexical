@@ -8,6 +8,6 @@
 
 export default function warnOnlyOnce(message: string): () => void {
   // The mock for this warns every time
-  // eslint-disable-next-line no-console
+
   return () => console.warn(message);
 }

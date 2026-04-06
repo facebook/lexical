@@ -33,7 +33,7 @@ function EditorsRefreshCTA({tabID, setErrorMessage}: Props) {
       .refreshLexicalEditors()
       .catch((err) => {
         setErrorMessage(err.message);
-        // eslint-disable-next-line no-console
+
         console.error(err);
       })
       .finally(() => setIsRefreshing(false));

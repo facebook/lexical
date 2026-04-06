@@ -18,7 +18,6 @@ export default function formatProdWarningMessage(
   }
   url.search = params.toString();
 
-  // eslint-disable-next-line no-console
   console.warn(
     `Minified Lexical warning #${code}; visit ${url.toString()} for the full message or use the non-minified dev environment for full errors and additional helpful warnings.`,
   );

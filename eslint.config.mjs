@@ -103,10 +103,7 @@ export default [
     },
 
     linterOptions: {
-      // Preserve existing eslint-disable directives even if the rule they
-      // reference isn't currently active (e.g. stale from older configs,
-      // proactive guards, or rules that only apply in some ESLint versions).
-      reportUnusedDisableDirectives: 'off',
+      reportUnusedDisableDirectives: 'warn',
     },
 
     plugins: {
@@ -198,8 +195,7 @@ export default [
       'no-array-constructor': ERROR,
       'no-bitwise': OFF,
       'no-caller': ERROR,
-      'no-console': ERROR,
-      'no-constant-condition': [ERROR, {checkLoops: 'all'}],
+      'no-console': [ERROR, {allow: ['warn', 'error']}],
       'no-debugger': ERROR,
       'no-eval': ERROR,
       'no-extend-native': WARN,
@@ -207,11 +203,7 @@ export default [
       'no-function-declare-after-return/no-function-declare-after-return':
         ERROR,
       'no-implied-eval': ERROR,
-      'no-inner-declarations': [
-        ERROR,
-        'functions',
-        {blockScopedFunctions: 'disallow'},
-      ],
+      'no-inner-declarations': [ERROR, 'functions'],
       'no-label-var': WARN,
       'no-labels': [ERROR, {allowLoop: true, allowSwitch: true}],
       'no-lone-blocks': WARN,

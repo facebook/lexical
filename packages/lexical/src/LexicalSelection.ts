@@ -2979,7 +2979,6 @@ function setDOMSelectionBaseAndExtent(
     // occur with FF and there's no good reason as to why it
     // should happen.
     if (__DEV__) {
-      // eslint-disable-next-line no-console
       console.warn(error);
     }
   }

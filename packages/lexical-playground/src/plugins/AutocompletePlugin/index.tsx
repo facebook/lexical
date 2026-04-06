@@ -188,7 +188,6 @@ export default function AutocompletePlugin(): JSX.Element | null {
           })
           .catch((e) => {
             if (e !== 'Dismissed') {
-              // eslint-disable-next-line no-console
               console.error(e);
             }
           });

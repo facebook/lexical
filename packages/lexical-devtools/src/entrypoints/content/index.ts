@@ -21,7 +21,7 @@ export default defineContentScript({
       .then(() => {
         injectScript('/injected.js');
       })
-      // eslint-disable-next-line no-console
+
       .catch(console.error);
   },
   matches: ['<all_urls>'],

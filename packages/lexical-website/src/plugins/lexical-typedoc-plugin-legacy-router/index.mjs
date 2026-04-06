@@ -6,7 +6,7 @@
  *
  */
 // @ts-check
-/* eslint-disable no-unused-vars -- import classes we don't use at runtime */
+
 import {Converter} from 'typedoc';
 import {ModuleRouter} from 'typedoc-plugin-markdown';
 

@@ -48,7 +48,6 @@ import {
   MIN_ALLOWED_FONT_SIZE,
 } from '../../context/ToolbarContext';
 
-// eslint-disable-next-line no-shadow
 export enum UpdateFontSizeType {
   increment = 1,
   decrement,

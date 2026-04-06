@@ -6,7 +6,6 @@
  *
  */
 // @ts-check
-/* eslint-disable no-console */
 
 import alias from '@rollup/plugin-alias';
 import babel from '@rollup/plugin-babel';

@@ -12,7 +12,6 @@ export default function warnOnlyOnce(message: string): () => void {
     let run = false;
     return () => {
       if (!run) {
-        // eslint-disable-next-line no-console
         console.warn(message);
       }
       run = true;

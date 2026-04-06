@@ -143,7 +143,7 @@ describe('LexicalEventHelpers', () => {
           }}>
           <RichTextPlugin
             contentEditable={
-              // eslint-disable-next-line jsx-a11y/aria-role, @typescript-eslint/no-explicit-any
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               <ContentEditable role={null as any} spellCheck={null as any} />
             }
             placeholder={null}

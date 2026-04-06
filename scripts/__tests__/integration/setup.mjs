@@ -28,6 +28,7 @@ export default async function () {
         ),
     );
   if (!needsBuild) {
+    // eslint-disable-next-line no-console
     console.log(
       '\nWARNING: Running integration tests with cached build artifacts from a previous `pnpm run prepare-release`.',
     );

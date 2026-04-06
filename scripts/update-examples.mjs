@@ -7,7 +7,7 @@
  */
 
 // @ts-check
-
+/* eslint-disable no-console */
 import {sync as globSync} from 'glob';
 import minimist from 'minimist';
 import * as fs from 'node:fs';

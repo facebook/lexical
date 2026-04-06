@@ -82,8 +82,10 @@ function $search(selection: null | BaseSelection): [boolean, string] {
 function useQuery(): (searchText: string) => SearchPromise {
   return useCallback((searchText: string) => {
     const server = new AutocompleteServer();
+    // eslint-disable-next-line no-console
     console.time('query');
     const response = server.query(searchText);
+    // eslint-disable-next-line no-console
     console.timeEnd('query');
     return response;
   }, []);
@@ -186,6 +188,7 @@ export default function AutocompletePlugin(): JSX.Element | null {
           })
           .catch((e) => {
             if (e !== 'Dismissed') {
+              // eslint-disable-next-line no-console
               console.error(e);
             }
           });

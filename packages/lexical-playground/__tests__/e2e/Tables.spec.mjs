@@ -7348,7 +7348,7 @@ test.describe.parallel('Tables', () => {
       const cell = document.querySelector(
         'table:first-of-type td, table:first-of-type th',
       );
-
+      // eslint-disable-next-line no-underscore-dangle
       return Boolean(cell && cell._cell);
     });
 

@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+/* eslint-disable no-shadow */
 
 import {buildEditorFromExtensions} from '@lexical/extension';
 import {TailwindExtension} from '@lexical/tailwind';

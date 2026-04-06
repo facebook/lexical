@@ -33,4 +33,5 @@ getRPCService<ITabIDService>('getTabID', 'background')()
     ),
   )
 
+  // eslint-disable-next-line no-console
   .catch(console.error);

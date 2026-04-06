@@ -117,6 +117,7 @@ export class InjectedPegasusService
             .getState()
             .setSelectedEditorKey(this.tabID, el.__lexicalEditor.getKey());
         } else {
+          // eslint-disable-next-line no-console
           console.warn('Selected Element is not a Lexical node');
         }
       },

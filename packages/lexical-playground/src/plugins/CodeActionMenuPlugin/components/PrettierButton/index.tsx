@@ -121,6 +121,7 @@ export function PrettierButton({lang, editor, getCodeDOMNode}: Props) {
       setSyntaxError(error.message);
       setTipsVisible(true);
     } else {
+      // eslint-disable-next-line no-console
       console.error('Unexpected error: ', error);
     }
   }

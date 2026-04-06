@@ -102,6 +102,13 @@ export default [
       sourceType: 'script',
     },
 
+    linterOptions: {
+      // Preserve existing eslint-disable directives even if the rule they
+      // reference isn't currently active (e.g. stale from older configs,
+      // proactive guards, or rules that only apply in some ESLint versions).
+      reportUnusedDisableDirectives: 'off',
+    },
+
     plugins: {
       header: headerPlugin,
       'import-x': importXPlugin,
@@ -200,7 +207,11 @@ export default [
       'no-function-declare-after-return/no-function-declare-after-return':
         ERROR,
       'no-implied-eval': ERROR,
-      'no-inner-declarations': [ERROR, 'functions'],
+      'no-inner-declarations': [
+        ERROR,
+        'functions',
+        {blockScopedFunctions: 'disallow'},
+      ],
       'no-label-var': WARN,
       'no-labels': [ERROR, {allowLoop: true, allowSwitch: true}],
       'no-lone-blocks': WARN,
@@ -246,6 +257,7 @@ export default [
       ],
       radix: WARN,
       'react/jsx-boolean-value': [ERROR, 'always'],
+      'react/jsx-key': ERROR,
       'react/jsx-no-undef': ERROR,
       'react/jsx-sort-prop-types': OFF,
       'react/jsx-tag-spacing': ERROR,
@@ -302,10 +314,18 @@ export default [
 
   // Override: Scripts (no header required, allow console)
   {
-    files: ['scripts/**/*.js', 'scripts/**/*.mjs'],
+    files: ['scripts/**/*.js'],
     rules: {
       'header/header': OFF,
       'no-console': OFF,
+    },
+  },
+
+  // Override: Scripts .mjs (no header required)
+  {
+    files: ['scripts/**/*.mjs'],
+    rules: {
+      'header/header': OFF,
     },
   },
 
@@ -377,14 +397,6 @@ export default [
     },
     rules: {
       strict: OFF,
-    },
-  },
-
-  // Override: DevTools and Playground - allow console (pre-existing usage)
-  {
-    files: ['packages/lexical-devtools/**', 'packages/lexical-playground/**'],
-    rules: {
-      'no-console': OFF,
     },
   },
 

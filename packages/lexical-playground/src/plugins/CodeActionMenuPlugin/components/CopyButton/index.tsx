@@ -54,6 +54,7 @@ export function CopyButton({editor, getCodeDOMNode}: Props) {
       setCopyCompleted(true);
       removeSuccessIcon();
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error('Failed to copy: ', err);
     }
   }

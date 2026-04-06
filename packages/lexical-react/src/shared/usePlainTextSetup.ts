@@ -21,5 +21,6 @@ export function usePlainTextSetup(editor: LexicalEditor): void {
     );
 
     // We only do this for init
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor]);
 }

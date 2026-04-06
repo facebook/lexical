@@ -231,14 +231,16 @@ export class ExtensionRep<Extension extends AnyLexicalExtension> {
   }
 
   mergeConfigs(): LexicalExtensionConfig<Extension> {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- LexicalExtensionConfig<Extension> is any
     let config: LexicalExtensionConfig<Extension> = this.extension.config || {};
     const mergeConfig = this.extension.mergeConfig
       ? this.extension.mergeConfig.bind(this.extension)
       : shallowMergeConfig;
     for (const cfg of this.configs) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- LexicalExtensionConfig<Extension> is any
       config = mergeConfig(config, cfg);
     }
-
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- any
     return config;
   }
 
@@ -275,7 +277,7 @@ export class ExtensionRep<Extension extends AnyLexicalExtension> {
         initState,
       ) as LexicalExtensionInit<Extension>;
     }
-
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- false positive
     this.state = applyInitializedState(state, initResult!, buildState);
   }
 
@@ -374,7 +376,7 @@ export class ExtensionRep<Extension extends AnyLexicalExtension> {
       String(state.id),
       String(ExtensionRepStateIds.initialized),
     );
-
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- any
     return state.initResult;
   }
 

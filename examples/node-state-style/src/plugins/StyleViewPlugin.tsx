@@ -190,7 +190,10 @@ function NodeLabel({node}: {node: LexicalNode}) {
 }
 
 function describeNode(node: LexicalNode): [string, React.ReactNode] {
-  return [`(${node.getKey()}) ${node.getType()}`, <NodeLabel node={node} />];
+  return [
+    `(${node.getKey()}) ${node.getType()}`,
+    <NodeLabel key={node.getKey()} node={node} />,
+  ];
 }
 
 function LexicalNodeTreeViewItem(props: TreeView.NodeProviderProps<NodeKey>) {

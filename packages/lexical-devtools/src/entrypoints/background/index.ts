@@ -23,9 +23,12 @@ export default defineBackground(() => {
 
   // Store initialization so other extension surfaces can use it
   // as all changes go through background SW
-  initExtensionStoreBackend().catch((err) =>
-    console.error('Failed to initialize extension store', err),
+  // eslint-disable-next-line no-console
+  initExtensionStoreBackend().catch(
+    // eslint-disable-next-line no-console
+    (err) => console.error('Failed to initialize extension store', err),
   );
 
+  // eslint-disable-next-line no-console
   ActionIconWatchdog.start(extensionStore).catch(console.error);
 });

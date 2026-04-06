@@ -18,9 +18,10 @@ const version = JSON.parse(
 ).version;
 
 // Print to STDERR for user to see
+// eslint-disable-next-line no-console
 console.error(`Using version: ${version}`);
 // Print to STDOUT for scripts to pick up
-
+// eslint-disable-next-line no-console
 console.log(`${version}`);
 
 fs.writeFileSync(

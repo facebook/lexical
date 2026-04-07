@@ -243,10 +243,11 @@ function parseMatcherOption(context, optionName) {
 
 /** @param {RuleContext} context */
 function getSourceCode(context) {
-  // ESLint 9+ provides sourceCode directly on context (required in ESLint 10+)
-  // ESLint 7-8 requires calling getSourceCode() method
+  if (context.sourceCode) {
+    return context.sourceCode;
+  }
   // @ts-expect-error -- getSourceCode() removed from types in ESLint 10, kept for ESLint 8 compat
-  return context.sourceCode || context.getSourceCode();
+  return context.getSourceCode();
 }
 
 const matcherSchema = {

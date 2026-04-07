@@ -241,6 +241,14 @@ function parseMatcherOption(context, optionName) {
   return options && optionName in options ? options[optionName] : undefined;
 }
 
+/** @param {RuleContext} context */
+function getSourceCode(context) {
+  // ESLint 9+ provides sourceCode directly on context (required in ESLint 10+)
+  // ESLint 7-8 requires calling getSourceCode() method
+  // @ts-expect-error -- getSourceCode() removed from types in ESLint 10, kept for ESLint 8 compat
+  return context.sourceCode || context.getSourceCode();
+}
+
 const matcherSchema = {
   oneOf: [{type: 'string'}, {contains: {type: 'string'}, type: 'array'}],
 };
@@ -248,7 +256,7 @@ const matcherSchema = {
 /** @type {RuleModule} */
 module.exports.rulesOfLexical = {
   create(context) {
-    const sourceCode = context.sourceCode;
+    const sourceCode = getSourceCode(context);
     const matchers = compileMatchers(context);
 
     /**

@@ -12,6 +12,7 @@ overrides:
   qs: '>=6.14.2'
   form-data: '>=4.0.4'
   '@isaacs/brace-expansion': '>=5.0.1'
+  prettier: 3.8.1
 
 importers:
 
@@ -205,7 +206,7 @@ importers:
         specifier: ^4.1.5
         version: 4.1.5
       prettier:
-        specifier: ^3.8.1
+        specifier: 3.8.1
         version: 3.8.1
       prettier-plugin-hermes-parser:
         specifier: ^0.34.1
@@ -694,8 +695,8 @@ importers:
         specifier: ^4.18.1
         version: 4.18.1
       prettier:
-        specifier: ^3.6.2
-        version: 3.6.2
+        specifier: 3.8.1
+        version: 3.8.1
       react:
         specifier: 19.1.1
         version: 19.1.1
@@ -723,7 +724,7 @@ importers:
         version: 7.25.9(@babel/core@7.29.0)
       '@prettier/sync':
         specifier: ^0.6.1
-        version: 0.6.1(prettier@3.6.2)
+        version: 0.6.1(prettier@3.8.1)
       '@rollup/plugin-babel':
         specifier: ^7.0.0
         version: 7.0.0(@babel/core@7.29.0)(@types/babel__core@7.20.5)(rollup@4.59.0)
@@ -3785,7 +3786,7 @@ packages:
   '@prettier/sync@0.6.1':
     resolution: {integrity: sha512-yF9G8vK/LYUTF3Cijd7VC9La3b20F20/J/fgoR4H0B8JGOWnZVZX6+I6+vODPosjmMcpdlUV+gUqJQZp3kLOcw==}
     peerDependencies:
-      prettier: '*'
+      prettier: 3.8.1
 
   '@protobufjs/aspromise@1.1.2':
     resolution: {integrity: sha512-j+gKExEuLmKwvz3OgROXtrJ2UG2x8Ch2YZUxahh+s1F2HZ+wAceUNLkvy6zKCPVRkU++ZWQrdxsUeQXmcg4uoQ==}
@@ -8207,7 +8208,7 @@ packages:
   hermes-transform@0.34.0:
     resolution: {integrity: sha512-+RDsrfixjUSg4hxhz6b8qdiCh9/awDG+W9Up78mvti4YH9mYyKgycSOXU6c5G6yMYYdXC383aEPYzG5WtjXzKw==}
     peerDependencies:
-      prettier: ^3.0.0
+      prettier: 3.8.1
       prettier-plugin-hermes-parser: '*'
     peerDependenciesMeta:
       prettier-plugin-hermes-parser:
@@ -10894,13 +10895,13 @@ packages:
   prettier-plugin-hermes-parser@0.34.1:
     resolution: {integrity: sha512-cdA3tlvvFZkr8CuzaRJ28EVl7ep2zbfxKBBiS1t1w2Kud+Gsv/aQeU2a6rmMBnMJn510xPrIy0aZ9AG0uQHcRQ==}
     peerDependencies:
-      prettier: ^3.0.0
+      prettier: 3.8.1
 
   prettier-plugin-organize-attributes@0.0.5:
     resolution: {integrity: sha512-dSts16q8wd+oq8Zwk5mwmYXo1aN3B+ZkEJqx/ar5fedNHdOvx7S4XDMH/pNK7rmBW0bPXkp/kJX5gAANsWzh3A==}
     engines: {node: '>=11.0.0'}
     peerDependencies:
-      prettier: ^2.0.0
+      prettier: 3.8.1
 
   prettier-plugin-tailwindcss@0.7.2:
     resolution: {integrity: sha512-LkphyK3Fw+q2HdMOoiEHWf93fNtYJwfamoKPl7UwtjFQdei/iIBoX11G6j706FzN3ymX9mPVi97qIY8328vdnA==}
@@ -10913,7 +10914,7 @@ packages:
       '@shopify/prettier-plugin-liquid': '*'
       '@trivago/prettier-plugin-sort-imports': '*'
       '@zackad/prettier-plugin-twig': '*'
-      prettier: ^3.0
+      prettier: 3.8.1
       prettier-plugin-astro: '*'
       prettier-plugin-css-order: '*'
       prettier-plugin-jsdoc: '*'
@@ -10956,21 +10957,6 @@ packages:
         optional: true
       prettier-plugin-svelte:
         optional: true
-
-  prettier@1.19.1:
-    resolution: {integrity: sha512-s7PoyDv/II1ObgQunCbB9PdLmUcBZcnWOcxDh7O0N/UwDEsHyqkW+Qh28jW+mVuCdx7gLB0BotYI1Y6uI9iyew==}
-    engines: {node: '>=4'}
-    hasBin: true
-
-  prettier@2.8.8:
-    resolution: {integrity: sha512-tdN8qQGvNjw4CHbY+XXk0JgCXn9QiF21a55rBe5LJAU+kDyC4WQn4+awm2Xfk2lQMk5fKup9XgzTZtGkjBdP9Q==}
-    engines: {node: '>=10.13.0'}
-    hasBin: true
-
-  prettier@3.6.2:
-    resolution: {integrity: sha512-I7AIg5boAr5R0FFtJ6rCfD+LFsWHp81dolrFD8S79U9tb8Az2nGrJncnMSnys+bpQJfRUzqs9hnA81OAA3hCuQ==}
-    engines: {node: '>=14'}
-    hasBin: true
 
   prettier@3.8.1:
     resolution: {integrity: sha512-UOnG6LftzbdaHZcKoPFtOcCKztrQ57WkHDeRD9t/PTQtmT0NHSeWWepj6pS0z/N7+08BHFDQVUrfmfMRcZwbMg==}
@@ -17410,11 +17396,6 @@ snapshots:
 
   '@preact/signals-core@1.14.1': {}
 
-  '@prettier/sync@0.6.1(prettier@3.6.2)':
-    dependencies:
-      make-synchronized: 0.8.0
-      prettier: 3.6.2
-
   '@prettier/sync@0.6.1(prettier@3.8.1)':
     dependencies:
       make-synchronized: 0.8.0
@@ -21778,7 +21759,7 @@ snapshots:
       md5: 2.3.0
       mkdirp: 1.0.4
       node-stream-zip: 1.15.0
-      prettier: 1.19.1
+      prettier: 3.8.1
       rimraf: 3.0.2
       semver: 7.7.2
       simple-git: 3.28.0
@@ -21795,7 +21776,7 @@ snapshots:
       '@babel/highlight': 7.25.9
       commander: 6.2.1
       lodash: 4.17.21
-      prettier: 2.8.8
+      prettier: 3.8.1
       shelljs: 0.8.5
       typescript: 4.4.4
       typescript-compiler: 1.4.1-2
@@ -25653,12 +25634,6 @@ snapshots:
       prettier: 3.8.1
     optionalDependencies:
       prettier-plugin-organize-attributes: 0.0.5(prettier@3.8.1)
-
-  prettier@1.19.1: {}
-
-  prettier@2.8.8: {}
-
-  prettier@3.6.2: {}
 
   prettier@3.8.1: {}
 

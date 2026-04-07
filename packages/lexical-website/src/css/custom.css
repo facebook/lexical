@@ -8,10 +8,21 @@
 
 @import url('navbar.css');
 
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
 @import 'tailwindcss/theme.css';
 @import 'tailwindcss/utilities.css';
 
 @source '../../../../examples/website-*/src/**/*.{js,jsx,ts,tsx}';
+@source '../../../../examples/agent-example/src/**/*.{js,jsx,ts,tsx}';
 
 @custom-variant dark (&:is(html[data-theme='dark'] *));
 
@@ -46,6 +57,12 @@
 
 .styled-button {
   @apply w-fit rounded-md bg-(--ifm-color-primary-dark) text-sm font-bold text-black transition-colors duration-300 hover:bg-(--ifm-color-primary) hover:text-black/60 hover:no-underline;
+}
+
+/* Reset Infima link styles inside Lexical editors so Tailwind classes take effect */
+[contenteditable] a {
+  color: inherit;
+  text-decoration: inherit;
 }
 
 /* This removes a weird margin that appears when scrolling code blocks until the end. */

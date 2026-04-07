@@ -181,7 +181,7 @@
     "typedoc": "^0.28.10",
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.58.0",
-    "vite": "^7.1.4",
+    "vite": "^7.3.2",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.2.4",
     "y-websocket": "^1.5.4"

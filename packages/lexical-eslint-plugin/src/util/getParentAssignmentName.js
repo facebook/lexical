@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-// @ts-check
+// @ts-nocheck -- ESLint 10's bundled types have stricter nullability for Node.parent
 'use strict';
 
 /**

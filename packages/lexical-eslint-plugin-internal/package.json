@@ -9,6 +9,6 @@
   },
   "private": true,
   "peerDependencies": {
-    "eslint": ">=7.31.0"
+    "eslint": ">=9"
   }
 }

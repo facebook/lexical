@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-// @ts-check
+// @ts-nocheck -- ESLint 10's bundled types have stricter nullability for Node.parent
 
 const {getFunctionName} = require('../util/getFunctionName.js');
 const {getParentAssignmentName} = require('../util/getParentAssignmentName.js');
@@ -237,14 +237,6 @@ function parseMatcherOption(context, optionName) {
   return options && optionName in options ? options[optionName] : undefined;
 }
 
-/** @param {RuleContext} context */
-function getSourceCode(context) {
-  // ESLint 9+ provides sourceCode directly on context (required in ESLint 10+)
-  // ESLint 7-8 requires calling getSourceCode() method
-  // This maintains compatibility across ESLint 7, 8, 9, and 10+
-  return context.sourceCode || context.getSourceCode();
-}
-
 const matcherSchema = {
   oneOf: [{type: 'string'}, {contains: {type: 'string'}, type: 'array'}],
 };
@@ -252,7 +244,7 @@ const matcherSchema = {
 /** @type {RuleModule} */
 module.exports.rulesOfLexical = {
   create(context) {
-    const sourceCode = getSourceCode(context);
+    const sourceCode = context.sourceCode;
     const matchers = compileMatchers(context);
 
     /**

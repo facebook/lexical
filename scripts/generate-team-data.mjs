@@ -119,7 +119,7 @@ function fetchSponsorInfo(username) {
         (data.data && data.data.user && data.data.user.hasSponsorsListing) ||
         false
       );
-    } catch (error) {
+    } catch (_error) {
       return false;
     }
   }

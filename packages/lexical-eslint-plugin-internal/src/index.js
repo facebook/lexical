@@ -6,9 +6,13 @@
  *
  */
 
-'use strict';
+import noImportsFromSelf from './rules/no-imports-from-self.js';
+import noOptionalChaining from './rules/no-optional-chaining.js';
 
-const rules = require('./rules');
+const rules = {
+  'no-imports-from-self': noImportsFromSelf,
+  'no-optional-chaining': noOptionalChaining,
+};
 
 // Legacy config format (ESLint 7-8)
 const legacyAll = {
@@ -47,4 +51,4 @@ const flatAll = {
 plugin.configs['flat/all'] = flatAll;
 plugin.configs['flat/recommended'] = flatAll;
 
-module.exports = plugin;
+export default plugin;

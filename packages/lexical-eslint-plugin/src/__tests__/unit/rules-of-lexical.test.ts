@@ -94,11 +94,10 @@ function readDocumentedRules() {
 }
 
 const ruleTester = new RuleTester({
-  languageOptions: {
+  // @ts-expect-error -- ESLint 8 RuleTester uses legacy config format
+  parserOptions: {
+    ecmaFeatures: {jsx: true},
     ecmaVersion: 2018,
-    parserOptions: {
-      ecmaFeatures: {jsx: true},
-    },
     sourceType: 'module',
   },
 });

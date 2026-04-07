@@ -451,7 +451,7 @@ importers:
   packages/lexical-eslint-plugin:
     dependencies:
       eslint:
-        specifier: '>=9'
+        specifier: '>=7.31.0'
         version: 10.2.0(jiti@2.6.1)
     devDependencies:
       '@types/eslint':

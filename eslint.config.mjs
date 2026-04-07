@@ -78,6 +78,7 @@ export default [
       'libdefs/',
       '**/.wxt/',
       '**/*.www.cjs',
+      '**/typedoc-sidebar.cjs',
     ],
   },
 

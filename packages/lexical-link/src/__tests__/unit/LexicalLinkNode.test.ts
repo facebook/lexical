@@ -39,6 +39,7 @@ import {
   ParagraphNode,
   RangeSelection,
   SerializedParagraphNode,
+  TextNode,
 } from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 import {assert, describe, expect, it, test} from 'vitest';
@@ -1287,46 +1288,101 @@ describe('LinkNode transform (Regression #8083)', () => {
     });
   });
 
-  test('cursor stays at merge point when adjacent identical links merge (Regression #8305)', () => {
+  // Regression #8305: All five visually-equivalent cursor positions at the
+  // boundary between two adjacent identical links must resolve to the merge
+  // boundary (textA at offset 5) after the links merge.
+  type MergeScenarioNodes = {
+    linkA: LinkNode;
+    linkB: LinkNode;
+    paragraph: ParagraphNode;
+    textA: TextNode;
+    textB: TextNode;
+  };
+  const mergeBoundaryScenarios: [
+    string,
+    ($nodes: MergeScenarioNodes) => void,
+  ][] = [
+    ['text point at end of first link text', ({textA}) => textA.select(5, 5)],
+    [
+      'text point at start of second link text',
+      ({textB}) => textB.select(0, 0),
+    ],
+    [
+      'element point at last child of first link',
+      ({linkA}) => linkA.select(1, 1),
+    ],
+    [
+      'element point between the two links',
+      ({paragraph}) => paragraph.select(1, 1),
+    ],
+    [
+      'element point at first child of second link',
+      ({linkB}) => linkB.select(0, 0),
+    ],
+  ];
+
+  test.each(mergeBoundaryScenarios)(
+    '#8305 cursor at merge boundary: %s',
+    (_desc, $setSelectionAtBoundary) => {
+      using editor = buildEditorFromExtensions(transformExtension);
+      let textAKey: string;
+      editor.update(
+        () => {
+          const textA = $createTextNode('link1');
+          textAKey = textA.getKey();
+          const textB = $createTextNode('link2');
+          const linkA = $createLinkNode('https://lexical.dev').append(textA);
+          const linkB = $createLinkNode('https://lexical.dev').append(textB);
+          const paragraph = $createParagraphNode().append(linkA, linkB);
+          $getRoot().clear().append(paragraph);
+          $setSelectionAtBoundary({linkA, linkB, paragraph, textA, textB});
+        },
+        {discrete: true},
+      );
+      editor.read(() => {
+        const paragraph = $getRoot().getFirstChild();
+        assert($isParagraphNode(paragraph), 'Expected ParagraphNode');
+        expect(paragraph.getChildrenSize()).toBe(1);
+        const mergedLink = paragraph.getFirstChild();
+        assert($isLinkNode(mergedLink), 'Expected LinkNode');
+        expect(mergedLink.getTextContent()).toBe('link1link2');
+        const selection = $getSelection();
+        assert($isRangeSelection(selection), 'Expected RangeSelection');
+        expect(selection.isCollapsed()).toBe(true);
+        expect(selection.anchor.type).toBe('text');
+        expect(selection.anchor.key).toBe(textAKey);
+        expect(selection.anchor.offset).toBe(5);
+      });
+    },
+  );
+
+  test('#8305 edge case: second link starts with LineBreakNode', () => {
     using editor = buildEditorFromExtensions(transformExtension);
     let textAKey: string;
     editor.update(
       () => {
-        const root = $getRoot();
         const textA = $createTextNode('link1');
         textAKey = textA.getKey();
-        const linkA = $createLinkNode('https://lexical.dev');
-        linkA.append(textA);
-        const textB = $createTextNode('link2');
-        const linkB = $createLinkNode('https://lexical.dev');
-        linkB.append(textB);
-        const paragraph = $createParagraphNode();
-        paragraph.append(linkA, linkB);
-        root.clear().append(paragraph);
-        // Place cursor between the two links (element selection in paragraph)
+        const paragraph = $createParagraphNode().append(
+          $createLinkNode('https://lexical.dev').append(textA),
+          $createLinkNode('https://lexical.dev').append(
+            $createLineBreakNode(),
+            $createTextNode('link2'),
+          ),
+        );
+        $getRoot().clear().append(paragraph);
         paragraph.select(1, 1);
       },
       {discrete: true},
     );
     editor.read(() => {
-      const root = $getRoot();
-      const paragraph = root.getFirstChild();
-      assert(
-        $isParagraphNode(paragraph),
-        'First child must be a ParagraphNode',
-      );
-      // Both links should be merged into one
+      const paragraph = $getRoot().getFirstChild();
+      assert($isParagraphNode(paragraph), 'Expected ParagraphNode');
       expect(paragraph.getChildrenSize()).toBe(1);
       const mergedLink = paragraph.getFirstChild();
-      assert($isLinkNode(mergedLink), 'Merged child must be a LinkNode');
-      expect(mergedLink.getTextContent()).toBe('link1link2');
-      // Cursor should be at the merge boundary (offset 5 = "link1".length),
-      // not at the end. Text nodes also merge, so textA absorbs textB.
+      assert($isLinkNode(mergedLink), 'Expected LinkNode');
       const selection = $getSelection();
-      assert(
-        $isRangeSelection(selection),
-        'Selection must be a RangeSelection',
-      );
+      assert($isRangeSelection(selection), 'Expected RangeSelection');
       expect(selection.isCollapsed()).toBe(true);
       expect(selection.anchor.type).toBe('text');
       expect(selection.anchor.key).toBe(textAKey);
@@ -1334,46 +1390,35 @@ describe('LinkNode transform (Regression #8083)', () => {
     });
   });
 
-  test('cursor stays at merge point when prevSibling merges link (Regression #8305)', () => {
+  test('#8305 edge case: first link ends with LineBreakNode', () => {
     using editor = buildEditorFromExtensions(transformExtension);
-    let textAKey: string;
     editor.update(
       () => {
-        const root = $getRoot();
-        const textA = $createTextNode('first');
-        textAKey = textA.getKey();
-        const linkA = $createLinkNode('https://lexical.dev');
-        linkA.append(textA);
-        const textB = $createTextNode('second');
-        const linkB = $createLinkNode('https://lexical.dev');
-        linkB.append(textB);
-        const trailing = $createTextNode(' tail');
-        const paragraph = $createParagraphNode();
-        paragraph.append(linkA, linkB, trailing);
-        root.clear().append(paragraph);
+        const paragraph = $createParagraphNode().append(
+          $createLinkNode('https://lexical.dev').append(
+            $createTextNode('link1'),
+            $createLineBreakNode(),
+          ),
+          $createLinkNode('https://lexical.dev').append(
+            $createTextNode('link2'),
+          ),
+        );
+        $getRoot().clear().append(paragraph);
         paragraph.select(1, 1);
       },
       {discrete: true},
     );
     editor.read(() => {
-      const root = $getRoot();
-      const paragraph = root.getFirstChild();
-      assert(
-        $isParagraphNode(paragraph),
-        'First child must be a ParagraphNode',
-      );
+      const paragraph = $getRoot().getFirstChild();
+      assert($isParagraphNode(paragraph), 'Expected ParagraphNode');
+      expect(paragraph.getChildrenSize()).toBe(1);
       const mergedLink = paragraph.getFirstChild();
-      assert($isLinkNode(mergedLink), 'First child must be a LinkNode');
-      expect(mergedLink.getTextContent()).toBe('firstsecond');
+      assert($isLinkNode(mergedLink), 'Expected LinkNode');
       const selection = $getSelection();
-      assert(
-        $isRangeSelection(selection),
-        'Selection must be a RangeSelection',
-      );
+      assert($isRangeSelection(selection), 'Expected RangeSelection');
       expect(selection.isCollapsed()).toBe(true);
       expect(selection.anchor.type).toBe('text');
-      expect(selection.anchor.key).toBe(textAKey);
-      expect(selection.anchor.offset).toBe(5);
+      expect(selection.anchor.offset).toBe(0);
     });
   });
 });

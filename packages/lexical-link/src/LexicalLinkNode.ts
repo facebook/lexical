@@ -38,8 +38,6 @@ import {
   $isNodeSelection,
   $isRangeSelection,
   $isSiblingCaret,
-  $isTextNode,
-  $isTextPointCaret,
   $normalizeCaret,
   $normalizeSelection__EXPERIMENTAL,
   $rewindSiblingCaret,
@@ -366,29 +364,23 @@ export function $linkNodeTransform(link: LinkNode): void {
       });
     }
   }
-  // Re-anchors a caret pair that points to the gap between two links
-  // so that it lands at the merge boundary after one link is removed.
+  // Fix a caret pair that points to the end of the absorbing link,
+  // which would shift when new children are appended during merge.
   function $fixMergeBoundaryCaret(
     pair: CaretPair,
-    gapOrigin: LexicalNode,
+    absorbingLink: LinkNode,
     mergingLink: LinkNode,
   ): CaretPair {
-    const [next] = pair;
-    if (
-      $isSiblingCaret(next) &&
-      !$isTextPointCaret(next) &&
-      next.origin.is(gapOrigin)
-    ) {
-      const firstChild = mergingLink.getFirstChild();
-      if ($isTextNode(firstChild)) {
-        const fixed = $caretFromPoint(
-          {key: firstChild.getKey(), offset: 0, type: 'text'},
-          'next',
-        );
-        return [fixed, fixed.getFlipped()];
-      }
+    const [next, prev] = pair;
+    const $isAffected = (caret: PointCaret) =>
+      $isSiblingCaret(caret) && caret.origin.is(absorbingLink);
+    if (!$isAffected(next) && !$isAffected(prev)) {
+      return pair;
     }
-    return pair;
+    // Resolve the merge boundary from the merging link's start, since
+    // those children survive the move and represent the boundary position.
+    const fixed = $normalizeCaret($getChildCaret(mergingLink, 'next'));
+    return [fixed, fixed.getFlipped()];
   }
 
   if (link.isAttached()) {

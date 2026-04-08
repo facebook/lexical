@@ -214,13 +214,24 @@ function createCursorSelection(
   anchorOffset: number,
   focusKey: NodeKey,
   focusOffset: number,
+  theme: {cursor?: string; cursorName?: string} = {},
 ): CursorSelection {
   const color = cursor.color;
   const caret = document.createElement('span');
-  caret.style.cssText = `position:absolute;top:0;bottom:0;right:-1px;width:1px;background-color:${color};z-index:10;`;
+  if (theme.cursor) {
+    caret.className = theme.cursor;
+    caret.style.cssText = `position:absolute;top:0;bottom:0;right:-1px;`;
+    caret.style.setProperty('--lexical-cursor-color', color);
+  } else {
+    caret.style.cssText = `position:absolute;top:0;bottom:0;right:-1px;width:1px;background-color:${color};z-index:10;`;
+  }
   const name = document.createElement('span');
   name.textContent = cursor.name;
-  name.style.cssText = `position:absolute;left:-2px;top:-16px;background-color:${color};color:#fff;line-height:12px;font-size:12px;padding:2px;font-family:Arial;font-weight:bold;white-space:nowrap;`;
+  if (theme.cursorName) {
+    name.className = theme.cursorName;
+  } else {
+    name.style.cssText = `position:absolute;left:-2px;top:-16px;background-color:${color};color:#fff;line-height:12px;font-size:12px;padding:2px;font-family:Arial;font-weight:bold;white-space:nowrap;`;
+  }
   caret.appendChild(name);
   return {
     anchor: {
@@ -243,6 +254,7 @@ function updateCursor(
   cursor: Cursor,
   nextSelection: null | CursorSelection,
   nodeMap: NodeMap,
+  theme: {selection?: string; selectionBg?: string} = {},
 ): void {
   const editor = binding.editor;
   const rootElement = editor.getRootElement();
@@ -323,17 +335,28 @@ function updateCursor(
       selection = document.createElement('span');
       selections[i] = selection;
       const selectionBg = document.createElement('span');
+      if (theme.selectionBg) {
+        selectionBg.className = theme.selectionBg;
+      }
       selection.appendChild(selectionBg);
       cursorsContainer.appendChild(selection);
     }
 
     const top = selectionRect.top - containerRect.top;
     const left = selectionRect.left - containerRect.left;
-    const style = `position:absolute;top:${top}px;left:${left}px;height:${selectionRect.height}px;width:${selectionRect.width}px;pointer-events:none;z-index:5;`;
-    selection.style.cssText = style;
+    const posStyle = `position:absolute;top:${top}px;left:${left}px;height:${selectionRect.height}px;width:${selectionRect.width}px;pointer-events:none;`;
 
-    (selection.firstChild as HTMLSpanElement).style.cssText =
-      `${style}left:0;top:0;background-color:${color};opacity:0.3;`;
+    if (theme.selection) {
+      selection.className = theme.selection;
+      selection.style.cssText = posStyle;
+      selection.style.setProperty('--lexical-cursor-color', color);
+      (selection.firstChild as HTMLSpanElement).style.cssText =
+        `position:absolute;left:0;top:0;width:100%;height:100%;`;
+    } else {
+      selection.style.cssText = posStyle;
+      (selection.firstChild as HTMLSpanElement).style.cssText =
+        `${posStyle}left:0;top:0;background-color:${color};opacity:0.3;z-index:5;`;
+    }
 
     if (i === selectionRectsLength - 1) {
       if (caret.parentNode !== selection) {
@@ -626,6 +649,7 @@ export function syncCursorPositions(
   const localClientID = binding.clientID;
   const cursors = binding.cursors;
   const editor = binding.editor;
+  const collabTheme = editor._config.theme.collaboration;
   const nodeMap = editor._editorState._nodeMap;
   const visitedClientIDs = new Set();
 
@@ -660,6 +684,7 @@ export function syncCursorPositions(
               anchorOffset,
               focusKey,
               focusOffset,
+              collabTheme,
             );
           } else {
             const anchor = selection.anchor;
@@ -672,7 +697,7 @@ export function syncCursorPositions(
         }
       }
 
-      updateCursor(binding, cursor, selection, nodeMap);
+      updateCursor(binding, cursor, selection, nodeMap, collabTheme);
     }
   }
 

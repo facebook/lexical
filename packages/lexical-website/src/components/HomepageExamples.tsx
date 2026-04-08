@@ -6,12 +6,17 @@
  *
  */
 
+import BrowserOnly from '@docusaurus/BrowserOnly';
 import ChatEditor from '@examples/website-chat/Editor';
 import NotionEditor from '@examples/website-notion/Editor';
 import RichInputEditor from '@examples/website-rich-input/Editor';
 import React from 'react';
 
 import StackBlitzButton from './StackBlitzButton';
+
+const AgentEditor = React.lazy(() =>
+  import('@examples/agent-example/Editor').then((m) => ({default: m.Editor})),
+);
 
 interface Section {
   description: string;
@@ -51,6 +56,25 @@ const SECTIONS: Section[] = [
     title: (
       <>
         Rich <span className="text-gradient">input field</span>
+      </>
+    ),
+  },
+  {
+    description:
+      'A rich text editor with AI-powered paragraph generation and named entity extraction using SmolLM2 and BERT-NER running in the browser via WebAssembly.',
+    editor: (
+      <BrowserOnly>
+        {() => (
+          <React.Suspense>
+            <AgentEditor />
+          </React.Suspense>
+        )}
+      </BrowserOnly>
+    ),
+    stackblitzPath: 'agent-example',
+    title: (
+      <>
+        AI <span className="text-gradient">agent</span> editor
       </>
     ),
   },

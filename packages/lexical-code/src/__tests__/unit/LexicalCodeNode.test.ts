@@ -583,7 +583,6 @@ describe('LexicalCodeNode tests', () => {
 
       for (const moveTo of ['start', 'end']) {
         for (const tabOrSpaces of ['tab', 'spaces']) {
-          // eslint-disable-next-line no-inner-declarations
           function testMoveTo(
             name: string,
             $beforeFn: () => void,

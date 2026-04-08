@@ -317,7 +317,7 @@ export class CodeNode extends ElementNode {
       let node: null | LexicalNode =
         $getFirstCodeNodeOfLine(firstSelectionNode);
       const insertNodes = [];
-      // eslint-disable-next-line no-constant-condition
+
       while (true) {
         if ($isTabNode(node)) {
           insertNodes.push($createTabNode());

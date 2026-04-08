@@ -185,14 +185,14 @@ export class ListItemNode extends ElementNode {
     if (isNestedListNode(this)) {
       return {
         after(containerElement) {
-          const prevSibling =
-            containerElement.previousElementSibling as HTMLElement | null;
-          if (prevSibling) {
-            // Move nested list into the previous <li>
-            while (containerElement.firstChild) {
-              prevSibling.append(containerElement.firstChild);
+          if (containerElement instanceof HTMLElement) {
+            const prevSibling = containerElement.previousElementSibling;
+            if (prevSibling) {
+              while (containerElement.firstChild) {
+                prevSibling.append(containerElement.firstChild);
+              }
+              containerElement.remove();
             }
-            containerElement.remove();
           }
           return containerElement;
         },

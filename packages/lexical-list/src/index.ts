@@ -12,7 +12,12 @@ import type {
   ListType,
   SerializedListNode,
 } from './LexicalListNode';
-import type {LexicalCommand, LexicalEditor, NodeKey} from 'lexical';
+import type {
+  LexicalCommand,
+  LexicalEditor,
+  LexicalNode,
+  NodeKey,
+} from 'lexical';
 
 import {effect, namedSignals} from '@lexical/extension';
 import {$findMatchingParent, mergeRegister} from '@lexical/utils';
@@ -20,6 +25,7 @@ import {
   $createParagraphNode,
   $getNodeByKey,
   $getSelection,
+  $isElementNode,
   $isRangeSelection,
   $isTextNode,
   COMMAND_PRIORITY_LOW,
@@ -137,7 +143,7 @@ export function registerList(
     ),
     editor.registerCommand(
       DELETE_CHARACTER_COMMAND,
-      () => {
+      (isBackward) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
           return false;
@@ -175,6 +181,12 @@ export function registerList(
         // Get the parent list node
         const listNode = listItemParent.getParent();
         if (!listNode || !$isListNode(listNode)) {
+          return false;
+        }
+
+        if (isBackward && listNodeHasOverflow(listNode)) {
+          // When character limit overflow nodes are present, let other handlers
+          // manage backspace to keep overflow cleanup consistent.
           return false;
         }
 
@@ -244,6 +256,23 @@ export function registerList(
     }),
   );
   return removeListener;
+}
+
+function listNodeHasOverflow(listNode: ListNode): boolean {
+  const stack: Array<LexicalNode> = [listNode];
+  while (stack.length > 0) {
+    const node = stack.pop();
+    if (!node) {
+      continue;
+    }
+    if (node.getType() === 'overflow') {
+      return true;
+    }
+    if ($isElementNode(node)) {
+      stack.push(...node.getChildren());
+    }
+  }
+  return false;
 }
 
 export function registerListStrictIndentTransform(

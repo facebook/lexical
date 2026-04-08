@@ -102,7 +102,7 @@ declare export class CodeNode extends ElementNode {
   getLanguage(): string | void;
 }
 
-declare export var CodeExtension: LexicalExtension<ExtensionConfigBase, "@lexical/code", mixed, mixed>;
+declare export var CodeExtension: LexicalExtension<ExtensionConfigBase, "@lexical/code", unknown, unknown>;
 
 /**
  * Deprecated @lexical/code-prism re-exports

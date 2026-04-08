@@ -107,8 +107,8 @@ declare export function $restoreEditorState(
 ): void;
 
 
-declare export function $insertNodeToNearestRoot<T: LexicalNode>(node: T): T;
-declare export function $insertNodeToNearestRootAtCaret<T: LexicalNode>(node: T, caret: PointCaret<CaretDirection>, options?: SplitAtPointCaretNextOptions): T;
+declare export function $insertNodeToNearestRoot<T extends LexicalNode>(node: T): T;
+declare export function $insertNodeToNearestRootAtCaret<T extends LexicalNode>(node: T, caret: PointCaret<CaretDirection>, options?: SplitAtPointCaretNextOptions): T;
 
 declare export function $insertNodeIntoLeaf(node: LexicalNode): void
 
@@ -177,21 +177,21 @@ declare export function $descendantsMatching(
 ): LexicalNode[];
 
 declare export function $getAdjacentSiblingOrParentSiblingCaret<
-  D: CaretDirection,
+  D extends CaretDirection,
 >(
   startCaret: NodeCaret<D>,
   rootMode?: RootMode,
 ): null | [NodeCaret<D>, number];
 
-export type StateConfigWrapper<K: string, V> = {
+export type StateConfigWrapper<K extends string, V> = {
   +stateConfig: StateConfig<K, V>;
-  +$get: <T: LexicalNode>(node: T) => V;
-  +$set: <T: LexicalNode>(
+  +$get: <T extends LexicalNode>(node: T) => V;
+  +$set: <T extends LexicalNode>(
     node: T,
     valueOrUpdater: ValueOrUpdater<V>,
   ) => T;
   /** `[$get, $set]` */
-  +accessors: $ReadOnly<[$get: StateConfigWrapper<K, V>['$get'], $set: StateConfigWrapper<K, V>['$set']]>;
+  +accessors: Readonly<[$get: StateConfigWrapper<K, V>['$get'], $set: StateConfigWrapper<K, V>['$set']]>;
   /**
    * `() => function () { return $get(this) }`
    *
@@ -205,7 +205,7 @@ export type StateConfigWrapper<K: string, V> = {
    * }
    * ```
    */
-  makeGetterMethod<T: LexicalNode>(): (this: T) => V;
+  makeGetterMethod<T extends LexicalNode>(): (this: T) => V;
   /**
    * `() => function (valueOrUpdater) { return $set(this, valueOrUpdater) }`
    *
@@ -219,12 +219,12 @@ export type StateConfigWrapper<K: string, V> = {
    * }
    * ```
    */
-  makeSetterMethod<T: LexicalNode>(): (
+  makeSetterMethod<T extends LexicalNode>(): (
     this: T,
     valueOrUpdater: ValueOrUpdater<V>,
   ) => T;
 };
 
-declare export function makeStateWrapper<K: string, V>(
+declare export function makeStateWrapper<K extends string, V>(
   stateConfig: StateConfig<K, V>,
 ): StateConfigWrapper<K, V>;

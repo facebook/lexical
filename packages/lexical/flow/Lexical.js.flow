@@ -150,7 +150,7 @@ export type CreateEditorArgs = {
   disableEvents?: boolean;
   editorState?: EditorState;
   namespace?: string;
-  nodes?: $ReadOnlyArray<Class<LexicalNode> | LexicalNodeReplacement>;
+  nodes?: ReadonlyArray<Class<LexicalNode> | LexicalNodeReplacement>;
   onError?: ErrorHandler;
   parentEditor?: LexicalEditor;
   editable?: boolean;
@@ -513,7 +513,7 @@ declare export class NodeSelection implements BaseSelection {
 }
 
 declare export function $isNodeSelection(
-  x: ?mixed,
+  x: ?unknown,
 ): x is NodeSelection;
 
 declare export class RangeSelection implements BaseSelection {
@@ -599,7 +599,7 @@ declare class _Point {
 declare export function $createRangeSelection(): RangeSelection;
 declare export function $createNodeSelection(): NodeSelection;
 declare export function $isRangeSelection(
-  x: ?mixed,
+  x: ?unknown,
 ): x is RangeSelection;
 declare export function $getSelection(): null | BaseSelection;
 declare export function $getPreviousSelection(): null | BaseSelection;
@@ -843,7 +843,7 @@ declare export class ElementDOMSlot<+T extends HTMLElement> {
   constructor(element: HTMLElement, before?: Node | null | void, after?: Node | null | void): void;
   withBefore(before: Node | null | void): ElementDOMSlot<T>;
   withAfter(after: Node | null | void): ElementDOMSlot<T>;
-  withElement<ElementType: HTMLElement>(element: ElementType): ElementDOMSlot<ElementType>;
+  withElement<ElementType extends HTMLElement>(element: ElementType): ElementDOMSlot<ElementType>;
   insertChild(dom: Node): this;
   removeChild(dom: Node): this;
   replaceChild(dom: Node, prevDom: Node): this;
@@ -865,7 +865,7 @@ declare export function isDOMUnmanaged(elementDOM: HTMLElement): boolean;
 
 declare export class DecoratorNode<X> extends LexicalNode {
   constructor(key?: NodeKey): void;
-  // Not sure how to get flow to agree that the DecoratorNode<mixed> is compatible with this,
+  // Not sure how to get flow to agree that the DecoratorNode<unknown> is compatible with this,
   // so we have a less precise type than in TS
   // getTopLevelElement(): this | ElementNode | null;
   // getTopLevelElementOrThrow(): this | ElementNode;
@@ -914,24 +914,24 @@ declare export function getNearestEditorFromDOMNode(
 declare export function $getNearestNodeFromDOMNode(
   startingDOM: Node,
 ): LexicalNode | null;
-declare export function $getNodeByKey<N: LexicalNode>(key: NodeKey): N | null;
-declare export function $getNodeByKeyOrThrow<N: LexicalNode>(key: NodeKey): N;
+declare export function $getNodeByKey<N extends LexicalNode>(key: NodeKey): N | null;
+declare export function $getNodeByKeyOrThrow<N extends LexicalNode>(key: NodeKey): N;
 declare export function $getRoot(): RootNode;
-declare export function $isLeafNode<T = mixed>(
+declare export function $isLeafNode<T = unknown>(
   node: ?LexicalNode,
 ): node is TextNode | LineBreakNode |  DecoratorNode<T>;
 declare export function $setCompositionKey(
   compositionKey: null | NodeKey,
 ): void;
 declare export function $setSelection(selection: null | BaseSelection): void;
-declare export function $nodesOfType<T: LexicalNode>(klass: Class<T>): Array<T>;
+declare export function $nodesOfType<T extends LexicalNode>(klass: Class<T>): Array<T>;
 declare export function $getAdjacentNode(
   focus: Point,
   isBackward: boolean,
 ): null | LexicalNode;
 declare export function resetRandomKey(): void;
 declare export function generateRandomKey(): string;
-declare export function $isInlineElementOrDecoratorNode<T = mixed>(
+declare export function $isInlineElementOrDecoratorNode<T = unknown>(
   node: LexicalNode,
 ): node is ElementNode|  DecoratorNode<T>;
 declare export function $getNearestRootOrShadowRoot(
@@ -944,8 +944,8 @@ declare export function $hasAncestor(
   child: LexicalNode,
   targetNode: LexicalNode,
 ): boolean;
-declare export function $cloneWithProperties<T: LexicalNode>(node: T): T;
-declare export function $copyNode<T: LexicalNode>(node: T, skipReset?: boolean): T;
+declare export function $cloneWithProperties<T extends LexicalNode>(node: T): T;
+declare export function $copyNode<T extends LexicalNode>(node: T, skipReset?: boolean): T;
 declare export function $getEditor(): LexicalEditor;
 
 /**
@@ -1036,7 +1036,7 @@ export type SerializedEditor = {
 /**
  * LexicalCaret
  */
-export interface BaseCaret<T: LexicalNode, D: CaretDirection, Type> extends Iterable<SiblingCaret<LexicalNode, D>> {
+export interface BaseCaret<T extends LexicalNode, D extends CaretDirection, Type> extends Iterable<SiblingCaret<LexicalNode, D>> {
   +origin: T;
   +type: Type;
   +direction: D;
@@ -1051,7 +1051,7 @@ export interface BaseCaret<T: LexicalNode, D: CaretDirection, Type> extends Iter
 }
 export type CaretDirection = 'next' | 'previous';
 type FLIP_DIRECTION = {'next' : 'previous', 'previous': 'next'};
-export interface CaretRange<D: CaretDirection = CaretDirection> extends Iterable<NodeCaret<D>> {
+export interface CaretRange<D extends CaretDirection = CaretDirection> extends Iterable<NodeCaret<D>> {
   +type: 'node-caret-range';
   +direction: D;
   anchor: PointCaret<D>;
@@ -1061,7 +1061,7 @@ export interface CaretRange<D: CaretDirection = CaretDirection> extends Iterable
   getTextSlices(): TextPointCaretSliceTuple<D>;
 }
 export type CaretType = 'sibling' | 'child';
-export interface ChildCaret<T: ElementNode = ElementNode, D: CaretDirection = CaretDirection> extends BaseCaret<T, D, 'child'> {
+export interface ChildCaret<T extends ElementNode = ElementNode, D extends CaretDirection = CaretDirection> extends BaseCaret<T, D, 'child'> {
   getLatest(): ChildCaret<T, D>;
   getParentCaret(mode?: RootMode): null | SiblingCaret<T, D>;
   getParentAtCaret(): T;
@@ -1075,11 +1075,11 @@ export interface ChildCaret<T: ElementNode = ElementNode, D: CaretDirection = Ca
   replaceOrInsert(node: LexicalNode, includeChildren?: boolean): ChildCaret<T, D>;
   splice(deleteCount: number, nodes: Iterable<LexicalNode>, nodesDirection?: CaretDirection): ChildCaret<T, D>;
 }
-export type FlipDirection<D: CaretDirection> = FLIP_DIRECTION[D];
-export type NodeCaret<D: CaretDirection = CaretDirection> = ChildCaret<ElementNode, D> | SiblingCaret<LexicalNode, D>;
-export type PointCaret<D: CaretDirection = CaretDirection> = ChildCaret<ElementNode, D> | SiblingCaret<LexicalNode, D> | TextPointCaret<TextNode, D>;
+export type FlipDirection<D extends CaretDirection> = FLIP_DIRECTION[D];
+export type NodeCaret<D extends CaretDirection = CaretDirection> = ChildCaret<ElementNode, D> | SiblingCaret<LexicalNode, D>;
+export type PointCaret<D extends CaretDirection = CaretDirection> = ChildCaret<ElementNode, D> | SiblingCaret<LexicalNode, D> | TextPointCaret<TextNode, D>;
 export type RootMode = 'root' | 'shadowRoot';
-export interface SiblingCaret<T: LexicalNode = LexicalNode, D: CaretDirection = CaretDirection> extends BaseCaret<T, D, 'sibling'> {
+export interface SiblingCaret<T extends LexicalNode = LexicalNode, D extends CaretDirection = CaretDirection> extends BaseCaret<T, D, 'sibling'> {
   getLatest(): SiblingCaret<T, D>;
   getChildCaret(): null | ChildCaret<T & ElementNode, D>;
   getParentCaret(mode?: RootMode): null | SiblingCaret<ElementNode, D>;
@@ -1098,7 +1098,7 @@ export interface StepwiseIteratorConfig<State, Stop, Value> {
   +step: (value: State) => State | Stop;
   +map: (value: State) => Value;
 }
-export interface TextPointCaret<T: TextNode = TextNode, D: CaretDirection = CaretDirection> extends BaseCaret<T, D, 'text'> {
+export interface TextPointCaret<T extends TextNode = TextNode, D extends CaretDirection = CaretDirection> extends BaseCaret<T, D, 'text'> {
   +offset: number;
   getLatest(): TextPointCaret<T, D>;
   getChildCaret(): null;
@@ -1107,7 +1107,7 @@ export interface TextPointCaret<T: TextNode = TextNode, D: CaretDirection = Care
   isSamePointCaret(other: null | void | PointCaret<CaretDirection>): boolean; // other is TextPointCaret<T, D>;
   getFlipped(): TextPointCaret<T, FlipDirection<D>>;
 }
-export interface TextPointCaretSlice<T: TextNode = TextNode, D: CaretDirection = CaretDirection> {
+export interface TextPointCaretSlice<T extends TextNode = TextNode, D extends CaretDirection = CaretDirection> {
   +type: 'slice';
   +caret: TextPointCaret<T, D>;
   +distance: number;
@@ -1116,24 +1116,24 @@ export interface TextPointCaretSlice<T: TextNode = TextNode, D: CaretDirection =
   getTextContentSize(): number;
   removeTextSlice(): TextPointCaret<T, D>;
 }
-export type TextPointCaretSliceTuple<D: CaretDirection> = [
+export type TextPointCaretSliceTuple<D extends CaretDirection> = [
   +anchorSlice: null | TextPointCaretSlice<TextNode, D>,
   +focusSlice: null | TextPointCaretSlice<TextNode, D>,
 ];
-declare export function $getAdjacentChildCaret<D: CaretDirection>(caret: null | NodeCaret<D>): null | NodeCaret<D>;
-declare export function $getCaretRange<D: CaretDirection>(anchor: PointCaret<D>, focus: PointCaret<D>): CaretRange<D>;
-declare export function $getChildCaret<T: null | ElementNode, D: CaretDirection>(origin: T, direction: D): ChildCaret<Exclude<null, T>, D> | Extract<null, T>;
-declare export function $getChildCaretOrSelf<Caret: null | PointCaret<CaretDirection>>(caret: Caret): Caret | ChildCaret<ElementNode, Exclude<null, Caret>['direction']>;
-declare export function $getSiblingCaret<T: null | LexicalNode, D: CaretDirection>(origin: T, direction: D): SiblingCaret<Exclude<null, T>, D> | Extract<null, T>;
+declare export function $getAdjacentChildCaret<D extends CaretDirection>(caret: null | NodeCaret<D>): null | NodeCaret<D>;
+declare export function $getCaretRange<D extends CaretDirection>(anchor: PointCaret<D>, focus: PointCaret<D>): CaretRange<D>;
+declare export function $getChildCaret<T extends null | ElementNode, D extends CaretDirection>(origin: T, direction: D): ChildCaret<Exclude<null, T>, D> | Extract<null, T>;
+declare export function $getChildCaretOrSelf<Caret extends null | PointCaret<CaretDirection>>(caret: Caret): Caret | ChildCaret<ElementNode, Exclude<null, Caret>['direction']>;
+declare export function $getSiblingCaret<T extends null | LexicalNode, D extends CaretDirection>(origin: T, direction: D): SiblingCaret<Exclude<null, T>, D> | Extract<null, T>;
 declare export function $getTextNodeOffset(origin: TextNode, offset: number | CaretDirection): number;
-declare export function $getTextPointCaret<T: null | TextNode, D: CaretDirection>(origin: T, direction: D, offset: number | CaretDirection): TextPointCaret<Exclude<null, T>, D> | Extract<null, T>;
-declare export function $getTextPointCaretSlice<T: TextNode, D: CaretDirection>(caret: TextPointCaret<T, D>, distance: number): TextPointCaretSlice<T, D>;
-declare export function $isChildCaret<D: CaretDirection>(caret: null | void | PointCaret<D>): caret is ChildCaret<ElementNode, D>;
-declare export function $isNodeCaret<D: CaretDirection>(caret: null | void | PointCaret<D>): caret is NodeCaret<D>;
-declare export function $isSiblingCaret<D: CaretDirection>(caret: null | void | PointCaret<D>): caret is SiblingCaret<LexicalNode, D>;
-declare export function $isTextPointCaret<D: CaretDirection>(caret: null | void | PointCaret<D>): caret is TextPointCaret<TextNode, D>;
-declare export function $isTextPointCaretSlice<D: CaretDirection>(caret: null | void | PointCaret<D> | TextPointCaretSlice<TextNode, D>): caret is TextPointCaretSlice<TextNode, D>;
-declare export function flipDirection<D: CaretDirection>(direction: D): FlipDirection<D>;
+declare export function $getTextPointCaret<T extends null | TextNode, D extends CaretDirection>(origin: T, direction: D, offset: number | CaretDirection): TextPointCaret<Exclude<null, T>, D> | Extract<null, T>;
+declare export function $getTextPointCaretSlice<T extends TextNode, D extends CaretDirection>(caret: TextPointCaret<T, D>, distance: number): TextPointCaretSlice<T, D>;
+declare export function $isChildCaret<D extends CaretDirection>(caret: null | void | PointCaret<D>): caret is ChildCaret<ElementNode, D>;
+declare export function $isNodeCaret<D extends CaretDirection>(caret: null | void | PointCaret<D>): caret is NodeCaret<D>;
+declare export function $isSiblingCaret<D extends CaretDirection>(caret: null | void | PointCaret<D>): caret is SiblingCaret<LexicalNode, D>;
+declare export function $isTextPointCaret<D extends CaretDirection>(caret: null | void | PointCaret<D>): caret is TextPointCaret<TextNode, D>;
+declare export function $isTextPointCaretSlice<D extends CaretDirection>(caret: null | void | PointCaret<D> | TextPointCaretSlice<TextNode, D>): caret is TextPointCaretSlice<TextNode, D>;
+declare export function flipDirection<D extends CaretDirection>(direction: D): FlipDirection<D>;
 declare export function makeStepwiseIterator<State, Stop, Value>(
   config: StepwiseIteratorConfig<State, Stop, Value>,
 ): Iterator<Value>;
@@ -1148,14 +1148,14 @@ declare export function $caretRangeFromSelection(
   selection: RangeSelection,
 ): CaretRange<CaretDirection>;
 declare export function $getAdjacentSiblingOrParentSiblingCaret<
-  D: CaretDirection,
+  D extends CaretDirection,
 >(
   startCaret: NodeCaret<D>,
   rootMode?: RootMode
 ): null | [NodeCaret<D>, number]
 declare export function $getCaretInDirection<
-  Caret: PointCaret<CaretDirection>,
-  D: CaretDirection,
+  Caret extends PointCaret<CaretDirection>,
+  D extends CaretDirection,
 >(
   caret: Caret,
   direction: D,
@@ -1164,29 +1164,29 @@ declare export function $getCaretInDirection<
   | (Caret extends TextPointCaret<TextNode, CaretDirection>
       ? TextPointCaret<TextNode, D>
       : empty);
-declare export function $getCaretRangeInDirection<D: CaretDirection>(
+declare export function $getCaretRangeInDirection<D extends CaretDirection>(
   range: CaretRange<CaretDirection>,
   direction: D,
 ): CaretRange<D>;
-declare export function $getChildCaretAtIndex<D: CaretDirection>(
+declare export function $getChildCaretAtIndex<D extends CaretDirection>(
   parent: ElementNode,
   index: number,
   direction: D,
 ): NodeCaret<D>;
-declare export function $normalizeCaret<D: CaretDirection>(
+declare export function $normalizeCaret<D extends CaretDirection>(
   initialCaret: PointCaret<D>,
 ): PointCaret<D>;
-declare export function $removeTextFromCaretRange<D: CaretDirection>(
+declare export function $removeTextFromCaretRange<D extends CaretDirection>(
   initialRange: CaretRange<D>,
   sliceMode?:
     | 'removeEmptySlices'
     | 'preserveEmptyTextSliceCaret'
 ): CaretRange<D>;
 declare export function $rewindSiblingCaret<
-  T: LexicalNode,
-  D: CaretDirection,
+  T extends LexicalNode,
+  D extends CaretDirection,
 >(caret: SiblingCaret<T, D>): NodeCaret<D>;
-declare export function $setPointFromCaret<D: CaretDirection>(
+declare export function $setPointFromCaret<D extends CaretDirection>(
   point: PointType,
   caret: PointCaret<D>,
 ): void;
@@ -1199,31 +1199,31 @@ declare export function $updateRangeSelectionFromCaretRange(
 ): void;
 
 export type CommonAncestorResult<
-  A: LexicalNode,
-  B: LexicalNode,
+  A extends LexicalNode,
+  B extends LexicalNode,
 > =
   | CommonAncestorResultSame<A>
   | CommonAncestorResultAncestor<A & ElementNode>
   | CommonAncestorResultDescendant<B & ElementNode>
   | CommonAncestorResultBranch<A, B>;
 export interface CommonAncestorResultBranch<
-  A: LexicalNode,
-  B: LexicalNode,
+  A extends LexicalNode,
+  B extends LexicalNode,
 > {
   +type: 'branch';
   +commonAncestor: ElementNode;
   +a: A | ElementNode;
   +b: B | ElementNode;
 }
-export interface CommonAncestorResultAncestor<A: ElementNode> {
+export interface CommonAncestorResultAncestor<A extends ElementNode> {
   +type: 'ancestor';
   +commonAncestor: A;
 }
-export interface CommonAncestorResultDescendant<B: ElementNode> {
+export interface CommonAncestorResultDescendant<B extends ElementNode> {
   +type: 'descendant';
   +commonAncestor: B;
 }
-export interface CommonAncestorResultSame<A: LexicalNode> {
+export interface CommonAncestorResultSame<A extends LexicalNode> {
   +type: 'same';
   +commonAncestor: A;
 }
@@ -1232,20 +1232,20 @@ declare export function $comparePointCaretNext(
   b: PointCaret<'next'>,
 ): -1 | 0 | 1;
 declare export function $getCommonAncestorResultBranchOrder<
-  A: LexicalNode,
-  B: LexicalNode,
+  A extends LexicalNode,
+  B extends LexicalNode,
 >(compare: CommonAncestorResultBranch<A, B>): -1 | 1 ;
 declare export function $getCommonAncestor<
-  A: LexicalNode,
-  B: LexicalNode,
+  A extends LexicalNode,
+  B extends LexicalNode,
 >(a: A, b: B): null | CommonAncestorResult<A, B>;
-declare export function $extendCaretToRange<D: CaretDirection>(
+declare export function $extendCaretToRange<D extends CaretDirection>(
   anchor: PointCaret<D>,
 ): CaretRange<D>;
-declare export function $getCollapsedCaretRange<D: CaretDirection>(
+declare export function $getCollapsedCaretRange<D extends CaretDirection>(
   anchor: PointCaret<D>,
 ): CaretRange<D>;
-declare export function $isExtendableTextPointCaret<D: CaretDirection>(
+declare export function $isExtendableTextPointCaret<D extends CaretDirection>(
   caret: PointCaret<D>
 ): implies caret is TextPointCaret<TextNode, D>;
 
@@ -1289,19 +1289,19 @@ export type UpdateTag =
  */
 export const NODE_STATE_KEY = '$';
 export type ValueOrUpdater<V> = V | ((prevValue: V) => V);
-export type StateConfigValue<S: AnyStateConfig> = S extends StateConfig<
+export type StateConfigValue<S extends AnyStateConfig> = S extends StateConfig<
   infer _K,
   infer V
 >
   ? V
   : empty;
-export type StateConfigKey<S: AnyStateConfig> = S extends StateConfig<
+export type StateConfigKey<S extends AnyStateConfig> = S extends StateConfig<
   infer K,
   infer _V
 >
   ? K
   : empty;
-export interface NodeStateConfig<S: AnyStateConfig> {
+export interface NodeStateConfig<S extends AnyStateConfig> {
   stateConfig: S;
   flat?: boolean;
 }
@@ -1315,8 +1315,8 @@ export type StateConfigJSON<S> = S extends StateConfig<infer K, infer V>
   : Record<empty, empty>;
 
 export type RequiredNodeStateConfigJSON<
-  Config: RequiredNodeStateConfig,
-  Flat: boolean,
+  Config extends RequiredNodeStateConfig,
+  Flat extends boolean,
 > = StateConfigJSON<
   Config extends NodeStateConfig<infer S>
     ? {flat: false, ...Config} extends {flat: Flat}
@@ -1326,19 +1326,19 @@ export type RequiredNodeStateConfigJSON<
     ? Config
     : empty
 >;
-export type StateValueOrUpdater<Cfg: AnyStateConfig> = ValueOrUpdater<
+export type StateValueOrUpdater<Cfg extends AnyStateConfig> = ValueOrUpdater<
   StateConfigValue<Cfg>
 >;
 // $FlowFixMe[unclear-type]
 export type AnyStateConfig = StateConfig<any, any>;
-export type NodeStateJSON<T: LexicalNode> = Partial<{
+export type NodeStateJSON<T extends LexicalNode> = Partial<{
     [typeof NODE_STATE_KEY]: CollectStateJSON<GetNodeStateConfig<T>, false>;
   }> & CollectStateJSON<GetNodeStateConfig<T>, true>;
 
-declare export class StateConfig<K: string, V> {
+declare export class StateConfig<K extends string, V> {
   +key: K;
-  +parse: (value?: mixed) => V;
-  +unparse: (value: V) => mixed;
+  +parse: (value?: unknown) => V;
+  +unparse: (value: V) => unknown;
   +isEqual: (a: V, b: V) => boolean;
   +defaultValue: V;
   +resetOnCopyNode: boolean;
@@ -1346,23 +1346,23 @@ declare export class StateConfig<K: string, V> {
 }
 
 export type StateValueConfig<V> = {
-  parse: (jsonValue: mixed) => V;
-  unparse?: (parsed: V) => mixed;
+  parse: (jsonValue: unknown) => V;
+  unparse?: (parsed: V) => unknown;
   isEqual?: (a: V, b: V) => boolean;
   resetOnCopyNode?: boolean;
 }
 
 export type UnionToIntersection<T> = (
   // $FlowFixMe[unclear-type]
-  T extends mixed ? (x: T) => mixed : empty
+  T extends unknown ? (x: T) => unknown : empty
   // $FlowFixMe[unclear-type]
 ) extends (x: infer R) => any
   ? R
   : empty;
 
 export type CollectStateJSON<
-  Tuple: $ReadOnlyArray<RequiredNodeStateConfig>,
-  Flat: boolean,
+  Tuple extends ReadonlyArray<RequiredNodeStateConfig>,
+  Flat extends boolean,
 > = UnionToIntersection<
   {[K in keyof Tuple]: RequiredNodeStateConfigJSON<Tuple[K], Flat>}[number]
 >;
@@ -1370,14 +1370,14 @@ export type CollectStateJSON<
 export const PROTOTYPE_CONFIG_METHOD = '$config';
 
 export interface StaticNodeConfigValue<
-  T: LexicalNode,
-  Type: string,
+  T extends LexicalNode,
+  Type extends string,
 > {
   +type?: Type;
   +$transform?: (node: T) => void;
   +$importJSON?: (serializedNode: SerializedLexicalNode) => T;
   +importDOM?: DOMConversionMap;
-  +stateConfigs?: $ReadOnlyArray<RequiredNodeStateConfig>;
+  +stateConfigs?: ReadonlyArray<RequiredNodeStateConfig>;
   +extends?: Class<LexicalNode>;
 }
 
@@ -1393,8 +1393,8 @@ export type BaseStaticNodeConfig = {
  * Used to extract the node and type from a StaticNodeConfigRecord
  */
 export type StaticNodeConfig<
-  T: LexicalNode,
-  Type: string,
+  T extends LexicalNode,
+  Type extends string,
 > = BaseStaticNodeConfig & {
   +[K in Type]?: StaticNodeConfigValue<T, Type>;
 };
@@ -1403,20 +1403,20 @@ export type StaticNodeConfig<
 export type AnyStaticNodeConfigValue = StaticNodeConfigValue<any, any>;
 
 export type StaticNodeConfigRecord<
-  Type: string,
-  Config: AnyStaticNodeConfigValue,
+  Type extends string,
+  Config extends AnyStaticNodeConfigValue,
 > = BaseStaticNodeConfig & {
   +[K in Type]?: Config;
 };
 
-type GetStaticNodeConfig<T: LexicalNode> = ReturnType<
+type GetStaticNodeConfig<T extends LexicalNode> = ReturnType<
   T[typeof PROTOTYPE_CONFIG_METHOD]
 > extends infer Record
   ? Record extends StaticNodeConfigRecord<infer Type, infer Config>
     ? Config & {+type: Type}
     : empty
   : empty;
-type GetStaticNodeConfigs<T: LexicalNode> =
+type GetStaticNodeConfigs<T extends LexicalNode> =
   GetStaticNodeConfig<T> extends infer OwnConfig
     ? OwnConfig extends empty
       ? []
@@ -1434,37 +1434,37 @@ type CollectStateConfigs<Configs> = Configs extends [
   ...infer ParentConfigs,
 ]
   ? OwnConfig extends {stateConfigs: infer StateConfigs}
-    ? StateConfigs extends $ReadOnlyArray<RequiredNodeStateConfig>
+    ? StateConfigs extends ReadonlyArray<RequiredNodeStateConfig>
       ? [...StateConfigs, ...CollectStateConfigs<ParentConfigs>]
       : CollectStateConfigs<ParentConfigs>
     : CollectStateConfigs<ParentConfigs>
   : [];
 
-export type GetNodeStateConfig<T: LexicalNode> = CollectStateConfigs<
+export type GetNodeStateConfig<T extends LexicalNode> = CollectStateConfigs<
   GetStaticNodeConfigs<T>
 >;
 
-declare export function $getState<K: string, V>(
+declare export function $getState<K extends string, V>(
   node: LexicalNode,
   stateConfig: StateConfig<K, V>,
   version?: 'latest' | 'direct',
 ): V;
-declare export function $getStateChange<T: LexicalNode, K: string, V>(
+declare export function $getStateChange<T extends LexicalNode, K extends string, V>(
   node: T,
   prevNode: T,
   stateConfig: StateConfig<K, V>,
 ): null | [value: V, prevValue: V];
-declare export function $getWritableNodeState<T: LexicalNode>(
+declare export function $getWritableNodeState<T extends LexicalNode>(
   node: T,
 ): NodeState<T>;
-type KnownStateMap = Map<AnyStateConfig, mixed>;
-type UnknownStateRecord = Record<string, mixed>;
+type KnownStateMap = Map<AnyStateConfig, unknown>;
+type UnknownStateRecord = Record<string, unknown>;
 type SharedConfigMap = Map<string, AnyStateConfig>;
 export type SharedNodeState = {
   sharedConfigMap: SharedConfigMap;
   flatKeys: Set<string>;
 };
-declare export class NodeState<T: LexicalNode> {
+declare export class NodeState<T extends LexicalNode> {
   +node: LexicalNode;
   +knownState: KnownStateMap;
   unknownState: void | UnknownStateRecord;
@@ -1477,21 +1477,21 @@ declare export class NodeState<T: LexicalNode> {
     knownState?: KnownStateMap,
     size?: number | void,
   ): this;
-  getValue<K: string, V>(stateConfig: StateConfig<K, V>): V;
+  getValue<K extends string, V>(stateConfig: StateConfig<K, V>): V;
   getInternalState(): [
-    {+[k in string]: mixed} | void,
-    $ReadOnlyMap<AnyStateConfig, mixed>,
+    {+[k in string]: unknown} | void,
+    ReadonlyMap<AnyStateConfig, unknown>,
   ];
   toJSON(): NodeStateJSON<T>;
   getWritable(node: T): NodeState<T>;
-  updateFromKnown<K: string, V>(
+  updateFromKnown<K extends string, V>(
     stateConfig: StateConfig<K, V>,
     value: V,
   ): void;
-  updateFromUnknown(k: string, v: mixed): void;
+  updateFromUnknown(k: string, v: unknown): void;
     updateFromJSON(unknownState: void | UnknownStateRecord): void;
 }
-declare export function $setState<Node: LexicalNode, K: string, V>(
+declare export function $setState<Node extends LexicalNode, K extends string, V>(
   node: Node,
   stateConfig: StateConfig<K, V>,
   valueOrUpdater: ValueOrUpdater<V>,
@@ -1510,7 +1510,7 @@ declare export function getStaticNodeConfig(cls: Class<LexicalNode>): {
   ownNodeConfig: void | StaticNodeConfigValue<LexicalNode, string>;
 };
 
-declare export function $isEditorState(x: mixed): x is EditorState;
+declare export function $isEditorState(x: unknown): x is EditorState;
 
 // $FlowFixMe[unclear-type]
 export type AnyLexicalExtension = LexicalExtension<any, string, any, any>;
@@ -1521,8 +1521,8 @@ export type AnyNormalizedLexicalExtensionArgument =
   // $FlowFixMe[unclear-type]
   NormalizedLexicalExtensionArgument<any, string, any, any>;  
 declare export function configExtension<
-  Config: ExtensionConfigBase,
-  Name: string,
+  Config extends ExtensionConfigBase,
+  Name extends string,
   Output,
   Init,
 >(
@@ -1629,23 +1629,23 @@ export interface LexicalExtension<
   ) => () => void;
 }
 export type LexicalExtensionArgument<
-  Config: ExtensionConfigBase,
-  Name: string,
+  Config extends ExtensionConfigBase,
+  Name extends string,
   Output,
   Init,
 > =
   | LexicalExtension<Config, Name, Output, Init>
   | NormalizedLexicalExtensionArgument<Config, Name, Output, Init>;
-export type LexicalExtensionConfig<+Extension: AnyLexicalExtension> =
-  $NonMaybeType<Extension[typeof configTypeSymbol]>;
+export type LexicalExtensionConfig<+Extension extends AnyLexicalExtension> =
+  NonNullable<Extension[typeof configTypeSymbol]>;
 export interface LexicalExtensionDependency<
-  +Dependency: AnyLexicalExtension,
+  +Dependency extends AnyLexicalExtension,
 > {
   +config: LexicalExtensionConfig<Dependency>;
   +output: LexicalExtensionOutput<Dependency>;
 }
-export type LexicalExtensionInit<Extension: AnyLexicalExtension> =
-  $NonMaybeType<Extension[typeof initTypeSymbol]>;
+export type LexicalExtensionInit<Extension extends AnyLexicalExtension> =
+  NonNullable<Extension[typeof initTypeSymbol]>;
 export interface LexicalExtensionInternal<Config, Output, Init> extends LexicalExtensionInternalConfig<Config>, LexicalExtensionInternalOutput<Output> {
   [typeof initTypeSymbol]: Init;
 }

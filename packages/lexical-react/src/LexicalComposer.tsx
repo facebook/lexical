@@ -27,8 +27,8 @@ import {
   LexicalNode,
   LexicalNodeReplacement,
 } from 'lexical';
-import {useMemo} from 'react';
 import * as React from 'react';
+import {useMemo} from 'react';
 import {CAN_USE_DOM} from 'shared/canUseDOM';
 import useLayoutEffect from 'shared/useLayoutEffect';
 

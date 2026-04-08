@@ -97,8 +97,10 @@ export interface ExtensionInitState {
   getPeerNameSet: () => ReadonlySet<string>;
 }
 
-export interface ExtensionBuildState<Init>
-  extends Omit<ExtensionInitState, 'getPeer' | 'getDependency'> {
+export interface ExtensionBuildState<Init> extends Omit<
+  ExtensionInitState,
+  'getPeer' | 'getDependency'
+> {
   /**
    * Get the result of a peerDependency by name, if it exists
    * (must be a peerDependency of this extension)
@@ -123,8 +125,10 @@ export interface ExtensionBuildState<Init>
  * An object that the register method can use to detect unmount and access the
  * configuration for extension dependencies
  */
-export interface ExtensionRegisterState<Init, Output>
-  extends ExtensionBuildState<Init> {
+export interface ExtensionRegisterState<
+  Init,
+  Output,
+> extends ExtensionBuildState<Init> {
   /** An AbortSignal that is aborted when this LexicalEditor registration is disposed */
   getSignal: () => AbortSignal;
   /**
@@ -166,8 +170,8 @@ export interface LexicalExtension<
   Name extends string,
   Output,
   Init,
-> extends InitialEditorConfig,
-    LexicalExtensionInternal<Config, Output, Init> {
+>
+  extends InitialEditorConfig, LexicalExtensionInternal<Config, Output, Init> {
   /** The name of the Extension, must be unique */
   readonly name: Name;
   /**

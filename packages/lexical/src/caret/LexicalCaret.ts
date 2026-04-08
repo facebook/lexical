@@ -92,8 +92,9 @@ export interface BaseCaret<
 /**
  * A RangeSelection expressed as a pair of Carets
  */
-export interface CaretRange<D extends CaretDirection = CaretDirection>
-  extends Iterable<NodeCaret<D>> {
+export interface CaretRange<
+  D extends CaretDirection = CaretDirection,
+> extends Iterable<NodeCaret<D>> {
   readonly type: 'node-caret-range';
   readonly direction: D;
   anchor: PointCaret<D>;
@@ -377,8 +378,7 @@ abstract class AbstractCaret<
   T extends LexicalNode,
   D extends CaretDirection,
   Type,
-> implements BaseCaret<T, D, Type>
-{
+> implements BaseCaret<T, D, Type> {
   abstract readonly type: Type;
   abstract readonly direction: D;
   readonly origin: T;
@@ -480,9 +480,9 @@ abstract class AbstractCaret<
 }
 
 abstract class AbstractChildCaret<
-    T extends ElementNode,
-    D extends CaretDirection,
-  >
+  T extends ElementNode,
+  D extends CaretDirection,
+>
   extends AbstractCaret<T, D, 'child'>
   implements ChildCaret<T, D>
 {
@@ -591,9 +591,9 @@ function $filterByMode<T extends ElementNode>(
 }
 
 abstract class AbstractSiblingCaret<
-    T extends LexicalNode,
-    D extends CaretDirection,
-  >
+  T extends LexicalNode,
+  D extends CaretDirection,
+>
   extends AbstractCaret<T, D, 'sibling'>
   implements SiblingCaret<T, D>
 {
@@ -652,9 +652,9 @@ abstract class AbstractSiblingCaret<
 }
 
 abstract class AbstractTextPointCaret<
-    T extends TextNode,
-    D extends CaretDirection,
-  >
+  T extends TextNode,
+  D extends CaretDirection,
+>
   extends AbstractCaret<T, D, 'text'>
   implements TextPointCaret<T, D>
 {
@@ -1047,9 +1047,10 @@ class CaretRangeImpl<D extends CaretDirection> implements CaretRange<D> {
   }
 }
 
-class TextPointCaretSliceImpl<T extends TextNode, D extends CaretDirection>
-  implements TextPointCaretSlice<T, D>
-{
+class TextPointCaretSliceImpl<
+  T extends TextNode,
+  D extends CaretDirection,
+> implements TextPointCaretSlice<T, D> {
   readonly type = 'slice';
   readonly caret: TextPointCaret<T, D>;
   readonly distance: number;

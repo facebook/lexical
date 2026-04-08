@@ -48,7 +48,7 @@
     "@vitejs/plugin-react": "^5.0.2",
     "lexical": "workspace:*",
     "typescript": "^5.9.2",
-    "vite": "^7.1.4",
+    "vite": "^7.3.2",
     "wxt": "^0.20.11"
   },
   "sideEffects": false

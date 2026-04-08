@@ -265,7 +265,6 @@ describe('LexicalLinkNode tests', () => {
           const {editor} = testEnv;
 
           await editor.update(() => {
-            // eslint-disable-next-line no-script-url
             const linkNode = $createLinkNode(input);
             expect(linkNode.createDOM(editorConfig).outerHTML).toBe(
               `<a href="${output}" class="my-link-class"></a>`,

@@ -94,9 +94,11 @@ function readDocumentedRules() {
 }
 
 const ruleTester = new RuleTester({
-  parserOptions: {
-    ecmaFeatures: {jsx: true},
+  languageOptions: {
     ecmaVersion: 2018,
+    parserOptions: {
+      ecmaFeatures: {jsx: true},
+    },
     sourceType: 'module',
   },
 });

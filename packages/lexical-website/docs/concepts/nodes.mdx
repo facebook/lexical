@@ -98,6 +98,12 @@ that ensure consistency with Lexical's internal immutable system. These methods 
 We recommend that your constructor should always support a zero-argument instantiation in order to better support collab and
 to reduce the amount of boilerplate required. You can always define your `$create*` functions with required arguments.
 
+If your node will participate in `@lexical/yjs` collaboration and you store custom data as direct properties instead of
+[NodeState](/docs/concepts/node-state), initialize every property unconditionally in the constructor, including `undefined`
+defaults. Optional property syntax such as `__foo?: string` without an assignment is not enough, because a freshly
+constructed instance will not have that property to sync. See the
+[collaboration guide](/docs/collaboration/react#custom-node-property-syncing) for details.
+
 ```ts
 import type {NodeKey} from 'lexical';
 

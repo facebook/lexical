@@ -182,6 +182,24 @@ export class ListItemNode extends ElementNode {
       element.dir = direction;
     }
 
+    if (isNestedListNode(this)) {
+      return {
+        after(containerElement) {
+          const prevSibling =
+            containerElement.previousElementSibling as HTMLElement | null;
+          if (prevSibling) {
+            // Move nested list into the previous <li>
+            while (containerElement.firstChild) {
+              prevSibling.append(containerElement.firstChild);
+            }
+            containerElement.remove();
+          }
+          return containerElement;
+        },
+        element,
+      };
+    }
+
     return {
       element,
     };

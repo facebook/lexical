@@ -10,9 +10,11 @@ import {$insertDataTransferForRichText} from '@lexical/clipboard';
 import {$patchStyleText} from '@lexical/selection';
 import {
   $createParagraphNode,
+  $createTextNode,
   $getRoot,
   $getSelection,
   $isRangeSelection,
+  ElementFormatType,
 } from 'lexical';
 import {
   DataTransferMock,
@@ -129,6 +131,44 @@ describe('HTMLCopyAndPaste tests', () => {
             }
           });
           expect(testEnv.innerHTML).toBe(testCase.expectedHTML);
+        });
+      });
+
+      test('pasting centered paragraph into non-empty paragraph preserves alignment (Regression #8101)', async () => {
+        const {editor} = testEnv;
+
+        await editor.update(() => {
+          const root = $getRoot();
+          root.clear();
+          const paragraph = $createParagraphNode();
+          paragraph.append($createTextNode('existing'));
+          root.append(paragraph);
+          paragraph.selectEnd();
+        });
+
+        const dataTransfer = new DataTransferMock();
+        dataTransfer.setData(
+          'text/html',
+          '<p style="text-align: center;">centered text</p>',
+        );
+        await editor.update(() => {
+          const selection = $getSelection();
+          invariant(
+            $isRangeSelection(selection),
+            'isRangeSelection(selection)',
+          );
+          $insertDataTransferForRichText(dataTransfer, selection, editor);
+        });
+
+        await editor.update(() => {
+          const root = $getRoot();
+          const firstChild = root.getFirstChild();
+          invariant(firstChild !== null, 'firstChild is not null');
+          expect(
+            (
+              firstChild as {getFormatType: () => ElementFormatType}
+            ).getFormatType(),
+          ).toBe('center');
         });
       });
 

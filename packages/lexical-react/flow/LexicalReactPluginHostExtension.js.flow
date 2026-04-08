@@ -54,7 +54,7 @@ declare export function mountReactExtensionComponent<
 ): void;
 
 declare export function mountReactPluginComponent<
-  P: {...} = {...},
+  P extends {...} = {...},
 >(
   editor: LexicalEditor,
   opts: {

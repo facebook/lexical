@@ -161,8 +161,8 @@ export class OffsetView {
       startKey = startNode.getParentOrThrow().getKey();
       startOffset =
         end > startOffsetNode.start
-          ? startOffsetNode.end
-          : startOffsetNode.start;
+          ? startNode.getIndexWithinParent() + 1
+          : startNode.getIndexWithinParent();
     }
 
     if (endOffsetNode.type === 'text') {
@@ -171,7 +171,9 @@ export class OffsetView {
     } else if (endOffsetNode.type === 'inline') {
       endKey = endNode.getParentOrThrow().getKey();
       endOffset =
-        end > endOffsetNode.start ? endOffsetNode.end : endOffsetNode.start;
+        end > endOffsetNode.start
+          ? endNode.getIndexWithinParent() + 1
+          : endNode.getIndexWithinParent();
     }
 
     const selection = $createRangeSelection();

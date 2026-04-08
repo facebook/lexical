@@ -1315,7 +1315,7 @@ function $convertTextDOMNode(domNode: Node): DOMConversionOutput {
 
 function findTextInLine(text: Text, forward: boolean): null | Text {
   let node: Node = text;
-  // eslint-disable-next-line no-constant-condition
+
   while (true) {
     let sibling: null | Node;
     while (

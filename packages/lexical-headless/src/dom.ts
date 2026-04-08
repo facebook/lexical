@@ -31,7 +31,7 @@ function destroyWindow(window: HappyDOMWindow): void {
  */
 export function withDOM<T>(f: (window: typeof globalThis.window) => T): T {
   const prevWindow = globalThis.window;
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- handle recursive case
+
   if (prevWindow) {
     return f(globalThis.window);
   }

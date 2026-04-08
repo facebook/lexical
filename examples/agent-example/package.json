@@ -1,0 +1,45 @@
+{
+  "name": "@lexical/agent-example",
+  "private": true,
+  "version": "0.42.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "cd ../.. && pnpm run lint",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "^4.0.1",
+    "@lexical/extension": "0.42.0",
+    "@lexical/history": "0.42.0",
+    "@lexical/react": "0.42.0",
+    "@lexical/rich-text": "0.42.0",
+    "@lexical/selection": "0.42.0",
+    "@lexical/utils": "0.42.0",
+    "lexical": "0.42.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.2.1",
+    "@types/react": "^19.1.12",
+    "@types/react-dom": "^19.1.9",
+    "@vitejs/plugin-react": "^5.0.2",
+    "cross-env": "^7.0.3",
+    "jsdom": "^26.1.0",
+    "tailwindcss": "^4.2.1",
+    "typescript": "^5.9.2",
+    "vite": "^7.3.2",
+    "vitest": "^3.2.4"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "4.52.0",
+    "@rollup/rollup-darwin-arm64": "4.52.0",
+    "@rollup/rollup-win32-x64-msvc": "4.52.0",
+    "@rollup/wasm-node": "4.52.0"
+  }
+}

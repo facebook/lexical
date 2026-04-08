@@ -53,6 +53,7 @@ import {
   getDOMSelection,
   KEY_ESCAPE_COMMAND,
 } from 'lexical';
+import * as React from 'react';
 import {
   useCallback,
   useEffect,
@@ -61,7 +62,6 @@ import {
   useRef,
   useState,
 } from 'react';
-import * as React from 'react';
 import {createPortal} from 'react-dom';
 
 import {

@@ -19,8 +19,8 @@ import {
   LexicalCommand,
   LexicalEditor,
 } from 'lexical';
-import {useEffect, useState} from 'react';
 import * as React from 'react';
+import {useEffect, useState} from 'react';
 
 import {
   $createPollNode,

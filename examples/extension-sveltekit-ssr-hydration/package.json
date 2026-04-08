@@ -49,7 +49,7 @@
     "tailwindcss": "^4.2.1",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.56.1",
-    "vite": "^7.3.1",
+    "vite": "^7.3.2",
     "vite-plugin-devtools-json": "^1.0.0",
     "vitest": "^3.2.4",
     "vitest-browser-svelte": "^0.1.0"

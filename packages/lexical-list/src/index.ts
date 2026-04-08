@@ -17,6 +17,7 @@ import type {LexicalCommand, LexicalEditor, NodeKey} from 'lexical';
 import {effect, namedSignals} from '@lexical/extension';
 import {$findMatchingParent, mergeRegister} from '@lexical/utils';
 import {
+  $createParagraphNode,
   $getNodeByKey,
   $getSelection,
   $isRangeSelection,
@@ -24,6 +25,7 @@ import {
   COMMAND_PRIORITY_LOW,
   createCommand,
   defineExtension,
+  DELETE_CHARACTER_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
   safeCast,
   TextNode,
@@ -130,6 +132,70 @@ export function registerList(
       () => {
         const shouldRestore = options && options.restoreNumbering;
         return $handleListInsertParagraph(!!shouldRestore);
+      },
+      COMMAND_PRIORITY_LOW,
+    ),
+    editor.registerCommand(
+      DELETE_CHARACTER_COMMAND,
+      () => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
+          return false;
+        }
+
+        const anchor = selection.anchor;
+        const anchorNode = anchor.getNode();
+
+        // Check if cursor is at the start of a node
+        if (anchor.type === 'text' && anchor.offset !== 0) {
+          return false;
+        }
+
+        // Find the parent ListItemNode
+        const listItemParent = $findMatchingParent(anchorNode, (node) =>
+          $isListItemNode(node),
+        );
+
+        if (!listItemParent || !$isListItemNode(listItemParent)) {
+          return false;
+        }
+
+        // Only handle deletion if the list item is empty
+        if (!listItemParent.isEmpty()) {
+          return false;
+        }
+
+        // Check if the list item has a previous sibling (not the first item)
+        const previousSibling = listItemParent.getPreviousSibling();
+        if (previousSibling === null) {
+          // If it's the first item in the list, don't handle it here
+          return false;
+        }
+
+        // Get the parent list node
+        const listNode = listItemParent.getParent();
+        if (!listNode || !$isListNode(listNode)) {
+          return false;
+        }
+
+        // Create a new paragraph block to replace the list item
+        const newParagraph = $createParagraphNode();
+
+        // Remove the list item
+        listItemParent.remove();
+
+        // If the list is now empty, remove it and insert paragraph after
+        if (listNode.isEmpty()) {
+          listNode.insertBefore(newParagraph);
+          listNode.remove();
+        } else {
+          // Otherwise insert paragraph after the list
+          listNode.insertAfter(newParagraph);
+        }
+
+        // Move selection to the new paragraph
+        newParagraph.select();
+        return true;
       },
       COMMAND_PRIORITY_LOW,
     ),

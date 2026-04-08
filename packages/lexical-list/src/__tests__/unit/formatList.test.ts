@@ -34,8 +34,10 @@ import {
   $getSelection,
   $isParagraphNode,
   $isRangeSelection,
+  $isTextNode,
   $nodesOfType,
   $selectAll,
+  DELETE_CHARACTER_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
   LexicalNode,
 } from 'lexical';
@@ -449,4 +451,183 @@ describe('$handleOutdent', () => {
       });
     });
   }, initOptions);
+});
+
+describe('DELETE_CHARACTER_COMMAND on empty list item', () => {
+  initializeUnitTest((testEnv) => {
+    test('exits list and creates paragraph when deleting empty non-first list item', async () => {
+      const {editor} = testEnv;
+      registerList(editor);
+
+      await editor.update(() => {
+        // Create a list with two items, second one is empty
+        const listItem1 = $createListItemNode();
+        listItem1.append($createTextNode('item 1'));
+
+        const listItem2 = $createListItemNode();
+        // Leave item 2 empty
+
+        const listNode = $createListNode('bullet');
+        listNode.append(listItem1, listItem2);
+        $getRoot().append(listNode);
+
+        // Position cursor at the starting position of the empty list item
+        listItem2.select();
+      });
+
+      // Dispatch DELETE_CHARACTER_COMMAND
+      await editor.update(() => {
+        editor.dispatchCommand(DELETE_CHARACTER_COMMAND, false);
+      });
+
+      editor.read(() => {
+        const root = $getRoot();
+        const children = root.getChildren();
+
+        // Root should now have 2 children: the list (with 1 item) and a paragraph
+        expect(children.length).toBe(2);
+        expect($isListNode(children[0])).toBe(true);
+        expect($isParagraphNode(children[1])).toBe(true);
+
+        // The list should only contain the first item
+        const list = children[0] as ListNode;
+        expect(list.getChildrenSize()).toBe(1);
+
+        // The second item should no longer exist
+        const listItem = list.getFirstChildOrThrow();
+        expect($isListItemNode(listItem)).toBe(true);
+
+        if ($isListItemNode(listItem)) {
+          const textChild = listItem.getFirstChild();
+          if (textChild && $isTextNode(textChild)) {
+            expect(textChild.getTextContent()).toBe('item 1');
+          }
+        }
+
+        // The cursor should be in the new paragraph (it should exist and be selected)
+        const selection = $getSelection();
+        expect($isRangeSelection(selection)).toBe(true);
+        // Verify that paragraph exists and the selection has been made
+        expect(children[1]).toBeDefined();
+      });
+    });
+
+    test('does not exit list if list item is the first one', async () => {
+      const {editor} = testEnv;
+      registerList(editor);
+
+      await editor.update(() => {
+        // Create a list with two items, first one is empty
+        const listItem1 = $createListItemNode();
+        // Leave item 1 empty
+
+        const listItem2 = $createListItemNode();
+        listItem2.append($createTextNode('item 2'));
+
+        const listNode = $createListNode('bullet');
+        listNode.append(listItem1, listItem2);
+        $getRoot().append(listNode);
+
+        // Position cursor at the starting position of the empty list item
+        listItem1.select();
+      });
+
+      // Dispatch DELETE_CHARACTER_COMMAND
+      await editor.update(() => {
+        editor.dispatchCommand(DELETE_CHARACTER_COMMAND, false);
+      });
+
+      editor.read(() => {
+        const root = $getRoot();
+        const children = root.getChildren();
+
+        // Root should still only have the list
+        expect(children.length).toBe(1);
+        expect($isListNode(children[0])).toBe(true);
+
+        // The list should still have both items
+        const list = children[0] as ListNode;
+        expect(list.getChildrenSize()).toBe(2);
+      });
+    });
+
+    test('does not exit list if list item has content', async () => {
+      const {editor} = testEnv;
+      registerList(editor);
+
+      await editor.update(() => {
+        // Create a list with two items, second one has content
+        const listItem1 = $createListItemNode();
+        listItem1.append($createTextNode('item 1'));
+
+        const listItem2 = $createListItemNode();
+        listItem2.append($createTextNode('item 2'));
+
+        const listNode = $createListNode('bullet');
+        listNode.append(listItem1, listItem2);
+        $getRoot().append(listNode);
+
+        // Position cursor at the starting position of the second item
+        listItem2.select();
+      });
+
+      // Dispatch DELETE_CHARACTER_COMMAND
+      await editor.update(() => {
+        editor.dispatchCommand(DELETE_CHARACTER_COMMAND, false);
+      });
+
+      editor.read(() => {
+        const root = $getRoot();
+        const children = root.getChildren();
+
+        // Root should still only have the list
+        expect(children.length).toBe(1);
+        expect($isListNode(children[0])).toBe(true);
+
+        // The list should still have both items
+        const list = children[0] as ListNode;
+        expect(list.getChildrenSize()).toBe(2);
+      });
+    });
+
+    test('removes list if it becomes empty after deleting the only remaining item', async () => {
+      const {editor} = testEnv;
+      registerList(editor);
+
+      await editor.update(() => {
+        // Create a list with one item
+        const listItem1 = $createListItemNode();
+        listItem1.append($createTextNode('item 1'));
+
+        const listItem2 = $createListItemNode();
+        // Leave item 2 empty
+
+        const listNode = $createListNode('bullet');
+        listNode.append(listItem1, listItem2);
+        $getRoot().append(listNode);
+
+        // Position cursor at the starting position of the empty list item
+        listItem2.select();
+      });
+
+      // Dispatch DELETE_CHARACTER_COMMAND
+      await editor.update(() => {
+        editor.dispatchCommand(DELETE_CHARACTER_COMMAND, false);
+      });
+
+      editor.read(() => {
+        const root = $getRoot();
+        const children = root.getChildren();
+
+        // Root should have list and paragraph
+        expect(children.length).toBe(2);
+        expect($isListNode(children[0])).toBe(true);
+        expect($isParagraphNode(children[1])).toBe(true);
+
+        // The list should only have 1 item
+        const list = children[0] as ListNode;
+        expect(list.getChildrenSize()).toBe(1);
+      });
+    });
+  });
 });

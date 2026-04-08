@@ -98,10 +98,12 @@ describe('LexicalOffset', () => {
         expect(selection.anchor.type).toBe('element');
         const anchorNode = selection.anchor.getNode();
         expect($isElementNode(anchorNode)).toBe(true);
-        // Offset should be a valid child index, not the raw offset value
-        expect(selection.anchor.offset).toBeLessThanOrEqual(
-          anchorNode.getChildrenSize(),
-        );
+        if ($isElementNode(anchorNode)) {
+          // Offset should be a valid child index, not the raw offset value
+          expect(selection.anchor.offset).toBeLessThanOrEqual(
+            anchorNode.getChildrenSize(),
+          );
+        }
       }
     });
   });

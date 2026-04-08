@@ -13,8 +13,8 @@ import {
   $createTextNode,
   $getRoot,
   $getSelection,
+  $isElementNode,
   $isRangeSelection,
-  ElementFormatType,
 } from 'lexical';
 import {
   DataTransferMock,
@@ -164,11 +164,8 @@ describe('HTMLCopyAndPaste tests', () => {
           const root = $getRoot();
           const firstChild = root.getFirstChild();
           invariant(firstChild !== null, 'firstChild is not null');
-          expect(
-            (
-              firstChild as {getFormatType: () => ElementFormatType}
-            ).getFormatType(),
-          ).toBe('center');
+          invariant($isElementNode(firstChild), 'firstChild is an ElementNode');
+          expect(firstChild.getFormatType()).toBe('center');
         });
       });
 

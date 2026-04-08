@@ -1286,4 +1286,94 @@ describe('LinkNode transform (Regression #8083)', () => {
       expect(linkNode).not.toBe(null);
     });
   });
+
+  test('cursor stays at merge point when adjacent identical links merge (Regression #8305)', () => {
+    using editor = buildEditorFromExtensions(transformExtension);
+    let textAKey: string;
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const textA = $createTextNode('link1');
+        textAKey = textA.getKey();
+        const linkA = $createLinkNode('https://lexical.dev');
+        linkA.append(textA);
+        const textB = $createTextNode('link2');
+        const linkB = $createLinkNode('https://lexical.dev');
+        linkB.append(textB);
+        const paragraph = $createParagraphNode();
+        paragraph.append(linkA, linkB);
+        root.clear().append(paragraph);
+        // Place cursor between the two links (element selection in paragraph)
+        paragraph.select(1, 1);
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      const root = $getRoot();
+      const paragraph = root.getFirstChild();
+      assert(
+        $isParagraphNode(paragraph),
+        'First child must be a ParagraphNode',
+      );
+      // Both links should be merged into one
+      expect(paragraph.getChildrenSize()).toBe(1);
+      const mergedLink = paragraph.getFirstChild();
+      assert($isLinkNode(mergedLink), 'Merged child must be a LinkNode');
+      expect(mergedLink.getTextContent()).toBe('link1link2');
+      // Cursor should be at the merge boundary (offset 5 = "link1".length),
+      // not at the end. Text nodes also merge, so textA absorbs textB.
+      const selection = $getSelection();
+      assert(
+        $isRangeSelection(selection),
+        'Selection must be a RangeSelection',
+      );
+      expect(selection.isCollapsed()).toBe(true);
+      expect(selection.anchor.type).toBe('text');
+      expect(selection.anchor.key).toBe(textAKey);
+      expect(selection.anchor.offset).toBe(5);
+    });
+  });
+
+  test('cursor stays at merge point when prevSibling merges link (Regression #8305)', () => {
+    using editor = buildEditorFromExtensions(transformExtension);
+    let textAKey: string;
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const textA = $createTextNode('first');
+        textAKey = textA.getKey();
+        const linkA = $createLinkNode('https://lexical.dev');
+        linkA.append(textA);
+        const textB = $createTextNode('second');
+        const linkB = $createLinkNode('https://lexical.dev');
+        linkB.append(textB);
+        const trailing = $createTextNode(' tail');
+        const paragraph = $createParagraphNode();
+        paragraph.append(linkA, linkB, trailing);
+        root.clear().append(paragraph);
+        paragraph.select(1, 1);
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      const root = $getRoot();
+      const paragraph = root.getFirstChild();
+      assert(
+        $isParagraphNode(paragraph),
+        'First child must be a ParagraphNode',
+      );
+      const mergedLink = paragraph.getFirstChild();
+      assert($isLinkNode(mergedLink), 'First child must be a LinkNode');
+      expect(mergedLink.getTextContent()).toBe('firstsecond');
+      const selection = $getSelection();
+      assert(
+        $isRangeSelection(selection),
+        'Selection must be a RangeSelection',
+      );
+      expect(selection.isCollapsed()).toBe(true);
+      expect(selection.anchor.type).toBe('text');
+      expect(selection.anchor.key).toBe(textAKey);
+      expect(selection.anchor.offset).toBe(5);
+    });
+  });
 });

@@ -37,6 +37,9 @@ import {
   $isElementNode,
   $isNodeSelection,
   $isRangeSelection,
+  $isSiblingCaret,
+  $isTextNode,
+  $isTextPointCaret,
   $normalizeCaret,
   $normalizeSelection__EXPERIMENTAL,
   $rewindSiblingCaret,
@@ -363,9 +366,40 @@ export function $linkNodeTransform(link: LinkNode): void {
       });
     }
   }
+  // Re-anchors a caret pair that points to the gap between two links
+  // so that it lands at the merge boundary after one link is removed.
+  function $fixMergeBoundaryCaret(
+    pair: CaretPair,
+    gapOrigin: LexicalNode,
+    mergingLink: LinkNode,
+  ): CaretPair {
+    const [next] = pair;
+    if (
+      $isSiblingCaret(next) &&
+      !$isTextPointCaret(next) &&
+      next.origin.is(gapOrigin)
+    ) {
+      const firstChild = mergingLink.getFirstChild();
+      if ($isTextNode(firstChild)) {
+        const fixed = $caretFromPoint(
+          {key: firstChild.getKey(), offset: 0, type: 'text'},
+          'next',
+        );
+        return [fixed, fixed.getFlipped()];
+      }
+    }
+    return pair;
+  }
+
   if (link.isAttached()) {
     const prevSibling = link.getPreviousSibling();
     if ($isLinkNode(prevSibling) && prevSibling.shouldMergeAdjacentLink(link)) {
+      if (anchorPair) {
+        anchorPair = $fixMergeBoundaryCaret(anchorPair, prevSibling, link);
+      }
+      if (focusPair) {
+        focusPair = $fixMergeBoundaryCaret(focusPair, prevSibling, link);
+      }
       prevSibling.append(...link.getChildren());
       link.remove();
       $restoreSelection();
@@ -373,6 +407,12 @@ export function $linkNodeTransform(link: LinkNode): void {
     }
     const nextSibling = link.getNextSibling();
     if ($isLinkNode(nextSibling) && link.shouldMergeAdjacentLink(nextSibling)) {
+      if (anchorPair) {
+        anchorPair = $fixMergeBoundaryCaret(anchorPair, link, nextSibling);
+      }
+      if (focusPair) {
+        focusPair = $fixMergeBoundaryCaret(focusPair, link, nextSibling);
+      }
       link.append(...nextSibling.getChildren());
       nextSibling.remove();
       transformed = true;

@@ -10,19 +10,23 @@
  * Captures screenshots of each example for the gallery page.
  *
  * Usage:
- *   node scripts/capture-gallery-screenshots.mjs
+ *   pnpm run capture-gallery-screenshots
  *
  * Prerequisites:
  *   - Playwright browsers installed (npx playwright install chromium)
  *
  * Output:
  *   Screenshots are saved to packages/lexical-website/static/img/gallery/
+ *
+ * Example list is defined in scripts/gallery-examples.ts.
  */
 
 import {execSync, spawn} from 'node:child_process';
 import {existsSync, mkdirSync, unlinkSync} from 'node:fs';
 import {dirname, resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
+
+import {type GalleryExample, galleryExamples} from './gallery-examples';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
@@ -31,30 +35,15 @@ const GALLERY_DIR = resolve(
   'packages/lexical-website/static/img/gallery',
 );
 
-// Examples to screenshot, keyed by directory name.
-// waitForSelector: optional CSS selector to wait for before screenshotting.
-const EXAMPLES = [
-  {
-    dir: 'vanilla-js-plugin',
-    name: 'vanilla-js-plugin',
-    waitForSelector: '[data-lexical-editor]',
-  },
-  {
-    dir: 'react-rich-collab',
-    name: 'react-rich-collab',
-    // Editor is inside iframes, so wait for the iframe elements instead
-    waitForSelector: 'iframe[name="left"]',
-  },
-  {
-    dir: 'react-table',
-    name: 'react-table',
-    waitForSelector: '[data-lexical-editor]',
-  },
-];
+// Only screenshot examples that have a waitForSelector configured
+const EXAMPLES = galleryExamples.filter(
+  (ex): ex is GalleryExample & {waitForSelector: string} =>
+    ex.waitForSelector != null,
+);
 
 const PORT = 5180;
 
-function waitForServer(port, timeoutMs = 60000) {
+function waitForServer(port: number, timeoutMs = 60000): Promise<void> {
   const start = Date.now();
   return new Promise((onResolve, onReject) => {
     const check = async () => {
@@ -81,7 +70,7 @@ function waitForServer(port, timeoutMs = 60000) {
   });
 }
 
-function killPort(port) {
+function killPort(port: number): void {
   try {
     execSync(`fuser -k ${port}/tcp`, {stdio: 'pipe'});
   } catch {
@@ -95,7 +84,7 @@ function killPort(port) {
   }
 }
 
-function installDeps(exampleDir) {
+function installDeps(exampleDir: string): void {
   // Use npm install since examples are excluded from the pnpm workspace
   execSync('npm install', {
     cwd: exampleDir,
@@ -108,7 +97,7 @@ function installDeps(exampleDir) {
   }
 }
 
-function startDevServer(exampleDir, port) {
+function startDevServer(exampleDir: string, port: number): void {
   const child = spawn(
     'npx',
     [
@@ -130,17 +119,15 @@ function startDevServer(exampleDir, port) {
   // Unref so the child doesn't keep the parent alive if we exit early
   child.unref();
 
-  child.stderr.on('data', (data) => {
+  child.stderr.on('data', (data: Buffer) => {
     const msg = data.toString();
     if (msg.includes('ERROR') || msg.includes('error')) {
       console.error(`  [vite stderr] ${msg.trim()}`);
     }
   });
-
-  return child;
 }
 
-async function main() {
+async function main(): Promise<void> {
   // Ensure output dir exists
   mkdirSync(GALLERY_DIR, {recursive: true});
 
@@ -154,9 +141,9 @@ async function main() {
   for (let i = 0; i < EXAMPLES.length; i++) {
     const example = EXAMPLES[i];
     const exampleDir = resolve(ROOT, 'examples', example.dir);
-    const outPath = resolve(GALLERY_DIR, `${example.name}.png`);
+    const outPath = resolve(GALLERY_DIR, `${example.dir}.png`);
 
-    console.warn(`[${i + 1}/${EXAMPLES.length}] ${example.name}`);
+    console.warn(`[${i + 1}/${EXAMPLES.length}] ${example.dir}`);
 
     if (!existsSync(exampleDir)) {
       console.error(`  Example directory not found: ${exampleDir}`);
@@ -189,18 +176,18 @@ async function main() {
       });
 
       // Wait for the editor content to render
-      if (example.waitForSelector) {
-        await page.waitForSelector(example.waitForSelector, {timeout: 15000});
-        // Give a moment for any animations/styles to settle
-        await page.waitForTimeout(1000);
-      }
+      await page.waitForSelector(example.waitForSelector, {timeout: 15000});
+      // Give a moment for any animations/styles to settle
+      await page.waitForTimeout(1000);
 
       await page.screenshot({fullPage: false, path: outPath});
       console.warn(`  Screenshot saved: ${outPath}`);
 
       await page.close();
     } catch (err) {
-      console.error(`  Error capturing ${example.name}: ${err.message}`);
+      console.error(
+        `  Error capturing ${example.dir}: ${(err as Error).message}`,
+      );
     } finally {
       // Kill the dev server and all its children
       killPort(PORT);

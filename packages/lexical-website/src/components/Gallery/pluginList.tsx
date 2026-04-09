@@ -6,6 +6,11 @@
  *
  */
 
+import {
+  buildStackBlitzUri,
+  galleryExamples,
+  getScreenshotPreview,
+} from '@gallery-examples';
 import {ReactNode} from 'react';
 
 export type Example = {
@@ -19,26 +24,11 @@ export type Example = {
 
 export const plugins = (customFields: {
   [key: string]: unknown;
-}): Array<Example> => [
-  {
-    description: 'Learn how to create an editor with Emojis',
-    preview: '/img/gallery/vanilla-js-plugin.png',
-    tags: ['opensource'],
-    title: 'EmojiPlugin',
-    uri: `${customFields.STACKBLITZ_PREFIX}examples/vanilla-js-plugin?embed=1&file=src%2Femoji-plugin%2FEmojiPlugin.ts&terminalHeight=0&ctl=0`,
-  },
-  {
-    description: 'Learn how to create an editor with Real Time Collaboration',
-    preview: '/img/gallery/react-rich-collab.png',
-    tags: ['opensource', 'favorite'],
-    title: 'Collab RichText',
-    uri: `${customFields.STACKBLITZ_PREFIX}examples/react-rich-collab?ctl=0&file=src%2Fmain.tsx&terminalHeight=0&embed=1`,
-  },
-  {
-    description: 'Learn how to create an editor with Tables',
-    preview: '/img/gallery/react-table.png',
-    tags: ['opensource', 'favorite'],
-    title: 'TablePlugin',
-    uri: `${customFields.STACKBLITZ_PREFIX}examples/react-table?embed=1&file=src%2Fmain.tsx&terminalHeight=0&ctl=0`,
-  },
-];
+}): Array<Example> =>
+  galleryExamples.map((example) => ({
+    description: example.description,
+    preview: getScreenshotPreview(example),
+    tags: example.tags,
+    title: example.title,
+    uri: buildStackBlitzUri(example, customFields.STACKBLITZ_PREFIX as string),
+  }));

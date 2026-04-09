@@ -70,7 +70,11 @@ function GalleryCardsImpl() {
   return (
     <section className="margin-top--lg margin-bottom--xl">
       <main className="margin-vert--lg">
-        <Filters filteredPlugins={filteredPlugins} tagList={tagList} />
+        <Filters
+          allPlugins={pluginsCombined}
+          filteredPlugins={filteredPlugins}
+          tagList={tagList}
+        />
         <div
           style={{display: 'flex', marginLeft: 'auto'}}
           className="container">

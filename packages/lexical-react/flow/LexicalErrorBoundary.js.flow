@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-export type LexicalErrorBoundaryProps = $ReadOnly<{
+export type LexicalErrorBoundaryProps = Readonly<{
   children: React.Node,
   onError: (error: Error) => void,
 }>;

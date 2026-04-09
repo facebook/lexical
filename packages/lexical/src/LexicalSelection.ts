@@ -1406,10 +1406,6 @@ export class RangeSelection implements BaseSelection {
         firstNode.constructor.name,
         firstNode.getType(),
       );
-      const pastedFormat = firstToInsert.getFormatType();
-      if (pastedFormat) {
-        firstBlock.setFormat(pastedFormat);
-      }
       firstBlock.append(...firstToInsert.getChildren());
       firstToInsert = blocks[1];
     }

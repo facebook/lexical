@@ -692,3 +692,49 @@
   background-repeat: no-repeat;
   background-size: contain;
 }
+
+.PlaygroundEditorTheme__page {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+.PlaygroundEditorTheme__pageContent {
+  margin-bottom: auto;
+}
+@media screen {
+  .PlaygroundEditorTheme__page {
+    max-width: 100%;
+    padding: var(--page-margin-top) var(--page-margin-right)
+      var(--page-margin-bottom) var(--page-margin-left);
+    margin-bottom: 24px; /* Space between pages */
+    margin-left: auto;
+    margin-right: auto;
+    box-shadow: 0 0 0 1px #ddd;
+    outline: none; /* Remove blue focus border */
+  }
+}
+@media print {
+  .PlaygroundEditorTheme__page {
+    page-break-inside: avoid;
+    width: calc(
+      var(--page-width) - var(--page-margin-right) - var(--page-margin-left)
+    );
+    height: calc(
+      var(--page-height) - var(--page-margin-top) - var(--page-margin-bottom)
+    );
+  }
+}
+@page {
+  size: var(--page-width) var(--page-height);
+  margin-top: var(--page-margin-top, 0.4in);
+  margin-right: var(--page-margin-right, 0.4in);
+  margin-bottom: var(--page-margin-bottom, 0.4in);
+  margin-left: var(--page-margin-left, 0.4in);
+}
+@media screen {
+  .PlaygroundEditorTheme__page {
+    width: var(--page-width);
+    min-height: var(--page-height);
+  }
+}

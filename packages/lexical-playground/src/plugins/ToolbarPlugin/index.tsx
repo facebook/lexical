@@ -21,6 +21,7 @@ import {
 import {INSERT_HORIZONTAL_RULE_COMMAND} from '@lexical/extension';
 import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
 import {$isListNode, ListNode} from '@lexical/list';
+import {ExtensionComponent} from '@lexical/react/ExtensionComponent';
 import {INSERT_EMBED_COMMAND} from '@lexical/react/LexicalAutoEmbedPlugin';
 import {$isHeadingNode} from '@lexical/rich-text';
 import {
@@ -93,6 +94,7 @@ import {
 } from '../ImagesExtension';
 import InsertLayoutDialog from '../LayoutPlugin/InsertLayoutDialog';
 import {INSERT_PAGE_BREAK} from '../PageBreakPlugin';
+import {PagesExtension} from '../PagesExtension';
 import {InsertPollDialog} from '../PollPlugin';
 import {SHORTCUTS} from '../ShortcutsPlugin/shortcuts';
 import {InsertTableDialog} from '../TablePlugin';
@@ -1258,6 +1260,7 @@ export default function ToolbarPlugin({
               <span className="shortcut">{SHORTCUTS.CLEAR_FORMATTING}</span>
             </DropDownItem>
           </DropDown>
+          <ExtensionComponent lexical:extension={PagesExtension} />
           {canViewerSeeInsertDropdown && (
             <>
               <Divider />

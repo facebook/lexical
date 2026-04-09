@@ -545,6 +545,17 @@
 .PlaygroundEditorTheme__nestedListItem:after {
   display: none;
 }
+.PlaygroundEditorTheme__contents .PlaygroundEditorTheme__contents {
+  margin-left: 32px;
+}
+.PlaygroundEditorTheme__contentsItem {
+  margin: 0;
+}
+.PlaygroundEditorTheme__contentsLink,
+.PlaygroundEditorTheme__contentsLink:hover {
+  text-decoration: underline;
+  text-decoration-style: dashed;
+}
 .PlaygroundEditorTheme__tokenComment {
   color: slategray;
 }

@@ -664,6 +664,10 @@ i.page-setup,
   background-image: url(images/icons/file-earmark-text.svg);
 }
 
+i.toc {
+  background-image: url(images/icons/list-nested.svg);
+}
+
 .link-editor .button.active,
 .toolbar .button.active {
   background-color: rgb(223, 232, 250);

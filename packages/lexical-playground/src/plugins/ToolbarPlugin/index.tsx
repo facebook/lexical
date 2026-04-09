@@ -97,6 +97,7 @@ import {INSERT_PAGE_BREAK} from '../PageBreakExtension';
 import {PagesReactExtension} from '../PagesReactExtension';
 import {InsertPollDialog} from '../PollPlugin';
 import {SHORTCUTS} from '../ShortcutsPlugin/shortcuts';
+import {INSERT_CONTENTS_COMMAND} from '../TableOfContentsPlugin';
 import {InsertTableDialog} from '../TablePlugin';
 import FontSize, {parseFontSizeForToolbar} from './fontSize';
 import {
@@ -614,7 +615,7 @@ export default function ToolbarPlugin({
   );
 
   const {
-    settings: {isCodeHighlighted, isCodeShiki},
+    settings: {isCodeHighlighted, isCodeShiki, showTableOfContents},
   } = useSettings();
 
   const $handleCodeNode = useCallback(
@@ -1284,6 +1285,16 @@ export default function ToolbarPlugin({
                   <i className="icon page-break" />
                   <span className="text">Page Break</span>
                 </DropDownItem>
+                {showTableOfContents && (
+                  <DropDownItem
+                    onClick={() =>
+                      dispatchToolbarCommand(INSERT_CONTENTS_COMMAND)
+                    }
+                    className="item">
+                    <i className="icon toc" />
+                    <span className="text">Table of Contents</span>
+                  </DropDownItem>
+                )}
                 <DropDownItem
                   onClick={() => {
                     showModal('Insert Image', (onClose) => (

@@ -7,15 +7,25 @@
  */
 import type {TableOfContentsEntry} from '@lexical/react/LexicalTableOfContentsPlugin';
 import type {HeadingTagType} from '@lexical/rich-text';
-import type {NodeKey} from 'lexical';
 import type {JSX} from 'react';
 
 import './index.css';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {TableOfContentsPlugin as LexicalTableOfContentsPlugin} from '@lexical/react/LexicalTableOfContentsPlugin';
+import {
+  COMMAND_PRIORITY_LOW,
+  createCommand,
+  type LexicalCommand,
+  type NodeKey,
+} from 'lexical';
+import {$createTextNode,$insertNodes} from 'lexical';
 import * as React from 'react';
 import {useEffect, useRef, useState} from 'react';
+
+import {$createContentsItemNode} from '../../nodes/ContentsItemNode';
+import {$createContentsLinkNode} from '../../nodes/ContentsLinkNode';
+import {$createContentsListNode} from '../../nodes/ContentsListNode';
 
 const MARGIN_ABOVE_EDITOR = 624;
 const HEADING_WIDTH = 9;
@@ -44,6 +54,10 @@ function isHeadingBelowTheTopOfThePage(element: HTMLElement): boolean {
   return elementYPosition >= MARGIN_ABOVE_EDITOR + HEADING_WIDTH;
 }
 
+export const INSERT_CONTENTS_COMMAND: LexicalCommand<void> = createCommand(
+  'INSERT_CONTENTS_COMMAND',
+);
+
 function TableOfContentsList({
   tableOfContents,
 }: {
@@ -65,6 +79,26 @@ function TableOfContentsList({
   }
 
   useEffect(() => {
+    const unregisterCommand = editor.registerCommand(
+      INSERT_CONTENTS_COMMAND,
+      () => {
+        if (tableOfContents.length > 0) {
+          const contentsNode = $createContentsListNode();
+          for (const [key, text, tag] of tableOfContents) {
+            const item = $createContentsItemNode();
+            item.append(
+              $createContentsLinkNode('#' + key).append($createTextNode(text)),
+            );
+            contentsNode.append(item);
+            item.setIndent(Number(tag[1]) - 1);
+          }
+          $insertNodes([contentsNode]);
+        }
+        return false;
+      },
+      COMMAND_PRIORITY_LOW,
+    );
+
     function scrollCallback() {
       if (
         tableOfContents.length !== 0 &&
@@ -134,7 +168,10 @@ function TableOfContentsList({
     }
 
     document.addEventListener('scroll', onScroll);
-    return () => document.removeEventListener('scroll', onScroll);
+    return () => {
+      document.removeEventListener('scroll', onScroll);
+      unregisterCommand();
+    };
   }, [tableOfContents, editor]);
 
   return (

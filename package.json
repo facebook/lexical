@@ -13,6 +13,7 @@
   },
   "engineStrict": true,
   "scripts": {
+    "capture-gallery-screenshots": "npx tsx scripts/capture-gallery-screenshots.ts",
     "start:example": "sh -c '(cd \"examples/$0\"; pnpm i && pnpm run monorepo:dev)'",
     "start": "cross-env NODE_ENV=development concurrently \"pnpm:collab\" \"pnpm -C packages/lexical-playground run dev\"",
     "start:website": "pnpm -C packages/lexical-website run start --port 3001",

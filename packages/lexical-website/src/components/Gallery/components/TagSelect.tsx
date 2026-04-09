@@ -34,6 +34,7 @@ function useTagState(tag: string) {
 interface Props extends ComponentProps<'input'> {
   tag: string;
   label: string;
+  count: number;
   description: string;
   icon: ReactElement<ComponentProps<'svg'>>;
 }
@@ -41,6 +42,7 @@ interface Props extends ComponentProps<'input'> {
 export default function TagSelect({
   icon,
   label,
+  count,
   description,
   tag,
   ...rest
@@ -64,6 +66,7 @@ export default function TagSelect({
       />
       <label htmlFor={id} className={styles.checkboxLabel} title={description}>
         {label}
+        <span className={styles.tagCount}>{count}</span>
         {icon}
       </label>
     </>

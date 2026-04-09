@@ -379,8 +379,12 @@ export function $convertTableCellNodeElement(
   );
 
   tableCellNode.__rowSpan = domNode_.rowSpan;
-  const backgroundColor = domNode_.style.backgroundColor;
-  if (backgroundColor !== '') {
+  const backgroundColor =
+    domNode_.style.backgroundColor ||
+    domNode_.style.background ||
+    domNode_.getAttribute('bgcolor') ||
+    null;
+  if (backgroundColor !== null) {
     tableCellNode.__backgroundColor = backgroundColor;
   }
   const verticalAlign = domNode_.style.verticalAlign;

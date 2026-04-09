@@ -368,5 +368,65 @@ describe('LexicalTableCellNode tests', () => {
         expect(node.getHeaderStyles()).toBe(TableCellHeaderStates.ROW);
       });
     });
+
+    test('DOM Conversion: <td> with style.backgroundColor reads inline background-color', async () => {
+      const {editor} = testEnv;
+
+      await editor.update(() => {
+        const td = document.createElement('td');
+        td.style.backgroundColor = '#F4B084';
+
+        const result = convertHTMLTag(td);
+        const node = expectTableCellNode(result);
+
+        // Browsers normalize hex to rgb when set via .style
+        expect(node.getBackgroundColor()).toBe(td.style.backgroundColor);
+      });
+    });
+
+    test('DOM Conversion: <td> with style.background shorthand (Excel/Outlook) reads background color', async () => {
+      const {editor} = testEnv;
+
+      await editor.update(() => {
+        const td = document.createElement('td');
+        td.style.background = '#F4B084';
+
+        const result = convertHTMLTag(td);
+        const node = expectTableCellNode(result);
+
+        // Browsers normalize hex to rgb; background may expand to backgroundColor
+        const expected =
+          td.style.backgroundColor || td.style.background || null;
+        expect(node.getBackgroundColor()).toBe(expected);
+        expect(node.getBackgroundColor()).not.toBeNull();
+      });
+    });
+
+    test('DOM Conversion: <td> with bgcolor attribute (legacy HTML) reads background color', async () => {
+      const {editor} = testEnv;
+
+      await editor.update(() => {
+        const td = document.createElement('td');
+        td.setAttribute('bgcolor', '#F4B084');
+
+        const result = convertHTMLTag(td);
+        const node = expectTableCellNode(result);
+
+        expect(node.getBackgroundColor()).toBe('#F4B084');
+      });
+    });
+
+    test('DOM Conversion: <td> with no background color sets backgroundColor to null', async () => {
+      const {editor} = testEnv;
+
+      await editor.update(() => {
+        const td = document.createElement('td');
+
+        const result = convertHTMLTag(td);
+        const node = expectTableCellNode(result);
+
+        expect(node.getBackgroundColor()).toBeNull();
+      });
+    });
   });
 });

@@ -34,6 +34,12 @@ export interface GalleryExample {
    * If omitted, the gallery falls back to the Slorber screenshot API.
    */
   waitForSelector?: string;
+  /**
+   * Vite config file to use when starting the dev server.
+   * Defaults to 'vite.config.monorepo.ts' if it exists in the
+   * example directory, otherwise 'vite.config.ts'.
+   */
+  viteConfig?: string;
 }
 
 /** Helper to build a StackBlitz URI from an example and a prefix */
@@ -78,6 +84,87 @@ export const galleryExamples: GalleryExample[] = [
     stackblitzQuery: 'embed=1&file=src%2Fmain.tsx&terminalHeight=0&ctl=0',
     tags: ['opensource', 'favorite'],
     title: 'TablePlugin',
+    waitForSelector: '[data-lexical-editor]',
+  },
+  {
+    description: 'Tables using the Extension architecture',
+    dir: 'extension-react-table',
+    stackblitzQuery: 'embed=1&file=src%2Fmain.tsx&terminalHeight=0&ctl=0',
+    tags: ['opensource'],
+    title: 'Extension: React Table',
+    waitForSelector: '[data-lexical-editor]',
+  },
+  {
+    description: 'SSR and hydration with Svelte 5 and the Extension API',
+    dir: 'extension-sveltekit-ssr-hydration',
+    stackblitzQuery:
+      'embed=1&file=src%2Froutes%2F%2Bpage.svelte&terminalHeight=0&ctl=0',
+    tags: ['opensource'],
+    title: 'Extension: SvelteKit SSR',
+    viteConfig: 'vite.config.ts',
+    waitForSelector: '[data-lexical-editor]',
+  },
+  {
+    description: 'Mount React plugins into a vanilla JS Extension editor',
+    dir: 'extension-vanilla-react-plugin-host',
+    stackblitzQuery: 'embed=1&file=src%2Fmain.ts&terminalHeight=0&ctl=0',
+    tags: ['opensource'],
+    title: 'Extension: React Plugin Host',
+    waitForSelector: '[data-lexical-editor]',
+  },
+  {
+    description: 'Vanilla JS checklist editor with Extensions and Tailwind',
+    dir: 'extension-vanilla-tailwind',
+    stackblitzQuery: 'embed=1&file=src%2Fmain.ts&terminalHeight=0&ctl=0',
+    tags: ['opensource'],
+    title: 'Extension: Vanilla Tailwind',
+    waitForSelector: '[data-lexical-editor]',
+  },
+  {
+    description:
+      'AI-powered editor with paragraph generation and named entity recognition',
+    dir: 'agent-example',
+    stackblitzQuery: 'embed=1&file=src%2Fmain.tsx&terminalHeight=0&ctl=0',
+    tags: ['opensource'],
+    title: 'AI Agent Editor',
+    viteConfig: 'vite.config.ts',
+    waitForSelector: '[data-lexical-editor]',
+  },
+  {
+    description: 'Chat interface with multiple rich text editor instances',
+    dir: 'website-chat',
+    stackblitzQuery: 'embed=1&file=src%2Fmain.tsx&terminalHeight=0&ctl=0',
+    tags: ['opensource'],
+    title: 'Chat',
+    viteConfig: 'vite.config.ts',
+    waitForSelector: '[data-lexical-editor]',
+  },
+  {
+    description:
+      'Notion-style editor with slash commands and drag-and-drop blocks',
+    dir: 'website-notion',
+    stackblitzQuery: 'embed=1&file=src%2Fmain.tsx&terminalHeight=0&ctl=0',
+    tags: ['opensource', 'favorite'],
+    title: 'Notion Clone',
+    viteConfig: 'vite.config.ts',
+    waitForSelector: '[data-lexical-editor]',
+  },
+  {
+    description: 'Simple rich text input with hashtag support',
+    dir: 'website-rich-input',
+    stackblitzQuery: 'embed=1&file=src%2Fmain.tsx&terminalHeight=0&ctl=0',
+    tags: ['opensource'],
+    title: 'Rich Input',
+    viteConfig: 'vite.config.ts',
+    waitForSelector: '[data-lexical-editor]',
+  },
+  {
+    description: 'Rich text editor with a formatting toolbar',
+    dir: 'website-toolbar',
+    stackblitzQuery: 'embed=1&file=src%2Fmain.tsx&terminalHeight=0&ctl=0',
+    tags: ['opensource', 'favorite'],
+    title: 'Toolbar',
+    viteConfig: 'vite.config.ts',
     waitForSelector: '[data-lexical-editor]',
   },
 ];

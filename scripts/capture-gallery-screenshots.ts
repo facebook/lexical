@@ -79,29 +79,47 @@ function waitForServer(port: number, timeoutMs = 60000): Promise<void> {
 }
 
 function installDeps(exampleDir: string): void {
-  // Use npm install since examples are excluded from the pnpm workspace
-  execSync('npm install', {
+  // --ignore-workspace so pnpm installs this example's own deps
+  // rather than running the monorepo workspace install.
+  // shell: true isolates the child from the tsx loader.
+  execSync('pnpm install --ignore-workspace', {
     cwd: exampleDir,
+    shell: true,
     stdio: 'pipe',
   });
-  // Remove the lockfile created by npm (this is a pnpm monorepo)
-  const lockfile = resolve(exampleDir, 'package-lock.json');
+  // Run the prepare script if it exists (e.g. svelte-kit sync)
+  try {
+    execSync('pnpm run --if-present prepare', {
+      cwd: exampleDir,
+      shell: true,
+      stdio: 'pipe',
+    });
+  } catch {
+    // prepare is optional
+  }
+  // Remove the lockfile created for this standalone install
+  const lockfile = resolve(exampleDir, 'pnpm-lock.yaml');
   if (existsSync(lockfile)) {
     unlinkSync(lockfile);
   }
 }
 
-function startDevServer(exampleDir: string, port: number): ChildProcess {
+function getViteConfig(exampleDir: string, explicit?: string): string {
+  if (explicit) {
+    return explicit;
+  }
+  const monorepo = resolve(exampleDir, 'vite.config.monorepo.ts');
+  return existsSync(monorepo) ? 'vite.config.monorepo.ts' : 'vite.config.ts';
+}
+
+function startDevServer(
+  exampleDir: string,
+  port: number,
+  viteConfig: string,
+): ChildProcess {
   const child = spawn(
-    IS_WINDOWS ? 'npx.cmd' : 'npx',
-    [
-      'vite',
-      '-c',
-      'vite.config.monorepo.ts',
-      '--port',
-      String(port),
-      '--strictPort',
-    ],
+    IS_WINDOWS ? 'pnpm.cmd' : 'pnpm',
+    ['exec', 'vite', '-c', viteConfig, '--port', String(port), '--strictPort'],
     {
       cwd: exampleDir,
       env: {...process.env, NODE_ENV: 'development'},
@@ -168,8 +186,9 @@ async function main(): Promise<void> {
     }
 
     // Start dev server
-    console.warn(`  Starting dev server on port ${PORT}...`);
-    const child = startDevServer(exampleDir, PORT);
+    const viteConfig = getViteConfig(exampleDir, example.viteConfig);
+    console.warn(`  Starting dev server on port ${PORT} (${viteConfig})...`);
+    const child = startDevServer(exampleDir, PORT, viteConfig);
 
     try {
       await waitForServer(PORT);

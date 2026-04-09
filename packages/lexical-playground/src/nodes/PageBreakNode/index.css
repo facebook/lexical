@@ -62,3 +62,9 @@
 .selected[type='page-break']::before {
   opacity: 1;
 }
+
+@media print {
+  [type='page-break'] {
+    visibility: hidden;
+  }
+}

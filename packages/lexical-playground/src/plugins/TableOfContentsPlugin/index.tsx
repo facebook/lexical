@@ -18,13 +18,17 @@ import {
   createCommand,
   type LexicalCommand,
   type NodeKey,
+  TextNode,
 } from 'lexical';
-import {$createTextNode,$insertNodes} from 'lexical';
+import {$createTextNode, $insertNodes} from 'lexical';
 import * as React from 'react';
 import {useEffect, useRef, useState} from 'react';
 
 import {$createContentsItemNode} from '../../nodes/ContentsItemNode';
-import {$createContentsLinkNode} from '../../nodes/ContentsLinkNode';
+import {
+  $createContentsLinkNode,
+  $isContentsLinkNode,
+} from '../../nodes/ContentsLinkNode';
 import {$createContentsListNode} from '../../nodes/ContentsListNode';
 
 const MARGIN_ABOVE_EDITOR = 624;
@@ -79,6 +83,23 @@ function TableOfContentsList({
   }
 
   useEffect(() => {
+    return editor.registerNodeTransform(TextNode, (textNode) => {
+      const parent = textNode.getParent();
+      const previousSibling = textNode.getPreviousSibling();
+      const nextSibling = textNode.getNextSibling();
+      // Skip if textNode is already part of an ContentsLink (idempotency check)
+      if ($isContentsLinkNode(parent)) {
+        return;
+      }
+      if ($isContentsLinkNode(previousSibling)) {
+        previousSibling.append(textNode);
+      } else if ($isContentsLinkNode(nextSibling)) {
+        nextSibling.splice(0, 0, [textNode]);
+      }
+    });
+  }, [editor]);
+
+  useEffect(() => {
     const unregisterCommand = editor.registerCommand(
       INSERT_CONTENTS_COMMAND,
       () => {
@@ -86,8 +107,14 @@ function TableOfContentsList({
           const contentsNode = $createContentsListNode();
           for (const [key, text, tag] of tableOfContents) {
             const item = $createContentsItemNode();
+            const element = editor.getElementByKey(key);
+            if (element) {
+              element.id = key;
+            }
             item.append(
-              $createContentsLinkNode('#' + key).append($createTextNode(text)),
+              $createContentsLinkNode('#' + key, {target: '_self'}).append(
+                $createTextNode(text),
+              ),
             );
             contentsNode.append(item);
             item.setIndent(Number(tag[1]) - 1);

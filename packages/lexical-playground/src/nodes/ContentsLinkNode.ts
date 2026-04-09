@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {LinkNode} from '@lexical/link';
-import {EditorConfig} from 'lexical';
+import {LinkAttributes, LinkNode} from '@lexical/link';
+import {EditorConfig, LexicalNode} from 'lexical';
 
 export class ContentsLinkNode extends LinkNode {
   $config() {
@@ -26,6 +26,13 @@ export class ContentsLinkNode extends LinkNode {
   }
 }
 
-export function $createContentsLinkNode(url: string) {
-  return new ContentsLinkNode(url);
+export function $createContentsLinkNode(
+  url: string,
+  attributes?: LinkAttributes,
+) {
+  return new ContentsLinkNode(url, attributes);
+}
+
+export function $isContentsLinkNode(node?: LexicalNode | null) {
+  return node instanceof ContentsLinkNode;
 }

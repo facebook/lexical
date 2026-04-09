@@ -64,6 +64,7 @@ function FloatingLinkEditor({
   const editorRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [linkUrl, setLinkUrl] = useState('');
+  const [target, setTarget] = useState<string | null>(null);
   const [editedLinkUrl, setEditedLinkUrl] = useState('https://');
   const [lastSelection, setLastSelection] = useState<BaseSelection | null>(
     null,
@@ -77,8 +78,10 @@ function FloatingLinkEditor({
 
       if (linkParent) {
         setLinkUrl(linkParent.getURL());
+        setTarget(linkParent.getTarget());
       } else if ($isLinkNode(node)) {
         setLinkUrl(node.getURL());
+        setTarget(node.getTarget());
       } else {
         setLinkUrl('');
       }
@@ -92,8 +95,10 @@ function FloatingLinkEditor({
         const parent = node.getParent();
         if ($isLinkNode(parent)) {
           setLinkUrl(parent.getURL());
+          setTarget(parent.getTarget());
         } else if ($isLinkNode(node)) {
           setLinkUrl(node.getURL());
+          setTarget(node.getTarget());
         } else {
           setLinkUrl('');
         }
@@ -314,7 +319,7 @@ function FloatingLinkEditor({
         <div className="link-view">
           <a
             href={sanitizeUrl(linkUrl)}
-            target="_blank"
+            target={target || '_blank'}
             rel="noopener noreferrer">
             {linkUrl}
           </a>

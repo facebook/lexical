@@ -21,7 +21,7 @@
  * Example list is defined in packages/lexical-website/src/components/Gallery/galleryExamples.ts.
  */
 
-import {execSync, spawn} from 'node:child_process';
+import {type ChildProcess, execSync, spawn} from 'node:child_process';
 import {existsSync, mkdirSync, unlinkSync} from 'node:fs';
 import {dirname, resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -45,6 +45,11 @@ const EXAMPLES = galleryExamples.filter(
 );
 
 const PORT = 5180;
+const IS_WINDOWS = process.platform === 'win32';
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}
 
 function waitForServer(port: number, timeoutMs = 60000): Promise<void> {
   const start = Date.now();
@@ -73,20 +78,6 @@ function waitForServer(port: number, timeoutMs = 60000): Promise<void> {
   });
 }
 
-function killPort(port: number): void {
-  try {
-    execSync(`fuser -k ${port}/tcp`, {stdio: 'pipe'});
-  } catch {
-    // Nothing on that port
-  }
-  // Wait briefly for port to free
-  try {
-    execSync(`sleep 0.5`, {stdio: 'pipe'});
-  } catch {
-    // ignore
-  }
-}
-
 function installDeps(exampleDir: string): void {
   // Use npm install since examples are excluded from the pnpm workspace
   execSync('npm install', {
@@ -100,9 +91,9 @@ function installDeps(exampleDir: string): void {
   }
 }
 
-function startDevServer(exampleDir: string, port: number): void {
+function startDevServer(exampleDir: string, port: number): ChildProcess {
   const child = spawn(
-    'npx',
+    IS_WINDOWS ? 'npx.cmd' : 'npx',
     [
       'vite',
       '-c',
@@ -113,14 +104,12 @@ function startDevServer(exampleDir: string, port: number): void {
     ],
     {
       cwd: exampleDir,
-      detached: true,
       env: {...process.env, NODE_ENV: 'development'},
       stdio: 'pipe',
+      // On Unix, create a process group so we can kill the tree
+      ...(IS_WINDOWS ? {} : {detached: true}),
     },
   );
-
-  // Unref so the child doesn't keep the parent alive if we exit early
-  child.unref();
 
   child.stderr.on('data', (data: Buffer) => {
     const msg = data.toString();
@@ -128,6 +117,25 @@ function startDevServer(exampleDir: string, port: number): void {
       console.error(`  [vite stderr] ${msg.trim()}`);
     }
   });
+
+  return child;
+}
+
+function killProcessTree(child: ChildProcess): void {
+  if (child.exitCode !== null || child.pid == null) {
+    return;
+  }
+  try {
+    if (IS_WINDOWS) {
+      // taskkill /T kills the process tree on Windows
+      execSync(`taskkill /T /F /PID ${child.pid}`, {stdio: 'pipe'});
+    } else {
+      // Kill the process group (negative pid) on Unix
+      process.kill(-child.pid, 'SIGTERM');
+    }
+  } catch {
+    // Process may already be dead
+  }
 }
 
 async function main(): Promise<void> {
@@ -159,12 +167,9 @@ async function main(): Promise<void> {
       installDeps(exampleDir);
     }
 
-    // Ensure port is free
-    killPort(PORT);
-
     // Start dev server
     console.warn(`  Starting dev server on port ${PORT}...`);
-    startDevServer(exampleDir, PORT);
+    const child = startDevServer(exampleDir, PORT);
 
     try {
       await waitForServer(PORT);
@@ -192,8 +197,9 @@ async function main(): Promise<void> {
         `  Error capturing ${example.dir}: ${(err as Error).message}`,
       );
     } finally {
-      // Kill the dev server and all its children
-      killPort(PORT);
+      killProcessTree(child);
+      // Brief pause to let the port free up before the next server
+      await sleep(500);
     }
   }
 

@@ -4,9 +4,9 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict
  */
 
-type Props = Readonly<{}>;
-
-declare export function HorizontalRulePlugin(props: Props): null;
+export default {
+  '*.(js|mjs|jsx|css|html|d.ts|ts|mts|tsx|yml|mdx|json)': 'prettier --write',
+  '*.(js|mjs|jsx|ts|mts|tsx)': ['eslint --fix'],
+};

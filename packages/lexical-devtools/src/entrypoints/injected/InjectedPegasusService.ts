@@ -29,9 +29,7 @@ export type IInjectedPegasusService = InstanceType<
   typeof InjectedPegasusService
 >;
 
-export class InjectedPegasusService
-  implements IPegasusRPCService<InjectedPegasusService>
-{
+export class InjectedPegasusService implements IPegasusRPCService<InjectedPegasusService> {
   private pickerActive: ElementPicker | null = null;
 
   constructor(

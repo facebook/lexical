@@ -78,7 +78,7 @@ const CaptionEditorExtension = defineExtension({
           className="ImageNode__contentEditable"
         />
       ),
-      decorators: [<MentionsPlugin />],
+      decorators: [<MentionsPlugin key="mentions" />],
     }),
   ],
   name: '@lexical/playground/ImageNodeCaption',

@@ -112,7 +112,7 @@ export function $getStartOfCodeInLine(
   let node: null | CodeHighlightNode | TabNode | LineBreakNode = anchor;
   let nodeOffset = offset;
   let nodeTextContent = anchor.getTextContent();
-  // eslint-disable-next-line no-constant-condition
+
   while (true) {
     if (nodeOffset === 0) {
       node = node.getPreviousSibling();
@@ -185,7 +185,7 @@ function findNextNonBlankInLine(
   let nodeOffset = offset;
   let nodeTextContent = anchor.getTextContent();
   let nodeTextContentSize = anchor.getTextContentSize();
-  // eslint-disable-next-line no-constant-condition
+
   while (true) {
     if (!$isCodeHighlightNode(node) || nodeOffset === nodeTextContentSize) {
       node = node.getNextSibling();

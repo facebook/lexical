@@ -25,6 +25,9 @@ module.exports.getParentAssignmentName = function getParentAssignmentName(
   // The rules of lexical $function convention only applies to functions,
   // not methods or properties.
   const parentNode = node.parent;
+  if (parentNode == null) {
+    return undefined;
+  }
   if (parentNode.type === 'VariableDeclarator' && parentNode.init === node) {
     // const $function = () => {};
     return parentNode.id;

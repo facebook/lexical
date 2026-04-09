@@ -395,7 +395,7 @@ declare export class TableSelection implements BaseSelection {
 }
 
 declare export function $isTableSelection(
-  x: ?mixed,
+  x: ?unknown,
 ): x is TableSelection;
 
 declare export function $createTableSelection(): TableSelection;
@@ -411,13 +411,13 @@ declare export function $createTableSelectionFrom(
  */
 
 export type InsertTableCommandPayloadHeaders =
-  | $ReadOnly<{
+  | Readonly<{
       rows: boolean;
       columns: boolean;
     }>
   | boolean;
 
-export type InsertTableCommandPayload = $ReadOnly<{
+export type InsertTableCommandPayload = Readonly<{
   columns: string;
   rows: string;
   includeHeaders?: InsertTableCommandPayloadHeaders;
@@ -448,7 +448,7 @@ export type SerializedTableCellNode = {
 };
 export type SerializedTableNode = {
   ...SerializedElementNode,
-  colWidths?: $ReadOnlyArray<number>;
+  colWidths?: ReadonlyArray<number>;
   rowStriping?: boolean;
   frozenColumnCount?: number;
   frozenRowCount?: number;

@@ -162,6 +162,46 @@ While these "playground" plugins aren't production ready - they serve as a great
 
 :::
 
+## Custom node property syncing
+
+`@lexical/yjs` syncs custom node properties by constructing a fresh node instance and inspecting its **own enumerable properties**. This means every property that should be synced across peers must be assigned in the constructor, even if the initial value is `undefined`.
+
+:::warning
+
+Declaring a class property with TypeScript's optional syntax (`foo?: Type`) does **not** guarantee the property exists as an own enumerable property on the instance. Under TypeScript's default compilation settings (target < ES2022 without `useDefineForClassFields`), such declarations produce no initialization code.
+
+:::
+
+### What to do
+
+Always initialize every node property in the constructor. Conditional initialization such as `if (someValue !== undefined) this.__someValue = someValue` is not enough, because the default construction path still needs to create the property.
+
+For example:
+
+```ts
+// ✅ Correct — property is guaranteed to be an own property
+class MyNode extends ElementNode {
+  __someValue: string | undefined;
+
+  constructor(someValue?: string, key?: NodeKey) {
+    super(key);
+    this.__someValue = someValue; // explicitly initialized
+  }
+}
+
+// ❌ Incorrect — property may not exist as an own property
+class MyNode extends ElementNode {
+  __someValue?: string; // optional syntax without initialization
+
+  constructor(key?: NodeKey) {
+    super(key);
+    // __someValue is never assigned → won't be synced via yjs
+  }
+}
+```
+
+If you use [`NodeState`](../concepts/node-state.md) for your custom properties, this concern does not apply. `NodeState` values are synced correctly without relying on constructor-created enumerable properties.
+
 ## Yjs providers
 
 Setting up the communication between clients, managing awareness information, and storing shared data for offline usage is quite a hassle. Providers manage all that for you and are the perfect starting point for your collaborative app.

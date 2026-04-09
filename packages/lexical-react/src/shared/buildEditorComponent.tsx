@@ -39,7 +39,6 @@ export function buildEditorComponent(
             onError={(e) => {
               editor._onError(e);
             }}
-            // eslint-disable-next-line react/no-array-index-key -- no natural key
             key={i}>
             <Suspense fallback={null}>{decorator}</Suspense>
           </ErrorBoundary>

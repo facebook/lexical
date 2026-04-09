@@ -19,10 +19,10 @@ async function updateChangelog() {
   const header = `## v${process.env.npm_package_version} (${date})`;
   const changelogContent = (
     await exec(
-      `git --no-pager log --oneline ${process.env.LATEST_RELEASE}...HEAD~1 --pretty=format:\"- %s %an\"`,
+      `git --no-pager log --oneline ${process.env.LATEST_RELEASE}...HEAD~1 --pretty=format:"- %s %an"`,
     )
   ).stdout
-    .replace(/[^a-zA-Z0-9()\n \-,\.#]/g, '')
+    .replace(/[^a-zA-Z0-9()\n \-,.#]/g, '')
     .trim();
   const tmpFilePath = './changelog-tmp';
   await exec(`echo "${header}\n" >> ${tmpFilePath}`);

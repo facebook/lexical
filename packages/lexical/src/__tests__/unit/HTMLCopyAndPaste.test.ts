@@ -134,7 +134,41 @@ describe('HTMLCopyAndPaste tests', () => {
         });
       });
 
-      test('pasting centered paragraph into non-empty paragraph preserves alignment (Regression #8101)', async () => {
+      test('pasting centered paragraph into empty paragraph preserves alignment (Regression #8101)', async () => {
+        const {editor} = testEnv;
+
+        await editor.update(() => {
+          const root = $getRoot();
+          root.clear();
+          const paragraph = $createParagraphNode();
+          root.append(paragraph);
+          paragraph.select();
+        });
+
+        const dataTransfer = new DataTransferMock();
+        dataTransfer.setData(
+          'text/html',
+          '<p style="text-align: center;">centered text</p>',
+        );
+        await editor.update(() => {
+          const selection = $getSelection();
+          invariant(
+            $isRangeSelection(selection),
+            'isRangeSelection(selection)',
+          );
+          $insertDataTransferForRichText(dataTransfer, selection, editor);
+        });
+
+        await editor.update(() => {
+          const root = $getRoot();
+          const firstChild = root.getFirstChild();
+          invariant(firstChild !== null, 'firstChild is not null');
+          invariant($isElementNode(firstChild), 'firstChild is an ElementNode');
+          expect(firstChild.getFormatType()).toBe('center');
+        });
+      });
+
+      test('pasting centered paragraph into non-empty paragraph does not change destination alignment', async () => {
         const {editor} = testEnv;
 
         await editor.update(() => {
@@ -165,7 +199,8 @@ describe('HTMLCopyAndPaste tests', () => {
           const firstChild = root.getFirstChild();
           invariant(firstChild !== null, 'firstChild is not null');
           invariant($isElementNode(firstChild), 'firstChild is an ElementNode');
-          expect(firstChild.getFormatType()).toBe('center');
+          // Pasting into non-empty paragraph should NOT change its alignment
+          expect(firstChild.getFormatType()).toBe('');
         });
       });
 

@@ -20,7 +20,7 @@ import {addClassNamesToElement} from '@lexical/utils';
 import {$isElementNode, ElementNode} from 'lexical';
 import type {LexicalExtension, NamedSignalsOutput} from '@lexical/extension';
 
-export type LinkAttributes = $ReadOnly<{
+export type LinkAttributes = Readonly<{
   rel?: null | string,
   target?: null | string,
   title?: null | string,

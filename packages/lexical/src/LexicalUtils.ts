@@ -700,10 +700,7 @@ export function getEditorsToPropagate(
   for (
     let currentEditor: LexicalEditor | null = editor;
     currentEditor !== null;
-    // Do not propagate commands to parent editors that are
-    // currently updating as that will trigger an early commit
-    // and can corrupt the nodeMap by doing GC too early
-    currentEditor = currentEditor._updating ? null : currentEditor._parentEditor
+    currentEditor = currentEditor._parentEditor
   ) {
     editorsToPropagate.push(currentEditor);
   }
@@ -1358,7 +1355,7 @@ export function dispatchCommand<TCommand extends LexicalCommand<unknown>>(
   command: TCommand,
   payload: CommandPayloadType<TCommand>,
 ): boolean {
-  return triggerCommandListeners(editor, command, payload);
+  return triggerCommandListeners(editor, command, payload, editor);
 }
 
 export function getElementByKeyOrThrow(

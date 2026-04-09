@@ -12,23 +12,23 @@ import teamData from '@site/src/data/team.json';
 import React from 'react';
 
 interface TeamMember {
-  readonly avatar: string;
-  readonly links: {
-    readonly github: string;
+  avatar: string;
+  links: {
+    github: string;
   };
-  readonly location?: string;
-  readonly name: string;
-  readonly org?: string;
-  readonly orgLink?: string;
-  readonly sponsor?: string;
-  readonly title?: string;
-  readonly username: string;
+  location?: string;
+  name: string;
+  org?: string;
+  orgLink?: string;
+  sponsor?: string;
+  title?: string;
+  username: string;
 }
 
 interface TeamSectionProps {
   title: React.ReactNode;
   description: React.ReactNode;
-  members: readonly TeamMember[];
+  members: TeamMember[];
 }
 
 function TeamMemberCard({member}: {member: TeamMember}) {

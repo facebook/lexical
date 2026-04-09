@@ -37,6 +37,7 @@ import {
   $isElementNode,
   $isNodeSelection,
   $isRangeSelection,
+  $isSiblingCaret,
   $normalizeCaret,
   $normalizeSelection__EXPERIMENTAL,
   $rewindSiblingCaret,
@@ -363,9 +364,34 @@ export function $linkNodeTransform(link: LinkNode): void {
       });
     }
   }
+  // Fix a caret pair that points to the end of the absorbing link,
+  // which would shift when new children are appended during merge.
+  function $fixMergeBoundaryCaret(
+    pair: CaretPair,
+    absorbingLink: LinkNode,
+    mergingLink: LinkNode,
+  ): CaretPair {
+    const [next, prev] = pair;
+    const $isAffected = (caret: PointCaret) =>
+      $isSiblingCaret(caret) && caret.origin.is(absorbingLink);
+    if (!$isAffected(next) && !$isAffected(prev)) {
+      return pair;
+    }
+    // Resolve the merge boundary from the merging link's start, since
+    // those children survive the move and represent the boundary position.
+    const fixed = $normalizeCaret($getChildCaret(mergingLink, 'next'));
+    return [fixed, fixed.getFlipped()];
+  }
+
   if (link.isAttached()) {
     const prevSibling = link.getPreviousSibling();
     if ($isLinkNode(prevSibling) && prevSibling.shouldMergeAdjacentLink(link)) {
+      if (anchorPair) {
+        anchorPair = $fixMergeBoundaryCaret(anchorPair, prevSibling, link);
+      }
+      if (focusPair) {
+        focusPair = $fixMergeBoundaryCaret(focusPair, prevSibling, link);
+      }
       prevSibling.append(...link.getChildren());
       link.remove();
       $restoreSelection();
@@ -373,6 +399,12 @@ export function $linkNodeTransform(link: LinkNode): void {
     }
     const nextSibling = link.getNextSibling();
     if ($isLinkNode(nextSibling) && link.shouldMergeAdjacentLink(nextSibling)) {
+      if (anchorPair) {
+        anchorPair = $fixMergeBoundaryCaret(anchorPair, link, nextSibling);
+      }
+      if (focusPair) {
+        focusPair = $fixMergeBoundaryCaret(focusPair, link, nextSibling);
+      }
       link.append(...nextSibling.getChildren());
       nextSibling.remove();
       transformed = true;

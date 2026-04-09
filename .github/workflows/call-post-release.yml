@@ -41,4 +41,5 @@ jobs:
           commit_message: 'Update examples for ${{ steps.latest.outputs.release }}'
           commit_user_name: 'Lexical GitHub Actions Bot'
           branch: post-release-${{ steps.latest.outputs.release }}
+          create_branch: true
           push_options: '--force'

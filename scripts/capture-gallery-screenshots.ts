@@ -18,7 +18,7 @@
  * Output:
  *   Screenshots are saved to packages/lexical-website/static/img/gallery/
  *
- * Example list is defined in scripts/gallery-examples.ts.
+ * Example list is defined in packages/lexical-website/src/components/Gallery/galleryExamples.ts.
  */
 
 import {execSync, spawn} from 'node:child_process';
@@ -26,7 +26,10 @@ import {existsSync, mkdirSync, unlinkSync} from 'node:fs';
 import {dirname, resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
-import {type GalleryExample, galleryExamples} from './gallery-examples';
+import {
+  type GalleryExample,
+  galleryExamples,
+} from '../packages/lexical-website/src/components/Gallery/galleryExamples';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');

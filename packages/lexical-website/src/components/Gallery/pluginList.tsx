@@ -6,12 +6,13 @@
  *
  */
 
+import {ReactNode} from 'react';
+
 import {
   buildStackBlitzUri,
   galleryExamples,
   getScreenshotPreview,
-} from '@gallery-examples';
-import {ReactNode} from 'react';
+} from './galleryExamples';
 
 export type Example = {
   description: string;

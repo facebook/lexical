@@ -381,10 +381,6 @@ const config = {
                   __dirname,
                   '../../examples/website-toolbar/src',
                 ),
-                '@gallery-examples': path.resolve(
-                  __dirname,
-                  '../../scripts/gallery-examples.ts',
-                ),
                 '@huggingface/transformers': path.resolve(
                   __dirname,
                   'node_modules/@huggingface/transformers/dist/transformers.web.js',

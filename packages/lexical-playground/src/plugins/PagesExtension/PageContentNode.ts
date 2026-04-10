@@ -8,7 +8,12 @@
 import type {LexicalNode} from 'lexical';
 
 import {getExtensionDependencyFromEditor} from '@lexical/extension';
-import {$getEditor, addClassNamesToElement, ElementNode} from 'lexical';
+import {
+  $create,
+  $getEditor,
+  addClassNamesToElement,
+  ElementNode,
+} from 'lexical';
 
 import {$isPageNode, PageNode} from './PageNode';
 import {PagesExtension} from './PagesExtension';
@@ -63,7 +68,7 @@ export class PageContentNode extends ElementNode {
 }
 
 export function $createPageContentNode(): PageContentNode {
-  return new PageContentNode();
+  return $create(PageContentNode);
 }
 
 export function $isPageContentNode(

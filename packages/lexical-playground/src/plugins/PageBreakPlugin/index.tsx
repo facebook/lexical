@@ -43,11 +43,8 @@ export default function PageBreakPlugin(): JSX.Element | null {
             return false;
           }
 
-          const focusNode = selection.focus.getNode();
-          if (focusNode !== null) {
-            const pgBreak = $createPageBreakNode();
-            $insertNodeToNearestRoot(pgBreak);
-          }
+          const pgBreak = $createPageBreakNode();
+          $insertNodeToNearestRoot(pgBreak);
 
           return true;
         },

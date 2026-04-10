@@ -5,43 +5,23 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {LexicalNode, SerializedElementNode} from 'lexical';
+import type {LexicalNode} from 'lexical';
 
-import {$getEditor, ElementNode, isHTMLElement} from 'lexical';
+import {getExtensionDependencyFromEditor} from '@lexical/extension';
+import {$create, $getEditor, ElementNode, isHTMLElement} from 'lexical';
 
+import {PagesExtension} from '../../plugins/PagesExtension';
 import {
   $createPageContentNode,
   $isPageContentNode,
   PageContentNode,
 } from './PageContentNode';
 
-export type SerializedPageNode = SerializedElementNode;
-
-const pagesMarkedForMeasurement = new Set<string>();
-const fixedPageHeights = new Map<string, number>();
-
 export class PageNode extends ElementNode {
   $config() {
     return this.config('page', {
       extends: ElementNode,
     });
-  }
-
-  static clearMeasurementFlags(): void {
-    pagesMarkedForMeasurement.clear();
-    fixedPageHeights.clear();
-  }
-
-  static clearFixedPages(): void {
-    fixedPageHeights.clear();
-  }
-
-  static markForMeasurement(nodeKey: string): void {
-    pagesMarkedForMeasurement.add(nodeKey);
-  }
-
-  static clearMeasurementFlag(nodeKey: string): void {
-    pagesMarkedForMeasurement.delete(nodeKey);
   }
 
   getContentNode(): PageContentNode {
@@ -79,30 +59,6 @@ export class PageNode extends ElementNode {
     return -1;
   }
 
-  isMarkedForMeasurement(): boolean {
-    return pagesMarkedForMeasurement.has(this.getKey());
-  }
-
-  markForMeasurement(): void {
-    pagesMarkedForMeasurement.add(this.getKey());
-  }
-
-  clearMeasurementFlag(): void {
-    pagesMarkedForMeasurement.delete(this.getKey());
-  }
-
-  getFixedHeight(): number | undefined {
-    return fixedPageHeights.get(this.getKey());
-  }
-
-  setFixedHeight(height: number): void {
-    fixedPageHeights.set(this.getKey(), height);
-  }
-
-  clearFixedHeight(): void {
-    fixedPageHeights.delete(this.getKey());
-  }
-
   getPageElement(): HTMLElement | null {
     const editor = $getEditor();
     return editor.getElementByKey(this.getKey());
@@ -114,7 +70,12 @@ export class PageNode extends ElementNode {
   }
 
   measureHeight(): number {
-    this.clearMeasurementFlag();
+    const {clearMeasurementFlag} = getExtensionDependencyFromEditor(
+      $getEditor(),
+      PagesExtension,
+    ).output;
+
+    clearMeasurementFlag(this);
     const element = this.getPageElement();
     if (!element) return 0;
     element.style.minHeight = 'unset';
@@ -148,6 +109,11 @@ export class PageNode extends ElementNode {
     if (!pageHeight) return [];
     let overflowAfterIndex = 0;
     let currentPageHeight = pageElement.scrollHeight;
+    const {setFixedHeight} = getExtensionDependencyFromEditor(
+      editor,
+      PagesExtension,
+    ).output;
+
     while (currentPageHeight < pageHeight) {
       const nextChild = nextPageChildNodes[overflowAfterIndex]?.cloneNode(true);
       if (!nextChild) break;
@@ -155,7 +121,7 @@ export class PageNode extends ElementNode {
       currentPageHeight = pageElement.scrollHeight;
       if (currentPageHeight > pageHeight) break;
       overflowAfterIndex++;
-      this.setFixedHeight(currentPageHeight);
+      setFixedHeight(this, currentPageHeight);
     }
     pageElement.style.minHeight = '';
     if (overflowAfterIndex === 0) return [];
@@ -186,11 +152,16 @@ export class PageNode extends ElementNode {
     if (!pageHeight) return [];
     let currentPageHeight = pageElement.scrollHeight;
     let overflowAfterIndex = children.length - 1;
+    const {setFixedHeight} = getExtensionDependencyFromEditor(
+      editor,
+      PagesExtension,
+    ).output;
+
     while (currentPageHeight > pageHeight) {
       const lastChild = childNodes[overflowAfterIndex];
       if (lastChild) lastChild.remove();
       currentPageHeight = pageElement.scrollHeight;
-      this.setFixedHeight(currentPageHeight);
+      setFixedHeight(this, currentPageHeight);
       if (currentPageHeight < pageHeight) break;
       overflowAfterIndex--;
     }
@@ -217,7 +188,9 @@ export class PageNode extends ElementNode {
   }
 
   fixFlow() {
-    if (!this.isAttached()) return this.clearMeasurementFlag();
+    const {clearMeasurementFlag, getFixedHeight} =
+      getExtensionDependencyFromEditor($getEditor(), PagesExtension).output;
+    if (!this.isAttached()) return clearMeasurementFlag(this);
     const editor = $getEditor();
     const rootElement = editor.getRootElement();
     if (!isHTMLElement(rootElement)) return;
@@ -225,7 +198,7 @@ export class PageNode extends ElementNode {
       rootElement.style.getPropertyValue('--page-height'),
       10,
     );
-    const fixedPageHeight = this.getFixedHeight();
+    const fixedPageHeight = getFixedHeight(this);
     const currentPageHeight = this.measureHeight();
     if (currentPageHeight === fixedPageHeight) return;
     if (!pageHeight || !currentPageHeight) return;
@@ -283,18 +256,10 @@ export class PageNode extends ElementNode {
   canInsertTextAfter(): boolean {
     return false;
   }
-
-  exportJSON(): SerializedPageNode {
-    return {
-      ...super.exportJSON(),
-      type: 'page',
-      version: 1,
-    };
-  }
 }
 
 export function $createPageNode(): PageNode {
-  return new PageNode().append($createPageContentNode());
+  return $create(PageNode).append($createPageContentNode());
 }
 
 export function $isPageNode(

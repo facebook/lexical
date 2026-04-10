@@ -9,12 +9,13 @@ import type {PageSetup, PageSize} from './types';
 import type {JSX} from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {RootNode} from 'lexical';
+import {useExtensionSignalValue} from '@lexical/react/useExtensionSignalValue';
 import {useCallback, useEffect, useState} from 'react';
 
 import DropDown, {DropDownItem} from '../../ui/DropDown';
 import {DEFAULT_PAGE_SETUP, PAGE_SIZES} from './constants';
-import {$getPageSetup, $setPageSetup} from './pageSetup';
+import {$setPageSetup} from './pageSetup';
+import {PagesExtension} from './PagesExtension';
 
 function dropDownActiveClass(active: boolean): string {
   return active ? 'active dropdown-item-active' : '';
@@ -82,21 +83,16 @@ export function PageSetupDropdownComponent({
   disabled = false,
 }: PageSetupDropdownProps): JSX.Element {
   const [editor] = useLexicalComposerContext();
-  const [pageSetup, setPageSetup] = useState<PageSetup | null>(null);
+  const pageSetup = useExtensionSignalValue(PagesExtension, 'pageSetup');
   const [pageSizeMenuOpen, setPageSizeMenuOpen] = useState(true);
   const [orientationMenuOpen, setOrientationMenuOpen] = useState(false);
   const [marginsMenuOpen, setMarginsMenuOpen] = useState(false);
-
-  const updatePageSetup = useCallback(() => {
-    const newPageSetup = editor.getEditorState().read($getPageSetup);
-    setPageSetup(newPageSetup);
-    setOrientationMenuOpen(newPageSetup !== null);
-    setMarginsMenuOpen(newPageSetup !== null);
-  }, [editor]);
   useEffect(() => {
-    updatePageSetup();
-    return editor.registerMutationListener(RootNode, updatePageSetup);
-  }, [editor, updatePageSetup]);
+    if (!pageSetup) {
+      setOrientationMenuOpen(false);
+      setMarginsMenuOpen(false);
+    }
+  }, [pageSetup]);
 
   const applyUpdate = useCallback(
     (v: null | Partial<PageSetup>) => {

@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {effect} from '@lexical/extension';
+import {effect, watchedSignal} from '@lexical/extension';
 import {ReactExtension} from '@lexical/react/ReactExtension';
 import {$wrapNodeInElement} from '@lexical/utils';
 import {
@@ -49,9 +49,10 @@ export interface PagesConfig {
 }
 
 export const PagesExtension = defineExtension({
-  build: () => {
+  build: (editor) => {
     const fixedPageHeights = new Map<NodeKey, number>();
     const pagesMarkedForMeasurement = new Set<NodeKey>();
+    const getPageSetup = () => editor.getEditorState().read($getPageSetup);
 
     return {
       $getPagesMarkedForMeasurement: (): PageNode[] => {
@@ -84,6 +85,11 @@ export const PagesExtension = defineExtension({
       markForMeasurementByKey: (key: NodeKey) => {
         pagesMarkedForMeasurement.add(key);
       },
+      pageSetup: watchedSignal(getPageSetup, (pageSetupSignal) =>
+        editor.registerMutationListener(RootNode, () => {
+          pageSetupSignal.value = getPageSetup();
+        }),
+      ),
       setFixedHeight: (node: PageNode, height: number) =>
         fixedPageHeights.set(node.getKey(), height),
     };

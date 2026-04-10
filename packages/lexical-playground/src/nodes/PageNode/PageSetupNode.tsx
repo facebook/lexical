@@ -8,77 +8,85 @@
 import {
   $applyNodeReplacement,
   $getRoot,
+  $getState,
+  $setState,
+  buildImportMap,
+  createState,
   DecoratorNode,
-  DOMConversionMap,
+  DOMConversionOutput,
   DOMExportOutput,
+  LexicalExportJSON,
   LexicalNode,
-  LexicalUpdateJSON,
-  NodeKey,
-  SerializedLexicalNode,
-  Spread,
+  StateConfigValue,
+  StateValueOrUpdater,
 } from 'lexical';
 
-import {DEFAULT_PAGE_SETUP} from './constants';
+import {DEFAULT_PAGE_SETUP, PAGE_SIZES} from './constants';
 import {Orientation, PageSetup, PageSize} from './types';
 
 export const PAGE_SETUP_TAG = 'page-setup';
 
-export type SerializedPageSetupNode = Spread<
-  {
-    type: 'page-setup';
-    version: 1;
-  } & PageSetup,
-  SerializedLexicalNode
->;
+export type SerializedPageSetupNode = LexicalExportJSON<PageSetupNode>;
+
+const pageSizeState = createState('pageSize', {
+  parse: (v): PageSize => {
+    if (typeof v === 'string' && v in PAGE_SIZES) {
+      return v as PageSize;
+    }
+    return DEFAULT_PAGE_SETUP.pageSize;
+  },
+});
+
+const orientationState = createState('orientation', {
+  parse: (v): Orientation =>
+    v === 'landscape' || v === 'portrait' ? v : DEFAULT_PAGE_SETUP.orientation,
+});
+
+const marginsState = createState('margins', {
+  isEqual: (a: PageSetup['margins'], b: PageSetup['margins']) =>
+    a.top === b.top &&
+    a.right === b.right &&
+    a.bottom === b.bottom &&
+    a.left === b.left,
+  parse: (v): PageSetup['margins'] => {
+    const defaults = structuredClone(DEFAULT_PAGE_SETUP.margins);
+    if (v && typeof v === 'object' && !Array.isArray(v)) {
+      const o = v as Record<string, unknown>;
+      for (const k of ['top', 'right', 'bottom', 'left'] as const) {
+        if (typeof o[k] === 'number') {
+          defaults[k] = o[k];
+        }
+      }
+    }
+    return defaults;
+  },
+});
+
+function $convertPageSetupElement(): DOMConversionOutput | null {
+  return {
+    node: $createPageSetupNode(),
+  };
+}
 
 export class PageSetupNode extends DecoratorNode<null> {
-  __pageSize: PageSize;
-  __orientation: Orientation;
-  __margins: {
-    top: number;
-    right: number;
-    bottom: number;
-    left: number;
-  };
-
-  static getType(): string {
-    return 'page-setup';
-  }
-
-  static clone(node: PageSetupNode): PageSetupNode {
-    return new PageSetupNode(
-      node.__pageSize,
-      node.__orientation,
-      structuredClone(node.__margins),
-      node.__key,
-    );
-  }
-
-  static importJSON(serializedNode: SerializedPageSetupNode): PageSetupNode {
-    return $createPageSetupNode().updateFromJSON(serializedNode);
-  }
-
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedPageSetupNode>,
-  ): this {
-    const {pageSize, orientation, margins} = serializedNode;
-    const node = super.updateFromJSON(serializedNode);
-    if (pageSize !== undefined) node.setPageSize(pageSize);
-    if (orientation !== undefined) node.setOrientation(orientation);
-    if (margins !== undefined) node.setMargins(margins);
-    return node;
-  }
-
-  constructor(
-    pageSize: PageSize,
-    orientation: Orientation,
-    margins: {top: number; right: number; bottom: number; left: number},
-    key?: NodeKey,
-  ) {
-    super(key);
-    this.__pageSize = pageSize;
-    this.__orientation = orientation;
-    this.__margins = margins;
+  $config() {
+    return this.config('page-setup', {
+      extends: DecoratorNode,
+      importDOM: buildImportMap({
+        div: (domNode) =>
+          domNode.hasAttribute('data-lexical-page-setup')
+            ? {
+                conversion: $convertPageSetupElement,
+                priority: 2,
+              }
+            : null,
+      }),
+      stateConfigs: [
+        {flat: true, stateConfig: pageSizeState},
+        {flat: true, stateConfig: orientationState},
+        {flat: true, stateConfig: marginsState},
+      ],
+    });
   }
 
   createDOM(): HTMLElement {
@@ -89,35 +97,6 @@ export class PageSetupNode extends DecoratorNode<null> {
 
   updateDOM(): boolean {
     return false;
-  }
-
-  static importDOM(): DOMConversionMap | null {
-    return {
-      div: (domNode: HTMLElement) => {
-        if (!domNode.hasAttribute('data-lexical-page-setup')) {
-          return null;
-        }
-        return {
-          conversion: () => {
-            return {
-              node: $createPageSetupNode(),
-            };
-          },
-          priority: 2,
-        };
-      },
-    };
-  }
-
-  exportJSON(): SerializedPageSetupNode {
-    return {
-      ...super.exportJSON(),
-      margins: this.__margins,
-      orientation: this.__orientation,
-      pageSize: this.__pageSize,
-      type: 'page-setup',
-      version: 1,
-    };
   }
 
   exportDOM(): DOMExportOutput {
@@ -158,44 +137,33 @@ export class PageSetupNode extends DecoratorNode<null> {
     };
   }
 
-  getPageSize(): PageSize {
-    const latest = this.getLatest();
-    return latest.__pageSize ?? DEFAULT_PAGE_SETUP.pageSize;
+  getPageSize(): StateConfigValue<typeof pageSizeState> {
+    return $getState(this, pageSizeState);
   }
 
-  getOrientation(): Orientation {
-    const latest = this.getLatest();
-    return latest.__orientation ?? DEFAULT_PAGE_SETUP.orientation;
+  getOrientation(): StateConfigValue<typeof orientationState> {
+    return $getState(this, orientationState);
   }
 
-  getMargins(): {top: number; right: number; bottom: number; left: number} {
-    const latest = this.getLatest();
-    return latest.__margins ?? structuredClone(DEFAULT_PAGE_SETUP.margins);
+  getMargins(): StateConfigValue<typeof marginsState> {
+    return $getState(this, marginsState);
   }
 
-  setPageSize(pageSize: PageSize) {
-    const writable = this.getWritable();
-    writable.__pageSize = pageSize;
-    return this;
+  setPageSize(pageSize: StateValueOrUpdater<typeof pageSizeState>): this {
+    return $setState(this, pageSizeState, pageSize);
   }
 
-  setOrientation(orientation: Orientation) {
-    const writable = this.getWritable();
-    writable.__orientation = orientation;
-    return this;
+  setOrientation(
+    orientation: StateValueOrUpdater<typeof orientationState>,
+  ): this {
+    return $setState(this, orientationState, orientation);
   }
 
-  setMargins(
-    margins: Partial<{
-      top: number;
-      right: number;
-      bottom: number;
-      left: number;
-    }>,
-  ) {
-    const writable = this.getWritable();
-    writable.__margins = {...writable.__margins, ...margins};
-    return this;
+  setMargins(margins: Partial<PageSetup['margins']>): this {
+    return $setState(this, marginsState, (prev: PageSetup['margins']) => ({
+      ...prev,
+      ...margins,
+    }));
   }
 }
 
@@ -204,7 +172,10 @@ export function $createPageSetupNode(
 ): PageSetupNode {
   const {pageSize, orientation, margins} = payload;
   return $applyNodeReplacement(
-    new PageSetupNode(pageSize, orientation, margins),
+    new PageSetupNode()
+      .setPageSize(pageSize)
+      .setOrientation(orientation)
+      .setMargins(margins),
   );
 }
 

@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {PageSetup, PageSize} from './types';
+import type {PageSetup, PageSize} from '../PagesExtension/types';
 import type {JSX} from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
@@ -13,9 +13,9 @@ import {useExtensionSignalValue} from '@lexical/react/useExtensionSignalValue';
 import {useCallback, useEffect, useState} from 'react';
 
 import DropDown, {DropDownItem} from '../../ui/DropDown';
-import {DEFAULT_PAGE_SETUP, PAGE_SIZES} from './constants';
-import {$setPageSetup} from './pageSetup';
-import {PagesExtension} from './PagesExtension';
+import {DEFAULT_PAGE_SETUP, PAGE_SIZES} from '../PagesExtension/constants';
+import {$setPageSetup} from '../PagesExtension/pageSetup';
+import {PagesExtension} from '../PagesExtension/PagesExtension';
 
 function dropDownActiveClass(active: boolean): string {
   return active ? 'active dropdown-item-active' : '';

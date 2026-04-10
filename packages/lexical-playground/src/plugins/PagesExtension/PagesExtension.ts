@@ -6,7 +6,6 @@
  *
  */
 import {effect, watchedSignal} from '@lexical/extension';
-import {ReactExtension} from '@lexical/react/ReactExtension';
 import {$wrapNodeInElement} from '@lexical/utils';
 import {
   $addUpdateTag,
@@ -33,6 +32,8 @@ import {
 } from 'lexical';
 
 import {$isPageBreakNode, PageBreakNode} from '../../nodes/PageBreakNode';
+import {PageBreakExtension} from '../PageBreakExtension';
+import {PageSetupDropdownComponent} from '../PagesReactExtension/PageSetupDropdown';
 import {PAGE_SIZES} from './constants';
 import {
   $createPageContentNode,
@@ -41,7 +42,6 @@ import {
 } from './PageContentNode';
 import {$createPageNode, $isPageNode, PageNode} from './PageNode';
 import {$getPageSetup, pageSetupState} from './pageSetup';
-import {PageSetupDropdownComponent} from './PageSetupDropdown';
 
 export interface PagesConfig {
   pageContentClass: string;
@@ -98,7 +98,7 @@ export const PagesExtension = defineExtension({
     pageClass: 'PlaygroundEditorTheme__page',
     pageContentClass: 'PlaygroundEditorTheme__pageContent',
   }),
-  dependencies: [ReactExtension],
+  dependencies: [PageBreakExtension],
   name: '@lexical/playground/Pages',
   nodes: () => [PageNode, PageContentNode],
   register: (editor, config, state) => {

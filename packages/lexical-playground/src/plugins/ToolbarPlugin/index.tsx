@@ -93,7 +93,7 @@ import {
   InsertImagePayload,
 } from '../ImagesExtension';
 import InsertLayoutDialog from '../LayoutPlugin/InsertLayoutDialog';
-import {INSERT_PAGE_BREAK} from '../PageBreakPlugin';
+import {INSERT_PAGE_BREAK} from '../PageBreakExtension';
 import {PagesExtension} from '../PagesExtension';
 import {InsertPollDialog} from '../PollPlugin';
 import {SHORTCUTS} from '../ShortcutsPlugin/shortcuts';

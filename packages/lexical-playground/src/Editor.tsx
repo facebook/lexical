@@ -58,7 +58,6 @@ import FloatingTextFormatToolbarPlugin from './plugins/FloatingTextFormatToolbar
 import {LayoutPlugin} from './plugins/LayoutPlugin/LayoutPlugin';
 import {MaxLengthExtension} from './plugins/MaxLengthPlugin';
 import MentionsPlugin from './plugins/MentionsPlugin';
-import PageBreakPlugin from './plugins/PageBreakPlugin';
 import PollPlugin from './plugins/PollPlugin';
 import ShortcutsPlugin from './plugins/ShortcutsPlugin';
 import SpecialTextPlugin from './plugins/SpecialTextPlugin';
@@ -263,7 +262,6 @@ export default function Editor(): JSX.Element {
             <TabFocusPlugin />
             <TabIndentationPlugin maxIndent={7} />
             <CollapsiblePlugin />
-            <PageBreakPlugin />
             <LayoutPlugin />
             {floatingAnchorElem && (
               <>

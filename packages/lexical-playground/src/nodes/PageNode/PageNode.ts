@@ -21,12 +21,10 @@ const pagesMarkedForMeasurement = new Set<string>();
 const fixedPageHeights = new Map<string, number>();
 
 export class PageNode extends ElementNode {
-  static getType(): string {
-    return 'page';
-  }
-
-  static clone(node: PageNode): PageNode {
-    return new PageNode(node.__key);
+  $config() {
+    return this.config('page', {
+      extends: ElementNode,
+    });
   }
 
   static clearMeasurementFlags(): void {
@@ -60,10 +58,6 @@ export class PageNode extends ElementNode {
 
   updateDOM(): boolean {
     return false;
-  }
-
-  static importJSON(): PageNode {
-    return new PageNode();
   }
 
   getPageNumber(): number {

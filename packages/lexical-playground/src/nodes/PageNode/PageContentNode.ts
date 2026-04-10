@@ -14,12 +14,10 @@ import {$isPageNode, PageNode} from './PageNode';
 export type SerializedPageContentNode = SerializedElementNode;
 
 export class PageContentNode extends ElementNode {
-  static getType(): string {
-    return 'page-content';
-  }
-
-  static clone(node: PageContentNode): PageContentNode {
-    return new PageContentNode(node.__key);
+  $config() {
+    return this.config('page-content', {
+      extends: ElementNode,
+    });
   }
 
   createDOM(): HTMLElement {
@@ -30,10 +28,6 @@ export class PageContentNode extends ElementNode {
 
   updateDOM(): boolean {
     return false;
-  }
-
-  static importJSON(): PageContentNode {
-    return new PageContentNode();
   }
 
   getPageNode(): PageNode {

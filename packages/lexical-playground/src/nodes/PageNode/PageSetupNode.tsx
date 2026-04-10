@@ -10,11 +10,8 @@ import {
   $getRoot,
   $getState,
   $setState,
-  buildImportMap,
   createState,
   DecoratorNode,
-  DOMConversionOutput,
-  DOMExportOutput,
   LexicalExportJSON,
   LexicalNode,
   StateConfigValue,
@@ -62,25 +59,10 @@ const marginsState = createState('margins', {
   },
 });
 
-function $convertPageSetupElement(): DOMConversionOutput | null {
-  return {
-    node: $createPageSetupNode(),
-  };
-}
-
 export class PageSetupNode extends DecoratorNode<null> {
   $config() {
     return this.config('page-setup', {
       extends: DecoratorNode,
-      importDOM: buildImportMap({
-        div: (domNode) =>
-          domNode.hasAttribute('data-lexical-page-setup')
-            ? {
-                conversion: $convertPageSetupElement,
-                priority: 2,
-              }
-            : null,
-      }),
       stateConfigs: [
         {flat: true, stateConfig: pageSizeState},
         {flat: true, stateConfig: orientationState},
@@ -97,12 +79,6 @@ export class PageSetupNode extends DecoratorNode<null> {
 
   updateDOM(): boolean {
     return false;
-  }
-
-  exportDOM(): DOMExportOutput {
-    const element = document.createElement('div');
-    element.setAttribute('data-lexical-page-setup', 'true');
-    return {element};
   }
 
   decorate(): null {

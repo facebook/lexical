@@ -262,4 +262,66 @@ describe('HTML', () => {
       '<span style="white-space: pre-wrap;">Hello</span><span style="white-space: pre-wrap;">World</span>',
     );
   });
+
+  describe('$generateNodesFromDOM: CSS class style inlining', () => {
+    // jsdom does not provide usable CSSStyleSheet data (e.g. cssRules),
+    // so stylesheet-based inlining is effectively a no-op.
+
+    test('HTML with <style> tags does not crash and still imports content', () => {
+      const editor = createHeadlessEditor();
+      const parser = new DOMParser();
+
+      editor.update(
+        () => {
+          const root = $getRoot();
+          const dom = parser.parseFromString(
+            `<html><head><style>.highlight { font-weight: bold; }</style></head>` +
+              `<body><p><span class="highlight">Hello</span></p></body></html>`,
+            'text/html',
+          );
+          const nodes = $generateNodesFromDOM(editor, dom);
+          root.append(...nodes);
+          expect(root.getTextContent()).toBe('Hello');
+        },
+        {discrete: true},
+      );
+    });
+
+    test('existing inline styles are preserved after inlining pass', () => {
+      const editor = createHeadlessEditor();
+      const parser = new DOMParser();
+
+      editor.update(
+        () => {
+          const dom = parser.parseFromString(
+            `<html><head><style>.colored { color: red; }</style></head>` +
+              `<body><p><span class="colored" style="color: blue;">Hello</span></p></body></html>`,
+            'text/html',
+          );
+          $generateNodesFromDOM(editor, dom);
+
+          // Inline style should never be overwritten
+          const span = dom.querySelector('.colored') as HTMLElement;
+          expect(span.style.color).toBe('blue');
+        },
+        {discrete: true},
+      );
+    });
+
+    test('HTML without <style> tags works as before', () => {
+      const editor = createHeadlessEditor();
+      const parser = new DOMParser();
+
+      editor.update(
+        () => {
+          const root = $getRoot();
+          const dom = parser.parseFromString('<p>Hello world</p>', 'text/html');
+          const nodes = $generateNodesFromDOM(editor, dom);
+          root.append(...nodes);
+          expect(root.getTextContent()).toBe('Hello world');
+        },
+        {discrete: true},
+      );
+    });
+  });
 });

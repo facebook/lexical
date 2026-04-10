@@ -15,6 +15,7 @@ import {
   $getNodeByKey,
   $getRoot,
   $getSelection,
+  $getStateChange,
   $isLeafNode,
   $isRangeSelection,
   $isRootNode,
@@ -32,12 +33,11 @@ import {useCallback, useEffect, useRef} from 'react';
 import {$isPageBreakNode, PageBreakNode} from '../../nodes/PageBreakNode';
 import {
   $createPageNode,
-  $getPageSetupNode,
+  $getPageSetup,
   $isPageNode,
-  $isPageSetupNode,
   PAGE_SIZES,
   PageNode,
-  PageSetupNode,
+  pageSetupState,
 } from '../../nodes/PageNode';
 import {
   $createPageContentNode,
@@ -76,11 +76,11 @@ export function PagesPlugin(): null {
 
   const updatePageDimensions = useCallback(() => {
     editor.getEditorState().read(() => {
-      const pageSetupNode = $getPageSetupNode();
+      const pageSetup = $getPageSetup();
       const rootElement = editor.getRootElement();
       if (!rootElement) return;
-      if (pageSetupNode) {
-        const {pageSize, orientation, margins} = pageSetupNode.getPageSetup();
+      if (pageSetup) {
+        const {pageSize, orientation, margins} = pageSetup;
         rootElement.dataset.paged = 'true';
         const pageWidth =
           PAGE_SIZES[pageSize][
@@ -134,17 +134,11 @@ export function PagesPlugin(): null {
   const fixPageStructure = useCallback(() => {
     editor.update(
       () => {
-        const pageSetupNode = $getPageSetupNode();
-        if (!pageSetupNode) return;
         const root = $getRoot();
         const children = root.getChildren();
-        const pages = [] as Array<PageNode | PageBreakNode | PageSetupNode>;
+        const pages = [] as Array<PageNode | PageBreakNode>;
         for (const child of children) {
-          if (
-            $isPageNode(child) ||
-            $isPageBreakNode(child) ||
-            $isPageSetupNode(child)
-          ) {
+          if ($isPageNode(child) || $isPageBreakNode(child)) {
             if ($isPageNode(child)) {
               pages.push(child);
               const contentNode = child.getContentNode();
@@ -291,18 +285,13 @@ export function PagesPlugin(): null {
 
     const $enforcePageStructure = () => {
       const isEditable = editor.isEditable();
-      if (!isEditable) return;
-      const pageSetupNode = $getPageSetupNode();
-      if (!pageSetupNode) return;
+      if (!isEditable || $getPageSetup() === null) return;
       const root = $getRoot();
       const children = root.getChildren();
       const isInvalid =
         !children.some($isPageNode) ||
         children.some(
-          (child) =>
-            !$isPageNode(child) &&
-            !$isPageBreakNode(child) &&
-            !$isPageSetupNode(child),
+          (child) => !$isPageNode(child) && !$isPageBreakNode(child),
         ) ||
         children.some(
           (child) =>
@@ -350,8 +339,6 @@ export function PagesPlugin(): null {
       (pageNode) => {
         $ensurePageNodeChildren(pageNode);
         if (!isTouchedRef.current) return;
-        const pageSetupNode = $getPageSetupNode();
-        if (!pageSetupNode) return;
         if (pageNode.isMarkedForMeasurement()) return;
         pageNode.markForMeasurement();
         schedulePageMeasurement();
@@ -367,8 +354,6 @@ export function PagesPlugin(): null {
       PageContentNode,
       (node) => {
         if (!isTouchedRef.current) return;
-        const pageSetupNode = $getPageSetupNode();
-        if (!pageSetupNode) return;
         const pageNode = node.getParent();
         if (!$isPageNode(pageNode)) return;
         if (pageNode.isMarkedForMeasurement()) return;
@@ -484,19 +469,26 @@ export function PagesPlugin(): null {
     );
 
     const removeMutationListeners = mergeRegister(
-      editor.registerMutationListener(PageSetupNode, (mutations) => {
-        updatePageDimensions();
-        const mutation = mutations.values().toArray()[0];
-        if (mutation === 'destroyed') destroyPageStructure();
-        if (mutation !== 'updated') return;
-        const pageSetup = editor.getEditorState().read(() => {
-          const node = $getPageSetupNode();
-          if (!node) return null;
-          return node.getPageSetup();
-        });
-        if (!pageSetup) return;
-        resizePages();
-      }),
+      editor.registerMutationListener(
+        RootNode,
+        (_mutations, {prevEditorState}) => {
+          const change = $getStateChange(
+            editor.getEditorState().read($getRoot),
+            prevEditorState.read($getRoot),
+            pageSetupState,
+          );
+          if (!change) {
+            return;
+          }
+          const [pageState, _prevPageState] = change;
+          if (!pageState) {
+            destroyPageStructure();
+            return;
+          }
+          updatePageDimensions();
+          resizePages();
+        },
+      ),
       editor.registerMutationListener(PageNode, (mutations) => {
         if (!isTouchedRef.current) return;
         for (const [key, mutation] of mutations) {

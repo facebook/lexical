@@ -8,7 +8,7 @@
 import {ReactExtension} from '@lexical/react/ReactExtension';
 import {configExtension, defineExtension} from 'lexical';
 
-import {PageContentNode, PageNode, PageSetupNode} from '../../nodes/PageNode';
+import {PageContentNode, PageNode} from '../../nodes/PageNode';
 import {PageSetupDropdownComponent} from './PageSetupDropdown';
 import {PagesPlugin} from './PagesPlugin';
 
@@ -20,5 +20,5 @@ export const PagesExtension = defineExtension({
     }),
   ],
   name: '@lexical/playground/Pages',
-  nodes: [PageSetupNode, PageNode, PageContentNode],
+  nodes: [PageNode, PageContentNode],
 });

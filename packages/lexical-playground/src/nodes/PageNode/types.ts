@@ -20,7 +20,7 @@ export type PageSize =
 
 export type Orientation = 'portrait' | 'landscape';
 
-export type PageSetup = {
+export interface PageSetup {
   pageSize: PageSize;
   orientation: Orientation;
   margins: {
@@ -29,4 +29,4 @@ export type PageSetup = {
     bottom: number;
     left: number;
   };
-};
+}

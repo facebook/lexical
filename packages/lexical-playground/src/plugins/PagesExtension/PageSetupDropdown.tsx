@@ -8,16 +8,15 @@
 import type {JSX} from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$getRoot} from 'lexical';
+import {RootNode} from 'lexical';
 import {useCallback, useEffect, useState} from 'react';
 
 import {
-  $createPageSetupNode,
-  $getPageSetupNode,
+  $getPageSetup,
+  $setPageSetup,
   DEFAULT_PAGE_SETUP,
   PAGE_SIZES,
   type PageSetup,
-  PageSetupNode,
   type PageSize,
 } from '../../nodes/PageNode';
 import DropDown, {DropDownItem} from '../../ui/DropDown';
@@ -94,31 +93,22 @@ export function PageSetupDropdownComponent({
   const [marginsMenuOpen, setMarginsMenuOpen] = useState(false);
 
   const updatePageSetup = useCallback(() => {
-    const newPageSetup = editor.getEditorState().read(() => {
-      const node = $getPageSetupNode();
-      if (!node) return null;
-      return node.getPageSetup();
-    });
+    const newPageSetup = editor.getEditorState().read($getPageSetup);
     setPageSetup(newPageSetup);
     setOrientationMenuOpen(newPageSetup !== null);
     setMarginsMenuOpen(newPageSetup !== null);
   }, [editor]);
   useEffect(() => {
     updatePageSetup();
-    editor.registerMutationListener(PageSetupNode, updatePageSetup);
+    return editor.registerMutationListener(RootNode, updatePageSetup);
   }, [editor, updatePageSetup]);
 
   const applyUpdate = useCallback(
-    (fn: (setup: PageSetupNode) => void) => {
+    (v: null | Partial<PageSetup>) => {
       editor.update(() => {
-        const node = $getPageSetupNode();
-        if (node) {
-          fn(node);
-        } else {
-          const newPageSetup = $createPageSetupNode();
-          $getRoot().getFirstChildOrThrow().insertBefore(newPageSetup);
-          fn(newPageSetup);
-        }
+        $setPageSetup(
+          v ? (prev) => ({...(prev || DEFAULT_PAGE_SETUP), ...v}) : v,
+        );
       });
     },
     [editor],
@@ -144,9 +134,7 @@ export function PageSetupDropdownComponent({
           <DropDownItem
             className={`item wide dropdown-submenu-item ${dropDownActiveClass(pageSetup === null)}`}
             onClick={() => {
-              applyUpdate((node) => {
-                node.remove();
-              });
+              applyUpdate(null);
             }}>
             <span className="text">Continuous</span>
           </DropDownItem>
@@ -157,9 +145,7 @@ export function PageSetupDropdownComponent({
                 pageSetup?.pageSize === size,
               )}`}
               onClick={() => {
-                applyUpdate((node) => {
-                  node.setPageSize(size);
-                });
+                applyUpdate({pageSize: size});
               }}>
               <span className="text">{PAGE_SIZES[size].label}</span>
             </DropDownItem>
@@ -184,9 +170,7 @@ export function PageSetupDropdownComponent({
               pageSetup?.orientation === 'portrait',
             )}`}
             onClick={() => {
-              applyUpdate((node) => {
-                node.setOrientation('portrait');
-              });
+              applyUpdate({orientation: 'portrait'});
             }}>
             <span className="text">Portrait</span>
           </DropDownItem>
@@ -195,9 +179,7 @@ export function PageSetupDropdownComponent({
               pageSetup?.orientation === 'landscape',
             )}`}
             onClick={() => {
-              applyUpdate((node) => {
-                node.setOrientation('landscape');
-              });
+              applyUpdate({orientation: 'landscape'});
             }}>
             <span className="text">Landscape</span>
           </DropDownItem>
@@ -226,9 +208,7 @@ export function PageSetupDropdownComponent({
                 ),
               )}`}
               onClick={() => {
-                applyUpdate((node) => {
-                  node.setMargins(preset.margins);
-                });
+                applyUpdate({margins: preset.margins});
               }}>
               <span className="text">{preset.label}</span>
             </DropDownItem>

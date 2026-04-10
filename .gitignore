@@ -37,3 +37,5 @@ npm-debug.log*
 .idea/**/shelf
 
 .idea
+
+.claude

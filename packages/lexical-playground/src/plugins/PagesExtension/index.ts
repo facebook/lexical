@@ -53,6 +53,16 @@ export const PagesExtension = defineExtension({
     const pagesMarkedForMeasurement = new Set<NodeKey>();
 
     return {
+      $getPagesMarkedForMeasurement: (): PageNode[] => {
+        const pages = [];
+        for (const key of pagesMarkedForMeasurement) {
+          const page = $getNodeByKey(key);
+          if ($isPageNode(page) && page.isAttached()) {
+            pages.push(page);
+          }
+        }
+        return pages;
+      },
       Component: PageSetupDropdownComponent,
       clearFixedHeight: (node: PageNode) =>
         fixedPageHeights.delete(node.getKey()),
@@ -85,6 +95,7 @@ export const PagesExtension = defineExtension({
     let rafId: number | null = null;
     let previousPageKey: NodeKey | null = null;
     const {
+      $getPagesMarkedForMeasurement,
       markForMeasurement,
       isMarkedForMeasurement,
       markForMeasurementByKey,
@@ -152,20 +163,21 @@ export const PagesExtension = defineExtension({
     };
 
     const schedulePageMeasurement = () => {
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+      }
       rafId = requestAnimationFrame(() => {
-        editor.update(
-          () => {
-            $addUpdateTag(SKIP_SCROLL_INTO_VIEW_TAG);
-            const root = $getRoot();
-            const children = root.getChildren();
-            for (const child of children) {
-              if ($isPageNode(child) && isMarkedForMeasurement(child)) {
-                child.fixFlow();
-              }
-            }
-          },
-          {tag: HISTORY_MERGE_TAG},
-        );
+        editor.update(() => {
+          const pages = $getPagesMarkedForMeasurement();
+          if (pages.length === 0) {
+            return;
+          }
+          $addUpdateTag(SKIP_SCROLL_INTO_VIEW_TAG);
+          $addUpdateTag(HISTORY_MERGE_TAG);
+          for (const page of pages) {
+            page.fixFlow();
+          }
+        });
       });
     };
 

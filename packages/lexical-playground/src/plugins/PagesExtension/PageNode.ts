@@ -8,14 +8,20 @@
 import type {LexicalNode} from 'lexical';
 
 import {getExtensionDependencyFromEditor} from '@lexical/extension';
-import {$create, $getEditor, ElementNode, isHTMLElement} from 'lexical';
+import {
+  $create,
+  $getEditor,
+  addClassNamesToElement,
+  ElementNode,
+  isHTMLElement,
+} from 'lexical';
 
-import {PagesExtension} from '../../plugins/PagesExtension';
 import {
   $createPageContentNode,
   $isPageContentNode,
   PageContentNode,
 } from './PageContentNode';
+import {PagesExtension} from './PagesExtension';
 
 export class PageNode extends ElementNode {
   $config() {
@@ -32,7 +38,11 @@ export class PageNode extends ElementNode {
 
   createDOM(): HTMLElement {
     const dom = document.createElement('div');
-    dom.className = 'PlaygroundEditorTheme__page';
+    addClassNamesToElement(
+      dom,
+      getExtensionDependencyFromEditor($getEditor(), PagesExtension).config
+        .pageClass,
+    );
     return dom;
   }
 

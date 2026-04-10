@@ -5,13 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {LexicalNode, SerializedElementNode} from 'lexical';
+import type {LexicalNode} from 'lexical';
 
-import {ElementNode} from 'lexical';
+import {getExtensionDependencyFromEditor} from '@lexical/extension';
+import {$getEditor, addClassNamesToElement, ElementNode} from 'lexical';
 
 import {$isPageNode, PageNode} from './PageNode';
-
-export type SerializedPageContentNode = SerializedElementNode;
+import {PagesExtension} from './PagesExtension';
 
 export class PageContentNode extends ElementNode {
   $config() {
@@ -22,7 +22,11 @@ export class PageContentNode extends ElementNode {
 
   createDOM(): HTMLElement {
     const dom = document.createElement('div');
-    dom.className = 'PlaygroundEditorTheme__pageContent';
+    addClassNamesToElement(
+      dom,
+      getExtensionDependencyFromEditor($getEditor(), PagesExtension).config
+        .pageContentClass,
+    );
     return dom;
   }
 
@@ -51,14 +55,6 @@ export class PageContentNode extends ElementNode {
 
   canInsertTextAfter(): boolean {
     return false;
-  }
-
-  exportJSON(): SerializedPageContentNode {
-    return {
-      ...super.exportJSON(),
-      type: 'page-content',
-      version: 1,
-    };
   }
 
   canBeEmpty(): boolean {

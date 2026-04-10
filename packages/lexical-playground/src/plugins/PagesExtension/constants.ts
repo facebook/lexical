@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {PageSetup, PageSize} from './types';
+import type {PageSetup, PageSize} from './types';
 
 export const PAGE_SIZES: Record<
   PageSize,

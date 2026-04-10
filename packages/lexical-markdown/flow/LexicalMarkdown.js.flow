@@ -68,14 +68,14 @@ export type MultilineElementTransformer = {
   type: 'multiline-element';
 };
 
-export type TextFormatTransformer = $ReadOnly<{
-  format: $ReadOnlyArray<TextFormatType>,
+export type TextFormatTransformer = Readonly<{
+  format: ReadonlyArray<TextFormatType>,
   tag: string,
   intraword?: boolean,
   type: 'text-format',
 }>;
 
-export type TextMatchTransformer = $ReadOnly<{
+export type TextMatchTransformer = Readonly<{
   dependencies: Array<Class<LexicalNode>>,
   export?: (
     node: LexicalNode,

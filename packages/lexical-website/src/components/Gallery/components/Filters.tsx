@@ -10,7 +10,7 @@ import type {CSSProperties, ReactNode} from 'react';
 
 import Heading from '@theme/Heading';
 import clsx from 'clsx';
-import React from 'react';
+import React, {useMemo} from 'react';
 
 import {Example} from '../pluginList';
 import {Tag} from '../tagList';
@@ -31,13 +31,22 @@ function TagCircleIcon({color, style}: {color: string; style?: CSSProperties}) {
   );
 }
 
-function TagListItem({tag, tagKey}: {tag: Tag; tagKey: string}) {
+function TagListItem({
+  count,
+  tag,
+  tagKey,
+}: {
+  count: number;
+  tag: Tag;
+  tagKey: string;
+}) {
   const {title, description, color} = tag;
   return (
     <li className={styles.tagListItem}>
       <TagSelect
         tag={tagKey}
         label={title}
+        count={count}
         description={description}
         icon={
           <TagCircleIcon
@@ -53,11 +62,24 @@ function TagListItem({tag, tagKey}: {tag: Tag; tagKey: string}) {
   );
 }
 
-function TagList({allTags}: {allTags: {[type in string]: Tag}}) {
+function TagList({
+  allTags,
+  tagCounts,
+}: {
+  allTags: {[type in string]: Tag};
+  tagCounts: Map<string, number>;
+}) {
   return (
     <ul className={clsx('clean-list', styles.tagList)}>
       {Object.keys(allTags).map((tag) => {
-        return <TagListItem key={tag} tag={allTags[tag]} tagKey={tag} />;
+        return (
+          <TagListItem
+            key={tag}
+            tag={allTags[tag]}
+            tagKey={tag}
+            count={tagCounts.get(tag) ?? 0}
+          />
+        );
       })}
     </ul>
   );
@@ -85,16 +107,28 @@ function HeadingRow({filteredPlugins}: {filteredPlugins: Array<Example>}) {
 }
 
 export default function Filters({
+  allPlugins,
   filteredPlugins,
   tagList,
 }: {
+  allPlugins: Array<Example>;
   filteredPlugins: Array<Example>;
   tagList: {[type in string]: Tag};
 }): ReactNode {
+  const tagCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const plugin of allPlugins) {
+      for (const tag of plugin.tags) {
+        counts.set(tag, (counts.get(tag) ?? 0) + 1);
+      }
+    }
+    return counts;
+  }, [allPlugins]);
+
   return (
     <section className="margin-top--l margin-bottom--lg container">
       <HeadingRow filteredPlugins={filteredPlugins} />
-      <TagList allTags={tagList} />
+      <TagList allTags={tagList} tagCounts={tagCounts} />
     </section>
   );
 }

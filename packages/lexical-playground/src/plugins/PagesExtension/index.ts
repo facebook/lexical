@@ -5,10 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-export {
-  PageSetupDropdownComponent,
-  type PageSetupDropdownProps,
-} from '../PagesReactExtension/PageSetupDropdown';
 export {DEFAULT_PAGE_SETUP, PAGE_SIZES} from './constants';
 export {
   $createPageContentNode,

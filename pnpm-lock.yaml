@@ -265,6 +265,30 @@ importers:
 
   packages/lexical: {}
 
+  packages/lexical-ai:
+    dependencies:
+      '@lexical/link':
+        specifier: workspace:*
+        version: link:../lexical-link
+      '@lexical/list':
+        specifier: workspace:*
+        version: link:../lexical-list
+      '@lexical/react':
+        specifier: workspace:*
+        version: link:../lexical-react
+      '@lexical/rich-text':
+        specifier: workspace:*
+        version: link:../lexical-rich-text
+      '@lexical/utils':
+        specifier: workspace:*
+        version: link:../lexical-utils
+      lexical:
+        specifier: workspace:*
+        version: link:../lexical
+      react:
+        specifier: 19.1.1
+        version: 19.1.1
+
   packages/lexical-clipboard:
     dependencies:
       '@lexical/html':
@@ -634,6 +658,9 @@ importers:
       '@floating-ui/react':
         specifier: ^0.27.16
         version: 0.27.16(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+      '@lexical/ai':
+        specifier: workspace:*
+        version: link:../lexical-ai
       '@lexical/clipboard':
         specifier: workspace:*
         version: link:../lexical-clipboard

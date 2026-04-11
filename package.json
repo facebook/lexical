@@ -188,7 +188,7 @@
     "y-websocket": "^1.5.4"
   },
   "dependencies": {
-    "semver": "^7.7.2",
+    "semver": "^7.7.4",
     "yjs": "^13.6.27"
   },
   "pnpm": {

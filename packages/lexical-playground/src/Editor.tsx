@@ -39,6 +39,7 @@ import {
 } from './collaboration';
 import {useSettings} from './context/SettingsContext';
 import ActionsPlugin from './plugins/ActionsPlugin';
+import AIPlugin from './plugins/AIPlugin';
 import AutocompletePlugin from './plugins/AutocompletePlugin';
 import AutoEmbedPlugin from './plugins/AutoEmbedPlugin';
 import CodeActionMenuPlugin from './plugins/CodeActionMenuPlugin';
@@ -309,6 +310,7 @@ export default function Editor(): JSX.Element {
         />
       </div>
       {showTreeView && <TreeViewPlugin />}
+      {isRichText && <AIPlugin />}
     </>
   );
 }

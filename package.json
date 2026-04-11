@@ -183,7 +183,6 @@
     "typescript": "^6.0.2",
     "typescript-eslint": "^8.58.1",
     "vite": "^8.0.8",
-    "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.1.4",
     "y-websocket": "^3.0.0"
   },

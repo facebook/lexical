@@ -8,6 +8,7 @@
 import {effect, watchedSignal} from '@lexical/extension';
 import {
   $addUpdateTag,
+  $createNodeSelection,
   $createParagraphNode,
   $getNearestNodeFromDOMNode,
   $getNearestRootOrShadowRoot,
@@ -16,6 +17,7 @@ import {
   $getSelection,
   $getStateChange,
   $isRangeSelection,
+  $setSelection,
   COMMAND_PRIORITY_LOW,
   defineExtension,
   DELETE_CHARACTER_COMMAND,
@@ -283,7 +285,6 @@ export const PagesExtension = defineExtension({
         if (!rootElement) return;
         if (pageSetup) {
           const {pageSize, orientation, margins} = pageSetup;
-          rootElement.dataset.paged = 'true';
           const pageWidth =
             PAGE_SIZES[pageSize][
               orientation === 'portrait' ? 'width' : 'height'
@@ -464,8 +465,6 @@ export const PagesExtension = defineExtension({
         // and marks the affected page (and its predecessor) for re-measurement.
         const pageObserver = new ResizeObserver((entries) => {
           const pageContent = entries[0].target as HTMLElement;
-          const isPaged = rootElement.dataset.paged === 'true';
-          if (!isPaged) return;
           editor.read(() => {
             const pageContentNode = $getNearestNodeFromDOMNode(pageContent);
             if (!$isPageContentNode(pageContentNode)) return;
@@ -571,6 +570,8 @@ export const PagesExtension = defineExtension({
           editor.registerCommand(
             SELECTION_CHANGE_COMMAND,
             () => {
+              const pageSetup = $getPageSetup();
+              if (!pageSetup) return false;
               const selection = $getSelection();
               if (!$isRangeSelection(selection)) return false;
               const anchorNode = selection.anchor.getNode();
@@ -607,6 +608,8 @@ export const PagesExtension = defineExtension({
           editor.registerCommand(
             DELETE_CHARACTER_COMMAND,
             (isBackward: boolean) => {
+              const pageSetup = $getPageSetup();
+              if (!pageSetup) return false;
               const selection = $getSelection();
               if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
                 return false;
@@ -625,10 +628,17 @@ export const PagesExtension = defineExtension({
                 (nearestRoot.getTextContentSize() ?? 0) === 0;
               if (isEmpty && isBackward) {
                 const pageNode = nearestRoot.getPageNode();
-                const previousPage = pageNode.getPreviousPage();
-                if (!previousPage) return false;
+                const previousSibling = pageNode.getPreviousSibling();
                 pageNode.remove();
-                previousPage.getContentNode().selectEnd();
+                if ($isPageNode(previousSibling)) {
+                  previousSibling.getContentNode().selectEnd();
+                } else if ($isPageBreakNode(previousSibling)) {
+                  const nodeSelection = $createNodeSelection();
+                  nodeSelection.add(previousSibling.getKey());
+                  $setSelection(nodeSelection);
+                } else {
+                  pageNode.selectPrevious();
+                }
                 return true;
               }
 
@@ -708,7 +718,6 @@ export const PagesExtension = defineExtension({
         // Copies page CSS custom properties to :root so CSS @page rules
         // (which can't read properties from arbitrary elements) pick them up.
         const handleBeforePrint = () => {
-          if (rootElement.dataset.paged !== 'true') return;
           for (const prop of PAGE_PROPS) {
             const val = rootElement.style.getPropertyValue(prop);
             if (val) document.documentElement.style.setProperty(prop, val);

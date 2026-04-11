@@ -17,7 +17,6 @@ export class ContentsListNode extends ListNode {
 
   createDOM(config: EditorConfig, editor?: LexicalEditor): HTMLElement {
     const element = super.createDOM(config, editor);
-    element.style.listStyle = 'none';
     element.classList.add(config.theme.contents);
     return element;
   }

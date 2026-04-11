@@ -545,6 +545,9 @@
 .PlaygroundEditorTheme__nestedListItem:after {
   display: none;
 }
+.PlaygroundEditorTheme__contents {
+  list-style-type: none;
+}
 .PlaygroundEditorTheme__contents .PlaygroundEditorTheme__contents {
   margin-left: 32px;
 }

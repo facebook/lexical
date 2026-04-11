@@ -8,16 +8,14 @@
 
 import {
   $createParagraphNode,
-  $createRangeSelection,
   $createTextNode,
   $getNodeByKey,
   $getRoot,
   $isParagraphNode,
   $isTextNode,
-  $setSelection,
 } from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
-import {describe, expect, it} from 'vitest';
+import {assert, describe, expect, it} from 'vitest';
 
 import {clearFormatting} from '../../src/plugins/ToolbarPlugin/utils';
 
@@ -36,12 +34,8 @@ describe('ToolbarPlugin clearFormatting', () => {
           $getRoot().clear().append(paragraph);
 
           const firstChild = paragraph.getFirstChild();
-          if (!$isTextNode(firstChild)) {
-            throw new Error('Expected first child to be a TextNode.');
-          }
-          const selection = $createRangeSelection();
-          selection.setTextNodeRange(firstChild, 0, firstChild, 3);
-          $setSelection(selection);
+          assert($isTextNode(firstChild), 'Expected first child to be a TextNode.');
+          firstChild.select(0, 3);
         },
         {discrete: true},
       );
@@ -50,9 +44,7 @@ describe('ToolbarPlugin clearFormatting', () => {
 
       editor.getEditorState().read(() => {
         const paragraph = $getNodeByKey(paragraphKey);
-        if (!$isParagraphNode(paragraph)) {
-          throw new Error('Expected a ParagraphNode.');
-        }
+        assert($isParagraphNode(paragraph), 'Expected to find a ParagraphNode.');
         expect(paragraph.getFormatType()).toBe('center');
       });
     });

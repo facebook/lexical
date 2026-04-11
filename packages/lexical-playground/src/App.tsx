@@ -63,6 +63,7 @@ import {PlaygroundMarkdownShortcutsExtension} from './plugins/MarkdownShortcutsE
 import {MaxLengthExtension} from './plugins/MaxLengthPlugin';
 import {PageBreakExtension} from './plugins/PageBreakExtension';
 import PasteLogPlugin from './plugins/PasteLogPlugin';
+import {TabFocusExtension} from './plugins/TabFocusExtension';
 import TestRecorderPlugin from './plugins/TestRecorderPlugin';
 import {TwitterExtension} from './plugins/TwitterExtension';
 import TypingPerfPlugin from './plugins/TypingPerfPlugin';
@@ -165,6 +166,7 @@ const PlaygroundRichTextExtension = defineExtension({
     TwitterExtension,
     YouTubeExtension,
     FigmaExtension,
+    TabFocusExtension,
     configExtension(ListExtension, {shouldPreserveNumbering: false}),
     CheckListExtension,
     PlaygroundMarkdownShortcutsExtension,

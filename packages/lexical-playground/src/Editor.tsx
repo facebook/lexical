@@ -61,7 +61,6 @@ import PollPlugin from './plugins/PollPlugin';
 import ShortcutsPlugin from './plugins/ShortcutsPlugin';
 import SpecialTextPlugin from './plugins/SpecialTextPlugin';
 import SpeechToTextPlugin from './plugins/SpeechToTextPlugin';
-import TabFocusPlugin from './plugins/TabFocusPlugin';
 import TableCellActionMenuPlugin from './plugins/TableActionMenuPlugin';
 import TableCellResizer from './plugins/TableCellResizer';
 import TableFitNestedTablePlugin from './plugins/TableFitNestedTablePlugin';
@@ -253,7 +252,6 @@ export default function Editor(): JSX.Element {
             <PollPlugin />
             <EquationsPlugin />
             <ExcalidrawPlugin />
-            <TabFocusPlugin />
             <TabIndentationPlugin maxIndent={7} />
             <CollapsiblePlugin />
             <LayoutPlugin />

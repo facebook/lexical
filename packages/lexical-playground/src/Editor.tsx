@@ -71,7 +71,6 @@ import TableOfContentsPlugin from './plugins/TableOfContentsPlugin';
 import TableScrollShadowPlugin from './plugins/TableScrollShadowPlugin';
 import ToolbarPlugin from './plugins/ToolbarPlugin';
 import TreeViewPlugin from './plugins/TreeViewPlugin';
-import TwitterPlugin from './plugins/TwitterPlugin';
 import {VersionsPlugin} from './plugins/VersionsPlugin';
 import YouTubePlugin from './plugins/YouTubePlugin';
 import ContentEditable from './ui/ContentEditable';
@@ -254,7 +253,6 @@ export default function Editor(): JSX.Element {
             <TableCellResizer />
             <TableScrollShadowPlugin />
             <PollPlugin />
-            <TwitterPlugin />
             <YouTubePlugin />
             <FigmaPlugin />
             <EquationsPlugin />

@@ -63,6 +63,7 @@ import {MaxLengthExtension} from './plugins/MaxLengthPlugin';
 import {PageBreakExtension} from './plugins/PageBreakExtension';
 import PasteLogPlugin from './plugins/PasteLogPlugin';
 import TestRecorderPlugin from './plugins/TestRecorderPlugin';
+import {TwitterExtension} from './plugins/TwitterExtension';
 import TypingPerfPlugin from './plugins/TypingPerfPlugin';
 import Settings from './Settings';
 import PlaygroundEditorTheme from './themes/PlaygroundEditorTheme';
@@ -159,6 +160,7 @@ const PlaygroundRichTextExtension = defineExtension({
     ImagesExtension,
     HorizontalRuleExtension,
     PageBreakExtension,
+    TwitterExtension,
     configExtension(ListExtension, {shouldPreserveNumbering: false}),
     CheckListExtension,
     PlaygroundMarkdownShortcutsExtension,

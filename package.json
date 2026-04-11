@@ -153,7 +153,7 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-simple-import-sort": "^13.0.0",
     "eslint-plugin-sort-keys-fix": "^1.1.2",
-    "flow-bin": "^0.307.1",
+    "flow-bin": "^0.309.0",
     "flow-typed": "^4.1.1",
     "fs-extra": "^10.0.0",
     "glob": "^10.4.1",
@@ -188,7 +188,7 @@
     "y-websocket": "^1.5.4"
   },
   "dependencies": {
-    "semver": "^7.7.2",
+    "semver": "^7.7.4",
     "yjs": "^13.6.27"
   },
   "pnpm": {

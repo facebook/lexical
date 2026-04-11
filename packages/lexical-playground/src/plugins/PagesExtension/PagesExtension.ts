@@ -65,7 +65,7 @@ export const PagesExtension = defineExtension({
   dependencies: [PageBreakExtension],
   name: '@lexical/playground/Pages',
   nodes: () => [PageNode, PageContentNode],
-  register: (editor, config, state) => {
+  register: (editor) => {
     let rafId: number | null = null;
     let previousPageKey: NodeKey | null = null;
     const fixedPageHeights = new Map<NodeKey, number>();
@@ -684,11 +684,11 @@ export const PagesExtension = defineExtension({
               if (!change) {
                 return;
               }
+              updatePageDimensions();
               const [pageState, _prevPageState] = change;
               if (!pageState) {
                 destroyPageStructure();
               } else {
-                updatePageDimensions();
                 resizePages();
               }
             },

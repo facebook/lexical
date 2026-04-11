@@ -65,6 +65,7 @@ import PasteLogPlugin from './plugins/PasteLogPlugin';
 import TestRecorderPlugin from './plugins/TestRecorderPlugin';
 import {TwitterExtension} from './plugins/TwitterExtension';
 import TypingPerfPlugin from './plugins/TypingPerfPlugin';
+import {YouTubeExtension} from './plugins/YouTubeExtension';
 import Settings from './Settings';
 import PlaygroundEditorTheme from './themes/PlaygroundEditorTheme';
 import {validateUrl} from './utils/url';
@@ -161,6 +162,7 @@ const PlaygroundRichTextExtension = defineExtension({
     HorizontalRuleExtension,
     PageBreakExtension,
     TwitterExtension,
+    YouTubeExtension,
     configExtension(ListExtension, {shouldPreserveNumbering: false}),
     CheckListExtension,
     PlaygroundMarkdownShortcutsExtension,

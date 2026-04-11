@@ -72,7 +72,6 @@ import TableScrollShadowPlugin from './plugins/TableScrollShadowPlugin';
 import ToolbarPlugin from './plugins/ToolbarPlugin';
 import TreeViewPlugin from './plugins/TreeViewPlugin';
 import {VersionsPlugin} from './plugins/VersionsPlugin';
-import YouTubePlugin from './plugins/YouTubePlugin';
 import ContentEditable from './ui/ContentEditable';
 
 const COLLAB_DOC_ID = 'main';
@@ -253,7 +252,6 @@ export default function Editor(): JSX.Element {
             <TableCellResizer />
             <TableScrollShadowPlugin />
             <PollPlugin />
-            <YouTubePlugin />
             <FigmaPlugin />
             <EquationsPlugin />
             <ExcalidrawPlugin />

@@ -311,7 +311,6 @@ function $isBlockFullySelected(
   block: ElementNode,
   caretRange: CaretRange,
 ): boolean {
-  // Both block boundary carets must be in "next" direction for $comparePointCaretNext
   const blockStartCaret = $normalizeCaret($getChildCaret(block, 'next'));
   const blockEndCaret = $normalizeCaret(
     $getCaretInDirection($getChildCaret(block, 'previous'), 'next'),
@@ -364,15 +363,10 @@ export const clearFormatting = (
     }
     const selection = $getSelection();
     if ($isRangeSelection(selection) || $isTableSelection(selection)) {
-      // Capture the caret range BEFORE extract(), only possible for RangeSelection.
-      // TableSelection boundaries are handled by extract() itself.
       const preExtractCaretRange = $isRangeSelection(selection)
         ? $caretRangeFromSelection(selection)
         : null;
-
       const extractedNodes = selection.extract();
-
-      // Re-read the selection AFTER extract() to check for collapse.
       const postExtractSelection = $getSelection();
       if ($isRangeSelection(postExtractSelection)) {
         const postExtractCaretRange =
@@ -401,8 +395,6 @@ export const clearFormatting = (
           const nearestBlockElement =
             $getNearestBlockElementAncestorOrThrow(node);
           if (nearestBlockElement.getFormat() !== 0) {
-            // Only clear block format if we have a pre-extract range (i.e. not
-            // a TableSelection) and the block was fully covered by it.
             if (
               preExtractCaretRange !== null &&
               $isBlockFullySelected(nearestBlockElement, preExtractCaretRange)

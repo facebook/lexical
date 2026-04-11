@@ -53,12 +53,12 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4.2.1",
     "buffer": "^6.0.3",
-    "cross-env": "^7.0.3",
+    "cross-env": "^10.1.0",
     "prettier-plugin-tailwindcss": "^0.7.2",
-    "tailwindcss": "^4.2.1",
-    "typedoc": "^0.28.13",
-    "typescript": "^5.9.2",
-    "webpack": "^5.101.3"
+    "tailwindcss": "^4.2.2",
+    "typedoc": "^0.28.18",
+    "typescript": "^6.0.2",
+    "webpack": "^5.106.1"
   },
   "browserslist": {
     "production": [

@@ -111,10 +111,11 @@ export function PageSetupDropdownComponent({
         <>
           <DropDownItem
             className={`item wide dropdown-submenu-item ${dropDownActiveClass(pageSetup === null)}`}
-            onClick={() => {
+            onClick={(event) => {
+              event.stopPropagation();
               applyUpdate(null);
             }}>
-            <span className="text">Continuous</span>
+            <span className="text">Pageless</span>
           </DropDownItem>
           {PAGE_SIZE_ORDER.map((size) => (
             <DropDownItem
@@ -122,7 +123,8 @@ export function PageSetupDropdownComponent({
               className={`item wide dropdown-submenu-item ${dropDownActiveClass(
                 pageSetup?.pageSize === size,
               )}`}
-              onClick={() => {
+              onClick={(event) => {
+                event.stopPropagation();
                 applyUpdate({pageSize: size});
               }}>
               <span className="text">{PAGE_SIZES[size].label}</span>
@@ -147,7 +149,8 @@ export function PageSetupDropdownComponent({
             className={`item wide dropdown-submenu-item ${dropDownActiveClass(
               pageSetup?.orientation === 'portrait',
             )}`}
-            onClick={() => {
+            onClick={(event) => {
+              event.stopPropagation();
               applyUpdate({orientation: 'portrait'});
             }}>
             <span className="text">Portrait</span>
@@ -156,7 +159,8 @@ export function PageSetupDropdownComponent({
             className={`item wide dropdown-submenu-item ${dropDownActiveClass(
               pageSetup?.orientation === 'landscape',
             )}`}
-            onClick={() => {
+            onClick={(event) => {
+              event.stopPropagation();
               applyUpdate({orientation: 'landscape'});
             }}>
             <span className="text">Landscape</span>
@@ -185,7 +189,8 @@ export function PageSetupDropdownComponent({
                   preset.margins,
                 ),
               )}`}
-              onClick={() => {
+              onClick={(event) => {
+                event.stopPropagation();
                 applyUpdate({margins: preset.margins});
               }}>
               <span className="text">{preset.label}</span>

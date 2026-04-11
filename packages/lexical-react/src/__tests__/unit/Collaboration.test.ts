@@ -25,7 +25,7 @@ import {
   createTestConnection,
   TestConnection,
   waitForReact,
-} from './utils';
+} from '../utils';
 
 describe('Collaboration', () => {
   let container: null | HTMLDivElement = null;

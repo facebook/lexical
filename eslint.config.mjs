@@ -414,6 +414,17 @@ export default [
     },
   },
 
+  // Override: Tests - disable react-hooks rules that flag patterns we
+  // intentionally use in tests (reassigning module-scoped variables and
+  // mutating captured objects from inside test components/hooks).
+  {
+    files: ['packages/**/__tests__/**', 'scripts/__tests__/**'],
+    rules: {
+      'react-hooks/globals': OFF,
+      'react-hooks/immutability': OFF,
+    },
+  },
+
   // Override: Index exports - restrict default exports
   {
     files: [

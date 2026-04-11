@@ -25,7 +25,7 @@ import {expectHtmlToBeEqual, html} from 'lexical/src/__tests__/utils';
 import {afterEach, beforeEach, describe, it} from 'vitest';
 import * as Y from 'yjs';
 
-import {Client, createTestConnection, waitForReact} from './utils';
+import {Client, createTestConnection, waitForReact} from '../utils';
 
 describe('CollaborationSnapshot', () => {
   let container: null | HTMLDivElement = null;

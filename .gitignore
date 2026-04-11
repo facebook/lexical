@@ -38,6 +38,7 @@ npm-debug.log*
 
 .idea
 
+.claude
 # Lockfiles in standalone examples and integration test fixtures.
 # These directories are excluded from the pnpm workspace and have their own
 # dependency manifests. Tracking their lockfiles causes Dependabot to generate

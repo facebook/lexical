@@ -11,7 +11,7 @@ import type {JSX} from 'react';
 
 import './index.css';
 
-import {$createLinkNode,LinkNode} from '@lexical/link';
+import {$createLinkNode, LinkNode} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {TableOfContentsPlugin as LexicalTableOfContentsPlugin} from '@lexical/react/LexicalTableOfContentsPlugin';
 import {$findMatchingParent} from '@lexical/utils';

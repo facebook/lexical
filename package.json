@@ -137,6 +137,7 @@
     "@eslint/compat": "^2.0.0",
     "@eslint/js": "^10.0.0",
     "@vitejs/plugin-react": "^5.0.3",
+    "@y/websocket-server": "^0.1.5",
     "baseline-browser-mapping": "^2.9.9",
     "chokidar": "^3.5.2",
     "concurrently": "^8.2.2",
@@ -185,7 +186,7 @@
     "vite": "^7.3.2",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.2.4",
-    "y-websocket": "^1.5.4"
+    "y-websocket": "^3.0.0"
   },
   "dependencies": {
     "semver": "^7.7.4",

@@ -362,25 +362,19 @@ export const clearFormatting = (
     }
     const selection = $getSelection();
     if ($isRangeSelection(selection) || $isTableSelection(selection)) {
-      const preExtractCaretRange = $isRangeSelection(selection)
-        ? $caretRangeFromSelection(selection)
-        : null;
       const extractedNodes = selection.extract();
+
       const postExtractSelection = $getSelection();
-      if ($isRangeSelection(postExtractSelection)) {
-        const postExtractCaretRange =
-          $caretRangeFromSelection(postExtractSelection);
-        const anchorNext = $getCaretInDirection(
-          postExtractCaretRange.anchor,
-          'next',
-        );
-        const focusNext = $getCaretInDirection(
-          postExtractCaretRange.focus,
-          'next',
-        );
-        if ($comparePointCaretNext(anchorNext, focusNext) === 0) {
-          return;
-        }
+      if (!$isRangeSelection(postExtractSelection)) {
+        return;
+      }
+
+      const postExtractCaretRange = $caretRangeFromSelection(postExtractSelection);
+      const anchorNext = $getCaretInDirection(postExtractCaretRange.anchor, 'next');
+      const focusNext = $getCaretInDirection(postExtractCaretRange.focus, 'next');
+
+      if ($comparePointCaretNext(anchorNext, focusNext) === 0) {
+        return;
       }
 
       extractedNodes.forEach((node) => {
@@ -394,10 +388,7 @@ export const clearFormatting = (
           const nearestBlockElement =
             $getNearestBlockElementAncestorOrThrow(node);
           if (nearestBlockElement.getFormat() !== 0) {
-            if (
-              preExtractCaretRange !== null &&
-              $isBlockFullySelected(nearestBlockElement, preExtractCaretRange)
-            ) {
+            if ($isBlockFullySelected(nearestBlockElement, postExtractCaretRange)) {
               nearestBlockElement.setFormat('');
             }
           }

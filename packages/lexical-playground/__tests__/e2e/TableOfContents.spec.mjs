@@ -214,8 +214,7 @@ test.describe('TableOfContents', () => {
     page,
     isPlainText,
   }) => {
-    // TODO
-    test.skip();
+    test.skip(isPlainText);
     await focusEditor(page);
 
     await page.keyboard.type('h1');
@@ -286,8 +285,7 @@ test.describe('TableOfContents', () => {
     page,
     isPlainText,
   }) => {
-    // TODO
-    test.skip();
+    test.skip(isPlainText);
     await focusEditor(page);
 
     await page.keyboard.type('h1');
@@ -338,8 +336,7 @@ test.describe('TableOfContents', () => {
     page,
     isPlainText,
   }) => {
-    // TODO
-    test.skip();
+    test.skip(isPlainText);
     await focusEditor(page);
 
     await page.keyboard.type('h1');

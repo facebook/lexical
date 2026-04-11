@@ -559,6 +559,11 @@
   text-decoration: underline;
   text-decoration-style: dashed;
 }
+.PlaygroundEditorTheme__contentsLink:empty {
+  display: inline-block;
+  min-width: 1px;
+  min-height: 1em;
+}
 .PlaygroundEditorTheme__tokenComment {
   color: slategray;
 }

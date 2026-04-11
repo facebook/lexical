@@ -16,14 +16,16 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {TableOfContentsPlugin as LexicalTableOfContentsPlugin} from '@lexical/react/LexicalTableOfContentsPlugin';
 import {$findMatchingParent} from '@lexical/utils';
 import {
+  COMMAND_PRIORITY_HIGH,
   COMMAND_PRIORITY_LOW,
   createCommand,
+  DELETE_CHARACTER_COMMAND,
   type LexicalCommand,
   mergeRegister,
   type NodeKey,
   TextNode,
 } from 'lexical';
-import {$createTextNode, $insertNodes} from 'lexical';
+import {$createTextNode, $getSelection,$insertNodes,$isRangeSelection} from 'lexical';
 import * as React from 'react';
 import {useEffect, useRef, useState} from 'react';
 
@@ -118,6 +120,23 @@ function TableOfContentsList({
             true,
           );
         }
+        if (node.isEmpty()) {
+          // When a ContentsLink becomes empty (e.g. all text deleted),
+          // set element selection at the parent ContentsItem so the user
+          // can type new text (TextNode transform moves it into the link)
+          // or press backspace to remove the ContentsItem
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            const anchorNode = selection.anchor.getNode();
+            const contentsItem = node.getParent();
+            if (
+              contentsItem &&
+              (anchorNode === node || anchorNode === contentsItem)
+            ) {
+              contentsItem.select(0, 0);
+            }
+          }
+        }
       }),
       editor.registerNodeTransform(LinkNode, (node) => {
         if ($findMatchingParent(node, $isContentsListNode)) {
@@ -131,6 +150,76 @@ function TableOfContentsList({
           );
         }
       }),
+      // Handle deletion within ContentsLink elements:
+      // 1. When deleting the last character: keep the ContentsLink empty
+      //    and set selection at the parent ContentsItem.
+      // 2. When at ContentsItem with an empty ContentsLink:
+      //    remove the ContentsItem entirely
+      editor.registerCommand(
+        DELETE_CHARACTER_COMMAND,
+        (isBackward) => {
+          const selection = $getSelection();
+          if (!$isRangeSelection(selection)) {
+            return false;
+          }
+          const {anchor} = selection;
+
+          // Case 1: Deleting text inside a ContentsLink
+          if (anchor.type === 'text') {
+            const textNode = anchor.getNode();
+            const parent = textNode.getParent();
+            if (!$isContentsLinkNode(parent)) {
+              return false;
+            }
+            const contentsItem = parent.getParent();
+            if (!contentsItem) {
+              return false;
+            }
+            const textContent = textNode.getTextContent();
+            // Collapsed selection: deleting the last remaining character
+            if (
+              selection.isCollapsed() &&
+              textContent.length > 1 &&
+              ((isBackward && anchor.offset === 1) ||
+                (!isBackward && anchor.offset === 0))
+            ) {
+              textNode.remove();
+              contentsItem.select(0, 0);
+              return true;
+            }
+            // Non-collapsed selection: deleting all text in the link
+            if (
+              !selection.isCollapsed() &&
+              selection.focus.type === 'text' &&
+              selection.focus.getNode() === textNode &&
+              selection.getTextContent().length === textContent.length
+            ) {
+              textNode.remove();
+              contentsItem.select(0, 0);
+              return true;
+            }
+            return false;
+          }
+
+          // Case 2: At a ContentsItem whose only child is empty ContentsLink
+          // — remove the ContentsItem entirely
+          if (anchor.type === 'element' && anchor.offset === 0) {
+            const anchorNode = anchor.getNode();
+            const firstChild = anchorNode.getFirstChild();
+            if (
+              anchorNode.getChildrenSize() === 1 &&
+              $isContentsLinkNode(firstChild) &&
+              firstChild.isEmpty()
+            ) {
+              anchorNode.remove();
+              return true;
+            }
+          }
+
+          return false;
+        },
+        COMMAND_PRIORITY_HIGH,
+      ),
     );
   }, [editor]);
 

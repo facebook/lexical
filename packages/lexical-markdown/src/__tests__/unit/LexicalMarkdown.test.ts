@@ -1774,3 +1774,73 @@ describe('markdown whitespace import (default mode)', () => {
     expect(exported).toBe('foo\nbar');
   });
 });
+
+// Tests for issue #8012: negative lookbehind assertions (?<!) throw a SyntaxError
+// in Safari < 16.4 at RegExp construction time, crashing the entire editor.
+// The fix captures the preceding character in group 1 instead.
+describe('markdown Safari compatibility (issue #8012)', () => {
+  function createTestEditor() {
+    return createHeadlessEditor({
+      nodes: [
+        HeadingNode,
+        ListNode,
+        ListItemNode,
+        QuoteNode,
+        CodeNode,
+        LinkNode,
+      ],
+    });
+  }
+
+  function roundtrip(md: string): string {
+    const editor = createTestEditor();
+    editor.update(() => $convertFromMarkdownString(md, TRANSFORMERS), {
+      discrete: true,
+    });
+    return editor
+      .getEditorState()
+      .read(() => $convertToMarkdownString(TRANSFORMERS));
+  }
+
+  it('does not throw when constructing markdown regex patterns', () => {
+    expect(() => {
+      const editor = createTestEditor();
+      editor.update(() => $convertFromMarkdownString('`hello`', TRANSFORMERS), {
+        discrete: true,
+      });
+    }).not.toThrow();
+  });
+
+  it('parses a code span at the start of a string', () => {
+    expect(roundtrip('`hello` world')).toBe('`hello` world');
+  });
+
+  it('parses a code span in the middle of text', () => {
+    expect(roundtrip('foo `code` bar')).toBe('foo `code` bar');
+  });
+
+  it('parses multiple code spans on the same line', () => {
+    expect(roundtrip('`a` and `b`')).toBe('`a` and `b`');
+  });
+
+  it('does not parse a backtick preceded by a backslash as a code span', () => {
+    const editor = createTestEditor();
+    editor.update(
+      () => $convertFromMarkdownString('\\`not code\\`', TRANSFORMERS),
+      {discrete: true},
+    );
+    const textContent = editor
+      .getEditorState()
+      .read(() => $getRoot().getTextContent());
+    expect(textContent).toBe('`not code`');
+  });
+
+  it('correctly captures code span content', () => {
+    expect(roundtrip('`hello world`')).toBe('`hello world`');
+    expect(roundtrip('foo `bar baz` qux')).toBe('foo `bar baz` qux');
+  });
+
+  it('does not apply emphasis formatting inside a code span', () => {
+    expect(roundtrip('`**not bold**`')).toBe('`**not bold**`');
+  });
+});

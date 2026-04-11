@@ -18,7 +18,6 @@ import {
   $getStateChange,
   $isLeafNode,
   $isRangeSelection,
-  $isRootNode,
   COMMAND_PRIORITY_LOW,
   defineExtension,
   DELETE_CHARACTER_COMMAND,
@@ -420,18 +419,6 @@ export const PagesExtension = defineExtension({
               const selection = $getSelection();
               if (!$isRangeSelection(selection)) return false;
               const anchorNode = selection.anchor.getNode();
-              if ($isRootNode(anchorNode)) {
-                const firstPage = anchorNode.getFirstChild()?.getNextSibling();
-                if (!$isPageNode(firstPage)) return false;
-                const pageContentKey = firstPage.getContentNode().getKey();
-                const isCollapsed = selection.isCollapsed();
-                if (selection.anchor.offset === 0) {
-                  selection.anchor.set(pageContentKey, 0, 'element');
-                  if (isCollapsed)
-                    selection.focus.set(pageContentKey, 0, 'element');
-                }
-                return false;
-              }
               const nearestRoot =
                 anchorNode.getKey() === 'root'
                   ? anchorNode

@@ -724,6 +724,9 @@
       var(--page-height) - var(--page-margin-top) - var(--page-margin-bottom)
     );
   }
+  .PlaygroundEditorTheme__page + [type='page-break'] {
+    display: none;
+  }
 }
 @page {
   size: var(--page-width) var(--page-height);

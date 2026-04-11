@@ -299,6 +299,7 @@ ${steps.map(formatStep).join(`\n`)}
     if (steps) {
       const testContent = generateTestContent();
       if (testContent !== null) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setTemplatedTest(testContent);
       }
       if (preRef.current) {

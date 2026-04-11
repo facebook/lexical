@@ -282,7 +282,11 @@ export default [
     plugins: {
       'react-hooks': reactHooksPlugin,
     },
-    rules: reactHooksPlugin.configs.recommended.rules,
+    rules: {
+      ...reactHooksPlugin.configs.recommended.rules,
+      // react-hooks/refs has too many false positives (in ^7.0.1)
+      'react-hooks/refs': OFF,
+    },
   },
 
   // Override: Package source files (module sourceType)

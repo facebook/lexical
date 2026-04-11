@@ -83,6 +83,7 @@ export const TreeView = forwardRef<
 
   useEffect(() => {
     if (!showLimited && editorState._nodeMap.size > LARGE_EDITOR_STATE_SIZE) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsLimited(true);
       if (!showLimited) {
         return;

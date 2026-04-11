@@ -119,6 +119,7 @@ export function DragPlugin({anchorElem}: DragPluginProps) {
     if (!isPickerOpen) {
       return;
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setHighlightedIndex((i) => Math.min(i, Math.max(options.length - 1, 0)));
   }, [isPickerOpen, options.length]);
 

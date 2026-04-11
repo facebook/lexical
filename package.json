@@ -179,7 +179,7 @@
     "tmp": "^0.2.1",
     "ts-morph": "^25.0.1",
     "ts-node": "^10.9.1",
-    "typedoc": "^0.28.10",
+    "typedoc": "^0.28.18",
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.58.0",
     "vite": "^7.3.2",

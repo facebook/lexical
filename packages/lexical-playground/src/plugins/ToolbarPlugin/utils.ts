@@ -24,23 +24,25 @@ import {$isTableSelection} from '@lexical/table';
 import {$getNearestBlockElementAncestorOrThrow} from '@lexical/utils';
 import {
   $addUpdateTag,
-  $caretFromPoint,
+  $caretRangeFromSelection,
   $comparePointCaretNext,
   $createParagraphNode,
-  $createPoint,
   $createRangeSelection,
+  $getCaretInDirection,
+  $getChildCaret,
   $getSelection,
   $isElementNode,
   $isLineBreakNode,
   $isParagraphNode,
   $isRangeSelection,
   $isTextNode,
+  $normalizeCaret,
   $setSelection,
   $splitNode,
+  CaretRange,
   ElementNode,
   LexicalEditor,
   LexicalNode,
-  PointType,
   RangeSelection,
   SKIP_DOM_SELECTION_TAG,
   SKIP_SELECTION_FOCUS_TAG,
@@ -52,6 +54,7 @@ import {
   MIN_ALLOWED_FONT_SIZE,
 } from '../../context/ToolbarContext';
 
+// eslint-disable-next-line no-shadow
 export enum UpdateFontSizeType {
   increment = 1,
   decrement,
@@ -306,31 +309,20 @@ function $findParagraphParent(node: LexicalNode): ElementNode | null {
 
 function $isBlockFullySelected(
   block: ElementNode,
-  selectionStart: PointType,
-  selectionEnd: PointType,
+  caretRange: CaretRange,
 ): boolean {
-  const textNodes = block.getAllTextNodes();
-  const blockStart =
-    textNodes.length > 0
-      ? $createPoint(textNodes[0].getKey(), 0, 'text')
-      : $createPoint(block.getKey(), 0, 'element');
-  const lastTextNode = textNodes[textNodes.length - 1];
-  const blockEnd =
-    lastTextNode !== undefined
-      ? $createPoint(
-          lastTextNode.getKey(),
-          lastTextNode.getTextContentSize(),
-          'text',
-        )
-      : $createPoint(block.getKey(), block.getChildrenSize(), 'element');
-  const startCaret = $caretFromPoint(selectionStart, 'next');
-  const endCaret = $caretFromPoint(selectionEnd, 'next');
-  const blockStartCaret = $caretFromPoint(blockStart, 'next');
-  const blockEndCaret = $caretFromPoint(blockEnd, 'next');
+  // Both block boundary carets must be in "next" direction for $comparePointCaretNext
+  const blockStartCaret = $normalizeCaret($getChildCaret(block, 'next'));
+  const blockEndCaret = $normalizeCaret(
+    $getCaretInDirection($getChildCaret(block, 'previous'), 'next'),
+  );
+
+  const anchorNext = $getCaretInDirection(caretRange.anchor, 'next');
+  const focusNext = $getCaretInDirection(caretRange.focus, 'next');
 
   return (
-    $comparePointCaretNext(startCaret, blockStartCaret) <= 0 &&
-    $comparePointCaretNext(endCaret, blockEndCaret) >= 0
+    $comparePointCaretNext(anchorNext, blockStartCaret) <= 0 &&
+    $comparePointCaretNext(focusNext, blockEndCaret) >= 0
   );
 }
 
@@ -372,30 +364,30 @@ export const clearFormatting = (
     }
     const selection = $getSelection();
     if ($isRangeSelection(selection) || $isTableSelection(selection)) {
-      const startEnd = selection.getStartEndPoints();
-      if (startEnd === null) {
-        return;
-      }
-      const [anchorPoint, focusPoint] = startEnd;
-      const isForward = anchorPoint.isBefore(focusPoint);
-      const startPoint = isForward ? anchorPoint : focusPoint;
-      const endPoint = isForward ? focusPoint : anchorPoint;
-      const selectionStart = $createPoint(
-        startPoint.key,
-        startPoint.offset,
-        startPoint.type,
-      );
-      const selectionEnd = $createPoint(
-        endPoint.key,
-        endPoint.offset,
-        endPoint.type,
-      );
-      const anchor = selection.anchor;
-      const focus = selection.focus;
+      // Capture the caret range BEFORE extract(), only possible for RangeSelection.
+      // TableSelection boundaries are handled by extract() itself.
+      const preExtractCaretRange = $isRangeSelection(selection)
+        ? $caretRangeFromSelection(selection)
+        : null;
+
       const extractedNodes = selection.extract();
 
-      if (anchor.key === focus.key && anchor.offset === focus.offset) {
-        return;
+      // Re-read the selection AFTER extract() to check for collapse.
+      const postExtractSelection = $getSelection();
+      if ($isRangeSelection(postExtractSelection)) {
+        const postExtractCaretRange =
+          $caretRangeFromSelection(postExtractSelection);
+        const anchorNext = $getCaretInDirection(
+          postExtractCaretRange.anchor,
+          'next',
+        );
+        const focusNext = $getCaretInDirection(
+          postExtractCaretRange.focus,
+          'next',
+        );
+        if ($comparePointCaretNext(anchorNext, focusNext) === 0) {
+          return;
+        }
       }
 
       extractedNodes.forEach((node) => {
@@ -409,13 +401,11 @@ export const clearFormatting = (
           const nearestBlockElement =
             $getNearestBlockElementAncestorOrThrow(node);
           if (nearestBlockElement.getFormat() !== 0) {
-            // Only clear the block format if the block's text was fully selected.
+            // Only clear block format if we have a pre-extract range (i.e. not
+            // a TableSelection) and the block was fully covered by it.
             if (
-              $isBlockFullySelected(
-                nearestBlockElement,
-                selectionStart,
-                selectionEnd,
-              )
+              preExtractCaretRange !== null &&
+              $isBlockFullySelected(nearestBlockElement, preExtractCaretRange)
             ) {
               nearestBlockElement.setFormat('');
             }

@@ -312,7 +312,7 @@ const config = {
 
   future: {
     // See https://docusaurus.io/blog/releases/3.8
-    experimental_faster: true,
+    faster: true,
     v4: {
       removeLegacyPostBuildHeadAttribute: true, // required
     },

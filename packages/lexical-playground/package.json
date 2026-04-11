@@ -36,9 +36,9 @@
     "lexical": "workspace:*",
     "lodash-es": "^4.18.1",
     "prettier": "^3.6.2",
-    "react": "^19.1.1",
+    "react": "^19.2.5",
     "react-day-picker": "^9.7.0",
-    "react-dom": "^19.1.1",
+    "react-dom": "^19.2.5",
     "react-error-boundary": "^6.0.0",
     "y-websocket": "^3.0.0",
     "yjs": ">=13.5.42"

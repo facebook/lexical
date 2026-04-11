@@ -184,16 +184,30 @@ function exportChildren(
     if ($isLineBreakNode(child)) {
       output.push('\n');
     } else if ($isTextNode(child)) {
-      output.push(
-        exportTextFormat(
-          child,
-          child.getTextContent(),
-          textTransformersIndex,
-          unclosedTags,
-          unclosableTags,
-          shouldPreserveNewLines,
-        ),
+      const textString = exportTextFormat(
+        child,
+        child.getTextContent(),
+        textTransformersIndex,
+        unclosedTags,
+        unclosableTags,
+        shouldPreserveNewLines,
       );
+
+      // When adjacent TextNodes use overlapping asterisk (or underscore) formatting,
+      // their closing and opening delimiters would merge into an ambiguous run.
+      // e.g. bold "123" + bold-italic "456" naively produces **123*456*** instead of
+      // **123** ***456***. Insert a space to prevent delimiter collision.
+      const lastOutput = output.length > 0 ? output[output.length - 1] : '';
+      if (
+        lastOutput.length > 0 &&
+        textString.length > 0 &&
+        ((lastOutput.endsWith('*') && textString.startsWith('*')) ||
+          (lastOutput.endsWith('_') && textString.startsWith('_')))
+      ) {
+        output.push(' ');
+      }
+
+      output.push(textString);
     } else if ($isElementNode(child)) {
       // empty paragraph returns ""
       output.push(
@@ -280,12 +294,49 @@ function exportTextFormat(
   for (let i = 0; i < unclosedTags.length; i++) {
     const nodeHasFormat = hasFormat(node, unclosedTags[i].format);
     const nextNodeHasFormat = hasFormat(nextNode, unclosedTags[i].format);
+    let isForced = false;
 
     // prevent adding closing tag if next sibling will do it
     if (nodeHasFormat && nextNodeHasFormat) {
-      continue;
-    }
+      const currentTag = unclosedTags[i].tag;
+      let isAmbiguousBoundary = false;
 
+      // Only check asterisk/underscore overlaps when there is NO whitespace separating the text
+      const nodeText = node ? node.getTextContent() : '';
+      const nextNodeText = nextNode ? nextNode.getTextContent() : '';
+
+      if (
+        (currentTag.includes('*') || currentTag.includes('_')) &&
+        !/\s$/.test(nodeText) &&
+        !/^\s/.test(nextNodeText)
+      ) {
+        for (const transformer of textTransformers) {
+          const format = transformer.format[0];
+          const tag = transformer.tag;
+
+          // An ambiguous boundary is created if a single-character tag (like italic '*')
+          // is opened or closed mid-word, colliding with the current tag.
+          if (tag.length === 1 && (tag === '*' || tag === '_')) {
+            if (hasFormat(nextNode, format) && !hasFormat(node, format)) {
+              isAmbiguousBoundary = true; // Next node opens a single asterisk
+              break;
+            }
+            if (hasFormat(node, format) && !hasFormat(nextNode, format)) {
+              isAmbiguousBoundary = true; // Current node closes a single asterisk
+              break;
+            }
+          }
+        }
+      }
+
+      if (isAmbiguousBoundary) {
+        isForced = true;
+        // Force-close the shared tag so a clean boundary is emitted.
+        // The while loop below will add this tag's closer to closingTagsAfter.
+      } else {
+        continue;
+      }
+    }
     const unhandledUnclosedTags = [...unclosedTags]; // Shallow copy to avoid modifying the original array
 
     while (unhandledUnclosedTags.length > i) {
@@ -306,7 +357,7 @@ function exportTextFormat(
           // Handles cases where the tag has not been closed before, e.g. if the previous node
           // was a text match transformer that did not account for closing tags of the next node (e.g. a link)
           closingTagsBefore += unclosedTag.tag;
-        } else if (!nextNodeHasFormat) {
+        } else if (!nextNodeHasFormat || isForced) {
           closingTagsAfter += unclosedTag.tag;
         }
       }

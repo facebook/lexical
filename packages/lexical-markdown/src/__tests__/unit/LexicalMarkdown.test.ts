@@ -1844,3 +1844,171 @@ describe('markdown Safari compatibility (issue #8012)', () => {
     expect(roundtrip('`**not bold**`')).toBe('`**not bold**`');
   });
 });
+
+// Tests for issue #7974: adjacent TextNodes with overlapping format bitmasks
+// produced colliding asterisk delimiters on export (e.g. **123*456***).
+// The fix inserts a space boundary when a single-char delimiter (*/_) would
+// otherwise merge with the neighbouring tag at a format transition.
+describe('markdown adjacent format boundary export (#7974)', () => {
+  function createTestEditor() {
+    return createHeadlessEditor({
+      nodes: [
+        HeadingNode,
+        QuoteNode,
+        CodeNode,
+        ListNode,
+        ListItemNode,
+        LinkNode,
+      ],
+    });
+  }
+
+  // Build a paragraph of TextNodes with specified formats, export to markdown.
+  function buildAndExport(
+    segments: Array<{text: string; formats: Array<string>}>,
+  ): string {
+    const editor = createTestEditor();
+    editor.update(
+      () => {
+        const para = $createParagraphNode();
+        for (const {text, formats} of segments) {
+          const node = $createTextNode(text);
+          for (const fmt of formats) {
+            node.toggleFormat(fmt as Parameters<typeof node.toggleFormat>[0]);
+          }
+          para.append(node);
+        }
+        $getRoot().append(para);
+      },
+      {discrete: true},
+    );
+    return editor
+      .getEditorState()
+      .read(() => $convertToMarkdownString(TRANSFORMERS));
+  }
+
+  // Bold → Bold+Italic
+  // Before fix: **123*456*** (delimiter collision, bold lost on re-import)
+  it('bold followed by bold-italic inserts space boundary on export', () => {
+    expect(
+      buildAndExport([
+        {formats: ['bold'], text: '123'},
+        {formats: ['bold', 'italic'], text: '456'},
+      ]),
+    ).toBe('**123** ***456***');
+  });
+
+  // Bold+Italic → Bold (reverse direction)
+  it('bold-italic followed by bold inserts space boundary on export', () => {
+    expect(
+      buildAndExport([
+        {formats: ['bold', 'italic'], text: '123'},
+        {formats: ['bold'], text: '456'},
+      ]),
+    ).toBe('***123*** **456**');
+  });
+
+  // Italic → Bold+Italic — italic is shared so the bold nests inside
+  // the open italic span; no forced close needed, no space inserted.
+  it('italic followed by bold-italic nests bold inside shared italic span', () => {
+    expect(
+      buildAndExport([
+        {formats: ['italic'], text: '123'},
+        {formats: ['bold', 'italic'], text: '456'},
+      ]),
+    ).toBe('*123**456***');
+  });
+
+  // Bold+Italic → Italic — bold closes (not on next), italic shared
+  it('bold-italic followed by italic force-closes bold at boundary', () => {
+    expect(
+      buildAndExport([
+        {formats: ['bold', 'italic'], text: '123'},
+        {formats: ['italic'], text: '456'},
+      ]),
+    ).toBe('***123*** *456*');
+  });
+
+  // Same-format adjacent nodes must merge, not duplicate delimiters
+  it('adjacent nodes with identical format merge into one span', () => {
+    expect(
+      buildAndExport([
+        {formats: ['bold'], text: 'abc'},
+        {formats: ['bold'], text: 'def'},
+      ]),
+    ).toBe('**abcdef**');
+  });
+
+  // Export → re-import → re-export must be identical (roundtrip stable)
+  it('bold then bold-italic export is stable on roundtrip', () => {
+    const editor = createTestEditor();
+    const first = buildAndExport([
+      {formats: ['bold'], text: '123'},
+      {formats: ['bold', 'italic'], text: '456'},
+    ]);
+
+    // re-import the exported string
+    editor.update(() => $convertFromMarkdownString(first, TRANSFORMERS), {
+      discrete: true,
+    });
+    const second = editor
+      .getEditorState()
+      .read(() => $convertToMarkdownString(TRANSFORMERS));
+
+    expect(second).toBe(first);
+  });
+
+  // Bold+Italic → Bold roundtrip is stable
+  it('bold-italic then bold export is stable on roundtrip', () => {
+    const editor = createTestEditor();
+    const first = buildAndExport([
+      {formats: ['bold', 'italic'], text: '123'},
+      {formats: ['bold'], text: '456'},
+    ]);
+
+    editor.update(() => $convertFromMarkdownString(first, TRANSFORMERS), {
+      discrete: true,
+    });
+    const second = editor
+      .getEditorState()
+      .read(() => $convertToMarkdownString(TRANSFORMERS));
+
+    expect(second).toBe(first);
+  });
+
+  // Single-format nodes are unaffected by the fix
+  it('single-format nodes export without regression', () => {
+    expect(buildAndExport([{formats: ['bold'], text: 'bold'}])).toBe(
+      '**bold**',
+    );
+    expect(buildAndExport([{formats: ['italic'], text: 'italic'}])).toBe(
+      '*italic*',
+    );
+    expect(
+      buildAndExport([{formats: ['bold', 'italic'], text: 'bolditalic'}]),
+    ).toBe('***bolditalic***');
+  });
+
+  // Bold → Bold+Italic → Bold: both boundaries are ambiguous, so each gets a
+  // space — the middle node must be fully wrapped with spaces on either side.
+  it('bold then bold-italic then bold inserts space boundary at each transition', () => {
+    expect(
+      buildAndExport([
+        {formats: ['bold'], text: '123'},
+        {formats: ['bold', 'italic'], text: '456'},
+        {formats: ['bold'], text: '789'},
+      ]),
+    ).toBe('**123** ***456*** **789**');
+  });
+
+  // Trailing whitespace on the node text disables the ambiguous-boundary check,
+  // so the shared italic span is not force-closed.
+  it('trailing whitespace on node text disables force-close check', () => {
+    expect(
+      buildAndExport([
+        {formats: ['italic'], text: 'Hello '},
+        {formats: ['bold', 'italic'], text: 'world'},
+      ]),
+    ).toBe('*Hello **world***');
+  });
+});

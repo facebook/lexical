@@ -6,7 +6,7 @@
  *
  */
 import {ListNode} from '@lexical/list';
-import {EditorConfig, LexicalEditor} from 'lexical';
+import {EditorConfig, LexicalEditor, LexicalNode} from 'lexical';
 
 export class ContentsListNode extends ListNode {
   $config() {
@@ -24,4 +24,8 @@ export class ContentsListNode extends ListNode {
 
 export function $createContentsListNode() {
   return new ContentsListNode();
+}
+
+export function $isContentsListNode(node?: LexicalNode | null) {
+  return node instanceof ContentsListNode;
 }

@@ -11,12 +11,15 @@ import type {JSX} from 'react';
 
 import './index.css';
 
+import {$createLinkNode,LinkNode} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {TableOfContentsPlugin as LexicalTableOfContentsPlugin} from '@lexical/react/LexicalTableOfContentsPlugin';
+import {$findMatchingParent} from '@lexical/utils';
 import {
   COMMAND_PRIORITY_LOW,
   createCommand,
   type LexicalCommand,
+  mergeRegister,
   type NodeKey,
   TextNode,
 } from 'lexical';
@@ -28,8 +31,12 @@ import {$createContentsItemNode} from '../../nodes/ContentsItemNode';
 import {
   $createContentsLinkNode,
   $isContentsLinkNode,
+  ContentsLinkNode,
 } from '../../nodes/ContentsLinkNode';
-import {$createContentsListNode} from '../../nodes/ContentsListNode';
+import {
+  $createContentsListNode,
+  $isContentsListNode,
+} from '../../nodes/ContentsListNode';
 
 const MARGIN_ABOVE_EDITOR = 624;
 const HEADING_WIDTH = 9;
@@ -83,20 +90,48 @@ function TableOfContentsList({
   }
 
   useEffect(() => {
-    return editor.registerNodeTransform(TextNode, (textNode) => {
-      const parent = textNode.getParent();
-      const previousSibling = textNode.getPreviousSibling();
-      const nextSibling = textNode.getNextSibling();
-      // Skip if textNode is already part of an ContentsLink (idempotency check)
-      if ($isContentsLinkNode(parent)) {
-        return;
-      }
-      if ($isContentsLinkNode(previousSibling)) {
-        previousSibling.append(textNode);
-      } else if ($isContentsLinkNode(nextSibling)) {
-        nextSibling.splice(0, 0, [textNode]);
-      }
-    });
+    return mergeRegister(
+      editor.registerNodeTransform(TextNode, (textNode) => {
+        const parent = textNode.getParent();
+        const previousSibling = textNode.getPreviousSibling();
+        const nextSibling = textNode.getNextSibling();
+        // Skip if textNode is already part of an ContentsLink (idempotency check)
+        if ($isContentsLinkNode(parent)) {
+          return;
+        }
+        if ($isContentsLinkNode(previousSibling)) {
+          previousSibling.append(textNode);
+        } else if ($isContentsLinkNode(nextSibling)) {
+          nextSibling.splice(0, 0, [textNode]);
+        }
+      }),
+      // The contents link must be within the contents
+      // If it's moved outside the contents, convert it to a regular link
+      editor.registerNodeTransform(ContentsLinkNode, (node) => {
+        if (!$findMatchingParent(node, $isContentsListNode)) {
+          node.replace(
+            $createLinkNode(node.getURL(), {
+              rel: node.getRel(),
+              target: node.getTarget(),
+              title: node.getRel(),
+            }),
+            true,
+          );
+        }
+      }),
+      editor.registerNodeTransform(LinkNode, (node) => {
+        if ($findMatchingParent(node, $isContentsListNode)) {
+          node.replace(
+            $createContentsLinkNode(node.getURL(), {
+              rel: node.getRel(),
+              target: node.getTarget(),
+              title: node.getRel(),
+            }),
+            true,
+          );
+        }
+      }),
+    );
   }, [editor]);
 
   useEffect(() => {

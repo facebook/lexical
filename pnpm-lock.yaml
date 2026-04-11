@@ -5,7 +5,6 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  '@shikijs/types': 4.0.2
   react: 19.1.1
   react-dom: 19.1.1
   '@types/node': 20.19.17
@@ -342,7 +341,7 @@ importers:
         version: 4.0.2
     devDependencies:
       '@shikijs/types':
-        specifier: 4.0.2
+        specifier: ^4.0.2
         version: 4.0.2
 
   packages/lexical-devtools:
@@ -4423,6 +4422,15 @@ packages:
   '@shikijs/themes@4.0.2':
     resolution: {integrity: sha512-mjCafwt8lJJaVSsQvNVrJumbnnj1RI8jbUKrPKgE6E3OvQKxnuRoBaYC51H4IGHePsGN/QtALglWBU7DoKDFnA==}
     engines: {node: '>=20'}
+
+  '@shikijs/types@3.12.2':
+    resolution: {integrity: sha512-K5UIBzxCyv0YoxN3LMrKB9zuhp1bV+LgewxuVwHdl4Gz5oePoUFrr9EfgJlGlDeXCU1b/yhdnXeuRvAnz8HN8Q==}
+
+  '@shikijs/types@3.20.0':
+    resolution: {integrity: sha512-lhYAATn10nkZcBQ0BlzSbJA3wcmL5MXUUF8d2Zzon6saZDlToKaiRX60n2+ZaHJCmXEcZRWNzn+k9vplr8Jhsw==}
+
+  '@shikijs/types@3.23.0':
+    resolution: {integrity: sha512-3JZ5HXOZfYjsYSk0yPwBrkupyYSLpAE26Qc0HLghhZNGTZg/SKxXIIgoxOpmmeQP0RRSDJTk1/vPfw9tbw+jSQ==}
 
   '@shikijs/types@4.0.2':
     resolution: {integrity: sha512-qzbeRooUTPnLE+sHD/Z8DStmaDgnbbc/pMrU203950aRqjX/6AFHeDYT+j00y2lPdz0ywJKx7o/7qnqTivtlXg==}
@@ -16568,7 +16576,7 @@ snapshots:
       '@shikijs/engine-oniguruma': 3.12.2
       '@shikijs/langs': 3.20.0
       '@shikijs/themes': 3.20.0
-      '@shikijs/types': 4.0.2
+      '@shikijs/types': 3.23.0
       '@shikijs/vscode-textmate': 10.0.2
 
   '@hapi/hoek@9.3.0': {}
@@ -17835,7 +17843,7 @@ snapshots:
 
   '@shikijs/engine-oniguruma@3.12.2':
     dependencies:
-      '@shikijs/types': 4.0.2
+      '@shikijs/types': 3.12.2
       '@shikijs/vscode-textmate': 10.0.2
 
   '@shikijs/engine-oniguruma@4.0.2':
@@ -17845,7 +17853,7 @@ snapshots:
 
   '@shikijs/langs@3.20.0':
     dependencies:
-      '@shikijs/types': 4.0.2
+      '@shikijs/types': 3.20.0
 
   '@shikijs/langs@4.0.2':
     dependencies:
@@ -17859,11 +17867,26 @@ snapshots:
 
   '@shikijs/themes@3.20.0':
     dependencies:
-      '@shikijs/types': 4.0.2
+      '@shikijs/types': 3.20.0
 
   '@shikijs/themes@4.0.2':
     dependencies:
       '@shikijs/types': 4.0.2
+
+  '@shikijs/types@3.12.2':
+    dependencies:
+      '@shikijs/vscode-textmate': 10.0.2
+      '@types/hast': 3.0.4
+
+  '@shikijs/types@3.20.0':
+    dependencies:
+      '@shikijs/vscode-textmate': 10.0.2
+      '@types/hast': 3.0.4
+
+  '@shikijs/types@3.23.0':
+    dependencies:
+      '@shikijs/vscode-textmate': 10.0.2
+      '@types/hast': 3.0.4
 
   '@shikijs/types@4.0.2':
     dependencies:

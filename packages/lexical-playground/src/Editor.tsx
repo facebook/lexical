@@ -58,7 +58,7 @@ import {MaxLengthExtension} from './plugins/MaxLengthPlugin';
 import MentionsPlugin from './plugins/MentionsPlugin';
 import PollPlugin from './plugins/PollPlugin';
 import ShortcutsPlugin from './plugins/ShortcutsPlugin';
-import SpecialTextPlugin from './plugins/SpecialTextPlugin';
+import {SpecialTextExtension} from './plugins/SpecialTextExtension';
 import SpeechToTextPlugin from './plugins/SpeechToTextPlugin';
 import TableCellActionMenuPlugin from './plugins/TableActionMenuPlugin';
 import TableCellResizer from './plugins/TableCellResizer';
@@ -144,6 +144,11 @@ export default function Editor(): JSX.Element {
   };
 
   useSyncExtensionSignal(MaxLengthExtension, 'disabled', !isMaxLength);
+  useSyncExtensionSignal(
+    SpecialTextExtension,
+    'disabled',
+    !shouldAllowHighlightingWithBrackets,
+  );
   useSyncExtensionSignal(
     LinkExtension,
     'attributes',
@@ -290,7 +295,6 @@ export default function Editor(): JSX.Element {
         {isAutocomplete && <AutocompletePlugin />}
         <div>{showTableOfContents && <TableOfContentsPlugin />}</div>
         {shouldUseLexicalContextMenu && <ContextMenuPlugin />}
-        {shouldAllowHighlightingWithBrackets && <SpecialTextPlugin />}
         <ActionsPlugin
           shouldPreserveNewLinesInMarkdown={shouldPreserveNewLinesInMarkdown}
           useCollabV2={useCollabV2}

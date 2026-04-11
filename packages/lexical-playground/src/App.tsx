@@ -64,6 +64,7 @@ import {PlaygroundMarkdownShortcutsExtension} from './plugins/MarkdownShortcutsE
 import {MaxLengthExtension} from './plugins/MaxLengthPlugin';
 import {PageBreakExtension} from './plugins/PageBreakExtension';
 import PasteLogPlugin from './plugins/PasteLogPlugin';
+import {SpecialTextExtension} from './plugins/SpecialTextExtension';
 import {TabFocusExtension} from './plugins/TabFocusExtension';
 import TestRecorderPlugin from './plugins/TestRecorderPlugin';
 import {TwitterExtension} from './plugins/TwitterExtension';
@@ -186,6 +187,7 @@ const AppExtension = defineExtension({
     HashtagExtension,
     DateTimeExtension,
     MaxLengthExtension,
+    SpecialTextExtension,
     DragDropPasteExtension,
     EmojisExtension,
     configExtension(LinkExtension, {validateUrl}),

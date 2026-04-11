@@ -61,13 +61,13 @@ test.describe('TableOfContents', () => {
     await assertHTML(
       page,
       html`
-        <h1 class="PlaygroundEditorTheme__h1" id="4" dir="auto">
+        <h1 class="PlaygroundEditorTheme__h1" id="heading-1" dir="auto">
           <span data-lexical-text="true">h1</span>
         </h1>
-        <h2 class="PlaygroundEditorTheme__h2" id="7" dir="auto">
+        <h2 class="PlaygroundEditorTheme__h2" id="heading-2" dir="auto">
           <span data-lexical-text="true">h2</span>
         </h2>
-        <h1 class="PlaygroundEditorTheme__h1" id="10" dir="auto">
+        <h1 class="PlaygroundEditorTheme__h1" id="heading-3" dir="auto">
           <span data-lexical-text="true">h1 again</span>
         </h1>
         <ol
@@ -78,7 +78,7 @@ test.describe('TableOfContents', () => {
             value="1">
             <a
               class="PlaygroundEditorTheme__link PlaygroundEditorTheme__contentsLink"
-              href="#4"
+              href="#heading-1"
               target="_self">
               <span data-lexical-text="true">h1</span>
             </a>
@@ -93,7 +93,7 @@ test.describe('TableOfContents', () => {
                 value="1">
                 <a
                   class="PlaygroundEditorTheme__link PlaygroundEditorTheme__contentsLink"
-                  href="#7"
+                  href="#heading-2"
                   target="_self">
                   <span data-lexical-text="true">h2</span>
                 </a>
@@ -105,7 +105,7 @@ test.describe('TableOfContents', () => {
             value="2">
             <a
               class="PlaygroundEditorTheme__link PlaygroundEditorTheme__contentsLink"
-              href="#10"
+              href="#heading-3"
               target="_self">
               <span data-lexical-text="true">h1 again</span>
             </a>
@@ -161,8 +161,8 @@ test.describe('TableOfContents', () => {
     // after clicking the link in the contents,
     // the page should scroll so that the heading is visible
     await selectFromInsertDropdown(page, '.item .toc');
-    await click(page, 'a[href="#4"]');
-    await click(page, '.link-view a[href="#4"]');
+    await click(page, 'a[href="#heading-1"]');
+    await click(page, '.link-view a[href="#heading-1"]');
 
     await expect(firstHeading).toBeInViewport();
   });
@@ -187,7 +187,7 @@ test.describe('TableOfContents', () => {
     await assertHTML(
       page,
       html`
-        <h1 class="PlaygroundEditorTheme__h1" id="4" dir="auto">
+        <h1 class="PlaygroundEditorTheme__h1" id="heading-1" dir="auto">
           <span data-lexical-text="true">first h1</span>
         </h1>
         <ol
@@ -198,7 +198,7 @@ test.describe('TableOfContents', () => {
             value="1">
             <a
               class="PlaygroundEditorTheme__link PlaygroundEditorTheme__contentsLink"
-              href="#4"
+              href="#heading-1"
               target="_self">
               <span data-lexical-text="true">the first h1 el</span>
             </a>
@@ -245,10 +245,10 @@ test.describe('TableOfContents', () => {
     await assertHTML(
       page,
       html`
-        <h1 class="PlaygroundEditorTheme__h1" id="4" dir="auto">
+        <h1 class="PlaygroundEditorTheme__h1" id="heading-1" dir="auto">
           <span data-lexical-text="true">h1</span>
         </h1>
-        <h1 class="PlaygroundEditorTheme__h1" id="7" dir="auto">
+        <h1 class="PlaygroundEditorTheme__h1" id="heading-2" dir="auto">
           <span data-lexical-text="true">h1</span>
         </h1>
         <ol
@@ -259,7 +259,7 @@ test.describe('TableOfContents', () => {
             value="1">
             <a
               class="PlaygroundEditorTheme__link PlaygroundEditorTheme__contentsLink"
-              href="#4"
+              href="#heading-1"
               target="_self">
               <span data-lexical-text="true">h1</span>
             </a>
@@ -269,7 +269,7 @@ test.describe('TableOfContents', () => {
             value="2">
             <a
               class="PlaygroundEditorTheme__link PlaygroundEditorTheme__contentsLink"
-              href="#7"
+              href="#heading-2"
               target="_self">
               <span data-lexical-text="true">h1</span>
             </a>
@@ -306,10 +306,10 @@ test.describe('TableOfContents', () => {
     await assertHTML(
       page,
       html`
-        <h1 class="PlaygroundEditorTheme__h1" id="4" dir="auto">
+        <h1 class="PlaygroundEditorTheme__h1" id="heading-1" dir="auto">
           <span data-lexical-text="true">h1</span>
         </h1>
-        <h1 class="PlaygroundEditorTheme__h1" id="7" dir="auto">
+        <h1 class="PlaygroundEditorTheme__h1" id="heading-2" dir="auto">
           <span data-lexical-text="true">h1</span>
         </h1>
         <ol
@@ -320,7 +320,7 @@ test.describe('TableOfContents', () => {
             value="1">
             <a
               class="PlaygroundEditorTheme__link PlaygroundEditorTheme__contentsLink"
-              href="#4"
+              href="#heading-1"
               target="_self">
               <span data-lexical-text="true">h1</span>
             </a>
@@ -358,10 +358,10 @@ test.describe('TableOfContents', () => {
     await assertHTML(
       page,
       html`
-        <h1 class="PlaygroundEditorTheme__h1" id="4" dir="auto">
+        <h1 class="PlaygroundEditorTheme__h1" id="heading-1" dir="auto">
           <span data-lexical-text="true">h1</span>
         </h1>
-        <h1 class="PlaygroundEditorTheme__h1" id="7" dir="auto">
+        <h1 class="PlaygroundEditorTheme__h1" id="heading-2" dir="auto">
           <span data-lexical-text="true">h1</span>
         </h1>
         <ol
@@ -372,7 +372,7 @@ test.describe('TableOfContents', () => {
             value="1">
             <a
               class="PlaygroundEditorTheme__link PlaygroundEditorTheme__contentsLink"
-              href="#4"
+              href="#heading-1"
               target="_self">
               <span data-lexical-text="true">h1</span>
             </a>

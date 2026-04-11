@@ -25,7 +25,12 @@ import {
   type NodeKey,
   TextNode,
 } from 'lexical';
-import {$createTextNode, $getSelection,$insertNodes,$isRangeSelection} from 'lexical';
+import {
+  $createTextNode,
+  $getSelection,
+  $insertNodes,
+  $isRangeSelection,
+} from 'lexical';
 import * as React from 'react';
 import {useEffect, useRef, useState} from 'react';
 
@@ -229,20 +234,21 @@ function TableOfContentsList({
       () => {
         if (tableOfContents.length > 0) {
           const contentsNode = $createContentsListNode();
-          for (const [key, text, tag] of tableOfContents) {
+          tableOfContents.forEach(([key, text, tag], index) => {
+            const anchorIndex = `heading-${index + 1}`;
             const item = $createContentsItemNode();
             const element = editor.getElementByKey(key);
             if (element) {
-              element.id = key;
+              element.id = anchorIndex;
             }
             item.append(
-              $createContentsLinkNode('#' + key, {target: '_self'}).append(
-                $createTextNode(text),
-              ),
+              $createContentsLinkNode('#' + anchorIndex, {
+                target: '_self',
+              }).append($createTextNode(text)),
             );
             contentsNode.append(item);
             item.setIndent(Number(tag[1]) - 1);
-          }
+          });
           $insertNodes([contentsNode]);
         }
         return false;

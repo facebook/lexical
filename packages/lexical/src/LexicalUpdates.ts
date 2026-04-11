@@ -785,12 +785,21 @@ export function triggerCommandListeners<
   editor: LexicalEditor,
   type: TCommand,
   payload: CommandPayloadType<TCommand>,
+  fromEditor: LexicalEditor,
 ): boolean {
   const editors = getEditorsToPropagate(editor);
+  let updatingParentEditor: undefined | LexicalEditor;
 
   for (let i = 4; i >= 0; i--) {
     for (let e = 0; e < editors.length; e++) {
       const currentEditor = editors[e];
+      if (e > 0 && currentEditor._updating) {
+        // We can't synchronously update an already updating editor without
+        // creating an early commit that will potentially corrupt the
+        // nodeMap by doing GC too early.
+        updatingParentEditor = currentEditor;
+        break;
+      }
       const commandListeners = currentEditor._commands;
       const listenerInPriorityOrder = commandListeners.get(type);
 
@@ -804,7 +813,7 @@ export function triggerCommandListeners<
           let returnVal = false;
           updateEditorSync(currentEditor, () => {
             for (let j = 0; j < listenersLength; j++) {
-              if (listeners[j](payload, editor)) {
+              if (listeners[j](payload, fromEditor)) {
                 returnVal = true;
                 return;
               }
@@ -816,6 +825,14 @@ export function triggerCommandListeners<
         }
       }
     }
+  }
+  if (updatingParentEditor) {
+    // Preserve the fairly broken legacy semantics of command delegation to fix
+    // https://github.com/facebook/lexical/issues/8306
+    updatingParentEditor.update(() => {
+      // This will be async so we can't know the result
+      triggerCommandListeners(updatingParentEditor, type, payload, fromEditor);
+    });
   }
 
   return false;

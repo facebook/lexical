@@ -361,6 +361,10 @@ const config = {
             resolve: {
               alias: {
                 ...buildLexicalWebpackAliases(),
+                '@examples/agent-example': path.resolve(
+                  __dirname,
+                  '../../examples/agent-example/src',
+                ),
                 '@examples/website-chat': path.resolve(
                   __dirname,
                   '../../examples/website-chat/src',
@@ -377,6 +381,11 @@ const config = {
                   __dirname,
                   '../../examples/website-toolbar/src',
                 ),
+                '@huggingface/transformers': path.resolve(
+                  __dirname,
+                  'node_modules/@huggingface/transformers/dist/transformers.web.js',
+                ),
+                'onnxruntime-node': false,
               },
             },
           };

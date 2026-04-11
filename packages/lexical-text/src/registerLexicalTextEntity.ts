@@ -102,7 +102,7 @@ export function registerLexicalTextEntity<T extends TextNode>(
     }
 
     let prevMatchLengthToSkip = 0;
-    // eslint-disable-next-line no-constant-condition
+
     while (true) {
       match = getMatch(text);
       let nextText = match === null ? '' : text.slice(match.end);

@@ -5,14 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-// @ts-check
-'use strict';
 
-const fs = require('fs-extra');
-const glob = require('glob');
-const path = require('node:path');
-const prettier = require('prettier');
-const {packagesManager} = require('./shared/packagesManager');
+import fs from 'fs-extra';
+import {globSync} from 'glob';
+import path from 'node:path';
+import prettier from 'prettier';
+
+import {packagesManager} from './shared/packagesManager.js';
 
 /**
  * @typedef {Object} UpdateTsconfigOptions
@@ -58,7 +57,7 @@ async function updateTsconfig({
     }
     if (test) {
       testPaths.push([`${pkg.getNpmName()}/src`, [resolveRelative('src')]]);
-      for (const fn of glob.sync(
+      for (const fn of globSync(
         pkg.resolve('src', '__tests__', 'utils', '*.{ts,tsx,mjs,jsx}'),
         {windowsPathsNoEscape: true},
       )) {
@@ -86,10 +85,33 @@ async function updateTsconfig({
   }
 }
 
+/** @type {Array<[string, Array<string>]>} */
+const WEBSITE_EXAMPLE_PATHS = [
+  [
+    '@examples/agent-example/Editor',
+    ['./examples/agent-example/src/Editor.tsx'],
+  ],
+  ['@examples/website-chat/Editor', ['./examples/website-chat/src/Editor.tsx']],
+  [
+    '@examples/website-notion/Editor',
+    ['./examples/website-notion/src/Editor.tsx'],
+  ],
+  [
+    '@examples/website-rich-input/Editor',
+    ['./examples/website-rich-input/src/Editor.tsx'],
+  ],
+  [
+    '@examples/website-toolbar/Editor',
+    ['./examples/website-toolbar/src/Editor.tsx'],
+  ],
+  ['@site/*', ['./packages/lexical-website/*']],
+];
+
 async function updateAllTsconfig() {
-  const prettierConfig = (await prettier.resolveConfig(__filename)) || {};
+  const prettierConfig =
+    (await prettier.resolveConfig(new URL(import.meta.url).pathname)) || {};
   await updateTsconfig({
-    extraPaths: [],
+    extraPaths: WEBSITE_EXAMPLE_PATHS,
     jsonFileName: './tsconfig.json',
     prettierConfig,
     test: true,

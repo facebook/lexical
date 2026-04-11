@@ -67,3 +67,28 @@ html[data-theme='dark'] .showcaseFavorite {
   font-size: smaller;
   line-height: 1.66;
 }
+
+.cardTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.cardTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 12px;
+  border: 1px solid;
+  opacity: 0.85;
+}
+
+.cardTagDot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}

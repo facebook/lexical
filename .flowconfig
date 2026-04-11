@@ -88,6 +88,7 @@ module.name_mapper='^@lexical/react/ReactPluginHostExtension$' -> '<PROJECT_ROOT
 module.name_mapper='^@lexical/react/ReactProviderExtension$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalReactProviderExtension.js.flow'
 module.name_mapper='^@lexical/react/TreeViewExtension$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalTreeViewExtension.js.flow'
 module.name_mapper='^@lexical/react/useExtensionComponent$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalExtensionComponent.js.flow'
+module.name_mapper='^@lexical/react/useExtensionSignalValue$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalExtensionSignalValue.js.flow'
 module.name_mapper='^@lexical/react/useLexicalEditable$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalEditable.js.flow'
 module.name_mapper='^@lexical/react/useLexicalIsTextContentEmpty$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalIsTextContentEmpty.js.flow'
 module.name_mapper='^@lexical/react/useLexicalNodeSelection$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalNodeSelection.js.flow'
@@ -116,4 +117,4 @@ nonstrict-import
 unclear-type
 
 [version]
-^0.306.0
+^0.307.1

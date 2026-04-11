@@ -358,7 +358,6 @@ export class LexicalBuilder {
           const toRep = this.extensionNameMap.get(toExtensionName);
           if (toRep) {
             for (const config of configs) {
-              // eslint-disable-next-line @typescript-eslint/no-unsafe-argument -- any
               toRep.configs.add(config);
             }
           }

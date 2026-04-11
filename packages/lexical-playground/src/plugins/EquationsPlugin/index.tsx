@@ -24,8 +24,8 @@ import {
   LexicalCommand,
   LexicalEditor,
 } from 'lexical';
-import {useCallback, useEffect} from 'react';
 import * as React from 'react';
+import {useCallback, useEffect} from 'react';
 
 import {$createEquationNode, EquationNode} from '../../nodes/EquationNode';
 import KatexEquationAlterer from '../../ui/KatexEquationAlterer';
@@ -74,7 +74,7 @@ export default function EquationsPlugin(): JSX.Element | null {
 
         if (inline) {
           $insertNodeIntoLeaf(equationNode);
-          if ($isRootOrShadowRoot(equationNode.getParentOrThrow())) {
+          if ($isRootOrShadowRoot(equationNode.getParent())) {
             $wrapNodeInElement(equationNode, $createParagraphNode).selectEnd();
           }
         } else {

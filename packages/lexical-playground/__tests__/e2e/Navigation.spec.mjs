@@ -764,6 +764,7 @@ test.describe('Keyboard Navigation', () => {
             focusPath: [0, 4, 0],
           });
         }
+        // eslint-disable-next-line no-dupe-else-if -- pre-existing, needs refactoring
       } else if (!IS_WINDOWS) {
         await assertSelection(page, {
           anchorOffset: 1,

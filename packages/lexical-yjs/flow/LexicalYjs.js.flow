@@ -62,11 +62,11 @@ export type XmlElement = Object;
 // $FlowFixMe[unclear-type]: work around for internal
 export type YMap = Object;
 export type TextOperation = {
-  insert?: string | mixed,
+  insert?: string | unknown,
   delete?: number,
   retain?: number,
   attributes?: {
-    [x: string]: mixed,
+    [x: string]: unknown,
   },
 };
 
@@ -106,7 +106,7 @@ export type Binding = {
   docMap: Map<string, Doc>,
   editor: LexicalEditor,
   id: string,
-  nodeProperties: Map<string, {[property: string]: mixed}>,
+  nodeProperties: Map<string, {[property: string]: unknown}>,
   root: CollabElementNode,
 };
 

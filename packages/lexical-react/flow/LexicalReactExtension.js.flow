@@ -46,7 +46,7 @@ export type ReactConfig = {
   contentEditable: React.Node | null;
   ErrorBoundary: ErrorBoundaryType;
   EditorChildrenComponent: EditorChildrenComponentType;
-  decorators: $ReadOnlyArray<DecoratorComponentType>;
+  decorators: ReadonlyArray<DecoratorComponentType>;
 };
 
 export type ReactOutputs = {

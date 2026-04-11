@@ -1,7 +1,7 @@
 {
   "name": "@lexical/website-toolbar-example",
   "private": true,
-  "version": "0.42.0",
+  "version": "0.43.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,13 +9,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@lexical/extension": "0.42.0",
-    "@lexical/history": "0.42.0",
-    "@lexical/react": "0.42.0",
-    "@lexical/rich-text": "0.42.0",
-    "@lexical/selection": "0.42.0",
-    "@lexical/utils": "0.42.0",
-    "lexical": "0.42.0",
+    "@lexical/extension": "0.43.0",
+    "@lexical/history": "0.43.0",
+    "@lexical/react": "0.43.0",
+    "@lexical/rich-text": "0.43.0",
+    "@lexical/selection": "0.43.0",
+    "@lexical/utils": "0.43.0",
+    "lexical": "0.43.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },
@@ -27,7 +27,7 @@
     "cross-env": "^7.0.3",
     "tailwindcss": "^4.2.1",
     "typescript": "^5.9.2",
-    "vite": "^7.3.1"
+    "vite": "^7.3.2"
   },
   "optionalDependencies": {
     "@rollup/rollup-linux-x64-gnu": "4.52.0",

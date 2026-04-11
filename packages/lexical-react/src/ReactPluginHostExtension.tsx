@@ -27,8 +27,8 @@ import {
   type LexicalEditor,
   type LexicalExtensionOutput,
 } from 'lexical';
-import {Suspense, useEffect, useState} from 'react';
 import * as React from 'react';
+import {Suspense, useEffect, useState} from 'react';
 import {createPortal} from 'react-dom';
 import {type Container, createRoot, type Root} from 'react-dom/client';
 import invariant from 'shared/invariant';

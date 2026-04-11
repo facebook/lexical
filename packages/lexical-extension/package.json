@@ -6,7 +6,7 @@
     "extension",
     "plugin"
   ],
-  "version": "0.42.0",
+  "version": "0.43.0",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -24,7 +24,7 @@
   "module": "LexicalExtension.mjs",
   "dependencies": {
     "@lexical/utils": "workspace:*",
-    "@preact/signals-core": "^1.11.0",
+    "@preact/signals-core": "^1.14.1",
     "lexical": "workspace:*"
   },
   "exports": {

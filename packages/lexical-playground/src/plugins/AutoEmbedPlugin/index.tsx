@@ -22,7 +22,7 @@ import {useMemo, useState} from 'react';
 import useModal from '../../hooks/useModal';
 import Button from '../../ui/Button';
 import {DialogActions} from '../../ui/Dialog';
-import {INSERT_FIGMA_COMMAND} from '../FigmaPlugin';
+import {INSERT_FIGMA_COMMAND} from '../FigmaExtension';
 import {INSERT_TWEET_COMMAND} from '../TwitterExtension';
 import {INSERT_YOUTUBE_COMMAND} from '../YouTubeExtension';
 

@@ -52,7 +52,6 @@ import DraggableBlockPlugin from './plugins/DraggableBlockPlugin';
 import EmojiPickerPlugin from './plugins/EmojiPickerPlugin';
 import EquationsPlugin from './plugins/EquationsPlugin';
 import ExcalidrawPlugin from './plugins/ExcalidrawPlugin';
-import FigmaPlugin from './plugins/FigmaPlugin';
 import FloatingLinkEditorPlugin from './plugins/FloatingLinkEditorPlugin';
 import FloatingTextFormatToolbarPlugin from './plugins/FloatingTextFormatToolbarPlugin';
 import {LayoutPlugin} from './plugins/LayoutPlugin/LayoutPlugin';
@@ -252,7 +251,6 @@ export default function Editor(): JSX.Element {
             <TableCellResizer />
             <TableScrollShadowPlugin />
             <PollPlugin />
-            <FigmaPlugin />
             <EquationsPlugin />
             <ExcalidrawPlugin />
             <TabFocusPlugin />

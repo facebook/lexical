@@ -57,6 +57,7 @@ import {DateTimeExtension} from './plugins/DateTimeExtension';
 import DocsPlugin from './plugins/DocsPlugin';
 import {DragDropPasteExtension} from './plugins/DragDropPasteExtension';
 import {EmojisExtension} from './plugins/EmojisExtension';
+import {FigmaExtension} from './plugins/FigmaExtension';
 import {ImagesExtension} from './plugins/ImagesExtension';
 import {PlaygroundMarkdownShortcutsExtension} from './plugins/MarkdownShortcutsExtension';
 import {MaxLengthExtension} from './plugins/MaxLengthPlugin';
@@ -163,6 +164,7 @@ const PlaygroundRichTextExtension = defineExtension({
     PageBreakExtension,
     TwitterExtension,
     YouTubeExtension,
+    FigmaExtension,
     configExtension(ListExtension, {shouldPreserveNumbering: false}),
     CheckListExtension,
     PlaygroundMarkdownShortcutsExtension,

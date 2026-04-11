@@ -42,8 +42,7 @@ import ActionsPlugin from './plugins/ActionsPlugin';
 import AutocompletePlugin from './plugins/AutocompletePlugin';
 import AutoEmbedPlugin from './plugins/AutoEmbedPlugin';
 import CodeActionMenuPlugin from './plugins/CodeActionMenuPlugin';
-import CodeHighlightPrismPlugin from './plugins/CodeHighlightPrismPlugin';
-import CodeHighlightShikiPlugin from './plugins/CodeHighlightShikiPlugin';
+import {CodeHighlightExtension} from './plugins/CodeHighlightExtension';
 import CommentPlugin from './plugins/CommentPlugin';
 import ComponentPickerPlugin from './plugins/ComponentPickerPlugin';
 import ContextMenuPlugin from './plugins/ContextMenuPlugin';
@@ -145,6 +144,11 @@ export default function Editor(): JSX.Element {
 
   useSyncExtensionSignal(MaxLengthExtension, 'disabled', !isMaxLength);
   useSyncExtensionSignal(
+    CodeHighlightExtension,
+    'mode',
+    !isCodeHighlighted ? 'off' : isCodeShiki ? 'shiki' : 'prism',
+  );
+  useSyncExtensionSignal(
     SpecialTextExtension,
     'disabled',
     !shouldAllowHighlightingWithBrackets,
@@ -238,12 +242,6 @@ export default function Editor(): JSX.Element {
                 <ContentEditable placeholder={placeholder} />
               </div>
             </div>
-            {isCodeHighlighted &&
-              (isCodeShiki ? (
-                <CodeHighlightShikiPlugin />
-              ) : (
-                <CodeHighlightPrismPlugin />
-              ))}
             <TablePlugin
               hasCellMerge={tableCellMerge}
               hasCellBackgroundColor={tableCellBackgroundColor}

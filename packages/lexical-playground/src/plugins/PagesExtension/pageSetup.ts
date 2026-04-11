@@ -16,7 +16,10 @@ import {
 import {DEFAULT_PAGE_SETUP, PAGE_SIZES} from './constants';
 import {Orientation, PageSetup, PageSize} from './types';
 
-function marginsIsEqual(a: PageSetup['margins'], b: PageSetup['margins']) {
+export function marginsIsEqual(
+  a: PageSetup['margins'],
+  b: PageSetup['margins'],
+) {
   return (
     a.bottom === b.bottom &&
     a.left === b.left &&

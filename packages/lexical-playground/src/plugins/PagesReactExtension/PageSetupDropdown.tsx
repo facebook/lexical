@@ -14,24 +14,11 @@ import {useCallback, useEffect, useState} from 'react';
 
 import DropDown, {DropDownItem} from '../../ui/DropDown';
 import {DEFAULT_PAGE_SETUP, PAGE_SIZES} from '../PagesExtension/constants';
-import {$setPageSetup} from '../PagesExtension/pageSetup';
+import {$setPageSetup, marginsIsEqual} from '../PagesExtension/pageSetup';
 import {PagesExtension} from '../PagesExtension/PagesExtension';
 
 function dropDownActiveClass(active: boolean): string {
   return active ? 'active dropdown-item-active' : '';
-}
-
-function marginsEqual(
-  a: PageSetup['margins'],
-  b: PageSetup['margins'],
-): boolean {
-  const e = 0.001;
-  return (
-    Math.abs(a.top - b.top) < e &&
-    Math.abs(a.right - b.right) < e &&
-    Math.abs(a.bottom - b.bottom) < e &&
-    Math.abs(a.left - b.left) < e
-  );
 }
 
 const MARGIN_PRESETS: ReadonlyArray<{
@@ -193,7 +180,7 @@ export function PageSetupDropdownComponent({
             <DropDownItem
               key={preset.label}
               className={`item wide dropdown-submenu-item ${dropDownActiveClass(
-                marginsEqual(
+                marginsIsEqual(
                   pageSetup?.margins ?? DEFAULT_PAGE_SETUP.margins,
                   preset.margins,
                 ),

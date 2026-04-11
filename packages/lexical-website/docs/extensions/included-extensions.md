@@ -4,9 +4,13 @@
 
 - [CodeExtension](/docs/api/modules/lexical_code#codeextension) - CodeNode (code blocks)
 
+[@lexical/code-prism](/docs/api/modules/lexical_code_-_prism)
+
+- [CodePrismExtension](/docs/api/modules/lexical_code_prism#codeprismextension) - Highlighting with Prism for CodeNode
+
 [@lexical/code-shiki](/docs/api/modules/lexical_code_-_shiki)
 
-- [CodeHighlighterShikiExtension](/docs/api/modules/lexical_code_shiki#codehighlightershikiextension) - Highlighting with Shiki for CodeNode
+- [CodeShikiExtension](/docs/api/modules/lexical_code_shiki#codeshikiextension) - Highlighting with Shiki for CodeNode
 
 [@lexical/dragon](/docs/api/modules/lexical_dragon)
 

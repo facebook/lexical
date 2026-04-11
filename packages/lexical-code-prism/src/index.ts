@@ -7,6 +7,8 @@
  */
 
 export {
+  type CodePrismConfig,
+  CodePrismExtension,
   PrismTokenizer,
   registerCodeHighlighting,
   type Tokenizer,

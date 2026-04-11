@@ -47,45 +47,15 @@ export interface PagesConfig {
 
 export const PagesExtension = defineExtension({
   build: (editor) => {
-    const fixedPageHeights = new Map<NodeKey, number>();
-    const pagesMarkedForMeasurement = new Set<NodeKey>();
     const getPageSetup = () => editor.getEditorState().read($getPageSetup);
 
     return {
-      $getPagesMarkedForMeasurement: (): PageNode[] => {
-        const pages = [];
-        for (const key of pagesMarkedForMeasurement) {
-          const page = $getNodeByKey(key);
-          if ($isPageNode(page) && page.isAttached()) {
-            pages.push(page);
-          }
-        }
-        return pages;
-      },
       Component: PageSetupDropdownComponent,
-      clearFixedHeight: (node: PageNode) =>
-        fixedPageHeights.delete(node.getKey()),
-      clearMeasurementFlag: (node: PageNode) => {
-        pagesMarkedForMeasurement.delete(node.getKey());
-      },
-      clearMeasurementFlags: (): void => {
-        fixedPageHeights.clear();
-        pagesMarkedForMeasurement.clear();
-      },
-      getFixedHeight: (node: PageNode): number | undefined =>
-        fixedPageHeights.get(node.getKey()),
-      isMarkedForMeasurement: (node: PageNode) =>
-        pagesMarkedForMeasurement.has(node.getKey()),
-      markForMeasurement: (node: PageNode) => {
-        pagesMarkedForMeasurement.add(node.getKey());
-      },
       pageSetup: watchedSignal(getPageSetup, (pageSetupSignal) =>
         editor.registerMutationListener(RootNode, () => {
           pageSetupSignal.value = getPageSetup();
         }),
       ),
-      setFixedHeight: (node: PageNode, height: number) =>
-        fixedPageHeights.set(node.getKey(), height),
     };
   },
   config: safeCast<PagesConfig>({
@@ -98,13 +68,188 @@ export const PagesExtension = defineExtension({
   register: (editor, config, state) => {
     let rafId: number | null = null;
     let previousPageKey: NodeKey | null = null;
-    const {
-      $getPagesMarkedForMeasurement,
-      markForMeasurement,
-      isMarkedForMeasurement,
-      clearMeasurementFlags,
-      clearFixedHeight,
-    } = state.getOutput();
+    const fixedPageHeights = new Map<NodeKey, number>();
+    const pagesMarkedForMeasurement = new Set<NodeKey>();
+    const clearMeasurementFlags = () => {
+      fixedPageHeights.clear();
+      pagesMarkedForMeasurement.clear();
+    };
+    const clearFixedHeight = (node: PageNode) =>
+      fixedPageHeights.delete(node.getKey());
+    const clearMeasurementFlag = (node: PageNode) =>
+      pagesMarkedForMeasurement.delete(node.getKey());
+    const getFixedHeight = (node: PageNode) =>
+      fixedPageHeights.get(node.getKey());
+    const isMarkedForMeasurement = (node: PageNode) =>
+      pagesMarkedForMeasurement.has(node.getKey());
+    const markForMeasurement = (node: PageNode) =>
+      pagesMarkedForMeasurement.add(node.getKey());
+    const setFixedHeight = (node: PageNode, height: number) =>
+      fixedPageHeights.set(node.getKey(), height);
+    const $getPagesMarkedForMeasurement = () => {
+      const pages = [];
+      for (const key of pagesMarkedForMeasurement) {
+        const page = $getNodeByKey(key);
+        if ($isPageNode(page) && page.isAttached()) {
+          pages.push(page);
+        }
+      }
+      return pages;
+    };
+    // Measures the natural content height of a page by temporarily removing
+    // the min-height constraint and reading scrollHeight.
+    const measureHeight = (node: PageNode) => {
+      clearMeasurementFlag(node);
+      const element = editor.getElementByKey(node.getKey());
+      if (!element) return 0;
+      element.style.minHeight = 'unset';
+      const height = element.scrollHeight;
+      element.style.minHeight = '';
+      return height;
+    };
+
+    // Determines which children from the next page can be pulled back into
+    // this page without exceeding the page height. Returns the child nodes
+    // that fit, using DOM cloning to simulate the layout.
+    const $getUnderflowingChildren = (node: PageNode) => {
+      const rootElement = editor.getRootElement();
+      if (!rootElement) return [];
+      const pageElement = node.getPageElement();
+      if (!pageElement) return [];
+      const contentElement = node.getPageContentElement();
+      if (!contentElement) return [];
+      const nextPage = node.getNextSibling();
+      if (!$isPageNode(nextPage)) return [];
+      const nextPageContentNode = nextPage.getContentNode();
+      if (!nextPageContentNode) return [];
+      const nextPageContentChildren = nextPageContentNode.getChildren();
+      if (!nextPageContentChildren.length) return [];
+      const nextPageContentElement = nextPage.getPageContentElement();
+      if (!nextPageContentElement) return [];
+      const nextPageChildNodes = Array.from(nextPageContentElement.childNodes);
+      pageElement.style.minHeight = 'unset';
+      const pageHeight = parseInt(
+        rootElement.style.getPropertyValue('--page-height'),
+        10,
+      );
+      if (!pageHeight) return [];
+      let overflowAfterIndex = 0;
+      let currentPageHeight = pageElement.scrollHeight;
+      while (currentPageHeight < pageHeight) {
+        const nextChild =
+          nextPageChildNodes[overflowAfterIndex]?.cloneNode(true);
+        if (!nextChild) break;
+        contentElement.appendChild(nextChild);
+        currentPageHeight = pageElement.scrollHeight;
+        if (currentPageHeight > pageHeight) break;
+        overflowAfterIndex++;
+        setFixedHeight(node, currentPageHeight);
+      }
+      pageElement.style.minHeight = '';
+      if (overflowAfterIndex === 0) return [];
+      return nextPageContentChildren.slice(0, overflowAfterIndex);
+    };
+
+    // Determines which children overflow beyond the page height by
+    // temporarily removing DOM nodes from the end until the page fits.
+    // Returns the Lexical nodes that should be moved to the next page.
+    const $getOverflowingChildren = (node: PageNode) => {
+      const rootElement = editor.getRootElement();
+      if (!rootElement) return [];
+      const pageElement = node.getPageElement();
+      if (!pageElement) return [];
+      const contentElement = node.getPageContentElement();
+      const contentNode = node.getContentNode();
+      if (!contentElement || !contentNode) return [];
+      const children = contentNode.getChildren();
+      const childNodes = Array.from(contentElement.childNodes);
+      if (children.length !== childNodes.length) {
+        childNodes.forEach((childNode) => childNode.remove());
+        contentNode.reconcileObservedMutation(contentElement, editor);
+        return $getOverflowingChildren(node);
+      }
+      pageElement.style.minHeight = 'unset';
+      const pageHeight = parseInt(
+        rootElement.style.getPropertyValue('--page-height'),
+        10,
+      );
+      if (!pageHeight) return [];
+      let currentPageHeight = pageElement.scrollHeight;
+      let overflowAfterIndex = children.length - 1;
+      while (currentPageHeight > pageHeight) {
+        const lastChild = childNodes[overflowAfterIndex];
+        if (lastChild) lastChild.remove();
+        currentPageHeight = pageElement.scrollHeight;
+        setFixedHeight(node, currentPageHeight);
+        if (currentPageHeight < pageHeight) break;
+        overflowAfterIndex--;
+      }
+      pageElement.style.minHeight = '';
+      return children.slice(overflowAfterIndex || 1);
+    };
+
+    // Measures a page's content height and dispatches to $fixOverflow or
+    // $fixUnderflow as needed. Skips if the height hasn't changed since
+    // the last measurement to avoid redundant work.
+    const $fixFlow = (node: PageNode) => {
+      if (!node.isAttached()) return clearMeasurementFlag(node);
+      const rootElement = editor.getRootElement();
+      if (!rootElement) return;
+      const pageHeight = parseInt(
+        rootElement.style.getPropertyValue('--page-height'),
+        10,
+      );
+      const fixedPageHeight = getFixedHeight(node);
+      const currentPageHeight = measureHeight(node);
+      if (currentPageHeight === fixedPageHeight) return;
+      if (!pageHeight || !currentPageHeight) return;
+      if (currentPageHeight === 0) return;
+      const isOverflowing = currentPageHeight > pageHeight;
+      if (isOverflowing) $fixOverflow(node);
+      else $fixUnderflow(node);
+    };
+
+    // Moves children that exceed the page height to the next page.
+    // If no next page exists, creates one and appends the overflow to it.
+    const $fixOverflow = (node: PageNode) => {
+      const contentNode = node.getContentNode();
+      const childrenSize = contentNode.getChildrenSize();
+      if (childrenSize === 1) return;
+      const overflowingChildren = $getOverflowingChildren(node);
+      if (!overflowingChildren.length) return;
+      const nextSibling = node.getNextSibling();
+      if ($isPageNode(nextSibling)) {
+        const nextContent = nextSibling.getContentNode();
+        const nextPageFirstChild = nextContent.getFirstChild();
+        if (!nextPageFirstChild) return;
+        overflowingChildren.forEach((child) => {
+          nextPageFirstChild.insertBefore(child);
+        });
+      } else {
+        const newPage = $createPageNode();
+        newPage.getContentNode().append(...overflowingChildren);
+        node.insertAfter(newPage);
+      }
+    };
+
+    // Pulls children from the next page to fill remaining space on this page.
+    // Removes the next page entirely if all its children were pulled back.
+    // Removes the current page if it has no children at all.
+    const $fixUnderflow = (node: PageNode) => {
+      const contentNode = node.getContentNode();
+      const childrenSize = contentNode.getChildrenSize();
+      if (!childrenSize) return node.remove();
+      const nextSibling = node.getNextSibling();
+      if (!$isPageNode(nextSibling)) return;
+      const nextContent = nextSibling.getContentNode();
+      const nextPageChildrenSize = nextContent.getChildrenSize();
+      if (nextPageChildrenSize === 0) return;
+      const underflowingChildren = $getUnderflowingChildren(node);
+      if (!underflowingChildren.length) return;
+      contentNode.append(...underflowingChildren);
+      if (nextPageChildrenSize !== underflowingChildren.length) return;
+      nextSibling.remove();
+    };
 
     // Scales the editor so that pages fit within the available root width
     // without horizontal scrolling, capped at 1x zoom.
@@ -186,7 +331,7 @@ export const PagesExtension = defineExtension({
           $addUpdateTag(SKIP_SCROLL_INTO_VIEW_TAG);
           $addUpdateTag(HISTORY_MERGE_TAG);
           for (const page of pages) {
-            page.fixFlow();
+            $fixFlow(page);
           }
         });
       });
@@ -315,6 +460,8 @@ export const PagesExtension = defineExtension({
       return effect(() => {
         const rootObserver = new ResizeObserver(updateZoom);
 
+        // Watches the focused page's content element for size changes
+        // and marks the affected page (and its predecessor) for re-measurement.
         const pageObserver = new ResizeObserver((entries) => {
           const pageContent = entries[0].target as HTMLElement;
           const isPaged = rootElement.dataset.paged === 'true';

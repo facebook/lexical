@@ -60,6 +60,7 @@ import {EmojisExtension} from './plugins/EmojisExtension';
 import {ImagesExtension} from './plugins/ImagesExtension';
 import {PlaygroundMarkdownShortcutsExtension} from './plugins/MarkdownShortcutsExtension';
 import {MaxLengthExtension} from './plugins/MaxLengthPlugin';
+import {PageBreakExtension} from './plugins/PageBreakExtension';
 import PasteLogPlugin from './plugins/PasteLogPlugin';
 import TestRecorderPlugin from './plugins/TestRecorderPlugin';
 import TypingPerfPlugin from './plugins/TypingPerfPlugin';
@@ -157,6 +158,7 @@ const PlaygroundRichTextExtension = defineExtension({
     RichTextExtension,
     ImagesExtension,
     HorizontalRuleExtension,
+    PageBreakExtension,
     configExtension(ListExtension, {shouldPreserveNumbering: false}),
     CheckListExtension,
     PlaygroundMarkdownShortcutsExtension,

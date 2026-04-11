@@ -53,6 +53,7 @@ import logo from './images/logo.svg';
 import {KeywordsExtension} from './nodes/KeywordNode';
 import PlaygroundNodes from './nodes/PlaygroundNodes';
 import {PlaygroundAutoLinkExtension} from './plugins/AutoLinkExtension';
+import {CollapsibleExtension} from './plugins/CollapsibleExtension';
 import {DateTimeExtension} from './plugins/DateTimeExtension';
 import DocsPlugin from './plugins/DocsPlugin';
 import {DragDropPasteExtension} from './plugins/DragDropPasteExtension';
@@ -167,6 +168,7 @@ const PlaygroundRichTextExtension = defineExtension({
     YouTubeExtension,
     FigmaExtension,
     TabFocusExtension,
+    CollapsibleExtension,
     configExtension(ListExtension, {shouldPreserveNumbering: false}),
     CheckListExtension,
     PlaygroundMarkdownShortcutsExtension,

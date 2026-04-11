@@ -44,7 +44,6 @@ import AutoEmbedPlugin from './plugins/AutoEmbedPlugin';
 import CodeActionMenuPlugin from './plugins/CodeActionMenuPlugin';
 import CodeHighlightPrismPlugin from './plugins/CodeHighlightPrismPlugin';
 import CodeHighlightShikiPlugin from './plugins/CodeHighlightShikiPlugin';
-import CollapsiblePlugin from './plugins/CollapsiblePlugin';
 import CommentPlugin from './plugins/CommentPlugin';
 import ComponentPickerPlugin from './plugins/ComponentPickerPlugin';
 import ContextMenuPlugin from './plugins/ContextMenuPlugin';
@@ -253,7 +252,6 @@ export default function Editor(): JSX.Element {
             <EquationsPlugin />
             <ExcalidrawPlugin />
             <TabIndentationPlugin maxIndent={7} />
-            <CollapsiblePlugin />
             <LayoutPlugin />
             {floatingAnchorElem && (
               <>

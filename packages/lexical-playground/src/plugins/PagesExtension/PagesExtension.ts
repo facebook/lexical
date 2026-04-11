@@ -6,7 +6,6 @@
  *
  */
 import {effect, watchedSignal} from '@lexical/extension';
-import {$wrapNodeInElement} from '@lexical/utils';
 import {
   $addUpdateTag,
   $createParagraphNode,
@@ -16,7 +15,6 @@ import {
   $getRoot,
   $getSelection,
   $getStateChange,
-  $isLeafNode,
   $isRangeSelection,
   COMMAND_PRIORITY_LOW,
   defineExtension,
@@ -81,9 +79,6 @@ export const PagesExtension = defineExtension({
       markForMeasurement: (node: PageNode) => {
         pagesMarkedForMeasurement.add(node.getKey());
       },
-      markForMeasurementByKey: (key: NodeKey) => {
-        pagesMarkedForMeasurement.add(key);
-      },
       pageSetup: watchedSignal(getPageSetup, (pageSetupSignal) =>
         editor.registerMutationListener(RootNode, () => {
           pageSetupSignal.value = getPageSetup();
@@ -101,18 +96,18 @@ export const PagesExtension = defineExtension({
   name: '@lexical/playground/Pages',
   nodes: () => [PageNode, PageContentNode],
   register: (editor, config, state) => {
-    let isTouched = false;
     let rafId: number | null = null;
     let previousPageKey: NodeKey | null = null;
     const {
       $getPagesMarkedForMeasurement,
       markForMeasurement,
       isMarkedForMeasurement,
-      markForMeasurementByKey,
       clearMeasurementFlags,
       clearFixedHeight,
     } = state.getOutput();
 
+    // Scales the editor so that pages fit within the available root width
+    // without horizontal scrolling, capped at 1x zoom.
     const updateZoom = () => {
       const rootElement = editor.getRootElement();
       if (!rootElement) return;
@@ -133,6 +128,9 @@ export const PagesExtension = defineExtension({
       rootElement.style.zoom = nextZoom;
     };
 
+    // Reads the current page setup (size, orientation, margins) and applies
+    // the corresponding CSS custom properties to the root element, or removes
+    // them when paged mode is disabled.
     const updatePageDimensions = () => {
       editor.getEditorState().read(() => {
         const pageSetup = $getPageSetup();
@@ -172,6 +170,9 @@ export const PagesExtension = defineExtension({
       });
     };
 
+    // Debounces page re-flow via requestAnimationFrame: on the next frame,
+    // runs fixFlow() on every page marked for measurement to redistribute
+    // content that overflows or underflows a page's available height.
     const schedulePageMeasurement = () => {
       if (rafId) {
         cancelAnimationFrame(rafId);
@@ -191,6 +192,9 @@ export const PagesExtension = defineExtension({
       });
     };
 
+    // Ensures all root-level children are properly wrapped in PageNodes.
+    // Moves stray content into the nearest page, handles PageBreakNodes by
+    // splitting content across pages, and creates a default empty page if none exist.
     const fixPageStructure = () => {
       editor.update(
         () => {
@@ -257,16 +261,17 @@ export const PagesExtension = defineExtension({
             markForMeasurement(newPage);
           }
 
-          isTouched = true;
           schedulePageMeasurement();
         },
         {
           discrete: true,
-          tag: HISTORY_MERGE_TAG,
         },
       );
     };
 
+    // Marks the first page of each page-break group for measurement and
+    // schedules re-flow, used when page dimensions change and all pages
+    // need to be re-measured.
     const resizePages = () => {
       editor.read(() => {
         const root = $getRoot();
@@ -278,11 +283,12 @@ export const PagesExtension = defineExtension({
           if ($isPageNode(child.getPreviousSibling())) continue;
           markForMeasurement(child);
         }
-        isTouched = true;
         schedulePageMeasurement();
       });
     };
 
+    // Removes all PageNode wrappers, moving their content back to the root
+    // as direct children. Used when paged mode is turned off.
     const destroyPageStructure = () => {
       editor.update(
         () => {
@@ -330,6 +336,9 @@ export const PagesExtension = defineExtension({
 
         rootObserver.observe(rootElement);
 
+        // Root transform callback: checks whether the root's children are
+        // valid (all PageNodes, no stray content, no PageBreakNodes inside
+        // PageContentNodes). If invalid, queues fixPageStructure as a microtask.
         const $enforcePageStructure = () => {
           const isEditable = editor.isEditable();
           if (!isEditable || $getPageSetup() === null) return;
@@ -350,6 +359,8 @@ export const PagesExtension = defineExtension({
           }
         };
 
+        // Normalizes a PageNode so it has exactly one PageContentNode child.
+        // Any stray children (e.g. from paste) are moved into the content node,
         const $ensurePageNodeChildren = (pageNode: PageNode) => {
           const children = pageNode.getChildren();
           let content: PageContentNode | undefined;
@@ -359,13 +370,7 @@ export const PagesExtension = defineExtension({
             if ($isPageContentNode(child)) {
               content = child;
             } else {
-              if ($isLeafNode(child)) {
-                strayChildren.push(
-                  $wrapNodeInElement(child, $createParagraphNode),
-                );
-              } else {
-                strayChildren.push(child);
-              }
+              strayChildren.push(child);
             }
           }
 
@@ -383,11 +388,12 @@ export const PagesExtension = defineExtension({
           pageNode.append(content);
         };
 
+        // When a PageNode changes, ensure its structure is valid and
+        // schedule measurement to fix overflow/underflow before next paint.
         const removePageTransform = editor.registerNodeTransform(
           PageNode,
           (pageNode) => {
             $ensurePageNodeChildren(pageNode);
-            if (!isTouched) return;
             if (isMarkedForMeasurement(pageNode)) return;
             markForMeasurement(pageNode);
             schedulePageMeasurement();
@@ -399,12 +405,12 @@ export const PagesExtension = defineExtension({
           $enforcePageStructure,
         );
 
+        // When PageContentNode content changes, mark its parent page for
+        // re-measurement so overflow/underflow is corrected.
         const removePageContentTransform = editor.registerNodeTransform(
           PageContentNode,
           (node) => {
-            if (!isTouched) return;
-            const pageNode = node.getParent();
-            if (!$isPageNode(pageNode)) return;
+            const pageNode = node.getPageNode();
             if (isMarkedForMeasurement(pageNode)) return;
             markForMeasurement(pageNode);
             schedulePageMeasurement();
@@ -412,10 +418,12 @@ export const PagesExtension = defineExtension({
         );
 
         const removeCommandListeners = mergeRegister(
+          // Tracks the currently focused page so a ResizeObserver can watch
+          // only its content element, avoiding unnecessary observation of
+          // every page. Unobserves the previous page when focus moves.
           editor.registerCommand(
             SELECTION_CHANGE_COMMAND,
             () => {
-              isTouched = true;
               const selection = $getSelection();
               if (!$isRangeSelection(selection)) return false;
               const anchorNode = selection.anchor.getNode();
@@ -445,6 +453,10 @@ export const PagesExtension = defineExtension({
             },
             COMMAND_PRIORITY_LOW,
           ),
+          // Handles character deletion at page boundaries: backspace at the
+          // start of a page merges content into the previous page, and forward
+          // delete at the end pulls content from the next page. Also handles
+          // removing an empty page on backspace.
           editor.registerCommand(
             DELETE_CHARACTER_COMMAND,
             (isBackward: boolean) => {
@@ -511,6 +523,9 @@ export const PagesExtension = defineExtension({
         );
 
         const removeMutationListeners = mergeRegister(
+          // Watches for page setup changes on the root node. When setup is
+          // removed, destroys the page structure; when it changes, updates
+          // CSS dimensions and triggers a full page resize.
           editor.registerMutationListener(
             RootNode,
             (_mutations, {prevEditorState}) => {
@@ -525,21 +540,12 @@ export const PagesExtension = defineExtension({
               const [pageState, _prevPageState] = change;
               if (!pageState) {
                 destroyPageStructure();
-                return;
+              } else {
+                updatePageDimensions();
+                resizePages();
               }
-              updatePageDimensions();
-              resizePages();
             },
           ),
-          editor.registerMutationListener(PageNode, (mutations) => {
-            if (!isTouched) return;
-            for (const [key, mutation] of mutations) {
-              if (mutation === 'created' || mutation === 'destroyed') {
-                markForMeasurementByKey(key);
-              }
-            }
-            schedulePageMeasurement();
-          }),
         );
 
         // Copy page properties to :root before printing so @page can use them
@@ -552,6 +558,8 @@ export const PagesExtension = defineExtension({
           '--page-margin-left',
         ];
 
+        // Copies page CSS custom properties to :root so CSS @page rules
+        // (which can't read properties from arbitrary elements) pick them up.
         const handleBeforePrint = () => {
           if (rootElement.dataset.paged !== 'true') return;
           for (const prop of PAGE_PROPS) {
@@ -560,6 +568,7 @@ export const PagesExtension = defineExtension({
           }
         };
 
+        // Cleans up :root CSS custom properties after printing completes.
         const handleAfterPrint = () => {
           for (const prop of PAGE_PROPS) {
             document.documentElement.style.removeProperty(prop);
@@ -572,7 +581,6 @@ export const PagesExtension = defineExtension({
         return () => {
           rootObserver.disconnect();
           pageObserver.disconnect();
-          isTouched = false;
           if (rafId !== null) {
             cancelAnimationFrame(rafId);
           }

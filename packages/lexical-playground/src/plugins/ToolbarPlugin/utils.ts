@@ -369,9 +369,16 @@ export const clearFormatting = (
         return;
       }
 
-      const postExtractCaretRange = $caretRangeFromSelection(postExtractSelection);
-      const anchorNext = $getCaretInDirection(postExtractCaretRange.anchor, 'next');
-      const focusNext = $getCaretInDirection(postExtractCaretRange.focus, 'next');
+      const postExtractCaretRange =
+        $caretRangeFromSelection(postExtractSelection);
+      const anchorNext = $getCaretInDirection(
+        postExtractCaretRange.anchor,
+        'next',
+      );
+      const focusNext = $getCaretInDirection(
+        postExtractCaretRange.focus,
+        'next',
+      );
 
       if ($comparePointCaretNext(anchorNext, focusNext) === 0) {
         return;
@@ -388,7 +395,9 @@ export const clearFormatting = (
           const nearestBlockElement =
             $getNearestBlockElementAncestorOrThrow(node);
           if (nearestBlockElement.getFormat() !== 0) {
-            if ($isBlockFullySelected(nearestBlockElement, postExtractCaretRange)) {
+            if (
+              $isBlockFullySelected(nearestBlockElement, postExtractCaretRange)
+            ) {
               nearestBlockElement.setFormat('');
             }
           }

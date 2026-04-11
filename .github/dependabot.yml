@@ -1,0 +1,28 @@
+version: 2
+updates:
+  # Keep GitHub Actions up to date
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'monthly'
+    groups:
+      github-actions:
+        patterns:
+          - '*'
+
+  # npm dependencies for the main workspace
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'monthly'
+    groups:
+      dev-dependencies:
+        dependency-type: 'development'
+        patterns:
+          - '*'
+    # Examples and integration test fixtures are standalone projects
+    # (excluded from the pnpm workspace). Their lockfiles are not tracked
+    # in git, so Dependabot does not need to manage them.
+    exclude-paths:
+      - 'examples/**'
+      - 'scripts/__tests__/integration/fixtures/**'

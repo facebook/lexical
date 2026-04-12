@@ -32,7 +32,6 @@ import {
 
 import {$isPageBreakNode, PageBreakNode} from '../../nodes/PageBreakNode';
 import {PageBreakExtension} from '../PageBreakExtension';
-import {PageSetupDropdownComponent} from '../PagesReactExtension/PageSetupDropdown';
 import {PAGE_SIZES} from './constants';
 import {
   $createPageContentNode,
@@ -52,7 +51,6 @@ export const PagesExtension = defineExtension({
     const getPageSetup = () => editor.getEditorState().read($getPageSetup);
 
     return {
-      Component: PageSetupDropdownComponent,
       pageSetup: watchedSignal(getPageSetup, (pageSetupSignal) =>
         editor.registerMutationListener(RootNode, () => {
           pageSetupSignal.value = getPageSetup();

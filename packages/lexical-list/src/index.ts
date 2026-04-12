@@ -25,7 +25,6 @@ import {
   $createParagraphNode,
   $getNodeByKey,
   $getSelection,
-  $isElementNode,
   $isRangeSelection,
   $isTextNode,
   COMMAND_PRIORITY_LOW,

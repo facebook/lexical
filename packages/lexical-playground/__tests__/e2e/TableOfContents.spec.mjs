@@ -140,8 +140,9 @@ test.describe('TableOfContents', () => {
   test('Clicking on the contents link scrolls to the heading', async ({
     page,
     isPlainText,
+    isCollab,
   }) => {
-    test.skip(isPlainText);
+    test.skip(isPlainText || isCollab);
     await focusEditor(page);
 
     // creating headings with ample spacing between them

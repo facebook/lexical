@@ -6,7 +6,13 @@
  *
  */
 import {ListNode} from '@lexical/list';
-import {EditorConfig, LexicalEditor, LexicalNode} from 'lexical';
+import {
+  $create,
+  addClassNamesToElement,
+  EditorConfig,
+  LexicalEditor,
+  LexicalNode,
+} from 'lexical';
 
 export class ContentsListNode extends ListNode {
   $config() {
@@ -17,13 +23,13 @@ export class ContentsListNode extends ListNode {
 
   createDOM(config: EditorConfig, editor?: LexicalEditor): HTMLElement {
     const element = super.createDOM(config, editor);
-    element.classList.add(config.theme.contents);
+    addClassNamesToElement(element, config.theme.contents);
     return element;
   }
 }
 
 export function $createContentsListNode() {
-  return new ContentsListNode();
+  return $create(ContentsListNode);
 }
 
 export function $isContentsListNode(node?: LexicalNode | null) {

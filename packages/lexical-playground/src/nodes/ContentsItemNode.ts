@@ -6,7 +6,12 @@
  *
  */
 import {ListItemNode} from '@lexical/list';
-import {EditorConfig, ElementNode} from 'lexical';
+import {
+  $create,
+  addClassNamesToElement,
+  EditorConfig,
+  ElementNode,
+} from 'lexical';
 
 import {$createContentsListNode} from './ContentsListNode';
 
@@ -23,11 +28,11 @@ export class ContentsItemNode extends ListItemNode {
 
   createDOM(config: EditorConfig): HTMLElement {
     const element = super.createDOM(config);
-    element.classList.add(config.theme.contentsItem);
+    addClassNamesToElement(element, config.theme.contentsItem);
     return element;
   }
 }
 
 export function $createContentsItemNode() {
-  return new ContentsItemNode();
+  return $create(ContentsItemNode);
 }

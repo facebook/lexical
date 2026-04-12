@@ -6,7 +6,12 @@
  *
  */
 import {LinkAttributes, LinkNode} from '@lexical/link';
-import {EditorConfig, LexicalNode} from 'lexical';
+import {
+  $create,
+  addClassNamesToElement,
+  EditorConfig,
+  LexicalNode,
+} from 'lexical';
 
 export class ContentsLinkNode extends LinkNode {
   $config() {
@@ -17,7 +22,7 @@ export class ContentsLinkNode extends LinkNode {
 
   createDOM(config: EditorConfig): HTMLAnchorElement | HTMLSpanElement {
     const element = super.createDOM(config);
-    element.classList.add(config.theme.contentsLink);
+    addClassNamesToElement(element, config.theme.contentsLink);
     return element;
   }
 
@@ -28,9 +33,13 @@ export class ContentsLinkNode extends LinkNode {
 
 export function $createContentsLinkNode(
   url: string,
-  attributes?: LinkAttributes,
+  attributes: LinkAttributes = {},
 ) {
-  return new ContentsLinkNode(url, attributes);
+  return $create(ContentsLinkNode)
+    .setURL(url)
+    .setTarget(attributes.target ?? null)
+    .setRel(attributes.rel ?? null)
+    .setTitle(attributes.title ?? null);
 }
 
 export function $isContentsLinkNode(node?: LexicalNode | null) {

@@ -14,11 +14,15 @@ import './index.css';
 import {$createLinkNode, LinkNode} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {TableOfContentsPlugin as LexicalTableOfContentsPlugin} from '@lexical/react/LexicalTableOfContentsPlugin';
+import {$isHeadingNode, HeadingNode} from '@lexical/rich-text';
 import {$findMatchingParent} from '@lexical/utils';
 import {
+  $getState,
+  $setState,
   COMMAND_PRIORITY_HIGH,
   COMMAND_PRIORITY_LOW,
   createCommand,
+  createState,
   DELETE_CHARACTER_COMMAND,
   type LexicalCommand,
   mergeRegister,
@@ -27,6 +31,7 @@ import {
 } from 'lexical';
 import {
   $createTextNode,
+  $getNodeByKey,
   $getSelection,
   $insertNodes,
   $isRangeSelection,
@@ -76,6 +81,10 @@ export const INSERT_CONTENTS_COMMAND: LexicalCommand<void> = createCommand(
   'INSERT_CONTENTS_COMMAND',
 );
 
+const anchorState = createState('anchor', {
+  parse: (v) => (typeof v === 'string' ? v : null),
+});
+
 function TableOfContentsList({
   tableOfContents,
 }: {
@@ -114,6 +123,18 @@ function TableOfContentsList({
       }),
       // The contents link must be within the contents
       // If it's moved outside the contents, convert it to a regular link
+      editor.registerNodeTransform(LinkNode, (node) => {
+        if ($findMatchingParent(node, $isContentsListNode)) {
+          node.replace(
+            $createContentsLinkNode(node.getURL(), {
+              rel: node.getRel(),
+              target: node.getTarget(),
+              title: node.getRel(),
+            }),
+            true,
+          );
+        }
+      }),
       editor.registerNodeTransform(ContentsLinkNode, (node) => {
         if (!$findMatchingParent(node, $isContentsListNode)) {
           node.replace(
@@ -141,18 +162,6 @@ function TableOfContentsList({
               contentsItem.select(0, 0);
             }
           }
-        }
-      }),
-      editor.registerNodeTransform(LinkNode, (node) => {
-        if ($findMatchingParent(node, $isContentsListNode)) {
-          node.replace(
-            $createContentsLinkNode(node.getURL(), {
-              rel: node.getRel(),
-              target: node.getTarget(),
-              title: node.getRel(),
-            }),
-            true,
-          );
         }
       }),
       // Handle deletion within ContentsLink elements:
@@ -225,6 +234,23 @@ function TableOfContentsList({
         },
         COMMAND_PRIORITY_HIGH,
       ),
+      // Synchronizing the anchorState and id attribute for each heading
+      editor.registerMutationListener(HeadingNode, (mutations) => {
+        mutations.forEach((mutation, key) => {
+          if (mutation !== 'destroyed') {
+            editor.update(() => {
+              const node = $getNodeByKey(key);
+              if ($isHeadingNode(node)) {
+                const anchor = $getState(node, anchorState);
+                const element = editor.getElementByKey(key);
+                if (element && anchor) {
+                  element.id = anchor;
+                }
+              }
+            });
+          }
+        });
+      }),
     );
   }, [editor]);
 
@@ -237,9 +263,9 @@ function TableOfContentsList({
           tableOfContents.forEach(([key, text, tag], index) => {
             const anchorIndex = `heading-${index + 1}`;
             const item = $createContentsItemNode();
-            const element = editor.getElementByKey(key);
-            if (element) {
-              element.id = anchorIndex;
+            const headingNode = $getNodeByKey(key);
+            if ($isHeadingNode(headingNode)) {
+              $setState(headingNode, anchorState, anchorIndex);
             }
             item.append(
               $createContentsLinkNode('#' + anchorIndex, {

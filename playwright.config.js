@@ -12,15 +12,6 @@ const {devices} = require('@playwright/test');
 const {CI} = process.env;
 const IS_CI = CI === 'true';
 
-// Playwright 1.59.0 introduced navigator.platform emulation that syncs the
-// in-browser navigator.platform with the device descriptor's user-agent
-// string (e.g. "Win32" for Desktop Firefox/Chrome presets).  This breaks
-// Lexical's IS_APPLE detection (which reads navigator.platform) and causes
-// keyboard shortcut mismatches on macOS CI runners.  The revert (PR #40016)
-// was not included in 1.59.1, so we disable the emulation here until a
-// fixed Playwright release is available.
-process.env.PLAYWRIGHT_NO_UA_PLATFORM = '1';
-
 const config = {
   forbidOnly: IS_CI,
   projects: [

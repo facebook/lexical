@@ -6,6 +6,7 @@
  *
  */
 
+import {$insertGeneratedNodes} from '@lexical/clipboard';
 import {CodeNode} from '@lexical/code';
 import {createHeadlessEditor} from '@lexical/headless';
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
@@ -17,10 +18,11 @@ import {
   $createRangeSelection,
   $createTextNode,
   $getRoot,
+  isHTMLElement,
   ParagraphNode,
   RangeSelection,
 } from 'lexical';
-import {describe, expect, test} from 'vitest';
+import {assert, describe, expect, test} from 'vitest';
 
 describe('HTML', () => {
   type Input = Array<{
@@ -264,10 +266,7 @@ describe('HTML', () => {
   });
 
   describe('$generateNodesFromDOM: CSS class style inlining', () => {
-    // jsdom does not provide usable CSSStyleSheet data (e.g. cssRules),
-    // so stylesheet-based inlining is effectively a no-op.
-
-    test('HTML with <style> tags does not crash and still imports content', () => {
+    test('HTML with <style> tags inlines styles by class', () => {
       const editor = createHeadlessEditor();
       const parser = new DOMParser();
 
@@ -280,8 +279,14 @@ describe('HTML', () => {
             'text/html',
           );
           const nodes = $generateNodesFromDOM(editor, dom);
-          root.append(...nodes);
+          $insertGeneratedNodes(editor, nodes, root.select(0));
           expect(root.getTextContent()).toBe('Hello');
+          const highlightSpan = dom.querySelector('span.highlight');
+          assert(isHTMLElement(highlightSpan), 'span.highlight is in the dom');
+          expect(highlightSpan.style.fontWeight).toBe('bold');
+          const textNodes = root.getAllTextNodes();
+          expect(textNodes).toHaveLength(1);
+          expect(textNodes[0].hasFormat('bold')).toBe(true);
         },
         {discrete: true},
       );
@@ -301,7 +306,8 @@ describe('HTML', () => {
           $generateNodesFromDOM(editor, dom);
 
           // Inline style should never be overwritten
-          const span = dom.querySelector('.colored') as HTMLElement;
+          const span = dom.querySelector('.colored');
+          assert(isHTMLElement(span), '.colored is still in the dom');
           expect(span.style.color).toBe('blue');
         },
         {discrete: true},
@@ -317,8 +323,15 @@ describe('HTML', () => {
           const root = $getRoot();
           const dom = parser.parseFromString('<p>Hello world</p>', 'text/html');
           const nodes = $generateNodesFromDOM(editor, dom);
-          root.append(...nodes);
-          expect(root.getTextContent()).toBe('Hello world');
+          $insertGeneratedNodes(editor, nodes, root.select(0));
+          expect(
+            root
+              .getAllTextNodes()
+              .map(
+                (node) =>
+                  [node.getTextContent(), node.hasFormat('bold')] as const,
+              ),
+          ).toEqual([['Hello world', false]]);
         },
         {discrete: true},
       );

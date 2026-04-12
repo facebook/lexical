@@ -154,7 +154,7 @@ Source code: [examples/react-rich-collab](https://github.com/facebook/lexical/tr
 - [`CommentPlugin`](https://github.com/facebook/lexical/tree/main/packages/lexical-playground/src/plugins/CommentPlugin) - features use of the separate provider and Yjs room to sync comments.
 - [`ImageComponent`](https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/nodes/ImageComponent.tsx) - features use of the `LexicalNestedComposer` paired with `CollaborationPlugin`.
 - [`PollOptionComponent`](https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/nodes/PollComponent.tsx) - showcases poll implementation using `clientID` from Yjs context.
-- [`StickyPlugin`](https://github.com/facebook/lexical/tree/main/packages/lexical-playground/src/plugins/StickyPlugin) - features use of the `LexicalNestedComposer` paired with `CollaborationPlugin` as well as sticky note position real-time sync.
+- [`StickyComponent`](https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/nodes/StickyComponent.tsx) - features use of the `LexicalNestedComposer` paired with `CollaborationPlugin` as well as sticky note position real-time sync.
 
 :::note
 

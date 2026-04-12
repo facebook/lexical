@@ -13,6 +13,7 @@
   "types": "index.d.ts",
   "dependencies": {
     "@lexical/code-core": "workspace:*",
+    "@lexical/extension": "workspace:*",
     "@shikijs/core": "^4.0.2",
     "@shikijs/engine-javascript": "^4.0.2",
     "@shikijs/langs": "^4.0.2",

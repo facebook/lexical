@@ -22,9 +22,9 @@ import {useMemo, useState} from 'react';
 import useModal from '../../hooks/useModal';
 import Button from '../../ui/Button';
 import {DialogActions} from '../../ui/Dialog';
-import {INSERT_FIGMA_COMMAND} from '../FigmaPlugin';
-import {INSERT_TWEET_COMMAND} from '../TwitterPlugin';
-import {INSERT_YOUTUBE_COMMAND} from '../YouTubePlugin';
+import {INSERT_FIGMA_COMMAND} from '../FigmaExtension';
+import {INSERT_TWEET_COMMAND} from '../TwitterExtension';
+import {INSERT_YOUTUBE_COMMAND} from '../YouTubeExtension';
 
 interface PlaygroundEmbedConfig extends EmbedConfig {
   // Human readable name of the embedded content e.g. Tweet or Google Map.

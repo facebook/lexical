@@ -309,6 +309,9 @@ importers:
       '@lexical/code-core':
         specifier: workspace:*
         version: link:../lexical-code-core
+      '@lexical/extension':
+        specifier: workspace:*
+        version: link:../lexical-extension
       lexical:
         specifier: workspace:*
         version: link:../lexical
@@ -325,6 +328,9 @@ importers:
       '@lexical/code-core':
         specifier: workspace:*
         version: link:../lexical-code-core
+      '@lexical/extension':
+        specifier: workspace:*
+        version: link:../lexical-extension
       '@shikijs/core':
         specifier: ^4.0.2
         version: 4.0.2

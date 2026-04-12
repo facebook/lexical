@@ -35,6 +35,76 @@ import {
 } from 'lexical';
 
 /**
+ * Inlines CSS rules from <style> tags onto matching elements as inline styles.
+ * This is needed because apps like Excel generate HTML where styles live in
+ * class-based <style> rules (e.g. `.xl65 { background: #FFFF00; color: blue; }`)
+ * rather than inline styles. Since Lexical's import converters read inline styles,
+ * we resolve stylesheet rules into inline styles before conversion.
+ *
+ * Mutates the DOM in-place. Original inline styles always take precedence over
+ * stylesheet rules (matching CSS specificity behavior).
+ */
+function inlineStylesFromStyleSheets(doc: Document): void {
+  if (doc.querySelector('style') === null) {
+    return;
+  }
+
+  const originalInlineStyles = new Map<HTMLElement, Set<string>>();
+
+  function getOriginalInlineProps(el: HTMLElement): Set<string> {
+    let props = originalInlineStyles.get(el);
+    if (props === undefined) {
+      props = new Set<string>();
+      for (let i = 0; i < el.style.length; i++) {
+        props.add(el.style[i]);
+      }
+      originalInlineStyles.set(el, props);
+    }
+    return props;
+  }
+
+  try {
+    for (const sheet of Array.from(doc.styleSheets)) {
+      let rules: CSSRuleList;
+      try {
+        rules = sheet.cssRules;
+      } catch {
+        continue;
+      }
+      for (const rule of Array.from(rules)) {
+        if (!(rule instanceof CSSStyleRule)) {
+          continue;
+        }
+        let elements: NodeListOf<Element>;
+        try {
+          elements = doc.querySelectorAll(rule.selectorText);
+        } catch {
+          continue;
+        }
+        for (const el of Array.from(elements)) {
+          if (!(el instanceof HTMLElement)) {
+            continue;
+          }
+          const originalProps = getOriginalInlineProps(el);
+          for (let i = 0; i < rule.style.length; i++) {
+            const prop = rule.style[i];
+            if (!originalProps.has(prop)) {
+              el.style.setProperty(
+                prop,
+                rule.style.getPropertyValue(prop),
+                rule.style.getPropertyPriority(prop),
+              );
+            }
+          }
+        }
+      }
+    }
+  } catch {
+    // styleSheets API not supported in this environment
+  }
+}
+
+/**
  * How you parse your html string to get a document is left up to you. In the browser you can use the native
  * DOMParser API to generate a document (see clipboard.ts), but to use in a headless environment you can use JSDom
  * or an equivalent library and pass in the document here.
@@ -43,6 +113,10 @@ export function $generateNodesFromDOM(
   editor: LexicalEditor,
   dom: Document | ParentNode,
 ): Array<LexicalNode> {
+  if (isDOMDocumentNode(dom)) {
+    inlineStylesFromStyleSheets(dom);
+  }
+
   const elements = isDOMDocumentNode(dom)
     ? dom.body.childNodes
     : dom.childNodes;

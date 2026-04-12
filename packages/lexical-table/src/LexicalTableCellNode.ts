@@ -395,6 +395,7 @@ export function $convertTableCellNodeElement(
   const hasLinethroughTextDecoration = textDecoration.includes('line-through');
   const hasItalicFontStyle = style.fontStyle === 'italic';
   const hasUnderlineTextDecoration = textDecoration.includes('underline');
+  const color = style.color;
   return {
     after: (childLexicalNodes) => {
       const result: LexicalNode[] = [];
@@ -430,6 +431,12 @@ export function $convertTableCellNodeElement(
             }
             if (hasUnderlineTextDecoration) {
               child.toggleFormat('underline');
+            }
+            if (color) {
+              const existingStyle = child.getStyle();
+              if (!existingStyle.includes('color:')) {
+                child.setStyle(existingStyle + `color: ${color};`);
+              }
             }
           }
 

@@ -76,6 +76,7 @@ export function PageSetupDropdownComponent({
   const [marginsMenuOpen, setMarginsMenuOpen] = useState(false);
   useEffect(() => {
     if (!pageSetup) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setOrientationMenuOpen(false);
       setMarginsMenuOpen(false);
     }

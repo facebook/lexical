@@ -32,6 +32,7 @@ const config = {
         launchOptions: {
           slowMo: 50,
         },
+        userAgent: undefined,
       },
     },
     {
@@ -42,6 +43,7 @@ const config = {
         launchOptions: {
           slowMo: 50,
         },
+        userAgent: undefined,
       },
     },
     {
@@ -52,6 +54,7 @@ const config = {
         launchOptions: {
           slowMo: 50,
         },
+        userAgent: undefined,
       },
     },
   ],

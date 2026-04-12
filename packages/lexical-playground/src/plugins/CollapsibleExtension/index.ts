@@ -8,7 +8,6 @@
 
 import './Collapsible.css';
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $findMatchingParent,
   $insertNodeToNearestRoot,
@@ -20,13 +19,13 @@ import {
   $isRangeSelection,
   COMMAND_PRIORITY_LOW,
   createCommand,
+  defineExtension,
   INSERT_PARAGRAPH_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
   KEY_ARROW_UP_COMMAND,
 } from 'lexical';
-import {useEffect} from 'react';
 
 import {
   $createCollapsibleContainerNode,
@@ -48,82 +47,74 @@ export const INSERT_COLLAPSIBLE_COMMAND = createCommand<void>(
   'INSERT_COLLAPSIBLE_COMMAND',
 );
 
-export default function CollapsiblePlugin(): null {
-  const [editor] = useLexicalComposerContext();
+const $onEscapeUp = () => {
+  const selection = $getSelection();
+  if (
+    $isRangeSelection(selection) &&
+    selection.isCollapsed() &&
+    selection.anchor.offset === 0
+  ) {
+    const container = $findMatchingParent(
+      selection.anchor.getNode(),
+      $isCollapsibleContainerNode,
+    );
 
-  useEffect(() => {
-    if (
-      !editor.hasNodes([
-        CollapsibleContainerNode,
-        CollapsibleTitleNode,
-        CollapsibleContentNode,
-      ])
-    ) {
-      throw new Error(
-        'CollapsiblePlugin: CollapsibleContainerNode, CollapsibleTitleNode, or CollapsibleContentNode not registered on editor',
-      );
-    }
-
-    const $onEscapeUp = () => {
-      const selection = $getSelection();
+    if ($isCollapsibleContainerNode(container)) {
+      const parent = container.getParent();
       if (
-        $isRangeSelection(selection) &&
-        selection.isCollapsed() &&
-        selection.anchor.offset === 0
+        parent !== null &&
+        parent.getFirstChild() === container &&
+        selection.anchor.key === container.getFirstDescendant()?.getKey()
       ) {
-        const container = $findMatchingParent(
-          selection.anchor.getNode(),
-          $isCollapsibleContainerNode,
-        );
+        container.insertBefore($createParagraphNode());
+      }
+    }
+  }
 
-        if ($isCollapsibleContainerNode(container)) {
-          const parent = container.getParent();
-          if (
-            parent !== null &&
-            parent.getFirstChild() === container &&
-            selection.anchor.key === container.getFirstDescendant()?.getKey()
-          ) {
-            container.insertBefore($createParagraphNode());
-          }
+  return false;
+};
+
+const $onEscapeDown = () => {
+  const selection = $getSelection();
+  if ($isRangeSelection(selection) && selection.isCollapsed()) {
+    const container = $findMatchingParent(
+      selection.anchor.getNode(),
+      $isCollapsibleContainerNode,
+    );
+
+    if ($isCollapsibleContainerNode(container)) {
+      const parent = container.getParent();
+      if (parent !== null && parent.getLastChild() === container) {
+        const titleParagraph = container.getFirstDescendant();
+        const contentParagraph = container.getLastDescendant();
+
+        if (
+          (contentParagraph !== null &&
+            selection.anchor.key === contentParagraph.getKey() &&
+            selection.anchor.offset ===
+              contentParagraph.getTextContentSize()) ||
+          (titleParagraph !== null &&
+            selection.anchor.key === titleParagraph.getKey() &&
+            selection.anchor.offset === titleParagraph.getTextContentSize())
+        ) {
+          container.insertAfter($createParagraphNode());
         }
       }
+    }
+  }
 
-      return false;
-    };
+  return false;
+};
 
-    const $onEscapeDown = () => {
-      const selection = $getSelection();
-      if ($isRangeSelection(selection) && selection.isCollapsed()) {
-        const container = $findMatchingParent(
-          selection.anchor.getNode(),
-          $isCollapsibleContainerNode,
-        );
-
-        if ($isCollapsibleContainerNode(container)) {
-          const parent = container.getParent();
-          if (parent !== null && parent.getLastChild() === container) {
-            const titleParagraph = container.getFirstDescendant();
-            const contentParagraph = container.getLastDescendant();
-
-            if (
-              (contentParagraph !== null &&
-                selection.anchor.key === contentParagraph.getKey() &&
-                selection.anchor.offset ===
-                  contentParagraph.getTextContentSize()) ||
-              (titleParagraph !== null &&
-                selection.anchor.key === titleParagraph.getKey() &&
-                selection.anchor.offset === titleParagraph.getTextContentSize())
-            ) {
-              container.insertAfter($createParagraphNode());
-            }
-          }
-        }
-      }
-
-      return false;
-    };
-
-    return mergeRegister(
+export const CollapsibleExtension = defineExtension({
+  name: '@lexical/playground/Collapsible',
+  nodes: [
+    CollapsibleContainerNode,
+    CollapsibleTitleNode,
+    CollapsibleContentNode,
+  ],
+  register: (editor) =>
+    mergeRegister(
       // Structure enforcing transformers for each node type. In case nesting structure is not
       // "Container > Title + Content" it'll unwrap nodes and convert it back
       // to regular content.
@@ -237,8 +228,5 @@ export default function CollapsiblePlugin(): null {
         },
         COMMAND_PRIORITY_LOW,
       ),
-    );
-  }, [editor]);
-
-  return null;
-}
+    ),
+});

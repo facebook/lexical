@@ -53,16 +53,24 @@ import logo from './images/logo.svg';
 import {KeywordsExtension} from './nodes/KeywordNode';
 import PlaygroundNodes from './nodes/PlaygroundNodes';
 import {PlaygroundAutoLinkExtension} from './plugins/AutoLinkExtension';
+import {CodeHighlightExtension} from './plugins/CodeHighlightExtension';
+import {CollapsibleExtension} from './plugins/CollapsibleExtension';
 import {DateTimeExtension} from './plugins/DateTimeExtension';
 import DocsPlugin from './plugins/DocsPlugin';
 import {DragDropPasteExtension} from './plugins/DragDropPasteExtension';
 import {EmojisExtension} from './plugins/EmojisExtension';
+import {FigmaExtension} from './plugins/FigmaExtension';
 import {ImagesExtension} from './plugins/ImagesExtension';
 import {PlaygroundMarkdownShortcutsExtension} from './plugins/MarkdownShortcutsExtension';
 import {MaxLengthExtension} from './plugins/MaxLengthPlugin';
+import {PageBreakExtension} from './plugins/PageBreakExtension';
 import PasteLogPlugin from './plugins/PasteLogPlugin';
+import {SpecialTextExtension} from './plugins/SpecialTextExtension';
+import {TabFocusExtension} from './plugins/TabFocusExtension';
 import TestRecorderPlugin from './plugins/TestRecorderPlugin';
+import {TwitterExtension} from './plugins/TwitterExtension';
 import TypingPerfPlugin from './plugins/TypingPerfPlugin';
+import {YouTubeExtension} from './plugins/YouTubeExtension';
 import Settings from './Settings';
 import PlaygroundEditorTheme from './themes/PlaygroundEditorTheme';
 import {validateUrl} from './utils/url';
@@ -157,6 +165,13 @@ const PlaygroundRichTextExtension = defineExtension({
     RichTextExtension,
     ImagesExtension,
     HorizontalRuleExtension,
+    PageBreakExtension,
+    TwitterExtension,
+    YouTubeExtension,
+    FigmaExtension,
+    TabFocusExtension,
+    CollapsibleExtension,
+    CodeHighlightExtension,
     configExtension(ListExtension, {shouldPreserveNumbering: false}),
     CheckListExtension,
     PlaygroundMarkdownShortcutsExtension,
@@ -174,6 +189,7 @@ const AppExtension = defineExtension({
     HashtagExtension,
     DateTimeExtension,
     MaxLengthExtension,
+    SpecialTextExtension,
     DragDropPasteExtension,
     EmojisExtension,
     configExtension(LinkExtension, {validateUrl}),

@@ -7,7 +7,6 @@
  */
 
 import babel from '@rollup/plugin-babel';
-import commonjs from '@rollup/plugin-commonjs';
 import react from '@vitejs/plugin-react';
 import {createRequire} from 'node:module';
 import {defineConfig} from 'vite';
@@ -39,11 +38,6 @@ export default defineConfig(({mode}) => ({
       },
     }),
   },
-  optimizeDeps: {
-    rolldownOptions: {
-      treeshake: true,
-    },
-  },
   plugins: [
     viteMonorepoResolutionPlugin(),
     babel({
@@ -70,10 +64,5 @@ export default defineConfig(({mode}) => ({
     react(),
     ...viteCopyExcalidrawAssets(),
     viteCopyEsm(),
-    commonjs({
-      // This is required for React 19 (at least 19.0.0-beta-26f2496093-20240514)
-      // because @rollup/plugin-commonjs does not analyze it correctly
-      strictRequires: [/\/node_modules\/(react-dom|react)\/[^/]\.js$/],
-    }),
   ],
 }));

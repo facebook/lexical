@@ -331,7 +331,6 @@ function createTextFormatTransformersIndex(
   const transformersByTag: Record<string, TextFormatTransformer> = {};
   const fullMatchRegExpByTag: Record<string, RegExp> = {};
   const openTagsRegExp: string[] = [];
-  const escapeRegExp = `(?<![\\\\])`;
 
   for (const transformer of textTransformers) {
     const {tag} = transformer;
@@ -339,22 +338,25 @@ function createTextFormatTransformersIndex(
     const tagRegExp = tag.replace(/(\*|\^|\+)/g, '\\$1');
     openTagsRegExp.push(tagRegExp);
 
-    // Single-char tag (e.g. "*"),
+    // Single-char tag (e.g. "*")
     if (tag.length === 1) {
       if (tag === '`') {
-        // Special handling for backticks - match content with escaped backticks
+        // Capture the preceding character in group 1 (empty string at start-of-string
+        // via the ^ branch) rather than using a negative lookbehind, which is not
+        // supported in Safari < 16.4. Consumers must add match[1].length to
+        // match.index to find the real start of the span (see importTextFormatTransformer.ts).
         fullMatchRegExpByTag[tag] = new RegExp(
-          `(?<![\\\\\`])(\`)((?:\\\\\`|[^\`])+?)(\`)(?!\`)`,
+          `(^|[^\\\\\`])(\`)((?:\\\\\`|[^\`])+?)(\`)(?!\`)`,
         );
       } else {
         fullMatchRegExpByTag[tag] = new RegExp(
-          `(?<![\\\\${tagRegExp}])(${tagRegExp})((\\\\${tagRegExp})?.*?[^${tagRegExp}\\s](\\\\${tagRegExp})?)((?<!\\\\)|(?<=\\\\\\\\))(${tagRegExp})(?![\\\\${tagRegExp}])`,
+          `(^|[^\\\\${tagRegExp}])(${tagRegExp})((\\\\${tagRegExp})?.*?[^${tagRegExp}\\s](\\\\${tagRegExp})?)(${tagRegExp})(?![\\\\${tagRegExp}])`,
         );
       }
     } else {
-      // Multi‐char tags (e.g. "**")
+      // Multi-char tags (e.g. "**")
       fullMatchRegExpByTag[tag] = new RegExp(
-        `(?<!\\\\)(${tagRegExp})((\\\\${tagRegExp})?.*?[^\\s](\\\\${tagRegExp})?)((?<!\\\\)|(?<=\\\\\\\\))(${tagRegExp})(?!\\\\)`,
+        `(^|[^\\\\])(${tagRegExp})((\\\\${tagRegExp})?.*?[^\\s](\\\\${tagRegExp})?)(${tagRegExp})(?!\\\\)`,
       );
     }
   }
@@ -364,10 +366,9 @@ function createTextFormatTransformersIndex(
     fullMatchRegExpByTag,
 
     // Regexp to locate *any* potential opening tag (longest first).
-    openTagsRegExp: new RegExp(
-      `${escapeRegExp}(${openTagsRegExp.join('|')})`,
-      'g',
-    ),
+    // The former (?<!\\) escape guard has been removed — the delimiter
+    // scanner's isEscaped() check handles escape filtering at match time.
+    openTagsRegExp: new RegExp(`(${openTagsRegExp.join('|')})`, 'g'),
     transformersByTag,
   };
 }

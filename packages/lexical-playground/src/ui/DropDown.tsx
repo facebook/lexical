@@ -135,6 +135,7 @@ function DropDownItems({
 
   useEffect(() => {
     if (items && !highlightedItem) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setHighlightedItem(items[0]);
     }
 

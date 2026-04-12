@@ -28,7 +28,7 @@ jobs:
       - run: pnpm run build
       - run: pnpm run build-www
       - run: pnpm run --filter @lexical/website build
-      - run: pnpm run --filter @lexical/playground build-vercel
+      - run: pnpm run --filter lexical-playground build-vercel
 
   unit:
     runs-on: ubuntu-latest

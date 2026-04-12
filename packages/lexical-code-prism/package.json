@@ -13,6 +13,7 @@
   "types": "index.d.ts",
   "dependencies": {
     "@lexical/code-core": "workspace:*",
+    "@lexical/extension": "workspace:*",
     "lexical": "workspace:*",
     "prismjs": "^1.30.0"
   },

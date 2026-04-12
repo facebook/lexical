@@ -31,6 +31,7 @@ For E2E testing workflow:
 
 ### Code Quality
 - `pnpm run lint` - Run ESLint on all files
+- `pnpm run lint:fix` - Auto-fix lint issues
 - `pnpm run prettier` - Check code formatting
 - `pnpm run prettier:fix` - Auto-fix formatting issues
 - `pnpm run flow` - Run Flow type checker
@@ -78,6 +79,7 @@ This is a monorepo with packages in `packages/`:
 **Feature Packages** (extend core with nodes/commands/utilities):
 - `@lexical/rich-text` - Rich text editing (headings, quotes, etc.)
 - `@lexical/plain-text` - Plain text editing
+- `@lexical/extension` - Extend editor functionality
 - `@lexical/list` - List nodes (ordered/unordered/checklist)
 - `@lexical/table` - Table support
 - `@lexical/code` - Code block with syntax highlighting
@@ -94,7 +96,38 @@ This is a monorepo with packages in `packages/`:
 
 ### Key Architectural Patterns
 
-**Plugin System (React)** - Plugins are React components that hook into the editor lifecycle:
+**Extensions** - Extensions should be used to add features and configuration
+to an editor. The set of extensions in an editor must be determined when the
+editor is created with `buildEditorFromExtensions`. Extensions with
+functionality that can be toggled on or off typically have a `disabled`
+configuration property and output signal that defaults to `false`. See the
+lexical-extension package and the supporting code in lexical for
+more examples and implementation details.
+
+```tsx
+export interface MyConfig {
+  disabled: boolean;
+}
+export const MyExtension = defineExtension({
+  build: (_editor, config, _state) => namedSignals(config),
+  config: safeCast<MyConfig>({ disabled: false }),
+  name: '@lexical/docs/My',
+  nodes: () => [MyNode],
+  register: (editor, _config, state) => {
+    const {disabled} = state.getOutput();
+    return effect(() => {
+      if (!disabled.value) {
+        return editor.registerUpdateListener(({editorState}) => {
+          // React to updates
+        });
+      }
+    })
+  },
+})
+```
+
+**Plugin System (React)** - Plugins are a legacy pattern for React components
+to hook into the editor lifecycle, extensions should be preferred for new code:
 ```jsx
 function MyPlugin() {
   const [editor] = useLexicalComposerContext();
@@ -149,10 +182,9 @@ Always access node properties/methods within read/update context. Nodes automati
 ### Custom Nodes
 When creating custom nodes:
 1. Extend a base node class (TextNode, ElementNode, DecoratorNode)
-2. Implement required static methods: `getType()`, `clone()`, `importJSON()`
-3. Implement instance methods: `createDOM()`, `updateDOM()`, `exportJSON()`
-4. Register with editor config: `nodes: [YourCustomNode]`
-5. Export a `$createYourNode()` factory function (follows $ convention)
+2. Implement instance methods: `$config()`, `createDOM()`, `updateDOM()`
+3. Register with extension or editor config: `nodes: [YourCustomNode]`
+4. Export a `$createYourNode()` factory function (follows $ convention)
 
 ### Build System
 - Uses Rollup for bundling

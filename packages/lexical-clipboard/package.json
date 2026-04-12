@@ -17,6 +17,7 @@
     "@lexical/list": "workspace:*",
     "@lexical/selection": "workspace:*",
     "@lexical/utils": "workspace:*",
+    "@types/trusted-types": "^2.0.7",
     "lexical": "workspace:*"
   },
   "repository": {

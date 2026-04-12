@@ -26,7 +26,7 @@ import {
   stopClients,
   testClientsForEquality,
   waitForReact,
-} from './utils';
+} from '../utils';
 
 const $insertParagraph = (...children: Array<string | LexicalNode>) => {
   const root = $getRoot();

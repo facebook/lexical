@@ -37,6 +37,7 @@ import {
 } from './LexicalConstants';
 import {EditorState} from './LexicalEditorState';
 import {
+  $createChildrenArray,
   cloneDecorators,
   getElementByKeyOrThrow,
   setMutatedNode,
@@ -61,7 +62,7 @@ let activeNextNodeMap: NodeMap;
 let activePrevKeyToDOMMap: Map<NodeKey, HTMLElement>;
 let mutatedNodes: MutatedNodes;
 
-function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
+function $destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
   const node = activePrevNodeMap.get(key);
 
   if (parentDOM !== null) {
@@ -78,8 +79,8 @@ function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
   }
 
   if ($isElementNode(node)) {
-    const children = createChildrenArray(node, activePrevNodeMap);
-    destroyChildren(children, 0, children.length - 1, null);
+    const children = $createChildrenArray(node, activePrevNodeMap);
+    $destroyChildren(children, 0, children.length - 1, null);
   }
 
   if (node !== undefined) {
@@ -93,7 +94,7 @@ function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
   }
 }
 
-function destroyChildren(
+function $destroyChildren(
   children: Array<NodeKey>,
   _startIndex: number,
   endIndex: number,
@@ -103,7 +104,7 @@ function destroyChildren(
     const child = children[startIndex];
 
     if (child !== undefined) {
-      destroyNode(child, dom);
+      $destroyNode(child, dom);
     }
   }
 }
@@ -216,7 +217,7 @@ function $createNode(key: NodeKey, slot: ElementDOMSlot | null): HTMLElement {
     }
     if (childrenSize !== 0) {
       const endIndex = childrenSize - 1;
-      const children = createChildrenArray(node, activeNextNodeMap);
+      const children = $createChildrenArray(node, activeNextNodeMap);
       $createChildren(children, node, 0, endIndex, node.getDOMSlot(dom));
     }
 
@@ -368,23 +369,6 @@ function $reconcileChildrenWithDirection(
   reconcileTextStyle(nextElement);
 }
 
-function createChildrenArray(
-  element: ElementNode,
-  nodeMap: NodeMap,
-): Array<NodeKey> {
-  const children = [];
-  let nodeKey = element.__first;
-  while (nodeKey !== null) {
-    const node = nodeMap.get(nodeKey);
-    if (node === undefined) {
-      invariant(false, 'createChildrenArray: node does not exist in nodeMap');
-    }
-    children.push(nodeKey);
-    nodeKey = node.__next;
-  }
-  return children;
-}
-
 function $reconcileChildren(
   prevElement: ElementNode,
   nextElement: ElementNode,
@@ -420,7 +404,7 @@ function $reconcileChildren(
           throw error;
         }
       }
-      destroyNode(prevFirstChildKey, null);
+      $destroyNode(prevFirstChildKey, null);
     }
     const nextChildNode = activeNextNodeMap.get(nextFirstChildKey);
     if ($isTextNode(nextChildNode)) {
@@ -430,8 +414,8 @@ function $reconcileChildren(
       }
     }
   } else {
-    const prevChildren = createChildrenArray(prevElement, activePrevNodeMap);
-    const nextChildren = createChildrenArray(nextElement, activeNextNodeMap);
+    const prevChildren = $createChildrenArray(prevElement, activePrevNodeMap);
+    const nextChildren = $createChildrenArray(nextElement, activeNextNodeMap);
     invariant(
       prevChildren.length === prevChildrenSize,
       '$reconcileChildren: prevChildren.length !== prevChildrenSize',
@@ -458,7 +442,7 @@ function $reconcileChildren(
           slot.before == null &&
           (slot.element as HTMLElement & LexicalPrivateDOM)
             .__lexicalLineBreak == null;
-        destroyChildren(
+        $destroyChildren(
           prevChildren,
           0,
           prevChildrenSize - 1,
@@ -550,7 +534,7 @@ function $reconcileNode(
     }
 
     parentDOM.replaceChild(replacementDOM, dom);
-    destroyNode(key, null);
+    $destroyNode(key, null);
     return replacementDOM;
   }
 
@@ -725,7 +709,7 @@ function $reconcileNodeChildren(
       if (!nextChildrenSet.has(prevKey)) {
         // Remove prev and continue
         siblingDOM = getNextSibling(getPrevElementByKeyOrThrow(prevKey));
-        destroyNode(prevKey, slot.element);
+        $destroyNode(prevKey, slot.element);
         prevIndex++;
         prevChildrenSet.delete(prevKey);
         continue;
@@ -780,7 +764,7 @@ function $reconcileNodeChildren(
       slot.withBefore(insertDOM),
     );
   } else if (removeOldChildren && !appendNewChildren) {
-    destroyChildren(prevChildren, prevIndex, prevEndIndex, slot.element);
+    $destroyChildren(prevChildren, prevIndex, prevEndIndex, slot.element);
   }
 }
 

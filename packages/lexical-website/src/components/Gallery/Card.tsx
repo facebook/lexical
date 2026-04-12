@@ -13,6 +13,7 @@ import React from 'react';
 
 import {Example} from './pluginList';
 import styles from './styles.module.css';
+import {TagList} from './tagList';
 
 function getCardImage(item: Example) {
   return (
@@ -20,6 +21,32 @@ function getCardImage(item: Example) {
     `https://slorber-api-screenshot.netlify.app/${encodeURIComponent(
       item.uri ?? '',
     )}/showcase`
+  );
+}
+
+function CardTagChips({tags}: {tags: Array<string>}) {
+  return (
+    <ul className={clsx('clean-list', styles.cardTags)}>
+      {tags.map((tagKey) => {
+        const tag = TagList[tagKey];
+        if (!tag) {
+          return null;
+        }
+        return (
+          <li
+            key={tagKey}
+            className={styles.cardTag}
+            style={{borderColor: tag.color}}
+            title={tag.description}>
+            <span
+              className={styles.cardTagDot}
+              style={{backgroundColor: tag.color}}
+            />
+            {tag.title}
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
@@ -42,6 +69,7 @@ function Card({item}: {item: Example}) {
           </Heading>
         </div>
         <p className={styles.showcaseCardBody}>{item.description}</p>
+        <CardTagChips tags={item.tags} />
       </div>
     </li>
   );

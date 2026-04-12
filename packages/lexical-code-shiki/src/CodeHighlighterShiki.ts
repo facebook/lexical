@@ -29,6 +29,7 @@ import {
   CodeNode,
   DEFAULT_CODE_LANGUAGE,
 } from '@lexical/code-core';
+import {effect, namedSignals} from '@lexical/extension';
 import {
   $createLineBreakNode,
   $createPoint,
@@ -923,14 +924,67 @@ export function registerCodeHighlighting(
   return mergeRegister(...registrations);
 }
 
+export interface CodeShikiConfig {
+  /**
+   * When true, the Shiki code highlighter is not registered on the editor.
+   * This signal can be flipped at runtime to enable or disable the
+   * highlighter, for example to switch between the Prism and Shiki
+   * highlighters without rebuilding the editor.
+   */
+  disabled: boolean;
+  tokenizer: Tokenizer;
+}
+
+/**
+ * Add code highlighting support for code blocks with Shiki.
+ *
+ * {@link CodeExtension} is a dependency, so the required `CodeNode` and
+ * `CodeHighlightNode` nodes are registered automatically.
+ */
+export const CodeShikiExtension = defineExtension({
+  build: (editor, config) => namedSignals(config),
+  config: safeCast<CodeShikiConfig>({
+    disabled: false,
+    tokenizer: ShikiTokenizer,
+  }),
+  dependencies: [CodeExtension],
+  name: '@lexical/code-shiki',
+  register: (editor, config, state) => {
+    const stores = state.getOutput();
+    return effect(() => {
+      if (stores.disabled.value) {
+        return;
+      }
+      return registerCodeHighlighting(editor, stores.tokenizer.value);
+    });
+  },
+});
+
+/**
+ * @deprecated Use {@link CodeShikiExtension} instead. This type is a
+ * flat alias for {@link Tokenizer} kept for backward compatibility with
+ * {@link CodeHighlighterShikiExtension}.
+ */
 export type CodeHighlighterShikiConfig = Tokenizer;
 
 /**
- * Add code highlighting support for code blocks with Shiki
+ * @deprecated Use {@link CodeShikiExtension} instead.
+ *
+ * This is a thin backward-compatibility shim that preserves the original
+ * flat {@link Tokenizer} config API. It depends on
+ * {@link CodeShikiExtension} and routes its configured tokenizer to the
+ * underlying extension during `init` (before `CodeShikiExtension` builds),
+ * so consumers using
+ * `configExtension(CodeHighlighterShikiExtension, customTokenizer)`
+ * continue to work without modification.
  */
 export const CodeHighlighterShikiExtension = defineExtension({
   config: safeCast<CodeHighlighterShikiConfig>(ShikiTokenizer),
-  dependencies: [CodeExtension],
-  name: '@lexical/code-shiki',
-  register: (editor, config) => registerCodeHighlighting(editor, config),
+  dependencies: [CodeShikiExtension],
+  init: (editorConfig, config, state) => {
+    // Forward the flat Tokenizer config to CodeShikiExtension's `tokenizer`
+    // field before it builds.
+    state.getDependency(CodeShikiExtension).config.tokenizer = config;
+  },
+  name: '@lexical/code-shiki/legacy',
 });

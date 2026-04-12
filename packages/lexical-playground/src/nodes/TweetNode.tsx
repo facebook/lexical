@@ -89,6 +89,7 @@ function TweetComponent({
 
   useEffect(() => {
     if (tweetID !== previousTweetIDRef.current) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsTweetLoading(true);
 
       if (isTwitterScriptLoading) {

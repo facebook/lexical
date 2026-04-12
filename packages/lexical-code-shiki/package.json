@@ -8,17 +8,18 @@
     "code"
   ],
   "license": "MIT",
-  "version": "0.42.0",
+  "version": "0.43.0",
   "main": "LexicalCodeShiki.js",
   "types": "index.d.ts",
   "dependencies": {
     "@lexical/code-core": "workspace:*",
-    "@shikijs/core": "^3.7.0",
-    "@shikijs/engine-javascript": "^3.7.0",
-    "@shikijs/langs": "^3.7.0",
-    "@shikijs/themes": "^3.7.0",
+    "@lexical/extension": "workspace:*",
+    "@shikijs/core": "^4.0.2",
+    "@shikijs/engine-javascript": "^4.0.2",
+    "@shikijs/langs": "^4.0.2",
+    "@shikijs/themes": "^4.0.2",
     "lexical": "workspace:*",
-    "shiki": "^3.7.0"
+    "shiki": "^4.0.2"
   },
   "repository": {
     "type": "git",
@@ -26,7 +27,7 @@
     "directory": "packages/lexical-code-shiki"
   },
   "devDependencies": {
-    "@shikijs/types": "^3.7.0"
+    "@shikijs/types": "^4.0.2"
   },
   "module": "LexicalCodeShiki.mjs",
   "sideEffects": true,

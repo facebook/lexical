@@ -622,7 +622,7 @@ function isNotVendorProperty(item: string): boolean {
 }
 
 function useSuggestedStylesCombobox(props: CSSPropertyComboBoxProps) {
-  const initialItems = useMemo(getSuggestedStyleKeys, []);
+  const [initialItems] = useState(getSuggestedStyleKeys);
   const [items, setItems] = useState(() =>
     initialItems.filter(isNotVendorProperty).join('\n'),
   );

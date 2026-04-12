@@ -6,6 +6,7 @@
  *
  */
 
+import {$insertGeneratedNodes} from '@lexical/clipboard';
 import {CodeNode} from '@lexical/code';
 import {createHeadlessEditor} from '@lexical/headless';
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
@@ -17,10 +18,11 @@ import {
   $createRangeSelection,
   $createTextNode,
   $getRoot,
+  isHTMLElement,
   ParagraphNode,
   RangeSelection,
 } from 'lexical';
-import {describe, expect, test} from 'vitest';
+import {assert, describe, expect, test} from 'vitest';
 
 describe('HTML', () => {
   type Input = Array<{
@@ -261,5 +263,78 @@ describe('HTML', () => {
     expect(html).toBe(
       '<span style="white-space: pre-wrap;">Hello</span><span style="white-space: pre-wrap;">World</span>',
     );
+  });
+
+  describe('$generateNodesFromDOM: CSS class style inlining', () => {
+    test('HTML with <style> tags inlines styles by class', () => {
+      const editor = createHeadlessEditor();
+      const parser = new DOMParser();
+
+      editor.update(
+        () => {
+          const root = $getRoot();
+          const dom = parser.parseFromString(
+            `<html><head><style>.highlight { font-weight: bold; }</style></head>` +
+              `<body><p><span class="highlight">Hello</span></p></body></html>`,
+            'text/html',
+          );
+          const nodes = $generateNodesFromDOM(editor, dom);
+          $insertGeneratedNodes(editor, nodes, root.select(0));
+          expect(root.getTextContent()).toBe('Hello');
+          const highlightSpan = dom.querySelector('span.highlight');
+          assert(isHTMLElement(highlightSpan), 'span.highlight is in the dom');
+          expect(highlightSpan.style.fontWeight).toBe('bold');
+          const textNodes = root.getAllTextNodes();
+          expect(textNodes).toHaveLength(1);
+          expect(textNodes[0].hasFormat('bold')).toBe(true);
+        },
+        {discrete: true},
+      );
+    });
+
+    test('existing inline styles are preserved after inlining pass', () => {
+      const editor = createHeadlessEditor();
+      const parser = new DOMParser();
+
+      editor.update(
+        () => {
+          const dom = parser.parseFromString(
+            `<html><head><style>.colored { color: red; }</style></head>` +
+              `<body><p><span class="colored" style="color: blue;">Hello</span></p></body></html>`,
+            'text/html',
+          );
+          $generateNodesFromDOM(editor, dom);
+
+          // Inline style should never be overwritten
+          const span = dom.querySelector('.colored');
+          assert(isHTMLElement(span), '.colored is still in the dom');
+          expect(span.style.color).toBe('blue');
+        },
+        {discrete: true},
+      );
+    });
+
+    test('HTML without <style> tags works as before', () => {
+      const editor = createHeadlessEditor();
+      const parser = new DOMParser();
+
+      editor.update(
+        () => {
+          const root = $getRoot();
+          const dom = parser.parseFromString('<p>Hello world</p>', 'text/html');
+          const nodes = $generateNodesFromDOM(editor, dom);
+          $insertGeneratedNodes(editor, nodes, root.select(0));
+          expect(
+            root
+              .getAllTextNodes()
+              .map(
+                (node) =>
+                  [node.getTextContent(), node.hasFormat('bold')] as const,
+              ),
+          ).toEqual([['Hello world', false]]);
+        },
+        {discrete: true},
+      );
+    });
   });
 });

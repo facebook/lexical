@@ -67,7 +67,7 @@ declare export function namedSignals<Defaults>(
   opts?: NamedSignalsOptions<Defaults>
 ): NamedSignalsOutput<Defaults>;
 
-declare export class Signal<T = mixed> {
+declare export class Signal<T = unknown> {
   constructor(value?: T, options?: SignalOptions<T>): this;
   subscribe(fn: (value: T) => void): () => void;
   name?: string;
@@ -87,7 +87,7 @@ export interface ReadonlySignal<T = unknown> {
   toJSON(): T;
   brand: symbol;  
 }
-export type SignalOptions<T = mixed> = {
+export type SignalOptions<T = unknown> = {
   watched?: (this: Signal<T>) => void;
   unwatched?: (this: Signal<T>) => void;
   name?: string;
@@ -117,19 +117,19 @@ export type ClearEditorConfig = {
 declare export var ClearEditorExtension: LexicalExtension<ClearEditorConfig, "@lexical/extension/ClearEditor", NamedSignalsOutput<ClearEditorConfig>, void>;
 declare export var EditorStateExtension: LexicalExtension<ExtensionConfigBase, "@lexical/extension/EditorState", Signal<EditorState>, void>;
 declare export function getExtensionDependencyFromEditor<
-  Extension: AnyLexicalExtension,
+  Extension extends AnyLexicalExtension,
 >(
   editor: LexicalEditor,
   extension: Extension,
 ): LexicalExtensionDependency<Extension>;
 declare export function getPeerDependencyFromEditor<
-  Extension: AnyLexicalExtension = empty,
+  Extension extends AnyLexicalExtension = empty,
 >(
   editor: LexicalEditor,
   extensionName: Extension['name'],
 ): LexicalExtensionDependency<Extension> | void;
 declare export function getPeerDependencyFromEditorOrThrow<
-  Extension: AnyLexicalExtension = empty,
+  Extension extends AnyLexicalExtension = empty,
 >(
   editor: LexicalEditor,
   extensionName: Extension['name'],
@@ -191,7 +191,7 @@ export type SerializedDecoratorTextNode = {
   format: number,
   ...
 };
-declare export class DecoratorTextNode<T> extends DecoratorNode<T> {
+declare export class DecoratorTextNode extends DecoratorNode<mixed> {
   createDOM(): HTMLElement;
   getFormat(): number;
   getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number;
@@ -203,7 +203,7 @@ declare export class DecoratorTextNode<T> extends DecoratorNode<T> {
 
 declare export function $isDecoratorTextNode(
   node: ?LexicalNode,
-): node is DecoratorTextNode<{...}>;
+): node is DecoratorTextNode;
 
 declare export var DecoratorTextExtension: LexicalExtension<ExtensionConfigBase, "@lexical/extension/DecoratorText", void, void>;
 

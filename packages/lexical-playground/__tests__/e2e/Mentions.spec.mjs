@@ -997,7 +997,7 @@ test.describe('Mentions', () => {
     await focusEditor(page);
     await page.keyboard.type('@a');
 
-    const menuElement = await page.locator('#typeahead-menu');
+    const menuElement = page.locator('#typeahead-menu');
     expect(await menuElement.getAttribute('aria-label')).toBe('Typeahead menu');
     expect(await menuElement.getAttribute('role')).toBe('listbox');
   });

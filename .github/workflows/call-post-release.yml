@@ -31,9 +31,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 24.x
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
+      - uses: pnpm/action-setup@v6
       - run: |
           pnpm install && pnpm run update-examples
       - uses: stefanzweifel/git-auto-commit-action@v7

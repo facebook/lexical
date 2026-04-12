@@ -7851,11 +7851,11 @@ test.describe.parallel('Tables', () => {
 
       const pageOrFrame = getPageOrFrame(page);
 
-      await pageOrFrame.locator('p').filter({hasText: 'after'});
+      await pageOrFrame.locator('p').filter({hasText: 'after'}).waitFor();
       await page.keyboard.down('Shift');
       await pageOrFrame
         .locator('table table > tr:last-of-type > th')
-        .click({force: true, timeout: 100}); // `force` to ignore playwright blocking due to TableCellResizer interception
+        .click({force: true}); // `force` to ignore playwright blocking due to TableCellResizer interception
       await page.keyboard.up('Shift');
 
       // Assert the selection is a range selection solely within the cell containing the nested table.

@@ -184,12 +184,6 @@ export function registerList(
           return false;
         }
 
-        if (isBackward && listNodeHasOverflow(listNode)) {
-          // When character limit overflow nodes are present, let other handlers
-          // manage backspace to keep overflow cleanup consistent.
-          return false;
-        }
-
         // Create a new paragraph block to replace the list item
         const newParagraph = $createParagraphNode();
 
@@ -256,23 +250,6 @@ export function registerList(
     }),
   );
   return removeListener;
-}
-
-function listNodeHasOverflow(listNode: ListNode): boolean {
-  const stack: Array<LexicalNode> = [listNode];
-  while (stack.length > 0) {
-    const node = stack.pop();
-    if (!node) {
-      continue;
-    }
-    if (node.getType() === 'overflow') {
-      return true;
-    }
-    if ($isElementNode(node)) {
-      stack.push(...node.getChildren());
-    }
-  }
-  return false;
 }
 
 export function registerListStrictIndentTransform(

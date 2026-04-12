@@ -26,7 +26,6 @@ const isJsdom =
   typeof navigator !== 'undefined' && /\bjsdom\//.test(navigator.userAgent);
 if (isJsdom) {
   const originalFocus = HTMLElement.prototype.focus;
-   
   function focusPreservingSelection(
     this: HTMLElement,
     options?: FocusOptions,

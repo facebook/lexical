@@ -33,8 +33,6 @@ jobs:
         with:
           node-version: ${{ inputs.node-version }}
       - uses: pnpm/action-setup@v6
-        with:
-          version: 9
       - name: Install required ubuntu-latest packages
         if: inputs.os == 'ubuntu-latest'
         run: |

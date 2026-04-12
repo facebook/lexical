@@ -41,8 +41,6 @@ jobs:
           node-version: 24.x
           registry-url: 'https://registry.npmjs.org'
       - uses: pnpm/action-setup@v6
-        with:
-          version: 9
       - run: pnpm install --frozen-lockfile
       - run: |
           git config user.name "Lexical GitHub Actions Bot"

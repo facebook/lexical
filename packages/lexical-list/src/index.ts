@@ -12,7 +12,13 @@ import type {
   ListType,
   SerializedListNode,
 } from './LexicalListNode';
-import type {ElementNode, LexicalCommand, LexicalEditor, LexicalNode, NodeKey} from 'lexical';
+import type {
+  ElementNode,
+  LexicalCommand,
+  LexicalEditor,
+  LexicalNode,
+  NodeKey,
+} from 'lexical';
 
 import {effect, namedSignals} from '@lexical/extension';
 import {$findMatchingParent, mergeRegister} from '@lexical/utils';

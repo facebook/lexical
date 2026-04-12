@@ -18,9 +18,9 @@ import {OverflowNode} from '@lexical/overflow';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
 
-import {CollapsibleContainerNode} from '../plugins/CollapsiblePlugin/CollapsibleContainerNode';
-import {CollapsibleContentNode} from '../plugins/CollapsiblePlugin/CollapsibleContentNode';
-import {CollapsibleTitleNode} from '../plugins/CollapsiblePlugin/CollapsibleTitleNode';
+import {CollapsibleContainerNode} from '../plugins/CollapsibleExtension/CollapsibleContainerNode';
+import {CollapsibleContentNode} from '../plugins/CollapsibleExtension/CollapsibleContentNode';
+import {CollapsibleTitleNode} from '../plugins/CollapsibleExtension/CollapsibleTitleNode';
 import {AutocompleteNode} from './AutocompleteNode';
 import {DateTimeNode} from './DateTimeNode/DateTimeNode';
 import {EmojiNode} from './EmojiNode';

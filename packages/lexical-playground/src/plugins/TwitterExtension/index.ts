@@ -6,12 +6,13 @@
  *
  */
 
-import type {JSX} from 'react';
-
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$insertNodeToNearestRoot} from '@lexical/utils';
-import {COMMAND_PRIORITY_EDITOR, createCommand, LexicalCommand} from 'lexical';
-import {useEffect} from 'react';
+import {
+  COMMAND_PRIORITY_EDITOR,
+  createCommand,
+  defineExtension,
+  LexicalCommand,
+} from 'lexical';
 
 import {$createTweetNode, TweetNode} from '../../nodes/TweetNode';
 
@@ -19,15 +20,11 @@ export const INSERT_TWEET_COMMAND: LexicalCommand<string> = createCommand(
   'INSERT_TWEET_COMMAND',
 );
 
-export default function TwitterPlugin(): JSX.Element | null {
-  const [editor] = useLexicalComposerContext();
-
-  useEffect(() => {
-    if (!editor.hasNodes([TweetNode])) {
-      throw new Error('TwitterPlugin: TweetNode not registered on editor');
-    }
-
-    return editor.registerCommand<string>(
+export const TwitterExtension = defineExtension({
+  name: '@lexical/playground/Twitter',
+  nodes: [TweetNode],
+  register: (editor) =>
+    editor.registerCommand<string>(
       INSERT_TWEET_COMMAND,
       (payload) => {
         const tweetNode = $createTweetNode(payload);
@@ -36,8 +33,5 @@ export default function TwitterPlugin(): JSX.Element | null {
         return true;
       },
       COMMAND_PRIORITY_EDITOR,
-    );
-  }, [editor]);
-
-  return null;
-}
+    ),
+});

@@ -5,19 +5,16 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {LexicalEditor} from 'lexical';
-import type {JSX} from 'react';
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {TextNode} from 'lexical';
-import {useEffect} from 'react';
+import {effect, namedSignals} from '@lexical/extension';
+import {defineExtension, safeCast, TextNode} from 'lexical';
 
 import {
   $createSpecialTextNode,
   SpecialTextNode,
 } from '../../nodes/SpecialTextNode';
 
-const BRACKETED_TEXT_REGEX = /\[([^\[\]]+)\]/; // eslint-disable-line
+const BRACKETED_TEXT_REGEX = /\[([^[\]]+)\]/;
 
 function $findAndTransformText(node: TextNode): null | TextNode {
   const text = node.getTextContent();
@@ -54,20 +51,20 @@ function $textNodeTransform(node: TextNode): void {
   }
 }
 
-function useTextTransformation(editor: LexicalEditor): void {
-  useEffect(() => {
-    if (!editor.hasNodes([SpecialTextNode])) {
-      throw new Error(
-        'SpecialTextPlugin: SpecialTextNode not registered on editor',
-      );
-    }
-
-    return editor.registerNodeTransform(TextNode, $textNodeTransform);
-  }, [editor]);
+export interface SpecialTextConfig {
+  disabled: boolean;
 }
 
-export default function SpecialTextPlugin(): JSX.Element | null {
-  const [editor] = useLexicalComposerContext();
-  useTextTransformation(editor);
-  return null;
-}
+export const SpecialTextExtension = defineExtension({
+  build: (editor, config) => namedSignals(config),
+  config: safeCast<SpecialTextConfig>({disabled: true}),
+  name: '@lexical/playground/SpecialText',
+  nodes: [SpecialTextNode],
+  register: (editor, config, state) =>
+    effect(() => {
+      if (state.getOutput().disabled.value) {
+        return;
+      }
+      return editor.registerNodeTransform(TextNode, $textNodeTransform);
+    }),
+});

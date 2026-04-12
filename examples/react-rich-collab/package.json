@@ -18,14 +18,14 @@
     "@lexical/utils": "0.43.0",
     "@lexical/yjs": "0.43.0",
     "lexical": "0.43.0",
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
     "y-webrtc": "^10.3.0",
     "y-websocket": "^2.0.2",
     "yjs": "^13.6.27"
   },
   "devDependencies": {
-    "@types/react": "^19.1.12",
+    "@types/react": "^19.2.14",
     "@types/react-dom": "^19.1.9",
     "@vitejs/plugin-react": "^5.0.2",
     "concurrently": "^8.2.2",

@@ -38,7 +38,7 @@ import {useCallback, useMemo, useState} from 'react';
 import useModal from '../../hooks/useModal';
 import catTypingGif from '../../images/cat-typing.gif';
 import {EmbedConfigs} from '../AutoEmbedPlugin';
-import {INSERT_COLLAPSIBLE_COMMAND} from '../CollapsiblePlugin';
+import {INSERT_COLLAPSIBLE_COMMAND} from '../CollapsibleExtension';
 import {INSERT_DATETIME_COMMAND} from '../DateTimeExtension';
 import {InsertEquationDialog} from '../EquationsPlugin';
 import {INSERT_EXCALIDRAW_COMMAND} from '../ExcalidrawPlugin';

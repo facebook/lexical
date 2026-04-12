@@ -28,6 +28,7 @@ export default defineConfig(({mode}) => ({
         split: new URL('./split/index.html', import.meta.url).pathname,
       },
     },
+    target: 'es2022',
     ...(mode === 'production' && {
       minify: 'terser',
       terserOptions: {
@@ -39,9 +40,8 @@ export default defineConfig(({mode}) => ({
     }),
   },
   optimizeDeps: {
-    esbuildOptions: {
-      target: 'es2022',
-      treeShaking: true,
+    rolldownOptions: {
+      treeshake: true,
     },
   },
   plugins: [

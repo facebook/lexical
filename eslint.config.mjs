@@ -282,7 +282,11 @@ export default [
     plugins: {
       'react-hooks': reactHooksPlugin,
     },
-    rules: reactHooksPlugin.configs.recommended.rules,
+    rules: {
+      ...reactHooksPlugin.configs.recommended.rules,
+      // react-hooks/refs has too many false positives (in ^7.0.1)
+      'react-hooks/refs': OFF,
+    },
   },
 
   // Override: Package source files (module sourceType)
@@ -411,6 +415,17 @@ export default [
     files: ['packages/**/__tests__/**'],
     rules: {
       '@lexical/internal/no-imports-from-self': OFF,
+    },
+  },
+
+  // Override: Tests - disable react-hooks rules that flag patterns we
+  // intentionally use in tests (reassigning module-scoped variables and
+  // mutating captured objects from inside test components/hooks).
+  {
+    files: ['packages/**/__tests__/**', 'scripts/__tests__/**'],
+    rules: {
+      'react-hooks/globals': OFF,
+      'react-hooks/immutability': OFF,
     },
   },
 

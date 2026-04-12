@@ -133,7 +133,7 @@ describe('LexicalTabNode tests', () => {
         new KeyboardEvent('keydown'),
       );
       expect(testEnv.innerHTML).toBe(
-        '<p dir="auto" style="padding-inline-start: calc(1 * 40px);"><span data-lexical-text="true">foo</span></p>',
+        '<p dir="auto" style="padding-inline-start: calc(40px);"><span data-lexical-text="true">foo</span></p>',
       );
     });
 
@@ -166,8 +166,8 @@ describe('LexicalTabNode tests', () => {
         new KeyboardEvent('keydown'),
       );
       expect(testEnv.innerHTML).toBe(
-        '<p dir="auto" style="padding-inline-start: calc(1 * 40px);"><span data-lexical-text="true">foo</span></p>' +
-          '<h1 dir="auto" style="padding-inline-start: calc(1 * 40px);"><span data-lexical-text="true">bar</span></h1>' +
+        '<p dir="auto" style="padding-inline-start: calc(40px);"><span data-lexical-text="true">foo</span></p>' +
+          '<h1 dir="auto" style="padding-inline-start: calc(40px);"><span data-lexical-text="true">bar</span></h1>' +
           '<ol dir="auto"><li value="1"><ol><li value="1"><span data-lexical-text="true">xyz</span></li></ol></li></ol>',
       );
     });

@@ -242,6 +242,7 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
             const rowCells = tableRow.getChildren<TableCellNode>();
             height = Math.min(
               ...rowCells.map(
+                // eslint-disable-next-line react-hooks/immutability
                 (cell) => getCellNodeHeight(cell, editor) ?? Infinity,
               ),
             );

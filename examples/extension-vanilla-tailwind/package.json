@@ -27,8 +27,7 @@
     "tailwindcss": "^4.2.1",
     "typescript": "5.4.5",
     "vite": "^7.3.2",
-    "vite-plugin-static-copy": "^3.2.0",
-    "vite-tsconfig-paths": "^5.1.4"
+    "vite-plugin-static-copy": "^3.2.0"
   },
   "optionalDependencies": {
     "@rollup/rollup-darwin-arm64": "4.52.0",

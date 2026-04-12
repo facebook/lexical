@@ -93,6 +93,7 @@ export default function DraggableBlockPlugin({
     if (!isPickerOpen || !options.length) {
       return;
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setHighlightedIndex((current) =>
       Math.min(current, Math.max(options.length - 1, 0)),
     );

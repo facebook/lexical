@@ -159,7 +159,7 @@ export default function ExcalidrawModal({
     setDiscardModalOpen(true);
   };
 
-  function ShowDiscardDialog(): JSX.Element {
+  function renderDiscardDialog(): JSX.Element {
     return (
       <Modal
         title="Discard"
@@ -207,7 +207,7 @@ export default function ExcalidrawModal({
         ref={excaliDrawModelRef}
         tabIndex={-1}>
         <div className="ExcalidrawModal__row">
-          {discardModalOpen && <ShowDiscardDialog />}
+          {discardModalOpen && renderDiscardDialog()}
           <Excalidraw
             onChange={onChange}
             excalidrawAPI={setExcalidrawAPI}

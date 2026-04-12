@@ -397,7 +397,11 @@ function syncNodeStateFromLexical(
   nextLexicalNode: LexicalNode,
 ): void {
   const nextState = nextLexicalNode.__state;
-  const existingState = sharedTypeGet(sharedType, '__state');
+  // Reading from a shared type that hasn't been integrated into a doc yet
+  // logs a "premature access" warning in yjs >= 13.6.10. When the shared
+  // type is detached we know there cannot be any existing state.
+  const existingState =
+    sharedType.doc === null ? undefined : sharedTypeGet(sharedType, '__state');
   if (!nextState) {
     return;
   }

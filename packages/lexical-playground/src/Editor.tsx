@@ -84,6 +84,7 @@ export function useSyncExtensionSignal<
   const signal = useOptionalExtensionDependency(extension)?.output[prop];
   useEffect(() => {
     if (signal) {
+      // eslint-disable-next-line react-hooks/immutability
       signal.value = value;
     }
   }, [signal, value]);

@@ -6,6 +6,8 @@
  *
  */
 
+/// <reference types="trusted-types" />
+
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
 import {$addNodeStyle, $sliceSelectedTextNodeContent} from '@lexical/selection';
 import {objectKlassEquals} from '@lexical/utils';

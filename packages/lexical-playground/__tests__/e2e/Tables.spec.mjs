@@ -1654,7 +1654,10 @@ test.describe.parallel('Tables', () => {
     await insertCollapsible(page);
 
     await page.keyboard.type('123');
-    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press(
+      // FIXME #8348 firefox ArrowDown skips over the content block
+      browserName === 'firefox' ? 'ArrowRight' : 'ArrowDown',
+    );
     await page.keyboard.type('123');
     await page.keyboard.press('Enter');
     await page.keyboard.press('Enter');

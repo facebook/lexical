@@ -94,7 +94,7 @@ import {
 } from '../ImagesExtension';
 import InsertLayoutDialog from '../LayoutPlugin/InsertLayoutDialog';
 import {INSERT_PAGE_BREAK} from '../PageBreakExtension';
-import {PagesExtension} from '../PagesExtension';
+import {PagesReactExtension} from '../PagesReactExtension';
 import {InsertPollDialog} from '../PollPlugin';
 import {SHORTCUTS} from '../ShortcutsPlugin/shortcuts';
 import {InsertTableDialog} from '../TablePlugin';
@@ -1260,7 +1260,7 @@ export default function ToolbarPlugin({
               <span className="shortcut">{SHORTCUTS.CLEAR_FORMATTING}</span>
             </DropDownItem>
           </DropDown>
-          <ExtensionComponent lexical:extension={PagesExtension} />
+          <ExtensionComponent lexical:extension={PagesReactExtension} />
           {canViewerSeeInsertDropdown && (
             <>
               <Divider />

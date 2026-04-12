@@ -191,6 +191,9 @@
     "yjs": "^13.6.27"
   },
   "pnpm": {
+    "neverBuiltDependencies": [
+      "onnxruntime-node"
+    ],
     "peerDependencyRules": {
       "allowedVersions": {
         "eslint": "10"

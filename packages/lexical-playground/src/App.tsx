@@ -64,6 +64,7 @@ import {ImagesExtension} from './plugins/ImagesExtension';
 import {PlaygroundMarkdownShortcutsExtension} from './plugins/MarkdownShortcutsExtension';
 import {MaxLengthExtension} from './plugins/MaxLengthPlugin';
 import {PageBreakExtension} from './plugins/PageBreakExtension';
+import {PagesReactExtension} from './plugins/PagesReactExtension';
 import PasteLogPlugin from './plugins/PasteLogPlugin';
 import {SpecialTextExtension} from './plugins/SpecialTextExtension';
 import {TabFocusExtension} from './plugins/TabFocusExtension';
@@ -175,6 +176,8 @@ const PlaygroundRichTextExtension = defineExtension({
     configExtension(ListExtension, {shouldPreserveNumbering: false}),
     CheckListExtension,
     PlaygroundMarkdownShortcutsExtension,
+    PageBreakExtension,
+    PagesReactExtension,
   ],
   name: '@lexical/playground/RichText',
 });

@@ -584,10 +584,3 @@ export function isDomNodeBetweenTwoInlineNodes(node: Node): boolean {
     isInlineDomNode(node.nextSibling) && isInlineDomNode(node.previousSibling)
   );
 }
-
-export function parseStringEnum<T extends string>(
-  stringEnum: {[K in T]: K},
-  value: string,
-): T | undefined {
-  return (stringEnum as Record<string, undefined | T>)[value];
-}

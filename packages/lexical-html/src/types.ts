@@ -6,26 +6,18 @@
  *
  */
 
-import type {
-  DOMImportContextSymbol,
-  DOMRenderContextSymbol,
-  DOMTextWrapModeKeys,
-  DOMWhiteSpaceCollapseKeys,
-} from './constants';
+import type {DOMRenderContextSymbol} from './constants';
 import type {
   BaseSelection,
   DOMExportOutput,
   ElementDOMSlot,
-  ElementNode,
   Klass,
   LexicalEditor,
   LexicalNode,
   StateConfig,
 } from 'lexical';
 
-export type AnyContextSymbol =
-  | typeof DOMImportContextSymbol
-  | typeof DOMRenderContextSymbol;
+export type AnyContextSymbol = typeof DOMRenderContextSymbol;
 
 export type ContextRecord<_K extends symbol> = Record<string | symbol, unknown>;
 
@@ -54,63 +46,17 @@ export interface DOMRenderExtensionOutput {
   defaults: undefined | ContextRecord<typeof DOMRenderContextSymbol>;
 }
 
-export type ImportStateConfig<V> = ContextConfig<
-  typeof DOMImportContextSymbol,
-  V
->;
-
 export type RenderStateConfig<V> = ContextConfig<
   typeof DOMRenderContextSymbol,
   V
 >;
 
-export type AnyImportStateConfigPairOrUpdater = AnyContextConfigPairOrUpdater<
-  typeof DOMImportContextSymbol
->;
 export type AnyRenderStateConfigPairOrUpdater = AnyContextConfigPairOrUpdater<
   typeof DOMRenderContextSymbol
 >;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyRenderStateConfig = RenderStateConfig<any>;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyImportStateConfig = ImportStateConfig<any>;
-
-export interface DOMImportOutput {
-  node: null | LexicalNode | LexicalNode[];
-  childNodes?: NodeListOf<ChildNode> | readonly ChildNode[];
-}
-
-export type NodeEmitter = (node: LexicalNode) => void;
-
-export interface StatefulNodeEmitter<Result> {
-  $emitNode(node: LexicalNode): void;
-  softBreak(): void;
-  close(): Result;
-}
-
-export interface ChildEmitterConfig {
-  $createBlockNode: (node: LexicalNode) => ElementNode;
-  $copyBlock: <T extends ElementNode>(node: T) => T;
-}
-
-export type DOMImportFunction<T extends Node> = (
-  node: T,
-  $next: () => null | undefined | DOMImportOutput,
-  editor: LexicalEditor,
-) => null | undefined | DOMImportOutput;
-
-export interface NodeNameMap extends HTMLElementTagNameMap {
-  '*': Node;
-  '#text': Text;
-  '#document': Document;
-  '#comment': Comment;
-  '#cdata-section': CDATASection;
-}
-
-export type NodeNameToType<T extends string> = T extends keyof NodeNameMap
-  ? NodeNameMap[T]
-  : Node;
 
 /** @internal @experimental */
 export interface DOMRenderConfig {
@@ -174,37 +120,3 @@ export interface DOMRenderMatch<T extends LexicalNode> {
   ) => boolean;
 }
 
-/** @internal @experimental */
-export interface DOMImportConfig {
-  overrides: DOMImportConfigMatch<DOMImportTag>[];
-  compileLegacyImportNode: (editor: LexicalEditor) => DOMImportNodeFn;
-}
-
-export type DOMImportTag = keyof NodeNameMap | (string & {});
-
-export interface DOMImportConfigMatch<Tag extends DOMImportTag> {
-  readonly tag: Tag | Tag[];
-  readonly selector?: string;
-  readonly priority?: 0 | 1 | 2 | 3 | 4;
-  readonly $import: DOMImportFunction<Node>;
-}
-
-export type DOMImportNodeFn = (
-  node: Node,
-) => null | undefined | DOMImportOutput;
-
-export interface DOMImportExtensionOutput {
-  $importNode: DOMImportNodeFn;
-  $importNodes: (root: ParentNode | Document) => LexicalNode[];
-  /** @deprecated */
-  $legacyImportNode: DOMImportNodeFn;
-  /** @deprecated */
-  $legacyImportNodes: (root: ParentNode | Document) => LexicalNode[];
-}
-
-export type DOMWhiteSpaceCollapse = keyof typeof DOMWhiteSpaceCollapseKeys;
-export type DOMTextWrapMode = keyof typeof DOMTextWrapModeKeys;
-
-export type DOMImportContextFinalizer = (
-  node: null | LexicalNode | LexicalNode[],
-) => null | LexicalNode | LexicalNode[];

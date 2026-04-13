@@ -119,4 +119,3 @@ export interface DOMRenderMatch<T extends LexicalNode> {
     editor: LexicalEditor,
   ) => boolean;
 }
-

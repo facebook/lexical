@@ -546,6 +546,23 @@ const clipboardDataFunctions = [
 ] as const;
 
 /**
+ * Serialize the content of the current selection to strings in
+ * text/plain, text/html, and application/x-lexical-editor (Lexical JSON)
+ * formats (as available).
+ *
+ * @param selection the selection to serialize (defaults to $getSelection())
+ * @returns LexicalClipboardData
+ */
+export function $getClipboardDataFromSelection(
+  selection: BaseSelection | null = $getSelection(),
+): LexicalClipboardData {
+  return $getClipboardDataWithConfigFromSelection(
+    $getExportConfig(),
+    selection,
+  );
+}
+
+/**
  * Call setData on the given clipboardData for each MIME type present
  * in the given data (from {@link $getClipboardDataFromSelection})
  *
@@ -567,23 +584,6 @@ export function setLexicalClipboardDataTransfer(
       clipboardData.setData(k, v);
     }
   }
-}
-
-/**
- * Serialize the content of the current selection to strings in
- * text/plain, text/html, and application/x-lexical-editor (Lexical JSON)
- * formats (as available).
- *
- * @param selection the selection to serialize (defaults to $getSelection())
- * @returns LexicalClipboardData
- */
-export function $getClipboardDataFromSelection(
-  selection: BaseSelection | null = $getSelection(),
-): LexicalClipboardData {
-  return $getClipboardDataWithConfigFromSelection(
-    $getExportConfig(),
-    selection,
-  );
 }
 
 export type ExportMimeTypeFunction = (

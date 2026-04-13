@@ -41,6 +41,7 @@ import {$isTableRowNode, type TableRowNode} from './LexicalTableRowNode';
 import {
   $getNearestTableCellInTableFromDOMNode,
   getTable,
+  getTableElement,
   isHTMLTableElement,
 } from './LexicalTableSelectionHelpers';
 import {$computeTableMapSkipCellCheck} from './LexicalTableUtils';
@@ -339,8 +340,7 @@ export class TableNode extends ElementNode {
   }
 
   updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
-    const slot = this.getDOMSlot(dom);
-    const tableElement = slot.element;
+    const tableElement = getTableElement(this, dom);
     if ((dom === tableElement) === $isScrollableTablesActive()) {
       return true;
     }

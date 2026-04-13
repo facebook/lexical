@@ -371,12 +371,14 @@ export type DOMExportOutputMap = Map<
   (editor: LexicalEditor, target: LexicalNode) => DOMExportOutput
 >;
 
-export type DOMExportOutput = {
+export interface DOMExportOutput {
   after?: (
     generatedElement: HTMLElement | DocumentFragment | Text | null | undefined,
   ) => HTMLElement | DocumentFragment | Text | null | undefined;
   element: HTMLElement | DocumentFragment | Text | null;
-};
+  append?: (element: HTMLElement | DocumentFragment | Text) => void;
+  $getChildNodes?: () => Iterable<LexicalNode>;
+}
 
 export type NodeKey = string;
 
@@ -548,17 +550,6 @@ export class LexicalNode {
       this.__state = prevNode.__state;
     } else if (prevNode.__state) {
       this.__state = prevNode.__state.getWritable(this);
-    }
-  }
-
-  /**
-   * Reset state in this copy of originalNode, if necessary
-   *
-   * @param originalNode
-   */
-  resetOnCopyNodeFrom(originalNode: this): void {
-    if (this.__state) {
-      this.__state = this.__state.getWritable(this).resetOnCopyNode();
     }
   }
 
@@ -1541,4 +1532,10 @@ export function insertRangeAfter(
   for (const nodeToInsert of nodesToInsert) {
     currentNode = currentNode.insertAfter(nodeToInsert);
   }
+}
+
+export function $isLexicalNode(
+  node: null | undefined | LexicalNode,
+): node is LexicalNode {
+  return node instanceof LexicalNode;
 }

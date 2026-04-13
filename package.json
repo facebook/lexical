@@ -6,7 +6,8 @@
   "private": true,
   "packageManager": "pnpm@10.33.0",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "examples/dev-*"
   ],
   "engines": {
     "node": ">=20.19.0",

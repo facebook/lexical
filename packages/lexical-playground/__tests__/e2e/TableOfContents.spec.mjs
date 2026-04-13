@@ -9,7 +9,10 @@
 import {
   deleteBackward,
   deleteForward,
+  moveToEditorBeginning,
+  moveToEditorEnd,
   moveToLineBeginning,
+  selectNextWord,
 } from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
@@ -71,7 +74,7 @@ test.describe('TableOfContents', () => {
           <span data-lexical-text="true">h1 again</span>
         </h1>
         <ol
-          class="PlaygroundEditorTheme__ol1 PlaygroundEditorTheme__contents"
+          class="PlaygroundEditorTheme__ol1 PlaygroundEditorTheme__contents active"
           dir="auto">
           <li
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__contentsItem"
@@ -168,6 +171,158 @@ test.describe('TableOfContents', () => {
     await expect(firstHeading).toBeInViewport();
   });
 
+  test('Can update the contents based on the current headings', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+
+    // prepare headings
+    await page.keyboard.type('h1');
+    await click(page, '.block-controls');
+    await click(page, '.dropdown .icon.h1');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('h2');
+    await click(page, '.block-controls');
+    await click(page, '.dropdown .icon.h2');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('h1 again');
+    await click(page, '.block-controls');
+    await click(page, '.dropdown .icon.h1');
+    await page.keyboard.press('Enter');
+
+    // Insert Contents using the Insert dropdown
+    await selectFromInsertDropdown(page, '.item .toc');
+    // Add text to the last element in the contents
+    await page.keyboard.type(' and again');
+
+    await assertHTML(
+      page,
+      html`
+        <h1 class="PlaygroundEditorTheme__h1" id="heading-1" dir="auto">
+          <span data-lexical-text="true">h1</span>
+        </h1>
+        <h2 class="PlaygroundEditorTheme__h2" id="heading-2" dir="auto">
+          <span data-lexical-text="true">h2</span>
+        </h2>
+        <h1 class="PlaygroundEditorTheme__h1" id="heading-3" dir="auto">
+          <span data-lexical-text="true">h1 again</span>
+        </h1>
+        <ol
+          class="PlaygroundEditorTheme__ol1 PlaygroundEditorTheme__contents active"
+          dir="auto">
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__contentsItem"
+            value="1">
+            <a
+              class="PlaygroundEditorTheme__link PlaygroundEditorTheme__contentsLink"
+              href="#heading-1"
+              target="_self">
+              <span data-lexical-text="true">h1</span>
+            </a>
+          </li>
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem PlaygroundEditorTheme__contentsItem"
+            value="2">
+            <ol
+              class="PlaygroundEditorTheme__ol2 PlaygroundEditorTheme__contents">
+              <li
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__contentsItem"
+                value="1">
+                <a
+                  class="PlaygroundEditorTheme__link PlaygroundEditorTheme__contentsLink"
+                  href="#heading-2"
+                  target="_self">
+                  <span data-lexical-text="true">h2</span>
+                </a>
+              </li>
+            </ol>
+          </li>
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__contentsItem"
+            value="2">
+            <a
+              class="PlaygroundEditorTheme__link PlaygroundEditorTheme__contentsLink"
+              href="#heading-3"
+              target="_self">
+              <span data-lexical-text="true">h1 again and again</span>
+            </a>
+          </li>
+        </ol>
+      `,
+      undefined,
+      {ignoreInlineStyles: true},
+    );
+
+    // rewrite the first heading
+    await moveToEditorBeginning(page);
+    await selectNextWord(page);
+    await page.keyboard.type('foo bar');
+
+    // focus on the contents
+    await moveToEditorEnd(page);
+    await click(page, '.contents-update-button');
+
+    await assertHTML(
+      page,
+      html`
+        <h1 class="PlaygroundEditorTheme__h1" id="heading-1" dir="auto">
+          <span data-lexical-text="true">foo bar</span>
+        </h1>
+        <h2 class="PlaygroundEditorTheme__h2" id="heading-2" dir="auto">
+          <span data-lexical-text="true">h2</span>
+        </h2>
+        <h1 class="PlaygroundEditorTheme__h1" id="heading-3" dir="auto">
+          <span data-lexical-text="true">h1 again</span>
+        </h1>
+        <ol
+          class="PlaygroundEditorTheme__ol1 PlaygroundEditorTheme__contents active"
+          dir="auto">
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__contentsItem"
+            value="1">
+            <a
+              class="PlaygroundEditorTheme__link PlaygroundEditorTheme__contentsLink"
+              href="#heading-1"
+              target="_self">
+              <span data-lexical-text="true">foo bar</span>
+            </a>
+          </li>
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem PlaygroundEditorTheme__contentsItem"
+            value="2">
+            <ol
+              class="PlaygroundEditorTheme__ol2 PlaygroundEditorTheme__contents">
+              <li
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__contentsItem"
+                value="1">
+                <a
+                  class="PlaygroundEditorTheme__link PlaygroundEditorTheme__contentsLink"
+                  href="#heading-2"
+                  target="_self">
+                  <span data-lexical-text="true">h2</span>
+                </a>
+              </li>
+            </ol>
+          </li>
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__contentsItem"
+            value="2">
+            <a
+              class="PlaygroundEditorTheme__link PlaygroundEditorTheme__contentsLink"
+              href="#heading-3"
+              target="_self">
+              <span data-lexical-text="true">h1 again</span>
+            </a>
+          </li>
+        </ol>
+      `,
+      undefined,
+      {ignoreInlineStyles: true},
+    );
+  });
+
   test('Text after the link and before it is appended to the link', async ({
     page,
     isPlainText,
@@ -192,7 +347,7 @@ test.describe('TableOfContents', () => {
           <span data-lexical-text="true">first h1</span>
         </h1>
         <ol
-          class="PlaygroundEditorTheme__ol1 PlaygroundEditorTheme__contents"
+          class="PlaygroundEditorTheme__ol1 PlaygroundEditorTheme__contents active"
           dir="auto">
           <li
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__contentsItem"
@@ -253,7 +408,7 @@ test.describe('TableOfContents', () => {
           <span data-lexical-text="true">h1</span>
         </h1>
         <ol
-          class="PlaygroundEditorTheme__ol1 PlaygroundEditorTheme__contents"
+          class="PlaygroundEditorTheme__ol1 PlaygroundEditorTheme__contents active"
           dir="auto">
           <li
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__contentsItem"
@@ -314,7 +469,7 @@ test.describe('TableOfContents', () => {
           <span data-lexical-text="true">h1</span>
         </h1>
         <ol
-          class="PlaygroundEditorTheme__ol1 PlaygroundEditorTheme__contents"
+          class="PlaygroundEditorTheme__ol1 PlaygroundEditorTheme__contents active"
           dir="auto">
           <li
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__contentsItem"
@@ -366,7 +521,7 @@ test.describe('TableOfContents', () => {
           <span data-lexical-text="true">h1</span>
         </h1>
         <ol
-          class="PlaygroundEditorTheme__ol1 PlaygroundEditorTheme__contents"
+          class="PlaygroundEditorTheme__ol1 PlaygroundEditorTheme__contents active"
           dir="auto">
           <li
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__contentsItem"

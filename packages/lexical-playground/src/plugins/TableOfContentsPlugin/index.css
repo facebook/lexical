@@ -93,3 +93,20 @@
   margin-left: 32px;
   position: relative;
 }
+
+.contents-update-button {
+  background: no-repeat center url(../../images/icons/arrow-clockwise.svg) #fff;
+  background-size: 12px 12px;
+  border: 1px solid #d0d0d0;
+  border-radius: 2px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  box-sizing: border-box;
+  height: 18px;
+  width: 18px;
+  z-index: 10px;
+  cursor: pointer;
+}
+
+.contents-update-button:hover {
+  background-color: #f3f3f3;
+}

@@ -292,7 +292,11 @@ export default function Editor(): JSX.Element {
           />
         )}
         {isAutocomplete && <AutocompletePlugin />}
-        <div>{showTableOfContents && <TableOfContentsPlugin />}</div>
+        <div>
+          {showTableOfContents && floatingAnchorElem && (
+            <TableOfContentsPlugin />
+          )}
+        </div>
         {shouldUseLexicalContextMenu && <ContextMenuPlugin />}
         <ActionsPlugin
           shouldPreserveNewLinesInMarkdown={shouldPreserveNewLinesInMarkdown}

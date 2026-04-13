@@ -551,6 +551,21 @@
 .PlaygroundEditorTheme__contents .PlaygroundEditorTheme__contents {
   margin-left: 32px;
 }
+.PlaygroundEditorTheme__contents:hover,
+.PlaygroundEditorTheme__contents.active {
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+.PlaygroundEditorTheme__contents:hover {
+  outline: 1px solid #d0d0d0;
+}
+.PlaygroundEditorTheme__contents.active {
+  outline: 1px solid #999;
+}
+.PlaygroundEditorTheme__contents .PlaygroundEditorTheme__contents:hover,
+.PlaygroundEditorTheme__contents .PlaygroundEditorTheme__contents.active {
+  outline: none;
+}
 .PlaygroundEditorTheme__contentsItem {
   margin: 0;
 }

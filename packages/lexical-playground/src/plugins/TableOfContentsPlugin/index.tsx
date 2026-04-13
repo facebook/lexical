@@ -11,9 +11,11 @@ import type {JSX} from 'react';
 
 import './index.css';
 
+import {autoUpdate, offset, useFloating} from '@floating-ui/react';
 import {$createLinkNode, LinkNode} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {TableOfContentsPlugin as LexicalTableOfContentsPlugin} from '@lexical/react/LexicalTableOfContentsPlugin';
+import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
 import {$isHeadingNode, HeadingNode} from '@lexical/rich-text';
 import {$findMatchingParent} from '@lexical/utils';
 import {
@@ -38,6 +40,7 @@ import {
 } from 'lexical';
 import * as React from 'react';
 import {useEffect, useRef, useState} from 'react';
+import {createPortal} from 'react-dom';
 
 import {$createContentsItemNode} from '../../nodes/ContentsItemNode';
 import {
@@ -48,6 +51,7 @@ import {
 import {
   $createContentsListNode,
   $isContentsListNode,
+  ContentsListNode,
 } from '../../nodes/ContentsListNode';
 
 const MARGIN_ABOVE_EDITOR = 624;
@@ -84,6 +88,26 @@ export const INSERT_CONTENTS_COMMAND: LexicalCommand<void> = createCommand(
 const anchorState = createState('anchor', {
   parse: (v) => (typeof v === 'string' ? v : null),
 });
+
+function $generateContentsNode(tableOfContents: Array<TableOfContentsEntry>) {
+  const contentsNode = $createContentsListNode();
+  tableOfContents.forEach(([key, text, tag], index) => {
+    const anchorIndex = `heading-${index + 1}`;
+    const item = $createContentsItemNode();
+    const headingNode = $getNodeByKey(key);
+    if ($isHeadingNode(headingNode)) {
+      $setState(headingNode, anchorState, anchorIndex);
+    }
+    item.append(
+      $createContentsLinkNode('#' + anchorIndex, {
+        target: '_self',
+      }).append($createTextNode(text)),
+    );
+    contentsNode.append(item);
+    item.setIndent(Number(tag[1]) - 1);
+  });
+  return contentsNode;
+}
 
 function TableOfContentsList({
   tableOfContents,
@@ -259,23 +283,7 @@ function TableOfContentsList({
       INSERT_CONTENTS_COMMAND,
       () => {
         if (tableOfContents.length > 0) {
-          const contentsNode = $createContentsListNode();
-          tableOfContents.forEach(([key, text, tag], index) => {
-            const anchorIndex = `heading-${index + 1}`;
-            const item = $createContentsItemNode();
-            const headingNode = $getNodeByKey(key);
-            if ($isHeadingNode(headingNode)) {
-              $setState(headingNode, anchorState, anchorIndex);
-            }
-            item.append(
-              $createContentsLinkNode('#' + anchorIndex, {
-                target: '_self',
-              }).append($createTextNode(text)),
-            );
-            contentsNode.append(item);
-            item.setIndent(Number(tag[1]) - 1);
-          });
-          $insertNodes([contentsNode]);
+          $insertNodes([$generateContentsNode(tableOfContents)]);
         }
         return false;
       },
@@ -406,11 +414,106 @@ function TableOfContentsList({
   );
 }
 
-export default function TableOfContentsPlugin() {
+function ContentsHoverActions({
+  tableOfContents,
+  anchorElem = document.body,
+}: {
+  tableOfContents: Array<TableOfContentsEntry>;
+  anchorElem?: HTMLElement;
+}) {
+  const [editor] = useLexicalComposerContext();
+  const isEditable = useLexicalEditable();
+  const [focusedContents, setFocusedContents] =
+    useState<ContentsListNode | null>(null);
+  const contentsElemRef = useRef<HTMLElement | null>(null);
+
+  const {refs, floatingStyles} = useFloating({
+    middleware: [offset({crossAxis: -12, mainAxis: -5})],
+    placement: 'top-start',
+    strategy: 'fixed',
+    whileElementsMounted: autoUpdate,
+  });
+
+  useEffect(() => {
+    return editor.registerUpdateListener(({editorState}) => {
+      editorState.read(() => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) {
+          contentsElemRef.current?.classList.remove('active');
+          contentsElemRef.current = null;
+          setFocusedContents(null);
+          refs.setReference(null);
+          return;
+        }
+        const anchorNode = selection.anchor.getNode();
+        const contentsNode = $findMatchingParent(
+          anchorNode,
+          $isContentsListNode,
+        );
+        const prevElem = contentsElemRef.current;
+        if (contentsNode) {
+          const elem = editor.getElementByKey(contentsNode.getKey());
+          setFocusedContents(contentsNode);
+          refs.setReference(elem);
+          if (elem !== prevElem) {
+            prevElem?.classList.remove('active');
+            elem?.classList.add('active');
+          }
+          contentsElemRef.current = elem;
+        } else {
+          prevElem?.classList.remove('active');
+          contentsElemRef.current = null;
+          setFocusedContents(null);
+          refs.setReference(null);
+        }
+      });
+    });
+  }, [editor, refs]);
+
+  if (!isEditable || !contentsElemRef.current) {
+    return null;
+  }
+
+  const handleUpdate = () => {
+    if (focusedContents && tableOfContents.length > 0) {
+      editor.update(() => {
+        const newContents = $generateContentsNode(tableOfContents);
+        focusedContents.replace(newContents);
+        newContents.selectEnd();
+      });
+    }
+  };
+
+  return createPortal(
+    <button
+      ref={refs.setFloating}
+      style={floatingStyles}
+      className="contents-update-button"
+      aria-label="Update the table of contents"
+      type="button"
+      onClick={handleUpdate}
+    />,
+    anchorElem,
+  );
+}
+
+export default function TableOfContentsPlugin({
+  anchorElem,
+}: {
+  anchorElem?: HTMLElement;
+}) {
   return (
     <LexicalTableOfContentsPlugin>
       {(tableOfContents) => {
-        return <TableOfContentsList tableOfContents={tableOfContents} />;
+        return (
+          <>
+            <TableOfContentsList tableOfContents={tableOfContents} />
+            <ContentsHoverActions
+              tableOfContents={tableOfContents}
+              anchorElem={anchorElem}
+            />
+          </>
+        );
       }}
     </LexicalTableOfContentsPlugin>
   );

@@ -26,7 +26,7 @@ import {ALWAYS_TRUE} from '../../constants';
 
 describe('buildTypeTree', () => {
   test('includes basic types', () => {
-    const editor = buildEditorFromExtensions();
+    using editor = buildEditorFromExtensions();
     expect(buildTypeTree(editor._createEditorArgs!)).toMatchObject({
       linebreak: {
         klass: LineBreakNode,

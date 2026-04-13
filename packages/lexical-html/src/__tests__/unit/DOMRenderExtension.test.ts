@@ -38,7 +38,7 @@ const idState = createState('id', {
 
 describe('DOMRenderExtension', () => {
   test('can override DOM create + update', () => {
-    const editor = buildEditorFromExtensions(
+    using editor = buildEditorFromExtensions(
       defineExtension({
         $initialEditorState: () => {
           const root = $getRoot();
@@ -139,7 +139,7 @@ describe('DOMRenderExtension', () => {
     );
   });
   test('can override DOM export', () => {
-    const editor = buildEditorFromExtensions(
+    using editor = buildEditorFromExtensions(
       defineExtension({
         $initialEditorState: () => {
           const root = $getRoot();
@@ -210,7 +210,7 @@ describe('DOMRenderExtension', () => {
         return this.config('text-a', {extends: TextNode});
       }
     }
-    const editor = buildEditorFromExtensions(
+    using editor = buildEditorFromExtensions(
       defineExtension({
         $initialEditorState: () => {
           $getRoot().append(

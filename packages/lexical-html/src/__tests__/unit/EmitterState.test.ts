@@ -81,7 +81,7 @@ function $emitTrees(trees: EmitTree[]): LexicalNode[] {
 
 describe('$createRootEmitter', () => {
   test('Can emit a series of inline nodes', () => {
-    const editor = buildEditorFromExtensions();
+    using editor = buildEditorFromExtensions();
     editor.update(
       () => {
         const inlines = [
@@ -100,7 +100,7 @@ describe('$createRootEmitter', () => {
     );
   });
   test('Can emit a series of mixed nodes', () => {
-    const editor = buildEditorFromExtensions();
+    using editor = buildEditorFromExtensions();
     editor.update(
       () => {
         const mixed = [
@@ -133,7 +133,7 @@ describe('$createRootEmitter', () => {
     );
   });
   test('Explicit paragraphs are not mixed up with implicit paragraphs', () => {
-    const editor = buildEditorFromExtensions();
+    using editor = buildEditorFromExtensions();
     editor.update(
       () => {
         const nodes: EmitTree[] = [
@@ -168,7 +168,7 @@ describe('$createRootEmitter', () => {
     );
   });
   test('softBreak creates a newline between inline nodes on close', () => {
-    const editor = buildEditorFromExtensions();
+    using editor = buildEditorFromExtensions();
     editor.update(
       () => {
         const inlines = ['hello', 'world'].map((text) => $createTextNode(text));
@@ -181,7 +181,7 @@ describe('$createRootEmitter', () => {
     );
   });
   test('$emitNode returns a shadow root emitter', () => {
-    const editor = buildEditorFromExtensions({
+    using editor = buildEditorFromExtensions({
       name: 'root',
       nodes: [TestShadowRootNode],
     });
@@ -236,7 +236,7 @@ describe('$createRootEmitter', () => {
     );
   });
   test('blocks are flattened', () => {
-    const editor = buildEditorFromExtensions({
+    using editor = buildEditorFromExtensions({
       dependencies: [ListExtension],
       name: 'root',
     });

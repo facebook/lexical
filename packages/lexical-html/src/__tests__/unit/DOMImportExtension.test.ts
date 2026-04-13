@@ -293,7 +293,7 @@ describe('DOMImportExtension', () => {
       importConfig = {},
       exportConfig = {},
     }: ImportTestCase) => {
-      const builtEditor = buildEditorFromExtensions(
+      using builtEditor = buildEditorFromExtensions(
         defineExtension({
           $initialEditorState: (editor) => {
             const parser = new DOMParser();

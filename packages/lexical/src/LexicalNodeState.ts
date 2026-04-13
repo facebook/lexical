@@ -862,9 +862,6 @@ export function nodeStatesAreEquivalent<T extends LexicalNode>(
   if (a === b) {
     return true;
   }
-  if (a && b && a.size !== b.size) {
-    return false;
-  }
   const keys = new Set<string>();
   return !(
     (a && hasUnequalMapEntry(keys, a, b)) ||

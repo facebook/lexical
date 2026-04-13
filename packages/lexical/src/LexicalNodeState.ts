@@ -223,11 +223,6 @@ export interface StateValueConfig<V> {
    * more appropriate for your use case.
    */
   isEqual?: (a: V, b: V) => boolean;
-  /**
-   * When a node is copied with {@link $copyNode} (not cloned), reset this
-   * value to the default.
-   */
-  resetOnCopyNode?: boolean;
 }
 
 /**

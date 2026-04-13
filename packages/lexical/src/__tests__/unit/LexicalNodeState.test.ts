@@ -586,100 +586,21 @@ describe('LexicalNode state', () => {
         });
       });
 
-      describe('resetOnCopyNode', () => {
-        test('state with resetOnCopyNode: true is reset when using $copyNode', () => {
+      describe('$copyNode preserves state', () => {
+        test('state is preserved when using $copyNode', () => {
           const {editor} = testEnv;
-          const resetState = createState('resetState', {
-            parse: (v) => (typeof v === 'number' ? v : 0),
-            resetOnCopyNode: true,
-          });
-          editor.update(
-            () => {
-              const node = $createStateNode();
-              $setState(node, resetState, 42);
-              expect($getState(node, resetState)).toBe(42);
-
-              const copy = $copyNode(node);
-              expect($getState(copy, resetState)).toBe(0);
-              expect($getState(node, resetState)).toBe(42);
-            },
-            {discrete: true},
-          );
-        });
-
-        test('state with resetOnCopyNode: false is preserved when using $copyNode', () => {
-          const {editor} = testEnv;
-          const persistState = createState('persistState', {
-            parse: (v) => (typeof v === 'number' ? v : 0),
-            resetOnCopyNode: false,
-          });
-          editor.update(
-            () => {
-              const node = $createStateNode();
-              $setState(node, persistState, 42);
-              expect($getState(node, persistState)).toBe(42);
-
-              const copy = $copyNode(node);
-              expect($getState(copy, persistState)).toBe(42);
-              expect($getState(node, persistState)).toBe(42);
-            },
-            {discrete: true},
-          );
-        });
-
-        test('state without resetOnCopyNode option is preserved when using $copyNode', () => {
-          const {editor} = testEnv;
-          const defaultState = createState('defaultState', {
+          const testState = createState('testState', {
             parse: (v) => (typeof v === 'number' ? v : 0),
           });
           editor.update(
             () => {
               const node = $createStateNode();
-              $setState(node, defaultState, 42);
-              expect($getState(node, defaultState)).toBe(42);
+              $setState(node, testState, 42);
+              expect($getState(node, testState)).toBe(42);
 
               const copy = $copyNode(node);
-              expect($getState(copy, defaultState)).toBe(42);
-              expect($getState(node, defaultState)).toBe(42);
-            },
-            {discrete: true},
-          );
-        });
-
-        test('multiple states with different resetOnCopyNode configurations', () => {
-          const {editor} = testEnv;
-          const resetState = createState('resetState', {
-            parse: (v) => (typeof v === 'number' ? v : 0),
-            resetOnCopyNode: true,
-          });
-          const persistState = createState('persistState', {
-            parse: (v) => (typeof v === 'string' ? v : ''),
-            resetOnCopyNode: false,
-          });
-          const defaultState = createState('defaultState', {
-            parse: (v) => (typeof v === 'boolean' ? v : false),
-          });
-
-          editor.update(
-            () => {
-              const node = $createStateNode();
-              $setState(node, resetState, 100);
-              $setState(node, persistState, 'hello');
-              $setState(node, defaultState, true);
-
-              expect($getState(node, resetState)).toBe(100);
-              expect($getState(node, persistState)).toBe('hello');
-              expect($getState(node, defaultState)).toBe(true);
-
-              const copy = $copyNode(node);
-              expect($getState(copy, resetState)).toBe(100);
-              expect($getState(copy, persistState)).toBe('hello');
-              expect($getState(copy, defaultState)).toBe(true);
-
-              // Original node should be unchanged
-              expect($getState(node, resetState)).toBe(100);
-              expect($getState(node, persistState)).toBe('hello');
-              expect($getState(node, defaultState)).toBe(true);
+              expect($getState(copy, testState)).toBe(42);
+              expect($getState(node, testState)).toBe(42);
             },
             {discrete: true},
           );

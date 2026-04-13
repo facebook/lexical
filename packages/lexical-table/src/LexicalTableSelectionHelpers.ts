@@ -918,13 +918,12 @@ export function $handleTableSelectionChangeCommand(
   // Generic selection logic that runs across every table observer when the selection changes.
   // Note: the selection might have changed in the code above, which re-dispatches the selection change command
   // and gets handled here on the second pass. This should be refactored.
-  const tableNodesAndObservers = tableObservers.observers
-    .entries()
-    .map(([tableKey, [tableObserver]]) => ({
-      tableNode: $getNodeByKeyOrThrow<TableNode>(tableKey),
-      tableObserver,
-    }))
-    .toArray();
+  const tableNodesAndObservers = Array.from(
+    tableObservers.observers.entries(),
+  ).map(([tableKey, [tableObserver]]) => ({
+    tableNode: $getNodeByKeyOrThrow<TableNode>(tableKey),
+    tableObserver,
+  }));
   for (const {tableNode, tableObserver} of tableNodesAndObservers) {
     $syncTableSelectionState(editor, tableNode, tableObserver);
   }

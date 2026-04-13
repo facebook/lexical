@@ -3,7 +3,7 @@
 Here we have an example that demonstrates how NodeState can be used with a
 DOMRenderExtension to override create and export behavior of any node.
 
-This example currently depends on unreleased features (v0.37+) and will not
+This example currently depends on unreleased features (v0.44+) and will not
 work outside of the monorepo.
 
 **Run it locally:** `npm i && npm run dev`

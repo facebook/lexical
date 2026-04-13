@@ -301,6 +301,13 @@ export class ListItemNode extends ElementNode {
     }
   }
 
+  resetOnCopyNodeFrom(original: this): void {
+    super.resetOnCopyNodeFrom(original);
+    if (original.getChecked()) {
+      this.setChecked(false);
+    }
+  }
+
   insertNewAfter(
     _: RangeSelection,
     restoreSelection = true,

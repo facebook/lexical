@@ -148,22 +148,22 @@ type DOMConversionCache = Map<
 
 export type EditorDOMRenderConfig = {
   /** @internal @experimental */
-  createDOM: <T: LexicalNode>(
+  $createDOM: <T: LexicalNode>(
     node: T,
     editor: LexicalEditor,
   ) => HTMLElement;
   /** @internal @experimental */
-  exportDOM: <T: LexicalNode>(
+  $exportDOM: <T: LexicalNode>(
     node: T,
     editor: LexicalEditor,
   ) => DOMExportOutput;
   /** @internal @experimental */
-  updateDOM: <T: LexicalNode>(
+  $updateDOM: <T: LexicalNode>(
     nextNode: T,
     prevNode: T,
     dom: HTMLElement,
     editor: LexicalEditor,
-  ) => boolean;  
+  ) => boolean;
 }
 
 export type CreateEditorArgs = {
@@ -335,26 +335,10 @@ export type EditorThemeClasses = {
   [string]: EditorThemeClassName | {[string]: EditorThemeClassName},
 };
 export type EditorConfig = {
+  dom?: EditorDOMRenderConfig,
   theme: EditorThemeClasses,
   namespace: string,
   disableEvents?: boolean,
-  /** @internal @experimental */
-  createDOM?: <T: LexicalNode>(
-    editor: LexicalEditor,
-    node: T,
-  ) => HTMLElement;
-  /** @internal @experimental */
-  exportDOM?: <T: LexicalNode>(
-    editor: LexicalEditor,
-    node: T,
-  ) => DOMExportOutput;
-  /** @internal @experimental */
-  updateDOM?: <T: LexicalNode>(
-    editor: LexicalEditor,
-    nextNode: T,
-    prevNode: T,
-    dom: HTMLElement,
-  ) => boolean;  
 };
 export type CommandListenerPriority = 0 | 1 | 2 | 3 | 4;
 export const COMMAND_PRIORITY_EDITOR = 0;
@@ -498,6 +482,8 @@ declare export class LexicalNode {
   reconcileObservedMutation(dom: HTMLElement, editor: LexicalEditor): void;
   // $FlowFixMe[unclear-type] -- Required to be `this`, but that is not generally sound or allowed in flow's variance model
   afterCloneFrom(prevNode: any): void;
+  // $FlowFixMe[unclear-type] -- Required to be `this`, but that is not generally sound or allowed in flow's variance model
+  resetOnCopyNodeFrom(original: any): void;
 }
 export type NodeMap = Map<NodeKey, LexicalNode>;
 

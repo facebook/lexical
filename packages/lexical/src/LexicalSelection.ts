@@ -1836,6 +1836,18 @@ export class RangeSelection implements BaseSelection {
             break;
           }
         }
+        // handle block elements that contain only empty inline elements
+        // treat them as effectively empty for deletion purposes
+        if (anchor.type === 'element' && anchor.offset === 0) {
+          const anchorElement = anchor.getNode();
+          if (
+            !$isRootOrShadowRoot(anchorElement) &&
+            $isEffectivelyEmpty(anchorElement)
+          ) {
+            anchorElement.remove();
+            return;
+          }
+        }
         if (state.type === 'merge-block') {
           const {caret, block} = state;
           $updateRangeSelectionFromCaretRange(
@@ -2001,6 +2013,20 @@ export function $getCharacterOffsets(
     return [0, 0];
   }
   return [getCharacterOffset(anchor), getCharacterOffset(focus)];
+}
+
+function $isEffectivelyEmpty(node: ElementNode): boolean {
+  if (node.isEmpty()) {
+    return false;
+  }
+  const children = node.getChildren();
+  return children.every(
+    (child) =>
+      $isElementNode(child) &&
+      child.isInline() &&
+      child.canBeEmpty() &&
+      child.isEmpty(),
+  );
 }
 
 function $collapseAtStart(

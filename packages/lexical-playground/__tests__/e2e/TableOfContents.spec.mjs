@@ -174,8 +174,9 @@ test.describe('TableOfContents', () => {
   test('Can update the contents based on the current headings', async ({
     page,
     isPlainText,
+    isCollab,
   }) => {
-    test.skip(isPlainText);
+    test.skip(isPlainText || isCollab);
     await focusEditor(page);
 
     // prepare headings

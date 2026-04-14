@@ -5,6 +5,7 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable", "ESNext.Disposable"],
     "module": "ESNext",
     "skipLibCheck": true,
+    "types": ["node"],
 
     /* Bundler mode */
     "moduleResolution": "bundler",
@@ -16,8 +17,6 @@
 
     /* Linting */
     "strict": true,
-    "noUnusedLocals": true,
-    // "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
   "extends": ["../../tsconfig.json"],

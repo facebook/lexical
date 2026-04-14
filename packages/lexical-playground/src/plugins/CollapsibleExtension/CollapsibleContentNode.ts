@@ -6,7 +6,7 @@
  *
  */
 
-import {IS_CHROME} from '@lexical/utils';
+import {IS_CHROME, IS_FIREFOX} from '@lexical/utils';
 import {
   DOMConversionMap,
   DOMConversionOutput,
@@ -44,7 +44,7 @@ export class CollapsibleContentNode extends ElementNode {
   createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement {
     const dom = document.createElement('div');
     dom.classList.add('Collapsible__content');
-    if (IS_CHROME) {
+    if (IS_CHROME || IS_FIREFOX) {
       editor.getEditorState().read(() => {
         const containerNode = this.getParentOrThrow();
         if (!$isCollapsibleContainerNode(containerNode)) {

@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import {AutoFocusExtension} from '@lexical/extension';
+import {PlainTextExtension} from '@lexical/plain-text';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
 import {RichTextExtension} from '@lexical/rich-text';
@@ -13,6 +15,7 @@ import {
   $createTextNode,
   $getRoot,
   defineExtension,
+  type LexicalEditor,
 } from 'lexical';
 import {useEffect} from 'react';
 import {createRoot, type Root} from 'react-dom/client';
@@ -56,6 +59,44 @@ describe('LexicalExtensionComposer', () => {
       `<div contenteditable="true" role="textbox" spellcheck="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><br></p></div>`,
     );
   });
+  it('AutoFocusExtension with PlainTextExtension initializes without errors', async () => {
+    // Smoke test for the initialization pattern that triggers the
+    // Firefox Focus tab bug. AutoFocusExtension calls editor.focus()
+    // from a root listener; PlainTextExtension matches the failing
+    // e2e test configuration. Verifies no errors during init and that
+    // a subsequent update after blur does not refocus the editor.
+    const ext = defineExtension({
+      dependencies: [PlainTextExtension, AutoFocusExtension],
+      name: '[test]',
+    });
+
+    function TestEditor() {
+      return <LexicalExtensionComposer extension={ext} />;
+    }
+
+    await ReactTestUtils.act(async () => {
+      reactRoot.render(<TestEditor />);
+      await Promise.resolve();
+    });
+
+    const editorElement = container.querySelector(
+      '[data-lexical-editor="true"]',
+    ) as HTMLElement & {__lexicalEditor?: LexicalEditor | null};
+    expect(editorElement).not.toBeNull();
+    const editor = editorElement.__lexicalEditor!;
+
+    // Blur the editor (user tabs away)
+    editorElement.blur();
+
+    // A subsequent no-op update must not refocus the editor
+    await ReactTestUtils.act(async () => {
+      editor.update(() => {});
+      await Promise.resolve();
+    });
+
+    expect(editorElement).not.toBe(document.activeElement);
+  });
+
   it('Provides a context', async () => {
     function InitialPlugin() {
       const [editor] = useLexicalComposerContext();

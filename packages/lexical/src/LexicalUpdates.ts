@@ -512,6 +512,13 @@ export function $commitPendingUpdates(
   const shouldSkipDOM = editor._headless || rootElement === null;
 
   if (pendingEditorState === null) {
+    // Even without a pending state, flush any deferred callbacks that
+    // may have been added by a prior update (e.g. via $onUpdate inside
+    // editor.focus()). This can happen when another commit consumed
+    // the pending editor state before this scheduled commit ran.
+    if (editor._deferred.length > 0) {
+      triggerDeferredUpdateCallbacks(editor, editor._deferred);
+    }
     return;
   }
 

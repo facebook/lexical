@@ -12,6 +12,7 @@
 
 const {github: lightCodeTheme, dracula: darkCodeTheme} =
   require('prism-react-renderer').themes;
+const packageDocsPlugin = require('./plugins/package-docs/index.mjs');
 const slugifyPlugin = require('./src/plugins/lexical-remark-slugify-anchors');
 const {packagesManager} = process.env.FB_INTERNAL
   ? {}
@@ -339,8 +340,8 @@ const config = {
     process.env.FB_INTERNAL
       ? null
       : [
-          './plugins/package-docs',
-          /** @type {import('./plugins/package-docs').PackageDocsPluginOptions} */
+          packageDocsPlugin,
+          /** @type {import('./plugins/package-docs/index.mjs').PackageDocsPluginOptions} */
           {
             baseDir: path.resolve(__dirname, '..'),
             editUrl: `${GITHUB_REPO_URL}/tree/main/packages/`,

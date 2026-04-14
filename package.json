@@ -7,7 +7,7 @@
   "packageManager": "pnpm@10.33.0",
   "workspaces": [
     "packages/*",
-    "examples/dev-*"
+    "dev-examples/*"
   ],
   "engines": {
     "node": ">=20.19.0",

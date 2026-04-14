@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite -c vite.config.monorepo.ts",
     "monorepo:dev": "vite -c vite.config.monorepo.ts",
-    "build": "tsc && vite build -c vite.config.monorepo.ts",
+    "build": "vite build -c vite.config.monorepo.ts",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -19,6 +19,7 @@
     "@lexical/rich-text": "workspace:*",
     "@lexical/selection": "workspace:*",
     "@lexical/utils": "workspace:*",
+    "@zag-js/combobox": "^1.40.0",
     "@shikijs/langs": "^4.0.2",
     "@shikijs/themes": "^4.0.2",
     "inline-style-parser": "^0.2.7",

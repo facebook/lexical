@@ -1,5 +1,5 @@
 packages:
   - 'packages/*'
-  - 'examples/dev-*'
+  - 'dev-examples/*'
   - '!examples/**/*'
   - '!scripts/__tests__/integration/fixtures/**/*'

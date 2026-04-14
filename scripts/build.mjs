@@ -158,7 +158,7 @@ function getExtension(format) {
  * @param {boolean} isProd
  * @param {'cjs'|'esm'} format
  * @param {string} version
- * @param {import('./shared/PackageMetadata.js').PackageMetadata} pkg
+ * @param {import('./shared/PackageMetadata.mjs').PackageMetadata} pkg
  * @returns {Promise<Array<string>>} the exports of the built module
  */
 async function build(

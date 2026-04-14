@@ -14,8 +14,8 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import {gt as semverGt} from 'semver';
 
-import {spawn} from './shared/childProcess.js';
-import {PackageMetadata} from './shared/PackageMetadata.js';
+import {spawn} from './shared/childProcess.mjs';
+import {PackageMetadata} from './shared/PackageMetadata.mjs';
 
 async function main() {
   const argv = minimist(process.argv.slice(2));

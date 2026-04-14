@@ -9,9 +9,9 @@
 import fs from 'fs-extra';
 import path from 'node:path';
 
-import {exec} from '../../shared/childProcess.js';
-import {packagesManager} from '../../shared/packagesManager.js';
-import readMonorepoPackageJson from '../../shared/readMonorepoPackageJson.js';
+import {exec} from '../../shared/childProcess.mjs';
+import {packagesManager} from '../../shared/packagesManager.mjs';
+import readMonorepoPackageJson from '../../shared/readMonorepoPackageJson.mjs';
 
 const {version} = readMonorepoPackageJson();
 

@@ -10,37 +10,8 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import {fileURLToPath} from 'node:url';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-/**
- * Find the monorepo root by walking up from this file's directory
- * looking for a package.json with a "workspaces" field.
- * @returns {string}
- */
-function findMonorepoRoot() {
-  let dir = __dirname;
-  while (dir !== path.dirname(dir)) {
-    const pkgPath = path.join(dir, 'package.json');
-    if (fs.existsSync(pkgPath)) {
-      try {
-        const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
-        if (pkg.workspaces) {
-          return dir;
-        }
-      } catch {
-        // ignore
-      }
-    }
-    dir = path.dirname(dir);
-  }
-  throw new Error('Could not find monorepo root');
-}
-
-const {PackageMetadata} = await import(
-  path.join(findMonorepoRoot(), 'scripts/shared/PackageMetadata.mjs')
-);
+import {PackageMetadata} from '../../../../scripts/shared/PackageMetadata.mjs';
 
 /**
  * @param {string} fn

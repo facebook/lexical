@@ -74,70 +74,36 @@ describe('LexicalExtensionComposer', () => {
     // so that the AutoFocusExtension root listener fires with
     // activeEditor === editor, triggering the inline path.
 
-    // Patch contentEditable to delegate to attribute (jsdom bug)
-    const ceDescriptor = Object.getOwnPropertyDescriptor(
-      HTMLElement.prototype,
-      'contentEditable',
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [PlainTextExtension, AutoFocusExtension],
+        name: '[test]',
+      }),
     );
-    Object.defineProperty(HTMLElement.prototype, 'contentEditable', {
-      configurable: true,
-      get(this: HTMLElement) {
-        const attr = this.getAttribute('contenteditable');
-        return attr === 'true' || attr === ''
-          ? 'true'
-          : attr === 'false'
-            ? 'false'
-            : 'inherit';
-      },
-      set(this: HTMLElement, value: string) {
-        if (value === 'inherit') {
-          this.removeAttribute('contenteditable');
-        } else {
-          this.setAttribute('contenteditable', value);
-        }
-      },
+
+    const rootElement = document.createElement('div');
+    rootElement.contentEditable = 'true';
+    container.appendChild(rootElement);
+
+    // Flush InitialStateExtension's microtask before setRootElement.
+    await Promise.resolve();
+
+    // Call setRootElement inside editor.update() so that when the
+    // root listener fires and calls editor.focus(), activeEditor ===
+    // editor. This makes editor.focus() → updateEditorSync take the
+    // inline path: $onUpdate pushes to _deferred, but NO $beginUpdate,
+    // NO pending state, NO microtask. The callback is orphaned.
+    editor.update(() => {
+      editor.setRootElement(rootElement);
     });
 
-    try {
-      using editor = buildEditorFromExtensions(
-        defineExtension({
-          dependencies: [PlainTextExtension, AutoFocusExtension],
-          name: '[test]',
-        }),
-      );
+    // _deferred has the stuck focus callback.
+    expect(editor._deferred.length).toBeGreaterThan(0);
 
-      const rootElement = document.createElement('div');
-      rootElement.contentEditable = 'true';
-      container.appendChild(rootElement);
-
-      // Flush InitialStateExtension's microtask before setRootElement.
-      await Promise.resolve();
-
-      // Call setRootElement inside editor.update() so that when the
-      // root listener fires and calls editor.focus(), activeEditor ===
-      // editor. This makes editor.focus() → updateEditorSync take the
-      // inline path: $onUpdate pushes to _deferred, but NO $beginUpdate,
-      // NO pending state, NO microtask. The callback is orphaned.
-      editor.update(() => {
-        editor.setRootElement(rootElement);
-      });
-
-      // _deferred has the stuck focus callback.
-      expect(editor._deferred.length).toBeGreaterThan(0);
-
-      // After microtasks flush, _deferred must be empty. Without the
-      // fix, the orphaned microtask finds null and returns early.
-      await Promise.resolve();
-      expect(editor._deferred).toHaveLength(0);
-    } finally {
-      if (ceDescriptor) {
-        Object.defineProperty(
-          HTMLElement.prototype,
-          'contentEditable',
-          ceDescriptor,
-        );
-      }
-    }
+    // After microtasks flush, _deferred must be empty. Without the
+    // fix, the orphaned microtask finds null and returns early.
+    await Promise.resolve();
+    expect(editor._deferred).toHaveLength(0);
   });
 
   it('Provides a context', async () => {

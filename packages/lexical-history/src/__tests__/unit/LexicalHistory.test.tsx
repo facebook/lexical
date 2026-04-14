@@ -588,6 +588,7 @@ describe('SharedHistoryExtension', () => {
       html`
         <p dir="auto"><span data-lexical-text="true">parent editor</span></p>
         <div
+          contenteditable="false"
           style="user-select: text; white-space: pre-wrap; word-break: break-word"
           data-lexical-decorator="true"
           data-lexical-editor="true">
@@ -610,6 +611,7 @@ describe('SharedHistoryExtension', () => {
       html`
         <p dir="auto"><span data-lexical-text="true">parent editor</span></p>
         <div
+          contenteditable="false"
           style="user-select: text; white-space: pre-wrap; word-break: break-word"
           data-lexical-decorator="true"
           data-lexical-editor="true">
@@ -644,6 +646,7 @@ describe('SharedHistoryExtension', () => {
       html`
         <p dir="auto"><span data-lexical-text="true">parent editor</span></p>
         <div
+          contenteditable="false"
           style="user-select: text; white-space: pre-wrap; word-break: break-word"
           data-lexical-decorator="true"
           data-lexical-editor="true">

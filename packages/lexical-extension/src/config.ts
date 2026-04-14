@@ -18,7 +18,6 @@ export interface KnownTypesAndNodes {
   nodes: Set<KlassConstructor<typeof LexicalNode>>;
 }
 /**
- * @experimental
  * Get the sets of nodes and types registered in the
  * {@link InitialEditorConfig}. This is to be used when an extension
  * needs to register optional behavior if some node or type is present.

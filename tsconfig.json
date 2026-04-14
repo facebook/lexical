@@ -291,7 +291,8 @@
     "**/dist/**",
     "**/npm/**",
     "**/node_modules/**",
-    "./packages/lexical-devtools/**"
+    "./packages/lexical-devtools/**",
+    "./packages/lexical-website/**"
   ],
   "typedocOptions": {"logLevel": "Verbose"},
   "ts-node": {"require": ["tsconfig-paths/register"], "transpileOnly": true}

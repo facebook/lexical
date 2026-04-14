@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-// @ts-nocheck - Babel plugin with untyped dependencies (@babel/helper-module-imports)
 
 import * as helperModuleImports from '@babel/helper-module-imports';
 import prettier from '@prettier/sync';

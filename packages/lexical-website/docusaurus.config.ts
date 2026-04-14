@@ -5,20 +5,25 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+// @ts-nocheck - Docusaurus config, not part of the main TypeScript build
+// Note: type annotations allow IDEs autocompletion
 
-'use strict';
-// @ts-check
-// Note: type annotations allow type checking and IDEs autocompletion
+import fs from 'node:fs';
+import {createRequire} from 'node:module';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {themes} from 'prism-react-renderer';
 
-const {github: lightCodeTheme, dracula: darkCodeTheme} =
-  require('prism-react-renderer').themes;
-const packageDocsPlugin = require('./plugins/package-docs/index.mjs');
-const slugifyPlugin = require('./src/plugins/lexical-remark-slugify-anchors');
-const {packagesManager} = process.env.FB_INTERNAL
-  ? {}
-  : require('../../scripts/shared/packagesManager');
-const path = require('node:path');
-const fs = require('node:fs');
+import {packagesManager as _pm} from '../../scripts/shared/packagesManager.mjs';
+import packageDocsPlugin from './plugins/package-docs/index.mjs';
+import slugifyPlugin from './src/plugins/lexical-remark-slugify-anchors/index.js';
+
+// Use import.meta.url (not import.meta.dirname) for jiti v1 compatibility
+const require = createRequire(import.meta.url);
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+const {github: lightCodeTheme, dracula: darkCodeTheme} = themes;
+const packagesManager = process.env.FB_INTERNAL ? undefined : _pm;
 
 /**
  * Build webpack resolve.alias entries that map each lexical package's module
@@ -32,10 +37,9 @@ function buildLexicalWebpackAliases() {
   if (process.env.FB_INTERNAL) {
     return {};
   }
-  /** @type {Record<string, string>} */
-  const aliases = {};
+  const aliases: Record<string, string> = {};
 
-  for (const pkg of packagesManager.getPublicPackages()) {
+  for (const pkg of packagesManager!.getPublicPackages()) {
     for (const [
       name,
       moduleExports,
@@ -90,7 +94,7 @@ const docLabels = {
 };
 
 /** @param {string} lowercaseLabel */
-function categoryOrder(lowercaseLabel) {
+function categoryOrder(lowercaseLabel: string) {
   switch (lowercaseLabel) {
     case 'Modules':
       return 0;
@@ -103,23 +107,19 @@ function categoryOrder(lowercaseLabel) {
   }
 }
 
-/**
- * @param {string} label
- */
-function capitalizeLabel(label) {
+function capitalizeLabel(label: string) {
   // modules, classes, interfaces -> Modules, Classes, Interfaces
   return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
-/**
- * @param {NormalizedSidebarItem} a
- * @param {NormalizedSidebarItem} b
- */
-function sidebarSort(a, b) {
+function sidebarSort(
+  a: {type: string; label?: string},
+  b: {type: string; label?: string},
+) {
   // Categories always come last and have their own defined sort order
   // Otherwise leave the sort as-is
   if (a.type === 'category' && b.type === 'category') {
-    return categoryOrder(a.label) - categoryOrder(b.label);
+    return categoryOrder(a.label!) - categoryOrder(b.label!);
   } else if (a.type === 'category') {
     return 1;
   } else if (b.type === 'category') {
@@ -132,10 +132,8 @@ function sidebarSort(a, b) {
 /**
  * Map an 'api/modules/...' id back to the original module name without
  * loading the markdown and parsing the frontmatter.
- *
- * @param {string} id
  */
-function idToModuleName(id) {
+function idToModuleName(id: string) {
   return id
     .replace(/^api\/modules\//i, '')
     .replace(/^lexical_react_/, '@lexical/react/')
@@ -146,95 +144,90 @@ function idToModuleName(id) {
 /**
  * Map an 'api/{category}/{fileId}.ClassName' to the class or interface name.
  * These are already capitalized and always preceded by a '.'.
- *
- * @param {string} id
  */
-function classOrInterfaceIdToLabel(id) {
+function classOrInterfaceIdToLabel(id: string) {
   return id.replace(/^[^.]+./, '');
 }
 
-/**
- * @type {SidebarItemsGenerator}
- */
 const sidebarItemsGenerator = async ({
   defaultSidebarItemsGenerator,
   ...args
-}) => {
+}: // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Docusaurus plugin API
+any) => {
   const items = await defaultSidebarItemsGenerator(args);
   if (args.item.dirName === 'api') {
-    return items
-      .map((sidebarItem) => {
-        if (sidebarItem.type === 'doc' && sidebarItem.id in docLabels) {
-          return {...sidebarItem, label: docLabels[sidebarItem.id]};
-        } else if (sidebarItem.type !== 'category') {
-          return sidebarItem;
-        }
-        /** @type {NormalizedSidebarItem[]} */
-        const groupedItems = [];
-        for (const item of sidebarItem.items) {
-          if (item.type === 'doc' && item.id.match(/^api\/modules\//i)) {
-            // autoConfiguration is disabled because the frontmatter
-            // sidebar_label otherwise takes precedence over anything we do
-            // here, and the default labels come from the page titles which
-            // are parsed at a later stage of the pipeline.
-            const label = idToModuleName(item.id);
-            const lastItem = groupedItems.at(-1);
-            if (
-              lastItem &&
-              lastItem.type === 'category' &&
-              lastItem.label === label
-            ) {
-              lastItem.link = {
-                id: item.id,
-                type: 'doc',
-              };
-              continue;
-            }
-            const m = /^(@lexical\/[^/]+)\/(.*)$/.exec(label);
-            if (m) {
-              const groupedItem = {...item, label: m[2]};
-              if (
-                (lastItem && lastItem.type === 'category') ||
-                lastItem.label === m[1]
-              ) {
-                lastItem.items.push(groupedItem);
-              } else {
-                groupedItems.push({
-                  items: [groupedItem],
-                  label: m[1],
-                  type: 'category',
-                });
-              }
-              continue;
-            }
-            groupedItems.push({...item, label});
-          } else if (item.type === 'doc') {
-            groupedItems.push({
-              ...item,
-              label: classOrInterfaceIdToLabel(item.id),
-            });
-          } else if (item.type === 'category') {
-            groupedItems.push({
-              ...item,
-              label: idToModuleName(item.label),
-            });
-          } else {
-            groupedItems.push(item);
+    return (
+      items
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Docusaurus sidebar item
+        .map((sidebarItem: any) => {
+          if (sidebarItem.type === 'doc' && sidebarItem.id in docLabels) {
+            return {...sidebarItem, label: docLabels[sidebarItem.id]};
+          } else if (sidebarItem.type !== 'category') {
+            return sidebarItem;
           }
-        }
-        return {
-          ...sidebarItem,
-          items: groupedItems,
-          label: capitalizeLabel(sidebarItem.label),
-        };
-      })
-      .sort(sidebarSort);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Docusaurus sidebar items
+          const groupedItems: any[] = [];
+          for (const item of sidebarItem.items) {
+            if (item.type === 'doc' && item.id.match(/^api\/modules\//i)) {
+              const label = idToModuleName(item.id);
+              const lastItem = groupedItems.at(-1);
+              if (
+                lastItem &&
+                lastItem.type === 'category' &&
+                lastItem.label === label
+              ) {
+                lastItem.link = {
+                  id: item.id,
+                  type: 'doc',
+                };
+                continue;
+              }
+              const m = /^(@lexical\/[^/]+)\/(.*)$/.exec(label);
+              if (m) {
+                const groupedItem = {...item, label: m[2]};
+                if (
+                  (lastItem && lastItem.type === 'category') ||
+                  lastItem.label === m[1]
+                ) {
+                  lastItem.items.push(groupedItem);
+                } else {
+                  groupedItems.push({
+                    items: [groupedItem],
+                    label: m[1],
+                    type: 'category',
+                  });
+                }
+                continue;
+              }
+              groupedItems.push({...item, label});
+            } else if (item.type === 'doc') {
+              groupedItems.push({
+                ...item,
+                label: classOrInterfaceIdToLabel(item.id),
+              });
+            } else if (item.type === 'category') {
+              groupedItems.push({
+                ...item,
+                label: idToModuleName(item.label),
+              });
+            } else {
+              groupedItems.push(item);
+            }
+          }
+          return {
+            ...sidebarItem,
+            items: groupedItems,
+            label: capitalizeLabel(sidebarItem.label),
+          };
+        })
+        .sort(sidebarSort)
+    );
   }
   return items;
 };
 
-/** @type {import('@docusaurus/types').ParseFrontMatter} */
-const parseFrontMatter = async (params) => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Docusaurus plugin API
+const parseFrontMatter = async (params: any) => {
   const result = await params.defaultParseFrontMatter(params);
   if (params.filePath.endsWith('/docs/api/modules.md')) {
     Object.assign(result.frontMatter, {
@@ -253,13 +246,12 @@ const parseFrontMatter = async (params) => {
   return result;
 };
 
-/** @type {Partial<import('docusaurus-plugin-typedoc/dist/types').PluginOptions>} */
 const docusaurusPluginTypedocConfig = {
   ...sourceLinkOptions(),
   customAnchorsFormat: 'curlyBrace',
   entryPoints: process.env.FB_INTERNAL
     ? []
-    : packagesManager
+    : packagesManager!
         .getPublicPackages()
         .flatMap((pkg) =>
           pkg
@@ -274,8 +266,14 @@ const docusaurusPluginTypedocConfig = {
   excludeInternal: true,
   plugin: [
     'typedoc-plugin-no-inherit',
-    require.resolve('./src/plugins/lexical-typedoc-plugin-module-name'),
-    require.resolve('./src/plugins/lexical-typedoc-plugin-legacy-router'),
+    path.resolve(
+      __dirname,
+      'src/plugins/lexical-typedoc-plugin-module-name/index.mjs',
+    ),
+    path.resolve(
+      __dirname,
+      'src/plugins/lexical-typedoc-plugin-legacy-router/index.mjs',
+    ),
     'typedoc-plugin-rename-defaults',
   ],
   router: 'legacy',
@@ -298,7 +296,6 @@ const STACKBLITZ_PREFIX = `https://stackblitz.com/github/${GIT_REPO_OWNER}/${GIT
     : GIT_COMMIT_SHA
 }/`;
 
-/** @type {import('@docusaurus/types').Config} */
 const config = {
   baseUrl: '/',
 
@@ -325,7 +322,7 @@ const config = {
     },
     mermaid: true,
     parseFrontMatter,
-    preprocessor: ({fileContent}) =>
+    preprocessor: ({fileContent}: {fileContent: string}) =>
       fileContent.replaceAll(
         'https://stackblitz.com/github/facebook/lexical/tree/main/',
         STACKBLITZ_PREFIX,
@@ -341,7 +338,6 @@ const config = {
       ? null
       : [
           packageDocsPlugin,
-          /** @type {import('./plugins/package-docs/index.mjs').PackageDocsPluginOptions} */
           {
             baseDir: path.resolve(__dirname, '..'),
             editUrl: `${GITHUB_REPO_URL}/tree/main/packages/`,
@@ -397,8 +393,11 @@ const config = {
     ['docusaurus-plugin-typedoc', docusaurusPluginTypedocConfig],
     async function tailwindcss() {
       return {
-        configurePostCss(postcssOptions) {
-          postcssOptions.plugins.push(require('@tailwindcss/postcss'));
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- PostCSS plugin API
+        async configurePostCss(postcssOptions: any) {
+          postcssOptions.plugins.push(
+            (await import('@tailwindcss/postcss')).default,
+          );
           return postcssOptions;
         },
         name: 'docusaurus-tailwindcss',
@@ -444,85 +443,81 @@ const config = {
 
   tagline: 'A text editor framework that does things differently',
 
-  themeConfig:
-    /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
-    ({
-      docs: {
-        sidebar: {
-          autoCollapseCategories: true,
-          hideable: true,
-        },
+  themeConfig: {
+    docs: {
+      sidebar: {
+        autoCollapseCategories: true,
+        hideable: true,
       },
-      navbar: {
-        items: [
-          {
-            label: 'Playground',
-            position: 'left',
-            to: 'https://playground.lexical.dev/',
-          },
-          {
-            label: 'Docs',
-            position: 'left',
-            sidebarId: 'docs',
-            type: 'docSidebar',
-          },
-          process.env.FB_INTERNAL
-            ? {
-                href: 'https://lexical.dev/docs/api/',
-                label: 'API',
-                position: 'left',
-              }
-            : {
-                label: 'API',
-                position: 'left',
-                sidebarId: 'api',
-                type: 'docSidebar',
-              },
+    },
+    navbar: {
+      items: [
+        {
+          label: 'Playground',
+          position: 'left',
+          to: 'https://playground.lexical.dev/',
+        },
+        {
+          label: 'Docs',
+          position: 'left',
+          sidebarId: 'docs',
+          type: 'docSidebar',
+        },
+        process.env.FB_INTERNAL
+          ? {
+              href: 'https://lexical.dev/docs/api/',
+              label: 'API',
+              position: 'left',
+            }
+          : {
+              label: 'API',
+              position: 'left',
+              sidebarId: 'api',
+              type: 'docSidebar',
+            },
 
-          {label: 'Community', position: 'left', to: '/community'},
-          {
-            label: 'Demos',
-            position: 'left',
-            to: '/gallery',
-          },
-          {
-            'aria-label': 'GitHub',
-            className: 'icon-link icon-link-mask icon-link-github',
-            position: 'right',
-            to: GITHUB_REPO_URL,
-          },
-          {
-            'aria-label': 'Discord',
-            className: 'icon-link icon-link-mask icon-link-discord',
-            position: 'right',
-            to: DISCORD_URL,
-          },
-        ].filter((item) => item != null),
-        logo: {
-          alt: 'Lexical',
-          height: 12,
-          src: 'img/logo.svg',
-          srcDark: 'img/logo-dark.svg',
+        {label: 'Community', position: 'left', to: '/community'},
+        {
+          label: 'Demos',
+          position: 'left',
+          to: '/gallery',
         },
+        {
+          'aria-label': 'GitHub',
+          className: 'icon-link icon-link-mask icon-link-github',
+          position: 'right',
+          to: GITHUB_REPO_URL,
+        },
+        {
+          'aria-label': 'Discord',
+          className: 'icon-link icon-link-mask icon-link-discord',
+          position: 'right',
+          to: DISCORD_URL,
+        },
+      ].filter((item) => item != null),
+      logo: {
+        alt: 'Lexical',
+        height: 12,
+        src: 'img/logo.svg',
+        srcDark: 'img/logo-dark.svg',
       },
-      prism: {
-        darkTheme: darkCodeTheme,
-        theme: lightCodeTheme,
-      },
-    }),
+    },
+    prism: {
+      darkTheme: darkCodeTheme,
+      theme: lightCodeTheme,
+    },
+  },
 
   themes: [
     '@docusaurus/theme-mermaid',
     [
       require.resolve('@easyops-cn/docusaurus-search-local'),
-      /** @type {import("@easyops-cn/docusaurus-search-local").PluginOptions} */
-      ({
-        // ... Your options.
+      {
         // `hashed` is recommended as long-term-cache of index file is possible.
         hashed: true,
         indexBlog: false,
         language: ['en'],
-      }),
+      },
     ],
   ],
 
@@ -530,4 +525,4 @@ const config = {
   url: 'https://lexical.dev',
 };
 
-module.exports = config;
+export default config;

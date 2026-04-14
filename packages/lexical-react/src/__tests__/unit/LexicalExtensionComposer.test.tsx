@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {AutoFocusExtension} from '@lexical/extension';
+import {buildEditorFromExtensions} from '@lexical/extension';
 import {PlainTextExtension} from '@lexical/plain-text';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
@@ -15,12 +15,11 @@ import {
   $createTextNode,
   $getRoot,
   defineExtension,
-  type LexicalEditor,
 } from 'lexical';
 import {useEffect} from 'react';
 import {createRoot, type Root} from 'react-dom/client';
 import * as ReactTestUtils from 'shared/react-test-utils';
-import {afterEach, beforeEach, describe, expect, it} from 'vitest';
+import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
 describe('LexicalExtensionComposer', () => {
   const extension = defineExtension({
@@ -59,42 +58,66 @@ describe('LexicalExtensionComposer', () => {
       `<div contenteditable="true" role="textbox" spellcheck="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><br></p></div>`,
     );
   });
-  it('AutoFocusExtension with PlainTextExtension initializes without errors', async () => {
-    // Smoke test for the initialization pattern that triggers the
-    // Firefox Focus tab bug. AutoFocusExtension calls editor.focus()
-    // from a root listener; PlainTextExtension matches the failing
-    // e2e test configuration. Verifies no errors during init and that
-    // a subsequent update after blur does not refocus the editor.
-    const ext = defineExtension({
-      dependencies: [PlainTextExtension, AutoFocusExtension],
-      name: '[test]',
+  it('$commitPendingUpdates flushes deferred callbacks even with no pending state', async () => {
+    // Reproduces the Firefox Focus tab bug. During editor init in
+    // Firefox, a selectionchange event causes a race between microtask
+    // scheduling and synchronous commits that leaves the focus $onUpdate
+    // callback orphaned in _deferred. When the orphaned microtask calls
+    // $commitPendingUpdates and finds _pendingEditorState === null, the
+    // fix ensures it still flushes _deferred rather than returning early.
+    //
+    // The exact Firefox race cannot be triggered in jsdom (jsdom doesn't
+    // fire selectionchange during DOM manipulation), so we create the
+    // race directly: editor.update() schedules a microtask to commit,
+    // then we synchronously commit via setRootElement (consuming the
+    // pending state), then we push a focus-like callback to _deferred,
+    // and let the orphaned microtask fire.
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [PlainTextExtension],
+        name: '[test]',
+      }),
+    );
+
+    // InitialStateExtension's afterRegistration already called
+    // editor.update(), which scheduled microtask A.
+
+    const rootElement = document.createElement('div');
+    rootElement.contentEditable = 'true';
+    container.appendChild(rootElement);
+
+    // setRootElement synchronously commits, consuming microtask A's
+    // pending state. Microtask A is still in the queue.
+    editor.setRootElement(rootElement);
+
+    // Simulate the end state of the Firefox race: editor.focus()'s
+    // $onUpdate callback is in _deferred, but _pendingEditorState was
+    // already consumed by a synchronous selectionchange commit. The
+    // orphaned microtask A will call $commitPendingUpdates and find
+    // _pendingEditorState === null.
+    //
+    // This uses _deferred directly because the Firefox race cannot be
+    // triggered in jsdom: the only way to add to _deferred without also
+    // creating a pending state is through $beginUpdate's inline path
+    // (activeEditor === editor), which requires an active selectionchange
+    // during setRootElement that jsdom doesn't fire.
+    const focusCallback = vi.fn(() => {
+      rootElement.focus();
     });
+    editor._deferred.push(focusCallback);
 
-    function TestEditor() {
-      return <LexicalExtensionComposer extension={ext} />;
-    }
+    // Let microtask A fire. Without the fix, it finds null and
+    // returns early — the callback stays stuck in _deferred.
+    await Promise.resolve();
 
-    await ReactTestUtils.act(async () => {
-      reactRoot.render(<TestEditor />);
-      await Promise.resolve();
-    });
+    // The fix ensures the orphaned microtask flushes _deferred
+    expect(focusCallback).toHaveBeenCalledTimes(1);
 
-    const editorElement = container.querySelector(
-      '[data-lexical-editor="true"]',
-    ) as HTMLElement & {__lexicalEditor?: LexicalEditor | null};
-    expect(editorElement).not.toBeNull();
-    const editor = editorElement.__lexicalEditor!;
-
-    // Blur the editor (user tabs away)
-    editorElement.blur();
-
-    // A subsequent no-op update must not refocus the editor
-    await ReactTestUtils.act(async () => {
-      editor.update(() => {});
-      await Promise.resolve();
-    });
-
-    expect(editorElement).not.toBe(document.activeElement);
+    // Verify no leakage: blur and do another update
+    focusCallback.mockClear();
+    rootElement.blur();
+    await editor.update(() => {});
+    expect(focusCallback).toHaveBeenCalledTimes(0);
   });
 
   it('Provides a context', async () => {

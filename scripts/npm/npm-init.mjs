@@ -6,15 +6,15 @@
  *
  */
 // @ts-check
-// npm-init can not use strict mode because PromZard is very strange
-// and does not simply require this module
-/* eslint-disable strict */
 /* eslint-disable sort-keys-fix/sort-keys-fix */
 
-const path = require('node:path');
-const npmToWwwName = require('../www/npmToWwwName');
-const argv = require('minimist')(process.argv.slice(2));
-const {PackageMetadata} = require('../shared/PackageMetadata');
+import minimist from 'minimist';
+import path from 'node:path';
+
+import {PackageMetadata} from '../shared/PackageMetadata.mjs';
+import npmToWwwName from '../www/npmToWwwName.mjs';
+
+const argv = minimist(process.argv.slice(2));
 
 const lexicalPkg = new PackageMetadata('packages/lexical/package.json');
 
@@ -34,7 +34,7 @@ if (
 }
 const pkgDirName = path.basename(workspace);
 
-module.exports = {
+export default {
   name: pkgDirName.replace(/^lexical-/, '@lexical/'),
   description: '',
   keywords: ['lexical', 'editor'],

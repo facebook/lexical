@@ -11,7 +11,7 @@ import * as fs from 'fs-extra';
 import * as path from 'node:path';
 import {describe, expect, it} from 'vitest';
 
-import transformErrorMessages from '../../transform-error-messages';
+import transformErrorMessages from '../../transform-error-messages.mjs';
 
 const prettierConfig = prettier.resolveConfig(__filename) || {};
 

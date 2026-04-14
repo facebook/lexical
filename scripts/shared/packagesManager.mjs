@@ -6,12 +6,11 @@
  *
  */
 // @ts-check
-'use strict';
 
-const path = require('node:path');
-const glob = require('glob');
+import {glob} from 'glob';
+import path from 'node:path';
 
-const {PackageMetadata} = require('./PackageMetadata');
+import {PackageMetadata} from './PackageMetadata.mjs';
 
 /**
  *
@@ -123,10 +122,10 @@ class PackagesManager {
   }
 }
 
-exports.packagesManager = new PackagesManager(
+export const packagesManager = new PackagesManager(
   glob.sync(
     path.resolve(
-      path.dirname(path.dirname(__dirname)),
+      path.dirname(path.dirname(import.meta.dirname)),
       'packages/*/package.json',
     ),
     {windowsPathsNoEscape: true},

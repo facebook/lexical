@@ -5,13 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-'use strict';
 // @ts-check
 
 /**
  * Data structure to manage reading from and writing to codes.json
  */
-class ErrorMap {
+export default class ErrorMap {
   /**
    * The map of error code numbers (as String(number)) to the error messages
    *
@@ -21,7 +20,7 @@ class ErrorMap {
   /**
    * The map of error messages to the error code numbers (as integers)
    *
-   * @type {Record<string, number}
+   * @type {Record<string, number>}
    */
   inverseErrorMap = {};
   /**
@@ -92,5 +91,3 @@ class ErrorMap {
     }
   }
 }
-
-module.exports = ErrorMap;

@@ -6,11 +6,10 @@
  *
  */
 // @ts-check
-'use strict';
 
-const fs = require('fs-extra');
-const glob = require('glob');
-const ts = require('typescript');
+import fs from 'fs-extra';
+import {glob} from 'glob';
+import ts from 'typescript';
 
 const pretty = process.env.CI !== 'true';
 

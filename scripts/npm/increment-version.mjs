@@ -8,10 +8,11 @@
  *
  */
 
-'use strict';
+import minimist from 'minimist';
 
-const {spawn} = require('../shared/childProcess');
-const argv = require('minimist')(process.argv.slice(2));
+import {spawn} from '../shared/childProcess.mjs';
+
+const argv = minimist(process.argv.slice(2));
 
 const increment = argv.i || process.env.INCREMENT;
 const channel = argv.channel || process.env.CHANNEL;

@@ -17,20 +17,15 @@ import terser from '@rollup/plugin-terser';
 import fs from 'fs-extra';
 import {glob} from 'glob';
 import minimist from 'minimist';
-import {createRequire} from 'module';
 import path from 'path';
 import {rollup} from 'rollup';
-import {fileURLToPath} from 'url';
 
-import {exec} from './shared/childProcess.js';
-import {packagesManager} from './shared/packagesManager.js';
-import npmToWwwName from './www/npmToWwwName.js';
+import transformErrorMessages from './error-codes/transform-error-messages.mjs';
+import {exec} from './shared/childProcess.mjs';
+import {packagesManager} from './shared/packagesManager.mjs';
+import npmToWwwName from './www/npmToWwwName.mjs';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Create require for loading CJS modules
-const require = createRequire(import.meta.url);
+const __dirname = import.meta.dirname;
 
 const argv = minimist(process.argv.slice(2));
 
@@ -277,10 +272,7 @@ async function build(
         exclude: '**/node_modules/**',
         extensions,
         plugins: [
-          [
-            require('./error-codes/transform-error-messages'),
-            {extractCodes, noMinify: !isProd},
-          ],
+          [transformErrorMessages, {extractCodes, noMinify: !isProd}],
           '@babel/plugin-transform-optional-catch-binding',
         ],
         presets: [

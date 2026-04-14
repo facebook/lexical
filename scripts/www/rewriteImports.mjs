@@ -6,13 +6,12 @@
  *
  */
 
-'use strict';
+import fs from 'fs-extra';
+import {glob} from 'glob';
+import path from 'node:path';
 
-const fs = require('fs-extra');
-const glob = require('glob');
-const path = require('node:path');
-const {packagesManager} = require('../shared/packagesManager');
-const transformFlowFileContents = require('./transformFlowFileContents');
+import {packagesManager} from '../shared/packagesManager.mjs';
+import transformFlowFileContents from './transformFlowFileContents.mjs';
 
 // This script attempts to find all Flow definition modules, and makes
 // them compatible with www. Specifically, it finds any imports that

@@ -9,7 +9,6 @@
 // From: https://github.com/payloadcms/payload/blob/main/packages/eslint-plugin/customRules/no-imports-from-self.js
 
 import fs from 'node:fs';
-import {createRequire} from 'node:module';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 
@@ -39,10 +38,8 @@ function findMonorepoRoot() {
   throw new Error('Could not find monorepo root');
 }
 
-// PackageMetadata.js is CJS (uses fs-extra), so use createRequire to load it
-const require = createRequire(import.meta.url);
-const {PackageMetadata} = require(
-  path.join(findMonorepoRoot(), 'scripts/shared/PackageMetadata.js'),
+const {PackageMetadata} = await import(
+  path.join(findMonorepoRoot(), 'scripts/shared/PackageMetadata.mjs')
 );
 
 /**

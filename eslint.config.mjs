@@ -311,18 +311,10 @@ export default [
 
   // Override: Scripts (no header required, allow console)
   {
-    files: ['scripts/**/*.js'],
+    files: ['scripts/**/*.js', 'scripts/**/*.mjs'],
     rules: {
       'header/header': OFF,
       'no-console': OFF,
-    },
-  },
-
-  // Override: Scripts .mjs (no header required)
-  {
-    files: ['scripts/**/*.mjs'],
-    rules: {
-      'header/header': OFF,
     },
   },
 

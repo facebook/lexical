@@ -71,7 +71,6 @@ import {SKIP_SELECTION_FOCUS_TAG} from './LexicalUpdateTags';
 import {
   $findMatchingParent,
   $getCompositionKey,
-  $getEditorDOMRenderConfig,
   $getNearestRootOrShadowRoot,
   $getNodeByKey,
   $getNodeFromDOM,
@@ -2313,11 +2312,7 @@ function $internalResolveSelectionPoint(
           elementDOM !== null,
           '$internalResolveSelectionPoint: node in DOM but not keyToDOMMap',
         );
-        const slot = $getEditorDOMRenderConfig(editor).$getDOMSlot(
-          resolvedElement,
-          elementDOM,
-          editor,
-        );
+        const slot = resolvedElement.getDOMSlot(elementDOM);
         [resolvedElement, resolvedOffset] = slot.resolveChildIndex(
           resolvedElement,
           elementDOM,

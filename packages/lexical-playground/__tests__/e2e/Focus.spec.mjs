@@ -20,18 +20,15 @@ test.describe('Focus', () => {
   test(`can tab out of the editor`, async ({browserName, page, isRichText}) => {
     // This won't work in webkit on macOS as tab works differently unless changed in
     // system preferences.
-    // Consistently fails in Firefox on Linux CI (focus doesn't leave the
-    // contenteditable after Tab in plain text mode).
-    test.skip(isRichText || browserName !== 'chromium');
+    test.skip(isRichText || browserName === 'webkit');
     await focusEditor(page);
     await page.keyboard.press('Tab');
-    await expect(async () => {
-      const isEditorFocused = await page.evaluate(() => {
-        const editor = document.querySelector('div[contenteditable="true"]');
-        return editor === document.activeElement;
-      });
-      expect(isEditorFocused).toBe(false);
-    }).toPass();
+    const isEditorFocused = await page.evaluate(() => {
+      const editor = document.querySelector('div[contenteditable="true"]');
+      return editor === document.activeElement;
+    });
+
+    expect(isEditorFocused).toBe(false);
   });
 
   test(`selection remains internally when clicking outside the editor`, async ({

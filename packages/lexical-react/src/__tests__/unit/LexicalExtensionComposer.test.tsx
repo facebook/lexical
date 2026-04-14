@@ -5,7 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {buildEditorFromExtensions} from '@lexical/extension';
+import {
+  AutoFocusExtension,
+  buildEditorFromExtensions,
+} from '@lexical/extension';
 import {PlainTextExtension} from '@lexical/plain-text';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
@@ -19,7 +22,7 @@ import {
 import {useEffect} from 'react';
 import {createRoot, type Root} from 'react-dom/client';
 import * as ReactTestUtils from 'shared/react-test-utils';
-import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
+import {afterEach, beforeEach, describe, expect, it} from 'vitest';
 
 describe('LexicalExtensionComposer', () => {
   const extension = defineExtension({
@@ -59,65 +62,82 @@ describe('LexicalExtensionComposer', () => {
     );
   });
   it('$commitPendingUpdates flushes deferred callbacks even with no pending state', async () => {
-    // Reproduces the Firefox Focus tab bug. During editor init in
-    // Firefox, a selectionchange event causes a race between microtask
-    // scheduling and synchronous commits that leaves the focus $onUpdate
-    // callback orphaned in _deferred. When the orphaned microtask calls
-    // $commitPendingUpdates and finds _pendingEditorState === null, the
-    // fix ensures it still flushes _deferred rather than returning early.
+    // Reproduces the Firefox Focus tab bug. When editor.focus() runs
+    // while activeEditor === editor (the inline updateEditorSync path),
+    // its $onUpdate callback is added to _deferred without creating a
+    // new pending state or microtask. The callback depends on the outer
+    // update's microtask to flush it. If that microtask finds
+    // _pendingEditorState === null (consumed by a synchronous commit),
+    // the fix ensures it still flushes _deferred.
     //
-    // The exact Firefox race cannot be triggered in jsdom (jsdom doesn't
-    // fire selectionchange during DOM manipulation), so we create the
-    // race directly: editor.update() schedules a microtask to commit,
-    // then we synchronously commit via setRootElement (consuming the
-    // pending state), then we push a focus-like callback to _deferred,
-    // and let the orphaned microtask fire.
-    using editor = buildEditorFromExtensions(
-      defineExtension({
-        dependencies: [PlainTextExtension],
-        name: '[test]',
-      }),
+    // We reproduce this by calling setRootElement inside editor.update()
+    // so that the AutoFocusExtension root listener fires with
+    // activeEditor === editor, triggering the inline path.
+
+    // Patch contentEditable to delegate to attribute (jsdom bug)
+    const ceDescriptor = Object.getOwnPropertyDescriptor(
+      HTMLElement.prototype,
+      'contentEditable',
     );
-
-    // InitialStateExtension's afterRegistration already called
-    // editor.update(), which scheduled microtask A.
-
-    const rootElement = document.createElement('div');
-    rootElement.contentEditable = 'true';
-    container.appendChild(rootElement);
-
-    // setRootElement synchronously commits, consuming microtask A's
-    // pending state. Microtask A is still in the queue.
-    editor.setRootElement(rootElement);
-
-    // Simulate the end state of the Firefox race: editor.focus()'s
-    // $onUpdate callback is in _deferred, but _pendingEditorState was
-    // already consumed by a synchronous selectionchange commit. The
-    // orphaned microtask A will call $commitPendingUpdates and find
-    // _pendingEditorState === null.
-    //
-    // This uses _deferred directly because the Firefox race cannot be
-    // triggered in jsdom: the only way to add to _deferred without also
-    // creating a pending state is through $beginUpdate's inline path
-    // (activeEditor === editor), which requires an active selectionchange
-    // during setRootElement that jsdom doesn't fire.
-    const focusCallback = vi.fn(() => {
-      rootElement.focus();
+    Object.defineProperty(HTMLElement.prototype, 'contentEditable', {
+      configurable: true,
+      get(this: HTMLElement) {
+        const attr = this.getAttribute('contenteditable');
+        return attr === 'true' || attr === ''
+          ? 'true'
+          : attr === 'false'
+            ? 'false'
+            : 'inherit';
+      },
+      set(this: HTMLElement, value: string) {
+        if (value === 'inherit') {
+          this.removeAttribute('contenteditable');
+        } else {
+          this.setAttribute('contenteditable', value);
+        }
+      },
     });
-    editor._deferred.push(focusCallback);
 
-    // Let microtask A fire. Without the fix, it finds null and
-    // returns early — the callback stays stuck in _deferred.
-    await Promise.resolve();
+    try {
+      using editor = buildEditorFromExtensions(
+        defineExtension({
+          dependencies: [PlainTextExtension, AutoFocusExtension],
+          name: '[test]',
+        }),
+      );
 
-    // The fix ensures the orphaned microtask flushes _deferred
-    expect(focusCallback).toHaveBeenCalledTimes(1);
+      const rootElement = document.createElement('div');
+      rootElement.contentEditable = 'true';
+      container.appendChild(rootElement);
 
-    // Verify no leakage: blur and do another update
-    focusCallback.mockClear();
-    rootElement.blur();
-    await editor.update(() => {});
-    expect(focusCallback).toHaveBeenCalledTimes(0);
+      // Flush InitialStateExtension's microtask before setRootElement.
+      await Promise.resolve();
+
+      // Call setRootElement inside editor.update() so that when the
+      // root listener fires and calls editor.focus(), activeEditor ===
+      // editor. This makes editor.focus() → updateEditorSync take the
+      // inline path: $onUpdate pushes to _deferred, but NO $beginUpdate,
+      // NO pending state, NO microtask. The callback is orphaned.
+      editor.update(() => {
+        editor.setRootElement(rootElement);
+      });
+
+      // _deferred has the stuck focus callback.
+      expect(editor._deferred.length).toBeGreaterThan(0);
+
+      // After microtasks flush, _deferred must be empty. Without the
+      // fix, the orphaned microtask finds null and returns early.
+      await Promise.resolve();
+      expect(editor._deferred).toHaveLength(0);
+    } finally {
+      if (ceDescriptor) {
+        Object.defineProperty(
+          HTMLElement.prototype,
+          'contentEditable',
+          ceDescriptor,
+        );
+      }
+    }
   });
 
   it('Provides a context', async () => {

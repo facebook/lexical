@@ -51,15 +51,11 @@ jobs:
         id: playwright-cache
         with:
           path: ${{ env.cache_playwright_path }}
-          key: playwright-${{ inputs.node-version }}-${{ runner.os }}-${{ runner.arch }}-v${{ secrets.CACHE_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
+          key: playwright-v2-${{ inputs.node-version }}-${{ runner.os }}-${{ runner.arch }}-v${{ secrets.CACHE_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
       - name: Install playwright
-        run: pnpm exec playwright install
-      - name: Save playwright to cache
-        uses: actions/cache/save@v5
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-        with:
-          path: ${{ env.cache_playwright_path }}
-          key: ${{ steps.playwright-cache.outputs.cache-primary-key }}
+        run: |
+          pnpm exec playwright install
+          pnpm exec playwright install --list
       - name: Run tests
         run: pnpm run ${{ env.test_script }}
       - name: Upload Artifacts

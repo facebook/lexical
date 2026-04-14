@@ -8,7 +8,6 @@
 import {type Signal, signal} from './signals';
 
 /**
- * @experimental
  * Create a Signal that will subscribe to a value from an external store when watched, similar to
  * React's [useSyncExternalStore](https://react.dev/reference/react/useSyncExternalStore).
  *

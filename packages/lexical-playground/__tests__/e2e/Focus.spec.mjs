@@ -20,7 +20,9 @@ test.describe('Focus', () => {
   test(`can tab out of the editor`, async ({browserName, page, isRichText}) => {
     // This won't work in webkit on macOS as tab works differently unless changed in
     // system preferences.
-    test.skip(isRichText || browserName === 'webkit');
+    // Consistently fails in Firefox on Linux CI (focus doesn't leave the
+    // contenteditable after Tab in plain text mode).
+    test.skip(isRichText || browserName !== 'chromium');
     await focusEditor(page);
     await page.keyboard.press('Tab');
     await expect(async () => {

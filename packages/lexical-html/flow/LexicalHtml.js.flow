@@ -10,11 +10,9 @@
 import type {
   AnyLexicalExtension,
   BaseSelection,
-  DOMConversionFn,
   DOMExportOutput,
   EditorDOMRenderConfig,
   ElementDOMSlot,
-  ElementNode,
   LexicalEditor,
   LexicalExtension,
   LexicalNode,
@@ -167,8 +165,6 @@ declare export function $withRenderContext(
 
 // Existing exports
 
-declare export var IGNORE_TAGS: Set<string>;
-
 declare export function $generateNodesFromDOM(
   editor: LexicalEditor,
   dom: Document,
@@ -191,18 +187,3 @@ declare export function $generateHtmlFromNodes(
   selection?: BaseSelection | null,
 ): string;
 
-declare export function getConversionFunction(
-  domNode: Node,
-  editor: LexicalEditor,
-): DOMConversionFn | null;
-
-declare export function $unwrapArtificialNodes(
-  allArtificialNodes: Array<LexicalNode>,
-): void;
-
-declare export function $wrapContinuousInlinesInPlace(
-  nodes: LexicalNode[],
-  $createWrapperFn: () => ElementNode,
-): void;
-
-declare export function isDomNodeBetweenTwoInlineNodes(node: Node): boolean;

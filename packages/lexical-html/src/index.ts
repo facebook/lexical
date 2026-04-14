@@ -135,8 +135,7 @@ function inlineStylesFromStyleSheets(doc: Document): void {
   }
 }
 
-/** Set of tag names that are ignored during DOM-to-Lexical conversion. */
-export const IGNORE_TAGS = new Set(['STYLE', 'SCRIPT']);
+const IGNORE_TAGS = new Set(['STYLE', 'SCRIPT']);
 
 /**
  * How you parse your html string to get a document is left up to you. In the browser you can use the native
@@ -333,11 +332,7 @@ function $appendNodesToHTML(
   return shouldInclude;
 }
 
-/**
- * Get the highest-priority DOM conversion function registered for the given DOM node.
- * @experimental
- */
-export function getConversionFunction(
+function getConversionFunction(
   domNode: Node,
   editor: LexicalEditor,
 ): DOMConversionFn | null {
@@ -522,12 +517,7 @@ function wrapContinuousInlines(
   return out;
 }
 
-/**
- * Replace artificial nodes with their children, inserting linebreaks between
- * adjacent artificial nodes.
- * @experimental
- */
-export function $unwrapArtificialNodes(
+function $unwrapArtificialNodes(
   allArtificialNodes: Array<ArtificialNode__DO_NOT_USE>,
 ) {
   // Replace artificial node with its children, inserting a linebreak
@@ -548,35 +538,7 @@ export function $unwrapArtificialNodes(
   }
 }
 
-/**
- * Wrap contiguous runs of inline nodes in block wrappers, mutating the array in place.
- * @experimental
- */
-export function $wrapContinuousInlinesInPlace(
-  nodes: LexicalNode[],
-  $createWrapperFn: () => ElementNode,
-): void {
-  let j = 0;
-  for (let i = 0, wrapper: undefined | ElementNode; i < nodes.length; i++) {
-    const node = nodes[i];
-    if (!node.isInline()) {
-      wrapper = undefined;
-      nodes[j++] = node;
-    } else {
-      if (!wrapper) {
-        nodes[j++] = wrapper = $createWrapperFn();
-      }
-      wrapper.append(node);
-    }
-  }
-  nodes.length = j;
-}
-
-/**
- * Returns true if the given DOM node is between two inline sibling nodes.
- * @experimental
- */
-export function isDomNodeBetweenTwoInlineNodes(node: Node): boolean {
+function isDomNodeBetweenTwoInlineNodes(node: Node): boolean {
   if (node.nextSibling == null || node.previousSibling == null) {
     return false;
   }

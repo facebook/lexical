@@ -1547,7 +1547,6 @@ export function insertRangeAfter(
 
 /**
  * Returns true if the given value is a {@link LexicalNode} instance.
- * @experimental
  */
 export function $isLexicalNode(
   node: null | undefined | LexicalNode,

@@ -111,6 +111,10 @@ export function setContextValue<Ctx extends AnyContextSymbol, V>(
   return value;
 }
 
+/**
+ * Create a context config pair that sets a value in the render context.
+ * @experimental
+ */
 export function contextValue<Ctx extends AnyContextSymbol, V>(
   cfg: ContextConfig<Ctx, V>,
   value: V,
@@ -118,6 +122,10 @@ export function contextValue<Ctx extends AnyContextSymbol, V>(
   return [cfg, value];
 }
 
+/**
+ * Create a context config updater that transforms a value in the render context.
+ * @experimental
+ */
 export function contextUpdater<Ctx extends AnyContextSymbol, V>(
   cfg: ContextConfig<Ctx, V>,
   updater: (prev: V) => V,

@@ -135,6 +135,7 @@ function inlineStylesFromStyleSheets(doc: Document): void {
   }
 }
 
+/** Set of tag names that are ignored during DOM-to-Lexical conversion. */
 export const IGNORE_TAGS = new Set(['STYLE', 'SCRIPT']);
 
 /**
@@ -175,6 +176,11 @@ export function $generateNodesFromDOM(
   return lexicalNodes;
 }
 
+/**
+ * Generate DOM nodes from the editor state into the given container element,
+ * using the editor's {@link EditorDOMRenderConfig}.
+ * @experimental
+ */
 export function $generateDOMFromNodes<T extends HTMLElement | DocumentFragment>(
   container: T,
   selection: null | BaseSelection = null,
@@ -201,6 +207,11 @@ export function $generateDOMFromNodes<T extends HTMLElement | DocumentFragment>(
   });
 }
 
+/**
+ * Generate DOM nodes from a root node into the given container element,
+ * including the root node itself. Uses the editor's {@link EditorDOMRenderConfig}.
+ * @experimental
+ */
 export function $generateDOMFromRoot<T extends HTMLElement | DocumentFragment>(
   container: T,
   root: LexicalNode = $getRoot(),
@@ -322,6 +333,10 @@ function $appendNodesToHTML(
   return shouldInclude;
 }
 
+/**
+ * Get the highest-priority DOM conversion function registered for the given DOM node.
+ * @experimental
+ */
 export function getConversionFunction(
   domNode: Node,
   editor: LexicalEditor,
@@ -507,6 +522,11 @@ function wrapContinuousInlines(
   return out;
 }
 
+/**
+ * Replace artificial nodes with their children, inserting linebreaks between
+ * adjacent artificial nodes.
+ * @experimental
+ */
 export function $unwrapArtificialNodes(
   allArtificialNodes: Array<ArtificialNode__DO_NOT_USE>,
 ) {
@@ -528,6 +548,10 @@ export function $unwrapArtificialNodes(
   }
 }
 
+/**
+ * Wrap contiguous runs of inline nodes in block wrappers, mutating the array in place.
+ * @experimental
+ */
 export function $wrapContinuousInlinesInPlace(
   nodes: LexicalNode[],
   $createWrapperFn: () => ElementNode,
@@ -548,6 +572,10 @@ export function $wrapContinuousInlinesInPlace(
   nodes.length = j;
 }
 
+/**
+ * Returns true if the given DOM node is between two inline sibling nodes.
+ * @experimental
+ */
 export function isDomNodeBetweenTwoInlineNodes(node: Node): boolean {
   if (node.nextSibling == null || node.previousSibling == null) {
     return false;

@@ -31,6 +31,7 @@ import {
  * Note that to support the ValueOrUpdater pattern you can not use a
  * function for V (but you may wrap it in an array or object).
  *
+ * @experimental
  * @__NO_SIDE_EFFECTS__
  */
 export function createRenderState<V>(
@@ -47,12 +48,14 @@ export function createRenderState<V>(
 }
 
 /**
- * true if the export was initiated from the root of the document
+ * Render context state that is true if the export was initiated from the root of the document.
+ * @experimental
  */
 export const RenderContextRoot = createRenderState('root', Boolean);
 
 /**
- * true if this is an export operation ($generateHtmlFromNodes)
+ * Render context state that is true if this is an export operation ($generateHtmlFromNodes).
+ * @experimental
  */
 export const RenderContextExport = createRenderState('isExport', Boolean);
 
@@ -75,6 +78,10 @@ function getRenderContext(
   );
 }
 
+/**
+ * Get a render context value during a DOM render or export operation.
+ * @experimental
+ */
 export function $getRenderContextValue<V>(
   cfg: RenderStateConfig<V>,
   editor: LexicalEditor = $getEditor(),
@@ -82,6 +89,10 @@ export function $getRenderContextValue<V>(
   return getContextValue(getRenderContext(editor), cfg);
 }
 
+/**
+ * Execute a callback within a render context with the given config pairs.
+ * @experimental
+ */
 export const $withRenderContext: (
   cfg: readonly AnyRenderStateConfigPairOrUpdater[],
   editor?: LexicalEditor,

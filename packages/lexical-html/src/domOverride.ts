@@ -12,6 +12,7 @@ import type {LexicalNode} from 'lexical';
  * A convenience function for type inference when constructing DOM overrides for
  * use with {@link DOMRenderExtension}.
  *
+ * @experimental
  * @__NO_SIDE_EFFECTS__
  */
 

@@ -612,7 +612,7 @@ export function getTransformSetFromKlass(
   return transforms;
 }
 
-/** @internal */
+/** @internal @experimental */
 export const DEFAULT_EDITOR_DOM_CONFIG: EditorDOMRenderConfig = {
   $createDOM: (node, editor) => node.createDOM(editor._config, editor),
   $exportDOM: (node, editor) => {

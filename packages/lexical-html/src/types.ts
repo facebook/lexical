@@ -17,44 +17,55 @@ import type {
   StateConfig,
 } from 'lexical';
 
+/** @experimental */
 export type AnyContextSymbol = typeof DOMRenderContextSymbol;
 
+/** @experimental */
 export type ContextRecord<_K extends symbol> = Record<string | symbol, unknown>;
 
+/** @experimental */
 export type ContextConfig<Sym extends symbol, V> = StateConfig<symbol, V> & {
   readonly [K in Sym]?: true;
 };
 
+/** @experimental */
 export type ContextConfigUpdater<Ctx extends AnyContextSymbol, V> = {
   readonly cfg: ContextConfig<Ctx, V>;
   readonly updater: (prev: V) => V;
 };
+/** @experimental */
 export type ContextConfigPair<Ctx extends AnyContextSymbol, V> = readonly [
   ContextConfig<Ctx, V>,
   V,
 ];
 
+/** @experimental */
 export type ContextPairOrUpdater<Ctx extends AnyContextSymbol, V> =
   | ContextConfigPair<Ctx, V>
   | ContextConfigUpdater<Ctx, V>;
 
+/** @experimental */
 export type AnyContextConfigPairOrUpdater<Ctx extends AnyContextSymbol> =
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ContextPairOrUpdater<Ctx, any>;
 
+/** @experimental */
 export interface DOMRenderExtensionOutput {
   defaults: undefined | ContextRecord<typeof DOMRenderContextSymbol>;
 }
 
+/** @experimental */
 export type RenderStateConfig<V> = ContextConfig<
   typeof DOMRenderContextSymbol,
   V
 >;
 
+/** @experimental */
 export type AnyRenderStateConfigPairOrUpdater = AnyContextConfigPairOrUpdater<
   typeof DOMRenderContextSymbol
 >;
 
+/** @experimental */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyRenderStateConfig = RenderStateConfig<any>;
 
@@ -68,6 +79,7 @@ export interface DOMRenderConfig {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyDOMRenderMatch = DOMRenderMatch<any>;
 
+/** @experimental */
 export type NodeMatch<T extends LexicalNode> =
   | Klass<T>
   | ((node: LexicalNode) => node is T);

@@ -28,6 +28,11 @@ describe('prepare-release tests', () => {
 });
 ['examples', 'scripts/__tests__/integration/fixtures']
   .flatMap((packagesDir) =>
-    glob.sync(`${packagesDir}/*/package.json`, {windowsPathsNoEscape: true}),
+    glob.sync(`${packagesDir}/*/package.json`, {
+      // dev-* examples are workspace packages with workspace:* deps
+      // and cannot be tested with published tarballs
+      ignore: ['examples/dev-*/package.json'],
+      windowsPathsNoEscape: true,
+    }),
   )
   .forEach((exampleJsonPath) => describeExample(exampleJsonPath));

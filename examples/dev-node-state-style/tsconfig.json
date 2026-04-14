@@ -20,6 +20,7 @@
     // "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src"],
+  "extends": ["../../tsconfig.json"],
+  "include": ["src", "../../libdefs/*.d.ts"],
   "references": [{"path": "./tsconfig.node.json"}]
 }

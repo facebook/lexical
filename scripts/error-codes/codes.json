@@ -334,9 +334,5 @@
   "332": "Element nodes must be mapped as a single node",
   "333": "Text nodes must be mapped to XmlText",
   "334": "Node with key %s changed from ElementNode to !ElementNode",
-  "335": "tableObserver not found for tableKey: %s",
-  "336": "$getDOMSlot called on a non-ElementNode (key %s type %s)",
-  "337": "Unable to find an active editor. This method can only be used synchronously during the callback of editor.update(), editor.read(), or editor.getEditorState().read(..., {editor}).%s",
-  "338": "To use $generateHtmlFromNodes in headless mode please initialize a headless browser implementation such as JSDom or use withDOM from @lexical/headless/dom before calling this function.",
-  "339": "Node class %s with type %s not registered in editor"
+  "335": "tableObserver not found for tableKey: %s"
 }

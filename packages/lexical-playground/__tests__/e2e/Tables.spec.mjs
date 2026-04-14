@@ -1664,11 +1664,13 @@ test.describe.parallel('Tables', () => {
     await page.keyboard.press('Enter');
 
     const collapsibleOpeningTag =
-      browserName === 'chromium'
+      browserName === 'chromium' || browserName === 'firefox'
         ? '<div class="Collapsible__container" open="">'
         : '<details class="Collapsible__container" open="">';
     const collapsibleClosingTag =
-      browserName === 'chromium' ? '</div>' : '</details>';
+      browserName === 'chromium' || browserName === 'firefox'
+        ? '</div>'
+        : '</details>';
 
     await assertHTML(
       page,

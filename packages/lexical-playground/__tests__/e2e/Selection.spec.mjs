@@ -621,7 +621,10 @@ test.describe.parallel('Selection', () => {
     await moveRight(page, 3);
     await deleteForward(page);
 
-    const collapsibleTag = browserName === 'chromium' ? 'div' : 'details';
+    const collapsibleTag =
+      browserName === 'chromium' || browserName === 'firefox'
+        ? 'div'
+        : 'details';
     await assertHTML(
       page,
       html`
@@ -665,7 +668,10 @@ test.describe.parallel('Selection', () => {
     await moveLeft(page, 'after'.length);
     await deleteBackward(page);
 
-    const collapsibleTag = browserName === 'chromium' ? 'div' : 'details';
+    const collapsibleTag =
+      browserName === 'chromium' || browserName === 'firefox'
+        ? 'div'
+        : 'details';
     await assertHTML(
       page,
       html`
@@ -692,6 +698,75 @@ test.describe.parallel('Selection', () => {
         </p>
       `,
     );
+  });
+
+  test('Arrow keys navigate into/out of collapsible content in all browsers (#8348)', async ({
+    page,
+    isPlainText,
+    browserName,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+
+    await page.keyboard.type('before');
+    await insertCollapsible(page);
+    await page.keyboard.type('title');
+    await moveRight(page, 2);
+    await page.keyboard.type('after');
+
+    await moveToEditorBeginning(page);
+    await moveDown(page, 1);
+    await moveDown(page, 1);
+
+    const collapsibleTag =
+      browserName === 'chromium' || browserName === 'firefox'
+        ? 'div'
+        : 'details';
+
+    await assertHTML(
+      page,
+      html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">before</span>
+          </p>
+          <${collapsibleTag} class="Collapsible__container" dir="auto" open="">
+            <summary class="Collapsible__title">
+              <p class="PlaygroundEditorTheme__paragraph">
+                <span data-lexical-text="true">title</span>
+              </p>
+            </summary>
+            <div class="Collapsible__content">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </div>
+          </${collapsibleTag}>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">after</span>
+          </p>
+        `,
+    );
+
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [1, 1, 0],
+      focusOffset: 0,
+      focusPath: [1, 1, 0],
+    });
+
+    await moveUp(page, 1);
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [1, 0, 0, 0, 0],
+      focusOffset: 0,
+      focusPath: [1, 0, 0, 0, 0],
+    });
+
+    await moveUp(page, 1);
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [0, 0, 0],
+      focusOffset: 0,
+      focusPath: [0, 0, 0],
+    });
   });
 
   test(`Can't delete forward a Table`, async ({page, isPlainText}) => {

@@ -123,11 +123,7 @@ class PackagesManager {
 }
 
 export const packagesManager = new PackagesManager(
-  glob.sync(
-    path.resolve(
-      path.dirname(path.dirname(import.meta.dirname)),
-      'packages/*/package.json',
-    ),
-    {windowsPathsNoEscape: true},
-  ),
+  glob.sync(path.resolve('packages/*/package.json'), {
+    windowsPathsNoEscape: true,
+  }),
 );

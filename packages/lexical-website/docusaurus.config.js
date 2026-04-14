@@ -5,23 +5,19 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-// @ts-nocheck - Docusaurus config, not part of the TypeScript build
-// Note: type annotations allow IDEs autocompletion
 
-import fs from 'node:fs';
-import {createRequire} from 'node:module';
-import path from 'node:path';
-import {themes} from 'prism-react-renderer';
+'use strict';
+// @ts-check
+// Note: type annotations allow type checking and IDEs autocompletion
 
-import slugifyPlugin from './src/plugins/lexical-remark-slugify-anchors/index.js';
-
-const require = createRequire(import.meta.url);
-const __dirname = import.meta.dirname;
-
-const {github: lightCodeTheme, dracula: darkCodeTheme} = themes;
+const {github: lightCodeTheme, dracula: darkCodeTheme} =
+  require('prism-react-renderer').themes;
+const slugifyPlugin = require('./src/plugins/lexical-remark-slugify-anchors');
 const {packagesManager} = process.env.FB_INTERNAL
   ? {}
-  : await import('../../scripts/shared/packagesManager.mjs');
+  : require('../../scripts/shared/packagesManager');
+const path = require('node:path');
+const fs = require('node:fs');
 
 /**
  * Build webpack resolve.alias entries that map each lexical package's module
@@ -400,10 +396,8 @@ const config = {
     ['docusaurus-plugin-typedoc', docusaurusPluginTypedocConfig],
     async function tailwindcss() {
       return {
-        async configurePostCss(postcssOptions) {
-          postcssOptions.plugins.push(
-            (await import('@tailwindcss/postcss')).default,
-          );
+        configurePostCss(postcssOptions) {
+          postcssOptions.plugins.push(require('@tailwindcss/postcss'));
           return postcssOptions;
         },
         name: 'docusaurus-tailwindcss',
@@ -535,4 +529,4 @@ const config = {
   url: 'https://lexical.dev',
 };
 
-export default config;
+module.exports = config;

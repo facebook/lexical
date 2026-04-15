@@ -164,7 +164,7 @@ describe('LexicalExtensionEditorComposer', () => {
           style="user-select: text; white-space: pre-wrap; word-break: break-word"
           data-lexical-editor="true">
           <p dir="auto"><span data-lexical-text="true">parent</span></p>
-          <div data-lexical-decorator="true">
+          <div contenteditable="false" data-lexical-decorator="true">
             <div
               contenteditable="true"
               role="textbox"

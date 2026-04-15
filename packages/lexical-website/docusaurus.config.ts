@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-// @ts-nocheck - Docusaurus config, not part of the main TypeScript build
-// Note: type annotations allow IDEs autocompletion
 
 import fs from 'node:fs';
 import {createRequire} from 'node:module';
@@ -14,7 +12,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {themes} from 'prism-react-renderer';
 
-import {packagesManager as _pm} from '../../scripts/shared/packagesManager.mjs';
+import {packagesManager} from '../../scripts/shared/packagesManager.mjs';
 import packageDocsPlugin from './plugins/package-docs/index.mjs';
 import slugifyPlugin from './src/plugins/lexical-remark-slugify-anchors/index.js';
 
@@ -23,7 +21,6 @@ const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const {github: lightCodeTheme, dracula: darkCodeTheme} = themes;
-const packagesManager = process.env.FB_INTERNAL ? undefined : _pm;
 
 /**
  * Build webpack resolve.alias entries that map each lexical package's module
@@ -39,7 +36,7 @@ function buildLexicalWebpackAliases() {
   }
   const aliases: Record<string, string> = {};
 
-  for (const pkg of packagesManager!.getPublicPackages()) {
+  for (const pkg of packagesManager.getPublicPackages()) {
     for (const [
       name,
       moduleExports,
@@ -83,17 +80,11 @@ function sourceLinkOptions() {
   };
 }
 
-/**
- * @typedef {import('@docusaurus/plugin-content-docs').PluginOptions['sidebarItemsGenerator']} SidebarItemsGenerator
- * @typedef {Awaited<ReturnType<SidebarItemsGenerator>>[number]} NormalizedSidebarItem
- */
-/** @type Record<string, string | undefined> */
-const docLabels = {
+const docLabels: Record<string, string | undefined> = {
   'api/index': 'Readme',
   'api/modules': 'Table of Contents',
 };
 
-/** @param {string} lowercaseLabel */
 function categoryOrder(lowercaseLabel: string) {
   switch (lowercaseLabel) {
     case 'Modules':
@@ -251,7 +242,7 @@ const docusaurusPluginTypedocConfig = {
   customAnchorsFormat: 'curlyBrace',
   entryPoints: process.env.FB_INTERNAL
     ? []
-    : packagesManager!
+    : packagesManager
         .getPublicPackages()
         .flatMap((pkg) =>
           pkg

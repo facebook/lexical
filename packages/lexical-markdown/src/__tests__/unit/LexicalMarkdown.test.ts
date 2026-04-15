@@ -347,7 +347,7 @@ describe('Markdown', () => {
       skipExport: true,
     },
     {
-      // Bullet list item starting with number-dot pattern should be escaped (Regression #7824)
+      // Bullet list item starting with number-dot pattern should be escaped (#7824)
       html: '<ul><li value="1"><span style="white-space: pre-wrap;">1. foo</span></li></ul>',
       md: '- 1\\. foo',
     },

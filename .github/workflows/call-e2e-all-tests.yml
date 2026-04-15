@@ -6,6 +6,39 @@ on:
 permissions: {}
 
 jobs:
+  # Build the dev playground once and cache the output for all test jobs
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+      - name: Use Node.js 24.x
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24.x
+          cache: 'pnpm'
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Restore build cache
+        uses: actions/cache/restore@v5
+        id: build-cache
+        with:
+          path: |
+            packages/lexical-playground/build
+            packages/*/dist
+          key: build-dev-v1-${{ github.sha }}
+      - name: Build
+        if: steps.build-cache.outputs.cache-hit != 'true'
+        run: pnpm run prepare-ci
+      - name: Save build cache
+        if: steps.build-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v5
+        with:
+          path: |
+            packages/lexical-playground/build
+            packages/*/dist
+          key: ${{ steps.build-cache.outputs.cache-primary-key }}
+
   # Prime playwright browser caches once per OS so parallel test jobs
   # don't all download browsers simultaneously
   setup-playwright:
@@ -23,11 +56,12 @@ jobs:
       cache_playwright_path: ${{ matrix.os == 'macos-latest' && '~/Library/Caches/ms-playwright' || matrix.os == 'windows-latest' && 'C:\Users\runneradmin\AppData\Local\ms-playwright' || '~/.cache/ms-playwright' }}
     steps:
       - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
-      - uses: pnpm/action-setup@v6
+          cache: 'pnpm'
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Restore playwright from cache
@@ -48,7 +82,7 @@ jobs:
           key: ${{ steps.playwright-cache.outputs.cache-primary-key }}
 
   mac-rich:
-    needs: setup-playwright
+    needs: [build, setup-playwright]
     strategy:
       matrix:
         node-version: [24.x]
@@ -62,7 +96,7 @@ jobs:
       editor-mode: ${{ matrix.editor-mode }}
 
   mac-plain:
-    needs: setup-playwright
+    needs: [build, setup-playwright]
     strategy:
       matrix:
         node-version: [24.x]
@@ -76,7 +110,7 @@ jobs:
       editor-mode: ${{ matrix.editor-mode }}
 
   linux:
-    needs: setup-playwright
+    needs: [build, setup-playwright]
     strategy:
       matrix:
         node-version: [24.x]
@@ -90,7 +124,7 @@ jobs:
       editor-mode: ${{ matrix.editor-mode }}
 
   windows:
-    needs: setup-playwright
+    needs: [build, setup-playwright]
     strategy:
       matrix:
         node-version: [24.x]
@@ -104,7 +138,7 @@ jobs:
       editor-mode: ${{ matrix.editor-mode }}
 
   collab-mac:
-    needs: setup-playwright
+    needs: [build, setup-playwright]
     strategy:
       matrix:
         node-version: [24.x]
@@ -117,7 +151,7 @@ jobs:
       editor-mode: 'rich-text-with-collab'
 
   collab-linux:
-    needs: setup-playwright
+    needs: [build, setup-playwright]
     strategy:
       matrix:
         node-version: [24.x]
@@ -130,7 +164,7 @@ jobs:
       editor-mode: 'rich-text-with-collab'
 
   collab-windows:
-    needs: setup-playwright
+    needs: [build, setup-playwright]
     strategy:
       matrix:
         node-version: [24.x]
@@ -143,7 +177,7 @@ jobs:
       editor-mode: 'rich-text-with-collab'
 
   prod:
-    needs: setup-playwright
+    needs: [build, setup-playwright]
     strategy:
       matrix:
         os: ['ubuntu-latest']
@@ -159,7 +193,7 @@ jobs:
       editor-mode: ${{ matrix.editor-mode }}
 
   collab-prod:
-    needs: setup-playwright
+    needs: [build, setup-playwright]
     strategy:
       matrix:
         os: ['ubuntu-latest']
@@ -192,7 +226,7 @@ jobs:
   #     override-react-version: beta
 
   flaky:
-    needs: setup-playwright
+    needs: [build, setup-playwright]
     strategy:
       matrix:
         node-version: [24.x]

@@ -22,17 +22,18 @@ jobs:
     env:
       CI: true
       E2E_EDITOR_MODE: ${{ inputs.editor-mode }}
+      E2E_PORT: 4000
       OVERRIDE_REACT_VERSION: ${{ inputs.override-react-version }}
       cache_playwright_path: ${{ inputs.os == 'macos-latest' && '~/Library/Caches/ms-playwright' || inputs.os == 'windows-latest' && 'C:\Users\runneradmin\AppData\Local\ms-playwright' || '~/.cache/ms-playwright' }}
       test_results_path: 'test-results/'
-      test_script: test-e2e-${{ inputs.editor-mode == 'rich-text-with-collab' && 'collab-' || '' }}${{ inputs.prod && 'prod-' || '' }}ci-${{ inputs.browser }}
     steps:
       - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
       - name: Use Node.js ${{ inputs.node-version }}
         uses: actions/setup-node@v6
         with:
           node-version: ${{ inputs.node-version }}
-      - uses: pnpm/action-setup@v6
+          cache: 'pnpm'
       - name: Install required ubuntu-latest packages
         if: inputs.os == 'ubuntu-latest'
         run: |
@@ -42,7 +43,6 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Install React ${{ inputs.override-react-version }}
         if: inputs.override-react-version != ''
-        # This should be safe since we are caching pnpm store and not node_modules
         run: |
           node ./scripts/override-react.js --version=${{ inputs.override-react-version }}
           grep version node_modules/{react,react-dom}/package.json
@@ -56,8 +56,27 @@ jobs:
         run: |
           pnpm exec playwright install
           pnpm exec playwright install --list
+      - name: Restore build cache
+        uses: actions/cache/restore@v5
+        id: build-cache
+        with:
+          path: |
+            packages/lexical-playground/build
+            packages/*/dist
+          key: build-${{ inputs.prod && 'prod' || 'dev' }}-v1-${{ github.sha }}
+      - name: Build
+        if: steps.build-cache.outputs.cache-hit != 'true'
+        run: pnpm run ${{ inputs.prod && 'prepare-ci-prod' || 'prepare-ci' }}
       - name: Run tests
-        run: pnpm run ${{ env.test_script }}
+        if: inputs.editor-mode != 'rich-text-with-collab'
+        run: pnpm run test-e2e-${{ inputs.prod && 'prod-' || '' }}${{ inputs.browser }} --grep-invert "@flaky"
+      - name: Run collab tests
+        if: inputs.editor-mode == 'rich-text-with-collab'
+        shell: bash
+        run: |
+          pnpm exec concurrently -k -s first \
+            "pnpm run collab" \
+            "pnpm run test-e2e-collab-${{ inputs.prod && 'prod-' || '' }}${{ inputs.browser }} --grep-invert @flaky"
       - name: Upload Artifacts
         if: failure()
         uses: actions/upload-artifact@v7

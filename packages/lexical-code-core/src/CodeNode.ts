@@ -28,6 +28,7 @@ import {
   $createLineBreakNode,
   $createParagraphNode,
   $createTabNode,
+  $hasUpdateTag,
   $isTabNode,
   $isTextNode,
   addClassNamesToElement,
@@ -298,7 +299,8 @@ export class CodeNode extends ElementNode {
       children[childrenLength - 2].getTextContent() === '\n' &&
       selection.isCollapsed() &&
       selection.anchor.key === this.__key &&
-      selection.anchor.offset === childrenLength
+      selection.anchor.offset === childrenLength &&
+      !$hasUpdateTag('paste')
     ) {
       children[childrenLength - 1].remove();
       children[childrenLength - 2].remove();

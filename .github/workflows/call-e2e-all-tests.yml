@@ -32,7 +32,9 @@ jobs:
         uses: actions/cache/restore@v5
         id: nm-cache
         with:
-          path: node_modules
+          path: |
+            node_modules
+            packages/*/node_modules
           key: nm-v1-${{ matrix.node-version }}-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
       - name: Install dependencies
         if: steps.nm-cache.outputs.cache-hit != 'true'
@@ -41,7 +43,9 @@ jobs:
         if: steps.nm-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v5
         with:
-          path: node_modules
+          path: |
+            node_modules
+            packages/*/node_modules
           key: ${{ steps.nm-cache.outputs.cache-primary-key }}
       - name: Restore playwright from cache
         uses: actions/cache/restore@v5

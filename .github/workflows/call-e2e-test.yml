@@ -42,7 +42,9 @@ jobs:
         uses: actions/cache/restore@v5
         id: nm-cache
         with:
-          path: node_modules
+          path: |
+            node_modules
+            packages/*/node_modules
           key: nm-v1-${{ inputs.node-version }}-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
       - name: Install dependencies
         if: steps.nm-cache.outputs.cache-hit != 'true'

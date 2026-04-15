@@ -62,6 +62,7 @@ export default function Editor() {
       !navigator.userAgent.includes('iPhone') &&
       !navigator.userAgent.includes('iPad')
     ) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setModKey('Ctrl + ');
     }
   }, []);
@@ -73,7 +74,7 @@ export default function Editor() {
       <div className="relative rounded-[10px] border border-solid border-zinc-200 bg-white transition-[border-color] duration-150 dark:border-white/[0.12] dark:bg-[#1f1f21]">
         <div className="relative">
           <ContentEditable
-            className="max-h-[160px] min-h-[80px] overflow-y-auto px-3.5 py-3 text-[0.9375rem] leading-[1.55] break-words outline-none"
+            className="max-h-40 min-h-20 overflow-y-auto px-3.5 py-3 text-[0.9375rem] leading-[1.55] break-words outline-none"
             aria-label="Rich text input"
             aria-placeholder="How are you feeling? Use #hashtags too."
             placeholder={

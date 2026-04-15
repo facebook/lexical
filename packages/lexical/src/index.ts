@@ -246,6 +246,7 @@ export {
   $cloneWithPropertiesEphemeral,
   $copyNode,
   $create,
+  $createChildrenArray,
   $findMatchingParent,
   $getAdjacentNode,
   $getEditor,

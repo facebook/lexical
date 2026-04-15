@@ -52,7 +52,7 @@ header h1 {
 .editor-shell {
   margin: 20px auto;
   border-radius: 2px;
-  max-width: 1100px;
+  max-width: 1128px;
   color: #000;
   position: relative;
   line-height: 1.7;
@@ -93,6 +93,52 @@ header h1 {
   position: relative;
   resize: vertical;
   z-index: -1;
+}
+
+@media print {
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  *,
+  *:before,
+  *:after {
+    filter: unset !important;
+    color-scheme: light !important;
+  }
+
+  body {
+    padding: 0 !important;
+    margin: 0 !important;
+    background: none !important;
+  }
+
+  body
+    *:not(
+      [data-lexical-editor],
+      [data-lexical-editor] *,
+      :has([data-lexical-editor])
+    ) {
+    display: none !important;
+  }
+
+  .editor-shell {
+    margin: 0 !important;
+    border-radius: 0 !important;
+    max-width: none !important;
+  }
+
+  [data-lexical-editor] {
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    max-width: none !important;
+    width: 100% !important;
+    height: auto !important;
+    zoom: 1 !important;
+  }
 }
 
 .test-recorder-output {
@@ -609,6 +655,11 @@ i.page-break,
   background-image: url(images/icons/scissors.svg);
 }
 
+i.page-setup,
+.icon.page-setup {
+  background-image: url(images/icons/file-earmark-text.svg);
+}
+
 .link-editor .button.active,
 .toolbar .button.active {
   background-color: rgb(223, 232, 250);
@@ -827,6 +878,21 @@ i.page-break,
   line-height: 20px;
   flex-grow: 1;
   min-width: 150px;
+}
+
+.dropdown .item.dropdown-submenu-trigger .dropdown-submenu-chevron {
+  flex-shrink: 0;
+  margin-left: 8px;
+  transform: rotate(0deg);
+  transition: transform 0.15s ease;
+}
+
+.dropdown .item.dropdown-submenu-trigger.expanded .dropdown-submenu-chevron {
+  transform: rotate(180deg);
+}
+
+.dropdown .item.dropdown-submenu-item {
+  padding-left: 24px;
 }
 
 .dropdown .item .icon {

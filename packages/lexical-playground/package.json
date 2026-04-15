@@ -1,6 +1,6 @@
 {
   "name": "lexical-playground",
-  "version": "0.42.0",
+  "version": "0.43.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -36,25 +36,25 @@
     "lexical": "workspace:*",
     "lodash-es": "^4.18.1",
     "prettier": "^3.6.2",
-    "react": "^19.1.1",
+    "react": "^19.2.5",
     "react-day-picker": "^9.7.0",
-    "react-dom": "^19.1.1",
+    "react-dom": "^19.2.5",
     "react-error-boundary": "^6.0.0",
-    "y-websocket": "^1.5.4",
+    "y-websocket": "^3.0.0",
     "yjs": ">=13.5.42"
   },
   "devDependencies": {
-    "@babel/plugin-transform-flow-strip-types": "^7.24.7",
-    "@babel/preset-react": "^7.24.7",
+    "@babel/plugin-transform-flow-strip-types": "^7.27.1",
+    "@babel/preset-react": "^7.28.5",
     "@prettier/sync": "^0.6.1",
     "@rollup/plugin-babel": "^7.0.0",
     "@rollup/plugin-commonjs": "^29.0.2",
-    "@types/lodash": "^4.14.182",
+    "@types/lodash": "^4.17.24",
     "@types/lodash-es": "^4.14.182",
-    "@vitejs/plugin-react": "^5.0.2",
+    "@vitejs/plugin-react": "^6.0.1",
     "rollup-plugin-copy": "^3.5.0",
-    "vite": "^7.3.2",
-    "vite-plugin-static-copy": "^2.3.0"
+    "vite": "^8.0.8",
+    "vite-plugin-static-copy": "^4.0.1"
   },
   "sideEffects": false
 }

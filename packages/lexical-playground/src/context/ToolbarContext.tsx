@@ -113,6 +113,7 @@ export const ToolbarContext = ({
   );
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     updateToolbarState('fontSizeInputValue', selectionFontSize.slice(0, -2));
   }, [selectionFontSize, updateToolbarState]);
 

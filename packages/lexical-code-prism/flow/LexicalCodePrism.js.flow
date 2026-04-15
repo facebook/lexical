@@ -11,7 +11,8 @@
  * LexicalCodePrism
  */
 
-import type {LexicalEditor} from 'lexical';
+import type {LexicalEditor, LexicalExtension} from 'lexical';
+import type {NamedSignalsOutput} from '@lexical/extension';
 
 type TokenContent = string | Token | (string | Token)[];
 export interface Token {
@@ -28,6 +29,12 @@ declare export function registerCodeHighlighting(
   editor: LexicalEditor,
   tokenizer?: Tokenizer,
 ): () => void;
+
+export type CodePrismConfig = {
+  disabled: boolean,
+  tokenizer: Tokenizer,
+};
+declare export var CodePrismExtension: LexicalExtension<CodePrismConfig, "@lexical/code-prism", NamedSignalsOutput<CodePrismConfig>, void>;
 
 declare export function normalizeCodeLanguage(lang: string): string;
 

@@ -15,7 +15,6 @@ export type NamedSignalsOutput<Defaults> = {
 };
 
 /**
- * @experimental
  * Return an object with the same shape as `defaults` with a {@link Signal}
  * for each value. If specified, the second `opts` argument is a partial
  * of overrides to the defaults and will be used as the initial value.

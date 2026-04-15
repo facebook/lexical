@@ -191,7 +191,7 @@ export type SerializedDecoratorTextNode = {
   format: number,
   ...
 };
-declare export class DecoratorTextNode<T> extends DecoratorNode<T> {
+declare export class DecoratorTextNode extends DecoratorNode<mixed> {
   createDOM(): HTMLElement;
   getFormat(): number;
   getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number;
@@ -203,7 +203,7 @@ declare export class DecoratorTextNode<T> extends DecoratorNode<T> {
 
 declare export function $isDecoratorTextNode(
   node: ?LexicalNode,
-): node is DecoratorTextNode<{...}>;
+): node is DecoratorTextNode;
 
 declare export var DecoratorTextExtension: LexicalExtension<ExtensionConfigBase, "@lexical/extension/DecoratorText", void, void>;
 

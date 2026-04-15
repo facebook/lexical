@@ -6,8 +6,8 @@ on:
 permissions: {}
 
 jobs:
-  # Cache node_modules, playwright browsers, and dev build output once per OS
-  # so parallel test jobs skip install and build entirely
+  # Cache playwright browsers and dev build output once per OS
+  # so parallel test jobs skip build entirely
   setup:
     strategy:
       matrix:
@@ -23,30 +23,14 @@ jobs:
       cache_playwright_path: ${{ matrix.os == 'macos-latest' && '~/Library/Caches/ms-playwright' || matrix.os == 'windows-latest' && 'C:\Users\runneradmin\AppData\Local\ms-playwright' || '~/.cache/ms-playwright' }}
     steps:
       - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
-      - uses: pnpm/action-setup@v6
-      - name: Restore node_modules cache
-        uses: actions/cache/restore@v5
-        id: nm-cache
-        with:
-          path: |
-            node_modules
-            packages/*/node_modules
-          key: nm-v1-${{ matrix.node-version }}-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          cache: 'pnpm'
       - name: Install dependencies
-        if: steps.nm-cache.outputs.cache-hit != 'true'
         run: pnpm install --frozen-lockfile
-      - name: Save node_modules cache
-        if: steps.nm-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v5
-        with:
-          path: |
-            node_modules
-            packages/*/node_modules
-          key: ${{ steps.nm-cache.outputs.cache-primary-key }}
       - name: Restore playwright from cache
         uses: actions/cache/restore@v5
         id: playwright-cache

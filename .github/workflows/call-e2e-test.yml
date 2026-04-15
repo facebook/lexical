@@ -28,30 +28,21 @@ jobs:
       test_results_path: 'test-results/'
     steps:
       - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
       - name: Use Node.js ${{ inputs.node-version }}
         uses: actions/setup-node@v6
         with:
           node-version: ${{ inputs.node-version }}
-      - uses: pnpm/action-setup@v6
+          cache: 'pnpm'
       - name: Install required ubuntu-latest packages
         if: inputs.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
           sudo apt-get install xvfb
-      - name: Restore node_modules cache
-        uses: actions/cache/restore@v5
-        id: nm-cache
-        with:
-          path: |
-            node_modules
-            packages/*/node_modules
-          key: nm-v1-${{ inputs.node-version }}-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
       - name: Install dependencies
-        if: steps.nm-cache.outputs.cache-hit != 'true'
         run: pnpm install --frozen-lockfile
       - name: Install React ${{ inputs.override-react-version }}
         if: inputs.override-react-version != ''
-        # Safe: test jobs only restore (never save) node_modules, so overrides don't persist
         run: |
           node ./scripts/override-react.js --version=${{ inputs.override-react-version }}
           grep version node_modules/{react,react-dom}/package.json

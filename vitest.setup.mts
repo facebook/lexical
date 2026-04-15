@@ -68,6 +68,37 @@ if (isJsdom) {
   }
   HTMLElement.prototype.focus = focusPreservingSelection;
 
+  // jsdom's HTMLElement.contentEditable is a plain property that doesn't
+  // synchronize with the 'contenteditable' DOM attribute. Real browsers
+  // (and the spec) require them to stay in sync, so override the
+  // property to delegate to getAttribute/setAttribute.
+  const ceDescriptor = Object.getOwnPropertyDescriptor(
+    HTMLElement.prototype,
+    'contentEditable',
+  );
+  if (!ceDescriptor || ceDescriptor.configurable !== false) {
+    Object.defineProperty(HTMLElement.prototype, 'contentEditable', {
+      configurable: true,
+      get(this: HTMLElement) {
+        const attr = this.getAttribute('contenteditable');
+        if (attr === 'true' || attr === '') {
+          return 'true';
+        }
+        if (attr === 'false') {
+          return 'false';
+        }
+        return 'inherit';
+      },
+      set(this: HTMLElement, value: string) {
+        if (value === 'inherit') {
+          this.removeAttribute('contenteditable');
+        } else {
+          this.setAttribute('contenteditable', value);
+        }
+      },
+    });
+  }
+
   if (typeof Range.prototype.getBoundingClientRect !== 'function') {
     // jsdom does not implement layout, so a zero-rect stub is sufficient
     // for code paths that only need a DOMRect-shaped value (like

@@ -6,6 +6,9 @@
  *
  */
 
+import type {Options as DocsPluginOptions} from '@docusaurus/plugin-content-docs';
+import type {Config} from '@docusaurus/types';
+
 import fs from 'node:fs';
 import {createRequire} from 'node:module';
 import path from 'node:path';
@@ -15,6 +18,11 @@ import {themes} from 'prism-react-renderer';
 import {packagesManager} from '../../scripts/shared/packagesManager.mjs';
 import packageDocsPlugin from './plugins/package-docs/index.mjs';
 import slugifyPlugin from './src/plugins/lexical-remark-slugify-anchors/index.js';
+
+type SidebarItemsGenerator = NonNullable<
+  DocsPluginOptions['sidebarItemsGenerator']
+>;
+type NormalizedSidebarItem = Awaited<ReturnType<SidebarItemsGenerator>>[number];
 
 // Use import.meta.url (not import.meta.dirname) for jiti v1 compatibility
 const require = createRequire(import.meta.url);
@@ -103,10 +111,7 @@ function capitalizeLabel(label: string) {
   return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
-function sidebarSort(
-  a: {type: string; label?: string},
-  b: {type: string; label?: string},
-) {
+function sidebarSort(a: NormalizedSidebarItem, b: NormalizedSidebarItem) {
   // Categories always come last and have their own defined sort order
   // Otherwise leave the sort as-is
   if (a.type === 'category' && b.type === 'category') {
@@ -140,85 +145,81 @@ function classOrInterfaceIdToLabel(id: string) {
   return id.replace(/^[^.]+./, '');
 }
 
-const sidebarItemsGenerator = async ({
+const sidebarItemsGenerator: SidebarItemsGenerator = async ({
   defaultSidebarItemsGenerator,
   ...args
-}: // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Docusaurus plugin API
-any) => {
+}) => {
   const items = await defaultSidebarItemsGenerator(args);
   if (args.item.dirName === 'api') {
-    return (
-      items
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Docusaurus sidebar item
-        .map((sidebarItem: any) => {
-          if (sidebarItem.type === 'doc' && sidebarItem.id in docLabels) {
-            return {...sidebarItem, label: docLabels[sidebarItem.id]};
-          } else if (sidebarItem.type !== 'category') {
-            return sidebarItem;
-          }
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Docusaurus sidebar items
-          const groupedItems: any[] = [];
-          for (const item of sidebarItem.items) {
-            if (item.type === 'doc' && item.id.match(/^api\/modules\//i)) {
-              const label = idToModuleName(item.id);
-              const lastItem = groupedItems.at(-1);
-              if (
-                lastItem &&
-                lastItem.type === 'category' &&
-                lastItem.label === label
-              ) {
-                lastItem.link = {
-                  id: item.id,
-                  type: 'doc',
-                };
-                continue;
-              }
-              const m = /^(@lexical\/[^/]+)\/(.*)$/.exec(label);
-              if (m) {
-                const groupedItem = {...item, label: m[2]};
-                if (
-                  (lastItem && lastItem.type === 'category') ||
-                  lastItem.label === m[1]
-                ) {
-                  lastItem.items.push(groupedItem);
-                } else {
-                  groupedItems.push({
-                    items: [groupedItem],
-                    label: m[1],
-                    type: 'category',
-                  });
-                }
-                continue;
-              }
-              groupedItems.push({...item, label});
-            } else if (item.type === 'doc') {
-              groupedItems.push({
-                ...item,
-                label: classOrInterfaceIdToLabel(item.id),
-              });
-            } else if (item.type === 'category') {
-              groupedItems.push({
-                ...item,
-                label: idToModuleName(item.label),
-              });
-            } else {
-              groupedItems.push(item);
+    return items
+      .map((sidebarItem) => {
+        if (sidebarItem.type === 'doc' && sidebarItem.id in docLabels) {
+          return {...sidebarItem, label: docLabels[sidebarItem.id]};
+        } else if (sidebarItem.type !== 'category') {
+          return sidebarItem;
+        }
+        const groupedItems: NormalizedSidebarItem[] = [];
+        for (const item of sidebarItem.items) {
+          if (item.type === 'doc' && item.id.match(/^api\/modules\//i)) {
+            const label = idToModuleName(item.id);
+            const lastItem = groupedItems.at(-1);
+            if (
+              lastItem &&
+              lastItem.type === 'category' &&
+              lastItem.label === label
+            ) {
+              lastItem.link = {
+                id: item.id,
+                type: 'doc',
+              };
+              continue;
             }
+            const m = /^(@lexical\/[^/]+)\/(.*)$/.exec(label);
+            if (m) {
+              const groupedItem = {...item, label: m[2]};
+              if (
+                (lastItem && lastItem.type === 'category') ||
+                lastItem.label === m[1]
+              ) {
+                lastItem.items.push(groupedItem);
+              } else {
+                groupedItems.push({
+                  items: [groupedItem],
+                  label: m[1],
+                  type: 'category',
+                });
+              }
+              continue;
+            }
+            groupedItems.push({...item, label});
+          } else if (item.type === 'doc') {
+            groupedItems.push({
+              ...item,
+              label: classOrInterfaceIdToLabel(item.id),
+            });
+          } else if (item.type === 'category') {
+            groupedItems.push({
+              ...item,
+              label: idToModuleName(item.label),
+            });
+          } else {
+            groupedItems.push(item);
           }
-          return {
-            ...sidebarItem,
-            items: groupedItems,
-            label: capitalizeLabel(sidebarItem.label),
-          };
-        })
-        .sort(sidebarSort)
-    );
+        }
+        return {
+          ...sidebarItem,
+          items: groupedItems,
+          label: capitalizeLabel(sidebarItem.label),
+        };
+      })
+      .sort(sidebarSort);
   }
   return items;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Docusaurus plugin API
-const parseFrontMatter = async (params: any) => {
+const parseFrontMatter: NonNullable<
+  Config['markdown']
+>['parseFrontMatter'] = async (params) => {
   const result = await params.defaultParseFrontMatter(params);
   if (params.filePath.endsWith('/docs/api/modules.md')) {
     Object.assign(result.frontMatter, {
@@ -287,7 +288,7 @@ const STACKBLITZ_PREFIX = `https://stackblitz.com/github/${GIT_REPO_OWNER}/${GIT
     : GIT_COMMIT_SHA
 }/`;
 
-const config = {
+const config: Config = {
   baseUrl: '/',
 
   customFields: {
@@ -384,8 +385,7 @@ const config = {
     ['docusaurus-plugin-typedoc', docusaurusPluginTypedocConfig],
     async function tailwindcss() {
       return {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- PostCSS plugin API
-        async configurePostCss(postcssOptions: any) {
+        async configurePostCss(postcssOptions: {plugins: unknown[]}) {
           postcssOptions.plugins.push(
             (await import('@tailwindcss/postcss')).default,
           );

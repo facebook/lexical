@@ -115,6 +115,8 @@
     "@babel/preset-flow": "^7.27.1",
     "@babel/preset-react": "^7.28.5",
     "@babel/preset-typescript": "^7.28.5",
+    "@docusaurus/plugin-content-docs": "^3.10.0",
+    "@docusaurus/types": "^3.10.0",
     "@eslint/compat": "^2.0.5",
     "@eslint/js": "^10.0.0",
     "@lexical/eslint-plugin": "file:./packages/lexical-eslint-plugin",

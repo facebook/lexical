@@ -187,7 +187,7 @@ export class ListItemNode extends ElementNode {
         after(containerElement) {
           if (containerElement instanceof HTMLElement) {
             const prevSibling = containerElement.previousElementSibling;
-            if (prevSibling) {
+            if (prevSibling instanceof HTMLLIElement) {
               while (containerElement.firstChild) {
                 prevSibling.append(containerElement.firstChild);
               }

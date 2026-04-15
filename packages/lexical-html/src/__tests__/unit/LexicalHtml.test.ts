@@ -43,7 +43,7 @@ describe('HTML', () => {
       name: 'Empty editor state',
     },
     {
-      // Regression #7207: nested list should be inside parent <li>, not a separate <li>
+      // #7207: nested list should be inside parent <li>, not a separate <li>
       html: '<ol><li value="1"><span style="white-space: pre-wrap;">Canada</span></li><li value="2"><span style="white-space: pre-wrap;">USA</span><ol><li value="1"><span style="white-space: pre-wrap;">LA</span></li><li value="2"><span style="white-space: pre-wrap;">TX</span></li></ol></li><li value="3"><span style="white-space: pre-wrap;">Germany</span></li></ol>',
       initializeEditorState: () => {
         const list = $createListNode('number');

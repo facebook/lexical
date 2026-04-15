@@ -16,7 +16,6 @@ import invariant from 'shared/invariant';
 import {LexicalBuilder} from './LexicalBuilder';
 
 /**
- * @experimental
  * Get the finalized config and output of an Extension that was used to build the editor.
  *
  * This is useful in the implementation of a LexicalNode or in other

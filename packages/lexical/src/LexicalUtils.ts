@@ -2254,3 +2254,21 @@ export const $findMatchingParent: {
 
   return null;
 };
+
+export function $createChildrenArray(
+  element: ElementNode,
+  nodeMap: null | NodeMap,
+): Array<NodeKey> {
+  const children = [];
+  let nodeKey = element.__first;
+  while (nodeKey !== null) {
+    const node =
+      nodeMap === null ? $getNodeByKey(nodeKey) : nodeMap.get(nodeKey);
+    if (node === null || node === undefined) {
+      invariant(false, '$createChildrenArray: node does not exist in nodeMap');
+    }
+    children.push(nodeKey);
+    nodeKey = node.__next;
+  }
+  return children;
+}

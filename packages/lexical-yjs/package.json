@@ -15,7 +15,6 @@
   "main": "LexicalYjs.js",
   "types": "index.d.ts",
   "dependencies": {
-    "@lexical/offset": "workspace:*",
     "@lexical/selection": "workspace:*",
     "lexical": "workspace:*"
   },

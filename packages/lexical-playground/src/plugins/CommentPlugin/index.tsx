@@ -477,6 +477,7 @@ function CommentsPanelListComment({
   thread?: Thread;
 }): JSX.Element {
   const seconds = Math.round(
+    // eslint-disable-next-line react-hooks/purity
     (comment.timeStamp - (performance.timeOrigin + performance.now())) / 1000,
   );
   const minutes = Math.round(seconds / 60);
@@ -821,6 +822,7 @@ export default function CommentPlugin({
           if (elem !== null) {
             elem.classList.add('selected');
             changedElems.push(elem);
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setShowComments(true);
           }
         }

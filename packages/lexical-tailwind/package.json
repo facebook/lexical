@@ -25,9 +25,9 @@
     "lexical": "workspace:*"
   },
   "devDependencies": {
-    "@tailwindcss/cli": "^4.1.13",
-    "tailwind-merge": "^3.3.1",
-    "tailwindcss": "^4.1.13"
+    "@tailwindcss/cli": "^4.2.2",
+    "tailwind-merge": "^3.5.0",
+    "tailwindcss": "^4.2.2"
   },
   "description": "This package contains an extension to use Tailwind for the editor theme",
   "sideEffects": false,

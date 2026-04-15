@@ -34,22 +34,22 @@
     "@webext-pegasus/store-zustand": "^0.3.0",
     "@webext-pegasus/transport": "^0.3.0",
     "framer-motion": "^11.1.5",
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1",
-    "zustand": "^4.5.1"
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "zustand": "^5.0.12"
   },
   "devDependencies": {
-    "@babel/plugin-transform-flow-strip-types": "^7.24.7",
-    "@babel/preset-react": "^7.24.7",
+    "@babel/plugin-transform-flow-strip-types": "^7.27.1",
+    "@babel/preset-react": "^7.28.5",
     "@lexical/devtools-core": "workspace:*",
-    "@rollup/plugin-babel": "^6.0.4",
-    "@types/react": "^19.1.12",
-    "@types/react-dom": "^19.1.9",
-    "@vitejs/plugin-react": "^5.0.2",
+    "@rollup/plugin-babel": "^7.0.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
     "lexical": "workspace:*",
-    "typescript": "^5.9.2",
-    "vite": "^7.3.2",
-    "wxt": "^0.20.11"
+    "typescript": "^6.0.2",
+    "vite": "^8.0.8",
+    "wxt": "^0.20.20"
   },
   "sideEffects": false
 }

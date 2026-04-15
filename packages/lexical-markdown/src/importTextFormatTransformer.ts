@@ -46,12 +46,15 @@ export function findOutermostTextFormatTransformer(
     const matches = Array.from(textContent.matchAll(globalRegex));
 
     for (const match of matches) {
-      const startIndex = match.index!;
-      const endIndex = startIndex + match[0].length;
+      // Group 1 captures the character preceding the opening backtick (or an
+      // empty string when the span starts at position 0). Offset past it so
+      // startIndex points to the backtick itself.
+      const startIndex = match.index! + match[1].length;
+      const endIndex = match.index! + match[0].length;
 
       if (!codeMatch) {
         codeMatch = {
-          content: match[2],
+          content: match[3],
           endIndex,
           startIndex,
           tag: '`',

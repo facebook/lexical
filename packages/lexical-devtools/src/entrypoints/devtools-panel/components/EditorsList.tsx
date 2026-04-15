@@ -42,6 +42,7 @@ export function EditorsList({tabID, setErrorMessage}: Props) {
 
   useEffect(() => {
     if (selectedEditorIdx !== -1) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setExpandedItems([selectedEditorIdx]);
       setTimeout(
         () =>

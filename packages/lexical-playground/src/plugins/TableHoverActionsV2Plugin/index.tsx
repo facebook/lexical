@@ -367,6 +367,7 @@ function TableHoverActionsV2({
 
   useEffect(() => {
     if (!hoveredTable) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCanReorder(false);
       return;
     }

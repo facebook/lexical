@@ -6,9 +6,9 @@ on:
 permissions: {}
 
 jobs:
-  # Prime playwright browser caches once per OS so parallel test jobs
-  # don't all download browsers simultaneously
-  setup-playwright:
+  # Cache node_modules, playwright browsers, and dev build output once per OS
+  # so parallel test jobs skip install and build entirely
+  setup:
     strategy:
       matrix:
         include:
@@ -28,8 +28,21 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - uses: pnpm/action-setup@v6
+      - name: Restore node_modules cache
+        uses: actions/cache/restore@v5
+        id: nm-cache
+        with:
+          path: node_modules
+          key: nm-v1-${{ matrix.node-version }}-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
       - name: Install dependencies
+        if: steps.nm-cache.outputs.cache-hit != 'true'
         run: pnpm install --frozen-lockfile
+      - name: Save node_modules cache
+        if: steps.nm-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v5
+        with:
+          path: node_modules
+          key: ${{ steps.nm-cache.outputs.cache-primary-key }}
       - name: Restore playwright from cache
         uses: actions/cache/restore@v5
         id: playwright-cache
@@ -46,9 +59,28 @@ jobs:
         with:
           path: ${{ env.cache_playwright_path }}
           key: ${{ steps.playwright-cache.outputs.cache-primary-key }}
+      - name: Restore build cache
+        uses: actions/cache/restore@v5
+        id: build-cache
+        with:
+          path: |
+            packages/lexical-playground/build
+            packages/*/dist
+          key: build-dev-v1-${{ github.sha }}
+      - name: Build
+        if: steps.build-cache.outputs.cache-hit != 'true'
+        run: pnpm run prepare-ci
+      - name: Save build cache
+        if: steps.build-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v5
+        with:
+          path: |
+            packages/lexical-playground/build
+            packages/*/dist
+          key: ${{ steps.build-cache.outputs.cache-primary-key }}
 
   mac-rich:
-    needs: setup-playwright
+    needs: setup
     strategy:
       matrix:
         node-version: [24.x]
@@ -62,7 +94,7 @@ jobs:
       editor-mode: ${{ matrix.editor-mode }}
 
   mac-plain:
-    needs: setup-playwright
+    needs: setup
     strategy:
       matrix:
         node-version: [24.x]
@@ -76,7 +108,7 @@ jobs:
       editor-mode: ${{ matrix.editor-mode }}
 
   linux:
-    needs: setup-playwright
+    needs: setup
     strategy:
       matrix:
         node-version: [24.x]
@@ -90,7 +122,7 @@ jobs:
       editor-mode: ${{ matrix.editor-mode }}
 
   windows:
-    needs: setup-playwright
+    needs: setup
     strategy:
       matrix:
         node-version: [24.x]
@@ -104,7 +136,7 @@ jobs:
       editor-mode: ${{ matrix.editor-mode }}
 
   collab-mac:
-    needs: setup-playwright
+    needs: setup
     strategy:
       matrix:
         node-version: [24.x]
@@ -117,7 +149,7 @@ jobs:
       editor-mode: 'rich-text-with-collab'
 
   collab-linux:
-    needs: setup-playwright
+    needs: setup
     strategy:
       matrix:
         node-version: [24.x]
@@ -130,7 +162,7 @@ jobs:
       editor-mode: 'rich-text-with-collab'
 
   collab-windows:
-    needs: setup-playwright
+    needs: setup
     strategy:
       matrix:
         node-version: [24.x]
@@ -143,7 +175,7 @@ jobs:
       editor-mode: 'rich-text-with-collab'
 
   prod:
-    needs: setup-playwright
+    needs: setup
     strategy:
       matrix:
         os: ['ubuntu-latest']
@@ -159,7 +191,7 @@ jobs:
       editor-mode: ${{ matrix.editor-mode }}
 
   collab-prod:
-    needs: setup-playwright
+    needs: setup
     strategy:
       matrix:
         os: ['ubuntu-latest']
@@ -192,7 +224,7 @@ jobs:
   #     override-react-version: beta
 
   flaky:
-    needs: setup-playwright
+    needs: setup
     strategy:
       matrix:
         node-version: [24.x]

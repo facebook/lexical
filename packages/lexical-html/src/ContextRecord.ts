@@ -22,10 +22,22 @@ type WithContext<Ctx extends AnyContextSymbol> = {
   [K in Ctx]?: undefined | ContextRecord<Ctx>;
 };
 
+/**
+ * @experimental
+ *
+ * The LexicalEditor with context
+ */
 export type EditorContext = {
   editor: LexicalEditor;
 } & WithContext<AnyContextSymbol>;
 
+/**
+ * @experimental
+ *
+ * @param contextRecord The ContextRecord
+ * @param cfg The configuration
+ * @returns The value or defaultValue of cfg
+ */
 export function getContextValue<Ctx extends AnyContextSymbol, V>(
   contextRecord: undefined | ContextRecord<Ctx>,
   cfg: ContextConfig<Ctx, V>,
@@ -36,6 +48,15 @@ export function getContextValue<Ctx extends AnyContextSymbol, V>(
     : cfg.defaultValue;
 }
 
+/**
+ * @experimental
+ *
+ * Read and delete cfg from this layer of context
+ *
+ * @param contextRecord The ContextRecord
+ * @param cfg The configuration
+ * @returns The value of the configuration that was removed
+ */
 export function popOwnContextValue<Ctx extends AnyContextSymbol, V>(
   contextRecord: ContextRecord<Ctx>,
   cfg: ContextConfig<Ctx, V>,
@@ -45,6 +66,15 @@ export function popOwnContextValue<Ctx extends AnyContextSymbol, V>(
   return rval;
 }
 
+/**
+ * @experimental
+ *
+ * Get the value without a default
+ *
+ * @param contextRecord The ContextRecord
+ * @param cfg The configuration
+ * @returns The current value in this context or `undefined` if not set
+ */
 export function getOwnContextValue<Ctx extends AnyContextSymbol, V>(
   contextRecord: ContextRecord<Ctx>,
   cfg: ContextConfig<Ctx, V>,
@@ -59,6 +89,13 @@ function getEditorContext(editor: LexicalEditor): undefined | EditorContext {
     : undefined;
 }
 
+/**
+ * @experimental
+ *
+ * @param sym The symbol for this ContextRecord (e.g. DOMRenderContextSymbol)
+ * @param editor The editor
+ * @returns The current context or undefined
+ */
 export function getContextRecord<Ctx extends AnyContextSymbol>(
   sym: Ctx,
   editor: LexicalEditor,
@@ -78,6 +115,13 @@ function toPair<Ctx extends AnyContextSymbol, V>(
   return pairOrUpdater;
 }
 
+/**
+ * Construct a new context from a parent context and pairs
+ *
+ * @param pairs The pairs and updaters to build the context from
+ * @param parent The parent context
+ * @returns The new context
+ */
 export function contextFromPairs<Ctx extends AnyContextSymbol>(
   pairs: readonly AnyContextConfigPairOrUpdater<Ctx>[],
   parent: undefined | ContextRecord<Ctx>,
@@ -96,19 +140,10 @@ export function contextFromPairs<Ctx extends AnyContextSymbol>(
   return rval;
 }
 
-export function createChildContext<Ctx extends AnyContextSymbol>(
+function createChildContext<Ctx extends AnyContextSymbol>(
   parent: undefined | ContextRecord<Ctx>,
 ): ContextRecord<Ctx> {
   return Object.create(parent || null);
-}
-
-export function setContextValue<Ctx extends AnyContextSymbol, V>(
-  contextRecord: ContextRecord<Ctx>,
-  cfg: ContextConfig<Ctx, V>,
-  value: V,
-): V {
-  contextRecord[cfg.key] = value;
-  return value;
 }
 
 /**
@@ -133,29 +168,9 @@ export function contextUpdater<Ctx extends AnyContextSymbol, V>(
   return {cfg, updater};
 }
 
-export function updateContextValue<Ctx extends AnyContextSymbol, V>(
-  contextRecord: ContextRecord<Ctx>,
-  cfg: ContextConfig<Ctx, V>,
-  updater: (prev: V) => V,
-): V {
-  const value = updater(getContextValue(contextRecord, cfg));
-  return setContextValue(contextRecord, cfg, value);
-}
-
-export function updateContextFromPairs<Ctx extends AnyContextSymbol>(
-  contextRecord: ContextRecord<Ctx>,
-  pairs: undefined | readonly AnyContextConfigPairOrUpdater<Ctx>[],
-): ContextRecord<Ctx> {
-  if (pairs) {
-    for (const pairOrUpdater of pairs) {
-      const [cfg, value] = toPair(contextRecord, pairOrUpdater);
-      setContextValue(contextRecord, cfg, value);
-    }
-  }
-  return contextRecord;
-}
-
 /**
+ * @internal
+ * @experimental
  * @__NO_SIDE_EFFECTS__
  */
 export function $withFullContext<Ctx extends AnyContextSymbol, T>(
@@ -175,6 +190,8 @@ export function $withFullContext<Ctx extends AnyContextSymbol, T>(
 }
 
 /**
+ * @internal
+ * @experimental
  * @__NO_SIDE_EFFECTS__
  */
 export function $withContext<Ctx extends AnyContextSymbol>(
@@ -187,7 +204,6 @@ export function $withContext<Ctx extends AnyContextSymbol>(
     editor = $getEditor(),
   ): (<T>(f: () => T) => T) => {
     return (f) => {
-      const prevDOMContext = activeContext;
       const parentEditorContext = getEditorContext(editor);
       const parentContextRecord =
         parentEditorContext && parentEditorContext[sym];
@@ -198,17 +214,14 @@ export function $withContext<Ctx extends AnyContextSymbol>(
       if (!contextRecord || contextRecord === parentContextRecord) {
         return f();
       }
-      try {
-        activeContext = {...parentEditorContext, editor, [sym]: contextRecord};
-        return f();
-      } finally {
-        activeContext = prevDOMContext;
-      }
+      return $withFullContext(sym, contextRecord, f, editor);
     };
   };
 }
 
 /**
+ * @experimental
+ * @internal
  * @__NO_SIDE_EFFECTS__
  */
 export function createContextState<Tag extends symbol, V>(

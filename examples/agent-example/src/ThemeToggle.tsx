@@ -25,7 +25,7 @@ export function ThemeToggle() {
         });
       }}
       aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-      className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full border border-solid border-zinc-200 bg-white text-zinc-500 shadow-sm transition-colors hover:cursor-pointer hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700">
+      className="absolute top-4 right-4 flex h-8 w-8 items-center justify-center rounded-full border border-solid border-zinc-200 bg-white text-zinc-500 shadow-sm transition-colors hover:cursor-pointer hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700">
       {isDark ? (
         <svg
           xmlns="http://www.w3.org/2000/svg"

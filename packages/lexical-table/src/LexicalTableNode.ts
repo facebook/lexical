@@ -356,8 +356,7 @@ export class TableNode extends ElementNode {
     if (!colWidths) {
       return;
     }
-    const slot = this.getDOMSlot(dom);
-    const tableElement = slot.element;
+    const tableElement = getTableElement(this, dom);
     updateColgroup(
       tableElement,
       this.getColumnCount(),

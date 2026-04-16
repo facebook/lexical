@@ -46,8 +46,8 @@ import {
   $internalCreateSelection,
   $isNodeSelection,
   $isRangeSelection,
+  $updateDOMSelection,
   applySelectionTransforms,
-  updateDOMSelection,
 } from './LexicalSelection';
 import {
   $getCompositionKey,
@@ -649,7 +649,7 @@ export function $commitPendingUpdates(
         if (blockCursorElement !== null) {
           removeDOMBlockCursorElement(blockCursorElement, editor, rootElement);
         }
-        updateDOMSelection(
+        $updateDOMSelection(
           currentSelection,
           pendingSelection,
           editor,

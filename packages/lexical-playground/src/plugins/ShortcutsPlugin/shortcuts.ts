@@ -6,6 +6,7 @@
  *
  */
 
+import {HeadingTagType} from '@lexical/rich-text';
 import {IS_APPLE} from '@lexical/utils';
 import {isExactShortcutMatch} from 'lexical';
 
@@ -60,10 +61,14 @@ export function isFormatParagraph(event: KeyboardEvent): boolean {
   });
 }
 
-export function isFormatHeading(event: KeyboardEvent): boolean {
-  return ['1', '2', '3'].some((key) => {
-    return isExactShortcutMatch(event, key, {...CONTROL_OR_META, altKey: true});
-  });
+export function getFormatHeading(
+  event: KeyboardEvent,
+): HeadingTagType | undefined {
+  for (const key of ['1', '2', '3'] as const) {
+    if (isExactShortcutMatch(event, key, {...CONTROL_OR_META, altKey: true})) {
+      return `h${key}`;
+    }
+  }
 }
 
 export function isFormatNumberedList(event: KeyboardEvent): boolean {

@@ -28,7 +28,6 @@ import {
   $createLineBreakNode,
   $createParagraphNode,
   $createTabNode,
-  $hasUpdateTag,
   $isTabNode,
   $isTextNode,
   addClassNamesToElement,
@@ -290,25 +289,6 @@ export class CodeNode extends ElementNode {
     selection: RangeSelection,
     restoreSelection = true,
   ): null | ParagraphNode | CodeHighlightNode | TabNode {
-    const children = this.getChildren();
-    const childrenLength = children.length;
-
-    if (
-      childrenLength >= 2 &&
-      children[childrenLength - 1].getTextContent() === '\n' &&
-      children[childrenLength - 2].getTextContent() === '\n' &&
-      selection.isCollapsed() &&
-      selection.anchor.key === this.__key &&
-      selection.anchor.offset === childrenLength &&
-      !$hasUpdateTag('paste')
-    ) {
-      children[childrenLength - 1].remove();
-      children[childrenLength - 2].remove();
-      const newElement = $createParagraphNode();
-      this.insertAfter(newElement, restoreSelection);
-      return newElement;
-    }
-
     // If the selection is within the codeblock, find all leading tabs and
     // spaces of the current line. Create a new line that has all those
     // tabs and spaces, such that leading indentation is preserved.

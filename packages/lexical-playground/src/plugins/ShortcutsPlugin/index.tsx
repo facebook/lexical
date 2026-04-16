@@ -80,7 +80,8 @@ export default function ShortcutsPlugin({
       } else if (isFormatParagraph(event)) {
         formatParagraph(editor);
       } else if (isFormatHeading(event)) {
-        const headingSize = `h${event.key}` as HeadingTagType;
+        const level = /^\d$/.test(event.key) ? event.key : event.code.slice(5);
+        const headingSize = `h${level}` as HeadingTagType;
         formatHeading(editor, toolbarState.blockType, headingSize);
       } else if (isFormatBulletList(event)) {
         formatBulletList(editor, toolbarState.blockType);

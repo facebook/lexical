@@ -7,7 +7,7 @@
  */
 
 import {IS_APPLE} from '@lexical/utils';
-import {isExactShortcutMatch, isModifierMatch} from 'lexical';
+import {isExactShortcutMatch} from 'lexical';
 
 //disable eslint sorting rule for quick reference to shortcuts
 /* eslint-disable sort-keys-fix/sort-keys-fix */
@@ -61,12 +61,9 @@ export function isFormatParagraph(event: KeyboardEvent): boolean {
 }
 
 export function isFormatHeading(event: KeyboardEvent): boolean {
-  const {key} = event;
-
-  return (
-    ['1', '2', '3'].includes(key) &&
-    isModifierMatch(event, {...CONTROL_OR_META, altKey: true})
-  );
+  return ['1', '2', '3'].some((key) => {
+    return isExactShortcutMatch(event, key, {...CONTROL_OR_META, altKey: true});
+  });
 }
 
 export function isFormatNumberedList(event: KeyboardEvent): boolean {

@@ -1014,6 +1014,11 @@ export function isExactShortcutMatch(
     return false;
   }
 
+  // Fallback for number keys
+  if (event.code.startsWith('Digit') && /^\d$/.test(expectedKey)) {
+    return event.code === `Digit${expectedKey}`;
+  }
+
   const expectedCode = 'Key' + expectedKey.toUpperCase();
 
   // For default keys with not English-based keyboard layouts where `event.key` is non-ASCII, match by `event.code`.

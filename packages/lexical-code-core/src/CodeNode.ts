@@ -6,6 +6,7 @@
  *
  */
 
+import type {CodeExtension} from './CodeExtension';
 import type {
   DOMConversionMap,
   DOMConversionOutput,
@@ -38,7 +39,6 @@ import {
 } from 'lexical';
 import warnOnlyOnce from 'shared/warnOnlyOnce';
 
-import {CodeExtension} from './CodeExtension';
 import {
   $createCodeHighlightNode,
   $isCodeHighlightNode,

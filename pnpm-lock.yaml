@@ -292,12 +292,18 @@ importers:
       '@lexical/code-prism':
         specifier: workspace:*
         version: link:../lexical-code-prism
+      '@lexical/extension':
+        specifier: workspace:*
+        version: link:../lexical-extension
       lexical:
         specifier: workspace:*
         version: link:../lexical
 
   packages/lexical-code-core:
     dependencies:
+      '@lexical/extension':
+        specifier: workspace:*
+        version: link:../lexical-extension
       lexical:
         specifier: workspace:*
         version: link:../lexical

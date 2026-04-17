@@ -5,10 +5,17 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {defineExtension} from 'lexical';
+
+import {
+  $getSelection,
+  $isRangeSelection,
+  COMMAND_PRIORITY_LOW,
+  defineExtension,
+  KEY_ENTER_COMMAND,
+} from 'lexical';
 
 import {CodeHighlightNode} from './CodeHighlightNode';
-import {CodeNode} from './CodeNode';
+import {$exitCodeNodeOnEnter, CodeNode} from './CodeNode';
 
 /**
  * Add code blocks to the editor (syntax highlighting provided separately)
@@ -16,4 +23,18 @@ import {CodeNode} from './CodeNode';
 export const CodeExtension = defineExtension({
   name: '@lexical/code',
   nodes: () => [CodeNode, CodeHighlightNode],
+  register(editor) {
+    return editor.registerCommand<KeyboardEvent>(
+      KEY_ENTER_COMMAND,
+      (event) => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection) && $exitCodeNodeOnEnter(selection)) {
+          event.preventDefault();
+          return true;
+        }
+        return false;
+      },
+      COMMAND_PRIORITY_LOW,
+    );
+  },
 });

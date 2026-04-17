@@ -6,9 +6,7 @@
  *
  */
 
-'use strict';
-
-function evalToString(ast /* : Object */) /* : string */ {
+export default function evalToString(ast /* : Object */) /* : string */ {
   switch (ast.type) {
     case 'StringLiteral':
     case 'Literal': // ESLint
@@ -22,5 +20,3 @@ function evalToString(ast /* : Object */) /* : string */ {
       throw new Error('Unsupported type ' + ast.type);
   }
 }
-
-module.exports = evalToString;

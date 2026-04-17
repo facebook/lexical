@@ -7,7 +7,6 @@
  */
 
 import {TOGGLE_LINK_COMMAND} from '@lexical/link';
-import {HeadingTagType} from '@lexical/rich-text';
 import {
   COMMAND_PRIORITY_NORMAL,
   FORMAT_ELEMENT_COMMAND,
@@ -36,6 +35,7 @@ import {
   UpdateFontSizeType,
 } from '../ToolbarPlugin/utils';
 import {
+  getFormatHeading,
   isAddComment,
   isCapitalize,
   isCenterAlign,
@@ -44,7 +44,6 @@ import {
   isFormatBulletList,
   isFormatCheckList,
   isFormatCode,
-  isFormatHeading,
   isFormatNumberedList,
   isFormatParagraph,
   isFormatQuote,
@@ -77,11 +76,12 @@ export default function ShortcutsPlugin({
       // Short-circuit, a least one modifier must be set
       if (isModifierMatch(event, {})) {
         return false;
+      }
+      const headingSize = getFormatHeading(event);
+      if (headingSize) {
+        formatHeading(editor, toolbarState.blockType, headingSize);
       } else if (isFormatParagraph(event)) {
         formatParagraph(editor);
-      } else if (isFormatHeading(event)) {
-        const headingSize = `h${event.key}` as HeadingTagType;
-        formatHeading(editor, toolbarState.blockType, headingSize);
       } else if (isFormatBulletList(event)) {
         formatBulletList(editor, toolbarState.blockType);
       } else if (isFormatNumberedList(event)) {

@@ -8,9 +8,7 @@
  *
  */
 
-'use strict';
-
-const {exec} = require('../shared/childProcess');
+import {exec} from '../shared/childProcess.mjs';
 
 const isPrerelease = process.env.npm_package_version.indexOf('-') !== -1;
 

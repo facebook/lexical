@@ -6,11 +6,10 @@
  *
  */
 
-'use strict';
+import fs from 'fs-extra';
+import path from 'node:path';
 
-const fs = require('fs-extra');
-const path = require('node:path');
-const {packagesManager} = require('./shared/packagesManager');
+import {packagesManager} from './shared/packagesManager.mjs';
 
 fs.removeSync(path.resolve(`./npm`));
 fs.removeSync(path.resolve(`./.ts-temp`));

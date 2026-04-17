@@ -11,7 +11,7 @@ import {globSync} from 'glob';
 import path from 'node:path';
 import prettier from 'prettier';
 
-import {packagesManager} from './shared/packagesManager.js';
+import {packagesManager} from './shared/packagesManager.mjs';
 
 /**
  * @typedef {Object} UpdateTsconfigOptions

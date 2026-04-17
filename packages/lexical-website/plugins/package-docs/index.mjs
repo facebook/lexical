@@ -6,13 +6,12 @@
  *
  */
 
-'use strict';
+import {glob} from 'glob';
+import fs from 'node:fs';
+import path from 'node:path';
 
-const fs = require('fs');
-const path = require('path');
-const glob = require('glob');
 // Not using packagesManager since it will cache package.json files
-const {PackageMetadata} = require('../../../../scripts/shared/PackageMetadata');
+import {PackageMetadata} from '../../../../scripts/shared/PackageMetadata.mjs';
 
 /**
  * @typedef {Object} PackageDocsPluginOptions
@@ -30,7 +29,7 @@ const {PackageMetadata} = require('../../../../scripts/shared/PackageMetadata');
  * @param {PackageDocsPluginOptions} options
  * @returns {import('@docusaurus/types').Plugin}
  */
-module.exports = async function (context, options) {
+export default async function (context, options) {
   return {
     getPathsToWatch: () => [`${options.baseDir}/*/{README.md,package.json}`],
     loadContent: () => {
@@ -80,4 +79,4 @@ module.exports = async function (context, options) {
     },
     name: 'package-docs',
   };
-};
+}

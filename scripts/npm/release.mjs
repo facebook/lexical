@@ -8,12 +8,13 @@
  *
  */
 
-'use strict';
+import minimist from 'minimist';
+import readline from 'node:readline';
 
-const readline = require('readline');
-const {exec} = require('../shared/childProcess');
-const {packagesManager} = require('../shared/packagesManager');
-const argv = require('minimist')(process.argv.slice(2));
+import {exec} from '../shared/childProcess.mjs';
+import {packagesManager} from '../shared/packagesManager.mjs';
+
+const argv = minimist(process.argv.slice(2));
 
 const nonInteractive = argv['non-interactive'];
 const dryRun = argv['dry-run'];

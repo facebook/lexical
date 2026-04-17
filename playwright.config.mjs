@@ -6,8 +6,7 @@
  *
  */
 
-'use strict';
-const {devices} = require('@playwright/test');
+import {devices} from '@playwright/test';
 
 const {CI} = process.env;
 const IS_CI = CI === 'true';
@@ -69,4 +68,4 @@ const config = {
     : undefined,
   workers: 4,
 };
-module.exports = config;
+export default config;

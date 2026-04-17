@@ -10,16 +10,13 @@ import type {
   ModuleExportEntry,
   NpmModuleExportEntry,
   PackageMetadata,
-} from '../../scripts/shared/PackageMetadata';
+} from '../../scripts/shared/PackageMetadata.mjs';
 import type {Alias} from 'vite';
 
 import * as fs from 'node:fs';
-import {createRequire} from 'node:module';
 import * as path from 'node:path';
 
-const require = createRequire(import.meta.url);
-const {packagesManager} =
-  require('../../scripts/shared/packagesManager') as typeof import('../../scripts/shared/packagesManager');
+import {packagesManager} from '../../scripts/shared/packagesManager.mjs';
 
 /**
  * Escape a string for exact match in a RegExp

@@ -6,12 +6,10 @@
  *
  */
 
-'use strict';
+import {exec as execCb, spawn as spawnCb} from 'node:child_process';
+import {promisify} from 'node:util';
 
-const {exec: execCb, spawn: spawnCb} = require('child_process');
-const {promisify} = require('util');
-
-const exec = promisify(execCb);
+export const exec = promisify(execCb);
 
 /**
  * @param {string} command
@@ -19,7 +17,7 @@ const exec = promisify(execCb);
  * @param {import('child_process').SpawnOptions} [options]
  * @returns {Promise<void>}
  */
-function spawn(command, args, options) {
+export function spawn(command, args, options) {
   return new Promise((resolve, reject) => {
     const child = spawnCb(command, args, options);
     child.on('close', (code) => {
@@ -34,6 +32,3 @@ function spawn(command, args, options) {
     child.on('error', reject);
   });
 }
-
-exports.exec = exec;
-exports.spawn = spawn;

@@ -6,8 +6,6 @@
  *
  */
 
-'use strict';
-
 /*:: import type { ErrorMap } from './Types' */
 
 /**
@@ -16,7 +14,9 @@
  * into
  *   { 0: 'MUCH ERROR', 1: 'SUCH WRONG' }
  */
-function invertObject(targetObj /* : ErrorMap */) /* : ErrorMap */ {
+export default function invertObject(
+  targetObj /* : ErrorMap */,
+) /* : ErrorMap */ {
   const result = {};
   const mapKeys = Object.keys(targetObj);
 
@@ -28,5 +28,3 @@ function invertObject(targetObj /* : ErrorMap */) /* : ErrorMap */ {
 
   return result;
 }
-
-module.exports = invertObject;

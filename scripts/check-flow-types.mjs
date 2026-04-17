@@ -6,13 +6,11 @@
  *
  */
 
-'use strict';
-
-const {spawn} = require('child_process');
+import {spawn} from 'node:child_process';
 
 async function runFlow(renderer, args) {
   return new Promise((resolve) => {
-    let cmd = __dirname + '/../node_modules/.bin/flow';
+    let cmd = import.meta.dirname + '/../node_modules/.bin/flow';
     if (process.platform === 'win32') {
       cmd = cmd.replace(/\//g, '\\') + '.cmd';
     }

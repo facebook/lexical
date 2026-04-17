@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-'use strict';
 
 /**
  * Converts a package name in the npm name convention to the www
@@ -18,7 +17,7 @@
  * @param {boolean} [forTypes] true to match the name that typescript will produce
  * @returns {string} the name of the package in www format
  */
-module.exports = function npmToWwwName(name) {
+export default function npmToWwwName(name) {
   let parts = name.replace(/^@/, '').split(/\//g);
 
   // Handle the @lexical/react/FlatNameSpace scenario
@@ -40,4 +39,4 @@ module.exports = function npmToWwwName(name) {
         : part.charAt(0).toUpperCase() + part.slice(1),
     )
     .join('');
-};
+}

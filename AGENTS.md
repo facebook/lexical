@@ -191,4 +191,4 @@ When creating custom nodes:
 - Build script: `scripts/build.mjs`
 - Supports multiple build modes: development, production, www (Meta internal)
 - TypeScript source → compiled to CommonJS and ESM
-- Package manager logic in `scripts/shared/packagesManager.js`
+- Package manager logic in `scripts/shared/packagesManager.mjs`

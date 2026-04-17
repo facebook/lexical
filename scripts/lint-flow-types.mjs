@@ -6,13 +6,13 @@
  *
  */
 // @ts-check
-'use strict';
 
-const fs = require('fs-extra');
-const ts = require('typescript');
-const tsMorph = require('ts-morph');
-const hermesParser = require('hermes-parser');
-const {packagesManager} = require('./shared/packagesManager');
+import fs from 'fs-extra';
+import * as hermesParser from 'hermes-parser';
+import * as tsMorph from 'ts-morph';
+import ts from 'typescript';
+
+import {packagesManager} from './shared/packagesManager.mjs';
 
 const pretty = process.env.CI !== 'true';
 

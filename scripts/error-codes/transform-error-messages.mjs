@@ -6,21 +6,19 @@
  *
  */
 
-'use strict';
-// @ts-check
+import * as helperModuleImports from '@babel/helper-module-imports';
+import prettier from '@prettier/sync';
+import fs from 'fs-extra';
 
-const fs = require('fs-extra');
-const ErrorMap = require('./ErrorMap');
-const evalToString = require('./evalToString');
-const helperModuleImports = require('@babel/helper-module-imports');
-const prettier = require('@prettier/sync');
+import ErrorMap from './ErrorMap.mjs';
+import evalToString from './evalToString.mjs';
 
 /** @type {Map<string, ErrorMap>} */
 const errorMaps = new Map();
 /**
  * Get a module-global ErrorMap instance so that all instances of this
  * plugin are working with the same data structure. Typically there is
- * at most one entry in this map (`${__dirname}/codes.json`).
+ * at most one entry in this map (`${import.meta.dirname}/codes.json`).
  *
  * @param {string} filepath
  * @returns {ErrorMap}
@@ -29,7 +27,7 @@ function getErrorMap(filepath) {
   let errorMap = errorMaps.get(filepath);
   if (!errorMap) {
     const prettierConfig = {
-      ...(prettier.resolveConfig(__filename) || {}),
+      ...(prettier.resolveConfig(import.meta.filename) || {}),
       filepath,
     };
     errorMap = new ErrorMap(fs.readJsonSync(filepath), (newErrorMap) =>
@@ -70,10 +68,10 @@ const invariantExpressions = [
  * @param {Partial<TransformErrorMessagesOptions>} opts
  * @returns {Promise<import('@babel/core').PluginObj>}
  */
-module.exports = function (babel, opts) {
+export default function transformErrorMessages(babel, opts) {
   const t = babel.types;
   const errorMap = getErrorMap(
-    (opts && opts.errorCodesPath) || `${__dirname}/codes.json`,
+    (opts && opts.errorCodesPath) || `${import.meta.dirname}/codes.json`,
   );
   return {
     visitor: {
@@ -199,4 +197,4 @@ module.exports = function (babel, opts) {
       },
     },
   };
-};
+}

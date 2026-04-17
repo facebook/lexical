@@ -11,7 +11,7 @@ import {glob} from 'glob';
 import path from 'node:path';
 import {describe, expect, test} from 'vitest';
 
-import {packagesManager} from '../../shared/packagesManager.js';
+import {packagesManager} from '../../shared/packagesManager.mjs';
 import {describeDevExample, describeExample} from './utils.mjs';
 
 describe('prepare-release tests', () => {

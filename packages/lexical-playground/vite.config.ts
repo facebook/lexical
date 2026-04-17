@@ -8,14 +8,12 @@
 
 import babel from '@rollup/plugin-babel';
 import react from '@vitejs/plugin-react';
-import {createRequire} from 'node:module';
 import {defineConfig} from 'vite';
 
+import transformErrorMessages from '../../scripts/error-codes/transform-error-messages.mjs';
 import viteMonorepoResolutionPlugin from '../shared/lexicalMonorepoPlugin';
 import viteCopyEsm from './viteCopyEsm';
 import viteCopyExcalidrawAssets from './viteCopyExcalidrawAssets';
-
-const require = createRequire(import.meta.url);
 
 // https://vitejs.dev/config/
 export default defineConfig(({mode}) => ({
@@ -51,7 +49,7 @@ export default defineConfig(({mode}) => ({
         ...(mode !== 'production'
           ? [
               [
-                require('../../scripts/error-codes/transform-error-messages'),
+                transformErrorMessages,
                 {
                   noMinify: true,
                 },

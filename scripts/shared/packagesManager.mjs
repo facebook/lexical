@@ -6,12 +6,15 @@
  *
  */
 // @ts-check
-'use strict';
 
-const path = require('node:path');
-const glob = require('glob');
+import {glob} from 'glob';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
 
-const {PackageMetadata} = require('./PackageMetadata');
+import {PackageMetadata} from './PackageMetadata.mjs';
+
+// Use import.meta.url (not import.meta.dirname) for jiti v1 compatibility
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  *
@@ -123,7 +126,7 @@ class PackagesManager {
   }
 }
 
-exports.packagesManager = new PackagesManager(
+export const packagesManager = new PackagesManager(
   glob.sync(
     path.resolve(
       path.dirname(path.dirname(__dirname)),

@@ -6,11 +6,11 @@
  *
  */
 // @ts-check
-'use strict';
 
-const fs = require('fs-extra');
-const path = require('node:path');
-const {packagesManager} = require('./shared/packagesManager');
+import fs from 'fs-extra';
+import path from 'node:path';
+
+import {packagesManager} from './shared/packagesManager.mjs';
 
 function readmeTemplate(npmName, directoryName, description) {
   const apiModuleName = directoryName.replace(/-/g, '_');

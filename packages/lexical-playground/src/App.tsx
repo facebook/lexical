@@ -227,7 +227,6 @@ function buildExtensionFromSettings(
       configExtension(HistoryExtension, {disabled: isCollab}),
       isRichText ? PlaygroundRichTextExtension : PlainTextExtension,
     ],
-    html: buildHTMLConfig(),
     name: '@lexical/playground/dynamic-config',
   });
 }

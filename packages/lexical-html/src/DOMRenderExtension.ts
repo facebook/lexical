@@ -13,8 +13,13 @@ import {compileDOMRenderConfigOverrides} from './compileDOMRenderConfigOverrides
 import {DOMRenderExtensionName} from './constants';
 import {contextFromPairs} from './ContextRecord';
 
-/** @internal @experimental */
-
+/**
+ * @experimental
+ *
+ * An extension that allows overriding the render and export behavior for an
+ * editor. This is highly experimental and subject to change from one version
+ * to the next.
+ **/
 export const DOMRenderExtension = defineExtension<
   DOMRenderConfig,
   typeof DOMRenderExtensionName,

@@ -7,7 +7,6 @@
  */
 
 import {
-  $createParagraphNode,
   $getSelection,
   $isRangeSelection,
   COMMAND_PRIORITY_LOW,
@@ -16,7 +15,7 @@ import {
 } from 'lexical';
 
 import {CodeHighlightNode} from './CodeHighlightNode';
-import {$isCodeNode, CodeNode} from './CodeNode';
+import {$exitCodeNodeOnEnter, CodeNode} from './CodeNode';
 
 /**
  * Add code blocks to the editor (syntax highlighting provided separately)
@@ -29,31 +28,8 @@ export const CodeExtension = defineExtension({
       KEY_ENTER_COMMAND,
       (event) => {
         const selection = $getSelection();
-        if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
-          return false;
-        }
-        const {anchor} = selection;
-        if (anchor.type !== 'element') {
-          return false;
-        }
-        const codeNode = anchor.getNode();
-        if (!$isCodeNode(codeNode)) {
-          return false;
-        }
-        const children = codeNode.getChildren();
-        const childrenLength = children.length;
-        if (
-          childrenLength >= 2 &&
-          children[childrenLength - 1].getTextContent() === '\n' &&
-          children[childrenLength - 2].getTextContent() === '\n' &&
-          anchor.offset === childrenLength
-        ) {
+        if ($isRangeSelection(selection) && $exitCodeNodeOnEnter(selection)) {
           event.preventDefault();
-          children[childrenLength - 1].remove();
-          children[childrenLength - 2].remove();
-          const newElement = $createParagraphNode();
-          codeNode.insertAfter(newElement, true);
-          newElement.select();
           return true;
         }
         return false;

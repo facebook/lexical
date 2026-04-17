@@ -18,7 +18,7 @@ import {
 import {describe, expect, it} from 'vitest';
 
 import {$createCodeHighlightNode} from '../../CodeHighlightNode';
-import {$isCodeNode} from '../../CodeNode';
+import {$isCodeNode, CodeNode} from '../../CodeNode';
 
 describe('CodeExtension', () => {
   it('should not escape code block when content has consecutive blank lines (paste scenario)', () => {
@@ -67,8 +67,7 @@ describe('CodeExtension', () => {
     using editor = buildEditorFromExtensions(ext);
     editor.update(
       () => {
-        const root = $getRoot();
-        const codeNode = root.getFirstChildOrThrow();
+        const codeNode = $getRoot().getFirstChildOrThrow<CodeNode>();
         codeNode.select(codeNode.getChildrenSize(), codeNode.getChildrenSize());
       },
       {discrete: true},
@@ -109,8 +108,7 @@ describe('CodeExtension', () => {
     using editor = buildEditorFromExtensions(ext);
     editor.update(
       () => {
-        const root = $getRoot();
-        const codeNode = root.getFirstChildOrThrow();
+        const codeNode = $getRoot().getFirstChildOrThrow<CodeNode>();
         codeNode.select(codeNode.getChildrenSize(), codeNode.getChildrenSize());
       },
       {discrete: true},
@@ -124,7 +122,6 @@ describe('CodeExtension', () => {
     editor.update(
       () => {
         const root = $getRoot();
-        // Should still be just one code node, no paragraph created
         expect(root.getChildrenSize()).toBe(1);
         expect($isCodeNode(root.getFirstChildOrThrow())).toBe(true);
       },
@@ -151,9 +148,7 @@ describe('CodeExtension', () => {
     using editor = buildEditorFromExtensions(ext);
     editor.update(
       () => {
-        const root = $getRoot();
-        const codeNode = root.getFirstChildOrThrow();
-        // Select at position 1, not at the end
+        const codeNode = $getRoot().getFirstChildOrThrow<CodeNode>();
         codeNode.select(1, 1);
       },
       {discrete: true},
@@ -167,7 +162,6 @@ describe('CodeExtension', () => {
     editor.update(
       () => {
         const root = $getRoot();
-        // Should still be just one code node
         expect(root.getChildrenSize()).toBe(1);
         expect($isCodeNode(root.getFirstChildOrThrow())).toBe(true);
       },

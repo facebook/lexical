@@ -27,7 +27,7 @@ export const CodeExtension = defineExtension({
   register(editor) {
     return editor.registerCommand<KeyboardEvent>(
       KEY_ENTER_COMMAND,
-      () => {
+      (event) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
           return false;
@@ -48,6 +48,7 @@ export const CodeExtension = defineExtension({
           children[childrenLength - 2].getTextContent() === '\n' &&
           anchor.offset === childrenLength
         ) {
+          event.preventDefault();
           children[childrenLength - 1].remove();
           children[childrenLength - 2].remove();
           const newElement = $createParagraphNode();

@@ -209,7 +209,7 @@ export function Toolbar(): JSX.Element {
 
   return (
     <div
-      className="sticky top-0 z-10 flex flex-wrap items-center gap-0.5 overflow-x-auto border-b [border-bottom-style:solid] border-b-black/10 bg-zinc-50 px-2 py-1.5 dark:border-b-white/10 dark:bg-zinc-800"
+      className="sticky top-0 z-10 flex flex-wrap items-center gap-0.5 overflow-x-auto border-b border-b-black/10 bg-zinc-50 px-2 py-1.5 [border-bottom-style:solid] dark:border-b-white/10 dark:bg-zinc-800"
       ref={toolbarRef}>
       <select
         className="cursor-pointer appearance-none rounded-md border border-solid border-transparent bg-transparent px-2 py-1 text-sm font-medium text-zinc-700 transition-colors duration-150 hover:bg-zinc-200 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500 dark:text-zinc-200 dark:hover:bg-zinc-700"

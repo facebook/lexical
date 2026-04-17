@@ -8,11 +8,13 @@
 
 import {$insertGeneratedNodes} from '@lexical/clipboard';
 import {CodeNode} from '@lexical/code';
+import {buildEditorFromExtensions} from '@lexical/extension';
 import {createHeadlessEditor} from '@lexical/headless';
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
 import {LinkNode} from '@lexical/link';
 import {ListItemNode, ListNode} from '@lexical/list';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
+import {JSDOM} from 'jsdom';
 import {
   $createParagraphNode,
   $createRangeSelection,
@@ -267,17 +269,16 @@ describe('HTML', () => {
 
   describe('$generateNodesFromDOM: CSS class style inlining', () => {
     test('HTML with <style> tags inlines styles by class', () => {
-      const editor = createHeadlessEditor();
-      const parser = new DOMParser();
-
+      const editor = buildEditorFromExtensions();
+      // workaround for https://github.com/jsdom/jsdom/issues/3179 - DOMParser does not work correctly
+      const dom = new JSDOM(
+        `<html><head><style>.highlight { font-weight: bold; }</style></head>` +
+          `<body><p><span class="highlight">Hello</span></p></body></html>`,
+      ).window.document;
+      expect(dom.styleSheets).toHaveLength(1);
       editor.update(
         () => {
           const root = $getRoot();
-          const dom = parser.parseFromString(
-            `<html><head><style>.highlight { font-weight: bold; }</style></head>` +
-              `<body><p><span class="highlight">Hello</span></p></body></html>`,
-            'text/html',
-          );
           const nodes = $generateNodesFromDOM(editor, dom);
           $insertGeneratedNodes(editor, nodes, root.select(0));
           expect(root.getTextContent()).toBe('Hello');

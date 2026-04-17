@@ -17,7 +17,6 @@ import type {
 } from 'lexical';
 
 import {$sliceSelectedTextNodeContent} from '@lexical/selection';
-import {isBlockDomNode, isHTMLElement} from '@lexical/utils';
 import {
   $createLineBreakNode,
   $createParagraphNode,
@@ -29,10 +28,16 @@ import {
   ArtificialNode__DO_NOT_USE,
   ElementNode,
   getRegisteredNode,
+  isBlockDomNode,
   isDocumentFragment,
   isDOMDocumentNode,
+  isHTMLElement,
   isInlineDomNode,
 } from 'lexical';
+
+function isStyleRule(rule: CSSRule): rule is CSSStyleRule {
+  return rule.constructor.name === CSSStyleRule.name;
+}
 
 /**
  * Inlines CSS rules from <style> tags onto matching elements as inline styles.
@@ -72,7 +77,7 @@ function inlineStylesFromStyleSheets(doc: Document): void {
         continue;
       }
       for (const rule of Array.from(rules)) {
-        if (!(rule instanceof CSSStyleRule)) {
+        if (!isStyleRule(rule)) {
           continue;
         }
         let elements: NodeListOf<Element>;
@@ -82,7 +87,7 @@ function inlineStylesFromStyleSheets(doc: Document): void {
           continue;
         }
         for (const el of Array.from(elements)) {
-          if (!(el instanceof HTMLElement)) {
+          if (!isHTMLElement(el)) {
             continue;
           }
           const originalProps = getOriginalInlineProps(el);

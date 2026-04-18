@@ -53,14 +53,14 @@ describe('precompileDOMRenderConfigOverrides', () => {
     }
     const overrides = [
       domOverride([TextNode], {
-        $exportDOM(node) {
+        $exportDOM: function $exportDOM_TextNode_0(node) {
           const span = document.createElement('span');
           span.append(node.getTextContent());
           return {element: span};
         },
       }),
       domOverride([TextNodeA], {
-        $exportDOM(node) {
+        $exportDOM: function $exportDOM_TextNodeA_1(node) {
           const span = document.createElement('span');
           span.append(node.getTextContent());
           span.dataset.lexicalType = node.getType();
@@ -68,7 +68,7 @@ describe('precompileDOMRenderConfigOverrides', () => {
         },
       }),
       domOverride([TextNode], {
-        $exportDOM(node, $next) {
+        $exportDOM: function $exportDOM_TextNode_2(node, $next) {
           const r = $next();
           if (isHTMLElement(r.element)) {
             r.element.dataset.didOverride = 'true';
@@ -90,8 +90,11 @@ describe('precompileDOMRenderConfigOverrides', () => {
             text: [overrides[0].$exportDOM, overrides[2].$exportDOM],
             'text-a': [
               overrides[0].$exportDOM,
-              overrides[1].$exportDOM,
+              // This is lower precedence than overrides[1] because it's for TextNode
               overrides[2].$exportDOM,
+              // this one is higher precedence and sorted after its extension ordering
+              // since it is for TextNodeA
+              overrides[1].$exportDOM,
             ],
           },
         ],
@@ -111,22 +114,22 @@ describe('precompileDOMRenderConfigOverrides', () => {
     }
     const overrides = [
       domOverride([TextNode], {
-        $exportDOM(node) {
+        $exportDOM: function $exportDOM_TextNode_0(node) {
           const span = document.createElement('span');
           span.append(node.getTextContent());
           return {element: span};
         },
       }),
       domOverride('*', {
-        $createDOM(node, $next) {
+        $createDOM: function $createDOM_any_1(node, $next) {
           return $next();
         },
-        $exportDOM(node, $next) {
+        $exportDOM: function $exportDOM_any_1(node, $next) {
           return $next();
         },
       }),
       domOverride([TextNodeA], {
-        $exportDOM(node) {
+        $exportDOM: function $exportDOM_TextNodeA_2(node) {
           const span = document.createElement('span');
           span.append(node.getTextContent());
           span.dataset.lexicalType = node.getType();
@@ -134,7 +137,7 @@ describe('precompileDOMRenderConfigOverrides', () => {
         },
       }),
       domOverride([TextNode], {
-        $exportDOM(node, $next) {
+        $exportDOM: function $exportDOM_TextNode_3(node, $next) {
           const r = $next();
           if (isHTMLElement(r.element)) {
             r.element.dataset.didOverride = 'true';
@@ -143,7 +146,7 @@ describe('precompileDOMRenderConfigOverrides', () => {
         },
       }),
       domOverride([$isLineBreakNode], {
-        $exportDOM(node, $next) {
+        $exportDOM: function $exportDOM_LineBreakNode_4(node, $next) {
           return $next();
         },
       }),
@@ -155,22 +158,23 @@ describe('precompileDOMRenderConfigOverrides', () => {
     expect(prerender).toEqual({
       $createDOM: [[ALWAYS_TRUE, overrides[1].$createDOM]],
       $exportDOM: [
+        // These are all merged because the predicate and wildcard were
+        // moved to a higher priority
         [
           'types',
           {
-            text: [overrides[0].$exportDOM],
-            'text-a': [overrides[0].$exportDOM],
-          },
-        ],
-        [ALWAYS_TRUE, overrides[1].$exportDOM],
-        [
-          'types',
-          {
-            text: [overrides[3].$exportDOM],
-            'text-a': [overrides[2].$exportDOM, overrides[3].$exportDOM],
+            text: [overrides[0].$exportDOM, overrides[3].$exportDOM],
+            'text-a': [
+              overrides[0].$exportDOM,
+              overrides[3].$exportDOM,
+              // This is re-ordered because it targets TextNodeA
+              overrides[2].$exportDOM,
+            ],
           },
         ],
         [$isLineBreakNode, overrides[4].$exportDOM],
+        // Reordered since it always matches
+        [ALWAYS_TRUE, overrides[1].$exportDOM],
       ],
       $extractWithChild: [],
       $getDOMSlot: [],

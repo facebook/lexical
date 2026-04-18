@@ -125,7 +125,15 @@ export type AnyRenderStateConfig = RenderStateConfig<any>;
  */
 export interface DOMRenderConfig {
   /**
-   * {@link DOMRenderMatch} overrides to customize node behavior
+   * {@link DOMRenderMatch} overrides to customize node behavior,
+   * the final priority of these will be based on the following criteria:
+   *
+   * - Wildcards (`'*'`) have highest priority
+   * - Predicates (`$isParagraphNode`) have next priority
+   * - Subclasses have higher priority (e.g. `ParagraphNode` before `ElementNode`)
+   * - Extensions closer to the root have higher priority
+   * - Extensions depended on later have higher priority
+   * - Overrides defined later have higher priority
    */
   overrides: AnyDOMRenderMatch[];
   /**

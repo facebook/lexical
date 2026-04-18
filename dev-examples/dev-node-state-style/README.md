@@ -10,4 +10,4 @@ work outside of the monorepo.
 
 [![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/facebook/lexical/tree/main?file=dev-examples/dev-node-state-style/src/main.tsx&startCommand=pnpm%20run%20start:example%20dev-node-state-style)
 
-[![Open in StackBlitz-PR](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/etrepum/lexical/tree/claude%2fremove-dom-import-code-LGqib?file=dev-examples/dev-node-state-style/src/main.tsx&startCommand=pnpm%20run%20start:example%20dev-node-state-style)
+[![Open in StackBlitz-PR](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/etrepum/lexical/tree/domextension-override-sort?file=dev-examples/dev-node-state-style/src/main.tsx&startCommand=pnpm%20run%20start:example%20dev-node-state-style)

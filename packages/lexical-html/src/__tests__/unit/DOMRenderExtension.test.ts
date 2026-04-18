@@ -204,6 +204,181 @@ describe('DOMRenderExtension', () => {
       }),
     );
   });
+  test('$decorateDOM runs on create and update with correct prevNode', () => {
+    type Call = {
+      key: string;
+      prevKey: null | string;
+      id: null | string;
+    };
+    const calls: Call[] = [];
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: () => {
+          $setState($createTextNode('text!'), idState, 'text');
+          $getRoot().append(
+            $createParagraphNode().append(
+              $setState($createTextNode('text!'), idState, 'text'),
+            ),
+          );
+        },
+        dependencies: [
+          configExtension(DOMRenderExtension, {
+            overrides: [
+              domOverride([TextNode], {
+                $decorateDOM(nextNode, prevNode, dom) {
+                  calls.push({
+                    id: $getState(nextNode, idState),
+                    key: nextNode.getKey(),
+                    prevKey: prevNode ? prevNode.getKey() : null,
+                  });
+                  const id = $getState(nextNode, idState);
+                  if (id) {
+                    dom.setAttribute('id', id);
+                  } else {
+                    dom.removeAttribute('id');
+                  }
+                },
+              }),
+            ],
+          }),
+        ],
+        name: 'root',
+      }),
+    );
+    const root = document.createElement('div');
+    editor.setRootElement(root);
+    expect(calls).toHaveLength(1);
+    expect(calls[0].prevKey).toBe(null);
+    expect(calls[0].id).toBe('text');
+    expect(
+      editor.read(() => {
+        expectHtmlToBeEqual(
+          root.innerHTML,
+          html`
+            <p dir="auto">
+              <span id="text" data-lexical-text="true">text!</span>
+            </p>
+          `,
+        );
+      }),
+    );
+    editor.update(
+      () =>
+        $getRoot()
+          .getAllTextNodes()
+          .forEach((node) => $setState(node, idState, 'updated')),
+      {discrete: true},
+    );
+    expect(calls).toHaveLength(2);
+    expect(calls[1].prevKey).toBe(calls[0].key);
+    expect(calls[1].id).toBe('updated');
+    expect(
+      editor.read(() => {
+        expectHtmlToBeEqual(
+          root.innerHTML,
+          html`
+            <p dir="auto">
+              <span id="updated" data-lexical-text="true">text!</span>
+            </p>
+          `,
+        );
+      }),
+    );
+  });
+  test('$decorateDOM overrides all run in order (base, specific, wildcard last)', () => {
+    class TextNodeA extends TextNode {
+      $config() {
+        return this.config('text-a', {extends: TextNode});
+      }
+    }
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: () => {
+          $getRoot().append(
+            $createParagraphNode().append(
+              $create(TextNodeA).setTextContent('text a'),
+            ),
+          );
+        },
+        dependencies: [
+          configExtension(DOMRenderExtension, {
+            overrides: [
+              domOverride('*', {
+                $decorateDOM(_nextNode, _prevNode, dom) {
+                  dom.dataset.order = `${dom.dataset.order || ''}wildcard;`;
+                },
+              }),
+              domOverride([TextNodeA], {
+                $decorateDOM(_nextNode, _prevNode, dom) {
+                  dom.dataset.order = `${dom.dataset.order || ''}text-a;`;
+                },
+              }),
+              domOverride([TextNode], {
+                $decorateDOM(_nextNode, _prevNode, dom) {
+                  dom.dataset.order = `${dom.dataset.order || ''}text;`;
+                },
+              }),
+            ],
+          }),
+        ],
+        name: 'root',
+        nodes: [TextNodeA],
+      }),
+    );
+    const root = document.createElement('div');
+    editor.setRootElement(root);
+    expect(
+      editor.read(() => {
+        expectHtmlToBeEqual(
+          root.innerHTML,
+          html`
+            <p dir="auto" data-order="wildcard;">
+              <span data-lexical-text="true" data-order="text;text-a;wildcard;">
+                text a
+              </span>
+            </p>
+          `,
+        );
+      }),
+    );
+  });
+  test('$decorateDOM runs after children are reconciled', () => {
+    const childCounts: Array<{type: string; count: number}> = [];
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: () => {
+          $getRoot().append(
+            $createParagraphNode().append(
+              $createTextNode('a'),
+              $createLineBreakNode(),
+              $createTextNode('b'),
+            ),
+          );
+        },
+        dependencies: [
+          configExtension(DOMRenderExtension, {
+            overrides: [
+              domOverride('*', {
+                $decorateDOM(nextNode, _prevNode, dom) {
+                  const type = nextNode.getType();
+                  if (type === 'paragraph' || type === 'root') {
+                    childCounts.push({count: dom.childNodes.length, type});
+                  }
+                },
+              }),
+            ],
+          }),
+        ],
+        name: 'root',
+      }),
+    );
+    const root = document.createElement('div');
+    editor.setRootElement(root);
+    expect(childCounts).toEqual([
+      {count: 3, type: 'paragraph'},
+      {count: 1, type: 'root'},
+    ]);
+  });
   test('type merge', () => {
     class TextNodeA extends TextNode {
       $config() {

@@ -120,6 +120,7 @@ function getPredicate(
 function makePrerender(): PreEditorDOMRenderConfig {
   return {
     $createDOM: [],
+    $decorateDOM: [],
     $exportDOM: [],
     $extractWithChild: [],
     $getDOMSlot: [],
@@ -211,6 +212,19 @@ function merge5<T, N extends LexicalNode, A, B, C>(
     const $next = () => acc(node, a, b, c, editor);
     const $override = $getOverride(node);
     return $override ? $override(node, a, b, c, $next, editor) : $next();
+  };
+}
+
+function sequence4<N extends LexicalNode, A, B>(
+  $acc: AccFn<void, N, [A, B]>,
+  $getOverride: (n: N) => undefined | AccFn<void, N, [A, B]>,
+): typeof $acc {
+  return (node, a, b, editor) => {
+    $acc(node, a, b, editor);
+    const $override = $getOverride(node);
+    if ($override) {
+      $override(node, a, b, editor);
+    }
   };
 }
 
@@ -362,6 +376,10 @@ export function precompileDOMRenderConfigOverrides(
   return prerender;
 }
 
+function identity<T>(v: T) {
+  return v;
+}
+
 export function compileDOMRenderConfigOverrides(
   editorConfig: InitialEditorConfig,
   {overrides}: DOMRenderConfig,
@@ -378,5 +396,6 @@ export function compileDOMRenderConfigOverrides(
   compilePrerenderKey(prerender, '$shouldExclude', dom, merge3, ignoreNext3);
   compilePrerenderKey(prerender, '$shouldInclude', dom, merge3, ignoreNext3);
   compilePrerenderKey(prerender, '$updateDOM', dom, merge4, ignoreNext4);
+  compilePrerenderKey(prerender, '$decorateDOM', dom, sequence4, identity);
   return dom;
 }

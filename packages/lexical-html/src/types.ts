@@ -254,6 +254,36 @@ export interface DOMRenderMatch<T extends LexicalNode> {
     editor: LexicalEditor,
   ) => boolean;
   /**
+   * Called after a node is created or updated and should make any in-place
+   * updates to the DOM in whatever way is necessary to make it align with
+   * any changes that might have happened during the `$createDOM` or
+   * `$updateDOM`. This also runs after any children have been reconciled.
+   *
+   * Use this when you have code that you would need to duplicate in both
+   * methods, or if there is a need to ensure that the children are also
+   * reconciled before performing this in-place update.
+   *
+   * Unlike other overrides, all applicable `$decorateDOM` functions are
+   * called unconditionally. There is no `$next` argument, because there
+   * are no known use cases for avoiding the next implementation and due
+   * to the void return value it would be error-prone and add boilerplate
+   * to require calling it.
+   *
+   * The ordering here is equivalent to an implicit `$next` call *first*.
+   *
+   * @param nextNode The current version of this node
+   * @param prevNode The previous version of this node if `$updateDOM` returned `false`, or `null` if `$createDOM` was just called
+   * @param dom The previously rendered `HTMLElement` for this node
+   * @param editor The editor
+   */
+  $decorateDOM?: (
+    nextNode: T,
+    prevNode: null | T,
+    dom: HTMLElement,
+    editor: LexicalEditor,
+  ) => void;
+
+  /**
    * Controls how the this node is serialized to HTML. This is important for
    * copy and paste between Lexical and non-Lexical editors, or Lexical
    * editors with different namespaces, in which case the primary transfer

@@ -89,6 +89,12 @@ export type DOMRenderMatch<T: LexicalNode> = {
     $next: () => boolean,
     editor: LexicalEditor,
   ) => boolean,
+  +$decorateDOM?: (
+    nextNode: T,
+    prevNode: T | null,
+    dom: HTMLElement,
+    editor: LexicalEditor,
+  ) => void,
   +$exportDOM?: (
     node: T,
     $next: () => DOMExportOutput,

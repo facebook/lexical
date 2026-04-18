@@ -257,6 +257,8 @@ function $createNode(key: NodeKey, slot: ElementDOMSlot | null): HTMLElement {
     slot.insertChild(dom);
   }
 
+  activeEditorDOMRenderConfig.$decorateDOM(node, null, dom, activeEditor);
+
   if (__DEV__) {
     // Freeze the node in DEV to prevent accidental mutations
     Object.freeze(node);
@@ -651,6 +653,12 @@ function $reconcileNode(
     nextNode = nextRootNode;
   }
 
+  activeEditorDOMRenderConfig.$decorateDOM(
+    nextNode,
+    prevNode,
+    dom,
+    activeEditor,
+  );
   if (__DEV__) {
     // Freeze the node in DEV to prevent accidental mutations
     Object.freeze(nextNode);

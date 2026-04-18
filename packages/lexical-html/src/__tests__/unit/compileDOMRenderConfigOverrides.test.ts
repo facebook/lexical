@@ -83,6 +83,7 @@ describe('precompileDOMRenderConfigOverrides', () => {
     );
     expect(prerender).toEqual({
       $createDOM: [],
+      $decorateDOM: [],
       $exportDOM: [
         [
           'types',
@@ -157,6 +158,7 @@ describe('precompileDOMRenderConfigOverrides', () => {
     );
     expect(prerender).toEqual({
       $createDOM: [[ALWAYS_TRUE, overrides[1].$createDOM]],
+      $decorateDOM: [],
       $exportDOM: [
         // These are all merged because the predicate and wildcard were
         // moved to a higher priority

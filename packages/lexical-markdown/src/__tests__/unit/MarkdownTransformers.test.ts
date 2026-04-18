@@ -7,6 +7,7 @@
  */
 import {CodeExtension} from '@lexical/code-core';
 import {buildEditorFromExtensions} from '@lexical/extension';
+import {HistoryExtension} from '@lexical/history';
 import {$createLinkNode, $isLinkNode, LinkExtension} from '@lexical/link';
 import {ListExtension} from '@lexical/list';
 import {registerMarkdownShortcuts} from '@lexical/markdown';
@@ -20,11 +21,13 @@ import {
   $isRangeSelection,
   defineExtension,
   LexicalEditor,
+  UNDO_COMMAND,
 } from 'lexical';
 import {assert, describe, expect, test} from 'vitest';
 
 const MarkdownShortcutTestExtension = defineExtension({
   dependencies: [
+    HistoryExtension,
     LinkExtension,
     RichTextExtension,
     ListExtension,
@@ -153,6 +156,26 @@ describe('LINK', () => {
       assert($isLinkNode(linkNode), 'First child must be a LinkNode');
       expect(linkNode.getTextContent()).toBe('hell[world](www)o');
       expect(linkNode.getURL()).toBe('link');
+    });
+  });
+});
+
+describe('HISTORY', () => {
+  test('undo after markdown format transform preserves typed markdown text', () => {
+    using editor = buildEditorFromExtensions([MarkdownShortcutTestExtension]);
+    typeMarkdown(editor, 'lorem *ipsum*');
+
+    editor.update(
+      () => {
+        editor.dispatchCommand(UNDO_COMMAND, undefined);
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const paragraph = $getRoot().getFirstChildOrThrow();
+      assert($isParagraphNode(paragraph), 'Root child must be a paragraph');
+      expect(paragraph.getTextContent()).toBe('lorem *ipsum*');
     });
   });
 });

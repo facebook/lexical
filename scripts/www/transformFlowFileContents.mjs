@@ -6,12 +6,11 @@
  *
  */
 
-'use strict';
+import {t, transform} from 'hermes-transform';
+import prettier from 'prettier';
 
-const {packagesManager} = require('../shared/packagesManager');
-const npmToWwwName = require('./npmToWwwName');
-const {t, transform} = require('hermes-transform');
-const prettier = require('prettier');
+import {packagesManager} from '../shared/packagesManager.mjs';
+import npmToWwwName from './npmToWwwName.mjs';
 
 const wwwMappings = Object.fromEntries(
   packagesManager
@@ -22,7 +21,7 @@ const wwwMappings = Object.fromEntries(
 );
 
 const prettierConfig = prettier
-  .resolveConfig(__filename)
+  .resolveConfig(import.meta.filename)
   .then((cfg) => cfg || {});
 
 /**
@@ -56,7 +55,7 @@ function unwrapCode(code) {
  * @param {string} source
  * @returns {Promise<string>} transformed source
  */
-module.exports = async function transformFlowFileContents(source) {
+export default async function transformFlowFileContents(source) {
   return unwrapCode(
     await transform(
       wrapCode(source),
@@ -99,4 +98,4 @@ module.exports = async function transformFlowFileContents(source) {
       await prettierConfig,
     ),
   );
-};
+}

@@ -6,15 +6,10 @@
  *
  */
 
-'use strict';
+import transformErrorMessages from './scripts/error-codes/transform-error-messages.mjs';
 
-module.exports = {
-  plugins: [
-    [
-      require('./scripts/error-codes/transform-error-messages'),
-      {noMinify: true},
-    ],
-  ],
+export default {
+  plugins: [[transformErrorMessages, {noMinify: true}]],
   presets: [
     [
       '@babel/preset-env',

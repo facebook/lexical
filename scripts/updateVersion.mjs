@@ -6,16 +6,16 @@
  *
  */
 
-'use strict';
+import fs from 'fs-extra';
+import {glob} from 'glob';
+import path from 'node:path';
 
-const fs = require('fs-extra');
-const path = require('path');
-const glob = require('glob');
-const {packagesManager} = require('./shared/packagesManager');
-const {PackageMetadata} = require('./shared/PackageMetadata');
-const npmToWwwName = require('./www/npmToWwwName');
+import {PackageMetadata} from './shared/PackageMetadata.mjs';
+import {packagesManager} from './shared/packagesManager.mjs';
+import readMonorepoPackageJson from './shared/readMonorepoPackageJson.mjs';
+import npmToWwwName from './www/npmToWwwName.mjs';
 
-const monorepoPackageJson = require('./shared/readMonorepoPackageJson')();
+const monorepoPackageJson = readMonorepoPackageJson();
 // get version from monorepo package.json version
 const version = monorepoPackageJson.version;
 

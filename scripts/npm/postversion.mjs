@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env node
 
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
@@ -8,9 +8,7 @@
  *
  */
 
-'use strict';
-
-const {spawn} = require('../shared/childProcess');
+import {spawn} from '../shared/childProcess.mjs';
 
 const {npm_package_version, CHANNEL, GITHUB_OUTPUT} = process.env;
 

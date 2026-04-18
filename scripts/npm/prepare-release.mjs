@@ -8,14 +8,14 @@
  *
  */
 
-'use strict';
+import fs from 'fs-extra';
+import {glob} from 'glob';
+import path from 'node:path';
 
-const fs = require('fs-extra');
-const glob = require('glob');
-const path = require('node:path');
-const {packagesManager} = require('../shared/packagesManager');
+import {packagesManager} from '../shared/packagesManager.mjs';
+import readMonorepoPackageJson from '../shared/readMonorepoPackageJson.mjs';
 
-const monorepoPackageJson = require('../shared/readMonorepoPackageJson')();
+const monorepoPackageJson = readMonorepoPackageJson();
 
 const version = monorepoPackageJson.version;
 
@@ -26,7 +26,7 @@ const version = monorepoPackageJson.version;
  * - The package.json and README.md from pkg
  * - The LICENSE file from the monorepo root
  *
- * @param {import('../shared/PackageMetadata').PackageMetadata} pkg the directory name of the package to process (e.g. 'lexical-rich-text')
+ * @param {import('../shared/PackageMetadata.mjs').PackageMetadata} pkg the directory name of the package to process (e.g. 'lexical-rich-text')
  */
 function preparePackage(pkg) {
   console.log(

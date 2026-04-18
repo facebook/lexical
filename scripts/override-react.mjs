@@ -6,12 +6,14 @@
  *
  */
 // @ts-check
-'use strict';
 
-const glob = require('glob');
-const fs = require('fs-extra');
-const argv = require('minimist')(process.argv.slice(2));
-const {exec} = require('./shared/childProcess');
+import fs from 'fs-extra';
+import {glob} from 'glob';
+import minimist from 'minimist';
+
+import {exec} from './shared/childProcess.mjs';
+
+const argv = minimist(process.argv.slice(2));
 
 async function main() {
   const {version} = argv;

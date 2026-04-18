@@ -13,6 +13,7 @@ import {$isElementNode, $isTextNode, RootNode, TextNode} from 'lexical';
  * @param root - The RootNode.
  * @param targetCharacters - The number of characters whose TextNode must be larger than.
  * @returns The TextNode and the intersections offset, or null if no TextNode is found.
+ * @deprecated $findTextIntersectionFromCharacters has never worked correctly and will be removed
  */
 export function $findTextIntersectionFromCharacters(
   root: RootNode,

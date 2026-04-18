@@ -44,7 +44,7 @@ jobs:
       - name: Install React ${{ inputs.override-react-version }}
         if: inputs.override-react-version != ''
         run: |
-          node ./scripts/override-react.js --version=${{ inputs.override-react-version }}
+          node ./scripts/override-react.mjs --version=${{ inputs.override-react-version }}
           grep version node_modules/{react,react-dom}/package.json
       - name: Restore playwright from cache
         uses: actions/cache/restore@v5

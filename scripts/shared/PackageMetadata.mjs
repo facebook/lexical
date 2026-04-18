@@ -6,11 +6,11 @@
  *
  */
 // @ts-check
-'use strict';
 
-const path = require('node:path');
-const fs = require('fs-extra');
-const npmToWwwName = require('../www/npmToWwwName');
+import fs from 'fs-extra';
+import path from 'node:path';
+
+import npmToWwwName from '../www/npmToWwwName.mjs';
 
 /**
  * @typedef {Object} ModuleBuildDefinition
@@ -55,7 +55,7 @@ function readableName(wwwName) {
 /**
  * Metadata abstraction for a package.json file
  */
-class PackageMetadata {
+export class PackageMetadata {
   /** @type {string} the path to the package.json file */
   packageJsonPath;
   /** @type {Record<string, any>} the parsed package.json */
@@ -252,5 +252,3 @@ class PackageMetadata {
     fs.writeJsonSync(this.packageJsonPath, this.packageJson, {spaces: 2});
   }
 }
-
-exports.PackageMetadata = PackageMetadata;

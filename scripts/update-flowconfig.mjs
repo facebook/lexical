@@ -6,15 +6,15 @@
  *
  */
 // @ts-check
-'use strict';
 
-const fs = require('fs-extra');
-const path = require('node:path');
-const {packagesManager} = require('./shared/packagesManager');
-const npmToWwwName = require('./www/npmToWwwName');
+import fs from 'fs-extra';
+import path from 'node:path';
+
+import {packagesManager} from './shared/packagesManager.mjs';
+import npmToWwwName from './www/npmToWwwName.mjs';
 
 const headerTemplate = fs.readFileSync(
-  path.resolve(__dirname, 'www', 'headerTemplate.js'),
+  path.resolve(import.meta.dirname, 'www', 'headerTemplate.js'),
   'utf8',
 );
 

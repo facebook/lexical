@@ -139,6 +139,7 @@ export type {
   CreateEditorArgs,
   EditableListener,
   EditorConfig,
+  EditorDOMRenderConfig,
   EditorSetOptions,
   EditorThemeClasses,
   EditorThemeClassName,
@@ -166,6 +167,7 @@ export {
   COMMAND_PRIORITY_LOW,
   COMMAND_PRIORITY_NORMAL,
   createEditor,
+  DEFAULT_EDITOR_DOM_CONFIG,
   getTransformSetFromKlass,
 } from './LexicalEditor';
 export type {
@@ -197,7 +199,7 @@ export type {
   StaticNodeConfigRecord,
   StaticNodeConfigValue,
 } from './LexicalNode';
-export {buildImportMap} from './LexicalNode';
+export {$isLexicalNode, buildImportMap} from './LexicalNode';
 export {
   $getState,
   $getStateChange,
@@ -250,6 +252,7 @@ export {
   $findMatchingParent,
   $getAdjacentNode,
   $getEditor,
+  $getEditorDOMRenderConfig,
   $getNearestNodeFromDOMNode,
   $getNearestRootOrShadowRoot,
   $getNodeByKey,

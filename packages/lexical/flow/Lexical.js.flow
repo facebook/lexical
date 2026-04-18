@@ -146,7 +146,55 @@ type DOMConversionCache = Map<
   Array<(node: Node) => DOMConversion | null>,
 >;
 
+export type EditorDOMRenderConfig = {
+  /** @internal @experimental */
+  $createDOM: <T: LexicalNode>(
+    node: T,
+    editor: LexicalEditor,
+  ) => HTMLElement;
+  /** @internal @experimental */
+  $getDOMSlot: <T: LexicalNode>(
+    node: T,
+    dom: HTMLElement,
+    editor: LexicalEditor,
+  ) => ElementDOMSlot<HTMLElement>;
+  /** @internal @experimental */
+  $exportDOM: <T: LexicalNode>(
+    node: T,
+    editor: LexicalEditor,
+  ) => DOMExportOutput;
+  /** @internal @experimental */
+  $extractWithChild: <T: LexicalNode>(
+    node: T,
+    childNode: LexicalNode,
+    selection: null | BaseSelection,
+    destination: 'clone' | 'html',
+    editor: LexicalEditor,
+  ) => boolean;
+  /** @internal @experimental */
+  $updateDOM: <T: LexicalNode>(
+    nextNode: T,
+    prevNode: T,
+    dom: HTMLElement,
+    editor: LexicalEditor,
+  ) => boolean;
+  /** @internal @experimental */
+  $shouldInclude: <T: LexicalNode>(
+    node: T,
+    selection: null | BaseSelection,
+    editor: LexicalEditor,
+  ) => boolean;
+  /** @internal @experimental */
+  $shouldExclude: <T: LexicalNode>(
+    node: T,
+    selection: null | BaseSelection,
+    editor: LexicalEditor,
+  ) => boolean;
+}
+
 export type CreateEditorArgs = {
+  /** @internal @experimental */
+  dom?: Partial<EditorDOMRenderConfig>;
   disableEvents?: boolean;
   editorState?: EditorState;
   namespace?: string;
@@ -313,6 +361,7 @@ export type EditorThemeClasses = {
   [string]: EditorThemeClassName | {[string]: EditorThemeClassName},
 };
 export type EditorConfig = {
+  dom?: EditorDOMRenderConfig,
   theme: EditorThemeClasses,
   namespace: string,
   disableEvents?: boolean,
@@ -877,6 +926,9 @@ declare export class DecoratorNode<X> extends LexicalNode {
 declare export function $isDecoratorNode<T = unknown>(
   node: ?LexicalNode,
 ): node is DecoratorNode<T>;
+declare export function $isLexicalNode(
+  node: ?LexicalNode,
+): node is LexicalNode;
 
 /**
  * LexicalParagraphNode
@@ -947,6 +999,10 @@ declare export function $hasAncestor(
 declare export function $cloneWithProperties<T extends LexicalNode>(node: T): T;
 declare export function $copyNode<T extends LexicalNode>(node: T, skipReset?: boolean): T;
 declare export function $getEditor(): LexicalEditor;
+declare export function $getEditorDOMRenderConfig(
+  editor?: LexicalEditor,
+): EditorDOMRenderConfig;
+declare export var DEFAULT_EDITOR_DOM_CONFIG: EditorDOMRenderConfig;
 
 /**
  * LexicalNormalization
@@ -1571,6 +1627,7 @@ export interface ExtensionRegisterState<Init, Output>
   getOutput: () => Output;
 }
 export interface InitialEditorConfig {
+  dom?: CreateEditorArgs['dom'];
   disableEvents?: CreateEditorArgs['disableEvents'];
   parentEditor?: CreateEditorArgs['parentEditor'];
   namespace?: CreateEditorArgs['namespace'];

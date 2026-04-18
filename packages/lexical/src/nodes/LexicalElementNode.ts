@@ -44,6 +44,7 @@ import {
 } from '../LexicalSelection';
 import {errorOnReadOnly, getActiveEditor} from '../LexicalUpdates';
 import {
+  $getEditorDOMRenderConfig,
   $getNodeByKey,
   $isRootOrShadowRoot,
   isHTMLElement,
@@ -659,7 +660,7 @@ export class ElementNode extends LexicalNode {
   }
   setFormat(type: ElementFormatType): this {
     const self = this.getWritable();
-    self.__format = type !== '' ? ELEMENT_TYPE_TO_FORMAT[type] : 0;
+    self.__format = type !== '' ? ELEMENT_TYPE_TO_FORMAT[type] || 0 : 0;
     return this;
   }
   setStyle(style: string): this {
@@ -982,7 +983,11 @@ export class ElementNode extends LexicalNode {
 
   /** @internal */
   reconcileObservedMutation(dom: HTMLElement, editor: LexicalEditor): void {
-    const slot = this.getDOMSlot(dom);
+    const slot = $getEditorDOMRenderConfig(editor).$getDOMSlot(
+      this,
+      dom,
+      editor,
+    );
     let currentDOM = slot.getFirstChild();
     for (
       let currentNode = this.getFirstChild();

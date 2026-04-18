@@ -11,6 +11,7 @@ import type {
   DOMChildConversion,
   DOMConversion,
   DOMConversionFn,
+  EditorDOMRenderConfig,
   ElementFormatType,
   LexicalEditor,
   LexicalNode,
@@ -20,6 +21,8 @@ import {$sliceSelectedTextNodeContent} from '@lexical/selection';
 import {
   $createLineBreakNode,
   $createParagraphNode,
+  $getEditor,
+  $getEditorDOMRenderConfig,
   $getRoot,
   $isBlockElementNode,
   $isElementNode,
@@ -27,13 +30,40 @@ import {
   $isTextNode,
   ArtificialNode__DO_NOT_USE,
   ElementNode,
-  getRegisteredNode,
   isBlockDomNode,
   isDocumentFragment,
   isDOMDocumentNode,
   isHTMLElement,
   isInlineDomNode,
 } from 'lexical';
+import invariant from 'shared/invariant';
+
+import {contextValue} from './ContextRecord';
+import {
+  $withRenderContext,
+  RenderContextExport,
+  RenderContextRoot,
+} from './RenderContext';
+
+export {contextUpdater, contextValue} from './ContextRecord';
+export {domOverride} from './domOverride';
+export {DOMRenderExtension} from './DOMRenderExtension';
+export {
+  $getRenderContextValue,
+  $withRenderContext,
+  RenderContextExport,
+  RenderContextRoot,
+} from './RenderContext';
+export type {
+  AnyDOMRenderMatch,
+  AnyRenderStateConfig,
+  AnyRenderStateConfigPairOrUpdater,
+  ContextPairOrUpdater,
+  DOMRenderConfig,
+  DOMRenderExtensionOutput,
+  DOMRenderMatch,
+  NodeMatch,
+} from './types';
 
 function isStyleRule(rule: CSSRule): rule is CSSStyleRule {
   return rule.constructor.name === CSSStyleRule.name;
@@ -109,6 +139,8 @@ function inlineStylesFromStyleSheets(doc: Document): void {
   }
 }
 
+const IGNORE_TAGS = new Set(['STYLE', 'SCRIPT']);
+
 /**
  * How you parse your html string to get a document is left up to you. In the browser you can use the native
  * DOMParser API to generate a document (see clipboard.ts), but to use in a headless environment you can use JSDom
@@ -125,7 +157,7 @@ export function $generateNodesFromDOM(
   const elements = isDOMDocumentNode(dom)
     ? dom.body.childNodes
     : dom.childNodes;
-  let lexicalNodes: Array<LexicalNode> = [];
+  const lexicalNodes: Array<LexicalNode> = [];
   const allArtificialNodes: Array<ArtificialNode__DO_NOT_USE> = [];
   for (const element of elements) {
     if (!IGNORE_TAGS.has(element.nodeName)) {
@@ -136,7 +168,9 @@ export function $generateNodesFromDOM(
         false,
       );
       if (lexicalNode !== null) {
-        lexicalNodes = lexicalNodes.concat(lexicalNode);
+        for (const node of lexicalNode) {
+          lexicalNodes.push(node);
+        }
       }
     }
   }
@@ -145,79 +179,131 @@ export function $generateNodesFromDOM(
   return lexicalNodes;
 }
 
+/**
+ * Generate DOM nodes from the editor state into the given container element,
+ * using the editor's {@link EditorDOMRenderConfig}.
+ * @experimental
+ */
+export function $generateDOMFromNodes<T extends HTMLElement | DocumentFragment>(
+  container: T,
+  selection: null | BaseSelection = null,
+  editor: LexicalEditor = $getEditor(),
+): T {
+  return $withRenderContext(
+    [contextValue(RenderContextExport, true)],
+    editor,
+  )(() => {
+    const root = $getRoot();
+    const domConfig = $getEditorDOMRenderConfig(editor);
+
+    const parentElementAppend = container.append.bind(container);
+    for (const topLevelNode of root.getChildren()) {
+      $appendNodesToHTML(
+        editor,
+        topLevelNode,
+        parentElementAppend,
+        selection,
+        domConfig,
+      );
+    }
+    return container;
+  });
+}
+
+/**
+ * Generate DOM nodes from a root node into the given container element,
+ * including the root node itself. Uses the editor's {@link EditorDOMRenderConfig}.
+ * @experimental
+ */
+export function $generateDOMFromRoot<T extends HTMLElement | DocumentFragment>(
+  container: T,
+  root: LexicalNode = $getRoot(),
+): T {
+  const editor = $getEditor();
+  return $withRenderContext(
+    [
+      contextValue(RenderContextExport, true),
+      contextValue(RenderContextRoot, true),
+    ],
+    editor,
+  )(() => {
+    const selection = null;
+    const domConfig = $getEditorDOMRenderConfig(editor);
+    const parentElementAppend = container.append.bind(container);
+    $appendNodesToHTML(editor, root, parentElementAppend, selection, domConfig);
+    return container;
+  });
+}
+
 export function $generateHtmlFromNodes(
   editor: LexicalEditor,
-  selection?: BaseSelection | null,
+  selection: BaseSelection | null = null,
 ): string {
   if (
     typeof document === 'undefined' ||
     (typeof window === 'undefined' && typeof global.window === 'undefined')
   ) {
-    throw new Error(
-      'To use $generateHtmlFromNodes in headless mode please initialize a headless browser implementation such as JSDom before calling this function.',
+    invariant(
+      false,
+      'To use $generateHtmlFromNodes in headless mode please initialize a headless browser implementation such as JSDom or use withDOM from @lexical/headless/dom before calling this function.',
     );
   }
-
-  const container = document.createElement('div');
-  const root = $getRoot();
-  const topLevelChildren = root.getChildren();
-
-  for (let i = 0; i < topLevelChildren.length; i++) {
-    const topLevelNode = topLevelChildren[i];
-    $appendNodesToHTML(editor, topLevelNode, container, selection);
-  }
-
-  return container.innerHTML;
+  return $generateDOMFromNodes(document.createElement('div'), selection, editor)
+    .innerHTML;
 }
 
 function $appendNodesToHTML(
   editor: LexicalEditor,
   currentNode: LexicalNode,
-  parentElement: HTMLElement | DocumentFragment,
+  parentElementAppend: (element: Node) => void,
   selection: BaseSelection | null = null,
+  domConfig: EditorDOMRenderConfig = $getEditorDOMRenderConfig(editor),
 ): boolean {
-  let shouldInclude =
-    selection !== null ? currentNode.isSelected(selection) : true;
-  const shouldExclude =
-    $isElementNode(currentNode) && currentNode.excludeFromCopy('html');
+  let shouldInclude = domConfig.$shouldInclude(currentNode, selection, editor);
+  const shouldExclude = domConfig.$shouldExclude(
+    currentNode,
+    selection,
+    editor,
+  );
   let target = currentNode;
 
   if (selection !== null && $isTextNode(currentNode)) {
     target = $sliceSelectedTextNodeContent(selection, currentNode, 'clone');
   }
-  const children = $isElementNode(target) ? target.getChildren() : [];
-  const registeredNode = getRegisteredNode(editor, target.getType());
-  let exportOutput;
-
-  // Use HTMLConfig overrides, if available.
-  if (registeredNode && registeredNode.exportDOM !== undefined) {
-    exportOutput = registeredNode.exportDOM(editor, target);
-  } else {
-    exportOutput = target.exportDOM(editor);
-  }
-
-  const {element, after} = exportOutput;
+  const exportProps = domConfig.$exportDOM(target, editor);
+  const {element, after, append, $getChildNodes} = exportProps;
 
   if (!element) {
     return false;
   }
 
   const fragment = document.createDocumentFragment();
+  const children = $getChildNodes
+    ? $getChildNodes()
+    : $isElementNode(target)
+      ? target.getChildren()
+      : [];
 
-  for (let i = 0; i < children.length; i++) {
-    const childNode = children[i];
+  const fragmentAppend = fragment.append.bind(fragment);
+  for (const childNode of children) {
     const shouldIncludeChild = $appendNodesToHTML(
       editor,
       childNode,
-      fragment,
+      fragmentAppend,
       selection,
+      domConfig,
     );
 
     if (
       !shouldInclude &&
-      $isElementNode(currentNode) &&
       shouldIncludeChild &&
-      currentNode.extractWithChild(childNode, selection, 'html')
+      domConfig.$extractWithChild(
+        currentNode,
+        childNode,
+        selection,
+        'html',
+        editor,
+      )
     ) {
       shouldInclude = true;
     }
@@ -225,9 +311,13 @@ function $appendNodesToHTML(
 
   if (shouldInclude && !shouldExclude) {
     if (isHTMLElement(element) || isDocumentFragment(element)) {
-      element.append(fragment);
+      if (append) {
+        append(fragment);
+      } else {
+        element.append(fragment);
+      }
     }
-    parentElement.append(element);
+    parentElementAppend(element);
 
     if (after) {
       const newElement = after.call(target, element);
@@ -240,7 +330,7 @@ function $appendNodesToHTML(
       }
     }
   } else {
-    parentElement.append(fragment);
+    parentElementAppend(fragment);
   }
 
   return shouldInclude;
@@ -274,8 +364,6 @@ function getConversionFunction(
   return currentConversion !== null ? currentConversion.conversion : null;
 }
 
-const IGNORE_TAGS = new Set(['STYLE', 'SCRIPT']);
-
 function $createNodesFromDOM(
   node: Node,
   editor: LexicalEditor,
@@ -284,7 +372,7 @@ function $createNodesFromDOM(
   forChildMap: Map<string, DOMChildConversion> = new Map(),
   parentLexicalNode?: LexicalNode | null | undefined,
 ): Array<LexicalNode> {
-  let lexicalNodes: Array<LexicalNode> = [];
+  const lexicalNodes: Array<LexicalNode> = [];
 
   if (IGNORE_TAGS.has(node.nodeName)) {
     return lexicalNodes;
@@ -379,11 +467,13 @@ function $createNodesFromDOM(
     if (childLexicalNodes.length > 0) {
       // If it hasn't been converted to a LexicalNode, we hoist its children
       // up to the same level as it.
-      lexicalNodes = lexicalNodes.concat(childLexicalNodes);
+      for (const childNode of childLexicalNodes) {
+        lexicalNodes.push(childNode);
+      }
     } else {
       if (isBlockDomNode(node) && isDomNodeBetweenTwoInlineNodes(node)) {
         // Empty block dom node that hasnt been converted, we replace it with a linebreak if its between inline nodes
-        lexicalNodes = lexicalNodes.concat($createLineBreakNode());
+        lexicalNodes.push($createLineBreakNode());
       }
     }
   } else {
@@ -434,18 +524,21 @@ function wrapContinuousInlines(
 function $unwrapArtificialNodes(
   allArtificialNodes: Array<ArtificialNode__DO_NOT_USE>,
 ) {
+  // Replace artificial node with its children, inserting a linebreak
+  // between adjacent artificial nodes
   for (const node of allArtificialNodes) {
-    if (node.getNextSibling() instanceof ArtificialNode__DO_NOT_USE) {
+    if (
+      node.getParent() &&
+      node.getNextSibling() instanceof ArtificialNode__DO_NOT_USE
+    ) {
       node.insertAfter($createLineBreakNode());
     }
   }
-  // Replace artificial node with it's children
   for (const node of allArtificialNodes) {
-    const children = node.getChildren();
-    for (const child of children) {
-      node.insertBefore(child);
+    const parent = node.getParent();
+    if (parent) {
+      parent.splice(node.getIndexWithinParent(), 1, node.getChildren());
     }
-    node.remove();
   }
 }
 

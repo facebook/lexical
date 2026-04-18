@@ -46,8 +46,8 @@ import {
   $internalCreateSelection,
   $isNodeSelection,
   $isRangeSelection,
+  $updateDOMSelection,
   applySelectionTransforms,
-  updateDOMSelection,
 } from './LexicalSelection';
 import {
   $getCompositionKey,
@@ -120,7 +120,8 @@ export function getActiveEditor(): LexicalEditor {
       'Unable to find an active editor. ' +
         'This method can only be used ' +
         'synchronously during the callback of ' +
-        'editor.update() or editor.read().%s',
+        'editor.update(), editor.read(), or ' +
+        'editor.getEditorState().read(..., {editor}).%s',
       collectBuildInformation(),
     );
   }
@@ -648,7 +649,7 @@ export function $commitPendingUpdates(
         if (blockCursorElement !== null) {
           removeDOMBlockCursorElement(blockCursorElement, editor, rootElement);
         }
-        updateDOMSelection(
+        $updateDOMSelection(
           currentSelection,
           pendingSelection,
           editor,

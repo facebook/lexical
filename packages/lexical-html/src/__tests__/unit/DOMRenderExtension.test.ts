@@ -232,11 +232,16 @@ describe('DOMRenderExtension', () => {
                 },
               }),
               domOverride([TextNodeA], {
-                $exportDOM(node) {
-                  const span = document.createElement('span');
-                  span.append(node.getTextContent());
-                  span.dataset.lexicalType = node.getType();
-                  return {element: span};
+                $exportDOM(node, $next) {
+                  // We want to call $next to get any export behavior
+                  // that applies to all TextNode, if we return
+                  // a new value we will only get export behavior that
+                  // applies to predicates, wildcards, and TextNodeA
+                  const r = $next();
+                  if (isHTMLElement(r.element)) {
+                    r.element.dataset.lexicalType = node.getType();
+                  }
+                  return r;
                 },
               }),
               domOverride([TextNode], {

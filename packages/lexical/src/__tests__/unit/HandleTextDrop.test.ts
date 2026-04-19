@@ -349,18 +349,50 @@ describe('$handleTextDrop', () => {
 
       await editor.read(() => {
         const root = $getRoot();
-        // Source paragraph should be empty (its children were moved).
-        const children = root.getChildren();
-        // The target paragraph should contain "target" followed by the dragged
-        // content (text + decorator + text).
-        const decoratorsInTree = children
+        const topLevelChildren = root.getChildren();
+        // Two paragraphs at the top level: the (now-empty) source and the
+        // target (now containing the moved content).
+        expect(topLevelChildren.length).toBe(2);
+
+        const allDecorators = topLevelChildren
           .flatMap((c) =>
             'getChildren' in c && typeof c.getChildren === 'function'
               ? c.getChildren()
               : [],
           )
           .filter($isDecoratorNode);
-        expect(decoratorsInTree.length).toBe(1);
+        // Exactly one decorator in the whole tree (preserved, not duplicated).
+        expect(allDecorators.length).toBe(1);
+
+        // The decorator must live under the target paragraph, not the source.
+        const sourceParagraph = topLevelChildren[0];
+        const targetParagraph = topLevelChildren[1];
+        invariant(
+          'getChildren' in sourceParagraph &&
+            typeof sourceParagraph.getChildren === 'function',
+          'expected source paragraph',
+        );
+        invariant(
+          'getChildren' in targetParagraph &&
+            typeof targetParagraph.getChildren === 'function',
+          'expected target paragraph',
+        );
+        const sourceDecorators = sourceParagraph
+          .getChildren()
+          .filter($isDecoratorNode);
+        const targetDecorators = targetParagraph
+          .getChildren()
+          .filter($isDecoratorNode);
+        expect(sourceDecorators.length).toBe(0);
+        expect(targetDecorators.length).toBe(1);
+
+        // Full text content should be "target" + "before" + decorator's text +
+        // "after". TestDecoratorNode.getTextContent() is 'Hello world', so the
+        // decorator appears between "before" and "after" in textContent.
+        expect(sourceParagraph.getTextContent()).toBe('');
+        expect(targetParagraph.getTextContent()).toBe(
+          'targetbeforeHello worldafter',
+        );
       });
     });
 

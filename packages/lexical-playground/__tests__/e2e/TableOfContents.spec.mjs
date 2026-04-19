@@ -391,9 +391,9 @@ test.describe('TableOfContents', () => {
     // the selection must be inside the empty contents link
     await assertSelection(page, {
       anchorOffset: 0,
-      anchorPath: [2, 1],
+      anchorPath: [2, 1, 0],
       focusOffset: 0,
-      focusPath: [2, 1],
+      focusPath: [2, 1, 0],
     });
 
     // new text must be entered inside the contents link

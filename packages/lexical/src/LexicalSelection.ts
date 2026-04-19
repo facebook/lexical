@@ -1836,18 +1836,6 @@ export class RangeSelection implements BaseSelection {
             break;
           }
         }
-        // handle block elements that contain only empty inline elements
-        // treat them as effectively empty for deletion purposes
-        if (anchor.type === 'element' && anchor.offset === 0) {
-          const anchorElement = anchor.getNode();
-          if (
-            !$isRootOrShadowRoot(anchorElement) &&
-            $isEffectivelyEmpty(anchorElement)
-          ) {
-            anchorElement.remove();
-            return;
-          }
-        }
         if (state.type === 'merge-block') {
           const {caret, block} = state;
           $updateRangeSelectionFromCaretRange(
@@ -1860,6 +1848,47 @@ export class RangeSelection implements BaseSelection {
             ),
           );
           return this.removeText();
+        }
+        // When the anchor is at offset 0 of a block that contains only empty inline canBeEmpty(),
+        // treat the block as effectively empty and remove it directly
+        if (anchor.type === 'element' && anchor.offset === 0) {
+          const anchorElement = anchor.getNode();
+          if (!$isRootOrShadowRoot(anchorElement)) {
+            if ($isEffectivelyEmpty(anchorElement)) {
+              // Remove inline children before removing the parent so there ate
+              // no orphaned nodes left in the node tree after the parent is gone
+              for (const child of anchorElement.getChildren()) {
+                child.remove();
+              }
+              anchorElement.remove();
+              return;
+            }
+            // Also handle then the cursor is directly inside an empty inline
+            // canBeEmpty() element whose parent block is effectively empty.
+            // This occurs when the browser keeps selection inside the inline
+            // element rather than normalizing it to the parent block
+            if (
+              $isElementNode(anchorElement) &&
+              anchorElement.isInline() &&
+              anchorElement.canBeEmpty() &&
+              anchorElement.isEmpty()
+            ) {
+              const parent = anchorElement.getParent();
+              if (
+                parent !== null &&
+                !$isRootOrShadowRoot(parent) &&
+                $isEffectivelyEmpty(parent)
+              ) {
+                // Remove the inline element first so it's cleanly detached from
+                // the node tree before the parent is removed. Removing the parent
+                // directly would leave the inline lement as an orphaned child of
+                // the detached parent, which confuses the DOM reconciler
+                anchorElement.remove();
+                parent.remove();
+                return;
+              }
+            }
+          }
         }
       }
 

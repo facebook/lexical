@@ -30,6 +30,8 @@ import {
   $getClipboardDataFromSelection,
   $handleTextDrop,
   $insertDataTransferForRichText,
+  $setDragSource,
+  clearDragSource,
   copyToClipboard,
   setLexicalClipboardDataTransfer,
 } from '@lexical/clipboard';
@@ -77,6 +79,7 @@ import {
   DELETE_CHARACTER_COMMAND,
   DELETE_LINE_COMMAND,
   DELETE_WORD_COMMAND,
+  DRAGEND_COMMAND,
   DRAGOVER_COMMAND,
   DRAGSTART_COMMAND,
   DROP_COMMAND,
@@ -1024,7 +1027,21 @@ export function registerRichText(editor: LexicalEditor): () => void {
             $getClipboardDataFromSelection(selection),
           );
         }
+        // Record this selection as the active drag source so a drop in a
+        // different editor can remove the dragged content from here.
+        $setDragSource(editor);
         return true;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    ),
+    editor.registerCommand<DragEvent>(
+      DRAGEND_COMMAND,
+      () => {
+        // Clear any recorded drag source; cancelled drags leave it untouched
+        // otherwise. A successful cross-editor drop clears the source itself
+        // when it fires, making this idempotent.
+        clearDragSource();
+        return false;
       },
       COMMAND_PRIORITY_EDITOR,
     ),

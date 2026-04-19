@@ -61,6 +61,10 @@ declare export function $handleTextDrop(
   ) => void,
 ): boolean;
 
+declare export function $setDragSource(editor: LexicalEditor): void;
+
+declare export function clearDragSource(): void;
+
 interface BaseSerializedNode {
   children?: Array<BaseSerializedNode>;
   type: string;

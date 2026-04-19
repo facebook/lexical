@@ -16,6 +16,8 @@ export {
   $insertDataTransferForPlainText,
   $insertDataTransferForRichText,
   $insertGeneratedNodes,
+  $setDragSource,
+  clearDragSource,
   copyToClipboard,
   type LexicalClipboardData,
   setLexicalClipboardDataTransfer,

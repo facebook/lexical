@@ -12,6 +12,8 @@ import {
   $getHtmlContent,
   $handleTextDrop,
   $insertDataTransferForPlainText,
+  $setDragSource,
+  clearDragSource,
 } from '@lexical/clipboard';
 import {DragonExtension} from '@lexical/dragon';
 import {
@@ -31,6 +33,7 @@ import {
   DELETE_CHARACTER_COMMAND,
   DELETE_LINE_COMMAND,
   DELETE_WORD_COMMAND,
+  DRAGEND_COMMAND,
   DRAGSTART_COMMAND,
   DROP_COMMAND,
   INSERT_LINE_BREAK_COMMAND,
@@ -406,7 +409,18 @@ export function registerPlainText(editor: LexicalEditor): () => void {
         if (!$isRangeSelection(selection)) {
           return false;
         }
+        // Record this selection as the active drag source so a drop in a
+        // different editor can remove the dragged content from here.
+        $setDragSource(editor);
         return true;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    ),
+    editor.registerCommand<DragEvent>(
+      DRAGEND_COMMAND,
+      () => {
+        clearDragSource();
+        return false;
       },
       COMMAND_PRIORITY_EDITOR,
     ),

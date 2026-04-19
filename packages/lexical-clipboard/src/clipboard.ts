@@ -373,12 +373,48 @@ function $adjustDropLocationForRemoval(
   return drop;
 }
 
+interface DragSourceRef {
+  editor: LexicalEditor;
+  selection: RangeSelection;
+}
+
+let activeDragSource: DragSourceRef | null = null;
+
+/**
+ * Register the current RangeSelection as the source of an active drag so that
+ * a drop in a different editor can remove the dragged content from the source.
+ * Must be called within an editor update or read context (it reads the current
+ * selection). If there is no non-collapsed RangeSelection, the drag source is
+ * cleared.
+ *
+ * Callers should pair this with {@link clearDragSource} on DRAGEND to avoid
+ * stale state if the drag is cancelled.
+ */
+export function $setDragSource(editor: LexicalEditor): void {
+  const selection = $getSelection();
+  if (!$isRangeSelection(selection) || selection.isCollapsed()) {
+    activeDragSource = null;
+    return;
+  }
+  activeDragSource = {editor, selection: selection.clone()};
+}
+
+/**
+ * Clear any previously recorded drag source. Safe to call at any time.
+ */
+export function clearDragSource(): void {
+  activeDragSource = null;
+}
+
 /**
  * Implements drag-and-drop behavior for an editor. When the drop originates
  * from a non-collapsed RangeSelection in the same editor, the selected content
- * is moved to the drop location. Otherwise the DataTransfer content is inserted
- * at the drop location. Returns true when the drop was handled (and
- * event.preventDefault was called), otherwise false.
+ * is moved to the drop location. When the drop originates from a different
+ * editor that called {@link $setDragSource} on DRAGSTART, the content is
+ * inserted at the drop location and removed from the source editor (cut-and-
+ * paste semantics across editors). Otherwise the DataTransfer content is
+ * inserted at the drop location (e.g. for external drags). Returns true when
+ * the drop was handled (and event.preventDefault was called), otherwise false.
  *
  * For full-fidelity internal moves (including custom nodes like images),
  * callers should populate the DataTransfer with Lexical's serialization format
@@ -413,6 +449,10 @@ export function $handleTextDrop(
   const sourceSelection = $getSelection();
   const isInternalMove =
     $isRangeSelection(sourceSelection) && !sourceSelection.isCollapsed();
+  const crossEditorSource =
+    activeDragSource !== null && activeDragSource.editor !== editor
+      ? activeDragSource
+      : null;
 
   if (isInternalMove) {
     if ($isDropInsideSourceRange(sourceSelection, dropLocation)) {
@@ -445,6 +485,24 @@ export function $handleTextDrop(
   const currentSelection = $getSelection();
   if (currentSelection !== null) {
     $insertDataTransfer(dataTransfer, currentSelection, editor);
+  }
+
+  // For cross-editor drags, remove the content from the source editor. We
+  // schedule this as a separate update on the source editor so it runs after
+  // the destination-editor update completes.
+  if (crossEditorSource !== null) {
+    const sourceEditor = crossEditorSource.editor;
+    const sourceSelectionSnapshot = crossEditorSource.selection;
+    activeDragSource = null;
+    sourceEditor.update(() => {
+      $setSelection(sourceSelectionSnapshot.clone());
+      const pending = $getSelection();
+      if ($isRangeSelection(pending) && !pending.isCollapsed()) {
+        pending.removeText();
+      }
+    });
+  } else {
+    activeDragSource = null;
   }
 
   event.preventDefault();

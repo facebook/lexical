@@ -10,6 +10,8 @@ import {
   $getClipboardDataFromSelection,
   $handleTextDrop,
   $insertDataTransferForRichText,
+  $setDragSource,
+  clearDragSource,
   setLexicalClipboardDataTransfer,
 } from '@lexical/clipboard';
 import {
@@ -26,11 +28,12 @@ import {
 } from 'lexical';
 import {
   $createTestDecoratorNode,
+  createTestEditor,
   DataTransferMock,
   initializeUnitTest,
   invariant,
 } from 'lexical/src/__tests__/utils';
-import {beforeEach, describe, expect, test, vi} from 'vitest';
+import {afterEach, beforeEach, describe, expect, test, vi} from 'vitest';
 
 const caretFromPointState = vi.hoisted(() => ({
   current: (_x: number, _y: number): null | {node: Node; offset: number} =>
@@ -434,6 +437,153 @@ describe('$handleTextDrop', () => {
       await editor.read(() => {
         expect($getRoot().getTextContent()).toBe('onetwothree');
       });
+    });
+  });
+});
+
+describe('$handleTextDrop across editors', () => {
+  let sourceContainer: HTMLDivElement;
+  let destContainer: HTMLDivElement;
+  let sourceEditor: LexicalEditor;
+  let destEditor: LexicalEditor;
+
+  beforeEach(() => {
+    caretFromPointState.current = () => null;
+    clearDragSource();
+
+    sourceContainer = document.createElement('div');
+    sourceContainer.contentEditable = 'true';
+    document.body.appendChild(sourceContainer);
+    sourceEditor = createTestEditor();
+    sourceEditor.setRootElement(sourceContainer);
+
+    destContainer = document.createElement('div');
+    destContainer.contentEditable = 'true';
+    document.body.appendChild(destContainer);
+    destEditor = createTestEditor();
+    destEditor.setRootElement(destContainer);
+  });
+
+  afterEach(() => {
+    sourceEditor.setRootElement(null);
+    destEditor.setRootElement(null);
+    document.body.removeChild(sourceContainer);
+    document.body.removeChild(destContainer);
+    clearDragSource();
+  });
+
+  test('cut-and-paste semantics when dropping from one editor into another', async () => {
+    let sourceTextKey = '';
+    await sourceEditor.update(() => {
+      const paragraph = $createParagraphNode();
+      const text = $createTextNode('source-content');
+      paragraph.append(text);
+      $getRoot().clear().append(paragraph);
+      sourceTextKey = text.getKey();
+
+      const selection = $createRangeSelection();
+      selection.anchor.set(sourceTextKey, 0, 'text');
+      selection.focus.set(sourceTextKey, 6, 'text'); // select "source"
+      $setSelection(selection);
+      // Simulate DRAGSTART on the source editor.
+      $setDragSource(sourceEditor);
+    });
+
+    let destTextKey = '';
+    await destEditor.update(() => {
+      const paragraph = $createParagraphNode();
+      const text = $createTextNode('destination');
+      paragraph.append(text);
+      $getRoot().clear().append(paragraph);
+      destTextKey = text.getKey();
+    });
+
+    // Serialize the source selection into the DataTransfer, as DRAGSTART does.
+    const dataTransfer = new DataTransferMock();
+    await sourceEditor.update(() => {
+      const selection = $getSelection();
+      invariant($isRangeSelection(selection), 'expected source selection');
+      setLexicalClipboardDataTransfer(
+        dataTransfer,
+        $getClipboardDataFromSelection(selection),
+      );
+    });
+
+    // Fire the drop on the destination editor.
+    await destEditor.update(() => {
+      const destSpan = destEditor.getElementByKey(destTextKey);
+      invariant(destSpan !== null, 'dest span null');
+      const domText = destSpan.firstChild;
+      invariant(
+        domText !== null && domText.nodeType === Node.TEXT_NODE,
+        'dest dom text',
+      );
+      setCaretFromPoint(domText as Text, 11); // end of "destination"
+
+      const preventDefault = vi.fn();
+      const event = {
+        clientX: 0,
+        clientY: 0,
+        dataTransfer,
+        preventDefault,
+      } as unknown as DragEvent;
+
+      const handled = $handleTextDrop(
+        event,
+        destEditor,
+        $insertDataTransferForRichText,
+      );
+      expect(handled).toBe(true);
+      expect(preventDefault).toHaveBeenCalled();
+    });
+
+    // Allow the source editor's scheduled update (removeText) to flush.
+    await new Promise<void>((resolve) => {
+      sourceEditor.update(
+        () => {
+          /* no-op */
+        },
+        {onUpdate: resolve},
+      );
+    });
+
+    await sourceEditor.read(() => {
+      // "source" (first 6 chars) was removed, "-content" remains.
+      expect($getRoot().getTextContent()).toBe('-content');
+    });
+    await destEditor.read(() => {
+      expect($getRoot().getTextContent()).toBe('destinationsource');
+    });
+  });
+
+  test('cancelled cross-editor drag leaves both editors untouched', async () => {
+    await sourceEditor.update(() => {
+      const paragraph = $createParagraphNode();
+      paragraph.append($createTextNode('source-content'));
+      $getRoot().clear().append(paragraph);
+
+      const text = paragraph.getFirstChildOrThrow();
+      const selection = $createRangeSelection();
+      selection.anchor.set(text.getKey(), 0, 'text');
+      selection.focus.set(text.getKey(), 6, 'text');
+      $setSelection(selection);
+      $setDragSource(sourceEditor);
+    });
+
+    await destEditor.update(() => {
+      const paragraph = $createParagraphNode();
+      paragraph.append($createTextNode('destination'));
+      $getRoot().clear().append(paragraph);
+    });
+
+    // Simulate DRAGEND without a drop — e.g. the user hits Escape.
+    clearDragSource();
+
+    await sourceEditor.read(() => {
+      expect($getRoot().getTextContent()).toBe('source-content');
+    });
+    await destEditor.read(() => {
+      expect($getRoot().getTextContent()).toBe('destination');
     });
   });
 });

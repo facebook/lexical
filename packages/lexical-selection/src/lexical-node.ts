@@ -29,11 +29,9 @@ import {
 } from 'lexical';
 import invariant from 'shared/invariant';
 
-import {CSS_TO_STYLES} from './constants';
 import {
   getCSSFromStyleObject,
   getStyleObjectFromCSS,
-  getStyleObjectFromRawCSS,
 } from './utils';
 
 /**
@@ -244,14 +242,9 @@ export function $trimTextContentFromAnchor(
 }
 
 /**
- * Gets the TextNode's style object and adds the styles to the CSS.
- * @param node - The TextNode to add styles to.
+ * Kept for backwards compatibility. Styles are parsed on demand now.
  */
-export function $addNodeStyle(node: TextNode): void {
-  const CSSText = node.getStyle();
-  const styles = getStyleObjectFromRawCSS(CSSText);
-  CSS_TO_STYLES.set(CSSText, styles);
-}
+export function $addNodeStyle(_node: TextNode): void {}
 
 /**
  * Applies the provided styles to the given TextNode, ElementNode, or
@@ -301,7 +294,6 @@ export function $patchStyle(
   } else {
     target.setTextStyle(newCSSText);
   }
-  CSS_TO_STYLES.set(newCSSText, newStyles);
 }
 
 /**

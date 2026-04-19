@@ -34,7 +34,7 @@ export {
   createDOMRange,
   createRectsFromDOMRange,
   getCSSFromStyleObject,
-  getStyleObjectFromCSS,
+  /** @deprecated moved to the lexical package */ getStyleObjectFromCSS,
 } from './utils';
 /** @deprecated renamed to {@link $trimTextContentFromAnchor} by @lexical/eslint-plugin rules-of-lexical */
 export const trimTextContentFromAnchor = $trimTextContentFromAnchor;

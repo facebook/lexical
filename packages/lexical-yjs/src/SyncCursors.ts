@@ -22,6 +22,7 @@ import {
   $isLineBreakNode,
   $isRangeSelection,
   $isTextNode,
+  setDOMStyleObject,
 } from 'lexical';
 import invariant from 'shared/invariant';
 import {
@@ -220,17 +221,42 @@ function createCursorSelection(
   const caret = document.createElement('span');
   if (theme.cursor) {
     caret.className = theme.cursor;
-    caret.style.cssText = `position:absolute;top:0;bottom:0;right:-1px;`;
-    caret.style.setProperty('--lexical-cursor-color', color);
+    setDOMStyleObject(caret.style, {
+      '--lexical-cursor-color': color,
+      bottom: '0',
+      position: 'absolute',
+      right: '-1px',
+      top: '0',
+    });
   } else {
-    caret.style.cssText = `position:absolute;top:0;bottom:0;right:-1px;width:1px;background-color:${color};z-index:10;`;
+    setDOMStyleObject(caret.style, {
+      'background-color': color,
+      bottom: '0',
+      position: 'absolute',
+      right: '-1px',
+      top: '0',
+      width: '1px',
+      'z-index': '10',
+    });
   }
   const name = document.createElement('span');
   name.textContent = cursor.name;
   if (theme.cursorName) {
     name.className = theme.cursorName;
   } else {
-    name.style.cssText = `position:absolute;left:-2px;top:-16px;background-color:${color};color:#fff;line-height:12px;font-size:12px;padding:2px;font-family:Arial;font-weight:bold;white-space:nowrap;`;
+    setDOMStyleObject(name.style, {
+      'background-color': color,
+      color: '#fff',
+      'font-family': 'Arial',
+      'font-size': '12px',
+      'font-weight': 'bold',
+      left: '-2px',
+      'line-height': '12px',
+      padding: '2px',
+      position: 'absolute',
+      top: '-16px',
+      'white-space': 'nowrap',
+    });
   }
   caret.appendChild(name);
   return {
@@ -344,18 +370,38 @@ function updateCursor(
 
     const top = selectionRect.top - containerRect.top;
     const left = selectionRect.left - containerRect.left;
-    const posStyle = `position:absolute;top:${top}px;left:${left}px;height:${selectionRect.height}px;width:${selectionRect.width}px;pointer-events:none;`;
+    const positionStyle = {
+      height: `${selectionRect.height}px`,
+      left: `${left}px`,
+      'pointer-events': 'none',
+      position: 'absolute',
+      top: `${top}px`,
+      width: `${selectionRect.width}px`,
+    };
 
     if (theme.selection) {
       selection.className = theme.selection;
-      selection.style.cssText = posStyle;
-      selection.style.setProperty('--lexical-cursor-color', color);
-      (selection.firstChild as HTMLSpanElement).style.cssText =
-        `position:absolute;left:0;top:0;width:100%;height:100%;`;
+      setDOMStyleObject(selection.style, {
+        ...positionStyle,
+        '--lexical-cursor-color': color,
+      });
+      setDOMStyleObject((selection.firstChild as HTMLSpanElement).style, {
+        height: '100%',
+        left: '0',
+        position: 'absolute',
+        top: '0',
+        width: '100%',
+      });
     } else {
-      selection.style.cssText = posStyle;
-      (selection.firstChild as HTMLSpanElement).style.cssText =
-        `${posStyle}left:0;top:0;background-color:${color};opacity:0.3;z-index:5;`;
+      setDOMStyleObject(selection.style, positionStyle);
+      setDOMStyleObject((selection.firstChild as HTMLSpanElement).style, {
+        ...positionStyle,
+        'background-color': color,
+        left: '0',
+        opacity: '0.3',
+        top: '0',
+        'z-index': '5',
+      });
     }
 
     if (i === selectionRectsLength - 1) {

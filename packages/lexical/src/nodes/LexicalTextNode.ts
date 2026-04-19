@@ -71,6 +71,7 @@ import {
   isInlineDomNode,
   toggleTextFormatType,
 } from '../LexicalUtils';
+import {setDOMStyleFromCSS} from '../utils/setDOMStyle';
 import {$createLineBreakNode} from './LexicalLineBreakNode';
 import {$createTabNode} from './LexicalTabNode';
 
@@ -502,7 +503,7 @@ export class TextNode extends LexicalNode {
     createTextInnerDOM(innerDOM, this, innerTag, format, text, config);
     const style = this.__style;
     if (style !== '') {
-      dom.style.cssText = style;
+      setDOMStyleFromCSS(dom.style, style);
     }
     return dom;
   }
@@ -565,7 +566,7 @@ export class TextNode extends LexicalNode {
     const prevStyle = prevNode.__style;
     const nextStyle = this.__style;
     if (prevStyle !== nextStyle) {
-      dom.style.cssText = nextStyle;
+      setDOMStyleFromCSS(dom.style, nextStyle, prevStyle);
     }
     return false;
   }

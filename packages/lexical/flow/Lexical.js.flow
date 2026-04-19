@@ -1768,3 +1768,15 @@ declare export function removeClassNamesFromElement(
 ): void;
 declare export function mergeRegister(...func: Array<() => void>): () => void;
 declare export function normalizeClassNames(...classNames: Array<typeof undefined | boolean | null | string>): Array<string>;
+declare export function getStyleObjectFromCSS(css: string): {
+  [string]: string,
+};
+declare export function setDOMStyleObject(
+  domStyle: CSSStyleDeclaration,
+  styleObject: {[string]: string | null | void},
+): void;
+declare export function setDOMStyleFromCSS(
+  domStyle: CSSStyleDeclaration,
+  cssText: string,
+  prevCSSText?: string,
+): void;

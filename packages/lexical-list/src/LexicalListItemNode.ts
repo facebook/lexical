@@ -22,7 +22,6 @@ import type {
   Spread,
 } from 'lexical';
 
-import {getStyleObjectFromCSS} from '@lexical/selection';
 import {
   addClassNamesToElement,
   removeClassNamesFromElement,
@@ -36,8 +35,10 @@ import {
   $isRangeSelection,
   buildImportMap,
   ElementNode,
+  getStyleObjectFromCSS,
   LexicalEditor,
   normalizeClassNames,
+  setDOMStyleFromCSS,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
@@ -140,11 +141,7 @@ export class ListItemNode extends ElementNode {
     const nextStyle = this.__style;
 
     if (prevStyle !== nextStyle) {
-      if (nextStyle === '') {
-        dom.removeAttribute('style');
-      } else {
-        dom.style.cssText = nextStyle;
-      }
+      setDOMStyleFromCSS(dom.style, nextStyle, prevStyle);
     }
     applyMarkerStyles(dom, this, prevNode);
   }

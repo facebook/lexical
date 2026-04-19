@@ -9,6 +9,7 @@
 import type {Options as DocsPluginOptions} from '@docusaurus/plugin-content-docs';
 import type {Config} from '@docusaurus/types';
 
+import tailwindcssPostcss from '@tailwindcss/postcss';
 import fs from 'node:fs';
 import {createRequire} from 'node:module';
 import path from 'node:path';
@@ -385,10 +386,8 @@ const config: Config = {
     ['docusaurus-plugin-typedoc', docusaurusPluginTypedocConfig],
     async function tailwindcss() {
       return {
-        async configurePostCss(postcssOptions: {plugins: unknown[]}) {
-          postcssOptions.plugins.push(
-            (await import('@tailwindcss/postcss')).default,
-          );
+        configurePostCss(postcssOptions: {plugins: unknown[]}) {
+          postcssOptions.plugins.push(tailwindcssPostcss);
           return postcssOptions;
         },
         name: 'docusaurus-tailwindcss',

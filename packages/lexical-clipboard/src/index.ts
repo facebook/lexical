@@ -12,6 +12,7 @@ export {
   $getClipboardDataFromSelection,
   $getHtmlContent,
   $getLexicalContent,
+  $handleTextDrop,
   $insertDataTransferForPlainText,
   $insertDataTransferForRichText,
   $insertGeneratedNodes,

@@ -10,6 +10,7 @@ import type {CommandPayloadType, LexicalEditor} from 'lexical';
 
 import {
   $getHtmlContent,
+  $handleTextDrop,
   $insertDataTransferForPlainText,
 } from '@lexical/clipboard';
 import {DragonExtension} from '@lexical/dragon';
@@ -392,30 +393,19 @@ export function registerPlainText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand<DragEvent>(
       DROP_COMMAND,
-      (event) => {
-        const selection = $getSelection();
-
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
-
-        // TODO: Make drag and drop work at some point.
-        event.preventDefault();
-        return true;
-      },
+      (event) =>
+        $handleTextDrop(event, editor, (dataTransfer, selection) =>
+          $insertDataTransferForPlainText(dataTransfer, selection),
+        ),
       COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand<DragEvent>(
       DRAGSTART_COMMAND,
-      (event) => {
+      () => {
         const selection = $getSelection();
-
         if (!$isRangeSelection(selection)) {
           return false;
         }
-
-        // TODO: Make drag and drop work at some point.
-        event.preventDefault();
         return true;
       },
       COMMAND_PRIORITY_EDITOR,

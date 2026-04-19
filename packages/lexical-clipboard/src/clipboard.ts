@@ -17,17 +17,22 @@ import {$addNodeStyle, $sliceSelectedTextNodeContent} from '@lexical/selection';
 import {objectKlassEquals} from '@lexical/utils';
 import {
   $caretFromPoint,
+  $createRangeSelection,
   $createTabNode,
   $getCaretRange,
   $getChildCaret,
   $getEditor,
+  $getNearestNodeFromDOMNode,
+  $getNodeByKey,
   $getRoot,
   $getSelection,
   $isElementNode,
   $isRangeSelection,
   $isTextNode,
   $isTextPointCaret,
+  $normalizeSelection__EXPERIMENTAL,
   $parseSerializedNode,
+  $setSelection,
   BaseSelection,
   COMMAND_PRIORITY_CRITICAL,
   COPY_COMMAND,
@@ -36,11 +41,14 @@ import {
   isSelectionWithinEditor,
   LexicalEditor,
   LexicalNode,
+  NodeKey,
+  RangeSelection,
   safeCast,
   SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
   SerializedElementNode,
   shallowMergeConfig,
 } from 'lexical';
+import caretFromPoint from 'shared/caretFromPoint';
 import invariant from 'shared/invariant';
 
 export interface LexicalClipboardData {
@@ -206,6 +214,156 @@ export function $insertDataTransferForRichText(
       selection.insertRawText(text);
     }
   }
+}
+
+interface DropLocation {
+  key: NodeKey;
+  offset: number;
+  type: 'text' | 'element';
+}
+
+function $resolveDropLocation(event: DragEvent): DropLocation | null {
+  const eventRange = caretFromPoint(event.clientX, event.clientY);
+  if (eventRange === null) {
+    return null;
+  }
+  const {offset: domOffset, node: domNode} = eventRange;
+  const node = $getNearestNodeFromDOMNode(domNode);
+  if (node === null) {
+    return null;
+  }
+  if ($isTextNode(node)) {
+    return {key: node.getKey(), offset: domOffset, type: 'text'};
+  }
+  const parent = node.getParent();
+  if (parent === null) {
+    return null;
+  }
+  return {
+    key: parent.getKey(),
+    offset: node.getIndexWithinParent() + 1,
+    type: 'element',
+  };
+}
+
+function $selectionFromDropLocation(
+  location: DropLocation,
+): RangeSelection | null {
+  if ($getNodeByKey(location.key) === null) {
+    return null;
+  }
+  const selection = $createRangeSelection();
+  selection.anchor.set(location.key, location.offset, location.type);
+  selection.focus.set(location.key, location.offset, location.type);
+  return $normalizeSelection__EXPERIMENTAL(selection);
+}
+
+function $isDropInsideSourceRange(
+  source: RangeSelection,
+  drop: DropLocation,
+): boolean {
+  if (drop.type !== 'text') {
+    return false;
+  }
+  const isBackward = source.isBackward();
+  const start = isBackward ? source.focus : source.anchor;
+  const end = isBackward ? source.anchor : source.focus;
+  if (
+    start.type === 'text' &&
+    end.type === 'text' &&
+    start.key === end.key &&
+    start.key === drop.key
+  ) {
+    return drop.offset > start.offset && drop.offset < end.offset;
+  }
+  return false;
+}
+
+/**
+ * Implements text drag-and-drop behavior for an editor. When the drop
+ * originates from a non-collapsed RangeSelection in the same editor, the
+ * selected content is moved to the drop location. Otherwise the DataTransfer
+ * content is inserted at the drop location. Returns true when the drop was
+ * handled (and event.preventDefault was called), otherwise false.
+ *
+ * @param event the DragEvent that triggered the drop.
+ * @param editor the LexicalEditor receiving the drop.
+ * @param $insertDataTransfer strategy for inserting the DataTransfer payload
+ *   at the drop selection (e.g. {@link $insertDataTransferForRichText} or
+ *   {@link $insertDataTransferForPlainText}).
+ */
+export function $handleTextDrop(
+  event: DragEvent,
+  editor: LexicalEditor,
+  $insertDataTransfer: (
+    dataTransfer: DataTransfer,
+    selection: BaseSelection,
+    targetEditor: LexicalEditor,
+  ) => void,
+): boolean {
+  const dataTransfer = event.dataTransfer;
+  if (dataTransfer === null) {
+    return false;
+  }
+
+  const dropLocation = $resolveDropLocation(event);
+  if (dropLocation === null) {
+    return false;
+  }
+
+  const sourceSelection = $getSelection();
+  const isInternalMove =
+    $isRangeSelection(sourceSelection) && !sourceSelection.isCollapsed();
+
+  if (isInternalMove) {
+    if ($isDropInsideSourceRange(sourceSelection, dropLocation)) {
+      // Dropping inside the drag source is a no-op, but preventDefault is
+      // still needed so the browser doesn't run its default insertion.
+      event.preventDefault();
+      return true;
+    }
+
+    // If the drop is in the same text node as a single-text-node source, the
+    // source removal will shift the offset within that text node. Adjust the
+    // drop offset so that the drop point still refers to the same visual
+    // location after removal.
+    const isBackward = sourceSelection.isBackward();
+    const start = isBackward ? sourceSelection.focus : sourceSelection.anchor;
+    const end = isBackward ? sourceSelection.anchor : sourceSelection.focus;
+    const adjustedDrop: DropLocation = {...dropLocation};
+    if (
+      dropLocation.type === 'text' &&
+      start.type === 'text' &&
+      end.type === 'text' &&
+      start.key === end.key &&
+      start.key === dropLocation.key &&
+      dropLocation.offset >= end.offset
+    ) {
+      adjustedDrop.offset = dropLocation.offset - (end.offset - start.offset);
+    }
+
+    sourceSelection.removeText();
+
+    const dropSelection = $selectionFromDropLocation(adjustedDrop);
+    if (dropSelection === null) {
+      return false;
+    }
+    $setSelection(dropSelection);
+  } else {
+    const dropSelection = $selectionFromDropLocation(dropLocation);
+    if (dropSelection === null) {
+      return false;
+    }
+    $setSelection(dropSelection);
+  }
+
+  const currentSelection = $getSelection();
+  if (currentSelection !== null) {
+    $insertDataTransfer(dataTransfer, currentSelection, editor);
+  }
+
+  event.preventDefault();
+  return true;
 }
 
 function trustHTML(html: string): string | TrustedHTML {

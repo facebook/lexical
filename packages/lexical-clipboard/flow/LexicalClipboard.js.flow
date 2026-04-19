@@ -51,6 +51,16 @@ declare export function $insertDataTransferForPlainText(
   selection: RangeSelection,
 ): void;
 
+declare export function $handleTextDrop(
+  event: DragEvent,
+  editor: LexicalEditor,
+  $insertDataTransfer: (
+    dataTransfer: DataTransfer,
+    selection: BaseSelection,
+    editor: LexicalEditor,
+  ) => void,
+): boolean;
+
 interface BaseSerializedNode {
   children?: Array<BaseSerializedNode>;
   type: string;

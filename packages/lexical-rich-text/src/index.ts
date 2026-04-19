@@ -27,6 +27,7 @@ import type {
 } from 'lexical';
 
 import {
+  $handleTextDrop,
   $insertDataTransferForRichText,
   copyToClipboard,
 } from '@lexical/clipboard';
@@ -996,12 +997,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
           return true;
         }
 
-        const selection = $getSelection();
-        if ($isRangeSelection(selection)) {
-          return true;
-        }
-
-        return false;
+        return $handleTextDrop(event, editor, $insertDataTransferForRichText);
       },
       COMMAND_PRIORITY_EDITOR,
     ),

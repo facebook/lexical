@@ -22,6 +22,7 @@ import type {
 export type LexicalNestedComposerProps = {
   children?: React.Node;
   initialEditor: LexicalEditorWithDispose;
+  disposeOnUnmount?: boolean;
 };
 
 declare export function LexicalExtensionEditorComposer(props: LexicalNestedComposerProps): React.Node;

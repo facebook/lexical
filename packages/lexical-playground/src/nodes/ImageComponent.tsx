@@ -431,19 +431,6 @@ export default function ImageComponent({
         }
       }
     });
-    if (show) {
-      // The "Add Caption" button click leaves browser focus on the button, so
-      // the contenteditable React is about to mount will not receive
-      // keystrokes. Wait a frame for the caption editor's root element to
-      // attach, then explicitly focus it and sync the Lexical selection.
-      requestAnimationFrame(() => {
-        const captionRoot = caption.getRootElement();
-        if (captionRoot !== null) {
-          captionRoot.focus({preventScroll: true});
-          caption.focus();
-        }
-      });
-    }
   };
 
   const onResizeEnd = (
@@ -499,7 +486,9 @@ export default function ImageComponent({
 
         {showCaption && (
           <div className="image-caption-container">
-            <LexicalExtensionEditorComposer initialEditor={caption}>
+            <LexicalExtensionEditorComposer
+              initialEditor={caption}
+              disposeOnUnmount={false}>
               <DisableCaptionOnBlur setShowCaption={setShowCaption} />
               {isCollabActive ? (
                 <CollaborationPlugin

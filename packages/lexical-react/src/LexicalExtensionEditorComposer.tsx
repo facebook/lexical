@@ -19,6 +19,14 @@ export interface LexicalExtensionEditorComposerProps {
    * Any children will have access to useLexicalComposerContext (e.g. for React plug-ins or UX)
    */
   children?: React.ReactNode;
+  /**
+   * When false, this component will NOT call `initialEditor.dispose()` on
+   * unmount. Use this when the editor's lifetime is managed elsewhere (for
+   * example, when the editor is stored on a node and the component may be
+   * remounted later to re-attach to the same editor). Defaults to true to
+   * preserve the original behavior for stand-alone editors.
+   */
+  disposeOnUnmount?: boolean;
 }
 
 /**
@@ -32,8 +40,12 @@ export interface LexicalExtensionEditorComposerProps {
 export function LexicalExtensionEditorComposer({
   initialEditor: editor,
   children,
+  disposeOnUnmount = true,
 }: LexicalExtensionEditorComposerProps) {
   useEffect(() => {
+    if (!disposeOnUnmount) {
+      return undefined;
+    }
     // Strict mode workaround
     let didMount = false;
     queueMicrotask(() => {
@@ -44,7 +56,7 @@ export function LexicalExtensionEditorComposer({
         editor.dispose();
       }
     };
-  }, [editor]);
+  }, [editor, disposeOnUnmount]);
   const {Component} = getExtensionDependencyFromEditor(
     editor,
     ReactExtension,

@@ -7,8 +7,10 @@
  */
 
 import {
+  $getClipboardDataFromSelection,
   $handleTextDrop,
   $insertDataTransferForRichText,
+  setLexicalClipboardDataTransfer,
 } from '@lexical/clipboard';
 import {
   $createParagraphNode,
@@ -16,12 +18,14 @@ import {
   $createTextNode,
   $getRoot,
   $getSelection,
+  $isDecoratorNode,
   $isRangeSelection,
   $setSelection,
   LexicalEditor,
   TextNode,
 } from 'lexical';
 import {
+  $createTestDecoratorNode,
   DataTransferMock,
   initializeUnitTest,
   invariant,
@@ -299,8 +303,108 @@ describe('$handleTextDrop', () => {
         expect($getRoot().getTextContent()).toBe('Hello  worldfoo');
       });
     });
+    test('preserves DecoratorNodes in the source when moved to a new location', async () => {
+      const {editor} = testEnv;
+      let targetParagraphKey = '';
+      await editor.update(() => {
+        const root = $getRoot().clear();
+        // Source paragraph: "before" + DecoratorNode + "after"
+        const sourceParagraph = $createParagraphNode();
+        const beforeText = $createTextNode('before');
+        const decorator = $createTestDecoratorNode();
+        const afterText = $createTextNode('after');
+        sourceParagraph.append(beforeText, decorator, afterText);
+
+        // Target paragraph (drop destination)
+        const targetParagraph = $createParagraphNode();
+        const targetText = $createTextNode('target');
+        targetParagraph.append(targetText);
+        targetParagraphKey = targetText.getKey();
+
+        root.append(sourceParagraph, targetParagraph);
+
+        // Select from start of "before" to end of "after" — covers the decorator.
+        const selection = $createRangeSelection();
+        selection.anchor.set(beforeText.getKey(), 0, 'text');
+        selection.focus.set(afterText.getKey(), 5, 'text');
+        $setSelection(selection);
+      });
+
+      // Populate the DataTransfer the same way DRAGSTART does — with Lexical's
+      // own serialization so custom nodes survive the drop.
+      await editor.update(() => {
+        const selection = $getSelection();
+        invariant($isRangeSelection(selection), 'expected range selection');
+
+        const domText = getParagraphTextDOM(editor, targetParagraphKey);
+        setCaretFromPoint(domText, 6); // drop at end of "target"
+
+        const {dataTransfer, event} = createDropEvent();
+        setLexicalClipboardDataTransfer(
+          dataTransfer,
+          $getClipboardDataFromSelection(selection),
+        );
+        $handleTextDrop(event, editor, $insertDataTransferForRichText);
+      });
+
+      await editor.read(() => {
+        const root = $getRoot();
+        // Source paragraph should be empty (its children were moved).
+        const children = root.getChildren();
+        // The target paragraph should contain "target" followed by the dragged
+        // content (text + decorator + text).
+        const decoratorsInTree = children
+          .flatMap((c) =>
+            'getChildren' in c && typeof c.getChildren === 'function'
+              ? c.getChildren()
+              : [],
+          )
+          .filter($isDecoratorNode);
+        expect(decoratorsInTree.length).toBe(1);
+      });
+    });
+
+    test('no-op when drop is inside a multi-node source range', async () => {
+      const {editor} = testEnv;
+      let innerKey = '';
+      await editor.update(() => {
+        const paragraph = $createParagraphNode();
+        const t1 = $createTextNode('one');
+        const t2 = $createTextNode('two').toggleFormat('bold');
+        const t3 = $createTextNode('three');
+        paragraph.append(t1, t2, t3);
+        $getRoot().clear().append(paragraph);
+        innerKey = t2.getKey();
+
+        // Selection spans t1..t3 (all three text nodes).
+        const selection = $createRangeSelection();
+        selection.anchor.set(t1.getKey(), 0, 'text');
+        selection.focus.set(t3.getKey(), 5, 'text');
+        $setSelection(selection);
+      });
+
+      await editor.update(() => {
+        // Drop INSIDE the "two" text node, which is strictly between the
+        // source's anchor and focus.
+        const domText = getParagraphTextDOM(editor, innerKey);
+        setCaretFromPoint(domText, 1);
+        const {dataTransfer, event, preventDefault} = createDropEvent();
+        dataTransfer.setData('text/plain', 'onetwothree');
+        const handled = $handleTextDrop(
+          event,
+          editor,
+          $insertDataTransferForRichText,
+        );
+        expect(handled).toBe(true);
+        expect(preventDefault).toHaveBeenCalled();
+      });
+
+      await editor.read(() => {
+        expect($getRoot().getTextContent()).toBe('onetwothree');
+      });
+    });
   });
 });
 
-// Silence unused warnings for imports that future tests may want.
+// Keep the TextNode import referenced for future cases.
 void TextNode;

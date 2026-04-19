@@ -27,9 +27,11 @@ import type {
 } from 'lexical';
 
 import {
+  $getClipboardDataFromSelection,
   $handleTextDrop,
   $insertDataTransferForRichText,
   copyToClipboard,
+  setLexicalClipboardDataTransfer,
 } from '@lexical/clipboard';
 import {DragonExtension} from '@lexical/dragon';
 import {
@@ -1008,6 +1010,19 @@ export function registerRichText(editor: LexicalEditor): () => void {
         const selection = $getSelection();
         if (isFileTransfer && !$isRangeSelection(selection)) {
           return false;
+        }
+        // Populate the DataTransfer with Lexical's own serialization so that
+        // custom nodes (e.g. images, decorators) survive a drop back into a
+        // Lexical editor rather than being downgraded to text/html.
+        if (
+          $isRangeSelection(selection) &&
+          !selection.isCollapsed() &&
+          event.dataTransfer !== null
+        ) {
+          setLexicalClipboardDataTransfer(
+            event.dataTransfer,
+            $getClipboardDataFromSelection(selection),
+          );
         }
         return true;
       },

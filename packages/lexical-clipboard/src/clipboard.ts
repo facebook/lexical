@@ -262,29 +262,128 @@ function $isDropInsideSourceRange(
   source: RangeSelection,
   drop: DropLocation,
 ): boolean {
-  if (drop.type !== 'text') {
+  const dropNode = $getNodeByKey(drop.key);
+  if (dropNode === null) {
     return false;
   }
+
   const isBackward = source.isBackward();
   const start = isBackward ? source.focus : source.anchor;
   const end = isBackward ? source.anchor : source.focus;
+
+  // Direct offset comparison for a drop that shares the same key as a point of
+  // the source.
+  const isAtStartBoundary =
+    drop.key === start.key &&
+    drop.type === start.type &&
+    drop.offset === start.offset;
+  const isAtEndBoundary =
+    drop.key === end.key &&
+    drop.type === end.type &&
+    drop.offset === end.offset;
+  if (isAtStartBoundary || isAtEndBoundary) {
+    return false;
+  }
+
   if (
+    drop.key === start.key &&
     start.type === 'text' &&
-    end.type === 'text' &&
-    start.key === end.key &&
-    start.key === drop.key
+    drop.type === 'text' &&
+    drop.offset <= start.offset
   ) {
-    return drop.offset > start.offset && drop.offset < end.offset;
+    return false;
+  }
+  if (
+    drop.key === end.key &&
+    end.type === 'text' &&
+    drop.type === 'text' &&
+    drop.offset >= end.offset
+  ) {
+    return false;
+  }
+  if (
+    drop.key === start.key &&
+    start.type === 'element' &&
+    drop.type === 'element' &&
+    drop.offset <= start.offset
+  ) {
+    return false;
+  }
+  if (
+    drop.key === end.key &&
+    end.type === 'element' &&
+    drop.type === 'element' &&
+    drop.offset >= end.offset
+  ) {
+    return false;
+  }
+
+  // If the drop node itself (or any ancestor) is contained within the source
+  // range, the drop is inside the source.
+  const sourceKeys = new Set(source.getNodes().map((n) => n.getKey()));
+  if (sourceKeys.has(drop.key)) {
+    return true;
+  }
+  for (
+    let node = dropNode.getParent();
+    node !== null;
+    node = node.getParent()
+  ) {
+    if (sourceKeys.has(node.getKey())) {
+      return true;
+    }
   }
   return false;
 }
 
+function $adjustDropLocationForRemoval(
+  source: RangeSelection,
+  drop: DropLocation,
+): DropLocation {
+  const isBackward = source.isBackward();
+  const start = isBackward ? source.focus : source.anchor;
+  const end = isBackward ? source.anchor : source.focus;
+
+  // Same-text-node source and drop: the text node shortens when we remove the
+  // source, so offsets past the removed range need to shift left.
+  if (
+    drop.type === 'text' &&
+    start.type === 'text' &&
+    end.type === 'text' &&
+    start.key === end.key &&
+    start.key === drop.key &&
+    drop.offset >= end.offset
+  ) {
+    return {...drop, offset: drop.offset - (end.offset - start.offset)};
+  }
+
+  // Same-parent element-point source and drop: children indexed past the
+  // removed range shift left by the number of removed children.
+  if (
+    drop.type === 'element' &&
+    start.type === 'element' &&
+    end.type === 'element' &&
+    start.key === end.key &&
+    start.key === drop.key &&
+    drop.offset >= end.offset
+  ) {
+    return {...drop, offset: drop.offset - (end.offset - start.offset)};
+  }
+
+  return drop;
+}
+
 /**
- * Implements text drag-and-drop behavior for an editor. When the drop
- * originates from a non-collapsed RangeSelection in the same editor, the
- * selected content is moved to the drop location. Otherwise the DataTransfer
- * content is inserted at the drop location. Returns true when the drop was
- * handled (and event.preventDefault was called), otherwise false.
+ * Implements drag-and-drop behavior for an editor. When the drop originates
+ * from a non-collapsed RangeSelection in the same editor, the selected content
+ * is moved to the drop location. Otherwise the DataTransfer content is inserted
+ * at the drop location. Returns true when the drop was handled (and
+ * event.preventDefault was called), otherwise false.
+ *
+ * For full-fidelity internal moves (including custom nodes like images),
+ * callers should populate the DataTransfer with Lexical's serialization format
+ * on DRAGSTART via {@link setLexicalClipboardDataTransfer} and
+ * {@link $getClipboardDataFromSelection}.
  *
  * @param event the DragEvent that triggered the drop.
  * @param editor the LexicalEditor receiving the drop.
@@ -323,24 +422,10 @@ export function $handleTextDrop(
       return true;
     }
 
-    // If the drop is in the same text node as a single-text-node source, the
-    // source removal will shift the offset within that text node. Adjust the
-    // drop offset so that the drop point still refers to the same visual
-    // location after removal.
-    const isBackward = sourceSelection.isBackward();
-    const start = isBackward ? sourceSelection.focus : sourceSelection.anchor;
-    const end = isBackward ? sourceSelection.anchor : sourceSelection.focus;
-    const adjustedDrop: DropLocation = {...dropLocation};
-    if (
-      dropLocation.type === 'text' &&
-      start.type === 'text' &&
-      end.type === 'text' &&
-      start.key === end.key &&
-      start.key === dropLocation.key &&
-      dropLocation.offset >= end.offset
-    ) {
-      adjustedDrop.offset = dropLocation.offset - (end.offset - start.offset);
-    }
+    const adjustedDrop = $adjustDropLocationForRemoval(
+      sourceSelection,
+      dropLocation,
+    );
 
     sourceSelection.removeText();
 

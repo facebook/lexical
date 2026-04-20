@@ -486,9 +486,7 @@ export default function ImageComponent({
 
         {showCaption && (
           <div className="image-caption-container">
-            <LexicalExtensionEditorComposer
-              initialEditor={caption}
-              disposeOnUnmount={false}>
+            <LexicalExtensionEditorComposer initialEditor={caption}>
               <DisableCaptionOnBlur setShowCaption={setShowCaption} />
               {isCollabActive ? (
                 <CollaborationPlugin

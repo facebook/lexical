@@ -8,25 +8,22 @@
 import {getExtensionDependencyFromEditor} from '@lexical/extension';
 import {ReactExtension} from '@lexical/react/ReactExtension';
 import {LexicalEditorWithDispose} from 'lexical';
-import {useEffect} from 'react';
 
 export interface LexicalExtensionEditorComposerProps {
   /**
-   * Your root extension, typically defined with {@link defineExtension}
+   * Your root extension, typically defined with {@link defineExtension}.
+   * The lifecycle of this editor is not owned by this component,
+   * you are responsible for calling `initialEditor.dispose()` if needed.
+   * Note also that any LexicalEditor can only be rendered to one root
+   * element, so if you try and use it from multiple components
+   * simultaneously then it will only be managed correctly by the last one
+   * to render.
    */
   initialEditor: LexicalEditorWithDispose;
   /**
    * Any children will have access to useLexicalComposerContext (e.g. for React plug-ins or UX)
    */
   children?: React.ReactNode;
-  /**
-   * When false, this component will NOT call `initialEditor.dispose()` on
-   * unmount. Use this when the editor's lifetime is managed elsewhere (for
-   * example, when the editor is stored on a node and the component may be
-   * remounted later to re-attach to the same editor). Defaults to true to
-   * preserve the original behavior for stand-alone editors.
-   */
-  disposeOnUnmount?: boolean;
 }
 
 /**
@@ -40,23 +37,7 @@ export interface LexicalExtensionEditorComposerProps {
 export function LexicalExtensionEditorComposer({
   initialEditor: editor,
   children,
-  disposeOnUnmount = true,
 }: LexicalExtensionEditorComposerProps) {
-  useEffect(() => {
-    if (!disposeOnUnmount) {
-      return undefined;
-    }
-    // Strict mode workaround
-    let didMount = false;
-    queueMicrotask(() => {
-      didMount = true;
-    });
-    return () => {
-      if (didMount) {
-        editor.dispose();
-      }
-    };
-  }, [editor, disposeOnUnmount]);
   const {Component} = getExtensionDependencyFromEditor(
     editor,
     ReactExtension,

@@ -122,8 +122,10 @@ declare export function registerClickableLink(
 ): () => void;
 
 export type AutoLinkConfig = {
-  matchers: LinkMatcher[];
   changeHandlers: ChangeHandler[];
+  excludeParents: Array<(parent: ElementNode) => boolean>;
+  matchers: LinkMatcher[];
+  punctuation?: string;
 }
 
 export type ChangeHandler = (

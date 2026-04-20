@@ -159,6 +159,12 @@ const MATCHERS = [
 <AutoLinkPlugin matchers={MATCHERS} />
 ```
 
+`AutoLinkPlugin` uses `.`, `,`, `;`, and whitespace as link boundaries by default. Pass `punctuation` to treat additional separators as boundaries for custom matchers:
+
+```jsx
+<AutoLinkPlugin matchers={MATCHERS} punctuation=".,;:" />
+```
+
 ### `LexicalClearEditorPlugin`
 
 Adds `clearEditor` command support to clear editor's content.

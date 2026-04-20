@@ -81,18 +81,18 @@ function findFirstMatch(
   return null;
 }
 
-const PUNCTUATION_OR_SPACE = /[.,;\s]/;
+const DEFAULT_PUNCTUATION = '.,;';
 
-function isSeparator(char: string): boolean {
-  return PUNCTUATION_OR_SPACE.test(char);
+function isSeparator(char: string, punctuation: string): boolean {
+  return /\s/.test(char) || punctuation.includes(char);
 }
 
-function endsWithSeparator(textContent: string): boolean {
-  return isSeparator(textContent[textContent.length - 1]);
+function endsWithSeparator(textContent: string, punctuation: string): boolean {
+  return isSeparator(textContent[textContent.length - 1], punctuation);
 }
 
-function startsWithSeparator(textContent: string): boolean {
-  return isSeparator(textContent[0]);
+function startsWithSeparator(textContent: string, punctuation: string): boolean {
+  return isSeparator(textContent[0], punctuation);
 }
 
 /**
@@ -110,7 +110,7 @@ function startsWithTLD(textContent: string, isEmail: boolean): boolean {
   }
 }
 
-function isPreviousNodeValid(node: LexicalNode): boolean {
+function isPreviousNodeValid(node: LexicalNode, punctuation: string): boolean {
   let previousNode = node.getPreviousSibling();
   if ($isElementNode(previousNode)) {
     previousNode = previousNode.getLastDescendant();
@@ -119,11 +119,11 @@ function isPreviousNodeValid(node: LexicalNode): boolean {
     previousNode === null ||
     $isLineBreakNode(previousNode) ||
     ($isTextNode(previousNode) &&
-      endsWithSeparator(previousNode.getTextContent()))
+      endsWithSeparator(previousNode.getTextContent(), punctuation))
   );
 }
 
-function isNextNodeValid(node: LexicalNode): boolean {
+function isNextNodeValid(node: LexicalNode, punctuation: string): boolean {
   let nextNode = node.getNextSibling();
   if ($isElementNode(nextNode)) {
     nextNode = nextNode.getFirstDescendant();
@@ -131,28 +131,30 @@ function isNextNodeValid(node: LexicalNode): boolean {
   return (
     nextNode === null ||
     $isLineBreakNode(nextNode) ||
-    ($isTextNode(nextNode) && startsWithSeparator(nextNode.getTextContent()))
+    ($isTextNode(nextNode) &&
+      startsWithSeparator(nextNode.getTextContent(), punctuation))
   );
 }
 
 function isContentAroundIsValid(
   matchStart: number,
   matchEnd: number,
+  punctuation: string,
   text: string,
   nodes: TextNode[],
 ): boolean {
   const contentBeforeIsValid =
     matchStart > 0
-      ? isSeparator(text[matchStart - 1])
-      : isPreviousNodeValid(nodes[0]);
+      ? isSeparator(text[matchStart - 1], punctuation)
+      : isPreviousNodeValid(nodes[0], punctuation);
   if (!contentBeforeIsValid) {
     return false;
   }
 
   const contentAfterIsValid =
     matchEnd < text.length
-      ? isSeparator(text[matchEnd])
-      : isNextNodeValid(nodes[nodes.length - 1]);
+      ? isSeparator(text[matchEnd], punctuation)
+      : isNextNodeValid(nodes[nodes.length - 1], punctuation);
   return contentAfterIsValid;
 }
 
@@ -283,6 +285,7 @@ function $handleLinkCreation(
   nodes: TextNode[],
   matchers: Array<LinkMatcher>,
   onChange: ChangeHandler,
+  punctuation: string,
 ): void {
   // Early return if any node is already part of an AutoLinkNode (idempotency check)
   for (const node of nodes) {
@@ -307,6 +310,7 @@ function $handleLinkCreation(
     const isValid = isContentAroundIsValid(
       invalidMatchEnd + matchStart,
       invalidMatchEnd + matchEnd,
+      punctuation,
       initialText,
       currentNodes,
     );
@@ -359,6 +363,7 @@ function handleLinkEdit(
   linkNode: AutoLinkNode,
   matchers: Array<LinkMatcher>,
   onChange: ChangeHandler,
+  punctuation: string,
 ): void {
   // Check children are simple text
   const children = linkNode.getChildren();
@@ -382,7 +387,10 @@ function handleLinkEdit(
   }
 
   // Check neighbors
-  if (!isPreviousNodeValid(linkNode) || !isNextNodeValid(linkNode)) {
+  if (
+    !isPreviousNodeValid(linkNode, punctuation) ||
+    !isNextNodeValid(linkNode, punctuation)
+  ) {
     replaceWithChildren(linkNode);
     onChange(null, linkNode.getURL());
     return;
@@ -415,6 +423,7 @@ function handleBadNeighbors(
   textNode: TextNode,
   matchers: Array<LinkMatcher>,
   onChange: ChangeHandler,
+  punctuation: string,
 ): void {
   const parent = textNode.getParent();
   const previousSibling = textNode.getPreviousSibling();
@@ -437,7 +446,7 @@ function handleBadNeighbors(
     ) {
       // If text doesn't start with separator, link should be unwrapped
       // because non-separator after link makes the boundary invalid
-      if (!startsWithSeparator(text)) {
+      if (!startsWithSeparator(text, punctuation)) {
         // Non-separator after link - unwrap the link
         replaceWithChildren(previousSibling);
         onChange(null, previousSibling.getURL());
@@ -451,7 +460,7 @@ function handleBadNeighbors(
         const match = findFirstMatch(combinedText, matchers);
         if (match !== null && match.text === combinedText) {
           previousSibling.append(textNode);
-          handleLinkEdit(previousSibling, matchers, onChange);
+          handleLinkEdit(previousSibling, matchers, onChange, punctuation);
           onChange(null, previousSibling.getURL());
         }
       }
@@ -463,7 +472,7 @@ function handleBadNeighbors(
   if (
     $isAutoLinkNode(nextSibling) &&
     !nextSibling.getIsUnlinked() &&
-    !endsWithSeparator(text)
+    !endsWithSeparator(text, punctuation)
   ) {
     // Check if the nextSibling is still a sibling (hasn't been moved) to prevent loops
     if (
@@ -507,22 +516,29 @@ function getTextNodesToMatch(textNode: TextNode): TextNode[] {
 }
 
 export interface AutoLinkConfig {
-  matchers: LinkMatcher[];
   changeHandlers: ChangeHandler[];
   excludeParents: Array<(parent: ElementNode) => boolean>;
+  matchers: LinkMatcher[];
+  punctuation?: string;
 }
 
 const defaultConfig: AutoLinkConfig = {
   changeHandlers: [],
   excludeParents: [],
   matchers: [],
+  punctuation: DEFAULT_PUNCTUATION,
 };
 
 export function registerAutoLink(
   editor: LexicalEditor,
   config: AutoLinkConfig = defaultConfig,
 ): () => void {
-  const {matchers, changeHandlers, excludeParents} = config;
+  const {
+    matchers,
+    changeHandlers,
+    excludeParents,
+    punctuation = DEFAULT_PUNCTUATION,
+  } = config;
   const onChange: ChangeHandler = (url, prevUrl) => {
     for (const handler of changeHandlers) {
       handler(url, prevUrl);
@@ -533,21 +549,26 @@ export function registerAutoLink(
       const parent = textNode.getParentOrThrow();
       const previous = textNode.getPreviousSibling();
       if ($isAutoLinkNode(parent)) {
-        handleLinkEdit(parent, matchers, onChange);
+        handleLinkEdit(parent, matchers, onChange, punctuation);
       } else if (
         !$isLinkNode(parent) &&
         !excludeParents.some((pred) => pred(parent))
       ) {
         if (
           textNode.isSimpleText() &&
-          (startsWithSeparator(textNode.getTextContent()) ||
+          (startsWithSeparator(textNode.getTextContent(), punctuation) ||
             !$isAutoLinkNode(previous))
         ) {
           const textNodesToMatch = getTextNodesToMatch(textNode);
-          $handleLinkCreation(textNodesToMatch, matchers, onChange);
+          $handleLinkCreation(
+            textNodesToMatch,
+            matchers,
+            onChange,
+            punctuation,
+          );
         }
 
-        handleBadNeighbors(textNode, matchers, onChange);
+        handleBadNeighbors(textNode, matchers, onChange, punctuation);
       }
     }),
     editor.registerCommand(

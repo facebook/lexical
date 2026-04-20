@@ -59,6 +59,10 @@ const TestLexicalAutoLinkExtension = defineExtension({
 const URL_MATCHER = createLinkMatcherWithRegExp(
   /https?:\/\/[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/,
 );
+const PORT_URL_MATCHER = createLinkMatcherWithRegExp(
+  /https?:\/\/[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}:\d+/,
+);
+const GH_TAG_MATCHER = createLinkMatcherWithRegExp(/GH-\d+/);
 
 describe('LexicalAutoLinkExtension tests', () => {
   test('registerAutoLink does not cause infinite transform loop with #1234.Another', async () => {
@@ -170,6 +174,111 @@ describe('LexicalAutoLinkExtension tests', () => {
         'first child must be an AutoLinkNode',
       );
       expect(autoLinkNode.getTextContent()).toBe('https://example.com');
+    });
+  });
+
+  test('default punctuation does not treat colon as an auto-link boundary', async () => {
+    using editor = buildEditorFromExtensions({
+      $initialEditorState() {
+        $getRoot().append(
+          $createParagraphNode().append($createTextNode('GH-123: investigate')),
+        );
+      },
+      dependencies: [
+        TestLexicalAutoLinkExtension,
+        configExtension(AutoLinkExtension, {
+          matchers: [GH_TAG_MATCHER],
+        }),
+      ],
+      name: '[test override]',
+    });
+
+    editor.read(() => {
+      const root = $getRoot();
+      const paragraphNode = root.getFirstChild();
+      assert(
+        $isParagraphNode(paragraphNode),
+        'first root child must be a ParagraphNode',
+      );
+      const firstChild = paragraphNode.getFirstChild();
+      assert($isTextNode(firstChild), 'first child must be a TextNode');
+      expect(firstChild.getTextContent()).toBe('GH-123: investigate');
+    });
+  });
+
+  test('custom punctuation can treat colon as an auto-link boundary', async () => {
+    using editor = buildEditorFromExtensions({
+      $initialEditorState() {
+        $getRoot().append(
+          $createParagraphNode().append($createTextNode('GH-123: investigate')),
+        );
+      },
+      dependencies: [
+        TestLexicalAutoLinkExtension,
+        configExtension(AutoLinkExtension, {
+          matchers: [GH_TAG_MATCHER],
+          punctuation: '.,;:',
+        }),
+      ],
+      name: '[test override]',
+    });
+
+    editor.read(() => {
+      const root = $getRoot();
+      const paragraphNode = root.getFirstChild();
+      assert(
+        $isParagraphNode(paragraphNode),
+        'first root child must be a ParagraphNode',
+      );
+      const autoLinkNode = paragraphNode.getFirstChild();
+      assert(
+        $isAutoLinkNode(autoLinkNode),
+        'first child must be an AutoLinkNode',
+      );
+      expect(autoLinkNode.getTextContent()).toBe('GH-123');
+
+      const nextSibling = autoLinkNode.getNextSibling();
+      assert($isTextNode(nextSibling), 'next sibling must be a TextNode');
+      expect(nextSibling.getTextContent()).toBe(': investigate');
+    });
+  });
+
+  test('custom punctuation does not break auto-linking URLs with embedded colons', async () => {
+    using editor = buildEditorFromExtensions({
+      $initialEditorState() {
+        $getRoot().append(
+          $createParagraphNode().append(
+            $createTextNode('https://example.com:3000 '),
+          ),
+        );
+      },
+      dependencies: [
+        TestLexicalAutoLinkExtension,
+        configExtension(AutoLinkExtension, {
+          matchers: [PORT_URL_MATCHER],
+          punctuation: '.,;:',
+        }),
+      ],
+      name: '[test override]',
+    });
+
+    editor.read(() => {
+      const root = $getRoot();
+      const paragraphNode = root.getFirstChild();
+      assert(
+        $isParagraphNode(paragraphNode),
+        'first root child must be a ParagraphNode',
+      );
+      const autoLinkNode = paragraphNode.getFirstChild();
+      assert(
+        $isAutoLinkNode(autoLinkNode),
+        'first child must be an AutoLinkNode',
+      );
+      expect(autoLinkNode.getTextContent()).toBe('https://example.com:3000');
+
+      const nextSibling = autoLinkNode.getNextSibling();
+      assert($isTextNode(nextSibling), 'next sibling must be a TextNode');
+      expect(nextSibling.getTextContent()).toBe(' ');
     });
   });
 });

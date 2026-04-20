@@ -16,14 +16,12 @@ import {$createLinkNode, LinkNode} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {TableOfContentsPlugin as LexicalTableOfContentsPlugin} from '@lexical/react/LexicalTableOfContentsPlugin';
 import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
-import {$isHeadingNode, HeadingNode} from '@lexical/rich-text';
+import {$isHeadingNode} from '@lexical/rich-text';
 import {$findMatchingParent} from '@lexical/utils';
 import {
-  $getState,
   $setState,
   COMMAND_PRIORITY_LOW,
   createCommand,
-  createState,
   type LexicalCommand,
   mergeRegister,
   type NodeKey,
@@ -51,6 +49,7 @@ import {
   $isContentsListNode,
   ContentsListNode,
 } from '../../nodes/ContentsListNode';
+import {idState} from '../IdStateExtension';
 
 const MARGIN_ABOVE_EDITOR = 624;
 const HEADING_WIDTH = 9;
@@ -83,10 +82,6 @@ export const INSERT_CONTENTS_COMMAND: LexicalCommand<void> = createCommand(
   'INSERT_CONTENTS_COMMAND',
 );
 
-const anchorState = createState('anchor', {
-  parse: (v) => (typeof v === 'string' ? v : null),
-});
-
 function $generateContentsNode(tableOfContents: Array<TableOfContentsEntry>) {
   const contentsNode = $createContentsListNode();
   tableOfContents.forEach(([key, text, tag], index) => {
@@ -94,7 +89,7 @@ function $generateContentsNode(tableOfContents: Array<TableOfContentsEntry>) {
     const item = $createContentsItemNode();
     const headingNode = $getNodeByKey(key);
     if ($isHeadingNode(headingNode)) {
-      $setState(headingNode, anchorState, anchorIndex);
+      $setState(headingNode, idState, anchorIndex);
     }
     item.append(
       $createContentsLinkNode('#' + anchorIndex, {
@@ -168,23 +163,6 @@ function TableOfContentsList({
             true,
           );
         }
-      }),
-      // Synchronizing the anchorState and id attribute for each heading
-      editor.registerMutationListener(HeadingNode, (mutations) => {
-        mutations.forEach((mutation, key) => {
-          if (mutation !== 'destroyed') {
-            editor.update(() => {
-              const node = $getNodeByKey(key);
-              if ($isHeadingNode(node)) {
-                const anchor = $getState(node, anchorState);
-                const element = editor.getElementByKey(key);
-                if (element && anchor) {
-                  element.id = anchor;
-                }
-              }
-            });
-          }
-        });
       }),
     );
   }, [editor]);

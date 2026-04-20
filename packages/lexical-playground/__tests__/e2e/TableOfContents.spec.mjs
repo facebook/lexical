@@ -39,6 +39,7 @@ test.describe('TableOfContents', () => {
   test('Can insert the Table of Contents node via the Insert dropdown', async ({
     page,
     isPlainText,
+    isCollab,
   }) => {
     test.skip(isPlainText);
     await focusEditor(page);
@@ -116,13 +117,15 @@ test.describe('TableOfContents', () => {
         </ol>
       `,
       undefined,
-      {ignoreInlineStyles: true},
+      // In collab mode, the cursor may be in a different location, which is why the "active" class is missing
+      {ignoreClasses: isCollab, ignoreInlineStyles: true},
     );
   });
 
   test('The table of contents is not inserted if the document does not have headings', async ({
     page,
     isPlainText,
+    isCollab,
   }) => {
     test.skip(isPlainText);
     await focusEditor(page);
@@ -136,7 +139,8 @@ test.describe('TableOfContents', () => {
         <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
       `,
       undefined,
-      {ignoreInlineStyles: true},
+      // In collab mode, the cursor may be in a different location, which is why the "active" class is missing
+      {ignoreClasses: isCollab, ignoreInlineStyles: true},
     );
   });
 
@@ -145,6 +149,7 @@ test.describe('TableOfContents', () => {
     isPlainText,
     isCollab,
   }) => {
+    // In collab mode, the cursor does not follow the leading cursor and therefore scrolling does not occur
     test.skip(isPlainText || isCollab);
     await focusEditor(page);
 
@@ -176,7 +181,7 @@ test.describe('TableOfContents', () => {
     isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText || isCollab);
+    test.skip(isPlainText);
     await focusEditor(page);
 
     // prepare headings
@@ -253,7 +258,8 @@ test.describe('TableOfContents', () => {
         </ol>
       `,
       undefined,
-      {ignoreInlineStyles: true},
+      // In collab mode, the cursor may be in a different location, which is why the "active" class is missing
+      {ignoreClasses: isCollab, ignoreInlineStyles: true},
     );
 
     // rewrite the first heading
@@ -320,13 +326,15 @@ test.describe('TableOfContents', () => {
         </ol>
       `,
       undefined,
-      {ignoreInlineStyles: true},
+      // In collab mode, the cursor may be in a different location, which is why the "active" class is missing
+      {ignoreClasses: isCollab, ignoreInlineStyles: true},
     );
   });
 
   test('Text after the link and before it is appended to the link', async ({
     page,
     isPlainText,
+    isCollab,
   }) => {
     test.skip(isPlainText);
     await focusEditor(page);
@@ -363,13 +371,15 @@ test.describe('TableOfContents', () => {
         </ol>
       `,
       undefined,
-      {ignoreInlineStyles: true},
+      // In collab mode, the cursor may be in a different location, which is why the "active" class is missing
+      {ignoreClasses: isCollab, ignoreInlineStyles: true},
     );
   });
 
   test('The contents link should be preserved in the contents element if it does not contain text.', async ({
     page,
     isPlainText,
+    isCollab,
   }) => {
     test.skip(isPlainText);
     await focusEditor(page);
@@ -434,13 +444,15 @@ test.describe('TableOfContents', () => {
         </ol>
       `,
       undefined,
-      {ignoreInlineStyles: true},
+      // In collab mode, the cursor may be in a different location, which is why the "active" class is missing
+      {ignoreClasses: isCollab, ignoreInlineStyles: true},
     );
   });
 
   test('The contents link should be removed by backward deleting #8205', async ({
     page,
     isPlainText,
+    isCollab,
   }) => {
     test.skip(isPlainText);
     await focusEditor(page);
@@ -485,13 +497,15 @@ test.describe('TableOfContents', () => {
         </ol>
       `,
       undefined,
-      {ignoreInlineStyles: true},
+      // In collab mode, the cursor may be in a different location, which is why the "active" class is missing
+      {ignoreClasses: isCollab, ignoreInlineStyles: true},
     );
   });
 
   test('The contenst link should be removed by forward deleting #8205', async ({
     page,
     isPlainText,
+    isCollab,
   }) => {
     test.skip(isPlainText);
     await focusEditor(page);
@@ -537,7 +551,8 @@ test.describe('TableOfContents', () => {
         </ol>
       `,
       undefined,
-      {ignoreInlineStyles: true},
+      // In collab mode, the cursor may be in a different location, which is why the "active" class is missing
+      {ignoreClasses: isCollab, ignoreInlineStyles: true},
     );
   });
 });

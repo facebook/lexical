@@ -578,6 +578,10 @@ i.markdown {
   background-image: url(images/icons/markdown.svg);
 }
 
+i.html {
+  background-image: url(images/icons/filetype-html.svg);
+}
+
 i.outdent {
   background-image: url(images/icons/outdent.svg);
 }
@@ -1384,6 +1388,14 @@ i.chevron-down {
   color: #222;
   display: inline-block;
   cursor: pointer;
+}
+
+.action-button[data-active='true'] {
+  filter: invert(90%);
+}
+
+.action-button[data-active='true']:hover {
+  filter: invert(100%);
 }
 
 .action-button:hover {

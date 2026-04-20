@@ -12,7 +12,7 @@ import type {
   AIStreamEvent,
   AIToolCall,
   AIToolDefinition,
-} from '@lexical/ai';
+} from './types';
 
 const DEFAULT_BASE_URL = '/api/ai';
 const DEFAULT_MODEL = 'claude-sonnet-4-20250514';

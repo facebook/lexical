@@ -11,7 +11,7 @@ import type {
   AIMessage,
   AIStreamEvent,
   AIToolDefinition,
-} from '@lexical/ai';
+} from './types';
 
 /**
  * Mock AI adapter that simulates an LLM with tool-calling capability.

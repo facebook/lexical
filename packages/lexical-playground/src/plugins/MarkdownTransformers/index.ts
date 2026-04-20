@@ -18,6 +18,7 @@ import {
   ELEMENT_TRANSFORMERS,
   ElementTransformer,
   MULTILINE_ELEMENT_TRANSFORMERS,
+  MultilineElementTransformer,
   TEXT_FORMAT_TRANSFORMERS,
   TEXT_MATCH_TRANSFORMERS,
   TextMatchTransformer,
@@ -129,6 +130,33 @@ export const EQUATION: TextMatchTransformer = {
   },
   trigger: '$',
   type: 'text-match',
+};
+
+export const EQUATION_BLOCK: MultilineElementTransformer = {
+  dependencies: [EquationNode],
+  export: (node: LexicalNode) => {
+    if (!$isEquationNode(node)) {
+      return null;
+    }
+    return `$$\n${node.getEquation()}\n$$`;
+  },
+  regExpEnd: {
+    optional: true,
+    regExp: /^[ \t]*\$\$$/,
+  },
+  regExpStart: /^[ \t]*\$\$$/,
+  replace: (rootNode, children, linesInBetween) => {
+    let equation = '';
+    if (linesInBetween) {
+      equation = linesInBetween.join('\n');
+    } else if (children) {
+      // Handles shortcut typing scenario
+      equation = children.map((child) => child.getTextContent()).join('');
+    }
+    const equationNode = $createEquationNode(equation, false);
+    rootNode.append(equationNode);
+  },
+  type: 'multiline-element',
 };
 
 export const TWEET: ElementTransformer = {
@@ -312,6 +340,7 @@ export const PLAYGROUND_TRANSFORMERS: Array<Transformer> = [
   HR,
   IMAGE,
   EMOJI,
+  EQUATION_BLOCK,
   EQUATION,
   TWEET,
   CHECK_LIST,

@@ -122,18 +122,6 @@ function $normalizePoint(point: PointType): void {
     } else if (!$isElementNode(nextNode)) {
       break;
     }
-    // Don't descend into empty inline elements that can be empty —
-    // the cursor should rest at the parent element level so that
-    // subsequent deletions can correctly identify the parent as
-    // "effectifely empty" and remove it, rather than placing
-    // the cursor inside and element that has no text content to navigate
-    else if (
-      nextNode.isInline() &&
-      nextNode.canBeEmpty() &&
-      nextNode.isEmpty()
-    ) {
-      break;
-    }
     point.set(
       nextNode.__key,
       nextOffsetAtEnd ? nextNode.getChildrenSize() : 0,

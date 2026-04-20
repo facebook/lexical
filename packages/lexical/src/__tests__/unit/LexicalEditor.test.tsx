@@ -57,6 +57,7 @@ import {
   type LexicalEditor,
   type LexicalNode,
   type LexicalNodeReplacement,
+  mergeRegister,
   ParagraphNode,
   RootNode,
   SKIP_DOM_SELECTION_TAG,
@@ -2685,6 +2686,39 @@ describe('LexicalEditor tests', () => {
     expect(textContentListener).toHaveBeenCalledTimes(1);
     expect(nodeTransformListener).toHaveBeenCalledTimes(1);
     expect(mutationListener).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls command listeners in LIFO order', async () => {
+    const calls: string[] = [];
+    let regOrder = 0;
+    const listener = (
+      priority: typeof COMMAND_PRIORITY_EDITOR | typeof COMMAND_PRIORITY_LOW,
+    ) => {
+      const idx = regOrder++;
+      return editor.registerCommand(
+        TEST_COMMAND,
+        () => {
+          calls.push(`${['editor', 'low'][priority]}:${idx}`);
+          return false;
+        },
+        priority,
+      );
+    };
+    const TEST_COMMAND = createCommand('TEST_COMMAND');
+    init();
+    const unreg = mergeRegister(
+      listener(COMMAND_PRIORITY_EDITOR),
+      listener(COMMAND_PRIORITY_LOW),
+      listener(COMMAND_PRIORITY_EDITOR),
+      listener(COMMAND_PRIORITY_LOW),
+    );
+    expect(calls).toHaveLength(0);
+    editor.dispatchCommand(TEST_COMMAND, undefined);
+    expect(calls).toEqual(['low:3', 'low:1', 'editor:2', 'editor:0']);
+    unreg();
+    calls.length = 0;
+    editor.dispatchCommand(TEST_COMMAND, undefined);
+    expect(calls).toEqual([]);
   });
 
   it('allows using the same listener for multiple node types', async () => {

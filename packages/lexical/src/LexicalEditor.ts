@@ -457,10 +457,12 @@ export type LexicalCommand<TPayload> = {
 export type CommandPayloadType<TCommand extends LexicalCommand<unknown>> =
   TCommand extends LexicalCommand<infer TPayload> ? TPayload : never;
 
-type Commands = Map<
-  LexicalCommand<unknown>,
-  Array<Set<CommandListener<unknown>>>
->;
+type Commands = Map<LexicalCommand<unknown>, CommandListenerSet<unknown>[]>;
+
+export interface CommandListenerSet<T> extends Set<CommandListener<T>> {
+  [LISTENER_CACHE_SYMBOL]?: CommandListener<T>[];
+}
+export const LISTENER_CACHE_SYMBOL = Symbol.for('@lexical/listener-cache');
 
 export type ListenerMap<T> = Map<T, undefined | (() => void)>;
 
@@ -1077,8 +1079,10 @@ export class LexicalEditor {
     }
 
     const listeners = listenersInPriorityOrder[priority];
+    delete listeners[LISTENER_CACHE_SYMBOL];
     listeners.add(listener as CommandListener<unknown>);
     return () => {
+      delete listeners[LISTENER_CACHE_SYMBOL];
       listeners.delete(listener as CommandListener<unknown>);
 
       if (

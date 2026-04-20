@@ -992,7 +992,21 @@ i.page-setup,
   position: fixed;
   left: 10px;
   bottom: 70px;
+  max-height: calc(100svh - 70px);
+  overflow-y: auto;
+  scrollbar-width: thin;
   animation: slide-in 0.4s ease;
+}
+
+.switches::after {
+  content: '';
+  position: sticky;
+  bottom: 0;
+  display: block;
+  height: 60px;
+  margin-top: -60px;
+  background: linear-gradient(to bottom, transparent, #eee);
+  pointer-events: none;
 }
 
 @keyframes slide-in {

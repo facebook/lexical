@@ -227,6 +227,15 @@ function $updateAndRetainSelection(
   }
 
   const anchor = selection.anchor;
+  const anchorNode = anchor.getNode();
+  const anchorCodeNode = $isCodeNode(anchorNode)
+    ? anchorNode
+    : anchorNode.getParent();
+  if (!node.is(anchorCodeNode)) {
+    updateFn();
+    return;
+  }
+
   const anchorOffset = anchor.offset;
   const isNewLineAnchor =
     anchor.type === 'element' &&
@@ -235,7 +244,6 @@ function $updateAndRetainSelection(
 
   // Calculating previous text offset (all text node prior to anchor + anchor own text offset)
   if (!isNewLineAnchor) {
-    const anchorNode = anchor.getNode();
     textOffset =
       anchorOffset +
       anchorNode.getPreviousSiblings().reduce((offset, _node) => {
@@ -262,7 +270,8 @@ function $updateAndRetainSelection(
     if (isText || $isLineBreakNode(_node)) {
       const textContentSize = _node.getTextContentSize();
       if (isText && textContentSize >= textOffset) {
-        _node.select(textOffset, textOffset);
+        const offsetToSet = Math.max(0, textOffset);
+        _node.select(offsetToSet, offsetToSet);
         return true;
       }
       textOffset -= textContentSize;

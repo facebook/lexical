@@ -52,6 +52,8 @@ import Editor from './Editor';
 import logo from './images/logo.svg';
 import {KeywordsExtension} from './nodes/KeywordNode';
 import PlaygroundNodes from './nodes/PlaygroundNodes';
+import {AIExtension} from './plugins/AIPlugin/AIExtension';
+import {AnthropicAdapter} from './plugins/AIPlugin/AnthropicAdapter';
 import {PlaygroundAutoLinkExtension} from './plugins/AutoLinkExtension';
 import {DateTimeExtension} from './plugins/DateTimeExtension';
 import DocsPlugin from './plugins/DocsPlugin';
@@ -160,6 +162,7 @@ const PlaygroundRichTextExtension = defineExtension({
     configExtension(ListExtension, {shouldPreserveNumbering: false}),
     CheckListExtension,
     PlaygroundMarkdownShortcutsExtension,
+    configExtension(AIExtension, {adapter: new AnthropicAdapter()}),
   ],
   name: '@lexical/playground/RichText',
 });

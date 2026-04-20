@@ -85,6 +85,7 @@ import {
   INSERT_PARAGRAPH_COMMAND,
   INSERT_TAB_COMMAND,
   isDOMNode,
+  isExactShortcutMatch,
   isSelectionCapturedInDecoratorInput,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
@@ -92,10 +93,9 @@ import {
   KEY_ARROW_UP_COMMAND,
   KEY_BACKSPACE_COMMAND,
   KEY_DELETE_COMMAND,
+  KEY_DOWN_COMMAND,
   KEY_ENTER_COMMAND,
   KEY_ESCAPE_COMMAND,
-  KEY_SPACE_COMMAND,
-  KEY_TAB_COMMAND,
   OUTDENT_CONTENT_COMMAND,
   PASTE_COMMAND,
   PASTE_TAG,
@@ -927,8 +927,6 @@ export function registerRichText(editor: LexicalEditor): () => void {
           return false;
         }
 
-        $resetCapitalization(selection);
-
         if (event !== null) {
           // If we have beforeinput, then we can avoid blocking
           // the default behavior. This ensures that the iOS can
@@ -1096,27 +1094,18 @@ export function registerRichText(editor: LexicalEditor): () => void {
       COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
-      KEY_SPACE_COMMAND,
-      (_) => {
+      // Using KEY_DOWN is effectively a higher priority than any specific key
+      KEY_DOWN_COMMAND,
+      (event) => {
         const selection = $getSelection();
-
-        if ($isRangeSelection(selection)) {
+        if (
+          $isRangeSelection(selection) &&
+          (isExactShortcutMatch(event, 'Tab', {shiftKey: 'any'}) ||
+            isExactShortcutMatch(event, ' ', {shiftKey: 'any'}) ||
+            isExactShortcutMatch(event, 'Enter', {shiftKey: 'any'}))
+        ) {
           $resetCapitalization(selection);
         }
-
-        return false;
-      },
-      COMMAND_PRIORITY_EDITOR,
-    ),
-    editor.registerCommand(
-      KEY_TAB_COMMAND,
-      (_) => {
-        const selection = $getSelection();
-
-        if ($isRangeSelection(selection)) {
-          $resetCapitalization(selection);
-        }
-
         return false;
       },
       COMMAND_PRIORITY_EDITOR,

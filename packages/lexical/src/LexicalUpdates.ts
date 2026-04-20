@@ -23,7 +23,6 @@ import {
   EditorUpdateOptions,
   LexicalCommand,
   LexicalEditor,
-  LISTENER_CACHE_SYMBOL,
   MapListeners,
   MutatedNodes,
   RegisteredNodes,
@@ -815,24 +814,17 @@ export function triggerCommandListeners<
       if (listenerInPriorityOrder !== undefined) {
         const listenersSet = listenerInPriorityOrder[i];
 
-        if (listenersSet !== undefined) {
-          const listeners =
-            listenersSet[LISTENER_CACHE_SYMBOL] || Array.from(listenersSet);
-          listenersSet[LISTENER_CACHE_SYMBOL] = listeners;
-          const listenersLength = listeners.length;
-
-          let returnVal = false;
-          updateEditorSync(currentEditor, () => {
-            for (let j = listenersLength - 1; j >= 0; j--) {
-              if (listeners[j](payload, fromEditor)) {
-                returnVal = true;
-                return;
-              }
+        let returnVal = false;
+        updateEditorSync(currentEditor, () => {
+          for (const listener of listenersSet) {
+            if (listener(payload, fromEditor)) {
+              returnVal = true;
+              return;
             }
-          });
-          if (returnVal) {
-            return returnVal;
           }
+        });
+        if (returnVal) {
+          return returnVal;
         }
       }
     }

@@ -27,6 +27,7 @@ import {
   TextNode,
 } from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
+import {DequeSet} from './LexicalDequeSet';
 import {cloneEditorState, createEmptyEditorState} from './LexicalEditorState';
 import {
   addRootElementEvents,
@@ -422,12 +423,31 @@ export type CommandListener<P> = (payload: P, editor: LexicalEditor) => boolean;
 export type EditableListener = (editable: boolean) => void | (() => void);
 
 export type CommandListenerPriority = 0 | 1 | 2 | 3 | 4;
+export type CommandListenerPriorityBefore =
+  | typeof COMMAND_PRIORITY_BEFORE_CRITICAL
+  | typeof COMMAND_PRIORITY_BEFORE_EDITOR
+  | typeof COMMAND_PRIORITY_BEFORE_HIGH
+  | typeof COMMAND_PRIORITY_BEFORE_LOW
+  | typeof COMMAND_PRIORITY_BEFORE_NORMAL;
 
 export const COMMAND_PRIORITY_EDITOR = 0;
 export const COMMAND_PRIORITY_LOW = 1;
 export const COMMAND_PRIORITY_NORMAL = 2;
 export const COMMAND_PRIORITY_HIGH = 3;
 export const COMMAND_PRIORITY_CRITICAL = 4;
+export const COMMAND_PRIORITY_BEFORE_EDITOR = -8;
+export const COMMAND_PRIORITY_BEFORE_LOW = -7;
+export const COMMAND_PRIORITY_BEFORE_NORMAL = -6;
+export const COMMAND_PRIORITY_BEFORE_HIGH = -5;
+export const COMMAND_PRIORITY_BEFORE_CRITICAL = -4;
+
+type Tuple5<T> = readonly [T, T, T, T, T];
+
+function normalizePriority(
+  priority: CommandListenerPriority | CommandListenerPriorityBefore,
+): CommandListenerPriority {
+  return (priority & 7) as CommandListenerPriority;
+}
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export type LexicalCommand<TPayload> = {
@@ -457,12 +477,13 @@ export type LexicalCommand<TPayload> = {
 export type CommandPayloadType<TCommand extends LexicalCommand<unknown>> =
   TCommand extends LexicalCommand<infer TPayload> ? TPayload : never;
 
-type Commands = Map<LexicalCommand<unknown>, CommandListenerSet<unknown>[]>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyCommandListener = CommandListener<any>;
 
-export interface CommandListenerSet<T> extends Set<CommandListener<T>> {
-  [LISTENER_CACHE_SYMBOL]?: CommandListener<T>[];
-}
-export const LISTENER_CACHE_SYMBOL = Symbol.for('@lexical/listener-cache');
+type Commands = Map<
+  LexicalCommand<unknown>,
+  Tuple5<DequeSet<AnyCommandListener>>
+>;
 
 export type ListenerMap<T> = Map<T, undefined | (() => void)>;
 
@@ -1050,7 +1071,7 @@ export class LexicalEditor {
   registerCommand<P>(
     command: LexicalCommand<P>,
     listener: CommandListener<P>,
-    priority: CommandListenerPriority,
+    priority: CommandListenerPriority | CommandListenerPriorityBefore,
   ): () => void {
     if (priority === undefined) {
       invariant(false, 'Listener for type "command" requires a "priority".');
@@ -1060,11 +1081,11 @@ export class LexicalEditor {
 
     if (!commandsMap.has(command)) {
       commandsMap.set(command, [
-        new Set(),
-        new Set(),
-        new Set(),
-        new Set(),
-        new Set(),
+        new DequeSet(),
+        new DequeSet(),
+        new DequeSet(),
+        new DequeSet(),
+        new DequeSet(),
       ]);
     }
 
@@ -1078,12 +1099,16 @@ export class LexicalEditor {
       );
     }
 
-    const listeners = listenersInPriorityOrder[priority];
-    delete listeners[LISTENER_CACHE_SYMBOL];
-    listeners.add(listener as CommandListener<unknown>);
+    const normalizedPriority = normalizePriority(priority);
+
+    const listeners = listenersInPriorityOrder[normalizedPriority];
+    if (normalizedPriority !== priority) {
+      listeners.addFront(listener);
+    } else {
+      listeners.addBack(listener);
+    }
     return () => {
-      delete listeners[LISTENER_CACHE_SYMBOL];
-      listeners.delete(listener as CommandListener<unknown>);
+      listeners.delete(listener);
 
       if (
         listenersInPriorityOrder.every(

@@ -45,6 +45,8 @@ import {
   $parseSerializedNode,
   $setCompositionKey,
   $setSelection,
+  COMMAND_PRIORITY_BEFORE_EDITOR,
+  COMMAND_PRIORITY_BEFORE_LOW,
   COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_LOW,
   createCommand,
@@ -1937,22 +1939,22 @@ describe('LexicalEditor tests', () => {
     );
 
     expect(editor._commands.has(command)).toEqual(true);
-    expect(editor._commands.get(command)).toEqual([
-      new Set([commandListener, commandListenerTwo]),
-      new Set(),
-      new Set(),
-      new Set(),
-      new Set(),
+    expect(editor._commands.get(command)?.map((v) => [...v])).toEqual([
+      [commandListener, commandListenerTwo],
+      [],
+      [],
+      [],
+      [],
     ]);
 
     removeCommandListener();
 
-    expect(editor._commands.get(command)).toEqual([
-      new Set([commandListenerTwo]),
-      new Set(),
-      new Set(),
-      new Set(),
-      new Set(),
+    expect(editor._commands.get(command)?.map((v) => [...v])).toEqual([
+      [commandListenerTwo],
+      [],
+      [],
+      [],
+      [],
     ]);
 
     removeCommandListenerTwo();
@@ -2688,17 +2690,21 @@ describe('LexicalEditor tests', () => {
     expect(mutationListener).toHaveBeenCalledTimes(1);
   });
 
-  it('calls command listeners in LIFO order', async () => {
+  it('calls command listeners in deque order', async () => {
     const calls: string[] = [];
     let regOrder = 0;
-    const listener = (
-      priority: typeof COMMAND_PRIORITY_EDITOR | typeof COMMAND_PRIORITY_LOW,
-    ) => {
+    const names = {
+      [COMMAND_PRIORITY_BEFORE_EDITOR]: 'before:editor',
+      [COMMAND_PRIORITY_BEFORE_LOW]: 'before:low',
+      [COMMAND_PRIORITY_EDITOR]: 'after:editor',
+      [COMMAND_PRIORITY_LOW]: 'after:low',
+    } as const;
+    const listener = (priority: keyof typeof names) => {
       const idx = regOrder++;
       return editor.registerCommand(
         TEST_COMMAND,
         () => {
-          calls.push(`${['editor', 'low'][priority]}:${idx}`);
+          calls.push(`${names[priority]}:${idx}`);
           return false;
         },
         priority,
@@ -2711,10 +2717,23 @@ describe('LexicalEditor tests', () => {
       listener(COMMAND_PRIORITY_LOW),
       listener(COMMAND_PRIORITY_EDITOR),
       listener(COMMAND_PRIORITY_LOW),
+      listener(COMMAND_PRIORITY_BEFORE_EDITOR),
+      listener(COMMAND_PRIORITY_BEFORE_LOW),
+      listener(COMMAND_PRIORITY_BEFORE_EDITOR),
+      listener(COMMAND_PRIORITY_BEFORE_LOW),
     );
     expect(calls).toHaveLength(0);
     editor.dispatchCommand(TEST_COMMAND, undefined);
-    expect(calls).toEqual(['low:3', 'low:1', 'editor:2', 'editor:0']);
+    expect(calls).toEqual([
+      'before:low:7',
+      'before:low:5',
+      'after:low:1',
+      'after:low:3',
+      'before:editor:6',
+      'before:editor:4',
+      'after:editor:0',
+      'after:editor:2',
+    ]);
     unreg();
     calls.length = 0;
     editor.dispatchCommand(TEST_COMMAND, undefined);

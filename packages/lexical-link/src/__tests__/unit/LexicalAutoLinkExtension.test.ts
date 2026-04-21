@@ -281,4 +281,41 @@ describe('LexicalAutoLinkExtension tests', () => {
       expect(nextSibling.getTextContent()).toBe(' ');
     });
   });
+
+  test('custom punctuation escapes regex-special characters', async () => {
+    using editor = buildEditorFromExtensions({
+      $initialEditorState() {
+        $getRoot().append(
+          $createParagraphNode().append($createTextNode('GH-123] investigate')),
+        );
+      },
+      dependencies: [
+        TestLexicalAutoLinkExtension,
+        configExtension(AutoLinkExtension, {
+          matchers: [GH_TAG_MATCHER],
+          punctuation: '.,;]',
+        }),
+      ],
+      name: '[test override]',
+    });
+
+    editor.read(() => {
+      const root = $getRoot();
+      const paragraphNode = root.getFirstChild();
+      assert(
+        $isParagraphNode(paragraphNode),
+        'first root child must be a ParagraphNode',
+      );
+      const autoLinkNode = paragraphNode.getFirstChild();
+      assert(
+        $isAutoLinkNode(autoLinkNode),
+        'first child must be an AutoLinkNode',
+      );
+      expect(autoLinkNode.getTextContent()).toBe('GH-123');
+
+      const nextSibling = autoLinkNode.getNextSibling();
+      assert($isTextNode(nextSibling), 'next sibling must be a TextNode');
+      expect(nextSibling.getTextContent()).toBe('] investigate');
+    });
+  });
 });

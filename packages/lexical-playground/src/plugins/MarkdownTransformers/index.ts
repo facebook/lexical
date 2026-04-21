@@ -145,7 +145,14 @@ export const EQUATION_BLOCK: MultilineElementTransformer = {
     regExp: /^[ \t]*\$\$$/,
   },
   regExpStart: /^[ \t]*\$\$$/,
-  replace: (rootNode, children, linesInBetween) => {
+  replace: (
+    rootNode,
+    children,
+    startMatch,
+    endMatch,
+    linesInBetween,
+    isImport,
+  ) => {
     let equation = '';
     if (linesInBetween) {
       equation = linesInBetween.join('\n');

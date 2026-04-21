@@ -1855,11 +1855,6 @@ export class RangeSelection implements BaseSelection {
           const anchorElement = anchor.getNode();
           if (!$isRootOrShadowRoot(anchorElement)) {
             if ($isEffectivelyEmpty(anchorElement)) {
-              // Remove inline children before removing the parent so there ate
-              // no orphaned nodes left in the node tree after the parent is gone
-              for (const child of anchorElement.getChildren()) {
-                child.remove();
-              }
               anchorElement.remove();
               return;
             }
@@ -1879,11 +1874,6 @@ export class RangeSelection implements BaseSelection {
                 !$isRootOrShadowRoot(parent) &&
                 $isEffectivelyEmpty(parent)
               ) {
-                // Remove the inline element first so it's cleanly detached from
-                // the node tree before the parent is removed. Removing the parent
-                // directly would leave the inline lement as an orphaned child of
-                // the detached parent, which confuses the DOM reconciler
-                anchorElement.remove();
                 parent.remove();
                 return;
               }

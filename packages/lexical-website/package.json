@@ -5,7 +5,8 @@
   "scripts": {
     "docusaurus": "cross-env IGNORE_PEER_DEPENDENCIES=react docusaurus",
     "start": "pnpm -C ../.. run build && cross-env IGNORE_PEER_DEPENDENCIES=react TYPEDOC_WATCH=true docusaurus start",
-    "build": "pnpm -C ../.. run build && cross-env IGNORE_PEER_DEPENDENCIES=react docusaurus build",
+    "build": "pnpm run tsc && pnpm -C ../.. run build && cross-env IGNORE_PEER_DEPENDENCIES=react docusaurus build",
+    "tsc": "tsc -p tsconfig.json",
     "swizzle": "cross-env IGNORE_PEER_DEPENDENCIES=react docusaurus swizzle",
     "deploy": "cross-env IGNORE_PEER_DEPENDENCIES=react docusaurus deploy",
     "clear": "cross-env IGNORE_PEER_DEPENDENCIES=react docusaurus clear",
@@ -51,6 +52,8 @@
     "unist-util-visit": "^5.1.0"
   },
   "devDependencies": {
+    "@docusaurus/module-type-aliases": "^3.10.0",
+    "@docusaurus/theme-classic": "^3.10.0",
     "@tailwindcss/postcss": "^4.2.1",
     "buffer": "^6.0.3",
     "cross-env": "^10.1.0",

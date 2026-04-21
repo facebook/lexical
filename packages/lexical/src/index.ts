@@ -135,6 +135,7 @@ export {
 export type {
   CommandListener,
   CommandListenerPriority,
+  CommandListenerPriorityBefore,
   CommandPayloadType,
   CreateEditorArgs,
   EditableListener,
@@ -161,6 +162,11 @@ export type {
   UpdateListenerPayload,
 } from './LexicalEditor';
 export {
+  COMMAND_PRIORITY_BEFORE_CRITICAL,
+  COMMAND_PRIORITY_BEFORE_EDITOR,
+  COMMAND_PRIORITY_BEFORE_HIGH,
+  COMMAND_PRIORITY_BEFORE_LOW,
+  COMMAND_PRIORITY_BEFORE_NORMAL,
   COMMAND_PRIORITY_CRITICAL,
   COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_HIGH,

@@ -42,9 +42,7 @@ import ActionsPlugin from './plugins/ActionsPlugin';
 import AutocompletePlugin from './plugins/AutocompletePlugin';
 import AutoEmbedPlugin from './plugins/AutoEmbedPlugin';
 import CodeActionMenuPlugin from './plugins/CodeActionMenuPlugin';
-import CodeHighlightPrismPlugin from './plugins/CodeHighlightPrismPlugin';
-import CodeHighlightShikiPlugin from './plugins/CodeHighlightShikiPlugin';
-import CollapsiblePlugin from './plugins/CollapsiblePlugin';
+import {CodeHighlightExtension} from './plugins/CodeHighlightExtension';
 import CommentPlugin from './plugins/CommentPlugin';
 import ComponentPickerPlugin from './plugins/ComponentPickerPlugin';
 import ContextMenuPlugin from './plugins/ContextMenuPlugin';
@@ -52,18 +50,15 @@ import DraggableBlockPlugin from './plugins/DraggableBlockPlugin';
 import EmojiPickerPlugin from './plugins/EmojiPickerPlugin';
 import EquationsPlugin from './plugins/EquationsPlugin';
 import ExcalidrawPlugin from './plugins/ExcalidrawPlugin';
-import FigmaPlugin from './plugins/FigmaPlugin';
 import FloatingLinkEditorPlugin from './plugins/FloatingLinkEditorPlugin';
 import FloatingTextFormatToolbarPlugin from './plugins/FloatingTextFormatToolbarPlugin';
 import {LayoutPlugin} from './plugins/LayoutPlugin/LayoutPlugin';
 import {MaxLengthExtension} from './plugins/MaxLengthPlugin';
 import MentionsPlugin from './plugins/MentionsPlugin';
-import PageBreakPlugin from './plugins/PageBreakPlugin';
 import PollPlugin from './plugins/PollPlugin';
 import ShortcutsPlugin from './plugins/ShortcutsPlugin';
-import SpecialTextPlugin from './plugins/SpecialTextPlugin';
+import {SpecialTextExtension} from './plugins/SpecialTextExtension';
 import SpeechToTextPlugin from './plugins/SpeechToTextPlugin';
-import TabFocusPlugin from './plugins/TabFocusPlugin';
 import TableCellActionMenuPlugin from './plugins/TableActionMenuPlugin';
 import TableCellResizer from './plugins/TableCellResizer';
 import TableFitNestedTablePlugin from './plugins/TableFitNestedTablePlugin';
@@ -72,9 +67,7 @@ import TableOfContentsPlugin from './plugins/TableOfContentsPlugin';
 import TableScrollShadowPlugin from './plugins/TableScrollShadowPlugin';
 import ToolbarPlugin from './plugins/ToolbarPlugin';
 import TreeViewPlugin from './plugins/TreeViewPlugin';
-import TwitterPlugin from './plugins/TwitterPlugin';
 import {VersionsPlugin} from './plugins/VersionsPlugin';
-import YouTubePlugin from './plugins/YouTubePlugin';
 import ContentEditable from './ui/ContentEditable';
 
 const COLLAB_DOC_ID = 'main';
@@ -91,6 +84,7 @@ export function useSyncExtensionSignal<
   const signal = useOptionalExtensionDependency(extension)?.output[prop];
   useEffect(() => {
     if (signal) {
+      // eslint-disable-next-line react-hooks/immutability
       signal.value = value;
     }
   }, [signal, value]);
@@ -150,6 +144,16 @@ export default function Editor(): JSX.Element {
   };
 
   useSyncExtensionSignal(MaxLengthExtension, 'disabled', !isMaxLength);
+  useSyncExtensionSignal(
+    CodeHighlightExtension,
+    'mode',
+    !isCodeHighlighted ? 'off' : isCodeShiki ? 'shiki' : 'prism',
+  );
+  useSyncExtensionSignal(
+    SpecialTextExtension,
+    'disabled',
+    !shouldAllowHighlightingWithBrackets,
+  );
   useSyncExtensionSignal(
     LinkExtension,
     'attributes',
@@ -239,12 +243,6 @@ export default function Editor(): JSX.Element {
                 <ContentEditable placeholder={placeholder} />
               </div>
             </div>
-            {isCodeHighlighted &&
-              (isCodeShiki ? (
-                <CodeHighlightShikiPlugin />
-              ) : (
-                <CodeHighlightPrismPlugin />
-              ))}
             <TablePlugin
               hasCellMerge={tableCellMerge}
               hasCellBackgroundColor={tableCellBackgroundColor}
@@ -255,15 +253,9 @@ export default function Editor(): JSX.Element {
             <TableCellResizer />
             <TableScrollShadowPlugin />
             <PollPlugin />
-            <TwitterPlugin />
-            <YouTubePlugin />
-            <FigmaPlugin />
             <EquationsPlugin />
             <ExcalidrawPlugin />
-            <TabFocusPlugin />
             <TabIndentationPlugin maxIndent={7} />
-            <CollapsiblePlugin />
-            <PageBreakPlugin />
             <LayoutPlugin />
             {floatingAnchorElem && (
               <>
@@ -302,7 +294,6 @@ export default function Editor(): JSX.Element {
         {isAutocomplete && <AutocompletePlugin />}
         <div>{showTableOfContents && <TableOfContentsPlugin />}</div>
         {shouldUseLexicalContextMenu && <ContextMenuPlugin />}
-        {shouldAllowHighlightingWithBrackets && <SpecialTextPlugin />}
         <ActionsPlugin
           shouldPreserveNewLinesInMarkdown={shouldPreserveNewLinesInMarkdown}
           useCollabV2={useCollabV2}

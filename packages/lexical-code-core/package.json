@@ -8,10 +8,11 @@
     "code"
   ],
   "license": "MIT",
-  "version": "0.42.0",
+  "version": "0.43.0",
   "main": "LexicalCodeCore.js",
   "types": "index.d.ts",
   "dependencies": {
+    "@lexical/extension": "workspace:*",
     "lexical": "workspace:*"
   },
   "repository": {

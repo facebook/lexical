@@ -109,6 +109,7 @@ export function TablePlugin({
 function usePropSignal<T>(value: T): Signal<T> {
   const [configSignal] = useState(() => signal(value));
   if (configSignal.peek() !== value) {
+    // eslint-disable-next-line react-hooks/immutability
     configSignal.value = value;
   }
   return configSignal;

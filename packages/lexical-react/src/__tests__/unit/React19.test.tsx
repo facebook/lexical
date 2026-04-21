@@ -37,6 +37,7 @@ describe(`React expectations (${React.version}) OVERRIDE_REACT_VERSION=${OVERRID
       .mockReturnValueOnce('cached')
       .mockReturnValue('not cached');
     function MemoComponent() {
+      // eslint-disable-next-line react-hooks/use-memo
       return React.useMemo(memoFun, []);
     }
     ReactTestUtils.act(() => {

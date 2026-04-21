@@ -1,0 +1,93 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ *
+ */
+
+.Collapsible__container {
+  background: #fcfcfc;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+
+.Collapsible__title {
+  cursor: pointer;
+  padding: 5px 5px 5px 20px;
+  position: relative;
+  font-weight: bold;
+  list-style: none;
+  outline: none;
+}
+
+.Collapsible__title::marker,
+.Collapsible__title::-webkit-details-marker {
+  display: none;
+}
+
+.Collapsible__title:before {
+  border-style: solid;
+  border-color: transparent;
+  border-width: 4px 6px 4px 6px;
+  border-left-color: #000;
+  display: block;
+  content: '';
+  position: absolute;
+  left: 7px;
+  top: 50%;
+  transform-origin: 2px 50%;
+  transform: translateY(-50%);
+  transition: transform 0.3s ease;
+}
+
+.Collapsible__container[open] > .Collapsible__title:before {
+  transform: translateY(-50%) rotate(90deg);
+}
+
+.Collapsible__content {
+  padding: 0 5px 5px 20px;
+  box-sizing: border-box;
+  interpolate-size: allow-keywords;
+  overflow: hidden;
+  transition:
+    height 0.3s ease-out,
+    opacity 0.3s ease-out,
+    visibility 0.3s ease-out allow-discrete;
+}
+
+/* Chrome uses div with hidden attribute — override display to allow animation */
+.Collapsible__content[hidden] {
+  content-visibility: visible;
+  display: block;
+  height: 0;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    height 0.3s ease-in,
+    opacity 0.3s ease-in,
+    visibility 0.3s ease-in allow-discrete;
+}
+
+/* Non-Chrome uses <details> — animate via ::details-content */
+details.Collapsible__container::details-content {
+  interpolate-size: allow-keywords;
+  overflow: hidden;
+  transition:
+    height 0.3s ease-out,
+    opacity 0.3s ease-out,
+    content-visibility 0.3s ease-out allow-discrete;
+}
+
+details.Collapsible__container:not([open])::details-content {
+  height: 0;
+  opacity: 0;
+  content-visibility: hidden;
+  transition:
+    height 0.3s ease-in,
+    opacity 0.3s ease-in,
+    content-visibility 0.3s ease-in allow-discrete;
+}

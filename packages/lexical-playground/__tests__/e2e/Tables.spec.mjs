@@ -1654,18 +1654,23 @@ test.describe.parallel('Tables', () => {
     await insertCollapsible(page);
 
     await page.keyboard.type('123');
-    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press(
+      // FIXME #8348 firefox ArrowDown skips over the content block
+      browserName === 'firefox' ? 'ArrowRight' : 'ArrowDown',
+    );
     await page.keyboard.type('123');
     await page.keyboard.press('Enter');
     await page.keyboard.press('Enter');
     await page.keyboard.press('Enter');
 
     const collapsibleOpeningTag =
-      browserName === 'chromium'
+      browserName === 'chromium' || browserName === 'firefox'
         ? '<div class="Collapsible__container" open="">'
         : '<details class="Collapsible__container" open="">';
     const collapsibleClosingTag =
-      browserName === 'chromium' ? '</div>' : '</details>';
+      browserName === 'chromium' || browserName === 'firefox'
+        ? '</div>'
+        : '</details>';
 
     await assertHTML(
       page,
@@ -7848,11 +7853,11 @@ test.describe.parallel('Tables', () => {
 
       const pageOrFrame = getPageOrFrame(page);
 
-      await pageOrFrame.locator('p').filter({hasText: 'after'});
+      await pageOrFrame.locator('p').filter({hasText: 'after'}).waitFor();
       await page.keyboard.down('Shift');
       await pageOrFrame
         .locator('table table > tr:last-of-type > th')
-        .click({force: true, timeout: 100}); // `force` to ignore playwright blocking due to TableCellResizer interception
+        .click({force: true}); // `force` to ignore playwright blocking due to TableCellResizer interception
       await page.keyboard.up('Shift');
 
       // Assert the selection is a range selection solely within the cell containing the nested table.

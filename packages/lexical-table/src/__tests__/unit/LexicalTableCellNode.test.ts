@@ -13,7 +13,7 @@ import {
   TableCellHeaderStates,
   TableCellNode,
 } from '@lexical/table';
-import {$getRoot, DOMConversionOutput} from 'lexical';
+import {$createTextNode, $getRoot, DOMConversionOutput} from 'lexical';
 import {
   expectHtmlToBeEqual,
   html,
@@ -366,6 +366,70 @@ describe('LexicalTableCellNode tests', () => {
         const node = expectTableCellNode(result);
 
         expect(node.getHeaderStyles()).toBe(TableCellHeaderStates.ROW);
+      });
+    });
+
+    test('DOM Conversion: <td> with style.backgroundColor reads inline background-color', async () => {
+      const {editor} = testEnv;
+
+      await editor.update(() => {
+        const td = document.createElement('td');
+        td.style.backgroundColor = '#F4B084';
+
+        const result = convertHTMLTag(td);
+        const node = expectTableCellNode(result);
+
+        // Browsers normalize hex to rgb when set via .style
+        expect(node.getBackgroundColor()).toBe(td.style.backgroundColor);
+      });
+    });
+
+    test('DOM Conversion: <td> with no background color sets backgroundColor to null', async () => {
+      const {editor} = testEnv;
+
+      await editor.update(() => {
+        const td = document.createElement('td');
+
+        const result = convertHTMLTag(td);
+        const node = expectTableCellNode(result);
+
+        expect(node.getBackgroundColor()).toBeNull();
+      });
+    });
+
+    test('DOM Conversion: <td> with color propagates color to child TextNodes via after callback', async () => {
+      const {editor} = testEnv;
+
+      await editor.update(() => {
+        const td = document.createElement('td');
+        td.style.color = 'blue';
+
+        const result = convertHTMLTag(td);
+        expectTableCellNode(result);
+
+        // The after callback propagates td color to child TextNodes
+        const textNode = $createTextNode('Hello');
+        result!.after!([textNode]);
+        expect(textNode.getStyle()).toContain('color: blue');
+      });
+    });
+
+    test('DOM Conversion: <td> color does not overwrite existing child TextNode color', async () => {
+      const {editor} = testEnv;
+
+      await editor.update(() => {
+        const td = document.createElement('td');
+        td.style.color = 'blue';
+
+        const result = convertHTMLTag(td);
+        expectTableCellNode(result);
+
+        const textNode = $createTextNode('Hello');
+        textNode.setStyle('color: red;');
+        result!.after!([textNode]);
+        // Existing color should not be overwritten
+        expect(textNode.getStyle()).toContain('color: red');
+        expect(textNode.getStyle()).not.toContain('color: blue');
       });
     });
   });

@@ -53,5 +53,6 @@ export function ExtensionComponent<Extension extends AnyLexicalExtension>({
   ...props
 }: ExtensionComponentProps<Extension>) {
   const Component = useExtensionComponent(extension);
+  // eslint-disable-next-line react-hooks/static-components
   return <Component {...props} />;
 }

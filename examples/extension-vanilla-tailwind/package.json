@@ -1,7 +1,7 @@
 {
   "name": "@lexical/extension-vanilla-example",
   "private": true,
-  "version": "0.42.0",
+  "version": "0.43.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -13,13 +13,13 @@
     "startCommand": "npm i && npm run monorepo:dev"
   },
   "dependencies": {
-    "@lexical/extension": "0.42.0",
-    "@lexical/history": "0.42.0",
-    "@lexical/list": "0.42.0",
-    "@lexical/rich-text": "0.42.0",
-    "@lexical/tailwind": "0.42.0",
-    "@lexical/utils": "0.42.0",
-    "lexical": "0.42.0"
+    "@lexical/extension": "0.43.0",
+    "@lexical/history": "0.43.0",
+    "@lexical/list": "0.43.0",
+    "@lexical/rich-text": "0.43.0",
+    "@lexical/tailwind": "0.43.0",
+    "@lexical/utils": "0.43.0",
+    "lexical": "0.43.0"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.2.1",
@@ -27,8 +27,7 @@
     "tailwindcss": "^4.2.1",
     "typescript": "5.4.5",
     "vite": "^7.3.2",
-    "vite-plugin-static-copy": "^3.2.0",
-    "vite-tsconfig-paths": "^5.1.4"
+    "vite-plugin-static-copy": "^3.2.0"
   },
   "optionalDependencies": {
     "@rollup/rollup-darwin-arm64": "4.52.0",

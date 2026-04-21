@@ -29,10 +29,7 @@ import {
 } from 'lexical';
 import invariant from 'shared/invariant';
 
-import {
-  getCSSFromStyleObject,
-  getStyleObjectFromCSS,
-} from './utils';
+import {getCSSFromStyleObject, getStyleObjectFromCSS} from './utils';
 
 /**
  * Generally used to append text content to HTML and JSON. Grabs the text content and "slices"

@@ -6,6 +6,12 @@
  *
  */
 
+import {
+  getStyleObjectFromCSS as getStyleObjectFromCSS_,
+  setDOMStyleFromCSS as setDOMStyleFromCSS_,
+  setDOMStyleObject as setDOMStyleObject_,
+} from './utils/setDOMStyle';
+
 export type {
   BaseCaret,
   CaretDirection,
@@ -395,8 +401,27 @@ export {
   removeClassNamesFromElement,
 } from './utils/classNames';
 export {mergeRegister} from './utils/mergeRegister';
-export {
-  getStyleObjectFromCSS,
-  setDOMStyleFromCSS,
-  setDOMStyleObject,
-} from './utils/setDOMStyle';
+/**
+ * Parses inline CSS text into an object that is compatible with
+ * `CSSStyleDeclaration.setProperty()`.
+ *
+ * Property names are expected to be kebab-case, such as `font-size`, and
+ * values are expected to include explicit units where needed, such as `12px`.
+ */
+export const getStyleObjectFromCSS = getStyleObjectFromCSS_;
+/**
+ * Applies inline CSS text to a DOM style declaration using
+ * `CSSStyleDeclaration.setProperty()`.
+ *
+ * Property names are expected to be kebab-case, such as `font-size`, and
+ * values are expected to include explicit units where needed, such as `12px`.
+ */
+export const setDOMStyleFromCSS = setDOMStyleFromCSS_;
+/**
+ * Applies a style object to a DOM style declaration using
+ * `CSSStyleDeclaration.setProperty()`.
+ *
+ * Property names are expected to be kebab-case, such as `font-size`, and
+ * values are expected to include explicit units where needed, such as `12px`.
+ */
+export const setDOMStyleObject = setDOMStyleObject_;

@@ -8,17 +8,26 @@
 
 const IMPORTANT_REG_EXP = /\s*!important\s*$/i;
 
-function getStyleDeclarations(css: string): Array<string> {
-  const declarations: Array<string> = [];
+/**
+ * Parses inline CSS text into an object that is compatible with
+ * `CSSStyleDeclaration.setProperty()`.
+ *
+ * Property names are expected to be kebab-case, such as `font-size`, and
+ * values are expected to include explicit units where needed, such as `12px`.
+ */
+export function getStyleObjectFromCSS(css: string): Record<string, string> {
+  const styles: Record<string, string> = {};
 
   if (!css) {
-    return declarations;
+    return styles;
   }
 
-  let currentDeclaration = '';
+  let currentProperty = '';
+  let currentValue = '';
   let currentQuote: '"' | "'" | null = null;
   let inComment = false;
   let isEscaped = false;
+  let isParsingValue = false;
   let parenthesisDepth = 0;
 
   for (let i = 0; i < css.length; i++) {
@@ -33,13 +42,21 @@ function getStyleDeclarations(css: string): Array<string> {
     }
 
     if (isEscaped) {
-      currentDeclaration += char;
+      if (isParsingValue) {
+        currentValue += char;
+      } else {
+        currentProperty += char;
+      }
       isEscaped = false;
       continue;
     }
 
     if (currentQuote !== null) {
-      currentDeclaration += char;
+      if (isParsingValue) {
+        currentValue += char;
+      } else {
+        currentProperty += char;
+      }
 
       if (char === '\\') {
         isEscaped = true;
@@ -58,133 +75,68 @@ function getStyleDeclarations(css: string): Array<string> {
 
     if (char === '"' || char === "'") {
       currentQuote = char;
-      currentDeclaration += char;
+      if (isParsingValue) {
+        currentValue += char;
+      } else {
+        currentProperty += char;
+      }
       continue;
     }
 
     if (char === '(') {
       parenthesisDepth++;
-      currentDeclaration += char;
+      if (isParsingValue) {
+        currentValue += char;
+      } else {
+        currentProperty += char;
+      }
       continue;
     }
 
     if (char === ')') {
       parenthesisDepth = Math.max(0, parenthesisDepth - 1);
-      currentDeclaration += char;
+      if (isParsingValue) {
+        currentValue += char;
+      } else {
+        currentProperty += char;
+      }
+      continue;
+    }
+
+    if (!isParsingValue && char === ':' && parenthesisDepth === 0) {
+      isParsingValue = true;
       continue;
     }
 
     if (char === ';' && parenthesisDepth === 0) {
-      const declaration = currentDeclaration.trim();
+      const property = currentProperty.trim();
+      const value = currentValue.trim();
 
-      if (declaration !== '') {
-        declarations.push(declaration);
+      if (property !== '' && value !== '') {
+        styles[property] = value;
       }
 
-      currentDeclaration = '';
+      currentProperty = '';
+      currentValue = '';
+      isParsingValue = false;
       continue;
     }
 
-    currentDeclaration += char;
-  }
-
-  const declaration = currentDeclaration.trim();
-
-  if (declaration !== '') {
-    declarations.push(declaration);
-  }
-
-  return declarations;
-}
-
-function getStylePropertyAndValue(
-  styleDeclaration: string,
-): [string, string] | null {
-  let currentQuote: '"' | "'" | null = null;
-  let inComment = false;
-  let isEscaped = false;
-  let parenthesisDepth = 0;
-
-  for (let i = 0; i < styleDeclaration.length; i++) {
-    const char = styleDeclaration[i];
-
-    if (inComment) {
-      if (char === '*' && styleDeclaration[i + 1] === '/') {
-        inComment = false;
-        i++;
-      }
-      continue;
-    }
-
-    if (isEscaped) {
-      isEscaped = false;
-      continue;
-    }
-
-    if (currentQuote !== null) {
-      if (char === '\\') {
-        isEscaped = true;
-      } else if (char === currentQuote) {
-        currentQuote = null;
-      }
-
-      continue;
-    }
-
-    if (char === '/' && styleDeclaration[i + 1] === '*') {
-      inComment = true;
-      i++;
-      continue;
-    }
-
-    if (char === '"' || char === "'") {
-      currentQuote = char;
-      continue;
-    }
-
-    if (char === '(') {
-      parenthesisDepth++;
-      continue;
-    }
-
-    if (char === ')') {
-      parenthesisDepth = Math.max(0, parenthesisDepth - 1);
-      continue;
-    }
-
-    if (char === ':' && parenthesisDepth === 0) {
-      const property = styleDeclaration.slice(0, i).trim();
-      const value = styleDeclaration.slice(i + 1).trim();
-
-      return property !== '' && value !== '' ? [property, value] : null;
+    if (isParsingValue) {
+      currentValue += char;
+    } else {
+      currentProperty += char;
     }
   }
 
-  return null;
-}
+  const property = currentProperty.trim();
+  const value = currentValue.trim();
 
-function forEachStylePropertyInCSS(
-  css: string,
-  callback: (property: string, value: string) => void,
-): void {
-  for (const styleDeclaration of getStyleDeclarations(css)) {
-    const propertyAndValue = getStylePropertyAndValue(styleDeclaration);
-
-    if (propertyAndValue !== null) {
-      const [property, value] = propertyAndValue;
-      callback(property, value);
-    }
+  if (property !== '' && value !== '') {
+    styles[property] = value;
   }
-}
 
-export function getStyleObjectFromCSS(css: string): Record<string, string> {
-  const styleObject: Record<string, string> = {};
-
-  forEachStylePropertyInCSS(css, (property, value) => {
-    styleObject[property] = value;
-  });
-
-  return styleObject;
+  return styles;
 }
 
 function setDOMStyleProperty(
@@ -199,11 +151,19 @@ function setDOMStyleProperty(
   domStyle.setProperty(property, nextValue, priority);
 }
 
+/**
+ * Applies a style object to a DOM style declaration using
+ * `CSSStyleDeclaration.setProperty()`.
+ *
+ * Property names are expected to be kebab-case, such as `font-size`, and
+ * values are expected to include explicit units where needed, such as `12px`.
+ */
 export function setDOMStyleObject(
   domStyle: CSSStyleDeclaration,
   styleObject: Record<string, string | null | undefined>,
 ): void {
-  for (const [property, value] of Object.entries(styleObject)) {
+  for (const property in styleObject) {
+    const value = styleObject[property];
     if (value == null) {
       domStyle.removeProperty(property);
     } else {
@@ -212,6 +172,13 @@ export function setDOMStyleObject(
   }
 }
 
+/**
+ * Applies inline CSS text to a DOM style declaration using
+ * `CSSStyleDeclaration.setProperty()`.
+ *
+ * Property names are expected to be kebab-case, such as `font-size`, and
+ * values are expected to include explicit units where needed, such as `12px`.
+ */
 export function setDOMStyleFromCSS(
   domStyle: CSSStyleDeclaration,
   cssText: string,
@@ -221,10 +188,15 @@ export function setDOMStyleFromCSS(
     return;
   }
 
-  forEachStylePropertyInCSS(prevCSSText, (property) => {
+  const prevCSS = getStyleObjectFromCSS(prevCSSText);
+  const nextCSS = getStyleObjectFromCSS(cssText);
+
+  for (const property in nextCSS) {
+    delete prevCSS[property];
+    setDOMStyleProperty(domStyle, property, nextCSS[property]);
+  }
+
+  for (const property in prevCSS) {
     domStyle.removeProperty(property);
-  });
-  forEachStylePropertyInCSS(cssText, (property, value) => {
-    setDOMStyleProperty(domStyle, property, value);
-  });
+  }
 }

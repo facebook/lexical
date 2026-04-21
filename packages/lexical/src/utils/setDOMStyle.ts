@@ -7,6 +7,40 @@
  */
 
 const IMPORTANT_REG_EXP = /\s*!important\s*$/i;
+const CSS_TO_STYLE_OBJECT_CACHE_MAX_SIZE = 100;
+const CSS_TO_STYLE_OBJECT_CACHE: Map<
+  string,
+  Record<string, string>
+> = new Map();
+
+function getCachedStyleObjectFromCSS(
+  css: string,
+): Record<string, string> | undefined {
+  const cachedStyleObject = CSS_TO_STYLE_OBJECT_CACHE.get(css);
+
+  if (cachedStyleObject !== undefined) {
+    CSS_TO_STYLE_OBJECT_CACHE.delete(css);
+    CSS_TO_STYLE_OBJECT_CACHE.set(css, cachedStyleObject);
+    return {...cachedStyleObject};
+  }
+
+  return undefined;
+}
+
+function setCachedStyleObjectFromCSS(
+  css: string,
+  styleObject: Record<string, string>,
+): void {
+  CSS_TO_STYLE_OBJECT_CACHE.set(css, styleObject);
+
+  if (CSS_TO_STYLE_OBJECT_CACHE.size > CSS_TO_STYLE_OBJECT_CACHE_MAX_SIZE) {
+    const oldestKey = CSS_TO_STYLE_OBJECT_CACHE.keys().next().value;
+
+    if (oldestKey !== undefined) {
+      CSS_TO_STYLE_OBJECT_CACHE.delete(oldestKey);
+    }
+  }
+}
 
 function getStyleDeclarations(css: string): Array<string> {
   const declarations: Array<string> = [];
@@ -164,6 +198,12 @@ function getStylePropertyAndValue(
 }
 
 export function getStyleObjectFromCSS(css: string): Record<string, string> {
+  const cachedStyleObject = getCachedStyleObjectFromCSS(css);
+
+  if (cachedStyleObject !== undefined) {
+    return cachedStyleObject;
+  }
+
   const styleObject: Record<string, string> = {};
 
   for (const styleDeclaration of getStyleDeclarations(css)) {
@@ -175,7 +215,13 @@ export function getStyleObjectFromCSS(css: string): Record<string, string> {
     }
   }
 
-  return styleObject;
+  if (__DEV__) {
+    Object.freeze(styleObject);
+  }
+
+  setCachedStyleObjectFromCSS(css, styleObject);
+
+  return {...styleObject};
 }
 
 function setDOMStyleProperty(

@@ -132,8 +132,18 @@ type Listeners = {
   update: Map<UpdateListener, void | (() => void)>,
 };
 export type CommandListener<P> = (payload: P, editor: LexicalEditor) => boolean;
+declare class DequeSet<T> {
+  size: number;
+  addBack(v: T): this;
+  addFront(v: T): this;
+  delete(v: T): boolean;
+  toArray(): T[];
+  toReadonlyArray(): $ReadOnlyArray<T>;
+  @@iterator(): Iterator<T>;
+}
+type Tuple5<T> = $ReadOnly<[T, T, T, T, T]>;
 // $FlowFixMe[unclear-type]
-type Commands = Map<LexicalCommand<any>, Array<Set<CommandListener<any>>>>;
+type Commands = Map<LexicalCommand<any>, Tuple5<DequeSet<CommandListener<any>>>>;
 type RegisteredNodes = Map<string, RegisteredNode>;
 type RegisteredNode = {
   klass: Class<LexicalNode>,
@@ -247,7 +257,7 @@ declare export class LexicalEditor {
   registerCommand<P>(
     command: LexicalCommand<P>,
     listener: CommandListener<P>,
-    priority: CommandListenerPriority,
+    priority: CommandListenerPriority | CommandListenerPriorityBefore,
   ): () => void;
   registerEditableListener(listener: EditableListener): () => void;
   registerMutationListener(
@@ -367,11 +377,17 @@ export type EditorConfig = {
   disableEvents?: boolean,
 };
 export type CommandListenerPriority = 0 | 1 | 2 | 3 | 4;
+export type CommandListenerPriorityBefore = -8 | -7 | -6 | -5 | -4;
 export const COMMAND_PRIORITY_EDITOR = 0;
 export const COMMAND_PRIORITY_LOW = 1;
 export const COMMAND_PRIORITY_NORMAL = 2;
 export const COMMAND_PRIORITY_HIGH = 3;
 export const COMMAND_PRIORITY_CRITICAL = 4;
+export const COMMAND_PRIORITY_BEFORE_EDITOR = -8;
+export const COMMAND_PRIORITY_BEFORE_LOW = -7;
+export const COMMAND_PRIORITY_BEFORE_NORMAL = -6;
+export const COMMAND_PRIORITY_BEFORE_HIGH = -5;
+export const COMMAND_PRIORITY_BEFORE_CRITICAL = -4;
 
 export type LexicalNodeReplacement = {
   replace: Class<LexicalNode>,

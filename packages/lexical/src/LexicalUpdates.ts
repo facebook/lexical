@@ -813,15 +813,11 @@ export function triggerCommandListeners<
 
       if (listenerInPriorityOrder !== undefined) {
         const listenersSet = listenerInPriorityOrder[i];
-
-        if (listenersSet !== undefined) {
-          const listeners = Array.from(listenersSet);
-          const listenersLength = listeners.length;
-
+        if (listenersSet.size > 0) {
           let returnVal = false;
           updateEditorSync(currentEditor, () => {
-            for (let j = 0; j < listenersLength; j++) {
-              if (listeners[j](payload, fromEditor)) {
+            for (const listener of listenersSet) {
+              if (listener(payload, fromEditor)) {
                 returnVal = true;
                 return;
               }

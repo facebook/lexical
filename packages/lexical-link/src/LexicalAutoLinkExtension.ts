@@ -91,7 +91,10 @@ function endsWithSeparator(textContent: string, punctuation: string): boolean {
   return isSeparator(textContent[textContent.length - 1], punctuation);
 }
 
-function startsWithSeparator(textContent: string, punctuation: string): boolean {
+function startsWithSeparator(
+  textContent: string,
+  punctuation: string,
+): boolean {
   return isSeparator(textContent[0], punctuation);
 }
 

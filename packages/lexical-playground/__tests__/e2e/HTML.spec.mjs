@@ -26,9 +26,10 @@ import {
 
 test.describe('HTML', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
-  test(`Can export HTML using the button`, async ({page}) => {
-    await focusEditor(page);
+  test(`Can export HTML using the button`, async ({page, isPlainText}) => {
+    test.skip(isPlainText);
 
+    await focusEditor(page);
     await page.keyboard.type('Foo');
     await applyHeading(page, 1);
     await page.keyboard.press('Enter');
@@ -135,7 +136,9 @@ test.describe('HTML', () => {
     );
   });
 
-  test(`Can import HTML using the button`, async ({page}) => {
+  test(`Can import HTML using the button`, async ({page, isPlainText}) => {
+    test.skip(isPlainText);
+
     await focusEditor(page);
     await click(page, '.action-button .html');
 

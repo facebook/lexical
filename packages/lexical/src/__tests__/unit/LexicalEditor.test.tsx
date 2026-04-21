@@ -27,6 +27,7 @@ import {
   TableRowNode,
 } from '@lexical/table';
 import {JSDOM} from 'jsdom';
+import * as lexical from 'lexical';
 import {
   $createLineBreakNode,
   $createNodeSelection,
@@ -49,6 +50,8 @@ import {
   COMMAND_PRIORITY_BEFORE_LOW,
   COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_LOW,
+  CommandListenerPriority,
+  CommandListenerPriorityBefore,
   createCommand,
   createEditor,
   EditorState,
@@ -79,7 +82,7 @@ import {createPortal} from 'react-dom';
 import {createRoot, Root} from 'react-dom/client';
 import invariant from 'shared/invariant';
 import * as ReactTestUtils from 'shared/react-test-utils';
-import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
+import {afterEach, assert, beforeEach, describe, expect, it, vi} from 'vitest';
 
 import {emptyFunction} from '../../LexicalUtils';
 import {SerializedParagraphNode} from '../../nodes/LexicalParagraphNode';
@@ -2738,6 +2741,83 @@ describe('LexicalEditor tests', () => {
     calls.length = 0;
     editor.dispatchCommand(TEST_COMMAND, undefined);
     expect(calls).toEqual([]);
+  });
+  it('maps priorities correctly', () => {
+    // this brute forces to make sure all of the names match exactly what we expect
+    const beforePriorities: [string, number][] = [];
+    const afterPriorities: [string, number][] = [];
+    for (const [k, v] of Object.entries(lexical)) {
+      if (k.startsWith('COMMAND_PRIORITY_')) {
+        assert(
+          typeof v === 'number' && Math.floor(v) === v,
+          'priorities are integers',
+        );
+        if (k.startsWith('COMMAND_PRIORITY_BEFORE')) {
+          expect(v < 0).toBe(true);
+          beforePriorities.push([k, v]);
+        } else {
+          expect(v >= 0).toBe(true);
+          afterPriorities.push([k, v]);
+        }
+      }
+    }
+    beforePriorities.sort((a, b) => a[1] - b[1]);
+    afterPriorities.sort((a, b) => a[1] - b[1]);
+    expect(beforePriorities).toHaveLength(5);
+    expect(afterPriorities).toHaveLength(5);
+    expect(
+      beforePriorities.map(([k]) => k.replace(/^COMMAND_PRIORITY_BEFORE_/, '')),
+    ).toEqual(
+      afterPriorities.map(([k]) => k.replace(/^COMMAND_PRIORITY_/, '')),
+    );
+    init();
+    const command = createCommand('TEST_COMMAND');
+    const listeners: (() => void)[] = [];
+    const calls: string[] = [];
+    for (const count of [0, 1]) {
+      for (const arr of [afterPriorities, beforePriorities]) {
+        for (const [k, v] of arr) {
+          listeners.push(
+            editor.registerCommand(
+              command,
+              () => {
+                calls.push(`${k} ${count}`);
+                return false;
+              },
+              v as CommandListenerPriority | CommandListenerPriorityBefore,
+            ),
+          );
+        }
+      }
+    }
+    editor.dispatchCommand(command, undefined);
+    expect(calls).toEqual([
+      'COMMAND_PRIORITY_BEFORE_CRITICAL 1',
+      'COMMAND_PRIORITY_BEFORE_CRITICAL 0',
+      'COMMAND_PRIORITY_CRITICAL 0',
+      'COMMAND_PRIORITY_CRITICAL 1',
+      'COMMAND_PRIORITY_BEFORE_HIGH 1',
+      'COMMAND_PRIORITY_BEFORE_HIGH 0',
+      'COMMAND_PRIORITY_HIGH 0',
+      'COMMAND_PRIORITY_HIGH 1',
+      'COMMAND_PRIORITY_BEFORE_NORMAL 1',
+      'COMMAND_PRIORITY_BEFORE_NORMAL 0',
+      'COMMAND_PRIORITY_NORMAL 0',
+      'COMMAND_PRIORITY_NORMAL 1',
+      'COMMAND_PRIORITY_BEFORE_LOW 1',
+      'COMMAND_PRIORITY_BEFORE_LOW 0',
+      'COMMAND_PRIORITY_LOW 0',
+      'COMMAND_PRIORITY_LOW 1',
+      'COMMAND_PRIORITY_BEFORE_EDITOR 1',
+      'COMMAND_PRIORITY_BEFORE_EDITOR 0',
+      'COMMAND_PRIORITY_EDITOR 0',
+      'COMMAND_PRIORITY_EDITOR 1',
+    ]);
+    // ensure unregistration works
+    mergeRegister(...listeners)();
+    calls.length = 0;
+    editor.dispatchCommand(command, undefined);
+    expect(calls).toHaveLength(0);
   });
 
   it('allows using the same listener for multiple node types', async () => {

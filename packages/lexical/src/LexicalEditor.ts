@@ -430,15 +430,45 @@ export type CommandListenerPriorityBefore =
   | typeof COMMAND_PRIORITY_BEFORE_LOW
   | typeof COMMAND_PRIORITY_BEFORE_NORMAL;
 
+/**
+ * {@link LexicalEditor.registerCommand} listener added to the end of the editor priority queue (after critical, high, normal, low)
+ */
 export const COMMAND_PRIORITY_EDITOR = 0;
+/**
+ * {@link LexicalEditor.registerCommand} listener added to the end of the low priority queue (after critical, high, normal; before editor)
+ */
 export const COMMAND_PRIORITY_LOW = 1;
+/**
+ * {@link LexicalEditor.registerCommand} listener added to the end of the normal priority queue (after critical, high; before low, editor)
+ */
 export const COMMAND_PRIORITY_NORMAL = 2;
+/**
+ * {@link LexicalEditor.registerCommand} listener added to the end of the high priority queue (after critical; before normal, low, editor)
+ */
 export const COMMAND_PRIORITY_HIGH = 3;
+/**
+ * {@link LexicalEditor.registerCommand} listener added to the end of the critical priority queue (before high, normal, low, editor)
+ */
 export const COMMAND_PRIORITY_CRITICAL = 4;
+/**
+ * {@link LexicalEditor.registerCommand} listener added to the beginning of the editor priority queue (after critical, high, normal, low)
+ */
 export const COMMAND_PRIORITY_BEFORE_EDITOR = -8;
+/**
+ * {@link LexicalEditor.registerCommand} listener added to the beginning of the low priority queue (after critical, high, normal; before editor)
+ */
 export const COMMAND_PRIORITY_BEFORE_LOW = -7;
+/**
+ * {@link LexicalEditor.registerCommand} listener added to the beginning of the normal priority queue (after critical, high; before low, editor)
+ */
 export const COMMAND_PRIORITY_BEFORE_NORMAL = -6;
+/**
+ * {@link LexicalEditor.registerCommand} listener added to the beginning of the high priority queue (after critical; before normal, low, editor)
+ */
 export const COMMAND_PRIORITY_BEFORE_HIGH = -5;
+/**
+ * {@link LexicalEditor.registerCommand} listener added to the beginning of the critical priority queue (before high, normal, low, editor)
+ */
 export const COMMAND_PRIORITY_BEFORE_CRITICAL = -4;
 
 type Tuple5<T> = readonly [T, T, T, T, T];

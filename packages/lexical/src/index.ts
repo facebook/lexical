@@ -135,6 +135,7 @@ export {
 export type {
   CommandListener,
   CommandListenerPriority,
+  CommandListenerPriorityBefore,
   CommandPayloadType,
   CreateEditorArgs,
   EditableListener,

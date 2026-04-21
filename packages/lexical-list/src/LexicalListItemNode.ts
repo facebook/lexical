@@ -59,14 +59,20 @@ function applyMarkerStyles(
   node: ListItemNode,
   prevNode: ListItemNode | null,
 ): void {
-  const styles: Record<string, string> = getStyleObjectFromCSS(
-    node.__textStyle,
-  );
+  const nextTextStyle = node.__textStyle;
+  const prevTextStyle = prevNode ? prevNode.__textStyle : '';
+
+  if (prevNode !== null && prevTextStyle === nextTextStyle) {
+    return;
+  }
+
+  const styles: Record<string, string> = getStyleObjectFromCSS(nextTextStyle);
   for (const k in styles) {
     dom.style.setProperty(`--listitem-marker-${k}`, styles[k]);
   }
-  if (prevNode) {
-    for (const k in getStyleObjectFromCSS(prevNode.__textStyle)) {
+
+  if (prevTextStyle !== '') {
+    for (const k in getStyleObjectFromCSS(prevTextStyle)) {
       if (!(k in styles)) {
         dom.style.removeProperty(`--listitem-marker-${k}`);
       }

@@ -7,40 +7,6 @@
  */
 
 const IMPORTANT_REG_EXP = /\s*!important\s*$/i;
-const CSS_TO_STYLE_OBJECT_CACHE_MAX_SIZE = 100;
-const CSS_TO_STYLE_OBJECT_CACHE: Map<
-  string,
-  Record<string, string>
-> = new Map();
-
-function getCachedStyleObjectFromCSS(
-  css: string,
-): Record<string, string> | undefined {
-  const cachedStyleObject = CSS_TO_STYLE_OBJECT_CACHE.get(css);
-
-  if (cachedStyleObject !== undefined) {
-    CSS_TO_STYLE_OBJECT_CACHE.delete(css);
-    CSS_TO_STYLE_OBJECT_CACHE.set(css, cachedStyleObject);
-    return {...cachedStyleObject};
-  }
-
-  return undefined;
-}
-
-function setCachedStyleObjectFromCSS(
-  css: string,
-  styleObject: Record<string, string>,
-): void {
-  CSS_TO_STYLE_OBJECT_CACHE.set(css, styleObject);
-
-  if (CSS_TO_STYLE_OBJECT_CACHE.size > CSS_TO_STYLE_OBJECT_CACHE_MAX_SIZE) {
-    const oldestKey = CSS_TO_STYLE_OBJECT_CACHE.keys().next().value;
-
-    if (oldestKey !== undefined) {
-      CSS_TO_STYLE_OBJECT_CACHE.delete(oldestKey);
-    }
-  }
-}
 
 function getStyleDeclarations(css: string): Array<string> {
   const declarations: Array<string> = [];
@@ -197,31 +163,28 @@ function getStylePropertyAndValue(
   return null;
 }
 
-export function getStyleObjectFromCSS(css: string): Record<string, string> {
-  const cachedStyleObject = getCachedStyleObjectFromCSS(css);
-
-  if (cachedStyleObject !== undefined) {
-    return cachedStyleObject;
-  }
-
-  const styleObject: Record<string, string> = {};
-
+function forEachStylePropertyInCSS(
+  css: string,
+  callback: (property: string, value: string) => void,
+): void {
   for (const styleDeclaration of getStyleDeclarations(css)) {
     const propertyAndValue = getStylePropertyAndValue(styleDeclaration);
 
     if (propertyAndValue !== null) {
       const [property, value] = propertyAndValue;
-      styleObject[property] = value;
+      callback(property, value);
     }
   }
+}
 
-  if (__DEV__) {
-    Object.freeze(styleObject);
-  }
+export function getStyleObjectFromCSS(css: string): Record<string, string> {
+  const styleObject: Record<string, string> = {};
 
-  setCachedStyleObjectFromCSS(css, styleObject);
+  forEachStylePropertyInCSS(css, (property, value) => {
+    styleObject[property] = value;
+  });
 
-  return {...styleObject};
+  return styleObject;
 }
 
 function setDOMStyleProperty(
@@ -258,9 +221,10 @@ export function setDOMStyleFromCSS(
     return;
   }
 
-  for (const property in getStyleObjectFromCSS(prevCSSText)) {
+  forEachStylePropertyInCSS(prevCSSText, (property) => {
     domStyle.removeProperty(property);
-  }
-
-  setDOMStyleObject(domStyle, getStyleObjectFromCSS(cssText));
+  });
+  forEachStylePropertyInCSS(cssText, (property, value) => {
+    setDOMStyleProperty(domStyle, property, value);
+  });
 }

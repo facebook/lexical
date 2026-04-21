@@ -371,12 +371,38 @@ export type DOMExportOutputMap = Map<
   (editor: LexicalEditor, target: LexicalNode) => DOMExportOutput
 >;
 
-export type DOMExportOutput = {
+export interface DOMExportOutput {
+  /**
+   * Called after the node and all of its children are constructed, can be used
+   * to perform any in-place updates to the node or return something else
+   * entirely.
+   *
+   * @param generatedElement `element` after children are appended
+   * @returns The final representation of this node in the exported DOM
+   */
   after?: (
     generatedElement: HTMLElement | DocumentFragment | Text | null | undefined,
   ) => HTMLElement | DocumentFragment | Text | null | undefined;
+  /**
+   * A DOM node for this lexical node, or null to skip it
+   */
   element: HTMLElement | DocumentFragment | Text | null;
-};
+  /**
+   * An optional override to change how and where DOM nodes for this
+   * ElementNode's children are appended, particularly useful if
+   * this node's children are not direct ancestors.
+   *
+   * @param element The DOM of a child node to append
+   */
+  append?: (element: HTMLElement | DocumentFragment | Text) => void;
+  /**
+   * If defined, will be used instead of `node.getChildren()` to determine
+   * which children to render for this LexicalNode.
+   *
+   * @returns The children to export
+   */
+  $getChildNodes?: () => Iterable<LexicalNode>;
+}
 
 export type NodeKey = string;
 
@@ -1541,4 +1567,13 @@ export function insertRangeAfter(
   for (const nodeToInsert of nodesToInsert) {
     currentNode = currentNode.insertAfter(nodeToInsert);
   }
+}
+
+/**
+ * Returns true if the given value is a {@link LexicalNode} instance.
+ */
+export function $isLexicalNode(
+  node: null | undefined | LexicalNode,
+): node is LexicalNode {
+  return node instanceof LexicalNode;
 }

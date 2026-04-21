@@ -11,8 +11,8 @@ import {glob} from 'glob';
 import path from 'node:path';
 import {describe, expect, test} from 'vitest';
 
-import {packagesManager} from '../../shared/packagesManager.js';
-import {describeExample} from './utils.mjs';
+import {packagesManager} from '../../shared/packagesManager.mjs';
+import {describeDevExample, describeExample} from './utils.mjs';
 
 describe('prepare-release tests', () => {
   for (const pkg of packagesManager.getPublicPackages()) {
@@ -31,3 +31,8 @@ describe('prepare-release tests', () => {
     glob.sync(`${packagesDir}/*/package.json`, {windowsPathsNoEscape: true}),
   )
   .forEach((exampleJsonPath) => describeExample(exampleJsonPath));
+// dev-examples use workspace:* deps and are tested with pnpm workspace
+// linking rather than published tarballs
+glob
+  .sync('dev-examples/*/package.json', {windowsPathsNoEscape: true})
+  .forEach((exampleJsonPath) => describeDevExample(exampleJsonPath));

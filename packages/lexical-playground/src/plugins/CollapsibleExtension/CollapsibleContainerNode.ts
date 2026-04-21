@@ -6,7 +6,7 @@
  *
  */
 
-import {IS_CHROME} from '@lexical/utils';
+import {IS_CHROME, IS_FIREFOX} from '@lexical/utils';
 import {
   $getSiblingCaret,
   $isElementNode,
@@ -85,9 +85,9 @@ export class CollapsibleContainerNode extends ElementNode {
   }
 
   createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement {
-    // details is not well supported in Chrome #5582
+    // details is not well supported in Chrome #5582 and Firefox #8348
     let dom: HTMLElement;
-    if (IS_CHROME) {
+    if (IS_CHROME || IS_FIREFOX) {
       dom = document.createElement('div');
       dom.setAttribute('open', '');
     } else {
@@ -109,8 +109,8 @@ export class CollapsibleContainerNode extends ElementNode {
   updateDOM(prevNode: this, dom: HTMLDetailsElement): boolean {
     const currentOpen = this.__open;
     if (prevNode.__open !== currentOpen) {
-      // details is not well supported in Chrome #5582
-      if (IS_CHROME) {
+      // details is not well supported in Chrome #5582 and Firefox #8348
+      if (IS_CHROME || IS_FIREFOX) {
         const contentDom = dom.children[1];
         if (!isHTMLElement(contentDom)) {
           throw new Error('Expected contentDom to be an HTMLElement');

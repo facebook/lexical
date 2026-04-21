@@ -62,7 +62,7 @@ export function useCharacterLimit(
   }, [editor]);
 
   useEffect(() => {
-    let text = editor.getEditorState().read($rootTextContent);
+    let text = editor.getEditorState().read($rootTextContent, {editor});
     let lastComputedTextLength = 0;
 
     return mergeRegister(

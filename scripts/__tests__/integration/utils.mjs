@@ -10,9 +10,9 @@ import fs from 'fs-extra';
 import path from 'node:path';
 import {beforeAll, describe, expect, test} from 'vitest';
 
-import {exec} from '../../shared/childProcess.js';
-import {packagesManager} from '../../shared/packagesManager.js';
-import readMonorepoPackageJson from '../../shared/readMonorepoPackageJson.js';
+import {exec} from '../../shared/childProcess.mjs';
+import {packagesManager} from '../../shared/packagesManager.mjs';
+import readMonorepoPackageJson from '../../shared/readMonorepoPackageJson.mjs';
 
 const monorepoVersion = readMonorepoPackageJson().version;
 
@@ -158,4 +158,37 @@ function describeExample(packageJsonPath, bodyFun = undefined) {
   });
 }
 
-export {describeExample, expectSuccessfulExec, withCwd};
+/**
+ * Describe a dev-example that uses workspace:* deps.
+ * These are built in-place using pnpm (workspace linking) rather than tarballs.
+ *
+ * @param {string} packageJsonPath
+ */
+function describeDevExample(packageJsonPath) {
+  const packageJson = fs.readJsonSync(packageJsonPath);
+  const exampleDir = path.dirname(packageJsonPath);
+  describe(exampleDir, () => {
+    beforeAll(async () => {
+      await withCwd(exampleDir, async () => {
+        await expectSuccessfulExec('pnpm install');
+        await expectSuccessfulExec('pnpm run build');
+      });
+    }, LONG_TIMEOUT);
+    test('build succeeded', () => {
+      expect(true).toBe(true);
+    });
+    if (packageJson.scripts && packageJson.scripts.test) {
+      test(
+        'tests pass',
+        async () => {
+          await withCwd(exampleDir, () =>
+            expectSuccessfulExec('pnpm run test'),
+          );
+        },
+        LONG_TIMEOUT,
+      );
+    }
+  });
+}
+
+export {describeDevExample, describeExample, expectSuccessfulExec, withCwd};

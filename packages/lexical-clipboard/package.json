@@ -13,6 +13,7 @@
   "main": "LexicalClipboard.js",
   "types": "index.d.ts",
   "dependencies": {
+    "@lexical/extension": "workspace:*",
     "@lexical/html": "workspace:*",
     "@lexical/list": "workspace:*",
     "@lexical/selection": "workspace:*",

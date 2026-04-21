@@ -17,6 +17,7 @@ import type {ElementNode, LexicalEditor, TextNode} from 'lexical';
 
 import {$isCodeNode} from '@lexical/code-core';
 import {
+  $addUpdateTag,
   $createRangeSelection,
   $getSelection,
   $isLineBreakNode,
@@ -27,6 +28,7 @@ import {
   COLLABORATION_TAG,
   COMMAND_PRIORITY_LOW,
   HISTORIC_TAG,
+  HISTORY_PUSH_TAG,
   KEY_ENTER_COMMAND,
   mergeRegister,
 } from 'lexical';
@@ -442,7 +444,7 @@ export function registerMarkdownShortcuts(
     parentNode: ElementNode,
     anchorNode: TextNode,
     anchorOffset: number,
-  ) => {
+  ): boolean => {
     if (
       runElementTransformers(
         parentNode,
@@ -451,7 +453,7 @@ export function registerMarkdownShortcuts(
         byType.element,
       )
     ) {
-      return;
+      return true;
     }
 
     if (
@@ -462,7 +464,7 @@ export function registerMarkdownShortcuts(
         byType.multilineElement,
       )
     ) {
-      return;
+      return true;
     }
 
     if (
@@ -472,14 +474,20 @@ export function registerMarkdownShortcuts(
         textMatchTransformersByTrigger,
       )
     ) {
-      return;
+      return true;
     }
 
-    $runTextFormatTransformers(
-      anchorNode,
-      anchorOffset,
-      textFormatTransformersByTrigger,
-    );
+    if (
+      $runTextFormatTransformers(
+        anchorNode,
+        anchorOffset,
+        textFormatTransformersByTrigger,
+      )
+    ) {
+      return true;
+    }
+
+    return false;
   };
 
   return mergeRegister(
@@ -533,7 +541,9 @@ export function registerMarkdownShortcuts(
             return;
           }
 
-          $transform(parentNode, anchorNode, selection.anchor.offset);
+          if ($transform(parentNode, anchorNode, selection.anchor.offset)) {
+            $addUpdateTag(HISTORY_PUSH_TAG);
+          }
         });
       },
     ),

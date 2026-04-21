@@ -125,12 +125,14 @@ export function getTableElement<T extends HTMLElement | null>(
   if (!dom) {
     return dom as T & null;
   }
-  const element = (
-    isHTMLTableElement(dom) ? dom : tableNode.getDOMSlot(dom).element
-  ) as HTMLTableElementWithWithTableSelectionState;
+  const element: null | HTMLTableElementWithWithTableSelectionState =
+    isHTMLTableElement(dom) ? dom : dom.querySelector('table');
   invariant(
-    element.nodeName === 'TABLE',
-    'getTableElement: Expecting table in as DOM node for TableNode, not %s',
+    isHTMLTableElement(element),
+    'getTableElement: Expecting table in DOM node for %s of type %s with key %s, not %s',
+    tableNode.constructor.name,
+    tableNode.getType(),
+    tableNode.getKey(),
     dom.nodeName,
   );
   return element;
@@ -918,13 +920,12 @@ export function $handleTableSelectionChangeCommand(
   // Generic selection logic that runs across every table observer when the selection changes.
   // Note: the selection might have changed in the code above, which re-dispatches the selection change command
   // and gets handled here on the second pass. This should be refactored.
-  const tableNodesAndObservers = tableObservers.observers
-    .entries()
-    .map(([tableKey, [tableObserver]]) => ({
-      tableNode: $getNodeByKeyOrThrow<TableNode>(tableKey),
-      tableObserver,
-    }))
-    .toArray();
+  const tableNodesAndObservers = Array.from(
+    tableObservers.observers.entries(),
+  ).map(([tableKey, [tableObserver]]) => ({
+    tableNode: $getNodeByKeyOrThrow<TableNode>(tableKey),
+    tableObserver,
+  }));
   for (const {tableNode, tableObserver} of tableNodesAndObservers) {
     $syncTableSelectionState(editor, tableNode, tableObserver);
   }

@@ -13,6 +13,7 @@ import fs from 'fs';
 import * as path from 'path';
 import {defineConfig, UserManifest} from 'wxt';
 
+import transformErrorMessages from '../../scripts/error-codes/transform-error-messages.mjs';
 import moduleResolution from '../shared/viteModuleResolution';
 
 // See https://wxt.dev/api/config.html
@@ -104,8 +105,7 @@ export default defineConfig({
           plugins: [
             '@babel/plugin-transform-flow-strip-types',
             [
-              // eslint-disable-next-line @typescript-eslint/no-require-imports
-              require('../../scripts/error-codes/transform-error-messages'),
+              transformErrorMessages,
               {
                 noMinify: true,
               },

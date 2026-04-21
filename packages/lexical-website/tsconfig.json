@@ -1,0 +1,20 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "typeRoots": ["./node_modules/@types", "./node_modules"],
+    "types": ["@docusaurus/module-type-aliases", "@docusaurus/theme-classic"]
+  },
+  "include": [
+    "../../libdefs",
+    "./docusaurus.config.ts",
+    "./sidebars.js",
+    "./plugins/**/*",
+    "./src/**/*"
+  ],
+  "exclude": [
+    "../../libdefs/*.js",
+    "**/node_modules/**",
+    "**/build/**",
+    "**/.docusaurus/**"
+  ]
+}

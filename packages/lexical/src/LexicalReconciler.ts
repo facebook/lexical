@@ -8,6 +8,7 @@
 
 import type {
   EditorConfig,
+  EditorDOMRenderConfig,
   LexicalEditor,
   MutatedNodes,
   MutationListeners,
@@ -24,6 +25,7 @@ import {
   $isLineBreakNode,
   $isRootNode,
   $isTextNode,
+  DEFAULT_EDITOR_DOM_CONFIG,
 } from '.';
 import {
   DOUBLE_LINE_BREAK,
@@ -37,6 +39,7 @@ import {
 } from './LexicalConstants';
 import {EditorState} from './LexicalEditorState';
 import {
+  $createChildrenArray,
   cloneDecorators,
   getElementByKeyOrThrow,
   setMutatedNode,
@@ -60,8 +63,9 @@ let activePrevNodeMap: NodeMap;
 let activeNextNodeMap: NodeMap;
 let activePrevKeyToDOMMap: Map<NodeKey, HTMLElement>;
 let mutatedNodes: MutatedNodes;
+let activeEditorDOMRenderConfig: EditorDOMRenderConfig;
 
-function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
+function $destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
   const node = activePrevNodeMap.get(key);
 
   if (parentDOM !== null) {
@@ -78,8 +82,8 @@ function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
   }
 
   if ($isElementNode(node)) {
-    const children = createChildrenArray(node, activePrevNodeMap);
-    destroyChildren(children, 0, children.length - 1, null);
+    const children = $createChildrenArray(node, activePrevNodeMap);
+    $destroyChildren(children, 0, children.length - 1, null);
   }
 
   if (node !== undefined) {
@@ -93,7 +97,7 @@ function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
   }
 }
 
-function destroyChildren(
+function $destroyChildren(
   children: Array<NodeKey>,
   _startIndex: number,
   endIndex: number,
@@ -103,7 +107,7 @@ function destroyChildren(
     const child = children[startIndex];
 
     if (child !== undefined) {
-      destroyNode(child, dom);
+      $destroyNode(child, dom);
     }
   }
 }
@@ -195,7 +199,7 @@ function $createNode(key: NodeKey, slot: ElementDOMSlot | null): HTMLElement {
   if (node === undefined) {
     invariant(false, 'createNode: node does not exist in nodeMap');
   }
-  const dom = node.createDOM(activeEditorConfig, activeEditor);
+  const dom = activeEditorDOMRenderConfig.$createDOM(node, activeEditor);
   storeDOMWithKey(key, dom, activeEditor);
 
   // This helps preserve the text, and stops spell check tools from
@@ -216,8 +220,14 @@ function $createNode(key: NodeKey, slot: ElementDOMSlot | null): HTMLElement {
     }
     if (childrenSize !== 0) {
       const endIndex = childrenSize - 1;
-      const children = createChildrenArray(node, activeNextNodeMap);
-      $createChildren(children, node, 0, endIndex, node.getDOMSlot(dom));
+      const children = $createChildrenArray(node, activeNextNodeMap);
+      $createChildren(
+        children,
+        node,
+        0,
+        endIndex,
+        activeEditorDOMRenderConfig.$getDOMSlot(node, dom, activeEditor),
+      );
     }
 
     const format = node.__format;
@@ -226,7 +236,7 @@ function $createNode(key: NodeKey, slot: ElementDOMSlot | null): HTMLElement {
       setElementFormat(dom, format);
     }
     if (!node.isInline()) {
-      reconcileElementTerminatingLineBreak(null, node, dom);
+      $reconcileElementTerminatingLineBreak(null, node, dom);
     }
   } else {
     const text = node.getTextContent();
@@ -318,7 +328,7 @@ function isLastChildLineBreakOrDecorator(
 }
 
 // If we end an element with a LineBreakNode, then we need to add an additional <br>
-function reconcileElementTerminatingLineBreak(
+function $reconcileElementTerminatingLineBreak(
   prevElement: null | ElementNode,
   nextElement: ElementNode,
   dom: HTMLElement & LexicalPrivateDOM,
@@ -332,7 +342,9 @@ function reconcileElementTerminatingLineBreak(
     activeNextNodeMap,
   );
   if (prevLineBreak !== nextLineBreak) {
-    nextElement.getDOMSlot(dom).setManagedLineBreak(nextLineBreak);
+    activeEditorDOMRenderConfig
+      .$getDOMSlot(nextElement, dom, activeEditor)
+      .setManagedLineBreak(nextLineBreak);
   }
 }
 
@@ -363,26 +375,13 @@ function $reconcileChildrenWithDirection(
 ): void {
   subTreeTextFormat = null;
   subTreeTextStyle = null;
-  $reconcileChildren(prevElement, nextElement, nextElement.getDOMSlot(dom));
+  $reconcileChildren(
+    prevElement,
+    nextElement,
+    activeEditorDOMRenderConfig.$getDOMSlot(nextElement, dom, activeEditor),
+  );
   reconcileTextFormat(nextElement);
   reconcileTextStyle(nextElement);
-}
-
-function createChildrenArray(
-  element: ElementNode,
-  nodeMap: NodeMap,
-): Array<NodeKey> {
-  const children = [];
-  let nodeKey = element.__first;
-  while (nodeKey !== null) {
-    const node = nodeMap.get(nodeKey);
-    if (node === undefined) {
-      invariant(false, 'createChildrenArray: node does not exist in nodeMap');
-    }
-    children.push(nodeKey);
-    nodeKey = node.__next;
-  }
-  return children;
 }
 
 function $reconcileChildren(
@@ -420,7 +419,7 @@ function $reconcileChildren(
           throw error;
         }
       }
-      destroyNode(prevFirstChildKey, null);
+      $destroyNode(prevFirstChildKey, null);
     }
     const nextChildNode = activeNextNodeMap.get(nextFirstChildKey);
     if ($isTextNode(nextChildNode)) {
@@ -430,8 +429,8 @@ function $reconcileChildren(
       }
     }
   } else {
-    const prevChildren = createChildrenArray(prevElement, activePrevNodeMap);
-    const nextChildren = createChildrenArray(nextElement, activeNextNodeMap);
+    const prevChildren = $createChildrenArray(prevElement, activePrevNodeMap);
+    const nextChildren = $createChildrenArray(nextElement, activeNextNodeMap);
     invariant(
       prevChildren.length === prevChildrenSize,
       '$reconcileChildren: prevChildren.length !== prevChildrenSize',
@@ -458,7 +457,7 @@ function $reconcileChildren(
           slot.before == null &&
           (slot.element as HTMLElement & LexicalPrivateDOM)
             .__lexicalLineBreak == null;
-        destroyChildren(
+        $destroyChildren(
           prevChildren,
           0,
           prevChildrenSize - 1,
@@ -542,7 +541,14 @@ function $reconcileNode(
   }
 
   // Update node. If it returns true, we need to unmount and re-create the node
-  if (nextNode.updateDOM(prevNode, dom, activeEditorConfig)) {
+  if (
+    activeEditorDOMRenderConfig.$updateDOM(
+      nextNode,
+      prevNode,
+      dom,
+      activeEditor,
+    )
+  ) {
     const replacementDOM = $createNode(key, null);
 
     if (parentDOM === null) {
@@ -550,7 +556,7 @@ function $reconcileNode(
     }
 
     parentDOM.replaceChild(replacementDOM, dom);
-    destroyNode(key, null);
+    $destroyNode(key, null);
     return replacementDOM;
   }
 
@@ -574,7 +580,7 @@ function $reconcileNode(
     if (isDirty) {
       $reconcileChildrenWithDirection(prevNode, nextNode, dom);
       if (!$isRootNode(nextNode) && !nextNode.isInline()) {
-        reconcileElementTerminatingLineBreak(prevNode, nextNode, dom);
+        $reconcileElementTerminatingLineBreak(prevNode, nextNode, dom);
       }
     } else {
       const previousSubTreeTextContent = dom.__lexicalTextContent;
@@ -725,7 +731,7 @@ function $reconcileNodeChildren(
       if (!nextChildrenSet.has(prevKey)) {
         // Remove prev and continue
         siblingDOM = getNextSibling(getPrevElementByKeyOrThrow(prevKey));
-        destroyNode(prevKey, slot.element);
+        $destroyNode(prevKey, slot.element);
         prevIndex++;
         prevChildrenSet.delete(prevKey);
         continue;
@@ -780,7 +786,7 @@ function $reconcileNodeChildren(
       slot.withBefore(insertDOM),
     );
   } else if (removeOldChildren && !appendNewChildren) {
-    destroyChildren(prevChildren, prevIndex, prevEndIndex, slot.element);
+    $destroyChildren(prevChildren, prevIndex, prevEndIndex, slot.element);
   }
 }
 
@@ -800,6 +806,7 @@ export function $reconcileRoot(
   treatAllNodesAsDirty = dirtyType === FULL_RECONCILE;
   activeEditor = editor;
   activeEditorConfig = editor._config;
+  activeEditorDOMRenderConfig = editor._config.dom || DEFAULT_EDITOR_DOM_CONFIG;
   activeEditorNodes = editor._nodes;
   activeMutationListeners = activeEditor._listeners.mutation;
   activeDirtyElements = dirtyElements;
@@ -835,6 +842,7 @@ export function $reconcileRoot(
   activePrevKeyToDOMMap = undefined;
   // @ts-ignore
   mutatedNodes = undefined;
+  activeEditorDOMRenderConfig = DEFAULT_EDITOR_DOM_CONFIG;
 
   return currentMutatedNodes;
 }

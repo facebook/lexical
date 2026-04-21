@@ -10,7 +10,7 @@ import fs from 'fs-extra';
 import {glob} from 'glob';
 import {describe, expect, test} from 'vitest';
 
-import {packagesManager} from '../../shared/packagesManager.js';
+import {packagesManager} from '../../shared/packagesManager.mjs';
 
 describe('prod ascii-only check', () => {
   for (const pkg of packagesManager.getPublicPackages()) {

@@ -28,12 +28,6 @@ properties to store the node's data can be [more efficient](#efficiency)
 and will save you from writing a lot of boilerplate in the constructor,
 updateFromJSON, and exportJSON.
 
-## Stability
-
-🧪 This API is experimental, and may evolve without a long deprecation
-period. See also [Capabilities](#capabilities) for notes on what it
-can and can not do out of the box today.
-
 ## Usage
 
 ### createState

@@ -125,7 +125,7 @@ export type AutoLinkConfig = {
   changeHandlers: ChangeHandler[];
   excludeParents: Array<(parent: ElementNode) => boolean>;
   matchers: LinkMatcher[];
-  punctuation?: string;
+  separatorRegex?: RegExp;
 }
 
 export type ChangeHandler = (

@@ -26,7 +26,6 @@ function useAutoLink(
   matchers: Array<LinkMatcher>,
   onChange?: ChangeHandler,
   excludeParents?: Array<(parent: ElementNode) => boolean>,
-  punctuation?: string,
 ): void {
   useEffect(() => {
     if (!editor.hasNodes([AutoLinkNode])) {
@@ -41,25 +40,22 @@ function useAutoLink(
       changeHandlers: onChange ? [onChange] : [],
       excludeParents: excludeParents ?? [],
       matchers,
-      punctuation,
     });
-  }, [editor, matchers, onChange, excludeParents, punctuation]);
+  }, [editor, matchers, onChange, excludeParents]);
 }
 
 export function AutoLinkPlugin({
   matchers,
   onChange,
   excludeParents,
-  punctuation,
 }: {
   matchers: Array<LinkMatcher>;
   onChange?: ChangeHandler;
   excludeParents?: Array<(parent: ElementNode) => boolean>;
-  punctuation?: string;
 }): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
 
-  useAutoLink(editor, matchers, onChange, excludeParents, punctuation);
+  useAutoLink(editor, matchers, onChange, excludeParents);
 
   return null;
 }

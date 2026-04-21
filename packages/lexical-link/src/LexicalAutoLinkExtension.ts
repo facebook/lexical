@@ -81,17 +81,7 @@ function findFirstMatch(
   return null;
 }
 
-const DEFAULT_PUNCTUATION = '.,;';
-const DEFAULT_SEPARATOR = /[.,;\s]/;
-const REGEX_SPECIAL_CHARS = /[\\^$.*+?()[\]{}|/-]/g;
-
-function createSeparatorRegex(punctuation: string): RegExp {
-  if (punctuation === DEFAULT_PUNCTUATION) {
-    return DEFAULT_SEPARATOR;
-  }
-
-  return new RegExp(`[${punctuation.replace(REGEX_SPECIAL_CHARS, '\\$&')}\\s]`);
-}
+const PUNCTUATION_OR_SPACE = /[.,;\s]/;
 
 function isSeparator(char: string, separatorRegex: RegExp): boolean {
   return separatorRegex.test(char);
@@ -538,14 +528,19 @@ export interface AutoLinkConfig {
   changeHandlers: ChangeHandler[];
   excludeParents: Array<(parent: ElementNode) => boolean>;
   matchers: LinkMatcher[];
-  punctuation?: string;
+  /**
+   * The regular expression used to determine whether surrounding
+   * characters count as separators when validating auto-link
+   * boundaries. Defaults to `/[.,;\s]/`.
+   */
+  separatorRegex?: RegExp;
 }
 
 const defaultConfig: AutoLinkConfig = {
   changeHandlers: [],
   excludeParents: [],
   matchers: [],
-  punctuation: DEFAULT_PUNCTUATION,
+  separatorRegex: PUNCTUATION_OR_SPACE,
 };
 
 export function registerAutoLink(
@@ -556,9 +551,8 @@ export function registerAutoLink(
     matchers,
     changeHandlers,
     excludeParents,
-    punctuation = DEFAULT_PUNCTUATION,
+    separatorRegex = PUNCTUATION_OR_SPACE,
   } = config;
-  const separatorRegex = createSeparatorRegex(punctuation);
   const onChange: ChangeHandler = (url, prevUrl) => {
     for (const handler of changeHandlers) {
       handler(url, prevUrl);

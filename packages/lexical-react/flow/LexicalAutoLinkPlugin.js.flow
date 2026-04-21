@@ -17,5 +17,4 @@ declare export function AutoLinkPlugin(props: {
   excludeParents?: Array<(parent: ElementNode) => boolean>,
   matchers: Array<LinkMatcher>,
   onChange?: ChangeHandler,
-  punctuation?: string,
 }): React.Node;

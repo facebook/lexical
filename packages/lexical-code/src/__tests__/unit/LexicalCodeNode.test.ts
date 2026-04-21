@@ -12,6 +12,7 @@ import {
   $createCodeHighlightNode,
   $createCodeNode,
   $isCodeHighlightNode,
+  $isCodeNode,
 } from '@lexical/code';
 import {registerCodeHighlighting} from '@lexical/code-prism';
 import {registerTabIndentation} from '@lexical/react/LexicalTabIndentationPlugin';
@@ -1001,6 +1002,52 @@ describe('LexicalCodeNode tests', () => {
           );
         }
       }
+    });
+    describe('CodeHighlighterPrism multiuser selection boundary conditions', () => {
+      test('does not throw when textOffset becomes negative or selection is outside target code block', async () => {
+        const {editor} = testEnv;
+        registerRichText(editor);
+        registerCodeHighlighting(editor);
+
+        await editor.update(() => {
+          const root = $getRoot();
+          const p = $createParagraphNode();
+          const pText = $createTextNode('outside code');
+          p.append(pText);
+          const code = $createCodeNode('javascript');
+          code.append($createTextNode('inside'));
+          root.append(p, code);
+
+          // Place selection outside code node
+          pText.select(1, 1);
+        });
+
+        // Trigger an update on the code node to fire Prism highlighting sync
+        // If bug is present, this might crash inside updateAndRetainSelection
+        let threw = false;
+        try {
+          await editor.update(() => {
+            const nodes = $dfs();
+            const codeNode = nodes.filter((dfsNode) =>
+              $isCodeNode(dfsNode.node),
+            )[0].node;
+            invariant($isCodeNode(codeNode), 'Expected a CodeNode');
+            codeNode.append($createTextNode('foo')); // trigger transform
+
+            const pText = nodes.filter(
+              (dfsNode) =>
+                $isTextNode(dfsNode.node) &&
+                dfsNode.node.getTextContent() === 'outside code',
+            )[0].node;
+            invariant($isTextNode(pText), 'Expected a TextNode');
+            pText.select(0, 0); // Keep selection outside
+          });
+        } catch (_e) {
+          threw = true;
+        }
+
+        expect(threw).toBe(false);
+      });
     });
     describe('initial editor state before transforms', () => {
       test('can be registered after initial editor state (regression #7014)', async () => {

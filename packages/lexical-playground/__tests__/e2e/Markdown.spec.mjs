@@ -1574,3 +1574,33 @@ const IMPORTED_MARKDOWN_HTML = html`
     </span>
   </code>
 `;
+
+test('can convert equation block ($$) text', async ({page, isPlainText}) => {
+  test.skip(isPlainText);
+  await focusEditor(page);
+  await page.keyboard.type('```markdown $$\nx=y\n$$');
+  await click(page, 'i.markdown');
+  await waitForSelector(page, '.editor-equation');
+
+  const isEquationBlock = await page.evaluate(() => {
+    const equation = document.querySelector('.editor-equation');
+    return equation && equation.tagName.toLowerCase() === 'div';
+  });
+  // Check if block equation
+  if (!isEquationBlock) {
+    throw new Error('Not block equation (div)');
+  }
+
+  // Toggle off
+  await click(page, 'i.markdown');
+
+  // Check that we got back to markdown text
+  const textCont = await page.evaluate(() => {
+    return document.querySelector('.PlaygroundEditorTheme__paragraph')
+      .textContent;
+  });
+
+  if (!textCont.includes('$$') || !textCont.includes('x=y')) {
+    throw new Error(`Exported markdown missing content: \${textCont}`);
+  }
+});

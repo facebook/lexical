@@ -90,9 +90,7 @@ function createSeparatorRegex(punctuation: string): RegExp {
     return DEFAULT_SEPARATOR;
   }
 
-  return new RegExp(
-    `[${punctuation.replace(REGEX_SPECIAL_CHARS, '\\$&')}\\s]`,
-  );
+  return new RegExp(`[${punctuation.replace(REGEX_SPECIAL_CHARS, '\\$&')}\\s]`);
 }
 
 function isSeparator(char: string, separatorRegex: RegExp): boolean {
@@ -128,7 +126,10 @@ function startsWithTLD(textContent: string, isEmail: boolean): boolean {
   }
 }
 
-function isPreviousNodeValid(node: LexicalNode, separatorRegex: RegExp): boolean {
+function isPreviousNodeValid(
+  node: LexicalNode,
+  separatorRegex: RegExp,
+): boolean {
   let previousNode = node.getPreviousSibling();
   if ($isElementNode(previousNode)) {
     previousNode = previousNode.getLastDescendant();

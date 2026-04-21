@@ -186,13 +186,6 @@ export function getStyleObjectFromRawCSS(css: string): Record<string, string> {
  * @param css - The CSS property as a string.
  * @returns The value of the given CSS property.
  */
-export {getStyleObjectFromCSS};
-
-/**
- * Gets the CSS styles from the style object.
- * @param styles - The style object containing the styles to get.
- * @returns A string containing the CSS styles and their values.
- */
 export function getCSSFromStyleObject(styles: Record<string, string>): string {
   let css = '';
 

@@ -20,6 +20,7 @@ import {
   $isTokenOrSegmented,
   BaseSelection,
   ElementNode,
+  getStyleObjectFromCSS,
   LexicalEditor,
   LexicalNode,
   NodeKey,
@@ -28,8 +29,9 @@ import {
   TextNode,
 } from 'lexical';
 import invariant from 'shared/invariant';
+import warnOnlyOnce from 'shared/warnOnlyOnce';
 
-import {getCSSFromStyleObject, getStyleObjectFromCSS} from './utils';
+import {getCSSFromStyleObject} from './utils';
 
 /**
  * Generally used to append text content to HTML and JSON. Grabs the text content and "slices"
@@ -239,9 +241,11 @@ export function $trimTextContentFromAnchor(
 }
 
 /**
- * Kept for backwards compatibility. Styles are parsed on demand now.
+ * @deprecated node styles are parsed on demand and not cached eternally
  */
-export function $addNodeStyle(_node: TextNode): void {}
+export const $addNodeStyle: (_node: TextNode) => void = warnOnlyOnce(
+  '$addNodeStyle is a deprecated no-op and calls should be removed',
+);
 
 /**
  * Applies the provided styles to the given TextNode, ElementNode, or

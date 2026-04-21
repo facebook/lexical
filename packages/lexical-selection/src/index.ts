@@ -6,6 +6,8 @@
  *
  */
 
+import {getStyleObjectFromCSS as getStyleObjectFromCSS_} from 'lexical';
+
 import {$trimTextContentFromAnchor} from './lexical-node';
 
 export {
@@ -34,8 +36,9 @@ export {
   createDOMRange,
   createRectsFromDOMRange,
   getCSSFromStyleObject,
-  /** @deprecated moved to the lexical package */ getStyleObjectFromCSS,
 } from './utils';
+/** @deprecated moved to the `lexical` package */
+export const getStyleObjectFromCSS = getStyleObjectFromCSS_;
 /** @deprecated renamed to {@link $trimTextContentFromAnchor} by @lexical/eslint-plugin rules-of-lexical */
 export const trimTextContentFromAnchor = $trimTextContentFromAnchor;
 export {

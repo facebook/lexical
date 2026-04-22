@@ -12,7 +12,6 @@ import {
   $writeDragSourceToDataTransfer,
   setLexicalClipboardDataTransfer,
 } from '@lexical/clipboard';
-import {registerRichText} from '@lexical/rich-text';
 import {
   $createParagraphNode,
   $createRangeSelection,
@@ -226,35 +225,28 @@ describe('$handleTextDrop', () => {
       });
     });
 
-    test('inserts DataTransfer content at drop point when there is no source selection', async () => {
+    test('returns false for an external drag (no marker), letting the browser handle it', async () => {
       const {editor} = testEnv;
-      let textKey = '';
       await editor.update(() => {
         const paragraph = $createParagraphNode();
-        const text = $createTextNode('Hello world');
-        paragraph.append(text);
+        paragraph.append($createTextNode('Hello world'));
         $getRoot().clear().append(paragraph);
-        textKey = text.getKey();
-
-        // Collapsed selection = no internal source.
-        const selection = $createRangeSelection();
-        selection.anchor.set(textKey, 0, 'text');
-        selection.focus.set(textKey, 0, 'text');
-        $setSelection(selection);
       });
 
+      let handled = true;
+      let preventDefault: ReturnType<typeof vi.fn> | null = null;
       await editor.update(() => {
-        const domText = getParagraphTextDOM(editor, textKey);
-        setCaretFromPoint(domText, 6);
-        const {dataTransfer, event} = createDropEvent();
+        const {dataTransfer, event, preventDefault: pd} = createDropEvent();
         dataTransfer.setData('text/plain', 'brave ');
-        // No drag-source marker — this represents an external drag.
-        $handleRichTextDrop(event, editor);
+        // No drag-source marker — this represents an external drag. The
+        // handler should bail so the browser's native drag-drop flow (which
+        // fires beforeinput insertFromDrop on the destination) takes over.
+        preventDefault = pd;
+        handled = $handleRichTextDrop(event, editor);
       });
-
-      await editor.read(() => {
-        expect($getRoot().getTextContent()).toBe('Hello brave world');
-      });
+      expect(handled).toBe(false);
+      expect(preventDefault).not.toBeNull();
+      expect(preventDefault!).not.toHaveBeenCalled();
     });
 
     test('returns false when caretFromPoint cannot resolve a location', async () => {
@@ -454,8 +446,6 @@ describe('$handleRichTextDrop across editors', () => {
   let destContainer: HTMLDivElement;
   let sourceEditor: LexicalEditor;
   let destEditor: LexicalEditor;
-  let unregisterSourceRichText: () => void;
-  let unregisterDestRichText: () => void;
 
   beforeEach(() => {
     caretFromPointState.current = () => null;
@@ -466,9 +456,6 @@ describe('$handleRichTextDrop across editors', () => {
     document.body.appendChild(sourceContainer);
     sourceEditor = createTestEditor();
     sourceEditor.setRootElement(sourceContainer);
-    // The synthetic deleteByDrag dispatched at the source root needs the
-    // source editor to have REMOVE_TEXT_COMMAND handlers registered.
-    unregisterSourceRichText = registerRichText(sourceEditor);
 
     destContainer = document.createElement('div');
     destContainer.setAttribute('data-lexical-editor', 'true');
@@ -476,30 +463,25 @@ describe('$handleRichTextDrop across editors', () => {
     document.body.appendChild(destContainer);
     destEditor = createTestEditor();
     destEditor.setRootElement(destContainer);
-    unregisterDestRichText = registerRichText(destEditor);
   });
 
   afterEach(() => {
-    unregisterSourceRichText();
-    unregisterDestRichText();
     sourceEditor.setRootElement(null);
     destEditor.setRootElement(null);
     document.body.removeChild(sourceContainer);
     document.body.removeChild(destContainer);
   });
 
-  test('inserts in the destination editor and dispatches deleteByDrag at the source root', async () => {
-    let sourceTextKey = '';
+  test('returns false for a cross-editor drop, letting the browser handle it', async () => {
     await sourceEditor.update(() => {
       const paragraph = $createParagraphNode();
       const text = $createTextNode('source-content');
       paragraph.append(text);
       $getRoot().clear().append(paragraph);
-      sourceTextKey = text.getKey();
 
       const selection = $createRangeSelection();
-      selection.anchor.set(sourceTextKey, 0, 'text');
-      selection.focus.set(sourceTextKey, 6, 'text'); // select "source"
+      selection.anchor.set(text.getKey(), 0, 'text');
+      selection.focus.set(text.getKey(), 6, 'text');
       $setSelection(selection);
     });
 
@@ -512,37 +494,17 @@ describe('$handleRichTextDrop across editors', () => {
       destTextKey = text.getKey();
     });
 
-    // Populate the DataTransfer the same way DRAGSTART does — Lexical
-    // clipboard data + drag-source marker pointing at the source editor.
+    // DRAGSTART would put the source editor's marker on the DataTransfer.
     const dataTransfer = new DataTransferMock();
     await sourceEditor.update(() => {
-      const selection = $getSelection();
-      invariant($isRangeSelection(selection), 'expected source selection');
-      setLexicalClipboardDataTransfer(
-        dataTransfer,
-        $getClipboardDataFromSelection(selection),
-      );
       $writeDragSourceToDataTransfer(
         dataTransfer as unknown as DataTransfer,
         sourceEditor,
       );
     });
 
-    // Capture the synthetic event that should be dispatched at the source
-    // root. (The source editor's actual deletion runs through Lexical's
-    // beforeinput handler, which is only registered when CAN_USE_BEFORE_INPUT
-    // is true. jsdom does not expose `getTargetRanges` on InputEvent, so the
-    // handler isn't registered in the test environment — we verify the
-    // dispatch contract here, and the end-to-end deletion is covered by the
-    // playground browser repro.)
-    const observedDispatches: InputEvent[] = [];
-    sourceContainer.addEventListener(
-      'beforeinput',
-      (e) => observedDispatches.push(e as InputEvent),
-      true,
-    );
-
-    // Fire the drop on the destination editor.
+    let handled = true;
+    let preventDefault: ReturnType<typeof vi.fn> | null = null;
     await destEditor.update(() => {
       const destSpan = destEditor.getElementByKey(destTextKey);
       invariant(destSpan !== null, 'dest span null');
@@ -551,30 +513,26 @@ describe('$handleRichTextDrop across editors', () => {
         domText !== null && domText.nodeType === Node.TEXT_NODE,
         'dest dom text',
       );
-      setCaretFromPoint(domText as Text, 11); // end of "destination"
+      setCaretFromPoint(domText as Text, 11);
 
-      const preventDefault = vi.fn();
+      const pd = vi.fn();
       const event = {
         clientX: 0,
         clientY: 0,
         dataTransfer,
-        preventDefault,
+        preventDefault: pd,
       } as unknown as DragEvent;
-
-      const handled = $handleRichTextDrop(event, destEditor);
-      expect(handled).toBe(true);
-      expect(preventDefault).toHaveBeenCalled();
+      preventDefault = pd;
+      handled = $handleRichTextDrop(event, destEditor);
     });
-
-    expect(observedDispatches.length).toBe(1);
-    expect(observedDispatches[0].type).toBe('beforeinput');
-    expect(observedDispatches[0].inputType).toBe('deleteByDrag');
-    expect(observedDispatches[0].target).toBe(sourceContainer);
-
-    // The destination editor inserted the dragged content.
-    await destEditor.read(() => {
-      expect($getRoot().getTextContent()).toBe('destinationsource');
-    });
+    // The marker says the drag came from a *different* editor, so the
+    // destination's $handleRichTextDrop bails and lets the browser run its
+    // native drag-and-drop flow (insertFromDrop on the destination,
+    // deleteByDrag on the source). That flow is covered by the playground
+    // browser repro; here we just verify the bail.
+    expect(handled).toBe(false);
+    expect(preventDefault).not.toBeNull();
+    expect(preventDefault!).not.toHaveBeenCalled();
   });
 
   test('cancelled cross-editor drag leaves both editors untouched', async () => {

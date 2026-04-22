@@ -271,18 +271,6 @@ function readDragMarker(dataTransfer: DataTransfer): LexicalDragMarker | null {
   return isLexicalDragMarker(parsed) ? parsed : null;
 }
 
-function findEditorRootByKey(key: string, doc: Document): HTMLElement | null {
-  const elements = doc.querySelectorAll('[data-lexical-editor="true"]');
-  for (const el of Array.from(elements)) {
-    const editor = (el as unknown as {__lexicalEditor?: {getKey: () => string}})
-      .__lexicalEditor;
-    if (editor && editor.getKey() === key) {
-      return el as HTMLElement;
-    }
-  }
-  return null;
-}
-
 function $resolveDropPointCaret(event: DragEvent): null | PointCaret<'next'> {
   const hit = caretFromPoint(event.clientX, event.clientY);
   if (hit === null) {
@@ -334,24 +322,33 @@ function $doDrop(
     return false;
   }
 
+  // Only same-editor drags need our help. For external drags and cross-editor
+  // drags the browser fires the standard beforeinput events
+  // (insertFromDrop on the destination, deleteByDrag on the source) which
+  // Lexical's own beforeinput handler routes through the right commands —
+  // including SKIP_SELECTION_FOCUS_TAG on the source side so the destination
+  // keeps focus. Same-editor drags are special only because Lexical's
+  // beforeinput handler skips applyDOMRange when the selection is not
+  // collapsed (the dragged range is still selected), which would otherwise
+  // route the insertion to the source's location instead of the drop point.
+  const marker = readDragMarker(dataTransfer);
+  if (marker === null || marker.editorKey !== editor.getKey()) {
+    return false;
+  }
+
+  const currentSelection = $getSelection();
+  if (!$isRangeSelection(currentSelection) || currentSelection.isCollapsed()) {
+    return false;
+  }
+
   const dropCaret = $resolveDropPointCaret(event);
   if (dropCaret === null) {
     return false;
   }
 
-  const marker = readDragMarker(dataTransfer);
-  const isSameEditorDrag =
-    marker !== null && marker.editorKey === editor.getKey();
-  const currentSelection = $getSelection();
-
-  // For a same-editor drag, reject drops strictly inside the dragged range
-  // (dropping into your own selection should be a no-op).
-  if (
-    isSameEditorDrag &&
-    $isRangeSelection(currentSelection) &&
-    !currentSelection.isCollapsed() &&
-    $isDropCaretInsideSelection(dropCaret, currentSelection)
-  ) {
+  // Reject drops strictly inside the dragged range (dropping into your own
+  // selection should be a no-op).
+  if ($isDropCaretInsideSelection(dropCaret, currentSelection)) {
     event.preventDefault();
     return true;
   }
@@ -363,18 +360,7 @@ function $doDrop(
     return false;
   }
 
-  // Remove the source content.
-  //  - Same-editor drag: the current selection is the dragged range; remove
-  //    it now so the insert below lands in the cleaned-up tree.
-  //  - Cross-editor drag: the source lives in a different editor; schedule a
-  //    separate update there after we finish inserting here.
-  if (
-    isSameEditorDrag &&
-    $isRangeSelection(currentSelection) &&
-    !currentSelection.isCollapsed()
-  ) {
-    currentSelection.removeText();
-  }
+  currentSelection.removeText();
 
   // If the drop caret's origin was swept away by the source removal (which can
   // happen when the drop lands exactly at a source boundary inside a text node
@@ -391,29 +377,6 @@ function $doDrop(
     $getCollapsedCaretRange(stableDropCaret),
   );
   $insertDataTransfer(dataTransfer, dropSelection, editor);
-
-  // Cross-editor removal happens via a synthetic `beforeinput` event with
-  // inputType `deleteByDrag` dispatched at the source editor's root. The
-  // source editor's own beforeinput handler (registered by its own copy of
-  // Lexical) then runs the deletion using its own selection state and
-  // module-level helpers, so the deletion works even when the source editor
-  // is from a different version of Lexical loaded on the same page. This is
-  // the same event the browser would have fired natively if we hadn't called
-  // event.preventDefault() on the drop.
-  if (marker !== null && !isSameEditorDrag) {
-    const rootElement = editor.getRootElement();
-    const doc = rootElement ? rootElement.ownerDocument : null;
-    const sourceRoot = doc ? findEditorRootByKey(marker.editorKey, doc) : null;
-    if (sourceRoot !== null) {
-      sourceRoot.dispatchEvent(
-        new InputEvent('beforeinput', {
-          bubbles: true,
-          cancelable: true,
-          inputType: 'deleteByDrag',
-        }),
-      );
-    }
-  }
 
   event.preventDefault();
   return true;

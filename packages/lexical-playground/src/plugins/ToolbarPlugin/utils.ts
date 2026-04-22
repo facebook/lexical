@@ -26,7 +26,6 @@ import {
   $addUpdateTag,
   $createParagraphNode,
   $createRangeSelection,
-  $createTextNode,
   $getSelection,
   $isElementNode,
   $isLineBreakNode,

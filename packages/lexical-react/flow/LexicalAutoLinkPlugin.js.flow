@@ -14,7 +14,7 @@ export {createLinkMatcherWithRegExp};
 export type {ChangeHandler, LinkMatcher};
 
 declare export function AutoLinkPlugin(props: {
-  excludeParents?: Array<(parent: ElementNode) => boolean>,
-  matchers: Array<LinkMatcher>,
+  excludeParents?: ((parent: ElementNode) => boolean)[],
+  matchers: LinkMatcher[],
   onChange?: ChangeHandler,
 }): React.Node;

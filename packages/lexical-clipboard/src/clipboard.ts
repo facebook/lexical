@@ -248,6 +248,15 @@ export function $writeDragSourceToDataTransfer(
   dataTransfer.setData(LEXICAL_DRAG_MIME_TYPE, JSON.stringify(marker));
 }
 
+function isLexicalDragMarker(value: unknown): value is LexicalDragMarker {
+  return (
+    value !== null &&
+    typeof value === 'object' &&
+    'editorKey' in value &&
+    typeof (value as {editorKey: unknown}).editorKey === 'string'
+  );
+}
+
 function readDragMarker(dataTransfer: DataTransfer): LexicalDragMarker | null {
   const raw = dataTransfer.getData(LEXICAL_DRAG_MIME_TYPE);
   if (!raw) {
@@ -259,15 +268,7 @@ function readDragMarker(dataTransfer: DataTransfer): LexicalDragMarker | null {
   } catch {
     return null;
   }
-  if (
-    parsed !== null &&
-    typeof parsed === 'object' &&
-    'editorKey' in parsed &&
-    typeof parsed.editorKey === 'string'
-  ) {
-    return {editorKey: parsed.editorKey};
-  }
-  return null;
+  return isLexicalDragMarker(parsed) ? parsed : null;
 }
 
 function findEditorRootByKey(key: string, doc: Document): HTMLElement | null {

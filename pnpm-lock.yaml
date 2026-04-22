@@ -661,9 +661,6 @@ importers:
       '@lexical/extension':
         specifier: workspace:*
         version: link:../lexical-extension
-      '@lexical/selection':
-        specifier: workspace:*
-        version: link:../lexical-selection
       '@lexical/utils':
         specifier: workspace:*
         version: link:../lexical-utils

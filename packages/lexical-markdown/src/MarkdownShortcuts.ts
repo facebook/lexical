@@ -391,22 +391,6 @@ function $isInsideUnclosedCodeSpan(node: TextNode, offset: number): boolean {
     }
   }
 
-  let sibling = node.getPreviousSibling();
-  while (sibling !== null) {
-    if ($isLineBreakNode(sibling)) {
-      break;
-    }
-    if ($isTextNode(sibling)) {
-      const siblingText = sibling.getTextContent();
-      for (let i = 0; i < siblingText.length; i++) {
-        if (siblingText[i] === '`') {
-          backtickCount++;
-        }
-      }
-    }
-    sibling = sibling.getPreviousSibling();
-  }
-
   return backtickCount % 2 !== 0;
 }
 

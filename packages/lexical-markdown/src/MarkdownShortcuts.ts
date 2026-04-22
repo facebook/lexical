@@ -316,6 +316,14 @@ function $runTextFormatTransformers(
       continue;
     }
 
+    // Per CommonMark, code spans take precedence over other inline formatting
+    if (
+      !matcher.format.includes('code') &&
+      $isInsideUnclosedCodeSpan(openNode, openTagStartIndex)
+    ) {
+      continue;
+    }
+
     // Clean text from opening and closing tags (starting from closing tag
     // to prevent any offset shifts if we start from opening one)
     const prevCloseNodeText = closeNode.getTextContent();
@@ -367,6 +375,23 @@ function $runTextFormatTransformers(
   }
 
   return false;
+}
+
+// Per CommonMark spec, code spans take precedence over other inline
+// formatting. Returns true if there is an unclosed backtick (code span
+// opener) in the text preceding the given offset, which means the offset
+// is inside a code span that hasn't been closed yet.
+function $isInsideUnclosedCodeSpan(node: TextNode, offset: number): boolean {
+  let backtickCount = 0;
+
+  const text = node.getTextContent();
+  for (let i = 0; i < offset; i++) {
+    if (text[i] === '`') {
+      backtickCount++;
+    }
+  }
+
+  return backtickCount % 2 !== 0;
 }
 
 function getOpenTagStartIndex(

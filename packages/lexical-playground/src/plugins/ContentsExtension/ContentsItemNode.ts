@@ -6,14 +6,9 @@
  *
  */
 import {ListItemNode} from '@lexical/list';
-import {
-  $create,
-  addClassNamesToElement,
-  EditorConfig,
-  ElementNode,
-} from 'lexical';
+import {$create, addClassNamesToElement, EditorConfig} from 'lexical';
 
-import {$createContentsListNode} from './ContentsListNode';
+import {$createContentsListNode, ContentsListNode} from './ContentsListNode';
 
 export class ContentsItemNode extends ListItemNode {
   $config() {
@@ -22,7 +17,7 @@ export class ContentsItemNode extends ListItemNode {
     });
   }
 
-  createParentElementNode(): ElementNode {
+  createParentElementNode(): ContentsListNode {
     return $createContentsListNode();
   }
 

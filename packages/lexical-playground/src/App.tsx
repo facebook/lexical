@@ -60,7 +60,6 @@ import DocsPlugin from './plugins/DocsPlugin';
 import {DragDropPasteExtension} from './plugins/DragDropPasteExtension';
 import {EmojisExtension} from './plugins/EmojisExtension';
 import {FigmaExtension} from './plugins/FigmaExtension';
-import {IdStateExtension} from './plugins/IdStateExtension';
 import {ImagesExtension} from './plugins/ImagesExtension';
 import {PlaygroundMarkdownShortcutsExtension} from './plugins/MarkdownShortcutsExtension';
 import {MaxLengthExtension} from './plugins/MaxLengthPlugin';
@@ -69,6 +68,7 @@ import {PagesReactExtension} from './plugins/PagesReactExtension';
 import PasteLogPlugin from './plugins/PasteLogPlugin';
 import {SpecialTextExtension} from './plugins/SpecialTextExtension';
 import {TabFocusExtension} from './plugins/TabFocusExtension';
+import {TableOfContentsExtension} from './plugins/TableOfContentsExtension';
 import {TerseExportExtension} from './plugins/TerseExportExtension';
 import TestRecorderPlugin from './plugins/TestRecorderPlugin';
 import {TwitterExtension} from './plugins/TwitterExtension';
@@ -180,7 +180,7 @@ const PlaygroundRichTextExtension = defineExtension({
     PlaygroundMarkdownShortcutsExtension,
     PageBreakExtension,
     PagesReactExtension,
-    IdStateExtension,
+    TableOfContentsExtension,
   ],
   name: '@lexical/playground/RichText',
 });

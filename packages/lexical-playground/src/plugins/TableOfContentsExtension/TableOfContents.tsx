@@ -9,10 +9,9 @@ import type {TableOfContentsEntry} from '@lexical/react/LexicalTableOfContentsPl
 import type {HeadingTagType} from '@lexical/rich-text';
 import type {JSX} from 'react';
 
-import './index.css';
+import './TableOfContents.css';
 
 import {autoUpdate, offset, useFloating} from '@floating-ui/react';
-import {$createLinkNode, LinkNode} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {TableOfContentsPlugin as LexicalTableOfContentsPlugin} from '@lexical/react/LexicalTableOfContentsPlugin';
 import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
@@ -23,9 +22,8 @@ import {
   COMMAND_PRIORITY_LOW,
   createCommand,
   type LexicalCommand,
-  mergeRegister,
+  LexicalNode,
   type NodeKey,
-  TextNode,
 } from 'lexical';
 import {
   $createTextNode,
@@ -38,17 +36,13 @@ import * as React from 'react';
 import {useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 
-import {$createContentsItemNode} from '../../nodes/ContentsItemNode';
-import {
-  $createContentsLinkNode,
-  $isContentsLinkNode,
-  ContentsLinkNode,
-} from '../../nodes/ContentsLinkNode';
+import {$createContentsItemNode} from '../ContentsExtension/ContentsItemNode';
+import {$createContentsLinkNode} from '../ContentsExtension/ContentsLinkNode';
 import {
   $createContentsListNode,
   $isContentsListNode,
   ContentsListNode,
-} from '../../nodes/ContentsListNode';
+} from '../ContentsExtension/ContentsListNode';
 import {idState} from '../IdStateExtension';
 
 const MARGIN_ABOVE_EDITOR = 624;
@@ -102,6 +96,26 @@ function $generateContentsNode(tableOfContents: Array<TableOfContentsEntry>) {
   return contentsNode;
 }
 
+function $getTopContentsNode(node: LexicalNode): ContentsListNode | null {
+  let list = $findMatchingParent(node, $isContentsListNode);
+
+  if (!list) {
+    return null;
+  }
+
+  let parent: ContentsListNode | null = list;
+
+  while (parent !== null) {
+    parent = parent.getParent();
+
+    if ($isContentsListNode(parent)) {
+      list = parent;
+    }
+  }
+
+  return list;
+}
+
 function TableOfContentsList({
   tableOfContents,
 }: {
@@ -110,6 +124,19 @@ function TableOfContentsList({
   const [selectedKey, setSelectedKey] = useState('');
   const selectedIndex = useRef(0);
   const [editor] = useLexicalComposerContext();
+
+  useEffect(() => {
+    return editor.registerCommand(
+      INSERT_CONTENTS_COMMAND,
+      () => {
+        if (tableOfContents.length > 0) {
+          $insertNodes([$generateContentsNode(tableOfContents)]);
+        }
+        return false;
+      },
+      COMMAND_PRIORITY_LOW,
+    );
+  }, [editor, tableOfContents]);
 
   function scrollToNode(key: NodeKey, currIndex: number) {
     editor.getEditorState().read(() => {
@@ -123,62 +150,6 @@ function TableOfContentsList({
   }
 
   useEffect(() => {
-    return mergeRegister(
-      editor.registerNodeTransform(TextNode, (textNode) => {
-        const parent = textNode.getParent();
-        const previousSibling = textNode.getPreviousSibling();
-        const nextSibling = textNode.getNextSibling();
-        // Skip if textNode is already part of an ContentsLink (idempotency check)
-        if ($isContentsLinkNode(parent)) {
-          return;
-        }
-        if ($isContentsLinkNode(previousSibling)) {
-          previousSibling.append(textNode);
-        } else if ($isContentsLinkNode(nextSibling)) {
-          nextSibling.splice(0, 0, [textNode]);
-        }
-      }),
-      // The contents link must be within the contents
-      // If it's moved outside the contents, convert it to a regular link
-      editor.registerNodeTransform(LinkNode, (node) => {
-        if ($findMatchingParent(node, $isContentsListNode)) {
-          node.replace(
-            $createContentsLinkNode(node.getURL(), {
-              rel: node.getRel(),
-              target: node.getTarget(),
-              title: node.getRel(),
-            }),
-            true,
-          );
-        }
-      }),
-      editor.registerNodeTransform(ContentsLinkNode, (node) => {
-        if (!$findMatchingParent(node, $isContentsListNode)) {
-          node.replace(
-            $createLinkNode(node.getURL(), {
-              rel: node.getRel(),
-              target: node.getTarget(),
-              title: node.getRel(),
-            }),
-            true,
-          );
-        }
-      }),
-    );
-  }, [editor]);
-
-  useEffect(() => {
-    const unregisterCommand = editor.registerCommand(
-      INSERT_CONTENTS_COMMAND,
-      () => {
-        if (tableOfContents.length > 0) {
-          $insertNodes([$generateContentsNode(tableOfContents)]);
-        }
-        return false;
-      },
-      COMMAND_PRIORITY_LOW,
-    );
-
     function scrollCallback() {
       if (
         tableOfContents.length !== 0 &&
@@ -248,10 +219,7 @@ function TableOfContentsList({
     }
 
     document.addEventListener('scroll', onScroll);
-    return () => {
-      document.removeEventListener('scroll', onScroll);
-      unregisterCommand();
-    };
+    return () => document.removeEventListener('scroll', onScroll);
   }, [tableOfContents, editor]);
 
   return (
@@ -335,10 +303,7 @@ function ContentsHoverActions({
           return;
         }
         const anchorNode = selection.anchor.getNode();
-        const contentsNode = $findMatchingParent(
-          anchorNode,
-          $isContentsListNode,
-        );
+        const contentsNode = $getTopContentsNode(anchorNode);
         const prevElem = contentsElemRef.current;
         if (contentsNode) {
           const elem = editor.getElementByKey(contentsNode.getKey());
@@ -386,11 +351,11 @@ function ContentsHoverActions({
   );
 }
 
-export default function TableOfContentsPlugin({
-  anchorElem,
-}: {
+export type TableOfContentsProps = {
   anchorElem?: HTMLElement;
-}) {
+};
+
+export function TableOfContentsComponent({anchorElem}: TableOfContentsProps) {
   return (
     <LexicalTableOfContentsPlugin>
       {(tableOfContents) => {

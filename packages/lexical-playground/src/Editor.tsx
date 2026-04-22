@@ -18,6 +18,7 @@ import {
   LinkExtension,
 } from '@lexical/link';
 import {CheckListExtension, ListExtension} from '@lexical/list';
+import {ExtensionComponent} from '@lexical/react/ExtensionComponent';
 import {CharacterLimitPlugin} from '@lexical/react/LexicalCharacterLimitPlugin';
 import {
   CollaborationPlugin,
@@ -63,7 +64,7 @@ import TableCellActionMenuPlugin from './plugins/TableActionMenuPlugin';
 import TableCellResizer from './plugins/TableCellResizer';
 import TableFitNestedTablePlugin from './plugins/TableFitNestedTablePlugin';
 import TableHoverActionsV2Plugin from './plugins/TableHoverActionsV2Plugin';
-import TableOfContentsPlugin from './plugins/TableOfContentsPlugin';
+import {TableOfContentsExtension} from './plugins/TableOfContentsExtension';
 import TableScrollShadowPlugin from './plugins/TableScrollShadowPlugin';
 import ToolbarPlugin from './plugins/ToolbarPlugin';
 import TreeViewPlugin from './plugins/TreeViewPlugin';
@@ -294,7 +295,10 @@ export default function Editor(): JSX.Element {
         {isAutocomplete && <AutocompletePlugin />}
         <div>
           {showTableOfContents && floatingAnchorElem && (
-            <TableOfContentsPlugin />
+            <ExtensionComponent
+              lexical:extension={TableOfContentsExtension}
+              anchorElem={floatingAnchorElem}
+            />
           )}
         </div>
         {shouldUseLexicalContextMenu && <ContextMenuPlugin />}

@@ -97,7 +97,7 @@ import {INSERT_PAGE_BREAK} from '../PageBreakExtension';
 import {PagesReactExtension} from '../PagesReactExtension';
 import {InsertPollDialog} from '../PollPlugin';
 import {SHORTCUTS} from '../ShortcutsPlugin/shortcuts';
-import {INSERT_CONTENTS_COMMAND} from '../TableOfContentsPlugin';
+import {INSERT_CONTENTS_COMMAND} from '../TableOfContentsExtension';
 import {InsertTableDialog} from '../TablePlugin';
 import FontSize, {parseFontSizeForToolbar} from './fontSize';
 import {

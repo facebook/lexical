@@ -321,7 +321,7 @@ export const formatCode = (editor: LexicalEditor, blockType: string) => {
         selection.insertNodes([codeNode]);
         selection = $getSelection();
         let extractedNodes: LexicalNode[] = [];
-        if($isRangeSelection(selection)) {
+        if ($isRangeSelection(selection)) {
           selection.anchor.set(selection.anchor.key, 0, selection.anchor.type);
           extractedNodes = selection.extract();
           selection.insertRawText(textContent);

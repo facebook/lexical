@@ -326,6 +326,18 @@ export const formatCode = (editor: LexicalEditor, blockType: string) => {
           extractedNodes = selection.extract();
           selection.insertRawText(textContent);
         }
+        while (
+          extractedNodes.length > 0 &&
+          $isLineBreakNode(extractedNodes[0])
+        ) {
+          extractedNodes.shift();
+        }
+        while (
+          extractedNodes.length > 0 &&
+          $isLineBreakNode(extractedNodes[extractedNodes.length - 1])
+        ) {
+          extractedNodes.pop();
+        }
         const paragraphNode = $createParagraphNode();
         extractedNodes.forEach((node) => {
           paragraphNode.append(node);

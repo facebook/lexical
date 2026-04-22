@@ -21,7 +21,10 @@ import {
 } from '@lexical/rich-text';
 import {$patchStyleText, $setBlocksType} from '@lexical/selection';
 import {$isTableSelection} from '@lexical/table';
-import {$getNearestBlockElementAncestorOrThrow} from '@lexical/utils';
+import {
+  $getNearestBlockElementAncestorOrThrow,
+  $insertNodeIntoLeaf,
+} from '@lexical/utils';
 import {
   $addUpdateTag,
   $createParagraphNode,
@@ -316,39 +319,10 @@ export const formatCode = (editor: LexicalEditor, blockType: string) => {
         if (!$isRangeSelection(selection)) {
           return;
         }
-        const textContent = selection.getTextContent();
         const codeNode = $createCodeNode();
-        selection.insertNodes([codeNode]);
-        selection = $getSelection();
-        let extractedNodes: LexicalNode[] = [];
-        if ($isRangeSelection(selection)) {
-          selection.anchor.set(selection.anchor.key, 0, selection.anchor.type);
-          extractedNodes = selection.extract();
-          selection.insertRawText(textContent);
-        }
-        while (
-          extractedNodes.length > 0 &&
-          $isLineBreakNode(extractedNodes[0])
-        ) {
-          extractedNodes.shift();
-        }
-        while (
-          extractedNodes.length > 0 &&
-          $isLineBreakNode(extractedNodes[extractedNodes.length - 1])
-        ) {
-          extractedNodes.pop();
-        }
-        const paragraphNode = $createParagraphNode();
-        extractedNodes.forEach((node) => {
-          paragraphNode.append(node);
-        });
-        if (!$isRangeSelection(selection)) {
-          return;
-        }
-        const topLevelNode = selection.anchor
-          .getNode()
-          .getTopLevelElementOrThrow();
-        topLevelNode.insertAfter(paragraphNode);
+        const extractedNodes = selection.extract();
+        $insertNodeIntoLeaf(codeNode);
+        codeNode.append(...extractedNodes);
       }
     });
   }

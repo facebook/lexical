@@ -465,7 +465,8 @@ export async function copyToClipboard(
     return false;
   }
   const element = windowDocument.createElement('span');
-  element.style.cssText = 'position: fixed; top: -1000px;';
+  element.style.position = 'fixed';
+  element.style.top = '-1000px';
   element.append(windowDocument.createTextNode('#'));
   rootElement.append(element);
   const range = new Range();

@@ -707,8 +707,10 @@ function needsManualZoom(): boolean {
     // https://chromestatus.com/feature/5198254868529152
     // https://github.com/facebook/lexical/issues/6863
     const div = document.createElement('div');
-    div.style.cssText =
-      'position: absolute; opacity: 0; width: 100px; left: -1000px;';
+    div.style.position = 'absolute';
+    div.style.opacity = '0';
+    div.style.width = '100px';
+    div.style.left = '-1000px';
     document.body.appendChild(div);
     const noZoom = div.getBoundingClientRect();
     div.style.setProperty('zoom', '2');

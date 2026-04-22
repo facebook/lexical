@@ -36,6 +36,7 @@ import {
   addClassNamesToElement,
   ElementNode,
   isHTMLElement,
+  setDOMStyleFromCSS,
 } from 'lexical';
 import warnOnlyOnce from 'shared/warnOnlyOnce';
 
@@ -126,7 +127,7 @@ export class CodeNode extends ElementNode {
 
     const style = this.getStyle();
     if (style) {
-      element.setAttribute('style', style);
+      setDOMStyleFromCSS(element.style, style);
     }
     return element;
   }
@@ -171,12 +172,8 @@ export class CodeNode extends ElementNode {
 
     const style = this.__style;
     const prevStyle = prevNode.__style;
-    if (style) {
-      if (style !== prevStyle) {
-        dom.setAttribute('style', style);
-      }
-    } else if (prevStyle) {
-      dom.removeAttribute('style');
+    if (style !== prevStyle) {
+      setDOMStyleFromCSS(dom.style, style, prevStyle);
     }
 
     return false;
@@ -202,7 +199,7 @@ export class CodeNode extends ElementNode {
 
     const style = this.getStyle();
     if (style) {
-      element.setAttribute('style', style);
+      setDOMStyleFromCSS(element.style, style);
     }
     return {element};
   }

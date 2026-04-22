@@ -254,11 +254,21 @@ function readDragMarker(dataTransfer: DataTransfer): LexicalDragMarker | null {
   if (!raw) {
     return null;
   }
+  let parsed: unknown;
   try {
-    return JSON.parse(raw) as LexicalDragMarker;
+    parsed = JSON.parse(raw);
   } catch {
     return null;
   }
+  if (
+    parsed !== null &&
+    typeof parsed === 'object' &&
+    'editorKey' in parsed &&
+    typeof parsed.editorKey === 'string'
+  ) {
+    return {editorKey: parsed.editorKey};
+  }
+  return null;
 }
 
 function findEditorRootByKey(key: string, doc: Document): HTMLElement | null {

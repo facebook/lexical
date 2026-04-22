@@ -1026,7 +1026,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
           );
           // Mark the drag source so a drop in a different editor can remove
           // the source range to produce cut-and-paste semantics.
-          $writeDragSourceToDataTransfer(event.dataTransfer, editor, selection);
+          $writeDragSourceToDataTransfer(event.dataTransfer, editor);
         }
         return true;
       },

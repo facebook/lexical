@@ -12,6 +12,7 @@ import {
   $writeDragSourceToDataTransfer,
   setLexicalClipboardDataTransfer,
 } from '@lexical/clipboard';
+import {registerRichText} from '@lexical/rich-text';
 import {
   $createParagraphNode,
   $createRangeSelection,
@@ -82,7 +83,6 @@ function $markActiveSelectionAsDragSource(
     $writeDragSourceToDataTransfer(
       dataTransfer as unknown as DataTransfer,
       editor,
-      sel,
     );
   }
 }
@@ -357,7 +357,6 @@ describe('$handleTextDrop', () => {
         $writeDragSourceToDataTransfer(
           dataTransfer as unknown as DataTransfer,
           editor,
-          selection,
         );
         $handleRichTextDrop(event, editor);
       });
@@ -455,6 +454,8 @@ describe('$handleRichTextDrop across editors', () => {
   let destContainer: HTMLDivElement;
   let sourceEditor: LexicalEditor;
   let destEditor: LexicalEditor;
+  let unregisterSourceRichText: () => void;
+  let unregisterDestRichText: () => void;
 
   beforeEach(() => {
     caretFromPointState.current = () => null;
@@ -465,6 +466,9 @@ describe('$handleRichTextDrop across editors', () => {
     document.body.appendChild(sourceContainer);
     sourceEditor = createTestEditor();
     sourceEditor.setRootElement(sourceContainer);
+    // The synthetic deleteByDrag dispatched at the source root needs the
+    // source editor to have REMOVE_TEXT_COMMAND handlers registered.
+    unregisterSourceRichText = registerRichText(sourceEditor);
 
     destContainer = document.createElement('div');
     destContainer.setAttribute('data-lexical-editor', 'true');
@@ -472,16 +476,19 @@ describe('$handleRichTextDrop across editors', () => {
     document.body.appendChild(destContainer);
     destEditor = createTestEditor();
     destEditor.setRootElement(destContainer);
+    unregisterDestRichText = registerRichText(destEditor);
   });
 
   afterEach(() => {
+    unregisterSourceRichText();
+    unregisterDestRichText();
     sourceEditor.setRootElement(null);
     destEditor.setRootElement(null);
     document.body.removeChild(sourceContainer);
     document.body.removeChild(destContainer);
   });
 
-  test('cut-and-paste semantics when dropping from one editor into another', async () => {
+  test('inserts in the destination editor and dispatches deleteByDrag at the source root', async () => {
     let sourceTextKey = '';
     await sourceEditor.update(() => {
       const paragraph = $createParagraphNode();
@@ -518,9 +525,22 @@ describe('$handleRichTextDrop across editors', () => {
       $writeDragSourceToDataTransfer(
         dataTransfer as unknown as DataTransfer,
         sourceEditor,
-        selection,
       );
     });
+
+    // Capture the synthetic event that should be dispatched at the source
+    // root. (The source editor's actual deletion runs through Lexical's
+    // beforeinput handler, which is only registered when CAN_USE_BEFORE_INPUT
+    // is true. jsdom does not expose `getTargetRanges` on InputEvent, so the
+    // handler isn't registered in the test environment — we verify the
+    // dispatch contract here, and the end-to-end deletion is covered by the
+    // playground browser repro.)
+    const observedDispatches: InputEvent[] = [];
+    sourceContainer.addEventListener(
+      'beforeinput',
+      (e) => observedDispatches.push(e as InputEvent),
+      true,
+    );
 
     // Fire the drop on the destination editor.
     await destEditor.update(() => {
@@ -546,20 +566,12 @@ describe('$handleRichTextDrop across editors', () => {
       expect(preventDefault).toHaveBeenCalled();
     });
 
-    // Allow the source editor's scheduled update (removeText) to flush.
-    await new Promise<void>((resolve) => {
-      sourceEditor.update(
-        () => {
-          /* no-op */
-        },
-        {onUpdate: resolve},
-      );
-    });
+    expect(observedDispatches.length).toBe(1);
+    expect(observedDispatches[0].type).toBe('beforeinput');
+    expect(observedDispatches[0].inputType).toBe('deleteByDrag');
+    expect(observedDispatches[0].target).toBe(sourceContainer);
 
-    await sourceEditor.read(() => {
-      // "source" (first 6 chars) was removed, "-content" remains.
-      expect($getRoot().getTextContent()).toBe('-content');
-    });
+    // The destination editor inserted the dragged content.
     await destEditor.read(() => {
       expect($getRoot().getTextContent()).toBe('destinationsource');
     });

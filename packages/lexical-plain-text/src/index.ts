@@ -407,7 +407,7 @@ export function registerPlainText(editor: LexicalEditor): () => void {
         // Mark the drag source so a drop in a different editor can remove
         // the source range to produce cut-and-paste semantics.
         if (!selection.isCollapsed() && event.dataTransfer !== null) {
-          $writeDragSourceToDataTransfer(event.dataTransfer, editor, selection);
+          $writeDragSourceToDataTransfer(event.dataTransfer, editor);
         }
         return true;
       },

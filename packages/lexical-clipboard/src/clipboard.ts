@@ -44,7 +44,6 @@ import {
   isSelectionWithinEditor,
   LexicalEditor,
   LexicalNode,
-  NodeKey,
   PointCaret,
   RangeSelection,
   safeCast,
@@ -224,15 +223,19 @@ const LEXICAL_DRAG_MIME_TYPE = 'application/x-lexical-drag';
 
 interface LexicalDragMarker {
   editorKey: string;
-  anchor: {key: NodeKey; offset: number; type: 'text' | 'element'};
-  focus: {key: NodeKey; offset: number; type: 'text' | 'element'};
 }
 
 /**
- * Populate `dataTransfer` with a marker identifying the current editor and
- * non-collapsed RangeSelection as a drag source. Pair this with
- * {@link $handleRichTextDrop} or {@link $handlePlainTextDrop} on the drop side
- * to get cut-and-paste semantics for drags that end in a different editor.
+ * Populate `dataTransfer` with a marker identifying the current editor as a
+ * drag source. Pair this with {@link $handleRichTextDrop} or
+ * {@link $handlePlainTextDrop} on the drop side to get cut-and-paste semantics
+ * for drags that end in a different editor.
+ *
+ * Only the source editor's key needs to round-trip — the source's
+ * RangeSelection itself is preserved on the source editor between drag start
+ * and drop (Lexical suppresses selectionchange during drag), so the drop
+ * handler reads it directly via `$getSelection()` on the resolved source
+ * editor.
  *
  * Callers typically invoke this from a DRAGSTART_COMMAND handler alongside
  * {@link setLexicalClipboardDataTransfer} (so that the dragged content itself
@@ -241,21 +244,8 @@ interface LexicalDragMarker {
 export function $writeDragSourceToDataTransfer(
   dataTransfer: DataTransfer,
   editor: LexicalEditor,
-  selection: RangeSelection,
 ): void {
-  const marker: LexicalDragMarker = {
-    anchor: {
-      key: selection.anchor.key,
-      offset: selection.anchor.offset,
-      type: selection.anchor.type,
-    },
-    editorKey: editor.getKey(),
-    focus: {
-      key: selection.focus.key,
-      offset: selection.focus.offset,
-      type: selection.focus.type,
-    },
-  };
+  const marker: LexicalDragMarker = {editorKey: editor.getKey()};
   dataTransfer.setData(LEXICAL_DRAG_MIME_TYPE, JSON.stringify(marker));
 }
 
@@ -271,13 +261,13 @@ function readDragMarker(dataTransfer: DataTransfer): LexicalDragMarker | null {
   }
 }
 
-function findEditorByKey(key: string, doc: Document): LexicalEditor | null {
+function findEditorRootByKey(key: string, doc: Document): HTMLElement | null {
   const elements = doc.querySelectorAll('[data-lexical-editor="true"]');
   for (const el of Array.from(elements)) {
-    const editor = (el as unknown as {__lexicalEditor?: LexicalEditor})
+    const editor = (el as unknown as {__lexicalEditor?: {getKey: () => string}})
       .__lexicalEditor;
     if (editor && editor.getKey() === key) {
-      return editor;
+      return el as HTMLElement;
     }
   }
   return null;
@@ -396,31 +386,32 @@ function $doDrop(
     $insertDataTransfer(dataTransfer, postSelection, editor);
   }
 
-  // Cross-editor removal happens last on a separate update so the destination
-  // insert has fully committed.
+  // Cross-editor removal happens via a synthetic `beforeinput` event with
+  // inputType `deleteByDrag` dispatched at the source editor's root. The
+  // source editor's own beforeinput handler (registered by its own copy of
+  // Lexical) then runs the deletion using its own selection state and
+  // module-level helpers, so the deletion works even when the source editor
+  // is from a different version of Lexical loaded on the same page. This is
+  // the same event the browser would have fired natively if we hadn't called
+  // event.preventDefault() on the drop.
   if (marker !== null && !isSameEditorDrag) {
     const rootElement = editor.getRootElement();
     const doc = rootElement ? rootElement.ownerDocument : null;
-    const sourceEditor = doc ? findEditorByKey(marker.editorKey, doc) : null;
-    if (sourceEditor !== null) {
-      sourceEditor.update(() => {
-        const restored = $createRangeSelection();
-        restored.anchor.set(
-          marker.anchor.key,
-          marker.anchor.offset,
-          marker.anchor.type,
-        );
-        restored.focus.set(
-          marker.focus.key,
-          marker.focus.offset,
-          marker.focus.type,
-        );
-        $setSelection(restored);
-        const pending = $getSelection();
-        if ($isRangeSelection(pending) && !pending.isCollapsed()) {
-          pending.removeText();
-        }
-      });
+    const sourceRoot = doc ? findEditorRootByKey(marker.editorKey, doc) : null;
+    if (sourceRoot !== null) {
+      sourceRoot.dispatchEvent(
+        new InputEvent('beforeinput', {
+          bubbles: true,
+          cancelable: true,
+          inputType: 'deleteByDrag',
+        }),
+      );
+      // The source editor's reconciliation may try to restore DOM focus and
+      // selection to itself after the deletion. Pull focus back to the
+      // destination so the user's caret ends up where they dropped.
+      if (rootElement !== null) {
+        rootElement.focus({preventScroll: true});
+      }
     }
   }
 

@@ -351,7 +351,11 @@ const $listExport = (
           : listType === 'check'
             ? `${listMarker} [${listItemNode.getChecked() ? 'x' : ' '}] `
             : listMarker + ' ';
-      output.push(indent + prefix + exportChildren(listItemNode));
+      let childrenText = exportChildren(listItemNode);
+      if (listType !== 'number') {
+        childrenText = childrenText.replace(/^(\s{0,3}\d+)(\.\s)/, '$1\\$2');
+      }
+      output.push(indent + prefix + childrenText);
       index++;
     }
   }

@@ -405,6 +405,24 @@ function useFloatingTextFormatToolbar(
     };
   }, [updatePopup]);
 
+  // Hide the popup while a drag is in progress. Otherwise it sits on top of
+  // the drag image and the drop target, and re-renders from selectionchange
+  // as the user drags. The popup re-appears once the drag ends (dragend) or
+  // a drop completes on this page (drop).
+  const [isDragging, setIsDragging] = useState(false);
+  useEffect(() => {
+    const onDragStart = () => setIsDragging(true);
+    const onDragEnd = () => setIsDragging(false);
+    document.addEventListener('dragstart', onDragStart, true);
+    document.addEventListener('dragend', onDragEnd, true);
+    document.addEventListener('drop', onDragEnd, true);
+    return () => {
+      document.removeEventListener('dragstart', onDragStart, true);
+      document.removeEventListener('dragend', onDragEnd, true);
+      document.removeEventListener('drop', onDragEnd, true);
+    };
+  }, []);
+
   useEffect(() => {
     return mergeRegister(
       editor.registerUpdateListener(() => {
@@ -418,7 +436,7 @@ function useFloatingTextFormatToolbar(
     );
   }, [editor, updatePopup]);
 
-  if (!isText) {
+  if (!isText || isDragging) {
     return null;
   }
 

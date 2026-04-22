@@ -18,11 +18,11 @@ import {objectKlassEquals} from '@lexical/utils';
 import {
   $caretFromPoint,
   $comparePointCaretNext,
-  $createRangeSelection,
   $createTabNode,
   $getCaretRange,
   $getChildCaret,
   $getChildCaretAtIndex,
+  $getCollapsedCaretRange,
   $getEditor,
   $getNearestNodeFromDOMNode,
   $getRoot,
@@ -33,8 +33,7 @@ import {
   $isTextNode,
   $isTextPointCaret,
   $parseSerializedNode,
-  $setPointFromCaret,
-  $setSelection,
+  $setSelectionFromCaretRange,
   $splitAtPointCaretNext,
   BaseSelection,
   COMMAND_PRIORITY_CRITICAL,
@@ -387,14 +386,10 @@ function $doDrop(
 
   // Point selection at the stable drop caret and insert the DataTransfer
   // payload there.
-  const dropSelection = $createRangeSelection();
-  $setPointFromCaret(dropSelection.anchor, stableDropCaret);
-  $setPointFromCaret(dropSelection.focus, stableDropCaret);
-  $setSelection(dropSelection);
-  const postSelection = $getSelection();
-  if (postSelection !== null) {
-    $insertDataTransfer(dataTransfer, postSelection, editor);
-  }
+  const dropSelection = $setSelectionFromCaretRange(
+    $getCollapsedCaretRange(stableDropCaret),
+  );
+  $insertDataTransfer(dataTransfer, dropSelection, editor);
 
   // Cross-editor removal happens via a synthetic `beforeinput` event with
   // inputType `deleteByDrag` dispatched at the source editor's root. The

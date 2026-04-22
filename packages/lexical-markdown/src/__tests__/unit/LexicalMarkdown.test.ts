@@ -347,6 +347,11 @@ describe('Markdown', () => {
       skipExport: true,
     },
     {
+      // Bullet list item starting with number-dot pattern should be escaped (#7824)
+      html: '<ul><li value="1"><span style="white-space: pre-wrap;">1. foo</span></li></ul>',
+      md: '- 1\\. foo',
+    },
+    {
       html: '<ol><li value="1"><span style="white-space: pre-wrap;">Hello</span></li><li value="2"><span style="white-space: pre-wrap;">world</span></li></ol>',
       md: '1. Hello\n2. world',
     },

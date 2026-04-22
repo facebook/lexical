@@ -19,6 +19,7 @@ import {
   $getSelection,
   $isParagraphNode,
   $isRangeSelection,
+  $isTextNode,
   defineExtension,
   LexicalEditor,
   UNDO_COMMAND,
@@ -156,6 +157,89 @@ describe('LINK', () => {
       assert($isLinkNode(linkNode), 'First child must be a LinkNode');
       expect(linkNode.getTextContent()).toBe('hell[world](www)o');
       expect(linkNode.getURL()).toBe('link');
+    });
+  });
+});
+
+describe('CODE_SPAN_PRECEDENCE', () => {
+  test('__bold__ inside backticks is not formatted as bold', () => {
+    using editor = buildEditorFromExtensions([MarkdownShortcutTestExtension]);
+    typeMarkdown(editor, '`__bold__`');
+    editor.read(() => {
+      const paragraph = $getRoot().getFirstChildOrThrow();
+      assert($isParagraphNode(paragraph), 'Root child must be a paragraph');
+      const children = paragraph.getChildren();
+      expect(children).toHaveLength(1);
+      const textNode = children[0];
+      assert($isTextNode(textNode), 'Child must be a TextNode');
+      expect(textNode.getTextContent()).toBe('__bold__');
+      expect(textNode.hasFormat('code')).toBe(true);
+      expect(textNode.hasFormat('bold')).toBe(false);
+    });
+  });
+
+  test('**bold** inside backticks is not formatted as bold', () => {
+    using editor = buildEditorFromExtensions([MarkdownShortcutTestExtension]);
+    typeMarkdown(editor, '`**bold**`');
+    editor.read(() => {
+      const paragraph = $getRoot().getFirstChildOrThrow();
+      assert($isParagraphNode(paragraph), 'Root child must be a paragraph');
+      const children = paragraph.getChildren();
+      expect(children).toHaveLength(1);
+      const textNode = children[0];
+      assert($isTextNode(textNode), 'Child must be a TextNode');
+      expect(textNode.getTextContent()).toBe('**bold**');
+      expect(textNode.hasFormat('code')).toBe(true);
+      expect(textNode.hasFormat('bold')).toBe(false);
+    });
+  });
+
+  test('*italic* inside backticks is not formatted as italic', () => {
+    using editor = buildEditorFromExtensions([MarkdownShortcutTestExtension]);
+    typeMarkdown(editor, '`*italic*`');
+    editor.read(() => {
+      const paragraph = $getRoot().getFirstChildOrThrow();
+      assert($isParagraphNode(paragraph), 'Root child must be a paragraph');
+      const children = paragraph.getChildren();
+      expect(children).toHaveLength(1);
+      const textNode = children[0];
+      assert($isTextNode(textNode), 'Child must be a TextNode');
+      expect(textNode.getTextContent()).toBe('*italic*');
+      expect(textNode.hasFormat('code')).toBe(true);
+      expect(textNode.hasFormat('italic')).toBe(false);
+    });
+  });
+
+  test('__bold__ without backticks still formats as bold', () => {
+    using editor = buildEditorFromExtensions([MarkdownShortcutTestExtension]);
+    typeMarkdown(editor, '__bold__');
+    editor.read(() => {
+      const paragraph = $getRoot().getFirstChildOrThrow();
+      assert($isParagraphNode(paragraph), 'Root child must be a paragraph');
+      const children = paragraph.getChildren();
+      expect(children).toHaveLength(1);
+      const textNode = children[0];
+      assert($isTextNode(textNode), 'Child must be a TextNode');
+      expect(textNode.getTextContent()).toBe('bold');
+      expect(textNode.hasFormat('bold')).toBe(true);
+    });
+  });
+
+  test('__bold__ after a completed code span still formats as bold', () => {
+    using editor = buildEditorFromExtensions([MarkdownShortcutTestExtension]);
+    typeMarkdown(editor, '`code` __bold__');
+    editor.read(() => {
+      const paragraph = $getRoot().getFirstChildOrThrow();
+      assert($isParagraphNode(paragraph), 'Root child must be a paragraph');
+      const textNodes = paragraph
+        .getChildren()
+        .filter((node) => $isTextNode(node));
+      const boldNode = textNodes.find(
+        (node) => $isTextNode(node) && node.hasFormat('bold'),
+      );
+      expect(boldNode).toBeDefined();
+      assert($isTextNode(boldNode!), 'Bold node must be a TextNode');
+      expect(boldNode!.getTextContent()).toBe('bold');
     });
   });
 });

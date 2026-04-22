@@ -411,12 +411,6 @@ function $doDrop(
           inputType: 'deleteByDrag',
         }),
       );
-      // The source editor's reconciliation may try to restore DOM focus and
-      // selection to itself after the deletion. Pull focus back to the
-      // destination so the user's caret ends up where they dropped.
-      if (rootElement !== null) {
-        rootElement.focus({preventScroll: true});
-      }
     }
   }
 

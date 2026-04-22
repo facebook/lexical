@@ -17,6 +17,7 @@ import {
   SerializedDocument,
   serializedDocumentFromEditorState,
 } from '@lexical/file';
+import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
 import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
@@ -28,6 +29,7 @@ import {CONNECTED_COMMAND, TOGGLE_CONNECT_COMMAND} from '@lexical/yjs';
 import {
   $createTextNode,
   $getRoot,
+  $insertNodes,
   $isParagraphNode,
   CLEAR_EDITOR_COMMAND,
   CLEAR_HISTORY_COMMAND,
@@ -110,6 +112,10 @@ export default function ActionsPlugin({
   const [modal, showModal] = useModal();
   const showFlashMessage = useFlashMessage();
   const {isCollabActive} = useCollaborationContext();
+  const [mode, setMode] = useState<'wysiwyg' | 'markdown' | 'html'>('wysiwyg');
+  const isMarkdown = mode === 'markdown';
+  const isHtml = mode === 'html';
+
   useEffect(() => {
     if (INITIAL_SETTINGS.isCollab) {
       return;
@@ -181,6 +187,7 @@ export default function ActionsPlugin({
           undefined, // node
           shouldPreserveNewLinesInMarkdown,
         );
+        setMode('wysiwyg');
       } else {
         const markdown = $convertToMarkdownString(
           PLAYGROUND_TRANSFORMERS,
@@ -193,9 +200,35 @@ export default function ActionsPlugin({
         if (markdown.length === 0) {
           codeNode.select();
         }
+        setMode('markdown');
       }
     });
   }, [editor, shouldPreserveNewLinesInMarkdown]);
+
+  const handleHtmlToggle = useCallback(() => {
+    editor.update(() => {
+      const root = $getRoot();
+      const firstChild = root.getFirstChild();
+      if ($isCodeNode(firstChild) && firstChild.getLanguage() === 'html') {
+        const htmlString = firstChild.getTextContent();
+        const parser = new DOMParser();
+        const dom = parser.parseFromString(htmlString, 'text/html');
+        const nodes = $generateNodesFromDOM(editor, dom);
+        $getRoot().clear().select();
+        $insertNodes(nodes);
+        setMode('wysiwyg');
+      } else {
+        const html = $generateHtmlFromNodes(editor);
+        const codeNode = $createCodeNode('html');
+        codeNode.append($createTextNode(html));
+        root.clear().append(codeNode);
+        if (html.length === 0) {
+          codeNode.select();
+        }
+        setMode('html');
+      }
+    });
+  }, [editor]);
 
   return (
     <div className="actions">
@@ -280,10 +313,23 @@ export default function ActionsPlugin({
       </button>
       <button
         className="action-button"
+        data-active={isMarkdown}
+        disabled={isHtml}
         onClick={handleMarkdownToggle}
-        title="Convert From Markdown"
-        aria-label="Convert from markdown">
+        title={isMarkdown ? 'Convert From Markdown' : 'Convert To Markdown'}
+        aria-label={
+          isMarkdown ? 'Convert from markdown' : 'Convert To Markdown'
+        }>
         <i className="markdown" />
+      </button>
+      <button
+        className="action-button"
+        data-active={isHtml}
+        disabled={isMarkdown}
+        onClick={handleHtmlToggle}
+        title={isHtml ? 'Convert From HTML' : ' Convert To HTML'}
+        aria-label={isHtml ? 'Convert from html' : 'Convert to html'}>
+        <i className="html" />
       </button>
       {isCollabActive && (
         <>

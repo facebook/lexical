@@ -10,10 +10,9 @@ import type {CommandPayloadType, LexicalEditor} from 'lexical';
 
 import {
   $getHtmlContent,
-  $handleTextDrop,
+  $handlePlainTextDrop,
   $insertDataTransferForPlainText,
-  $setDragSource,
-  clearDragSource,
+  $writeDragSourceToDataTransfer,
 } from '@lexical/clipboard';
 import {DragonExtension} from '@lexical/dragon';
 import {
@@ -33,7 +32,6 @@ import {
   DELETE_CHARACTER_COMMAND,
   DELETE_LINE_COMMAND,
   DELETE_WORD_COMMAND,
-  DRAGEND_COMMAND,
   DRAGSTART_COMMAND,
   DROP_COMMAND,
   INSERT_LINE_BREAK_COMMAND,
@@ -396,31 +394,22 @@ export function registerPlainText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand<DragEvent>(
       DROP_COMMAND,
-      (event) =>
-        $handleTextDrop(event, editor, (dataTransfer, selection) =>
-          $insertDataTransferForPlainText(dataTransfer, selection),
-        ),
+      (event) => $handlePlainTextDrop(event, editor),
       COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand<DragEvent>(
       DRAGSTART_COMMAND,
-      () => {
+      (event) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
           return false;
         }
-        // Record this selection as the active drag source so a drop in a
-        // different editor can remove the dragged content from here.
-        $setDragSource(editor);
+        // Mark the drag source so a drop in a different editor can remove
+        // the source range to produce cut-and-paste semantics.
+        if (!selection.isCollapsed() && event.dataTransfer !== null) {
+          $writeDragSourceToDataTransfer(event.dataTransfer, editor, selection);
+        }
         return true;
-      },
-      COMMAND_PRIORITY_EDITOR,
-    ),
-    editor.registerCommand<DragEvent>(
-      DRAGEND_COMMAND,
-      () => {
-        clearDragSource();
-        return false;
       },
       COMMAND_PRIORITY_EDITOR,
     ),

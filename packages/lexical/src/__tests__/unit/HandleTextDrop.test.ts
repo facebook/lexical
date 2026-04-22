@@ -8,10 +8,8 @@
 
 import {
   $getClipboardDataFromSelection,
-  $handleTextDrop,
-  $insertDataTransferForRichText,
-  $setDragSource,
-  clearDragSource,
+  $handleRichTextDrop,
+  $writeDragSourceToDataTransfer,
   setLexicalClipboardDataTransfer,
 } from '@lexical/clipboard';
 import {
@@ -75,6 +73,20 @@ function getParagraphTextDOM(editor: LexicalEditor, textKey: string): Text {
   return textNode as Text;
 }
 
+function $markActiveSelectionAsDragSource(
+  dataTransfer: DataTransferMock,
+  editor: LexicalEditor,
+): void {
+  const sel = $getSelection();
+  if ($isRangeSelection(sel) && !sel.isCollapsed()) {
+    $writeDragSourceToDataTransfer(
+      dataTransfer as unknown as DataTransfer,
+      editor,
+      sel,
+    );
+  }
+}
+
 describe('$handleTextDrop', () => {
   initializeUnitTest((testEnv) => {
     beforeEach(() => {
@@ -103,11 +115,8 @@ describe('$handleTextDrop', () => {
         setCaretFromPoint(domText, 15);
         const {dataTransfer, event, preventDefault} = createDropEvent();
         dataTransfer.setData('text/plain', 'foo');
-        const handled = $handleTextDrop(
-          event,
-          editor,
-          $insertDataTransferForRichText,
-        );
+        $markActiveSelectionAsDragSource(dataTransfer, editor);
+        const handled = $handleRichTextDrop(event, editor);
         expect(handled).toBe(true);
         expect(preventDefault).toHaveBeenCalled();
       });
@@ -139,7 +148,8 @@ describe('$handleTextDrop', () => {
         setCaretFromPoint(domText, 0);
         const {dataTransfer, event} = createDropEvent();
         dataTransfer.setData('text/plain', 'foo');
-        $handleTextDrop(event, editor, $insertDataTransferForRichText);
+        $markActiveSelectionAsDragSource(dataTransfer, editor);
+        $handleRichTextDrop(event, editor);
       });
 
       await editor.read(() => {
@@ -169,11 +179,8 @@ describe('$handleTextDrop', () => {
         setCaretFromPoint(domText, 7);
         const {dataTransfer, event, preventDefault} = createDropEvent();
         dataTransfer.setData('text/plain', 'foo');
-        const handled = $handleTextDrop(
-          event,
-          editor,
-          $insertDataTransferForRichText,
-        );
+        $markActiveSelectionAsDragSource(dataTransfer, editor);
+        const handled = $handleRichTextDrop(event, editor);
         expect(handled).toBe(true);
         expect(preventDefault).toHaveBeenCalled();
       });
@@ -208,7 +215,8 @@ describe('$handleTextDrop', () => {
         setCaretFromPoint(domText, 4);
         const {dataTransfer, event} = createDropEvent();
         dataTransfer.setData('text/plain', 'source');
-        $handleTextDrop(event, editor, $insertDataTransferForRichText);
+        $markActiveSelectionAsDragSource(dataTransfer, editor);
+        $handleRichTextDrop(event, editor);
       });
 
       await editor.read(() => {
@@ -240,7 +248,8 @@ describe('$handleTextDrop', () => {
         setCaretFromPoint(domText, 6);
         const {dataTransfer, event} = createDropEvent();
         dataTransfer.setData('text/plain', 'brave ');
-        $handleTextDrop(event, editor, $insertDataTransferForRichText);
+        // No drag-source marker — this represents an external drag.
+        $handleRichTextDrop(event, editor);
       });
 
       await editor.read(() => {
@@ -261,11 +270,7 @@ describe('$handleTextDrop', () => {
       await editor.update(() => {
         const {event, preventDefault: pd} = createDropEvent();
         preventDefault = pd;
-        handled = $handleTextDrop(
-          event,
-          editor,
-          $insertDataTransferForRichText,
-        );
+        handled = $handleRichTextDrop(event, editor);
       });
       expect(handled).toBe(false);
       expect(preventDefault).not.toBeNull();
@@ -299,7 +304,8 @@ describe('$handleTextDrop', () => {
         setCaretFromPoint(domText, 15);
         const {dataTransfer, event} = createDropEvent();
         dataTransfer.setData('text/plain', 'foo');
-        $handleTextDrop(event, editor, $insertDataTransferForRichText);
+        $markActiveSelectionAsDragSource(dataTransfer, editor);
+        $handleRichTextDrop(event, editor);
       });
 
       await editor.read(() => {
@@ -334,7 +340,8 @@ describe('$handleTextDrop', () => {
       });
 
       // Populate the DataTransfer the same way DRAGSTART does — with Lexical's
-      // own serialization so custom nodes survive the drop.
+      // own serialization so custom nodes survive the drop, plus a drag-source
+      // marker so the handler treats it as a same-editor move.
       await editor.update(() => {
         const selection = $getSelection();
         invariant($isRangeSelection(selection), 'expected range selection');
@@ -347,7 +354,12 @@ describe('$handleTextDrop', () => {
           dataTransfer,
           $getClipboardDataFromSelection(selection),
         );
-        $handleTextDrop(event, editor, $insertDataTransferForRichText);
+        $writeDragSourceToDataTransfer(
+          dataTransfer as unknown as DataTransfer,
+          editor,
+          selection,
+        );
+        $handleRichTextDrop(event, editor);
       });
 
       await editor.read(() => {
@@ -425,11 +437,8 @@ describe('$handleTextDrop', () => {
         setCaretFromPoint(domText, 1);
         const {dataTransfer, event, preventDefault} = createDropEvent();
         dataTransfer.setData('text/plain', 'onetwothree');
-        const handled = $handleTextDrop(
-          event,
-          editor,
-          $insertDataTransferForRichText,
-        );
+        $markActiveSelectionAsDragSource(dataTransfer, editor);
+        const handled = $handleRichTextDrop(event, editor);
         expect(handled).toBe(true);
         expect(preventDefault).toHaveBeenCalled();
       });
@@ -441,7 +450,7 @@ describe('$handleTextDrop', () => {
   });
 });
 
-describe('$handleTextDrop across editors', () => {
+describe('$handleRichTextDrop across editors', () => {
   let sourceContainer: HTMLDivElement;
   let destContainer: HTMLDivElement;
   let sourceEditor: LexicalEditor;
@@ -449,15 +458,16 @@ describe('$handleTextDrop across editors', () => {
 
   beforeEach(() => {
     caretFromPointState.current = () => null;
-    clearDragSource();
 
     sourceContainer = document.createElement('div');
+    sourceContainer.setAttribute('data-lexical-editor', 'true');
     sourceContainer.contentEditable = 'true';
     document.body.appendChild(sourceContainer);
     sourceEditor = createTestEditor();
     sourceEditor.setRootElement(sourceContainer);
 
     destContainer = document.createElement('div');
+    destContainer.setAttribute('data-lexical-editor', 'true');
     destContainer.contentEditable = 'true';
     document.body.appendChild(destContainer);
     destEditor = createTestEditor();
@@ -469,7 +479,6 @@ describe('$handleTextDrop across editors', () => {
     destEditor.setRootElement(null);
     document.body.removeChild(sourceContainer);
     document.body.removeChild(destContainer);
-    clearDragSource();
   });
 
   test('cut-and-paste semantics when dropping from one editor into another', async () => {
@@ -485,8 +494,6 @@ describe('$handleTextDrop across editors', () => {
       selection.anchor.set(sourceTextKey, 0, 'text');
       selection.focus.set(sourceTextKey, 6, 'text'); // select "source"
       $setSelection(selection);
-      // Simulate DRAGSTART on the source editor.
-      $setDragSource(sourceEditor);
     });
 
     let destTextKey = '';
@@ -498,7 +505,8 @@ describe('$handleTextDrop across editors', () => {
       destTextKey = text.getKey();
     });
 
-    // Serialize the source selection into the DataTransfer, as DRAGSTART does.
+    // Populate the DataTransfer the same way DRAGSTART does — Lexical
+    // clipboard data + drag-source marker pointing at the source editor.
     const dataTransfer = new DataTransferMock();
     await sourceEditor.update(() => {
       const selection = $getSelection();
@@ -506,6 +514,11 @@ describe('$handleTextDrop across editors', () => {
       setLexicalClipboardDataTransfer(
         dataTransfer,
         $getClipboardDataFromSelection(selection),
+      );
+      $writeDragSourceToDataTransfer(
+        dataTransfer as unknown as DataTransfer,
+        sourceEditor,
+        selection,
       );
     });
 
@@ -528,11 +541,7 @@ describe('$handleTextDrop across editors', () => {
         preventDefault,
       } as unknown as DragEvent;
 
-      const handled = $handleTextDrop(
-        event,
-        destEditor,
-        $insertDataTransferForRichText,
-      );
+      const handled = $handleRichTextDrop(event, destEditor);
       expect(handled).toBe(true);
       expect(preventDefault).toHaveBeenCalled();
     });
@@ -567,7 +576,6 @@ describe('$handleTextDrop across editors', () => {
       selection.anchor.set(text.getKey(), 0, 'text');
       selection.focus.set(text.getKey(), 6, 'text');
       $setSelection(selection);
-      $setDragSource(sourceEditor);
     });
 
     await destEditor.update(() => {
@@ -576,9 +584,8 @@ describe('$handleTextDrop across editors', () => {
       $getRoot().clear().append(paragraph);
     });
 
-    // Simulate DRAGEND without a drop — e.g. the user hits Escape.
-    clearDragSource();
-
+    // No drop event ever fires — there is no DataTransfer to read, so the
+    // marker-based design has nothing to act on. Both editors are unchanged.
     await sourceEditor.read(() => {
       expect($getRoot().getTextContent()).toBe('source-content');
     });

@@ -28,10 +28,9 @@ import type {
 
 import {
   $getClipboardDataFromSelection,
-  $handleTextDrop,
+  $handleRichTextDrop,
   $insertDataTransferForRichText,
-  $setDragSource,
-  clearDragSource,
+  $writeDragSourceToDataTransfer,
   copyToClipboard,
   setLexicalClipboardDataTransfer,
 } from '@lexical/clipboard';
@@ -79,7 +78,6 @@ import {
   DELETE_CHARACTER_COMMAND,
   DELETE_LINE_COMMAND,
   DELETE_WORD_COMMAND,
-  DRAGEND_COMMAND,
   DRAGOVER_COMMAND,
   DRAGSTART_COMMAND,
   DROP_COMMAND,
@@ -1002,7 +1000,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
           return true;
         }
 
-        return $handleTextDrop(event, editor, $insertDataTransferForRichText);
+        return $handleRichTextDrop(event, editor);
       },
       COMMAND_PRIORITY_EDITOR,
     ),
@@ -1014,34 +1012,23 @@ export function registerRichText(editor: LexicalEditor): () => void {
         if (isFileTransfer && !$isRangeSelection(selection)) {
           return false;
         }
-        // Populate the DataTransfer with Lexical's own serialization so that
-        // custom nodes (e.g. images, decorators) survive a drop back into a
-        // Lexical editor rather than being downgraded to text/html.
         if (
           $isRangeSelection(selection) &&
           !selection.isCollapsed() &&
           event.dataTransfer !== null
         ) {
+          // Populate Lexical's own serialization so custom nodes (images,
+          // decorators) survive a drop back into a Lexical editor rather than
+          // being downgraded to text/html.
           setLexicalClipboardDataTransfer(
             event.dataTransfer,
             $getClipboardDataFromSelection(selection),
           );
+          // Mark the drag source so a drop in a different editor can remove
+          // the source range to produce cut-and-paste semantics.
+          $writeDragSourceToDataTransfer(event.dataTransfer, editor, selection);
         }
-        // Record this selection as the active drag source so a drop in a
-        // different editor can remove the dragged content from here.
-        $setDragSource(editor);
         return true;
-      },
-      COMMAND_PRIORITY_EDITOR,
-    ),
-    editor.registerCommand<DragEvent>(
-      DRAGEND_COMMAND,
-      () => {
-        // Clear any recorded drag source; cancelled drags leave it untouched
-        // otherwise. A successful cross-editor drop clears the source itself
-        // when it fires, making this idempotent.
-        clearDragSource();
-        return false;
       },
       COMMAND_PRIORITY_EDITOR,
     ),

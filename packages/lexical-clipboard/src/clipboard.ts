@@ -17,22 +17,25 @@ import {$addNodeStyle, $sliceSelectedTextNodeContent} from '@lexical/selection';
 import {objectKlassEquals} from '@lexical/utils';
 import {
   $caretFromPoint,
+  $comparePointCaretNext,
   $createRangeSelection,
   $createTabNode,
   $getCaretRange,
   $getChildCaret,
+  $getChildCaretAtIndex,
   $getEditor,
   $getNearestNodeFromDOMNode,
-  $getNodeByKey,
   $getRoot,
   $getSelection,
+  $getTextPointCaret,
   $isElementNode,
   $isRangeSelection,
   $isTextNode,
   $isTextPointCaret,
-  $normalizeSelection__EXPERIMENTAL,
   $parseSerializedNode,
+  $setPointFromCaret,
   $setSelection,
+  $splitAtPointCaretNext,
   BaseSelection,
   COMMAND_PRIORITY_CRITICAL,
   COPY_COMMAND,
@@ -42,6 +45,7 @@ import {
   LexicalEditor,
   LexicalNode,
   NodeKey,
+  PointCaret,
   RangeSelection,
   safeCast,
   SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
@@ -216,218 +220,107 @@ export function $insertDataTransferForRichText(
   }
 }
 
-interface DropLocation {
-  key: NodeKey;
-  offset: number;
-  type: 'text' | 'element';
+const LEXICAL_DRAG_MIME_TYPE = 'application/x-lexical-drag';
+
+interface LexicalDragMarker {
+  editorKey: string;
+  anchor: {key: NodeKey; offset: number; type: 'text' | 'element'};
+  focus: {key: NodeKey; offset: number; type: 'text' | 'element'};
 }
 
-function $resolveDropLocation(event: DragEvent): DropLocation | null {
-  const eventRange = caretFromPoint(event.clientX, event.clientY);
-  if (eventRange === null) {
+/**
+ * Populate `dataTransfer` with a marker identifying the current editor and
+ * non-collapsed RangeSelection as a drag source. Pair this with
+ * {@link $handleRichTextDrop} or {@link $handlePlainTextDrop} on the drop side
+ * to get cut-and-paste semantics for drags that end in a different editor.
+ *
+ * Callers typically invoke this from a DRAGSTART_COMMAND handler alongside
+ * {@link setLexicalClipboardDataTransfer} (so that the dragged content itself
+ * round-trips with full node fidelity).
+ */
+export function $writeDragSourceToDataTransfer(
+  dataTransfer: DataTransfer,
+  editor: LexicalEditor,
+  selection: RangeSelection,
+): void {
+  const marker: LexicalDragMarker = {
+    anchor: {
+      key: selection.anchor.key,
+      offset: selection.anchor.offset,
+      type: selection.anchor.type,
+    },
+    editorKey: editor.getKey(),
+    focus: {
+      key: selection.focus.key,
+      offset: selection.focus.offset,
+      type: selection.focus.type,
+    },
+  };
+  dataTransfer.setData(LEXICAL_DRAG_MIME_TYPE, JSON.stringify(marker));
+}
+
+function readDragMarker(dataTransfer: DataTransfer): LexicalDragMarker | null {
+  const raw = dataTransfer.getData(LEXICAL_DRAG_MIME_TYPE);
+  if (!raw) {
     return null;
   }
-  const {offset: domOffset, node: domNode} = eventRange;
-  const node = $getNearestNodeFromDOMNode(domNode);
+  try {
+    return JSON.parse(raw) as LexicalDragMarker;
+  } catch {
+    return null;
+  }
+}
+
+function findEditorByKey(key: string, doc: Document): LexicalEditor | null {
+  const elements = doc.querySelectorAll('[data-lexical-editor="true"]');
+  for (const el of Array.from(elements)) {
+    const editor = (el as unknown as {__lexicalEditor?: LexicalEditor})
+      .__lexicalEditor;
+    if (editor && editor.getKey() === key) {
+      return editor;
+    }
+  }
+  return null;
+}
+
+function $resolveDropPointCaret(event: DragEvent): null | PointCaret<'next'> {
+  const hit = caretFromPoint(event.clientX, event.clientY);
+  if (hit === null) {
+    return null;
+  }
+  const node = $getNearestNodeFromDOMNode(hit.node);
   if (node === null) {
     return null;
   }
   if ($isTextNode(node)) {
-    return {key: node.getKey(), offset: domOffset, type: 'text'};
+    return $getTextPointCaret(node, 'next', hit.offset);
+  }
+  if ($isElementNode(node)) {
+    return $getChildCaretAtIndex(node, hit.offset, 'next');
   }
   const parent = node.getParent();
   if (parent === null) {
     return null;
   }
-  return {
-    key: parent.getKey(),
-    offset: node.getIndexWithinParent() + 1,
-    type: 'element',
-  };
+  return $getChildCaretAtIndex(parent, node.getIndexWithinParent() + 1, 'next');
 }
 
-function $selectionFromDropLocation(
-  location: DropLocation,
-): RangeSelection | null {
-  if ($getNodeByKey(location.key) === null) {
-    return null;
-  }
-  const selection = $createRangeSelection();
-  selection.anchor.set(location.key, location.offset, location.type);
-  selection.focus.set(location.key, location.offset, location.type);
-  return $normalizeSelection__EXPERIMENTAL(selection);
-}
-
-function $isDropInsideSourceRange(
-  source: RangeSelection,
-  drop: DropLocation,
+function $isDropCaretInsideSelection(
+  dropCaret: PointCaret<'next'>,
+  selection: RangeSelection,
 ): boolean {
-  const dropNode = $getNodeByKey(drop.key);
-  if (dropNode === null) {
-    return false;
-  }
-
-  const isBackward = source.isBackward();
-  const start = isBackward ? source.focus : source.anchor;
-  const end = isBackward ? source.anchor : source.focus;
-
-  // Direct offset comparison for a drop that shares the same key as a point of
-  // the source.
-  const isAtStartBoundary =
-    drop.key === start.key &&
-    drop.type === start.type &&
-    drop.offset === start.offset;
-  const isAtEndBoundary =
-    drop.key === end.key &&
-    drop.type === end.type &&
-    drop.offset === end.offset;
-  if (isAtStartBoundary || isAtEndBoundary) {
-    return false;
-  }
-
-  if (
-    drop.key === start.key &&
-    start.type === 'text' &&
-    drop.type === 'text' &&
-    drop.offset <= start.offset
-  ) {
-    return false;
-  }
-  if (
-    drop.key === end.key &&
-    end.type === 'text' &&
-    drop.type === 'text' &&
-    drop.offset >= end.offset
-  ) {
-    return false;
-  }
-  if (
-    drop.key === start.key &&
-    start.type === 'element' &&
-    drop.type === 'element' &&
-    drop.offset <= start.offset
-  ) {
-    return false;
-  }
-  if (
-    drop.key === end.key &&
-    end.type === 'element' &&
-    drop.type === 'element' &&
-    drop.offset >= end.offset
-  ) {
-    return false;
-  }
-
-  // If the drop node itself (or any ancestor) is contained within the source
-  // range, the drop is inside the source.
-  const sourceKeys = new Set(source.getNodes().map((n) => n.getKey()));
-  if (sourceKeys.has(drop.key)) {
-    return true;
-  }
-  for (
-    let node = dropNode.getParent();
-    node !== null;
-    node = node.getParent()
-  ) {
-    if (sourceKeys.has(node.getKey())) {
-      return true;
-    }
-  }
-  return false;
+  const anchorCaret = $caretFromPoint(selection.anchor, 'next');
+  const focusCaret = $caretFromPoint(selection.focus, 'next');
+  const isBackward = selection.isBackward();
+  const startCaret = isBackward ? focusCaret : anchorCaret;
+  const endCaret = isBackward ? anchorCaret : focusCaret;
+  return (
+    $comparePointCaretNext(startCaret, dropCaret) < 0 &&
+    $comparePointCaretNext(dropCaret, endCaret) < 0
+  );
 }
 
-function $adjustDropLocationForRemoval(
-  source: RangeSelection,
-  drop: DropLocation,
-): DropLocation {
-  const isBackward = source.isBackward();
-  const start = isBackward ? source.focus : source.anchor;
-  const end = isBackward ? source.anchor : source.focus;
-
-  // Same-text-node source and drop: the text node shortens when we remove the
-  // source, so offsets past the removed range need to shift left.
-  if (
-    drop.type === 'text' &&
-    start.type === 'text' &&
-    end.type === 'text' &&
-    start.key === end.key &&
-    start.key === drop.key &&
-    drop.offset >= end.offset
-  ) {
-    return {...drop, offset: drop.offset - (end.offset - start.offset)};
-  }
-
-  // Same-parent element-point source and drop: children indexed past the
-  // removed range shift left by the number of removed children.
-  if (
-    drop.type === 'element' &&
-    start.type === 'element' &&
-    end.type === 'element' &&
-    start.key === end.key &&
-    start.key === drop.key &&
-    drop.offset >= end.offset
-  ) {
-    return {...drop, offset: drop.offset - (end.offset - start.offset)};
-  }
-
-  return drop;
-}
-
-interface DragSourceRef {
-  editor: LexicalEditor;
-  selection: RangeSelection;
-}
-
-let activeDragSource: DragSourceRef | null = null;
-
-/**
- * Register the current RangeSelection as the source of an active drag so that
- * a drop in a different editor can remove the dragged content from the source.
- * Must be called within an editor update or read context (it reads the current
- * selection). If there is no non-collapsed RangeSelection, the drag source is
- * cleared.
- *
- * Callers should pair this with {@link clearDragSource} on DRAGEND to avoid
- * stale state if the drag is cancelled.
- */
-export function $setDragSource(editor: LexicalEditor): void {
-  const selection = $getSelection();
-  if (!$isRangeSelection(selection) || selection.isCollapsed()) {
-    activeDragSource = null;
-    return;
-  }
-  activeDragSource = {editor, selection: selection.clone()};
-}
-
-/**
- * Clear any previously recorded drag source. Safe to call at any time.
- */
-export function clearDragSource(): void {
-  activeDragSource = null;
-}
-
-/**
- * Implements drag-and-drop behavior for an editor. When the drop originates
- * from a non-collapsed RangeSelection in the same editor, the selected content
- * is moved to the drop location. When the drop originates from a different
- * editor that called {@link $setDragSource} on DRAGSTART, the content is
- * inserted at the drop location and removed from the source editor (cut-and-
- * paste semantics across editors). Otherwise the DataTransfer content is
- * inserted at the drop location (e.g. for external drags). Returns true when
- * the drop was handled (and event.preventDefault was called), otherwise false.
- *
- * For full-fidelity internal moves (including custom nodes like images),
- * callers should populate the DataTransfer with Lexical's serialization format
- * on DRAGSTART via {@link setLexicalClipboardDataTransfer} and
- * {@link $getClipboardDataFromSelection}.
- *
- * @param event the DragEvent that triggered the drop.
- * @param editor the LexicalEditor receiving the drop.
- * @param $insertDataTransfer strategy for inserting the DataTransfer payload
- *   at the drop selection (e.g. {@link $insertDataTransferForRichText} or
- *   {@link $insertDataTransferForPlainText}).
- */
-export function $handleTextDrop(
+function $doDrop(
   event: DragEvent,
   editor: LexicalEditor,
   $insertDataTransfer: (
@@ -441,72 +334,127 @@ export function $handleTextDrop(
     return false;
   }
 
-  const dropLocation = $resolveDropLocation(event);
-  if (dropLocation === null) {
+  const dropCaret = $resolveDropPointCaret(event);
+  if (dropCaret === null) {
     return false;
   }
 
-  const sourceSelection = $getSelection();
-  const isInternalMove =
-    $isRangeSelection(sourceSelection) && !sourceSelection.isCollapsed();
-  const crossEditorSource =
-    activeDragSource !== null && activeDragSource.editor !== editor
-      ? activeDragSource
-      : null;
-
-  if (isInternalMove) {
-    if ($isDropInsideSourceRange(sourceSelection, dropLocation)) {
-      // Dropping inside the drag source is a no-op, but preventDefault is
-      // still needed so the browser doesn't run its default insertion.
-      event.preventDefault();
-      return true;
-    }
-
-    const adjustedDrop = $adjustDropLocationForRemoval(
-      sourceSelection,
-      dropLocation,
-    );
-
-    sourceSelection.removeText();
-
-    const dropSelection = $selectionFromDropLocation(adjustedDrop);
-    if (dropSelection === null) {
-      return false;
-    }
-    $setSelection(dropSelection);
-  } else {
-    const dropSelection = $selectionFromDropLocation(dropLocation);
-    if (dropSelection === null) {
-      return false;
-    }
-    $setSelection(dropSelection);
-  }
-
+  const marker = readDragMarker(dataTransfer);
+  const isSameEditorDrag =
+    marker !== null && marker.editorKey === editor.getKey();
   const currentSelection = $getSelection();
-  if (currentSelection !== null) {
-    $insertDataTransfer(dataTransfer, currentSelection, editor);
+
+  // For a same-editor drag, reject drops strictly inside the dragged range
+  // (dropping into your own selection should be a no-op).
+  if (
+    isSameEditorDrag &&
+    $isRangeSelection(currentSelection) &&
+    !currentSelection.isCollapsed() &&
+    $isDropCaretInsideSelection(dropCaret, currentSelection)
+  ) {
+    event.preventDefault();
+    return true;
   }
 
-  // For cross-editor drags, remove the content from the source editor. We
-  // schedule this as a separate update on the source editor so it runs after
-  // the destination-editor update completes.
-  if (crossEditorSource !== null) {
-    const sourceEditor = crossEditorSource.editor;
-    const sourceSelectionSnapshot = crossEditorSource.selection;
-    activeDragSource = null;
-    sourceEditor.update(() => {
-      $setSelection(sourceSelectionSnapshot.clone());
-      const pending = $getSelection();
-      if ($isRangeSelection(pending) && !pending.isCollapsed()) {
-        pending.removeText();
-      }
-    });
-  } else {
-    activeDragSource = null;
+  // Split at the drop caret so we have a stable NodeCaret boundary that
+  // survives text-content mutations in its siblings.
+  const stableDropCaret = $splitAtPointCaretNext(dropCaret);
+  if (stableDropCaret === null) {
+    return false;
+  }
+
+  // Remove the source content.
+  //  - Same-editor drag: the current selection is the dragged range; remove
+  //    it now so the insert below lands in the cleaned-up tree.
+  //  - Cross-editor drag: the source lives in a different editor; schedule a
+  //    separate update there after we finish inserting here.
+  if (
+    isSameEditorDrag &&
+    $isRangeSelection(currentSelection) &&
+    !currentSelection.isCollapsed()
+  ) {
+    currentSelection.removeText();
+  }
+
+  // If the drop caret's origin was swept away by the source removal (which can
+  // happen when the drop lands exactly at a source boundary inside a text node
+  // whose content was entirely selected), abort — the user saw "no-op" either
+  // way, and we shouldn't try to insert into a detached node.
+  if (!stableDropCaret.origin.isAttached()) {
+    event.preventDefault();
+    return true;
+  }
+
+  // Point selection at the stable drop caret and insert the DataTransfer
+  // payload there.
+  const dropSelection = $createRangeSelection();
+  $setPointFromCaret(dropSelection.anchor, stableDropCaret);
+  $setPointFromCaret(dropSelection.focus, stableDropCaret);
+  $setSelection(dropSelection);
+  const postSelection = $getSelection();
+  if (postSelection !== null) {
+    $insertDataTransfer(dataTransfer, postSelection, editor);
+  }
+
+  // Cross-editor removal happens last on a separate update so the destination
+  // insert has fully committed.
+  if (marker !== null && !isSameEditorDrag) {
+    const rootElement = editor.getRootElement();
+    const doc = rootElement ? rootElement.ownerDocument : null;
+    const sourceEditor = doc ? findEditorByKey(marker.editorKey, doc) : null;
+    if (sourceEditor !== null) {
+      sourceEditor.update(() => {
+        const restored = $createRangeSelection();
+        restored.anchor.set(
+          marker.anchor.key,
+          marker.anchor.offset,
+          marker.anchor.type,
+        );
+        restored.focus.set(
+          marker.focus.key,
+          marker.focus.offset,
+          marker.focus.type,
+        );
+        $setSelection(restored);
+        const pending = $getSelection();
+        if ($isRangeSelection(pending) && !pending.isCollapsed()) {
+          pending.removeText();
+        }
+      });
+    }
   }
 
   event.preventDefault();
   return true;
+}
+
+/**
+ * Drop handler for rich-text editors. Inserts the DataTransfer payload via
+ * {@link $insertDataTransferForRichText} at the drop caret and, when the drag
+ * originated from a Lexical editor (marked via
+ * {@link $writeDragSourceToDataTransfer} on DRAGSTART), removes the source
+ * range — producing cut-and-paste semantics whether the drop is in the same
+ * editor or a different one on the same page.
+ */
+export function $handleRichTextDrop(
+  event: DragEvent,
+  editor: LexicalEditor,
+): boolean {
+  return $doDrop(event, editor, $insertDataTransferForRichText);
+}
+
+/**
+ * Drop handler for plain-text editors. Same semantics as
+ * {@link $handleRichTextDrop} but inserts via
+ * {@link $insertDataTransferForPlainText}.
+ */
+export function $handlePlainTextDrop(
+  event: DragEvent,
+  editor: LexicalEditor,
+): boolean {
+  return $doDrop(event, editor, (dataTransfer, selection) =>
+    $insertDataTransferForPlainText(dataTransfer, selection),
+  );
 }
 
 function trustHTML(html: string): string | TrustedHTML {

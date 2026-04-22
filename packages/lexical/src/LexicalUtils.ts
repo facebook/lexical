@@ -9,6 +9,7 @@
 import type {
   CommandPayloadType,
   EditorConfig,
+  EditorDOMRenderConfig,
   EditorThemeClasses,
   Klass,
   LexicalCommand,
@@ -44,6 +45,7 @@ import {
   $isTabNode,
   $isTextNode,
   DecoratorNode,
+  DEFAULT_EDITOR_DOM_CONFIG,
   ElementNode,
   HISTORY_MERGE_TAG,
   LineBreakNode,
@@ -700,10 +702,7 @@ export function getEditorsToPropagate(
   for (
     let currentEditor: LexicalEditor | null = editor;
     currentEditor !== null;
-    // Do not propagate commands to parent editors that are
-    // currently updating as that will trigger an early commit
-    // and can corrupt the nodeMap by doing GC too early
-    currentEditor = currentEditor._updating ? null : currentEditor._parentEditor
+    currentEditor = currentEditor._parentEditor
   ) {
     editorsToPropagate.push(currentEditor);
   }
@@ -1015,6 +1014,11 @@ export function isExactShortcutMatch(
   if (event.key.length === 1 && event.key.charCodeAt(0) <= 127) {
     // For ASCII keys we must not match it by `event.code` because it would break remapped layouts (English (US) Dvorak, etc.).
     return false;
+  }
+
+  // Fallback for number keys
+  if (event.code.startsWith('Digit') && /^\d$/.test(expectedKey)) {
+    return event.code === `Digit${expectedKey}`;
   }
 
   const expectedCode = 'Key' + expectedKey.toUpperCase();
@@ -1358,7 +1362,7 @@ export function dispatchCommand<TCommand extends LexicalCommand<unknown>>(
   command: TCommand,
   payload: CommandPayloadType<TCommand>,
 ): boolean {
-  return triggerCommandListeners(editor, command, payload);
+  return triggerCommandListeners(editor, command, payload, editor);
 }
 
 export function getElementByKeyOrThrow(
@@ -1529,7 +1533,15 @@ export function getWindow(editor: LexicalEditor): Window {
   return windowObj;
 }
 
-export function $isInlineElementOrDecoratorNode(node: LexicalNode): boolean {
+const InlineNodeBrand: unique symbol = Symbol.for('@lexical/InlineNodeBrand');
+
+export function $isInlineElementOrDecoratorNode<T>(node: LexicalNode): node is (
+  | ElementNode
+  | DecoratorNode<T>
+) & {
+  isInline(): true;
+  [InlineNodeBrand]: never;
+} {
   return (
     ($isElementNode(node) && node.isInline()) ||
     ($isDecoratorNode(node) && node.isInline())
@@ -1875,7 +1887,9 @@ export function isDocumentFragment(x: unknown): x is DocumentFragment {
  * @param node - the Dom Node to check
  * @returns if the Dom Node is an inline node
  */
-export function isInlineDomNode(node: Node) {
+export function isInlineDomNode(
+  node: Node,
+): node is (HTMLElement | Text) & {[InlineDOMBrand]: never} {
   const inlineNodes = new RegExp(
     /^(a|abbr|acronym|b|cite|code|del|em|i|ins|kbd|label|mark|output|q|ruby|s|samp|span|strong|sub|sup|time|u|tt|var|#text)$/,
     'i',
@@ -1888,7 +1902,12 @@ export function isInlineDomNode(node: Node) {
  * @param node - the Dom Node to check
  * @returns if the Dom Node is a block node
  */
-export function isBlockDomNode(node: Node) {
+const BlockDOMBrand = Symbol.for('@lexical/BlockDOMBrand');
+const InlineDOMBrand = Symbol.for('@lexical/InlineDOMBrand');
+
+export function isBlockDomNode(
+  node: Node,
+): node is HTMLElement & {[BlockDOMBrand]: never} {
   const blockNodes = new RegExp(
     /^(address|article|aside|blockquote|canvas|dd|div|dl|dt|fieldset|figcaption|figure|footer|form|h1|h2|h3|h4|h5|h6|header|hr|li|main|nav|noscript|ol|p|pre|section|table|td|tfoot|ul|video)$/,
     'i',
@@ -1935,6 +1954,15 @@ export function INTERNAL_$isBlock(
  */
 export function $getEditor(): LexicalEditor {
   return getActiveEditor();
+}
+
+/**
+ * @internal @experimental
+ */
+export function $getEditorDOMRenderConfig(
+  editor: LexicalEditor = $getEditor(),
+): EditorDOMRenderConfig {
+  return editor._config.dom || DEFAULT_EDITOR_DOM_CONFIG;
 }
 
 /** @internal */
@@ -2257,3 +2285,21 @@ export const $findMatchingParent: {
 
   return null;
 };
+
+export function $createChildrenArray(
+  element: ElementNode,
+  nodeMap: null | NodeMap,
+): Array<NodeKey> {
+  const children = [];
+  let nodeKey = element.__first;
+  while (nodeKey !== null) {
+    const node =
+      nodeMap === null ? $getNodeByKey(nodeKey) : nodeMap.get(nodeKey);
+    if (node === null || node === undefined) {
+      invariant(false, '$createChildrenArray: node does not exist in nodeMap');
+    }
+    children.push(nodeKey);
+    nodeKey = node.__next;
+  }
+  return children;
+}

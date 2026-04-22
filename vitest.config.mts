@@ -7,31 +7,14 @@
  */
 
 import react from '@vitejs/plugin-react';
-import tsconfigPaths from 'vite-tsconfig-paths';
-import {defineConfig, mergeConfig, Plugin} from 'vitest/config';
-
-function lexicalTestMocks(): Plugin {
-  return {
-    config(config, _env) {
-      return mergeConfig(config, {
-        resolve: {
-          alias: {
-            'shared/devInvariant':
-              'packages/shared/src/__mocks__/devInvariant.ts',
-            'shared/invariant': 'packages/shared/src/__mocks__/invariant.ts',
-            'shared/warnOnlyOnce':
-              'packages/shared/src/__mocks__/warnOnlyOnce.ts',
-          },
-          conditions: ['development', 'import', 'module', 'browser', 'default'],
-          dedupe: ['react', 'react-dom'],
-        },
-      });
-    },
-    name: 'lexicalTestMocks',
-  };
-}
+import {defineConfig} from 'vitest/config';
 
 export default defineConfig({
+  resolve: {
+    conditions: ['development', 'import', 'module', 'browser', 'default'],
+    dedupe: ['react', 'react-dom'],
+    tsconfigPaths: true,
+  },
   test: {
     clearMocks: true,
     projects: [
@@ -42,11 +25,7 @@ export default defineConfig({
           __DEV__: true,
         },
         extends: true,
-        plugins: [
-          react(),
-          tsconfigPaths({projects: ['./tsconfig.test.json']}),
-          lexicalTestMocks(),
-        ],
+        plugins: [react()],
         test: {
           env: {
             LEXICAL_VERSION: JSON.stringify(

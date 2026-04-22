@@ -6,6 +6,26 @@
  *
  */
 
+@import url('navbar.css');
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+@import 'tailwindcss/theme.css';
+@import 'tailwindcss/utilities.css';
+
+@source '../../../../examples/website-*/src/**/*.{js,jsx,ts,tsx}';
+@source '../../../../examples/agent-example/src/**/*.{js,jsx,ts,tsx}';
+
+@custom-variant dark (&:is(html[data-theme='dark'] *));
+
 /**
  * Any CSS included here will be global. The classic template
  * bundles Infima by default. Infima is a CSS framework designed to
@@ -22,6 +42,7 @@
   --ifm-color-primary-lighter: #aed4ff;
   --ifm-color-primary-lightest: #e6f2ff;
   --ifm-code-font-size: 95%;
+  --ifm-navbar-height: 5rem;
   --ifm-footer-padding-vertical: 4rem;
   --docusaurus-highlighted-code-line-bg: rgba(255, 255, 0, 0.3);
 }
@@ -30,14 +51,21 @@
   --docusaurus-highlighted-code-line-bg: rgba(255, 255, 0, 0.3);
 }
 
-.footer__links {
-  margin-bottom: 3rem;
+.text-gradient {
+  @apply bg-linear-to-r from-[#76b6ff] to-[#00c896] bg-clip-text text-transparent;
 }
 
-html[data-theme='dark'] .button--outline:hover {
-  color: white;
+.styled-button {
+  @apply w-fit rounded-md bg-(--ifm-color-primary-dark) text-sm font-bold text-black transition-colors duration-300 hover:bg-(--ifm-color-primary) hover:text-black/60 hover:no-underline;
 }
 
-html[data-theme='dark'] .button--text:hover {
-  color: rgba(0, 0, 0, 0.5);
+/* Reset Infima link styles inside Lexical editors so Tailwind classes take effect */
+[contenteditable] a {
+  color: inherit;
+  text-decoration: inherit;
+}
+
+/* This removes a weird margin that appears when scrolling code blocks until the end. */
+.code-block-container-no-margin [class*='codeBlockContainer'] {
+  margin-bottom: 0;
 }

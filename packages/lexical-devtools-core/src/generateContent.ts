@@ -107,49 +107,55 @@ export function generateContent(
 
   if (exportDOM) {
     let htmlString = '';
-    editorState.read(() => {
-      htmlString = printPrettyHTML($generateHtmlFromNodes(editor));
-    });
+    editorState.read(
+      () => {
+        htmlString = printPrettyHTML($generateHtmlFromNodes(editor));
+      },
+      {editor},
+    );
     return htmlString;
   }
 
   let res = ' root\n';
 
-  const selectionString = editorState.read(() => {
-    const selection = $getSelection();
+  const selectionString = editorState.read(
+    () => {
+      const selection = $getSelection();
 
-    visitTree($getRoot(), (node: LexicalNode, indent: Array<string>) => {
-      const nodeKey = node.getKey();
-      const nodeKeyDisplay = `(${nodeKey})`;
-      const typeDisplay = node.getType() || '';
-      const isSelected = node.isSelected();
+      visitTree($getRoot(), (node: LexicalNode, indent: Array<string>) => {
+        const nodeKey = node.getKey();
+        const nodeKeyDisplay = `(${nodeKey})`;
+        const typeDisplay = node.getType() || '';
+        const isSelected = node.isSelected();
 
-      res += `${isSelected ? SYMBOLS.selectedLine : ' '} ${indent.join(
-        ' ',
-      )} ${nodeKeyDisplay} ${typeDisplay} ${printNode(
-        node,
-        customPrintNode,
-        obfuscateText,
-      )}\n`;
+        res += `${isSelected ? SYMBOLS.selectedLine : ' '} ${indent.join(
+          ' ',
+        )} ${nodeKeyDisplay} ${typeDisplay} ${printNode(
+          node,
+          customPrintNode,
+          obfuscateText,
+        )}\n`;
 
-      res += $printSelectedCharsLine({
-        indent,
-        isSelected,
-        node,
-        nodeKeyDisplay,
-        selection,
-        typeDisplay,
+        res += $printSelectedCharsLine({
+          indent,
+          isSelected,
+          node,
+          nodeKeyDisplay,
+          selection,
+          typeDisplay,
+        });
       });
-    });
 
-    return selection === null
-      ? ': null'
-      : $isRangeSelection(selection)
-        ? printRangeSelection(selection)
-        : $isTableSelection(selection)
-          ? printTableSelection(selection)
-          : printNodeSelection(selection);
-  });
+      return selection === null
+        ? ': null'
+        : $isRangeSelection(selection)
+          ? printRangeSelection(selection)
+          : $isTableSelection(selection)
+            ? printTableSelection(selection)
+            : printNodeSelection(selection);
+    },
+    {editor},
+  );
 
   res += '\n selection' + selectionString;
 

@@ -46,8 +46,8 @@ import {
   $internalCreateSelection,
   $isNodeSelection,
   $isRangeSelection,
+  $updateDOMSelection,
   applySelectionTransforms,
-  updateDOMSelection,
 } from './LexicalSelection';
 import {
   $getCompositionKey,
@@ -120,7 +120,8 @@ export function getActiveEditor(): LexicalEditor {
       'Unable to find an active editor. ' +
         'This method can only be used ' +
         'synchronously during the callback of ' +
-        'editor.update() or editor.read().%s',
+        'editor.update(), editor.read(), or ' +
+        'editor.getEditorState().read(..., {editor}).%s',
       collectBuildInformation(),
     );
   }
@@ -511,6 +512,13 @@ export function $commitPendingUpdates(
   const shouldSkipDOM = editor._headless || rootElement === null;
 
   if (pendingEditorState === null) {
+    // Even without a pending state, flush any deferred callbacks that
+    // may have been added by a prior update (e.g. via $onUpdate inside
+    // editor.focus()). This can happen when another commit consumed
+    // the pending editor state before this scheduled commit ran.
+    if (editor._deferred.length > 0) {
+      triggerDeferredUpdateCallbacks(editor, editor._deferred);
+    }
     return;
   }
 
@@ -641,7 +649,7 @@ export function $commitPendingUpdates(
         if (blockCursorElement !== null) {
           removeDOMBlockCursorElement(blockCursorElement, editor, rootElement);
         }
-        updateDOMSelection(
+        $updateDOMSelection(
           currentSelection,
           pendingSelection,
           editor,
@@ -785,26 +793,31 @@ export function triggerCommandListeners<
   editor: LexicalEditor,
   type: TCommand,
   payload: CommandPayloadType<TCommand>,
+  fromEditor: LexicalEditor,
 ): boolean {
   const editors = getEditorsToPropagate(editor);
+  let updatingParentEditor: undefined | LexicalEditor;
 
   for (let i = 4; i >= 0; i--) {
     for (let e = 0; e < editors.length; e++) {
       const currentEditor = editors[e];
+      if (e > 0 && currentEditor._updating) {
+        // We can't synchronously update an already updating editor without
+        // creating an early commit that will potentially corrupt the
+        // nodeMap by doing GC too early.
+        updatingParentEditor = currentEditor;
+        break;
+      }
       const commandListeners = currentEditor._commands;
       const listenerInPriorityOrder = commandListeners.get(type);
 
       if (listenerInPriorityOrder !== undefined) {
         const listenersSet = listenerInPriorityOrder[i];
-
-        if (listenersSet !== undefined) {
-          const listeners = Array.from(listenersSet);
-          const listenersLength = listeners.length;
-
+        if (listenersSet.size > 0) {
           let returnVal = false;
           updateEditorSync(currentEditor, () => {
-            for (let j = 0; j < listenersLength; j++) {
-              if (listeners[j](payload, editor)) {
+            for (const listener of listenersSet) {
+              if (listener(payload, fromEditor)) {
                 returnVal = true;
                 return;
               }
@@ -816,6 +829,14 @@ export function triggerCommandListeners<
         }
       }
     }
+  }
+  if (updatingParentEditor) {
+    // Preserve the fairly broken legacy semantics of command delegation to fix
+    // https://github.com/facebook/lexical/issues/8306
+    updatingParentEditor.update(() => {
+      // This will be async so we can't know the result
+      triggerCommandListeners(updatingParentEditor, type, payload, fromEditor);
+    });
   }
 
   return false;

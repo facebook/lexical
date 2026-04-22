@@ -5,15 +5,29 @@
     "module": "esnext",
     "jsx": "react-jsx",
     "moduleResolution": "bundler",
-    "downlevelIteration": true,
     "noEmit": true,
     "strict": true,
-    "baseUrl": ".",
     "typeRoots": ["node_modules/@types"],
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "allowJs": true,
     "paths": {
+      "@examples/agent-example/Editor": [
+        "./examples/agent-example/src/Editor.tsx"
+      ],
+      "@examples/website-chat/Editor": [
+        "./examples/website-chat/src/Editor.tsx"
+      ],
+      "@examples/website-notion/Editor": [
+        "./examples/website-notion/src/Editor.tsx"
+      ],
+      "@examples/website-rich-input/Editor": [
+        "./examples/website-rich-input/src/Editor.tsx"
+      ],
+      "@examples/website-toolbar/Editor": [
+        "./examples/website-toolbar/src/Editor.tsx"
+      ],
+      "@site/*": ["./packages/lexical-website/*"],
       "lexical": ["./packages/lexical/src/index.ts"],
       "@lexical/clipboard": ["./packages/lexical-clipboard/src/index.ts"],
       "@lexical/code": ["./packages/lexical-code/src/index.ts"],
@@ -176,6 +190,9 @@
       "@lexical/react/useExtensionComponent": [
         "./packages/lexical-react/src/useExtensionComponent.tsx"
       ],
+      "@lexical/react/useExtensionSignalValue": [
+        "./packages/lexical-react/src/useExtensionSignalValue.ts"
+      ],
       "@lexical/react/useLexicalEditable": [
         "./packages/lexical-react/src/useLexicalEditable.ts"
       ],
@@ -251,6 +268,9 @@
       "@lexical/overflow/src": ["./packages/lexical-overflow/src"],
       "@lexical/plain-text/src": ["./packages/lexical-plain-text/src"],
       "@lexical/react/src": ["./packages/lexical-react/src"],
+      "@lexical/react/src/__tests__/utils": [
+        "./packages/lexical-react/src/__tests__/utils/index.tsx"
+      ],
       "@lexical/rich-text/src": ["./packages/lexical-rich-text/src"],
       "@lexical/selection/src": ["./packages/lexical-selection/src"],
       "@lexical/selection/src/__tests__/utils": [
@@ -271,7 +291,8 @@
     "**/dist/**",
     "**/npm/**",
     "**/node_modules/**",
-    "./packages/lexical-devtools/**"
+    "./packages/lexical-devtools/**",
+    "./packages/lexical-website/**"
   ],
   "typedocOptions": {"logLevel": "Verbose"},
   "ts-node": {"require": ["tsconfig-paths/register"], "transpileOnly": true}

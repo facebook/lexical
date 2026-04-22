@@ -7,6 +7,6 @@
  * @flow strict
  */
 
-type Props = $ReadOnly<{}>;
+type Props = Readonly<{}>;
 
 declare export function HorizontalRulePlugin(props: Props): null;

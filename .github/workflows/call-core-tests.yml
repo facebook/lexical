@@ -19,16 +19,14 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
+      - uses: pnpm/action-setup@v6
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - run: pnpm run ci-check
       - run: pnpm run build
       - run: pnpm run build-www
       - run: pnpm run --filter @lexical/website build
-      - run: pnpm run --filter @lexical/playground build-vercel
+      - run: pnpm run --filter lexical-playground build-vercel
 
   unit:
     runs-on: ubuntu-latest
@@ -43,15 +41,13 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
+      - uses: pnpm/action-setup@v6
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Install React ${{ matrix.override-react-version }}
         if: matrix.override-react-version != ''
         # This should be safe since we are caching pnpm store and not node_modules
         run: |
-          node ./scripts/override-react.js --version=${{ matrix.override-react-version }}
+          node ./scripts/override-react.mjs --version=${{ matrix.override-react-version }}
           grep version node_modules/{react,react-dom}/package.json
       - run: pnpm run test-unit

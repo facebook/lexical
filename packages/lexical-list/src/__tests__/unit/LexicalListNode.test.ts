@@ -14,13 +14,13 @@ import {
   ListItemNode,
   ListNode,
 } from '@lexical/list';
+import {waitForReact} from '@lexical/react/src/__tests__/utils';
 import {$createTextNode, $getRoot, ParagraphNode, TextNode} from 'lexical';
 import {
   expectHtmlToBeEqual,
   html,
   initializeUnitTest,
 } from 'lexical/src/__tests__/utils';
-import {waitForReact} from 'packages/lexical-react/src/__tests__/unit/utils';
 import {assert, describe, expect, test} from 'vitest';
 
 const editorConfig = Object.freeze({

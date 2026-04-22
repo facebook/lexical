@@ -14,11 +14,20 @@ import type {
   DOMExportOutputMap,
   NodeKey,
 } from './LexicalNode';
+import type {ElementDOMSlot} from './nodes/LexicalElementNode';
 
 import invariant from 'shared/invariant';
 
-import {$getRoot, $getSelection, mergeRegister, TextNode} from '.';
+import {
+  $getRoot,
+  $getSelection,
+  $isElementNode,
+  BaseSelection,
+  mergeRegister,
+  TextNode,
+} from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
+import {DequeSet} from './LexicalDequeSet';
 import {cloneEditorState, createEmptyEditorState} from './LexicalEditorState';
 import {
   addRootElementEvents,
@@ -47,6 +56,7 @@ import {
   getCachedTypeToNodeMap,
   getDefaultView,
   getDOMSelection,
+  getRegisteredNode,
   getStaticNodeConfig,
   hasOwnExportDOM,
   hasOwnStaticMethod,
@@ -183,6 +193,12 @@ export interface EditorThemeClasses {
   tableSelected?: EditorThemeClassName;
   tableSelection?: EditorThemeClassName;
   text?: TextNodeThemeClasses;
+  collaboration?: {
+    cursor?: EditorThemeClassName;
+    cursorName?: EditorThemeClassName;
+    selection?: EditorThemeClassName;
+    selectionBg?: EditorThemeClassName;
+  };
   embedBlock?: {
     base?: EditorThemeClassName;
     focus?: EditorThemeClassName;
@@ -192,11 +208,12 @@ export interface EditorThemeClasses {
   [key: string]: any;
 }
 
-export type EditorConfig = {
+export interface EditorConfig {
+  dom?: EditorDOMRenderConfig;
   disableEvents?: boolean;
   namespace: string;
   theme: EditorThemeClasses;
-};
+}
 
 export type LexicalNodeReplacement = {
   replace: Klass<LexicalNode>;
@@ -217,7 +234,54 @@ export type HTMLConfig = {
  */
 export type LexicalNodeConfig = Klass<LexicalNode> | LexicalNodeReplacement;
 
-export type CreateEditorArgs = {
+/** @internal @experimental */
+export interface EditorDOMRenderConfig {
+  /** @internal @experimental */
+  $createDOM: <T extends LexicalNode>(
+    node: T,
+    editor: LexicalEditor,
+  ) => HTMLElement;
+  /** @internal @experimental */
+  $getDOMSlot: <T extends LexicalNode>(
+    node: T,
+    dom: HTMLElement,
+    editor: LexicalEditor,
+  ) => ElementDOMSlot<HTMLElement>;
+  /** @internal @experimental */
+  $exportDOM: <T extends LexicalNode>(
+    node: T,
+    editor: LexicalEditor,
+  ) => DOMExportOutput;
+  /** @internal @experimental */
+  $extractWithChild: <T extends LexicalNode>(
+    node: T,
+    childNode: LexicalNode,
+    selection: null | BaseSelection,
+    destination: 'clone' | 'html',
+    editor: LexicalEditor,
+  ) => boolean;
+  /** @internal @experimental */
+  $updateDOM: <T extends LexicalNode>(
+    nextNode: T,
+    prevNode: T,
+    dom: HTMLElement,
+    editor: LexicalEditor,
+  ) => boolean;
+  /** @internal @experimental */
+  $shouldInclude: <T extends LexicalNode>(
+    node: T,
+    selection: null | BaseSelection,
+    editor: LexicalEditor,
+  ) => boolean;
+  /** @internal @experimental */
+  $shouldExclude: <T extends LexicalNode>(
+    node: T,
+    selection: null | BaseSelection,
+    editor: LexicalEditor,
+  ) => boolean;
+}
+
+export interface CreateEditorArgs {
   disableEvents?: boolean;
   editorState?: EditorState;
   namespace?: string;
@@ -227,7 +291,8 @@ export type CreateEditorArgs = {
   editable?: boolean;
   theme?: EditorThemeClasses;
   html?: HTMLConfig;
-};
+  dom?: Partial<EditorDOMRenderConfig>;
+}
 
 export type RegisteredNodes = Map<string, RegisteredNode>;
 
@@ -358,12 +423,61 @@ export type CommandListener<P> = (payload: P, editor: LexicalEditor) => boolean;
 export type EditableListener = (editable: boolean) => void | (() => void);
 
 export type CommandListenerPriority = 0 | 1 | 2 | 3 | 4;
+export type CommandListenerPriorityBefore =
+  | typeof COMMAND_PRIORITY_BEFORE_CRITICAL
+  | typeof COMMAND_PRIORITY_BEFORE_EDITOR
+  | typeof COMMAND_PRIORITY_BEFORE_HIGH
+  | typeof COMMAND_PRIORITY_BEFORE_LOW
+  | typeof COMMAND_PRIORITY_BEFORE_NORMAL;
 
+/**
+ * {@link LexicalEditor.registerCommand} listener added to the end of the editor priority queue (after critical, high, normal, low)
+ */
 export const COMMAND_PRIORITY_EDITOR = 0;
+/**
+ * {@link LexicalEditor.registerCommand} listener added to the end of the low priority queue (after critical, high, normal; before editor)
+ */
 export const COMMAND_PRIORITY_LOW = 1;
+/**
+ * {@link LexicalEditor.registerCommand} listener added to the end of the normal priority queue (after critical, high; before low, editor)
+ */
 export const COMMAND_PRIORITY_NORMAL = 2;
+/**
+ * {@link LexicalEditor.registerCommand} listener added to the end of the high priority queue (after critical; before normal, low, editor)
+ */
 export const COMMAND_PRIORITY_HIGH = 3;
+/**
+ * {@link LexicalEditor.registerCommand} listener added to the end of the critical priority queue (before high, normal, low, editor)
+ */
 export const COMMAND_PRIORITY_CRITICAL = 4;
+/**
+ * {@link LexicalEditor.registerCommand} listener added to the beginning of the editor priority queue (after critical, high, normal, low)
+ */
+export const COMMAND_PRIORITY_BEFORE_EDITOR = -8;
+/**
+ * {@link LexicalEditor.registerCommand} listener added to the beginning of the low priority queue (after critical, high, normal; before editor)
+ */
+export const COMMAND_PRIORITY_BEFORE_LOW = -7;
+/**
+ * {@link LexicalEditor.registerCommand} listener added to the beginning of the normal priority queue (after critical, high; before low, editor)
+ */
+export const COMMAND_PRIORITY_BEFORE_NORMAL = -6;
+/**
+ * {@link LexicalEditor.registerCommand} listener added to the beginning of the high priority queue (after critical; before normal, low, editor)
+ */
+export const COMMAND_PRIORITY_BEFORE_HIGH = -5;
+/**
+ * {@link LexicalEditor.registerCommand} listener added to the beginning of the critical priority queue (before high, normal, low, editor)
+ */
+export const COMMAND_PRIORITY_BEFORE_CRITICAL = -4;
+
+type Tuple5<T> = readonly [T, T, T, T, T];
+
+function normalizePriority(
+  priority: CommandListenerPriority | CommandListenerPriorityBefore,
+): CommandListenerPriority {
+  return (priority & 7) as CommandListenerPriority;
+}
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export type LexicalCommand<TPayload> = {
@@ -393,9 +507,12 @@ export type LexicalCommand<TPayload> = {
 export type CommandPayloadType<TCommand extends LexicalCommand<unknown>> =
   TCommand extends LexicalCommand<infer TPayload> ? TPayload : never;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyCommandListener = CommandListener<any>;
+
 type Commands = Map<
   LexicalCommand<unknown>,
-  Array<Set<CommandListener<unknown>>>
+  Tuple5<DequeSet<AnyCommandListener>>
 >;
 
 export type ListenerMap<T> = Map<T, undefined | (() => void)>;
@@ -548,6 +665,36 @@ export function getTransformSetFromKlass(
   return transforms;
 }
 
+/** @internal @experimental */
+export const DEFAULT_EDITOR_DOM_CONFIG: EditorDOMRenderConfig = {
+  $createDOM: (node, editor) => node.createDOM(editor._config, editor),
+  $exportDOM: (node, editor) => {
+    const registeredNode = getRegisteredNode(editor, node.getType());
+    // Use HTMLConfig overrides, if available.
+    return registeredNode && registeredNode.exportDOM !== undefined
+      ? registeredNode.exportDOM(editor, node)
+      : node.exportDOM(editor);
+  },
+  $extractWithChild: (node, childNode, selection, destination, _editor) =>
+    $isElementNode(node) &&
+    node.extractWithChild(childNode, selection, destination),
+  $getDOMSlot: (node, dom, _editor) => {
+    invariant(
+      $isElementNode(node),
+      '$getDOMSlot called on a non-ElementNode (key %s type %s)',
+      node.getKey(),
+      node.getType(),
+    );
+    return node.getDOMSlot(dom);
+  },
+  $shouldExclude: (node, _selection, _editor) =>
+    $isElementNode(node) && node.excludeFromCopy('html'),
+  $shouldInclude: (node, selection, _editor) =>
+    selection ? node.isSelected(selection) : true,
+  $updateDOM: (nextNode, prevNode, dom, editor) =>
+    nextNode.updateDOM(prevNode, dom, editor._config),
+};
+
 /**
  * Creates a new LexicalEditor attached to a single contentEditable (provided in the config). This is
  * the lowest-level initialization API for a LexicalEditor. If you're using React or another framework,
@@ -664,6 +811,10 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
     registeredNodes,
     {
       disableEvents,
+      dom: {
+        ...DEFAULT_EDITOR_DOM_CONFIG,
+        ...(editorConfig && editorConfig.dom),
+      },
       namespace,
       theme,
     },
@@ -950,7 +1101,7 @@ export class LexicalEditor {
   registerCommand<P>(
     command: LexicalCommand<P>,
     listener: CommandListener<P>,
-    priority: CommandListenerPriority,
+    priority: CommandListenerPriority | CommandListenerPriorityBefore,
   ): () => void {
     if (priority === undefined) {
       invariant(false, 'Listener for type "command" requires a "priority".');
@@ -960,11 +1111,11 @@ export class LexicalEditor {
 
     if (!commandsMap.has(command)) {
       commandsMap.set(command, [
-        new Set(),
-        new Set(),
-        new Set(),
-        new Set(),
-        new Set(),
+        new DequeSet(),
+        new DequeSet(),
+        new DequeSet(),
+        new DequeSet(),
+        new DequeSet(),
       ]);
     }
 
@@ -978,10 +1129,16 @@ export class LexicalEditor {
       );
     }
 
-    const listeners = listenersInPriorityOrder[priority];
-    listeners.add(listener as CommandListener<unknown>);
+    const normalizedPriority = normalizePriority(priority);
+
+    const listeners = listenersInPriorityOrder[normalizedPriority];
+    if (normalizedPriority !== priority) {
+      listeners.addFront(listener);
+    } else {
+      listeners.addBack(listener);
+    }
     return () => {
-      listeners.delete(listener as CommandListener<unknown>);
+      listeners.delete(listener);
 
       if (
         listenersInPriorityOrder.every(

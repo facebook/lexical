@@ -8,7 +8,7 @@
     "lexical",
     "editor"
   ],
-  "version": "0.42.0",
+  "version": "0.43.0",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -43,7 +43,7 @@
     }
   },
   "devDependencies": {
-    "@types/eslint": "^8.56.9",
+    "@types/eslint": "^9.6.1",
     "@types/estree": "^1.0.6"
   },
   "module": "LexicalEslintPlugin.mjs"

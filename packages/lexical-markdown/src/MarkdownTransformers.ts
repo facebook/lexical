@@ -351,7 +351,11 @@ const $listExport = (
           : listType === 'check'
             ? `${listMarker} [${listItemNode.getChecked() ? 'x' : ' '}] `
             : listMarker + ' ';
-      output.push(indent + prefix + exportChildren(listItemNode));
+      let childrenText = exportChildren(listItemNode);
+      if (listType !== 'number') {
+        childrenText = childrenText.replace(/^(\s{0,3}\d+)(\.\s)/, '$1\\$2');
+      }
+      output.push(indent + prefix + childrenText);
       index++;
     }
   }
@@ -767,7 +771,8 @@ export function normalizeMarkdown(
   const sanitizedLines: string[] = [];
 
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trimEnd();
+    const rawLine = lines[i];
+    const line = rawLine.trimEnd();
     const lastLine = sanitizedLines[sanitizedLines.length - 1];
 
     // Code blocks of ```single line``` don't toggle the inCodeBlock flag
@@ -785,7 +790,7 @@ export function normalizeMarkdown(
 
     // If we are inside a code block, keep the line unchanged
     if (inCodeBlock) {
-      sanitizedLines.push(line);
+      sanitizedLines.push(rawLine);
       continue;
     }
 
@@ -810,7 +815,13 @@ export function normalizeMarkdown(
       ENDS_WITH(TAG_START_REGEX).test(lastLine) ||
       CODE_END_REGEX.test(lastLine)
     ) {
-      sanitizedLines.push(line);
+      // When not merging, preserve trailing whitespace (e.g. hard line-break
+      // markers "  " or non-breaking spaces). Whitespace-only lines still
+      // collapse to '' because trimEnd() already reduced them, so they
+      // continue to act as paragraph separators.
+      sanitizedLines.push(
+        !shouldMergeAdjacentLines && line !== '' ? rawLine : line,
+      );
     } else {
       sanitizedLines[sanitizedLines.length - 1] =
         lastLine + ' ' + line.trimStart();

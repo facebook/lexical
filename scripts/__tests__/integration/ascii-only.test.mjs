@@ -10,7 +10,7 @@ import fs from 'fs-extra';
 import {glob} from 'glob';
 import {describe, expect, test} from 'vitest';
 
-import {packagesManager} from '../../shared/packagesManager.js';
+import {packagesManager} from '../../shared/packagesManager.mjs';
 
 describe('prod ascii-only check', () => {
   for (const pkg of packagesManager.getPublicPackages()) {
@@ -21,6 +21,7 @@ describe('prod ascii-only check', () => {
       expect(files).not.toHaveLength(0);
       expect(
         files.filter((fn) =>
+          // eslint-disable-next-line no-control-regex
           /[^\x00-\x7f]/.test(fs.readFileSync(fn, {encoding: 'utf8'})),
         ),
       ).toHaveLength(0);

@@ -8,7 +8,7 @@
     "rich-text"
   ],
   "license": "MIT",
-  "version": "0.42.0",
+  "version": "0.43.0",
   "dependencies": {
     "@floating-ui/react": "^0.27.16",
     "@lexical/devtools-core": "workspace:*",
@@ -32,7 +32,13 @@
   },
   "peerDependencies": {
     "react": ">=17.x",
-    "react-dom": ">=17.x"
+    "react-dom": ">=17.x",
+    "yjs": ">=13.5.22"
+  },
+  "peerDependenciesMeta": {
+    "yjs": {
+      "optional": true
+    }
   },
   "repository": {
     "type": "git",
@@ -1388,6 +1394,36 @@
         "development": "./useLexicalExtensionComponent.dev.js",
         "production": "./useLexicalExtensionComponent.prod.js",
         "default": "./useLexicalExtensionComponent.js"
+      }
+    },
+    "./useExtensionSignalValue": {
+      "import": {
+        "types": "./useExtensionSignalValue.d.ts",
+        "development": "./useLexicalExtensionSignalValue.dev.mjs",
+        "production": "./useLexicalExtensionSignalValue.prod.mjs",
+        "node": "./useLexicalExtensionSignalValue.node.mjs",
+        "default": "./useLexicalExtensionSignalValue.mjs"
+      },
+      "require": {
+        "types": "./useExtensionSignalValue.d.ts",
+        "development": "./useLexicalExtensionSignalValue.dev.js",
+        "production": "./useLexicalExtensionSignalValue.prod.js",
+        "default": "./useLexicalExtensionSignalValue.js"
+      }
+    },
+    "./useExtensionSignalValue.js": {
+      "import": {
+        "types": "./useExtensionSignalValue.d.ts",
+        "development": "./useLexicalExtensionSignalValue.dev.mjs",
+        "production": "./useLexicalExtensionSignalValue.prod.mjs",
+        "node": "./useLexicalExtensionSignalValue.node.mjs",
+        "default": "./useLexicalExtensionSignalValue.mjs"
+      },
+      "require": {
+        "types": "./useExtensionSignalValue.d.ts",
+        "development": "./useLexicalExtensionSignalValue.dev.js",
+        "production": "./useLexicalExtensionSignalValue.prod.js",
+        "default": "./useLexicalExtensionSignalValue.js"
       }
     },
     "./useLexicalEditable": {

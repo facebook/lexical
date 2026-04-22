@@ -154,13 +154,53 @@ Source code: [examples/react-rich-collab](https://github.com/facebook/lexical/tr
 - [`CommentPlugin`](https://github.com/facebook/lexical/tree/main/packages/lexical-playground/src/plugins/CommentPlugin) - features use of the separate provider and Yjs room to sync comments.
 - [`ImageComponent`](https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/nodes/ImageComponent.tsx) - features use of the `LexicalNestedComposer` paired with `CollaborationPlugin`.
 - [`PollOptionComponent`](https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/nodes/PollComponent.tsx) - showcases poll implementation using `clientID` from Yjs context.
-- [`StickyPlugin`](https://github.com/facebook/lexical/tree/main/packages/lexical-playground/src/plugins/StickyPlugin) - features use of the `LexicalNestedComposer` paired with `CollaborationPlugin` as well as sticky note position real-time sync.
+- [`StickyComponent`](https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/nodes/StickyComponent.tsx) - features use of the `LexicalNestedComposer` paired with `CollaborationPlugin` as well as sticky note position real-time sync.
 
 :::note
 
 While these "playground" plugins aren't production ready - they serve as a great example of collaborative Lexical capabilities as well as provide a good starting point.
 
 :::
+
+## Custom node property syncing
+
+`@lexical/yjs` syncs custom node properties by constructing a fresh node instance and inspecting its **own enumerable properties**. This means every property that should be synced across peers must be assigned in the constructor, even if the initial value is `undefined`.
+
+:::warning
+
+Declaring a class property with TypeScript's optional syntax (`foo?: Type`) does **not** guarantee the property exists as an own enumerable property on the instance. Under TypeScript's default compilation settings (target < ES2022 without `useDefineForClassFields`), such declarations produce no initialization code.
+
+:::
+
+### What to do
+
+Always initialize every node property in the constructor. Conditional initialization such as `if (someValue !== undefined) this.__someValue = someValue` is not enough, because the default construction path still needs to create the property.
+
+For example:
+
+```ts
+// ✅ Correct — property is guaranteed to be an own property
+class MyNode extends ElementNode {
+  __someValue: string | undefined;
+
+  constructor(someValue?: string, key?: NodeKey) {
+    super(key);
+    this.__someValue = someValue; // explicitly initialized
+  }
+}
+
+// ❌ Incorrect — property may not exist as an own property
+class MyNode extends ElementNode {
+  __someValue?: string; // optional syntax without initialization
+
+  constructor(key?: NodeKey) {
+    super(key);
+    // __someValue is never assigned → won't be synced via yjs
+  }
+}
+```
+
+If you use [`NodeState`](../concepts/node-state.md) for your custom properties, this concern does not apply. `NodeState` values are synced correctly without relying on constructor-created enumerable properties.
 
 ## Yjs providers
 

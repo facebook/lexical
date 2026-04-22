@@ -8,9 +8,13 @@
 
 import {Window as HappyDOMWindow} from 'happy-dom';
 
-function createWindow(): typeof globalThis.window {
+function createWindow(): typeof globalThis.window & HappyDOMWindow {
   // @ts-expect-error -- DOMWindow is not exactly Window
   return new HappyDOMWindow();
+}
+
+function destroyWindow(window: HappyDOMWindow): void {
+  void window.happyDOM.close();
 }
 
 /**
@@ -27,7 +31,7 @@ function createWindow(): typeof globalThis.window {
  */
 export function withDOM<T>(f: (window: typeof globalThis.window) => T): T {
   const prevWindow = globalThis.window;
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- handle recursive case
+
   if (prevWindow) {
     return f(globalThis.window);
   }
@@ -49,6 +53,6 @@ export function withDOM<T>(f: (window: typeof globalThis.window) => T): T {
     globalThis.MutationObserver = prevMutationObserver;
     globalThis.document = prevDocument;
     globalThis.window = prevWindow;
-    newWindow.close();
+    destroyWindow(newWindow);
   }
 }

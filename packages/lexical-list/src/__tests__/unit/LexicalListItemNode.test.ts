@@ -6,11 +6,22 @@
  *
  */
 
+import {$generateNodesFromDOM} from '@lexical/html';
+import {
+  $createTableCellNode,
+  $createTableNode,
+  $createTableRowNode,
+} from '@lexical/table';
 import {
   $createParagraphNode,
   $createRangeSelection,
   $createTextNode,
   $getRoot,
+  $getSelection,
+  $insertNodes,
+  $isElementNode,
+  $isParagraphNode,
+  $isRangeSelection,
   TextNode,
 } from 'lexical';
 import {
@@ -18,12 +29,13 @@ import {
   html,
   initializeUnitTest,
 } from 'lexical/src/__tests__/utils';
-import {beforeEach, describe, expect, it, test} from 'vitest';
+import {assert, beforeEach, describe, expect, it, test} from 'vitest';
 
 import {
   $createListItemNode,
   $createListNode,
   $isListItemNode,
+  $isListNode,
   ListItemNode,
   ListNode,
 } from '../..';
@@ -1489,6 +1501,353 @@ describe('LexicalListItemNode tests', () => {
           '</ol>' +
           '</div>',
       );
+    });
+
+    describe('ListItemNode $transform wraps orphan ListItemNodes', () => {
+      test('wraps a single orphan ListItemNode under root in a ListNode', () => {
+        const {editor} = testEnv;
+
+        editor.update(
+          () => {
+            $getRoot().append(
+              $createListItemNode().append($createTextNode('orphan')),
+            );
+          },
+          {discrete: true},
+        );
+
+        editor.read(() => {
+          const wrapper = $getRoot().getFirstChild();
+          assert($isListNode(wrapper), 'orphan <li> should be wrapped in list');
+          expect(wrapper.getListType()).toBe('bullet');
+        });
+
+        expectHtmlToBeEqual(
+          testEnv.innerHTML,
+          html`
+            <ul dir="auto">
+              <li value="1">
+                <span data-lexical-text="true">orphan</span>
+              </li>
+            </ul>
+          `,
+        );
+      });
+
+      test('wraps adjacent orphan ListItemNodes in a single ListNode', () => {
+        const {editor} = testEnv;
+
+        editor.update(
+          () => {
+            $getRoot().append(
+              $createListItemNode().append($createTextNode('a')),
+              $createListItemNode().append($createTextNode('b')),
+              $createListItemNode().append($createTextNode('c')),
+            );
+          },
+          {discrete: true},
+        );
+
+        expectHtmlToBeEqual(
+          testEnv.innerHTML,
+          html`
+            <ul dir="auto">
+              <li value="1"><span data-lexical-text="true">a</span></li>
+              <li value="2"><span data-lexical-text="true">b</span></li>
+              <li value="3"><span data-lexical-text="true">c</span></li>
+            </ul>
+          `,
+        );
+      });
+
+      test('does not merge orphan ListItemNodes separated by a ParagraphNode', () => {
+        const {editor} = testEnv;
+
+        editor.update(
+          () => {
+            $getRoot().append(
+              $createListItemNode().append($createTextNode('a')),
+              $createParagraphNode().append($createTextNode('middle')),
+              $createListItemNode().append($createTextNode('b')),
+            );
+          },
+          {discrete: true},
+        );
+
+        expectHtmlToBeEqual(
+          testEnv.innerHTML,
+          html`
+            <ul dir="auto">
+              <li value="1"><span data-lexical-text="true">a</span></li>
+            </ul>
+            <p dir="auto"><span data-lexical-text="true">middle</span></p>
+            <ul dir="auto">
+              <li value="1"><span data-lexical-text="true">b</span></li>
+            </ul>
+          `,
+        );
+      });
+
+      test('parses HTML with orphan <li> outside of <ul>', () => {
+        const {editor} = testEnv;
+        const parser = new DOMParser();
+        const input = html`
+          <div>
+            <ul>
+              <li>test</li>
+              <li>test</li>
+              <li>test</li>
+            </ul>
+            hello world
+            <li>test</li>
+          </div>
+        `;
+
+        editor.update(
+          () => {
+            $getRoot().clear().select();
+            const dom = parser.parseFromString(input, 'text/html');
+            $insertNodes($generateNodesFromDOM(editor, dom));
+          },
+          {discrete: true},
+        );
+
+        expectHtmlToBeEqual(
+          testEnv.innerHTML,
+          html`
+            <ul dir="auto">
+              <li value="1"><span data-lexical-text="true">test</span></li>
+              <li value="2"><span data-lexical-text="true">test</span></li>
+              <li value="3"><span data-lexical-text="true">test</span></li>
+            </ul>
+            <p dir="auto">
+              <span data-lexical-text="true">hello world</span>
+            </p>
+            <ul dir="auto">
+              <li value="1"><span data-lexical-text="true">test</span></li>
+            </ul>
+          `,
+        );
+      });
+
+      test('preserves the selection on the orphan when it is wrapped', () => {
+        const {editor} = testEnv;
+
+        editor.update(
+          () => {
+            const text = $createTextNode('orphan');
+            $getRoot()
+              .clear()
+              .append(
+                $createParagraphNode().append($createTextNode('hello world')),
+                $createListItemNode().append(text),
+              );
+            text.select(2, 4);
+          },
+          {discrete: true},
+        );
+
+        editor.read(() => {
+          const selection = $getSelection();
+          assert(
+            $isRangeSelection(selection),
+            'selection should be a RangeSelection',
+          );
+          const {anchor, focus} = selection;
+          expect(anchor.getNode().getTextContent()).toBe('orphan');
+          expect(anchor.offset).toBe(2);
+          expect(focus.getNode().getTextContent()).toBe('orphan');
+          expect(focus.offset).toBe(4);
+        });
+      });
+
+      test('preserves a selection anchored outside the orphan', () => {
+        const {editor} = testEnv;
+
+        editor.update(
+          () => {
+            const helloText = $createTextNode('hello world');
+            $getRoot()
+              .clear()
+              .append(
+                $createParagraphNode().append(helloText),
+                $createListItemNode().append($createTextNode('orphan')),
+              );
+            helloText.select(3, 5);
+          },
+          {discrete: true},
+        );
+
+        editor.read(() => {
+          const selection = $getSelection();
+          assert(
+            $isRangeSelection(selection),
+            'selection should be a RangeSelection',
+          );
+          const {anchor, focus} = selection;
+          expect(anchor.getNode().getTextContent()).toBe('hello world');
+          expect(anchor.offset).toBe(3);
+          expect(focus.getNode().getTextContent()).toBe('hello world');
+          expect(focus.offset).toBe(5);
+        });
+      });
+
+      test('wraps orphan ListItemNode inside a paragraph with no siblings', () => {
+        const {editor} = testEnv;
+
+        editor.update(
+          () => {
+            $getRoot()
+              .clear()
+              .append(
+                $createParagraphNode().append(
+                  $createListItemNode().append($createTextNode('item')),
+                ),
+              );
+          },
+          {discrete: true},
+        );
+        editor.read(() => {
+          const root = $getRoot();
+          expect(root.getChildrenSize()).toBe(1);
+          const [list] = root.getChildren();
+          assert($isListNode(list));
+          expect(list.getChildrenSize()).toBe(1);
+          const [listItem] = list.getChildren();
+          assert($isListItemNode(listItem));
+          expect(listItem.getTextContent()).toBe('item');
+        });
+      });
+
+      test('wraps orphan ListItemNode inside a paragraph with prev siblings', () => {
+        const {editor} = testEnv;
+
+        editor.update(
+          () => {
+            $getRoot()
+              .clear()
+              .append(
+                $createParagraphNode().append(
+                  $createTextNode('before'),
+                  $createListItemNode().append($createTextNode('item')),
+                ),
+              );
+          },
+          {discrete: true},
+        );
+        editor.read(() => {
+          const root = $getRoot();
+          expect(root.getChildrenSize()).toBe(2);
+          const [p, list] = root.getChildren();
+          assert($isParagraphNode(p));
+          expect(p.getTextContent()).toBe('before');
+          assert($isListNode(list));
+          expect(list.getChildrenSize()).toBe(1);
+          const [listItem] = list.getChildren();
+          assert($isListItemNode(listItem));
+          expect(listItem.getTextContent()).toBe('item');
+        });
+      });
+
+      test('wraps orphan ListItemNode inside a paragraph with next siblings', () => {
+        const {editor} = testEnv;
+
+        editor.update(
+          () => {
+            $getRoot()
+              .clear()
+              .append(
+                $createParagraphNode().append(
+                  $createListItemNode().append($createTextNode('item')),
+                  $createTextNode('after'),
+                ),
+              );
+          },
+          {discrete: true},
+        );
+        editor.read(() => {
+          const root = $getRoot();
+          expect(root.getChildrenSize()).toBe(2);
+          const [list, p] = root.getChildren();
+          assert($isParagraphNode(p));
+          expect(p.getTextContent()).toBe('after');
+          assert($isListNode(list));
+          expect(list.getChildrenSize()).toBe(1);
+          const [listItem] = list.getChildren();
+          assert($isListItemNode(listItem));
+          expect(listItem.getTextContent()).toBe('item');
+        });
+      });
+
+      test('wraps orphan ListItemNode inside a paragraph with both siblings', () => {
+        const {editor} = testEnv;
+
+        editor.update(
+          () => {
+            $getRoot()
+              .clear()
+              .append(
+                $createParagraphNode().append(
+                  $createTextNode('before'),
+                  $createListItemNode().append($createTextNode('item')),
+                  $createTextNode('after'),
+                ),
+              );
+          },
+          {discrete: true},
+        );
+        editor.read(() => {
+          const root = $getRoot();
+          expect(root.getChildrenSize()).toBe(3);
+          const [p0, list, p1] = root.getChildren();
+          assert($isParagraphNode(p0));
+          expect(p0.getTextContent()).toBe('before');
+          assert($isParagraphNode(p1));
+          expect(p1.getTextContent()).toBe('after');
+          assert($isListNode(list));
+          expect(list.getChildrenSize()).toBe(1);
+          const [listItem] = list.getChildren();
+          assert($isListItemNode(listItem));
+          expect(listItem.getTextContent()).toBe('item');
+        });
+      });
+
+      test('wraps orphan ListItemNode inside a shadow-root table cell', () => {
+        const {editor} = testEnv;
+
+        editor.update(
+          () => {
+            const cell = $createTableCellNode().append(
+              $createListItemNode().append($createTextNode('orphan')),
+            );
+            $getRoot()
+              .clear()
+              .append(
+                $createTableNode().append($createTableRowNode().append(cell)),
+              );
+          },
+          {discrete: true},
+        );
+
+        editor.read(() => {
+          const table = $getRoot().getFirstChild();
+          assert($isElementNode(table), 'root first child is an element');
+          const row = table.getFirstChild();
+          assert($isElementNode(row), 'table first child is an element');
+          const cell = row.getFirstChild();
+          assert($isElementNode(cell), 'row first child is an element');
+          expect(cell.getChildrenSize()).toBe(1);
+          const wrapper = cell.getFirstChild();
+          assert(
+            $isListNode(wrapper),
+            'orphan <li> should be wrapped inside the table cell',
+          );
+          expect(wrapper.getChildrenSize()).toBe(1);
+          expect(wrapper.getFirstChildOrThrow().getTextContent()).toBe(
+            'orphan',
+          );
+        });
+      });
     });
   });
 });

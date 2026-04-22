@@ -17,9 +17,11 @@ import {$addNodeStyle, $sliceSelectedTextNodeContent} from '@lexical/selection';
 import {objectKlassEquals} from '@lexical/utils';
 import {
   $caretFromPoint,
+  $caretRangeFromSelection,
   $comparePointCaretNext,
   $createTabNode,
   $getCaretRange,
+  $getCaretRangeInDirection,
   $getChildCaret,
   $getChildCaretAtIndex,
   $getCollapsedCaretRange,
@@ -297,14 +299,13 @@ function $isDropCaretInsideSelection(
   dropCaret: PointCaret<'next'>,
   selection: RangeSelection,
 ): boolean {
-  const anchorCaret = $caretFromPoint(selection.anchor, 'next');
-  const focusCaret = $caretFromPoint(selection.focus, 'next');
-  const isBackward = selection.isBackward();
-  const startCaret = isBackward ? focusCaret : anchorCaret;
-  const endCaret = isBackward ? anchorCaret : focusCaret;
+  const {anchor: start, focus: end} = $getCaretRangeInDirection(
+    $caretRangeFromSelection(selection),
+    'next',
+  );
   return (
-    $comparePointCaretNext(startCaret, dropCaret) < 0 &&
-    $comparePointCaretNext(dropCaret, endCaret) < 0
+    $comparePointCaretNext(start, dropCaret) < 0 &&
+    $comparePointCaretNext(dropCaret, end) < 0
   );
 }
 

@@ -6,7 +6,7 @@
  *
  */
 
-import type {ListType} from './';
+import type {ListNode, ListType} from './';
 import type {
   BaseSelection,
   DOMConversionOutput,
@@ -24,6 +24,7 @@ import type {
 
 import {getStyleObjectFromCSS} from '@lexical/selection';
 import {
+  $insertNodeToNearestRootAtCaret,
   addClassNamesToElement,
   removeClassNamesFromElement,
 } from '@lexical/utils';
@@ -31,9 +32,11 @@ import {
   $applyNodeReplacement,
   $copyNode,
   $createParagraphNode,
+  $getSiblingCaret,
   $isElementNode,
   $isParagraphNode,
   $isRangeSelection,
+  $isRootOrShadowRoot,
   buildImportMap,
   ElementNode,
   LexicalEditor,
@@ -84,13 +87,48 @@ export class ListItemNode extends ElementNode {
   $config() {
     return this.config('listitem', {
       $transform: (node: ListItemNode): void => {
-        if (node.__checked == null) {
-          return;
-        }
         const parent = node.getParent();
         if ($isListNode(parent)) {
           if (parent.getListType() !== 'check' && node.getChecked() != null) {
             node.setChecked(undefined);
+          }
+        } else if (parent) {
+          const newParent = node.createParentElementNode();
+          invariant(
+            $isListNode(newParent),
+            'ListItemNode.createParentElementNode() must return a ListNode',
+          );
+          // Insert an empty ListNode at the orphan's position, splitting
+          // any enclosing non-shadow-root blocks so the ListNode lifts to
+          // a valid container before we move the orphan in. The ListNode
+          // $transform merges adjacent same-type lists, so neighbouring
+          // orphans will coalesce once their own transforms run.
+          const children = [node];
+          for (const dir of ['previous', 'next'] as const) {
+            children.reverse();
+            for (const {origin} of $getSiblingCaret(node, dir)) {
+              if (!$isListItemNode(origin)) {
+                break;
+              }
+              children.push(origin);
+            }
+          }
+          node.insertBefore(newParent);
+          newParent.splice(0, 0, children);
+          if (!$isRootOrShadowRoot(parent)) {
+            const prevSibling = newParent.getPreviousSibling();
+            const nextSibling = newParent.getNextSibling();
+            $insertNodeToNearestRootAtCaret(
+              newParent,
+              prevSibling
+                ? nextSibling
+                  ? $getSiblingCaret(prevSibling, 'next')
+                  : $getSiblingCaret(parent, 'next')
+                : $getSiblingCaret(parent, 'previous'),
+            );
+            if (parent.isEmpty() && parent.isAttached()) {
+              parent.remove();
+            }
           }
         }
       },
@@ -462,7 +500,7 @@ export class ListItemNode extends ElementNode {
     return true;
   }
 
-  createParentElementNode(): ElementNode {
+  createParentElementNode(): ListNode {
     return $createListNode('bullet');
   }
 

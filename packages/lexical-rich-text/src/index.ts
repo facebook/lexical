@@ -78,7 +78,6 @@ import {
   DELETE_CHARACTER_COMMAND,
   DELETE_LINE_COMMAND,
   DELETE_WORD_COMMAND,
-  DRAGEND_COMMAND,
   DRAGOVER_COMMAND,
   DRAGSTART_COMMAND,
   DROP_COMMAND,
@@ -126,13 +125,6 @@ export type SerializedHeadingNode = Spread<
 export const DRAG_DROP_PASTE: LexicalCommand<Array<File>> = createCommand(
   'DRAG_DROP_PASTE_FILE',
 );
-
-// Cache the most recently processed dragover coordinates so repeated
-// dragover events at the same position (browsers fire them continuously
-// during a drag) don't redo the DOM hit test. Reset on DRAGEND.
-let lastDragoverClientX = Number.NaN;
-let lastDragoverClientY = Number.NaN;
-let lastDragoverOverDecorator = false;
 
 export type SerializedQuoteNode = SerializedElementNode;
 
@@ -1050,43 +1042,16 @@ export function registerRichText(editor: LexicalEditor): () => void {
         }
         const x = event.clientX;
         const y = event.clientY;
-        // Browsers fire dragover continuously during a drag (roughly every
-        // 350ms) regardless of cursor movement. The handler below does a DOM
-        // hit test + tree walk that only matters when the pointer has moved
-        // to a new position, so cache the last decision and replay it when
-        // the coordinates haven't changed.
-        if (x === lastDragoverClientX && y === lastDragoverClientY) {
-          if (lastDragoverOverDecorator) {
-            event.preventDefault();
-          }
-          return true;
-        }
-        lastDragoverClientX = x;
-        lastDragoverClientY = y;
-        lastDragoverOverDecorator = false;
         const eventRange = caretFromPoint(x, y);
         if (eventRange !== null) {
           const node = $getNearestNodeFromDOMNode(eventRange.node);
           if ($isDecoratorNode(node)) {
             // Show browser caret as the user is dragging the media across the screen. Won't work
             // for DecoratorNode nor it's relevant.
-            lastDragoverOverDecorator = true;
             event.preventDefault();
           }
         }
         return true;
-      },
-      COMMAND_PRIORITY_EDITOR,
-    ),
-    editor.registerCommand<DragEvent>(
-      DRAGEND_COMMAND,
-      () => {
-        // Reset the dragover cache so the next drag doesn't replay a stale
-        // decision from the previous drag's final position.
-        lastDragoverClientX = Number.NaN;
-        lastDragoverClientY = Number.NaN;
-        lastDragoverOverDecorator = false;
-        return false;
       },
       COMMAND_PRIORITY_EDITOR,
     ),

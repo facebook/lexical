@@ -32,6 +32,7 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {mergeRegister} from '@lexical/utils';
 import {CONNECTED_COMMAND, TOGGLE_CONNECT_COMMAND} from '@lexical/yjs';
 import {
+  $createParagraphNode,
   $getRoot,
   $insertNodes,
   $isParagraphNode,
@@ -261,8 +262,11 @@ export default function ActionsPlugin({
         const parser = new DOMParser();
         const dom = parser.parseFromString(htmlString, 'text/html');
         const nodes = $generateNodesFromDOM(editor, dom);
-        $getRoot().clear().select();
+        root.clear().select();
         $insertNodes(nodes);
+        if (root.isEmpty()) {
+          root.append($createParagraphNode()).select();
+        }
         setMode('wysiwyg');
       } else {
         const html = $withRenderContext(

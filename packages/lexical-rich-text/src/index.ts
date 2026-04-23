@@ -568,33 +568,6 @@ function $resetCapitalization(selection: RangeSelection): void {
   }
 }
 
-function $escapeCodeFormatIfAtBoundary(
-  selection: RangeSelection,
-  direction: 'start' | 'end' | 'both',
-): void {
-  if (!selection.isCollapsed() || selection.anchor.type !== 'text') {
-    return;
-  }
-  const anchor = selection.anchor;
-  const anchorNode = anchor.getNode();
-  if (!$isTextNode(anchorNode) || !anchorNode.hasFormat('code')) {
-    return;
-  }
-  const atEnd =
-    anchor.offset === anchorNode.getTextContentSize() &&
-    anchorNode.getNextSibling() === null;
-  const atStart =
-    anchor.offset === 0 && anchorNode.getPreviousSibling() === null;
-  if (
-    (direction === 'end' && atEnd) ||
-    (direction === 'start' && atStart) ||
-    (direction === 'both' && (atEnd || atStart))
-  ) {
-    selection.setFormat(0);
-    selection.setStyle('');
-  }
-}
-
 export function registerRichText(editor: LexicalEditor): () => void {
   const removeListener = mergeRegister(
     editor.registerCommand(
@@ -604,9 +577,6 @@ export function registerRichText(editor: LexicalEditor): () => void {
         if ($isNodeSelection(selection)) {
           selection.clear();
           return true;
-        }
-        if ($isRangeSelection(selection)) {
-          $escapeCodeFormatIfAtBoundary(selection, 'both');
         }
         return false;
       },
@@ -745,7 +715,6 @@ export function registerRichText(editor: LexicalEditor): () => void {
         if (!$isRangeSelection(selection)) {
           return false;
         }
-        $escapeCodeFormatIfAtBoundary(selection, 'both');
         selection.insertParagraph();
         return true;
       },
@@ -872,14 +841,11 @@ export function registerRichText(editor: LexicalEditor): () => void {
         if (!$isRangeSelection(selection)) {
           return false;
         }
-        const isHoldingShift = event.shiftKey;
         if ($shouldOverrideDefaultCharacterSelection(selection, true)) {
+          const isHoldingShift = event.shiftKey;
           event.preventDefault();
           $moveCharacter(selection, isHoldingShift, true);
           return true;
-        }
-        if (!isHoldingShift) {
-          $escapeCodeFormatIfAtBoundary(selection, 'start');
         }
         return false;
       },
@@ -906,14 +872,11 @@ export function registerRichText(editor: LexicalEditor): () => void {
         if (!$isRangeSelection(selection)) {
           return false;
         }
-        const isHoldingShift = event.shiftKey;
         if ($shouldOverrideDefaultCharacterSelection(selection, false)) {
+          const isHoldingShift = event.shiftKey;
           event.preventDefault();
           $moveCharacter(selection, isHoldingShift, false);
           return true;
-        }
-        if (!isHoldingShift) {
-          $escapeCodeFormatIfAtBoundary(selection, 'end');
         }
         return false;
       },

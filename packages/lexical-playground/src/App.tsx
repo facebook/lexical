@@ -10,6 +10,7 @@ import {
   AutoFocusExtension,
   ClearEditorExtension,
   DecoratorTextExtension,
+  EscapeFormatAtBoundaryExtension,
   HorizontalRuleExtension,
   SelectionAlwaysOnDisplayExtension,
 } from '@lexical/extension';
@@ -165,6 +166,9 @@ function $prepopulatedRichText() {
 const PlaygroundRichTextExtension = defineExtension({
   dependencies: [
     RichTextExtension,
+    configExtension(EscapeFormatAtBoundaryExtension, {
+      triggers: ['enter', 'click', 'arrow'],
+    }),
     ImagesExtension,
     HorizontalRuleExtension,
     PageBreakExtension,

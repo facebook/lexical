@@ -6,6 +6,7 @@
  *
  */
 
+import {registerEscapeFormatAtBoundary} from '@lexical/extension';
 import {registerRichText} from '@lexical/rich-text';
 import {
   $createParagraphNode,
@@ -29,7 +30,7 @@ import {
 } from 'lexical/src/__tests__/utils';
 import {describe, expect, test} from 'vitest';
 
-describe('Code format escape', () => {
+describe('EscapeFormatAtBoundaryExtension', () => {
   initializeUnitTest((testEnv) => {
     async function setupCodeTextNode(editor: LexicalEditor) {
       await editor.update(() => {
@@ -43,10 +44,23 @@ describe('Code format escape', () => {
       });
     }
 
+    function registerAll(editor: LexicalEditor) {
+      const removeRichText = registerRichText(editor);
+      const removeEscape = registerEscapeFormatAtBoundary(
+        editor,
+        ['code'],
+        ['enter', 'click', 'arrow'],
+      );
+      return () => {
+        removeRichText();
+        removeEscape();
+      };
+    }
+
     describe('CLICK_COMMAND', () => {
       test('clears format when clicking at the end of a code node with no next sibling', async () => {
         const {editor} = testEnv;
-        registerRichText(editor);
+        registerAll(editor);
         await setupCodeTextNode(editor);
 
         await editor.update(() => {
@@ -78,7 +92,7 @@ describe('Code format escape', () => {
 
       test('clears format when clicking at the start of a code node with no previous sibling', async () => {
         const {editor} = testEnv;
-        registerRichText(editor);
+        registerAll(editor);
         await setupCodeTextNode(editor);
 
         await editor.update(() => {
@@ -102,7 +116,7 @@ describe('Code format escape', () => {
 
       test('does not clear format when clicking in the middle of a code node', async () => {
         const {editor} = testEnv;
-        registerRichText(editor);
+        registerAll(editor);
         await setupCodeTextNode(editor);
 
         await editor.update(() => {
@@ -126,7 +140,7 @@ describe('Code format escape', () => {
 
       test('does not clear format at end of code node when it has a next sibling', async () => {
         const {editor} = testEnv;
-        registerRichText(editor);
+        registerAll(editor);
 
         await editor.update(() => {
           const root = $getRoot();
@@ -170,7 +184,7 @@ describe('Code format escape', () => {
     describe('INSERT_PARAGRAPH_COMMAND', () => {
       test('clears format when pressing Enter at the end of a code node', async () => {
         const {editor} = testEnv;
-        registerRichText(editor);
+        registerAll(editor);
         await setupCodeTextNode(editor);
 
         await editor.update(() => {
@@ -203,7 +217,7 @@ describe('Code format escape', () => {
 
       test('clears format when pressing Enter at the start of a code node', async () => {
         const {editor} = testEnv;
-        registerRichText(editor);
+        registerAll(editor);
         await setupCodeTextNode(editor);
 
         await editor.update(() => {
@@ -228,7 +242,7 @@ describe('Code format escape', () => {
 
       test('preserves code format when pressing Enter in the middle of a code node', async () => {
         const {editor} = testEnv;
-        registerRichText(editor);
+        registerAll(editor);
         await setupCodeTextNode(editor);
 
         await editor.update(() => {
@@ -254,7 +268,7 @@ describe('Code format escape', () => {
     describe('KEY_ARROW_RIGHT_COMMAND', () => {
       test('clears format when arrowing right at the end of a code node', async () => {
         const {editor} = testEnv;
-        registerRichText(editor);
+        registerAll(editor);
         await setupCodeTextNode(editor);
 
         await editor.update(() => {
@@ -288,7 +302,7 @@ describe('Code format escape', () => {
 
       test('does not clear format when shift is held (extending selection)', async () => {
         const {editor} = testEnv;
-        registerRichText(editor);
+        registerAll(editor);
         await setupCodeTextNode(editor);
 
         await editor.update(() => {
@@ -322,7 +336,7 @@ describe('Code format escape', () => {
 
       test('does not clear format in the middle of a code node', async () => {
         const {editor} = testEnv;
-        registerRichText(editor);
+        registerAll(editor);
         await setupCodeTextNode(editor);
 
         await editor.update(() => {
@@ -349,7 +363,7 @@ describe('Code format escape', () => {
     describe('KEY_ARROW_LEFT_COMMAND', () => {
       test('clears format when arrowing left at the start of a code node', async () => {
         const {editor} = testEnv;
-        registerRichText(editor);
+        registerAll(editor);
         await setupCodeTextNode(editor);
 
         await editor.update(() => {
@@ -375,7 +389,7 @@ describe('Code format escape', () => {
 
       test('does not clear format when shift is held (extending selection)', async () => {
         const {editor} = testEnv;
-        registerRichText(editor);
+        registerAll(editor);
         await setupCodeTextNode(editor);
 
         await editor.update(() => {
@@ -401,7 +415,7 @@ describe('Code format escape', () => {
 
       test('does not clear format in the middle of a code node', async () => {
         const {editor} = testEnv;
-        registerRichText(editor);
+        registerAll(editor);
         await setupCodeTextNode(editor);
 
         await editor.update(() => {

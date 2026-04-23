@@ -208,7 +208,8 @@ const NodeContextMenuPlugin = forwardRef<
       let visibleItems: ContextMenuType[] = [];
       if (items) {
         editor.read(() => {
-          const node = $getNearestNodeFromDOMNode(e.target as Element) ?? $getRoot();
+          const node =
+            $getNearestNodeFromDOMNode(e.target as Element) ?? $getRoot();
           if (node) {
             visibleItems = items!.filter((option) =>
               option.$showOn ? option.$showOn(node) : true,

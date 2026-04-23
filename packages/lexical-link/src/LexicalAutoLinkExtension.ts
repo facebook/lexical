@@ -526,14 +526,14 @@ function getTextNodesToMatch(textNode: TextNode): TextNode[] {
 
 export interface AutoLinkConfig {
   changeHandlers: ChangeHandler[];
-  excludeParents: Array<(parent: ElementNode) => boolean>;
+  excludeParents: ((parent: ElementNode) => boolean)[];
   matchers: LinkMatcher[];
   /**
    * The regular expression used to determine whether surrounding
    * characters count as separators when validating auto-link
    * boundaries. Defaults to `/[.,;\s]/`.
    */
-  separatorRegex?: RegExp;
+  separatorRegex: RegExp;
 }
 
 const defaultConfig: AutoLinkConfig = {
@@ -545,7 +545,8 @@ const defaultConfig: AutoLinkConfig = {
 
 export function registerAutoLink(
   editor: LexicalEditor,
-  config: AutoLinkConfig = defaultConfig,
+  config: Partial<AutoLinkConfig> &
+    Omit<AutoLinkConfig, 'separatorRegex'> = defaultConfig,
 ): () => void {
   const {
     matchers,

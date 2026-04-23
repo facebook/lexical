@@ -123,9 +123,9 @@ declare export function registerClickableLink(
 
 export type AutoLinkConfig = {
   changeHandlers: ChangeHandler[];
-  excludeParents: Array<(parent: ElementNode) => boolean>;
+  excludeParents: ((parent: ElementNode) => boolean)[];
   matchers: LinkMatcher[];
-  separatorRegex?: RegExp;
+  separatorRegex: RegExp;
 }
 
 export type ChangeHandler = (
@@ -156,7 +156,12 @@ declare export var AutoLinkExtension: LexicalExtension<AutoLinkConfig, "@lexical
 
 declare export function registerAutoLink(
   editor: LexicalEditor,
-  config?: AutoLinkConfig,
+  config?: {
+    changeHandlers: ChangeHandler[];
+    excludeParents: ((parent: ElementNode) => boolean)[];
+    matchers: LinkMatcher[];
+    separatorRegex?: RegExp;
+  },
 ): () => void;
 
 export type LinkConfig = {

@@ -592,7 +592,7 @@ function $reconcileNode(
     if (isDirty) {
       $reconcileChildrenWithDirection(prevNode, nextNode, dom);
       const parent = nextNode.getParent();
-      if (
+      const needsLineBreak =
         !$isRootNode(nextNode) &&
         (!nextNode.isInline() ||
           (nextNode.canBeEmpty() &&
@@ -600,8 +600,10 @@ function $reconcileNode(
             parent !== null &&
             $isEffectivelyEmpty(parent) &&
             // Among all the empty inline nodes, only one needs a linebreak
-            nextNode.getIndexWithinParent() === 0))
-      ) {
+            nextNode.getIndexWithinParent() === 0));
+      // Also reconcile when a managed linebreak already exists in the DOM
+      // but element no longer needs one (e.g. an empty inline that became non-empty)
+      if (needsLineBreak || dom.__lexicalLineBreak) {
         $reconcileElementTerminatingLineBreak(prevNode, nextNode, dom);
       }
     } else {

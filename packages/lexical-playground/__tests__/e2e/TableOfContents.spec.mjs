@@ -439,7 +439,6 @@ test.describe('TableOfContents', () => {
               href="#heading-2"
               target="_self">
               <span data-lexical-text="true">h1</span>
-              <br />
             </a>
           </li>
         </ol>

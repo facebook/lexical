@@ -261,6 +261,13 @@ export interface EditorDOMRenderConfig {
     editor: LexicalEditor,
   ) => boolean;
   /** @internal @experimental */
+  $decorateDOM: <T extends LexicalNode>(
+    node: T,
+    prevNode: null | T,
+    dom: HTMLElement,
+    editor: LexicalEditor,
+  ) => void;
+  /** @internal @experimental */
   $updateDOM: <T extends LexicalNode>(
     nextNode: T,
     prevNode: T,
@@ -668,6 +675,7 @@ export function getTransformSetFromKlass(
 /** @internal @experimental */
 export const DEFAULT_EDITOR_DOM_CONFIG: EditorDOMRenderConfig = {
   $createDOM: (node, editor) => node.createDOM(editor._config, editor),
+  $decorateDOM: (_node, _prevNode, _dom, _editor) => {},
   $exportDOM: (node, editor) => {
     const registeredNode = getRegisteredNode(editor, node.getType());
     // Use HTMLConfig overrides, if available.

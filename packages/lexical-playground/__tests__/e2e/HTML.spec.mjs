@@ -41,48 +41,52 @@ test.describe('HTML', () => {
     await toggleItalic(page);
     await insertDateTime(page);
 
-    const expectedViewHtml = `<h1 class="PlaygroundEditorTheme__h1" dir="auto">
-      <span data-lexical-text="true">Foo</span>
-    </h1>
-    <code
-      class="PlaygroundEditorTheme__code"
-      dir="auto"
-      spellcheck="false"
-      data-gutter="1"
-      data-highlight-language="javascript"
-      data-language="javascript">
-      <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
-        const
-      </span>
-      <span data-lexical-text="true">x</span>
-      <span class="PlaygroundEditorTheme__tokenOperator" data-lexical-text="true">
-        =
-      </span>
-      <span data-lexical-text="true"></span>
-      <span class="PlaygroundEditorTheme__tokenSelector" data-lexical-text="true">
-        "hello world"
-      </span>
-      <span
-        class="PlaygroundEditorTheme__tokenPunctuation"
-        data-lexical-text="true">
-        ;
-      </span>
-    </code>
-    <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-      <span data-lexical-text="true">Today</span>
+    const expectedViewHtml = html`
+      <h1 class="PlaygroundEditorTheme__h1" dir="auto">
+        <span data-lexical-text="true">Foo</span>
+      </h1>
+      <code
+        class="PlaygroundEditorTheme__code"
+        dir="auto"
+        spellcheck="false"
+        data-gutter="1"
+        data-highlight-language="javascript"
+        data-language="javascript">
+        <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
+          const
+        </span>
+        <span data-lexical-text="true">x</span>
+        <span
+          class="PlaygroundEditorTheme__tokenOperator"
+          data-lexical-text="true">
+          =
+        </span>
+        <span data-lexical-text="true"></span>
+        <span
+          class="PlaygroundEditorTheme__tokenSelector"
+          data-lexical-text="true">
+          "hello world"
+        </span>
+        <span
+          class="PlaygroundEditorTheme__tokenPunctuation"
+          data-lexical-text="true">
+          ;
+        </span>
+      </code>
+      <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+        <span data-lexical-text="true">Today</span>
         <span
           contenteditable="false"
           data-lexical-datetime="*"
           data-lexical-decorator="true">
           <div class="dateTimePill bold italic">*</div>
         </span>
-      <br />
-    </p>`;
+        <br />
+      </p>
+    `;
     await await assertHTML(
       page,
-      html`
-        ${expectedViewHtml}
-      `,
+      expectedViewHtml,
       undefined,
       {ignoreInlineStyles: true},
       // Custom modification: replace the date text and data-lexical-datetime value with wildcards for matching
@@ -120,9 +124,7 @@ test.describe('HTML', () => {
     // same view after import html
     await await assertHTML(
       page,
-      html`
-        ${expectedViewHtml}
-      `,
+      expectedViewHtml,
       undefined,
       {ignoreInlineStyles: true},
       // Custom modification: replace the date text and data-lexical-datetime value with wildcards for matching

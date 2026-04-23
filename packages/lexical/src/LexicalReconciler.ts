@@ -40,6 +40,7 @@ import {
 import {EditorState} from './LexicalEditorState';
 import {
   $createChildrenArray,
+  $isEffectivelyEmpty,
   cloneDecorators,
   getElementByKeyOrThrow,
   setMutatedNode,
@@ -235,7 +236,16 @@ function $createNode(key: NodeKey, slot: ElementDOMSlot | null): HTMLElement {
     if (format !== 0) {
       setElementFormat(dom, format);
     }
-    if (!node.isInline()) {
+    const parent = node.getParent();
+    if (
+      !node.isInline() ||
+      (node.canBeEmpty() &&
+        node.isEmpty() &&
+        parent !== null &&
+        $isEffectivelyEmpty(parent) &&
+        // Among all the empty inline nodes, only one needs a linebreak
+        node.getIndexWithinParent() === 0)
+    ) {
       $reconcileElementTerminatingLineBreak(null, node, dom);
     }
   } else {
@@ -581,7 +591,17 @@ function $reconcileNode(
     }
     if (isDirty) {
       $reconcileChildrenWithDirection(prevNode, nextNode, dom);
-      if (!$isRootNode(nextNode) && !nextNode.isInline()) {
+      const parent = nextNode.getParent();
+      if (
+        !$isRootNode(nextNode) &&
+        (!nextNode.isInline() ||
+          (nextNode.canBeEmpty() &&
+            nextNode.isEmpty() &&
+            parent !== null &&
+            $isEffectivelyEmpty(parent) &&
+            // Among all the empty inline nodes, only one needs a linebreak
+            nextNode.getIndexWithinParent() === 0))
+      ) {
         $reconcileElementTerminatingLineBreak(prevNode, nextNode, dom);
       }
     } else {

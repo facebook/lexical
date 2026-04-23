@@ -77,6 +77,7 @@ import {
   $getNodeFromDOM,
   $getRoot,
   $hasAncestor,
+  $isEffectivelyEmpty,
   $isRootOrShadowRoot,
   $isTokenOrSegmented,
   $isTokenOrTab,
@@ -1869,11 +1870,7 @@ export class RangeSelection implements BaseSelection {
               anchorElement.isEmpty()
             ) {
               const parent = anchorElement.getParent();
-              if (
-                parent !== null &&
-                !$isRootOrShadowRoot(parent) &&
-                $isEffectivelyEmpty(parent)
-              ) {
+              if (parent !== null && $isEffectivelyEmpty(parent)) {
                 parent.remove();
                 return;
               }
@@ -2032,20 +2029,6 @@ export function $getCharacterOffsets(
     return [0, 0];
   }
   return [getCharacterOffset(anchor), getCharacterOffset(focus)];
-}
-
-function $isEffectivelyEmpty(node: ElementNode): boolean {
-  if (node.isEmpty()) {
-    return false;
-  }
-  const children = node.getChildren();
-  return children.every(
-    (child) =>
-      $isElementNode(child) &&
-      child.isInline() &&
-      child.canBeEmpty() &&
-      child.isEmpty(),
-  );
 }
 
 function $collapseAtStart(

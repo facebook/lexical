@@ -27,8 +27,12 @@ import type {
 } from 'lexical';
 
 import {
+  $getClipboardDataFromSelection,
+  $handleRichTextDrop,
   $insertDataTransferForRichText,
+  $writeDragSourceToDataTransfer,
   copyToClipboard,
+  setLexicalClipboardDataTransfer,
 } from '@lexical/clipboard';
 import {DragonExtension} from '@lexical/dragon';
 import {
@@ -1033,12 +1037,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
           return true;
         }
 
-        const selection = $getSelection();
-        if ($isRangeSelection(selection)) {
-          return true;
-        }
-
-        return false;
+        return $handleRichTextDrop(event, editor);
       },
       COMMAND_PRIORITY_EDITOR,
     ),
@@ -1049,6 +1048,22 @@ export function registerRichText(editor: LexicalEditor): () => void {
         const selection = $getSelection();
         if (isFileTransfer && !$isRangeSelection(selection)) {
           return false;
+        }
+        if (
+          $isRangeSelection(selection) &&
+          !selection.isCollapsed() &&
+          event.dataTransfer !== null
+        ) {
+          // Populate Lexical's own serialization so custom nodes (images,
+          // decorators) survive a drop back into a Lexical editor rather than
+          // being downgraded to text/html.
+          setLexicalClipboardDataTransfer(
+            event.dataTransfer,
+            $getClipboardDataFromSelection(selection),
+          );
+          // Mark the drag source so a drop in a different editor can remove
+          // the source range to produce cut-and-paste semantics.
+          $writeDragSourceToDataTransfer(event.dataTransfer, editor);
         }
         return true;
       },

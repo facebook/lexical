@@ -39,6 +39,7 @@ import {
   buildImportMap,
   ElementNode,
   getStyleObjectFromCSS,
+  isHTMLElement,
   LexicalEditor,
   normalizeClassNames,
   setDOMStyleFromCSS,
@@ -226,9 +227,9 @@ export class ListItemNode extends ElementNode {
     if (isNestedListNode(this)) {
       return {
         after(containerElement) {
-          if (containerElement instanceof HTMLElement) {
+          if (isHTMLElement(containerElement)) {
             const prevSibling = containerElement.previousElementSibling;
-            if (prevSibling instanceof HTMLLIElement) {
+            if (isHTMLElement(prevSibling) && prevSibling.nodeName === 'LI') {
               while (containerElement.firstChild) {
                 prevSibling.append(containerElement.firstChild);
               }

@@ -18,7 +18,7 @@ export type LexicalNestedComposerProps = {
   children?: React.Node;
   initialEditor: LexicalEditor;
   initialTheme?: EditorThemeClasses;
-  initialNodes?: $ReadOnlyArray<Class<LexicalNode> | LexicalNodeReplacement>;
+  initialNodes?: ReadonlyArray<Class<LexicalNode> | LexicalNodeReplacement>;
   skipCollabChecks?: void | true;
   skipEditableListener?: void | true;
 };

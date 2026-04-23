@@ -509,6 +509,7 @@ function useMentionLookupService(mentionString: string | null) {
     const cachedResults = mentionsCache.get(mentionString);
 
     if (mentionString == null) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setResults([]);
       return;
     }

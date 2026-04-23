@@ -24,10 +24,12 @@ import {
   $getStartOfCodeInLine,
   $isCodeHighlightNode,
   $isCodeNode,
+  CodeExtension,
   CodeHighlightNode,
   CodeNode,
   DEFAULT_CODE_LANGUAGE,
 } from '@lexical/code-core';
+import {effect, namedSignals} from '@lexical/extension';
 import {
   $createLineBreakNode,
   $createPoint,
@@ -49,6 +51,7 @@ import {
   $onUpdate,
   $setSelectionFromCaretRange,
   COMMAND_PRIORITY_LOW,
+  defineExtension,
   INDENT_CONTENT_COMMAND,
   INSERT_TAB_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
@@ -58,6 +61,7 @@ import {
   MOVE_TO_END,
   MOVE_TO_START,
   OUTDENT_CONTENT_COMMAND,
+  safeCast,
   TabNode,
   TextNode,
 } from 'lexical';
@@ -896,3 +900,39 @@ export function registerCodeHighlighting(
 
   return mergeRegister(...registrations);
 }
+
+export interface CodePrismConfig {
+  /**
+   * When true, the Prism code highlighter is not registered on the editor.
+   * This signal can be flipped at runtime to enable or disable the
+   * highlighter, for example to switch between the Prism and Shiki
+   * highlighters without rebuilding the editor.
+   */
+  disabled: boolean;
+  tokenizer: Tokenizer;
+}
+
+/**
+ * Add code highlighting support for code blocks with Prism.
+ *
+ * {@link CodeExtension} is a dependency, so the required `CodeNode` and
+ * `CodeHighlightNode` nodes are registered automatically.
+ */
+export const CodePrismExtension = defineExtension({
+  build: (editor, config) => namedSignals(config),
+  config: safeCast<CodePrismConfig>({
+    disabled: false,
+    tokenizer: PrismTokenizer,
+  }),
+  dependencies: [CodeExtension],
+  name: '@lexical/code-prism',
+  register: (editor, config, state) => {
+    const stores = state.getOutput();
+    return effect(() => {
+      if (stores.disabled.value) {
+        return;
+      }
+      return registerCodeHighlighting(editor, stores.tokenizer.value);
+    });
+  },
+});

@@ -6,7 +6,7 @@
  *
  */
 
-import type {CodeHighlightNode} from '@lexical/code';
+import type {CodeExtension} from './CodeExtension';
 import type {
   DOMConversionMap,
   DOMConversionOutput,
@@ -23,21 +23,27 @@ import type {
   TabNode,
 } from 'lexical';
 
+import {getPeerDependencyFromEditor} from '@lexical/extension';
 import {
   $create,
   $createLineBreakNode,
   $createParagraphNode,
   $createTabNode,
+  $getEditor,
+  $isLineBreakNode,
   $isTabNode,
   $isTextNode,
   addClassNamesToElement,
   ElementNode,
   isHTMLElement,
+  setDOMStyleFromCSS,
 } from 'lexical';
+import warnOnlyOnce from 'shared/warnOnlyOnce';
 
 import {
   $createCodeHighlightNode,
   $isCodeHighlightNode,
+  type CodeHighlightNode,
 } from './CodeHighlightNode';
 import {$getFirstCodeNodeOfLine} from './FlatStructureUtils';
 
@@ -65,6 +71,10 @@ function hasChildDOMNodeTag(node: Node, tagName: string) {
 const LANGUAGE_DATA_ATTRIBUTE = 'data-language';
 const HIGHLIGHT_LANGUAGE_DATA_ATTRIBUTE = 'data-highlight-language';
 const THEME_DATA_ATTRIBUTE = 'data-theme';
+
+const noExtensionDeprecation = warnOnlyOnce(
+  'Using CodeNode without CodeExtension is deprecated',
+);
 
 /** @noInheritDoc */
 export class CodeNode extends ElementNode {
@@ -117,7 +127,7 @@ export class CodeNode extends ElementNode {
 
     const style = this.getStyle();
     if (style) {
-      element.setAttribute('style', style);
+      setDOMStyleFromCSS(element.style, style);
     }
     return element;
   }
@@ -162,12 +172,8 @@ export class CodeNode extends ElementNode {
 
     const style = this.__style;
     const prevStyle = prevNode.__style;
-    if (style) {
-      if (style !== prevStyle) {
-        dom.setAttribute('style', style);
-      }
-    } else if (prevStyle) {
-      dom.removeAttribute('style');
+    if (style !== prevStyle) {
+      setDOMStyleFromCSS(dom.style, style, prevStyle);
     }
 
     return false;
@@ -193,7 +199,7 @@ export class CodeNode extends ElementNode {
 
     const style = this.getStyle();
     if (style) {
-      element.setAttribute('style', style);
+      setDOMStyleFromCSS(element.style, style);
     }
     return {element};
   }
@@ -289,24 +295,18 @@ export class CodeNode extends ElementNode {
     selection: RangeSelection,
     restoreSelection = true,
   ): null | ParagraphNode | CodeHighlightNode | TabNode {
-    const children = this.getChildren();
-    const childrenLength = children.length;
-
     if (
-      childrenLength >= 2 &&
-      children[childrenLength - 1].getTextContent() === '\n' &&
-      children[childrenLength - 2].getTextContent() === '\n' &&
-      selection.isCollapsed() &&
-      selection.anchor.key === this.__key &&
-      selection.anchor.offset === childrenLength
+      !getPeerDependencyFromEditor<typeof CodeExtension>(
+        $getEditor(),
+        '@lexical/code',
+      )
     ) {
-      children[childrenLength - 1].remove();
-      children[childrenLength - 2].remove();
-      const newElement = $createParagraphNode();
-      this.insertAfter(newElement, restoreSelection);
-      return newElement;
+      noExtensionDeprecation();
+      const el = $exitCodeNodeOnEnter(selection);
+      if (el) {
+        return el;
+      }
     }
-
     // If the selection is within the codeblock, find all leading tabs and
     // spaces of the current line. Create a new line that has all those
     // tabs and spaces, such that leading indentation is preserved.
@@ -470,4 +470,31 @@ function isGitHubCodeCell(
 
 function isGitHubCodeTable(table: HTMLTableElement): table is HTMLTableElement {
   return table.classList.contains('js-file-line-container');
+}
+
+export function $exitCodeNodeOnEnter(
+  selection: RangeSelection,
+): null | ParagraphNode {
+  const {anchor} = selection;
+  if (selection.isCollapsed() && anchor.type === 'element') {
+    const codeNode = anchor.getNode();
+    if ($isCodeNode(codeNode)) {
+      const childrenSize = codeNode.getChildrenSize();
+      if (childrenSize >= 2 && anchor.offset === childrenSize) {
+        const lastChild = codeNode.getLastChild();
+        if (
+          $isLineBreakNode(lastChild) &&
+          $isLineBreakNode(lastChild.getPreviousSibling())
+        ) {
+          const newElement = $createParagraphNode();
+          codeNode
+            .splice(childrenSize - 2, 2, [])
+            .insertAfter(newElement, false);
+          newElement.select();
+          return newElement;
+        }
+      }
+    }
+  }
+  return null;
 }

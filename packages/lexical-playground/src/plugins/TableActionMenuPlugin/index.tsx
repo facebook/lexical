@@ -853,7 +853,7 @@ function TableCellActionMenuContainer({
     let timeoutId: ReturnType<typeof setTimeout> | undefined = undefined;
     const callback = () => {
       timeoutId = undefined;
-      editor.getEditorState().read($moveMenu);
+      editor.getEditorState().read($moveMenu, {editor});
     };
     const delayedCallback = () => {
       if (timeoutId === undefined) {
@@ -884,6 +884,7 @@ function TableCellActionMenuContainer({
 
   useEffect(() => {
     if (prevTableCellDOM.current !== tableCellNode) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsMenuOpen(false);
     }
 

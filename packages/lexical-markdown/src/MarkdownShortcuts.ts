@@ -17,6 +17,7 @@ import type {ElementNode, LexicalEditor, TextNode} from 'lexical';
 
 import {$isCodeNode} from '@lexical/code-core';
 import {
+  $addUpdateTag,
   $createRangeSelection,
   $getSelection,
   $isLineBreakNode,
@@ -27,6 +28,7 @@ import {
   COLLABORATION_TAG,
   COMMAND_PRIORITY_LOW,
   HISTORIC_TAG,
+  HISTORY_PUSH_TAG,
   KEY_ENTER_COMMAND,
   mergeRegister,
 } from 'lexical';
@@ -314,6 +316,14 @@ function $runTextFormatTransformers(
       continue;
     }
 
+    // Per CommonMark, code spans take precedence over other inline formatting
+    if (
+      !matcher.format.includes('code') &&
+      $isInsideUnclosedCodeSpan(openNode, openTagStartIndex)
+    ) {
+      continue;
+    }
+
     // Clean text from opening and closing tags (starting from closing tag
     // to prevent any offset shifts if we start from opening one)
     const prevCloseNodeText = closeNode.getTextContent();
@@ -365,6 +375,23 @@ function $runTextFormatTransformers(
   }
 
   return false;
+}
+
+// Per CommonMark spec, code spans take precedence over other inline
+// formatting. Returns true if there is an unclosed backtick (code span
+// opener) in the text preceding the given offset, which means the offset
+// is inside a code span that hasn't been closed yet.
+function $isInsideUnclosedCodeSpan(node: TextNode, offset: number): boolean {
+  let backtickCount = 0;
+
+  const text = node.getTextContent();
+  for (let i = 0; i < offset; i++) {
+    if (text[i] === '`') {
+      backtickCount++;
+    }
+  }
+
+  return backtickCount % 2 !== 0;
 }
 
 function getOpenTagStartIndex(
@@ -442,7 +469,7 @@ export function registerMarkdownShortcuts(
     parentNode: ElementNode,
     anchorNode: TextNode,
     anchorOffset: number,
-  ) => {
+  ): boolean => {
     if (
       runElementTransformers(
         parentNode,
@@ -451,7 +478,7 @@ export function registerMarkdownShortcuts(
         byType.element,
       )
     ) {
-      return;
+      return true;
     }
 
     if (
@@ -462,7 +489,7 @@ export function registerMarkdownShortcuts(
         byType.multilineElement,
       )
     ) {
-      return;
+      return true;
     }
 
     if (
@@ -472,14 +499,20 @@ export function registerMarkdownShortcuts(
         textMatchTransformersByTrigger,
       )
     ) {
-      return;
+      return true;
     }
 
-    $runTextFormatTransformers(
-      anchorNode,
-      anchorOffset,
-      textFormatTransformersByTrigger,
-    );
+    if (
+      $runTextFormatTransformers(
+        anchorNode,
+        anchorOffset,
+        textFormatTransformersByTrigger,
+      )
+    ) {
+      return true;
+    }
+
+    return false;
   };
 
   return mergeRegister(
@@ -533,7 +566,9 @@ export function registerMarkdownShortcuts(
             return;
           }
 
-          $transform(parentNode, anchorNode, selection.anchor.offset);
+          if ($transform(parentNode, anchorNode, selection.anchor.offset)) {
+            $addUpdateTag(HISTORY_PUSH_TAG);
+          }
         });
       },
     ),

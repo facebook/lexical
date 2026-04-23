@@ -1,3 +1,39 @@
+## v0.43.0 (2026-04-09)
+
+- lexical-link Bug Fix Preserve cursor position when merging adjacent identical links (#8309) Sathvik Veerapaneni
+- Breaking Changelexical Bug Fix Use asynchronous parent editor delegation when needed (#8308) Bob Ippolito
+-  Chore Upgrade vite to 7.3.2 (#8307) Bob Ippolito
+- lexical Chore Upgrade ESLint 8 to ESLint 10 with flat configuration (#8287) Bob Ippolito
+- lexical-website Documentation Update clarify Yjs custom node property syncing (#8288) Ved Thakar
+- lexical-react Feature Add lexicalreactuseExtensionSignalValue module for reading signals (#8286) Bob Ippolito
+- example Feature Add a new agent-example using a local LLM (#8281) Bob Ippolito
+- lexical-yjs Feature Add CSS classes to collaboration cursor elements (#8271) Mike Burton
+- build(deps) bump lodash-es from 4.17.22 to 4.18.1 (#8279) dependabotbot
+- lexical-utilslexical-extension Bug Fix Fix insertNodeIntoLeaf edge case and update preactsignals-core, hermes, and flow related dependencies (#8276) Bob Ippolito
+- lexical-website Chore community page updates (#8270) Bob Ippolito
+- lexical-markdown Bug Fix Preserve markdown hard line breaks during import when newlines are preserved (#8265) joshjryan
+- Bump flow and replace legacy flow syntax with modern ones (#8277) Sam Zhou
+- lexical-headless Bug Fix Use window.happyDOM.close() to ensure proper cleanup (#8274) Bob Ippolito
+- lexical Fix merge TextNodes when state contains different number of default values (#8273) James Fitzsimmons
+- lexical-website Feature ui improvement in the homepage of lexical.dev (#8216) Matheus SantAnna
+- build(deps) bump happy-dom from 20.8.8 to 20.8.9 (#8269) dependabotbot
+- lexical Fix  Replaced the function insertNodes with insertNodeIntoLeaf for consistent behavior of Decorator Node within MarkNode (#8266) Ajinkya Nikam
+- examples Feature Added examples (for the website)  (#8258) Matheus SantAnna
+- lexical Fix exclude Android WebView from ISSAFARI browser detection (#8267) K
+- lexical-playground Bug Fix Use isExactShortcutMatch for Dvorak keyboard compatibility (#8260) Sathvik Veerapaneni
+- build(deps) bump happy-dom from 20.0.11 to 20.8.8 (#8264) dependabotbot
+- lexical-table Bug Fix Infer column header state from position during DOM import (#8259) Sathvik Veerapaneni
+- lexical-selection Bug Fix Make getSelectionStyleValueForProperty direction-independent (#8261) Sathvik Veerapaneni
+- build(deps) bump astro from 5.18.0 to 5.18.1 in scriptstestsintegrationfixtureslexical-esm-astro-react (#8262) dependabotbot
+- lexical-code-prismlexical-code-shiki Bug Fix Remove usage of skipTransforms in CodeHighlighterPrism and CodeHighlighterShiki (#8254) Bob Ippolito
+-  Chore Update flow-bin to 0.306.0 and add incompatible-variance workaround (#8253) Bob Ippolito
+-  Chore Github CI workflows action updates and run with node 24 (#8248) Bob Ippolito
+-  Chore Update unit tests with extensions to use explicit resource management (using) (#8243) Bob Ippolito
+- examples Chore Update examples for v0.42.0 (#8246) Bob Ippolito
+- build(deps) bump next from 15.5.11 to 15.5.14 in scriptstestsintegrationfixtureslexical-esm-nextjs (#8242) dependabotbot
+- v0.42.0 (#8245) Bob Ippolito
+- v0.42.0 Lexical GitHub Actions Bot
+
 ## v0.42.0 (2026-03-19)
 
 - lexical-table Bug Fix handle table selections crossing intoout of nested tables (#8234) Randal

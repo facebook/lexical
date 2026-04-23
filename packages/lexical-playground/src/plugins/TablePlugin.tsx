@@ -31,6 +31,7 @@ export function InsertTableDialog({
     const row = Number(rows);
     const column = Number(columns);
     if (row && row > 0 && row <= 500 && column && column > 0 && column <= 50) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsDisabled(false);
     } else {
       setIsDisabled(true);

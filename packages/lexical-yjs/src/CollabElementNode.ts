@@ -10,8 +10,8 @@ import type {Binding} from '.';
 import type {ElementNode, NodeKey, NodeMap} from 'lexical';
 import type {AbstractType, Map as YMap, XmlElement, XmlText} from 'yjs';
 
-import {$createChildrenArray} from '@lexical/offset';
 import {
+  $createChildrenArray,
   $getNodeByKey,
   $getNodeByKeyOrThrow,
   $isDecoratorNode,

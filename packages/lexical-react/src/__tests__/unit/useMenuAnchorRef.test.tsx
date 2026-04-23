@@ -14,19 +14,19 @@ import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
 import {useMenuAnchorRef} from '../../shared/LexicalMenu';
 
+vi.mock('@lexical/react/LexicalComposerContext', () => ({
+  useLexicalComposerContext: () => [createTestEditor()],
+}));
+
+vi.mock('shared/canUseDOM', () => ({
+  CAN_USE_DOM: false,
+}));
+
 describe('useMenuAnchorRef', () => {
   let container: HTMLDivElement | null = null;
   let reactRoot: Root;
 
   beforeEach(() => {
-    vi.mock('@lexical/react/LexicalComposerContext', () => ({
-      useLexicalComposerContext: () => [createTestEditor()],
-    }));
-
-    vi.mock('shared/canUseDOM', () => ({
-      CAN_USE_DOM: false,
-    }));
-
     container = document.createElement('div');
     reactRoot = createRoot(container);
   });

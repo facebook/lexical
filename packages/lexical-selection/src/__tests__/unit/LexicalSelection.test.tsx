@@ -2556,6 +2556,64 @@ describe('LexicalSelection tests', () => {
     });
   });
 
+  describe('Testing that getStyleObjectFromRawCSS handles comments and semicolons inside values', () => {
+    test('', async () => {
+      const testEditor = createTestEditor();
+      const element = document.createElement('div');
+      testEditor.setRootElement(element);
+
+      await testEditor.update(() => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        const textNode = $createTextNode('Hello, World!');
+        textNode.setStyle(
+          'background-image: url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\'></svg>"); /* ignored */ content: "semi;colon:value"; color: red;',
+        );
+        $addNodeStyle(textNode);
+        paragraph.append(textNode);
+        root.append(paragraph);
+
+        const selection = $createRangeSelection();
+        $setSelection(selection);
+        selection.insertParagraph();
+        $setAnchorPoint({
+          key: textNode.getKey(),
+          offset: 0,
+          type: 'text',
+        });
+
+        $setFocusPoint({
+          key: textNode.getKey(),
+          offset: 10,
+          type: 'text',
+        });
+
+        const cssBackgroundImageValue = $getSelectionStyleValueForProperty(
+          selection,
+          'background-image',
+          '',
+        );
+        expect(cssBackgroundImageValue).toBe(
+          'url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\'></svg>")',
+        );
+
+        const cssContentValue = $getSelectionStyleValueForProperty(
+          selection,
+          'content',
+          '',
+        );
+        expect(cssContentValue).toBe('"semi;colon:value"');
+
+        const cssColorValue = $getSelectionStyleValueForProperty(
+          selection,
+          'color',
+          '',
+        );
+        expect(cssColorValue).toBe('red');
+      });
+    });
+  });
+
   describe('$patchStyle', () => {
     it('should patch the style with the new style object', async () => {
       await ReactTestUtils.act(async () => {
@@ -3096,7 +3154,7 @@ describe('LexicalSelection tests', () => {
         });
       });
       expect(element.innerHTML).toStrictEqual(
-        `<h1 dir="auto"><span data-lexical-text="true">1</span></h1><h1 dir="auto" style="padding-inline-start: calc(1 * 40px);"><span data-lexical-text="true">1.1</span></h1>`,
+        `<h1 dir="auto"><span data-lexical-text="true">1</span></h1><h1 dir="auto" style="padding-inline-start: calc(40px);"><span data-lexical-text="true">1.1</span></h1>`,
       );
     });
 
@@ -3134,7 +3192,7 @@ describe('LexicalSelection tests', () => {
         });
       });
       expect(element.innerHTML).toStrictEqual(
-        `<h1 dir="auto" style="padding-inline-start: calc(1 * 40px);"><span data-lexical-text="true">1.1</span></h1>`,
+        `<h1 dir="auto" style="padding-inline-start: calc(40px);"><span data-lexical-text="true">1.1</span></h1>`,
       );
     });
   });

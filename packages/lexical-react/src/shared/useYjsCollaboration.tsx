@@ -467,6 +467,7 @@ export function useYjsCursors(
 ): JSX.Element {
   return useMemo(() => {
     const ref = (element: null | HTMLElement) => {
+      // eslint-disable-next-line react-hooks/immutability
       binding.cursorsContainer = element;
     };
 

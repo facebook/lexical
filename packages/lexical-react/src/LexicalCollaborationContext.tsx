@@ -78,10 +78,12 @@ export function useCollaborationContext(
   collabContext = collabContext ?? UNSAFE_GLOBAL_CONTEXT;
 
   if (username != null) {
+    // eslint-disable-next-line react-hooks/immutability
     collabContext.name = username;
   }
 
   if (color != null) {
+    // eslint-disable-next-line react-hooks/immutability
     collabContext.color = color;
   }
 

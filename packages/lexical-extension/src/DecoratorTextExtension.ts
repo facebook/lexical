@@ -14,7 +14,6 @@ import type {
   StateValueOrUpdater,
   TextFormatType,
 } from 'lexical';
-import type {JSX} from 'react';
 
 import {
   $getSelection,
@@ -42,7 +41,7 @@ const formatState = createState('format', {
   parse: (value) => (typeof value === 'number' ? value : 0),
 });
 
-export class DecoratorTextNode extends DecoratorNode<JSX.Element> {
+export class DecoratorTextNode extends DecoratorNode<unknown> {
   $config() {
     return this.config('decorator-text', {
       extends: DecoratorNode,

@@ -71,6 +71,7 @@ import {SKIP_SELECTION_FOCUS_TAG} from './LexicalUpdateTags';
 import {
   $findMatchingParent,
   $getCompositionKey,
+  $getEditorDOMRenderConfig,
   $getNearestRootOrShadowRoot,
   $getNodeByKey,
   $getNodeFromDOM,
@@ -2312,7 +2313,11 @@ function $internalResolveSelectionPoint(
           elementDOM !== null,
           '$internalResolveSelectionPoint: node in DOM but not keyToDOMMap',
         );
-        const slot = resolvedElement.getDOMSlot(elementDOM);
+        const slot = $getEditorDOMRenderConfig(editor).$getDOMSlot(
+          resolvedElement,
+          elementDOM,
+          editor,
+        );
         [resolvedElement, resolvedOffset] = slot.resolveChildIndex(
           resolvedElement,
           elementDOM,
@@ -2984,20 +2989,24 @@ function setDOMSelectionBaseAndExtent(
   }
 }
 
-function getElementAndOffsetForPoint(
+function $getElementAndOffsetForPoint(
   editor: LexicalEditor,
   node: LexicalNode,
   offset: number,
 ): [HTMLElement, number] {
   const element = getElementByKeyOrThrow(editor, node.getKey());
   if ($isElementNode(node)) {
-    const slot = node.getDOMSlot(element);
+    const slot = $getEditorDOMRenderConfig(editor).$getDOMSlot(
+      node,
+      element,
+      editor,
+    );
     return [slot.element, offset + slot.getFirstChildOffset()];
   }
   return [element, offset];
 }
 
-export function updateDOMSelection(
+export function $updateDOMSelection(
   prevSelection: BaseSelection | null,
   nextSelection: BaseSelection | null,
   editor: LexicalEditor,
@@ -3041,12 +3050,12 @@ export function updateDOMSelection(
   const focus = nextSelection.focus;
   const anchorNode = anchor.getNode();
   const focusNode = focus.getNode();
-  const [anchorDOM, nextAnchorOffset] = getElementAndOffsetForPoint(
+  const [anchorDOM, nextAnchorOffset] = $getElementAndOffsetForPoint(
     editor,
     anchorNode,
     anchor.offset,
   );
-  const [focusDOM, nextFocusOffset] = getElementAndOffsetForPoint(
+  const [focusDOM, nextFocusOffset] = $getElementAndOffsetForPoint(
     editor,
     focusNode,
     focus.offset,

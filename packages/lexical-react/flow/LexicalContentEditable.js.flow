@@ -28,7 +28,7 @@ type HTMLDivElementDOMProps = Readonly<{
   'aria-invalid'?: void | boolean,
   'aria-owns'?: void | string,
   'title'?: void | string,
-  onClick?: void | ((e: SyntheticEvent<HTMLDivElement>) => mixed),
+  onClick?: void | ((e: SyntheticEvent<HTMLDivElement>) => unknown),
   autoCapitalize?: void | boolean,
   autoComplete?: void | boolean,
   autoCorrect?: void | boolean,

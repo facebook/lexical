@@ -6,7 +6,7 @@
  *
  */
 
-import type {ListType} from './';
+import type {ListNode, ListType} from './';
 import type {
   BaseSelection,
   DOMConversionOutput,
@@ -22,8 +22,8 @@ import type {
   Spread,
 } from 'lexical';
 
-import {getStyleObjectFromCSS} from '@lexical/selection';
 import {
+  $insertNodeToNearestRootAtCaret,
   addClassNamesToElement,
   removeClassNamesFromElement,
 } from '@lexical/utils';
@@ -31,13 +31,17 @@ import {
   $applyNodeReplacement,
   $copyNode,
   $createParagraphNode,
+  $getSiblingCaret,
   $isElementNode,
   $isParagraphNode,
   $isRangeSelection,
+  $isRootOrShadowRoot,
   buildImportMap,
   ElementNode,
+  getStyleObjectFromCSS,
   LexicalEditor,
   normalizeClassNames,
+  setDOMStyleFromCSS,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
@@ -58,14 +62,20 @@ function applyMarkerStyles(
   node: ListItemNode,
   prevNode: ListItemNode | null,
 ): void {
-  const styles: Record<string, string> = getStyleObjectFromCSS(
-    node.__textStyle,
-  );
+  const nextTextStyle = node.__textStyle;
+  const prevTextStyle = prevNode ? prevNode.__textStyle : '';
+
+  if (prevNode !== null && prevTextStyle === nextTextStyle) {
+    return;
+  }
+
+  const styles: Record<string, string> = getStyleObjectFromCSS(nextTextStyle);
   for (const k in styles) {
     dom.style.setProperty(`--listitem-marker-${k}`, styles[k]);
   }
-  if (prevNode) {
-    for (const k in getStyleObjectFromCSS(prevNode.__textStyle)) {
+
+  if (prevTextStyle !== '') {
+    for (const k in getStyleObjectFromCSS(prevTextStyle)) {
       if (!(k in styles)) {
         dom.style.removeProperty(`--listitem-marker-${k}`);
       }
@@ -84,13 +94,48 @@ export class ListItemNode extends ElementNode {
   $config() {
     return this.config('listitem', {
       $transform: (node: ListItemNode): void => {
-        if (node.__checked == null) {
-          return;
-        }
         const parent = node.getParent();
         if ($isListNode(parent)) {
           if (parent.getListType() !== 'check' && node.getChecked() != null) {
             node.setChecked(undefined);
+          }
+        } else if (parent) {
+          const newParent = node.createParentElementNode();
+          invariant(
+            $isListNode(newParent),
+            'ListItemNode.createParentElementNode() must return a ListNode',
+          );
+          // Insert an empty ListNode at the orphan's position, splitting
+          // any enclosing non-shadow-root blocks so the ListNode lifts to
+          // a valid container before we move the orphan in. The ListNode
+          // $transform merges adjacent same-type lists, so neighbouring
+          // orphans will coalesce once their own transforms run.
+          const children = [node];
+          for (const dir of ['previous', 'next'] as const) {
+            children.reverse();
+            for (const {origin} of $getSiblingCaret(node, dir)) {
+              if (!$isListItemNode(origin)) {
+                break;
+              }
+              children.push(origin);
+            }
+          }
+          node.insertBefore(newParent);
+          newParent.splice(0, 0, children);
+          if (!$isRootOrShadowRoot(parent)) {
+            const prevSibling = newParent.getPreviousSibling();
+            const nextSibling = newParent.getNextSibling();
+            $insertNodeToNearestRootAtCaret(
+              newParent,
+              prevSibling
+                ? nextSibling
+                  ? $getSiblingCaret(prevSibling, 'next')
+                  : $getSiblingCaret(parent, 'next')
+                : $getSiblingCaret(parent, 'previous'),
+            );
+            if (parent.isEmpty() && parent.isAttached()) {
+              parent.remove();
+            }
           }
         }
       },
@@ -140,11 +185,7 @@ export class ListItemNode extends ElementNode {
     const nextStyle = this.__style;
 
     if (prevStyle !== nextStyle) {
-      if (nextStyle === '') {
-        dom.removeAttribute('style');
-      } else {
-        dom.style.cssText = nextStyle;
-      }
+      setDOMStyleFromCSS(dom.style, nextStyle, prevStyle);
     }
     applyMarkerStyles(dom, this, prevNode);
   }
@@ -480,7 +521,7 @@ export class ListItemNode extends ElementNode {
     return true;
   }
 
-  createParentElementNode(): ElementNode {
+  createParentElementNode(): ListNode {
     return $createListNode('bullet');
   }
 

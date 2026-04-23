@@ -459,11 +459,7 @@ function useDraggableBlockMenu(
       editor.registerRootListener((rootElement) => {
         function onBlur(event: FocusEvent) {
           const relatedTarget = event.relatedTarget;
-          if (
-            relatedTarget &&
-            relatedTarget instanceof HTMLElement &&
-            isOnMenu(relatedTarget)
-          ) {
+          if (isHTMLElement(relatedTarget) && isOnMenu(relatedTarget)) {
             // Blur is caused by clicking on drag handle - restore focus immediately
             // to prevent cursor from disappearing. This must be synchronous to work.
             if (rootElement) {
@@ -494,8 +490,7 @@ function useDraggableBlockMenu(
           const activeElement = document.activeElement;
           if (
             rootElement &&
-            activeElement &&
-            activeElement instanceof HTMLElement &&
+            isHTMLElement(activeElement) &&
             isOnMenu(activeElement)
           ) {
             // Focus is on menu - restore to root and prevent blur command

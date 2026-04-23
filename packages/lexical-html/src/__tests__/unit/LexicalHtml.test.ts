@@ -12,7 +12,12 @@ import {buildEditorFromExtensions} from '@lexical/extension';
 import {createHeadlessEditor} from '@lexical/headless';
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
 import {LinkNode} from '@lexical/link';
-import {ListItemNode, ListNode} from '@lexical/list';
+import {
+  $createListItemNode,
+  $createListNode,
+  ListItemNode,
+  ListNode,
+} from '@lexical/list';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {JSDOM} from 'jsdom';
 import {
@@ -40,6 +45,30 @@ describe('HTML', () => {
         $getRoot().append($createParagraphNode());
       },
       name: 'Empty editor state',
+    },
+    {
+      // #7207: nested list should be inside parent <li>, not a separate <li>
+      html: '<ol><li value="1"><span style="white-space: pre-wrap;">Canada</span></li><li value="2"><span style="white-space: pre-wrap;">USA</span><ol><li value="1"><span style="white-space: pre-wrap;">LA</span></li><li value="2"><span style="white-space: pre-wrap;">TX</span></li></ol></li><li value="3"><span style="white-space: pre-wrap;">Germany</span></li></ol>',
+      initializeEditorState: () => {
+        const list = $createListNode('number');
+        const item1 = $createListItemNode();
+        item1.append($createTextNode('Canada'));
+        const item2 = $createListItemNode();
+        item2.append($createTextNode('USA'));
+        const nestedWrapper = $createListItemNode();
+        const nestedList = $createListNode('number');
+        const nested1 = $createListItemNode();
+        nested1.append($createTextNode('LA'));
+        const nested2 = $createListItemNode();
+        nested2.append($createTextNode('TX'));
+        nestedList.append(nested1, nested2);
+        nestedWrapper.append(nestedList);
+        const item3 = $createListItemNode();
+        item3.append($createTextNode('Germany'));
+        list.append(item1, item2, nestedWrapper, item3);
+        $getRoot().append(list);
+      },
+      name: 'Nested ordered list numbering (Regression #7207)',
     },
   ];
   for (const {name, html, initializeEditorState} of HTML_SERIALIZE) {

@@ -40,6 +40,7 @@ import {
   buildImportMap,
   ElementNode,
   getStyleObjectFromCSS,
+  isHTMLElement,
   LexicalEditor,
   normalizeClassNames,
   setDOMStyleFromCSS,
@@ -217,6 +218,24 @@ export class ListItemNode extends ElementNode {
     const direction = this.getDirection();
     if (direction) {
       element.dir = direction;
+    }
+
+    if (isNestedListNode(this)) {
+      return {
+        after(containerElement) {
+          if (isHTMLElement(containerElement)) {
+            const prevSibling = containerElement.previousElementSibling;
+            if (isHTMLElement(prevSibling) && prevSibling.nodeName === 'LI') {
+              while (containerElement.firstChild) {
+                prevSibling.append(containerElement.firstChild);
+              }
+              containerElement.remove();
+            }
+          }
+          return containerElement;
+        },
+        element,
+      };
     }
 
     return {

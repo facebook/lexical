@@ -49,6 +49,7 @@ import useFlashMessage from '../../hooks/useFlashMessage';
 import useModal from '../../hooks/useModal';
 import Button from '../../ui/Button';
 import {docFromHash, docToHash} from '../../utils/docSerialization';
+import {formatCodeWithPrettier} from '../CodeActionMenuPlugin/components/PrettierButton';
 import {PLAYGROUND_TRANSFORMERS} from '../MarkdownTransformers';
 import {
   SPEECH_TO_TEXT_COMMAND,
@@ -103,6 +104,26 @@ async function shareDoc(doc: SerializedDocument): Promise<void> {
   await window.navigator.clipboard.writeText(newUrl);
 }
 
+function handlePrettierResponse(
+  editor: LexicalEditor,
+  originalHtml: string,
+  formattedHtml: string,
+): void {
+  editor.update(() => {
+    const rootNode = $getRoot();
+    const codeNode = rootNode.getChildren().find($isCodeNode);
+    if (
+      !codeNode ||
+      codeNode.getLanguage() !== 'html' ||
+      rootNode.getChildrenSize() !== 1 ||
+      codeNode.getTextContent() !== originalHtml
+    ) {
+      return;
+    }
+    codeNode.select(0).insertRawText(formattedHtml.trimEnd());
+  });
+}
+
 export default function ActionsPlugin({
   shouldPreserveNewLinesInMarkdown,
   useCollabV2,
@@ -122,6 +143,7 @@ export default function ActionsPlugin({
   const isMarkdown = mode === 'markdown';
   const isHtml = mode === 'html';
   const unregisterTransformRef = useRef(() => {});
+
   useEffect(() => {
     if (mode !== 'wysiwyg') {
       const unregister = editor.registerNodeTransform(RootNode, (rootNode) => {
@@ -252,6 +274,15 @@ export default function ActionsPlugin({
         codeNode.select().insertRawText(html);
         codeNode.select(0, 0);
         setMode('html');
+        if (html) {
+          formatCodeWithPrettier(html, 'html')
+            .then((formattedCode) =>
+              editor.update(() =>
+                handlePrettierResponse(editor, html, formattedCode),
+              ),
+            )
+            .catch((err: Error) => console.error(err));
+        }
       }
     });
   }, [editor]);

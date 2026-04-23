@@ -47,6 +47,14 @@ async function loadPrettierFormat() {
   return format;
 }
 
+export async function formatCodeWithPrettier(content: string, lang: string) {
+  const format = await loadPrettierFormat();
+  const options = getPrettierOptions(lang);
+  const prettierParsers = await loadPrettierParserByLang(lang);
+  options.plugins = prettierParsers.map((parser) => parser.default || parser);
+  return await format(content, options);
+}
+
 const PRETTIER_OPTIONS_BY_LANG: Record<string, Options> = {
   css: {parser: 'css'},
   html: {parser: 'html'},
@@ -94,14 +102,7 @@ export function PrettierButton({lang, editor, getCodeDOMNode}: Props) {
     }
 
     try {
-      const format = await loadPrettierFormat();
-      const options = getPrettierOptions(lang);
-      const prettierParsers = await loadPrettierParserByLang(lang);
-      options.plugins = prettierParsers.map(
-        (parser) => parser.default || parser,
-      );
-      const formattedCode = await format(content, options);
-
+      const formattedCode = await formatCodeWithPrettier(content, lang);
       editor.update(() => {
         const codeNode = $getNearestNodeFromDOMNode(codeDOMNode);
         if ($isCodeNode(codeNode)) {

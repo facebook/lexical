@@ -546,6 +546,34 @@ export function $insertNodeToNearestRootAtCaret<
   options?: SplitAtPointCaretNextOptions,
 ): NodeCaret<D> {
   let insertCaret: PointCaret<'next'> = $getCaretInDirection(caret, 'next');
+  // Normalize boundary cases for TextPointCaret
+  if ($isTextPointCaret(insertCaret)) {
+    if (insertCaret.offset === 0) {
+      insertCaret = $getSiblingCaret(
+        insertCaret.origin,
+        'previous',
+      ).getFlipped();
+    } else if (insertCaret.offset === insertCaret.origin.getTextContentSize()) {
+      insertCaret = $getSiblingCaret(insertCaret.origin, 'next');
+    }
+  }
+  // Make sure we have a distinct node as the origin
+  if (insertCaret.origin.is(node)) {
+    invariant(
+      $isSiblingCaret(insertCaret),
+      '$insertNodeToNearestRootAtCaret node %s of type %s can not be inserted into itself',
+      node.getKey(),
+      node.getType(),
+    );
+    insertCaret = $rewindSiblingCaret(insertCaret);
+  }
+  // Handle split boundary conditions where node is being inserted adjacent to itself
+  if (
+    node.is(insertCaret.getNodeAtCaret()) ||
+    node.is(insertCaret.getFlipped().getNodeAtCaret())
+  ) {
+    node.remove(true);
+  }
   for (
     let nextCaret: null | PointCaret<'next'> = insertCaret;
     nextCaret;

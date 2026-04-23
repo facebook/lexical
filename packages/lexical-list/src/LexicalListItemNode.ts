@@ -36,6 +36,7 @@ import {
   $isParagraphNode,
   $isRangeSelection,
   $isRootOrShadowRoot,
+  $rewindSiblingCaret,
   buildImportMap,
   ElementNode,
   getStyleObjectFromCSS,
@@ -123,15 +124,10 @@ export class ListItemNode extends ElementNode {
           node.insertBefore(newParent);
           newParent.splice(0, 0, children);
           if (!$isRootOrShadowRoot(parent)) {
-            const prevSibling = newParent.getPreviousSibling();
-            const nextSibling = newParent.getNextSibling();
             $insertNodeToNearestRootAtCaret(
               newParent,
-              prevSibling
-                ? nextSibling
-                  ? $getSiblingCaret(prevSibling, 'next')
-                  : $getSiblingCaret(parent, 'next')
-                : $getSiblingCaret(parent, 'previous'),
+              $rewindSiblingCaret($getSiblingCaret(newParent, 'next')),
+              {$shouldSplit: () => false, removeEmptyDestination: true},
             );
             if (parent.isEmpty() && parent.isAttached()) {
               parent.remove();

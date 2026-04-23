@@ -395,3 +395,8 @@ export {
   removeClassNamesFromElement,
 } from './utils/classNames';
 export {mergeRegister} from './utils/mergeRegister';
+export {
+  getStyleObjectFromCSS,
+  setDOMStyleFromCSS,
+  setDOMStyleObject,
+} from './utils/setDOMStyle';

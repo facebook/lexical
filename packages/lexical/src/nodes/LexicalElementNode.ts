@@ -228,8 +228,9 @@ export class ElementDOMSlot<T extends HTMLElement = HTMLElement> {
     if (webkitHack) {
       const img = document.createElement('img');
       img.setAttribute('data-lexical-linebreak', 'true');
-      img.style.cssText =
-        'display: inline !important; border: 0px !important; margin: 0px !important;';
+      img.style.setProperty('display', 'inline', 'important');
+      img.style.setProperty('border', '0px', 'important');
+      img.style.setProperty('margin', '0px', 'important');
       img.alt = '';
       element.insertBefore(img, br);
       element.__lexicalLineBreak = img;

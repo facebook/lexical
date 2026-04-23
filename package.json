@@ -214,7 +214,8 @@
       "@isaacs/brace-expansion": ">=5.0.1",
       "prettier": "3.8.1",
       "yaml@^1": "^1.10.3",
-      "simple-git": ">=3.32.0"
+      "simple-git": ">=3.32.0",
+      "follow-redirects": ">=1.16.0"
     }
   }
 }

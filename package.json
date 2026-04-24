@@ -6,7 +6,8 @@
   "private": true,
   "packageManager": "pnpm@10.33.0",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "dev-examples/*"
   ],
   "engines": {
     "node": ">=20.19.0",
@@ -36,6 +37,7 @@
     "flow-typed-install": "flow-typed install -s -o --ignoreDeps dev peer bundled",
     "tsc": "tsc",
     "tsc-extension": "pnpm --filter @lexical/devtools run compile",
+    "tsc-website": "pnpm --filter @lexical/website run tsc",
     "tsc-watch": "tsc -w",
     "collab": "cross-env HOST=localhost PORT=1234 npx y-websocket",
     "validation": "npx ts-node --cwdMode packages/lexical-playground/src/server/validation.ts",
@@ -85,7 +87,7 @@
     "lint": "eslint ./",
     "lint:fix": "eslint ./ --fix",
     "prettier": "prettier --list-different .",
-    "ci-check": "npm-run-all --parallel tsc tsc-extension flow prettier lint",
+    "ci-check": "npm-run-all --parallel tsc tsc-extension tsc-website flow prettier lint",
     "prettier:fix": "prettier --write .",
     "prepare-ci": "pnpm run build-playground-dev",
     "prepare-ci-prod": "pnpm run build-playground-prod",
@@ -212,7 +214,8 @@
       "@isaacs/brace-expansion": ">=5.0.1",
       "prettier": "3.8.1",
       "yaml@^1": "^1.10.3",
-      "simple-git": ">=3.32.0"
+      "simple-git": ">=3.32.0",
+      "follow-redirects": ">=1.16.0"
     }
   }
 }

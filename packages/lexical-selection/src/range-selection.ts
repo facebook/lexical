@@ -34,15 +34,12 @@ import {
   $isRootOrShadowRoot,
   $isTextNode,
   $setSelection,
+  getStyleObjectFromCSS,
   INTERNAL_$isBlock,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
-import {
-  $getComputedStyleForElement,
-  $getComputedStyleForParent,
-  getStyleObjectFromCSS,
-} from './utils';
+import {$getComputedStyleForElement, $getComputedStyleForParent} from './utils';
 
 export function $copyBlockFormatIndent(
   srcNode: ElementNode,

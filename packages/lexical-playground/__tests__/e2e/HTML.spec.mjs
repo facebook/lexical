@@ -1,0 +1,226 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
+import {
+  applyCodeBlock,
+  applyHeading,
+  selectAll,
+  toggleBold,
+  toggleItalic,
+} from '../keyboardShortcuts/index.mjs';
+import {
+  assertHTML,
+  click,
+  focusEditor,
+  html,
+  initialize,
+  insertDateTime,
+  repeat,
+  test,
+} from '../utils/index.mjs';
+
+test.describe('HTML', () => {
+  test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
+  test(`Can export HTML using the button`, async ({page, isPlainText}) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+    await page.keyboard.type('Foo');
+    await applyHeading(page, 1);
+    await page.keyboard.press('Enter');
+    await applyCodeBlock(page);
+    await page.keyboard.type('const x = "hello world";');
+    await repeat(3, async () => await page.keyboard.press('Enter'));
+    await page.keyboard.type('Today ');
+    await toggleBold(page);
+    await toggleItalic(page);
+    await insertDateTime(page);
+
+    const expectedViewHtml = html`
+      <h1 class="PlaygroundEditorTheme__h1" dir="auto">
+        <span data-lexical-text="true">Foo</span>
+      </h1>
+      <code
+        class="PlaygroundEditorTheme__code"
+        dir="auto"
+        spellcheck="false"
+        data-gutter="1"
+        data-highlight-language="javascript"
+        data-language="javascript">
+        <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
+          const
+        </span>
+        <span data-lexical-text="true">x</span>
+        <span
+          class="PlaygroundEditorTheme__tokenOperator"
+          data-lexical-text="true">
+          =
+        </span>
+        <span data-lexical-text="true"></span>
+        <span
+          class="PlaygroundEditorTheme__tokenSelector"
+          data-lexical-text="true">
+          "hello world"
+        </span>
+        <span
+          class="PlaygroundEditorTheme__tokenPunctuation"
+          data-lexical-text="true">
+          ;
+        </span>
+      </code>
+      <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+        <span data-lexical-text="true">Today</span>
+        <span
+          contenteditable="false"
+          data-lexical-datetime="*"
+          data-lexical-decorator="true">
+          <div class="dateTimePill bold italic">*</div>
+        </span>
+        <br />
+      </p>
+    `;
+    await await assertHTML(
+      page,
+      expectedViewHtml,
+      undefined,
+      {ignoreInlineStyles: true},
+      // Custom modification: replace the date text and data-lexical-datetime value with wildcards for matching
+      (actualHtml) =>
+        actualHtml
+          .replace(/(<div[^>]*>)(.*?)(<\/div>)/, '$1*$3')
+          .replace(
+            /data-lexical-datetime="[^"]*"/,
+            'data-lexical-datetime="*"',
+          ),
+    );
+
+    await click(page, '.action-button .html');
+
+    await await assertHTML(
+      page,
+      html`
+        <code
+          class="PlaygroundEditorTheme__code"
+          dir="auto"
+          spellcheck="false"
+          data-gutter="1"
+          data-highlight-language="html"
+          data-language="html">
+          *
+        </code>
+      `,
+      undefined,
+      {ignoreInlineStyles: true},
+      (actualHtml) =>
+        actualHtml.replace(/(<code[^>]*>)([\s\S]*)(<\/code>)/, '$1\n  *\n$3'),
+    );
+
+    await click(page, '.action-button .html');
+    // same view after import html
+    await await assertHTML(
+      page,
+      expectedViewHtml,
+      undefined,
+      {ignoreInlineStyles: true},
+      // Custom modification: replace the date text and data-lexical-datetime value with wildcards for matching
+      (actualHtml) =>
+        actualHtml
+          .replace(/(<div[^>]*>)(.*?)(<\/div>)/, '$1*$3')
+          .replace(
+            /data-lexical-datetime="[^"]*"/,
+            'data-lexical-datetime="*"',
+          ),
+    );
+  });
+
+  test(`Can import HTML using the button`, async ({page, isPlainText}) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+    await click(page, '.action-button .html');
+
+    await await assertHTML(
+      page,
+      html`
+        <code
+          class="PlaygroundEditorTheme__code"
+          dir="auto"
+          spellcheck="false"
+          data-gutter="1"
+          data-highlight-language="html"
+          data-language="html">
+          *
+        </code>
+      `,
+      undefined,
+      {ignoreInlineStyles: true},
+      (actualHtml) =>
+        actualHtml.replace(/(<code[^>]*>)([\s\S]*)(<\/code>)/, '$1\n  *\n$3'),
+    );
+
+    await selectAll(page);
+    await page.keyboard.type(html`
+      <h1>Foo</h1>
+      <pre>const x = "hello world";</pre>
+      <p>
+        Hello
+        <b><i>world</i></b>
+      </p>
+    `);
+    await click(page, '.action-button .html');
+
+    await await assertHTML(
+      page,
+      html`
+        <h1 class="PlaygroundEditorTheme__h1" dir="auto">
+          <span data-lexical-text="true">Foo</span>
+        </h1>
+        <code
+          class="PlaygroundEditorTheme__code"
+          dir="auto"
+          spellcheck="false"
+          data-gutter="1"
+          data-highlight-language="javascript"
+          data-language="javascript">
+          <span
+            class="PlaygroundEditorTheme__tokenAttr"
+            data-lexical-text="true">
+            const
+          </span>
+          <span data-lexical-text="true">x</span>
+          <span
+            class="PlaygroundEditorTheme__tokenOperator"
+            data-lexical-text="true">
+            =
+          </span>
+          <span data-lexical-text="true"></span>
+          <span
+            class="PlaygroundEditorTheme__tokenSelector"
+            data-lexical-text="true">
+            "hello world"
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true">
+            ;
+          </span>
+        </code>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">Hello</span>
+          <strong
+            class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
+            data-lexical-text="true">
+            world
+          </strong>
+        </p>
+      `,
+      undefined,
+      {ignoreInlineStyles: true},
+    );
+  });
+});

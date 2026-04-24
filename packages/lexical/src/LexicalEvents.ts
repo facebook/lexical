@@ -69,6 +69,7 @@ import {
   REDO_COMMAND,
   REMOVE_TEXT_COMMAND,
   SELECTION_CHANGE_COMMAND,
+  SKIP_SELECTION_FOCUS_TAG,
   UNDO_COMMAND,
 } from '.';
 import {
@@ -863,7 +864,15 @@ function $handleBeforeInput(event: InputEvent): boolean {
       break;
     }
 
-    case 'deleteByDrag':
+    case 'deleteByDrag': {
+      // The drop target is taking over focus and the document selection;
+      // suppress this editor's own attempt to focus its root or move the DOM
+      // selection back to the post-removal point during reconciliation.
+      $addUpdateTag(SKIP_SELECTION_FOCUS_TAG);
+      dispatchCommand(editor, REMOVE_TEXT_COMMAND, event);
+      break;
+    }
+
     case 'deleteByCut': {
       dispatchCommand(editor, REMOVE_TEXT_COMMAND, event);
       break;

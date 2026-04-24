@@ -192,7 +192,7 @@ describe('useExtensionSignalValue', () => {
       name: 'test',
     });
 
-    const editor = buildEditorFromExtensions({
+    using editor = buildEditorFromExtensions({
       dependencies: [ReactPluginHostExtension, TestExtension],
       name: '[root]',
     });
@@ -284,7 +284,7 @@ describe('useExtensionSignalValue', () => {
       name: 'test',
     });
 
-    const editor = buildEditorFromExtensions({
+    using editor = buildEditorFromExtensions({
       dependencies: [ReactPluginHostExtension, TestExtension],
       name: '[root]',
     });
@@ -337,7 +337,7 @@ describe('useExtensionSignalValue', () => {
       name: 'test',
     });
 
-    const editor = buildEditorFromExtensions({
+    using editor = buildEditorFromExtensions({
       dependencies: [ReactPluginHostExtension, TestExtension],
       name: '[root]',
     });
@@ -380,7 +380,7 @@ describe('useExtensionSignalValue', () => {
       name: 'test',
     });
 
-    const editor = buildEditorFromExtensions({
+    using editor = buildEditorFromExtensions({
       dependencies: [ReactPluginHostExtension, TestExtension],
       name: '[root]',
     });

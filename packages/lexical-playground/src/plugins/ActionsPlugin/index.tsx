@@ -18,6 +18,12 @@ import {
   serializedDocumentFromEditorState,
 } from '@lexical/file';
 import {
+  $generateHtmlFromNodes,
+  $generateNodesFromDOM,
+  $withRenderContext,
+  contextValue,
+} from '@lexical/html';
+import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
 } from '@lexical/markdown';
@@ -26,16 +32,17 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {mergeRegister} from '@lexical/utils';
 import {CONNECTED_COMMAND, TOGGLE_CONNECT_COMMAND} from '@lexical/yjs';
 import {
-  $createTextNode,
   $getRoot,
+  $insertNodes,
   $isParagraphNode,
   CLEAR_EDITOR_COMMAND,
   CLEAR_HISTORY_COMMAND,
   COLLABORATION_TAG,
   COMMAND_PRIORITY_EDITOR,
   HISTORIC_TAG,
+  RootNode,
 } from 'lexical';
-import {useCallback, useEffect, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 
 import {INITIAL_SETTINGS} from '../../appSettings';
 import useFlashMessage from '../../hooks/useFlashMessage';
@@ -47,6 +54,7 @@ import {
   SPEECH_TO_TEXT_COMMAND,
   SUPPORT_SPEECH_RECOGNITION,
 } from '../SpeechToTextPlugin';
+import {RenderContextTerse} from '../TerseExportExtension';
 import {SHOW_VERSIONS_COMMAND} from '../VersionsPlugin';
 
 async function sendEditorState(editor: LexicalEditor): Promise<void> {
@@ -110,6 +118,29 @@ export default function ActionsPlugin({
   const [modal, showModal] = useModal();
   const showFlashMessage = useFlashMessage();
   const {isCollabActive} = useCollaborationContext();
+  const [mode, setMode] = useState<'wysiwyg' | 'markdown' | 'html'>('wysiwyg');
+  const isMarkdown = mode === 'markdown';
+  const isHtml = mode === 'html';
+  const unregisterTransformRef = useRef(() => {});
+  useEffect(() => {
+    if (mode !== 'wysiwyg') {
+      const unregister = editor.registerNodeTransform(RootNode, (rootNode) => {
+        let codeNode = rootNode.getChildren().find($isCodeNode);
+        if (!codeNode) {
+          codeNode = $createCodeNode(mode);
+        }
+        if (rootNode.getChildrenSize() !== 1 || !codeNode.getParent()) {
+          rootNode.splice(0, rootNode.getChildrenSize(), [codeNode]);
+          codeNode.select();
+        }
+        if (codeNode.getLanguage() !== mode) {
+          codeNode.setLanguage(mode);
+        }
+      });
+      unregisterTransformRef.current = unregister;
+      return unregister;
+    }
+  }, [editor, mode]);
   useEffect(() => {
     if (INITIAL_SETTINGS.isCollab) {
       return;
@@ -175,12 +206,14 @@ export default function ActionsPlugin({
       const root = $getRoot();
       const firstChild = root.getFirstChild();
       if ($isCodeNode(firstChild) && firstChild.getLanguage() === 'markdown') {
+        unregisterTransformRef.current();
         $convertFromMarkdownString(
           firstChild.getTextContent(),
           PLAYGROUND_TRANSFORMERS,
           undefined, // node
           shouldPreserveNewLinesInMarkdown,
         );
+        setMode('wysiwyg');
       } else {
         const markdown = $convertToMarkdownString(
           PLAYGROUND_TRANSFORMERS,
@@ -188,14 +221,40 @@ export default function ActionsPlugin({
           shouldPreserveNewLinesInMarkdown,
         );
         const codeNode = $createCodeNode('markdown');
-        codeNode.append($createTextNode(markdown));
         root.clear().append(codeNode);
-        if (markdown.length === 0) {
-          codeNode.select();
-        }
+        codeNode.select().insertRawText(markdown);
+        codeNode.select(0, 0);
+        setMode('markdown');
       }
     });
   }, [editor, shouldPreserveNewLinesInMarkdown]);
+
+  const handleHtmlToggle = useCallback(() => {
+    editor.update(() => {
+      const root = $getRoot();
+      const firstChild = root.getFirstChild();
+      if ($isCodeNode(firstChild) && firstChild.getLanguage() === 'html') {
+        unregisterTransformRef.current();
+        const htmlString = firstChild.getTextContent();
+        const parser = new DOMParser();
+        const dom = parser.parseFromString(htmlString, 'text/html');
+        const nodes = $generateNodesFromDOM(editor, dom);
+        $getRoot().clear().select();
+        $insertNodes(nodes);
+        setMode('wysiwyg');
+      } else {
+        const html = $withRenderContext(
+          [contextValue(RenderContextTerse, true)],
+          editor,
+        )(() => $generateHtmlFromNodes(editor));
+        const codeNode = $createCodeNode('html');
+        root.clear().append(codeNode);
+        codeNode.select().insertRawText(html);
+        codeNode.select(0, 0);
+        setMode('html');
+      }
+    });
+  }, [editor]);
 
   return (
     <div className="actions">
@@ -280,10 +339,23 @@ export default function ActionsPlugin({
       </button>
       <button
         className="action-button"
+        data-active={isMarkdown}
+        disabled={isHtml}
         onClick={handleMarkdownToggle}
-        title="Convert From Markdown"
-        aria-label="Convert from markdown">
+        title={isMarkdown ? 'Convert From Markdown' : 'Convert To Markdown'}
+        aria-label={
+          isMarkdown ? 'Convert from markdown' : 'Convert To Markdown'
+        }>
         <i className="markdown" />
+      </button>
+      <button
+        className="action-button"
+        data-active={isHtml}
+        disabled={isMarkdown}
+        onClick={handleHtmlToggle}
+        title={isHtml ? 'Convert From HTML' : ' Convert To HTML'}
+        aria-label={isHtml ? 'Convert from html' : 'Convert to html'}>
+        <i className="html" />
       </button>
       {isCollabActive && (
         <>

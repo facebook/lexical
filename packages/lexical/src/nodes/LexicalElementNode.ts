@@ -44,6 +44,7 @@ import {
 } from '../LexicalSelection';
 import {errorOnReadOnly, getActiveEditor} from '../LexicalUpdates';
 import {
+  $getEditorDOMRenderConfig,
   $getNodeByKey,
   $isRootOrShadowRoot,
   isHTMLElement,
@@ -227,8 +228,9 @@ export class ElementDOMSlot<T extends HTMLElement = HTMLElement> {
     if (webkitHack) {
       const img = document.createElement('img');
       img.setAttribute('data-lexical-linebreak', 'true');
-      img.style.cssText =
-        'display: inline !important; border: 0px !important; margin: 0px !important;';
+      img.style.setProperty('display', 'inline', 'important');
+      img.style.setProperty('border', '0px', 'important');
+      img.style.setProperty('margin', '0px', 'important');
       img.alt = '';
       element.insertBefore(img, br);
       element.__lexicalLineBreak = img;
@@ -659,7 +661,7 @@ export class ElementNode extends LexicalNode {
   }
   setFormat(type: ElementFormatType): this {
     const self = this.getWritable();
-    self.__format = type !== '' ? ELEMENT_TYPE_TO_FORMAT[type] : 0;
+    self.__format = type !== '' ? ELEMENT_TYPE_TO_FORMAT[type] || 0 : 0;
     return this;
   }
   setStyle(style: string): this {
@@ -982,7 +984,11 @@ export class ElementNode extends LexicalNode {
 
   /** @internal */
   reconcileObservedMutation(dom: HTMLElement, editor: LexicalEditor): void {
-    const slot = this.getDOMSlot(dom);
+    const slot = $getEditorDOMRenderConfig(editor).$getDOMSlot(
+      this,
+      dom,
+      editor,
+    );
     let currentDOM = slot.getFirstChild();
     for (
       let currentNode = this.getFirstChild();

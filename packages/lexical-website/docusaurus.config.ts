@@ -7,8 +7,9 @@
  */
 
 import type {Options as DocsPluginOptions} from '@docusaurus/plugin-content-docs';
-import type {Config} from '@docusaurus/types';
+import type {Config, PluginModule} from '@docusaurus/types';
 
+import tailwindcssPostcss from '@tailwindcss/postcss';
 import fs from 'node:fs';
 import {createRequire} from 'node:module';
 import path from 'node:path';
@@ -178,7 +179,8 @@ const sidebarItemsGenerator: SidebarItemsGenerator = async ({
             if (m) {
               const groupedItem = {...item, label: m[2]};
               if (
-                (lastItem && lastItem.type === 'category') ||
+                lastItem &&
+                lastItem.type === 'category' &&
                 lastItem.label === m[1]
               ) {
                 lastItem.items.push(groupedItem);
@@ -346,54 +348,49 @@ const config: Config = {
     async function webpackLexicalModules() {
       return {
         configureWebpack() {
-          return {
-            resolve: {
-              alias: {
-                ...buildLexicalWebpackAliases(),
-                '@examples/agent-example': path.resolve(
-                  __dirname,
-                  '../../examples/agent-example/src',
-                ),
-                '@examples/website-chat': path.resolve(
-                  __dirname,
-                  '../../examples/website-chat/src',
-                ),
-                '@examples/website-notion': path.resolve(
-                  __dirname,
-                  '../../examples/website-notion/src',
-                ),
-                '@examples/website-rich-input': path.resolve(
-                  __dirname,
-                  '../../examples/website-rich-input/src',
-                ),
-                '@examples/website-toolbar': path.resolve(
-                  __dirname,
-                  '../../examples/website-toolbar/src',
-                ),
-                '@huggingface/transformers': path.resolve(
-                  __dirname,
-                  'node_modules/@huggingface/transformers/dist/transformers.web.js',
-                ),
-                'onnxruntime-node': false,
-              },
-            },
+          const alias: Record<string, string | false | string[]> = {
+            ...buildLexicalWebpackAliases(),
+            '@examples/agent-example': path.resolve(
+              __dirname,
+              '../../examples/agent-example/src',
+            ),
+            '@examples/website-chat': path.resolve(
+              __dirname,
+              '../../examples/website-chat/src',
+            ),
+            '@examples/website-notion': path.resolve(
+              __dirname,
+              '../../examples/website-notion/src',
+            ),
+            '@examples/website-rich-input': path.resolve(
+              __dirname,
+              '../../examples/website-rich-input/src',
+            ),
+            '@examples/website-toolbar': path.resolve(
+              __dirname,
+              '../../examples/website-toolbar/src',
+            ),
+            '@huggingface/transformers': path.resolve(
+              __dirname,
+              'node_modules/@huggingface/transformers/dist/transformers.web.js',
+            ),
+            'onnxruntime-node': false,
           };
+          return {resolve: {alias}};
         },
         name: 'webpack-lexical-modules',
       };
-    },
+    } satisfies PluginModule,
     ['docusaurus-plugin-typedoc', docusaurusPluginTypedocConfig],
     async function tailwindcss() {
       return {
-        async configurePostCss(postcssOptions: {plugins: unknown[]}) {
-          postcssOptions.plugins.push(
-            (await import('@tailwindcss/postcss')).default,
-          );
+        configurePostCss(postcssOptions) {
+          postcssOptions.plugins.push(tailwindcssPostcss);
           return postcssOptions;
         },
         name: 'docusaurus-tailwindcss',
       };
-    },
+    } satisfies PluginModule,
     [
       '@docusaurus/plugin-client-redirects',
       {

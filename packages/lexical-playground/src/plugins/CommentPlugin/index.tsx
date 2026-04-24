@@ -279,15 +279,17 @@ function CommentInputBox({
               container.appendChild(elem);
             }
             const color = '255, 212, 0';
-            const style = `position:absolute;top:${
+            elem.style.position = 'absolute';
+            elem.style.top = `${
               selectionRect.top +
               (window.pageYOffset || document.documentElement.scrollTop)
-            }px;left:${selectionRect.left}px;height:${
-              selectionRect.height
-            }px;width:${
-              selectionRect.width
-            }px;background-color:rgba(${color}, 0.3);pointer-events:none;z-index:5;`;
-            elem.style.cssText = style;
+            }px`;
+            elem.style.left = `${selectionRect.left}px`;
+            elem.style.height = `${selectionRect.height}px`;
+            elem.style.width = `${selectionRect.width}px`;
+            elem.style.backgroundColor = `rgba(${color}, 0.3)`;
+            elem.style.pointerEvents = 'none';
+            elem.style.zIndex = '5';
           }
           for (let i = elementsLength - 1; i >= selectionRectsLength; i--) {
             const elem = elements[i];

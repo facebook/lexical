@@ -68,6 +68,7 @@ import {PagesReactExtension} from './plugins/PagesReactExtension';
 import PasteLogPlugin from './plugins/PasteLogPlugin';
 import {SpecialTextExtension} from './plugins/SpecialTextExtension';
 import {TabFocusExtension} from './plugins/TabFocusExtension';
+import {TerseExportExtension} from './plugins/TerseExportExtension';
 import TestRecorderPlugin from './plugins/TestRecorderPlugin';
 import {TwitterExtension} from './plugins/TwitterExtension';
 import TypingPerfPlugin from './plugins/TypingPerfPlugin';
@@ -199,6 +200,7 @@ const AppExtension = defineExtension({
     PlaygroundAutoLinkExtension,
     ClickableLinkExtension,
     SelectionAlwaysOnDisplayExtension,
+    TerseExportExtension,
   ],
   html: buildHTMLConfig(),
   name: '@lexical/playground',
@@ -227,7 +229,6 @@ function buildExtensionFromSettings(
       configExtension(HistoryExtension, {disabled: isCollab}),
       isRichText ? PlaygroundRichTextExtension : PlainTextExtension,
     ],
-    html: buildHTMLConfig(),
     name: '@lexical/playground/dynamic-config',
   });
 }

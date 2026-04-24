@@ -135,10 +135,12 @@ export {
 export type {
   CommandListener,
   CommandListenerPriority,
+  CommandListenerPriorityBefore,
   CommandPayloadType,
   CreateEditorArgs,
   EditableListener,
   EditorConfig,
+  EditorDOMRenderConfig,
   EditorSetOptions,
   EditorThemeClasses,
   EditorThemeClassName,
@@ -160,12 +162,18 @@ export type {
   UpdateListenerPayload,
 } from './LexicalEditor';
 export {
+  COMMAND_PRIORITY_BEFORE_CRITICAL,
+  COMMAND_PRIORITY_BEFORE_EDITOR,
+  COMMAND_PRIORITY_BEFORE_HIGH,
+  COMMAND_PRIORITY_BEFORE_LOW,
+  COMMAND_PRIORITY_BEFORE_NORMAL,
   COMMAND_PRIORITY_CRITICAL,
   COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_HIGH,
   COMMAND_PRIORITY_LOW,
   COMMAND_PRIORITY_NORMAL,
   createEditor,
+  DEFAULT_EDITOR_DOM_CONFIG,
   getTransformSetFromKlass,
 } from './LexicalEditor';
 export type {
@@ -197,7 +205,7 @@ export type {
   StaticNodeConfigRecord,
   StaticNodeConfigValue,
 } from './LexicalNode';
-export {buildImportMap} from './LexicalNode';
+export {$isLexicalNode, buildImportMap} from './LexicalNode';
 export {
   $getState,
   $getStateChange,
@@ -250,6 +258,7 @@ export {
   $findMatchingParent,
   $getAdjacentNode,
   $getEditor,
+  $getEditorDOMRenderConfig,
   $getNearestNodeFromDOMNode,
   $getNearestRootOrShadowRoot,
   $getNodeByKey,
@@ -386,3 +395,8 @@ export {
   removeClassNamesFromElement,
 } from './utils/classNames';
 export {mergeRegister} from './utils/mergeRegister';
+export {
+  getStyleObjectFromCSS,
+  setDOMStyleFromCSS,
+  setDOMStyleObject,
+} from './utils/setDOMStyle';

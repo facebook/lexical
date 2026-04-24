@@ -29,6 +29,7 @@ import {
   LexicalUpdateJSON,
   NodeKey,
   SerializedElementNode,
+  setDOMStyleFromCSS,
   setDOMUnmanaged,
   Spread,
 } from 'lexical';
@@ -41,6 +42,7 @@ import {$isTableRowNode, type TableRowNode} from './LexicalTableRowNode';
 import {
   $getNearestTableCellInTableFromDOMNode,
   getTable,
+  getTableElement,
   isHTMLTableElement,
 } from './LexicalTableSelectionHelpers';
 import {$computeTableMapSkipCellCheck} from './LexicalTableUtils';
@@ -273,7 +275,7 @@ export class TableNode extends ElementNode {
   createDOM(config: EditorConfig, editor?: LexicalEditor): HTMLElement {
     const tableElement = document.createElement('table');
     if (this.__style) {
-      tableElement.style.cssText = this.__style;
+      setDOMStyleFromCSS(tableElement.style, this.__style);
     }
     const colGroup = document.createElement('colgroup');
     tableElement.appendChild(colGroup);
@@ -286,7 +288,7 @@ export class TableNode extends ElementNode {
       if (classes) {
         addClassNamesToElement(wrapperElement, classes);
       } else {
-        wrapperElement.style.cssText = 'overflow-x: auto;';
+        wrapperElement.style.overflowX = 'auto';
       }
       wrapperElement.appendChild(tableElement);
       this.updateTableWrapper(null, wrapperElement, tableElement, config);
@@ -322,7 +324,11 @@ export class TableNode extends ElementNode {
     config: EditorConfig,
   ): void {
     if (this.__style !== (prevNode ? prevNode.__style : '')) {
-      tableElement.style.cssText = this.__style;
+      setDOMStyleFromCSS(
+        tableElement.style,
+        this.__style,
+        prevNode ? prevNode.__style : '',
+      );
     }
     if (this.__rowStriping !== (prevNode ? prevNode.__rowStriping : false)) {
       setRowStriping(tableElement, config, this.__rowStriping);
@@ -339,8 +345,7 @@ export class TableNode extends ElementNode {
   }
 
   updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
-    const slot = this.getDOMSlot(dom);
-    const tableElement = slot.element;
+    const tableElement = getTableElement(this, dom);
     if ((dom === tableElement) === $isScrollableTablesActive()) {
       return true;
     }
@@ -356,8 +361,7 @@ export class TableNode extends ElementNode {
     if (!colWidths) {
       return;
     }
-    const slot = this.getDOMSlot(dom);
-    const tableElement = slot.element;
+    const tableElement = getTableElement(this, dom);
     updateColgroup(
       tableElement,
       this.getColumnCount(),

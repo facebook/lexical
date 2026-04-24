@@ -789,6 +789,24 @@ describe('LexicalTextNode tests', () => {
       });
     });
 
+    test('applies styles with direct DOM property updates', async () => {
+      await update(() => {
+        const textNode = $createTextNode('My text node');
+        textNode.setStyle(
+          'color: red; background-color: blue !important; --custom: value;',
+        );
+
+        const element = textNode.createDOM(editorConfig);
+
+        expect(element.style.color).toBe('red');
+        expect(element.style.backgroundColor).toBe('blue');
+        expect(element.style.getPropertyPriority('background-color')).toBe(
+          'important',
+        );
+        expect(element.style.getPropertyValue('--custom')).toBe('value');
+      });
+    });
+
     describe('has parent node', () => {
       test.each([
         ['no formatting', 0, 'My text node', '<span>My text node</span>'],
@@ -909,6 +927,25 @@ describe('LexicalTextNode tests', () => {
         });
       },
     );
+
+    test('updates and removes styles with direct DOM property updates', async () => {
+      await update(() => {
+        const prevTextNode = $createTextNode('My text node');
+        prevTextNode.setStyle('color: red; --custom: value;');
+
+        const element = prevTextNode.createDOM(editorConfig);
+
+        const nextTextNode = $createTextNode('My text node');
+        nextTextNode.setStyle('padding: 1px;');
+
+        expect(
+          nextTextNode.updateDOM(prevTextNode, element, editorConfig),
+        ).toBe(false);
+        expect(element.style.color).toBe('');
+        expect(element.style.getPropertyValue('--custom')).toBe('');
+        expect(element.style.padding).toBe('1px');
+      });
+    });
   });
 
   describe('exportDOM()', () => {

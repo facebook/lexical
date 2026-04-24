@@ -7,9 +7,12 @@
  */
 import type {ElementNode, LexicalEditor, LexicalNode} from 'lexical';
 
-import {$getEditor, $isRootNode, $isTextNode} from 'lexical';
-
-import {CSS_TO_STYLES} from './constants';
+import {
+  $getEditor,
+  $isRootNode,
+  $isTextNode,
+  getStyleObjectFromCSS,
+} from 'lexical';
 
 function getDOMTextNode(element: Node | null): Text | null {
   let node = element;
@@ -175,48 +178,13 @@ export function createRectsFromDOMRange(
  * @returns The styleObject containing all the styles and their values.
  */
 export function getStyleObjectFromRawCSS(css: string): Record<string, string> {
-  const styleObject: Record<string, string> = {};
-  if (!css) {
-    return styleObject;
-  }
-  const styles = css.split(';');
-
-  for (const style of styles) {
-    if (style !== '') {
-      const [key, value] = style.split(/:([^]+)/); // split on first colon
-      if (key && value) {
-        styleObject[key.trim()] = value.trim();
-      }
-    }
-  }
-
-  return styleObject;
+  return getStyleObjectFromCSS(css);
 }
 
 /**
- * Given a CSS string, returns an object from the style cache.
+ * Given a CSS string, returns the parsed style object.
  * @param css - The CSS property as a string.
  * @returns The value of the given CSS property.
- */
-export function getStyleObjectFromCSS(css: string): Record<string, string> {
-  let value = CSS_TO_STYLES.get(css);
-  if (value === undefined) {
-    value = getStyleObjectFromRawCSS(css);
-    CSS_TO_STYLES.set(css, value);
-  }
-
-  if (__DEV__) {
-    // Freeze the value in DEV to prevent accidental mutations
-    Object.freeze(value);
-  }
-
-  return value;
-}
-
-/**
- * Gets the CSS styles from the style object.
- * @param styles - The style object containing the styles to get.
- * @returns A string containing the CSS styles and their values.
  */
 export function getCSSFromStyleObject(styles: Record<string, string>): string {
   let css = '';

@@ -45,7 +45,7 @@ function $convertMentionElement(
   return null;
 }
 
-const mentionStyle = 'background-color: rgba(24, 119, 232, 0.2)';
+const mentionBackgroundColor = 'rgba(24, 119, 232, 0.2)';
 export class MentionNode extends TextNode {
   __mention: string;
 
@@ -76,7 +76,7 @@ export class MentionNode extends TextNode {
 
   createDOM(config: EditorConfig): HTMLElement {
     const dom = super.createDOM(config);
-    dom.style.cssText = mentionStyle;
+    dom.style.backgroundColor = mentionBackgroundColor;
     dom.className = 'mention';
     dom.spellcheck = false;
 

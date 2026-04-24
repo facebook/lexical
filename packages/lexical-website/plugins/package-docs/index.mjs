@@ -16,7 +16,7 @@ import {PackageMetadata} from '../../../../scripts/shared/PackageMetadata.mjs';
 /**
  * @typedef {Object} PackageDocsPluginOptions
  * @property {string} baseDir
- * @property {editUrl} editUrl
+ * @property {string} editUrl
  * @property {string} targetDir
  * @property {Record<string, string>} packageFrontMatter
  */
@@ -25,21 +25,21 @@ import {PackageMetadata} from '../../../../scripts/shared/PackageMetadata.mjs';
  * Watch all public monorepo packages/{project}/README.md files and
  * copy them to docs/packages/{project}.md
  *
- * @param {import('@docusaurus/types').LoadContext} context
- * @param {PackageDocsPluginOptions} options
- * @returns {import('@docusaurus/types').Plugin}
+ * @type {import('@docusaurus/types').PluginModule}
  */
-export default async function (context, options) {
+const packageDocsPlugin = async function (context, options) {
+  const {baseDir, editUrl, packageFrontMatter, targetDir} =
+    /** @type {PackageDocsPluginOptions} */ (options);
   return {
-    getPathsToWatch: () => [`${options.baseDir}/*/{README.md,package.json}`],
+    getPathsToWatch: () => [`${baseDir}/*/{README.md,package.json}`],
     loadContent: () => {
-      fs.mkdirSync(options.targetDir, {recursive: true});
+      fs.mkdirSync(targetDir, {recursive: true});
       const oldTargets = new Set(
-        glob.sync(path.resolve(options.targetDir, '*.md'), {
+        glob.sync(path.resolve(targetDir, '*.md'), {
           windowsPathsNoEscape: true,
         }),
       );
-      for (const srcPath of glob.sync(`${options.baseDir}/*/README.md`, {
+      for (const srcPath of glob.sync(`${baseDir}/*/README.md`, {
         windowsPathsNoEscape: true,
       })) {
         const jsonPath = path.resolve(path.dirname(srcPath), 'package.json');
@@ -51,18 +51,14 @@ export default async function (context, options) {
           continue;
         }
         const folderName = metadata.getDirectoryName();
-        const targetPath = path.resolve(options.targetDir, `${folderName}.md`);
-        /** @type {string|undefined} */
+        const targetPath = path.resolve(targetDir, `${folderName}.md`);
         const frontMatter = [
           `# Do not edit! Generated from ${path.relative(
             path.dirname(targetPath),
             srcPath,
           )}`,
-          options.packageFrontMatter[folderName],
-          `custom_edit_url: ${options.editUrl.replace(
-            /\/$/,
-            '',
-          )}/${folderName}/README.md`,
+          packageFrontMatter[folderName],
+          `custom_edit_url: ${editUrl.replace(/\/$/, '')}/${folderName}/README.md`,
         ]
           .filter(Boolean)
           .map((s) => s.trim())
@@ -79,4 +75,6 @@ export default async function (context, options) {
     },
     name: 'package-docs',
   };
-}
+};
+
+export default packageDocsPlugin;

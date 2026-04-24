@@ -546,6 +546,34 @@ export function $insertNodeToNearestRootAtCaret<
   options?: SplitAtPointCaretNextOptions,
 ): NodeCaret<D> {
   let insertCaret: PointCaret<'next'> = $getCaretInDirection(caret, 'next');
+  // Normalize boundary cases for TextPointCaret
+  if ($isTextPointCaret(insertCaret)) {
+    if (insertCaret.offset === 0) {
+      insertCaret = $getSiblingCaret(
+        insertCaret.origin,
+        'previous',
+      ).getFlipped();
+    } else if (insertCaret.offset === insertCaret.origin.getTextContentSize()) {
+      insertCaret = $getSiblingCaret(insertCaret.origin, 'next');
+    }
+  }
+  // Make sure we have a distinct node as the origin
+  if (insertCaret.origin.is(node)) {
+    invariant(
+      $isSiblingCaret(insertCaret),
+      '$insertNodeToNearestRootAtCaret node %s of type %s can not be inserted into itself',
+      node.getKey(),
+      node.getType(),
+    );
+    insertCaret = $rewindSiblingCaret(insertCaret);
+  }
+  // Handle split boundary conditions where node is being inserted adjacent to itself
+  if (
+    node.is(insertCaret.getNodeAtCaret()) ||
+    node.is(insertCaret.getFlipped().getNodeAtCaret())
+  ) {
+    node.remove(true);
+  }
   for (
     let nextCaret: null | PointCaret<'next'> = insertCaret;
     nextCaret;
@@ -707,8 +735,10 @@ function needsManualZoom(): boolean {
     // https://chromestatus.com/feature/5198254868529152
     // https://github.com/facebook/lexical/issues/6863
     const div = document.createElement('div');
-    div.style.cssText =
-      'position: absolute; opacity: 0; width: 100px; left: -1000px;';
+    div.style.position = 'absolute';
+    div.style.opacity = '0';
+    div.style.width = '100px';
+    div.style.left = '-1000px';
     document.body.appendChild(div);
     const noZoom = div.getBoundingClientRect();
     div.style.setProperty('zoom', '2');

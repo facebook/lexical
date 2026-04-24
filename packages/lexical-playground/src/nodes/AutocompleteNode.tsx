@@ -79,10 +79,6 @@ export class AutocompleteNode extends TextNode {
     return {element: null};
   }
 
-  excludeFromCopy() {
-    return true;
-  }
-
   createDOM(config: EditorConfig): HTMLElement {
     const dom = super.createDOM(config);
     dom.classList.add(config.theme.autocomplete);

@@ -38,6 +38,10 @@ export function setFloatingElemPositionForLinkEditor(
     left = editorScrollerRect.right - floatingElemRect.width - horizontalOffset;
   }
 
+  if (top + floatingElemRect.height > editorScrollerRect.bottom) {
+    top -= floatingElemRect.height + targetRect.height + verticalGap * 2;
+  }
+
   top -= anchorElementRect.top;
   left -= anchorElementRect.left;
 

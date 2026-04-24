@@ -132,6 +132,25 @@ export default function ActionsPlugin({
   const unregisterTransformRef = useRef(() => {});
   const [mode, dispatchMode, isPending] = useActionState(
     async (prevMode: EditorMode, nextMode: EditorMode): Promise<EditorMode> => {
+      if (prevMode === 'wysiwyg') {
+        // handle transitions from wysiwyg -> nextMode -> wysiwyg when there's a single
+        // root child CodeNode that is the nextMode language. e2e tests assume you can
+        // do this.
+        editor.read(() => {
+          const root = $getRoot();
+          const codeNode =
+            root.getChildrenSize() === 1
+              ? root.getChildren().find($isCodeNode)
+              : null;
+          if (codeNode) {
+            const language = codeNode.getLanguage();
+            if (language === nextMode) {
+              prevMode = nextMode;
+              nextMode = 'wysiwyg';
+            }
+          }
+        });
+      }
       if (nextMode === 'wysiwyg') {
         unregisterTransformRef.current();
         editor.update(() => {

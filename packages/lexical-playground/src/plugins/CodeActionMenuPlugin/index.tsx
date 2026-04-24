@@ -22,7 +22,8 @@ import {useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 
 import {CopyButton} from './components/CopyButton';
-import {canBePrettier, PrettierButton} from './components/PrettierButton';
+import {PrettierButton} from './components/PrettierButton';
+import {canBePrettier} from './formatCodeWithPrettier';
 import {useDebounce} from './utils';
 
 const CODE_PADDING = 8;

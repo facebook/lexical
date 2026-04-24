@@ -16,6 +16,8 @@ import {
 import {
   assertHTML,
   click,
+  evaluate,
+  expect,
   focusEditor,
   html,
   initialize,
@@ -49,7 +51,7 @@ test.describe('HTML', () => {
         class="PlaygroundEditorTheme__code"
         dir="auto"
         spellcheck="false"
-        data-gutter="1"
+        data-gutter="*"
         data-highlight-language="javascript"
         data-language="javascript">
         <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
@@ -92,6 +94,7 @@ test.describe('HTML', () => {
       // Custom modification: replace the date text and data-lexical-datetime value with wildcards for matching
       (actualHtml) =>
         actualHtml
+          .replace(/data-gutter="[^"]*"/g, 'data-gutter="*"')
           .replace(/(<div[^>]*>)(.*?)(<\/div>)/, '$1*$3')
           .replace(
             /data-lexical-datetime="[^"]*"/,
@@ -108,7 +111,7 @@ test.describe('HTML', () => {
           class="PlaygroundEditorTheme__code"
           dir="auto"
           spellcheck="false"
-          data-gutter="1"
+          data-gutter="*"
           data-highlight-language="html"
           data-language="html">
           *
@@ -117,7 +120,9 @@ test.describe('HTML', () => {
       undefined,
       {ignoreInlineStyles: true},
       (actualHtml) =>
-        actualHtml.replace(/(<code[^>]*>)([\s\S]*)(<\/code>)/, '$1\n  *\n$3'),
+        actualHtml
+          .replace(/data-gutter="[^"]*"/g, 'data-gutter="*"')
+          .replace(/(<code[^>]*>)([\s\S]*)(<\/code>)/, '$1\n  *\n$3'),
     );
 
     await click(page, '.action-button .html');
@@ -130,9 +135,10 @@ test.describe('HTML', () => {
       // Custom modification: replace the date text and data-lexical-datetime value with wildcards for matching
       (actualHtml) =>
         actualHtml
-          .replace(/(<div[^>]*>)(.*?)(<\/div>)/, '$1*$3')
+          .replace(/data-gutter="[^"]*"/g, 'data-gutter="*"')
+          .replace(/(<div[^>]*>)(.*?)(<\/div>)/g, '$1*$3')
           .replace(
-            /data-lexical-datetime="[^"]*"/,
+            /data-lexical-datetime="[^"]*"/g,
             'data-lexical-datetime="*"',
           ),
     );
@@ -151,7 +157,7 @@ test.describe('HTML', () => {
           class="PlaygroundEditorTheme__code"
           dir="auto"
           spellcheck="false"
-          data-gutter="1"
+          data-gutter="*"
           data-highlight-language="html"
           data-language="html">
           *
@@ -160,7 +166,9 @@ test.describe('HTML', () => {
       undefined,
       {ignoreInlineStyles: true},
       (actualHtml) =>
-        actualHtml.replace(/(<code[^>]*>)([\s\S]*)(<\/code>)/, '$1\n  *\n$3'),
+        actualHtml
+          .replace(/data-gutter="[^"]*"/g, 'data-gutter="*"')
+          .replace(/(<code[^>]*>)([\s\S]*)(<\/code>)/, '$1\n  *\n$3'),
     );
 
     await selectAll(page);
@@ -184,7 +192,7 @@ test.describe('HTML', () => {
           class="PlaygroundEditorTheme__code"
           dir="auto"
           spellcheck="false"
-          data-gutter="1"
+          data-gutter="*"
           data-highlight-language="javascript"
           data-language="javascript">
           <span
@@ -221,6 +229,38 @@ test.describe('HTML', () => {
       `,
       undefined,
       {ignoreInlineStyles: true},
+      (actualHtml) =>
+        actualHtml.replace(/data-gutter="[^"]*"/g, 'data-gutter="*"'),
     );
+  });
+
+  test(`Formats a terse HTML export with prettier`, async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+    await applyHeading(page, 1);
+    await page.keyboard.type('Foo');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Hello world');
+
+    await click(page, '.action-button .html');
+
+    const expectedPrettyHtml = [
+      '<h1><span>Foo</span></h1>',
+      '<p><span>Hello world</span></p>',
+    ].join('\n');
+
+    await expect(async () => {
+      const codeText = await evaluate(page, () => {
+        const editor = window.lexicalEditor;
+        return window.lexicalEditor.read(() =>
+          editor.getEditorState()._nodeMap.get('root').getTextContent(),
+        );
+      });
+      expect(codeText).toBe(expectedPrettyHtml);
+    }).toPass({intervals: [100, 250, 500], timeout: 5000});
   });
 });

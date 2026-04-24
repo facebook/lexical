@@ -18,6 +18,7 @@ import {
   $getRoot,
   $getSelection,
   $isRangeSelection,
+  $isTextNode,
   CLICK_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
   IS_CODE,
@@ -29,7 +30,7 @@ import {invariant, KeyboardEventMock} from 'lexical/src/__tests__/utils';
 import {describe, expect, test} from 'vitest';
 
 describe('EscapeFormatAtBoundaryExtension', () => {
-  function createEditor(): LexicalEditor {
+  function createEditor() {
     return buildEditorFromExtensions({
       dependencies: [
         RichTextExtension,
@@ -39,6 +40,12 @@ describe('EscapeFormatAtBoundaryExtension', () => {
       ],
       name: 'test',
     });
+  }
+
+  function $getFirstTextNode() {
+    const node = $getRoot().getFirstDescendant();
+    invariant($isTextNode(node));
+    return node;
   }
 
   async function setupCodeTextNode(editor: LexicalEditor) {
@@ -77,7 +84,7 @@ describe('EscapeFormatAtBoundaryExtension', () => {
       await setupCodeTextNode(editor);
 
       await editor.update(() => {
-        const textNode = $getRoot().getFirstDescendant()!;
+        const textNode = $getFirstTextNode();
         textNode.selectStart();
       });
 
@@ -96,7 +103,7 @@ describe('EscapeFormatAtBoundaryExtension', () => {
       await setupCodeTextNode(editor);
 
       await editor.update(() => {
-        const textNode = $getRoot().getFirstDescendant()!;
+        const textNode = $getFirstTextNode();
         const selection = textNode.select(3, 3);
         selection.format = IS_CODE;
       });
@@ -125,7 +132,7 @@ describe('EscapeFormatAtBoundaryExtension', () => {
       });
 
       await editor.update(() => {
-        const codeNode = $getRoot().getFirstDescendant()!;
+        const codeNode = $getFirstTextNode();
         const selection = codeNode.selectEnd();
         selection.format = IS_CODE;
       });
@@ -165,7 +172,7 @@ describe('EscapeFormatAtBoundaryExtension', () => {
       await setupCodeTextNode(editor);
 
       await editor.update(() => {
-        const textNode = $getRoot().getFirstDescendant()!;
+        const textNode = $getFirstTextNode();
         const selection = textNode.selectStart();
         selection.format = IS_CODE;
       });
@@ -185,7 +192,7 @@ describe('EscapeFormatAtBoundaryExtension', () => {
       await setupCodeTextNode(editor);
 
       await editor.update(() => {
-        const textNode = $getRoot().getFirstDescendant()!;
+        const textNode = $getFirstTextNode();
         const selection = textNode.select(3, 3);
         selection.format = IS_CODE;
       });
@@ -246,7 +253,7 @@ describe('EscapeFormatAtBoundaryExtension', () => {
       await setupCodeTextNode(editor);
 
       await editor.update(() => {
-        const textNode = $getRoot().getFirstDescendant()!;
+        const textNode = $getFirstTextNode();
         const selection = textNode.select(3, 3);
         selection.format = IS_CODE;
       });
@@ -268,7 +275,7 @@ describe('EscapeFormatAtBoundaryExtension', () => {
       await setupCodeTextNode(editor);
 
       await editor.update(() => {
-        const textNode = $getRoot().getFirstDescendant()!;
+        const textNode = $getFirstTextNode();
         const selection = textNode.selectStart();
         selection.format = IS_CODE;
       });
@@ -289,7 +296,7 @@ describe('EscapeFormatAtBoundaryExtension', () => {
       await setupCodeTextNode(editor);
 
       await editor.update(() => {
-        const textNode = $getRoot().getFirstDescendant()!;
+        const textNode = $getFirstTextNode();
         const selection = textNode.selectStart();
         selection.format = IS_CODE;
       });
@@ -310,7 +317,7 @@ describe('EscapeFormatAtBoundaryExtension', () => {
       await setupCodeTextNode(editor);
 
       await editor.update(() => {
-        const textNode = $getRoot().getFirstDescendant()!;
+        const textNode = $getFirstTextNode();
         const selection = textNode.select(3, 3);
         selection.format = IS_CODE;
       });

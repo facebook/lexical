@@ -9,9 +9,11 @@
 import {
   deleteBackward,
   deleteForward,
+  moveLeft,
   moveToEditorBeginning,
   moveToEditorEnd,
   moveToLineBeginning,
+  selectCharacters,
   selectNextWord,
 } from '../keyboardShortcuts/index.mjs';
 import {
@@ -524,6 +526,112 @@ test.describe('TableOfContents', () => {
     await moveToLineBeginning(page);
     await deleteForward(page);
     await deleteForward(page);
+    await deleteForward(page);
+
+    await assertHTML(
+      page,
+      html`
+        <h1 class="PlaygroundEditorTheme__h1" id="heading-1" dir="auto">
+          <span data-lexical-text="true">h1</span>
+        </h1>
+        <h1 class="PlaygroundEditorTheme__h1" id="heading-2" dir="auto">
+          <span data-lexical-text="true">h1</span>
+        </h1>
+        <ol
+          class="PlaygroundEditorTheme__ol1 PlaygroundEditorTheme__contents active"
+          dir="auto">
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__contentsItem"
+            value="1">
+            <a
+              class="PlaygroundEditorTheme__link PlaygroundEditorTheme__contentsLink"
+              href="#heading-1"
+              target="_self">
+              <span data-lexical-text="true">h1</span>
+            </a>
+          </li>
+        </ol>
+      `,
+      undefined,
+      // In collab mode, the cursor may be in a different location, which is why the "active" class is missing
+      {ignoreClasses: isCollab, ignoreInlineStyles: true},
+    );
+  });
+
+  test('The contenst link should be removed if there is a backward selection #8205', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+
+    await page.keyboard.type('h1');
+    await click(page, '.block-controls');
+    await click(page, '.dropdown .icon.h1');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('h1');
+    await click(page, '.block-controls');
+    await click(page, '.dropdown .icon.h1');
+    await page.keyboard.press('Enter');
+
+    await selectFromInsertDropdown(page, '.item .toc');
+    // removes text and element
+    await selectCharacters(page, 'left', 3);
+    await deleteBackward(page);
+
+    await assertHTML(
+      page,
+      html`
+        <h1 class="PlaygroundEditorTheme__h1" id="heading-1" dir="auto">
+          <span data-lexical-text="true">h1</span>
+        </h1>
+        <h1 class="PlaygroundEditorTheme__h1" id="heading-2" dir="auto">
+          <span data-lexical-text="true">h1</span>
+        </h1>
+        <ol
+          class="PlaygroundEditorTheme__ol1 PlaygroundEditorTheme__contents active"
+          dir="auto">
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__contentsItem"
+            value="1">
+            <a
+              class="PlaygroundEditorTheme__link PlaygroundEditorTheme__contentsLink"
+              href="#heading-1"
+              target="_self">
+              <span data-lexical-text="true">h1</span>
+            </a>
+          </li>
+        </ol>
+      `,
+      undefined,
+      // In collab mode, the cursor may be in a different location, which is why the "active" class is missing
+      {ignoreClasses: isCollab, ignoreInlineStyles: true},
+    );
+  });
+
+  test('The contenst link should be removed if there is a forward selection #8205', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+
+    await page.keyboard.type('h1');
+    await click(page, '.block-controls');
+    await click(page, '.dropdown .icon.h1');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('h1');
+    await click(page, '.block-controls');
+    await click(page, '.dropdown .icon.h1');
+    await page.keyboard.press('Enter');
+
+    await selectFromInsertDropdown(page, '.item .toc');
+    // removes text and element
+    await moveToLineBeginning(page);
+    await moveLeft(page, 1);
+    await selectCharacters(page, 'right', 3);
     await deleteForward(page);
 
     await assertHTML(

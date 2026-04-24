@@ -2304,16 +2304,20 @@ export function $createChildrenArray(
   return children;
 }
 
+export function $isEmptyableInlineElementNode(
+  node: LexicalNode,
+): node is ElementNode {
+  return (
+    $isElementNode(node) &&
+    node.isInline() &&
+    node.canBeEmpty() &&
+    node.isEmpty()
+  );
+}
+
 export function $isEffectivelyEmpty(node: ElementNode): boolean {
   if (node.isEmpty() || $isRootOrShadowRoot(node)) {
     return false;
   }
-  const children = node.getChildren();
-  return children.every(
-    (child) =>
-      $isElementNode(child) &&
-      child.isInline() &&
-      child.canBeEmpty() &&
-      child.isEmpty(),
-  );
+  return node.getChildren().every($isEmptyableInlineElementNode);
 }

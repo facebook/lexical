@@ -239,9 +239,7 @@ function $createNode(key: NodeKey, slot: ElementDOMSlot | null): HTMLElement {
     const parent = node.getParent();
     if (
       !node.isInline() ||
-      (node.canBeEmpty() &&
-        node.isEmpty() &&
-        parent !== null &&
+      (parent !== null &&
         $isEffectivelyEmpty(parent) &&
         // Among all the empty inline nodes, only one needs a linebreak
         node.getIndexWithinParent() === 0)
@@ -595,9 +593,7 @@ function $reconcileNode(
       const needsLineBreak =
         !$isRootNode(nextNode) &&
         (!nextNode.isInline() ||
-          (nextNode.canBeEmpty() &&
-            nextNode.isEmpty() &&
-            parent !== null &&
+          (parent !== null &&
             $isEffectivelyEmpty(parent) &&
             // Among all the empty inline nodes, only one needs a linebreak
             nextNode.getIndexWithinParent() === 0));

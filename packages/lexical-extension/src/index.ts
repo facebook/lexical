@@ -25,7 +25,7 @@ export {EditorStateExtension} from './EditorStateExtension';
 export {
   type EscapeFormatAtBoundaryConfig,
   EscapeFormatAtBoundaryExtension,
-  registerEscapeFormatAtBoundary,
+  type EscapeFormatTrigger,
 } from './EscapeFormatAtBoundaryExtension';
 export {getExtensionDependencyFromEditor} from './getExtensionDependencyFromEditor';
 export {

@@ -25,10 +25,25 @@ import {
 import {namedSignals} from './namedSignals';
 import {effect} from './signals';
 
+/**
+ * Trigger types that cause format escape at text node boundaries.
+ * - `enter`: Escape on paragraph insertion (Enter key)
+ * - `click`: Escape on mouse click
+ * - `arrow`: Escape on arrow key navigation (left/right)
+ */
+export type EscapeFormatTrigger = 'enter' | 'click' | 'arrow';
+
+/**
+ * Configuration for {@link EscapeFormatAtBoundaryExtension}.
+ *
+ * @property disabled - When true, the extension is inactive.
+ * @property formats - Text format types to escape at boundaries (e.g. `['code']`).
+ * @property triggers - Which user interactions trigger the escape behavior.
+ */
 export interface EscapeFormatAtBoundaryConfig {
   disabled: boolean;
   formats: TextFormatType[];
-  triggers: Array<'enter' | 'click' | 'arrow'>;
+  triggers: {[K in EscapeFormatTrigger]?: boolean};
 }
 
 function $escapeFormatIfAtBoundary(
@@ -65,14 +80,14 @@ function $escapeFormatIfAtBoundary(
   }
 }
 
-export function registerEscapeFormatAtBoundary(
+function registerEscapeFormatAtBoundary(
   editor: LexicalEditor,
   formats: TextFormatType[],
-  triggers: Array<'enter' | 'click' | 'arrow'>,
+  triggers: {[K in EscapeFormatTrigger]?: boolean},
 ): () => void {
   const cleanups: Array<() => void> = [];
 
-  if (triggers.includes('click')) {
+  if (triggers.click) {
     cleanups.push(
       editor.registerCommand(
         CLICK_COMMAND,
@@ -88,7 +103,7 @@ export function registerEscapeFormatAtBoundary(
     );
   }
 
-  if (triggers.includes('enter')) {
+  if (triggers.enter) {
     cleanups.push(
       editor.registerCommand(
         INSERT_PARAGRAPH_COMMAND,
@@ -104,7 +119,7 @@ export function registerEscapeFormatAtBoundary(
     );
   }
 
-  if (triggers.includes('arrow')) {
+  if (triggers.arrow) {
     cleanups.push(
       editor.registerCommand<KeyboardEvent>(
         KEY_ARROW_LEFT_COMMAND,
@@ -141,10 +156,16 @@ export function registerEscapeFormatAtBoundary(
 }
 
 /**
- * An extension to escape text format (e.g. code, bold, italic) when the
- * cursor is at the boundary of a formatted text node with no adjacent
- * sibling in that direction. This prevents the format from "leaking"
- * into subsequently typed text.
+ * An extension to escape text format (e.g. code) when the cursor is at the
+ * boundary of a formatted text node with no adjacent sibling in that direction.
+ * This prevents the format from "leaking" into subsequently typed text.
+ *
+ * @example
+ * ```ts
+ * configExtension(EscapeFormatAtBoundaryExtension, {
+ *   triggers: {enter: true, click: true, arrow: true},
+ * })
+ * ```
  */
 export const EscapeFormatAtBoundaryExtension = defineExtension({
   build(editor, config) {
@@ -153,7 +174,7 @@ export const EscapeFormatAtBoundaryExtension = defineExtension({
   config: safeCast<EscapeFormatAtBoundaryConfig>({
     disabled: false,
     formats: ['code'],
-    triggers: ['enter'],
+    triggers: {enter: true},
   }),
   name: '@lexical/extension/EscapeFormatAtBoundary',
   register(editor, config, state) {

@@ -167,7 +167,7 @@ const PlaygroundRichTextExtension = defineExtension({
   dependencies: [
     RichTextExtension,
     configExtension(EscapeFormatAtBoundaryExtension, {
-      triggers: ['enter', 'click', 'arrow'],
+      triggers: {arrow: true, click: true, enter: true},
     }),
     ImagesExtension,
     HorizontalRuleExtension,

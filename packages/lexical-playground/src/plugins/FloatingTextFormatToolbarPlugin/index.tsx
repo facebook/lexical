@@ -10,6 +10,7 @@ import type {JSX} from 'react';
 
 import './index.css';
 
+import {useMergeRefs} from '@floating-ui/react';
 import {$isCodeHighlightNode} from '@lexical/code';
 import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
@@ -49,6 +50,7 @@ function TextFormatFloatingToolbar({
   isSubscript,
   isSuperscript,
   setIsLinkEditMode,
+  ref,
 }: {
   editor: LexicalEditor;
   anchorElem: HTMLElement;
@@ -64,8 +66,10 @@ function TextFormatFloatingToolbar({
   isSuperscript: boolean;
   isUnderline: boolean;
   setIsLinkEditMode: Dispatch<boolean>;
+  ref?: React.Ref<HTMLDivElement | null>;
 }): JSX.Element {
   const popupCharStylesEditorRef = useRef<HTMLDivElement | null>(null);
+  const mergedRef = useMergeRefs([popupCharStylesEditorRef, ref]);
 
   const insertLink = useCallback(() => {
     if (!isLink) {
@@ -192,7 +196,7 @@ function TextFormatFloatingToolbar({
   }, [editor, $updateTextFormatFloatingToolbar]);
 
   return (
-    <div ref={popupCharStylesEditorRef} className="floating-text-format-popup">
+    <div ref={mergedRef} className="floating-text-format-popup">
       {editor.isEditable() && (
         <>
           <button
@@ -405,6 +409,32 @@ function useFloatingTextFormatToolbar(
     };
   }, [updatePopup]);
 
+  // Hide the popup while a drag is in progress. Otherwise it sits on top of
+  // the drag image and the drop target, and re-renders from selectionchange
+  // as the user drags. The popup re-appears once the drag ends (dragend) or
+  // a drop completes on this page (drop).
+  const ref = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const onDragStart = () => {
+      if (ref.current) {
+        ref.current.style.display = 'none';
+      }
+    };
+    const onDragEnd = () => {
+      if (ref.current && ref.current.style.display === 'none') {
+        ref.current.style.display = 'block';
+      }
+    };
+    document.addEventListener('dragstart', onDragStart, true);
+    document.addEventListener('dragend', onDragEnd, true);
+    document.addEventListener('drop', onDragEnd, true);
+    return () => {
+      document.removeEventListener('dragstart', onDragStart, true);
+      document.removeEventListener('dragend', onDragEnd, true);
+      document.removeEventListener('drop', onDragEnd, true);
+    };
+  }, []);
+
   useEffect(() => {
     return mergeRegister(
       editor.registerUpdateListener(() => {
@@ -426,6 +456,7 @@ function useFloatingTextFormatToolbar(
     <TextFormatFloatingToolbar
       editor={editor}
       anchorElem={anchorElem}
+      ref={ref}
       isLink={isLink}
       isBold={isBold}
       isItalic={isItalic}

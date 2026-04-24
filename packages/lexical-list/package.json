@@ -13,7 +13,6 @@
   "types": "index.d.ts",
   "dependencies": {
     "@lexical/extension": "workspace:*",
-    "@lexical/selection": "workspace:*",
     "@lexical/utils": "workspace:*",
     "lexical": "workspace:*"
   },

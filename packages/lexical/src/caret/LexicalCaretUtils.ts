@@ -676,11 +676,16 @@ export interface SplitAtPointCaretNextOptions {
   /** If the parent matches rootMode a split will not occur, default is 'shadowRoot' */
   rootMode?: RootMode;
   /**
-   * If element.canBeEmpty() and would create an empty split, this function will be
+   * If `element.canBeEmpty()` and it would create an empty split, this function will be
    * called with the element and 'first' | 'last'. If it returns false, the empty
    * split will not be created. Default is `() => true` to always split when possible.
    */
   $shouldSplit?: (node: ElementNode, edge: 'first' | 'last') => boolean;
+  /**
+   * If the destination would create an empty split on both sides, then
+   * remove it instead of splitting. Default `false`.
+   */
+  removeEmptyDestination?: boolean;
 }
 
 function $alwaysSplit(_node: ElementNode, _edge: 'first' | 'last'): true {
@@ -700,6 +705,7 @@ export function $splitAtPointCaretNext(
     $splitTextPointCaretNext = $splitTextPointCaret,
     rootMode = 'shadowRoot',
     $shouldSplit = $alwaysSplit,
+    removeEmptyDestination = false,
   }: SplitAtPointCaretNextOptions = {},
 ): null | NodeCaret<'next'> {
   if ($isTextPointCaret(pointCaret)) {
@@ -708,17 +714,22 @@ export function $splitAtPointCaretNext(
   const parentCaret = pointCaret.getParentCaret(rootMode);
   if (parentCaret) {
     const {origin} = parentCaret;
-    if (
-      $isChildCaret(pointCaret) &&
-      !(origin.canBeEmpty() && $shouldSplit(origin, 'first'))
-    ) {
-      // No split necessary, the left side would be empty
-      return $rewindSiblingCaret(parentCaret);
+    if ($isChildCaret(pointCaret)) {
+      const beforeParentCaret = $rewindSiblingCaret(parentCaret);
+      if (removeEmptyDestination && origin.isEmpty()) {
+        origin.remove();
+        return beforeParentCaret;
+      }
+      if (!(origin.canBeEmpty() && $shouldSplit(origin, 'first'))) {
+        return beforeParentCaret;
+      }
     }
     const siblings = $getAdjacentNodes(pointCaret);
     if (
       siblings.length > 0 ||
-      (origin.canBeEmpty() && $shouldSplit(origin, 'last'))
+      (!removeEmptyDestination &&
+        origin.canBeEmpty() &&
+        $shouldSplit(origin, 'last'))
     ) {
       // Split and insert the siblings into the new tree
       parentCaret.insert($copyElementNode(origin).splice(0, 0, siblings));

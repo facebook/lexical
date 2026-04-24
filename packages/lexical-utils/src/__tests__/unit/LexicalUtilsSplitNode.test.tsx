@@ -82,8 +82,7 @@ describe('LexicalUtils#splitNode', () => {
       _: 'split nested list items',
       expectedHtml:
         '<ul>' +
-        '<li><span style="white-space: pre-wrap;">Before</span></li>' +
-        '<li><ul><li><span style="white-space: pre-wrap;">Hello</span></li></ul></li>' +
+        '<li><span style="white-space: pre-wrap;">Before</span><ul><li><span style="white-space: pre-wrap;">Hello</span></li></ul></li>' +
         '</ul>' +
         '<ul>' +
         '<li><ul><li><span style="white-space: pre-wrap;">world</span></li></ul></li>' +

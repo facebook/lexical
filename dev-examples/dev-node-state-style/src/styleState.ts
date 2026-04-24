@@ -381,13 +381,46 @@ export const StyleStateExtension = defineExtension({
   dependencies: [
     configExtension(DOMRenderExtension, {
       overrides: [
+        // Remove pre-wrap from TextNode export when not needed
+        domOverride([TextNode], {
+          $exportDOM(node, $next) {
+            const result = $next();
+            if (isHTMLElement(result.element)) {
+              for (const el of [
+                result.element,
+                ...result.element.querySelectorAll('*'),
+              ]) {
+                if (
+                  isHTMLElement(el) &&
+                  el.style.whiteSpace === 'pre-wrap' && // we know there aren't tabs or newlines but if there are
+                  // leading, trailing, or adjacent spaces then we need the
+                  // pre-wrap to preserve the content
+                  !/^\s|\s$|\s\s/.test(result.element.textContent)
+                ) {
+                  el.style.setProperty('white-space', null);
+                  if (el.style.cssText === '') {
+                    el.removeAttribute('style');
+                  }
+                }
+              }
+            }
+            return result;
+          },
+        }),
         domOverride('*', {
-          $createDOM(node, $next) {
-            const dom: HTMLElementWithManagedStyle = $next();
-            const nextStyleObject = $getStyleObject(node);
-            dom[PREV_STYLE_STATE] = nextStyleObject;
-            applyStyle(dom, nextStyleObject);
-            return dom;
+          $decorateDOM(nextNode, prevNode, dom) {
+            const managedDOM: HTMLElementWithManagedStyle = dom;
+            const nextStyleObject = $getStyleObject(nextNode);
+            managedDOM[PREV_STYLE_STATE] = nextStyleObject;
+            applyStyle(
+              dom,
+              prevNode
+                ? diffStyleObjects(
+                    getPreviousStyleObject(nextNode, prevNode, dom),
+                    nextStyleObject,
+                  )
+                : nextStyleObject,
+            );
           },
           $exportDOM(node, $next) {
             const output = $next();
@@ -412,25 +445,6 @@ export const StyleStateExtension = defineExtension({
             }
             return output;
           },
-          $updateDOM(
-            nextNode,
-            prevNode,
-            dom: HTMLElementWithManagedStyle,
-            $next,
-          ) {
-            if ($next()) {
-              return true;
-            }
-            const prevStyleObject = getPreviousStyleObject(
-              nextNode,
-              prevNode,
-              dom,
-            );
-            const nextStyleObject = $getStyleObject(nextNode);
-            dom[PREV_STYLE_STATE] = nextStyleObject;
-            applyStyle(dom, diffStyleObjects(prevStyleObject, nextStyleObject));
-            return false;
-          },
         }),
       ],
     }),
@@ -439,11 +453,10 @@ export const StyleStateExtension = defineExtension({
     import: constructStyleImportMap(),
   },
   name: '@lexical/examples/node-state-style/StyleState',
-  register(editor) {
-    return editor.registerCommand(
+  register: (editor) =>
+    editor.registerCommand(
       PATCH_TEXT_STYLE_COMMAND,
       $patchSelectedTextStyle,
       COMMAND_PRIORITY_EDITOR,
-    );
-  },
+    ),
 });

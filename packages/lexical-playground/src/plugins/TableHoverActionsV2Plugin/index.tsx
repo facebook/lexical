@@ -179,6 +179,10 @@ function getTableKey(tableElement: HTMLTableElement | null): string | null {
   return tableElement?.getAttribute('data-lexical-key') ?? null;
 }
 
+function isHTMLTableRowElement(node: unknown): node is HTMLTableRowElement {
+  return isHTMLElement(node) && node.nodeName === 'TR';
+}
+
 function TableHoverActionsV2({
   anchorElem,
 }: {
@@ -283,10 +287,9 @@ function TableHoverActionsV2({
         return;
       }
 
-      const rowIndex =
-        hoveredCell.parentElement instanceof HTMLTableRowElement
-          ? hoveredCell.parentElement.rowIndex
-          : -1;
+      const rowIndex = isHTMLTableRowElement(hoveredCell.parentElement)
+        ? hoveredCell.parentElement.rowIndex
+        : -1;
       const colIndex = hoveredCell.cellIndex ?? -1;
 
       const closestTopCell = getClosestTopCellPosition(

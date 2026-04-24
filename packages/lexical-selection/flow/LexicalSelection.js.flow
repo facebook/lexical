@@ -18,6 +18,7 @@ import type {
   TextNode,
 } from 'lexical';
 declare export function $cloneWithProperties<T extends LexicalNode>(node: T): T;
+/** @deprecated moved to the lexical package */
 declare export function getStyleObjectFromCSS(css: string): {
   [string]: string,
 };

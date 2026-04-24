@@ -326,7 +326,24 @@ const listReplace = (listType: ListType): ElementTransformer['replace'] => {
       listItem.setIndent(indent);
       const parentList = listItem.getParent();
       if ($isListNode(parentList) && parentList.getListType() !== listType) {
-        parentList.setListType(listType);
+        const parentListWrapper = parentList.getParent();
+        if ($isListItemNode(parentListWrapper)) {
+          listItem.remove();
+          const newList = $createListNode(
+            listType,
+            listType === 'number' ? Number(match[2]) : undefined,
+          );
+          if (listMarker) {
+            $setState(newList, listMarkerState, listMarker);
+          }
+          newList.append(listItem);
+          const newWrapper = $createListItemNode();
+          newWrapper.append(newList);
+          parentListWrapper.insertAfter(newWrapper);
+          if (parentList.getChildrenSize() === 0) {
+            parentListWrapper.remove();
+          }
+        }
       }
     }
   };

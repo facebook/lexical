@@ -186,7 +186,7 @@ export default function ActionsPlugin({
         editor.update(() => {
           const codeNode = $createCodeNode('html');
           $getRoot().clear().append(codeNode);
-          codeNode.select().insertRawText(html);
+          codeNode.select().insertRawText(html.trimEnd());
           codeNode.select(0, 0);
         });
       }

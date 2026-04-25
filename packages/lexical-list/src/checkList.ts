@@ -59,10 +59,41 @@ export function registerCheckList(
       ? () => disableTakeFocusOnClick
       : disableTakeFocusOnClick.peek.bind(disableTakeFocusOnClick);
 
-  const configHandleClick = (event: MouseEvent | TouchEvent) => {
+  // Mobile tap fix: the touchstart listener registered below calls
+  // event.preventDefault() to keep the caret away from the marker. On iOS
+  // Safari and Android Chrome that suppression also cancels the synthesized
+  // click, so handleClick never runs and the checkbox cannot be toggled by
+  // tap. We additionally listen for pointerup with pointerType === 'touch'
+  // and run the same toggle logic, deduplicating against any click that
+  // does fire on browsers where preventDefault doesn't suppress it.
+  let lastHandledTimeStamp = 0;
+  const DEDUP_WINDOW_MS = 500;
+  const configHandleClick = (event: PointerEvent | MouseEvent | TouchEvent) => {
+    if (
+      lastHandledTimeStamp > 0 &&
+      event.timeStamp - lastHandledTimeStamp < DEDUP_WINDOW_MS
+    ) {
+      return;
+    }
+    lastHandledTimeStamp = event.timeStamp;
     handleClick(event, peekDisableTakeFocusOnClick());
   };
-  const configHandleSelectDefaults = (event: MouseEvent | TouchEvent) => {
+  const configHandlePointerUp = (event: PointerEvent) => {
+    if (event.pointerType !== 'touch') {
+      return;
+    }
+    if (
+      lastHandledTimeStamp > 0 &&
+      event.timeStamp - lastHandledTimeStamp < DEDUP_WINDOW_MS
+    ) {
+      return;
+    }
+    lastHandledTimeStamp = event.timeStamp;
+    handleClick(event, peekDisableTakeFocusOnClick());
+  };
+  const configHandleSelectDefaults = (
+    event: PointerEvent | MouseEvent | TouchEvent,
+  ) => {
     handleSelectDefaults(event, peekDisableTakeFocusOnClick());
   };
   return mergeRegister(
@@ -172,6 +203,7 @@ export function registerCheckList(
     editor.registerRootListener((rootElement) => {
       if (rootElement !== null) {
         rootElement.addEventListener('click', configHandleClick);
+        rootElement.addEventListener('pointerup', configHandlePointerUp);
         // Use capture so we run before other listeners that might move focus.
         rootElement.addEventListener(
           'pointerdown',
@@ -192,6 +224,7 @@ export function registerCheckList(
         });
         return () => {
           rootElement.removeEventListener('click', configHandleClick);
+          rootElement.removeEventListener('pointerup', configHandlePointerUp);
           rootElement.removeEventListener(
             'pointerdown',
             configHandleSelectDefaults,
@@ -220,7 +253,7 @@ export function registerCheckList(
 }
 
 function handleCheckItemEvent(
-  event: MouseEvent | TouchEvent,
+  event: PointerEvent | MouseEvent | TouchEvent,
   callback: () => void,
 ) {
   const target = event.target;
@@ -277,7 +310,8 @@ function handleCheckItemEvent(
   // Determine whether this is a touch event; some environments may supply
   // pointerType on PointerEvent while touch events use the `touches` API above.
   const isTouchEvent =
-    pointerType === 'touch' || (event as PointerEvent).pointerType === 'touch';
+    pointerType === 'touch' ||
+    ('pointerType' in event && event.pointerType === 'touch');
   const clickAreaPadding = isTouchEvent ? 32 : 0; // Add 32px padding for touch events
 
   if (
@@ -292,7 +326,7 @@ function handleCheckItemEvent(
 }
 
 function handleClick(
-  event: MouseEvent | TouchEvent,
+  event: PointerEvent | MouseEvent | TouchEvent,
   disableFocusOnClick: boolean,
 ) {
   handleCheckItemEvent(event, () => {
@@ -326,7 +360,7 @@ function handleClick(
  *
  */
 function handleSelectDefaults(
-  event: MouseEvent | TouchEvent,
+  event: PointerEvent | MouseEvent | TouchEvent,
   disableTakeFocusOnClick: boolean,
 ) {
   handleCheckItemEvent(event, () => {

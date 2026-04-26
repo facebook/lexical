@@ -67,22 +67,26 @@ export function registerCheckList(
   // and run the same toggle logic, deduplicating against any click that
   // does fire on browsers where preventDefault doesn't suppress it.
   //
-  // Dedup state is per-target: a global window would block tapping a second
-  // checkbox within 500ms of toggling the first.
-  const lastHandledByTarget = new WeakMap<EventTarget, number>();
+  // Dedup state is per-target: recorded as `__lexicalCheckListLastHandled`
+  // on the target element. A global window would
+  // block tapping a second checkbox within 500ms of toggling the first.
   const DEDUP_WINDOW_MS = 500;
   const isWithinDedupWindow = (
     event: PointerEvent | MouseEvent | TouchEvent,
   ): boolean => {
-    if (event.target == null) {
+    const target = event.target;
+    if (!isHTMLElement(target)) {
       return false;
     }
-    const last = lastHandledByTarget.get(event.target);
+    // @ts-ignore internal field
+    const last = target.__lexicalCheckListLastHandled as number | undefined;
     return last !== undefined && event.timeStamp - last < DEDUP_WINDOW_MS;
   };
   const recordHandled = (event: PointerEvent | MouseEvent | TouchEvent) => {
-    if (event.target != null) {
-      lastHandledByTarget.set(event.target, event.timeStamp);
+    const target = event.target;
+    if (isHTMLElement(target)) {
+      // @ts-ignore internal field
+      target.__lexicalCheckListLastHandled = event.timeStamp;
     }
   };
   const configHandleClick = (event: PointerEvent | MouseEvent | TouchEvent) => {

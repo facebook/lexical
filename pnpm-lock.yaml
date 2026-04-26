@@ -402,6 +402,9 @@ importers:
       '@lexical/extension':
         specifier: workspace:*
         version: link:../lexical-extension
+      '@lexical/utils':
+        specifier: workspace:*
+        version: link:../lexical-utils
       lexical:
         specifier: workspace:*
         version: link:../lexical

@@ -119,4 +119,36 @@ if (isJsdom) {
       } as DOMRect;
     };
   }
+
+  // jsdom does not implement PointerEvent. Provide a minimal subclass of
+  // Event carrying the fields our event handlers read (button, buttons,
+  // clientX/Y, pointerType). Tests that need richer behavior can extend
+  // or override per-event.
+  if (
+    typeof (globalThis as {PointerEvent?: unknown}).PointerEvent !== 'function'
+  ) {
+    interface PointerEventLikeInit extends EventInit {
+      button?: number;
+      buttons?: number;
+      clientX?: number;
+      clientY?: number;
+      pointerType?: string;
+    }
+    class PointerEventPolyfill extends Event {
+      button: number;
+      buttons: number;
+      clientX: number;
+      clientY: number;
+      pointerType: string;
+      constructor(type: string, options: PointerEventLikeInit = {}) {
+        super(type, options);
+        this.button = options.button ?? 0;
+        this.buttons = options.buttons ?? 0;
+        this.clientX = options.clientX ?? 0;
+        this.clientY = options.clientY ?? 0;
+        this.pointerType = options.pointerType || 'mouse';
+      }
+    }
+    (globalThis as {PointerEvent: unknown}).PointerEvent = PointerEventPolyfill;
+  }
 }

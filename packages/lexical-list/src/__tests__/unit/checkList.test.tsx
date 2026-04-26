@@ -6,8 +6,17 @@
  *
  */
 
+import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
+import {
+  $createListItemNode,
+  $createListNode,
+  $isListItemNode,
+  $isListNode,
+  CheckListExtension,
+} from '@lexical/list';
+import {RichTextExtension} from '@lexical/rich-text';
 import {$getRoot} from 'lexical';
-import {initializeUnitTest} from 'lexical/src/__tests__/utils';
+import {invariant} from 'lexical/src/__tests__/utils';
 import {
   afterAll,
   afterEach,
@@ -15,41 +24,15 @@ import {
   beforeEach,
   describe,
   expect,
-  test,
+  it,
   vi,
 } from 'vitest';
 
-import {$createListItemNode, $createListNode} from '../..';
-import {registerCheckList} from '../../checkList';
-
-// Polyfill PointerEvent for jsdom (mirrors LexicalTableMobileSelection.test.tsx).
-interface PointerEventInit extends EventInit {
-  clientX?: number;
-  clientY?: number;
-  pointerType?: string;
-}
-
-(global as unknown as {PointerEvent: unknown}).PointerEvent =
-  class PointerEventPolyfill extends Event {
-    clientX: number;
-    clientY: number;
-    pointerType: string;
-
-    constructor(type: string, options: PointerEventInit = {}) {
-      super(type, options);
-      this.clientX = options.clientX || 0;
-      this.clientY = options.clientY || 0;
-      this.pointerType = options.pointerType || 'mouse';
-    }
-  };
-
-describe('registerCheckList — mobile tap toggle', () => {
-  // jsdom does not implement getComputedStyle with pseudo-elements (see
-  // https://github.com/jsdom/jsdom/issues/1928), but the checklist hit-test
-  // reads the ::before width to size the marker area. Stub a 16px width so
-  // the bounds check resolves to a concrete number; vi.restoreAllMocks
-  // returns the original implementation afterwards so the mock cannot leak
-  // to other test files in the same worker.
+describe('CheckListExtension mobile tap toggle', () => {
+  // jsdom does not implement getComputedStyle with pseudo-elements
+  // (https://github.com/jsdom/jsdom/issues/1928), but the checklist
+  // hit-test reads the ::before width to size the marker area. Stub a
+  // 16px width so the bounds check resolves to a concrete number.
   const originalGetComputedStyle = window.getComputedStyle;
   beforeAll(() => {
     vi.spyOn(window, 'getComputedStyle').mockImplementation(
@@ -65,107 +48,150 @@ describe('registerCheckList — mobile tap toggle', () => {
     vi.restoreAllMocks();
   });
 
-  initializeUnitTest((testEnv) => {
-    let cleanup: (() => void) | null = null;
+  const checkListExtension = defineExtension({
+    $initialEditorState: () => {
+      const list = $createListNode('check');
+      list.append($createListItemNode(false));
+      list.append($createListItemNode(false));
+      $getRoot().append(list);
+    },
+    dependencies: [CheckListExtension, RichTextExtension],
+    name: '[checklist-test]',
+  });
 
-    beforeEach(async () => {
-      cleanup = registerCheckList(testEnv.editor);
-      await testEnv.editor.update(
-        () => {
-          const list = $createListNode('check');
-          list.append($createListItemNode(false));
-          $getRoot().clear().append(list);
-        },
-        {discrete: true},
-      );
+  let container: HTMLDivElement;
+  let rootElement: HTMLDivElement;
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+    rootElement = document.createElement('div');
+    rootElement.contentEditable = 'true';
+    container.appendChild(rootElement);
+  });
+  afterEach(() => {
+    document.body.removeChild(container);
+  });
+
+  function buildEditor() {
+    const editor = buildEditorFromExtensions(checkListExtension);
+    editor.setRootElement(rootElement);
+    return editor;
+  }
+
+  function getCheckListItem(index = 0): HTMLLIElement {
+    const items = rootElement.querySelectorAll('li');
+    const li = items[index];
+    invariant(li !== undefined, `No <li> at index ${index}`);
+    return li as HTMLLIElement;
+  }
+
+  function readChecked(
+    editor: ReturnType<typeof buildEditor>,
+    index: number,
+  ): boolean {
+    return editor.read(() => {
+      const list = $getRoot().getFirstChildOrThrow();
+      invariant($isListNode(list), 'Expected a ListNode at root');
+      const item = list.getChildAtIndex(index);
+      invariant($isListItemNode(item), `Expected ListItemNode at ${index}`);
+      return item.getChecked() === true;
     });
+  }
 
-    afterEach(() => {
-      cleanup?.();
-      cleanup = null;
+  it('touch pointerup over the marker area toggles the item', () => {
+    using editor = buildEditor();
+    expect(readChecked(editor, 0)).toBe(false);
+
+    const li = getCheckListItem(0);
+    // clientX is well inside the marker hit area for any plausible
+    // ::before width / touch padding combination.
+    li.dispatchEvent(
+      new PointerEvent('pointerup', {
+        bubbles: true,
+        cancelable: true,
+        clientX: 10,
+        clientY: 5,
+        pointerType: 'touch',
+      }),
+    );
+
+    expect(readChecked(editor, 0)).toBe(true);
+  });
+
+  it('mouse pointerup is ignored (click stays the desktop path)', () => {
+    using editor = buildEditor();
+    expect(readChecked(editor, 0)).toBe(false);
+
+    const li = getCheckListItem(0);
+    li.dispatchEvent(
+      new PointerEvent('pointerup', {
+        bubbles: true,
+        cancelable: true,
+        clientX: 10,
+        clientY: 5,
+        pointerType: 'mouse',
+      }),
+    );
+
+    expect(readChecked(editor, 0)).toBe(false);
+  });
+
+  it('pointerup followed by a synthesized click does not double-toggle', () => {
+    using editor = buildEditor();
+    expect(readChecked(editor, 0)).toBe(false);
+
+    const li = getCheckListItem(0);
+    const baseTimeStamp = 1000;
+    const pointerUp = new PointerEvent('pointerup', {
+      bubbles: true,
+      cancelable: true,
+      clientX: 10,
+      clientY: 5,
+      pointerType: 'touch',
     });
+    Object.defineProperty(pointerUp, 'timeStamp', {value: baseTimeStamp});
+    li.dispatchEvent(pointerUp);
+    expect(readChecked(editor, 0)).toBe(true);
 
-    function getCheckListItem(): HTMLLIElement {
-      const li = testEnv.container.querySelector('li');
-      if (!li) {
-        throw new Error('No <li> rendered');
-      }
-      return li as HTMLLIElement;
-    }
-
-    function isChecked(li: HTMLLIElement): boolean {
-      return li.getAttribute('aria-checked') === 'true';
-    }
-
-    test('touch pointerup over the marker area toggles the item', async () => {
-      const li = getCheckListItem();
-      expect(isChecked(li)).toBe(false);
-
-      // clientX is well inside the marker hit area for any plausible
-      // ::before width / touch padding combination.
-      li.dispatchEvent(
-        new PointerEvent('pointerup', {
-          bubbles: true,
-          cancelable: true,
-          clientX: 10,
-          clientY: 5,
-          pointerType: 'touch',
-        }),
-      );
-
-      // editor.update() reconciles asynchronously — wait for the DOM rather
-      // than assuming a fixed number of microtasks.
-      await vi.waitFor(() => expect(isChecked(li)).toBe(true));
+    // Browsers where touchstart preventDefault did not suppress click
+    // also fire it shortly after. The dedup window must absorb it.
+    const click = new MouseEvent('click', {
+      bubbles: true,
+      cancelable: true,
+      clientX: 10,
+      clientY: 5,
     });
+    Object.defineProperty(click, 'timeStamp', {value: baseTimeStamp + 50});
+    li.dispatchEvent(click);
 
-    test('mouse pointerup is ignored (click stays the desktop path)', () => {
-      const li = getCheckListItem();
-      expect(isChecked(li)).toBe(false);
+    expect(readChecked(editor, 0)).toBe(true);
+  });
 
-      li.dispatchEvent(
-        new PointerEvent('pointerup', {
-          bubbles: true,
-          cancelable: true,
-          clientX: 10,
-          clientY: 5,
-          pointerType: 'mouse',
-        }),
-      );
+  it('rapid taps on two different items toggle both within the dedup window', () => {
+    using editor = buildEditor();
+    expect(readChecked(editor, 0)).toBe(false);
+    expect(readChecked(editor, 1)).toBe(false);
 
-      expect(isChecked(li)).toBe(false);
-    });
-
-    test('pointerup followed by a synthesized click does not double-toggle', async () => {
-      const li = getCheckListItem();
-      expect(isChecked(li)).toBe(false);
-
-      const baseTimeStamp = 1000;
-      const pointerUp = new PointerEvent('pointerup', {
+    const baseTimeStamp = 1000;
+    const tap = (target: HTMLLIElement, offsetMs: number) => {
+      const event = new PointerEvent('pointerup', {
         bubbles: true,
         cancelable: true,
         clientX: 10,
         clientY: 5,
         pointerType: 'touch',
       });
-      Object.defineProperty(pointerUp, 'timeStamp', {value: baseTimeStamp});
-      li.dispatchEvent(pointerUp);
-      await vi.waitFor(() => expect(isChecked(li)).toBe(true));
-
-      // Browsers where touchstart preventDefault did not suppress click will
-      // also fire it shortly after. The dedup window must absorb it.
-      const click = new MouseEvent('click', {
-        bubbles: true,
-        cancelable: true,
-        clientX: 10,
-        clientY: 5,
+      Object.defineProperty(event, 'timeStamp', {
+        value: baseTimeStamp + offsetMs,
       });
-      Object.defineProperty(click, 'timeStamp', {value: baseTimeStamp + 50});
-      li.dispatchEvent(click);
+      target.dispatchEvent(event);
+    };
 
-      // Give any queued reconciliation a chance to run, then assert the
-      // state has not flipped back.
-      await new Promise((resolve) => setTimeout(resolve, 0));
-      expect(isChecked(li)).toBe(true);
-    });
+    tap(getCheckListItem(0), 0);
+    // 100ms later: well inside DEDUP_WINDOW_MS, tap a different box.
+    tap(getCheckListItem(1), 100);
+
+    expect(readChecked(editor, 0)).toBe(true);
+    expect(readChecked(editor, 1)).toBe(true);
   });
 });

@@ -66,29 +66,40 @@ export function registerCheckList(
   // tap. We additionally listen for pointerup with pointerType === 'touch'
   // and run the same toggle logic, deduplicating against any click that
   // does fire on browsers where preventDefault doesn't suppress it.
-  let lastHandledTimeStamp = 0;
+  //
+  // Dedup state is per-target: a global window would block tapping a second
+  // checkbox within 500ms of toggling the first.
+  const lastHandledByTarget = new WeakMap<EventTarget, number>();
   const DEDUP_WINDOW_MS = 500;
+  const isWithinDedupWindow = (
+    event: PointerEvent | MouseEvent | TouchEvent,
+  ): boolean => {
+    if (event.target == null) {
+      return false;
+    }
+    const last = lastHandledByTarget.get(event.target);
+    return last !== undefined && event.timeStamp - last < DEDUP_WINDOW_MS;
+  };
+  const recordHandled = (event: PointerEvent | MouseEvent | TouchEvent) => {
+    if (event.target != null) {
+      lastHandledByTarget.set(event.target, event.timeStamp);
+    }
+  };
   const configHandleClick = (event: PointerEvent | MouseEvent | TouchEvent) => {
-    if (
-      lastHandledTimeStamp > 0 &&
-      event.timeStamp - lastHandledTimeStamp < DEDUP_WINDOW_MS
-    ) {
+    if (isWithinDedupWindow(event)) {
       return;
     }
-    lastHandledTimeStamp = event.timeStamp;
+    recordHandled(event);
     handleClick(event, peekDisableTakeFocusOnClick());
   };
   const configHandlePointerUp = (event: PointerEvent) => {
     if (event.pointerType !== 'touch') {
       return;
     }
-    if (
-      lastHandledTimeStamp > 0 &&
-      event.timeStamp - lastHandledTimeStamp < DEDUP_WINDOW_MS
-    ) {
+    if (isWithinDedupWindow(event)) {
       return;
     }
-    lastHandledTimeStamp = event.timeStamp;
+    recordHandled(event);
     handleClick(event, peekDisableTakeFocusOnClick());
   };
   const configHandleSelectDefaults = (

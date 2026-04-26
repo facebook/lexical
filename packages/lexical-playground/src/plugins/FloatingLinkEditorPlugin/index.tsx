@@ -14,6 +14,7 @@ import {
   $createLinkNode,
   $isAutoLinkNode,
   $isLinkNode,
+  LinkNode,
   TOGGLE_LINK_COMMAND,
 } from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
@@ -31,6 +32,7 @@ import {
   getDOMSelection,
   KEY_ESCAPE_COMMAND,
   LexicalEditor,
+  RangeSelection,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import * as React from 'react';
@@ -39,6 +41,33 @@ import {createPortal} from 'react-dom';
 
 import {getSelectedNode} from '../../utils/getSelectedNode';
 import {sanitizeUrl} from '../../utils/url';
+
+function $getSelectedLinkNode(selection: RangeSelection): LinkNode | null {
+  const node = getSelectedNode(selection);
+  // 1. Node itself is a link
+  if ($isLinkNode(node)) {
+    return node;
+  }
+  // 2. Parent is a link
+  const linkParent = $findMatchingParent(node, $isLinkNode);
+  if ($isLinkNode(linkParent)) {
+    return linkParent;
+  }
+  // 3. Right-biased adjacent link (for single-char links)
+  if (selection.isCollapsed()) {
+    const anchor = selection.anchor;
+    if (anchor.type === 'text') {
+      const anchorNode = anchor.getNode();
+      if (anchor.offset === anchorNode.getTextContentSize()) {
+        const nextSibling = anchorNode.getNextSibling();
+        if ($isLinkNode(nextSibling)) {
+          return nextSibling;
+        }
+      }
+    }
+  }
+  return null;
+}
 
 function preventDefault(
   event: React.KeyboardEvent<HTMLInputElement> | React.MouseEvent<HTMLElement>,
@@ -92,13 +121,9 @@ function FloatingLinkEditor({
   const $updateLinkEditor = useCallback(() => {
     const selection = $getSelection();
     if ($isRangeSelection(selection)) {
-      const node = getSelectedNode(selection);
-      const linkParent = $findMatchingParent(node, $isLinkNode);
-
-      if (linkParent) {
-        setLinkUrl(linkParent.getURL());
-      } else if ($isLinkNode(node)) {
-        setLinkUrl(node.getURL());
+      const linkNode = $getSelectedLinkNode(selection);
+      if (linkNode) {
+        setLinkUrl(linkNode.getURL());
       } else {
         setLinkUrl('');
       }
@@ -356,8 +381,8 @@ function useFloatingLinkEditorToolbar(
     function $updateToolbar() {
       const selection = $getSelection();
       if ($isRangeSelection(selection)) {
+        const focusLinkNode = $getSelectedLinkNode(selection);
         const focusNode = getSelectedNode(selection);
-        const focusLinkNode = $findMatchingParent(focusNode, $isLinkNode);
         const focusAutoLinkNode = $findMatchingParent(
           focusNode,
           $isAutoLinkNode,

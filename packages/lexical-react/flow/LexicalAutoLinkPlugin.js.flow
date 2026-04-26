@@ -8,11 +8,13 @@
  */
 
 import type {LinkAttributes, ChangeHandler, LinkMatcher} from '@lexical/link';
+import type {ElementNode} from 'lexical';
 import {createLinkMatcherWithRegExp} from '@lexical/link';
 export {createLinkMatcherWithRegExp};
 export type {ChangeHandler, LinkMatcher};
 
 declare export function AutoLinkPlugin(props: {
-  matchers: Array<LinkMatcher>,
+  excludeParents?: ((parent: ElementNode) => boolean)[],
+  matchers: LinkMatcher[],
   onChange?: ChangeHandler,
 }): React.Node;

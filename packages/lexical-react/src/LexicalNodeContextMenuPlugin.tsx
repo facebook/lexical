@@ -22,7 +22,7 @@ import {
   useTypeahead,
 } from '@floating-ui/react';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$getNearestNodeFromDOMNode, LexicalNode} from 'lexical';
+import {$getNearestNodeFromDOMNode, $getRoot, LexicalNode} from 'lexical';
 import {forwardRef, JSX, RefObject, useEffect, useRef, useState} from 'react';
 
 class MenuOption {
@@ -208,7 +208,8 @@ const NodeContextMenuPlugin = forwardRef<
       let visibleItems: ContextMenuType[] = [];
       if (items) {
         editor.read(() => {
-          const node = $getNearestNodeFromDOMNode(e.target as Element);
+          const node =
+            $getNearestNodeFromDOMNode(e.target as Element) ?? $getRoot();
           if (node) {
             visibleItems = items!.filter((option) =>
               option.$showOn ? option.$showOn(node) : true,

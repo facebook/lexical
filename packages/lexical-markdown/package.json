@@ -16,6 +16,7 @@
     "@lexical/link": "workspace:*",
     "@lexical/list": "workspace:*",
     "@lexical/rich-text": "workspace:*",
+    "@lexical/selection": "workspace:*",
     "@lexical/text": "workspace:*",
     "@lexical/utils": "workspace:*",
     "lexical": "workspace:*"

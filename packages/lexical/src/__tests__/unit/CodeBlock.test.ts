@@ -22,7 +22,7 @@ import {beforeEach, describe, expect, test} from 'vitest';
 
 describe('CodeBlock tests', () => {
   initializeUnitTest(
-    (testEnv) => {
+    testEnv => {
       beforeEach(async () => {
         const {editor} = testEnv;
         await editor.update(() => {

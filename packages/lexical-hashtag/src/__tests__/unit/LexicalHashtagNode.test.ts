@@ -11,7 +11,7 @@ import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 import {describe, expect, test} from 'vitest';
 
 describe('LexicalHashtagNode tests', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     test('HashtagNode.exportJSON() should return and object conforming to the expected schema', () => {
       const {editor} = testEnv;
       editor.update(() => {

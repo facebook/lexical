@@ -182,7 +182,7 @@ describe('LexicalMenu', () => {
 
       // Verify text content
       const texts = Array.from(items).map(
-        (item) => item.querySelector('.text')?.textContent,
+        item => item.querySelector('.text')?.textContent,
       );
       expect(texts).toEqual(['Option A', 'Option B', 'Option C']);
     });
@@ -374,7 +374,7 @@ describe('LexicalMenu', () => {
       });
 
       expect(capturedOptions).toHaveLength(3);
-      expect(capturedOptions.map((o) => o.title)).toEqual(['X', 'Y', 'Z']);
+      expect(capturedOptions.map(o => o.title)).toEqual(['X', 'Y', 'Z']);
     });
 
     it('should pass empty string as matchingString when no match', async () => {

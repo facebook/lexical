@@ -408,7 +408,7 @@ export function applyTableHandlers(
     tableObserver.listenersToRemove.add(
       editor.registerCommand(
         command,
-        (event) =>
+        event =>
           $handleArrowKey(
             editor,
             event,
@@ -425,7 +425,7 @@ export function applyTableHandlers(
   tableObserver.listenersToRemove.add(
     editor.registerCommand(
       KEY_ESCAPE_COMMAND,
-      (event) => {
+      event => {
         const selection = $getSelection();
         if ($isTableSelection(selection)) {
           const focusCellNode = $findParentTableCellNodeInTable(
@@ -482,14 +482,14 @@ export function applyTableHandlers(
 
       const nearestElementNode = $findMatchingParent(
         selection.anchor.getNode(),
-        (n) => $isElementNode(n),
+        n => $isElementNode(n),
       );
 
       const topLevelCellElementNode =
         nearestElementNode &&
         $findMatchingParent(
           nearestElementNode,
-          (n) => $isElementNode(n) && $isTableCellNode(n.getParent()),
+          n => $isElementNode(n) && $isTableCellNode(n.getParent()),
         );
 
       if (
@@ -582,7 +582,7 @@ export function applyTableHandlers(
   tableObserver.listenersToRemove.add(
     editor.registerCommand(
       CUT_COMMAND,
-      (event) => {
+      event => {
         const selection = $getSelection();
         if (selection) {
           if (!($isTableSelection(selection) || $isRangeSelection(selection))) {
@@ -611,7 +611,7 @@ export function applyTableHandlers(
   tableObserver.listenersToRemove.add(
     editor.registerCommand(
       FORMAT_TEXT_COMMAND,
-      (payload) => {
+      payload => {
         const selection = $getSelection();
 
         if (!$isSelectionInTable(selection, tableNode)) {
@@ -625,7 +625,7 @@ export function applyTableHandlers(
         } else if ($isRangeSelection(selection)) {
           const tableCellNode = $findMatchingParent(
             selection.anchor.getNode(),
-            (n) => $isTableCellNode(n),
+            n => $isTableCellNode(n),
           );
 
           if (!$isTableCellNode(tableCellNode)) {
@@ -642,7 +642,7 @@ export function applyTableHandlers(
   tableObserver.listenersToRemove.add(
     editor.registerCommand(
       FORMAT_ELEMENT_COMMAND,
-      (formatType) => {
+      formatType => {
         const selection = $getSelection();
         if (
           !$isTableSelection(selection) ||
@@ -709,7 +709,7 @@ export function applyTableHandlers(
   tableObserver.listenersToRemove.add(
     editor.registerCommand(
       CONTROLLED_TEXT_INSERTION_COMMAND,
-      (payload) => {
+      payload => {
         const selection = $getSelection();
 
         if (!$isSelectionInTable(selection, tableNode)) {
@@ -723,7 +723,7 @@ export function applyTableHandlers(
         } else if ($isRangeSelection(selection)) {
           const tableCellNode = $findMatchingParent(
             selection.anchor.getNode(),
-            (n) => $isTableCellNode(n),
+            n => $isTableCellNode(n),
           );
 
           if (!$isTableCellNode(tableCellNode)) {
@@ -755,7 +755,7 @@ export function applyTableHandlers(
     tableObserver.listenersToRemove.add(
       editor.registerCommand(
         KEY_TAB_COMMAND,
-        (event) => {
+        event => {
           const selection = $getSelection();
           if (
             !$isRangeSelection(selection) ||
@@ -789,7 +789,7 @@ export function applyTableHandlers(
   tableObserver.listenersToRemove.add(
     editor.registerCommand(
       FOCUS_COMMAND,
-      (payload) => {
+      payload => {
         return tableNode.isSelected();
       },
       COMMAND_PRIORITY_HIGH,
@@ -898,7 +898,7 @@ export function $handleTableSelectionChangeCommand(
         tableNode.is(
           $findMatchingParent(
             anchorCell,
-            (node) => node.is(tableNode) || node.is(firstCell),
+            node => node.is(tableNode) || node.is(firstCell),
           ),
         )
       ) {
@@ -1391,7 +1391,7 @@ export function $addHighlightStyleToTable(
   tableSelection: TableObserver,
 ) {
   tableSelection.$disableHighlightStyle();
-  $forEachTableCell(tableSelection.table, (cell) => {
+  $forEachTableCell(tableSelection.table, cell => {
     cell.highlighted = true;
     $addHighlightToDOM(editor, cell);
   });
@@ -1402,7 +1402,7 @@ export function $removeHighlightStyleToTable(
   tableObserver: TableObserver,
 ) {
   tableObserver.$enableHighlightStyle();
-  $forEachTableCell(tableObserver.table, (cell) => {
+  $forEachTableCell(tableObserver.table, cell => {
     const elem = cell.elem;
     cell.highlighted = false;
     $removeHighlightFromDOM(editor, cell);
@@ -1940,7 +1940,7 @@ function $handleArrowKey(
           ((direction === 'up' && !selection.isBackward()) ||
             (direction === 'down' && selection.isBackward()));
         if (isTableUnselect) {
-          let focusParentNode = $findMatchingParent(focusNode, (n) =>
+          let focusParentNode = $findMatchingParent(focusNode, n =>
             $isTableNode(n),
           );
           if ($isTableCellNode(focusParentNode)) {
@@ -2033,7 +2033,7 @@ function $handleArrowKey(
         } else {
           let focusParentNode = $findMatchingParent(
             focusNode,
-            (n) => $isElementNode(n) && !n.isInline(),
+            n => $isElementNode(n) && !n.isInline(),
           );
           if ($isTableCellNode(focusParentNode)) {
             focusParentNode = $findMatchingParent(
@@ -2334,16 +2334,14 @@ function $getTableEdgeCursorPosition(
     return undefined;
   }
 
-  const anchorCellNode = $findMatchingParent(selection.anchor.getNode(), (n) =>
+  const anchorCellNode = $findMatchingParent(selection.anchor.getNode(), n =>
     $isTableCellNode(n),
   ) as TableCellNode | null;
   if (!anchorCellNode) {
     return undefined;
   }
 
-  const parentTable = $findMatchingParent(anchorCellNode, (n) =>
-    $isTableNode(n),
-  );
+  const parentTable = $findMatchingParent(anchorCellNode, n => $isTableNode(n));
   if (!$isTableNode(parentTable) || !parentTable.is(tableNode)) {
     return undefined;
   }

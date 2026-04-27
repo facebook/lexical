@@ -318,7 +318,7 @@ function $normalizeMarkdownTextNode(textNode: TextNode): void {
 
   // Split node to isolate each tab then replace '\t' into TabNode
   const splitNodes = textNode.splitText(...tabOffsets);
-  splitNodes.forEach((node) => {
+  splitNodes.forEach(node => {
     if (node.getTextContent() === '\t') {
       node.replace($createTabNode());
     }

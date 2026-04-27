@@ -105,7 +105,7 @@ const SIMPLE_INLINE_JSX_MATCHER: TextMatchTransformer = {
 // Matches html within a mdx file
 const MDX_HTML_TRANSFORMER: MultilineElementTransformer = {
   dependencies: [CodeNode],
-  export: (node) => {
+  export: node => {
     if (node.getTextContent().startsWith('From HTML:')) {
       return `<MyComponent>${node
         .getTextContent()

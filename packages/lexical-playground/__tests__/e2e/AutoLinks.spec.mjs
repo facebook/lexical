@@ -538,7 +538,7 @@ test.describe.parallel('Auto Links', () => {
       // Edge Cases
       'http://foo.bar', // Minimal URL with uncommon TLD
       'https://foo.bar', // HTTPS minimal URL with uncommon TLD
-    ].forEach((testUrl) =>
+    ].forEach(testUrl =>
       test(testUrl, async ({page, isPlainText}) => {
         test.skip(isPlainText);
         await focusEditor(page);
@@ -579,7 +579,7 @@ test.describe.parallel('Auto Links', () => {
       'email@domain.name',
       'email@domain.co.uk',
       'firstname-lastname@domain.com',
-    ].forEach((testUrl) =>
+    ].forEach(testUrl =>
       test(testUrl, async ({page, isPlainText}) => {
         test.skip(isPlainText);
         await focusEditor(page);

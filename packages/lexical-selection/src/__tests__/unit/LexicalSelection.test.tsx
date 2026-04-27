@@ -285,7 +285,7 @@ describe('LexicalSelection tests', () => {
     editor!.getEditorState().read(() => {
       const xNode = $getRoot()
         .getAllTextNodes()
-        .find((node) => node.getTextContent() === 'x');
+        .find(node => node.getTextContent() === 'x');
       expect(xNode).toBeDefined();
       expect(xNode!.hasFormat('bold')).toBe(true);
     });
@@ -1879,7 +1879,7 @@ describe('LexicalSelection tests', () => {
       },
     ];
     baseCases
-      .flatMap((testCase) => {
+      .flatMap(testCase => {
         // Test inverse selection
         const inverse = {
           ...testCase,
@@ -2187,7 +2187,7 @@ describe('LexicalSelection tests', () => {
       },
     ];
     baseCases
-      .flatMap((testCase) => {
+      .flatMap(testCase => {
         const inverse = {
           ...testCase,
           invertSelection: true,
@@ -2424,7 +2424,7 @@ describe('LexicalSelection tests', () => {
         },
         name: 'moves selection to parent if next sibling is not a text node',
       },
-    ].forEach((testCase) => {
+    ].forEach(testCase => {
       test(testCase.name, async () => {
         await testEditor.update(() => {
           const {key, offset} = testCase.fn();

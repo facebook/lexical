@@ -96,7 +96,7 @@ export function TablePlugin({
     if (hasCellBackgroundColor) {
       return;
     }
-    return editor.registerNodeTransform(TableCellNode, (node) => {
+    return editor.registerNodeTransform(TableCellNode, node => {
       if (node.getBackgroundColor() !== null) {
         node.setBackgroundColor(null);
       }

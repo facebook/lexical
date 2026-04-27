@@ -17,7 +17,7 @@ import {beforeEach, describe, test} from 'vitest';
 import {registerListStrictIndentTransform} from '../../index';
 
 describe('Lexical List StrictIndentTransform tests', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     beforeEach(() => {
       const {editor} = testEnv;
       registerListStrictIndentTransform(editor);

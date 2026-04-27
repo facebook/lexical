@@ -31,7 +31,7 @@ import {
 const $insertParagraph = (...children: Array<string | LexicalNode>) => {
   const root = $getRoot();
   const paragraph = $createParagraphNode();
-  const nodes = children.map((child) => {
+  const nodes = children.map(child => {
     return typeof child === 'string' ? $createTextNode(child) : child;
   });
   paragraph.append(...nodes);
@@ -198,7 +198,7 @@ describe('CollaborationWithCollisions', () => {
   describe.each([[false], [true]])(
     'useCollabV2: %s',
     (useCollabV2: boolean) => {
-      SIMPLE_TEXT_COLLISION_TESTS.forEach((testCase) => {
+      SIMPLE_TEXT_COLLISION_TESTS.forEach(testCase => {
         it(testCase.name, async () => {
           const connection = createTestConnection(useCollabV2);
           const clients = createAndStartClients(

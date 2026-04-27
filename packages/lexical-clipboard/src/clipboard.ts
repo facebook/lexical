@@ -449,7 +449,7 @@ export function $handlePlainTextDrop(
 function trustHTML(html: string): string | TrustedHTML {
   if (window.trustedTypes && window.trustedTypes.createPolicy) {
     const policy = window.trustedTypes.createPolicy('lexical', {
-      createHTML: (input) => input,
+      createHTML: input => input,
     });
     return policy.createHTML(html);
   }
@@ -715,7 +715,7 @@ export async function copyToClipboard(
   return new Promise((resolve, reject) => {
     const removeListener = editor.registerCommand(
       COPY_COMMAND,
-      (secondEvent) => {
+      secondEvent => {
         if (objectKlassEquals(secondEvent, ClipboardEvent)) {
           removeListener();
           if (clipboardEventTimeout !== null) {

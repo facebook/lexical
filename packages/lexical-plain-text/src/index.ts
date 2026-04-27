@@ -121,7 +121,7 @@ export function registerPlainText(editor: LexicalEditor): () => void {
   const removeListener = mergeRegister(
     editor.registerCommand<boolean>(
       DELETE_CHARACTER_COMMAND,
-      (isBackward) => {
+      isBackward => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -135,7 +135,7 @@ export function registerPlainText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand<boolean>(
       DELETE_WORD_COMMAND,
-      (isBackward) => {
+      isBackward => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -149,7 +149,7 @@ export function registerPlainText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand<boolean>(
       DELETE_LINE_COMMAND,
-      (isBackward) => {
+      isBackward => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -163,7 +163,7 @@ export function registerPlainText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand<InputEvent | string>(
       CONTROLLED_TEXT_INSERTION_COMMAND,
-      (eventOrText) => {
+      eventOrText => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -206,7 +206,7 @@ export function registerPlainText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand<boolean>(
       INSERT_LINE_BREAK_COMMAND,
-      (selectStart) => {
+      selectStart => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -234,7 +234,7 @@ export function registerPlainText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand<KeyboardEvent>(
       KEY_ARROW_LEFT_COMMAND,
-      (payload) => {
+      payload => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -256,7 +256,7 @@ export function registerPlainText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand<KeyboardEvent>(
       KEY_ARROW_RIGHT_COMMAND,
-      (payload) => {
+      payload => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -278,7 +278,7 @@ export function registerPlainText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand<KeyboardEvent>(
       KEY_BACKSPACE_COMMAND,
-      (event) => {
+      event => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -298,7 +298,7 @@ export function registerPlainText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand<KeyboardEvent>(
       KEY_DELETE_COMMAND,
-      (event) => {
+      event => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -312,7 +312,7 @@ export function registerPlainText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand<KeyboardEvent | null>(
       KEY_ENTER_COMMAND,
-      (event) => {
+      event => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -352,7 +352,7 @@ export function registerPlainText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand(
       COPY_COMMAND,
-      (event) => {
+      event => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -366,7 +366,7 @@ export function registerPlainText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand(
       CUT_COMMAND,
-      (event) => {
+      event => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -380,7 +380,7 @@ export function registerPlainText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand(
       PASTE_COMMAND,
-      (event) => {
+      event => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -394,12 +394,12 @@ export function registerPlainText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand<DragEvent>(
       DROP_COMMAND,
-      (event) => $handlePlainTextDrop(event, editor),
+      event => $handlePlainTextDrop(event, editor),
       COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand<DragEvent>(
       DRAGSTART_COMMAND,
-      (event) => {
+      event => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
           return false;

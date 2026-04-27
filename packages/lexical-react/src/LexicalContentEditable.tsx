@@ -75,7 +75,7 @@ function Placeholder({
   useLayoutEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setEditable(editor.isEditable());
-    return editor.registerEditableListener((currentIsEditable) => {
+    return editor.registerEditableListener(currentIsEditable => {
       setEditable(currentIsEditable);
     });
   }, [editor]);

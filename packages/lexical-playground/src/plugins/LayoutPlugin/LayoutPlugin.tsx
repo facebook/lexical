@@ -147,7 +147,7 @@ export function LayoutPlugin(): null {
       ),
       editor.registerCommand(
         INSERT_LAYOUT_COMMAND,
-        (template) => {
+        template => {
           editor.update(() => {
             const container = $createLayoutContainerNode(template);
             const itemsCount = getItemsCountFromTemplate(template);
@@ -206,7 +206,7 @@ export function LayoutPlugin(): null {
         COMMAND_PRIORITY_EDITOR,
       ),
 
-      editor.registerNodeTransform(LayoutItemNode, (node) => {
+      editor.registerNodeTransform(LayoutItemNode, node => {
         // Structure enforcing transformers for each node type. In case nesting structure is not
         // "Container > Item" it'll unwrap nodes and convert it back
         // to regular content.
@@ -218,7 +218,7 @@ export function LayoutPlugin(): null {
           $fillLayoutItemIfEmpty(node);
         }
       }),
-      editor.registerNodeTransform(LayoutContainerNode, (node) => {
+      editor.registerNodeTransform(LayoutContainerNode, node => {
         const children = node.getChildren<LexicalNode>();
         if (!children.every($isLayoutItemNode)) {
           for (const child of children) {

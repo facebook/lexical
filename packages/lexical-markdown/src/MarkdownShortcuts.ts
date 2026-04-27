@@ -574,7 +574,7 @@ export function registerMarkdownShortcuts(
     ),
     editor.registerCommand(
       KEY_ENTER_COMMAND,
-      (event) => {
+      event => {
         if (event !== null && event.shiftKey) {
           return false;
         }

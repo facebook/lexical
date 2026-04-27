@@ -344,7 +344,7 @@ export class NodeSelection implements BaseSelection {
     }
     const a: Set<NodeKey> = this._nodes;
     const b: Set<NodeKey> = selection._nodes;
-    return a.size === b.size && Array.from(a).every((key) => b.has(key));
+    return a.size === b.size && Array.from(a).every(key => b.has(key));
   }
 
   isCollapsed(): boolean {
@@ -1201,7 +1201,7 @@ export class RangeSelection implements BaseSelection {
       }
     }
     const applyFormatToElements = (alignWith: number | null) => {
-      selectedNodes.forEach((node) => {
+      selectedNodes.forEach(node => {
         if ($isElementNode(node)) {
           const newFormat = node.getFormatFlags(formatType, alignWith);
           node.setTextFormat(newFormat);
@@ -1755,7 +1755,7 @@ export class RangeSelection implements BaseSelection {
       if (
         initialRange
           .getTextSlices()
-          .every((slice) => slice === null || slice.distance === 0)
+          .every(slice => slice === null || slice.distance === 0)
       ) {
         // There's no text in the direction of the deletion so we can explore our options
         let state:

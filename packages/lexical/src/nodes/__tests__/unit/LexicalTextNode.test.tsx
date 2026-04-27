@@ -347,12 +347,12 @@ describe('LexicalTextNode tests', () => {
       $getRoot().append(paragraphNode);
 
       // Set each format and ensure that the other formats are cleared
-      capitalizationFormats.forEach((formatToSet) => {
+      capitalizationFormats.forEach(formatToSet => {
         textNode.toggleFormat(formatToSet);
 
         capitalizationFormats
-          .filter((format) => format !== formatToSet)
-          .forEach((format) => expect(textNode.hasFormat(format)).toBe(false));
+          .filter(format => format !== formatToSet)
+          .forEach(format => expect(textNode.hasFormat(format)).toBe(false));
 
         expect(textNode.hasFormat(formatToSet)).toBe(true);
       });
@@ -489,7 +489,7 @@ describe('LexicalTextNode tests', () => {
           const splitNodes = textNode.splitText(...splitOffsets);
 
           expect(paragraphNode.getChildren()).toHaveLength(splitStrings.length);
-          expect(splitNodes.map((node) => node.getTextContent())).toEqual(
+          expect(splitNodes.map(node => node.getTextContent())).toEqual(
             splitStrings,
           );
         });
@@ -628,7 +628,7 @@ describe('LexicalTextNode tests', () => {
       await update(() => {
         const textNode = $createTextNode('foo');
         const splits = textNode.splitText(1, 2);
-        expect(splits.map((split) => split.getTextContent())).toEqual([
+        expect(splits.map(split => split.getTextContent())).toEqual([
           'f',
           'o',
           'o',
@@ -640,15 +640,13 @@ describe('LexicalTextNode tests', () => {
       await update(() => {
         const textNode = $createTextNode('hello world');
         const state = createState('state', {
-          parse: (v) => v,
-          unparse: (v) => v,
+          parse: v => v,
+          unparse: v => v,
         });
         $setState(textNode, state, 'foo');
         const splits = textNode.splitText(3, 5);
         expect(
-          splits
-            .map((split) => $getState(split, state))
-            .every((v) => v === 'foo'),
+          splits.map(split => $getState(split, state)).every(v => v === 'foo'),
         ).toEqual(true);
 
         // Check that the state value is not aliased to the original node.
@@ -663,15 +661,13 @@ describe('LexicalTextNode tests', () => {
       await update(() => {
         const textNode = $createTestSegmentedNode('hello world');
         const state = createState('state', {
-          parse: (v) => v,
-          unparse: (v) => v,
+          parse: v => v,
+          unparse: v => v,
         });
         $setState(textNode, state, 'foo');
         const splits = textNode.splitText(3, 5);
         expect(
-          splits
-            .map((split) => $getState(split, state))
-            .every((v) => v === 'foo'),
+          splits.map(split => $getState(split, state)).every(v => v === 'foo'),
         ).toEqual(true);
       });
     });

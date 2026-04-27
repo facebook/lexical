@@ -358,7 +358,7 @@ describe('HTML', () => {
             root
               .getAllTextNodes()
               .map(
-                (node) =>
+                node =>
                   [node.getTextContent(), node.hasFormat('bold')] as const,
               ),
           ).toEqual([['Hello world', false]]);

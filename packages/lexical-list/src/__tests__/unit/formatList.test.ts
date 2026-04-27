@@ -80,7 +80,7 @@ const initOptions = {
 };
 
 describe('insertList', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     test('inserting with empty root selection', async () => {
       const {editor} = testEnv;
 
@@ -178,7 +178,7 @@ describe('insertList', () => {
 
       editor.read(() => {
         const lists = $nodesOfType(ListNode).filter(
-          (node) => node.getListType() === 'number',
+          node => node.getListType() === 'number',
         );
         expect(lists.length).toBe(2);
       });
@@ -231,7 +231,7 @@ describe('insertList', () => {
 });
 
 describe('$handleListInsertParagraph', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     test('exits list when list item is completely empty', async () => {
       const {editor} = testEnv;
       registerList(editor);
@@ -385,7 +385,7 @@ describe('$handleListInsertParagraph', () => {
 
 describe('$handleIndent', () => {
   initializeUnitTest(
-    (testEnv) => {
+    testEnv => {
       test('creates a new nested sublist', async () => {
         const {editor} = testEnv;
 
@@ -420,7 +420,7 @@ describe('$handleIndent', () => {
 });
 
 describe('$handleOutdent', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     test('removes the nested list and replaces list item', async () => {
       const {editor} = testEnv;
 

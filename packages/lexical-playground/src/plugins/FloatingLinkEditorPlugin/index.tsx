@@ -291,7 +291,7 @@ function FloatingLinkEditor({
 
   return (
     <div
-      ref={(el) => {
+      ref={el => {
         editorRef.current = el;
         refs.setFloating(el);
       }}
@@ -307,10 +307,10 @@ function FloatingLinkEditor({
             ref={inputRef}
             className="link-input"
             value={editedLinkUrl}
-            onChange={(event) => {
+            onChange={event => {
               setEditedLinkUrl(event.target.value);
             }}
-            onKeyDown={(event) => {
+            onKeyDown={event => {
               monitorInputInteraction(event);
             }}
           />
@@ -347,7 +347,7 @@ function FloatingLinkEditor({
             role="button"
             tabIndex={0}
             onMouseDown={preventDefault}
-            onClick={(event) => {
+            onClick={event => {
               event.preventDefault();
               setEditedLinkUrl(linkUrl);
               setIsLinkEditMode(true);
@@ -393,8 +393,8 @@ function useFloatingLinkEditorToolbar(
         }
         const badNode = selection
           .getNodes()
-          .filter((node) => !$isLineBreakNode(node))
-          .find((node) => {
+          .filter(node => !$isLineBreakNode(node))
+          .find(node => {
             const linkNode = $findMatchingParent(node, $isLinkNode);
             const autoLinkNode = $findMatchingParent(node, $isAutoLinkNode);
             return (
@@ -443,7 +443,7 @@ function useFloatingLinkEditorToolbar(
       ),
       editor.registerCommand(
         CLICK_COMMAND,
-        (payload) => {
+        payload => {
           const selection = $getSelection();
           if ($isRangeSelection(selection)) {
             const node = getSelectedNode(selection);

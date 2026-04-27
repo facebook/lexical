@@ -72,8 +72,8 @@ function fetchContributors() {
   if (!result) {
     throw new Error('Failed to fetch contributors');
   }
-  const lines = result.split('\n').filter((line) => line.trim());
-  return lines.map((line) => JSON.parse(line));
+  const lines = result.split('\n').filter(line => line.trim());
+  return lines.map(line => JSON.parse(line));
 }
 
 /**
@@ -336,7 +336,7 @@ async function generateTeamData() {
 }
 
 // Run the script
-generateTeamData().catch((error) => {
+generateTeamData().catch(error => {
   console.error('Error generating team data:', error);
   process.exit(1);
 });

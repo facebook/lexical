@@ -146,7 +146,7 @@ export function syncYjsChangesToLexical(
   // safely computed during the event call. If it is accessed after event
   // call it might result in unexpected behavior.
   // https://github.com/yjs/yjs/blob/00ef472d68545cb260abd35c2de4b3b78719c9e4/src/utils/YEvent.js#L132
-  events.forEach((event) => event.delta);
+  events.forEach(event => event.delta);
 
   editor.update(
     () => {
@@ -357,7 +357,7 @@ export function syncYjsChangesToLexicalV2__EXPERIMENTAL(
   const editorState = editor._editorState;
 
   // Remove deleted nodes from the mapping
-  iterateDeletedStructs(transaction, transaction.deleteSet, (struct) => {
+  iterateDeletedStructs(transaction, transaction.deleteSet, struct => {
     if (struct.constructor === Item) {
       const content = struct.content as ContentType;
       const type = content.type;
@@ -372,7 +372,7 @@ export function syncYjsChangesToLexicalV2__EXPERIMENTAL(
   // safely computed during the event call. If it is accessed after event
   // call it might result in unexpected behavior.
   // https://github.com/yjs/yjs/blob/00ef472d68545cb260abd35c2de4b3b78719c9e4/src/utils/YEvent.js#L132
-  events.forEach((event) => event.delta);
+  events.forEach(event => event.delta);
 
   editor.update(
     () => {
@@ -445,7 +445,7 @@ export function syncLexicalUpdateToYjsV2__EXPERIMENTAL(
 
   // Nodes are normalized synchronously (`discrete: true` above), so the mapping may now be
   // incorrect for these nodes, as they point to `getLatest` which is mutable within an update.
-  normalizedNodes.forEach((nodeKey) => {
+  normalizedNodes.forEach(nodeKey => {
     binding.mapping.deleteNode(nodeKey);
   });
 

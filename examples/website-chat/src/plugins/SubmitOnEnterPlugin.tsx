@@ -26,7 +26,7 @@ export function SubmitOnEnterPlugin({onSubmit}: SubmitOnEnterPluginProps) {
   useEffect(() => {
     return editor.registerCommand(
       KEY_ENTER_COMMAND,
-      (event) => {
+      event => {
         if (event !== null && event.shiftKey) {
           return false;
         }

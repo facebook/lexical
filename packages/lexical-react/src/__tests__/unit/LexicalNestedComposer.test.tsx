@@ -154,7 +154,7 @@ describe('LexicalNestedComposer', () => {
             },
             namespace: 'parent',
             nodes: [ReactDecoratorNode],
-            onError: (err) => {
+            onError: err => {
               throw err;
             },
           }}>
@@ -246,7 +246,7 @@ describe('LexicalNestedComposer', () => {
             },
             namespace: 'parent',
             nodes: [ReactDecoratorNode],
-            onError: (err) => {
+            onError: err => {
               throw err;
             },
           }}>
@@ -349,7 +349,7 @@ describe('LexicalNestedComposer', () => {
             },
             namespace: 'parent',
             nodes: [ReactDecoratorNode],
-            onError: (err) => {
+            onError: err => {
               throw err;
             },
           }}>
@@ -449,7 +449,7 @@ describe('LexicalNestedComposer', () => {
             },
             namespace: 'parent',
             nodes: [ReactDecoratorNode],
-            onError: (err) => {
+            onError: err => {
               throw err;
             },
           }}>
@@ -473,7 +473,7 @@ describe('LexicalNestedComposer', () => {
     // nodes inherited
     expect([...nestedEditor._nodes.keys()].sort()).toEqual(
       [...editor._nodes.keys()]
-        .filter((k) => k !== ReactDecoratorNode.getType())
+        .filter(k => k !== ReactDecoratorNode.getType())
         .sort(),
     );
     expectHtmlToBeEqual(
@@ -551,7 +551,7 @@ describe('LexicalNestedComposer', () => {
             },
             namespace: 'parent',
             nodes: [ReactDecoratorNode],
-            onError: (err) => {
+            onError: err => {
               throw err;
             },
           }}>
@@ -575,7 +575,7 @@ describe('LexicalNestedComposer', () => {
     // nodes inherited
     expect([...nestedEditor._nodes.keys()].sort()).toEqual(
       [...editor._nodes.keys()]
-        .filter((k) => k !== ReactDecoratorNode.getType())
+        .filter(k => k !== ReactDecoratorNode.getType())
         .sort(),
     );
     expect(editor.isEditable()).toBe(true);
@@ -702,7 +702,7 @@ describe('LexicalNestedComposer', () => {
             },
             namespace: 'parent',
             nodes: [ReactDecoratorNode],
-            onError: (err) => {
+            onError: err => {
               throw err;
             },
           }}>
@@ -726,7 +726,7 @@ describe('LexicalNestedComposer', () => {
     // nodes not inherited
     expect([...nestedEditor._nodes.keys()].sort()).toEqual(
       [...editor._nodes.keys()]
-        .filter((k) => k !== ReactDecoratorNode.getType())
+        .filter(k => k !== ReactDecoratorNode.getType())
         .sort(),
     );
     expect(editor.isEditable()).toBe(true);
@@ -812,7 +812,7 @@ describe('LexicalNestedComposer', () => {
     let editor: undefined | LexicalEditor;
     let nestedEditor: undefined | LexicalEditor;
     const DELEGATED_COMMAND = createCommand<unknown>('DELEGATED_COMMAND');
-    const $commandListener = vi.fn((_) => false);
+    const $commandListener = vi.fn(_ => false);
     function DelegateListenerPlugin() {
       const [currentEditor] = useLexicalComposerContext();
       useEffect(() => {
@@ -885,7 +885,7 @@ describe('LexicalNestedComposer', () => {
             },
             namespace: 'parent',
             nodes: [ReactDecoratorNode],
-            onError: (err) => {
+            onError: err => {
               throw err;
             },
           }}>
@@ -910,7 +910,7 @@ describe('LexicalNestedComposer', () => {
     // nodes not inherited
     expect([...nestedEditor._nodes.keys()].sort()).toEqual(
       [...editor._nodes.keys()]
-        .filter((k) => k !== ReactDecoratorNode.getType())
+        .filter(k => k !== ReactDecoratorNode.getType())
         .sort(),
     );
     expect(warn.mock.calls).toEqual([]);
@@ -975,7 +975,7 @@ describe('LexicalNestedComposer', () => {
       $commandListener.mockClear();
       // Can stop propagation from nested editor
       $commandListener.mockImplementation(
-        (opts) =>
+        opts =>
           opts.dispatchEditor === opts.currentEditor &&
           opts.priority === COMMAND_PRIORITY_EDITOR,
       );
@@ -1012,7 +1012,7 @@ describe('LexicalNestedComposer', () => {
 
       // Can stop propagation from parent editor
       $commandListener.mockImplementation(
-        (opts) => opts.dispatchEditor !== opts.currentEditor,
+        opts => opts.dispatchEditor !== opts.currentEditor,
       );
       expect(nestedEditor?.dispatchCommand(DELEGATED_COMMAND, undefined)).toBe(
         true,
@@ -1101,7 +1101,7 @@ describe('LexicalNestedComposer', () => {
               StaticTransformNode,
               ConfigTransformNode,
             ],
-            onError: (err) => {
+            onError: err => {
               throw err;
             },
           }}>

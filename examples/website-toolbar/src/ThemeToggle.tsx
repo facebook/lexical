@@ -15,7 +15,7 @@ export function ThemeToggle() {
   );
 
   const toggle = useCallback(() => {
-    setIsDark((prev) => {
+    setIsDark(prev => {
       const next = !prev;
       document.documentElement.classList.toggle('dark', next);
       return next;

@@ -32,7 +32,7 @@ import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 import {beforeEach, describe, expect, test} from 'vitest';
 
 describe('table selection', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     let tableNode: TableNode;
     let tableMap: TableMapType;
     let tableSelection: TableSelection;
@@ -75,7 +75,7 @@ describe('table selection', () => {
             expect(
               $getRoot()
                 .getAllTextNodes()
-                .map((node) => node.getStyle()),
+                .map(node => node.getStyle()),
             ).toEqual(Array.from({length}, () => ''));
             expect($isTableSelection($getSelection())).toBe(true);
             $patchStyleText($getSelection()!, {color: 'red'});
@@ -83,7 +83,7 @@ describe('table selection', () => {
             expect(
               $getRoot()
                 .getAllTextNodes()
-                .map((node) => node.getStyle()),
+                .map(node => node.getStyle()),
             ).toEqual(Array.from({length}, () => 'color: red;'));
           },
           {discrete: true},

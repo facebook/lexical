@@ -21,7 +21,7 @@ import {$createRootNode, RootNode} from '../../nodes/LexicalRootNode';
 import {initializeUnitTest} from '../utils';
 
 describe('LexicalEditorState tests', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     test('constructor', async () => {
       const root = $createRootNode();
       const nodeMap = new Map([['root', root]]);

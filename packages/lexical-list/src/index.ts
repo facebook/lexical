@@ -12,18 +12,27 @@ import type {
   ListType,
   SerializedListNode,
 } from './LexicalListNode';
-import type {LexicalCommand, LexicalEditor, NodeKey} from 'lexical';
+import type {
+  ElementNode,
+  LexicalCommand,
+  LexicalEditor,
+  LexicalNode,
+  NodeKey,
+} from 'lexical';
 
 import {effect, namedSignals} from '@lexical/extension';
 import {$findMatchingParent, mergeRegister} from '@lexical/utils';
 import {
+  $createParagraphNode,
   $getNodeByKey,
   $getSelection,
+  $isElementNode,
   $isRangeSelection,
   $isTextNode,
   COMMAND_PRIORITY_LOW,
   createCommand,
   defineExtension,
+  DELETE_CHARACTER_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
   safeCast,
   TextNode,
@@ -133,6 +142,76 @@ export function registerList(
       },
       COMMAND_PRIORITY_LOW,
     ),
+    editor.registerCommand(
+      DELETE_CHARACTER_COMMAND,
+      (isBackward) => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
+          return false;
+        }
+
+        const anchor = selection.anchor;
+        const anchorNode = anchor.getNode();
+
+        // Check if cursor is at the start of a node
+        if (anchor.type === 'text' && anchor.offset !== 0) {
+          return false;
+        }
+
+        // Find the parent ListItemNode
+        const listItemParent = $findMatchingParent(anchorNode, (node) =>
+          $isListItemNode(node),
+        );
+
+        if (!listItemParent || !$isListItemNode(listItemParent)) {
+          return false;
+        }
+
+        // Only handle deletion if the list item is empty
+        if (!listItemParent.isEmpty()) {
+          return false;
+        }
+
+        // Check if the list item has a previous sibling (not the first item)
+        const previousSibling = listItemParent.getPreviousSibling();
+        if (previousSibling === null) {
+          // If it's the first item in the list, don't handle it here
+          return false;
+        }
+
+        // Get the parent list node
+        const listNode = listItemParent.getParent();
+        if (!listNode || !$isListNode(listNode)) {
+          return false;
+        }
+
+        if (isBackward && listNodeHasOverflow(editor, listNode)) {
+          // When character limit overflow nodes are present, let other handlers
+          // manage backspace to keep overflow cleanup consistent.
+          return false;
+        }
+
+        // Create a new paragraph block to replace the list item
+        const newParagraph = $createParagraphNode();
+
+        // Remove the list item
+        listItemParent.remove();
+
+        // If the list is now empty, remove it and insert paragraph after
+        if (listNode.isEmpty()) {
+          listNode.insertBefore(newParagraph);
+          listNode.remove();
+        } else {
+          // Otherwise insert paragraph after the list
+          listNode.insertAfter(newParagraph);
+        }
+
+        // Move selection to the new paragraph
+        newParagraph.select();
+        return true;
+      },
+      COMMAND_PRIORITY_LOW,
+    ),
     editor.registerNodeTransform(ListItemNode, (node) => {
       const firstChild = node.getFirstChild();
       if (firstChild) {
@@ -178,6 +257,32 @@ export function registerList(
     }),
   );
   return removeListener;
+}
+
+function listNodeHasOverflow(
+  editor: LexicalEditor,
+  listNode: ListNode,
+): boolean {
+  const overflowConfig = editor._nodes.get('overflow');
+  if (!overflowConfig) {
+    return false;
+  }
+  const overflowKlass = overflowConfig.klass;
+  const stack: Array<LexicalNode> = [listNode];
+  while (stack.length > 0) {
+    const node = stack.pop()!;
+    if (node instanceof overflowKlass) {
+      return true;
+    }
+    if ($isElementNode(node)) {
+      let child = (node as ElementNode).getLastChild();
+      while (child !== null) {
+        stack.push(child);
+        child = child.getPreviousSibling();
+      }
+    }
+  }
+  return false;
 }
 
 export function registerListStrictIndentTransform(

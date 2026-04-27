@@ -1489,10 +1489,20 @@ after`;
     expect(normalizeMarkdown(md, true)).toBe('```\ncode\n```\nNext line');
   });
 
-  it('trims hard-break trailing spaces when merging adjacent lines', () => {
-    const md = `foo  
+  it('preserves hard-break trailing spaces when merging adjacent lines', () => {
+    const md = ['foo  ', 'bar'].join('\n');
+    expect(normalizeMarkdown(md, true)).toBe(md);
+  });
+
+  it('preserves backslash hard-breaks when merging adjacent lines', () => {
+    const md = `foo\\
 bar`;
-    expect(normalizeMarkdown(md, true)).toBe(`foo bar`);
+    expect(normalizeMarkdown(md, true)).toBe(md);
+  });
+
+  it('merges a soft break before a hard-breaking line', () => {
+    const md = ['foo', 'bar  ', 'baz'].join('\n');
+    expect(normalizeMarkdown(md, true)).toBe(['foo bar  ', 'baz'].join('\n'));
   });
 
   it('treats whitespace-only lines as empty separators (no merge across them)', () => {
@@ -1703,6 +1713,33 @@ describe('markdown whitespace import (default mode)', () => {
     });
   }
 
+  function expectRoundTrip(md: string, shouldMergeAdjacentLines = false): void {
+    const editor = createTestEditor();
+
+    editor.update(
+      () =>
+        $convertFromMarkdownString(
+          md,
+          [...TRANSFORMERS, HIGHLIGHT_TEXT_MATCH_IMPORT],
+          undefined,
+          false,
+          shouldMergeAdjacentLines,
+        ),
+      {discrete: true},
+    );
+
+    expect(
+      editor
+        .getEditorState()
+        .read(() =>
+          $convertToMarkdownString([
+            ...TRANSFORMERS,
+            HIGHLIGHT_TEXT_MATCH_IMPORT,
+          ]),
+        ),
+    ).toBe(md);
+  }
+
   it('preserves trailing whitespace on a standalone paragraph line (default mode)', () => {
     // A paragraph with trailing spaces, separated by an empty line from the next.
     const md = 'hello world   \n\nnext paragraph';
@@ -1754,34 +1791,30 @@ describe('markdown whitespace import (default mode)', () => {
     ).toBe(md);
   });
 
-  it('handles two-space hard line break in default mode (adjacent lines merged into LineBreak)', () => {
+  it('preserves two-space hard line break in default mode', () => {
     // In default mode, "foo  \nbar" has two adjacent non-empty lines → normalizeMarkdown
     // preserves the trailing "  " which $importBlocks then converts to a LineBreakNode.
-    const md = 'foo  \nbar';
-    const editor = createTestEditor();
+    expectRoundTrip('foo  \nbar');
+  });
 
-    editor.update(
-      () =>
-        $convertFromMarkdownString(md, [
-          ...TRANSFORMERS,
-          HIGHLIGHT_TEXT_MATCH_IMPORT,
-        ]),
-      {discrete: true},
-    );
+  it('preserves backslash hard line break in default mode', () => {
+    expectRoundTrip('foo\\\nbar');
+  });
 
-    const exported = editor
-      .getEditorState()
-      .read(() =>
-        $convertToMarkdownString([
-          ...TRANSFORMERS,
-          HIGHLIGHT_TEXT_MATCH_IMPORT,
-        ]),
-      );
+  it('preserves two-space hard line break in merge-adjacent mode', () => {
+    expectRoundTrip('foo  \nbar', true);
+  });
 
-    // The hard-break + next line are within the same paragraph; after import and
-    // re-export, the paragraph containing a LineBreakNode exports as "foo\nbar"
-    // (a single newline without the trailing spaces, since the break is now structural).
-    expect(exported).toBe('foo\nbar');
+  it('preserves backslash hard line break in merge-adjacent mode', () => {
+    expectRoundTrip('foo\\\nbar', true);
+  });
+
+  it('preserves two-space hard line break between blockquote lines', () => {
+    expectRoundTrip('> foo  \n> bar');
+  });
+
+  it('preserves backslash hard line break between blockquote lines', () => {
+    expectRoundTrip('> foo\\\n> bar');
   });
 });
 

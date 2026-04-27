@@ -191,7 +191,7 @@ export type SerializedDecoratorTextNode = {
   format: number,
   ...
 };
-declare export class DecoratorTextNode extends DecoratorNode<mixed> {
+declare export class DecoratorTextNode extends DecoratorNode<unknown> {
   createDOM(): HTMLElement;
   getFormat(): number;
   getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number;

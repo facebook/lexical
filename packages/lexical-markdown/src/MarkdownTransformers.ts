@@ -221,12 +221,12 @@ const ENDS_WITH = (regex: RegExp) =>
   new RegExp(`(?:${regex.source})$`, regex.flags);
 
 export const listMarkerState = createState('mdListMarker', {
-  parse: (v) => (typeof v === 'string' && /^[-*+]$/.test(v) ? v : '-'),
+  parse: v => (typeof v === 'string' && /^[-*+]$/.test(v) ? v : '-'),
   resetOnCopyNode: true,
 });
 
 export const codeFenceState = createState('mdCodeFence', {
-  parse: (val) => {
+  parse: val => {
     if (typeof val === 'string' && /^`{3,}$/.test(val)) {
       return val;
     }
@@ -373,7 +373,7 @@ export const HEADING: ElementTransformer = {
     return '#'.repeat(level) + ' ' + exportChildren(node);
   },
   regExp: HEADING_REGEX,
-  replace: createBlockNode((match) => {
+  replace: createBlockNode(match => {
     const tag = ('h' + match[1].length) as HeadingTagType;
     return $createHeadingNode(tag);
   }),
@@ -431,7 +431,7 @@ export const CODE: MultilineElementTransformer = {
     if (textContent.indexOf(fence) > -1) {
       const backticks = textContent.match(/`{3,}/g);
       if (backticks) {
-        const maxLength = Math.max(...backticks.map((b) => b.length));
+        const maxLength = Math.max(...backticks.map(b => b.length));
         fence = '`'.repeat(maxLength + 1);
       }
     }
@@ -569,7 +569,7 @@ export const CODE: MultilineElementTransformer = {
       codeBlockNode.append(textNode);
       rootNode.append(codeBlockNode);
     } else if (children) {
-      createBlockNode((match) => {
+      createBlockNode(match => {
         return $createCodeNode(match ? match[2] : undefined);
       })(rootNode, children, startMatch, isImport);
     }

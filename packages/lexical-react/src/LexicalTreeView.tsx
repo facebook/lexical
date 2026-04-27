@@ -116,7 +116,7 @@ export function TreeView({
       timeTravelPanelClassName={timeTravelPanelClassName}
       setEditorReadOnly={handleEditorReadOnly}
       editorState={editorCurrentState}
-      setEditorState={(state) => editor.setEditorState(state)}
+      setEditorState={state => editor.setEditorState(state)}
       generateContent={async function (exportDOM) {
         // Generates the content for the tree view, allowing customization with exportDOM and customPrintNode
         return generateContent(editor, commandsLog, exportDOM, customPrintNode);

@@ -122,14 +122,14 @@ export function registerCheckList(
     ),
     editor.registerCommand<KeyboardEvent>(
       KEY_ARROW_DOWN_COMMAND,
-      (event) => {
+      event => {
         return handleArrowUpOrDown(event, editor, false);
       },
       COMMAND_PRIORITY_LOW,
     ),
     editor.registerCommand<KeyboardEvent>(
       KEY_ARROW_UP_COMMAND,
-      (event) => {
+      event => {
         return handleArrowUpOrDown(event, editor, true);
       },
       COMMAND_PRIORITY_LOW,
@@ -155,7 +155,7 @@ export function registerCheckList(
     ),
     editor.registerCommand<KeyboardEvent>(
       KEY_SPACE_COMMAND,
-      (event) => {
+      event => {
         const activeItem = getActiveCheckListItem();
 
         if (activeItem != null && editor.isEditable()) {
@@ -176,7 +176,7 @@ export function registerCheckList(
     ),
     editor.registerCommand<KeyboardEvent>(
       KEY_ARROW_LEFT_COMMAND,
-      (event) => {
+      event => {
         return editor.getEditorState().read(() => {
           const selection = $getSelection();
 
@@ -188,7 +188,7 @@ export function registerCheckList(
               const anchorNode = anchor.getNode();
               const elementNode = $findMatchingParent(
                 anchorNode,
-                (node) => $isElementNode(node) && !node.isInline(),
+                node => $isElementNode(node) && !node.isInline(),
               );
               if ($isListItemNode(elementNode)) {
                 const parent = elementNode.getParent();
@@ -215,7 +215,7 @@ export function registerCheckList(
       COMMAND_PRIORITY_LOW,
     ),
 
-    editor.registerRootListener((rootElement) => {
+    editor.registerRootListener(rootElement => {
       if (rootElement !== null) {
         rootElement.addEventListener('click', configHandleClick);
         rootElement.addEventListener('pointerup', configHandlePointerUp);

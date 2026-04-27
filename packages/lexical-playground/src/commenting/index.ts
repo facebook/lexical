@@ -303,7 +303,7 @@ export class CommentStore {
 
     const unsubscribe = this._editor.registerCommand(
       TOGGLE_CONNECT_COMMAND,
-      (payload) => {
+      payload => {
         if (connect !== undefined && disconnect !== undefined) {
           const shouldConnect = payload;
 
@@ -348,7 +348,7 @@ export class CommentStore {
                 target === sharedCommentsArray
                   ? undefined
                   : parent instanceof YMap &&
-                    (this._comments.find((t) => t.id === parent.get('id')) as
+                    (this._comments.find(t => t.id === parent.get('id')) as
                       | Thread
                       | undefined);
 

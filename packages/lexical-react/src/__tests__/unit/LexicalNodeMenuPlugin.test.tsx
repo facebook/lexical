@@ -121,7 +121,7 @@ function createApp(plugin: React.ReactNode): React.FC {
         initialConfig={{
           namespace: 'test-node-menu',
           nodes: [],
-          onError: (err) => {
+          onError: err => {
             throw err;
           },
           theme: {},

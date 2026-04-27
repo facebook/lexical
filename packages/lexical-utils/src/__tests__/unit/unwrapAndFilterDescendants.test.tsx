@@ -69,7 +69,7 @@ describe('$unwrapAndFilterDescendants', () => {
       {discrete: true},
     );
   });
-  [0, 1, 2].forEach((depth) =>
+  [0, 1, 2].forEach(depth =>
     it(`Can un-nest children at depth ${depth}`, () => {
       editor.update(
         () => {

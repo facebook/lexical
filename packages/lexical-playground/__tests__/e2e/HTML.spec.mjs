@@ -92,7 +92,7 @@ test.describe('HTML', () => {
       undefined,
       {ignoreInlineStyles: true},
       // Custom modification: replace the date text and data-lexical-datetime value with wildcards for matching
-      (actualHtml) =>
+      actualHtml =>
         actualHtml
           .replace(/data-gutter="[^"]*"/g, 'data-gutter="*"')
           .replace(/(<div[^>]*>)(.*?)(<\/div>)/, '$1*$3')
@@ -119,7 +119,7 @@ test.describe('HTML', () => {
       `,
       undefined,
       {ignoreInlineStyles: true},
-      (actualHtml) =>
+      actualHtml =>
         actualHtml
           .replace(/data-gutter="[^"]*"/g, 'data-gutter="*"')
           .replace(/(<code[^>]*>)([\s\S]*)(<\/code>)/, '$1\n  *\n$3'),
@@ -133,7 +133,7 @@ test.describe('HTML', () => {
       undefined,
       {ignoreInlineStyles: true},
       // Custom modification: replace the date text and data-lexical-datetime value with wildcards for matching
-      (actualHtml) =>
+      actualHtml =>
         actualHtml
           .replace(/data-gutter="[^"]*"/g, 'data-gutter="*"')
           .replace(/(<div[^>]*>)(.*?)(<\/div>)/g, '$1*$3')
@@ -165,7 +165,7 @@ test.describe('HTML', () => {
       `,
       undefined,
       {ignoreInlineStyles: true},
-      (actualHtml) =>
+      actualHtml =>
         actualHtml
           .replace(/data-gutter="[^"]*"/g, 'data-gutter="*"')
           .replace(/(<code[^>]*>)([\s\S]*)(<\/code>)/, '$1\n  *\n$3'),
@@ -229,7 +229,7 @@ test.describe('HTML', () => {
       `,
       undefined,
       {ignoreInlineStyles: true},
-      (actualHtml) =>
+      actualHtml =>
         actualHtml.replace(/data-gutter="[^"]*"/g, 'data-gutter="*"'),
     );
   });

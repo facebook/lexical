@@ -85,7 +85,7 @@ describe('LexicalNodeHelpers tests', () => {
               editorState: $initialEditorState,
               namespace: '',
               nodes: plugin === 'PlainTextPlugin' ? [] : RICH_TEXT_NODES,
-              onError: (err) => {
+              onError: err => {
                 throw err;
               },
               theme: {},
@@ -136,7 +136,7 @@ describe('LexicalNodeHelpers tests', () => {
               editorState: initialEditorStateJson,
               namespace: '',
               nodes: plugin === 'PlainTextPlugin' ? [] : RICH_TEXT_NODES,
-              onError: (err) => {
+              onError: err => {
                 throw err;
               },
               theme: {},
@@ -195,7 +195,7 @@ describe('LexicalNodeHelpers tests', () => {
             initialConfig={{
               namespace: '',
               nodes: plugin === 'PlainTextPlugin' ? [] : RICH_TEXT_NODES,
-              onError: (err) => {
+              onError: err => {
                 throw err;
               },
               theme: {},
@@ -204,7 +204,7 @@ describe('LexicalNodeHelpers tests', () => {
             {plugin === 'PlainTextPlugin' ? (
               <PlainTextPlugin
                 contentEditable={<ContentEditable />}
-                placeholder={(isEditable) =>
+                placeholder={isEditable =>
                   isEditable ? (
                     <span className="placeholder">My placeholder</span>
                   ) : null
@@ -214,7 +214,7 @@ describe('LexicalNodeHelpers tests', () => {
             ) : (
               <RichTextPlugin
                 contentEditable={<ContentEditable />}
-                placeholder={(isEditable) =>
+                placeholder={isEditable =>
                   isEditable ? (
                     <span className="placeholder">My placeholder</span>
                   ) : null

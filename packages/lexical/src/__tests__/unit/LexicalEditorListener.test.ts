@@ -127,7 +127,7 @@ describe('LexicalEditor listeners', () => {
       const editableListenerCallback = vi.fn();
       const editableListener = vi
         .fn()
-        .mockImplementation((editable) =>
+        .mockImplementation(editable =>
           editableListenerCallback.bind(null, editable),
         );
       const unregister = editor.registerEditableListener(editableListener);

@@ -143,7 +143,7 @@ export function $removeStyleProperty<
   T extends LexicalNode,
   Prop extends keyof StyleObject,
 >(node: T, prop: Prop): T {
-  return $setStyleObject(node, (prevStyle) => {
+  return $setStyleObject(node, prevStyle => {
     if (prop in prevStyle) {
       const {[prop]: _ignore, ...nextStyle} = prevStyle;
       return nextStyle;
@@ -156,7 +156,7 @@ export function $setStyleProperty<
   T extends LexicalNode,
   Prop extends keyof StyleObject,
 >(node: T, prop: Prop, value: ValueOrUpdater<StyleObject[Prop]>): T {
-  return $setStyleObject(node, (prevStyle) => {
+  return $setStyleObject(node, prevStyle => {
     const prevValue = prevStyle[prop];
     const nextValue = typeof value === 'function' ? value(prevValue) : value;
     return prevValue === nextValue
@@ -270,7 +270,7 @@ export function $patchSelectedTextStyle(
       $setStyleObject(node, styleCallback);
     }
   } else {
-    $forEachSelectedTextNode((node) => $setStyleObject(node, styleCallback));
+    $forEachSelectedTextNode(node => $setStyleObject(node, styleCallback));
   }
   return true;
 }
@@ -321,21 +321,21 @@ export type StyleMapping = (input: StyleObject) => StyleObject;
 
 // TODO there's no reasonable way to hook into importDOM from a plug-in https://github.com/facebook/lexical/issues/7259
 export function constructStyleImportMap(
-  styleMapping: StyleMapping = (input) => input,
+  styleMapping: StyleMapping = input => input,
 ): DOMConversionMap {
   const importMap: DOMConversionMap = {};
 
   // Wrap all TextNode importers with a function that also imports
   // styles that are not otherwise imported
   for (const [tag, fn] of Object.entries(TextNode.importDOM() || {})) {
-    importMap[tag] = (importNode) => {
+    importMap[tag] = importNode => {
       const importer = fn(importNode);
       if (!importer) {
         return null;
       }
       return {
         ...importer,
-        conversion: (element) => {
+        conversion: element => {
           const output = importer.conversion(element);
           if (
             output === null ||
@@ -429,7 +429,7 @@ export const StyleStateExtension = defineExtension({
               if (output.after) {
                 return {
                   ...output,
-                  after: (generatedElement) => {
+                  after: generatedElement => {
                     const el = output.after
                       ? output.after(generatedElement)
                       : generatedElement;
@@ -453,7 +453,7 @@ export const StyleStateExtension = defineExtension({
     import: constructStyleImportMap(),
   },
   name: '@lexical/examples/node-state-style/StyleState',
-  register: (editor) =>
+  register: editor =>
     editor.registerCommand(
       PATCH_TEXT_STYLE_COMMAND,
       $patchSelectedTextStyle,

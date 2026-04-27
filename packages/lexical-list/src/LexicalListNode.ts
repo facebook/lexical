@@ -300,7 +300,7 @@ function $normalizeChildren(nodes: Array<LexicalNode>): Array<ListItemNode> {
       normalizedListItems.push(node);
       const children = node.getChildren();
       if (children.length > 1) {
-        children.forEach((child) => {
+        children.forEach(child => {
           if ($isListNode(child)) {
             normalizedListItems.push($wrapInListItem(child));
           }

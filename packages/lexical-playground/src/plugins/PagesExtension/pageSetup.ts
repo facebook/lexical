@@ -61,7 +61,7 @@ export const pageSetupState = createState('pageSetup', {
       a.orientation === b.orientation &&
       a.pageSize === b.pageSize &&
       (a.margins === b.margins || marginsIsEqual(a.margins, b.margins))),
-  parse: (v) => {
+  parse: v => {
     if (v && typeof v === 'object' && !Array.isArray(v)) {
       const obj: {[k in string]?: unknown} = v;
       return {

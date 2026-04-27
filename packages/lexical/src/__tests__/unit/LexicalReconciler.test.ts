@@ -19,7 +19,7 @@ import {$getReconciledDirection} from '../../LexicalReconciler';
 import {initializeUnitTest} from '../utils';
 
 describe('LexicalReconciler', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     test('Should set direction of root node children to auto if root node has no direction', async () => {
       const {editor} = testEnv;
 
@@ -35,7 +35,7 @@ describe('LexicalReconciler', () => {
       const directions = editor.read(() => {
         return $getRoot()
           .getChildren<ParagraphNode>()
-          .map((child) => $getReconciledDirection(child));
+          .map(child => $getReconciledDirection(child));
       });
       expect(directions).toEqual(['auto', 'auto', 'auto']);
     });
@@ -56,7 +56,7 @@ describe('LexicalReconciler', () => {
       const directions = editor.read(() => {
         return $getRoot()
           .getChildren<ParagraphNode>()
-          .map((child) => $getReconciledDirection(child));
+          .map(child => $getReconciledDirection(child));
       });
       expect(directions).toEqual([null, null, null]);
     });
@@ -88,7 +88,7 @@ describe('LexicalReconciler', () => {
       const directions = editor.read(() => {
         return $getRoot()
           .getChildren<ParagraphNode>()
-          .map((child) => $getReconciledDirection(child));
+          .map(child => $getReconciledDirection(child));
       });
       expect(directions).toEqual(['rtl', 'ltr', 'ltr', 'rtl', 'auto']);
     });
@@ -111,7 +111,7 @@ describe('LexicalReconciler', () => {
       const directions = editor.read(() => {
         return $getRoot()
           .getChildren<ParagraphNode>()
-          .map((child) => $getReconciledDirection(child));
+          .map(child => $getReconciledDirection(child));
       });
       expect(directions).toEqual(['ltr', null, null]);
     });
@@ -132,7 +132,7 @@ describe('LexicalReconciler', () => {
       let directions = editor.read(() => {
         return $getRoot()
           .getChildren<ParagraphNode>()
-          .map((child) => $getReconciledDirection(child));
+          .map(child => $getReconciledDirection(child));
       });
       expect(directions).toEqual(['auto', 'ltr']);
 
@@ -144,7 +144,7 @@ describe('LexicalReconciler', () => {
       directions = editor.read(() => {
         return $getRoot()
           .getChildren<ParagraphNode>()
-          .map((child) => $getReconciledDirection(child));
+          .map(child => $getReconciledDirection(child));
       });
       expect(directions).toEqual([null, 'ltr']);
 
@@ -156,7 +156,7 @@ describe('LexicalReconciler', () => {
       directions = editor.read(() => {
         return $getRoot()
           .getChildren<ParagraphNode>()
-          .map((child) => $getReconciledDirection(child));
+          .map(child => $getReconciledDirection(child));
       });
       expect(directions).toEqual(['auto', 'ltr']);
     });

@@ -199,7 +199,7 @@ export const ReactPluginHostExtension = defineExtension({
       },
       editor.registerCommand(
         REACT_PLUGIN_HOST_MOUNT_PLUGIN_COMMAND,
-        (arg) => {
+        arg => {
           // This runs before the PluginHost version
           untracked(() => {
             const {plugins} = mountedPluginsStore.value;
@@ -212,7 +212,7 @@ export const ReactPluginHostExtension = defineExtension({
       ),
       editor.registerCommand(
         REACT_PLUGIN_HOST_MOUNT_ROOT_COMMAND,
-        (arg) => {
+        arg => {
           invariant(
             root === undefined,
             'ReactPluginHostExtension: Root is already mounted',

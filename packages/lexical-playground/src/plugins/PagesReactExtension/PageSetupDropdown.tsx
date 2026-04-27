@@ -86,7 +86,7 @@ export function PageSetupDropdownComponent({
     (v: null | Partial<PageSetup>) => {
       editor.update(() => {
         $setPageSetup(
-          v ? (prev) => ({...(prev || DEFAULT_PAGE_SETUP), ...v}) : v,
+          v ? prev => ({...(prev || DEFAULT_PAGE_SETUP), ...v}) : v,
         );
       });
     },
@@ -101,9 +101,9 @@ export function PageSetupDropdownComponent({
       buttonAriaLabel="Page setup: size, orientation, and layout">
       <DropDownItem
         className={`item wide dropdown-submenu-trigger ${pageSizeMenuOpen ? 'expanded' : ''}`}
-        onClick={(event) => {
+        onClick={event => {
           event.stopPropagation();
-          setPageSizeMenuOpen((open) => !open);
+          setPageSizeMenuOpen(open => !open);
         }}>
         <span className="text">Page size</span>
         <i className="chevron-down dropdown-submenu-chevron" />
@@ -112,19 +112,19 @@ export function PageSetupDropdownComponent({
         <>
           <DropDownItem
             className={`item wide dropdown-submenu-item ${dropDownActiveClass(pageSetup === null)}`}
-            onClick={(event) => {
+            onClick={event => {
               event.stopPropagation();
               applyUpdate(null);
             }}>
             <span className="text">Pageless</span>
           </DropDownItem>
-          {PAGE_SIZE_ORDER.map((size) => (
+          {PAGE_SIZE_ORDER.map(size => (
             <DropDownItem
               key={size}
               className={`item wide dropdown-submenu-item ${dropDownActiveClass(
                 pageSetup?.pageSize === size,
               )}`}
-              onClick={(event) => {
+              onClick={event => {
                 event.stopPropagation();
                 applyUpdate({pageSize: size});
               }}>
@@ -137,9 +137,9 @@ export function PageSetupDropdownComponent({
         className={`item wide dropdown-submenu-trigger ${
           orientationMenuOpen ? 'expanded' : ''
         }`}
-        onClick={(event) => {
+        onClick={event => {
           event.stopPropagation();
-          setOrientationMenuOpen((open) => !open);
+          setOrientationMenuOpen(open => !open);
         }}>
         <span className="text">Orientation</span>
         <i className="chevron-down dropdown-submenu-chevron" />
@@ -150,7 +150,7 @@ export function PageSetupDropdownComponent({
             className={`item wide dropdown-submenu-item ${dropDownActiveClass(
               pageSetup?.orientation === 'portrait',
             )}`}
-            onClick={(event) => {
+            onClick={event => {
               event.stopPropagation();
               applyUpdate({orientation: 'portrait'});
             }}>
@@ -160,7 +160,7 @@ export function PageSetupDropdownComponent({
             className={`item wide dropdown-submenu-item ${dropDownActiveClass(
               pageSetup?.orientation === 'landscape',
             )}`}
-            onClick={(event) => {
+            onClick={event => {
               event.stopPropagation();
               applyUpdate({orientation: 'landscape'});
             }}>
@@ -172,16 +172,16 @@ export function PageSetupDropdownComponent({
         className={`item wide dropdown-submenu-trigger ${
           marginsMenuOpen ? 'expanded' : ''
         }`}
-        onClick={(event) => {
+        onClick={event => {
           event.stopPropagation();
-          setMarginsMenuOpen((open) => !open);
+          setMarginsMenuOpen(open => !open);
         }}
         title="Page margins (all sides)">
         <span className="text">Margins</span>
         <i className="chevron-down dropdown-submenu-chevron" />
       </DropDownItem>
       {marginsMenuOpen
-        ? MARGIN_PRESETS.map((preset) => (
+        ? MARGIN_PRESETS.map(preset => (
             <DropDownItem
               key={preset.label}
               className={`item wide dropdown-submenu-item ${dropDownActiveClass(
@@ -190,7 +190,7 @@ export function PageSetupDropdownComponent({
                   preset.margins,
                 ),
               )}`}
-              onClick={(event) => {
+              onClick={event => {
                 event.stopPropagation();
                 applyUpdate({margins: preset.margins});
               }}>

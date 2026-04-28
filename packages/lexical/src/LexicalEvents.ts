@@ -586,13 +586,18 @@ function getTargetRange(event: InputEvent): null | StaticRange {
   return targetRanges[0];
 }
 
-function $maybeMoveSelectionPastTrailingSpace(
+// When a macOS text replacement is accepted, Chrome and Firefox fire input events for the character that
+// triggered the acceptance *before* the one for the replacement text. This causes the caret to be placed
+// before the acceptance character. This function moves the caret past the acceptance character.
+function $maybeMoveSelectionPastTrailingAcceptanceCharacter(
   insertedText: string | null | undefined,
 ): void {
   if (
     insertedText == null ||
     insertedText.length <= 1 ||
-    insertedText.endsWith(' ')
+    lastKeyCode == null ||
+    lastKeyCode.length !== 1 ||
+    insertedText.endsWith(lastKeyCode)
   ) {
     return;
   }
@@ -609,7 +614,7 @@ function $maybeMoveSelectionPastTrailingSpace(
 
   const offset = selection.anchor.offset;
   const textContent = anchorNode.getTextContent();
-  if (textContent[offset] === ' ') {
+  if (textContent[offset] === lastKeyCode) {
     selection.setTextNodeRange(anchorNode, offset + 1, anchorNode, offset + 1);
   }
 }
@@ -825,7 +830,7 @@ function $handleBeforeInput(event: InputEvent): boolean {
     ) {
       event.preventDefault();
       dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, data);
-      $maybeMoveSelectionPastTrailingSpace(data);
+      $maybeMoveSelectionPastTrailingAcceptanceCharacter(data);
     } else {
       unprocessedBeforeInputData = data;
     }
@@ -846,7 +851,9 @@ function $handleBeforeInput(event: InputEvent): boolean {
       const textFromDataTransfer = event.dataTransfer
         ? event.dataTransfer.getData('text/plain')
         : null;
-      $maybeMoveSelectionPastTrailingSpace(textFromDataTransfer ?? event.data);
+      $maybeMoveSelectionPastTrailingAcceptanceCharacter(
+        textFromDataTransfer ?? event.data,
+      );
       break;
     }
 

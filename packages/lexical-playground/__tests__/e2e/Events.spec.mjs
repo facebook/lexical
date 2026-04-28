@@ -155,6 +155,10 @@ test.describe('Events', () => {
           data: ' ',
           inputType: 'insertText',
         });
+        const spaceKeyDownEvent = new KeyboardEvent('keydown', {
+          bubbles: true,
+          key: ' ',
+        });
         const spaceOffset = fireSpaceFirst
           ? args.textToReplace.length
           : args.replacementText.length;
@@ -169,6 +173,9 @@ test.describe('Events', () => {
           : [replacementBeforeInputEvent, spaceBeforeInputEvent];
 
         for (const event of orderedEvents) {
+          if (event === spaceBeforeInputEvent) {
+            editable.dispatchEvent(spaceKeyDownEvent);
+          }
           editable.dispatchEvent(event);
           if (event === replacementBeforeInputEvent) {
             textNode.textContent = fireSpaceFirst

@@ -168,6 +168,9 @@ export function diffStyleObjects(
   nextStyles: StyleObject,
 ): StyleObject {
   let styleDiff: undefined | Record<string, string | undefined>;
+  if (prevStyles === NO_STYLE) {
+    return nextStyles;
+  }
   if (prevStyles !== nextStyles) {
     for (const k_ in nextStyles) {
       const k = k_ as keyof StyleObject;
@@ -399,16 +402,14 @@ export const StyleStateExtension = defineExtension({
           $decorateDOM(nextNode, prevNode, dom) {
             const managedDOM: HTMLElementWithManagedStyle = dom;
             const nextStyleObject = $getStyleObject(nextNode);
-            const prevStyleObject = prevNode
-              ? getPreviousStyleObject(nextNode, prevNode, dom)
-              : NO_STYLE;
-            managedDOM[PREV_STYLE_STATE] = nextStyleObject;
-            setDOMStyleObject(
-              dom.style,
-              prevNode
-                ? diffStyleObjects(prevStyleObject, nextStyleObject)
-                : nextStyleObject,
+            const diffStyleObject = diffStyleObjects(
+              getPreviousStyleObject(nextNode, prevNode, dom),
+              nextStyleObject,
             );
+            managedDOM[PREV_STYLE_STATE] = nextStyleObject;
+            if (diffStyleObject !== NO_STYLE) {
+              setDOMStyleObject(dom.style, diffStyleObject);
+            }
           },
           $exportDOM(node, $next) {
             const output = $next();

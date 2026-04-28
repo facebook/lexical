@@ -659,6 +659,23 @@ function $handleBeforeInput(event: InputEvent): boolean {
 
   const selection = $getSelection();
 
+  // On Chrome, pressing Backspace inside a `contenteditable` element will accept a pending text replacement. This
+  // behavior is not desireable, so we check for this case and prevent the bogus replacement from happening.
+  if (
+    inputType === 'insertText' &&
+    event.data &&
+    event.data.length > 1 &&
+    lastKeyCode === 'Backspace'
+  ) {
+    event.preventDefault();
+    if ($isRangeSelection(selection) && !selection.isCollapsed()) {
+      const point = selection.isBackward() ? selection.anchor : selection.focus;
+      selection.anchor.set(point.key, point.offset, point.type);
+      selection.focus.set(point.key, point.offset, point.type);
+    }
+    return true;
+  }
+
   if (inputType === 'deleteContentBackward') {
     if (selection === null) {
       // Use previous selection

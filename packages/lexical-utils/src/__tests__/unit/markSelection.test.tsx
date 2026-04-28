@@ -46,7 +46,7 @@ Range.prototype.getClientRects = function (): DOMRectList {
 };
 
 describe('markSelection', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     it('does not throw for text-type selection points', async () => {
       const {editor} = testEnv;
       await editor.update(() => {

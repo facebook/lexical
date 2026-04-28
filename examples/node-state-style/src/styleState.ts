@@ -10,7 +10,6 @@ import type {PropertiesHyphenFallback} from 'csstype';
 
 import {domOverride, DOMRenderExtension} from '@lexical/html';
 import {$forEachSelectedTextNode} from '@lexical/selection';
-import InlineStyleParser from 'inline-style-parser';
 import {
   $caretRangeFromSelection,
   $getPreviousSelection,
@@ -26,6 +25,7 @@ import {
   createState,
   defineExtension,
   DOMConversionMap,
+  getStyleObjectFromCSS,
   isHTMLElement,
   LexicalNode,
   TextNode,
@@ -38,14 +38,11 @@ import {
  * @returns The styleObject containing all the styles and their values.
  */
 export function getStyleObjectFromRawCSS(css: string): StyleObject {
-  let styleObject: undefined | Record<string, string>;
-  for (const token of InlineStyleParser(css, {silent: true})) {
-    if (token.type === 'declaration' && token.value) {
-      styleObject = styleObject || {};
-      styleObject[token.property] = token.value;
-    }
+  const styleObject = getStyleObjectFromCSS(css);
+  for (const _ in styleObject) {
+    return styleObject as StyleObject;
   }
-  return styleObject || NO_STYLE;
+  return NO_STYLE;
 }
 
 export type Prettify<T> = {[K in keyof T]: T[K]} & {};

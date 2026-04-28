@@ -21,7 +21,6 @@
     "@shikijs/langs": "^3.3.0",
     "@shikijs/themes": "^3.3.0",
     "@zag-js/combobox": "^1.9.2",
-    "inline-style-parser": "^0.2.4",
     "lexical": "0.44.0",
     "lucide-react": "^0.503.0",
     "prettier": "^3.5.3",

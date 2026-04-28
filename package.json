@@ -222,7 +222,8 @@
       "postcss": ">=8.5.10",
       "astro": ">=6.1.6",
       "eslint": ">=9.26.0",
-      "immutable": ">=4.3.8"
+      "immutable": ">=4.3.8",
+      "path-to-regexp": ">=0.1.13"
     }
   }
 }

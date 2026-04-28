@@ -399,14 +399,14 @@ export const StyleStateExtension = defineExtension({
           $decorateDOM(nextNode, prevNode, dom) {
             const managedDOM: HTMLElementWithManagedStyle = dom;
             const nextStyleObject = $getStyleObject(nextNode);
+            const prevStyleObject = prevNode
+              ? getPreviousStyleObject(nextNode, prevNode, dom)
+              : NO_STYLE;
             managedDOM[PREV_STYLE_STATE] = nextStyleObject;
             setDOMStyleObject(
               dom.style,
               prevNode
-                ? diffStyleObjects(
-                    getPreviousStyleObject(nextNode, prevNode, dom),
-                    nextStyleObject,
-                  )
+                ? diffStyleObjects(prevStyleObject, nextStyleObject)
                 : nextStyleObject,
             );
           },

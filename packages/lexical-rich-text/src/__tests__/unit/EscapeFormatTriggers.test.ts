@@ -6,11 +6,7 @@
  *
  */
 
-import {
-  buildEditorFromExtensions,
-  configExtension,
-  EscapeFormatAtBoundaryExtension,
-} from '@lexical/extension';
+import {buildEditorFromExtensions} from '@lexical/extension';
 import {RichTextExtension} from '@lexical/rich-text';
 import {
   $createParagraphNode,
@@ -20,22 +16,26 @@ import {
   $isRangeSelection,
   $isTextNode,
   CLICK_COMMAND,
-  INSERT_PARAGRAPH_COMMAND,
+  configExtension,
   IS_CODE,
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
+  KEY_ENTER_COMMAND,
+  KEY_SPACE_COMMAND,
+  KEY_TAB_COMMAND,
   type LexicalEditor,
 } from 'lexical';
 import {invariant, KeyboardEventMock} from 'lexical/src/__tests__/utils';
 import {describe, expect, test} from 'vitest';
 
-describe('EscapeFormatAtBoundaryExtension', () => {
+describe('RichTextExtension escapeFormatTriggers', () => {
   function createEditor() {
     return buildEditorFromExtensions({
       dependencies: [
-        RichTextExtension,
-        configExtension(EscapeFormatAtBoundaryExtension, {
-          triggers: {arrow: true, click: true, enter: true},
+        configExtension(RichTextExtension, {
+          escapeFormatTriggers: {
+            code: {arrow: true, click: true, enter: true, onlyAtBoundary: true},
+          },
         }),
       ],
       name: 'test',
@@ -147,7 +147,7 @@ describe('EscapeFormatAtBoundaryExtension', () => {
     });
   });
 
-  describe('INSERT_PARAGRAPH_COMMAND', () => {
+  describe('KEY_ENTER_COMMAND', () => {
     test('clears format when pressing Enter at the end of a code node', async () => {
       using editor = createEditor();
       await setupCodeTextNode(editor);
@@ -157,7 +157,7 @@ describe('EscapeFormatAtBoundaryExtension', () => {
         selection.format = IS_CODE;
       });
 
-      await editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND, undefined);
+      await editor.dispatchCommand(KEY_ENTER_COMMAND, null);
 
       await editor.read(() => {
         const selection = $getSelection();
@@ -177,7 +177,7 @@ describe('EscapeFormatAtBoundaryExtension', () => {
         selection.format = IS_CODE;
       });
 
-      await editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND, undefined);
+      await editor.dispatchCommand(KEY_ENTER_COMMAND, null);
 
       await editor.read(() => {
         const selection = $getSelection();
@@ -197,7 +197,7 @@ describe('EscapeFormatAtBoundaryExtension', () => {
         selection.format = IS_CODE;
       });
 
-      await editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND, undefined);
+      await editor.dispatchCommand(KEY_ENTER_COMMAND, null);
 
       await editor.read(() => {
         const selection = $getSelection();
@@ -330,6 +330,165 @@ describe('EscapeFormatAtBoundaryExtension', () => {
         invariant($isRangeSelection(selection));
         expect(selection.format).toBe(IS_CODE);
       });
+    });
+  });
+});
+
+describe('RichTextExtension default capitalization reset', () => {
+  function createDefaultEditor() {
+    return buildEditorFromExtensions({
+      dependencies: [RichTextExtension],
+      name: 'test',
+    });
+  }
+
+  async function setupFormattedTextNode(
+    editor: LexicalEditor,
+    format: 'capitalize' | 'uppercase' | 'lowercase',
+  ) {
+    await editor.update(() => {
+      const root = $getRoot();
+      root.clear();
+      const paragraph = $createParagraphNode();
+      const textNode = $createTextNode('hello');
+      textNode.toggleFormat(format);
+      paragraph.append(textNode);
+      root.append(paragraph);
+    });
+  }
+
+  for (const format of ['capitalize', 'uppercase', 'lowercase'] as const) {
+    describe(`${format} format`, () => {
+      test('clears on Enter key', async () => {
+        using editor = createDefaultEditor();
+        await setupFormattedTextNode(editor, format);
+
+        await editor.update(() => {
+          const selection = $getRoot().selectEnd();
+          selection.toggleFormat(format);
+        });
+
+        await editor.dispatchCommand(KEY_ENTER_COMMAND, null);
+
+        await editor.read(() => {
+          const selection = $getSelection();
+          invariant($isRangeSelection(selection));
+          expect(selection.hasFormat(format)).toBe(false);
+        });
+      });
+
+      test('clears on Space key', async () => {
+        using editor = createDefaultEditor();
+        await setupFormattedTextNode(editor, format);
+
+        await editor.update(() => {
+          const selection = $getRoot().selectEnd();
+          selection.toggleFormat(format);
+        });
+
+        await editor.dispatchCommand(
+          KEY_SPACE_COMMAND,
+          new KeyboardEventMock(),
+        );
+
+        await editor.read(() => {
+          const selection = $getSelection();
+          invariant($isRangeSelection(selection));
+          expect(selection.hasFormat(format)).toBe(false);
+        });
+      });
+
+      test('clears on Tab key', async () => {
+        using editor = createDefaultEditor();
+        await setupFormattedTextNode(editor, format);
+
+        await editor.update(() => {
+          const selection = $getRoot().selectEnd();
+          selection.toggleFormat(format);
+        });
+
+        await editor.dispatchCommand(KEY_TAB_COMMAND, new KeyboardEventMock());
+
+        await editor.read(() => {
+          const selection = $getSelection();
+          invariant($isRangeSelection(selection));
+          expect(selection.hasFormat(format)).toBe(false);
+        });
+      });
+    });
+  }
+});
+
+describe('RichTextExtension escapeFormatTriggers mergeConfig', () => {
+  test('overriding one format preserves default capitalization resets', async () => {
+    using editor = buildEditorFromExtensions({
+      dependencies: [
+        configExtension(RichTextExtension, {
+          escapeFormatTriggers: {
+            code: {enter: true, onlyAtBoundary: true},
+          },
+        }),
+      ],
+      name: 'test',
+    });
+
+    await editor.update(() => {
+      const root = $getRoot();
+      root.clear();
+      const paragraph = $createParagraphNode();
+      const textNode = $createTextNode('hello');
+      textNode.toggleFormat('uppercase');
+      paragraph.append(textNode);
+      root.append(paragraph);
+    });
+
+    await editor.update(() => {
+      const selection = $getRoot().selectEnd();
+      selection.toggleFormat('uppercase');
+    });
+
+    await editor.dispatchCommand(KEY_ENTER_COMMAND, null);
+
+    await editor.read(() => {
+      const selection = $getSelection();
+      invariant($isRangeSelection(selection));
+      expect(selection.hasFormat('uppercase')).toBe(false);
+    });
+  });
+
+  test('null disables a default format', async () => {
+    using editor = buildEditorFromExtensions({
+      dependencies: [
+        configExtension(RichTextExtension, {
+          escapeFormatTriggers: {
+            capitalize: null,
+          },
+        }),
+      ],
+      name: 'test',
+    });
+
+    await editor.update(() => {
+      const root = $getRoot();
+      root.clear();
+      const paragraph = $createParagraphNode();
+      const textNode = $createTextNode('hello');
+      textNode.toggleFormat('capitalize');
+      paragraph.append(textNode);
+      root.append(paragraph);
+    });
+
+    await editor.update(() => {
+      const selection = $getRoot().selectEnd();
+      selection.toggleFormat('capitalize');
+    });
+
+    await editor.dispatchCommand(KEY_ENTER_COMMAND, null);
+
+    await editor.read(() => {
+      const selection = $getSelection();
+      invariant($isRangeSelection(selection));
+      expect(selection.hasFormat('capitalize')).toBe(true);
     });
   });
 });

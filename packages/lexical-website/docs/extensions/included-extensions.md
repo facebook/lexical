@@ -21,7 +21,6 @@
 - [AutoFocusExtension](/docs/api/modules/lexical_extension#autofocusextension) - Focus the editor when it is created (e.g. on page load)
 - [ClearEditorExtension](/docs/api/modules/lexical_extension#cleareditorextension) - Implementation for the `CLEAR_EDITOR_COMMAND`
 - [EditorStateExtension](/docs/api/modules/lexical_extension#editorstateextension) - Provide EditorState as a signal (alternative to `registerUpdateListener`)
-- [EscapeFormatAtBoundaryExtension](/docs/api/modules/lexical_extension#escapeformatatboundaryextension) - Escape text formatting (e.g. code, bold) when the cursor is at the boundary of a formatted text node
 - [HorizontalRuleExtension](/docs/api/modules/lexical_extension#horizontalruleextension) - HorizontalRuleNode (`<hr>` tag)
 - [InitialStateExtension](/docs/api/modules/lexical_extension#initialstateextension) - Sets the initial state of the editor (always included)
 - [NodeSelectionExtension](/docs/api/modules/lexical_extension#nodeselectionextension) - Tracks selection, typically for DecoratorNodes
@@ -68,7 +67,7 @@
 
 [@lexical/rich-text](/docs/api/modules/lexical_rich_text)
 
-- [RichTextExtension](/docs/api/modules/lexical_rich_text#richtextextension) - Rich Text editor (QuoteNode, HeadingNode), the return key creates a ParagraphNode by default (multiple ParagraphNode per document)
+- [RichTextExtension](/docs/api/modules/lexical_rich_text#richtextextension) - Rich Text editor (QuoteNode, HeadingNode), the return key creates a ParagraphNode by default (multiple ParagraphNode per document). Includes configurable `escapeFormatTriggers` to escape text formatting (e.g. code) at text node boundaries
 
 [@lexical/table](/docs/api/modules/lexical_table)
 

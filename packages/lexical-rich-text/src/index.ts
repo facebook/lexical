@@ -104,6 +104,7 @@ import {
   PASTE_COMMAND,
   PASTE_TAG,
   REMOVE_TEXT_COMMAND,
+  safeCast,
   SELECT_ALL_COMMAND,
   setNodeIndentFromDOM,
 } from 'lexical';
@@ -556,19 +557,157 @@ function $isSelectionCollapsedAtFrontOfIndentedBlock(
 }
 
 /**
- * Resets the capitalization of the selection to default.
- * Called when the user presses space, tab, or enter key.
- * @param selection The selection to reset the capitalization of.
+ * Trigger types that cause format escape at text node boundaries.
+ * - `enter`: Escape on Enter key press
+ * - `click`: Escape on mouse click
+ * - `arrow`: Escape on arrow key navigation (left/right)
+ * - `space`: Escape on Space key press
+ * - `tab`: Escape on Tab key press
  */
-function $resetCapitalization(selection: RangeSelection): void {
-  for (const format of ['lowercase', 'uppercase', 'capitalize'] as const) {
+export type EscapeFormatTrigger = 'enter' | 'click' | 'arrow' | 'space' | 'tab';
+
+/**
+ * Trigger flags for a single format type. Set a trigger key to `true` to
+ * escape that format when the corresponding user interaction occurs.
+ *
+ * When `onlyAtBoundary` is `true`, the format is only escaped when the cursor
+ * is at the start or end of a formatted text node with no adjacent sibling in
+ * that direction. When `onlyAtBoundary` is `false` or omitted the format is
+ * always escaped regardless of cursor position (matching the legacy
+ * `$resetCapitalization` behavior).
+ */
+export type TriggerConfig = {
+  [K in EscapeFormatTrigger]?: boolean;
+} & {
+  onlyAtBoundary?: boolean;
+};
+
+/**
+ * Per-format trigger configuration. Each {@link TextFormatType} maps to its
+ * own set of triggers, or `null` to explicitly disable escape for that format
+ * (useful when overriding defaults via `configExtension`).
+ */
+export type EscapeFormatTriggerConfig = {
+  [K in TextFormatType]?: TriggerConfig | null;
+};
+
+/**
+ * Configuration for {@link RichTextExtension}.
+ *
+ * @property escapeFormatTriggers - Per-format trigger configuration that
+ *   controls which text formats are automatically cleared from the selection
+ *   on specific user interactions.
+ *
+ *   Defaults to:
+ *   ```ts
+ *   {
+ *     capitalize: {enter: true, space: true, tab: true},
+ *     lowercase: {enter: true, space: true, tab: true},
+ *     uppercase: {enter: true, space: true, tab: true},
+ *   }
+ *   ```
+ *
+ *   To opt in to escaping `code` formatting at text node boundaries:
+ *   ```ts
+ *   configExtension(RichTextExtension, {
+ *     escapeFormatTriggers: {
+ *       code: {onlyAtBoundary: true, enter: true, click: true, arrow: true},
+ *     },
+ *   })
+ *   ```
+ */
+export interface RichTextConfig {
+  escapeFormatTriggers: EscapeFormatTriggerConfig;
+}
+
+const DEFAULT_RICH_TEXT_CONFIG: RichTextConfig = {
+  escapeFormatTriggers: {
+    capitalize: {enter: true, space: true, tab: true},
+    lowercase: {enter: true, space: true, tab: true},
+    uppercase: {enter: true, space: true, tab: true},
+  },
+};
+
+function $escapeFormatsForTrigger(
+  selection: RangeSelection,
+  trigger: EscapeFormatTrigger,
+  direction: 'start' | 'end' | 'both',
+  config: EscapeFormatTriggerConfig,
+): void {
+  let isBoundary = false;
+  let anchorNode: LexicalNode | null = null;
+
+  if (selection.isCollapsed() && selection.anchor.type === 'text') {
+    const node = selection.anchor.getNode();
+    if ($isTextNode(node)) {
+      anchorNode = node;
+      const offset = selection.anchor.offset;
+      const atEnd =
+        offset === node.getTextContentSize() && node.getNextSibling() === null;
+      const atStart = offset === 0 && node.getPreviousSibling() === null;
+      isBoundary =
+        (direction === 'end' && atEnd) ||
+        (direction === 'start' && atStart) ||
+        (direction === 'both' && (atEnd || atStart));
+    }
+  }
+
+  let didEscapeBoundary = false;
+  for (const [formatKey, triggers] of Object.entries(config)) {
+    if (triggers == null || !triggers[trigger]) {
+      continue;
+    }
+    const format = formatKey as TextFormatType;
+
+    if (triggers.onlyAtBoundary) {
+      if (
+        !isBoundary ||
+        !anchorNode ||
+        !$isTextNode(anchorNode) ||
+        !anchorNode.hasFormat(format)
+      ) {
+        continue;
+      }
+      didEscapeBoundary = true;
+    }
+
     if (selection.hasFormat(format)) {
       selection.toggleFormat(format);
     }
   }
+
+  if (didEscapeBoundary) {
+    selection.setStyle('');
+  }
 }
 
-export function registerRichText(editor: LexicalEditor): () => void {
+function mergeRichTextConfig(
+  config: RichTextConfig,
+  overrides: Partial<RichTextConfig>,
+): RichTextConfig {
+  if (overrides.escapeFormatTriggers === undefined) {
+    return config;
+  }
+  const merged: EscapeFormatTriggerConfig = {...config.escapeFormatTriggers};
+  for (const key of Object.keys(
+    overrides.escapeFormatTriggers,
+  ) as TextFormatType[]) {
+    const triggers = overrides.escapeFormatTriggers[key];
+    if (triggers === null) {
+      merged[key] = null;
+    } else if (triggers !== undefined) {
+      const existing = merged[key];
+      merged[key] =
+        existing != null ? {...existing, ...triggers} : {...triggers};
+    }
+  }
+  return {...config, escapeFormatTriggers: merged};
+}
+
+export function registerRichText(
+  editor: LexicalEditor,
+  escapeFormatTriggers: EscapeFormatTriggerConfig = DEFAULT_RICH_TEXT_CONFIG.escapeFormatTriggers,
+): () => void {
   const removeListener = mergeRegister(
     editor.registerCommand(
       CLICK_COMMAND,
@@ -577,6 +716,14 @@ export function registerRichText(editor: LexicalEditor): () => void {
         if ($isNodeSelection(selection)) {
           selection.clear();
           return true;
+        }
+        if ($isRangeSelection(selection)) {
+          $escapeFormatsForTrigger(
+            selection,
+            'click',
+            'both',
+            escapeFormatTriggers,
+          );
         }
         return false;
       },
@@ -841,6 +988,14 @@ export function registerRichText(editor: LexicalEditor): () => void {
         if (!$isRangeSelection(selection)) {
           return false;
         }
+        if (!event.shiftKey) {
+          $escapeFormatsForTrigger(
+            selection,
+            'arrow',
+            'start',
+            escapeFormatTriggers,
+          );
+        }
         if ($shouldOverrideDefaultCharacterSelection(selection, true)) {
           const isHoldingShift = event.shiftKey;
           event.preventDefault();
@@ -871,6 +1026,14 @@ export function registerRichText(editor: LexicalEditor): () => void {
         }
         if (!$isRangeSelection(selection)) {
           return false;
+        }
+        if (!event.shiftKey) {
+          $escapeFormatsForTrigger(
+            selection,
+            'arrow',
+            'end',
+            escapeFormatTriggers,
+          );
         }
         if ($shouldOverrideDefaultCharacterSelection(selection, false)) {
           const isHoldingShift = event.shiftKey;
@@ -931,7 +1094,12 @@ export function registerRichText(editor: LexicalEditor): () => void {
           return false;
         }
 
-        $resetCapitalization(selection);
+        $escapeFormatsForTrigger(
+          selection,
+          'enter',
+          'both',
+          escapeFormatTriggers,
+        );
 
         if (event !== null) {
           // If we have beforeinput, then we can avoid blocking
@@ -1116,7 +1284,12 @@ export function registerRichText(editor: LexicalEditor): () => void {
         const selection = $getSelection();
 
         if ($isRangeSelection(selection)) {
-          $resetCapitalization(selection);
+          $escapeFormatsForTrigger(
+            selection,
+            'space',
+            'both',
+            escapeFormatTriggers,
+          );
         }
 
         return false;
@@ -1129,7 +1302,12 @@ export function registerRichText(editor: LexicalEditor): () => void {
         const selection = $getSelection();
 
         if ($isRangeSelection(selection)) {
-          $resetCapitalization(selection);
+          $escapeFormatsForTrigger(
+            selection,
+            'tab',
+            'both',
+            escapeFormatTriggers,
+          );
         }
 
         return false;
@@ -1142,12 +1320,28 @@ export function registerRichText(editor: LexicalEditor): () => void {
 
 /**
  * An extension to register \@lexical/rich-text behavior and nodes
- * ({@link HeadingNode}, {@link QuoteNode})
+ * ({@link HeadingNode}, {@link QuoteNode}).
+ *
+ * Includes configurable format escape via `escapeFormatTriggers`.
+ * Use `configExtension` to customize which formats escape on which triggers.
+ *
+ * @example
+ * ```ts
+ * configExtension(RichTextExtension, {
+ *   escapeFormatTriggers: {
+ *     code: {click: true, arrow: true},
+ *   },
+ * })
+ * ```
  */
 export const RichTextExtension = defineExtension({
+  config: safeCast<RichTextConfig>(DEFAULT_RICH_TEXT_CONFIG),
   conflictsWith: ['@lexical/plain-text'],
   dependencies: [DragonExtension],
+  mergeConfig: mergeRichTextConfig,
   name: '@lexical/rich-text',
   nodes: () => [HeadingNode, QuoteNode],
-  register: registerRichText,
+  register(editor, config) {
+    return registerRichText(editor, config.escapeFormatTriggers);
+  },
 });

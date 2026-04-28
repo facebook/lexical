@@ -22,11 +22,6 @@ export {
   type SerializedDecoratorTextNode,
 } from './DecoratorTextExtension';
 export {EditorStateExtension} from './EditorStateExtension';
-export {
-  type EscapeFormatAtBoundaryConfig,
-  EscapeFormatAtBoundaryExtension,
-  type EscapeFormatTrigger,
-} from './EscapeFormatAtBoundaryExtension';
 export {getExtensionDependencyFromEditor} from './getExtensionDependencyFromEditor';
 export {
   getPeerDependencyFromEditor,

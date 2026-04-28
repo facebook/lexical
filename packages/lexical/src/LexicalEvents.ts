@@ -617,6 +617,15 @@ function $maybeMoveSelectionPastTrailingAcceptanceCharacter(
   const textContent = anchorNode.getTextContent();
   if (textContent[offset] === lastKeyCode) {
     selection.setTextNodeRange(anchorNode, offset + 1, anchorNode, offset + 1);
+    return;
+  }
+
+  const nextSibling = anchorNode.getNextSibling();
+  if (
+    $isTextNode(nextSibling) &&
+    nextSibling.getTextContent().startsWith(lastKeyCode)
+  ) {
+    selection.setTextNodeRange(nextSibling, 1, nextSibling, 1);
   }
 }
 

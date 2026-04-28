@@ -27,6 +27,7 @@ import type {
 import {ELEMENT_TYPE_TO_FORMAT} from '../LexicalConstants';
 import {
   $applyNodeReplacement,
+  $setDirectionFromDOM,
   getCachedClassNameArray,
   isHTMLElement,
   setNodeIndentFromDOM,
@@ -182,10 +183,7 @@ function $convertParagraphElement(element: HTMLElement): DOMConversionOutput {
       }
     }
   }
-  const dir = element.getAttribute('dir');
-  if (dir === 'ltr' || dir === 'rtl') {
-    node.setDirection(dir);
-  }
+  $setDirectionFromDOM(node, element);
   return {node};
 }
 

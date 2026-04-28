@@ -37,6 +37,7 @@ import {
   $isRangeSelection,
   $isRootOrShadowRoot,
   $rewindSiblingCaret,
+  $setDirectionFromDOM,
   buildImportMap,
   ElementNode,
   getStyleObjectFromCSS,
@@ -646,12 +647,7 @@ function $convertListItemElement(domNode: HTMLElement): DOMConversionOutput {
       : ariaCheckedAttr === 'false'
         ? false
         : undefined;
-  const node = $createListItemNode(checked);
-  const dir = domNode.getAttribute('dir');
-  if (dir === 'ltr' || dir === 'rtl') {
-    node.setDirection(dir);
-  }
-  return {node};
+  return {node: $setDirectionFromDOM($createListItemNode(checked), domNode)};
 }
 
 function $convertCheckboxInput(domNode: Element): DOMConversionOutput {

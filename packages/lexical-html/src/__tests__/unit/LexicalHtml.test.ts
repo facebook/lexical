@@ -370,14 +370,10 @@ describe('HTML', () => {
   });
 
   describe('importDOM preserves dir attribute', () => {
-    function createTestEditor() {
-      return createHeadlessEditor({
+    function importAndGetDirection(html: string): string | null {
+      const editor = createHeadlessEditor({
         nodes: [HeadingNode, ListNode, ListItemNode, QuoteNode],
       });
-    }
-
-    function importAndGetDirection(html: string): string | null {
-      const editor = createTestEditor();
       editor.update(
         () => {
           const parser = new DOMParser();
@@ -389,62 +385,41 @@ describe('HTML', () => {
         },
         {discrete: true},
       );
-      let direction: string | null = null;
-      editor.getEditorState().read(() => {
+      return editor.read(() => {
         const firstChild = $getRoot().getFirstChild();
-        if ($isElementNode(firstChild)) {
-          direction = firstChild.getDirection();
-        }
+        return $isElementNode(firstChild) ? firstChild.getDirection() : null;
       });
-      return direction;
     }
 
-    test('paragraph with dir="rtl"', () => {
-      expect(importAndGetDirection('<p dir="rtl">مرحبا</p>')).toBe('rtl');
-    });
-
-    test('paragraph with dir="ltr"', () => {
-      expect(importAndGetDirection('<p dir="ltr">Hello</p>')).toBe('ltr');
-    });
-
-    test('paragraph without dir', () => {
-      expect(importAndGetDirection('<p>Hello</p>')).toBe(null);
-    });
-
-    test('heading with dir="rtl"', () => {
-      expect(importAndGetDirection('<h1 dir="rtl">عنوان</h1>')).toBe('rtl');
-    });
-
-    test('blockquote with dir="rtl"', () => {
-      expect(
-        importAndGetDirection('<blockquote dir="rtl">اقتباس</blockquote>'),
-      ).toBe('rtl');
-    });
-
-    test('list with dir="rtl"', () => {
-      const editor = createTestEditor();
-      editor.update(
-        () => {
-          const parser = new DOMParser();
-          const dom = parser.parseFromString(
-            '<ul dir="rtl"><li>عنصر</li></ul>',
-            'text/html',
-          );
-          const nodes = $generateNodesFromDOM(editor, dom);
-          $getRoot().selectEnd();
-          const selection = $getRoot().select(0);
-          selection.insertNodes(nodes);
-        },
-        {discrete: true},
-      );
-      let direction: string | null = null;
-      editor.getEditorState().read(() => {
-        const firstChild = $getRoot().getFirstChild();
-        if ($isElementNode(firstChild)) {
-          direction = firstChild.getDirection();
-        }
-      });
-      expect(direction).toBe('rtl');
+    test.for([
+      {
+        expected: 'rtl',
+        html: '<p dir="rtl">مرحبا</p>',
+        name: 'paragraph with dir="rtl"',
+      },
+      {
+        expected: 'ltr',
+        html: '<p dir="ltr">Hello</p>',
+        name: 'paragraph with dir="ltr"',
+      },
+      {expected: null, html: '<p>Hello</p>', name: 'paragraph without dir'},
+      {
+        expected: 'rtl',
+        html: '<h1 dir="rtl">عنوان</h1>',
+        name: 'heading with dir="rtl"',
+      },
+      {
+        expected: 'rtl',
+        html: '<blockquote dir="rtl">اقتباس</blockquote>',
+        name: 'blockquote with dir="rtl"',
+      },
+      {
+        expected: 'rtl',
+        html: '<ul dir="rtl"><li>عنصر</li></ul>',
+        name: 'list with dir="rtl"',
+      },
+    ])('$name', ({html, expected}) => {
+      expect(importAndGetDirection(html)).toBe(expected);
     });
   });
 });

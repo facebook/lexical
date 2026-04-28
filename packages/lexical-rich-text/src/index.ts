@@ -67,6 +67,7 @@ import {
   $isTextNode,
   $normalizeSelection__EXPERIMENTAL,
   $selectAll,
+  $setDirectionFromDOM,
   $setSelection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_EDITOR,
@@ -434,10 +435,7 @@ function $convertHeadingElement(element: HTMLElement): DOMConversionOutput {
       setNodeIndentFromDOM(element, node);
       node.setFormat(element.style.textAlign as ElementFormatType);
     }
-    const dir = element.getAttribute('dir');
-    if (dir === 'ltr' || dir === 'rtl') {
-      node.setDirection(dir);
-    }
+    $setDirectionFromDOM(node, element);
   }
   return {node};
 }
@@ -448,10 +446,7 @@ function $convertBlockquoteElement(element: HTMLElement): DOMConversionOutput {
     node.setFormat(element.style.textAlign as ElementFormatType);
     setNodeIndentFromDOM(element, node);
   }
-  const dir = element.getAttribute('dir');
-  if (dir === 'ltr' || dir === 'rtl') {
-    node.setDirection(dir);
-  }
+  $setDirectionFromDOM(node, element);
   return {node};
 }
 

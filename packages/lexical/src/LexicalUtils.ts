@@ -2074,6 +2074,14 @@ export function setNodeIndentFromDOM(
   elementNode.setIndent(indent);
 }
 
+export function $setDirectionFromDOM<T extends ElementNode>(
+  node: T,
+  domNode: HTMLElement,
+): T {
+  const dir = domNode.getAttribute('dir');
+  return dir === 'ltr' || dir === 'rtl' ? node.setDirection(dir) : node;
+}
+
 /**
  * @internal
  *

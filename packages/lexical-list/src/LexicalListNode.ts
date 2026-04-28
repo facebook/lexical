@@ -16,6 +16,7 @@ import {
   $copyNode,
   $createTextNode,
   $isElementNode,
+  $setDirectionFromDOM,
   buildImportMap,
   DOMConversionOutput,
   DOMExportOutput,
@@ -350,10 +351,7 @@ function $convertListNode(
   }
 
   if (node) {
-    const dir = domNode.getAttribute('dir');
-    if (dir === 'ltr' || dir === 'rtl') {
-      node.setDirection(dir);
-    }
+    $setDirectionFromDOM(node, domNode);
   }
 
   return {

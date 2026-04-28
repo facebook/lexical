@@ -2074,6 +2074,17 @@ export function setNodeIndentFromDOM(
   elementNode.setIndent(indent);
 }
 
+/**
+ * Reads the `dir` attribute from a DOM element and applies it to the given
+ * ElementNode via {@link ElementNode.setDirection} when it is a valid direction
+ * value (`'ltr'` or `'rtl'`). Other values, including missing or empty `dir`,
+ * leave the node unchanged. Useful inside `importDOM` converters to preserve
+ * explicit text direction from imported HTML.
+ *
+ * @param node - The ElementNode to update.
+ * @param domNode - The source HTMLElement whose `dir` attribute is read.
+ * @returns The node, with its direction set when the source `dir` was valid.
+ */
 export function $setDirectionFromDOM<T extends ElementNode>(
   node: T,
   domNode: HTMLElement,

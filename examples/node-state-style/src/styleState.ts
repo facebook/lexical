@@ -28,6 +28,7 @@ import {
   getStyleObjectFromCSS,
   isHTMLElement,
   LexicalNode,
+  setDOMStyleObject,
   TextNode,
   ValueOrUpdater,
 } from 'lexical';
@@ -160,16 +161,6 @@ export function $setStyleProperty<
       ? prevStyle
       : {...prevStyle, [prop]: nextValue};
   });
-}
-
-export function applyStyle(
-  element: HTMLElement,
-  styleObject: StyleObject,
-): void {
-  for (const k_ in styleObject) {
-    const k = k_ as keyof StyleObject;
-    element.style.setProperty(k, styleObject[k] ?? null);
-  }
 }
 
 export function diffStyleObjects(
@@ -409,8 +400,8 @@ export const StyleStateExtension = defineExtension({
             const managedDOM: HTMLElementWithManagedStyle = dom;
             const nextStyleObject = $getStyleObject(nextNode);
             managedDOM[PREV_STYLE_STATE] = nextStyleObject;
-            applyStyle(
-              dom,
+            setDOMStyleObject(
+              dom.style,
               prevNode
                 ? diffStyleObjects(
                     getPreviousStyleObject(nextNode, prevNode, dom),
@@ -431,13 +422,13 @@ export const StyleStateExtension = defineExtension({
                       ? output.after(generatedElement)
                       : generatedElement;
                     if (isHTMLElement(el)) {
-                      applyStyle(el, style);
+                      setDOMStyleObject(el.style, style);
                     }
                     return el;
                   },
                 };
               } else if (isHTMLElement(output.element)) {
-                applyStyle(output.element, style);
+                setDOMStyleObject(output.element.style, style);
               }
             }
             return output;

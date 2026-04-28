@@ -188,6 +188,9 @@ let lastKeyDownTimeStamp = 0;
 let lastKeyCode: null | string = null;
 let lastBeforeInputInsertTextTimeStamp = 0;
 let unprocessedBeforeInputData: null | string = null;
+let isInsertTextAfterHandledSelectionCommand = false;
+let handledSelectionCommandTimeoutId: null | ReturnType<typeof setTimeout> =
+  null;
 // Node can be moved between documents (for example using createPortal), so we
 // need to track the document each root element was originally registered on.
 const rootElementToDocument = new WeakMap<HTMLElement, Document>();
@@ -607,6 +610,23 @@ function isPossiblyAndroidKeyPress(timeStamp: number): boolean {
   );
 }
 
+function clearHandledSelectionCommandInsertText(): void {
+  isInsertTextAfterHandledSelectionCommand = false;
+  if (handledSelectionCommandTimeoutId !== null) {
+    clearTimeout(handledSelectionCommandTimeoutId);
+    handledSelectionCommandTimeoutId = null;
+  }
+}
+
+function markHandledSelectionCommandInsertText(): void {
+  clearHandledSelectionCommandInsertText();
+  isInsertTextAfterHandledSelectionCommand = true;
+  handledSelectionCommandTimeoutId = setTimeout(() => {
+    isInsertTextAfterHandledSelectionCommand = false;
+    handledSelectionCommandTimeoutId = null;
+  }, 0);
+}
+
 export function registerDefaultCommandHandlers(editor: LexicalEditor) {
   editor.registerCommand(
     BEFORE_INPUT_COMMAND,
@@ -659,14 +679,14 @@ function $handleBeforeInput(event: InputEvent): boolean {
 
   const selection = $getSelection();
 
-  // On Chrome, pressing Backspace inside a `contenteditable` element will accept a pending text replacement. This
-  // behavior is not desireable, so we check for this case and prevent the bogus replacement from happening.
+  // On Chrome on macOS, some handled selection commands may accept a pending text replacement. This behavior
+  // is not desirable, so we check for this case and prevent bogus text replacements from happening.
   if (
     inputType === 'insertText' &&
     event.data &&
-    event.data.length > 1 &&
-    lastKeyCode === 'Backspace'
+    isInsertTextAfterHandledSelectionCommand
   ) {
+    clearHandledSelectionCommandInsertText();
     event.preventDefault();
     if ($isRangeSelection(selection) && !selection.isCollapsed()) {
       const point = selection.isBackward() ? selection.anchor : selection.focus;
@@ -969,6 +989,7 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
 
   // We don't want the onInput to bubble, in the case of nested editors.
   event.stopPropagation();
+  clearHandledSelectionCommandInsertText();
   updateEditorSync(
     editor,
     () => {
@@ -1208,6 +1229,9 @@ function onCompositionEnd(
 function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
   lastKeyDownTimeStamp = event.timeStamp;
   lastKeyCode = event.key;
+  if (event.key !== 'Backspace') {
+    clearHandledSelectionCommandInsertText();
+  }
   if (editor.isComposing()) {
     return;
   }
@@ -1258,7 +1282,9 @@ function $handleKeyDown(event: KeyboardEvent): boolean {
     dispatchCommand(editor, KEY_ENTER_COMMAND, event);
   } else if (isDeleteBackward(event)) {
     if (isBackspace(event)) {
-      dispatchCommand(editor, KEY_BACKSPACE_COMMAND, event);
+      if (dispatchCommand(editor, KEY_BACKSPACE_COMMAND, event)) {
+        markHandledSelectionCommandInsertText();
+      }
     } else {
       event.preventDefault();
       dispatchCommand(editor, DELETE_CHARACTER_COMMAND, true);
@@ -1313,11 +1339,15 @@ function $handleKeyDown(event: KeyboardEvent): boolean {
         dispatchCommand(editor, CUT_COMMAND, event);
       } else if (isSelectAll(event)) {
         event.preventDefault();
-        dispatchCommand(editor, SELECT_ALL_COMMAND, event);
+        if (dispatchCommand(editor, SELECT_ALL_COMMAND, event)) {
+          markHandledSelectionCommandInsertText();
+        }
       }
     } else if (isSelectAll(event)) {
       event.preventDefault();
-      dispatchCommand(editor, SELECT_ALL_COMMAND, event);
+      if (dispatchCommand(editor, SELECT_ALL_COMMAND, event)) {
+        markHandledSelectionCommandInsertText();
+      }
     }
   }
 

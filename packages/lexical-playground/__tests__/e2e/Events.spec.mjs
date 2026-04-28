@@ -107,7 +107,7 @@ test.describe('Events', () => {
     await page.keyboard.type(textToReplace);
     await evaluate(
       page,
-      (args) => {
+      args => {
         const editable = document.querySelector('[contenteditable="true"]');
         const span = editable.querySelector('span');
         const textNode = span.firstChild;

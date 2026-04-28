@@ -182,6 +182,10 @@ function $convertParagraphElement(element: HTMLElement): DOMConversionOutput {
       }
     }
   }
+  const dir = element.getAttribute('dir');
+  if (dir === 'ltr' || dir === 'rtl') {
+    node.setDirection(dir);
+  }
   return {node};
 }
 

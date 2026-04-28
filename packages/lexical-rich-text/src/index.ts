@@ -434,6 +434,10 @@ function $convertHeadingElement(element: HTMLElement): DOMConversionOutput {
       setNodeIndentFromDOM(element, node);
       node.setFormat(element.style.textAlign as ElementFormatType);
     }
+    const dir = element.getAttribute('dir');
+    if (dir === 'ltr' || dir === 'rtl') {
+      node.setDirection(dir);
+    }
   }
   return {node};
 }
@@ -443,6 +447,10 @@ function $convertBlockquoteElement(element: HTMLElement): DOMConversionOutput {
   if (element.style !== null) {
     node.setFormat(element.style.textAlign as ElementFormatType);
     setNodeIndentFromDOM(element, node);
+  }
+  const dir = element.getAttribute('dir');
+  if (dir === 'ltr' || dir === 'rtl') {
+    node.setDirection(dir);
   }
   return {node};
 }

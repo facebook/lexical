@@ -349,6 +349,13 @@ function $convertListNode(
     }
   }
 
+  if (node) {
+    const dir = domNode.getAttribute('dir');
+    if (dir === 'ltr' || dir === 'rtl') {
+      node.setDirection(dir);
+    }
+  }
+
   return {
     after: $normalizeChildren,
     node,

@@ -646,7 +646,12 @@ function $convertListItemElement(domNode: HTMLElement): DOMConversionOutput {
       : ariaCheckedAttr === 'false'
         ? false
         : undefined;
-  return {node: $createListItemNode(checked)};
+  const node = $createListItemNode(checked);
+  const dir = domNode.getAttribute('dir');
+  if (dir === 'ltr' || dir === 'rtl') {
+    node.setDirection(dir);
+  }
+  return {node};
 }
 
 function $convertCheckboxInput(domNode: Element): DOMConversionOutput {

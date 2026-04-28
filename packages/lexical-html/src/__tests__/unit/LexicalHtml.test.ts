@@ -25,6 +25,7 @@ import {
   $createRangeSelection,
   $createTextNode,
   $getRoot,
+  $isElementNode,
   isHTMLElement,
   ParagraphNode,
   RangeSelection,
@@ -365,6 +366,85 @@ describe('HTML', () => {
         },
         {discrete: true},
       );
+    });
+  });
+
+  describe('importDOM preserves dir attribute', () => {
+    function createTestEditor() {
+      return createHeadlessEditor({
+        nodes: [HeadingNode, ListNode, ListItemNode, QuoteNode],
+      });
+    }
+
+    function importAndGetDirection(html: string): string | null {
+      const editor = createTestEditor();
+      editor.update(
+        () => {
+          const parser = new DOMParser();
+          const dom = parser.parseFromString(html, 'text/html');
+          const nodes = $generateNodesFromDOM(editor, dom);
+          $getRoot().selectEnd();
+          const selection = $getRoot().select(0);
+          selection.insertNodes(nodes);
+        },
+        {discrete: true},
+      );
+      let direction: string | null = null;
+      editor.getEditorState().read(() => {
+        const firstChild = $getRoot().getFirstChild();
+        if ($isElementNode(firstChild)) {
+          direction = firstChild.getDirection();
+        }
+      });
+      return direction;
+    }
+
+    test('paragraph with dir="rtl"', () => {
+      expect(importAndGetDirection('<p dir="rtl">مرحبا</p>')).toBe('rtl');
+    });
+
+    test('paragraph with dir="ltr"', () => {
+      expect(importAndGetDirection('<p dir="ltr">Hello</p>')).toBe('ltr');
+    });
+
+    test('paragraph without dir', () => {
+      expect(importAndGetDirection('<p>Hello</p>')).toBe(null);
+    });
+
+    test('heading with dir="rtl"', () => {
+      expect(importAndGetDirection('<h1 dir="rtl">عنوان</h1>')).toBe('rtl');
+    });
+
+    test('blockquote with dir="rtl"', () => {
+      expect(
+        importAndGetDirection('<blockquote dir="rtl">اقتباس</blockquote>'),
+      ).toBe('rtl');
+    });
+
+    test('list with dir="rtl"', () => {
+      const editor = createTestEditor();
+      editor.update(
+        () => {
+          const parser = new DOMParser();
+          const dom = parser.parseFromString(
+            '<ul dir="rtl"><li>عنصر</li></ul>',
+            'text/html',
+          );
+          const nodes = $generateNodesFromDOM(editor, dom);
+          $getRoot().selectEnd();
+          const selection = $getRoot().select(0);
+          selection.insertNodes(nodes);
+        },
+        {discrete: true},
+      );
+      let direction: string | null = null;
+      editor.getEditorState().read(() => {
+        const firstChild = $getRoot().getFirstChild();
+        if ($isElementNode(firstChild)) {
+          direction = firstChild.getDirection();
+        }
+      });
+      expect(direction).toBe('rtl');
     });
   });
 });

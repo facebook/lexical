@@ -6,11 +6,13 @@
  *
  */
 
+import {effect, namedSignals} from '@lexical/extension';
 import {$findMatchingParent} from '@lexical/utils';
 import {
   $createParagraphNode,
   $getSelection,
   $isRangeSelection,
+  COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_LOW,
   defineExtension,
   KEY_ARROW_DOWN_COMMAND,
@@ -19,6 +21,7 @@ import {
   KEY_ARROW_UP_COMMAND,
   KEY_ENTER_COMMAND,
   mergeRegister,
+  safeCast,
 } from 'lexical';
 
 import {CodeHighlightNode} from './CodeHighlightNode';
@@ -42,6 +45,7 @@ const $onEscapeUp = () => {
           selection.anchor.key === contentParagraph.getKey()
         ) {
           code.insertBefore($createParagraphNode());
+          return true;
         }
       }
     }
@@ -65,6 +69,7 @@ const $onEscapeDown = () => {
           selection.anchor.offset === contentParagraph.getTextContentSize()
         ) {
           code.insertAfter($createParagraphNode());
+          return true;
         }
       }
     }
@@ -73,13 +78,32 @@ const $onEscapeDown = () => {
   return false;
 };
 
+export interface CodeConfig {
+  /**
+   * When `true`, When set to true, this enables the ability to exit a code block
+   * that has no adjacent elements using the ArrowLeft/ArrowUp keys
+   * if the cursor is at the beginning, or the ArrowRight/ArrowDown keys
+   * if the cursor is at the end.
+   * When `false` (default), pressing the arrow keys will not move the cursor
+   * if there are no adjacent elements around the code block
+   */
+  escapeWithArrows: boolean;
+}
+
 /**
  * Add code blocks to the editor (syntax highlighting provided separately)
  */
 export const CodeExtension = defineExtension({
+  build(editor, config, state) {
+    return namedSignals(config);
+  },
+  config: safeCast<CodeConfig>({
+    escapeWithArrows: false,
+  }),
   name: '@lexical/code',
   nodes: () => [CodeNode, CodeHighlightNode],
-  register(editor) {
+  register(editor, config, state) {
+    const stores = state.getOutput();
     return mergeRegister(
       editor.registerCommand<KeyboardEvent>(
         KEY_ENTER_COMMAND,
@@ -93,33 +117,35 @@ export const CodeExtension = defineExtension({
         },
         COMMAND_PRIORITY_LOW,
       ),
-      // When collapsible is the last child pressing down/right arrow will insert paragraph
+      // When node is the last child pressing down/right or up/let arrow will insert paragraph
       // below it to allow adding more content. It's similar what $insertBlockNode
       // (mainly for decorators), except it'll always be possible to continue adding
       // new content even if trailing paragraph is accidentally deleted
-      editor.registerCommand(
-        KEY_ARROW_DOWN_COMMAND,
-        $onEscapeDown,
-        COMMAND_PRIORITY_LOW,
-      ),
-      editor.registerCommand(
-        KEY_ARROW_RIGHT_COMMAND,
-        $onEscapeDown,
-        COMMAND_PRIORITY_LOW,
-      ),
-      // When collapsible is the first child pressing up/left arrow will insert paragraph
-      // above it to allow adding more content. It's similar what $insertBlockNode
-      // (mainly for decorators), except it'll always be possible to continue adding
-      // new content even if leading paragraph is accidentally deleted
-      editor.registerCommand(
-        KEY_ARROW_UP_COMMAND,
-        $onEscapeUp,
-        COMMAND_PRIORITY_LOW,
-      ),
-      editor.registerCommand(
-        KEY_ARROW_LEFT_COMMAND,
-        $onEscapeUp,
-        COMMAND_PRIORITY_LOW,
+      effect(() =>
+        stores.escapeWithArrows.value
+          ? mergeRegister(
+              editor.registerCommand(
+                KEY_ARROW_DOWN_COMMAND,
+                $onEscapeDown,
+                COMMAND_PRIORITY_EDITOR,
+              ),
+              editor.registerCommand(
+                KEY_ARROW_RIGHT_COMMAND,
+                $onEscapeDown,
+                COMMAND_PRIORITY_EDITOR,
+              ),
+              editor.registerCommand(
+                KEY_ARROW_UP_COMMAND,
+                $onEscapeUp,
+                COMMAND_PRIORITY_EDITOR,
+              ),
+              editor.registerCommand(
+                KEY_ARROW_LEFT_COMMAND,
+                $onEscapeUp,
+                COMMAND_PRIORITY_EDITOR,
+              ),
+            )
+          : undefined,
       ),
     );
   },

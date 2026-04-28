@@ -6,7 +6,7 @@
  *
  */
 
-export {CodeExtension} from './CodeExtension';
+export {type CodeConfig, CodeExtension} from './CodeExtension';
 export {
   $createCodeHighlightNode,
   $isCodeHighlightNode,

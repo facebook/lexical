@@ -14,6 +14,7 @@ import {
   $getRoot,
   $isElementNode,
   $isParagraphNode,
+  configExtension,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
@@ -183,7 +184,10 @@ describe('CodeExtension', () => {
         $getRoot().append(codeNode);
         text.selectEnd();
       },
-      dependencies: [CodeExtension, RichTextExtension],
+      dependencies: [
+        configExtension(CodeExtension, {escapeWithArrows: true}),
+        RichTextExtension,
+      ],
       name: '[root-middle]',
     });
     using editor = buildEditorFromExtensions(ext);
@@ -214,7 +218,10 @@ describe('CodeExtension', () => {
         const length = text.getTextContentSize();
         text.select(length - 1, length - 1);
       },
-      dependencies: [CodeExtension, RichTextExtension],
+      dependencies: [
+        configExtension(CodeExtension, {escapeWithArrows: true}),
+        RichTextExtension,
+      ],
       name: '[root-middle]',
     });
     using editor = buildEditorFromExtensions(ext);
@@ -243,7 +250,10 @@ describe('CodeExtension', () => {
         $getRoot().append(codeNode);
         text.selectEnd();
       },
-      dependencies: [CodeExtension, RichTextExtension],
+      dependencies: [
+        configExtension(CodeExtension, {escapeWithArrows: true}),
+        RichTextExtension,
+      ],
       name: '[root-middle]',
     });
     using editor = buildEditorFromExtensions(ext);
@@ -274,7 +284,10 @@ describe('CodeExtension', () => {
         const length = text.getTextContentSize();
         text.select(length - 1, length - 1);
       },
-      dependencies: [CodeExtension, RichTextExtension],
+      dependencies: [
+        configExtension(CodeExtension, {escapeWithArrows: true}),
+        RichTextExtension,
+      ],
       name: '[root-middle]',
     });
     using editor = buildEditorFromExtensions(ext);
@@ -303,7 +316,10 @@ describe('CodeExtension', () => {
         $getRoot().append(codeNode);
         text.selectStart();
       },
-      dependencies: [CodeExtension, RichTextExtension],
+      dependencies: [
+        configExtension(CodeExtension, {escapeWithArrows: true}),
+        RichTextExtension,
+      ],
       name: '[root-middle]',
     });
     using editor = buildEditorFromExtensions(ext);
@@ -333,7 +349,10 @@ describe('CodeExtension', () => {
         $getRoot().append(codeNode);
         text.select(1, 1);
       },
-      dependencies: [CodeExtension, RichTextExtension],
+      dependencies: [
+        configExtension(CodeExtension, {escapeWithArrows: true}),
+        RichTextExtension,
+      ],
       name: '[root-middle]',
     });
     using editor = buildEditorFromExtensions(ext);
@@ -362,7 +381,10 @@ describe('CodeExtension', () => {
         $getRoot().append(codeNode);
         text.selectStart();
       },
-      dependencies: [CodeExtension, RichTextExtension],
+      dependencies: [
+        configExtension(CodeExtension, {escapeWithArrows: true}),
+        RichTextExtension,
+      ],
       name: '[root-middle]',
     });
     using editor = buildEditorFromExtensions(ext);
@@ -392,7 +414,10 @@ describe('CodeExtension', () => {
         $getRoot().append(codeNode);
         text.select(1, 1);
       },
-      dependencies: [CodeExtension, RichTextExtension],
+      dependencies: [
+        configExtension(CodeExtension, {escapeWithArrows: true}),
+        RichTextExtension,
+      ],
       name: '[root-middle]',
     });
     using editor = buildEditorFromExtensions(ext);

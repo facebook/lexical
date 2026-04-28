@@ -96,7 +96,7 @@ test.describe('Events', () => {
     );
   });
 
-  test('Text replacements (MacOS specific)', async ({
+  test('Caret ends after text replacement acceptance boundary - using Space (MacOS specific)', async ({
     page,
     isPlainText,
     browserName,
@@ -203,6 +203,158 @@ test.describe('Events', () => {
       focusOffset: `${replacementText} `.length,
       focusPath: [0, 0, 0],
     });
+  });
+
+  test('Caret ends after text replacement acceptance boundary - using Enter (MacOS specific)', async ({
+    page,
+    isPlainText,
+    browserName,
+  }) => {
+    const textToReplace = 'omw';
+    const replacementText = 'On my way!';
+
+    await focusEditor(page);
+    await page.keyboard.type(textToReplace);
+
+    await evaluate(
+      page,
+      args => {
+        const editable = document.querySelector('[contenteditable="true"]');
+        const firstParagraph = editable.querySelector('p');
+        const firstSpan = firstParagraph.querySelector('span');
+        const textNode = firstSpan.firstChild;
+
+        function singleRangeFn(
+          startContainer,
+          startOffset,
+          endContainer,
+          endOffset,
+        ) {
+          return () => [
+            new StaticRange({
+              endContainer,
+              endOffset,
+              startContainer,
+              startOffset,
+            }),
+          ];
+        }
+
+        const enterKeyDownEvent = new KeyboardEvent('keydown', {
+          bubbles: true,
+          key: 'Enter',
+        });
+        const enterBeforeInputEvent = new InputEvent('beforeinput', {
+          bubbles: true,
+          cancelable: true,
+          inputType: args.isPlainText ? 'insertLineBreak' : 'insertParagraph',
+        });
+        enterBeforeInputEvent.getTargetRanges = singleRangeFn(
+          textNode,
+          args.textToReplace.length,
+          textNode,
+          args.textToReplace.length,
+        );
+
+        editable.dispatchEvent(enterKeyDownEvent);
+        if (args.browserName === 'webkit') {
+          editable.dispatchEvent(enterBeforeInputEvent);
+        }
+      },
+      {browserName, isPlainText, textToReplace},
+    );
+
+    await evaluate(
+      page,
+      args => {
+        const editable = document.querySelector('[contenteditable="true"]');
+        const firstParagraph = editable.querySelector('p');
+        const firstSpan = firstParagraph.querySelector('span');
+        const textNode = firstSpan.firstChild;
+
+        function singleRangeFn(
+          startContainer,
+          startOffset,
+          endContainer,
+          endOffset,
+        ) {
+          return () => [
+            new StaticRange({
+              endContainer,
+              endOffset,
+              startContainer,
+              startOffset,
+            }),
+          ];
+        }
+
+        const dataTransfer = new DataTransfer();
+        dataTransfer.setData('text/plain', args.replacementText);
+        dataTransfer.setData('text/html', args.replacementText);
+
+        const replacementBeforeInputEvent = new InputEvent('beforeinput', {
+          bubbles: true,
+          cancelable: true,
+          data: args.replacementText,
+          dataTransfer:
+            args.browserName === 'chromium' ? undefined : dataTransfer,
+          inputType:
+            args.browserName === 'chromium'
+              ? 'insertText'
+              : 'insertReplacementText',
+        });
+        replacementBeforeInputEvent.getTargetRanges = singleRangeFn(
+          textNode,
+          0,
+          textNode,
+          args.textToReplace.length,
+        );
+
+        editable.dispatchEvent(replacementBeforeInputEvent);
+
+        const updatedFirstParagraph = editable.querySelector('p');
+        const updatedFirstSpan = updatedFirstParagraph.querySelector('span');
+        updatedFirstSpan.firstChild.textContent = args.replacementText;
+      },
+      {browserName, replacementText, textToReplace},
+    );
+
+    if (isPlainText) {
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">${replacementText}</span>
+            <br />
+            <br />
+          </p>
+        `,
+      );
+      await assertSelection(page, {
+        anchorOffset: 2,
+        anchorPath: [0],
+        focusOffset: 2,
+        focusPath: [0],
+      });
+    } else {
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">${replacementText}</span>
+          </p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <br />
+          </p>
+        `,
+      );
+      await assertSelection(page, {
+        anchorOffset: 0,
+        anchorPath: [1],
+        focusOffset: 0,
+        focusPath: [1],
+      });
+    }
   });
 
   test('Add period with double-space after emoji (MacOS specific) #3953', async ({

@@ -22,15 +22,17 @@ import {
 import invariant from 'shared/invariant';
 import warnOnlyOnce from 'shared/warnOnlyOnce';
 
-import {  $getPreviousSelection,
+import {
+  $getPreviousSelection,
   $getRoot,
   $getSelection,
   $isDecoratorNode,
   $isElementNode,
-$isLineBreakNode,   $isNodeSelection,
+  $isLineBreakNode,
+  $isNodeSelection,
   $isRangeSelection,
   $isRootNode,
-$isTabNode,
+  $isTabNode,
   $isTextNode,
   $setCompositionKey,
   BLUR_COMMAND,
@@ -70,7 +72,8 @@ $isTabNode,
   REMOVE_TEXT_COMMAND,
   SELECTION_CHANGE_COMMAND,
   SKIP_SELECTION_FOCUS_TAG,
-  UNDO_COMMAND} from '.';
+  UNDO_COMMAND,
+} from '.';
 import {
   BEFORE_INPUT_COMMAND,
   COMPOSITION_END_COMMAND,

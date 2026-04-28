@@ -69,7 +69,7 @@ function $convertDateTimeElement(
   if (dateTimeValue) {
     const node = $createDateTimeNode(new Date(Date.parse(dateTimeValue)));
     return {
-      after: (childLexicalNodes) => {
+      after: childLexicalNodes => {
         // exportDOM returns only one child text, so only the first node of the array is taken
         const firstChild = childLexicalNodes[0];
         if ($isTextNode(firstChild)) {
@@ -96,8 +96,8 @@ function $convertDateTimeElement(
 }
 
 const dateTimeState = createState('dateTime', {
-  parse: (v) => new Date(v as string),
-  unparse: (v) => v.toISOString(),
+  parse: v => new Date(v as string),
+  unparse: v => v.toISOString(),
 });
 
 export class DateTimeNode extends DecoratorTextNode {
@@ -105,7 +105,7 @@ export class DateTimeNode extends DecoratorTextNode {
     return this.config('datetime', {
       extends: DecoratorTextNode,
       importDOM: buildImportMap({
-        span: (domNode) =>
+        span: domNode =>
           domNode.getAttribute('data-lexical-datetime') !== null ||
           // GDocs Support
           (domNode.getAttribute('data-rich-links') !== null &&

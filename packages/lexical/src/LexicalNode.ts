@@ -664,7 +664,7 @@ export class LexicalNode {
 
     const isSelected = targetSelection
       .getNodes()
-      .some((n) => n.__key === this.__key);
+      .some(n => n.__key === this.__key);
 
     if ($isTextNode(this)) {
       return isSelected;

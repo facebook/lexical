@@ -78,7 +78,7 @@ describe('TableExtension', () => {
     );
     editor.read(() => {
       const children = $getRoot().getChildren();
-      expect(children.map((node) => node.getType())).toEqual([
+      expect(children.map(node => node.getType())).toEqual([
         'paragraph',
         'table',
         'paragraph',
@@ -87,7 +87,7 @@ describe('TableExtension', () => {
       expect($isTableNode(table)).toBe(true);
       const rows = table.getChildren();
       expect(rows.length).toBe(2);
-      rows.forEach((row) => {
+      rows.forEach(row => {
         expect($isTableRowNode(row)).toBe(true);
         if ($isTableRowNode(row)) {
           const cells = row.getChildren();
@@ -505,7 +505,7 @@ describe('TableExtension', () => {
         const selectedNodes = selection.getNodes().filter($isTableCellNode);
         const totalCells = tableMap.reduce((acc, row) => {
           const uniqueCells = new Set();
-          row.forEach((cellMap) => {
+          row.forEach(cellMap => {
             if (cellMap && cellMap.cell) {
               uniqueCells.add(cellMap.cell.getKey());
             }
@@ -601,11 +601,11 @@ describe('TableExtension', () => {
         // Verify all unique cells are in the selection (merged cells should appear once)
         const selectedNodes = selection.getNodes().filter($isTableCellNode);
         const uniqueCellKeys = new Set(
-          selectedNodes.map((node) => node.getKey()),
+          selectedNodes.map(node => node.getKey()),
         );
         const totalUniqueCells = new Set<NodeKey>();
-        tableMap.forEach((row) => {
-          row.forEach((cellMap) => {
+        tableMap.forEach(row => {
+          row.forEach(cellMap => {
             if (cellMap && cellMap.cell) {
               totalUniqueCells.add(cellMap.cell.getKey());
             }

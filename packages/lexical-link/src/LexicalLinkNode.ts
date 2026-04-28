@@ -683,9 +683,7 @@ function $splitLinkAtSelection(
   extractedNodes: LexicalNode[],
 ): void {
   const extractedKeys = new Set(
-    extractedNodes
-      .filter((n) => parentLink.isParentOf(n))
-      .map((n) => n.getKey()),
+    extractedNodes.filter(n => parentLink.isParentOf(n)).map(n => n.getKey()),
   );
 
   const allChildren = parentLink.getChildren();
@@ -695,13 +693,13 @@ function $splitLinkAtSelection(
     extractedKeys.has(child.getKey()) ||
     ($isElementNode(child) &&
       extractedNodes.some(
-        (n) => parentLink.isParentOf(n) && child.isParentOf(n),
+        n => parentLink.isParentOf(n) && child.isParentOf(n),
       ));
 
   const extractedChildren = allChildren.filter(isExtractedChild);
 
   if (extractedChildren.length === allChildren.length) {
-    allChildren.forEach((child) => parentLink.insertBefore(child));
+    allChildren.forEach(child => parentLink.insertBefore(child));
     parentLink.remove();
     return;
   }
@@ -713,7 +711,7 @@ function $splitLinkAtSelection(
   const isAtEnd = lastExtractedIndex === allChildren.length - 1;
 
   if (isAtStart) {
-    extractedChildren.forEach((child) => parentLink.insertBefore(child));
+    extractedChildren.forEach(child => parentLink.insertBefore(child));
   } else if (isAtEnd) {
     for (let i = extractedChildren.length - 1; i >= 0; i--) {
       parentLink.insertAfter(extractedChildren[i]);
@@ -728,7 +726,7 @@ function $splitLinkAtSelection(
       const newLink = $copyNode(parentLink);
 
       extractedChildren[extractedChildren.length - 1].insertAfter(newLink);
-      trailingChildren.forEach((child) => newLink.append(child));
+      trailingChildren.forEach(child => newLink.append(child));
     }
   }
 }
@@ -769,7 +767,7 @@ export function $toggleLink(
     }
 
     // Handle all selected nodes
-    nodes.forEach((node) => {
+    nodes.forEach(node => {
       if (url === null) {
         // Remove link
         const linkParent = $findMatchingParent(
@@ -816,7 +814,7 @@ export function $toggleLink(
           !$isAutoLinkNode(parent) && $isLinkNode(parent),
       );
       if (parentLink !== null) {
-        parentLink.getChildren().forEach((child) => {
+        parentLink.getChildren().forEach(child => {
           parentLink.insertBefore(child);
         });
         parentLink.remove();
@@ -831,7 +829,7 @@ export function $toggleLink(
   if (url === null) {
     const processedLinks = new Set<NodeKey>();
 
-    nodes.forEach((node) => {
+    nodes.forEach(node => {
       const parentLink = $findMatchingParent(
         node,
         (parent): parent is LinkNode =>

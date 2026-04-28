@@ -26,7 +26,7 @@ export const CodeExtension = defineExtension({
   register(editor) {
     return editor.registerCommand<KeyboardEvent>(
       KEY_ENTER_COMMAND,
-      (event) => {
+      event => {
         const selection = $getSelection();
         if ($isRangeSelection(selection) && $exitCodeNodeOnEnter(selection)) {
           event.preventDefault();

@@ -100,7 +100,7 @@ function parseOptions(json: unknown): Options {
 }
 
 const questionState = createState('question', {
-  parse: (v) => (typeof v === 'string' ? v : ''),
+  parse: v => (typeof v === 'string' ? v : ''),
 });
 const optionsState = createState('options', {
   isEqual: (a, b) =>
@@ -113,7 +113,7 @@ export class PollNode extends DecoratorNode<JSX.Element> {
     return this.config('poll', {
       extends: DecoratorNode,
       importDOM: buildImportMap({
-        span: (domNode) =>
+        span: domNode =>
           domNode.getAttribute('data-lexical-poll-question') !== null
             ? {
                 conversion: $convertPollElement,
@@ -142,11 +142,11 @@ export class PollNode extends DecoratorNode<JSX.Element> {
   }
 
   addOption(option: Option): this {
-    return this.setOptions((options) => [...options, option]);
+    return this.setOptions(options => [...options, option]);
   }
 
   deleteOption(option: Option): this {
-    return this.setOptions((prevOptions) => {
+    return this.setOptions(prevOptions => {
       const index = prevOptions.indexOf(option);
       if (index === -1) {
         return prevOptions;
@@ -158,7 +158,7 @@ export class PollNode extends DecoratorNode<JSX.Element> {
   }
 
   setOptionText(option: Option, text: string): this {
-    return this.setOptions((prevOptions) => {
+    return this.setOptions(prevOptions => {
       const clonedOption = cloneOption(option, text);
       const options = Array.from(prevOptions);
       const index = options.indexOf(option);
@@ -168,7 +168,7 @@ export class PollNode extends DecoratorNode<JSX.Element> {
   }
 
   toggleVote(option: Option, username: string): this {
-    return this.setOptions((prevOptions) => {
+    return this.setOptions(prevOptions => {
       const index = prevOptions.indexOf(option);
       if (index === -1) {
         return prevOptions;

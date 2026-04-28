@@ -38,7 +38,7 @@ export function useReactDecorators(
       if (element !== null) {
         const reactDecorator = (
           <ErrorBoundary
-            onError={(e) => {
+            onError={e => {
               editor._onError(e);
             }}>
             <Suspense fallback={null}>{decorators[nodeKey]}</Suspense>

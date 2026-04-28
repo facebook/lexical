@@ -179,7 +179,7 @@ class ChildEditorNode extends DecoratorNode<null> {
 const ChildEditorExtension = defineExtension({
   name: '@lexical/test/ChildEditor',
   nodes: [ChildEditorNode],
-  register: (editor) =>
+  register: editor =>
     editor.registerMutationListener(
       ChildEditorNode,
       (nodes, {prevEditorState}) => {
@@ -255,7 +255,7 @@ describe('LexicalHistory tests', () => {
 
     editor.registerCommand<boolean>(
       CAN_REDO_COMMAND,
-      (payload) => {
+      payload => {
         canRedo = payload;
         return false;
       },
@@ -264,7 +264,7 @@ describe('LexicalHistory tests', () => {
 
     editor.registerCommand<boolean>(
       CAN_UNDO_COMMAND,
-      (payload) => {
+      payload => {
         canUndo = payload;
         return false;
       },
@@ -359,7 +359,7 @@ describe('LexicalHistory tests', () => {
 
     editor.registerCommand<boolean>(
       CAN_REDO_COMMAND,
-      (payload) => {
+      payload => {
         canRedo = payload;
         return false;
       },
@@ -368,7 +368,7 @@ describe('LexicalHistory tests', () => {
 
     editor.registerCommand<boolean>(
       CAN_UNDO_COMMAND,
-      (payload) => {
+      payload => {
         canUndo = payload;
         return false;
       },

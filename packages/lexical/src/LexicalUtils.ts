@@ -142,7 +142,7 @@ export const isArray = Array.isArray;
 export const scheduleMicroTask: (fn: () => void) => void =
   typeof queueMicrotask === 'function'
     ? queueMicrotask
-    : (fn) => {
+    : fn => {
         // No window prefix intended (#1400)
         Promise.resolve().then(fn);
       };
@@ -2211,7 +2211,7 @@ export function getStaticNodeConfig(klass: Klass<LexicalNode>): {
       }
       klass.importJSON =
         (ownNodeConfig && ownNodeConfig.$importJSON) ||
-        ((serializedNode) => new klass().updateFromJSON(serializedNode));
+        (serializedNode => new klass().updateFromJSON(serializedNode));
     }
     if (!hasOwnStaticMethod(klass, 'importDOM') && ownNodeConfig) {
       const {importDOM} = ownNodeConfig;

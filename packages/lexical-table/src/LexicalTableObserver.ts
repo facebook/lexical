@@ -212,7 +212,7 @@ export class TableObserver {
 
   removeListeners() {
     this.abortController.abort('removeListeners');
-    Array.from(this.listenersToRemove).forEach((removeListener) =>
+    Array.from(this.listenersToRemove).forEach(removeListener =>
       removeListener(),
     );
     this.listenersToRemove.clear();
@@ -226,7 +226,7 @@ export class TableObserver {
   }
 
   trackTable() {
-    const observer = new MutationObserver((records) => {
+    const observer = new MutationObserver(records => {
       this.editor.getEditorState().read(
         () => {
           let gridNeedsRedraw = false;
@@ -552,13 +552,13 @@ export class TableObserver {
       return;
     }
 
-    selectedNodes.forEach((cellNode) => {
+    selectedNodes.forEach(cellNode => {
       if ($isElementNode(cellNode)) {
         const paragraphNode = $createParagraphNode();
         const textNode = $createTextNode();
         paragraphNode.append(textNode);
         cellNode.append(paragraphNode);
-        cellNode.getChildren().forEach((child) => {
+        cellNode.getChildren().forEach(child => {
           if (child !== paragraphNode) {
             child.remove();
           }

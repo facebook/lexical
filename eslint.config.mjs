@@ -319,7 +319,7 @@ export default [
   },
 
   // Override: TypeScript files
-  ...tseslint.configs.recommended.map((config) => ({
+  ...tseslint.configs.recommended.map(config => ({
     ...config,
     files: ['**/*.ts', '**/*.tsx', '**/*.mts'],
   })),

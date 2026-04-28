@@ -19,7 +19,7 @@ test.describe('Auto scroll while typing', () => {
   async function addScroll(page, selector_) {
     await evaluate(
       page,
-      (selector) => {
+      selector => {
         const element = document.querySelector(selector);
         element.style.overflow = 'auto';
         element.style.maxHeight = '200px';
@@ -31,7 +31,7 @@ test.describe('Auto scroll while typing', () => {
   async function isCaretVisible(page, selector_) {
     return await evaluate(
       page,
-      (selector) => {
+      selector => {
         const selection = document.getSelection();
         const range = selection.getRangeAt(0);
         const element = document.createElement('span');
@@ -61,8 +61,8 @@ test.describe('Auto scroll while typing', () => {
       name: 'Can auto scroll if parent element is scrollable',
       selector: '.editor-container',
     },
-  ].forEach((testCase) => {
-    [true, false].forEach((isSoftLineBreak) => {
+  ].forEach(testCase => {
+    [true, false].forEach(isSoftLineBreak => {
       test(`${testCase.name}${
         isSoftLineBreak ? ' (soft line break)' : ''
       }`, async ({page, isPlainText, browserName}) => {

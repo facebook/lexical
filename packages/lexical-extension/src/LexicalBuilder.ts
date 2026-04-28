@@ -184,7 +184,7 @@ export class LexicalBuilder {
         ...editorConfig,
         ...(onError
           ? {
-              onError: (err) => {
+              onError: err => {
                 onError(err, editor);
               },
             }

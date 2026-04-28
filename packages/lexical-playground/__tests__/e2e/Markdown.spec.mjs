@@ -650,7 +650,7 @@ test.describe.parallel('Markdown', () => {
     },
   ];
 
-  BASE_BLOCK_SHORTCUTS.forEach((testCase) => {
+  BASE_BLOCK_SHORTCUTS.forEach(testCase => {
     test(`can convert "${testCase.text}" shortcut`, async ({
       page,
       isCollab,
@@ -674,7 +674,7 @@ test.describe.parallel('Markdown', () => {
     });
   });
 
-  SIMPLE_TEXT_FORMAT_SHORTCUTS.forEach((testCase) => {
+  SIMPLE_TEXT_FORMAT_SHORTCUTS.forEach(testCase => {
     test(`can convert "${testCase.text}" shortcut`, async ({
       page,
       isCollab,
@@ -686,7 +686,7 @@ test.describe.parallel('Markdown', () => {
     });
   });
 
-  NESTED_TEXT_FORMAT_SHORTCUTS.forEach((testCase) => {
+  NESTED_TEXT_FORMAT_SHORTCUTS.forEach(testCase => {
     test(`can convert "${testCase.text}" shortcut`, async ({page}) => {
       await focusEditor(page);
       await page.keyboard.type(testCase.text);

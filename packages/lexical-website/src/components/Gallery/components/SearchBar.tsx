@@ -18,7 +18,7 @@ export default function SearchBar() {
       <input
         placeholder={'Search for plugin...'}
         value={searchName}
-        onInput={(e) => {
+        onInput={e => {
           setSearchName(e.currentTarget.value);
         }}
       />

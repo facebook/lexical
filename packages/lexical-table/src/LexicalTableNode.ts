@@ -29,6 +29,7 @@ import {
   LexicalUpdateJSON,
   NodeKey,
   SerializedElementNode,
+  setDOMStyleFromCSS,
   setDOMUnmanaged,
   Spread,
 } from 'lexical';
@@ -274,7 +275,7 @@ export class TableNode extends ElementNode {
   createDOM(config: EditorConfig, editor?: LexicalEditor): HTMLElement {
     const tableElement = document.createElement('table');
     if (this.__style) {
-      tableElement.style.cssText = this.__style;
+      setDOMStyleFromCSS(tableElement.style, this.__style);
     }
     const colGroup = document.createElement('colgroup');
     tableElement.appendChild(colGroup);
@@ -287,7 +288,7 @@ export class TableNode extends ElementNode {
       if (classes) {
         addClassNamesToElement(wrapperElement, classes);
       } else {
-        wrapperElement.style.cssText = 'overflow-x: auto;';
+        wrapperElement.style.overflowX = 'auto';
       }
       wrapperElement.appendChild(tableElement);
       this.updateTableWrapper(null, wrapperElement, tableElement, config);
@@ -323,7 +324,11 @@ export class TableNode extends ElementNode {
     config: EditorConfig,
   ): void {
     if (this.__style !== (prevNode ? prevNode.__style : '')) {
-      tableElement.style.cssText = this.__style;
+      setDOMStyleFromCSS(
+        tableElement.style,
+        this.__style,
+        prevNode ? prevNode.__style : '',
+      );
     }
     if (this.__rowStriping !== (prevNode ? prevNode.__rowStriping : false)) {
       setRowStriping(tableElement, config, this.__rowStriping);
@@ -360,7 +365,7 @@ export class TableNode extends ElementNode {
     updateColgroup(
       tableElement,
       this.getColumnCount(),
-      colWidths.map((width) => width * scale),
+      colWidths.map(width => width * scale),
     );
   }
 
@@ -368,7 +373,7 @@ export class TableNode extends ElementNode {
     const superExport = super.exportDOM(editor);
     const {element} = superExport;
     return {
-      after: (tableElement) => {
+      after: tableElement => {
         if (superExport.after) {
           tableElement = superExport.after(tableElement);
         }
@@ -600,7 +605,7 @@ export class TableNode extends ElementNode {
     }
 
     let columnCount = 0;
-    firstRow.getChildren().forEach((cell) => {
+    firstRow.getChildren().forEach(cell => {
       if ($isTableCellNode(cell)) {
         columnCount += cell.getColSpan();
       }
@@ -655,7 +660,7 @@ export function $convertTableElement(
     }
   }
   return {
-    after: (children) => $descendantsMatching(children, $isTableRowNode),
+    after: children => $descendantsMatching(children, $isTableRowNode),
     node: tableNode,
   };
 }

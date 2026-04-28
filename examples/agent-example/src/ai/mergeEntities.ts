@@ -133,7 +133,7 @@ export function mergeEntities(
     }
   }
 
-  return merged.map((m) => ({
+  return merged.map(m => ({
     end: m.end,
     entity: m.entity,
     score: m.minScore,

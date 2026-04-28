@@ -41,9 +41,9 @@ const isWWW = argv.www;
 const extractCodes = argv.codes;
 
 const modulePackageMappings = Object.fromEntries(
-  packagesManager.getPublicPackages().flatMap((pkg) => {
+  packagesManager.getPublicPackages().flatMap(pkg => {
     const pkgName = pkg.getNpmName();
-    return pkg.getExportedNpmModuleNames().map((npm) => [npm, pkgName]);
+    return pkg.getExportedNpmModuleNames().map(npm => [npm, pkgName]);
   }),
 );
 
@@ -56,21 +56,21 @@ function getShikiAssets(assetType) {
       ),
       {windowsPathsNoEscape: true},
     )
-    .map((p) => path.basename(p.replaceAll('\\', '/'), '.mjs'));
+    .map(p => path.basename(p.replaceAll('\\', '/'), '.mjs'));
 }
 
 const wwwMappings = {
   ...Object.fromEntries(
-    Object.keys(modulePackageMappings).map((npm) => [npm, npmToWwwName(npm)]),
+    Object.keys(modulePackageMappings).map(npm => [npm, npmToWwwName(npm)]),
   ),
   ...Object.fromEntries(
-    getShikiAssets('langs').map((name) => [
+    getShikiAssets('langs').map(name => [
       `@shikijs/langs/${name}`,
       `shikijs-langs-${name}`,
     ]),
   ),
   ...Object.fromEntries(
-    getShikiAssets('themes').map((name) => [
+    getShikiAssets('themes').map(name => [
       `@shikijs/themes/${name}`,
       `shikijs-themes-${name}`,
     ]),
@@ -137,7 +137,7 @@ const thirdPartyExternalsRegExp = new RegExp(
 const strictWWWMappings = {};
 
 // Add quotes around mappings to make them more strict.
-Object.keys(wwwMappings).forEach((mapping) => {
+Object.keys(wwwMappings).forEach(mapping => {
   strictWWWMappings[`'${mapping}'`] = `'${wwwMappings[mapping]}'`;
 });
 

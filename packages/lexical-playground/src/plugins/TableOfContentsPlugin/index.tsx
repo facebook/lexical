@@ -189,7 +189,7 @@ function TableOfContentsList({
 export default function TableOfContentsPlugin() {
   return (
     <LexicalTableOfContentsPlugin>
-      {(tableOfContents) => {
+      {tableOfContents => {
         return <TableOfContentsList tableOfContents={tableOfContents} />;
       }}
     </LexicalTableOfContentsPlugin>

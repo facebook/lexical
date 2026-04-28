@@ -586,6 +586,34 @@ function getTargetRange(event: InputEvent): null | StaticRange {
   return targetRanges[0];
 }
 
+function $maybeMoveSelectionPastTrailingSpace(
+  insertedText: string | null | undefined,
+): void {
+  if (
+    insertedText == null ||
+    insertedText.length <= 1 ||
+    insertedText.endsWith(' ')
+  ) {
+    return;
+  }
+
+  const selection = $getSelection();
+  if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
+    return;
+  }
+
+  const anchorNode = selection.anchor.getNode();
+  if (!$isTextNode(anchorNode)) {
+    return;
+  }
+
+  const offset = selection.anchor.offset;
+  const textContent = anchorNode.getTextContent();
+  if (textContent[offset] === ' ') {
+    selection.setTextNodeRange(anchorNode, offset + 1, anchorNode, offset + 1);
+  }
+}
+
 function $canRemoveText(
   anchorNode: TextNode | ElementNode,
   focusNode: TextNode | ElementNode,
@@ -797,6 +825,7 @@ function $handleBeforeInput(event: InputEvent): boolean {
     ) {
       event.preventDefault();
       dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, data);
+      $maybeMoveSelectionPastTrailingSpace(data);
     } else {
       unprocessedBeforeInputData = data;
     }
@@ -814,6 +843,10 @@ function $handleBeforeInput(event: InputEvent): boolean {
     case 'insertFromDrop':
     case 'insertReplacementText': {
       dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, event);
+      const textFromDataTransfer = event.dataTransfer
+        ? event.dataTransfer.getData('text/plain')
+        : null;
+      $maybeMoveSelectionPastTrailingSpace(textFromDataTransfer ?? event.data);
       break;
     }
 

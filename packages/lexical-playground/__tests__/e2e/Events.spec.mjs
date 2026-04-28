@@ -6,8 +6,11 @@
  *
  */
 
+import {expect} from '@playwright/test';
+
 import {
   assertHTML,
+  assertSelection,
   evaluate,
   focusEditor,
   html,
@@ -91,6 +94,108 @@ test.describe('Events', () => {
         </p>
       `,
     );
+  });
+
+  test('Text replacements (MacOS specific)', async ({
+    page,
+    isPlainText,
+    browserName,
+  }) => {
+    const textToReplace = 'omw';
+    const replacementText = 'On my way!';
+    await focusEditor(page);
+    await page.keyboard.type(textToReplace);
+    await evaluate(
+      page,
+      (args) => {
+        const editable = document.querySelector('[contenteditable="true"]');
+        const span = editable.querySelector('span');
+        const textNode = span.firstChild;
+        function singleRangeFn(
+          startContainer,
+          startOffset,
+          endContainer,
+          endOffset,
+        ) {
+          return () => [
+            new StaticRange({
+              endContainer,
+              endOffset,
+              startContainer,
+              startOffset,
+            }),
+          ];
+        }
+        const dataTransfer = new DataTransfer();
+        dataTransfer.setData('text/plain', args.replacementText);
+        dataTransfer.setData('text/html', args.replacementText);
+        const replacementBeforeInputEvent = new InputEvent('beforeinput', {
+          bubbles: true,
+          cancelable: true,
+          // `data` is `null` for real `insertReplacementText` events, but that breaks the test.
+          data: args.replacementText,
+          dataTransfer:
+            args.browserName === 'chromium' ? undefined : dataTransfer,
+          inputType:
+            args.browserName === 'chromium'
+              ? 'insertText'
+              : 'insertReplacementText',
+        });
+        const fireSpaceFirst = args.browserName !== 'webkit';
+        replacementBeforeInputEvent.getTargetRanges = singleRangeFn(
+          textNode,
+          0,
+          textNode,
+          // Chromium actually returns `0` here (for some reason), but that breaks the test.
+          args.textToReplace.length,
+        );
+        const spaceBeforeInputEvent = new InputEvent('beforeinput', {
+          bubbles: true,
+          cancelable: true,
+          data: ' ',
+          inputType: 'insertText',
+        });
+        const spaceOffset = fireSpaceFirst
+          ? args.textToReplace.length
+          : args.replacementText.length;
+        spaceBeforeInputEvent.getTargetRanges = singleRangeFn(
+          textNode,
+          spaceOffset,
+          textNode,
+          spaceOffset,
+        );
+        const orderedEvents = fireSpaceFirst
+          ? [spaceBeforeInputEvent, replacementBeforeInputEvent]
+          : [replacementBeforeInputEvent, spaceBeforeInputEvent];
+
+        for (const event of orderedEvents) {
+          editable.dispatchEvent(event);
+          if (event === replacementBeforeInputEvent) {
+            textNode.textContent = fireSpaceFirst
+              ? `${args.replacementText} `
+              : args.replacementText;
+          } else if (event === spaceBeforeInputEvent) {
+            textNode.textContent += ' ';
+          } else {
+            throw new Error('Invalid event');
+          }
+        }
+      },
+      {browserName, replacementText, textToReplace},
+    );
+
+    const textContent = await evaluate(page, () => {
+      const editable = document.querySelector('[contenteditable="true"]');
+      return editable?.textContent ?? null;
+    });
+    expect(textContent).toBe(`${replacementText} `);
+
+    await assertSelection(page, {
+      anchorOffset: `${replacementText} `.length,
+      anchorPath: [0, 0, 0],
+      focusOffset: `${replacementText} `.length,
+      focusPath: [0, 0, 0],
+    });
   });
 
   test('Add period with double-space after emoji (MacOS specific) #3953', async ({

@@ -218,7 +218,8 @@
       "follow-redirects": ">=1.16.0",
       "uuid": ">=14.0.0",
       "protobufjs": ">=7.5.5",
-      "dompurify": ">=3.4.0"
+      "dompurify": ">=3.4.0",
+      "postcss": ">=8.5.10"
     }
   }
 }

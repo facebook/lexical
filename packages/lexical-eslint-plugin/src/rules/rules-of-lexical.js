@@ -40,7 +40,7 @@ function getIdentifierVariable(sourceCode, identifier) {
   ) {
     const variable = scopeManager
       .getDeclaredVariables(node)
-      .find((v) => v.identifiers.includes(identifier));
+      .find(v => v.identifiers.includes(identifier));
     if (variable) {
       return variable;
     }
@@ -323,7 +323,7 @@ module.exports.rulesOfLexical = {
     return {
       ArrowFunctionExpression: pushFunction,
       'ArrowFunctionExpression:exit': popFunction,
-      CallExpression: (node) => {
+      CallExpression: node => {
         if (shouldIgnore()) {
           return;
         }
@@ -354,7 +354,7 @@ module.exports.rulesOfLexical = {
           suggestName,
         };
         /** @type {ReportFixer} */
-        const fix = (fixer) => {
+        const fix = fixer => {
           /** @type {Set<Identifier>} */
           const replaced = new Set();
           /** @type {Fix[]} */

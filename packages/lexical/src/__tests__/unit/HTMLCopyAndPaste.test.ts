@@ -23,7 +23,7 @@ import {beforeEach, describe, expect, test} from 'vitest';
 
 describe('HTMLCopyAndPaste tests', () => {
   initializeUnitTest(
-    (testEnv) => {
+    testEnv => {
       beforeEach(async () => {
         const {editor} = testEnv;
         await editor.update(() => {

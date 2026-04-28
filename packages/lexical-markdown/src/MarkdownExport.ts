@@ -39,7 +39,7 @@ export function createMarkdownExport(
   // Export only uses text formats that are responsible for single format
   // e.g. it will filter out *** (bold, italic) and instead use separate ** and *
   const textFormatTransformers = byType.textFormat
-    .filter((transformer) => transformer.format.length === 1)
+    .filter(transformer => transformer.format.length === 1)
     // Make sure all text transformers that contain 'code' in their format are at the end of the array. Otherwise, formatted code like
     // <strong><code>code</code></strong> will be exported as `**Bold Code**`, as the code format will be applied first, and the bold format
     // will be applied second and thus skipped entirely, as the code format will prevent any further formatting.
@@ -49,7 +49,7 @@ export function createMarkdownExport(
       );
     });
 
-  return (node) => {
+  return node => {
     const output = [];
     const children = (node || $getRoot()).getChildren();
 
@@ -92,7 +92,7 @@ function exportTopLevelElements(
     if (!transformer.export) {
       continue;
     }
-    const result = transformer.export(node, (_node) =>
+    const result = transformer.export(node, _node =>
       exportChildren(
         _node,
         textTransformersIndex,
@@ -150,7 +150,7 @@ function exportChildren(
 
       const result = transformer.export(
         child,
-        (parentNode) =>
+        parentNode =>
           exportChildren(
             parentNode,
             textTransformersIndex,
@@ -268,7 +268,7 @@ function exportTextFormat(
       // or the nodes before that (which would result in an unclosed tag)
       if (
         !checkHasFormat(prevNode, format) ||
-        !unclosedTags.find((element) => element.tag === tag)
+        !unclosedTags.find(element => element.tag === tag)
       ) {
         unclosedTags.push({format, tag});
         openingTags += tag;
@@ -296,7 +296,7 @@ function exportTextFormat(
       if (
         unclosableTags &&
         unclosedTag &&
-        unclosableTags.find((element) => element.tag === unclosedTag.tag)
+        unclosableTags.find(element => element.tag === unclosedTag.tag)
       ) {
         continue;
       }

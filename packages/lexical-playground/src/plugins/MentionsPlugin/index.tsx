@@ -494,7 +494,7 @@ const dummyMentionsData = [
 const dummyLookupService = {
   search(string: string, callback: (results: Array<string>) => void): void {
     setTimeout(() => {
-      const results = dummyMentionsData.filter((mention) =>
+      const results = dummyMentionsData.filter(mention =>
         mention.toLowerCase().includes(string.toLowerCase()),
       );
       callback(results);
@@ -522,7 +522,7 @@ function useMentionLookupService(mentionString: string | null) {
     }
 
     mentionsCache.set(mentionString, null);
-    dummyLookupService.search(mentionString, (newResults) => {
+    dummyLookupService.search(mentionString, newResults => {
       mentionsCache.set(mentionString, newResults);
       setResults(newResults);
     });
@@ -592,7 +592,7 @@ export default function NewMentionsPlugin(): JSX.Element | null {
     () =>
       results
         .map(
-          (result) =>
+          result =>
             new MentionTypeaheadOption(result, <i className="icon user" />),
         )
         .slice(0, SUGGESTION_LIST_LENGTH_LIMIT),

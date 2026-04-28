@@ -16,7 +16,7 @@ import transformErrorMessages from '../../transform-error-messages.mjs';
 const prettierConfig = prettier.resolveConfig(__filename) || {};
 
 function waitTick(): Promise<void> {
-  return new Promise((resolve) => queueMicrotask(resolve));
+  return new Promise(resolve => queueMicrotask(resolve));
 }
 
 async function withCodes(
@@ -85,7 +85,7 @@ async function expectTransform(opts: ExpectTransformOptions) {
   return await withCodes(
     opts.messageMapBefore,
     opts.messageMapExpect,
-    async (errorCodesPath) => {
+    async errorCodesPath => {
       const {code} = babel.transformSync(fmt`${opts.codeBefore}`, {
         configFile: false,
         plugins: [[transformErrorMessages, {errorCodesPath, ...opts.opts}]],

@@ -52,7 +52,7 @@ export default function Editor() {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   const onSubmit = useCallback((editorState: EditorState) => {
-    setMessages((prev) => [
+    setMessages(prev => [
       ...prev,
       {author: 'me', id: Date.now(), initialState: editorState},
     ]);
@@ -89,7 +89,7 @@ export default function Editor() {
       <div
         ref={messagesContainerRef}
         className="flex h-[288px] flex-col gap-1.5 overflow-y-auto px-3.5 pt-3.5 pb-1.5 max-[996px]:h-[228px]">
-        {messages.map((msg) => (
+        {messages.map(msg => (
           <div
             key={msg.id}
             className={`flex max-w-[78%] items-end gap-1.5 ${msg.author === 'me' ? 'flex-row-reverse self-end' : 'self-start'}`}>

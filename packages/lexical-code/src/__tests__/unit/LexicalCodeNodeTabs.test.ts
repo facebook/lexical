@@ -32,7 +32,7 @@ import {
 import {describe, expect, test} from 'vitest';
 
 describe('LexicalCodeNode tests', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     describe('Tabs', () => {
       // Tests are described using the following convention
       // > is the beginning of a line
@@ -78,8 +78,8 @@ describe('LexicalCodeNode tests', () => {
         ['>-li|ne1>>-li|ne2', '>li|ne1>>li|ne2', 'outdent'],
         ['>|-line1>->-line2|', '>|--line1>-->--line2|', 'tab'],
       ];
-      suite.forEach((scenario) => {
-        ['forwards', 'backwards'].forEach((direction) => {
+      suite.forEach(scenario => {
+        ['forwards', 'backwards'].forEach(direction => {
           test(`testing ${scenario[2]}: ${scenario[0]} => ${scenario[1]} (${direction})`, async () => {
             const {editor} = testEnv;
 

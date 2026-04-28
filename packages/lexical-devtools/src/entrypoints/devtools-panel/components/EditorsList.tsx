@@ -37,7 +37,7 @@ export function EditorsList({tabID, setErrorMessage}: Props) {
   const {lexicalState, selectedEditorKey} = useExtensionStore();
   const states = lexicalState[tabID] ?? {};
   const selectedEditorIdx = Object.keys(states).findIndex(
-    (key) => key === selectedEditorKey[tabID],
+    key => key === selectedEditorKey[tabID],
   );
 
   useEffect(() => {
@@ -74,7 +74,7 @@ export function EditorsList({tabID, setErrorMessage}: Props) {
       {Object.entries(states).map(([key, state], idx) => (
         <AccordionItem
           key={key}
-          ref={(el) => {
+          ref={el => {
             tabRefs.current.set(idx, el);
           }}>
           <h2>
@@ -93,18 +93,18 @@ export function EditorsList({tabID, setErrorMessage}: Props) {
               timeTravelButtonClassName="debug-timetravel-button"
               timeTravelPanelSliderClassName="debug-timetravel-panel-slider"
               timeTravelPanelButtonClassName="debug-timetravel-panel-button"
-              setEditorReadOnly={(isReadonly) =>
+              setEditorReadOnly={isReadonly =>
                 injectedPegasusService
                   .setEditorReadOnly(key, isReadonly)
-                  .catch((e) => setErrorMessage(e.stack))
+                  .catch(e => setErrorMessage(e.stack))
               }
               editorState={state as EditorState}
-              setEditorState={(editorState) =>
+              setEditorState={editorState =>
                 injectedPegasusService
                   .setEditorState(key, editorState as SerializedRawEditorState)
-                  .catch((e) => setErrorMessage(e.stack))
+                  .catch(e => setErrorMessage(e.stack))
               }
-              generateContent={(exportDOM) =>
+              generateContent={exportDOM =>
                 injectedPegasusService.generateTreeViewContent(key, exportDOM)
               }
             />

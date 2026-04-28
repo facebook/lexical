@@ -32,6 +32,7 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {mergeRegister} from '@lexical/utils';
 import {CONNECTED_COMMAND, TOGGLE_CONNECT_COMMAND} from '@lexical/yjs';
 import {
+  $createParagraphNode,
   $getRoot,
   $insertNodes,
   $isParagraphNode,
@@ -42,13 +43,21 @@ import {
   HISTORIC_TAG,
   RootNode,
 } from 'lexical';
-import {useCallback, useEffect, useRef, useState} from 'react';
+import {
+  startTransition,
+  useActionState,
+  useEffect,
+  useOptimistic,
+  useRef,
+  useState,
+} from 'react';
 
 import {INITIAL_SETTINGS} from '../../appSettings';
 import useFlashMessage from '../../hooks/useFlashMessage';
 import useModal from '../../hooks/useModal';
 import Button from '../../ui/Button';
 import {docFromHash, docToHash} from '../../utils/docSerialization';
+import {formatCodeWithPrettier} from '../CodeActionMenuPlugin/formatCodeWithPrettier';
 import {PLAYGROUND_TRANSFORMERS} from '../MarkdownTransformers';
 import {
   SPEECH_TO_TEXT_COMMAND,
@@ -103,6 +112,8 @@ async function shareDoc(doc: SerializedDocument): Promise<void> {
   await window.navigator.clipboard.writeText(newUrl);
 }
 
+type EditorMode = 'wysiwyg' | 'markdown' | 'html';
+
 export default function ActionsPlugin({
   shouldPreserveNewLinesInMarkdown,
   useCollabV2,
@@ -118,13 +129,97 @@ export default function ActionsPlugin({
   const [modal, showModal] = useModal();
   const showFlashMessage = useFlashMessage();
   const {isCollabActive} = useCollaborationContext();
-  const [mode, setMode] = useState<'wysiwyg' | 'markdown' | 'html'>('wysiwyg');
-  const isMarkdown = mode === 'markdown';
-  const isHtml = mode === 'html';
   const unregisterTransformRef = useRef(() => {});
+  const [mode, dispatchMode, isPending] = useActionState(
+    async (prevMode: EditorMode, nextMode: EditorMode): Promise<EditorMode> => {
+      if (prevMode === 'wysiwyg') {
+        // handle transitions from wysiwyg -> nextMode -> wysiwyg when there's a single
+        // root child CodeNode that is the nextMode language. e2e tests assume you can
+        // do this.
+        editor.read(() => {
+          const root = $getRoot();
+          const codeNode =
+            root.getChildrenSize() === 1
+              ? root.getChildren().find($isCodeNode)
+              : null;
+          if (codeNode) {
+            const language = codeNode.getLanguage();
+            if (language === nextMode) {
+              prevMode = nextMode;
+              nextMode = 'wysiwyg';
+            }
+          }
+        });
+      }
+      if (nextMode === 'wysiwyg') {
+        unregisterTransformRef.current();
+        editor.update(() => {
+          if (prevMode === 'html') {
+            const root = $getRoot();
+            const parser = new DOMParser();
+            const content = root.getTextContent();
+            const dom = parser.parseFromString(content, 'text/html');
+            const nodes = $generateNodesFromDOM(editor, dom);
+            root.clear().select();
+            $insertNodes(nodes);
+            if (root.isEmpty()) {
+              root.append($createParagraphNode()).select();
+            }
+          } else if (prevMode === 'markdown') {
+            const root = $getRoot();
+            const firstChild = root.getFirstChild();
+            if (
+              $isCodeNode(firstChild) &&
+              firstChild.getLanguage() === 'markdown'
+            ) {
+              unregisterTransformRef.current();
+              $convertFromMarkdownString(
+                firstChild.getTextContent(),
+                PLAYGROUND_TRANSFORMERS,
+                undefined, // node
+                shouldPreserveNewLinesInMarkdown,
+              );
+            }
+          }
+        });
+      } else if (nextMode === 'markdown') {
+        editor.update(() => {
+          const markdown = $convertToMarkdownString(
+            PLAYGROUND_TRANSFORMERS,
+            undefined, //node
+            shouldPreserveNewLinesInMarkdown,
+          );
+          const codeNode = $createCodeNode('markdown');
+          $getRoot().clear().append(codeNode);
+          codeNode.select().insertRawText(markdown);
+          codeNode.select(0, 0);
+        });
+      } else if (nextMode === 'html') {
+        const rawHtml = editor.read(() =>
+          $withRenderContext(
+            [contextValue(RenderContextTerse, true)],
+            editor,
+          )(() => $generateHtmlFromNodes(editor)),
+        );
+        const html = await formatCodeWithPrettier(rawHtml, 'html');
+        editor.update(() => {
+          const codeNode = $createCodeNode('html');
+          $getRoot().clear().append(codeNode);
+          codeNode.select().insertRawText(html.trimEnd());
+          codeNode.select(0, 0);
+        });
+      }
+      return nextMode;
+    },
+    'wysiwyg',
+  );
+  const [optimisticMode, setOptimisticMode] = useOptimistic<EditorMode>(mode);
+  const isMarkdown = optimisticMode === 'markdown';
+  const isHtml = optimisticMode === 'html';
+
   useEffect(() => {
     if (mode !== 'wysiwyg') {
-      const unregister = editor.registerNodeTransform(RootNode, (rootNode) => {
+      const unregister = editor.registerNodeTransform(RootNode, rootNode => {
         let codeNode = rootNode.getChildren().find($isCodeNode);
         if (!codeNode) {
           codeNode = $createCodeNode(mode);
@@ -145,7 +240,7 @@ export default function ActionsPlugin({
     if (INITIAL_SETTINGS.isCollab) {
       return;
     }
-    docFromHash(window.location.hash).then((doc) => {
+    docFromHash(window.location.hash).then(doc => {
       if (doc && doc.source === 'Playground') {
         editor.setEditorState(editorStateFromSerializedDocument(editor, doc));
         editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined);
@@ -154,12 +249,12 @@ export default function ActionsPlugin({
   }, [editor]);
   useEffect(() => {
     return mergeRegister(
-      editor.registerEditableListener((editable) => {
+      editor.registerEditableListener(editable => {
         setIsEditable(editable);
       }),
       editor.registerCommand<boolean>(
         CONNECTED_COMMAND,
-        (payload) => {
+        payload => {
           const isConnected = payload;
           setConnected(isConnected);
           return false;
@@ -201,60 +296,21 @@ export default function ActionsPlugin({
     );
   }, [editor, isEditable]);
 
-  const handleMarkdownToggle = useCallback(() => {
-    editor.update(() => {
-      const root = $getRoot();
-      const firstChild = root.getFirstChild();
-      if ($isCodeNode(firstChild) && firstChild.getLanguage() === 'markdown') {
-        unregisterTransformRef.current();
-        $convertFromMarkdownString(
-          firstChild.getTextContent(),
-          PLAYGROUND_TRANSFORMERS,
-          undefined, // node
-          shouldPreserveNewLinesInMarkdown,
-        );
-        setMode('wysiwyg');
-      } else {
-        const markdown = $convertToMarkdownString(
-          PLAYGROUND_TRANSFORMERS,
-          undefined, //node
-          shouldPreserveNewLinesInMarkdown,
-        );
-        const codeNode = $createCodeNode('markdown');
-        root.clear().append(codeNode);
-        codeNode.select().insertRawText(markdown);
-        codeNode.select(0, 0);
-        setMode('markdown');
+  const toggleMode = (targetMode: 'html' | 'markdown') => {
+    startTransition(() => {
+      const nextMode =
+        mode === 'wysiwyg'
+          ? targetMode
+          : mode === targetMode
+            ? 'wysiwyg'
+            : mode;
+      if (mode === nextMode) {
+        return;
       }
+      setOptimisticMode(nextMode);
+      dispatchMode(nextMode);
     });
-  }, [editor, shouldPreserveNewLinesInMarkdown]);
-
-  const handleHtmlToggle = useCallback(() => {
-    editor.update(() => {
-      const root = $getRoot();
-      const firstChild = root.getFirstChild();
-      if ($isCodeNode(firstChild) && firstChild.getLanguage() === 'html') {
-        unregisterTransformRef.current();
-        const htmlString = firstChild.getTextContent();
-        const parser = new DOMParser();
-        const dom = parser.parseFromString(htmlString, 'text/html');
-        const nodes = $generateNodesFromDOM(editor, dom);
-        $getRoot().clear().select();
-        $insertNodes(nodes);
-        setMode('wysiwyg');
-      } else {
-        const html = $withRenderContext(
-          [contextValue(RenderContextTerse, true)],
-          editor,
-        )(() => $generateHtmlFromNodes(editor));
-        const codeNode = $createCodeNode('html');
-        root.clear().append(codeNode);
-        codeNode.select().insertRawText(html);
-        codeNode.select(0, 0);
-        setMode('html');
-      }
-    });
-  }, [editor]);
+  };
 
   return (
     <div className="actions">
@@ -316,7 +372,7 @@ export default function ActionsPlugin({
         className="action-button clear"
         disabled={isEditorEmpty}
         onClick={() => {
-          showModal('Clear editor', (onClose) => (
+          showModal('Clear editor', onClose => (
             <ShowClearDialog editor={editor} onClose={onClose} />
           ));
         }}
@@ -340,8 +396,8 @@ export default function ActionsPlugin({
       <button
         className="action-button"
         data-active={isMarkdown}
-        disabled={isHtml}
-        onClick={handleMarkdownToggle}
+        disabled={isHtml || isPending}
+        onClick={() => toggleMode('markdown')}
         title={isMarkdown ? 'Convert From Markdown' : 'Convert To Markdown'}
         aria-label={
           isMarkdown ? 'Convert from markdown' : 'Convert To Markdown'
@@ -351,8 +407,8 @@ export default function ActionsPlugin({
       <button
         className="action-button"
         data-active={isHtml}
-        disabled={isMarkdown}
-        onClick={handleHtmlToggle}
+        disabled={isMarkdown || isPending}
+        onClick={() => toggleMode('html')}
         title={isHtml ? 'Convert From HTML' : ' Convert To HTML'}
         aria-label={isHtml ? 'Convert from html' : 'Convert to html'}>
         <i className="html" />

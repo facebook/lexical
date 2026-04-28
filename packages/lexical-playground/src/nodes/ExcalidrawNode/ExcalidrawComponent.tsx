@@ -205,7 +205,7 @@ export default function ExcalidrawComponent({
               className="image-edit-button"
               role="button"
               tabIndex={0}
-              onMouseDown={(event) => event.preventDefault()}
+              onMouseDown={event => event.preventDefault()}
               onClick={openModal}
             />
           )}

@@ -12,7 +12,7 @@ import {describe, expect, test} from 'vitest';
 import {initializeUnitTest} from '../../../__tests__/utils';
 
 describe('LexicalLineBreakNode tests', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     test('LineBreakNode.constructor', async () => {
       const {editor} = testEnv;
 

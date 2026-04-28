@@ -33,7 +33,7 @@ export function useDecorators(
 
   // Subscribe to changes
   useLayoutEffect(() => {
-    return editor.registerDecoratorListener<JSX.Element>((nextDecorators) => {
+    return editor.registerDecoratorListener<JSX.Element>(nextDecorators => {
       flushSync(() => {
         setDecorators(nextDecorators);
       });
@@ -55,7 +55,7 @@ export function useDecorators(
     for (let i = 0; i < decoratorKeys.length; i++) {
       const nodeKey = decoratorKeys[i];
       const reactDecorator = (
-        <ErrorBoundary onError={(e) => editor._onError(e)}>
+        <ErrorBoundary onError={e => editor._onError(e)}>
           <Suspense fallback={null}>{decorators[nodeKey]}</Suspense>
         </ErrorBoundary>
       );

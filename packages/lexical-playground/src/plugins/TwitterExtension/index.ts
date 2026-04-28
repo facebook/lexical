@@ -23,10 +23,10 @@ export const INSERT_TWEET_COMMAND: LexicalCommand<string> = createCommand(
 export const TwitterExtension = defineExtension({
   name: '@lexical/playground/Twitter',
   nodes: [TweetNode],
-  register: (editor) =>
+  register: editor =>
     editor.registerCommand<string>(
       INSERT_TWEET_COMMAND,
-      (payload) => {
+      payload => {
         const tweetNode = $createTweetNode(payload);
         $insertNodeToNearestRoot(tweetNode);
 

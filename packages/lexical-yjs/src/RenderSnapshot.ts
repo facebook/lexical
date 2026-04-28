@@ -30,7 +30,7 @@ export type YChange<UserT = any> = {
 
 const ychangeState = createState<typeof STATE_KEY, YChange | null>(STATE_KEY, {
   isEqual: (a, b) => a === b,
-  parse: (value) => (value as YChange) ?? null,
+  parse: value => (value as YChange) ?? null,
 });
 
 export function $getYChangeState<UserT = unknown>(
@@ -58,13 +58,13 @@ export const renderSnapshot__EXPERIMENTAL = (
   const {doc} = binding;
   invariant(!doc.gc, 'GC must be disabled to render snapshot');
 
-  doc.transact((transaction) => {
+  doc.transact(transaction => {
     // Before rendering, we are going to sanitize ops and split deleted ops
     // if they were deleted by seperate users.
     const pud = new PermanentUserData(doc);
     if (pud) {
-      pud.dss.forEach((ds) => {
-        iterateDeletedStructs(transaction, ds, (_item) => {});
+      pud.dss.forEach(ds => {
+        iterateDeletedStructs(transaction, ds, _item => {});
       });
     }
 

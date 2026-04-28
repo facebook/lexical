@@ -20,7 +20,7 @@ import {describe, expect, it} from 'vitest';
 import {docFromHash, docToHash} from '../../src/utils/docSerialization';
 
 describe('docSerialization', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     describe('docToHash/docFromHash round-trips', () => {
       it('with empty state', async () => {
         const {editor} = testEnv;

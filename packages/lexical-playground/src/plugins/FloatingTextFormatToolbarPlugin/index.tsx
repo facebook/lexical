@@ -448,7 +448,7 @@ function useFloatingTextFormatToolbar(
     );
   }, [editor, updatePopup]);
 
-  if (!isText) {
+  if (!isText || isLink) {
     return null;
   }
 

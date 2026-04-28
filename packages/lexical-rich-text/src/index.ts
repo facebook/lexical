@@ -199,7 +199,7 @@ export class QuoteNode extends ElementNode {
   collapseAtStart(): true {
     const paragraph = $createParagraphNode();
     const children = this.getChildren();
-    children.forEach((child) => paragraph.append(child));
+    children.forEach(child => paragraph.append(child));
     this.replace(paragraph);
     return true;
   }
@@ -401,7 +401,7 @@ export class HeadingNode extends ElementNode {
       ? $createHeadingNode(this.getTag())
       : $createParagraphNode();
     const children = this.getChildren();
-    children.forEach((child) => newElement.append(child));
+    children.forEach(child => newElement.append(child));
     this.replace(newElement);
     return true;
   }
@@ -495,7 +495,7 @@ async function onCutForRichText(
     if ($isRangeSelection(selection)) {
       selection.removeText();
     } else if ($isNodeSelection(selection)) {
-      selection.getNodes().forEach((node) => node.remove());
+      selection.getNodes().forEach(node => node.remove());
     }
   });
 }
@@ -572,7 +572,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
   const removeListener = mergeRegister(
     editor.registerCommand(
       CLICK_COMMAND,
-      (payload) => {
+      payload => {
         const selection = $getSelection();
         if ($isNodeSelection(selection)) {
           selection.clear();
@@ -584,7 +584,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand<boolean>(
       DELETE_CHARACTER_COMMAND,
-      (isBackward) => {
+      isBackward => {
         const selection = $getSelection();
         if ($isRangeSelection(selection)) {
           selection.deleteCharacter(isBackward);
@@ -599,7 +599,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand<boolean>(
       DELETE_WORD_COMMAND,
-      (isBackward) => {
+      isBackward => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
           return false;
@@ -611,7 +611,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand<boolean>(
       DELETE_LINE_COMMAND,
-      (isBackward) => {
+      isBackward => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
           return false;
@@ -623,7 +623,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand(
       CONTROLLED_TEXT_INSERTION_COMMAND,
-      (eventOrText) => {
+      eventOrText => {
         const selection = $getSelection();
 
         if (typeof eventOrText === 'string') {
@@ -664,7 +664,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand<TextFormatType>(
       FORMAT_TEXT_COMMAND,
-      (format) => {
+      format => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
           return false;
@@ -676,7 +676,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand<ElementFormatType>(
       FORMAT_ELEMENT_COMMAND,
-      (format) => {
+      format => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection) && !$isNodeSelection(selection)) {
           return false;
@@ -698,7 +698,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand<boolean>(
       INSERT_LINE_BREAK_COMMAND,
-      (selectStart) => {
+      selectStart => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
           return false;
@@ -737,7 +737,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     editor.registerCommand(
       INDENT_CONTENT_COMMAND,
       () => {
-        return $handleIndentAndOutdent((block) => {
+        return $handleIndentAndOutdent(block => {
           const indent = block.getIndent();
           block.setIndent(indent + 1);
         });
@@ -747,7 +747,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     editor.registerCommand(
       OUTDENT_CONTENT_COMMAND,
       () => {
-        return $handleIndentAndOutdent((block) => {
+        return $handleIndentAndOutdent(block => {
           const indent = block.getIndent();
           if (indent > 0) {
             block.setIndent(Math.max(0, indent - 1));
@@ -758,7 +758,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand<KeyboardEvent>(
       KEY_ARROW_UP_COMMAND,
-      (event) => {
+      event => {
         const selection = $getSelection();
         if ($isNodeSelection(selection)) {
           // If selection is on a node, let's try and move selection
@@ -788,7 +788,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand<KeyboardEvent>(
       KEY_ARROW_DOWN_COMMAND,
-      (event) => {
+      event => {
         const selection = $getSelection();
         if ($isNodeSelection(selection)) {
           // If selection is on a node, let's try and move selection
@@ -822,7 +822,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand<KeyboardEvent>(
       KEY_ARROW_LEFT_COMMAND,
-      (event) => {
+      event => {
         const selection = $getSelection();
         if ($isNodeSelection(selection)) {
           // If selection is on a node, let's try and move selection
@@ -853,7 +853,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand<KeyboardEvent>(
       KEY_ARROW_RIGHT_COMMAND,
-      (event) => {
+      event => {
         const selection = $getSelection();
         if ($isNodeSelection(selection)) {
           // If selection is on a node, let's try and move selection
@@ -884,7 +884,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand<KeyboardEvent>(
       KEY_BACKSPACE_COMMAND,
-      (event) => {
+      event => {
         if ($isTargetWithinDecorator(event.target as HTMLElement)) {
           return false;
         }
@@ -910,7 +910,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand<KeyboardEvent>(
       KEY_DELETE_COMMAND,
-      (event) => {
+      event => {
         if ($isTargetWithinDecorator(event.target as HTMLElement)) {
           return false;
         }
@@ -925,7 +925,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand<KeyboardEvent | null>(
       KEY_ENTER_COMMAND,
-      (event) => {
+      event => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
           return false;
@@ -970,7 +970,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand<DragEvent>(
       DROP_COMMAND,
-      (event) => {
+      event => {
         const [, files] = eventFiles(event);
         if (files.length > 0) {
           const x = event.clientX;
@@ -1006,7 +1006,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand<DragEvent>(
       DRAGSTART_COMMAND,
-      (event) => {
+      event => {
         const [isFileTransfer] = eventFiles(event);
         const selection = $getSelection();
         if (isFileTransfer && !$isRangeSelection(selection)) {
@@ -1034,7 +1034,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand<DragEvent>(
       DRAGOVER_COMMAND,
-      (event) => {
+      event => {
         const [isFileTransfer] = eventFiles(event);
         const selection = $getSelection();
         if (isFileTransfer && !$isRangeSelection(selection)) {
@@ -1066,7 +1066,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand(
       COPY_COMMAND,
-      (event) => {
+      event => {
         copyToClipboard(
           editor,
           objectKlassEquals(event, ClipboardEvent) ? event : null,
@@ -1077,7 +1077,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand(
       CUT_COMMAND,
-      (event) => {
+      event => {
         onCutForRichText(event, editor);
         return true;
       },
@@ -1085,7 +1085,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand(
       PASTE_COMMAND,
-      (event) => {
+      event => {
         const [, files, hasTextContent] = eventFiles(event);
         if (files.length > 0 && !hasTextContent) {
           editor.dispatchCommand(DRAG_DROP_PASTE, files);
@@ -1112,7 +1112,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand(
       KEY_SPACE_COMMAND,
-      (_) => {
+      _ => {
         const selection = $getSelection();
 
         if ($isRangeSelection(selection)) {
@@ -1125,7 +1125,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand(
       KEY_TAB_COMMAND,
-      (_) => {
+      _ => {
         const selection = $getSelection();
 
         if ($isRangeSelection(selection)) {

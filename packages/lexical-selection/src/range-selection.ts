@@ -181,7 +181,7 @@ export function $wrapNodes(
     let element = createElement();
     element.setFormat(target.getFormatType());
     element.setIndent(target.getIndent());
-    children.forEach((child) => element.append(child));
+    children.forEach(child => element.append(child));
 
     if (wrappingElement) {
       element = wrappingElement.append(element);
@@ -326,12 +326,12 @@ export function $wrapNodesImpl(
         elementMapping.set(parentKey, targetElement);
         // Move node and its siblings to the new
         // element.
-        parent.getChildren().forEach((child) => {
+        parent.getChildren().forEach(child => {
           targetElement.append(child);
           movedNodes.add(child.getKey());
           if ($isElementNode(child)) {
             // Skip nested leaf nodes if the parent has already been moved
-            child.getChildrenKeys().forEach((key) => movedNodes.add(key));
+            child.getChildrenKeys().forEach(key => movedNodes.add(key));
           }
         });
         $removeParentEmptyElements(parent);

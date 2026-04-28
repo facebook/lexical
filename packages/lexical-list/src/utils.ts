@@ -151,7 +151,7 @@ export function isNestedListNode(
 export function $findNearestListItemNode(
   node: LexicalNode,
 ): ListItemNode | null {
-  const matchingParent = $findMatchingParent(node, (parent) =>
+  const matchingParent = $findMatchingParent(node, parent =>
     $isListItemNode(parent),
   );
   return matchingParent as ListItemNode | null;

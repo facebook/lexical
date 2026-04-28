@@ -16,6 +16,7 @@ import {
   $copyNode,
   $createTextNode,
   $isElementNode,
+  $setDirectionFromDOM,
   buildImportMap,
   DOMConversionOutput,
   DOMExportOutput,
@@ -347,6 +348,10 @@ function $convertListNode(
     } else {
       node = $createListNode('bullet');
     }
+  }
+
+  if (node) {
+    $setDirectionFromDOM(node, domNode);
   }
 
   return {

@@ -430,19 +430,19 @@ describe('LexicalTableNode tests', () => {
                   </colgroup>
                   <tr>
                     <td>
-                      <p>
+                      <p dir="ltr">
                         <span data-lexical-text="true">Hello there</span>
                       </p>
                     </td>
                     <td>
-                      <p>
+                      <p dir="ltr">
                         <span data-lexical-text="true">General Kenobi!</span>
                       </p>
                     </td>
                   </tr>
                   <tr>
                     <td>
-                      <p>
+                      <p dir="ltr">
                         <span data-lexical-text="true">Lexical is nice</span>
                       </p>
                     </td>

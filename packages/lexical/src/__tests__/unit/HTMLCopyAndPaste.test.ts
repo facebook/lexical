@@ -104,6 +104,16 @@ describe('HTMLCopyAndPaste tests', () => {
           pastedHTML: `<strong>hello</strong>`,
           plainTextInsert: ' world',
         },
+        {
+          expectedHTML: `<p dir="auto"><span data-lexical-text="true">hello world</span></p>`,
+          name: 'div with display:inline should not insert linebreaks',
+          pastedHTML: `<div><div style="display: inline;">hello</div> <div style="display: inline;">world</div></div>`,
+        },
+        {
+          expectedHTML: `<code spellcheck="false" dir="auto"><span data-lexical-text="true">❯ cd ~/src/lexical</span></code>`,
+          name: 'Ghostty terminal paste with inline divs',
+          pastedHTML: `<div style="font-family: monospace; white-space: pre;"><div style="display: inline;color: rgb(181, 189, 104);font-weight: bold;">&#10095;</div> cd ~/src/lexical</div>`,
+        },
       ];
 
       HTML_COPY_PASTING_TESTS.forEach((testCase, i) => {

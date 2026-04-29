@@ -1894,6 +1894,12 @@ export function isInlineDomNode(
     /^(a|abbr|acronym|b|cite|code|del|em|i|ins|kbd|label|mark|output|q|ruby|s|samp|span|strong|sub|sup|time|u|tt|var|#text)$/,
     'i',
   );
+  if (isHTMLElement(node)) {
+    const display = node.style.display;
+    if (display !== '') {
+      return display.startsWith('inline');
+    }
+  }
   return node.nodeName.match(inlineNodes) !== null;
 }
 
@@ -1912,6 +1918,12 @@ export function isBlockDomNode(
     /^(address|article|aside|blockquote|canvas|dd|div|dl|dt|fieldset|figcaption|figure|footer|form|h1|h2|h3|h4|h5|h6|header|hr|li|main|nav|noscript|ol|p|pre|section|table|td|tfoot|ul|video)$/,
     'i',
   );
+  if (isHTMLElement(node)) {
+    const display = node.style.display;
+    if (display !== '') {
+      return !display.startsWith('inline');
+    }
+  }
   return node.nodeName.match(blockNodes) !== null;
 }
 

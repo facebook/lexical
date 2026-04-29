@@ -18,6 +18,7 @@ import {
 } from '@lexical/list';
 import {$createQuoteNode, HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {
+  $copyNode,
   $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
@@ -47,10 +48,12 @@ import {
   CHECK_LIST,
   CODE,
   ElementTransformer,
+  hardLineBreakState,
   HEADING,
   listMarkerState,
   MultilineElementTransformer,
   normalizeMarkdown,
+  parseMarkdownHardLineBreak,
   TRANSFORMERS,
 } from '../../MarkdownTransformers';
 
@@ -1745,6 +1748,14 @@ describe('markdown whitespace import (default mode)', () => {
     ).toBe(md);
   }
 
+  function getHardLineBreakMarker(line: string): string {
+    const parsed = parseMarkdownHardLineBreak(line);
+    if (parsed === null) {
+      throw new Error('Expected a hard line break marker');
+    }
+    return parsed[1];
+  }
+
   it('preserves trailing whitespace on a standalone paragraph line (default mode)', () => {
     // A paragraph with trailing spaces, separated by an empty line from the next.
     const md = 'hello world   \n\nnext paragraph';
@@ -1826,8 +1837,63 @@ describe('markdown whitespace import (default mode)', () => {
     expectRoundTrip('> foo  \n> bar');
   });
 
+  it('preserves exact hard line break spaces between blockquote lines', () => {
+    expectRoundTrip('> foo   \n> bar');
+  });
+
   it('preserves backslash hard line break between blockquote lines', () => {
     expectRoundTrip('> foo\\\n> bar');
+  });
+
+  it('exports exact hard line break markers from line break state', () => {
+    const editor = createTestEditor();
+    const marker = getHardLineBreakMarker('foo   ');
+
+    editor.update(
+      () => {
+        const lineBreakNode = $createLineBreakNode();
+        $setState(lineBreakNode, hardLineBreakState, marker);
+        $getRoot()
+          .clear()
+          .append(
+            $createParagraphNode().append(
+              $createTextNode('foo'),
+              lineBreakNode,
+              $createTextNode('bar'),
+            ),
+          );
+      },
+      {discrete: true},
+    );
+
+    expect(
+      editor
+        .getEditorState()
+        .read(() =>
+          $convertToMarkdownString([
+            ...TRANSFORMERS,
+            HIGHLIGHT_TEXT_MATCH_IMPORT,
+          ]),
+        ),
+    ).toBe('foo   \nbar');
+  });
+
+  it('does not copy markdown hard line break markers when line breaks are copied', () => {
+    const editor = createTestEditor();
+    const marker = getHardLineBreakMarker('foo   ');
+
+    editor.update(
+      () => {
+        const lineBreakNode = $createLineBreakNode();
+        $setState(lineBreakNode, hardLineBreakState, marker);
+
+        expect($getState(lineBreakNode, hardLineBreakState)).toBe('   ');
+        const copy = $copyNode(lineBreakNode);
+        expect($getState(copy, hardLineBreakState)).toBe(null);
+        expect($getState(lineBreakNode, hardLineBreakState)).toBe('   ');
+      },
+      {discrete: true},
+    );
   });
 });
 

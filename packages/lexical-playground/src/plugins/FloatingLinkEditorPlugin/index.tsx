@@ -9,7 +9,14 @@ import type {JSX} from 'react';
 
 import './index.css';
 
-import {autoUpdate, flip, offset, shift, useFloating} from '@floating-ui/react';
+import {
+  autoUpdate,
+  flip,
+  inline,
+  offset,
+  shift,
+  useFloating,
+} from '@floating-ui/react';
 import {
   $createLinkNode,
   $isAutoLinkNode,
@@ -21,6 +28,7 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$findMatchingParent, mergeRegister} from '@lexical/utils';
 import {
   $getSelection,
+  $isDecoratorNode,
   $isLineBreakNode,
   $isNodeSelection,
   $isRangeSelection,
@@ -102,6 +110,7 @@ function FloatingLinkEditor({
 
   const {refs, floatingStyles} = useFloating({
     middleware: [
+      inline(),
       offset(10),
       flip({
         boundary: scrollerElem || undefined,
@@ -154,28 +163,47 @@ function FloatingLinkEditor({
     const rootElement = editor.getRootElement();
 
     if (selection !== null && rootElement !== null && editor.isEditable()) {
-      let domRect: DOMRect | undefined;
+      let referenceElement: Element | null = null;
 
       if ($isNodeSelection(selection)) {
         const nodes = selection.getNodes();
         if (nodes.length > 0) {
-          const element = editor.getElementByKey(nodes[0].getKey());
-          if (element) {
-            domRect = element.getBoundingClientRect();
-          }
+          referenceElement = editor.getElementByKey(nodes[0].getKey());
         }
+      } else if (
+        $isRangeSelection(selection) &&
+        nativeSelection !== null &&
+        nativeSelection.rangeCount > 0 &&
+        rootElement.contains(nativeSelection.anchorNode)
+      ) {
+        const linkNode = $getSelectedLinkNode(selection);
+        if (linkNode) {
+          // For decorator-only links (e.g. linked images), anchor to the
+          // decorator's element since the link's line box may not match
+          // the decorator's visual extent.
+          const onlyChild =
+            linkNode.getChildrenSize() === 1 ? linkNode.getFirstChild() : null;
+          referenceElement =
+            onlyChild && $isDecoratorNode(onlyChild)
+              ? editor.getElementByKey(onlyChild.getKey())
+              : editor.getElementByKey(linkNode.getKey());
+        }
+      }
+
+      if (referenceElement) {
+        // Use a virtual element exposing both rect methods so `inline`
+        // can read client rects reliably.
+        const refEl = referenceElement;
+        refs.setPositionReference({
+          getBoundingClientRect: () => refEl.getBoundingClientRect(),
+          getClientRects: () => refEl.getClientRects(),
+        });
       } else if (
         nativeSelection !== null &&
         nativeSelection.rangeCount > 0 &&
         rootElement.contains(nativeSelection.anchorNode)
       ) {
-        domRect = nativeSelection.getRangeAt(0).getBoundingClientRect();
-      }
-
-      if (domRect) {
-        refs.setPositionReference({
-          getBoundingClientRect: () => domRect,
-        });
+        refs.setPositionReference(nativeSelection.getRangeAt(0));
       }
       setLastSelection(selection);
     } else if (!activeElement || activeElement.className !== 'link-input') {

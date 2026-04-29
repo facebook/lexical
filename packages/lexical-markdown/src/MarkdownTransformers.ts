@@ -242,32 +242,38 @@ export const codeFenceState = createState('mdCodeFence', {
   resetOnCopyNode: true,
 });
 
-export type MarkdownHardLineBreak = 'backslash' | 'spaces';
+export type MarkdownHardLineBreak = string;
 
 export const hardLineBreakState = createState('mdHardLineBreak', {
-  parse: (val): MarkdownHardLineBreak | null =>
-    val === 'backslash' || val === 'spaces' ? val : null,
+  parse: (val): MarkdownHardLineBreak | null => {
+    if (val === '\\') {
+      return val;
+    }
+    if (typeof val === 'string' && /^ {2,}$/.test(val)) {
+      return val;
+    }
+    return null;
+  },
+  resetOnCopyNode: true,
 });
 
-export function getMarkdownHardLineBreak(
+export function parseMarkdownHardLineBreak(
   line: string,
-): MarkdownHardLineBreak | null {
+): [string, MarkdownHardLineBreak] | null {
   if (line.endsWith('\\')) {
-    return 'backslash';
+    return [line.slice(0, -1), '\\'];
   }
-  if (/\S {2,}$/.test(line)) {
-    return 'spaces';
-  }
-  return null;
-}
 
-function removeMarkdownHardLineBreak(
-  line: string,
-  hardLineBreak: MarkdownHardLineBreak,
-): string {
-  return hardLineBreak === 'backslash'
-    ? line.slice(0, -1)
-    : line.replace(/ {2,}$/, '');
+  const spaces = line.match(/ {2,}$/);
+  if (spaces !== null) {
+    const marker = spaces[0];
+    const text = line.slice(0, -marker.length);
+    if (text !== '' && /\S$/.test(text)) {
+      return [text, marker];
+    }
+  }
+
+  return null;
 }
 
 export function $createMarkdownLineBreakNode(
@@ -278,13 +284,12 @@ export function $createMarkdownLineBreakNode(
 
   if ($isTextNode(lastChild)) {
     const lastText = lastChild.getTextContent();
-    const hardLineBreak = getMarkdownHardLineBreak(lastText);
+    const hardLineBreak = parseMarkdownHardLineBreak(lastText);
 
     if (hardLineBreak !== null) {
-      lastChild.setTextContent(
-        removeMarkdownHardLineBreak(lastText, hardLineBreak),
-      );
-      $setState(lineBreakNode, hardLineBreakState, hardLineBreak);
+      const [text, marker] = hardLineBreak;
+      lastChild.setTextContent(text);
+      $setState(lineBreakNode, hardLineBreakState, marker);
     }
   }
 
@@ -853,9 +858,9 @@ export function normalizeMarkdown(
     const line = rawLine.trimEnd();
     const lastLine = sanitizedLines[sanitizedLines.length - 1];
     const hardLineBreak =
-      i < lines.length - 1 ? getMarkdownHardLineBreak(rawLine) : null;
+      i < lines.length - 1 ? parseMarkdownHardLineBreak(rawLine) : null;
     const lastLineHasHardLineBreak =
-      lastLine !== undefined && getMarkdownHardLineBreak(lastLine) !== null;
+      lastLine !== undefined && parseMarkdownHardLineBreak(lastLine) !== null;
 
     // Code blocks of ```single line``` don't toggle the inCodeBlock flag
     if (CODE_SINGLE_LINE_REGEX.test(line)) {

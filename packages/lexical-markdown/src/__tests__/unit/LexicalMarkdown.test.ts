@@ -1494,6 +1494,11 @@ after`;
     expect(normalizeMarkdown(md, true)).toBe(md);
   });
 
+  it('preserves exact hard-break trailing spaces when merging adjacent lines', () => {
+    const md = ['foo   ', 'bar'].join('\n');
+    expect(normalizeMarkdown(md, true)).toBe(md);
+  });
+
   it('preserves backslash hard-breaks when merging adjacent lines', () => {
     const md = `foo\\
 bar`;
@@ -1797,12 +1802,20 @@ describe('markdown whitespace import (default mode)', () => {
     expectRoundTrip('foo  \nbar');
   });
 
+  it('preserves exact hard line break spaces in default mode', () => {
+    expectRoundTrip('foo   \nbar');
+  });
+
   it('preserves backslash hard line break in default mode', () => {
     expectRoundTrip('foo\\\nbar');
   });
 
   it('preserves two-space hard line break in merge-adjacent mode', () => {
     expectRoundTrip('foo  \nbar', true);
+  });
+
+  it('preserves exact hard line break spaces in merge-adjacent mode', () => {
+    expectRoundTrip('foo   \nbar', true);
   });
 
   it('preserves backslash hard line break in merge-adjacent mode', () => {

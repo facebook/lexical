@@ -477,11 +477,8 @@ function $exportChildren(
 function $exportLineBreak(node: LineBreakNode): string {
   const hardLineBreak = $getState(node, hardLineBreakState);
 
-  if (hardLineBreak === 'backslash') {
-    return '\\\n';
-  }
-  if (hardLineBreak === 'spaces') {
-    return '  \n';
+  if (hardLineBreak !== null) {
+    return hardLineBreak + '\n';
   }
   return '\n';
 }

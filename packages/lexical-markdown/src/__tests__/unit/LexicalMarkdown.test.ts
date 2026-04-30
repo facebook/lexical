@@ -28,7 +28,10 @@ import {
   $getState,
   $getTextPointCaret,
   $insertNodes,
+  $isElementNode,
+  $isLineBreakNode,
   $isRangeSelection,
+  $isTextNode,
   $setSelectionFromCaretRange,
   $setState,
   KEY_ENTER_COMMAND,
@@ -1754,6 +1757,48 @@ describe('markdown whitespace import (default mode)', () => {
     return parsed[1];
   }
 
+  function expectImportedHardLineBreakMarker(md: string, marker: string): void {
+    const editor = createTestEditor();
+
+    editor.update(
+      () =>
+        $convertFromMarkdownString(md, [
+          ...TRANSFORMERS,
+          HIGHLIGHT_TEXT_MATCH_IMPORT,
+        ]),
+      {discrete: true},
+    );
+
+    editor.getEditorState().read(() => {
+      const block = $getRoot().getFirstChildOrThrow();
+      assert($isElementNode(block), 'Expected an element block');
+      const lineBreakNode = block
+        .getChildren()
+        .find(child => $isLineBreakNode(child));
+
+      assert(lineBreakNode !== undefined, 'Expected a line break node');
+      expect(
+        block
+          .getChildren()
+          .filter($isTextNode)
+          .map(child => child.getTextContent()),
+      ).not.toContain(marker);
+      expect(block.getTextContent()).toBe('foo\nbar');
+      expect($getState(lineBreakNode, hardLineBreakState)).toBe(marker);
+    });
+
+    expect(
+      editor
+        .getEditorState()
+        .read(() =>
+          $convertToMarkdownString([
+            ...TRANSFORMERS,
+            HIGHLIGHT_TEXT_MATCH_IMPORT,
+          ]),
+        ),
+    ).toBe(md);
+  }
+
   it('preserves trailing whitespace on a standalone paragraph line (default mode)', () => {
     // A paragraph with trailing spaces, separated by an empty line from the next.
     const md = 'hello world   \n\nnext paragraph';
@@ -1817,6 +1862,62 @@ describe('markdown whitespace import (default mode)', () => {
 
   it('preserves backslash hard line break in default mode', () => {
     expectRoundTrip('foo\\\nbar');
+  });
+
+  it('stores a two-space hard line break marker after formatted text', () => {
+    expectImportedHardLineBreakMarker('**foo**  \nbar', '  ');
+  });
+
+  it('stores exact hard line break spaces after formatted text', () => {
+    expectImportedHardLineBreakMarker('**foo**   \nbar', '   ');
+  });
+
+  it('stores a two-space hard line break marker after a link', () => {
+    expectImportedHardLineBreakMarker(
+      '[foo](https://lexical.dev)  \nbar',
+      '  ',
+    );
+  });
+
+  it('does not infer a hard line break marker from spaces inside a link', () => {
+    const md = '[foo  ](https://lexical.dev)\nbar';
+    const editor = createTestEditor();
+
+    editor.update(
+      () =>
+        $convertFromMarkdownString(md, [
+          ...TRANSFORMERS,
+          HIGHLIGHT_TEXT_MATCH_IMPORT,
+        ]),
+      {discrete: true},
+    );
+
+    editor.getEditorState().read(() => {
+      const block = $getRoot().getFirstChildOrThrow();
+      assert($isElementNode(block), 'Expected an element block');
+      const lineBreakNode = block
+        .getChildren()
+        .find(child => $isLineBreakNode(child));
+
+      assert(lineBreakNode !== undefined, 'Expected a line break node');
+      expect(block.getTextContent()).toBe('foo  \nbar');
+      expect($getState(lineBreakNode, hardLineBreakState)).toBe('');
+    });
+
+    expect(
+      editor
+        .getEditorState()
+        .read(() =>
+          $convertToMarkdownString([
+            ...TRANSFORMERS,
+            HIGHLIGHT_TEXT_MATCH_IMPORT,
+          ]),
+        ),
+    ).toBe(md);
+  });
+
+  it('stores a two-space hard line break marker after formatted blockquote text', () => {
+    expectImportedHardLineBreakMarker('> **foo**  \n> bar', '  ');
   });
 
   it('preserves two-space hard line break in merge-adjacent mode', () => {

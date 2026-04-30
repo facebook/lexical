@@ -37,6 +37,7 @@ import {
   $createTextNode,
   $findMatchingParent,
   $getState,
+  $isLineBreakNode,
   $isTextNode,
   $setState,
   BaseSelection,
@@ -265,21 +266,60 @@ export function parseMarkdownHardLineBreak(
   return spaces ? [spaces[1], spaces[2]] : null;
 }
 
+function hasNonWhitespaceContentOnLine(
+  children: Array<LexicalNode>,
+  endIndex: number,
+): boolean {
+  for (let i = endIndex - 1; i >= 0; i--) {
+    if ($isLineBreakNode(children[i])) {
+      return false;
+    }
+    if (/\S/.test(children[i].getTextContent())) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function $extractMarkdownHardLineBreakMarker(
+  previousNode: ElementNode,
+): MarkdownHardLineBreak | null {
+  const children = previousNode.getChildren();
+  const lastChildIndex = children.length - 1;
+  const lastChild = children[lastChildIndex];
+
+  if (!$isTextNode(lastChild)) {
+    return null;
+  }
+
+  const lastText = lastChild.getTextContent();
+  const hardLineBreak = parseMarkdownHardLineBreak(lastText);
+
+  if (hardLineBreak !== null) {
+    const [text, marker] = hardLineBreak;
+    lastChild.setTextContent(text);
+    return marker;
+  }
+
+  if (
+    /^ {2,}$/.test(lastText) &&
+    hasNonWhitespaceContentOnLine(children, lastChildIndex)
+  ) {
+    lastChild.setTextContent('');
+    return lastText;
+  }
+
+  return null;
+}
+
 export function $createMarkdownLineBreakNode(
   previousNode: ElementNode,
 ): LineBreakNode {
   const lineBreakNode = $createLineBreakNode();
-  const lastChild = previousNode.getLastChild();
+  const hardLineBreak = $extractMarkdownHardLineBreakMarker(previousNode);
 
-  if ($isTextNode(lastChild)) {
-    const lastText = lastChild.getTextContent();
-    const hardLineBreak = parseMarkdownHardLineBreak(lastText);
-
-    if (hardLineBreak !== null) {
-      const [text, marker] = hardLineBreak;
-      lastChild.setTextContent(text);
-      $setState(lineBreakNode, hardLineBreakState, marker);
-    }
+  if (hardLineBreak !== null) {
+    $setState(lineBreakNode, hardLineBreakState, hardLineBreak);
   }
 
   return lineBreakNode;

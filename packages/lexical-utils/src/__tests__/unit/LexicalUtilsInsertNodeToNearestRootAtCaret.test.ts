@@ -219,9 +219,9 @@ const scenarios: Scenario[] = [
 const optionVariants: {
   options: SplitAtPointCaretNextOptions;
   splits: SplitFlags;
-}[] = [true, false].flatMap((first) =>
-  [true, false].flatMap((last) =>
-    [true, false].flatMap((removeEmptyDestination) => [
+}[] = [true, false].flatMap(first =>
+  [true, false].flatMap(last =>
+    [true, false].flatMap(removeEmptyDestination => [
       {
         options: {
           $shouldSplit: (_node, edge) =>

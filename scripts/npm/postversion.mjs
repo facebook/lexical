@@ -76,7 +76,7 @@ async function main() {
     'push',
     ...(process.env.DRY_RUN === '1' ? ['--dry-run'] : []),
     'origin',
-    ...refs.map((ref) => `+${ref}`),
+    ...refs.map(ref => `+${ref}`),
   ]);
   if (GITHUB_OUTPUT) {
     commands.push(

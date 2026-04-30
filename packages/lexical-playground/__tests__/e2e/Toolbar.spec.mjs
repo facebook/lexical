@@ -112,7 +112,7 @@ test.describe('Toolbar', () => {
           ignoreClasses: true,
           ignoreInlineStyles: true,
         },
-        (actualHtml) =>
+        actualHtml =>
           // flaky fix: remove the extra <p dir="auto"><br /></p> that appears occasionally in CI runs
           actualHtml.replace(
             html`

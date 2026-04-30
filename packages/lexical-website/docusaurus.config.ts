@@ -55,14 +55,14 @@ function buildLexicalWebpackAliases() {
         moduleExports.import.default,
         moduleExports.require.development,
         moduleExports.require.default,
-      ].flatMap((fn) => {
+      ].flatMap(fn => {
         if (!fn) {
           return [];
         }
         const rel = fn.replace(/^\.\//, '');
         return [pkg.resolve('dist', rel), pkg.resolve(rel)];
       });
-      const resolved = candidates.find((f) => fs.existsSync(f));
+      const resolved = candidates.find(f => fs.existsSync(f));
       if (!resolved) {
         throw new Error(
           `Missing dist file for ${name}. Run \`pnpm run build\` first.\n` +
@@ -153,7 +153,7 @@ const sidebarItemsGenerator: SidebarItemsGenerator = async ({
   const items = await defaultSidebarItemsGenerator(args);
   if (args.item.dirName === 'api') {
     return items
-      .map((sidebarItem) => {
+      .map(sidebarItem => {
         if (sidebarItem.type === 'doc' && sidebarItem.id in docLabels) {
           return {...sidebarItem, label: docLabels[sidebarItem.id]};
         } else if (sidebarItem.type !== 'category') {
@@ -221,7 +221,7 @@ const sidebarItemsGenerator: SidebarItemsGenerator = async ({
 
 const parseFrontMatter: NonNullable<
   Config['markdown']
->['parseFrontMatter'] = async (params) => {
+>['parseFrontMatter'] = async params => {
   const result = await params.defaultParseFrontMatter(params);
   if (params.filePath.endsWith('/docs/api/modules.md')) {
     Object.assign(result.frontMatter, {
@@ -247,10 +247,10 @@ const docusaurusPluginTypedocConfig = {
     ? []
     : packagesManager
         .getPublicPackages()
-        .flatMap((pkg) =>
+        .flatMap(pkg =>
           pkg
             .getExportedNpmModuleEntries()
-            .map((entry) =>
+            .map(entry =>
               path.relative(
                 __dirname,
                 pkg.resolve('src', entry.sourceFileName),
@@ -402,7 +402,7 @@ const config: Config = {
         ],
       },
     ],
-  ].filter((plugin) => plugin != null),
+  ].filter(plugin => plugin != null),
   presets: [
     [
       require.resolve('docusaurus-plugin-internaldocs-fb/docusaurus-preset'),
@@ -482,7 +482,7 @@ const config: Config = {
           position: 'right',
           to: DISCORD_URL,
         },
-      ].filter((item) => item != null),
+      ].filter(item => item != null),
       logo: {
         alt: 'Lexical',
         height: 12,

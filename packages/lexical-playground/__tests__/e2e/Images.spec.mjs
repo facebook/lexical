@@ -605,7 +605,7 @@ test.describe('Images', () => {
       positionStart: 'start',
     });
 
-    const lexicalSelection = await evaluate(page, (editor) => {
+    const lexicalSelection = await evaluate(page, editor => {
       return window.lexicalEditor._editorState._selection;
     });
     expect(lexicalSelection.anchor).toBeTruthy();

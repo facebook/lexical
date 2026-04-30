@@ -525,7 +525,7 @@ function onClick(event: PointerEvent, editor: LexicalEditor): void {
           if (anchorNode !== focusNode) {
             const parentNode = $findMatchingParent(
               anchorNode,
-              (node) => $isElementNode(node) && !node.isInline(),
+              node => $isElementNode(node) && !node.isInline(),
             );
             if ($isElementNode(parentNode)) {
               parentNode.select(0);

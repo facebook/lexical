@@ -54,7 +54,7 @@ const editorConfig = Object.freeze({
 });
 
 describe('LexicalListItemNode tests', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     test('ListItemNode.constructor', async () => {
       const {editor} = testEnv;
 

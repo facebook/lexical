@@ -359,7 +359,7 @@ function TableHoverActionsV2({
       setIsLeftVisible(false);
     };
 
-    return editor.registerRootListener((rootElement) => {
+    return editor.registerRootListener(rootElement => {
       if (rootElement) {
         rootElement.addEventListener('mouseleave', handleMouseLeave);
         return () =>
@@ -410,7 +410,7 @@ function TableHoverActionsV2({
   }, [canReorder, hoveredColumnIndex, hoveredTable]);
 
   useEffect(() => {
-    dropIndicatorCleanupRef.current.forEach((cleanup) => cleanup());
+    dropIndicatorCleanupRef.current.forEach(cleanup => cleanup());
     dropIndicatorCleanupRef.current = [];
     if (!hoveredTable || !canReorder) {
       return;
@@ -499,12 +499,12 @@ function TableHoverActionsV2({
         },
       });
 
-    dropIndicatorCleanupRef.current = Array.from(headerRow.cells).map((cell) =>
+    dropIndicatorCleanupRef.current = Array.from(headerRow.cells).map(cell =>
       registerDropTarget(cell),
     );
 
     return () => {
-      dropIndicatorCleanupRef.current.forEach((cleanup) => cleanup());
+      dropIndicatorCleanupRef.current.forEach(cleanup => cleanup());
       dropIndicatorCleanupRef.current = [];
       setDropIndicatorState(null);
     };
@@ -609,7 +609,7 @@ function TableHoverActionsV2({
   return (
     <>
       <div
-        ref={(node) => {
+        ref={node => {
           floatingElemRef.current = node;
           refs.setFloating(node);
         }}
@@ -647,7 +647,7 @@ function TableHoverActionsV2({
         />
       </div>
       <button
-        ref={(node) => {
+        ref={node => {
           leftFloatingElemRef.current = node;
           leftRefs.setFloating(node);
         }}

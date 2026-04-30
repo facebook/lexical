@@ -37,6 +37,7 @@ import {
   $isRangeSelection,
   $isRootOrShadowRoot,
   $rewindSiblingCaret,
+  $setDirectionFromDOM,
   buildImportMap,
   ElementNode,
   getStyleObjectFromCSS,
@@ -333,7 +334,7 @@ export class ListItemNode extends ElementNode {
     if (siblings.length !== 0) {
       const newListNode = $copyNode(listNode);
 
-      siblings.forEach((sibling) => newListNode.append(sibling));
+      siblings.forEach(sibling => newListNode.append(sibling));
 
       node.insertAfter(newListNode, restoreSelection);
     }
@@ -378,7 +379,7 @@ export class ListItemNode extends ElementNode {
   collapseAtStart(selection: RangeSelection): true {
     const paragraph = $createParagraphNode();
     const children = this.getChildren();
-    children.forEach((child) => paragraph.append(child));
+    children.forEach(child => paragraph.append(child));
     const listNode = this.getParentOrThrow();
     const listNodeParent = listNode.getParentOrThrow();
     const isIndented = $isListItemNode(listNodeParent);
@@ -570,7 +571,7 @@ function $setListItemThemeClassNames(
   if (nestedListItemClassName !== undefined) {
     const nestedListItemClasses = normalizeClassNames(nestedListItemClassName);
 
-    if (node.getChildren().some((child) => $isListNode(child))) {
+    if (node.getChildren().some(child => $isListNode(child))) {
       classesToAdd.push(...nestedListItemClasses);
     } else {
       classesToRemove.push(...nestedListItemClasses);
@@ -646,7 +647,7 @@ function $convertListItemElement(domNode: HTMLElement): DOMConversionOutput {
       : ariaCheckedAttr === 'false'
         ? false
         : undefined;
-  return {node: $createListItemNode(checked)};
+  return {node: $setDirectionFromDOM($createListItemNode(checked), domNode)};
 }
 
 function $convertCheckboxInput(domNode: Element): DOMConversionOutput {

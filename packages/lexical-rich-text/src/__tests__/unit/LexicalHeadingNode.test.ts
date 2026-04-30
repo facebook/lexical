@@ -36,7 +36,7 @@ const editorConfig = Object.freeze({
 });
 
 describe('LexicalHeadingNode tests', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     test('HeadingNode.constructor', async () => {
       const {editor} = testEnv;
       await editor.update(() => {

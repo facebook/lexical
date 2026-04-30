@@ -61,7 +61,7 @@ const packageDocsPlugin = async function (context, options) {
           `custom_edit_url: ${editUrl.replace(/\/$/, '')}/${folderName}/README.md`,
         ]
           .filter(Boolean)
-          .map((s) => s.trim())
+          .map(s => s.trim())
           .join('\n');
         fs.writeFileSync(
           targetPath,

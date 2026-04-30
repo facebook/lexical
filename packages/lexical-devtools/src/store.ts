@@ -35,11 +35,11 @@ export interface ExtensionState {
 }
 
 export const useExtensionStore = create<ExtensionState>()(
-  subscribeWithSelector((set) => ({
+  subscribeWithSelector(set => ({
     isSelecting: {},
     lexicalState: {},
     markTabAsRestricted: (tabID: number) =>
-      set((state) => ({
+      set(state => ({
         lexicalState: {
           ...state.lexicalState,
           [tabID]: null,
@@ -47,14 +47,14 @@ export const useExtensionStore = create<ExtensionState>()(
       })),
     selectedEditorKey: {},
     setIsSelecting: (tabID: number, isSelecting: boolean) =>
-      set((state) => ({
+      set(state => ({
         isSelecting: {
           ...state.isSelecting,
           [tabID]: isSelecting,
         },
       })),
     setSelectedEditorKey: (tabID: number, editorKey: string | null) =>
-      set((state) => ({
+      set(state => ({
         selectedEditorKey: {
           ...state.selectedEditorKey,
           [tabID]: editorKey,
@@ -64,7 +64,7 @@ export const useExtensionStore = create<ExtensionState>()(
       id: number,
       states: {[editorKey: string]: SerializedRawEditorState},
     ) =>
-      set((state) => ({
+      set(state => ({
         lexicalState: {
           ...state.lexicalState,
           [id]: states,

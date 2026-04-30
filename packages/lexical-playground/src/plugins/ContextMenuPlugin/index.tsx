@@ -132,7 +132,7 @@ export default function ContextMenuPlugin(): JSX.Element {
             ancestorNodeWithRootAsParent?.remove();
           } else if ($isNodeSelection(selection)) {
             const selectedNodes = selection.getNodes();
-            selectedNodes.forEach((node) => {
+            selectedNodes.forEach(node => {
               if ($isDecoratorNode(node)) {
                 node.remove();
               }

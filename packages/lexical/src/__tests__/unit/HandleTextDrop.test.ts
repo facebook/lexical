@@ -87,7 +87,7 @@ function $markActiveSelectionAsDragSource(
 }
 
 describe('$handleTextDrop', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     beforeEach(() => {
       caretFromPointState.current = () => null;
     });
@@ -361,7 +361,7 @@ describe('$handleTextDrop', () => {
         expect(topLevelChildren.length).toBe(2);
 
         const allDecorators = topLevelChildren
-          .flatMap((c) =>
+          .flatMap(c =>
             'getChildren' in c && typeof c.getChildren === 'function'
               ? c.getChildren()
               : [],
@@ -519,7 +519,7 @@ describe('$handleRichTextDrop across editors', () => {
     const observedDispatches: InputEvent[] = [];
     sourceContainer.addEventListener(
       'beforeinput',
-      (e) => observedDispatches.push(e as InputEvent),
+      e => observedDispatches.push(e as InputEvent),
       true,
     );
 

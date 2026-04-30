@@ -179,12 +179,12 @@ export default function AutocompletePlugin(): JSX.Element | null {
         $clearSuggestion();
         searchPromise = query(match);
         searchPromise.promise
-          .then((newSuggestion) => {
+          .then(newSuggestion => {
             if (searchPromise !== null) {
               updateAsyncSuggestion(searchPromise, newSuggestion);
             }
           })
-          .catch((e) => {
+          .catch(e => {
             if (e !== 'Dismissed') {
               console.error(e);
             }
@@ -288,7 +288,7 @@ class AutocompleteServer {
           ? String.fromCharCode(char0 + 32) + searchText.substring(1)
           : searchText;
         const match = this.DATABASE.find(
-          (dictionaryWord) =>
+          dictionaryWord =>
             dictionaryWord.startsWith(caseInsensitiveSearchText) ?? null,
         );
         if (match === undefined) {

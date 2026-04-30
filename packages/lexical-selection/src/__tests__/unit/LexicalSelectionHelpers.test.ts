@@ -140,7 +140,7 @@ describe('LexicalSelectionHelpers tests', () => {
       });
 
       // getTextContent
-      setupTestCase((selection) => {
+      setupTestCase(selection => {
         expect(selection.getTextContent()).toEqual('');
       });
 
@@ -189,7 +189,7 @@ describe('LexicalSelectionHelpers tests', () => {
       });
 
       // insertParagraph
-      setupTestCase((selection) => {
+      setupTestCase(selection => {
         selection.insertParagraph();
 
         expect(selection.anchor).toEqual(
@@ -735,7 +735,7 @@ describe('LexicalSelectionHelpers tests', () => {
       });
 
       // getTextContent
-      setupTestCase((selection) => {
+      setupTestCase(selection => {
         expect(selection.getTextContent()).toEqual('');
       });
 
@@ -888,7 +888,7 @@ describe('LexicalSelectionHelpers tests', () => {
       });
 
       // getTextContent
-      setupTestCase((selection) => {
+      setupTestCase(selection => {
         expect(selection.getTextContent()).toEqual('');
       });
 
@@ -1041,7 +1041,7 @@ describe('LexicalSelectionHelpers tests', () => {
       });
 
       // getTextContent
-      setupTestCase((selection) => {
+      setupTestCase(selection => {
         expect(selection.getTextContent()).toEqual('');
       });
 
@@ -1344,7 +1344,7 @@ describe('LexicalSelectionHelpers tests', () => {
       });
 
       // getTextContent
-      setupTestCase((selection) => {
+      setupTestCase(selection => {
         expect(selection.getTextContent()).toEqual('a');
       });
 
@@ -1393,7 +1393,7 @@ describe('LexicalSelectionHelpers tests', () => {
       });
 
       // insertParagraph
-      setupTestCase((selection) => {
+      setupTestCase(selection => {
         selection.insertParagraph();
 
         expect(selection.anchor).toEqual(
@@ -1513,12 +1513,12 @@ describe('LexicalSelectionHelpers tests', () => {
       };
 
       // getNodes
-      setupTestCase((selection) => {
+      setupTestCase(selection => {
         expect(selection.getNodes()).toEqual([$getNodeByKey('a')]);
       });
 
       // getTextContent
-      setupTestCase((selection) => {
+      setupTestCase(selection => {
         expect(selection.getTextContent()).toEqual('a');
       });
 
@@ -1684,7 +1684,7 @@ describe('LexicalSelectionHelpers tests', () => {
       });
 
       // getTextContent
-      setupTestCase((selection) => {
+      setupTestCase(selection => {
         expect(selection.getTextContent()).toEqual('abc');
       });
 
@@ -3185,7 +3185,7 @@ describe('$patchStyleText', () => {
 
   test.each<TextModeType>(['token', 'segmented'])(
     'can update style of text node that is in %s mode',
-    async (mode) => {
+    async mode => {
       const editor = createTestEditor();
 
       const element = document.createElement('div');

@@ -71,7 +71,7 @@ function TagList({
 }) {
   return (
     <ul className={clsx('clean-list', styles.tagList)}>
-      {Object.keys(allTags).map((tag) => {
+      {Object.keys(allTags).map(tag => {
         return (
           <TagListItem
             key={tag}

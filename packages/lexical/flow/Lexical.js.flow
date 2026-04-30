@@ -138,12 +138,17 @@ declare class DequeSet<T> {
   addFront(v: T): this;
   delete(v: T): boolean;
   toArray(): T[];
-  toReadonlyArray(): $ReadOnlyArray<T>;
+  toReadonlyArray(): ReadonlyArray<T>;
   @@iterator(): Iterator<T>;
 }
-type Tuple5<T> = $ReadOnly<[T, T, T, T, T]>;
+type Tuple5<T> = Readonly<[T, T, T, T, T]>;
 // $FlowFixMe[unclear-type]
-type Commands = Map<LexicalCommand<any>, Tuple5<DequeSet<CommandListener<any>>>>;
+type Commands = Map<
+  // $FlowFixMe[unclear-type]
+  LexicalCommand<any>,
+  // $FlowFixMe[unclear-type]
+  Tuple5<DequeSet<CommandListener<any>>>,
+>;
 type RegisteredNodes = Map<string, RegisteredNode>;
 type RegisteredNode = {
   klass: Class<LexicalNode>,
@@ -158,23 +163,23 @@ type DOMConversionCache = Map<
 
 export type EditorDOMRenderConfig = {
   /** @internal @experimental */
-  $createDOM: <T: LexicalNode>(
+  $createDOM: <T extends LexicalNode>(
     node: T,
     editor: LexicalEditor,
   ) => HTMLElement;
   /** @internal @experimental */
-  $getDOMSlot: <T: LexicalNode>(
+  $getDOMSlot: <T extends LexicalNode>(
     node: T,
     dom: HTMLElement,
     editor: LexicalEditor,
   ) => ElementDOMSlot<HTMLElement>;
   /** @internal @experimental */
-  $exportDOM: <T: LexicalNode>(
+  $exportDOM: <T extends LexicalNode>(
     node: T,
     editor: LexicalEditor,
   ) => DOMExportOutput;
   /** @internal @experimental */
-  $extractWithChild: <T: LexicalNode>(
+  $extractWithChild: <T extends LexicalNode>(
     node: T,
     childNode: LexicalNode,
     selection: null | BaseSelection,
@@ -182,20 +187,20 @@ export type EditorDOMRenderConfig = {
     editor: LexicalEditor,
   ) => boolean;
   /** @internal @experimental */
-  $updateDOM: <T: LexicalNode>(
+  $updateDOM: <T extends LexicalNode>(
     nextNode: T,
     prevNode: T,
     dom: HTMLElement,
     editor: LexicalEditor,
   ) => boolean;
   /** @internal @experimental */
-  $shouldInclude: <T: LexicalNode>(
+  $shouldInclude: <T extends LexicalNode>(
     node: T,
     selection: null | BaseSelection,
     editor: LexicalEditor,
   ) => boolean;
   /** @internal @experimental */
-  $shouldExclude: <T: LexicalNode>(
+  $shouldExclude: <T extends LexicalNode>(
     node: T,
     selection: null | BaseSelection,
     editor: LexicalEditor,

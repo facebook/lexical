@@ -47,11 +47,11 @@ export interface PagesConfig {
 }
 
 export const PagesExtension = defineExtension({
-  build: (editor) => {
+  build: editor => {
     const getPageSetup = () => editor.getEditorState().read($getPageSetup);
 
     return {
-      pageSetup: watchedSignal(getPageSetup, (pageSetupSignal) =>
+      pageSetup: watchedSignal(getPageSetup, pageSetupSignal =>
         editor.registerMutationListener(RootNode, () => {
           pageSetupSignal.value = getPageSetup();
         }),
@@ -65,7 +65,7 @@ export const PagesExtension = defineExtension({
   dependencies: [PageBreakExtension],
   name: '@lexical/playground/Pages',
   nodes: () => [PageNode, PageContentNode],
-  register: (editor) => {
+  register: editor => {
     let rafId: number | null = null;
     let previousPageKey: NodeKey | null = null;
     const fixedPageHeights = new Map<NodeKey, number>();
@@ -164,7 +164,7 @@ export const PagesExtension = defineExtension({
       const children = contentNode.getChildren();
       const childNodes = Array.from(contentElement.childNodes);
       if (children.length !== childNodes.length) {
-        childNodes.forEach((childNode) => childNode.remove());
+        childNodes.forEach(childNode => childNode.remove());
         contentNode.reconcileObservedMutation(contentElement, editor);
         return $getOverflowingChildren(node);
       }
@@ -222,7 +222,7 @@ export const PagesExtension = defineExtension({
         const nextContent = nextSibling.getContentNode();
         const nextPageFirstChild = nextContent.getFirstChild();
         if (!nextPageFirstChild) return;
-        overflowingChildren.forEach((child) => {
+        overflowingChildren.forEach(child => {
           nextPageFirstChild.insertBefore(child);
         });
       } else {
@@ -441,7 +441,7 @@ export const PagesExtension = defineExtension({
           for (const child of children) {
             if ($isPageNode(child)) {
               const contentNode = child.getContentNode();
-              contentNode.getChildren().forEach((c) => {
+              contentNode.getChildren().forEach(c => {
                 child.insertBefore(c);
               });
               child.remove();
@@ -452,7 +452,7 @@ export const PagesExtension = defineExtension({
       );
     };
 
-    return editor.registerRootListener((rootElement) => {
+    return editor.registerRootListener(rootElement => {
       if (!rootElement) {
         return;
       }
@@ -461,7 +461,7 @@ export const PagesExtension = defineExtension({
 
         // Watches the focused page's content element for size changes
         // and marks the affected page (and its predecessor) for re-measurement.
-        const pageObserver = new ResizeObserver((entries) => {
+        const pageObserver = new ResizeObserver(entries => {
           const pageContent = entries[0].target as HTMLElement;
           editor.read(() => {
             const pageContentNode = $getNearestNodeFromDOMNode(pageContent);
@@ -491,10 +491,10 @@ export const PagesExtension = defineExtension({
           const isInvalid =
             !children.some($isPageNode) ||
             children.some(
-              (child) => !$isPageNode(child) && !$isPageBreakNode(child),
+              child => !$isPageNode(child) && !$isPageBreakNode(child),
             ) ||
             children.some(
-              (child) =>
+              child =>
                 $isPageNode(child) &&
                 child.getContentNode().getChildren().some($isPageBreakNode),
             );
@@ -536,7 +536,7 @@ export const PagesExtension = defineExtension({
         // schedule measurement to fix overflow/underflow before next paint.
         const removePageTransform = editor.registerNodeTransform(
           PageNode,
-          (pageNode) => {
+          pageNode => {
             $ensurePageNodeChildren(pageNode);
             if (isMarkedForMeasurement(pageNode)) return;
             markForMeasurement(pageNode);
@@ -553,7 +553,7 @@ export const PagesExtension = defineExtension({
         // re-measurement so overflow/underflow is corrected.
         const removePageContentTransform = editor.registerNodeTransform(
           PageContentNode,
-          (node) => {
+          node => {
             const pageNode = node.getPageNode();
             if (isMarkedForMeasurement(pageNode)) return;
             markForMeasurement(pageNode);

@@ -9,7 +9,7 @@
 import {spawn} from 'node:child_process';
 
 async function runFlow(renderer, args) {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     let cmd = import.meta.dirname + '/../node_modules/.bin/flow';
     if (process.platform === 'win32') {
       cmd = cmd.replace(/\//g, '\\') + '.cmd';

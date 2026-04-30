@@ -41,6 +41,7 @@ import {
   KEY_BACKSPACE_COMMAND,
   KEY_DELETE_COMMAND,
   KEY_ENTER_COMMAND,
+  KEY_ESCAPE_COMMAND,
   PASTE_COMMAND,
   PASTE_TAG,
   REMOVE_TEXT_COMMAND,
@@ -409,6 +410,18 @@ export function registerPlainText(editor: LexicalEditor): () => void {
         if (!selection.isCollapsed() && event.dataTransfer !== null) {
           $writeDragSourceToDataTransfer(event.dataTransfer, editor);
         }
+        return true;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    ),
+    editor.registerCommand(
+      KEY_ESCAPE_COMMAND,
+      () => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) {
+          return false;
+        }
+        editor.blur();
         return true;
       },
       COMMAND_PRIORITY_EDITOR,

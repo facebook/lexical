@@ -611,10 +611,7 @@ function $maybeMoveSelectionPastTrailingAcceptanceBoundary(
           ? '\t'
           : null;
 
-  if (
-    characterToSearchFor == null ||
-    insertedText.endsWith(characterToSearchFor)
-  ) {
+  if (characterToSearchFor == null) {
     return;
   }
 

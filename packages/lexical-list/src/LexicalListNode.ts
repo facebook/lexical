@@ -312,7 +312,7 @@ function $normalizeChildren(nodes: Array<LexicalNode>): Array<ListItemNode> {
     } else {
       const found = nodes.find($isListItemNode);
       const $createListItem = found ? () => $copyNode(found) : undefined;
-      normalizedListItems.push($wrapInListItem(node, exampleListItem));
+      normalizedListItems.push($wrapInListItem(node, $createListItem));
     }
   }
   return normalizedListItems;

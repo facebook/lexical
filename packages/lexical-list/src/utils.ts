@@ -194,15 +194,14 @@ export function $removeHighestEmptyListParent(
 /**
  * Wraps a node into a ListItemNode.
  * @param node - The node to be wrapped into a ListItemNode
- * @param listItemWrapper — The item that the node wraps into.
- * By default this is ListItemNode, but can be overridden by a subclass
+ * @param $createWrapper — The function that creates an element to wrap a node in
  * @returns The ListItemNode which the passed node is wrapped in.
  */
 export function $wrapInListItem(
   node: LexicalNode,
-  listItemWrapper: ListItemNode = $createListItemNode(),
+  $createWrapper: () => ListItemNode = $createListItemNode,
 ): ListItemNode {
-  return listItemWrapper.append(node);
+  return $createWrapper().append(node);
 }
 
 /**

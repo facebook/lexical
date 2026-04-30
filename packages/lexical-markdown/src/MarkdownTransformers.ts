@@ -245,14 +245,11 @@ export const codeFenceState = createState('mdCodeFence', {
 export type MarkdownHardLineBreak = string;
 
 export const hardLineBreakState = createState('mdHardLineBreak', {
-  parse: (val): MarkdownHardLineBreak | null => {
-    if (val === '\\') {
+  parse: (val): MarkdownHardLineBreak => {
+    if (typeof val === 'string' && /^(\\| {2,})$/.test(val)) {
       return val;
     }
-    if (typeof val === 'string' && /^ {2,}$/.test(val)) {
-      return val;
-    }
-    return null;
+    return '';
   },
   resetOnCopyNode: true,
 });
@@ -264,16 +261,8 @@ export function parseMarkdownHardLineBreak(
     return [line.slice(0, -1), '\\'];
   }
 
-  const spaces = line.match(/ {2,}$/);
-  if (spaces !== null) {
-    const marker = spaces[0];
-    const text = line.slice(0, -marker.length);
-    if (text !== '' && /\S$/.test(text)) {
-      return [text, marker];
-    }
-  }
-
-  return null;
+  const spaces = line.match(/^(.*?\S)( {2,})$/);
+  return spaces ? [spaces[1], spaces[2]] : null;
 }
 
 export function $createMarkdownLineBreakNode(

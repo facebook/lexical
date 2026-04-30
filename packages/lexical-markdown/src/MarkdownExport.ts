@@ -475,12 +475,7 @@ function $exportChildren(
 }
 
 function $exportLineBreak(node: LineBreakNode): string {
-  const hardLineBreak = $getState(node, hardLineBreakState);
-
-  if (hardLineBreak !== null) {
-    return hardLineBreak + '\n';
-  }
-  return '\n';
+  return $getState(node, hardLineBreakState) + '\n';
 }
 
 function exportTextFormat(

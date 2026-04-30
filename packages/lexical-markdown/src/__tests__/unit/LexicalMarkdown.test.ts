@@ -33,7 +33,7 @@ import {
   $setState,
   KEY_ENTER_COMMAND,
 } from 'lexical';
-import {describe, expect, it} from 'vitest';
+import {assert, describe, expect, it} from 'vitest';
 
 import {
   $convertFromMarkdownString,
@@ -1750,9 +1750,7 @@ describe('markdown whitespace import (default mode)', () => {
 
   function getHardLineBreakMarker(line: string): string {
     const parsed = parseMarkdownHardLineBreak(line);
-    if (parsed === null) {
-      throw new Error('Expected a hard line break marker');
-    }
+    assert(parsed !== null, 'Expected a hard line break marker');
     return parsed[1];
   }
 
@@ -1889,7 +1887,7 @@ describe('markdown whitespace import (default mode)', () => {
 
         expect($getState(lineBreakNode, hardLineBreakState)).toBe('   ');
         const copy = $copyNode(lineBreakNode);
-        expect($getState(copy, hardLineBreakState)).toBe(null);
+        expect($getState(copy, hardLineBreakState)).toBe('');
         expect($getState(lineBreakNode, hardLineBreakState)).toBe('   ');
       },
       {discrete: true},

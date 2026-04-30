@@ -37,7 +37,7 @@ type Equal<X, Y> =
     : false;
 
 const numberState = createState('numberState', {
-  parse: (v) => (typeof v === 'number' ? v : 0),
+  parse: v => (typeof v === 'number' ? v : 0),
 });
 const boolState = createState('boolState', {parse: Boolean});
 class StateNode extends TestNode {
@@ -116,7 +116,7 @@ function $createStateNode() {
 
 describe('LexicalNode state', () => {
   initializeUnitTest(
-    (testEnv) => {
+    testEnv => {
       let root: RootNode;
 
       beforeEach(async () => {
@@ -128,7 +128,7 @@ describe('LexicalNode state', () => {
 
       test(`state.$set() and state.$get() need to be inside an update`, async () => {
         const stringState = createState('stringState', {
-          parse: (value) => (typeof value === 'string' ? value : ''),
+          parse: value => (typeof value === 'string' ? value : ''),
         });
         const $fn = () => {
           $setState(root, stringState, 'hello');
@@ -157,7 +157,7 @@ describe('LexicalNode state', () => {
 
       test(`getState and setState`, async () => {
         const stringState = createState('stringState', {
-          parse: (value) => (typeof value === 'string' ? value : ''),
+          parse: value => (typeof value === 'string' ? value : ''),
         });
         const {editor} = testEnv;
         editor.update(() => {
@@ -168,7 +168,7 @@ describe('LexicalNode state', () => {
           expect($getState(root, stringState)).toBe('hello');
 
           const maybeStringState = createState('maybeStringState', {
-            parse: (value) => (typeof value === 'string' ? value : undefined),
+            parse: value => (typeof value === 'string' ? value : undefined),
           });
           const maybeStringValue = $getState(root, maybeStringState);
           type _Test2 = Expect<
@@ -202,7 +202,7 @@ describe('LexicalNode state', () => {
         const {editor} = testEnv;
         editor.update(
           () => {
-            const k0 = createState('foo', {parse: (v) => !!v});
+            const k0 = createState('foo', {parse: v => !!v});
             const k1 = createState('foo', {parse: () => 'foo'});
             expect($getState(root, k0)).toBe(false);
             $setState(root, k0, true);
@@ -226,7 +226,7 @@ describe('LexicalNode state', () => {
           expect(stateNode.getNumber()).toBe(0);
           stateNode.setNumber(1);
           expect(stateNode.getNumber()).toBe(1);
-          stateNode.setNumber((n) => n + 1);
+          stateNode.setNumber(n => n + 1);
           expect(stateNode.getNumber()).toBe(2);
           $setState(stateNode, boolState, true);
           expect(stateNode.exportJSON()).toMatchObject({
@@ -270,7 +270,7 @@ describe('LexicalNode state', () => {
         const {editor} = testEnv;
         editor.update(() => {
           const indentState = createState('indent', {
-            parse: (value) => (typeof value === 'number' ? value : 0),
+            parse: value => (typeof value === 'number' ? value : 0),
           });
           const paragraph = $createParagraphNode();
           expect($getState(paragraph, indentState)).toBe(0);
@@ -287,7 +287,7 @@ describe('LexicalNode state', () => {
           expect(json3).not.toHaveProperty(NODE_STATE_KEY);
 
           const foo = createState('foo', {
-            parse: (value) => (typeof value === 'string' ? value : ''),
+            parse: value => (typeof value === 'string' ? value : ''),
           });
           $setState(paragraph, foo, 'fooValue');
           const json4 = paragraph.exportJSON();
@@ -306,7 +306,7 @@ describe('LexicalNode state', () => {
         editor.update(() => {
           const paragraph = $createParagraphNode();
           const objectState = createState('object', {
-            parse: (value) =>
+            parse: value =>
               (value as TestObject) || {
                 bar: 0,
                 foo: '',
@@ -339,7 +339,7 @@ describe('LexicalNode state', () => {
         let v0: RootNode;
         let v1: RootNode;
         const vk = createState('vk', {
-          parse: (v) => (typeof v === 'number' ? v : null),
+          parse: v => (typeof v === 'number' ? v : null),
         });
         editor.update(
           () => {
@@ -430,7 +430,7 @@ describe('LexicalNode state', () => {
         test('TextNode merging only with equivalent state', () => {
           const {editor} = testEnv;
           const classNameState = createState('className', {
-            parse: (v) => (typeof v === 'string' ? v : ''),
+            parse: v => (typeof v === 'string' ? v : ''),
           });
           const $createTextWithClassName = (className: string) =>
             $setState($createTextNode(className), classNameState, className);
@@ -456,9 +456,9 @@ describe('LexicalNode state', () => {
             const textNodes = $getRoot().getAllTextNodes();
             expect(textNodes).toHaveLength(6);
             expect(
-              textNodes.map((node) => $getState(node, classNameState)),
+              textNodes.map(node => $getState(node, classNameState)),
             ).toEqual(['red', '', 'red', 'blue', 'red', 'blue']);
-            expect(textNodes.map((node) => node.getTextContent())).toEqual([
+            expect(textNodes.map(node => node.getTextContent())).toEqual([
               'red',
               'none!',
               'red',
@@ -480,9 +480,9 @@ describe('LexicalNode state', () => {
             const textNodes = $getRoot().getAllTextNodes();
             expect(textNodes).toHaveLength(4);
             expect(
-              textNodes.map((node) => $getState(node, classNameState)),
+              textNodes.map(node => $getState(node, classNameState)),
             ).toEqual(['red', 'blue', 'red', 'blue']);
-            expect(textNodes.map((node) => node.getTextContent())).toEqual([
+            expect(textNodes.map(node => node.getTextContent())).toEqual([
               'rednone!red',
               'blueblue',
               'red',
@@ -500,7 +500,7 @@ describe('LexicalNode state', () => {
           let v4!: RootNode;
           let v5!: RootNode;
           const vk = createState('vk', {
-            parse: (v) => (typeof v === 'number' ? v : null),
+            parse: v => (typeof v === 'number' ? v : null),
           });
           editor.update(
             () => {
@@ -590,7 +590,7 @@ describe('LexicalNode state', () => {
         test('state with resetOnCopyNode: true is reset when using $copyNode', () => {
           const {editor} = testEnv;
           const resetState = createState('resetState', {
-            parse: (v) => (typeof v === 'number' ? v : 0),
+            parse: v => (typeof v === 'number' ? v : 0),
             resetOnCopyNode: true,
           });
           editor.update(
@@ -610,7 +610,7 @@ describe('LexicalNode state', () => {
         test('state with resetOnCopyNode: false is preserved when using $copyNode', () => {
           const {editor} = testEnv;
           const persistState = createState('persistState', {
-            parse: (v) => (typeof v === 'number' ? v : 0),
+            parse: v => (typeof v === 'number' ? v : 0),
             resetOnCopyNode: false,
           });
           editor.update(
@@ -630,7 +630,7 @@ describe('LexicalNode state', () => {
         test('state without resetOnCopyNode option is preserved when using $copyNode', () => {
           const {editor} = testEnv;
           const defaultState = createState('defaultState', {
-            parse: (v) => (typeof v === 'number' ? v : 0),
+            parse: v => (typeof v === 'number' ? v : 0),
           });
           editor.update(
             () => {
@@ -649,15 +649,15 @@ describe('LexicalNode state', () => {
         test('multiple states with different resetOnCopyNode configurations', () => {
           const {editor} = testEnv;
           const resetState = createState('resetState', {
-            parse: (v) => (typeof v === 'number' ? v : 0),
+            parse: v => (typeof v === 'number' ? v : 0),
             resetOnCopyNode: true,
           });
           const persistState = createState('persistState', {
-            parse: (v) => (typeof v === 'string' ? v : ''),
+            parse: v => (typeof v === 'string' ? v : ''),
             resetOnCopyNode: false,
           });
           const defaultState = createState('defaultState', {
-            parse: (v) => (typeof v === 'boolean' ? v : false),
+            parse: v => (typeof v === 'boolean' ? v : false),
           });
 
           editor.update(

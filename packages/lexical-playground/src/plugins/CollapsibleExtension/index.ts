@@ -113,12 +113,12 @@ export const CollapsibleExtension = defineExtension({
     CollapsibleTitleNode,
     CollapsibleContentNode,
   ],
-  register: (editor) =>
+  register: editor =>
     mergeRegister(
       // Structure enforcing transformers for each node type. In case nesting structure is not
       // "Container > Title + Content" it'll unwrap nodes and convert it back
       // to regular content.
-      editor.registerNodeTransform(CollapsibleContentNode, (node) => {
+      editor.registerNodeTransform(CollapsibleContentNode, node => {
         const parent = node.getParent();
         if (!$isCollapsibleContainerNode(parent)) {
           const children = node.getChildren();
@@ -129,7 +129,7 @@ export const CollapsibleExtension = defineExtension({
         }
       }),
 
-      editor.registerNodeTransform(CollapsibleTitleNode, (node) => {
+      editor.registerNodeTransform(CollapsibleTitleNode, node => {
         const parent = node.getParent();
         if (!$isCollapsibleContainerNode(parent)) {
           node.replace($createParagraphNode().append(...node.getChildren()));
@@ -137,7 +137,7 @@ export const CollapsibleExtension = defineExtension({
         }
       }),
 
-      editor.registerNodeTransform(CollapsibleContainerNode, (node) => {
+      editor.registerNodeTransform(CollapsibleContainerNode, node => {
         const children = node.getChildren();
         if (
           children.length !== 2 ||
@@ -191,7 +191,7 @@ export const CollapsibleExtension = defineExtension({
           if ($isRangeSelection(selection)) {
             const titleNode = $findMatchingParent(
               selection.anchor.getNode(),
-              (node) => $isCollapsibleTitleNode(node),
+              node => $isCollapsibleTitleNode(node),
             );
 
             if ($isCollapsibleTitleNode(titleNode)) {

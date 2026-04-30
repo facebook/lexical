@@ -57,7 +57,7 @@ export function loadCodeLanguage(
   const langId = diffedLanguage ? diffedLanguage : language;
   if (!isCodeLanguageLoaded(langId)) {
     const languageInfo = bundledLanguagesInfo.find(
-      (desc) =>
+      desc =>
         desc.id === langId || (desc.aliases && desc.aliases.includes(langId)),
     );
     if (languageInfo) {
@@ -100,7 +100,7 @@ export function loadCodeTheme(
   codeNodeKey?: NodeKey,
 ) {
   if (!isCodeThemeLoaded(theme)) {
-    const themeInfo = bundledThemesInfo.find((info) => info.id === theme);
+    const themeInfo = bundledThemesInfo.find(info => info.id === theme);
     if (themeInfo) {
       return shiki.loadTheme(themeInfo.import()).then(() => {
         if (editor && codeNodeKey) {
@@ -117,16 +117,16 @@ export function loadCodeTheme(
 }
 
 export function getCodeLanguageOptions(): [string, string][] {
-  return bundledLanguagesInfo.map((i) => [i.id, i.name]);
+  return bundledLanguagesInfo.map(i => [i.id, i.name]);
 }
 export function getCodeThemeOptions(): [string, string][] {
-  return bundledThemesInfo.map((i) => [i.id, i.displayName]);
+  return bundledThemesInfo.map(i => [i.id, i.displayName]);
 }
 
 export function normalizeCodeLanguage(language: string): string {
   const langId = language;
   const languageInfo = bundledLanguagesInfo.find(
-    (desc) =>
+    desc =>
       desc.id === langId || (desc.aliases && desc.aliases.includes(langId)),
   );
   if (languageInfo) {

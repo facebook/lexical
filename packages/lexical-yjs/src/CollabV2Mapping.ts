@@ -49,7 +49,7 @@ export class CollabV2Mapping {
       }
       this._sharedTypeToNodeKeys.set(
         sharedType,
-        node.map((n) => n.getKey()),
+        node.map(n => n.getKey()),
       );
       for (const n of node) {
         this._nodeMap.set(n.getKey(), n);
@@ -74,7 +74,7 @@ export class CollabV2Mapping {
     }
     if (sharedType instanceof XmlText) {
       const arr = Array.from(
-        nodes.map((nodeKey) => this._nodeMap.get(nodeKey)!),
+        nodes.map(nodeKey => this._nodeMap.get(nodeKey)!),
       ) as Array<TextNode>;
       return arr.length > 0 ? arr : undefined;
     }

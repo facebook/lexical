@@ -12,7 +12,12 @@ import {buildEditorFromExtensions} from '@lexical/extension';
 import {createHeadlessEditor} from '@lexical/headless';
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
 import {LinkNode} from '@lexical/link';
-import {ListItemNode, ListNode} from '@lexical/list';
+import {
+  $createListItemNode,
+  $createListNode,
+  ListItemNode,
+  ListNode,
+} from '@lexical/list';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {JSDOM} from 'jsdom';
 import {
@@ -20,6 +25,7 @@ import {
   $createRangeSelection,
   $createTextNode,
   $getRoot,
+  $isElementNode,
   isHTMLElement,
   ParagraphNode,
   RangeSelection,
@@ -40,6 +46,30 @@ describe('HTML', () => {
         $getRoot().append($createParagraphNode());
       },
       name: 'Empty editor state',
+    },
+    {
+      // #7207: nested list should be inside parent <li>, not a separate <li>
+      html: '<ol><li value="1"><span style="white-space: pre-wrap;">Canada</span></li><li value="2"><span style="white-space: pre-wrap;">USA</span><ol><li value="1"><span style="white-space: pre-wrap;">LA</span></li><li value="2"><span style="white-space: pre-wrap;">TX</span></li></ol></li><li value="3"><span style="white-space: pre-wrap;">Germany</span></li></ol>',
+      initializeEditorState: () => {
+        const list = $createListNode('number');
+        const item1 = $createListItemNode();
+        item1.append($createTextNode('Canada'));
+        const item2 = $createListItemNode();
+        item2.append($createTextNode('USA'));
+        const nestedWrapper = $createListItemNode();
+        const nestedList = $createListNode('number');
+        const nested1 = $createListItemNode();
+        nested1.append($createTextNode('LA'));
+        const nested2 = $createListItemNode();
+        nested2.append($createTextNode('TX'));
+        nestedList.append(nested1, nested2);
+        nestedWrapper.append(nestedList);
+        const item3 = $createListItemNode();
+        item3.append($createTextNode('Germany'));
+        list.append(item1, item2, nestedWrapper, item3);
+        $getRoot().append(list);
+      },
+      name: 'Nested ordered list numbering (Regression #7207)',
     },
   ];
   for (const {name, html, initializeEditorState} of HTML_SERIALIZE) {
@@ -329,13 +359,67 @@ describe('HTML', () => {
             root
               .getAllTextNodes()
               .map(
-                (node) =>
+                node =>
                   [node.getTextContent(), node.hasFormat('bold')] as const,
               ),
           ).toEqual([['Hello world', false]]);
         },
         {discrete: true},
       );
+    });
+  });
+
+  describe('importDOM preserves dir attribute', () => {
+    function importAndGetDirection(html: string): string | null {
+      const editor = createHeadlessEditor({
+        nodes: [HeadingNode, ListNode, ListItemNode, QuoteNode],
+      });
+      editor.update(
+        () => {
+          const parser = new DOMParser();
+          const dom = parser.parseFromString(html, 'text/html');
+          const nodes = $generateNodesFromDOM(editor, dom);
+          $getRoot().selectEnd();
+          const selection = $getRoot().select(0);
+          selection.insertNodes(nodes);
+        },
+        {discrete: true},
+      );
+      return editor.read(() => {
+        const firstChild = $getRoot().getFirstChild();
+        return $isElementNode(firstChild) ? firstChild.getDirection() : null;
+      });
+    }
+
+    test.for([
+      {
+        expected: 'rtl',
+        html: '<p dir="rtl">مرحبا</p>',
+        name: 'paragraph with dir="rtl"',
+      },
+      {
+        expected: 'ltr',
+        html: '<p dir="ltr">Hello</p>',
+        name: 'paragraph with dir="ltr"',
+      },
+      {expected: null, html: '<p>Hello</p>', name: 'paragraph without dir'},
+      {
+        expected: 'rtl',
+        html: '<h1 dir="rtl">عنوان</h1>',
+        name: 'heading with dir="rtl"',
+      },
+      {
+        expected: 'rtl',
+        html: '<blockquote dir="rtl">اقتباس</blockquote>',
+        name: 'blockquote with dir="rtl"',
+      },
+      {
+        expected: 'rtl',
+        html: '<ul dir="rtl"><li>عنصر</li></ul>',
+        name: 'list with dir="rtl"',
+      },
+    ])('$name', ({html, expected}) => {
+      expect(importAndGetDirection(html)).toBe(expected);
     });
   });
 });

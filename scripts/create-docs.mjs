@@ -26,7 +26,7 @@ ${description}
 }
 
 function createDocs() {
-  packagesManager.getPublicPackages().forEach((pkg) => {
+  packagesManager.getPublicPackages().forEach(pkg => {
     const npmName = pkg.getNpmName();
     const directoryName = pkg.getDirectoryName();
     const root = pkg.resolve('..', '..');

@@ -103,7 +103,7 @@ function wrapTableHtml(expected: string): string {
 polyfillContentEditable();
 
 describe('LexicalTableNode tests', () => {
-  [false, true].forEach((hasHorizontalScroll) => {
+  [false, true].forEach(hasHorizontalScroll => {
     describe(`hasHorizontalScroll={${hasHorizontalScroll}}`, () => {
       function expectTableHtmlToBeEqual(
         actual: string,
@@ -126,7 +126,7 @@ describe('LexicalTableNode tests', () => {
       }
 
       initializeUnitTest(
-        (testEnv) => {
+        testEnv => {
           beforeEach(async () => {
             const {editor} = testEnv;
             await editor.update(() => {
@@ -430,19 +430,19 @@ describe('LexicalTableNode tests', () => {
                   </colgroup>
                   <tr>
                     <td>
-                      <p>
+                      <p dir="ltr">
                         <span data-lexical-text="true">Hello there</span>
                       </p>
                     </td>
                     <td>
-                      <p>
+                      <p dir="ltr">
                         <span data-lexical-text="true">General Kenobi!</span>
                       </p>
                     </td>
                   </tr>
                   <tr>
                     <td>
-                      <p>
+                      <p dir="ltr">
                         <span data-lexical-text="true">Lexical is nice</span>
                       </p>
                     </td>
@@ -1848,7 +1848,7 @@ describe('LexicalTableNode tests', () => {
       return <TablePlugin hasHorizontalScroll={hasHorizontalScroll} />;
     }
     initializeUnitTest(
-      (testEnv) => {
+      testEnv => {
         beforeEach(async () => {
           const {editor} = testEnv;
           await editor.update(() => {

@@ -65,12 +65,12 @@ export const TreeView = forwardRef<
     (exportDOM: boolean) => {
       const myID = ++lastGenerationID.current;
       generateContent(exportDOM)
-        .then((treeText) => {
+        .then(treeText => {
           if (myID === lastGenerationID.current) {
             setContent(treeText);
           }
         })
-        .catch((err) => {
+        .catch(err => {
           if (myID === lastGenerationID.current) {
             setContent(
               `Error rendering tree: ${err.message}\n\nStack:\n${err.stack}`,
@@ -105,7 +105,7 @@ export const TreeView = forwardRef<
 
       // Only record in time travel if there was an actual editor state change
       if (!timeTravelEnabled && isEditorStateChange) {
-        setTimeStampedEditorStates((currentEditorStates) => [
+        setTimeStampedEditorStates(currentEditorStates => [
           ...currentEditorStates,
           [Date.now(), editorState],
         ]);
@@ -225,7 +225,7 @@ export const TreeView = forwardRef<
           <input
             className={timeTravelPanelSliderClassName}
             ref={inputRef}
-            onChange={(event) => {
+            onChange={event => {
               const editorStateIndex = Number(event.target.value);
               const timeStampedEditorState =
                 timeStampedEditorStates[editorStateIndex];

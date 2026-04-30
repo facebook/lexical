@@ -8,7 +8,7 @@
     "markdown"
   ],
   "license": "MIT",
-  "version": "0.43.0",
+  "version": "0.44.0",
   "main": "LexicalMarkdown.js",
   "types": "index.d.ts",
   "dependencies": {
@@ -16,6 +16,7 @@
     "@lexical/link": "workspace:*",
     "@lexical/list": "workspace:*",
     "@lexical/rich-text": "workspace:*",
+    "@lexical/selection": "workspace:*",
     "@lexical/text": "workspace:*",
     "@lexical/utils": "workspace:*",
     "lexical": "workspace:*"

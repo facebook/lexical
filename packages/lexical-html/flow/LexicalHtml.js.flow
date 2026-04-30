@@ -23,32 +23,36 @@ import type {
 
 type AnyContextSymbol = symbol;
 
-type ContextRecord<K: symbol> = {+[string | symbol]: mixed};
+type ContextRecord<K extends symbol> = {+[string | symbol]: unknown};
 
-type ContextConfig<Sym: symbol, V> = StateConfig<symbol, V>;
+type ContextConfig<Sym extends symbol, V> = StateConfig<symbol, V>;
 
-type ContextConfigUpdater<Ctx: AnyContextSymbol, V> = {
+type ContextConfigUpdater<Ctx extends AnyContextSymbol, V> = {
   +cfg: ContextConfig<Ctx, V>,
   +updater: (prev: V) => V,
 };
 
-type ContextConfigPair<Ctx: AnyContextSymbol, V> = $ReadOnly<
+type ContextConfigPair<Ctx extends AnyContextSymbol, V> = Readonly<
   [ContextConfig<Ctx, V>, V],
 >;
 
-export type ContextPairOrUpdater<Ctx: AnyContextSymbol, V> =
+export type ContextPairOrUpdater<Ctx extends AnyContextSymbol, V> =
   | ContextConfigPair<Ctx, V>
   | ContextConfigUpdater<Ctx, V>;
 
 // $FlowFixMe[unclear-type]
-type AnyContextConfigPairOrUpdater<Ctx: AnyContextSymbol> = ContextPairOrUpdater<Ctx, any>;
+type AnyContextConfigPairOrUpdater<Ctx extends AnyContextSymbol> =
+  // $FlowFixMe[unclear-type]
+  ContextPairOrUpdater<Ctx, any>;
 
 // Render types
 
 export type RenderStateConfig<V> = ContextConfig<symbol, V>;
 
 // $FlowFixMe[unclear-type]
-export type AnyRenderStateConfigPairOrUpdater = AnyContextConfigPairOrUpdater<any>;
+export type AnyRenderStateConfigPairOrUpdater =
+  // $FlowFixMe[unclear-type]
+  AnyContextConfigPairOrUpdater<any>;
 
 // $FlowFixMe[unclear-type]
 export type AnyRenderStateConfig = RenderStateConfig<any>;
@@ -65,13 +69,13 @@ export type DOMRenderConfig = {
 // $FlowFixMe[unclear-type]
 export type AnyDOMRenderMatch = DOMRenderMatch<any>;
 
-export type NodeMatch<T: LexicalNode> =
+export type NodeMatch<T extends LexicalNode> =
   | Class<T>
   | ((node: LexicalNode) => boolean);
 
-export type DOMRenderMatch<T: LexicalNode> = {
-  +nodes: '*' | $ReadOnlyArray<NodeMatch<T>>,
-  +$getDOMSlot?: <N: LexicalNode>(
+export type DOMRenderMatch<T extends LexicalNode> = {
+  +nodes: '*' | ReadonlyArray<NodeMatch<T>>,
+  +$getDOMSlot?: <N extends LexicalNode>(
     node: N,
     dom: HTMLElement,
     $next: () => ElementDOMSlot<HTMLElement>,
@@ -89,6 +93,12 @@ export type DOMRenderMatch<T: LexicalNode> = {
     $next: () => boolean,
     editor: LexicalEditor,
   ) => boolean,
+  +$decorateDOM?: (
+    nextNode: T,
+    prevNode: T | null,
+    dom: HTMLElement,
+    editor: LexicalEditor,
+  ) => void,
   +$exportDOM?: (
     node: T,
     $next: () => DOMExportOutput,
@@ -118,12 +128,12 @@ export type DOMRenderMatch<T: LexicalNode> = {
 
 // contextUpdater, contextValue
 
-declare export function contextUpdater<Ctx: AnyContextSymbol, V>(
+declare export function contextUpdater<Ctx extends AnyContextSymbol, V>(
   cfg: ContextConfig<Ctx, V>,
   updater: (prev: V) => V,
 ): ContextConfigUpdater<Ctx, V>;
 
-declare export function contextValue<Ctx: AnyContextSymbol, V>(
+declare export function contextValue<Ctx extends AnyContextSymbol, V>(
   cfg: ContextConfig<Ctx, V>,
   value: V,
 ): ContextConfigPair<Ctx, V>;
@@ -134,8 +144,8 @@ declare export function domOverride(
   nodes: '*',
   config: Omit<DOMRenderMatch<LexicalNode>, 'nodes'>,
 ): DOMRenderMatch<LexicalNode>;
-declare export function domOverride<T: LexicalNode>(
-  nodes: $ReadOnlyArray<NodeMatch<T>>,
+declare export function domOverride<T extends LexicalNode>(
+  nodes: ReadonlyArray<NodeMatch<T>>,
   config: Omit<DOMRenderMatch<T>, 'nodes'>,
 ): DOMRenderMatch<T>;
 
@@ -159,7 +169,7 @@ declare export function $getRenderContextValue<V>(
 ): V;
 
 declare export function $withRenderContext(
-  cfg: $ReadOnlyArray<AnyRenderStateConfigPairOrUpdater>,
+  cfg: ReadonlyArray<AnyRenderStateConfigPairOrUpdater>,
   editor?: LexicalEditor,
 ): <T>(f: () => T) => T;
 
@@ -171,16 +181,16 @@ declare export function $generateNodesFromDOM(
 ): Array<LexicalNode>;
 
 declare export function $generateDOMFromNodes<
-  T: HTMLElement | DocumentFragment,
+  T extends HTMLElement | DocumentFragment,
 >(
   container: T,
   selection?: null | BaseSelection,
   editor?: LexicalEditor,
 ): T;
 
-declare export function $generateDOMFromRoot<
-  T: HTMLElement | DocumentFragment,
->(container: T, root?: LexicalNode): T;
+declare export function $generateDOMFromRoot<T extends HTMLElement | DocumentFragment>(
+  container: T, root?: LexicalNode,
+): T;
 
 declare export function $generateHtmlFromNodes(
   editor: LexicalEditor,

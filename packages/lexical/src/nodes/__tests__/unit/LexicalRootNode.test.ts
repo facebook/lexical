@@ -28,7 +28,7 @@ import {
 import {$createRootNode} from '../../LexicalRootNode';
 
 describe('LexicalRootNode tests', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     let rootNode: RootNode;
 
     function expectRootTextContentToBe(text: string): void {

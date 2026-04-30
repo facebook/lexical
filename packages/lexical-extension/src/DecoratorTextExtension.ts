@@ -38,7 +38,7 @@ export type SerializedDecoratorTextNode = Spread<
 >;
 
 const formatState = createState('format', {
-  parse: (value) => (typeof value === 'number' ? value : 0),
+  parse: value => (typeof value === 'number' ? value : 0),
 });
 
 export class DecoratorTextNode extends DecoratorNode<unknown> {
@@ -198,7 +198,7 @@ export const DecoratorTextExtension = defineExtension({
   register(editor, config, state) {
     return editor.registerCommand<TextFormatType>(
       FORMAT_TEXT_COMMAND,
-      (formatType) => {
+      formatType => {
         const selection = $getSelection();
         if ($isNodeSelection(selection) || $isRangeSelection(selection)) {
           for (const node of selection.getNodes()) {

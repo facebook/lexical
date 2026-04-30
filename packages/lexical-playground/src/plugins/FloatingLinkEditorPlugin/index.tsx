@@ -9,10 +9,12 @@ import type {JSX} from 'react';
 
 import './index.css';
 
+import {autoUpdate, flip, offset, shift, useFloating} from '@floating-ui/react';
 import {
   $createLinkNode,
   $isAutoLinkNode,
   $isLinkNode,
+  LinkNode,
   TOGGLE_LINK_COMMAND,
 } from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
@@ -30,6 +32,7 @@ import {
   getDOMSelection,
   KEY_ESCAPE_COMMAND,
   LexicalEditor,
+  RangeSelection,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import * as React from 'react';
@@ -37,8 +40,34 @@ import {Dispatch, useCallback, useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 
 import {getSelectedNode} from '../../utils/getSelectedNode';
-import {setFloatingElemPositionForLinkEditor} from '../../utils/setFloatingElemPositionForLinkEditor';
 import {sanitizeUrl} from '../../utils/url';
+
+function $getSelectedLinkNode(selection: RangeSelection): LinkNode | null {
+  const node = getSelectedNode(selection);
+  // 1. Node itself is a link
+  if ($isLinkNode(node)) {
+    return node;
+  }
+  // 2. Parent is a link
+  const linkParent = $findMatchingParent(node, $isLinkNode);
+  if ($isLinkNode(linkParent)) {
+    return linkParent;
+  }
+  // 3. Right-biased adjacent link (for single-char links)
+  if (selection.isCollapsed()) {
+    const anchor = selection.anchor;
+    if (anchor.type === 'text') {
+      const anchorNode = anchor.getNode();
+      if (anchor.offset === anchorNode.getTextContentSize()) {
+        const nextSibling = anchorNode.getNextSibling();
+        if ($isLinkNode(nextSibling)) {
+          return nextSibling;
+        }
+      }
+    }
+  }
+  return null;
+}
 
 function preventDefault(
   event: React.KeyboardEvent<HTMLInputElement> | React.MouseEvent<HTMLElement>,
@@ -69,16 +98,32 @@ function FloatingLinkEditor({
     null,
   );
 
+  const scrollerElem = anchorElem.parentElement;
+
+  const {refs, floatingStyles} = useFloating({
+    middleware: [
+      offset(10),
+      flip({
+        boundary: scrollerElem || undefined,
+        padding: 10,
+      }),
+      shift({
+        boundary: scrollerElem || undefined,
+        padding: 10,
+      }),
+    ],
+    placement: 'bottom-start',
+    strategy: 'absolute',
+    whileElementsMounted: (...args) =>
+      autoUpdate(...args, {ancestorScroll: false}),
+  });
+
   const $updateLinkEditor = useCallback(() => {
     const selection = $getSelection();
     if ($isRangeSelection(selection)) {
-      const node = getSelectedNode(selection);
-      const linkParent = $findMatchingParent(node, $isLinkNode);
-
-      if (linkParent) {
-        setLinkUrl(linkParent.getURL());
-      } else if ($isLinkNode(node)) {
-        setLinkUrl(node.getURL());
+      const linkNode = $getSelectedLinkNode(selection);
+      if (linkNode) {
+        setLinkUrl(linkNode.getURL());
       } else {
         setLinkUrl('');
       }
@@ -103,13 +148,8 @@ function FloatingLinkEditor({
       }
     }
 
-    const editorElem = editorRef.current;
     const nativeSelection = getDOMSelection(editor._window);
     const activeElement = document.activeElement;
-
-    if (editorElem === null) {
-      return;
-    }
 
     const rootElement = editor.getRootElement();
 
@@ -126,52 +166,26 @@ function FloatingLinkEditor({
         }
       } else if (
         nativeSelection !== null &&
+        nativeSelection.rangeCount > 0 &&
         rootElement.contains(nativeSelection.anchorNode)
       ) {
-        domRect =
-          nativeSelection.focusNode?.parentElement?.getBoundingClientRect();
+        domRect = nativeSelection.getRangeAt(0).getBoundingClientRect();
       }
 
       if (domRect) {
-        domRect.y += 40;
-        setFloatingElemPositionForLinkEditor(domRect, editorElem, anchorElem);
+        refs.setPositionReference({
+          getBoundingClientRect: () => domRect,
+        });
       }
       setLastSelection(selection);
     } else if (!activeElement || activeElement.className !== 'link-input') {
-      if (rootElement !== null) {
-        setFloatingElemPositionForLinkEditor(null, editorElem, anchorElem);
-      }
       setLastSelection(null);
       setIsLinkEditMode(false);
       setLinkUrl('');
     }
 
     return true;
-  }, [anchorElem, editor, setIsLinkEditMode, isLinkEditMode, linkUrl]);
-
-  useEffect(() => {
-    const scrollerElem = anchorElem.parentElement;
-
-    const update = () => {
-      editor.getEditorState().read(() => {
-        $updateLinkEditor();
-      });
-    };
-
-    window.addEventListener('resize', update);
-
-    if (scrollerElem) {
-      scrollerElem.addEventListener('scroll', update);
-    }
-
-    return () => {
-      window.removeEventListener('resize', update);
-
-      if (scrollerElem) {
-        scrollerElem.removeEventListener('scroll', update);
-      }
-    };
-  }, [anchorElem.parentElement, editor, $updateLinkEditor]);
+  }, [editor, setIsLinkEditMode, isLinkEditMode, linkUrl, refs]);
 
   useEffect(() => {
     return mergeRegister(
@@ -276,17 +290,27 @@ function FloatingLinkEditor({
   };
 
   return (
-    <div ref={editorRef} className="link-editor">
+    <div
+      ref={el => {
+        editorRef.current = el;
+        refs.setFloating(el);
+      }}
+      className="link-editor"
+      style={{
+        ...floatingStyles,
+        opacity: isLink ? 1 : 0,
+        pointerEvents: isLink ? 'auto' : 'none',
+      }}>
       {!isLink ? null : isLinkEditMode ? (
         <>
           <input
             ref={inputRef}
             className="link-input"
             value={editedLinkUrl}
-            onChange={(event) => {
+            onChange={event => {
               setEditedLinkUrl(event.target.value);
             }}
-            onKeyDown={(event) => {
+            onKeyDown={event => {
               monitorInputInteraction(event);
             }}
           />
@@ -323,7 +347,7 @@ function FloatingLinkEditor({
             role="button"
             tabIndex={0}
             onMouseDown={preventDefault}
-            onClick={(event) => {
+            onClick={event => {
               event.preventDefault();
               setEditedLinkUrl(linkUrl);
               setIsLinkEditMode(true);
@@ -357,8 +381,8 @@ function useFloatingLinkEditorToolbar(
     function $updateToolbar() {
       const selection = $getSelection();
       if ($isRangeSelection(selection)) {
+        const focusLinkNode = $getSelectedLinkNode(selection);
         const focusNode = getSelectedNode(selection);
-        const focusLinkNode = $findMatchingParent(focusNode, $isLinkNode);
         const focusAutoLinkNode = $findMatchingParent(
           focusNode,
           $isAutoLinkNode,
@@ -369,8 +393,8 @@ function useFloatingLinkEditorToolbar(
         }
         const badNode = selection
           .getNodes()
-          .filter((node) => !$isLineBreakNode(node))
-          .find((node) => {
+          .filter(node => !$isLineBreakNode(node))
+          .find(node => {
             const linkNode = $findMatchingParent(node, $isLinkNode);
             const autoLinkNode = $findMatchingParent(node, $isAutoLinkNode);
             return (
@@ -419,7 +443,7 @@ function useFloatingLinkEditorToolbar(
       ),
       editor.registerCommand(
         CLICK_COMMAND,
-        (payload) => {
+        payload => {
           const selection = $getSelection();
           if ($isRangeSelection(selection)) {
             const node = getSelectedNode(selection);

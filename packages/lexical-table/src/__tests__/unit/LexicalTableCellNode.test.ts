@@ -30,7 +30,7 @@ const editorConfig = Object.freeze({
 });
 
 describe('LexicalTableCellNode tests', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     test('TableCellNode.constructor', async () => {
       const {editor} = testEnv;
 

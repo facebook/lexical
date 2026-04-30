@@ -16,6 +16,8 @@ import {
 import {
   assertHTML,
   click,
+  evaluate,
+  expect,
   focusEditor,
   html,
   initialize,
@@ -41,53 +43,58 @@ test.describe('HTML', () => {
     await toggleItalic(page);
     await insertDateTime(page);
 
-    const expectedViewHtml = `<h1 class="PlaygroundEditorTheme__h1" dir="auto">
-      <span data-lexical-text="true">Foo</span>
-    </h1>
-    <code
-      class="PlaygroundEditorTheme__code"
-      dir="auto"
-      spellcheck="false"
-      data-gutter="1"
-      data-highlight-language="javascript"
-      data-language="javascript">
-      <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
-        const
-      </span>
-      <span data-lexical-text="true">x</span>
-      <span class="PlaygroundEditorTheme__tokenOperator" data-lexical-text="true">
-        =
-      </span>
-      <span data-lexical-text="true"></span>
-      <span class="PlaygroundEditorTheme__tokenSelector" data-lexical-text="true">
-        "hello world"
-      </span>
-      <span
-        class="PlaygroundEditorTheme__tokenPunctuation"
-        data-lexical-text="true">
-        ;
-      </span>
-    </code>
-    <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-      <span data-lexical-text="true">Today</span>
+    const expectedViewHtml = html`
+      <h1 class="PlaygroundEditorTheme__h1" dir="auto">
+        <span data-lexical-text="true">Foo</span>
+      </h1>
+      <code
+        class="PlaygroundEditorTheme__code"
+        dir="auto"
+        spellcheck="false"
+        data-gutter="*"
+        data-highlight-language="javascript"
+        data-language="javascript">
+        <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
+          const
+        </span>
+        <span data-lexical-text="true">x</span>
+        <span
+          class="PlaygroundEditorTheme__tokenOperator"
+          data-lexical-text="true">
+          =
+        </span>
+        <span data-lexical-text="true"></span>
+        <span
+          class="PlaygroundEditorTheme__tokenSelector"
+          data-lexical-text="true">
+          "hello world"
+        </span>
+        <span
+          class="PlaygroundEditorTheme__tokenPunctuation"
+          data-lexical-text="true">
+          ;
+        </span>
+      </code>
+      <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+        <span data-lexical-text="true">Today</span>
         <span
           contenteditable="false"
           data-lexical-datetime="*"
           data-lexical-decorator="true">
           <div class="dateTimePill bold italic">*</div>
         </span>
-      <br />
-    </p>`;
+        <br />
+      </p>
+    `;
     await await assertHTML(
       page,
-      html`
-        ${expectedViewHtml}
-      `,
+      expectedViewHtml,
       undefined,
       {ignoreInlineStyles: true},
       // Custom modification: replace the date text and data-lexical-datetime value with wildcards for matching
-      (actualHtml) =>
+      actualHtml =>
         actualHtml
+          .replace(/data-gutter="[^"]*"/g, 'data-gutter="*"')
           .replace(/(<div[^>]*>)(.*?)(<\/div>)/, '$1*$3')
           .replace(
             /data-lexical-datetime="[^"]*"/,
@@ -104,7 +111,7 @@ test.describe('HTML', () => {
           class="PlaygroundEditorTheme__code"
           dir="auto"
           spellcheck="false"
-          data-gutter="1"
+          data-gutter="*"
           data-highlight-language="html"
           data-language="html">
           *
@@ -112,25 +119,26 @@ test.describe('HTML', () => {
       `,
       undefined,
       {ignoreInlineStyles: true},
-      (actualHtml) =>
-        actualHtml.replace(/(<code[^>]*>)([\s\S]*)(<\/code>)/, '$1\n  *\n$3'),
+      actualHtml =>
+        actualHtml
+          .replace(/data-gutter="[^"]*"/g, 'data-gutter="*"')
+          .replace(/(<code[^>]*>)([\s\S]*)(<\/code>)/, '$1\n  *\n$3'),
     );
 
     await click(page, '.action-button .html');
     // same view after import html
     await await assertHTML(
       page,
-      html`
-        ${expectedViewHtml}
-      `,
+      expectedViewHtml,
       undefined,
       {ignoreInlineStyles: true},
       // Custom modification: replace the date text and data-lexical-datetime value with wildcards for matching
-      (actualHtml) =>
+      actualHtml =>
         actualHtml
-          .replace(/(<div[^>]*>)(.*?)(<\/div>)/, '$1*$3')
+          .replace(/data-gutter="[^"]*"/g, 'data-gutter="*"')
+          .replace(/(<div[^>]*>)(.*?)(<\/div>)/g, '$1*$3')
           .replace(
-            /data-lexical-datetime="[^"]*"/,
+            /data-lexical-datetime="[^"]*"/g,
             'data-lexical-datetime="*"',
           ),
     );
@@ -149,7 +157,7 @@ test.describe('HTML', () => {
           class="PlaygroundEditorTheme__code"
           dir="auto"
           spellcheck="false"
-          data-gutter="1"
+          data-gutter="*"
           data-highlight-language="html"
           data-language="html">
           *
@@ -157,8 +165,10 @@ test.describe('HTML', () => {
       `,
       undefined,
       {ignoreInlineStyles: true},
-      (actualHtml) =>
-        actualHtml.replace(/(<code[^>]*>)([\s\S]*)(<\/code>)/, '$1\n  *\n$3'),
+      actualHtml =>
+        actualHtml
+          .replace(/data-gutter="[^"]*"/g, 'data-gutter="*"')
+          .replace(/(<code[^>]*>)([\s\S]*)(<\/code>)/, '$1\n  *\n$3'),
     );
 
     await selectAll(page);
@@ -182,7 +192,7 @@ test.describe('HTML', () => {
           class="PlaygroundEditorTheme__code"
           dir="auto"
           spellcheck="false"
-          data-gutter="1"
+          data-gutter="*"
           data-highlight-language="javascript"
           data-language="javascript">
           <span
@@ -219,6 +229,38 @@ test.describe('HTML', () => {
       `,
       undefined,
       {ignoreInlineStyles: true},
+      actualHtml =>
+        actualHtml.replace(/data-gutter="[^"]*"/g, 'data-gutter="*"'),
     );
+  });
+
+  test(`Formats a terse HTML export with prettier`, async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+    await applyHeading(page, 1);
+    await page.keyboard.type('Foo');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Hello world');
+
+    await click(page, '.action-button .html');
+
+    const expectedPrettyHtml = [
+      '<h1><span>Foo</span></h1>',
+      '<p><span>Hello world</span></p>',
+    ].join('\n');
+
+    await expect(async () => {
+      const codeText = await evaluate(page, () => {
+        const editor = window.lexicalEditor;
+        return window.lexicalEditor.read(() =>
+          editor.getEditorState()._nodeMap.get('root').getTextContent(),
+        );
+      });
+      expect(codeText).toBe(expectedPrettyHtml);
+    }).toPass({intervals: [100, 250, 500], timeout: 5000});
   });
 });

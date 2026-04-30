@@ -27,12 +27,12 @@ describe('prepare-release tests', () => {
   }
 });
 ['examples', 'scripts/__tests__/integration/fixtures']
-  .flatMap((packagesDir) =>
+  .flatMap(packagesDir =>
     glob.sync(`${packagesDir}/*/package.json`, {windowsPathsNoEscape: true}),
   )
-  .forEach((exampleJsonPath) => describeExample(exampleJsonPath));
+  .forEach(exampleJsonPath => describeExample(exampleJsonPath));
 // dev-examples use workspace:* deps and are tested with pnpm workspace
 // linking rather than published tarballs
 glob
   .sync('dev-examples/*/package.json', {windowsPathsNoEscape: true})
-  .forEach((exampleJsonPath) => describeDevExample(exampleJsonPath));
+  .forEach(exampleJsonPath => describeDevExample(exampleJsonPath));

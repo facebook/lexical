@@ -31,7 +31,7 @@ async function publish() {
   if (!nonInteractive) {
     console.info(
       `You're about to publish:
-    ${pkgs.map((pkg) => pkg.getNpmName()).join('\n')}
+    ${pkgs.map(pkg => pkg.getNpmName()).join('\n')}
 
     Type "publish" to confirm.`,
     );
@@ -43,7 +43,7 @@ async function publish() {
     if (dryRun === undefined || dryRun === 0) {
       await exec(
         `cd ./packages/${pkg.getDirectoryName()}/npm && pnpm publish --access public --tag ${channel} --no-git-checks`,
-      ).catch((err) => {
+      ).catch(err => {
         if (
           ignorePreviouslyPublished &&
           err &&
@@ -67,7 +67,7 @@ async function publish() {
 }
 
 async function waitForInput() {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     const rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout,

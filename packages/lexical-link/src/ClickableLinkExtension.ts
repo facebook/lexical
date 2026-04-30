@@ -112,7 +112,7 @@ export function registerClickableLink(
     }
   };
 
-  return editor.registerRootListener((rootElement) => {
+  return editor.registerRootListener(rootElement => {
     if (rootElement) {
       rootElement.addEventListener('click', onClick, eventOptions);
       rootElement.addEventListener('mouseup', onMouseUp, eventOptions);

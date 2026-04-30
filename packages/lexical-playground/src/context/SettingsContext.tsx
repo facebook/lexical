@@ -41,7 +41,7 @@ export const SettingsContext = ({
   const [settings, setSettings] = useState(INITIAL_SETTINGS);
 
   const setOption = useCallback((setting: SettingName, value: boolean) => {
-    setSettings((options) => ({
+    setSettings(options => ({
       ...options,
       [setting]: value,
     }));

@@ -182,7 +182,7 @@ export function EmojiPlugin() {
         type="button"
         className={`flex h-[34px] w-[34px] shrink-0 cursor-pointer items-center justify-center rounded-full border-0 text-[1.1rem] leading-none transition-[background-color,transform] duration-150 active:scale-[0.92] ${open ? 'bg-indigo-100 dark:bg-indigo-900' : 'bg-zinc-100 hover:bg-zinc-200 dark:bg-[#3a3a3c] dark:hover:bg-zinc-600'}`}
         title="Add emoji"
-        onClick={() => setOpen((v) => !v)}>
+        onClick={() => setOpen(v => !v)}>
         😊
       </button>
 
@@ -193,7 +193,7 @@ export function EmojiPlugin() {
           <div
             className="flex gap-0.5 border-b [border-bottom-style:solid] border-zinc-100 px-1 pt-1 pb-0 dark:border-white/[0.07]"
             role="tablist">
-            {Object.keys(EMOJI_CATEGORIES).map((cat) => (
+            {Object.keys(EMOJI_CATEGORIES).map(cat => (
               <button
                 key={cat}
                 type="button"
@@ -209,7 +209,7 @@ export function EmojiPlugin() {
           <div
             className="grid max-h-[168px] grid-cols-8 gap-0.5 overflow-y-auto p-1.5"
             role="listbox">
-            {EMOJI_CATEGORIES[activeTab].map((emoji) => (
+            {EMOJI_CATEGORIES[activeTab].map(emoji => (
               <button
                 key={emoji}
                 type="button"

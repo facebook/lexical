@@ -15,6 +15,6 @@ fs.removeSync(path.resolve(`./npm`));
 fs.removeSync(path.resolve(`./.ts-temp`));
 packagesManager
   .getPublicPackages()
-  .forEach((pkg) =>
-    ['dist', 'npm'].forEach((subdir) => fs.removeSync(pkg.resolve(subdir))),
+  .forEach(pkg =>
+    ['dist', 'npm'].forEach(subdir => fs.removeSync(pkg.resolve(subdir))),
   );

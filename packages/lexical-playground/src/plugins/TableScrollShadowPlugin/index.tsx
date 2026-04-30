@@ -7,6 +7,7 @@
  */
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {isHTMLElement} from 'lexical';
 import {useEffect} from 'react';
 
 const SCROLLABLE_WRAPPER_CLASS =
@@ -93,16 +94,16 @@ export default function TableScrollShadowPlugin(): null {
     const wrappers = editorElement.querySelectorAll<HTMLElement>(
       `.${SCROLLABLE_WRAPPER_CLASS}`,
     );
-    wrappers.forEach((wrapper) => {
+    wrappers.forEach(wrapper => {
       resizeObserver.observe(wrapper);
       addScrollListener(wrapper);
     });
 
     // Watch for new wrappers to observe
-    const wrapperObserver = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        mutation.addedNodes.forEach((node) => {
-          if (node instanceof HTMLElement) {
+    const wrapperObserver = new MutationObserver(mutations => {
+      mutations.forEach(mutation => {
+        mutation.addedNodes.forEach(node => {
+          if (isHTMLElement(node)) {
             if (node.classList.contains(SCROLLABLE_WRAPPER_CLASS)) {
               resizeObserver.observe(node);
               addScrollListener(node);
@@ -112,7 +113,7 @@ export default function TableScrollShadowPlugin(): null {
             const childWrappers = node.querySelectorAll<HTMLElement>(
               `.${SCROLLABLE_WRAPPER_CLASS}`,
             );
-            childWrappers.forEach((wrapper) => {
+            childWrappers.forEach(wrapper => {
               resizeObserver.observe(wrapper);
               addScrollListener(wrapper);
               updateTableScrollState(wrapper);

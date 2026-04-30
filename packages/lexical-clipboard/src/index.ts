@@ -19,6 +19,8 @@ export {
   $insertGeneratedNodes,
   $writeDragSourceToDataTransfer,
   copyToClipboard,
+  type GetClipboardDataConfig,
+  GetClipboardDataExtension,
   type LexicalClipboardData,
   setLexicalClipboardDataTransfer,
 } from './clipboard';

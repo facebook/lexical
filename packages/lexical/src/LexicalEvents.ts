@@ -621,10 +621,10 @@ function clearHandledSelectionCommandInsertText(): void {
 function markHandledSelectionCommandInsertText(): void {
   clearHandledSelectionCommandInsertText();
   isInsertTextAfterHandledSelectionCommand = true;
-  handledSelectionCommandTimeoutId = setTimeout(() => {
-    isInsertTextAfterHandledSelectionCommand = false;
-    handledSelectionCommandTimeoutId = null;
-  }, 0);
+  handledSelectionCommandTimeoutId = setTimeout(
+    clearHandledSelectionCommandInsertText,
+    0,
+  );
 }
 
 export function registerDefaultCommandHandlers(editor: LexicalEditor) {
@@ -1329,7 +1329,12 @@ function $handleKeyDown(event: KeyboardEvent): boolean {
     dispatchCommand(editor, REDO_COMMAND, undefined);
   } else {
     const prevSelection = editor._editorState._selection;
-    if (prevSelection !== null && !$isRangeSelection(prevSelection)) {
+    if (isSelectAll(event)) {
+      event.preventDefault();
+      if (dispatchCommand(editor, SELECT_ALL_COMMAND, event)) {
+        markHandledSelectionCommandInsertText();
+      }
+    } else if (prevSelection !== null && !$isRangeSelection(prevSelection)) {
       // Only RangeSelection can use the native cut/copy/select all
       if (isCopy(event)) {
         event.preventDefault();
@@ -1337,16 +1342,6 @@ function $handleKeyDown(event: KeyboardEvent): boolean {
       } else if (isCut(event)) {
         event.preventDefault();
         dispatchCommand(editor, CUT_COMMAND, event);
-      } else if (isSelectAll(event)) {
-        event.preventDefault();
-        if (dispatchCommand(editor, SELECT_ALL_COMMAND, event)) {
-          markHandledSelectionCommandInsertText();
-        }
-      }
-    } else if (isSelectAll(event)) {
-      event.preventDefault();
-      if (dispatchCommand(editor, SELECT_ALL_COMMAND, event)) {
-        markHandledSelectionCommandInsertText();
       }
     }
   }

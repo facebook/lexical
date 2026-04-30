@@ -120,6 +120,7 @@ function getPredicate(
 function makePrerender(): PreEditorDOMRenderConfig {
   return {
     $createDOM: [],
+    $decorateDOM: [],
     $exportDOM: [],
     $extractWithChild: [],
     $getDOMSlot: [],
@@ -214,6 +215,19 @@ function merge5<T, N extends LexicalNode, A, B, C>(
   };
 }
 
+function sequence4<N extends LexicalNode, A, B>(
+  $acc: AccFn<void, N, [A, B]>,
+  $getOverride: (n: N) => undefined | AccFn<void, N, [A, B]>,
+): typeof $acc {
+  return (node, a, b, editor) => {
+    $acc(node, a, b, editor);
+    const $override = $getOverride(node);
+    if ($override) {
+      $override(node, a, b, editor);
+    }
+  };
+}
+
 function compilePrerenderKey<K extends keyof PreEditorDOMRenderConfig>(
   prerender: PreEditorDOMRenderConfig,
   k: K,
@@ -230,7 +244,7 @@ function compilePrerenderKey<K extends keyof PreEditorDOMRenderConfig>(
       const [$predicate, $override] = pair;
       acc = mergeFunction(
         acc,
-        (node) => ($predicate(node) && $override) || undefined,
+        node => ($predicate(node) && $override) || undefined,
       );
     } else {
       const typeOverrides = pair[1];
@@ -244,7 +258,7 @@ function compilePrerenderKey<K extends keyof PreEditorDOMRenderConfig>(
           );
         }
       }
-      acc = mergeFunction(acc, (node) => {
+      acc = mergeFunction(acc, node => {
         const f = compiled[node.getType()];
         return f && ignoreNextFunction(f);
       });
@@ -282,13 +296,77 @@ function addOverride<K extends keyof PreEditorDOMRenderConfig>(
   }
 }
 
+type NormalizedDOMRenderMatch<T> = Omit<
+  DOMRenderMatch<LexicalNode>,
+  'nodes'
+> & {
+  nodes: T;
+};
+
+function isWildcard(
+  override: DOMRenderMatch<LexicalNode>,
+): override is NormalizedDOMRenderMatch<'*'> {
+  return override.nodes === '*';
+}
+
+function sortedOverrides(
+  overrides: DOMRenderMatch<LexicalNode>[],
+): DOMRenderMatch<LexicalNode>[] {
+  const byWildcard: NormalizedDOMRenderMatch<'*'>[] = [];
+  const byPredicate: NormalizedDOMRenderMatch<
+    [(node: LexicalNode) => node is LexicalNode]
+  >[] = [];
+  const byNode: NormalizedDOMRenderMatch<[Klass<LexicalNode>]>[] = [];
+  for (const override of overrides) {
+    if (isWildcard(override)) {
+      byWildcard.push(override);
+    } else if (Array.isArray(override.nodes)) {
+      for (const klassOrPredicate of override.nodes) {
+        if ($isLexicalNode(klassOrPredicate.prototype)) {
+          byNode.push(
+            override.nodes.length === 1
+              ? (override as NormalizedDOMRenderMatch<[Klass<LexicalNode>]>)
+              : {...override, nodes: [klassOrPredicate]},
+          );
+        } else {
+          byPredicate.push(
+            override.nodes.length === 1
+              ? (override as NormalizedDOMRenderMatch<
+                  [(node: LexicalNode) => node is LexicalNode]
+                >)
+              : {...override, nodes: [klassOrPredicate]},
+          );
+        }
+      }
+    }
+  }
+  const depths = new Map<Klass<LexicalNode>, number>();
+  const depthOf = (klass: Klass<LexicalNode>): number => {
+    let depth = depths.get(klass);
+    if (depth === undefined) {
+      depth = 0;
+      for (
+        let k: Klass<LexicalNode> = klass;
+        $isLexicalNode(k.prototype);
+        k = Object.getPrototypeOf(k)
+      ) {
+        depth++;
+      }
+      depths.set(klass, depth);
+    }
+    return depth;
+  };
+  byNode.sort((a, b) => depthOf(a.nodes[0]) - depthOf(b.nodes[0]));
+  return [...byNode, ...byPredicate, ...byWildcard];
+}
+
 export function precompileDOMRenderConfigOverrides(
   editorConfig: Pick<InitialEditorConfig, 'nodes'>,
   overrides: DOMRenderConfig['overrides'],
 ): PreEditorDOMRenderConfig {
   const typeTree = buildTypeTree(editorConfig);
   const prerender = makePrerender();
-  for (const override of overrides) {
+  for (const override of sortedOverrides(overrides)) {
     const predicateOrTypes = getPredicate(typeTree, override);
     for (const k_ in prerender) {
       const k = k_ as keyof typeof prerender;
@@ -296,6 +374,10 @@ export function precompileDOMRenderConfigOverrides(
     }
   }
   return prerender;
+}
+
+function identity<T>(v: T) {
+  return v;
 }
 
 export function compileDOMRenderConfigOverrides(
@@ -314,5 +396,6 @@ export function compileDOMRenderConfigOverrides(
   compilePrerenderKey(prerender, '$shouldExclude', dom, merge3, ignoreNext3);
   compilePrerenderKey(prerender, '$shouldInclude', dom, merge3, ignoreNext3);
   compilePrerenderKey(prerender, '$updateDOM', dom, merge4, ignoreNext4);
+  compilePrerenderKey(prerender, '$decorateDOM', dom, sequence4, identity);
   return dom;
 }

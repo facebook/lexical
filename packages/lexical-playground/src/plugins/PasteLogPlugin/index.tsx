@@ -27,7 +27,7 @@ export default function PasteLogPlugin(): JSX.Element {
           const {clipboardData} = e;
           const allData: string[] = [];
           if (clipboardData && clipboardData.types) {
-            clipboardData.types.forEach((type) => {
+            clipboardData.types.forEach(type => {
               allData.push(type.toUpperCase(), clipboardData.getData(type));
             });
           }

@@ -397,7 +397,7 @@ export function $convertTableCellNodeElement(
   const hasUnderlineTextDecoration = textDecoration.includes('underline');
   const color = style.color;
   return {
-    after: (childLexicalNodes) => {
+    after: childLexicalNodes => {
       const result: LexicalNode[] = [];
       let paragraphNode: ParagraphNode | null = null;
 

@@ -38,6 +38,7 @@ import {
   $findMatchingParent,
   $getState,
   $setState,
+  BaseSelection,
   createState,
   ElementNode,
   Klass,
@@ -59,12 +60,14 @@ export type ElementTransformer = {
   /**
    * `export` is called when the `$convertToMarkdownString` is called to convert the editor state into markdown.
    *
+   * @param selection - Optional selection to filter exported content. When provided, only selected content should be included.
    * @return return null to cancel the export, even though the regex matched. Lexical will then search for the next transformer.
    */
   export: (
     node: LexicalNode,
     // eslint-disable-next-line no-shadow
     traverseChildren: (node: ElementNode) => string,
+    selection?: BaseSelection | null,
   ) => string | null;
   regExp: RegExp;
   /**
@@ -102,12 +105,14 @@ export type MultilineElementTransformer = {
   /**
    * `export` is called when the `$convertToMarkdownString` is called to convert the editor state into markdown.
    *
+   * @param selection - Optional selection to filter exported content. When provided, only selected content should be included.
    * @return return null to cancel the export, even though the regex matched. Lexical will then search for the next transformer.
    */
   export?: (
     node: LexicalNode,
     // eslint-disable-next-line no-shadow
     traverseChildren: (node: ElementNode) => string,
+    selection?: BaseSelection | null,
   ) => string | null;
   /**
    * This regex determines when to start matching
@@ -221,12 +226,12 @@ const ENDS_WITH = (regex: RegExp) =>
   new RegExp(`(?:${regex.source})$`, regex.flags);
 
 export const listMarkerState = createState('mdListMarker', {
-  parse: (v) => (typeof v === 'string' && /^[-*+]$/.test(v) ? v : '-'),
+  parse: v => (typeof v === 'string' && /^[-*+]$/.test(v) ? v : '-'),
   resetOnCopyNode: true,
 });
 
 export const codeFenceState = createState('mdCodeFence', {
-  parse: (val) => {
+  parse: val => {
     if (typeof val === 'string' && /^`{3,}$/.test(val)) {
       return val;
     }
@@ -329,6 +334,7 @@ const $listExport = (
   listNode: ListNode,
   exportChildren: (node: ElementNode) => string,
   depth: number,
+  selection?: BaseSelection | null,
 ): string => {
   const output = [];
   const children = listNode.getChildren();
@@ -338,9 +344,24 @@ const $listExport = (
       if (listItemNode.getChildrenSize() === 1) {
         const firstChild = listItemNode.getFirstChild();
         if ($isListNode(firstChild)) {
-          output.push($listExport(firstChild, exportChildren, depth + 1));
+          const nestedResult = $listExport(
+            firstChild,
+            exportChildren,
+            depth + 1,
+            selection,
+          );
+          if (nestedResult) {
+            output.push(nestedResult);
+          }
           continue;
         }
+      }
+      // Skip unselected list items when selection is provided
+      if (
+        selection &&
+        !listItemNode.getChildren().some(child => child.isSelected(selection))
+      ) {
+        continue;
       }
       const indent = ' '.repeat(depth * LIST_INDENT_SIZE);
       const listType = listNode.getListType();
@@ -373,7 +394,7 @@ export const HEADING: ElementTransformer = {
     return '#'.repeat(level) + ' ' + exportChildren(node);
   },
   regExp: HEADING_REGEX,
-  replace: createBlockNode((match) => {
+  replace: createBlockNode(match => {
     const tag = ('h' + match[1].length) as HeadingTagType;
     return $createHeadingNode(tag);
   }),
@@ -431,7 +452,7 @@ export const CODE: MultilineElementTransformer = {
     if (textContent.indexOf(fence) > -1) {
       const backticks = textContent.match(/`{3,}/g);
       if (backticks) {
-        const maxLength = Math.max(...backticks.map((b) => b.length));
+        const maxLength = Math.max(...backticks.map(b => b.length));
         fence = '`'.repeat(maxLength + 1);
       }
     }
@@ -569,7 +590,7 @@ export const CODE: MultilineElementTransformer = {
       codeBlockNode.append(textNode);
       rootNode.append(codeBlockNode);
     } else if (children) {
-      createBlockNode((match) => {
+      createBlockNode(match => {
         return $createCodeNode(match ? match[2] : undefined);
       })(rootNode, children, startMatch, isImport);
     }
@@ -579,8 +600,10 @@ export const CODE: MultilineElementTransformer = {
 
 export const UNORDERED_LIST: ElementTransformer = {
   dependencies: [ListNode, ListItemNode],
-  export: (node, exportChildren) => {
-    return $isListNode(node) ? $listExport(node, exportChildren, 0) : null;
+  export: (node, exportChildren, selection) => {
+    return $isListNode(node)
+      ? $listExport(node, exportChildren, 0, selection)
+      : null;
   },
   regExp: UNORDERED_LIST_REGEX,
   replace: listReplace('bullet'),
@@ -589,8 +612,10 @@ export const UNORDERED_LIST: ElementTransformer = {
 
 export const CHECK_LIST: ElementTransformer = {
   dependencies: [ListNode, ListItemNode],
-  export: (node, exportChildren) => {
-    return $isListNode(node) ? $listExport(node, exportChildren, 0) : null;
+  export: (node, exportChildren, selection) => {
+    return $isListNode(node)
+      ? $listExport(node, exportChildren, 0, selection)
+      : null;
   },
   regExp: CHECK_LIST_REGEX,
   replace: listReplace('check'),
@@ -599,8 +624,10 @@ export const CHECK_LIST: ElementTransformer = {
 
 export const ORDERED_LIST: ElementTransformer = {
   dependencies: [ListNode, ListItemNode],
-  export: (node, exportChildren) => {
-    return $isListNode(node) ? $listExport(node, exportChildren, 0) : null;
+  export: (node, exportChildren, selection) => {
+    return $isListNode(node)
+      ? $listExport(node, exportChildren, 0, selection)
+      : null;
   },
   regExp: ORDERED_LIST_REGEX,
   replace: listReplace('number'),

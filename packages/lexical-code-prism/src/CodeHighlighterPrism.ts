@@ -257,7 +257,7 @@ function $updateAndRetainSelection(
 
   // If it was non-element anchor then we walk through child nodes
   // and looking for a position of original text offset
-  node.getChildren().some((_node) => {
+  node.getChildren().some(_node => {
     const isText = $isTextNode(_node);
     if (isText || $isLineBreakNode(_node)) {
       const textContentSize = _node.getTextContentSize();
@@ -676,14 +676,14 @@ function $handleShiftLines(
   let insertionPoint =
     maybeInsertionPoint != null ? maybeInsertionPoint : sibling;
   linebreak.remove();
-  range.forEach((node) => node.remove());
+  range.forEach(node => node.remove());
   if (type === KEY_ARROW_UP_COMMAND) {
-    range.forEach((node) => insertionPoint.insertBefore(node));
+    range.forEach(node => insertionPoint.insertBefore(node));
     insertionPoint.insertBefore(linebreak);
   } else {
     insertionPoint.insertAfter(linebreak);
     insertionPoint = linebreak;
-    range.forEach((node) => {
+    range.forEach(node => {
       insertionPoint.insertAfter(node);
       insertionPoint = node;
     });
@@ -774,7 +774,7 @@ export function registerCodeHighlighting(
     registrations.push(
       editor.registerMutationListener(
         CodeNode,
-        (mutations) => {
+        mutations => {
           editor.getEditorState().read(() => {
             for (const [key, type] of mutations) {
               if (type !== 'destroyed') {
@@ -811,7 +811,7 @@ export function registerCodeHighlighting(
     ),
     editor.registerCommand(
       KEY_TAB_COMMAND,
-      (event) => {
+      event => {
         const command = $handleTab(event.shiftKey);
         if (command === null) {
           return false;
@@ -846,7 +846,7 @@ export function registerCodeHighlighting(
     ),
     editor.registerCommand(
       KEY_ARROW_UP_COMMAND,
-      (event) => {
+      event => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection) || !$isSelectionInCode(selection)) {
           return false;
@@ -867,7 +867,7 @@ export function registerCodeHighlighting(
     ),
     editor.registerCommand(
       KEY_ARROW_DOWN_COMMAND,
-      (event) => {
+      event => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection) || !$isSelectionInCode(selection)) {
           return false;
@@ -888,12 +888,12 @@ export function registerCodeHighlighting(
     ),
     editor.registerCommand(
       MOVE_TO_START,
-      (event) => $handleMoveTo(MOVE_TO_START, event),
+      event => $handleMoveTo(MOVE_TO_START, event),
       COMMAND_PRIORITY_LOW,
     ),
     editor.registerCommand(
       MOVE_TO_END,
-      (event) => $handleMoveTo(MOVE_TO_END, event),
+      event => $handleMoveTo(MOVE_TO_END, event),
       COMMAND_PRIORITY_LOW,
     ),
   );

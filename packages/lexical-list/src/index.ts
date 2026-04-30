@@ -95,7 +95,7 @@ export function registerList(
     ),
     editor.registerCommand(
       UPDATE_LIST_START_COMMAND,
-      (payload) => {
+      payload => {
         const {listNodeKey, newStart} = payload;
         const listNode = $getNodeByKey(listNodeKey);
         if (!$isListNode(listNode)) {
@@ -133,7 +133,7 @@ export function registerList(
       },
       COMMAND_PRIORITY_LOW,
     ),
-    editor.registerNodeTransform(ListItemNode, (node) => {
+    editor.registerNodeTransform(ListItemNode, node => {
       const firstChild = node.getFirstChild();
       if (firstChild) {
         if ($isTextNode(firstChild)) {
@@ -160,7 +160,7 @@ export function registerList(
         }
       }
     }),
-    editor.registerNodeTransform(TextNode, (node) => {
+    editor.registerNodeTransform(TextNode, node => {
       const listItemParentNode = node.getParent();
       if (
         $isListItemNode(listItemParentNode) &&
@@ -191,7 +191,7 @@ export function registerListStrictIndentTransform(
 
     const startingListItemNode = $findMatchingParent(
       listItemNode,
-      (node) =>
+      node =>
         $isListItemNode(node) &&
         $isListNode(node.getParent()) &&
         $isListItemNode(node.getPreviousSibling()),

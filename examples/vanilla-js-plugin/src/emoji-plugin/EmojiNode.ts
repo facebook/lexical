@@ -34,7 +34,7 @@ export class EmojiNode extends TextNode {
 
   constructor(unifiedID: string, key?: NodeKey) {
     const unicodeEmoji = String.fromCodePoint(
-      ...unifiedID.split('-').map((v) => parseInt(v, 16)),
+      ...unifiedID.split('-').map(v => parseInt(v, 16)),
     );
     super(unicodeEmoji, key);
 

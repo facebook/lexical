@@ -88,10 +88,10 @@ test.describe.parallel('Selection', () => {
   }) => {
     // TODO(collab-v2): nested editors are not supported yet
     test.skip(isPlainText || IS_COLLAB_V2);
-    const hasSelection = async (parentSelector) =>
+    const hasSelection = async parentSelector =>
       await evaluate(
         page,
-        (_parentSelector) => {
+        _parentSelector => {
           return (
             document
               .querySelector(`${_parentSelector} > .tree-view-output pre`)
@@ -181,7 +181,7 @@ test.describe.parallel('Selection', () => {
     await page.keyboard.press('Enter');
     await page.keyboard.type('Three');
 
-    const p = (text) =>
+    const p = text =>
       text
         ? html`
             <p class="PlaygroundEditorTheme__paragraph" dir="auto">
@@ -220,7 +220,7 @@ test.describe.parallel('Selection', () => {
     await page.keyboard.press('Enter');
     await page.keyboard.type('Three');
 
-    const p = (text) =>
+    const p = text =>
       text
         ? html`
             <p class="PlaygroundEditorTheme__paragraph" dir="auto">
@@ -274,7 +274,7 @@ test.describe.parallel('Selection', () => {
     await page.keyboard.press('Enter');
     await page.keyboard.type('Three');
 
-    const p = (text) =>
+    const p = text =>
       text
         ? html`
             <p class="PlaygroundEditorTheme__paragraph" dir="auto">
@@ -353,7 +353,7 @@ test.describe.parallel('Selection', () => {
     isPlainText,
   }) => {
     test.skip(isPlainText || !IS_MAC);
-    const modifyImageHTML = async (originalHtml) =>
+    const modifyImageHTML = async originalHtml =>
       await prettifyHTML(
         originalHtml
           .replace(
@@ -1739,7 +1739,7 @@ test.describe.parallel('Selection', () => {
         throw new Error('Expected selection to be no null');
       }
 
-      return new Promise((resolve) => {
+      return new Promise(resolve => {
         editor.update(
           () => {
             for (const node of editor._editorState._nodeMap) {

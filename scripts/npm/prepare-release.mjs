@@ -43,10 +43,10 @@ function preparePackage(pkg) {
       `Missing Flow type definitions for package ${pkg.getDirectoryName()}`,
     );
   }
-  flowSources.forEach((flowSource) =>
+  flowSources.forEach(flowSource =>
     fs.copySync(flowSource, pkg.resolve('npm', path.basename(flowSource))),
   );
-  ['package.json', 'README.md'].forEach((fn) =>
+  ['package.json', 'README.md'].forEach(fn =>
     fs.copySync(pkg.resolve(fn), pkg.resolve('npm', fn)),
   );
 
@@ -55,9 +55,9 @@ function preparePackage(pkg) {
   const npmPackageJson = fs.readJsonSync(npmPackageJsonPath);
 
   // Replace workspace:* in dependencies and devDependencies
-  ['dependencies', 'devDependencies'].forEach((depType) => {
+  ['dependencies', 'devDependencies'].forEach(depType => {
     if (npmPackageJson[depType]) {
-      Object.keys(npmPackageJson[depType]).forEach((dep) => {
+      Object.keys(npmPackageJson[depType]).forEach(dep => {
         if (npmPackageJson[depType][dep] === 'workspace:*') {
           npmPackageJson[depType][dep] = version;
         }

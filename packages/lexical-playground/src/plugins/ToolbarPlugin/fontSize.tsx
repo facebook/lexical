@@ -139,7 +139,7 @@ export default function FontSize({
           (selectionFontSize !== '' &&
             Number(inputValue) <= MIN_ALLOWED_FONT_SIZE)
         }
-        onClick={(e) => {
+        onClick={e => {
           updateFontSize(
             editor,
             UpdateFontSizeType.decrement,
@@ -161,7 +161,7 @@ export default function FontSize({
         className="toolbar-item font-size-input"
         min={MIN_ALLOWED_FONT_SIZE}
         max={MAX_ALLOWED_FONT_SIZE}
-        onChange={(e) => setInputValue(e.target.value)}
+        onChange={e => setInputValue(e.target.value)}
         onClick={handleClick}
         onKeyDown={handleKeyPress}
         onBlur={handleInputBlur}
@@ -174,7 +174,7 @@ export default function FontSize({
           (selectionFontSize !== '' &&
             Number(inputValue) >= MAX_ALLOWED_FONT_SIZE)
         }
-        onClick={(e) => {
+        onClick={e => {
           updateFontSize(
             editor,
             UpdateFontSizeType.increment,

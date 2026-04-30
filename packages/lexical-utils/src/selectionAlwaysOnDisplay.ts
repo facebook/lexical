@@ -38,7 +38,7 @@ export default function selectionAlwaysOnDisplay(
     }
   };
 
-  return editor.registerRootListener((rootElement) => {
+  return editor.registerRootListener(rootElement => {
     if (rootElement) {
       const document = rootElement.ownerDocument;
       document.addEventListener('selectionchange', onSelectionChange);

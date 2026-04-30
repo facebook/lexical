@@ -261,6 +261,13 @@ export interface EditorDOMRenderConfig {
     editor: LexicalEditor,
   ) => boolean;
   /** @internal @experimental */
+  $decorateDOM: <T extends LexicalNode>(
+    node: T,
+    prevNode: null | T,
+    dom: HTMLElement,
+    editor: LexicalEditor,
+  ) => void;
+  /** @internal @experimental */
   $updateDOM: <T extends LexicalNode>(
     nextNode: T,
     prevNode: T,
@@ -600,7 +607,7 @@ function initializeConversionCache(
   const conversionCache = new Map();
   const handledConversions = new Set();
   const addConversionsToCache = (map: DOMConversionMap) => {
-    Object.keys(map).forEach((key) => {
+    Object.keys(map).forEach(key => {
       let currentCache = conversionCache.get(key);
 
       if (currentCache === undefined) {
@@ -611,7 +618,7 @@ function initializeConversionCache(
       currentCache.push(map[key]);
     });
   };
-  nodes.forEach((node) => {
+  nodes.forEach(node => {
     const importDOM = node.klass.importDOM;
 
     if (importDOM == null || handledConversions.has(importDOM)) {
@@ -668,6 +675,7 @@ export function getTransformSetFromKlass(
 /** @internal @experimental */
 export const DEFAULT_EDITOR_DOM_CONFIG: EditorDOMRenderConfig = {
   $createDOM: (node, editor) => node.createDOM(editor._config, editor),
+  $decorateDOM: (_node, _prevNode, _dom, _editor) => {},
   $exportDOM: (node, editor) => {
     const registeredNode = getRegisteredNode(editor, node.getType());
     // Use HTMLConfig overrides, if available.
@@ -773,7 +781,7 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
           // by mocking its static getType
           klass !== LexicalNode
         ) {
-          (['getType', 'clone'] as const).forEach((method) => {
+          (['getType', 'clone'] as const).forEach(method => {
             if (!hasOwnStaticMethod(klass, method)) {
               console.warn(`${name} must implement static "${method}" method`);
             }
@@ -1141,9 +1149,7 @@ export class LexicalEditor {
       listeners.delete(listener);
 
       if (
-        listenersInPriorityOrder.every(
-          (listenersSet) => listenersSet.size === 0,
-        )
+        listenersInPriorityOrder.every(listenersSet => listenersSet.size === 0)
       ) {
         commandsMap.delete(command);
       }
@@ -1289,10 +1295,10 @@ export class LexicalEditor {
 
     markNodesWithTypesAsDirty(
       this,
-      registeredNodes.map((node) => node.klass.getType()),
+      registeredNodes.map(node => node.klass.getType()),
     );
     return () => {
-      registeredNodes.forEach((node) =>
+      registeredNodes.forEach(node =>
         node.transforms.delete(listener as Transform<LexicalNode>),
       );
     };

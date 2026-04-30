@@ -76,7 +76,7 @@ export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
         html,
         namespace,
         nodes,
-        onError: (error) => onError(error, editor),
+        onError: error => onError(error, editor),
         theme,
       });
       initializeEditor(editor, initialEditorState);

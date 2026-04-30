@@ -142,7 +142,7 @@ export const isArray = Array.isArray;
 export const scheduleMicroTask: (fn: () => void) => void =
   typeof queueMicrotask === 'function'
     ? queueMicrotask
-    : (fn) => {
+    : fn => {
         // No window prefix intended (#1400)
         Promise.resolve().then(fn);
       };
@@ -2077,6 +2077,25 @@ export function setNodeIndentFromDOM(
 }
 
 /**
+ * Reads the `dir` attribute from a DOM element and applies it to the given
+ * ElementNode via {@link ElementNode.setDirection} when it is a valid direction
+ * value (`'ltr'` or `'rtl'`). Other values, including missing or empty `dir`,
+ * leave the node unchanged. Useful inside `importDOM` converters to preserve
+ * explicit text direction from imported HTML.
+ *
+ * @param node - The ElementNode to update.
+ * @param domNode - The source HTMLElement whose `dir` attribute is read.
+ * @returns The node, with its direction set when the source `dir` was valid.
+ */
+export function $setDirectionFromDOM<T extends ElementNode>(
+  node: T,
+  domNode: HTMLElement,
+): T {
+  const dir = domNode.getAttribute('dir');
+  return dir === 'ltr' || dir === 'rtl' ? node.setDirection(dir) : node;
+}
+
+/**
  * @internal
  *
  * Mark this node as unmanaged by lexical's mutation observer like
@@ -2213,7 +2232,7 @@ export function getStaticNodeConfig(klass: Klass<LexicalNode>): {
       }
       klass.importJSON =
         (ownNodeConfig && ownNodeConfig.$importJSON) ||
-        ((serializedNode) => new klass().updateFromJSON(serializedNode));
+        (serializedNode => new klass().updateFromJSON(serializedNode));
     }
     if (!hasOwnStaticMethod(klass, 'importDOM') && ownNodeConfig) {
       const {importDOM} = ownNodeConfig;

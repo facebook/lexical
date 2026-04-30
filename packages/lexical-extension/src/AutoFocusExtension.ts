@@ -42,7 +42,7 @@ export const AutoFocusExtension = defineExtension({
     return effect(() =>
       stores.disabled.value
         ? undefined
-        : editor.registerRootListener((rootElement) => {
+        : editor.registerRootListener(rootElement => {
             editor.focus(
               () => {
                 // If we try and move selection to the same point with setBaseAndExtent, it won't

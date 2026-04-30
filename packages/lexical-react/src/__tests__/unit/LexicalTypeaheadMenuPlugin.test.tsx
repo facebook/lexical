@@ -134,7 +134,7 @@ function createApp(plugin: React.ReactNode): React.FC {
         initialConfig={{
           namespace: 'test-typeahead',
           nodes: [],
-          onError: (err) => {
+          onError: err => {
             throw err;
           },
           theme: {},

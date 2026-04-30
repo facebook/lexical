@@ -16,6 +16,7 @@ import {
   $copyNode,
   $createTextNode,
   $isElementNode,
+  $setDirectionFromDOM,
   buildImportMap,
   DOMConversionOutput,
   DOMExportOutput,
@@ -300,7 +301,7 @@ function $normalizeChildren(nodes: Array<LexicalNode>): Array<ListItemNode> {
       normalizedListItems.push(node);
       const children = node.getChildren();
       if (children.length > 1) {
-        children.forEach((child) => {
+        children.forEach(child => {
           if ($isListNode(child)) {
             normalizedListItems.push($wrapInListItem(child));
           }
@@ -347,6 +348,10 @@ function $convertListNode(
     } else {
       node = $createListNode('bullet');
     }
+  }
+
+  if (node) {
+    $setDirectionFromDOM(node, domNode);
   }
 
   return {

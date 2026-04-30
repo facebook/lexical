@@ -51,6 +51,7 @@ export {DOMRenderExtension} from './DOMRenderExtension';
 export {
   $getRenderContextValue,
   $withRenderContext,
+  createRenderState,
   RenderContextExport,
   RenderContextRoot,
 } from './RenderContext';

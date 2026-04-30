@@ -16,15 +16,19 @@ import {
   ListItemNode,
   ListNode,
 } from '@lexical/list';
-import {HeadingNode, QuoteNode} from '@lexical/rich-text';
+import {$createQuoteNode, HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {
+  $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
+  $getCaretRange,
   $getRoot,
   $getSelection,
   $getState,
+  $getTextPointCaret,
   $insertNodes,
   $isRangeSelection,
+  $setSelectionFromCaretRange,
   $setState,
   KEY_ENTER_COMMAND,
 } from 'lexical';
@@ -32,6 +36,7 @@ import {describe, expect, it} from 'vitest';
 
 import {
   $convertFromMarkdownString,
+  $convertSelectionToMarkdownString,
   $convertToMarkdownString,
   LINK,
   registerMarkdownShortcuts,
@@ -105,7 +110,7 @@ const SIMPLE_INLINE_JSX_MATCHER: TextMatchTransformer = {
 // Matches html within a mdx file
 const MDX_HTML_TRANSFORMER: MultilineElementTransformer = {
   dependencies: [CodeNode],
-  export: (node) => {
+  export: node => {
     if (node.getTextContent().startsWith('From HTML:')) {
       return `<MyComponent>${node
         .getTextContent()
@@ -331,18 +336,18 @@ describe('Markdown', () => {
       md: '- Hello\n- world',
     },
     {
-      html: '<ul><li value="1"><span style="white-space: pre-wrap;">Level 1</span></li><li value="2"><ul><li value="1"><span style="white-space: pre-wrap;">Level 2</span></li><li value="2"><ul><li value="1"><span style="white-space: pre-wrap;">Level 3</span></li></ul></li></ul></li></ul><p><span style="white-space: pre-wrap;">Hello world</span></p>',
+      html: '<ul><li value="1"><span style="white-space: pre-wrap;">Level 1</span><ul><li value="1"><span style="white-space: pre-wrap;">Level 2</span><ul><li value="1"><span style="white-space: pre-wrap;">Level 3</span></li></ul></li></ul></li></ul><p><span style="white-space: pre-wrap;">Hello world</span></p>',
       md: '- Level 1\n    - Level 2\n        - Level 3\n\nHello world',
     },
     // List indentation with tabs, Import only: export will use "    " only for one level of indentation
     {
-      html: '<ul><li value="1"><span style="white-space: pre-wrap;">Level 1</span></li><li value="2"><ul><li value="1"><span style="white-space: pre-wrap;">Level 2</span></li><li value="2"><ul><li value="1"><span style="white-space: pre-wrap;">Level 3</span></li></ul></li></ul></li></ul><p><span style="white-space: pre-wrap;">Hello world</span></p>',
+      html: '<ul><li value="1"><span style="white-space: pre-wrap;">Level 1</span><ul><li value="1"><span style="white-space: pre-wrap;">Level 2</span><ul><li value="1"><span style="white-space: pre-wrap;">Level 3</span></li></ul></li></ul></li></ul><p><span style="white-space: pre-wrap;">Hello world</span></p>',
       md: '- Level 1\n\t- Level 2\n  \t  - Level 3\n\nHello world',
       skipExport: true,
     },
     {
       // Import only: export will use "-" instead of "*"
-      html: '<ul><li value="1"><span style="white-space: pre-wrap;">Level 1</span></li><li value="2"><ul><li value="1"><span style="white-space: pre-wrap;">Level 2</span></li><li value="2"><ul><li value="1"><span style="white-space: pre-wrap;">Level 3</span></li></ul></li></ul></li></ul><p><span style="white-space: pre-wrap;">Hello world</span></p>',
+      html: '<ul><li value="1"><span style="white-space: pre-wrap;">Level 1</span><ul><li value="1"><span style="white-space: pre-wrap;">Level 2</span><ul><li value="1"><span style="white-space: pre-wrap;">Level 3</span></li></ul></li></ul></li></ul><p><span style="white-space: pre-wrap;">Hello world</span></p>',
       md: '* Level 1\n    * Level 2\n        * Level 3\n\nHello world',
       skipExport: true,
     },
@@ -1847,5 +1852,327 @@ describe('markdown Safari compatibility (issue #8012)', () => {
 
   it('does not apply emphasis formatting inside a code span', () => {
     expect(roundtrip('`**not bold**`')).toBe('`**not bold**`');
+  });
+});
+
+describe('$convertSelectionToMarkdownString', () => {
+  function createTestEditor() {
+    return createHeadlessEditor({
+      nodes: [
+        HeadingNode,
+        ListNode,
+        ListItemNode,
+        QuoteNode,
+        CodeNode,
+        LinkNode,
+      ],
+    });
+  }
+
+  it('converts full selection to markdown', () => {
+    const editor = createTestEditor();
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        const text = $createTextNode('Hello World');
+        paragraph.append(text);
+        root.append(paragraph);
+        text.select(0);
+      },
+      {discrete: true},
+    );
+    const result = editor
+      .getEditorState()
+      .read(
+        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+        {editor},
+      );
+    expect(result).toBe('Hello World');
+  });
+
+  it('converts partial text selection to markdown', () => {
+    const editor = createTestEditor();
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        const text = $createTextNode('Hello World');
+        paragraph.append(text);
+        root.append(paragraph);
+        text.select(6, 11);
+      },
+      {discrete: true},
+    );
+    const result = editor
+      .getEditorState()
+      .read(
+        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+        {editor},
+      );
+    expect(result).toBe('World');
+  });
+
+  it('converts selection with bold text to markdown', () => {
+    const editor = createTestEditor();
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        const normal = $createTextNode('Hello ');
+        const bold = $createTextNode('Bold');
+        bold.toggleFormat('bold');
+        const after = $createTextNode(' World');
+        paragraph.append(normal, bold, after);
+        root.append(paragraph);
+        $setSelectionFromCaretRange(
+          $getCaretRange(
+            $getTextPointCaret(normal, 'next', 0),
+            $getTextPointCaret(bold, 'next', 4),
+          ),
+        );
+      },
+      {discrete: true},
+    );
+    const result = editor
+      .getEditorState()
+      .read(
+        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+        {editor},
+      );
+    expect(result).toBe('Hello **Bold**');
+  });
+
+  it('returns empty string for null selection', () => {
+    const result = $convertSelectionToMarkdownString(TRANSFORMERS, null);
+    expect(result).toBe('');
+  });
+
+  it('returns empty string for collapsed selection', () => {
+    const editor = createTestEditor();
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        const text = $createTextNode('Hello World');
+        paragraph.append(text);
+        root.append(paragraph);
+        text.select(5, 5);
+      },
+      {discrete: true},
+    );
+    const result = editor
+      .getEditorState()
+      .read(
+        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+        {editor},
+      );
+    expect(result).toBe('');
+  });
+
+  it('converts backward selection to markdown', () => {
+    const editor = createTestEditor();
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        const text = $createTextNode('Hello World');
+        paragraph.append(text);
+        root.append(paragraph);
+        text.select(5, 0);
+      },
+      {discrete: true},
+    );
+    const result = editor
+      .getEditorState()
+      .read(
+        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+        {editor},
+      );
+    expect(result).toBe('Hello');
+  });
+
+  it('converts multi-paragraph selection to markdown', () => {
+    const editor = createTestEditor();
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const p1 = $createParagraphNode();
+        const t1 = $createTextNode('First paragraph');
+        p1.append(t1);
+        const p2 = $createParagraphNode();
+        const t2 = $createTextNode('Second paragraph');
+        p2.append(t2);
+        root.append(p1, p2);
+        $setSelectionFromCaretRange(
+          $getCaretRange(
+            $getTextPointCaret(t1, 'next', 0),
+            $getTextPointCaret(t2, 'next', 'next'),
+          ),
+        );
+      },
+      {discrete: true},
+    );
+    const result = editor
+      .getEditorState()
+      .read(
+        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+        {editor},
+      );
+    expect(result).toBe('First paragraph\n\nSecond paragraph');
+  });
+
+  it('converts selection within a list to markdown', () => {
+    const editor = createTestEditor();
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const list = $createListNode('bullet');
+        const item1 = $createListItemNode();
+        const t1 = $createTextNode('Item 1');
+        item1.append(t1);
+        const item2 = $createListItemNode();
+        const t2 = $createTextNode('Item 2');
+        item2.append(t2);
+        list.append(item1, item2);
+        root.append(list);
+        $setSelectionFromCaretRange(
+          $getCaretRange(
+            $getTextPointCaret(t1, 'next', 0),
+            $getTextPointCaret(t2, 'next', 'next'),
+          ),
+        );
+      },
+      {discrete: true},
+    );
+    const result = editor
+      .getEditorState()
+      .read(
+        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+        {editor},
+      );
+    expect(result).toBe('- Item 1\n- Item 2');
+  });
+
+  it('preserves link when partially selecting link text', () => {
+    const editor = createTestEditor();
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        const before = $createTextNode('before ');
+        const linkNode = $createLinkNode('https://example.com');
+        const linkText = $createTextNode('link text');
+        linkNode.append(linkText);
+        const after = $createTextNode(' after');
+        paragraph.append(before, linkNode, after);
+        root.append(paragraph);
+        linkText.select(0, 4);
+      },
+      {discrete: true},
+    );
+    const result = editor
+      .getEditorState()
+      .read(
+        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+        {editor},
+      );
+    expect(result).toBe('[link](https://example.com)');
+  });
+
+  it('list partial selection only includes selected items', () => {
+    const editor = createTestEditor();
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const list = $createListNode('bullet');
+        const item1 = $createListItemNode();
+        const t1 = $createTextNode('Item 1');
+        item1.append(t1);
+        const item2 = $createListItemNode();
+        const t2 = $createTextNode('Item 2');
+        item2.append(t2);
+        const item3 = $createListItemNode();
+        const t3 = $createTextNode('Item 3');
+        item3.append(t3);
+        list.append(item1, item2, item3);
+        root.append(list);
+        $setSelectionFromCaretRange(
+          $getCaretRange(
+            $getTextPointCaret(t2, 'next', 0),
+            $getTextPointCaret(t3, 'next', 2),
+          ),
+        );
+      },
+      {discrete: true},
+    );
+    const result = editor
+      .getEditorState()
+      .read(
+        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+        {editor},
+      );
+    expect(result).toBe('- Item 2\n- It');
+  });
+
+  it('quote partial selection only includes selected text', () => {
+    const editor = createTestEditor();
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const quote = $createQuoteNode();
+        const t1 = $createTextNode('Line 1');
+        const br = $createLineBreakNode();
+        const t2 = $createTextNode('Line 2');
+        quote.append(t1, br, t2);
+        root.append(quote);
+        t2.select(0);
+      },
+      {discrete: true},
+    );
+    const result = editor
+      .getEditorState()
+      .read(
+        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+        {editor},
+      );
+    expect(result).toBe('> Line 2');
+  });
+
+  it('nested list partial selection only includes selected nested items', () => {
+    const editor = createTestEditor();
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const list = $createListNode('bullet');
+        const item1 = $createListItemNode();
+        const t1 = $createTextNode('Item 1');
+        item1.append(t1);
+        const nestedContainer = $createListItemNode();
+        const nestedList = $createListNode('bullet');
+        const nestedItem1 = $createListItemNode();
+        const nt1 = $createTextNode('Nested A');
+        nestedItem1.append(nt1);
+        const nestedItem2 = $createListItemNode();
+        const nt2 = $createTextNode('Nested B');
+        nestedItem2.append(nt2);
+        nestedList.append(nestedItem1, nestedItem2);
+        nestedContainer.append(nestedList);
+        const item3 = $createListItemNode();
+        const t3 = $createTextNode('Item 3');
+        item3.append(t3);
+        list.append(item1, nestedContainer, item3);
+        root.append(list);
+        nt1.select(0);
+      },
+      {discrete: true},
+    );
+    const result = editor
+      .getEditorState()
+      .read(
+        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+        {editor},
+      );
+    expect(result).toBe('    - Nested A');
   });
 });

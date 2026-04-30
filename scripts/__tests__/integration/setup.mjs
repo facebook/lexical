@@ -22,7 +22,7 @@ export default async function () {
   const needsBuild = packagesManager
     .getPublicPackages()
     .some(
-      (pkg) =>
+      pkg =>
         !fs.existsSync(
           path.resolve(`./npm/${pkg.getDirectoryName()}-${version}.tgz`),
         ),

@@ -285,7 +285,7 @@ describe('LexicalSelection tests', () => {
     editor!.getEditorState().read(() => {
       const xNode = $getRoot()
         .getAllTextNodes()
-        .find((node) => node.getTextContent() === 'x');
+        .find(node => node.getTextContent() === 'x');
       expect(xNode).toBeDefined();
       expect(xNode!.hasFormat('bold')).toBe(true);
     });
@@ -1879,7 +1879,7 @@ describe('LexicalSelection tests', () => {
       },
     ];
     baseCases
-      .flatMap((testCase) => {
+      .flatMap(testCase => {
         // Test inverse selection
         const inverse = {
           ...testCase,
@@ -2187,7 +2187,7 @@ describe('LexicalSelection tests', () => {
       },
     ];
     baseCases
-      .flatMap((testCase) => {
+      .flatMap(testCase => {
         const inverse = {
           ...testCase,
           invertSelection: true,
@@ -2424,7 +2424,7 @@ describe('LexicalSelection tests', () => {
         },
         name: 'moves selection to parent if next sibling is not a text node',
       },
-    ].forEach((testCase) => {
+    ].forEach(testCase => {
       test(testCase.name, async () => {
         await testEditor.update(() => {
           const {key, offset} = testCase.fn();
@@ -2552,6 +2552,64 @@ describe('LexicalSelection tests', () => {
           '',
         );
         expect(cssFontSizeValue).toBe('30px');
+      });
+    });
+  });
+
+  describe('Testing that getStyleObjectFromRawCSS handles comments and semicolons inside values', () => {
+    test('', async () => {
+      const testEditor = createTestEditor();
+      const element = document.createElement('div');
+      testEditor.setRootElement(element);
+
+      await testEditor.update(() => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        const textNode = $createTextNode('Hello, World!');
+        textNode.setStyle(
+          'background-image: url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\'></svg>"); /* ignored */ content: "semi;colon:value"; color: red;',
+        );
+        $addNodeStyle(textNode);
+        paragraph.append(textNode);
+        root.append(paragraph);
+
+        const selection = $createRangeSelection();
+        $setSelection(selection);
+        selection.insertParagraph();
+        $setAnchorPoint({
+          key: textNode.getKey(),
+          offset: 0,
+          type: 'text',
+        });
+
+        $setFocusPoint({
+          key: textNode.getKey(),
+          offset: 10,
+          type: 'text',
+        });
+
+        const cssBackgroundImageValue = $getSelectionStyleValueForProperty(
+          selection,
+          'background-image',
+          '',
+        );
+        expect(cssBackgroundImageValue).toBe(
+          'url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\'></svg>")',
+        );
+
+        const cssContentValue = $getSelectionStyleValueForProperty(
+          selection,
+          'content',
+          '',
+        );
+        expect(cssContentValue).toBe('"semi;colon:value"');
+
+        const cssColorValue = $getSelectionStyleValueForProperty(
+          selection,
+          'color',
+          '',
+        );
+        expect(cssColorValue).toBe('red');
       });
     });
   });

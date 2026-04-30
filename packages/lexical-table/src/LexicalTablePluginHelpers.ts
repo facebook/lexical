@@ -267,7 +267,7 @@ function $tableSelectAllCommand(): boolean {
 export function registerTableCellUnmergeTransform(
   editor: LexicalEditor,
 ): () => void {
-  return editor.registerNodeTransform(TableCellNode, (node) => {
+  return editor.registerNodeTransform(TableCellNode, node => {
     if (node.getColSpan() > 1 || node.getRowSpan() > 1) {
       // When we have rowSpan we have to map the entire Table to understand where the new Cells
       // fit best; let's analyze all Cells at once to save us from further transform iterations
@@ -352,7 +352,7 @@ export function registerTableSelectionObserver(
     ),
     editor.registerMutationListener(
       TableNode,
-      (nodeMutations) => {
+      nodeMutations => {
         editor.getEditorState().read(
           () => {
             for (const [nodeKey, mutation] of nodeMutations) {
@@ -412,7 +412,7 @@ export function registerTablePlugin(
   return mergeRegister(
     editor.registerCommand(
       INSERT_TABLE_COMMAND,
-      (payload) => {
+      payload => {
         return $insertTable(payload, hasNestedTables.peek());
       },
       COMMAND_PRIORITY_EDITOR,
@@ -455,7 +455,7 @@ function $tableSelectionInsertClipboardNodesCommand(
   const {nodes, selection} = selectionPayload;
 
   const hasTables = nodes.some(
-    (n) => $isTableNode(n) || $dfs(n).some((d) => $isTableNode(d.node)),
+    n => $isTableNode(n) || $dfs(n).some(d => $isTableNode(d.node)),
   );
   if (!hasTables) {
     // Not pasting a table - no special handling required.
@@ -466,10 +466,10 @@ function $tableSelectionInsertClipboardNodesCommand(
   const isRangeSelection = $isRangeSelection(selection);
   const isSelectionInsideOfGrid =
     (isRangeSelection &&
-      $findMatchingParent(selection.anchor.getNode(), (n) =>
+      $findMatchingParent(selection.anchor.getNode(), n =>
         $isTableCellNode(n),
       ) !== null &&
-      $findMatchingParent(selection.focus.getNode(), (n) =>
+      $findMatchingParent(selection.focus.getNode(), n =>
         $isTableCellNode(n),
       ) !== null) ||
     isTableSelection;
@@ -510,7 +510,7 @@ function $insertTableIntoGrid(
 
   const [anchor, focus] = anchorAndFocus;
   const [anchorCellNode, anchorRowNode, gridNode] = $getNodeTriplet(anchor);
-  const focusCellNode = $findMatchingParent(focus.getNode(), (n) =>
+  const focusCellNode = $findMatchingParent(focus.getNode(), n =>
     $isTableCellNode(n),
   );
 
@@ -645,7 +645,7 @@ function $insertTableIntoGrid(
         cell.setBackgroundColor(backgroundColor);
       }
       const originalChildren = cell.getChildren();
-      templateCell.getChildren().forEach((child) => {
+      templateCell.getChildren().forEach(child => {
         if ($isTextNode(child)) {
           const paragraphNode = $createParagraphNode();
           paragraphNode.append(child);
@@ -654,7 +654,7 @@ function $insertTableIntoGrid(
           cell.append(child);
         }
       });
-      originalChildren.forEach((n) => n.remove());
+      originalChildren.forEach(n => n.remove());
     }
   }
 

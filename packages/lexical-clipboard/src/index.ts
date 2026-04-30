@@ -7,6 +7,7 @@
  */
 
 export {
+  $exportMimeTypeFromSelection,
   $generateJSONFromSelectedNodes,
   $generateNodesFromSerializedNodes,
   $getClipboardDataFromSelection,
@@ -19,6 +20,10 @@ export {
   $insertGeneratedNodes,
   $writeDragSourceToDataTransfer,
   copyToClipboard,
+  type ExportMimeTypeConfig,
+  type ExportMimeTypeFunction,
+  type GetClipboardDataConfig,
+  GetClipboardDataExtension,
   type LexicalClipboardData,
   setLexicalClipboardDataTransfer,
 } from './clipboard';

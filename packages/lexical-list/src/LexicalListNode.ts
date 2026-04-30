@@ -303,12 +303,14 @@ function $normalizeChildren(nodes: Array<LexicalNode>): Array<ListItemNode> {
       if (children.length > 1) {
         children.forEach(child => {
           if ($isListNode(child)) {
-            normalizedListItems.push($wrapInListItem(child));
+            normalizedListItems.push($wrapInListItem(child, $copyNode(node)));
           }
         });
       }
     } else {
-      normalizedListItems.push($wrapInListItem(node));
+      const found = nodes.find($isListItemNode);
+      const exampleListItem = found ? $copyNode(found) : undefined;
+      normalizedListItems.push($wrapInListItem(node, exampleListItem));
     }
   }
   return normalizedListItems;

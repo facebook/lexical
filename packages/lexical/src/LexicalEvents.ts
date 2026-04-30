@@ -28,9 +28,11 @@ import {
   $getSelection,
   $isDecoratorNode,
   $isElementNode,
+  $isLineBreakNode,
   $isNodeSelection,
   $isRangeSelection,
   $isRootNode,
+  $isTabNode,
   $isTextNode,
   $setCompositionKey,
   BLUR_COMMAND,
@@ -590,6 +592,100 @@ function getTargetRange(event: InputEvent): null | StaticRange {
   return targetRanges[0];
 }
 
+// When a macOS text replacement is accepted, Chrome and Firefox fire input events for the key press that
+// triggered the acceptance *before* the one for the replacement text. This causes the caret to be placed
+// before the acceptance boundary. This function moves the caret past the acceptance boundary.
+function $maybeMoveSelectionPastTrailingAcceptanceBoundary(
+  insertedText: string | null | undefined,
+): void {
+  if (insertedText == null || insertedText.length <= 1 || lastKeyCode == null) {
+    return;
+  }
+
+  const characterToSearchFor =
+    lastKeyCode.length === 1
+      ? lastKeyCode
+      : lastKeyCode === 'Enter'
+        ? '\n'
+        : lastKeyCode === 'Tab'
+          ? '\t'
+          : null;
+
+  if (
+    characterToSearchFor == null ||
+    insertedText.endsWith(characterToSearchFor)
+  ) {
+    return;
+  }
+
+  const selection = $getSelection();
+  if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
+    return;
+  }
+
+  const anchorNode = selection.anchor.getNode();
+  if (!$isTextNode(anchorNode)) {
+    return;
+  }
+
+  switch (characterToSearchFor) {
+    case '\n':
+      if (anchorNode.getTextContentSize() === selection.anchor.offset) {
+        const block = $findMatchingParent(
+          anchorNode,
+          node => $isElementNode(node) && !node.isInline(),
+        );
+        const nextBlock = $isElementNode(block) ? block.getNextSibling() : null;
+        if ($isElementNode(nextBlock)) {
+          nextBlock.selectStart();
+          break;
+        }
+
+        const nextSibling = anchorNode.getNextSibling();
+        if ($isLineBreakNode(nextSibling)) {
+          nextSibling.selectNext(0, 0);
+          break;
+        }
+        break;
+      }
+      break;
+    case '\t':
+      if (selection.anchor.offset === anchorNode.getTextContentSize()) {
+        const nextSibling = anchorNode.getNextSibling();
+        if ($isTabNode(nextSibling)) {
+          nextSibling.selectNext(0, 0);
+          break;
+        }
+        break;
+      }
+      break;
+    default:
+      {
+        const offset = selection.anchor.offset;
+        const textContent = anchorNode.getTextContent();
+        if (textContent[offset] === characterToSearchFor) {
+          selection.setTextNodeRange(
+            anchorNode,
+            offset + 1,
+            anchorNode,
+            offset + 1,
+          );
+          return;
+        }
+
+        const nextSibling = anchorNode.getNextSibling();
+        if (
+          $isTextNode(nextSibling) &&
+          selection.anchor.offset === anchorNode.getTextContentSize() &&
+          nextSibling.getTextContent().startsWith(characterToSearchFor)
+        ) {
+          selection.setTextNodeRange(nextSibling, 1, nextSibling, 1);
+        }
+      }
+      break;
+  }
+}
+
 function $canRemoveText(
   anchorNode: TextNode | ElementNode,
   focusNode: TextNode | ElementNode,
@@ -835,6 +931,7 @@ function $handleBeforeInput(event: InputEvent): boolean {
     ) {
       event.preventDefault();
       dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, data);
+      $maybeMoveSelectionPastTrailingAcceptanceBoundary(data);
     } else {
       unprocessedBeforeInputData = data;
     }
@@ -852,6 +949,12 @@ function $handleBeforeInput(event: InputEvent): boolean {
     case 'insertFromDrop':
     case 'insertReplacementText': {
       dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, event);
+      const textFromDataTransfer = event.dataTransfer
+        ? event.dataTransfer.getData('text/plain')
+        : null;
+      $maybeMoveSelectionPastTrailingAcceptanceBoundary(
+        textFromDataTransfer ?? event.data,
+      );
       break;
     }
 

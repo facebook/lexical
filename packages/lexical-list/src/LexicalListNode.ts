@@ -199,13 +199,6 @@ export class ListNode extends ElementNode {
     deleteCount: number,
     nodesToInsert: LexicalNode[],
   ): this {
-    const exampleListItem =
-      nodesToInsert.find($isListItemNode) ??
-      this.getChildren().find($isListItemNode);
-    const $newListItem = exampleListItem
-      ? () => $copyNode(exampleListItem)
-      : $createListItemNode;
-
     let listItemNodesToInsert = nodesToInsert;
     for (let i = 0; i < nodesToInsert.length; i++) {
       const node = nodesToInsert[i];
@@ -213,7 +206,7 @@ export class ListNode extends ElementNode {
         if (listItemNodesToInsert === nodesToInsert) {
           listItemNodesToInsert = [...nodesToInsert];
         }
-        listItemNodesToInsert[i] = $newListItem().append(
+        listItemNodesToInsert[i] = this.createListItemNode().append(
           $isElementNode(node) && !($isListNode(node) || node.isInline())
             ? $createTextNode(node.getTextContent())
             : node,
@@ -225,6 +218,10 @@ export class ListNode extends ElementNode {
 
   extractWithChild(child: LexicalNode): boolean {
     return $isListItemNode(child);
+  }
+
+  createListItemNode(): ListItemNode {
+    return $createListItemNode();
   }
 }
 
@@ -293,7 +290,16 @@ function $setListThemeClassNames(
  * ensuring that they are all ListItemNodes and contain either a single nested ListNode
  * or some other inline content.
  */
-function $normalizeChildren(nodes: Array<LexicalNode>): Array<ListItemNode> {
+function $normalizeChildren(
+  nodes: Array<LexicalNode>,
+  listNode: ListNode | null,
+): Array<ListItemNode> {
+  // create an example list item based on existing ones
+  const foundItem = nodes.find($isListItemNode);
+  const $createWrapperItem = listNode
+    ? () => listNode.createListItemNode()
+    : foundItem && (() => $copyNode(foundItem));
+
   const normalizedListItems: Array<ListItemNode> = [];
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
@@ -304,15 +310,13 @@ function $normalizeChildren(nodes: Array<LexicalNode>): Array<ListItemNode> {
         children.forEach(child => {
           if ($isListNode(child)) {
             normalizedListItems.push(
-              $wrapInListItem(child, () => $copyNode(node)),
+              $wrapInListItem(child, $createWrapperItem),
             );
           }
         });
       }
     } else {
-      const found = nodes.find($isListItemNode);
-      const $createListItem = found ? () => $copyNode(found) : undefined;
-      normalizedListItems.push($wrapInListItem(node, $createListItem));
+      normalizedListItems.push($wrapInListItem(node, $createWrapperItem));
     }
   }
   return normalizedListItems;
@@ -359,7 +363,7 @@ function $convertListNode(
   }
 
   return {
-    after: $normalizeChildren,
+    after: children => $normalizeChildren(children, node),
     node,
   };
 }

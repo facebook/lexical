@@ -10,6 +10,7 @@ import type {
   BaseSelection,
   ElementNode,
   LexicalNode,
+  LineBreakNode,
   TextFormatType,
   TextNode,
 } from 'lexical';
@@ -17,6 +18,7 @@ import type {
 import {$sliceSelectedTextNodeContent} from '@lexical/selection';
 import {
   $getRoot,
+  $getState,
   $isDecoratorNode,
   $isElementNode,
   $isLineBreakNode,
@@ -25,6 +27,7 @@ import {
 
 import {
   ElementTransformer,
+  hardLineBreakState,
   MultilineElementTransformer,
   TextFormatTransformer,
   TextMatchTransformer,
@@ -62,7 +65,7 @@ export function createMarkdownExport(
 
     for (let i = 0; i < children.length; i++) {
       const child = children[i];
-      const result = exportTopLevelElements(
+      const result = $exportTopLevelElements(
         child,
         elementTransformers,
         textFormatTransformers,
@@ -285,7 +288,7 @@ function $exportChildrenForSelection(
 
     if ($isLineBreakNode(child)) {
       if (childIncluded) {
-        output.push('\n');
+        output.push($exportLineBreak(child));
         anyChildIncluded = true;
       }
     } else if ($isTextNode(child)) {
@@ -338,7 +341,7 @@ function $exportChildrenForSelection(
   return {markdown: output.join(''), shouldInclude: anyChildIncluded};
 }
 
-function exportTopLevelElements(
+function $exportTopLevelElements(
   node: LexicalNode,
   elementTransformers: Array<ElementTransformer | MultilineElementTransformer>,
   textTransformersIndex: Array<TextFormatTransformer>,
@@ -350,7 +353,7 @@ function exportTopLevelElements(
       continue;
     }
     const result = transformer.export(node, _node =>
-      exportChildren(
+      $exportChildren(
         _node,
         textTransformersIndex,
         textMatchTransformers,
@@ -366,7 +369,7 @@ function exportTopLevelElements(
   }
 
   if ($isElementNode(node)) {
-    return exportChildren(
+    return $exportChildren(
       node,
       textTransformersIndex,
       textMatchTransformers,
@@ -381,7 +384,7 @@ function exportTopLevelElements(
   }
 }
 
-function exportChildren(
+function $exportChildren(
   node: ElementNode,
   textTransformersIndex: Array<TextFormatTransformer>,
   textMatchTransformers: Array<TextMatchTransformer>,
@@ -408,7 +411,7 @@ function exportChildren(
       const result = transformer.export(
         child,
         parentNode =>
-          exportChildren(
+          $exportChildren(
             parentNode,
             textTransformersIndex,
             textMatchTransformers,
@@ -439,7 +442,7 @@ function exportChildren(
     }
 
     if ($isLineBreakNode(child)) {
-      output.push('\n');
+      output.push($exportLineBreak(child));
     } else if ($isTextNode(child)) {
       output.push(
         exportTextFormat(
@@ -454,7 +457,7 @@ function exportChildren(
     } else if ($isElementNode(child)) {
       // empty paragraph returns ""
       output.push(
-        exportChildren(
+        $exportChildren(
           child,
           textTransformersIndex,
           textMatchTransformers,
@@ -469,6 +472,10 @@ function exportChildren(
   }
 
   return output.join('');
+}
+
+function $exportLineBreak(node: LineBreakNode): string {
+  return $getState(node, hardLineBreakState) + '\n';
 }
 
 function exportTextFormat(

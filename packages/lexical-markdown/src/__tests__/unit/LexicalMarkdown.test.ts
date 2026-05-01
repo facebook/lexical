@@ -16,22 +16,31 @@ import {
   ListItemNode,
   ListNode,
 } from '@lexical/list';
-import {HeadingNode, QuoteNode} from '@lexical/rich-text';
+import {$createQuoteNode, HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {
+  $copyNode,
+  $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
+  $getCaretRange,
   $getRoot,
   $getSelection,
   $getState,
+  $getTextPointCaret,
   $insertNodes,
+  $isElementNode,
+  $isLineBreakNode,
   $isRangeSelection,
+  $isTextNode,
+  $setSelectionFromCaretRange,
   $setState,
   KEY_ENTER_COMMAND,
 } from 'lexical';
-import {describe, expect, it} from 'vitest';
+import {assert, describe, expect, it} from 'vitest';
 
 import {
   $convertFromMarkdownString,
+  $convertSelectionToMarkdownString,
   $convertToMarkdownString,
   LINK,
   registerMarkdownShortcuts,
@@ -42,10 +51,12 @@ import {
   CHECK_LIST,
   CODE,
   ElementTransformer,
+  hardLineBreakState,
   HEADING,
   listMarkerState,
   MultilineElementTransformer,
   normalizeMarkdown,
+  parseMarkdownHardLineBreak,
   TRANSFORMERS,
 } from '../../MarkdownTransformers';
 
@@ -1484,10 +1495,25 @@ after`;
     expect(normalizeMarkdown(md, true)).toBe('```\ncode\n```\nNext line');
   });
 
-  it('trims hard-break trailing spaces when merging adjacent lines', () => {
-    const md = `foo  
+  it('preserves hard-break trailing spaces when merging adjacent lines', () => {
+    const md = ['foo  ', 'bar'].join('\n');
+    expect(normalizeMarkdown(md, true)).toBe(md);
+  });
+
+  it('preserves exact hard-break trailing spaces when merging adjacent lines', () => {
+    const md = ['foo   ', 'bar'].join('\n');
+    expect(normalizeMarkdown(md, true)).toBe(md);
+  });
+
+  it('preserves backslash hard-breaks when merging adjacent lines', () => {
+    const md = `foo\\
 bar`;
-    expect(normalizeMarkdown(md, true)).toBe(`foo bar`);
+    expect(normalizeMarkdown(md, true)).toBe(md);
+  });
+
+  it('merges a soft break before a hard-breaking line', () => {
+    const md = ['foo', 'bar  ', 'baz'].join('\n');
+    expect(normalizeMarkdown(md, true)).toBe(['foo bar  ', 'baz'].join('\n'));
   });
 
   it('treats whitespace-only lines as empty separators (no merge across them)', () => {
@@ -1698,6 +1724,81 @@ describe('markdown whitespace import (default mode)', () => {
     });
   }
 
+  function expectRoundTrip(md: string, shouldMergeAdjacentLines = false): void {
+    const editor = createTestEditor();
+
+    editor.update(
+      () =>
+        $convertFromMarkdownString(
+          md,
+          [...TRANSFORMERS, HIGHLIGHT_TEXT_MATCH_IMPORT],
+          undefined,
+          false,
+          shouldMergeAdjacentLines,
+        ),
+      {discrete: true},
+    );
+
+    expect(
+      editor
+        .getEditorState()
+        .read(() =>
+          $convertToMarkdownString([
+            ...TRANSFORMERS,
+            HIGHLIGHT_TEXT_MATCH_IMPORT,
+          ]),
+        ),
+    ).toBe(md);
+  }
+
+  function getHardLineBreakMarker(line: string): string {
+    const parsed = parseMarkdownHardLineBreak(line);
+    assert(parsed !== null, 'Expected a hard line break marker');
+    return parsed[1];
+  }
+
+  function expectImportedHardLineBreakMarker(md: string, marker: string): void {
+    const editor = createTestEditor();
+
+    editor.update(
+      () =>
+        $convertFromMarkdownString(md, [
+          ...TRANSFORMERS,
+          HIGHLIGHT_TEXT_MATCH_IMPORT,
+        ]),
+      {discrete: true},
+    );
+
+    editor.getEditorState().read(() => {
+      const block = $getRoot().getFirstChildOrThrow();
+      assert($isElementNode(block), 'Expected an element block');
+      const lineBreakNode = block
+        .getChildren()
+        .find(child => $isLineBreakNode(child));
+
+      assert(lineBreakNode !== undefined, 'Expected a line break node');
+      expect(
+        block
+          .getChildren()
+          .filter($isTextNode)
+          .map(child => child.getTextContent()),
+      ).not.toContain(marker);
+      expect(block.getTextContent()).toBe('foo\nbar');
+      expect($getState(lineBreakNode, hardLineBreakState)).toBe(marker);
+    });
+
+    expect(
+      editor
+        .getEditorState()
+        .read(() =>
+          $convertToMarkdownString([
+            ...TRANSFORMERS,
+            HIGHLIGHT_TEXT_MATCH_IMPORT,
+          ]),
+        ),
+    ).toBe(md);
+  }
+
   it('preserves trailing whitespace on a standalone paragraph line (default mode)', () => {
     // A paragraph with trailing spaces, separated by an empty line from the next.
     const md = 'hello world   \n\nnext paragraph';
@@ -1749,10 +1850,37 @@ describe('markdown whitespace import (default mode)', () => {
     ).toBe(md);
   });
 
-  it('handles two-space hard line break in default mode (adjacent lines merged into LineBreak)', () => {
+  it('preserves two-space hard line break in default mode', () => {
     // In default mode, "foo  \nbar" has two adjacent non-empty lines → normalizeMarkdown
     // preserves the trailing "  " which $importBlocks then converts to a LineBreakNode.
-    const md = 'foo  \nbar';
+    expectRoundTrip('foo  \nbar');
+  });
+
+  it('preserves exact hard line break spaces in default mode', () => {
+    expectRoundTrip('foo   \nbar');
+  });
+
+  it('preserves backslash hard line break in default mode', () => {
+    expectRoundTrip('foo\\\nbar');
+  });
+
+  it('stores a two-space hard line break marker after formatted text', () => {
+    expectImportedHardLineBreakMarker('**foo**  \nbar', '  ');
+  });
+
+  it('stores exact hard line break spaces after formatted text', () => {
+    expectImportedHardLineBreakMarker('**foo**   \nbar', '   ');
+  });
+
+  it('stores a two-space hard line break marker after a link', () => {
+    expectImportedHardLineBreakMarker(
+      '[foo](https://lexical.dev)  \nbar',
+      '  ',
+    );
+  });
+
+  it('does not infer a hard line break marker from spaces inside a link', () => {
+    const md = '[foo  ](https://lexical.dev)\nbar';
     const editor = createTestEditor();
 
     editor.update(
@@ -1764,19 +1892,107 @@ describe('markdown whitespace import (default mode)', () => {
       {discrete: true},
     );
 
-    const exported = editor
-      .getEditorState()
-      .read(() =>
-        $convertToMarkdownString([
-          ...TRANSFORMERS,
-          HIGHLIGHT_TEXT_MATCH_IMPORT,
-        ]),
-      );
+    editor.getEditorState().read(() => {
+      const block = $getRoot().getFirstChildOrThrow();
+      assert($isElementNode(block), 'Expected an element block');
+      const lineBreakNode = block
+        .getChildren()
+        .find(child => $isLineBreakNode(child));
 
-    // The hard-break + next line are within the same paragraph; after import and
-    // re-export, the paragraph containing a LineBreakNode exports as "foo\nbar"
-    // (a single newline without the trailing spaces, since the break is now structural).
-    expect(exported).toBe('foo\nbar');
+      assert(lineBreakNode !== undefined, 'Expected a line break node');
+      expect(block.getTextContent()).toBe('foo  \nbar');
+      expect($getState(lineBreakNode, hardLineBreakState)).toBe('');
+    });
+
+    expect(
+      editor
+        .getEditorState()
+        .read(() =>
+          $convertToMarkdownString([
+            ...TRANSFORMERS,
+            HIGHLIGHT_TEXT_MATCH_IMPORT,
+          ]),
+        ),
+    ).toBe(md);
+  });
+
+  it('stores a two-space hard line break marker after formatted blockquote text', () => {
+    expectImportedHardLineBreakMarker('> **foo**  \n> bar', '  ');
+  });
+
+  it('preserves two-space hard line break in merge-adjacent mode', () => {
+    expectRoundTrip('foo  \nbar', true);
+  });
+
+  it('preserves exact hard line break spaces in merge-adjacent mode', () => {
+    expectRoundTrip('foo   \nbar', true);
+  });
+
+  it('preserves backslash hard line break in merge-adjacent mode', () => {
+    expectRoundTrip('foo\\\nbar', true);
+  });
+
+  it('preserves two-space hard line break between blockquote lines', () => {
+    expectRoundTrip('> foo  \n> bar');
+  });
+
+  it('preserves exact hard line break spaces between blockquote lines', () => {
+    expectRoundTrip('> foo   \n> bar');
+  });
+
+  it('preserves backslash hard line break between blockquote lines', () => {
+    expectRoundTrip('> foo\\\n> bar');
+  });
+
+  it('exports exact hard line break markers from line break state', () => {
+    const editor = createTestEditor();
+    const marker = getHardLineBreakMarker('foo   ');
+
+    editor.update(
+      () => {
+        const lineBreakNode = $createLineBreakNode();
+        $setState(lineBreakNode, hardLineBreakState, marker);
+        $getRoot()
+          .clear()
+          .append(
+            $createParagraphNode().append(
+              $createTextNode('foo'),
+              lineBreakNode,
+              $createTextNode('bar'),
+            ),
+          );
+      },
+      {discrete: true},
+    );
+
+    expect(
+      editor
+        .getEditorState()
+        .read(() =>
+          $convertToMarkdownString([
+            ...TRANSFORMERS,
+            HIGHLIGHT_TEXT_MATCH_IMPORT,
+          ]),
+        ),
+    ).toBe('foo   \nbar');
+  });
+
+  it('does not copy markdown hard line break markers when line breaks are copied', () => {
+    const editor = createTestEditor();
+    const marker = getHardLineBreakMarker('foo   ');
+
+    editor.update(
+      () => {
+        const lineBreakNode = $createLineBreakNode();
+        $setState(lineBreakNode, hardLineBreakState, marker);
+
+        expect($getState(lineBreakNode, hardLineBreakState)).toBe('   ');
+        const copy = $copyNode(lineBreakNode);
+        expect($getState(copy, hardLineBreakState)).toBe('');
+        expect($getState(lineBreakNode, hardLineBreakState)).toBe('   ');
+      },
+      {discrete: true},
+    );
   });
 });
 
@@ -1847,5 +2063,327 @@ describe('markdown Safari compatibility (issue #8012)', () => {
 
   it('does not apply emphasis formatting inside a code span', () => {
     expect(roundtrip('`**not bold**`')).toBe('`**not bold**`');
+  });
+});
+
+describe('$convertSelectionToMarkdownString', () => {
+  function createTestEditor() {
+    return createHeadlessEditor({
+      nodes: [
+        HeadingNode,
+        ListNode,
+        ListItemNode,
+        QuoteNode,
+        CodeNode,
+        LinkNode,
+      ],
+    });
+  }
+
+  it('converts full selection to markdown', () => {
+    const editor = createTestEditor();
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        const text = $createTextNode('Hello World');
+        paragraph.append(text);
+        root.append(paragraph);
+        text.select(0);
+      },
+      {discrete: true},
+    );
+    const result = editor
+      .getEditorState()
+      .read(
+        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+        {editor},
+      );
+    expect(result).toBe('Hello World');
+  });
+
+  it('converts partial text selection to markdown', () => {
+    const editor = createTestEditor();
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        const text = $createTextNode('Hello World');
+        paragraph.append(text);
+        root.append(paragraph);
+        text.select(6, 11);
+      },
+      {discrete: true},
+    );
+    const result = editor
+      .getEditorState()
+      .read(
+        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+        {editor},
+      );
+    expect(result).toBe('World');
+  });
+
+  it('converts selection with bold text to markdown', () => {
+    const editor = createTestEditor();
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        const normal = $createTextNode('Hello ');
+        const bold = $createTextNode('Bold');
+        bold.toggleFormat('bold');
+        const after = $createTextNode(' World');
+        paragraph.append(normal, bold, after);
+        root.append(paragraph);
+        $setSelectionFromCaretRange(
+          $getCaretRange(
+            $getTextPointCaret(normal, 'next', 0),
+            $getTextPointCaret(bold, 'next', 4),
+          ),
+        );
+      },
+      {discrete: true},
+    );
+    const result = editor
+      .getEditorState()
+      .read(
+        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+        {editor},
+      );
+    expect(result).toBe('Hello **Bold**');
+  });
+
+  it('returns empty string for null selection', () => {
+    const result = $convertSelectionToMarkdownString(TRANSFORMERS, null);
+    expect(result).toBe('');
+  });
+
+  it('returns empty string for collapsed selection', () => {
+    const editor = createTestEditor();
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        const text = $createTextNode('Hello World');
+        paragraph.append(text);
+        root.append(paragraph);
+        text.select(5, 5);
+      },
+      {discrete: true},
+    );
+    const result = editor
+      .getEditorState()
+      .read(
+        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+        {editor},
+      );
+    expect(result).toBe('');
+  });
+
+  it('converts backward selection to markdown', () => {
+    const editor = createTestEditor();
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        const text = $createTextNode('Hello World');
+        paragraph.append(text);
+        root.append(paragraph);
+        text.select(5, 0);
+      },
+      {discrete: true},
+    );
+    const result = editor
+      .getEditorState()
+      .read(
+        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+        {editor},
+      );
+    expect(result).toBe('Hello');
+  });
+
+  it('converts multi-paragraph selection to markdown', () => {
+    const editor = createTestEditor();
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const p1 = $createParagraphNode();
+        const t1 = $createTextNode('First paragraph');
+        p1.append(t1);
+        const p2 = $createParagraphNode();
+        const t2 = $createTextNode('Second paragraph');
+        p2.append(t2);
+        root.append(p1, p2);
+        $setSelectionFromCaretRange(
+          $getCaretRange(
+            $getTextPointCaret(t1, 'next', 0),
+            $getTextPointCaret(t2, 'next', 'next'),
+          ),
+        );
+      },
+      {discrete: true},
+    );
+    const result = editor
+      .getEditorState()
+      .read(
+        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+        {editor},
+      );
+    expect(result).toBe('First paragraph\n\nSecond paragraph');
+  });
+
+  it('converts selection within a list to markdown', () => {
+    const editor = createTestEditor();
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const list = $createListNode('bullet');
+        const item1 = $createListItemNode();
+        const t1 = $createTextNode('Item 1');
+        item1.append(t1);
+        const item2 = $createListItemNode();
+        const t2 = $createTextNode('Item 2');
+        item2.append(t2);
+        list.append(item1, item2);
+        root.append(list);
+        $setSelectionFromCaretRange(
+          $getCaretRange(
+            $getTextPointCaret(t1, 'next', 0),
+            $getTextPointCaret(t2, 'next', 'next'),
+          ),
+        );
+      },
+      {discrete: true},
+    );
+    const result = editor
+      .getEditorState()
+      .read(
+        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+        {editor},
+      );
+    expect(result).toBe('- Item 1\n- Item 2');
+  });
+
+  it('preserves link when partially selecting link text', () => {
+    const editor = createTestEditor();
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        const before = $createTextNode('before ');
+        const linkNode = $createLinkNode('https://example.com');
+        const linkText = $createTextNode('link text');
+        linkNode.append(linkText);
+        const after = $createTextNode(' after');
+        paragraph.append(before, linkNode, after);
+        root.append(paragraph);
+        linkText.select(0, 4);
+      },
+      {discrete: true},
+    );
+    const result = editor
+      .getEditorState()
+      .read(
+        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+        {editor},
+      );
+    expect(result).toBe('[link](https://example.com)');
+  });
+
+  it('list partial selection only includes selected items', () => {
+    const editor = createTestEditor();
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const list = $createListNode('bullet');
+        const item1 = $createListItemNode();
+        const t1 = $createTextNode('Item 1');
+        item1.append(t1);
+        const item2 = $createListItemNode();
+        const t2 = $createTextNode('Item 2');
+        item2.append(t2);
+        const item3 = $createListItemNode();
+        const t3 = $createTextNode('Item 3');
+        item3.append(t3);
+        list.append(item1, item2, item3);
+        root.append(list);
+        $setSelectionFromCaretRange(
+          $getCaretRange(
+            $getTextPointCaret(t2, 'next', 0),
+            $getTextPointCaret(t3, 'next', 2),
+          ),
+        );
+      },
+      {discrete: true},
+    );
+    const result = editor
+      .getEditorState()
+      .read(
+        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+        {editor},
+      );
+    expect(result).toBe('- Item 2\n- It');
+  });
+
+  it('quote partial selection only includes selected text', () => {
+    const editor = createTestEditor();
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const quote = $createQuoteNode();
+        const t1 = $createTextNode('Line 1');
+        const br = $createLineBreakNode();
+        const t2 = $createTextNode('Line 2');
+        quote.append(t1, br, t2);
+        root.append(quote);
+        t2.select(0);
+      },
+      {discrete: true},
+    );
+    const result = editor
+      .getEditorState()
+      .read(
+        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+        {editor},
+      );
+    expect(result).toBe('> Line 2');
+  });
+
+  it('nested list partial selection only includes selected nested items', () => {
+    const editor = createTestEditor();
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const list = $createListNode('bullet');
+        const item1 = $createListItemNode();
+        const t1 = $createTextNode('Item 1');
+        item1.append(t1);
+        const nestedContainer = $createListItemNode();
+        const nestedList = $createListNode('bullet');
+        const nestedItem1 = $createListItemNode();
+        const nt1 = $createTextNode('Nested A');
+        nestedItem1.append(nt1);
+        const nestedItem2 = $createListItemNode();
+        const nt2 = $createTextNode('Nested B');
+        nestedItem2.append(nt2);
+        nestedList.append(nestedItem1, nestedItem2);
+        nestedContainer.append(nestedList);
+        const item3 = $createListItemNode();
+        const t3 = $createTextNode('Item 3');
+        item3.append(t3);
+        list.append(item1, nestedContainer, item3);
+        root.append(list);
+        nt1.select(0);
+      },
+      {discrete: true},
+    );
+    const result = editor
+      .getEditorState()
+      .read(
+        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+        {editor},
+      );
+    expect(result).toBe('    - Nested A');
   });
 });

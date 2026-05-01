@@ -49,11 +49,11 @@ import {
 } from '../utils';
 
 function mapLatest<T extends LexicalNode>(nodes: T[]): T[] {
-  return nodes.map((node) => node.getLatest());
+  return nodes.map(node => node.getLatest());
 }
 
 describe('LexicalSelection tests', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     describe('Inserting text either side of inline elements', () => {
       const setup = async (
         mode: 'start-of-paragraph' | 'mid-paragraph' | 'end-of-paragraph',
@@ -524,9 +524,9 @@ describe('LexicalSelection tests', () => {
               expect(trailingTokenText.isAttached()).toBe(false);
               const allTextNodes = $getRoot().getAllTextNodes();
               // The token node will be completely removed
-              expect(allTextNodes.map((node) => node.getTextContent())).toEqual(
-                ['lead'],
-              );
+              expect(allTextNodes.map(node => node.getTextContent())).toEqual([
+                'lead',
+              ]);
               const selection = $assertRangeSelection($getSelection());
               expect(selection.isCollapsed()).toBe(true);
               expect(selection.anchor.key).toBe(leadingText.getKey());
@@ -670,9 +670,9 @@ describe('LexicalSelection tests', () => {
               expect(trailingText.isAttached()).toBe(true);
               const allTextNodes = $getRoot().getAllTextNodes();
               // The token node will be completely removed
-              expect(allTextNodes.map((node) => node.getTextContent())).toEqual(
-                ['ing text'],
-              );
+              expect(allTextNodes.map(node => node.getTextContent())).toEqual([
+                'ing text',
+              ]);
               const selection = $assertRangeSelection($getSelection());
               expect(selection.isCollapsed()).toBe(true);
               expect(selection.anchor.key).toBe(trailingText.getKey());
@@ -788,9 +788,9 @@ describe('LexicalSelection tests', () => {
               // expecting a new node since it was segmented
               expect(trailingSegmentedText.isAttached()).toBe(false);
               const allTextNodes = $getRoot().getAllTextNodes();
-              expect(allTextNodes.map((node) => node.getTextContent())).toEqual(
-                ['text'],
-              );
+              expect(allTextNodes.map(node => node.getTextContent())).toEqual([
+                'text',
+              ]);
               const selection = $assertRangeSelection($getSelection());
               expect(selection.isCollapsed()).toBe(true);
               expect(selection.anchor.key).toBe(allTextNodes[0].getKey());
@@ -817,9 +817,10 @@ describe('LexicalSelection tests', () => {
               expect(trailingSegmentedText.isAttached()).toBe(false);
               const allTextNodes = $getRoot().getAllTextNodes();
               // These should get merged in reconciliation
-              expect(allTextNodes.map((node) => node.getTextContent())).toEqual(
-                ['lead', 'text'],
-              );
+              expect(allTextNodes.map(node => node.getTextContent())).toEqual([
+                'lead',
+                'text',
+              ]);
               const selection = $assertRangeSelection($getSelection());
               expect(selection.isCollapsed()).toBe(true);
               expect(selection.anchor.key).toBe(leadingText.getKey());
@@ -830,7 +831,7 @@ describe('LexicalSelection tests', () => {
           testEnv.editor.getEditorState().read(() => {
             const allTextNodes = $getRoot().getAllTextNodes();
             // These should get merged in reconciliation
-            expect(allTextNodes.map((node) => node.getTextContent())).toEqual([
+            expect(allTextNodes.map(node => node.getTextContent())).toEqual([
               'leadtext',
             ]);
             expect(leadingText.isAttached()).toBe(true);
@@ -865,7 +866,7 @@ describe('Regression tests for #6701', () => {
     }
     const editor = createEditor({
       nodes: [InlineElementNode],
-      onError: (err) => {
+      onError: err => {
         throw err;
       },
     });
@@ -885,7 +886,7 @@ describe('Regression tests for #6701', () => {
 });
 
 describe('getNodes()', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     let paragraphNode: ParagraphNode;
     let paragraphText: TextNode;
     let linkNode: LinkNode;
@@ -975,7 +976,7 @@ describe('getNodes()', () => {
                 listItem2,
                 listItemText2,
                 emptyParagraph,
-              ].map((node) => node.getLatest()),
+              ].map(node => node.getLatest()),
             );
           },
           {discrete: true},
@@ -1008,7 +1009,7 @@ describe('getNodes()', () => {
                 listItemText2,
                 noLongerEmptyParagraph,
                 inlineDecoratorTrailing,
-              ].map((node) => node.getLatest()),
+              ].map(node => node.getLatest()),
             );
           },
           {discrete: true},
@@ -1044,7 +1045,7 @@ describe('getNodes()', () => {
                 listItem2,
                 listItemText2,
                 emptyParagraph,
-              ].map((node) => node.getLatest()),
+              ].map(node => node.getLatest()),
             );
           },
           {discrete: true},
@@ -1081,7 +1082,7 @@ describe('getNodes()', () => {
                 listItemText2,
                 noLongerEmptyParagraph,
                 inlineElementTrailing,
-              ].map((node) => node.getLatest()),
+              ].map(node => node.getLatest()),
             );
           },
           {discrete: true},
@@ -1114,7 +1115,7 @@ describe('getNodes()', () => {
                 listItemText1,
                 listItem2,
                 listItemText2,
-              ].map((n) => n.getLatest()),
+              ].map(n => n.getLatest()),
             );
           },
           {discrete: true},
@@ -1200,7 +1201,7 @@ describe('getNodes()', () => {
           });
           expect(selection.getNodes()).toEqual(
             // The bias is towards the right
-            [inlineDecoratorTrailing].map((node) => node.getLatest()),
+            [inlineDecoratorTrailing].map(node => node.getLatest()),
           );
         },
         {discrete: true},
@@ -1236,7 +1237,7 @@ describe('getNodes()', () => {
           expect(selection.getNodes()).toEqual(
             // The bias is towards the last descendant since no
             // nodes exist to the right
-            [inlineDecoratorTrailing].map((node) => node.getLatest()),
+            [inlineDecoratorTrailing].map(node => node.getLatest()),
           );
         },
         {discrete: true},
@@ -1278,7 +1279,7 @@ describe('getNodes()', () => {
               listItemText2,
               noLongerEmptyParagraph,
               inlineDecoratorLeading,
-            ].map((node) => node.getLatest()),
+            ].map(node => node.getLatest()),
           );
         },
         {discrete: true},
@@ -1371,7 +1372,7 @@ describe('getNodes()', () => {
 });
 
 describe('extract()', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     let paragraphNode: ParagraphNode;
     let paragraphText: TextNode;
     let linkNode: LinkNode;
@@ -1556,7 +1557,7 @@ describe('extract()', () => {
 });
 
 describe('Regression #7081', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     test('Firefox selection & paste before linebreak', () => {
       testEnv.editor.update(
         () => {
@@ -1590,7 +1591,7 @@ describe('Regression #7081', () => {
 });
 
 describe('Regression #7173', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     test('Can insertNodes of multiple blocks with a target of an initial empty block and the entire next block', () => {
       testEnv.editor.update(
         () => {
@@ -1616,7 +1617,7 @@ describe('Regression #7173', () => {
 });
 
 describe('Regression #3181', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     test('Point.isBefore edge case with mixed TextNode & ElementNode and matching descendants', () => {
       testEnv.editor.update(
         () => {
@@ -1655,7 +1656,7 @@ describe('Regression #3181', () => {
 });
 
 describe('Regression #8067', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     test('Formatting issue when replacing text with format', () => {
       testEnv.editor.update(
         () => {
@@ -1679,7 +1680,7 @@ describe('Regression #8067', () => {
 });
 
 describe('Regression #8098', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     test('Do not apply format and style when moving to different node', async () => {
       const {editor} = testEnv;
       let normalTextKey: string;

@@ -15,7 +15,7 @@ import React from 'react';
 import StackBlitzButton from './StackBlitzButton';
 
 const AgentEditor = React.lazy(() =>
-  import('@examples/agent-example/Editor').then((m) => ({default: m.Editor})),
+  import('@examples/agent-example/Editor').then(m => ({default: m.Editor})),
 );
 
 interface Section {

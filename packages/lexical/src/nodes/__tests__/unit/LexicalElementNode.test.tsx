@@ -447,7 +447,7 @@ describe('LexicalElementNode tests', () => {
       },
     ];
 
-    BASE_INSERTIONS.forEach((testCase) => {
+    BASE_INSERTIONS.forEach(testCase => {
       it(`Plain text: ${testCase.name}`, async () => {
         await update(() => {
           block.splice(
@@ -590,7 +590,7 @@ describe('LexicalElementNode tests', () => {
       },
     ];
 
-    NESTED_ELEMENTS_TESTS.forEach((testCase) => {
+    NESTED_ELEMENTS_TESTS.forEach(testCase => {
       it(`Nested elements: ${testCase.name}`, async () => {
         await update(() => {
           const text1 = $createTextNode('Foo');
@@ -658,7 +658,7 @@ describe('LexicalElementNode tests', () => {
       const transforms = new Set();
       const expectedTransforms: string[] = [];
 
-      const removeTransform = editor.registerNodeTransform(TextNode, (node) => {
+      const removeTransform = editor.registerNodeTransform(TextNode, node => {
         transforms.add(node.__key);
       });
 
@@ -693,7 +693,7 @@ describe('LexicalElementNode tests', () => {
 
       await update(() => {
         expect(block.getTextContent()).toEqual('Foo2BarBaz');
-        expectedTransforms.forEach((key) => {
+        expectedTransforms.forEach(key => {
           expect(transforms).toContain(key);
         });
       });
@@ -710,7 +710,7 @@ describe('getDOMSlot tests', () => {
     document.body.appendChild(container);
     editor = createEditor({
       nodes: [WrapperElementNode],
-      onError: (error) => {
+      onError: error => {
         throw error;
       },
     });

@@ -68,7 +68,7 @@ export default function EquationsPlugin(): JSX.Element | null {
 
     return editor.registerCommand<CommandPayload>(
       INSERT_EQUATION_COMMAND,
-      (payload) => {
+      payload => {
         const {equation, inline} = payload;
         const equationNode = $createEquationNode(equation, inline);
 

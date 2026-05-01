@@ -32,8 +32,8 @@ export default function npmToWwwName(name) {
     }
   }
   return parts
-    .flatMap((part) => part.split('-'))
-    .map((part) =>
+    .flatMap(part => part.split('-'))
+    .map(part =>
       /^use[A-Z]/.test(part)
         ? part
         : part.charAt(0).toUpperCase() + part.slice(1),

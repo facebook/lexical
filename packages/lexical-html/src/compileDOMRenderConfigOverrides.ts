@@ -244,7 +244,7 @@ function compilePrerenderKey<K extends keyof PreEditorDOMRenderConfig>(
       const [$predicate, $override] = pair;
       acc = mergeFunction(
         acc,
-        (node) => ($predicate(node) && $override) || undefined,
+        node => ($predicate(node) && $override) || undefined,
       );
     } else {
       const typeOverrides = pair[1];
@@ -258,7 +258,7 @@ function compilePrerenderKey<K extends keyof PreEditorDOMRenderConfig>(
           );
         }
       }
-      acc = mergeFunction(acc, (node) => {
+      acc = mergeFunction(acc, node => {
         const f = compiled[node.getType()];
         return f && ignoreNextFunction(f);
       });

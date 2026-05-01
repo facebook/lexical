@@ -33,7 +33,7 @@ import {expectHtmlToBeEqual, html} from 'lexical/src/__tests__/utils';
 import {describe, expect, test} from 'vitest';
 
 const idState = createState('id', {
-  parse: (v) => (typeof v === 'string' ? v : null),
+  parse: v => (typeof v === 'string' ? v : null),
 });
 
 describe('DOMRenderExtension', () => {
@@ -100,9 +100,7 @@ describe('DOMRenderExtension', () => {
       () =>
         $getRoot()
           .getAllTextNodes()
-          .forEach((node) =>
-            $setState(node, idState, (prev) => `${prev}-updated`),
-          ),
+          .forEach(node => $setState(node, idState, prev => `${prev}-updated`)),
       {discrete: true},
     );
     // Update works too
@@ -122,7 +120,7 @@ describe('DOMRenderExtension', () => {
       () =>
         $getRoot()
           .getAllTextNodes()
-          .forEach((node) => $setState(node, idState, null)),
+          .forEach(node => $setState(node, idState, null)),
       {discrete: true},
     );
     expect(
@@ -266,7 +264,7 @@ describe('DOMRenderExtension', () => {
       () =>
         $getRoot()
           .getAllTextNodes()
-          .forEach((node) => $setState(node, idState, 'updated')),
+          .forEach(node => $setState(node, idState, 'updated')),
       {discrete: true},
     );
     expect(calls).toHaveLength(2);

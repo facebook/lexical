@@ -27,7 +27,7 @@ type LanguagesType = keyof typeof PRETTIER_PARSER_MODULES;
 async function loadPrettierParserByLang(lang: string) {
   const dynamicImports = PRETTIER_PARSER_MODULES[lang as LanguagesType];
   const modules = await Promise.all(
-    dynamicImports.map((dynamicImport) => dynamicImport()),
+    dynamicImports.map(dynamicImport => dynamicImport()),
   );
   return modules;
 }
@@ -66,7 +66,7 @@ export async function formatCodeWithPrettier(content: string, lang: string) {
   const format = await loadPrettierFormat();
   const options = getPrettierOptions(lang);
   const prettierParsers = await loadPrettierParserByLang(lang);
-  options.plugins = prettierParsers.map((parser) => parser.default || parser);
+  options.plugins = prettierParsers.map(parser => parser.default || parser);
   if (lang === 'html') {
     content = content.replace(
       /(<[a-z][^>]*\bstyle\s*=\s*["'][^"']*white-space\s*:\s*pre[^"']*["'][^>]*>)/gi,

@@ -85,7 +85,7 @@ export const getCodeLanguages = (): Array<string> =>
     .filter(
       // Prism has several language helpers mixed into languages object
       // so filtering them out here to get langs list
-      (language) => typeof Prism.languages[language] !== 'function',
+      language => typeof Prism.languages[language] !== 'function',
     )
     .sort();
 
@@ -177,7 +177,7 @@ export function tokenizeDiffHighlight(
     };
 
     const withoutPrefixes = token.content.filter(
-      (t) => typeof t === 'string' || t.type !== 'prefix',
+      t => typeof t === 'string' || t.type !== 'prefix',
     );
     const prefixCount = token.content.length - withoutPrefixes.length;
     const diffTokens = Prism.tokenize(

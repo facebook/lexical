@@ -54,7 +54,7 @@ export function BlockWithAlignableContents({
     return mergeRegister(
       editor.registerCommand<ElementFormatType>(
         FORMAT_ELEMENT_COMMAND,
-        (formatType) => {
+        formatType => {
           if (isSelected) {
             const selection = $getSelection();
 
@@ -86,7 +86,7 @@ export function BlockWithAlignableContents({
       ),
       editor.registerCommand<MouseEvent>(
         CLICK_COMMAND,
-        (event) => {
+        event => {
           if (event.target === ref.current) {
             event.preventDefault();
             if (!event.shiftKey) {

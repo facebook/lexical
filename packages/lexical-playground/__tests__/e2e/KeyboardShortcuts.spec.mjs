@@ -49,47 +49,47 @@ import {
 
 const formatTestCases = [
   {
-    applyShortcut: (page) => applyNormalFormat(page),
+    applyShortcut: page => applyNormalFormat(page),
     canToggle: false,
     format: 'Normal',
   },
   {
-    applyShortcut: (page) => applyHeading(page, 1),
+    applyShortcut: page => applyHeading(page, 1),
     canToggle: false,
     format: 'Heading 1',
   },
   {
-    applyShortcut: (page) => applyHeading(page, 2),
+    applyShortcut: page => applyHeading(page, 2),
     canToggle: false,
     format: 'Heading 2',
   },
   {
-    applyShortcut: (page) => applyHeading(page, 3),
+    applyShortcut: page => applyHeading(page, 3),
     canToggle: false,
     format: 'Heading 3',
   },
   {
-    applyShortcut: (page) => toggleBulletList(page),
+    applyShortcut: page => toggleBulletList(page),
     canToggle: true,
     format: 'Bulleted List',
   },
   {
-    applyShortcut: (page) => toggleNumberedList(page),
+    applyShortcut: page => toggleNumberedList(page),
     canToggle: true,
     format: 'Numbered List',
   },
   {
-    applyShortcut: (page) => toggleChecklist(page),
+    applyShortcut: page => toggleChecklist(page),
     canToggle: true,
     format: 'Check List',
   },
   {
-    applyShortcut: (page) => applyQuoteBlock(page),
+    applyShortcut: page => applyQuoteBlock(page),
     canToggle: false,
     format: 'Quote',
   },
   {
-    applyShortcut: (page) => applyCodeBlock(page),
+    applyShortcut: page => applyCodeBlock(page),
     canToggle: false,
     format: 'Code Block',
   },
@@ -98,52 +98,52 @@ const formatTestCases = [
 const alignmentTestCases = [
   {
     alignment: 'Left Align',
-    applyShortcut: (page) => leftAlign(page),
+    applyShortcut: page => leftAlign(page),
   },
   {
     alignment: 'Center Align',
-    applyShortcut: (page) => centerAlign(page),
+    applyShortcut: page => centerAlign(page),
   },
   {
     alignment: 'Right Align',
-    applyShortcut: (page) => rightAlign(page),
+    applyShortcut: page => rightAlign(page),
   },
   {
     alignment: 'Justify Align',
-    applyShortcut: (page) => justifyAlign(page),
+    applyShortcut: page => justifyAlign(page),
   },
 ];
 
 const additionalStylesTestCases = [
   {
-    applyShortcut: (page) => toggleLowercase(page),
+    applyShortcut: page => toggleLowercase(page),
     style: 'Lowercase',
   },
   {
-    applyShortcut: (page) => toggleUppercase(page),
+    applyShortcut: page => toggleUppercase(page),
     style: 'Uppercase',
   },
   {
-    applyShortcut: (page) => toggleCapitalize(page),
+    applyShortcut: page => toggleCapitalize(page),
     style: 'Capitalize',
   },
   {
-    applyShortcut: (page) => toggleStrikethrough(page),
+    applyShortcut: page => toggleStrikethrough(page),
     style: 'Strikethrough',
   },
   {
-    applyShortcut: (page) => toggleSubscript(page),
+    applyShortcut: page => toggleSubscript(page),
     style: 'Subscript',
   },
   {
-    applyShortcut: (page) => toggleSuperscript(page),
+    applyShortcut: page => toggleSuperscript(page),
     style: 'Superscript',
   },
 ];
 
 const DEFAULT_FORMAT = 'Normal';
 
-const getSelectedFormat = async (page) => {
+const getSelectedFormat = async page => {
   return await textContent(
     page,
     '.toolbar-item.block-controls > .text.dropdown-button-text',
@@ -153,7 +153,7 @@ const getSelectedFormat = async (page) => {
 const isDropdownItemActive = async (page, dropdownItemIndex) => {
   return await evaluate(
     page,
-    async (_dropdownItemIndex) => {
+    async _dropdownItemIndex => {
       await document
         .querySelector(
           'button[aria-label="Formatting options for additional text styles"]',

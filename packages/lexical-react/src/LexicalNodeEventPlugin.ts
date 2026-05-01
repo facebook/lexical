@@ -46,7 +46,7 @@ export function NodeEventPlugin({
               : null
             : $findMatchingParent(
                 nearestNode,
-                (node) => node instanceof nodeType,
+                node => node instanceof nodeType,
               );
           if (targetNode !== null) {
             listenerRef.current(event, editor, targetNode.getKey());
@@ -56,7 +56,7 @@ export function NodeEventPlugin({
       });
     };
 
-    return editor.registerRootListener((rootElement) => {
+    return editor.registerRootListener(rootElement => {
       if (rootElement) {
         rootElement.addEventListener(eventType, onEvent, isCaptured);
         return () =>

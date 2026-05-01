@@ -7,7 +7,6 @@
  */
 
 import {
-  $getEditor,
   $getEditorDOMRenderConfig,
   $getSelection,
   $isElementNode,
@@ -31,6 +30,7 @@ function $getOrderedSelectionPoints(selection: RangeSelection): [Point, Point] {
 }
 
 function $rangeTargetFromPoint(
+  editor: LexicalEditor,
   point: Point,
   node: ElementNode | TextNode,
   dom: HTMLElement,
@@ -39,7 +39,6 @@ function $rangeTargetFromPoint(
     const textDOM = getDOMTextNode(dom) || dom;
     return [textDOM, point.offset];
   } else {
-    const editor = $getEditor();
     const slot = $getEditorDOMRenderConfig(editor).$getDOMSlot(
       node,
       dom,
@@ -60,8 +59,8 @@ function $rangeFromPoints(
 ): Range {
   const editorDocument = editor._window ? editor._window.document : document;
   const range = editorDocument.createRange();
-  range.setStart(...$rangeTargetFromPoint(start, startNode, startDOM));
-  range.setEnd(...$rangeTargetFromPoint(end, endNode, endDOM));
+  range.setStart(...$rangeTargetFromPoint(editor, start, startNode, startDOM));
+  range.setEnd(...$rangeTargetFromPoint(editor, end, endNode, endDOM));
   return range;
 }
 

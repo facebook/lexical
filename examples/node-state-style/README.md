@@ -1,7 +1,7 @@
 # Node State Style example
 
 Here we have an example that demonstrates how NodeState can be used with a
-mutation listener to override behavior of any node.
+DOMRenderExtension to override create and export behavior of any node.
 
 **Run it locally:** `npm i && npm run dev`
 

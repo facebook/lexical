@@ -30,7 +30,7 @@ function getErrorMap(filepath) {
       ...(prettier.resolveConfig(import.meta.filename) || {}),
       filepath,
     };
-    errorMap = new ErrorMap(fs.readJsonSync(filepath), (newErrorMap) =>
+    errorMap = new ErrorMap(fs.readJsonSync(filepath), newErrorMap =>
       fs.writeFileSync(
         filepath,
         prettier.format(JSON.stringify(newErrorMap), prettierConfig),
@@ -103,9 +103,7 @@ export default function transformErrorMessages(babel, opts) {
             const errorMsgExpressions = Array.from(node.arguments.slice(2));
             const errorMsgQuasis = errorMsgLiteral
               .split('%s')
-              .map((raw) =>
-                t.templateElement({cooked: String.raw({raw}), raw}),
-              );
+              .map(raw => t.templateElement({cooked: String.raw({raw}), raw}));
 
             // Outputs:
             //   `A ${adj} message that contains ${noun}`;

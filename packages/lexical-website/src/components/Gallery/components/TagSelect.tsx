@@ -21,10 +21,8 @@ function useTagState(tag: string) {
   const [tags, setTags] = useTags();
   const isSelected = tags.includes(tag);
   const toggle = useCallback(() => {
-    setTags((list) => {
-      return list.includes(tag)
-        ? list.filter((t) => t !== tag)
-        : [...list, tag];
+    setTags(list => {
+      return list.includes(tag) ? list.filter(t => t !== tag) : [...list, tag];
     });
   }, [tag, setTags]);
 
@@ -57,7 +55,7 @@ export default function TagSelect({
         checked={isSelected}
         onChange={toggle}
         className={styles.screenReaderOnly}
-        onKeyDown={(e) => {
+        onKeyDown={e => {
           if (e.key === 'Enter') {
             toggle();
           }

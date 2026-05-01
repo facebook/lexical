@@ -42,7 +42,7 @@ import {
 } from '../../../__tests__/utils';
 
 describe('LexicalTabNode tests', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     beforeEach(async () => {
       const {editor} = testEnv;
       await editor.update(() => {
@@ -115,7 +115,7 @@ describe('LexicalTabNode tests', () => {
         $insertDataTransferForRichText(dataTransfer, selection, editor);
       });
       expect(testEnv.innerHTML).toBe(
-        '<p dir="auto"><span data-lexical-text="true">Hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span></p><p dir="auto"><span data-lexical-text="true">Hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span></p>',
+        '<p dir="ltr"><span data-lexical-text="true">Hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span></p><p dir="auto"><span data-lexical-text="true">Hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span></p>',
       );
     });
 
@@ -290,7 +290,7 @@ describe('LexicalTabNode tests', () => {
 
     describe('TabNode at selection boundaries with normal TextNode sibling (#7602)', () => {
       const input = 'x\tx';
-      (['next', 'previous'] as const).forEach((direction) => {
+      (['next', 'previous'] as const).forEach(direction => {
         [
           {output: 'yx', start: 0},
           {output: 'xy', start: 1},
@@ -318,7 +318,7 @@ describe('LexicalTabNode tests', () => {
             // Using read here because we want to see the post-normalization merged state
             editor.read(() => {
               const expectNodes = $getRoot().getAllTextNodes();
-              expect(expectNodes.map((node) => node.getTextContent())).toEqual([
+              expect(expectNodes.map(node => node.getTextContent())).toEqual([
                 output,
               ]);
               expect(expectNodes.map($isTabNode)).toEqual([false]);

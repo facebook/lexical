@@ -47,7 +47,7 @@ module.exports.buildMatcher = function buildMatcher(...toMatchers) {
       regExpSources.push(/^[(^]/.test(arg) ? arg : `^${escapeRegExp(arg)}$`);
     } else if (arg && arg instanceof RegExp) {
       if (arg.flags) {
-        matchFuns.push((s) => arg.test(s));
+        matchFuns.push(s => arg.test(s));
       } else {
         regExpSources.push(arg.source);
       }
@@ -55,12 +55,12 @@ module.exports.buildMatcher = function buildMatcher(...toMatchers) {
       matchFuns.push(arg);
     }
   }
-  const pattern = regExpSources.map((s) => `(?:${s})`).join('|');
+  const pattern = regExpSources.map(s => `(?:${s})`).join('|');
   if (pattern) {
     const re = new RegExp(pattern);
-    matchFuns.push((s) => re.test(s));
+    matchFuns.push(s => re.test(s));
   }
-  return (node) => {
+  return node => {
     if (node) {
       if (node.type !== 'Identifier') {
         // Runtime type invariant check

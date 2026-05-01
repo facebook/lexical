@@ -7,84 +7,52 @@
  */
 
 import {Tabs} from '@ark-ui/react/tabs';
-import {AutoFocusPlugin} from '@lexical/react/LexicalAutoFocusPlugin';
-import {
-  InitialConfigType,
-  LexicalComposer,
-} from '@lexical/react/LexicalComposer';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {AutoFocusExtension} from '@lexical/extension';
+import {HistoryExtension} from '@lexical/history';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
-import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
-import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
-import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
-import {
-  DOMExportOutput,
-  DOMExportOutputMap,
-  Klass,
-  LexicalEditor,
-  LexicalNode,
-  ParagraphNode,
-  TextNode,
-} from 'lexical';
-import {useEffect} from 'react';
+import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
+import {RichTextExtension} from '@lexical/rich-text';
+import {defineExtension, ParagraphNode, TextNode} from 'lexical';
 
 import ExampleTheme from './ExampleTheme';
 import {ShikiViewPlugin} from './plugins/ShikiViewPlugin';
 import {StyleViewPlugin} from './plugins/StyleViewPlugin';
 import {ToolbarPlugin} from './plugins/ToolbarPlugin';
-import {
-  $exportNodeStyle,
-  constructStyleImportMap,
-  registerStyleState,
-} from './styleState';
+import {StyleStateExtension} from './styleState';
 
 const placeholder = 'Enter some rich text...';
 
-const exportMap: DOMExportOutputMap = new Map<
-  Klass<LexicalNode>,
-  (editor: LexicalEditor, target: LexicalNode) => DOMExportOutput
->([[TextNode, $exportNodeStyle]]);
-
-const editorConfig: InitialConfigType = {
-  html: {
-    export: exportMap,
-    import: constructStyleImportMap(),
-  },
+const editorExtension = defineExtension({
+  dependencies: [
+    RichTextExtension,
+    HistoryExtension,
+    AutoFocusExtension,
+    StyleStateExtension,
+  ],
+  name: '@lexical/examples/node-state-style',
   namespace: 'NodeState Demo',
   nodes: [ParagraphNode, TextNode],
   onError(error: Error) {
     throw error;
   },
   theme: ExampleTheme,
-};
-
-function StyleStatePlugin() {
-  const [editor] = useLexicalComposerContext();
-  useEffect(() => registerStyleState(editor), [editor]);
-  return null;
-}
+});
 
 export default function App() {
   return (
-    <LexicalComposer initialConfig={editorConfig}>
+    <LexicalExtensionComposer
+      extension={editorExtension}
+      contentEditable={null}>
       <div className="editor-container">
         <ToolbarPlugin />
         <div className="editor-inner">
-          <RichTextPlugin
-            contentEditable={
-              <ContentEditable
-                className="editor-input"
-                aria-placeholder={placeholder}
-                placeholder={
-                  <div className="editor-placeholder">{placeholder}</div>
-                }
-              />
+          <ContentEditable
+            className="editor-input"
+            aria-placeholder={placeholder}
+            placeholder={
+              <div className="editor-placeholder">{placeholder}</div>
             }
-            ErrorBoundary={LexicalErrorBoundary}
           />
-          <HistoryPlugin />
-          <AutoFocusPlugin />
-          <StyleStatePlugin />
         </div>
       </div>
       <Tabs.Root
@@ -109,6 +77,6 @@ export default function App() {
           <ShikiViewPlugin lang="json" />
         </Tabs.Content>
       </Tabs.Root>
-    </LexicalComposer>
+    </LexicalExtensionComposer>
   );
 }

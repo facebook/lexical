@@ -30,7 +30,7 @@ import {initializeUnitTest} from '../../../__tests__/utils';
 
 // The tests below here are intended to be basically copied from packages/lexical-website/docs/concepts/traversals.md
 describe('traversals.md', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     describe('Traversal Strategies', () => {
       let paragraphA: ParagraphNode;
       let textA1: TextNode;

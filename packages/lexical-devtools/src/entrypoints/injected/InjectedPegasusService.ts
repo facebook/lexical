@@ -96,7 +96,7 @@ export class InjectedPegasusService implements IPegasusRPCService<InjectedPegasu
 
     this.pickerActive = new ElementPicker({style: ELEMENT_PICKER_STYLE});
     this.pickerActive.start({
-      elementFilter: (el) => {
+      elementFilter: el => {
         let parent: HTMLElement | null = el;
         while (parent !== null && parent.tagName !== 'BODY') {
           if ('__lexicalEditor' in parent) {
@@ -108,7 +108,7 @@ export class InjectedPegasusService implements IPegasusRPCService<InjectedPegasu
         return false;
       },
 
-      onClick: (el) => {
+      onClick: el => {
         this.deactivatePicker();
         if (isLexicalNode(el)) {
           this.extensionStore

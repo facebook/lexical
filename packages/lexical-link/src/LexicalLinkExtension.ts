@@ -61,7 +61,7 @@ export function registerLink(
     editor.registerNodeTransform(LinkNode, $linkNodeTransform),
     editor.registerCommand(
       TOGGLE_LINK_COMMAND,
-      (payload) => {
+      payload => {
         const validateUrl = stores.validateUrl.peek();
         const attributes = stores.attributes.peek();
         if (payload === null) {
@@ -94,7 +94,7 @@ export function registerLink(
       const attributes = stores.attributes.value;
       return editor.registerCommand(
         PASTE_COMMAND,
-        (event) => {
+        event => {
           const selection = $getSelection();
           if (
             !$isRangeSelection(selection) ||
@@ -111,7 +111,7 @@ export function registerLink(
             return false;
           }
           // If we select nodes that are elements then avoid applying the link.
-          if (!selection.getNodes().some((node) => $isElementNode(node))) {
+          if (!selection.getNodes().some(node => $isElementNode(node))) {
             editor.dispatchCommand(TOGGLE_LINK_COMMAND, {
               ...attributes,
               url: clipboardText,

@@ -65,9 +65,9 @@ const teamDataPath = join(
 );
 const teamData = JSON.parse(fs.readFileSync(teamDataPath, 'utf8'));
 
-const coreUsernames = teamData.core.map((m) => m.username);
-const emeritiUsernames = teamData.emeriti.map((m) => m.username);
-const distinguishedUsernames = teamData.distinguished.map((m) => m.username);
+const coreUsernames = teamData.core.map(m => m.username);
+const emeritiUsernames = teamData.emeriti.map(m => m.username);
+const distinguishedUsernames = teamData.distinguished.map(m => m.username);
 
 // Create a map of username -> display name
 // Priority: team.json data, then hardcoded historical data
@@ -80,7 +80,7 @@ allHistoricalReviewers.forEach(({name, username}) => {
 
 // Then override with team.json data (which is more authoritative)
 [...teamData.core, ...teamData.emeriti, ...teamData.distinguished].forEach(
-  (member) => {
+  member => {
     usernameToName.set(member.username, member.name);
   },
 );
@@ -93,23 +93,23 @@ function formatReviewer(username) {
 
 // Categorize all historical reviewers
 const core = allHistoricalReviewers
-  .filter((r) => coreUsernames.includes(r.username))
+  .filter(r => coreUsernames.includes(r.username))
   .sort((a, b) =>
     a.username.toLowerCase().localeCompare(b.username.toLowerCase()),
   );
 const emeriti = allHistoricalReviewers
-  .filter((r) => emeritiUsernames.includes(r.username))
+  .filter(r => emeritiUsernames.includes(r.username))
   .sort((a, b) =>
     a.username.toLowerCase().localeCompare(b.username.toLowerCase()),
   );
 const distinguished = allHistoricalReviewers
-  .filter((r) => distinguishedUsernames.includes(r.username))
+  .filter(r => distinguishedUsernames.includes(r.username))
   .sort((a, b) =>
     a.username.toLowerCase().localeCompare(b.username.toLowerCase()),
   );
 const notInTeamData = allHistoricalReviewers
   .filter(
-    (r) =>
+    r =>
       !coreUsernames.includes(r.username) &&
       !emeritiUsernames.includes(r.username) &&
       !distinguishedUsernames.includes(r.username),

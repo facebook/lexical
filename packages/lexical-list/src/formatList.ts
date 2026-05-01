@@ -482,7 +482,7 @@ export function $handleOutdent(listItemNode: ListItemNode): void {
       previousSiblingsListItem.append(previousSiblingsList);
       listItemNode
         .getPreviousSiblings()
-        .forEach((sibling) => previousSiblingsList.append(sibling));
+        .forEach(sibling => previousSiblingsList.append(sibling));
       const nextSiblingsListItem = $copyNode(listItemNode);
       const nextSiblingsList = $copyNode(parentList);
       nextSiblingsListItem.append(nextSiblingsList);
@@ -528,9 +528,7 @@ export function $handleListInsertParagraph(
       $isListItemNode(parentListItem) &&
       parentListItem
         .getChildren()
-        .every(
-          (node) => $isTextNode(node) && node.getTextContent().trim() === '',
-        )
+        .every(node => $isTextNode(node) && node.getTextContent().trim() === '')
     ) {
       listItem = parentListItem;
     }

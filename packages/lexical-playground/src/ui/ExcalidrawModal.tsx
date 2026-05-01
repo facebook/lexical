@@ -132,7 +132,7 @@ export default function ExcalidrawModal({
   }, [elements, files, onDelete]);
 
   const save = () => {
-    if (elements?.some((el) => !el.isDeleted)) {
+    if (elements?.some(el => !el.isDeleted)) {
       const appState = excalidrawAPI?.getAppState();
       // We only need a subset of the state
       const partialState: Partial<AppState> = {

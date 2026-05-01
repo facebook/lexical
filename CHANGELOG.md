@@ -1,3 +1,66 @@
+## v0.44.0 (2026-04-27)
+
+- lexical Chore Fix uuid dependency vulnerability  (#8399) Vishisht Maroria
+-  Fix Flow type errors in flow definition files (#8396) Sherry
+- lexical-extension Bug Fix Use maybeFromEditor in getPeerDependencyFromEditor (#8398) Sherry
+- lexical-playground Bug Fix Show floating link editor for single-character links (#8392) mayrang
+- lexical-list Bug Fix Toggle checklist items on mobile tap (#8390) jWA
+- lexical-playground Refactor Use floating-uireact for FloatingLinkEditorPlugin positioning (#8388) mayrang
+- build(deps) bump excalidrawexcalidraw from 0.18.0 to 0.18.1 (#8389) dependabotbot
+- lexical-react Bug Fix Fall back to root node in NodeContextMenuPlugin when click target has no Lexical node (#8385) mayrang
+- lexical-playground Feature Format HTML conversion with prettier (#8386) Bob Ippolito
+- lexical-linklexical-react Feature Allow custom punctuation for AutoLink boundaries (#8378) Agyei Holy
+- lexical-list Bug Fix Merge nested list into parent li during HTML export (#8313) Sathvik Veerapaneni
+- lexical-clipboardlexical-rich-textlexical-plain-text Bug Fix Drag-and-drop within the same block (#8373) Bob Ippolito
+- lexicallexical-utilslexical-list Bug Fix Clean up and test insertNodeToNearestRootAtCaret edge cases (#8384) Bob Ippolito
+- lexical-htmllexical-playground Feature Implement a well-defined ordering for DOMRenderExtension overrides and add decorateDOM (#8368) Bob Ippolito
+- lexicallexical-code-corelexical-listlexical-tablelexical-yjs Refactor make runtime style updates CSP-safe (#8372) Agyei Holy
+- lexical-list Bug Fix Ensure that ListItemNode always has a ListItem parent (#8382) Bob Ippolito
+- lexical-markdown Bug Fix Code spans take precedence over inline formatting in shortcuts (#8381) Sherry
+- lexical-playground Feature HTML conversion button (#8379) Sergey Gorbachev
+- address follow-redirects dependency vulnerability (#8380) vishisht31
+- lexical-markdown Bug Fix Escape ordered-list pattern in bullet list item export (#8311) Sathvik Veerapaneni
+- lexical Feature COMMANDPRIORITYBEFORE priorities for last-registered-called-first order (#8375) Bob Ippolito
+- lexical-react Bug Fix Dont auto-dispose editor from LexicalExtensionEditorComposer (#8377) Bob Ippolito
+- lexical-website Bug Fix Fix type checking for lexical-website package (#8371) Bob Ippolito
+- lexical-website Bug Fix Fix tailwindcss docusaurus config regression (#8369) Bob Ippolito
+- lexicallexical-html Feature Extensible DOM createupdateexport (#8353) Bob Ippolito
+- lexical-react Bug Fix Add yjs as optional peer dependency for Yarn PnP compatibility (#8366) Kim Jong Hyen
+- lexical-markdown Bug Fix Add undo history entry for markdown shortcut transforms (#8365) Seongyu Kim
+- lexical-text Chore Add deprecation notice to findTextIntersectionFromCharacters (#8364) Bob Ippolito
+-  Chore Refactor CommonJS scripts to ESM modules (#8355) Bob Ippolito
+- Breaking Changelexical-code Bug Fix move code block escape logic to KEYENTERCOMMAND listener (#8360) Anika
+- lexicallexical-playground Fix Use the fallback matching for number keys in keyboard shortcuts (#8361) Sergey Gorbachev
+- address simple-git dependency vulnerability (#8358) Sherry
+- lexical Bug Fix Workaround for synchronous firefox focus edge case behavior (#8356) Bob Ippolito
+-  Chore Cache build  playwright before running e2e tests (#8357) Bob Ippolito
+- lexical Bug Fix Resolve Firefox arrow key navigation issue in collapsible nodes (#8348) (#8349) Mohmed Ikram
+- lexicallexical-extension Chore Remove experimental flag from Extension and NodeState APIs (#8354) Bob Ippolito
+- Breaking Changelexical-offsetlexical Chore Deprecate the brokenundocumenteduntested OffsetView and export createChildrenArray from lexical (#8350) Bob Ippolito
+- build(deps) bump pnpmaction-setup from 4 to 6 in the github-actions group across 1 directory (#8335) dependabotbot
+- lexical-htmllexical-table Feature Inline CSS from style tags (#8326) Tom Sarduy
+- lexical-playground Feature Add PagesExtension (#8322) Ibrahim El-bastawisi
+- build(deps) bump zustand from 4.5.7 to 5.0.12 (#8340) dependabotbot
+- build(deps-dev) bump the dev-dependencies group across 1 directory with 42 updates (#8347) dependabotbot
+- lexical-code-prismlexical-code-shikilexical-playground Feature Add CodePrismExtension, CodeShikiExtension, and migrate playground plugins to extensions (#8346) Bob Ippolito
+-  Chore Encourage agents to use extensions and config in AGENTS.md (#8341) Bob Ippolito
+- build(deps) bump docusaurus from 3.9.2 to 3.10.0, update typedoc, react (#8339) dependabotbot
+- build(deps) bump y-websocket from 1.5.4 to 3.0.0 (#8343) dependabotbot
+- build(deps) bump semver from 7.7.2 to 7.7.4 (#8338) dependabotbot
+- build(deps) bump docusaurusfaster from 3.9.2 to 3.10.0 (#8342) dependabotbot
+- chore update stale dev dependencies to resolve Dependabot alerts (#8336) Michael
+- chore remove examplefixture lockfiles from git to reduce Dependabot noise (#8334) Michael
+- lexical-markdown Bug Fix replace lookbehind assertions for Safari  16.4 compatibility (#8332) Yahid Basha
+- lexical-code-shiki Chore Upgrade shiki to 4.0.2 (#8330) Bob Ippolito
+- lexical-react Bug Fix Prevent error when editorRef is null (#8329) Jimmy
+- lexical-extension Fix Remove JSX dependency from DecoratorTextNode (#8328) Bob Ippolito
+-  Security Override yaml to 1.10.3 to fix CVE-2026-33532 (#8324) Sherry
+- lexical-playground Collapsible Section Animations (#8323) Ivaylo Pavlov
+- Update examples for v0.43.0 (#8321) Bob Ippolito
+- lexical-website Feature Add more examples to the demos gallery with local screenshot captures (#8316) Bob Ippolito
+- v0.43.0 (#8319) Bob Ippolito
+- v0.43.0 Lexical GitHub Actions Bot
+
 ## v0.43.0 (2026-04-09)
 
 - lexical-link Bug Fix Preserve cursor position when merging adjacent identical links (#8309) Sathvik Veerapaneni

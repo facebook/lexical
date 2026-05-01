@@ -45,7 +45,7 @@ export function useCharacterLimit(
   optional: OptionalProps = Object.freeze({}),
 ): void {
   const {
-    strlen = (input) => input.length,
+    strlen = input => input.length,
     // UTF-16
     remainingCharacters = () => {
       return;
@@ -103,7 +103,7 @@ export function useCharacterLimit(
       }),
       editor.registerCommand(
         DELETE_CHARACTER_COMMAND,
-        (isBackward) => {
+        isBackward => {
           const selection = $getSelection();
           if (!$isRangeSelection(selection)) {
             return false;

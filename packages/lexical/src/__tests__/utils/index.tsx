@@ -465,7 +465,7 @@ export function TestComposer({
   return (
     <LexicalComposer
       initialConfig={{
-        onError: (e) => {
+        onError: e => {
           throw e;
         },
         ...config,
@@ -493,7 +493,7 @@ export function createTestEditor(
   const customNodes = config.nodes || [];
   const editor = createEditor({
     namespace: config.namespace,
-    onError: (e) => {
+    onError: e => {
       throw e;
     },
     ...config,
@@ -507,7 +507,7 @@ export function createTestHeadlessEditor(
 ): LexicalEditor {
   return createHeadlessEditor({
     editorState,
-    onError: (error) => {
+    onError: error => {
       throw error;
     },
   });

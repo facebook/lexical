@@ -104,7 +104,7 @@ export const ToolbarContext = ({
 
   const updateToolbarState = useCallback(
     <Key extends ToolbarStateKey>(key: Key, value: ToolbarStateValue<Key>) => {
-      setToolbarState((prev) => ({
+      setToolbarState(prev => ({
         ...prev,
         [key]: value,
       }));

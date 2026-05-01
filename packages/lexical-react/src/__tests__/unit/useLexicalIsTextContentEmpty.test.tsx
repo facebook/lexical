@@ -46,7 +46,7 @@ describe('useLexicalIsTextContentEmpty', () => {
         createEditor({
           namespace: '',
           nodes: [ParagraphNode],
-          onError: (err) => {
+          onError: err => {
             throw err;
           },
         }),

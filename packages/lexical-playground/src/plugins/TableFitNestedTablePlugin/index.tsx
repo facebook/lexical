@@ -57,7 +57,7 @@ function $calculateResizeRootTables(
   const roots: TableNode[] = [];
   for (const table of tables) {
     if (
-      $findMatchingParent(table, (n) => n !== table && inputTables.has(n)) ===
+      $findMatchingParent(table, n => n !== table && inputTables.has(n)) ===
       null
     ) {
       roots.push(table);
@@ -75,7 +75,7 @@ function $resizeDOMColWidthsToFit(
     return;
   }
   const allNestedTables = $dfs(node)
-    .map((n) => n.node)
+    .map(n => n.node)
     .filter($isTableNode);
   for (const table of allNestedTables) {
     const element = editor.getElementByKey(table.getKey());
@@ -125,7 +125,7 @@ export default function TableFitNestedTablePlugin(): null {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
-    return editor.registerMutationListener(TableNode, (nodeMutations) => {
+    return editor.registerMutationListener(TableNode, nodeMutations => {
       editor.getEditorState().read(() => {
         const modifiedTables = new Set<TableNode>();
         for (const [nodeKey, mutation] of nodeMutations) {
@@ -137,7 +137,7 @@ export default function TableFitNestedTablePlugin(): null {
           }
         }
         const resizeRoots = $calculateResizeRootTables(modifiedTables);
-        resizeRoots.forEach((root) => {
+        resizeRoots.forEach(root => {
           $resizeDOMColWidthsToFit(editor, root);
         });
       });

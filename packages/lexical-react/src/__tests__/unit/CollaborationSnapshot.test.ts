@@ -45,7 +45,7 @@ describe('CollaborationSnapshot', () => {
     editor1 = client1.getEditor();
     editor2 = client2.getEditor();
 
-    const mutationListener: MutationListener = (mutations) => {
+    const mutationListener: MutationListener = mutations => {
       editor1.getEditorState().read(() => {
         for (const [nodeKey, mutation] of mutations) {
           if (mutation === 'destroyed') {
@@ -442,7 +442,7 @@ describe('CollaborationSnapshot', () => {
         ),
       );
 
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       expectHtmlToBeEqual(
         client1.getHTML(),

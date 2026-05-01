@@ -42,11 +42,11 @@ function $createTestTable(rows: number, columns: number): TableNode {
 }
 
 function $getTableCellTexts(tableNode: TableNode): string[][] {
-  return tableNode.getChildren().map((row) => {
+  return tableNode.getChildren().map(row => {
     if (!$isTableRowNode(row)) {
       return [];
     }
-    return row.getChildren().map((cell) => {
+    return row.getChildren().map(cell => {
       if (!$isTableCellNode(cell)) {
         return '';
       }
@@ -483,7 +483,7 @@ describe('$moveTableColumn', () => {
       // Verify row and column count is preserved
       const rows = table.getChildren();
       expect(rows.length).toBe(3);
-      rows.forEach((row) => {
+      rows.forEach(row => {
         if (!$isTableRowNode(row)) {
           throw new Error('Expected row node');
         }

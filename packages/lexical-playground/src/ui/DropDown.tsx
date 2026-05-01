@@ -88,7 +88,7 @@ function DropDownItems({
 
   const registerItem = useCallback(
     (itemRef: React.RefObject<null | HTMLButtonElement>) => {
-      setItems((prev) => (prev ? [...prev, itemRef] : [itemRef]));
+      setItems(prev => (prev ? [...prev, itemRef] : [itemRef]));
     },
     [setItems],
   );
@@ -109,7 +109,7 @@ function DropDownItems({
     if (key === 'Escape' || key === 'Tab') {
       onClose();
     } else if (key === 'ArrowUp') {
-      setHighlightedItem((prev) => {
+      setHighlightedItem(prev => {
         if (!prev) {
           return items[0];
         }
@@ -117,7 +117,7 @@ function DropDownItems({
         return items[index === -1 ? items.length - 1 : index];
       });
     } else if (key === 'ArrowDown') {
-      setHighlightedItem((prev) => {
+      setHighlightedItem(prev => {
         if (!prev) {
           return items[0];
         }

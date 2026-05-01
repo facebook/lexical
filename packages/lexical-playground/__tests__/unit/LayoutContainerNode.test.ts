@@ -23,7 +23,7 @@ import {LayoutItemNode} from '../../src/nodes/LayoutItemNode';
 
 describe('LayoutContainerNode HTML serialization', () => {
   initializeUnitTest(
-    (testEnv) => {
+    testEnv => {
       describe('exportDOM', () => {
         it('exports with inline grid-template-columns style', async () => {
           const {editor} = testEnv;
@@ -85,7 +85,7 @@ describe('LayoutContainerNode HTML serialization', () => {
             const root = $getRoot();
             const children = root.getChildren();
             const hasLayoutContainer = children.some(
-              (child) => child instanceof LayoutContainerNode,
+              child => child instanceof LayoutContainerNode,
             );
             expect(hasLayoutContainer).toBe(false);
           });

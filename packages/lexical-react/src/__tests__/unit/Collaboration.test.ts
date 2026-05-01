@@ -523,7 +523,7 @@ describe('Collaboration', () => {
       const editor = client.getEditor();
 
       const state = createState('foo', {
-        parse: (value) => (value as {foo: string}) || {foo: 'foo'},
+        parse: value => (value as {foo: string}) || {foo: 'foo'},
       });
 
       act(() => {

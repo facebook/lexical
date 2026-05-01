@@ -33,10 +33,10 @@ export const INSERT_DATETIME_COMMAND: LexicalCommand<CommandPayload> =
 export const DateTimeExtension = defineExtension({
   name: '@lexical/playground/DateTime',
   nodes: [DateTimeNode],
-  register: (editor) =>
+  register: editor =>
     editor.registerCommand<CommandPayload>(
       INSERT_DATETIME_COMMAND,
-      (payload) => {
+      payload => {
         const {dateTime} = payload;
         const dateTimeNode = $createDateTimeNode(dateTime);
 

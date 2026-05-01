@@ -285,7 +285,7 @@ from main in step 4).
 4. After PR is merged to main, publish to NPM with the Github Actions "Publish to NPM" workflow (`pre-release.yml`)
 5. Create a GitHub release from the tag created in step 1, manually editing the release notes
 6. Announce the release in #announcements on Discord
-7. Raise a PR against the post-release-* version branch (created by `call-post-release.yml` via `pre-release.yml`) to update the examples
+7. If a post-release-* version branch was created, raise a PR against it (may be created by `call-post-release.yml` via `pre-release.yml`) to update the examples. Since v0.44.0 this is no longer likely because we do not commit lockfiles for examples.
 
 ## Release Protocol
 

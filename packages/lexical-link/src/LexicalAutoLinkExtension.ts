@@ -50,7 +50,7 @@ export type LinkMatcher = (text: string) => LinkMatcherResult | null;
 
 export function createLinkMatcherWithRegExp(
   regExp: RegExp,
-  urlTransformer: (text: string) => string = (text) => text,
+  urlTransformer: (text: string) => string = text => text,
 ) {
   return (text: string) => {
     const match = regExp.exec(text);
@@ -305,9 +305,7 @@ function $handleLinkCreation(
   }
 
   let currentNodes = [...nodes];
-  const initialText = currentNodes
-    .map((node) => node.getTextContent())
-    .join('');
+  const initialText = currentNodes.map(node => node.getTextContent()).join('');
   let text = initialText;
   let match;
   let invalidMatchEnd = 0;
@@ -503,7 +501,7 @@ function replaceWithChildren(node: ElementNode): Array<LexicalNode> {
   }
 
   node.remove();
-  return children.map((child) => child.getLatest());
+  return children.map(child => child.getLatest());
 }
 
 function getTextNodesToMatch(textNode: TextNode): TextNode[] {
@@ -567,7 +565,7 @@ export function registerAutoLink(
         handleLinkEdit(parent, matchers, onChange, separatorRegex);
       } else if (
         !$isLinkNode(parent) &&
-        !excludeParents.some((pred) => pred(parent))
+        !excludeParents.some(pred => pred(parent))
       ) {
         if (
           textNode.isSimpleText() &&
@@ -588,13 +586,13 @@ export function registerAutoLink(
     }),
     editor.registerCommand(
       TOGGLE_LINK_COMMAND,
-      (payload) => {
+      payload => {
         const selection = $getSelection();
         if (payload !== null || !$isRangeSelection(selection)) {
           return false;
         }
         const nodes = selection.extract();
-        nodes.forEach((node) => {
+        nodes.forEach(node => {
           const parent = node.getParent();
 
           if ($isAutoLinkNode(parent)) {

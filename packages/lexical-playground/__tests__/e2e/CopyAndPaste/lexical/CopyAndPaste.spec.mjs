@@ -919,7 +919,7 @@ test.describe('CopyAndPaste', () => {
       await assertHTML(
         page,
         html`
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <p class="PlaygroundEditorTheme__paragraph" dir="ltr">
             <span style="font-size: 24pt" data-lexical-text="true">
               Random text at
             </span>
@@ -947,12 +947,12 @@ test.describe('CopyAndPaste', () => {
       await assertHTML(
         page,
         html`
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <p class="PlaygroundEditorTheme__paragraph" dir="ltr">
             <span style="font-size: 24px;" data-lexical-text="true">
               Text in 24px
             </span>
           </p>
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <p class="PlaygroundEditorTheme__paragraph" dir="ltr">
             <span style="font-size: 36pt;" data-lexical-text="true">
               Text in 36pt
             </span>

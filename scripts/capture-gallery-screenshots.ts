@@ -48,7 +48,7 @@ const PORT = 5180;
 const IS_WINDOWS = process.platform === 'win32';
 
 function sleep(ms: number): Promise<void> {
-  return new Promise((r) => setTimeout(r, ms));
+  return new Promise(r => setTimeout(r, ms));
 }
 
 function waitForServer(port: number, timeoutMs = 60000): Promise<void> {
@@ -226,7 +226,7 @@ async function main(): Promise<void> {
   console.warn('\nDone!');
 }
 
-main().catch((err) => {
+main().catch(err => {
   console.error('Fatal error:', err);
   process.exit(1);
 });

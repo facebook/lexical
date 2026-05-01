@@ -14,7 +14,7 @@ export function load(/** @type {import('typedoc').Application} */ app) {
     (/** @type {import('typedoc').Context} */ context) => {
       context.project
         .getReflectionsByKind(typedoc.ReflectionKind.Module)
-        .forEach((reflection) => {
+        .forEach(reflection => {
           // Replace "lexical-react/src/foo" with "@lexical/react/foo"
           reflection.name = reflection.name
             .replace(/^lexical-/, '@lexical/')

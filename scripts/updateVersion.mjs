@@ -20,7 +20,7 @@ const monorepoPackageJson = readMonorepoPackageJson();
 const version = monorepoPackageJson.version;
 
 const publicNpmNames = new Set(
-  packagesManager.getPublicPackages().map((pkg) => pkg.getNpmName()),
+  packagesManager.getPublicPackages().map(pkg => pkg.getNpmName()),
 );
 
 /**
@@ -57,7 +57,7 @@ function updateVersion() {
       './examples/*/package.json',
       './scripts/__tests__/integration/fixtures/*/package.json',
     ])
-    .forEach((packageJsonPath) =>
+    .forEach(packageJsonPath =>
       updatePackage(new PackageMetadata(packageJsonPath)),
     );
 }
@@ -213,8 +213,8 @@ function updateDependencies(pkg) {
     peerDependencies = {},
     devDependencies = {},
   } = packageJson;
-  [dependencies, devDependencies].forEach((deps) => {
-    Object.keys(deps).forEach((dep) => {
+  [dependencies, devDependencies].forEach(deps => {
+    Object.keys(deps).forEach(dep => {
       if (publicNpmNames.has(dep)) {
         deps[dep] = depVersion;
       }
@@ -222,7 +222,7 @@ function updateDependencies(pkg) {
   });
   // Move peerDependencies on lexical monorepo packages to dependencies
   // per #5783
-  Object.keys(peerDependencies).forEach((peerDep) => {
+  Object.keys(peerDependencies).forEach(peerDep => {
     if (publicNpmNames.has(peerDep)) {
       delete peerDependencies[peerDep];
       dependencies[peerDep] = depVersion;

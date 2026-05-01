@@ -18,10 +18,8 @@ import main from './main';
 export default defineUnlistedScript({
   main() {
     initPegasusTransport({namespace: EXTENSION_NAME});
-    getRPCService<ITabIDService>('getTabID', 'background')().then((tabID) =>
-      extensionStoreReady().then((extensionStore) =>
-        main(tabID, extensionStore),
-      ),
+    getRPCService<ITabIDService>('getTabID', 'background')().then(tabID =>
+      extensionStoreReady().then(extensionStore => main(tabID, extensionStore)),
     );
   },
 });

@@ -39,7 +39,7 @@ interface DFSKeyPair {
 }
 
 describe('LexicalNodeHelpers tests', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     describe('dfs order', () => {
       let expectedKeys: DFSKeyPair[];
       let reverseExpectedKeys: DFSKeyPair[];
@@ -118,7 +118,7 @@ describe('LexicalNodeHelpers tests', () => {
               text5,
               block3,
               text6,
-            ].map((n) => ({depth: n.getParentKeys().length, node: n.getKey()})),
+            ].map(n => ({depth: n.getParentKeys().length, node: n.getKey()})),
           );
           // R, P2, B3, T6, T5, T4, P1, B2, T3, T2, B1, T1
           expect(reverseExpectedKeys).toEqual(
@@ -135,7 +135,7 @@ describe('LexicalNodeHelpers tests', () => {
               text2,
               block1,
               text1,
-            ].map((n) => ({depth: n.getParentKeys().length, node: n.getKey()})),
+            ].map(n => ({depth: n.getParentKeys().length, node: n.getKey()})),
           );
         });
       });

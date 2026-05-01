@@ -131,7 +131,7 @@ test.describe('Tab', () => {
     await page.keyboard.type('Foo');
     await page.keyboard.press('Tab');
 
-    page.on('pageerror', (error) => {
+    page.on('pageerror', error => {
       throw new Error(`Uncaught exception: ${error.message}`);
     });
 

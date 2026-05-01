@@ -5,10 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {
-  getExtensionDependencyFromEditor,
-  LexicalBuilder,
-} from '@lexical/extension';
+import {getPeerDependencyFromEditor} from '@lexical/extension';
 import {$getEditor, LexicalEditor} from 'lexical';
 
 import {DOMRenderContextSymbol, DOMRenderExtensionName} from './constants';
@@ -62,11 +59,11 @@ export const RenderContextExport = createRenderState('isExport', Boolean);
 function getDefaultRenderContext(
   editor: LexicalEditor,
 ): undefined | ContextRecord<typeof DOMRenderContextSymbol> {
-  const builder = LexicalBuilder.maybeFromEditor(editor);
-  return builder && builder.hasExtensionByName(DOMRenderExtensionName)
-    ? getExtensionDependencyFromEditor(editor, DOMRenderExtension).output
-        .defaults
-    : undefined;
+  const dep = getPeerDependencyFromEditor<typeof DOMRenderExtension>(
+    editor,
+    DOMRenderExtensionName,
+  );
+  return dep ? dep.output.defaults : undefined;
 }
 
 function getRenderContext(

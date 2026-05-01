@@ -19,10 +19,10 @@ const EMAIL_REGEX =
 export const PlaygroundAutoLinkExtension = configExtension(AutoLinkExtension, {
   excludeParents: [$isCodeNode],
   matchers: [
-    createLinkMatcherWithRegExp(URL_REGEX, (text) => {
+    createLinkMatcherWithRegExp(URL_REGEX, text => {
       return text.startsWith('http') ? text : `https://${text}`;
     }),
-    createLinkMatcherWithRegExp(EMAIL_REGEX, (text) => {
+    createLinkMatcherWithRegExp(EMAIL_REGEX, text => {
       return `mailto:${text}`;
     }),
   ],

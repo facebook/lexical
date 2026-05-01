@@ -208,7 +208,7 @@ test.describe('Extensions', () => {
         3,
       );
 
-      await new Promise((resolve) => {
+      await new Promise(resolve => {
         setTimeout(() => {
           document.execCommand('insertText', false, 'and');
           resolve();

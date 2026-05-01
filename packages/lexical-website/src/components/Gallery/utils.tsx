@@ -29,13 +29,13 @@ function filterExamples({
   tags: Array<string>;
 }) {
   if (searchName) {
-    examples = examples.filter((example) =>
+    examples = examples.filter(example =>
       example.title.toLowerCase().includes(searchName.toLowerCase()),
     );
   }
   if (tags.length !== 0) {
-    examples = examples.filter((example) =>
-      example.tags.some((tag) => tags.includes(tag)),
+    examples = examples.filter(example =>
+      example.tags.some(tag => tags.includes(tag)),
     );
   }
   return examples;

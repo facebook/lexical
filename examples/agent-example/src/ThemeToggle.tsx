@@ -18,7 +18,7 @@ export function ThemeToggle() {
     <button
       type="button"
       onClick={() => {
-        setIsDark((prev) => {
+        setIsDark(prev => {
           const next = !prev;
           document.documentElement.classList.toggle('dark', next);
           return next;

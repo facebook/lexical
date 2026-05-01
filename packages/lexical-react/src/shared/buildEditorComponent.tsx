@@ -20,7 +20,7 @@ export function buildEditorComponent(
   context: LexicalComposerContextWithEditor,
 ) {
   const [editor] = context;
-  const rawConfigDecorators = config.decorators.map((El) =>
+  const rawConfigDecorators = config.decorators.map(El =>
     // eslint-disable-next-line react/jsx-key -- wrapped later
     typeof El === 'function' ? <El context={context} /> : El,
   );
@@ -36,7 +36,7 @@ export function buildEditorComponent(
       () =>
         rawConfigDecorators.map((decorator, i) => (
           <ErrorBoundary
-            onError={(e) => {
+            onError={e => {
               editor._onError(e);
             }}
             key={i}>

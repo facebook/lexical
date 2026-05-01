@@ -15,6 +15,6 @@ import {PLAYGROUND_TRANSFORMERS} from '../MarkdownTransformers';
 // should get a refactor to require less manual configuration
 export const PlaygroundMarkdownShortcutsExtension = defineExtension({
   name: '@lexical/playground/MarkdownShortcuts',
-  register: (editor) =>
+  register: editor =>
     registerMarkdownShortcuts(editor, PLAYGROUND_TRANSFORMERS),
 });

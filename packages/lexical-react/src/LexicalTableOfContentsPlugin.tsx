@@ -191,7 +191,7 @@ export function TableOfContentsPlugin({children}: Props): JSX.Element {
           // If a node is changes, all child heading positions need to be updated
           $getRoot()
             .getChildren()
-            .forEach((node) => {
+            .forEach(node => {
               if ($isElementNode(node) && dirtyElements.get(node.__key)) {
                 updateChildHeadings(node);
               }

@@ -211,7 +211,7 @@ const NodeContextMenuPlugin = forwardRef<
           const node =
             $getNearestNodeFromDOMNode(e.target as Element) ?? $getRoot();
           if (node) {
-            visibleItems = items!.filter((option) =>
+            visibleItems = items!.filter(option =>
               option.$showOn ? option.$showOn(node) : true,
             );
           }
@@ -242,14 +242,14 @@ const NodeContextMenuPlugin = forwardRef<
         }
       }) as MenuType[];
 
-      listContentRef.current = renderableItems.map((item) => item.key);
+      listContentRef.current = renderableItems.map(item => item.key);
 
       setRenderItems(renderableItems);
 
       setIsOpen(true);
     }
 
-    return editor.registerRootListener((rootElement) => {
+    return editor.registerRootListener(rootElement => {
       if (rootElement !== null) {
         rootElement.addEventListener('contextmenu', onContextMenu);
         return () =>

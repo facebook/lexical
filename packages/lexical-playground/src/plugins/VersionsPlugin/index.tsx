@@ -96,7 +96,7 @@ export function VersionsPlugin({id}: {id: string}) {
           },
           COMMAND_PRIORITY_CRITICAL,
         ),
-        editor.registerEditableListener((isEditable) => {
+        editor.registerEditableListener(isEditable => {
           if (isEditable && isDiffMode) {
             editor.dispatchCommand(
               CLEAR_DIFF_VERSIONS_COMMAND__EXPERIMENTAL,
@@ -136,7 +136,7 @@ export function VersionsPlugin({id}: {id: string}) {
     }
     return editor.registerMutationListener(
       TextNode,
-      (nodes) => {
+      nodes => {
         const userToColor = new Map<User, string>();
         const getUserColor = (user: User): string => {
           if (userToColor.has(user)) {
@@ -186,7 +186,7 @@ export function VersionsPlugin({id}: {id: string}) {
     }
 
     const now = Date.now();
-    setVersions((prevVersions) => [
+    setVersions(prevVersions => [
       ...prevVersions,
       {
         name: `Snapshot ${new Date(now).toLocaleString()}`,

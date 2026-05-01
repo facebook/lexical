@@ -251,7 +251,7 @@ function $dfsCaretIterator<D extends CaretDirection>(
   return makeStepwiseIterator({
     hasNext: (state): state is NodeCaret<'next'> => state !== null,
     initial: startCaret,
-    map: (state) => ({depth, node: state.origin}),
+    map: state => ({depth, node: state.origin}),
     step: (state: NodeCaret<'next'>) => {
       if (state.isSameNodeCaret(endCaret)) {
         return null;
@@ -363,7 +363,7 @@ export function $getNearestBlockElementAncestorOrThrow(
 ): ElementNode {
   const blockNode = $findMatchingParent(
     startNode,
-    (node) => $isElementNode(node) && !node.isInline(),
+    node => $isElementNode(node) && !node.isInline(),
   );
   if (!$isElementNode(blockNode)) {
     invariant(
@@ -812,7 +812,7 @@ function $unwrapAndFilterDescendantsImpl(
       $unwrapAndFilterDescendantsImpl(
         node,
         $predicate,
-        $onSuccess || ((child) => node.insertAfter(child)),
+        $onSuccess || (child => node.insertAfter(child)),
       );
     }
     node.remove();
@@ -890,7 +890,7 @@ function $childIterator<D extends CaretDirection>(
   return makeStepwiseIterator({
     hasNext: $isSiblingCaret,
     initial: startCaret.getAdjacentCaret(),
-    map: (caret) => {
+    map: caret => {
       const origin = caret.origin.getLatest();
       if (__DEV__ && seen !== null) {
         const key = origin.getKey();
@@ -982,7 +982,7 @@ export interface StateConfigWrapper<K extends string, V> {
 export function makeStateWrapper<K extends string, V>(
   stateConfig: StateConfig<K, V>,
 ): StateConfigWrapper<K, V> {
-  const $get: StateConfigWrapper<K, V>['$get'] = (node) =>
+  const $get: StateConfigWrapper<K, V>['$get'] = node =>
     $getState(node, stateConfig);
   const $set: StateConfigWrapper<K, V>['$set'] = (node, valueOrUpdater) =>
     $setState(node, stateConfig, valueOrUpdater);

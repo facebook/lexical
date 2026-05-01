@@ -40,10 +40,10 @@ module.exports = require('./dist/${filename}');
 }
 
 function updateWwwStubs() {
-  packagesManager.getPublicPackages().forEach((pkg) => {
+  packagesManager.getPublicPackages().forEach(pkg => {
     const npmName = pkg.getNpmName();
     // Only worry about the entrypoint stub if it has a single module export
-    if (pkg.getExportedNpmModuleNames().some((name) => name !== npmName)) {
+    if (pkg.getExportedNpmModuleNames().some(name => name !== npmName)) {
       return;
     }
 

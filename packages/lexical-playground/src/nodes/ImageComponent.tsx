@@ -92,7 +92,7 @@ function useSuspenseImage(src: string): ImageStatus {
   if (cached && 'error' in cached && typeof cached.error === 'boolean') {
     return cached;
   } else if (!cached) {
-    cached = new Promise<ImageStatus>((resolve) => {
+    cached = new Promise<ImageStatus>(resolve => {
       const img = new Image();
       img.src = src;
       img.onload = () =>
@@ -102,7 +102,7 @@ function useSuspenseImage(src: string): ImageStatus {
           width: img.naturalWidth,
         });
       img.onerror = () => resolve({error: true});
-    }).then((rval) => {
+    }).then(rval => {
       imageCache.set(src, rval);
       return rval;
     });
@@ -376,7 +376,7 @@ export default function ImageComponent({
       ),
       editor.registerCommand(
         DRAGSTART_COMMAND,
-        (event) => {
+        event => {
           if (event.target === imageRef.current) {
             // TODO This is just a temporary workaround for FF to behave like other browsers.
             // Ideally, this handles drag & drop too (and all browsers).
@@ -407,7 +407,7 @@ export default function ImageComponent({
         $onEscape,
         COMMAND_PRIORITY_LOW,
       ),
-      editor.registerRootListener((rootElement) => {
+      editor.registerRootListener(rootElement => {
         if (rootElement) {
           rootElement.addEventListener('contextmenu', onRightClick);
           return () =>

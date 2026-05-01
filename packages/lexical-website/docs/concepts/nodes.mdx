@@ -512,7 +512,7 @@ const DEFAULT_COLOR = 'inherit';
 // highlight-start
 // This defines how the color property is parsed along with a default value
 const colorState = createState('color', {
-  parse: (value) => (typeof value === 'string' ? value : DEFAULT_COLOR),
+  parse: value => (typeof value === 'string' ? value : DEFAULT_COLOR),
 });
 // highlight-end
 

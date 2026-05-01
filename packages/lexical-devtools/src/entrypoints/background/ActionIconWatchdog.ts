@@ -26,7 +26,7 @@ export default class ActionIconWatchdog {
       tabs.map(this.checkAndHandleRestrictedPageIfSo.bind(this)),
     );
 
-    browser.tabs.onCreated.addListener((tab) => {
+    browser.tabs.onCreated.addListener(tab => {
       this.checkAndHandleRestrictedPageIfSo(tab);
     });
 

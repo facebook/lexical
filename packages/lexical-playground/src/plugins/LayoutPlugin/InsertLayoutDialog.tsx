@@ -32,7 +32,7 @@ export default function InsertLayoutDialog({
   onClose: () => void;
 }): JSX.Element {
   const [layout, setLayout] = useState(LAYOUTS[0].value);
-  const buttonLabel = LAYOUTS.find((item) => item.value === layout)?.label;
+  const buttonLabel = LAYOUTS.find(item => item.value === layout)?.label;
 
   const onClick = () => {
     activeEditor.dispatchCommand(INSERT_LAYOUT_COMMAND, layout);

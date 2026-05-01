@@ -432,14 +432,14 @@ function useDraggableBlockMenu(
     return mergeRegister(
       editor.registerCommand(
         DRAGOVER_COMMAND,
-        (event) => {
+        event => {
           return onDragover(event);
         },
         COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand(
         DROP_COMMAND,
-        (event) => {
+        event => {
           return $onDrop(event);
         },
         COMMAND_PRIORITY_HIGH,
@@ -456,7 +456,7 @@ function useDraggableBlockMenu(
     }
 
     return mergeRegister(
-      editor.registerRootListener((rootElement) => {
+      editor.registerRootListener(rootElement => {
         function onBlur(event: FocusEvent) {
           const relatedTarget = event.relatedTarget;
           if (isHTMLElement(relatedTarget) && isOnMenu(relatedTarget)) {

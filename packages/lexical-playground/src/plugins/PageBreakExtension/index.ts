@@ -23,7 +23,7 @@ export const INSERT_PAGE_BREAK: LexicalCommand<undefined> = createCommand();
 export const PageBreakExtension = defineExtension({
   name: '@lexical/playground/PageBreak',
   nodes: [PageBreakNode],
-  register: (editor) =>
+  register: editor =>
     editor.registerCommand(
       INSERT_PAGE_BREAK,
       () => {

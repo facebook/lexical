@@ -145,7 +145,7 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
       }
     };
     return mergeRegister(
-      ...[LinkNode, AutoLinkNode].map((Klass) =>
+      ...[LinkNode, AutoLinkNode].map(Klass =>
         editor.registerMutationListener(Klass, (...args) => listener(...args), {
           skipInitialization: true,
         }),

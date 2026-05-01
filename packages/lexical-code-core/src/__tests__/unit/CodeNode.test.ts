@@ -23,7 +23,7 @@ const editorConfig = {
 
 describe('CodeNode', () => {
   initializeUnitTest(
-    (testEnv) => {
+    testEnv => {
       it('applies and replaces styles through DOM style properties', async () => {
         const {editor} = testEnv;
 

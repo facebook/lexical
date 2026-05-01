@@ -89,7 +89,7 @@ function isExcludedProperty(
 export function initializeNodeProperties(binding: BaseBinding): void {
   const {editor, nodeProperties} = binding;
   editor.update(() => {
-    editor._nodes.forEach((nodeInfo) => {
+    editor._nodes.forEach(nodeInfo => {
       const node = new nodeInfo.klass();
       const defaultProperties: {[property: string]: unknown} = {};
       for (const [property, value] of Object.entries(node)) {

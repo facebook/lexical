@@ -217,11 +217,11 @@ export function InsertImageDialog({
 export const ImagesExtension = defineExtension({
   name: '@lexical/playground/Images',
   nodes: [ImageNode],
-  register: (editor) =>
+  register: editor =>
     mergeRegister(
       editor.registerCommand<InsertImagePayload>(
         INSERT_IMAGE_COMMAND,
-        (payload) => {
+        payload => {
           const imageNode = $createImageNode(payload);
           $insertNodes([imageNode]);
           if ($isRootOrShadowRoot(imageNode.getParentOrThrow())) {
@@ -234,17 +234,17 @@ export const ImagesExtension = defineExtension({
       ),
       editor.registerCommand<DragEvent>(
         DRAGSTART_COMMAND,
-        (event) => $onDragStart(event),
+        event => $onDragStart(event),
         COMMAND_PRIORITY_HIGH,
       ),
       editor.registerCommand<DragEvent>(
         DRAGOVER_COMMAND,
-        (event) => $onDragover(event),
+        event => $onDragover(event),
         COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand<DragEvent>(
         DROP_COMMAND,
-        (event) => $onDrop(event, editor),
+        event => $onDrop(event, editor),
         COMMAND_PRIORITY_HIGH,
       ),
     ),

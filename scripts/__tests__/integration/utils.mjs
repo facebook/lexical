@@ -44,10 +44,10 @@ function expectSuccessfulExec(cmd) {
   const env = Object.fromEntries(
     Object.entries(process.env).filter(([k]) => k !== 'VITEST_WORKER_ID'),
   );
-  return exec(cmd, {env}).catch((err) => {
+  return exec(cmd, {env}).catch(err => {
     expect(
       Object.fromEntries(
-        ['code', 'stdout', 'stderr'].map((prop) => [prop, err[prop]]),
+        ['code', 'stdout', 'stderr'].map(prop => [prop, err[prop]]),
       ),
     ).toBe(null);
     throw err;
@@ -90,13 +90,13 @@ async function buildExample({packageJson, exampleDir}) {
   const installDeps = Array.from(depsMap.entries(), ([dep, pkg]) =>
     path.resolve('npm', `${pkg.getDirectoryName()}-${monorepoVersion}.tgz`),
   );
-  ['node_modules', 'dist', 'build', '.next', '.svelte-kit'].forEach(
-    (cleanDir) => fs.removeSync(path.resolve(exampleDir, cleanDir)),
+  ['node_modules', 'dist', 'build', '.next', '.svelte-kit'].forEach(cleanDir =>
+    fs.removeSync(path.resolve(exampleDir, cleanDir)),
   );
 
   await withCwd(exampleDir, async () => {
     await expectSuccessfulExec(
-      `npm install --no-save ${installDeps.map((fn) => `'${fn}'`).join(' ')}`,
+      `npm install --no-save ${installDeps.map(fn => `'${fn}'`).join(' ')}`,
     );
     await expectSuccessfulExec('npm run build');
     if (hasPlaywright) {
@@ -127,7 +127,7 @@ function describeExample(packageJsonPath, bodyFun = undefined) {
       expect(true).toBe(true);
     });
     test(`installed lexical ${monorepoVersion}`, () => {
-      const packageNames = deps.map((pkg) => pkg.getNpmName());
+      const packageNames = deps.map(pkg => pkg.getNpmName());
       expect(packageNames).toContain('lexical');
       for (const pkg of deps) {
         const installedPath = path.join(

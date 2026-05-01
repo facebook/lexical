@@ -58,12 +58,12 @@ const sourceModuleResolution = (isSsrBuild = false) => {
   return [
     ...packagesManager
       .getPublicPackages()
-      .flatMap((pkg) =>
+      .flatMap(pkg =>
         pkg.getExportedNpmModuleEntries().map(toAlias.bind(null, pkg)),
       ),
     ...['shared']
-      .map((name) => packagesManager.getPackageByDirectoryName(name))
-      .flatMap((pkg) =>
+      .map(name => packagesManager.getPackageByDirectoryName(name))
+      .flatMap(pkg =>
         pkg.getPrivateModuleEntries().map(toAlias.bind(null, pkg)),
       ),
   ];
@@ -74,19 +74,19 @@ const distModuleResolution = (
   isSsrBuild = false,
 ) => {
   return [
-    ...packagesManager.getPublicPackages().flatMap((pkg) =>
+    ...packagesManager.getPublicPackages().flatMap(pkg =>
       pkg
         .getNormalizedNpmModuleExportEntries()
         .map((entry: NpmModuleExportEntry) => {
           const [name, moduleExports] = entry;
           const replacements = ([environment, 'default'] as const).flatMap(
-            (condition) =>
+            condition =>
               [
                 !isSsrBuild &&
                   moduleExports.browser &&
                   moduleExports.browser[condition],
                 moduleExports.import[condition],
-              ].flatMap((fn) => (fn ? [pkg.resolve('dist', fn)] : [])),
+              ].flatMap(fn => (fn ? [pkg.resolve('dist', fn)] : [])),
           );
           const replacement = replacements.find(fs.existsSync.bind(fs));
           if (!replacement) {

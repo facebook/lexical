@@ -129,7 +129,7 @@ export function getDynamicOptions(editor: LexicalEditor, queryString: string) {
 
     options.push(
       ...colOptions.map(
-        (columns) =>
+        columns =>
           new ComponentPickerOption(`${rows}x${columns} Table`, {
             icon: <i className="icon table" />,
             keywords: ['table'],
@@ -159,7 +159,7 @@ export function getBaseOptions(editor: LexicalEditor, showModal: ShowModal) {
         }),
     }),
     ...([1, 2, 3] as const).map(
-      (n) =>
+      n =>
         new ComponentPickerOption(`Heading ${n}`, {
           icon: <i className={`icon h${n}`} />,
           keywords: ['heading', 'header', `h${n}`],
@@ -176,7 +176,7 @@ export function getBaseOptions(editor: LexicalEditor, showModal: ShowModal) {
       icon: <i className="icon table" />,
       keywords: ['table', 'grid', 'spreadsheet', 'rows', 'columns'],
       onSelect: () =>
-        showModal('Insert Table', (onClose) => (
+        showModal('Insert Table', onClose => (
           <InsertTableDialog activeEditor={editor} onClose={onClose} />
         )),
     }),
@@ -250,12 +250,12 @@ export function getBaseOptions(editor: LexicalEditor, showModal: ShowModal) {
       icon: <i className="icon poll" />,
       keywords: ['poll', 'vote'],
       onSelect: () =>
-        showModal('Insert Poll', (onClose) => (
+        showModal('Insert Poll', onClose => (
           <InsertPollDialog activeEditor={editor} onClose={onClose} />
         )),
     }),
     ...EmbedConfigs.map(
-      (embedConfig) =>
+      embedConfig =>
         new ComponentPickerOption(`Embed ${embedConfig.contentName}`, {
           icon: embedConfig.icon,
           keywords: [...embedConfig.keywords, 'embed'],
@@ -305,7 +305,7 @@ export function getBaseOptions(editor: LexicalEditor, showModal: ShowModal) {
       icon: <i className="icon equation" />,
       keywords: ['equation', 'latex', 'math'],
       onSelect: () =>
-        showModal('Insert Equation', (onClose) => (
+        showModal('Insert Equation', onClose => (
           <InsertEquationDialog activeEditor={editor} onClose={onClose} />
         )),
     }),
@@ -322,7 +322,7 @@ export function getBaseOptions(editor: LexicalEditor, showModal: ShowModal) {
       icon: <i className="icon image" />,
       keywords: ['image', 'photo', 'picture', 'file'],
       onSelect: () =>
-        showModal('Insert Image', (onClose) => (
+        showModal('Insert Image', onClose => (
           <InsertImageDialog activeEditor={editor} onClose={onClose} />
         )),
     }),
@@ -336,12 +336,12 @@ export function getBaseOptions(editor: LexicalEditor, showModal: ShowModal) {
       icon: <i className="icon columns" />,
       keywords: ['columns', 'layout', 'grid'],
       onSelect: () =>
-        showModal('Insert Columns Layout', (onClose) => (
+        showModal('Insert Columns Layout', onClose => (
           <InsertLayoutDialog activeEditor={editor} onClose={onClose} />
         )),
     }),
     ...(['left', 'center', 'right', 'justify'] as const).map(
-      (alignment) =>
+      alignment =>
         new ComponentPickerOption(`Align ${alignment}`, {
           icon: <i className={`icon ${alignment}-align`} />,
           keywords: ['align', 'justify', alignment],
@@ -374,9 +374,9 @@ export default function ComponentPickerMenuPlugin(): JSX.Element {
     return [
       ...getDynamicOptions(editor, queryString),
       ...baseOptions.filter(
-        (option) =>
+        option =>
           regex.test(option.title) ||
-          option.keywords.some((keyword) => regex.test(keyword)),
+          option.keywords.some(keyword => regex.test(keyword)),
       ),
     ];
   }, [editor, queryString, showModal]);

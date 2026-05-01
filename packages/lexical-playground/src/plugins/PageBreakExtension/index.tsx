@@ -25,7 +25,7 @@ export const PageBreakExtension = defineExtension({
   dependencies: [ReactExtension],
   name: '@lexical/playground/PageBreak',
   nodes: () => [PageBreakNode],
-  register: (editor) =>
+  register: editor =>
     editor.registerCommand(
       INSERT_PAGE_BREAK,
       () => {

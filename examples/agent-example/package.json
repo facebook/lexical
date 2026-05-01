@@ -1,7 +1,7 @@
 {
   "name": "@lexical/agent-example",
   "private": true,
-  "version": "0.43.0",
+  "version": "0.44.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -14,13 +14,13 @@
   },
   "dependencies": {
     "@huggingface/transformers": "^4.0.1",
-    "@lexical/extension": "0.43.0",
-    "@lexical/history": "0.43.0",
-    "@lexical/react": "0.43.0",
-    "@lexical/rich-text": "0.43.0",
-    "@lexical/selection": "0.43.0",
-    "@lexical/utils": "0.43.0",
-    "lexical": "0.43.0",
+    "@lexical/extension": "0.44.0",
+    "@lexical/history": "0.44.0",
+    "@lexical/react": "0.44.0",
+    "@lexical/rich-text": "0.44.0",
+    "@lexical/selection": "0.44.0",
+    "@lexical/utils": "0.44.0",
+    "lexical": "0.44.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5"
   },

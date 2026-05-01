@@ -107,7 +107,7 @@ export const CodeExtension = defineExtension({
     return mergeRegister(
       editor.registerCommand<KeyboardEvent>(
         KEY_ENTER_COMMAND,
-        (event) => {
+        event => {
           const selection = $getSelection();
           if ($isRangeSelection(selection) && $exitCodeNodeOnEnter(selection)) {
             event.preventDefault();

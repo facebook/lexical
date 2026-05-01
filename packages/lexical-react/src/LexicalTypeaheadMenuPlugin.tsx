@@ -324,7 +324,7 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
 
   useEffect(
     () =>
-      editor.registerEditableListener((isEditable) => {
+      editor.registerEditableListener(isEditable => {
         if (!isEditable) {
           closeTypeahead();
         }

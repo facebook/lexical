@@ -91,7 +91,7 @@ export const TableExtension = defineExtension({
       effect(() =>
         stores.hasCellBackgroundColor.value
           ? undefined
-          : editor.registerNodeTransform(TableCellNode, (node) => {
+          : editor.registerNodeTransform(TableCellNode, node => {
               if (node.getBackgroundColor() !== null) {
                 node.setBackgroundColor(null);
               }

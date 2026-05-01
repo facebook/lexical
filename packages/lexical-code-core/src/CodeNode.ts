@@ -371,7 +371,7 @@ export class CodeNode extends ElementNode {
   collapseAtStart(): boolean {
     const paragraph = $createParagraphNode();
     const children = this.getChildren();
-    children.forEach((child) => paragraph.append(child));
+    children.forEach(child => paragraph.append(child));
     this.replace(paragraph);
     return true;
   }

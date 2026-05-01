@@ -61,7 +61,7 @@ export function DragPlugin({anchorElem}: DragPluginProps) {
     }
     const regex = new RegExp(queryString, 'i');
     return base.filter(
-      (o) => regex.test(o.title) || o.keywords.some((k) => regex.test(k)),
+      o => regex.test(o.title) || o.keywords.some(k => regex.test(k)),
     );
   }, [editor, queryString]);
 
@@ -120,7 +120,7 @@ export function DragPlugin({anchorElem}: DragPluginProps) {
       return;
     }
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setHighlightedIndex((i) => Math.min(i, Math.max(options.length - 1, 0)));
+    setHighlightedIndex(i => Math.min(i, Math.max(options.length - 1, 0)));
   }, [isPickerOpen, options.length]);
 
   useEffect(() => {
@@ -151,10 +151,10 @@ export function DragPlugin({anchorElem}: DragPluginProps) {
       }
       if (e.key === 'ArrowDown') {
         e.preventDefault();
-        setHighlightedIndex((i) => (i + 1) % options.length);
+        setHighlightedIndex(i => (i + 1) % options.length);
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
-        setHighlightedIndex((i) => (i - 1 + options.length) % options.length);
+        setHighlightedIndex(i => (i - 1 + options.length) % options.length);
       } else if (e.key === 'Enter') {
         e.preventDefault();
         selectOption(options[highlightedIndex]);
@@ -225,7 +225,7 @@ export function DragPlugin({anchorElem}: DragPluginProps) {
                 className="block w-full border-0 border-b [border-bottom-style:solid] border-zinc-200 bg-transparent px-3 py-2 text-[0.85rem] text-inherit outline-none dark:border-zinc-700"
                 placeholder="Filter blocks..."
                 value={queryString}
-                onChange={(e) => setQueryString(e.target.value)}
+                onChange={e => setQueryString(e.target.value)}
               />
               <ul className="m-0 max-h-[220px] list-none overflow-y-auto p-1">
                 {options.map((option, i) => (
@@ -267,7 +267,7 @@ export function DragPlugin({anchorElem}: DragPluginProps) {
               className="flex h-[18px] w-[18px] shrink-0 cursor-pointer items-center justify-center rounded-sm border-none bg-transparent [background-size:14px_14px] bg-center bg-no-repeat opacity-50 hover:bg-zinc-100 hover:opacity-100 dark:invert dark:hover:bg-[#ffffdd]"
               style={{backgroundImage: "url('/img/plus.svg')"}}
               title="Click to add below (Alt/Option to add above)"
-              onMouseDown={(e) => {
+              onMouseDown={e => {
                 e.preventDefault();
                 e.stopPropagation();
               }}

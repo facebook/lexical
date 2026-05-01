@@ -114,7 +114,7 @@ const theme: EditorThemeClasses = {
       'list-[lower-alpha]',
       'list-[upper-roman]',
       'list-[lower-roman]',
-    ].map((cls) => join(listCommonClasses, cls)),
+    ].map(cls => join(listCommonClasses, cls)),
     ul: join(listCommonClasses, 'list-disc'),
   },
   // mark: 'PlaygroundEditorTheme__mark',

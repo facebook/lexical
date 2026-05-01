@@ -351,7 +351,7 @@ export class TableSelection implements BaseSelection {
           lastRow = currentRow;
         }
         if (!nodeMap.has(cell.getKey())) {
-          $visitRecursively(cell, (childNode) => {
+          $visitRecursively(cell, childNode => {
             nodeMap.set(childNode.getKey(), childNode);
           });
         }
@@ -366,7 +366,7 @@ export class TableSelection implements BaseSelection {
   }
 
   getTextContent(): string {
-    const nodes = this.getNodes().filter((node) => $isTableCellNode(node));
+    const nodes = this.getNodes().filter(node => $isTableCellNode(node));
     let textContent = '';
     for (let i = 0; i < nodes.length; i++) {
       const node = nodes[i];

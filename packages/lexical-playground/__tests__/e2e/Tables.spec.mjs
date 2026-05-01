@@ -84,7 +84,7 @@ async function fillTablePartiallyWithText(page) {
 }
 
 const WRAPPER = IS_TABLE_HORIZONTAL_SCROLL ? [0] : [];
-const nthTableSelector = (nth) =>
+const nthTableSelector = nth =>
   IS_TABLE_HORIZONTAL_SCROLL
     ? `div.PlaygroundEditorTheme__tableScrollableWrapper:nth-of-type(${nth}) > table`
     : `table:nth-of-type(${nth})`;
@@ -2006,7 +2006,7 @@ test.describe.parallel('Tables', () => {
         ignoreClasses: false,
         ignoreInlineStyles: false,
       },
-      (actualHtml) =>
+      actualHtml =>
         // flaky fix: +- 1px for the height assertion
         actualHtml.replace(
           '<tr style="height: 88px">',
@@ -6612,7 +6612,7 @@ test.describe.parallel('Tables', () => {
         ignoreClasses: false,
         ignoreInlineStyles: false,
       },
-      (actualHtml) =>
+      actualHtml =>
         // flaky fix: handle height differences in the assertion
         actualHtml.replace(
           /<tr style="height: \d+px">/,
@@ -7400,7 +7400,7 @@ test.describe.parallel('Tables', () => {
       return anchorMatches && focusMatches;
     };
 
-    const waitForTableSelectionCoordinates = async (expected) => {
+    const waitForTableSelectionCoordinates = async expected => {
       for (let i = 0; i < 20; i++) {
         const coords = await readTableSelectionCoordinates();
         if (matchesExpected(coords, expected)) {

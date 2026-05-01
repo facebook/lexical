@@ -24,7 +24,7 @@ async function main() {
     argv._.length > 0
       ? argv._
       : ['examples/*', 'scripts/__tests__/integration/fixtures/*'];
-  for (const fn of paths.flatMap((dir) =>
+  for (const fn of paths.flatMap(dir =>
     globSync(path.join(dir, 'package.json'), {windowsPathsNoEscape: true}),
   )) {
     const pkg = new PackageMetadata(fn);
@@ -70,7 +70,7 @@ async function main() {
       );
       for (const dir of [
         pkg.resolve('node_modules', '{lexical,@lexical}'),
-      ].flatMap((v) => globSync(v))) {
+      ].flatMap(v => globSync(v))) {
         console.log(`> rm -rf ${dir}`);
         fs.rmSync(dir, {force: true, recursive: true});
       }

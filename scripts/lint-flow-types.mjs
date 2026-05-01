@@ -18,7 +18,7 @@ const pretty = process.env.CI !== 'true';
 
 /** @type {ts.FormatDiagnosticsHost} */
 const diagnosticsHost = {
-  getCanonicalFileName: (fn) => fn,
+  getCanonicalFileName: fn => fn,
   getCurrentDirectory: () => './',
   getNewLine: () => '\n',
 };
@@ -42,7 +42,7 @@ function lintFlowTypes() {
 
 function collectFlowExports(flowAst) {
   const exportNames = new Map();
-  const exportId = (node) => {
+  const exportId = node => {
     const identifier =
       node.type === 'Identifier'
         ? node
@@ -99,7 +99,7 @@ function compareFlowDts(
   });
   const flowMap = collectFlowExports(flowAst);
   const symbols = entrypoint.getExportSymbols();
-  const tsMap = new Map(symbols.map((sym) => [sym.getName(), sym]));
+  const tsMap = new Map(symbols.map(sym => [sym.getName(), sym]));
   for (const [name, symbol] of tsMap) {
     if (flowMap.has(name)) {
       continue;
@@ -159,7 +159,7 @@ function lintFlowTypesForPackage(
     }
     const flowMsg = flowDiagnostics
       .map(
-        (ident) =>
+        ident =>
           `${ident.loc.source}:${ident.loc.start.line}:${ident.loc.start.column} - warning: Flow export '${ident.name}' does not have a TypeScript declaration`,
       )
       .join('\n');

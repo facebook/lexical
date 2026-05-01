@@ -42,7 +42,7 @@ const editorConfig = Object.freeze({
 });
 
 describe('LexicalAutoAutoLinkNode tests', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     test('AutoLinkNode.constructor', async () => {
       const {editor} = testEnv;
 

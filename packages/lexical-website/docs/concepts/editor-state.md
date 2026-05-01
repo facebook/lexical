@@ -108,8 +108,26 @@ const editorStateRef = useRef(undefined);
 </LexicalComposer>
 ```
 
-Note that Lexical uses `initialConfig.editorState` only once (when it's being initialized) and passing different value later
-won't be reflected in editor. See "Update state" below for proper ways of updating editor state.
+Lexical reads `initialConfig.editorState` only once (when the editor is created); passing
+a different value later won't be reflected. See "Updating state" below for the proper way
+to change editor state after initialization.
+
+The `editorState` field accepts:
+
+- a JSON string, parsed with `editor.parseEditorState()` (as in the example above);
+- an `EditorState` instance, applied directly with `editor.setEditorState()`;
+- a function `(editor) => void`, run inside `editor.update(...)` and invoked only if the
+  root is still empty (so a populated root is left untouched);
+- `null`, which skips default initialization entirely. Use this with the
+  [collaboration plugin](/docs/collaboration/react) so that the Yjs document, not
+  Lexical, owns the initial state.
+
+Omitting the field (or passing `undefined`) seeds the root with a default empty
+`ParagraphNode`. The two are not interchangeable: `null` leaves the root with no children,
+while `undefined` produces a single empty line. If your `loadContent` may yield `null` or
+`undefined` for new documents, coalesce to `undefined` (e.g. `(await loadContent()) ?? undefined`)
+so the editor still gets the default paragraph rather than the collab-style uninitialized
+state.
 
 ## Updating state
 
@@ -172,6 +190,20 @@ Here's an example of how you can set editor state from a stringified JSON:
 const editorState = editor.parseEditorState(editorStateJSONString);
 editor.setEditorState(editorState);
 ```
+
+:::warning
+
+`setEditorState` throws when called with an `EditorState` that satisfies
+`editorState.isEmpty()` — i.e. the root is the only node and there is no selection. The
+message is `"setEditorState: the editor state is empty. Ensure the editor state's root
+node never becomes empty."`. The `EditorState` produced by initializing with
+`editorState: null` and never appending content (typical for a collaboration document
+before peers connect) has exactly this shape, so persisting and reloading such a state
+will fail at the `setEditorState` call. Note that `parseEditorState` itself succeeds — the
+throw lands on the apply step. Either guard with `editorState.isEmpty()` before calling
+`setEditorState`, or seed the document with a `ParagraphNode` before serializing.
+
+:::
 
 ## State update listener
 

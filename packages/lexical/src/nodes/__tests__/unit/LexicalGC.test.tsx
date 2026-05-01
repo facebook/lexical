@@ -23,7 +23,7 @@ import {
 } from '../../../__tests__/utils';
 
 describe('LexicalGC tests', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     test('RootNode.clear() with a child and subchild', async () => {
       const {editor} = testEnv;
       await editor.update(() => {

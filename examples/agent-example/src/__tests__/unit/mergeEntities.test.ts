@@ -170,7 +170,7 @@ describe('computeTokenOffsets', () => {
 
     // Second "London" (should find the second occurrence)
     const london2 = result.find(
-      (t) => t.word === 'London' && t.start > london1.start,
+      t => t.word === 'London' && t.start > london1.start,
     );
     expect(london2).toBeDefined();
     expect(SAMPLE_TEXT.slice(london2!.start, london2!.end)).toBe('London');
@@ -258,7 +258,7 @@ describe('mergeEntities', () => {
     const result = mergeEntities(RAW_NER_TOKENS, SAMPLE_TEXT);
 
     // Extract just entity+text for readability
-    const summary = result.map((e) => ({entity: e.entity, text: e.text}));
+    const summary = result.map(e => ({entity: e.entity, text: e.text}));
 
     expect(summary).toEqual([
       {entity: 'PER', text: 'Dominic Gannaway'},

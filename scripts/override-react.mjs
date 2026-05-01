@@ -24,7 +24,7 @@ async function main() {
   [
     'package.json',
     ...glob.sync('./packages/*/package.json', {windowsPathsNoEscape: true}),
-  ].forEach((fn) => {
+  ].forEach(fn => {
     const json = fs.readJsonSync(fn);
     const isRoot = fn === 'package.json';
     let didUpdate = isRoot;
@@ -32,7 +32,7 @@ async function main() {
       json.overrides ||= {};
       Object.assign(
         json.overrides,
-        Object.fromEntries(packages.map((pkg) => [pkg, '$' + pkg])),
+        Object.fromEntries(packages.map(pkg => [pkg, '$' + pkg])),
       );
     } else if (json.dependencies) {
       for (const k of packages) {
@@ -46,7 +46,7 @@ async function main() {
       fs.writeJsonSync(fn, json, {spaces: 2});
     }
   });
-  const cmd = `pnpm add -w ${packages.map((pkg) => `${pkg}@${version}`).join(' ')}`;
+  const cmd = `pnpm add -w ${packages.map(pkg => `${pkg}@${version}`).join(' ')}`;
   console.log(cmd);
   await exec(cmd);
   await exec(

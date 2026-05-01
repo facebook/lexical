@@ -28,7 +28,7 @@ import {
 import {assert, beforeEach, describe, expect, test} from 'vitest';
 
 describe('LexicalMarkNode tests', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     describe('$wrapSelectionInMarkNode', () => {
       beforeEach(() => {
         testEnv.editor.update(
@@ -90,13 +90,13 @@ describe('LexicalMarkNode tests', () => {
           expect(paragraphNode.getTextContent()).toEqual(
             'unmarked marked unmarked',
           );
-          expect(paragraphNode.getChildren().map((c) => c.getType())).toEqual([
+          expect(paragraphNode.getChildren().map(c => c.getType())).toEqual([
             'text',
             'mark',
             'text',
           ]);
           expect(
-            paragraphNode.getChildren().map((c) => c.getTextContent()),
+            paragraphNode.getChildren().map(c => c.getTextContent()),
           ).toEqual(['unmarked ', 'marked', ' unmarked']);
         });
       });
@@ -122,7 +122,7 @@ describe('LexicalMarkNode tests', () => {
           expect(paragraphNode.getChildren()).toHaveLength(1);
           const markNode = paragraphNode.getFirstChildOrThrow<MarkNode>();
           expect(markNode.getType()).toEqual('mark');
-          expect(markNode.getChildren().map((c) => c.getKey())).toEqual([
+          expect(markNode.getChildren().map(c => c.getKey())).toEqual([
             decoratorNode.getKey(),
             textNode.getKey(),
           ]);
@@ -153,7 +153,7 @@ describe('LexicalMarkNode tests', () => {
 
           $insertNodeIntoLeaf($createTestDecoratorNode());
 
-          expect(paragraphNode.getChildren().map((c) => c.getType())).toEqual([
+          expect(paragraphNode.getChildren().map(c => c.getType())).toEqual([
             'mark',
           ]);
           const updatedMarkNode = paragraphNode.getFirstChildOrThrow();
@@ -188,7 +188,7 @@ describe('LexicalMarkNode tests', () => {
           expect(paragraphNode.getChildren()).toHaveLength(1);
           const markNode = paragraphNode.getFirstChildOrThrow<MarkNode>();
           expect(markNode.getType()).toEqual('mark');
-          expect(markNode.getChildren().map((c) => c.getKey())).toEqual([
+          expect(markNode.getChildren().map(c => c.getKey())).toEqual([
             elementNode.getKey(),
             textNode.getKey(),
           ]);

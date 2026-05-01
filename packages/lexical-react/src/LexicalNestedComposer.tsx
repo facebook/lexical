@@ -200,7 +200,7 @@ export function LexicalNestedComposer({
   // Update `isEditable` state of nested editor in response to the same change on parent editor.
   useEffect(() => {
     if (!skipEditableListener) {
-      const editableListener: EditableListener = (editable) =>
+      const editableListener: EditableListener = editable =>
         initialEditor.setEditable(editable);
       editableListener(parentEditor.isEditable());
       return parentEditor.registerEditableListener(editableListener);

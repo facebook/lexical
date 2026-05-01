@@ -94,7 +94,7 @@ const rule = {
               suggestedModuleName: `'${invalidPackage.getNpmName()}'`,
             };
             /** @type {import('eslint').Rule.ReportFixer} */
-            const fix = (fixer) =>
+            const fix = fixer =>
               fixer.replaceText(node.source, data.suggestedModuleName);
             context.report({
               data,
@@ -122,7 +122,7 @@ const rule = {
             )}'`,
           };
           /** @type {import('eslint').Rule.ReportFixer} */
-          const fix = (fixer) =>
+          const fix = fixer =>
             fixer.replaceText(node.source, data.suggestedModuleName);
           context.report({
             data,

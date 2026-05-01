@@ -365,7 +365,7 @@ export class TableNode extends ElementNode {
     updateColgroup(
       tableElement,
       this.getColumnCount(),
-      colWidths.map((width) => width * scale),
+      colWidths.map(width => width * scale),
     );
   }
 
@@ -373,7 +373,7 @@ export class TableNode extends ElementNode {
     const superExport = super.exportDOM(editor);
     const {element} = superExport;
     return {
-      after: (tableElement) => {
+      after: tableElement => {
         if (superExport.after) {
           tableElement = superExport.after(tableElement);
         }
@@ -605,7 +605,7 @@ export class TableNode extends ElementNode {
     }
 
     let columnCount = 0;
-    firstRow.getChildren().forEach((cell) => {
+    firstRow.getChildren().forEach(cell => {
       if ($isTableCellNode(cell)) {
         columnCount += cell.getColSpan();
       }
@@ -660,7 +660,7 @@ export function $convertTableElement(
     }
   }
   return {
-    after: (children) => $descendantsMatching(children, $isTableRowNode),
+    after: children => $descendantsMatching(children, $isTableRowNode),
     node: tableNode,
   };
 }

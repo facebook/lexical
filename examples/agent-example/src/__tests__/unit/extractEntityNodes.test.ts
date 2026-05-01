@@ -32,7 +32,7 @@ import {
 } from '../../utils/extractEntityNodes';
 
 const labelState = createState('label', {
-  parse: (v) => (typeof v === 'string' ? v : ''),
+  parse: v => (typeof v === 'string' ? v : ''),
 });
 
 // Minimal inline decorator node for testing replacements
@@ -472,13 +472,13 @@ describe('extractEntityNodes', () => {
               {end: 21, entity: 'ORG', start: 17, text: 'Meta'},
             ],
             {
-              LOC: replaceWithEntity((text) =>
+              LOC: replaceWithEntity(text =>
                 $createTestEntityNode(`loc:${text}`),
               ),
-              ORG: replaceWithEntity((text) =>
+              ORG: replaceWithEntity(text =>
                 $createTestEntityNode(`org:${text}`),
               ),
-              PER: replaceWithEntity((text) =>
+              PER: replaceWithEntity(text =>
                 $createTestEntityNode(`per:${text}`),
               ),
             },

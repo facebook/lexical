@@ -203,7 +203,7 @@ export function $withContext<Ctx extends AnyContextSymbol>(
     cfg: readonly AnyContextConfigPairOrUpdater<Ctx>[],
     editor = $getEditor(),
   ): (<T>(f: () => T) => T) => {
-    return (f) => {
+    return f => {
       const parentEditorContext = getEditorContext(editor);
       const parentContextRecord =
         parentEditorContext && parentEditorContext[sym];

@@ -122,7 +122,7 @@ export default function ExcalidrawImage({
 
   return (
     <div
-      ref={(node) => {
+      ref={node => {
         if (node) {
           if (imageContainerRef) {
             imageContainerRef.current = node;

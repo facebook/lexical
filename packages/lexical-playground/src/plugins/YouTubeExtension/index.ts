@@ -23,10 +23,10 @@ export const INSERT_YOUTUBE_COMMAND: LexicalCommand<string> = createCommand(
 export const YouTubeExtension = defineExtension({
   name: '@lexical/playground/YouTube',
   nodes: [YouTubeNode],
-  register: (editor) =>
+  register: editor =>
     editor.registerCommand<string>(
       INSERT_YOUTUBE_COMMAND,
-      (payload) => {
+      payload => {
         const youTubeNode = $createYouTubeNode(payload);
         $insertNodeToNearestRoot(youTubeNode);
 

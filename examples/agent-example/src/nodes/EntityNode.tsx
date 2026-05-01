@@ -47,27 +47,27 @@ const ENTITY_STYLES = {
   LOC: {
     className:
       'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950 dark:text-emerald-300 dark:hover:bg-emerald-900',
-    getHref: (text) =>
+    getHref: text =>
       `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(text)}`,
-    getTitle: (text) => `View ${text} on Google Maps`,
+    getTitle: text => `View ${text} on Google Maps`,
     iconPath:
       'M8 0C5.2 0 3 2.3 3 5.2 3 9.1 8 16 8 16s5-6.9 5-10.8C13 2.3 10.8 0 8 0zm0 7.5a2.2 2.2 0 110-4.4 2.2 2.2 0 010 4.4z',
   },
   ORG: {
     className:
       'bg-violet-50 text-violet-700 hover:bg-violet-100 dark:bg-violet-950 dark:text-violet-300 dark:hover:bg-violet-900',
-    getHref: (text) =>
+    getHref: text =>
       `https://www.google.com/search?q=${encodeURIComponent(text)}`,
-    getTitle: (text) => `Search for ${text}`,
+    getTitle: text => `Search for ${text}`,
     iconPath:
       'M3 1a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v14H3V1zm2 2h2v2H5V3zm4 0h2v2H9V3zM5 7h2v2H5V7zm4 0h2v2H9V7zm-2 4h2v4H7v-4z',
   },
   PER: {
     className:
       'bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-950 dark:text-blue-300 dark:hover:bg-blue-900',
-    getHref: (text) =>
+    getHref: text =>
       `https://www.google.com/search?q=${encodeURIComponent(text)}`,
-    getTitle: (text) => `Search for ${text}`,
+    getTitle: text => `Search for ${text}`,
     iconPath:
       'M8 0a3 3 0 1 1 0 6 3 3 0 0 1 0-6zm0 8c-4 0-6 2-6 3.5V13a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-1.5C14 10 12 8 8 8z',
   },
@@ -80,7 +80,7 @@ export function isEntityType(v: unknown): v is EntityType {
 }
 
 const entityTextState = createState('entityText', {
-  parse: (v) => (typeof v === 'string' ? v : ''),
+  parse: v => (typeof v === 'string' ? v : ''),
 });
 
 const entityTypeState = createState('entityType', {
@@ -99,7 +99,7 @@ function $convertEntityElement(
   const text = domNode.textContent || '';
   const node = $createEntityNode(entityType, text);
   return {
-    after: (children) => {
+    after: children => {
       const firstChild = children[0];
       if ($isTextNode(firstChild)) {
         node.setFormat(firstChild.getFormat());
@@ -115,7 +115,7 @@ export class EntityNode extends DecoratorTextNode {
     return this.config('entity', {
       extends: DecoratorTextNode,
       importDOM: buildImportMap({
-        span: (domNode) =>
+        span: domNode =>
           domNode.hasAttribute(DATA_ATTRIBUTE)
             ? {conversion: $convertEntityElement, priority: 1}
             : null,

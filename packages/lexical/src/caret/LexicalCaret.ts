@@ -392,7 +392,7 @@ abstract class AbstractCaret<
     return makeStepwiseIterator({
       hasNext: $isSiblingCaret,
       initial: this.getAdjacentCaret(),
-      map: (caret) => caret,
+      map: caret => caret,
       step: (caret: SiblingCaret<LexicalNode, D>) => caret.getAdjacentCaret(),
     });
   }
@@ -1038,7 +1038,7 @@ class CaretRangeImpl<D extends CaretDirection> implements CaretRange<D> {
       hasNext: (state: null | NodeCaret<D>): state is NodeCaret<D> =>
         state !== null && !(isTextFocus && focus.isSameNodeCaret(state)),
       initial: anchor.isSameNodeCaret(focus) ? null : step(anchor),
-      map: (state) => state,
+      map: state => state,
       step,
     });
   }

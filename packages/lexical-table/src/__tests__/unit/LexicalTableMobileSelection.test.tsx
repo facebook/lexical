@@ -51,7 +51,7 @@ interface PointerEventInit extends EventInit {
  * would incorrectly create table selections instead of just moving the cursor.
  */
 describe('LexicalTableMobileSelection', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     /**
      * Helper function to create a 2x2 table for testing
      */

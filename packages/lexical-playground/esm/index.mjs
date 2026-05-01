@@ -21,7 +21,7 @@ const initialConfig = {
   namespace: 'Vanilla JS Demo',
   // Register nodes specific for @lexical/rich-text
   nodes: [HeadingNode, QuoteNode],
-  onError: (error) => {
+  onError: error => {
     throw error;
   },
   theme: {

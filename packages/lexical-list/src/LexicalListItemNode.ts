@@ -37,6 +37,7 @@ import {
   $isRangeSelection,
   $isRootOrShadowRoot,
   $rewindSiblingCaret,
+  $setDirectionFromDOM,
   buildImportMap,
   ElementNode,
   getStyleObjectFromCSS,
@@ -333,7 +334,7 @@ export class ListItemNode extends ElementNode {
     if (siblings.length !== 0) {
       const newListNode = $copyNode(listNode);
 
-      siblings.forEach((sibling) => newListNode.append(sibling));
+      siblings.forEach(sibling => newListNode.append(sibling));
 
       node.insertAfter(newListNode, restoreSelection);
     }
@@ -378,7 +379,7 @@ export class ListItemNode extends ElementNode {
   collapseAtStart(selection: RangeSelection): true {
     const paragraph = $createParagraphNode();
     const children = this.getChildren();
-    children.forEach((child) => paragraph.append(child));
+    children.forEach(child => paragraph.append(child));
     const listNode = this.getParentOrThrow();
     const listNodeParent = listNode.getParentOrThrow();
     const isIndented = $isListItemNode(listNodeParent);
@@ -532,55 +533,52 @@ function $setListItemThemeClassNames(
   editorThemeClasses: EditorThemeClasses,
   node: ListItemNode,
 ): void {
-  const classesToAdd = [];
-  const classesToRemove = [];
   const listTheme = editorThemeClasses.list;
-  const listItemClassName = listTheme ? listTheme.listitem : undefined;
-  let nestedListItemClassName;
-
-  if (listTheme && listTheme.nested) {
-    nestedListItemClassName = listTheme.nested.listitem;
+  if (!listTheme) {
+    return;
   }
 
-  if (listItemClassName !== undefined) {
-    classesToAdd.push(...normalizeClassNames(listItemClassName));
+  const listItemClassName = listTheme.listitem;
+  const nestedListItemClassName = listTheme.nested && listTheme.nested.listitem;
+  const parentNode = node.getParent();
+  const isCheckList =
+    $isListNode(parentNode) && parentNode.getListType() === 'check';
+  const checked = node.getChecked();
+  const isNested = node.getChildren().some(child => $isListNode(child));
+
+  // Always remove the variable theme classes first so that the className
+  // string stays in a canonical order regardless of how the dom got here
+  // (fresh create vs. cross-parent reuse). classList.remove on a missing
+  // class is a no-op, so this is safe even on a freshly-created element.
+  const classesToRemove: string[] = [];
+  if (listTheme.listitemChecked !== undefined) {
+    classesToRemove.push(listTheme.listitemChecked);
   }
-
-  if (listTheme) {
-    const parentNode = node.getParent();
-    const isCheckList =
-      $isListNode(parentNode) && parentNode.getListType() === 'check';
-    const checked = node.getChecked();
-
-    if (!isCheckList || checked) {
-      classesToRemove.push(listTheme.listitemUnchecked);
-    }
-
-    if (!isCheckList || !checked) {
-      classesToRemove.push(listTheme.listitemChecked);
-    }
-
-    if (isCheckList) {
-      classesToAdd.push(
-        checked ? listTheme.listitemChecked : listTheme.listitemUnchecked,
-      );
-    }
+  if (listTheme.listitemUnchecked !== undefined) {
+    classesToRemove.push(listTheme.listitemUnchecked);
   }
-
   if (nestedListItemClassName !== undefined) {
-    const nestedListItemClasses = normalizeClassNames(nestedListItemClassName);
-
-    if (node.getChildren().some((child) => $isListNode(child))) {
-      classesToAdd.push(...nestedListItemClasses);
-    } else {
-      classesToRemove.push(...nestedListItemClasses);
-    }
+    classesToRemove.push(...normalizeClassNames(nestedListItemClassName));
   }
-
   if (classesToRemove.length > 0) {
     removeClassNamesFromElement(dom, ...classesToRemove);
   }
 
+  const classesToAdd: string[] = [];
+  if (listItemClassName !== undefined) {
+    classesToAdd.push(...normalizeClassNames(listItemClassName));
+  }
+  if (isCheckList) {
+    const checkClassName = checked
+      ? listTheme.listitemChecked
+      : listTheme.listitemUnchecked;
+    if (checkClassName !== undefined) {
+      classesToAdd.push(checkClassName);
+    }
+  }
+  if (nestedListItemClassName !== undefined && isNested) {
+    classesToAdd.push(...normalizeClassNames(nestedListItemClassName));
+  }
   if (classesToAdd.length > 0) {
     addClassNamesToElement(dom, ...classesToAdd);
   }
@@ -604,15 +602,10 @@ function updateListItemChecked(
   } else {
     dom.setAttribute('role', 'checkbox');
     dom.setAttribute('tabIndex', '-1');
-    if (
-      !prevListItemNode ||
-      listItemNode.__checked !== prevListItemNode.__checked
-    ) {
-      dom.setAttribute(
-        'aria-checked',
-        listItemNode.getChecked() ? 'true' : 'false',
-      );
-    }
+    dom.setAttribute(
+      'aria-checked',
+      listItemNode.getChecked() ? 'true' : 'false',
+    );
   }
 }
 
@@ -646,7 +639,7 @@ function $convertListItemElement(domNode: HTMLElement): DOMConversionOutput {
       : ariaCheckedAttr === 'false'
         ? false
         : undefined;
-  return {node: $createListItemNode(checked)};
+  return {node: $setDirectionFromDOM($createListItemNode(checked), domNode)};
 }
 
 function $convertCheckboxInput(domNode: Element): DOMConversionOutput {

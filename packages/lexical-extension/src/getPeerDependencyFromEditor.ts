@@ -43,7 +43,8 @@ export function getPeerDependencyFromEditor<
   editor: LexicalEditor,
   extensionName: Extension['name'],
 ): LexicalExtensionDependency<Extension> | undefined {
-  const builder = LexicalBuilder.fromEditor(editor);
+  const builder = LexicalBuilder.maybeFromEditor(editor);
+  if (!builder) return undefined;
   const peer = builder.extensionNameMap.get(extensionName);
   return peer
     ? (peer.getExtensionDependency() as LexicalExtensionDependency<Extension>)

@@ -49,14 +49,14 @@ describe('LexicalHeadlessEditor', () => {
   ) {
     const nodesFromState = Array.from(editorState._nodeMap.values());
     expect(nodesFromState).toEqual(
-      nodes.map((node) => expect.objectContaining(node)),
+      nodes.map(node => expect.objectContaining(node)),
     );
   }
 
   beforeEach(() => {
     editor = createHeadlessEditor({
       namespace: '',
-      onError: (error) => {
+      onError: error => {
         throw error;
       },
     });

@@ -276,6 +276,7 @@ export {
   $onUpdate,
   $selectAll,
   $setCompositionKey,
+  $setDirectionFromDOM,
   $setSelection,
   $splitNode,
   getDOMOwnerDocument,

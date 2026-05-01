@@ -51,7 +51,7 @@ describe('LexicalComposer tests', () => {
           initialConfig={{
             namespace: '',
             nodes: [],
-            onError: (err) => {
+            onError: err => {
               throw err;
             },
             theme,
@@ -94,7 +94,7 @@ describe('LexicalComposer tests', () => {
               },
               namespace: '',
               nodes: [],
-              onError: (err) => {
+              onError: err => {
                 throw err;
               },
             }}>

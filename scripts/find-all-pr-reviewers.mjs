@@ -102,7 +102,7 @@ async function findAllPRReviewers() {
 
       // Add a small delay to avoid rate limiting
       if (hasNextPage) {
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
     } catch (error) {
       console.error('Error parsing response:', error.message);
@@ -120,7 +120,7 @@ async function findAllPRReviewers() {
   );
 
   console.log('=== All PR Reviewers (Alphabetical) ===\n');
-  reviewerList.forEach((reviewer) => {
+  reviewerList.forEach(reviewer => {
     console.log(reviewer);
   });
 
@@ -131,7 +131,7 @@ async function findAllPRReviewers() {
 }
 
 // Run the script
-findAllPRReviewers().catch((error) => {
+findAllPRReviewers().catch(error => {
   console.error('Error finding PR reviewers:', error);
   process.exit(1);
 });

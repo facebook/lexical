@@ -103,7 +103,7 @@ describe('LexicalNode tests', () => {
     vi.restoreAllMocks();
   });
   initializeUnitTest(
-    (testEnv) => {
+    testEnv => {
       let paragraphNode: ParagraphNode;
       let textNode: TextNode;
 
@@ -495,13 +495,12 @@ describe('LexicalNode tests', () => {
               expect($isRangeSelection(selection)).toBe(true);
               const dbg = [selection.anchor, selection.focus]
                 .map(
-                  (point) =>
-                    `(${names[point.key] || point.key}:${point.offset})`,
+                  point => `(${names[point.key] || point.key}:${point.offset})`,
                 )
                 .join(' ');
               const nodes = `[${selection
                 .getNodes()
-                .map((k) => names[k.__key] || k.__key)
+                .map(k => names[k.__key] || k.__key)
                 .join(',')}]`;
               expect([dbg, nodes, inlineDecoratorNode.isSelected()]).toEqual([
                 dbg,

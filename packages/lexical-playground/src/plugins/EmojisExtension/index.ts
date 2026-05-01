@@ -56,6 +56,6 @@ function $textNodeTransform(node: TextNode): void {
 
 export const EmojisExtension = defineExtension({
   name: '@lexical/playground/Emojis',
-  register: (editor) =>
+  register: editor =>
     editor.registerNodeTransform(TextNode, $textNodeTransform),
 });

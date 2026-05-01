@@ -82,7 +82,7 @@ export function $createTableNodeWithDimensions(
 export function $getTableCellNodeFromLexicalNode(
   startingNode: LexicalNode,
 ): TableCellNode | null {
-  const node = $findMatchingParent(startingNode, (n) => $isTableCellNode(n));
+  const node = $findMatchingParent(startingNode, n => $isTableCellNode(n));
 
   if ($isTableCellNode(node)) {
     return node;
@@ -94,7 +94,7 @@ export function $getTableCellNodeFromLexicalNode(
 export function $getTableRowNodeFromTableCellNodeOrThrow(
   startingNode: LexicalNode,
 ): TableRowNode {
-  const node = $findMatchingParent(startingNode, (n) => $isTableRowNode(n));
+  const node = $findMatchingParent(startingNode, n => $isTableRowNode(n));
 
   if ($isTableRowNode(node)) {
     return node;
@@ -106,7 +106,7 @@ export function $getTableRowNodeFromTableCellNodeOrThrow(
 export function $getTableNodeFromLexicalNodeOrThrow(
   startingNode: LexicalNode,
 ): TableNode {
-  const node = $findMatchingParent(startingNode, (n) => $isTableNode(n));
+  const node = $findMatchingParent(startingNode, n => $isTableNode(n));
 
   if ($isTableNode(node)) {
     return node;
@@ -120,14 +120,14 @@ export function $getTableRowIndexFromTableCellNode(
 ): number {
   const tableRowNode = $getTableRowNodeFromTableCellNodeOrThrow(tableCellNode);
   const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableRowNode);
-  return tableNode.getChildren().findIndex((n) => n.is(tableRowNode));
+  return tableNode.getChildren().findIndex(n => n.is(tableRowNode));
 }
 
 export function $getTableColumnIndexFromTableCellNode(
   tableCellNode: TableCellNode,
 ): number {
   const tableRowNode = $getTableRowNodeFromTableCellNodeOrThrow(tableCellNode);
-  return tableRowNode.getChildren().findIndex((n) => n.is(tableCellNode));
+  return tableRowNode.getChildren().findIndex(n => n.is(tableCellNode));
 }
 
 export type TableCellSiblings = {
@@ -842,7 +842,7 @@ export function $mergeCells(cellNodes: TableCellNode[]): TableCellNode | null {
         continue;
       }
 
-      if (cellNodes.some((cell) => cell.is(mapCell.cell))) {
+      if (cellNodes.some(cell => cell.is(mapCell.cell))) {
         processedCells.add(cellKey);
         // Get the actual position of this cell in the grid
         const cellStartRow = mapCell.startRow;
@@ -1314,7 +1314,7 @@ export function $moveTableColumn(
     return;
   }
   const rows = tableNode.getChildren().filter($isTableRowNode);
-  rows.forEach((row) => {
+  rows.forEach(row => {
     const cells = row.getChildren();
     const [moved] = cells.splice(originColumn, 1);
     cells.splice(targetColumn, 0, moved);

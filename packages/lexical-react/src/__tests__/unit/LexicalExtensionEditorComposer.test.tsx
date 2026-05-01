@@ -56,7 +56,7 @@ const DecorateState = createState('decorate', {
     (node: ReactDecoratorNode): React.ReactNode =>
       null,
 });
-const InlineState = createState('inline', {parse: (v) => !!v});
+const InlineState = createState('inline', {parse: v => !!v});
 
 class ReactDecoratorNode extends DecoratorNode<React.ReactNode> {
   $config() {
@@ -206,7 +206,7 @@ describe('LexicalExtensionEditorComposer', () => {
     const handled: number[] = [];
     editor.registerCommand(
       TestCommand,
-      (payload) => {
+      payload => {
         handled.push(payload);
         return true;
       },

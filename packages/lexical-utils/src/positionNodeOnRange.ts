@@ -127,7 +127,7 @@ export default function mlcPositionNodeOnRange(
     stop();
     rootDOMNode = currentRootDOMNode;
     parentDOMNode = currentParentDOMNode;
-    observer = new MutationObserver((mutations) => {
+    observer = new MutationObserver(mutations => {
       const nextRootDOMNode = editor.getRootElement();
       const nextParentDOMNode =
         nextRootDOMNode && nextRootDOMNode.parentElement;

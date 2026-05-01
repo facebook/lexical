@@ -371,7 +371,7 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
   invariant(
     false,
     '$removeTextFromCaretRange: selection was lost, could not find a new anchor given candidates with keys: %s',
-    JSON.stringify(anchorCandidates.map((n) => n.origin.__key)),
+    JSON.stringify(anchorCandidates.map(n => n.origin.__key)),
   );
 }
 
@@ -433,7 +433,7 @@ function $getBlockMergeTargets(
     anchorBlock &&
     $getBlock(
       focusElements,
-      (node) => seenStart.has(node.getKey()) && INTERNAL_$isBlock(node),
+      node => seenStart.has(node.getKey()) && INTERNAL_$isBlock(node),
     );
   return anchorBlock && focusBlock ? [anchorBlock, focusBlock] : null;
 }

@@ -194,7 +194,7 @@ function testESLint10Flat() {
 function setupFixtures() {
   log(`\n${BOLD}${BLUE}Setting up test fixtures...${RESET}`);
 
-  [ESLINT8_DIR, ESLINT8_DEPRECATED_DIR, ESLINT10_DIR].forEach((cwd) => {
+  [ESLINT8_DIR, ESLINT8_DEPRECATED_DIR, ESLINT10_DIR].forEach(cwd => {
     try {
       log(`  Installing dependencies for ${path.basename(cwd)} fixture...`);
       execSync('pnpm install --no-lockfile', {

@@ -28,7 +28,7 @@ export function SlashMenuPlugin() {
     }
     const regex = new RegExp(queryString, 'i');
     return base.filter(
-      (o) => regex.test(o.title) || o.keywords.some((k) => regex.test(k)),
+      o => regex.test(o.title) || o.keywords.some(k => regex.test(k)),
     );
   }, [editor, queryString]);
 

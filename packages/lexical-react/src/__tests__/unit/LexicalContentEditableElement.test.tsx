@@ -25,7 +25,7 @@ describe('ContentEditableElement tests', () => {
 
     editor = createEditor({
       namespace: 'ContentEditableElement',
-      onError: (error) => {
+      onError: error => {
         throw error;
       },
     });
@@ -188,7 +188,7 @@ describe('ContentEditableElement tests', () => {
 
   it('registers and cleans up root element properly', async () => {
     let rootElement: HTMLElement | null = null;
-    editor.setRootElement = vi.fn((element) => {
+    editor.setRootElement = vi.fn(element => {
       rootElement = element;
     });
 

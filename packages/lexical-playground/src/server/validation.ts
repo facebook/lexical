@@ -24,14 +24,14 @@ global.__DEV__ = true;
 const editor = createHeadlessEditor({
   namespace: 'validation',
   nodes: [...PlaygroundNodes],
-  onError: (error) => {
+  onError: error => {
     console.error(error);
   },
 });
 
 const getJSONData = (req: http.IncomingMessage): Promise<string> => {
   const body: Array<Uint8Array> = [];
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     req
       .on('data', (chunk: Uint8Array) => {
         body.push(chunk);

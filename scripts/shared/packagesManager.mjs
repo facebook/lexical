@@ -40,7 +40,7 @@ class PackagesManager {
    */
   constructor(packagePaths) {
     this.packages = packagePaths
-      .map((packagePath) => new PackageMetadata(packagePath))
+      .map(packagePath => new PackageMetadata(packagePath))
       .sort(packageSort);
     for (const pkg of this.packages) {
       this.packagesByNpmName.set(pkg.getNpmName(), pkg);
@@ -90,7 +90,7 @@ class PackagesManager {
    * @returns {Array<PackageMetadata>}
    */
   getPublicPackages() {
-    return this.packages.filter((pkg) => !pkg.isPrivate());
+    return this.packages.filter(pkg => !pkg.isPrivate());
   }
 
   /**
@@ -106,7 +106,7 @@ class PackagesManager {
     const depsMap = new Map();
     const visited = new Set();
     /** @param {string[]} deps */
-    const traverse = (deps) => {
+    const traverse = deps => {
       for (const dep of deps) {
         if (visited.has(dep)) {
           continue;

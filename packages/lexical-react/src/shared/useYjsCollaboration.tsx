@@ -400,7 +400,7 @@ function useProvider(
   useEffect(() => {
     return editor.registerCommand(
       TOGGLE_CONNECT_COMMAND,
-      (payload) => {
+      payload => {
         const shouldConnect = payload;
 
         if (shouldConnect) {

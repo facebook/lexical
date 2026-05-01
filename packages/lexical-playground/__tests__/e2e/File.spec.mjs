@@ -96,7 +96,7 @@ test.describe('File', () => {
       `,
     );
 
-    page.on('filechooser', (fileChooser) => {
+    page.on('filechooser', fileChooser => {
       fileChooser.setFiles([filePath]);
     });
     await click(page, '.action-button.import');

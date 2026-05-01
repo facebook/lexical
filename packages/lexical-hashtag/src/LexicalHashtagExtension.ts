@@ -276,7 +276,7 @@ export function registerLexicalHashtag(
       editor,
       config.getHashtagMatch,
       HashtagNode,
-      (textNode) => $createHashtagNode(textNode.getTextContent()),
+      textNode => $createHashtagNode(textNode.getTextContent()),
     ),
   );
 }

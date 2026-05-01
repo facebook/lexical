@@ -15,14 +15,14 @@ import npmToWwwName from './npmToWwwName.mjs';
 const wwwMappings = Object.fromEntries(
   packagesManager
     .getPublicPackages()
-    .flatMap((pkg) =>
-      pkg.getExportedNpmModuleNames().map((npm) => [npm, npmToWwwName(npm)]),
+    .flatMap(pkg =>
+      pkg.getExportedNpmModuleNames().map(npm => [npm, npmToWwwName(npm)]),
     ),
 );
 
 const prettierConfig = prettier
   .resolveConfig(import.meta.filename)
-  .then((cfg) => cfg || {});
+  .then(cfg => cfg || {});
 
 /**
  * Add a statement to the end of the code so the comments don't
@@ -59,7 +59,7 @@ export default async function transformFlowFileContents(source) {
   return unwrapCode(
     await transform(
       wrapCode(source),
-      (context) => ({
+      context => ({
         ExportNamedDeclaration(node) {
           const exportSource = node.source;
           if (!exportSource) {

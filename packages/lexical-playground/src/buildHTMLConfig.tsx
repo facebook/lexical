@@ -44,14 +44,14 @@ function buildImportMap(): DOMConversionMap {
   // Wrap all TextNode importers with a function that also imports
   // the custom styles implemented by the playground
   for (const [tag, fn] of Object.entries(TextNode.importDOM() || {})) {
-    importMap[tag] = (importNode) => {
+    importMap[tag] = importNode => {
       const importer = fn(importNode);
       if (!importer) {
         return null;
       }
       return {
         ...importer,
-        conversion: (element) => {
+        conversion: element => {
           const output = importer.conversion(element);
           if (
             output === null ||
@@ -93,7 +93,7 @@ function buildExportMap(): DOMExportOutputMap {
           const after = output.after;
           return {
             ...output,
-            after: (generatedElement) => {
+            after: generatedElement => {
               if (after) {
                 generatedElement = after(generatedElement);
               }

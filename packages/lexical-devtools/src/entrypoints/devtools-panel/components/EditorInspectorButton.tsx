@@ -31,7 +31,7 @@ export function EditorInspectorButton({tabID, setErrorMessage}: Props) {
     injectedPegasusService
       .refreshLexicalEditors()
       .then(() => injectedPegasusService.toggleEditorPicker())
-      .catch((err) => {
+      .catch(err => {
         setErrorMessage(err.message);
         console.error(err);
       });

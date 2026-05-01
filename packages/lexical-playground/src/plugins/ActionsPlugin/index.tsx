@@ -10,7 +10,7 @@ import type {LexicalEditor} from 'lexical';
 import type {JSX} from 'react';
 
 import {$createCodeNode, $isCodeNode} from '@lexical/code';
-import {getExtensionDependencyFromEditor} from '@lexical/extension';
+import {getPeerDependencyFromEditor} from '@lexical/extension';
 import {
   editorStateFromSerializedDocument,
   exportFile,
@@ -134,11 +134,13 @@ export default function ActionsPlugin({
   const unregisterTransformRef = useRef(() => {});
   const [mode, dispatchMode, isPending] = useActionState(
     async (prevMode: EditorMode, nextMode: EditorMode): Promise<EditorMode> => {
-      const pagesOutput = getExtensionDependencyFromEditor(
+      const pagesDisabled = getPeerDependencyFromEditor<typeof PagesExtension>(
         editor,
-        PagesExtension,
-      ).output;
-      pagesOutput.disabled.value = true;
+        PagesExtension.name,
+      )?.output.disabled;
+      if (pagesDisabled !== undefined) {
+        pagesDisabled.value = true;
+      }
       if (prevMode === 'wysiwyg') {
         // handle transitions from wysiwyg -> nextMode -> wysiwyg when there's a single
         // root child CodeNode that is the nextMode language. e2e tests assume you can
@@ -225,12 +227,14 @@ export default function ActionsPlugin({
   const isHtml = optimisticMode === 'html';
 
   useEffect(() => {
-    const pagesOutput = getExtensionDependencyFromEditor(
+    const pagesDisabled = getPeerDependencyFromEditor<typeof PagesExtension>(
       editor,
-      PagesExtension,
-    ).output;
+      PagesExtension.name,
+    )?.output.disabled;
     const isCodeBlockEditor = mode !== 'wysiwyg';
-    pagesOutput.disabled.value = isCodeBlockEditor;
+    if (pagesDisabled !== undefined) {
+      pagesDisabled.value = isCodeBlockEditor;
+    }
 
     if (isCodeBlockEditor) {
       const unregister = editor.registerNodeTransform(RootNode, rootNode => {

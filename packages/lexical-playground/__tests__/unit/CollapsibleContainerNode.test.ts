@@ -9,7 +9,7 @@
 import {$generateNodesFromDOM} from '@lexical/html';
 import {$getRoot, $insertNodes} from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
-import {describe, expect, it} from 'vitest';
+import {assert, describe, expect, it} from 'vitest';
 
 import {
   $isCollapsibleContainerNode,
@@ -49,23 +49,26 @@ describe('CollapsibleContainerNode HTML import (issue #8407)', () => {
             const container = root
               .getChildren()
               .find($isCollapsibleContainerNode);
-            expect(container).toBeDefined();
-            const children = (
-              container as CollapsibleContainerNode
-            ).getChildren();
+            assert(
+              container != null,
+              'CollapsibleContainerNode must be a child of RootNode',
+            );
+            const children = container.getChildren();
             expect(children.length).toBe(2);
-            expect($isCollapsibleTitleNode(children[0])).toBe(true);
-            expect($isCollapsibleContentNode(children[1])).toBe(true);
-            expect((children[0] as CollapsibleTitleNode).getTextContent()).toBe(
-              'Details',
+            assert(
+              $isCollapsibleTitleNode(children[0]),
+              'First child must be CollapsibleTitleNode',
             );
-            expect(
-              (children[1] as CollapsibleContentNode).getTextContent().trim(),
-            ).toBe('Something small enough to escape casual notice.');
+            assert(
+              $isCollapsibleContentNode(children[1]),
+              'Second child must be CollapsibleContentNode',
+            );
+            expect(children[0].getTextContent()).toBe('Details');
+            expect(children[1].getTextContent().trim()).toBe(
+              'Something small enough to escape casual notice.',
+            );
             // No `open` attribute on the source element should map to closed.
-            expect((container as CollapsibleContainerNode).getOpen()).toBe(
-              false,
-            );
+            expect(container.getOpen()).toBe(false);
           });
         });
 
@@ -85,7 +88,7 @@ describe('CollapsibleContainerNode HTML import (issue #8407)', () => {
             const root = $getRoot();
             const container = root
               .getChildren()
-              .find($isCollapsibleContainerNode) as CollapsibleContainerNode;
+              .find($isCollapsibleContainerNode)!;
             expect(container.getOpen()).toBe(true);
           });
         });
@@ -107,17 +110,19 @@ describe('CollapsibleContainerNode HTML import (issue #8407)', () => {
             const root = $getRoot();
             const container = root
               .getChildren()
-              .find($isCollapsibleContainerNode) as CollapsibleContainerNode;
+              .find($isCollapsibleContainerNode)!;
             const children = container.getChildren();
             expect(children.length).toBe(2);
-            expect($isCollapsibleTitleNode(children[0])).toBe(true);
-            expect($isCollapsibleContentNode(children[1])).toBe(true);
-            expect((children[0] as CollapsibleTitleNode).getTextContent()).toBe(
-              'Title',
+            assert(
+              $isCollapsibleTitleNode(children[0]),
+              'First child must be CollapsibleTitleNode',
             );
-            expect(
-              (children[1] as CollapsibleContentNode).getTextContent().trim(),
-            ).toBe('Body before');
+            assert(
+              $isCollapsibleContentNode(children[1]),
+              'Second child must be CollapsibleContentNode',
+            );
+            expect(children[0].getTextContent()).toBe('Title');
+            expect(children[1].getTextContent().trim()).toBe('Body before');
           });
         });
 
@@ -137,7 +142,7 @@ describe('CollapsibleContainerNode HTML import (issue #8407)', () => {
             const root = $getRoot();
             const container = root
               .getChildren()
-              .find($isCollapsibleContainerNode) as CollapsibleContainerNode;
+              .find($isCollapsibleContainerNode)!;
             // The empty CollapsibleTitleNode created for missing <summary>
             // is removed by CollapsibleTitleNode's $transform, leaving the
             // body wrapped in a single CollapsibleContentNode. The crucial
@@ -145,10 +150,11 @@ describe('CollapsibleContainerNode HTML import (issue #8407)', () => {
             // shadow root.
             const children = container.getChildren();
             expect(children.length).toBe(1);
-            expect($isCollapsibleContentNode(children[0])).toBe(true);
-            expect(
-              (children[0] as CollapsibleContentNode).getTextContent(),
-            ).toBe('Just some loose text');
+            assert(
+              $isCollapsibleContentNode(children[0]),
+              'Sole child must be CollapsibleContentNode',
+            );
+            expect(children[0].getTextContent()).toBe('Just some loose text');
           });
         });
 
@@ -169,15 +175,18 @@ describe('CollapsibleContainerNode HTML import (issue #8407)', () => {
             const root = $getRoot();
             const container = root
               .getChildren()
-              .find($isCollapsibleContainerNode) as CollapsibleContainerNode;
+              .find($isCollapsibleContainerNode)!;
             const children = container.getChildren();
             expect(children.length).toBe(2);
-            expect($isCollapsibleTitleNode(children[0])).toBe(true);
-            expect($isCollapsibleContentNode(children[1])).toBe(true);
-            const contentChildren = (
-              children[1] as CollapsibleContentNode
-            ).getChildren();
-            expect(contentChildren.length).toBe(2);
+            assert(
+              $isCollapsibleTitleNode(children[0]),
+              'First child must be CollapsibleTitleNode',
+            );
+            assert(
+              $isCollapsibleContentNode(children[1]),
+              'Second child must be CollapsibleContentNode',
+            );
+            expect(children[1].getChildren().length).toBe(2);
           });
         });
 
@@ -203,14 +212,17 @@ describe('CollapsibleContainerNode HTML import (issue #8407)', () => {
             const root = $getRoot();
             const container = root
               .getChildren()
-              .find($isCollapsibleContainerNode);
-            expect(container).toBeDefined();
-            const children = (
-              container as CollapsibleContainerNode
-            ).getChildren();
+              .find($isCollapsibleContainerNode)!;
+            const children = container.getChildren();
             expect(children.length).toBe(2);
-            expect($isCollapsibleTitleNode(children[0])).toBe(true);
-            expect($isCollapsibleContentNode(children[1])).toBe(true);
+            assert(
+              $isCollapsibleTitleNode(children[0]),
+              'First child must be CollapsibleTitleNode',
+            );
+            assert(
+              $isCollapsibleContentNode(children[1]),
+              'Second child must be CollapsibleContentNode',
+            );
           });
         });
       });

@@ -30,6 +30,7 @@ import {
 import {
   $createCollapsibleContentNode,
   $isCollapsibleContentNode,
+  CollapsibleContentNode,
 } from './CollapsibleContentNode';
 import {
   $createCollapsibleTitleNode,
@@ -59,15 +60,22 @@ export function $convertDetailsElement(
       // expected structure so the editor doesn't end up with TextNodes
       // directly under the shadow root.
       let titleNode: CollapsibleTitleNode | null = null;
+      let contentNode: CollapsibleContentNode | null = null;
       const bodyNodes: LexicalNode[] = [];
       for (const child of childLexicalNodes) {
         if (titleNode === null && $isCollapsibleTitleNode(child)) {
           titleNode = child;
         } else if ($isCollapsibleContentNode(child)) {
-          // Lexical-exported markup wraps the body in a CollapsibleContentNode;
-          // unwrap so we can rebuild a single canonical content node.
-          for (const grandchild of child.getChildren()) {
-            bodyNodes.push(grandchild);
+          if (contentNode === null) {
+            // Lexical-exported markup wraps the body in a
+            // CollapsibleContentNode; reuse it instead of rebuilding.
+            contentNode = child;
+          } else {
+            // Multiple content nodes (rare): fold the extras into bodyNodes
+            // so they get appended to the canonical one below.
+            for (const grandchild of child.getChildren()) {
+              bodyNodes.push(grandchild);
+            }
           }
         } else {
           bodyNodes.push(child);
@@ -76,7 +84,9 @@ export function $convertDetailsElement(
       if (titleNode === null) {
         titleNode = $createCollapsibleTitleNode();
       }
-      const contentNode = $createCollapsibleContentNode();
+      if (contentNode === null) {
+        contentNode = $createCollapsibleContentNode();
+      }
       // CollapsibleContentNode is also a shadow root, so wrap any inline
       // siblings in a paragraph before appending.
       let pending: LexicalNode[] = [];

@@ -10,6 +10,7 @@ import type {LexicalEditor} from 'lexical';
 import type {JSX} from 'react';
 
 import {$createCodeNode, $isCodeNode} from '@lexical/code';
+import {getExtensionDependencyFromEditor} from '@lexical/extension';
 import {
   editorStateFromSerializedDocument,
   exportFile,
@@ -59,6 +60,7 @@ import Button from '../../ui/Button';
 import {docFromHash, docToHash} from '../../utils/docSerialization';
 import {formatCodeWithPrettier} from '../CodeActionMenuPlugin/formatCodeWithPrettier';
 import {PLAYGROUND_TRANSFORMERS} from '../MarkdownTransformers';
+import {PagesExtension} from '../PagesExtension';
 import {
   SPEECH_TO_TEXT_COMMAND,
   SUPPORT_SPEECH_RECOGNITION,
@@ -132,6 +134,11 @@ export default function ActionsPlugin({
   const unregisterTransformRef = useRef(() => {});
   const [mode, dispatchMode, isPending] = useActionState(
     async (prevMode: EditorMode, nextMode: EditorMode): Promise<EditorMode> => {
+      const pagesOutput = getExtensionDependencyFromEditor(
+        editor,
+        PagesExtension,
+      ).output;
+      pagesOutput.disabled.value = true;
       if (prevMode === 'wysiwyg') {
         // handle transitions from wysiwyg -> nextMode -> wysiwyg when there's a single
         // root child CodeNode that is the nextMode language. e2e tests assume you can
@@ -218,7 +225,14 @@ export default function ActionsPlugin({
   const isHtml = optimisticMode === 'html';
 
   useEffect(() => {
-    if (mode !== 'wysiwyg') {
+    const pagesOutput = getExtensionDependencyFromEditor(
+      editor,
+      PagesExtension,
+    ).output;
+    const isCodeBlockEditor = mode !== 'wysiwyg';
+    pagesOutput.disabled.value = isCodeBlockEditor;
+
+    if (isCodeBlockEditor) {
       const unregister = editor.registerNodeTransform(RootNode, rootNode => {
         let codeNode = rootNode.getChildren().find($isCodeNode);
         if (!codeNode) {

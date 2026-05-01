@@ -53,7 +53,7 @@ describe('CollapsibleContainerNode HTML import (issue #8407)', () => {
             const children = (
               container as CollapsibleContainerNode
             ).getChildren();
-            expect(children.length).toBeGreaterThanOrEqual(2);
+            expect(children.length).toBe(2);
             expect($isCollapsibleTitleNode(children[0])).toBe(true);
             expect($isCollapsibleContentNode(children[1])).toBe(true);
             expect((children[0] as CollapsibleTitleNode).getTextContent()).toBe(
@@ -137,16 +137,18 @@ describe('CollapsibleContainerNode HTML import (issue #8407)', () => {
             const root = $getRoot();
             const container = root
               .getChildren()
-              .find($isCollapsibleContainerNode);
-            expect(container).toBeDefined();
-            for (const child of (
-              container as CollapsibleContainerNode
-            ).getChildren()) {
-              // No raw TextNode should appear directly under the shadow root.
-              expect(['collapsible-title', 'collapsible-content']).toContain(
-                child.getType(),
-              );
-            }
+              .find($isCollapsibleContainerNode) as CollapsibleContainerNode;
+            // The empty CollapsibleTitleNode created for missing <summary>
+            // is removed by CollapsibleTitleNode's $transform, leaving the
+            // body wrapped in a single CollapsibleContentNode. The crucial
+            // invariant is that no raw TextNode sits directly under the
+            // shadow root.
+            const children = container.getChildren();
+            expect(children.length).toBe(1);
+            expect($isCollapsibleContentNode(children[0])).toBe(true);
+            expect(
+              (children[0] as CollapsibleContentNode).getTextContent(),
+            ).toBe('Just some loose text');
           });
         });
 

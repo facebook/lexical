@@ -296,9 +296,9 @@ function $setListThemeClassNames(
  * or some other inline content.
  */
 function $normalizeChildren(
-  nodes: Array<LexicalNode>,
+  nodes: LexicalNode[],
   listNode: ListNode,
-): Array<ListItemNode> {
+): ListItemNode[] {
   const $createWrapperItem = listNode.createListItemNode.bind(listNode);
 
   const normalizedListItems: ListItemNode[] = [];

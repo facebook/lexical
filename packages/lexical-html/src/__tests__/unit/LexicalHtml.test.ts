@@ -422,4 +422,50 @@ describe('HTML', () => {
       expect(importAndGetDirection(html)).toBe(expected);
     });
   });
+
+  describe('importDOM handles unknown block elements', () => {
+    function importAndExport(html: string): string {
+      const editor = createHeadlessEditor();
+      editor.update(
+        () => {
+          const parser = new DOMParser();
+          const dom = parser.parseFromString(html, 'text/html');
+          const nodes = $generateNodesFromDOM(editor, dom);
+          $getRoot().selectEnd();
+          const selection = $getRoot().select(0);
+          selection.insertNodes(nodes);
+        },
+        {discrete: true},
+      );
+      return editor.getEditorState().read(() => $generateHtmlFromNodes(editor));
+    }
+
+    test('wraps text inside unknown block element in paragraph', () => {
+      const html = importAndExport(
+        '<details><summary>Details</summary>Something small enough to escape casual notice.</details>',
+      );
+      expect(html).toContain('Something small enough to escape casual notice');
+      expect(() =>
+        importAndExport(
+          '<details><summary>Details</summary>Something</details>',
+        ),
+      ).not.toThrow();
+    });
+
+    test('wraps text inside unknown nested element in paragraph', () => {
+      expect(() =>
+        importAndExport(
+          '<details><summary>Details</summary><foo>Something</foo></details>',
+        ),
+      ).not.toThrow();
+    });
+
+    test('handles summary element as block', () => {
+      expect(() =>
+        importAndExport('<summary>Click me</summary>'),
+      ).not.toThrow();
+      const html = importAndExport('<summary>Click me</summary>');
+      expect(html).toContain('Click me');
+    });
+  });
 });

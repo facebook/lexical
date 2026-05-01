@@ -1902,7 +1902,7 @@ const BlockDOMBrand = Symbol.for('@lexical/BlockDOMBrand');
 const InlineDOMBrand = Symbol.for('@lexical/InlineDOMBrand');
 
 const BLOCK_TAG_RE =
-  /^(address|article|aside|blockquote|canvas|dd|div|dl|dt|fieldset|figcaption|figure|footer|form|h1|h2|h3|h4|h5|h6|header|hr|li|main|nav|noscript|ol|p|pre|section|table|td|tfoot|ul|video)$/i;
+  /^(address|article|aside|blockquote|canvas|dd|details|div|dl|dt|fieldset|figcaption|figure|footer|form|h1|h2|h3|h4|h5|h6|header|hr|li|main|nav|noscript|ol|p|pre|section|summary|table|td|tfoot|ul|video)$/i;
 
 /**
  *

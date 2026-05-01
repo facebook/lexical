@@ -467,7 +467,16 @@ function $createNodesFromDOM(
   if (currentLexicalNode == null) {
     if (childLexicalNodes.length > 0) {
       // If it hasn't been converted to a LexicalNode, we hoist its children
-      // up to the same level as it.
+      // up to the same level as it. Wrap inline children in paragraphs
+      // if the parent does not have a block ancestor to avoid inserting
+      // text or inline nodes directly into a root node.
+      if (!hasBlockAncestorLexicalNode) {
+        childLexicalNodes = wrapContinuousInlines(
+          node,
+          childLexicalNodes,
+          $createParagraphNode,
+        );
+      }
       for (const childNode of childLexicalNodes) {
         lexicalNodes.push(childNode);
       }

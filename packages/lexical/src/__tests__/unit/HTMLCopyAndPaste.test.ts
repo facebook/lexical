@@ -170,6 +170,34 @@ describe('HTMLCopyAndPaste tests', () => {
           '<p dir="auto"><span style="background-color: rgb(255, 170, 45);" data-lexical-text="true">Prediction</span></p>',
         );
       });
+
+      test('pasting a centered paragraph into an empty paragraph preserves alignment', async () => {
+        const {editor} = testEnv;
+        const dataTransfer = new DataTransferMock();
+        dataTransfer.setData(
+          'text/html',
+          '<p style="text-align: center;">Centered text</p>',
+        );
+
+        await editor.update(() => {
+          const root = $getRoot();
+          root.clear();
+          const p = $createParagraphNode();
+          root.append(p);
+          p.selectEnd();
+        });
+
+        await editor.update(() => {
+          const selection = $getSelection();
+          invariant(
+            $isRangeSelection(selection),
+            'isRangeSelection(selection)',
+          );
+          $insertDataTransferForRichText(dataTransfer, selection, editor);
+        });
+
+        expect(testEnv.innerHTML).toContain('text-align: center');
+      });
     },
     {
       namespace: 'test',

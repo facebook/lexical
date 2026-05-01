@@ -26,6 +26,7 @@ import {
   $getPreviousSelection,
   $getRoot,
   $getSelection,
+  $isBlockElementNode,
   $isDecoratorNode,
   $isElementNode,
   $isLineBreakNode,
@@ -611,7 +612,7 @@ function $maybeMoveSelectionPastTrailingAcceptanceBoundary(
           ? '\t'
           : null;
 
-  if (characterToSearchFor == null) {
+  if (!characterToSearchFor) {
     return;
   }
 
@@ -625,61 +626,31 @@ function $maybeMoveSelectionPastTrailingAcceptanceBoundary(
     return;
   }
 
-  switch (characterToSearchFor) {
-    case '\n':
-      if (anchorNode.getTextContentSize() === selection.anchor.offset) {
-        const block = $findMatchingParent(
-          anchorNode,
-          node => $isElementNode(node) && !node.isInline(),
-        );
-        const nextBlock = $isElementNode(block) ? block.getNextSibling() : null;
+  const {offset} = selection.anchor;
+  if (anchorNode.getTextContentSize() === offset) {
+    const nextSibling = anchorNode.getNextSibling();
+    if (characterToSearchFor === '\n') {
+      if ($isLineBreakNode(nextSibling)) {
+        nextSibling.selectEnd();
+      } else if (!nextSibling) {
+        const block = $findMatchingParent(anchorNode, $isBlockElementNode);
+        const nextBlock = block && block.getNextSibling();
         if ($isElementNode(nextBlock)) {
           nextBlock.selectStart();
-          break;
-        }
-
-        const nextSibling = anchorNode.getNextSibling();
-        if ($isLineBreakNode(nextSibling)) {
-          nextSibling.selectNext(0, 0);
-          break;
-        }
-        break;
-      }
-      break;
-    case '\t':
-      if (selection.anchor.offset === anchorNode.getTextContentSize()) {
-        const nextSibling = anchorNode.getNextSibling();
-        if ($isTabNode(nextSibling)) {
-          nextSibling.selectNext(0, 0);
-          break;
-        }
-        break;
-      }
-      break;
-    default:
-      {
-        const offset = selection.anchor.offset;
-        const textContent = anchorNode.getTextContent();
-        if (textContent[offset] === characterToSearchFor) {
-          selection.setTextNodeRange(
-            anchorNode,
-            offset + 1,
-            anchorNode,
-            offset + 1,
-          );
-          return;
-        }
-
-        const nextSibling = anchorNode.getNextSibling();
-        if (
-          $isTextNode(nextSibling) &&
-          selection.anchor.offset === anchorNode.getTextContentSize() &&
-          nextSibling.getTextContent().startsWith(characterToSearchFor)
-        ) {
-          selection.setTextNodeRange(nextSibling, 1, nextSibling, 1);
         }
       }
-      break;
+    } else if (characterToSearchFor === '\t') {
+      if ($isTabNode(nextSibling)) {
+        nextSibling.selectEnd();
+      }
+    } else if (
+      $isTextNode(nextSibling) &&
+      nextSibling.getTextContent()[0] === characterToSearchFor
+    ) {
+      nextSibling.select(1, 1);
+    }
+  } else if (anchorNode.getTextContent()[offset] === characterToSearchFor) {
+    anchorNode.select(offset + 1, offset + 1);
   }
 }
 

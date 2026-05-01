@@ -871,6 +871,9 @@ importers:
       '@lexical/dragon':
         specifier: workspace:*
         version: link:../lexical-dragon
+      '@lexical/extension':
+        specifier: 'workspace:'
+        version: link:../lexical-extension
       '@lexical/selection':
         specifier: workspace:*
         version: link:../lexical-selection

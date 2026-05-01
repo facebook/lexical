@@ -303,7 +303,6 @@ describe('LexicalTableNode tests', () => {
                             width: 75px;
                             vertical-align: top;
                             text-align: start;
-                            background-color: rgb(242, 243, 245);
                           ">
                           <p><span style="white-space: pre-wrap">0</span></p>
                         </th>
@@ -313,7 +312,6 @@ describe('LexicalTableNode tests', () => {
                             width: 75px;
                             vertical-align: top;
                             text-align: start;
-                            background-color: rgb(242, 243, 245);
                           ">
                           <p><span style="white-space: pre-wrap">1</span></p>
                         </th>
@@ -325,7 +323,6 @@ describe('LexicalTableNode tests', () => {
                             width: 75px;
                             vertical-align: top;
                             text-align: start;
-                            background-color: rgb(242, 243, 245);
                           ">
                           <p><span style="white-space: pre-wrap">2</span></p>
                         </th>
@@ -379,7 +376,6 @@ describe('LexicalTableNode tests', () => {
                             width: 75px;
                             vertical-align: top;
                             text-align: start;
-                            background-color: rgb(242, 243, 245);
                           ">
                           <p><span style="white-space: pre-wrap">1</span></p>
                         </th>

@@ -7,10 +7,15 @@
  */
 import {CodeExtension} from '@lexical/code-core';
 import {buildEditorFromExtensions} from '@lexical/extension';
+import {createHeadlessEditor} from '@lexical/headless';
 import {HistoryExtension} from '@lexical/history';
 import {$createLinkNode, $isLinkNode, LinkExtension} from '@lexical/link';
 import {ListExtension} from '@lexical/list';
-import {registerMarkdownShortcuts} from '@lexical/markdown';
+import {
+  $convertFromMarkdownString,
+  registerMarkdownShortcuts,
+  TextMatchTransformer,
+} from '@lexical/markdown';
 import {RichTextExtension} from '@lexical/rich-text';
 import {
   $createParagraphNode,
@@ -22,6 +27,8 @@ import {
   $isTextNode,
   defineExtension,
   LexicalEditor,
+  ParagraphNode,
+  TextNode,
   UNDO_COMMAND,
 } from 'lexical';
 import {assert, describe, expect, test} from 'vitest';
@@ -240,6 +247,112 @@ describe('CODE_SPAN_PRECEDENCE', () => {
       expect(boldNode).toBeDefined();
       assert($isTextNode(boldNode!), 'Bold node must be a TextNode');
       expect(boldNode!.getTextContent()).toBe('bold');
+    });
+  });
+});
+
+const BLOCK_FORMAT: TextMatchTransformer = {
+  dependencies: [],
+  importRegExp: /\$\$([^$]+?)\$\$/,
+  regExp: /\$\$([^$]+?)\$\$$/,
+  replace: (textNode, match) => {
+    textNode.setTextContent(match[1]);
+    textNode.toggleFormat('code');
+  },
+  trigger: '$',
+  type: 'text-match',
+};
+
+const INLINE_FORMAT: TextMatchTransformer = {
+  dependencies: [],
+  importRegExp: /\$([^$]+?)\$/,
+  regExp: /\$([^$]+?)\$$/,
+  replace: (textNode, match) => {
+    textNode.setTextContent(match[1]);
+    textNode.toggleFormat('bold');
+  },
+  trigger: '$',
+  type: 'text-match',
+};
+
+const EquationShortcutTestExtension = defineExtension({
+  dependencies: [
+    HistoryExtension,
+    LinkExtension,
+    RichTextExtension,
+    ListExtension,
+    CodeExtension,
+  ],
+  name: 'EquationShortcutTest',
+  register: editor_ =>
+    registerMarkdownShortcuts(editor_, [BLOCK_FORMAT, INLINE_FORMAT]),
+});
+
+describe('BLOCK_EQUATION', () => {
+  test('typing $...$ creates bold format (inline) after BLOCK_FORMAT fails', () => {
+    using editor = buildEditorFromExtensions([EquationShortcutTestExtension]);
+    typeMarkdown(editor, '$x=1$');
+    editor.read(() => {
+      const paragraph = $getRoot().getFirstChildOrThrow();
+      assert($isParagraphNode(paragraph), 'Root child must be a paragraph');
+      const children = paragraph.getChildren();
+      const textNode = children[0];
+      assert($isTextNode(textNode), 'Child must be a TextNode');
+      expect(textNode.getTextContent()).toBe('x=1');
+      expect(textNode.hasFormat('bold')).toBe(true);
+      expect(textNode.hasFormat('code')).toBe(false);
+    });
+  });
+
+  test('$convertFromMarkdownString imports $$...$$ as code format (block) when BLOCK_FORMAT precedes INLINE_FORMAT', () => {
+    const editor = createHeadlessEditor({
+      namespace: '',
+      nodes: [ParagraphNode, TextNode],
+      onError: () => {},
+    });
+
+    editor.update(
+      () => {
+        $convertFromMarkdownString('$$x=1$$', [BLOCK_FORMAT, INLINE_FORMAT]);
+      },
+      {discrete: true},
+    );
+
+    editor.getEditorState().read(() => {
+      const paragraph = $getRoot().getFirstChildOrThrow();
+      assert($isParagraphNode(paragraph), 'Root child must be a paragraph');
+      const children = paragraph.getChildren();
+      const textNode = children[0];
+      assert($isTextNode(textNode), 'Child must be a TextNode');
+      expect(textNode.getTextContent()).toBe('x=1');
+      expect(textNode.hasFormat('code')).toBe(true);
+      expect(textNode.hasFormat('bold')).toBe(false);
+    });
+  });
+
+  test('$convertFromMarkdownString imports $...$ as bold format (inline) when BLOCK_FORMAT fails', () => {
+    const editor = createHeadlessEditor({
+      namespace: '',
+      nodes: [ParagraphNode, TextNode],
+      onError: () => {},
+    });
+
+    editor.update(
+      () => {
+        $convertFromMarkdownString('$x=1$', [BLOCK_FORMAT, INLINE_FORMAT]);
+      },
+      {discrete: true},
+    );
+
+    editor.getEditorState().read(() => {
+      const paragraph = $getRoot().getFirstChildOrThrow();
+      assert($isParagraphNode(paragraph), 'Root child must be a paragraph');
+      const children = paragraph.getChildren();
+      const textNode = children[0];
+      assert($isTextNode(textNode), 'Child must be a TextNode');
+      expect(textNode.getTextContent()).toBe('x=1');
+      expect(textNode.hasFormat('bold')).toBe(true);
+      expect(textNode.hasFormat('code')).toBe(false);
     });
   });
 });

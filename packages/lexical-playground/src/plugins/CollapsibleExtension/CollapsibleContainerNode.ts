@@ -8,7 +8,9 @@
 
 import {IS_CHROME, IS_FIREFOX} from '@lexical/utils';
 import {
+  $createParagraphNode,
   $getSiblingCaret,
+  $isBlockElementNode,
   $isElementNode,
   $rewindSiblingCaret,
   DOMConversionMap,
@@ -25,6 +27,15 @@ import {
   Spread,
 } from 'lexical';
 
+import {
+  $createCollapsibleContentNode,
+  $isCollapsibleContentNode,
+} from './CollapsibleContentNode';
+import {
+  $createCollapsibleTitleNode,
+  $isCollapsibleTitleNode,
+  CollapsibleTitleNode,
+} from './CollapsibleTitleNode';
 import {setDomHiddenUntilFound} from './CollapsibleUtils';
 
 type SerializedCollapsibleContainerNode = Spread<
@@ -40,6 +51,55 @@ export function $convertDetailsElement(
   const isOpen = domNode.open !== undefined ? domNode.open : true;
   const node = $createCollapsibleContainerNode(isOpen);
   return {
+    after: childLexicalNodes => {
+      // CollapsibleContainerNode is a shadow root that requires exactly two
+      // children: a CollapsibleTitleNode (from <summary>) followed by a
+      // CollapsibleContentNode. Arbitrary <details> markup may include loose
+      // text or block siblings; reshape the imported children into the
+      // expected structure so the editor doesn't end up with TextNodes
+      // directly under the shadow root.
+      let titleNode: CollapsibleTitleNode | null = null;
+      const bodyNodes: LexicalNode[] = [];
+      for (const child of childLexicalNodes) {
+        if (titleNode === null && $isCollapsibleTitleNode(child)) {
+          titleNode = child;
+        } else if ($isCollapsibleContentNode(child)) {
+          // Lexical-exported markup wraps the body in a CollapsibleContentNode;
+          // unwrap so we can rebuild a single canonical content node.
+          for (const grandchild of child.getChildren()) {
+            bodyNodes.push(grandchild);
+          }
+        } else {
+          bodyNodes.push(child);
+        }
+      }
+      if (titleNode === null) {
+        titleNode = $createCollapsibleTitleNode();
+      }
+      const contentNode = $createCollapsibleContentNode();
+      // CollapsibleContentNode is also a shadow root, so wrap any inline
+      // siblings in a paragraph before appending.
+      let pending: LexicalNode[] = [];
+      const flushPending = () => {
+        if (pending.length === 0) {
+          return;
+        }
+        const paragraph = $createParagraphNode();
+        paragraph.append(...pending);
+        contentNode.append(paragraph);
+        pending = [];
+      };
+      for (const body of bodyNodes) {
+        if ($isBlockElementNode(body)) {
+          flushPending();
+          contentNode.append(body);
+        } else {
+          pending.push(body);
+        }
+      }
+      flushPending();
+      return [titleNode, contentNode];
+    },
     node,
   };
 }

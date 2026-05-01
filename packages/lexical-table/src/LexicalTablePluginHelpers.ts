@@ -481,7 +481,8 @@ function $tableSelectionInsertClipboardNodesCommand(
 
   // When pasting just a table, flatten the table on the destination table, even when nested tables are allowed.
   if (nodes.length === 1 && $isTableNode(nodes[0])) {
-    return $insertTableIntoGrid(nodes[0], selection);
+    $insertTableIntoGrid(nodes[0], selection);
+    return true;
   }
 
   // If nested tables are enabled, allow pasting a table into a single cell.

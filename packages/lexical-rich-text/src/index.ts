@@ -35,6 +35,7 @@ import {
   setLexicalClipboardDataTransfer,
 } from '@lexical/clipboard';
 import {DragonExtension} from '@lexical/dragon';
+import {effect, namedSignals, ReadonlySignal, signal} from '@lexical/extension';
 import {
   $isParentRTL,
   $moveCharacter,
@@ -107,6 +108,7 @@ import {
   safeCast,
   SELECT_ALL_COMMAND,
   setNodeIndentFromDOM,
+  shallowMergeConfig,
 } from 'lexical';
 import caretFromPoint from 'shared/caretFromPoint';
 import {
@@ -681,37 +683,51 @@ function $escapeFormatsForTrigger(
   }
 }
 
+function mergeEscapeFormatTriggers(
+  config: EscapeFormatTriggerConfig,
+  overrides: EscapeFormatTriggerConfig,
+) {
+  const merged = shallowMergeConfig(config, overrides);
+  for (const k of Object.keys(overrides) as TextFormatType[]) {
+    merged[k] = mergeTriggerConfig(config[k], overrides[k]);
+  }
+  return merged;
+}
+
+function mergeTriggerConfig(
+  config: TriggerConfig | null | undefined,
+  override: TriggerConfig | null | undefined,
+): TriggerConfig | null | undefined {
+  if (!config || override === null) {
+    return override;
+  }
+  return shallowMergeConfig(config, override);
+}
+
 function mergeRichTextConfig(
   config: RichTextConfig,
   overrides: Partial<RichTextConfig>,
 ): RichTextConfig {
-  if (overrides.escapeFormatTriggers === undefined) {
-    return config;
+  const merged = shallowMergeConfig(config, overrides);
+  if (overrides.escapeFormatTriggers) {
+    merged.escapeFormatTriggers = mergeEscapeFormatTriggers(
+      config.escapeFormatTriggers,
+      overrides.escapeFormatTriggers,
+    );
   }
-  const merged: EscapeFormatTriggerConfig = {...config.escapeFormatTriggers};
-  for (const key of Object.keys(
-    overrides.escapeFormatTriggers,
-  ) as TextFormatType[]) {
-    const triggers = overrides.escapeFormatTriggers[key];
-    if (triggers === null) {
-      merged[key] = null;
-    } else if (triggers !== undefined) {
-      const existing = merged[key];
-      merged[key] =
-        existing != null ? {...existing, ...triggers} : {...triggers};
-    }
-  }
-  return {...config, escapeFormatTriggers: merged};
+  return merged;
 }
 
 export function registerRichText(
   editor: LexicalEditor,
-  escapeFormatTriggers: EscapeFormatTriggerConfig = DEFAULT_RICH_TEXT_CONFIG.escapeFormatTriggers,
+  escapeFormatTriggers: ReadonlySignal<EscapeFormatTriggerConfig> = signal(
+    DEFAULT_RICH_TEXT_CONFIG.escapeFormatTriggers,
+  ),
 ): () => void {
   const removeListener = mergeRegister(
     editor.registerCommand(
       CLICK_COMMAND,
-      payload => {
+      () => {
         const selection = $getSelection();
         if ($isNodeSelection(selection)) {
           selection.clear();
@@ -722,7 +738,7 @@ export function registerRichText(
             selection,
             'click',
             'both',
-            escapeFormatTriggers,
+            escapeFormatTriggers.peek(),
           );
         }
         return false;
@@ -993,7 +1009,7 @@ export function registerRichText(
             selection,
             'arrow',
             'start',
-            escapeFormatTriggers,
+            escapeFormatTriggers.peek(),
           );
         }
         if ($shouldOverrideDefaultCharacterSelection(selection, true)) {
@@ -1032,7 +1048,7 @@ export function registerRichText(
             selection,
             'arrow',
             'end',
-            escapeFormatTriggers,
+            escapeFormatTriggers.peek(),
           );
         }
         if ($shouldOverrideDefaultCharacterSelection(selection, false)) {
@@ -1098,7 +1114,7 @@ export function registerRichText(
           selection,
           'enter',
           'both',
-          escapeFormatTriggers,
+          escapeFormatTriggers.peek(),
         );
 
         if (event !== null) {
@@ -1280,7 +1296,7 @@ export function registerRichText(
     ),
     editor.registerCommand(
       KEY_SPACE_COMMAND,
-      _ => {
+      () => {
         const selection = $getSelection();
 
         if ($isRangeSelection(selection)) {
@@ -1288,7 +1304,7 @@ export function registerRichText(
             selection,
             'space',
             'both',
-            escapeFormatTriggers,
+            escapeFormatTriggers.peek(),
           );
         }
 
@@ -1298,7 +1314,7 @@ export function registerRichText(
     ),
     editor.registerCommand(
       KEY_TAB_COMMAND,
-      _ => {
+      () => {
         const selection = $getSelection();
 
         if ($isRangeSelection(selection)) {
@@ -1306,7 +1322,7 @@ export function registerRichText(
             selection,
             'tab',
             'both',
-            escapeFormatTriggers,
+            escapeFormatTriggers.peek(),
           );
         }
 
@@ -1335,13 +1351,15 @@ export function registerRichText(
  * ```
  */
 export const RichTextExtension = defineExtension({
+  build: (_editor, config) => namedSignals(config),
   config: safeCast<RichTextConfig>(DEFAULT_RICH_TEXT_CONFIG),
   conflictsWith: ['@lexical/plain-text'],
   dependencies: [DragonExtension],
   mergeConfig: mergeRichTextConfig,
   name: '@lexical/rich-text',
   nodes: () => [HeadingNode, QuoteNode],
-  register(editor, config) {
-    return registerRichText(editor, config.escapeFormatTriggers);
-  },
+  register: (editor, _config, state) =>
+    effect(() =>
+      registerRichText(editor, state.getOutput().escapeFormatTriggers),
+    ),
 });

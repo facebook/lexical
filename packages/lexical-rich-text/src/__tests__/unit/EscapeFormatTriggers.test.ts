@@ -6,8 +6,11 @@
  *
  */
 
-import {buildEditorFromExtensions} from '@lexical/extension';
-import {RichTextExtension} from '@lexical/rich-text';
+import {
+  buildEditorFromExtensions,
+  getExtensionDependencyFromEditor,
+} from '@lexical/extension';
+import {EscapeFormatTriggerConfig, RichTextExtension} from '@lexical/rich-text';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -17,20 +20,42 @@ import {
   $isTextNode,
   CLICK_COMMAND,
   configExtension,
+  InitialEditorStateType,
   IS_CODE,
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
   KEY_ENTER_COMMAND,
   KEY_SPACE_COMMAND,
   KEY_TAB_COMMAND,
-  type LexicalEditor,
+  RangeSelection,
+  TEXT_TYPE_TO_FORMAT,
 } from 'lexical';
-import {invariant, KeyboardEventMock} from 'lexical/src/__tests__/utils';
-import {describe, expect, test} from 'vitest';
+import {KeyboardEventMock} from 'lexical/src/__tests__/utils';
+import {assert, describe, expect, test} from 'vitest';
+
+// This simulates what the $updateSelectionFormatStyleFromTextNode infrastructure
+// would normally do in response to onSelectionChange DOM events, with some extra
+// constraints to ensure that tests are setup in the expected manner.
+function $updateSelectionFormat(
+  selection: RangeSelection,
+  expectFormat: number,
+) {
+  assert(
+    selection.anchor.type === 'text' &&
+      selection.focus.type === 'text' &&
+      selection.anchor.key === selection.focus.key,
+    'Selection must have anchor and focus on the same TextNode',
+  );
+  const anchorNode = selection.anchor.getNode();
+  const format = anchorNode.getFormat();
+  expect(format).toBe(expectFormat);
+  selection.setFormat(format);
+}
 
 describe('RichTextExtension escapeFormatTriggers', () => {
-  function createEditor() {
+  function createEditor($initialEditorState?: InitialEditorStateType) {
     return buildEditorFromExtensions({
+      $initialEditorState,
       dependencies: [
         configExtension(RichTextExtension, {
           escapeFormatTriggers: {
@@ -44,290 +69,233 @@ describe('RichTextExtension escapeFormatTriggers', () => {
 
   function $getFirstTextNode() {
     const node = $getRoot().getFirstDescendant();
-    invariant($isTextNode(node));
+    assert($isTextNode(node));
     return node;
   }
 
-  async function setupCodeTextNode(editor: LexicalEditor) {
-    await editor.update(() => {
-      const root = $getRoot();
-      root.clear();
-      const paragraph = $createParagraphNode();
-      const textNode = $createTextNode('code text');
-      textNode.toggleFormat('code');
-      paragraph.append(textNode);
-      root.append(paragraph);
-    });
+  function $setupCodeTextNode() {
+    $getRoot().append(
+      $createParagraphNode().append(
+        $createTextNode('code text').toggleFormat('code'),
+      ),
+    );
   }
 
   describe('CLICK_COMMAND', () => {
-    test('clears format when clicking at the end of a code node with no next sibling', async () => {
-      using editor = createEditor();
-      await setupCodeTextNode(editor);
-
-      await editor.update(() => {
-        $getRoot().selectEnd();
+    test('clears format when clicking at the end of a code node with no next sibling', () => {
+      using editor = createEditor(() => {
+        $setupCodeTextNode();
+        $updateSelectionFormat($getRoot().selectEnd(), IS_CODE);
       });
 
-      await editor.dispatchCommand(CLICK_COMMAND, new MouseEvent('click'));
+      editor.dispatchCommand(CLICK_COMMAND, new MouseEvent('click'));
 
-      await editor.read(() => {
+      editor.read(() => {
         const selection = $getSelection();
-        invariant($isRangeSelection(selection));
+        assert($isRangeSelection(selection));
         expect(selection.format).toBe(0);
         expect(selection.style).toBe('');
       });
     });
 
-    test('clears format when clicking at the start of a code node with no previous sibling', async () => {
-      using editor = createEditor();
-      await setupCodeTextNode(editor);
-
-      await editor.update(() => {
-        const textNode = $getFirstTextNode();
-        textNode.selectStart();
+    test('clears format when clicking at the start of a code node with no previous sibling', () => {
+      using editor = createEditor(() => {
+        $setupCodeTextNode();
+        $updateSelectionFormat($getRoot().selectStart(), IS_CODE);
       });
 
-      await editor.dispatchCommand(CLICK_COMMAND, new MouseEvent('click'));
+      editor.dispatchCommand(CLICK_COMMAND, new MouseEvent('click'));
 
-      await editor.read(() => {
+      editor.read(() => {
         const selection = $getSelection();
-        invariant($isRangeSelection(selection));
+        assert($isRangeSelection(selection));
         expect(selection.format).toBe(0);
         expect(selection.style).toBe('');
       });
     });
 
-    test('does not clear format when clicking in the middle of a code node', async () => {
-      using editor = createEditor();
-      await setupCodeTextNode(editor);
-
-      await editor.update(() => {
-        const textNode = $getFirstTextNode();
-        const selection = textNode.select(3, 3);
-        selection.format = IS_CODE;
+    test('does not clear format when clicking in the middle of a code node', () => {
+      using editor = createEditor(() => {
+        $setupCodeTextNode();
+        $updateSelectionFormat($getFirstTextNode().select(3, 3), IS_CODE);
       });
 
-      await editor.dispatchCommand(CLICK_COMMAND, new MouseEvent('click'));
+      editor.dispatchCommand(CLICK_COMMAND, new MouseEvent('click'));
 
-      await editor.read(() => {
+      editor.read(() => {
         const selection = $getSelection();
-        invariant($isRangeSelection(selection));
+        assert($isRangeSelection(selection));
         expect(selection.format).toBe(IS_CODE);
       });
     });
 
-    test('does not clear format at end of code node when it has a next sibling', async () => {
-      using editor = createEditor();
-
-      await editor.update(() => {
-        const root = $getRoot();
-        root.clear();
-        const paragraph = $createParagraphNode();
-        const codeNode = $createTextNode('code');
-        codeNode.toggleFormat('code');
-        const plainNode = $createTextNode(' plain');
-        paragraph.append(codeNode, plainNode);
-        root.append(paragraph);
+    test('does not clear format at end of code node when it has a next sibling', () => {
+      using editor = createEditor(() => {
+        const codeNode = $createTextNode('code').toggleFormat('code');
+        $getRoot().append(
+          $createParagraphNode().append(codeNode, $createTextNode(' plain')),
+        );
+        $updateSelectionFormat(codeNode.select(), IS_CODE);
       });
 
-      await editor.update(() => {
-        const codeNode = $getFirstTextNode();
-        const selection = codeNode.selectEnd();
-        selection.format = IS_CODE;
-      });
+      editor.dispatchCommand(CLICK_COMMAND, new MouseEvent('click'));
 
-      await editor.dispatchCommand(CLICK_COMMAND, new MouseEvent('click'));
-
-      await editor.read(() => {
+      editor.read(() => {
         const selection = $getSelection();
-        invariant($isRangeSelection(selection));
+        assert($isRangeSelection(selection));
         expect(selection.format).toBe(IS_CODE);
       });
     });
   });
 
   describe('KEY_ENTER_COMMAND', () => {
-    test('clears format when pressing Enter at the end of a code node', async () => {
-      using editor = createEditor();
-      await setupCodeTextNode(editor);
-
-      await editor.update(() => {
-        const selection = $getRoot().selectEnd();
-        selection.format = IS_CODE;
+    test('clears format when pressing Enter at the end of a code node', () => {
+      using editor = createEditor(() => {
+        $setupCodeTextNode();
+        $updateSelectionFormat($getRoot().selectEnd(), IS_CODE);
       });
 
-      await editor.dispatchCommand(KEY_ENTER_COMMAND, null);
+      editor.dispatchCommand(KEY_ENTER_COMMAND, null);
 
-      await editor.read(() => {
+      editor.read(() => {
         const selection = $getSelection();
-        invariant($isRangeSelection(selection));
+        assert($isRangeSelection(selection));
         expect(selection.format).toBe(0);
         expect(selection.style).toBe('');
       });
     });
 
-    test('clears format when pressing Enter at the start of a code node', async () => {
-      using editor = createEditor();
-      await setupCodeTextNode(editor);
-
-      await editor.update(() => {
-        const textNode = $getFirstTextNode();
-        const selection = textNode.selectStart();
-        selection.format = IS_CODE;
+    test('clears format when pressing Enter at the start of a code node', () => {
+      using editor = createEditor(() => {
+        $setupCodeTextNode();
+        $updateSelectionFormat($getRoot().selectStart(), IS_CODE);
       });
 
-      await editor.dispatchCommand(KEY_ENTER_COMMAND, null);
+      editor.dispatchCommand(KEY_ENTER_COMMAND, null);
 
-      await editor.read(() => {
+      editor.read(() => {
         const selection = $getSelection();
-        invariant($isRangeSelection(selection));
+        assert($isRangeSelection(selection));
         expect(selection.format).toBe(0);
         expect(selection.style).toBe('');
       });
     });
 
-    test('preserves code format when pressing Enter in the middle of a code node', async () => {
-      using editor = createEditor();
-      await setupCodeTextNode(editor);
-
-      await editor.update(() => {
-        const textNode = $getFirstTextNode();
-        const selection = textNode.select(3, 3);
-        selection.format = IS_CODE;
+    test('preserves code format when pressing Enter in the middle of a code node', () => {
+      using editor = createEditor(() => {
+        $setupCodeTextNode();
+        $updateSelectionFormat($getFirstTextNode().select(3, 3), IS_CODE);
       });
 
-      await editor.dispatchCommand(KEY_ENTER_COMMAND, null);
+      editor.dispatchCommand(KEY_ENTER_COMMAND, null);
 
-      await editor.read(() => {
+      editor.read(() => {
         const selection = $getSelection();
-        invariant($isRangeSelection(selection));
+        assert($isRangeSelection(selection));
         expect(selection.format).not.toBe(0);
       });
     });
   });
 
   describe('KEY_ARROW_RIGHT_COMMAND', () => {
-    test('clears format when arrowing right at the end of a code node', async () => {
-      using editor = createEditor();
-      await setupCodeTextNode(editor);
-
-      await editor.update(() => {
-        const selection = $getRoot().selectEnd();
-        selection.format = IS_CODE;
+    test('clears format when arrowing right at the end of a code node', () => {
+      using editor = createEditor(() => {
+        $setupCodeTextNode();
+        $updateSelectionFormat($getRoot().selectEnd(), IS_CODE);
       });
 
       const keyEvent = new KeyboardEventMock();
-      await editor.dispatchCommand(KEY_ARROW_RIGHT_COMMAND, keyEvent);
+      editor.dispatchCommand(KEY_ARROW_RIGHT_COMMAND, keyEvent);
 
-      await editor.read(() => {
+      editor.read(() => {
         const selection = $getSelection();
-        invariant($isRangeSelection(selection));
+        assert($isRangeSelection(selection));
         expect(selection.format).toBe(0);
         expect(selection.style).toBe('');
       });
     });
 
-    test('does not clear format when shift is held (extending selection)', async () => {
-      using editor = createEditor();
-      await setupCodeTextNode(editor);
-
-      await editor.update(() => {
-        const selection = $getRoot().selectEnd();
-        selection.format = IS_CODE;
+    test('does not clear format when shift is held (extending selection)', () => {
+      using editor = createEditor(() => {
+        $setupCodeTextNode();
+        $updateSelectionFormat($getRoot().selectEnd(), IS_CODE);
       });
 
       const keyEvent = new KeyboardEventMock();
       keyEvent.shiftKey = true;
-      await editor.dispatchCommand(KEY_ARROW_RIGHT_COMMAND, keyEvent);
+      editor.dispatchCommand(KEY_ARROW_RIGHT_COMMAND, keyEvent);
 
-      await editor.read(() => {
+      editor.read(() => {
         const selection = $getSelection();
-        invariant($isRangeSelection(selection));
+        assert($isRangeSelection(selection));
         expect(selection.format).toBe(IS_CODE);
       });
     });
 
-    test('does not clear format in the middle of a code node', async () => {
-      using editor = createEditor();
-      await setupCodeTextNode(editor);
-
-      await editor.update(() => {
-        const textNode = $getFirstTextNode();
-        const selection = textNode.select(3, 3);
-        selection.format = IS_CODE;
+    test('does not clear format in the middle of a code node', () => {
+      using editor = createEditor(() => {
+        $setupCodeTextNode();
+        $updateSelectionFormat($getFirstTextNode().select(3, 3), IS_CODE);
       });
 
       const keyEvent = new KeyboardEventMock();
-      await editor.dispatchCommand(KEY_ARROW_RIGHT_COMMAND, keyEvent);
+      editor.dispatchCommand(KEY_ARROW_RIGHT_COMMAND, keyEvent);
 
-      await editor.read(() => {
+      editor.read(() => {
         const selection = $getSelection();
-        invariant($isRangeSelection(selection));
+        assert($isRangeSelection(selection));
         expect(selection.format).toBe(IS_CODE);
       });
     });
   });
 
   describe('KEY_ARROW_LEFT_COMMAND', () => {
-    test('clears format when arrowing left at the start of a code node', async () => {
-      using editor = createEditor();
-      await setupCodeTextNode(editor);
-
-      await editor.update(() => {
-        const textNode = $getFirstTextNode();
-        const selection = textNode.selectStart();
-        selection.format = IS_CODE;
+    test('clears format when arrowing left at the start of a code node', () => {
+      using editor = createEditor(() => {
+        $setupCodeTextNode();
+        $updateSelectionFormat($getRoot().selectStart(), IS_CODE);
       });
 
       const keyEvent = new KeyboardEventMock();
-      await editor.dispatchCommand(KEY_ARROW_LEFT_COMMAND, keyEvent);
+      editor.dispatchCommand(KEY_ARROW_LEFT_COMMAND, keyEvent);
 
-      await editor.read(() => {
+      editor.read(() => {
         const selection = $getSelection();
-        invariant($isRangeSelection(selection));
+        assert($isRangeSelection(selection));
         expect(selection.format).toBe(0);
         expect(selection.style).toBe('');
       });
     });
 
-    test('does not clear format when shift is held (extending selection)', async () => {
-      using editor = createEditor();
-      await setupCodeTextNode(editor);
-
-      await editor.update(() => {
-        const textNode = $getFirstTextNode();
-        const selection = textNode.selectStart();
-        selection.format = IS_CODE;
+    test('does not clear format when shift is held (extending selection)', () => {
+      using editor = createEditor(() => {
+        $setupCodeTextNode();
+        $updateSelectionFormat($getRoot().selectStart(), IS_CODE);
       });
 
       const keyEvent = new KeyboardEventMock();
       keyEvent.shiftKey = true;
-      await editor.dispatchCommand(KEY_ARROW_LEFT_COMMAND, keyEvent);
+      editor.dispatchCommand(KEY_ARROW_LEFT_COMMAND, keyEvent);
 
-      await editor.read(() => {
+      editor.read(() => {
         const selection = $getSelection();
-        invariant($isRangeSelection(selection));
+        assert($isRangeSelection(selection));
         expect(selection.format).toBe(IS_CODE);
       });
     });
 
-    test('does not clear format in the middle of a code node', async () => {
-      using editor = createEditor();
-      await setupCodeTextNode(editor);
-
-      await editor.update(() => {
-        const textNode = $getFirstTextNode();
-        const selection = textNode.select(3, 3);
-        selection.format = IS_CODE;
+    test('does not clear format in the middle of a code node', () => {
+      using editor = createEditor(() => {
+        $setupCodeTextNode();
+        $updateSelectionFormat($getFirstTextNode().select(3, 3), IS_CODE);
       });
 
       const keyEvent = new KeyboardEventMock();
-      await editor.dispatchCommand(KEY_ARROW_LEFT_COMMAND, keyEvent);
+      editor.dispatchCommand(KEY_ARROW_LEFT_COMMAND, keyEvent);
 
-      await editor.read(() => {
+      editor.read(() => {
         const selection = $getSelection();
-        invariant($isRangeSelection(selection));
+        assert($isRangeSelection(selection));
         expect(selection.format).toBe(IS_CODE);
       });
     });
@@ -335,160 +303,119 @@ describe('RichTextExtension escapeFormatTriggers', () => {
 });
 
 describe('RichTextExtension default capitalization reset', () => {
-  function createDefaultEditor() {
-    return buildEditorFromExtensions({
-      dependencies: [RichTextExtension],
-      name: 'test',
-    });
-  }
-
-  async function setupFormattedTextNode(
-    editor: LexicalEditor,
-    format: 'capitalize' | 'uppercase' | 'lowercase',
-  ) {
-    await editor.update(() => {
-      const root = $getRoot();
-      root.clear();
-      const paragraph = $createParagraphNode();
-      const textNode = $createTextNode('hello');
-      textNode.toggleFormat(format);
-      paragraph.append(textNode);
-      root.append(paragraph);
-    });
-  }
-
   for (const format of ['capitalize', 'uppercase', 'lowercase'] as const) {
     describe(`${format} format`, () => {
-      test('clears on Enter key', async () => {
-        using editor = createDefaultEditor();
-        await setupFormattedTextNode(editor, format);
-
-        await editor.update(() => {
-          const selection = $getRoot().selectEnd();
-          selection.toggleFormat(format);
+      function createDefaultEditor() {
+        return buildEditorFromExtensions({
+          $initialEditorState: () => {
+            $updateSelectionFormat(
+              $getRoot()
+                .append(
+                  $createParagraphNode().append(
+                    $createTextNode('hello').toggleFormat(format),
+                  ),
+                )
+                .selectEnd(),
+              TEXT_TYPE_TO_FORMAT[format],
+            );
+          },
+          dependencies: [RichTextExtension],
+          name: 'test',
         });
+      }
 
-        await editor.dispatchCommand(KEY_ENTER_COMMAND, null);
+      for (const COMMAND of [
+        KEY_ENTER_COMMAND,
+        KEY_SPACE_COMMAND,
+        KEY_TAB_COMMAND,
+      ] as const) {
+        test(`clears on ${COMMAND.type}`, () => {
+          using editor = createDefaultEditor();
 
-        await editor.read(() => {
-          const selection = $getSelection();
-          invariant($isRangeSelection(selection));
-          expect(selection.hasFormat(format)).toBe(false);
+          editor.dispatchCommand(COMMAND, new KeyboardEventMock());
+
+          editor.read(() => {
+            const selection = $getSelection();
+            assert($isRangeSelection(selection));
+            expect(selection.hasFormat(format)).toBe(false);
+          });
         });
-      });
-
-      test('clears on Space key', async () => {
-        using editor = createDefaultEditor();
-        await setupFormattedTextNode(editor, format);
-
-        await editor.update(() => {
-          const selection = $getRoot().selectEnd();
-          selection.toggleFormat(format);
-        });
-
-        await editor.dispatchCommand(
-          KEY_SPACE_COMMAND,
-          new KeyboardEventMock(),
-        );
-
-        await editor.read(() => {
-          const selection = $getSelection();
-          invariant($isRangeSelection(selection));
-          expect(selection.hasFormat(format)).toBe(false);
-        });
-      });
-
-      test('clears on Tab key', async () => {
-        using editor = createDefaultEditor();
-        await setupFormattedTextNode(editor, format);
-
-        await editor.update(() => {
-          const selection = $getRoot().selectEnd();
-          selection.toggleFormat(format);
-        });
-
-        await editor.dispatchCommand(KEY_TAB_COMMAND, new KeyboardEventMock());
-
-        await editor.read(() => {
-          const selection = $getSelection();
-          invariant($isRangeSelection(selection));
-          expect(selection.hasFormat(format)).toBe(false);
-        });
-      });
+      }
     });
   }
 });
 
 describe('RichTextExtension escapeFormatTriggers mergeConfig', () => {
-  test('overriding one format preserves default capitalization resets', async () => {
-    using editor = buildEditorFromExtensions({
+  function buildEditorWithEscapeFormatTriggers(
+    escapeFormatTriggers: EscapeFormatTriggerConfig,
+  ) {
+    return buildEditorFromExtensions({
+      $initialEditorState: () => {
+        $updateSelectionFormat(
+          $getRoot()
+            .append(
+              $createParagraphNode().append(
+                $createTextNode('hello').toggleFormat('uppercase'),
+              ),
+            )
+            .selectEnd(),
+          TEXT_TYPE_TO_FORMAT.uppercase,
+        );
+      },
       dependencies: [
         configExtension(RichTextExtension, {
-          escapeFormatTriggers: {
-            code: {enter: true, onlyAtBoundary: true},
-          },
+          escapeFormatTriggers,
         }),
       ],
       name: 'test',
     });
-
-    await editor.update(() => {
-      const root = $getRoot();
-      root.clear();
-      const paragraph = $createParagraphNode();
-      const textNode = $createTextNode('hello');
-      textNode.toggleFormat('uppercase');
-      paragraph.append(textNode);
-      root.append(paragraph);
+  }
+  test('overriding one format preserves default capitalization resets', () => {
+    using editor = buildEditorWithEscapeFormatTriggers({
+      code: {enter: true, onlyAtBoundary: true},
     });
 
-    await editor.update(() => {
-      const selection = $getRoot().selectEnd();
-      selection.toggleFormat('uppercase');
-    });
+    editor.dispatchCommand(KEY_ENTER_COMMAND, null);
 
-    await editor.dispatchCommand(KEY_ENTER_COMMAND, null);
-
-    await editor.read(() => {
+    editor.read(() => {
       const selection = $getSelection();
-      invariant($isRangeSelection(selection));
+      assert($isRangeSelection(selection));
       expect(selection.hasFormat('uppercase')).toBe(false);
     });
   });
 
-  test('null disables a default format', async () => {
-    using editor = buildEditorFromExtensions({
-      dependencies: [
-        configExtension(RichTextExtension, {
-          escapeFormatTriggers: {
-            capitalize: null,
-          },
-        }),
-      ],
-      name: 'test',
+  test('null disables a default format', () => {
+    using editor = buildEditorWithEscapeFormatTriggers({
+      uppercase: null,
     });
 
-    await editor.update(() => {
-      const root = $getRoot();
-      root.clear();
-      const paragraph = $createParagraphNode();
-      const textNode = $createTextNode('hello');
-      textNode.toggleFormat('capitalize');
-      paragraph.append(textNode);
-      root.append(paragraph);
-    });
+    editor.dispatchCommand(KEY_ENTER_COMMAND, null);
 
-    await editor.update(() => {
-      const selection = $getRoot().selectEnd();
-      selection.toggleFormat('capitalize');
-    });
-
-    await editor.dispatchCommand(KEY_ENTER_COMMAND, null);
-
-    await editor.read(() => {
+    editor.read(() => {
       const selection = $getSelection();
-      invariant($isRangeSelection(selection));
-      expect(selection.hasFormat('capitalize')).toBe(true);
+      assert($isRangeSelection(selection));
+      expect(selection.hasFormat('uppercase')).toBe(true);
+    });
+  });
+
+  test('escapeFormatTriggers can be modified as a signal', () => {
+    using editor = buildEditorWithEscapeFormatTriggers({
+      uppercase: null,
+    });
+    // re-enable the behavior here
+    const dep = getExtensionDependencyFromEditor(editor, RichTextExtension);
+    expect(dep.output.escapeFormatTriggers.peek().uppercase).toBe(null);
+    dep.output.escapeFormatTriggers.value = {
+      ...dep.output.escapeFormatTriggers.value,
+      uppercase: {enter: true},
+    };
+
+    editor.dispatchCommand(KEY_ENTER_COMMAND, null);
+
+    editor.read(() => {
+      const selection = $getSelection();
+      assert($isRangeSelection(selection));
+      expect(selection.hasFormat('uppercase')).toBe(false);
     });
   });
 });

@@ -36,7 +36,7 @@ import {
   mergeNextSiblingListIfSameType,
   updateChildrenListItemValue,
 } from './formatList';
-import {$getListDepth, $wrapInListItem} from './utils';
+import {$getListDepth} from './utils';
 
 export type SerializedListNode = Spread<
   {
@@ -219,6 +219,12 @@ export class ListNode extends ElementNode {
     return $isListItemNode(child);
   }
 
+  /**
+   * Create an appropriate ListItemNode to be a child of this ListNode,
+   * {@link $createListItemNode} is the default implementation.
+   *
+   * @returns A new ListItemNode.
+   */
   createListItemNode(): ListItemNode {
     return $createListItemNode();
   }
@@ -291,16 +297,11 @@ function $setListThemeClassNames(
  */
 function $normalizeChildren(
   nodes: Array<LexicalNode>,
-  listNode: ListNode | null,
+  listNode: ListNode,
 ): Array<ListItemNode> {
-  // create an example list item based on existing ones
-  const exampleItem = nodes.find($isListItemNode);
-  const $createWrapperItem = listNode
-    ? () => listNode.createListItemNode()
-    : exampleItem &&
-      (() => exampleItem.createParentElementNode().createListItemNode());
+  const $createWrapperItem = listNode.createListItemNode.bind(listNode);
 
-  const normalizedListItems: Array<ListItemNode> = [];
+  const normalizedListItems: ListItemNode[] = [];
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
     if ($isListItemNode(node)) {
@@ -309,14 +310,12 @@ function $normalizeChildren(
       if (children.length > 1) {
         children.forEach(child => {
           if ($isListNode(child)) {
-            normalizedListItems.push(
-              $wrapInListItem(child, $createWrapperItem),
-            );
+            normalizedListItems.push($createWrapperItem().append(child));
           }
         });
       }
     } else {
-      normalizedListItems.push($wrapInListItem(node, $createWrapperItem));
+      normalizedListItems.push($createWrapperItem().append(node));
     }
   }
   return normalizedListItems;
@@ -341,27 +340,23 @@ function isDomChecklist(domNode: HTMLElement) {
   return false;
 }
 
+function isHTMLOListElement(node: unknown): node is HTMLOListElement {
+  return isHTMLElement(node) && node.nodeName.toLowerCase() === 'ol';
+}
+
 function $convertListNode(
   domNode: HTMLOListElement | HTMLUListElement,
 ): DOMConversionOutput {
-  const nodeName = domNode.nodeName.toLowerCase();
-  let node = null;
-  if (nodeName === 'ol') {
-    // @ts-ignore
+  let node: ListNode;
+  if (isHTMLOListElement(domNode)) {
     const start = domNode.start;
     node = $createListNode('number', start);
-  } else if (nodeName === 'ul') {
-    if (isDomChecklist(domNode)) {
-      node = $createListNode('check');
-    } else {
-      node = $createListNode('bullet');
-    }
+  } else if (isDomChecklist(domNode)) {
+    node = $createListNode('check');
+  } else {
+    node = $createListNode('bullet');
   }
-
-  if (node) {
-    $setDirectionFromDOM(node, domNode);
-  }
-
+  $setDirectionFromDOM(node, domNode);
   return {
     after: children => $normalizeChildren(children, node),
     node,

@@ -11,13 +11,7 @@ import type {LexicalNode, Spread} from 'lexical';
 import {$findMatchingParent} from '@lexical/utils';
 import invariant from 'shared/invariant';
 
-import {
-  $createListItemNode,
-  $isListItemNode,
-  $isListNode,
-  ListItemNode,
-  ListNode,
-} from './';
+import {$isListItemNode, $isListNode, ListItemNode, ListNode} from './';
 
 /**
  * Checks the depth of listNode from the root node.
@@ -189,19 +183,6 @@ export function $removeHighestEmptyListParent(
   }
 
   emptyListPtr.remove();
-}
-
-/**
- * Wraps a node into a ListItemNode.
- * @param node - The node to be wrapped into a ListItemNode
- * @param $createWrapper — The function that creates an element to wrap a node in
- * @returns The ListItemNode which the passed node is wrapped in.
- */
-export function $wrapInListItem(
-  node: LexicalNode,
-  $createWrapper: () => ListItemNode = $createListItemNode,
-): ListItemNode {
-  return $createWrapper().append(node);
 }
 
 /**

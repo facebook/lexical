@@ -10,7 +10,8 @@ import type {CodeHighlightNode, CodeNode} from '@lexical/code';
 import type {LexicalCommand, LineBreakNode, TabNode} from 'lexical';
 
 import {$createCodeNode, $isCodeNode} from '@lexical/code';
-import {registerCodeHighlighting} from '@lexical/code-prism';
+import {registerCodeIndentation} from '@lexical/code-core';
+import {PrismTokenizer, registerCodeHighlighting} from '@lexical/code-prism';
 import {registerTabIndentation} from '@lexical/react/LexicalTabIndentationPlugin';
 import {registerRichText} from '@lexical/rich-text';
 import {
@@ -30,6 +31,12 @@ import {
   tabKeyboardEvent,
 } from 'lexical/src/__tests__/utils';
 import {describe, expect, test} from 'vitest';
+
+import {
+  $runOutdentScenario,
+  OUTDENT_SCENARIOS,
+} from '../../../../lexical-code-core/src/__tests__/outdentTestUtils';
+import {registerHighlightingOnly} from '../../../../lexical-code-prism/src/CodeHighlighterPrism';
 
 describe('LexicalCodeNode tests', () => {
   initializeUnitTest(testEnv => {
@@ -239,6 +246,41 @@ describe('LexicalCodeNode tests', () => {
           });
         });
       });
+    });
+
+    describe('tabSize (#8410): outdent space-indented lines', () => {
+      test.for(OUTDENT_SCENARIOS)(
+        '$name',
+        async ({
+          rawText,
+          cursorOffset,
+          tabSize,
+          expectedText,
+          expectedCursor,
+        }) => {
+          const {editor} = testEnv;
+          const {text, cursor} = await $runOutdentScenario(
+            editor,
+            () => {
+              registerRichText(editor);
+              registerTabIndentation(editor);
+              // Use the internal highlighting-only helper paired with a
+              // tabSize-aware registerCodeIndentation call. The legacy
+              // wrapper registerCodeHighlighting bundles a no-tabSize
+              // registerCodeIndentation, which would shadow the
+              // tabSize-aware command at the same priority.
+              registerHighlightingOnly(editor, PrismTokenizer);
+              registerCodeIndentation(editor, tabSize);
+            },
+            rawText,
+            cursorOffset,
+          );
+          expect(text).toBe(expectedText);
+          if (expectedCursor !== undefined) {
+            expect(cursor).toBe(expectedCursor);
+          }
+        },
+      );
     });
   });
 });

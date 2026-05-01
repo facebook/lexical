@@ -19,11 +19,15 @@ export {
   $getStartOfCodeInLine,
   $isCodeHighlightNode,
   $isCodeNode,
+  $outdentLeadingSpaces,
   CodeExtension,
   CodeHighlightNode,
+  type CodeIndentConfig,
+  CodeIndentExtension,
   CodeNode,
   DEFAULT_CODE_LANGUAGE,
   getDefaultCodeLanguage,
+  registerCodeIndentation,
 } from '@lexical/code-core';
 
 /** @deprecated moved to `@lexical/code-prism` */

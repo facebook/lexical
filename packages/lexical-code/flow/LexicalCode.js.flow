@@ -59,6 +59,12 @@ declare export function $getLastCodeNodeOfLine(
   anchor: CodeHighlightNode | TabNode | LineBreakNode,
 ): CodeHighlightNode | TabNode | LineBreakNode;
 
+declare export function $outdentLeadingSpaces(
+  node: CodeHighlightNode,
+  tabSize: number,
+  selection: RangeSelection,
+): boolean;
+
 declare export function $getEndOfCodeInLine(
   anchor: CodeHighlightNode | TabNode,
 ): CodeHighlightNode | TabNode;
@@ -103,6 +109,18 @@ declare export class CodeNode extends ElementNode {
 }
 
 declare export var CodeExtension: LexicalExtension<ExtensionConfigBase, "@lexical/code", unknown, unknown>;
+
+export type CodeIndentConfig = {
+  disabled: boolean,
+  tabSize: number | void,
+};
+
+declare export function registerCodeIndentation(
+  editor: LexicalEditor,
+  tabSize?: number,
+): () => void;
+
+declare export var CodeIndentExtension: LexicalExtension<CodeIndentConfig, "@lexical/code-indent", unknown, unknown>;
 
 /**
  * Deprecated @lexical/code-prism re-exports

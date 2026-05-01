@@ -13,7 +13,6 @@ import {
 } from '@lexical/utils';
 import {
   $applyNodeReplacement,
-  $copyNode,
   $createTextNode,
   $isElementNode,
   $setDirectionFromDOM,
@@ -295,10 +294,11 @@ function $normalizeChildren(
   listNode: ListNode | null,
 ): Array<ListItemNode> {
   // create an example list item based on existing ones
-  const foundItem = nodes.find($isListItemNode);
+  const exampleItem = nodes.find($isListItemNode);
   const $createWrapperItem = listNode
     ? () => listNode.createListItemNode()
-    : foundItem && (() => $copyNode(foundItem));
+    : exampleItem &&
+      (() => exampleItem.createParentElementNode().createListItemNode());
 
   const normalizedListItems: Array<ListItemNode> = [];
   for (let i = 0; i < nodes.length; i++) {

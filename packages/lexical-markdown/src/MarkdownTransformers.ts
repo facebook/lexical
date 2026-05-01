@@ -37,12 +37,15 @@ import {
   $createTextNode,
   $findMatchingParent,
   $getState,
+  $isLineBreakNode,
+  $isTextNode,
   $setState,
   BaseSelection,
   createState,
   ElementNode,
   Klass,
   LexicalNode,
+  LineBreakNode,
   TextFormatType,
   TextNode,
 } from 'lexical';
@@ -240,6 +243,88 @@ export const codeFenceState = createState('mdCodeFence', {
   resetOnCopyNode: true,
 });
 
+export type MarkdownHardLineBreak = string;
+
+export const hardLineBreakState = createState('mdHardLineBreak', {
+  parse: (val): MarkdownHardLineBreak => {
+    if (typeof val === 'string' && /^(\\| {2,})$/.test(val)) {
+      return val;
+    }
+    return '';
+  },
+  resetOnCopyNode: true,
+});
+
+export function parseMarkdownHardLineBreak(
+  line: string,
+): [string, MarkdownHardLineBreak] | null {
+  if (line.endsWith('\\')) {
+    return [line.slice(0, -1), '\\'];
+  }
+
+  const spaces = line.match(/^(.*?\S)( {2,})$/);
+  return spaces ? [spaces[1], spaces[2]] : null;
+}
+
+function hasNonWhitespaceContentOnLine(
+  children: Array<LexicalNode>,
+  endIndex: number,
+): boolean {
+  for (let i = endIndex - 1; i >= 0; i--) {
+    if ($isLineBreakNode(children[i])) {
+      return false;
+    }
+    if (/\S/.test(children[i].getTextContent())) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function $extractMarkdownHardLineBreakMarker(
+  previousNode: ElementNode,
+): MarkdownHardLineBreak | null {
+  const children = previousNode.getChildren();
+  const lastChildIndex = children.length - 1;
+  const lastChild = children[lastChildIndex];
+
+  if (!$isTextNode(lastChild)) {
+    return null;
+  }
+
+  const lastText = lastChild.getTextContent();
+  const hardLineBreak = parseMarkdownHardLineBreak(lastText);
+
+  if (hardLineBreak !== null) {
+    const [text, marker] = hardLineBreak;
+    lastChild.setTextContent(text);
+    return marker;
+  }
+
+  if (
+    /^ {2,}$/.test(lastText) &&
+    hasNonWhitespaceContentOnLine(children, lastChildIndex)
+  ) {
+    lastChild.setTextContent('');
+    return lastText;
+  }
+
+  return null;
+}
+
+export function $createMarkdownLineBreakNode(
+  previousNode: ElementNode,
+): LineBreakNode {
+  const lineBreakNode = $createLineBreakNode();
+  const hardLineBreak = $extractMarkdownHardLineBreakMarker(previousNode);
+
+  if (hardLineBreak !== null) {
+    $setState(lineBreakNode, hardLineBreakState, hardLineBreak);
+  }
+
+  return lineBreakNode;
+}
+
 const createBlockNode = (
   createNode: (match: Array<string>) => ElementNode,
 ): ElementTransformer['replace'] => {
@@ -421,7 +506,7 @@ export const QUOTE: ElementTransformer = {
       const previousNode = parentNode.getPreviousSibling();
       if ($isQuoteNode(previousNode)) {
         previousNode.splice(previousNode.getChildrenSize(), 0, [
-          $createLineBreakNode(),
+          $createMarkdownLineBreakNode(previousNode),
           ...children,
         ]);
         parentNode.remove();
@@ -801,6 +886,10 @@ export function normalizeMarkdown(
     const rawLine = lines[i];
     const line = rawLine.trimEnd();
     const lastLine = sanitizedLines[sanitizedLines.length - 1];
+    const hardLineBreak =
+      i < lines.length - 1 ? parseMarkdownHardLineBreak(rawLine) : null;
+    const lastLineHasHardLineBreak =
+      lastLine !== undefined && parseMarkdownHardLineBreak(lastLine) !== null;
 
     // Code blocks of ```single line``` don't toggle the inCodeBlock flag
     if (CODE_SINGLE_LINE_REGEX.test(line)) {
@@ -835,6 +924,7 @@ export function normalizeMarkdown(
       CHECK_LIST_REGEX.test(line) ||
       TABLE_ROW_REG_EXP.test(line) ||
       TABLE_ROW_DIVIDER_REG_EXP.test(line) ||
+      lastLineHasHardLineBreak ||
       !shouldMergeAdjacentLines ||
       TAG_START_REGEX.test(line) ||
       TAG_END_REGEX.test(line) ||
@@ -847,11 +937,13 @@ export function normalizeMarkdown(
       // collapse to '' because trimEnd() already reduced them, so they
       // continue to act as paragraph separators.
       sanitizedLines.push(
-        !shouldMergeAdjacentLines && line !== '' ? rawLine : line,
+        (!shouldMergeAdjacentLines && line !== '') || hardLineBreak !== null
+          ? rawLine
+          : line,
       );
     } else {
       sanitizedLines[sanitizedLines.length - 1] =
-        lastLine + ' ' + line.trimStart();
+        lastLine + ' ' + (hardLineBreak === null ? line : rawLine).trimStart();
     }
   }
 

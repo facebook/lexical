@@ -29,14 +29,14 @@ export function registerLexicalCommandLogger(
     unregisterCommandListeners.push(
       editor.registerCommand(
         command,
-        (payload) => {
+        payload => {
           index += 1;
           const entry: LexicalCommandEntry = {
             index,
             payload,
             type: command.type ? command.type : 'UNKNOWN',
           };
-          setLoggedCommands((state) => [...state.slice(-9), entry]);
+          setLoggedCommands(state => [...state.slice(-9), entry]);
           return false;
         },
         COMMAND_PRIORITY_CRITICAL,
@@ -44,7 +44,7 @@ export function registerLexicalCommandLogger(
     );
   }
 
-  return () => unregisterCommandListeners.forEach((unregister) => unregister());
+  return () => unregisterCommandListeners.forEach(unregister => unregister());
 }
 
 export function useLexicalCommandsLog(

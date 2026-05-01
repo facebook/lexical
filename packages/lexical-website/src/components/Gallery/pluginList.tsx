@@ -26,7 +26,7 @@ export type Example = {
 export const plugins = (customFields: {
   [key: string]: unknown;
 }): Array<Example> =>
-  galleryExamples.map((example) => ({
+  galleryExamples.map(example => ({
     description: example.description,
     preview: getScreenshotPreview(example),
     tags: example.tags,

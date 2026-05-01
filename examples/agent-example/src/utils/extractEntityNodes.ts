@@ -90,7 +90,7 @@ export function $collectTextNodeOffsets(): {
 export function replaceWithEntity(
   create: (text: string) => DecoratorTextNode,
 ): (textNode: TextNode) => void {
-  return (textNode) => {
+  return textNode => {
     const entity = create(textNode.getTextContent());
     entity.setFormat(textNode.getFormat());
     textNode.replace(entity);

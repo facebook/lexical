@@ -258,7 +258,7 @@ describe('LexicalEditor tests', () => {
       editor.registerNodeTransform(RootNode, $transform);
       editor.registerNodeTransform(ParagraphNode, $transform);
       editor.registerNodeTransform(TextNode, $transform);
-      editor.registerNodeTransform(ParagraphNode, (node) => {
+      editor.registerNodeTransform(ParagraphNode, node => {
         const lastChild = node.getLastChild();
         if (
           $isTextNode(lastChild) &&
@@ -294,7 +294,7 @@ describe('LexicalEditor tests', () => {
       ]);
       events.length = 0;
       // Add a transform that mutates the text
-      await editor.registerNodeTransform(TextNode, (node) => {
+      await editor.registerNodeTransform(TextNode, node => {
         const textContent = node.getTextContent();
         if (textContent.startsWith('[')) {
           return;
@@ -316,14 +316,14 @@ describe('LexicalEditor tests', () => {
         editor.read(() =>
           $getRoot()
             .getAllTextNodes()
-            .map((node) => node.getTextContent()),
+            .map(node => node.getTextContent()),
         ),
       ).toEqual(['[first]', '[second]']);
       events.length = 0;
       await editor.update(() => {
         $getRoot()
           .getAllTextNodes()
-          .forEach((node) =>
+          .forEach(node =>
             node.setTextContent(`:${node.getTextContent().slice(1, -1)}:`),
           );
         paragraphNode.append($createTextNode('third').setMode('token'));
@@ -355,7 +355,7 @@ describe('LexicalEditor tests', () => {
         editor.read(() =>
           $getRoot()
             .getAllTextNodes()
-            .map((node) => node.getTextContent()),
+            .map(node => node.getTextContent()),
         ),
       ).toEqual(['[:first:]', '[:second:]', '[third]', '[fourth]']);
     });
@@ -418,7 +418,7 @@ describe('LexicalEditor tests', () => {
       });
       expect(editor.read(() => $getRoot().getTextContent())).toEqual('');
       expect(editor.read(() => $getEditor())).toBe(editor);
-      editor.registerNodeTransform(TextNode, (node) => {
+      editor.registerNodeTransform(TextNode, node => {
         if (node.getTextContent() === 'This works!') {
           node.replace($createTextNode('Transforms work!'));
         }
@@ -735,7 +735,7 @@ describe('LexicalEditor tests', () => {
     init();
 
     // 2. Add italics
-    const italicsListener = editor.registerNodeTransform(TextNode, (node) => {
+    const italicsListener = editor.registerNodeTransform(TextNode, node => {
       if (
         node.getTextContent() === 'foo' &&
         node.hasFormat('bold') &&
@@ -746,14 +746,14 @@ describe('LexicalEditor tests', () => {
     });
 
     // 1. Add bold
-    const boldListener = editor.registerNodeTransform(TextNode, (node) => {
+    const boldListener = editor.registerNodeTransform(TextNode, node => {
       if (node.getTextContent() === 'foo' && !node.hasFormat('bold')) {
         node.toggleFormat('bold');
       }
     });
 
     // 2. Add underline
-    const underlineListener = editor.registerNodeTransform(TextNode, (node) => {
+    const underlineListener = editor.registerNodeTransform(TextNode, node => {
       if (
         node.getTextContent() === 'foo' &&
         node.hasFormat('bold') &&
@@ -787,7 +787,7 @@ describe('LexicalEditor tests', () => {
     // 2. (Block transform) Add text
     const testParagraphListener = editor.registerNodeTransform(
       ParagraphNode,
-      (paragraph) => {
+      paragraph => {
         if (skipFirst[0]) {
           skipFirst[0] = false;
 
@@ -801,7 +801,7 @@ describe('LexicalEditor tests', () => {
     );
 
     // 2. (Text transform) Add bold to text
-    const boldListener = editor.registerNodeTransform(TextNode, (node) => {
+    const boldListener = editor.registerNodeTransform(TextNode, node => {
       if (node.getTextContent() === 'foo' && !node.hasFormat('bold')) {
         node.toggleFormat('bold');
       }
@@ -810,7 +810,7 @@ describe('LexicalEditor tests', () => {
     // 3. (Block transform) Add italics to bold text
     const italicsListener = editor.registerNodeTransform(
       ParagraphNode,
-      (paragraph) => {
+      paragraph => {
         const child = paragraph.getLastDescendant();
 
         if (
@@ -849,7 +849,7 @@ describe('LexicalEditor tests', () => {
     init();
 
     // 1. [Foo] into [<empty>,Fo,o,<empty>,!,<empty>]
-    const fooListener = editor.registerNodeTransform(TextNode, (node) => {
+    const fooListener = editor.registerNodeTransform(TextNode, node => {
       if (node.getTextContent() === 'Foo' && !hasRun[0]) {
         const [before, after] = node.splitText(2);
 
@@ -865,7 +865,7 @@ describe('LexicalEditor tests', () => {
     // 2. [Foo!] into [<empty>,Fo,o!,<empty>,!,<empty>]
     const megaFooListener = editor.registerNodeTransform(
       ParagraphNode,
-      (paragraph) => {
+      paragraph => {
         const child = paragraph.getFirstChild();
 
         if (
@@ -886,7 +886,7 @@ describe('LexicalEditor tests', () => {
     );
 
     // 3. [Foo!!] into formatted bold [<empty>,Fo,o!!,<empty>]
-    const boldFooListener = editor.registerNodeTransform(TextNode, (node) => {
+    const boldFooListener = editor.registerNodeTransform(TextNode, node => {
       if (node.getTextContent() === 'Foo!!' && !hasRun[2]) {
         node.toggleFormat('bold');
 
@@ -920,7 +920,7 @@ describe('LexicalEditor tests', () => {
 
     const executeTransform = vi.fn();
     let hasBeenRemoved = false;
-    const removeListener = editor.registerNodeTransform(TextNode, (node) => {
+    const removeListener = editor.registerNodeTransform(TextNode, node => {
       if (hasBeenRemoved) {
         executeTransform();
       }
@@ -959,13 +959,13 @@ describe('LexicalEditor tests', () => {
 
     const removeParagraphTransform = editor.registerNodeTransform(
       ParagraphNode,
-      (node) => {
+      node => {
         executeParagraphNodeTransform();
       },
     );
     const removeTextNodeTransform = editor.registerNodeTransform(
       TextNode,
-      (node) => {
+      node => {
         executeTextNodeTransform();
       },
     );
@@ -1051,7 +1051,7 @@ describe('LexicalEditor tests', () => {
         $getRoot()
           .getChildren()
           .filter($isParagraphNode)
-          .forEach((node) => node.remove());
+          .forEach(node => node.remove());
       },
       {discrete: true},
     );
@@ -1104,7 +1104,7 @@ describe('LexicalEditor tests', () => {
         paragraph1.append(...textNodes.slice(3));
       });
 
-      removeTransform = editor.registerNodeTransform(TextNode, (node) => {
+      removeTransform = editor.registerNodeTransform(TextNode, node => {
         textTransformCount[Number(node.__text)]++;
       });
     });
@@ -1172,7 +1172,7 @@ describe('LexicalEditor tests', () => {
     const errorListener = vi.fn();
     init(errorListener);
 
-    const boldListener = editor.registerNodeTransform(TextNode, (node) => {
+    const boldListener = editor.registerNodeTransform(TextNode, node => {
       node.toggleFormat('bold');
     });
 
@@ -1360,14 +1360,14 @@ describe('LexicalEditor tests', () => {
 
       // Subscribe to changes
       useEffect(() => {
-        return editor.registerDecoratorListener<ReactNode>((nextDecorators) => {
+        return editor.registerDecoratorListener<ReactNode>(nextDecorators => {
           setDecorators(nextDecorators);
         });
       }, []);
 
       const decoratedPortals = useMemo(
         () =>
-          Object.keys(decorators).map((nodeKey) => {
+          Object.keys(decorators).map(nodeKey => {
             const reactDecorator = decorators[nodeKey];
             const element = editor.getElementByKey(nodeKey)!;
 
@@ -1942,7 +1942,7 @@ describe('LexicalEditor tests', () => {
     );
 
     expect(editor._commands.has(command)).toEqual(true);
-    expect(editor._commands.get(command)?.map((v) => [...v])).toEqual([
+    expect(editor._commands.get(command)?.map(v => [...v])).toEqual([
       [commandListener, commandListenerTwo],
       [],
       [],
@@ -1952,7 +1952,7 @@ describe('LexicalEditor tests', () => {
 
     removeCommandListener();
 
-    expect(editor._commands.get(command)?.map((v) => [...v])).toEqual([
+    expect(editor._commands.get(command)?.map(v => [...v])).toEqual([
       [commandListenerTwo],
       [],
       [],
@@ -2002,7 +2002,7 @@ describe('LexicalEditor tests', () => {
       root.append(paragraph);
       paragraph.append(textNode);
     });
-    editor.registerTextContentListener((text) => {
+    editor.registerTextContentListener(text => {
       fn(text);
     });
 
@@ -2627,7 +2627,7 @@ describe('LexicalEditor tests', () => {
 
     editor.registerMutationListener(
       TextNode,
-      (map) => {
+      map => {
         mutationListener();
         editor.registerMutationListener(
           TextNode,
@@ -2905,7 +2905,7 @@ describe('LexicalEditor tests', () => {
     expect(mutationListenerA).toHaveBeenCalledTimes(2);
     expect(mutationListenerB).toHaveBeenCalledTimes(2);
     expect(mutationListenerC).toHaveBeenCalledTimes(1);
-    [mutationListenerA, mutationListenerB, mutationListenerC].forEach((fn) => {
+    [mutationListenerA, mutationListenerB, mutationListenerC].forEach(fn => {
       expect(fn).toHaveBeenLastCalledWith(
         expect.anything(),
         expect.objectContaining({

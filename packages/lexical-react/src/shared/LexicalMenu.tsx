@@ -442,7 +442,7 @@ export function LexicalMenu<TOption extends MenuOption>({
     return mergeRegister(
       editor.registerCommand<KeyboardEvent>(
         KEY_ARROW_DOWN_COMMAND,
-        (payload) => {
+        payload => {
           const event = payload;
           if (options !== null && options.length) {
             const newSelectedIndex =
@@ -480,7 +480,7 @@ export function LexicalMenu<TOption extends MenuOption>({
       ),
       editor.registerCommand<KeyboardEvent>(
         KEY_ARROW_UP_COMMAND,
-        (payload) => {
+        payload => {
           const event = payload;
           if (options !== null && options.length) {
             const newSelectedIndex =
@@ -512,7 +512,7 @@ export function LexicalMenu<TOption extends MenuOption>({
       ),
       editor.registerCommand<KeyboardEvent>(
         KEY_ESCAPE_COMMAND,
-        (payload) => {
+        payload => {
           const event = payload;
           event.preventDefault();
           event.stopImmediatePropagation();
@@ -523,7 +523,7 @@ export function LexicalMenu<TOption extends MenuOption>({
       ),
       editor.registerCommand<KeyboardEvent>(
         KEY_TAB_COMMAND,
-        (payload) => {
+        payload => {
           const event = payload;
           if (
             options === null ||

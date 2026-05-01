@@ -19,18 +19,18 @@ const monorepoPackageJson = (
 ).default();
 
 const publicNpmNames = new Set(
-  packagesManager.getPublicPackages().map((pkg) => pkg.getNpmName()),
+  packagesManager.getPublicPackages().map(pkg => pkg.getNpmName()),
 );
 
 describe('public package.json audits (`pnpm run update-packages` to fix most issues)', () => {
-  packagesManager.getPublicPackages().forEach((pkg) => {
+  packagesManager.getPublicPackages().forEach(pkg => {
     const npmName = pkg.getNpmName();
     const packageJson = pkg.packageJson;
     describe(npmName, () => {
       const sourceFiles = fs
         .readdirSync(pkg.resolve('src'))
-        .filter((str) => /\.tsx?/.test(str))
-        .map((str) => str.replace(/\.tsx?$/, ''))
+        .filter(str => /\.tsx?/.test(str))
+        .map(str => str.replace(/\.tsx?$/, ''))
         .sort();
       const exportedModules = pkg.getExportedNpmModuleNames().sort();
       const {dependencies = {}, peerDependencies = {}} = packageJson;
@@ -60,9 +60,7 @@ describe('public package.json audits (`pnpm run update-packages` to fix most iss
       });
       it('must not have monorepo peerDependencies', () => {
         expect(
-          Object.keys(peerDependencies).filter((dep) =>
-            publicNpmNames.has(dep),
-          ),
+          Object.keys(peerDependencies).filter(dep => publicNpmNames.has(dep)),
         ).toEqual([]);
       });
       it('monorepo dependencies must use workspace:* as the version', () => {
@@ -77,7 +75,7 @@ describe('public package.json audits (`pnpm run update-packages` to fix most iss
       });
       test.each(exportedModules)(
         `should have a source file for exported module %s`,
-        (exportedModule) => {
+        exportedModule => {
           expect(sourceFiles).toContain(
             exportedModule.slice(npmName.length + 1) || 'index',
           );
@@ -89,7 +87,7 @@ describe('public package.json audits (`pnpm run update-packages` to fix most iss
         });
         test.each(sourceFiles)(
           `%s.tsx? must have an exported module`,
-          (sourceFile) => {
+          sourceFile => {
             expect(exportedModules).toContain(`${npmName}/${sourceFile}`);
           },
         );
@@ -99,7 +97,7 @@ describe('public package.json audits (`pnpm run update-packages` to fix most iss
 });
 
 describe('documentation audits (`pnpm run update-packages` to fix most issues)', () => {
-  packagesManager.getPublicPackages().forEach((pkg) => {
+  packagesManager.getPublicPackages().forEach(pkg => {
     const npmName = pkg.getNpmName();
     describe(npmName, () => {
       const root = pkg.resolve('..', '..');
@@ -119,7 +117,7 @@ describe('documentation audits (`pnpm run update-packages` to fix most issues)',
 });
 
 describe('www public package audits (`pnpm run update-packages` to fix most issues)', () => {
-  packagesManager.getPublicPackages().forEach((pkg) => {
+  packagesManager.getPublicPackages().forEach(pkg => {
     const npmName = pkg.getNpmName();
     const wwwEntrypoint = `${npmToWwwName(npmName)}.js`;
     describe(npmName, () => {
@@ -131,7 +129,7 @@ describe('www public package audits (`pnpm run update-packages` to fix most issu
         ).not.toEqual([]);
       });
       // Only worry about the entrypoint stub if it has a single module export
-      if (pkg.getExportedNpmModuleNames().every((name) => name === npmName)) {
+      if (pkg.getExportedNpmModuleNames().every(name => name === npmName)) {
         it(`has a packages/${pkg.getDirectoryName()}/${wwwEntrypoint}`, () => {
           expect(fs.existsSync(pkg.resolve(wwwEntrypoint))).toBe(true);
         });

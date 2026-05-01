@@ -68,6 +68,11 @@ let activeEditorDOMRenderConfig: EditorDOMRenderConfig;
 
 function $destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
   const node = activePrevNodeMap.get(key);
+  // A node "moved" across parents in the same transaction still exists in
+  // the next node map. We only detach its DOM from the old parent here;
+  // the new parent's $createNode call will reuse it. Skip child destruction
+  // and mutation marking — $reconcileNode will mark it 'updated' instead.
+  const isMoved = activeNextNodeMap.has(key);
 
   if (parentDOM !== null) {
     const dom = getPrevElementByKeyOrThrow(key);
@@ -76,11 +81,13 @@ function $destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
     }
   }
 
+  if (isMoved) {
+    return;
+  }
+
   // This logic is really important, otherwise we will leak DOM nodes
   // when their corresponding LexicalNodes are removed from the editor state.
-  if (!activeNextNodeMap.has(key)) {
-    activeEditor._keyToDOMMap.delete(key);
-  }
+  activeEditor._keyToDOMMap.delete(key);
 
   if ($isElementNode(node)) {
     const children = $createChildrenArray(node, activePrevNodeMap);
@@ -200,6 +207,25 @@ function $createNode(key: NodeKey, slot: ElementDOMSlot | null): HTMLElement {
   if (node === undefined) {
     invariant(false, 'createNode: node does not exist in nodeMap');
   }
+
+  // Cross-parent move: the same key existed in the previous tree under a
+  // different parent. Reuse the existing DOM so React decorator portals,
+  // contentEditable focus, etc. survive the reparenting. Without this the
+  // DecoratorNode's wrapper is recreated and React unmounts/remounts the
+  // child component (visible as a 1-frame flicker in Safari).
+  // Requires a slot so $reconcileNode has a valid parentDOM in case the
+  // moved node also reports updateDOM=true and needs an in-place replace.
+  if (slot !== null) {
+    const prevNode = activePrevNodeMap.get(key);
+    if (prevNode !== undefined && prevNode.__parent !== node.__parent) {
+      const existingDOM = activePrevKeyToDOMMap.get(key);
+      if (existingDOM !== undefined) {
+        slot.insertChild(existingDOM);
+        return $reconcileNode(key, slot.element);
+      }
+    }
+  }
+
   const dom = activeEditorDOMRenderConfig.$createDOM(node, activeEditor);
   storeDOMWithKey(key, dom, activeEditor);
 
@@ -414,7 +440,14 @@ function $reconcileChildren(
       const lastDOM = getPrevElementByKeyOrThrow(prevFirstChildKey);
       const replacementDOM = $createNode(nextFirstChildKey, null);
       try {
-        dom.replaceChild(replacementDOM, lastDOM);
+        if (lastDOM.parentNode === dom) {
+          dom.replaceChild(replacementDOM, lastDOM);
+        } else {
+          // lastDOM was reused as a descendant of replacementDOM (cross-parent
+          // move, e.g. wrapping an image in a link). It's already detached
+          // from `dom`, so just insert the replacement.
+          slot.insertChild(replacementDOM);
+        }
       } catch (error) {
         if (typeof error === 'object' && error != null) {
           const msg = `${error.toString()} Parent: ${
@@ -614,7 +647,11 @@ function $reconcileNode(
       subTreeTextContent += text;
     }
 
-    if (treatAllNodesAsDirty || nextNode.__dir !== prevNode.__dir) {
+    if (
+      treatAllNodesAsDirty ||
+      nextNode.__dir !== prevNode.__dir ||
+      nextNode.__parent !== prevNode.__parent
+    ) {
       $setElementDirection(dom, nextNode);
       if (
         // Root node direction changing from set to unset (or vice versa)

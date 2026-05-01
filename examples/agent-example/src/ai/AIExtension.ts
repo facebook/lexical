@@ -337,9 +337,9 @@ function createAIState(editor: LexicalEditor, config: AIExtensionConfig) {
     editor.update(
       () => {
         $replaceTextWithEntityNodes(textInfo.textNodes, entities, {
-          LOC: replaceWithEntity((text) => $createEntityNode('LOC', text)),
-          ORG: replaceWithEntity((text) => $createEntityNode('ORG', text)),
-          PER: replaceWithEntity((text) => $createEntityNode('PER', text)),
+          LOC: replaceWithEntity(text => $createEntityNode('LOC', text)),
+          ORG: replaceWithEntity(text => $createEntityNode('ORG', text)),
+          PER: replaceWithEntity(text => $createEntityNode('PER', text)),
         });
       },
       {tag: AI_ENTITIES_TAG},

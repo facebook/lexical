@@ -17,7 +17,7 @@ describe('stackblitz doc url audits', () => {
     .sync(['packages/*/README.md', 'packages/lexical-website/docs/**/*.md'], {
       ignore: 'packages/lexical-website/docs/api/**',
     })
-    .forEach((fn) =>
+    .forEach(fn =>
       describe(fn, () =>
         it('Does not have incorrect stackblitz URLs', () => {
           const contents = fs.readFileSync(fn, 'utf8');

@@ -323,7 +323,7 @@ export function $patchStyleText(
       $patchStyle(emptyNode, patch);
     }
   }
-  $forEachSelectedTextNode((textNode) => {
+  $forEachSelectedTextNode(textNode => {
     $patchStyle(textNode, patch);
   });
 

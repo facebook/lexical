@@ -130,8 +130,8 @@ function scanDelimiters(
   const delimiters: Delimiter[] = [];
   const delimiterChars = new Set(
     Object.keys(transformersIndex.transformersByTag)
-      .filter((tag) => tag[0] !== '`')
-      .map((tag) => tag[0]),
+      .filter(tag => tag[0] !== '`')
+      .map(tag => tag[0]),
   );
 
   const isEscaped = (index: number): boolean => {
@@ -144,7 +144,7 @@ function scanDelimiters(
 
   const isInExcludedRange = (index: number): boolean => {
     return excludeRanges.some(
-      (range) => index >= range.start && index < range.end,
+      range => index >= range.start && index < range.end,
     );
   };
 
@@ -235,7 +235,7 @@ function processEmphasis(
 
       const maxLen = Math.min(opener.length, closer.length);
       const matchedTag = Object.keys(transformersIndex.transformersByTag)
-        .filter((t) => t[0] === opener.char && t.length <= maxLen)
+        .filter(t => t[0] === opener.char && t.length <= maxLen)
         .sort((a, b) => b.length - a.length)[0];
 
       if (!matchedTag) {

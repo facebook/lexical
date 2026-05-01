@@ -15,7 +15,7 @@ import {
 } from 'lexical';
 
 export const idState = createState('id', {
-  parse: (v) => (typeof v === 'string' && v ? v : null),
+  parse: v => (typeof v === 'string' && v ? v : null),
 });
 
 export const IdStateExtension = defineExtension({

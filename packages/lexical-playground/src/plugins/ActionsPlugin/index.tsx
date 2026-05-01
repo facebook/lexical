@@ -10,6 +10,7 @@ import type {LexicalEditor} from 'lexical';
 import type {JSX} from 'react';
 
 import {$createCodeNode, $isCodeNode} from '@lexical/code';
+import {getPeerDependencyFromEditor} from '@lexical/extension';
 import {
   editorStateFromSerializedDocument,
   exportFile,
@@ -59,6 +60,7 @@ import Button from '../../ui/Button';
 import {docFromHash, docToHash} from '../../utils/docSerialization';
 import {formatCodeWithPrettier} from '../CodeActionMenuPlugin/formatCodeWithPrettier';
 import {PLAYGROUND_TRANSFORMERS} from '../MarkdownTransformers';
+import {PagesExtension} from '../PagesExtension';
 import {
   SPEECH_TO_TEXT_COMMAND,
   SUPPORT_SPEECH_RECOGNITION,
@@ -132,6 +134,13 @@ export default function ActionsPlugin({
   const unregisterTransformRef = useRef(() => {});
   const [mode, dispatchMode, isPending] = useActionState(
     async (prevMode: EditorMode, nextMode: EditorMode): Promise<EditorMode> => {
+      const pagesDisabled = getPeerDependencyFromEditor<typeof PagesExtension>(
+        editor,
+        PagesExtension.name,
+      )?.output.disabled;
+      if (pagesDisabled !== undefined) {
+        pagesDisabled.value = true;
+      }
       if (prevMode === 'wysiwyg') {
         // handle transitions from wysiwyg -> nextMode -> wysiwyg when there's a single
         // root child CodeNode that is the nextMode language. e2e tests assume you can
@@ -218,8 +227,17 @@ export default function ActionsPlugin({
   const isHtml = optimisticMode === 'html';
 
   useEffect(() => {
-    if (mode !== 'wysiwyg') {
-      const unregister = editor.registerNodeTransform(RootNode, (rootNode) => {
+    const pagesDisabled = getPeerDependencyFromEditor<typeof PagesExtension>(
+      editor,
+      PagesExtension.name,
+    )?.output.disabled;
+    const isCodeBlockEditor = mode !== 'wysiwyg';
+    if (pagesDisabled !== undefined) {
+      pagesDisabled.value = isCodeBlockEditor;
+    }
+
+    if (isCodeBlockEditor) {
+      const unregister = editor.registerNodeTransform(RootNode, rootNode => {
         let codeNode = rootNode.getChildren().find($isCodeNode);
         if (!codeNode) {
           codeNode = $createCodeNode(mode);
@@ -240,7 +258,7 @@ export default function ActionsPlugin({
     if (INITIAL_SETTINGS.isCollab) {
       return;
     }
-    docFromHash(window.location.hash).then((doc) => {
+    docFromHash(window.location.hash).then(doc => {
       if (doc && doc.source === 'Playground') {
         editor.setEditorState(editorStateFromSerializedDocument(editor, doc));
         editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined);
@@ -249,12 +267,12 @@ export default function ActionsPlugin({
   }, [editor]);
   useEffect(() => {
     return mergeRegister(
-      editor.registerEditableListener((editable) => {
+      editor.registerEditableListener(editable => {
         setIsEditable(editable);
       }),
       editor.registerCommand<boolean>(
         CONNECTED_COMMAND,
-        (payload) => {
+        payload => {
           const isConnected = payload;
           setConnected(isConnected);
           return false;
@@ -372,7 +390,7 @@ export default function ActionsPlugin({
         className="action-button clear"
         disabled={isEditorEmpty}
         onClick={() => {
-          showModal('Clear editor', (onClose) => (
+          showModal('Clear editor', onClose => (
             <ShowClearDialog editor={editor} onClose={onClose} />
           ));
         }}

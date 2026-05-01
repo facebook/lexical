@@ -346,7 +346,7 @@ export class NodeSelection implements BaseSelection {
     }
     const a: Set<NodeKey> = this._nodes;
     const b: Set<NodeKey> = selection._nodes;
-    return a.size === b.size && Array.from(a).every((key) => b.has(key));
+    return a.size === b.size && Array.from(a).every(key => b.has(key));
   }
 
   isCollapsed(): boolean {
@@ -1203,7 +1203,7 @@ export class RangeSelection implements BaseSelection {
       }
     }
     const applyFormatToElements = (alignWith: number | null) => {
-      selectedNodes.forEach((node) => {
+      selectedNodes.forEach(node => {
         if ($isElementNode(node)) {
           const newFormat = node.getFormatFlags(formatType, alignWith);
           node.setTextFormat(newFormat);
@@ -1757,7 +1757,7 @@ export class RangeSelection implements BaseSelection {
       if (
         initialRange
           .getTextSlices()
-          .every((slice) => slice === null || slice.distance === 0)
+          .every(slice => slice === null || slice.distance === 0)
       ) {
         // There's no text in the direction of the deletion so we can explore our options
         let state:
@@ -3055,10 +3055,6 @@ export function $updateDOMSelection(
   rootElement: HTMLElement,
   nodeCount: number,
 ): void {
-  const anchorDOMNode = domSelection.anchorNode;
-  const focusDOMNode = domSelection.focusNode;
-  const anchorOffset = domSelection.anchorOffset;
-  const focusOffset = domSelection.focusOffset;
   const activeElement = document.activeElement;
 
   // TODO: make this not hard-coded, and add another config option
@@ -3078,13 +3074,23 @@ export function $updateDOMSelection(
     // lose focus.
     if (
       prevSelection !== null &&
-      isSelectionWithinEditor(editor, anchorDOMNode, focusDOMNode)
+      isSelectionWithinEditor(
+        editor,
+        domSelection.anchorNode,
+        domSelection.focusNode,
+      )
     ) {
       domSelection.removeAllRanges();
     }
 
     return;
   }
+
+  // DOM Selection property reads (anchorNode, focusNode, anchorOffset,
+  // focusOffset) are deferred to their single point of use in the diff
+  // check below, and guarded by a cheap domSelection.type check first.
+  // These reads force the browser to resolve the selection against the
+  // current layout, triggering synchronous style/layout recalculation.
 
   const anchor = nextSelection.anchor;
   const focus = nextSelection.focus;
@@ -3151,11 +3157,11 @@ export function $updateDOMSelection(
   // we're moving selection to within an element, as this can
   // sometimes be problematic around scrolling.
   if (
-    anchorOffset === nextAnchorOffset &&
-    focusOffset === nextFocusOffset &&
-    anchorDOMNode === nextAnchorNode &&
-    focusDOMNode === nextFocusNode && // Badly interpreted range selection when collapsed - #1482
-    !(domSelection.type === 'Range' && isCollapsed)
+    !(domSelection.type === 'Range' && isCollapsed) && // Badly interpreted range selection when collapsed - #1482
+    domSelection.anchorOffset === nextAnchorOffset &&
+    domSelection.focusOffset === nextFocusOffset &&
+    domSelection.anchorNode === nextAnchorNode &&
+    domSelection.focusNode === nextFocusNode
   ) {
     // If the root element does not have focus, ensure it has focus
     if (activeElement === null || !rootElement.contains(activeElement)) {

@@ -20,7 +20,7 @@ export const exec = promisify(execCb);
 export function spawn(command, args, options) {
   return new Promise((resolve, reject) => {
     const child = spawnCb(command, args, options);
-    child.on('close', (code) => {
+    child.on('close', code => {
       if (code === 0) {
         resolve();
       } else {

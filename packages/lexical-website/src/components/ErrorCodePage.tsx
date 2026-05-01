@@ -43,7 +43,7 @@ function ErrorFinder() {
 
   useEffect(() => {
     if (!process.env.FB_INTERNAL) {
-      import('../../../../scripts/error-codes/codes.json').then((module) =>
+      import('../../../../scripts/error-codes/codes.json').then(module =>
         setCodes(module as unknown as ErrorCodes),
       );
     }

@@ -25,6 +25,7 @@ import {
   $createRangeSelection,
   $createTextNode,
   $getRoot,
+  $isElementNode,
   isHTMLElement,
   ParagraphNode,
   RangeSelection,
@@ -358,13 +359,67 @@ describe('HTML', () => {
             root
               .getAllTextNodes()
               .map(
-                (node) =>
+                node =>
                   [node.getTextContent(), node.hasFormat('bold')] as const,
               ),
           ).toEqual([['Hello world', false]]);
         },
         {discrete: true},
       );
+    });
+  });
+
+  describe('importDOM preserves dir attribute', () => {
+    function importAndGetDirection(html: string): string | null {
+      const editor = createHeadlessEditor({
+        nodes: [HeadingNode, ListNode, ListItemNode, QuoteNode],
+      });
+      editor.update(
+        () => {
+          const parser = new DOMParser();
+          const dom = parser.parseFromString(html, 'text/html');
+          const nodes = $generateNodesFromDOM(editor, dom);
+          $getRoot().selectEnd();
+          const selection = $getRoot().select(0);
+          selection.insertNodes(nodes);
+        },
+        {discrete: true},
+      );
+      return editor.read(() => {
+        const firstChild = $getRoot().getFirstChild();
+        return $isElementNode(firstChild) ? firstChild.getDirection() : null;
+      });
+    }
+
+    test.for([
+      {
+        expected: 'rtl',
+        html: '<p dir="rtl">مرحبا</p>',
+        name: 'paragraph with dir="rtl"',
+      },
+      {
+        expected: 'ltr',
+        html: '<p dir="ltr">Hello</p>',
+        name: 'paragraph with dir="ltr"',
+      },
+      {expected: null, html: '<p>Hello</p>', name: 'paragraph without dir'},
+      {
+        expected: 'rtl',
+        html: '<h1 dir="rtl">عنوان</h1>',
+        name: 'heading with dir="rtl"',
+      },
+      {
+        expected: 'rtl',
+        html: '<blockquote dir="rtl">اقتباس</blockquote>',
+        name: 'blockquote with dir="rtl"',
+      },
+      {
+        expected: 'rtl',
+        html: '<ul dir="rtl"><li>عنصر</li></ul>',
+        name: 'list with dir="rtl"',
+      },
+    ])('$name', ({html, expected}) => {
+      expect(importAndGetDirection(html)).toBe(expected);
     });
   });
 });

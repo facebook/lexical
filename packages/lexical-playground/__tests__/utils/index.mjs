@@ -58,7 +58,7 @@ export function wrapTableHtml(
     ${expected
       .replace(/<table(\s[^>]*)?>/g, (match, rawAttrs = '') => {
         const attrs = [...rawAttrs.matchAll(/(\w+)=["']([^"']*)["']/g)].map(
-          (m) => [m[1], m[2]],
+          m => [m[1], m[2]],
         );
         const dirAttr = attrs.find(([k]) => k === 'dir');
         const divAttrs = [
@@ -155,7 +155,7 @@ export async function initialize({
 async function exposeLexicalEditor(page) {
   if (IS_COLLAB) {
     await Promise.all(
-      ['left', 'right'].map(async (name) => {
+      ['left', 'right'].map(async name => {
         const frameLocator = page.frameLocator(`[name="${name}"]`);
         await expect(
           frameLocator.locator('.action-button.connect'),
@@ -241,7 +241,7 @@ async function assertHTMLOnPageOrFrame(
   ignoreInlineStyles,
   ignoreDir,
   frameName,
-  actualHtmlModificationsCallback = (actualHtml) => actualHtml,
+  actualHtmlModificationsCallback = actualHtml => actualHtml,
 ) {
   const expected = await prettifyHTML(expectedHtml.replace(/\n/gm, ''), {
     ignoreClasses,
@@ -412,7 +412,7 @@ async function assertSelectionOnPageOrFrame(page, expected) {
   const selection = await page.evaluate(() => {
     const rootElement = document.querySelector('div[contenteditable="true"]');
 
-    const getPathFromNode = (node) => {
+    const getPathFromNode = node => {
       const path = [];
       if (node === rootElement) {
         return [];
@@ -643,7 +643,7 @@ export async function pasteFromClipboard(
 }
 
 export async function sleep(delay) {
-  await new Promise((resolve) => setTimeout(resolve, delay));
+  await new Promise(resolve => setTimeout(resolve, delay));
 }
 
 // Fair time for the browser to process a newly inserted image
@@ -798,7 +798,7 @@ export function getExpectedDateTimeHtml({selected = false, formats = []} = {}) {
       data-lexical-decorator="true">
       <div
         class="dateTimePill ${selected ? 'selected' : ''} ${formats
-          .map((f) => formatToClassname[f] || '')
+          .map(f => formatToClassname[f] || '')
           .join(' ')}">
         ${date.toDateString()}
       </div>
@@ -1201,8 +1201,8 @@ export async function pressInsertLinkButton(page) {
 export function createHumanReadableSelection(_overview, dto) {
   return {
     anchorOffset: dto.anchorOffset.value,
-    anchorPath: dto.anchorPath.map((p) => p.value),
+    anchorPath: dto.anchorPath.map(p => p.value),
     focusOffset: dto.focusOffset.value,
-    focusPath: dto.focusPath.map((p) => p.value),
+    focusPath: dto.focusPath.map(p => p.value),
   };
 }

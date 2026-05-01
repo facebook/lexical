@@ -61,7 +61,7 @@ const editorConfig = Object.freeze({
 });
 
 describe('LexicalLinkNode tests', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     test('LinkNode.constructor', async () => {
       const {editor} = testEnv;
 
@@ -613,7 +613,7 @@ describe('LexicalLinkNode tests', () => {
           expect(linkNode.getURL()).toBe('https://example.com/foo');
           expect(linkNode.getRel()).toBe('noreferrer');
           expect(
-            linkNode.getChildren().map((node) => node.getTextContent()),
+            linkNode.getChildren().map(node => node.getTextContent()),
           ).toEqual(['text', '\n']);
           expect($getSelection()).toMatchObject({
             anchor: {
@@ -635,7 +635,7 @@ describe('LexicalLinkNode tests', () => {
       editor.read(() => {
         const paragraph = $getRoot().getFirstChild() as ParagraphNode;
         const children = paragraph.getChildren();
-        expect(children.map((node) => node.getTextContent())).toEqual([
+        expect(children.map(node => node.getTextContent())).toEqual([
           'some text',
           '\n',
         ]);
@@ -850,7 +850,7 @@ describe('LexicalLinkNode tests', () => {
 
         const children = p.getChildren();
         expect(children.length).toBe(3);
-        children.forEach((child) => expect($isTextNode(child)).toBe(true));
+        children.forEach(child => expect($isTextNode(child)).toBe(true));
       });
     });
   });

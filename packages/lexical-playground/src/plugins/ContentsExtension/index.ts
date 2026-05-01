@@ -20,9 +20,9 @@ import {$isContentsListNode, ContentsListNode} from './ContentsListNode';
 export const ContentsExtension = defineExtension({
   name: '@lexical/playground/Contents',
   nodes: () => [ContentsListNode, ContentsItemNode, ContentsLinkNode],
-  register: (editor) => {
+  register: editor => {
     return mergeRegister(
-      editor.registerNodeTransform(TextNode, (textNode) => {
+      editor.registerNodeTransform(TextNode, textNode => {
         const parent = textNode.getParent();
         const previousSibling = textNode.getPreviousSibling();
         const nextSibling = textNode.getNextSibling();
@@ -38,7 +38,7 @@ export const ContentsExtension = defineExtension({
       }),
       // The contents link must be within the contents
       // If it's moved outside the contents, convert it to a regular link
-      editor.registerNodeTransform(LinkNode, (node) => {
+      editor.registerNodeTransform(LinkNode, node => {
         if ($findMatchingParent(node, $isContentsListNode)) {
           node.replace(
             $createContentsLinkNode(node.getURL(), {
@@ -50,7 +50,7 @@ export const ContentsExtension = defineExtension({
           );
         }
       }),
-      editor.registerNodeTransform(ContentsLinkNode, (node) => {
+      editor.registerNodeTransform(ContentsLinkNode, node => {
         if (!$findMatchingParent(node, $isContentsListNode)) {
           node.replace(
             $createLinkNode(node.getURL(), {

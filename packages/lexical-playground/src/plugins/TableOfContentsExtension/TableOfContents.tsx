@@ -358,7 +358,7 @@ export type TableOfContentsProps = {
 export function TableOfContentsComponent({anchorElem}: TableOfContentsProps) {
   return (
     <LexicalTableOfContentsPlugin>
-      {(tableOfContents) => {
+      {tableOfContents => {
         return (
           <>
             <TableOfContentsList tableOfContents={tableOfContents} />

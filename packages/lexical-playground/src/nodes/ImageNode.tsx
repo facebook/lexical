@@ -249,9 +249,9 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
         priority: 0,
       }),
       figure: () => ({
-        conversion: (node) => {
+        conversion: node => {
           return {
-            after: (childNodes) => {
+            after: childNodes => {
               const imageNodes = childNodes.filter($isImageNode);
               const figcaption = node.querySelector('figcaption');
               if (figcaption) {

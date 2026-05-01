@@ -28,7 +28,7 @@ export function load(app) {
         comment &&
         comment.summary.length === 1 &&
         comment.summary.some(
-          (part) =>
+          part =>
             part.kind === 'text' &&
             part.text.startsWith(
               'Copyright (c) Meta Platforms, Inc. and affiliates.',
@@ -47,7 +47,7 @@ class LegacyRouter extends ModuleRouter {
     const original = super.getIdealBaseName(reflection);
     const modified = original.replace(
       /(?:@lexical\/(?:react\/)?[^/]+|lexical)/,
-      (s) => `modules/${s.replace(/^@/, '').replace(/[/]/g, '_')}`,
+      s => `modules/${s.replace(/^@/, '').replace(/[/]/g, '_')}`,
     );
     return modified;
   }

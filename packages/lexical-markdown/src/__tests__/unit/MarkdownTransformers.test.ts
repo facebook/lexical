@@ -35,7 +35,7 @@ const MarkdownShortcutTestExtension = defineExtension({
     CodeExtension,
   ],
   name: 'MarkdownShortcutTest',
-  register: (editor_) => registerMarkdownShortcuts(editor_),
+  register: editor_ => registerMarkdownShortcuts(editor_),
 });
 
 function typeMarkdown(editor: LexicalEditor, text: string) {
@@ -61,7 +61,7 @@ describe('LINK', () => {
       const paragraph = $getRoot().getFirstChildOrThrow();
       assert($isParagraphNode(paragraph), 'Root child must be a paragraph');
       const children = paragraph.getChildren();
-      expect(children.map((node) => node.getTextContent())).toEqual([
+      expect(children.map(node => node.getTextContent())).toEqual([
         'Start ',
         'test',
       ]);
@@ -78,7 +78,7 @@ describe('LINK', () => {
       assert($isParagraphNode(paragraph), 'Root child must be a paragraph');
       const children = paragraph.getChildren();
 
-      expect(children.map((node) => node.getTextContent())).toEqual([
+      expect(children.map(node => node.getTextContent())).toEqual([
         'Bold',
         ' ',
         'Link',
@@ -112,7 +112,7 @@ describe('LINK', () => {
       assert($isParagraphNode(paragraph), 'Root child must be a paragraph');
       const children = paragraph.getChildren();
 
-      expect(children.map((node) => node.getTextContent())).toEqual([
+      expect(children.map(node => node.getTextContent())).toEqual([
         '[a](https://a.example.com) ',
         'b',
       ]);
@@ -233,9 +233,9 @@ describe('CODE_SPAN_PRECEDENCE', () => {
       assert($isParagraphNode(paragraph), 'Root child must be a paragraph');
       const textNodes = paragraph
         .getChildren()
-        .filter((node) => $isTextNode(node));
+        .filter(node => $isTextNode(node));
       const boldNode = textNodes.find(
-        (node) => $isTextNode(node) && node.hasFormat('bold'),
+        node => $isTextNode(node) && node.hasFormat('bold'),
       );
       expect(boldNode).toBeDefined();
       assert($isTextNode(boldNode!), 'Bold node must be a TextNode');

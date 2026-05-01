@@ -15,7 +15,7 @@ const pretty = process.env.CI !== 'true';
 
 /** @type {ts.FormatDiagnosticsHost} */
 const diagnosticsHost = {
-  getCanonicalFileName: (fn) => fn,
+  getCanonicalFileName: fn => fn,
   getCurrentDirectory: () => './',
   getNewLine: () => '\n',
 };
@@ -63,7 +63,7 @@ function validateTscTypes() {
         });
       }
     };
-    ast.forEachChild((node) => {
+    ast.forEachChild(node => {
       if (node.kind === ts.SyntaxKind.ExportDeclaration) {
         const exportNode =
           /** @type {import('typescript').ExportDeclaration} */ (node);

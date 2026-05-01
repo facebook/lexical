@@ -648,7 +648,7 @@ export class ElementNode extends LexicalNode {
   clear(): this {
     const writableSelf = this.getWritable();
     const children = this.getChildren();
-    children.forEach((child) => child.remove());
+    children.forEach(child => child.remove());
     return writableSelf;
   }
   append(...nodesToAppend: LexicalNode[]): this {

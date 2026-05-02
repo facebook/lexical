@@ -1,8 +1,8 @@
 // onnxruntime-node and sharp ship large prebuilt native binaries that are
-// only reachable through the Node entrypoint of @huggingface/transformers,
-// which we never load - the website build aliases @huggingface/transformers
-// to transformers.web.js (see packages/lexical-website/docusaurus.config.ts).
-// Strip them from the manifest so pnpm does not download them.
+// only reachable through the Node entrypoint of @huggingface/transformers.
+// This example loads transformers.js in a browser web worker (see
+// src/ai/ai-worker.ts), so the Node entrypoint is unreachable. Strip them
+// from the manifest so `pnpm i` does not download them.
 function readPackage(pkg) {
   if (pkg.name === '@huggingface/transformers' && pkg.dependencies) {
     delete pkg.dependencies['onnxruntime-node'];

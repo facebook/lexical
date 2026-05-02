@@ -27,7 +27,6 @@ export {
   CodeNode,
   DEFAULT_CODE_LANGUAGE,
   getDefaultCodeLanguage,
-  registerCodeIndentation,
 } from '@lexical/code-core';
 
 /** @deprecated moved to `@lexical/code-prism` */

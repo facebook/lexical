@@ -6,23 +6,24 @@
  *
  */
 
-import type {CodeHighlightNode} from '../CodeHighlightNode';
-import type {CodeNode} from '../CodeNode';
-import type {LexicalEditor, LineBreakNode, TabNode} from 'lexical';
+import type {CodeNode} from '@lexical/code-core';
+import type {LexicalEditor, PointCaret} from 'lexical';
 
+import {$createCodeNode} from '@lexical/code-core';
 import {
-  $caretRangeFromSelection,
-  $createRangeSelection,
-  $getCaretRangeInDirection,
+  $getChildCaret,
+  $getCollapsedCaretRange,
   $getRoot,
   $getSelection,
+  $getSiblingCaret,
+  $getTextPointCaret,
   $isLineBreakNode,
   $isRangeSelection,
+  $isTextNode,
   $setSelectionFromCaretRange,
   OUTDENT_CONTENT_COMMAND,
 } from 'lexical';
-
-import {$createCodeNode} from '../CodeNode';
+import {assert} from 'vitest';
 
 /**
  * Shared test helper for the OUTDENT_CONTENT_COMMAND space-stripping
@@ -36,74 +37,58 @@ import {$createCodeNode} from '../CodeNode';
  * call its own `registerCodeHighlighting(editor, ..., tabSize)` and any
  * async language/theme loading the highlighter requires.
  */
-export async function $runOutdentScenario(
+export function $runOutdentScenario(
   editor: LexicalEditor,
-  register: () => void | Promise<void>,
   rawText: string,
   cursorOffset: number,
-): Promise<{cursor: number; text: string}> {
-  await register();
-
+): {cursor: number; text: string} {
   let codeNode: CodeNode;
-  await editor.update(() => {
-    const root = $getRoot();
-    codeNode = $createCodeNode();
-    root.append(codeNode);
-    codeNode.selectStart();
-    $getSelection()!.insertRawText(rawText);
-  });
+  editor.update(
+    () => {
+      codeNode = $createCodeNode();
+      $getRoot().clear().append(codeNode);
+      codeNode.selectStart().insertRawText(rawText);
+    },
+    {discrete: true},
+  );
 
-  await editor.update(() => {
-    const selection = $createRangeSelection();
-    let matching: null | LineBreakNode | TabNode | CodeHighlightNode =
-      codeNode.getFirstChild();
+  editor.update(() => {
+    let matching = codeNode.getFirstChild();
     let offset = 0;
-    let parentIndex = 0;
-    while (
-      matching !== null &&
-      offset + matching.getTextContentSize() < cursorOffset
-    ) {
+    while (matching && offset + matching.getTextContentSize() < cursorOffset) {
       offset += matching.getTextContentSize();
       matching = matching.getNextSibling();
-      parentIndex++;
     }
-    if (matching === null) {
-      selection.anchor.set(codeNode.getKey(), 0, 'element');
-      selection.focus.set(codeNode.getKey(), 0, 'element');
-    } else if (!$isLineBreakNode(matching)) {
-      selection.anchor.set(matching.getKey(), cursorOffset - offset, 'text');
-      selection.focus.set(matching.getKey(), cursorOffset - offset, 'text');
-    } else {
-      selection.anchor.set(codeNode.getKey(), parentIndex, 'element');
-      selection.focus.set(codeNode.getKey(), parentIndex, 'element');
-    }
-    $setSelectionFromCaretRange(
-      $getCaretRangeInDirection($caretRangeFromSelection(selection), 'next'),
+    assert(
+      matching === null || $isLineBreakNode(matching) || $isTextNode(matching),
     );
+    let point: PointCaret<'next'>;
+    if (matching === null) {
+      point = $getChildCaret(codeNode, 'next');
+    } else if (!$isLineBreakNode(matching)) {
+      point = $getTextPointCaret(matching, 'next', cursorOffset - offset);
+    } else {
+      point = $getSiblingCaret(matching, 'next');
+    }
+    $setSelectionFromCaretRange($getCollapsedCaretRange(point));
     editor.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined);
   });
 
-  let text = '';
-  let cursor = 0;
-  editor.read(() => {
-    text = codeNode.getTextContent();
+  return editor.read(() => {
     const sel = $getSelection();
-    if (!$isRangeSelection(sel)) {
-      return;
-    }
-    let runOffset = 0;
-    let node: null | LineBreakNode | TabNode | CodeHighlightNode =
-      codeNode.getFirstChild();
-    while (node !== null) {
+    assert($isRangeSelection(sel) && sel.focus.type === 'text');
+    let cursor = 0;
+    let node = codeNode.getFirstChild();
+    while ($isTextNode(node) || $isLineBreakNode(node)) {
       if (sel.focus.key === node.getKey()) {
-        cursor = runOffset + sel.focus.offset;
-        return;
+        cursor += sel.focus.offset;
+        break;
       }
-      runOffset += node.getTextContentSize();
+      cursor += node.getTextContentSize();
       node = node.getNextSibling();
     }
+    return {cursor, text: codeNode.getTextContent()};
   });
-  return {cursor, text};
 }
 
 /**

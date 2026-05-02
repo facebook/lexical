@@ -49,7 +49,7 @@ import invariant from 'shared/invariant';
 
 import {CodeExtension} from './CodeExtension';
 import {$isCodeHighlightNode} from './CodeHighlightNode';
-import {$isCodeNode, CodeNode} from './CodeNode';
+import {$isCodeNode} from './CodeNode';
 import {
   $getCodeLineDirection,
   $getEndOfCodeInLine,
@@ -87,13 +87,13 @@ function $isSelectionInCode(selection: null | BaseSelection): boolean {
  */
 function $getCodeLines(
   selection: RangeSelection,
-): Array<Array<CodeHighlightNode | TabNode>> {
+): (CodeHighlightNode | TabNode)[][] {
   const nodes = selection.getNodes();
-  const lines: Array<Array<CodeHighlightNode | TabNode>> = [];
+  const lines: (CodeHighlightNode | TabNode)[][] = [];
   if (nodes.length === 1 && $isCodeNode(nodes[0])) {
     return lines;
   }
-  let lastLine: Array<CodeHighlightNode | TabNode> = [];
+  let lastLine: (CodeHighlightNode | TabNode)[] = [];
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
     invariant(
@@ -149,7 +149,7 @@ function $handleTab(shiftKey: boolean): null | LexicalCommand<void> {
     return indentOrOutdent;
   }
 
-  const codeLine: Array<CodeHighlightNode | TabNode> = codeLines[0];
+  const codeLine: (CodeHighlightNode | TabNode)[] = codeLines[0];
   const codeLineLength = codeLine.length;
 
   invariant(
@@ -470,13 +470,14 @@ function $handleMoveTo(
 }
 
 /**
+ * @internal
  * Register the keyboard and command handlers that drive code-block
  * indentation: Tab / Shift+Tab, INDENT/OUTDENT_CONTENT_COMMAND,
  * INSERT_TAB_COMMAND, alt+arrow line shifting, and Home/End movement.
  *
  * Both `@lexical/code-shiki` and `@lexical/code-prism` use this via
  * {@link CodeIndentExtension}; callers using `registerCodeHighlighting`
- * directly should also call this to retain the keyboard behavior.
+ * will implicitly call this with tabSize of `undefined`.
  *
  * @param editor The editor to register on.
  * @param tabSize When set, OUTDENT_CONTENT_COMMAND (Shift+Tab) also strips
@@ -487,10 +488,6 @@ export function registerCodeIndentation(
   editor: LexicalEditor,
   tabSize?: number,
 ): () => void {
-  if (!editor.hasNodes([CodeNode])) {
-    throw new Error('CodeIndentation: CodeNode not registered on editor');
-  }
-
   return mergeRegister(
     editor.registerCommand(
       KEY_TAB_COMMAND,

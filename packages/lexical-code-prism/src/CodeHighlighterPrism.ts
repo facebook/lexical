@@ -331,12 +331,6 @@ export function registerHighlightingOnly(
   editor: LexicalEditor,
   tokenizer: Tokenizer,
 ): () => void {
-  if (!editor.hasNodes([CodeNode, CodeHighlightNode])) {
-    throw new Error(
-      'CodeHighlightPlugin: CodeNode or CodeHighlightNode not registered on editor',
-    );
-  }
-
   const registrations = [];
 
   // Only register the mutation listener if not in headless mode
@@ -385,17 +379,21 @@ export function registerHighlightingOnly(
 
 /**
  * Register the Prism tokenizer-driven highlighting on the editor along
- * with the indent / Tab / arrow-key keyboard handlers (via
- * {@link "@lexical/code-core".registerCodeIndentation}). This wrapper
- * preserves the legacy single-call setup; existing callers do not need
- * to change.
+ * with the indent / Tab / arrow-key keyboard handlers. This function
+ * is provided for legacy code that has not upgraded to using
+ * {@link CodePrismExtension}.
  */
 export function registerCodeHighlighting(
   editor: LexicalEditor,
-  tokenizer?: Tokenizer,
+  tokenizer: Tokenizer = PrismTokenizer,
 ): () => void {
+  if (!editor.hasNodes([CodeNode, CodeHighlightNode])) {
+    throw new Error(
+      'CodeHighlightPlugin: CodeNode or CodeHighlightNode not registered on editor',
+    );
+  }
   return mergeRegister(
-    registerHighlightingOnly(editor, tokenizer ?? PrismTokenizer),
+    registerHighlightingOnly(editor, tokenizer),
     registerCodeIndentation(editor),
   );
 }

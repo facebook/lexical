@@ -10,10 +10,17 @@ import type {CodeHighlightNode, CodeNode} from '@lexical/code';
 import type {LexicalCommand, LineBreakNode, TabNode} from 'lexical';
 
 import {$createCodeNode, $isCodeNode} from '@lexical/code';
-import {registerCodeIndentation} from '@lexical/code-core';
-import {PrismTokenizer, registerCodeHighlighting} from '@lexical/code-prism';
+import {CodeIndentExtension} from '@lexical/code-core';
+import {
+  CodePrismExtension,
+  registerCodeHighlighting,
+} from '@lexical/code-prism';
+import {
+  buildEditorFromExtensions,
+  TabIndentationExtension,
+} from '@lexical/extension';
 import {registerTabIndentation} from '@lexical/react/LexicalTabIndentationPlugin';
-import {registerRichText} from '@lexical/rich-text';
+import {registerRichText, RichTextExtension} from '@lexical/rich-text';
 import {
   $caretRangeFromSelection,
   $createRangeSelection,
@@ -22,6 +29,7 @@ import {
   $getSelection,
   $isLineBreakNode,
   $setSelectionFromCaretRange,
+  configExtension,
   INDENT_CONTENT_COMMAND,
   KEY_TAB_COMMAND,
   OUTDENT_CONTENT_COMMAND,
@@ -36,7 +44,6 @@ import {
   $runOutdentScenario,
   OUTDENT_SCENARIOS,
 } from '../../../../lexical-code-core/src/__tests__/outdentTestUtils';
-import {registerHighlightingOnly} from '../../../../lexical-code-prism/src/CodeHighlighterPrism';
 
 describe('LexicalCodeNode tests', () => {
   initializeUnitTest(testEnv => {
@@ -247,40 +254,30 @@ describe('LexicalCodeNode tests', () => {
         });
       });
     });
-
-    describe('tabSize (#8410): outdent space-indented lines', () => {
-      test.for(OUTDENT_SCENARIOS)(
-        '$name',
-        async ({
+  });
+  describe('tabSize (#8410): outdent space-indented lines', () => {
+    test.for(OUTDENT_SCENARIOS)(
+      '$name',
+      ({rawText, cursorOffset, tabSize, expectedText, expectedCursor}) => {
+        using editor = buildEditorFromExtensions({
+          dependencies: [
+            RichTextExtension,
+            TabIndentationExtension,
+            CodePrismExtension,
+            configExtension(CodeIndentExtension, {tabSize}),
+          ],
+          name: 'prism-outdent',
+        });
+        const {text, cursor} = $runOutdentScenario(
+          editor,
           rawText,
           cursorOffset,
-          tabSize,
-          expectedText,
-          expectedCursor,
-        }) => {
-          const {editor} = testEnv;
-          const {text, cursor} = await $runOutdentScenario(
-            editor,
-            () => {
-              registerRichText(editor);
-              registerTabIndentation(editor);
-              // Use the internal highlighting-only helper paired with a
-              // tabSize-aware registerCodeIndentation call. The legacy
-              // wrapper registerCodeHighlighting bundles a no-tabSize
-              // registerCodeIndentation, which would shadow the
-              // tabSize-aware command at the same priority.
-              registerHighlightingOnly(editor, PrismTokenizer);
-              registerCodeIndentation(editor, tabSize);
-            },
-            rawText,
-            cursorOffset,
-          );
-          expect(text).toBe(expectedText);
-          if (expectedCursor !== undefined) {
-            expect(cursor).toBe(expectedCursor);
-          }
-        },
-      );
-    });
+        );
+        expect(text).toBe(expectedText);
+        if (expectedCursor !== undefined) {
+          expect(cursor).toBe(expectedCursor);
+        }
+      },
+    );
   });
 });

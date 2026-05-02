@@ -115,11 +115,6 @@ export type CodeIndentConfig = {
   tabSize: number | void,
 };
 
-declare export function registerCodeIndentation(
-  editor: LexicalEditor,
-  tabSize?: number,
-): () => void;
-
 declare export var CodeIndentExtension: LexicalExtension<CodeIndentConfig, "@lexical/code-indent", unknown, unknown>;
 
 /**

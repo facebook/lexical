@@ -52,16 +52,16 @@
     "unist-util-visit": "^5.1.0"
   },
   "devDependencies": {
-    "@docusaurus/module-type-aliases": "^3.10.0",
-    "@docusaurus/theme-classic": "^3.10.0",
-    "@tailwindcss/postcss": "^4.2.1",
+    "@docusaurus/module-type-aliases": "^3.10.1",
+    "@docusaurus/theme-classic": "^3.10.1",
+    "@tailwindcss/postcss": "^4.2.4",
     "buffer": "^6.0.3",
     "cross-env": "^10.1.0",
-    "prettier-plugin-tailwindcss": "^0.7.2",
-    "tailwindcss": "^4.2.2",
-    "typedoc": "^0.28.18",
-    "typescript": "^6.0.2",
-    "webpack": "^5.106.1"
+    "prettier-plugin-tailwindcss": "^0.8.0",
+    "tailwindcss": "^4.2.4",
+    "typedoc": "^0.28.19",
+    "typescript": "^6.0.3",
+    "webpack": "^5.106.2"
   },
   "browserslist": {
     "production": [

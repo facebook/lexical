@@ -53,8 +53,8 @@
     "@types/lodash-es": "^4.14.182",
     "@vitejs/plugin-react": "^6.0.1",
     "rollup-plugin-copy": "^3.5.0",
-    "vite": "^8.0.8",
-    "vite-plugin-static-copy": "^4.0.1"
+    "vite": "^8.0.10",
+    "vite-plugin-static-copy": "^4.1.0"
   },
   "sideEffects": false
 }

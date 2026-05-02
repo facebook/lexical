@@ -31,6 +31,7 @@ export function EditorRefPlugin({
     if (typeof editorRef === 'function') {
       editorRef(editor);
     } else if (typeof editorRef === 'object' && editorRef !== null) {
+      // eslint-disable-next-line react-hooks/immutability
       editorRef.current = editor;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -14,7 +14,7 @@
     "@atlaskit/drag-and-drop-indicator": "^0.11.1",
     "@atlaskit/pragmatic-drag-and-drop": "^1.7.7",
     "@excalidraw/excalidraw": "^0.18.1",
-    "@floating-ui/react": "^0.27.16",
+    "@floating-ui/react": "^0.27.19",
     "@lexical/clipboard": "workspace:*",
     "@lexical/code": "workspace:*",
     "@lexical/code-prism": "workspace:*",
@@ -40,7 +40,7 @@
     "react-day-picker": "^9.7.0",
     "react-dom": "^19.2.5",
     "react-error-boundary": "^6.0.0",
-    "y-websocket": "^3.0.0",
+    "y-websocket": "^2.1.0",
     "yjs": ">=13.5.42"
   },
   "devDependencies": {

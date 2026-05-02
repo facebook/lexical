@@ -208,21 +208,8 @@
       "react": "19.2.5",
       "react-dom": "19.2.5",
       "@types/node": "25.6.0",
-      "qs": ">=6.14.2",
-      "form-data": ">=4.0.4",
-      "@isaacs/brace-expansion": ">=5.0.1",
       "prettier": "3.8.1",
-      "yaml@^1": "^1.10.3",
-      "simple-git": ">=3.32.0",
-      "follow-redirects": ">=1.16.0",
-      "uuid": ">=14.0.0",
-      "protobufjs": ">=7.5.5",
-      "dompurify": ">=3.4.0",
-      "postcss": ">=8.5.10",
-      "astro": ">=6.1.6",
-      "eslint": ">=9.26.0",
-      "immutable": ">=4.3.8",
-      "path-to-regexp@>=1.0.0 <1.9.0": "^1.9.0"
+      "yaml@^1": "^1.10.3"
     }
   }
 }

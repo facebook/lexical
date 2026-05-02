@@ -22,8 +22,8 @@ importers:
         specifier: ^7.7.4
         version: 7.7.4
       yjs:
-        specifier: ^13.6.27
-        version: 13.6.27
+        specifier: ^13.6.30
+        version: 13.6.30
     devDependencies:
       '@babel/core':
         specifier: ^7.29.0
@@ -264,7 +264,7 @@ importers:
         version: 4.1.5(@opentelemetry/api@1.9.0)(@types/node@25.6.0)(happy-dom@20.9.0)(jsdom@29.1.1)(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.46.2)(yaml@2.8.4))
       y-websocket:
         specifier: ^2.1.0
-        version: 2.1.0(yjs@13.6.27)
+        version: 2.1.0(yjs@13.6.30)
 
   packages/lexical: {}
 
@@ -735,10 +735,10 @@ importers:
         version: 6.0.0(react@19.2.5)
       y-websocket:
         specifier: ^2.1.0
-        version: 2.1.0(yjs@13.6.27)
+        version: 2.1.0(yjs@13.6.30)
       yjs:
-        specifier: '>=13.5.42'
-        version: 13.6.27
+        specifier: '>=13.6.30'
+        version: 13.6.30
     devDependencies:
       '@babel/plugin-transform-flow-strip-types':
         specifier: ^7.27.1
@@ -12606,6 +12606,10 @@ packages:
 
   yjs@13.6.27:
     resolution: {integrity: sha512-OIDwaflOaq4wC6YlPBy2L6ceKeKuF7DeTxx+jPzv1FHn9tCZ0ZwSRnUBxD05E3yed46fv/FWJbvR+Ud7x0L7zw==}
+    engines: {node: '>=16.0.0', npm: '>=8.0.0'}
+
+  yjs@13.6.30:
+    resolution: {integrity: sha512-vv/9h42eCMC81ZHDFswuu/MKzkl/vyq1BhaNGfHyOonwlG4CJbQF4oiBBJPvfdeCt/PlVDWh7Nov9D34YY09uQ==}
     engines: {node: '>=16.0.0', npm: '>=8.0.0'}
 
   yn@3.1.1:
@@ -26728,27 +26732,27 @@ snapshots:
 
   xtend@4.0.2: {}
 
-  y-leveldb@0.1.2(yjs@13.6.27):
+  y-leveldb@0.1.2(yjs@13.6.30):
     dependencies:
       level: 6.0.1
       lib0: 0.2.117
-      yjs: 13.6.27
+      yjs: 13.6.30
     optional: true
 
-  y-protocols@1.0.7(yjs@13.6.27):
+  y-protocols@1.0.7(yjs@13.6.30):
     dependencies:
       lib0: 0.2.117
-      yjs: 13.6.27
+      yjs: 13.6.30
 
-  y-websocket@2.1.0(yjs@13.6.27):
+  y-websocket@2.1.0(yjs@13.6.30):
     dependencies:
       lib0: 0.2.117
       lodash.debounce: 4.0.8
-      y-protocols: 1.0.7(yjs@13.6.27)
-      yjs: 13.6.27
+      y-protocols: 1.0.7(yjs@13.6.30)
+      yjs: 13.6.30
     optionalDependencies:
       ws: 6.2.3
-      y-leveldb: 0.1.2(yjs@13.6.27)
+      y-leveldb: 0.1.2(yjs@13.6.30)
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -26797,6 +26801,10 @@ snapshots:
       yargs-parser: 21.1.1
 
   yjs@13.6.27:
+    dependencies:
+      lib0: 0.2.117
+
+  yjs@13.6.30:
     dependencies:
       lib0: 0.2.117
 

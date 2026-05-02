@@ -271,7 +271,7 @@ The return value is a dispose function, typically the result of `mergeRegister`.
 This happens after [register](#register) for every extension has been called,
 so all commands should be registered. This is the phase when the
 `$initialEditorState` is applied to the editor by `InitialStateExtension`,
-so `editor.setRootElement` should be called no sooner than this phas e(it may
+so `editor.setRootElement` should be called no sooner than this phase (it may
 of course be called after the editor is built, outside of extensions).
 
 The return value is a dispose function, typically the result of

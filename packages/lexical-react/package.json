@@ -10,7 +10,7 @@
   "license": "MIT",
   "version": "0.44.0",
   "dependencies": {
-    "@floating-ui/react": "^0.27.16",
+    "@floating-ui/react": "^0.27.19",
     "@lexical/devtools-core": "workspace:*",
     "@lexical/dragon": "workspace:*",
     "@lexical/extension": "workspace:*",

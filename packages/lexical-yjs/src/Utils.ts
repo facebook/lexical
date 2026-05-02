@@ -21,6 +21,7 @@ import {
   DecoratorNode,
   EditorState,
   ElementNode,
+  isLexicalEditor,
   LexicalNode,
   NodeKey,
   RangeSelection,
@@ -337,13 +338,8 @@ export function $syncPropertiesFromYjs(
         // buildEditorFromExtensions in its constructor), reuse it so its
         // extensions and LexicalBuilder registration survive the sync.
         // Otherwise, fall back to a bare editor.
-        const reusable =
-          prevValue !== null &&
-          typeof prevValue === 'object' &&
-          !(prevValue instanceof Doc) &&
-          typeof (prevValue as {_key?: unknown})._key === 'string';
-        if (reusable) {
-          (prevValue as {_key: NodeKey})._key = key;
+        if (isLexicalEditor(prevValue)) {
+          prevValue._key = key;
           nextValue = prevValue;
         } else {
           const nestedEditor = createEditor();

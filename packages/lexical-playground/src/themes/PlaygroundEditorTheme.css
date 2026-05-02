@@ -163,7 +163,10 @@
   }
 }
 .PlaygroundEditorTheme__code {
-  background-color: rgb(240, 242, 245);
+  /* `--shiki-light(-bg)` is set inline by CodeShikiExtension when
+     defaultThemeName is null. The var() fallback covers off/Prism mode. */
+  background-color: var(--shiki-light-bg, rgb(240, 242, 245));
+  color: var(--shiki-light);
   font-family: Menlo, Consolas, Monaco, monospace;
   display: block;
   line-height: 1.53;
@@ -178,6 +181,9 @@
   white-space: pre;
   max-width: 100%;
   box-sizing: border-box;
+}
+.PlaygroundEditorTheme__code span[style*='--shiki-light'] {
+  color: var(--shiki-light);
 }
 .PlaygroundEditorTheme__code:before {
   content: attr(data-gutter);

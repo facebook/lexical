@@ -12,6 +12,9 @@ export {
   type CodeShikiConfig,
   CodeShikiExtension,
   registerCodeHighlighting,
+  type ShikiThemeContext,
+  type ShikiThemeDef,
+  type ShikiThemeSpec,
   ShikiTokenizer,
   type Tokenizer,
 } from './CodeHighlighterShiki';

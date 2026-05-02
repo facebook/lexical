@@ -26,6 +26,7 @@ import {
   $addUpdateTag,
   $createParagraphNode,
   $createRangeSelection,
+  $createTextNode,
   $getSelection,
   $isElementNode,
   $isLineBreakNode,
@@ -48,6 +49,7 @@ import {
   MIN_ALLOWED_FONT_SIZE,
 } from '../../context/ToolbarContext';
 
+// eslint-disable-next-line no-shadow
 export enum UpdateFontSizeType {
   increment = 1,
   decrement,
@@ -320,9 +322,27 @@ export const formatCode = (editor: LexicalEditor, blockType: string) => {
         const codeNode = $createCodeNode();
         selection.insertNodes([codeNode]);
         selection = $getSelection();
+        let extractedNodes: LexicalNode[] = [];
         if ($isRangeSelection(selection)) {
+          selection.anchor.set(selection.anchor.key, 0, selection.anchor.type);
+          extractedNodes = selection.extract();
           selection.insertRawText(textContent);
         }
+
+        // Create paragraph node and append all extracted nodes to it
+        const paragraphNode = $createParagraphNode();
+        extractedNodes.forEach((node) => {
+          paragraphNode.append(node);
+        });
+
+        // Insert paragraph node below the code node
+        if (!$isRangeSelection(selection)) {
+          return;
+        }
+        const topLevelNode = selection.anchor
+          .getNode()
+          .getTopLevelElementOrThrow();
+        topLevelNode.insertAfter(paragraphNode);
       }
     });
   }

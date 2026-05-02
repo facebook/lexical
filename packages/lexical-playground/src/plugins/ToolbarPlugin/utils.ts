@@ -310,19 +310,30 @@ export const formatCode = (editor: LexicalEditor, blockType: string) => {
       }
       if (!$isRangeSelection(selection) || selection.isCollapsed()) {
         $setBlocksType(selection, () => $createCodeNode());
-      } else {
-        $splitParagraphsByLineBreaks(selection);
-        selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return;
-        }
-        const textContent = selection.getTextContent();
-        const codeNode = $createCodeNode();
-        selection.insertNodes([codeNode]);
-        selection = $getSelection();
-        if ($isRangeSelection(selection)) {
-          selection.insertRawText(textContent);
-        }
+        return;
+      }
+      // When any selected block is not a plain paragraph (e.g. HeadingNode,
+      // QuoteNode), use $setBlocksType which handles any block type correctly.
+      // The text-copy path below only works for paragraph nodes.
+      const anchorInParagraph =
+        $findParagraphParent(selection.anchor.getNode()) !== null;
+      const focusInParagraph =
+        $findParagraphParent(selection.focus.getNode()) !== null;
+      if (!anchorInParagraph || !focusInParagraph) {
+        $setBlocksType(selection, () => $createCodeNode());
+        return;
+      }
+      $splitParagraphsByLineBreaks(selection);
+      selection = $getSelection();
+      if (!$isRangeSelection(selection)) {
+        return;
+      }
+      const textContent = selection.getTextContent();
+      const codeNode = $createCodeNode();
+      selection.insertNodes([codeNode]);
+      selection = $getSelection();
+      if ($isRangeSelection(selection)) {
+        selection.insertRawText(textContent);
       }
     });
   }

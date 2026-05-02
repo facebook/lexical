@@ -84,7 +84,6 @@ export function CollaborationPlugin({
     isProviderInitialized.current = true;
 
     const newProvider = providerFactory(id, yjsDocMap);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setProvider(newProvider);
     setDoc(yjsDocMap.get(id));
 
@@ -114,7 +113,6 @@ export function CollaborationPlugin({
       yjsDocMap,
       excludedProperties,
     );
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setBinding(newBinding);
 
     return () => {

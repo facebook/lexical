@@ -375,6 +375,7 @@ const config: Config = {
               'node_modules/@huggingface/transformers/dist/transformers.web.js',
             ),
             'onnxruntime-node': false,
+            sharp: false,
           };
           return {resolve: {alias}};
         },

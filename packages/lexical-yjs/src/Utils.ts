@@ -330,12 +330,26 @@ export function $syncPropertiesFromYjs(
           yjsDocMap.delete(prevValue.guid);
         }
 
-        const nestedEditor = createEditor();
         const key = nextValue.guid;
-        nestedEditor._key = key;
         yjsDocMap.set(key, nextValue);
 
-        nextValue = nestedEditor;
+        // If the node already constructed a nested editor (e.g. via
+        // buildEditorFromExtensions in its constructor), reuse it so its
+        // extensions and LexicalBuilder registration survive the sync.
+        // Otherwise, fall back to a bare editor.
+        const reusable =
+          prevValue !== null &&
+          typeof prevValue === 'object' &&
+          !(prevValue instanceof Doc) &&
+          typeof (prevValue as {_key?: unknown})._key === 'string';
+        if (reusable) {
+          (prevValue as {_key: NodeKey})._key = key;
+          nextValue = prevValue;
+        } else {
+          const nestedEditor = createEditor();
+          nestedEditor._key = key;
+          nextValue = nestedEditor;
+        }
       }
 
       if (writableNode === undefined) {

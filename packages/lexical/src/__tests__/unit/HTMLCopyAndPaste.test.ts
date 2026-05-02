@@ -10,6 +10,7 @@ import {$insertDataTransferForRichText} from '@lexical/clipboard';
 import {$patchStyleText} from '@lexical/selection';
 import {
   $createParagraphNode,
+  $createTextNode,
   $getRoot,
   $getSelection,
   $isRangeSelection,
@@ -197,6 +198,120 @@ describe('HTMLCopyAndPaste tests', () => {
         });
 
         expect(testEnv.innerHTML).toContain('text-align: center');
+      });
+
+      test('pasting a right-aligned paragraph into an empty paragraph preserves alignment', async () => {
+        const {editor} = testEnv;
+        const dataTransfer = new DataTransferMock();
+        dataTransfer.setData(
+          'text/html',
+          '<p style="text-align: right;">Right-aligned text</p>',
+        );
+
+        await editor.update(() => {
+          const root = $getRoot();
+          root.clear();
+          const p = $createParagraphNode();
+          root.append(p);
+          p.selectEnd();
+        });
+
+        await editor.update(() => {
+          const selection = $getSelection();
+          invariant(
+            $isRangeSelection(selection),
+            'isRangeSelection(selection)',
+          );
+          $insertDataTransferForRichText(dataTransfer, selection, editor);
+        });
+
+        expect(testEnv.innerHTML).toContain('text-align: right');
+      });
+
+      test('pasting an aligned paragraph does not override destination alignment when destination already has explicit alignment', async () => {
+        const {editor} = testEnv;
+        const dataTransfer = new DataTransferMock();
+        dataTransfer.setData(
+          'text/html',
+          '<p style="text-align: center;">Centered pasted text</p>',
+        );
+
+        await editor.update(() => {
+          const root = $getRoot();
+          root.clear();
+          const p = $createParagraphNode();
+          p.setFormat('right');
+          // Paragraph must be non-empty for merge logic to run
+          p.append($createTextNode('existing text'));
+          root.append(p);
+          p.selectEnd();
+        });
+
+        await editor.update(() => {
+          const selection = $getSelection();
+          invariant(
+            $isRangeSelection(selection),
+            'isRangeSelection(selection)',
+          );
+          $insertDataTransferForRichText(dataTransfer, selection, editor);
+        });
+
+        expect(testEnv.innerHTML).toContain('text-align: right');
+        expect(testEnv.innerHTML).not.toContain('text-align: center');
+      });
+
+      test('pasting multiple paragraphs with mixed alignment each gets their own alignment', async () => {
+        const {editor} = testEnv;
+        const dataTransfer = new DataTransferMock();
+        dataTransfer.setData(
+          'text/html',
+          '<p style="text-align: center;">First</p><p style="text-align: right;">Second</p>',
+        );
+
+        await editor.update(() => {
+          const root = $getRoot();
+          root.clear();
+          const p = $createParagraphNode();
+          root.append(p);
+          p.selectEnd();
+        });
+
+        await editor.update(() => {
+          const selection = $getSelection();
+          invariant(
+            $isRangeSelection(selection),
+            'isRangeSelection(selection)',
+          );
+          $insertDataTransferForRichText(dataTransfer, selection, editor);
+        });
+
+        expect(testEnv.innerHTML).toContain('text-align: center');
+        expect(testEnv.innerHTML).toContain('text-align: right');
+      });
+
+      test('pasting an unaligned paragraph into an empty paragraph does not add alignment', async () => {
+        const {editor} = testEnv;
+        const dataTransfer = new DataTransferMock();
+        dataTransfer.setData('text/html', '<p>Plain paragraph</p>');
+
+        await editor.update(() => {
+          const root = $getRoot();
+          root.clear();
+          const p = $createParagraphNode();
+          root.append(p);
+          p.selectEnd();
+        });
+
+        await editor.update(() => {
+          const selection = $getSelection();
+          invariant(
+            $isRangeSelection(selection),
+            'isRangeSelection(selection)',
+          );
+          $insertDataTransferForRichText(dataTransfer, selection, editor);
+        });
+
+        expect(testEnv.innerHTML).not.toContain('text-align');
       });
     },
     {

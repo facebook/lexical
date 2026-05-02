@@ -98,6 +98,7 @@ export function LexicalNodeMenuPlugin<TOption extends MenuOption>({
   }, [closeNodeMenu, editor, nodeKey, openNodeMenu, resolution]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     positionOrCloseMenu();
   }, [positionOrCloseMenu, nodeKey]);
 

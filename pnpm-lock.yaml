@@ -13,6 +13,7 @@ overrides:
   uuid: '>=14.0.0'
   onnxruntime-node: link:./stubs/empty
   sharp: link:./stubs/empty
+  yjs: ^13.6.30
 
 importers:
 
@@ -22,8 +23,8 @@ importers:
         specifier: ^7.7.4
         version: 7.7.4
       yjs:
-        specifier: ^13.6.27
-        version: 13.6.27
+        specifier: ^13.6.30
+        version: 13.6.30
     devDependencies:
       '@babel/core':
         specifier: ^7.29.0
@@ -264,7 +265,7 @@ importers:
         version: 4.1.5(@opentelemetry/api@1.9.0)(@types/node@25.6.0)(happy-dom@20.9.0)(jsdom@29.1.1)(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.46.2)(yaml@2.8.4))
       y-websocket:
         specifier: ^2.1.0
-        version: 2.1.0(yjs@13.6.27)
+        version: 2.1.0(yjs@13.6.30)
 
   packages/lexical: {}
 
@@ -735,10 +736,10 @@ importers:
         version: 6.0.0(react@19.2.5)
       y-websocket:
         specifier: ^2.1.0
-        version: 2.1.0(yjs@13.6.27)
+        version: 2.1.0(yjs@13.6.30)
       yjs:
-        specifier: '>=13.5.42'
-        version: 13.6.27
+        specifier: ^13.6.30
+        version: 13.6.30
     devDependencies:
       '@babel/plugin-transform-flow-strip-types':
         specifier: ^7.27.1
@@ -840,8 +841,8 @@ importers:
         specifier: ^6.0.0
         version: 6.0.0(react@19.2.5)
       yjs:
-        specifier: '>=13.5.22'
-        version: 13.6.27
+        specifier: ^13.6.30
+        version: 13.6.30
     devDependencies:
       '@types/jest-axe':
         specifier: ^3.5.9
@@ -1073,9 +1074,10 @@ importers:
       lexical:
         specifier: workspace:*
         version: link:../lexical
+    devDependencies:
       yjs:
-        specifier: '>=13.5.22'
-        version: 13.6.27
+        specifier: ^13.6.30
+        version: 13.6.30
 
   packages/shared:
     dependencies:
@@ -12549,20 +12551,20 @@ packages:
   y-leveldb@0.1.2:
     resolution: {integrity: sha512-6ulEn5AXfXJYi89rXPEg2mMHAyyw8+ZfeMMdOtBbV8FJpQ1NOrcgi6DTAcXof0dap84NjHPT2+9d0rb6cFsjEg==}
     peerDependencies:
-      yjs: ^13.0.0
+      yjs: ^13.6.30
 
   y-protocols@1.0.7:
     resolution: {integrity: sha512-YSVsLoXxO67J6eE/nV4AtFtT3QEotZf5sK5BHxFBXso7VDUT3Tx07IfA6hsu5Q5OmBdMkQVmFZ9QOA7fikWvnw==}
     engines: {node: '>=16.0.0', npm: '>=8.0.0'}
     peerDependencies:
-      yjs: ^13.0.0
+      yjs: ^13.6.30
 
   y-websocket@2.1.0:
     resolution: {integrity: sha512-WHYDRqomaGkkaujtowCDwL8KYk+t1zQCGIgKyvxvchhjTQlMgWXRHJK+FDEcWmHA7I7o/4fy0eniOrtmz0e4mA==}
     engines: {node: '>=16.0.0', npm: '>=8.0.0'}
     hasBin: true
     peerDependencies:
-      yjs: ^13.5.6
+      yjs: ^13.6.30
 
   y18n@4.0.3:
     resolution: {integrity: sha512-JKhqTOwSrqNA1NY5lSztJ1GrBiUodLMmIZuLiDaMRJ+itFd+ABVE8XBjOvIWL+rSqNDC74LCSFmlb/U4UZ4hJQ==}
@@ -12604,8 +12606,8 @@ packages:
     resolution: {integrity: sha512-7dSzzRQ++CKnNI/krKnYRV7JKKPUXMEh61soaHKg9mrWEhzFWhFnxPxGl+69cD1Ou63C13NUPCnmIcrvqCuM6w==}
     engines: {node: '>=12'}
 
-  yjs@13.6.27:
-    resolution: {integrity: sha512-OIDwaflOaq4wC6YlPBy2L6ceKeKuF7DeTxx+jPzv1FHn9tCZ0ZwSRnUBxD05E3yed46fv/FWJbvR+Ud7x0L7zw==}
+  yjs@13.6.30:
+    resolution: {integrity: sha512-vv/9h42eCMC81ZHDFswuu/MKzkl/vyq1BhaNGfHyOonwlG4CJbQF4oiBBJPvfdeCt/PlVDWh7Nov9D34YY09uQ==}
     engines: {node: '>=16.0.0', npm: '>=8.0.0'}
 
   yn@3.1.1:
@@ -26728,27 +26730,27 @@ snapshots:
 
   xtend@4.0.2: {}
 
-  y-leveldb@0.1.2(yjs@13.6.27):
+  y-leveldb@0.1.2(yjs@13.6.30):
     dependencies:
       level: 6.0.1
       lib0: 0.2.117
-      yjs: 13.6.27
+      yjs: 13.6.30
     optional: true
 
-  y-protocols@1.0.7(yjs@13.6.27):
+  y-protocols@1.0.7(yjs@13.6.30):
     dependencies:
       lib0: 0.2.117
-      yjs: 13.6.27
+      yjs: 13.6.30
 
-  y-websocket@2.1.0(yjs@13.6.27):
+  y-websocket@2.1.0(yjs@13.6.30):
     dependencies:
       lib0: 0.2.117
       lodash.debounce: 4.0.8
-      y-protocols: 1.0.7(yjs@13.6.27)
-      yjs: 13.6.27
+      y-protocols: 1.0.7(yjs@13.6.30)
+      yjs: 13.6.30
     optionalDependencies:
       ws: 6.2.3
-      y-leveldb: 0.1.2(yjs@13.6.27)
+      y-leveldb: 0.1.2(yjs@13.6.30)
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -26796,7 +26798,7 @@ snapshots:
       y18n: 5.0.8
       yargs-parser: 21.1.1
 
-  yjs@13.6.27:
+  yjs@13.6.30:
     dependencies:
       lib0: 0.2.117
 

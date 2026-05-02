@@ -22,7 +22,7 @@
     "react-dom": "^19.2.5",
     "y-webrtc": "^10.3.0",
     "y-websocket": "^2.0.2",
-    "yjs": "^13.6.27"
+    "yjs": "^13.6.30"
   },
   "devDependencies": {
     "@types/react": "^19.2.14",

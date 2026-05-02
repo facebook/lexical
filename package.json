@@ -142,7 +142,6 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
-    "@y/websocket-server": "^0.1.5",
     "baseline-browser-mapping": "^2.10.18",
     "chokidar": "^5.0.0",
     "concurrently": "^9.2.1",
@@ -190,7 +189,7 @@
     "typescript-eslint": "^8.58.1",
     "vite": "^8.0.8",
     "vitest": "^4.1.4",
-    "y-websocket": "^3.0.0"
+    "y-websocket": "^2.1.0"
   },
   "dependencies": {
     "semver": "^7.7.4",

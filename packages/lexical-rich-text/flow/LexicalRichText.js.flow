@@ -19,6 +19,7 @@ import type {
   LexicalExtension,
   ExtensionConfigBase,
   SerializedElementNode,
+  TextFormatType,
 } from 'lexical';
 import {ElementNode} from 'lexical';
 
@@ -59,7 +60,28 @@ declare export function $createHeadingNode(
 declare export function $isHeadingNode(
   node: ?LexicalNode,
 ): node is  HeadingNode;
-declare export function registerRichText(editor: LexicalEditor): () => void;
+export type EscapeFormatTrigger =
+  | 'enter'
+  | 'click'
+  | 'arrow'
+  | 'space'
+  | 'tab';
+
+export type TriggerConfig = {
+  [K in EscapeFormatTrigger]?: boolean,
+} & {
+  onlyAtBoundary?: boolean,
+};
+
+export type EscapeFormatTriggerConfig = {
+  [K in TextFormatType]?: TriggerConfig | null,
+};
+
+export type RichTextConfig = {
+  escapeFormatTriggers: EscapeFormatTriggerConfig,
+};
+
+declare export function registerRichText(editor: LexicalEditor, escapeFormatTriggers?: EscapeFormatTriggerConfig): () => void;
 
 export type SerializedQuoteNode = SerializedElementNode;
 export type SerializedHeadingNode = {
@@ -69,4 +91,4 @@ export type SerializedHeadingNode = {
 };
 
 
-declare export var RichTextExtension: LexicalExtension<ExtensionConfigBase, "@lexical/rich-text", void, void>;
+declare export var RichTextExtension: LexicalExtension<RichTextConfig, "@lexical/rich-text", void, void>;

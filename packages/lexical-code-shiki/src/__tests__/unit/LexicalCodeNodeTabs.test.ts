@@ -14,15 +14,21 @@ import {
   $isCodeHighlightNode,
   $isCodeNode,
 } from '@lexical/code';
+import {CodeIndentExtension} from '@lexical/code-core';
 import {
+  CodeShikiExtension,
   isCodeLanguageLoaded,
   loadCodeLanguage,
   loadCodeTheme,
   registerCodeHighlighting,
   ShikiTokenizer,
 } from '@lexical/code-shiki';
+import {
+  buildEditorFromExtensions,
+  TabIndentationExtension,
+} from '@lexical/extension';
 import {registerTabIndentation} from '@lexical/react/LexicalTabIndentationPlugin';
-import {registerRichText} from '@lexical/rich-text';
+import {registerRichText, RichTextExtension} from '@lexical/rich-text';
 import {
   $caretRangeFromSelection,
   $createRangeSelection,
@@ -32,6 +38,7 @@ import {
   $isLineBreakNode,
   $isTabNode,
   $setSelectionFromCaretRange,
+  configExtension,
   INDENT_CONTENT_COMMAND,
   KEY_TAB_COMMAND,
   OUTDENT_CONTENT_COMMAND,
@@ -42,6 +49,10 @@ import {
 } from 'lexical/src/__tests__/utils';
 import {describe, expect, test} from 'vitest';
 
+import {
+  $runOutdentScenario,
+  OUTDENT_SCENARIOS,
+} from '../../../../lexical-code-core/src/__tests__/outdentTestUtils';
 import {isCodeThemeLoaded} from '../../FacadeShiki';
 
 describe('LexicalCodeNode tests', () => {
@@ -279,5 +290,38 @@ describe('LexicalCodeNode tests', () => {
         });
       });
     });
+  });
+  describe('tabSize (#8410): outdent space-indented lines', async () => {
+    await loadCodeLanguage(ShikiTokenizer.defaultLanguage);
+    await loadCodeTheme(ShikiTokenizer.defaultTheme);
+    test.for(OUTDENT_SCENARIOS)(
+      '$name',
+      async ({
+        rawText,
+        cursorOffset,
+        tabSize,
+        expectedText,
+        expectedCursor,
+      }) => {
+        using editor = buildEditorFromExtensions({
+          dependencies: [
+            RichTextExtension,
+            TabIndentationExtension,
+            CodeShikiExtension,
+            configExtension(CodeIndentExtension, {tabSize}),
+          ],
+          name: 'shiki-outdent',
+        });
+        const {text, cursor} = $runOutdentScenario(
+          editor,
+          rawText,
+          cursorOffset,
+        );
+        expect(text).toBe(expectedText);
+        if (expectedCursor !== undefined) {
+          expect(cursor).toBe(expectedCursor);
+        }
+      },
+    );
   });
 });

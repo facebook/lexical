@@ -172,6 +172,9 @@ test.describe('TableOfContents', () => {
     // after clicking the link in the contents,
     // the page should scroll so that the heading is visible
     await selectFromInsertDropdown(page, '.item .toc');
+    // аfter inserting the TOC, the cursor will be on the link,
+    // so close the floating menu so that it doesn't cover the first link
+    await page.keyboard.press('Escape');
     await click(page, 'a[href="#heading-1"]');
     await click(page, '.link-view a[href="#heading-1"]');
 

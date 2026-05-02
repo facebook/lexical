@@ -324,11 +324,8 @@ export const formatCode = (editor: LexicalEditor, blockType: string) => {
         const trailingParagraph = $createParagraphNode();
         selection.insertNodes([codeNode, trailingParagraph]);
         // insertNodes leaves the cursor in the trailing paragraph.
-        codeNode.selectStart();
-        selection = $getSelection();
-        if ($isRangeSelection(selection)) {
-          selection.insertRawText(textContent);
-        }
+        selection = codeNode.select();
+        selection.insertRawText(textContent);
         // Drop the trailing paragraph if the merge step didn't fill it.
         if (trailingParagraph.isAttached() && trailingParagraph.isEmpty()) {
           trailingParagraph.remove();

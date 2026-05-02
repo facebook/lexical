@@ -69,11 +69,11 @@ importers:
         specifier: ^10.0.0
         version: 10.0.1(eslint@10.3.0(jiti@2.6.1))
       '@lexical/eslint-plugin':
-        specifier: file:./packages/lexical-eslint-plugin
-        version: file:packages/lexical-eslint-plugin(eslint@10.3.0(jiti@2.6.1))
+        specifier: workspace:*
+        version: link:packages/lexical-eslint-plugin
       '@lexical/eslint-plugin-internal':
-        specifier: file:./packages/lexical-eslint-plugin-internal
-        version: file:packages/lexical-eslint-plugin-internal(eslint@10.3.0(jiti@2.6.1))
+        specifier: workspace:*
+        version: link:packages/lexical-eslint-plugin-internal
       '@playwright/test':
         specifier: ^1.59.1
         version: 1.59.1
@@ -3309,16 +3309,6 @@ packages:
 
   '@leichtgewicht/ip-codec@2.0.5':
     resolution: {integrity: sha512-Vo+PSpZG2/fmgmiNzYK9qWRh8h/CHrwD0mo1h1DzL4yzHNSfWYujGTYsWGreD000gcgmZ7K4Ys6Tx9TxtsKdDw==}
-
-  '@lexical/eslint-plugin-internal@file:packages/lexical-eslint-plugin-internal':
-    resolution: {directory: packages/lexical-eslint-plugin-internal, type: directory}
-    peerDependencies:
-      eslint: '>=9.26.0'
-
-  '@lexical/eslint-plugin@file:packages/lexical-eslint-plugin':
-    resolution: {directory: packages/lexical-eslint-plugin, type: directory}
-    peerDependencies:
-      eslint: '>=9.26.0'
 
   '@mdx-js/mdx@3.1.1':
     resolution: {integrity: sha512-f6ZO2ifpwAQIpzGWaBQT2TXxPv6z3RBzQKpVftEWN78Vl/YweF1uwussDx8ECAXVtr3Rs89fKyG9YlzUs9DyGQ==}
@@ -16712,14 +16702,6 @@ snapshots:
   '@kwsites/promise-deferred@1.1.1': {}
 
   '@leichtgewicht/ip-codec@2.0.5': {}
-
-  '@lexical/eslint-plugin-internal@file:packages/lexical-eslint-plugin-internal(eslint@10.3.0(jiti@2.6.1))':
-    dependencies:
-      eslint: 10.3.0(jiti@2.6.1)
-
-  '@lexical/eslint-plugin@file:packages/lexical-eslint-plugin(eslint@10.3.0(jiti@2.6.1))':
-    dependencies:
-      eslint: 10.3.0(jiti@2.6.1)
 
   '@mdx-js/mdx@3.1.1':
     dependencies:

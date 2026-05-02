@@ -884,7 +884,6 @@ function TableCellActionMenuContainer({
 
   useEffect(() => {
     if (prevTableCellDOM.current !== tableCellNode) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsMenuOpen(false);
     }
 

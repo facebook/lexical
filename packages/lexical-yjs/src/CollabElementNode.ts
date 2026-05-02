@@ -480,15 +480,33 @@ export class CollabElementNode {
       const nextKey = nextChildren[nextIndex];
 
       if (prevKey === nextKey) {
-        // Nove move, create or remove
-        this._syncChildFromLexical(
-          binding,
-          nextIndex,
-          nextKey,
-          prevNodeMap,
-          dirtyElements,
-          dirtyLeaves,
-        );
+        if (this._children[nextIndex] === undefined) {
+          // The Lexical node already exists for this key but the collab
+          // binding is not tracking it yet. This happens when an editor
+          // is built with a non-empty initial state (e.g. an empty
+          // paragraph) and then bound to an empty Yjs doc, since
+          // bootstrap only runs initializeEditor when the Lexical root is
+          // empty. Treat it as a create so the existing Lexical state is
+          // exported into Yjs.
+          const nextChildNode = $getNodeByKeyOrThrow(nextKey);
+          const collabNode = $createCollabNodeFromLexicalNode(
+            binding,
+            nextChildNode,
+            this,
+          );
+          collabNodeMap.set(nextKey, collabNode);
+          this.splice(binding, nextIndex, 0, collabNode);
+        } else {
+          // No move, create or remove
+          this._syncChildFromLexical(
+            binding,
+            nextIndex,
+            nextKey,
+            prevNodeMap,
+            dirtyElements,
+            dirtyLeaves,
+          );
+        }
 
         prevIndex++;
         nextIndex++;

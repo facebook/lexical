@@ -134,7 +134,7 @@
     "@rollup/plugin-terser": "^1.0.0",
     "@types/babel__helper-module-imports": "^7.18.3",
     "@types/fs-extra": "^11.0.4",
-    "@types/jsdom": "^21.1.6",
+    "@types/jsdom": "^28.0.1",
     "@types/katex": "^0.16.7",
     "@types/node": "^25.6.0",
     "@types/prismjs": "^1.26.6",

@@ -3,6 +3,7 @@
 [@lexical/code](/docs/api/modules/lexical_code)
 
 - [CodeExtension](/docs/api/modules/lexical_code#codeextension) - CodeNode (code blocks)
+- [CodeIndentExtension](/docs/api/modules/lexical_code#codeindentextension) - CodeNode tab key indentation (code blocks)
 
 [@lexical/code-prism](/docs/api/modules/lexical_code_-_prism)
 

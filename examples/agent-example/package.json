@@ -41,5 +41,11 @@
     "@rollup/rollup-darwin-arm64": "4.52.0",
     "@rollup/rollup-win32-x64-msvc": "4.52.0",
     "@rollup/wasm-node": "4.52.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "onnxruntime-node": "link:./stubs/empty",
+      "sharp": "link:./stubs/empty"
+    }
   }
 }

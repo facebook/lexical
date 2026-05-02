@@ -1,0 +1,10 @@
+{
+  "name": "@lexical/empty-stub",
+  "version": "0.0.0",
+  "private": true,
+  "description": "No-op stub used by pnpm overrides to skip large native binaries that are never reached at runtime.",
+  "main": "index.js",
+  "module": "index.js",
+  "types": "index.d.ts",
+  "license": "MIT"
+}

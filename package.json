@@ -207,7 +207,9 @@
       "@types/node": "25.6.0",
       "prettier": "3.8.1",
       "yaml@^1": "^1.10.3",
-      "uuid": ">=14.0.0"
+      "uuid": ">=14.0.0",
+      "onnxruntime-node": "link:./stubs/empty",
+      "sharp": "link:./stubs/empty"
     }
   }
 }

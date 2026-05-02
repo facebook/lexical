@@ -21,15 +21,17 @@ import {
 } from '@lexical/rich-text';
 import {$patchStyleText, $setBlocksType} from '@lexical/selection';
 import {$isTableSelection} from '@lexical/table';
-import {$getNearestBlockElementAncestorOrThrow} from '@lexical/utils';
+import {
+  $findMatchingParent,
+  $getNearestBlockElementAncestorOrThrow,
+} from '@lexical/utils';
 import {
   $addUpdateTag,
   $createParagraphNode,
   $createRangeSelection,
   $getSelection,
-  $isElementNode,
+  $isBlockElementNode,
   $isLineBreakNode,
-  $isParagraphNode,
   $isRangeSelection,
   $isTextNode,
   $setSelection,
@@ -244,16 +246,16 @@ export const formatQuote = (editor: LexicalEditor, blockType: string) => {
   }
 };
 
-function $splitParagraphsByLineBreaks(selection: RangeSelection): void {
+function $splitBlocksByLineBreaks(selection: RangeSelection): void {
   const blocks: Set<ElementNode> = new Set();
   for (const node of selection.getNodes()) {
-    const block = $isParagraphNode(node) ? node : $findParagraphParent(node);
+    const block = $findBlockAncestor(node);
     if (block !== null) {
       blocks.add(block);
     }
   }
   for (const point of [selection.anchor, selection.focus]) {
-    const block = $findParagraphParent(point.getNode());
+    const block = $findBlockAncestor(point.getNode());
     if (block !== null) {
       blocks.add(block);
     }
@@ -292,12 +294,8 @@ function $splitParagraphsByLineBreaks(selection: RangeSelection): void {
   $setSelection(newSelection);
 }
 
-function $findParagraphParent(node: LexicalNode): ElementNode | null {
-  if ($isParagraphNode(node)) {
-    return node;
-  }
-  const parent = node.getParent();
-  return $isElementNode(parent) && $isParagraphNode(parent) ? parent : null;
+function $findBlockAncestor(node: LexicalNode): ElementNode | null {
+  return $findMatchingParent(node, $isBlockElementNode);
 }
 
 export const formatCode = (editor: LexicalEditor, blockType: string) => {
@@ -311,17 +309,29 @@ export const formatCode = (editor: LexicalEditor, blockType: string) => {
       if (!$isRangeSelection(selection) || selection.isCollapsed()) {
         $setBlocksType(selection, () => $createCodeNode());
       } else {
-        $splitParagraphsByLineBreaks(selection);
+        // Each LineBreakNode becomes a block boundary so insertNodes below
+        // can place the code block on its own row, not between <br>s.
+        $splitBlocksByLineBreaks(selection);
         selection = $getSelection();
         if (!$isRangeSelection(selection)) {
           return;
         }
         const textContent = selection.getTextContent();
+        // The trailing paragraph absorbs the post-insertion merge that
+        // would otherwise fold the original block's trailing content into
+        // the code node.
         const codeNode = $createCodeNode();
-        selection.insertNodes([codeNode]);
+        const trailingParagraph = $createParagraphNode();
+        selection.insertNodes([codeNode, trailingParagraph]);
+        // insertNodes leaves the cursor in the trailing paragraph.
+        codeNode.selectStart();
         selection = $getSelection();
         if ($isRangeSelection(selection)) {
           selection.insertRawText(textContent);
+        }
+        // Drop the trailing paragraph if the merge step didn't fill it.
+        if (trailingParagraph.isAttached() && trailingParagraph.isEmpty()) {
+          trailingParagraph.remove();
         }
       }
     });

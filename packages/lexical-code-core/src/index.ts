@@ -12,6 +12,11 @@ export {
   $isCodeHighlightNode,
   CodeHighlightNode,
 } from './CodeHighlightNode';
+export {
+  type CodeIndentConfig,
+  CodeIndentExtension,
+  registerCodeIndentation,
+} from './CodeIndentation';
 export type {SerializedCodeNode} from './CodeNode';
 export {
   $createCodeNode,
@@ -26,4 +31,5 @@ export {
   $getFirstCodeNodeOfLine,
   $getLastCodeNodeOfLine,
   $getStartOfCodeInLine,
+  $outdentLeadingSpaces,
 } from './FlatStructureUtils';

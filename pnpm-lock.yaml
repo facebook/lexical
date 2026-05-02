@@ -13,6 +13,7 @@ overrides:
   uuid: '>=14.0.0'
   onnxruntime-node: link:./stubs/empty
   sharp: link:./stubs/empty
+  yjs: ^13.6.30
 
 importers:
 
@@ -22,8 +23,8 @@ importers:
         specifier: ^7.7.4
         version: 7.7.4
       yjs:
-        specifier: ^13.6.27
-        version: 13.6.27
+        specifier: ^13.6.30
+        version: 13.6.30
     devDependencies:
       '@babel/core':
         specifier: ^7.29.0
@@ -98,8 +99,8 @@ importers:
         specifier: ^11.0.4
         version: 11.0.4
       '@types/jsdom':
-        specifier: ^21.1.6
-        version: 21.1.6
+        specifier: ^28.0.1
+        version: 28.0.1
       '@types/katex':
         specifier: ^0.16.7
         version: 0.16.7
@@ -264,7 +265,7 @@ importers:
         version: 4.1.5(@opentelemetry/api@1.9.0)(@types/node@25.6.0)(happy-dom@20.9.0)(jsdom@29.1.1)(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.46.2)(yaml@2.8.4))
       y-websocket:
         specifier: ^2.1.0
-        version: 2.1.0(yjs@13.6.27)
+        version: 2.1.0(yjs@13.6.30)
 
   packages/lexical: {}
 
@@ -725,8 +726,8 @@ importers:
         specifier: 19.2.5
         version: 19.2.5
       react-day-picker:
-        specifier: ^9.7.0
-        version: 9.12.0(react@19.2.5)
+        specifier: ^9.14.0
+        version: 9.14.0(react@19.2.5)
       react-dom:
         specifier: 19.2.5
         version: 19.2.5(react@19.2.5)
@@ -735,10 +736,10 @@ importers:
         version: 6.0.0(react@19.2.5)
       y-websocket:
         specifier: ^2.1.0
-        version: 2.1.0(yjs@13.6.27)
+        version: 2.1.0(yjs@13.6.30)
       yjs:
-        specifier: '>=13.5.42'
-        version: 13.6.27
+        specifier: ^13.6.30
+        version: 13.6.30
     devDependencies:
       '@babel/plugin-transform-flow-strip-types':
         specifier: ^7.27.1
@@ -840,8 +841,8 @@ importers:
         specifier: ^6.0.0
         version: 6.0.0(react@19.2.5)
       yjs:
-        specifier: '>=13.5.22'
-        version: 13.6.27
+        specifier: ^13.6.30
+        version: 13.6.30
     devDependencies:
       '@types/jest-axe':
         specifier: ^3.5.9
@@ -1073,9 +1074,10 @@ importers:
       lexical:
         specifier: workspace:*
         version: link:../lexical
+    devDependencies:
       yjs:
-        specifier: '>=13.5.22'
-        version: 13.6.27
+        specifier: ^13.6.30
+        version: 13.6.30
 
   packages/shared:
     dependencies:
@@ -4576,6 +4578,10 @@ packages:
     resolution: {integrity: sha512-+PmQX0PiAYPMeVYe237LJAYvOMYW1j2rH5YROyS3b4CTVJum34HfRvKvAzozHAQG0TnHNdUfY9nCeUyRAs//cw==}
     engines: {node: '>=14.16'}
 
+  '@tabby_ai/hijri-converter@1.0.5':
+    resolution: {integrity: sha512-r5bClKrcIusDoo049dSL8CawnHR6mRdDwhlQuIgZRNty68q0x8k3Lf1BtPAMxRf/GgnHBnIO4ujd3+GQdLWzxQ==}
+    engines: {node: '>=16.0.0'}
+
   '@tailwindcss/cli@4.2.4':
     resolution: {integrity: sha512-e87GGhuXxnyQPyA0TS8an/3wNpj+OUmx8u0F4BicYr48TF72032AIu5917rRYaWm7HorXi3GSZ/uG+ohqP6AKA==}
     hasBin: true
@@ -4913,8 +4919,8 @@ packages:
   '@types/jest@29.5.12':
     resolution: {integrity: sha512-eDC8bTvT/QhYdxJAulQikueigY5AsdBRH2yDKW3yveW7svY3+DzN84/2NUgkw10RTiJbWqZrTtoGVdYlvFJdLw==}
 
-  '@types/jsdom@21.1.6':
-    resolution: {integrity: sha512-/7kkMsC+/kMs7gAYmmBR9P0vGTnOoLhQhyhQJSlXGI5bzTHp6xdo0TtKWQAsz6pmSAeVqKSbqeyP6hytqr9FDw==}
+  '@types/jsdom@28.0.1':
+    resolution: {integrity: sha512-GJq2QE4TAZ5ajSoCasn5DOFm8u1mI3tIFvM5tIq3W5U/RTB6gsHwc6Yhpl91X9VSDOUVblgXmG+2+sSvFQrdlw==}
 
   '@types/json-schema@7.0.15':
     resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
@@ -5036,8 +5042,8 @@ packages:
   '@types/stack-utils@2.0.1':
     resolution: {integrity: sha512-Hl219/BT5fLAaz6NDkSuhzasy49dwQS/DSdu4MdggFB8zcXv7vflBI3xp7FEmkmdDkBUI2bPUNeMttp2knYdxw==}
 
-  '@types/tough-cookie@4.0.2':
-    resolution: {integrity: sha512-Q5vtl1W5ue16D+nIaW8JWebSSraJVlK+EthKn7e7UcD4KWsaSJ8BqGPXNaPghgtcn/fhvrN17Tv8ksUsQpiplw==}
+  '@types/tough-cookie@4.0.5':
+    resolution: {integrity: sha512-/Ad8+nIOV7Rl++6f1BdKxFSMgmoqEoYbHRpPcx3JEfv8VRsQe9Z4mCXeJBzxs7mbHY/XOZZuXlRNfhpVPbs6ZA==}
 
   '@types/trusted-types@2.0.7':
     resolution: {integrity: sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw==}
@@ -10567,8 +10573,8 @@ packages:
     peerDependencies:
       react: 19.2.5
 
-  react-day-picker@9.12.0:
-    resolution: {integrity: sha512-t8OvG/Zrciso5CQJu5b1A7yzEmebvST+S3pOVQJWxwjjVngyG/CA2htN/D15dLI4uTEuLLkbZyS4YYt480FAtA==}
+  react-day-picker@9.14.0:
+    resolution: {integrity: sha512-tBaoDWjPwe0M5pGrum4H0SR6Lyk+BO9oHnp9JbKpGKW2mlraNPgP9BMfsg5pWpwrssARmeqk7YBl2oXutZTaHA==}
     engines: {node: '>=18'}
     peerDependencies:
       react: 19.2.5
@@ -11859,6 +11865,9 @@ packages:
   undici-types@7.19.2:
     resolution: {integrity: sha512-qYVnV5OEm2AW8cJMCpdV20CDyaN3g0AjDlOGf1OW4iaDEx8MwdtChUp4zu4H0VP3nDRF/8RKWH+IPp9uW0YGZg==}
 
+  undici-types@7.25.0:
+    resolution: {integrity: sha512-AXNgS1Byr27fTI+2bsPEkV9CxkT8H6xNyRI68b3TatlZo3RkzlqQBLL+w7SmGPVpokjHbcuNVQUWE7FRTg+LRA==}
+
   undici@7.25.0:
     resolution: {integrity: sha512-xXnp4kTyor2Zq+J1FfPI6Eq3ew5h6Vl0F/8d9XU5zZQf1tX9s2Su1/3PiMmUANFULpmksxkClamIZcaUqryHsQ==}
     engines: {node: '>=20.18.1'}
@@ -12549,20 +12558,20 @@ packages:
   y-leveldb@0.1.2:
     resolution: {integrity: sha512-6ulEn5AXfXJYi89rXPEg2mMHAyyw8+ZfeMMdOtBbV8FJpQ1NOrcgi6DTAcXof0dap84NjHPT2+9d0rb6cFsjEg==}
     peerDependencies:
-      yjs: ^13.0.0
+      yjs: ^13.6.30
 
   y-protocols@1.0.7:
     resolution: {integrity: sha512-YSVsLoXxO67J6eE/nV4AtFtT3QEotZf5sK5BHxFBXso7VDUT3Tx07IfA6hsu5Q5OmBdMkQVmFZ9QOA7fikWvnw==}
     engines: {node: '>=16.0.0', npm: '>=8.0.0'}
     peerDependencies:
-      yjs: ^13.0.0
+      yjs: ^13.6.30
 
   y-websocket@2.1.0:
     resolution: {integrity: sha512-WHYDRqomaGkkaujtowCDwL8KYk+t1zQCGIgKyvxvchhjTQlMgWXRHJK+FDEcWmHA7I7o/4fy0eniOrtmz0e4mA==}
     engines: {node: '>=16.0.0', npm: '>=8.0.0'}
     hasBin: true
     peerDependencies:
-      yjs: ^13.5.6
+      yjs: ^13.6.30
 
   y18n@4.0.3:
     resolution: {integrity: sha512-JKhqTOwSrqNA1NY5lSztJ1GrBiUodLMmIZuLiDaMRJ+itFd+ABVE8XBjOvIWL+rSqNDC74LCSFmlb/U4UZ4hJQ==}
@@ -12604,8 +12613,8 @@ packages:
     resolution: {integrity: sha512-7dSzzRQ++CKnNI/krKnYRV7JKKPUXMEh61soaHKg9mrWEhzFWhFnxPxGl+69cD1Ou63C13NUPCnmIcrvqCuM6w==}
     engines: {node: '>=12'}
 
-  yjs@13.6.27:
-    resolution: {integrity: sha512-OIDwaflOaq4wC6YlPBy2L6ceKeKuF7DeTxx+jPzv1FHn9tCZ0ZwSRnUBxD05E3yed46fv/FWJbvR+Ud7x0L7zw==}
+  yjs@13.6.30:
+    resolution: {integrity: sha512-vv/9h42eCMC81ZHDFswuu/MKzkl/vyq1BhaNGfHyOonwlG4CJbQF4oiBBJPvfdeCt/PlVDWh7Nov9D34YY09uQ==}
     engines: {node: '>=16.0.0', npm: '>=8.0.0'}
 
   yn@3.1.1:
@@ -17220,6 +17229,8 @@ snapshots:
     dependencies:
       defer-to-connect: 2.0.1
 
+  '@tabby_ai/hijri-converter@1.0.5': {}
+
   '@tailwindcss/cli@4.2.4':
     dependencies:
       '@parcel/watcher': 2.5.6
@@ -17603,11 +17614,12 @@ snapshots:
       expect: 29.7.0
       pretty-format: 29.7.0
 
-  '@types/jsdom@21.1.6':
+  '@types/jsdom@28.0.1':
     dependencies:
       '@types/node': 25.6.0
-      '@types/tough-cookie': 4.0.2
+      '@types/tough-cookie': 4.0.5
       parse5: 7.3.0
+      undici-types: 7.25.0
 
   '@types/json-schema@7.0.15': {}
 
@@ -17743,7 +17755,7 @@ snapshots:
 
   '@types/stack-utils@2.0.1': {}
 
-  '@types/tough-cookie@4.0.2': {}
+  '@types/tough-cookie@4.0.5': {}
 
   '@types/trusted-types@2.0.7': {}
 
@@ -24286,9 +24298,10 @@ snapshots:
       '@babel/runtime': 7.29.2
       react: 19.2.5
 
-  react-day-picker@9.12.0(react@19.2.5):
+  react-day-picker@9.14.0(react@19.2.5):
     dependencies:
       '@date-fns/tz': 1.4.1
+      '@tabby_ai/hijri-converter': 1.0.5
       date-fns: 4.1.0
       date-fns-jalali: 4.1.0-0
       react: 19.2.5
@@ -25826,6 +25839,8 @@ snapshots:
 
   undici-types@7.19.2: {}
 
+  undici-types@7.25.0: {}
+
   undici@7.25.0: {}
 
   unescape@1.0.1:
@@ -26728,27 +26743,27 @@ snapshots:
 
   xtend@4.0.2: {}
 
-  y-leveldb@0.1.2(yjs@13.6.27):
+  y-leveldb@0.1.2(yjs@13.6.30):
     dependencies:
       level: 6.0.1
       lib0: 0.2.117
-      yjs: 13.6.27
+      yjs: 13.6.30
     optional: true
 
-  y-protocols@1.0.7(yjs@13.6.27):
+  y-protocols@1.0.7(yjs@13.6.30):
     dependencies:
       lib0: 0.2.117
-      yjs: 13.6.27
+      yjs: 13.6.30
 
-  y-websocket@2.1.0(yjs@13.6.27):
+  y-websocket@2.1.0(yjs@13.6.30):
     dependencies:
       lib0: 0.2.117
       lodash.debounce: 4.0.8
-      y-protocols: 1.0.7(yjs@13.6.27)
-      yjs: 13.6.27
+      y-protocols: 1.0.7(yjs@13.6.30)
+      yjs: 13.6.30
     optionalDependencies:
       ws: 6.2.3
-      y-leveldb: 0.1.2(yjs@13.6.27)
+      y-leveldb: 0.1.2(yjs@13.6.30)
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -26796,7 +26811,7 @@ snapshots:
       y18n: 5.0.8
       yargs-parser: 21.1.1
 
-  yjs@13.6.27:
+  yjs@13.6.30:
     dependencies:
       lib0: 0.2.117
 

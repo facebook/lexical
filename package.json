@@ -209,7 +209,8 @@
       "yaml@^1": "^1.10.3",
       "uuid": ">=14.0.0",
       "onnxruntime-node": "link:./stubs/empty",
-      "sharp": "link:./stubs/empty"
+      "sharp": "link:./stubs/empty",
+      "yjs": "$yjs"
     }
   }
 }

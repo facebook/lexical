@@ -41,7 +41,7 @@
     "react-dom": "^19.2.5",
     "react-error-boundary": "^6.0.0",
     "y-websocket": "^2.1.0",
-    "yjs": ">=13.6.30"
+    "yjs": "^13.6.30"
   },
   "devDependencies": {
     "@babel/plugin-transform-flow-strip-types": "^7.27.1",

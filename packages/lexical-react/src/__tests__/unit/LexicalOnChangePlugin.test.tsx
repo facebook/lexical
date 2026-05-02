@@ -142,4 +142,88 @@ describe('OnChangePlugin tests', () => {
 
     expect(onChange).toHaveBeenCalledTimes(1);
   });
+
+  it('calls onChange when editor returns to the initial state after a real change (HistoryPlugin undo scenario)', async () => {
+    const onChange = vi.fn();
+    let capturedEditor: LexicalEditor;
+
+    function GrabEditor() {
+      [capturedEditor] = useLexicalComposerContext();
+      return null;
+    }
+
+    function App() {
+      return (
+        <LexicalComposer
+          initialConfig={{
+            editorState: ed => {
+              ed.update(() => {
+                const p = $createParagraphNode();
+                p.append($createTextNode('hello world'));
+                $getRoot().append(p);
+              });
+            },
+            namespace: '',
+            nodes: [],
+            onError: err => {
+              throw err;
+            },
+          }}>
+          <GrabEditor />
+          <SimulateFocusUpdatePlugin />
+          <OnChangePlugin onChange={onChange} />
+        </LexicalComposer>
+      );
+    }
+
+    await ReactTestUtils.act(async () => {
+      reactRoot.render(<App />);
+    });
+
+    // Capture the initial state AFTER mount (after SimulateFocusUpdatePlugin ran)
+    const initialEditorState = capturedEditor!.getEditorState();
+    expect(onChange).not.toHaveBeenCalled();
+
+    // Make a real user change so hasSeenFirstChangeRef flips to true
+    await ReactTestUtils.act(async () => {
+      capturedEditor!.update(() => {
+        const root = $getRoot();
+        const paragraph = root.getFirstChild();
+        if ($isParagraphNode(paragraph)) {
+          const textNode = paragraph.getFirstChild();
+          if ($isTextNode(textNode)) {
+            textNode.toggleFormat('bold');
+          }
+        }
+      });
+    });
+
+    expect(onChange).toHaveBeenCalledTimes(1);
+
+    // Simulate HistoryPlugin restoring to the initial state
+    // (e.g., undo all the way back to the state at mount time)
+    await ReactTestUtils.act(async () => {
+      capturedEditor!.setEditorState(initialEditorState);
+    });
+
+    expect(onChange).toHaveBeenCalledTimes(2);
+
+    // Simulate a user action from the restored initial state.
+    // Without the hasSeenFirstChangeRef guard, this would be incorrectly suppressed
+    // because prevEditorState === initialPrevEditorStateRef.current.
+    await ReactTestUtils.act(async () => {
+      capturedEditor!.update(() => {
+        const root = $getRoot();
+        const paragraph = root.getFirstChild();
+        if ($isParagraphNode(paragraph)) {
+          const textNode = paragraph.getFirstChild();
+          if ($isTextNode(textNode)) {
+            textNode.toggleFormat('italic');
+          }
+        }
+      });
+    });
+
+    expect(onChange).toHaveBeenCalledTimes(3);
+  });
 });

@@ -28,6 +28,7 @@ export function OnChangePlugin({
 }): null {
   const [editor] = useLexicalComposerContext();
   const initialPrevEditorStateRef = useRef<EditorState | null>(null);
+  const hasSeenFirstChangeRef = useRef(false);
 
   useLayoutEffect(() => {
     if (onChange) {
@@ -40,11 +41,13 @@ export function OnChangePlugin({
               dirtyLeaves.size === 0) ||
             (ignoreHistoryMergeTagChange && tags.has(HISTORY_MERGE_TAG)) ||
             prevEditorState.isEmpty() ||
-            prevEditorState === initialPrevEditorStateRef.current
+            (!hasSeenFirstChangeRef.current &&
+              prevEditorState === initialPrevEditorStateRef.current)
           ) {
             return;
           }
 
+          hasSeenFirstChangeRef.current = true;
           onChange(editorState, editor, tags);
         },
       );

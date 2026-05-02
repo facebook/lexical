@@ -173,18 +173,15 @@ export function createRectsFromDOMRange(
 }
 
 /**
- * Creates an object containing all the styles and their values provided in the CSS string.
- * @param css - The CSS string of styles and their values.
- * @returns The styleObject containing all the styles and their values.
+ * @deprecated Use {@link getStyleObjectFromCSS}, this is just an alias for backwards compatibility.
  */
-export function getStyleObjectFromRawCSS(css: string): Record<string, string> {
-  return getStyleObjectFromCSS(css);
-}
+export const getStyleObjectFromRawCSS = getStyleObjectFromCSS;
 
 /**
- * Given a CSS string, returns the parsed style object.
- * @param css - The CSS property as a string.
- * @returns The value of the given CSS property.
+ * Serializes a style object into a CSS declaration string, the inverse of
+ * {@link getStyleObjectFromCSS}.
+ * @param styles - An object mapping CSS property names to their values.
+ * @returns A CSS string of the form `prop: value;` for each entry, concatenated together.
  */
 export function getCSSFromStyleObject(styles: Record<string, string>): string {
   let css = '';

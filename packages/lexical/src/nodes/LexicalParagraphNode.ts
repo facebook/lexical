@@ -169,10 +169,8 @@ export class ParagraphNode extends ElementNode {
 
 function $convertParagraphElement(element: HTMLElement): DOMConversionOutput {
   const node = $createParagraphNode();
-  if (element.style) {
-    $setFormatFromDOM(node, element);
-    setNodeIndentFromDOM(element, node);
-  }
+  $setFormatFromDOM(node, element);
+  setNodeIndentFromDOM(element, node);
 
   // Check legacy 'align' attribute
   // Only use this if no format was set by CSS

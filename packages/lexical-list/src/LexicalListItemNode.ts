@@ -642,9 +642,7 @@ function $convertListItemElement(domNode: HTMLElement): DOMConversionOutput {
         : undefined;
 
   const node = $createListItemNode(checked);
-  if (domNode.style !== null) {
-    $setFormatFromDOM(node, domNode);
-  }
+  $setFormatFromDOM(node, domNode);
 
   return {
     after: setFormatFromChildren.bind(null, node),

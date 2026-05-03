@@ -46,6 +46,7 @@ import {
   $isTextNode,
   DecoratorNode,
   DEFAULT_EDITOR_DOM_CONFIG,
+  ElementFormatType,
   ElementNode,
   HISTORY_MERGE_TAG,
   LineBreakNode,
@@ -59,6 +60,7 @@ import {
   DOM_DOCUMENT_TYPE,
   DOM_ELEMENT_TYPE,
   DOM_TEXT_TYPE,
+  ELEMENT_TYPE_TO_FORMAT,
   HAS_DIRTY_NODES,
   LTR_REGEX,
   PROTOTYPE_CONFIG_METHOD,
@@ -2093,6 +2095,27 @@ export function $setDirectionFromDOM<T extends ElementNode>(
 ): T {
   const dir = domNode.getAttribute('dir');
   return dir === 'ltr' || dir === 'rtl' ? node.setDirection(dir) : node;
+}
+
+/**
+ * Reads the `style` and CSS `textAlign` property from a DOM element
+ * and set format to the given ElementNode via {@link ElementNode.setFormat}
+ * when it is a valid alignment value {@link ElementFormatType}
+ * Other values, including missing or empty, leave the node unchanged.
+ * Useful inside `importDOM` converters to preserve explicit alignment from imported HTML.
+ *
+ * @param node - The ElementNode to update.
+ * @param domNode - The source HTMLElement whose `style` property is read.
+ * @returns The node, with its align format set when the source `style.textAlign` was valid.
+ */
+export function $setFormatFromDOM<T extends ElementNode>(
+  node: T,
+  domNode: HTMLElement,
+): T {
+  const alignment = domNode.style.textAlign;
+  return alignment && alignment in ELEMENT_TYPE_TO_FORMAT
+    ? node.setFormat(alignment as ElementFormatType)
+    : node;
 }
 
 /**

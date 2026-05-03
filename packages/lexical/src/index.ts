@@ -277,6 +277,7 @@ export {
   $selectAll,
   $setCompositionKey,
   $setDirectionFromDOM,
+  $setFormatFromDOM,
   $setSelection,
   $splitNode,
   getDOMOwnerDocument,

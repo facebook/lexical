@@ -13,6 +13,7 @@ import type {
   DOMExportOutput,
   EditorConfig,
   EditorThemeClasses,
+  ElementFormatType,
   LexicalNode,
   LexicalUpdateJSON,
   NodeKey,
@@ -639,7 +640,12 @@ function $convertListItemElement(domNode: HTMLElement): DOMConversionOutput {
       : ariaCheckedAttr === 'false'
         ? false
         : undefined;
-  return {node: $setDirectionFromDOM($createListItemNode(checked), domNode)};
+
+  const node = $createListItemNode(checked);
+  if (domNode.style !== null) {
+    node.setFormat(domNode.style.textAlign as ElementFormatType);
+  }
+  return {node: $setDirectionFromDOM(node, domNode)};
 }
 
 function $convertCheckboxInput(domNode: Element): DOMConversionOutput {

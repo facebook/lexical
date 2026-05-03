@@ -18,6 +18,9 @@
     "@lexical/selection": "workspace:*",
     "lexical": "workspace:*"
   },
+  "devDependencies": {
+    "yjs": "^13.6.30"
+  },
   "peerDependencies": {
     "yjs": ">=13.5.22"
   },

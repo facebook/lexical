@@ -334,6 +334,7 @@ export function LexicalMenu<TOption extends MenuOption>({
 
   useEffect(() => {
     if (preselectFirstItem) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setHighlightedIndex(0);
     }
   }, [matchingString, preselectFirstItem]);

@@ -104,10 +104,17 @@ export const ToolbarStateExtension = defineExtension({
         // never fires. Read the editor-state signal as a change
         // trigger — every editor update is when the stacks may have
         // changed.
+        //
+        // TODO: a future version of @lexical/history is expected to
+        // expose `canUndo` / `canRedo` signals directly from
+        // HistoryExtension, at which point this trigger and the
+        // historyState read here can be replaced with a direct
+        // dependency on those signals.
         void editorState.value;
         return historyState.value.redoStack.length > 0;
       }),
       canUndo: computed(() => {
+        // See the comment on `canRedo` above.
         void editorState.value;
         return historyState.value.undoStack.length > 0;
       }),

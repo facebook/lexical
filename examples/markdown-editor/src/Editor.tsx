@@ -6,16 +6,15 @@
  *
  */
 
-import {$convertFromMarkdownString} from '@lexical/markdown';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
-import {defineExtension} from 'lexical';
-import {useCallback} from 'react';
+import {configExtension, defineExtension} from 'lexical';
 
 import {
-  MARKDOWN_TRANSFORMERS,
-  MarkdownExtension,
-} from './extensions/MarkdownExtension';
+  MarkdownPersistenceExtension,
+  RESET_MARKDOWN_COMMAND,
+} from './extensions/MarkdownPersistenceExtension';
 import {MarkdownPreviewPlugin} from './plugins/MarkdownPreviewPlugin';
 
 const STORAGE_KEY = '@lexical/markdown-editor-example/document';
@@ -80,33 +79,31 @@ const theme = {
   },
 };
 
-function loadInitialMarkdown(): string {
-  if (typeof window === 'undefined') {
-    return DEMO_MARKDOWN;
-  }
-  const stored = window.localStorage.getItem(STORAGE_KEY);
-  return stored ?? DEMO_MARKDOWN;
-}
-
-const initialMarkdown = loadInitialMarkdown();
-
 const markdownEditorExtension = defineExtension({
-  $initialEditorState: () => {
-    $convertFromMarkdownString(initialMarkdown, MARKDOWN_TRANSFORMERS);
-  },
-  dependencies: [MarkdownExtension],
+  dependencies: [
+    configExtension(MarkdownPersistenceExtension, {
+      defaultMarkdown: DEMO_MARKDOWN,
+      storageKey: STORAGE_KEY,
+    }),
+  ],
   name: '@lexical/markdown-editor-example/Editor',
   namespace: '@lexical/markdown-editor-example',
   theme,
 });
 
-export default function Editor() {
-  const handlePreviewChange = useCallback((markdown: string) => {
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem(STORAGE_KEY, markdown);
-    }
-  }, []);
+function ResetButton() {
+  const [editor] = useLexicalComposerContext();
+  return (
+    <button
+      type="button"
+      onClick={() => editor.dispatchCommand(RESET_MARKDOWN_COMMAND, undefined)}
+      className="cursor-pointer rounded-md border border-solid border-transparent bg-transparent px-2 py-0.5 text-[10px] font-medium tracking-wide text-zinc-500 normal-case transition-colors duration-150 hover:bg-zinc-200 dark:text-zinc-400 dark:hover:bg-zinc-700">
+      Reset
+    </button>
+  );
+}
 
+export default function Editor() {
   return (
     <LexicalExtensionComposer
       extension={markdownEditorExtension}
@@ -132,20 +129,10 @@ export default function Editor() {
         <div className="flex min-h-0 flex-col">
           <div className="flex items-center justify-between border-b [border-bottom-style:solid] border-b-black/10 bg-zinc-50 px-4 py-2 text-xs font-semibold tracking-wide text-zinc-500 uppercase dark:border-b-white/10 dark:bg-zinc-800 dark:text-zinc-400">
             <span>Markdown</span>
-            <button
-              type="button"
-              onClick={() => {
-                if (typeof window !== 'undefined') {
-                  window.localStorage.removeItem(STORAGE_KEY);
-                  window.location.reload();
-                }
-              }}
-              className="cursor-pointer rounded-md border border-solid border-transparent bg-transparent px-2 py-0.5 text-[10px] font-medium tracking-wide text-zinc-500 normal-case transition-colors duration-150 hover:bg-zinc-200 dark:text-zinc-400 dark:hover:bg-zinc-700">
-              Reset
-            </button>
+            <ResetButton />
           </div>
           <div className="flex-1 overflow-auto bg-white dark:bg-stone-800">
-            <MarkdownPreviewPlugin onChange={handlePreviewChange} />
+            <MarkdownPreviewPlugin />
           </div>
         </div>
       </div>

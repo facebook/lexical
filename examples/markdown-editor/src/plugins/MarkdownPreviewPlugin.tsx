@@ -7,23 +7,11 @@
  */
 
 import {useExtensionSignalValue} from '@lexical/react/useExtensionSignalValue';
-import {useEffect} from 'react';
 
 import {MarkdownExtension} from '../extensions/MarkdownExtension';
 
-interface MarkdownPreviewPluginProps {
-  onChange?: (markdown: string) => void;
-}
-
-export function MarkdownPreviewPlugin({onChange}: MarkdownPreviewPluginProps) {
+export function MarkdownPreviewPlugin() {
   const markdown = useExtensionSignalValue(MarkdownExtension, 'markdown');
-
-  useEffect(() => {
-    if (onChange) {
-      onChange(markdown);
-    }
-  }, [markdown, onChange]);
-
   return (
     <pre className="m-0 h-full overflow-auto p-4 font-mono text-sm leading-relaxed whitespace-pre-wrap text-zinc-800 dark:text-zinc-200">
       {markdown}

@@ -356,7 +356,11 @@ function createMergeActionGetter(
   };
 }
 
-function redo(editor: LexicalEditor, historyState: HistoryState): void {
+function redo(
+  editor: LexicalEditor,
+  historyState: HistoryState,
+  onChange?: (state: HistoryState) => void,
+): void {
   const redoStack = historyState.redoStack;
   const undoStack = historyState.undoStack;
 
@@ -376,6 +380,10 @@ function redo(editor: LexicalEditor, historyState: HistoryState): void {
 
     historyState.current = historyStateEntry || null;
 
+    if (onChange) {
+      onChange(historyState);
+    }
+
     if (historyStateEntry) {
       historyStateEntry.editor.setEditorState(historyStateEntry.editorState, {
         tag: HISTORIC_TAG,
@@ -384,7 +392,11 @@ function redo(editor: LexicalEditor, historyState: HistoryState): void {
   }
 }
 
-function undo(editor: LexicalEditor, historyState: HistoryState): void {
+function undo(
+  editor: LexicalEditor,
+  historyState: HistoryState,
+  onChange?: (state: HistoryState) => void,
+): void {
   const redoStack = historyState.redoStack;
   const undoStack = historyState.undoStack;
   const undoStackLength = undoStack.length;
@@ -404,6 +416,10 @@ function undo(editor: LexicalEditor, historyState: HistoryState): void {
 
     historyState.current = historyStateEntry || null;
 
+    if (onChange) {
+      onChange(historyState);
+    }
+
     if (historyStateEntry) {
       historyStateEntry.editor.setEditorState(historyStateEntry.editorState, {
         tag: HISTORIC_TAG,
@@ -412,10 +428,16 @@ function undo(editor: LexicalEditor, historyState: HistoryState): void {
   }
 }
 
-function clearHistory(historyState: HistoryState) {
+function clearHistory(
+  historyState: HistoryState,
+  onChange?: (state: HistoryState) => void,
+): void {
   historyState.undoStack = [];
   historyState.redoStack = [];
   historyState.current = null;
+  if (onChange) {
+    onChange(historyState);
+  }
 }
 
 /**
@@ -511,8 +533,7 @@ export function registerHistory(
     editor.registerCommand(
       UNDO_COMMAND,
       () => {
-        undo(editor, historyState);
-        notifyChange();
+        undo(editor, historyState, onHistoryStateChange);
         return true;
       },
       COMMAND_PRIORITY_EDITOR,
@@ -520,8 +541,7 @@ export function registerHistory(
     editor.registerCommand(
       REDO_COMMAND,
       () => {
-        redo(editor, historyState);
-        notifyChange();
+        redo(editor, historyState, onHistoryStateChange);
         return true;
       },
       COMMAND_PRIORITY_EDITOR,
@@ -529,8 +549,7 @@ export function registerHistory(
     editor.registerCommand(
       CLEAR_EDITOR_COMMAND,
       () => {
-        clearHistory(historyState);
-        notifyChange();
+        clearHistory(historyState, onHistoryStateChange);
         return false;
       },
       COMMAND_PRIORITY_EDITOR,
@@ -538,10 +557,9 @@ export function registerHistory(
     editor.registerCommand(
       CLEAR_HISTORY_COMMAND,
       () => {
-        clearHistory(historyState);
+        clearHistory(historyState, onHistoryStateChange);
         editor.dispatchCommand(CAN_REDO_COMMAND, false);
         editor.dispatchCommand(CAN_UNDO_COMMAND, false);
-        notifyChange();
         return true;
       },
       COMMAND_PRIORITY_EDITOR,
@@ -656,22 +674,26 @@ export const HistoryExtension = defineExtension({
     const stores = state.getOutput();
     return effect(() => {
       if (stores.disabled.value) {
-        canUndo.value = false;
-        canRedo.value = false;
+        batch(() => {
+          canUndo.value = false;
+          canRedo.value = false;
+        });
         return undefined;
       }
       // registerHistory invokes our callback on initialization and after every
       // mutation of historyState, so canUndo/canRedo are always derived
-      // directly from the current HistoryState.
+      // directly from the current HistoryState. The batch ensures that
+      // subscribers to both signals are only notified once per change.
       return registerHistory(
         editor,
         stores.historyState.value,
         stores.delay,
         () => stores.now.peek()(),
-        historyState => {
-          canUndo.value = historyState.undoStack.length > 0;
-          canRedo.value = historyState.redoStack.length > 0;
-        },
+        historyState =>
+          batch(() => {
+            canUndo.value = historyState.undoStack.length > 0;
+            canRedo.value = historyState.redoStack.length > 0;
+          }),
       );
     });
   },

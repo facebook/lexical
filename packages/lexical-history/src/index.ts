@@ -10,11 +10,13 @@ import type {EditorState, LexicalEditor, LexicalNode, NodeKey} from 'lexical';
 
 import {
   batch,
+  computed,
   effect,
   getPeerDependencyFromEditor,
   namedSignals,
   ReadonlySignal,
   Signal,
+  signal,
 } from '@lexical/extension';
 import {mergeRegister} from '@lexical/utils';
 import {
@@ -558,33 +560,63 @@ export interface HistoryConfig {
   now: () => number;
 }
 
-type HistoryExtensionOutput = {
-  canRedo: ReadonlySignal<boolean>;
+/** Internal writable signals created during the init phase. */
+interface HistoryExtensionInit {
+  canRedo: Signal<boolean>;
+  canUndo: Signal<boolean>;
+}
+
+/**
+ * The output signals exposed by {@link HistoryExtension}.
+ *
+ * Config-derived signals (`delay`, `disabled`, `historyState`, `now`) are
+ * writable so that peer extensions such as {@link SharedHistoryExtension} can
+ * redirect them at runtime.  The `canUndo` / `canRedo` signals are
+ * **readonly** for consumers — they are derived from the current
+ * {@link HistoryState} and kept in sync automatically.
+ */
+export interface HistoryExtensionOutput {
+  /**
+   * `true` when there is at least one entry in the undo stack, i.e. the
+   * editor can perform an undo.
+   */
   canUndo: ReadonlySignal<boolean>;
+  /**
+   * `true` when there is at least one entry in the redo stack, i.e. the
+   * editor can perform a redo.
+   */
+  canRedo: ReadonlySignal<boolean>;
+  /** The merge-delay in milliseconds forwarded to {@link registerHistory}. */
   delay: Signal<number>;
+  /** When `true` the history listener is not registered. */
   disabled: Signal<boolean>;
+  /** The active {@link HistoryState} instance. */
   historyState: Signal<HistoryState>;
+  /** The clock function forwarded to {@link registerHistory}. */
   now: Signal<() => number>;
-};
+}
 
 /**
  * Registers necessary listeners to manage undo/redo history stack and related
  * editor commands, via the \@lexical/history module.
  */
-
 export const HistoryExtension = defineExtension({
+  init: (): HistoryExtensionInit => ({
+    canRedo: signal(false),
+    canUndo: signal(false),
+  }),
   build: (
     editor,
     {delay, createInitialHistoryState, disabled, now},
-  ): HistoryExtensionOutput =>
-    namedSignals({
-      canRedo: false,
-      canUndo: false,
-      delay,
-      disabled,
-      historyState: createInitialHistoryState(editor),
-      now,
-    }) as HistoryExtensionOutput,
+    state,
+  ): HistoryExtensionOutput => {
+    const {canUndo, canRedo} = state.getInitResult();
+    return {
+      ...namedSignals({delay, disabled, historyState: createInitialHistoryState(editor), now}),
+      canRedo: computed(() => canRedo.value),
+      canUndo: computed(() => canUndo.value),
+    };
+  },
   config: safeCast<HistoryConfig>({
     createInitialHistoryState: createEmptyHistoryState,
     delay: 300,
@@ -593,14 +625,13 @@ export const HistoryExtension = defineExtension({
   }),
   name: '@lexical/history/History',
   register: (editor, config, state) => {
+    const {canUndo, canRedo} = state.getInitResult();
     const stores = state.getOutput();
-    const canUndoSignal = stores.canUndo as Signal<boolean>;
-    const canRedoSignal = stores.canRedo as Signal<boolean>;
     return mergeRegister(
       effect(() => {
         if (stores.disabled.value) {
-          canUndoSignal.value = false;
-          canRedoSignal.value = false;
+          canUndo.value = false;
+          canRedo.value = false;
           return undefined;
         }
         return registerHistory(
@@ -612,16 +643,16 @@ export const HistoryExtension = defineExtension({
       }),
       editor.registerCommand(
         CAN_UNDO_COMMAND,
-        (canUndo) => {
-          canUndoSignal.value = canUndo;
+        () => {
+          canUndo.value = stores.historyState.peek().undoStack.length > 0;
           return false;
         },
         COMMAND_PRIORITY_EDITOR,
       ),
       editor.registerCommand(
         CAN_REDO_COMMAND,
-        (canRedo) => {
-          canRedoSignal.value = canRedo;
+        () => {
+          canRedo.value = stores.historyState.peek().redoStack.length > 0;
           return false;
         },
         COMMAND_PRIORITY_EDITOR,

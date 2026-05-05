@@ -6,36 +6,23 @@
  *
  */
 
-import {$convertToMarkdownString, type Transformer} from '@lexical/markdown';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {useEffect, useState} from 'react';
+import {useExtensionSignalValue} from '@lexical/react/useExtensionSignalValue';
+import {useEffect} from 'react';
+
+import {MarkdownExtension} from '../extensions/MarkdownExtension';
 
 interface MarkdownPreviewPluginProps {
-  transformers: Array<Transformer>;
   onChange?: (markdown: string) => void;
 }
 
-export function MarkdownPreviewPlugin({
-  transformers,
-  onChange,
-}: MarkdownPreviewPluginProps) {
-  const [editor] = useLexicalComposerContext();
-  const [markdown, setMarkdown] = useState('');
+export function MarkdownPreviewPlugin({onChange}: MarkdownPreviewPluginProps) {
+  const markdown = useExtensionSignalValue(MarkdownExtension, 'markdown');
 
   useEffect(() => {
-    return editor.registerUpdateListener(({editorState}) => {
-      editorState.read(
-        () => {
-          const next = $convertToMarkdownString(transformers);
-          setMarkdown(next);
-          if (onChange) {
-            onChange(next);
-          }
-        },
-        {editor},
-      );
-    });
-  }, [editor, transformers, onChange]);
+    if (onChange) {
+      onChange(markdown);
+    }
+  }, [markdown, onChange]);
 
   return (
     <pre className="m-0 h-full overflow-auto p-4 font-mono text-sm leading-relaxed whitespace-pre-wrap text-zinc-800 dark:text-zinc-200">

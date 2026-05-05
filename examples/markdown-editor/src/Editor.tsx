@@ -10,7 +10,7 @@ import {$convertFromMarkdownString} from '@lexical/markdown';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
 import {defineExtension} from 'lexical';
-import {useCallback, useMemo} from 'react';
+import {useCallback} from 'react';
 
 import {
   MARKDOWN_TRANSFORMERS,
@@ -107,8 +107,6 @@ export default function Editor() {
     }
   }, []);
 
-  const transformers = useMemo(() => MARKDOWN_TRANSFORMERS, []);
-
   return (
     <LexicalExtensionComposer
       extension={markdownEditorExtension}
@@ -147,10 +145,7 @@ export default function Editor() {
             </button>
           </div>
           <div className="flex-1 overflow-auto bg-white dark:bg-stone-800">
-            <MarkdownPreviewPlugin
-              transformers={transformers}
-              onChange={handlePreviewChange}
-            />
+            <MarkdownPreviewPlugin onChange={handlePreviewChange} />
           </div>
         </div>
       </div>

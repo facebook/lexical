@@ -4,6 +4,6 @@ Here we have an example Lexical setup in rich text configuration (`@lexical/rich
 
 This example is used on the page https://lexical.dev/
 
-**Run it locally:** `npm i && npm run dev`
+**Run it locally:** `pnpm i && pnpm run dev`
 
 [![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/facebook/lexical/tree/main/examples/website-rich-input?file=src/main.tsx)

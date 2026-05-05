@@ -28,7 +28,7 @@ import {
   type LexicalEditorWithDispose,
   TextNode,
 } from 'lexical';
-import {afterEach, describe, expect, test} from 'vitest';
+import {describe, expect, test} from 'vitest';
 
 import {
   $convertListItemPrefixToCheckList,
@@ -36,26 +36,15 @@ import {
   MarkdownExtension,
 } from '../../extensions/MarkdownExtension';
 
-let activeEditor: LexicalEditorWithDispose | null = null;
-
 function createTestEditor(): LexicalEditorWithDispose {
-  const editor = buildEditorFromExtensions(
+  return buildEditorFromExtensions(
     defineExtension({
       dependencies: [MarkdownExtension],
       name: 'markdown-editor-test',
       namespace: 'markdown-editor-test',
     }),
   );
-  activeEditor = editor;
-  return editor;
 }
-
-afterEach(() => {
-  if (activeEditor) {
-    activeEditor.dispose();
-    activeEditor = null;
-  }
-});
 
 function importMarkdown(
   editor: LexicalEditorWithDispose,
@@ -75,13 +64,13 @@ function exportMarkdown(editor: LexicalEditorWithDispose): string {
 
 describe('MARKDOWN_TRANSFORMERS', () => {
   test('round-trips a heading', () => {
-    const editor = createTestEditor();
+    using editor = createTestEditor();
     importMarkdown(editor, '# Hello');
     expect(exportMarkdown(editor)).toBe('# Hello');
   });
 
   test('round-trips inline formats', () => {
-    const editor = createTestEditor();
+    using editor = createTestEditor();
     importMarkdown(editor, 'A **bold** and *italic* and `code` line');
     expect(exportMarkdown(editor)).toBe(
       'A **bold** and *italic* and `code` line',
@@ -89,28 +78,28 @@ describe('MARKDOWN_TRANSFORMERS', () => {
   });
 
   test('round-trips an unordered list', () => {
-    const editor = createTestEditor();
+    using editor = createTestEditor();
     const md = '- one\n- two\n- three';
     importMarkdown(editor, md);
     expect(exportMarkdown(editor)).toBe(md);
   });
 
   test('round-trips an ordered list', () => {
-    const editor = createTestEditor();
+    using editor = createTestEditor();
     const md = '1. one\n2. two\n3. three';
     importMarkdown(editor, md);
     expect(exportMarkdown(editor)).toBe(md);
   });
 
   test('round-trips a check list', () => {
-    const editor = createTestEditor();
+    using editor = createTestEditor();
     const md = '- [ ] todo\n- [x] done';
     importMarkdown(editor, md);
     expect(exportMarkdown(editor)).toBe(md);
   });
 
   test('CHECK_LIST is matched before UNORDERED_LIST on import', () => {
-    const editor = createTestEditor();
+    using editor = createTestEditor();
     importMarkdown(editor, '- [x] done');
     editor.read(() => {
       const list = $getRoot().getFirstChild();
@@ -128,7 +117,7 @@ describe('$convertListItemPrefixToCheckList', () => {
     text: string,
     fn: (editor: LexicalEditorWithDispose) => void,
   ): void {
-    const editor = createTestEditor();
+    using editor = createTestEditor();
     editor.update(
       () => {
         const list = $createListNode('bullet');
@@ -161,7 +150,7 @@ describe('$convertListItemPrefixToCheckList', () => {
   });
 
   test('the function is a no-op when called on an already-stripped item', () => {
-    const editor = createTestEditor();
+    using editor = createTestEditor();
     let itemKey = '';
     editor.update(
       () => {
@@ -187,7 +176,7 @@ describe('$convertListItemPrefixToCheckList', () => {
   });
 
   test('mutating a list item text into `[x] foo` triggers the transform', () => {
-    const editor = createTestEditor();
+    using editor = createTestEditor();
     let textKey = '';
     editor.update(
       () => {
@@ -214,7 +203,7 @@ describe('$convertListItemPrefixToCheckList', () => {
 
 describe('MarkdownExtension markdown signal', () => {
   test('updates as the editor state changes', () => {
-    const editor = createTestEditor();
+    using editor = createTestEditor();
     const {markdown} = getExtensionDependencyFromEditor(
       editor,
       MarkdownExtension,

@@ -20,8 +20,9 @@ import {
   defineExtension,
   FORMAT_TEXT_COMMAND,
   type LexicalEditorWithDispose,
+  type LexicalNode,
 } from 'lexical';
-import {afterEach, describe, expect, test} from 'vitest';
+import {describe, expect, test} from 'vitest';
 
 import {
   MARKDOWN_TRANSFORMERS,
@@ -29,34 +30,33 @@ import {
 } from '../../extensions/MarkdownExtension';
 import {ToolbarStateExtension} from '../../extensions/ToolbarStateExtension';
 
-let activeEditor: LexicalEditorWithDispose | null = null;
-
 function createTestEditor(): LexicalEditorWithDispose {
-  const editor = buildEditorFromExtensions(
+  return buildEditorFromExtensions(
     defineExtension({
       dependencies: [MarkdownExtension, ToolbarStateExtension],
       name: 'toolbar-state-test',
       namespace: 'toolbar-state-test',
     }),
   );
-  activeEditor = editor;
-  return editor;
 }
 
 function getOutputs(editor: LexicalEditorWithDispose) {
   return getExtensionDependencyFromEditor(editor, ToolbarStateExtension).output;
 }
 
-afterEach(() => {
-  if (activeEditor) {
-    activeEditor.dispose();
-    activeEditor = null;
+function $selectFirstLeaf(): void {
+  let leaf: LexicalNode | null = $getRoot().getFirstChild();
+  while (leaf !== null && $isElementNode(leaf)) {
+    leaf = leaf.getFirstChild();
   }
-});
+  if (leaf !== null) {
+    leaf.selectStart();
+  }
+}
 
 describe('ToolbarStateExtension', () => {
   test('canUndo / canRedo reflect command broadcasts', () => {
-    const editor = createTestEditor();
+    using editor = createTestEditor();
     const {canUndo, canRedo} = getOutputs(editor);
     expect(canUndo.value).toBe(false);
     expect(canRedo.value).toBe(false);
@@ -68,18 +68,8 @@ describe('ToolbarStateExtension', () => {
     expect(canUndo.value).toBe(false);
   });
 
-  function $selectFirstLeaf(): void {
-    let leaf: import('lexical').LexicalNode | null = $getRoot().getFirstChild();
-    while (leaf !== null && $isElementNode(leaf)) {
-      leaf = leaf.getFirstChild();
-    }
-    if (leaf !== null) {
-      leaf.selectStart();
-    }
-  }
-
   test('blockType reflects the current top-level block', () => {
-    const editor = createTestEditor();
+    using editor = createTestEditor();
     const {blockType} = getOutputs(editor);
     const dispose = blockType.subscribe(() => {});
     try {
@@ -113,7 +103,7 @@ describe('ToolbarStateExtension', () => {
   });
 
   test('isBold / isItalic / isCode start false and follow FORMAT_TEXT_COMMAND', () => {
-    const editor = createTestEditor();
+    using editor = createTestEditor();
     const {isBold, isItalic, isCode} = getOutputs(editor);
     // Hold subscriptions so the computed signals stay watched and
     // pick up editor state updates eagerly.

@@ -6,14 +6,14 @@
  *
  */
 
-import {effect} from '@lexical/extension';
+import {effect, getExtensionDependencyFromEditor} from '@lexical/extension';
 import {$convertFromMarkdownString} from '@lexical/markdown';
 import {mergeRegister} from '@lexical/utils';
 import {
   COMMAND_PRIORITY_EDITOR,
   createCommand,
   defineExtension,
-  HISTORY_MERGE_TAG,
+  type LexicalEditor,
   safeCast,
 } from 'lexical';
 
@@ -35,17 +35,43 @@ export const RESET_MARKDOWN_COMMAND = createCommand<void>(
   'RESET_MARKDOWN_COMMAND',
 );
 
+function readStoredMarkdown(storageKey: string): string | null {
+  if (typeof window === 'undefined' || storageKey === '') {
+    return null;
+  }
+  return window.localStorage.getItem(storageKey);
+}
+
+function $loadMarkdown(editor: LexicalEditor): void {
+  const persistence = getExtensionDependencyFromEditor(
+    editor,
+    MarkdownPersistenceExtension,
+  ).config;
+  const {transformers} = getExtensionDependencyFromEditor(
+    editor,
+    MarkdownExtension,
+  ).config;
+  const stored = readStoredMarkdown(persistence.storageKey);
+  $convertFromMarkdownString(
+    stored ?? persistence.defaultMarkdown,
+    transformers,
+  );
+}
+
 /**
  * Owns the localStorage <-> editor markdown sync:
  *
- * - On registration, seeds the editor from `localStorage[storageKey]`
- *   (falling back to `defaultMarkdown`).
+ * - Provides the editor's `$initialEditorState` so the document is
+ *   seeded from `localStorage[storageKey]` (falling back to
+ *   `defaultMarkdown`) without needing a bootstrap update in
+ *   `register`.
  * - Persists the markdown output signal back to localStorage on every
  *   change.
  * - Registers {@link RESET_MARKDOWN_COMMAND} which clears the storage
  *   entry and re-imports the default markdown.
  */
 export const MarkdownPersistenceExtension = defineExtension({
+  $initialEditorState: $loadMarkdown,
   config: safeCast<MarkdownPersistenceConfig>({
     defaultMarkdown: '',
     storageKey: '',
@@ -53,46 +79,35 @@ export const MarkdownPersistenceExtension = defineExtension({
   dependencies: [MarkdownExtension],
   name: '@lexical/markdown-editor-example/MarkdownPersistence',
   register(editor, {storageKey, defaultMarkdown}, state) {
-    const markdownDep = state.getDependency(MarkdownExtension);
-    const {markdown} = markdownDep.output;
-    const {transformers} = markdownDep.config;
+    const {markdown} = state.getDependency(MarkdownExtension).output;
+    const {transformers} = state.getDependency(MarkdownExtension).config;
     const hasStorage = typeof window !== 'undefined' && storageKey !== '';
 
-    const stored = hasStorage ? window.localStorage.getItem(storageKey) : null;
-    const initialMarkdown = stored ?? defaultMarkdown;
-    editor.update(
-      () => {
-        $convertFromMarkdownString(initialMarkdown, transformers);
-      },
-      {tag: HISTORY_MERGE_TAG},
-    );
-
     let initial = true;
-    const disposeEffect = effect(() => {
-      const value = markdown.value;
-      if (initial) {
-        initial = false;
-        return;
-      }
-      if (hasStorage) {
-        window.localStorage.setItem(storageKey, value);
-      }
-    });
-
-    const disposeReset = editor.registerCommand(
-      RESET_MARKDOWN_COMMAND,
-      () => {
-        if (hasStorage) {
-          window.localStorage.removeItem(storageKey);
+    return mergeRegister(
+      effect(() => {
+        const value = markdown.value;
+        if (initial) {
+          initial = false;
+          return;
         }
-        editor.update(() => {
-          $convertFromMarkdownString(defaultMarkdown, transformers);
-        });
-        return true;
-      },
-      COMMAND_PRIORITY_EDITOR,
+        if (hasStorage) {
+          window.localStorage.setItem(storageKey, value);
+        }
+      }),
+      editor.registerCommand(
+        RESET_MARKDOWN_COMMAND,
+        () => {
+          if (hasStorage) {
+            window.localStorage.removeItem(storageKey);
+          }
+          editor.update(() =>
+            $convertFromMarkdownString(defaultMarkdown, transformers),
+          );
+          return true;
+        },
+        COMMAND_PRIORITY_EDITOR,
+      ),
     );
-
-    return mergeRegister(disposeEffect, disposeReset);
   },
 });

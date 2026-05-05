@@ -14,6 +14,7 @@ import {
   getPeerDependencyFromEditor,
   namedSignals,
   ReadonlySignal,
+  Signal,
 } from '@lexical/extension';
 import {mergeRegister} from '@lexical/utils';
 import {
@@ -557,19 +558,33 @@ export interface HistoryConfig {
   now: () => number;
 }
 
+type HistoryExtensionOutput = {
+  canRedo: ReadonlySignal<boolean>;
+  canUndo: ReadonlySignal<boolean>;
+  delay: Signal<number>;
+  disabled: Signal<boolean>;
+  historyState: Signal<HistoryState>;
+  now: Signal<() => number>;
+};
+
 /**
  * Registers necessary listeners to manage undo/redo history stack and related
  * editor commands, via the \@lexical/history module.
  */
 
 export const HistoryExtension = defineExtension({
-  build: (editor, {delay, createInitialHistoryState, disabled, now}) =>
+  build: (
+    editor,
+    {delay, createInitialHistoryState, disabled, now},
+  ): HistoryExtensionOutput =>
     namedSignals({
+      canRedo: false,
+      canUndo: false,
       delay,
       disabled,
       historyState: createInitialHistoryState(editor),
       now,
-    }),
+    }) as HistoryExtensionOutput,
   config: safeCast<HistoryConfig>({
     createInitialHistoryState: createEmptyHistoryState,
     delay: 300,
@@ -579,12 +594,38 @@ export const HistoryExtension = defineExtension({
   name: '@lexical/history/History',
   register: (editor, config, state) => {
     const stores = state.getOutput();
-    return effect(() =>
-      stores.disabled.value
-        ? undefined
-        : registerHistory(editor, stores.historyState.value, stores.delay, () =>
-            stores.now.peek()(),
-          ),
+    const canUndoSignal = stores.canUndo as Signal<boolean>;
+    const canRedoSignal = stores.canRedo as Signal<boolean>;
+    return mergeRegister(
+      effect(() => {
+        if (stores.disabled.value) {
+          canUndoSignal.value = false;
+          canRedoSignal.value = false;
+          return undefined;
+        }
+        return registerHistory(
+          editor,
+          stores.historyState.value,
+          stores.delay,
+          () => stores.now.peek()(),
+        );
+      }),
+      editor.registerCommand(
+        CAN_UNDO_COMMAND,
+        (canUndo) => {
+          canUndoSignal.value = canUndo;
+          return false;
+        },
+        COMMAND_PRIORITY_EDITOR,
+      ),
+      editor.registerCommand(
+        CAN_REDO_COMMAND,
+        (canRedo) => {
+          canRedoSignal.value = canRedo;
+          return false;
+        },
+        COMMAND_PRIORITY_EDITOR,
+      ),
     );
   },
 });

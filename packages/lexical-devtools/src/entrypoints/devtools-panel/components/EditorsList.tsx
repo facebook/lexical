@@ -10,14 +10,7 @@ import type {IInjectedPegasusService} from '../../injected/InjectedPegasusServic
 import type {EditorState} from 'lexical';
 
 // import './App.css';
-import {
-  Accordion,
-  AccordionButton,
-  AccordionIcon,
-  AccordionItem,
-  AccordionPanel,
-  Box,
-} from '@chakra-ui/react';
+import {Accordion, Box} from '@chakra-ui/react';
 import {TreeView} from '@lexical/devtools-core';
 import {getRPCService} from '@webext-pegasus/rpc';
 import * as React from 'react';
@@ -33,7 +26,7 @@ interface Props {
 
 export function EditorsList({tabID, setErrorMessage}: Props) {
   const tabRefs = useRef(new Map<number, HTMLDivElement | null>());
-  const [expandedItems, setExpandedItems] = useState<number[] | number>([0]);
+  const [expandedItems, setExpandedItems] = useState<string[]>(['0']);
   const {lexicalState, selectedEditorKey} = useExtensionStore();
   const states = lexicalState[tabID] ?? {};
   const selectedEditorIdx = Object.keys(states).findIndex(
@@ -43,7 +36,7 @@ export function EditorsList({tabID, setErrorMessage}: Props) {
   useEffect(() => {
     if (selectedEditorIdx !== -1) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setExpandedItems([selectedEditorIdx]);
+      setExpandedItems([String(selectedEditorIdx)]);
       setTimeout(
         () =>
           tabRefs.current
@@ -65,27 +58,27 @@ export function EditorsList({tabID, setErrorMessage}: Props) {
   );
 
   return (
-    <Accordion
-      defaultIndex={[0]}
-      index={expandedItems}
-      onChange={setExpandedItems}
-      allowMultiple={true}
-      allowToggle={true}>
+    <Accordion.Root
+      multiple={true}
+      collapsible={true}
+      value={expandedItems}
+      onValueChange={details => setExpandedItems(details.value)}>
       {Object.entries(states).map(([key, state], idx) => (
-        <AccordionItem
+        <Accordion.Item
           key={key}
+          value={String(idx)}
           ref={el => {
             tabRefs.current.set(idx, el);
           }}>
           <h2>
-            <AccordionButton>
+            <Accordion.ItemTrigger>
               <Box as="span" flex="1" textAlign="left">
                 ID: {key}
               </Box>
-              <AccordionIcon />
-            </AccordionButton>
+              <Accordion.ItemIndicator />
+            </Accordion.ItemTrigger>
           </h2>
-          <AccordionPanel pb={4}>
+          <Accordion.ItemContent pb={4}>
             <TreeView
               viewClassName="tree-view-output"
               treeTypeButtonClassName="debug-treetype-button"
@@ -108,9 +101,9 @@ export function EditorsList({tabID, setErrorMessage}: Props) {
                 injectedPegasusService.generateTreeViewContent(key, exportDOM)
               }
             />
-          </AccordionPanel>
-        </AccordionItem>
+          </Accordion.ItemContent>
+        </Accordion.Item>
       ))}
-    </Accordion>
+    </Accordion.Root>
   );
 }

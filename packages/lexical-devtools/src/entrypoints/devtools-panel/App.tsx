@@ -8,15 +8,7 @@
 
 import './App.css';
 
-import {
-  Alert,
-  AlertIcon,
-  Box,
-  ButtonGroup,
-  Flex,
-  Spacer,
-  Text,
-} from '@chakra-ui/react';
+import {Alert, Box, ButtonGroup, Flex, Spacer, Text} from '@chakra-ui/react';
 import * as React from 'react';
 import {useState} from 'react';
 
@@ -39,11 +31,13 @@ function App({tabID}: Props) {
   const lexicalCount = Object.keys(states ?? {}).length;
 
   return lexicalState[tabID] === null ? (
-    <Alert status="warning">
-      <AlertIcon />
-      This is a restricted browser page. Lexical DevTools cannot access this
-      page.
-    </Alert>
+    <Alert.Root status="warning">
+      <Alert.Indicator />
+      <Alert.Content>
+        This is a restricted browser page. Lexical DevTools cannot access this
+        page.
+      </Alert.Content>
+    </Alert.Root>
   ) : (
     <>
       <Flex
@@ -58,7 +52,7 @@ function App({tabID}: Props) {
         boxShadow="md"
         zIndex={99}>
         <Box paddingX="2" alignContent="center">
-          <ButtonGroup variant="outline" spacing="2">
+          <ButtonGroup variant="outline" gap="2">
             <EditorInspectorButton
               tabID={tabID}
               setErrorMessage={setErrorMessage}
@@ -101,10 +95,12 @@ function App({tabID}: Props) {
           {lexicalCount > 0 ? (
             <EditorsList tabID={tabID} setErrorMessage={setErrorMessage} />
           ) : (
-            <Alert status="info">
-              <AlertIcon />
-              No Lexical editors found on the page.
-            </Alert>
+            <Alert.Root status="info">
+              <Alert.Indicator />
+              <Alert.Content>
+                No Lexical editors found on the page.
+              </Alert.Content>
+            </Alert.Root>
           )}
         </Box>
       </Box>

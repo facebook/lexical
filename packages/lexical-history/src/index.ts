@@ -634,9 +634,15 @@ export const HistoryExtension = defineExtension({
           canRedo.value = false;
           return undefined;
         }
+        const historyState = stores.historyState.value;
+        // Sync immediately whenever historyState is (re-)assigned, so that
+        // pre-populated stacks (e.g. from SharedHistoryExtension) are
+        // reflected without waiting for a command to be dispatched.
+        canUndo.value = historyState.undoStack.length > 0;
+        canRedo.value = historyState.redoStack.length > 0;
         return registerHistory(
           editor,
-          stores.historyState.value,
+          historyState,
           stores.delay,
           () => stores.now.peek()(),
         );

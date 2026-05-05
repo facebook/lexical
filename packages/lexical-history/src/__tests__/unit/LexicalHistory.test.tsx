@@ -636,6 +636,95 @@ describe('HistoryExtension canUndo/canRedo signals', () => {
     expect(output.canRedo.value).toBe(false);
     expect(output.canUndo.value).toBe(true);
   });
+
+  test('canUndo is true immediately when initialized with a non-empty undoStack', () => {
+    // Build a donor editor and populate its history.
+    const donor = buildEditorFromExtensions({
+      dependencies: [configExtension(HistoryExtension, {delay: 0})],
+      name: 'donor',
+    });
+    donor.update(
+      () =>
+        $getRoot().append(
+          $createParagraphNode().append($createTextNode('hello')),
+        ),
+      {discrete: true},
+    );
+    const donorHistory = getExtensionDependencyFromEditor(
+      donor,
+      HistoryExtension,
+    ).output.historyState.peek();
+    expect(donorHistory.undoStack.length).toBeGreaterThan(0);
+
+    // A second editor that starts with the donor's history state.
+    const editor = buildEditorFromExtensions({
+      dependencies: [
+        configExtension(HistoryExtension, {
+          delay: 0,
+          createInitialHistoryState: () => donorHistory,
+        }),
+      ],
+      name: 'test',
+    });
+    const {output} = getExtensionDependencyFromEditor(editor, HistoryExtension);
+    expect(output.canUndo.value).toBe(true);
+    expect(output.canRedo.value).toBe(false);
+  });
+
+  test('canRedo is true immediately when initialized with a non-empty redoStack', () => {
+    // Build a donor editor with an item on the redo stack.
+    const donor = buildEditorFromExtensions({
+      dependencies: [configExtension(HistoryExtension, {delay: 0})],
+      name: 'donor',
+    });
+    donor.update(
+      () =>
+        $getRoot().append(
+          $createParagraphNode().append($createTextNode('hello')),
+        ),
+      {discrete: true},
+    );
+    donor.dispatchCommand(UNDO_COMMAND, undefined);
+    const donorHistory = getExtensionDependencyFromEditor(
+      donor,
+      HistoryExtension,
+    ).output.historyState.peek();
+    expect(donorHistory.redoStack.length).toBeGreaterThan(0);
+
+    const editor = buildEditorFromExtensions({
+      dependencies: [
+        configExtension(HistoryExtension, {
+          delay: 0,
+          createInitialHistoryState: () => donorHistory,
+        }),
+      ],
+      name: 'test',
+    });
+    const {output} = getExtensionDependencyFromEditor(editor, HistoryExtension);
+    expect(output.canUndo.value).toBe(false);
+    expect(output.canRedo.value).toBe(true);
+  });
+
+  test('signals update when historyState signal is reassigned to a populated state', () => {
+    // Start with an empty history, then swap historyState to one with entries,
+    // simulating what SharedHistoryExtension does when it inherits parent state.
+    const editor = buildEditorFromExtensions({
+      dependencies: [configExtension(HistoryExtension, {delay: 0})],
+      name: 'test',
+    });
+    const dep = getExtensionDependencyFromEditor(editor, HistoryExtension);
+    expect(dep.output.canUndo.value).toBe(false);
+
+    const populated = createEmptyHistoryState();
+    populated.undoStack.push({
+      editor,
+      editorState: editor.getEditorState(),
+    });
+
+    dep.output.historyState.value = populated;
+    expect(dep.output.canUndo.value).toBe(true);
+    expect(dep.output.canRedo.value).toBe(false);
+  });
 });
 
 describe('SharedHistoryExtension', () => {

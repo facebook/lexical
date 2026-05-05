@@ -98,8 +98,12 @@ export const ToolbarStateExtension = defineExtension({
     return {
       blockType: computed(() => selection.value.blockType),
       canRedo: computed(() => {
-        // The history state object is mutated in place by registerHistory,
-        // so depend on editorState as a change trigger.
+        // The HistoryState object the signal holds is mutated in
+        // place by registerHistory (push/pop on the stack arrays,
+        // field reassignments on the object), so the signal itself
+        // never fires. Read the editor-state signal as a change
+        // trigger — every editor update is when the stacks may have
+        // changed.
         void editorState.value;
         return historyState.value.redoStack.length > 0;
       }),

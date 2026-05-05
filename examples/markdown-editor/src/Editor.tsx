@@ -16,6 +16,7 @@ import {
   RESET_MARKDOWN_COMMAND,
 } from './extensions/MarkdownPersistenceExtension';
 import {MarkdownPreviewPlugin} from './plugins/MarkdownPreviewPlugin';
+import {ToolbarPlugin} from './plugins/ToolbarPlugin';
 
 const STORAGE_KEY = '@lexical/markdown-editor-example/document';
 
@@ -110,8 +111,8 @@ export default function Editor() {
       contentEditable={null}>
       <div className="grid h-full w-full grid-cols-1 overflow-hidden rounded-2xl border border-solid border-black/10 md:grid-cols-2 dark:border-white/10 dark:bg-stone-800">
         <div className="relative flex min-h-0 flex-col border-b [border-bottom-style:solid] border-b-black/10 md:border-r md:border-b-0 md:[border-right-style:solid] md:border-r-black/10 dark:border-b-white/10 dark:md:border-r-white/10">
-          <div className="flex items-center justify-between border-b [border-bottom-style:solid] border-b-black/10 bg-zinc-50 px-4 py-2 text-xs font-semibold tracking-wide text-zinc-500 uppercase dark:border-b-white/10 dark:bg-zinc-800 dark:text-zinc-400">
-            Editor
+          <div className="flex h-11 shrink-0 items-center gap-1 border-b [border-bottom-style:solid] border-b-black/10 bg-zinc-50 px-2 dark:border-b-white/10 dark:bg-zinc-800">
+            <ToolbarPlugin />
           </div>
           <div className="relative flex-1 overflow-auto">
             <ContentEditable
@@ -127,8 +128,10 @@ export default function Editor() {
           </div>
         </div>
         <div className="flex min-h-0 flex-col">
-          <div className="flex items-center justify-between border-b [border-bottom-style:solid] border-b-black/10 bg-zinc-50 px-4 py-2 text-xs font-semibold tracking-wide text-zinc-500 uppercase dark:border-b-white/10 dark:bg-zinc-800 dark:text-zinc-400">
-            <span>Markdown</span>
+          <div className="flex h-11 shrink-0 items-center justify-between border-b [border-bottom-style:solid] border-b-black/10 bg-zinc-50 px-4 dark:border-b-white/10 dark:bg-zinc-800">
+            <span className="text-xs font-semibold tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
+              Markdown
+            </span>
             <ResetButton />
           </div>
           <div className="flex-1 overflow-auto bg-white dark:bg-stone-800">

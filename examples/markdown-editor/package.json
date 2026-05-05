@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@lexical/extension": "0.44.0",
@@ -15,6 +18,7 @@
     "@lexical/markdown": "0.44.0",
     "@lexical/react": "0.44.0",
     "@lexical/rich-text": "0.44.0",
+    "@lexical/selection": "0.44.0",
     "@lexical/utils": "0.44.0",
     "lexical": "0.44.0",
     "react": "^19.2.5",
@@ -26,9 +30,11 @@
     "@types/react-dom": "^19.1.9",
     "@vitejs/plugin-react": "^5.0.2",
     "cross-env": "^7.0.3",
+    "jsdom": "^26.1.0",
     "tailwindcss": "^4.2.1",
     "typescript": "^5.9.2",
-    "vite": "^7.3.2"
+    "vite": "^7.3.2",
+    "vitest": "^3.2.4"
   },
   "optionalDependencies": {
     "@rollup/rollup-linux-x64-gnu": "4.52.0",

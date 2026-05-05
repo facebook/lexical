@@ -133,10 +133,15 @@ describe('ToolbarStateExtension', () => {
     expect(bold).toBe(false);
     expect(italic).toBe(false);
     expect(code).toBe(false);
-    editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold');
-    // Force a re-read of the editor state via a discrete no-op so
-    // the test is robust regardless of when listeners settle.
-    editor.read(() => undefined);
+    // Wrap the dispatch in a discrete update so listeners fire
+    // synchronously before control returns, ensuring the watched
+    // signals have settled.
+    editor.update(
+      () => {
+        editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold');
+      },
+      {discrete: true},
+    );
     // The selection's format flag is updated by formatText via the
     // command, so the selection-derived locals should now reflect bold.
     expect(bold).toBe(true);

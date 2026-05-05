@@ -10,7 +10,6 @@ import type {EditorState, LexicalEditor, LexicalNode, NodeKey} from 'lexical';
 
 import {
   batch,
-  computed,
   effect,
   getPeerDependencyFromEditor,
   namedSignals,
@@ -646,7 +645,11 @@ export const HistoryExtension = defineExtension({
     {delay, createInitialHistoryState, disabled, now},
     state,
   ): HistoryExtensionOutput => {
-    const {canUndo, canRedo} = state.getInitResult();
+    // The init phase already created writable Signal<boolean> instances for
+    // canUndo/canRedo. Signal<T> extends ReadonlySignal<T>, so exposing them
+    // through the HistoryExtensionOutput type (which declares them as
+    // ReadonlySignal<boolean>) is sufficient to prevent consumers from
+    // mutating them — no computed() wrapper required.
     return {
       ...namedSignals({
         delay,
@@ -654,8 +657,7 @@ export const HistoryExtension = defineExtension({
         historyState: createInitialHistoryState(editor),
         now,
       }),
-      canRedo: computed(() => canRedo.value),
-      canUndo: computed(() => canUndo.value),
+      ...state.getInitResult(),
     };
   },
   config: safeCast<HistoryConfig>({
@@ -672,28 +674,28 @@ export const HistoryExtension = defineExtension({
   register: (editor, config, state) => {
     const {canUndo, canRedo} = state.getInitResult();
     const stores = state.getOutput();
+    // Single update path: passing `null` resets both signals (used for the
+    // disabled state); passing a HistoryState derives them from its stacks
+    // (used by registerHistory on init and after every mutation). The batch
+    // ensures subscribers to both signals are only notified once per change.
+    const syncFromHistoryState = (historyState: HistoryState | null) =>
+      batch(() => {
+        canUndo.value =
+          historyState != null && historyState.undoStack.length > 0;
+        canRedo.value =
+          historyState != null && historyState.redoStack.length > 0;
+      });
     return effect(() => {
       if (stores.disabled.value) {
-        batch(() => {
-          canUndo.value = false;
-          canRedo.value = false;
-        });
+        syncFromHistoryState(null);
         return undefined;
       }
-      // registerHistory invokes our callback on initialization and after every
-      // mutation of historyState, so canUndo/canRedo are always derived
-      // directly from the current HistoryState. The batch ensures that
-      // subscribers to both signals are only notified once per change.
       return registerHistory(
         editor,
         stores.historyState.value,
         stores.delay,
         () => stores.now.peek()(),
-        historyState =>
-          batch(() => {
-            canUndo.value = historyState.undoStack.length > 0;
-            canRedo.value = historyState.redoStack.length > 0;
-          }),
+        syncFromHistoryState,
       );
     });
   },

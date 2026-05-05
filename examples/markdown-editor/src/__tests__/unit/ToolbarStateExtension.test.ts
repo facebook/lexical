@@ -16,12 +16,13 @@ import {
   $createTextNode,
   $getRoot,
   $isElementNode,
-  CAN_REDO_COMMAND,
-  CAN_UNDO_COMMAND,
   defineExtension,
   FORMAT_TEXT_COMMAND,
+  HISTORY_PUSH_TAG,
   type LexicalEditorWithDispose,
   type LexicalNode,
+  REDO_COMMAND,
+  UNDO_COMMAND,
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
 
@@ -59,17 +60,51 @@ function $selectFirstLeaf(): void {
 }
 
 describe('ToolbarStateExtension', () => {
-  test('canUndo / canRedo reflect command broadcasts', () => {
+  test('canUndo / canRedo follow the history stacks', () => {
     using editor = createTestEditor();
     const {canUndo, canRedo} = getOutputs(editor);
-    expect(canUndo.value).toBe(false);
-    expect(canRedo.value).toBe(false);
-    editor.dispatchCommand(CAN_UNDO_COMMAND, true);
-    expect(canUndo.value).toBe(true);
-    editor.dispatchCommand(CAN_REDO_COMMAND, true);
-    expect(canRedo.value).toBe(true);
-    editor.dispatchCommand(CAN_UNDO_COMMAND, false);
-    expect(canUndo.value).toBe(false);
+    let undoVal = false;
+    let redoVal = false;
+    using _watch = effect(() => {
+      undoVal = canUndo.value;
+      redoVal = canRedo.value;
+    });
+    expect(undoVal).toBe(false);
+    expect(redoVal).toBe(false);
+    // History only pushes on the second push (the first establishes
+    // `current`). HISTORY_PUSH_TAG forces a push and bypasses the
+    // typing-merge heuristic.
+    function appendChar(ch: string): void {
+      editor.update(
+        () => {
+          const paragraph = $getRoot().getFirstChild();
+          if ($isElementNode(paragraph)) {
+            paragraph.append($createTextNode(ch));
+          }
+        },
+        {discrete: true, tag: HISTORY_PUSH_TAG},
+      );
+    }
+    appendChar('a');
+    appendChar('b');
+    expect(undoVal).toBe(true);
+    expect(redoVal).toBe(false);
+    editor.update(
+      () => {
+        editor.dispatchCommand(UNDO_COMMAND, undefined);
+      },
+      {discrete: true},
+    );
+    expect(undoVal).toBe(false);
+    expect(redoVal).toBe(true);
+    editor.update(
+      () => {
+        editor.dispatchCommand(REDO_COMMAND, undefined);
+      },
+      {discrete: true},
+    );
+    expect(undoVal).toBe(true);
+    expect(redoVal).toBe(false);
   });
 
   test('blockType reflects the current top-level block', () => {

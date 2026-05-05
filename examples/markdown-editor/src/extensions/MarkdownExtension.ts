@@ -29,6 +29,7 @@ import {
   ITALIC_STAR,
   ORDERED_LIST,
   registerMarkdownShortcuts,
+  type TextMatchTransformer,
   type Transformer,
   UNORDERED_LIST,
 } from '@lexical/markdown';
@@ -43,14 +44,61 @@ import {
   $createParagraphNode,
   $getSelection,
   $isRangeSelection,
-  $isTextNode,
   COMMAND_PRIORITY_EDITOR,
   createCommand,
   defineExtension,
   type LexicalCommand,
   safeCast,
-  TextNode,
 } from 'lexical';
+
+/**
+ * Catches `[ ]` / `[x]` typed at the start of an existing list item.
+ *
+ * The standard {@link CHECK_LIST} element transformer only fires when
+ * the parent block is a paragraph at the document root, so once the
+ * user has typed `- ` (which UNORDERED_LIST converts into a bullet
+ * list) the line is no longer eligible. A `text-match` transformer
+ * has no such grandparent restriction — its `replace` callback runs
+ * wherever the trigger character (space) lands and the regex matches,
+ * including inside a `ListItemNode`.
+ *
+ * Only `regExp` (no `importRegExp`) is provided, so this transformer
+ * is purely a typing-time shortcut and never fires during markdown
+ * import. Export is handled by {@link CHECK_LIST}.
+ */
+const CHECK_LIST_ITEM: TextMatchTransformer = {
+  dependencies: [ListItemNode],
+  regExp: /^\[(\s|x|X)?\]\s$/,
+  replace: (textNode, match) => {
+    const listItem = textNode.getParent();
+    if (!$isListItemNode(listItem)) {
+      return;
+    }
+    const list = listItem.getParent();
+    if (!$isListNode(list)) {
+      return;
+    }
+    if (list.getListType() !== 'check') {
+      list.setListType('check');
+      // Items that were previously bullet/number have `__checked` set
+      // to undefined. Default the others to unchecked so they render
+      // as proper checkboxes once the list type changes.
+      for (const sibling of list.getChildren()) {
+        if (
+          $isListItemNode(sibling) &&
+          !sibling.is(listItem) &&
+          sibling.getChecked() === undefined
+        ) {
+          sibling.setChecked(false);
+        }
+      }
+    }
+    listItem.setChecked((match[1] ?? '').toLowerCase() === 'x');
+    textNode.remove();
+  },
+  trigger: ' ',
+  type: 'text-match',
+};
 
 /**
  * The set of markdown transformers used by both the live preview
@@ -62,6 +110,11 @@ import {
  * `CHECK_LIST` must come before `UNORDERED_LIST` / `ORDERED_LIST` so
  * that `- [ ] foo` in imported markdown matches the checklist regex
  * before the plain list regex catches the leading `- `.
+ *
+ * `CHECK_LIST_ITEM` is the typing-time companion: when the user has
+ * already turned a line into a bullet/numbered item by typing `- ` /
+ * `1. ` and then types `[ ] ` or `[x] `, this transformer flips the
+ * list to a checklist in place.
  */
 export const MARKDOWN_TRANSFORMERS: Array<Transformer> = [
   HEADING,
@@ -72,60 +125,8 @@ export const MARKDOWN_TRANSFORMERS: Array<Transformer> = [
   BOLD_ITALIC_STAR,
   BOLD_STAR,
   ITALIC_STAR,
+  CHECK_LIST_ITEM,
 ];
-
-/**
- * Matches a `[ ]`, `[]` or `[x]` checklist marker followed by a space
- * at the start of a list item's text content. Used by the typing-time
- * shortcut transform — once the user has typed `- ` the line is
- * already a `bullet` ListItemNode, so the standard CHECK_LIST element
- * transformer (which only fires for top-level paragraphs) cannot turn
- * it into a checklist. This transform plugs that gap.
- */
-const CHECK_LIST_ITEM_PREFIX = /^(\[(\s|x|X)?\])\s/;
-
-/**
- * If the first text child of a list item starts with a `[ ]` / `[x]`
- * marker, convert the parent list to a checklist, set the item's
- * checked state, and strip the marker. Returns `true` if a conversion
- * happened, which is useful for testing.
- */
-export function $convertListItemPrefixToCheckList(
-  listItem: ListItemNode,
-): boolean {
-  const firstChild = listItem.getFirstChild();
-  if (!$isTextNode(firstChild)) {
-    return false;
-  }
-  const text = firstChild.getTextContent();
-  const match = text.match(CHECK_LIST_ITEM_PREFIX);
-  if (!match) {
-    return false;
-  }
-  const list = listItem.getParent();
-  if (!$isListNode(list)) {
-    return false;
-  }
-  if (list.getListType() !== 'check') {
-    list.setListType('check');
-    // Items that were previously bullet/number have `__checked` set to
-    // `undefined`. Default them to unchecked so they render as proper
-    // checkboxes once the list type changes.
-    for (const sibling of list.getChildren()) {
-      if (
-        $isListItemNode(sibling) &&
-        !sibling.is(listItem) &&
-        sibling.getChecked() === undefined
-      ) {
-        sibling.setChecked(false);
-      }
-    }
-  }
-  const isChecked = (match[2] ?? '').toLowerCase() === 'x';
-  listItem.setChecked(isChecked);
-  firstChild.setTextContent(text.slice(match[0].length));
-  return true;
-}
 
 export interface MarkdownConfig {
   transformers: Array<Transformer>;
@@ -152,11 +153,10 @@ export const FORMAT_HEADING_COMMAND: LexicalCommand<HeadingTagType> =
  * dependencies that the supplied transformers require (rich text,
  * lists, check lists, history, tab indentation), registers the
  * markdown shortcut handler so typing `# `, `**bold**`, `` `code` ``,
- * `- item`, `1. item`, etc. transforms inline, plus a node transform
- * that catches `[ ] ` / `[x] ` typed inside an existing list item and
- * converts it to a checklist, registers paragraph/heading block-format
- * commands, and exposes the current editor content as a markdown
- * string through the `markdown` output signal.
+ * `- item`, `1. item`, `[ ] todo`, etc. transforms inline, registers
+ * paragraph/heading block-format commands, and exposes the current
+ * editor content as a markdown string through the `markdown` output
+ * signal.
  */
 export const MarkdownExtension = defineExtension({
   build(editor, {transformers}, state) {
@@ -184,21 +184,6 @@ export const MarkdownExtension = defineExtension({
   register(editor, {transformers}) {
     return mergeRegister(
       registerMarkdownShortcuts(editor, transformers),
-      // Fires when a list item is mutated directly (e.g. from
-      // $convertFromMarkdownString during import, or from list commands).
-      editor.registerNodeTransform(
-        ListItemNode,
-        $convertListItemPrefixToCheckList,
-      ),
-      // Mutating a TextNode (e.g. typing) does not by itself mark its
-      // parent ListItemNode dirty, so the transform above wouldn't fire
-      // for typing. This forwards from the TextNode level.
-      editor.registerNodeTransform(TextNode, node => {
-        const parent = node.getParent();
-        if ($isListItemNode(parent) && parent.getFirstChild() === node) {
-          $convertListItemPrefixToCheckList(parent);
-        }
-      }),
       editor.registerCommand(
         FORMAT_PARAGRAPH_COMMAND,
         () => {

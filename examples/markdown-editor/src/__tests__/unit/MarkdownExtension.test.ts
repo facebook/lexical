@@ -14,6 +14,7 @@ import {
 import {
   $createListItemNode,
   $createListNode,
+  $isListItemNode,
   $isListNode,
   ListItemNode,
   ListNode,
@@ -25,14 +26,14 @@ import {
 import {
   $createTextNode,
   $getRoot,
+  $getSelection,
+  $isRangeSelection,
   defineExtension,
   type LexicalEditorWithDispose,
-  TextNode,
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
 
 import {
-  $convertListItemPrefixToCheckList,
   MARKDOWN_TRANSFORMERS,
   MarkdownExtension,
 } from '../../extensions/MarkdownExtension';
@@ -113,92 +114,72 @@ describe('MARKDOWN_TRANSFORMERS', () => {
   });
 });
 
-describe('$convertListItemPrefixToCheckList', () => {
-  function withBulletListItem(
-    text: string,
-    fn: (editor: LexicalEditorWithDispose) => void,
-  ): void {
-    using editor = createTestEditor();
+describe('CHECK_LIST_ITEM typing-time transformer', () => {
+  function setupBulletListItem(editor: LexicalEditorWithDispose): void {
     editor.update(
       () => {
         const list = $createListNode('bullet');
         const item = $createListItemNode();
-        item.append($createTextNode(text));
-        list.append(item);
-        $getRoot().clear().append(list);
-      },
-      {discrete: true},
-    );
-    fn(editor);
-  }
-
-  test('a bullet list item authored with `[ ] ` is auto-converted', () => {
-    withBulletListItem('[ ] todo', editor => {
-      expect(exportMarkdown(editor)).toBe('- [ ] todo');
-    });
-  });
-
-  test('a bullet list item authored with `[x] ` is auto-converted', () => {
-    withBulletListItem('[x] done', editor => {
-      expect(exportMarkdown(editor)).toBe('- [x] done');
-    });
-  });
-
-  test('a bullet list item without a marker is left alone', () => {
-    withBulletListItem('plain text', editor => {
-      expect(exportMarkdown(editor)).toBe('- plain text');
-    });
-  });
-
-  test('the function is a no-op when called on an already-stripped item', () => {
-    using editor = createTestEditor();
-    let itemKey = '';
-    editor.update(
-      () => {
-        const list = $createListNode('check');
-        const item = $createListItemNode(false);
-        item.append($createTextNode('already done'));
-        list.append(item);
-        $getRoot().clear().append(list);
-        itemKey = item.getKey();
-      },
-      {discrete: true},
-    );
-    editor.update(
-      () => {
-        const item = editor
-          .getEditorState()
-          ._nodeMap.get(itemKey) as ListItemNode;
-        const result = $convertListItemPrefixToCheckList(item);
-        expect(result).toBe(false);
-      },
-      {discrete: true},
-    );
-  });
-
-  test('mutating a list item text into `[x] foo` triggers the transform', () => {
-    using editor = createTestEditor();
-    let textKey = '';
-    editor.update(
-      () => {
-        const list = $createListNode('bullet');
-        const item = $createListItemNode();
-        const text = $createTextNode('placeholder');
+        const text = $createTextNode('');
         item.append(text);
         list.append(item);
         $getRoot().clear().append(list);
-        textKey = text.getKey();
+        text.select(0, 0);
       },
       {discrete: true},
     );
-    editor.update(
-      () => {
-        const text = editor.getEditorState()._nodeMap.get(textKey) as TextNode;
-        text.setTextContent('[x] foo');
-      },
-      {discrete: true},
-    );
-    expect(exportMarkdown(editor)).toBe('- [x] foo');
+  }
+
+  function typeChars(editor: LexicalEditorWithDispose, chars: string): void {
+    for (const ch of chars) {
+      editor.update(
+        () => {
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            selection.insertText(ch);
+          }
+        },
+        {discrete: true},
+      );
+    }
+  }
+
+  test('typing `[x] ` inside a bullet list item flips it to a checklist', () => {
+    using editor = createTestEditor();
+    setupBulletListItem(editor);
+    typeChars(editor, '[x] ');
+    editor.read(() => {
+      const list = $getRoot().getFirstChild();
+      expect($isListNode(list)).toBe(true);
+      const listNode = list as ListNode;
+      expect(listNode.getListType()).toBe('check');
+      const item = listNode.getFirstChild();
+      expect($isListItemNode(item)).toBe(true);
+      expect((item as ListItemNode).getChecked()).toBe(true);
+      expect((item as ListItemNode).getTextContent()).toBe('');
+    });
+  });
+
+  test('typing `[ ] ` inside a bullet list item flips it to an unchecked item', () => {
+    using editor = createTestEditor();
+    setupBulletListItem(editor);
+    typeChars(editor, '[ ] ');
+    editor.read(() => {
+      const list = $getRoot().getFirstChild() as ListNode;
+      expect(list.getListType()).toBe('check');
+      const item = list.getFirstChild() as ListItemNode;
+      expect(item.getChecked()).toBe(false);
+    });
+  });
+
+  test('typing nothing matching is left alone', () => {
+    using editor = createTestEditor();
+    setupBulletListItem(editor);
+    typeChars(editor, 'plain ');
+    editor.read(() => {
+      const list = $getRoot().getFirstChild() as ListNode;
+      expect(list.getListType()).toBe('bullet');
+    });
   });
 });
 

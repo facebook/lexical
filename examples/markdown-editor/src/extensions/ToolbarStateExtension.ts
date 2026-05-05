@@ -6,17 +6,15 @@
  *
  */
 
-import {computed, EditorStateExtension, signal} from '@lexical/extension';
+import {computed, EditorStateExtension} from '@lexical/extension';
+import {HistoryExtension} from '@lexical/history';
 import {$isListNode} from '@lexical/list';
 import {$isHeadingNode} from '@lexical/rich-text';
-import {$findMatchingParent, mergeRegister} from '@lexical/utils';
+import {$findMatchingParent} from '@lexical/utils';
 import {
   $getSelection,
   $isRangeSelection,
   $isRootOrShadowRoot,
-  CAN_REDO_COMMAND,
-  CAN_UNDO_COMMAND,
-  COMMAND_PRIORITY_LOW,
   defineExtension,
 } from 'lexical';
 
@@ -74,13 +72,17 @@ function $readSelectionState(): ToolbarSelectionState {
 }
 
 /**
- * Owns all of the reactive state the formatting toolbar reads:
+ * Owns all of the reactive state the formatting toolbar reads, all
+ * derived as `computed()` signals off the existing extension outputs:
  *
- * - `canUndo` / `canRedo` are updated from the editor's
- *   {@link CAN_UNDO_COMMAND} / {@link CAN_REDO_COMMAND} broadcasts.
  * - The selection-derived signals (`blockType`, `isBold`, `isItalic`,
  *   `isCode`) are computed off the {@link EditorStateExtension} signal,
  *   so they recompute lazily whenever the editor state changes.
+ * - `canUndo` / `canRedo` are computed off the {@link HistoryExtension}
+ *   `historyState` signal. The history state object is mutated in
+ *   place, so we also read the editor-state signal as a change
+ *   trigger — every editor update is a chance for the stacks to have
+ *   changed.
  *
  * The React `<ToolbarPlugin />` component only consumes these signals
  * via `useExtensionSignalValue` and otherwise dispatches commands.
@@ -88,39 +90,28 @@ function $readSelectionState(): ToolbarSelectionState {
 export const ToolbarStateExtension = defineExtension({
   build(editor, _config, state) {
     const editorState = state.getDependency(EditorStateExtension).output;
+    const historyState =
+      state.getDependency(HistoryExtension).output.historyState;
     const selection = computed(() =>
       editorState.value.read($readSelectionState, {editor}),
     );
     return {
       blockType: computed(() => selection.value.blockType),
-      canRedo: signal(false),
-      canUndo: signal(false),
+      canRedo: computed(() => {
+        // The history state object is mutated in place by registerHistory,
+        // so depend on editorState as a change trigger.
+        void editorState.value;
+        return historyState.value.redoStack.length > 0;
+      }),
+      canUndo: computed(() => {
+        void editorState.value;
+        return historyState.value.undoStack.length > 0;
+      }),
       isBold: computed(() => selection.value.isBold),
       isCode: computed(() => selection.value.isCode),
       isItalic: computed(() => selection.value.isItalic),
     };
   },
-  dependencies: [MarkdownExtension, EditorStateExtension],
+  dependencies: [MarkdownExtension, EditorStateExtension, HistoryExtension],
   name: '@lexical/markdown-editor-example/ToolbarState',
-  register(editor, _config, state) {
-    const {canUndo, canRedo} = state.getOutput();
-    return mergeRegister(
-      editor.registerCommand(
-        CAN_UNDO_COMMAND,
-        payload => {
-          canUndo.value = payload;
-          return false;
-        },
-        COMMAND_PRIORITY_LOW,
-      ),
-      editor.registerCommand(
-        CAN_REDO_COMMAND,
-        payload => {
-          canRedo.value = payload;
-          return false;
-        },
-        COMMAND_PRIORITY_LOW,
-      ),
-    );
-  },
 });

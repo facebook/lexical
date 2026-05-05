@@ -12,8 +12,6 @@ import {Alert, Box, ButtonGroup, Flex, Spacer, Text} from '@chakra-ui/react';
 import * as React from 'react';
 import {useState} from 'react';
 
-import lexicalLogo from '@/public/lexical.svg';
-
 import EditorsRefreshCTA from '../../components/EditorsRefreshCTA';
 import {useExtensionStore} from '../../store';
 import {EditorInspectorButton} from './components/EditorInspectorButton';
@@ -77,7 +75,7 @@ function App({tabID}: Props) {
         <Box px="2" alignContent="center">
           <a href="https://lexical.dev" target="_blank">
             <img
-              src={lexicalLogo}
+              src="/lexical.svg"
               className="logo"
               width={134}
               height={30}

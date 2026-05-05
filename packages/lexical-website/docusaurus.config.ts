@@ -374,6 +374,22 @@ const config: Config = {
               __dirname,
               'node_modules/@huggingface/transformers/dist/transformers.web.js',
             ),
+            // transformers.web.js imports `onnxruntime-common` directly, but
+            // it is only a transitive dep through onnxruntime-web. Resolve it
+            // explicitly so webpack can find it under pnpm's strict layout.
+            'onnxruntime-common': require.resolve('onnxruntime-common', {
+              paths: [
+                path.dirname(
+                  require.resolve('onnxruntime-web', {
+                    paths: [
+                      path.dirname(
+                        require.resolve('@huggingface/transformers'),
+                      ),
+                    ],
+                  }),
+                ),
+              ],
+            }),
             'onnxruntime-node': false,
             sharp: false,
           };

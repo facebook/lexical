@@ -576,23 +576,23 @@ describe('HistoryExtension canUndo/canRedo signals', () => {
   test('signals start as false', () => {
     using editor = buildEditor();
     const {output} = getExtensionDependencyFromEditor(editor, HistoryExtension);
-    expect(output.canUndo.value).toBe(false);
-    expect(output.canRedo.value).toBe(false);
+    expect(output.canUndo.peek()).toBe(false);
+    expect(output.canRedo.peek()).toBe(false);
   });
 
   test('canUndo becomes true after a push, canRedo stays false', () => {
     using editor = makeEditorWithOneUndoEntry();
     const {output} = getExtensionDependencyFromEditor(editor, HistoryExtension);
-    expect(output.canUndo.value).toBe(true);
-    expect(output.canRedo.value).toBe(false);
+    expect(output.canUndo.peek()).toBe(true);
+    expect(output.canRedo.peek()).toBe(false);
   });
 
   test('canRedo becomes true after undo, canUndo goes false', () => {
     using editor = makeEditorWithOneUndoEntry();
     const {output} = getExtensionDependencyFromEditor(editor, HistoryExtension);
     editor.dispatchCommand(UNDO_COMMAND, undefined);
-    expect(output.canUndo.value).toBe(false);
-    expect(output.canRedo.value).toBe(true);
+    expect(output.canUndo.peek()).toBe(false);
+    expect(output.canRedo.peek()).toBe(true);
   });
 
   test('canRedo clears after redo, canUndo returns true', () => {
@@ -600,17 +600,17 @@ describe('HistoryExtension canUndo/canRedo signals', () => {
     const {output} = getExtensionDependencyFromEditor(editor, HistoryExtension);
     editor.dispatchCommand(UNDO_COMMAND, undefined);
     editor.dispatchCommand(REDO_COMMAND, undefined);
-    expect(output.canUndo.value).toBe(true);
-    expect(output.canRedo.value).toBe(false);
+    expect(output.canUndo.peek()).toBe(true);
+    expect(output.canRedo.peek()).toBe(false);
   });
 
   test('signals reset to false after CLEAR_HISTORY_COMMAND', () => {
     using editor = makeEditorWithOneUndoEntry();
     const {output} = getExtensionDependencyFromEditor(editor, HistoryExtension);
-    expect(output.canUndo.value).toBe(true);
+    expect(output.canUndo.peek()).toBe(true);
     editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined);
-    expect(output.canUndo.value).toBe(false);
-    expect(output.canRedo.value).toBe(false);
+    expect(output.canUndo.peek()).toBe(false);
+    expect(output.canRedo.peek()).toBe(false);
   });
 
   test('canRedo clears when a new edit is made after undo', () => {
@@ -621,10 +621,10 @@ describe('HistoryExtension canUndo/canRedo signals', () => {
     editor.update(() => editor.dispatchCommand(UNDO_COMMAND, undefined), {
       discrete: true,
     });
-    expect(output.canRedo.value).toBe(true);
+    expect(output.canRedo.peek()).toBe(true);
     editor.update(() => $appendParagraph('third'), {discrete: true});
-    expect(output.canRedo.value).toBe(false);
-    expect(output.canUndo.value).toBe(true);
+    expect(output.canRedo.peek()).toBe(false);
+    expect(output.canUndo.peek()).toBe(true);
   });
 
   test('canUndo is true immediately when initialized with a non-empty undoStack', () => {
@@ -637,8 +637,8 @@ describe('HistoryExtension canUndo/canRedo signals', () => {
 
     using editor = buildEditorWithHistory(donorHistory);
     const {output} = getExtensionDependencyFromEditor(editor, HistoryExtension);
-    expect(output.canUndo.value).toBe(true);
-    expect(output.canRedo.value).toBe(false);
+    expect(output.canUndo.peek()).toBe(true);
+    expect(output.canRedo.peek()).toBe(false);
   });
 
   test('canRedo is true immediately when initialized with a non-empty redoStack', () => {
@@ -652,15 +652,15 @@ describe('HistoryExtension canUndo/canRedo signals', () => {
 
     using editor = buildEditorWithHistory(donorHistory);
     const {output} = getExtensionDependencyFromEditor(editor, HistoryExtension);
-    expect(output.canUndo.value).toBe(false);
-    expect(output.canRedo.value).toBe(true);
+    expect(output.canUndo.peek()).toBe(false);
+    expect(output.canRedo.peek()).toBe(true);
   });
 
   test('signals update when historyState signal is reassigned to a populated state', () => {
     // Simulates what SharedHistoryExtension does when it inherits parent state.
     using editor = buildEditor();
     const dep = getExtensionDependencyFromEditor(editor, HistoryExtension);
-    expect(dep.output.canUndo.value).toBe(false);
+    expect(dep.output.canUndo.peek()).toBe(false);
 
     const populated = createEmptyHistoryState();
     populated.undoStack.push({
@@ -669,8 +669,8 @@ describe('HistoryExtension canUndo/canRedo signals', () => {
     });
 
     dep.output.historyState.value = populated;
-    expect(dep.output.canUndo.value).toBe(true);
-    expect(dep.output.canRedo.value).toBe(false);
+    expect(dep.output.canUndo.peek()).toBe(true);
+    expect(dep.output.canRedo.peek()).toBe(false);
   });
 });
 

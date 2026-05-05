@@ -21,7 +21,6 @@ import {
   FORMAT_TEXT_COMMAND,
   HISTORY_PUSH_TAG,
   type LexicalEditorWithDispose,
-  type LexicalNode,
   REDO_COMMAND,
   UNDO_COMMAND,
 } from 'lexical';
@@ -53,19 +52,9 @@ function getOutputs(editor: LexicalEditorWithDispose) {
   return getExtensionDependencyFromEditor(editor, ToolbarStateExtension).output;
 }
 
-function $selectFirstLeaf(): void {
-  let leaf: LexicalNode | null = $getRoot().getFirstChild();
-  while (leaf !== null && $isElementNode(leaf)) {
-    leaf = leaf.getFirstChild();
-  }
-  if (leaf !== null) {
-    leaf.selectStart();
-  }
-}
-
 function $importAndSelect(markdown: string): void {
   $convertFromMarkdownString(markdown, MARKDOWN_TRANSFORMERS);
-  $selectFirstLeaf();
+  $getRoot().selectEnd();
 }
 
 describe('ToolbarStateExtension', () => {
@@ -129,7 +118,7 @@ describe('ToolbarStateExtension', () => {
       $getRoot()
         .clear()
         .append($createParagraphNode().append($createTextNode('hello')))
-        .selectStart();
+        .selectEnd();
     });
     const {isBold, isItalic, isCode} = getOutputs(editor);
     // Mirror the signals into locals via an effect so the computed

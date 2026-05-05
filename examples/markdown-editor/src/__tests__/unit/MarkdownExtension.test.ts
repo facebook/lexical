@@ -115,7 +115,7 @@ describe('CHECK_LIST_ITEM typing-time transformer', () => {
     $getRoot()
       .clear()
       .append($createListNode('bullet').append($createListItemNode()))
-      .selectStart();
+      .selectEnd();
   }
 
   function typeChars(editor: LexicalEditorWithDispose, chars: string): void {

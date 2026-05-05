@@ -32,16 +32,16 @@ export type HistoryConfig = {
   disabled: boolean;
 }
 
-export interface HistoryExtensionOutput {
+export type HistoryExtensionOutput = {
   /** `true` when there is at least one entry in the undo stack. */
-  canUndo: ReadonlySignal<boolean>;
+  canUndo: ReadonlySignal<boolean>,
   /** `true` when there is at least one entry in the redo stack. */
-  canRedo: ReadonlySignal<boolean>;
-  delay: Signal<number>;
-  disabled: Signal<boolean>;
-  historyState: Signal<HistoryState>;
-  now: Signal<() => number>;
-}
+  canRedo: ReadonlySignal<boolean>,
+  delay: Signal<number>,
+  disabled: Signal<boolean>,
+  historyState: Signal<HistoryState>,
+  now: Signal<() => number>,
+};
 
 declare export var HistoryExtension: LexicalExtension<HistoryConfig, "@lexical/history/History", HistoryExtensionOutput, void>;
 declare export var SharedHistoryExtension: LexicalExtension<ExtensionConfigBase, "@lexical/history/SharedHistory", void, void>;

@@ -258,7 +258,11 @@ describe('@lexical/list tests', () => {
               </ul>
             </li>
           </ul>
-          <p dir="auto" style="padding-inline-start: calc(40px)"><br /></p>
+          <p
+            dir="auto"
+            style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
+            <br />
+          </p>
         </div>
       `,
     );
@@ -290,7 +294,9 @@ describe('@lexical/list tests', () => {
               </ul>
             </li>
           </ul>
-          <p dir="auto" style="padding-inline-start: calc(40px)">
+          <p
+            dir="auto"
+            style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
             <span data-lexical-text="true">more text</span>
           </p>
           <p dir="auto"><span data-lexical-text="true">even more text</span></p>

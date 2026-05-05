@@ -7,6 +7,7 @@
  */
 
 import {
+  applyHeading,
   deleteBackward,
   deleteForward,
   moveLeft,
@@ -48,16 +49,13 @@ test.describe('TableOfContents', () => {
 
     // prepare headings
     await page.keyboard.type('h1');
-    await click(page, '.block-controls');
-    await click(page, '.dropdown .icon.h1');
+    await applyHeading(page, 1);
     await page.keyboard.press('Enter');
     await page.keyboard.type('h2');
-    await click(page, '.block-controls');
-    await click(page, '.dropdown .icon.h2');
+    await applyHeading(page, 2);
     await page.keyboard.press('Enter');
     await page.keyboard.type('h1 again');
-    await click(page, '.block-controls');
-    await click(page, '.dropdown .icon.h1');
+    await applyHeading(page, 1);
     await page.keyboard.press('Enter');
 
     // Insert Contents using the Insert dropdown
@@ -157,12 +155,10 @@ test.describe('TableOfContents', () => {
 
     // creating headings with ample spacing between them
     await page.keyboard.type('first h1');
-    await click(page, '.block-controls');
-    await click(page, '.dropdown .icon.h1');
+    await applyHeading(page, 1);
     await repeat(42, async () => await page.keyboard.press('Enter'));
     await page.keyboard.type('another h1');
-    await click(page, '.block-controls');
-    await click(page, '.dropdown .icon.h1');
+    await applyHeading(page, 1);
     await page.keyboard.press('Enter');
 
     // make sure that the first heading isn't visible
@@ -191,16 +187,13 @@ test.describe('TableOfContents', () => {
 
     // prepare headings
     await page.keyboard.type('h1');
-    await click(page, '.block-controls');
-    await click(page, '.dropdown .icon.h1');
+    await applyHeading(page, 1);
     await page.keyboard.press('Enter');
     await page.keyboard.type('h2');
-    await click(page, '.block-controls');
-    await click(page, '.dropdown .icon.h2');
+    await applyHeading(page, 2);
     await page.keyboard.press('Enter');
     await page.keyboard.type('h1 again');
-    await click(page, '.block-controls');
-    await click(page, '.dropdown .icon.h1');
+    await applyHeading(page, 1);
     await page.keyboard.press('Enter');
 
     // Insert Contents using the Insert dropdown
@@ -345,8 +338,7 @@ test.describe('TableOfContents', () => {
     await focusEditor(page);
 
     await page.keyboard.type('first h1');
-    await click(page, '.block-controls');
-    await click(page, '.dropdown .icon.h1');
+    await applyHeading(page, 1);
     await page.keyboard.press('Enter');
 
     await selectFromInsertDropdown(page, '.item .toc');
@@ -390,12 +382,10 @@ test.describe('TableOfContents', () => {
     await focusEditor(page);
 
     await page.keyboard.type('h1');
-    await click(page, '.block-controls');
-    await click(page, '.dropdown .icon.h1');
+    await applyHeading(page, 1);
     await page.keyboard.press('Enter');
     await page.keyboard.type('h1');
-    await click(page, '.block-controls');
-    await click(page, '.dropdown .icon.h1');
+    await applyHeading(page, 1);
     await page.keyboard.press('Enter');
 
     await selectFromInsertDropdown(page, '.item .toc');
@@ -463,12 +453,10 @@ test.describe('TableOfContents', () => {
     await focusEditor(page);
 
     await page.keyboard.type('h1');
-    await click(page, '.block-controls');
-    await click(page, '.dropdown .icon.h1');
+    await applyHeading(page, 1);
     await page.keyboard.press('Enter');
     await page.keyboard.type('h1');
-    await click(page, '.block-controls');
-    await click(page, '.dropdown .icon.h1');
+    await applyHeading(page, 1);
     await page.keyboard.press('Enter');
 
     await selectFromInsertDropdown(page, '.item .toc');
@@ -516,12 +504,10 @@ test.describe('TableOfContents', () => {
     await focusEditor(page);
 
     await page.keyboard.type('h1');
-    await click(page, '.block-controls');
-    await click(page, '.dropdown .icon.h1');
+    await applyHeading(page, 1);
     await page.keyboard.press('Enter');
     await page.keyboard.type('h1');
-    await click(page, '.block-controls');
-    await click(page, '.dropdown .icon.h1');
+    await applyHeading(page, 1);
     await page.keyboard.press('Enter');
 
     await selectFromInsertDropdown(page, '.item .toc');
@@ -570,12 +556,10 @@ test.describe('TableOfContents', () => {
     await focusEditor(page);
 
     await page.keyboard.type('h1');
-    await click(page, '.block-controls');
-    await click(page, '.dropdown .icon.h1');
+    await applyHeading(page, 1);
     await page.keyboard.press('Enter');
     await page.keyboard.type('h1');
-    await click(page, '.block-controls');
-    await click(page, '.dropdown .icon.h1');
+    await applyHeading(page, 1);
     await page.keyboard.press('Enter');
 
     await selectFromInsertDropdown(page, '.item .toc');
@@ -622,12 +606,10 @@ test.describe('TableOfContents', () => {
     await focusEditor(page);
 
     await page.keyboard.type('h1');
-    await click(page, '.block-controls');
-    await click(page, '.dropdown .icon.h1');
+    await applyHeading(page, 1);
     await page.keyboard.press('Enter');
     await page.keyboard.type('h1');
-    await click(page, '.block-controls');
-    await click(page, '.dropdown .icon.h1');
+    await applyHeading(page, 1);
     await page.keyboard.press('Enter');
 
     await selectFromInsertDropdown(page, '.item .toc');

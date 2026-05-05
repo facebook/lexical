@@ -6,7 +6,11 @@
  *
  */
 
-import {TabIndentationExtension, watchedSignal} from '@lexical/extension';
+import {
+  computed,
+  EditorStateExtension,
+  TabIndentationExtension,
+} from '@lexical/extension';
 import {HistoryExtension} from '@lexical/history';
 import {CheckListExtension, ListExtension} from '@lexical/list';
 import {
@@ -57,22 +61,13 @@ export interface MarkdownConfig {
  * the `markdown` output signal.
  */
 export const MarkdownExtension = defineExtension({
-  build(editor, {transformers}) {
+  build(editor, {transformers}, state) {
+    const editorState = state.getDependency(EditorStateExtension).output;
     return {
-      markdown: watchedSignal(
-        () =>
-          editor
-            .getEditorState()
-            .read(() => $convertToMarkdownString(transformers), {editor}),
-        signal =>
-          editor.registerUpdateListener(({editorState}) => {
-            editorState.read(
-              () => {
-                signal.value = $convertToMarkdownString(transformers);
-              },
-              {editor},
-            );
-          }),
+      markdown: computed(() =>
+        editorState.value.read(() => $convertToMarkdownString(transformers), {
+          editor,
+        }),
       ),
     };
   },
@@ -85,6 +80,7 @@ export const MarkdownExtension = defineExtension({
     ListExtension,
     CheckListExtension,
     TabIndentationExtension,
+    EditorStateExtension,
   ],
   name: '@lexical/markdown-editor-example/Markdown',
   register(editor, {transformers}) {

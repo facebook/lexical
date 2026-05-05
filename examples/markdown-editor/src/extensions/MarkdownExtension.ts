@@ -32,9 +32,25 @@ import {
   type Transformer,
   UNORDERED_LIST,
 } from '@lexical/markdown';
-import {RichTextExtension} from '@lexical/rich-text';
+import {
+  $createHeadingNode,
+  type HeadingTagType,
+  RichTextExtension,
+} from '@lexical/rich-text';
+import {$setBlocksType} from '@lexical/selection';
 import {mergeRegister} from '@lexical/utils';
-import {$isTextNode, defineExtension, safeCast, TextNode} from 'lexical';
+import {
+  $createParagraphNode,
+  $getSelection,
+  $isRangeSelection,
+  $isTextNode,
+  COMMAND_PRIORITY_EDITOR,
+  createCommand,
+  defineExtension,
+  type LexicalCommand,
+  safeCast,
+  TextNode,
+} from 'lexical';
 
 /**
  * The set of markdown transformers used by both the live preview
@@ -116,14 +132,31 @@ export interface MarkdownConfig {
 }
 
 /**
+ * Reformats the current selection's blocks as a paragraph. Toolbars
+ * and other UI should dispatch this command rather than calling
+ * `$setBlocksType` directly so the markdown extension is the single
+ * owner of block-formatting behavior.
+ */
+export const FORMAT_PARAGRAPH_COMMAND: LexicalCommand<void> = createCommand(
+  'FORMAT_PARAGRAPH_COMMAND',
+);
+
+/**
+ * Reformats the current selection's blocks as the given heading.
+ */
+export const FORMAT_HEADING_COMMAND: LexicalCommand<HeadingTagType> =
+  createCommand('FORMAT_HEADING_COMMAND');
+
+/**
  * A self-contained markdown extension. It pulls in all of the node
  * dependencies that the supplied transformers require (rich text,
  * lists, check lists, history, tab indentation), registers the
  * markdown shortcut handler so typing `# `, `**bold**`, `` `code` ``,
  * `- item`, `1. item`, etc. transforms inline, plus a node transform
  * that catches `[ ] ` / `[x] ` typed inside an existing list item and
- * converts it to a checklist, and exposes the current editor content
- * as a markdown string through the `markdown` output signal.
+ * converts it to a checklist, registers paragraph/heading block-format
+ * commands, and exposes the current editor content as a markdown
+ * string through the `markdown` output signal.
  */
 export const MarkdownExtension = defineExtension({
   build(editor, {transformers}, state) {
@@ -166,6 +199,28 @@ export const MarkdownExtension = defineExtension({
           $convertListItemPrefixToCheckList(parent);
         }
       }),
+      editor.registerCommand(
+        FORMAT_PARAGRAPH_COMMAND,
+        () => {
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            $setBlocksType(selection, () => $createParagraphNode());
+          }
+          return true;
+        },
+        COMMAND_PRIORITY_EDITOR,
+      ),
+      editor.registerCommand(
+        FORMAT_HEADING_COMMAND,
+        tag => {
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            $setBlocksType(selection, () => $createHeadingNode(tag));
+          }
+          return true;
+        },
+        COMMAND_PRIORITY_EDITOR,
+      ),
     );
   },
 });

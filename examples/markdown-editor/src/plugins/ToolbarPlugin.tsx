@@ -7,44 +7,28 @@
  */
 
 import {
-  $isListNode,
   INSERT_CHECK_LIST_COMMAND,
   INSERT_ORDERED_LIST_COMMAND,
   INSERT_UNORDERED_LIST_COMMAND,
-  ListNode,
   REMOVE_LIST_COMMAND,
 } from '@lexical/list';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useExtensionSignalValue} from '@lexical/react/useExtensionSignalValue';
 import {
-  $createHeadingNode,
-  $isHeadingNode,
-  HeadingTagType,
-} from '@lexical/rich-text';
-import {$setBlocksType} from '@lexical/selection';
-import {$findMatchingParent, mergeRegister} from '@lexical/utils';
-import {
-  $createParagraphNode,
-  $getSelection,
-  $isRangeSelection,
-  $isRootOrShadowRoot,
-  CAN_REDO_COMMAND,
-  CAN_UNDO_COMMAND,
-  COMMAND_PRIORITY_LOW,
   FORMAT_TEXT_COMMAND,
   type LexicalEditor,
   REDO_COMMAND,
   UNDO_COMMAND,
 } from 'lexical';
-import {useCallback, useEffect, useState} from 'react';
 
-type BlockType =
-  | 'paragraph'
-  | 'h1'
-  | 'h2'
-  | 'h3'
-  | 'bullet'
-  | 'number'
-  | 'check';
+import {
+  FORMAT_HEADING_COMMAND,
+  FORMAT_PARAGRAPH_COMMAND,
+} from '../extensions/MarkdownExtension';
+import {
+  type BlockType,
+  ToolbarStateExtension,
+} from '../extensions/ToolbarStateExtension';
 
 const BLOCK_TYPES: ReadonlyArray<{label: string; value: BlockType}> = [
   {label: 'Paragraph', value: 'paragraph'},
@@ -59,25 +43,13 @@ const BLOCK_TYPES: ReadonlyArray<{label: string; value: BlockType}> = [
 function applyBlockType(editor: LexicalEditor, type: BlockType): void {
   switch (type) {
     case 'paragraph':
-      editor.update(() => {
-        const selection = $getSelection();
-        if ($isRangeSelection(selection)) {
-          $setBlocksType(selection, () => $createParagraphNode());
-        }
-      });
       editor.dispatchCommand(REMOVE_LIST_COMMAND, undefined);
+      editor.dispatchCommand(FORMAT_PARAGRAPH_COMMAND, undefined);
       return;
     case 'h1':
     case 'h2':
     case 'h3':
-      editor.update(() => {
-        const selection = $getSelection();
-        if ($isRangeSelection(selection)) {
-          $setBlocksType(selection, () =>
-            $createHeadingNode(type as HeadingTagType),
-          );
-        }
-      });
+      editor.dispatchCommand(FORMAT_HEADING_COMMAND, type);
       return;
     case 'bullet':
       editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined);
@@ -106,69 +78,12 @@ function Divider() {
 
 export function ToolbarPlugin() {
   const [editor] = useLexicalComposerContext();
-  const [canUndo, setCanUndo] = useState(false);
-  const [canRedo, setCanRedo] = useState(false);
-  const [blockType, setBlockType] = useState<BlockType>('paragraph');
-  const [isBold, setIsBold] = useState(false);
-  const [isItalic, setIsItalic] = useState(false);
-  const [isCode, setIsCode] = useState(false);
-
-  const $updateToolbar = useCallback(() => {
-    const selection = $getSelection();
-    if (!$isRangeSelection(selection)) {
-      return;
-    }
-    const anchorNode = selection.anchor.getNode();
-    let topLevelElement = $findMatchingParent(anchorNode, e => {
-      const parent = e.getParent();
-      return parent !== null && $isRootOrShadowRoot(parent);
-    });
-    if (topLevelElement === null) {
-      topLevelElement = anchorNode.getTopLevelElementOrThrow();
-    }
-    if ($isHeadingNode(topLevelElement)) {
-      setBlockType(topLevelElement.getTag() as BlockType);
-    } else if (
-      topLevelElement instanceof ListNode ||
-      $isListNode(topLevelElement)
-    ) {
-      setBlockType(topLevelElement.getListType() as BlockType);
-    } else {
-      setBlockType('paragraph');
-    }
-    setIsBold(selection.hasFormat('bold'));
-    setIsItalic(selection.hasFormat('italic'));
-    setIsCode(selection.hasFormat('code'));
-  }, []);
-
-  useEffect(() => {
-    return mergeRegister(
-      editor.registerUpdateListener(({editorState}) => {
-        editorState.read(
-          () => {
-            $updateToolbar();
-          },
-          {editor},
-        );
-      }),
-      editor.registerCommand(
-        CAN_UNDO_COMMAND,
-        payload => {
-          setCanUndo(payload);
-          return false;
-        },
-        COMMAND_PRIORITY_LOW,
-      ),
-      editor.registerCommand(
-        CAN_REDO_COMMAND,
-        payload => {
-          setCanRedo(payload);
-          return false;
-        },
-        COMMAND_PRIORITY_LOW,
-      ),
-    );
-  }, [editor, $updateToolbar]);
+  const canUndo = useExtensionSignalValue(ToolbarStateExtension, 'canUndo');
+  const canRedo = useExtensionSignalValue(ToolbarStateExtension, 'canRedo');
+  const blockType = useExtensionSignalValue(ToolbarStateExtension, 'blockType');
+  const isBold = useExtensionSignalValue(ToolbarStateExtension, 'isBold');
+  const isItalic = useExtensionSignalValue(ToolbarStateExtension, 'isItalic');
+  const isCode = useExtensionSignalValue(ToolbarStateExtension, 'isCode');
 
   return (
     <div

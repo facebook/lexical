@@ -15,6 +15,7 @@ import {
   MarkdownPersistenceExtension,
   RESET_MARKDOWN_COMMAND,
 } from './extensions/MarkdownPersistenceExtension';
+import {ToolbarStateExtension} from './extensions/ToolbarStateExtension';
 import {MarkdownPreviewPlugin} from './plugins/MarkdownPreviewPlugin';
 import {ToolbarPlugin} from './plugins/ToolbarPlugin';
 
@@ -86,6 +87,7 @@ const markdownEditorExtension = defineExtension({
       defaultMarkdown: DEMO_MARKDOWN,
       storageKey: STORAGE_KEY,
     }),
+    ToolbarStateExtension,
   ],
   name: '@lexical/markdown-editor-example/Editor',
   namespace: '@lexical/markdown-editor-example',

@@ -1407,6 +1407,14 @@ export class RangeSelection implements BaseSelection {
         firstNode.constructor.name,
         firstNode.getType(),
       );
+      // Preserve the pasted block's format/alignment on the destination
+      // block when the destination doesn't already have an explicit format.
+      if (
+        firstToInsert.getFormatType() !== '' &&
+        firstBlock.getFormatType() === ''
+      ) {
+        firstBlock.setFormat(firstToInsert.getFormatType());
+      }
       firstBlock.append(...firstToInsert.getChildren());
       firstToInsert = blocks[1];
     }

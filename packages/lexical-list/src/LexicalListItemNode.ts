@@ -673,6 +673,7 @@ function setFormatFromChildren(
     firstChild.getFormatType()
   ) {
     listItemNode.setFormat(firstChild.getFormatType());
+    return firstChild.getChildren();
   }
   return children;
 }

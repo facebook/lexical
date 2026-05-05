@@ -113,6 +113,23 @@ export const galleryExamples: GalleryExample[] = [
     waitForSelector: '[data-lexical-editor]',
   },
   {
+    description: 'Split-view markdown WYSIWYG editor with live preview',
+    dir: 'markdown-editor',
+    stackblitzQuery: 'embed=1&file=src%2Fmain.tsx&terminalHeight=0&ctl=0',
+    tags: [
+      'opensource',
+      'favorite',
+      'react',
+      'extension',
+      'tailwind',
+      'toolbar',
+      'markdown',
+    ],
+    title: 'Markdown Editor',
+    viteConfig: 'vite.config.ts',
+    waitForSelector: '[data-lexical-editor]',
+  },
+  {
     description: 'Vanilla JS checklist editor with Extensions and Tailwind',
     dir: 'extension-vanilla-tailwind',
     stackblitzQuery: 'embed=1&file=src%2Fmain.ts&terminalHeight=0&ctl=0',

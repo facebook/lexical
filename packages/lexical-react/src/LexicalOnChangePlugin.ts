@@ -10,6 +10,7 @@ import type {EditorState, LexicalEditor} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {HISTORY_MERGE_TAG} from 'lexical';
+import {useRef} from 'react';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
 export function OnChangePlugin({
@@ -26,9 +27,12 @@ export function OnChangePlugin({
   ) => void;
 }): null {
   const [editor] = useLexicalComposerContext();
+  const initialPrevEditorStateRef = useRef<EditorState | null>(null);
+  const hasSeenFirstChangeRef = useRef(false);
 
   useLayoutEffect(() => {
     if (onChange) {
+      initialPrevEditorStateRef.current = editor.getEditorState();
       return editor.registerUpdateListener(
         ({editorState, dirtyElements, dirtyLeaves, prevEditorState, tags}) => {
           if (
@@ -36,11 +40,14 @@ export function OnChangePlugin({
               dirtyElements.size === 0 &&
               dirtyLeaves.size === 0) ||
             (ignoreHistoryMergeTagChange && tags.has(HISTORY_MERGE_TAG)) ||
-            prevEditorState.isEmpty()
+            prevEditorState.isEmpty() ||
+            (!hasSeenFirstChangeRef.current &&
+              prevEditorState === initialPrevEditorStateRef.current)
           ) {
             return;
           }
 
+          hasSeenFirstChangeRef.current = true;
           onChange(editorState, editor, tags);
         },
       );

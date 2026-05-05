@@ -372,6 +372,7 @@ const listReplace = (listType: ListType): ElementTransformer['replace'] => {
       firstMatchChar === listMarkerState.parse(firstMatchChar)
         ? firstMatchChar
         : undefined;
+    const indent = getIndent(match[1]);
     if ($isListNode(nextNode) && nextNode.getListType() === listType) {
       if (listMarker) {
         $setState(nextNode, listMarkerState, listMarker);
@@ -393,6 +394,9 @@ const listReplace = (listType: ListType): ElementTransformer['replace'] => {
       }
       previousNode.append(listItem);
       parentNode.remove();
+    } else if (indent > 0 && $isListNode(previousNode)) {
+      previousNode.append(listItem);
+      parentNode.remove();
     } else {
       const list = $createListNode(
         listType,
@@ -408,9 +412,29 @@ const listReplace = (listType: ListType): ElementTransformer['replace'] => {
     if (!isImport) {
       listItem.select(0, 0);
     }
-    const indent = getIndent(match[1]);
     if (indent) {
       listItem.setIndent(indent);
+      const parentList = listItem.getParent();
+      if ($isListNode(parentList) && parentList.getListType() !== listType) {
+        const parentListWrapper = parentList.getParent();
+        if ($isListItemNode(parentListWrapper)) {
+          listItem.remove();
+          const newList = $createListNode(
+            listType,
+            listType === 'number' ? Number(match[2]) : undefined,
+          );
+          if (listMarker) {
+            $setState(newList, listMarkerState, listMarker);
+          }
+          newList.append(listItem);
+          const newWrapper = $createListItemNode();
+          newWrapper.append(newList);
+          parentListWrapper.insertAfter(newWrapper);
+          if (parentList.getChildrenSize() === 0) {
+            parentListWrapper.remove();
+          }
+        }
+      }
     }
   };
 };

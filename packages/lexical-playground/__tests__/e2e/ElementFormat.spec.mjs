@@ -40,7 +40,7 @@ test.describe('Element format', () => {
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
           dir="auto"
-          style="padding-inline-start: calc(80px); text-align: center;">
+          style="padding-inline-start: calc(2 * var(--lexical-indent-base-value, 40px)); text-align: center;">
           <span data-lexical-text="true">Hello</span>
           <a class="PlaygroundEditorTheme__link" href="https://lexical.io">
             <span data-lexical-text="true">https://lexical.io</span>

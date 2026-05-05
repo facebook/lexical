@@ -6,21 +6,29 @@
  *
  */
 
-import type {JSX} from 'react';
-
-import {ErrorBoundary as ReactErrorBoundary} from 'react-error-boundary';
+import {type ErrorInfo, type JSX, useCallback} from 'react';
+import {ErrorBoundary} from 'react-error-boundary';
 
 export type LexicalErrorBoundaryProps = {
   children: JSX.Element;
-  onError: (error: Error) => void;
+  onError: (error: Error, info: ErrorInfo) => void;
 };
 
 export function LexicalErrorBoundary({
   children,
   onError,
 }: LexicalErrorBoundaryProps): JSX.Element {
+  const wrappedOnError = useCallback(
+    (err: unknown, info: ErrorInfo) => {
+      onError(
+        err instanceof Error ? err : new Error(String(err), {cause: err}),
+        info,
+      );
+    },
+    [onError],
+  );
   return (
-    <ReactErrorBoundary
+    <ErrorBoundary
       fallback={
         <div
           style={{
@@ -31,8 +39,8 @@ export function LexicalErrorBoundary({
           An error was thrown.
         </div>
       }
-      onError={onError}>
+      onError={wrappedOnError}>
       {children}
-    </ReactErrorBoundary>
+    </ErrorBoundary>
   );
 }

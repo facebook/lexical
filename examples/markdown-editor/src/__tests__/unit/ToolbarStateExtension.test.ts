@@ -13,6 +13,7 @@ import {
 } from '@lexical/extension';
 import {$convertFromMarkdownString} from '@lexical/markdown';
 import {
+  $createParagraphNode,
   $createTextNode,
   $getRoot,
   $isElementNode,
@@ -24,7 +25,7 @@ import {
   REDO_COMMAND,
   UNDO_COMMAND,
 } from 'lexical';
-import {describe, expect, test} from 'vitest';
+import {assert, describe, expect, test} from 'vitest';
 
 import {
   MARKDOWN_TRANSFORMERS,
@@ -35,9 +36,12 @@ import {
   ToolbarStateExtension,
 } from '../../extensions/ToolbarStateExtension';
 
-function createTestEditor(): LexicalEditorWithDispose {
+function createTestEditor(
+  $initialEditorState?: () => void,
+): LexicalEditorWithDispose {
   return buildEditorFromExtensions(
     defineExtension({
+      $initialEditorState,
       dependencies: [MarkdownExtension, ToolbarStateExtension],
       name: 'toolbar-state-test',
       namespace: 'toolbar-state-test',
@@ -59,6 +63,11 @@ function $selectFirstLeaf(): void {
   }
 }
 
+function $importAndSelect(markdown: string): void {
+  $convertFromMarkdownString(markdown, MARKDOWN_TRANSFORMERS);
+  $selectFirstLeaf();
+}
+
 describe('ToolbarStateExtension', () => {
   test('canUndo / canRedo follow the history stacks', () => {
     using editor = createTestEditor();
@@ -78,9 +87,8 @@ describe('ToolbarStateExtension', () => {
       editor.update(
         () => {
           const paragraph = $getRoot().getFirstChild();
-          if ($isElementNode(paragraph)) {
-            paragraph.append($createTextNode(ch));
-          }
+          assert($isElementNode(paragraph), 'Expecting ElementNode');
+          paragraph.append($createTextNode(ch));
         },
         {discrete: true, tag: HISTORY_PUSH_TAG},
       );
@@ -89,20 +97,14 @@ describe('ToolbarStateExtension', () => {
     appendChar('b');
     expect(undoVal).toBe(true);
     expect(redoVal).toBe(false);
-    editor.update(
-      () => {
-        editor.dispatchCommand(UNDO_COMMAND, undefined);
-      },
-      {discrete: true},
-    );
+    editor.update(() => editor.dispatchCommand(UNDO_COMMAND, undefined), {
+      discrete: true,
+    });
     expect(undoVal).toBe(false);
     expect(redoVal).toBe(true);
-    editor.update(
-      () => {
-        editor.dispatchCommand(REDO_COMMAND, undefined);
-      },
-      {discrete: true},
-    );
+    editor.update(() => editor.dispatchCommand(REDO_COMMAND, undefined), {
+      discrete: true,
+    });
     expect(undoVal).toBe(true);
     expect(redoVal).toBe(false);
   });
@@ -114,34 +116,21 @@ describe('ToolbarStateExtension', () => {
     using _watch = effect(() => {
       currentBlockType = blockType.value;
     });
-    editor.update(
-      () => {
-        $convertFromMarkdownString('# heading', MARKDOWN_TRANSFORMERS);
-        $selectFirstLeaf();
-      },
-      {discrete: true},
-    );
+    editor.update(() => $importAndSelect('# heading'), {discrete: true});
     expect(currentBlockType).toBe('h1');
-    editor.update(
-      () => {
-        $convertFromMarkdownString('- one', MARKDOWN_TRANSFORMERS);
-        $selectFirstLeaf();
-      },
-      {discrete: true},
-    );
+    editor.update(() => $importAndSelect('- one'), {discrete: true});
     expect(currentBlockType).toBe('bullet');
-    editor.update(
-      () => {
-        $convertFromMarkdownString('- [x] done', MARKDOWN_TRANSFORMERS);
-        $selectFirstLeaf();
-      },
-      {discrete: true},
-    );
+    editor.update(() => $importAndSelect('- [x] done'), {discrete: true});
     expect(currentBlockType).toBe('check');
   });
 
   test('isBold / isItalic / isCode start false and follow FORMAT_TEXT_COMMAND', () => {
-    using editor = createTestEditor();
+    using editor = createTestEditor(() => {
+      $getRoot()
+        .clear()
+        .append($createParagraphNode().append($createTextNode('hello')))
+        .selectStart();
+    });
     const {isBold, isItalic, isCode} = getOutputs(editor);
     // Mirror the signals into locals via an effect so the computed
     // signals stay watched and the assertions can read the locals.
@@ -153,30 +142,15 @@ describe('ToolbarStateExtension', () => {
       italic = isItalic.value;
       code = isCode.value;
     });
-    editor.update(
-      () => {
-        const paragraph = $getRoot().getFirstChild();
-        if (!$isElementNode(paragraph)) {
-          return;
-        }
-        const text = $createTextNode('hello');
-        paragraph.append(text);
-        text.select(0, 5);
-      },
-      {discrete: true},
-    );
     expect(bold).toBe(false);
     expect(italic).toBe(false);
     expect(code).toBe(false);
     // Wrap the dispatch in a discrete update so listeners fire
     // synchronously before control returns, ensuring the watched
     // signals have settled.
-    editor.update(
-      () => {
-        editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold');
-      },
-      {discrete: true},
-    );
+    editor.update(() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold'), {
+      discrete: true,
+    });
     // The selection's format flag is updated by formatText via the
     // command, so the selection-derived locals should now reflect bold.
     expect(bold).toBe(true);

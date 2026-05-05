@@ -16,31 +16,31 @@ import {
   $createListNode,
   $isListItemNode,
   $isListNode,
-  ListItemNode,
-  ListNode,
 } from '@lexical/list';
 import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
 } from '@lexical/markdown';
 import {
-  $createTextNode,
   $getRoot,
   $getSelection,
   $isRangeSelection,
   defineExtension,
   type LexicalEditorWithDispose,
 } from 'lexical';
-import {describe, expect, test} from 'vitest';
+import {assert, describe, expect, test} from 'vitest';
 
 import {
   MARKDOWN_TRANSFORMERS,
   MarkdownExtension,
 } from '../../extensions/MarkdownExtension';
 
-function createTestEditor(): LexicalEditorWithDispose {
+function createTestEditor(
+  $initialEditorState?: () => void,
+): LexicalEditorWithDispose {
   return buildEditorFromExtensions(
     defineExtension({
+      $initialEditorState,
       dependencies: [MarkdownExtension],
       name: 'markdown-editor-test',
       namespace: 'markdown-editor-test',
@@ -48,16 +48,15 @@ function createTestEditor(): LexicalEditorWithDispose {
   );
 }
 
+function $importMarkdown(markdown: string): void {
+  $convertFromMarkdownString(markdown, MARKDOWN_TRANSFORMERS);
+}
+
 function importMarkdown(
   editor: LexicalEditorWithDispose,
   markdown: string,
 ): void {
-  editor.update(
-    () => {
-      $convertFromMarkdownString(markdown, MARKDOWN_TRANSFORMERS);
-    },
-    {discrete: true},
-  );
+  editor.update(() => $importMarkdown(markdown), {discrete: true});
 }
 
 function exportMarkdown(editor: LexicalEditorWithDispose): string {
@@ -66,48 +65,45 @@ function exportMarkdown(editor: LexicalEditorWithDispose): string {
 
 describe('MARKDOWN_TRANSFORMERS', () => {
   test('round-trips a heading', () => {
-    using editor = createTestEditor();
-    importMarkdown(editor, '# Hello');
+    using editor = createTestEditor(() => $importMarkdown('# Hello'));
     expect(exportMarkdown(editor)).toBe('# Hello');
   });
 
   test('round-trips inline formats', () => {
-    using editor = createTestEditor();
-    importMarkdown(editor, 'A **bold** and *italic* and `code` line');
+    using editor = createTestEditor(() =>
+      $importMarkdown('A **bold** and *italic* and `code` line'),
+    );
     expect(exportMarkdown(editor)).toBe(
       'A **bold** and *italic* and `code` line',
     );
   });
 
   test('round-trips an unordered list', () => {
-    using editor = createTestEditor();
     const md = '- one\n- two\n- three';
-    importMarkdown(editor, md);
+    using editor = createTestEditor(() => $importMarkdown(md));
     expect(exportMarkdown(editor)).toBe(md);
   });
 
   test('round-trips an ordered list', () => {
-    using editor = createTestEditor();
     const md = '1. one\n2. two\n3. three';
-    importMarkdown(editor, md);
+    using editor = createTestEditor(() => $importMarkdown(md));
     expect(exportMarkdown(editor)).toBe(md);
   });
 
   test('round-trips a check list', () => {
-    using editor = createTestEditor();
     const md = '- [ ] todo\n- [x] done';
-    importMarkdown(editor, md);
+    using editor = createTestEditor(() => $importMarkdown(md));
     expect(exportMarkdown(editor)).toBe(md);
   });
 
   test('CHECK_LIST is matched before UNORDERED_LIST on import', () => {
-    using editor = createTestEditor();
-    importMarkdown(editor, '- [x] done');
+    using editor = createTestEditor(() => $importMarkdown('- [x] done'));
     editor.read(() => {
       const list = $getRoot().getFirstChild();
-      expect($isListNode(list)).toBe(true);
-      expect((list as ListNode).getListType()).toBe('check');
-      const item = (list as ListNode).getFirstChild() as ListItemNode;
+      assert($isListNode(list), 'Expecting ListNode');
+      expect(list.getListType()).toBe('check');
+      const item = list.getFirstChild();
+      assert($isListItemNode(item), 'Expecting ListItemNode');
       expect(item.getChecked()).toBe(true);
       expect(item.getTextContent()).toBe('done');
     });
@@ -115,19 +111,11 @@ describe('MARKDOWN_TRANSFORMERS', () => {
 });
 
 describe('CHECK_LIST_ITEM typing-time transformer', () => {
-  function setupBulletListItem(editor: LexicalEditorWithDispose): void {
-    editor.update(
-      () => {
-        const list = $createListNode('bullet');
-        const item = $createListItemNode();
-        const text = $createTextNode('');
-        item.append(text);
-        list.append(item);
-        $getRoot().clear().append(list);
-        text.select(0, 0);
-      },
-      {discrete: true},
-    );
+  function $setupBulletListItem(): void {
+    $getRoot()
+      .clear()
+      .append($createListNode('bullet').append($createListItemNode()))
+      .selectStart();
   }
 
   function typeChars(editor: LexicalEditorWithDispose, chars: string): void {
@@ -135,9 +123,8 @@ describe('CHECK_LIST_ITEM typing-time transformer', () => {
       editor.update(
         () => {
           const selection = $getSelection();
-          if ($isRangeSelection(selection)) {
-            selection.insertText(ch);
-          }
+          assert($isRangeSelection(selection), 'Expecting RangeSelection');
+          selection.insertText(ch);
         },
         {discrete: true},
       );
@@ -145,39 +132,38 @@ describe('CHECK_LIST_ITEM typing-time transformer', () => {
   }
 
   test('typing `[x] ` inside a bullet list item flips it to a checklist', () => {
-    using editor = createTestEditor();
-    setupBulletListItem(editor);
+    using editor = createTestEditor($setupBulletListItem);
     typeChars(editor, '[x] ');
     editor.read(() => {
       const list = $getRoot().getFirstChild();
-      expect($isListNode(list)).toBe(true);
-      const listNode = list as ListNode;
-      expect(listNode.getListType()).toBe('check');
-      const item = listNode.getFirstChild();
-      expect($isListItemNode(item)).toBe(true);
-      expect((item as ListItemNode).getChecked()).toBe(true);
-      expect((item as ListItemNode).getTextContent()).toBe('');
+      assert($isListNode(list), 'Expecting ListNode');
+      expect(list.getListType()).toBe('check');
+      const item = list.getFirstChild();
+      assert($isListItemNode(item), 'Expecting ListItemNode');
+      expect(item.getChecked()).toBe(true);
+      expect(item.getTextContent()).toBe('');
     });
   });
 
   test('typing `[ ] ` inside a bullet list item flips it to an unchecked item', () => {
-    using editor = createTestEditor();
-    setupBulletListItem(editor);
+    using editor = createTestEditor($setupBulletListItem);
     typeChars(editor, '[ ] ');
     editor.read(() => {
-      const list = $getRoot().getFirstChild() as ListNode;
+      const list = $getRoot().getFirstChild();
+      assert($isListNode(list), 'Expecting ListNode');
       expect(list.getListType()).toBe('check');
-      const item = list.getFirstChild() as ListItemNode;
+      const item = list.getFirstChild();
+      assert($isListItemNode(item), 'Expecting ListItemNode');
       expect(item.getChecked()).toBe(false);
     });
   });
 
   test('typing nothing matching is left alone', () => {
-    using editor = createTestEditor();
-    setupBulletListItem(editor);
+    using editor = createTestEditor($setupBulletListItem);
     typeChars(editor, 'plain ');
     editor.read(() => {
-      const list = $getRoot().getFirstChild() as ListNode;
+      const list = $getRoot().getFirstChild();
+      assert($isListNode(list), 'Expecting ListNode');
       expect(list.getListType()).toBe('bullet');
     });
   });

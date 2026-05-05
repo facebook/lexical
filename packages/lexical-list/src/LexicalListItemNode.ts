@@ -38,6 +38,7 @@ import {
   $isRootOrShadowRoot,
   $rewindSiblingCaret,
   $setDirectionFromDOM,
+  $setFormatFromDOM,
   buildImportMap,
   ElementNode,
   getStyleObjectFromCSS,
@@ -639,7 +640,14 @@ function $convertListItemElement(domNode: HTMLElement): DOMConversionOutput {
       : ariaCheckedAttr === 'false'
         ? false
         : undefined;
-  return {node: $setDirectionFromDOM($createListItemNode(checked), domNode)};
+
+  const node = $createListItemNode(checked);
+  $setFormatFromDOM(node, domNode);
+
+  return {
+    after: setFormatFromChildren.bind(null, node),
+    node: $setDirectionFromDOM(node, domNode),
+  };
 }
 
 function $convertCheckboxInput(domNode: Element): DOMConversionOutput {
@@ -648,7 +656,26 @@ function $convertCheckboxInput(domNode: Element): DOMConversionOutput {
     return {node: null};
   }
   const checked = domNode.hasAttribute('checked');
-  return {node: $createListItemNode(checked)};
+  const node = $createListItemNode(checked);
+  return {after: setFormatFromChildren.bind(null, node), node};
+}
+
+function setFormatFromChildren(
+  listItemNode: ListItemNode,
+  children: LexicalNode[],
+): LexicalNode[] {
+  const firstChild = children[0];
+  // google doc sets the alignment of the <p> tag inside the <li>
+  if (
+    children.length === 1 &&
+    $isParagraphNode(firstChild) &&
+    !listItemNode.getFormatType() &&
+    firstChild.getFormatType()
+  ) {
+    listItemNode.setFormat(firstChild.getFormatType());
+    return firstChild.getChildren();
+  }
+  return children;
 }
 
 /**

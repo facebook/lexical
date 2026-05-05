@@ -30,7 +30,7 @@ import {
   ToolbarStateExtension,
 } from '../extensions/ToolbarStateExtension';
 
-const BLOCK_TYPES: ReadonlyArray<{label: string; value: BlockType}> = [
+const BLOCK_TYPES: readonly {label: string; value: BlockType}[] = [
   {label: 'Paragraph', value: 'paragraph'},
   {label: 'Heading 1', value: 'h1'},
   {label: 'Heading 2', value: 'h2'},

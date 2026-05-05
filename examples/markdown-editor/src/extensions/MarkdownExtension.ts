@@ -116,7 +116,7 @@ const CHECK_LIST_ITEM: TextMatchTransformer = {
  * `1. ` and then types `[ ] ` or `[x] `, this transformer flips the
  * list to a checklist in place.
  */
-export const MARKDOWN_TRANSFORMERS: Array<Transformer> = [
+export const MARKDOWN_TRANSFORMERS: Transformer[] = [
   HEADING,
   CHECK_LIST,
   UNORDERED_LIST,
@@ -129,7 +129,7 @@ export const MARKDOWN_TRANSFORMERS: Array<Transformer> = [
 ];
 
 export interface MarkdownConfig {
-  transformers: Array<Transformer>;
+  transformers: Transformer[];
 }
 
 /**

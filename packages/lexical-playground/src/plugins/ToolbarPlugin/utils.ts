@@ -27,15 +27,21 @@ import {
 } from '@lexical/utils';
 import {
   $addUpdateTag,
+  $caretRangeFromSelection,
+  $comparePointCaretNext,
   $createParagraphNode,
   $createRangeSelection,
+  $getCaretInDirection,
+  $getChildCaret,
   $getSelection,
   $isBlockElementNode,
   $isLineBreakNode,
   $isRangeSelection,
   $isTextNode,
+  $normalizeCaret,
   $setSelection,
   $splitNode,
+  CaretRange,
   ElementNode,
   LexicalEditor,
   LexicalNode,
@@ -298,6 +304,24 @@ function $findBlockAncestor(node: LexicalNode): ElementNode | null {
   return $findMatchingParent(node, $isBlockElementNode);
 }
 
+function $isBlockFullySelected(
+  block: ElementNode,
+  caretRange: CaretRange,
+): boolean {
+  const blockStartCaret = $normalizeCaret($getChildCaret(block, 'next'));
+  const blockEndCaret = $normalizeCaret(
+    $getCaretInDirection($getChildCaret(block, 'previous'), 'next'),
+  );
+
+  const anchorNext = $getCaretInDirection(caretRange.anchor, 'next');
+  const focusNext = $getCaretInDirection(caretRange.focus, 'next');
+
+  return (
+    $comparePointCaretNext(anchorNext, blockStartCaret) <= 0 &&
+    $comparePointCaretNext(focusNext, blockEndCaret) >= 0
+  );
+}
+
 export const formatCode = (editor: LexicalEditor, blockType: string) => {
   if (blockType !== 'code') {
     editor.update(() => {
@@ -345,11 +369,25 @@ export const clearFormatting = (
     }
     const selection = $getSelection();
     if ($isRangeSelection(selection) || $isTableSelection(selection)) {
-      const anchor = selection.anchor;
-      const focus = selection.focus;
       const extractedNodes = selection.extract();
 
-      if (anchor.key === focus.key && anchor.offset === focus.offset) {
+      const postExtractSelection = $getSelection();
+      if (!$isRangeSelection(postExtractSelection)) {
+        return;
+      }
+
+      const postExtractCaretRange =
+        $caretRangeFromSelection(postExtractSelection);
+      const anchorNext = $getCaretInDirection(
+        postExtractCaretRange.anchor,
+        'next',
+      );
+      const focusNext = $getCaretInDirection(
+        postExtractCaretRange.focus,
+        'next',
+      );
+
+      if ($comparePointCaretNext(anchorNext, focusNext) === 0) {
         return;
       }
 
@@ -364,7 +402,11 @@ export const clearFormatting = (
           const nearestBlockElement =
             $getNearestBlockElementAncestorOrThrow(node);
           if (nearestBlockElement.getFormat() !== 0) {
-            nearestBlockElement.setFormat('');
+            if (
+              $isBlockFullySelected(nearestBlockElement, postExtractCaretRange)
+            ) {
+              nearestBlockElement.setFormat('');
+            }
           }
           if (nearestBlockElement.getIndent() !== 0) {
             nearestBlockElement.setIndent(0);

@@ -6,6 +6,7 @@
  *
  */
 
+import type {ShikiThemeDef} from './CodeHighlighterShiki';
 import type {CodeNode} from '@lexical/code-core';
 import type {ThemedToken, TokensResult} from '@shikijs/types';
 import type {LexicalEditor, LexicalNode, NodeKey} from 'lexical';
@@ -138,21 +139,39 @@ export function normalizeCodeLanguage(language: string): string {
 export function $getHighlightNodes(
   codeNode: CodeNode,
   language: string,
+  themeSpec: ShikiThemeDef,
 ): LexicalNode[] {
   const DIFF_LANGUAGE_REGEX = /^diff-([\w-]+)/i;
   const diffLanguageMatch = DIFF_LANGUAGE_REGEX.exec(language);
   const code: string = codeNode.getTextContent();
-  const tokensResult: TokensResult = shiki.codeToTokens(code, {
-    lang: diffLanguageMatch ? diffLanguageMatch[1] : language,
-    theme: codeNode.getTheme() || 'poimandres',
-  });
-  const {tokens, bg, fg} = tokensResult;
+  const lang = diffLanguageMatch ? diffLanguageMatch[1] : language;
+  // String spec: inline single-theme path. Shiki returns a single-theme
+  // tokensResult with `bg` / `fg` strings.
+  // Object spec ({light, dark}): multi-theme vars-only path. Shiki
+  // populates `rootStyle` with `--shiki-light(-bg)` / `--shiki-dark(-bg)`
+  // CSS variables, no inline color, and the consuming page's CSS owns
+  // the active scheme.
+  const tokensResult: TokensResult =
+    typeof themeSpec === 'string'
+      ? shiki.codeToTokens(code, {lang, theme: themeSpec})
+      : shiki.codeToTokens(code, {
+          defaultColor: false,
+          lang,
+          themes: themeSpec,
+        });
+  const {tokens, bg, fg, rootStyle} = tokensResult;
   let style = '';
-  if (bg) {
-    style += `background-color: ${bg};`;
-  }
-  if (fg) {
-    style += `color: ${fg};`;
+  if (rootStyle) {
+    // Set only on the multi-theme path; bg/fg are variable lists, not
+    // values that could be appended to `background-color: ${bg}`.
+    style = rootStyle;
+  } else {
+    if (bg) {
+      style += `background-color: ${bg};`;
+    }
+    if (fg) {
+      style += `color: ${fg};`;
+    }
   }
   if (codeNode.getStyle() !== style) {
     codeNode.setStyle(style);

@@ -577,15 +577,15 @@ interface HistoryExtensionInit {
  */
 export interface HistoryExtensionOutput {
   /**
-   * `true` when there is at least one entry in the undo stack, i.e. the
-   * editor can perform an undo.
-   */
-  canUndo: ReadonlySignal<boolean>;
-  /**
    * `true` when there is at least one entry in the redo stack, i.e. the
    * editor can perform a redo.
    */
   canRedo: ReadonlySignal<boolean>;
+  /**
+   * `true` when there is at least one entry in the undo stack, i.e. the
+   * editor can perform an undo.
+   */
+  canUndo: ReadonlySignal<boolean>;
   /** The merge-delay in milliseconds forwarded to {@link registerHistory}. */
   delay: Signal<number>;
   /** When `true` the history listener is not registered. */
@@ -612,7 +612,12 @@ export const HistoryExtension = defineExtension({
   ): HistoryExtensionOutput => {
     const {canUndo, canRedo} = state.getInitResult();
     return {
-      ...namedSignals({delay, disabled, historyState: createInitialHistoryState(editor), now}),
+      ...namedSignals({
+        delay,
+        disabled,
+        historyState: createInitialHistoryState(editor),
+        now,
+      }),
       canRedo: computed(() => canRedo.value),
       canUndo: computed(() => canUndo.value),
     };

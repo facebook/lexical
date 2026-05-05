@@ -33,10 +33,10 @@ export type HistoryConfig = {
 }
 
 export type HistoryExtensionOutput = {
-  /** `true` when there is at least one entry in the undo stack. */
-  canUndo: ReadonlySignal<boolean>,
   /** `true` when there is at least one entry in the redo stack. */
   canRedo: ReadonlySignal<boolean>,
+  /** `true` when there is at least one entry in the undo stack. */
+  canUndo: ReadonlySignal<boolean>,
   delay: Signal<number>,
   disabled: Signal<boolean>,
   historyState: Signal<HistoryState>,

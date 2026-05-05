@@ -660,8 +660,8 @@ describe('HistoryExtension canUndo/canRedo signals', () => {
     const editor = buildEditorFromExtensions({
       dependencies: [
         configExtension(HistoryExtension, {
-          delay: 0,
           createInitialHistoryState: () => donorHistory,
+          delay: 0,
         }),
       ],
       name: 'test',
@@ -694,8 +694,8 @@ describe('HistoryExtension canUndo/canRedo signals', () => {
     const editor = buildEditorFromExtensions({
       dependencies: [
         configExtension(HistoryExtension, {
-          delay: 0,
           createInitialHistoryState: () => donorHistory,
+          delay: 0,
         }),
       ],
       name: 'test',

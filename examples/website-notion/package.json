@@ -1,7 +1,7 @@
 {
   "name": "@lexical/website-notion-example",
   "private": true,
-  "version": "0.44.0",
+  "version": "0.44.1-nightly.20260505.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,14 +9,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@lexical/extension": "0.44.0",
-    "@lexical/history": "0.44.0",
-    "@lexical/list": "0.44.0",
-    "@lexical/react": "0.44.0",
-    "@lexical/rich-text": "0.44.0",
-    "@lexical/selection": "0.44.0",
-    "@lexical/utils": "0.44.0",
-    "lexical": "0.44.0",
+    "@lexical/extension": "0.44.1-nightly.20260505.0",
+    "@lexical/history": "0.44.1-nightly.20260505.0",
+    "@lexical/list": "0.44.1-nightly.20260505.0",
+    "@lexical/react": "0.44.1-nightly.20260505.0",
+    "@lexical/rich-text": "0.44.1-nightly.20260505.0",
+    "@lexical/selection": "0.44.1-nightly.20260505.0",
+    "@lexical/utils": "0.44.1-nightly.20260505.0",
+    "lexical": "0.44.1-nightly.20260505.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5"
   },

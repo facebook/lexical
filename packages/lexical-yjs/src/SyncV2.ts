@@ -181,14 +181,12 @@ export const $createOrUpdateNodeFromYElement = (
   $syncPropertiesFromYjs(binding, properties, node, keysChanged);
   if (!keysChanged) {
     $getWritableNodeState(node).updateFromJSON(state);
-  } else {
-    const stateKeysChanged = Object.keys(state).filter(k =>
-      keysChanged.has(stateKeyToAttrKey(k)),
-    );
-    if (stateKeysChanged.length > 0) {
-      const writableState = $getWritableNodeState(node);
-      for (const k of stateKeysChanged) {
-        writableState.updateFromUnknown(k, state[k]);
+  } else if (keysChanged.size > 0) {
+    const writableState = $getWritableNodeState(node);
+    for (const changedKey of keysChanged) {
+      if (changedKey.startsWith(STATE_KEY_PREFIX)) {
+        const stateKey = attrKeyToStateKey(changedKey);
+        writableState.updateFromUnknown(stateKey, state[stateKey]);
       }
     }
   }

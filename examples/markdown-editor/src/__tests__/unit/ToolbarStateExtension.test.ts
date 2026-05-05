@@ -8,6 +8,7 @@
 
 import {
   buildEditorFromExtensions,
+  effect,
   getExtensionDependencyFromEditor,
 } from '@lexical/extension';
 import {$convertFromMarkdownString} from '@lexical/markdown';
@@ -28,7 +29,10 @@ import {
   MARKDOWN_TRANSFORMERS,
   MarkdownExtension,
 } from '../../extensions/MarkdownExtension';
-import {ToolbarStateExtension} from '../../extensions/ToolbarStateExtension';
+import {
+  type BlockType,
+  ToolbarStateExtension,
+} from '../../extensions/ToolbarStateExtension';
 
 function createTestEditor(): LexicalEditorWithDispose {
   return buildEditorFromExtensions(
@@ -71,75 +75,70 @@ describe('ToolbarStateExtension', () => {
   test('blockType reflects the current top-level block', () => {
     using editor = createTestEditor();
     const {blockType} = getOutputs(editor);
-    const dispose = blockType.subscribe(() => {});
-    try {
-      editor.update(
-        () => {
-          $convertFromMarkdownString('# heading', MARKDOWN_TRANSFORMERS);
-          $selectFirstLeaf();
-        },
-        {discrete: true},
-      );
-      expect(blockType.value).toBe('h1');
-      editor.update(
-        () => {
-          $convertFromMarkdownString('- one', MARKDOWN_TRANSFORMERS);
-          $selectFirstLeaf();
-        },
-        {discrete: true},
-      );
-      expect(blockType.value).toBe('bullet');
-      editor.update(
-        () => {
-          $convertFromMarkdownString('- [x] done', MARKDOWN_TRANSFORMERS);
-          $selectFirstLeaf();
-        },
-        {discrete: true},
-      );
-      expect(blockType.value).toBe('check');
-    } finally {
-      dispose();
-    }
+    let currentBlockType: BlockType = 'paragraph';
+    using _watch = effect(() => {
+      currentBlockType = blockType.value;
+    });
+    editor.update(
+      () => {
+        $convertFromMarkdownString('# heading', MARKDOWN_TRANSFORMERS);
+        $selectFirstLeaf();
+      },
+      {discrete: true},
+    );
+    expect(currentBlockType).toBe('h1');
+    editor.update(
+      () => {
+        $convertFromMarkdownString('- one', MARKDOWN_TRANSFORMERS);
+        $selectFirstLeaf();
+      },
+      {discrete: true},
+    );
+    expect(currentBlockType).toBe('bullet');
+    editor.update(
+      () => {
+        $convertFromMarkdownString('- [x] done', MARKDOWN_TRANSFORMERS);
+        $selectFirstLeaf();
+      },
+      {discrete: true},
+    );
+    expect(currentBlockType).toBe('check');
   });
 
   test('isBold / isItalic / isCode start false and follow FORMAT_TEXT_COMMAND', () => {
     using editor = createTestEditor();
     const {isBold, isItalic, isCode} = getOutputs(editor);
-    // Hold subscriptions so the computed signals stay watched and
-    // pick up editor state updates eagerly.
-    const dispose = [
-      isBold.subscribe(() => {}),
-      isItalic.subscribe(() => {}),
-      isCode.subscribe(() => {}),
-    ];
-    try {
-      editor.update(
-        () => {
-          const paragraph = $getRoot().getFirstChild();
-          if (!$isElementNode(paragraph)) {
-            return;
-          }
-          const text = $createTextNode('hello');
-          paragraph.append(text);
-          text.select(0, 5);
-        },
-        {discrete: true},
-      );
-      expect(isBold.value).toBe(false);
-      expect(isItalic.value).toBe(false);
-      expect(isCode.value).toBe(false);
-      editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold');
-      // Force a re-read of the editor state via a discrete no-op so
-      // the test is robust regardless of when listeners settle.
-      editor.read(() => undefined);
-      // The selection's format flag is updated by formatText via the
-      // command, so the selection-derived signals should now reflect
-      // bold.
-      expect(isBold.value).toBe(true);
-    } finally {
-      for (const fn of dispose) {
-        fn();
-      }
-    }
+    // Mirror the signals into locals via an effect so the computed
+    // signals stay watched and the assertions can read the locals.
+    let bold = false;
+    let italic = false;
+    let code = false;
+    using _watch = effect(() => {
+      bold = isBold.value;
+      italic = isItalic.value;
+      code = isCode.value;
+    });
+    editor.update(
+      () => {
+        const paragraph = $getRoot().getFirstChild();
+        if (!$isElementNode(paragraph)) {
+          return;
+        }
+        const text = $createTextNode('hello');
+        paragraph.append(text);
+        text.select(0, 5);
+      },
+      {discrete: true},
+    );
+    expect(bold).toBe(false);
+    expect(italic).toBe(false);
+    expect(code).toBe(false);
+    editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold');
+    // Force a re-read of the editor state via a discrete no-op so
+    // the test is robust regardless of when listeners settle.
+    editor.read(() => undefined);
+    // The selection's format flag is updated by formatText via the
+    // command, so the selection-derived locals should now reflect bold.
+    expect(bold).toBe(true);
   });
 });

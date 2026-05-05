@@ -8,6 +8,7 @@
 
 import {
   buildEditorFromExtensions,
+  effect,
   getExtensionDependencyFromEditor,
 } from '@lexical/extension';
 import {
@@ -208,17 +209,17 @@ describe('MarkdownExtension markdown signal', () => {
       editor,
       MarkdownExtension,
     ).output;
-    // The signal is lazy: it only stays in sync while it has a
-    // subscriber. A no-op subscription gets us into the watched state.
-    const dispose = markdown.subscribe(() => {});
-    try {
-      expect(markdown.value).toBe('');
-      importMarkdown(editor, '# Title');
-      expect(markdown.value).toBe('# Title');
-      importMarkdown(editor, '- one\n- two');
-      expect(markdown.value).toBe('- one\n- two');
-    } finally {
-      dispose();
-    }
+    // Capture the latest value into a local so the effect both keeps
+    // the lazy signal watched and gives the assertions something to
+    // read directly. `using` disposes the effect on test exit.
+    let current = '';
+    using _watch = effect(() => {
+      current = markdown.value;
+    });
+    expect(current).toBe('');
+    importMarkdown(editor, '# Title');
+    expect(current).toBe('# Title');
+    importMarkdown(editor, '- one\n- two');
+    expect(current).toBe('- one\n- two');
   });
 });

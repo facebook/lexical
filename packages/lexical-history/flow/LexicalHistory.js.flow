@@ -23,6 +23,8 @@ declare export function registerHistory(
   editor: LexicalEditor,
   historyState: HistoryState,
   delay: number,
+  dateNow?: () => number,
+  onHistoryStateChange?: (historyState: HistoryState) => void,
 ): () => void;
 declare export function createEmptyHistoryState(): HistoryState;
 

@@ -425,6 +425,12 @@ function clearHistory(historyState: HistoryState) {
  * @param historyState - The history state, containing the current state and the undo/redo stack.
  * @param delay - The time (in milliseconds) the editor should delay generating a new history stack,
  * instead of merging the current changes with the current stack.
+ * @param dateNow - The clock function used for delay-based merging.
+ * @param onHistoryStateChange - Optional callback invoked once on registration
+ * and again any time `historyState` is mutated (push, pop, clear, etc.). It is
+ * NOT invoked when a candidate update is discarded without changing the
+ * stacks. Useful for keeping derived values (e.g. signals) in sync with the
+ * current `HistoryState`.
  * @returns The listeners cleanup callback function.
  */
 export function registerHistory(
@@ -432,8 +438,15 @@ export function registerHistory(
   historyState: HistoryState,
   delay: number | ReadonlySignal<number>,
   dateNow: () => number = Date.now,
+  onHistoryStateChange?: (state: HistoryState) => void,
 ): () => void {
   const getMergeAction = createMergeActionGetter(editor, delay, dateNow);
+
+  const notifyChange = () => {
+    if (onHistoryStateChange) {
+      onHistoryStateChange(historyState);
+    }
+  };
 
   const applyChange = ({
     editorState,
@@ -487,13 +500,19 @@ export function registerHistory(
       editor,
       editorState,
     };
+    notifyChange();
   };
+
+  // Allow consumers (e.g. HistoryExtension) to read pre-populated stacks
+  // immediately, without waiting for the first edit.
+  notifyChange();
 
   return mergeRegister(
     editor.registerCommand(
       UNDO_COMMAND,
       () => {
         undo(editor, historyState);
+        notifyChange();
         return true;
       },
       COMMAND_PRIORITY_EDITOR,
@@ -502,6 +521,7 @@ export function registerHistory(
       REDO_COMMAND,
       () => {
         redo(editor, historyState);
+        notifyChange();
         return true;
       },
       COMMAND_PRIORITY_EDITOR,
@@ -510,6 +530,7 @@ export function registerHistory(
       CLEAR_EDITOR_COMMAND,
       () => {
         clearHistory(historyState);
+        notifyChange();
         return false;
       },
       COMMAND_PRIORITY_EDITOR,
@@ -520,6 +541,7 @@ export function registerHistory(
         clearHistory(historyState);
         editor.dispatchCommand(CAN_REDO_COMMAND, false);
         editor.dispatchCommand(CAN_UNDO_COMMAND, false);
+        notifyChange();
         return true;
       },
       COMMAND_PRIORITY_EDITOR,
@@ -601,10 +623,6 @@ export interface HistoryExtensionOutput {
  * editor commands, via the \@lexical/history module.
  */
 export const HistoryExtension = defineExtension({
-  init: (): HistoryExtensionInit => ({
-    canRedo: signal(false),
-    canUndo: signal(false),
-  }),
   build: (
     editor,
     {delay, createInitialHistoryState, disabled, now},
@@ -628,47 +646,34 @@ export const HistoryExtension = defineExtension({
     disabled: typeof window === 'undefined',
     now: Date.now,
   }),
+  init: (): HistoryExtensionInit => ({
+    canRedo: signal(false),
+    canUndo: signal(false),
+  }),
   name: '@lexical/history/History',
   register: (editor, config, state) => {
     const {canUndo, canRedo} = state.getInitResult();
     const stores = state.getOutput();
-    return mergeRegister(
-      effect(() => {
-        if (stores.disabled.value) {
-          canUndo.value = false;
-          canRedo.value = false;
-          return undefined;
-        }
-        const historyState = stores.historyState.value;
-        // Sync immediately whenever historyState is (re-)assigned, so that
-        // pre-populated stacks (e.g. from SharedHistoryExtension) are
-        // reflected without waiting for a command to be dispatched.
-        canUndo.value = historyState.undoStack.length > 0;
-        canRedo.value = historyState.redoStack.length > 0;
-        return registerHistory(
-          editor,
-          historyState,
-          stores.delay,
-          () => stores.now.peek()(),
-        );
-      }),
-      editor.registerCommand(
-        CAN_UNDO_COMMAND,
-        () => {
-          canUndo.value = stores.historyState.peek().undoStack.length > 0;
-          return false;
+    return effect(() => {
+      if (stores.disabled.value) {
+        canUndo.value = false;
+        canRedo.value = false;
+        return undefined;
+      }
+      // registerHistory invokes our callback on initialization and after every
+      // mutation of historyState, so canUndo/canRedo are always derived
+      // directly from the current HistoryState.
+      return registerHistory(
+        editor,
+        stores.historyState.value,
+        stores.delay,
+        () => stores.now.peek()(),
+        historyState => {
+          canUndo.value = historyState.undoStack.length > 0;
+          canRedo.value = historyState.redoStack.length > 0;
         },
-        COMMAND_PRIORITY_EDITOR,
-      ),
-      editor.registerCommand(
-        CAN_REDO_COMMAND,
-        () => {
-          canRedo.value = stores.historyState.peek().redoStack.length > 0;
-          return false;
-        },
-        COMMAND_PRIORITY_EDITOR,
-      ),
-    );
+      );
+    });
   },
 });
 

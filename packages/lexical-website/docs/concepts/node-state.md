@@ -190,13 +190,7 @@ to the default returned by its `parse` function — see
 :::note
 
 Don't reuse a flat key that a superclass already serializes (e.g. `text`
-on `TextNode`). There's no runtime check, but the resulting JSON shape is
-ambiguous and not round-trip stable: which value wins on serialize depends
-on the order the superclass's `exportJSON` spreads its own fields and
-`super.exportJSON()`, and on parse the top-level value is lifted into
-NodeState while the superclass's `updateFromJSON` may also reassign it to
-the original property — leaving both representations populated and prone
-to drift.
+on `TextNode`).
 
 :::
 
@@ -278,11 +272,12 @@ export class ColoredNode extends TextNode {
 
 :::tip
 
-To stage the migration without breaking existing payloads, keep the
-serialized key name the same as the old property name (the first
-argument to `createState`) and keep the default value identical to the
-one your old `parse`/`updateFromJSON` produced for missing or invalid
-input. Existing JSON will then deserialize unchanged.
+For a seamless migration, keep the JSON key name the same — for a flat
+state, that's the first argument to `createState`. Migrating from a
+non-flat NodeState to a flat NodeState also works: state that appears
+under the `$` (`NODE_STATE_KEY`) is still parsed even when the state is
+configured as flat, and the flat value takes precedence when both are
+present.
 
 :::
 

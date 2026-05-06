@@ -190,9 +190,13 @@ to the default returned by its `parse` function — see
 :::note
 
 Don't reuse a flat key that a superclass already serializes (e.g. `text`
-on `TextNode`). There's no runtime check, but the resulting JSON will be
-ambiguous: the superclass field wins on serialize, and on parse the value
-will be lifted into NodeState — corrupting both fields.
+on `TextNode`). There's no runtime check, but the resulting JSON shape is
+ambiguous and not round-trip stable: which value wins on serialize depends
+on the order the superclass's `exportJSON` spreads its own fields and
+`super.exportJSON()`, and on parse the top-level value is lifted into
+NodeState while the superclass's `updateFromJSON` may also reassign it to
+the original property — leaving both representations populated and prone
+to drift.
 
 :::
 

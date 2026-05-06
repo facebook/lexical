@@ -1404,6 +1404,7 @@ export function scrollIntoViewIfNeeded(
   editor: LexicalEditor,
   selectionRect: DOMRect,
   rootElement: HTMLElement,
+  startingElement?: HTMLElement | null,
 ): void {
   const doc = getDOMOwnerDocument(rootElement);
   const defaultView = getDefaultView(doc);
@@ -1412,15 +1413,20 @@ export function scrollIntoViewIfNeeded(
     return;
   }
   let {top: currentTop, bottom: currentBottom} = selectionRect;
+  let {left: currentLeft, right: currentRight} = selectionRect;
   let targetTop = 0;
   let targetBottom = 0;
-  let element: HTMLElement | null = rootElement;
+  let targetLeft = 0;
+  let targetRight = 0;
+  let element: HTMLElement | null = startingElement || rootElement;
 
   while (element !== null) {
     const isBodyElement = element === doc.body;
     if (isBodyElement) {
       targetTop = 0;
       targetBottom = getWindow(editor).innerHeight;
+      targetLeft = 0;
+      targetRight = getWindow(editor).innerWidth;
       // Account for CSS scroll-padding on the document element
       const computedStyle = defaultView.getComputedStyle(doc.documentElement);
       const scrollPaddingTop = parseFloat(computedStyle.scrollPaddingTop);
@@ -1435,6 +1441,8 @@ export function scrollIntoViewIfNeeded(
       const targetRect = element.getBoundingClientRect();
       targetTop = targetRect.top;
       targetBottom = targetRect.bottom;
+      targetLeft = targetRect.left;
+      targetRight = targetRect.right;
     }
     let diff = 0;
 
@@ -1446,7 +1454,6 @@ export function scrollIntoViewIfNeeded(
 
     if (diff !== 0) {
       if (isBodyElement) {
-        // Only handles scrolling of Y axis
         defaultView.scrollBy(0, diff);
       } else {
         const scrollTop = element.scrollTop;
@@ -1456,6 +1463,28 @@ export function scrollIntoViewIfNeeded(
         currentBottom -= yOffset;
       }
     }
+
+    // Horizontal scrolling
+    let hDiff = 0;
+
+    if (currentLeft < targetLeft) {
+      hDiff = -(targetLeft - currentLeft);
+    } else if (currentRight > targetRight) {
+      hDiff = currentRight - targetRight;
+    }
+
+    if (hDiff !== 0) {
+      if (isBodyElement) {
+        defaultView.scrollBy(hDiff, 0);
+      } else {
+        const scrollLeft = element.scrollLeft;
+        element.scrollLeft += hDiff;
+        const xOffset = element.scrollLeft - scrollLeft;
+        currentLeft -= xOffset;
+        currentRight -= xOffset;
+      }
+    }
+
     if (isBodyElement) {
       break;
     }

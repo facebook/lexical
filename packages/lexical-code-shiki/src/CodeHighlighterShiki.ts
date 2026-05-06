@@ -130,14 +130,91 @@ function updateCodeGutter(node: CodeNode, editor: LexicalEditor): void {
   }
   // @ts-ignore:: internal field
   codeElement.__cachedChildrenLength = childrenLength;
-  let gutter = '1';
   let count = 1;
   for (let i = 0; i < childrenLength; i++) {
     if ($isLineBreakNode(children[i])) {
-      gutter += '\n' + ++count;
+      count++;
     }
   }
-  codeElement.setAttribute('data-gutter', gutter);
+
+  if (node.getWordWrap()) {
+    // Word-wrap mode: update real DOM gutter elements
+    const gutterEl = codeElement.querySelector('.code-gutter');
+    if (gutterEl) {
+      while (gutterEl.children.length > count) {
+        gutterEl.removeChild(gutterEl.lastChild!);
+      }
+      while (gutterEl.children.length < count) {
+        const span = document.createElement('span');
+        span.textContent = String(gutterEl.children.length + 1);
+        gutterEl.appendChild(span);
+      }
+      for (let i = 0; i < count; i++) {
+        const span = gutterEl.children[i] as HTMLElement;
+        const lineNum = String(i + 1);
+        if (span.textContent !== lineNum) {
+          span.textContent = lineNum;
+        }
+      }
+      syncGutterHeights(codeElement);
+    }
+  } else {
+    // Classic mode: data-gutter attribute
+    let gutter = '1';
+    for (let i = 1; i < count; i++) {
+      gutter += '\n' + (i + 1);
+    }
+    codeElement.setAttribute('data-gutter', gutter);
+  }
+}
+
+function syncGutterHeights(codeElement: HTMLElement): void {
+  const gutterEl = codeElement.querySelector('.code-gutter');
+  const contentEl = codeElement.querySelector('.code-content');
+  if (!gutterEl || !contentEl) {
+    return;
+  }
+
+  const children = contentEl.childNodes;
+  const lineHeights: number[] = [];
+  const range = document.createRange();
+  let lineStart = 0;
+
+  for (let i = 0; i <= children.length; i++) {
+    const child = children[i];
+    const isEnd = i === children.length;
+    const isBreak = child && child.nodeName === 'BR';
+
+    if (isEnd || isBreak) {
+      if (lineStart < i) {
+        range.setStartBefore(children[lineStart]);
+        range.setEndAfter(children[i - 1]);
+        const rects = range.getClientRects();
+        let height = 0;
+        if (rects.length > 0) {
+          const first = rects[0];
+          const last = rects[rects.length - 1];
+          height = last.bottom - first.top;
+        }
+        lineHeights.push(height);
+      } else {
+        lineHeights.push(0);
+      }
+      lineStart = i + 1;
+    }
+  }
+
+  for (let i = 0; i < gutterEl.children.length && i < lineHeights.length; i++) {
+    const span = gutterEl.children[i] as HTMLElement;
+    const h = lineHeights[i];
+    if (h > 0) {
+      span.style.height = h + 'px';
+      span.style.lineHeight = h + 'px';
+    } else {
+      span.style.height = '';
+      span.style.lineHeight = '';
+    }
+  }
 }
 
 interface TransformState {
@@ -784,16 +861,46 @@ export function registerCodeHighlighting(
 
   // Only register the mutation listener if not in headless mode
   if (editor._headless !== true) {
+    const resizeObservers = new Map<string, ResizeObserver>();
+
     registrations.push(
       editor.registerMutationListener(
         CodeNode,
         mutations => {
           editor.getEditorState().read(() => {
             for (const [key, type] of mutations) {
-              if (type !== 'destroyed') {
+              if (type === 'destroyed') {
+                const observer = resizeObservers.get(key);
+                if (observer) {
+                  observer.disconnect();
+                  resizeObservers.delete(key);
+                }
+              } else {
                 const node = $getNodeByKey(key);
                 if (node !== null) {
                   updateCodeGutter(node as CodeNode, editor);
+
+                  const codeNode = node as CodeNode;
+                  const codeElement = editor.getElementByKey(key);
+                  if (codeNode.getWordWrap() && codeElement) {
+                    if (!resizeObservers.has(key)) {
+                      const contentEl =
+                        codeElement.querySelector('.code-content');
+                      if (contentEl) {
+                        const observer = new ResizeObserver(() => {
+                          syncGutterHeights(codeElement);
+                        });
+                        observer.observe(contentEl);
+                        resizeObservers.set(key, observer);
+                      }
+                    }
+                  } else {
+                    const observer = resizeObservers.get(key);
+                    if (observer) {
+                      observer.disconnect();
+                      resizeObservers.delete(key);
+                    }
+                  }
                 }
               }
             }
@@ -801,6 +908,12 @@ export function registerCodeHighlighting(
         },
         {skipInitialization: false},
       ),
+      () => {
+        for (const observer of resizeObservers.values()) {
+          observer.disconnect();
+        }
+        resizeObservers.clear();
+      },
     );
   }
 

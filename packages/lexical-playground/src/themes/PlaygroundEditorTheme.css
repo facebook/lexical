@@ -198,6 +198,38 @@
   margin-top: -8px;
   padding: 8px;
 }
+.PlaygroundEditorTheme__code[data-word-wrap='true'] {
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  overflow-x: visible;
+  padding-bottom: 8px;
+}
+.PlaygroundEditorTheme__code[data-word-wrap='true']:before {
+  display: none;
+}
+.PlaygroundEditorTheme__code .code-gutter {
+  position: sticky;
+  left: 0;
+  float: left;
+  background-color: #eee;
+  border-right: 1px solid #ccc;
+  color: #777;
+  text-align: right;
+  min-width: 25px;
+  padding: 8px;
+  margin-right: 10px;
+  margin-top: -8px;
+  z-index: 3;
+  user-select: none;
+}
+.PlaygroundEditorTheme__code .code-gutter span {
+  display: block;
+  line-height: 1.53;
+}
+.PlaygroundEditorTheme__code .code-content {
+  display: block;
+  overflow: visible;
+}
 .PlaygroundEditorTheme__tableScrollableWrapper {
   overflow-x: auto;
   margin: 0px 0px 5px 0px;

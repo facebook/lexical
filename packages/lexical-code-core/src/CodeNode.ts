@@ -34,9 +34,11 @@ import {
   $isTabNode,
   $isTextNode,
   addClassNamesToElement,
+  ElementDOMSlot,
   ElementNode,
   isHTMLElement,
   setDOMStyleFromCSS,
+  setDOMUnmanaged,
 } from 'lexical';
 import warnOnlyOnce from 'shared/warnOnlyOnce';
 
@@ -51,6 +53,7 @@ export type SerializedCodeNode = Spread<
   {
     language: string | null | undefined;
     theme?: string | undefined;
+    wordWrap?: boolean | undefined;
   },
   SerializedElementNode
 >;
@@ -84,6 +87,8 @@ export class CodeNode extends ElementNode {
   __theme: string | undefined;
   /** @internal */
   __isSyntaxHighlightSupported: boolean;
+  /** @internal */
+  __wordWrap: boolean;
 
   static getType(): string {
     return 'code';
@@ -98,6 +103,7 @@ export class CodeNode extends ElementNode {
     this.__language = language || undefined;
     this.__isSyntaxHighlightSupported = false;
     this.__theme = undefined;
+    this.__wordWrap = false;
   }
 
   afterCloneFrom(prevNode: this): void {
@@ -105,6 +111,7 @@ export class CodeNode extends ElementNode {
     this.__language = prevNode.__language;
     this.__theme = prevNode.__theme;
     this.__isSyntaxHighlightSupported = prevNode.__isSyntaxHighlightSupported;
+    this.__wordWrap = prevNode.__wordWrap;
   }
 
   // View
@@ -129,9 +136,36 @@ export class CodeNode extends ElementNode {
     if (style) {
       setDOMStyleFromCSS(element.style, style);
     }
+
+    if (this.__wordWrap) {
+      element.setAttribute('data-word-wrap', 'true');
+      const gutterEl = document.createElement('div');
+      gutterEl.className = 'code-gutter';
+      setDOMUnmanaged(gutterEl);
+      element.appendChild(gutterEl);
+      const contentEl = document.createElement('div');
+      contentEl.className = 'code-content';
+      element.appendChild(contentEl);
+    }
+
     return element;
   }
+
+  getDOMSlot(element: HTMLElement): ElementDOMSlot {
+    if (this.__wordWrap) {
+      const contentEl = element.querySelector<HTMLElement>('.code-content');
+      if (contentEl) {
+        return super.getDOMSlot(element).withElement(contentEl);
+      }
+    }
+    return super.getDOMSlot(element);
+  }
   updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
+    // Force re-creation if wordWrap changes (DOM structure is different)
+    if (this.__wordWrap !== prevNode.__wordWrap) {
+      return true;
+    }
+
     const language = this.__language;
     const prevLanguage = prevNode.__language;
 
@@ -279,7 +313,8 @@ export class CodeNode extends ElementNode {
     return super
       .updateFromJSON(serializedNode)
       .setLanguage(serializedNode.language)
-      .setTheme(serializedNode.theme);
+      .setTheme(serializedNode.theme)
+      .setWordWrap(serializedNode.wordWrap || false);
   }
 
   exportJSON(): SerializedCodeNode {
@@ -287,6 +322,7 @@ export class CodeNode extends ElementNode {
       ...super.exportJSON(),
       language: this.getLanguage(),
       theme: this.getTheme(),
+      ...(this.__wordWrap ? {wordWrap: true} : undefined),
     };
   }
 
@@ -404,6 +440,16 @@ export class CodeNode extends ElementNode {
 
   getTheme(): string | undefined {
     return this.getLatest().__theme;
+  }
+
+  setWordWrap(wordWrap: boolean): this {
+    const writable = this.getWritable();
+    writable.__wordWrap = wordWrap;
+    return writable;
+  }
+
+  getWordWrap(): boolean {
+    return this.getLatest().__wordWrap;
   }
 }
 

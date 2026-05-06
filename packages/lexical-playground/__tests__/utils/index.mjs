@@ -97,6 +97,7 @@ export async function initialize({
   tableHorizontalScroll,
   shouldAllowHighlightingWithBrackets,
   selectionAlwaysOnDisplay,
+  showTableOfContents,
 }) {
   const appSettings = {};
   appSettings.isRichText = IS_RICH_TEXT;
@@ -132,6 +133,8 @@ export async function initialize({
     !!shouldAllowHighlightingWithBrackets;
 
   appSettings.selectionAlwaysOnDisplay = !!selectionAlwaysOnDisplay;
+
+  appSettings.showTableOfContents = !!showTableOfContents;
 
   const urlParams = appSettingsToURLParams(appSettings);
   const url = `http://localhost:${E2E_PORT}/${

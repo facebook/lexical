@@ -40,6 +40,7 @@ import {
 import {EditorState} from './LexicalEditorState';
 import {
   $createChildrenArray,
+  $isEffectivelyEmpty,
   cloneDecorators,
   getElementByKeyOrThrow,
   setMutatedNode,
@@ -261,7 +262,14 @@ function $createNode(key: NodeKey, slot: ElementDOMSlot | null): HTMLElement {
     if (format !== 0) {
       setElementFormat(dom, format);
     }
-    if (!node.isInline()) {
+    const parent = node.getParent();
+    if (
+      !node.isInline() ||
+      (parent !== null &&
+        $isEffectivelyEmpty(parent) &&
+        // Among all the empty inline nodes, only one needs a linebreak
+        node.getIndexWithinParent() === 0)
+    ) {
       $reconcileElementTerminatingLineBreak(null, node, dom);
     }
   } else {
@@ -614,7 +622,17 @@ function $reconcileNode(
     }
     if (isDirty) {
       $reconcileChildrenWithDirection(prevNode, nextNode, dom);
-      if (!$isRootNode(nextNode) && !nextNode.isInline()) {
+      const parent = nextNode.getParent();
+      const needsLineBreak =
+        !$isRootNode(nextNode) &&
+        (!nextNode.isInline() ||
+          (parent !== null &&
+            $isEffectivelyEmpty(parent) &&
+            // Among all the empty inline nodes, only one needs a linebreak
+            nextNode.getIndexWithinParent() === 0));
+      // Also reconcile when a managed linebreak already exists in the DOM
+      // but element no longer needs one (e.g. an empty inline that became non-empty)
+      if (needsLineBreak || dom.__lexicalLineBreak) {
         $reconcileElementTerminatingLineBreak(prevNode, nextNode, dom);
       }
     } else {

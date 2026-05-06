@@ -3064,6 +3064,38 @@ describe('LexicalEditor tests', () => {
     );
   });
 
+  it('should include linebreak into emptyable inline element if its parent has only that element', async () => {
+    init();
+
+    await editor.update(() => {
+      $getRoot().append(
+        $createParagraphNode().append($createTestInlineElementNode()),
+      );
+    });
+
+    expect(container.firstElementChild?.innerHTML).toBe(
+      '<p dir="auto"><a><br></a></p>',
+    );
+  });
+
+  it('should include linebreak only in the first emptyable inline element if its parent has multiple such nodes', async () => {
+    init();
+
+    await editor.update(() => {
+      $getRoot().append(
+        $createParagraphNode().append(
+          $createTestInlineElementNode(),
+          $createTestInlineElementNode(),
+          $createTestInlineElementNode(),
+        ),
+      );
+    });
+
+    expect(container.firstElementChild?.innerHTML).toBe(
+      '<p dir="auto"><a><br></a><a></a><a></a></p>',
+    );
+  });
+
   it('reconciles state without root element', () => {
     editor = createTestEditor({});
     const state = editor.parseEditorState(

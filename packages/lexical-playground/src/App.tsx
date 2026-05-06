@@ -68,6 +68,7 @@ import {PagesReactExtension} from './plugins/PagesReactExtension';
 import PasteLogPlugin from './plugins/PasteLogPlugin';
 import {SpecialTextExtension} from './plugins/SpecialTextExtension';
 import {TabFocusExtension} from './plugins/TabFocusExtension';
+import {TableOfContentsExtension} from './plugins/TableOfContentsExtension';
 import {TerseExportExtension} from './plugins/TerseExportExtension';
 import TestRecorderPlugin from './plugins/TestRecorderPlugin';
 import {TwitterExtension} from './plugins/TwitterExtension';
@@ -183,6 +184,7 @@ const PlaygroundRichTextExtension = defineExtension({
     PlaygroundMarkdownShortcutsExtension,
     PageBreakExtension,
     PagesReactExtension,
+    TableOfContentsExtension,
   ],
   name: '@lexical/playground/RichText',
 });

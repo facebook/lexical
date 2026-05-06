@@ -77,6 +77,8 @@ import {
   $getNodeFromDOM,
   $getRoot,
   $hasAncestor,
+  $isEffectivelyEmpty,
+  $isEmptyableInlineElementNode,
   $isRootOrShadowRoot,
   $isTokenOrSegmented,
   $isTokenOrTab,
@@ -1849,6 +1851,9 @@ export class RangeSelection implements BaseSelection {
           );
           return this.removeText();
         }
+        if ($cleanupEffectivelyEmpty(anchor)) {
+          return;
+        }
       }
 
       // Handle the deletion around decorators.
@@ -1906,6 +1911,11 @@ export class RangeSelection implements BaseSelection {
       ) {
         $collapseAtStart(this, anchorNode);
       }
+    }
+    // After a non-collapsed deletion, apply the effectively-empty cleanup:
+    // text removal may leave an empty inline node whose parent block should also be removed
+    if (!wasCollapsed && this.isCollapsed()) {
+      $cleanupEffectivelyEmpty(this.anchor);
     }
   }
 
@@ -1970,6 +1980,36 @@ export class RangeSelection implements BaseSelection {
 
 export function $isNodeSelection(x: unknown): x is NodeSelection {
   return x instanceof NodeSelection;
+}
+
+/**
+ * When a deletion leaves the anchor inside (or at) an effectively-empty structure —
+ * a block whose only children are emptyable inline elements, or directly inside
+ * such an inline element — remove the empty nodes so they don't linger invisibly in the editor state.
+ *
+ * @param anchor the anchor
+ * @returns true when any removal took place
+ */
+function $cleanupEffectivelyEmpty(anchor: PointType): boolean {
+  if (anchor.type !== 'element' || anchor.offset !== 0) {
+    return false;
+  }
+  const element = anchor.getNode();
+  if ($isRootOrShadowRoot(element)) {
+    return false;
+  }
+  if ($isEffectivelyEmpty(element)) {
+    element.remove();
+    return true;
+  }
+  if ($isEmptyableInlineElementNode(element)) {
+    const parent = element.getParent();
+    if (parent !== null && $isEffectivelyEmpty(parent)) {
+      parent.remove();
+      return true;
+    }
+  }
+  return false;
 }
 
 function getCharacterOffset(point: PointType): number {

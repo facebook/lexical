@@ -189,10 +189,10 @@ to the default returned by its `parse` function — see
 
 :::note
 
-Only one declaration per key is allowed per node. A flat state key must
-not collide with a property already serialized by the superclass (e.g.
-`text` on `TextNode`). If it does, registration will throw at editor
-construction.
+Don't reuse a flat key that a superclass already serializes (e.g. `text`
+on `TextNode`). There's no runtime check, but the resulting JSON will be
+ambiguous: the superclass field wins on serialize, and on parse the value
+will be lifted into NodeState — corrupting both fields.
 
 :::
 
@@ -275,7 +275,7 @@ export class ColoredNode extends TextNode {
 :::tip
 
 To stage the migration without breaking existing payloads, keep the
-serialized key name the same as the old property name (the second
+serialized key name the same as the old property name (the first
 argument to `createState`) and keep the default value identical to the
 one your old `parse`/`updateFromJSON` produced for missing or invalid
 input. Existing JSON will then deserialize unchanged.

@@ -10,7 +10,13 @@
  * Captures screenshots of each example for the gallery page.
  *
  * Usage:
- *   pnpm run capture-gallery-screenshots
+ *   pnpm run capture-gallery-screenshots                # all examples
+ *   pnpm run capture-gallery-screenshots markdown-editor # one or more
+ *   pnpm run capture-gallery-screenshots website-toolbar website-rich-input
+ *
+ * Each positional argument is matched against the example's `dir`
+ * (the folder name under examples/). Unknown names exit non-zero so
+ * typos don't silently no-op.
  *
  * Prerequisites:
  *   - Playwright browsers installed (npx playwright install chromium)
@@ -39,10 +45,38 @@ const GALLERY_DIR = resolve(
 );
 
 // Only screenshot examples that have a waitForSelector configured
-const EXAMPLES = galleryExamples.filter(
+const SCREENSHOTABLE = galleryExamples.filter(
   (ex): ex is GalleryExample & {waitForSelector: string} =>
     ex.waitForSelector != null,
 );
+
+// Optional positional args: example dir names to refresh. If none
+// are provided, all screenshotable examples are captured.
+const requestedDirs = process.argv.slice(2);
+const unknown = requestedDirs.filter(
+  dir => !galleryExamples.some(ex => ex.dir === dir),
+);
+if (unknown.length > 0) {
+  const known = galleryExamples
+    .map(ex => `  ${ex.dir}`)
+    .sort()
+    .join('\n');
+  console.error(
+    `Unknown example name(s): ${unknown.join(', ')}\n` +
+      `Available examples:\n${known}`,
+  );
+  process.exit(1);
+}
+const EXAMPLES =
+  requestedDirs.length === 0
+    ? SCREENSHOTABLE
+    : SCREENSHOTABLE.filter(ex => requestedDirs.includes(ex.dir));
+if (EXAMPLES.length === 0) {
+  console.error(
+    'None of the requested examples have a waitForSelector configured.',
+  );
+  process.exit(1);
+}
 
 const PORT = 5180;
 const IS_WINDOWS = process.platform === 'win32';

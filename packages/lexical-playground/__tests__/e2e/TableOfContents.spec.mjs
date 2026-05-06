@@ -144,6 +144,98 @@ test.describe('TableOfContents', () => {
     );
   });
 
+  test('Should be backward-compatible when re-importing HTML', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+
+    // prepare headings
+    await page.keyboard.type('h1');
+    await applyHeading(page, 1);
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('h2');
+    await applyHeading(page, 2);
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('h1 again');
+    await applyHeading(page, 1);
+    await page.keyboard.press('Enter');
+
+    // Insert Contents using the Insert dropdown
+    await selectFromInsertDropdown(page, '.item .toc');
+
+    const expectedViewHTML = html`
+      <h1 class="PlaygroundEditorTheme__h1" id="heading-1" dir="auto">
+        <span data-lexical-text="true">h1</span>
+      </h1>
+      <h2 class="PlaygroundEditorTheme__h2" id="heading-2" dir="auto">
+        <span data-lexical-text="true">h2</span>
+      </h2>
+      <h1 class="PlaygroundEditorTheme__h1" id="heading-3" dir="auto">
+        <span data-lexical-text="true">h1 again</span>
+      </h1>
+      <ol
+        class="PlaygroundEditorTheme__ol1 PlaygroundEditorTheme__contents active"
+        dir="auto">
+        <li
+          class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__contentsItem"
+          value="1">
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__contentsLink"
+            href="#heading-1"
+            target="_self">
+            <span data-lexical-text="true">h1</span>
+          </a>
+        </li>
+        <li
+          class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem PlaygroundEditorTheme__contentsItem"
+          value="2">
+          <ol
+            class="PlaygroundEditorTheme__ol2 PlaygroundEditorTheme__contents">
+            <li
+              class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__contentsItem"
+              value="1">
+              <a
+                class="PlaygroundEditorTheme__link PlaygroundEditorTheme__contentsLink"
+                href="#heading-2"
+                target="_self">
+                <span data-lexical-text="true">h2</span>
+              </a>
+            </li>
+          </ol>
+        </li>
+        <li
+          class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__contentsItem"
+          value="2">
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__contentsLink"
+            href="#heading-3"
+            target="_self">
+            <span data-lexical-text="true">h1 again</span>
+          </a>
+        </li>
+      </ol>
+    `;
+    await assertHTML(
+      page,
+      expectedViewHTML,
+      undefined,
+      // In collab mode, the cursor may be in a different location, which is why the "active" class is missing
+      {ignoreClasses: isCollab, ignoreInlineStyles: true},
+    );
+
+    // export and re-import current state
+    await click(page, '.action-button .html');
+    await click(page, '.action-button .html');
+
+    await assertHTML(page, expectedViewHTML, undefined, {
+      ignoreClasses: isCollab,
+      ignoreInlineStyles: true,
+    });
+  });
+
   test('Clicking on the contents link scrolls to the heading', async ({
     page,
     isPlainText,
@@ -495,7 +587,7 @@ test.describe('TableOfContents', () => {
     );
   });
 
-  test('The contenst link should be removed by forward deleting #8205', async ({
+  test('The contents link should be removed by forward deleting #8205', async ({
     page,
     isPlainText,
     isCollab,
@@ -547,7 +639,7 @@ test.describe('TableOfContents', () => {
     );
   });
 
-  test('The contenst link should be removed if there is a backward selection #8205', async ({
+  test('The contents link should be removed if there is a backward selection #8205', async ({
     page,
     isPlainText,
     isCollab,
@@ -597,7 +689,7 @@ test.describe('TableOfContents', () => {
     );
   });
 
-  test('The contenst link should be removed if there is a forward selection #8205', async ({
+  test('The contents link should be removed if there is a forward selection #8205', async ({
     page,
     isPlainText,
     isCollab,

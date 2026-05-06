@@ -53,6 +53,12 @@
   height: 300px;
 }
 
+@media (max-width: 1600px) {
+  .table-of-contents {
+    display: none;
+  }
+}
+
 .first-heading {
   color: black;
   font-weight: bold;

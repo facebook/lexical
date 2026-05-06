@@ -265,9 +265,11 @@ export class ColoredNode extends TextNode {
 }
 ```
 
-`exportJSON`, `importJSON`, `updateFromJSON`, `clone`, and
-`afterCloneFrom` are all generated from `$config`. Read the color via
-`$getState(node, colorState)` and write it via
+No `exportJSON`, `importJSON`, `updateFromJSON`, `clone`, or
+`afterCloneFrom` override is needed: `$config` installs `clone` and
+`importJSON`, and the base `exportJSON`/`updateFromJSON`/`afterCloneFrom`
+on `LexicalNode`/`TextNode` already round-trip NodeState. Read the color
+via `$getState(node, colorState)` and write it via
 `$setState(node, colorState, value)` instead of `node.__color`.
 
 :::tip

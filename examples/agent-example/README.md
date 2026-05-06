@@ -28,3 +28,5 @@ Models are loaded lazily on first use. Generated text streams directly into the 
 ```bash
 pnpm i && pnpm run dev
 ```
+
+[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/facebook/lexical/tree/main/examples/agent-example?file=src/main.tsx)

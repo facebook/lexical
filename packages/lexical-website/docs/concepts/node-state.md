@@ -118,16 +118,13 @@ the node and its NodeState *won't* be marked dirty.
 The NodeState for a node, if any values are set to non-default values, is
 serialized to a record under a single
 [NODE_STATE_KEY](/docs/api/modules/lexical#node_state_key)
-which is equal to `'$'`. In the future, it is expected that nodes will be
-able to declare required state and lift those values to the top-level of
-their serialized nodes
-(see [#7260](https://github.com/facebook/lexical/issues/7260)).
+which is equal to `'$'`.
 
 ```json
 {
   "type": "poll",
   "$": {
-    "question": "Are you planning to use NodeState?",
+    "question": "Are you planning to use NodeState?"
   }
 }
 ```
@@ -139,6 +136,149 @@ but for advanced use cases you may use values such as Date, Map, or Set
 that need to be transformed before JSON serialization. See the
 [StateValueConfig](/docs/api/interfaces/lexical.StateValueConfig)
 API documentation.
+
+:::
+
+### Flat serialization with `$config`
+
+Nodes that declare a `StateConfig` in [`$config`](nodes.mdx#creating-custom-nodes-with-config-and-nodestate)
+with `flat: true` lift that key to the top level of the serialized node
+instead of nesting it under `'$'`. This makes the JSON shape identical
+to a legacy node that stored the value as a `__property` instance
+variable, so existing payloads continue to round-trip after the node is
+migrated to NodeState.
+
+For example, a `ColoredNode` that extends `TextNode` and declares a flat
+`color` state (see [Extending TextNode with `$config`](nodes.mdx#extending-textnode-with-config)):
+
+```ts
+$config() {
+  return this.config('colored', {
+    extends: TextNode,
+    stateConfigs: [{flat: true, stateConfig: colorState}],
+  });
+}
+```
+
+serializes as:
+
+```json
+{
+  "type": "colored",
+  "text": "hello",
+  "color": "red"
+}
+```
+
+A non-flat (default) state on the same node would instead appear under
+`'$'`:
+
+```json
+{
+  "type": "colored",
+  "text": "hello",
+  "$": {
+    "color": "red"
+  }
+}
+```
+
+In both cases, a key is only emitted when the current value is not equal
+to the default returned by its `parse` function — see
+[Efficiency](#efficiency).
+
+:::note
+
+Only one declaration per key is allowed per node. A flat state key must
+not collide with a property already serialized by the superclass (e.g.
+`text` on `TextNode`). If it does, registration will throw at editor
+construction.
+
+:::
+
+### Upgrading a legacy JSON property to NodeState
+
+A node that stores data as a `__property` instance variable with custom
+`exportJSON`/`importJSON`/`updateFromJSON` can be migrated to NodeState
+with `flat: true` without changing its serialized JSON shape.
+
+Before — `ColoredNode` with a `__color` property and hand-written
+serialization (see the full legacy example in
+[Extending TextNode with `$config`](nodes.mdx#extending-textnode-with-config)):
+
+```ts
+export type SerializedColoredNode = Spread<
+  {color?: string},
+  SerializedTextNode
+>;
+
+export class ColoredNode extends TextNode {
+  __color: string;
+
+  constructor(text: string = '', color: string = DEFAULT_COLOR, key?: NodeKey) {
+    super(text, key);
+    this.__color = color;
+  }
+
+  static getType(): string {
+    return 'colored';
+  }
+
+  static clone(node: ColoredNode): ColoredNode {
+    return new ColoredNode(node.__text, node.__color, node.__key);
+  }
+
+  static importJSON(serializedNode: SerializedColoredNode) {
+    return new ColoredNode().updateFromJSON(serializedNode);
+  }
+
+  updateFromJSON(serializedNode: SerializedColoredNode) {
+    const self = super.updateFromJSON(serializedNode);
+    self.__color =
+      typeof serializedNode.color === 'string'
+        ? serializedNode.color
+        : DEFAULT_COLOR;
+    return self;
+  }
+
+  exportJSON(): SerializedColoredNode {
+    return {
+      ...super.exportJSON(),
+      color: this.__color === DEFAULT_COLOR ? undefined : this.__color,
+    };
+  }
+}
+```
+
+After — same on-the-wire JSON, no hand-written serialization:
+
+```ts
+const colorState = createState('color', {
+  parse: (v) => (typeof v === 'string' ? v : DEFAULT_COLOR),
+});
+
+export class ColoredNode extends TextNode {
+  $config() {
+    return this.config('colored', {
+      extends: TextNode,
+      stateConfigs: [{flat: true, stateConfig: colorState}],
+    });
+  }
+}
+```
+
+`exportJSON`, `importJSON`, `updateFromJSON`, `clone`, and
+`afterCloneFrom` are all generated from `$config`. Read the color via
+`$getState(node, colorState)` and write it via
+`$setState(node, colorState, value)` instead of `node.__color`.
+
+:::tip
+
+To stage the migration without breaking existing payloads, keep the
+serialized key name the same as the old property name (the second
+argument to `createState`) and keep the default value identical to the
+one your old `parse`/`updateFromJSON` produced for missing or invalid
+input. Existing JSON will then deserialize unchanged.
 
 :::
 

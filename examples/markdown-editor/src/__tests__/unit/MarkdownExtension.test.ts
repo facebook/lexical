@@ -18,10 +18,7 @@ import {
   $isListNode,
 } from '@lexical/list';
 import {
-  $convertFromMarkdownString,
-  $convertToMarkdownString,
-} from '@lexical/markdown';
-import {
+  $getEditor,
   $getRoot,
   $getSelection,
   $isRangeSelection,
@@ -30,10 +27,7 @@ import {
 } from 'lexical';
 import {assert, describe, expect, test} from 'vitest';
 
-import {
-  MARKDOWN_TRANSFORMERS,
-  MarkdownExtension,
-} from '../../extensions/MarkdownExtension';
+import {MarkdownExtension} from '../../extensions/MarkdownExtension';
 
 function createTestEditor(
   $initialEditorState?: () => void,
@@ -49,7 +43,10 @@ function createTestEditor(
 }
 
 function $importMarkdown(markdown: string): void {
-  $convertFromMarkdownString(markdown, MARKDOWN_TRANSFORMERS);
+  getExtensionDependencyFromEditor(
+    $getEditor(),
+    MarkdownExtension,
+  ).output.$fromString(markdown);
 }
 
 function importMarkdown(
@@ -60,7 +57,10 @@ function importMarkdown(
 }
 
 function exportMarkdown(editor: LexicalEditorWithDispose): string {
-  return editor.read(() => $convertToMarkdownString(MARKDOWN_TRANSFORMERS));
+  return editor.read(
+    getExtensionDependencyFromEditor(editor, MarkdownExtension).output
+      .$toString,
+  );
 }
 
 describe('MARKDOWN_TRANSFORMERS', () => {

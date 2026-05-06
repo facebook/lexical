@@ -7,7 +7,6 @@
  */
 
 import {effect, getExtensionDependencyFromEditor} from '@lexical/extension';
-import {$convertFromMarkdownString} from '@lexical/markdown';
 import {mergeRegister} from '@lexical/utils';
 import {
   COMMAND_PRIORITY_EDITOR,
@@ -47,15 +46,12 @@ function $loadMarkdown(editor: LexicalEditor): void {
     editor,
     MarkdownPersistenceExtension,
   ).config;
-  const {transformers} = getExtensionDependencyFromEditor(
+  const {$fromString} = getExtensionDependencyFromEditor(
     editor,
     MarkdownExtension,
-  ).config;
+  ).output;
   const stored = readStoredMarkdown(persistence.storageKey);
-  $convertFromMarkdownString(
-    stored ?? persistence.defaultMarkdown,
-    transformers,
-  );
+  $fromString(stored ?? persistence.defaultMarkdown);
 }
 
 /**
@@ -79,8 +75,8 @@ export const MarkdownPersistenceExtension = defineExtension({
   dependencies: [MarkdownExtension],
   name: '@lexical/markdown-editor-example/MarkdownPersistence',
   register(editor, {storageKey, defaultMarkdown}, state) {
-    const {markdown} = state.getDependency(MarkdownExtension).output;
-    const {transformers} = state.getDependency(MarkdownExtension).config;
+    const {markdown, $fromString} =
+      state.getDependency(MarkdownExtension).output;
     const hasStorage = typeof window !== 'undefined' && storageKey !== '';
 
     let initial = true;
@@ -101,9 +97,7 @@ export const MarkdownPersistenceExtension = defineExtension({
           if (hasStorage) {
             window.localStorage.removeItem(storageKey);
           }
-          editor.update(() =>
-            $convertFromMarkdownString(defaultMarkdown, transformers),
-          );
+          editor.update(() => $fromString(defaultMarkdown));
           return true;
         },
         COMMAND_PRIORITY_EDITOR,

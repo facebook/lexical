@@ -9,6 +9,7 @@
 import {
   computed,
   EditorStateExtension,
+  ReadonlySignal,
   TabIndentationExtension,
 } from '@lexical/extension';
 import {HistoryExtension} from '@lexical/history';
@@ -20,6 +21,7 @@ import {
   ListItemNode,
 } from '@lexical/list';
 import {
+  $convertFromMarkdownString,
   $convertToMarkdownString,
   BOLD_ITALIC_STAR,
   BOLD_STAR,
@@ -47,6 +49,7 @@ import {
   COMMAND_PRIORITY_EDITOR,
   createCommand,
   defineExtension,
+  type ElementNode,
   type LexicalCommand,
   safeCast,
 } from 'lexical';
@@ -130,6 +133,8 @@ export const MARKDOWN_TRANSFORMERS: Transformer[] = [
 
 export interface MarkdownConfig {
   transformers: Transformer[];
+  shouldPreserveNewlines: boolean;
+  mergeAdjacentNewlines: boolean;
 }
 
 /**
@@ -148,6 +153,15 @@ export const FORMAT_PARAGRAPH_COMMAND: LexicalCommand<void> = createCommand(
 export const FORMAT_HEADING_COMMAND: LexicalCommand<HeadingTagType> =
   createCommand('FORMAT_HEADING_COMMAND');
 
+export interface MarkdownOutput {
+  /** Convert the editor's contents to a Markdown string */
+  $toString: (node?: ElementNode) => string;
+  /** Replace the editor's contents with the result of parsing a Markdown string */
+  $fromString: (markdown: string, node?: ElementNode) => void;
+  /** A signal observing the editor's contents as a Markdown string  */
+  markdown: ReadonlySignal<string>;
+}
+
 /**
  * A self-contained markdown extension. It pulls in all of the node
  * dependencies that the supplied transformers require (rich text,
@@ -159,17 +173,33 @@ export const FORMAT_HEADING_COMMAND: LexicalCommand<HeadingTagType> =
  * signal.
  */
 export const MarkdownExtension = defineExtension({
-  build(editor, {transformers}, state) {
+  build(editor, config, state): MarkdownOutput {
+    const {transformers, shouldPreserveNewlines, mergeAdjacentNewlines} =
+      config;
     const editorState = state.getDependency(EditorStateExtension).output;
+    const $toString = (node?: ElementNode) =>
+      $convertToMarkdownString(transformers, node, shouldPreserveNewlines);
+    const $fromString = (markdown: string, node?: ElementNode) =>
+      $convertFromMarkdownString(
+        markdown,
+        transformers,
+        node,
+        shouldPreserveNewlines,
+        mergeAdjacentNewlines,
+      );
     return {
+      $fromString,
+      $toString,
       markdown: computed(() =>
-        editorState.value.read(() => $convertToMarkdownString(transformers), {
+        editorState.value.read($toString, {
           editor,
         }),
       ),
     };
   },
   config: safeCast<MarkdownConfig>({
+    mergeAdjacentNewlines: true,
+    shouldPreserveNewlines: true,
     transformers: MARKDOWN_TRANSFORMERS,
   }),
   dependencies: [

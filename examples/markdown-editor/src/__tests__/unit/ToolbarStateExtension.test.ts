@@ -11,10 +11,10 @@ import {
   effect,
   getExtensionDependencyFromEditor,
 } from '@lexical/extension';
-import {$convertFromMarkdownString} from '@lexical/markdown';
 import {
   $createParagraphNode,
   $createTextNode,
+  $getEditor,
   $getRoot,
   $isElementNode,
   defineExtension,
@@ -26,10 +26,7 @@ import {
 } from 'lexical';
 import {assert, describe, expect, test} from 'vitest';
 
-import {
-  MARKDOWN_TRANSFORMERS,
-  MarkdownExtension,
-} from '../../extensions/MarkdownExtension';
+import {MarkdownExtension} from '../../extensions/MarkdownExtension';
 import {
   type BlockType,
   ToolbarStateExtension,
@@ -53,7 +50,10 @@ function getOutputs(editor: LexicalEditorWithDispose) {
 }
 
 function $importAndSelect(markdown: string): void {
-  $convertFromMarkdownString(markdown, MARKDOWN_TRANSFORMERS);
+  getExtensionDependencyFromEditor(
+    $getEditor(),
+    MarkdownExtension,
+  ).output.$fromString(markdown);
   $getRoot().selectEnd();
 }
 

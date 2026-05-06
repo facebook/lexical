@@ -902,6 +902,10 @@ declare export class ElementNode extends LexicalNode {
 declare export function $isElementNode(
   node: ?LexicalNode,
 ): node is ElementNode;
+declare export function $collapseChildrenInto(
+  source: ElementNode,
+  target: ElementNode,
+): void;
 
 /**
  * ElementDOMSlot

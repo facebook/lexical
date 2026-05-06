@@ -252,6 +252,7 @@ export {
   $applyNodeReplacement,
   $cloneWithProperties,
   $cloneWithPropertiesEphemeral,
+  $collapseChildrenInto,
   $copyNode,
   $create,
   $createChildrenArray,

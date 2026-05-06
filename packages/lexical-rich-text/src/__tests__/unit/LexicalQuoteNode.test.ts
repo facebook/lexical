@@ -7,9 +7,17 @@
  */
 
 import {$createQuoteNode, QuoteNode} from '@lexical/rich-text';
-import {$createRangeSelection, $getRoot, ParagraphNode} from 'lexical';
-import {initializeUnitTest} from 'lexical/src/__tests__/utils';
-import {describe, expect, test} from 'vitest';
+import {
+  $createRangeSelection,
+  $getRoot,
+  $isParagraphNode,
+  ParagraphNode,
+} from 'lexical';
+import {
+  $createTestInlineElementNode,
+  initializeUnitTest,
+} from 'lexical/src/__tests__/utils';
+import {assert, describe, expect, test} from 'vitest';
 
 const editorConfig = Object.freeze({
   namespace: '',
@@ -92,6 +100,30 @@ describe('LexicalQuoteNode tests', () => {
         expect(quoteNode.__type).toEqual(createdQuoteNode.__type);
         expect(quoteNode.__parent).toEqual(createdQuoteNode.__parent);
         expect(quoteNode.__key).not.toEqual(createdQuoteNode.__key);
+      });
+    });
+
+    describe('QuoteNode.collapseAtStart() with empty inline children', () => {
+      test('drops empty inline ElementNode children instead of carrying them over', () => {
+        const {editor} = testEnv;
+        editor.update(
+          () => {
+            const root = $getRoot();
+            root.clear();
+            const quote = $createQuoteNode();
+            quote.append($createTestInlineElementNode());
+            root.append(quote);
+            quote.collapseAtStart();
+          },
+          {discrete: true},
+        );
+        editor.read(() => {
+          const root = $getRoot();
+          expect(root.getChildrenSize()).toBe(1);
+          const paragraph = root.getFirstChild();
+          assert($isParagraphNode(paragraph), 'quote replaced by paragraph');
+          expect(paragraph.getChildrenSize()).toBe(0);
+        });
       });
     });
   });

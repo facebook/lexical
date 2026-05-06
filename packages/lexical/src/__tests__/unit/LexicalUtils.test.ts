@@ -8,6 +8,7 @@
 
 import {
   $applyNodeReplacement,
+  $collapseChildrenInto,
   $copyNode,
   $createParagraphNode,
   $createTextNode,
@@ -39,7 +40,11 @@ import {
   scheduleMicroTask,
   scrollIntoViewIfNeeded,
 } from '../../LexicalUtils';
-import {initializeUnitTest} from '../utils';
+import {
+  $createTestElementNode,
+  $createTestInlineElementNode,
+  initializeUnitTest,
+} from '../utils';
 
 describe('LexicalUtils tests', () => {
   initializeUnitTest(testEnv => {
@@ -921,6 +926,98 @@ describe('$copyNode', () => {
       expect($getState(copiedParagraph, STRING_STATE)).toBe('non-default');
       expect(initialParagraph.__string).toBe('not-aliased');
       expect(copiedParagraph.__string).toBe('non-default');
+    });
+  });
+});
+
+describe('$collapseChildrenInto', () => {
+  initializeUnitTest(testEnv => {
+    test('drops empty inline ElementNode children', () => {
+      const {editor} = testEnv;
+      editor.update(
+        () => {
+          const source = $createParagraphNode();
+          const target = $createParagraphNode();
+          source.append($createTestInlineElementNode());
+          $getRoot().append(source, target);
+          $collapseChildrenInto(source, target);
+          expect(source.getChildrenSize()).toBe(0);
+          expect(target.getChildrenSize()).toBe(0);
+        },
+        {discrete: true},
+      );
+    });
+
+    test('preserves non-empty inline ElementNode children', () => {
+      const {editor} = testEnv;
+      editor.update(
+        () => {
+          const source = $createParagraphNode();
+          const target = $createParagraphNode();
+          const inline = $createTestInlineElementNode();
+          inline.append($createTextNode('keep'));
+          source.append(inline);
+          $getRoot().append(source, target);
+          $collapseChildrenInto(source, target);
+          expect(target.getChildrenSize()).toBe(1);
+          expect(target.getTextContent()).toBe('keep');
+        },
+        {discrete: true},
+      );
+    });
+
+    test('preserves empty non-inline (block) ElementNode children', () => {
+      const {editor} = testEnv;
+      editor.update(
+        () => {
+          const source = $createParagraphNode();
+          const target = $createParagraphNode();
+          source.append($createTestElementNode());
+          $getRoot().append(source, target);
+          $collapseChildrenInto(source, target);
+          expect(target.getChildrenSize()).toBe(1);
+        },
+        {discrete: true},
+      );
+    });
+
+    test('preserves TextNode children', () => {
+      const {editor} = testEnv;
+      editor.update(
+        () => {
+          const source = $createParagraphNode();
+          const target = $createParagraphNode();
+          source.append($createTextNode('plain'));
+          $getRoot().append(source, target);
+          $collapseChildrenInto(source, target);
+          expect(target.getChildrenSize()).toBe(1);
+          expect(target.getTextContent()).toBe('plain');
+        },
+        {discrete: true},
+      );
+    });
+
+    test('preserves child order with mixed children', () => {
+      const {editor} = testEnv;
+      editor.update(
+        () => {
+          const source = $createParagraphNode();
+          const target = $createParagraphNode();
+          const inlineWithText = $createTestInlineElementNode();
+          inlineWithText.append($createTextNode('b'));
+          source.append(
+            $createTextNode('a'),
+            $createTestInlineElementNode(),
+            inlineWithText,
+            $createTextNode('c'),
+          );
+          $getRoot().append(source, target);
+          $collapseChildrenInto(source, target);
+          expect(target.getChildrenSize()).toBe(3);
+          expect(target.getTextContent()).toBe('abc');
+        },
+        {discrete: true},
+      );
     });
   });
 });

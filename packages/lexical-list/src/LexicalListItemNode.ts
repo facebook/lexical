@@ -29,6 +29,7 @@ import {
 } from '@lexical/utils';
 import {
   $applyNodeReplacement,
+  $collapseChildrenInto,
   $copyNode,
   $createParagraphNode,
   $getSiblingCaret,
@@ -379,8 +380,7 @@ export class ListItemNode extends ElementNode {
 
   collapseAtStart(selection: RangeSelection): true {
     const paragraph = $createParagraphNode();
-    const children = this.getChildren();
-    children.forEach(child => paragraph.append(child));
+    $collapseChildrenInto(this, paragraph);
     const listNode = this.getParentOrThrow();
     const listNodeParent = listNode.getParentOrThrow();
     const isIndented = $isListItemNode(listNodeParent);

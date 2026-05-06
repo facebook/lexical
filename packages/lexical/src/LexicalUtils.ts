@@ -2347,3 +2347,25 @@ export function $createChildrenArray(
   }
   return children;
 }
+
+/**
+ * @internal
+ *
+ * Building block for `collapseAtStart` implementations. Moves each
+ * child of `source` into `target`, dropping any direct child that is
+ * an empty inline ElementNode. Without this filter, a custom inline
+ * ElementNode with `canBeEmpty()=true` survives its parent's collapse
+ * as an orphan empty element (see #8205).
+ */
+export function $collapseChildrenInto(
+  source: ElementNode,
+  target: ElementNode,
+): void {
+  for (const child of source.getChildren()) {
+    if ($isElementNode(child) && child.isInline() && child.isEmpty()) {
+      child.remove(true);
+      continue;
+    }
+    target.append(child);
+  }
+}

@@ -25,6 +25,7 @@ import {
   TextNode,
 } from 'lexical';
 import {
+  $createTestInlineElementNode,
   expectHtmlToBeEqual,
   html,
   initializeUnitTest,
@@ -1846,6 +1847,37 @@ describe('LexicalListItemNode tests', () => {
           expect(wrapper.getFirstChildOrThrow().getTextContent()).toBe(
             'orphan',
           );
+        });
+      });
+    });
+
+    describe('ListItemNode.collapseAtStart() with empty inline children', () => {
+      test('drops empty inline ElementNode children instead of carrying them over', () => {
+        const {editor} = testEnv;
+
+        editor.update(
+          () => {
+            const root = $getRoot();
+            root.clear();
+            const listItem = $createListItemNode();
+            listItem.append($createTestInlineElementNode());
+            const list = $createListNode('bullet').append(listItem);
+            root.append(list);
+
+            listItem.collapseAtStart(listItem.select(0, 0));
+          },
+          {discrete: true},
+        );
+
+        editor.read(() => {
+          const root = $getRoot();
+          expect(root.getChildrenSize()).toBe(1);
+          const paragraph = root.getFirstChild();
+          assert(
+            $isParagraphNode(paragraph),
+            'list collapsed into a paragraph',
+          );
+          expect(paragraph.getChildrenSize()).toBe(0);
         });
       });
     });

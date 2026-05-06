@@ -52,6 +52,7 @@ import {
 } from '@lexical/utils';
 import {
   $applyNodeReplacement,
+  $collapseChildrenInto,
   $createParagraphNode,
   $createRangeSelection,
   $createTabNode,
@@ -203,8 +204,7 @@ export class QuoteNode extends ElementNode {
 
   collapseAtStart(): true {
     const paragraph = $createParagraphNode();
-    const children = this.getChildren();
-    children.forEach(child => paragraph.append(child));
+    $collapseChildrenInto(this, paragraph);
     this.replace(paragraph);
     return true;
   }
@@ -405,8 +405,7 @@ export class HeadingNode extends ElementNode {
     const newElement = !this.isEmpty()
       ? $createHeadingNode(this.getTag())
       : $createParagraphNode();
-    const children = this.getChildren();
-    children.forEach(child => newElement.append(child));
+    $collapseChildrenInto(this, newElement);
     this.replace(newElement);
     return true;
   }

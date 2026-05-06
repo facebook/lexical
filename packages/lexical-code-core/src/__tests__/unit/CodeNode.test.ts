@@ -8,9 +8,12 @@
 
 import type {EditorConfig} from 'lexical';
 
-import {$getRoot} from 'lexical';
-import {initializeUnitTest} from 'lexical/src/__tests__/utils';
-import {describe, expect, it} from 'vitest';
+import {$getRoot, $isParagraphNode} from 'lexical';
+import {
+  $createTestInlineElementNode,
+  initializeUnitTest,
+} from 'lexical/src/__tests__/utils';
+import {assert, describe, expect, it} from 'vitest';
 
 import {$createCodeNode} from '../../CodeNode';
 
@@ -70,6 +73,28 @@ describe('CodeNode', () => {
         expect(exportedElement).not.toBeNull();
         expect(exportedElement!.style.padding).toBe('1px');
         expect(exportedElement!.style.color).toBe('blue');
+      });
+
+      it('drops empty inline ElementNode children during collapseAtStart', () => {
+        const {editor} = testEnv;
+        editor.update(
+          () => {
+            const root = $getRoot();
+            root.clear();
+            const code = $createCodeNode('javascript');
+            code.append($createTestInlineElementNode());
+            root.append(code);
+            code.collapseAtStart();
+          },
+          {discrete: true},
+        );
+        editor.read(() => {
+          const root = $getRoot();
+          expect(root.getChildrenSize()).toBe(1);
+          const paragraph = root.getFirstChild();
+          assert($isParagraphNode(paragraph), 'code replaced by paragraph');
+          expect(paragraph.getChildrenSize()).toBe(0);
+        });
       });
     },
     {

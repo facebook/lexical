@@ -15,11 +15,15 @@ import {
   $createTextNode,
   $getRoot,
   $getSelection,
+  $isElementNode,
   ParagraphNode,
   RangeSelection,
 } from 'lexical';
-import {initializeUnitTest} from 'lexical/src/__tests__/utils';
-import {describe, expect, test} from 'vitest';
+import {
+  $createTestInlineElementNode,
+  initializeUnitTest,
+} from 'lexical/src/__tests__/utils';
+import {assert, describe, expect, test} from 'vitest';
 
 const editorConfig = Object.freeze({
   namespace: '',
@@ -238,6 +242,33 @@ describe('LexicalHeadingNode tests', () => {
       expect(testEnv.outerHTML).toBe(
         `<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><h2 dir="auto"><span data-lexical-text="true">${text}</span></h2><p dir="auto"><br></p></div>`,
       );
+    });
+
+    describe('HeadingNode.collapseAtStart() with empty inline children', () => {
+      test('drops empty inline ElementNode children instead of carrying them over', () => {
+        const {editor} = testEnv;
+        editor.update(
+          () => {
+            const root = $getRoot();
+            root.clear();
+            const heading = $createHeadingNode('h2');
+            heading.append($createTestInlineElementNode());
+            root.append(heading);
+            heading.collapseAtStart();
+          },
+          {discrete: true},
+        );
+        editor.read(() => {
+          const root = $getRoot();
+          expect(root.getChildrenSize()).toBe(1);
+          const replacement = root.getFirstChild();
+          assert(
+            $isElementNode(replacement),
+            'heading replaced by an ElementNode',
+          );
+          expect(replacement.getChildrenSize()).toBe(0);
+        });
+      });
     });
   });
 });

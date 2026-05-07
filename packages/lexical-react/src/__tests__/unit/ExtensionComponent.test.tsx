@@ -8,6 +8,7 @@
 import {ExtensionComponent} from '@lexical/react/ExtensionComponent';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
 import {ReactExtension} from '@lexical/react/ReactExtension';
+import {mountReactExtensionComponent} from '@lexical/react/ReactPluginHostExtension';
 import {useExtensionComponent} from '@lexical/react/useExtensionComponent';
 import {defineExtension} from 'lexical';
 import * as React from 'react';
@@ -112,6 +113,17 @@ describe('ExtensionComponent type compatibility', () => {
       undefined as unknown as ReturnedComponent,
     );
     expect(typeof useExtensionComponent).toBe('function');
+  });
+
+  it('mountReactExtensionComponent accepts required props', () => {
+    type Opts = Parameters<
+      typeof mountReactExtensionComponent<typeof RequiredPropsExtension>
+    >[1];
+    // The `props` field of the options must allow the required props of the
+    // output Component (or null), and not collapse to `never`.
+    assertType<Opts['props']>({count: 1, value: 'hi'});
+    assertType<Opts['props']>(null);
+    expect(typeof mountReactExtensionComponent).toBe('function');
   });
 
   it('renders a Component that has required props', () => {

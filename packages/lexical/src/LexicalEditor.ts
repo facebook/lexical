@@ -217,14 +217,10 @@ export interface EditorConfig {
 
 /**
  * Configuration entry passed in {@link CreateEditorArgs.nodes} to substitute
- * every instance of a core node class with an instance of a custom subclass.
- * Combined with {@link withKlass}, this lets node transforms and mutation
- * listeners that target the original class continue to fire on the
- * replacement.
+ * a core node class with a custom subclass. The replacement class itself
+ * must also appear in `nodes`.
  *
- * See [Node Replacement](https://lexical.dev/docs/concepts/node-replacement)
- * for a full example. Don't forget to also list the replacement class in
- * {@link CreateEditorArgs.nodes}.
+ * See [Node Replacement](https://lexical.dev/docs/concepts/node-replacement).
  */
 export type LexicalNodeReplacement = {
   /**
@@ -232,20 +228,22 @@ export type LexicalNodeReplacement = {
    */
   replace: Klass<LexicalNode>;
   /**
-   * Factory called whenever {@link replace} is constructed. The argument is
-   * the original instance about to be created; return the replacement node.
+   * Called from `$applyNodeReplacement` (invoked by the `$create*` factories
+   * for `replace`) with the freshly-constructed original. Return the
+   * substitute node — must be an instance of `withKlass` when that is set.
+   * Direct `new` calls bypass this hook.
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   with: <T extends {new (...args: any): any}>(
     node: InstanceType<T>,
   ) => LexicalNode;
   /**
-   * The replacement class returned by {@link with}. Pass it so that
-   * {@link LexicalEditor.registerNodeTransform} and
-   * {@link LexicalEditor.registerMutationListener} subscriptions targeting
-   * the original {@link replace} class continue to fire on the substituted
-   * instances. Currently optional, but a runtime warning is emitted when
-   * omitted and it is expected to become required in a future version.
+   * The replacement class returned by `with`. Must extend `replace`
+   * (asserted in dev). When set, {@link LexicalEditor.registerNodeTransform}
+   * subscriptions on `replace` also run on the replacement, and
+   * {@link LexicalEditor.registerMutationListener} subscriptions on `replace`
+   * are redirected to the replacement. Will be required in a future version
+   * — a runtime warning is emitted when omitted.
    */
   withKlass?: Klass<LexicalNode>;
 };

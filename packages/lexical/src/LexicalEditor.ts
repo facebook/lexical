@@ -227,6 +227,7 @@ export type LexicalNodeReplacement = {
 export type HTMLConfig = {
   export?: DOMExportOutputMap;
   import?: DOMConversionMap;
+  isInlineDomNode?: (node: Node) => boolean;
 };
 
 /**

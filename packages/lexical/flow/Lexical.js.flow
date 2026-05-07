@@ -406,6 +406,7 @@ export type HTMLConfig = {
     (editor: LexicalEditor, target: LexicalNode) => DOMExportOutput,
   >,
   import?: DOMConversionMap,
+  isInlineDomNode?: (node: Node) => boolean,
 };
 
 declare export function createEditor(editorConfig?: {

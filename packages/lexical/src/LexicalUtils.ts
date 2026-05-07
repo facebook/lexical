@@ -84,6 +84,7 @@ import {
   errorOnReadOnly,
   getActiveEditor,
   getActiveEditorState,
+  internalGetActiveEditor,
   internalGetActiveEditorState,
   isCurrentlyReadOnlyMode,
   triggerCommandListeners,
@@ -1895,9 +1896,22 @@ const INLINE_TAG_RE =
 export function isInlineDomNode(
   node: Node,
 ): node is (HTMLElement | Text) & {[InlineDOMBrand]: never} {
-  return isHTMLElement(node) && node.style.display.startsWith('inline')
-    ? true
-    : INLINE_TAG_RE.test(node.nodeName);
+  if (isHTMLElement(node) && node.style.display.startsWith('inline')) {
+    return true;
+  }
+  if (INLINE_TAG_RE.test(node.nodeName)) {
+    return true;
+  }
+  const editor = internalGetActiveEditor();
+  if (editor !== null) {
+    const args = editor._createEditorArgs;
+    const customCheck =
+      args != null && args.html != null ? args.html.isInlineDomNode : undefined;
+    if (customCheck != null && customCheck(node)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 const BlockDOMBrand = Symbol.for('@lexical/BlockDOMBrand');

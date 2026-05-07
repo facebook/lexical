@@ -410,6 +410,7 @@ export class LexicalBuilder {
     >();
     const htmlExport: NonNullable<HTMLConfig['export']> = new Map();
     const htmlImport: NonNullable<HTMLConfig['import']> = {};
+    let htmlIsInlineDomNode: HTMLConfig['isInlineDomNode'];
     const theme: EditorThemeClasses = {};
     const extensionReps = this.sortedExtensionReps();
     for (const extensionRep of extensionReps) {
@@ -459,6 +460,13 @@ export class LexicalBuilder {
         if (extension.html.import) {
           Object.assign(htmlImport, extension.html.import);
         }
+        if (extension.html.isInlineDomNode) {
+          const prev = htmlIsInlineDomNode;
+          const next = extension.html.isInlineDomNode;
+          htmlIsInlineDomNode = prev
+            ? (node: Node) => prev(node) || next(node)
+            : next;
+        }
       }
       if (extension.theme) {
         deepThemeMergeInPlace(theme, extension.theme);
@@ -472,13 +480,16 @@ export class LexicalBuilder {
     }
     const hasImport = Object.keys(htmlImport).length > 0;
     const hasExport = htmlExport.size > 0;
-    if (hasImport || hasExport) {
+    if (hasImport || hasExport || htmlIsInlineDomNode) {
       config.html = {};
       if (hasImport) {
         config.html.import = htmlImport;
       }
       if (hasExport) {
         config.html.export = htmlExport;
+      }
+      if (htmlIsInlineDomNode) {
+        config.html.isInlineDomNode = htmlIsInlineDomNode;
       }
     }
     for (const extensionRep of extensionReps) {

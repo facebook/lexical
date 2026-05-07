@@ -215,12 +215,38 @@ export interface EditorConfig {
   theme: EditorThemeClasses;
 }
 
+/**
+ * Configuration entry passed in {@link CreateEditorArgs.nodes} to substitute
+ * every instance of a core node class with an instance of a custom subclass.
+ * Combined with {@link withKlass}, this lets node transforms and mutation
+ * listeners that target the original class continue to fire on the
+ * replacement.
+ *
+ * See [Node Replacement](https://lexical.dev/docs/concepts/node-replacement)
+ * for a full example. Don't forget to also list the replacement class in
+ * {@link CreateEditorArgs.nodes}.
+ */
 export type LexicalNodeReplacement = {
+  /**
+   * The core node class whose instances should be replaced.
+   */
   replace: Klass<LexicalNode>;
+  /**
+   * Factory called whenever {@link replace} is constructed. The argument is
+   * the original instance about to be created; return the replacement node.
+   */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   with: <T extends {new (...args: any): any}>(
     node: InstanceType<T>,
   ) => LexicalNode;
+  /**
+   * The replacement class returned by {@link with}. Pass it so that
+   * {@link LexicalEditor.registerNodeTransform} and
+   * {@link LexicalEditor.registerMutationListener} subscriptions targeting
+   * the original {@link replace} class continue to fire on the substituted
+   * instances. Currently optional, but a runtime warning is emitted when
+   * omitted and it is expected to become required in a future version.
+   */
   withKlass?: Klass<LexicalNode>;
 };
 

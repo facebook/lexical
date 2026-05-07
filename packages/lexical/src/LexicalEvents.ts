@@ -797,6 +797,31 @@ function $handleBeforeInput(event: InputEvent): boolean {
         }
       } else {
         $setCompositionKey(null);
+
+        // iOS 10-key Korean IME (천지인/Chunjiin) does not fire compositionstart /
+        // compositionend events. Instead it sends a deleteContentBackward with a
+        // non-collapsed targetRange to delete the current composing jamo, immediately
+        // followed by insertText with the updated syllable.
+        //
+        // Because editor.isComposing() is always false for this keyboard type, Lexical
+        // would otherwise dispatch DELETE_CHARACTER_COMMAND, which ignores the
+        // targetRange entirely and deletes only one character before the cursor. This
+        // leaves orphaned jamo in the editor state that accumulate and corrupt output
+        // (e.g. typing "안녕하세요" produces "안녕하ᄉ세ᄋᄋ요").
+        //
+        // Fix: when on iOS with a non-collapsed targetRange, apply the range directly
+        // to the Lexical selection and delete the matched text. If applyDOMRange cannot
+        // resolve the range (returns a collapsed selection), fall through to the default
+        // Lexical deletion path.
+        if (IS_IOS && targetRange !== null && !targetRange.collapsed) {
+          selection.applyDOMRange(targetRange);
+          if (!selection.isCollapsed()) {
+            event.preventDefault();
+            selection.removeText();
+            return true;
+          }
+        }
+
         event.preventDefault();
         // Chromium Android at the moment seems to ignore the preventDefault
         // on 'deleteContentBackward' and still deletes the content. Which leads

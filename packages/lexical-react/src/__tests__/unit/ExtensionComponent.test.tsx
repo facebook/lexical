@@ -8,6 +8,7 @@
 import {ExtensionComponent} from '@lexical/react/ExtensionComponent';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
 import {ReactExtension} from '@lexical/react/ReactExtension';
+import {useExtensionComponent} from '@lexical/react/useExtensionComponent';
 import {defineExtension} from 'lexical';
 import * as React from 'react';
 import {createRoot, Root} from 'react-dom/client';
@@ -95,6 +96,22 @@ describe('ExtensionComponent type compatibility', () => {
     );
     expect(withProp).toBeTruthy();
     expect(withoutProp).toBeTruthy();
+  });
+
+  it('useExtensionComponent preserves required prop types', () => {
+    // Type-only check: the hook's return type must remain a ComponentType
+    // that requires the extension Component's props.
+    type ReturnedComponent = ReturnType<
+      typeof useExtensionComponent<typeof RequiredOutputComponent>
+    >;
+    assertType<React.ComponentType<RequiredProps>>(
+      undefined as unknown as ReturnedComponent,
+    );
+    assertType<React.ComponentType<Record<never, never>>>(
+      // @ts-expect-error -- contravariance: ComponentType<RequiredProps> is not assignable to ComponentType<{}>
+      undefined as unknown as ReturnedComponent,
+    );
+    expect(typeof useExtensionComponent).toBe('function');
   });
 
   it('renders a Component that has required props', () => {

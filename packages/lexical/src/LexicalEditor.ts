@@ -228,22 +228,20 @@ export type LexicalNodeReplacement = {
    */
   replace: Klass<LexicalNode>;
   /**
-   * Called from `$applyNodeReplacement` (invoked by the `$create*` factories
-   * for `replace`) with the freshly-constructed original. Return the
-   * substitute node — must be an instance of `withKlass` when that is set.
-   * Direct `new` calls bypass this hook.
+   * Called by the `$create*` factories for `replace` with the
+   * freshly-constructed original. Returns the substitute node, which must be
+   * an instance of `withKlass` when set.
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   with: <T extends {new (...args: any): any}>(
     node: InstanceType<T>,
   ) => LexicalNode;
   /**
-   * The replacement class returned by `with`. Must extend `replace`
-   * (asserted in dev). When set, {@link LexicalEditor.registerNodeTransform}
-   * subscriptions on `replace` also run on the replacement, and
-   * {@link LexicalEditor.registerMutationListener} subscriptions on `replace`
-   * are redirected to the replacement. Will be required in a future version
-   * — a runtime warning is emitted when omitted.
+   * The replacement class returned by `with`. Must extend `replace`. When
+   * set, {@link LexicalEditor.registerNodeTransform} and
+   * {@link LexicalEditor.registerMutationListener} subscriptions registered
+   * against `replace` also fire for the replacement. Will be required in a
+   * future version.
    */
   withKlass?: Klass<LexicalNode>;
 };

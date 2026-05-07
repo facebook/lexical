@@ -9,8 +9,13 @@ import {ExtensionComponent} from '@lexical/react/ExtensionComponent';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
 import {ReactExtension} from '@lexical/react/ReactExtension';
 import {mountReactExtensionComponent} from '@lexical/react/ReactPluginHostExtension';
-import {useExtensionComponent} from '@lexical/react/useExtensionComponent';
-import {defineExtension} from 'lexical';
+import {
+  useExtensionComponent,
+  useExtensionDependency,
+  useOptionalExtensionDependency,
+  usePeerExtensionDependency,
+} from '@lexical/react/useExtensionComponent';
+import {defineExtension, type LexicalExtensionDependency} from 'lexical';
 import * as React from 'react';
 import {createRoot, Root} from 'react-dom/client';
 import {act} from 'react-dom/test-utils';
@@ -124,6 +129,87 @@ describe('ExtensionComponent type compatibility', () => {
     assertType<Opts['props']>({count: 1, value: 'hi'});
     assertType<Opts['props']>(null);
     expect(typeof mountReactExtensionComponent).toBe('function');
+  });
+
+  it('useExtensionDependency preserves the output Component prop types', () => {
+    type Dep = ReturnType<
+      typeof useExtensionDependency<typeof RequiredPropsExtension>
+    >;
+    assertType<LexicalExtensionDependency<typeof RequiredPropsExtension>>(
+      undefined as unknown as Dep,
+    );
+    assertType<React.ComponentType<RequiredProps>>(
+      undefined as unknown as Dep['output']['Component'],
+    );
+    assertType<React.ComponentType<Record<never, never>>>(
+      // @ts-expect-error -- contravariance: ComponentType<RequiredProps> is not assignable to ComponentType<{}>
+      undefined as unknown as Dep['output']['Component'],
+    );
+    expect(typeof useExtensionDependency).toBe('function');
+  });
+
+  it('useOptionalExtensionDependency preserves the output Component prop types', () => {
+    type Dep = ReturnType<
+      typeof useOptionalExtensionDependency<typeof RequiredPropsExtension>
+    >;
+    assertType<
+      undefined | LexicalExtensionDependency<typeof RequiredPropsExtension>
+    >(undefined as unknown as Dep);
+    assertType<undefined | React.ComponentType<RequiredProps>>(
+      undefined as unknown as
+        | undefined
+        | NonNullable<Dep>['output']['Component'],
+    );
+    expect(typeof useOptionalExtensionDependency).toBe('function');
+  });
+
+  it('usePeerExtensionDependency preserves the output Component prop types', () => {
+    type Dep = ReturnType<
+      typeof usePeerExtensionDependency<typeof RequiredPropsExtension>
+    >;
+    assertType<
+      undefined | LexicalExtensionDependency<typeof RequiredPropsExtension>
+    >(undefined as unknown as Dep);
+    assertType<undefined | React.ComponentType<RequiredProps>>(
+      undefined as unknown as
+        | undefined
+        | NonNullable<Dep>['output']['Component'],
+    );
+    // The hook is keyed by the extension name at runtime.
+    assertType<Parameters<typeof usePeerExtensionDependency>[0]>(
+      'required-props-extension',
+    );
+    expect(typeof usePeerExtensionDependency).toBe('function');
+  });
+
+  it('useExtensionDependency renders the output Component with required props', () => {
+    function Consumer() {
+      const {output} = useExtensionDependency(RequiredPropsExtension);
+      return <output.Component value="dep" count={7} />;
+    }
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    let root: Root | undefined;
+    try {
+      act(() => {
+        root = createRoot(container);
+        root.render(
+          <LexicalExtensionComposer
+            extension={defineExtension({
+              dependencies: [RequiredPropsExtension],
+              name: '[root-dep]',
+            })}>
+            <Consumer />
+          </LexicalExtensionComposer>,
+        );
+      });
+      expect(container.textContent).toContain('dep-7');
+    } finally {
+      act(() => {
+        root?.unmount();
+      });
+      document.body.removeChild(container);
+    }
   });
 
   it('renders a Component that has required props', () => {

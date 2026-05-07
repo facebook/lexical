@@ -26,6 +26,7 @@ import {
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {TabIndentationPlugin} from '@lexical/react/LexicalTabIndentationPlugin';
 import {TablePlugin} from '@lexical/react/LexicalTablePlugin';
+import {TouchIndentationPlugin} from '@lexical/react/LexicalTouchIndentationPlugin';
 import {useOptionalExtensionDependency} from '@lexical/react/useExtensionComponent';
 import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
 import {CAN_USE_DOM} from '@lexical/utils';
@@ -256,6 +257,7 @@ export default function Editor(): JSX.Element {
             <EquationsPlugin />
             <ExcalidrawPlugin />
             <TabIndentationPlugin maxIndent={7} />
+            <TouchIndentationPlugin />
             <LayoutPlugin />
             {floatingAnchorElem && (
               <>

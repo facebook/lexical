@@ -169,6 +169,9 @@
       "@lexical/react/LexicalTablePlugin": [
         "./packages/lexical-react/src/LexicalTablePlugin.ts"
       ],
+      "@lexical/react/LexicalTouchIndentationPlugin": [
+        "./packages/lexical-react/src/LexicalTouchIndentationPlugin.tsx"
+      ],
       "@lexical/react/LexicalTreeView": [
         "./packages/lexical-react/src/LexicalTreeView.tsx"
       ],

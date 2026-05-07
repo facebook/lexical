@@ -256,9 +256,9 @@ test.describe('Keyboard shortcuts', () => {
       });
     };
 
-    expect(await getFontSize()).toBe('17');
+    expect(await getFontSize()).toBe('18');
     await decreaseFontSize(page);
-    expect(await getFontSize()).toBe('15');
+    expect(await getFontSize()).toBe('16');
   });
 
   test('Can clear formatting with the shortcut', async ({

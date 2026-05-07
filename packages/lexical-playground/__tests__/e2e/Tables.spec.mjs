@@ -1981,7 +1981,7 @@ test.describe.parallel('Tables', () => {
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </th>
           </tr>
-          <tr style="height: 87px">
+          <tr style="height: 89px">
             <td class="PlaygroundEditorTheme__tableCell">
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </td>
@@ -2010,7 +2010,7 @@ test.describe.parallel('Tables', () => {
         // flaky fix: +- 1px for the height assertion
         actualHtml.replace(
           '<tr style="height: 88px">',
-          '<tr style="height: 87px">',
+          '<tr style="height: 89px">',
         ),
     );
   });

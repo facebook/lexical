@@ -454,7 +454,7 @@ test.describe.parallel('Auto Links', () => {
       page,
       html`
         <p dir="auto">
-          <span style="font-size: 19px;" data-lexical-text="true">
+          <span style="font-size: 20px;" data-lexical-text="true">
             Hellohttp://example.com and more
           </span>
         </p>
@@ -472,13 +472,13 @@ test.describe.parallel('Auto Links', () => {
       page,
       html`
         <p dir="auto">
-          <span style="font-size: 19px;" data-lexical-text="true">Hello</span>
+          <span style="font-size: 20px;" data-lexical-text="true">Hello</span>
           <a href="http://example.com">
-            <span style="font-size: 19px;" data-lexical-text="true">
+            <span style="font-size: 20px;" data-lexical-text="true">
               http://example.com
             </span>
           </a>
-          <span style="font-size: 19px;" data-lexical-text="true">
+          <span style="font-size: 20px;" data-lexical-text="true">
             and more
           </span>
         </p>

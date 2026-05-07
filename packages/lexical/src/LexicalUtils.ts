@@ -881,11 +881,17 @@ function $setTextContentWithSelection(
   node.setTextContent(textContent);
   if ($isRangeSelection(selection)) {
     const key = node.getKey();
+    let pointMutated = false;
     for (const k of ['anchor', 'focus'] as const) {
       const pt = selection[k];
       if (pt.type === 'text' && pt.key === key) {
         pt.offset = $getTextNodeOffset(node, pt.offset, 'clamp');
+        pointMutated = true;
       }
+    }
+    if (pointMutated) {
+      selection._cachedNodes = null;
+      selection._cachedIsBackward = null;
     }
   }
 }

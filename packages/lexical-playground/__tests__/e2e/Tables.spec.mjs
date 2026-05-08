@@ -2051,12 +2051,6 @@ test.describe.parallel('Tables', () => {
         ignoreClasses: false,
         ignoreInlineStyles: false,
       },
-      actualHtml =>
-        // flaky fix: +- 1px for the height assertion
-        actualHtml.replace(
-          '<tr dir="auto style="height: 88px"">',
-          '<tr dir="auto" style="height: 87px">',
-        ),
     );
   });
 

@@ -212,6 +212,9 @@ export class Point {
       }
       if (selection !== null) {
         selection.setCachedNodes(null);
+        if ($isRangeSelection(selection)) {
+          selection._cachedIsBackward = null;
+        }
         selection.dirty = true;
       }
     }
@@ -471,6 +474,8 @@ export class RangeSelection implements BaseSelection {
   anchor: PointType;
   focus: PointType;
   _cachedNodes: Array<LexicalNode> | null;
+  /** @internal */
+  _cachedIsBackward: boolean | null;
   dirty: boolean;
 
   constructor(
@@ -484,6 +489,7 @@ export class RangeSelection implements BaseSelection {
     anchor._selection = this;
     focus._selection = this;
     this._cachedNodes = null;
+    this._cachedIsBackward = null;
     this.format = format;
     this.style = style;
     this.dirty = false;
@@ -968,6 +974,8 @@ export class RangeSelection implements BaseSelection {
           // we correctly replace that right range.
           if (textNode.isComposing() && this.anchor.type === 'text') {
             this.anchor.offset -= text.length;
+            this._cachedNodes = null;
+            this._cachedIsBackward = null;
           }
           return;
         }
@@ -993,6 +1001,8 @@ export class RangeSelection implements BaseSelection {
           // When composing, we need to adjust the anchor offset so that
           // we correctly replace that right range.
           this.anchor.offset -= text.length;
+          this._cachedNodes = null;
+          this._cachedIsBackward = null;
         }
       }
     } else {
@@ -1141,6 +1151,8 @@ export class RangeSelection implements BaseSelection {
             // When composing, we need to adjust the anchor offset so that
             // we correctly replace that right range.
             this.anchor.offset -= text.length;
+            this._cachedNodes = null;
+            this._cachedIsBackward = null;
           }
         }
       } else if (startOffset === firstNodeTextLength) {
@@ -1960,7 +1972,15 @@ export class RangeSelection implements BaseSelection {
    * @returns true if the Selection is backwards, false otherwise.
    */
   isBackward(): boolean {
-    return this.focus.isBefore(this.anchor);
+    const cached = this._cachedIsBackward;
+    if (cached !== null) {
+      return cached;
+    }
+    const isBackward = this.focus.isBefore(this.anchor);
+    if (!isCurrentlyReadOnlyMode()) {
+      this._cachedIsBackward = isBackward;
+    }
+    return isBackward;
   }
 
   getStartEndPoints(): null | [PointType, PointType] {

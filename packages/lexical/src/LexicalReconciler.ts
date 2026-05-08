@@ -138,19 +138,11 @@ function setElementIndent(dom: HTMLElement, indent: number): void {
     }
   }
 
-  if (indent === 0) {
-    dom.style.setProperty('padding-inline-start', '');
-    return;
-  }
-
-  const indentationBaseValue =
-    getComputedStyle(activeEditor._rootElement || dom).getPropertyValue(
-      '--lexical-indent-base-value',
-    ) || DEFAULT_INDENT_VALUE;
-
   dom.style.setProperty(
     'padding-inline-start',
-    `calc(${indent} * ${indentationBaseValue})`,
+    indent === 0
+      ? ''
+      : `calc(${indent} * var(--lexical-indent-base-value, ${DEFAULT_INDENT_VALUE}))`,
   );
 }
 

@@ -331,6 +331,17 @@ function patchStyleConversion(
 
 ## JSON
 
+:::tip
+
+If your custom node uses [`$config`](./nodes.mdx#creating-custom-nodes-with-config-and-nodestate)
+with `NodeState`, `exportJSON`, `importJSON`, and `updateFromJSON` are
+generated for you. Flat state keys are lifted to the top level of the
+serialized node and the rest are nested under `'$'` — see
+[Flat serialization with `$config`](./node-state.md#flat-serialization-with-config)
+and the [legacy-property upgrade recipe](./node-state.md#upgrading-a-legacy-json-property-to-nodestate).
+
+:::
+
 ### Lexical -> JSON
 To generate a JSON snapshot from an `EditorState`, you can call the `toJSON()` method on the `EditorState` object.
 

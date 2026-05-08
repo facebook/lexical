@@ -69,6 +69,7 @@ import {
   $normalizeSelection__EXPERIMENTAL,
   $selectAll,
   $setDirectionFromDOM,
+  $setFormatFromDOM,
   $setSelection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_EDITOR,
@@ -434,10 +435,8 @@ function $convertHeadingElement(element: HTMLElement): DOMConversionOutput {
     nodeName === 'h6'
   ) {
     node = $createHeadingNode(nodeName);
-    if (element.style !== null) {
-      setNodeIndentFromDOM(element, node);
-      node.setFormat(element.style.textAlign as ElementFormatType);
-    }
+    setNodeIndentFromDOM(element, node);
+    $setFormatFromDOM(node, element);
     $setDirectionFromDOM(node, element);
   }
   return {node};
@@ -445,10 +444,8 @@ function $convertHeadingElement(element: HTMLElement): DOMConversionOutput {
 
 function $convertBlockquoteElement(element: HTMLElement): DOMConversionOutput {
   const node = $createQuoteNode();
-  if (element.style !== null) {
-    node.setFormat(element.style.textAlign as ElementFormatType);
-    setNodeIndentFromDOM(element, node);
-  }
+  $setFormatFromDOM(node, element);
+  setNodeIndentFromDOM(element, node);
   $setDirectionFromDOM(node, element);
   return {node};
 }

@@ -18,7 +18,8 @@ export type ExtensionComponentProps<Extension extends AnyLexicalExtension> = {
   /** The Extension */ 'lexical:extension': Extension;
 } & ([LexicalExtensionOutput<Extension>] extends [
   {
-    Component: infer OutputComponentType extends React.ComponentType;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- contravariant in props
+    Component: infer OutputComponentType extends React.ComponentType<any>;
   },
 ]
   ? /** The Props from the Extension output Component */ Omit<

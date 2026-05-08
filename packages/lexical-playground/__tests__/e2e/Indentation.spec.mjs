@@ -143,19 +143,19 @@ test.describe('Identation', () => {
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
           dir="auto"
-          style="padding-inline-start: calc(40px)">
+          style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
           <span data-lexical-text="true">foo</span>
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
           dir="auto"
-          style="padding-inline-start: calc(40px)">
+          style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
           <span data-lexical-text="true">bar</span>
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
           dir="auto"
-          style="padding-inline-start: calc(40px)">
+          style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
           <span data-lexical-text="true">yar</span>
         </p>
         <ul class="PlaygroundEditorTheme__ul" dir="auto">
@@ -190,7 +190,7 @@ test.describe('Identation', () => {
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
           dir="auto"
-          style="padding-inline-start: calc(40px)">
+          style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
           <br />
         </p>
         <table
@@ -204,7 +204,7 @@ test.describe('Identation', () => {
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
+                style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
                 <span data-lexical-text="true">foo</span>
               </p>
             </th>
@@ -213,7 +213,7 @@ test.describe('Identation', () => {
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
           dir="auto"
-          style="padding-inline-start: calc(40px)">
+          style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
           <br />
         </p>
       `,
@@ -228,19 +228,19 @@ test.describe('Identation', () => {
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
           dir="auto"
-          style="padding-inline-start: calc(80px)">
+          style="padding-inline-start: calc(2 * var(--lexical-indent-base-value, 40px))">
           <span data-lexical-text="true">foo</span>
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
           dir="auto"
-          style="padding-inline-start: calc(80px)">
+          style="padding-inline-start: calc(2 * var(--lexical-indent-base-value, 40px))">
           <span data-lexical-text="true">bar</span>
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
           dir="auto"
-          style="padding-inline-start: calc(80px)">
+          style="padding-inline-start: calc(2 * var(--lexical-indent-base-value, 40px))">
           <span data-lexical-text="true">yar</span>
         </p>
         <ul class="PlaygroundEditorTheme__ul" dir="auto">
@@ -281,7 +281,7 @@ test.describe('Identation', () => {
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
           dir="auto"
-          style="padding-inline-start: calc(80px)">
+          style="padding-inline-start: calc(2 * var(--lexical-indent-base-value, 40px))">
           <br />
         </p>
         <table
@@ -295,7 +295,7 @@ test.describe('Identation', () => {
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(80px)">
+                style="padding-inline-start: calc(2 * var(--lexical-indent-base-value, 40px))">
                 <span data-lexical-text="true">foo</span>
               </p>
             </th>
@@ -304,7 +304,7 @@ test.describe('Identation', () => {
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
           dir="auto"
-          style="padding-inline-start: calc(80px)">
+          style="padding-inline-start: calc(2 * var(--lexical-indent-base-value, 40px))">
           <br />
         </p>
       `,
@@ -319,19 +319,19 @@ test.describe('Identation', () => {
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
           dir="auto"
-          style="padding-inline-start: calc(40px)">
+          style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
           <span data-lexical-text="true">foo</span>
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
           dir="auto"
-          style="padding-inline-start: calc(40px)">
+          style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
           <span data-lexical-text="true">bar</span>
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
           dir="auto"
-          style="padding-inline-start: calc(40px)">
+          style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
           <span data-lexical-text="true">yar</span>
         </p>
         <ul class="PlaygroundEditorTheme__ul" dir="auto">
@@ -366,7 +366,7 @@ test.describe('Identation', () => {
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
           dir="auto"
-          style="padding-inline-start: calc(40px)">
+          style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
           <br />
         </p>
         <table
@@ -380,7 +380,7 @@ test.describe('Identation', () => {
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
+                style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
                 <span data-lexical-text="true">foo</span>
               </p>
             </th>
@@ -389,7 +389,7 @@ test.describe('Identation', () => {
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
           dir="auto"
-          style="padding-inline-start: calc(40px)">
+          style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
           <br />
         </p>
       `,
@@ -467,7 +467,7 @@ test.describe('Identation', () => {
     await clickIndentButton(page, MAX_INDENT);
 
     const expectedHTML =
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent" dir="auto" style="padding-inline-start: calc(240px)"><br /></p>';
+      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent" dir="auto" style="padding-inline-start: calc(6 * var(--lexical-indent-base-value, 40px))"><br /></p>';
 
     await assertHTML(page, expectedHTML);
     await clickIndentButton(page, MAX_INDENT);

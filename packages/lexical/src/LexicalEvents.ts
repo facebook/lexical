@@ -1142,6 +1142,8 @@ function $handleInput(event: InputEvent): boolean {
       !editor.isComposing()
     ) {
       selection.anchor.offset -= textLength;
+      selection._cachedNodes = null;
+      selection._cachedIsBackward = null;
     }
 
     // This ensures consistency on Android.

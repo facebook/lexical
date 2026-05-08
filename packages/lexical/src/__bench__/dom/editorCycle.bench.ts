@@ -6,12 +6,15 @@
  *
  */
 
-import type {LexicalEditor} from 'lexical';
-
 import {bench, describe} from 'vitest';
 
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getRoot,
+  type LexicalEditor,
+} from '../../';
 import {createTestEditor} from '../../__tests__/utils';
-import {$createParagraphNode, $createTextNode, $getRoot} from '.';
 
 const SIZES = [1000, 5000] as const;
 

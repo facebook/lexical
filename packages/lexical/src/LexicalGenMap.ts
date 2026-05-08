@@ -10,30 +10,32 @@ const TOMBSTONE = null;
 const GEN_MAP_SIZE_THRESHOLD = 1000;
 
 /**
- * Create a copy of the given Map, returning either a fresh Map or a clone
- * of a copy-on-write GenMap depending on the size threshold.
+ * @internal
  *
- * Below the threshold the cost of `new Map(map)` is small enough that the
- * extra indirection of GenMap is not worthwhile. At and above the threshold
- * GenMap's O(1) clone wins.
+ * Create a copy of the given Map, returning either a fresh Map or a clone
+ * of a copy-on-write GenMap depending on the source type and size.
+ *
+ * - If the source is already a GenMap, returns `map.clone()` (O(1)).
+ * - If the source is a plain Map below the threshold, returns
+ *   `new Map(map)` to avoid the GenMap overhead on small docs.
+ * - Otherwise wraps a fresh GenMap around the source.
  */
 export function cloneMap<K, V>(
   map: Map<K, V>,
   minGenMapSize: number = GEN_MAP_SIZE_THRESHOLD,
 ): Map<K, V> {
-  if (map.size < minGenMapSize) {
-    return new Map(map);
-  }
   if (map instanceof GenMap) {
     return map.clone();
   }
-  const clone = new GenMap<K, V>();
-  clone._old = new Map(map);
-  clone._size = map.size;
-  return clone;
+  if (map.size < minGenMapSize) {
+    return new Map(map);
+  }
+  return new GenMap<K, V>().init(new Map(map), undefined, map.size);
 }
 
 /**
+ * @internal
+ *
  * A copy-on-write Map suitable for cloning large collections cheaply.
  *
  * Before being written to, a GenMap shares its `_old` and `_nursery` Maps
@@ -45,6 +47,9 @@ export function cloneMap<K, V>(
  * `_nursery` holds writes since the last compaction (deletions stored as
  * `TOMBSTONE`). `_mutable` tracks whether `_nursery` may be written to
  * directly or must first be cloned.
+ *
+ * Implements the full `Map<K, V>` interface; methods not documented
+ * individually behave as their native `Map` counterparts.
  */
 export class GenMap<K, V> implements Map<K, V> {
   _mutable: boolean = false;
@@ -52,13 +57,25 @@ export class GenMap<K, V> implements Map<K, V> {
   _nursery: undefined | Map<K, typeof TOMBSTONE | V> = undefined;
   _size: number = 0;
 
+  /**
+   * Returns a new GenMap that initially shares `_old` and `_nursery`
+   * with this one. Marks both as not-mutable so the next write on either
+   * side triggers a copy-on-write of the nursery before mutating.
+   */
   clone(): GenMap<K, V> {
     this._mutable = false;
-    const next = new GenMap<K, V>();
-    next._old = this._old;
-    next._nursery = this._nursery;
-    next._size = this._size;
-    return next;
+    return new GenMap<K, V>().init(this._old, this._nursery, this._size);
+  }
+
+  init(
+    old: undefined | ReadonlyMap<K, V>,
+    nursery: undefined | Map<K, typeof TOMBSTONE | V>,
+    size: number,
+  ): this {
+    this._old = old;
+    this._nursery = nursery;
+    this._size = size;
+    return this;
   }
 
   get size(): number {
@@ -95,19 +112,11 @@ export class GenMap<K, V> implements Map<K, V> {
    * Returns the nursery for in-place writes. If this GenMap is currently
    * sharing its nursery with an ancestor clone, this either compacts (if
    * the nursery has grown large enough) or makes a shallow copy.
-   *
-   * Skipping the `new Map()` allocation when the nursery is `undefined` or
-   * empty saves ~5-10% on the typing path where most cycles start with no
-   * pending writes.
    */
   getNursery(): Map<K, typeof TOMBSTONE | V> {
     if (!this._mutable || !this._nursery) {
       this.compact();
-      if (this._nursery !== undefined && this._nursery.size > 0) {
-        this._nursery = new Map(this._nursery);
-      } else if (this._nursery === undefined) {
-        this._nursery = new Map();
-      }
+      this._nursery = new Map(this._nursery);
       this._mutable = true;
     }
     return this._nursery;
@@ -149,7 +158,8 @@ export class GenMap<K, V> implements Map<K, V> {
     if (v === TOMBSTONE || v === undefined) {
       this._size++;
       if (v === TOMBSTONE) {
-        // Preserve insertion order: clear the tombstone before re-setting.
+        // Match native Map semantics where `delete(k); set(k, v)`
+        // re-inserts the key at the end of iteration order.
         nursery.delete(key);
       }
     }

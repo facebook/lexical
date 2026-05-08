@@ -62,7 +62,7 @@ export default defineConfig({
         extends: true,
         test: {
           environment: 'node',
-          exclude: ['**/node_modules/**'],
+          exclude: ['**/node_modules/**', '**/__bench__/dom/**'],
           include: ['packages/*/src/__bench__/*.bench.ts'],
           name: 'bench',
         },

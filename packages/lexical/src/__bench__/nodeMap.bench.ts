@@ -9,27 +9,9 @@
 import {bench, describe} from 'vitest';
 
 import {GenMap} from '../LexicalGenMap';
+import {buildMap, type FakeNode, makeNode} from './_utils';
 
 const SIZES = [100, 1000, 10000, 100000] as const;
-
-type FakeNode = {
-  __key: string;
-  __type: string;
-  __parent: string | null;
-};
-
-function makeNode(key: string): FakeNode {
-  return {__key: key, __parent: 'root', __type: 'text'};
-}
-
-function buildMap(size: number): Map<string, FakeNode> {
-  const m = new Map<string, FakeNode>();
-  for (let i = 0; i < size; i++) {
-    const k = String(i);
-    m.set(k, makeNode(k));
-  }
-  return m;
-}
 
 function buildGenMap(size: number): GenMap<string, FakeNode> {
   const g = new GenMap<string, FakeNode>();

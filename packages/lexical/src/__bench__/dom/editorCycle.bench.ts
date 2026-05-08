@@ -6,39 +6,15 @@
  *
  */
 
+import type {LexicalEditor, ParagraphNode} from '../../';
+
 import {bench, describe} from 'vitest';
 
-import {
-  $createParagraphNode,
-  $createTextNode,
-  $getRoot,
-  type LexicalEditor,
-} from '../../';
+import {$createTextNode, $getRoot} from '../../';
 import {createTestEditor} from '../../__tests__/utils';
+import {attachToDOM, buildLargeDoc} from './_utils';
 
 const SIZES = [1000, 5000] as const;
-
-function buildLargeDoc(editor: LexicalEditor, paragraphs: number): void {
-  editor.update(
-    () => {
-      const root = $getRoot();
-      for (let i = 0; i < paragraphs; i++) {
-        const p = $createParagraphNode();
-        p.append($createTextNode(`paragraph ${i} with some text content`));
-        root.append(p);
-      }
-    },
-    {discrete: true},
-  );
-}
-
-function attachToDOM(editor: LexicalEditor): HTMLElement {
-  const root = document.createElement('div');
-  root.contentEditable = 'true';
-  document.body.appendChild(root);
-  editor.setRootElement(root);
-  return root;
-}
 
 for (const size of SIZES) {
   describe(`size=${size} :: typing 1 char per cycle`, () => {
@@ -54,7 +30,7 @@ for (const size of SIZES) {
             const last = root.getLastChild();
             if (last) {
               const t = $createTextNode(`x${cycle++}`);
-              (last as ReturnType<typeof $createParagraphNode>).append(t);
+              (last as ParagraphNode).append(t);
             }
           },
           {discrete: true},

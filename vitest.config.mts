@@ -61,9 +61,11 @@ export default defineConfig({
       {
         extends: true,
         test: {
+          benchmark: {
+            exclude: ['**/node_modules/**', '**/__bench__/dom/**'],
+            include: ['packages/*/src/__bench__/*.bench.ts'],
+          },
           environment: 'node',
-          exclude: ['**/node_modules/**', '**/__bench__/dom/**'],
-          include: ['packages/*/src/__bench__/*.bench.ts'],
           name: 'bench',
         },
       },
@@ -75,14 +77,16 @@ export default defineConfig({
         extends: true,
         plugins: [react()],
         test: {
+          benchmark: {
+            exclude: ['**/node_modules/**'],
+            include: ['packages/*/src/__bench__/dom/**/*.bench.ts'],
+          },
           env: {
             LEXICAL_VERSION: JSON.stringify(
               `${process.env.npm_package_version}+git`,
             ),
           },
           environment: 'jsdom',
-          exclude: ['**/node_modules/**'],
-          include: ['packages/*/src/__bench__/dom/**/*.bench.ts'],
           name: 'bench-dom',
           setupFiles: ['./vitest.setup.mts'],
           typecheck: {

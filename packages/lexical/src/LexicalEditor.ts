@@ -34,6 +34,7 @@ import {
   registerDefaultCommandHandlers,
   removeRootElementEvents,
 } from './LexicalEvents';
+import {GenMap} from './LexicalGenMap';
 import {flushRootMutations, initMutationObserver} from './LexicalMutations';
 import {LexicalNode} from './LexicalNode';
 import {createSharedNodeState, SharedNodeState} from './LexicalNodeState';
@@ -984,7 +985,7 @@ export class LexicalEditor {
     this._compositionKey = null;
     this._deferred = [];
     // Used during reconciliation
-    this._keyToDOMMap = new Map();
+    this._keyToDOMMap = new GenMap();
     this._updates = [];
     this._updating = false;
     // Listeners

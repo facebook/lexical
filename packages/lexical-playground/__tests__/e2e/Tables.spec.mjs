@@ -13,6 +13,7 @@ import {
   moveRight,
   moveToEditorBeginning,
   moveToEditorEnd,
+  moveToLineEnd,
   moveUp,
   pressBackspace,
   selectAll,
@@ -7824,6 +7825,8 @@ test.describe.parallel('Tables', () => {
         .locator('p')
         .filter({hasText: 'before'})
         .click({force: true}); // `force` to ignore playwright blocking due to TableCellResizer interception
+      // move the cursor to the end of the word
+      await moveToLineEnd(page);
       await page.keyboard.down('Shift');
       await pageOrFrame
         .locator('table table > tr:first-of-type > th:first-of-type')
@@ -7832,7 +7835,7 @@ test.describe.parallel('Tables', () => {
 
       // Assert the selection is a range selection solely within the cell containing the nested table.
       await assertSelection(page, {
-        anchorOffset: 5, // at the end of the word "before"
+        anchorOffset: 6, // at the end of the word "before"
         anchorPath: TEXT_BEFORE_NESTED_TABLE,
         focusOffset: 1,
         focusPath: END_OF_INNER_TABLE,

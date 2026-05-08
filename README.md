@@ -120,4 +120,4 @@ We welcome contributions! Please read our [Contributing Guide](https://github.co
 
 ## License
 
-[MIT](https://github.com/facebook/lexical/blob/main/LICENSE) License © Meta Platforms, Inc.
+[MIT](https://github.com/facebook/lexical/blob/main/LICENSE) License Copyright ©2026 Meta Platforms, Inc.

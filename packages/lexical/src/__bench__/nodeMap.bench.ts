@@ -13,6 +13,11 @@ import {buildMap, type FakeNode, makeNode} from './_utils';
 
 const SIZES = [100, 1000, 10000, 100000] as const;
 
+// Module-level sink push'd into by each bench body so V8 can't elide
+// the work. The array is intentionally never read; `push` is the
+// observable side effect that anchors the computation. See README.md.
+const benchSinks: unknown[] = [];
+
 function buildGenMap(size: number): GenMap<string, FakeNode> {
   const g = new GenMap<string, FakeNode>();
   g._mutable = true;
@@ -170,7 +175,7 @@ for (const size of SIZES) {
     bench(
       'Map',
       () => {
-        mapBase.get(k);
+        benchSinks.push(mapBase.get(k));
       },
       {
         setup: () => {
@@ -182,7 +187,7 @@ for (const size of SIZES) {
     bench(
       'GenMap',
       () => {
-        genBase.get(k);
+        benchSinks.push(genBase.get(k));
       },
       {
         setup: () => {
@@ -199,8 +204,9 @@ for (const size of SIZES) {
     bench(
       'Map',
       () => {
-        let _count = 0;
-        for (const _ of mapBase) _count++;
+        let count = 0;
+        for (const _ of mapBase) count++;
+        benchSinks.push(count);
       },
       {
         setup: () => {
@@ -212,8 +218,9 @@ for (const size of SIZES) {
     bench(
       'GenMap',
       () => {
-        let _count = 0;
-        for (const _ of genBase) _count++;
+        let count = 0;
+        for (const _ of genBase) count++;
+        benchSinks.push(count);
       },
       {
         setup: () => {

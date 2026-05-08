@@ -105,19 +105,26 @@ starts from a clean baseline. Vitest invokes `setup` before each timed
 iteration; allocations inside `setup` do not count toward the benchmark.
 
 **DCE prevention** — V8 may eliminate calls whose return values are
-unused. For lookups, assign to a discardable local:
+unused. Each bench file should declare a module-level sink and `push`
+into it from the timed body so the call can't be elided:
 
 ```ts
-let _sink;
+const benchSinks: unknown[] = [];
+
 bench('get', () => {
-  _sink = map.get(someKey);
+  benchSinks.push(map.get(someKey));
 });
 ```
 
-For loops, ensure the body produces a side effect or accumulates into a
-visible local. The existing `nodeMap.bench.ts` uses `let _count = 0; for
-(const _ of m) _count++;` — the increment forces V8 to materialize the
-iterator.
+For loops, accumulate into a local and push the local once at the end:
+
+```ts
+bench('iterate', () => {
+  let count = 0;
+  for (const _ of map) count++;
+  benchSinks.push(count);
+});
+```
 
 ## Reading results
 

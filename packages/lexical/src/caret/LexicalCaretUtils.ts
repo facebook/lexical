@@ -29,6 +29,7 @@ import {
 import {
   $copyNode,
   $getNodeByKeyOrThrow,
+  $isEmptyableInlineElementNode,
   $isRootOrShadowRoot,
   $setSelection,
   INTERNAL_$isBlock,
@@ -351,6 +352,13 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
       const element = parent;
       parent = parent.getParent();
       element.remove(true);
+    }
+    // after merging, remove any emptyable inline children
+    // that were pulled into anchorBlock from focusBlock
+    for (const child of anchorBlock.getChildren()) {
+      if ($isEmptyableInlineElementNode(child)) {
+        child.remove();
+      }
     }
   }
 

@@ -7,15 +7,43 @@
  */
 import type {TableOfContentsEntry} from '@lexical/react/LexicalTableOfContentsPlugin';
 import type {HeadingTagType} from '@lexical/rich-text';
-import type {NodeKey} from 'lexical';
 import type {JSX} from 'react';
 
-import './index.css';
+import './TableOfContents.css';
 
+import {autoUpdate, offset, useFloating} from '@floating-ui/react';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {TableOfContentsPlugin as LexicalTableOfContentsPlugin} from '@lexical/react/LexicalTableOfContentsPlugin';
+import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
+import {$isHeadingNode} from '@lexical/rich-text';
+import {$findMatchingParent} from '@lexical/utils';
+import {
+  $setState,
+  COMMAND_PRIORITY_LOW,
+  createCommand,
+  type LexicalCommand,
+  LexicalNode,
+  type NodeKey,
+} from 'lexical';
+import {
+  $createTextNode,
+  $getNodeByKey,
+  $getSelection,
+  $insertNodes,
+  $isRangeSelection,
+} from 'lexical';
 import * as React from 'react';
 import {useEffect, useRef, useState} from 'react';
+import {createPortal} from 'react-dom';
+
+import {$createContentsItemNode} from '../ContentsExtension/ContentsItemNode';
+import {$createContentsLinkNode} from '../ContentsExtension/ContentsLinkNode';
+import {
+  $createContentsListNode,
+  $isContentsListNode,
+  ContentsListNode,
+} from '../ContentsExtension/ContentsListNode';
+import {idState} from '../IdStateExtension';
 
 const MARGIN_ABOVE_EDITOR = 624;
 const HEADING_WIDTH = 9;
@@ -44,6 +72,50 @@ function isHeadingBelowTheTopOfThePage(element: HTMLElement): boolean {
   return elementYPosition >= MARGIN_ABOVE_EDITOR + HEADING_WIDTH;
 }
 
+export const INSERT_CONTENTS_COMMAND: LexicalCommand<void> = createCommand(
+  'INSERT_CONTENTS_COMMAND',
+);
+
+function $generateContentsNode(tableOfContents: Array<TableOfContentsEntry>) {
+  const contentsNode = $createContentsListNode();
+  tableOfContents.forEach(([key, text, tag], index) => {
+    const anchorIndex = `heading-${index + 1}`;
+    const item = $createContentsItemNode();
+    const headingNode = $getNodeByKey(key);
+    if ($isHeadingNode(headingNode)) {
+      $setState(headingNode, idState, anchorIndex);
+    }
+    item.append(
+      $createContentsLinkNode('#' + anchorIndex, {
+        target: '_self',
+      }).append($createTextNode(text)),
+    );
+    contentsNode.append(item);
+    item.setIndent(Number(tag[1]) - 1);
+  });
+  return contentsNode;
+}
+
+function $getTopContentsNode(node: LexicalNode): ContentsListNode | null {
+  let list = $findMatchingParent(node, $isContentsListNode);
+
+  if (!list) {
+    return null;
+  }
+
+  let parent: ContentsListNode | null = list;
+
+  while (parent !== null) {
+    parent = parent.getParent();
+
+    if ($isContentsListNode(parent)) {
+      list = parent;
+    }
+  }
+
+  return list;
+}
+
 function TableOfContentsList({
   tableOfContents,
 }: {
@@ -52,6 +124,19 @@ function TableOfContentsList({
   const [selectedKey, setSelectedKey] = useState('');
   const selectedIndex = useRef(0);
   const [editor] = useLexicalComposerContext();
+
+  useEffect(() => {
+    return editor.registerCommand(
+      INSERT_CONTENTS_COMMAND,
+      () => {
+        if (tableOfContents.length > 0) {
+          $insertNodes([$generateContentsNode(tableOfContents)]);
+        }
+        return false;
+      },
+      COMMAND_PRIORITY_LOW,
+    );
+  }, [editor, tableOfContents]);
 
   function scrollToNode(key: NodeKey, currIndex: number) {
     editor.getEditorState().read(() => {
@@ -186,11 +271,103 @@ function TableOfContentsList({
   );
 }
 
-export default function TableOfContentsPlugin() {
+function ContentsHoverActions({
+  tableOfContents,
+  anchorElem = document.body,
+}: {
+  tableOfContents: Array<TableOfContentsEntry>;
+  anchorElem?: HTMLElement;
+}) {
+  const [editor] = useLexicalComposerContext();
+  const isEditable = useLexicalEditable();
+  const [focusedContents, setFocusedContents] =
+    useState<ContentsListNode | null>(null);
+  const contentsElemRef = useRef<HTMLElement | null>(null);
+
+  const {refs, floatingStyles} = useFloating({
+    middleware: [offset({crossAxis: -12, mainAxis: -5})],
+    placement: 'top-start',
+    strategy: 'fixed',
+    whileElementsMounted: autoUpdate,
+  });
+
+  useEffect(() => {
+    return editor.registerUpdateListener(({editorState}) => {
+      editorState.read(() => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) {
+          contentsElemRef.current?.classList.remove('active');
+          contentsElemRef.current = null;
+          setFocusedContents(null);
+          refs.setReference(null);
+          return;
+        }
+        const anchorNode = selection.anchor.getNode();
+        const contentsNode = $getTopContentsNode(anchorNode);
+        const prevElem = contentsElemRef.current;
+        if (contentsNode) {
+          const elem = editor.getElementByKey(contentsNode.getKey());
+          setFocusedContents(contentsNode);
+          refs.setReference(elem);
+          if (elem !== prevElem) {
+            prevElem?.classList.remove('active');
+            elem?.classList.add('active');
+          }
+          contentsElemRef.current = elem;
+        } else {
+          prevElem?.classList.remove('active');
+          contentsElemRef.current = null;
+          setFocusedContents(null);
+          refs.setReference(null);
+        }
+      });
+    });
+  }, [editor, refs]);
+
+  if (!isEditable || !contentsElemRef.current) {
+    return null;
+  }
+
+  const handleUpdate = () => {
+    if (focusedContents && tableOfContents.length > 0) {
+      editor.update(() => {
+        const newContents = $generateContentsNode(tableOfContents);
+        focusedContents.replace(newContents);
+        newContents.selectEnd();
+      });
+    }
+  };
+
+  return createPortal(
+    <button
+      ref={refs.setFloating}
+      style={floatingStyles}
+      className="contents-update-button"
+      aria-label="Update the table of contents"
+      type="button"
+      onClick={handleUpdate}
+    />,
+    anchorElem,
+  );
+}
+
+export type TableOfContentsProps = {
+  anchorElem?: HTMLElement;
+};
+
+export function TableOfContentsComponent({anchorElem}: TableOfContentsProps) {
   return (
     <LexicalTableOfContentsPlugin>
       {tableOfContents => {
-        return <TableOfContentsList tableOfContents={tableOfContents} />;
+        return (
+          <>
+            <TableOfContentsList tableOfContents={tableOfContents} />
+            <ContentsHoverActions
+              tableOfContents={tableOfContents}
+              anchorElem={anchorElem}
+            />
+          </>
+        );
       }}
     </LexicalTableOfContentsPlugin>
   );

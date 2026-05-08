@@ -8,6 +8,14 @@
 
 @import 'https://fonts.googleapis.com/css?family=Reenie+Beanie';
 
+:root {
+  --toolbar-height: 36px;
+}
+
+html {
+  scroll-padding-top: var(--toolbar-height);
+}
+
 body {
   margin: 0;
   font-family:
@@ -662,6 +670,10 @@ i.page-break,
 i.page-setup,
 .icon.page-setup {
   background-image: url(images/icons/file-earmark-text.svg);
+}
+
+i.toc {
+  background-image: url(images/icons/list-nested.svg);
 }
 
 .link-editor .button.active,
@@ -1519,7 +1531,7 @@ button.action-button:disabled {
   border-top-right-radius: 10px;
   vertical-align: middle;
   overflow: auto;
-  height: 36px;
+  height: var(--toolbar-height);
   position: sticky;
   top: 0;
   z-index: 20;

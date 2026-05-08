@@ -83,6 +83,11 @@ function preventDefault(
   event.preventDefault();
 }
 
+type LinkView = {
+  url: string;
+  target: null | string;
+};
+
 function FloatingLinkEditor({
   editor,
   isLink,
@@ -100,7 +105,7 @@ function FloatingLinkEditor({
 }): JSX.Element {
   const editorRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const [linkUrl, setLinkUrl] = useState('');
+  const [link, setLink] = useState<LinkView>({target: null, url: ''});
   const [editedLinkUrl, setEditedLinkUrl] = useState('https://');
   const [lastSelection, setLastSelection] = useState<BaseSelection | null>(
     null,
@@ -134,12 +139,12 @@ function FloatingLinkEditor({
     if ($isRangeSelection(selection)) {
       const linkNode = $getSelectedLinkNode(selection);
       if (linkNode) {
-        setLinkUrl(linkNode.getURL());
+        setLink({target: linkNode.getTarget(), url: linkNode.getURL()});
       } else {
-        setLinkUrl('');
+        setLink({target: null, url: ''});
       }
       if (isLinkEditMode) {
-        setEditedLinkUrl(linkUrl);
+        setEditedLinkUrl(link.url);
       }
     } else if ($isNodeSelection(selection)) {
       const nodes = selection.getNodes();
@@ -147,14 +152,14 @@ function FloatingLinkEditor({
         const node = nodes[0];
         const parent = node.getParent();
         if ($isLinkNode(parent)) {
-          setLinkUrl(parent.getURL());
+          setLink({target: parent.getTarget(), url: parent.getURL()});
         } else if ($isLinkNode(node)) {
-          setLinkUrl(node.getURL());
+          setLink({target: node.getTarget(), url: node.getURL()});
         } else {
-          setLinkUrl('');
+          setLink({target: null, url: ''});
         }
         if (isLinkEditMode) {
-          setEditedLinkUrl(linkUrl);
+          setEditedLinkUrl(link.url);
         }
       }
     }
@@ -211,11 +216,11 @@ function FloatingLinkEditor({
     } else if (!activeElement || activeElement.className !== 'link-input') {
       setLastSelection(null);
       setIsLinkEditMode(false);
-      setLinkUrl('');
+      setLink({target: null, url: ''});
     }
 
     return true;
-  }, [editor, setIsLinkEditMode, isLinkEditMode, linkUrl, refs]);
+  }, [editor, setIsLinkEditMode, isLinkEditMode, link.url, refs]);
 
   useEffect(() => {
     return mergeRegister(
@@ -294,7 +299,7 @@ function FloatingLinkEditor({
   ) => {
     event.preventDefault();
     if (lastSelection !== null) {
-      if (linkUrl !== '') {
+      if (link.url !== '') {
         editor.update(() => {
           editor.dispatchCommand(
             TOGGLE_LINK_COMMAND,
@@ -367,10 +372,10 @@ function FloatingLinkEditor({
       ) : (
         <div className="link-view">
           <a
-            href={sanitizeUrl(linkUrl)}
-            target="_blank"
+            href={sanitizeUrl(link.url)}
+            target={link.target || '_blank'}
             rel="noopener noreferrer">
-            {linkUrl}
+            {link.url}
           </a>
           <div
             className="link-edit"
@@ -379,7 +384,7 @@ function FloatingLinkEditor({
             onMouseDown={preventDefault}
             onClick={event => {
               event.preventDefault();
-              setEditedLinkUrl(linkUrl);
+              setEditedLinkUrl(link.url);
               setIsLinkEditMode(true);
             }}
           />

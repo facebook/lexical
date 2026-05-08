@@ -12,6 +12,7 @@ import {
   DecoratorTextExtension,
   HorizontalRuleExtension,
   SelectionAlwaysOnDisplayExtension,
+  TouchIndentationExtension,
 } from '@lexical/extension';
 import {HashtagExtension} from '@lexical/hashtag';
 import {HistoryExtension} from '@lexical/history';
@@ -205,6 +206,7 @@ const AppExtension = defineExtension({
     ClickableLinkExtension,
     SelectionAlwaysOnDisplayExtension,
     TerseExportExtension,
+    TouchIndentationExtension,
   ],
   html: buildHTMLConfig(),
   name: '@lexical/playground',

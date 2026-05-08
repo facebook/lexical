@@ -65,7 +65,6 @@ export {
   TabIndentationExtension,
 } from './TabIndentationExtension';
 export {
-  registerTouchIndentation,
   type TouchIndentationConfig,
   TouchIndentationExtension,
 } from './TouchIndentationExtension';

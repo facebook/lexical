@@ -8,6 +8,7 @@
 
 import {
   deleteBackward,
+  extendToNextWord,
   moveDown,
   moveLeft,
   moveRight,
@@ -7872,40 +7873,43 @@ test.describe.parallel('Tables', () => {
       });
     });
 
-    test(
-      'Range-select from inside nested table to text above it selects the entire table, but not the outer table',
-      {
-        tag: '@flaky',
-      },
-      async ({browserName, page, isPlainText, isCollab}) => {
-        test.skip(isPlainText);
-        test.skip(isCollab);
-        test.fixme(
-          browserName === 'firefox',
-          'Erroneously selects the entire outer cell',
-        );
-        await initialize({hasNestedTables: true, page});
+    test('Range-select from inside nested table to text above it selects the entire table, but not the outer table', async ({
+      browserName,
+      page,
+      isPlainText,
+      isCollab,
+    }) => {
+      test.skip(isPlainText);
+      test.skip(isCollab);
+      test.fixme(
+        browserName === 'firefox',
+        'Erroneously selects the entire outer cell',
+      );
+      await initialize({hasNestedTables: true, page});
 
-        await setupTables(page);
+      await setupTables(page);
 
-        const pageOrFrame = getPageOrFrame(page);
+      const pageOrFrame = getPageOrFrame(page);
 
-        await pageOrFrame
-          .locator('table table > tr:first-of-type > th:first-of-type')
-          .click();
-        await page.keyboard.down('Shift');
-        await pageOrFrame.locator('p').filter({hasText: 'before'}).click();
-        await page.keyboard.up('Shift');
+      await pageOrFrame
+        .locator('table table > tr:first-of-type > th:first-of-type')
+        .click();
+      await page.keyboard.down('Shift');
 
-        // Assert the selection is a range selection solely within the cell containing the nested table.
-        await assertSelection(page, {
-          anchorOffset: 1, // anchor moves to the end of the table
-          anchorPath: END_OF_INNER_TABLE,
-          focusOffset: 5,
-          focusPath: TEXT_BEFORE_NESTED_TABLE,
-        });
-      },
-    );
+      // workaround to ensure you reach the end of the word
+      await pageOrFrame.locator('p span').filter({hasText: 'before'}).click();
+      await extendToNextWord(page);
+
+      await page.keyboard.up('Shift');
+
+      // Assert the selection is a range selection solely within the cell containing the nested table.
+      await assertSelection(page, {
+        anchorOffset: 1, // anchor moves to the end of the table
+        anchorPath: END_OF_INNER_TABLE,
+        focusOffset: 6,
+        focusPath: TEXT_BEFORE_NESTED_TABLE,
+      });
+    });
 
     test('Range-select from inside nested table to text below it selects the entire table, but not the outer table', async ({
       browserName,
@@ -7927,7 +7931,11 @@ test.describe.parallel('Tables', () => {
 
       await pageOrFrame.locator('table table td').click();
       await page.keyboard.down('Shift');
-      await pageOrFrame.locator('p').filter({hasText: 'after'}).click();
+
+      // workaround to ensure you reach the end of the word
+      await pageOrFrame.locator('p span').filter({hasText: 'after'}).click();
+      await extendToNextWord(page);
+
       await page.keyboard.up('Shift');
 
       // Assert the selection is a range selection solely within the cell containing the nested table.

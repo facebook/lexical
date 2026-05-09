@@ -6,8 +6,8 @@
  *
  */
 
+import {toggleBulletList} from '../keyboardShortcuts/index.mjs';
 import {
-  click,
   evaluate,
   expect,
   focusEditor,
@@ -91,11 +91,6 @@ test.describe('Auto scroll while typing', () => {
 
 test.describe('Auto scroll respects mobile visual viewport', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
-
-  async function toggleBulletList(page) {
-    await click(page, '.block-controls');
-    await click(page, '.dropdown .icon.bullet-list');
-  }
 
   // Replace window.visualViewport with a stub reporting a smaller height,
   // simulating an on-screen keyboard occupying the lower part of the viewport.
@@ -210,6 +205,9 @@ test.describe('Auto scroll respects mobile visual viewport', () => {
     );
 
     expect(bottom).not.toBeNull();
-    expect(bottom).toBeLessThanOrEqual(visualViewportBottom);
+    // Sub-pixel tolerance: Firefox can return e.g. 300.27 when the scroll
+    // target is exactly 300 due to fractional layout rounding. The original
+    // bug overshoots by ~280 px, so 1 px still catches it cleanly.
+    expect(bottom).toBeLessThanOrEqual(visualViewportBottom + 1);
   });
 });

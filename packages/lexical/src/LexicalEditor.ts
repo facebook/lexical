@@ -34,6 +34,7 @@ import {
   registerDefaultCommandHandlers,
   removeRootElementEvents,
 } from './LexicalEvents';
+import {GenMap} from './LexicalGenMap';
 import {flushRootMutations, initMutationObserver} from './LexicalMutations';
 import {LexicalNode} from './LexicalNode';
 import {createSharedNodeState, SharedNodeState} from './LexicalNodeState';
@@ -584,11 +585,32 @@ export type SerializedEditor = {
   editorState: SerializedEditorState;
 };
 
+/** @internal */
+export type ResetEditorOptions = {
+  /**
+   * When `true`, `_updates` and `_updateTags` are kept intact across the
+   * reset. Used by callers that preserve `pendingEditorState` and intend
+   * the queued updates to commit against it (notably `setRootElement`).
+   * Without this, queued callbacks tagged for the upcoming commit would
+   * be silently dropped despite the state being kept.
+   */
+  preserveUpdateQueue?: boolean;
+};
+
+/**
+ * @internal
+ *
+ * Resets the editor's transient state — DOM mappings, dirty tracking,
+ * composition, and (by default) the queued updates and tags — while
+ * applying the given pendingEditorState. Used during root element
+ * transitions and reconciler error recovery.
+ */
 export function resetEditor(
   editor: LexicalEditor,
   prevRootElement: null | HTMLElement,
   nextRootElement: null | HTMLElement,
   pendingEditorState: EditorState,
+  options?: ResetEditorOptions,
 ): void {
   const keyNodeMap = editor._keyToDOMMap;
   keyNodeMap.clear();
@@ -600,8 +622,10 @@ export function resetEditor(
   editor._dirtyLeaves = new Set();
   editor._dirtyElements.clear();
   editor._normalizedNodes = new Set();
-  editor._updateTags = new Set();
-  editor._updates = [];
+  if (!options || !options.preserveUpdateQueue) {
+    editor._updateTags = new Set();
+    editor._updates = [];
+  }
   editor._blockCursorElement = null;
 
   const observer = editor._observer;
@@ -984,7 +1008,7 @@ export class LexicalEditor {
     this._compositionKey = null;
     this._deferred = [];
     // Used during reconciliation
-    this._keyToDOMMap = new Map();
+    this._keyToDOMMap = new GenMap();
     this._updates = [];
     this._updating = false;
     // Listeners
@@ -1398,7 +1422,9 @@ export class LexicalEditor {
       const classNames = getCachedClassNameArray(this._config.theme, 'root');
       const pendingEditorState = this._pendingEditorState || this._editorState;
       this._rootElement = nextRootElement;
-      resetEditor(this, prevRootElement, nextRootElement, pendingEditorState);
+      resetEditor(this, prevRootElement, nextRootElement, pendingEditorState, {
+        preserveUpdateQueue: true,
+      });
 
       if (prevRootElement !== null) {
         // TODO: remove this flag once we no longer use UEv2 internally

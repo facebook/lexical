@@ -222,6 +222,7 @@
   "exclude": [
     "./libdefs/*.js",
     "**/__tests__/**",
+    "**/__bench__/**",
     "**/dist/**",
     "**/npm/**",
     "**/node_modules/**",

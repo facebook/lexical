@@ -6,6 +6,7 @@
  *
  */
 
+import {CodeIndentExtension} from '@lexical/code-core';
 import {CodePrismExtension} from '@lexical/code-prism';
 import {CodeShikiExtension} from '@lexical/code-shiki';
 import {
@@ -33,6 +34,7 @@ export const CodeHighlightExtension = defineExtension({
   dependencies: [
     configExtension(CodePrismExtension, {disabled: true}),
     configExtension(CodeShikiExtension, {disabled: true}),
+    configExtension(CodeIndentExtension, {tabSize: 2}),
   ],
   name: '@lexical/playground/CodeHighlight',
   register: (editor, config, state) => {

@@ -15,12 +15,12 @@
     "write-heading-ids": "cross-env IGNORE_PEER_DEPENDENCIES=react docusaurus write-heading-ids"
   },
   "dependencies": {
-    "@docusaurus/core": "^3.10.0",
-    "@docusaurus/faster": "^3.10.0",
-    "@docusaurus/plugin-client-redirects": "^3.10.0",
-    "@docusaurus/preset-classic": "^3.10.0",
-    "@docusaurus/theme-common": "^3.10.0",
-    "@docusaurus/theme-mermaid": "^3.10.0",
+    "@docusaurus/core": "^3.10.1",
+    "@docusaurus/faster": "^3.10.1",
+    "@docusaurus/plugin-client-redirects": "^3.10.1",
+    "@docusaurus/preset-classic": "^3.10.1",
+    "@docusaurus/theme-common": "^3.10.1",
+    "@docusaurus/theme-mermaid": "^3.10.1",
     "@easyops-cn/docusaurus-search-local": "^0.55.1",
     "@huggingface/transformers": "^4.0.1",
     "@lexical/extension": "workspace:*",
@@ -52,16 +52,16 @@
     "unist-util-visit": "^5.1.0"
   },
   "devDependencies": {
-    "@docusaurus/module-type-aliases": "^3.10.0",
-    "@docusaurus/theme-classic": "^3.10.0",
-    "@tailwindcss/postcss": "^4.2.1",
+    "@docusaurus/module-type-aliases": "^3.10.1",
+    "@docusaurus/theme-classic": "^3.10.1",
+    "@tailwindcss/postcss": "^4.2.4",
     "buffer": "^6.0.3",
     "cross-env": "^10.1.0",
-    "prettier-plugin-tailwindcss": "^0.7.2",
-    "tailwindcss": "^4.2.2",
-    "typedoc": "^0.28.18",
-    "typescript": "^6.0.2",
-    "webpack": "^5.106.1"
+    "prettier-plugin-tailwindcss": "^0.8.0",
+    "tailwindcss": "^4.2.4",
+    "typedoc": "^0.28.19",
+    "typescript": "^6.0.3",
+    "webpack": "^5.106.2"
   },
   "browserslist": {
     "production": [

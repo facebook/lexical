@@ -346,7 +346,7 @@ test.describe('Keyboard shortcuts', () => {
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
           dir="auto"
-          style="padding-inline-start: calc(120px);">
+          style="padding-inline-start: calc(3 * var(--lexical-indent-base-value, 40px));">
           <span data-lexical-text="true">abc</span>
         </p>
       `,
@@ -360,7 +360,7 @@ test.describe('Keyboard shortcuts', () => {
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
           dir="auto"
-          style="padding-inline-start: calc(40px);">
+          style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px));">
           <span data-lexical-text="true">abc</span>
         </p>
       `,

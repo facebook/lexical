@@ -7,7 +7,7 @@
  * @flow strict
  */
 import type {LexicalExtension, ExtensionConfigBase, EditorState, BaseSelection, LexicalEditor} from 'lexical';
-import type {NamedSignalsOutput} from '@lexical/extension';
+import type {ReadonlySignal, Signal} from '@lexical/extension';
 
 export type HistoryStateEntry = {
   editor: LexicalEditor,
@@ -23,6 +23,8 @@ declare export function registerHistory(
   editor: LexicalEditor,
   historyState: HistoryState,
   delay: number,
+  dateNow?: () => number,
+  onHistoryStateChange?: (historyState: HistoryState) => void,
 ): () => void;
 declare export function createEmptyHistoryState(): HistoryState;
 
@@ -31,9 +33,17 @@ export type HistoryConfig = {
   createInitialHistoryState: (editor: LexicalEditor) => HistoryState;
   disabled: boolean;
 }
-declare export var HistoryExtension: LexicalExtension<HistoryConfig, "@lexical/history/History", NamedSignalsOutput<{
-    delay: number;
-    disabled: boolean;
-    historyState: HistoryState;
-}>, void>;
+
+export type HistoryExtensionOutput = {
+  /** `true` when there is at least one entry in the redo stack. */
+  canRedo: ReadonlySignal<boolean>,
+  /** `true` when there is at least one entry in the undo stack. */
+  canUndo: ReadonlySignal<boolean>,
+  delay: Signal<number>,
+  disabled: Signal<boolean>,
+  historyState: Signal<HistoryState>,
+  now: Signal<() => number>,
+};
+
+declare export var HistoryExtension: LexicalExtension<HistoryConfig, "@lexical/history/History", HistoryExtensionOutput, void>;
 declare export var SharedHistoryExtension: LexicalExtension<ExtensionConfigBase, "@lexical/history/SharedHistory", void, void>;

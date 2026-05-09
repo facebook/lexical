@@ -112,20 +112,24 @@ export function LexicalNestedComposer({
       );
 
       if (composerTheme !== undefined) {
+        // eslint-disable-next-line react-hooks/immutability
         initialEditor._config.theme = composerTheme;
       }
 
+      // eslint-disable-next-line react-hooks/immutability
       initialEditor._parentEditor = initialEditor._parentEditor || parentEditor;
       const createEditorArgs = initialEditor._createEditorArgs;
       const explicitNamespace = createEditorArgs && createEditorArgs.namespace;
 
       if (!initialNodes) {
         if (!(createEditorArgs && createEditorArgs.nodes)) {
+          // eslint-disable-next-line react-hooks/immutability
           const parentNodes = (initialEditor._nodes = new Map(
             parentEditor._nodes,
           ));
           if (!explicitNamespace) {
             // This is the only safe situation to inherit the parent's namespace
+            // eslint-disable-next-line react-hooks/immutability
             initialEditor._config.namespace = parentEditor._config.namespace;
           }
           for (const [type, entry] of parentNodes) {
@@ -140,12 +144,14 @@ export function LexicalNestedComposer({
           }
         } else if (!explicitNamespace) {
           explicitNamespaceWarning();
+          // eslint-disable-next-line react-hooks/immutability
           initialEditor._config.namespace = parentEditor._config.namespace;
         }
       } else {
         initialNodesWarning();
         if (!explicitNamespace) {
           explicitNamespaceWarning();
+          // eslint-disable-next-line react-hooks/immutability
           initialEditor._config.namespace = parentEditor._config.namespace;
         }
         for (let klass of initialNodes) {

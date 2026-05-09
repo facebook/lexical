@@ -6,7 +6,7 @@
  *
  */
 
-import {ChakraProvider} from '@chakra-ui/react';
+import {ChakraProvider, defaultSystem} from '@chakra-ui/react';
 import {initPegasusTransport} from '@webext-pegasus/transport/devtools';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
@@ -20,7 +20,7 @@ initPegasusTransport();
 extensionStoreReady().then(() =>
   ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
-      <ChakraProvider>
+      <ChakraProvider value={defaultSystem}>
         <App tabID={tabID} />
       </ChakraProvider>
     </React.StrictMode>,

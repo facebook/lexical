@@ -10,9 +10,17 @@ import type {CodeHighlightNode, CodeNode} from '@lexical/code';
 import type {LexicalCommand, LineBreakNode, TabNode} from 'lexical';
 
 import {$createCodeNode, $isCodeNode} from '@lexical/code';
-import {registerCodeHighlighting} from '@lexical/code-prism';
+import {CodeIndentExtension} from '@lexical/code-core';
+import {
+  CodePrismExtension,
+  registerCodeHighlighting,
+} from '@lexical/code-prism';
+import {
+  buildEditorFromExtensions,
+  TabIndentationExtension,
+} from '@lexical/extension';
 import {registerTabIndentation} from '@lexical/react/LexicalTabIndentationPlugin';
-import {registerRichText} from '@lexical/rich-text';
+import {registerRichText, RichTextExtension} from '@lexical/rich-text';
 import {
   $caretRangeFromSelection,
   $createRangeSelection,
@@ -21,6 +29,7 @@ import {
   $getSelection,
   $isLineBreakNode,
   $setSelectionFromCaretRange,
+  configExtension,
   INDENT_CONTENT_COMMAND,
   KEY_TAB_COMMAND,
   OUTDENT_CONTENT_COMMAND,
@@ -30,6 +39,11 @@ import {
   tabKeyboardEvent,
 } from 'lexical/src/__tests__/utils';
 import {describe, expect, test} from 'vitest';
+
+import {
+  $runOutdentScenario,
+  OUTDENT_SCENARIOS,
+} from '../../../../lexical-code-core/src/__tests__/outdentTestUtils';
 
 describe('LexicalCodeNode tests', () => {
   initializeUnitTest(testEnv => {
@@ -240,5 +254,30 @@ describe('LexicalCodeNode tests', () => {
         });
       });
     });
+  });
+  describe('tabSize (#8410): outdent space-indented lines', () => {
+    test.for(OUTDENT_SCENARIOS)(
+      '$name',
+      ({rawText, cursorOffset, tabSize, expectedText, expectedCursor}) => {
+        using editor = buildEditorFromExtensions({
+          dependencies: [
+            RichTextExtension,
+            TabIndentationExtension,
+            CodePrismExtension,
+            configExtension(CodeIndentExtension, {tabSize}),
+          ],
+          name: 'prism-outdent',
+        });
+        const {text, cursor} = $runOutdentScenario(
+          editor,
+          rawText,
+          cursorOffset,
+        );
+        expect(text).toBe(expectedText);
+        if (expectedCursor !== undefined) {
+          expect(cursor).toBe(expectedCursor);
+        }
+      },
+    );
   });
 });

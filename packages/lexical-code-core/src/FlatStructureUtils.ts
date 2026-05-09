@@ -11,6 +11,7 @@ import type {
   CaretDirection,
   LexicalNode,
   LineBreakNode,
+  RangeSelection,
   SiblingCaret,
   TabNode,
 } from 'lexical';
@@ -219,4 +220,59 @@ export function $getEndOfCodeInLine(
     'Unexpected lineBreakNode in getEndOfCodeInLine',
   );
   return lastNode;
+}
+
+/**
+ * Strip up to `tabSize` leading spaces from a {@link CodeHighlightNode} that
+ * starts a code line, to support outdenting space-indented code lines (e.g.
+ * code formatted with prettier). Returns true if any spaces were stripped.
+ *
+ * Best-effort: a line with fewer than `tabSize` leading spaces has all of
+ * them stripped, matching VS Code / IntelliJ behavior.
+ *
+ * Selection is preserved relative to line content. Anchor/focus offsets
+ * pointing into `node` shift left by the number of stripped characters
+ * (clamped to 0). The underlying TextNode mutation does not adjust
+ * selection offsets that already point into the old text, so we patch
+ * them up explicitly.
+ */
+export function $outdentLeadingSpaces(
+  node: CodeHighlightNode,
+  tabSize: number,
+  selection: RangeSelection,
+): boolean {
+  if (!Number.isInteger(tabSize) || tabSize <= 0) {
+    return false;
+  }
+  const text = node.getTextContent();
+  const leading = /^ +/.exec(text);
+  if (!leading) {
+    return false;
+  }
+  const stripCount = Math.min(tabSize, leading[0].length);
+  const lineKey = node.getKey();
+  const oldAnchorOffset =
+    selection.anchor.key === lineKey && selection.anchor.type === 'text'
+      ? selection.anchor.offset
+      : null;
+  const oldFocusOffset =
+    selection.focus.key === lineKey && selection.focus.type === 'text'
+      ? selection.focus.offset
+      : null;
+  node.spliceText(0, stripCount, '');
+  if (oldAnchorOffset !== null) {
+    selection.anchor.set(
+      lineKey,
+      Math.max(0, oldAnchorOffset - stripCount),
+      'text',
+    );
+  }
+  if (oldFocusOffset !== null) {
+    selection.focus.set(
+      lineKey,
+      Math.max(0, oldFocusOffset - stripCount),
+      'text',
+    );
+  }
+  return true;
 }

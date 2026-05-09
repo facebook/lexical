@@ -43,8 +43,9 @@
     "@rollup/wasm-node": "4.52.0"
   },
   "pnpm": {
-    "neverBuiltDependencies": [
-      "onnxruntime-node"
-    ]
+    "overrides": {
+      "onnxruntime-node": "link:./stubs/empty",
+      "sharp": "link:./stubs/empty"
+    }
   }
 }

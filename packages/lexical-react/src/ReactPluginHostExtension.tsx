@@ -53,10 +53,10 @@ export function mountReactExtensionComponent<
     extension: Extension;
     props: [LexicalExtensionOutput<Extension>] extends [
       {
-        Component: infer OutputComponentType extends React.ComponentType;
+        Component: React.ComponentType<infer OutputComponentProps>;
       },
     ]
-      ? /** The Props from the Extension output Component */ React.ComponentProps<OutputComponentType> | null
+      ? /** The Props from the Extension output Component */ OutputComponentProps | null
       : never;
   } & Omit<MountPluginCommandArg, 'element'>,
 ): void {

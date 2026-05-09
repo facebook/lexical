@@ -69,14 +69,14 @@ jobs:
         run: pnpm run ${{ inputs.prod && 'prepare-ci-prod' || 'prepare-ci' }}
       - name: Run tests
         if: inputs.editor-mode != 'rich-text-with-collab'
-        run: pnpm run test-e2e-${{ inputs.prod && 'prod-' || '' }}${{ inputs.browser }} --grep-invert "@flaky"
+        run: pnpm run test-e2e-${{ inputs.prod && 'prod-' || '' }}${{ inputs.browser }} ${{ inputs.flaky && '--grep' || '--grep-invert' }} "@flaky"
       - name: Run collab tests
         if: inputs.editor-mode == 'rich-text-with-collab'
         shell: bash
         run: |
           pnpm exec concurrently -k -s first \
             "pnpm run collab" \
-            "pnpm run test-e2e-collab-${{ inputs.prod && 'prod-' || '' }}${{ inputs.browser }} --grep-invert @flaky"
+            "pnpm run test-e2e-collab-${{ inputs.prod && 'prod-' || '' }}${{ inputs.browser }} ${{ inputs.flaky && '--grep' || '--grep-invert' }} @flaky"
       - name: Upload Artifacts
         if: failure()
         uses: actions/upload-artifact@v7

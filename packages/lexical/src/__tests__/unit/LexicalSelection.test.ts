@@ -1679,6 +1679,44 @@ describe('Regression #8067', () => {
   });
 });
 
+describe('RangeSelection.isBackward() caching (#5825)', () => {
+  initializeUnitTest(testEnv => {
+    test('caches the result and invalidates on Point mutations', () => {
+      const {editor} = testEnv;
+      editor.update(
+        () => {
+          const root = $getRoot();
+          root.clear();
+          const paragraph = $createParagraphNode();
+          const text = $createTextNode('hello');
+          paragraph.append(text);
+          root.append(paragraph);
+
+          const selection = text.select(0, 5);
+          expect(selection._cachedIsBackward).toBeNull();
+
+          // First call computes and caches.
+          expect(selection.isBackward()).toBe(false);
+          expect(selection._cachedIsBackward).toBe(false);
+
+          // Hits the cache without recomputing.
+          expect(selection.isBackward()).toBe(false);
+
+          // setTextNodeRange routes through anchor.set + focus.set,
+          // invalidating the cache.
+          selection.setTextNodeRange(text, 5, text, 0);
+          expect(selection._cachedIsBackward).toBeNull();
+
+          // anchor=5, focus=0 → now backward, recomputed and re-cached.
+          expect(selection.isBackward()).toBe(true);
+          expect(selection._cachedIsBackward).toBe(true);
+        },
+        {discrete: true},
+      );
+    });
+  });
+});
+
 describe('Regression #8098', () => {
   initializeUnitTest(testEnv => {
     test('Do not apply format and style when moving to different node', async () => {

@@ -89,7 +89,6 @@ function TweetComponent({
 
   useEffect(() => {
     if (tweetID !== previousTweetIDRef.current) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsTweetLoading(true);
 
       if (isTwitterScriptLoading) {
@@ -102,7 +101,8 @@ function TweetComponent({
           script.onerror = onError as OnErrorEventHandler;
         }
       } else {
-        createTweet();
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        createTweet().catch(console.error);
       }
 
       if (previousTweetIDRef) {

@@ -164,7 +164,11 @@ function $prepopulatedRichText() {
 // These are only enabled for rich-text mode
 const PlaygroundRichTextExtension = defineExtension({
   dependencies: [
-    RichTextExtension,
+    configExtension(RichTextExtension, {
+      escapeFormatTriggers: {
+        code: {arrow: true, click: true, enter: true, onlyAtBoundary: true},
+      },
+    }),
     ImagesExtension,
     HorizontalRuleExtension,
     PageBreakExtension,

@@ -27,7 +27,7 @@
     "postinstall": "wxt prepare"
   },
   "dependencies": {
-    "@chakra-ui/react": "^2.8.2",
+    "@chakra-ui/react": "^3.35.0",
     "@emotion/react": "^11.11.4",
     "@emotion/styled": "^11.11.5",
     "@webext-pegasus/rpc": "^0.3.0",
@@ -47,9 +47,9 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
     "lexical": "workspace:*",
-    "typescript": "^6.0.2",
-    "vite": "^8.0.8",
-    "wxt": "^0.20.20"
+    "typescript": "^6.0.3",
+    "vite": "^8.0.10",
+    "wxt": "^0.20.25"
   },
   "sideEffects": false
 }

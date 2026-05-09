@@ -16,6 +16,20 @@ updates:
     schedule:
       interval: 'monthly'
     groups:
+      docusaurus-and-typedoc:
+        patterns:
+          - '@docusaurus/*'
+          - 'docusaurus-*'
+          - 'typedoc'
+          - 'typedoc-*'
+          - '@easyops-cn/docusaurus-search-local'
+
+      flow-and-hermes:
+        patterns:
+          - 'hermes-*'
+          - 'flow-*'
+          - '@babel/preset-flow'
+
       dev-dependencies:
         dependency-type: 'development'
         patterns:

@@ -10,6 +10,7 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  $getState,
   $setState,
   createState,
   ParagraphNode,
@@ -26,6 +27,10 @@ import {
   TestConnection,
   waitForReact,
 } from '../utils';
+
+const state = createState('foo', {
+  parse: value => (value ? (value as string) : undefined),
+});
 
 describe('Collaboration', () => {
   let container: null | HTMLDivElement = null;
@@ -522,17 +527,13 @@ describe('Collaboration', () => {
       client.start(container!);
       const editor = client.getEditor();
 
-      const state = createState('foo', {
-        parse: value => (value as {foo: string}) || {foo: 'foo'},
-      });
-
       act(() => {
         editor.update(
           () => {
             const root = $getRoot().clear();
             const paragraph = $createParagraphNode();
             const text = $createTextNode('Hello');
-            $setState(paragraph, state, {foo: 'foo'});
+            $setState(paragraph, state, 'bar');
             paragraph.append(text);
             root.append(paragraph);
           },
@@ -550,7 +551,7 @@ describe('Collaboration', () => {
       editor.update(
         () => {
           const paragraph = $getRoot().getFirstChildOrThrow<ParagraphNode>();
-          $setState(paragraph, state, {foo: 'foo'});
+          $setState(paragraph, state, 'bar');
           // Include another update otherwise equalYTypePNode would return true
           paragraph.append($createTextNode('!'));
         },
@@ -558,6 +559,46 @@ describe('Collaboration', () => {
       );
 
       expect(updated).toBe(false);
+    });
+
+    it('Should sync the removal of node state from element nodes', async () => {
+      const client1 = connector.createClient('1');
+      const client2 = connector.createClient('2');
+      client1.start(container!);
+      client2.start(container!);
+
+      await expectCorrectInitialContent(client1, client2);
+
+      await waitForReact(() => {
+        client1.update(() => {
+          const root = $getRoot().clear();
+          const paragraph = $createParagraphNode();
+          $setState(paragraph, state, 'bar');
+          root.append(paragraph);
+        });
+      });
+
+      let editor2State = client2.getEditorState().read(() => {
+        const paragraph = $getRoot().getFirstChildOrThrow<ParagraphNode>();
+        return $getState(paragraph, state);
+      });
+      expect(editor2State).toEqual('bar');
+
+      await waitForReact(() => {
+        client1.update(() => {
+          const paragraph = $getRoot().getFirstChildOrThrow<ParagraphNode>();
+          $setState(paragraph, state, undefined);
+        });
+      });
+
+      editor2State = client2.getEditorState().read(() => {
+        const paragraph = $getRoot().getFirstChildOrThrow<ParagraphNode>();
+        return $getState(paragraph, state);
+      });
+      expect(editor2State).toBeUndefined();
+
+      client1.stop();
+      client2.stop();
     });
   });
 });

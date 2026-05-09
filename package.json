@@ -44,6 +44,7 @@
     "vitest": "vitest",
     "test-unit": "vitest --project unit --project scripts-unit --no-watch",
     "test-unit-watch": "vitest --project unit --project scripts-unit",
+    "bench": "vitest bench --project bench --project bench-dom --run",
     "test-eslint-integration": "node packages/lexical-eslint-plugin/__tests__/integration/integration-test.mjs",
     "test-integration": "vitest --project integration --no-watch",
     "test-e2e-chromium": "cross-env E2E_BROWSER=chromium playwright test --project=\"chromium\"",

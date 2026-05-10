@@ -2789,7 +2789,7 @@ function $expandLineSelectionInBlockWithLineBreaks(textNode: TextNode): {
   let firstOffset = 0;
 
   while (node !== null) {
-    const prev = node.getPreviousSibling();
+    const prev: LexicalNode | null = node.getPreviousSibling();
     if (prev === null || $isLineBreakNode(prev)) {
       if ($isTextNode(node)) {
         firstKey = node.__key;
@@ -2813,7 +2813,7 @@ function $expandLineSelectionInBlockWithLineBreaks(textNode: TextNode): {
   let lastOffset = textNode.getTextContentSize();
   while (true) {
     invariant(node !== null, '$expandLineSelectionInBlockWithLineBreaks: node');
-    const next = node.getNextSibling();
+    const next: LexicalNode | null = node.getNextSibling();
     if (next === null || $isLineBreakNode(next)) {
       if ($isTextNode(node)) {
         lastKey = node.__key;

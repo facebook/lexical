@@ -1750,7 +1750,7 @@ describe('Regression #7592', () => {
         ({
           offset: 4,
           offsetNode: textDOM,
-        }) as CaretPosition) as typeof document.caretPositionFromPoint;
+        }) as unknown as CaretPosition) as typeof document.caretPositionFromPoint;
 
       await editor.update(
         () => {
@@ -1805,7 +1805,7 @@ describe('Regression #7592', () => {
         ({
           offset: 1,
           offsetNode: textDOM,
-        }) as CaretPosition) as typeof document.caretPositionFromPoint;
+        }) as unknown as CaretPosition) as typeof document.caretPositionFromPoint;
 
       await editor.update(
         () => {

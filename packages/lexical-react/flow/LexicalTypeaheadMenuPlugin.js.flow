@@ -70,7 +70,7 @@ export type TypeaheadMenuPluginProps<TOption> = {
   triggerFn: TriggerFn,
   menuRenderFn?: MenuRenderFn<TOption>,
   onOpen?: (resolution: MenuResolution) => void,
-  onClose?: () => void,
+  onClose?: () => void | Promise<void>,
   anchorClassName?: string,
 };
 

@@ -7,6 +7,7 @@
  */
 
 import {LexicalComposer} from '@lexical/react/LexicalComposer';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
@@ -16,9 +17,18 @@ import {
   MenuRenderFn,
   useBasicTypeaheadTriggerMatch,
 } from '@lexical/react/LexicalTypeaheadMenuPlugin';
-import {TextNode} from 'lexical';
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getRoot,
+  $getSelection,
+  $isRangeSelection,
+  LexicalEditor,
+  ParagraphNode,
+  TextNode,
+} from 'lexical';
 import * as React from 'react';
-import {useCallback} from 'react';
+import {useCallback, useEffect} from 'react';
 import ReactDOM from 'react-dom';
 import {createRoot, Root} from 'react-dom/client';
 import * as ReactTestUtils from 'shared/react-test-utils';
@@ -127,13 +137,16 @@ function TypeaheadPluginWithoutMenuRenderFn({
   );
 }
 
-function createApp(plugin: React.ReactNode): React.FC {
+function createApp(
+  plugin: React.ReactNode,
+  nodes: Array<typeof ParagraphNode> = [],
+): React.FC {
   return function App() {
     return (
       <LexicalComposer
         initialConfig={{
           namespace: 'test-typeahead',
-          nodes: [],
+          nodes,
           onError: err => {
             throw err;
           },
@@ -228,6 +241,271 @@ describe('LexicalTypeaheadMenuPlugin', () => {
       });
 
       expect(container.querySelector('[contenteditable]')).not.toBeNull();
+    });
+  });
+
+  describe('onClose', () => {
+    beforeEach(() => {
+      class ResizeObserverMock {
+        // LexicalMenu only constructs ResizeObserver and calls observe/unobserve/disconnect.
+        constructor(_callback: unknown) {}
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+      }
+      vi.stubGlobal('ResizeObserver', ResizeObserverMock);
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it('awaits async onClose before unmounting the menu', async () => {
+      const editorRef: {current: LexicalEditor | null} = {current: null};
+
+      function CaptureEditorPlugin() {
+        const [editor] = useLexicalComposerContext();
+        useEffect(() => {
+          editorRef.current = editor;
+        }, [editor]);
+        return null;
+      }
+
+      let resolveOnClose!: () => void;
+      const onClose = vi.fn(
+        () =>
+          new Promise<void>(resolve => {
+            resolveOnClose = resolve;
+          }),
+      );
+
+      const menuRenderFn: MenuRenderFn<TestMenuOption> = (
+        anchorElementRef,
+        itemProps,
+        matchingString,
+      ) => {
+        return anchorElementRef.current && itemProps.options.length
+          ? ReactDOM.createPortal(
+              <div
+                className="custom-typeahead-menu"
+                data-testid="custom-typeahead">
+                <ul>
+                  {itemProps.options.map((option, i) => (
+                    <li
+                      key={option.key}
+                      data-selected={itemProps.selectedIndex === i}
+                      className="custom-item">
+                      {option.title}
+                    </li>
+                  ))}
+                </ul>
+                {matchingString != null && (
+                  <span data-testid="matching-string">{matchingString}</span>
+                )}
+              </div>,
+              anchorElementRef.current,
+            )
+          : null;
+      };
+
+      function Harness() {
+        const checkForTriggerMatch = useBasicTypeaheadTriggerMatch('/', {
+          minLength: 0,
+        });
+        const onSelectOption = useCallback(
+          (
+            _option: TestMenuOption,
+            _nodeToRemove: TextNode | null,
+            closeMenu: () => void,
+          ) => {
+            closeMenu();
+          },
+          [],
+        );
+        return (
+          <LexicalTypeaheadMenuPlugin<TestMenuOption>
+            onQueryChange={vi.fn()}
+            onSelectOption={onSelectOption}
+            triggerFn={checkForTriggerMatch}
+            options={TEST_OPTIONS}
+            menuRenderFn={menuRenderFn}
+            onClose={onClose}
+          />
+        );
+      }
+
+      const App = createApp(
+        <>
+          <CaptureEditorPlugin />
+          <Harness />
+        </>,
+        [ParagraphNode],
+      );
+
+      await ReactTestUtils.act(async () => {
+        reactRoot.render(<App />);
+      });
+
+      const editor = editorRef.current;
+      expect(editor).not.toBeNull();
+
+      await ReactTestUtils.act(async () => {
+        editor!.update(() => {
+          const root = $getRoot();
+          root.clear();
+          const p = $createParagraphNode();
+          p.append($createTextNode(''));
+          root.append(p);
+          p.selectEnd();
+          const sel = $getSelection();
+          if ($isRangeSelection(sel)) {
+            sel.insertText('/');
+          }
+        });
+      });
+
+      expect(
+        document.querySelector('[data-testid="custom-typeahead"]'),
+      ).not.toBeNull();
+      expect(onClose).not.toHaveBeenCalled();
+
+      await ReactTestUtils.act(async () => {
+        editor!.update(() => {
+          const root = $getRoot();
+          const p = root.getFirstChildOrThrow();
+          const textNode = p.getFirstChild();
+          if (textNode !== null && textNode.getType() === 'text') {
+            textNode.setTextContent('');
+            textNode.selectEnd();
+          }
+        });
+      });
+
+      expect(onClose).toHaveBeenCalledTimes(1);
+      expect(
+        document.querySelector('[data-testid="custom-typeahead"]'),
+      ).not.toBeNull();
+
+      await ReactTestUtils.act(async () => {
+        resolveOnClose();
+        await Promise.resolve();
+      });
+
+      expect(
+        document.querySelector('[data-testid="custom-typeahead"]'),
+      ).toBeNull();
+    });
+
+    it('runs synchronous onClose before clearing the menu', async () => {
+      const editorRef: {current: LexicalEditor | null} = {current: null};
+      const callOrder: string[] = [];
+
+      function CaptureEditorPlugin() {
+        const [editor] = useLexicalComposerContext();
+        useEffect(() => {
+          editorRef.current = editor;
+        }, [editor]);
+        return null;
+      }
+
+      const onClose = vi.fn(() => {
+        callOrder.push('onClose');
+      });
+
+      const menuRenderFn: MenuRenderFn<TestMenuOption> = (
+        anchorElementRef,
+        itemProps,
+        matchingString,
+      ) => {
+        return anchorElementRef.current && itemProps.options.length
+          ? ReactDOM.createPortal(
+              <div
+                className="custom-typeahead-menu"
+                data-testid="custom-typeahead">
+                <ul />
+                {matchingString != null && (
+                  <span data-testid="matching-string">{matchingString}</span>
+                )}
+              </div>,
+              anchorElementRef.current,
+            )
+          : null;
+      };
+
+      function Harness() {
+        const checkForTriggerMatch = useBasicTypeaheadTriggerMatch('/', {
+          minLength: 0,
+        });
+        const onSelectOption = useCallback(
+          (
+            _option: TestMenuOption,
+            _nodeToRemove: TextNode | null,
+            closeMenu: () => void,
+          ) => {
+            closeMenu();
+          },
+          [],
+        );
+        return (
+          <LexicalTypeaheadMenuPlugin<TestMenuOption>
+            onQueryChange={vi.fn()}
+            onSelectOption={onSelectOption}
+            triggerFn={checkForTriggerMatch}
+            options={TEST_OPTIONS}
+            menuRenderFn={menuRenderFn}
+            onClose={onClose}
+          />
+        );
+      }
+
+      const App = createApp(
+        <>
+          <CaptureEditorPlugin />
+          <Harness />
+        </>,
+        [ParagraphNode],
+      );
+
+      await ReactTestUtils.act(async () => {
+        reactRoot.render(<App />);
+      });
+
+      const editor = editorRef.current;
+      expect(editor).not.toBeNull();
+
+      await ReactTestUtils.act(async () => {
+        editor!.update(() => {
+          const root = $getRoot();
+          root.clear();
+          const p = $createParagraphNode();
+          p.append($createTextNode(''));
+          root.append(p);
+          p.selectEnd();
+          const sel = $getSelection();
+          if ($isRangeSelection(sel)) {
+            sel.insertText('/');
+          }
+        });
+      });
+
+      await ReactTestUtils.act(async () => {
+        editor!.update(() => {
+          const root = $getRoot();
+          const p = root.getFirstChildOrThrow();
+          const textNode = p.getFirstChild();
+          if (textNode !== null && textNode.getType() === 'text') {
+            textNode.setTextContent('');
+            textNode.selectEnd();
+          }
+        });
+        await Promise.resolve();
+      });
+
+      expect(callOrder).toEqual(['onClose']);
+      expect(onClose).toHaveBeenCalledTimes(1);
+      expect(
+        document.querySelector('[data-testid="custom-typeahead"]'),
+      ).toBeNull();
     });
   });
 });

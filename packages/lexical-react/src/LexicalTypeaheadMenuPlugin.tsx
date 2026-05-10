@@ -204,7 +204,7 @@ export type TypeaheadMenuPluginProps<TOption extends MenuOption> = {
   triggerFn: TriggerFn;
   menuRenderFn?: MenuRenderFn<TOption>;
   onOpen?: (resolution: MenuResolution) => void;
-  onClose?: () => void;
+  onClose?: () => void | PromiseLike<void>;
   anchorClassName?: string;
   commandPriority?: CommandListenerPriority;
   parent?: HTMLElement;
@@ -236,10 +236,16 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
   );
 
   const closeTypeahead = useCallback(() => {
-    setResolution(null);
-    if (onClose != null && resolution !== null) {
-      onClose();
-    }
+    const hadMenu = resolution !== null;
+    void (async () => {
+      try {
+        if (onClose != null && hadMenu) {
+          await Promise.resolve(onClose());
+        }
+      } finally {
+        setResolution(null);
+      }
+    })();
   }, [onClose, resolution]);
 
   const openTypeahead = useCallback(

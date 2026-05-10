@@ -24,12 +24,14 @@ import {
   $getRoot,
   $getSelection,
   $isParagraphNode,
+  $isRangeSelection,
   $isTextNode,
   $selectAll,
   $setSelection,
   createEditor,
   ElementNode,
   getDOMSelection,
+  getDOMTextNode,
   LexicalEditor,
   type LexicalNode,
   ParagraphNode,
@@ -39,7 +41,10 @@ import {
 import {beforeEach, describe, expect, test} from 'vitest';
 
 import {SerializedElementNode} from '../..';
-import {$internalCreateRangeSelection} from '../../LexicalSelection';
+import {
+  $internalCreateRangeSelection,
+  $tryNormalizeTripleClickLineSelection,
+} from '../../LexicalSelection';
 import {
   $assertRangeSelection,
   $createTestDecoratorNode,
@@ -1713,6 +1718,118 @@ describe('RangeSelection.isBackward() caching (#5825)', () => {
         },
         {discrete: true},
       );
+    });
+  });
+});
+
+describe('Regression #7592', () => {
+  initializeUnitTest(testEnv => {
+    test('triple-click narrows selection to one line in multiline TextNode', async () => {
+      const {editor} = testEnv;
+      let textKey = '';
+
+      await editor.update(
+        () => {
+          const root = $getRoot();
+          const p = $createParagraphNode();
+          const t = $createTextNode('aa\nbb\ncc');
+          p.append(t);
+          root.clear().append(p);
+          textKey = t.getKey();
+          t.select(0, t.getTextContent().length);
+        },
+        {discrete: true},
+      );
+
+      const textDOM = getDOMTextNode(editor.getElementByKey(textKey)!);
+      invariant(textDOM !== null);
+
+      const nativeCaretPositionFromPoint =
+        document.caretPositionFromPoint?.bind(document);
+      document.caretPositionFromPoint = ((_x: number, _y: number) =>
+        ({
+          offset: 4,
+          offsetNode: textDOM,
+        }) as CaretPosition) as typeof document.caretPositionFromPoint;
+
+      await editor.update(
+        () => {
+          const selection = $getSelection();
+          invariant($isRangeSelection(selection));
+          const event = {
+            clientX: 0,
+            clientY: 0,
+            view: window,
+          } as unknown as PointerEvent;
+          expect(
+            $tryNormalizeTripleClickLineSelection(editor, selection, event),
+          ).toBe(true);
+          expect(selection.getTextContent()).toBe('bb');
+        },
+        {discrete: true},
+      );
+
+      if (nativeCaretPositionFromPoint !== undefined) {
+        document.caretPositionFromPoint = nativeCaretPositionFromPoint;
+      } else {
+        delete (document as Partial<Document>).caretPositionFromPoint;
+      }
+    });
+
+    test('triple-click narrows selection for LineBreak-separated lines', async () => {
+      const {editor} = testEnv;
+      let secondTextKey = '';
+
+      await editor.update(
+        () => {
+          const root = $getRoot();
+          const p = $createParagraphNode();
+          const t1 = $createTextNode('aa');
+          const br = $createLineBreakNode();
+          const t2 = $createTextNode('bb');
+          p.append(t1, br, t2);
+          root.clear().append(p);
+          secondTextKey = t2.getKey();
+          const sel = t1.select(0, t1.getTextContentSize());
+          sel.focus.set(t2.getKey(), t2.getTextContentSize(), 'text');
+        },
+        {discrete: true},
+      );
+
+      const textDOM = getDOMTextNode(editor.getElementByKey(secondTextKey)!);
+      invariant(textDOM !== null);
+
+      const nativeCaretPositionFromPoint =
+        document.caretPositionFromPoint?.bind(document);
+      document.caretPositionFromPoint = ((_x: number, _y: number) =>
+        ({
+          offset: 1,
+          offsetNode: textDOM,
+        }) as CaretPosition) as typeof document.caretPositionFromPoint;
+
+      await editor.update(
+        () => {
+          const selection = $getSelection();
+          invariant($isRangeSelection(selection));
+          expect(selection.getTextContent()).toContain('\n');
+          const event = {
+            clientX: 0,
+            clientY: 0,
+            view: window,
+          } as unknown as PointerEvent;
+          expect(
+            $tryNormalizeTripleClickLineSelection(editor, selection, event),
+          ).toBe(true);
+          expect(selection.getTextContent()).toBe('bb');
+        },
+        {discrete: true},
+      );
+
+      if (nativeCaretPositionFromPoint !== undefined) {
+        document.caretPositionFromPoint = nativeCaretPositionFromPoint;
+      } else {
+        delete (document as Partial<Document>).caretPositionFromPoint;
+      }
     });
   });
 });

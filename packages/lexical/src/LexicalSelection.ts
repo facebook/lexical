@@ -2731,6 +2731,208 @@ export function $internalCreateRangeSelection(
   );
 }
 
+function getCaretTextPositionFromPoint(
+  doc: Document,
+  x: number,
+  y: number,
+): null | {node: Text; offset: number} {
+  try {
+    if (typeof doc.caretPositionFromPoint === 'function') {
+      const position = doc.caretPositionFromPoint(x, y);
+      if (
+        position != null &&
+        position.offsetNode != null &&
+        position.offsetNode.nodeType === Node.TEXT_NODE
+      ) {
+        return {node: position.offsetNode as Text, offset: position.offset};
+      }
+      return null;
+    }
+    const docWithCaret = doc as Document & {
+      caretRangeFromPoint?: (clientX: number, clientY: number) => Range | null;
+    };
+    if (typeof docWithCaret.caretRangeFromPoint === 'function') {
+      const range = docWithCaret.caretRangeFromPoint(x, y);
+      if (range != null && range.startContainer.nodeType === Node.TEXT_NODE) {
+        return {
+          node: range.startContainer as Text,
+          offset: range.startOffset,
+        };
+      }
+    }
+  } catch {
+    // caret*FromPoint can throw when x/y are outside the window.
+  }
+  return null;
+}
+
+function getLineStartEndInString(
+  text: string,
+  offset: number,
+): [number, number] {
+  const safeOffset = Math.max(0, Math.min(offset, text.length));
+  const nlBefore = text.lastIndexOf('\n', safeOffset - 1);
+  const lineStart = nlBefore === -1 ? 0 : nlBefore + 1;
+  const nlAfter = text.indexOf('\n', safeOffset);
+  const lineEnd = nlAfter === -1 ? text.length : nlAfter;
+  return [lineStart, lineEnd];
+}
+
+function $expandLineSelectionInBlockWithLineBreaks(textNode: TextNode): {
+  anchorKey: NodeKey;
+  anchorOffset: number;
+  focusKey: NodeKey;
+  focusOffset: number;
+} {
+  let node: LexicalNode | null = textNode;
+  let firstKey = textNode.__key;
+  let firstOffset = 0;
+
+  while (node !== null) {
+    const prev = node.getPreviousSibling();
+    if (prev === null || $isLineBreakNode(prev)) {
+      if ($isTextNode(node)) {
+        firstKey = node.__key;
+        firstOffset = 0;
+      }
+      break;
+    }
+    if ($isTextNode(prev) || $isTabNode(prev)) {
+      node = prev;
+    } else {
+      if ($isTextNode(node)) {
+        firstKey = node.__key;
+        firstOffset = 0;
+      }
+      break;
+    }
+  }
+
+  node = textNode;
+  let lastKey = textNode.__key;
+  let lastOffset = textNode.getTextContentSize();
+  while (true) {
+    invariant(node !== null, '$expandLineSelectionInBlockWithLineBreaks: node');
+    const next = node.getNextSibling();
+    if (next === null || $isLineBreakNode(next)) {
+      if ($isTextNode(node)) {
+        lastKey = node.__key;
+        lastOffset = node.getTextContentSize();
+      }
+      break;
+    }
+    if ($isTextNode(next) || $isTabNode(next)) {
+      node = next;
+    } else {
+      if ($isTextNode(node)) {
+        lastKey = node.__key;
+        lastOffset = node.getTextContentSize();
+      }
+      break;
+    }
+  }
+
+  return {
+    anchorKey: firstKey,
+    anchorOffset: firstOffset,
+    focusKey: lastKey,
+    focusOffset: lastOffset,
+  };
+}
+
+/**
+ * Browsers often expand triple-click selection to an entire multiline
+ * container (e.g. <pre>, multi-line quote). This narrows the selection to
+ * the line under the click using caret position from the pointer event.
+ *
+ * @returns true if the selection was updated.
+ */
+export function $tryNormalizeTripleClickLineSelection(
+  editor: LexicalEditor,
+  selection: RangeSelection,
+  domEvent: PointerEvent,
+): boolean {
+  if (selection.isCollapsed()) {
+    return false;
+  }
+  const view = domEvent.view;
+  if (view == null) {
+    return false;
+  }
+  const doc = view.document;
+  const caret = getCaretTextPositionFromPoint(
+    doc,
+    domEvent.clientX,
+    domEvent.clientY,
+  );
+  if (caret === null) {
+    return false;
+  }
+  const lexicalText = $getNodeFromDOM(caret.node);
+  if (!$isTextNode(lexicalText)) {
+    return false;
+  }
+  const lexicalOffset = $getTextNodeOffset(lexicalText, caret.offset, 'clamp');
+  const block = $findMatchingParent(
+    lexicalText,
+    n => $isElementNode(n) && !n.isInline(),
+  );
+  if (block === null || $isRootNode(block)) {
+    return false;
+  }
+  if (!block.isParentOf(lexicalText)) {
+    return false;
+  }
+
+  const singleNodeText = lexicalText.getTextContent();
+  if (singleNodeText.includes('\n')) {
+    const [lineStart, lineEnd] = getLineStartEndInString(
+      singleNodeText,
+      lexicalOffset,
+    );
+    if (lineStart === 0 && lineEnd === singleNodeText.length) {
+      return false;
+    }
+    const anchor = selection.anchor;
+    const focus = selection.focus;
+    if (anchor.type !== 'text' || focus.type !== 'text') {
+      return false;
+    }
+    if (anchor.getNode() !== lexicalText || focus.getNode() !== lexicalText) {
+      return false;
+    }
+    const r0 = Math.min(anchor.offset, focus.offset);
+    const r1 = Math.max(anchor.offset, focus.offset);
+    if (!(r0 === 0 && r1 === singleNodeText.length)) {
+      return false;
+    }
+    selection.anchor.set(lexicalText.__key, lineStart, 'text');
+    selection.focus.set(lexicalText.__key, lineEnd, 'text');
+    selection.dirty = true;
+    return true;
+  }
+
+  if (!selection.getTextContent().includes('\n')) {
+    return false;
+  }
+
+  const bounds = $expandLineSelectionInBlockWithLineBreaks(lexicalText);
+
+  if (
+    selection.anchor.key === bounds.anchorKey &&
+    selection.anchor.offset === bounds.anchorOffset &&
+    selection.focus.key === bounds.focusKey &&
+    selection.focus.offset === bounds.focusOffset
+  ) {
+    return false;
+  }
+
+  selection.anchor.set(bounds.anchorKey, bounds.anchorOffset, 'text');
+  selection.focus.set(bounds.focusKey, bounds.focusOffset, 'text');
+  selection.dirty = true;
+  return true;
+}
+
 function $validatePoint(name: 'anchor' | 'focus', point: PointType): void {
   const node = $getNodeByKey(point.key);
   invariant(

@@ -90,6 +90,7 @@ import {
 } from './LexicalConstants';
 import {
   $internalCreateRangeSelection,
+  $tryNormalizeTripleClickLineSelection,
   RangeSelection,
 } from './LexicalSelection';
 import {getActiveEditor, updateEditorSync} from './LexicalUpdates';
@@ -522,19 +523,23 @@ function onClick(event: PointerEvent, editor: LexicalEditor): void {
           domSelection.removeAllRanges();
           selection.dirty = true;
         } else if (event.detail === 3 && !selection.isCollapsed()) {
-          // Triple click causing selection to overflow into the nearest element. In that
-          // case visually it looks like a single element content is selected, focus node
-          // is actually at the beginning of the next element (if present) and any manipulations
-          // with selection (formatting) are affecting second element as well
-          const focus = selection.focus;
-          const focusNode = focus.getNode();
-          if (anchorNode !== focusNode) {
-            const parentNode = $findMatchingParent(
-              anchorNode,
-              node => $isElementNode(node) && !node.isInline(),
-            );
-            if ($isElementNode(parentNode)) {
-              parentNode.select(0);
+          if (
+            !$tryNormalizeTripleClickLineSelection(editor, selection, event)
+          ) {
+            // Triple click causing selection to overflow into the nearest element. In that
+            // case visually it looks like a single element content is selected, focus node
+            // is actually at the beginning of the next element (if present) and any manipulations
+            // with selection (formatting) are affecting second element as well
+            const focus = selection.focus;
+            const focusNode = focus.getNode();
+            if (anchorNode !== focusNode) {
+              const parentNode = $findMatchingParent(
+                anchorNode,
+                node => $isElementNode(node) && !node.isInline(),
+              );
+              if ($isElementNode(parentNode)) {
+                parentNode.select(0);
+              }
             }
           }
         }

@@ -619,15 +619,7 @@ export function registerMarkdownShortcuts(
             anchorOffset,
             byType.multilineElement,
             true,
-          )
-        ) {
-          if (event !== null) {
-            event.preventDefault();
-          }
-          return true;
-        }
-
-        if (
+          ) ||
           runElementTransformers(
             parentNode,
             anchorNode,

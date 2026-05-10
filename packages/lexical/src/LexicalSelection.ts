@@ -2739,46 +2739,21 @@ function $tripleClickLineWalkStopsAt(node: LexicalNode): boolean {
   return $isLineBreakNode(node) || ($isElementNode(node) && !node.isInline());
 }
 
-function $walkTripleClickLineCaretBounds<D extends CaretDirection>(
-  clickedText: TextNode,
-  direction: D,
-  endpoint: number | 'next',
+function $collectTripleClickTextBound<D extends CaretDirection>(
+  anchor: PointCaret<D>,
   onTextNode: (t: TextNode) => void,
 ): void {
-  let caret: null | PointCaret<D> = $getTextPointCaret(
-    clickedText,
-    direction,
-    endpoint,
-  );
-  while (caret !== null) {
-    let hitStop = false;
-    for (const sc of caret) {
-      if ($tripleClickLineWalkStopsAt(sc.origin)) {
-        hitStop = true;
-        break;
-      }
-      const boundary = sc.getNodeAtCaret();
-      if (boundary !== null && $tripleClickLineWalkStopsAt(boundary)) {
-        hitStop = true;
-        break;
-      }
-      if ($isTextNode(sc.origin)) {
-        onTextNode(sc.origin);
-      }
+  for (const c of $extendCaretToRange(anchor).iterNodeCarets('root')) {
+    if ($tripleClickLineWalkStopsAt(c.origin)) {
+      return;
     }
-    if (hitStop) {
-      break;
+    const nodeAt = c.getNodeAtCaret();
+    if (nodeAt !== null && $tripleClickLineWalkStopsAt(nodeAt)) {
+      return;
     }
-    const up = caret.getParentCaret('root');
-    if (
-      up === null ||
-      $tripleClickLineWalkStopsAt(up.origin) ||
-      !$isElementNode(up.origin) ||
-      !up.origin.isInline()
-    ) {
-      break;
+    if ($isTextNode(c.origin)) {
+      onTextNode(c.origin);
     }
-    caret = up;
   }
 }
 
@@ -2789,16 +2764,22 @@ function $getTripleClickLineTextNodeBounds(clickedText: TextNode): {
   focusOffset: number;
 } {
   let firstText = clickedText;
-  $walkTripleClickLineCaretBounds(clickedText, 'previous', 0, t => {
-    firstText = t;
-  });
+  $collectTripleClickTextBound(
+    $getTextPointCaret(clickedText, 'previous', 0)!,
+    t => {
+      firstText = t;
+    },
+  );
 
   let lastText = clickedText;
   let lastOffset = clickedText.getTextContentSize();
-  $walkTripleClickLineCaretBounds(clickedText, 'next', 'next', t => {
-    lastText = t;
-    lastOffset = t.getTextContentSize();
-  });
+  $collectTripleClickTextBound(
+    $getTextPointCaret(clickedText, 'next', 'next')!,
+    t => {
+      lastText = t;
+      lastOffset = t.getTextContentSize();
+    },
+  );
 
   return {
     anchorKey: firstText.__key,

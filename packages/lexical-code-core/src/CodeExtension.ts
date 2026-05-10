@@ -6,147 +6,35 @@
  *
  */
 
-import {effect, namedSignals} from '@lexical/extension';
-import {$findMatchingParent} from '@lexical/utils';
 import {
-  $createParagraphNode,
   $getSelection,
   $isRangeSelection,
-  COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_LOW,
   defineExtension,
-  KEY_ARROW_DOWN_COMMAND,
-  KEY_ARROW_LEFT_COMMAND,
-  KEY_ARROW_RIGHT_COMMAND,
-  KEY_ARROW_UP_COMMAND,
   KEY_ENTER_COMMAND,
-  mergeRegister,
-  safeCast,
 } from 'lexical';
 
 import {CodeHighlightNode} from './CodeHighlightNode';
-import {$exitCodeNodeOnEnter, $isCodeNode, CodeNode} from './CodeNode';
-
-const $onEscapeUp = () => {
-  const selection = $getSelection();
-  if (
-    $isRangeSelection(selection) &&
-    selection.isCollapsed() &&
-    selection.anchor.offset === 0
-  ) {
-    const code = $findMatchingParent(selection.anchor.getNode(), $isCodeNode);
-
-    if ($isCodeNode(code)) {
-      const parent = code.getParent();
-      if (parent !== null && parent.getFirstChild() === code) {
-        const contentParagraph = code.getFirstDescendant();
-        if (
-          contentParagraph !== null &&
-          selection.anchor.key === contentParagraph.getKey()
-        ) {
-          code.insertBefore($createParagraphNode());
-          return true;
-        }
-      }
-    }
-  }
-
-  return false;
-};
-
-const $onEscapeDown = () => {
-  const selection = $getSelection();
-  if ($isRangeSelection(selection) && selection.isCollapsed()) {
-    const code = $findMatchingParent(selection.anchor.getNode(), $isCodeNode);
-
-    if ($isCodeNode(code)) {
-      const parent = code.getParent();
-      if (parent !== null && parent.getLastChild() === code) {
-        const contentParagraph = code.getLastDescendant();
-        if (
-          contentParagraph !== null &&
-          selection.anchor.key === contentParagraph.getKey() &&
-          selection.anchor.offset === contentParagraph.getTextContentSize()
-        ) {
-          code.insertAfter($createParagraphNode());
-          return true;
-        }
-      }
-    }
-  }
-
-  return false;
-};
-
-export interface CodeConfig {
-  /**
-   * When `true`, When set to true, this enables the ability to exit a code block
-   * that has no adjacent elements using the ArrowLeft/ArrowUp keys
-   * if the cursor is at the beginning, or the ArrowRight/ArrowDown keys
-   * if the cursor is at the end.
-   * When `false` (default), pressing the arrow keys will not move the cursor
-   * if there are no adjacent elements around the code block
-   */
-  escapeWithArrows: boolean;
-}
+import {$exitCodeNodeOnEnter, CodeNode} from './CodeNode';
 
 /**
  * Add code blocks to the editor (syntax highlighting provided separately)
  */
 export const CodeExtension = defineExtension({
-  build(editor, config, state) {
-    return namedSignals(config);
-  },
-  config: safeCast<CodeConfig>({
-    escapeWithArrows: false,
-  }),
   name: '@lexical/code',
   nodes: () => [CodeNode, CodeHighlightNode],
-  register(editor, config, state) {
-    const stores = state.getOutput();
-    return mergeRegister(
-      editor.registerCommand<KeyboardEvent>(
-        KEY_ENTER_COMMAND,
-        event => {
-          const selection = $getSelection();
-          if ($isRangeSelection(selection) && $exitCodeNodeOnEnter(selection)) {
-            event.preventDefault();
-            return true;
-          }
-          return false;
-        },
-        COMMAND_PRIORITY_LOW,
-      ),
-      // When node is the last child pressing down/right or up/let arrow will insert paragraph
-      // below it to allow adding more content. It's similar what $insertBlockNode
-      // (mainly for decorators), except it'll always be possible to continue adding
-      // new content even if trailing paragraph is accidentally deleted
-      effect(() =>
-        stores.escapeWithArrows.value
-          ? mergeRegister(
-              editor.registerCommand(
-                KEY_ARROW_DOWN_COMMAND,
-                $onEscapeDown,
-                COMMAND_PRIORITY_EDITOR,
-              ),
-              editor.registerCommand(
-                KEY_ARROW_RIGHT_COMMAND,
-                $onEscapeDown,
-                COMMAND_PRIORITY_EDITOR,
-              ),
-              editor.registerCommand(
-                KEY_ARROW_UP_COMMAND,
-                $onEscapeUp,
-                COMMAND_PRIORITY_EDITOR,
-              ),
-              editor.registerCommand(
-                KEY_ARROW_LEFT_COMMAND,
-                $onEscapeUp,
-                COMMAND_PRIORITY_EDITOR,
-              ),
-            )
-          : undefined,
-      ),
+  register(editor) {
+    return editor.registerCommand<KeyboardEvent>(
+      KEY_ENTER_COMMAND,
+      event => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection) && $exitCodeNodeOnEnter(selection)) {
+          event.preventDefault();
+          return true;
+        }
+        return false;
+      },
+      COMMAND_PRIORITY_LOW,
     );
   },
 });

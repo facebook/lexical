@@ -19,8 +19,10 @@ import type {
 import {effect, namedSignals} from '@lexical/extension';
 import {
   $createLineBreakNode,
+  $createParagraphNode,
   $createPoint,
   $createTabNode,
+  $findMatchingParent,
   $getCaretRange,
   $getCaretRangeInDirection,
   $getSelection,
@@ -37,6 +39,8 @@ import {
   INDENT_CONTENT_COMMAND,
   INSERT_TAB_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
+  KEY_ARROW_LEFT_COMMAND,
+  KEY_ARROW_RIGHT_COMMAND,
   KEY_ARROW_UP_COMMAND,
   KEY_TAB_COMMAND,
   mergeRegister,
@@ -328,7 +332,7 @@ function $handleShiftLines(
         if (codeNodeSibling === null) {
           codeNode.selectPrevious();
           event.preventDefault();
-          return true;
+          return false;
         }
       } else if (
         !arrowIsUp &&
@@ -339,7 +343,7 @@ function $handleShiftLines(
         if (codeNodeSibling === null) {
           codeNode.selectNext();
           event.preventDefault();
-          return true;
+          return false;
         }
       }
     }
@@ -469,6 +473,56 @@ function $handleMoveTo(
   return true;
 }
 
+const $onEscapeUp = () => {
+  const selection = $getSelection();
+  if (
+    $isRangeSelection(selection) &&
+    selection.isCollapsed() &&
+    selection.anchor.offset === 0
+  ) {
+    const code = $findMatchingParent(selection.anchor.getNode(), $isCodeNode);
+
+    if ($isCodeNode(code)) {
+      const parent = code.getParent();
+      if (parent !== null && parent.getFirstChild() === code) {
+        const contentParagraph = code.getFirstDescendant();
+        if (
+          contentParagraph !== null &&
+          selection.anchor.key === contentParagraph.getKey()
+        ) {
+          code.insertBefore($createParagraphNode());
+          return true;
+        }
+      }
+    }
+  }
+
+  return false;
+};
+
+const $onEscapeDown = () => {
+  const selection = $getSelection();
+  if ($isRangeSelection(selection) && selection.isCollapsed()) {
+    const code = $findMatchingParent(selection.anchor.getNode(), $isCodeNode);
+
+    if ($isCodeNode(code)) {
+      const parent = code.getParent();
+      if (parent !== null && parent.getLastChild() === code) {
+        const contentParagraph = code.getLastDescendant();
+        if (
+          contentParagraph !== null &&
+          selection.anchor.key === contentParagraph.getKey() &&
+          selection.anchor.offset === contentParagraph.getTextContentSize()
+        ) {
+          code.insertAfter($createParagraphNode());
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+};
+
 /**
  * @internal
  * Register the keyboard and command handlers that drive code-block
@@ -487,8 +541,36 @@ function $handleMoveTo(
 export function registerCodeIndentation(
   editor: LexicalEditor,
   tabSize?: number,
+  escapeWithArrows?: boolean,
 ): () => void {
   return mergeRegister(
+    // When node is the last child pressing down/right or up/let arrow will insert paragraph
+    // below it to allow adding more content.
+    // These handlers must be executed before $handleShiftLines
+    ...(escapeWithArrows
+      ? [
+          editor.registerCommand(
+            KEY_ARROW_DOWN_COMMAND,
+            event => (event.altKey ? false : $onEscapeDown()),
+            COMMAND_PRIORITY_LOW,
+          ),
+          editor.registerCommand(
+            KEY_ARROW_RIGHT_COMMAND,
+            $onEscapeDown,
+            COMMAND_PRIORITY_LOW,
+          ),
+          editor.registerCommand(
+            KEY_ARROW_UP_COMMAND,
+            event => (event.altKey ? false : $onEscapeUp()),
+            COMMAND_PRIORITY_LOW,
+          ),
+          editor.registerCommand(
+            KEY_ARROW_LEFT_COMMAND,
+            $onEscapeUp,
+            COMMAND_PRIORITY_LOW,
+          ),
+        ]
+      : []),
     editor.registerCommand(
       KEY_TAB_COMMAND,
       event => {
@@ -541,7 +623,8 @@ export function registerCodeIndentation(
           selection.isCollapsed() &&
           anchor.offset === 0 &&
           anchorNode.getPreviousSibling() === null &&
-          $isCodeNode(anchorNode.getParentOrThrow())
+          $isCodeNode(anchorNode.getParentOrThrow()) &&
+          anchorNode.getParentOrThrow().getPreviousSibling() === null
         ) {
           event.preventDefault();
           return true;
@@ -567,7 +650,8 @@ export function registerCodeIndentation(
           selection.isCollapsed() &&
           anchor.offset === anchorNode.getTextContentSize() &&
           anchorNode.getNextSibling() === null &&
-          $isCodeNode(anchorNode.getParentOrThrow())
+          $isCodeNode(anchorNode.getParentOrThrow()) &&
+          anchorNode.getParentOrThrow().getNextSibling() === null
         ) {
           event.preventDefault();
           return true;
@@ -606,6 +690,15 @@ export interface CodeIndentConfig {
    * this option.
    */
   tabSize: number | undefined;
+  /**
+   * When `true`, When set to true, this enables the ability to exit a code block
+   * that has no adjacent elements using the ArrowLeft/ArrowUp keys
+   * if the cursor is at the beginning, or the ArrowRight/ArrowDown keys
+   * if the cursor is at the end.
+   * When `false` (default), pressing the arrow keys will not move the cursor
+   * if there are no adjacent elements around the code block
+   */
+  escapeWithArrows: boolean;
 }
 
 /**
@@ -623,6 +716,7 @@ export const CodeIndentExtension = defineExtension({
   build: (editor, config) => namedSignals(config),
   config: safeCast<CodeIndentConfig>({
     disabled: false,
+    escapeWithArrows: false,
     tabSize: undefined,
   }),
   dependencies: [CodeExtension],
@@ -633,7 +727,11 @@ export const CodeIndentExtension = defineExtension({
       if (stores.disabled.value) {
         return;
       }
-      return registerCodeIndentation(editor, stores.tabSize.value);
+      return registerCodeIndentation(
+        editor,
+        stores.tabSize.value,
+        stores.escapeWithArrows.value,
+      );
     });
   },
 });

@@ -23,7 +23,6 @@ import {
   focusEditor,
   html,
   initialize,
-  repeat,
   test,
 } from '../utils/index.mjs';
 

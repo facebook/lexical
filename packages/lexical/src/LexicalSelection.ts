@@ -2735,20 +2735,30 @@ export function $internalCreateRangeSelection(
   );
 }
 
-function $tripleClickLineWalkStopsAt(node: LexicalNode): boolean {
-  return $isLineBreakNode(node) || ($isElementNode(node) && !node.isInline());
+function $tripleClickLineCaretIterationHitBoundary(
+  node: LexicalNode,
+  lineBlock: ElementNode,
+): boolean {
+  return (
+    $isLineBreakNode(node) ||
+    ($isElementNode(node) && !node.isInline() && !node.is(lineBlock))
+  );
 }
 
 function $collectTripleClickTextBound<D extends CaretDirection>(
   anchor: PointCaret<D>,
+  lineBlock: ElementNode,
   onTextNode: (t: TextNode) => void,
 ): void {
   for (const c of $extendCaretToRange(anchor).iterNodeCarets('root')) {
-    if ($tripleClickLineWalkStopsAt(c.origin)) {
+    if ($tripleClickLineCaretIterationHitBoundary(c.origin, lineBlock)) {
       return;
     }
     const nodeAt = c.getNodeAtCaret();
-    if (nodeAt !== null && $tripleClickLineWalkStopsAt(nodeAt)) {
+    if (
+      nodeAt !== null &&
+      $tripleClickLineCaretIterationHitBoundary(nodeAt, lineBlock)
+    ) {
       return;
     }
     if ($isTextNode(c.origin)) {
@@ -2757,7 +2767,10 @@ function $collectTripleClickTextBound<D extends CaretDirection>(
   }
 }
 
-function $getTripleClickLineTextNodeBounds(clickedText: TextNode): {
+function $getTripleClickLineTextNodeBounds(
+  clickedText: TextNode,
+  lineBlock: ElementNode,
+): {
   anchorKey: NodeKey;
   anchorOffset: number;
   focusKey: NodeKey;
@@ -2766,6 +2779,7 @@ function $getTripleClickLineTextNodeBounds(clickedText: TextNode): {
   let firstText = clickedText;
   $collectTripleClickTextBound(
     $getTextPointCaret(clickedText, 'previous', 0)!,
+    lineBlock,
     t => {
       firstText = t;
     },
@@ -2775,6 +2789,7 @@ function $getTripleClickLineTextNodeBounds(clickedText: TextNode): {
   let lastOffset = clickedText.getTextContentSize();
   $collectTripleClickTextBound(
     $getTextPointCaret(clickedText, 'next', 'next')!,
+    lineBlock,
     t => {
       lastText = t;
       lastOffset = t.getTextContentSize();
@@ -2829,6 +2844,9 @@ export function $tryNormalizeTripleClickLineSelection(
   if (block === null || $isRootNode(block)) {
     return false;
   }
+  if (!$isElementNode(block)) {
+    return false;
+  }
   if (!block.isParentOf(lexicalText)) {
     return false;
   }
@@ -2837,7 +2855,7 @@ export function $tryNormalizeTripleClickLineSelection(
     return false;
   }
 
-  const bounds = $getTripleClickLineTextNodeBounds(lexicalText);
+  const bounds = $getTripleClickLineTextNodeBounds(lexicalText, block);
 
   if (
     selection.anchor.key === bounds.anchorKey &&

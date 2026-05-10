@@ -79,7 +79,7 @@ type LexicalAutoEmbedPluginProps<TEmbedConfig extends EmbedConfig> = {
   /**
    * An array of configurations used to insert Embed elements
    */
-  embedConfigs: Array<TEmbedConfig>;
+  embedConfigs: TEmbedConfig[];
   /**
    * Callback for handling the {@link INSERT_EMBED_COMMAND} command.
    * If no function is passed, the command is not registered

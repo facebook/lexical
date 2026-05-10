@@ -43,6 +43,7 @@ function runElementTransformers(
   anchorNode: TextNode,
   anchorOffset: number,
   elementTransformers: ReadonlyArray<ElementTransformer>,
+  triggerOnEnter?: boolean,
 ): boolean {
   const grandParentNode = parentNode.getParent();
 
@@ -61,18 +62,22 @@ function runElementTransformers(
   // TODO:
   // Can have a quick check if caret is close enough to the beginning of the string (e.g. offset less than 10-20)
   // since otherwise it won't be a markdown shortcut, but tables are exception
-  if (textContent[anchorOffset - 1] !== ' ') {
-    return false;
+  if (!triggerOnEnter) {
+    if (textContent[anchorOffset - 1] !== ' ') {
+      return false;
+    }
   }
 
   for (const {regExp, replace} of elementTransformers) {
     const match = textContent.match(regExp);
 
-    if (
-      match &&
-      match[0].length ===
-        (match[0].endsWith(' ') ? anchorOffset : anchorOffset - 1)
-    ) {
+    const expectedMatchLength = triggerOnEnter
+      ? anchorOffset
+      : match && match[0].endsWith(' ')
+        ? anchorOffset
+        : anchorOffset - 1;
+
+    if (match && match[0].length === expectedMatchLength) {
       const nextSiblings = anchorNode.getNextSiblings();
       const [leadingNode, remainderNode] = anchorNode.splitText(anchorOffset);
       const siblings = remainderNode
@@ -613,6 +618,21 @@ export function registerMarkdownShortcuts(
             anchorNode,
             anchorOffset,
             byType.multilineElement,
+            true,
+          )
+        ) {
+          if (event !== null) {
+            event.preventDefault();
+          }
+          return true;
+        }
+
+        if (
+          runElementTransformers(
+            parentNode,
+            anchorNode,
+            anchorOffset,
+            byType.element,
             true,
           )
         ) {

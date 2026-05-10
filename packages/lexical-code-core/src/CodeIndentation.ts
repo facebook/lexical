@@ -17,12 +17,11 @@ import type {
 } from 'lexical';
 
 import {effect, namedSignals} from '@lexical/extension';
+import {$onEscapeDown, $onEscapeUp} from '@lexical/utils';
 import {
   $createLineBreakNode,
-  $createParagraphNode,
   $createPoint,
   $createTabNode,
-  $findMatchingParent,
   $getCaretRange,
   $getCaretRangeInDirection,
   $getSelection,
@@ -473,56 +472,6 @@ function $handleMoveTo(
   return true;
 }
 
-const $onEscapeUp = () => {
-  const selection = $getSelection();
-  if (
-    $isRangeSelection(selection) &&
-    selection.isCollapsed() &&
-    selection.anchor.offset === 0
-  ) {
-    const code = $findMatchingParent(selection.anchor.getNode(), $isCodeNode);
-
-    if ($isCodeNode(code)) {
-      const parent = code.getParent();
-      if (parent !== null && parent.getFirstChild() === code) {
-        const contentParagraph = code.getFirstDescendant();
-        if (
-          contentParagraph !== null &&
-          selection.anchor.key === contentParagraph.getKey()
-        ) {
-          code.insertBefore($createParagraphNode());
-          return true;
-        }
-      }
-    }
-  }
-
-  return false;
-};
-
-const $onEscapeDown = () => {
-  const selection = $getSelection();
-  if ($isRangeSelection(selection) && selection.isCollapsed()) {
-    const code = $findMatchingParent(selection.anchor.getNode(), $isCodeNode);
-
-    if ($isCodeNode(code)) {
-      const parent = code.getParent();
-      if (parent !== null && parent.getLastChild() === code) {
-        const contentParagraph = code.getLastDescendant();
-        if (
-          contentParagraph !== null &&
-          selection.anchor.key === contentParagraph.getKey() &&
-          selection.anchor.offset === contentParagraph.getTextContentSize()
-        ) {
-          code.insertAfter($createParagraphNode());
-          return true;
-        }
-      }
-    }
-  }
-  return false;
-};
-
 /**
  * @internal
  * Register the keyboard and command handlers that drive code-block
@@ -551,22 +500,22 @@ export function registerCodeIndentation(
       ? [
           editor.registerCommand(
             KEY_ARROW_DOWN_COMMAND,
-            event => (event.altKey ? false : $onEscapeDown()),
+            event => (event.altKey ? false : $onEscapeDown($isCodeNode)),
             COMMAND_PRIORITY_LOW,
           ),
           editor.registerCommand(
             KEY_ARROW_RIGHT_COMMAND,
-            $onEscapeDown,
+            () => $onEscapeDown($isCodeNode),
             COMMAND_PRIORITY_LOW,
           ),
           editor.registerCommand(
             KEY_ARROW_UP_COMMAND,
-            event => (event.altKey ? false : $onEscapeUp()),
+            event => (event.altKey ? false : $onEscapeUp($isCodeNode)),
             COMMAND_PRIORITY_LOW,
           ),
           editor.registerCommand(
             KEY_ARROW_LEFT_COMMAND,
-            $onEscapeUp,
+            () => $onEscapeUp($isCodeNode),
             COMMAND_PRIORITY_LOW,
           ),
         ]

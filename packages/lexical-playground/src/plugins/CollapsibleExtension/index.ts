@@ -158,7 +158,7 @@ export const CollapsibleExtension = defineExtension({
       // new content even if trailing paragraph is accidentally deleted
       editor.registerCommand(
         KEY_ARROW_DOWN_COMMAND,
-        $onEscapeDown,
+        () => $onEscapeDown(),
         COMMAND_PRIORITY_LOW,
       ),
 

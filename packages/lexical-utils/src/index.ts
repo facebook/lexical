@@ -1001,3 +1001,87 @@ export function makeStateWrapper<K extends string, V>(
     stateConfig,
   };
 }
+
+/**
+ * Inserts a new paragraph before a container node when the cursor moves outside the container element
+ *
+ * Intended for use ArrowLeft/ArrowUp keyboard handlers to allow the user to break out
+ * of a container node by creating a new paragraph before it.
+ *
+ * A paragraph is inserted if that the cursor is positioned at the beginning inside the container,
+ * and the container itself is the first element in the document and has no preceding sibling
+ *
+ * @param $isContainerNode - Type guard identifying the container node type to escape from.
+ * @returns `true` if a paragraph was inserted, `false` otherwise.
+ */
+export function $onEscapeUp(
+  $isContainerNode: (node?: LexicalNode | null) => node is ElementNode,
+) {
+  const selection = $getSelection();
+  if (
+    $isRangeSelection(selection) &&
+    selection.isCollapsed() &&
+    selection.anchor.offset === 0
+  ) {
+    const containerNode = $findMatchingParent(
+      selection.anchor.getNode(),
+      $isContainerNode,
+    );
+
+    if (containerNode) {
+      const parent = containerNode.getParent();
+      if (parent !== null && parent.getFirstChild() === containerNode) {
+        const contentParagraph = containerNode.getFirstDescendant();
+        if (
+          contentParagraph !== null &&
+          selection.anchor.key === contentParagraph.getKey()
+        ) {
+          containerNode.insertBefore($createParagraphNode());
+          return true;
+        }
+      }
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Inserts a new paragraph after a container node when the cursor moves outside the container element
+ *
+ * Intended for use ArrowRight/ArrowDown keyboard handlers to allow the user to break out
+ * of a container node by creating a new paragraph after it.
+ *
+ * A paragraph is inserted if that the cursor is positioned at the ending inside the container,
+ * and the container itself is the last element in the document and has no next sibling
+ *
+ * @param $isContainerNode - Type guard identifying the container node type to escape from.
+ * @returns `true` if a paragraph was inserted, `false` otherwise.
+ */
+export function $onEscapeDown(
+  $isContainerNode: (node?: LexicalNode | null) => node is ElementNode,
+) {
+  const selection = $getSelection();
+  if ($isRangeSelection(selection) && selection.isCollapsed()) {
+    const containerNode = $findMatchingParent(
+      selection.anchor.getNode(),
+      $isContainerNode,
+    );
+
+    if (containerNode) {
+      const parent = containerNode.getParent();
+      if (parent !== null && parent.getLastChild() === containerNode) {
+        const contentParagraph = containerNode.getLastDescendant();
+        if (
+          contentParagraph !== null &&
+          selection.anchor.key === contentParagraph.getKey() &&
+          selection.anchor.offset === contentParagraph.getTextContentSize()
+        ) {
+          containerNode.insertAfter($createParagraphNode());
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}

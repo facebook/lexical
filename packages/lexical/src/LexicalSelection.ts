@@ -12,6 +12,7 @@ import type {NodeKey} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextFormatType} from './nodes/LexicalTextNode';
 
+import caretFromPoint from 'shared/caretFromPoint';
 import {IS_FIREFOX} from 'shared/environment';
 import invariant from 'shared/invariant';
 
@@ -87,6 +88,7 @@ import {
   getElementByKeyOrThrow,
   getWindow,
   INTERNAL_$isBlock,
+  isDOMTextNode,
   isHTMLElement,
   isSelectionCapturedInDecoratorInput,
   isSelectionWithinEditor,
@@ -2731,111 +2733,120 @@ export function $internalCreateRangeSelection(
   );
 }
 
-function getCaretTextPositionFromPoint(
-  doc: Document,
-  x: number,
-  y: number,
-): null | {node: Text; offset: number} {
-  try {
-    if (typeof doc.caretPositionFromPoint === 'function') {
-      const position = doc.caretPositionFromPoint(x, y);
-      if (
-        position != null &&
-        position.offsetNode != null &&
-        position.offsetNode.nodeType === Node.TEXT_NODE
-      ) {
-        return {node: position.offsetNode as Text, offset: position.offset};
-      }
-      return null;
-    }
-    const docWithCaret = doc as Document & {
-      caretRangeFromPoint?: (clientX: number, clientY: number) => Range | null;
-    };
-    if (typeof docWithCaret.caretRangeFromPoint === 'function') {
-      const range = docWithCaret.caretRangeFromPoint(x, y);
-      if (range != null && range.startContainer.nodeType === Node.TEXT_NODE) {
-        return {
-          node: range.startContainer as Text,
-          offset: range.startOffset,
-        };
-      }
-    }
-  } catch {
-    // caret*FromPoint can throw when x/y are outside the window.
-  }
-  return null;
+function $tripleClickLineWalkStopsAt(node: LexicalNode): boolean {
+  return $isLineBreakNode(node) || ($isElementNode(node) && !node.isInline());
 }
 
-function getLineStartEndInString(
-  text: string,
-  offset: number,
-): [number, number] {
-  const safeOffset = Math.max(0, Math.min(offset, text.length));
-  const nlBefore = text.lastIndexOf('\n', safeOffset - 1);
-  const lineStart = nlBefore === -1 ? 0 : nlBefore + 1;
-  const nlAfter = text.indexOf('\n', safeOffset);
-  const lineEnd = nlAfter === -1 ? text.length : nlAfter;
-  return [lineStart, lineEnd];
-}
-
-function $expandLineSelectionInBlockWithLineBreaks(textNode: TextNode): {
+function $getTripleClickLineTextNodeBounds(clickedText: TextNode): {
   anchorKey: NodeKey;
   anchorOffset: number;
   focusKey: NodeKey;
   focusOffset: number;
 } {
-  let node: LexicalNode | null = textNode;
-  let firstKey = textNode.__key;
+  let firstText = clickedText;
   let firstOffset = 0;
-
-  while (node !== null) {
-    const prev: LexicalNode | null = node.getPreviousSibling();
-    if (prev === null || $isLineBreakNode(prev)) {
-      if ($isTextNode(node)) {
-        firstKey = node.__key;
-        firstOffset = 0;
+  let cur: LexicalNode = clickedText;
+  outer: while (true) {
+    while (true) {
+      const prev = cur.getPreviousSibling();
+      if (prev === null) {
+        break;
       }
-      break;
-    }
-    if ($isTextNode(prev) || $isTabNode(prev)) {
-      node = prev;
-    } else {
-      if ($isTextNode(node)) {
-        firstKey = node.__key;
-        firstOffset = 0;
+      if ($tripleClickLineWalkStopsAt(prev)) {
+        break outer;
       }
-      break;
+      if ($isTextNode(prev)) {
+        cur = prev;
+        firstText = prev;
+        firstOffset = 0;
+        continue;
+      }
+      if ($isElementNode(prev) && prev.isInline()) {
+        const rightDesc = prev.getLastDescendant();
+        if (!$isTextNode(rightDesc)) {
+          break outer;
+        }
+        cur = rightDesc;
+        firstText = rightDesc;
+        firstOffset = 0;
+        continue;
+      }
+      break outer;
     }
+    const parent = cur.getParent();
+    if (
+      parent === null ||
+      $tripleClickLineWalkStopsAt(parent) ||
+      !$isElementNode(parent) ||
+      !parent.isInline()
+    ) {
+      break outer;
+    }
+    cur = parent;
   }
 
-  node = textNode;
-  let lastKey = textNode.__key;
-  let lastOffset = textNode.getTextContentSize();
-  while (true) {
-    invariant(node !== null, '$expandLineSelectionInBlockWithLineBreaks: node');
-    const next: LexicalNode | null = node.getNextSibling();
-    if (next === null || $isLineBreakNode(next)) {
-      if ($isTextNode(node)) {
-        lastKey = node.__key;
-        lastOffset = node.getTextContentSize();
+  let lastText = clickedText;
+  let lastOffset = clickedText.getTextContentSize();
+  cur = clickedText;
+  outer2: while (true) {
+    while (true) {
+      const next = cur.getNextSibling();
+      if (next === null) {
+        break;
       }
-      break;
-    }
-    if ($isTextNode(next) || $isTabNode(next)) {
-      node = next;
-    } else {
-      if ($isTextNode(node)) {
-        lastKey = node.__key;
-        lastOffset = node.getTextContentSize();
+      if ($tripleClickLineWalkStopsAt(next)) {
+        if ($isTextNode(cur)) {
+          lastText = cur;
+          lastOffset = cur.getTextContentSize();
+        }
+        break outer2;
       }
-      break;
+      if ($isTextNode(next)) {
+        cur = next;
+        lastText = next;
+        lastOffset = next.getTextContentSize();
+        continue;
+      }
+      if ($isElementNode(next) && next.isInline()) {
+        const leftDesc = next.getFirstDescendant();
+        if (!$isTextNode(leftDesc)) {
+          if ($isTextNode(cur)) {
+            lastText = cur;
+            lastOffset = cur.getTextContentSize();
+          }
+          break outer2;
+        }
+        cur = leftDesc;
+        lastText = leftDesc;
+        lastOffset = leftDesc.getTextContentSize();
+        continue;
+      }
+      if ($isTextNode(cur)) {
+        lastText = cur;
+        lastOffset = cur.getTextContentSize();
+      }
+      break outer2;
     }
+    const parent = cur.getParent();
+    if (
+      parent === null ||
+      $tripleClickLineWalkStopsAt(parent) ||
+      !$isElementNode(parent) ||
+      !parent.isInline()
+    ) {
+      if ($isTextNode(cur)) {
+        lastText = cur;
+        lastOffset = cur.getTextContentSize();
+      }
+      break outer2;
+    }
+    cur = parent;
   }
 
   return {
-    anchorKey: firstKey,
+    anchorKey: firstText.__key,
     anchorOffset: firstOffset,
-    focusKey: lastKey,
+    focusKey: lastText.__key,
     focusOffset: lastOffset,
   };
 }
@@ -2848,7 +2859,7 @@ function $expandLineSelectionInBlockWithLineBreaks(textNode: TextNode): {
  * @returns true if the selection was updated.
  */
 export function $tryNormalizeTripleClickLineSelection(
-  editor: LexicalEditor,
+  _editor: LexicalEditor,
   selection: RangeSelection,
   domEvent: PointerEvent,
 ): boolean {
@@ -2859,20 +2870,20 @@ export function $tryNormalizeTripleClickLineSelection(
   if (view == null) {
     return false;
   }
-  const doc = view.document;
-  const caret = getCaretTextPositionFromPoint(
-    doc,
-    domEvent.clientX,
-    domEvent.clientY,
-  );
-  if (caret === null) {
+  let domCaret: null | {node: Node; offset: number};
+  try {
+    domCaret = caretFromPoint(domEvent.clientX, domEvent.clientY);
+  } catch {
+    // caret*FromPoint can throw when x/y are outside the window.
     return false;
   }
-  const lexicalText = $getNodeFromDOM(caret.node);
+  if (domCaret == null || !isDOMTextNode(domCaret.node)) {
+    return false;
+  }
+  const lexicalText = $getNodeFromDOM(domCaret.node);
   if (!$isTextNode(lexicalText)) {
     return false;
   }
-  const lexicalOffset = $getTextNodeOffset(lexicalText, caret.offset, 'clamp');
   const block = $findMatchingParent(
     lexicalText,
     n => $isElementNode(n) && !n.isInline(),
@@ -2884,39 +2895,11 @@ export function $tryNormalizeTripleClickLineSelection(
     return false;
   }
 
-  const singleNodeText = lexicalText.getTextContent();
-  if (singleNodeText.includes('\n')) {
-    const [lineStart, lineEnd] = getLineStartEndInString(
-      singleNodeText,
-      lexicalOffset,
-    );
-    if (lineStart === 0 && lineEnd === singleNodeText.length) {
-      return false;
-    }
-    const anchor = selection.anchor;
-    const focus = selection.focus;
-    if (anchor.type !== 'text' || focus.type !== 'text') {
-      return false;
-    }
-    if (anchor.getNode() !== lexicalText || focus.getNode() !== lexicalText) {
-      return false;
-    }
-    const r0 = Math.min(anchor.offset, focus.offset);
-    const r1 = Math.max(anchor.offset, focus.offset);
-    if (!(r0 === 0 && r1 === singleNodeText.length)) {
-      return false;
-    }
-    selection.anchor.set(lexicalText.__key, lineStart, 'text');
-    selection.focus.set(lexicalText.__key, lineEnd, 'text');
-    selection.dirty = true;
-    return true;
-  }
-
   if (!selection.getTextContent().includes('\n')) {
     return false;
   }
 
-  const bounds = $expandLineSelectionInBlockWithLineBreaks(lexicalText);
+  const bounds = $getTripleClickLineTextNodeBounds(lexicalText);
 
   if (
     selection.anchor.key === bounds.anchorKey &&
@@ -2927,9 +2910,18 @@ export function $tryNormalizeTripleClickLineSelection(
     return false;
   }
 
-  selection.anchor.set(bounds.anchorKey, bounds.anchorOffset, 'text');
-  selection.focus.set(bounds.focusKey, bounds.focusOffset, 'text');
-  selection.dirty = true;
+  const anchorNode = $getNodeByKey(bounds.anchorKey);
+  const focusNode = $getNodeByKey(bounds.focusKey);
+  if (!$isTextNode(anchorNode) || !$isTextNode(focusNode)) {
+    return false;
+  }
+
+  selection.setTextNodeRange(
+    anchorNode,
+    bounds.anchorOffset,
+    focusNode,
+    bounds.focusOffset,
+  );
   return true;
 }
 

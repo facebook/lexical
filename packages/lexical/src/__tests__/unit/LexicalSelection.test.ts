@@ -38,7 +38,7 @@ import {
   RangeSelection,
   TextNode,
 } from 'lexical';
-import {beforeEach, describe, expect, test} from 'vitest';
+import {beforeEach, describe, expect, test, vi} from 'vitest';
 
 import {SerializedElementNode} from '../..';
 import {
@@ -1724,38 +1724,79 @@ describe('RangeSelection.isBackward() caching (#5825)', () => {
 
 describe('Regression #7592', () => {
   initializeUnitTest(testEnv => {
-    test('triple-click narrows selection to one line in multiline TextNode', async () => {
+    function withCaretFromPointMock(textDom: Text, offset: number): Disposable {
+      const cleanups: Array<() => void> = [];
+      const makeCollapsedRange = () => {
+        const range = document.createRange();
+        range.setStart(textDom, offset);
+        range.collapse(true);
+        return range;
+      };
+      if (typeof document.caretRangeFromPoint === 'function') {
+        const rangeSpy = vi
+          .spyOn(document, 'caretRangeFromPoint')
+          .mockImplementation((_clientX: number, _clientY: number) =>
+            makeCollapsedRange(),
+          );
+        cleanups.push(() => rangeSpy.mockRestore());
+      } else {
+        const doc = document as Document & {
+          caretRangeFromPoint?: (
+            clientX: number,
+            clientY: number,
+          ) => Range | null;
+        };
+        doc.caretRangeFromPoint = (_clientX: number, _clientY: number) =>
+          makeCollapsedRange();
+        cleanups.push(() => {
+          delete doc.caretRangeFromPoint;
+        });
+      }
+      return {
+        [Symbol.dispose]() {
+          for (const cleanup of cleanups) {
+            cleanup();
+          }
+        },
+      };
+    }
+
+    test('triple-click narrows selection to one line when inline elements sit between LineBreak-separated lines', async () => {
       const {editor} = testEnv;
-      let textKey = '';
+      let lineBeforeBrTextKey = '';
 
       await editor.update(
         () => {
           const root = $getRoot();
           const p = $createParagraphNode();
-          const t = $createTextNode('aa\nbb\ncc');
-          p.append(t);
+          const t1 = $createTextNode('aa ');
+          const link = $createLinkNode('https://', {}).append(
+            $createTextNode('bb'),
+          );
+          const t2 = $createTextNode(' cc');
+          const br = $createLineBreakNode();
+          const t3 = $createTextNode('dd');
+          p.append(t1, link, t2, br, t3);
           root.clear().append(p);
-          textKey = t.getKey();
-          t.select(0, t.getTextContent().length);
+          lineBeforeBrTextKey = t2.getKey();
+          const sel = t1.select(0, t1.getTextContentSize());
+          sel.focus.set(t3.getKey(), t3.getTextContentSize(), 'text');
         },
         {discrete: true},
       );
 
-      const textDOM = getDOMTextNode(editor.getElementByKey(textKey)!);
+      const textDOM = getDOMTextNode(
+        editor.getElementByKey(lineBeforeBrTextKey)!,
+      );
       invariant(textDOM !== null);
 
-      const nativeCaretPositionFromPoint =
-        document.caretPositionFromPoint?.bind(document);
-      document.caretPositionFromPoint = ((_x: number, _y: number) =>
-        ({
-          offset: 4,
-          offsetNode: textDOM,
-        }) as unknown as CaretPosition) as typeof document.caretPositionFromPoint;
+      using _caretFromPoint = withCaretFromPointMock(textDOM, 2);
 
       await editor.update(
         () => {
           const selection = $getSelection();
           invariant($isRangeSelection(selection));
+          expect(selection.getTextContent()).toContain('\n');
           const event = {
             clientX: 0,
             clientY: 0,
@@ -1764,16 +1805,10 @@ describe('Regression #7592', () => {
           expect(
             $tryNormalizeTripleClickLineSelection(editor, selection, event),
           ).toBe(true);
-          expect(selection.getTextContent()).toBe('bb');
+          expect(selection.getTextContent()).toBe('aa bb cc');
         },
         {discrete: true},
       );
-
-      if (nativeCaretPositionFromPoint !== undefined) {
-        document.caretPositionFromPoint = nativeCaretPositionFromPoint;
-      } else {
-        delete (document as Partial<Document>).caretPositionFromPoint;
-      }
     });
 
     test('triple-click narrows selection for LineBreak-separated lines', async () => {
@@ -1799,13 +1834,7 @@ describe('Regression #7592', () => {
       const textDOM = getDOMTextNode(editor.getElementByKey(secondTextKey)!);
       invariant(textDOM !== null);
 
-      const nativeCaretPositionFromPoint =
-        document.caretPositionFromPoint?.bind(document);
-      document.caretPositionFromPoint = ((_x: number, _y: number) =>
-        ({
-          offset: 1,
-          offsetNode: textDOM,
-        }) as unknown as CaretPosition) as typeof document.caretPositionFromPoint;
+      using _caretFromPoint = withCaretFromPointMock(textDOM, 1);
 
       await editor.update(
         () => {
@@ -1824,12 +1853,6 @@ describe('Regression #7592', () => {
         },
         {discrete: true},
       );
-
-      if (nativeCaretPositionFromPoint !== undefined) {
-        document.caretPositionFromPoint = nativeCaretPositionFromPoint;
-      } else {
-        delete (document as Partial<Document>).caretPositionFromPoint;
-      }
     });
   });
 });

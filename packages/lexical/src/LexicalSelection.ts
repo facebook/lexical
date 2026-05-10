@@ -30,6 +30,7 @@ import {
   $getChildCaret,
   $getSiblingCaret,
   $getTextNodeOffset,
+  $getTextPointCaret,
   $isChildCaret,
   $isDecoratorNode,
   $isElementNode,
@@ -47,6 +48,7 @@ import {
   $setSelection,
   $setSelectionFromCaretRange,
   $updateRangeSelectionFromCaretRange,
+  type CaretDirection,
   CaretRange,
   ChildCaret,
   COLLABORATION_TAG,
@@ -2737,6 +2739,49 @@ function $tripleClickLineWalkStopsAt(node: LexicalNode): boolean {
   return $isLineBreakNode(node) || ($isElementNode(node) && !node.isInline());
 }
 
+function $walkTripleClickLineCaretBounds<D extends CaretDirection>(
+  clickedText: TextNode,
+  direction: D,
+  endpoint: number | 'next',
+  onTextNode: (t: TextNode) => void,
+): void {
+  let caret: null | PointCaret<D> = $getTextPointCaret(
+    clickedText,
+    direction,
+    endpoint,
+  );
+  while (caret !== null) {
+    let hitStop = false;
+    for (const sc of caret) {
+      if ($tripleClickLineWalkStopsAt(sc.origin)) {
+        hitStop = true;
+        break;
+      }
+      const boundary = sc.getNodeAtCaret();
+      if (boundary !== null && $tripleClickLineWalkStopsAt(boundary)) {
+        hitStop = true;
+        break;
+      }
+      if ($isTextNode(sc.origin)) {
+        onTextNode(sc.origin);
+      }
+    }
+    if (hitStop) {
+      break;
+    }
+    const up = caret.getParentCaret('root');
+    if (
+      up === null ||
+      $tripleClickLineWalkStopsAt(up.origin) ||
+      !$isElementNode(up.origin) ||
+      !up.origin.isInline()
+    ) {
+      break;
+    }
+    caret = up;
+  }
+}
+
 function $getTripleClickLineTextNodeBounds(clickedText: TextNode): {
   anchorKey: NodeKey;
   anchorOffset: number;
@@ -2744,108 +2789,20 @@ function $getTripleClickLineTextNodeBounds(clickedText: TextNode): {
   focusOffset: number;
 } {
   let firstText = clickedText;
-  let firstOffset = 0;
-  let cur: LexicalNode = clickedText;
-  outer: while (true) {
-    while (true) {
-      const prev = cur.getPreviousSibling();
-      if (prev === null) {
-        break;
-      }
-      if ($tripleClickLineWalkStopsAt(prev)) {
-        break outer;
-      }
-      if ($isTextNode(prev)) {
-        cur = prev;
-        firstText = prev;
-        firstOffset = 0;
-        continue;
-      }
-      if ($isElementNode(prev) && prev.isInline()) {
-        const rightDesc = prev.getLastDescendant();
-        if (!$isTextNode(rightDesc)) {
-          break outer;
-        }
-        cur = rightDesc;
-        firstText = rightDesc;
-        firstOffset = 0;
-        continue;
-      }
-      break outer;
-    }
-    const parent = cur.getParent();
-    if (
-      parent === null ||
-      $tripleClickLineWalkStopsAt(parent) ||
-      !$isElementNode(parent) ||
-      !parent.isInline()
-    ) {
-      break outer;
-    }
-    cur = parent;
-  }
+  $walkTripleClickLineCaretBounds(clickedText, 'previous', 0, t => {
+    firstText = t;
+  });
 
   let lastText = clickedText;
   let lastOffset = clickedText.getTextContentSize();
-  cur = clickedText;
-  outer2: while (true) {
-    while (true) {
-      const next = cur.getNextSibling();
-      if (next === null) {
-        break;
-      }
-      if ($tripleClickLineWalkStopsAt(next)) {
-        if ($isTextNode(cur)) {
-          lastText = cur;
-          lastOffset = cur.getTextContentSize();
-        }
-        break outer2;
-      }
-      if ($isTextNode(next)) {
-        cur = next;
-        lastText = next;
-        lastOffset = next.getTextContentSize();
-        continue;
-      }
-      if ($isElementNode(next) && next.isInline()) {
-        const leftDesc = next.getFirstDescendant();
-        if (!$isTextNode(leftDesc)) {
-          if ($isTextNode(cur)) {
-            lastText = cur;
-            lastOffset = cur.getTextContentSize();
-          }
-          break outer2;
-        }
-        cur = leftDesc;
-        lastText = leftDesc;
-        lastOffset = leftDesc.getTextContentSize();
-        continue;
-      }
-      if ($isTextNode(cur)) {
-        lastText = cur;
-        lastOffset = cur.getTextContentSize();
-      }
-      break outer2;
-    }
-    const parent = cur.getParent();
-    if (
-      parent === null ||
-      $tripleClickLineWalkStopsAt(parent) ||
-      !$isElementNode(parent) ||
-      !parent.isInline()
-    ) {
-      if ($isTextNode(cur)) {
-        lastText = cur;
-        lastOffset = cur.getTextContentSize();
-      }
-      break outer2;
-    }
-    cur = parent;
-  }
+  $walkTripleClickLineCaretBounds(clickedText, 'next', 'next', t => {
+    lastText = t;
+    lastOffset = t.getTextContentSize();
+  });
 
   return {
     anchorKey: firstText.__key,
-    anchorOffset: firstOffset,
+    anchorOffset: 0,
     focusKey: lastText.__key,
     focusOffset: lastOffset,
   };

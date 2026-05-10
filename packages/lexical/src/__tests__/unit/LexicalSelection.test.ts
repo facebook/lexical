@@ -1746,10 +1746,11 @@ describe('Regression #7592', () => {
             clientY: number,
           ) => Range | null;
         };
+        const previousCaretRangeFromPoint = doc.caretRangeFromPoint;
         doc.caretRangeFromPoint = (_clientX: number, _clientY: number) =>
           makeCollapsedRange();
         cleanups.push(() => {
-          delete doc.caretRangeFromPoint;
+          doc.caretRangeFromPoint = previousCaretRangeFromPoint;
         });
       }
       return {

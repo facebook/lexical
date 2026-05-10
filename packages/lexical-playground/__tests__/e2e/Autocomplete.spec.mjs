@@ -42,7 +42,7 @@ test.describe('Autocomplete', () => {
             <span data-lexical-text="true">Sort by alpha</span>
             <span
               class="PlaygroundEditorTheme__autocomplete"
-              style="font-size: 15px"
+              style="font-size: 16px"
               data-lexical-text="true">
               betical (TAB)
             </span>
@@ -53,7 +53,7 @@ test.describe('Autocomplete', () => {
             <span data-lexical-text="true">Sort by alpha</span>
             <span
               class="PlaygroundEditorTheme__autocomplete"
-              style="font-size: 15px; display: none"
+              style="font-size: 16px; display: none"
               data-lexical-text="true">
               betical (TAB)
             </span>
@@ -67,7 +67,7 @@ test.describe('Autocomplete', () => {
         html`
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">Sort by alpha</span>
-            <span style="font-size: 15px" data-lexical-text="true">
+            <span style="font-size: 16px" data-lexical-text="true">
               betical order:
             </span>
           </p>
@@ -97,13 +97,13 @@ test.describe('Autocomplete', () => {
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <strong
             class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
-            style="font-size: 17px;"
+            style="font-size: 18px;"
             data-lexical-text="true">
             Test
           </strong>
           <strong
             class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic PlaygroundEditorTheme__autocomplete"
-            style="font-size: 17px;"
+            style="font-size: 18px;"
             data-lexical-text="true">
             imonials (TAB)
           </strong>
@@ -113,13 +113,13 @@ test.describe('Autocomplete', () => {
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <strong
             class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
-            style="font-size: 17px;"
+            style="font-size: 18px;"
             data-lexical-text="true">
             Test
           </strong>
           <strong
             class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic PlaygroundEditorTheme__autocomplete"
-            style="font-size: 17px; display: none"
+            style="font-size: 18px; display: none"
             data-lexical-text="true">
             imonials (TAB)
           </strong>
@@ -143,17 +143,17 @@ test.describe('Autocomplete', () => {
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <strong
             class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
-            style="font-size: 17px;"
+            style="font-size: 18px;"
             data-lexical-text="true">
             Test
           </strong>
           <strong
             class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
-            style="font-size: 17px;"
+            style="font-size: 18px;"
             data-lexical-text="true">
             imonials
           </strong>
-          <span style="font-size: 15px;" data-lexical-text="true">2024</span>
+          <span style="font-size: 16px;" data-lexical-text="true">2024</span>
         </p>
       `,
     );
@@ -182,13 +182,13 @@ test.describe('Autocomplete', () => {
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <strong
             class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
-            style="font-size: 17px;"
+            style="font-size: 18px;"
             data-lexical-text="true">
             Test
           </strong>
           <strong
             class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic PlaygroundEditorTheme__autocomplete"
-            style="font-size: 17px;"
+            style="font-size: 18px;"
             data-lexical-text="true">
             imonials (TAB)
           </strong>
@@ -198,13 +198,13 @@ test.describe('Autocomplete', () => {
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <strong
             class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
-            style="font-size: 17px;"
+            style="font-size: 18px;"
             data-lexical-text="true">
             Test
           </strong>
           <strong
             class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic PlaygroundEditorTheme__autocomplete"
-            style="font-size: 17px; display: none"
+            style="font-size: 18px; display: none"
             data-lexical-text="true">
             imonials (TAB)
           </strong>
@@ -220,13 +220,13 @@ test.describe('Autocomplete', () => {
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <strong
             class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
-            style="font-size: 17px;"
+            style="font-size: 18px;"
             data-lexical-text="true">
             Test
           </strong>
           <strong
             class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
-            style="font-size: 17px;"
+            style="font-size: 18px;"
             data-lexical-text="true">
             imonials
           </strong>
@@ -236,13 +236,13 @@ test.describe('Autocomplete', () => {
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <strong
             class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
-            style="font-size: 17px;"
+            style="font-size: 18px;"
             data-lexical-text="true">
             Test
           </strong>
           <strong
             class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
-            style="font-size: 17px; display: none"
+            style="font-size: 18px; display: none"
             data-lexical-text="true">
             imonials
           </strong>
@@ -258,13 +258,13 @@ test.describe('Autocomplete', () => {
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <strong
             class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
-            style="font-size: 17px;"
+            style="font-size: 18px;"
             data-lexical-text="true">
             Test
           </strong>
           <strong
             class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic PlaygroundEditorTheme__autocomplete"
-            style="font-size: 17px;"
+            style="font-size: 18px;"
             data-lexical-text="true">
             imonials (TAB)
           </strong>
@@ -274,13 +274,13 @@ test.describe('Autocomplete', () => {
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <strong
             class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
-            style="font-size: 17px;"
+            style="font-size: 18px;"
             data-lexical-text="true">
             Test
           </strong>
           <strong
             class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic PlaygroundEditorTheme__autocomplete"
-            style="font-size: 17px; display: none"
+            style="font-size: 18px; display: none"
             data-lexical-text="true">
             imonials (TAB)
           </strong>

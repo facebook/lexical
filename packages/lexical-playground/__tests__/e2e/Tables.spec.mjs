@@ -8,11 +8,13 @@
 
 import {
   deleteBackward,
+  extendToNextWord,
   moveDown,
   moveLeft,
   moveRight,
   moveToEditorBeginning,
   moveToEditorEnd,
+  moveToLineEnd,
   moveUp,
   pressBackspace,
   selectAll,
@@ -2025,7 +2027,7 @@ test.describe.parallel('Tables', () => {
               <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
             </th>
           </tr>
-          <tr dir="auto" style="height: 87px">
+          <tr dir="auto" style="height: 89px">
             <td class="PlaygroundEditorTheme__tableCell" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
             </td>
@@ -2055,7 +2057,7 @@ test.describe.parallel('Tables', () => {
         // flaky fix: +- 1px for the height assertion
         actualHtml.replace(
           '<tr dir="auto" style="height: 88px">',
-          '<tr dir="auto" style="height: 87px">',
+          '<tr dir="auto" style="height: 89px">',
         ),
     );
   });
@@ -8411,6 +8413,8 @@ test.describe.parallel('Tables', () => {
         .locator('p')
         .filter({hasText: 'before'})
         .click({force: true}); // `force` to ignore playwright blocking due to TableCellResizer interception
+      // move the cursor to the end of the word
+      await moveToLineEnd(page);
       await page.keyboard.down('Shift');
       await pageOrFrame
         .locator('table table > tr:first-of-type > th:first-of-type')
@@ -8419,7 +8423,7 @@ test.describe.parallel('Tables', () => {
 
       // Assert the selection is a range selection solely within the cell containing the nested table.
       await assertSelection(page, {
-        anchorOffset: 5, // at the end of the word "before"
+        anchorOffset: 6, // at the end of the word "before"
         anchorPath: TEXT_BEFORE_NESTED_TABLE,
         focusOffset: 1,
         focusPath: END_OF_INNER_TABLE,
@@ -8478,14 +8482,18 @@ test.describe.parallel('Tables', () => {
         .locator('table table > tr:first-of-type > th:first-of-type')
         .click();
       await page.keyboard.down('Shift');
-      await pageOrFrame.locator('p').filter({hasText: 'before'}).click();
+
+      // workaround to ensure you reach the end of the word
+      await pageOrFrame.locator('p span').filter({hasText: 'before'}).click();
+      await extendToNextWord(page);
+
       await page.keyboard.up('Shift');
 
       // Assert the selection is a range selection solely within the cell containing the nested table.
       await assertSelection(page, {
         anchorOffset: 1, // anchor moves to the end of the table
         anchorPath: END_OF_INNER_TABLE,
-        focusOffset: 5,
+        focusOffset: 6,
         focusPath: TEXT_BEFORE_NESTED_TABLE,
       });
     });
@@ -8510,7 +8518,11 @@ test.describe.parallel('Tables', () => {
 
       await pageOrFrame.locator('table table td').click();
       await page.keyboard.down('Shift');
-      await pageOrFrame.locator('p').filter({hasText: 'after'}).click();
+
+      // workaround to ensure you reach the end of the word
+      await pageOrFrame.locator('p span').filter({hasText: 'after'}).click();
+      await extendToNextWord(page);
+
       await page.keyboard.up('Shift');
 
       // Assert the selection is a range selection solely within the cell containing the nested table.

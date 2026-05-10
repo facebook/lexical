@@ -72,6 +72,7 @@ import {Dispatch, useCallback, useEffect, useState} from 'react';
 import {useSettings} from '../../context/SettingsContext';
 import {
   blockTypeToBlockName,
+  DEFAULT_FONT_SIZE,
   useToolbarState,
 } from '../../context/ToolbarContext';
 import useModal from '../../hooks/useModal';
@@ -743,7 +744,11 @@ export default function ToolbarPlugin({
       updateToolbarState('isCode', selection.hasFormat('code'));
       updateToolbarState(
         'fontSize',
-        $getSelectionStyleValueForProperty(selection, 'font-size', '15px'),
+        $getSelectionStyleValueForProperty(
+          selection,
+          'font-size',
+          `${DEFAULT_FONT_SIZE}px`,
+        ),
       );
       updateToolbarState('isLowercase', selection.hasFormat('lowercase'));
       updateToolbarState('isUppercase', selection.hasFormat('uppercase'));

@@ -1427,8 +1427,20 @@ export function scrollIntoViewIfNeeded(
   while (element !== null) {
     const isBodyElement = element === doc.body;
     if (isBodyElement) {
-      targetTop = 0;
-      targetBottom = getWindow(editor).innerHeight;
+      // On mobile, the on-screen keyboard shrinks the visual viewport but
+      // not the layout viewport (innerHeight).
+      // selectionRect comes from getBoundingClientRect in layout-viewport coords,
+      // so we must compare against visualViewport bounds,
+      // or the caret stays behind the keyboard.
+      const visualViewport = defaultView.visualViewport;
+      if (visualViewport) {
+        const offsetTop = visualViewport.offsetTop;
+        targetTop = offsetTop;
+        targetBottom = offsetTop + visualViewport.height;
+      } else {
+        targetTop = 0;
+        targetBottom = getWindow(editor).innerHeight;
+      }
       // Account for CSS scroll-padding on the document element
       const computedStyle = defaultView.getComputedStyle(doc.documentElement);
       const scrollPaddingTop = parseFloat(computedStyle.scrollPaddingTop);

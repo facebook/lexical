@@ -333,7 +333,19 @@ function $applyAllTransforms(
         node !== undefined &&
         $isNodeValidForTransform(node, compositionKey)
       ) {
-        $applyTransforms(editor, node, transformsCache);
+        if (
+          $isElementNode(node) &&
+          node.isInline() &&
+          node.canBeEmpty() &&
+          node.isEmpty()
+        ) {
+          node.remove();
+          console.warn(
+            `Emptyable inline elements are removed from the state, so returning 'true' from ${node.constructor.name}.canBeEmpty() is not allowed`,
+          );
+        } else {
+          $applyTransforms(editor, node, transformsCache);
+        }
       }
     }
 

@@ -29,6 +29,7 @@ import {
 import {JSDOM} from 'jsdom';
 import * as lexical from 'lexical';
 import {
+  $create,
   $createLineBreakNode,
   $createNodeSelection,
   $createParagraphNode,
@@ -95,6 +96,7 @@ import {
   expectHtmlToBeEqual,
   html,
   TestComposer,
+  TestInlineElementNode,
   TestTextNode,
 } from '../utils';
 
@@ -993,6 +995,66 @@ describe('LexicalEditor tests', () => {
 
     removeParagraphTransform();
     removeTextNodeTransform();
+  });
+
+  it('empty inline nodes are removed and do not trigger their own registred transforms #8205', async () => {
+    init();
+
+    class EmptyableInlineNode extends TestInlineElementNode {
+      canBeEmpty() {
+        return true;
+      }
+    }
+    const executeInlineNodeTransform = vi.fn();
+
+    const removeParagraphTransform = editor.registerNodeTransform(
+      EmptyableInlineNode,
+      executeInlineNodeTransform,
+    );
+
+    await editor.update(() => {
+      const root = $getRoot();
+      const paragraph = $createParagraphNode();
+      root.append(paragraph);
+      paragraph.append(
+        $create(EmptyableInlineNode),
+        $create(EmptyableInlineNode),
+      );
+    });
+
+    await editor.update(() => {
+      const root = $getRoot();
+      const paragraph = root.getFirstChild();
+      assert($isParagraphNode(paragraph));
+
+      // An empty inline element cannot be inserted
+      expect(paragraph.isEmpty()).toBe(true);
+
+      paragraph.append(
+        $create(EmptyableInlineNode).append($createTextNode('foo')),
+      );
+    });
+
+    await editor.update(() => {
+      const root = $getRoot();
+      const paragraph = root.getFirstChild();
+      assert($isParagraphNode(paragraph));
+      const inlineNode = paragraph.getFirstChild();
+      assert(inlineNode instanceof EmptyableInlineNode);
+
+      inlineNode.getFirstChildOrThrow().remove();
+    });
+
+    await editor.update(() => {
+      const root = $getRoot();
+      const paragraph = root.getFirstChild();
+      assert($isParagraphNode(paragraph));
+
+      expect(paragraph.isEmpty()).toBe(true);
+      expect(executeInlineNodeTransform).toHaveBeenCalledTimes(0);
+    });
+
+    removeParagraphTransform();
   });
 
   it('transforms do not discard unintentional dirtyElements', () => {

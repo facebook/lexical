@@ -1849,7 +1849,24 @@ export class RangeSelection implements BaseSelection {
           }
         }
         if (state.type === 'merge-block') {
+          // `block` is the anchor-side block; `caret.origin` is the
+          // adjacent (previous-direction) block we descended into.
           const {caret, block} = state;
+          // Empty adjacent block at the same nesting level: remove it
+          // instead of merging, so the current block's type (e.g.
+          // heading) survives. Limiting to a shared parent leaves
+          // structural wrappers like a ListNode containing an empty
+          // ListItemNode to the default cross-block merge — the
+          // ListNode is not considered empty just because its only
+          // child is.
+          if (
+            caret.origin.isEmpty() &&
+            !block.isEmpty() &&
+            caret.origin.getParent() === block.getParent()
+          ) {
+            caret.origin.remove(true);
+            return;
+          }
           $updateRangeSelectionFromCaretRange(
             this,
             $getCaretRange(

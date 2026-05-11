@@ -617,9 +617,18 @@ export type EscapeFormatTriggerConfig = {
  *     },
  *   })
  *   ```
+ *
+ * @property normalizeInlineElements - Adds normalization for each
+ * subclass of ElementNode, which removes empty inline elements.
+ * This option is intended to facilitate a smooth migration
+ * from the plugin API and may be removed in the future
+ *
+ * Default: true
+ *
  */
 export interface RichTextConfig {
   escapeFormatTriggers: EscapeFormatTriggerConfig;
+  normalizeInlineElements: boolean;
 }
 
 const DEFAULT_RICH_TEXT_CONFIG: RichTextConfig = {
@@ -628,6 +637,7 @@ const DEFAULT_RICH_TEXT_CONFIG: RichTextConfig = {
     lowercase: {enter: true, space: true, tab: true},
     uppercase: {enter: true, space: true, tab: true},
   },
+  normalizeInlineElements: true,
 };
 
 function $escapeFormatsForTrigger(
@@ -723,7 +733,29 @@ export function registerRichText(
   escapeFormatTriggers: ReadonlySignal<EscapeFormatTriggerConfig> = signal(
     DEFAULT_RICH_TEXT_CONFIG.escapeFormatTriggers,
   ),
+  normalizeInlineElements: boolean = false,
 ): () => void {
+  if (normalizeInlineElements) {
+    for (const {klass, transforms} of editor._nodes.values()) {
+      if (
+        klass.prototype instanceof ElementNode &&
+        klass.prototype.isInline !== ElementNode.prototype.isInline
+      ) {
+        const deleteEmptyInline = (node: LexicalNode) => {
+          if ($isElementNode(node) && node.isInline() && node.isEmpty()) {
+            node.remove();
+            if (__DEV__ && node.canBeEmpty()) {
+              console.warn(
+                `Emptyable inline elements are removed from the EditorState, so returning 'true' from ${node.constructor.name}.canBeEmpty() is not allowed`,
+              );
+            }
+          }
+        };
+        transforms.add(deleteEmptyInline);
+      }
+    }
+  }
+
   const removeListener = mergeRegister(
     editor.registerCommand(
       CLICK_COMMAND,
@@ -1358,8 +1390,14 @@ export const RichTextExtension = defineExtension({
   mergeConfig: mergeRichTextConfig,
   name: '@lexical/rich-text',
   nodes: () => [HeadingNode, QuoteNode],
-  register: (editor, _config, state) =>
-    effect(() =>
-      registerRichText(editor, state.getOutput().escapeFormatTriggers),
-    ),
+  register: (editor, _config, state) => {
+    const {escapeFormatTriggers, normalizeInlineElements} = state.getOutput();
+    return effect(() =>
+      registerRichText(
+        editor,
+        escapeFormatTriggers,
+        normalizeInlineElements.value,
+      ),
+    );
+  },
 });

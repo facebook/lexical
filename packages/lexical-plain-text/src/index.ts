@@ -6,7 +6,7 @@
  *
  */
 
-import type {CommandPayloadType, LexicalEditor} from 'lexical';
+import type {CommandPayloadType, LexicalEditor, LexicalNode} from 'lexical';
 
 import {
   $getHtmlContent,
@@ -15,6 +15,7 @@ import {
   $writeDragSourceToDataTransfer,
 } from '@lexical/clipboard';
 import {DragonExtension} from '@lexical/dragon';
+import {effect, namedSignals} from '@lexical/extension';
 import {
   $moveCharacter,
   $shouldOverrideDefaultCharacterSelection,
@@ -22,6 +23,7 @@ import {
 import {mergeRegister, objectKlassEquals} from '@lexical/utils';
 import {
   $getSelection,
+  $isElementNode,
   $isRangeSelection,
   $selectAll,
   COMMAND_PRIORITY_EDITOR,
@@ -34,6 +36,7 @@ import {
   DELETE_WORD_COMMAND,
   DRAGSTART_COMMAND,
   DROP_COMMAND,
+  ElementNode,
   INSERT_LINE_BREAK_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
@@ -44,6 +47,7 @@ import {
   PASTE_COMMAND,
   PASTE_TAG,
   REMOVE_TEXT_COMMAND,
+  safeCast,
   SELECT_ALL_COMMAND,
 } from 'lexical';
 import {
@@ -117,7 +121,48 @@ function onCutForPlainText(
   });
 }
 
-export function registerPlainText(editor: LexicalEditor): () => void {
+/**
+ * @property normalizeInlineElements - Adds normalization for each
+ * subclass of ElementNode, which removes empty inline elements.
+ * This option is intended to facilitate a smooth migration
+ * from the plugin API and may be removed in the future
+ *
+ * Default: true
+ *
+ */
+export interface PlainTextConfig {
+  normalizeInlineElements: boolean;
+}
+
+const DEFAULT_PLAIN_TEXT_CONFIG = {
+  normalizeInlineElements: true,
+};
+
+export function registerPlainText(
+  editor: LexicalEditor,
+  normalizeInlineElements: boolean = false,
+): () => void {
+  if (normalizeInlineElements) {
+    for (const {klass, transforms} of editor._nodes.values()) {
+      if (
+        klass.prototype instanceof ElementNode &&
+        klass.prototype.isInline !== ElementNode.prototype.isInline
+      ) {
+        const deleteEmptyInline = (node: LexicalNode) => {
+          if ($isElementNode(node) && node.isInline() && node.isEmpty()) {
+            node.remove();
+            if (__DEV__ && node.canBeEmpty()) {
+              console.warn(
+                `Emptyable inline elements are removed from the EditorState, so returning 'true' from ${node.constructor.name}.canBeEmpty() is not allowed`,
+              );
+            }
+          }
+        };
+        transforms.add(deleteEmptyInline);
+      }
+    }
+  }
+
   const removeListener = mergeRegister(
     editor.registerCommand<boolean>(
       DELETE_CHARACTER_COMMAND,
@@ -421,8 +466,16 @@ export function registerPlainText(editor: LexicalEditor): () => void {
  * An extension to register \@lexical/plain-text behavior
  */
 export const PlainTextExtension = defineExtension({
+  build: (_editor, config) => namedSignals(config),
+  config: safeCast<PlainTextConfig>(DEFAULT_PLAIN_TEXT_CONFIG),
   conflictsWith: ['@lexical/rich-text'],
   dependencies: [DragonExtension],
   name: '@lexical/plain-text',
-  register: registerPlainText,
+  register: (editor, _config, state) =>
+    effect(() =>
+      registerPlainText(
+        editor,
+        state.getOutput().normalizeInlineElements.value,
+      ),
+    ),
 });

@@ -554,7 +554,7 @@ test.describe.parallel('TextFormatting', () => {
       html`
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello</span>
-          <span style="font-size: 17px;" data-lexical-text="true">world</span>
+          <span style="font-size: 18px;" data-lexical-text="true">world</span>
           <span data-lexical-text="true">!</span>
         </p>
       `,
@@ -586,8 +586,8 @@ test.describe.parallel('TextFormatting', () => {
       page,
       html`
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <span style="font-size: 17px;" data-lexical-text="true">Hello</span>
-          <span style="font-size: 19px;" data-lexical-text="true">world!</span>
+          <span style="font-size: 18px;" data-lexical-text="true">Hello</span>
+          <span style="font-size: 20px;" data-lexical-text="true">world!</span>
         </p>
       `,
     );
@@ -618,7 +618,7 @@ test.describe.parallel('TextFormatting', () => {
       html`
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello</span>
-          <span style="font-size: 13px;" data-lexical-text="true">world</span>
+          <span style="font-size: 14px;" data-lexical-text="true">world</span>
           <span data-lexical-text="true">!</span>
         </p>
       `,
@@ -650,7 +650,7 @@ test.describe.parallel('TextFormatting', () => {
       page,
       html`
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <span style="font-size: 13px;" data-lexical-text="true">Hello</span>
+          <span style="font-size: 14px;" data-lexical-text="true">Hello</span>
           <span style="font-size: 12px;" data-lexical-text="true">world!</span>
         </p>
       `,
@@ -683,7 +683,7 @@ test.describe.parallel('TextFormatting', () => {
       html`
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello</span>
-          <span style="font-size: 17px;" data-lexical-text="true">world</span>
+          <span style="font-size: 18px;" data-lexical-text="true">world</span>
           <span data-lexical-text="true">!</span>
         </p>
       `,
@@ -705,7 +705,7 @@ test.describe.parallel('TextFormatting', () => {
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello</span>
           <span
-            style="font-size: 17px; font-family: Georgia;"
+            style="font-size: 18px; font-family: Georgia;"
             data-lexical-text="true">
             world
           </span>
@@ -729,7 +729,7 @@ test.describe.parallel('TextFormatting', () => {
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello</span>
           <span
-            style="font-size: 15px; font-family: Georgia;"
+            style="font-size: 16px; font-family: Georgia;"
             data-lexical-text="true">
             world
           </span>

@@ -58,6 +58,42 @@ export default defineConfig({
           name: 'integration',
         },
       },
+      {
+        extends: true,
+        test: {
+          benchmark: {
+            exclude: ['**/node_modules/**', '**/__bench__/dom/**'],
+            include: ['packages/*/src/__bench__/*.bench.ts'],
+          },
+          environment: 'node',
+          name: 'bench',
+        },
+      },
+      {
+        define: {
+          IS_REACT_ACT_ENVIRONMENT: true,
+          __DEV__: true,
+        },
+        extends: true,
+        plugins: [react()],
+        test: {
+          benchmark: {
+            exclude: ['**/node_modules/**'],
+            include: ['packages/*/src/__bench__/dom/**/*.bench.ts'],
+          },
+          env: {
+            LEXICAL_VERSION: JSON.stringify(
+              `${process.env.npm_package_version}+git`,
+            ),
+          },
+          environment: 'jsdom',
+          name: 'bench-dom',
+          setupFiles: ['./vitest.setup.mts'],
+          typecheck: {
+            tsconfig: './tsconfig.test.json',
+          },
+        },
+      },
     ],
   },
 });

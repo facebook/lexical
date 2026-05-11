@@ -38,8 +38,10 @@ import {
   IS_ALIGN_START,
 } from './LexicalConstants';
 import {EditorState} from './LexicalEditorState';
+import {cloneMap} from './LexicalGenMap';
 import {
   $createChildrenArray,
+  $isRootOrShadowRoot,
   cloneDecorators,
   getElementByKeyOrThrow,
   setMutatedNode,
@@ -177,7 +179,7 @@ export function $getReconciledDirection(
     return null;
   }
   const parent = node.getParentOrThrow();
-  if (!$isRootNode(parent) || parent.__dir !== null) {
+  if (!$isRootOrShadowRoot(parent) || parent.__dir !== null) {
     return null;
   }
   return 'auto';
@@ -851,7 +853,7 @@ export function $reconcileRoot(
   activePrevNodeMap = prevEditorState._nodeMap;
   activeNextNodeMap = nextEditorState._nodeMap;
   activeEditorStateReadOnly = nextEditorState._readOnly;
-  activePrevKeyToDOMMap = new Map(editor._keyToDOMMap);
+  activePrevKeyToDOMMap = cloneMap(editor._keyToDOMMap);
   // We keep track of mutated nodes so we can trigger mutation
   // listeners later in the update cycle.
   const currentMutatedNodes = new Map();

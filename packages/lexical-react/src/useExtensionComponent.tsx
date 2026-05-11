@@ -50,9 +50,8 @@ export function usePeerExtensionDependency<
  * @returns `getExtensionConfigFromEditor(useLexicalComposerContext()[0], extension).Component`
  */
 export function useExtensionComponent<
-  Props extends Record<never, never>,
-  OutputComponent extends React.ComponentType<Props>,
-  Extension extends OutputComponentExtension<OutputComponent>,
->(extension: Extension): OutputComponent {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- contravariant in props
+  OutputComponent extends React.ComponentType<any>,
+>(extension: OutputComponentExtension<OutputComponent>): OutputComponent {
   return useExtensionDependency(extension).output.Component;
 }

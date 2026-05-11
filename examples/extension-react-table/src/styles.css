@@ -69,7 +69,7 @@ h1 {
 .editor-input {
   min-height: 150px;
   resize: none;
-  font-size: 15px;
+  font-size: 16px;
   caret-color: rgb(5, 5, 5);
   position: relative;
   tab-size: 1;
@@ -85,7 +85,7 @@ h1 {
   text-overflow: ellipsis;
   top: 15px;
   left: 10px;
-  font-size: 15px;
+  font-size: 16px;
   user-select: none;
   display: inline-block;
   pointer-events: none;
@@ -231,7 +231,7 @@ h1 {
 }
 
 .editor-heading-h2 {
-  font-size: 15px;
+  font-size: 16px;
   color: rgb(101, 103, 107);
   font-weight: 700;
   margin: 0;
@@ -243,7 +243,7 @@ h1 {
 .editor-quote {
   margin: 0;
   margin-left: 20px;
-  font-size: 15px;
+  font-size: 16px;
   color: rgb(101, 103, 107);
   border-left-color: rgb(206, 208, 212);
   border-left-width: 4px;

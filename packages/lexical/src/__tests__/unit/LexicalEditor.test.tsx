@@ -1352,6 +1352,42 @@ describe('LexicalEditor tests', () => {
     });
   }
 
+  it('setRootElement preserves queued updates and tags across reset (#7360)', () => {
+    const rootElement = document.createElement('div');
+    rootElement.contentEditable = 'true';
+    document.body.appendChild(rootElement);
+
+    const newEditor = createTestEditor({onError: vi.fn()});
+
+    let queuedRan = false;
+    newEditor._updates.push([
+      () => {
+        queuedRan = true;
+      },
+      undefined,
+    ]);
+    newEditor._updateTags.add('custom_tag');
+
+    let listenerTags: Set<string> | null = null;
+    newEditor.registerUpdateListener(({tags}) => {
+      if (tags.has('custom_tag')) {
+        listenerTags = tags;
+      }
+    });
+
+    newEditor.setRootElement(rootElement);
+
+    // setRootElement calls $commitPendingUpdates which drains _updates via
+    // $triggerEnqueuedUpdates. Before the fix, resetEditor wiped _updates
+    // and _updateTags despite preserving _pendingEditorState, so the queued
+    // callback never ran and the tag never reached update listeners.
+    expect(queuedRan).toBe(true);
+    expect(listenerTags).not.toBeNull();
+    expect(listenerTags!.has('custom_tag')).toBe(true);
+
+    document.body.removeChild(rootElement);
+  });
+
   describe('With node decorators', () => {
     function useDecorators() {
       const [decorators, setDecorators] = useState(() =>

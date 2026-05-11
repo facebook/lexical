@@ -22,7 +22,9 @@ import {
   $createTextNode,
   $getRoot,
   $getSelection,
+  $isElementNode,
   $isRangeSelection,
+  $isTextNode,
   LexicalEditor,
   ParagraphNode,
   TextNode,
@@ -373,8 +375,11 @@ describe('LexicalTypeaheadMenuPlugin', () => {
         editor!.update(() => {
           const root = $getRoot();
           const p = root.getFirstChildOrThrow();
+          if (!$isElementNode(p)) {
+            return;
+          }
           const textNode = p.getFirstChild();
-          if (textNode !== null && textNode.getType() === 'text') {
+          if ($isTextNode(textNode)) {
             textNode.setTextContent('');
             textNode.selectEnd();
           }
@@ -492,8 +497,11 @@ describe('LexicalTypeaheadMenuPlugin', () => {
         editor!.update(() => {
           const root = $getRoot();
           const p = root.getFirstChildOrThrow();
+          if (!$isElementNode(p)) {
+            return;
+          }
           const textNode = p.getFirstChild();
-          if (textNode !== null && textNode.getType() === 'text') {
+          if ($isTextNode(textNode)) {
             textNode.setTextContent('');
             textNode.selectEnd();
           }

@@ -1350,6 +1350,7 @@ describe('Markdown', () => {
         replace: () => {
           return false;
         },
+        triggerOnEnter: true,
         type: 'multiline-element',
       };
 
@@ -1405,6 +1406,7 @@ describe('Markdown', () => {
             node.select(0, 0);
           }
         },
+        triggerOnEnter: true,
         type: 'element',
       };
 

@@ -88,6 +88,12 @@ export type ElementTransformer = {
     isImport: boolean,
   ) => boolean | void;
   type: 'element';
+  /**
+   * When set, `registerMarkdownShortcuts` may run this transformer from `KEY_ENTER_COMMAND`
+   * at end-of-line without requiring a trailing space (the update listener still uses the
+   * space after the markdown token). Omit or false to disable Enter-triggered shortcuts.
+   */
+  triggerOnEnter?: boolean;
 };
 
 export type MultilineElementTransformer = {
@@ -159,6 +165,12 @@ export type MultilineElementTransformer = {
     isImport: boolean,
   ) => boolean | void;
   type: 'multiline-element';
+  /**
+   * When set, `registerMarkdownShortcuts` may run this transformer from `KEY_ENTER_COMMAND`
+   * at end-of-line without requiring a trailing space (the update listener still uses the
+   * space after the markdown token). Omit or false to disable Enter-triggered shortcuts.
+   */
+  triggerOnEnter?: boolean;
 };
 
 export type TextFormatTransformer = Readonly<{
@@ -483,6 +495,7 @@ export const HEADING: ElementTransformer = {
     const tag = ('h' + match[1].length) as HeadingTagType;
     return $createHeadingNode(tag);
   }),
+  triggerOnEnter: true,
   type: 'element',
 };
 
@@ -521,12 +534,12 @@ export const QUOTE: ElementTransformer = {
       node.select(0, 0);
     }
   },
+  triggerOnEnter: true,
   type: 'element',
 };
 
 export const CODE: MultilineElementTransformer = {
   dependencies: [CodeNode],
-
   export: (node: LexicalNode) => {
     if (!$isCodeNode(node)) {
       return null;
@@ -616,11 +629,11 @@ export const CODE: MultilineElementTransformer = {
     CODE.replace(rootNode, null, startMatch, null, linesInBetween, true);
     return [true, lines.length - 1];
   },
+
   regExpEnd: {
     optional: true,
     regExp: CODE_END_REGEX,
   },
-
   regExpStart: CODE_START_REGEX,
 
   replace: (
@@ -680,6 +693,8 @@ export const CODE: MultilineElementTransformer = {
       })(rootNode, children, startMatch, isImport);
     }
   },
+
+  triggerOnEnter: true,
   type: 'multiline-element',
 };
 
@@ -692,6 +707,7 @@ export const UNORDERED_LIST: ElementTransformer = {
   },
   regExp: UNORDERED_LIST_REGEX,
   replace: listReplace('bullet'),
+  triggerOnEnter: true,
   type: 'element',
 };
 
@@ -704,6 +720,7 @@ export const CHECK_LIST: ElementTransformer = {
   },
   regExp: CHECK_LIST_REGEX,
   replace: listReplace('check'),
+  triggerOnEnter: true,
   type: 'element',
 };
 
@@ -716,6 +733,7 @@ export const ORDERED_LIST: ElementTransformer = {
   },
   regExp: ORDERED_LIST_REGEX,
   replace: listReplace('number'),
+  triggerOnEnter: true,
   type: 'element',
 };
 

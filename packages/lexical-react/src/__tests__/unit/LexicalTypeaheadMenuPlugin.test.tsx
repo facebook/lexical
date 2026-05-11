@@ -7,8 +7,8 @@
  */
 
 import {LexicalComposer} from '@lexical/react/LexicalComposer';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
+import {EditorRefPlugin} from '@lexical/react/LexicalEditorRefPlugin';
 import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {
@@ -19,18 +19,14 @@ import {
 } from '@lexical/react/LexicalTypeaheadMenuPlugin';
 import {
   $createParagraphNode,
-  $createTextNode,
   $getRoot,
-  $getSelection,
-  $isElementNode,
-  $isRangeSelection,
-  $isTextNode,
+  DELETE_CHARACTER_COMMAND,
   LexicalEditor,
   ParagraphNode,
   TextNode,
 } from 'lexical';
 import * as React from 'react';
-import {useCallback, useEffect} from 'react';
+import {useCallback} from 'react';
 import ReactDOM from 'react-dom';
 import {createRoot, Root} from 'react-dom/client';
 import * as ReactTestUtils from 'shared/react-test-utils';
@@ -247,6 +243,8 @@ describe('LexicalTypeaheadMenuPlugin', () => {
   });
 
   describe('onClose', () => {
+    let patchedSelectionModify = false;
+
     beforeEach(() => {
       class ResizeObserverMock {
         // LexicalMenu only constructs ResizeObserver and calls observe/unobserve/disconnect.
@@ -256,22 +254,47 @@ describe('LexicalTypeaheadMenuPlugin', () => {
         disconnect() {}
       }
       vi.stubGlobal('ResizeObserver', ResizeObserverMock);
+
+      if (typeof Selection.prototype.modify !== 'function') {
+        patchedSelectionModify = true;
+        Selection.prototype.modify = function (
+          this: Selection,
+          alter: string,
+          direction: string,
+          granularity: string,
+        ): void {
+          const node = this.anchorNode;
+          if (
+            node?.nodeType !== Node.TEXT_NODE ||
+            direction !== 'backward' ||
+            granularity !== 'character'
+          ) {
+            return;
+          }
+          const text = node as Text;
+          const o = this.focusOffset;
+          if (o <= 0) {
+            return;
+          }
+          if (alter === 'extend') {
+            this.setBaseAndExtent(text, o - 1, text, o);
+          } else if (alter === 'move') {
+            this.setBaseAndExtent(text, o - 1, text, o - 1);
+          }
+        };
+      }
     });
 
     afterEach(() => {
       vi.unstubAllGlobals();
+      if (patchedSelectionModify) {
+        delete (Selection.prototype as {modify?: unknown}).modify;
+        patchedSelectionModify = false;
+      }
     });
 
     it('awaits async onClose before unmounting the menu', async () => {
-      const editorRef: {current: LexicalEditor | null} = {current: null};
-
-      function CaptureEditorPlugin() {
-        const [editor] = useLexicalComposerContext();
-        useEffect(() => {
-          editorRef.current = editor;
-        }, [editor]);
-        return null;
-      }
+      const editorRef = React.createRef<LexicalEditor>();
 
       let resolveOnClose!: () => void;
       const onClose = vi.fn(
@@ -338,7 +361,7 @@ describe('LexicalTypeaheadMenuPlugin', () => {
 
       const App = createApp(
         <>
-          <CaptureEditorPlugin />
+          <EditorRefPlugin editorRef={editorRef} />
           <Harness />
         </>,
         [ParagraphNode],
@@ -353,16 +376,11 @@ describe('LexicalTypeaheadMenuPlugin', () => {
 
       await ReactTestUtils.act(async () => {
         editor!.update(() => {
-          const root = $getRoot();
-          root.clear();
-          const p = $createParagraphNode();
-          p.append($createTextNode(''));
-          root.append(p);
-          p.selectEnd();
-          const sel = $getSelection();
-          if ($isRangeSelection(sel)) {
-            sel.insertText('/');
-          }
+          $getRoot()
+            .clear()
+            .append($createParagraphNode())
+            .select()
+            .insertText('/');
         });
       });
 
@@ -372,18 +390,8 @@ describe('LexicalTypeaheadMenuPlugin', () => {
       expect(onClose).not.toHaveBeenCalled();
 
       await ReactTestUtils.act(async () => {
-        editor!.update(() => {
-          const root = $getRoot();
-          const p = root.getFirstChildOrThrow();
-          if (!$isElementNode(p)) {
-            return;
-          }
-          const textNode = p.getFirstChild();
-          if ($isTextNode(textNode)) {
-            textNode.setTextContent('');
-            textNode.selectEnd();
-          }
-        });
+        editor!.dispatchCommand(DELETE_CHARACTER_COMMAND, true);
+        await Promise.resolve();
       });
 
       expect(onClose).toHaveBeenCalledTimes(1);
@@ -402,16 +410,8 @@ describe('LexicalTypeaheadMenuPlugin', () => {
     });
 
     it('runs synchronous onClose before clearing the menu', async () => {
-      const editorRef: {current: LexicalEditor | null} = {current: null};
+      const editorRef = React.createRef<LexicalEditor>();
       const callOrder: string[] = [];
-
-      function CaptureEditorPlugin() {
-        const [editor] = useLexicalComposerContext();
-        useEffect(() => {
-          editorRef.current = editor;
-        }, [editor]);
-        return null;
-      }
 
       const onClose = vi.fn(() => {
         callOrder.push('onClose');
@@ -465,7 +465,7 @@ describe('LexicalTypeaheadMenuPlugin', () => {
 
       const App = createApp(
         <>
-          <CaptureEditorPlugin />
+          <EditorRefPlugin editorRef={editorRef} />
           <Harness />
         </>,
         [ParagraphNode],
@@ -480,32 +480,16 @@ describe('LexicalTypeaheadMenuPlugin', () => {
 
       await ReactTestUtils.act(async () => {
         editor!.update(() => {
-          const root = $getRoot();
-          root.clear();
-          const p = $createParagraphNode();
-          p.append($createTextNode(''));
-          root.append(p);
-          p.selectEnd();
-          const sel = $getSelection();
-          if ($isRangeSelection(sel)) {
-            sel.insertText('/');
-          }
+          $getRoot()
+            .clear()
+            .append($createParagraphNode())
+            .select()
+            .insertText('/');
         });
       });
 
       await ReactTestUtils.act(async () => {
-        editor!.update(() => {
-          const root = $getRoot();
-          const p = root.getFirstChildOrThrow();
-          if (!$isElementNode(p)) {
-            return;
-          }
-          const textNode = p.getFirstChild();
-          if ($isTextNode(textNode)) {
-            textNode.setTextContent('');
-            textNode.selectEnd();
-          }
-        });
+        editor!.dispatchCommand(DELETE_CHARACTER_COMMAND, true);
         await Promise.resolve();
       });
 

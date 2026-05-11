@@ -550,6 +550,10 @@ export function LexicalMenu<TOption extends MenuOption>({
           ) {
             return false;
           }
+          // LOW priority runs before EDITOR; Shift+Enter must reach rich-text line-break handling.
+          if (event !== null && event.shiftKey) {
+            return false;
+          }
           if (event !== null) {
             event.preventDefault();
             event.stopImmediatePropagation();

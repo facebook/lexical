@@ -1408,10 +1408,19 @@ export function getDOMOwnerDocument(
       : null;
 }
 
+/**
+ * Scrolls the window and ancestor scroll containers so `selectionRect` is
+ * visible vertically and horizontally.
+ *
+ * @param scrollChainStartElement When provided, the walk toward `document.body`
+ * begins at this element so horizontally scrollable ancestors between the caret
+ * and the editor root (for example a code block) are updated.
+ */
 export function scrollIntoViewIfNeeded(
   editor: LexicalEditor,
   selectionRect: DOMRect,
   rootElement: HTMLElement,
+  scrollChainStartElement?: HTMLElement | null,
 ): void {
   const doc = getDOMOwnerDocument(rootElement);
   const defaultView = getDefaultView(doc);
@@ -1419,13 +1428,23 @@ export function scrollIntoViewIfNeeded(
   if (doc === null || defaultView === null) {
     return;
   }
-  let {top: currentTop, bottom: currentBottom} = selectionRect;
+  let {
+    top: currentTop,
+    bottom: currentBottom,
+    left: currentLeft,
+    right: currentRight,
+  } = selectionRect;
   let targetTop = 0;
   let targetBottom = 0;
-  let element: HTMLElement | null = rootElement;
+  let targetLeft = 0;
+  let targetRight = 0;
+  const element: HTMLElement | null =
+    scrollChainStartElement != null ? scrollChainStartElement : rootElement;
 
-  while (element !== null) {
-    const isBodyElement = element === doc.body;
+  let walk: HTMLElement | null = element;
+
+  while (walk !== null) {
+    const isBodyElement = walk === doc.body;
     if (isBodyElement) {
       // On mobile, the on-screen keyboard shrinks the visual viewport but
       // not the layout viewport (innerHeight).
@@ -1435,26 +1454,41 @@ export function scrollIntoViewIfNeeded(
       const visualViewport = defaultView.visualViewport;
       if (visualViewport) {
         const offsetTop = visualViewport.offsetTop;
+        const offsetLeft = visualViewport.offsetLeft;
         targetTop = offsetTop;
         targetBottom = offsetTop + visualViewport.height;
+        targetLeft = offsetLeft;
+        targetRight = offsetLeft + visualViewport.width;
       } else {
         targetTop = 0;
         targetBottom = getWindow(editor).innerHeight;
+        targetLeft = 0;
+        targetRight = getWindow(editor).innerWidth;
       }
       // Account for CSS scroll-padding on the document element
       const computedStyle = defaultView.getComputedStyle(doc.documentElement);
       const scrollPaddingTop = parseFloat(computedStyle.scrollPaddingTop);
       const scrollPaddingBottom = parseFloat(computedStyle.scrollPaddingBottom);
+      const scrollPaddingLeft = parseFloat(computedStyle.scrollPaddingLeft);
+      const scrollPaddingRight = parseFloat(computedStyle.scrollPaddingRight);
       if (isFinite(scrollPaddingTop)) {
         targetTop += scrollPaddingTop;
       }
       if (isFinite(scrollPaddingBottom)) {
         targetBottom -= scrollPaddingBottom;
       }
+      if (isFinite(scrollPaddingLeft)) {
+        targetLeft += scrollPaddingLeft;
+      }
+      if (isFinite(scrollPaddingRight)) {
+        targetRight -= scrollPaddingRight;
+      }
     } else {
-      const targetRect = element.getBoundingClientRect();
+      const targetRect = walk.getBoundingClientRect();
       targetTop = targetRect.top;
       targetBottom = targetRect.bottom;
+      targetLeft = targetRect.left;
+      targetRight = targetRect.right;
     }
     let diff = 0;
 
@@ -1464,22 +1498,40 @@ export function scrollIntoViewIfNeeded(
       diff = currentBottom - targetBottom;
     }
 
-    if (diff !== 0) {
+    let diffX = 0;
+    if (currentLeft < targetLeft) {
+      diffX = -(targetLeft - currentLeft);
+    } else if (currentRight > targetRight) {
+      diffX = currentRight - targetRight;
+    }
+
+    if (diff !== 0 || diffX !== 0) {
       if (isBodyElement) {
-        // Only handles scrolling of Y axis
-        defaultView.scrollBy(0, diff);
+        defaultView.scrollBy(diffX, diff);
       } else {
-        const scrollTop = element.scrollTop;
-        element.scrollTop += diff;
-        const yOffset = element.scrollTop - scrollTop;
-        currentTop -= yOffset;
-        currentBottom -= yOffset;
+        if (diff !== 0) {
+          const scrollTop = walk.scrollTop;
+          walk.scrollTop += diff;
+          const yOffset = walk.scrollTop - scrollTop;
+          currentTop -= yOffset;
+          currentBottom -= yOffset;
+        }
+        if (diffX !== 0) {
+          const maxScrollX = walk.scrollWidth - walk.clientWidth;
+          if (maxScrollX > 0) {
+            const scrollLeft = walk.scrollLeft;
+            walk.scrollLeft += diffX;
+            const xOffset = walk.scrollLeft - scrollLeft;
+            currentLeft -= xOffset;
+            currentRight -= xOffset;
+          }
+        }
       }
     }
     if (isBodyElement) {
       break;
     }
-    element = getParentElement(element);
+    walk = getParentElement(walk);
   }
 }
 

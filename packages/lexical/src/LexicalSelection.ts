@@ -3208,11 +3208,35 @@ export function $updateDOMSelection(
       } else {
         selectionRect = selectionTarget.getBoundingClientRect();
       }
-      scrollIntoViewIfNeeded(editor, selectionRect, rootElement);
+      scrollIntoViewIfNeeded(
+        editor,
+        selectionRect,
+        rootElement,
+        getDOMScrollChainStartForCaret(selectionTarget),
+      );
     }
   }
 
   markSelectionChangeFromDOMUpdate();
+}
+
+function getDOMScrollChainStartForCaret(
+  selectionTarget: Range | HTMLElement | Text,
+): HTMLElement | null {
+  if (selectionTarget instanceof Text) {
+    return selectionTarget.parentElement;
+  }
+  if (selectionTarget instanceof HTMLElement) {
+    return selectionTarget;
+  }
+  const startContainer = selectionTarget.startContainer;
+  if (startContainer.nodeType === Node.TEXT_NODE) {
+    return (startContainer as Text).parentElement;
+  }
+  if (startContainer.nodeType === Node.ELEMENT_NODE) {
+    return startContainer as HTMLElement;
+  }
+  return null;
 }
 
 export function $insertNodes(nodes: Array<LexicalNode>) {

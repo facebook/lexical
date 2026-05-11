@@ -397,10 +397,15 @@ function internalMarkParentElementsAsDirty(
   }
 }
 
-// TODO #6031 this function or their callers have to adjust selection (i.e. insertBefore)
 /**
  * Removes a node from its parent, updating all necessary pointers and links.
  * @internal
+ *
+ * This function does not adjust the editor's current selection. Callers
+ * that need element-anchored offsets in the old parent to track the child
+ * count change must call `$updateElementSelectionOnCreateDeleteNode` (with
+ * `times = -1`) after invoking this — see `$removeNode`, `replace`,
+ * `insertBefore`, and `insertAfter` for the pattern.
  *
  * This function is for internal use of the library.
  * Please do not use it as it may change in the future.

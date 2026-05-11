@@ -1263,7 +1263,23 @@ export class LexicalNode {
     const writableReplaceWith = replaceWith.getWritable();
     const writableParent = this.getParentOrThrow().getWritable();
     const size = writableParent.__size;
+    // Capture replaceWith's old parent / index before removeFromParent so the
+    // cloned selection's element offsets in that old parent can be adjusted
+    // afterwards. See #6031.
+    const replaceWithOldParent = writableReplaceWith.getParent();
+    const replaceWithOldIndex =
+      replaceWithOldParent !== null
+        ? writableReplaceWith.getIndexWithinParent()
+        : -1;
     removeFromParent(writableReplaceWith);
+    if (replaceWithOldParent !== null && $isRangeSelection(selection)) {
+      $updateElementSelectionOnCreateDeleteNode(
+        selection,
+        replaceWithOldParent,
+        replaceWithOldIndex,
+        -1,
+      );
+    }
     const prevSibling = self.getPreviousSibling();
     const nextSibling = self.getNextSibling();
     const prevKey = self.__prev;
@@ -1332,7 +1348,6 @@ export class LexicalNode {
     if (oldParent !== null) {
       // TODO: this is O(n), can we improve?
       const oldIndex = nodeToInsert.getIndexWithinParent();
-      removeFromParent(writableNodeToInsert);
       if ($isRangeSelection(selection)) {
         const oldParentKey = oldParent.__key;
         const anchor = selection.anchor;
@@ -1345,6 +1360,21 @@ export class LexicalNode {
           focus.type === 'element' &&
           focus.key === oldParentKey &&
           focus.offset === oldIndex + 1;
+      }
+      removeFromParent(writableNodeToInsert);
+      // Adjust element-anchored offsets in oldParent to track its reduced
+      // child count. The boolean flags captured above
+      // (elementAnchorSelectionOnNode / elementFocusSelectionOnNode) recorded
+      // whether anchor/focus sat at oldIndex+1 before this removal; the
+      // post-insertion block below uses them to re-anchor onto the moved
+      // node in its new parent. See #6031.
+      if (restoreSelection && $isRangeSelection(selection)) {
+        $updateElementSelectionOnCreateDeleteNode(
+          selection,
+          oldParent,
+          oldIndex,
+          -1,
+        );
       }
     }
     const nextSibling = this.getNextSibling();
@@ -1396,7 +1426,28 @@ export class LexicalNode {
     const writableSelf = this.getWritable();
     const writableNodeToInsert = nodeToInsert.getWritable();
     const insertKey = writableNodeToInsert.__key;
+    const selection = $getSelection();
+    // Capture nodeToInsert's old parent / index before detaching so the
+    // selection's element offsets in that old parent can be adjusted
+    // afterwards. See #6031.
+    const insertOldParent = writableNodeToInsert.getParent();
+    const insertOldIndex =
+      insertOldParent !== null
+        ? writableNodeToInsert.getIndexWithinParent()
+        : -1;
     removeFromParent(writableNodeToInsert);
+    if (
+      insertOldParent !== null &&
+      restoreSelection &&
+      $isRangeSelection(selection)
+    ) {
+      $updateElementSelectionOnCreateDeleteNode(
+        selection,
+        insertOldParent,
+        insertOldIndex,
+        -1,
+      );
+    }
     const prevSibling = this.getPreviousSibling();
     const writableParent = this.getParentOrThrow().getWritable();
     const prevKey = writableSelf.__prev;
@@ -1413,7 +1464,6 @@ export class LexicalNode {
     writableNodeToInsert.__prev = prevKey;
     writableNodeToInsert.__next = writableSelf.__key;
     writableNodeToInsert.__parent = writableSelf.__parent;
-    const selection = $getSelection();
     if (restoreSelection && $isRangeSelection(selection)) {
       const parent = this.getParentOrThrow();
       $updateElementSelectionOnCreateDeleteNode(selection, parent, index);

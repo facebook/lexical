@@ -27,6 +27,7 @@ import {
   SerializedTextNode,
   TextNode,
 } from 'lexical';
+import invariant from 'shared/invariant';
 import {
   afterAll,
   beforeAll,
@@ -41,6 +42,7 @@ import {LexicalNode} from '../../LexicalNode';
 import {$createParagraphNode} from '../../nodes/LexicalParagraphNode';
 import {$createTextNode} from '../../nodes/LexicalTextNode';
 import {
+  $createTestElementNode,
   $createTestInlineElementNode,
   initializeUnitTest,
   TestElementNode,
@@ -1614,6 +1616,263 @@ describe('LexicalNode tests', () => {
       theme: {},
     },
   );
+});
+
+describe('Element-anchored selection on old parent (#6031)', () => {
+  type Mover = (target: ElementNode, mover: ElementNode) => void;
+  type MethodSpec = {
+    name: string;
+    act: Mover;
+    actNoRestore: Mover | null;
+  };
+  const methods: ReadonlyArray<MethodSpec> = [
+    {
+      act: (target, mover) => target.insertBefore(mover),
+      actNoRestore: (target, mover) => target.insertBefore(mover, false),
+      name: 'insertBefore',
+    },
+    {
+      act: (target, mover) => target.insertAfter(mover),
+      actNoRestore: (target, mover) => target.insertAfter(mover, false),
+      name: 'insertAfter',
+    },
+    {
+      act: (target, mover) => target.replace(mover),
+      actNoRestore: null,
+      name: 'replace',
+    },
+  ];
+  const methodsWithRestoreFlag = methods.filter(
+    (m): m is MethodSpec & {actNoRestore: Mover} => m.actNoRestore !== null,
+  );
+
+  describe('cross-parent move', () => {
+    initializeUnitTest(testEnv => {
+      // Setup: root contains two TestElementNode containers. `source` holds
+      // [mover, a2, a3]; `target` holds [inTarget]. Each test acts via one
+      // of the three methods to move `mover` from source into target so
+      // source's child count drops from 3 to 2.
+      type Refs = {
+        source: ElementNode;
+        target: ElementNode;
+        mover: ElementNode;
+        inTarget: ElementNode;
+      };
+      const $setupTwoContainers = (out: Refs) => {
+        const root = $getRoot().clear();
+        out.source = $createTestElementNode();
+        out.target = $createTestElementNode();
+        out.mover = $createParagraphNode();
+        const a2 = $createParagraphNode();
+        const a3 = $createParagraphNode();
+        out.inTarget = $createParagraphNode();
+        out.source.append(out.mover, a2, a3);
+        out.target.append(out.inTarget);
+        root.append(out.source, out.target);
+      };
+
+      test.for(methods)(
+        '$name shifts offset > removed index in source parent',
+        ({act}) => {
+          const {editor} = testEnv;
+          let sourceKey = '';
+          editor.update(
+            () => {
+              const refs = {} as Refs;
+              $setupTwoContainers(refs);
+              sourceKey = refs.source.__key;
+              // Collapsed at end of source. 3 > removedIndex (0), so the
+              // -1 shift must drive it to 2.
+              refs.source.select(3, 3);
+              act(refs.inTarget, refs.mover);
+            },
+            {discrete: true},
+          );
+          editor.read(() => {
+            const sel = $getSelection();
+            invariant($isRangeSelection(sel));
+            expect(sel.anchor.key).toBe(sourceKey);
+            expect(sel.anchor.type).toBe('element');
+            expect(sel.anchor.offset).toBe(2);
+            expect(sel.focus.offset).toBe(2);
+          });
+        },
+      );
+
+      test.for(methods)(
+        '$name does not shift offset at removed index (boundary)',
+        ({act}) => {
+          const {editor} = testEnv;
+          let sourceKey = '';
+          editor.update(
+            () => {
+              const refs = {} as Refs;
+              $setupTwoContainers(refs);
+              sourceKey = refs.source.__key;
+              // Collapsed at source offset 0. The helper uses
+              // `nodeOffset < selectionOffset` for negative shifts, so
+              // offset == removedIndex (both 0) must stay.
+              refs.source.select(0, 0);
+              act(refs.inTarget, refs.mover);
+            },
+            {discrete: true},
+          );
+          editor.read(() => {
+            const sel = $getSelection();
+            invariant($isRangeSelection(sel));
+            expect(sel.anchor.key).toBe(sourceKey);
+            expect(sel.anchor.offset).toBe(0);
+            expect(sel.focus.offset).toBe(0);
+          });
+        },
+      );
+
+      test.for(methods)(
+        '$name shifts only the past-boundary side of a non-collapsed selection',
+        ({act}) => {
+          const {editor} = testEnv;
+          let sourceKey = '';
+          editor.update(
+            () => {
+              const refs = {} as Refs;
+              $setupTwoContainers(refs);
+              sourceKey = refs.source.__key;
+              // Anchor at 0 (boundary), focus at 3 (past). After removing
+              // index 0: anchor stays at 0, focus shifts to 2.
+              refs.source.select(0, 3);
+              act(refs.inTarget, refs.mover);
+            },
+            {discrete: true},
+          );
+          editor.read(() => {
+            const sel = $getSelection();
+            invariant($isRangeSelection(sel));
+            expect(sel.anchor.key).toBe(sourceKey);
+            expect(sel.anchor.offset).toBe(0);
+            expect(sel.focus.key).toBe(sourceKey);
+            expect(sel.focus.offset).toBe(2);
+          });
+        },
+      );
+
+      test.for(methods)(
+        '$name leaves selection in an unrelated third parent untouched',
+        ({act}) => {
+          const {editor} = testEnv;
+          let sourceKey = '';
+          let otherKey = '';
+          editor.update(
+            () => {
+              const root = $getRoot().clear();
+              const source = $createTestElementNode();
+              const target = $createTestElementNode();
+              const other = $createTestElementNode();
+              const mover = $createParagraphNode();
+              const a2 = $createParagraphNode();
+              const a3 = $createParagraphNode();
+              const inTarget = $createParagraphNode();
+              const inOther = $createParagraphNode();
+              source.append(mover, a2, a3);
+              target.append(inTarget);
+              other.append(inOther);
+              root.append(source, target, other);
+              sourceKey = source.__key;
+              otherKey = other.__key;
+              // Cursor sits in `other`, which the move does not touch.
+              other.select(1, 1);
+              act(inTarget, mover);
+            },
+            {discrete: true},
+          );
+          editor.read(() => {
+            const sel = $getSelection();
+            invariant($isRangeSelection(sel));
+            expect(sel.anchor.key).toBe(otherKey);
+            expect(sel.anchor.offset).toBe(1);
+            expect(sel.focus.key).toBe(otherKey);
+            expect(sel.focus.offset).toBe(1);
+            expect(sourceKey).not.toBe(otherKey);
+          });
+        },
+      );
+
+      test.for(methodsWithRestoreFlag)(
+        '$name with restoreSelection=false skips the source-parent shift',
+        ({actNoRestore}) => {
+          const {editor} = testEnv;
+          let sourceKey = '';
+          editor.update(
+            () => {
+              const refs = {} as Refs;
+              $setupTwoContainers(refs);
+              sourceKey = refs.source.__key;
+              refs.source.select(3, 3);
+              actNoRestore(refs.inTarget, refs.mover);
+            },
+            {discrete: true},
+          );
+          editor.read(() => {
+            const sel = $getSelection();
+            invariant($isRangeSelection(sel));
+            expect(sel.anchor.key).toBe(sourceKey);
+            expect(sel.anchor.offset).toBe(3);
+            expect(sel.focus.offset).toBe(3);
+          });
+        },
+      );
+    });
+  });
+
+  describe('within-parent move', () => {
+    initializeUnitTest(testEnv => {
+      // For within-parent moves the source and target parents coincide.
+      // The pre-removal -1 shift and the post-insertion +1 shift compose
+      // so element-anchored offsets track the (unchanged) visual layout
+      // instead of going stale or out of range, which was the #6031 bug
+      // for callers that did not detect same-parent moves themselves.
+      const methodsForWithinParent = methodsWithRestoreFlag;
+
+      test.for(methodsForWithinParent)(
+        '$name keeps an end-of-parent cursor in range for a no-op move',
+        ({name, act}) => {
+          const {editor} = testEnv;
+          let parentKey = '';
+          editor.update(
+            () => {
+              const root = $getRoot().clear();
+              const parent = $createTestElementNode();
+              const a = $createParagraphNode();
+              const b = $createParagraphNode();
+              parent.append(a, b);
+              root.append(parent);
+              parentKey = parent.__key;
+              // Collapsed at offset 2 (end of [a, b]). Pre-fix this went
+              // out of range when the within-parent move's removeFromParent
+              // shrank `parent` without adjusting the offset.
+              parent.select(2, 2);
+              // Each method is invoked so the move is a layout no-op:
+              // insertBefore: b.insertBefore(a) → a stays before b
+              // insertAfter:  a.insertAfter(b)  → b stays after a
+              if (name === 'insertBefore') {
+                act(b, a);
+              } else {
+                act(a, b);
+              }
+            },
+            {discrete: true},
+          );
+
+          editor.read(() => {
+            const sel = $getSelection();
+            invariant($isRangeSelection(sel));
+            expect(sel.anchor.key).toBe(parentKey);
+            expect(sel.anchor.offset).toBe(2);
+            expect(sel.focus.offset).toBe(2);
+          });
+        },
+      );
+    });
+  });
 });
 
 // These are outside of the above suite because of the

@@ -1902,6 +1902,7 @@ function $handleArrowKey(
 
   const selection = $getSelection();
 
+  // Handle arrow key into a table (including from a table into a nested table)
   if (!$isSelectionInTable(selection, tableNode)) {
     if ($isRangeSelection(selection)) {
       if (direction === 'backward') {
@@ -2200,7 +2201,10 @@ function $handleArrowKey(
       }
     }
   } else if ($isTableSelection(selection)) {
-    const {anchor, focus} = selection;
+    const {anchor, focus, tableKey} = selection;
+    if (tableKey !== tableNode.getKey()) {
+      return false;
+    }
     const anchorCellNode = $findMatchingParent(
       anchor.getNode(),
       $isTableCellNode,

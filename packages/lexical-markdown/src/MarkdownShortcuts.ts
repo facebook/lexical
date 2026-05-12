@@ -442,10 +442,10 @@ export function registerMarkdownShortcuts(
 ): () => void {
   const byType = transformersByType(transformers);
   const elementTransformersForEnter = byType.element.filter(
-    t => t.triggerOnEnter === true,
+    t => t.triggerOnEnter,
   );
   const multilineElementTransformersForEnter = byType.multilineElement.filter(
-    t => t.triggerOnEnter === true,
+    t => t.triggerOnEnter,
   );
   const textFormatTransformersByTrigger = indexBy(
     byType.textFormat,

@@ -485,11 +485,8 @@ describe('LexicalReconciler', () => {
     // suffix size-delta helper. Mirrors the structure of nodes like
     // TableNode that wrap their keyed DOM in a scrollable container.
     class BlockWrapperElementNode extends ElementNode {
-      static getType(): string {
-        return 'audit_block_wrapper';
-      }
-      static clone(node: BlockWrapperElementNode): BlockWrapperElementNode {
-        return new BlockWrapperElementNode(node.__key);
+      $config() {
+        return this.config('audit_block_wrapper', {});
       }
       createDOM(): HTMLElement {
         const el = document.createElement('div');
@@ -504,12 +501,6 @@ describe('LexicalReconciler', () => {
       }
       getDOMSlot(dom: HTMLElement): ElementDOMSlot {
         return super.getDOMSlot(dom).withElement(dom.querySelector('section')!);
-      }
-      exportJSON(): SerializedElementNode {
-        throw new Error('Not implemented');
-      }
-      static importJSON(): BlockWrapperElementNode {
-        throw new Error('Not implemented');
       }
     }
     function $createBlockWrapperElementNode(): BlockWrapperElementNode {
@@ -1713,17 +1704,10 @@ describe('LexicalReconciler', () => {
     // parent of the existing child.
     test('AUDIT-5b: size-delta suffix routes $reconcileNode replaceChild through slot.element on wrapping parents', () => {
       class RerenderParagraphNode extends ParagraphNode {
-        static getType(): string {
-          return 'audit_rerender_paragraph';
-        }
-        // Required for the writable clone to remain a RerenderParagraphNode.
-        // Without this override, `$cloneWithProperties` resolves
-        // `latestNode.constructor.clone` to `ParagraphNode.clone`, which
-        // returns a plain ParagraphNode — `updateDOM` then dispatches to
-        // the base class and returns false, so the replaceChild branch
-        // never fires.
-        static clone(node: RerenderParagraphNode): RerenderParagraphNode {
-          return new RerenderParagraphNode(node.__key);
+        $config() {
+          return this.config('audit_rerender_paragraph', {
+            extends: ParagraphNode,
+          });
         }
         updateDOM(): boolean {
           return true;
@@ -1843,11 +1827,10 @@ describe('LexicalReconciler', () => {
     // `__lexicalTextContent`, which then propagates up the cache chain.
     test('AUDIT-6: same-size suffix reads current-state cache after $updateDOM=true', () => {
       class RerenderParagraphNode extends ParagraphNode {
-        static getType(): string {
-          return 'audit_rerender_paragraph_same_size';
-        }
-        static clone(node: RerenderParagraphNode): RerenderParagraphNode {
-          return new RerenderParagraphNode(node.__key);
+        $config() {
+          return this.config('audit_rerender_paragraph_same_size', {
+            extends: ParagraphNode,
+          });
         }
         updateDOM(): boolean {
           return true;

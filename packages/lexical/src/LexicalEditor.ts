@@ -12,6 +12,7 @@ import type {
   DOMConversionMap,
   DOMExportOutput,
   DOMExportOutputMap,
+  LexicalPrivateDOM,
   NodeKey,
 } from './LexicalNode';
 import type {ElementDOMSlot} from './nodes/LexicalElementNode';
@@ -939,7 +940,7 @@ export class LexicalEditor {
   /** @internal */
   _deferred: Array<() => void>;
   /** @internal */
-  _keyToDOMMap: Map<NodeKey, HTMLElement>;
+  _keyToDOMMap: Map<NodeKey, HTMLElement & LexicalPrivateDOM>;
   /** @internal */
   _updates: Array<[() => void, EditorUpdateOptions | undefined]>;
   /** @internal */

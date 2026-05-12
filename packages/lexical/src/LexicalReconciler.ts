@@ -92,9 +92,7 @@ export const CACHED_TEXT_SIZE_KEY = Symbol.for('@lexical/CachedTextSize');
 
 function $cachedTextSize(node: LexicalNode): number {
   if ($isElementNode(node)) {
-    const keyedDom = activePrevKeyToDOMMap.get(node.__key) as
-      | (HTMLElement & LexicalPrivateDOM)
-      | undefined;
+    const keyedDom = activePrevKeyToDOMMap.get(node.__key);
     const cached = keyedDom && keyedDom.__lexicalTextContent;
     invariant(
       typeof cached === 'string',
@@ -520,8 +518,12 @@ function $createChildren(
   // identical to `slot.element` otherwise. Look up rather than thread a
   // parameter — the element's DOM is already in the map via
   // `storeDOMWithKey` by the time we get here.
-  const cacheDom = activeEditor._keyToDOMMap.get(element.__key) as HTMLElement &
-    LexicalPrivateDOM;
+  const cacheDom = activeEditor._keyToDOMMap.get(element.__key);
+  invariant(
+    cacheDom !== undefined,
+    '$createChildren: Element with key %s missing from keyToDOMMap',
+    element.__key,
+  );
   cacheDom.__lexicalTextContent = subTreeTextContent;
   cacheDom.__lexicalFirstTextKey = subTreeFirstTextKey;
   subTreeTextContent = previousSubTreeTextContent + subTreeTextContent;
@@ -850,9 +852,7 @@ function $tryReconcileSuffixWithSizeDelta(
     }
     let text: string;
     if ($isElementNode(node)) {
-      const childKeyedDom = activeEditor._keyToDOMMap.get(nextSuffixKeys[i]) as
-        | (HTMLElement & LexicalPrivateDOM)
-        | undefined;
+      const childKeyedDom = activeEditor._keyToDOMMap.get(nextSuffixKeys[i]);
       const cached = childKeyedDom && childKeyedDom.__lexicalTextContent;
       invariant(
         typeof cached === 'string',
@@ -956,9 +956,12 @@ function $reconcileChildren(
   // element. Keeping them split lets wrapping nodes (TableNode etc.)
   // route cache R/W to the outer DOM while DOM ops stay on the slot.
   const dom: HTMLElement & LexicalPrivateDOM = slot.element;
-  const cacheDom = activeEditor._keyToDOMMap.get(
+  const cacheDom = activeEditor._keyToDOMMap.get(nextElement.__key);
+  invariant(
+    cacheDom !== undefined,
+    '$reconcileChildren: Element with key %s missing from keyToDOMMap',
     nextElement.__key,
-  ) as HTMLElement & LexicalPrivateDOM;
+  );
 
   const sizeDelta = nextChildrenSize - prevChildrenSize;
   if (
@@ -1051,9 +1054,7 @@ function $reconcileChildren(
               // point at the detached old DOM whose `__lexicalTextContent`
               // is from the previous cycle. Mirrors the size-delta helper
               // at L856.
-              const childKeyedDom = activeEditor._keyToDOMMap.get(cur) as
-                | (HTMLElement & LexicalPrivateDOM)
-                | undefined;
+              const childKeyedDom = activeEditor._keyToDOMMap.get(cur);
               const cached =
                 childKeyedDom && childKeyedDom.__lexicalTextContent;
               invariant(

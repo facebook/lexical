@@ -24,7 +24,7 @@ jobs:
       E2E_EDITOR_MODE: ${{ inputs.editor-mode }}
       E2E_PORT: 4000
       OVERRIDE_REACT_VERSION: ${{ inputs.override-react-version }}
-      cache_playwright_path: ${{ inputs.os == 'macos-latest' && '~/Library/Caches/ms-playwright' || inputs.os == 'windows-latest' && 'C:\Users\runneradmin\AppData\Local\ms-playwright' || '~/.cache/ms-playwright' }}
+      cache_playwright_path: ${{ inputs.os == 'macos-latest' && '~/Library/Caches/ms-playwright' || inputs.os == 'windows-latest' && 'C:\\Users\\runneradmin\\AppData\\Local\\ms-playwright' || '~/.cache/ms-playwright' }}
       test_results_path: 'test-results/'
     steps:
       - uses: actions/checkout@v6

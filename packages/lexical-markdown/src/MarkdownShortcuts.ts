@@ -452,7 +452,7 @@ export function registerMarkdownShortcuts(
   // `- `, ...) and text-match triggers carry their own single-character triggers.
   const compositionEndTriggerChars = new Set<string>([' ']);
   for (const t of byType.textFormat) {
-    compositionEndTriggerChars.add(t.tag[t.tag.length - 1]);
+    compositionEndTriggerChars.add(t.tag.slice(-1));
   }
   for (const t of byType.textMatch) {
     if (t.trigger !== undefined) {

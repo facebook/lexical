@@ -1303,11 +1303,16 @@ export class LexicalNode {
     writableReplaceWith.__next = nextKey;
     writableReplaceWith.__parent = parentKey;
     writableParent.__size = size;
+    // Snapshot replaceWith's children count before children transfer so
+    // element-anchored selections on `this` can map to the equivalent offset
+    // in writableReplaceWith.
+    let prevSizeBeforeChildrenTransfer = 0;
     if (includeChildren) {
       invariant(
         $isElementNode(this) && $isElementNode(writableReplaceWith),
         'includeChildren should only be true for ElementNodes',
       );
+      prevSizeBeforeChildrenTransfer = writableReplaceWith.getChildrenSize();
       this.getChildren().forEach((child: LexicalNode) => {
         writableReplaceWith.append(child);
       });
@@ -1316,11 +1321,34 @@ export class LexicalNode {
       $setSelection(selection);
       const anchor = selection.anchor;
       const focus = selection.focus;
+      // For an element-anchored point on `this` with includeChildren, the
+      // transferred children land at offsets [prevSize ... prevSize + N) in
+      // writableReplaceWith, so the equivalent point is at
+      // `prevSize + originalOffset`. Without this remap the caller (e.g.
+      // `$setBlocksType`) has to re-anchor afterwards from a stale clone.
+      // For non-element points or !includeChildren the children are gone, so
+      // fall back to the previous "move to end" behavior.
       if (anchor.key === toReplaceKey) {
-        $moveSelectionPointToEnd(anchor, writableReplaceWith);
+        if (includeChildren && anchor.type === 'element') {
+          anchor.set(
+            writableReplaceWith.__key,
+            prevSizeBeforeChildrenTransfer + anchor.offset,
+            'element',
+          );
+        } else {
+          $moveSelectionPointToEnd(anchor, writableReplaceWith);
+        }
       }
       if (focus.key === toReplaceKey) {
-        $moveSelectionPointToEnd(focus, writableReplaceWith);
+        if (includeChildren && focus.type === 'element') {
+          focus.set(
+            writableReplaceWith.__key,
+            prevSizeBeforeChildrenTransfer + focus.offset,
+            'element',
+          );
+        } else {
+          $moveSelectionPointToEnd(focus, writableReplaceWith);
+        }
       }
     }
     if ($getCompositionKey() === toReplaceKey) {

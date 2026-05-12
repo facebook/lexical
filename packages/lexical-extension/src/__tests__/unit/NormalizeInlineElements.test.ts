@@ -7,7 +7,6 @@
  */
 
 import {buildEditorFromExtensions} from '@lexical/extension';
-import {RichTextExtension} from '@lexical/rich-text';
 import {
   $create,
   $createParagraphNode,
@@ -19,7 +18,9 @@ import {
 import {TestInlineElementNode} from 'lexical/src/__tests__/utils';
 import {assert, describe, expect, test} from 'vitest';
 
-describe('RichTextExtension normalizeInlineElements', () => {
+import {NormalizeInlineElementsExtension} from '../../NormalizeInlineElementsExtension';
+
+describe('NormalizeInlineElements', () => {
   test('should remove empty inline elements by default', async () => {
     using editor = buildEditorFromExtensions({
       $initialEditorState: () => {
@@ -31,7 +32,7 @@ describe('RichTextExtension normalizeInlineElements', () => {
           $create(TestInlineElementNode),
         );
       },
-      dependencies: [configExtension(RichTextExtension)],
+      dependencies: [configExtension(NormalizeInlineElementsExtension)],
       name: 'test',
       nodes: [TestInlineElementNode],
     });
@@ -69,7 +70,7 @@ describe('RichTextExtension normalizeInlineElements', () => {
     });
   });
 
-  test('should not to remove empty inline elements if normalizeInlineElements is disabled', async () => {
+  test('should not to remove empty inline elements if extension is disabled', async () => {
     using editor = buildEditorFromExtensions({
       $initialEditorState: () => {
         const root = $getRoot();
@@ -81,7 +82,7 @@ describe('RichTextExtension normalizeInlineElements', () => {
         );
       },
       dependencies: [
-        configExtension(RichTextExtension, {normalizeInlineElements: false}),
+        configExtension(NormalizeInlineElementsExtension, {disabled: true}),
       ],
       name: 'test',
       nodes: [TestInlineElementNode],

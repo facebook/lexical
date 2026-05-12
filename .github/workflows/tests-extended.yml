@@ -6,25 +6,172 @@ on:
     paths-ignore:
       - 'packages/lexical-website/**'
       - 'packages/*/README.md'
+  pull_request_review:
+    types: [submitted]
 
-permissions: {}
+permissions:
+  pull-requests: read
+  actions: read
 
 concurrency:
   # Only cancel an in-progress run when a newer commit lands on the same ref.
-  # Other events (labeled, reopened, manual approval re-runs, etc.) get a
-  # distinct group so they never cancel a run that is already underway.
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.event_name == 'pull_request' && github.event.action != 'synchronize' && github.run_id || 'commit' }}
+  # Other events (labeled, reopened, review submitted) get a distinct group so
+  # they never cancel a run that is already underway.
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.event_name == 'pull_request' && github.event.action == 'synchronize' && 'synchronize' || github.run_id }}
   cancel-in-progress: true
 
 jobs:
+  check_should_run:
+    if: github.repository_owner == 'facebook'
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+    steps:
+      - id: check
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const labels = (pr.labels || []).map((l) => l.name);
+            const gatingLabels = labels.filter(
+              (l) => l === 'extended-tests' || l === 'dependencies',
+            );
+            const isSync =
+              context.eventName === 'pull_request' &&
+              context.payload.action === 'synchronize';
+
+            // ---- Gate ----------------------------------------------------------
+            let gateOpen = false;
+            let gateReason = '';
+            if (gatingLabels.length > 0) {
+              gateOpen = true;
+              gateReason = `gating label present (${gatingLabels.join(', ')})`;
+            } else if (context.eventName === 'pull_request_review') {
+              const state = context.payload.review?.state;
+              if (state === 'approved') {
+                gateOpen = true;
+                gateReason = 'review submitted as approved';
+              } else {
+                gateReason = `review state is "${state}", not approved`;
+              }
+            } else {
+              // pull_request synchronize/reopened with no gating label: open the
+              // gate if the PR is currently approved. reviewDecision is
+              // GraphQL-only.
+              const { repository } = await github.graphql(
+                `query($owner: String!, $repo: String!, $number: Int!) {
+                   repository(owner: $owner, name: $repo) {
+                     pullRequest(number: $number) { reviewDecision }
+                   }
+                 }`,
+                { owner: context.repo.owner, repo: context.repo.repo, number: pr.number },
+              );
+              const decision = repository.pullRequest.reviewDecision;
+              if (decision === 'APPROVED') {
+                gateOpen = true;
+                gateReason = 'no gating label; PR reviewDecision is APPROVED';
+              } else {
+                gateReason = `no gating label; PR reviewDecision is ${decision ?? 'null'}`;
+              }
+            }
+
+            const summarize = async (verdict, detail) => {
+              const label = verdict ? 'Running' : 'Skipped';
+              core.summary
+                .addHeading('Extended tests gate', 3)
+                .addRaw(`**${label}** — ${detail}`, true)
+                .addBreak()
+                .addRaw(
+                  `Event: \`${context.eventName}\`` +
+                    (context.payload.action ? ` (\`${context.payload.action}\`)` : '') +
+                    `, head SHA: \`${pr.head.sha.slice(0, 7)}\``,
+                  true,
+                );
+              await core.summary.write();
+              core.info(`should_run=${verdict}: ${detail}`);
+              core.setOutput('should_run', verdict ? 'true' : 'false');
+            };
+
+            if (!gateOpen) {
+              await summarize(false, gateReason);
+              return;
+            }
+
+            // ---- New commit always runs ---------------------------------------
+            if (isSync) {
+              await summarize(
+                true,
+                `${gateReason}. New commit — always runs the extended suite.`,
+              );
+              return;
+            }
+
+            // ---- Metadata event: only run if tests haven't already started ----
+            // For labeled / reopened / review submitted, defer to any prior run
+            // of this workflow on the same head SHA that already kicked off (or
+            // completed) the extended test jobs. A prior run that only executed
+            // check_should_run (gate closed at the time) doesn't count — its
+            // workflow conclusion is success even though no tests ran.
+            const { data: runsData } = await github.rest.actions.listWorkflowRuns({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'tests-extended.yml',
+              head_sha: pr.head.sha,
+              per_page: 100,
+            });
+            let blockingRun = null;
+            for (const run of runsData.workflow_runs) {
+              if (run.id === context.runId) continue;
+              const completedOk =
+                run.status === 'completed' && run.conclusion === 'success';
+              const active =
+                run.status === 'in_progress' || run.status === 'queued';
+              if (!completedOk && !active) continue;
+              const { data: jobsData } =
+                await github.rest.actions.listJobsForWorkflowRun({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  run_id: run.id,
+                  per_page: 100,
+                });
+              const ranTests = jobsData.jobs.some(
+                (j) =>
+                  j.name !== 'check_should_run' &&
+                  (j.conclusion === 'success' ||
+                    j.status === 'in_progress' ||
+                    j.status === 'queued'),
+              );
+              if (ranTests) {
+                blockingRun = run;
+                break;
+              }
+            }
+
+            if (blockingRun) {
+              const state =
+                blockingRun.status === 'completed'
+                  ? 'completed successfully'
+                  : 'already in progress';
+              await summarize(
+                false,
+                `${gateReason}, but extended tests are ${state} for this SHA in ` +
+                  `[run #${blockingRun.id}](${blockingRun.html_url}). ` +
+                  `Metadata events only restart tests when none have run yet.`,
+              );
+              return;
+            }
+
+            await summarize(
+              true,
+              `${gateReason}. No prior run has executed the extended tests for this SHA.`,
+            );
+
   e2e-tests:
-    if: github.repository_owner == 'facebook' &&
-      (contains(github.event.pull_request.labels.*.name, 'extended-tests') ||
-      contains(github.event.pull_request.labels.*.name, 'dependencies'))
+    needs: check_should_run
+    if: needs.check_should_run.outputs.should_run == 'true'
     uses: ./.github/workflows/call-e2e-all-tests.yml
 
   integration-tests:
-    if: github.repository_owner == 'facebook' &&
-      (contains(github.event.pull_request.labels.*.name, 'extended-tests') ||
-      contains(github.event.pull_request.labels.*.name, 'dependencies'))
+    needs: check_should_run
+    if: needs.check_should_run.outputs.should_run == 'true'
     uses: ./.github/workflows/call-integration-tests.yml

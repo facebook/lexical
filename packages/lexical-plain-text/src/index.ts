@@ -15,6 +15,7 @@ import {
   $writeDragSourceToDataTransfer,
 } from '@lexical/clipboard';
 import {DragonExtension} from '@lexical/dragon';
+import {NormalizeInlineElementsExtension} from '@lexical/extension';
 import {
   $moveCharacter,
   $shouldOverrideDefaultCharacterSelection,
@@ -422,7 +423,7 @@ export function registerPlainText(editor: LexicalEditor): () => void {
  */
 export const PlainTextExtension = defineExtension({
   conflictsWith: ['@lexical/rich-text'],
-  dependencies: [DragonExtension],
+  dependencies: [DragonExtension, NormalizeInlineElementsExtension],
   name: '@lexical/plain-text',
   register: registerPlainText,
 });

@@ -10,11 +10,9 @@ jobs:
   build:
     strategy:
       matrix:
-        include:
-          - prod: false
-            node-version: 24.x
-          - prod: true
-            node-version: 24.x
+        node-version: [24.x]
+        prod: [true, false]
+        os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6

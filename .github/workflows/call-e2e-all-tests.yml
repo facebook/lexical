@@ -7,48 +7,73 @@ permissions: {}
 
 jobs:
   # Build the dev playground once and cache the output for all test jobs
-  build:
-    strategy:
-      matrix:
-        node-version: [24.x]
-        prod: [true, false]
-        os: [ubuntu-latest, macos-latest, windows-latest]
+  build-ubuntu:
+    env:
+      node-version: 24.x
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/setup-pnpm
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: ${{ env.node-version }}
+      - uses: ./.github/actions/setup-playwright
+        with:
+          node-version: ${{ env.node-version }}
       - uses: ./.github/actions/setup-playground
         with:
-          node-version: ${{ matrix.node-version }}
-          prod: ${{ matrix.prod }}
+          node-version: ${{ env.node-version }}
 
-  # Prime playwright browser caches once per OS so parallel test jobs
-  # don't all download browsers simultaneously
-  setup-playwright:
-    strategy:
-      matrix:
-        include:
-          - os: ubuntu-latest
-            node-version: 24.x
-          - os: macos-latest
-            node-version: 24.x
-          - os: windows-latest
-            node-version: 24.x
-    runs-on: ${{ matrix.os }}
+  build-ubuntu-prod:
+    env:
+      node-version: 24.x
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/setup-pnpm
         with:
-          node-version: ${{ matrix.node-version }}
-
+          node-version: ${{ env.node-version }}
       - uses: ./.github/actions/setup-playwright
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: ${{ env.node-version }}
+      - uses: ./.github/actions/setup-playground
+        with:
+          node-version: ${{ env.node-version }}
+          prod: true
+
+  build-macos:
+    env:
+      node-version: 24.x
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-pnpm
+        with:
+          node-version: ${{ env.node-version }}
+      - uses: ./.github/actions/setup-playwright
+        with:
+          node-version: ${{ env.node-version }}
+      - uses: ./.github/actions/setup-playground
+        with:
+          node-version: ${{ env.node-version }}
+
+  build-windows:
+    env:
+      node-version: 24.x
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-pnpm
+        with:
+          node-version: ${{ env.node-version }}
+      - uses: ./.github/actions/setup-playwright
+        with:
+          node-version: ${{ env.node-version }}
+      - uses: ./.github/actions/setup-playground
+        with:
+          node-version: ${{ env.node-version }}
 
   mac-rich:
-    needs: [build, setup-playwright]
+    needs: [build-macos]
     strategy:
       matrix:
         node-version: [24.x]
@@ -62,7 +87,7 @@ jobs:
       editor-mode: ${{ matrix.editor-mode }}
 
   mac-plain:
-    needs: [build, setup-playwright]
+    needs: [build-macos]
     strategy:
       matrix:
         node-version: [24.x]
@@ -76,7 +101,7 @@ jobs:
       editor-mode: ${{ matrix.editor-mode }}
 
   linux:
-    needs: [build, setup-playwright]
+    needs: [build-ubuntu]
     strategy:
       matrix:
         node-version: [24.x]
@@ -90,7 +115,7 @@ jobs:
       editor-mode: ${{ matrix.editor-mode }}
 
   windows:
-    needs: [build, setup-playwright]
+    needs: [build-windows]
     strategy:
       matrix:
         node-version: [24.x]
@@ -104,7 +129,7 @@ jobs:
       editor-mode: ${{ matrix.editor-mode }}
 
   collab-mac:
-    needs: [build, setup-playwright]
+    needs: [build-macos]
     strategy:
       matrix:
         node-version: [24.x]
@@ -117,7 +142,7 @@ jobs:
       editor-mode: 'rich-text-with-collab'
 
   collab-linux:
-    needs: [build, setup-playwright]
+    needs: [build-ubuntu]
     strategy:
       matrix:
         node-version: [24.x]
@@ -130,7 +155,7 @@ jobs:
       editor-mode: 'rich-text-with-collab'
 
   collab-windows:
-    needs: [build, setup-playwright]
+    needs: [build-windows]
     strategy:
       matrix:
         node-version: [24.x]
@@ -143,7 +168,7 @@ jobs:
       editor-mode: 'rich-text-with-collab'
 
   prod:
-    needs: [build, setup-playwright]
+    needs: [build-ubuntu-prod]
     strategy:
       matrix:
         os: ['ubuntu-latest']
@@ -159,7 +184,7 @@ jobs:
       editor-mode: ${{ matrix.editor-mode }}
 
   collab-prod:
-    needs: [build, setup-playwright]
+    needs: [build-ubuntu-prod]
     strategy:
       matrix:
         os: ['ubuntu-latest']
@@ -174,7 +199,7 @@ jobs:
       browser: ${{ matrix.browser }}
       editor-mode: ${{ matrix.editor-mode }}
   flaky:
-    needs: [build, setup-playwright]
+    needs: [build-ubuntu]
     strategy:
       matrix:
         node-version: [24.x]

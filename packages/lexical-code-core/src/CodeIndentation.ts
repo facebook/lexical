@@ -568,12 +568,13 @@ export function registerCodeIndentation(
           return false;
         }
         // If at the start of a code block, prevent selection from moving out
+        const parent = anchorNode.getParent();
         if (
           selection.isCollapsed() &&
           anchor.offset === 0 &&
           anchorNode.getPreviousSibling() === null &&
-          $isCodeNode(anchorNode.getParentOrThrow()) &&
-          anchorNode.getParentOrThrow().getPreviousSibling() === null
+          $isCodeNode(parent) &&
+          parent.getPreviousSibling() === null
         ) {
           event.preventDefault();
           return true;

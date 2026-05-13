@@ -42,7 +42,7 @@
     "docusaurus-plugin-typedoc": "^1.4.2",
     "fs-extra": "^11.3.4",
     "lexical": "workspace:*",
-    "mermaid": "^11.14.0",
+    "mermaid": "^11.15.0",
     "prism-react-renderer": "^2.4.1",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",

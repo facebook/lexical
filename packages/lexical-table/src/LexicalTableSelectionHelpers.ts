@@ -180,52 +180,60 @@ export function registerTableWindowHandlers(
   editor: LexicalEditor,
   tableObservers: TableObservers,
 ) {
-  const rootElement = editor.getRootElement();
-  const editorWindow = editor._window;
-  if (!rootElement || !editorWindow) {
-    return () => {};
-  }
-
-  const pointerDownCallback = (event: PointerEvent) => {
-    const target = event.target;
-    if (
-      event.button !== 0 ||
-      !isDOMNode(target) ||
-      !rootElement.contains(target)
-    ) {
+  // Use registerRootListener so the pointerdown handler is (re)attached
+  // whenever the root element is set. This is required for the Extension API,
+  // where register() runs before the ContentEditable mounts and getRootElement()
+  // is still null.
+  return editor.registerRootListener(rootElement => {
+    if (rootElement === null) {
       return;
     }
-    const selectionInfo = getTableObserverFromCellNode(target);
+    const editorWindow = editor._window;
+    if (editorWindow === null) {
+      return;
+    }
 
-    editor.update(() => {
-      // Clear highlights from all tables (even one we're actively clicking on)
-      const selection = $getSelection();
-      if ($isTableSelection(selection)) {
-        for (const [observer] of tableObservers.observers.values()) {
-          observer.$clearHighlight(false);
-        }
-        $setSelection(null);
-        editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
-      }
-      if (!selectionInfo) {
+    const pointerDownCallback = (event: PointerEvent) => {
+      const target = event.target;
+      if (
+        event.button !== 0 ||
+        !isDOMNode(target) ||
+        !rootElement.contains(target)
+      ) {
         return;
       }
-      const {tableObserver, tableElement, cellElement} = selectionInfo;
-      $handleTableClick(
-        editor,
-        event,
-        cellElement,
-        tableElement,
-        tableObserver,
-        tableObservers,
-      );
-    });
-  };
+      const selectionInfo = getTableObserverFromCellNode(target);
 
-  editorWindow.addEventListener('pointerdown', pointerDownCallback);
-  return () => {
-    editorWindow.removeEventListener('pointerdown', pointerDownCallback);
-  };
+      editor.update(() => {
+        // Clear highlights from all tables (even one we're actively clicking on)
+        const selection = $getSelection();
+        if ($isTableSelection(selection)) {
+          for (const [observer] of tableObservers.observers.values()) {
+            observer.$clearHighlight(false);
+          }
+          $setSelection(null);
+          editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+        }
+        if (!selectionInfo) {
+          return;
+        }
+        const {tableObserver, tableElement, cellElement} = selectionInfo;
+        $handleTableClick(
+          editor,
+          event,
+          cellElement,
+          tableElement,
+          tableObserver,
+          tableObservers,
+        );
+      });
+    };
+
+    editorWindow.addEventListener('pointerdown', pointerDownCallback);
+    return () => {
+      editorWindow.removeEventListener('pointerdown', pointerDownCallback);
+    };
+  });
 }
 
 function $handleTableClick(

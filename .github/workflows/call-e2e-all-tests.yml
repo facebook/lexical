@@ -17,6 +17,7 @@ jobs:
             node-version: 24.x
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/setup-pnpm
         with:
           node-version: ${{ matrix.node-version }}
@@ -39,6 +40,7 @@ jobs:
             node-version: 24.x
     runs-on: ${{ matrix.os }}
     steps:
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/setup-pnpm
         with:
           node-version: ${{ matrix.node-version }}

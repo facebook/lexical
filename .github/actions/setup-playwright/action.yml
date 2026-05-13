@@ -1,5 +1,5 @@
 name: Setup playwright
-description: Set up Playwright, depends on pnpm-setup
+description: Set up Playwright, depends on setup-pnpm
 
 inputs:
   node-version: {required: true, description: 'Node version, e.g. 24.x'}
@@ -18,7 +18,7 @@ runs:
       run: |
         sudo apt-get update
         sudo apt-get install xvfb
-    # pnpm-setup must be completed before this point
+    # setup-pnpm must be completed before this point
     - name: Restore playwright from cache
       uses: actions/cache/restore@v5
       id: playwright-cache

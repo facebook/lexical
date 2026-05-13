@@ -1,5 +1,5 @@
 name: Setup playground build
-description: Set up the playground with prepare-ci, depends on pnpm-setup
+description: Set up the playground with prepare-ci, depends on setup-pnpm
 inputs:
   node-version: {required: true, description: 'Node version, e.g. 24.x'}
   fail-on-cache-miss:

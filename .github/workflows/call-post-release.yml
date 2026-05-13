@@ -25,10 +25,12 @@ jobs:
           owner: facebook
           repo: lexical
           excludes: draft
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref }}
       - uses: ./.github/actions/setup-pnpm
         with:
           node-version: 24.x
-          ref: ${{ inputs.ref }}
           pnpm-install-args: ''
       - run: |
           pnpm run update-examples

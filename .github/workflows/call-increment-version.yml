@@ -32,10 +32,13 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
       - uses: ./.github/actions/setup-pnpm
         with:
           node-version: 24.x
-          fetch-depth: 0
       - run: |
           git config user.name "Lexical GitHub Actions Bot"
           git config user.email "<>"

@@ -1,0 +1,34 @@
+name: Setup playwright
+
+inputs:
+  node-version: {required: true, type: string}
+  fail-on-cache-miss: {required: false, type: boolean}
+
+runs:
+  using: 'composite'
+  env:
+    cache_playwright_path: ${{ inputs.os == 'macos-latest' && '~/Library/Caches/ms-playwright' || inputs.os == 'windows-latest' && 'C:\\Users\\runneradmin\\AppData\\Local\\ms-playwright' || '~/.cache/ms-playwright' }}
+  steps:
+    - name: Install required ubuntu-latest packages
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install xvfb
+    # pnpm-setup must be completed before this point
+    - name: Restore playwright from cache
+      uses: actions/cache/restore@v5
+      id: playwright-cache
+      with:
+        path: ${{ env.cache_playwright_path }}
+        key: playwright-v2-${{ inputs.node-version }}-${{ runner.os }}-${{ runner.arch }}-v${{ secrets.CACHE_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
+        fail-on-cache-miss: ${{ inputs.fail-on-cache-miss }}
+    - name: Install playwright
+      run: |
+        pnpm exec playwright install
+        pnpm exec playwright install --list
+    - name: Save playwright to cache
+      if: steps.playwright-cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v5
+      with:
+        path: ${{ env.cache_playwright_path }}
+        key: ${{ steps.playwright-cache.outputs.cache-primary-key }}

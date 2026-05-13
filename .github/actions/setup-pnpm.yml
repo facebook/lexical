@@ -1,0 +1,25 @@
+name: Setup node and pnpm
+
+inputs:
+  node-version: {required: true, type: string}
+  fetch-depth: {required: false, type: number, default: 1}
+  ref: {required: false, type: string}
+  registry-url: {required: false, type: string}
+  frozen: {required: false, type: boolean, default: true}
+
+runs:
+  using: 'composite'
+  steps:
+    - uses: actions/checkout@v6
+      with:
+        fetch-depth: ${{ inputs.fetch-depth }}
+        ref: ${{ inputs.ref }}
+    - uses: pnpm/action-setup@v6
+    - name: Use Node.js ${{ inputs.node-version }}
+      uses: actions/setup-node@v6
+      with:
+        cache: 'pnpm'
+        node-version: ${{ inputs.node-version }}
+        registry-url: ${{ inputs.registry-url }}
+    - name: Install dependencies
+      run: pnpm install ${{ inputs.frozen && '--frozen-lockfile' || '' }}

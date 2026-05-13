@@ -32,16 +32,10 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-      # Setup .npmrc file to publish to npm
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-pnpm
         with:
           node-version: 24.x
-          registry-url: 'https://registry.npmjs.org'
-      - uses: pnpm/action-setup@v6
-      - run: pnpm install --frozen-lockfile
+          fetch-depth: 0
       - run: |
           git config user.name "Lexical GitHub Actions Bot"
           git config user.email "<>"

@@ -1,0 +1,31 @@
+name: Setup playground build
+
+inputs:
+  node-version: {required: true, type: string}
+  prod: {required: false, type: boolean}
+  fail-on-cache-miss: {required: false, type: boolean}
+
+runs:
+  using: 'composite'
+  steps:
+    # setup-pnpm must be completed before this point
+    - name: Restore build cache
+      uses: actions/cache/restore@v5
+      id: build-cache
+      with:
+        path: |
+          packages/lexical-playground/build
+          packages/*/dist
+        key: build-${{ inputs.prod && 'prod' || 'dev' }}-v${{ secrets.CACHE_VERSION }}-${{ inputs.node-version }}-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
+        fail-on-cache-miss: ${{ inputs.fail-on-cache-miss }}
+    - name: Build
+      if: steps.build-cache.outputs.cache-hit != 'true'
+      run: pnpm run ${{ inputs.prod && 'prepare-ci-prod' || 'prepare-ci' }}
+    - name: Save build cache
+      if: steps.build-cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v5
+      with:
+        path: |
+          packages/lexical-playground/build
+          packages/*/dist
+        key: ${{ steps.build-cache.outputs.cache-primary-key }}

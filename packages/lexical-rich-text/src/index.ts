@@ -35,7 +35,13 @@ import {
   setLexicalClipboardDataTransfer,
 } from '@lexical/clipboard';
 import {DragonExtension} from '@lexical/dragon';
-import {effect, namedSignals, ReadonlySignal, signal} from '@lexical/extension';
+import {
+  effect,
+  namedSignals,
+  NormalizeInlineElementsExtension,
+  ReadonlySignal,
+  signal,
+} from '@lexical/extension';
 import {
   $isParentRTL,
   $moveCharacter,
@@ -617,6 +623,14 @@ export type EscapeFormatTriggerConfig = {
  *     },
  *   })
  *   ```
+ *
+ * @property normalizeInlineElements - Adds normalization for each
+ * subclass of ElementNode, which removes empty inline elements.
+ * This option is intended to facilitate a smooth migration
+ * from the plugin API and may be removed in the future
+ *
+ * Default: true
+ *
  */
 export interface RichTextConfig {
   escapeFormatTriggers: EscapeFormatTriggerConfig;
@@ -1354,7 +1368,7 @@ export const RichTextExtension = defineExtension({
   build: (_editor, config) => namedSignals(config),
   config: safeCast<RichTextConfig>(DEFAULT_RICH_TEXT_CONFIG),
   conflictsWith: ['@lexical/plain-text'],
-  dependencies: [DragonExtension],
+  dependencies: [DragonExtension, NormalizeInlineElementsExtension],
   mergeConfig: mergeRichTextConfig,
   name: '@lexical/rich-text',
   nodes: () => [HeadingNode, QuoteNode],

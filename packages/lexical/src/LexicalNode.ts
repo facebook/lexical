@@ -1332,9 +1332,11 @@ export class LexicalNode {
         'includeChildren should only be true for ElementNodes',
       );
       prevSizeBeforeChildrenTransfer = writableReplaceWith.getChildrenSize();
-      this.getChildren().forEach((child: LexicalNode) => {
-        writableReplaceWith.append(child);
-      });
+      writableReplaceWith.splice(
+        prevSizeBeforeChildrenTransfer,
+        0,
+        this.getChildren(),
+      );
     }
     if ($isRangeSelection(selection)) {
       $setSelection(selection);

@@ -1,15 +1,19 @@
 name: Setup playwright
+description: Set up Playwright, depends on pnpm-setup
 
 inputs:
-  node-version: {required: true, type: string}
-  fail-on-cache-miss: {required: false, type: boolean}
+  node-version: {required: true, description: 'Node version, e.g. 24.x'}
+  fail-on-cache-miss:
+    {required: false, description: 'true to fail on cache miss'}
 
 runs:
   using: 'composite'
-  env:
-    cache_playwright_path: ${{ inputs.os == 'macos-latest' && '~/Library/Caches/ms-playwright' || inputs.os == 'windows-latest' && 'C:\\Users\\runneradmin\\AppData\\Local\\ms-playwright' || '~/.cache/ms-playwright' }}
   steps:
+    - id: vars
+      shell: bash
+      run: echo "cache_playwright_path=${{ inputs.os == 'macos-latest' && '~/Library/Caches/ms-playwright' || inputs.os == 'windows-latest' && 'C:\\Users\\runneradmin\\AppData\\Local\\ms-playwright' || '~/.cache/ms-playwright' }}" >> "$GITHUB_OUTPUT"
     - name: Install required ubuntu-latest packages
+      shell: bash
       if: runner.os == 'Linux'
       run: |
         sudo apt-get update
@@ -19,10 +23,11 @@ runs:
       uses: actions/cache/restore@v5
       id: playwright-cache
       with:
-        path: ${{ env.cache_playwright_path }}
-        key: playwright-v2-${{ inputs.node-version }}-${{ runner.os }}-${{ runner.arch }}-v${{ secrets.CACHE_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
+        path: ${{ steps.vars.outputs.cache_playwright_path }}
+        key: playwright-v2-${{ inputs.node-version }}-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml') }}
         fail-on-cache-miss: ${{ inputs.fail-on-cache-miss }}
     - name: Install playwright
+      shell: bash
       run: |
         pnpm exec playwright install
         pnpm exec playwright install --list
@@ -30,5 +35,5 @@ runs:
       if: steps.playwright-cache.outputs.cache-hit != 'true'
       uses: actions/cache/save@v5
       with:
-        path: ${{ env.cache_playwright_path }}
+        path: ${{ steps.vars.outputs.cache_playwright_path }}
         key: ${{ steps.playwright-cache.outputs.cache-primary-key }}

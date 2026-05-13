@@ -1,0 +1,36 @@
+name: Setup node and pnpm
+description: Installs node and pnpm and the package.json dependencies
+inputs:
+  node-version: {required: true, description: 'Node version, e.g. 24.x'}
+  fetch-depth:
+    {
+      required: false,
+      description: 'actions/checkout: Fetch depth of the checkout, default is 1',
+    }
+  ref: {required: false, description: 'actions/checkout: Ref to checkout'}
+  registry-url:
+    {required: false, description: 'actions/setup-node: npm registry to use'}
+  pnpm-install-args:
+    {
+      required: false,
+      default: '--frozen-lockfile',
+      description: 'arguments for pnpm install, default is --frozen-lockfile',
+    }
+
+runs:
+  using: 'composite'
+  steps:
+    - uses: actions/checkout@v6
+      with:
+        fetch-depth: ${{ inputs.fetch-depth }}
+        ref: ${{ inputs.ref }}
+    - uses: pnpm/action-setup@v6
+    - name: Use Node.js ${{ inputs.node-version }}
+      uses: actions/setup-node@v6
+      with:
+        cache: 'pnpm'
+        node-version: ${{ inputs.node-version }}
+        registry-url: ${{ inputs.registry-url }}
+    - name: Install dependencies
+      shell: bash
+      run: pnpm install ${{ inputs.pnpm-install-args }}

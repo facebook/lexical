@@ -12,10 +12,12 @@ import {
   $isCodeHighlightNode,
   $isCodeNode,
   CodeExtension,
+  CodeGutterExtension,
   CodeHighlightNode,
   CodeIndentExtension,
   CodeNode,
   DEFAULT_CODE_LANGUAGE,
+  registerCodeGutter,
   registerCodeIndentation,
 } from '@lexical/code-core';
 import {effect, namedSignals} from '@lexical/extension';
@@ -83,116 +85,6 @@ function $textNodeTransform(
     // When code block converted into paragraph or other element
     // code highlight nodes converted back to normal text
     node.replace($createTextNode(node.__text));
-  }
-}
-
-function updateCodeGutter(node: CodeNode, editor: LexicalEditor): void {
-  const codeElement = editor.getElementByKey(node.getKey());
-  if (codeElement === null) {
-    return;
-  }
-  const children = node.getChildren();
-  const childrenLength = children.length;
-  // @ts-ignore: internal field
-  if (childrenLength === codeElement.__cachedChildrenLength) {
-    // Avoid updating the attribute if the children length hasn't changed.
-    return;
-  }
-  // @ts-ignore:: internal field
-  codeElement.__cachedChildrenLength = childrenLength;
-  let count = 1;
-  for (let i = 0; i < childrenLength; i++) {
-    if ($isLineBreakNode(children[i])) {
-      count++;
-    }
-  }
-
-  if (node.getWordWrap()) {
-    // Word-wrap mode: update real DOM gutter elements
-    const gutterEl = codeElement.querySelector('.code-gutter');
-    if (gutterEl) {
-      // Sync number of gutter line elements
-      while (gutterEl.children.length > count) {
-        gutterEl.removeChild(gutterEl.lastChild!);
-      }
-      while (gutterEl.children.length < count) {
-        const span = document.createElement('span');
-        span.textContent = String(gutterEl.children.length + 1);
-        gutterEl.appendChild(span);
-      }
-      // Update text content for all lines
-      for (let i = 0; i < count; i++) {
-        const span = gutterEl.children[i] as HTMLElement;
-        const lineNum = String(i + 1);
-        if (span.textContent !== lineNum) {
-          span.textContent = lineNum;
-        }
-      }
-      // Sync heights after DOM update
-      syncGutterHeights(codeElement);
-    }
-  } else {
-    // Classic mode: data-gutter attribute
-    let gutter = '1';
-    for (let i = 1; i < count; i++) {
-      gutter += '\n' + (i + 1);
-    }
-    codeElement.setAttribute('data-gutter', gutter);
-  }
-}
-
-function syncGutterHeights(codeElement: HTMLElement): void {
-  const gutterEl = codeElement.querySelector('.code-gutter');
-  const contentEl = codeElement.querySelector('.code-content');
-  if (!gutterEl || !contentEl) {
-    return;
-  }
-
-  const children = contentEl.childNodes;
-  let lineStart = 0;
-
-  // Measure heights of each logical line in the content
-  // Lines are separated by <br> elements (LineBreakNode renders as <br>)
-  const lineHeights: number[] = [];
-  const range = document.createRange();
-
-  for (let i = 0; i <= children.length; i++) {
-    const child = children[i];
-    const isEnd = i === children.length;
-    const isBreak = child && child.nodeName === 'BR';
-
-    if (isEnd || isBreak) {
-      // Measure height of this logical line
-      if (lineStart < i) {
-        range.setStartBefore(children[lineStart]);
-        range.setEndAfter(children[i - 1]);
-        const rects = range.getClientRects();
-        let height = 0;
-        if (rects.length > 0) {
-          const first = rects[0];
-          const last = rects[rects.length - 1];
-          height = last.bottom - first.top;
-        }
-        lineHeights.push(height);
-      } else {
-        // Empty line — use line-height
-        lineHeights.push(0);
-      }
-      lineStart = i + 1;
-    }
-  }
-
-  // Apply heights to gutter spans
-  for (let i = 0; i < gutterEl.children.length && i < lineHeights.length; i++) {
-    const span = gutterEl.children[i] as HTMLElement;
-    const h = lineHeights[i];
-    if (h > 0) {
-      span.style.height = h + 'px';
-      span.style.lineHeight = h + 'px';
-    } else {
-      span.style.height = '';
-      span.style.lineHeight = '';
-    }
   }
 }
 
@@ -398,17 +290,19 @@ interface TransformState {
 
 /**
  * @internal
- * Register only the Prism highlighting transforms and the gutter
- * mutation listener. No keyboard / indent handlers — those are the
- * responsibility of
+ * Register only the Prism highlighting transforms. The gutter
+ * mutation listener is provided separately via
+ * {@link "@lexical/code-core".registerCodeGutter} /
+ * {@link "@lexical/code-core".CodeGutterExtension}, and the keyboard /
+ * indent handlers via
  * {@link "@lexical/code-core".registerCodeIndentation} /
  * {@link "@lexical/code-core".CodeIndentExtension}.
  *
- * Used by {@link CodePrismExtension}, whose `CodeIndentExtension`
- * dependency handles the indent side. The legacy
- * {@link registerCodeHighlighting} wrapper combines this helper with
- * `registerCodeIndentation` for direct callers that want the original
- * single-call setup.
+ * Used by {@link CodePrismExtension}, whose `CodeGutterExtension` and
+ * `CodeIndentExtension` dependencies handle the gutter and indent
+ * sides. The legacy {@link registerCodeHighlighting} wrapper combines
+ * this helper with both `registerCodeGutter` and `registerCodeIndentation`
+ * for direct callers that want the original single-call setup.
  *
  * Exported for use by the package's own unit tests; not re-exported
  * from the package entry point.
@@ -417,75 +311,11 @@ export function registerHighlightingOnly(
   editor: LexicalEditor,
   tokenizer: Tokenizer,
 ): () => void {
-  const registrations = [];
-
-  // Only register the mutation listener if not in headless mode
-  if (editor._headless !== true) {
-    const resizeObservers = new Map<string, ResizeObserver>();
-
-    registrations.push(
-      editor.registerMutationListener(
-        CodeNode,
-        mutations => {
-          editor.getEditorState().read(() => {
-            for (const [key, type] of mutations) {
-              if (type === 'destroyed') {
-                // Clean up ResizeObserver for destroyed nodes
-                const observer = resizeObservers.get(key);
-                if (observer) {
-                  observer.disconnect();
-                  resizeObservers.delete(key);
-                }
-              } else {
-                const node = $getNodeByKey(key);
-                if (node !== null) {
-                  updateCodeGutter(node as CodeNode, editor);
-
-                  // Set up ResizeObserver for word-wrap mode
-                  const codeNode = node as CodeNode;
-                  const codeElement = editor.getElementByKey(key);
-                  if (codeNode.getWordWrap() && codeElement) {
-                    if (!resizeObservers.has(key)) {
-                      const contentEl =
-                        codeElement.querySelector('.code-content');
-                      if (contentEl) {
-                        const observer = new ResizeObserver(() => {
-                          syncGutterHeights(codeElement);
-                        });
-                        observer.observe(contentEl);
-                        resizeObservers.set(key, observer);
-                      }
-                    }
-                  } else {
-                    // Clean up observer if word wrap was disabled
-                    const observer = resizeObservers.get(key);
-                    if (observer) {
-                      observer.disconnect();
-                      resizeObservers.delete(key);
-                    }
-                  }
-                }
-              }
-            }
-          });
-        },
-        {skipInitialization: false},
-      ),
-      // Cleanup all observers on unmount
-      () => {
-        for (const observer of resizeObservers.values()) {
-          observer.disconnect();
-        }
-        resizeObservers.clear();
-      },
-    );
-  }
-
   const transformState: TransformState = {
     didTransform: false,
     nodesCurrentlyHighlighting: new Set(),
   };
-  registrations.push(
+  return mergeRegister(
     editor.registerNodeTransform(
       CodeNode,
       $codeNodeTransform.bind(null, editor, tokenizer, transformState),
@@ -499,8 +329,6 @@ export function registerHighlightingOnly(
       $textNodeTransform.bind(null, editor, tokenizer, transformState),
     ),
   );
-
-  return mergeRegister(...registrations);
 }
 
 /**
@@ -520,6 +348,7 @@ export function registerCodeHighlighting(
   }
   return mergeRegister(
     registerHighlightingOnly(editor, tokenizer),
+    registerCodeGutter(editor),
     registerCodeIndentation(editor),
   );
 }
@@ -550,7 +379,7 @@ export const CodePrismExtension = defineExtension({
     disabled: false,
     tokenizer: PrismTokenizer,
   }),
-  dependencies: [CodeExtension, CodeIndentExtension],
+  dependencies: [CodeExtension, CodeGutterExtension, CodeIndentExtension],
   name: '@lexical/code-prism',
   register: (editor, config, state) => {
     const stores = state.getOutput();

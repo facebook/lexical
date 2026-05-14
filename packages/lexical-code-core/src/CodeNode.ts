@@ -20,6 +20,8 @@ import type {
   RangeSelection,
   SerializedElementNode,
   Spread,
+  StateConfigValue,
+  StateValueOrUpdater,
   TabNode,
 } from 'lexical';
 
@@ -30,13 +32,17 @@ import {
   $createParagraphNode,
   $createTabNode,
   $getEditor,
+  $getState,
   $isLineBreakNode,
   $isTabNode,
   $isTextNode,
+  $setState,
   addClassNamesToElement,
+  createState,
   ElementDOMSlot,
   ElementNode,
   isHTMLElement,
+  NODE_STATE_KEY,
   setDOMStyleFromCSS,
   setDOMUnmanaged,
 } from 'lexical';
@@ -77,6 +83,22 @@ const LANGUAGE_DATA_ATTRIBUTE = 'data-language';
 const HIGHLIGHT_LANGUAGE_DATA_ATTRIBUTE = 'data-highlight-language';
 const THEME_DATA_ATTRIBUTE = 'data-theme';
 
+/**
+ * NodeState backing for the `wordWrap` flag on a {@link CodeNode}. Using
+ * {@link createState} replaces what would otherwise be a `__wordWrap`
+ * field plus matching `clone`/`afterCloneFrom`/`updateFromJSON`/setters
+ * boilerplate with a single state config plus thin getter/setter
+ * wrappers; the framework handles cloning and copy-on-write automatically.
+ *
+ * The legacy top-level `wordWrap` JSON shape is preserved by hand in
+ * {@link CodeNode#updateFromJSON} and {@link CodeNode#exportJSON} (the
+ * latter strips the auto-serialized entry from `$`), so consumers see
+ * the same wire format as before this migration.
+ */
+const wordWrapState = createState('wordWrap', {
+  parse: v => (typeof v === 'boolean' ? v : false),
+});
+
 const noExtensionDeprecation = warnOnlyOnce(
   'Using CodeNode without CodeExtension is deprecated',
 );
@@ -89,8 +111,6 @@ export class CodeNode extends ElementNode {
   __theme: string | undefined;
   /** @internal */
   __isSyntaxHighlightSupported: boolean;
-  /** @internal */
-  __wordWrap: boolean;
 
   static getType(): string {
     return 'code';
@@ -105,7 +125,6 @@ export class CodeNode extends ElementNode {
     this.__language = language || undefined;
     this.__isSyntaxHighlightSupported = false;
     this.__theme = undefined;
-    this.__wordWrap = false;
   }
 
   afterCloneFrom(prevNode: this): void {
@@ -113,7 +132,6 @@ export class CodeNode extends ElementNode {
     this.__language = prevNode.__language;
     this.__theme = prevNode.__theme;
     this.__isSyntaxHighlightSupported = prevNode.__isSyntaxHighlightSupported;
-    this.__wordWrap = prevNode.__wordWrap;
   }
 
   // View
@@ -139,7 +157,7 @@ export class CodeNode extends ElementNode {
       setDOMStyleFromCSS(element.style, style);
     }
 
-    if (this.__wordWrap) {
+    if (this.getWordWrap()) {
       element.setAttribute('data-word-wrap', 'true');
       const gutterEl = document.createElement('div');
       gutterEl.className = 'code-gutter';
@@ -154,7 +172,7 @@ export class CodeNode extends ElementNode {
   }
 
   getDOMSlot(element: HTMLElement): ElementDOMSlot {
-    if (this.__wordWrap) {
+    if (this.getWordWrap()) {
       const contentEl = element.querySelector<HTMLElement>('.code-content');
       if (contentEl) {
         return super.getDOMSlot(element).withElement(contentEl);
@@ -163,8 +181,14 @@ export class CodeNode extends ElementNode {
     return super.getDOMSlot(element);
   }
   updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
-    // Force re-creation if wordWrap changes (DOM structure is different)
-    if (this.__wordWrap !== prevNode.__wordWrap) {
+    // Force re-creation if wordWrap changes (DOM structure is different).
+    // Use 'direct' reads so we compare each version's stored value, the
+    // same way the previous `this.__wordWrap !== prevNode.__wordWrap`
+    // check did.
+    if (
+      $getState(this, wordWrapState, 'direct') !==
+      $getState(prevNode, wordWrapState, 'direct')
+    ) {
       return true;
     }
 
@@ -320,11 +344,24 @@ export class CodeNode extends ElementNode {
   }
 
   exportJSON(): SerializedCodeNode {
+    // `wordWrap` is backed by NodeState so `super.exportJSON()` will
+    // include it under the `$` (NODE_STATE_KEY) bucket. Strip it from
+    // there and re-emit at the top level to preserve the legacy wire
+    // format (`{wordWrap: true}` only when enabled).
+    const {[NODE_STATE_KEY]: nodeStateBucket, ...rest} = super.exportJSON();
+    let cleanedNodeState = nodeStateBucket;
+    if (nodeStateBucket && 'wordWrap' in nodeStateBucket) {
+      const {wordWrap: _stripped, ...others} = nodeStateBucket;
+      cleanedNodeState = Object.keys(others).length > 0 ? others : undefined;
+    }
     return {
-      ...super.exportJSON(),
+      ...rest,
+      ...(cleanedNodeState !== undefined
+        ? {[NODE_STATE_KEY]: cleanedNodeState}
+        : undefined),
       language: this.getLanguage(),
       theme: this.getTheme(),
-      ...(this.__wordWrap ? {wordWrap: true} : undefined),
+      ...(this.getWordWrap() ? {wordWrap: true} : undefined),
     };
   }
 
@@ -444,14 +481,12 @@ export class CodeNode extends ElementNode {
     return this.getLatest().__theme;
   }
 
-  setWordWrap(wordWrap: boolean): this {
-    const writable = this.getWritable();
-    writable.__wordWrap = wordWrap;
-    return writable;
+  setWordWrap(valueOrUpdater: StateValueOrUpdater<typeof wordWrapState>): this {
+    return $setState(this, wordWrapState, valueOrUpdater);
   }
 
-  getWordWrap(): boolean {
-    return this.getLatest().__wordWrap;
+  getWordWrap(): StateConfigValue<typeof wordWrapState> {
+    return $getState(this, wordWrapState);
   }
 }
 

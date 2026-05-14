@@ -70,7 +70,7 @@ function $indentOverTab(selection: RangeSelection): boolean {
 export type CanIndentPredicate = (node: ElementNode) => boolean;
 
 function $defaultCanIndent(node: ElementNode) {
-  return node.canBeEmpty();
+  return node.canIndent();
 }
 
 export function registerTabIndentation(

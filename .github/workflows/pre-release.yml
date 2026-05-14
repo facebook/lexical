@@ -8,6 +8,13 @@ on:
         default: false
         type: boolean
 
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
 jobs:
   release:
     uses: ./.github/workflows/call-npm-publish.yml

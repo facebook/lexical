@@ -9,6 +9,12 @@ on:
         default: 0
         type: number
 
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
 jobs:
   release:
     if: github.repository_owner == 'facebook'

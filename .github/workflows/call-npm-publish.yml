@@ -18,6 +18,8 @@ on:
       NPM_TOKEN:
         required: true
 
+permissions: {}
+
 jobs:
   release:
     runs-on: ubuntu-latest

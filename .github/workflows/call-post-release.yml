@@ -19,15 +19,11 @@ jobs:
     permissions:
       contents: write
     steps:
-      - id: latest
-        uses: pozetroninc/github-action-get-latest-release@master
-        with:
-          owner: facebook
-          repo: lexical
-          excludes: draft
       - uses: actions/checkout@v6
         with:
           ref: ${{ inputs.ref }}
+      - id: latest
+        uses: ./.github/actions/get-latest-release
       - uses: ./.github/actions/setup-pnpm
         with:
           node-version: 24.x

@@ -43,11 +43,7 @@ jobs:
           git config user.name "Lexical GitHub Actions Bot"
           git config user.email "<>"
       - id: latest
-        uses: pozetroninc/github-action-get-latest-release@master
-        with:
-          owner: facebook
-          repo: lexical
-          excludes: draft
+        uses: ./.github/actions/get-latest-release
       - id: increment-version
         run: pnpm run increment-version
         env:

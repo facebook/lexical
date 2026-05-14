@@ -9,6 +9,8 @@ on:
         default: 0
         type: number
 
+permissions: {}
+
 jobs:
   release:
     if: github.repository_owner == 'facebook'

@@ -345,6 +345,7 @@ const config: Config = {
           },
         ],
     './plugins/webpack-buffer',
+    './plugins/webpack-fb-internal',
     async function webpackLexicalModules() {
       return {
         configureWebpack() {
@@ -422,7 +423,7 @@ const config: Config = {
   ].filter(plugin => plugin != null),
   presets: [
     [
-      require.resolve('docusaurus-plugin-internaldocs-fb/docusaurus-preset'),
+      'classic',
       {
         blog: false,
         docs: {
@@ -435,7 +436,6 @@ const config: Config = {
         gtag: {
           trackingID: 'G-7C6YYBYBBT',
         },
-        staticDocsProject: 'lexical',
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
         },

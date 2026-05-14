@@ -1161,7 +1161,7 @@ export async function dragDraggableMenuTo(
 ) {
   await dragMouse(
     page,
-    await selectorBoundingBox(page, '.draggable-block-menu'),
+    await selectorBoundingBox(page, '[data-lexical-block-drag-handle]'),
     await selectorBoundingBox(page, toSelector),
     {positionEnd, positionStart},
   );

@@ -53,6 +53,24 @@ export function $copyBlockFormatIndent(
   }
 }
 
+function $isPointAtBlockStart(point: Point, block: ElementNode): boolean {
+  if (point.type !== 'text' || point.offset !== 0) {
+    return false;
+  }
+  let node: LexicalNode = point.getNode();
+  while (node !== block) {
+    if (node.getPreviousSibling() !== null) {
+      return false;
+    }
+    const parent: LexicalNode | null = node.getParent();
+    if (parent === null) {
+      return false;
+    }
+    node = parent;
+  }
+  return true;
+}
+
 /**
  * Converts all nodes in the selection that are of one block type to another.
  * @param selection - The selected blocks to be converted.
@@ -81,15 +99,31 @@ export function $setBlocksType<T extends ElementNode>(
       INTERNAL_$isBlock,
     );
     const focusBlock = $findMatchingParent(focus.getNode(), INTERNAL_$isBlock);
+    const focusAtBlockStart =
+      $isElementNode(focusBlock) &&
+      anchorBlock !== focusBlock &&
+      $isPointAtBlockStart(focus, focusBlock);
     if ($isElementNode(anchorBlock)) {
       blockMap.set(anchorBlock.getKey(), anchorBlock);
     }
-    if ($isElementNode(focusBlock)) {
+    if ($isElementNode(focusBlock) && !focusAtBlockStart) {
       blockMap.set(focusBlock.getKey(), focusBlock);
     }
   }
   for (const node of selection.getNodes()) {
     if ($isElementNode(node) && INTERNAL_$isBlock(node)) {
+      if (
+        anchorAndFocus &&
+        node.is(
+          $findMatchingParent(anchorAndFocus[1].getNode(), INTERNAL_$isBlock),
+        ) &&
+        !node.is(
+          $findMatchingParent(anchorAndFocus[0].getNode(), INTERNAL_$isBlock),
+        ) &&
+        $isPointAtBlockStart(anchorAndFocus[1], node)
+      ) {
+        continue;
+      }
       blockMap.set(node.getKey(), node);
     } else if (anchorAndFocus === null) {
       const ancestorBlock = $findMatchingParent(node, INTERNAL_$isBlock);

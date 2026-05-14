@@ -46,6 +46,7 @@ import {EditorState} from './LexicalEditorState';
 import {cloneMap} from './LexicalGenMap';
 import {
   $createChildrenArray,
+  $getElementDOMSlot,
   $isRootOrShadowRoot,
   cloneDecorators,
   getElementByKeyOrThrow,
@@ -424,7 +425,7 @@ function $createNode(key: NodeKey, slot: ElementDOMSlot | null): HTMLElement {
         node,
         0,
         endIndex,
-        activeEditorDOMRenderConfig.$getDOMSlot(node, dom, activeEditor),
+        $getElementDOMSlot(activeEditor, node, dom),
       );
     }
 
@@ -570,9 +571,9 @@ function $reconcileElementTerminatingLineBreak(
     activeNextNodeMap,
   );
   if (prevLineBreak !== nextLineBreak) {
-    activeEditorDOMRenderConfig
-      .$getDOMSlot(nextElement, dom, activeEditor)
-      .setManagedLineBreak(nextLineBreak);
+    $getElementDOMSlot(activeEditor, nextElement, dom).setManagedLineBreak(
+      nextLineBreak,
+    );
   }
 }
 
@@ -607,7 +608,7 @@ function $reconcileChildrenWithDirection(
   $reconcileChildren(
     prevElement,
     nextElement,
-    activeEditorDOMRenderConfig.$getDOMSlot(nextElement, dom, activeEditor),
+    $getElementDOMSlot(activeEditor, nextElement, dom),
   );
   if (!$isRootOrShadowRoot(nextElement)) {
     // RootNode / ShadowRootNode never expose `__textFormat` / `__textStyle`

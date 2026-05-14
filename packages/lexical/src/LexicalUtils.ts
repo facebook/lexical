@@ -46,6 +46,7 @@ import {
   $isTextNode,
   DecoratorNode,
   DEFAULT_EDITOR_DOM_CONFIG,
+  ElementDOMSlot,
   ElementFormatType,
   ElementNode,
   HISTORY_MERGE_TAG,
@@ -1990,6 +1991,29 @@ export function $getEditorDOMRenderConfig(
   editor: LexicalEditor = $getEditor(),
 ): EditorDOMRenderConfig {
   return editor._config.dom || DEFAULT_EDITOR_DOM_CONFIG;
+}
+
+/**
+ * @internal @experimental
+ *
+ * Resolve the DOM slot for an `ElementNode` through the configured
+ * `$getDOMSlot` hook, narrowing to {@link ElementDOMSlot} so callers can use
+ * children-management methods. Invariants if a non-ElementDOMSlot is returned
+ * for an ElementNode (extension contract violation).
+ */
+export function $getElementDOMSlot(
+  editor: LexicalEditor,
+  node: ElementNode,
+  dom: HTMLElement,
+): ElementDOMSlot<HTMLElement> {
+  const slot = $getEditorDOMRenderConfig(editor).$getDOMSlot(node, dom, editor);
+  invariant(
+    slot instanceof ElementDOMSlot,
+    '$getElementDOMSlot: expected ElementDOMSlot for ElementNode (key %s type %s)',
+    node.getKey(),
+    node.getType(),
+  );
+  return slot;
 }
 
 /** @internal */

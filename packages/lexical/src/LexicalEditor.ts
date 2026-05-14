@@ -6,6 +6,7 @@
  *
  */
 
+import type {DOMSlot} from './LexicalDOMSlot';
 import type {EditorState, SerializedEditorState} from './LexicalEditorState';
 import type {
   DOMConversion,
@@ -15,7 +16,6 @@ import type {
   LexicalPrivateDOM,
   NodeKey,
 } from './LexicalNode';
-import type {ElementDOMSlot} from './nodes/LexicalElementNode';
 
 import invariant from 'shared/invariant';
 
@@ -265,12 +265,20 @@ export interface EditorDOMRenderConfig {
     node: T,
     editor: LexicalEditor,
   ) => HTMLElement;
-  /** @internal @experimental */
+  /**
+   * @internal @experimental
+   *
+   * The default impl dispatches to `node.getDOMSlot(dom)` — for `ElementNode`
+   * that returns an {@link ElementDOMSlot} with children-management methods,
+   * for non-Element nodes the base {@link DOMSlot} pointing at the keyed DOM.
+   * Callsites that need ElementNode-specific slot methods should narrow via
+   * `$isElementNode` or cast to `ElementDOMSlot`.
+   */
   $getDOMSlot: <T extends LexicalNode>(
     node: T,
     dom: HTMLElement,
     editor: LexicalEditor,
-  ) => ElementDOMSlot<HTMLElement>;
+  ) => DOMSlot<HTMLElement>;
   /** @internal @experimental */
   $exportDOM: <T extends LexicalNode>(
     node: T,
@@ -733,15 +741,7 @@ export const DEFAULT_EDITOR_DOM_CONFIG: EditorDOMRenderConfig = {
   $extractWithChild: (node, childNode, selection, destination, _editor) =>
     $isElementNode(node) &&
     node.extractWithChild(childNode, selection, destination),
-  $getDOMSlot: (node, dom, _editor) => {
-    invariant(
-      $isElementNode(node),
-      '$getDOMSlot called on a non-ElementNode (key %s type %s)',
-      node.getKey(),
-      node.getType(),
-    );
-    return node.getDOMSlot(dom);
-  },
+  $getDOMSlot: (node, dom, _editor) => node.getDOMSlot(dom),
   $shouldExclude: (node, _selection, _editor) =>
     $isElementNode(node) && node.excludeFromCopy('html'),
   $shouldInclude: (node, selection, _editor) =>

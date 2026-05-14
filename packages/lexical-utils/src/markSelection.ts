@@ -7,7 +7,7 @@
  */
 
 import {
-  $getEditorDOMRenderConfig,
+  $getElementDOMSlot,
   $getSelection,
   $isElementNode,
   $isRangeSelection,
@@ -39,11 +39,7 @@ function $rangeTargetFromPoint(
     const textDOM = getDOMTextNode(dom) || dom;
     return [textDOM, point.offset];
   } else {
-    const slot = $getEditorDOMRenderConfig(editor).$getDOMSlot(
-      node,
-      dom,
-      editor,
-    );
+    const slot = $getElementDOMSlot(editor, node, dom);
     return [slot.element, slot.getFirstChildOffset() + point.offset];
   }
 }

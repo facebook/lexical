@@ -35,6 +35,7 @@ import {
   ELEMENT_TYPE_TO_FORMAT,
   TEXT_TYPE_TO_FORMAT,
 } from '../LexicalConstants';
+import {DOMSlot} from '../LexicalDOMSlot';
 import {$isEphemeral, LexicalNode} from '../LexicalNode';
 import {
   $getSelection,
@@ -44,7 +45,7 @@ import {
 } from '../LexicalSelection';
 import {errorOnReadOnly, getActiveEditor} from '../LexicalUpdates';
 import {
-  $getEditorDOMRenderConfig,
+  $getElementDOMSlot,
   $getNodeByKey,
   $isRootOrShadowRoot,
   isHTMLElement,
@@ -82,10 +83,15 @@ export interface ElementNode {
 }
 
 /**
- * A utility class for managing the DOM children of an ElementNode
+ * A utility class for managing the DOM children of an ElementNode.
+ *
+ * Extends {@link DOMSlot} with children-management semantics: the slot tracks
+ * `before` / `after` boundaries inside the element where lexical-managed
+ * children are inserted, plus a managed line break used by the reconciler.
  */
-export class ElementDOMSlot<T extends HTMLElement = HTMLElement> {
-  readonly element: T;
+export class ElementDOMSlot<
+  T extends HTMLElement = HTMLElement,
+> extends DOMSlot<T> {
   readonly before: Node | null;
   readonly after: Node | null;
   constructor(
@@ -96,7 +102,7 @@ export class ElementDOMSlot<T extends HTMLElement = HTMLElement> {
     /** All managed children will be inserted after this node, if defined */
     after?: Node | undefined | null,
   ) {
-    this.element = element;
+    super(element);
     this.before = before || null;
     this.after = after || null;
   }
@@ -989,11 +995,7 @@ export class ElementNode extends LexicalNode {
 
   /** @internal */
   reconcileObservedMutation(dom: HTMLElement, editor: LexicalEditor): void {
-    const slot = $getEditorDOMRenderConfig(editor).$getDOMSlot(
-      this,
-      dom,
-      editor,
-    );
+    const slot = $getElementDOMSlot(editor, this, dom);
     let currentDOM = slot.getFirstChild();
     for (
       let currentNode = this.getFirstChild();

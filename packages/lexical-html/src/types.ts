@@ -10,7 +10,7 @@ import type {DOMRenderContextSymbol} from './constants';
 import type {
   BaseSelection,
   DOMExportOutput,
-  ElementDOMSlot,
+  DOMSlot,
   Klass,
   LexicalEditor,
   LexicalNode,
@@ -194,21 +194,24 @@ export interface DOMRenderMatch<T extends LexicalNode> {
    * after the children. The root of the node returned by createDOM must
    * still be exactly one HTMLElement.
    *
-   * Generally you will call `$next()` to get an ElementDOMSlot and then use
-   * its methods to create a new one.
+   * Generally you will call `$next()` to get a slot and then use its methods
+   * to create a new one. For ElementNode, the returned slot will be an
+   * {@link ElementDOMSlot} with children-management semantics; for non-Element
+   * nodes a base {@link DOMSlot} pointing at the keyed DOM. You may narrow the
+   * returned slot via `instanceof ElementDOMSlot` when needed.
    *
    * @param node The LexicalNode
    * @param dom The rendered HTMLElement
    * @param $next Call the next implementation
    * @param editor The editor
-   * @returns The `ElementDOMSlot` for this node
+   * @returns The slot for this node
    */
   $getDOMSlot?: <N extends LexicalNode>(
     node: N,
     dom: HTMLElement,
-    $next: () => ElementDOMSlot<HTMLElement>,
+    $next: () => DOMSlot<HTMLElement>,
     editor: LexicalEditor,
-  ) => ElementDOMSlot<HTMLElement>;
+  ) => DOMSlot<HTMLElement>;
   /**
    * Called during the reconciliation process to determine which nodes
    * to insert into the DOM for this Lexical Node. This is also the default

@@ -132,6 +132,7 @@ export {
   NODE_STATE_KEY,
   TEXT_TYPE_TO_FORMAT,
 } from './LexicalConstants';
+export {DOMSlot} from './LexicalDOMSlot';
 export type {
   CommandListener,
   CommandListenerPriority,
@@ -259,6 +260,7 @@ export {
   $getAdjacentNode,
   $getEditor,
   $getEditorDOMRenderConfig,
+  $getElementDOMSlot,
   $getNearestNodeFromDOMNode,
   $getNearestRootOrShadowRoot,
   $getNodeByKey,
@@ -314,11 +316,14 @@ export {
 export {ArtificialNode__DO_NOT_USE} from './nodes/ArtificialNode';
 export {$isDecoratorNode, DecoratorNode} from './nodes/LexicalDecoratorNode';
 export type {
-  ElementDOMSlot,
   ElementFormatType,
   SerializedElementNode,
 } from './nodes/LexicalElementNode';
-export {$isElementNode, ElementNode} from './nodes/LexicalElementNode';
+export {
+  $isElementNode,
+  ElementDOMSlot,
+  ElementNode,
+} from './nodes/LexicalElementNode';
 export type {SerializedLineBreakNode} from './nodes/LexicalLineBreakNode';
 export {
   $createLineBreakNode,

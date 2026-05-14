@@ -172,7 +172,7 @@ export type EditorDOMRenderConfig = {
     node: T,
     dom: HTMLElement,
     editor: LexicalEditor,
-  ) => ElementDOMSlot<HTMLElement>;
+  ) => DOMSlot<HTMLElement>;
   /** @internal @experimental */
   $exportDOM: <T extends LexicalNode>(
     node: T,
@@ -513,6 +513,7 @@ declare export class LexicalNode {
     dom: HTMLElement,
     config: EditorConfig,
   ): boolean;
+  getDOMSlot(element: HTMLElement): DOMSlot<HTMLElement>;
   remove(preserveEmptyParent?: boolean): void;
   replace<N extends LexicalNode>(replaceWith: N): N;
   insertAfter(
@@ -904,10 +905,18 @@ declare export function $isElementNode(
 ): node is ElementNode;
 
 /**
+ * DOMSlot
+ */
+declare export class DOMSlot<+T extends HTMLElement> {
+  +element: HTMLElement;
+  constructor(element: HTMLElement): void;
+  withElement<ElementType extends HTMLElement>(element: ElementType): DOMSlot<ElementType>;
+}
+
+/**
  * ElementDOMSlot
  */
-declare export class ElementDOMSlot<+T extends HTMLElement> {
-  +element: HTMLElement;
+declare export class ElementDOMSlot<+T extends HTMLElement> extends DOMSlot<T> {
   +before: Node | null;
   +after: Node | null;
   constructor(element: HTMLElement, before?: Node | null | void, after?: Node | null | void): void;
@@ -1023,6 +1032,11 @@ declare export function $getEditor(): LexicalEditor;
 declare export function $getEditorDOMRenderConfig(
   editor?: LexicalEditor,
 ): EditorDOMRenderConfig;
+declare export function $getElementDOMSlot(
+  editor: LexicalEditor,
+  node: ElementNode,
+  dom: HTMLElement,
+): ElementDOMSlot<HTMLElement>;
 declare export var DEFAULT_EDITOR_DOM_CONFIG: EditorDOMRenderConfig;
 
 /**

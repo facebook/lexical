@@ -6,7 +6,7 @@
  *
  */
 
-import type {JSX,type ReactNode, useEffect, useRef} from 'react';
+import type {JSX, ReactNode} from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {eventFiles} from '@lexical/rich-text';
@@ -23,6 +23,7 @@ import {
   DROP_COMMAND,
   type LexicalEditor,
 } from 'lexical';
+import {useEffect, useRef} from 'react';
 import {createPortal} from 'react-dom';
 import {IS_FIREFOX} from 'shared/environment';
 

@@ -10,6 +10,7 @@ import {fixupPluginRules} from '@eslint/compat';
 import js from '@eslint/js';
 import lexicalInternalPlugin from '@lexical/eslint-plugin-internal';
 import prettierConfig from 'eslint-config-prettier';
+import compat from 'eslint-plugin-compat';
 import _headerPlugin from 'eslint-plugin-header';
 import importXPlugin from 'eslint-plugin-import-x';
 import jsxA11yPlugin from 'eslint-plugin-jsx-a11y';
@@ -447,4 +448,10 @@ export default [
 
   // Prettier must be last to override formatting rules
   prettierConfig,
+
+  // Compatibility with browserslist
+  {
+    ...compat.configs['flat/recommended'],
+    ignores: ['packages/lexical-playground/**'],
+  },
 ];

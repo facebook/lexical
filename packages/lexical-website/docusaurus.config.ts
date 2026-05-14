@@ -345,7 +345,6 @@ const config: Config = {
           },
         ],
     './plugins/webpack-buffer',
-    './plugins/webpack-fb-internal',
     async function webpackLexicalModules() {
       return {
         configureWebpack() {

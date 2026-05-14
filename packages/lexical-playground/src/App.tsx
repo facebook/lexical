@@ -27,6 +27,7 @@ import {
   ListExtension,
 } from '@lexical/list';
 import {PlainTextExtension} from '@lexical/plain-text';
+import {BlockDragHandleExtension} from '@lexical/react/LexicalBlockDragHandleExtension';
 import {LexicalCollaboration} from '@lexical/react/LexicalCollaborationContext';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
 import {
@@ -205,6 +206,7 @@ const AppExtension = defineExtension({
     ClickableLinkExtension,
     SelectionAlwaysOnDisplayExtension,
     TerseExportExtension,
+    BlockDragHandleExtension,
   ],
   html: buildHTMLConfig(),
   name: '@lexical/playground',

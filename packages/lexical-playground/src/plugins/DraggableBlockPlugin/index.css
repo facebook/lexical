@@ -1,40 +1,49 @@
-.draggable-block-menu {
-  border-radius: 4px;
-  padding: 2px 1px;
-  cursor: grab;
-  opacity: 0;
-  position: absolute;
-  left: 0;
-  top: 0;
-  will-change: transform, opacity;
+/* Block drag wrapper: positions the drag handle as a sibling to the block
+ * content. Wrapper is display: flex so the handle sits to the left of the
+ * content; content takes the remaining space. */
+[data-lexical-block-drag-wrapper] {
   display: flex;
-  gap: 2px;
-  transition:
-    transform 140ms ease-in-out,
-    opacity 160ms ease-in-out;
+  align-items: flex-start;
+  gap: 4px;
+  position: relative;
 }
 
-.draggable-block-menu .icon {
+[data-lexical-block-drag-wrapper] > [data-lexical-block-drag-inner] {
+  flex: 1;
+  min-width: 0;
+}
+
+[data-lexical-block-drag-handle] {
+  flex: 0 0 auto;
   width: 16px;
   height: 16px;
-  opacity: 0.3;
-  background-image: url(../../images/icons/draggable-block-menu.svg);
-}
-
-.draggable-block-menu .icon-plus {
-  display: inline-block;
+  margin-top: 4px;
+  padding: 0;
   border: none;
-  cursor: pointer;
   background-color: transparent;
-  background-image: url(../../images/icons/plus.svg);
+  background-image: url(../../images/icons/draggable-block-menu.svg);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 16px 16px;
+  font-size: 0;
+  color: transparent;
+  cursor: grab;
+  opacity: 0;
+  transition: opacity 160ms ease-in-out;
+  border-radius: 4px;
 }
 
-.draggable-block-menu:active {
-  cursor: grabbing;
+[data-lexical-block-drag-wrapper]:hover > [data-lexical-block-drag-handle] {
+  opacity: 0.3;
 }
 
-.draggable-block-menu .icon:hover {
+[data-lexical-block-drag-handle]:hover {
+  opacity: 1 !important;
   background-color: #efefef;
+}
+
+[data-lexical-block-drag-handle]:active {
+  cursor: grabbing;
 }
 
 .draggable-block-target-line {
@@ -46,18 +55,4 @@
   top: 0;
   opacity: 0;
   will-change: transform;
-}
-
-.draggable-block-component-picker {
-  max-width: 260px;
-}
-
-.draggable-block-component-picker .component-picker-search {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 8px 10px;
-  border: 0;
-  outline: none;
-  font-size: 14px;
-  border-radius: 8px 8px 0 0;
 }

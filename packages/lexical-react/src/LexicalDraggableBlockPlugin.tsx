@@ -6,7 +6,7 @@
  *
  */
 
-import type {JSX} from 'react';
+import type {JSX,type ReactNode, useEffect, useRef} from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {eventFiles} from '@lexical/rich-text';
@@ -14,7 +14,6 @@ import {calculateZoomLevel, isHTMLElement, mergeRegister} from '@lexical/utils';
 import {
   $getNearestNodeFromDOMNode,
   $getNodeByKey,
-  $getRoot,
   $getSelection,
   $onUpdate,
   BLUR_COMMAND,
@@ -22,217 +21,61 @@ import {
   COMMAND_PRIORITY_LOW,
   DRAGOVER_COMMAND,
   DROP_COMMAND,
-  LexicalEditor,
+  type LexicalEditor,
 } from 'lexical';
-import {
-  DragEvent as ReactDragEvent,
-  ReactNode,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
 import {createPortal} from 'react-dom';
 import {IS_FIREFOX} from 'shared/environment';
 
-import {Point} from './shared/point';
-import {Rectangle} from './shared/rect';
+import {BLOCK_DRAG_HANDLE_ATTR} from './LexicalBlockDragHandleExtension';
 
-const SPACE = 4;
 const TARGET_LINE_HALF_HEIGHT = 2;
 const DRAG_DATA_FORMAT = 'application/x-lexical-drag-block';
 const TEXT_BOX_HORIZONTAL_PADDING = 28;
+const SPACE = 4;
 
-const Downward = 1;
-const Upward = -1;
-const Indeterminate = 0;
-
-let prevIndex = Infinity;
-
-function getCurrentIndex(keysLength: number): number {
-  if (keysLength === 0) {
-    return Infinity;
+/**
+ * Find the block wrapper that owns the drag handle target. Wrappers are emitted
+ * by {@link BlockDragHandleExtension} as siblings of the handle button.
+ */
+function getBlockElementFromHandle(handle: HTMLElement): HTMLElement | null {
+  const wrapper = handle.parentElement;
+  if (!wrapper) {
+    return null;
   }
-  if (prevIndex >= 0 && prevIndex < keysLength) {
-    return prevIndex;
-  }
-
-  return Math.floor(keysLength / 2);
+  // The inner element (the lexical-keyed block DOM) sits next to the handle.
+  const inner = wrapper.querySelector<HTMLElement>(
+    `:scope > :not([${BLOCK_DRAG_HANDLE_ATTR}])`,
+  );
+  return inner;
 }
 
-function getTopLevelNodeKeys(editor: LexicalEditor): string[] {
-  return editor.getEditorState().read(() => $getRoot().getChildrenKeys());
-}
-
-function getCollapsedMargins(elem: HTMLElement): {
-  marginTop: number;
-  marginBottom: number;
-} {
-  const getMargin = (
-    element: Element | null,
-    margin: 'marginTop' | 'marginBottom',
-  ): number =>
-    element ? parseFloat(window.getComputedStyle(element)[margin]) : 0;
-
-  const {marginTop, marginBottom} = window.getComputedStyle(elem);
-  const prevElemSiblingMarginBottom = getMargin(
-    elem.previousElementSibling,
-    'marginBottom',
-  );
-  const nextElemSiblingMarginTop = getMargin(
-    elem.nextElementSibling,
-    'marginTop',
-  );
-  const collapsedTopMargin = Math.max(
-    parseFloat(marginTop),
-    prevElemSiblingMarginBottom,
-  );
-  const collapsedBottomMargin = Math.max(
-    parseFloat(marginBottom),
-    nextElemSiblingMarginTop,
-  );
-
-  return {marginBottom: collapsedBottomMargin, marginTop: collapsedTopMargin};
-}
-
-function getBlockElement(
-  anchorElem: HTMLElement,
-  editor: LexicalEditor,
-  event: MouseEvent,
-  useEdgeAsDefault = false,
+/**
+ * Walk up from the event target to find the nearest block (via the wrapper).
+ */
+function getBlockElementFromEventTarget(
+  target: EventTarget | null,
 ): HTMLElement | null {
-  const anchorElementRect = anchorElem.getBoundingClientRect();
-  const topLevelNodeKeys = getTopLevelNodeKeys(editor);
-
-  let blockElem: HTMLElement | null = null;
-
-  editor.getEditorState().read(() => {
-    if (useEdgeAsDefault) {
-      const [firstNode, lastNode] = [
-        editor.getElementByKey(topLevelNodeKeys[0]),
-        editor.getElementByKey(topLevelNodeKeys[topLevelNodeKeys.length - 1]),
-      ];
-
-      const [firstNodeRect, lastNodeRect] = [
-        firstNode != null ? firstNode.getBoundingClientRect() : undefined,
-        lastNode != null ? lastNode.getBoundingClientRect() : undefined,
-      ];
-
-      if (firstNodeRect && lastNodeRect) {
-        const firstNodeZoom = calculateZoomLevel(firstNode);
-        const lastNodeZoom = calculateZoomLevel(lastNode);
-        if (event.y / firstNodeZoom < firstNodeRect.top) {
-          blockElem = firstNode;
-        } else if (event.y / lastNodeZoom > lastNodeRect.bottom) {
-          blockElem = lastNode;
-        }
-
-        if (blockElem) {
-          return;
-        }
-      }
-    }
-
-    let index = getCurrentIndex(topLevelNodeKeys.length);
-    let direction = Indeterminate;
-
-    while (index >= 0 && index < topLevelNodeKeys.length) {
-      const key = topLevelNodeKeys[index];
-      const elem = editor.getElementByKey(key);
-      if (elem === null) {
-        break;
-      }
-      const zoom = calculateZoomLevel(elem);
-      const point = new Point(event.x / zoom, event.y / zoom);
-      const domRect = Rectangle.fromDOM(elem);
-      const {marginTop, marginBottom} = getCollapsedMargins(elem);
-      const rect = domRect.generateNewRect({
-        bottom: domRect.bottom + marginBottom,
-        left: anchorElementRect.left,
-        right: anchorElementRect.right,
-        top: domRect.top - marginTop,
-      });
-
-      const {
-        result,
-        reason: {isOnTopSide, isOnBottomSide},
-      } = rect.contains(point);
-
-      if (result) {
-        blockElem = elem;
-        prevIndex = index;
-        break;
-      }
-
-      if (direction === Indeterminate) {
-        if (isOnTopSide) {
-          direction = Upward;
-        } else if (isOnBottomSide) {
-          direction = Downward;
-        } else {
-          // stop search block element
-          direction = Infinity;
-        }
-      }
-
-      index += direction;
-    }
-  });
-
-  return blockElem;
-}
-
-function setMenuPosition(
-  targetElem: HTMLElement | null,
-  floatingElem: HTMLElement,
-  anchorElem: HTMLElement,
-  zoomLevel: number,
-) {
-  if (!targetElem) {
-    floatingElem.style.display = 'none';
-    return;
+  if (!isHTMLElement(target)) {
+    return null;
   }
-
-  const targetRect = targetElem.getBoundingClientRect();
-  const targetStyle = window.getComputedStyle(targetElem);
-  const floatingElemRect = floatingElem.getBoundingClientRect();
-  const anchorElementRect = anchorElem.getBoundingClientRect();
-
-  // top left
-  let targetCalculateHeight: number = parseInt(targetStyle.lineHeight, 10);
-  if (isNaN(targetCalculateHeight)) {
-    // middle
-    targetCalculateHeight = targetRect.bottom - targetRect.top;
+  const handle = target.closest<HTMLElement>(`[${BLOCK_DRAG_HANDLE_ATTR}]`);
+  if (handle) {
+    return getBlockElementFromHandle(handle);
   }
-  const top =
-    (targetRect.top +
-      (targetCalculateHeight -
-        (floatingElemRect.height || targetCalculateHeight)) /
-        2 -
-      anchorElementRect.top +
-      anchorElem.scrollTop) /
-    zoomLevel;
-
-  const left = SPACE;
-
-  floatingElem.style.display = 'flex';
-  floatingElem.style.opacity = '1';
-  floatingElem.style.transform = `translate(${left}px, ${top}px)`;
-}
-
-function setDragImage(
-  dataTransfer: DataTransfer,
-  draggableBlockElem: HTMLElement,
-) {
-  const {transform} = draggableBlockElem.style;
-
-  // Remove dragImage borders
-  draggableBlockElem.style.transform = 'translateZ(0)';
-  dataTransfer.setDragImage(draggableBlockElem, 0, 0);
-
-  setTimeout(() => {
-    draggableBlockElem.style.transform = transform;
-  });
+  // For drop/dragover: target is somewhere in/around a block, find the
+  // wrapper's inner element via traversal.
+  const wrapperChild = target.closest<HTMLElement>(
+    '[data-lexical-block-drag-wrapper] > *',
+  );
+  if (
+    wrapperChild &&
+    !wrapperChild.hasAttribute(BLOCK_DRAG_HANDLE_ATTR) &&
+    wrapperChild.parentElement !== null &&
+    wrapperChild.parentElement.hasAttribute('data-lexical-block-drag-wrapper')
+  ) {
+    return wrapperChild;
+  }
+  return null;
 }
 
 function setTargetLine(
@@ -245,18 +88,13 @@ function setTargetLine(
     targetBlockElem.getBoundingClientRect();
   const {top: anchorTop, width: anchorWidth} =
     anchorElem.getBoundingClientRect();
-  const {marginTop, marginBottom} = getCollapsedMargins(targetBlockElem);
   let lineTop = targetBlockElemTop;
-  if (mouseY >= targetBlockElemTop) {
-    lineTop += targetBlockElemHeight + marginBottom / 2;
-  } else {
-    lineTop -= marginTop / 2;
+  if (mouseY >= targetBlockElemTop + targetBlockElemHeight / 2) {
+    lineTop += targetBlockElemHeight;
   }
-
   const top =
     lineTop - anchorTop - TARGET_LINE_HALF_HEIGHT + anchorElem.scrollTop;
   const left = TEXT_BOX_HORIZONTAL_PADDING - SPACE;
-
   targetLineElem.style.transform = `translate(${left}px, ${top}px)`;
   targetLineElem.style.width = `${
     anchorWidth - (TEXT_BOX_HORIZONTAL_PADDING - SPACE) * 2
@@ -271,82 +109,125 @@ function hideTargetLine(targetLineElem: HTMLElement | null) {
   }
 }
 
+function setDragImage(
+  dataTransfer: DataTransfer,
+  draggableBlockElem: HTMLElement,
+) {
+  const {transform} = draggableBlockElem.style;
+  draggableBlockElem.style.transform = 'translateZ(0)';
+  dataTransfer.setDragImage(draggableBlockElem, 0, 0);
+  setTimeout(() => {
+    draggableBlockElem.style.transform = transform;
+  });
+}
+
 function useDraggableBlockMenu(
   editor: LexicalEditor,
   anchorElem: HTMLElement,
-  menuRef: React.RefObject<HTMLElement | null>,
   targetLineRef: React.RefObject<HTMLElement | null>,
   isEditable: boolean,
-  menuComponent: ReactNode,
   targetLineComponent: ReactNode,
-  isOnMenu: (element: HTMLElement) => boolean,
   onElementChanged?: (element: HTMLElement | null) => void,
 ): JSX.Element {
-  const scrollerElem = anchorElem.parentElement;
-
   const isDraggingBlockRef = useRef<boolean>(false);
-  const [draggableBlockElem, setDraggableBlockElemState] =
-    useState<HTMLElement | null>(null);
+  const onElementChangedRef = useRef(onElementChanged);
+  onElementChangedRef.current = onElementChanged;
 
-  const setDraggableBlockElem = useCallback(
-    (elem: HTMLElement | null) => {
-      setDraggableBlockElemState(elem);
-      if (onElementChanged) {
-        onElementChanged(elem);
-      }
-    },
-    [onElementChanged],
-  );
-
+  // Wrapper hover → onElementChanged signal. Use event delegation on the
+  // editor root rather than per-wrapper listeners so dynamic block changes
+  // are handled automatically.
   useEffect(() => {
-    function onMouseMove(event: MouseEvent) {
-      const target = event.target;
-      if (!isHTMLElement(target)) {
-        setDraggableBlockElem(null);
+    return editor.registerRootListener(rootElement => {
+      if (!rootElement) {
         return;
       }
+      let currentBlockElem: HTMLElement | null = null;
+      function notify(elem: HTMLElement | null) {
+        if (elem !== currentBlockElem) {
+          currentBlockElem = elem;
+          const cb = onElementChangedRef.current;
+          if (cb) {
+            cb(elem);
+          }
+        }
+      }
+      function onMouseOver(event: MouseEvent) {
+        notify(getBlockElementFromEventTarget(event.target));
+      }
+      function onMouseLeave() {
+        notify(null);
+      }
+      rootElement.addEventListener('mouseover', onMouseOver);
+      rootElement.addEventListener('mouseleave', onMouseLeave);
+      return () => {
+        rootElement.removeEventListener('mouseover', onMouseOver);
+        rootElement.removeEventListener('mouseleave', onMouseLeave);
+      };
+    });
+  }, [editor]);
 
-      if (isOnMenu(target)) {
+  // dragstart on drag handles (event delegation). Sets the drag payload to
+  // the nearest lexical node key for the block.
+  useEffect(() => {
+    return editor.registerRootListener(rootElement => {
+      if (!rootElement) {
         return;
       }
+      function onDragStart(event: DragEvent) {
+        const target = event.target;
+        if (
+          !isHTMLElement(target) ||
+          !target.matches(`[${BLOCK_DRAG_HANDLE_ATTR}]`)
+        ) {
+          return;
+        }
+        const blockElem = getBlockElementFromHandle(target);
+        if (!blockElem || !event.dataTransfer) {
+          return;
+        }
+        let nodeKey = '';
+        editor.read(() => {
+          const node = $getNearestNodeFromDOMNode(blockElem);
+          if (node) {
+            nodeKey = node.getKey();
+          }
+        });
+        if (!nodeKey) {
+          return;
+        }
+        setDragImage(event.dataTransfer, blockElem);
+        event.dataTransfer.setData(DRAG_DATA_FORMAT, nodeKey);
+        isDraggingBlockRef.current = true;
 
-      const _draggableBlockElem = getBlockElement(anchorElem, editor, event);
-
-      setDraggableBlockElem(_draggableBlockElem);
-    }
-
-    function onMouseLeave() {
-      setDraggableBlockElem(null);
-    }
-
-    if (scrollerElem != null) {
-      scrollerElem.addEventListener('mousemove', onMouseMove);
-      scrollerElem.addEventListener('mouseleave', onMouseLeave);
-    }
-
-    return () => {
-      if (scrollerElem != null) {
-        scrollerElem.removeEventListener('mousemove', onMouseMove);
-        scrollerElem.removeEventListener('mouseleave', onMouseLeave);
+        if (IS_FIREFOX && document.activeElement !== rootElement) {
+          // Firefox: restore focus synchronously so caret stays visible.
+          rootElement!.focus({preventScroll: true});
+          editor.update(() => {
+            const selection = $getSelection();
+            if (selection !== null && !selection.dirty) {
+              selection.dirty = true;
+            }
+          });
+        }
       }
-    };
-  }, [scrollerElem, anchorElem, editor, isOnMenu, setDraggableBlockElem]);
+      function onDragEnd() {
+        isDraggingBlockRef.current = false;
+        hideTargetLine(targetLineRef.current);
+        if (IS_FIREFOX) {
+          editor.focus();
+        }
+      }
+      rootElement.addEventListener('dragstart', onDragStart);
+      rootElement.addEventListener('dragend', onDragEnd);
+      return () => {
+        rootElement.removeEventListener('dragstart', onDragStart);
+        rootElement.removeEventListener('dragend', onDragEnd);
+      };
+    });
+  }, [editor, targetLineRef]);
 
-  useEffect(() => {
-    const zoomLevel = calculateZoomLevel(
-      document.getElementsByClassName('ContentEditable__root')[0],
-      true,
-    );
-    if (menuRef.current) {
-      setMenuPosition(
-        draggableBlockElem,
-        menuRef.current,
-        anchorElem,
-        zoomLevel,
-      );
-    }
-  }, [anchorElem, draggableBlockElem, menuRef]);
-
+  // DRAGOVER for target line + DROP for the reorder. Mirrors the previous
+  // command-based wiring; block detection now traverses block wrappers.
   useEffect(() => {
     function onDragover(event: DragEvent): boolean {
       if (!isDraggingBlockRef.current) {
@@ -356,11 +237,7 @@ function useDraggableBlockMenu(
       if (isFileTransfer) {
         return false;
       }
-      const {pageY, target} = event;
-      if (!isHTMLElement(target)) {
-        return false;
-      }
-      const targetBlockElem = getBlockElement(anchorElem, editor, event, true);
+      const targetBlockElem = getBlockElementFromEventTarget(event.target);
       const targetLineElem = targetLineRef.current;
       if (targetBlockElem === null || targetLineElem === null) {
         return false;
@@ -368,10 +245,12 @@ function useDraggableBlockMenu(
       setTargetLine(
         targetLineElem,
         targetBlockElem,
-        pageY / calculateZoomLevel(target),
+        event.pageY /
+          calculateZoomLevel(
+            isHTMLElement(event.target) ? event.target : anchorElem,
+          ),
         anchorElem,
       );
-      // Prevent default event to be able to trigger onDrop events
       event.preventDefault();
       return true;
     }
@@ -391,10 +270,7 @@ function useDraggableBlockMenu(
       if (!draggedNode) {
         return false;
       }
-      if (!isHTMLElement(target)) {
-        return false;
-      }
-      const targetBlockElem = getBlockElement(anchorElem, editor, event, true);
+      const targetBlockElem = getBlockElementFromEventTarget(target);
       if (!targetBlockElem) {
         return false;
       }
@@ -403,68 +279,65 @@ function useDraggableBlockMenu(
         return false;
       }
       if (targetNode === draggedNode) {
-        // Firefox-specific fix: Even when no move occurs, restore focus to ensure cursor visibility
         if (IS_FIREFOX) {
           editor.focus();
         }
         return true;
       }
       const targetBlockElemTop = targetBlockElem.getBoundingClientRect().top;
-      if (pageY / calculateZoomLevel(target) >= targetBlockElemTop) {
+      const targetBlockElemHeight =
+        targetBlockElem.getBoundingClientRect().height;
+      const zoom = calculateZoomLevel(
+        isHTMLElement(target) ? target : anchorElem,
+      );
+      if (pageY / zoom >= targetBlockElemTop + targetBlockElemHeight / 2) {
         targetNode.insertAfter(draggedNode);
       } else {
         targetNode.insertBefore(draggedNode);
       }
-      setDraggableBlockElem(null);
+      hideTargetLine(targetLineRef.current);
 
-      // Firefox-specific fix: Use editor.focus() after drop to properly restore
-      // both focus and selection. This ensures cursor visibility immediately.
       if (IS_FIREFOX) {
-        // Using $onUpdate ensures this happens after the current update cycle finishes
         $onUpdate(() => {
           editor.focus();
         });
       }
-
       return true;
     }
 
     return mergeRegister(
       editor.registerCommand(
         DRAGOVER_COMMAND,
-        event => {
-          return onDragover(event);
-        },
+        event => onDragover(event),
         COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand(
         DROP_COMMAND,
-        event => {
-          return $onDrop(event);
-        },
+        event => $onDrop(event),
         COMMAND_PRIORITY_HIGH,
       ),
     );
-  }, [anchorElem, editor, targetLineRef, setDraggableBlockElem]);
+  }, [editor, anchorElem, targetLineRef]);
 
-  // Firefox-specific: Prevent blur when clicking on drag handle to maintain cursor visibility.
-  // Firefox fires blur before dragstart, causing focus loss. We detect this by checking if
-  // the blur's relatedTarget is on the menu using isOnMenu, then restore focus synchronously.
+  // Firefox blur fix — handle is contenteditable=false, but Firefox still
+  // fires blur on the root when focusing the handle button. Restore focus.
   useEffect(() => {
     if (!IS_FIREFOX || !isEditable) {
       return;
     }
-
     return mergeRegister(
       editor.registerRootListener(rootElement => {
+        if (!rootElement) {
+          return;
+        }
         function onBlur(event: FocusEvent) {
           const relatedTarget = event.relatedTarget;
-          if (isHTMLElement(relatedTarget) && isOnMenu(relatedTarget)) {
-            // Blur is caused by clicking on drag handle - restore focus immediately
-            // to prevent cursor from disappearing. This must be synchronous to work.
+          if (
+            isHTMLElement(relatedTarget) &&
+            relatedTarget.matches(`[${BLOCK_DRAG_HANDLE_ATTR}]`)
+          ) {
             if (rootElement) {
               rootElement.focus({preventScroll: true});
-              // Force selection update to ensure cursor is visible
               editor.update(() => {
                 const selection = $getSelection();
                 if (selection !== null && !selection.dirty) {
@@ -472,17 +345,12 @@ function useDraggableBlockMenu(
                 }
               });
             }
-            // Prevent the event from propagating to LexicalEvents handler
             event.stopImmediatePropagation();
           }
         }
-
-        if (rootElement) {
-          rootElement.addEventListener('blur', onBlur, true);
-          return () => rootElement.removeEventListener('blur', onBlur, true);
-        }
+        rootElement.addEventListener('blur', onBlur, true);
+        return () => rootElement.removeEventListener('blur', onBlur, true);
       }),
-      // Intercept BLUR_COMMAND if focus is on the menu (fallback in case event propagation wasn't stopped)
       editor.registerCommand(
         BLUR_COMMAND,
         () => {
@@ -491,9 +359,8 @@ function useDraggableBlockMenu(
           if (
             rootElement &&
             isHTMLElement(activeElement) &&
-            isOnMenu(activeElement)
+            activeElement.matches(`[${BLOCK_DRAG_HANDLE_ATTR}]`)
           ) {
-            // Focus is on menu - restore to root and prevent blur command
             rootElement.focus({preventScroll: true});
             editor.update(() => {
               const selection = $getSelection();
@@ -501,101 +368,48 @@ function useDraggableBlockMenu(
                 selection.dirty = true;
               }
             });
-            return true; // Prevent command from propagating
+            return true;
           }
           return false;
         },
         COMMAND_PRIORITY_HIGH,
       ),
     );
-  }, [editor, isEditable, isOnMenu]);
+  }, [editor, isEditable]);
 
-  function onDragStart(event: ReactDragEvent<HTMLDivElement>): void {
-    const dataTransfer = event.dataTransfer;
-    if (!dataTransfer || !draggableBlockElem) {
-      return;
-    }
-
-    setDragImage(dataTransfer, draggableBlockElem);
-    let nodeKey = '';
-    editor.update(() => {
-      const node = $getNearestNodeFromDOMNode(draggableBlockElem);
-      if (node) {
-        nodeKey = node.getKey();
-      }
-    });
-    isDraggingBlockRef.current = true;
-    dataTransfer.setData(DRAG_DATA_FORMAT, nodeKey);
-
-    // Firefox-specific: Restore focus synchronously after drag starts to prevent cursor loss.
-    // The blur handler should have already restored focus, but we do it here as a fallback
-    // and to ensure selection is properly maintained during drag.
-    if (IS_FIREFOX) {
-      const rootElement = editor.getRootElement();
-      if (rootElement !== null && document.activeElement !== rootElement) {
-        // Restore focus synchronously - don't use requestAnimationFrame as blur already happened
-        // and we need immediate focus restoration to maintain cursor visibility
-        rootElement.focus({preventScroll: true});
-        // Force selection update to ensure cursor is visible
-        editor.update(() => {
-          const selection = $getSelection();
-          if (selection !== null && !selection.dirty) {
-            selection.dirty = true;
-          }
-        });
-      }
-    }
-  }
-
-  function onDragEnd(): void {
-    isDraggingBlockRef.current = false;
-    hideTargetLine(targetLineRef.current);
-
-    // Firefox-specific fix: Use editor.focus() to properly restore both focus and
-    // selection after drag ends. This ensures cursor visibility immediately.
-    if (IS_FIREFOX) {
-      // editor.focus() handles both focus restoration and selection update properly
-      editor.focus();
-    }
-  }
-  return createPortal(
-    <>
-      <div draggable={true} onDragStart={onDragStart} onDragEnd={onDragEnd}>
-        {isEditable && menuComponent}
-      </div>
-      {targetLineComponent}
-    </>,
-    anchorElem,
-  );
+  return createPortal(targetLineComponent, anchorElem);
 }
 
+/**
+ * Renders the drop-target indicator and wires drag-and-drop reorder for block
+ * ElementNodes whose DOM has been wrapped by
+ * {@link BlockDragHandleExtension}. The drag handle itself is rendered by the
+ * extension as a sibling of each block's content element.
+ *
+ * Callers handle hover-related UI (e.g. an "add block" picker positioned next
+ * to the hovered block) through `onElementChanged`, which reports the block
+ * element currently under the pointer.
+ *
+ * @experimental
+ */
 export function DraggableBlockPlugin_EXPERIMENTAL({
   anchorElem = document.body,
-  menuRef,
   targetLineRef,
-  menuComponent,
   targetLineComponent,
-  isOnMenu,
   onElementChanged,
 }: {
   anchorElem?: HTMLElement;
-  menuRef: React.RefObject<HTMLElement | null>;
   targetLineRef: React.RefObject<HTMLElement | null>;
-  menuComponent: ReactNode;
   targetLineComponent: ReactNode;
-  isOnMenu: (element: HTMLElement) => boolean;
   onElementChanged?: (element: HTMLElement | null) => void;
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();
   return useDraggableBlockMenu(
     editor,
     anchorElem,
-    menuRef,
     targetLineRef,
     editor._editable,
-    menuComponent,
     targetLineComponent,
-    isOnMenu,
     onElementChanged,
   );
 }

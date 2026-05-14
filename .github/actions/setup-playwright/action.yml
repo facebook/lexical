@@ -2,9 +2,12 @@ name: Setup playwright
 description: Set up Playwright, depends on setup-pnpm
 
 inputs:
-  node-version: {required: true, description: 'Node version, e.g. 24.x'}
+  node-version:
+    required: true
+    description: 'Node version, e.g. 24.x'
   fail-on-cache-miss:
-    {required: false, description: 'true to fail on cache miss'}
+    required: false
+    description: 'true to fail on cache miss'
 
 runs:
   using: 'composite'

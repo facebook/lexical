@@ -19,14 +19,19 @@ import {
   $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
+  $getElementDOMSlot,
   $getRoot,
   $getState,
   $getStateChange,
+  $isElementNode,
   $setState,
   configExtension,
   createState,
   defineExtension,
+  DOMSlot,
+  ElementDOMSlot,
   isHTMLElement,
+  LineBreakNode,
   TextNode,
 } from 'lexical';
 import {expectHtmlToBeEqual, html} from 'lexical/src/__tests__/utils';
@@ -451,5 +456,117 @@ describe('DOMRenderExtension', () => {
         );
       }),
     );
+  });
+
+  test('leaf-node extension can wrap createDOM and expose inner via $getDOMSlot (visible-linebreak)', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: () => {
+          $getRoot().append(
+            $createParagraphNode().append(
+              $createTextNode('before'),
+              $createLineBreakNode(),
+              $createTextNode('after'),
+            ),
+          );
+        },
+        dependencies: [
+          configExtension(DOMRenderExtension, {
+            overrides: [
+              domOverride([LineBreakNode], {
+                $createDOM: (_node, $next) => {
+                  const br = $next();
+                  const wrapper = document.createElement('span');
+                  wrapper.setAttribute('data-visible-linebreak', 'true');
+                  const marker = document.createElement('span');
+                  marker.textContent = '↵';
+                  marker.contentEditable = 'false';
+                  marker.setAttribute('aria-hidden', 'true');
+                  wrapper.appendChild(marker);
+                  wrapper.appendChild(br);
+                  return wrapper;
+                },
+                $getDOMSlot: (_node, dom, $next) => {
+                  const br = dom.querySelector('br');
+                  return br instanceof HTMLElement ? new DOMSlot(br) : $next();
+                },
+              }),
+            ],
+          }),
+        ],
+        name: 'visible-linebreak-example',
+      }),
+    );
+    const root = document.createElement('div');
+    editor.setRootElement(root);
+    editor.read(() => {
+      expectHtmlToBeEqual(
+        root.innerHTML,
+        html`
+          <p dir="auto">
+            <span data-lexical-text="true">before</span>
+            <span data-visible-linebreak="true">
+              <span contenteditable="false" aria-hidden="true">↵</span>
+              <br />
+            </span>
+            <span data-lexical-text="true">after</span>
+          </p>
+        `,
+      );
+    });
+  });
+
+  test('default leaf-node slot returns DOMSlot pointing at keyed DOM', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: () => {
+          $getRoot().append(
+            $createParagraphNode().append($createLineBreakNode()),
+          );
+        },
+        dependencies: [],
+        name: 'default-leaf-slot',
+      }),
+    );
+    const root = document.createElement('div');
+    editor.setRootElement(root);
+    editor.read(() => {
+      const paragraph = $getRoot().getFirstChildOrThrow();
+      if (!$isElementNode(paragraph)) {
+        throw new Error('expected paragraph to be an ElementNode');
+      }
+      const [linebreak] = paragraph.getChildren();
+      const dom = editor.getElementByKey(linebreak.getKey())!;
+      const slot = linebreak.getDOMSlot(dom);
+      expect(slot).toBeInstanceOf(DOMSlot);
+      expect(slot).not.toBeInstanceOf(ElementDOMSlot);
+      expect(slot.element).toBe(dom);
+    });
+  });
+
+  test('$getElementDOMSlot returns ElementDOMSlot for ElementNode through the hook', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: () => {
+          $getRoot().append(
+            $createParagraphNode().append($createTextNode('hello')),
+          );
+        },
+        dependencies: [],
+        name: 'element-slot-helper',
+      }),
+    );
+    const root = document.createElement('div');
+    editor.setRootElement(root);
+    editor.read(() => {
+      const paragraph = $getRoot().getFirstChildOrThrow();
+      if (!$isElementNode(paragraph)) {
+        throw new Error('expected paragraph to be an ElementNode');
+      }
+      const dom = editor.getElementByKey(paragraph.getKey())!;
+      const slot = $getElementDOMSlot(editor, paragraph, dom);
+      expect(slot).toBeInstanceOf(ElementDOMSlot);
+      expect(slot.element).toBe(dom);
+    });
   });
 });

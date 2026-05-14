@@ -12,9 +12,10 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - id: vars
+    - name: Compute path
+      id: vars
       shell: bash
-      run: echo "cache_playwright_path=${{ inputs.os == 'macos-latest' && '~/Library/Caches/ms-playwright' || inputs.os == 'windows-latest' && 'C:\\Users\\runneradmin\\AppData\\Local\\ms-playwright' || '~/.cache/ms-playwright' }}" >> "$GITHUB_OUTPUT"
+      run: echo "cache_playwright_path=${{ runner.os == 'macOS' && '~/Library/Caches/ms-playwright' || runner.os == 'Windows' && 'C:\\Users\\runneradmin\\AppData\\Local\\ms-playwright' || '~/.cache/ms-playwright' }}" >> "$GITHUB_OUTPUT"
     - name: Install required ubuntu-latest packages
       shell: bash
       if: runner.os == 'Linux'

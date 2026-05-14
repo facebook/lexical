@@ -18,7 +18,6 @@ import {$isListItemNode, $isListNode, ListItemNode} from '@lexical/list';
 import {$isQuoteNode} from '@lexical/rich-text';
 import {$findMatchingParent} from '@lexical/utils';
 import {
-  $createLineBreakNode,
   $createParagraphNode,
   $createTabNode,
   $createTextNode,
@@ -26,12 +25,12 @@ import {
   $getSelection,
   $isElementNode,
   $isParagraphNode,
-  $isTextNode,
   ElementNode,
   TextNode,
 } from 'lexical';
 
 import {importTextTransformers} from './importTextTransformers';
+import {$createMarkdownLineBreakNode} from './MarkdownTransformers';
 import {isEmptyParagraph, transformersByType} from './utils';
 
 export type TextFormatTransformersIndex = Readonly<{
@@ -283,18 +282,8 @@ function $importBlocks(
       }
 
       if (targetNode != null && targetNode.getTextContentSize() > 0) {
-        const lastChild = targetNode.getLastChild();
-        if ($isTextNode(lastChild)) {
-          const lastText = lastChild.getTextContent();
-          if (lastText.endsWith('\\')) {
-            lastChild.setTextContent(lastText.slice(0, -1));
-          } else if (/ {2,}$/.test(lastText)) {
-            lastChild.setTextContent(lastText.replace(/ {2,}$/, ''));
-          }
-        }
-
         targetNode.splice(targetNode.getChildrenSize(), 0, [
-          $createLineBreakNode(),
+          $createMarkdownLineBreakNode(targetNode),
           ...elementNode.getChildren(),
         ]);
         elementNode.remove();

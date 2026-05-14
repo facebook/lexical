@@ -31,6 +31,7 @@ import {
   $applyNodeReplacement,
   $copyNode,
   $createParagraphNode,
+  $getSelection,
   $getSiblingCaret,
   $isElementNode,
   $isParagraphNode,
@@ -38,6 +39,7 @@ import {
   $isRootOrShadowRoot,
   $rewindSiblingCaret,
   $setDirectionFromDOM,
+  $setFormatFromDOM,
   buildImportMap,
   ElementNode,
   getStyleObjectFromCSS,
@@ -296,14 +298,38 @@ export class ListItemNode extends ElementNode {
       list.insertAfter(replaceWithNode);
       replaceWithNode.insertAfter(newList);
     }
+    const toReplaceKey = this.__key;
+    let prevSizeBeforeChildrenTransfer = 0;
     if (includeChildren) {
       invariant(
         $isElementNode(replaceWithNode),
         'includeChildren should only be true for ElementNodes',
       );
-      this.getChildren().forEach((child: LexicalNode) => {
-        replaceWithNode.append(child);
-      });
+      prevSizeBeforeChildrenTransfer = replaceWithNode.getChildrenSize();
+      replaceWithNode.splice(
+        prevSizeBeforeChildrenTransfer,
+        0,
+        this.getChildren(),
+      );
+    }
+    // The base LexicalNode.replace remaps element-anchored selection points
+    // from the replaced node to the replacement, but this override skips
+    // super and the trailing this.remove() would otherwise drop selection
+    // onto a sibling list item via moveSelectionPointToSibling. Mirror the
+    // base behavior here for the element-anchored case.
+    if (includeChildren && $isElementNode(replaceWithNode)) {
+      const selection = $getSelection();
+      if ($isRangeSelection(selection)) {
+        for (const point of selection.getStartEndPoints()) {
+          if (point.key === toReplaceKey && point.type === 'element') {
+            point.set(
+              replaceWithNode.getKey(),
+              prevSizeBeforeChildrenTransfer + point.offset,
+              'element',
+            );
+          }
+        }
+      }
     }
     this.remove();
     if (list.getChildrenSize() === 0) {
@@ -533,55 +559,52 @@ function $setListItemThemeClassNames(
   editorThemeClasses: EditorThemeClasses,
   node: ListItemNode,
 ): void {
-  const classesToAdd = [];
-  const classesToRemove = [];
   const listTheme = editorThemeClasses.list;
-  const listItemClassName = listTheme ? listTheme.listitem : undefined;
-  let nestedListItemClassName;
-
-  if (listTheme && listTheme.nested) {
-    nestedListItemClassName = listTheme.nested.listitem;
+  if (!listTheme) {
+    return;
   }
 
-  if (listItemClassName !== undefined) {
-    classesToAdd.push(...normalizeClassNames(listItemClassName));
+  const listItemClassName = listTheme.listitem;
+  const nestedListItemClassName = listTheme.nested && listTheme.nested.listitem;
+  const parentNode = node.getParent();
+  const isCheckList =
+    $isListNode(parentNode) && parentNode.getListType() === 'check';
+  const checked = node.getChecked();
+  const isNested = node.getChildren().some(child => $isListNode(child));
+
+  // Always remove the variable theme classes first so that the className
+  // string stays in a canonical order regardless of how the dom got here
+  // (fresh create vs. cross-parent reuse). classList.remove on a missing
+  // class is a no-op, so this is safe even on a freshly-created element.
+  const classesToRemove: string[] = [];
+  if (listTheme.listitemChecked !== undefined) {
+    classesToRemove.push(listTheme.listitemChecked);
   }
-
-  if (listTheme) {
-    const parentNode = node.getParent();
-    const isCheckList =
-      $isListNode(parentNode) && parentNode.getListType() === 'check';
-    const checked = node.getChecked();
-
-    if (!isCheckList || checked) {
-      classesToRemove.push(listTheme.listitemUnchecked);
-    }
-
-    if (!isCheckList || !checked) {
-      classesToRemove.push(listTheme.listitemChecked);
-    }
-
-    if (isCheckList) {
-      classesToAdd.push(
-        checked ? listTheme.listitemChecked : listTheme.listitemUnchecked,
-      );
-    }
+  if (listTheme.listitemUnchecked !== undefined) {
+    classesToRemove.push(listTheme.listitemUnchecked);
   }
-
   if (nestedListItemClassName !== undefined) {
-    const nestedListItemClasses = normalizeClassNames(nestedListItemClassName);
-
-    if (node.getChildren().some(child => $isListNode(child))) {
-      classesToAdd.push(...nestedListItemClasses);
-    } else {
-      classesToRemove.push(...nestedListItemClasses);
-    }
+    classesToRemove.push(...normalizeClassNames(nestedListItemClassName));
   }
-
   if (classesToRemove.length > 0) {
     removeClassNamesFromElement(dom, ...classesToRemove);
   }
 
+  const classesToAdd: string[] = [];
+  if (listItemClassName !== undefined) {
+    classesToAdd.push(...normalizeClassNames(listItemClassName));
+  }
+  if (isCheckList) {
+    const checkClassName = checked
+      ? listTheme.listitemChecked
+      : listTheme.listitemUnchecked;
+    if (checkClassName !== undefined) {
+      classesToAdd.push(checkClassName);
+    }
+  }
+  if (nestedListItemClassName !== undefined && isNested) {
+    classesToAdd.push(...normalizeClassNames(nestedListItemClassName));
+  }
   if (classesToAdd.length > 0) {
     addClassNamesToElement(dom, ...classesToAdd);
   }
@@ -605,15 +628,10 @@ function updateListItemChecked(
   } else {
     dom.setAttribute('role', 'checkbox');
     dom.setAttribute('tabIndex', '-1');
-    if (
-      !prevListItemNode ||
-      listItemNode.__checked !== prevListItemNode.__checked
-    ) {
-      dom.setAttribute(
-        'aria-checked',
-        listItemNode.getChecked() ? 'true' : 'false',
-      );
-    }
+    dom.setAttribute(
+      'aria-checked',
+      listItemNode.getChecked() ? 'true' : 'false',
+    );
   }
 }
 
@@ -647,7 +665,14 @@ function $convertListItemElement(domNode: HTMLElement): DOMConversionOutput {
       : ariaCheckedAttr === 'false'
         ? false
         : undefined;
-  return {node: $setDirectionFromDOM($createListItemNode(checked), domNode)};
+
+  const node = $createListItemNode(checked);
+  $setFormatFromDOM(node, domNode);
+
+  return {
+    after: setFormatFromChildren.bind(null, node),
+    node: $setDirectionFromDOM(node, domNode),
+  };
 }
 
 function $convertCheckboxInput(domNode: Element): DOMConversionOutput {
@@ -656,7 +681,26 @@ function $convertCheckboxInput(domNode: Element): DOMConversionOutput {
     return {node: null};
   }
   const checked = domNode.hasAttribute('checked');
-  return {node: $createListItemNode(checked)};
+  const node = $createListItemNode(checked);
+  return {after: setFormatFromChildren.bind(null, node), node};
+}
+
+function setFormatFromChildren(
+  listItemNode: ListItemNode,
+  children: LexicalNode[],
+): LexicalNode[] {
+  const firstChild = children[0];
+  // google doc sets the alignment of the <p> tag inside the <li>
+  if (
+    children.length === 1 &&
+    $isParagraphNode(firstChild) &&
+    !listItemNode.getFormatType() &&
+    firstChild.getFormatType()
+  ) {
+    listItemNode.setFormat(firstChild.getFormatType());
+    return firstChild.getChildren();
+  }
+  return children;
 }
 
 /**

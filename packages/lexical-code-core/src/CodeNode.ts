@@ -66,7 +66,9 @@ function hasChildDOMNodeTag(node: Node, tagName: string) {
     if (isHTMLElement(child) && child.tagName === tagName) {
       return true;
     }
-    hasChildDOMNodeTag(child, tagName);
+    if (hasChildDOMNodeTag(child, tagName)) {
+      return true;
+    }
   }
   return false;
 }

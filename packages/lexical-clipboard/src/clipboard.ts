@@ -8,12 +8,9 @@
 
 /// <reference types="trusted-types" />
 
-import {
-  getExtensionDependencyFromEditor,
-  LexicalBuilder,
-} from '@lexical/extension';
+import {getPeerDependencyFromEditor} from '@lexical/extension';
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
-import {$addNodeStyle, $sliceSelectedTextNodeContent} from '@lexical/selection';
+import {$sliceSelectedTextNodeContent} from '@lexical/selection';
 import {objectKlassEquals} from '@lexical/utils';
 import {
   $caretFromPoint,
@@ -59,7 +56,7 @@ export interface LexicalClipboardData {
   'text/html'?: string | undefined;
   'application/x-lexical-editor'?: string | undefined;
   'text/plain': string;
-  [mimeType: string]: string | undefined;
+  [mimeType: string & {}]: string | undefined;
 }
 
 /**
@@ -652,13 +649,8 @@ export function $generateNodesFromSerializedNodes(
   serializedNodes: Array<BaseSerializedNode>,
 ): Array<LexicalNode> {
   const nodes = [];
-  for (let i = 0; i < serializedNodes.length; i++) {
-    const serializedNode = serializedNodes[i];
-    const node = $parseSerializedNode(serializedNode);
-    if ($isTextNode(node)) {
-      $addNodeStyle(node);
-    }
-    nodes.push(node);
+  for (const serializedNode of serializedNodes) {
+    nodes.push($parseSerializedNode(serializedNode));
   }
   return nodes;
 }
@@ -825,28 +817,65 @@ export function setLexicalClipboardDataTransfer(
   }
 }
 
+/**
+ * A function that produces the serialized representation of a selection for
+ * a single MIME type. Functions are arranged in a stack per MIME type (see
+ * {@link ExportMimeTypeConfig}); the function at the top of the stack is
+ * invoked first and may call `next()` to delegate to the previous function
+ * in the stack (typically the default Lexical serializer).
+ *
+ * Returning `null` from the top-most function omits that MIME type from the
+ * resulting {@link LexicalClipboardData}.
+ *
+ * @param selection - The selection to serialize, or `null` if there is none.
+ * @param next - Calls the previous handler in the stack and returns its
+ *   result, or `null` if there is no previous handler.
+ * @returns The serialized string for this MIME type, or `null` to omit it.
+ */
 export type ExportMimeTypeFunction = (
   selection: null | BaseSelection,
   next: () => null | string,
 ) => null | string;
 
+/**
+ * Configuration for {@link GetClipboardDataExtension}.
+ */
 export interface GetClipboardDataConfig {
+  /**
+   * The per-MIME-type serializer stacks used when copying or dragging the
+   * current selection out of the editor. See {@link ExportMimeTypeConfig}.
+   *
+   * Merged with [...prev, ...override]
+   */
   $exportMimeType: ExportMimeTypeConfig;
 }
 
-export type ExportMimeTypeConfig = Record<
-  keyof LexicalClipboardData | (string & {}),
-  ExportMimeTypeFunction[]
->;
+/**
+ * A mapping from MIME type to a stack of {@link ExportMimeTypeFunction}.
+ *
+ * Each entry is an ordered array; the function at the highest index runs
+ * first and may call `next()` to fall through to the function below it.
+ * The default config provides a single fallback handler for
+ * `'application/x-lexical-editor'`, `'text/html'`, and `'text/plain'`.
+ *
+ * When {@link GetClipboardDataExtension} merges a partial config, new
+ * functions are appended to the existing array for each MIME type, so
+ * later-registered handlers run before earlier ones (including the
+ * defaults) and may delegate to them via `next()`. To register a brand new
+ * MIME type, supply a key not present in the default config; arbitrary
+ * string keys are accepted in addition to the keys of
+ * {@link LexicalClipboardData}.
+ */
+export type ExportMimeTypeConfig = {
+  [K in keyof LexicalClipboardData]?: ExportMimeTypeFunction[];
+};
 
-function $getExportConfig() {
-  const editor = $getEditor();
-  const builder = LexicalBuilder.maybeFromEditor(editor);
-  if (builder && builder.hasExtensionByName(GetClipboardDataExtension.name)) {
-    return getExtensionDependencyFromEditor(editor, GetClipboardDataExtension)
-      .output;
-  }
-  return DEFAULT_EXPORT_MIME_TYPE;
+function $getExportConfig(editor = $getEditor()) {
+  const dep = getPeerDependencyFromEditor<typeof GetClipboardDataExtension>(
+    editor,
+    GetClipboardDataExtension.name,
+  );
+  return dep ? dep.output : DEFAULT_EXPORT_MIME_TYPE;
 }
 
 const DEFAULT_EXPORT_MIME_TYPE: ExportMimeTypeConfig = {
@@ -865,9 +894,11 @@ function $getClipboardDataWithConfigFromSelection(
 ): LexicalClipboardData {
   const clipboardData: LexicalClipboardData = {'text/plain': ''};
   for (const [k, fns] of Object.entries($exportMimeType)) {
-    const v = callExportMimeTypeFunctionStack(fns, selection);
-    if (v !== null) {
-      clipboardData[k] = v;
+    if (fns) {
+      const v = callExportMimeTypeFunctionStack(fns, selection);
+      if (v !== null) {
+        clipboardData[k] = v;
+      }
     }
   }
   return clipboardData;
@@ -882,6 +913,27 @@ function callExportMimeTypeFunctionStack(
   return callAt(fns.length - 1);
 }
 
+/**
+ * Serialize the given selection for a single MIME type using the active
+ * editor's configured {@link ExportMimeTypeConfig}. The configured stack is
+ * read from {@link GetClipboardDataExtension} via the editor's peer
+ * dependency lookup; if the extension was not built into the editor, the
+ * default stack is used.
+ *
+ * Useful when only one MIME representation is needed rather than the full
+ * {@link LexicalClipboardData} produced by
+ * {@link $getClipboardDataFromSelection}.
+ *
+ * Must be called from within an editor update or read.
+ *
+ * @param mimeType - The MIME type to serialize, e.g. `'text/html'`,
+ *   `'application/x-lexical-editor'`, `'text/plain'`, or any custom key
+ *   registered in the {@link ExportMimeTypeConfig}.
+ * @param selection - The selection to serialize (defaults to
+ *   `$getSelection()`).
+ * @returns The serialized string for the requested MIME type, or `null` if
+ *   no handler is registered for it or every handler returned `null`.
+ */
 export function $exportMimeTypeFromSelection(
   mimeType: keyof ExportMimeTypeConfig,
   selection: null | BaseSelection = $getSelection(),
@@ -892,6 +944,56 @@ export function $exportMimeTypeFromSelection(
   );
 }
 
+/**
+ * Lexical extension that controls how the current selection is serialized
+ * into clipboard MIME types when copying or dragging out of the editor.
+ *
+ * The extension's config holds an {@link ExportMimeTypeConfig} — a stack of
+ * {@link ExportMimeTypeFunction} per MIME type. Out of the box it provides
+ * fallback serializers for `'application/x-lexical-editor'`, `'text/html'`,
+ * and `'text/plain'` that defer to {@link $getLexicalContent},
+ * {@link $getHtmlContent}, and `selection.getTextContent()` respectively.
+ *
+ * Apps can layer additional handlers on top to customize an existing
+ * payload (delegating to the default via `next()`) or to register an
+ * entirely new MIME type. Functions provided through `mergeConfig` are
+ * appended to the existing stack for each MIME type, so a newly registered
+ * handler runs first and may fall through to the previously registered
+ * handlers via its `next` argument.
+ *
+ * The extension's `output` is the resolved {@link ExportMimeTypeConfig},
+ * which {@link $getClipboardDataFromSelection} and
+ * {@link $exportMimeTypeFromSelection} read via the editor's peer
+ * dependency lookup.
+ *
+ * @example
+ * ```ts
+ * import {configExtension, defineExtension} from '@lexical/extension';
+ * import {GetClipboardDataExtension} from '@lexical/clipboard';
+ *
+ * const MyClipboardExtension = defineExtension({
+ *   name: 'my-app/clipboard',
+ *   dependencies: [
+ *     configExtension(GetClipboardDataExtension, {
+ *       $exportMimeType: {
+ *         // Wrap the default HTML output with an app-specific marker.
+ *         'text/html': [
+ *           (selection, next) => {
+ *             const html = next();
+ *             return html ? wrapWithMyAppMarker(html) : html;
+ *           },
+ *         ],
+ *         // Add a brand-new MIME type.
+ *         'application/vnd.myapp+json': [
+ *           (selection) =>
+ *             selection ? exportMyAppFormat(selection) : null,
+ *         ],
+ *       },
+ *     }),
+ *   ],
+ * });
+ * ```
+ */
 export const GetClipboardDataExtension = defineExtension({
   build(editor, config, state) {
     return config.$exportMimeType;
@@ -904,7 +1006,10 @@ export const GetClipboardDataExtension = defineExtension({
     if (partial.$exportMimeType) {
       const $exportMimeType = {...config.$exportMimeType};
       for (const [k, v] of Object.entries(partial.$exportMimeType)) {
-        $exportMimeType[k] = [...$exportMimeType[k], ...v];
+        if (v) {
+          const prev = $exportMimeType[k];
+          $exportMimeType[k] = prev ? [...prev, ...v] : v;
+        }
       }
       merged.$exportMimeType = $exportMimeType;
     }

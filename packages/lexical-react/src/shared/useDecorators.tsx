@@ -44,6 +44,7 @@ export function useDecorators(
     // If the content editable mounts before the subscription is added, then
     // nothing will be rendered on initial pass. We can get around that by
     // ensuring that we set the value.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDecorators(editor.getDecorators());
   }, [editor]);
 

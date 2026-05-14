@@ -44,13 +44,15 @@ test('Layout - removes layout completely when both columns are empty and backspa
         style="grid-template-columns: 1fr 1fr">
         <div
           class="PlaygroundEditorTheme__layoutItem"
+          dir="auto"
           data-lexical-layout-item="true">
-          <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
         </div>
         <div
           class="PlaygroundEditorTheme__layoutItem"
+          dir="auto"
           data-lexical-layout-item="true">
-          <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
         </div>
       </div>
       <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>

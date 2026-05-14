@@ -28,6 +28,7 @@ import {ELEMENT_TYPE_TO_FORMAT} from '../LexicalConstants';
 import {
   $applyNodeReplacement,
   $setDirectionFromDOM,
+  $setFormatFromDOM,
   getCachedClassNameArray,
   isHTMLElement,
   setNodeIndentFromDOM,
@@ -168,10 +169,8 @@ export class ParagraphNode extends ElementNode {
 
 function $convertParagraphElement(element: HTMLElement): DOMConversionOutput {
   const node = $createParagraphNode();
-  if (element.style) {
-    node.setFormat(element.style.textAlign as ElementFormatType);
-    setNodeIndentFromDOM(element, node);
-  }
+  $setFormatFromDOM(node, element);
+  setNodeIndentFromDOM(element, node);
 
   // Check legacy 'align' attribute
   // Only use this if no format was set by CSS

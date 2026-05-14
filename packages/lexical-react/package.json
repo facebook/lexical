@@ -10,7 +10,7 @@
   "license": "MIT",
   "version": "0.44.0",
   "dependencies": {
-    "@floating-ui/react": "^0.27.16",
+    "@floating-ui/react": "^0.27.19",
     "@lexical/devtools-core": "workspace:*",
     "@lexical/dragon": "workspace:*",
     "@lexical/extension": "workspace:*",
@@ -28,7 +28,7 @@
     "@lexical/utils": "workspace:*",
     "@lexical/yjs": "workspace:*",
     "lexical": "workspace:*",
-    "react-error-boundary": "^6.0.0"
+    "react-error-boundary": "^6.1.1"
   },
   "peerDependencies": {
     "react": ">=17.x",

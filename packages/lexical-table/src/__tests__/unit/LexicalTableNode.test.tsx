@@ -199,9 +199,9 @@ describe('LexicalTableNode tests', () => {
                 html`
                   <table class="${editorConfig.theme.table}">
                     <colgroup><col /></colgroup>
-                    <tr>
-                      <td>
-                        <p><br /></p>
+                    <tr dir="auto">
+                      <td dir="auto">
+                        <p dir="auto"><br /></p>
                       </td>
                     </tr>
                   </table>
@@ -214,9 +214,9 @@ describe('LexicalTableNode tests', () => {
                     class="${editorConfig.theme.table}"
                     style="background-color: blue">
                     <colgroup><col /></colgroup>
-                    <tr>
-                      <td>
-                        <p><br /></p>
+                    <tr dir="auto">
+                      <td dir="auto">
+                        <p dir="auto"><br /></p>
                       </td>
                     </tr>
                   </table>
@@ -249,9 +249,9 @@ describe('LexicalTableNode tests', () => {
                     class="${editorConfig.theme.table}"
                     style="--table-index: 0">
                     <colgroup><col /></colgroup>
-                    <tr>
-                      <td>
-                        <p><br /></p>
+                    <tr dir="auto">
+                      <td dir="auto">
+                        <p dir="auto"><br /></p>
                       </td>
                     </tr>
                   </table>
@@ -264,9 +264,9 @@ describe('LexicalTableNode tests', () => {
                     class="${editorConfig.theme.table}"
                     style="--table-index: 1">
                     <colgroup><col /></colgroup>
-                    <tr>
-                      <td>
-                        <p><br /></p>
+                    <tr dir="auto">
+                      <td dir="auto">
+                        <p dir="auto"><br /></p>
                       </td>
                     </tr>
                   </table>
@@ -419,7 +419,7 @@ describe('LexicalTableNode tests', () => {
               $insertDataTransferForRichText(dataTransfer, selection, editor);
             });
             // Make sure paragraph is inserted inside empty cells
-            const emptyCell = '<td><p><br></p></td>';
+            const emptyCell = '<td dir="auto"><p dir="auto"><br></p></td>';
             expectReconciledTableHtmlToBeEqual(
               testEnv.innerHTML,
               html`
@@ -428,20 +428,20 @@ describe('LexicalTableNode tests', () => {
                     <col style="width: 100px;" />
                     <col style="width: 200px;" />
                   </colgroup>
-                  <tr>
-                    <td>
+                  <tr dir="auto">
+                    <td dir="auto">
                       <p dir="ltr">
                         <span data-lexical-text="true">Hello there</span>
                       </p>
                     </td>
-                    <td>
+                    <td dir="auto">
                       <p dir="ltr">
                         <span data-lexical-text="true">General Kenobi!</span>
                       </p>
                     </td>
                   </tr>
-                  <tr>
-                    <td>
+                  <tr dir="auto">
+                    <td dir="auto">
                       <p dir="ltr">
                         <span data-lexical-text="true">Lexical is nice</span>
                       </p>
@@ -542,50 +542,50 @@ describe('LexicalTableNode tests', () => {
                     <col />
                     <col />
                   </colgroup>
-                  <tr style="text-align: start">
-                    <th>
-                      <p>
+                  <tr dir="auto" style="text-align: start">
+                    <th dir="auto">
+                      <p dir="auto">
                         <span data-lexical-text="true">Items</span>
                       </p>
                     </th>
-                    <th>
-                      <p>
+                    <th dir="auto">
+                      <p dir="auto">
                         <span data-lexical-text="true">Expenditure</span>
                       </p>
                     </th>
                   </tr>
-                  <tr style="text-align: start">
-                    <th>
-                      <p>
+                  <tr dir="auto" style="text-align: start">
+                    <th dir="auto">
+                      <p dir="auto">
                         <span data-lexical-text="true">Donuts</span>
                       </p>
                     </th>
-                    <td>
-                      <p style="text-align: center;">
+                    <td dir="auto">
+                      <p dir="auto" style="text-align: center;">
                         <span data-lexical-text="true">3,000</span>
                       </p>
                     </td>
                   </tr>
-                  <tr style="text-align: start">
-                    <th>
-                      <p>
+                  <tr dir="auto" style="text-align: start">
+                    <th dir="auto">
+                      <p dir="auto">
                         <span data-lexical-text="true">Stationery</span>
                       </p>
                     </th>
-                    <td>
-                      <p style="text-align: center;">
+                    <td dir="auto">
+                      <p dir="auto" style="text-align: center;">
                         <span data-lexical-text="true">18,000</span>
                       </p>
                     </td>
                   </tr>
-                  <tr style="text-align: start">
-                    <th>
-                      <p>
+                  <tr dir="auto" style="text-align: start">
+                    <th dir="auto">
+                      <p dir="auto">
                         <span data-lexical-text="true">Totals</span>
                       </p>
                     </th>
-                    <td>
-                      <p style="text-align: center;">
+                    <td dir="auto">
+                      <p dir="auto" style="text-align: center;">
                         <span data-lexical-text="true">21,000</span>
                       </p>
                     </td>
@@ -696,68 +696,68 @@ describe('LexicalTableNode tests', () => {
                     <col />
                     <col />
                   </colgroup>
-                  <tr style="text-align: start">
-                    <td style="background-color: rgb(240, 240, 240)">
-                      <p style="text-align: center"><br /></p>
+                  <tr dir="auto" style="text-align: start">
+                    <td dir="auto" style="background-color: rgb(240, 240, 240)">
+                      <p dir="auto" style="text-align: center"><br /></p>
                     </td>
-                    <th style="background-color: rgb(230, 230, 230)">
-                      <p>
+                    <th dir="auto" style="background-color: rgb(230, 230, 230)">
+                      <p dir="auto">
                         <span data-lexical-text="true">He-Man</span>
                       </p>
                     </th>
-                    <th style="background-color: rgb(230, 230, 230)">
-                      <p>
+                    <th dir="auto" style="background-color: rgb(230, 230, 230)">
+                      <p dir="auto">
                         <span data-lexical-text="true">Skeletor</span>
                       </p>
                     </th>
                   </tr>
-                  <tr style="text-align: start">
-                    <th style="background-color: rgb(230, 230, 230)">
-                      <p>
+                  <tr dir="auto" style="text-align: start">
+                    <th dir="auto" style="background-color: rgb(230, 230, 230)">
+                      <p dir="auto">
                         <span data-lexical-text="true">Role</span>
                       </p>
                     </th>
-                    <td style="background-color: rgb(250, 250, 250)">
-                      <p style="text-align: center">
+                    <td dir="auto" style="background-color: rgb(250, 250, 250)">
+                      <p dir="auto" style="text-align: center">
                         <span data-lexical-text="true">Hero</span>
                       </p>
                     </td>
-                    <td style="background-color: rgb(250, 250, 250)">
-                      <p style="text-align: center">
+                    <td dir="auto" style="background-color: rgb(250, 250, 250)">
+                      <p dir="auto" style="text-align: center">
                         <span data-lexical-text="true">Villain</span>
                       </p>
                     </td>
                   </tr>
-                  <tr style="text-align: start">
-                    <th style="background-color: rgb(230, 230, 230)">
-                      <p>
+                  <tr dir="auto" style="text-align: start">
+                    <th dir="auto" style="background-color: rgb(230, 230, 230)">
+                      <p dir="auto">
                         <span data-lexical-text="true">Weapon</span>
                       </p>
                     </th>
-                    <td style="background-color: rgb(240, 240, 240)">
-                      <p style="text-align: center">
+                    <td dir="auto" style="background-color: rgb(240, 240, 240)">
+                      <p dir="auto" style="text-align: center">
                         <span data-lexical-text="true">Power Sword</span>
                       </p>
                     </td>
-                    <td style="background-color: rgb(240, 240, 240)">
-                      <p style="text-align: center">
+                    <td dir="auto" style="background-color: rgb(240, 240, 240)">
+                      <p dir="auto" style="text-align: center">
                         <span data-lexical-text="true">Havoc Staff</span>
                       </p>
                     </td>
                   </tr>
-                  <tr style="text-align: start">
-                    <th style="background-color: rgb(230, 230, 230)">
-                      <p>
+                  <tr dir="auto" style="text-align: start">
+                    <th dir="auto" style="background-color: rgb(230, 230, 230)">
+                      <p dir="auto">
                         <span data-lexical-text="true">Dark secret</span>
                       </p>
                     </th>
-                    <td style="background-color: rgb(250, 250, 250)">
-                      <p style="text-align: center">
+                    <td dir="auto" style="background-color: rgb(250, 250, 250)">
+                      <p dir="auto" style="text-align: center">
                         <span data-lexical-text="true">Expert florist</span>
                       </p>
                     </td>
-                    <td style="background-color: rgb(250, 250, 250)">
-                      <p style="text-align: center">
+                    <td dir="auto" style="background-color: rgb(250, 250, 250)">
+                      <p dir="auto" style="text-align: center">
                         <span data-lexical-text="true">Cries at romcoms</span>
                       </p>
                     </td>
@@ -792,36 +792,36 @@ describe('LexicalTableNode tests', () => {
                     <col style="width: 189px" />
                     <col style="width: 171px" />
                   </colgroup>
-                  <tr style="height: 21px;">
-                    <td style="vertical-align: bottom">
-                      <p>
+                  <tr dir="auto" style="height: 21px;">
+                    <td dir="auto" style="vertical-align: bottom">
+                      <p dir="auto">
                         <strong data-lexical-text="true">Surface</strong>
                       </p>
                     </td>
-                    <td style="vertical-align: bottom">
-                      <p>
+                    <td dir="auto" style="vertical-align: bottom">
+                      <p dir="auto">
                         <em data-lexical-text="true">MWP_WORK_LS_COMPOSER</em>
                       </p>
                     </td>
-                    <td style="vertical-align: bottom">
-                      <p style="text-align: right;">
+                    <td dir="auto" style="vertical-align: bottom">
+                      <p dir="auto" style="text-align: right;">
                         <span data-lexical-text="true">77349</span>
                       </p>
                     </td>
                   </tr>
-                  <tr style="height: 21px;">
-                    <td style="vertical-align: bottom">
-                      <p>
+                  <tr dir="auto" style="height: 21px;">
+                    <td dir="auto" style="vertical-align: bottom">
+                      <p dir="auto">
                         <span data-lexical-text="true">Lexical</span>
                       </p>
                     </td>
-                    <td style="vertical-align: bottom">
-                      <p>
+                    <td dir="auto" style="vertical-align: bottom">
+                      <p dir="auto">
                         <span data-lexical-text="true">XDS_RICH_TEXT_AREA</span>
                       </p>
                     </td>
-                    <td style="vertical-align: bottom">
-                      <p>
+                    <td dir="auto" style="vertical-align: bottom">
+                      <p dir="auto">
                         <span data-lexical-text="true">sdvd</span>
                         <strong data-lexical-text="true">sdfvsfs</strong>
                       </p>
@@ -1003,60 +1003,60 @@ describe('LexicalTableNode tests', () => {
                     <col />
                     <col />
                   </colgroup>
-                  <tr>
-                    <th>
-                      <p><br /></p>
+                  <tr dir="auto">
+                    <th dir="auto">
+                      <p dir="auto"><br /></p>
                     </th>
-                    <th>
-                      <p><br /></p>
+                    <th dir="auto">
+                      <p dir="auto"><br /></p>
                     </th>
-                    <th>
-                      <p><br /></p>
+                    <th dir="auto">
+                      <p dir="auto"><br /></p>
                     </th>
-                    <th>
-                      <p><br /></p>
+                    <th dir="auto">
+                      <p dir="auto"><br /></p>
                     </th>
                   </tr>
-                  <tr>
-                    <th>
-                      <p><br /></p>
+                  <tr dir="auto">
+                    <th dir="auto">
+                      <p dir="auto"><br /></p>
                     </th>
-                    <td>
-                      <p><br /></p>
+                    <td dir="auto">
+                      <p dir="auto"><br /></p>
                     </td>
-                    <td>
-                      <p><br /></p>
+                    <td dir="auto">
+                      <p dir="auto"><br /></p>
                     </td>
-                    <td>
-                      <p><br /></p>
+                    <td dir="auto">
+                      <p dir="auto"><br /></p>
                     </td>
                   </tr>
-                  <tr>
-                    <th>
-                      <p><br /></p>
+                  <tr dir="auto">
+                    <th dir="auto">
+                      <p dir="auto"><br /></p>
                     </th>
-                    <td>
-                      <p><br /></p>
+                    <td dir="auto">
+                      <p dir="auto"><br /></p>
                     </td>
-                    <td>
-                      <p><br /></p>
+                    <td dir="auto">
+                      <p dir="auto"><br /></p>
                     </td>
-                    <td>
-                      <p><br /></p>
+                    <td dir="auto">
+                      <p dir="auto"><br /></p>
                     </td>
                   </tr>
-                  <tr>
-                    <th>
-                      <p><br /></p>
+                  <tr dir="auto">
+                    <th dir="auto">
+                      <p dir="auto"><br /></p>
                     </th>
-                    <td>
-                      <p><br /></p>
+                    <td dir="auto">
+                      <p dir="auto"><br /></p>
                     </td>
-                    <td>
-                      <p><br /></p>
+                    <td dir="auto">
+                      <p dir="auto"><br /></p>
                     </td>
-                    <td>
-                      <p><br /></p>
+                    <td dir="auto">
+                      <p dir="auto"><br /></p>
                     </td>
                   </tr>
                 </table>
@@ -1866,20 +1866,20 @@ describe('LexicalTableNode tests', () => {
                   <col />
                   <col />
                 </colgroup>
-                <tr>
-                  <th>
-                    <p><br /></p>
+                <tr dir="auto">
+                  <th dir="auto">
+                    <p dir="auto"><br /></p>
                   </th>
-                  <th>
-                    <p><br /></p>
+                  <th dir="auto">
+                    <p dir="auto"><br /></p>
                   </th>
                 </tr>
-                <tr>
-                  <th>
-                    <p><br /></p>
+                <tr dir="auto">
+                  <th dir="auto">
+                    <p dir="auto"><br /></p>
                   </th>
-                  <td>
-                    <p><br /></p>
+                  <td dir="auto">
+                    <p dir="auto"><br /></p>
                   </td>
                 </tr>
               </table>
@@ -1900,20 +1900,20 @@ describe('LexicalTableNode tests', () => {
                     <col />
                     <col />
                   </colgroup>
-                  <tr>
-                    <th>
-                      <p><br /></p>
+                  <tr dir="auto">
+                    <th dir="auto">
+                      <p dir="auto"><br /></p>
                     </th>
-                    <th>
-                      <p><br /></p>
+                    <th dir="auto">
+                      <p dir="auto"><br /></p>
                     </th>
                   </tr>
-                  <tr>
-                    <th>
-                      <p><br /></p>
+                  <tr dir="auto">
+                    <th dir="auto">
+                      <p dir="auto"><br /></p>
                     </th>
-                    <td>
-                      <p><br /></p>
+                    <td dir="auto">
+                      <p dir="auto"><br /></p>
                     </td>
                   </tr>
                 </table>
@@ -1934,20 +1934,20 @@ describe('LexicalTableNode tests', () => {
                   <col />
                   <col />
                 </colgroup>
-                <tr>
-                  <th>
-                    <p><br /></p>
+                <tr dir="auto">
+                  <th dir="auto">
+                    <p dir="auto"><br /></p>
                   </th>
-                  <th>
-                    <p><br /></p>
+                  <th dir="auto">
+                    <p dir="auto"><br /></p>
                   </th>
                 </tr>
-                <tr>
-                  <th>
-                    <p><br /></p>
+                <tr dir="auto">
+                  <th dir="auto">
+                    <p dir="auto"><br /></p>
                   </th>
-                  <td>
-                    <p><br /></p>
+                  <td dir="auto">
+                    <p dir="auto"><br /></p>
                   </td>
                 </tr>
               </table>

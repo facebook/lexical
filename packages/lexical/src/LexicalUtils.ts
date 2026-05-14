@@ -46,6 +46,7 @@ import {
   $isTextNode,
   DecoratorNode,
   DEFAULT_EDITOR_DOM_CONFIG,
+  ElementFormatType,
   ElementNode,
   HISTORY_MERGE_TAG,
   LineBreakNode,
@@ -59,6 +60,7 @@ import {
   DOM_DOCUMENT_TYPE,
   DOM_ELEMENT_TYPE,
   DOM_TEXT_TYPE,
+  ELEMENT_TYPE_TO_FORMAT,
   HAS_DIRTY_NODES,
   LTR_REGEX,
   PROTOTYPE_CONFIG_METHOD,
@@ -395,10 +397,15 @@ function internalMarkParentElementsAsDirty(
   }
 }
 
-// TODO #6031 this function or their callers have to adjust selection (i.e. insertBefore)
 /**
  * Removes a node from its parent, updating all necessary pointers and links.
  * @internal
+ *
+ * This function does not adjust the editor's current selection. Callers
+ * that need element-anchored offsets in the old parent to track the child
+ * count change must call `$updateElementSelectionOnCreateDeleteNode` (with
+ * `times = -1`) after invoking this — see `$removeNode`, `replace`,
+ * `insertBefore`, and `insertAfter` for the pattern.
  *
  * This function is for internal use of the library.
  * Please do not use it as it may change in the future.
@@ -879,11 +886,17 @@ function $setTextContentWithSelection(
   node.setTextContent(textContent);
   if ($isRangeSelection(selection)) {
     const key = node.getKey();
+    let pointMutated = false;
     for (const k of ['anchor', 'focus'] as const) {
       const pt = selection[k];
       if (pt.type === 'text' && pt.key === key) {
         pt.offset = $getTextNodeOffset(node, pt.offset, 'clamp');
+        pointMutated = true;
       }
+    }
+    if (pointMutated) {
+      selection._cachedNodes = null;
+      selection._cachedIsBackward = null;
     }
   }
 }
@@ -1423,8 +1436,20 @@ export function scrollIntoViewIfNeeded(
   while (element !== null) {
     const isBodyElement = element === doc.body;
     if (isBodyElement) {
-      targetTop = 0;
-      targetBottom = getWindow(editor).innerHeight;
+      // On mobile, the on-screen keyboard shrinks the visual viewport but
+      // not the layout viewport (innerHeight).
+      // selectionRect comes from getBoundingClientRect in layout-viewport coords,
+      // so we must compare against visualViewport bounds,
+      // or the caret stays behind the keyboard.
+      const visualViewport = defaultView.visualViewport;
+      if (visualViewport) {
+        const offsetTop = visualViewport.offsetTop;
+        targetTop = offsetTop;
+        targetBottom = offsetTop + visualViewport.height;
+      } else {
+        targetTop = 0;
+        targetBottom = getWindow(editor).innerHeight;
+      }
       targetLeft = 0;
       targetRight = getWindow(editor).innerWidth;
       // Account for CSS scroll-padding on the document element
@@ -1911,6 +1936,9 @@ export function isDocumentFragment(x: unknown): x is DocumentFragment {
   return isDOMNode(x) && x.nodeType === DOM_DOCUMENT_FRAGMENT_TYPE;
 }
 
+const INLINE_TAG_RE =
+  /^(a|abbr|acronym|b|cite|code|del|em|i|ins|kbd|label|mark|output|q|ruby|s|samp|span|strong|sub|sup|time|u|tt|var|#text)$/i;
+
 /**
  *
  * @param node - the Dom Node to check
@@ -1919,29 +1947,28 @@ export function isDocumentFragment(x: unknown): x is DocumentFragment {
 export function isInlineDomNode(
   node: Node,
 ): node is (HTMLElement | Text) & {[InlineDOMBrand]: never} {
-  const inlineNodes = new RegExp(
-    /^(a|abbr|acronym|b|cite|code|del|em|i|ins|kbd|label|mark|output|q|ruby|s|samp|span|strong|sub|sup|time|u|tt|var|#text)$/,
-    'i',
-  );
-  return node.nodeName.match(inlineNodes) !== null;
+  return isHTMLElement(node) && node.style.display.startsWith('inline')
+    ? true
+    : INLINE_TAG_RE.test(node.nodeName);
 }
+
+const BlockDOMBrand = Symbol.for('@lexical/BlockDOMBrand');
+const InlineDOMBrand = Symbol.for('@lexical/InlineDOMBrand');
+
+const BLOCK_TAG_RE =
+  /^(address|article|aside|blockquote|canvas|dd|div|dl|dt|fieldset|figcaption|figure|footer|form|h1|h2|h3|h4|h5|h6|header|hr|li|main|nav|noscript|ol|p|pre|section|table|td|tfoot|ul|video)$/i;
 
 /**
  *
  * @param node - the Dom Node to check
  * @returns if the Dom Node is a block node
  */
-const BlockDOMBrand = Symbol.for('@lexical/BlockDOMBrand');
-const InlineDOMBrand = Symbol.for('@lexical/InlineDOMBrand');
-
 export function isBlockDomNode(
   node: Node,
 ): node is HTMLElement & {[BlockDOMBrand]: never} {
-  const blockNodes = new RegExp(
-    /^(address|article|aside|blockquote|canvas|dd|div|dl|dt|fieldset|figcaption|figure|footer|form|h1|h2|h3|h4|h5|h6|header|hr|li|main|nav|noscript|ol|p|pre|section|table|td|tfoot|ul|video)$/,
-    'i',
-  );
-  return node.nodeName.match(blockNodes) !== null;
+  return isHTMLElement(node) && node.style.display.startsWith('inline')
+    ? false
+    : BLOCK_TAG_RE.test(node.nodeName);
 }
 
 /**
@@ -2123,14 +2150,36 @@ export function $setDirectionFromDOM<T extends ElementNode>(
 }
 
 /**
+ * Reads the `style` and CSS `textAlign` property from a DOM element
+ * and set format to the given ElementNode via {@link ElementNode.setFormat}
+ * when it is a valid alignment value {@link ElementFormatType}
+ * Other values, including missing or empty, leave the node unchanged.
+ * Useful inside `importDOM` converters to preserve explicit alignment from imported HTML.
+ *
+ * @param node - The ElementNode to update.
+ * @param domNode - The source HTMLElement whose `style` property is read.
+ * @returns The node, with its align format set when the source `style.textAlign` was valid.
+ */
+export function $setFormatFromDOM<T extends ElementNode>(
+  node: T,
+  domNode: HTMLElement,
+): T {
+  const alignment = domNode.style.textAlign;
+  return alignment && alignment in ELEMENT_TYPE_TO_FORMAT
+    ? node.setFormat(alignment as ElementFormatType)
+    : node;
+}
+
+/**
  * @internal
  *
  * Mark this node as unmanaged by lexical's mutation observer like
  * decorator nodes
  */
-export function setDOMUnmanaged(elementDom: HTMLElement): void {
-  const el: HTMLElement & LexicalPrivateDOM = elementDom;
-  el.__lexicalUnmanaged = true;
+export function setDOMUnmanaged(
+  elementDom: HTMLElement & LexicalPrivateDOM,
+): void {
+  elementDom.__lexicalUnmanaged = true;
 }
 
 /**
@@ -2138,9 +2187,8 @@ export function setDOMUnmanaged(elementDom: HTMLElement): void {
  *
  * True if this DOM node was marked with {@link setDOMUnmanaged}
  */
-export function isDOMUnmanaged(elementDom: Node): boolean {
-  const el: Node & LexicalPrivateDOM = elementDom;
-  return el.__lexicalUnmanaged === true;
+export function isDOMUnmanaged(elementDom: Node & LexicalPrivateDOM): boolean {
+  return elementDom.__lexicalUnmanaged === true;
 }
 
 /**

@@ -26,11 +26,14 @@ import {
   $getPreviousSelection,
   $getRoot,
   $getSelection,
+  $isBlockElementNode,
   $isDecoratorNode,
   $isElementNode,
+  $isLineBreakNode,
   $isNodeSelection,
   $isRangeSelection,
   $isRootNode,
+  $isTabNode,
   $isTextNode,
   $setCompositionKey,
   BLUR_COMMAND,
@@ -188,6 +191,9 @@ let lastKeyDownTimeStamp = 0;
 let lastKeyCode: null | string = null;
 let lastBeforeInputInsertTextTimeStamp = 0;
 let unprocessedBeforeInputData: null | string = null;
+let isInsertTextAfterHandledSelectionCommand = false;
+let handledSelectionCommandTimeoutId: null | ReturnType<typeof setTimeout> =
+  null;
 // Node can be moved between documents (for example using createPortal), so we
 // need to track the document each root element was originally registered on.
 const rootElementToDocument = new WeakMap<HTMLElement, Document>();
@@ -587,6 +593,67 @@ function getTargetRange(event: InputEvent): null | StaticRange {
   return targetRanges[0];
 }
 
+// When a macOS text replacement is accepted, Chrome and Firefox fire input events for the key press that
+// triggered the acceptance *before* the one for the replacement text. This causes the caret to be placed
+// before the acceptance boundary. This function moves the caret past the acceptance boundary.
+function $maybeMoveSelectionPastTrailingAcceptanceBoundary(
+  insertedText: string | null | undefined,
+): void {
+  if (insertedText == null || insertedText.length <= 1 || lastKeyCode == null) {
+    return;
+  }
+
+  const characterToSearchFor =
+    lastKeyCode.length === 1
+      ? lastKeyCode
+      : lastKeyCode === 'Enter'
+        ? '\n'
+        : lastKeyCode === 'Tab'
+          ? '\t'
+          : null;
+
+  if (!characterToSearchFor) {
+    return;
+  }
+
+  const selection = $getSelection();
+  if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
+    return;
+  }
+
+  const anchorNode = selection.anchor.getNode();
+  if (!$isTextNode(anchorNode)) {
+    return;
+  }
+
+  const {offset} = selection.anchor;
+  if (anchorNode.getTextContentSize() === offset) {
+    const nextSibling = anchorNode.getNextSibling();
+    if (characterToSearchFor === '\n') {
+      if ($isLineBreakNode(nextSibling)) {
+        nextSibling.selectEnd();
+      } else if (!nextSibling) {
+        const block = $findMatchingParent(anchorNode, $isBlockElementNode);
+        const nextBlock = block && block.getNextSibling();
+        if ($isElementNode(nextBlock)) {
+          nextBlock.selectStart();
+        }
+      }
+    } else if (characterToSearchFor === '\t') {
+      if ($isTabNode(nextSibling)) {
+        nextSibling.selectEnd();
+      }
+    } else if (
+      $isTextNode(nextSibling) &&
+      nextSibling.getTextContent()[0] === characterToSearchFor
+    ) {
+      nextSibling.select(1, 1);
+    }
+  } else if (anchorNode.getTextContent()[offset] === characterToSearchFor) {
+    anchorNode.select(offset + 1, offset + 1);
+  }
+}
+
 function $canRemoveText(
   anchorNode: TextNode | ElementNode,
   focusNode: TextNode | ElementNode,
@@ -604,6 +671,23 @@ function isPossiblyAndroidKeyPress(timeStamp: number): boolean {
   return (
     lastKeyCode === 'MediaLast' &&
     timeStamp < lastKeyDownTimeStamp + ANDROID_COMPOSITION_LATENCY
+  );
+}
+
+function clearHandledSelectionCommandInsertText(): void {
+  isInsertTextAfterHandledSelectionCommand = false;
+  if (handledSelectionCommandTimeoutId !== null) {
+    clearTimeout(handledSelectionCommandTimeoutId);
+    handledSelectionCommandTimeoutId = null;
+  }
+}
+
+function markHandledSelectionCommandInsertText(): void {
+  clearHandledSelectionCommandInsertText();
+  isInsertTextAfterHandledSelectionCommand = true;
+  handledSelectionCommandTimeoutId = setTimeout(
+    clearHandledSelectionCommandInsertText,
+    0,
   );
 }
 
@@ -659,6 +743,23 @@ function $handleBeforeInput(event: InputEvent): boolean {
 
   const selection = $getSelection();
 
+  // On Chrome on macOS, some handled selection commands may accept a pending text replacement. This behavior
+  // is not desirable, so we check for this case and prevent bogus text replacements from happening.
+  if (
+    inputType === 'insertText' &&
+    event.data &&
+    isInsertTextAfterHandledSelectionCommand
+  ) {
+    clearHandledSelectionCommandInsertText();
+    event.preventDefault();
+    if ($isRangeSelection(selection) && !selection.isCollapsed()) {
+      const point = selection.isBackward() ? selection.anchor : selection.focus;
+      selection.anchor.set(point.key, point.offset, point.type);
+      selection.focus.set(point.key, point.offset, point.type);
+    }
+    return true;
+  }
+
   if (inputType === 'deleteContentBackward') {
     if (selection === null) {
       // Use previous selection
@@ -696,6 +797,31 @@ function $handleBeforeInput(event: InputEvent): boolean {
         }
       } else {
         $setCompositionKey(null);
+
+        // iOS 10-key Korean IME (천지인/Chunjiin) does not fire compositionstart /
+        // compositionend events. Instead it sends a deleteContentBackward with a
+        // non-collapsed targetRange to delete the current composing jamo, immediately
+        // followed by insertText with the updated syllable.
+        //
+        // Because editor.isComposing() is always false for this keyboard type, Lexical
+        // would otherwise dispatch DELETE_CHARACTER_COMMAND, which ignores the
+        // targetRange entirely and deletes only one character before the cursor. This
+        // leaves orphaned jamo in the editor state that accumulate and corrupt output
+        // (e.g. typing "안녕하세요" produces "안녕하ᄉ세ᄋᄋ요").
+        //
+        // Fix: when on iOS with a non-collapsed targetRange, apply the range directly
+        // to the Lexical selection and delete the matched text. If applyDOMRange cannot
+        // resolve the range (returns a collapsed selection), fall through to the default
+        // Lexical deletion path.
+        if (IS_IOS && targetRange !== null && !targetRange.collapsed) {
+          selection.applyDOMRange(targetRange);
+          if (!selection.isCollapsed()) {
+            event.preventDefault();
+            selection.removeText();
+            return true;
+          }
+        }
+
         event.preventDefault();
         // Chromium Android at the moment seems to ignore the preventDefault
         // on 'deleteContentBackward' and still deletes the content. Which leads
@@ -798,6 +924,7 @@ function $handleBeforeInput(event: InputEvent): boolean {
     ) {
       event.preventDefault();
       dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, data);
+      $maybeMoveSelectionPastTrailingAcceptanceBoundary(data);
     } else {
       unprocessedBeforeInputData = data;
     }
@@ -815,6 +942,12 @@ function $handleBeforeInput(event: InputEvent): boolean {
     case 'insertFromDrop':
     case 'insertReplacementText': {
       dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, event);
+      const textFromDataTransfer = event.dataTransfer
+        ? event.dataTransfer.getData('text/plain')
+        : null;
+      $maybeMoveSelectionPastTrailingAcceptanceBoundary(
+        textFromDataTransfer ?? event.data,
+      );
       break;
     }
 
@@ -952,6 +1085,7 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
 
   // We don't want the onInput to bubble, in the case of nested editors.
   event.stopPropagation();
+  clearHandledSelectionCommandInsertText();
   updateEditorSync(
     editor,
     () => {
@@ -1033,6 +1167,8 @@ function $handleInput(event: InputEvent): boolean {
       !editor.isComposing()
     ) {
       selection.anchor.offset -= textLength;
+      selection._cachedNodes = null;
+      selection._cachedIsBackward = null;
     }
 
     // This ensures consistency on Android.
@@ -1191,6 +1327,9 @@ function onCompositionEnd(
 function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
   lastKeyDownTimeStamp = event.timeStamp;
   lastKeyCode = event.key;
+  if (event.key !== 'Backspace') {
+    clearHandledSelectionCommandInsertText();
+  }
   if (editor.isComposing()) {
     return;
   }
@@ -1241,7 +1380,9 @@ function $handleKeyDown(event: KeyboardEvent): boolean {
     dispatchCommand(editor, KEY_ENTER_COMMAND, event);
   } else if (isDeleteBackward(event)) {
     if (isBackspace(event)) {
-      dispatchCommand(editor, KEY_BACKSPACE_COMMAND, event);
+      if (dispatchCommand(editor, KEY_BACKSPACE_COMMAND, event)) {
+        markHandledSelectionCommandInsertText();
+      }
     } else {
       event.preventDefault();
       dispatchCommand(editor, DELETE_CHARACTER_COMMAND, true);
@@ -1286,7 +1427,12 @@ function $handleKeyDown(event: KeyboardEvent): boolean {
     dispatchCommand(editor, REDO_COMMAND, undefined);
   } else {
     const prevSelection = editor._editorState._selection;
-    if (prevSelection !== null && !$isRangeSelection(prevSelection)) {
+    if (isSelectAll(event)) {
+      event.preventDefault();
+      if (dispatchCommand(editor, SELECT_ALL_COMMAND, event)) {
+        markHandledSelectionCommandInsertText();
+      }
+    } else if (prevSelection !== null && !$isRangeSelection(prevSelection)) {
       // Only RangeSelection can use the native cut/copy/select all
       if (isCopy(event)) {
         event.preventDefault();
@@ -1294,13 +1440,7 @@ function $handleKeyDown(event: KeyboardEvent): boolean {
       } else if (isCut(event)) {
         event.preventDefault();
         dispatchCommand(editor, CUT_COMMAND, event);
-      } else if (isSelectAll(event)) {
-        event.preventDefault();
-        dispatchCommand(editor, SELECT_ALL_COMMAND, event);
       }
-    } else if (isSelectAll(event)) {
-      event.preventDefault();
-      dispatchCommand(editor, SELECT_ALL_COMMAND, event);
     }
   }
 

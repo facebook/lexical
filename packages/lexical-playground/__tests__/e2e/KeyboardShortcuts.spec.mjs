@@ -256,9 +256,9 @@ test.describe('Keyboard shortcuts', () => {
       });
     };
 
-    expect(await getFontSize()).toBe('17');
+    expect(await getFontSize()).toBe('18');
     await decreaseFontSize(page);
-    expect(await getFontSize()).toBe('15');
+    expect(await getFontSize()).toBe('16');
   });
 
   test('Can clear formatting with the shortcut', async ({
@@ -346,7 +346,7 @@ test.describe('Keyboard shortcuts', () => {
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
           dir="auto"
-          style="padding-inline-start: calc(120px);">
+          style="padding-inline-start: calc(3 * var(--lexical-indent-base-value, 40px));">
           <span data-lexical-text="true">abc</span>
         </p>
       `,
@@ -360,7 +360,7 @@ test.describe('Keyboard shortcuts', () => {
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
           dir="auto"
-          style="padding-inline-start: calc(40px);">
+          style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px));">
           <span data-lexical-text="true">abc</span>
         </p>
       `,

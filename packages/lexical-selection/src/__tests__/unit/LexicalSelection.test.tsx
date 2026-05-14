@@ -24,7 +24,6 @@ import {MarkdownShortcutPlugin} from '@lexical/react/LexicalMarkdownShortcutPlug
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {$createHeadingNode} from '@lexical/rich-text';
 import {
-  $addNodeStyle,
   $getSelectionStyleValueForProperty,
   $patchStyleText,
   $setBlocksType,
@@ -2457,7 +2456,6 @@ describe('LexicalSelection tests', () => {
         textNode.setStyle(
           '   font-family  : Arial  ;  color    :   red   ;top     : 50px',
         );
-        $addNodeStyle(textNode);
         paragraph.append(textNode);
         root.append(paragraph);
 
@@ -2513,7 +2511,6 @@ describe('LexicalSelection tests', () => {
         textNode.setStyle(
           'font-family: double:prefix:Arial; color: color:white; font-size: 30px',
         );
-        $addNodeStyle(textNode);
         paragraph.append(textNode);
         root.append(paragraph);
 
@@ -2569,7 +2566,6 @@ describe('LexicalSelection tests', () => {
         textNode.setStyle(
           'background-image: url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\'></svg>"); /* ignored */ content: "semi;colon:value"; color: red;',
         );
-        $addNodeStyle(textNode);
         paragraph.append(textNode);
         root.append(paragraph);
 
@@ -2622,7 +2618,6 @@ describe('LexicalSelection tests', () => {
           const paragraph = $createParagraphNode();
           const textNode = $createTextNode('Hello, World!');
           textNode.setStyle('font-family: serif; color: red;');
-          $addNodeStyle(textNode);
           paragraph.append(textNode);
           root.append(paragraph);
 
@@ -2675,7 +2670,6 @@ describe('LexicalSelection tests', () => {
           const paragraph = $createParagraphNode();
           const textNode = $createTextNode('Hello, World!');
           textNode.setStyle(`color: ${currentColor};`);
-          $addNodeStyle(textNode);
           paragraph.append(textNode);
           root.append(paragraph);
 
@@ -3154,7 +3148,7 @@ describe('LexicalSelection tests', () => {
         });
       });
       expect(element.innerHTML).toStrictEqual(
-        `<h1 dir="auto"><span data-lexical-text="true">1</span></h1><h1 dir="auto" style="padding-inline-start: calc(40px);"><span data-lexical-text="true">1.1</span></h1>`,
+        `<h1 dir="auto"><span data-lexical-text="true">1</span></h1><h1 dir="auto" style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px));"><span data-lexical-text="true">1.1</span></h1>`,
       );
     });
 
@@ -3192,7 +3186,7 @@ describe('LexicalSelection tests', () => {
         });
       });
       expect(element.innerHTML).toStrictEqual(
-        `<h1 dir="auto" style="padding-inline-start: calc(40px);"><span data-lexical-text="true">1.1</span></h1>`,
+        `<h1 dir="auto" style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px));"><span data-lexical-text="true">1.1</span></h1>`,
       );
     });
   });

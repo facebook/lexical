@@ -8,6 +8,7 @@
  */
 
 import type {
+  BaseSelection,
   LexicalEditor,
   LexicalNode,
   ElementNode,
@@ -102,6 +103,12 @@ declare export function $convertFromMarkdownString(
   shouldPreserveNewLines?: boolean,
   shouldMergeAdjacentLines?: boolean,
 ): void;
+
+declare export function $convertSelectionToMarkdownString(
+  transformers?: Transformer[],
+  selection: BaseSelection | null,
+  shouldPreserveNewLines?: boolean,
+): string;
 
 declare export function $convertToMarkdownString(
   transformers?: Array<Transformer>,

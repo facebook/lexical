@@ -127,6 +127,7 @@ export default function FontSize({
   };
 
   React.useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setInputValue(selectionFontSize);
   }, [selectionFontSize]);
 

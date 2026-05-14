@@ -8,6 +8,10 @@
 
 @import 'https://fonts.googleapis.com/css?family=Reenie+Beanie';
 
+:root {
+  --playground-font-size: 16px;
+}
+
 body {
   margin: 0;
   font-family:
@@ -352,8 +356,6 @@ pre::-webkit-scrollbar-thumb {
   padding: 8px;
   color: #050505;
   cursor: pointer;
-  line-height: 16px;
-  font-size: 15px;
   display: flex;
   align-content: center;
   flex-direction: row;
@@ -677,7 +679,7 @@ i.page-setup,
   padding: 8px 12px;
   border-radius: 15px;
   background-color: #eee;
-  font-size: 15px;
+  font-size: var(--playground-font-size);
   color: rgb(5, 5, 5);
   border: 0;
   outline: 0;
@@ -691,7 +693,7 @@ i.page-setup,
   margin: 8px 12px;
   padding: 8px 12px;
   border-radius: 15px;
-  font-size: 15px;
+  font-size: var(--playground-font-size);
   color: rgb(5, 5, 5);
   border: 0;
   outline: 0;
@@ -827,7 +829,7 @@ i.page-setup,
   color: #050505;
   cursor: pointer;
   line-height: 16px;
-  font-size: 15px;
+  font-size: var(--playground-font-size);
   display: flex;
   align-content: center;
   flex-direction: row;
@@ -988,7 +990,7 @@ i.page-setup,
 }
 
 .switches {
-  z-index: 6;
+  z-index: 20;
   position: fixed;
   left: 10px;
   bottom: 70px;
@@ -1496,20 +1498,6 @@ button.action-button:disabled {
   text-decoration: underline;
 }
 
-.connecting {
-  font-size: 15px;
-  color: #999;
-  overflow: hidden;
-  position: absolute;
-  text-overflow: ellipsis;
-  top: 10px;
-  left: 10px;
-  user-select: none;
-  white-space: nowrap;
-  display: inline-block;
-  pointer-events: none;
-}
-
 .toolbar {
   display: flex;
   margin-bottom: 1px;
@@ -1809,22 +1797,6 @@ button.item.dropdown-item-active {
 
 button.item.dropdown-item-active i {
   opacity: 1;
-}
-
-.TableNode__contentEditable {
-  min-height: 20px;
-  border: 0px;
-  resize: none;
-  cursor: text;
-  display: block;
-  position: relative;
-  outline: 0px;
-  padding: 0;
-  user-select: text;
-  font-size: 15px;
-  white-space: pre-wrap;
-  word-break: break-word;
-  z-index: 3;
 }
 
 .dialog-dropdown {

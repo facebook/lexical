@@ -7,82 +7,73 @@ permissions: {}
 
 jobs:
   # Build the dev playground once and cache the output for all test jobs
-  build:
+  build-ubuntu:
+    env:
+      node-version: 24.x
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v6
-      - name: Use Node.js 24.x
-        uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-pnpm
         with:
-          node-version: 24.x
-          cache: 'pnpm'
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-      - name: Restore build cache
-        uses: actions/cache/restore@v5
-        id: build-cache
+          node-version: ${{ env.node-version }}
+      - uses: ./.github/actions/setup-playwright
         with:
-          path: |
-            packages/lexical-playground/build
-            packages/*/dist
-          key: build-dev-v1-${{ github.sha }}
-      - name: Build
-        if: steps.build-cache.outputs.cache-hit != 'true'
-        run: pnpm run prepare-ci
-      - name: Save build cache
-        if: steps.build-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v5
+          node-version: ${{ env.node-version }}
+      - uses: ./.github/actions/setup-playground
         with:
-          path: |
-            packages/lexical-playground/build
-            packages/*/dist
-          key: ${{ steps.build-cache.outputs.cache-primary-key }}
+          node-version: ${{ env.node-version }}
 
-  # Prime playwright browser caches once per OS so parallel test jobs
-  # don't all download browsers simultaneously
-  setup-playwright:
-    strategy:
-      matrix:
-        include:
-          - os: ubuntu-latest
-            node-version: 24.x
-          - os: macos-latest
-            node-version: 24.x
-          - os: windows-latest
-            node-version: 24.x
-    runs-on: ${{ matrix.os }}
+  build-ubuntu-prod:
     env:
-      cache_playwright_path: ${{ matrix.os == 'macos-latest' && '~/Library/Caches/ms-playwright' || matrix.os == 'windows-latest' && 'C:\Users\runneradmin\AppData\Local\ms-playwright' || '~/.cache/ms-playwright' }}
+      node-version: 24.x
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v6
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-pnpm
         with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'pnpm'
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-      - name: Restore playwright from cache
-        uses: actions/cache/restore@v5
-        id: playwright-cache
+          node-version: ${{ env.node-version }}
+      - uses: ./.github/actions/setup-playwright
         with:
-          path: ${{ env.cache_playwright_path }}
-          key: playwright-v2-${{ matrix.node-version }}-${{ runner.os }}-${{ runner.arch }}-v${{ secrets.CACHE_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
-      - name: Install playwright
-        run: |
-          pnpm exec playwright install
-          pnpm exec playwright install --list
-      - name: Save playwright to cache
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v5
+          node-version: ${{ env.node-version }}
+      - uses: ./.github/actions/setup-playground
         with:
-          path: ${{ env.cache_playwright_path }}
-          key: ${{ steps.playwright-cache.outputs.cache-primary-key }}
+          node-version: ${{ env.node-version }}
+          prod: true
+
+  build-macos:
+    env:
+      node-version: 24.x
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-pnpm
+        with:
+          node-version: ${{ env.node-version }}
+      - uses: ./.github/actions/setup-playwright
+        with:
+          node-version: ${{ env.node-version }}
+      - uses: ./.github/actions/setup-playground
+        with:
+          node-version: ${{ env.node-version }}
+
+  build-windows:
+    env:
+      node-version: 24.x
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-pnpm
+        with:
+          node-version: ${{ env.node-version }}
+      - uses: ./.github/actions/setup-playwright
+        with:
+          node-version: ${{ env.node-version }}
+      - uses: ./.github/actions/setup-playground
+        with:
+          node-version: ${{ env.node-version }}
 
   mac-rich:
-    needs: [build, setup-playwright]
+    needs: [build-macos]
     strategy:
       matrix:
         node-version: [24.x]
@@ -96,7 +87,7 @@ jobs:
       editor-mode: ${{ matrix.editor-mode }}
 
   mac-plain:
-    needs: [build, setup-playwright]
+    needs: [build-macos]
     strategy:
       matrix:
         node-version: [24.x]
@@ -110,7 +101,7 @@ jobs:
       editor-mode: ${{ matrix.editor-mode }}
 
   linux:
-    needs: [build, setup-playwright]
+    needs: [build-ubuntu]
     strategy:
       matrix:
         node-version: [24.x]
@@ -124,7 +115,7 @@ jobs:
       editor-mode: ${{ matrix.editor-mode }}
 
   windows:
-    needs: [build, setup-playwright]
+    needs: [build-windows]
     strategy:
       matrix:
         node-version: [24.x]
@@ -138,7 +129,7 @@ jobs:
       editor-mode: ${{ matrix.editor-mode }}
 
   collab-mac:
-    needs: [build, setup-playwright]
+    needs: [build-macos]
     strategy:
       matrix:
         node-version: [24.x]
@@ -151,7 +142,7 @@ jobs:
       editor-mode: 'rich-text-with-collab'
 
   collab-linux:
-    needs: [build, setup-playwright]
+    needs: [build-ubuntu]
     strategy:
       matrix:
         node-version: [24.x]
@@ -164,7 +155,7 @@ jobs:
       editor-mode: 'rich-text-with-collab'
 
   collab-windows:
-    needs: [build, setup-playwright]
+    needs: [build-windows]
     strategy:
       matrix:
         node-version: [24.x]
@@ -177,7 +168,7 @@ jobs:
       editor-mode: 'rich-text-with-collab'
 
   prod:
-    needs: [build, setup-playwright]
+    needs: [build-ubuntu-prod]
     strategy:
       matrix:
         os: ['ubuntu-latest']
@@ -193,7 +184,7 @@ jobs:
       editor-mode: ${{ matrix.editor-mode }}
 
   collab-prod:
-    needs: [build, setup-playwright]
+    needs: [build-ubuntu-prod]
     strategy:
       matrix:
         os: ['ubuntu-latest']
@@ -207,26 +198,8 @@ jobs:
       node-version: ${{ matrix.node-version }}
       browser: ${{ matrix.browser }}
       editor-mode: ${{ matrix.editor-mode }}
-
-  # This has been stalling in GitHub CI for unknown reasons, disable for now
-  # react-beta:
-  #   strategy:
-  #     matrix:
-  #       # Currently using a single combination for every-patch e2e tests of
-  #       # react beta to reduce cost impact
-  #       editor-mode: ['rich-text']
-  #       prod: [false]
-  #   uses: ./.github/workflows/call-e2e-test.yml
-  #   with:
-  #     os: 'ubuntu-latest'
-  #     browser: 'chromium'
-  #     node-version: 24.x
-  #     editor-mode: ${{ matrix.editor-mode }}
-  #     prod: ${{ matrix.prod }}
-  #     override-react-version: beta
-
   flaky:
-    needs: [build, setup-playwright]
+    needs: [build-ubuntu]
     strategy:
       matrix:
         node-version: [24.x]

@@ -212,6 +212,9 @@ export class Point {
       }
       if (selection !== null) {
         selection.setCachedNodes(null);
+        if ($isRangeSelection(selection)) {
+          selection._cachedIsBackward = null;
+        }
         selection.dirty = true;
       }
     }
@@ -471,6 +474,8 @@ export class RangeSelection implements BaseSelection {
   anchor: PointType;
   focus: PointType;
   _cachedNodes: Array<LexicalNode> | null;
+  /** @internal */
+  _cachedIsBackward: boolean | null;
   dirty: boolean;
 
   constructor(
@@ -484,6 +489,7 @@ export class RangeSelection implements BaseSelection {
     anchor._selection = this;
     focus._selection = this;
     this._cachedNodes = null;
+    this._cachedIsBackward = null;
     this.format = format;
     this.style = style;
     this.dirty = false;
@@ -968,6 +974,8 @@ export class RangeSelection implements BaseSelection {
           // we correctly replace that right range.
           if (textNode.isComposing() && this.anchor.type === 'text') {
             this.anchor.offset -= text.length;
+            this._cachedNodes = null;
+            this._cachedIsBackward = null;
           }
           return;
         }
@@ -993,6 +1001,8 @@ export class RangeSelection implements BaseSelection {
           // When composing, we need to adjust the anchor offset so that
           // we correctly replace that right range.
           this.anchor.offset -= text.length;
+          this._cachedNodes = null;
+          this._cachedIsBackward = null;
         }
       }
     } else {
@@ -1141,6 +1151,8 @@ export class RangeSelection implements BaseSelection {
             // When composing, we need to adjust the anchor offset so that
             // we correctly replace that right range.
             this.anchor.offset -= text.length;
+            this._cachedNodes = null;
+            this._cachedIsBackward = null;
           }
         }
       } else if (startOffset === firstNodeTextLength) {
@@ -1837,7 +1849,24 @@ export class RangeSelection implements BaseSelection {
           }
         }
         if (state.type === 'merge-block') {
+          // `block` is the anchor-side block; `caret.origin` is the
+          // adjacent (previous-direction) block we descended into.
           const {caret, block} = state;
+          // Empty adjacent block at the same nesting level: remove it
+          // instead of merging, so the current block's type (e.g.
+          // heading) survives. Limiting to a shared parent leaves
+          // structural wrappers like a ListNode containing an empty
+          // ListItemNode to the default cross-block merge — the
+          // ListNode is not considered empty just because its only
+          // child is.
+          if (
+            caret.origin.isEmpty() &&
+            !block.isEmpty() &&
+            caret.origin.getParent() === block.getParent()
+          ) {
+            caret.origin.remove(true);
+            return;
+          }
           $updateRangeSelectionFromCaretRange(
             this,
             $getCaretRange(
@@ -1960,10 +1989,18 @@ export class RangeSelection implements BaseSelection {
    * @returns true if the Selection is backwards, false otherwise.
    */
   isBackward(): boolean {
-    return this.focus.isBefore(this.anchor);
+    const cached = this._cachedIsBackward;
+    if (cached !== null) {
+      return cached;
+    }
+    const isBackward = this.focus.isBefore(this.anchor);
+    if (!isCurrentlyReadOnlyMode()) {
+      this._cachedIsBackward = isBackward;
+    }
+    return isBackward;
   }
 
-  getStartEndPoints(): null | [PointType, PointType] {
+  getStartEndPoints(): [PointType, PointType] {
     return [this.anchor, this.focus];
   }
 }
@@ -3015,10 +3052,6 @@ export function $updateDOMSelection(
   rootElement: HTMLElement,
   nodeCount: number,
 ): void {
-  const anchorDOMNode = domSelection.anchorNode;
-  const focusDOMNode = domSelection.focusNode;
-  const anchorOffset = domSelection.anchorOffset;
-  const focusOffset = domSelection.focusOffset;
   const activeElement = document.activeElement;
 
   // TODO: make this not hard-coded, and add another config option
@@ -3038,13 +3071,23 @@ export function $updateDOMSelection(
     // lose focus.
     if (
       prevSelection !== null &&
-      isSelectionWithinEditor(editor, anchorDOMNode, focusDOMNode)
+      isSelectionWithinEditor(
+        editor,
+        domSelection.anchorNode,
+        domSelection.focusNode,
+      )
     ) {
       domSelection.removeAllRanges();
     }
 
     return;
   }
+
+  // DOM Selection property reads (anchorNode, focusNode, anchorOffset,
+  // focusOffset) are deferred to their single point of use in the diff
+  // check below, and guarded by a cheap domSelection.type check first.
+  // These reads force the browser to resolve the selection against the
+  // current layout, triggering synchronous style/layout recalculation.
 
   const anchor = nextSelection.anchor;
   const focus = nextSelection.focus;
@@ -3111,11 +3154,11 @@ export function $updateDOMSelection(
   // we're moving selection to within an element, as this can
   // sometimes be problematic around scrolling.
   if (
-    anchorOffset === nextAnchorOffset &&
-    focusOffset === nextFocusOffset &&
-    anchorDOMNode === nextAnchorNode &&
-    focusDOMNode === nextFocusNode && // Badly interpreted range selection when collapsed - #1482
-    !(domSelection.type === 'Range' && isCollapsed)
+    !(domSelection.type === 'Range' && isCollapsed) && // Badly interpreted range selection when collapsed - #1482
+    domSelection.anchorOffset === nextAnchorOffset &&
+    domSelection.focusOffset === nextFocusOffset &&
+    domSelection.anchorNode === nextAnchorNode &&
+    domSelection.focusNode === nextFocusNode
   ) {
     // If the root element does not have focus, ensure it has focus
     if (activeElement === null || !rootElement.contains(activeElement)) {

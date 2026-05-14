@@ -3,6 +3,7 @@
 [@lexical/code](/docs/api/modules/lexical_code)
 
 - [CodeExtension](/docs/api/modules/lexical_code#codeextension) - CodeNode (code blocks)
+- [CodeIndentExtension](/docs/api/modules/lexical_code#codeindentextension) - CodeNode tab key indentation (code blocks)
 
 [@lexical/code-prism](/docs/api/modules/lexical_code_-_prism)
 
@@ -67,7 +68,7 @@
 
 [@lexical/rich-text](/docs/api/modules/lexical_rich_text)
 
-- [RichTextExtension](/docs/api/modules/lexical_rich_text#richtextextension) - Rich Text editor (QuoteNode, HeadingNode), the return key creates a ParagraphNode by default (multiple ParagraphNode per document)
+- [RichTextExtension](/docs/api/modules/lexical_rich_text#richtextextension) - Rich Text editor (QuoteNode, HeadingNode), the return key creates a ParagraphNode by default (multiple ParagraphNode per document). Includes configurable `escapeFormatTriggers` to escape text formatting (e.g. code) at text node boundaries
 
 [@lexical/table](/docs/api/modules/lexical_table)
 

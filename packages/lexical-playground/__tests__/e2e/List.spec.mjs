@@ -889,31 +889,31 @@ test.describe.parallel('Nested List', () => {
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
           dir="auto"
-          style="padding-inline-start: calc(120px)">
+          style="padding-inline-start: calc(3 * var(--lexical-indent-base-value, 40px))">
           <span data-lexical-text="true">Hello</span>
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
           dir="auto"
-          style="padding-inline-start: calc(120px)">
+          style="padding-inline-start: calc(3 * var(--lexical-indent-base-value, 40px))">
           <span data-lexical-text="true">from</span>
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
           dir="auto"
-          style="padding-inline-start: calc(120px)">
+          style="padding-inline-start: calc(3 * var(--lexical-indent-base-value, 40px))">
           <span data-lexical-text="true">the</span>
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
           dir="auto"
-          style="padding-inline-start: calc(120px)">
+          style="padding-inline-start: calc(3 * var(--lexical-indent-base-value, 40px))">
           <span data-lexical-text="true">other</span>
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
           dir="auto"
-          style="padding-inline-start: calc(120px)">
+          style="padding-inline-start: calc(3 * var(--lexical-indent-base-value, 40px))">
           <span data-lexical-text="true">side</span>
         </p>
       `,
@@ -2723,7 +2723,7 @@ test.describe.parallel('Nested List', () => {
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
           dir="auto"
-          style="padding-inline-start: calc(40px)">
+          style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
           <br />
         </p>
       `,
@@ -2768,7 +2768,7 @@ test.describe.parallel('Nested List', () => {
           <p
             class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
             dir="auto"
-            style="padding-inline-start: calc(40px)">
+            style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
             <br />
           </p>
           <ul class="PlaygroundEditorTheme__ul" dir="auto">

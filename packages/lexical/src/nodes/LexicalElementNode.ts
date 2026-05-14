@@ -943,6 +943,11 @@ export class ElementNode extends LexicalNode {
   canInsertTextAfter(): boolean {
     return true;
   }
+
+  /**
+   * If the method is overridden and returns true, ensure that `canBeEmpty()`
+   * returns false for the inline node to work correctly
+   */
   isInline(): boolean {
     return false;
   }

@@ -47,6 +47,7 @@ module.name_mapper='^@lexical/react/ExtensionComponent$' -> '<PROJECT_ROOT>/pack
 module.name_mapper='^@lexical/react/LexicalAutoEmbedPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalAutoEmbedPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalAutoFocusPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalAutoFocusPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalAutoLinkPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalAutoLinkPlugin.js.flow'
+module.name_mapper='^@lexical/react/LexicalBlockDragHandleExtension$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalBlockDragHandleExtension.js.flow'
 module.name_mapper='^@lexical/react/LexicalBlockWithAlignableContents$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalBlockWithAlignableContents.js.flow'
 module.name_mapper='^@lexical/react/LexicalCharacterLimitPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalCharacterLimitPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalCheckListPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalCheckListPlugin.js.flow'

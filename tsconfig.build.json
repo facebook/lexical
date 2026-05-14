@@ -45,6 +45,9 @@
       "@lexical/react/LexicalAutoLinkPlugin": [
         "./packages/lexical-react/src/LexicalAutoLinkPlugin.ts"
       ],
+      "@lexical/react/LexicalBlockDragHandleExtension": [
+        "./packages/lexical-react/src/LexicalBlockDragHandleExtension.ts"
+      ],
       "@lexical/react/LexicalBlockWithAlignableContents": [
         "./packages/lexical-react/src/LexicalBlockWithAlignableContents.tsx"
       ],

@@ -166,6 +166,36 @@
         "default": "./LexicalAutoLinkPlugin.js"
       }
     },
+    "./LexicalBlockDragHandleExtension": {
+      "import": {
+        "types": "./LexicalBlockDragHandleExtension.d.ts",
+        "development": "./LexicalBlockDragHandleExtension.dev.mjs",
+        "production": "./LexicalBlockDragHandleExtension.prod.mjs",
+        "node": "./LexicalBlockDragHandleExtension.node.mjs",
+        "default": "./LexicalBlockDragHandleExtension.mjs"
+      },
+      "require": {
+        "types": "./LexicalBlockDragHandleExtension.d.ts",
+        "development": "./LexicalBlockDragHandleExtension.dev.js",
+        "production": "./LexicalBlockDragHandleExtension.prod.js",
+        "default": "./LexicalBlockDragHandleExtension.js"
+      }
+    },
+    "./LexicalBlockDragHandleExtension.js": {
+      "import": {
+        "types": "./LexicalBlockDragHandleExtension.d.ts",
+        "development": "./LexicalBlockDragHandleExtension.dev.mjs",
+        "production": "./LexicalBlockDragHandleExtension.prod.mjs",
+        "node": "./LexicalBlockDragHandleExtension.node.mjs",
+        "default": "./LexicalBlockDragHandleExtension.mjs"
+      },
+      "require": {
+        "types": "./LexicalBlockDragHandleExtension.d.ts",
+        "development": "./LexicalBlockDragHandleExtension.dev.js",
+        "production": "./LexicalBlockDragHandleExtension.prod.js",
+        "default": "./LexicalBlockDragHandleExtension.js"
+      }
+    },
     "./LexicalBlockWithAlignableContents": {
       "import": {
         "types": "./LexicalBlockWithAlignableContents.d.ts",

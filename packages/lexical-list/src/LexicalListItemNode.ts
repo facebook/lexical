@@ -31,6 +31,7 @@ import {
   $applyNodeReplacement,
   $copyNode,
   $createParagraphNode,
+  $getSelection,
   $getSiblingCaret,
   $isElementNode,
   $isParagraphNode,
@@ -297,14 +298,38 @@ export class ListItemNode extends ElementNode {
       list.insertAfter(replaceWithNode);
       replaceWithNode.insertAfter(newList);
     }
+    const toReplaceKey = this.__key;
+    let prevSizeBeforeChildrenTransfer = 0;
     if (includeChildren) {
       invariant(
         $isElementNode(replaceWithNode),
         'includeChildren should only be true for ElementNodes',
       );
-      this.getChildren().forEach((child: LexicalNode) => {
-        replaceWithNode.append(child);
-      });
+      prevSizeBeforeChildrenTransfer = replaceWithNode.getChildrenSize();
+      replaceWithNode.splice(
+        prevSizeBeforeChildrenTransfer,
+        0,
+        this.getChildren(),
+      );
+    }
+    // The base LexicalNode.replace remaps element-anchored selection points
+    // from the replaced node to the replacement, but this override skips
+    // super and the trailing this.remove() would otherwise drop selection
+    // onto a sibling list item via moveSelectionPointToSibling. Mirror the
+    // base behavior here for the element-anchored case.
+    if (includeChildren && $isElementNode(replaceWithNode)) {
+      const selection = $getSelection();
+      if ($isRangeSelection(selection)) {
+        for (const point of selection.getStartEndPoints()) {
+          if (point.key === toReplaceKey && point.type === 'element') {
+            point.set(
+              replaceWithNode.getKey(),
+              prevSizeBeforeChildrenTransfer + point.offset,
+              'element',
+            );
+          }
+        }
+      }
     }
     this.remove();
     if (list.getChildrenSize() === 0) {

@@ -1,0 +1,22 @@
+name: Get latest release
+description: Returns the tag name of the latest non-draft GitHub release for the current repository
+outputs:
+  release:
+    description: Tag name of the latest non-draft release (e.g. "v0.16.0")
+    value: ${{ steps.fetch.outputs.result }}
+
+runs:
+  using: 'composite'
+  steps:
+    - id: fetch
+      uses: actions/github-script@v7
+      with:
+        result-encoding: string
+        script: |
+          const releases = await github.paginate(github.rest.repos.listReleases, {
+            ...context.repo,
+            per_page: 100,
+          });
+          const latest = releases.find((r) => !r.draft);
+          if (!latest) throw new Error('No non-draft release found');
+          return latest.tag_name;

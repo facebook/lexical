@@ -3,6 +3,14 @@ on:
   # Run daily at 2:30am UTC
   schedule:
     - cron: '30 2 * * 1-5'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
 jobs:
   increment-version:
     # prevents this action from running on forks

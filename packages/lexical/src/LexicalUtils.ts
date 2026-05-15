@@ -397,10 +397,15 @@ function internalMarkParentElementsAsDirty(
   }
 }
 
-// TODO #6031 this function or their callers have to adjust selection (i.e. insertBefore)
 /**
  * Removes a node from its parent, updating all necessary pointers and links.
  * @internal
+ *
+ * This function does not adjust the editor's current selection. Callers
+ * that need element-anchored offsets in the old parent to track the child
+ * count change must call `$updateElementSelectionOnCreateDeleteNode` (with
+ * `times = -1`) after invoking this — see `$removeNode`, `replace`,
+ * `insertBefore`, and `insertAfter` for the pattern.
  *
  * This function is for internal use of the library.
  * Please do not use it as it may change in the future.
@@ -2142,9 +2147,10 @@ export function $setFormatFromDOM<T extends ElementNode>(
  * Mark this node as unmanaged by lexical's mutation observer like
  * decorator nodes
  */
-export function setDOMUnmanaged(elementDom: HTMLElement): void {
-  const el: HTMLElement & LexicalPrivateDOM = elementDom;
-  el.__lexicalUnmanaged = true;
+export function setDOMUnmanaged(
+  elementDom: HTMLElement & LexicalPrivateDOM,
+): void {
+  elementDom.__lexicalUnmanaged = true;
 }
 
 /**
@@ -2152,9 +2158,8 @@ export function setDOMUnmanaged(elementDom: HTMLElement): void {
  *
  * True if this DOM node was marked with {@link setDOMUnmanaged}
  */
-export function isDOMUnmanaged(elementDom: Node): boolean {
-  const el: Node & LexicalPrivateDOM = elementDom;
-  return el.__lexicalUnmanaged === true;
+export function isDOMUnmanaged(elementDom: Node & LexicalPrivateDOM): boolean {
+  return elementDom.__lexicalUnmanaged === true;
 }
 
 /**

@@ -76,17 +76,74 @@ export class AutoEmbedOption extends MenuOption {
 }
 
 type LexicalAutoEmbedPluginProps<TEmbedConfig extends EmbedConfig> = {
-  embedConfigs: Array<TEmbedConfig>;
-  onOpenEmbedModalForConfig: (embedConfig: TEmbedConfig) => void;
+  /**
+   * An array of configurations used to insert Embed elements
+   */
+  embedConfigs: TEmbedConfig[];
+  /**
+   * Callback for handling the {@link INSERT_EMBED_COMMAND} command.
+   * If no function is passed, the command is not registered
+   * @param embedConfig - the config corresponding to the {@link EmbedConfig.type} of the inserted Embed
+   * @returns
+   */
+  onOpenEmbedModalForConfig?: (embedConfig: TEmbedConfig) => void;
+  /**
+   * A function that links a specific configuration to a set of options.
+   * Each option can be handling by click or press the Enter or Tab key
+   * when the cursor hovers over it.
+   * Pass the necessary callbacks to {@link AutoEmbedOption.onSelect}
+   * @param activeEmbedConfig - the current active config is determined by a match
+   * from the {@link EmbedConfig.parseUrl} of the inserted AutoLinkNode
+   * @param embedFn - callback for handling option selection.
+   * Calling the callback will invoke the {@link EmbedConfig.insertNode} method
+   * and remove the inserted AutoLinkNode
+   * @param dismissFn - сallback to deselect. Calling the callback will hide the options menu
+   * @returns array of options from {@link AutoEmbedOption} instances
+   */
   getMenuOptions: (
     activeEmbedConfig: TEmbedConfig,
     embedFn: () => void,
     dismissFn: () => void,
-  ) => Array<AutoEmbedOption>;
+  ) => AutoEmbedOption[];
+  /**
+   * A function for rendering button menu.
+   * By default, it displays a plain list with the option titles
+   */
   menuRenderFn?: MenuRenderFn<AutoEmbedOption>;
+  /**
+   * Priority for key handling in the menu. The default is `COMMAND_PRIORITY_LOW`
+   */
   menuCommandPriority?: CommandListenerPriority;
 };
 
+/**
+ * Watches for pasted AutoLink nodes that match any of the provided embed configurations (e.g., YouTube, Twitter URLs).
+ * When a match is found, it shows a menu offering to replace the link with an embedded node.
+ *
+ * You can pass a generic type to the plugin to extend {@link EmbedConfig}
+ * with additional data in {@link EmbedMatchResult} that will be passed to the callbacks
+ *
+ * @example
+ * Usage
+ * ```tsx
+ * interface CustomEmbedConfig extends EmbedConfig<{
+ *   domain: string;
+ *   oid?: string;
+ * }> {
+ *   // Icon for display.
+ *   icon?: JSX.Element;
+ *   // Embed a Figma Project.
+ *   description?: string;
+ * };
+ *
+ * return (
+ *  <LexicalAutoEmbedPlugin<CustomEmbedConfig>
+ *    embedConfigs={EmbedConfigs}
+ *    getMenuOptions={getMenuOptions}
+ *  />
+ * );
+ * ```
+ */
 export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
   embedConfigs,
   onOpenEmbedModalForConfig,
@@ -151,9 +208,11 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
         }),
       ),
     );
-  }, [checkIfLinkNodeIsEmbeddable, editor, embedConfigs, nodeKey, reset]);
+  }, [checkIfLinkNodeIsEmbeddable, editor, nodeKey, reset]);
 
   useEffect(() => {
+    if (!onOpenEmbedModalForConfig) return;
+
     return editor.registerCommand(
       INSERT_EMBED_COMMAND,
       (embedConfigType: TEmbedConfig['type']) => {

@@ -22,9 +22,7 @@ import {$insertNodeToNearestRoot} from '@lexical/utils';
 import {
   $create,
   $createNodeSelection,
-  $getEditorDOMRenderConfig,
-  $getNearestNodeFromDOMNode,
-  $getNodeByKey,
+  $getNodeFromDOMNode,
   $getSelection,
   $isNodeSelection,
   $isRangeSelection,
@@ -178,19 +176,7 @@ export const HorizontalRuleExtension = defineExtension({
         CLICK_COMMAND,
         (event: MouseEvent) => {
           if (isDOMNode(event.target)) {
-            // Skip clicks that originate from an extension-rendered control
-            // attached to the wrapper (e.g. a block drag handle); those have
-            // their own interaction semantics and shouldn't toggle the HR
-            // selection just because they live inside the same keyed DOM.
-            if (
-              event.target instanceof HTMLElement &&
-              event.target.closest('[data-lexical-block-drag-handle]')
-            ) {
-              return false;
-            }
-            // Walk up the DOM so a wrapper around the keyed `<hr>` (e.g.
-            // BlockDragHandleExtension) still resolves to this node.
-            const node = $getNearestNodeFromDOMNode(event.target);
+            const node = $getNodeFromDOMNode(event.target);
             if ($isHorizontalRuleNode(node)) {
               $toggleNodeSelection(node, event.shiftKey);
               return true;
@@ -229,35 +215,19 @@ export const HorizontalRuleExtension = defineExtension({
       }),
       effect(() => {
         const effects = [];
-        for (const [
-          key,
-          {domNode, selectedSignal},
-        ] of nodeSelectionStore.value.nodeSelections.entries()) {
+        for (const {
+          domNode,
+          selectedSignal,
+        } of nodeSelectionStore.value.nodeSelections.values()) {
           effects.push(
             effect(() => {
               const dom = domNode.value;
               if (dom) {
-                // Apply the selected class to the slot's content-bearing
-                // element (the actual `<hr>`) rather than the keyed DOM, so
-                // a wrapper added by an extension doesn't dilute the theme's
-                // compound selector
-                // (e.g. `.PlaygroundEditorTheme__hr.PlaygroundEditorTheme__hrSelected`).
-                let target: HTMLElement = dom;
-                editor.getEditorState().read(() => {
-                  const node = $getNodeByKey(key);
-                  if (node !== null) {
-                    target = $getEditorDOMRenderConfig(editor).$getDOMSlot(
-                      node,
-                      dom,
-                      editor,
-                    ).element;
-                  }
-                });
                 const isSelected = selectedSignal.value;
                 if (isSelected) {
-                  addClassNamesToElement(target, isSelectedClassName);
+                  addClassNamesToElement(dom, isSelectedClassName);
                 } else {
-                  removeClassNamesFromElement(target, isSelectedClassName);
+                  removeClassNamesFromElement(dom, isSelectedClassName);
                 }
               }
             }),

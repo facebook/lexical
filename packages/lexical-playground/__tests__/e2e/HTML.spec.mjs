@@ -51,9 +51,15 @@ test.describe('HTML', () => {
         class="PlaygroundEditorTheme__code"
         dir="auto"
         spellcheck="false"
-        data-gutter="*"
         data-highlight-language="javascript"
         data-language="javascript">
+        <span
+          class="code-gutter"
+          contenteditable="false"
+          aria-hidden="true"
+          data-lexical-code-gutter="true">
+          *
+        </span>
         <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
           const
         </span>
@@ -94,7 +100,11 @@ test.describe('HTML', () => {
       // Custom modification: replace the date text and data-lexical-datetime value with wildcards for matching
       actualHtml =>
         actualHtml
-          .replace(/data-gutter="[^"]*"/g, 'data-gutter="*"')
+          .replace(
+            /(data-lexical-code-gutter="true">)([\s\S]*?)(<\/span>)/g,
+            (m, p1, content, p3) =>
+              p1 + content.replace(/\d+(?:\s+\d+)*/, '*') + p3,
+          )
           .replace(/(<div[^>]*>)(.*?)(<\/div>)/, '$1*$3')
           .replace(
             /data-lexical-datetime="[^"]*"/,
@@ -111,7 +121,6 @@ test.describe('HTML', () => {
           class="PlaygroundEditorTheme__code"
           dir="auto"
           spellcheck="false"
-          data-gutter="*"
           data-highlight-language="html"
           data-language="html">
           *
@@ -121,7 +130,11 @@ test.describe('HTML', () => {
       {ignoreInlineStyles: true},
       actualHtml =>
         actualHtml
-          .replace(/data-gutter="[^"]*"/g, 'data-gutter="*"')
+          .replace(
+            /(data-lexical-code-gutter="true">)([\s\S]*?)(<\/span>)/g,
+            (m, p1, content, p3) =>
+              p1 + content.replace(/\d+(?:\s+\d+)*/, '*') + p3,
+          )
           .replace(/(<code[^>]*>)([\s\S]*)(<\/code>)/, '$1\n  *\n$3'),
     );
 
@@ -135,7 +148,11 @@ test.describe('HTML', () => {
       // Custom modification: replace the date text and data-lexical-datetime value with wildcards for matching
       actualHtml =>
         actualHtml
-          .replace(/data-gutter="[^"]*"/g, 'data-gutter="*"')
+          .replace(
+            /(data-lexical-code-gutter="true">)([\s\S]*?)(<\/span>)/g,
+            (m, p1, content, p3) =>
+              p1 + content.replace(/\d+(?:\s+\d+)*/, '*') + p3,
+          )
           .replace(/(<div[^>]*>)(.*?)(<\/div>)/g, '$1*$3')
           .replace(
             /data-lexical-datetime="[^"]*"/g,
@@ -157,7 +174,6 @@ test.describe('HTML', () => {
           class="PlaygroundEditorTheme__code"
           dir="auto"
           spellcheck="false"
-          data-gutter="*"
           data-highlight-language="html"
           data-language="html">
           *
@@ -167,7 +183,11 @@ test.describe('HTML', () => {
       {ignoreInlineStyles: true},
       actualHtml =>
         actualHtml
-          .replace(/data-gutter="[^"]*"/g, 'data-gutter="*"')
+          .replace(
+            /(data-lexical-code-gutter="true">)([\s\S]*?)(<\/span>)/g,
+            (m, p1, content, p3) =>
+              p1 + content.replace(/\d+(?:\s+\d+)*/, '*') + p3,
+          )
           .replace(/(<code[^>]*>)([\s\S]*)(<\/code>)/, '$1\n  *\n$3'),
     );
 
@@ -192,9 +212,15 @@ test.describe('HTML', () => {
           class="PlaygroundEditorTheme__code"
           dir="auto"
           spellcheck="false"
-          data-gutter="*"
           data-highlight-language="javascript"
           data-language="javascript">
+          <span
+            class="code-gutter"
+            contenteditable="false"
+            aria-hidden="true"
+            data-lexical-code-gutter="true">
+            *
+          </span>
           <span
             class="PlaygroundEditorTheme__tokenAttr"
             data-lexical-text="true">
@@ -230,7 +256,11 @@ test.describe('HTML', () => {
       undefined,
       {ignoreInlineStyles: true},
       actualHtml =>
-        actualHtml.replace(/data-gutter="[^"]*"/g, 'data-gutter="*"'),
+        actualHtml.replace(
+          /(data-lexical-code-gutter="true">)([\s\S]*?)(<\/span>)/g,
+          (m, p1, content, p3) =>
+            p1 + content.replace(/\d+(?:\s+\d+)*/, '*') + p3,
+        ),
     );
   });
 
@@ -269,7 +299,7 @@ test.describe('HTML', () => {
     await focusEditor(page);
     // Ensure we're in pageless mode
     await page.waitForSelector(
-      '.ContentEditable__root .PlaygroundEditorTheme__paragraph',
+      '.ContentEditable__root > .PlaygroundEditorTheme__paragraph',
     );
     await applyHeading(page, 1);
     await page.keyboard.type('Foo');
@@ -282,7 +312,7 @@ test.describe('HTML', () => {
     await btn.click();
     // Ensure we're in page mode
     await page.waitForSelector(
-      '.ContentEditable__root .PlaygroundEditorTheme__page > .PlaygroundEditorTheme__pageContent',
+      '.ContentEditable__root > .PlaygroundEditorTheme__page > .PlaygroundEditorTheme__pageContent',
     );
     await click(page, '.action-button .html');
 
@@ -303,7 +333,7 @@ test.describe('HTML', () => {
     await click(page, '.action-button .html');
     // Ensure we're in page mode
     await page.waitForSelector(
-      '.ContentEditable__root .PlaygroundEditorTheme__page > .PlaygroundEditorTheme__pageContent',
+      '.ContentEditable__root > .PlaygroundEditorTheme__page > .PlaygroundEditorTheme__pageContent',
     );
   });
 });

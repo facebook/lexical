@@ -67,9 +67,10 @@ export function $createDOMRange(
   let focusOffset = _focusOffset;
 
   // For ElementNode endpoints, route through `$getElementDOMSlot` so an
-  // extension that wraps the keyed DOM (e.g. `BlockDragHandleExtension`) is
-  // not the target of `range.setStart`/`setEnd` — the lexical-managed
-  // children live inside the slot element, offset by `getFirstChildOffset()`.
+  // extension that prepends prelude DOM via `slot.after` (e.g.
+  // `CodeGutterExtension`) is not the target of `range.setStart`/`setEnd` —
+  // the lexical-managed children live inside the slot element, offset by
+  // `getFirstChildOffset()`.
   if ($isElementNode(anchorNode) && rawAnchorDOM !== null) {
     const slot = $getElementDOMSlot(editor, anchorNode, rawAnchorDOM);
     anchorDOM = slot.element;

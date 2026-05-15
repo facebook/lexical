@@ -12,6 +12,7 @@ import {
   $isCodeHighlightNode,
   $isCodeNode,
   CodeExtension,
+  CodeGutterExtension,
   CodeHighlightNode,
   CodeIndentExtension,
   CodeNode,
@@ -87,21 +88,36 @@ function $textNodeTransform(
   }
 }
 
+/**
+ * Legacy `data-gutter` updater used by the {@link registerCodeHighlighting}
+ * direct-API path. Sets a `data-gutter="1\n2\n…"` attribute on the
+ * `<code>` element, which a CSS `::before` pseudo with
+ * `content: attr(data-gutter)` renders as the line-number gutter.
+ *
+ * The extension-framework path ({@link CodePrismExtension}) instead
+ * pulls in `CodeGutterExtension` from `@lexical/code-core`, which
+ * renders the gutter as a real `<span data-lexical-code-gutter>`
+ * child managed through `slot.after` and strips this attribute on
+ * `$decorateDOM`. This function is retained for legacy callers that
+ * use `registerCodeHighlighting` on a plain editor without the
+ * Extension framework.
+ */
 function $updateCodeGutter(node: CodeNode, editor: LexicalEditor): void {
   const keyedDOM = editor.getElementByKey(node.getKey());
   if (keyedDOM === null) {
     return;
   }
-  // Route through the editor's `$getDOMSlot` hook so extensions that wrap
-  // the node's DOM (e.g. block drag-handle wrapper) point us at the actual
-  // <code> element, not the wrapper. The node's own `getDOMSlot` would
-  // skip those overrides.
   const codeElement = $getElementDOMSlot(editor, node, keyedDOM).element;
+  // CodeGutterExtension renders a real `<span data-lexical-code-gutter>`
+  // child instead of the attribute when active. Skip the attribute write
+  // so the two paths don't both apply to the same DOM.
+  if (codeElement.querySelector(':scope > [data-lexical-code-gutter]')) {
+    return;
+  }
   const children = node.getChildren();
   const childrenLength = children.length;
   // @ts-ignore: internal field
   if (childrenLength === codeElement.__cachedChildrenLength) {
-    // Avoid updating the attribute if the children length hasn't changed.
     return;
   }
   // @ts-ignore:: internal field
@@ -339,7 +355,11 @@ export function registerHighlightingOnly(
 ): () => void {
   const registrations = [];
 
-  // Only register the mutation listener if not in headless mode
+  // Legacy `data-gutter` mutation listener: keeps the attribute in sync
+  // for direct-API callers (`registerCodeHighlighting`) on a plain
+  // editor. Extension-framework users get a slot-managed
+  // `<span data-lexical-code-gutter>` from `CodeGutterExtension`
+  // instead, which strips this attribute on `$decorateDOM`.
   if (editor._headless !== true) {
     registrations.push(
       editor.registerMutationListener(
@@ -430,7 +450,7 @@ export const CodePrismExtension = defineExtension({
     disabled: false,
     tokenizer: PrismTokenizer,
   }),
-  dependencies: [CodeExtension, CodeIndentExtension],
+  dependencies: [CodeExtension, CodeGutterExtension, CodeIndentExtension],
   name: '@lexical/code-prism',
   register: (editor, config, state) => {
     const stores = state.getOutput();

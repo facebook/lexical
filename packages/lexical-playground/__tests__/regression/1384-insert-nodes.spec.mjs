@@ -48,9 +48,15 @@ test.describe('Regression test #1384', () => {
           class="PlaygroundEditorTheme__code"
           dir="auto"
           spellcheck="false"
-          data-gutter="123"
           data-highlight-language="javascript"
           data-language="javascript">
+          <span
+            class="code-gutter"
+            contenteditable="false"
+            aria-hidden="true"
+            data-lexical-code-gutter="true">
+            123
+          </span>
           <span
             class="PlaygroundEditorTheme__tokenFunction"
             data-lexical-text="true">

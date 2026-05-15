@@ -10,7 +10,6 @@ import type {JSX} from 'react';
 
 import './index.css';
 
-import {BLOCK_DRAG_HANDLE_ATTR} from '@lexical/react/LexicalBlockDragHandleExtension';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {DraggableBlockPlugin_EXPERIMENTAL} from '@lexical/react/LexicalDraggableBlockPlugin';
 import {
@@ -32,20 +31,17 @@ import {
   getDynamicOptions,
 } from '../ComponentPickerPlugin';
 
+const DRAGGABLE_BLOCK_MENU_CLASSNAME = 'draggable-block-menu';
+
 type PickerState = {
   insertBefore: boolean;
   targetNodeKey: NodeKey;
 };
 
-/**
- * Playground wrapper for the slot-driven DraggableBlockPlugin rewrite.
- *
- * The drag handle is rendered into each top-level block ElementNode's DOM by
- * `BlockDragHandleExtension` (wired in the playground via the editor's
- * extension list); this wrapper mounts the drop-target line and a floating
- * "+" affordance positioned next to the currently hovered block (tracked via
- * `onElementChanged`). Clicking "+" opens the component picker inline.
- */
+function isOnMenu(element: HTMLElement): boolean {
+  return !!element.closest(`.${DRAGGABLE_BLOCK_MENU_CLASSNAME}`);
+}
+
 export default function DraggableBlockPlugin({
   anchorElem = document.body,
 }: {
@@ -53,44 +49,13 @@ export default function DraggableBlockPlugin({
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();
   const [modal, showModal] = useModal();
-  const addButtonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const pickerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const targetLineRef = useRef<HTMLDivElement>(null);
-  const [hoveredBlockElem, setHoveredBlockElem] = useState<HTMLElement | null>(
+  const [draggableElement, setDraggableElement] = useState<HTMLElement | null>(
     null,
   );
-  const [isOverAddButton, setIsOverAddButton] = useState(false);
-  const lastHoveredBlockRef = useRef<HTMLElement | null>(null);
-  if (hoveredBlockElem) {
-    lastHoveredBlockRef.current = hoveredBlockElem;
-  }
-  // While the mouse is on the "+" button (rendered in a portal outside the
-  // editor root), the editor's mouseleave fires and clears `hoveredBlockElem`.
-  // Hold the last hovered block so the button stays positioned and visible.
-  const effectiveBlockElem =
-    hoveredBlockElem || (isOverAddButton ? lastHoveredBlockRef.current : null);
-
-  // When the "+" is hovered (but the block itself isn't, since the
-  // pointer left the editor area), keep the drag handle visible by
-  // stamping a data attribute on the block that the CSS treats the same
-  // as `:hover`.
-  const blockForAddHover =
-    isOverAddButton && lastHoveredBlockRef.current
-      ? lastHoveredBlockRef.current
-      : null;
-  useEffect(() => {
-    if (
-      !blockForAddHover ||
-      !blockForAddHover.querySelector(`:scope > [${BLOCK_DRAG_HANDLE_ATTR}]`)
-    ) {
-      return;
-    }
-    blockForAddHover.setAttribute('data-add-button-hover', '');
-    return () => {
-      blockForAddHover.removeAttribute('data-add-button-hover');
-    };
-  }, [blockForAddHover]);
   const [pickerState, setPickerState] = useState<PickerState | null>(null);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [queryString, setQueryString] = useState('');
@@ -102,9 +67,11 @@ export default function DraggableBlockPlugin({
 
   const options = useMemo(() => {
     const baseOptions = getBaseOptions(editor, showModal);
+
     if (!queryString) {
       return baseOptions;
     }
+
     const regex = new RegExp(queryString, 'i');
     return [
       ...getDynamicOptions(editor, queryString),
@@ -140,7 +107,7 @@ export default function DraggableBlockPlugin({
       const target = event.target as Node | null;
       if (
         (pickerRef.current && pickerRef.current.contains(target)) ||
-        (addButtonRef.current && addButtonRef.current.contains(target))
+        (menuRef.current && menuRef.current.contains(target))
       ) {
         return;
       }
@@ -228,22 +195,24 @@ export default function DraggableBlockPlugin({
   }, [highlightedIndex, isPickerOpen, options, selectOption]);
 
   function openComponentPicker(e: React.MouseEvent) {
-    const targetBlockElem = effectiveBlockElem;
-    if (!targetBlockElem) {
+    if (!draggableElement || !editor) {
       return;
     }
+
     let targetNodeKey: NodeKey | null = null;
     editor.read(() => {
-      const resolvedNode = $getNearestNodeFromDOMNode(targetBlockElem);
+      const resolvedNode = $getNearestNodeFromDOMNode(draggableElement);
       if (resolvedNode) {
         targetNodeKey = resolvedNode.getKey();
       }
     });
+
     if (!targetNodeKey) {
       return;
     }
+
     const insertBefore = e.altKey || e.ctrlKey;
-    const rect = addButtonRef.current?.getBoundingClientRect();
+    const rect = menuRef.current?.getBoundingClientRect();
     setPickerPosition(
       rect
         ? {
@@ -257,39 +226,6 @@ export default function DraggableBlockPlugin({
     setHighlightedIndex(0);
     setIsPickerOpen(true);
   }
-
-  // Position the "+" button to the left of the drag handle. The drag
-  // handle sits at `-22px` from the wrapper (block's parent div) via the
-  // extension's CSS, so the "+" needs to align to the same coordinate
-  // system. Using the inner block's rect would mis-align for blocks that
-  // carry their own margin-left (e.g. quote), since the inner offset
-  // doesn't apply to the wrapper.
-  //   ⋮ left = wrapper.left - 22  (16px wide, ends at wrapper.left - 6)
-  //   +  left = ⋮.left - 2 (gap) - 16 (width) = wrapper.left - 40
-  //   top aligned with ⋮ (top: 4px from wrapper top).
-  // Hidden via CSS media query on narrow viewports where the editor's left
-  // padding shrinks below the handle column width.
-  //
-  // Button is rendered at the last-hovered block's position even when no
-  // block is hovered, so its own mouseenter can still fire while the
-  // editor's mouseleave has already cleared `hoveredBlockElem`. Without
-  // this the button would flip to `display: none`, suppressing mouse
-  // events and making it impossible to reach.
-  const addButtonStyle: React.CSSProperties = useMemo(() => {
-    const blockForPosition = effectiveBlockElem || lastHoveredBlockRef.current;
-    if (!blockForPosition) {
-      return {display: 'none'};
-    }
-    const rect = blockForPosition.getBoundingClientRect();
-    const anchorRect = anchorElem.getBoundingClientRect();
-    return {
-      left: rect.left - anchorRect.left - 40 + anchorElem.scrollLeft,
-      opacity: effectiveBlockElem ? undefined : 0,
-      pointerEvents: 'auto',
-      position: 'absolute',
-      top: rect.top - anchorRect.top + 4 + anchorElem.scrollTop,
-    };
-  }, [effectiveBlockElem, anchorElem]);
 
   return (
     <>
@@ -331,26 +267,25 @@ export default function DraggableBlockPlugin({
             document.body,
           )
         : null}
-      {ReactDOM.createPortal(
-        <button
-          ref={addButtonRef}
-          type="button"
-          className="draggable-block-add-button"
-          title="Click to add below"
-          onClick={openComponentPicker}
-          onMouseEnter={() => setIsOverAddButton(true)}
-          onMouseLeave={() => setIsOverAddButton(false)}
-          style={addButtonStyle}
-        />,
-        anchorElem,
-      )}
       <DraggableBlockPlugin_EXPERIMENTAL
         anchorElem={anchorElem}
+        menuRef={menuRef}
         targetLineRef={targetLineRef}
+        menuComponent={
+          <div ref={menuRef} className="icon draggable-block-menu">
+            <button
+              title="Click to add below"
+              className="icon icon-plus"
+              onClick={openComponentPicker}
+            />
+            <div className="icon" />
+          </div>
+        }
         targetLineComponent={
           <div ref={targetLineRef} className="draggable-block-target-line" />
         }
-        onElementChanged={setHoveredBlockElem}
+        isOnMenu={isOnMenu}
+        onElementChanged={setDraggableElement}
       />
     </>
   );

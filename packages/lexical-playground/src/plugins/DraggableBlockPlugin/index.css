@@ -1,106 +1,39 @@
-/* Wrap-all + display:contents: the wrapper has no box so browser
- * navigation / triple-click / execCommand see the inner element as the
- * block boundary. The handle's position is anchored to the inner via
- * CSS anchor positioning so it doesn't need the wrapper to provide a
- * positioning context. */
-[data-lexical-block-drag-wrapper] {
-  display: contents;
-  /* Scope the anchor name so each wrapper's inner is the anchor target
-   * for the handle inside the same wrapper — without scope, all handles
-   * resolve to the most recently declared anchor and stack on the last
-   * block. */
-  anchor-scope: --lexical-block-drag-anchor;
-}
-
-[data-lexical-block-drag-inner] {
-  anchor-name: --lexical-block-drag-anchor;
-}
-
-[data-lexical-block-drag-handle] {
-  position: absolute;
-  position-anchor: --lexical-block-drag-anchor;
-  left: calc(anchor(left) - 22px);
-  top: calc(anchor(top) + 4px);
-  width: 16px;
-  height: 16px;
-  padding: 0;
-  border: none;
-  background-color: transparent;
-  background-image: url(../../images/icons/draggable-block-menu.svg);
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: 16px 16px;
-  font-size: 0;
-  color: transparent;
+.draggable-block-menu {
+  border-radius: 4px;
+  padding: 2px 1px;
   cursor: grab;
   opacity: 0;
-  /* The handle sits at `left: -22px` outside the wrapper's geometric box,
-   * so wrapper-only hover would lose track the moment the cursor crosses
-   * the gap to reach the handle. Always-on pointer events let the handle's
-   * own `:hover` rule keep it visible during that transition. The position
-   * is far enough left that pointer events here don't interfere with
-   * normal text clicks inside the editor. */
-  pointer-events: auto;
-  transition: opacity 160ms ease-in-out;
-  border-radius: 4px;
-  /* iPad portrait (1024×1366) and landscape (1366 wide) fall outside the
-   * `max-width: 1025px` breakpoint that hides the handle on phones, so the
-   * button is reachable on touch. Suppress the long-press callout lens. */
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  user-select: none;
+  position: absolute;
+  left: 0;
+  top: 0;
+  will-change: transform, opacity;
+  display: flex;
+  gap: 2px;
+  transition:
+    transform 140ms ease-in-out,
+    opacity 160ms ease-in-out;
 }
 
-[data-lexical-block-drag-wrapper]:has([data-lexical-block-drag-inner]:hover)
-  > [data-lexical-block-drag-handle],
-[data-lexical-block-drag-wrapper][data-add-button-hover]
-  > [data-lexical-block-drag-handle],
-[data-lexical-block-drag-handle]:hover {
+.draggable-block-menu .icon {
+  width: 16px;
+  height: 16px;
   opacity: 0.3;
+  background-image: url(../../images/icons/draggable-block-menu.svg);
 }
 
-[data-lexical-block-drag-handle]:hover {
-  opacity: 1 !important;
-  background-color: #efefef;
+.draggable-block-menu .icon-plus {
+  display: inline-block;
+  border: none;
+  cursor: pointer;
+  background-color: transparent;
+  background-image: url(../../images/icons/plus.svg);
 }
 
-[data-lexical-block-drag-handle]:active {
+.draggable-block-menu:active {
   cursor: grabbing;
 }
 
-/* On narrow viewports the editor's left padding shrinks to 8px, leaving
- * no room for the floating drag handle / add button column. Hide them
- * rather than letting them spill outside the editor (parity with the
- * previous floating menu, which only mounted when there was room). */
-@media (max-width: 1025px) {
-  [data-lexical-block-drag-handle],
-  .draggable-block-add-button {
-    display: none;
-  }
-}
-
-/* Floating "+" affordance, positioned next to the hovered block via React. */
-.draggable-block-add-button {
-  width: 16px;
-  height: 16px;
-  padding: 0;
-  border: none;
-  background-color: transparent;
-  background-image: url(../../images/icons/plus.svg);
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: 16px 16px;
-  font-size: 0;
-  color: transparent;
-  cursor: pointer;
-  opacity: 0.3;
-  border-radius: 4px;
-  transition: opacity 160ms ease-in-out;
-  will-change: transform, opacity;
-}
-
-.draggable-block-add-button:hover {
-  opacity: 1;
+.draggable-block-menu .icon:hover {
   background-color: #efefef;
 }
 

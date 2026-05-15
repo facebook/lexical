@@ -35,7 +35,7 @@ test.describe('HTML CopyAndPaste', () => {
         '<p>Hello\n</p>\n\n<p>\n\nWorld\n\n</p>\n\n<p>Hello\n\n   World   \n\n!\n\n</p><p>Hello <b>World</b> <i>!</i></p>',
     });
 
-    const paragraphs = page.locator('div[contenteditable="true"] p');
+    const paragraphs = page.locator('div[contenteditable="true"] > p');
     await expect(paragraphs).toHaveCount(4);
 
     // Explicitly checking inner text, since regular assertHTML will prettify it and strip all
@@ -71,9 +71,15 @@ test.describe('HTML CopyAndPaste', () => {
           class="PlaygroundEditorTheme__code"
           dir="auto"
           spellcheck="false"
-          data-gutter="123"
           data-highlight-language="javascript"
           data-language="javascript">
+          <span
+            class="code-gutter"
+            contenteditable="false"
+            aria-hidden="true"
+            data-lexical-code-gutter="true">
+            123
+          </span>
           <span
             class="PlaygroundEditorTheme__tokenAttr"
             data-lexical-text="true">

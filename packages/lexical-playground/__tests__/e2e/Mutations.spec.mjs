@@ -161,21 +161,19 @@ test.describe('Mutations', () => {
 
     await validateContent(page);
 
-    // Remove the paragraph. Under `BlockDragHandleExtension` the visible
-    // top-level block is the wrapper around the `<p>`, so remove that to
-    // trigger the same "top-level block went missing" mutation as before.
+    // Remove the paragraph
     await evaluate(page, () => {
       const rootElement = document.querySelector('div[contenteditable="true"]');
-      const topLevelBlock = rootElement.firstChild;
+      const paragraph = rootElement.firstChild;
 
-      topLevelBlock.remove();
+      paragraph.remove();
     });
     await validateContent(page);
 
     // Remove the paragraph content
     await evaluate(page, () => {
       const rootElement = document.querySelector('div[contenteditable="true"]');
-      const paragraph = rootElement.querySelector('p');
+      const paragraph = rootElement.firstChild;
 
       paragraph.textContent = '';
     });
@@ -184,7 +182,7 @@ test.describe('Mutations', () => {
     // Remove the first text
     await evaluate(page, () => {
       const rootElement = document.querySelector('div[contenteditable="true"]');
-      const firstTextNode = rootElement.querySelector('p').firstChild;
+      const firstTextNode = rootElement.firstChild.firstChild;
 
       firstTextNode.remove();
     });
@@ -193,7 +191,7 @@ test.describe('Mutations', () => {
     // Remove the first text contents
     await evaluate(page, () => {
       const rootElement = document.querySelector('div[contenteditable="true"]');
-      const firstTextNode = rootElement.querySelector('p').firstChild;
+      const firstTextNode = rootElement.firstChild.firstChild;
 
       firstTextNode.textContent = '';
     });
@@ -202,8 +200,7 @@ test.describe('Mutations', () => {
     // Remove the second text
     await evaluate(page, () => {
       const rootElement = document.querySelector('div[contenteditable="true"]');
-      const secondTextNode =
-        rootElement.querySelector('p').firstChild.nextSibling;
+      const secondTextNode = rootElement.firstChild.firstChild.nextSibling;
 
       secondTextNode.remove();
     });
@@ -213,7 +210,7 @@ test.describe('Mutations', () => {
     await evaluate(page, () => {
       const rootElement = document.querySelector('div[contenteditable="true"]');
       const thirdTextNode =
-        rootElement.querySelector('p').firstChild.nextSibling.nextSibling;
+        rootElement.firstChild.firstChild.nextSibling.nextSibling;
 
       thirdTextNode.remove();
     });
@@ -223,8 +220,7 @@ test.describe('Mutations', () => {
     await evaluate(page, () => {
       const rootElement = document.querySelector('div[contenteditable="true"]');
       const forthTextNode =
-        rootElement.querySelector('p').firstChild.nextSibling.nextSibling
-          .nextSibling;
+        rootElement.firstChild.firstChild.nextSibling.nextSibling.nextSibling;
 
       forthTextNode.remove();
     });
@@ -233,7 +229,7 @@ test.describe('Mutations', () => {
     // Move last to first
     await evaluate(page, () => {
       const rootElement = document.querySelector('div[contenteditable="true"]');
-      const paragraph = rootElement.querySelector('p');
+      const paragraph = rootElement.firstChild;
       const firstTextNode = paragraph.firstChild;
       const forthTextNode =
         paragraph.firstChild.nextSibling.nextSibling.nextSibling;
@@ -245,7 +241,7 @@ test.describe('Mutations', () => {
     // Reverse sort all the children
     await evaluate(page, () => {
       const rootElement = document.querySelector('div[contenteditable="true"]');
-      const paragraph = rootElement.querySelector('p');
+      const paragraph = rootElement.firstChild;
       const firstTextNode = paragraph.firstChild;
       const secondTextNode = paragraph.firstChild.nextSibling;
       const thirdTextNode = paragraph.firstChild.nextSibling.nextSibling;
@@ -273,7 +269,7 @@ test.describe('Mutations', () => {
     // Adding additional nodes to paragraph
     await evaluate(page, () => {
       const rootElement = document.querySelector('div[contenteditable="true"]');
-      const paragraph = rootElement.querySelector('p');
+      const paragraph = rootElement.firstChild;
       const firstTextNode = paragraph.firstChild;
       const span = document.createElement('span');
       const span2 = document.createElement('span');
@@ -287,7 +283,7 @@ test.describe('Mutations', () => {
     // Adding additional nodes to text nodes
     await evaluate(page, () => {
       const rootElement = document.querySelector('div[contenteditable="true"]');
-      const paragraph = rootElement.querySelector('p');
+      const paragraph = rootElement.firstChild;
       const firstTextNode = paragraph.firstChild;
       const span = document.createElement('span');
       const text = document.createTextNode('123');
@@ -299,7 +295,7 @@ test.describe('Mutations', () => {
     // Replace text nodes on text nodes #1
     await evaluate(page, () => {
       const rootElement = document.querySelector('div[contenteditable="true"]');
-      const paragraph = rootElement.querySelector('p');
+      const paragraph = rootElement.firstChild;
       const firstTextNode = paragraph.firstChild;
       const text = document.createTextNode('123');
       firstTextNode.firstChild.replaceWith(text);
@@ -309,7 +305,7 @@ test.describe('Mutations', () => {
     // Replace text nodes on line break #2
     await evaluate(page, () => {
       const rootElement = document.querySelector('div[contenteditable="true"]');
-      const paragraph = rootElement.querySelector('p');
+      const paragraph = rootElement.firstChild;
       const firstTextNode = paragraph.firstChild;
       const br = document.createElement('br');
       firstTextNode.firstChild.replaceWith(br);
@@ -319,7 +315,7 @@ test.describe('Mutations', () => {
     // Update text content, this should work :)
     await evaluate(page, () => {
       const rootElement = document.querySelector('div[contenteditable="true"]');
-      const paragraph = rootElement.querySelector('p');
+      const paragraph = rootElement.firstChild;
       const firstTextNode = paragraph.firstChild;
       firstTextNode.firstChild.nodeValue = 'Bonjour ';
     });

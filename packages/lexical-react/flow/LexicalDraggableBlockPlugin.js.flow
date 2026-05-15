@@ -11,11 +11,14 @@ import * as React from 'react';
 
 type Props = Readonly<{
   anchorElem?: ?HTMLElement,
+  menuRef: React.RefObject<?HTMLElement>,
   targetLineRef: React.RefObject<?HTMLElement>,
+  menuComponent: React.Node,
   targetLineComponent: React.Node,
-  onElementChanged?: (element: HTMLElement | null) => void,
+  isOnMenu: (element: HTMLElement) => boolean,
+  onElementChanged?: (element: HTMLElement | null) => void
 }>;
-
+	
 declare export function DraggableBlockPlugin_EXPERIMENTAL(
   props: Props,
 ): React.MixedElement;

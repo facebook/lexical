@@ -178,8 +178,7 @@
   max-width: 100%;
   box-sizing: border-box;
 }
-.PlaygroundEditorTheme__code:before {
-  content: attr(data-gutter);
+.PlaygroundEditorTheme__code > [data-lexical-code-gutter] {
   position: sticky;
   background-color: #eee;
   left: 0;
@@ -195,7 +194,9 @@
   min-width: 25px;
   margin-right: 10px;
   margin-top: -8px;
-  padding: 8px;
+  user-select: none;
+  -webkit-user-select: none;
+  pointer-events: none;
 }
 .PlaygroundEditorTheme__tableScrollableWrapper {
   overflow-x: auto;

@@ -7,6 +7,7 @@
  */
 
 export {CodeExtension} from './CodeExtension';
+export {CodeGutterExtension} from './CodeGutterExtension';
 export {
   $createCodeHighlightNode,
   $isCodeHighlightNode,

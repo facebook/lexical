@@ -27,7 +27,6 @@ import {
   ListExtension,
 } from '@lexical/list';
 import {PlainTextExtension} from '@lexical/plain-text';
-import {BlockDragHandleExtension} from '@lexical/react/LexicalBlockDragHandleExtension';
 import {LexicalCollaboration} from '@lexical/react/LexicalCollaborationContext';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
 import {
@@ -184,11 +183,6 @@ const PlaygroundRichTextExtension = defineExtension({
     PlaygroundMarkdownShortcutsExtension,
     PageBreakExtension,
     PagesReactExtension,
-    // The drag-handle wrapper is only useful with the `DraggableBlockPlugin`
-    // (drop-target line, DnD wiring), which the playground renders only in
-    // rich-text mode. Registering it here keeps the wrapper out of plain-text
-    // editors where the handle would be visible but inert.
-    BlockDragHandleExtension,
   ],
   name: '@lexical/playground/RichText',
 });

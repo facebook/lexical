@@ -24,8 +24,6 @@ import {
 } from '@lexical/utils';
 import {
   $applyNodeReplacement,
-  $getEditorDOMRenderConfig,
-  $getNodeByKey,
   CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
 } from 'lexical';
@@ -50,32 +48,14 @@ function HorizontalRuleComponent({nodeKey}: {nodeKey: NodeKey}) {
         (event: MouseEvent) => {
           const hrElem = editor.getElementByKey(nodeKey);
 
-          if (hrElem === null || !(event.target instanceof Node)) {
-            return false;
-          }
-          // Hit-test against the slot's inner `<hr>`, not the keyed DOM. With
-          // an extension-added wrapper, the keyed DOM is the wrapper and
-          // includes the gutter + any sibling controls (e.g. a drag handle);
-          // restricting `contains` to the inner element keeps clicks on
-          // those siblings from registering as an HR selection.
-          let target: HTMLElement = hrElem;
-          editor.getEditorState().read(() => {
-            const node = $getNodeByKey(nodeKey);
-            if (node !== null) {
-              target = $getEditorDOMRenderConfig(editor).$getDOMSlot(
-                node,
-                hrElem,
-                editor,
-              ).element;
-            }
-          });
-          if (target.contains(event.target)) {
+          if (event.target === hrElem) {
             if (!event.shiftKey) {
               clearSelection();
             }
             setSelected(!isSelected);
             return true;
           }
+
           return false;
         },
         COMMAND_PRIORITY_LOW,
@@ -88,25 +68,10 @@ function HorizontalRuleComponent({nodeKey}: {nodeKey: NodeKey}) {
     const isSelectedClassName = editor._config.theme.hrSelected ?? 'selected';
 
     if (hrElem !== null) {
-      // Apply the selected class to the slot's content-bearing element (the
-      // actual `<hr>`) rather than the keyed DOM, so a wrapper added by an
-      // extension doesn't dilute the theme's compound selector
-      // (`.PlaygroundEditorTheme__hr.PlaygroundEditorTheme__hrSelected`).
-      let target: HTMLElement = hrElem;
-      editor.getEditorState().read(() => {
-        const node = $getNodeByKey(nodeKey);
-        if (node !== null) {
-          target = $getEditorDOMRenderConfig(editor).$getDOMSlot(
-            node,
-            hrElem,
-            editor,
-          ).element;
-        }
-      });
       if (isSelected) {
-        addClassNamesToElement(target, isSelectedClassName);
+        addClassNamesToElement(hrElem, isSelectedClassName);
       } else {
-        removeClassNamesFromElement(target, isSelectedClassName);
+        removeClassNamesFromElement(hrElem, isSelectedClassName);
       }
     }
   }, [editor, isSelected, nodeKey]);

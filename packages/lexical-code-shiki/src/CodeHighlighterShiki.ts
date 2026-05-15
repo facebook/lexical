@@ -12,6 +12,7 @@ import {
   $isCodeHighlightNode,
   $isCodeNode,
   CodeExtension,
+  CodeGutterExtension,
   CodeHighlightNode,
   CodeIndentExtension,
   CodeNode,
@@ -85,21 +86,29 @@ function $textNodeTransform(
   }
 }
 
+/**
+ * Legacy `data-gutter` updater used by the
+ * {@link registerCodeShikiHighlighting} direct-API path. See the
+ * mirror in `@lexical/code-prism` for the rationale — extension-
+ * framework users get the slot-managed `<span data-lexical-code-gutter>`
+ * via `CodeGutterExtension` instead, which strips this attribute on
+ * `$decorateDOM`.
+ */
 function $updateCodeGutter(node: CodeNode, editor: LexicalEditor): void {
   const keyedDOM = editor.getElementByKey(node.getKey());
   if (keyedDOM === null) {
     return;
   }
-  // Route through the editor's `$getDOMSlot` hook so extensions that wrap
-  // the node's DOM (e.g. block drag-handle wrapper) point us at the actual
-  // <code> element, not the wrapper. The node's own `getDOMSlot` would
-  // skip those overrides.
   const codeElement = $getElementDOMSlot(editor, node, keyedDOM).element;
+  // See the mirror in `@lexical/code-prism`. Skip when the slot-managed
+  // gutter is already in place.
+  if (codeElement.querySelector(':scope > [data-lexical-code-gutter]')) {
+    return;
+  }
   const children = node.getChildren();
   const childrenLength = children.length;
   // @ts-ignore: internal field
   if (childrenLength === codeElement.__cachedChildrenLength) {
-    // Avoid updating the attribute if the children length hasn't changed.
     return;
   }
   // @ts-ignore:: internal field
@@ -353,7 +362,9 @@ export function registerHighlightingOnly(
 ): () => void {
   const registrations = [];
 
-  // Only register the mutation listener if not in headless mode
+  // Legacy `data-gutter` mutation listener: see comment on the mirror
+  // in `@lexical/code-prism`. Extension-framework users get the
+  // slot-managed gutter via `CodeGutterExtension`.
   if (editor._headless !== true) {
     registrations.push(
       editor.registerMutationListener(
@@ -444,7 +455,7 @@ export const CodeShikiExtension = defineExtension({
     disabled: false,
     tokenizer: ShikiTokenizer,
   }),
-  dependencies: [CodeExtension, CodeIndentExtension],
+  dependencies: [CodeExtension, CodeGutterExtension, CodeIndentExtension],
   name: '@lexical/code-shiki',
   register: (editor, config, state) => {
     const stores = state.getOutput();

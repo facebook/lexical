@@ -427,43 +427,25 @@ function createProvider(id, yjsDocMap) {
 
 ### `LexicalDraggableBlockPlugin`
 
-Wires drag-and-drop reorder for top-level block nodes whose DOM has been wrapped by `BlockDragHandleExtension`. The drag handle itself is rendered by the extension as a sibling of each block's content element; this plugin renders the drop-target indicator and forwards hover changes to the caller.
+Adds a draggable block handle that appears next to top-level block nodes when hovered. Users can drag and drop blocks to reorder them. A target line indicates the drop position.
 
-> Note: This plugin and `BlockDragHandleExtension` are experimental.
-
-> Migration from earlier versions: the previous shape took `menuRef` / `menuComponent` / `isOnMenu` props and rendered the drag handle through a portal. Those props were removed — the handle is now produced by `BlockDragHandleExtension` directly into each top-level block's DOM, and the plugin only emits the drop indicator + hover changes. Consumers that rendered their own "+" / add-block button next to the handle should subscribe via `onElementChanged` and position it themselves (see `examples/website-notion/src/plugins/DragPlugin.tsx` for a reference layout).
-
-Register `BlockDragHandleExtension` on the editor (it adds the drag handle into each block's DOM) and render `DraggableBlockPlugin_EXPERIMENTAL` to mount the drop-target line:
+> Note: This plugin is experimental.
 
 ```jsx
-import {BlockDragHandleExtension} from '@lexical/react/LexicalBlockDragHandleExtension';
 import {DraggableBlockPlugin_EXPERIMENTAL} from '@lexical/react/LexicalDraggableBlockPlugin';
-import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
-import {RichTextExtension} from '@lexical/rich-text';
-import {defineExtension} from 'lexical';
 
-const editorExtension = defineExtension({
-  dependencies: [RichTextExtension, BlockDragHandleExtension],
-  name: 'my-editor',
-});
+const menuRef = useRef(null);
+const targetLineRef = useRef(null);
 
-function MyEditor() {
-  const targetLineRef = useRef(null);
-  return (
-    <LexicalExtensionComposer extension={editorExtension}>
-      {/* ContentEditable, other plugins, etc. */}
-      <DraggableBlockPlugin_EXPERIMENTAL
-        anchorElem={document.body}
-        targetLineRef={targetLineRef}
-        targetLineComponent={<div ref={targetLineRef} className="target-line" />}
-        onElementChanged={(blockElem) => {/* update affordances next to the hovered block */}}
-      />
-    </LexicalExtensionComposer>
-  );
-}
+<DraggableBlockPlugin_EXPERIMENTAL
+  anchorElem={document.body}
+  menuRef={menuRef}
+  targetLineRef={targetLineRef}
+  menuComponent={<div ref={menuRef} className="drag-handle">::</div>}
+  targetLineComponent={<div ref={targetLineRef} className="target-line" />}
+  isOnMenu={(el) => menuRef.current?.contains(el) ?? false}
+/>
 ```
-
-For a full reference covering the `onElementChanged` callback wired to a floating "+" add-block button, see [`examples/website-notion/src/plugins/DragPlugin.tsx`](https://github.com/facebook/lexical/blob/main/examples/website-notion/src/plugins/DragPlugin.tsx) — it ports the previous portal-based composition (`menuRef` / `menuComponent` / `isOnMenu`) to the new extension-driven shape.
 
 ### `LexicalNodeEventPlugin`
 

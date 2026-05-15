@@ -419,16 +419,25 @@ async function assertSelectionOnPageOrFrame(page, expected) {
         if (parent === null || node === rootElement) {
           break;
         }
-        // Skip the `BlockDragHandleExtension` inner-marker element — a
-        // pass-through layer between the wrapper and the keyed DOM that
-        // would add an extra step to the path vs the un-wrapped baseline.
-        const isInnerMarker =
-          node.nodeType === Node.ELEMENT_NODE &&
-          node.getAttribute &&
-          node.getAttribute('data-lexical-block-drag-inner') === 'true';
-        if (!isInnerMarker) {
-          path.push(Array.from(parent.childNodes).indexOf(node));
+        // The slot-managed code line-number gutter (from
+        // CodeGutterExtension) is a contentEditable=false sibling of
+        // CodeNode's managed children. It is not part of the lexical
+        // content, so skip it when computing selection paths.
+        let index = 0;
+        for (const sibling of parent.childNodes) {
+          if (sibling === node) {
+            break;
+          }
+          if (
+            sibling.nodeType === Node.ELEMENT_NODE &&
+            sibling.getAttribute &&
+            sibling.getAttribute('data-lexical-code-gutter') === 'true'
+          ) {
+            continue;
+          }
+          index++;
         }
+        path.push(index);
         node = parent;
       }
       return path.reverse();
@@ -451,60 +460,14 @@ async function assertSelectionOnPageOrFrame(page, expected) {
       return offset;
     };
 
-    const normalizeBlockHandleFocus = (node, offset) => {
-      // Browser arrow-key navigation lands focus on the
-      // `BlockDragHandleExtension` wrapper at offset 0 when navigating to
-      // the start of a wrapped block (the wrapper is a DOM-tree boundary
-      // even with `display: contents`). Translate to the deepest first /
-      // last text inside the inner element so paths line up with the
-      // un-wrapped baseline.
-      if (
-        node &&
-        node.nodeType === Node.ELEMENT_NODE &&
-        node.getAttribute &&
-        node.getAttribute('data-lexical-block-drag-wrapper') === 'true'
-      ) {
-        const inner = node.querySelector(
-          ':scope > [data-lexical-block-drag-inner]',
-        );
-        if (inner) {
-          const walker = document.createTreeWalker(inner, NodeFilter.SHOW_TEXT);
-          if (offset === 0) {
-            const first = walker.nextNode();
-            if (first) {
-              return [first, 0];
-            }
-          } else {
-            let last = null;
-            let next;
-            while ((next = walker.nextNode())) {
-              last = next;
-            }
-            if (last) {
-              return [last, last.nodeValue.length];
-            }
-          }
-        }
-      }
-      return [node, offset];
-    };
-
     const {anchorNode, anchorOffset, focusNode, focusOffset} =
       window.getSelection();
 
-    const [normAnchorNode, normAnchorOffset] = normalizeBlockHandleFocus(
-      anchorNode,
-      anchorOffset,
-    );
-    const [normFocusNode, normFocusOffset] = normalizeBlockHandleFocus(
-      focusNode,
-      focusOffset,
-    );
     return {
-      anchorOffset: fixOffset(normAnchorNode, normAnchorOffset),
-      anchorPath: getPathFromNode(normAnchorNode),
-      focusOffset: fixOffset(normFocusNode, normFocusOffset),
-      focusPath: getPathFromNode(normFocusNode),
+      anchorOffset: fixOffset(anchorNode, anchorOffset),
+      anchorPath: getPathFromNode(anchorNode),
+      focusOffset: fixOffset(focusNode, focusOffset),
+      focusPath: getPathFromNode(focusNode),
     };
   });
   expect(selection.anchorPath).toEqual(expected.anchorPath);
@@ -930,208 +893,11 @@ export async function dragImage(
   );
 }
 
-// Depth-aware matcher for `<TAG ...>...</TAG>` starting at `start`. Returns
-// the index of the matching close-tag's `<`, or -1 if unbalanced. Counts only
-// well-formed `<TAG ...>` / `</TAG>` boundaries — sufficient for serialized
-// HTML coming back from `innerHTML` (no comments / CDATA inside the editor).
-function findMatchingClose(source, tag, start) {
-  const openRe = new RegExp(`<${tag}(?=[\\s/>])`, 'g');
-  const closeRe = new RegExp(`</${tag}>`, 'g');
-  let depth = 1;
-  let cursor = start;
-  while (cursor < source.length) {
-    openRe.lastIndex = cursor;
-    closeRe.lastIndex = cursor;
-    const nextOpen = openRe.exec(source);
-    const nextClose = closeRe.exec(source);
-    if (!nextClose) {
-      return -1;
-    }
-    if (nextOpen && nextOpen.index < nextClose.index) {
-      depth++;
-      cursor = nextOpen.index + nextOpen[0].length;
-    } else {
-      depth--;
-      if (depth === 0) {
-        return nextClose.index;
-      }
-      cursor = nextClose.index + nextClose[0].length;
-    }
-  }
-  return -1;
-}
-
-function stripBlockDragWrapper(input) {
-  // Wrap-all: `<div wrap><button>⋮</button><INNER ...>...</INNER></div>`.
-  // For ElementNode the wrapper holds the marker attribute (sometimes a
-  // reconciler-set `style=""`); the inner element holds the real
-  // attributes and content. Strip wrapper + handle, emit inner with
-  // wrapper's attrs merged in (so reconciler-set props on the keyed DOM
-  // — which under wrap is the wrapper — migrate back to the canonical
-  // content element for snapshot matching).
-  const wrapperOpen =
-    /<div([^>]*?)\sdata-lexical-block-drag-wrapper="true"([^>]*)>/g;
-  let output = '';
-  let lastIndex = 0;
-  let m;
-  while ((m = wrapperOpen.exec(input)) !== null) {
-    output += input.slice(lastIndex, m.index);
-    const attrsBefore = m[1];
-    const attrsAfter = m[2];
-    const wrapperCloseStart = findMatchingClose(
-      input,
-      'div',
-      m.index + m[0].length,
-    );
-    if (wrapperCloseStart === -1) {
-      output += input.slice(m.index);
-      lastIndex = input.length;
-      break;
-    }
-    const wrapperCloseEnd = wrapperCloseStart + '</div>'.length;
-    let cursor = m.index + m[0].length;
-    while (cursor < input.length && /\s/.test(input[cursor])) {
-      cursor++;
-    }
-    if (input.slice(cursor, cursor + 7) === '<button') {
-      const buttonClose = input.indexOf('</button>', cursor);
-      if (buttonClose === -1 || buttonClose > wrapperCloseStart) {
-        output += input.slice(m.index, wrapperCloseEnd);
-        lastIndex = wrapperCloseEnd;
-        wrapperOpen.lastIndex = wrapperCloseEnd;
-        continue;
-      }
-      cursor = buttonClose + '</button>'.length;
-      while (cursor < input.length && /\s/.test(input[cursor])) {
-        cursor++;
-      }
-    }
-    const innerOpenMatch = input
-      .slice(cursor)
-      .match(/^<([a-z][a-z0-9]*)([^>]*)>/);
-    if (
-      !innerOpenMatch ||
-      innerOpenMatch[2].indexOf('data-lexical-block-drag-inner="true"') === -1
-    ) {
-      output += input.slice(m.index, wrapperCloseEnd);
-      lastIndex = wrapperCloseEnd;
-      wrapperOpen.lastIndex = wrapperCloseEnd;
-      continue;
-    }
-    const innerTag = innerOpenMatch[1];
-    const innerAttrsRaw = innerOpenMatch[2].replace(
-      /\s+data-lexical-block-drag-inner="true"/,
-      '',
-    );
-    const innerAttrs = innerAttrsRaw.replace(/\s*\/$/, '');
-    const innerContentStart = cursor + innerOpenMatch[0].length;
-    const VOID_TAGS = new Set([
-      'area',
-      'base',
-      'br',
-      'col',
-      'embed',
-      'hr',
-      'img',
-      'input',
-      'link',
-      'meta',
-      'param',
-      'source',
-      'track',
-      'wbr',
-    ]);
-    const isVoidInner = VOID_TAGS.has(innerTag);
-    let innerContent = '';
-    let afterInner;
-    if (isVoidInner) {
-      afterInner = innerContentStart;
-    } else {
-      const innerCloseStart = findMatchingClose(
-        input,
-        innerTag,
-        innerContentStart,
-      );
-      if (innerCloseStart === -1 || innerCloseStart >= wrapperCloseStart) {
-        output += input.slice(m.index, wrapperCloseEnd);
-        lastIndex = wrapperCloseEnd;
-        wrapperOpen.lastIndex = wrapperCloseEnd;
-        continue;
-      }
-      innerContent = input.slice(innerContentStart, innerCloseStart);
-      afterInner = innerCloseStart + `</${innerTag}>`.length;
-    }
-    while (afterInner < wrapperCloseStart && /\s/.test(input[afterInner])) {
-      afterInner++;
-    }
-    const trailingSiblings = input.slice(afterInner, wrapperCloseStart).trim();
-    const wrapperAttrs = (attrsBefore + attrsAfter).replace(
-      /\s*data-lexical-block-drag-wrapper="true"/,
-      '',
-    );
-    const COMPOSABLE_ATTRS = new Set(['class', 'style']);
-    const mergeAttrsInto = targetAttrs => {
-      const targetNames = new Map();
-      const nameRe = /\s+([a-z-]+)="([^"]*)"/g;
-      let nameMatch;
-      while ((nameMatch = nameRe.exec(targetAttrs)) !== null) {
-        targetNames.set(nameMatch[1], nameMatch[2]);
-      }
-      let merged = targetAttrs;
-      let leftover = '';
-      wrapperAttrs.replace(/\s+([a-z-]+)="([^"]*)"/g, (full, name, value) => {
-        if (!targetNames.has(name)) {
-          leftover += full;
-          return '';
-        }
-        if (COMPOSABLE_ATTRS.has(name) && value !== '') {
-          const existing = targetNames.get(name);
-          const tokens = name === 'style' ? '; ' : ' ';
-          const combined = existing
-            ? `${existing}${existing.endsWith(tokens.trim()) ? ' ' : tokens}${value}`
-            : value;
-          merged = merged.replace(
-            new RegExp(
-              `(\\s${name}=")${existing.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(")`,
-            ),
-            `$1${combined}$2`,
-          );
-          targetNames.set(name, combined);
-        }
-        return '';
-      });
-      return {leftover, merged};
-    };
-    if (isVoidInner) {
-      const {leftover, merged} = mergeAttrsInto(innerAttrs);
-      output += `<${innerTag}${merged}${leftover} />${trailingSiblings}`;
-    } else if (innerAttrs.trim() !== '') {
-      const {leftover, merged} = mergeAttrsInto(innerAttrs);
-      output += `<${innerTag}${merged}${leftover}>${innerContent}</${innerTag}>${trailingSiblings}`;
-    } else {
-      output += `<div${wrapperAttrs}>${innerContent}${trailingSiblings}</div>`;
-    }
-    lastIndex = wrapperCloseEnd;
-    wrapperOpen.lastIndex = wrapperCloseEnd;
-  }
-  output += input.slice(lastIndex);
-  return output;
-}
-
 export async function prettifyHTML(
   string,
   {ignoreClasses, ignoreInlineStyles, ignoreDir} = {},
 ) {
   let output = string;
-
-  // Strip the `BlockDragHandleExtension` wrap so snapshot fixtures (most of
-  // which predate the extension) compare against the bare keyed DOM. The
-  // wrapper, the drag-handle button child, and the inner `data-*` marker
-  // attribute are all extension-rendered scaffolding around each top-level
-  // block; nothing in any test cares whether they're present. The wrapper's
-  // `dir` attribute (set on the keyed DOM by the reconciler) is moved onto
-  // the inner element so existing dir-aware fixtures keep matching.
-  output = stripBlockDragWrapper(output);
 
   if (ignoreClasses) {
     output = output.replace(/\sclass="([^"]*)"/g, '');
@@ -1410,18 +1176,10 @@ export async function dragDraggableMenuTo(
   toSelector,
   positionStart = 'middle',
   positionEnd = 'middle',
-  fromBlockSelector,
 ) {
-  // With `BlockDragHandleExtension`, every top-level block has its own
-  // handle, so the bare attribute selector is ambiguous. When the caller
-  // provides the source block selector, scope the handle to that block's
-  // wrapper; otherwise fall back to the first wrapper's handle.
-  const handleSelector = fromBlockSelector
-    ? `[data-lexical-block-drag-wrapper]:has(${fromBlockSelector}) > [data-lexical-block-drag-handle]`
-    : '[data-lexical-block-drag-handle] >> nth=0';
   await dragMouse(
     page,
-    await selectorBoundingBox(page, handleSelector),
+    await selectorBoundingBox(page, '.draggable-block-menu'),
     await selectorBoundingBox(page, toSelector),
     {positionEnd, positionStart},
   );

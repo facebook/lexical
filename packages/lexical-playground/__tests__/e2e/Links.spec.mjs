@@ -2160,9 +2160,9 @@ test.describe.parallel('Links', () => {
     await insertSampleImage(page);
 
     // Select both images
-    await click(page, ':nth-match(p, 1) .editor-image img');
+    await click(page, 'p:nth-child(1) .editor-image img');
     await page.keyboard.down('Shift');
-    await click(page, ':nth-match(p, 2) .editor-image img');
+    await click(page, 'p:nth-child(2) .editor-image img');
     await page.keyboard.up('Shift');
 
     // Add link to both images
@@ -2243,9 +2243,9 @@ test.describe.parallel('Links', () => {
     );
 
     // Edit link for both images
-    await click(page, ':nth-match(p, 1) .editor-image img');
+    await click(page, 'p:nth-child(1) .editor-image img');
     await page.keyboard.down('Shift');
-    await click(page, ':nth-match(p, 2) .editor-image img');
+    await click(page, 'p:nth-child(2) .editor-image img');
     await page.keyboard.up('Shift');
     await click(page, '.link-edit');
     await focus(page, '.link-input');
@@ -2326,9 +2326,9 @@ test.describe.parallel('Links', () => {
     );
 
     // Remove links from both images
-    await click(page, ':nth-match(p, 1) .editor-image img');
+    await click(page, 'p:nth-child(1) .editor-image img');
     await page.keyboard.down('Shift');
-    await click(page, ':nth-match(p, 2) .editor-image img');
+    await click(page, 'p:nth-child(2) .editor-image img');
     await page.keyboard.up('Shift');
     await click(page, '.link-trash');
 

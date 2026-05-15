@@ -468,7 +468,7 @@ test.describe('Images', () => {
 
       await click(
         page,
-        'div.ContentEditable__root p:first-of-type > span:first-of-type',
+        'div.ContentEditable__root > p:first-of-type > span:first-of-type',
       );
 
       await assertHTML(
@@ -502,7 +502,7 @@ test.describe('Images', () => {
 
       await click(
         page,
-        'div.ContentEditable__root p:first-of-type > span:first-of-type',
+        'div.ContentEditable__root > p:first-of-type > span:first-of-type',
       );
 
       await assertHTML(

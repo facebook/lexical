@@ -16,7 +16,6 @@
     "@lexical/extension": "workspace:*",
     "@lexical/hashtag": "workspace:*",
     "@lexical/history": "workspace:*",
-    "@lexical/html": "workspace:*",
     "@lexical/link": "workspace:*",
     "@lexical/list": "workspace:*",
     "@lexical/mark": "workspace:*",
@@ -165,36 +164,6 @@
         "development": "./LexicalAutoLinkPlugin.dev.js",
         "production": "./LexicalAutoLinkPlugin.prod.js",
         "default": "./LexicalAutoLinkPlugin.js"
-      }
-    },
-    "./LexicalBlockDragHandleExtension": {
-      "import": {
-        "types": "./LexicalBlockDragHandleExtension.d.ts",
-        "development": "./LexicalBlockDragHandleExtension.dev.mjs",
-        "production": "./LexicalBlockDragHandleExtension.prod.mjs",
-        "node": "./LexicalBlockDragHandleExtension.node.mjs",
-        "default": "./LexicalBlockDragHandleExtension.mjs"
-      },
-      "require": {
-        "types": "./LexicalBlockDragHandleExtension.d.ts",
-        "development": "./LexicalBlockDragHandleExtension.dev.js",
-        "production": "./LexicalBlockDragHandleExtension.prod.js",
-        "default": "./LexicalBlockDragHandleExtension.js"
-      }
-    },
-    "./LexicalBlockDragHandleExtension.js": {
-      "import": {
-        "types": "./LexicalBlockDragHandleExtension.d.ts",
-        "development": "./LexicalBlockDragHandleExtension.dev.mjs",
-        "production": "./LexicalBlockDragHandleExtension.prod.mjs",
-        "node": "./LexicalBlockDragHandleExtension.node.mjs",
-        "default": "./LexicalBlockDragHandleExtension.mjs"
-      },
-      "require": {
-        "types": "./LexicalBlockDragHandleExtension.d.ts",
-        "development": "./LexicalBlockDragHandleExtension.dev.js",
-        "production": "./LexicalBlockDragHandleExtension.prod.js",
-        "default": "./LexicalBlockDragHandleExtension.js"
       }
     },
     "./LexicalBlockWithAlignableContents": {

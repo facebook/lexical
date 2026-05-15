@@ -42,7 +42,6 @@ test.describe('DraggableBlock', () => {
       'p:has-text("Paragraph 2")',
       'middle',
       'end',
-      'p:has-text("Paragraph 1")',
     );
     await page.pause();
     await assertHTML(
@@ -90,7 +89,6 @@ test.describe('DraggableBlock', () => {
       'p:has-text("Paragraph 1")',
       'middle',
       'end',
-      'p:has-text("Paragraph 1")',
     );
 
     await assertHTML(
@@ -133,7 +131,6 @@ test.describe('DraggableBlock', () => {
       'p:has-text("Paragraph 1")',
       'middle',
       'end',
-      'p:has-text("Paragraph 2")',
     );
 
     await assertHTML(
@@ -171,13 +168,7 @@ test.describe('DraggableBlock', () => {
 
     await mouseMoveToSelector(page, 'p:has-text("Paragraph 1")');
     await page.pause();
-    await dragDraggableMenuTo(
-      page,
-      '.ContentEditable__root',
-      'middle',
-      'middle',
-      'p:has-text("Paragraph 1")',
-    );
+    await dragDraggableMenuTo(page, '.ContentEditable__root');
 
     await assertHTML(
       page,

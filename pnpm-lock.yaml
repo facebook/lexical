@@ -313,6 +313,9 @@ importers:
       '@lexical/extension':
         specifier: workspace:*
         version: link:../lexical-extension
+      '@lexical/html':
+        specifier: workspace:*
+        version: link:../lexical-html
       lexical:
         specifier: workspace:*
         version: link:../lexical
@@ -798,9 +801,6 @@ importers:
       '@lexical/history':
         specifier: workspace:*
         version: link:../lexical-history
-      '@lexical/html':
-        specifier: workspace:*
-        version: link:../lexical-html
       '@lexical/link':
         specifier: workspace:*
         version: link:../lexical-link

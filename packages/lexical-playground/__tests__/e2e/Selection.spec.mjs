@@ -159,9 +159,15 @@ test.describe.parallel('Selection', () => {
           class="PlaygroundEditorTheme__code"
           dir="auto"
           spellcheck="false"
-          data-gutter="1"
           data-highlight-language="javascript"
           data-language="javascript">
+          <span
+            class="code-gutter"
+            contenteditable="false"
+            aria-hidden="true"
+            data-lexical-code-gutter="true">
+            1
+          </span>
           <span data-lexical-text="true">Line2</span>
         </code>
       `,
@@ -947,7 +953,7 @@ test.describe.parallel('Selection', () => {
     await page.keyboard.press('Enter');
     await page.keyboard.type('Paragraph 2');
     await page
-      .locator('div[contenteditable="true"] p')
+      .locator('div[contenteditable="true"] > p')
       .first()
       .click({clickCount: 3});
 
@@ -979,7 +985,7 @@ test.describe.parallel('Selection', () => {
     });
 
     await page
-      .locator('div[contenteditable="true"] p')
+      .locator('div[contenteditable="true"] > p')
       .first()
       .click({clickCount: 3});
 

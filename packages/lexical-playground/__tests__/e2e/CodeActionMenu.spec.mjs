@@ -50,8 +50,7 @@ test.describe('CodeActionMenu', () => {
           class="PlaygroundEditorTheme__code"
           dir="ltr"
           spellcheck="false"
-          data-gutter="123"
-          data-highlight-language="javascript">
+          data-highlight-language="javascript"><span aria-hidden="true" class="code-gutter" contenteditable="false" data-lexical-code-gutter="true">123</span>
           <span data-lexical-text="true"></span>
           <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
             const
@@ -120,8 +119,7 @@ test.describe('CodeActionMenu', () => {
           class="PlaygroundEditorTheme__code"
           dir="ltr"
           spellcheck="false"
-          data-gutter="12345"
-          data-highlight-language="javascript">
+          data-highlight-language="javascript"><span aria-hidden="true" class="code-gutter" contenteditable="false" data-lexical-code-gutter="true">12345</span>
           <span data-lexical-text="true"></span>
           <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
             const
@@ -199,9 +197,8 @@ test.describe('CodeActionMenu', () => {
           class="PlaygroundEditorTheme__code"
           dir="auto"
           spellcheck="false"
-          data-gutter="1"
           data-language="javascript"
-          data-highlight-language="javascript">
+          data-highlight-language="javascript"><span aria-hidden="true" class="code-gutter" contenteditable="false" data-lexical-code-gutter="true">1</span>
           <span data-lexical-text="true"></span>
           <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
             const
@@ -230,9 +227,8 @@ test.describe('CodeActionMenu', () => {
         class="PlaygroundEditorTheme__code"
         dir="auto"
         spellcheck="false"
-        data-gutter="12"
         data-language="javascript"
-        data-highlight-language="javascript">
+        data-highlight-language="javascript"><span aria-hidden="true" class="code-gutter" contenteditable="false" data-lexical-code-gutter="true">12</span>
           <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
             const
           </span>
@@ -275,9 +271,8 @@ test.describe('CodeActionMenu', () => {
           class="PlaygroundEditorTheme__code"
           dir="auto"
           spellcheck="false"
-          data-gutter="1"
           data-language="javascript"
-          data-highlight-language="javascript">
+          data-highlight-language="javascript"><span aria-hidden="true" class="code-gutter" contenteditable="false" data-lexical-code-gutter="true">1</span>
           <span data-lexical-text="true">cons luci</span>
           <span class="PlaygroundEditorTheme__tokenOperator" data-lexical-text="true">
             =

@@ -35,6 +35,9 @@ test.describe('Autocomplete', () => {
       await focusEditor(page);
       await page.keyboard.type('Sort by alpha');
       await sleep(500);
+      // The ghost is a DOM-only decoration on the active TextNode's span and
+      // is intentionally not part of EditorState, so it doesn't sync through
+      // Yjs to the right collab frame.
       await assertHTML(
         page,
         html`
@@ -48,6 +51,11 @@ test.describe('Autocomplete', () => {
                 betical (TAB)
               </span>
             </span>
+          </p>
+        `,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">Sort by alpha</span>
           </p>
         `,
       );
@@ -82,6 +90,7 @@ test.describe('Autocomplete', () => {
     // The ghost is appended inside the keyed DOM (here `<strong>` for bold-
     // formatted text), so it picks up the parent tag's formatting tag-wise
     // (bold via `<strong>`) and inherits the surrounding font-size via CSS.
+    // Right collab frame doesn't see the ghost (DOM-only decoration).
     await assertHTML(
       page,
       html`
@@ -97,6 +106,16 @@ test.describe('Autocomplete', () => {
               data-autocomplete-ghost="true">
               imonials (TAB)
             </span>
+          </strong>
+        </p>
+      `,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <strong
+            class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic"
+            style="font-size: 18px;"
+            data-lexical-text="true">
+            Test
           </strong>
         </p>
       `,

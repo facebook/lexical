@@ -59,10 +59,11 @@ import {
   $updateElementSelectionOnCreateDeleteNode,
   adjustPointOffsetForMergedSibling,
 } from '../LexicalSelection';
-import {errorOnReadOnly} from '../LexicalUpdates';
+import {errorOnReadOnly, internalGetActiveEditor} from '../LexicalUpdates';
 import {
   $applyNodeReplacement,
   $getCompositionKey,
+  $getEditorDOMRenderConfig,
   $setCompositionKey,
   getCachedClassNameArray,
   internalMarkSiblingsAsDirty,
@@ -221,7 +222,7 @@ function diffComposedText(a: string, b: string): [number, number, string] {
   return [left, aLength - left - right, b.slice(left, bLength - right)];
 }
 
-function setTextContent(
+function $setTextContent(
   nextText: string,
   dom: HTMLElement,
   node: TextNode,
@@ -231,17 +232,13 @@ function setTextContent(
   const suffix = isComposing ? COMPOSITION_SUFFIX : '';
   const text: string = nextText + suffix;
 
-  // Route through the node's DOM slot so subclasses (e.g. a TextNode that
-  // prepends or appends `contentEditable=false` sibling decorations inside
-  // the same span) can scope this update to the actual text-bearing child
-  // instead of wiping all siblings via `dom.textContent =`.
-  //
-  // Note: this consults `node.getDOMSlot` (the subclass override path), not
-  // the editor-level `$getDOMSlot` extension hook — `setTextContent` runs
-  // without the editor in scope (called from createDOM and updateDOM which
-  // pre-date the keyed-DOM map write). Extension authors targeting TextNode
-  // decoration through `DOMRenderExtension` get no rerouting here; the
-  // subclass override is the supported path for sibling decoration.
+  // Route through the editor-level `$getDOMSlot` hook so that
+  // `DOMRenderExtension` overrides targeting TextNode (e.g. extensions
+  // injecting `contentEditable=false` siblings around the text) can
+  // intercept. Falls back to `node.getDOMSlot(dom)` when no active editor
+  // is set (e.g. `editor.getEditorState().read(cb)` without the `{editor}`
+  // option, which `lexical-html` export paths rely on); the default
+  // dispatch implementation does the same thing.
   //
   // Practical contract for extensions that append non-lexical siblings to a
   // vanilla TextNode's DOM (e.g. an autocomplete ghost rendered into the
@@ -249,9 +246,13 @@ function setTextContent(
   // `DOMSlot.getFirstChild()` returns the first DOM child (the text node)
   // and `insertChild` puts new content before `slot.before` (defaulting to
   // append). Prepending a sibling, or wrapping the text node, requires
-  // either a TextNode subclass with its own `getDOMSlot` override or a
-  // managed `slot.before` / `slot.after` boundary.
-  const slot = node.getDOMSlot(dom);
+  // either a TextNode subclass with its own `getDOMSlot` override, an
+  // extension that returns a slot with a managed `slot.before` / `slot.after`
+  // boundary, or both.
+  const editor = internalGetActiveEditor();
+  const slot = editor
+    ? $getEditorDOMRenderConfig(editor).$getDOMSlot(node, dom, editor)
+    : node.getDOMSlot(dom);
   const firstChild = slot.getFirstChild();
 
   if (firstChild === null || firstChild.nodeType !== Node.TEXT_NODE) {
@@ -277,7 +278,7 @@ function setTextContent(
   }
 }
 
-function createTextInnerDOM(
+function $createTextInnerDOM(
   innerDOM: HTMLElement,
   node: TextNode,
   innerTag: string,
@@ -285,7 +286,7 @@ function createTextInnerDOM(
   text: string,
   config: EditorConfig,
 ): void {
-  setTextContent(text, innerDOM, node);
+  $setTextContent(text, innerDOM, node);
   const theme = config.theme;
   // Apply theme class names
   const textClassNames = theme.text;
@@ -520,7 +521,7 @@ export class TextNode extends LexicalNode {
       dom.appendChild(innerDOM);
     }
     const text = this.__text;
-    createTextInnerDOM(innerDOM, this, innerTag, format, text, config);
+    $createTextInnerDOM(innerDOM, this, innerTag, format, text, config);
     const style = this.__style;
     if (style !== '') {
       setDOMStyleFromCSS(dom.style, style);
@@ -549,7 +550,7 @@ export class TextNode extends LexicalNode {
         invariant(false, 'updateDOM: prevInnerDOM is null or undefined');
       }
       const nextInnerDOM = document.createElement(nextInnerTag);
-      createTextInnerDOM(
+      $createTextInnerDOM(
         nextInnerDOM,
         this,
         nextInnerTag,
@@ -569,7 +570,7 @@ export class TextNode extends LexicalNode {
         }
       }
     }
-    setTextContent(nextText, innerDOM, this);
+    $setTextContent(nextText, innerDOM, this);
     const theme = config.theme;
     // Apply theme class names
     const textClassNames = theme.text;

@@ -881,6 +881,19 @@ export async function prettifyHTML(
 ) {
   let output = string;
 
+  // Strip the `BlockDragHandleExtension` wrap so snapshot fixtures (most of
+  // which predate the extension) compare against the bare keyed DOM. The
+  // wrapper, the drag-handle button child, and the inner `data-*` marker
+  // attribute are all extension-rendered scaffolding around each top-level
+  // block; nothing in any test cares whether they're present. The wrapper's
+  // `dir` attribute (set on the keyed DOM by the reconciler) is moved onto
+  // the inner element so existing dir-aware fixtures keep matching.
+  output = output.replace(
+    /<div data-lexical-block-drag-wrapper="true"(\s+dir="[^"]*")?\s*>\s*<button[^>]*data-lexical-block-drag-handle="true"[^>]*>[\s\S]*?<\/button>\s*<([a-z][a-z0-9]*)((?:\s+(?!data-lexical-block-drag-inner=)[a-z-]+(?:="[^"]*")?)*)\s+data-lexical-block-drag-inner="true"((?:\s+[a-z-]+(?:="[^"]*")?)*)\s*>([\s\S]*?)<\/\2>\s*<\/div>/g,
+    (_match, wrapperDir = '', tag, beforeAttrs, afterAttrs, content) =>
+      `<${tag}${beforeAttrs}${afterAttrs}${wrapperDir}>${content}</${tag}>`,
+  );
+
   if (ignoreClasses) {
     output = output.replace(/\sclass="([^"]*)"/g, '');
   }

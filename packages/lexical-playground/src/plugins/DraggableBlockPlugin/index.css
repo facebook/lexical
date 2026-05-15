@@ -1,23 +1,17 @@
-/* Block drag wrapper: positions the drag handle as a sibling to the block
- * content. Wrapper is display: flex so the handle sits to the left of the
- * content; content takes the remaining space. */
+/* Block drag wrapper: the drag handle floats to the left edge of the
+ * block, outside the content area, using absolute positioning. The wrapper
+ * itself is a block container so the inner element keeps its natural
+ * width and margins. */
 [data-lexical-block-drag-wrapper] {
-  display: flex;
-  align-items: flex-start;
-  gap: 4px;
   position: relative;
 }
 
-[data-lexical-block-drag-wrapper] > [data-lexical-block-drag-inner] {
-  flex: 1;
-  min-width: 0;
-}
-
 [data-lexical-block-drag-handle] {
-  flex: 0 0 auto;
+  position: absolute;
+  left: -22px;
+  top: 4px;
   width: 16px;
   height: 16px;
-  margin-top: 4px;
   padding: 0;
   border: none;
   background-color: transparent;
@@ -29,11 +23,27 @@
   color: transparent;
   cursor: grab;
   opacity: 0;
+  /* The handle sits at `left: -22px` outside the wrapper's geometric box,
+   * so wrapper-only hover would lose track the moment the cursor crosses
+   * the gap to reach the handle. Always-on pointer events let the handle's
+   * own `:hover` rule keep it visible during that transition. The position
+   * is far enough left that pointer events here don't interfere with
+   * normal text clicks inside the editor. */
+  pointer-events: auto;
   transition: opacity 160ms ease-in-out;
   border-radius: 4px;
+  /* iPad portrait (1024×1366) and landscape (1366 wide) fall outside the
+   * `max-width: 1025px` breakpoint that hides the handle on phones, so the
+   * button is reachable on touch. Suppress the long-press callout lens. */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
-[data-lexical-block-drag-wrapper]:hover > [data-lexical-block-drag-handle] {
+[data-lexical-block-drag-wrapper]:hover > [data-lexical-block-drag-handle],
+[data-lexical-block-drag-wrapper][data-add-button-hover]
+  > [data-lexical-block-drag-handle],
+[data-lexical-block-drag-handle]:hover {
   opacity: 0.3;
 }
 
@@ -46,6 +56,42 @@
   cursor: grabbing;
 }
 
+/* On narrow viewports the editor's left padding shrinks to 8px, leaving
+ * no room for the floating drag handle / add button column. Hide them
+ * rather than letting them spill outside the editor (parity with the
+ * previous floating menu, which only mounted when there was room). */
+@media (max-width: 1025px) {
+  [data-lexical-block-drag-handle],
+  .draggable-block-add-button {
+    display: none;
+  }
+}
+
+/* Floating "+" affordance, positioned next to the hovered block via React. */
+.draggable-block-add-button {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  background-color: transparent;
+  background-image: url(../../images/icons/plus.svg);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 16px 16px;
+  font-size: 0;
+  color: transparent;
+  cursor: pointer;
+  opacity: 0.3;
+  border-radius: 4px;
+  transition: opacity 160ms ease-in-out;
+  will-change: transform, opacity;
+}
+
+.draggable-block-add-button:hover {
+  opacity: 1;
+  background-color: #efefef;
+}
+
 .draggable-block-target-line {
   pointer-events: none;
   background: deepskyblue;
@@ -55,4 +101,18 @@
   top: 0;
   opacity: 0;
   will-change: transform;
+}
+
+.draggable-block-component-picker {
+  max-width: 260px;
+}
+
+.draggable-block-component-picker .component-picker-search {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 0;
+  outline: none;
+  font-size: 14px;
+  border-radius: 8px 8px 0 0;
 }

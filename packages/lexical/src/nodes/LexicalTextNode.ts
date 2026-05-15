@@ -226,34 +226,54 @@ function setTextContent(
   dom: HTMLElement,
   node: TextNode,
 ): void {
-  const firstChild = dom.firstChild;
   const isComposing = node.isComposing();
   // Always add a suffix if we're composing a node
   const suffix = isComposing ? COMPOSITION_SUFFIX : '';
   const text: string = nextText + suffix;
 
-  if (firstChild == null) {
-    dom.textContent = text;
-  } else {
-    const nodeValue = firstChild.nodeValue;
-    if (nodeValue !== text) {
-      if (isComposing || IS_FIREFOX) {
-        // We also use the diff composed text for general text in FF to avoid
-        // the spellcheck red line from flickering.
-        const [index, remove, insert] = diffComposedText(
-          nodeValue as string,
-          text,
-        );
-        if (remove !== 0) {
-          // @ts-expect-error
-          firstChild.deleteData(index, remove);
-        }
-        // @ts-expect-error
-        firstChild.insertData(index, insert);
-      } else {
-        firstChild.nodeValue = text;
-      }
+  // Route through the node's DOM slot so subclasses (e.g. a TextNode that
+  // prepends or appends `contentEditable=false` sibling decorations inside
+  // the same span) can scope this update to the actual text-bearing child
+  // instead of wiping all siblings via `dom.textContent =`.
+  //
+  // Note: this consults `node.getDOMSlot` (the subclass override path), not
+  // the editor-level `$getDOMSlot` extension hook — `setTextContent` runs
+  // without the editor in scope (called from createDOM and updateDOM which
+  // pre-date the keyed-DOM map write). Extension authors targeting TextNode
+  // decoration through `DOMRenderExtension` get no rerouting here; the
+  // subclass override is the supported path for sibling decoration.
+  //
+  // Practical contract for extensions that append non-lexical siblings to a
+  // vanilla TextNode's DOM (e.g. an autocomplete ghost rendered into the
+  // same `<span>`): append-only is safe because the default
+  // `DOMSlot.getFirstChild()` returns the first DOM child (the text node)
+  // and `insertChild` puts new content before `slot.before` (defaulting to
+  // append). Prepending a sibling, or wrapping the text node, requires
+  // either a TextNode subclass with its own `getDOMSlot` override or a
+  // managed `slot.before` / `slot.after` boundary.
+  const slot = node.getDOMSlot(dom);
+  const firstChild = slot.getFirstChild();
+
+  if (firstChild === null || firstChild.nodeType !== Node.TEXT_NODE) {
+    slot.insertChild(document.createTextNode(text));
+    return;
+  }
+
+  const textChild = firstChild as Text;
+  const nodeValue = textChild.nodeValue;
+  if (nodeValue === text) {
+    return;
+  }
+  if (isComposing || IS_FIREFOX) {
+    // We also use the diff composed text for general text in FF to avoid
+    // the spellcheck red line from flickering.
+    const [index, remove, insert] = diffComposedText(nodeValue as string, text);
+    if (remove !== 0) {
+      textChild.deleteData(index, remove);
     }
+    textChild.insertData(index, insert);
+  } else {
+    textChild.nodeValue = text;
   }
 }
 

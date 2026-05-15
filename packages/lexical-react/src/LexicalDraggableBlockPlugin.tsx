@@ -27,7 +27,11 @@ import {useEffect, useRef} from 'react';
 import {createPortal} from 'react-dom';
 import {IS_FIREFOX} from 'shared/environment';
 
-import {BLOCK_DRAG_HANDLE_ATTR} from './LexicalBlockDragHandleExtension';
+import {
+  BLOCK_DRAG_HANDLE_ATTR,
+  BLOCK_DRAG_INNER_ATTR,
+  BLOCK_DRAG_WRAPPER_ATTR,
+} from './LexicalBlockDragHandleExtension';
 
 const TARGET_LINE_HALF_HEIGHT = 2;
 const DRAG_DATA_FORMAT = 'application/x-lexical-drag-block';
@@ -35,23 +39,23 @@ const TEXT_BOX_HORIZONTAL_PADDING = 28;
 const SPACE = 4;
 
 /**
- * Find the block wrapper that owns the drag handle target. Wrappers are emitted
- * by {@link BlockDragHandleExtension} as siblings of the handle button.
+ * Each decorated block is wrapped by {@link BlockDragHandleExtension}; the
+ * inner element (the lexical-keyed block DOM) carries the
+ * `data-lexical-block-drag-inner` attribute next to the handle button
+ * inside the same wrapper.
  */
 function getBlockElementFromHandle(handle: HTMLElement): HTMLElement | null {
   const wrapper = handle.parentElement;
   if (!wrapper) {
     return null;
   }
-  // The inner element (the lexical-keyed block DOM) sits next to the handle.
-  const inner = wrapper.querySelector<HTMLElement>(
-    `:scope > :not([${BLOCK_DRAG_HANDLE_ATTR}])`,
+  return wrapper.querySelector<HTMLElement>(
+    `:scope > [${BLOCK_DRAG_INNER_ATTR}]`,
   );
-  return inner;
 }
 
 /**
- * Walk up from the event target to find the nearest block (via the wrapper).
+ * Walk up from the event target to find the nearest decorated block.
  */
 function getBlockElementFromEventTarget(
   target: EventTarget | null,
@@ -63,20 +67,40 @@ function getBlockElementFromEventTarget(
   if (handle) {
     return getBlockElementFromHandle(handle);
   }
-  // For drop/dragover: target is somewhere in/around a block, find the
-  // wrapper's inner element via traversal.
-  const wrapperChild = target.closest<HTMLElement>(
-    '[data-lexical-block-drag-wrapper] > *',
+  const inner = target.closest<HTMLElement>(`[${BLOCK_DRAG_INNER_ATTR}]`);
+  return inner;
+}
+
+/**
+ * Fallback for drop/dragover when the pointer lands outside any decorated
+ * block (e.g. below the last paragraph). Pick the wrapper whose vertical
+ * center is closest to the pointer's y, then return its inner element.
+ */
+function getNearestBlockElementByY(
+  rootElement: HTMLElement,
+  clientY: number,
+): HTMLElement | null {
+  const wrappers = rootElement.querySelectorAll<HTMLElement>(
+    `[${BLOCK_DRAG_WRAPPER_ATTR}]`,
   );
-  if (
-    wrapperChild &&
-    !wrapperChild.hasAttribute(BLOCK_DRAG_HANDLE_ATTR) &&
-    wrapperChild.parentElement !== null &&
-    wrapperChild.parentElement.hasAttribute('data-lexical-block-drag-wrapper')
-  ) {
-    return wrapperChild;
+  let bestInner: HTMLElement | null = null;
+  let bestDistance = Infinity;
+  for (const wrapper of wrappers) {
+    const inner = wrapper.querySelector<HTMLElement>(
+      `:scope > [${BLOCK_DRAG_INNER_ATTR}]`,
+    );
+    if (!inner) {
+      continue;
+    }
+    const rect = inner.getBoundingClientRect();
+    const center = rect.top + rect.height / 2;
+    const distance = Math.abs(clientY - center);
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      bestInner = inner;
+    }
   }
-  return null;
+  return bestInner;
 }
 
 function setTargetLine(
@@ -170,6 +194,9 @@ function useDraggableBlockMenu(
   // dragstart on drag handles (event delegation). Sets the drag payload to
   // the nearest lexical node key for the block.
   useEffect(() => {
+    if (!isEditable) {
+      return;
+    }
     return editor.registerRootListener(rootElement => {
       if (!rootElement) {
         return;
@@ -225,7 +252,7 @@ function useDraggableBlockMenu(
         rootElement.removeEventListener('dragend', onDragEnd);
       };
     });
-  }, [editor, targetLineRef]);
+  }, [editor, isEditable, targetLineRef]);
 
   // DRAGOVER for target line + DROP for the reorder. Mirrors the previous
   // command-based wiring; block detection now traverses block wrappers.
@@ -238,7 +265,11 @@ function useDraggableBlockMenu(
       if (isFileTransfer) {
         return false;
       }
-      const targetBlockElem = getBlockElementFromEventTarget(event.target);
+      const rootElement = editor.getRootElement();
+      let targetBlockElem = getBlockElementFromEventTarget(event.target);
+      if (targetBlockElem === null && rootElement) {
+        targetBlockElem = getNearestBlockElementByY(rootElement, event.clientY);
+      }
       const targetLineElem = targetLineRef.current;
       if (targetBlockElem === null || targetLineElem === null) {
         return false;
@@ -271,7 +302,11 @@ function useDraggableBlockMenu(
       if (!draggedNode) {
         return false;
       }
-      const targetBlockElem = getBlockElementFromEventTarget(target);
+      const rootElement = editor.getRootElement();
+      let targetBlockElem = getBlockElementFromEventTarget(target);
+      if (targetBlockElem === null && rootElement) {
+        targetBlockElem = getNearestBlockElementByY(rootElement, event.clientY);
+      }
       if (!targetBlockElem) {
         return false;
       }
@@ -390,6 +425,13 @@ function useDraggableBlockMenu(
  * Callers handle hover-related UI (e.g. an "add block" picker positioned next
  * to the hovered block) through `onElementChanged`, which reports the block
  * element currently under the pointer.
+ *
+ * **Breaking change in this revision:** the prior `menuRef` / `menuComponent`
+ * / `isOnMenu` props were removed; the drag handle is now produced by
+ * `BlockDragHandleExtension` directly into each block's DOM. Consumers that
+ * rendered their own "+" / add-block button next to the handle should
+ * subscribe via `onElementChanged` and position it themselves — see
+ * `examples/website-notion/src/plugins/DragPlugin.tsx` for a reference layout.
  *
  * @experimental
  */

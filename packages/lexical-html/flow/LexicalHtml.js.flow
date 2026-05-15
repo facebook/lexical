@@ -12,6 +12,7 @@ import type {
   BaseSelection,
   DOMExportOutput,
   EditorDOMRenderConfig,
+  DOMSlot,
   ElementDOMSlot,
   LexicalEditor,
   LexicalExtension,
@@ -78,9 +79,9 @@ export type DOMRenderMatch<T extends LexicalNode> = {
   +$getDOMSlot?: <N extends LexicalNode>(
     node: N,
     dom: HTMLElement,
-    $next: () => ElementDOMSlot<HTMLElement>,
+    $next: () => DOMSlot<HTMLElement>,
     editor: LexicalEditor,
-  ) => ElementDOMSlot<HTMLElement>,
+  ) => DOMSlot<HTMLElement>,
   +$createDOM?: (
     node: T,
     $next: () => HTMLElement,

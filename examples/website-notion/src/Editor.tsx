@@ -9,6 +9,7 @@
 import {TabIndentationExtension} from '@lexical/extension';
 import {HistoryExtension} from '@lexical/history';
 import {ListExtension} from '@lexical/list';
+import {BlockDragHandleExtension} from '@lexical/react/LexicalBlockDragHandleExtension';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
 import {RichTextExtension} from '@lexical/rich-text';
@@ -45,6 +46,7 @@ const editorExtension = defineExtension({
     HistoryExtension,
     ListExtension,
     TabIndentationExtension,
+    BlockDragHandleExtension,
   ],
   name: '@lexical/website/notion-like-editor',
   namespace: '@lexical/website/notion-like-editor',

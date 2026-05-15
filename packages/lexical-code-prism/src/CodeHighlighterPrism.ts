@@ -21,6 +21,7 @@ import {
 import {effect, namedSignals} from '@lexical/extension';
 import {
   $createTextNode,
+  $getElementDOMSlot,
   $getNodeByKey,
   $getSelection,
   $isLineBreakNode,
@@ -86,11 +87,16 @@ function $textNodeTransform(
   }
 }
 
-function updateCodeGutter(node: CodeNode, editor: LexicalEditor): void {
-  const codeElement = editor.getElementByKey(node.getKey());
-  if (codeElement === null) {
+function $updateCodeGutter(node: CodeNode, editor: LexicalEditor): void {
+  const keyedDOM = editor.getElementByKey(node.getKey());
+  if (keyedDOM === null) {
     return;
   }
+  // Route through the editor's `$getDOMSlot` hook so extensions that wrap
+  // the node's DOM (e.g. block drag-handle wrapper) point us at the actual
+  // <code> element, not the wrapper. The node's own `getDOMSlot` would
+  // skip those overrides.
+  const codeElement = $getElementDOMSlot(editor, node, keyedDOM).element;
   const children = node.getChildren();
   const childrenLength = children.length;
   // @ts-ignore: internal field
@@ -344,7 +350,7 @@ export function registerHighlightingOnly(
               if (type !== 'destroyed') {
                 const node = $getNodeByKey(key);
                 if (node !== null) {
-                  updateCodeGutter(node as CodeNode, editor);
+                  $updateCodeGutter(node as CodeNode, editor);
                 }
               }
             }

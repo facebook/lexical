@@ -6,35 +6,28 @@
  *
  */
 
-import type {BaseSelection, NodeKey, TextNode} from 'lexical';
 import type {JSX} from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$isAtNodeEnd} from '@lexical/selection';
 import {mergeRegister} from '@lexical/utils';
 import {
-  $addUpdateTag,
-  $createTextNode,
   $getNodeByKey,
   $getSelection,
   $isRangeSelection,
   $isTextNode,
-  $setSelection,
+  type BaseSelection,
   COMMAND_PRIORITY_LOW,
-  HISTORY_MERGE_TAG,
+  type EditorState,
   KEY_ARROW_RIGHT_COMMAND,
   KEY_TAB_COMMAND,
+  type LexicalEditor,
+  type NodeKey,
+  setDOMUnmanaged,
 } from 'lexical';
 import {useCallback, useEffect} from 'react';
 
-import {useToolbarState} from '../../context/ToolbarContext';
-import {
-  $createAutocompleteNode,
-  AutocompleteNode,
-} from '../../nodes/AutocompleteNode';
 import {addSwipeRightListener} from '../../utils/swipe';
-
-const HISTORY_MERGE = {tag: HISTORY_MERGE_TAG};
 
 declare global {
   interface Navigator {
@@ -49,12 +42,19 @@ type SearchPromise = {
   promise: Promise<null | string>;
 };
 
-export const uuid = Math.random()
-  .toString(36)
-  .replace(/[^a-z]+/g, '')
-  .substring(0, 5);
+/**
+ * Marker attribute on the per-suggestion ghost decoration element. The
+ * element is appended directly into the TextNode's keyed DOM (the
+ * `<span data-lexical-text="true">`) as a contentEditable=false sibling of
+ * the actual text node, so it never enters the editor state — no history
+ * pollution, no collab churn, no `exportDOM` carve-outs.
+ *
+ * `LexicalTextNode.setTextContent` routes through the node's
+ * {@link DOMSlot}, modifying the text node child directly instead of
+ * `dom.textContent = ...`, which preserves this sibling across updates.
+ */
+const AUTOCOMPLETE_GHOST_ATTR = 'data-autocomplete-ghost';
 
-// TODO lookup should be custom
 function $search(selection: null | BaseSelection): [boolean, string] {
   if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
     return [false, ''];
@@ -78,14 +78,10 @@ function $search(selection: null | BaseSelection): [boolean, string] {
   return [true, word.reverse().join('')];
 }
 
-// TODO query should be custom
 function useQuery(): (searchText: string) => SearchPromise {
   return useCallback((searchText: string) => {
     const server = new AutocompleteServer();
-    console.time('query');
-    const response = server.query(searchText);
-    console.timeEnd('query');
-    return response;
+    return server.query(searchText);
   }, []);
 }
 
@@ -99,89 +95,133 @@ function formatSuggestionText(suggestion: string): string {
   return `${suggestion} ${isMobile ? '(SWIPE \u2B95)' : '(TAB)'}`;
 }
 
+/**
+ * Render / update / remove the ghost decoration on a TextNode's keyed DOM.
+ * Always reconciles to exactly zero or one ghost in the editor.
+ */
+function syncGhost(
+  editor: LexicalEditor,
+  textNodeKey: NodeKey | null,
+  ghostText: string | null,
+): void {
+  // Always tear down every existing ghost first. This keeps the invariant
+  // "at most one ghost in the editor at a time" trivially: even if a race
+  // (e.g. async query resolving as the user starts typing again) attempts
+  // to add a second one, the next call collapses back to one.
+  const root = editor.getRootElement();
+  if (root) {
+    for (const el of root.querySelectorAll(`[${AUTOCOMPLETE_GHOST_ATTR}]`)) {
+      el.remove();
+    }
+  }
+  if (textNodeKey === null || ghostText === null) {
+    return;
+  }
+  const dom = editor.getElementByKey(textNodeKey);
+  if (!dom) {
+    return;
+  }
+  const ghost = document.createElement('span');
+  ghost.setAttribute(AUTOCOMPLETE_GHOST_ATTR, 'true');
+  ghost.setAttribute('contenteditable', 'false');
+  ghost.className = 'PlaygroundEditorTheme__autocomplete';
+  ghost.textContent = ghostText;
+  // Mark the ghost as outside Lexical's mutation tracking so the
+  // reconciler doesn't reconcile it away when it sees an unknown DOM
+  // child appear inside the TextNode's keyed span.
+  setDOMUnmanaged(ghost);
+  dom.appendChild(ghost);
+}
+
 export default function AutocompletePlugin(): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
   const query = useQuery();
-  const {toolbarState} = useToolbarState();
 
   useEffect(() => {
-    let autocompleteNodeKey: null | NodeKey = null;
-    let lastMatch: null | string = null;
-    let lastSuggestion: null | string = null;
-    let searchPromise: null | SearchPromise = null;
-    let prevNodeFormat: number = 0;
-    function $clearSuggestion() {
-      const autocompleteNode =
-        autocompleteNodeKey !== null
-          ? $getNodeByKey(autocompleteNodeKey)
-          : null;
-      if (autocompleteNode !== null && autocompleteNode.isAttached()) {
-        autocompleteNode.remove();
-        autocompleteNodeKey = null;
-      }
+    let activeTextNodeKey: NodeKey | null = null;
+    let lastMatch: string | null = null;
+    let lastSuggestion: string | null = null;
+    let searchPromise: SearchPromise | null = null;
+
+    function dismiss() {
+      activeTextNodeKey = null;
+      lastMatch = null;
+      lastSuggestion = null;
       if (searchPromise !== null) {
         searchPromise.dismiss();
         searchPromise = null;
       }
-      lastMatch = null;
-      lastSuggestion = null;
-      prevNodeFormat = 0;
+      syncGhost(editor, null, null);
     }
-    function updateAsyncSuggestion(
-      refSearchPromise: SearchPromise,
-      newSuggestion: null | string,
+
+    function applyAsyncSuggestion(
+      refPromise: SearchPromise,
+      newSuggestion: string | null,
     ) {
-      if (searchPromise !== refSearchPromise || newSuggestion === null) {
-        // Outdated or no suggestion
+      if (searchPromise !== refPromise || newSuggestion === null) {
         return;
       }
-      editor.update(() => {
+      editor.getEditorState().read(() => {
         const selection = $getSelection();
         const [hasMatch, match] = $search(selection);
         if (!hasMatch || match !== lastMatch || !$isRangeSelection(selection)) {
-          // Outdated
           return;
         }
-        const selectionCopy = selection.clone();
-        const prevNode = selection.getNodes()[0] as TextNode;
-        prevNodeFormat = prevNode.getFormat();
-        const node = $createAutocompleteNode(
-          formatSuggestionText(newSuggestion),
-          uuid,
-        )
-          .setFormat(prevNodeFormat)
-          .setStyle(`font-size: ${toolbarState.fontSize}`);
-        autocompleteNodeKey = node.getKey();
-        selection.insertNodes([node]);
-        $setSelection(selectionCopy);
+        const node = selection.getNodes()[0];
+        if (!$isTextNode(node)) {
+          return;
+        }
+        activeTextNodeKey = node.getKey();
         lastSuggestion = newSuggestion;
-      }, HISTORY_MERGE);
+        syncGhost(
+          editor,
+          activeTextNodeKey,
+          formatSuggestionText(newSuggestion),
+        );
+      });
     }
 
-    function $handleAutocompleteNodeTransform(node: AutocompleteNode) {
-      const key = node.getKey();
-      if (node.__uuid === uuid && key !== autocompleteNodeKey) {
-        // Max one Autocomplete node per session
-        $clearSuggestion();
-      }
-    }
-    function handleUpdate() {
-      editor.update(() => {
+    function handleUpdate({editorState}: {editorState: EditorState}) {
+      editorState.read(() => {
         const selection = $getSelection();
         const [hasMatch, match] = $search(selection);
         if (!hasMatch) {
-          $clearSuggestion();
+          dismiss();
           return;
         }
         if (match === lastMatch) {
+          // Same prefix, but the active TextNode key may have changed if
+          // the user moved the cursor between nodes with the same prefix.
+          if ($isRangeSelection(selection)) {
+            const node = selection.getNodes()[0];
+            if ($isTextNode(node)) {
+              const key = node.getKey();
+              if (key !== activeTextNodeKey) {
+                activeTextNodeKey = key;
+                syncGhost(
+                  editor,
+                  activeTextNodeKey,
+                  lastSuggestion ? formatSuggestionText(lastSuggestion) : null,
+                );
+              }
+            }
+          }
           return;
         }
-        $clearSuggestion();
+        // New prefix — clear any stale ghost while waiting for the async
+        // suggestion, then kick off a fresh query.
+        if (searchPromise !== null) {
+          searchPromise.dismiss();
+        }
+        syncGhost(editor, null, null);
+        lastMatch = match;
+        lastSuggestion = null;
+        activeTextNodeKey = null;
         searchPromise = query(match);
         searchPromise.promise
           .then(newSuggestion => {
             if (searchPromise !== null) {
-              updateAsyncSuggestion(searchPromise, newSuggestion);
+              applyAsyncSuggestion(searchPromise, newSuggestion);
             }
           })
           .catch(e => {
@@ -189,78 +229,89 @@ export default function AutocompletePlugin(): JSX.Element | null {
               console.error(e);
             }
           });
-        lastMatch = match;
-      }, HISTORY_MERGE);
-    }
-    function $handleAutocompleteIntent(): boolean {
-      if (lastSuggestion === null || autocompleteNodeKey === null) {
-        return false;
-      }
-      const autocompleteNode = $getNodeByKey(autocompleteNodeKey);
-      if (autocompleteNode === null) {
-        return false;
-      }
-      const textNode = $createTextNode(lastSuggestion)
-        .setFormat(prevNodeFormat)
-        .setStyle(`font-size: ${toolbarState.fontSize}`);
-      autocompleteNode.replace(textNode);
-      textNode.selectNext();
-      $clearSuggestion();
-      return true;
-    }
-    function $handleKeypressCommand(e: Event) {
-      if ($handleAutocompleteIntent()) {
-        e.preventDefault();
-        return true;
-      }
-      return false;
-    }
-    function handleSwipeRight(_force: number, e: TouchEvent) {
-      editor.update(() => {
-        if ($handleAutocompleteIntent()) {
-          e.preventDefault();
-        } else {
-          $addUpdateTag(HISTORY_MERGE.tag);
-        }
       });
     }
-    function unmountSuggestion() {
-      editor.update(() => {
-        $clearSuggestion();
-      }, HISTORY_MERGE);
+
+    function $commitSuggestion(): boolean {
+      if (activeTextNodeKey === null || lastSuggestion === null) {
+        return false;
+      }
+      const node = $getNodeByKey(activeTextNodeKey);
+      if (!$isTextNode(node)) {
+        // Active TextNode has been replaced (e.g. user toggled format,
+        // splitting the run). Drop the stale ghost so the next keystroke
+        // cycles a fresh suggestion instead of leaving a no-op Tab press.
+        dismiss();
+        return false;
+      }
+      // Append the raw suggestion text (without the "(TAB)" hint) at the
+      // end of the active text node.
+      node.spliceText(node.getTextContentSize(), 0, lastSuggestion, true);
+      dismiss();
+      return true;
+    }
+
+    function handleCommitCommand(event: Event): boolean {
+      let didCommit = false;
+      // `discrete: true` so the commit is observable on the next line, in
+      // particular `event.preventDefault()` only fires when the commit
+      // actually happened in this synchronous turn.
+      editor.update(
+        () => {
+          didCommit = $commitSuggestion();
+        },
+        {discrete: true},
+      );
+      if (didCommit) {
+        event.preventDefault();
+      }
+      return didCommit;
+    }
+
+    function handleSwipeRight(_force: number, event: TouchEvent) {
+      let didCommit = false;
+      editor.update(
+        () => {
+          didCommit = $commitSuggestion();
+        },
+        {discrete: true},
+      );
+      if (didCommit) {
+        event.preventDefault();
+      }
     }
 
     const rootElem = editor.getRootElement();
 
     return mergeRegister(
-      editor.registerNodeTransform(
-        AutocompleteNode,
-        $handleAutocompleteNodeTransform,
-      ),
       editor.registerUpdateListener(handleUpdate),
       editor.registerCommand(
         KEY_TAB_COMMAND,
-        $handleKeypressCommand,
+        handleCommitCommand,
         COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand(
         KEY_ARROW_RIGHT_COMMAND,
-        $handleKeypressCommand,
+        handleCommitCommand,
         COMMAND_PRIORITY_LOW,
       ),
       ...(rootElem !== null
         ? [addSwipeRightListener(rootElem, handleSwipeRight)]
         : []),
-      unmountSuggestion,
+      () => {
+        // Tear down on unmount: clear any ghost still attached so a fresh
+        // mount doesn't see leftover decoration.
+        dismiss();
+      },
     );
-  }, [editor, query, toolbarState.fontSize]);
+  }, [editor, query]);
 
   return null;
 }
 
 /*
- * Simulate an asynchronous autocomplete server (typical in more common use cases like GMail where
- * the data is not static).
+ * Simulate an asynchronous autocomplete server (typical in more common use
+ * cases like GMail where the data is not static).
  */
 class AutocompleteServer {
   DATABASE = DICTIONARY;

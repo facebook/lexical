@@ -1985,7 +1985,12 @@ export function $getEditor(): LexicalEditor {
 }
 
 /**
- * @internal @experimental
+ * @experimental
+ *
+ * Read the editor's `$getDOMSlot` configuration (defaulting to the base
+ * implementation when no override is registered via {@link DOMRenderExtension}).
+ * Cross-package consumers (`@lexical/utils`, `@lexical/react`) use this to
+ * route selection / DOM lookups through extension-configured slots.
  */
 export function $getEditorDOMRenderConfig(
   editor: LexicalEditor = $getEditor(),
@@ -1994,7 +1999,7 @@ export function $getEditorDOMRenderConfig(
 }
 
 /**
- * @internal @experimental
+ * @experimental
  *
  * Resolve the DOM slot for an `ElementNode` through the configured
  * `$getDOMSlot` hook, narrowing to {@link ElementDOMSlot} so callers can use
@@ -2166,10 +2171,12 @@ export function $setFormatFromDOM<T extends ElementNode>(
 }
 
 /**
- * @internal
+ * Mark this DOM element as unmanaged by lexical's mutation observer (like
+ * decorator nodes are). Extensions that inject non-lexical decoration
+ * elements into a node's DOM should mark them so the mutation observer
+ * doesn't evict them as "unknown DOM children" during cleanup.
  *
- * Mark this node as unmanaged by lexical's mutation observer like
- * decorator nodes
+ * @experimental
  */
 export function setDOMUnmanaged(
   elementDom: HTMLElement & LexicalPrivateDOM,
@@ -2178,9 +2185,9 @@ export function setDOMUnmanaged(
 }
 
 /**
- * @internal
+ * True if this DOM node was marked with {@link setDOMUnmanaged}.
  *
- * True if this DOM node was marked with {@link setDOMUnmanaged}
+ * @experimental
  */
 export function isDOMUnmanaged(elementDom: Node & LexicalPrivateDOM): boolean {
   return elementDom.__lexicalUnmanaged === true;

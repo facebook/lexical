@@ -898,7 +898,7 @@ declare export class ElementNode extends LexicalNode {
     nodesToInsert: Array<LexicalNode>,
   ): this;
   exportJSON(): SerializedElementNode;
-  getDOMSlot(dom: HTMLElement): ElementDOMSlot<HTMLElement>;
+  getDOMSlot(element: HTMLElement): ElementDOMSlot<HTMLElement>;
 }
 declare export function $isElementNode(
   node: ?LexicalNode,
@@ -907,25 +907,28 @@ declare export function $isElementNode(
 /**
  * DOMSlot
  */
-declare export class DOMSlot<+T extends HTMLElement> {
-  +element: HTMLElement;
-  constructor(element: HTMLElement): void;
+declare export class DOMSlot<+T extends HTMLElement = HTMLElement> {
+  +element: T;
+  +before: Node | null;
+  +after: Node | null;
+  constructor(element: T, before?: Node | null | void, after?: Node | null | void): void;
+  withBefore(before: Node | null | void): DOMSlot<T>;
+  withAfter(after: Node | null | void): DOMSlot<T>;
   withElement<ElementType extends HTMLElement>(element: ElementType): DOMSlot<ElementType>;
+  insertChild(dom: Node): this;
+  removeChild(dom: Node): this;
+  replaceChild(dom: Node, prevDom: Node): this;
+  getFirstChild(): Node | null;
 }
 
 /**
  * ElementDOMSlot
  */
-declare export class ElementDOMSlot<+T extends HTMLElement> extends DOMSlot<T> {
-  +before: Node | null;
-  +after: Node | null;
-  constructor(element: HTMLElement, before?: Node | null | void, after?: Node | null | void): void;
+declare export class ElementDOMSlot<+T extends HTMLElement = HTMLElement> extends DOMSlot<T> {
   withBefore(before: Node | null | void): ElementDOMSlot<T>;
   withAfter(after: Node | null | void): ElementDOMSlot<T>;
   withElement<ElementType extends HTMLElement>(element: ElementType): ElementDOMSlot<ElementType>;
   insertChild(dom: Node): this;
-  removeChild(dom: Node): this;
-  replaceChild(dom: Node, prevDom: Node): this;
   getFirstChild(): Node | null;
   //
   getManagedLineBreak(): HTMLElement | null;

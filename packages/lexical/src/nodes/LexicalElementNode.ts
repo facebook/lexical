@@ -85,42 +85,25 @@ export interface ElementNode {
 /**
  * A utility class for managing the DOM children of an ElementNode.
  *
- * Extends {@link DOMSlot} with children-management semantics: the slot tracks
- * `before` / `after` boundaries inside the element where lexical-managed
- * children are inserted, plus a managed line break used by the reconciler.
+ * Extends {@link DOMSlot} with ElementNode-specific scaffolding — the
+ * reconciler-managed line break that keeps empty elements selectable, and
+ * the offset / index resolution helpers needed when mapping DOM selections
+ * onto lexical positions. The base `before` / `after` boundaries and the
+ * children mutation helpers (`insertChild`, `removeChild`, …) live on
+ * {@link DOMSlot}.
  */
 export class ElementDOMSlot<
   T extends HTMLElement = HTMLElement,
 > extends DOMSlot<T> {
-  readonly before: Node | null;
-  readonly after: Node | null;
-  constructor(
-    /** The element returned by createDOM */
-    element: T,
-    /** All managed children will be inserted before this node, if defined */
-    before?: Node | undefined | null,
-    /** All managed children will be inserted after this node, if defined */
-    after?: Node | undefined | null,
-  ) {
-    super(element);
-    this.before = before || null;
-    this.after = after || null;
-  }
-  /**
-   * Return a new ElementDOMSlot where all managed children will be inserted before this node
-   */
+  /** Return a new slot with `before` updated, preserving subclass type. */
   withBefore(before: Node | undefined | null): ElementDOMSlot<T> {
     return new ElementDOMSlot(this.element, before, this.after);
   }
-  /**
-   * Return a new ElementDOMSlot where all managed children will be inserted after this node
-   */
+  /** Return a new slot with `after` updated, preserving subclass type. */
   withAfter(after: Node | undefined | null): ElementDOMSlot<T> {
     return new ElementDOMSlot(this.element, this.before, after);
   }
-  /**
-   * Return a new ElementDOMSlot with an updated root element
-   */
+  /** Return a new slot with `element` updated, preserving subclass type. */
   withElement<ElementType extends HTMLElement>(
     element: ElementType,
   ): ElementDOMSlot<ElementType> {
@@ -130,8 +113,9 @@ export class ElementDOMSlot<
     return new ElementDOMSlot(element, this.before, this.after);
   }
   /**
-   * Insert the given child before this.before and any reconciler managed line break node,
-   * or append it if this.before is not defined
+   * Insert the given child before {@link DOMSlot.before} or the managed
+   * line break (whichever marks the lexical end of children), or append if
+   * neither is set.
    */
   insertChild(dom: Node): this {
     const before = this.before || this.getManagedLineBreak();
@@ -143,34 +127,8 @@ export class ElementDOMSlot<
     return this;
   }
   /**
-   * Remove the managed child from this container, will throw if it was not already there
-   */
-  removeChild(dom: Node): this {
-    invariant(
-      dom.parentElement === this.element,
-      'ElementDOMSlot.removeChild: dom is not in element',
-    );
-    this.element.removeChild(dom);
-    return this;
-  }
-  /**
-   * Replace managed child prevDom with dom. Will throw if prevDom is not a child
-   *
-   * @param dom The new node to replace prevDom
-   * @param prevDom the node that will be replaced
-   */
-  replaceChild(dom: Node, prevDom: Node): this {
-    invariant(
-      prevDom.parentElement === this.element,
-      'ElementDOMSlot.replaceChild: prevDom is not in element',
-    );
-    this.element.replaceChild(dom, prevDom);
-    return this;
-  }
-  /**
-   * Returns the first managed child of this node,
-   * which will either be this.after.nextSibling or this.element.firstChild,
-   * and will never be this.before if it is defined.
+   * Returns the first managed child, skipping `before`, `after`, and the
+   * managed line break.
    */
   getFirstChild(): ChildNode | null {
     const firstChild = this.after
@@ -268,14 +226,18 @@ export class ElementDOMSlot<
     initialOffset: number,
   ): [node: ElementNode, idx: number] {
     if (initialDOM === this.element) {
+      // `firstChildOffset` is the DOM index of the first lexical child:
+      // 0 in the common case, or `N` when the slot carries `N` non-lexical
+      // prelude nodes via `after` (e.g. an extension prepending a UI
+      // affordance before the lexical content). Clamp `initialOffset`
+      // (a DOM index) to the lexical-children window, then shift it back
+      // into the element's lexical offset space.
       const firstChildOffset = this.getFirstChildOffset();
-      return [
-        element,
-        Math.min(
-          firstChildOffset + element.getChildrenSize(),
-          Math.max(firstChildOffset, initialOffset),
-        ),
-      ];
+      const clamped = Math.min(
+        firstChildOffset + element.getChildrenSize(),
+        Math.max(firstChildOffset, initialOffset),
+      );
+      return [element, clamped - firstChildOffset];
     }
     // The resolved offset must be before or after the children
     const initialPath = indexPath(elementDOM, initialDOM);
@@ -832,12 +794,12 @@ export class ElementNode extends LexicalNode {
     return writableSelf;
   }
   /**
-   * @internal
+   * @experimental
    *
-   * An experimental API that an ElementNode can override to control where its
-   * children are inserted into the DOM, this is useful to add a wrapping node
-   * or accessory nodes before or after the children. The root of the node returned
-   * by createDOM must still be exactly one HTMLElement.
+   * An ElementNode subclass can override this to control where its children
+   * are inserted into the DOM, e.g. to add a wrapping node or accessory nodes
+   * before or after the children. The root of the node returned by createDOM
+   * must still be exactly one HTMLElement.
    */
   getDOMSlot(element: HTMLElement): ElementDOMSlot<HTMLElement> {
     return new ElementDOMSlot(element);

@@ -841,3 +841,463 @@ describe('indexPath', () => {
     expect(indexPath(root, child)).toEqual([1, 1]);
   });
 });
+
+describe('ElementDOMSlot class', () => {
+  function makeElement(): HTMLElement {
+    return document.createElement('div');
+  }
+
+  test('constructor defaults before/after to null', () => {
+    const el = makeElement();
+    const slot = new ElementDOMSlot(el);
+    expect(slot.element).toBe(el);
+    expect(slot.before).toBe(null);
+    expect(slot.after).toBe(null);
+  });
+
+  test('constructor accepts before and after', () => {
+    const el = makeElement();
+    const beforeNode = document.createElement('span');
+    const afterNode = document.createElement('span');
+    el.appendChild(afterNode);
+    el.appendChild(beforeNode);
+    const slot = new ElementDOMSlot(el, beforeNode, afterNode);
+    expect(slot.before).toBe(beforeNode);
+    expect(slot.after).toBe(afterNode);
+  });
+
+  test('withBefore returns a new slot, preserves after and element', () => {
+    const el = makeElement();
+    const a = document.createElement('span');
+    const b = document.createElement('span');
+    el.appendChild(a);
+    const original = new ElementDOMSlot(el, null, a);
+    const updated = original.withBefore(b);
+    expect(updated).not.toBe(original);
+    expect(updated.element).toBe(el);
+    expect(updated.before).toBe(b);
+    expect(updated.after).toBe(a);
+    // Original unchanged
+    expect(original.before).toBe(null);
+  });
+
+  test('withAfter returns a new slot, preserves before and element', () => {
+    const el = makeElement();
+    const a = document.createElement('span');
+    const b = document.createElement('span');
+    const original = new ElementDOMSlot(el, a, null);
+    const updated = original.withAfter(b);
+    expect(updated).not.toBe(original);
+    expect(updated.before).toBe(a);
+    expect(updated.after).toBe(b);
+    expect(original.after).toBe(null);
+  });
+
+  test('withElement preserves before / after on the new element', () => {
+    const el1 = makeElement();
+    const el2 = makeElement();
+    const beforeNode = document.createElement('span');
+    const afterNode = document.createElement('span');
+    const original = new ElementDOMSlot(el1, beforeNode, afterNode);
+    const updated = original.withElement(el2);
+    expect(updated.element).toBe(el2);
+    expect(updated.before).toBe(beforeNode);
+    expect(updated.after).toBe(afterNode);
+  });
+
+  test('withElement returns same instance when element is unchanged', () => {
+    const el = makeElement();
+    const original = new ElementDOMSlot(el);
+    const updated = original.withElement(el);
+    expect(updated).toBe(original);
+  });
+
+  test('insertChild appends when before is null', () => {
+    const el = makeElement();
+    const slot = new ElementDOMSlot(el);
+    const child = document.createElement('span');
+    slot.insertChild(child);
+    expect(el.firstChild).toBe(child);
+    expect(el.lastChild).toBe(child);
+  });
+
+  test('insertChild inserts before the slot.before node', () => {
+    const el = makeElement();
+    const trailing = document.createElement('button');
+    el.appendChild(trailing);
+    const slot = new ElementDOMSlot(el, trailing);
+    const child = document.createElement('span');
+    slot.insertChild(child);
+    expect(el.firstChild).toBe(child);
+    expect(el.lastChild).toBe(trailing);
+  });
+
+  test('getFirstChild returns null for empty element', () => {
+    const el = makeElement();
+    const slot = new ElementDOMSlot(el);
+    expect(slot.getFirstChild()).toBe(null);
+  });
+
+  test('getFirstChild skips past slot.after sibling', () => {
+    const el = makeElement();
+    const leading = document.createElement('button');
+    const lexicalChild = document.createElement('span');
+    el.appendChild(leading);
+    el.appendChild(lexicalChild);
+    const slot = new ElementDOMSlot(el, null, leading);
+    expect(slot.getFirstChild()).toBe(lexicalChild);
+  });
+
+  test('getFirstChild returns null when only slot.before is present', () => {
+    const el = makeElement();
+    const trailing = document.createElement('button');
+    el.appendChild(trailing);
+    const slot = new ElementDOMSlot(el, trailing);
+    expect(slot.getFirstChild()).toBe(null);
+  });
+
+  test('getFirstChildOffset is 0 with no after', () => {
+    const el = makeElement();
+    const slot = new ElementDOMSlot(el);
+    expect(slot.getFirstChildOffset()).toBe(0);
+  });
+
+  test('getFirstChildOffset counts DOM siblings up to and including after', () => {
+    const el = makeElement();
+    const a = document.createElement('span');
+    const b = document.createElement('span');
+    const c = document.createElement('span');
+    el.appendChild(a);
+    el.appendChild(b);
+    el.appendChild(c);
+    expect(new ElementDOMSlot(el, null, a).getFirstChildOffset()).toBe(1);
+    expect(new ElementDOMSlot(el, null, b).getFirstChildOffset()).toBe(2);
+    expect(new ElementDOMSlot(el, null, c).getFirstChildOffset()).toBe(3);
+  });
+});
+
+describe('ElementDOMSlot integration: leading decoration (slot.after)', () => {
+  let container: HTMLElement;
+  let editor: LexicalEditor;
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+    editor = createEditor({
+      nodes: [LeadingDecorElementNode],
+      onError: error => {
+        throw error;
+      },
+    });
+    editor.setRootElement(container);
+  });
+
+  afterEach(() => {
+    document.body.removeChild(container);
+    // @ts-ignore
+    container = null;
+  });
+
+  class LeadingDecorElementNode extends ElementNode {
+    static getType() {
+      return 'leading-decor';
+    }
+    static clone(node: LeadingDecorElementNode): LeadingDecorElementNode {
+      return new LeadingDecorElementNode(node.__key);
+    }
+    createDOM() {
+      const el = document.createElement('div');
+      el.setAttribute('data-block', 'true');
+      const marker = document.createElement('span');
+      marker.setAttribute('data-marker', 'true');
+      marker.contentEditable = 'false';
+      marker.textContent = '§';
+      el.appendChild(marker);
+      return el;
+    }
+    updateDOM() {
+      return false;
+    }
+    getDOMSlot(dom: HTMLElement): ElementDOMSlot {
+      const marker = dom.querySelector('[data-marker]') as HTMLElement;
+      return super.getDOMSlot(dom).withAfter(marker);
+    }
+    exportJSON(): SerializedElementNode {
+      throw new Error('Not implemented');
+    }
+    static importJSON(): LeadingDecorElementNode {
+      throw new Error('Not implemented');
+    }
+  }
+  function $createLeadingDecorNode(): LeadingDecorElementNode {
+    return $applyNodeReplacement(new LeadingDecorElementNode());
+  }
+
+  test('decoration sits in DOM before lexical children', () => {
+    editor.update(
+      () => {
+        $getRoot()
+          .clear()
+          .append($createLeadingDecorNode().append($createTextNode('hello')));
+      },
+      {discrete: true},
+    );
+    const block = container.querySelector('[data-block]')!;
+    const marker = block.querySelector('[data-marker]')!;
+    const text = block.querySelector('[data-lexical-text="true"]')!;
+    expect(block.firstChild).toBe(marker);
+    expect(marker.nextSibling).toBe(text);
+    expect(text.textContent).toBe('hello');
+  });
+
+  test('appending children keeps the leading decoration first', () => {
+    let block: LeadingDecorElementNode;
+    editor.update(
+      () => {
+        block = $createLeadingDecorNode().append(
+          $createTextNode('a').setMode('token'),
+        );
+        $getRoot().clear().append(block);
+      },
+      {discrete: true},
+    );
+    editor.update(
+      () => {
+        block.append($createTextNode('b').setMode('token'));
+      },
+      {discrete: true},
+    );
+    const blockDom = container.querySelector('[data-block]')!;
+    expect(blockDom.children[0].getAttribute('data-marker')).toBe('true');
+    const texts = blockDom.querySelectorAll('[data-lexical-text="true"]');
+    expect(Array.from(texts).map(n => n.textContent)).toEqual(['a', 'b']);
+  });
+
+  test('clearing children removes lexical content but keeps decoration', () => {
+    let block: LeadingDecorElementNode;
+    editor.update(
+      () => {
+        block = $createLeadingDecorNode().append($createTextNode('x'));
+        $getRoot().clear().append(block);
+      },
+      {discrete: true},
+    );
+    editor.update(
+      () => {
+        block.clear();
+      },
+      {discrete: true},
+    );
+    const blockDom = container.querySelector('[data-block]')!;
+    const marker = blockDom.querySelector('[data-marker]');
+    expect(marker).not.toBe(null);
+    // Empty element gets a managed line break sibling after the marker
+    expect(blockDom.querySelector('[data-lexical-text="true"]')).toBe(null);
+  });
+
+  test('resolveChildIndex maps DOM offset to lexical index using firstChildOffset', () => {
+    // With a leading marker, `slot.getFirstChildOffset()` is 1. A DOM
+    // selection landing on `setStart(blockDom, N)` must resolve to lexical
+    // child index `N - 1` so `$validatePoint` doesn't reject the point as
+    // out-of-range. Without the subtraction in `resolveChildIndex`, an
+    // IME-like Range pointing at the second lexical text (DOM offset 2)
+    // would resolve to lexical index 2 and crash on validation.
+    let block: LeadingDecorElementNode;
+    editor.update(
+      () => {
+        block = $createLeadingDecorNode().append(
+          $createTextNode('a').setMode('token'),
+          $createTextNode('b').setMode('token'),
+        );
+        $getRoot().clear().append(block);
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      const blockDom = container.querySelector('[data-block]') as HTMLElement;
+      const slot = block.getDOMSlot(blockDom);
+      // 2 lexical children + 1 marker prelude → firstChildOffset == 1.
+      expect(slot.getFirstChildOffset()).toBe(1);
+      // DOM offset 1 (just after marker, before first text) → lexical 0.
+      expect(slot.resolveChildIndex(block, blockDom, blockDom, 1)).toEqual([
+        block,
+        0,
+      ]);
+      // DOM offset 2 (between the two texts) → lexical 1.
+      expect(slot.resolveChildIndex(block, blockDom, blockDom, 2)).toEqual([
+        block,
+        1,
+      ]);
+      // DOM offset 3 (after last text) → lexical 2 (= getChildrenSize()).
+      expect(slot.resolveChildIndex(block, blockDom, blockDom, 3)).toEqual([
+        block,
+        2,
+      ]);
+      // Out-of-range clamp: DOM offset 0 (before marker) clamps up to 0.
+      expect(slot.resolveChildIndex(block, blockDom, blockDom, 0)).toEqual([
+        block,
+        0,
+      ]);
+      // Out-of-range clamp: DOM offset 99 clamps to children size.
+      expect(slot.resolveChildIndex(block, blockDom, blockDom, 99)).toEqual([
+        block,
+        2,
+      ]);
+    });
+  });
+});
+
+describe('ElementDOMSlot integration: trailing decoration (slot.before)', () => {
+  let container: HTMLElement;
+  let editor: LexicalEditor;
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+    editor = createEditor({
+      nodes: [TrailingDecorElementNode],
+      onError: error => {
+        throw error;
+      },
+    });
+    editor.setRootElement(container);
+  });
+
+  afterEach(() => {
+    document.body.removeChild(container);
+    // @ts-ignore
+    container = null;
+  });
+
+  class TrailingDecorElementNode extends ElementNode {
+    static getType() {
+      return 'trailing-decor';
+    }
+    static clone(node: TrailingDecorElementNode): TrailingDecorElementNode {
+      return new TrailingDecorElementNode(node.__key);
+    }
+    createDOM() {
+      const el = document.createElement('div');
+      el.setAttribute('data-block', 'true');
+      const marker = document.createElement('span');
+      marker.setAttribute('data-marker', 'true');
+      marker.contentEditable = 'false';
+      marker.textContent = '⋮';
+      el.appendChild(marker);
+      return el;
+    }
+    updateDOM() {
+      return false;
+    }
+    getDOMSlot(dom: HTMLElement): ElementDOMSlot {
+      const marker = dom.querySelector('[data-marker]') as HTMLElement;
+      return super.getDOMSlot(dom).withBefore(marker);
+    }
+    exportJSON(): SerializedElementNode {
+      throw new Error('Not implemented');
+    }
+    static importJSON(): TrailingDecorElementNode {
+      throw new Error('Not implemented');
+    }
+  }
+  function $createTrailingDecorNode(): TrailingDecorElementNode {
+    return $applyNodeReplacement(new TrailingDecorElementNode());
+  }
+
+  test('decoration sits in DOM after lexical children', () => {
+    editor.update(
+      () => {
+        $getRoot()
+          .clear()
+          .append($createTrailingDecorNode().append($createTextNode('hello')));
+      },
+      {discrete: true},
+    );
+    const block = container.querySelector('[data-block]')!;
+    const marker = block.querySelector('[data-marker]')!;
+    const text = block.querySelector('[data-lexical-text="true"]')!;
+    expect(text.nextSibling).toBe(marker);
+    expect(block.lastChild).toBe(marker);
+  });
+
+  test('appending children keeps the trailing decoration last', () => {
+    let block: TrailingDecorElementNode;
+    editor.update(
+      () => {
+        block = $createTrailingDecorNode().append(
+          $createTextNode('a').setMode('token'),
+        );
+        $getRoot().clear().append(block);
+      },
+      {discrete: true},
+    );
+    editor.update(
+      () => {
+        block.append($createTextNode('b').setMode('token'));
+      },
+      {discrete: true},
+    );
+    const blockDom = container.querySelector('[data-block]')!;
+    // Last DOM child stays the marker, lexical children come before it
+    expect(
+      blockDom.children[blockDom.children.length - 1].getAttribute(
+        'data-marker',
+      ),
+    ).toBe('true');
+    const texts = blockDom.querySelectorAll('[data-lexical-text="true"]');
+    expect(Array.from(texts).map(n => n.textContent)).toEqual(['a', 'b']);
+  });
+
+  test('moving an existing child to the end preserves the trailing decoration', () => {
+    let block: TrailingDecorElementNode;
+    let firstChild: TextNode;
+    editor.update(
+      () => {
+        firstChild = $createTextNode('first').setMode('token');
+        block = $createTrailingDecorNode().append(
+          firstChild,
+          $createTextNode('second').setMode('token'),
+        );
+        $getRoot().clear().append(block);
+      },
+      {discrete: true},
+    );
+    editor.update(
+      () => {
+        // Move firstChild to the end of the block
+        block.append(firstChild);
+      },
+      {discrete: true},
+    );
+    const blockDom = container.querySelector('[data-block]')!;
+    const texts = Array.from(
+      blockDom.querySelectorAll('[data-lexical-text="true"]'),
+    );
+    expect(texts.map(n => n.textContent)).toEqual(['second', 'first']);
+    expect(blockDom.lastChild!.nodeType).toBe(Node.ELEMENT_NODE);
+    expect(
+      (blockDom.lastChild as HTMLElement).getAttribute('data-marker'),
+    ).toBe('true');
+  });
+
+  test('clearing children removes lexical content but keeps decoration', () => {
+    let block: TrailingDecorElementNode;
+    editor.update(
+      () => {
+        block = $createTrailingDecorNode().append($createTextNode('x'));
+        $getRoot().clear().append(block);
+      },
+      {discrete: true},
+    );
+    editor.update(
+      () => {
+        block.clear();
+      },
+      {discrete: true},
+    );
+    const blockDom = container.querySelector('[data-block]')!;
+    const marker = blockDom.querySelector('[data-marker]');
+    expect(marker).not.toBe(null);
+    expect(blockDom.querySelector('[data-lexical-text="true"]')).toBe(null);
+  });
+});

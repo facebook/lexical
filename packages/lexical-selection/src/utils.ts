@@ -9,6 +9,8 @@ import type {ElementNode, LexicalEditor, LexicalNode} from 'lexical';
 
 import {
   $getEditor,
+  $getElementDOMSlot,
+  $isElementNode,
   $isRootNode,
   $isTextNode,
   getStyleObjectFromCSS,
@@ -47,7 +49,7 @@ function getDOMIndexWithinParent(node: ChildNode): [ParentNode, number] {
  * @param _focusOffset - The amount of space offset from the focus to the anchor.
  * @returns The range of selection for the DOM that was created.
  */
-export function createDOMRange(
+export function $createDOMRange(
   editor: LexicalEditor,
   anchorNode: LexicalNode,
   _anchorOffset: number,
@@ -57,17 +59,34 @@ export function createDOMRange(
   const anchorKey = anchorNode.getKey();
   const focusKey = focusNode.getKey();
   const range = document.createRange();
-  let anchorDOM: Node | Text | null = editor.getElementByKey(anchorKey);
-  let focusDOM: Node | Text | null = editor.getElementByKey(focusKey);
+  const rawAnchorDOM = editor.getElementByKey(anchorKey);
+  const rawFocusDOM = editor.getElementByKey(focusKey);
+  let anchorDOM: Node | Text | null = rawAnchorDOM;
+  let focusDOM: Node | Text | null = rawFocusDOM;
   let anchorOffset = _anchorOffset;
   let focusOffset = _focusOffset;
 
+  // For ElementNode endpoints, route through `$getElementDOMSlot` so an
+  // extension that wraps the keyed DOM (e.g. `BlockDragHandleExtension`) is
+  // not the target of `range.setStart`/`setEnd` — the lexical-managed
+  // children live inside the slot element, offset by `getFirstChildOffset()`.
+  if ($isElementNode(anchorNode) && rawAnchorDOM !== null) {
+    const slot = $getElementDOMSlot(editor, anchorNode, rawAnchorDOM);
+    anchorDOM = slot.element;
+    anchorOffset = slot.getFirstChildOffset() + _anchorOffset;
+  }
+  if ($isElementNode(focusNode) && rawFocusDOM !== null) {
+    const slot = $getElementDOMSlot(editor, focusNode, rawFocusDOM);
+    focusDOM = slot.element;
+    focusOffset = slot.getFirstChildOffset() + _focusOffset;
+  }
+
   if ($isTextNode(anchorNode)) {
-    anchorDOM = getDOMTextNode(anchorDOM);
+    anchorDOM = getDOMTextNode(rawAnchorDOM);
   }
 
   if ($isTextNode(focusNode)) {
-    focusDOM = getDOMTextNode(focusDOM);
+    focusDOM = getDOMTextNode(rawFocusDOM);
   }
 
   if (
@@ -117,6 +136,8 @@ export function createDOMRange(
 
   return range;
 }
+/** @deprecated renamed to {@link $createDOMRange} by @lexical/eslint-plugin rules-of-lexical */
+export const createDOMRange = $createDOMRange;
 
 /**
  * Creates DOMRects, generally used to help the editor find a specific location on the screen.
@@ -204,10 +225,14 @@ export function $getComputedStyleForElement(
   element: ElementNode,
 ): CSSStyleDeclaration | null {
   const editor = $getEditor();
-  const domElement = editor.getElementByKey(element.getKey());
-  if (domElement === null) {
+  const keyedDOM = editor.getElementByKey(element.getKey());
+  if (keyedDOM === null) {
     return null;
   }
+  // Read computed styles from the slot's content-bearing element, not the
+  // keyed DOM, so an extension-added wrapper does not shadow `writing-mode`
+  // / `direction` set on the actual content element.
+  const domElement = $getElementDOMSlot(editor, element, keyedDOM).element;
   const view = domElement.ownerDocument.defaultView;
   if (view === null) {
     return null;

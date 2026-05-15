@@ -833,7 +833,12 @@ function $tryReconcileSuffixWithSizeDelta(
           break;
         }
       }
-      $createNode(op.key, slot.withBefore(beforeDOM));
+      // No lexical sibling found: insertion goes at the end of the lexical
+      // range, which is still bounded by `slot.before` for slots carrying a
+      // trailing non-lexical decoration (e.g. a drag handle pinned as the
+      // last DOM child of the parent). Falling back to `slot.before` keeps
+      // those decorations behind the new child.
+      $createNode(op.key, slot.withBefore(beforeDOM ?? slot.before));
     }
     if (op.kind !== 'destroy') {
       const opNode = activeNextNodeMap.get(op.key);
@@ -1577,14 +1582,17 @@ function $reconcileNodeChildren(
         continue;
       }
       if (!prevChildrenSet.has(nextKey)) {
-        // Create next
-        $createNode(nextKey, slot.withBefore(siblingDOM));
+        // Create next. When siblingDOM is null we're appending at the end
+        // of the lexical range; fall back to `slot.before` so slots with a
+        // trailing non-lexical decoration (e.g. block drag handle) keep
+        // that decoration after the new child.
+        $createNode(nextKey, slot.withBefore(siblingDOM ?? slot.before));
         nextIndex++;
       } else {
         // Move next
         const childDOM = getElementByKeyOrThrow(activeEditor, nextKey);
         if (childDOM !== siblingDOM) {
-          slot.withBefore(siblingDOM).insertChild(childDOM);
+          slot.withBefore(siblingDOM ?? slot.before).insertChild(childDOM);
         }
         siblingDOM = getNextSibling($reconcileNode(nextKey, slot.element));
 
@@ -1625,7 +1633,9 @@ function $reconcileNodeChildren(
       nextElement,
       nextIndex,
       nextEndIndex,
-      slot.withBefore(insertDOM),
+      // Preserve the slot's trailing decoration anchor when appending at
+      // the end (insertDOM === null).
+      slot.withBefore(insertDOM ?? slot.before),
     );
   } else if (removeOldChildren && !appendNewChildren) {
     $destroyChildren(prevChildren, prevIndex, prevEndIndex, slot.element);

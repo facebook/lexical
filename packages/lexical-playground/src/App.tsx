@@ -184,6 +184,11 @@ const PlaygroundRichTextExtension = defineExtension({
     PlaygroundMarkdownShortcutsExtension,
     PageBreakExtension,
     PagesReactExtension,
+    // The drag-handle wrapper is only useful with the `DraggableBlockPlugin`
+    // (drop-target line, DnD wiring), which the playground renders only in
+    // rich-text mode. Registering it here keeps the wrapper out of plain-text
+    // editors where the handle would be visible but inert.
+    BlockDragHandleExtension,
   ],
   name: '@lexical/playground/RichText',
 });
@@ -206,7 +211,6 @@ const AppExtension = defineExtension({
     ClickableLinkExtension,
     SelectionAlwaysOnDisplayExtension,
     TerseExportExtension,
-    BlockDragHandleExtension,
   ],
   html: buildHTMLConfig(),
   name: '@lexical/playground',

@@ -22,6 +22,10 @@ import {
  * Demonstrates the extension-driven path for a leaf node category: no
  * `LineBreakNode` subclass required, behaviour attaches via
  * `DOMRenderExtension` configuration.
+ *
+ * Not registered in the default playground — pull this into a project's
+ * extension list to opt into visible line-break markers everywhere
+ * `LineBreakNode` renders.
  */
 const VISIBLE_LINEBREAK_CLASS = 'visible-linebreak';
 const VISIBLE_LINEBREAK_MARKER = '↵';
@@ -45,7 +49,7 @@ export const VisibleLineBreakExtension = defineExtension({
             return wrapper;
           },
           $getDOMSlot: (_node, dom, $next, _editor) => {
-            const br = dom.querySelector('br');
+            const br = dom.querySelector(':scope > br');
             return br instanceof HTMLElement ? new DOMSlot(br) : $next();
           },
         }),

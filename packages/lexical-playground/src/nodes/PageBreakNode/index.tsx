@@ -12,8 +12,14 @@ import './index.css';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
-import {mergeRegister} from '@lexical/utils';
 import {
+  addClassNamesToElement,
+  mergeRegister,
+  removeClassNamesFromElement,
+} from '@lexical/utils';
+import {
+  $getEditorDOMRenderConfig,
+  $getNodeByKey,
   CLICK_COMMAND,
   COMMAND_PRIORITY_HIGH,
   COMMAND_PRIORITY_LOW,
@@ -40,15 +46,33 @@ function PageBreakComponent({nodeKey}: {nodeKey: NodeKey}) {
         CLICK_COMMAND,
         (event: MouseEvent) => {
           const pbElem = editor.getElementByKey(nodeKey);
-
-          if (event.target === pbElem) {
+          if (pbElem === null || !(event.target instanceof Node)) {
+            return false;
+          }
+          // Hit-test against the slot's inner `<figure>`, not the keyed
+          // DOM. With an extension-added wrapper, the keyed DOM is the
+          // wrapper and includes the gutter + any sibling controls (drag
+          // handle, future add buttons, etc.); restricting `contains` to
+          // the inner element keeps clicks on those siblings from
+          // registering as a PageBreak selection.
+          let target: HTMLElement = pbElem;
+          editor.getEditorState().read(() => {
+            const node = $getNodeByKey(nodeKey);
+            if (node !== null) {
+              target = $getEditorDOMRenderConfig(editor).$getDOMSlot(
+                node,
+                pbElem,
+                editor,
+              ).element;
+            }
+          });
+          if (target.contains(event.target)) {
             if (!event.shiftKey) {
               clearSelection();
             }
             setSelected(!isSelected);
             return true;
           }
-
           return false;
         },
         COMMAND_PRIORITY_LOW,
@@ -59,7 +83,26 @@ function PageBreakComponent({nodeKey}: {nodeKey: NodeKey}) {
   useEffect(() => {
     const pbElem = editor.getElementByKey(nodeKey);
     if (pbElem !== null) {
-      pbElem.className = isSelected ? 'selected' : '';
+      // Apply the selected class to the slot's content-bearing element
+      // (the actual `<figure>`) rather than the keyed DOM, so a wrapper
+      // added by an extension doesn't prevent the page-break-marker theme
+      // from highlighting the figure.
+      let target: HTMLElement = pbElem;
+      editor.getEditorState().read(() => {
+        const node = $getNodeByKey(nodeKey);
+        if (node !== null) {
+          target = $getEditorDOMRenderConfig(editor).$getDOMSlot(
+            node,
+            pbElem,
+            editor,
+          ).element;
+        }
+      });
+      if (isSelected) {
+        addClassNamesToElement(target, 'selected');
+      } else {
+        removeClassNamesFromElement(target, 'selected');
+      }
     }
   }, [editor, isSelected, nodeKey]);
 

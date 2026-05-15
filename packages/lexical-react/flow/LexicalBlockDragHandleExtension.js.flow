@@ -10,3 +10,16 @@
 /**
  * LexicalBlockDragHandleExtension
  */
+
+import type {ExtensionConfigBase, LexicalExtension} from 'lexical';
+
+declare export var BLOCK_DRAG_WRAPPER_ATTR: 'data-lexical-block-drag-wrapper';
+declare export var BLOCK_DRAG_HANDLE_ATTR: 'data-lexical-block-drag-handle';
+declare export var BLOCK_DRAG_INNER_ATTR: 'data-lexical-block-drag-inner';
+
+declare export var BlockDragHandleExtension: LexicalExtension<
+  ExtensionConfigBase,
+  '@lexical/react/block-drag-handle',
+  void,
+  void,
+>;

@@ -634,14 +634,14 @@ test.describe.parallel('Selection', () => {
           <span data-lexical-text="true">abc</span>
         </p>
         <${collapsibleTag} class="Collapsible__container" dir="auto" open="">
-          <summary class="Collapsible__title">
+          <summary class="Collapsible__title" dir="auto">
             <p
               class="PlaygroundEditorTheme__paragraph">
               <span data-lexical-text="true">title</span>
             </p>
           </summary>
-          <div class="Collapsible__content">
-            <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+          <div class="Collapsible__content" dir="auto">
+            <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
           </div>
         </${collapsibleTag}>
         <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
@@ -681,14 +681,14 @@ test.describe.parallel('Selection', () => {
           <span data-lexical-text="true">abc</span>
         </p>
         <${collapsibleTag} class="Collapsible__container" dir="auto" open="">
-          <summary class="Collapsible__title">
+          <summary class="Collapsible__title" dir="auto">
             <p
               class="PlaygroundEditorTheme__paragraph">
               <span data-lexical-text="true">title</span>
             </p>
           </summary>
-          <div class="Collapsible__content">
-            <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+          <div class="Collapsible__content" dir="auto">
+            <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
           </div>
         </${collapsibleTag}>
         <p
@@ -730,13 +730,13 @@ test.describe.parallel('Selection', () => {
             <span data-lexical-text="true">before</span>
           </p>
           <${collapsibleTag} class="Collapsible__container" dir="auto" open="">
-            <summary class="Collapsible__title">
+            <summary class="Collapsible__title" dir="auto">
               <p class="PlaygroundEditorTheme__paragraph">
                 <span data-lexical-text="true">title</span>
               </p>
             </summary>
-            <div class="Collapsible__content">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            <div class="Collapsible__content" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
             </div>
           </${collapsibleTag}>
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
@@ -793,14 +793,16 @@ test.describe.parallel('Selection', () => {
             <col style="width: 92px" />
             <col style="width: 92px" />
           </colgroup>
-          <tr>
+          <tr dir="auto">
             <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+              dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
             </th>
             <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+              dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
             </th>
           </tr>
         </table>
@@ -834,14 +836,16 @@ test.describe.parallel('Selection', () => {
             <col style="width: 92px" />
             <col style="width: 92px" />
           </colgroup>
-          <tr>
+          <tr dir="auto">
             <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+              dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
             </th>
             <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+              dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
             </th>
           </tr>
         </table>

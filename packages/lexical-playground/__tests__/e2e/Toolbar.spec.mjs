@@ -171,89 +171,89 @@ test.describe('Toolbar', () => {
               <col style="width: 92px" />
               <col style="width: 92px" />
             </colgroup>
-            <tr>
-              <th>
-                <p><br /></p>
+            <tr dir="auto">
+              <th dir="auto">
+                <p dir="auto"><br /></p>
               </th>
-              <th>
-                <p><br /></p>
+              <th dir="auto">
+                <p dir="auto"><br /></p>
               </th>
-              <th>
-                <p><br /></p>
+              <th dir="auto">
+                <p dir="auto"><br /></p>
               </th>
-              <th>
-                <p><br /></p>
+              <th dir="auto">
+                <p dir="auto"><br /></p>
               </th>
-              <th>
-                <p><br /></p>
+              <th dir="auto">
+                <p dir="auto"><br /></p>
               </th>
             </tr>
-            <tr>
-              <th>
-                <p><br /></p>
+            <tr dir="auto">
+              <th dir="auto">
+                <p dir="auto"><br /></p>
               </th>
-              <td>
-                <p><br /></p>
+              <td dir="auto">
+                <p dir="auto"><br /></p>
               </td>
-              <td>
-                <p><br /></p>
+              <td dir="auto">
+                <p dir="auto"><br /></p>
               </td>
-              <td>
-                <p><br /></p>
+              <td dir="auto">
+                <p dir="auto"><br /></p>
               </td>
-              <td>
-                <p><br /></p>
+              <td dir="auto">
+                <p dir="auto"><br /></p>
               </td>
             </tr>
-            <tr>
-              <th>
-                <p><br /></p>
+            <tr dir="auto">
+              <th dir="auto">
+                <p dir="auto"><br /></p>
               </th>
-              <td>
-                <p><br /></p>
+              <td dir="auto">
+                <p dir="auto"><br /></p>
               </td>
-              <td>
-                <p><br /></p>
+              <td dir="auto">
+                <p dir="auto"><br /></p>
               </td>
-              <td>
-                <p><br /></p>
+              <td dir="auto">
+                <p dir="auto"><br /></p>
               </td>
-              <td>
-                <p><br /></p>
+              <td dir="auto">
+                <p dir="auto"><br /></p>
               </td>
             </tr>
-            <tr>
-              <th>
-                <p><br /></p>
+            <tr dir="auto">
+              <th dir="auto">
+                <p dir="auto"><br /></p>
               </th>
-              <td>
-                <p><br /></p>
+              <td dir="auto">
+                <p dir="auto"><br /></p>
               </td>
-              <td>
-                <p><br /></p>
+              <td dir="auto">
+                <p dir="auto"><br /></p>
               </td>
-              <td>
-                <p><br /></p>
+              <td dir="auto">
+                <p dir="auto"><br /></p>
               </td>
-              <td>
-                <p><br /></p>
+              <td dir="auto">
+                <p dir="auto"><br /></p>
               </td>
             </tr>
-            <tr>
-              <th>
-                <p><br /></p>
+            <tr dir="auto">
+              <th dir="auto">
+                <p dir="auto"><br /></p>
               </th>
-              <td>
-                <p><br /></p>
+              <td dir="auto">
+                <p dir="auto"><br /></p>
               </td>
-              <td>
-                <p><br /></p>
+              <td dir="auto">
+                <p dir="auto"><br /></p>
               </td>
-              <td>
-                <p><br /></p>
+              <td dir="auto">
+                <p dir="auto"><br /></p>
               </td>
-              <td>
-                <p><br /></p>
+              <td dir="auto">
+                <p dir="auto"><br /></p>
               </td>
             </tr>
           </table>

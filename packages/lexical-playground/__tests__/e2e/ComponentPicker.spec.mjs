@@ -85,29 +85,32 @@ test.describe('ComponentPicker', () => {
               <col style="width: 92px" />
               <col style="width: 92px" />
             </colgroup>
-            <tr>
+            <tr dir="auto">
               <th
-                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
-                <p class="PlaygroundEditorTheme__paragraph">
+                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+                dir="auto">
+                <p class="PlaygroundEditorTheme__paragraph" dir="auto">
                   <br />
                 </p>
               </th>
               <th
-                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
-                <p class="PlaygroundEditorTheme__paragraph">
+                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+                dir="auto">
+                <p class="PlaygroundEditorTheme__paragraph" dir="auto">
                   <br />
                 </p>
               </th>
             </tr>
-            <tr>
+            <tr dir="auto">
               <th
-                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
-                <p class="PlaygroundEditorTheme__paragraph">
+                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+                dir="auto">
+                <p class="PlaygroundEditorTheme__paragraph" dir="auto">
                   <br />
                 </p>
               </th>
-              <td class="PlaygroundEditorTheme__tableCell">
-                <p class="PlaygroundEditorTheme__paragraph">
+              <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+                <p class="PlaygroundEditorTheme__paragraph" dir="auto">
                   <br />
                 </p>
               </td>

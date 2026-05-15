@@ -696,4 +696,104 @@ describe('TableExtension', () => {
       });
     });
   });
+
+  describe('drag selection', () => {
+    // Polyfill PointerEvent for jsdom
+    interface PointerEventInit extends EventInit {
+      button?: number;
+      buttons?: number;
+      pointerType?: string;
+      clientX?: number;
+      clientY?: number;
+    }
+    if (
+      typeof (globalThis as {PointerEvent?: unknown}).PointerEvent ===
+      'undefined'
+    ) {
+      (globalThis as unknown as {PointerEvent: unknown}).PointerEvent =
+        class PointerEvent extends Event {
+          button: number;
+          buttons: number;
+          pointerType: string;
+          clientX: number;
+          clientY: number;
+          constructor(type: string, options: PointerEventInit = {}) {
+            super(type, options);
+            this.button = options.button || 0;
+            this.buttons = options.buttons ?? 1;
+            this.pointerType = options.pointerType || 'mouse';
+            this.clientX = options.clientX ?? 0;
+            this.clientY = options.clientY ?? 0;
+          }
+        };
+    }
+
+    it('attaches the window pointerdown handler when setRootElement is called after register', () => {
+      // The TableExtension registers handlers during buildEditor, before any
+      // root element is mounted. Regression test for the bug where the
+      // pointerdown listener on editorWindow was never attached because
+      // editor.getRootElement() was null at register() time, breaking drag
+      // selection. See https://github.com/facebook/lexical/issues/8491
+      const container = document.createElement('div');
+      document.body.appendChild(container);
+      try {
+        editor.setRootElement(container);
+        editor.update(
+          () => {
+            const root = $getRoot().clear();
+            const table = $createTableNodeWithDimensions(2, 2, false);
+            root.append(table);
+            const firstRow = table.getFirstChild();
+            assert($isTableRowNode(firstRow), 'Expected first row');
+            const firstCell = firstRow.getFirstChild();
+            assert($isTableCellNode(firstCell), 'Expected first cell');
+            const paragraph = firstCell.getFirstChild();
+            assert($isParagraphNode(paragraph), 'Expected paragraph in cell');
+            paragraph.selectStart();
+          },
+          {discrete: true},
+        );
+
+        const firstCellElement = container.querySelector('td');
+        assert(firstCellElement !== null, 'Expected first cell element');
+        const tableElement = container.querySelector('table');
+        assert(tableElement !== null, 'Expected table element');
+
+        // Before the pointerdown, no anchor cell is set on the TableObserver.
+        const observerKey = '__lexicalTableSelection';
+        const observerBefore = (
+          tableElement as unknown as Record<string, {anchorCell: unknown}>
+        )[observerKey];
+        assert(observerBefore !== undefined, 'Expected TableObserver to exist');
+        expect(observerBefore.anchorCell).toBeNull();
+
+        const pointerEvent = new (
+          globalThis as unknown as {
+            PointerEvent: new (
+              type: string,
+              options?: PointerEventInit,
+            ) => Event;
+          }
+        ).PointerEvent('pointerdown', {
+          bubbles: true,
+          button: 0,
+          buttons: 1,
+          cancelable: true,
+          pointerType: 'mouse',
+        });
+        firstCellElement.dispatchEvent(pointerEvent);
+
+        // After the pointerdown, the window-level pointerdown handler should
+        // have run and set the anchor cell on the observer. If the handler
+        // was never attached, the anchor remains null.
+        const observerAfter = (
+          tableElement as unknown as Record<string, {anchorCell: unknown}>
+        )[observerKey];
+        expect(observerAfter.anchorCell).not.toBeNull();
+      } finally {
+        editor.setRootElement(null);
+        document.body.removeChild(container);
+      }
+    });
+  });
 });

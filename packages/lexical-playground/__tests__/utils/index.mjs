@@ -419,7 +419,19 @@ async function assertSelectionOnPageOrFrame(page, expected) {
         if (parent === null || node === rootElement) {
           break;
         }
-        path.push(Array.from(parent.childNodes).indexOf(node));
+        // Skip the `BlockDragHandleExtension` inner-marker element — it's a
+        // pass-through layer between the wrapper and the keyed DOM, and
+        // would add an extra step to the path vs the un-wrapped baseline.
+        // The wrapper itself stays in the walk so its index in the root is
+        // what the next iteration records (matching the original block's
+        // index pre-wrap).
+        const isInnerMarker =
+          node.nodeType === Node.ELEMENT_NODE &&
+          node.getAttribute &&
+          node.getAttribute('data-lexical-block-drag-inner') === 'true';
+        if (!isInnerMarker) {
+          path.push(Array.from(parent.childNodes).indexOf(node));
+        }
         node = parent;
       }
       return path.reverse();
@@ -875,6 +887,201 @@ export async function dragImage(
   );
 }
 
+// Depth-aware matcher for `<TAG ...>...</TAG>` starting at `start`. Returns
+// the index of the matching close-tag's `<`, or -1 if unbalanced. Counts only
+// well-formed `<TAG ...>` / `</TAG>` boundaries — sufficient for serialized
+// HTML coming back from `innerHTML` (no comments / CDATA inside the editor).
+function findMatchingClose(source, tag, start) {
+  const openRe = new RegExp(`<${tag}(?=[\\s/>])`, 'g');
+  const closeRe = new RegExp(`</${tag}>`, 'g');
+  let depth = 1;
+  let cursor = start;
+  while (cursor < source.length) {
+    openRe.lastIndex = cursor;
+    closeRe.lastIndex = cursor;
+    const nextOpen = openRe.exec(source);
+    const nextClose = closeRe.exec(source);
+    if (!nextClose) {
+      return -1;
+    }
+    if (nextOpen && nextOpen.index < nextClose.index) {
+      depth++;
+      cursor = nextOpen.index + nextOpen[0].length;
+    } else {
+      depth--;
+      if (depth === 0) {
+        return nextClose.index;
+      }
+      cursor = nextClose.index + nextClose[0].length;
+    }
+  }
+  return -1;
+}
+
+function stripBlockDragWrapper(input) {
+  // Wrapper opener: `<div ATTRS data-lexical-block-drag-wrapper="true" ATTRS>`.
+  // For ElementNode (paragraph etc.) the wrapper carries only the marker
+  // attribute (optionally with `dir`); the inner element holds all the real
+  // attributes and content. For DecoratorNode the wrapper picks up
+  // `contenteditable="false"` + `data-lexical-decorator="true"` from the
+  // reconciler post-processing the keyed DOM, and the decorator's React
+  // portal mounts its content as a sibling inside the wrapper (since
+  // `useDecorators` reads `editor.getElementByKey` which returns the
+  // wrapper). The inner-marker element is then effectively empty.
+  //
+  // Two strip strategies:
+  //   - Plain wrapper (only marker + optional dir): drop wrapper, emit inner
+  //     element with the marker attribute removed (paragraph/heading/etc.).
+  //   - Decorated wrapper (extra attrs): keep wrapper with marker stripped,
+  //     remove the button + inner-marker children, and let the
+  //     portal-mounted sibling content stay (HR / PageBreak / embed).
+  const wrapperOpen =
+    /<div([^>]*?)\sdata-lexical-block-drag-wrapper="true"([^>]*)>/g;
+  let output = '';
+  let lastIndex = 0;
+  let m;
+  while ((m = wrapperOpen.exec(input)) !== null) {
+    output += input.slice(lastIndex, m.index);
+    const attrsBefore = m[1];
+    const attrsAfter = m[2];
+    const wrapperCloseStart = findMatchingClose(
+      input,
+      'div',
+      m.index + m[0].length,
+    );
+    if (wrapperCloseStart === -1) {
+      output += input.slice(m.index);
+      lastIndex = input.length;
+      break;
+    }
+    const wrapperCloseEnd = wrapperCloseStart + '</div>'.length;
+    let cursor = m.index + m[0].length;
+    while (cursor < input.length && /\s/.test(input[cursor])) {
+      cursor++;
+    }
+    // Skip the handle button (always the first child).
+    if (input.slice(cursor, cursor + 7) === '<button') {
+      const buttonClose = input.indexOf('</button>', cursor);
+      if (buttonClose === -1 || buttonClose > wrapperCloseStart) {
+        output += input.slice(m.index, wrapperCloseEnd);
+        lastIndex = wrapperCloseEnd;
+        wrapperOpen.lastIndex = wrapperCloseEnd;
+        continue;
+      }
+      cursor = buttonClose + '</button>'.length;
+      while (cursor < input.length && /\s/.test(input[cursor])) {
+        cursor++;
+      }
+    }
+    // Inner-marker element. Its opening tag is required; its content (if
+    // any) is appended after the inner-marker element is dropped from the
+    // emit.
+    const innerOpenMatch = input
+      .slice(cursor)
+      .match(/^<([a-z][a-z0-9]*)([^>]*)>/);
+    if (
+      !innerOpenMatch ||
+      innerOpenMatch[2].indexOf('data-lexical-block-drag-inner="true"') === -1
+    ) {
+      output += input.slice(m.index, wrapperCloseEnd);
+      lastIndex = wrapperCloseEnd;
+      wrapperOpen.lastIndex = wrapperCloseEnd;
+      continue;
+    }
+    const innerTag = innerOpenMatch[1];
+    const innerAttrsRaw = innerOpenMatch[2].replace(
+      /\s+data-lexical-block-drag-inner="true"/,
+      '',
+    );
+    // Drop a trailing "/" (self-close marker on void elements) and any
+    // whitespace before it so attribute merging produces a clean attr list.
+    const innerAttrs = innerAttrsRaw.replace(/\s*\/$/, '');
+    const innerContentStart = cursor + innerOpenMatch[0].length;
+    const VOID_TAGS = new Set([
+      'area',
+      'base',
+      'br',
+      'col',
+      'embed',
+      'hr',
+      'img',
+      'input',
+      'link',
+      'meta',
+      'param',
+      'source',
+      'track',
+      'wbr',
+    ]);
+    const isVoidInner = VOID_TAGS.has(innerTag);
+    let innerContent = '';
+    let afterInner;
+    if (isVoidInner) {
+      afterInner = innerContentStart;
+    } else {
+      const innerCloseStart = findMatchingClose(
+        input,
+        innerTag,
+        innerContentStart,
+      );
+      if (innerCloseStart === -1 || innerCloseStart >= wrapperCloseStart) {
+        output += input.slice(m.index, wrapperCloseEnd);
+        lastIndex = wrapperCloseEnd;
+        wrapperOpen.lastIndex = wrapperCloseEnd;
+        continue;
+      }
+      innerContent = input.slice(innerContentStart, innerCloseStart);
+      afterInner = innerCloseStart + `</${innerTag}>`.length;
+    }
+    while (afterInner < wrapperCloseStart && /\s/.test(input[afterInner])) {
+      afterInner++;
+    }
+    const trailingSiblings = input.slice(afterInner, wrapperCloseStart).trim();
+    const wrapperAttrs = (attrsBefore + attrsAfter).replace(
+      /\s*data-lexical-block-drag-wrapper="true"/,
+      '',
+    );
+    // Merge wrapper attrs into a target attribute string, skipping wrapper
+    // attrs whose name already exists on the target — the target is the
+    // canonical owner for those (e.g. theme `class` on the inner element),
+    // and the wrapper's copy is often a placeholder set by alignment /
+    // indent toggling on the reconciler-keyed DOM.
+    const mergeAttrs = targetAttrs => {
+      const targetNames = new Set();
+      const nameRe = /\s+([a-z-]+)=/g;
+      let nameMatch;
+      while ((nameMatch = nameRe.exec(targetAttrs)) !== null) {
+        targetNames.add(nameMatch[1]);
+      }
+      return wrapperAttrs.replace(/\s+([a-z-]+)="[^"]*"/g, (full, name) =>
+        targetNames.has(name) ? '' : full,
+      );
+    };
+    if (isVoidInner) {
+      // Void inner (HR etc.) is itself the canonical content. Merge wrapper
+      // attrs into it and emit self-closing.
+      output += `<${innerTag}${innerAttrs}${mergeAttrs(innerAttrs)} />${trailingSiblings}`;
+    } else if (innerAttrs.trim() !== '') {
+      // ElementNode case (paragraph / heading / list / code etc.). Merge
+      // wrapper attrs (dir / style / class etc.) into the inner element so
+      // reconciler-applied props that landed on the wrapper migrate to the
+      // canonical content element.
+      output += `<${innerTag}${innerAttrs}${mergeAttrs(innerAttrs)}>${innerContent}</${innerTag}>${trailingSiblings}`;
+    } else {
+      // Empty non-void inner: a DecoratorNode whose React portal mounts
+      // visible content as a sibling of the inner-marker (since
+      // `useDecorators` reads `editor.getElementByKey` which returns the
+      // wrapper). Keep the wrapper (minus the marker) as the result's
+      // outer tag and drop the empty inner shell.
+      output += `<div${wrapperAttrs}>${innerContent}${trailingSiblings}</div>`;
+    }
+    lastIndex = wrapperCloseEnd;
+    wrapperOpen.lastIndex = wrapperCloseEnd;
+  }
+  output += input.slice(lastIndex);
+  return output;
+}
+
 export async function prettifyHTML(
   string,
   {ignoreClasses, ignoreInlineStyles, ignoreDir} = {},
@@ -888,11 +1095,7 @@ export async function prettifyHTML(
   // block; nothing in any test cares whether they're present. The wrapper's
   // `dir` attribute (set on the keyed DOM by the reconciler) is moved onto
   // the inner element so existing dir-aware fixtures keep matching.
-  output = output.replace(
-    /<div data-lexical-block-drag-wrapper="true"(\s+dir="[^"]*")?\s*>\s*<button[^>]*data-lexical-block-drag-handle="true"[^>]*>[\s\S]*?<\/button>\s*<([a-z][a-z0-9]*)((?:\s+(?!data-lexical-block-drag-inner=)[a-z-]+(?:="[^"]*")?)*)\s+data-lexical-block-drag-inner="true"((?:\s+[a-z-]+(?:="[^"]*")?)*)\s*>([\s\S]*?)<\/\2>\s*<\/div>/g,
-    (_match, wrapperDir = '', tag, beforeAttrs, afterAttrs, content) =>
-      `<${tag}${beforeAttrs}${afterAttrs}${wrapperDir}>${content}</${tag}>`,
-  );
+  output = stripBlockDragWrapper(output);
 
   if (ignoreClasses) {
     output = output.replace(/\sclass="([^"]*)"/g, '');

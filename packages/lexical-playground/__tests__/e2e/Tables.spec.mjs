@@ -86,10 +86,14 @@ async function fillTablePartiallyWithText(page) {
 }
 
 const WRAPPER = IS_TABLE_HORIZONTAL_SCROLL ? [0] : [];
+// With `BlockDragHandleExtension` each top-level block is wrapped, so tables
+// are no longer siblings — `:nth-of-type` doesn't pick the Nth across nested
+// wrappers. Playwright's `:nth-match` counts every match in tree order
+// regardless of sibling structure, which is what these tests want.
 const nthTableSelector = nth =>
   IS_TABLE_HORIZONTAL_SCROLL
-    ? `div.PlaygroundEditorTheme__tableScrollableWrapper:nth-of-type(${nth}) > table`
-    : `table:nth-of-type(${nth})`;
+    ? `:nth-match(div.PlaygroundEditorTheme__tableScrollableWrapper, ${nth}) > table`
+    : `:nth-match(table, ${nth})`;
 
 test.describe.parallel('Tables', () => {
   test(`Can a table be inserted from the toolbar`, async ({

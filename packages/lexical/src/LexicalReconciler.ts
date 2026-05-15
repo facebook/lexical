@@ -14,7 +14,12 @@ import type {
   MutationListeners,
   RegisteredNodes,
 } from './LexicalEditor';
-import type {LexicalPrivateDOM, NodeKey, NodeMap} from './LexicalNode';
+import type {
+  LexicalNode,
+  LexicalPrivateDOM,
+  NodeKey,
+  NodeMap,
+} from './LexicalNode';
 import type {ElementDOMSlot, ElementNode} from './nodes/LexicalElementNode';
 
 import invariant from 'shared/invariant';
@@ -50,9 +55,174 @@ import {
 
 type IntentionallyMarkedAsDirtyElement = boolean;
 
+/**
+ * @internal
+ *
+ * A reconcile-managed cache of `getTextContentSize()` for leaf nodes.
+ *
+ * Stored as a Symbol-keyed property on the node instance itself so that
+ * read/write are direct slot access. The slot is pre-allocated to
+ * `undefined` as a non-enumerable property in the LexicalNode constructor
+ * so all instances share the same V8 hidden-class shape and the setter is
+ * a stable inline cache hit instead of a per-instance shape transition.
+ *
+ * ElementNodes already carry their computed text content in
+ * `dom.__lexicalTextContent` (written at the end of `$reconcileChildren`),
+ * so we never set this on ElementNodes — `$cachedTextSize` routes them to
+ * the DOM cache instead.
+ *
+ * Leaf writes are skipped when the slot is already not `undefined`. The
+ * setter is only re-entered for the same instance via cross-parent moves
+ * (where the leaf is reused in a new parent without going through
+ * `getWritable` — text is unchanged, so the prior cycle's value is still
+ * correct). A leaf whose text actually changed went through
+ * `getWritable()` and produced a fresh clone via `static clone(node)` ->
+ * ctor -> fresh `undefined` slot, so the setter writes through normally.
+ *
+ * The reconciler sets this on every reconciled leaf at the end of
+ * `$reconcileNode` (and on every newly-created leaf in `$createNode`), so
+ * the previous editor state's leaves always carry a valid cached size from
+ * the cycle that just committed.
+ *
+ * Suffix-incremental fast path reads this off the previous-state instance
+ * to get the pre-reconcile size of dirty children in O(1), avoiding both
+ * the `getLatest()` -> next-state trap and a recursive prev-tree walk.
+ */
+export const CACHED_TEXT_SIZE_KEY = Symbol.for('@lexical/CachedTextSize');
+
+function $cachedTextSize(node: LexicalNode): number {
+  if ($isElementNode(node)) {
+    const keyedDom = activePrevKeyToDOMMap.get(node.__key);
+    const cached = keyedDom && keyedDom.__lexicalTextContent;
+    invariant(
+      typeof cached === 'string',
+      'cachedTextSize: missing __lexicalTextContent for ElementNode of type %s',
+      node.getType(),
+    );
+    return cached.length;
+  }
+  const cached = node[CACHED_TEXT_SIZE_KEY];
+  // $reconcileNode and $createNode set the size on every leaf they touch, so a
+  // missing entry here means the invariant was broken upstream. Falling back to
+  // getTextContentSize() would resolve via getLatest() against the next state
+  // and silently miscompute prev sizes — fail loudly instead.
+  invariant(
+    cached !== undefined,
+    'cachedTextSize: missing entry for leaf %s key %s',
+    node.getType(),
+    node.__key,
+  );
+  return cached;
+}
+
+function $setCachedTextSize(node: LexicalNode): void {
+  if ($isElementNode(node)) {
+    return;
+  }
+  // Skip if a value is already cached on this instance. The setter is only
+  // re-entered for the same instance via cross-parent moves (where the leaf
+  // is reused in a new parent without going through `getWritable` — text is
+  // unchanged so the prior cycle's value is still correct), and that's
+  // exactly the case where the instance is also frozen in DEV.
+  if (node[CACHED_TEXT_SIZE_KEY] !== undefined) {
+    return;
+  }
+  node[CACHED_TEXT_SIZE_KEY] = $isTextNode(node)
+    ? node.__text.length
+    : node.getTextContentSize();
+}
+
+/**
+ * Minimum children count for the suffix-incremental fast path to engage.
+ * The fast path adds bookkeeping (cache lookups, suffix walks, splice) that
+ * a few-children parent's general walk would beat — gate by a threshold so
+ * the overhead only kicks in where the prefix preservation pays for it.
+ * Tuned via `editorCycle.bench`.
+ */
+const MIN_FAST_PATH_CHILDREN = 4;
+
+/**
+ * @internal
+ *
+ * Bench-only escape hatch. When `skipChildrenFastPath` is true the children
+ * fast paths in `$reconcileChildren` are skipped and the general path
+ * (`$reconcileNodeChildren`) runs instead — used by `editorCycle.bench.ts`
+ * to produce a head-to-head A/B against the legacy walk in a single
+ * `vitest bench` run. Has no effect when false (default).
+ */
+export const __benchOnly = {
+  skipChildrenFastPath: false,
+};
+
 let subTreeTextContent = '';
 let subTreeTextFormat: number | null = null;
 let subTreeTextStyle: string | null = null;
+let subTreeFirstTextKey: NodeKey | null = null;
+
+// Save/restore guard for the leftmost-wins `subTreeFirstTextKey`
+// invariant. Any walk that recursively reconciles or creates element
+// children must wrap each iteration with `$beginCaptureGuard()` ...
+// `$endCaptureGuard(saved)` so the recursive scope's
+// `$reconcileChildrenWithDirection` reset doesn't clobber an
+// earlier sibling's captured first-text descriptor.
+//
+// Per-iteration object alloc relies on V8 escape analysis to keep
+// `CaptureGuard` off the heap — the shape is monomorphic and the
+// lifetime is deterministic, so stack alloc is the expected outcome.
+type CaptureGuard = {
+  firstTextKey: NodeKey | null;
+  format: number | null;
+  style: string | null;
+};
+
+function $beginCaptureGuard(): CaptureGuard {
+  return {
+    firstTextKey: subTreeFirstTextKey,
+    format: subTreeTextFormat,
+    style: subTreeTextStyle,
+  };
+}
+
+function $endCaptureGuard(saved: CaptureGuard): void {
+  if (saved.firstTextKey !== null) {
+    subTreeTextFormat = saved.format;
+    subTreeTextStyle = saved.style;
+    subTreeFirstTextKey = saved.firstTextKey;
+  }
+}
+
+// Bubble a non-dirty element child's cached first-text descriptor up to
+// the caller's scope so a non-dirty prefix carrying the canonical first
+// text still wins over a later dirty sibling. Only fires when the
+// caller hasn't already captured one.
+//
+// `__lexicalFirstTextKey` is a reconciler-maintained cache that
+// `$createNode` / `$reconcileNode` set on every element's outer keyed
+// DOM. `null` means "this element has no text descendant" (legitimate —
+// empty element, decorator); `undefined` means the cache is missing,
+// which is an invariant violation worth surfacing loudly rather than
+// silently falling through and losing the leftmost-wins capture.
+function $bubbleChildFirstText(
+  childKeyedDom: HTMLElement & LexicalPrivateDOM,
+): void {
+  if (subTreeFirstTextKey !== null) {
+    return;
+  }
+  const childFirstKey = childKeyedDom.__lexicalFirstTextKey;
+  invariant(
+    childFirstKey !== undefined,
+    '$bubbleChildFirstText: missing __lexicalFirstTextKey on element keyed DOM',
+  );
+  if (childFirstKey === null) {
+    return;
+  }
+  const textNode = activeNextNodeMap.get(childFirstKey);
+  if ($isTextNode(textNode)) {
+    subTreeTextFormat = textNode.getFormat();
+    subTreeTextStyle = textNode.getStyle();
+    subTreeFirstTextKey = childFirstKey;
+  }
+}
 let activeEditorConfig: EditorConfig;
 let activeEditor: LexicalEditor;
 let activeEditorNodes: RegisteredNodes;
@@ -63,7 +233,8 @@ let activeDirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>;
 let activeDirtyLeaves: Set<NodeKey>;
 let activePrevNodeMap: NodeMap;
 let activeNextNodeMap: NodeMap;
-let activePrevKeyToDOMMap: Map<NodeKey, HTMLElement>;
+let activePrevKeyToDOMMap: Map<NodeKey, HTMLElement & LexicalPrivateDOM>;
+let activeDirtyChildrenByParent: Map<NodeKey, Set<NodeKey>>;
 let mutatedNodes: MutatedNodes;
 let activeEditorDOMRenderConfig: EditorDOMRenderConfig;
 
@@ -219,7 +390,8 @@ function $createNode(key: NodeKey, slot: ElementDOMSlot | null): HTMLElement {
     }
   }
 
-  const dom = activeEditorDOMRenderConfig.$createDOM(node, activeEditor);
+  const dom: HTMLElement & LexicalPrivateDOM =
+    activeEditorDOMRenderConfig.$createDOM(node, activeEditor);
   storeDOMWithKey(key, dom, activeEditor);
 
   // This helps preserve the text, and stops spell check tools from
@@ -238,7 +410,13 @@ function $createNode(key: NodeKey, slot: ElementDOMSlot | null): HTMLElement {
     if (indent !== 0) {
       setElementIndent(dom, indent);
     }
-    if (childrenSize !== 0) {
+    if (childrenSize === 0) {
+      // Empty element: $createChildren's cache write is skipped, so set
+      // the cache explicitly on the keyed DOM. Symmetric with the
+      // (keyed-DOM) writes in $createChildren / $reconcileChildren.
+      dom.__lexicalTextContent = '';
+      dom.__lexicalFirstTextKey = null;
+    } else {
       const endIndex = childrenSize - 1;
       const children = $createChildrenArray(node, activeNextNodeMap);
       $createChildren(
@@ -279,6 +457,9 @@ function $createNode(key: NodeKey, slot: ElementDOMSlot | null): HTMLElement {
 
   activeEditorDOMRenderConfig.$decorateDOM(node, null, dom, activeEditor);
 
+  // Same cached-text-size invariant as $reconcileNode — every node leaving
+  // a reconciler entry point in the next state carries a current label.
+  $setCachedTextSize(node);
   if (__DEV__) {
     // Freeze the node in DEV to prevent accidental mutations
     Object.freeze(node);
@@ -301,17 +482,27 @@ function $createChildren(
   endIndex: number,
   slot: ElementDOMSlot,
 ): void {
+  // Save outer scope and reset module state so this walk's
+  // `dom.__lexicalFirstTextKey` write only reflects descendants captured
+  // here, not a leaked first-text key from an earlier sibling's outer
+  // walk. Mirrors what `$reconcileChildrenWithDirection` does at entry.
   const previousSubTreeTextContent = subTreeTextContent;
+  const outerSaved = $beginCaptureGuard();
   subTreeTextContent = '';
+  subTreeTextFormat = null;
+  subTreeTextStyle = null;
+  subTreeFirstTextKey = null;
   let startIndex = _startIndex;
 
   for (; startIndex <= endIndex; ++startIndex) {
+    const saved = $beginCaptureGuard();
     $createNode(children[startIndex], slot);
     const node = activeNextNodeMap.get(children[startIndex]);
     if (node !== null && $isTextNode(node)) {
       if (subTreeTextFormat === null) {
         subTreeTextFormat = node.getFormat();
         subTreeTextStyle = node.getStyle();
+        subTreeFirstTextKey = node.__key;
       }
     } else if (
       // inline $textContentRequiresDoubleLinebreakAtEnd
@@ -321,10 +512,25 @@ function $createChildren(
     ) {
       subTreeTextContent += DOUBLE_LINE_BREAK;
     }
+    $endCaptureGuard(saved);
   }
-  const dom: HTMLElement & LexicalPrivateDOM = slot.element;
-  dom.__lexicalTextContent = subTreeTextContent;
+  // Cache lives on the keyed DOM (outer wrapper) for wrapping elements;
+  // identical to `slot.element` otherwise. Look up rather than thread a
+  // parameter — the element's DOM is already in the map via
+  // `storeDOMWithKey` by the time we get here.
+  const cacheDom = activeEditor._keyToDOMMap.get(element.__key);
+  invariant(
+    cacheDom !== undefined,
+    '$createChildren: Element with key %s missing from keyToDOMMap',
+    element.__key,
+  );
+  cacheDom.__lexicalTextContent = subTreeTextContent;
+  cacheDom.__lexicalFirstTextKey = subTreeFirstTextKey;
   subTreeTextContent = previousSubTreeTextContent + subTreeTextContent;
+  // Outer-scope leftmost-wins: if the caller already had a first text
+  // captured, restore it. Otherwise leave this walk's first-text in the
+  // module state so the caller's outer walk picks it up.
+  $endCaptureGuard(outerSaved);
 }
 
 type LastChildState = 'line-break' | 'decorator' | 'empty';
@@ -397,13 +603,341 @@ function $reconcileChildrenWithDirection(
 ): void {
   subTreeTextFormat = null;
   subTreeTextStyle = null;
+  subTreeFirstTextKey = null;
   $reconcileChildren(
     prevElement,
     nextElement,
     activeEditorDOMRenderConfig.$getDOMSlot(nextElement, dom, activeEditor),
   );
-  reconcileTextFormat(nextElement);
-  reconcileTextStyle(nextElement);
+  if (!$isRootOrShadowRoot(nextElement)) {
+    // RootNode / ShadowRootNode never expose `__textFormat` / `__textStyle`
+    // to user code: `LexicalElementNode.exportJSON` excludes them (#7968)
+    // and selection inheritance only reads element format/style for
+    // empty-element anchors gated on `!isRootTextContentEmpty`. Skipping
+    // reconcile here keeps the invariant aligned and sidesteps the
+    // suffix-fast-path's stale-format edge case at the root level.
+    reconcileTextFormat(nextElement);
+    reconcileTextStyle(nextElement);
+  }
+}
+
+function $buildDirtyChildrenByParent(): Map<NodeKey, Set<NodeKey>> {
+  const map = new Map<NodeKey, Set<NodeKey>>();
+  const addKeysToMap = (keys: Iterable<NodeKey>): void => {
+    for (const key of keys) {
+      const node = activeNextNodeMap.get(key);
+      if (node === undefined) {
+        continue;
+      }
+      const parentKey = node.__parent;
+      if (parentKey === null) {
+        continue;
+      }
+      let set = map.get(parentKey);
+      if (set === undefined) {
+        set = new Set();
+        map.set(parentKey, set);
+      }
+      set.add(key);
+    }
+  };
+  addKeysToMap(activeDirtyElements.keys());
+  addKeysToMap(activeDirtyLeaves);
+  return map;
+}
+
+// Returns the key of the first child in the K-element suffix if all dirty
+// children form a contiguous suffix of `parent` (and 0 < K < total children).
+// Returns null otherwise — caller falls back to the full-walk fast path.
+function $suffixStartIfContiguous(
+  parent: ElementNode,
+  dirty: Set<NodeKey>,
+): NodeKey | null {
+  const k = dirty.size;
+  if (k === 0 || k >= parent.__size) {
+    return null;
+  }
+  let cur: NodeKey | null = parent.__last;
+  let suffixStart: NodeKey | null = null;
+  let i = 0;
+  while (cur !== null && i < k) {
+    if (!dirty.has(cur)) {
+      return null;
+    }
+    suffixStart = cur;
+    const node = activeNextNodeMap.get(cur);
+    if (node === undefined) {
+      return null;
+    }
+    cur = node.__prev;
+    i++;
+  }
+  if (i !== k) {
+    return null;
+  }
+  // The element immediately before the suffix must be non-dirty
+  // (cur === null is excluded by the k < parent.__size check above).
+  if (cur !== null && dirty.has(cur)) {
+    return null;
+  }
+  return suffixStart;
+}
+
+// Suffix-incremental fast path for ±1 children-size mutations.
+// Two structural patterns are supported (others bail to the general path):
+//   - sizeDelta=+1, K=2: append at end, or end-split where one node
+//     becomes two. Last 2 children of `nextElement` are dirty; one prev
+//     child corresponds.
+//   - sizeDelta=-1, K=1: boundary-collapse (e.g. backspace at the start
+//     of a block merging into the previous). Last 1 child of `nextElement`
+//     is dirty; two prev children correspond.
+// (The same-size sizeDelta=0 case is inlined in `$reconcileChildren` and
+// uses the same splice math with a simpler suffix walk.)
+//
+// Returns true if the cache was spliced and DOM mutated; false on bail
+// (K mismatch, boundary mismatch, or out-of-order suffix overlap), in
+// which case the caller falls through to `$reconcileNodeChildren`.
+function $tryReconcileSuffixWithSizeDelta(
+  prevElement: ElementNode,
+  nextElement: ElementNode,
+  slot: ElementDOMSlot,
+  cacheDom: HTMLElement & LexicalPrivateDOM,
+  cachedParentText: string,
+  suffixStartKey: NodeKey,
+  k: number,
+  sizeDelta: number,
+): boolean {
+  // `slot.element` is the inner DOM where children live and where DOM
+  // operations (replaceChild / removeChild / insertBefore) must target;
+  // `cacheDom` is the outer keyed DOM that holds the parent's text-content
+  // cache. For non-wrapping ElementNodes they're the same element; for
+  // wrapping nodes (e.g. TableNode with a scrollable wrapper) they differ
+  // and routing each role to the right element matters for correctness.
+  // Caller invariant: this helper only handles ±1 children-size mutations.
+  // Bailing on anything else preserves defense-in-depth in case the
+  // upstream gate ever loosens.
+  if (sizeDelta !== 1 && sizeDelta !== -1) {
+    return false;
+  }
+  // Only the two patterns above are supported; e.g. K=3 dirty after a
+  // split-into-three, or K=1 with sizeDelta=+1 (pure append with no
+  // sibling cloned for `__next` link), all bail.
+  const expectedK = sizeDelta === 1 ? 2 : 1;
+  if (k !== expectedK) {
+    return false;
+  }
+  // K' = K − sizeDelta: delta=+1, K=2 → K'=1; delta=-1, K=1 → K'=2.
+  const kPrime = k - sizeDelta;
+  let prevSuffixStartKey: NodeKey | null = prevElement.__last;
+  for (let i = 0; i < kPrime - 1; i++) {
+    if (prevSuffixStartKey === null) {
+      return false;
+    }
+    const node = activePrevNodeMap.get(prevSuffixStartKey);
+    if (node === undefined) {
+      return false;
+    }
+    prevSuffixStartKey = node.__prev;
+  }
+  if (prevSuffixStartKey === null) {
+    return false;
+  }
+  const nextStartNode = activeNextNodeMap.get(suffixStartKey);
+  const prevStartNode = activePrevNodeMap.get(prevSuffixStartKey);
+  if (nextStartNode === undefined || prevStartNode === undefined) {
+    return false;
+  }
+  // Boundary identity: the node immediately before the suffix in next must
+  // match the corresponding node in prev. Both null (suffix starts at first
+  // child) is a match too.
+  if (nextStartNode.__prev !== prevStartNode.__prev) {
+    return false;
+  }
+  const nextSuffixKeys: NodeKey[] = [];
+  let cur: NodeKey | null = suffixStartKey;
+  for (let i = 0; i < k; i++) {
+    if (cur === null) {
+      return false;
+    }
+    nextSuffixKeys.push(cur);
+    const node = activeNextNodeMap.get(cur);
+    cur = node ? node.__next : null;
+  }
+  const prevSuffixKeys: NodeKey[] = [];
+  cur = prevSuffixStartKey;
+  for (let i = 0; i < kPrime; i++) {
+    if (cur === null) {
+      return false;
+    }
+    prevSuffixKeys.push(cur);
+    const node = activePrevNodeMap.get(cur);
+    cur = node ? node.__next : null;
+  }
+  // Two-pointer walk to validate ordering and plan ops in next-order.
+  // Bail if a key is in both suffixes but at different positions (reorder).
+  const prevSet = new Set(prevSuffixKeys);
+  const nextSet = new Set(nextSuffixKeys);
+  type SuffixOp =
+    | {kind: 'reconcile'; key: NodeKey}
+    | {kind: 'create'; key: NodeKey; nextIndex: number}
+    | {kind: 'destroy'; key: NodeKey};
+  const ops: SuffixOp[] = [];
+  let pi = 0;
+  let ni = 0;
+  while (pi < kPrime && ni < k) {
+    if (nextSuffixKeys[ni] === prevSuffixKeys[pi]) {
+      ops.push({key: nextSuffixKeys[ni], kind: 'reconcile'});
+      pi++;
+      ni++;
+    } else if (!nextSet.has(prevSuffixKeys[pi])) {
+      ops.push({key: prevSuffixKeys[pi], kind: 'destroy'});
+      pi++;
+    } else if (!prevSet.has(nextSuffixKeys[ni])) {
+      ops.push({key: nextSuffixKeys[ni], kind: 'create', nextIndex: ni});
+      ni++;
+    } else {
+      return false;
+    }
+  }
+  while (pi < kPrime) {
+    ops.push({key: prevSuffixKeys[pi++], kind: 'destroy'});
+  }
+  while (ni < k) {
+    ops.push({key: nextSuffixKeys[ni], kind: 'create', nextIndex: ni});
+    ni++;
+  }
+  let oldSuffixLength = 0;
+  for (let i = 0; i < kPrime; i++) {
+    const prevNode = activePrevNodeMap.get(prevSuffixKeys[i]);
+    if (prevNode === undefined) {
+      return false;
+    }
+    oldSuffixLength += $cachedTextSize(prevNode);
+    if (i < kPrime - 1 && $isElementNode(prevNode) && !prevNode.isInline()) {
+      oldSuffixLength += DOUBLE_LINE_BREAK.length;
+    }
+  }
+  for (const op of ops) {
+    const saved = $beginCaptureGuard();
+    if (op.kind === 'reconcile') {
+      $reconcileNode(op.key, slot.element);
+    } else if (op.kind === 'destroy') {
+      $destroyNode(op.key, slot.element);
+    } else {
+      let beforeDOM: Node | null = null;
+      for (let j = op.nextIndex + 1; j < k; j++) {
+        const siblingDOM = activeEditor._keyToDOMMap.get(nextSuffixKeys[j]);
+        if (siblingDOM !== undefined) {
+          beforeDOM = siblingDOM;
+          break;
+        }
+      }
+      $createNode(op.key, slot.withBefore(beforeDOM));
+    }
+    if (op.kind !== 'destroy') {
+      const opNode = activeNextNodeMap.get(op.key);
+      if (opNode && $isTextNode(opNode) && subTreeTextFormat === null) {
+        subTreeTextFormat = opNode.getFormat();
+        subTreeTextStyle = opNode.getStyle();
+        subTreeFirstTextKey = opNode.__key;
+      }
+    }
+    $endCaptureGuard(saved);
+  }
+  let newSuffix = '';
+  for (let i = 0; i < k; i++) {
+    const node = activeNextNodeMap.get(nextSuffixKeys[i]);
+    if (node === undefined) {
+      return false;
+    }
+    let text: string;
+    if ($isElementNode(node)) {
+      const childKeyedDom = activeEditor._keyToDOMMap.get(nextSuffixKeys[i]);
+      const cached = childKeyedDom && childKeyedDom.__lexicalTextContent;
+      invariant(
+        typeof cached === 'string',
+        'tryReconcileSuffixWithSizeDelta: missing __lexicalTextContent on child of type %s after suffix reconcile',
+        node.getType(),
+      );
+      text = cached;
+    } else {
+      text = node.getTextContent();
+    }
+    newSuffix += text;
+    if (i < k - 1 && $isElementNode(node) && !node.isInline()) {
+      newSuffix += DOUBLE_LINE_BREAK;
+    }
+  }
+  const newParentText =
+    cachedParentText.slice(0, cachedParentText.length - oldSuffixLength) +
+    newSuffix;
+  cacheDom.__lexicalTextContent = newParentText;
+  return true;
+}
+
+/**
+ * Decide whether the post-suffix-walk values of `subTreeTextFormat` /
+ * `subTreeTextStyle` should be kept (the prefix has no text descendant
+ * and the suffix carries the canonical first text) or replaced with the
+ * prev-cycle's canonical values (the prefix is still authoritative).
+ *
+ * The cached `__lexicalFirstTextKey` on `dom` is the deep TextNode key
+ * recorded when this element's children were last walked. We climb its
+ * ancestor chain in next-state until we reach a direct child of
+ * `nextElement`, then probe `dirtyChildren`: if that direct child is
+ * dirty (or the cached key is missing from the next map), the cached
+ * key has been moved into the suffix's subtree or destroyed, so the
+ * suffix-derived values are authoritative. Otherwise the prefix is
+ * canonical and we recover format/style from the live text node, which
+ * lets `reconcileTextFormat` / `reconcileTextStyle` no-op via their
+ * existing equality check against the parent's `__textFormat` /
+ * `__textStyle`.
+ *
+ * Walk depth is bounded by tree depth from the text node to the
+ * reconciled element (typically 1 — text directly under a paragraph).
+ * Always refreshes the cache for the next cycle.
+ */
+function $resolveSuffixPathFormat(
+  nextElement: ElementNode,
+  dom: HTMLElement & LexicalPrivateDOM,
+  dirtyChildren: Set<NodeKey>,
+): void {
+  const cachedFirstTextKey = dom.__lexicalFirstTextKey;
+  if (cachedFirstTextKey != null) {
+    const parentKey = nextElement.__key;
+    let ancestor: NodeKey | null = cachedFirstTextKey;
+    while (ancestor !== null) {
+      const node = activeNextNodeMap.get(ancestor);
+      if (node === undefined) {
+        ancestor = null;
+        break;
+      }
+      if (node.__parent === parentKey) {
+        break;
+      }
+      ancestor = node.__parent;
+    }
+    if (ancestor !== null && !dirtyChildren.has(ancestor)) {
+      const textNode = activeNextNodeMap.get(cachedFirstTextKey);
+      if ($isTextNode(textNode)) {
+        // Prefix carries the canonical first text descendant. Recover
+        // format/style from the live next-state node — `reconcileTextFormat`
+        // will compare against `nextElement.__textFormat` and no-op when
+        // the prev cycle's value is still correct.
+        subTreeTextFormat = textNode.getFormat();
+        subTreeTextStyle = textNode.getStyle();
+        // Cache key is unchanged this cycle.
+        return;
+      }
+    }
+  }
+  // Either no prev text descendant, ancestor not found, or ancestor is
+  // dirty. Keep the suffix-derived `subTreeTextFormat` / `subTreeTextStyle`
+  // so reconcileTextFormat updates the parent (or no-ops on root /
+  // shadow root via the gate). Refresh the cache to reflect this cycle's
+  // first text descendant, recorded by the recursive suffix-child walks
+  // into `subTreeFirstTextKey`.
+  dom.__lexicalFirstTextKey = subTreeFirstTextKey;
 }
 
 function $reconcileChildren(
@@ -415,7 +949,239 @@ function $reconcileChildren(
   const prevChildrenSize = prevElement.__size;
   const nextChildrenSize = nextElement.__size;
   subTreeTextContent = '';
+  // `dom` is `slot.element` (the inner DOM where children live and where
+  // DOM operations target). `cacheDom` is the keyed DOM (outer wrapper
+  // for nodes that wrap, identical to `dom` otherwise) and holds the
+  // `__lexicalTextContent` / `__lexicalFirstTextKey` caches for this
+  // element. Keeping them split lets wrapping nodes (TableNode etc.)
+  // route cache R/W to the outer DOM while DOM ops stay on the slot.
   const dom: HTMLElement & LexicalPrivateDOM = slot.element;
+  const cacheDom = activeEditor._keyToDOMMap.get(nextElement.__key);
+  invariant(
+    cacheDom !== undefined,
+    '$reconcileChildren: Element with key %s missing from keyToDOMMap',
+    nextElement.__key,
+  );
+
+  const sizeDelta = nextChildrenSize - prevChildrenSize;
+  if (
+    !__benchOnly.skipChildrenFastPath &&
+    Math.abs(sizeDelta) <= 1 &&
+    prevChildrenSize >= MIN_FAST_PATH_CHILDREN &&
+    prevElement.__first === nextElement.__first &&
+    // For sizeDelta=0 the parent must not have been cloned this cycle —
+    // any structural mutation routed through Lexical's mutation API
+    // (insertBefore/insertAfter/replace/remove/append etc.) keeps the
+    // parent in `_cloneNotNeeded` via `getWritable()`, so this single
+    // check already covers a stale `__last` for those cases. Direct
+    // pointer mutation that bypasses `getWritable()` is outside the
+    // contract and not guarded against here. For sizeDelta=±1 the
+    // parent is always cloned (its `__size` mutation goes through
+    // `getWritable`), so the same check would dead-code that branch.
+    (sizeDelta !== 0 || !activeEditor._cloneNotNeeded.has(prevElement.__key))
+  ) {
+    // Suffix-incremental fast path: when the dirty children form a
+    // contiguous suffix and the parent already has a valid cached text,
+    // splice the new suffix into the cache instead of walking every child.
+    // The non-dirty prefix (and its DLB into the suffix) stays untouched,
+    // so format/style propagation — which captures the first text descendant
+    // — is unaffected.
+    const cachedParentText = cacheDom.__lexicalTextContent;
+    const dirtyChildren = activeDirtyChildrenByParent.get(prevElement.__key);
+    if (
+      !treatAllNodesAsDirty &&
+      typeof cachedParentText === 'string' &&
+      dirtyChildren !== undefined
+    ) {
+      const suffixStartKey = $suffixStartIfContiguous(
+        nextElement,
+        dirtyChildren,
+      );
+      if (suffixStartKey !== null) {
+        const k = dirtyChildren.size;
+        if (sizeDelta === 0) {
+          let oldSuffixLength = 0;
+          let cur: NodeKey | null = suffixStartKey;
+          let i = 0;
+          while (cur !== null && i < k) {
+            const prevNode = activePrevNodeMap.get(cur);
+            if (prevNode === undefined) {
+              break;
+            }
+            oldSuffixLength += $cachedTextSize(prevNode);
+            if (i < k - 1 && $isElementNode(prevNode) && !prevNode.isInline()) {
+              oldSuffixLength += DOUBLE_LINE_BREAK.length;
+            }
+            const nextNodeForLink = activeNextNodeMap.get(cur);
+            cur = nextNodeForLink ? nextNodeForLink.__next : null;
+            i++;
+          }
+
+          cur = suffixStartKey;
+          i = 0;
+          while (cur !== null && i < k) {
+            const node = activeNextNodeMap.get(cur);
+            if (node === undefined) {
+              break;
+            }
+            const saved = $beginCaptureGuard();
+            $reconcileNode(cur, dom);
+            if ($isTextNode(node) && subTreeTextFormat === null) {
+              subTreeTextFormat = node.getFormat();
+              subTreeTextStyle = node.getStyle();
+              subTreeFirstTextKey = node.__key;
+            }
+            $endCaptureGuard(saved);
+            cur = node.__next;
+            i++;
+          }
+
+          let newSuffix = '';
+          cur = suffixStartKey;
+          i = 0;
+          while (cur !== null && i < k) {
+            const node = activeNextNodeMap.get(cur);
+            if (node === undefined) {
+              break;
+            }
+            let text: string;
+            if ($isElementNode(node)) {
+              // Read from the current keyed DOM map, not the prev snapshot.
+              // The just-completed reconcile loop above can fire
+              // `$reconcileNode`'s `parentDOM.replaceChild` branch when a
+              // dirty child's `$updateDOM` returns true (e.g. `ListNode`
+              // toggling `__tag` / `__listType`); the snapshot would still
+              // point at the detached old DOM whose `__lexicalTextContent`
+              // is from the previous cycle. Mirrors the size-delta helper
+              // at L856.
+              const childKeyedDom = activeEditor._keyToDOMMap.get(cur);
+              const cached =
+                childKeyedDom && childKeyedDom.__lexicalTextContent;
+              invariant(
+                typeof cached === 'string',
+                'reconcileChildren same-size suffix: missing __lexicalTextContent on child of type %s after reconcile',
+                node.getType(),
+              );
+              text = cached;
+            } else {
+              text = node.getTextContent();
+            }
+            newSuffix += text;
+            if (i < k - 1 && $isElementNode(node) && !node.isInline()) {
+              newSuffix += DOUBLE_LINE_BREAK;
+            }
+            cur = node.__next;
+            i++;
+          }
+
+          const newParentText =
+            cachedParentText.slice(
+              0,
+              cachedParentText.length - oldSuffixLength,
+            ) + newSuffix;
+          cacheDom.__lexicalTextContent = newParentText;
+          subTreeTextContent = previousSubTreeTextContent + newParentText;
+          // Recover the canonical first-text format/style for this parent.
+          // If the prefix carries it, `reconcileTextFormat` no-ops via
+          // equality. If the prefix has no text descendant, the
+          // suffix-derived values stay and propagate correctly.
+          $resolveSuffixPathFormat(nextElement, cacheDom, dirtyChildren);
+          return;
+        }
+        if (
+          $tryReconcileSuffixWithSizeDelta(
+            prevElement,
+            nextElement,
+            slot,
+            cacheDom,
+            cachedParentText,
+            suffixStartKey,
+            k,
+            sizeDelta,
+          )
+        ) {
+          // Helper returns true only after writing cacheDom.__lexicalTextContent
+          // (helper body's final line). Match the PR-wide strict-on-miss
+          // policy rather than masking a future regression with `?? ''`.
+          const newCachedText = cacheDom.__lexicalTextContent;
+          invariant(
+            typeof newCachedText === 'string',
+            'reconcileChildren: $tryReconcileSuffixWithSizeDelta returned true without writing __lexicalTextContent',
+          );
+          subTreeTextContent = previousSubTreeTextContent + newCachedText;
+          $resolveSuffixPathFormat(nextElement, cacheDom, dirtyChildren);
+          return;
+        }
+        // Bail: helper rejected the size-delta candidate (K mismatch,
+        // boundary mismatch, or out-of-order suffix overlap). Fall through
+        // to the outer general path.
+      }
+    }
+
+    if (sizeDelta === 0) {
+      let nodeKey: NodeKey | null = prevElement.__first;
+      let i = 0;
+      while (nodeKey !== null) {
+        const node = activeNextNodeMap.get(nodeKey);
+        if (node === undefined) {
+          break;
+        }
+        const isDirty =
+          treatAllNodesAsDirty ||
+          activeDirtyLeaves.has(nodeKey) ||
+          activeDirtyElements.has(nodeKey);
+        const saved = $beginCaptureGuard();
+        if (isDirty) {
+          $reconcileNode(nodeKey, dom);
+        } else {
+          // Subtree is structurally and content-clean — accumulate the
+          // cached text from the existing DOM rather than walking back
+          // through `$reconcileNode`.
+          let text: string;
+          let childKeyedDom: undefined | (HTMLElement & LexicalPrivateDOM);
+          if ($isElementNode(node)) {
+            childKeyedDom = activePrevKeyToDOMMap.get(nodeKey);
+            const cached = childKeyedDom && childKeyedDom.__lexicalTextContent;
+            invariant(
+              typeof cached === 'string',
+              'reconcileChildren structurally-clean walk: missing __lexicalTextContent on non-dirty child of type %s',
+              node.getType(),
+            );
+            text = cached;
+          } else {
+            text = node.getTextContent();
+          }
+          subTreeTextContent += text;
+          if (childKeyedDom !== undefined) {
+            $bubbleChildFirstText(childKeyedDom);
+          }
+        }
+        if ($isTextNode(node)) {
+          if (subTreeTextFormat === null) {
+            subTreeTextFormat = node.getFormat();
+            subTreeTextStyle = node.getStyle();
+            subTreeFirstTextKey = node.__key;
+          }
+        } else if (
+          $isElementNode(node) &&
+          i < nextChildrenSize - 1 &&
+          !node.isInline()
+        ) {
+          subTreeTextContent += DOUBLE_LINE_BREAK;
+        }
+        $endCaptureGuard(saved);
+        nodeKey = node.__next;
+        i++;
+      }
+      cacheDom.__lexicalTextContent = subTreeTextContent;
+      cacheDom.__lexicalFirstTextKey = subTreeFirstTextKey;
+      subTreeTextContent = previousSubTreeTextContent + subTreeTextContent;
+      return;
+    }
+    // sizeDelta !== 0 with no successful suffix-incremental path: fall
+    // through to the outer general walk (`$reconcileNodeChildren`), which
+    // handles arbitrary size changes.
+  }
 
   if (prevChildrenSize === 1 && nextChildrenSize === 1) {
     const prevFirstChildKey: NodeKey = prevElement.__first!;
@@ -455,6 +1221,7 @@ function $reconcileChildren(
       if (subTreeTextFormat === null) {
         subTreeTextFormat = nextChildNode.getFormat();
         subTreeTextStyle = nextChildNode.getStyle();
+        subTreeFirstTextKey = nextChildNode.__key;
       }
     }
   } else {
@@ -510,7 +1277,8 @@ function $reconcileChildren(
     }
   }
 
-  dom.__lexicalTextContent = subTreeTextContent;
+  cacheDom.__lexicalTextContent = subTreeTextContent;
+  cacheDom.__lexicalFirstTextKey = subTreeFirstTextKey;
   subTreeTextContent = previousSubTreeTextContent + subTreeTextContent;
 }
 
@@ -544,12 +1312,23 @@ function $reconcileNode(
     let text: string;
     if ($isElementNode(prevNode)) {
       const previousSubTreeTextContent = dom.__lexicalTextContent;
-      if (typeof previousSubTreeTextContent === 'string') {
-        text = previousSubTreeTextContent;
-      } else {
-        text = prevNode.getTextContent();
-        dom.__lexicalTextContent = text;
-      }
+      // Strict invariant — every element reconciled in a previous cycle has
+      // both `__lexicalTextContent` and `__lexicalFirstTextKey` set on its
+      // keyed DOM by `$createNode` / `$reconcileChildren`. A missing cache
+      // here would silently desync the parent text accumulation and pair
+      // with `$bubbleChildFirstText`'s own strict invariant a line below,
+      // so fail loudly here instead.
+      invariant(
+        typeof previousSubTreeTextContent === 'string',
+        'reconcileNode: missing __lexicalTextContent on non-dirty element of type %s',
+        prevNode.getType(),
+      );
+      text = previousSubTreeTextContent;
+      // Bubble this clean element's cached first-text descendant up to the
+      // caller's scope so a non-dirty prefix carrying the canonical first
+      // text still wins over a later dirty sibling whose recursion would
+      // otherwise clobber the module state.
+      $bubbleChildFirstText(dom);
     } else {
       text = prevNode.getTextContent();
     }
@@ -612,15 +1391,24 @@ function $reconcileNode(
         $reconcileElementTerminatingLineBreak(prevNode, nextNode, dom);
       }
     } else {
+      // Currently unreachable under normal flow — `getWritable()` always
+      // calls `internalMarkNodeAsDirty` (LexicalNode.ts: getWritable),
+      // so a non-identity (`prevNode !== nextNode`) reconcile implies
+      // `isDirty` is true. Kept as defense-in-depth in case the dirty
+      // propagation contract changes.
       const previousSubTreeTextContent = dom.__lexicalTextContent;
-      let text: string;
-      if (typeof previousSubTreeTextContent === 'string') {
-        text = previousSubTreeTextContent;
-      } else {
-        text = prevNode.getTextContent();
-        dom.__lexicalTextContent = text;
-      }
-      subTreeTextContent += text;
+      // Same strict invariant as the prevNode === nextNode branch above —
+      // the cache is set on every reconciled element and surviving until
+      // here without one means an upstream invariant was broken.
+      invariant(
+        typeof previousSubTreeTextContent === 'string',
+        'reconcileNode: missing __lexicalTextContent on cloned non-dirty element of type %s',
+        prevNode.getType(),
+      );
+      subTreeTextContent += previousSubTreeTextContent;
+      // Mirror the prevNode === nextNode branch: bubble this clean element's
+      // cached first-text descendant up to the caller's scope.
+      $bubbleChildFirstText(dom);
     }
 
     if (
@@ -661,27 +1449,31 @@ function $reconcileNode(
     subTreeTextContent += text;
   }
 
-  if (
-    !activeEditorStateReadOnly &&
-    $isRootNode(nextNode) &&
-    nextNode.__cachedText !== subTreeTextContent
-  ) {
-    // Cache the latest text content.
-    const nextRootNode = nextNode.getWritable();
-    nextRootNode.__cachedText = subTreeTextContent;
-    // This invariant from #8099 is left commented out for performance reasons
-    // if (__DEV__) {
-    //   const computedTextContent =
-    //     ElementNode.prototype.getTextContent.call(nextRootNode);
-    //   devInvariant(
-    //     computedTextContent === subTreeTextContent,
-    //     'LexicalReconciler: Computed nextRootNode.getTextContent() does not match nextRootNode.__cachedText %s !== %s (dom.__lexicalTextContent %s)',
-    //     JSON.stringify(computedTextContent),
-    //     JSON.stringify(subTreeTextContent),
-    //     JSON.stringify(dom.__lexicalTextContent),
-    //   );
-    // }
-    nextNode = nextRootNode;
+  if (!activeEditorStateReadOnly && $isRootNode(nextNode)) {
+    // Re-fetch the latest root: a child reconcile (e.g. `reconcileTextFormat`
+    // calling `setTextFormat` on the parent) can clone the root mid-cycle,
+    // leaving the local `nextNode` pointing at a stale instance whose
+    // `__cachedText` would no-op the comparison below while the actual root
+    // in the map carries `null` (RootNode constructor's default).
+    const latestRoot = nextNode.getLatest();
+    if (latestRoot.__cachedText !== subTreeTextContent) {
+      // Cache the latest text content.
+      const nextRootNode = latestRoot.getWritable();
+      nextRootNode.__cachedText = subTreeTextContent;
+      // This invariant from #8099 is left commented out for performance reasons
+      // if (__DEV__) {
+      //   const computedTextContent =
+      //     ElementNode.prototype.getTextContent.call(nextRootNode);
+      //   devInvariant(
+      //     computedTextContent === subTreeTextContent,
+      //     'LexicalReconciler: Computed nextRootNode.getTextContent() does not match nextRootNode.__cachedText %s !== %s (dom.__lexicalTextContent %s)',
+      //     JSON.stringify(computedTextContent),
+      //     JSON.stringify(subTreeTextContent),
+      //     JSON.stringify(dom.__lexicalTextContent),
+      //   );
+      // }
+      nextNode = nextRootNode;
+    }
   }
 
   activeEditorDOMRenderConfig.$decorateDOM(
@@ -690,6 +1482,11 @@ function $reconcileNode(
     dom,
     activeEditor,
   );
+  // Maintain the cached-text-size invariant: every reconciled node carries
+  // a current label so the next cycle's reads of the previous-state
+  // instance are O(1) and never need to fall through to a recursive walk
+  // that would resolve via `getLatest()` -> next state.
+  $setCachedTextSize(nextNode);
   if (__DEV__) {
     // Freeze the node in DEV to prevent accidental mutations
     Object.freeze(nextNode);
@@ -751,6 +1548,7 @@ function $reconcileNodeChildren(
   while (prevIndex <= prevEndIndex && nextIndex <= nextEndIndex) {
     const prevKey = prevChildren[prevIndex];
     const nextKey = nextChildren[nextIndex];
+    const saved = $beginCaptureGuard();
 
     if (prevKey === nextKey) {
       siblingDOM = getNextSibling($reconcileNode(nextKey, slot.element));
@@ -765,6 +1563,7 @@ function $reconcileNodeChildren(
       } else if (!prevChildrenSet.has(prevKey)) {
         // continue if prevKey has already been moved
         prevIndex++;
+        $endCaptureGuard(saved);
         continue;
       }
       if (!nextChildrenSet.has(prevKey)) {
@@ -773,6 +1572,7 @@ function $reconcileNodeChildren(
         $destroyNode(prevKey, slot.element);
         prevIndex++;
         prevChildrenSet.delete(prevKey);
+        $endCaptureGuard(saved);
         continue;
       }
       if (!prevChildrenSet.has(nextKey)) {
@@ -797,6 +1597,7 @@ function $reconcileNodeChildren(
       if (subTreeTextFormat === null) {
         subTreeTextFormat = node.getFormat();
         subTreeTextStyle = node.getStyle();
+        subTreeFirstTextKey = node.__key;
       }
     } else if (
       // inline $textContentRequiresDoubleLinebreakAtEnd
@@ -806,6 +1607,7 @@ function $reconcileNodeChildren(
     ) {
       subTreeTextContent += DOUBLE_LINE_BREAK;
     }
+    $endCaptureGuard(saved);
   }
 
   const appendNewChildren = prevIndex > prevEndIndex;
@@ -839,7 +1641,12 @@ export function $reconcileRoot(
 ): MutatedNodes {
   // We cache text content to make retrieval more efficient.
   // The cache must be rebuilt during reconciliation to account for any changes.
+  // Reset all four sub-tree accumulators at cycle start so the
+  // first-text/format/style invariant doesn't carry state across cycles.
   subTreeTextContent = '';
+  subTreeTextFormat = null;
+  subTreeTextStyle = null;
+  subTreeFirstTextKey = null;
   // Rather than pass around a load of arguments through the stack recursively
   // we instead set them as bindings within the scope of the module.
   treatAllNodesAsDirty = dirtyType === FULL_RECONCILE;
@@ -854,6 +1661,7 @@ export function $reconcileRoot(
   activeNextNodeMap = nextEditorState._nodeMap;
   activeEditorStateReadOnly = nextEditorState._readOnly;
   activePrevKeyToDOMMap = cloneMap(editor._keyToDOMMap);
+  activeDirtyChildrenByParent = $buildDirtyChildrenByParent();
   // We keep track of mutated nodes so we can trigger mutation
   // listeners later in the update cycle.
   const currentMutatedNodes = new Map();
@@ -879,6 +1687,8 @@ export function $reconcileRoot(
   activeEditorConfig = undefined;
   // @ts-ignore
   activePrevKeyToDOMMap = undefined;
+  // @ts-ignore
+  activeDirtyChildrenByParent = undefined;
   // @ts-ignore
   mutatedNodes = undefined;
   activeEditorDOMRenderConfig = DEFAULT_EDITOR_DOM_CONFIG;

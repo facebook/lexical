@@ -71,12 +71,7 @@ export function $insertList(listType: ListType): void {
   if (selection !== null) {
     let nodes = selection.getNodes();
     if ($isRangeSelection(selection)) {
-      const anchorAndFocus = selection.getStartEndPoints();
-      invariant(
-        anchorAndFocus !== null,
-        'insertList: anchor should be defined',
-      );
-      const [anchor] = anchorAndFocus;
+      const [anchor] = selection.getStartEndPoints();
       const anchorNode = anchor.getNode();
       const anchorNodeParent = anchorNode.getParent();
 

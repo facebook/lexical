@@ -9,23 +9,21 @@ on:
         default: 0
         type: number
 
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
 jobs:
   release:
     if: github.repository_owner == 'facebook'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-
-      - name: Configure Node.js
-        uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-pnpm
         with:
           node-version: 24.x
-
-      - uses: pnpm/action-setup@v6
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
       - name: Zip & submit to stores
         run: pnpm run publish-extension
         env:

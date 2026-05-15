@@ -36,6 +36,7 @@
   },
   "dependencies": {
     "@lexical/clipboard": "workspace:*",
+    "@lexical/extension": "workspace:*",
     "@lexical/dragon": "workspace:*",
     "@lexical/selection": "workspace:*",
     "@lexical/utils": "workspace:*",

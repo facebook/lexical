@@ -19,11 +19,9 @@ import type {
 import {TableSelection} from '@lexical/table';
 import {
   $caretFromPoint,
-  $createRangeSelection,
   $extendCaretToRange,
   $findMatchingParent,
   $getPreviousSelection,
-  $getSelection,
   $hasAncestor,
   $isChildCaret,
   $isDecoratorNode,
@@ -76,12 +74,8 @@ export function $setBlocksType<T extends ElementNode>(
   // expand it here
   const anchorAndFocus = selection.getStartEndPoints();
   const blockMap = new Map<NodeKey, ElementNode>();
-  let newSelection: RangeSelection | null = null;
   if (anchorAndFocus) {
     const [anchor, focus] = anchorAndFocus;
-    newSelection = $createRangeSelection();
-    newSelection.anchor.set(anchor.key, anchor.offset, anchor.type);
-    newSelection.focus.set(focus.key, focus.offset, focus.type);
     const anchorBlock = $findMatchingParent(
       anchor.getNode(),
       INTERNAL_$isBlock,
@@ -104,29 +98,13 @@ export function $setBlocksType<T extends ElementNode>(
       }
     }
   }
-  for (const [key, prevNode] of blockMap) {
+  // Selection remapping is delegated to LexicalNode.replace (and the
+  // ListItemNode.replace override): both remap an element-anchored point
+  // on the replaced block to {key: replacement, offset: prevSize + offset}.
+  for (const [, prevNode] of blockMap) {
     const element = $createElement();
     $afterCreateElement(prevNode, element);
     prevNode.replace(element, true);
-    if (newSelection) {
-      if (key === newSelection.anchor.key) {
-        newSelection.anchor.set(
-          element.getKey(),
-          newSelection.anchor.offset,
-          newSelection.anchor.type,
-        );
-      }
-      if (key === newSelection.focus.key) {
-        newSelection.focus.set(
-          element.getKey(),
-          newSelection.focus.offset,
-          newSelection.focus.type,
-        );
-      }
-    }
-  }
-  if (newSelection && selection.is($getSelection())) {
-    $setSelection(newSelection);
   }
 }
 
@@ -326,14 +304,17 @@ export function $wrapNodesImpl(
         elementMapping.set(parentKey, targetElement);
         // Move node and its siblings to the new
         // element.
-        parent.getChildren().forEach(child => {
-          targetElement.append(child);
+        const children = parent.getChildren();
+        targetElement.splice(targetElement.getChildrenSize(), 0, children);
+        for (const child of children) {
           movedNodes.add(child.getKey());
           if ($isElementNode(child)) {
             // Skip nested leaf nodes if the parent has already been moved
-            child.getChildrenKeys().forEach(key => movedNodes.add(key));
+            for (const key of child.getChildrenKeys()) {
+              movedNodes.add(key);
+            }
           }
-        });
+        }
         $removeParentEmptyElements(parent);
       }
     } else if (emptyElements.has(node.getKey())) {

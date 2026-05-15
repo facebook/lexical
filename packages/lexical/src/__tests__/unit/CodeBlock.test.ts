@@ -92,6 +92,11 @@ describe('CodeBlock tests', () => {
           pastedHTML: `<meta charset='utf-8'><code>1<br>2</code>`,
         },
         {
+          expectedHTML: `<code spellcheck="false" dir="auto"><span data-lexical-text="true">1</span><br><span data-lexical-text="true">2</span></code>`,
+          name: 'Multiline <code> with nested <br>',
+          pastedHTML: `<meta charset='utf-8'><code><span>1<br>2</span></code>`,
+        },
+        {
           expectedHTML: `<p dir="auto"><strong class="editor-text-bold editor-text-italic editor-text-underline" data-lexical-text="true">Hello </strong><sub data-lexical-text="true"><strong class="editor-text-bold editor-text-italic">World </strong></sub><sup data-lexical-text="true"><strong class="editor-text-bold editor-text-italic editor-text-underline">Lexical</strong></sup></p>`,
           name: 'Multiple text formats',
           pastedHTML: `<strong style="font-weight: 700; font-style: italic; text-decoration: underline; color: rgb(0, 0, 0); font-size: 15px; text-align: left; text-indent: 0px; background-color: rgb(255, 255, 255);">Hello </strong><sub style="color: rgb(0, 0, 0); font-style: normal; font-weight: 400; text-align: left; text-indent: 0px; background-color: rgb(255, 255, 255);"><strong style="font-weight: 700; font-style: italic; text-decoration: line-through; font-size: 0.8em; vertical-align: sub !important;">World </strong></sub><sup style="color: rgb(0, 0, 0); font-style: normal; font-weight: 400; text-align: left; text-indent: 0px; background-color: rgb(255, 255, 255);"><strong style="font-weight: 700; font-style: italic; text-decoration: underline line-through; font-size: 0.8em; vertical-align: super;">Lexical</strong></sup>`,

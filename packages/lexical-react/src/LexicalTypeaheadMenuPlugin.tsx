@@ -242,25 +242,23 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
     const finish = () => {
       setResolution(null);
     };
-    if (onClose == null) {
-      finish();
-      return;
+    if (!onClose) {
+      return finish();
     }
-    let maybePromise: void | PromiseLike<void>;
     try {
-      maybePromise = onClose();
+      const result = onClose();
+      if (
+        result != null &&
+        typeof (result as PromiseLike<void>).then === 'function'
+      ) {
+        void Promise.resolve(result).then(finish, finish);
+        return;
+      }
     } catch (error) {
       finish();
       throw error;
     }
-    if (
-      maybePromise != null &&
-      typeof (maybePromise as PromiseLike<void>).then === 'function'
-    ) {
-      void Promise.resolve(maybePromise).then(finish, finish);
-    } else {
-      finish();
-    }
+    finish();
   }, [onClose, resolution]);
 
   const openTypeahead = useCallback(

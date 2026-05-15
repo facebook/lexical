@@ -546,12 +546,10 @@ export function LexicalMenu<TOption extends MenuOption>({
           if (
             options === null ||
             selectedIndex === null ||
-            options[selectedIndex] == null
+            options[selectedIndex] == null ||
+            // Shift+Enter must reach rich-text line-break handling
+            (event && event.shiftKey)
           ) {
-            return false;
-          }
-          // LOW priority runs before EDITOR; Shift+Enter must reach rich-text line-break handling.
-          if (event !== null && event.shiftKey) {
             return false;
           }
           if (event !== null) {

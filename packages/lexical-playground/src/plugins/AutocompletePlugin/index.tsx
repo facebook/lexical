@@ -251,17 +251,15 @@ export default function AutocompletePlugin(): JSX.Element | null {
       return true;
     }
 
-    function handleCommitCommand(event: Event): boolean {
-      let didCommit = false;
-      // `discrete: true` so the commit is observable on the next line, in
-      // particular `event.preventDefault()` only fires when the commit
-      // actually happened in this synchronous turn.
-      editor.update(
-        () => {
-          didCommit = $commitSuggestion();
-        },
-        {discrete: true},
-      );
+    function $handleCommitCommand(event: Event): boolean {
+      // `triggerCommandListeners` already wraps each listener bucket in
+      // `updateEditorSync`, so `$commitSuggestion` runs in an active editor
+      // context here. Wrapping in `editor.update({discrete: true})` from
+      // inside that existing update would defer the splice to a microtask,
+      // leaving `didCommit` stuck at `false` long enough for the next
+      // handler (e.g. tab indentation) to insert a tab before the suggestion
+      // lands.
+      const didCommit = $commitSuggestion();
       if (didCommit) {
         event.preventDefault();
       }
@@ -269,6 +267,10 @@ export default function AutocompletePlugin(): JSX.Element | null {
     }
 
     function handleSwipeRight(_force: number, event: TouchEvent) {
+      // Touch handler isn't called from a command-listener pipeline, so it
+      // needs its own update context. `discrete: true` keeps the splice
+      // synchronous relative to the touch event so `preventDefault` is
+      // accurate.
       let didCommit = false;
       editor.update(
         () => {
@@ -287,12 +289,12 @@ export default function AutocompletePlugin(): JSX.Element | null {
       editor.registerUpdateListener(handleUpdate),
       editor.registerCommand(
         KEY_TAB_COMMAND,
-        handleCommitCommand,
+        $handleCommitCommand,
         COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand(
         KEY_ARROW_RIGHT_COMMAND,
-        handleCommitCommand,
+        $handleCommitCommand,
         COMMAND_PRIORITY_LOW,
       ),
       ...(rootElem !== null

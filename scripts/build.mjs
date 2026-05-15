@@ -126,6 +126,12 @@ const thirdPartyExternals = [
   'y-websocket',
   'happy-dom',
   'jsdom',
+  // The @lexical/code-shiki package declares shiki and @shikijs/* as
+  // npm dependencies and loads languages/themes via dynamic import, so
+  // they must remain external in the published bundle rather than be
+  // inlined by Rollup.
+  'shiki',
+  '@shikijs',
   ...(isWWW
     ? [':server-only-hack:.*']
     : ['react-error-boundary', '@floating-ui/react']),
@@ -322,11 +328,7 @@ async function build(
       },
     ],
     // Lexical Code: this ensures PrismJS imports get included in the bundle
-    // Lexical Code Shiki: 'recommended' preset has treeshake.tryCatchDeoptimization: true which avoids
-    //                     feature detection of oniguruma-to-es to be optimized out and cause a bug
-    treeshake: ['smallest', false, 'recommended'][
-      1 + ['Lexical Code Prism', 'Lexical Code Shiki'].indexOf(name)
-    ],
+    treeshake: name === 'Lexical Code Prism' ? false : 'smallest',
   };
   /** @type {import('rollup').OutputOptions} */
   const outputOptions = {

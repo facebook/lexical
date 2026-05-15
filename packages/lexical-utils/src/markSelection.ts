@@ -25,7 +25,7 @@ import positionNodeOnRange from './positionNodeOnRange';
 import px from './px';
 
 function $getOrderedSelectionPoints(selection: RangeSelection): [Point, Point] {
-  const points = selection.getStartEndPoints()!;
+  const points = selection.getStartEndPoints();
   return selection.isBackward() ? [points[1], points[0]] : points;
 }
 

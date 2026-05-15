@@ -36,6 +36,7 @@ import {
   type Prettify,
   type RequiredNodeStateConfig,
 } from './LexicalNodeState';
+import {CACHED_TEXT_SIZE_KEY} from './LexicalReconciler';
 import {
   $getSelection,
   $isNodeSelection,
@@ -241,6 +242,15 @@ export type LexicalUpdateJSON<T extends SerializedLexicalNode> = Omit<
 /** @internal */
 export interface LexicalPrivateDOM {
   __lexicalTextContent?: string | undefined | null;
+  /**
+   * NodeKey of the deep first text descendant (DFS order) of this
+   * element, or `null` if the subtree carries no text descendants.
+   * Maintained alongside `__lexicalTextContent` and used by the
+   * suffix-incremental fast path in `$reconcileChildren` to decide in
+   * O(1) (via the cycle's dirty-children set) whether the prefix still
+   * carries the canonical first text descendant.
+   */
+  __lexicalFirstTextKey?: NodeKey | null | undefined;
   __lexicalLineBreak?: HTMLBRElement | HTMLImageElement | undefined | null;
   __lexicalDir?: 'ltr' | 'rtl' | null | undefined;
   __lexicalUnmanaged?: boolean | undefined;
@@ -430,6 +440,14 @@ export function $markEphemeral<T extends LexicalNode>(
   return node;
 }
 
+/** @internal */
+const NON_ENUMERABLE_PROP_DESC: PropertyDescriptor = {
+  configurable: true,
+  enumerable: false,
+  value: undefined,
+  writable: true,
+};
+
 export class LexicalNode {
   /** @internal Allow us to look up the type including static props */
   declare ['constructor']: KlassConstructor<typeof LexicalNode>;
@@ -446,6 +464,8 @@ export class LexicalNode {
   __next: null | NodeKey;
   /** @internal */
   __state?: NodeState<this>;
+  /** @internal */
+  [CACHED_TEXT_SIZE_KEY]?: number;
 
   // Flow doesn't support abstract classes unfortunately, so we can't _force_
   // subclasses of Node to implement statics. All subclasses of Node should have
@@ -596,12 +616,11 @@ export class LexicalNode {
     this.__parent = null;
     this.__prev = null;
     this.__next = null;
-    Object.defineProperty(this, '__state', {
-      configurable: true,
-      enumerable: false,
-      value: undefined,
-      writable: true,
-    });
+    Object.defineProperty(this, '__state', NON_ENUMERABLE_PROP_DESC);
+    // Pre-initialize the reconciler's cached-text-size slot so subsequent
+    // assignments on the V8 hot path slot into a stable hidden class
+    // instead of triggering per-instance shape transitions.
+    Object.defineProperty(this, CACHED_TEXT_SIZE_KEY, NON_ENUMERABLE_PROP_DESC);
     $setNodeKey(this, key);
 
     if (__DEV__) {
@@ -1263,7 +1282,23 @@ export class LexicalNode {
     const writableReplaceWith = replaceWith.getWritable();
     const writableParent = this.getParentOrThrow().getWritable();
     const size = writableParent.__size;
+    // Capture replaceWith's old parent / index before removeFromParent so the
+    // cloned selection's element offsets in that old parent can be adjusted
+    // afterwards. See #6031.
+    const replaceWithOldParent = writableReplaceWith.getParent();
+    const replaceWithOldIndex =
+      replaceWithOldParent !== null
+        ? writableReplaceWith.getIndexWithinParent()
+        : -1;
     removeFromParent(writableReplaceWith);
+    if (replaceWithOldParent !== null && $isRangeSelection(selection)) {
+      $updateElementSelectionOnCreateDeleteNode(
+        selection,
+        replaceWithOldParent,
+        replaceWithOldIndex,
+        -1,
+      );
+    }
     const prevSibling = self.getPreviousSibling();
     const nextSibling = self.getNextSibling();
     const prevKey = self.__prev;
@@ -1287,24 +1322,54 @@ export class LexicalNode {
     writableReplaceWith.__next = nextKey;
     writableReplaceWith.__parent = parentKey;
     writableParent.__size = size;
+    // Snapshot replaceWith's children count before children transfer so
+    // element-anchored selections on `this` can map to the equivalent offset
+    // in writableReplaceWith.
+    let prevSizeBeforeChildrenTransfer = 0;
     if (includeChildren) {
       invariant(
         $isElementNode(this) && $isElementNode(writableReplaceWith),
         'includeChildren should only be true for ElementNodes',
       );
-      this.getChildren().forEach((child: LexicalNode) => {
-        writableReplaceWith.append(child);
-      });
+      prevSizeBeforeChildrenTransfer = writableReplaceWith.getChildrenSize();
+      writableReplaceWith.splice(
+        prevSizeBeforeChildrenTransfer,
+        0,
+        this.getChildren(),
+      );
     }
     if ($isRangeSelection(selection)) {
       $setSelection(selection);
       const anchor = selection.anchor;
       const focus = selection.focus;
+      // For an element-anchored point on `this` with includeChildren, the
+      // transferred children land at offsets [prevSize ... prevSize + N) in
+      // writableReplaceWith, so the equivalent point is at
+      // `prevSize + originalOffset`. Without this remap the caller (e.g.
+      // `$setBlocksType`) has to re-anchor afterwards from a stale clone.
+      // For non-element points or !includeChildren the children are gone, so
+      // fall back to the previous "move to end" behavior.
       if (anchor.key === toReplaceKey) {
-        $moveSelectionPointToEnd(anchor, writableReplaceWith);
+        if (includeChildren && anchor.type === 'element') {
+          anchor.set(
+            writableReplaceWith.__key,
+            prevSizeBeforeChildrenTransfer + anchor.offset,
+            'element',
+          );
+        } else {
+          $moveSelectionPointToEnd(anchor, writableReplaceWith);
+        }
       }
       if (focus.key === toReplaceKey) {
-        $moveSelectionPointToEnd(focus, writableReplaceWith);
+        if (includeChildren && focus.type === 'element') {
+          focus.set(
+            writableReplaceWith.__key,
+            prevSizeBeforeChildrenTransfer + focus.offset,
+            'element',
+          );
+        } else {
+          $moveSelectionPointToEnd(focus, writableReplaceWith);
+        }
       }
     }
     if ($getCompositionKey() === toReplaceKey) {
@@ -1332,7 +1397,6 @@ export class LexicalNode {
     if (oldParent !== null) {
       // TODO: this is O(n), can we improve?
       const oldIndex = nodeToInsert.getIndexWithinParent();
-      removeFromParent(writableNodeToInsert);
       if ($isRangeSelection(selection)) {
         const oldParentKey = oldParent.__key;
         const anchor = selection.anchor;
@@ -1345,6 +1409,21 @@ export class LexicalNode {
           focus.type === 'element' &&
           focus.key === oldParentKey &&
           focus.offset === oldIndex + 1;
+      }
+      removeFromParent(writableNodeToInsert);
+      // Adjust element-anchored offsets in oldParent to track its reduced
+      // child count. The boolean flags captured above
+      // (elementAnchorSelectionOnNode / elementFocusSelectionOnNode) recorded
+      // whether anchor/focus sat at oldIndex+1 before this removal; the
+      // post-insertion block below uses them to re-anchor onto the moved
+      // node in its new parent. See #6031.
+      if (restoreSelection && $isRangeSelection(selection)) {
+        $updateElementSelectionOnCreateDeleteNode(
+          selection,
+          oldParent,
+          oldIndex,
+          -1,
+        );
       }
     }
     const nextSibling = this.getNextSibling();
@@ -1396,7 +1475,28 @@ export class LexicalNode {
     const writableSelf = this.getWritable();
     const writableNodeToInsert = nodeToInsert.getWritable();
     const insertKey = writableNodeToInsert.__key;
+    const selection = $getSelection();
+    // Capture nodeToInsert's old parent / index before detaching so the
+    // selection's element offsets in that old parent can be adjusted
+    // afterwards. See #6031.
+    const insertOldParent = writableNodeToInsert.getParent();
+    const insertOldIndex =
+      insertOldParent !== null
+        ? writableNodeToInsert.getIndexWithinParent()
+        : -1;
     removeFromParent(writableNodeToInsert);
+    if (
+      insertOldParent !== null &&
+      restoreSelection &&
+      $isRangeSelection(selection)
+    ) {
+      $updateElementSelectionOnCreateDeleteNode(
+        selection,
+        insertOldParent,
+        insertOldIndex,
+        -1,
+      );
+    }
     const prevSibling = this.getPreviousSibling();
     const writableParent = this.getParentOrThrow().getWritable();
     const prevKey = writableSelf.__prev;
@@ -1413,7 +1513,6 @@ export class LexicalNode {
     writableNodeToInsert.__prev = prevKey;
     writableNodeToInsert.__next = writableSelf.__key;
     writableNodeToInsert.__parent = writableSelf.__parent;
-    const selection = $getSelection();
     if (restoreSelection && $isRangeSelection(selection)) {
       const parent = this.getParentOrThrow();
       $updateElementSelectionOnCreateDeleteNode(selection, parent, index);

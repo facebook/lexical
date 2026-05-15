@@ -27,6 +27,7 @@ import {
   $setSelection,
   COLLABORATION_TAG,
   COMMAND_PRIORITY_LOW,
+  COMPOSITION_END_TAG,
   HISTORIC_TAG,
   HISTORY_PUSH_TAG,
   KEY_ENTER_COMMAND,
@@ -444,6 +445,20 @@ export function registerMarkdownShortcuts(
     byType.textMatch,
     ({trigger}) => trigger,
   );
+  // Composition end fires per IME commit (every CJK syllable, German dead-key
+  // resolve, etc.). Most of those have nothing to do with markdown, so only
+  // enter the transformer pass when the just-committed character can plausibly
+  // close a trigger. Space covers element/multilineElement triggers (`# `,
+  // `- `, ...) and text-match triggers carry their own single-character triggers.
+  const compositionEndTriggerChars = new Set<string>([' ']);
+  for (const t of byType.textFormat) {
+    compositionEndTriggerChars.add(t.tag.slice(-1));
+  }
+  for (const t of byType.textMatch) {
+    if (t.trigger !== undefined) {
+      compositionEndTriggerChars.add(t.trigger);
+    }
+  }
 
   for (const transformer of transformers) {
     const type = transformer.type;
@@ -528,6 +543,13 @@ export function registerMarkdownShortcuts(
           return;
         }
 
+        // composition end commits the composed text without moving the
+        // selection (compositionupdate already did) and may jump the anchor by
+        // more than one when multi-character commits land at once. Skip the
+        // typed-character heuristics so a trailing trigger character can still
+        // fire its transform.
+        const isCompositionEnd = tags.has(COMPOSITION_END_TAG);
+
         const selection = editorState.read($getSelection);
         const prevSelection = prevEditorState.read($getSelection);
 
@@ -537,7 +559,7 @@ export function registerMarkdownShortcuts(
           !$isRangeSelection(prevSelection) ||
           !$isRangeSelection(selection) ||
           !selection.isCollapsed() ||
-          selection.is(prevSelection)
+          (selection.is(prevSelection) && !isCompositionEnd)
         ) {
           return;
         }
@@ -550,9 +572,20 @@ export function registerMarkdownShortcuts(
         if (
           !$isTextNode(anchorNode) ||
           !dirtyLeaves.has(anchorKey) ||
-          (anchorOffset !== 1 && anchorOffset > prevSelection.anchor.offset + 1)
+          (!isCompositionEnd &&
+            anchorOffset !== 1 &&
+            anchorOffset > prevSelection.anchor.offset + 1)
         ) {
           return;
+        }
+
+        if (isCompositionEnd) {
+          const closeChar = editorState.read(() => anchorNode.getTextContent())[
+            anchorOffset - 1
+          ];
+          if (!compositionEndTriggerChars.has(closeChar)) {
+            return;
+          }
         }
 
         editor.update(() => {

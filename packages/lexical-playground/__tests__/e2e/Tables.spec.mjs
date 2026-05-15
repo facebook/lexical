@@ -1172,8 +1172,8 @@ test.describe.parallel('Tables', () => {
 
         // For some reason you need to click the paragraph twice for this to pass
         // on Collab Firefox.
-        await click(page, 'div.ContentEditable__root > p:first-of-type');
-        await click(page, 'div.ContentEditable__root > p:first-of-type');
+        await click(page, 'div.ContentEditable__root p:first-of-type');
+        await click(page, 'div.ContentEditable__root p:first-of-type');
 
         await pasteFromClipboard(page, clipboard);
       });

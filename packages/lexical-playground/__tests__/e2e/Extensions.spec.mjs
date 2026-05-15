@@ -199,8 +199,8 @@ test.describe('Extensions', () => {
     await evaluate(page, async () => {
       const editor = document.querySelector('div[contenteditable="true"]');
       const selection = window.getSelection();
-      const secondParagraphTextNode =
-        editor.firstChild.nextSibling.firstChild.firstChild;
+      const paragraphs = editor.querySelectorAll('p');
+      const secondParagraphTextNode = paragraphs[1].firstChild.firstChild;
       selection.setBaseAndExtent(
         secondParagraphTextNode,
         0,

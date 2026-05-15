@@ -454,14 +454,60 @@ async function assertSelectionOnPageOrFrame(page, expected) {
       return offset;
     };
 
+    const normalizeWrapperFocus = (node, offset) => {
+      // Browser arrow-key navigation lands focus on the
+      // `BlockDragHandleExtension` wrapper at offset 0 (before any children)
+      // when navigating to the start of a wrapped block, because the wrapper
+      // is a block boundary that the navigation treats as a stop. Translate
+      // such positions back to the deepest first / last text inside the
+      // inner element so paths line up with the un-wrapped baseline.
+      if (
+        node &&
+        node.nodeType === Node.ELEMENT_NODE &&
+        node.getAttribute &&
+        node.getAttribute('data-lexical-block-drag-wrapper') === 'true'
+      ) {
+        const inner = node.querySelector(
+          ':scope > [data-lexical-block-drag-inner]',
+        );
+        if (inner) {
+          const walker = document.createTreeWalker(inner, NodeFilter.SHOW_TEXT);
+          if (offset === 0) {
+            const first = walker.nextNode();
+            if (first) {
+              return [first, 0];
+            }
+          } else {
+            let last = null;
+            let next;
+            while ((next = walker.nextNode())) {
+              last = next;
+            }
+            if (last) {
+              return [last, last.nodeValue.length];
+            }
+          }
+        }
+      }
+      return [node, offset];
+    };
+
     const {anchorNode, anchorOffset, focusNode, focusOffset} =
       window.getSelection();
 
+    const [normAnchorNode, normAnchorOffset] = normalizeWrapperFocus(
+      anchorNode,
+      anchorOffset,
+    );
+    const [normFocusNode, normFocusOffset] = normalizeWrapperFocus(
+      focusNode,
+      focusOffset,
+    );
     return {
-      anchorOffset: fixOffset(anchorNode, anchorOffset),
-      anchorPath: getPathFromNode(anchorNode),
-      focusOffset: fixOffset(focusNode, focusOffset),
-      focusPath: getPathFromNode(focusNode),
+      anchorOffset: fixOffset(normAnchorNode, normAnchorOffset),
+      anchorPath: getPathFromNode(normAnchorNode),
+      focusOffset: fixOffset(normFocusNode, normFocusOffset),
+      focusPath: getPathFromNode(normFocusNode),
     };
   });
   expect(selection.anchorPath).toEqual(expected.anchorPath);
@@ -1041,32 +1087,56 @@ function stripBlockDragWrapper(input) {
       /\s*data-lexical-block-drag-wrapper="true"/,
       '',
     );
-    // Merge wrapper attrs into a target attribute string, skipping wrapper
-    // attrs whose name already exists on the target — the target is the
-    // canonical owner for those (e.g. theme `class` on the inner element),
-    // and the wrapper's copy is often a placeholder set by alignment /
-    // indent toggling on the reconciler-keyed DOM.
-    const mergeAttrs = targetAttrs => {
-      const targetNames = new Set();
-      const nameRe = /\s+([a-z-]+)=/g;
+    // Merge wrapper attrs into a target attribute string. `class` and
+    // `style` are composable — wrapper-side tokens are appended to the
+    // target's existing value. Other attributes (`dir` etc.) keep the
+    // target's value when both define them, since the inner element is
+    // the canonical owner.
+    const COMPOSABLE_ATTRS = new Set(['class', 'style']);
+    const mergeAttrsInto = targetAttrs => {
+      const targetNames = new Map();
+      const nameRe = /\s+([a-z-]+)="([^"]*)"/g;
       let nameMatch;
       while ((nameMatch = nameRe.exec(targetAttrs)) !== null) {
-        targetNames.add(nameMatch[1]);
+        targetNames.set(nameMatch[1], nameMatch[2]);
       }
-      return wrapperAttrs.replace(/\s+([a-z-]+)="[^"]*"/g, (full, name) =>
-        targetNames.has(name) ? '' : full,
-      );
+      let merged = targetAttrs;
+      let leftover = '';
+      wrapperAttrs.replace(/\s+([a-z-]+)="([^"]*)"/g, (full, name, value) => {
+        if (!targetNames.has(name)) {
+          leftover += full;
+          return '';
+        }
+        if (COMPOSABLE_ATTRS.has(name) && value !== '') {
+          const existing = targetNames.get(name);
+          const tokens = name === 'style' ? '; ' : ' ';
+          const combined = existing
+            ? `${existing}${existing.endsWith(tokens.trim()) ? ' ' : tokens}${value}`
+            : value;
+          merged = merged.replace(
+            new RegExp(
+              `(\\s${name}=")${existing.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(")`,
+            ),
+            `$1${combined}$2`,
+          );
+          targetNames.set(name, combined);
+        }
+        return '';
+      });
+      return {leftover, merged};
     };
     if (isVoidInner) {
       // Void inner (HR etc.) is itself the canonical content. Merge wrapper
       // attrs into it and emit self-closing.
-      output += `<${innerTag}${innerAttrs}${mergeAttrs(innerAttrs)} />${trailingSiblings}`;
+      const {leftover, merged} = mergeAttrsInto(innerAttrs);
+      output += `<${innerTag}${merged}${leftover} />${trailingSiblings}`;
     } else if (innerAttrs.trim() !== '') {
       // ElementNode case (paragraph / heading / list / code etc.). Merge
       // wrapper attrs (dir / style / class etc.) into the inner element so
       // reconciler-applied props that landed on the wrapper migrate to the
       // canonical content element.
-      output += `<${innerTag}${innerAttrs}${mergeAttrs(innerAttrs)}>${innerContent}</${innerTag}>${trailingSiblings}`;
+      const {leftover, merged} = mergeAttrsInto(innerAttrs);
+      output += `<${innerTag}${merged}${leftover}>${innerContent}</${innerTag}>${trailingSiblings}`;
     } else {
       // Empty non-void inner: a DecoratorNode whose React portal mounts
       // visible content as a sibling of the inner-marker (since
@@ -1374,10 +1444,18 @@ export async function dragDraggableMenuTo(
   toSelector,
   positionStart = 'middle',
   positionEnd = 'middle',
+  fromBlockSelector,
 ) {
+  // With `BlockDragHandleExtension`, every top-level block has its own
+  // handle, so the bare attribute selector is ambiguous. When the caller
+  // provides the source block selector, scope the handle to that block's
+  // wrapper; otherwise fall back to the first wrapper's handle.
+  const handleSelector = fromBlockSelector
+    ? `[data-lexical-block-drag-wrapper]:has(${fromBlockSelector}) > [data-lexical-block-drag-handle]`
+    : '[data-lexical-block-drag-handle] >> nth=0';
   await dragMouse(
     page,
-    await selectorBoundingBox(page, '[data-lexical-block-drag-handle]'),
+    await selectorBoundingBox(page, handleSelector),
     await selectorBoundingBox(page, toSelector),
     {positionEnd, positionStart},
   );

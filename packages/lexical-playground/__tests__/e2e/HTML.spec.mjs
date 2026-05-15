@@ -269,7 +269,7 @@ test.describe('HTML', () => {
     await focusEditor(page);
     // Ensure we're in pageless mode
     await page.waitForSelector(
-      '.ContentEditable__root > .PlaygroundEditorTheme__paragraph',
+      '.ContentEditable__root .PlaygroundEditorTheme__paragraph',
     );
     await applyHeading(page, 1);
     await page.keyboard.type('Foo');
@@ -282,7 +282,7 @@ test.describe('HTML', () => {
     await btn.click();
     // Ensure we're in page mode
     await page.waitForSelector(
-      '.ContentEditable__root > .PlaygroundEditorTheme__page > .PlaygroundEditorTheme__pageContent',
+      '.ContentEditable__root .PlaygroundEditorTheme__page > .PlaygroundEditorTheme__pageContent',
     );
     await click(page, '.action-button .html');
 
@@ -303,7 +303,7 @@ test.describe('HTML', () => {
     await click(page, '.action-button .html');
     // Ensure we're in page mode
     await page.waitForSelector(
-      '.ContentEditable__root > .PlaygroundEditorTheme__page > .PlaygroundEditorTheme__pageContent',
+      '.ContentEditable__root .PlaygroundEditorTheme__page > .PlaygroundEditorTheme__pageContent',
     );
   });
 });

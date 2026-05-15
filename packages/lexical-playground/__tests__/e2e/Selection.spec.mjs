@@ -947,7 +947,7 @@ test.describe.parallel('Selection', () => {
     await page.keyboard.press('Enter');
     await page.keyboard.type('Paragraph 2');
     await page
-      .locator('div[contenteditable="true"] > p')
+      .locator('div[contenteditable="true"] p')
       .first()
       .click({clickCount: 3});
 
@@ -979,7 +979,7 @@ test.describe.parallel('Selection', () => {
     });
 
     await page
-      .locator('div[contenteditable="true"] > p')
+      .locator('div[contenteditable="true"] p')
       .first()
       .click({clickCount: 3});
 

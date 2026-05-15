@@ -35,7 +35,7 @@ test.describe('HTML CopyAndPaste', () => {
         '<p>Hello\n</p>\n\n<p>\n\nWorld\n\n</p>\n\n<p>Hello\n\n   World   \n\n!\n\n</p><p>Hello <b>World</b> <i>!</i></p>',
     });
 
-    const paragraphs = page.locator('div[contenteditable="true"] > p');
+    const paragraphs = page.locator('div[contenteditable="true"] p');
     await expect(paragraphs).toHaveCount(4);
 
     // Explicitly checking inner text, since regular assertHTML will prettify it and strip all

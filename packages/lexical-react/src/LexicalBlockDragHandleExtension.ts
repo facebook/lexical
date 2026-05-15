@@ -9,7 +9,6 @@ import type {LexicalNode} from 'lexical';
 
 import {domOverride, DOMRenderExtension} from '@lexical/html';
 import {
-  $isDecoratorNode,
   $isElementNode,
   $isRootNode,
   configExtension,
@@ -44,24 +43,21 @@ export const BLOCK_DRAG_HANDLE_ATTR = 'data-lexical-block-drag-handle';
 export const BLOCK_DRAG_INNER_ATTR = 'data-lexical-block-drag-inner';
 
 function shouldWrap(node: LexicalNode): node is LexicalNode {
-  // Top-level block — either an ElementNode (paragraph, heading, list,
-  // quote, code, table, collapsible…) or a DecoratorNode (HR, image, …)
-  // that's a direct child of the real RootNode. Shadow roots (collapsible
-  // container/content, table cell) are excluded so nested blocks keep their
-  // natural DOM and don't get duplicate handles on inner rows.
+  // Top-level block ElementNode (paragraph, heading, list, quote, code,
+  // table, collapsible…) that's a direct child of the real RootNode.
+  // Shadow roots (collapsible container/content, table cell) are excluded
+  // so nested blocks keep their natural DOM and don't get duplicate
+  // handles on inner rows.
   //
-  // DecoratorNode caveat: `useDecorators` mounts the React portal via
-  // `editor.getElementByKey(nodeKey)`, which returns the wrapper here —
-  // not the inner element. Wrapped decorators today work because the only
-  // wrapped DecoratorNodes (HR, PageBreak) return components whose render
-  // is `null` (they only register hooks). A DecoratorNode whose `decorate()`
-  // actually renders visible DOM would mount alongside the handle button
-  // and inner element, with undefined visual ordering — re-evaluate before
-  // wrapping such a node.
-  const isBlockKind =
-    ($isElementNode(node) && !node.isInline()) ||
-    ($isDecoratorNode(node) && !node.isInline());
-  if (!isBlockKind) {
+  // DecoratorNodes are intentionally NOT wrapped. `useDecorators` mounts
+  // the React portal via `editor.getElementByKey(nodeKey)`, which returns
+  // the wrapper here — not the inner element. For decorators whose
+  // `decorate()` returns visible DOM (e.g. equation, image), the rendered
+  // portal lands as a sibling of the empty inner-marker inside the
+  // wrapper, with undefined visual ordering. Until the slot abstraction
+  // covers portal-mount routing, leave DecoratorNodes without a wrap —
+  // they keep their original keyed DOM and have no drag handle.
+  if (!$isElementNode(node) || node.isInline()) {
     return false;
   }
   return $isRootNode(node.getParent());
@@ -78,7 +74,11 @@ function createDragHandle(): HTMLButtonElement {
   handle.setAttribute(BLOCK_DRAG_HANDLE_ATTR, 'true');
   handle.setAttribute('aria-label', 'Drag to reorder');
   handle.contentEditable = 'false';
-  handle.textContent = '⋮';
+  // Intentionally no textContent: the handle's visual is a background
+  // image in CSS. Adding text content here would create a text node
+  // inside the wrapper, which interferes with the browser's paragraph
+  // detection for triple-click selection (browser treats the wrapper as a
+  // text-bearing block and the multi-paragraph triple-click collapses).
   return handle;
 }
 

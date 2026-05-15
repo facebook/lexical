@@ -146,7 +146,7 @@ describe('BlockDragHandleExtension', () => {
     });
   });
 
-  test('wraps a top-level DecoratorNode (HR) with handle + inner', () => {
+  test('does not wrap top-level DecoratorNodes (HR keeps its own keyed DOM)', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({
         $initialEditorState: () => {
@@ -157,21 +157,21 @@ describe('BlockDragHandleExtension', () => {
           HorizontalRuleExtension,
           BlockDragHandleExtension,
         ],
-        name: 'test-decorator-wrap',
+        name: 'test-decorator-no-wrap',
       }),
     );
     const root = document.createElement('div');
     editor.setRootElement(root);
     editor.read(() => {
+      // Decorator nodes (HR / image / equation etc.) are intentionally left
+      // out of the wrap because `useDecorators` mounts their React portal
+      // onto the keyed DOM (which would be the wrapper) and any decorator
+      // with visible rendered content would land alongside the empty
+      // inner-marker with undefined visual ordering.
       const wrappers = root.querySelectorAll(`[${BLOCK_DRAG_WRAPPER_ATTR}]`);
-      expect(wrappers).toHaveLength(1);
-      const wrapper = wrappers[0];
-      const handle = wrapper.querySelector(`[${BLOCK_DRAG_HANDLE_ATTR}]`);
-      const inner = wrapper.querySelector(`[${BLOCK_DRAG_INNER_ATTR}]`);
-      expect(handle?.tagName).toBe('BUTTON');
-      expect(inner?.tagName).toBe('HR');
-      expect(handle?.parentElement).toBe(wrapper);
-      expect(inner?.parentElement).toBe(wrapper);
+      expect(wrappers).toHaveLength(0);
+      const hr = root.querySelector('hr');
+      expect(hr).not.toBeNull();
     });
   });
 

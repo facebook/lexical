@@ -1438,13 +1438,10 @@ export function scrollIntoViewIfNeeded(
   let targetBottom = 0;
   let targetLeft = 0;
   let targetRight = 0;
-  const element: HTMLElement | null =
-    scrollChainStartElement != null ? scrollChainStartElement : rootElement;
+  let element: HTMLElement | null = scrollChainStartElement || rootElement;
 
-  let walk: HTMLElement | null = element;
-
-  while (walk !== null) {
-    const isBodyElement = walk === doc.body;
+  while (element !== null) {
+    const isBodyElement = element === doc.body;
     if (isBodyElement) {
       // On mobile, the on-screen keyboard shrinks the visual viewport but
       // not the layout viewport (innerHeight).
@@ -1484,7 +1481,7 @@ export function scrollIntoViewIfNeeded(
         targetRight -= scrollPaddingRight;
       }
     } else {
-      const targetRect = walk.getBoundingClientRect();
+      const targetRect = element.getBoundingClientRect();
       targetTop = targetRect.top;
       targetBottom = targetRect.bottom;
       targetLeft = targetRect.left;
@@ -1510,18 +1507,18 @@ export function scrollIntoViewIfNeeded(
         defaultView.scrollBy(diffX, diff);
       } else {
         if (diff !== 0) {
-          const scrollTop = walk.scrollTop;
-          walk.scrollTop += diff;
-          const yOffset = walk.scrollTop - scrollTop;
+          const scrollTop = element.scrollTop;
+          element.scrollTop += diff;
+          const yOffset = element.scrollTop - scrollTop;
           currentTop -= yOffset;
           currentBottom -= yOffset;
         }
         if (diffX !== 0) {
-          const maxScrollX = walk.scrollWidth - walk.clientWidth;
+          const maxScrollX = element.scrollWidth - element.clientWidth;
           if (maxScrollX > 0) {
-            const scrollLeft = walk.scrollLeft;
-            walk.scrollLeft += diffX;
-            const xOffset = walk.scrollLeft - scrollLeft;
+            const scrollLeft = element.scrollLeft;
+            element.scrollLeft += diffX;
+            const xOffset = element.scrollLeft - scrollLeft;
             currentLeft -= xOffset;
             currentRight -= xOffset;
           }
@@ -1531,7 +1528,7 @@ export function scrollIntoViewIfNeeded(
     if (isBodyElement) {
       break;
     }
-    walk = getParentElement(walk);
+    element = getParentElement(element);
   }
 }
 

@@ -419,12 +419,9 @@ async function assertSelectionOnPageOrFrame(page, expected) {
         if (parent === null || node === rootElement) {
           break;
         }
-        // Skip the `BlockDragHandleExtension` inner-marker element — it's a
-        // pass-through layer between the wrapper and the keyed DOM, and
+        // Skip the `BlockDragHandleExtension` inner-marker element — a
+        // pass-through layer between the wrapper and the keyed DOM that
         // would add an extra step to the path vs the un-wrapped baseline.
-        // The wrapper itself stays in the walk so its index in the root is
-        // what the next iteration records (matching the original block's
-        // index pre-wrap).
         const isInnerMarker =
           node.nodeType === Node.ELEMENT_NODE &&
           node.getAttribute &&
@@ -454,13 +451,13 @@ async function assertSelectionOnPageOrFrame(page, expected) {
       return offset;
     };
 
-    const normalizeWrapperFocus = (node, offset) => {
+    const normalizeBlockHandleFocus = (node, offset) => {
       // Browser arrow-key navigation lands focus on the
-      // `BlockDragHandleExtension` wrapper at offset 0 (before any children)
-      // when navigating to the start of a wrapped block, because the wrapper
-      // is a block boundary that the navigation treats as a stop. Translate
-      // such positions back to the deepest first / last text inside the
-      // inner element so paths line up with the un-wrapped baseline.
+      // `BlockDragHandleExtension` wrapper at offset 0 when navigating to
+      // the start of a wrapped block (the wrapper is a DOM-tree boundary
+      // even with `display: contents`). Translate to the deepest first /
+      // last text inside the inner element so paths line up with the
+      // un-wrapped baseline.
       if (
         node &&
         node.nodeType === Node.ELEMENT_NODE &&
@@ -495,11 +492,11 @@ async function assertSelectionOnPageOrFrame(page, expected) {
     const {anchorNode, anchorOffset, focusNode, focusOffset} =
       window.getSelection();
 
-    const [normAnchorNode, normAnchorOffset] = normalizeWrapperFocus(
+    const [normAnchorNode, normAnchorOffset] = normalizeBlockHandleFocus(
       anchorNode,
       anchorOffset,
     );
-    const [normFocusNode, normFocusOffset] = normalizeWrapperFocus(
+    const [normFocusNode, normFocusOffset] = normalizeBlockHandleFocus(
       focusNode,
       focusOffset,
     );
@@ -965,22 +962,13 @@ function findMatchingClose(source, tag, start) {
 }
 
 function stripBlockDragWrapper(input) {
-  // Wrapper opener: `<div ATTRS data-lexical-block-drag-wrapper="true" ATTRS>`.
-  // For ElementNode (paragraph etc.) the wrapper carries only the marker
-  // attribute (optionally with `dir`); the inner element holds all the real
-  // attributes and content. For DecoratorNode the wrapper picks up
-  // `contenteditable="false"` + `data-lexical-decorator="true"` from the
-  // reconciler post-processing the keyed DOM, and the decorator's React
-  // portal mounts its content as a sibling inside the wrapper (since
-  // `useDecorators` reads `editor.getElementByKey` which returns the
-  // wrapper). The inner-marker element is then effectively empty.
-  //
-  // Two strip strategies:
-  //   - Plain wrapper (only marker + optional dir): drop wrapper, emit inner
-  //     element with the marker attribute removed (paragraph/heading/etc.).
-  //   - Decorated wrapper (extra attrs): keep wrapper with marker stripped,
-  //     remove the button + inner-marker children, and let the
-  //     portal-mounted sibling content stay (HR / PageBreak / embed).
+  // Wrap-all: `<div wrap><button>⋮</button><INNER ...>...</INNER></div>`.
+  // For ElementNode the wrapper holds the marker attribute (sometimes a
+  // reconciler-set `style=""`); the inner element holds the real
+  // attributes and content. Strip wrapper + handle, emit inner with
+  // wrapper's attrs merged in (so reconciler-set props on the keyed DOM
+  // — which under wrap is the wrapper — migrate back to the canonical
+  // content element for snapshot matching).
   const wrapperOpen =
     /<div([^>]*?)\sdata-lexical-block-drag-wrapper="true"([^>]*)>/g;
   let output = '';
@@ -1005,7 +993,6 @@ function stripBlockDragWrapper(input) {
     while (cursor < input.length && /\s/.test(input[cursor])) {
       cursor++;
     }
-    // Skip the handle button (always the first child).
     if (input.slice(cursor, cursor + 7) === '<button') {
       const buttonClose = input.indexOf('</button>', cursor);
       if (buttonClose === -1 || buttonClose > wrapperCloseStart) {
@@ -1019,9 +1006,6 @@ function stripBlockDragWrapper(input) {
         cursor++;
       }
     }
-    // Inner-marker element. Its opening tag is required; its content (if
-    // any) is appended after the inner-marker element is dropped from the
-    // emit.
     const innerOpenMatch = input
       .slice(cursor)
       .match(/^<([a-z][a-z0-9]*)([^>]*)>/);
@@ -1039,8 +1023,6 @@ function stripBlockDragWrapper(input) {
       /\s+data-lexical-block-drag-inner="true"/,
       '',
     );
-    // Drop a trailing "/" (self-close marker on void elements) and any
-    // whitespace before it so attribute merging produces a clean attr list.
     const innerAttrs = innerAttrsRaw.replace(/\s*\/$/, '');
     const innerContentStart = cursor + innerOpenMatch[0].length;
     const VOID_TAGS = new Set([
@@ -1087,11 +1069,6 @@ function stripBlockDragWrapper(input) {
       /\s*data-lexical-block-drag-wrapper="true"/,
       '',
     );
-    // Merge wrapper attrs into a target attribute string. `class` and
-    // `style` are composable — wrapper-side tokens are appended to the
-    // target's existing value. Other attributes (`dir` etc.) keep the
-    // target's value when both define them, since the inner element is
-    // the canonical owner.
     const COMPOSABLE_ATTRS = new Set(['class', 'style']);
     const mergeAttrsInto = targetAttrs => {
       const targetNames = new Map();
@@ -1126,23 +1103,12 @@ function stripBlockDragWrapper(input) {
       return {leftover, merged};
     };
     if (isVoidInner) {
-      // Void inner (HR etc.) is itself the canonical content. Merge wrapper
-      // attrs into it and emit self-closing.
       const {leftover, merged} = mergeAttrsInto(innerAttrs);
       output += `<${innerTag}${merged}${leftover} />${trailingSiblings}`;
     } else if (innerAttrs.trim() !== '') {
-      // ElementNode case (paragraph / heading / list / code etc.). Merge
-      // wrapper attrs (dir / style / class etc.) into the inner element so
-      // reconciler-applied props that landed on the wrapper migrate to the
-      // canonical content element.
       const {leftover, merged} = mergeAttrsInto(innerAttrs);
       output += `<${innerTag}${merged}${leftover}>${innerContent}</${innerTag}>${trailingSiblings}`;
     } else {
-      // Empty non-void inner: a DecoratorNode whose React portal mounts
-      // visible content as a sibling of the inner-marker (since
-      // `useDecorators` reads `editor.getElementByKey` which returns the
-      // wrapper). Keep the wrapper (minus the marker) as the result's
-      // outer tag and drop the empty inner shell.
       output += `<div${wrapperAttrs}>${innerContent}${trailingSiblings}</div>`;
     }
     lastIndex = wrapperCloseEnd;

@@ -51,12 +51,9 @@ describe('BlockDragHandleExtension', () => {
       expect(wrappers).toHaveLength(1);
       const wrapper = wrappers[0];
       const handle = wrapper.querySelector(`[${BLOCK_DRAG_HANDLE_ATTR}]`);
-      expect(handle).not.toBeNull();
       expect(handle?.tagName).toBe('BUTTON');
       const inner = wrapper.querySelector(`[${BLOCK_DRAG_INNER_ATTR}]`);
-      expect(inner).not.toBeNull();
       expect(inner?.tagName).toBe('P');
-      // Handle and inner are siblings inside the wrapper.
       expect(handle?.parentElement).toBe(wrapper);
       expect(inner?.parentElement).toBe(wrapper);
       // Lexical children mount inside the inner element (via the slot).
@@ -86,12 +83,9 @@ describe('BlockDragHandleExtension', () => {
     editor.setRootElement(root);
     editor.read(() => {
       const wrappers = root.querySelectorAll(`[${BLOCK_DRAG_WRAPPER_ATTR}]`);
-      // Only one wrapper around the paragraph; the line break inside the
-      // paragraph is untouched.
       expect(wrappers).toHaveLength(1);
       const inner = wrappers[0].querySelector(`[${BLOCK_DRAG_INNER_ATTR}]`);
       const br = inner?.querySelector('br');
-      expect(br).not.toBeNull();
       expect(br?.parentElement).toBe(inner);
     });
   });
@@ -163,11 +157,6 @@ describe('BlockDragHandleExtension', () => {
     const root = document.createElement('div');
     editor.setRootElement(root);
     editor.read(() => {
-      // Decorator nodes (HR / image / equation etc.) are intentionally left
-      // out of the wrap because `useDecorators` mounts their React portal
-      // onto the keyed DOM (which would be the wrapper) and any decorator
-      // with visible rendered content would land alongside the empty
-      // inner-marker with undefined visual ordering.
       const wrappers = root.querySelectorAll(`[${BLOCK_DRAG_WRAPPER_ATTR}]`);
       expect(wrappers).toHaveLength(0);
       const hr = root.querySelector('hr');
@@ -179,11 +168,6 @@ describe('BlockDragHandleExtension', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({
         $initialEditorState: () => {
-          // 2 rows × 2 cols, with `hasHorizontalScroll: true` (TableExtension
-          // default) — TableNode.createDOM returns `<div><table>…</table></div>`.
-          // Without the `node.getDOMSlot(inner)` routing in
-          // `BlockDragHandleExtension`, rows would be inserted into the outer
-          // `<div>` instead of the `<table>`, orphaning every row.
           const table = $createTableNodeWithDimensions(2, 2, true);
           $getRoot().append(table);
         },
@@ -205,12 +189,10 @@ describe('BlockDragHandleExtension', () => {
       expect(tableNode).toBeDefined();
       const wrapper = root.querySelector(`[${BLOCK_DRAG_WRAPPER_ATTR}]`);
       expect(wrapper).not.toBeNull();
-      // Inner is the scrollable `<div>`; the `<table>` lives inside it.
       const inner = wrapper!.querySelector(`[${BLOCK_DRAG_INNER_ATTR}]`);
       expect(inner?.tagName).toBe('DIV');
       const table = inner!.querySelector(':scope > table');
       expect(table).not.toBeNull();
-      // Rows must be inside the `<table>`, not loose in the scrollable div.
       const rows = table!.querySelectorAll('tr');
       expect(rows.length).toBe(2);
       rows.forEach(row => {

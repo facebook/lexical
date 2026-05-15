@@ -1,15 +1,26 @@
-/* Block drag wrapper: the drag handle floats to the left edge of the
- * block, outside the content area, using absolute positioning. The wrapper
- * itself is a block container so the inner element keeps its natural
- * width and margins. */
+/* Wrap-all + display:contents: the wrapper has no box so browser
+ * navigation / triple-click / execCommand see the inner element as the
+ * block boundary. The handle's position is anchored to the inner via
+ * CSS anchor positioning so it doesn't need the wrapper to provide a
+ * positioning context. */
 [data-lexical-block-drag-wrapper] {
-  position: relative;
+  display: contents;
+  /* Scope the anchor name so each wrapper's inner is the anchor target
+   * for the handle inside the same wrapper — without scope, all handles
+   * resolve to the most recently declared anchor and stack on the last
+   * block. */
+  anchor-scope: --lexical-block-drag-anchor;
+}
+
+[data-lexical-block-drag-inner] {
+  anchor-name: --lexical-block-drag-anchor;
 }
 
 [data-lexical-block-drag-handle] {
   position: absolute;
-  left: -22px;
-  top: 4px;
+  position-anchor: --lexical-block-drag-anchor;
+  left: calc(anchor(left) - 22px);
+  top: calc(anchor(top) + 4px);
   width: 16px;
   height: 16px;
   padding: 0;
@@ -40,7 +51,8 @@
   user-select: none;
 }
 
-[data-lexical-block-drag-wrapper]:hover > [data-lexical-block-drag-handle],
+[data-lexical-block-drag-wrapper]:has([data-lexical-block-drag-inner]:hover)
+  > [data-lexical-block-drag-handle],
 [data-lexical-block-drag-wrapper][data-add-button-hover]
   > [data-lexical-block-drag-handle],
 [data-lexical-block-drag-handle]:hover {

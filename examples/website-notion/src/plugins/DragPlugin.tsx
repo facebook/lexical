@@ -6,7 +6,7 @@
  *
  */
 
-import {BLOCK_DRAG_WRAPPER_ATTR} from '@lexical/react/LexicalBlockDragHandleExtension';
+import {BLOCK_DRAG_HANDLE_ATTR} from '@lexical/react/LexicalBlockDragHandleExtension';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {DraggableBlockPlugin_EXPERIMENTAL} from '@lexical/react/LexicalDraggableBlockPlugin';
 import {
@@ -63,25 +63,25 @@ export function DragPlugin({anchorElem}: DragPluginProps) {
   const effectiveBlockElem =
     hoveredBlockElem || (isOverAddButton ? lastHoveredBlockRef.current : null);
 
-  // When the "+" is hovered (but the wrapper itself isn't), keep the drag
-  // handle visible by stamping a data attribute on the wrapper that the
+  // When the "+" is hovered (but the block itself isn't), keep the drag
+  // handle visible by stamping a data attribute on the block that the
   // CSS targets the same as `:hover`.
-  const wrapperForAddHover =
+  const blockForAddHover =
     isOverAddButton && lastHoveredBlockRef.current
-      ? lastHoveredBlockRef.current.parentElement
+      ? lastHoveredBlockRef.current
       : null;
   useEffect(() => {
     if (
-      !wrapperForAddHover ||
-      !wrapperForAddHover.hasAttribute(BLOCK_DRAG_WRAPPER_ATTR)
+      !blockForAddHover ||
+      !blockForAddHover.querySelector(`:scope > [${BLOCK_DRAG_HANDLE_ATTR}]`)
     ) {
       return;
     }
-    wrapperForAddHover.setAttribute('data-add-button-hover', '');
+    blockForAddHover.setAttribute('data-add-button-hover', '');
     return () => {
-      wrapperForAddHover.removeAttribute('data-add-button-hover');
+      blockForAddHover.removeAttribute('data-add-button-hover');
     };
-  }, [wrapperForAddHover]);
+  }, [blockForAddHover]);
   const [pickerState, setPickerState] = useState<PickerState | null>(null);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [queryString, setQueryString] = useState('');

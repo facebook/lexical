@@ -10,7 +10,7 @@ import type {JSX} from 'react';
 
 import './index.css';
 
-import {BLOCK_DRAG_WRAPPER_ATTR} from '@lexical/react/LexicalBlockDragHandleExtension';
+import {BLOCK_DRAG_HANDLE_ATTR} from '@lexical/react/LexicalBlockDragHandleExtension';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {DraggableBlockPlugin_EXPERIMENTAL} from '@lexical/react/LexicalDraggableBlockPlugin';
 import {
@@ -71,26 +71,26 @@ export default function DraggableBlockPlugin({
   const effectiveBlockElem =
     hoveredBlockElem || (isOverAddButton ? lastHoveredBlockRef.current : null);
 
-  // When the "+" is hovered (but the wrapper itself isn't, since the
+  // When the "+" is hovered (but the block itself isn't, since the
   // pointer left the editor area), keep the drag handle visible by
-  // stamping a data attribute on the wrapper that the CSS treats the same
+  // stamping a data attribute on the block that the CSS treats the same
   // as `:hover`.
-  const wrapperForAddHover =
+  const blockForAddHover =
     isOverAddButton && lastHoveredBlockRef.current
-      ? lastHoveredBlockRef.current.parentElement
+      ? lastHoveredBlockRef.current
       : null;
   useEffect(() => {
     if (
-      !wrapperForAddHover ||
-      !wrapperForAddHover.hasAttribute(BLOCK_DRAG_WRAPPER_ATTR)
+      !blockForAddHover ||
+      !blockForAddHover.querySelector(`:scope > [${BLOCK_DRAG_HANDLE_ATTR}]`)
     ) {
       return;
     }
-    wrapperForAddHover.setAttribute('data-add-button-hover', '');
+    blockForAddHover.setAttribute('data-add-button-hover', '');
     return () => {
-      wrapperForAddHover.removeAttribute('data-add-button-hover');
+      blockForAddHover.removeAttribute('data-add-button-hover');
     };
-  }, [wrapperForAddHover]);
+  }, [blockForAddHover]);
   const [pickerState, setPickerState] = useState<PickerState | null>(null);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [queryString, setQueryString] = useState('');
@@ -280,12 +280,7 @@ export default function DraggableBlockPlugin({
     if (!blockForPosition) {
       return {display: 'none'};
     }
-    const wrapper = blockForPosition.parentElement;
-    const positionEl =
-      wrapper && wrapper.hasAttribute(BLOCK_DRAG_WRAPPER_ATTR)
-        ? wrapper
-        : blockForPosition;
-    const rect = positionEl.getBoundingClientRect();
+    const rect = blockForPosition.getBoundingClientRect();
     const anchorRect = anchorElem.getBoundingClientRect();
     return {
       left: rect.left - anchorRect.left - 40 + anchorElem.scrollLeft,

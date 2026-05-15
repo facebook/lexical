@@ -16,47 +16,23 @@ import {
 } from 'lexical';
 
 /**
- * Attribute on the outer wrapper element. Stable contract for consumers
- * that need to find the wrapper from arbitrary descendants (e.g.
- * `LexicalDraggableBlockPlugin` walks up the DOM with this attribute to
- * resolve which block a pointer event refers to).
- *
- * @experimental
- */
-export const BLOCK_DRAG_WRAPPER_ATTR = 'data-lexical-block-drag-wrapper';
-/**
- * Attribute on the drag-handle button itself. Used both by consumers
- * (for hit-testing — `event.target.closest('[data-lexical-block-drag-handle]')`)
- * and for the global DnD event delegation in `LexicalDraggableBlockPlugin`.
+ * Attribute on the drag-handle button. Stable contract for consumers that
+ * need to hit-test events (`event.target.closest('[data-lexical-block-drag-handle]')`)
+ * or wire global DnD delegation.
  *
  * @experimental
  */
 export const BLOCK_DRAG_HANDLE_ATTR = 'data-lexical-block-drag-handle';
-/**
- * Attribute on the inner element — the original DOM the node would have
- * produced without wrapping. Consumers that need the node's own keyed
- * element (rather than the wrapper) should query `:scope > [data-lexical-block-drag-inner]`
- * within the wrapper.
- *
- * @experimental
- */
-export const BLOCK_DRAG_INNER_ATTR = 'data-lexical-block-drag-inner';
 
 function shouldWrap(node: LexicalNode): node is LexicalNode {
   // Top-level block ElementNode (paragraph, heading, list, quote, code,
   // table, collapsible…) that's a direct child of the real RootNode.
   // Shadow roots (collapsible container/content, table cell) are excluded
-  // so nested blocks keep their natural DOM and don't get duplicate
-  // handles on inner rows.
+  // so nested blocks don't get duplicate handles on inner rows.
   //
-  // DecoratorNodes are intentionally NOT wrapped. `useDecorators` mounts
-  // the React portal via `editor.getElementByKey(nodeKey)`, which returns
-  // the wrapper here — not the inner element. For decorators whose
-  // `decorate()` returns visible DOM (e.g. equation, image), the rendered
-  // portal lands as a sibling of the empty inner-marker inside the
-  // wrapper, with undefined visual ordering. Until the slot abstraction
-  // covers portal-mount routing, leave DecoratorNodes without a wrap —
-  // they keep their original keyed DOM and have no drag handle.
+  // DecoratorNodes are intentionally NOT wrapped. The slot abstraction
+  // doesn't yet cover decorator portal-mount routing — see
+  // `packages/lexical-react/src/shared/useDecorators.tsx`.
   if (!$isElementNode(node) || node.isInline()) {
     return false;
   }
@@ -68,19 +44,33 @@ function createDragHandle(): HTMLButtonElement {
   handle.type = 'button';
   handle.draggable = true;
   // Mouse-only affordance; no keyboard reorder pattern is wired. Without
-  // tabIndex = -1, Tab would cycle through every block's handle, adding
-  // one focus stop per block on top of the editor's own focus.
+  // tabIndex = -1, Tab would cycle through every block's handle.
   handle.tabIndex = -1;
   handle.setAttribute(BLOCK_DRAG_HANDLE_ATTR, 'true');
   handle.setAttribute('aria-label', 'Drag to reorder');
   handle.contentEditable = 'false';
-  // Intentionally no textContent: the handle's visual is a background
-  // image in CSS. Adding text content here would create a text node
-  // inside the wrapper, which interferes with the browser's paragraph
-  // detection for triple-click selection (browser treats the wrapper as a
-  // text-bearing block and the multi-paragraph triple-click collapses).
+  // No textContent — the visual is a CSS background-image.
   return handle;
 }
+
+/**
+ * Attribute on the outer wrapper element. Stable contract for consumers
+ * that walk up the DOM from arbitrary descendants to find which block a
+ * pointer event belongs to.
+ *
+ * @experimental
+ */
+export const BLOCK_DRAG_WRAPPER_ATTR = 'data-lexical-block-drag-wrapper';
+
+/**
+ * Attribute on the inner element — the original DOM the node would have
+ * produced without wrapping. Consumers that need the node's own keyed
+ * element should query `:scope > [data-lexical-block-drag-inner]` within
+ * the wrapper.
+ *
+ * @experimental
+ */
+export const BLOCK_DRAG_INNER_ATTR = 'data-lexical-block-drag-inner';
 
 function wrapWithHandle(inner: HTMLElement): HTMLDivElement {
   const wrapper = document.createElement('div');
@@ -92,17 +82,14 @@ function wrapWithHandle(inner: HTMLElement): HTMLDivElement {
 }
 
 /**
- * Worked example for the generalized `getDOMSlot` abstraction in the
- * ElementNode + extension axis: wraps each top-level block node's DOM with
- * a sibling drag-handle element, and exposes the original inner element
- * through `$getDOMSlot` so the reconciler still mounts children inside it.
- *
- * Wrapping every top-level block uniformly (rather than embedding into
- * the node's own DOM) sidesteps per-node DOM peculiarities: nodes with
- * `overflow-x` on their keyed element (code, scrollable tables), void
- * elements (HR), and nodes that positionally index `dom.children` (e.g.
- * `CollapsibleContainerNode.children[1]`) all keep their own DOM intact
- * inside the wrapper.
+ * Worked example for the generalized `getDOMSlot` abstraction. Each
+ * top-level block ElementNode is wrapped with a `<div>` that carries a
+ * drag-handle button next to the original DOM. The wrapper uses
+ * `display: contents` so the browser's arrow-key navigation /
+ * triple-click / execCommand range operations see the inner element as
+ * the block boundary; the handle's position is anchored to the inner via
+ * CSS anchor-positioning (`anchor-name` on inner, `position-anchor` on
+ * handle) so the wrapper doesn't need a positioning context.
  *
  * The drag interaction itself (HTML5 DnD wiring, target line, drop) is
  * registered separately on the editor root via event delegation on the
@@ -123,20 +110,8 @@ export const BlockDragHandleExtension = defineExtension({
             if (!inner) {
               return $next();
             }
-            // Dispatch to the node's own `getDOMSlot` against the inner
-            // element so node-specific slot config (e.g. `TableNode`'s
-            // `withElement(table).withAfter(colgroup)`, which depends on
-            // walking into the scrollable `<div>` wrapper or skipping the
-            // `<colgroup>` prelude) is preserved under wrap. Constructing a
-            // fresh `ElementDOMSlot(inner)` here would discard that.
             return node.getDOMSlot(inner);
           },
-          // `dom` here is the wrapper, but a node's `updateDOM` expects its
-          // own element (e.g. CollapsibleContainer indexes `children[1]` to
-          // find its content div, ParagraphNode reads `dom.children` for
-          // empty-state detection, etc.). Forward to the underlying
-          // `updateDOM` with the inner element so node-internal DOM
-          // operations still target the right element.
           $updateDOM: (nextNode, prevNode, dom, $next, editor) => {
             const inner = dom.querySelector<HTMLElement>(
               `:scope > [${BLOCK_DRAG_INNER_ATTR}]`,

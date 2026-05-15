@@ -54,9 +54,6 @@ function getBlockElementFromHandle(handle: HTMLElement): HTMLElement | null {
   );
 }
 
-/**
- * Walk up from the event target to find the nearest decorated block.
- */
 function getBlockElementFromEventTarget(
   target: EventTarget | null,
 ): HTMLElement | null {
@@ -67,15 +64,9 @@ function getBlockElementFromEventTarget(
   if (handle) {
     return getBlockElementFromHandle(handle);
   }
-  const inner = target.closest<HTMLElement>(`[${BLOCK_DRAG_INNER_ATTR}]`);
-  return inner;
+  return target.closest<HTMLElement>(`[${BLOCK_DRAG_INNER_ATTR}]`);
 }
 
-/**
- * Fallback for drop/dragover when the pointer lands outside any decorated
- * block (e.g. below the last paragraph). Pick the wrapper whose vertical
- * center is closest to the pointer's y, then return its inner element.
- */
 function getNearestBlockElementByY(
   rootElement: HTMLElement,
   clientY: number,

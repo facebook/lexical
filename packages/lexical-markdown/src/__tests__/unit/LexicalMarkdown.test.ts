@@ -1350,7 +1350,6 @@ describe('Markdown', () => {
         replace: () => {
           return false;
         },
-        triggerOnEnter: true,
         type: 'multiline-element',
       };
 

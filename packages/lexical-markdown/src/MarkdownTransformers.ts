@@ -166,9 +166,9 @@ export type MultilineElementTransformer = {
   ) => boolean | void;
   type: 'multiline-element';
   /**
-   * When set, `registerMarkdownShortcuts` may run this transformer from `KEY_ENTER_COMMAND`
+   * By default, `registerMarkdownShortcuts` may run this transformer from `KEY_ENTER_COMMAND`
    * at end-of-line without requiring a trailing space (the update listener still uses the
-   * space after the markdown token). Omit or false to disable Enter-triggered shortcuts.
+   * space after the markdown token). Set to `false` to disable Enter-triggered shortcuts.
    */
   triggerOnEnter?: boolean;
 };
@@ -694,7 +694,6 @@ export const CODE: MultilineElementTransformer = {
     }
   },
 
-  triggerOnEnter: true,
   type: 'multiline-element',
 };
 

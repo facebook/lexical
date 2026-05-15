@@ -71,9 +71,8 @@ function runElementTransformers(
   for (const {regExp, replace} of elementTransformers) {
     const match = textContent.match(regExp);
 
-    const expectedMatchLength = triggerOnEnter
-      ? anchorOffset
-      : match && match[0].endsWith(' ')
+    const expectedMatchLength =
+      triggerOnEnter || (match && match[0].endsWith(' '))
         ? anchorOffset
         : anchorOffset - 1;
 
@@ -445,7 +444,7 @@ export function registerMarkdownShortcuts(
     t => t.triggerOnEnter,
   );
   const multilineElementTransformersForEnter = byType.multilineElement.filter(
-    t => t.triggerOnEnter,
+    t => t.triggerOnEnter !== false,
   );
   const textFormatTransformersByTrigger = indexBy(
     byType.textFormat,

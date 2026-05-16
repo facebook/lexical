@@ -6,6 +6,7 @@
  *
  */
 
+import {$isAtNodeEnd} from '@lexical/selection';
 import {
   $caretFromPoint,
   $caretRangeFromSelection,
@@ -1031,10 +1032,15 @@ export function $onEscapeUp(
     if (containerNode) {
       const parent = containerNode.getParent();
       if (parent !== null && parent.getFirstChild() === containerNode) {
-        const contentParagraph = containerNode.getFirstDescendant();
+        const firstDescendant = containerNode.getFirstDescendant();
+        const anchorNode = selection.anchor.getNode();
         if (
-          contentParagraph !== null &&
-          selection.anchor.key === contentParagraph.getKey()
+          firstDescendant !== null &&
+          // the selection can be at the edge of the text
+          (anchorNode === firstDescendant ||
+            // or at the edge of the parent element
+            ($isElementNode(anchorNode) &&
+              anchorNode.getFirstDescendant() === firstDescendant))
         ) {
           containerNode.insertBefore($createParagraphNode());
           return true;
@@ -1071,11 +1077,16 @@ export function $onEscapeDown(
     if (containerNode) {
       const parent = containerNode.getParent();
       if (parent !== null && parent.getLastChild() === containerNode) {
-        const contentParagraph = containerNode.getLastDescendant();
+        const lastDescendant = containerNode.getLastDescendant();
+        const anchorNode = selection.anchor.getNode();
         if (
-          contentParagraph !== null &&
-          selection.anchor.key === contentParagraph.getKey() &&
-          selection.anchor.offset === contentParagraph.getTextContentSize()
+          lastDescendant !== null &&
+          $isAtNodeEnd(selection.anchor) &&
+          // the selection can be at the edge of the text
+          (anchorNode === lastDescendant ||
+            // or at the edge of the parent element
+            ($isElementNode(anchorNode) &&
+              anchorNode.getLastDescendant() === lastDescendant))
         ) {
           containerNode.insertAfter($createParagraphNode());
           return true;

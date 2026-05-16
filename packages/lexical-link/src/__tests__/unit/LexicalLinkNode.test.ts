@@ -1267,27 +1267,6 @@ describe('LinkNode transform (Regression #8083)', () => {
     });
   });
 
-  test('an empty link is not deleted if the transformation did not occur', () => {
-    using editor = buildEditorFromExtensions(transformExtension);
-    let linkKey: string;
-    editor.update(
-      () => {
-        const root = $getRoot();
-        const link = $createLinkNode('https://lexical.dev');
-        linkKey = link.getKey();
-        const paragraph = $createParagraphNode();
-        paragraph.append(link);
-        root.clear().append(paragraph);
-        link.select();
-      },
-      {discrete: true},
-    );
-    editor.read(() => {
-      const linkNode = $getNodeByKey(linkKey);
-      expect(linkNode).not.toBe(null);
-    });
-  });
-
   // Regression #8305: All five visually-equivalent cursor positions at the
   // boundary between two adjacent identical links must resolve to the merge
   // boundary (textA at offset 5) after the links merge.

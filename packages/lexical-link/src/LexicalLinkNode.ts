@@ -814,9 +814,13 @@ export function $toggleLink(
           !$isAutoLinkNode(parent) && $isLinkNode(parent),
       );
       if (parentLink !== null) {
-        parentLink.getChildren().forEach(child => {
-          parentLink.insertBefore(child);
-        });
+        parentLink
+          .getParentOrThrow()
+          .splice(
+            parentLink.getIndexWithinParent(),
+            0,
+            parentLink.getChildren(),
+          );
         parentLink.remove();
       }
       return;

@@ -2000,7 +2000,7 @@ export class RangeSelection implements BaseSelection {
     return isBackward;
   }
 
-  getStartEndPoints(): null | [PointType, PointType] {
+  getStartEndPoints(): [PointType, PointType] {
     return [this.anchor, this.focus];
   }
 }

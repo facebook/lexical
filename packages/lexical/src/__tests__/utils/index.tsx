@@ -236,6 +236,10 @@ export class TestInlineElementNode extends ElementNode {
   isInline() {
     return true;
   }
+
+  canBeEmpty() {
+    return false;
+  }
 }
 
 export function $createTestInlineElementNode(): TestInlineElementNode {

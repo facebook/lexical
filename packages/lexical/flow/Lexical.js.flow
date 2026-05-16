@@ -630,7 +630,7 @@ declare export class RangeSelection implements BaseSelection {
   getCachedNodes(): null | Array<LexicalNode>;
   setCachedNodes(nodes: null | Array<LexicalNode>): void;
   forwardDeletion(anchor: PointType, anchorNode: ElementNode | TextNode, isBackward: boolean): boolean;
-  getStartEndPoints(): null | [PointType, PointType];
+  getStartEndPoints(): [PointType, PointType];
 }
 export type TextPoint = TextPointType;
 type TextPointType = {

@@ -16,10 +16,6 @@ import HomepageExamples from '@site/src/components/HomepageExamples';
 import HomepageFeatures from '@site/src/components/HomepageFeatures';
 import StackBlitzButton from '@site/src/components/StackBlitzButton';
 import Layout from '@theme/Layout';
-import {inject} from '@vercel/analytics';
-
-// activate analytics
-inject();
 
 function LandingHero() {
   return (

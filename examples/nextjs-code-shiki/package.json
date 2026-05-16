@@ -1,5 +1,5 @@
 {
-  "name": "lexical-esm-nextjs",
+  "name": "@lexical/nextjs-code-shiki-example",
   "version": "0.44.0",
   "private": true,
   "scripts": {
@@ -9,9 +9,13 @@
     "test": "playwright test"
   },
   "dependencies": {
-    "@lexical/code": "0.44.0",
-    "@lexical/plain-text": "0.44.0",
+    "@lexical/code-core": "0.44.0",
+    "@lexical/code-shiki": "0.44.0",
+    "@lexical/extension": "0.44.0",
+    "@lexical/headless": "0.44.0",
+    "@lexical/history": "0.44.0",
     "@lexical/react": "0.44.0",
+    "@lexical/rich-text": "0.44.0",
     "lexical": "0.44.0",
     "next": "^15.5.14",
     "react": "^19",
@@ -22,9 +26,6 @@
     "@types/node": "^20",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.1.9",
-    "autoprefixer": "^10.0.1",
-    "postcss": "^8",
-    "tailwindcss": "^3.3.0",
     "typescript": "^5.9.2"
   }
 }

@@ -6,15 +6,15 @@
  *
  */
 
-import EditorUseClient from "./EditorUseClient";
+import EditorClient from './EditorClient';
 
 export const dynamic = 'force-dynamic';
 
 export default function Home() {
   return (
     <main>
-  		<h1>Next.js Rich Text Lexical Example</h1>
-      <EditorUseClient />
+      <h1>Lexical Next.js Code Shiki Example</h1>
+      <EditorClient />
     </main>
   );
 }

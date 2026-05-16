@@ -6,15 +6,15 @@
  *
  */
 
-import type { PlaywrightTestConfig } from '@playwright/test';
+import type {PlaywrightTestConfig} from '@playwright/test';
 
 const config: PlaywrightTestConfig = {
-	webServer: {
-		command: 'pnpm run start',
-		port: 3000
-	},
-	testDir: 'tests',
-	testMatch: /(.+\.)?(test|spec)\.[jt]s/
+  testDir: 'tests',
+  testMatch: /(.+\.)?(test|spec)\.[jt]s/,
+  webServer: {
+    command: 'pnpm run start',
+    port: 3000,
+  },
 };
 
 export default config;

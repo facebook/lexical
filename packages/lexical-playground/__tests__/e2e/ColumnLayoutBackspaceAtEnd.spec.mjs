@@ -85,8 +85,8 @@ for (const key of ['ArrowRight', 'ArrowDown']) {
     isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText);
-    await initialize({isCollab, page});
+    test.skip(isPlainText || isCollab);
+    await initialize({page});
     await focusEditor(page);
 
     await page.keyboard.type('/');

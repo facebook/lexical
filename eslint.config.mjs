@@ -450,8 +450,5 @@ export default [
   prettierConfig,
 
   // Compatibility with browserslist
-  {
-    ...compat.configs['flat/recommended'],
-    ignores: ['packages/lexical-playground/**'],
-  },
+  compat.configs['flat/recommended'],
 ];

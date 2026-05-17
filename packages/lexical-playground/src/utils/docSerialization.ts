@@ -42,11 +42,11 @@ const CompressionAPIWarning = warnOnlyOnce(
 );
 
 export async function docToHash(doc: SerializedDocument): Promise<string> {
-  if (typeof CompressionStream === 'undefined') {
+  const cs = getCompressionStream();
+  if (!cs) {
     CompressionAPIWarning();
     return '';
   }
-  const cs = new CompressionStream('gzip');
   const writer = cs.writable.getWriter();
   const [, output] = await Promise.all([
     writer
@@ -60,6 +60,20 @@ export async function docToHash(doc: SerializedDocument): Promise<string> {
     .replace(/=+$/, '')}`;
 }
 
+// Feature detection is extracted to functions as a workaround until
+// https://github.com/amilajack/eslint-plugin-compat/pull/687 lands
+function getCompressionStream() {
+  if (typeof CompressionStream !== 'undefined') {
+    return new CompressionStream('gzip');
+  }
+}
+
+function getDecompressionStream() {
+  if (typeof DecompressionStream !== 'undefined') {
+    new DecompressionStream('gzip');
+  }
+}
+
 export async function docFromHash(
   hash: string,
 ): Promise<SerializedDocument | null> {
@@ -67,11 +81,11 @@ export async function docFromHash(
   if (!m) {
     return null;
   }
-  if (typeof DecompressionStream === 'undefined') {
+  const ds = getDecompressionStream();
+  if (!ds) {
     CompressionAPIWarning();
     return null;
   }
-  const ds = new DecompressionStream('gzip');
   const writer = ds.writable.getWriter();
   const b64 = atob(m[1].replace(/_/g, '/').replace(/-/g, '+'));
   const array = new Uint8Array(b64.length);

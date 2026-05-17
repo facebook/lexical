@@ -68,7 +68,6 @@ export type MultilineElementTransformer = {
     isImport: boolean,
   ) => boolean | void;
   type: 'multiline-element';
-  triggerOnEnter?: boolean;
 };
 
 export type TextFormatTransformer = Readonly<{

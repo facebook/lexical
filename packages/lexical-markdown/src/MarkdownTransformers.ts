@@ -165,12 +165,6 @@ export type MultilineElementTransformer = {
     isImport: boolean,
   ) => boolean | void;
   type: 'multiline-element';
-  /**
-   * By default, `registerMarkdownShortcuts` may run this transformer from `KEY_ENTER_COMMAND`
-   * at end-of-line without requiring a trailing space (the update listener still uses the
-   * space after the markdown token). Set to `false` to disable Enter-triggered shortcuts.
-   */
-  triggerOnEnter?: boolean;
 };
 
 export type TextFormatTransformer = Readonly<{

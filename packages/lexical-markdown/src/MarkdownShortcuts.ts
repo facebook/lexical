@@ -444,9 +444,6 @@ export function registerMarkdownShortcuts(
   const elementTransformersForEnter = byType.element.filter(
     t => t.triggerOnEnter,
   );
-  const multilineElementTransformersForEnter = byType.multilineElement.filter(
-    t => t.triggerOnEnter !== false,
-  );
   const textFormatTransformersByTrigger = indexBy(
     byType.textFormat,
     ({tag}) => tag[tag.length - 1],
@@ -655,7 +652,7 @@ export function registerMarkdownShortcuts(
             parentNode,
             anchorNode,
             anchorOffset,
-            multilineElementTransformersForEnter,
+            byType.multilineElement,
             true,
           ) ||
           runElementTransformers(

@@ -6,9 +6,6 @@
  *
  */
 
-import type {JSX} from 'react';
-
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$isAtNodeEnd} from '@lexical/selection';
 import {mergeRegister} from '@lexical/utils';
 import {
@@ -18,6 +15,7 @@ import {
   $isTextNode,
   type BaseSelection,
   COMMAND_PRIORITY_LOW,
+  defineExtension,
   type EditorState,
   KEY_ARROW_RIGHT_COMMAND,
   KEY_TAB_COMMAND,
@@ -25,7 +23,6 @@ import {
   type NodeKey,
   setDOMUnmanaged,
 } from 'lexical';
-import {useCallback, useEffect} from 'react';
 
 import {addSwipeRightListener} from '../../utils/swipe';
 
@@ -78,11 +75,9 @@ function $search(selection: null | BaseSelection): [boolean, string] {
   return [true, word.reverse().join('')];
 }
 
-function useQuery(): (searchText: string) => SearchPromise {
-  return useCallback((searchText: string) => {
-    const server = new AutocompleteServer();
-    return server.query(searchText);
-  }, []);
+function query(searchText: string): SearchPromise {
+  const server = new AutocompleteServer();
+  return server.query(searchText);
 }
 
 function formatSuggestionText(suggestion: string): string {
@@ -133,11 +128,16 @@ function syncGhost(
   dom.appendChild(ghost);
 }
 
-export default function AutocompletePlugin(): JSX.Element | null {
-  const [editor] = useLexicalComposerContext();
-  const query = useQuery();
-
-  useEffect(() => {
+/**
+ * Picks up etrepum's review nudge on PR #8519 — the previous
+ * `AutocompletePlugin` React component held no JSX or hooks-driven state
+ * (only `useEffect` doing side-effect registrations), so it's collapsed
+ * here into a pure {@link defineExtension} consumed by the playground's
+ * dynamic-config extension list.
+ */
+export const AutocompleteExtension = defineExtension({
+  name: '@lexical/playground/autocomplete',
+  register: (editor: LexicalEditor) => {
     let activeTextNodeKey: NodeKey | null = null;
     let lastMatch: string | null = null;
     let lastSuggestion: string | null = null;
@@ -161,75 +161,87 @@ export default function AutocompletePlugin(): JSX.Element | null {
       if (searchPromise !== refPromise || newSuggestion === null) {
         return;
       }
-      editor.getEditorState().read(() => {
-        const selection = $getSelection();
-        const [hasMatch, match] = $search(selection);
-        if (!hasMatch || match !== lastMatch || !$isRangeSelection(selection)) {
-          return;
-        }
-        const node = selection.getNodes()[0];
-        if (!$isTextNode(node)) {
-          return;
-        }
-        activeTextNodeKey = node.getKey();
-        lastSuggestion = newSuggestion;
-        syncGhost(
-          editor,
-          activeTextNodeKey,
-          formatSuggestionText(newSuggestion),
-        );
-      });
+      editor.getEditorState().read(
+        () => {
+          const selection = $getSelection();
+          const [hasMatch, match] = $search(selection);
+          if (
+            !hasMatch ||
+            match !== lastMatch ||
+            !$isRangeSelection(selection)
+          ) {
+            return;
+          }
+          const node = selection.getNodes()[0];
+          if (!$isTextNode(node)) {
+            return;
+          }
+          activeTextNodeKey = node.getKey();
+          lastSuggestion = newSuggestion;
+          syncGhost(
+            editor,
+            activeTextNodeKey,
+            formatSuggestionText(newSuggestion),
+          );
+        },
+        {editor},
+      );
     }
 
     function handleUpdate({editorState}: {editorState: EditorState}) {
-      editorState.read(() => {
-        const selection = $getSelection();
-        const [hasMatch, match] = $search(selection);
-        if (!hasMatch) {
-          dismiss();
-          return;
-        }
-        if (match === lastMatch) {
-          // Same prefix, but the active TextNode key may have changed if
-          // the user moved the cursor between nodes with the same prefix.
-          if ($isRangeSelection(selection)) {
-            const node = selection.getNodes()[0];
-            if ($isTextNode(node)) {
-              const key = node.getKey();
-              if (key !== activeTextNodeKey) {
-                activeTextNodeKey = key;
-                syncGhost(
-                  editor,
-                  activeTextNodeKey,
-                  lastSuggestion ? formatSuggestionText(lastSuggestion) : null,
-                );
+      editorState.read(
+        () => {
+          const selection = $getSelection();
+          const [hasMatch, match] = $search(selection);
+          if (!hasMatch) {
+            dismiss();
+            return;
+          }
+          if (match === lastMatch) {
+            // Same prefix, but the active TextNode key may have changed if
+            // the user moved the cursor between nodes with the same prefix.
+            if ($isRangeSelection(selection)) {
+              const node = selection.getNodes()[0];
+              if ($isTextNode(node)) {
+                const key = node.getKey();
+                if (key !== activeTextNodeKey) {
+                  activeTextNodeKey = key;
+                  syncGhost(
+                    editor,
+                    activeTextNodeKey,
+                    lastSuggestion
+                      ? formatSuggestionText(lastSuggestion)
+                      : null,
+                  );
+                }
               }
             }
+            return;
           }
-          return;
-        }
-        // New prefix — clear any stale ghost while waiting for the async
-        // suggestion, then kick off a fresh query.
-        if (searchPromise !== null) {
-          searchPromise.dismiss();
-        }
-        syncGhost(editor, null, null);
-        lastMatch = match;
-        lastSuggestion = null;
-        activeTextNodeKey = null;
-        searchPromise = query(match);
-        searchPromise.promise
-          .then(newSuggestion => {
-            if (searchPromise !== null) {
-              applyAsyncSuggestion(searchPromise, newSuggestion);
-            }
-          })
-          .catch(e => {
-            if (e !== 'Dismissed') {
-              console.error(e);
-            }
-          });
-      });
+          // New prefix — clear any stale ghost while waiting for the async
+          // suggestion, then kick off a fresh query.
+          if (searchPromise !== null) {
+            searchPromise.dismiss();
+          }
+          syncGhost(editor, null, null);
+          lastMatch = match;
+          lastSuggestion = null;
+          activeTextNodeKey = null;
+          searchPromise = query(match);
+          searchPromise.promise
+            .then(newSuggestion => {
+              if (searchPromise !== null) {
+                applyAsyncSuggestion(searchPromise, newSuggestion);
+              }
+            })
+            .catch(e => {
+              if (e !== 'Dismissed') {
+                console.error(e);
+              }
+            });
+        },
+        {editor},
+      );
     }
 
     function $commitSuggestion(): boolean {
@@ -301,15 +313,13 @@ export default function AutocompletePlugin(): JSX.Element | null {
         ? [addSwipeRightListener(rootElem, handleSwipeRight)]
         : []),
       () => {
-        // Tear down on unmount: clear any ghost still attached so a fresh
-        // mount doesn't see leftover decoration.
+        // Tear down on dispose: clear any ghost still attached so a fresh
+        // build doesn't see leftover decoration.
         dismiss();
       },
     );
-  }, [editor, query]);
-
-  return null;
-}
+  },
+});
 
 /*
  * Simulate an asynchronous autocomplete server (typical in more common use

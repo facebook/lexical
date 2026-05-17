@@ -52,6 +52,7 @@ import Editor from './Editor';
 import logo from './images/logo.svg';
 import {KeywordsExtension} from './nodes/KeywordNode';
 import PlaygroundNodes from './nodes/PlaygroundNodes';
+import {AutocompleteExtension} from './plugins/AutocompletePlugin';
 import {PlaygroundAutoLinkExtension} from './plugins/AutoLinkExtension';
 import {CodeHighlightExtension} from './plugins/CodeHighlightExtension';
 import {CollapsibleExtension} from './plugins/CollapsibleExtension';
@@ -219,9 +220,12 @@ const AppExtension = defineExtension({
  * different editor configurations based on the query string.
  */
 function buildExtensionFromSettings(
-  settings: Record<'isCollab' | 'emptyEditor' | 'isRichText', boolean>,
+  settings: Record<
+    'isCollab' | 'emptyEditor' | 'isRichText' | 'isAutocomplete',
+    boolean
+  >,
 ) {
-  const {isCollab, emptyEditor, isRichText} = settings;
+  const {isCollab, emptyEditor, isRichText, isAutocomplete} = settings;
   return defineExtension({
     $initialEditorState: isCollab
       ? null
@@ -232,6 +236,7 @@ function buildExtensionFromSettings(
       AppExtension,
       configExtension(HistoryExtension, {disabled: isCollab}),
       isRichText ? PlaygroundRichTextExtension : PlainTextExtension,
+      ...(isAutocomplete ? [AutocompleteExtension] : []),
     ],
     name: '@lexical/playground/dynamic-config',
   });
@@ -239,12 +244,24 @@ function buildExtensionFromSettings(
 
 function App(): JSX.Element {
   const {
-    settings: {isCollab, emptyEditor, isRichText, measureTypingPerf},
+    settings: {
+      isAutocomplete,
+      isCollab,
+      emptyEditor,
+      isRichText,
+      measureTypingPerf,
+    },
   } = useSettings();
 
   const app = useMemo(
-    () => buildExtensionFromSettings({emptyEditor, isCollab, isRichText}),
-    [emptyEditor, isCollab, isRichText],
+    () =>
+      buildExtensionFromSettings({
+        emptyEditor,
+        isAutocomplete,
+        isCollab,
+        isRichText,
+      }),
+    [emptyEditor, isAutocomplete, isCollab, isRichText],
   );
 
   return (

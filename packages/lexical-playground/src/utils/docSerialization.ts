@@ -87,5 +87,4 @@ export async function docFromHash(
   }
   await closed;
   return JSON.parse(output.join(''));
-  }
 }

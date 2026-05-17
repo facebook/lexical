@@ -125,6 +125,35 @@ describe('CodeGutterExtension', () => {
     });
   });
 
+  it('marks the last LineBreakNode wrap with data-line-number-trailing for the placeholder line', () => {
+    const ext = defineExtension({
+      $initialEditorState: () => {
+        const codeNode = $createCodeNode('javascript');
+        codeNode.append(
+          $createCodeHighlightNode('line1'),
+          $createLineBreakNode(),
+        );
+        $getRoot().append(codeNode);
+      },
+      dependencies: [CodeExtension, CodeGutterExtension, RichTextExtension],
+      name: '[root]',
+    });
+
+    using editor = buildEditorFromExtensions(ext);
+    const rootElement = document.createElement('div');
+    editor.setRootElement(rootElement);
+    editor.read(() => {
+      const code = rootElement.querySelector('code') as HTMLElement;
+      const trailingWraps = code.querySelectorAll(
+        '[data-line-number-trailing]',
+      );
+      expect(trailingWraps.length).toBe(1);
+      expect(trailingWraps[0].getAttribute('data-line-number-trailing')).toBe(
+        '2',
+      );
+    });
+  });
+
   it('does not set data-line-number on non-line-starter children', () => {
     const ext = defineExtension({
       $initialEditorState: () => {

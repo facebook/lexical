@@ -16,6 +16,7 @@ import {
 import {$isCodeNode, CodeNode} from './CodeNode';
 
 const LINE_NUMBER_ATTR = 'data-line-number';
+const TRAILING_LINE_NUMBER_ATTR = 'data-line-number-trailing';
 const CODE_GUTTER_ACTIVE_ATTR = 'data-lexical-code-gutter-active';
 const CODE_LINEBREAK_WRAP_CLASS = 'code-linebreak-wrap';
 const CODE_LINEBREAK_WRAP_ATTR = 'data-lexical-code-linebreak-wrap';
@@ -91,6 +92,7 @@ export const CodeGutterExtension = defineExtension({
             dom.setAttribute(CODE_GUTTER_ACTIVE_ATTR, 'true');
             let lineN = 1;
             let prevChild = null;
+            let lastLineBreakDOM: HTMLElement | null = null;
             for (const child of node.getChildren()) {
               const isLineStart =
                 prevChild === null || $isLineBreakNode(prevChild);
@@ -101,11 +103,25 @@ export const CodeGutterExtension = defineExtension({
                 } else if (childDOM.hasAttribute(LINE_NUMBER_ATTR)) {
                   childDOM.removeAttribute(LINE_NUMBER_ATTR);
                 }
+                if ($isLineBreakNode(child)) {
+                  if (childDOM.hasAttribute(TRAILING_LINE_NUMBER_ATTR)) {
+                    childDOM.removeAttribute(TRAILING_LINE_NUMBER_ATTR);
+                  }
+                  lastLineBreakDOM = childDOM;
+                } else {
+                  lastLineBreakDOM = null;
+                }
               }
               if ($isLineBreakNode(child)) {
                 lineN++;
               }
               prevChild = child;
+            }
+            if (lastLineBreakDOM) {
+              lastLineBreakDOM.setAttribute(
+                TRAILING_LINE_NUMBER_ATTR,
+                String(lineN),
+              );
             }
           },
         }),

@@ -241,7 +241,7 @@ test.describe('CodeActionMenu', () => {
             data-lexical-text="true">
             ;
           </span>
-          <span data-lexical-code-linebreak-wrap="true" class="code-linebreak-wrap"><br /></span>
+          <span data-lexical-code-linebreak-wrap="true" data-line-number-trailing="2" class="code-linebreak-wrap"><br /></span>
           <br />
         </code>
       `,

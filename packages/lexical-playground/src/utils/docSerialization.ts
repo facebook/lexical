@@ -70,7 +70,7 @@ function getCompressionStream() {
 
 function getDecompressionStream() {
   if (typeof DecompressionStream !== 'undefined') {
-    new DecompressionStream('gzip');
+    return new DecompressionStream('gzip');
   }
 }
 

@@ -6,89 +6,107 @@
  *
  */
 import {domOverride, DOMRenderExtension} from '@lexical/html';
-import {$isLineBreakNode, configExtension, defineExtension} from 'lexical';
+import {
+  $isLineBreakNode,
+  configExtension,
+  defineExtension,
+  LineBreakNode,
+} from 'lexical';
 
-import {CodeNode} from './CodeNode';
+import {$isCodeNode, CodeNode} from './CodeNode';
 
-const CODE_GUTTER_CLASS = 'code-gutter';
-const CODE_GUTTER_ATTR = 'data-lexical-code-gutter';
+const LINE_NUMBER_ATTR = 'data-line-number';
+const CODE_GUTTER_ACTIVE_ATTR = 'data-lexical-code-gutter-active';
+const CODE_LINEBREAK_WRAP_CLASS = 'code-linebreak-wrap';
+const CODE_LINEBREAK_WRAP_ATTR = 'data-lexical-code-linebreak-wrap';
 
-function $countCodeLines(node: CodeNode): number {
-  let lines = 1;
-  for (const child of node.getChildren()) {
-    if ($isLineBreakNode(child)) {
-      lines += 1;
-    }
-  }
-  return lines;
-}
-
-function renderGutter(lines: number): string {
-  let out = '1';
-  for (let i = 2; i <= lines; i++) {
-    out += '\n' + i;
-  }
-  return out;
-}
-
-function syncGutter(dom: HTMLElement, lines: number): void {
-  // The legacy `registerCodeHighlighting` path also runs a mutation
-  // listener that writes a `data-gutter` attribute to the same `<code>`
-  // element for the CSS pseudo-element fallback. When this extension is
-  // active the slot-managed span is the visible gutter, so strip the
-  // attribute to keep the DOM output clean.
-  if (dom.hasAttribute('data-gutter')) {
-    dom.removeAttribute('data-gutter');
-  }
-  let gutter = dom.querySelector<HTMLElement>(`:scope > [${CODE_GUTTER_ATTR}]`);
-  if (!gutter) {
-    gutter = document.createElement('span');
-    gutter.className = CODE_GUTTER_CLASS;
-    gutter.setAttribute(CODE_GUTTER_ATTR, 'true');
-    gutter.setAttribute('aria-hidden', 'true');
-    gutter.contentEditable = 'false';
-    dom.prepend(gutter);
-  }
-  const next = renderGutter(lines);
-  if (gutter.textContent !== next) {
-    gutter.textContent = next;
-  }
+function hasOurLineBreakWrap(dom: HTMLElement): boolean {
+  return dom.tagName === 'SPAN' && dom.hasAttribute(CODE_LINEBREAK_WRAP_ATTR);
 }
 
 /**
- * Decorates each `CodeNode`'s `<code>` element with a `contentEditable=false`
- * line-number gutter span and brackets the lexical-managed children behind
- * it via `slot.after`.
+ * Decorates the first node of each line inside a `CodeNode` with a
+ * `data-line-number="N"` attribute so consumer CSS can render line numbers
+ * as `::before` pseudo-elements positioned at each line's start. Each line
+ * starter (the first `CodeHighlightNode` of the line, or a `LineBreakNode`
+ * whose previous sibling is `null` or another `LineBreakNode` — i.e. an
+ * empty line) carries its own number, so layout follows the actual DOM
+ * positions and stays accurate under line wrap.
  *
- * Picks up etrepum's suggestion on the #8201 thread that the code
- * highlighting extensions should "embed the line number in the gutter by
- * decorating the first TextNode (or LineBreak?) of each line", replacing
- * the previous ad-hoc `data-gutter` attribute that the highlighter
- * transforms set outside the reconciler.
+ * Because `<br>` is a void element and cannot host CSS pseudo-elements,
+ * `LineBreakNode`s inside a `CodeNode` are wrapped in a `<span>` via a
+ * `$createDOM` override; the wrap composes through `$next()` so a sibling
+ * `VisibleLineBreak`-style extension still applies. The wrap is the keyed
+ * DOM Lexical hands back from `getElementByKey`, so `data-line-number`
+ * goes on the wrap and the CSS `::before` renders normally.
  *
- * The gutter element holds the numbered text as `"1\n2\n…"` and is
- * positioned with `white-space: pre` + sticky / absolute layout in
- * consumer CSS, aligning each number with the corresponding code line
- * via shared `line-height` and the matching newline structure.
+ * `CodeNode`'s `$decorateDOM` walks its children once after they've been
+ * reconciled and sets the attribute on every line-starter, so insertion
+ * and deletion of lines re-numbers consistently — individual leaf nodes
+ * carrying stale numbers from a previous structure isn't possible because
+ * the parent always re-runs the pass.
+ *
+ * A sentinel `data-lexical-code-gutter-active` attribute is set on the
+ * `<code>` element so the legacy `data-gutter` mutation listener path
+ * (`@lexical/code-prism`, `@lexical/code-shiki`) can skip its write when
+ * this extension is active and avoid double-rendering.
  *
  * Listed as a dependency of `CodePrismExtension` / `CodeShikiExtension`
- * so any project that opts into a syntax highlighter keeps the
- * existing line-number behaviour. Projects using `CodeExtension`
- * without a highlighter can add this extension explicitly.
+ * so any project that opts into a syntax highlighter keeps the existing
+ * line-number behaviour. Projects using `CodeExtension` without a
+ * highlighter can add this extension explicitly.
  */
 export const CodeGutterExtension = defineExtension({
   dependencies: [
     configExtension(DOMRenderExtension, {
       overrides: [
-        domOverride([CodeNode], {
-          $decorateDOM: (node, _prevNode, dom, _editor) => {
-            syncGutter(dom, $countCodeLines(node));
+        domOverride([LineBreakNode], {
+          $createDOM: (node, $next, _editor) => {
+            const inner = $next();
+            if (!$isCodeNode(node.getParent())) {
+              return inner;
+            }
+            const wrap = document.createElement('span');
+            wrap.setAttribute(CODE_LINEBREAK_WRAP_ATTR, 'true');
+            wrap.className = CODE_LINEBREAK_WRAP_CLASS;
+            wrap.appendChild(inner);
+            return wrap;
           },
-          $getDOMSlot: (_node, dom, $next, _editor) => {
-            const gutter = dom.querySelector<HTMLElement>(
-              `:scope > [${CODE_GUTTER_ATTR}]`,
-            );
-            return gutter ? $next().withAfter(gutter) : $next();
+          $updateDOM: (node, _prev, dom, $next, _editor) => {
+            const wantsWrap = $isCodeNode(node.getParent());
+            if (wantsWrap !== hasOurLineBreakWrap(dom)) {
+              return true;
+            }
+            return $next();
+          },
+        }),
+        domOverride([CodeNode], {
+          $decorateDOM: (node, _prevNode, dom, editor) => {
+            // Legacy `data-gutter` attribute and slot-managed gutter span
+            // are obsolete under per-line decoration. Strip the attribute
+            // when the legacy listener may have set it on a prior path.
+            if (dom.hasAttribute('data-gutter')) {
+              dom.removeAttribute('data-gutter');
+            }
+            dom.setAttribute(CODE_GUTTER_ACTIVE_ATTR, 'true');
+            let lineN = 1;
+            let prevChild = null;
+            for (const child of node.getChildren()) {
+              const isLineStart =
+                prevChild === null || $isLineBreakNode(prevChild);
+              const childDOM = editor.getElementByKey(child.getKey());
+              if (childDOM) {
+                if (isLineStart) {
+                  childDOM.setAttribute(LINE_NUMBER_ATTR, String(lineN));
+                } else if (childDOM.hasAttribute(LINE_NUMBER_ATTR)) {
+                  childDOM.removeAttribute(LINE_NUMBER_ATTR);
+                }
+              }
+              if ($isLineBreakNode(child)) {
+                lineN++;
+              }
+              prevChild = child;
+            }
           },
         }),
       ],

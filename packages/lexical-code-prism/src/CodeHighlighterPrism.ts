@@ -96,11 +96,11 @@ function $textNodeTransform(
  *
  * The extension-framework path ({@link CodePrismExtension}) instead
  * pulls in `CodeGutterExtension` from `@lexical/code-core`, which
- * renders the gutter as a real `<span data-lexical-code-gutter>`
- * child managed through `slot.after` and strips this attribute on
- * `$decorateDOM`. This function is retained for legacy callers that
- * use `registerCodeHighlighting` on a plain editor without the
- * Extension framework.
+ * decorates each line-starter child with `data-line-number` and marks
+ * the `<code>` element with `data-lexical-code-gutter-active`. This
+ * function is retained for legacy callers that use
+ * `registerCodeHighlighting` on a plain editor without the Extension
+ * framework.
  */
 function $updateCodeGutter(node: CodeNode, editor: LexicalEditor): void {
   const keyedDOM = editor.getElementByKey(node.getKey());
@@ -108,10 +108,10 @@ function $updateCodeGutter(node: CodeNode, editor: LexicalEditor): void {
     return;
   }
   const codeElement = $getElementDOMSlot(editor, node, keyedDOM).element;
-  // CodeGutterExtension renders a real `<span data-lexical-code-gutter>`
-  // child instead of the attribute when active. Skip the attribute write
-  // so the two paths don't both apply to the same DOM.
-  if (codeElement.querySelector(':scope > [data-lexical-code-gutter]')) {
+  // CodeGutterExtension marks the `<code>` element with
+  // `data-lexical-code-gutter-active` when present. Skip the attribute
+  // write so the two paths don't both render line numbers.
+  if (codeElement.hasAttribute('data-lexical-code-gutter-active')) {
     return;
   }
   const children = node.getChildren();
@@ -357,9 +357,9 @@ export function registerHighlightingOnly(
 
   // Legacy `data-gutter` mutation listener: keeps the attribute in sync
   // for direct-API callers (`registerCodeHighlighting`) on a plain
-  // editor. Extension-framework users get a slot-managed
-  // `<span data-lexical-code-gutter>` from `CodeGutterExtension`
-  // instead, which strips this attribute on `$decorateDOM`.
+  // editor. Extension-framework users get per-line `data-line-number`
+  // attributes from `CodeGutterExtension` and this path bails on the
+  // `data-lexical-code-gutter-active` sentinel.
   if (editor._headless !== true) {
     registrations.push(
       editor.registerMutationListener(

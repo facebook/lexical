@@ -90,9 +90,9 @@ function $textNodeTransform(
  * Legacy `data-gutter` updater used by the
  * {@link registerCodeShikiHighlighting} direct-API path. See the
  * mirror in `@lexical/code-prism` for the rationale — extension-
- * framework users get the slot-managed `<span data-lexical-code-gutter>`
- * via `CodeGutterExtension` instead, which strips this attribute on
- * `$decorateDOM`.
+ * framework users get per-line `data-line-number` attributes via
+ * `CodeGutterExtension`, which marks the `<code>` element with
+ * `data-lexical-code-gutter-active` so this path can bail.
  */
 function $updateCodeGutter(node: CodeNode, editor: LexicalEditor): void {
   const keyedDOM = editor.getElementByKey(node.getKey());
@@ -100,9 +100,9 @@ function $updateCodeGutter(node: CodeNode, editor: LexicalEditor): void {
     return;
   }
   const codeElement = $getElementDOMSlot(editor, node, keyedDOM).element;
-  // See the mirror in `@lexical/code-prism`. Skip when the slot-managed
-  // gutter is already in place.
-  if (codeElement.querySelector(':scope > [data-lexical-code-gutter]')) {
+  // See the mirror in `@lexical/code-prism`. Skip when the extension
+  // is active.
+  if (codeElement.hasAttribute('data-lexical-code-gutter-active')) {
     return;
   }
   const children = node.getChildren();
@@ -363,8 +363,8 @@ export function registerHighlightingOnly(
   const registrations = [];
 
   // Legacy `data-gutter` mutation listener: see comment on the mirror
-  // in `@lexical/code-prism`. Extension-framework users get the
-  // slot-managed gutter via `CodeGutterExtension`.
+  // in `@lexical/code-prism`. Extension-framework users get per-line
+  // `data-line-number` attributes via `CodeGutterExtension`.
   if (editor._headless !== true) {
     registrations.push(
       editor.registerMutationListener(

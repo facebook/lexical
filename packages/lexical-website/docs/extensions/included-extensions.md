@@ -5,13 +5,13 @@
 - [CodeExtension](/docs/api/modules/lexical_code#codeextension) - CodeNode (code blocks)
 - [CodeIndentExtension](/docs/api/modules/lexical_code#codeindentextension) - CodeNode tab key indentation (code blocks)
 
-[@lexical/code-prism](/docs/api/modules/lexical_code_-_prism)
+[@lexical/code-prism](/docs/api/modules/lexical_code-prism)
 
-- [CodePrismExtension](/docs/api/modules/lexical_code_prism#codeprismextension) - Highlighting with Prism for CodeNode
+- [CodePrismExtension](/docs/api/modules/lexical_code-prism#codeprismextension) - Highlighting with Prism for CodeNode
 
-[@lexical/code-shiki](/docs/api/modules/lexical_code_-_shiki)
+[@lexical/code-shiki](/docs/api/modules/lexical_code-shiki)
 
-- [CodeShikiExtension](/docs/api/modules/lexical_code_shiki#codeshikiextension) - Highlighting with Shiki for CodeNode
+- [CodeShikiExtension](/docs/api/modules/lexical_code-shiki#codeshikiextension) - Highlighting with Shiki for CodeNode
 
 [@lexical/dragon](/docs/api/modules/lexical_dragon)
 
@@ -55,9 +55,9 @@
 
 - [OverflowExtension](/docs/api/modules/lexical_overflow#overflowextension) - OverflowNode
 
-[@lexical/plain-text](/docs/api/modules/lexical_plain_text)
+[@lexical/plain-text](/docs/api/modules/lexical_plain-text)
 
-- [PlainTextExtension](/docs/api/modules/lexical_plain_text#plaintextextension) - Plain text editor, the return key creates a LineBreakNode by default (one ParagraphNode per document)
+- [PlainTextExtension](/docs/api/modules/lexical_plain-text#plaintextextension) - Plain text editor, the return key creates a LineBreakNode by default (one ParagraphNode per document)
 
 `@lexical/react`
 
@@ -66,9 +66,9 @@
 - [ReactProviderExtension](/docs/api/modules/lexical_react_ReactProviderExtension#reactproviderextension)
 - [TreeViewExtension](/docs/api/modules/lexical_react_TreeViewExtension#treeviewextension)
 
-[@lexical/rich-text](/docs/api/modules/lexical_rich_text)
+[@lexical/rich-text](/docs/api/modules/lexical_rich-text)
 
-- [RichTextExtension](/docs/api/modules/lexical_rich_text#richtextextension) - Rich Text editor (QuoteNode, HeadingNode), the return key creates a ParagraphNode by default (multiple ParagraphNode per document). Includes configurable `escapeFormatTriggers` to escape text formatting (e.g. code) at text node boundaries
+- [RichTextExtension](/docs/api/modules/lexical_rich-text#richtextextension) - Rich Text editor (QuoteNode, HeadingNode), the return key creates a ParagraphNode by default (multiple ParagraphNode per document). Includes configurable `escapeFormatTriggers` to escape text formatting (e.g. code) at text node boundaries
 
 [@lexical/table](/docs/api/modules/lexical_table)
 

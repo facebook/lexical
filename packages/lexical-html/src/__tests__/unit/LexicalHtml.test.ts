@@ -89,9 +89,7 @@ describe('HTML', () => {
         discrete: true,
       });
 
-      expect(
-        editor.getEditorState().read(() => $generateHtmlFromNodes(editor)),
-      ).toBe(html);
+      expect(editor.read(() => $generateHtmlFromNodes(editor))).toBe(html);
     });
   }
 

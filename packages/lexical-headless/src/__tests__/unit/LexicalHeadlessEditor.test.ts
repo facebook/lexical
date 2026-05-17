@@ -202,9 +202,7 @@ describe('LexicalHeadlessEditor', () => {
 
     const cleanup = setupDom();
 
-    const html = editor
-      .getEditorState()
-      .read(() => $generateHtmlFromNodes(editor, null));
+    const html = editor.read(() => $generateHtmlFromNodes(editor, null));
 
     cleanup();
 
@@ -229,9 +227,7 @@ describe('LexicalHeadlessEditor', () => {
         ),
       );
       const html = withDOM(() =>
-        editor
-          .getEditorState()
-          .read(() => $generateHtmlFromNodes(editor, null)),
+        editor.read(() => $generateHtmlFromNodes(editor, null)),
       );
 
       expect(html).toBe(

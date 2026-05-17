@@ -59,10 +59,11 @@ import {
   $updateElementSelectionOnCreateDeleteNode,
   adjustPointOffsetForMergedSibling,
 } from '../LexicalSelection';
-import {errorOnReadOnly, internalGetActiveEditor} from '../LexicalUpdates';
+import {errorOnReadOnly} from '../LexicalUpdates';
 import {
   $applyNodeReplacement,
   $getCompositionKey,
+  $getEditor,
   $getEditorDOMRenderConfig,
   $setCompositionKey,
   getCachedClassNameArray,
@@ -235,10 +236,7 @@ function $setTextContent(
   // Route through the editor-level `$getDOMSlot` hook so that
   // `DOMRenderExtension` overrides targeting TextNode (e.g. extensions
   // injecting `contentEditable=false` siblings around the text) can
-  // intercept. Falls back to `node.getDOMSlot(dom)` when no active editor
-  // is set (e.g. `editor.getEditorState().read(cb)` without the `{editor}`
-  // option, which `lexical-html` export paths rely on); the default
-  // dispatch implementation does the same thing.
+  // intercept. The default impl delegates to `node.getDOMSlot(dom)`.
   //
   // Practical contract for extensions that append non-lexical siblings to a
   // vanilla TextNode's DOM (e.g. an autocomplete ghost rendered into the
@@ -249,10 +247,8 @@ function $setTextContent(
   // either a TextNode subclass with its own `getDOMSlot` override, an
   // extension that returns a slot with a managed `slot.before` / `slot.after`
   // boundary, or both.
-  const editor = internalGetActiveEditor();
-  const slot = editor
-    ? $getEditorDOMRenderConfig(editor).$getDOMSlot(node, dom, editor)
-    : node.getDOMSlot(dom);
+  const editor = $getEditor();
+  const slot = $getEditorDOMRenderConfig(editor).$getDOMSlot(node, dom, editor);
   const firstChild = slot.getFirstChild();
 
   if (firstChild === null || firstChild.nodeType !== Node.TEXT_NODE) {

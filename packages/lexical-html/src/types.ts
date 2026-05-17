@@ -10,7 +10,7 @@ import type {DOMRenderContextSymbol} from './constants';
 import type {
   BaseSelection,
   DOMExportOutput,
-  DOMSlot,
+  DOMSlotForNode,
   Klass,
   LexicalEditor,
   LexicalNode,
@@ -195,10 +195,10 @@ export interface DOMRenderMatch<T extends LexicalNode> {
    * still be exactly one HTMLElement.
    *
    * Generally you will call `$next()` to get a slot and then use its methods
-   * to create a new one. For ElementNode, the returned slot will be an
-   * {@link ElementDOMSlot} with children-management semantics; for non-Element
-   * nodes a base {@link DOMSlot} pointing at the keyed DOM. You may narrow the
-   * returned slot via `instanceof ElementDOMSlot` when needed.
+   * to create a new one. The slot type is narrowed via {@link DOMSlotForNode}:
+   * for `ElementNode` it resolves to {@link ElementDOMSlot} with
+   * children-management semantics; for non-Element nodes the base
+   * {@link DOMSlot} pointing at the keyed DOM.
    *
    * @param node The LexicalNode
    * @param dom The rendered HTMLElement
@@ -206,12 +206,12 @@ export interface DOMRenderMatch<T extends LexicalNode> {
    * @param editor The editor
    * @returns The slot for this node
    */
-  $getDOMSlot?: <N extends LexicalNode>(
-    node: N,
+  $getDOMSlot?: (
+    node: T,
     dom: HTMLElement,
-    $next: () => DOMSlot<HTMLElement>,
+    $next: () => DOMSlotForNode<T>,
     editor: LexicalEditor,
-  ) => DOMSlot<HTMLElement>;
+  ) => DOMSlotForNode<T>;
   /**
    * Called during the reconciliation process to determine which nodes
    * to insert into the DOM for this Lexical Node. This is also the default

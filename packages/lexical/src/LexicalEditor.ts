@@ -16,6 +16,7 @@ import type {
   LexicalPrivateDOM,
   NodeKey,
 } from './LexicalNode';
+import type {ElementDOMSlot, ElementNode} from './nodes/LexicalElementNode';
 
 import invariant from 'shared/invariant';
 
@@ -258,6 +259,19 @@ export type HTMLConfig = {
  */
 export type LexicalNodeConfig = Klass<LexicalNode> | LexicalNodeReplacement;
 
+/**
+ * @experimental
+ *
+ * The slot type produced by `$getDOMSlot` for a given node, narrowed via
+ * the node's static class: `ElementNode` resolves to {@link ElementDOMSlot}
+ * (with children-management methods), other nodes to the base
+ * {@link DOMSlot}. Callers passing a known node type get the narrowed slot
+ * without manual `instanceof` checks.
+ */
+export type DOMSlotForNode<N extends LexicalNode> = N extends ElementNode
+  ? ElementDOMSlot<HTMLElement>
+  : DOMSlot<HTMLElement>;
+
 /** @internal @experimental */
 export interface EditorDOMRenderConfig {
   /** @internal @experimental */
@@ -272,7 +286,8 @@ export interface EditorDOMRenderConfig {
    * that returns an {@link ElementDOMSlot} with children-management methods,
    * for non-Element nodes the base {@link DOMSlot} pointing at the keyed DOM.
    * Callsites that need ElementNode-specific slot methods should narrow via
-   * `$isElementNode` or cast to `ElementDOMSlot`.
+   * `$getElementDOMSlot`. The user-facing override signature in
+   * `DOMRenderMatch` is narrowed via {@link DOMSlotForNode}.
    */
   $getDOMSlot: <T extends LexicalNode>(
     node: T,

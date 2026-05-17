@@ -161,6 +161,10 @@ type DOMConversionCache = Map<
   Array<(node: Node) => DOMConversion | null>,
 >;
 
+export type DOMSlotForNode<N: LexicalNode> = N extends ElementNode
+  ? ElementDOMSlot<HTMLElement>
+  : DOMSlot<HTMLElement>;
+
 export type EditorDOMRenderConfig = {
   /** @internal @experimental */
   $createDOM: <T extends LexicalNode>(

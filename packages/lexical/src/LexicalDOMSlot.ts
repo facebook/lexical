@@ -6,6 +6,10 @@
  *
  */
 
+import type {LexicalPrivateDOM} from './LexicalNode';
+import type {ElementNode} from './nodes/LexicalElementNode';
+
+import {IS_APPLE_WEBKIT, IS_IOS, IS_SAFARI} from 'shared/environment';
 import invariant from 'shared/invariant';
 
 /**
@@ -102,4 +106,198 @@ export class DOMSlot<T extends HTMLElement = HTMLElement> {
       : this.element.firstChild;
     return firstChild === this.before ? null : firstChild;
   }
+}
+
+/**
+ * A utility class for managing the DOM children of an ElementNode.
+ *
+ * Extends {@link DOMSlot} with ElementNode-specific scaffolding — the
+ * reconciler-managed line break that keeps empty elements selectable, and
+ * the offset / index resolution helpers needed when mapping DOM selections
+ * onto lexical positions. The base `before` / `after` boundaries and the
+ * children mutation helpers (`insertChild`, `removeChild`, …) live on
+ * {@link DOMSlot}.
+ */
+export class ElementDOMSlot<
+  T extends HTMLElement = HTMLElement,
+> extends DOMSlot<T> {
+  /** Return a new slot with `before` updated, preserving subclass type. */
+  withBefore(before: Node | undefined | null): ElementDOMSlot<T> {
+    return new ElementDOMSlot(this.element, before, this.after);
+  }
+  /** Return a new slot with `after` updated, preserving subclass type. */
+  withAfter(after: Node | undefined | null): ElementDOMSlot<T> {
+    return new ElementDOMSlot(this.element, this.before, after);
+  }
+  /** Return a new slot with `element` updated, preserving subclass type. */
+  withElement<ElementType extends HTMLElement>(
+    element: ElementType,
+  ): ElementDOMSlot<ElementType> {
+    if (this.element === (element as HTMLElement)) {
+      return this as unknown as ElementDOMSlot<ElementType>;
+    }
+    return new ElementDOMSlot(element, this.before, this.after);
+  }
+  /**
+   * Insert the given child before {@link DOMSlot.before} or the managed
+   * line break (whichever marks the lexical end of children), or append if
+   * neither is set.
+   */
+  insertChild(dom: Node): this {
+    const before = this.before || this.getManagedLineBreak();
+    invariant(
+      before === null || before.parentElement === this.element,
+      'ElementDOMSlot.insertChild: before is not in element',
+    );
+    this.element.insertBefore(dom, before);
+    return this;
+  }
+  /**
+   * Returns the first managed child, skipping `before`, `after`, and the
+   * managed line break.
+   */
+  getFirstChild(): ChildNode | null {
+    const firstChild = this.after
+      ? this.after.nextSibling
+      : this.element.firstChild;
+    return firstChild === this.before ||
+      firstChild === this.getManagedLineBreak()
+      ? null
+      : firstChild;
+  }
+  /**
+   * @internal
+   */
+  getManagedLineBreak(): Exclude<
+    LexicalPrivateDOM['__lexicalLineBreak'],
+    undefined
+  > {
+    const element: HTMLElement & LexicalPrivateDOM = this.element;
+    return element.__lexicalLineBreak || null;
+  }
+  /** @internal */
+  setManagedLineBreak(
+    lineBreakType: null | 'empty' | 'line-break' | 'decorator',
+  ): void {
+    if (lineBreakType === null) {
+      this.removeManagedLineBreak();
+    } else {
+      const webkitHack =
+        lineBreakType === 'decorator' &&
+        (IS_APPLE_WEBKIT || IS_IOS || IS_SAFARI);
+      this.insertManagedLineBreak(webkitHack);
+    }
+  }
+
+  /** @internal */
+  removeManagedLineBreak(): void {
+    const br = this.getManagedLineBreak();
+    if (br) {
+      const element: HTMLElement & LexicalPrivateDOM = this.element;
+      const sibling = br.nodeName === 'IMG' ? br.nextSibling : null;
+      if (sibling) {
+        element.removeChild(sibling);
+      }
+      element.removeChild(br);
+      element.__lexicalLineBreak = undefined;
+    }
+  }
+  /** @internal */
+  insertManagedLineBreak(webkitHack: boolean): void {
+    const prevBreak = this.getManagedLineBreak();
+    if (prevBreak) {
+      if (webkitHack === (prevBreak.nodeName === 'IMG')) {
+        return;
+      }
+      this.removeManagedLineBreak();
+    }
+    const element: HTMLElement & LexicalPrivateDOM = this.element;
+    const before = this.before;
+    const br = document.createElement('br');
+    element.insertBefore(br, before);
+    if (webkitHack) {
+      const img = document.createElement('img');
+      img.setAttribute('data-lexical-linebreak', 'true');
+      img.style.setProperty('display', 'inline', 'important');
+      img.style.setProperty('border', '0px', 'important');
+      img.style.setProperty('margin', '0px', 'important');
+      img.alt = '';
+      element.insertBefore(img, br);
+      element.__lexicalLineBreak = img;
+    } else {
+      element.__lexicalLineBreak = br;
+    }
+  }
+
+  /**
+   * @internal
+   *
+   * Returns the offset of the first child
+   */
+  getFirstChildOffset(): number {
+    let i = 0;
+    for (let node = this.after; node !== null; node = node.previousSibling) {
+      i++;
+    }
+    return i;
+  }
+
+  /**
+   * @internal
+   */
+  resolveChildIndex(
+    element: ElementNode,
+    elementDOM: HTMLElement,
+    initialDOM: Node,
+    initialOffset: number,
+  ): [node: ElementNode, idx: number] {
+    if (initialDOM === this.element) {
+      // `firstChildOffset` is the DOM index of the first lexical child:
+      // 0 in the common case, or `N` when the slot carries `N` non-lexical
+      // prelude nodes via `after` (e.g. an extension prepending a UI
+      // affordance before the lexical content). Clamp `initialOffset`
+      // (a DOM index) to the lexical-children window, then shift it back
+      // into the element's lexical offset space.
+      const firstChildOffset = this.getFirstChildOffset();
+      const clamped = Math.min(
+        firstChildOffset + element.getChildrenSize(),
+        Math.max(firstChildOffset, initialOffset),
+      );
+      return [element, clamped - firstChildOffset];
+    }
+    // The resolved offset must be before or after the children
+    const initialPath = indexPath(elementDOM, initialDOM);
+    initialPath.push(initialOffset);
+    const elementPath = indexPath(elementDOM, this.element);
+    let offset = element.getIndexWithinParent();
+    for (let i = 0; i < elementPath.length; i++) {
+      const target = initialPath[i];
+      const source = elementPath[i];
+      if (target === undefined || target < source) {
+        break;
+      } else if (target > source) {
+        offset += 1;
+        break;
+      }
+    }
+    return [element.getParentOrThrow(), offset];
+  }
+}
+
+export function indexPath(root: HTMLElement, child: Node): number[] {
+  const path: number[] = [];
+  let node: Node | null = child;
+  for (; node !== root && node !== null; node = node.parentNode) {
+    let i = 0;
+    for (
+      let sibling = node.previousSibling;
+      sibling !== null;
+      sibling = sibling.previousSibling
+    ) {
+      i++;
+    }
+    path.push(i);
+  }
+  invariant(node === root, 'indexPath: root is not a parent of child');
+  return path.reverse();
 }

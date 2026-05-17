@@ -71,7 +71,8 @@ import {SKIP_SELECTION_FOCUS_TAG} from './LexicalUpdateTags';
 import {
   $findMatchingParent,
   $getCompositionKey,
-  $getElementDOMSlot,
+  $getDOMSlot,
+  $getDOMTextNode,
   $getNearestRootOrShadowRoot,
   $getNodeByKey,
   $getNodeFromDOM,
@@ -83,7 +84,6 @@ import {
   $setCompositionKey,
   doesContainSurrogatePair,
   getDOMSelection,
-  getDOMTextNode,
   getElementByKeyOrThrow,
   getWindow,
   INTERNAL_$isBlock,
@@ -1613,19 +1613,21 @@ export class RangeSelection implements BaseSelection {
       removeDOMBlockCursorElement(blockCursorElement, editor, rootElement);
     }
     if (this.dirty) {
-      let nextAnchorDOM: HTMLElement | Text | null = getElementByKeyOrThrow(
-        editor,
-        this.anchor.key,
-      );
-      let nextFocusDOM: HTMLElement | Text | null = getElementByKeyOrThrow(
-        editor,
-        this.focus.key,
-      );
+      const anchorKeyedDOM = getElementByKeyOrThrow(editor, this.anchor.key);
+      const focusKeyedDOM = getElementByKeyOrThrow(editor, this.focus.key);
+      let nextAnchorDOM: HTMLElement | Text | null = anchorKeyedDOM;
+      let nextFocusDOM: HTMLElement | Text | null = focusKeyedDOM;
       if (this.anchor.type === 'text') {
-        nextAnchorDOM = getDOMTextNode(nextAnchorDOM);
+        const node = this.anchor.getNode();
+        nextAnchorDOM = $isTextNode(node)
+          ? $getDOMTextNode(node, anchorKeyedDOM, editor)
+          : null;
       }
       if (this.focus.type === 'text') {
-        nextFocusDOM = getDOMTextNode(nextFocusDOM);
+        const node = this.focus.getNode();
+        nextFocusDOM = $isTextNode(node)
+          ? $getDOMTextNode(node, focusKeyedDOM, editor)
+          : null;
       }
       if (nextAnchorDOM && nextFocusDOM) {
         setDOMSelectionBaseAndExtent(
@@ -2350,7 +2352,7 @@ function $internalResolveSelectionPoint(
           elementDOM !== null,
           '$internalResolveSelectionPoint: node in DOM but not keyToDOMMap',
         );
-        const slot = $getElementDOMSlot(editor, resolvedElement, elementDOM);
+        const slot = $getDOMSlot(resolvedElement, elementDOM, editor);
         [resolvedElement, resolvedOffset] = slot.resolveChildIndex(
           resolvedElement,
           elementDOM,
@@ -3029,7 +3031,7 @@ function $getElementAndOffsetForPoint(
 ): [HTMLElement, number] {
   const element = getElementByKeyOrThrow(editor, node.getKey());
   if ($isElementNode(node)) {
-    const slot = $getElementDOMSlot(editor, node, element);
+    const slot = $getDOMSlot(node, element, editor);
     return [slot.element, offset + slot.getFirstChildOffset()];
   }
   return [element, offset];
@@ -3103,7 +3105,9 @@ export function $updateDOMSelection(
   let anchorFormatOrStyleChanged = false;
 
   if (anchor.type === 'text') {
-    nextAnchorNode = getDOMTextNode(anchorDOM);
+    nextAnchorNode = $isTextNode(anchorNode)
+      ? $getDOMTextNode(anchorNode, anchorDOM, editor)
+      : null;
     anchorFormatOrStyleChanged =
       anchorNode.getFormat() !== nextFormat ||
       anchorNode.getStyle() !== nextStyle;
@@ -3115,7 +3119,9 @@ export function $updateDOMSelection(
   }
 
   if (focus.type === 'text') {
-    nextFocusNode = getDOMTextNode(focusDOM);
+    nextFocusNode = $isTextNode(focusNode)
+      ? $getDOMTextNode(focusNode, focusDOM, editor)
+      : null;
   }
 
   // If we can't get an underlying text node for selection, then

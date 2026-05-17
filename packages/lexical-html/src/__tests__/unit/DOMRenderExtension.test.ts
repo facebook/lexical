@@ -19,17 +19,16 @@ import {
   $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
-  $getElementDOMSlot,
+  $getDOMSlot,
   $getRoot,
   $getState,
   $getStateChange,
+  $isElementDOMSlot,
   $isElementNode,
   $setState,
   configExtension,
   createState,
   defineExtension,
-  DOMSlot,
-  ElementDOMSlot,
   isHTMLElement,
   LineBreakNode,
   TextNode,
@@ -488,7 +487,7 @@ describe('DOMRenderExtension', () => {
                 },
                 $getDOMSlot: (_node, dom, $next) => {
                   const br = dom.querySelector('br');
-                  return br instanceof HTMLElement ? new DOMSlot(br) : $next();
+                  return isHTMLElement(br) ? $next().withElement(br) : $next();
                 },
               }),
             ],
@@ -538,13 +537,12 @@ describe('DOMRenderExtension', () => {
       const [linebreak] = paragraph.getChildren();
       const dom = editor.getElementByKey(linebreak.getKey())!;
       const slot = linebreak.getDOMSlot(dom);
-      expect(slot).toBeInstanceOf(DOMSlot);
-      expect(slot).not.toBeInstanceOf(ElementDOMSlot);
+      expect($isElementDOMSlot(slot)).toBe(false);
       expect(slot.element).toBe(dom);
     });
   });
 
-  test('$getElementDOMSlot returns ElementDOMSlot for ElementNode through the hook', () => {
+  test('$getDOMSlot returns ElementDOMSlot for ElementNode through the hook', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({
         $initialEditorState: () => {
@@ -564,8 +562,8 @@ describe('DOMRenderExtension', () => {
         throw new Error('expected paragraph to be an ElementNode');
       }
       const dom = editor.getElementByKey(paragraph.getKey())!;
-      const slot = $getElementDOMSlot(editor, paragraph, dom);
-      expect(slot).toBeInstanceOf(ElementDOMSlot);
+      const slot = $getDOMSlot(paragraph, dom, editor);
+      expect($isElementDOMSlot(slot)).toBe(true);
       expect(slot.element).toBe(dom);
     });
   });

@@ -8,6 +8,7 @@
 
 import type {
   CommandPayloadType,
+  DOMSlotForNode,
   EditorConfig,
   EditorDOMRenderConfig,
   EditorThemeClasses,
@@ -46,7 +47,6 @@ import {
   $isTextNode,
   DecoratorNode,
   DEFAULT_EDITOR_DOM_CONFIG,
-  ElementDOMSlot,
   ElementFormatType,
   ElementNode,
   HISTORY_MERGE_TAG,
@@ -68,6 +68,7 @@ import {
   RTL_REGEX,
   TEXT_TYPE_TO_FORMAT,
 } from './LexicalConstants';
+import {DOMSlot, ElementDOMSlot} from './LexicalDOMSlot';
 import {LexicalEditor} from './LexicalEditor';
 import {flushRootMutations} from './LexicalMutations';
 import {
@@ -2001,24 +2002,61 @@ export function $getEditorDOMRenderConfig(
 /**
  * @experimental
  *
- * Resolve the DOM slot for an `ElementNode` through the configured
- * `$getDOMSlot` hook, narrowing to {@link ElementDOMSlot} so callers can use
- * children-management methods. Invariants if a non-ElementDOMSlot is returned
- * for an ElementNode (extension contract violation).
+ * Resolve the DOM slot for a node through the configured `$getDOMSlot` hook,
+ * narrowing the return type via {@link DOMSlotForNode}: for an `ElementNode`
+ * the result is an {@link ElementDOMSlot} (with children-management methods),
+ * for non-Element nodes the base {@link DOMSlot} pointing at the keyed DOM.
+ *
+ * Invariants if an extension override returns a slot that doesn't match the
+ * expected narrow type for the node (extension contract violation).
  */
-export function $getElementDOMSlot(
-  editor: LexicalEditor,
-  node: ElementNode,
+export function $getDOMSlot<N extends LexicalNode>(
+  node: N,
   dom: HTMLElement,
-): ElementDOMSlot<HTMLElement> {
+  editor: LexicalEditor = $getEditor(),
+): DOMSlotForNode<N> {
   const slot = $getEditorDOMRenderConfig(editor).$getDOMSlot(node, dom, editor);
-  invariant(
-    slot instanceof ElementDOMSlot,
-    '$getElementDOMSlot: expected ElementDOMSlot for ElementNode (key %s type %s)',
-    node.getKey(),
-    node.getType(),
-  );
-  return slot;
+  if ($isElementNode(node)) {
+    invariant(
+      (slot as DOMSlot<HTMLElement>) instanceof ElementDOMSlot,
+      '$getDOMSlot: expected ElementDOMSlot for ElementNode (key %s type %s)',
+      node.getKey(),
+      node.getType(),
+    );
+  }
+  return slot as DOMSlotForNode<N>;
+}
+
+/**
+ * @experimental
+ *
+ * Type guard narrowing a {@link DOMSlot} to an {@link ElementDOMSlot}, which
+ * exposes children-management methods like `insertChild` and the managed
+ * line-break helpers.
+ */
+export function $isElementDOMSlot(
+  slot: DOMSlot<HTMLElement>,
+): slot is ElementDOMSlot<HTMLElement> {
+  return slot instanceof ElementDOMSlot;
+}
+
+/**
+ * @experimental
+ *
+ * Resolve the actual text DOM (`Text`) for a `TextNode` through the
+ * configured `$getDOMSlot` hook. Unlike the plain {@link getDOMTextNode}
+ * which descends the first child chain from a raw element, this routes
+ * through the slot so an extension wrapping the text node's keyed DOM
+ * (e.g. one that injects a `contentEditable=false` sibling before the
+ * text) still points at the correct content element.
+ */
+export function $getDOMTextNode(
+  node: TextNode,
+  dom: HTMLElement,
+  editor: LexicalEditor = $getEditor(),
+): Text | null {
+  const slot = $getDOMSlot(node, dom, editor);
+  return getDOMTextNode(slot.element);
 }
 
 /** @internal */

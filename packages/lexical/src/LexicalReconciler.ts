@@ -6,6 +6,7 @@
  *
  */
 
+import type {ElementDOMSlot} from './LexicalDOMSlot';
 import type {
   EditorConfig,
   EditorDOMRenderConfig,
@@ -20,7 +21,7 @@ import type {
   NodeKey,
   NodeMap,
 } from './LexicalNode';
-import type {ElementDOMSlot, ElementNode} from './nodes/LexicalElementNode';
+import type {ElementNode} from './nodes/LexicalElementNode';
 
 import invariant from 'shared/invariant';
 
@@ -46,7 +47,7 @@ import {EditorState} from './LexicalEditorState';
 import {cloneMap} from './LexicalGenMap';
 import {
   $createChildrenArray,
-  $getElementDOMSlot,
+  $getDOMSlot,
   $isRootOrShadowRoot,
   cloneDecorators,
   getElementByKeyOrThrow,
@@ -425,7 +426,7 @@ function $createNode(key: NodeKey, slot: ElementDOMSlot | null): HTMLElement {
         node,
         0,
         endIndex,
-        $getElementDOMSlot(activeEditor, node, dom),
+        $getDOMSlot(node, dom, activeEditor),
       );
     }
 
@@ -571,7 +572,7 @@ function $reconcileElementTerminatingLineBreak(
     activeNextNodeMap,
   );
   if (prevLineBreak !== nextLineBreak) {
-    $getElementDOMSlot(activeEditor, nextElement, dom).setManagedLineBreak(
+    $getDOMSlot(nextElement, dom, activeEditor).setManagedLineBreak(
       nextLineBreak,
     );
   }
@@ -608,7 +609,7 @@ function $reconcileChildrenWithDirection(
   $reconcileChildren(
     prevElement,
     nextElement,
-    $getElementDOMSlot(activeEditor, nextElement, dom),
+    $getDOMSlot(nextElement, dom, activeEditor),
   );
   if (!$isRootOrShadowRoot(nextElement)) {
     // RootNode / ShadowRootNode never expose `__textFormat` / `__textStyle`

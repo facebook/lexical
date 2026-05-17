@@ -9,7 +9,7 @@ import {domOverride, DOMRenderExtension} from '@lexical/html';
 import {
   configExtension,
   defineExtension,
-  DOMSlot,
+  isHTMLElement,
   LineBreakNode,
 } from 'lexical';
 
@@ -50,7 +50,7 @@ export const VisibleLineBreakExtension = defineExtension({
           },
           $getDOMSlot: (_node, dom, $next, _editor) => {
             const br = dom.querySelector(':scope > br');
-            return br instanceof HTMLElement ? new DOMSlot(br) : $next();
+            return isHTMLElement(br) ? $next().withElement(br) : $next();
           },
         }),
       ],

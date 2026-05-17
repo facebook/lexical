@@ -22,7 +22,7 @@ import {
 import {effect, namedSignals} from '@lexical/extension';
 import {
   $createTextNode,
-  $getElementDOMSlot,
+  $getDOMSlot,
   $getNodeByKey,
   $getSelection,
   $isLineBreakNode,
@@ -99,7 +99,7 @@ function $updateCodeGutter(node: CodeNode, editor: LexicalEditor): void {
   if (keyedDOM === null) {
     return;
   }
-  const codeElement = $getElementDOMSlot(editor, node, keyedDOM).element;
+  const codeElement = $getDOMSlot(node, keyedDOM, editor).element;
   // See the mirror in `@lexical/code-prism`. Skip when the extension
   // is active.
   if (codeElement.hasAttribute('data-lexical-code-gutter-active')) {

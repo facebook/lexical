@@ -172,11 +172,11 @@ export type EditorDOMRenderConfig = {
     editor: LexicalEditor,
   ) => HTMLElement;
   /** @internal @experimental */
-  $getDOMSlot: <T extends LexicalNode>(
-    node: T,
+  $getDOMSlot: <N extends LexicalNode>(
+    node: N,
     dom: HTMLElement,
     editor: LexicalEditor,
-  ) => DOMSlot<HTMLElement>;
+  ) => DOMSlotForNode<N>;
   /** @internal @experimental */
   $exportDOM: <T extends LexicalNode>(
     node: T,
@@ -1039,11 +1039,19 @@ declare export function $getEditor(): LexicalEditor;
 declare export function $getEditorDOMRenderConfig(
   editor?: LexicalEditor,
 ): EditorDOMRenderConfig;
-declare export function $getElementDOMSlot(
-  editor: LexicalEditor,
-  node: ElementNode,
+declare export function $getDOMSlot<N: LexicalNode>(
+  node: N,
   dom: HTMLElement,
-): ElementDOMSlot<HTMLElement>;
+  editor?: LexicalEditor,
+): DOMSlotForNode<N>;
+declare export function $getDOMTextNode(
+  node: TextNode,
+  dom: HTMLElement,
+  editor?: LexicalEditor,
+): Text | null;
+declare export function $isElementDOMSlot(
+  slot: DOMSlot<HTMLElement>,
+): slot is ElementDOMSlot<HTMLElement>;
 declare export var DEFAULT_EDITOR_DOM_CONFIG: EditorDOMRenderConfig;
 
 /**

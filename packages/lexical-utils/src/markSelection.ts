@@ -7,10 +7,12 @@
  */
 
 import {
-  $getElementDOMSlot,
+  $getDOMSlot,
+  $getDOMTextNode,
   $getSelection,
   $isElementNode,
   $isRangeSelection,
+  $isTextNode,
   type EditorState,
   ElementNode,
   getDOMTextNode,
@@ -36,10 +38,12 @@ function $rangeTargetFromPoint(
   dom: HTMLElement,
 ): [HTMLElement | Text, number] {
   if (point.type === 'text' || !$isElementNode(node)) {
-    const textDOM = getDOMTextNode(dom) || dom;
+    const textDOM = $isTextNode(node)
+      ? ($getDOMTextNode(node, dom, editor) ?? dom)
+      : getDOMTextNode(dom) || dom;
     return [textDOM, point.offset];
   } else {
-    const slot = $getElementDOMSlot(editor, node, dom);
+    const slot = $getDOMSlot(node, dom, editor);
     return [slot.element, slot.getFirstChildOffset() + point.offset];
   }
 }

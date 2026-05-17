@@ -6,7 +6,7 @@
  *
  */
 
-import type {DOMSlot} from './LexicalDOMSlot';
+import type {DOMSlot, ElementDOMSlot} from './LexicalDOMSlot';
 import type {EditorState, SerializedEditorState} from './LexicalEditorState';
 import type {
   DOMConversion,
@@ -16,7 +16,7 @@ import type {
   LexicalPrivateDOM,
   NodeKey,
 } from './LexicalNode';
-import type {ElementDOMSlot, ElementNode} from './nodes/LexicalElementNode';
+import type {ElementNode} from './nodes/LexicalElementNode';
 
 import invariant from 'shared/invariant';
 
@@ -282,18 +282,16 @@ export interface EditorDOMRenderConfig {
   /**
    * @internal @experimental
    *
-   * The default impl dispatches to `node.getDOMSlot(dom)` — for `ElementNode`
-   * that returns an {@link ElementDOMSlot} with children-management methods,
-   * for non-Element nodes the base {@link DOMSlot} pointing at the keyed DOM.
-   * Callsites that need ElementNode-specific slot methods should narrow via
-   * `$getElementDOMSlot`. The user-facing override signature in
-   * `DOMRenderMatch` is narrowed via {@link DOMSlotForNode}.
+   * The default impl dispatches to `node.getDOMSlot(dom)`. The return type is
+   * narrowed via {@link DOMSlotForNode}: callers passing an `ElementNode` get
+   * an {@link ElementDOMSlot} with children-management methods, callers
+   * passing a non-Element node get the base {@link DOMSlot}.
    */
-  $getDOMSlot: <T extends LexicalNode>(
-    node: T,
+  $getDOMSlot: <N extends LexicalNode>(
+    node: N,
     dom: HTMLElement,
     editor: LexicalEditor,
-  ) => DOMSlot<HTMLElement>;
+  ) => DOMSlotForNode<N>;
   /** @internal @experimental */
   $exportDOM: <T extends LexicalNode>(
     node: T,
@@ -756,7 +754,11 @@ export const DEFAULT_EDITOR_DOM_CONFIG: EditorDOMRenderConfig = {
   $extractWithChild: (node, childNode, selection, destination, _editor) =>
     $isElementNode(node) &&
     node.extractWithChild(childNode, selection, destination),
-  $getDOMSlot: (node, dom, _editor) => node.getDOMSlot(dom),
+  $getDOMSlot: <N extends LexicalNode>(
+    node: N,
+    dom: HTMLElement,
+    _editor: LexicalEditor,
+  ): DOMSlotForNode<N> => node.getDOMSlot(dom) as DOMSlotForNode<N>,
   $shouldExclude: (node, _selection, _editor) =>
     $isElementNode(node) && node.excludeFromCopy('html'),
   $shouldInclude: (node, selection, _editor) =>

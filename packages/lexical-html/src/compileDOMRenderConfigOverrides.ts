@@ -9,6 +9,7 @@ import {getKnownTypesAndNodes} from '@lexical/extension';
 import {
   $isLexicalNode,
   DEFAULT_EDITOR_DOM_CONFIG,
+  type DOMSlotForNode,
   type EditorDOMRenderConfig,
   getStaticNodeConfig,
   InitialEditorConfig,
@@ -191,6 +192,33 @@ function merge3<T, N extends LexicalNode, A>(
     const $override = $getOverride(node);
     return $override ? $override(node, a, $next, editor) : $next();
   };
+}
+
+// `$getDOMSlot` has a conditional return type (`DOMSlotForNode<N>`) that the
+// generic `AccFn<T, N, Args>` machinery can't unify — T can't depend on the
+// per-call N. We compose accumulator + override the same way `merge3` does
+// and let the cast at the return restore the narrow type.
+function merge3GetDOMSlot(
+  acc: EditorDOMRenderConfig['$getDOMSlot'],
+  $getOverride: (n: LexicalNode) => DOMRenderMatch<LexicalNode>['$getDOMSlot'],
+): EditorDOMRenderConfig['$getDOMSlot'] {
+  return <N extends LexicalNode>(
+    node: N,
+    dom: HTMLElement,
+    editor: LexicalEditor,
+  ): DOMSlotForNode<N> => {
+    const $next = () => acc(node, dom, editor);
+    const $override = $getOverride(node);
+    return (
+      $override ? $override(node, dom, $next, editor) : $next()
+    ) as DOMSlotForNode<N>;
+  };
+}
+
+function ignoreNext3GetDOMSlot(
+  fn: EditorDOMRenderConfig['$getDOMSlot'],
+): DOMRenderMatch<LexicalNode>['$getDOMSlot'] {
+  return (node, dom, _$next, editor) => fn(node, dom, editor);
 }
 
 function merge4<T, N extends LexicalNode, A, B>(
@@ -392,7 +420,13 @@ export function compileDOMRenderConfigOverrides(
   compilePrerenderKey(prerender, '$createDOM', dom, merge2, ignoreNext2);
   compilePrerenderKey(prerender, '$exportDOM', dom, merge2, ignoreNext2);
   compilePrerenderKey(prerender, '$extractWithChild', dom, merge5, ignoreNext5);
-  compilePrerenderKey(prerender, '$getDOMSlot', dom, merge3, ignoreNext3);
+  compilePrerenderKey(
+    prerender,
+    '$getDOMSlot',
+    dom,
+    merge3GetDOMSlot,
+    ignoreNext3GetDOMSlot,
+  );
   compilePrerenderKey(prerender, '$shouldExclude', dom, merge3, ignoreNext3);
   compilePrerenderKey(prerender, '$shouldInclude', dom, merge3, ignoreNext3);
   compilePrerenderKey(prerender, '$updateDOM', dom, merge4, ignoreNext4);

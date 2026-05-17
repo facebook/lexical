@@ -8,27 +8,14 @@
 import type {ElementNode, LexicalEditor, LexicalNode} from 'lexical';
 
 import {
+  $getDOMSlot,
+  $getDOMTextNode,
   $getEditor,
-  $getElementDOMSlot,
   $isElementNode,
   $isRootNode,
   $isTextNode,
   getStyleObjectFromCSS,
 } from 'lexical';
-
-function getDOMTextNode(element: Node | null): Text | null {
-  let node = element;
-
-  while (node != null) {
-    if (node.nodeType === Node.TEXT_NODE) {
-      return node as Text;
-    }
-
-    node = node.firstChild;
-  }
-
-  return null;
-}
 
 function getDOMIndexWithinParent(node: ChildNode): [ParentNode, number] {
   const parent = node.parentNode;
@@ -66,28 +53,27 @@ export function $createDOMRange(
   let anchorOffset = _anchorOffset;
   let focusOffset = _focusOffset;
 
-  // For ElementNode endpoints, route through `$getElementDOMSlot` so an
-  // extension that prepends prelude DOM via `slot.after` (e.g.
-  // `CodeGutterExtension`) is not the target of `range.setStart`/`setEnd` —
-  // the lexical-managed children live inside the slot element, offset by
-  // `getFirstChildOffset()`.
+  // For ElementNode endpoints, route through `$getDOMSlot` so an extension
+  // that prepends prelude DOM via `slot.after` (e.g. `CodeGutterExtension`)
+  // is not the target of `range.setStart`/`setEnd` — the lexical-managed
+  // children live inside the slot element, offset by `getFirstChildOffset()`.
   if ($isElementNode(anchorNode) && rawAnchorDOM !== null) {
-    const slot = $getElementDOMSlot(editor, anchorNode, rawAnchorDOM);
+    const slot = $getDOMSlot(anchorNode, rawAnchorDOM, editor);
     anchorDOM = slot.element;
     anchorOffset = slot.getFirstChildOffset() + _anchorOffset;
   }
   if ($isElementNode(focusNode) && rawFocusDOM !== null) {
-    const slot = $getElementDOMSlot(editor, focusNode, rawFocusDOM);
+    const slot = $getDOMSlot(focusNode, rawFocusDOM, editor);
     focusDOM = slot.element;
     focusOffset = slot.getFirstChildOffset() + _focusOffset;
   }
 
-  if ($isTextNode(anchorNode)) {
-    anchorDOM = getDOMTextNode(rawAnchorDOM);
+  if ($isTextNode(anchorNode) && rawAnchorDOM !== null) {
+    anchorDOM = $getDOMTextNode(anchorNode, rawAnchorDOM, editor);
   }
 
-  if ($isTextNode(focusNode)) {
-    focusDOM = getDOMTextNode(rawFocusDOM);
+  if ($isTextNode(focusNode) && rawFocusDOM !== null) {
+    focusDOM = $getDOMTextNode(focusNode, rawFocusDOM, editor);
   }
 
   if (
@@ -233,7 +219,7 @@ export function $getComputedStyleForElement(
   // Read computed styles from the slot's content-bearing element, not the
   // keyed DOM, so an extension-added wrapper does not shadow `writing-mode`
   // / `direction` set on the actual content element.
-  const domElement = $getElementDOMSlot(editor, element, keyedDOM).element;
+  const domElement = $getDOMSlot(element, keyedDOM, editor).element;
   const view = domElement.ownerDocument.defaultView;
   if (view === null) {
     return null;

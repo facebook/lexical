@@ -132,7 +132,8 @@ export {
   NODE_STATE_KEY,
   TEXT_TYPE_TO_FORMAT,
 } from './LexicalConstants';
-export {DOMSlot} from './LexicalDOMSlot';
+export type {DOMSlot} from './LexicalDOMSlot';
+export type {ElementDOMSlot} from './LexicalDOMSlot';
 export type {
   CommandListener,
   CommandListenerPriority,
@@ -259,9 +260,10 @@ export {
   $createChildrenArray,
   $findMatchingParent,
   $getAdjacentNode,
+  $getDOMSlot,
+  $getDOMTextNode,
   $getEditor,
   $getEditorDOMRenderConfig,
-  $getElementDOMSlot,
   $getNearestNodeFromDOMNode,
   $getNearestRootOrShadowRoot,
   $getNodeByKey,
@@ -270,6 +272,7 @@ export {
   $getRoot,
   $hasAncestor,
   $hasUpdateTag,
+  $isElementDOMSlot,
   $isInlineElementOrDecoratorNode,
   $isLeafNode,
   $isRootOrShadowRoot,
@@ -320,11 +323,7 @@ export type {
   ElementFormatType,
   SerializedElementNode,
 } from './nodes/LexicalElementNode';
-export {
-  $isElementNode,
-  ElementDOMSlot,
-  ElementNode,
-} from './nodes/LexicalElementNode';
+export {$isElementNode, ElementNode} from './nodes/LexicalElementNode';
 export type {SerializedLineBreakNode} from './nodes/LexicalLineBreakNode';
 export {
   $createLineBreakNode,

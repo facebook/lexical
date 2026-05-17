@@ -22,7 +22,7 @@ import {
 import {effect, namedSignals} from '@lexical/extension';
 import {
   $createTextNode,
-  $getElementDOMSlot,
+  $getDOMSlot,
   $getNodeByKey,
   $getSelection,
   $isLineBreakNode,
@@ -107,7 +107,7 @@ function $updateCodeGutter(node: CodeNode, editor: LexicalEditor): void {
   if (keyedDOM === null) {
     return;
   }
-  const codeElement = $getElementDOMSlot(editor, node, keyedDOM).element;
+  const codeElement = $getDOMSlot(node, keyedDOM, editor).element;
   // CodeGutterExtension marks the `<code>` element with
   // `data-lexical-code-gutter-active` when present. Skip the attribute
   // write so the two paths don't both render line numbers.

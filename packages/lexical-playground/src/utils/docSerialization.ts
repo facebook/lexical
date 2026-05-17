@@ -42,7 +42,10 @@ const CompressionAPIWarning = warnOnlyOnce(
 );
 
 export async function docToHash(doc: SerializedDocument): Promise<string> {
-  if (typeof CompressionStream !== 'undefined') {
+  if (typeof CompressionStream === 'undefined') {
+    CompressionAPIWarning();
+    return '';
+  } else {
     const cs = new CompressionStream('gzip');
     const writer = cs.writable.getWriter();
     const [, output] = await Promise.all([
@@ -56,9 +59,6 @@ export async function docToHash(doc: SerializedDocument): Promise<string> {
       .replace(/\+/g, '-')
       .replace(/=+$/, '')}`;
   }
-
-  CompressionAPIWarning();
-  return '';
 }
 
 export async function docFromHash(
@@ -68,7 +68,10 @@ export async function docFromHash(
   if (!m) {
     return null;
   }
-  if (typeof CompressionStream !== 'undefined') {
+  if (typeof DecompressionStream === 'undefined') {
+    CompressionAPIWarning();
+    return null;
+  } else {
     const ds = new DecompressionStream('gzip');
     const writer = ds.writable.getWriter();
     const b64 = atob(m[1].replace(/_/g, '/').replace(/-/g, '+'));
@@ -86,6 +89,4 @@ export async function docFromHash(
     await closed;
     return JSON.parse(output.join(''));
   }
-  CompressionAPIWarning();
-  return null;
 }

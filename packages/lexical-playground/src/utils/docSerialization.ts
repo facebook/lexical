@@ -42,28 +42,23 @@ const CompressionAPIWarning = warnOnlyOnce(
 );
 
 export async function docToHash(doc: SerializedDocument): Promise<string> {
-  const json = JSON.stringify(doc);
-  let encoded: string;
-
-  if (
-    typeof CompressionStream !== 'undefined' &&
-    typeof DecompressionStream !== 'undefined'
-  ) {
+  if (typeof CompressionStream !== 'undefined') {
     const cs = new CompressionStream('gzip');
     const writer = cs.writable.getWriter();
     const [, output] = await Promise.all([
-      writer.write(new TextEncoder().encode(json)).then(() => writer.close()),
+      writer
+        .write(new TextEncoder().encode(JSON.stringify(doc)))
+        .then(() => writer.close()),
       readBytestoString(cs.readable.getReader()),
     ]);
-    encoded = output;
-  } else {
-    encoded = encodeURIComponent(json);
-    CompressionAPIWarning();
+    return `#doc=${btoa(output)
+      .replace(/\//g, '_')
+      .replace(/\+/g, '-')
+      .replace(/=+$/, '')}`;
   }
-  return `#doc=${btoa(encoded)
-    .replace(/\//g, '_')
-    .replace(/\+/g, '-')
-    .replace(/=+$/, '')}`;
+
+  CompressionAPIWarning();
+  return '';
 }
 
 export async function docFromHash(
@@ -73,14 +68,10 @@ export async function docFromHash(
   if (!m) {
     return null;
   }
-  const b64 = atob(m[1].replace(/_/g, '/').replace(/-/g, '+'));
-
-  if (
-    typeof CompressionStream !== 'undefined' &&
-    typeof DecompressionStream !== 'undefined'
-  ) {
+  if (typeof CompressionStream !== 'undefined') {
     const ds = new DecompressionStream('gzip');
     const writer = ds.writable.getWriter();
+    const b64 = atob(m[1].replace(/_/g, '/').replace(/-/g, '+'));
     const array = new Uint8Array(b64.length);
     for (let i = 0; i < b64.length; i++) {
       array[i] = b64.charCodeAt(i);
@@ -94,8 +85,7 @@ export async function docFromHash(
     }
     await closed;
     return JSON.parse(output.join(''));
-  } else {
-    CompressionAPIWarning();
-    return JSON.parse(decodeURIComponent(b64));
   }
+  CompressionAPIWarning();
+  return null;
 }

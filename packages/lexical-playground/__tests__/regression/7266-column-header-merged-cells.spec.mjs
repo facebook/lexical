@@ -31,11 +31,6 @@ test.describe('Regression test #7266', () => {
 
     await initialize({isCollab, page});
 
-    if (isCollab) {
-      // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
-      page.setViewportSize({height: 1000, width: 3000});
-    }
-
     await focusEditor(page);
 
     await insertTable(page, 4, 4);
@@ -150,11 +145,6 @@ test.describe('Regression test #7266', () => {
     test.skip(isPlainText);
 
     await initialize({isCollab, page});
-
-    if (isCollab) {
-      // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
-      page.setViewportSize({height: 1000, width: 3000});
-    }
 
     await focusEditor(page);
 

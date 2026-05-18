@@ -138,9 +138,6 @@ export async function initialize({
     isCollab ? 'split/' : ''
   }?${urlParams.toString()}`;
 
-  // Having more horizontal space prevents redundant text wraps for tests
-  // which affects CMD+ArrowRight/Left navigation
-  page.setViewportSize({height: 1000, width: isCollab ? 2500 : 1250});
   await page.goto(url);
 
   await exposeLexicalEditor(page);

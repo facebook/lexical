@@ -59,7 +59,7 @@ jobs:
   build-windows:
     env:
       node-version: 24.x
-    runs-on: windows-latest
+    runs-on: windows-2022
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/setup-pnpm
@@ -123,7 +123,7 @@ jobs:
         editor-mode: ['rich-text', 'plain-text']
     uses: ./.github/workflows/call-e2e-test.yml
     with:
-      os: 'windows-latest'
+      os: 'windows-2022'
       node-version: ${{ matrix.node-version }}
       browser: ${{ matrix.browser }}
       editor-mode: ${{ matrix.editor-mode }}
@@ -162,7 +162,7 @@ jobs:
         browser: ['chromium', 'firefox']
     uses: ./.github/workflows/call-e2e-test.yml
     with:
-      os: 'windows-latest'
+      os: 'windows-2022'
       node-version: ${{ matrix.node-version }}
       browser: ${{ matrix.browser }}
       editor-mode: 'rich-text-with-collab'

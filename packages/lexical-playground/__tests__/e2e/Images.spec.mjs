@@ -584,11 +584,6 @@ test.describe('Images', () => {
     test.fixme(isCollab);
     test.skip(isPlainText);
 
-    await page.setViewportSize({
-      height: 1000,
-      width: 2000,
-    });
-
     await focusEditor(page);
 
     await page.keyboard.type('HelloWorld');

@@ -69,6 +69,7 @@ export const HR: ElementTransformer = {
 
     line.selectNext();
   },
+  triggerOnEnter: true,
   type: 'element',
 };
 
@@ -146,6 +147,7 @@ export const TWEET: ElementTransformer = {
     const tweetNode = $createTweetNode(id);
     textNode.replace(tweetNode);
   },
+  triggerOnEnter: true,
   type: 'element',
 };
 

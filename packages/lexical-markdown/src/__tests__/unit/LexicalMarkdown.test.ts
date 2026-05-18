@@ -1399,6 +1399,102 @@ describe('Markdown', () => {
         '<p><span style="white-space: pre-wrap;">```</span></p>',
       );
     });
+
+    it('should transform element markdown on Enter when trailing space was not required (custom element transformer)', () => {
+      const ELEMENT_TRIGGERED_FENCE: ElementTransformer = {
+        dependencies: [CodeNode],
+        export: () => null,
+        regExp: /^`{3,}(\w+)?$/,
+        replace: (parentNode, children, match, isImport) => {
+          const node = $createCodeNode(match[1]);
+          node.append(...children);
+          parentNode.replace(node);
+          if (!isImport) {
+            node.select(0, 0);
+          }
+        },
+        triggerOnEnter: true,
+        type: 'element',
+      };
+
+      const editor = createHeadlessEditor({
+        nodes: [
+          HeadingNode,
+          ListNode,
+          ListItemNode,
+          QuoteNode,
+          CodeNode,
+          LinkNode,
+        ],
+      });
+
+      registerMarkdownShortcuts(editor, [ELEMENT_TRIGGERED_FENCE]);
+
+      editor.update(
+        () => {
+          const root = $getRoot();
+          const paragraph = $createParagraphNode();
+          root.append(paragraph);
+          paragraph.selectEnd();
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            selection.insertText('```');
+          }
+        },
+        {discrete: true},
+      );
+
+      editor.update(
+        () => {
+          editor.dispatchCommand(KEY_ENTER_COMMAND, null);
+        },
+        {discrete: true},
+      );
+
+      expect(editor.read(() => $generateHtmlFromNodes(editor))).toBe(
+        '<pre spellcheck="false"></pre>',
+      );
+    });
+
+    it('should transform heading on Enter when a line was inserted at once (no trailing space listener trigger)', () => {
+      const editor = createHeadlessEditor({
+        nodes: [
+          HeadingNode,
+          ListNode,
+          ListItemNode,
+          QuoteNode,
+          CodeNode,
+          LinkNode,
+        ],
+      });
+
+      registerMarkdownShortcuts(editor, [HEADING]);
+
+      editor.update(
+        () => {
+          const root = $getRoot();
+          const paragraph = $createParagraphNode();
+          root.append(paragraph);
+          paragraph.selectEnd();
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            selection.insertText('## ');
+          }
+        },
+        {discrete: true},
+      );
+
+      editor.update(
+        () => {
+          editor.dispatchCommand(KEY_ENTER_COMMAND, null);
+        },
+        {discrete: true},
+      );
+
+      expect(editor.read(() => $generateHtmlFromNodes(editor))).toBe(
+        '<h2><br></h2>',
+      );
+    });
   });
 
   describe('composition-end trigger characters (#7026)', () => {

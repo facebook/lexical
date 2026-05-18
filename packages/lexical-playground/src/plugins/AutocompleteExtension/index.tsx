@@ -81,6 +81,7 @@ function query(searchText: string): SearchPromise {
 }
 
 function formatSuggestionText(suggestion: string): string {
+  // eslint-disable-next-line compat/compat
   const userAgentData = window.navigator.userAgentData;
   const isMobile =
     userAgentData !== undefined

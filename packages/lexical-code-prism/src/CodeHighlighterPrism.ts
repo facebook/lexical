@@ -6,12 +6,9 @@
  *
  */
 
-import type {LexicalEditor, LexicalNode, NodeKey} from 'lexical';
-
 import {
   $isCodeHighlightNode,
   $isCodeNode,
-  CODE_GUTTER_ACTIVE_ATTR,
   CodeExtension,
   CodeGutterExtension,
   CodeHighlightNode,
@@ -31,8 +28,13 @@ import {
   $isTabNode,
   $isTextNode,
   $onUpdate,
+  declarePeerDependency,
   defineExtension,
+  type ExtensionInitState,
+  type LexicalEditor,
+  type LexicalNode,
   mergeRegister,
+  type NodeKey,
   safeCast,
   TextNode,
 } from 'lexical';
@@ -95,10 +97,11 @@ function $textNodeTransform(
  * `<code>` element, which a CSS `::before` pseudo with
  * `content: attr(data-gutter)` renders as the line-number gutter.
  *
- * The extension-framework path ({@link CodePrismExtension}) instead
- * pulls in `CodeGutterExtension` from `@lexical/code-core`, which
- * decorates each line-starter child with `data-line-number` and marks
- * the `<code>` element with `data-lexical-code-gutter-active`. This
+ * The extension-framework path ({@link CodePrismExtension}) treats
+ * `CodeGutterExtension` from `@lexical/code-core` as a peer dependency;
+ * when it's registered, `registerHighlightingOnly` skips this mutation
+ * listener entirely and per-line `data-line-number` attributes from
+ * `CodeGutterExtension` drive the gutter instead. This `$updateCodeGutter`
  * function is retained for legacy callers that use
  * `registerCodeHighlighting` on a plain editor without the Extension
  * framework.
@@ -109,12 +112,6 @@ function $updateCodeGutter(node: CodeNode, editor: LexicalEditor): void {
     return;
   }
   const codeElement = $getDOMSlot(node, keyedDOM, editor).element;
-  // CodeGutterExtension marks the `<code>` element with
-  // `CODE_GUTTER_ACTIVE_ATTR` when present. Skip the attribute write
-  // so the two paths don't both render line numbers.
-  if (codeElement.hasAttribute(CODE_GUTTER_ACTIVE_ATTR)) {
-    return;
-  }
   const children = node.getChildren();
   const childrenLength = children.length;
   // @ts-ignore: internal field
@@ -353,15 +350,21 @@ interface TransformState {
 export function registerHighlightingOnly(
   editor: LexicalEditor,
   tokenizer: Tokenizer,
+  state?: ExtensionInitState,
 ): () => void {
   const registrations = [];
 
   // Legacy `data-gutter` mutation listener: keeps the attribute in sync
   // for direct-API callers (`registerCodeHighlighting`) on a plain
-  // editor. Extension-framework users get per-line `data-line-number`
-  // attributes from `CodeGutterExtension` and this path bails on the
-  // `data-lexical-code-gutter-active` sentinel.
-  if (editor._headless !== true) {
+  // editor. When called from `CodePrismExtension.register`, `state` is
+  // provided and we check the `CodeGutterExtension` peer dependency —
+  // if it's registered, per-line `data-line-number` attributes handle
+  // the gutter and this listener is skipped entirely.
+  const hasGutterPeer =
+    state !== undefined &&
+    state.getPeer<typeof CodeGutterExtension>('@lexical/code/CodeGutter') !==
+      undefined;
+  if (editor._headless !== true && !hasGutterPeer) {
     registrations.push(
       editor.registerMutationListener(
         CodeNode,
@@ -451,15 +454,20 @@ export const CodePrismExtension = defineExtension({
     disabled: false,
     tokenizer: PrismTokenizer,
   }),
-  dependencies: [CodeExtension, CodeGutterExtension, CodeIndentExtension],
+  dependencies: [CodeExtension, CodeIndentExtension],
   name: '@lexical/code-prism',
+  peerDependencies: [
+    declarePeerDependency<typeof CodeGutterExtension>(
+      '@lexical/code/CodeGutter',
+    ),
+  ],
   register: (editor, config, state) => {
     const stores = state.getOutput();
     return effect(() => {
       if (stores.disabled.value) {
         return;
       }
-      return registerHighlightingOnly(editor, stores.tokenizer.value);
+      return registerHighlightingOnly(editor, stores.tokenizer.value, state);
     });
   },
 });

@@ -19,14 +19,12 @@ import {$isCodeNode, CodeNode} from './CodeNode';
 const LINE_NUMBER_ATTR = 'data-line-number';
 const TRAILING_LINE_NUMBER_ATTR = 'data-line-number-trailing';
 /**
- * Sentinel attribute set on the `<code>` element while
- * `CodeGutterExtension` is registered. The legacy `data-gutter`
- * mutation-listener path in `@lexical/code-prism` and
- * `@lexical/code-shiki` checks for this attribute and bails so the two
- * line-number paths don't both render. Exported so consumers don't have
- * to duplicate the string literal.
+ * Marker attribute set on the `<code>` element while this extension is
+ * registered. CSS hooks (e.g. the gutter background `::before`) target
+ * this attribute. Not part of any cross-extension protocol — purely a
+ * CSS hook.
  */
-export const CODE_GUTTER_ACTIVE_ATTR = 'data-lexical-code-gutter-active';
+const CODE_GUTTER_ACTIVE_ATTR = 'data-lexical-code-gutter-active';
 const CODE_LINEBREAK_WRAP_CLASS = 'code-linebreak-wrap';
 const CODE_LINEBREAK_WRAP_ATTR = 'data-lexical-code-linebreak-wrap';
 
@@ -83,15 +81,15 @@ function $needsWrap(node: LineBreakNode): boolean {
  * with it, but in practice cross-class reparenting recreates the DOM, so
  * the attribute does not survive.
  *
- * A sentinel `data-lexical-code-gutter-active` attribute is set on the
- * `<code>` element so the legacy `data-gutter` mutation listener path
- * (`@lexical/code-prism`, `@lexical/code-shiki`) can skip its write when
- * this extension is active and avoid double-rendering.
+ * Declared as a `peerDependency` of `CodePrismExtension` /
+ * `CodeShikiExtension` (not a hard dependency). Their `register`
+ * callbacks check `state.getPeer('@lexical/code/CodeGutter')` and skip
+ * the legacy `data-gutter` mutation listener when this extension is
+ * registered, so the two line-number paths never run together.
  *
- * Listed as a dependency of `CodePrismExtension` / `CodeShikiExtension`
- * so any project that opts into a syntax highlighter keeps the existing
- * line-number behaviour. Projects using `CodeExtension` without a
- * highlighter can add this extension explicitly.
+ * Because it's a peer (not a hard dep), projects that register only a
+ * highlighter extension don't get this for free — add it explicitly to
+ * the editor's extension list to enable per-line gutter decoration.
  */
 export const CodeGutterExtension = defineExtension({
   dependencies: [

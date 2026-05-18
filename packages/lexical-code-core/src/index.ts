@@ -7,10 +7,7 @@
  */
 
 export {CodeExtension} from './CodeExtension';
-export {
-  CODE_GUTTER_ACTIVE_ATTR,
-  CodeGutterExtension,
-} from './CodeGutterExtension';
+export {CodeGutterExtension} from './CodeGutterExtension';
 export {
   $createCodeHighlightNode,
   $isCodeHighlightNode,

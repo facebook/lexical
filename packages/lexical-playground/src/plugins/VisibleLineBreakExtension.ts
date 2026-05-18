@@ -5,12 +5,19 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import {
+  effect,
+  getExtensionDependencyFromEditor,
+  namedSignals,
+} from '@lexical/extension';
 import {domOverride, DOMRenderExtension} from '@lexical/html';
 import {
   configExtension,
   defineExtension,
   isHTMLElement,
+  type LexicalEditor,
   LineBreakNode,
+  safeCast,
 } from 'lexical';
 
 /**
@@ -23,38 +30,76 @@ import {
  * `LineBreakNode` subclass required, behaviour attaches via
  * `DOMRenderExtension` configuration.
  *
- * Not registered in the default playground — pull this into a project's
- * extension list to opt into visible line-break markers everywhere
- * `LineBreakNode` renders.
+ * `disabled` toggles the wrap at runtime without recreating the editor.
+ * Flipping the signal forces a no-op `LineBreakNode` transform so every
+ * existing `LineBreakNode` gets re-rendered through the `$createDOM` /
+ * `$updateDOM` overrides below.
  */
 const VISIBLE_LINEBREAK_CLASS = 'visible-linebreak';
 const VISIBLE_LINEBREAK_MARKER = '↵';
+const VISIBLE_LINEBREAK_ATTR = 'data-lexical-visible-linebreak';
+
+export interface VisibleLineBreakConfig {
+  disabled: boolean;
+}
+
+function $isDisabled(editor: LexicalEditor): boolean {
+  return getExtensionDependencyFromEditor(editor, VisibleLineBreakExtension)
+    .output.disabled.value;
+}
+
+function hasOurWrap(dom: HTMLElement): boolean {
+  return dom.tagName === 'SPAN' && dom.hasAttribute(VISIBLE_LINEBREAK_ATTR);
+}
 
 export const VisibleLineBreakExtension = defineExtension({
+  build: (editor, config) => namedSignals(config),
+  config: safeCast<VisibleLineBreakConfig>({disabled: false}),
   dependencies: [
     configExtension(DOMRenderExtension, {
       overrides: [
         domOverride([LineBreakNode], {
-          $createDOM: (_node, $next, _editor) => {
-            const br = $next();
+          $createDOM: (_node, $next, editor) => {
+            const inner = $next();
+            if ($isDisabled(editor)) {
+              return inner;
+            }
             const wrapper = document.createElement('span');
             wrapper.className = VISIBLE_LINEBREAK_CLASS;
-            wrapper.setAttribute('data-lexical-visible-linebreak', 'true');
+            wrapper.setAttribute(VISIBLE_LINEBREAK_ATTR, 'true');
             const marker = document.createElement('span');
             marker.textContent = VISIBLE_LINEBREAK_MARKER;
             marker.setAttribute('aria-hidden', 'true');
             marker.contentEditable = 'false';
             wrapper.appendChild(marker);
-            wrapper.appendChild(br);
+            wrapper.appendChild(inner);
             return wrapper;
           },
           $getDOMSlot: (_node, dom, $next, _editor) => {
             const br = dom.querySelector(':scope > br');
             return isHTMLElement(br) ? $next().withElement(br) : $next();
           },
+          $updateDOM: (_node, _prev, dom, $next, editor) => {
+            const wantsWrap = !$isDisabled(editor);
+            if (wantsWrap !== hasOurWrap(dom)) {
+              return true;
+            }
+            return $next();
+          },
         }),
       ],
     }),
   ],
   name: '@lexical/playground/visible-linebreak',
+  register: (editor, _config, state) => {
+    const stores = state.getOutput();
+    return effect(() => {
+      // Subscribe to the signal so the effect re-runs on every flip.
+      void stores.disabled.value;
+      // Force every existing LineBreakNode to re-render via the overrides
+      // by registering and immediately unregistering a no-op transform —
+      // the register call marks all existing LineBreakNode instances dirty.
+      editor.registerNodeTransform(LineBreakNode, () => {})();
+    });
+  },
 });

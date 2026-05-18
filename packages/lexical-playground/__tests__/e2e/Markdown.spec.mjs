@@ -105,7 +105,7 @@ test.describe.parallel('Markdown', () => {
     },
     {
       expectation:
-        '<code class="PlaygroundEditorTheme__code" dir="auto" spellcheck="false" data-language="javascript" data-highlight-language="javascript"><span aria-hidden="true" class="code-gutter" contenteditable="false" data-lexical-code-gutter="true">1</span><br></code>',
+        '<code class="PlaygroundEditorTheme__code" dir="auto" spellcheck="false" data-language="javascript" data-highlight-language="javascript" data-lexical-code-gutter-active="true"><br></code>',
       importExpectation: '',
       isBlockTest: true,
       markdownImport: '',
@@ -884,19 +884,14 @@ test.describe.parallel('Markdown', () => {
           dir="auto"
           spellcheck="false"
           data-highlight-language="markdown"
-          data-language="markdown">
-          <span
-            class="code-gutter"
-            contenteditable="false"
-            aria-hidden="true"
-            data-lexical-code-gutter="true">
-            12
-          </span>
-          <span data-lexical-text="true">Hello</span>
+          data-language="markdown"
+          data-lexical-code-gutter-active="true">
+          <span data-lexical-text="true" data-line-number="1">Hello</span>
           <br />
           <span
             class="PlaygroundEditorTheme__tokenPunctuation"
-            data-lexical-text="true">
+            data-lexical-text="true"
+            data-line-number="2">
             *
           </span>
           <span data-lexical-text="true">world</span>
@@ -1101,22 +1096,16 @@ const LIST_MARKER_MARKDOWN = html`
     dir="auto"
     spellcheck="false"
     data-highlight-language="markdown"
-    data-language="markdown">
-    <span
-      class="code-gutter"
-      contenteditable="false"
-      aria-hidden="true"
-      data-lexical-code-gutter="true">
-      123
-    </span>
-    <span data-lexical-text="true">+</span>
+    data-language="markdown"
+    data-lexical-code-gutter-active="true">
+    <span data-lexical-text="true" data-line-number="1">+</span>
     <span data-lexical-text="true">a</span>
     <br />
-    <span data-lexical-text="true"></span>
+    <span data-lexical-text="true" data-line-number="2"></span>
     <span data-lexical-text="true">-</span>
     <span data-lexical-text="true">b</span>
     <br />
-    <span data-lexical-text="true">+</span>
+    <span data-lexical-text="true" data-line-number="3">+</span>
     <span data-lexical-text="true">c</span>
   </code>
 `;
@@ -1247,15 +1236,9 @@ const TYPED_MARKDOWN_HTML = html`
     dir="auto"
     spellcheck="false"
     data-highlight-language="sql"
-    data-language="sql">
-    <span
-      class="code-gutter"
-      contenteditable="false"
-      aria-hidden="true"
-      data-lexical-code-gutter="true">
-      1
-    </span>
-    <span data-lexical-text="true">Code block</span>
+    data-language="sql"
+    data-lexical-code-gutter-active="true">
+    <span data-lexical-text="true" data-line-number="1">Code block</span>
   </code>
   <p class="PlaygroundEditorTheme__paragraph" dir="auto">
     <span data-lexical-text="true">Done</span>
@@ -1536,19 +1519,19 @@ const IMPORTED_MARKDOWN_HTML = html`
     dir="auto"
     spellcheck="false"
     data-highlight-language="javascript"
-    data-language="javascript">
+    data-language="javascript"
+    data-lexical-code-gutter-active="true">
     <span
-      class="code-gutter"
-      contenteditable="false"
-      aria-hidden="true"
-      data-lexical-code-gutter="true">
-      123
-    </span>
-    <span class="PlaygroundEditorTheme__tokenComment" data-lexical-text="true">
+      class="PlaygroundEditorTheme__tokenComment"
+      data-lexical-text="true"
+      data-line-number="1">
       // Some comments
     </span>
     <br />
-    <span class="PlaygroundEditorTheme__tokenProperty" data-lexical-text="true">
+    <span
+      class="PlaygroundEditorTheme__tokenProperty"
+      data-lexical-text="true"
+      data-line-number="2">
       1
     </span>
     <span data-lexical-text="true"></span>
@@ -1573,7 +1556,10 @@ const IMPORTED_MARKDOWN_HTML = html`
       ;
     </span>
     <br />
-    <span class="PlaygroundEditorTheme__tokenOperator" data-lexical-text="true">
+    <span
+      class="PlaygroundEditorTheme__tokenOperator"
+      data-lexical-text="true"
+      data-line-number="3">
       **
     </span>
     <span data-lexical-text="true">_</span>

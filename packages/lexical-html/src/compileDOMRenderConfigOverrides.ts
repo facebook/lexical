@@ -9,7 +9,6 @@ import {getKnownTypesAndNodes} from '@lexical/extension';
 import {
   $isLexicalNode,
   DEFAULT_EDITOR_DOM_CONFIG,
-  type DOMSlotForNode,
   type EditorDOMRenderConfig,
   getStaticNodeConfig,
   InitialEditorConfig,
@@ -194,32 +193,14 @@ function merge3<T, N extends LexicalNode, A>(
   };
 }
 
-// `$getDOMSlot` has a conditional return type (`DOMSlotForNode<N>`) that the
-// generic `AccFn<T, N, Args>` machinery can't unify — T can't depend on the
-// per-call N. We compose accumulator + override the same way `merge3` does
-// and let the cast at the return restore the narrow type.
-function merge3GetDOMSlot(
+const merge3GetDOMSlot = merge3 as (
   acc: EditorDOMRenderConfig['$getDOMSlot'],
   $getOverride: (n: LexicalNode) => DOMRenderMatch<LexicalNode>['$getDOMSlot'],
-): EditorDOMRenderConfig['$getDOMSlot'] {
-  return <N extends LexicalNode>(
-    node: N,
-    dom: HTMLElement,
-    editor: LexicalEditor,
-  ): DOMSlotForNode<N> => {
-    const $next = () => acc(node, dom, editor);
-    const $override = $getOverride(node);
-    return (
-      $override ? $override(node, dom, $next, editor) : $next()
-    ) as DOMSlotForNode<N>;
-  };
-}
+) => EditorDOMRenderConfig['$getDOMSlot'];
 
-function ignoreNext3GetDOMSlot(
+const ignoreNext3GetDOMSlot = ignoreNext3 as (
   fn: EditorDOMRenderConfig['$getDOMSlot'],
-): DOMRenderMatch<LexicalNode>['$getDOMSlot'] {
-  return (node, dom, _$next, editor) => fn(node, dom, editor);
-}
+) => DOMRenderMatch<LexicalNode>['$getDOMSlot'];
 
 function merge4<T, N extends LexicalNode, A, B>(
   $acc: AccFn<T, N, [A, B]>,

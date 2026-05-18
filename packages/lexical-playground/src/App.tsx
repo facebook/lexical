@@ -52,7 +52,7 @@ import Editor from './Editor';
 import logo from './images/logo.svg';
 import {KeywordsExtension} from './nodes/KeywordNode';
 import PlaygroundNodes from './nodes/PlaygroundNodes';
-import {AutocompleteExtension} from './plugins/AutocompletePlugin';
+import {AutocompleteExtension} from './plugins/AutocompleteExtension';
 import {PlaygroundAutoLinkExtension} from './plugins/AutoLinkExtension';
 import {CodeHighlightExtension} from './plugins/CodeHighlightExtension';
 import {CollapsibleExtension} from './plugins/CollapsibleExtension';
@@ -73,6 +73,7 @@ import {TerseExportExtension} from './plugins/TerseExportExtension';
 import TestRecorderPlugin from './plugins/TestRecorderPlugin';
 import {TwitterExtension} from './plugins/TwitterExtension';
 import TypingPerfPlugin from './plugins/TypingPerfPlugin';
+import {VisibleLineBreakExtension} from './plugins/VisibleLineBreakExtension';
 import {YouTubeExtension} from './plugins/YouTubeExtension';
 import Settings from './Settings';
 import PlaygroundEditorTheme from './themes/PlaygroundEditorTheme';
@@ -221,11 +222,21 @@ const AppExtension = defineExtension({
  */
 function buildExtensionFromSettings(
   settings: Record<
-    'isCollab' | 'emptyEditor' | 'isRichText' | 'isAutocomplete',
+    | 'isCollab'
+    | 'emptyEditor'
+    | 'isRichText'
+    | 'isAutocomplete'
+    | 'isVisibleLineBreak',
     boolean
   >,
 ) {
-  const {isCollab, emptyEditor, isRichText, isAutocomplete} = settings;
+  const {
+    isCollab,
+    emptyEditor,
+    isRichText,
+    isAutocomplete,
+    isVisibleLineBreak,
+  } = settings;
   return defineExtension({
     $initialEditorState: isCollab
       ? null
@@ -237,6 +248,7 @@ function buildExtensionFromSettings(
       configExtension(HistoryExtension, {disabled: isCollab}),
       isRichText ? PlaygroundRichTextExtension : PlainTextExtension,
       ...(isAutocomplete ? [AutocompleteExtension] : []),
+      ...(isVisibleLineBreak ? [VisibleLineBreakExtension] : []),
     ],
     name: '@lexical/playground/dynamic-config',
   });
@@ -249,6 +261,7 @@ function App(): JSX.Element {
       isCollab,
       emptyEditor,
       isRichText,
+      isVisibleLineBreak,
       measureTypingPerf,
     },
   } = useSettings();
@@ -260,8 +273,9 @@ function App(): JSX.Element {
         isAutocomplete,
         isCollab,
         isRichText,
+        isVisibleLineBreak,
       }),
-    [emptyEditor, isAutocomplete, isCollab, isRichText],
+    [emptyEditor, isAutocomplete, isCollab, isRichText, isVisibleLineBreak],
   );
 
   return (

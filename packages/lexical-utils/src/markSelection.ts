@@ -38,9 +38,10 @@ function $rangeTargetFromPoint(
   dom: HTMLElement,
 ): [HTMLElement | Text, number] {
   if (point.type === 'text' || !$isElementNode(node)) {
-    const textDOM = $isTextNode(node)
-      ? ($getDOMTextNode(node, dom, editor) ?? dom)
-      : getDOMTextNode(dom) || dom;
+    const textDOM =
+      ($isTextNode(node)
+        ? $getDOMTextNode(node, dom, editor)
+        : getDOMTextNode(dom)) || dom;
     return [textDOM, point.offset];
   } else {
     const slot = $getDOMSlot(node, dom, editor);

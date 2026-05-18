@@ -2018,13 +2018,13 @@ export function $getDOMSlot<N extends LexicalNode>(
   const slot = $getEditorDOMRenderConfig(editor).$getDOMSlot(node, dom, editor);
   if ($isElementNode(node)) {
     invariant(
-      (slot as DOMSlot<HTMLElement>) instanceof ElementDOMSlot,
+      slot instanceof ElementDOMSlot,
       '$getDOMSlot: expected ElementDOMSlot for ElementNode (key %s type %s)',
       node.getKey(),
       node.getType(),
     );
   }
-  return slot as DOMSlotForNode<N>;
+  return slot;
 }
 
 /**

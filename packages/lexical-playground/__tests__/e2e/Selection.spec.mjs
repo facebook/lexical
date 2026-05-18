@@ -160,9 +160,15 @@ test.describe.parallel('Selection', () => {
           dir="auto"
           spellcheck="false"
           data-highlight-language="javascript"
-          data-language="javascript"
-          data-lexical-code-gutter-active="true">
-          <span data-lexical-text="true" data-line-number="1">Line2</span>
+          data-language="javascript">
+          <span
+            class="code-gutter"
+            contenteditable="false"
+            aria-hidden="true"
+            data-lexical-code-gutter="true">
+            1
+          </span>
+          <span data-lexical-text="true">Line2</span>
         </code>
       `,
     );

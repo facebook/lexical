@@ -675,7 +675,11 @@ export async function focusEditor(page, parentSelector = '.editor-shell') {
 }
 
 export async function getHTML(page, selector = 'div[contenteditable="true"]') {
-  return await locate(page, selector).innerHTML();
+  // Strip the same Safari-only `<img data-lexical-linebreak>` hack that
+  // `assertHTML` filters out — otherwise an `originalHTML` captured on
+  // webkit will contain the img and fail to match itself after
+  // `assertHTML` strips the same img on the next comparison.
+  return removeSafariLinebreakImgHack(await locate(page, selector).innerHTML());
 }
 
 export function getEditorElement(page, parentSelector = '.editor-shell') {

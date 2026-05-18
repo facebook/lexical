@@ -12,6 +12,7 @@ import {
   defineExtension,
   LineBreakNode,
 } from 'lexical';
+import {IS_APPLE_WEBKIT, IS_IOS, IS_SAFARI} from 'shared/environment';
 
 import {$isCodeNode, CodeNode} from './CodeNode';
 
@@ -23,6 +24,23 @@ const CODE_LINEBREAK_WRAP_ATTR = 'data-lexical-code-linebreak-wrap';
 
 function hasOurLineBreakWrap(dom: HTMLElement): boolean {
   return dom.tagName === 'SPAN' && dom.hasAttribute(CODE_LINEBREAK_WRAP_ATTR);
+}
+
+function $needsWrap(node: LineBreakNode): boolean {
+  if (!$isCodeNode(node.getParent())) {
+    return false;
+  }
+  const prev = node.getPreviousSibling();
+  const next = node.getNextSibling();
+  // Line-starter (prev null or LineBreakNode) → represents an empty line
+  // that needs its own line number.
+  // Trailing (last child) → reconciler will add a placeholder `<br>`
+  // after; we need the wrap to host the trailing line number.
+  // Content-line-ending BRs (prev is content, next is content) stay
+  // bare so webkit's native cursor traversal works around them.
+  const isLineStarter = prev === null || $isLineBreakNode(prev);
+  const isTrailing = next === null;
+  return isLineStarter || isTrailing;
 }
 
 /**
@@ -64,17 +82,33 @@ export const CodeGutterExtension = defineExtension({
         domOverride([LineBreakNode], {
           $createDOM: (node, $next, _editor) => {
             const inner = $next();
-            if (!$isCodeNode(node.getParent())) {
+            if (!$needsWrap(node)) {
               return inner;
             }
             const wrap = document.createElement('span');
             wrap.setAttribute(CODE_LINEBREAK_WRAP_ATTR, 'true');
             wrap.className = CODE_LINEBREAK_WRAP_CLASS;
+            // Mirrors the `setManagedLineBreak` webkit hack in
+            // `LexicalDOMSlot` — a zero-size inline `<img>` next to the
+            // `<br>` keeps webkit's cursor algorithm working when an
+            // inline element surrounds the `<br>`. We only pay the
+            // selection-offset cost on lines that actually need the
+            // wrap (empty / trailing), so content-line-ending BRs stay
+            // bare and webkit's native cursor handles them directly.
+            if (IS_APPLE_WEBKIT || IS_IOS || IS_SAFARI) {
+              const img = document.createElement('img');
+              img.setAttribute('data-lexical-linebreak', 'true');
+              img.style.setProperty('display', 'inline', 'important');
+              img.style.setProperty('border', '0px', 'important');
+              img.style.setProperty('margin', '0px', 'important');
+              img.alt = '';
+              wrap.appendChild(img);
+            }
             wrap.appendChild(inner);
             return wrap;
           },
           $updateDOM: (node, _prev, dom, $next, _editor) => {
-            const wantsWrap = $isCodeNode(node.getParent());
+            const wantsWrap = $needsWrap(node);
             if (wantsWrap !== hasOurLineBreakWrap(dom)) {
               return true;
             }

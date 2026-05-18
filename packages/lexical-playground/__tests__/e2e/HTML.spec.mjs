@@ -52,12 +52,15 @@ test.describe('HTML', () => {
         dir="auto"
         spellcheck="false"
         data-highlight-language="javascript"
-        data-language="javascript"
-        data-lexical-code-gutter-active="true">
+        data-language="javascript">
         <span
-          class="PlaygroundEditorTheme__tokenAttr"
-          data-lexical-text="true"
-          data-line-number="1">
+          class="code-gutter"
+          contenteditable="false"
+          aria-hidden="true"
+          data-lexical-code-gutter="true">
+          *
+        </span>
+        <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
           const
         </span>
         <span data-lexical-text="true">x</span>
@@ -119,8 +122,7 @@ test.describe('HTML', () => {
           dir="auto"
           spellcheck="false"
           data-highlight-language="html"
-          data-language="html"
-          data-lexical-code-gutter-active="true">
+          data-language="html">
           *
         </code>
       `,
@@ -173,8 +175,7 @@ test.describe('HTML', () => {
           dir="auto"
           spellcheck="false"
           data-highlight-language="html"
-          data-language="html"
-          data-lexical-code-gutter-active="true">
+          data-language="html">
           *
         </code>
       `,
@@ -212,12 +213,17 @@ test.describe('HTML', () => {
           dir="auto"
           spellcheck="false"
           data-highlight-language="javascript"
-          data-language="javascript"
-          data-lexical-code-gutter-active="true">
+          data-language="javascript">
+          <span
+            class="code-gutter"
+            contenteditable="false"
+            aria-hidden="true"
+            data-lexical-code-gutter="true">
+            *
+          </span>
           <span
             class="PlaygroundEditorTheme__tokenAttr"
-            data-lexical-text="true"
-            data-line-number="1">
+            data-lexical-text="true">
             const
           </span>
           <span data-lexical-text="true">x</span>

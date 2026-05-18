@@ -110,9 +110,15 @@ test.describe('Identation', () => {
           dir="auto"
           spellcheck="false"
           data-highlight-language="javascript"
-          data-language="javascript"
-          data-lexical-code-gutter-active="true">
-          <span data-lexical-text="true" data-line-number="1">code</span>
+          data-language="javascript">
+          <span
+            class="code-gutter"
+            contenteditable="false"
+            aria-hidden="true"
+            data-lexical-code-gutter="true">
+            1
+          </span>
+          <span data-lexical-text="true">code</span>
         </code>
         <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
         <table
@@ -184,9 +190,15 @@ test.describe('Identation', () => {
           dir="auto"
           spellcheck="false"
           data-highlight-language="javascript"
-          data-language="javascript"
-          data-lexical-code-gutter-active="true">
-          <span data-lexical-text="true" data-line-number="1">code</span>
+          data-language="javascript">
+          <span
+            class="code-gutter"
+            contenteditable="false"
+            aria-hidden="true"
+            data-lexical-code-gutter="true">
+            1
+          </span>
+          <span data-lexical-text="true">code</span>
         </code>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
@@ -277,9 +289,15 @@ test.describe('Identation', () => {
           dir="auto"
           spellcheck="false"
           data-highlight-language="javascript"
-          data-language="javascript"
-          data-lexical-code-gutter-active="true">
-          <span data-lexical-text="true" data-line-number="1">code</span>
+          data-language="javascript">
+          <span
+            class="code-gutter"
+            contenteditable="false"
+            aria-hidden="true"
+            data-lexical-code-gutter="true">
+            1
+          </span>
+          <span data-lexical-text="true">code</span>
         </code>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
@@ -364,9 +382,15 @@ test.describe('Identation', () => {
           dir="auto"
           spellcheck="false"
           data-highlight-language="javascript"
-          data-language="javascript"
-          data-lexical-code-gutter-active="true">
-          <span data-lexical-text="true" data-line-number="1">code</span>
+          data-language="javascript">
+          <span
+            class="code-gutter"
+            contenteditable="false"
+            aria-hidden="true"
+            data-lexical-code-gutter="true">
+            1
+          </span>
+          <span data-lexical-text="true">code</span>
         </code>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
@@ -436,9 +460,15 @@ test.describe('Identation', () => {
           dir="auto"
           spellcheck="false"
           data-highlight-language="javascript"
-          data-language="javascript"
-          data-lexical-code-gutter-active="true">
-          <span data-lexical-text="true" data-line-number="1">code</span>
+          data-language="javascript">
+          <span
+            class="code-gutter"
+            contenteditable="false"
+            aria-hidden="true"
+            data-lexical-code-gutter="true">
+            1
+          </span>
+          <span data-lexical-text="true">code</span>
         </code>
         <p class="PlaygroundEditorTheme__paragraph" dir="auto" style="">
           <br />

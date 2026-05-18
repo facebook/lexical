@@ -1119,13 +1119,14 @@ export function registerRichText(
     editor.registerCommand<KeyboardEvent | null>(
       KEY_ENTER_COMMAND,
       event => {
-        const selection = $getSelection();
+        let selection = $getSelection();
         // When a block-level DecoratorNode is selected as a NodeSelection
         // (e.g. it is the only root child after the user removed all
         // surrounding paragraphs), Enter has no RangeSelection to act on
         // and the default handler bails out, leaving the editor stuck.
-        // Insert an empty paragraph after the decorator and place the
-        // caret in it so the user can keep typing.
+        // Convert to a RangeSelection past the decorator so the default
+        // RangeSelection handler below inserts a paragraph and places
+        // the caret.
         if ($isNodeSelection(selection)) {
           const nodes = selection.getNodes();
           if (
@@ -1133,15 +1134,8 @@ export function registerRichText(
             $isDecoratorNode(nodes[0]) &&
             !nodes[0].isInline()
           ) {
-            const newParagraph = $createParagraphNode();
-            nodes[0].insertAfter(newParagraph);
-            newParagraph.select();
-            if (event !== null) {
-              event.preventDefault();
-            }
-            return true;
+            selection = nodes[0].selectNext();
           }
-          return false;
         }
         if (!$isRangeSelection(selection)) {
           return false;

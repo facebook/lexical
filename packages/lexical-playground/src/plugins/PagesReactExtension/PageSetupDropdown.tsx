@@ -31,7 +31,7 @@ const MARGIN_PRESETS: ReadonlyArray<{
   },
   {
     label: 'Normal (0.4")',
-    margins: structuredClone(DEFAULT_PAGE_SETUP.margins),
+    margins: {...DEFAULT_PAGE_SETUP.margins},
   },
   {
     label: 'Moderate (0.75")',

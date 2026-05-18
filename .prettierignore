@@ -26,3 +26,4 @@ flow-typed
 test-results
 /libdefs/*.js
 pnpm-lock.yaml
+**/.next/**

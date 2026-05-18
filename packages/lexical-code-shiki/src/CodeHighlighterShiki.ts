@@ -11,6 +11,7 @@ import type {LexicalEditor, LexicalNode, NodeKey} from 'lexical';
 import {
   $isCodeHighlightNode,
   $isCodeNode,
+  CODE_GUTTER_ACTIVE_ATTR,
   CodeExtension,
   CodeGutterExtension,
   CodeHighlightNode,
@@ -102,7 +103,7 @@ function $updateCodeGutter(node: CodeNode, editor: LexicalEditor): void {
   const codeElement = $getDOMSlot(node, keyedDOM, editor).element;
   // See the mirror in `@lexical/code-prism`. Skip when the extension
   // is active.
-  if (codeElement.hasAttribute('data-lexical-code-gutter-active')) {
+  if (codeElement.hasAttribute(CODE_GUTTER_ACTIVE_ATTR)) {
     return;
   }
   const children = node.getChildren();

@@ -11,6 +11,7 @@ import type {LexicalEditor, LexicalNode, NodeKey} from 'lexical';
 import {
   $isCodeHighlightNode,
   $isCodeNode,
+  CODE_GUTTER_ACTIVE_ATTR,
   CodeExtension,
   CodeGutterExtension,
   CodeHighlightNode,
@@ -109,9 +110,9 @@ function $updateCodeGutter(node: CodeNode, editor: LexicalEditor): void {
   }
   const codeElement = $getDOMSlot(node, keyedDOM, editor).element;
   // CodeGutterExtension marks the `<code>` element with
-  // `data-lexical-code-gutter-active` when present. Skip the attribute
-  // write so the two paths don't both render line numbers.
-  if (codeElement.hasAttribute('data-lexical-code-gutter-active')) {
+  // `CODE_GUTTER_ACTIVE_ATTR` when present. Skip the attribute write
+  // so the two paths don't both render line numbers.
+  if (codeElement.hasAttribute(CODE_GUTTER_ACTIVE_ATTR)) {
     return;
   }
   const children = node.getChildren();

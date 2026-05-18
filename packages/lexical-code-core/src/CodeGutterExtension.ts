@@ -18,10 +18,24 @@ import {$isCodeNode, CodeNode} from './CodeNode';
 
 const LINE_NUMBER_ATTR = 'data-line-number';
 const TRAILING_LINE_NUMBER_ATTR = 'data-line-number-trailing';
-const CODE_GUTTER_ACTIVE_ATTR = 'data-lexical-code-gutter-active';
+/**
+ * Sentinel attribute set on the `<code>` element while
+ * `CodeGutterExtension` is registered. The legacy `data-gutter`
+ * mutation-listener path in `@lexical/code-prism` and
+ * `@lexical/code-shiki` checks for this attribute and bails so the two
+ * line-number paths don't both render. Exported so consumers don't have
+ * to duplicate the string literal.
+ */
+export const CODE_GUTTER_ACTIVE_ATTR = 'data-lexical-code-gutter-active';
 const CODE_LINEBREAK_WRAP_CLASS = 'code-linebreak-wrap';
 const CODE_LINEBREAK_WRAP_ATTR = 'data-lexical-code-linebreak-wrap';
 
+// Identifies the wrap span produced by this extension's `$createDOM`
+// override. If another extension at higher priority wraps the
+// LineBreakNode further, the keyed DOM would no longer be our wrap and
+// this check would force a full recreate every reconcile — current
+// lexical does not stack `LineBreakNode` overrides, but the invariant
+// is fragile and worth surfacing.
 function hasOurLineBreakWrap(dom: HTMLElement): boolean {
   return dom.tagName === 'SPAN' && dom.hasAttribute(CODE_LINEBREAK_WRAP_ATTR);
 }
@@ -63,7 +77,11 @@ function $needsWrap(node: LineBreakNode): boolean {
  * reconciled and sets the attribute on every line-starter, so insertion
  * and deletion of lines re-numbers consistently — individual leaf nodes
  * carrying stale numbers from a previous structure isn't possible because
- * the parent always re-runs the pass.
+ * the parent always re-runs the pass. The pass only cleans children that
+ * remain inside the `CodeNode`; a child whose DOM is preserved across a
+ * move to a non-`CodeNode` parent could carry a stale `data-line-number`
+ * with it, but in practice cross-class reparenting recreates the DOM, so
+ * the attribute does not survive.
  *
  * A sentinel `data-lexical-code-gutter-active` attribute is set on the
  * `<code>` element so the legacy `data-gutter` mutation listener path
@@ -88,13 +106,17 @@ export const CodeGutterExtension = defineExtension({
             const wrap = document.createElement('span');
             wrap.setAttribute(CODE_LINEBREAK_WRAP_ATTR, 'true');
             wrap.className = CODE_LINEBREAK_WRAP_CLASS;
-            // Mirrors the `setManagedLineBreak` webkit hack in
-            // `LexicalDOMSlot` — a zero-size inline `<img>` next to the
-            // `<br>` keeps webkit's cursor algorithm working when an
-            // inline element surrounds the `<br>`. We only pay the
-            // selection-offset cost on lines that actually need the
-            // wrap (empty / trailing), so content-line-ending BRs stay
-            // bare and webkit's native cursor handles them directly.
+            // Mirrors the `decorator`-mode branch of `setManagedLineBreak`
+            // in `LexicalDOMSlot` — a zero-size inline `<img>` next to
+            // the `<br>` keeps webkit's cursor algorithm working when
+            // an inline element surrounds the `<br>`. Applied
+            // unconditionally on wrap (not gated like the canonical
+            // hack's `'decorator'` check) because the wrap itself
+            // creates the inline-element-surrounds-`<br>` shape the
+            // hack was designed for. We only pay the selection-offset
+            // cost on lines that actually need the wrap (empty /
+            // trailing), so content-line-ending BRs stay bare and
+            // webkit's native cursor handles them directly.
             if (IS_APPLE_WEBKIT || IS_IOS || IS_SAFARI) {
               const img = document.createElement('img');
               img.setAttribute('data-lexical-linebreak', 'true');

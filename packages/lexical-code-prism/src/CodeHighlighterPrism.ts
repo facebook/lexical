@@ -30,7 +30,6 @@ import {
   $onUpdate,
   declarePeerDependency,
   defineExtension,
-  type ExtensionInitState,
   type LexicalEditor,
   type LexicalNode,
   mergeRegister,
@@ -350,20 +349,15 @@ interface TransformState {
 export function registerHighlightingOnly(
   editor: LexicalEditor,
   tokenizer: Tokenizer,
-  state?: ExtensionInitState,
+  hasGutterPeer: boolean = false,
 ): () => void {
   const registrations = [];
 
   // Legacy `data-gutter` mutation listener: keeps the attribute in sync
   // for direct-API callers (`registerCodeHighlighting`) on a plain
-  // editor. When called from `CodePrismExtension.register`, `state` is
-  // provided and we check the `CodeGutterExtension` peer dependency —
-  // if it's registered, per-line `data-line-number` attributes handle
-  // the gutter and this listener is skipped entirely.
-  const hasGutterPeer =
-    state !== undefined &&
-    state.getPeer<typeof CodeGutterExtension>('@lexical/code/CodeGutter') !==
-      undefined;
+  // editor. When called from `CodePrismExtension.register` with
+  // `hasGutterPeer = true`, per-line `data-line-number` attributes from
+  // `CodeGutterExtension` drive the gutter and this listener is skipped.
   if (editor._headless !== true && !hasGutterPeer) {
     registrations.push(
       editor.registerMutationListener(
@@ -463,11 +457,18 @@ export const CodePrismExtension = defineExtension({
   ],
   register: (editor, config, state) => {
     const stores = state.getOutput();
+    const hasGutterPeer =
+      state.getPeer<typeof CodeGutterExtension>('@lexical/code/CodeGutter') !==
+      undefined;
     return effect(() => {
       if (stores.disabled.value) {
         return;
       }
-      return registerHighlightingOnly(editor, stores.tokenizer.value, state);
+      return registerHighlightingOnly(
+        editor,
+        stores.tokenizer.value,
+        hasGutterPeer,
+      );
     });
   },
 });

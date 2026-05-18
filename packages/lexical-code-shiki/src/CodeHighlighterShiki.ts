@@ -30,7 +30,6 @@ import {
   $onUpdate,
   declarePeerDependency,
   defineExtension,
-  type ExtensionInitState,
   type LexicalEditor,
   type LexicalNode,
   mergeRegister,
@@ -358,19 +357,15 @@ function isEqual(nodeA: LexicalNode, nodeB: LexicalNode): boolean {
 export function registerHighlightingOnly(
   editor: LexicalEditor,
   tokenizer: Tokenizer,
-  state?: ExtensionInitState,
+  hasGutterPeer: boolean = false,
 ): () => void {
   const registrations = [];
 
   // Legacy `data-gutter` mutation listener: see comment on the mirror
-  // in `@lexical/code-prism`. When `state` is provided (extension
-  // path) and the `CodeGutterExtension` peer is registered, this
-  // listener is skipped — per-line `data-line-number` attributes
-  // handle the gutter.
-  const hasGutterPeer =
-    state !== undefined &&
-    state.getPeer<typeof CodeGutterExtension>('@lexical/code/CodeGutter') !==
-      undefined;
+  // in `@lexical/code-prism`. When called from
+  // `CodeShikiExtension.register` with `hasGutterPeer = true`, per-line
+  // `data-line-number` attributes from `CodeGutterExtension` drive the
+  // gutter and this listener is skipped.
   if (editor._headless !== true && !hasGutterPeer) {
     registrations.push(
       editor.registerMutationListener(
@@ -470,11 +465,18 @@ export const CodeShikiExtension = defineExtension({
   ],
   register: (editor, config, state) => {
     const stores = state.getOutput();
+    const hasGutterPeer =
+      state.getPeer<typeof CodeGutterExtension>('@lexical/code/CodeGutter') !==
+      undefined;
     return effect(() => {
       if (stores.disabled.value) {
         return;
       }
-      return registerHighlightingOnly(editor, stores.tokenizer.value, state);
+      return registerHighlightingOnly(
+        editor,
+        stores.tokenizer.value,
+        hasGutterPeer,
+      );
     });
   },
 });

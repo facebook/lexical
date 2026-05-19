@@ -30,7 +30,12 @@ import {
   $isListItemNode,
   ListItemNode,
 } from './LexicalListItemNode';
-import {$createListNode, $isListNode, type ListType} from './LexicalListNode';
+import {
+  $createListNode,
+  $isListNode,
+  ListNode,
+  type ListType,
+} from './LexicalListNode';
 
 /**
  * Mirrors the legacy `isDomChecklist` heuristic from
@@ -260,4 +265,10 @@ export const ListImportExtension = defineExtension({
     configExtension(DOMImportExtension, {rules: ListImportRules}),
   ],
   name: '@lexical/list/Import',
+  // Register ListNode + ListItemNode lazily so the rules can safely call
+  // their $create helpers. We can't depend on ListExtension directly
+  // because it's defined in this package's ./index — a module-init
+  // cycle. Apps that want the full ListExtension behavior (commands,
+  // transforms) should depend on it separately.
+  nodes: () => [ListNode, ListItemNode],
 });

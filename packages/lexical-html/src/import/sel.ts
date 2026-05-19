@@ -254,11 +254,12 @@ const COMMENT_SELECTOR = {
 } as CompiledSelector<Comment>;
 
 /**
- * Combinator API for building {@link CompiledSelector}s. The `css` method is
- * attached in `./index.ts` (where the CSS parser is available without a
- * circular import).
+ * Combinator API for building {@link CompiledSelector}s. The public
+ * `sel` is augmented from this in `./index.ts` (where the CSS parser is
+ * available without a circular import); consumers outside `@lexical/html`
+ * should always import the public `sel` from the package root.
  *
- * @experimental
+ * @internal
  */
 export const selBase = {
   /** Match any {@link HTMLElement}. */

@@ -10,16 +10,30 @@ import type {ChildSchema} from './types';
 import {
   $createParagraphNode,
   $isBlockElementNode,
+  $isDecoratorNode,
   type ElementFormatType,
   type LexicalNode,
 } from 'lexical';
 
 /**
- * @internal
- *
+ * True if the node fills a block slot at the root or inside another
+ * block — covers both ElementNode-style blocks (paragraph, heading,
+ * quote) and block-level DecoratorNodes (HorizontalRuleNode,
+ * ImageNode-as-block, etc.). Used by {@link BlockSchema},
+ * {@link RootSchema}, and {@link NestedBlockSchema}.
+ */
+function isBlockLevel(node: LexicalNode): boolean {
+  return (
+    $isBlockElementNode(node) || ($isDecoratorNode(node) && !node.isInline())
+  );
+}
+
+/**
  * Apply a {@link ChildSchema} to a flat list of children produced by
  * `$importChildren`. Walks the list once, partitions into accepted vs.
  * rejected runs, packages or drops rejected runs, then runs `finalize`.
+ *
+ * @internal
  */
 export function applySchema(
   schema: ChildSchema,
@@ -100,7 +114,7 @@ function $paragraphPackageRun(
  * @experimental
  */
 export const BlockSchema: ChildSchema = {
-  accepts: $isBlockElementNode,
+  accepts: isBlockLevel,
   name: 'BlockSchema',
   packageRun: $paragraphPackageRun,
 };
@@ -113,7 +127,7 @@ export const BlockSchema: ChildSchema = {
  * @experimental
  */
 export const InlineSchema: ChildSchema = {
-  accepts: child => !$isBlockElementNode(child),
+  accepts: child => !isBlockLevel(child),
   name: 'InlineSchema',
 };
 
@@ -128,7 +142,7 @@ export const InlineSchema: ChildSchema = {
  * @experimental
  */
 export const NestedBlockSchema: ChildSchema = {
-  accepts: $isBlockElementNode,
+  accepts: isBlockLevel,
   name: 'NestedBlockSchema',
   /**
    * Pass an inline run through unchanged. Because the schema iterator only
@@ -151,7 +165,7 @@ export const NestedBlockSchema: ChildSchema = {
  * @experimental
  */
 export const RootSchema: ChildSchema = {
-  accepts: $isBlockElementNode,
+  accepts: isBlockLevel,
   name: 'RootSchema',
   packageRun: $paragraphPackageRun,
 };

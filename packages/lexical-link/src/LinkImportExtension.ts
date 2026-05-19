@@ -15,7 +15,8 @@ import {
 } from '@lexical/html';
 import {configExtension, defineExtension} from 'lexical';
 
-import {$createLinkNode} from './index';
+import {LinkExtension} from './LexicalLinkExtension';
+import {$createLinkNode} from './LexicalLinkNode';
 
 const AnchorRule = defineImportRule({
   $import: (ctx, el) => {
@@ -53,6 +54,8 @@ export const LinkImportRules = [AnchorRule];
 export const LinkImportExtension = defineExtension({
   dependencies: [
     CoreImportExtension,
+    // Registers LinkNode so the import rules can safely $createLinkNode.
+    LinkExtension,
     configExtension(DOMImportExtension, {rules: LinkImportRules}),
   ],
   name: '@lexical/link/Import',

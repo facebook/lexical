@@ -14,6 +14,7 @@ import {
 } from '@lexical/html';
 import {configExtension, defineExtension, isHTMLElement} from 'lexical';
 
+import {CodeExtension} from './CodeExtension';
 import {$createCodeNode} from './CodeNode';
 
 const LANGUAGE_DATA_ATTRIBUTE = 'data-language';
@@ -209,6 +210,9 @@ export const CodeImportRules = [
 export const CodeImportExtension = defineExtension({
   dependencies: [
     CoreImportExtension,
+    // Registers CodeNode (and CodeHighlightNode) so the rules can safely
+    // $createCodeNode.
+    CodeExtension,
     configExtension(DOMImportExtension, {rules: CodeImportRules}),
   ],
   name: '@lexical/code/Import',

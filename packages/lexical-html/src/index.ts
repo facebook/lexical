@@ -83,6 +83,8 @@ export {
   defineImportRule,
   type DOMImportConfig,
   DOMImportExtension,
+  HorizontalRuleImportExtension,
+  HorizontalRuleImportRules,
   ImportSource,
   type ImportSourceKind,
   ImportTextFormat,

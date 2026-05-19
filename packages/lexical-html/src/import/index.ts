@@ -36,6 +36,10 @@ export {
   DOMImportExtension,
 } from './DOMImportExtension';
 export {
+  HorizontalRuleImportExtension,
+  HorizontalRuleImportRules,
+} from './HorizontalRuleImportExtension';
+export {
   $getImportContextValue,
   $withImportContext,
   createImportSessionState,

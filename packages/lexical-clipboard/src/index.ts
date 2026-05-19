@@ -35,4 +35,5 @@ export {
   DEFAULT_IMPORT_MIME_TYPE_PRIORITY,
   type ImportMimeTypeConfig,
   type ImportMimeTypeFunction,
+  type ImportMimeTypePriority,
 } from './ClipboardImportExtension';

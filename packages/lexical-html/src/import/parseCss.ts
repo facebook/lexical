@@ -8,6 +8,8 @@
 import type {Predicate} from './sel';
 import type {ElementSelectorBuilder} from './types';
 
+import invariant from 'shared/invariant';
+
 import {buildAttrPredicate, buildClassAllPredicate, buildSelector} from './sel';
 
 const IDENT_CHAR = /[A-Za-z0-9_-]/;
@@ -40,9 +42,7 @@ class Cursor {
   }
   readQuoted(): string {
     const quote = this.consume();
-    if (quote !== '"' && quote !== "'") {
-      throw this.error(`expected quote, got ${JSON.stringify(quote)}`);
-    }
+    this.assert(quote === '"' || quote === "'", 'expected quote');
     const start = this.pos;
     while (!this.eof() && this.peek() !== quote) {
       if (this.peek() === '\\') {
@@ -51,16 +51,23 @@ class Cursor {
         this.pos++;
       }
     }
-    if (this.eof()) {
-      throw this.error('unterminated string');
-    }
+    this.assert(!this.eof(), 'unterminated string');
     const value = this.source.slice(start, this.pos);
     this.pos++; // consume closing quote
     return value.replace(/\\(.)/g, '$1');
   }
-  error(msg: string): Error {
-    return new Error(
-      `[lexical] invalid CSS selector at col ${this.pos + 1}: ${msg}\n  ${this.source}\n  ${' '.repeat(this.pos)}^`,
+  /**
+   * `invariant(cond, fmt, …)`-flavored assertion that also surfaces the
+   * cursor's position context. Use for parse-time errors so a malformed
+   * CSS selector gets a useful, position-annotated message.
+   */
+  assert(cond: boolean, msg: string): asserts cond {
+    invariant(
+      cond,
+      'invalid CSS selector at col %s: %s in %s',
+      String(this.pos + 1),
+      msg,
+      this.source,
     );
   }
 }
@@ -93,24 +100,18 @@ function parseSimpleSelector(c: Cursor): ParsedSimpleSelector {
     if (ch === '.') {
       c.consume();
       const cls = c.readIdent();
-      if (!cls) {
-        throw c.error('expected class name after "."');
-      }
+      c.assert(cls !== '', 'expected class name after "."');
       classes.push(cls);
     } else if (ch === '#') {
       c.consume();
       const id = c.readIdent();
-      if (!id) {
-        throw c.error('expected id after "#"');
-      }
+      c.assert(id !== '', 'expected id after "#"');
       predicates.push(buildAttrPredicate('id', id));
     } else if (ch === '[') {
       c.consume();
       c.skipWhitespace();
       const name = c.readIdent();
-      if (!name) {
-        throw c.error('expected attribute name after "["');
-      }
+      c.assert(name !== '', 'expected attribute name after "["');
       c.skipWhitespace();
       let value: true | string = true;
       if (c.peek() === '=') {
@@ -121,15 +122,11 @@ function parseSimpleSelector(c: Cursor): ParsedSimpleSelector {
           value = c.readQuoted();
         } else {
           value = c.readIdent();
-          if (!value) {
-            throw c.error('expected attribute value');
-          }
+          c.assert(value !== '', 'expected attribute value');
         }
         c.skipWhitespace();
       }
-      if (c.peek() !== ']') {
-        throw c.error('expected "]"');
-      }
+      c.assert(c.peek() === ']', 'expected "]"');
       c.consume();
       predicates.push(buildAttrPredicate(name, value));
     } else {
@@ -163,7 +160,7 @@ function parseSimpleSelector(c: Cursor): ParsedSimpleSelector {
 export function parseSelector(
   source: string,
 ): ElementSelectorBuilder<HTMLElement> {
-  const c = new Cursor(source, 0);
+  const c: Cursor = new Cursor(source, 0);
   const groups: ParsedSimpleSelector[] = [];
 
   while (true) {
@@ -178,11 +175,10 @@ export function parseSelector(
     if (c.eof()) {
       break;
     }
-    if (c.peek() !== ',') {
-      throw c.error(
-        'expected "," (selector lists are the only supported combinator)',
-      );
-    }
+    c.assert(
+      c.peek() === ',',
+      'expected "," (selector lists are the only supported combinator)',
+    );
     c.consume();
     c.skipWhitespace();
   }

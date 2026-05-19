@@ -155,13 +155,10 @@ describe('ClipboardImportExtension', () => {
                 },
               ],
             },
-            // Try the custom MIME type before text/html.
-            priority: [
-              'application/x-lexical-editor',
-              'application/vnd.myapp+json',
-              'text/html',
-              'text/plain',
-            ],
+            // Slot the custom MIME type between lexical-editor (0) and
+            // text/html (10). The other built-in weights inherit from
+            // the defaults; we don't need to enumerate them.
+            priority: {'application/vnd.myapp+json': 5},
           }),
         ],
         name: 'host',
@@ -190,9 +187,7 @@ describe('ClipboardImportExtension', () => {
     });
   });
 
-  test('priority is REPLACED (not appended) when provided in a partial config', () => {
-    // Verifies apps have full control over ordering — they include the
-    // built-ins explicitly when they want to preserve them.
+  test('priority weights compose without coordination between extensions', () => {
     let myAppCalls = 0;
     let htmlCalls = 0;
     using editor = buildEditorFromExtensions(
@@ -214,8 +209,8 @@ describe('ClipboardImportExtension', () => {
                 },
               ],
             },
-            // App-defined order: myapp wins over html.
-            priority: ['application/vnd.myapp+json', 'text/html', 'text/plain'],
+            // myapp gets weight 1 → runs ahead of html (default weight 10).
+            priority: {'application/vnd.myapp+json': 1},
           }),
         ],
         name: 'host',

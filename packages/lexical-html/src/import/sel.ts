@@ -13,6 +13,7 @@ import type {
 } from './types';
 
 import {isDOMTextNode, isHTMLElement} from 'lexical';
+import invariant from 'shared/invariant';
 
 /**
  * @internal
@@ -47,17 +48,16 @@ const IMPL = Symbol.for('@lexical/html/SelectorImpl');
 export function getSelectorImpl(sel: CompiledSelector): SelectorImpl {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const impl = (sel as any)[IMPL] as SelectorImpl | undefined;
-  if (!impl) {
-    throw new Error(
-      '[lexical] match must be a CompiledSelector produced by sel.* or sel.css(); received a raw object.',
-    );
-  }
+  invariant(
+    impl !== undefined,
+    'match must be a CompiledSelector produced by sel.* or sel.css(); received a raw object.',
+  );
   return impl;
 }
 
 function combinePredicates(preds: readonly Predicate[]): Predicate {
   if (preds.length === 0) {
-    return matchAnyHTMLElement;
+    return isHTMLElement;
   }
   if (preds.length === 1) {
     return preds[0];
@@ -70,10 +70,6 @@ function combinePredicates(preds: readonly Predicate[]): Predicate {
     }
     return true;
   };
-}
-
-function matchAnyHTMLElement(node: Node): boolean {
-  return isHTMLElement(node);
 }
 
 /**
@@ -192,8 +188,10 @@ export function buildAttrPredicate(
       return true;
     };
   }
-  throw new Error(
-    `[lexical] sel.attr(${JSON.stringify(name)}, …) requires true, a string, or a RegExp`,
+  invariant(
+    false,
+    'sel.attr(%s, ...) requires true, a string, or a RegExp',
+    JSON.stringify(name),
   );
 }
 
@@ -227,8 +225,10 @@ function buildStylePredicate(
       return true;
     };
   }
-  throw new Error(
-    `[lexical] sel.styleAny(${JSON.stringify(prop)}, …) requires a string or a RegExp`,
+  invariant(
+    false,
+    'sel.styleAny(%s, ...) requires a string or a RegExp',
+    JSON.stringify(prop),
   );
 }
 
@@ -238,8 +238,9 @@ const TEXT_SELECTOR_IMPL: SelectorImpl = {
   tags: new Set(),
 };
 
-// The cast is needed because `CompiledSelector` is an opaque branded
-// interface; the internal IMPL key isn't declared on it.
+// The `as` cast is needed because `CompiledSelector` is an opaque
+// branded interface — neither the object literal nor a typed const can
+// declare the internal `IMPL` symbol without exposing it.
 const TEXT_SELECTOR = {[IMPL]: TEXT_SELECTOR_IMPL} as CompiledSelector<Text>;
 
 const COMMENT_SELECTOR_IMPL: SelectorImpl = {
@@ -282,9 +283,7 @@ export const selBase = {
       ? HTMLElementTagNameMap[Tags[number]]
       : HTMLElement
   > {
-    if (tags.length === 0) {
-      throw new Error('[lexical] sel.tag() requires at least one tag name');
-    }
+    invariant(tags.length > 0, 'sel.tag() requires at least one tag name');
     const upper = new Set<string>();
     for (const t of tags) {
       upper.add(t.toUpperCase());

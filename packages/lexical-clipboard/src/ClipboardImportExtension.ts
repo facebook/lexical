@@ -74,6 +74,26 @@ export type ImportMimeTypeConfig = {
 };
 
 /**
+ * Per-MIME-type ordering weights. Lower numbers run first.
+ *
+ * Composable across extensions: each extension contributes weights for
+ * its MIME types without needing to coordinate. A partial config that
+ * sets `{'application/vnd.myapp+json': 5}` slots its type between the
+ * built-in `application/x-lexical-editor` (0) and `text/html` (10) — no
+ * need to enumerate the full ordering. mergeConfig spreads pairs (later
+ * keys override earlier ones for the same MIME type, so an extension
+ * can also re-rank a built-in by repeating its key with a new weight).
+ *
+ * Iteration: every MIME type that has a handler stack and is present in
+ * the dataTransfer (regardless of whether it has an explicit weight) is
+ * tried; MIME types with no explicit weight sort to the end, behind all
+ * weighted ones, in lexical order.
+ *
+ * @experimental
+ */
+export type ImportMimeTypePriority = Readonly<Record<string, number>>;
+
+/**
  * Configuration for {@link ClipboardImportExtension}.
  *
  * @experimental
@@ -88,39 +108,36 @@ export interface ClipboardImportConfig {
    * behavior of {@link GetClipboardDataExtension.$exportMimeType}.
    *
    * Apps add a stack under a brand-new key to register a brand-new MIME
-   * type — be sure to also add it to {@link priority} so that it actually
-   * gets tried during import.
+   * type. Set a {@link priority} weight to control where in the
+   * iteration it sits relative to the built-ins.
    */
   $importMimeType: ImportMimeTypeConfig;
   /**
-   * The MIME types tried by {@link $insertDataTransferForRichText}, in
-   * priority order. The first MIME type whose `DataTransfer.getData`
-   * returns a non-empty value (and whose stack claims it) wins.
-   *
-   * Apps register additional MIME types by adding both an entry here and
-   * a handler stack in {@link $importMimeType}. New entries from a
-   * partial config are appended to the end of the priority list (i.e.
-   * tried after the built-ins) and de-duplicated against existing
-   * entries.
+   * See {@link ImportMimeTypePriority}. Spread-merged across configs —
+   * extensions contribute weights without coordinating with each other.
    */
-  priority: readonly string[];
+  priority: ImportMimeTypePriority;
 }
 
 /**
- * Default MIME-type priority list reproducing the legacy
- * {@link $insertDataTransferForRichText} behavior:
+ * Default per-MIME-type weights reproducing the legacy
+ * `$insertDataTransferForRichText` ordering:
  *
- * `application/x-lexical-editor` → `text/html` → `text/plain` →
- * `text/uri-list` (Webkit-only text fallback).
+ * `application/x-lexical-editor` (0) → `text/html` (10) →
+ * `text/plain` (20) → `text/uri-list` (30).
+ *
+ * Gaps between weights let third-party MIME types slot in (e.g. weight
+ * 5 to run between lexical and html). Apps can also override built-in
+ * weights to demote them.
  *
  * @experimental
  */
-export const DEFAULT_IMPORT_MIME_TYPE_PRIORITY: readonly string[] = [
-  'application/x-lexical-editor',
-  'text/html',
-  'text/plain',
-  'text/uri-list',
-];
+export const DEFAULT_IMPORT_MIME_TYPE_PRIORITY: ImportMimeTypePriority = {
+  'application/x-lexical-editor': 0,
+  'text/html': 10,
+  'text/plain': 20,
+  'text/uri-list': 30,
+};
 
 function trustHTML(html: string): string | TrustedHTML {
   if (window.trustedTypes && window.trustedTypes.createPolicy) {
@@ -267,6 +284,32 @@ function callImportMimeTypeFunctionStack(
   return callAt(fns.length - 1);
 }
 
+/**
+ * Sort the MIME types that have a registered handler stack by their
+ * configured priority weight (ascending). Types with no explicit weight
+ * sort after all weighted types, in lexical order, so unknown types
+ * remain reachable but never preempt a known one.
+ */
+function orderedMimeTypes(config: ClipboardImportConfig): string[] {
+  const mimes = Object.keys(config.$importMimeType).filter(
+    k => config.$importMimeType[k] !== undefined,
+  );
+  return mimes.sort((a, b) => {
+    const wa = config.priority[a];
+    const wb = config.priority[b];
+    if (wa === undefined && wb === undefined) {
+      return a < b ? -1 : a > b ? 1 : 0;
+    }
+    if (wa === undefined) {
+      return 1;
+    }
+    if (wb === undefined) {
+      return -1;
+    }
+    return wa - wb;
+  });
+}
+
 function $runImport(
   config: ClipboardImportConfig,
   dataTransfer: DataTransfer,
@@ -277,12 +320,7 @@ function $runImport(
   // matches text/plain verbatim (iOS Safari autocorrect produces a
   // text/html payload identical to the plain text).
   const plainString = dataTransfer.getData('text/plain');
-  const seen = new Set<string>();
-  for (const mime of config.priority) {
-    if (seen.has(mime)) {
-      continue;
-    }
-    seen.add(mime);
+  for (const mime of orderedMimeTypes(config)) {
     const data = dataTransfer.getData(mime);
     if (!data) {
       continue;
@@ -408,11 +446,12 @@ export const ClipboardImportExtension = defineExtension({
       merged.$importMimeType = $importMimeType;
     }
     if (partial.priority) {
-      // Replace rather than append: apps that want their own MIME type
-      // in a specific position (e.g. before text/html) need full control
-      // over the ordering. To preserve the built-ins, include them
-      // explicitly in the new list (see {@link DEFAULT_IMPORT_MIME_TYPE_PRIORITY}).
-      merged.priority = partial.priority;
+      // Spread-merge weights. Per-MIME-type keys in `partial` override
+      // any matching key in `config` (so an extension can rerank a
+      // built-in MIME type) and new keys are simply added (so multiple
+      // extensions can each contribute their own MIME types without
+      // having to coordinate).
+      merged.priority = {...config.priority, ...partial.priority};
     }
     return merged;
   },

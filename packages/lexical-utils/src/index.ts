@@ -1042,7 +1042,7 @@ export function $onEscapeUp(
             ($isElementNode(anchorNode) &&
               anchorNode.getFirstDescendant() === firstDescendant))
         ) {
-          containerNode.insertBefore($createParagraphNode());
+          containerNode.insertBefore($createParagraphNode()).selectEnd();
           return true;
         }
       }
@@ -1088,7 +1088,7 @@ export function $onEscapeDown(
             ($isElementNode(anchorNode) &&
               anchorNode.getLastDescendant() === lastDescendant))
         ) {
-          containerNode.insertAfter($createParagraphNode());
+          containerNode.insertAfter($createParagraphNode()).selectEnd();
           return true;
         }
       }

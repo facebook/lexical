@@ -93,7 +93,7 @@ for (const key of ['ArrowRight', 'ArrowDown']) {
     await click(page, '.typeahead-popover .icon.columns');
     await click(page, '.Modal__modal .Modal__content .Button__root');
 
-    // remove empry paragraphs around the layout
+    // remove empty paragraphs around the layout
     await moveToEditorEnd(page);
     await page.keyboard.press('Backspace');
     await moveToEditorBeginning(page);

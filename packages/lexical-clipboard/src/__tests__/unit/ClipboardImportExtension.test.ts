@@ -136,6 +136,110 @@ describe('ClipboardImportExtension', () => {
     expect(deferred).toBe(true);
   });
 
+  test('app-defined MIME type is reached when added to both stack and priority', () => {
+    let saw = '';
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState,
+        dependencies: [
+          configExtension(ClipboardImportExtension, {
+            $importMimeType: {
+              'application/vnd.myapp+json': [
+                (data, selection, e) => {
+                  saw = data;
+                  const p = $createParagraphNode().append(
+                    $createTextNode(`[${data}]`),
+                  );
+                  $insertGeneratedNodes(e, [p], selection);
+                  return true;
+                },
+              ],
+            },
+            // Try the custom MIME type before text/html.
+            priority: [
+              'application/x-lexical-editor',
+              'application/vnd.myapp+json',
+              'text/html',
+              'text/plain',
+            ],
+          }),
+        ],
+        name: 'host',
+      }),
+    );
+    const dt = new DataTransferMock();
+    dt.setData('text/html', '<p>html-fallback</p>');
+    dt.setData('application/vnd.myapp+json', '{"a":1}');
+    editor.update(
+      () => {
+        const selection = $getSelection();
+        assert($isRangeSelection(selection), 'expected RangeSelection');
+        $insertDataTransferForRichText(
+          dt as unknown as DataTransfer,
+          selection,
+          editor,
+        );
+      },
+      {discrete: true},
+    );
+    expect(saw).toBe('{"a":1}');
+    editor.read(() => {
+      const lastChild = $getRoot().getLastChild();
+      assert($isParagraphNode(lastChild), 'expected paragraph');
+      expect(lastChild.getTextContent()).toBe('[{"a":1}]');
+    });
+  });
+
+  test('priority is REPLACED (not appended) when provided in a partial config', () => {
+    // Verifies apps have full control over ordering — they include the
+    // built-ins explicitly when they want to preserve them.
+    let myAppCalls = 0;
+    let htmlCalls = 0;
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState,
+        dependencies: [
+          configExtension(ClipboardImportExtension, {
+            $importMimeType: {
+              'application/vnd.myapp+json': [
+                () => {
+                  myAppCalls++;
+                  return true;
+                },
+              ],
+              'text/html': [
+                (_html, _selection, _e, next) => {
+                  htmlCalls++;
+                  return next();
+                },
+              ],
+            },
+            // App-defined order: myapp wins over html.
+            priority: ['application/vnd.myapp+json', 'text/html', 'text/plain'],
+          }),
+        ],
+        name: 'host',
+      }),
+    );
+    const dt = new DataTransferMock();
+    dt.setData('text/html', '<p>x</p>');
+    dt.setData('application/vnd.myapp+json', '{}');
+    editor.update(
+      () => {
+        const selection = $getSelection();
+        assert($isRangeSelection(selection), 'expected RangeSelection');
+        $insertDataTransferForRichText(
+          dt as unknown as DataTransfer,
+          selection,
+          editor,
+        );
+      },
+      {discrete: true},
+    );
+    expect(myAppCalls).toBe(1);
+    expect(htmlCalls).toBe(0);
+  });
+
   test('text/html can be routed through DOMImportExtension', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({

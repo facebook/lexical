@@ -51,10 +51,7 @@ import {
 import caretFromPoint from 'shared/caretFromPoint';
 import invariant from 'shared/invariant';
 
-import {
-  $getImportConfig,
-  callImportMimeTypeFunctionStack,
-} from './ClipboardImportExtension';
+import {$getImportOutput} from './ClipboardImportExtension';
 
 export interface LexicalClipboardData {
   'text/html'?: string | undefined;
@@ -155,51 +152,7 @@ export function $insertDataTransferForRichText(
   selection: BaseSelection,
   editor: LexicalEditor,
 ): void {
-  const $importMimeType = $getImportConfig(editor);
-
-  const lexicalString = dataTransfer.getData('application/x-lexical-editor');
-  if (
-    lexicalString &&
-    callImportMimeTypeFunctionStack(
-      $importMimeType['application/x-lexical-editor'],
-      lexicalString,
-      selection,
-      editor,
-    )
-  ) {
-    return;
-  }
-
-  const htmlString = dataTransfer.getData('text/html');
-  const plainString = dataTransfer.getData('text/plain');
-
-  // Skip HTML handling if it matches the plain text representation.
-  // This avoids unnecessary processing for plain text strings created by
-  // iOS Safari autocorrect, which incorrectly includes a `text/html` type.
-  if (
-    htmlString &&
-    plainString !== htmlString &&
-    callImportMimeTypeFunctionStack(
-      $importMimeType['text/html'],
-      htmlString,
-      selection,
-      editor,
-    )
-  ) {
-    return;
-  }
-
-  // Webkit-specific: read 'text/uri-list' as a text fallback when there's
-  // no text/plain payload.
-  const text = plainString || dataTransfer.getData('text/uri-list');
-  if (text) {
-    callImportMimeTypeFunctionStack(
-      $importMimeType['text/plain'],
-      text,
-      selection,
-      editor,
-    );
-  }
+  $getImportOutput(editor).$insertDataTransfer(dataTransfer, selection, editor);
 }
 
 const LEXICAL_DRAG_MIME_TYPE = 'application/x-lexical-drag';

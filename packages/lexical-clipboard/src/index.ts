@@ -30,8 +30,9 @@ export {
 export {
   type ClipboardImportConfig,
   ClipboardImportExtension,
+  type ClipboardImportOutput,
   DEFAULT_IMPORT_MIME_TYPE,
-  IMPORT_MIME_TYPE_PRIORITY,
+  DEFAULT_IMPORT_MIME_TYPE_PRIORITY,
   type ImportMimeTypeConfig,
   type ImportMimeTypeFunction,
 } from './ClipboardImportExtension';

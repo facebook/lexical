@@ -68,7 +68,7 @@ export type ImportMimeTypeFunction = (
  *
  * @experimental
  */
- 
+
 export type ImportMimeTypeConfig = {
   [key: string]: ImportMimeTypeFunction[] | undefined;
 };
@@ -86,22 +86,40 @@ export interface ClipboardImportConfig {
    *
    * Merged with `[...prev, ...override]` per MIME type, matching the
    * behavior of {@link GetClipboardDataExtension.$exportMimeType}.
+   *
+   * Apps add a stack under a brand-new key to register a brand-new MIME
+   * type — be sure to also add it to {@link priority} so that it actually
+   * gets tried during import.
    */
   $importMimeType: ImportMimeTypeConfig;
+  /**
+   * The MIME types tried by {@link $insertDataTransferForRichText}, in
+   * priority order. The first MIME type whose `DataTransfer.getData`
+   * returns a non-empty value (and whose stack claims it) wins.
+   *
+   * Apps register additional MIME types by adding both an entry here and
+   * a handler stack in {@link $importMimeType}. New entries from a
+   * partial config are appended to the end of the priority list (i.e.
+   * tried after the built-ins) and de-duplicated against existing
+   * entries.
+   */
+  priority: readonly string[];
 }
 
 /**
- * The MIME types tried by {@link $insertDataTransferForRichText}, in
- * priority order. The first MIME type whose data is present (and whose
- * stack claims it) wins. `'text/plain'` is special-cased to also fall back
- * to `'text/uri-list'` when no `'text/plain'` data is present.
+ * Default MIME-type priority list reproducing the legacy
+ * {@link $insertDataTransferForRichText} behavior:
+ *
+ * `application/x-lexical-editor` → `text/html` → `text/plain` →
+ * `text/uri-list` (Webkit-only text fallback).
  *
  * @experimental
  */
-export const IMPORT_MIME_TYPE_PRIORITY: readonly string[] = [
+export const DEFAULT_IMPORT_MIME_TYPE_PRIORITY: readonly string[] = [
   'application/x-lexical-editor',
   'text/html',
   'text/plain',
+  'text/uri-list',
 ];
 
 function trustHTML(html: string): string | TrustedHTML {
@@ -118,7 +136,7 @@ function trustHTML(html: string): string | TrustedHTML {
  * Default handler for `'application/x-lexical-editor'`: parse the JSON,
  * verify the namespace, and insert the serialized nodes.
  */
-const $defaultLexicalEditorImporter = (
+const $defaultLexicalEditorImporter: ImportMimeTypeFunction = (
   data,
   selection,
   editor,
@@ -136,7 +154,6 @@ const $defaultLexicalEditorImporter = (
       return true;
     }
   } catch (error) {
-     
     console.error(error);
   }
   return next();
@@ -149,7 +166,7 @@ const $defaultLexicalEditorImporter = (
  * custom pipeline. See {@link $generateNodesFromDOMViaExtension} for the
  * built-in `DOMImportExtension` adapter.
  */
-const $defaultHtmlImporter = (
+const $defaultHtmlImporter: ImportMimeTypeFunction = (
   data,
   selection,
   editor,
@@ -162,7 +179,6 @@ const $defaultHtmlImporter = (
     $insertGeneratedNodes(editor, nodes, selection);
     return true;
   } catch (error) {
-     
     console.error(error);
     return next();
   }
@@ -173,7 +189,7 @@ const $defaultHtmlImporter = (
  * insert paragraphs / line breaks / tab nodes respectively for a
  * RangeSelection; otherwise insert as raw text.
  */
-const $defaultPlainTextImporter = (data, selection) => {
+const $defaultPlainTextImporter: ImportMimeTypeFunction = (data, selection) => {
   if ($isRangeSelection(selection)) {
     const parts = data.split(/(\r?\n|\t)/);
     if (parts[parts.length - 1] === '') {
@@ -209,15 +225,35 @@ export const DEFAULT_IMPORT_MIME_TYPE: ImportMimeTypeConfig = {
   'application/x-lexical-editor': [$defaultLexicalEditorImporter],
   'text/html': [$defaultHtmlImporter],
   'text/plain': [$defaultPlainTextImporter],
+  // `text/uri-list` is a Webkit-only payload that drops behave-like text;
+  // reuse the plain-text handler so a URL drop on a rich-text editor
+  // inserts as plain text rather than being ignored.
+  'text/uri-list': [$defaultPlainTextImporter],
 };
 
 /**
- * Invoke a stack from the highest-index handler down. Identical in shape
- * to the export-side `callExportMimeTypeFunctionStack`.
+ * Output of {@link ClipboardImportExtension}: the merged configuration
+ * plus a self-contained {@link $insertDataTransfer} function that owns
+ * the entire paste-side iteration over the priority list. Apps look this
+ * up via peer-dependency and call it directly; {@link
+ * $insertDataTransferForRichText} delegates to it.
  *
- * @internal
+ * @experimental
  */
-export function callImportMimeTypeFunctionStack(
+export interface ClipboardImportOutput extends ClipboardImportConfig {
+  /**
+   * Try every MIME type in `priority` order against the `DataTransfer`,
+   * invoking the configured stack for the first one that has a non-empty
+   * payload. Returns `true` if any stack claimed the data.
+   */
+  $insertDataTransfer(
+    dataTransfer: DataTransfer,
+    selection: BaseSelection,
+    editor: LexicalEditor,
+  ): boolean;
+}
+
+function callImportMimeTypeFunctionStack(
   fns: ImportMimeTypeFunction[] | undefined,
   data: string,
   selection: BaseSelection,
@@ -231,21 +267,73 @@ export function callImportMimeTypeFunctionStack(
   return callAt(fns.length - 1);
 }
 
+function $runImport(
+  config: ClipboardImportConfig,
+  dataTransfer: DataTransfer,
+  selection: BaseSelection,
+  editor: LexicalEditor,
+): boolean {
+  // Read once for the iOS Safari heuristic that skips text/html when it
+  // matches text/plain verbatim (iOS Safari autocorrect produces a
+  // text/html payload identical to the plain text).
+  const plainString = dataTransfer.getData('text/plain');
+  const seen = new Set<string>();
+  for (const mime of config.priority) {
+    if (seen.has(mime)) {
+      continue;
+    }
+    seen.add(mime);
+    const data = dataTransfer.getData(mime);
+    if (!data) {
+      continue;
+    }
+    if (mime === 'text/html' && data === plainString) {
+      continue;
+    }
+    if (
+      callImportMimeTypeFunctionStack(
+        config.$importMimeType[mime],
+        data,
+        selection,
+        editor,
+      )
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+const DEFAULT_OUTPUT: ClipboardImportOutput = {
+  $importMimeType: DEFAULT_IMPORT_MIME_TYPE,
+  $insertDataTransfer(dataTransfer, selection, editor) {
+    return $runImport(
+      {
+        $importMimeType: DEFAULT_IMPORT_MIME_TYPE,
+        priority: DEFAULT_IMPORT_MIME_TYPE_PRIORITY,
+      },
+      dataTransfer,
+      selection,
+      editor,
+    );
+  },
+  priority: DEFAULT_IMPORT_MIME_TYPE_PRIORITY,
+};
+
 /**
- * @experimental
- *
- * Look up the merged {@link ImportMimeTypeConfig} on the editor. Returns
- * {@link DEFAULT_IMPORT_MIME_TYPE} when no {@link ClipboardImportExtension}
- * is configured (so behavior is unchanged for editors that don't opt in).
- *
  * @internal
+ *
+ * Look up the {@link ClipboardImportOutput} on the editor. Returns a
+ * static default-backed output when no {@link ClipboardImportExtension}
+ * is configured, so callers can always invoke `output.$insertDataTransfer`
+ * regardless of whether the editor opted in.
  */
-export function $getImportConfig(editor: LexicalEditor): ImportMimeTypeConfig {
+export function $getImportOutput(editor: LexicalEditor): ClipboardImportOutput {
   const dep = getPeerDependencyFromEditor<typeof ClipboardImportExtension>(
     editor,
     ClipboardImportExtension.name,
   );
-  return dep ? dep.output : DEFAULT_IMPORT_MIME_TYPE;
+  return dep ? dep.output : DEFAULT_OUTPUT;
 }
 
 /**
@@ -294,11 +382,18 @@ export function $getImportConfig(editor: LexicalEditor): ImportMimeTypeConfig {
  * ```
  */
 export const ClipboardImportExtension = defineExtension({
-  build(_editor, config) {
-    return config.$importMimeType;
+  build(_editor, config): ClipboardImportOutput {
+    return {
+      $importMimeType: config.$importMimeType,
+      $insertDataTransfer(dataTransfer, selection, editor) {
+        return $runImport(config, dataTransfer, selection, editor);
+      },
+      priority: config.priority,
+    };
   },
   config: safeCast<ClipboardImportConfig>({
     $importMimeType: DEFAULT_IMPORT_MIME_TYPE,
+    priority: DEFAULT_IMPORT_MIME_TYPE_PRIORITY,
   }),
   mergeConfig(config, partial) {
     const merged = shallowMergeConfig(config, partial);
@@ -311,6 +406,13 @@ export const ClipboardImportExtension = defineExtension({
         }
       }
       merged.$importMimeType = $importMimeType;
+    }
+    if (partial.priority) {
+      // Replace rather than append: apps that want their own MIME type
+      // in a specific position (e.g. before text/html) need full control
+      // over the ordering. To preserve the built-ins, include them
+      // explicitly in the new list (see {@link DEFAULT_IMPORT_MIME_TYPE_PRIORITY}).
+      merged.priority = partial.priority;
     }
     return merged;
   },

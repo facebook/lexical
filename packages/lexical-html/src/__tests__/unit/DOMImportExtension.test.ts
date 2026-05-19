@@ -12,6 +12,7 @@ import {
 } from '@lexical/extension';
 import {
   $getImportContextValue,
+  type AnyDOMImportRule,
   BlockSchema,
   contextValue,
   createImportState,
@@ -41,10 +42,9 @@ import {
   IS_ITALIC,
   type LexicalEditor,
   type LexicalNode,
-  ParagraphNode,
-  TextNode,
+  type ParagraphNode,
 } from 'lexical';
-import {describe, expect, test} from 'vitest';
+import {assert, describe, expect, test} from 'vitest';
 
 const idState = createState('id', {
   parse: v => (typeof v === 'string' ? v : null),
@@ -75,7 +75,7 @@ const AnchorRule = defineImportRule({
       return $next();
     }
     const link = $createLinkNode(el.href);
-    link.append(...ctx.$importChildren(el, {schema: InlineSchema}));
+    link.splice(0, 0, ctx.$importChildren(el, {schema: InlineSchema}));
     return [link];
   },
   match: sel.tag('a'),
@@ -85,7 +85,7 @@ const AnchorRule = defineImportRule({
 const ParagraphRule = defineImportRule({
   $import: (ctx, el) => {
     const p = $createParagraphNode();
-    p.append(...ctx.$importChildren(el, {schema: InlineSchema}));
+    p.splice(0, 0, ctx.$importChildren(el, {schema: InlineSchema}));
     return [p];
   },
   match: sel.tag('p'),
@@ -143,7 +143,7 @@ const FigureRule = defineImportRule({
     }
     if (cap) {
       const capP = $createParagraphNode();
-      capP.append(...ctx.$importChildren(cap, {schema: InlineSchema}));
+      capP.splice(0, 0, ctx.$importChildren(cap, {schema: InlineSchema}));
       out.push(capP);
     }
     return out;
@@ -183,7 +183,7 @@ const CodeCaptureRule = defineImportRule({
 const SourceAwareRule = defineImportRule({
   $import: (ctx, el) => {
     const p = $createParagraphNode();
-    p.append(...ctx.$importChildren(el, {schema: InlineSchema}));
+    p.splice(0, 0, ctx.$importChildren(el, {schema: InlineSchema}));
     $setState(p, sourceState, ctx.get(ImportSource));
     return [p];
   },
@@ -191,14 +191,10 @@ const SourceAwareRule = defineImportRule({
   name: 'test/source-aware',
 });
 
-function buildTestEditor(extraRules: ReturnType<typeof defineImportRule>[]) {
+function buildTestEditor(extraRules: AnyDOMImportRule[]) {
   return buildEditorFromExtensions(
     defineExtension({
-      dependencies: [
-        configExtension(DOMImportExtension, {
-          rules: extraRules,
-        }),
-      ],
+      dependencies: [configExtension(DOMImportExtension, {rules: extraRules})],
       name: 'test-host',
       nodes: [LinkNode],
     }),
@@ -219,6 +215,24 @@ function $generate(
   return dep.output.$generateNodesFromDOM(dom.window.document, options);
 }
 
+function $importInto(
+  editor: LexicalEditor,
+  html: string,
+  options?: Parameters<typeof $generate>[2],
+): void {
+  editor.update(
+    () => {
+      const nodes = $generate(editor, html, options);
+      $getRoot().clear().splice(0, 0, nodes);
+    },
+    {discrete: true},
+  );
+}
+
+function $rootParagraphs(): ParagraphNode[] {
+  return $getRoot().getChildren().filter($isParagraphNode);
+}
+
 describe('DOMImportExtension', () => {
   test('basic anchor import + id decorator', () => {
     using editor = buildTestEditor([
@@ -227,29 +241,18 @@ describe('DOMImportExtension', () => {
       ParagraphRule,
       TextRule,
     ]);
-    editor.update(
-      () => {
-        const nodes = $generate(
-          editor,
-          '<p><a id="x" href="https://example.com">link</a></p>',
-        );
-        $getRoot()
-          .clear()
-          .append(...nodes);
-      },
-      {discrete: true},
-    );
+    $importInto(editor, '<p><a id="x" href="https://example.com">link</a></p>');
     editor.read(() => {
-      const root = $getRoot();
-      const para = root.getFirstChild();
-      expect($isParagraphNode(para)).toBe(true);
-      const link = (para as ParagraphNode).getFirstChild();
-      expect($isLinkNode(link)).toBe(true);
-      expect($getState(link as LexicalNode, idState)).toBe('x');
-      expect((link as LinkNode).getURL()).toBe('https://example.com/');
-      const text = (link as LinkNode).getFirstChild();
-      expect($isTextNode(text)).toBe(true);
-      expect((text as TextNode).getTextContent()).toBe('link');
+      const [para] = $rootParagraphs();
+      const link = para.getFirstChild();
+      assert($isLinkNode(link), 'expected LinkNode');
+      expect($getState(link, idState)).toBe('x');
+      // The test AnchorRule reads el.href (the resolved URL property), which
+      // JSDOM normalizes; getAttribute('href') would return the raw value.
+      expect(link.getURL()).toBe('https://example.com/');
+      const text = link.getFirstChild();
+      assert($isTextNode(text), 'expected TextNode');
+      expect(text.getTextContent()).toBe('link');
     });
   });
 
@@ -260,200 +263,110 @@ describe('DOMImportExtension', () => {
       ParagraphRule,
       TextRule,
     ]);
-    editor.update(
-      () => {
-        const nodes = $generate(
-          editor,
-          '<p>plain <b>bold <i>italicbold</i></b></p>',
-        );
-        $getRoot()
-          .clear()
-          .append(...nodes);
-      },
-      {discrete: true},
-    );
+    $importInto(editor, '<p>plain <b>bold <i>italicbold</i></b></p>');
     editor.read(() => {
-      const para = $getRoot().getFirstChild() as ParagraphNode;
-      const texts = para.getChildren();
-      expect(texts.length).toBe(3);
-      expect((texts[0] as TextNode).getTextContent()).toBe('plain ');
-      expect((texts[0] as TextNode).getFormat()).toBe(0);
-      expect((texts[1] as TextNode).getTextContent()).toBe('bold ');
-      expect((texts[1] as TextNode).hasFormat('bold')).toBe(true);
-      expect((texts[1] as TextNode).hasFormat('italic')).toBe(false);
-      expect((texts[2] as TextNode).getTextContent()).toBe('italicbold');
-      expect((texts[2] as TextNode).hasFormat('bold')).toBe(true);
-      expect((texts[2] as TextNode).hasFormat('italic')).toBe(true);
+      const texts = $getRoot().getAllTextNodes();
+      expect(texts).toHaveLength(3);
+      const find = (s: string) => {
+        const t = texts.find(n => n.getTextContent() === s);
+        assert(t !== undefined, `no TextNode ${JSON.stringify(s)}`);
+        return t;
+      };
+      expect(find('plain ').getFormat()).toBe(0);
+      expect(find('bold ').hasFormat('bold')).toBe(true);
+      expect(find('bold ').hasFormat('italic')).toBe(false);
+      expect(find('italicbold').hasFormat('bold')).toBe(true);
+      expect(find('italicbold').hasFormat('italic')).toBe(true);
     });
   });
 
   test('RootSchema wraps stray inline runs in paragraphs', () => {
     using editor = buildTestEditor([ParagraphRule, TextRule, BoldRule]);
-    editor.update(
-      () => {
-        const nodes = $generate(editor, 'orphan <b>inlines</b> at root');
-        $getRoot()
-          .clear()
-          .append(...nodes);
-      },
-      {discrete: true},
-    );
+    $importInto(editor, 'orphan <b>inlines</b> at root');
     editor.read(() => {
       const root = $getRoot();
       expect(root.getChildrenSize()).toBe(1);
-      const para = root.getFirstChild() as ParagraphNode;
-      expect($isParagraphNode(para)).toBe(true);
+      const [para] = $rootParagraphs();
       expect(para.getTextContent()).toBe('orphan inlines at root');
     });
   });
 
   test('sibling-emitting rule (<figure> -> two paragraphs)', () => {
     using editor = buildTestEditor([FigureRule, ParagraphRule, TextRule]);
-    editor.update(
-      () => {
-        const nodes = $generate(
-          editor,
-          '<figure><img src="x" alt="cat"/><figcaption>A cat.</figcaption></figure>',
-        );
-        $getRoot()
-          .clear()
-          .append(...nodes);
-      },
-      {discrete: true},
+    $importInto(
+      editor,
+      '<figure><img src="x" alt="cat"/><figcaption>A cat.</figcaption></figure>',
     );
     editor.read(() => {
-      const children = $getRoot().getChildren();
-      expect(children.length).toBe(2);
-      expect((children[0] as ParagraphNode).getTextContent()).toBe('[img:cat]');
-      expect((children[1] as ParagraphNode).getTextContent()).toBe('A cat.');
+      const ps = $rootParagraphs();
+      expect(ps).toHaveLength(2);
+      expect(ps[0].getTextContent()).toBe('[img:cat]');
+      expect(ps[1].getTextContent()).toBe('A cat.');
     });
   });
 
   test('$next() deferral: code rule defers to next on non-language code', () => {
     using editor = buildTestEditor([CodeRule, ParagraphRule, TextRule]);
-    editor.update(
-      () => {
-        const nodes = $generate(
-          editor,
-          '<pre><code class="language-js">x</code></pre><pre><code>y</code></pre>',
-        );
-        $getRoot()
-          .clear()
-          .append(...nodes);
-      },
-      {discrete: true},
+    $importInto(
+      editor,
+      '<pre><code class="language-js">x</code></pre><pre><code>y</code></pre>',
     );
     editor.read(() => {
-      const children = $getRoot().getChildren();
-      // The first <pre> is caught by CodeRule. The second has no language
-      // class, so CodeRule's $next() falls through; with no other rule for
-      // <pre>, the dispatcher hoists children (the <code>'s text "y") which
-      // RootSchema wraps in a paragraph.
-      expect(children.length).toBe(2);
-      expect((children[0] as ParagraphNode).getTextContent()).toBe('[code:js]');
-      expect((children[1] as ParagraphNode).getTextContent()).toBe('y');
+      const ps = $rootParagraphs();
+      expect(ps).toHaveLength(2);
+      expect(ps[0].getTextContent()).toBe('[code:js]');
+      expect(ps[1].getTextContent()).toBe('y');
     });
   });
 
   test('regex capture is exposed on ctx.captures without re-running', () => {
     using editor = buildTestEditor([CodeCaptureRule]);
-    editor.update(
-      () => {
-        const nodes = $generate(
-          editor,
-          '<pre data-language="rust">irrelevant</pre>',
-        );
-        $getRoot()
-          .clear()
-          .append(...nodes);
-      },
-      {discrete: true},
-    );
+    $importInto(editor, '<pre data-language="rust">irrelevant</pre>');
     editor.read(() => {
-      const p = $getRoot().getFirstChild() as ParagraphNode;
+      const [p] = $rootParagraphs();
       expect(p.getTextContent()).toBe('[capture:rust]');
     });
   });
 
   test('per-call context: ImportSource flows to rule body', () => {
     using editor = buildTestEditor([SourceAwareRule, TextRule]);
-    editor.update(
-      () => {
-        const nodes = $generate(editor, '<div>x</div>', {
-          context: [contextValue(ImportSource, 'paste')],
-        });
-        $getRoot()
-          .clear()
-          .append(...nodes);
-      },
-      {discrete: true},
-    );
+    $importInto(editor, '<div>x</div>', {
+      context: [contextValue(ImportSource, 'paste')],
+    });
     editor.read(() => {
-      const p = $getRoot().getFirstChild() as ParagraphNode;
+      const [p] = $rootParagraphs();
       expect($getState(p, sourceState)).toBe('paste');
     });
-
-    editor.update(
-      () => {
-        const nodes = $generate(editor, '<div>x</div>', {
-          context: [contextValue(ImportSource, 'deserialize')],
-        });
-        $getRoot()
-          .clear()
-          .append(...nodes);
-      },
-      {discrete: true},
-    );
+    $importInto(editor, '<div>x</div>', {
+      context: [contextValue(ImportSource, 'deserialize')],
+    });
     editor.read(() => {
-      const p = $getRoot().getFirstChild() as ParagraphNode;
+      const [p] = $rootParagraphs();
       expect($getState(p, sourceState)).toBe('deserialize');
     });
   });
 
   test('per-call context default is "unknown"', () => {
     using editor = buildTestEditor([SourceAwareRule, TextRule]);
-    editor.update(
-      () => {
-        const nodes = $generate(editor, '<div>x</div>');
-        $getRoot()
-          .clear()
-          .append(...nodes);
-      },
-      {discrete: true},
-    );
+    $importInto(editor, '<div>x</div>');
     editor.read(() => {
-      const p = $getRoot().getFirstChild() as ParagraphNode;
+      const [p] = $rootParagraphs();
       expect($getState(p, sourceState)).toBe('unknown');
     });
   });
 
   test('rule priority: later-registered rule runs first; can call $next()', () => {
     using editor = buildTestEditor([
-      // First in list = higher priority. The id decorator wraps the anchor
-      // importer below.
       IdAttributeRule,
       AnchorRule,
       ParagraphRule,
       TextRule,
     ]);
-    editor.update(
-      () => {
-        const nodes = $generate(
-          editor,
-          '<p><a id="link-x" href="/y">click</a></p>',
-        );
-        $getRoot()
-          .clear()
-          .append(...nodes);
-      },
-      {discrete: true},
-    );
+    $importInto(editor, '<p><a id="link-x" href="/y">click</a></p>');
     editor.read(() => {
-      const link = (
-        $getRoot().getFirstChild() as ParagraphNode
-      ).getFirstChild();
-      expect($isLinkNode(link)).toBe(true);
-      expect($getState(link as LexicalNode, idState)).toBe('link-x');
+      const link = $rootParagraphs()[0].getFirstChild();
+      assert($isLinkNode(link), 'expected LinkNode');
+      expect($getState(link, idState)).toBe('link-x');
     });
   });
 
@@ -468,19 +381,11 @@ describe('DOMImportExtension', () => {
       name: 'test/css-pfoo',
     });
     using editor = buildTestEditor([cssRule, ParagraphRule, TextRule]);
-    editor.update(
-      () => {
-        const nodes = $generate(editor, '<p class="foo">x</p><p>y</p>');
-        $getRoot()
-          .clear()
-          .append(...nodes);
-      },
-      {discrete: true},
-    );
+    $importInto(editor, '<p class="foo">x</p><p>y</p>');
     editor.read(() => {
-      const children = $getRoot().getChildren();
-      expect((children[0] as ParagraphNode).getTextContent()).toBe('[matched]');
-      expect((children[1] as ParagraphNode).getTextContent()).toBe('y');
+      const ps = $rootParagraphs();
+      expect(ps[0].getTextContent()).toBe('[matched]');
+      expect(ps[1].getTextContent()).toBe('y');
     });
   });
 
@@ -498,20 +403,9 @@ describe('DOMImportExtension', () => {
       name: 'test/css-combinator',
     });
     using editor = buildTestEditor([chained]);
-    editor.update(
-      () => {
-        const nodes = $generate(
-          editor,
-          '<span class="highlight" data-lang="go">x</span>',
-        );
-        $getRoot()
-          .clear()
-          .append(...nodes);
-      },
-      {discrete: true},
-    );
+    $importInto(editor, '<span class="highlight" data-lang="go">x</span>');
     editor.read(() => {
-      const p = $getRoot().getFirstChild() as ParagraphNode;
+      const [p] = $rootParagraphs();
       expect(p.getTextContent()).toBe('[combo:go]');
     });
   });
@@ -520,8 +414,9 @@ describe('DOMImportExtension', () => {
     const dom = new JSDOM(
       '<!doctype html><html><body><a href="x"></a><p></p></body></html>',
     );
-    const anchor = dom.window.document.body.firstElementChild!;
-    const para = dom.window.document.body.lastElementChild!;
+    const anchor = dom.window.document.body.firstElementChild;
+    const para = dom.window.document.body.lastElementChild;
+    assert(anchor !== null && para !== null, 'expected two children');
     expect(isElementOfTag(anchor, 'a')).toBe(true);
     expect(isElementOfTag(anchor, 'p')).toBe(false);
     expect(isElementOfTag(para, 'p')).toBe(true);
@@ -529,26 +424,16 @@ describe('DOMImportExtension', () => {
 
   test('compileImportRules: unknown tags hit wildcard bucket', () => {
     using editor = buildTestEditor([IdAttributeRule, ParagraphRule, TextRule]);
-    editor.update(
-      () => {
-        // Custom element with an id — only the id decorator matches; the
-        // dispatcher then hoists children (the text "z") which RootSchema
-        // wraps in a paragraph. We can't decorate the paragraph because
-        // the id rule sees the result of $next() applied to the custom
-        // element, which is the hoisted text only.
-        const nodes = $generate(editor, '<my-thing id="custom">z</my-thing>');
-        $getRoot()
-          .clear()
-          .append(...nodes);
-      },
-      {discrete: true},
-    );
+    $importInto(editor, '<my-thing id="custom">z</my-thing>');
     editor.read(() => {
-      const p = $getRoot().getFirstChild() as ParagraphNode;
+      // Custom element with an id — only the id decorator matches; the
+      // dispatcher then hoists children (the text "z") which RootSchema
+      // wraps in a paragraph. The id decorator's $next() returned a single
+      // TextNode so the id ends up on the text.
+      const [p] = $rootParagraphs();
       expect(p.getTextContent()).toBe('z');
-      // id decorator's $next() returned [TextNode], a single node, so the id
-      // gets set on the text.
-      const text = p.getFirstChild() as TextNode;
+      const text = p.getFirstChild();
+      assert($isTextNode(text), 'expected TextNode');
       expect($getState(text, idState)).toBe('custom');
     });
   });
@@ -573,20 +458,9 @@ describe('BlockSchema / InlineSchema', () => {
 
   test('BlockSchema wraps inline runs in paragraphs', () => {
     using editor = buildTestEditor([BlockRule, ParagraphRule, TextRule]);
-    editor.update(
-      () => {
-        const nodes = $generate(
-          editor,
-          '<section>inline<p>block</p>more inline</section>',
-        );
-        $getRoot()
-          .clear()
-          .append(...nodes);
-      },
-      {discrete: true},
-    );
+    $importInto(editor, '<section>inline<p>block</p>more inline</section>');
     editor.read(() => {
-      const p = $getRoot().getFirstChild() as ParagraphNode;
+      const [p] = $rootParagraphs();
       // 3 children: paragraph("inline"), paragraph("block"), paragraph("more inline")
       expect(p.getTextContent()).toBe('[section:3]');
     });
@@ -598,20 +472,21 @@ describe('regression sanity for the existing $generateNodesFromDOM', () => {
     using editor = buildTestEditor([BoldRule, ParagraphRule, TextRule]);
     editor.update(
       () => {
-        // First call inside <b>: format propagates.
         const a = $generate(editor, '<p><b>x</b></p>');
-        // Second call outside <b>: format must NOT carry over.
         const b = $generate(editor, '<p>y</p>');
         $getRoot()
           .clear()
-          .append(...a, ...b);
+          .splice(0, 0, [...a, ...b]);
       },
       {discrete: true},
     );
     editor.read(() => {
-      const [p1, p2] = $getRoot().getChildren() as ParagraphNode[];
-      expect((p1.getFirstChild() as TextNode).hasFormat('bold')).toBe(true);
-      expect((p2.getFirstChild() as TextNode).hasFormat('bold')).toBe(false);
+      const [p1, p2] = $rootParagraphs();
+      const t1 = p1.getFirstChild();
+      const t2 = p2.getFirstChild();
+      assert($isTextNode(t1) && $isTextNode(t2), 'expected text nodes');
+      expect(t1.hasFormat('bold')).toBe(true);
+      expect(t2.hasFormat('bold')).toBe(false);
     });
   });
 });

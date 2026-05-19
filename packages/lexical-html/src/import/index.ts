@@ -38,10 +38,17 @@ export {
 export {
   $getImportContextValue,
   $withImportContext,
+  createImportSessionState,
   createImportState,
+  defaultIsInline,
+  defaultPreservesWhitespace,
   ImportSource,
   type ImportSourceKind,
   ImportTextFormat,
+  ImportWhitespaceConfig,
+  type IsInlineForWhitespace,
+  type IsPreserveWhitespaceDom,
+  type WhitespaceImportConfig,
 } from './ImportContext';
 export {parseSelector} from './parseCss';
 export {
@@ -66,6 +73,8 @@ export type {
   ImportChildrenOpts,
   ImportContextPairOrUpdater,
   ImportNodeOpts,
+  ImportSession,
+  ImportSessionConfig,
   ImportStateConfig,
   NodeOfSelector,
   StyleMatchOptions,

@@ -88,7 +88,7 @@ function $paragraphPackageRun(
   if (textAlign) {
     paragraph.setFormat(textAlign);
   }
-  paragraph.append(...run);
+  paragraph.splice(0, 0, run);
   return [paragraph];
 }
 

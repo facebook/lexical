@@ -100,7 +100,7 @@ const ListRule = defineImportRule({
     }
     $setDirectionFromDOM(node, el);
     const children = ctx.$importChildren(el);
-    node.append(...$normalizeListChildren(children, node.getListType()));
+    node.splice(0, 0, $normalizeListChildren(children, node.getListType()));
     return [node];
   },
   match: sel.tag('ol', 'ul'),
@@ -148,7 +148,7 @@ const ListItemRule = defineImportRule({
       node,
       ctx.$importChildren(el),
     );
-    node.append(...children);
+    node.splice(0, 0, children);
     return [node];
   },
   match: sel.tag('li'),
@@ -173,7 +173,7 @@ function $buildChecklistItem(
   $setFormatFromDOM(node, el);
   $setDirectionFromDOM(node, el);
   const children = liftFormatFromSingleParagraph(node, ctx.$importChildren(el));
-  node.append(...children);
+  node.splice(0, 0, children);
   return [node];
 }
 
@@ -226,7 +226,7 @@ export const ListSchema: ChildSchema = {
     // become a paragraph inside a synthetic list item, preserving the
     // structure invariant.
     const wrap = $createParagraphNode();
-    wrap.append(...run);
+    wrap.splice(0, 0, run);
     item.append(wrap);
     return [item];
   },

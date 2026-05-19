@@ -22,14 +22,17 @@ import {
   IS_SUPERSCRIPT,
   IS_UNDERLINE,
   isDOMTextNode,
-  isHTMLElement,
   type LexicalNode,
   setNodeIndentFromDOM,
 } from 'lexical';
 
 import {contextValue} from '../ContextRecord';
 import {defineImportRule} from './defineImportRule';
-import {ImportTextFormat} from './ImportContext';
+import {
+  ImportTextFormat,
+  ImportWhitespaceConfig,
+  type WhitespaceImportConfig,
+} from './ImportContext';
 import {selBase} from './sel';
 
 const sel = selBase;
@@ -45,149 +48,206 @@ const ALIGNMENT_VALUES: ReadonlySet<ElementFormatType> =
   ]);
 
 /**
- * Combine the format bits implied by inline `style` properties (Google
- * Docs-style markup) with `extra`, returning the new TextFormatType
- * bitmask to install into {@link ImportTextFormat} while descending into
- * the element's children.
+ * A pair of bitmasks describing which {@link TextFormatType} bits to set
+ * and which to clear when descending into an element. The clear pass
+ * matters for cases the legacy OR-merge mishandled, e.g. `<b
+ * style="font-weight: normal">` clearing an inherited bold, or `<sub>` /
+ * `<sup>` clearing each other.
  */
-function styleFormatBits(style: CSSStyleDeclaration): number {
-  let bits = 0;
-  const fontWeight = style.fontWeight;
-  if (fontWeight === '700' || fontWeight === 'bold') {
-    bits |= IS_BOLD;
-  }
-  if (style.fontStyle === 'italic') {
-    bits |= IS_ITALIC;
-  }
-  const textDecoration = style.textDecoration.split(' ');
-  if (textDecoration.includes('underline')) {
-    bits |= IS_UNDERLINE;
-  }
-  if (textDecoration.includes('line-through')) {
-    bits |= IS_STRIKETHROUGH;
-  }
-  const verticalAlign = style.verticalAlign;
-  if (verticalAlign === 'sub') {
-    bits |= IS_SUBSCRIPT;
-  } else if (verticalAlign === 'super') {
-    bits |= IS_SUPERSCRIPT;
-  }
-  return bits;
+interface FormatOverride {
+  readonly set: number;
+  readonly clear: number;
 }
 
-const NODE_NAME_TO_FORMAT: Record<string, number> = {
-  CODE: IS_CODE,
-  EM: IS_ITALIC,
-  I: IS_ITALIC,
-  MARK: IS_HIGHLIGHT,
-  S: IS_STRIKETHROUGH,
-  STRONG: IS_BOLD,
-  SUB: IS_SUBSCRIPT,
-  SUP: IS_SUPERSCRIPT,
-  U: IS_UNDERLINE,
+/**
+ * The small subset of inline-style properties that affect text formatting
+ * during import. Modeled as a plain object so tag-implicit defaults and
+ * the element's own inline `style` can be merged with `{...defaults,
+ * ...override-if-set}` semantics rather than relying on CSSStyleDeclaration.
+ */
+interface FormatStyle {
+  fontWeight?: string;
+  fontStyle?: string;
+  textDecoration?: string;
+  verticalAlign?: string;
+}
+
+/**
+ * Default style implied by each inline format tag. `<b>`/`<strong>` set
+ * font-weight, `<sub>` sets vertical-align, etc. Any of these can be
+ * overridden by the element's own inline `style` (so `<b
+ * style="font-weight: normal">` ends up with `fontWeight: 'normal'` in
+ * the effective style).
+ */
+const TAG_DEFAULT_STYLE: Record<string, FormatStyle> = {
+  B: {fontWeight: 'bold'},
+  EM: {fontStyle: 'italic'},
+  I: {fontStyle: 'italic'},
+  S: {textDecoration: 'line-through'},
+  STRONG: {fontWeight: 'bold'},
+  SUB: {verticalAlign: 'sub'},
+  SUP: {verticalAlign: 'super'},
+  U: {textDecoration: 'underline'},
 };
 
 /**
- * Inline formatting tags (`<strong>`, `<em>`, `<i>`, `<code>`, `<mark>`,
- * `<s>`, `<sub>`, `<sup>`, `<u>`). Each pushes its associated format bit
- * plus any CSS-derived bits into {@link ImportTextFormat} for the duration
- * of the children traversal — no wrapping lexical node is produced.
+ * Tags whose effect on TextFormat has no CSS analog (so the style-merge
+ * path can't reach them). Applied as a pure "set" override.
+ */
+const TAG_ONLY_SET: Record<string, number> = {
+  CODE: IS_CODE,
+  MARK: IS_HIGHLIGHT,
+};
+
+function readElementFormatStyle(el: HTMLElement): FormatStyle {
+  return {
+    fontStyle: el.style.fontStyle,
+    fontWeight: el.style.fontWeight,
+    textDecoration: el.style.textDecoration,
+    verticalAlign: el.style.verticalAlign,
+  };
+}
+
+function mergeStyles(
+  defaults: FormatStyle,
+  override: FormatStyle,
+): FormatStyle {
+  return {
+    fontStyle: override.fontStyle || defaults.fontStyle,
+    fontWeight: override.fontWeight || defaults.fontWeight,
+    textDecoration: override.textDecoration || defaults.textDecoration,
+    verticalAlign: override.verticalAlign || defaults.verticalAlign,
+  };
+}
+
+/**
+ * Translate a {@link FormatStyle} into a {@link FormatOverride}. Explicit
+ * "non-decorating" values (`font-weight: normal`, `text-decoration: none`,
+ * `vertical-align: baseline`) produce `clear` bits, so an inner element
+ * can remove a format inherited from its ancestors.
+ */
+function styleFormatOverride(style: FormatStyle): FormatOverride {
+  let set = 0;
+  let clear = 0;
+
+  const {fontWeight, fontStyle, textDecoration, verticalAlign} = style;
+
+  if (fontWeight === '700' || fontWeight === 'bold') {
+    set |= IS_BOLD;
+  } else if (fontWeight === 'normal' || fontWeight === '400') {
+    clear |= IS_BOLD;
+  }
+
+  if (fontStyle === 'italic') {
+    set |= IS_ITALIC;
+  } else if (fontStyle === 'normal') {
+    clear |= IS_ITALIC;
+  }
+
+  if (textDecoration) {
+    const parts = textDecoration.split(' ');
+    if (parts.includes('underline')) {
+      set |= IS_UNDERLINE;
+    }
+    if (parts.includes('line-through')) {
+      set |= IS_STRIKETHROUGH;
+    }
+    if (parts.includes('none')) {
+      clear |= IS_UNDERLINE | IS_STRIKETHROUGH;
+    }
+  }
+
+  if (verticalAlign === 'sub') {
+    set |= IS_SUBSCRIPT;
+    clear |= IS_SUPERSCRIPT;
+  } else if (verticalAlign === 'super') {
+    set |= IS_SUPERSCRIPT;
+    clear |= IS_SUBSCRIPT;
+  } else if (verticalAlign === 'baseline') {
+    clear |= IS_SUBSCRIPT | IS_SUPERSCRIPT;
+  }
+
+  return {clear, set};
+}
+
+function applyFormatOverride(format: number, ov: FormatOverride): number {
+  return (format & ~ov.clear) | ov.set;
+}
+
+/**
+ * Unified rule for inline-format-bearing tags and `<span>`. The element's
+ * effective style is its tag's {@link TAG_DEFAULT_STYLE} merged with its
+ * inline `style` (element's own style wins for any property it sets), and
+ * the resulting style is translated into a {@link FormatOverride}. Tags
+ * with no CSS analog (`<code>`, `<mark>`) contribute their bit as a pure
+ * `set` override.
+ *
+ * This shape lets:
+ * - `<b style="font-weight: normal">` clear an inherited IS_BOLD.
+ * - `<sub><sup>x</sup></sub>` resolve to IS_SUPERSCRIPT only (sub/sup
+ *   mutex via the vertical-align clear logic).
+ * - `<span style="text-decoration: none">` strip inherited underline /
+ *   line-through.
  */
 const InlineFormatRule = defineImportRule({
   $import: (ctx, el) => {
-    const ownFormat = NODE_NAME_TO_FORMAT[el.nodeName] || 0;
-    const inheritedFormat = ctx.get(ImportTextFormat);
-    const styleBits = styleFormatBits(el.style);
-    const merged = inheritedFormat | ownFormat | styleBits;
-    if (merged === inheritedFormat) {
+    const inherited = ctx.get(ImportTextFormat);
+    const tagDefault = TAG_DEFAULT_STYLE[el.nodeName];
+    const elStyle = readElementFormatStyle(el);
+    const effective = tagDefault ? mergeStyles(tagDefault, elStyle) : elStyle;
+    let merged = applyFormatOverride(inherited, styleFormatOverride(effective));
+    const tagOnly = TAG_ONLY_SET[el.nodeName];
+    if (tagOnly) {
+      merged |= tagOnly;
+    }
+    if (merged === inherited) {
       return ctx.$importChildren(el);
     }
     return ctx.$importChildren(el, {
       context: [contextValue(ImportTextFormat, merged)],
     });
   },
-  match: sel.tag('strong', 'em', 'i', 'code', 'mark', 's', 'sub', 'sup', 'u'),
+  match: sel.tag(
+    'b',
+    'strong',
+    'em',
+    'i',
+    'code',
+    'mark',
+    's',
+    'sub',
+    'sup',
+    'u',
+    'span',
+  ),
   name: '@lexical/html/inline-format',
 });
 
 /**
- * `<b>` is special: Google Docs wraps copied content in a `<b
- * style="font-weight: normal">` that must NOT add bold (the outer wrapper
- * is just an opaque container). Only contribute IS_BOLD when the inline
- * style doesn't override the default.
+ * Walk up the DOM ancestor chain to determine whether `node` is inside an
+ * element whose whitespace should be preserved, per the supplied
+ * {@link WhitespaceImportConfig.preservesWhitespace} predicate. Pure
+ * ancestor walk, no caching.
  */
-const BoldRule = defineImportRule({
-  $import: (ctx, el) => {
-    const inherited = ctx.get(ImportTextFormat);
-    const ownFormat = el.style.fontWeight === 'normal' ? 0 : IS_BOLD;
-    const styleBits = styleFormatBits(el.style);
-    const merged = inherited | ownFormat | styleBits;
-    if (merged === inherited) {
-      return ctx.$importChildren(el);
-    }
-    return ctx.$importChildren(el, {
-      context: [contextValue(ImportTextFormat, merged)],
-    });
-  },
-  match: sel.tag('b'),
-  name: '@lexical/html/b',
-});
-
-/**
- * `<span>` carries no own semantics but commonly hosts Google-Docs-style
- * CSS formatting. Push any style-derived format bits into context and
- * unwrap.
- */
-const SpanRule = defineImportRule({
-  $import: (ctx, el) => {
-    const inherited = ctx.get(ImportTextFormat);
-    const styleBits = styleFormatBits(el.style);
-    const merged = inherited | styleBits;
-    if (merged === inherited) {
-      return ctx.$importChildren(el);
-    }
-    return ctx.$importChildren(el, {
-      context: [contextValue(ImportTextFormat, merged)],
-    });
-  },
-  match: sel.tag('span'),
-  name: '@lexical/html/span',
-});
-
-/**
- * Walk up the DOM ancestor chain to determine whether `node` is inside a
- * `<pre>` (or any element with `white-space: pre*`). Pure ancestor walk,
- * no caching — kept simple since this is only called for text node
- * imports.
- */
-function isInsidePre(node: Node): boolean {
+function isInsidePreserveWhitespace(
+  node: Node,
+  wsConfig: WhitespaceImportConfig,
+): boolean {
   let current: Node | null = node.parentNode;
   while (current !== null) {
-    if (isHTMLElement(current)) {
-      if (current.nodeName === 'PRE') {
-        return true;
-      }
-      const ws = current.style.whiteSpace;
-      if (typeof ws === 'string' && ws.startsWith('pre')) {
-        return true;
-      }
+    if (wsConfig.preservesWhitespace(current)) {
+      return true;
     }
     current = current.parentNode;
   }
   return false;
 }
 
-function isInlineSiblingTextEligible(node: Node): boolean {
-  if (isHTMLElement(node)) {
-    const display = node.style.display;
-    if (display !== '' && !display.startsWith('inline')) {
-      return false;
-    }
-  }
-  return true;
-}
-
-function findAdjacentTextOnLine(text: Text, forward: boolean): Text | null {
+function findAdjacentTextOnLine(
+  text: Text,
+  forward: boolean,
+  wsConfig: WhitespaceImportConfig,
+): Text | null {
   let node: Node = text;
   while (true) {
     let sibling: Node | null = null;
@@ -201,7 +261,7 @@ function findAdjacentTextOnLine(text: Text, forward: boolean): Text | null {
       node = parent;
     }
     node = sibling;
-    if (!isInlineSiblingTextEligible(node)) {
+    if (!wsConfig.isInline(node)) {
       return null;
     }
     let descendant: Node | null = node;
@@ -217,7 +277,10 @@ function findAdjacentTextOnLine(text: Text, forward: boolean): Text | null {
   }
 }
 
-function collapseWhitespace(textNode: Text): string {
+function collapseWhitespace(
+  textNode: Text,
+  wsConfig: WhitespaceImportConfig,
+): string {
   let textContent = (textNode.textContent || '')
     .replace(/\r/g, '')
     .replace(/[ \t\n]+/g, ' ');
@@ -229,7 +292,7 @@ function collapseWhitespace(textNode: Text): string {
     let isStartOfLine = true;
     while (
       neighbor !== null &&
-      (neighbor = findAdjacentTextOnLine(neighbor, false)) !== null
+      (neighbor = findAdjacentTextOnLine(neighbor, false, wsConfig)) !== null
     ) {
       const neighborContent = neighbor.textContent || '';
       if (neighborContent.length > 0) {
@@ -249,7 +312,7 @@ function collapseWhitespace(textNode: Text): string {
     let isEndOfLine = true;
     while (
       neighbor !== null &&
-      (neighbor = findAdjacentTextOnLine(neighbor, true)) !== null
+      (neighbor = findAdjacentTextOnLine(neighbor, true, wsConfig)) !== null
     ) {
       const neighborContent = (neighbor.textContent || '').replace(
         /^( |\t|\r?\n)+/,
@@ -287,7 +350,8 @@ function applyFormat(node: LexicalNode, format: number): LexicalNode {
 const TextRule = defineImportRule({
   $import: (ctx, el) => {
     const format = ctx.get(ImportTextFormat);
-    if (isInsidePre(el)) {
+    const wsConfig = ctx.get(ImportWhitespaceConfig);
+    if (isInsidePreserveWhitespace(el, wsConfig)) {
       const raw = el.textContent || '';
       const parts = raw.split(/(\r?\n|\t)/);
       const out: LexicalNode[] = [];
@@ -302,7 +366,7 @@ const TextRule = defineImportRule({
       }
       return out;
     }
-    const collapsed = collapseWhitespace(el);
+    const collapsed = collapseWhitespace(el, wsConfig);
     if (collapsed === '') {
       return [];
     }
@@ -310,6 +374,18 @@ const TextRule = defineImportRule({
   },
   match: sel.text(),
   name: '@lexical/html/#text',
+});
+
+/**
+ * Drop `<style>` and `<script>` and skip descending into them — matches
+ * the legacy `IGNORE_TAGS` set, but as a regular rule so apps can register
+ * a higher-priority `<style>` rule to capture stylesheet text into the
+ * import session for later use.
+ */
+const IgnoreScriptStyleRule = defineImportRule({
+  $import: () => [],
+  match: sel.tag('script', 'style'),
+  name: '@lexical/html/script-style-ignore',
 });
 
 /**
@@ -340,7 +416,7 @@ const ParagraphRule = defineImportRule({
     // We deliberately pass no schema: paragraphs accept any inline run as-is.
     // The enclosing context (root / block) is responsible for ensuring the
     // paragraph itself is a valid block child.
-    p.append(...ctx.$importChildren(el));
+    p.splice(0, 0, ctx.$importChildren(el));
     return [p];
   },
   match: sel.tag('p'),
@@ -357,10 +433,9 @@ const ParagraphRule = defineImportRule({
  * @experimental
  */
 export const CoreImportRules = [
+  IgnoreScriptStyleRule,
   ParagraphRule,
   TextRule,
   LineBreakRule,
-  SpanRule,
-  BoldRule,
   InlineFormatRule,
 ];

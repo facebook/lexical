@@ -10,6 +10,7 @@ import type {
   DOMImportContext,
   ImportChildrenOpts,
   ImportNodeOpts,
+  ImportSession,
   ImportStateConfig,
 } from './types';
 
@@ -20,18 +21,21 @@ import {
   type CompiledRule,
   getDispatchIndices,
 } from './compileImportRules';
-import {$getImportContextValue, $withImportContext} from './ImportContext';
+import {
+  $getImportContextValue,
+  $withImportContext,
+  ImportSessionImpl,
+} from './ImportContext';
 import {applySchema, RootSchema} from './schemas';
 
 const NO_CAPTURES: Record<string, RegExpMatchArray> = Object.freeze(
   {} as Record<string, RegExpMatchArray>,
 );
 
-const IGNORE_TAGS = new Set(['STYLE', 'SCRIPT']);
-
 interface Runtime {
   readonly dispatch: CompiledDispatch;
   readonly editor: LexicalEditor;
+  readonly session: ImportSession;
 }
 
 function makeContext(
@@ -47,6 +51,7 @@ function makeContext(
     get<V>(cfg: ImportStateConfig<V>): V {
       return $getImportContextValue(cfg, runtime.editor);
     },
+    session: runtime.session,
   };
   return ctx;
 }
@@ -70,9 +75,6 @@ function $importChildrenRun(
   const onChild = opts && opts.$onChild;
   const collected: LexicalNode[] = [];
   for (const child of Array.from(parent.childNodes)) {
-    if (IGNORE_TAGS.has(child.nodeName)) {
-      continue;
-    }
     const produced = $importOneInternal(runtime, child, undefined);
     for (const lex of produced) {
       const result = onChild ? onChild(lex) : lex;
@@ -95,15 +97,15 @@ function $importOneInternal(
   opts: ImportNodeOpts | undefined,
 ): LexicalNode[] {
   const run = () => $dispatch(runtime, node);
-  return opts && opts.context
-    ? $withImportContext(opts.context, runtime.editor)(run)
-    : run();
+  const out =
+    opts && opts.context
+      ? $withImportContext(opts.context, runtime.editor)(run)
+      : run();
+  // Surface to callers as a mutable array per the DOMImportContext contract.
+  return out as LexicalNode[];
 }
 
-function $dispatch(runtime: Runtime, node: Node): LexicalNode[] {
-  if (IGNORE_TAGS.has(node.nodeName)) {
-    return [];
-  }
+function $dispatch(runtime: Runtime, node: Node): readonly LexicalNode[] {
   const indices = getDispatchIndices(runtime.dispatch, node);
   if (indices.length === 0) {
     return $hoistChildrenOf(runtime, node);
@@ -135,15 +137,14 @@ function $dispatch(runtime: Runtime, node: Node): LexicalNode[] {
     }
     return $hoistChildrenOf(runtime, node);
   };
-  const out = $next();
-  return Array.isArray(out) ? out : Array.from(out);
+  return $next();
 }
 
 /**
  * Fallback when no rule matched and `$next()` was called past the end of the
  * chain: hoist the element's children to take its place, recursively. Pure
- * elements with no rule become invisible, matching the legacy behavior at
- * line 467-485 of `index.ts`.
+ * elements with no rule become invisible, matching the legacy
+ * `$createNodesFromDOM` hoisting behavior.
  */
 function $hoistChildrenOf(runtime: Runtime, node: Node): LexicalNode[] {
   if (!('childNodes' in node)) {
@@ -155,9 +156,6 @@ function $hoistChildrenOf(runtime: Runtime, node: Node): LexicalNode[] {
   }
   const collected: LexicalNode[] = [];
   for (const child of Array.from(parent.childNodes)) {
-    if (IGNORE_TAGS.has(child.nodeName)) {
-      continue;
-    }
     const produced = $importOneInternal(runtime, child, undefined);
     for (const lex of produced) {
       collected.push(lex);
@@ -179,7 +177,7 @@ export function $runImport(
   editor: LexicalEditor,
   dom: Document | ParentNode,
 ): LexicalNode[] {
-  const runtime: Runtime = {dispatch, editor};
+  const runtime: Runtime = {dispatch, editor, session: new ImportSessionImpl()};
   const rootParent: ParentNode = isDOMDocumentNode(dom) ? dom.body : dom;
   return $importChildrenRun(runtime, rootParent, {schema: RootSchema});
 }

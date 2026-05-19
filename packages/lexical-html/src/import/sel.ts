@@ -63,8 +63,8 @@ function combinePredicates(preds: readonly Predicate[]): Predicate {
     return preds[0];
   }
   return (node, captures) => {
-    for (let i = 0; i < preds.length; i++) {
-      if (!preds[i](node, captures)) {
+    for (const p of preds) {
+      if (!p(node, captures)) {
         return false;
       }
     }
@@ -130,8 +130,8 @@ export function buildClassAllPredicate(classes: readonly string[]): Predicate {
       return false;
     }
     const cl = node.classList;
-    for (let i = 0; i < ns.length; i++) {
-      if (!cl.contains(ns[i])) {
+    for (const c of ns) {
+      if (!cl.contains(c)) {
         return false;
       }
     }
@@ -150,8 +150,8 @@ export function buildClassAnyPredicate(classes: readonly string[]): Predicate {
       return false;
     }
     const cl = node.classList;
-    for (let i = 0; i < ns.length; i++) {
-      if (cl.contains(ns[i])) {
+    for (const c of ns) {
+      if (cl.contains(c)) {
         return true;
       }
     }
@@ -238,9 +238,9 @@ const TEXT_SELECTOR_IMPL: SelectorImpl = {
   tags: new Set(),
 };
 
-const TEXT_SELECTOR: CompiledSelector<Text> = {
-  [IMPL]: TEXT_SELECTOR_IMPL,
-} as unknown as CompiledSelector<Text>;
+// The cast is needed because `CompiledSelector` is an opaque branded
+// interface; the internal IMPL key isn't declared on it.
+const TEXT_SELECTOR = {[IMPL]: TEXT_SELECTOR_IMPL} as CompiledSelector<Text>;
 
 const COMMENT_SELECTOR_IMPL: SelectorImpl = {
   kind: 'comment',
@@ -248,9 +248,9 @@ const COMMENT_SELECTOR_IMPL: SelectorImpl = {
   tags: new Set(),
 };
 
-const COMMENT_SELECTOR: CompiledSelector<Comment> = {
+const COMMENT_SELECTOR = {
   [IMPL]: COMMENT_SELECTOR_IMPL,
-} as unknown as CompiledSelector<Comment>;
+} as CompiledSelector<Comment>;
 
 /**
  * Combinator API for building {@link CompiledSelector}s. The `css` method is

@@ -15,12 +15,12 @@ import {$isLinkNode, LinkImportExtension, LinkNode} from '@lexical/link';
 import {JSDOM} from 'jsdom';
 import {
   $getRoot,
+  $isParagraphNode,
   defineExtension,
   type LexicalEditor,
   type LexicalNode,
-  type ParagraphNode,
 } from 'lexical';
-import {describe, expect, test} from 'vitest';
+import {assert, describe, expect, test} from 'vitest';
 
 function buildEditor() {
   return buildEditorFromExtensions(
@@ -38,50 +38,46 @@ function $generate(editor: LexicalEditor, html: string): LexicalNode[] {
   return dep.output.$generateNodesFromDOM(dom.window.document);
 }
 
+function $importInto(editor: LexicalEditor, html: string): void {
+  editor.update(
+    () => {
+      const nodes = $generate(editor, html);
+      $getRoot()
+        .clear()
+        .append(...nodes);
+    },
+    {discrete: true},
+  );
+}
+
+function $firstLink(): LinkNode {
+  const para = $getRoot().getFirstChild();
+  assert($isParagraphNode(para), 'expected paragraph');
+  const link = para.getFirstChild();
+  assert($isLinkNode(link), 'expected LinkNode');
+  return link;
+}
+
 describe('LinkImportExtension', () => {
   test('<a href="…">text</a> → LinkNode with TextNode child', () => {
     using editor = buildEditor();
-    editor.update(
-      () => {
-        const nodes = $generate(
-          editor,
-          '<p><a href="https://example.com">click</a></p>',
-        );
-        $getRoot()
-          .clear()
-          .append(...nodes);
-      },
-      {discrete: true},
-    );
+    $importInto(editor, '<p><a href="https://example.com">click</a></p>');
     editor.read(() => {
-      const link = (
-        $getRoot().getFirstChild() as ParagraphNode
-      ).getFirstChild();
-      expect($isLinkNode(link)).toBe(true);
-      // We read href via getAttribute so JSDOM's URL resolution is bypassed.
-      expect((link as LinkNode).getURL()).toBe('https://example.com');
-      expect((link as LinkNode).getTextContent()).toBe('click');
+      const link = $firstLink();
+      // href is read via getAttribute, so JSDOM's URL resolution is bypassed.
+      expect(link.getURL()).toBe('https://example.com');
+      expect(link.getTextContent()).toBe('click');
     });
   });
 
   test('rel, target, title preserved', () => {
     using editor = buildEditor();
-    editor.update(
-      () => {
-        const nodes = $generate(
-          editor,
-          '<p><a href="/x" target="_blank" rel="noopener" title="hello">x</a></p>',
-        );
-        $getRoot()
-          .clear()
-          .append(...nodes);
-      },
-      {discrete: true},
+    $importInto(
+      editor,
+      '<p><a href="/x" target="_blank" rel="noopener" title="hello">x</a></p>',
     );
     editor.read(() => {
-      const link = (
-        $getRoot().getFirstChild() as ParagraphNode
-      ).getFirstChild() as LinkNode;
+      const link = $firstLink();
       expect(link.getTarget()).toBe('_blank');
       expect(link.getRel()).toBe('noopener');
       expect(link.getTitle()).toBe('hello');
@@ -90,17 +86,10 @@ describe('LinkImportExtension', () => {
 
   test('empty <a> with no children is skipped', () => {
     using editor = buildEditor();
-    editor.update(
-      () => {
-        const nodes = $generate(editor, '<p>before<a href="/x"></a>after</p>');
-        $getRoot()
-          .clear()
-          .append(...nodes);
-      },
-      {discrete: true},
-    );
+    $importInto(editor, '<p>before<a href="/x"></a>after</p>');
     editor.read(() => {
-      const para = $getRoot().getFirstChild() as ParagraphNode;
+      const para = $getRoot().getFirstChild();
+      assert($isParagraphNode(para), 'expected paragraph');
       expect(para.getTextContent()).toBe('beforeafter');
     });
   });

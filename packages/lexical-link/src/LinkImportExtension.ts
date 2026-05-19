@@ -28,7 +28,7 @@ const AnchorRule = defineImportRule({
       target: el.getAttribute('target'),
       title: el.getAttribute('title'),
     });
-    link.append(...ctx.$importChildren(el, {schema: InlineSchema}));
+    link.splice(0, 0, ctx.$importChildren(el, {schema: InlineSchema}));
     return [link];
   },
   match: sel.tag('a'),

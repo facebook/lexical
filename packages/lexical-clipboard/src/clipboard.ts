@@ -16,7 +16,6 @@ import {
   $caretFromPoint,
   $caretRangeFromSelection,
   $comparePointCaretNext,
-  $createTabNode,
   $getCaretRange,
   $getCaretRangeInDirection,
   $getChildCaret,
@@ -52,7 +51,10 @@ import {
 import caretFromPoint from 'shared/caretFromPoint';
 import invariant from 'shared/invariant';
 
-import {getClipboardImporter} from './ClipboardImportExtension';
+import {
+  $getImportConfig,
+  callImportMimeTypeFunctionStack,
+} from './ClipboardImportExtension';
 
 export interface LexicalClipboardData {
   'text/html'?: string | undefined;
@@ -153,21 +155,19 @@ export function $insertDataTransferForRichText(
   selection: BaseSelection,
   editor: LexicalEditor,
 ): void {
-  const lexicalString = dataTransfer.getData('application/x-lexical-editor');
+  const $importMimeType = $getImportConfig(editor);
 
-  if (lexicalString) {
-    try {
-      const payload = JSON.parse(lexicalString);
-      if (
-        payload.namespace === editor._config.namespace &&
-        Array.isArray(payload.nodes)
-      ) {
-        const nodes = $generateNodesFromSerializedNodes(payload.nodes);
-        return $insertGeneratedNodes(editor, nodes, selection);
-      }
-    } catch (error) {
-      console.error(error);
-    }
+  const lexicalString = dataTransfer.getData('application/x-lexical-editor');
+  if (
+    lexicalString &&
+    callImportMimeTypeFunctionStack(
+      $importMimeType['application/x-lexical-editor'],
+      lexicalString,
+      selection,
+      editor,
+    )
+  ) {
+    return;
   }
 
   const htmlString = dataTransfer.getData('text/html');
@@ -176,47 +176,29 @@ export function $insertDataTransferForRichText(
   // Skip HTML handling if it matches the plain text representation.
   // This avoids unnecessary processing for plain text strings created by
   // iOS Safari autocorrect, which incorrectly includes a `text/html` type.
-  if (htmlString && plainString !== htmlString) {
-    try {
-      const parser = new DOMParser();
-      const dom = parser.parseFromString(
-        trustHTML(htmlString) as string,
-        'text/html',
-      );
-      const importer = getClipboardImporter(editor);
-      const nodes = importer(editor, dom);
-      return $insertGeneratedNodes(editor, nodes, selection);
-    } catch (error) {
-      console.error(error);
-    }
+  if (
+    htmlString &&
+    plainString !== htmlString &&
+    callImportMimeTypeFunctionStack(
+      $importMimeType['text/html'],
+      htmlString,
+      selection,
+      editor,
+    )
+  ) {
+    return;
   }
 
-  // Multi-line plain text in rich text mode pasted as separate paragraphs
-  // instead of single paragraph with linebreaks.
-  // Webkit-specific: Supports read 'text/uri-list' in clipboard.
+  // Webkit-specific: read 'text/uri-list' as a text fallback when there's
+  // no text/plain payload.
   const text = plainString || dataTransfer.getData('text/uri-list');
-  if (text != null) {
-    if ($isRangeSelection(selection)) {
-      const parts = text.split(/(\r?\n|\t)/);
-      if (parts[parts.length - 1] === '') {
-        parts.pop();
-      }
-      for (let i = 0; i < parts.length; i++) {
-        const currentSelection = $getSelection();
-        if ($isRangeSelection(currentSelection)) {
-          const part = parts[i];
-          if (part === '\n' || part === '\r\n') {
-            currentSelection.insertParagraph();
-          } else if (part === '\t') {
-            currentSelection.insertNodes([$createTabNode()]);
-          } else {
-            currentSelection.insertText(part);
-          }
-        }
-      }
-    } else {
-      selection.insertRawText(text);
-    }
+  if (text) {
+    callImportMimeTypeFunctionStack(
+      $importMimeType['text/plain'],
+      text,
+      selection,
+      editor,
+    );
   }
 }
 
@@ -444,16 +426,6 @@ export function $handlePlainTextDrop(
   return $doDrop(event, editor, (dataTransfer, selection) =>
     $insertDataTransferForPlainText(dataTransfer, selection),
   );
-}
-
-function trustHTML(html: string): string | TrustedHTML {
-  if (window.trustedTypes && window.trustedTypes.createPolicy) {
-    const policy = window.trustedTypes.createPolicy('lexical', {
-      createHTML: input => input,
-    });
-    return policy.createHTML(html);
-  }
-  return html;
 }
 
 /**

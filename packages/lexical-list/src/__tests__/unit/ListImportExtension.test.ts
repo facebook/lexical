@@ -25,7 +25,7 @@ import {
   type LexicalEditor,
   type LexicalNode,
 } from 'lexical';
-import {describe, expect, test} from 'vitest';
+import {assert, describe, expect, test} from 'vitest';
 
 function buildEditor() {
   return buildEditorFromExtensions(
@@ -43,43 +43,47 @@ function $generate(editor: LexicalEditor, html: string): LexicalNode[] {
   return dep.output.$generateNodesFromDOM(dom.window.document);
 }
 
+function $importInto(editor: LexicalEditor, html: string): void {
+  editor.update(
+    () => {
+      const nodes = $generate(editor, html);
+      $getRoot()
+        .clear()
+        .append(...nodes);
+    },
+    {discrete: true},
+  );
+}
+
+function $rootList(): ListNode {
+  const node = $getRoot().getFirstChild();
+  assert($isListNode(node), 'expected ListNode at root');
+  return node;
+}
+
+function $items(list: ListNode): ListItemNode[] {
+  return list.getChildren().filter($isListItemNode);
+}
+
 describe('ListImportExtension', () => {
   test('<ul><li>a</li><li>b</li></ul> → bullet list with two items', () => {
     using editor = buildEditor();
-    editor.update(
-      () => {
-        const nodes = $generate(editor, '<ul><li>a</li><li>b</li></ul>');
-        $getRoot()
-          .clear()
-          .append(...nodes);
-      },
-      {discrete: true},
-    );
+    $importInto(editor, '<ul><li>a</li><li>b</li></ul>');
     editor.read(() => {
-      const list = $getRoot().getFirstChild() as ListNode;
-      expect($isListNode(list)).toBe(true);
+      const list = $rootList();
       expect(list.getListType()).toBe('bullet');
-      const items = list.getChildren();
-      expect(items.length).toBe(2);
-      expect((items[0] as ListItemNode).getTextContent()).toBe('a');
-      expect((items[1] as ListItemNode).getTextContent()).toBe('b');
+      const items = $items(list);
+      expect(items).toHaveLength(2);
+      expect(items[0].getTextContent()).toBe('a');
+      expect(items[1].getTextContent()).toBe('b');
     });
   });
 
   test('<ol start="3"> → number list with start=3', () => {
     using editor = buildEditor();
-    editor.update(
-      () => {
-        const nodes = $generate(editor, '<ol start="3"><li>x</li></ol>');
-        $getRoot()
-          .clear()
-          .append(...nodes);
-      },
-      {discrete: true},
-    );
+    $importInto(editor, '<ol start="3"><li>x</li></ol>');
     editor.read(() => {
-      const list = $getRoot().getFirstChild() as ListNode;
-      expect($isListNode(list)).toBe(true);
+      const list = $rootList();
       expect(list.getListType()).toBe('number');
       expect(list.getStart()).toBe(3);
     });
@@ -87,22 +91,15 @@ describe('ListImportExtension', () => {
 
   test('GitHub task-list-item → checklist item', () => {
     using editor = buildEditor();
-    editor.update(
-      () => {
-        const nodes = $generate(
-          editor,
-          '<ul class="contains-task-list"><li class="task-list-item"><input type="checkbox" checked/>done</li><li class="task-list-item"><input type="checkbox"/>todo</li></ul>',
-        );
-        $getRoot()
-          .clear()
-          .append(...nodes);
-      },
-      {discrete: true},
+    $importInto(
+      editor,
+      '<ul class="contains-task-list"><li class="task-list-item"><input type="checkbox" checked/>done</li><li class="task-list-item"><input type="checkbox"/>todo</li></ul>',
     );
     editor.read(() => {
-      const list = $getRoot().getFirstChild() as ListNode;
+      const list = $rootList();
       expect(list.getListType()).toBe('check');
-      const items = list.getChildren() as ListItemNode[];
+      const items = $items(list);
+      expect(items).toHaveLength(2);
       expect(items[0].getChecked()).toBe(true);
       expect(items[1].getChecked()).toBe(false);
     });
@@ -110,44 +107,27 @@ describe('ListImportExtension', () => {
 
   test('aria-checked drives checklist state', () => {
     using editor = buildEditor();
-    editor.update(
-      () => {
-        const nodes = $generate(
-          editor,
-          '<ul><li aria-checked="true">a</li></ul>',
-        );
-        $getRoot()
-          .clear()
-          .append(...nodes);
-      },
-      {discrete: true},
-    );
+    $importInto(editor, '<ul><li aria-checked="true">a</li></ul>');
     editor.read(() => {
-      const list = $getRoot().getFirstChild() as ListNode;
+      const list = $rootList();
       expect(list.getListType()).toBe('check');
-      const item = list.getFirstChild() as ListItemNode;
-      expect(item.getChecked()).toBe(true);
+      const items = $items(list);
+      expect(items[0].getChecked()).toBe(true);
     });
   });
 
-  test('stray text inside <ul> gets wrapped via normalizeListChildren', () => {
+  test('stray text inside <ul> gets wrapped via $normalizeListChildren', () => {
     using editor = buildEditor();
-    editor.update(
-      () => {
-        const nodes = $generate(editor, '<ul>stray <li>real item</li></ul>');
-        $getRoot()
-          .clear()
-          .append(...nodes);
-      },
-      {discrete: true},
-    );
+    $importInto(editor, '<ul>stray <li>real item</li></ul>');
     editor.read(() => {
-      const list = $getRoot().getFirstChild() as ListNode;
-      const items = list.getChildren() as ListItemNode[];
-      // Stray text gets wrapped in its own ListItemNode (the normalize
-      // step works on flattened children).
+      const list = $rootList();
+      const items = $items(list);
+      // The framework's flattening of unmatched <ul> child text + the legacy
+      // normalize step both produce list items; the real item must survive.
       expect(items.length).toBeGreaterThanOrEqual(1);
-      expect($isListItemNode(items[items.length - 1])).toBe(true);
+      expect(items.some(i => i.getTextContent().includes('real item'))).toBe(
+        true,
+      );
     });
   });
 });

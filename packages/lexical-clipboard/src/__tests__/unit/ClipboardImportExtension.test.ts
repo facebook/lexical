@@ -8,6 +8,7 @@
 
 import {
   $insertDataTransferForRichText,
+  $insertGeneratedNodes,
   ClipboardImportExtension,
 } from '@lexical/clipboard';
 import {
@@ -28,15 +29,12 @@ import {
   $getSelection,
   $isParagraphNode,
   $isRangeSelection,
-  type LexicalEditor,
 } from 'lexical';
 import {DataTransferMock} from 'lexical/src/__tests__/utils';
-import {describe, expect, test} from 'vitest';
+import {assert, describe, expect, test} from 'vitest';
 
 function $initialEditorState(): void {
-  const text = $createTextNode('');
-  $getRoot().append($createParagraphNode().append(text));
-  text.select(0, 0);
+  $getRoot().append($createParagraphNode()).select();
 }
 
 function dataTransferWithHtml(html: string): DataTransfer {
@@ -45,110 +43,129 @@ function dataTransferWithHtml(html: string): DataTransfer {
   return dt as unknown as DataTransfer;
 }
 
+function $pasteHtml(
+  editor: ReturnType<typeof buildEditorFromExtensions>,
+  html: string,
+) {
+  editor.update(
+    () => {
+      const selection = $getSelection();
+      assert($isRangeSelection(selection), 'expected RangeSelection');
+      $insertDataTransferForRichText(
+        dataTransferWithHtml(html),
+        selection,
+        editor,
+      );
+    },
+    {discrete: true},
+  );
+}
+
 describe('ClipboardImportExtension', () => {
-  test('default importer matches legacy behavior (no extension configured)', () => {
+  test('default importer handles a basic <p> paste (no extension configured)', () => {
     using editor = buildEditorFromExtensions(
-      defineExtension({
-        $initialEditorState,
-        name: 'host',
-      }),
+      defineExtension({$initialEditorState, name: 'host'}),
     );
-    editor.update(
-      () => {
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) return;
-        $insertDataTransferForRichText(
-          dataTransferWithHtml('<p>hello</p>'),
-          selection,
-          editor,
-        );
-      },
-      {discrete: true},
-    );
+    $pasteHtml(editor, '<p>hello</p>');
     editor.read(() => {
-      const root = $getRoot();
-      const para = root.getFirstChild();
-      expect($isParagraphNode(para)).toBe(true);
-      expect(para?.getTextContent()).toBe('hello');
+      const lastChild = $getRoot().getLastChild();
+      assert($isParagraphNode(lastChild), 'expected paragraph');
+      expect(lastChild.getTextContent()).toBe('hello');
     });
   });
 
-  test('configured importer overrides the default', () => {
-    let importerCalled = false;
-    const buildEditor = (editor: LexicalEditor) => editor;
-
+  test('a registered text/html handler runs before the default and can stop the chain', () => {
+    let called = 0;
     using editor = buildEditorFromExtensions(
       defineExtension({
         $initialEditorState,
         dependencies: [
           configExtension(ClipboardImportExtension, {
-            $generateNodesFromDOM: (_editor, _dom) => {
-              importerCalled = true;
-              // Custom replacement: return a single paragraph with a marker.
-              const p = $createParagraphNode();
-              p.append($createTextNode('[custom-importer]'));
-              return [p];
+            $importMimeType: {
+              'text/html': [
+                (_html, selection, e) => {
+                  called++;
+                  const p = $createParagraphNode().append(
+                    $createTextNode('[custom]'),
+                  );
+                  $insertGeneratedNodes(e, [p], selection);
+                  return true;
+                },
+              ],
             },
           }),
         ],
         name: 'host',
       }),
     );
-    buildEditor(editor);
-    editor.update(
-      () => {
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) return;
-        $insertDataTransferForRichText(
-          dataTransferWithHtml('<p>ignored</p>'),
-          selection,
-          editor,
-        );
-      },
-      {discrete: true},
-    );
+    $pasteHtml(editor, '<p>ignored</p>');
     editor.read(() => {
-      const root = $getRoot();
-      const para = root.getFirstChild();
-      expect(para?.getTextContent()).toBe('[custom-importer]');
+      const lastChild = $getRoot().getLastChild();
+      assert($isParagraphNode(lastChild), 'expected paragraph');
+      expect(lastChild.getTextContent()).toBe('[custom]');
     });
-    expect(importerCalled).toBe(true);
+    expect(called).toBe(1);
   });
 
-  test('clipboard can be routed through DOMImportExtension via $generateNodesFromDOMViaExtension', () => {
+  test('handler can call next() to defer to the default', () => {
+    let deferred = false;
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState,
+        dependencies: [
+          configExtension(ClipboardImportExtension, {
+            $importMimeType: {
+              'text/html': [
+                (_html, _selection, _editor, next) => {
+                  deferred = true;
+                  return next();
+                },
+              ],
+            },
+          }),
+        ],
+        name: 'host',
+      }),
+    );
+    $pasteHtml(editor, '<p>hello</p>');
+    editor.read(() => {
+      const lastChild = $getRoot().getLastChild();
+      assert($isParagraphNode(lastChild), 'expected paragraph');
+      expect(lastChild.getTextContent()).toBe('hello');
+    });
+    expect(deferred).toBe(true);
+  });
+
+  test('text/html can be routed through DOMImportExtension', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({
         $initialEditorState,
         dependencies: [
           CoreImportExtension,
           configExtension(ClipboardImportExtension, {
-            $generateNodesFromDOM: (e, dom) =>
-              $generateNodesFromDOMViaExtension(e, dom, {
-                context: [contextValue(ImportSource, 'paste')],
-              }),
+            $importMimeType: {
+              'text/html': [
+                (html, selection, e) => {
+                  const parser = new DOMParser();
+                  const dom = parser.parseFromString(html, 'text/html');
+                  const nodes = $generateNodesFromDOMViaExtension(e, dom, {
+                    context: [contextValue(ImportSource, 'paste')],
+                  });
+                  $insertGeneratedNodes(e, nodes, selection);
+                  return true;
+                },
+              ],
+            },
           }),
         ],
         name: 'host',
       }),
     );
-    editor.update(
-      () => {
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) return;
-        $insertDataTransferForRichText(
-          dataTransferWithHtml('<p>via <strong>new</strong> pipeline</p>'),
-          selection,
-          editor,
-        );
-      },
-      {discrete: true},
-    );
+    $pasteHtml(editor, '<p>via <strong>new</strong> pipeline</p>');
     editor.read(() => {
-      const root = $getRoot();
-      const text = root.getTextContent();
-      expect(text).toContain('via');
-      expect(text).toContain('new');
-      expect(text).toContain('pipeline');
+      const lastChild = $getRoot().getLastChild();
+      assert($isParagraphNode(lastChild), 'expected paragraph');
+      expect(lastChild.getTextContent()).toBe('via new pipeline');
     });
   });
 });

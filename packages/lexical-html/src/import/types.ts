@@ -156,6 +156,41 @@ export type ImportStateConfig<V> = ContextConfig<
 >;
 
 /**
+ * A typed handle to a slot in {@link ImportSession}. Create one at module
+ * scope with {@link createImportSessionState}. The default value is read
+ * lazily the first time a session reads the slot.
+ *
+ * @experimental
+ */
+export interface ImportSessionConfig<V> {
+  readonly key: symbol;
+  readonly getDefault: () => V;
+}
+
+/**
+ * A mutable, document-order-shared store for the import pipeline. Lets a
+ * rule visited early in the document write information that rules visited
+ * later can read — e.g. parse `<style>` or `<meta>` and influence
+ * subsequent matching.
+ *
+ * Use sparingly: state that flows from parents to descendants belongs in
+ * {@link ImportStateConfig} (via `$importChildren({context: [...]})`),
+ * which is immutable, scoped, and easier to reason about.
+ *
+ * @experimental
+ */
+export interface ImportSession {
+  /** Read the current value, returning the config's default if unset. */
+  get<V>(cfg: ImportSessionConfig<V>): V;
+  /** Write `value` into the slot. */
+  set<V>(cfg: ImportSessionConfig<V>, value: V): void;
+  /** Read-modify-write. */
+  update<V>(cfg: ImportSessionConfig<V>, updater: (prev: V) => V): void;
+  /** Returns `true` if the slot has been written since session creation. */
+  has<V>(cfg: ImportSessionConfig<V>): boolean;
+}
+
+/**
  * Context exposed to a rule's `$import` function. Mirrors the existing render
  * context (see {@link RenderContext}) but is import-scoped.
  *
@@ -168,6 +203,15 @@ export interface DOMImportContext<
   readonly editor: LexicalEditor;
   /** Captures from this rule's selector. Fresh per rule invocation. */
   readonly captures: Readonly<C>;
+  /**
+   * Mutable, document-order-shared store. Use to make information from
+   * earlier-visited nodes available to later-visited ones (e.g. a
+   * `<style>` or `<meta>` at the top of the document influencing how
+   * later elements are interpreted). One {@link ImportSession} instance
+   * is created per top-level `$generateNodesFromDOM` call and is shared
+   * across all recursive `$importChildren` / `$importOne` invocations.
+   */
+  readonly session: ImportSession;
 
   /** Read a typed context value. */
   get<V>(cfg: ImportStateConfig<V>): V;

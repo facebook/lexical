@@ -174,7 +174,7 @@ const TableRule = defineImportRule({
       }
     }
     const children = ctx.$importChildren(el);
-    node.append(...$descendantsMatching(children, $isTableRowNode));
+    node.splice(0, 0, $descendantsMatching(children, $isTableRowNode));
     return [node];
   },
   match: sel.tag('table'),
@@ -189,7 +189,7 @@ const TableRowRule = defineImportRule({
     }
     const node = $createTableRowNode(height);
     const children = ctx.$importChildren(el);
-    node.append(...$descendantsMatching(children, $isTableCellNode));
+    node.splice(0, 0, $descendantsMatching(children, $isTableCellNode));
     return [node];
   },
   match: sel.tag('tr'),
@@ -247,7 +247,7 @@ const TableCellRule = defineImportRule({
     const rawChildren = ctx.$importChildren(el);
     applyCellStyleToTextDescendants(el.style, rawChildren);
     const packaged = $packageCellChildren(rawChildren);
-    cell.append(...packaged);
+    cell.splice(0, 0, packaged);
     return [cell];
   },
   match: sel.tag('td', 'th'),
@@ -267,7 +267,7 @@ export const TableSchema: ChildSchema = {
   packageRun(run) {
     if (run.every($isTableCellNode)) {
       const row = $createTableRowNode();
-      row.append(...run);
+      row.splice(0, 0, run);
       return [row];
     }
     return [];

@@ -45,7 +45,7 @@ const HeadingRule = defineImportRule({
     setNodeIndentFromDOM(el, node);
     $setFormatFromDOM(node, el);
     $setDirectionFromDOM(node, el);
-    node.append(...ctx.$importChildren(el));
+    node.splice(0, 0, ctx.$importChildren(el));
     return [node];
   },
   match: sel.tag('h1', 'h2', 'h3', 'h4', 'h5', 'h6'),
@@ -58,7 +58,7 @@ const QuoteRule = defineImportRule({
     $setFormatFromDOM(node, el);
     setNodeIndentFromDOM(el, node);
     $setDirectionFromDOM(node, el);
-    node.append(...ctx.$importChildren(el));
+    node.splice(0, 0, ctx.$importChildren(el));
     return [node];
   },
   match: sel.tag('blockquote'),
@@ -90,7 +90,7 @@ const GoogleDocsTitleSpanRule = defineImportRule({
       return $next();
     }
     const node = $createHeadingNode('h1');
-    node.append(...ctx.$importChildren(el));
+    node.splice(0, 0, ctx.$importChildren(el));
     return [node];
   },
   match: sel.tag('span'),

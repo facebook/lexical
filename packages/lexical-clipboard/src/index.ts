@@ -29,6 +29,9 @@ export {
 } from './clipboard';
 export {
   type ClipboardImportConfig,
-  type ClipboardImporter,
   ClipboardImportExtension,
+  DEFAULT_IMPORT_MIME_TYPE,
+  IMPORT_MIME_TYPE_PRIORITY,
+  type ImportMimeTypeConfig,
+  type ImportMimeTypeFunction,
 } from './ClipboardImportExtension';

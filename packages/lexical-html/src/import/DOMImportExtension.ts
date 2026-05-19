@@ -23,8 +23,10 @@ import {
 import {DOMImportExtensionName} from '../constants';
 import {contextFromPairs} from '../ContextRecord';
 import {type CompiledDispatch, compileImportRules} from './compileImportRules';
+import {defineImportRule} from './defineImportRule';
 import {$withImportContext} from './ImportContext';
 import {$runImport} from './runImport';
+import {selBase} from './sel';
 
 /**
  * Configuration for {@link DOMImportExtension}.
@@ -49,6 +51,23 @@ export interface DOMImportConfig {
    */
   readonly contextDefaults: readonly ImportContextPairOrUpdater[];
 }
+
+/**
+ * Lowest-priority catch-all rule used as the default `config.rules` entry
+ * for {@link DOMImportExtension}: descends into the element's children
+ * and returns whatever they produced. With no other matching rule, an
+ * element vanishes and its contents are inserted in its place — the
+ * legacy `$createNodesFromDOM` hoisting behavior, but now expressed as a
+ * regular rule that apps can override (e.g. with a `sel.any()` rule that
+ * captures and discards unknown elements).
+ *
+ * @experimental
+ */
+export const DefaultHoistRule = defineImportRule({
+  $import: (ctx, el) => ctx.$importChildren(el),
+  match: selBase.any(),
+  name: '@lexical/html/default-hoist',
+});
 
 /**
  * @experimental
@@ -85,7 +104,7 @@ export const DOMImportExtension = defineExtension<
   },
   config: {
     contextDefaults: [],
-    rules: [],
+    rules: [DefaultHoistRule],
   },
   mergeConfig(config, partial) {
     const merged = shallowMergeConfig(config, partial);

@@ -6,13 +6,20 @@
  *
  */
 
-import {$insertDataTransferForRichText} from '@lexical/clipboard';
+import {
+  $getClipboardDataFromSelection,
+  $insertDataTransferForRichText,
+  setLexicalClipboardDataTransfer,
+} from '@lexical/clipboard';
 import {$patchStyleText} from '@lexical/selection';
 import {
   $createParagraphNode,
+  $createTextNode,
   $getRoot,
   $getSelection,
+  $isElementNode,
   $isRangeSelection,
+  $selectAll,
 } from 'lexical';
 import {
   DataTransferMock,
@@ -144,6 +151,174 @@ describe('HTMLCopyAndPaste tests', () => {
             }
           });
           expect(testEnv.innerHTML).toBe(testCase.expectedHTML);
+        });
+      });
+
+      test('pasting centered paragraph into empty paragraph preserves alignment (Regression #8101)', async () => {
+        const {editor} = testEnv;
+
+        await editor.update(() => {
+          const root = $getRoot();
+          root.clear();
+          const paragraph = $createParagraphNode();
+          root.append(paragraph);
+          paragraph.select();
+        });
+
+        const dataTransfer = new DataTransferMock();
+        dataTransfer.setData(
+          'text/html',
+          '<p style="text-align: center;">centered text</p>',
+        );
+        await editor.update(() => {
+          const selection = $getSelection();
+          invariant(
+            $isRangeSelection(selection),
+            'isRangeSelection(selection)',
+          );
+          $insertDataTransferForRichText(dataTransfer, selection, editor);
+        });
+
+        await editor.update(() => {
+          const root = $getRoot();
+          const firstChild = root.getFirstChild();
+          invariant(firstChild !== null, 'firstChild is not null');
+          invariant($isElementNode(firstChild), 'firstChild is an ElementNode');
+          expect(firstChild.getFormatType()).toBe('center');
+        });
+      });
+
+      test('pasting centered paragraph into non-empty paragraph does not change destination alignment', async () => {
+        const {editor} = testEnv;
+
+        await editor.update(() => {
+          const root = $getRoot();
+          root.clear();
+          const paragraph = $createParagraphNode();
+          paragraph.append($createTextNode('existing'));
+          root.append(paragraph);
+          paragraph.selectEnd();
+        });
+
+        const dataTransfer = new DataTransferMock();
+        dataTransfer.setData(
+          'text/html',
+          '<p style="text-align: center;">centered text</p>',
+        );
+        await editor.update(() => {
+          const selection = $getSelection();
+          invariant(
+            $isRangeSelection(selection),
+            'isRangeSelection(selection)',
+          );
+          $insertDataTransferForRichText(dataTransfer, selection, editor);
+        });
+
+        await editor.update(() => {
+          const root = $getRoot();
+          const firstChild = root.getFirstChild();
+          invariant(firstChild !== null, 'firstChild is not null');
+          invariant($isElementNode(firstChild), 'firstChild is an ElementNode');
+          // Pasting into non-empty paragraph should NOT change its alignment
+          expect(firstChild.getFormatType()).toBe('');
+        });
+      });
+
+      test('copy text from centered paragraph and paste into empty paragraph preserves alignment (Regression #8101)', async () => {
+        const {editor} = testEnv;
+
+        // Create centered paragraph, select all text, copy
+        let clipboardData: ReturnType<typeof $getClipboardDataFromSelection>;
+        await editor.update(() => {
+          const root = $getRoot();
+          root.clear();
+          const paragraph = $createParagraphNode();
+          paragraph.setFormat('center');
+          paragraph.append($createTextNode('centered text'));
+          root.append(paragraph);
+          $selectAll();
+          clipboardData = $getClipboardDataFromSelection();
+        });
+
+        // Paste into empty paragraph
+        await editor.update(() => {
+          const root = $getRoot();
+          root.clear();
+          const emptyParagraph = $createParagraphNode();
+          root.append(emptyParagraph);
+          emptyParagraph.select();
+        });
+
+        const dataTransfer = new DataTransferMock();
+        setLexicalClipboardDataTransfer(
+          dataTransfer as unknown as DataTransfer,
+          clipboardData!,
+        );
+        await editor.update(() => {
+          const selection = $getSelection();
+          invariant(
+            $isRangeSelection(selection),
+            'isRangeSelection(selection)',
+          );
+          $insertDataTransferForRichText(dataTransfer, selection, editor);
+        });
+
+        await editor.update(() => {
+          const root = $getRoot();
+          const firstChild = root.getFirstChild();
+          invariant(firstChild !== null, 'firstChild is not null');
+          invariant($isElementNode(firstChild), 'firstChild is an ElementNode');
+          expect(firstChild.getFormatType()).toBe('center');
+        });
+      });
+
+      test('copy text from centered paragraph and paste into non-empty paragraph does not change alignment', async () => {
+        const {editor} = testEnv;
+
+        // Create centered paragraph, select all text, copy
+        let clipboardData: ReturnType<typeof $getClipboardDataFromSelection>;
+        await editor.update(() => {
+          const root = $getRoot();
+          root.clear();
+          const paragraph = $createParagraphNode();
+          paragraph.setFormat('center');
+          paragraph.append($createTextNode('centered text'));
+          root.append(paragraph);
+          $selectAll();
+          clipboardData = $getClipboardDataFromSelection();
+        });
+
+        // Paste into non-empty left-aligned paragraph
+        await editor.update(() => {
+          const root = $getRoot();
+          root.clear();
+          const paragraph = $createParagraphNode();
+          paragraph.append($createTextNode('existing'));
+          root.append(paragraph);
+          paragraph.selectEnd();
+        });
+
+        const dataTransfer = new DataTransferMock();
+        setLexicalClipboardDataTransfer(
+          dataTransfer as unknown as DataTransfer,
+          clipboardData!,
+        );
+        await editor.update(() => {
+          const selection = $getSelection();
+          invariant(
+            $isRangeSelection(selection),
+            'isRangeSelection(selection)',
+          );
+          $insertDataTransferForRichText(dataTransfer, selection, editor);
+        });
+
+        await editor.update(() => {
+          const root = $getRoot();
+          const firstChild = root.getFirstChild();
+          invariant(firstChild !== null, 'firstChild is not null');
+          invariant($isElementNode(firstChild), 'firstChild is an ElementNode');
+          // Non-empty destination should NOT change alignment
+          expect(firstChild.getFormatType()).toBe('');
         });
       });
 

@@ -545,6 +545,88 @@ describe('LexicalUtils tests', () => {
         doc.documentElement.style.scrollPaddingTop = '';
       }
     });
+
+    test('scrollIntoViewIfNeeded scrolls horizontally inside overflow container', () => {
+      const {editor} = testEnv;
+      const rootElement = editor.getRootElement()!;
+      const doc = rootElement.ownerDocument;
+      const shell = doc.createElement('div');
+      const inner = doc.createElement('div');
+      inner.textContent = 'x';
+      shell.appendChild(inner);
+      rootElement.appendChild(shell);
+
+      const shellRect = {
+        bottom: 40,
+        height: 40,
+        left: 0,
+        right: 100,
+        toJSON: () => shellRect,
+        top: 0,
+        width: 100,
+        x: 0,
+        y: 0,
+      };
+      vi.spyOn(shell, 'getBoundingClientRect').mockReturnValue(
+        shellRect as unknown as DOMRect,
+      );
+      Object.defineProperty(shell, 'clientWidth', {
+        configurable: true,
+        value: 100,
+      });
+      Object.defineProperty(shell, 'scrollWidth', {
+        configurable: true,
+        value: 500,
+      });
+      shell.scrollLeft = 0;
+
+      const selectionRect = new DOMRect(350, 10, 5, 16);
+
+      scrollIntoViewIfNeeded(editor, selectionRect, rootElement, inner);
+
+      expect(shell.scrollLeft).toBeGreaterThan(0);
+    });
+
+    test('scrollIntoViewIfNeeded scrolls left when caret is left of scroll container viewport', () => {
+      const {editor} = testEnv;
+      const rootElement = editor.getRootElement()!;
+      const doc = rootElement.ownerDocument;
+      const shell = doc.createElement('div');
+      const inner = doc.createElement('div');
+      inner.textContent = 'x';
+      shell.appendChild(inner);
+      rootElement.appendChild(shell);
+
+      const shellRect = {
+        bottom: 40,
+        height: 40,
+        left: 100,
+        right: 200,
+        toJSON: () => shellRect,
+        top: 0,
+        width: 100,
+        x: 100,
+        y: 0,
+      };
+      vi.spyOn(shell, 'getBoundingClientRect').mockReturnValue(
+        shellRect as unknown as DOMRect,
+      );
+      Object.defineProperty(shell, 'clientWidth', {
+        configurable: true,
+        value: 100,
+      });
+      Object.defineProperty(shell, 'scrollWidth', {
+        configurable: true,
+        value: 500,
+      });
+      shell.scrollLeft = 200;
+
+      const selectionRect = new DOMRect(95, 10, 5, 16);
+
+      scrollIntoViewIfNeeded(editor, selectionRect, rootElement, inner);
+
+      expect(shell.scrollLeft).toBeLessThan(200);
+    });
   });
 });
 describe('$applyNodeReplacement', () => {

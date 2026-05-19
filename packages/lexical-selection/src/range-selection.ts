@@ -85,7 +85,7 @@ export function $setBlocksType<T extends ElementNode>(
     newNodeDest: T,
   ) => void = $copyBlockFormatIndent,
 ): void {
-  if (selection === null) {
+  if (!selection) {
     return;
   }
   // Selections tend to not include their containing blocks so we effectively
@@ -135,7 +135,7 @@ export function $setBlocksType<T extends ElementNode>(
   // Selection remapping is delegated to LexicalNode.replace (and the
   // ListItemNode.replace override): both remap an element-anchored point
   // on the replaced block to {key: replacement, offset: prevSize + offset}.
-  for (const [, prevNode] of blockMap) {
+  for (const prevNode of blockMap.values()) {
     const element = $createElement();
     $afterCreateElement(prevNode, element);
     prevNode.replace(element, true);

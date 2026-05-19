@@ -8,6 +8,7 @@
 
 import type {
   BaseSelection,
+  DecoratorNode,
   ElementNode,
   LexicalNode,
   NodeKey,
@@ -54,10 +55,16 @@ export function $copyBlockFormatIndent(
 }
 
 function $isPointAtBlockStart(point: Point, block: ElementNode): boolean {
-  if (point.type !== 'text' || point.offset !== 0) {
+  if (point.offset !== 0) {
     return false;
   }
   let node: LexicalNode = point.getNode();
+  // When an ElementNode is empty it's not possible to distinguish if
+  // the selection's intent is the entire block or the edge so we consider
+  // it to be the entire block
+  if ($isElementNode(node) && node.isEmpty()) {
+    return false;
+  }
   while (!node.is(block)) {
     if (node.getPreviousSibling() !== null) {
       return false;
@@ -91,6 +98,8 @@ export function $setBlocksType<T extends ElementNode>(
   // Selections tend to not include their containing blocks so we effectively
   // expand it here
   const anchorAndFocus = selection.getStartEndPoints();
+  let skipFocusAtBlockStart = false;
+  let focusBlock: ElementNode | DecoratorNode<unknown> | null = null;
   const blockMap = new Map<NodeKey, ElementNode>();
   if (anchorAndFocus) {
     const [anchor, focus] = anchorAndFocus;
@@ -98,34 +107,25 @@ export function $setBlocksType<T extends ElementNode>(
       anchor.getNode(),
       INTERNAL_$isBlock,
     );
-    const focusBlock = $findMatchingParent(focus.getNode(), INTERNAL_$isBlock);
-    const focusAtBlockStart =
+    focusBlock = $findMatchingParent(focus.getNode(), INTERNAL_$isBlock);
+    skipFocusAtBlockStart =
       $isElementNode(focusBlock) &&
-      anchorBlock !== focusBlock &&
+      !focusBlock.is(anchorBlock) &&
       $isPointAtBlockStart(focus, focusBlock);
     if ($isElementNode(anchorBlock)) {
       blockMap.set(anchorBlock.getKey(), anchorBlock);
     }
-    if ($isElementNode(focusBlock) && !focusAtBlockStart) {
+    if ($isElementNode(focusBlock) && !skipFocusAtBlockStart) {
       blockMap.set(focusBlock.getKey(), focusBlock);
     }
   }
   for (const node of selection.getNodes()) {
     if ($isElementNode(node) && INTERNAL_$isBlock(node)) {
-      if (
-        anchorAndFocus &&
-        node.is(
-          $findMatchingParent(anchorAndFocus[1].getNode(), INTERNAL_$isBlock),
-        ) &&
-        !node.is(
-          $findMatchingParent(anchorAndFocus[0].getNode(), INTERNAL_$isBlock),
-        ) &&
-        $isPointAtBlockStart(anchorAndFocus[1], node)
-      ) {
+      if (skipFocusAtBlockStart && node.is(focusBlock)) {
         continue;
       }
       blockMap.set(node.getKey(), node);
-    } else if (anchorAndFocus === null) {
+    } else if (!anchorAndFocus) {
       const ancestorBlock = $findMatchingParent(node, INTERNAL_$isBlock);
       if ($isElementNode(ancestorBlock)) {
         blockMap.set(ancestorBlock.getKey(), ancestorBlock);

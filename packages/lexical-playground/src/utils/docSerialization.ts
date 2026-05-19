@@ -7,6 +7,7 @@
  */
 
 import {SerializedDocument} from '@lexical/file';
+import warnOnlyOnce from 'shared/warnOnlyOnce';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function* generateReader<T = any>(
@@ -36,8 +37,16 @@ async function readBytestoString(
   return output.join('');
 }
 
+const CompressionAPIWarning = warnOnlyOnce(
+  'Your browser does not support CompressionStream/DecompressionStream',
+);
+
 export async function docToHash(doc: SerializedDocument): Promise<string> {
-  const cs = new CompressionStream('gzip');
+  const cs = getCompressionStream();
+  if (!cs) {
+    CompressionAPIWarning();
+    return '';
+  }
   const writer = cs.writable.getWriter();
   const [, output] = await Promise.all([
     writer
@@ -51,6 +60,20 @@ export async function docToHash(doc: SerializedDocument): Promise<string> {
     .replace(/=+$/, '')}`;
 }
 
+// Feature detection is extracted to functions as a workaround until
+// https://github.com/amilajack/eslint-plugin-compat/pull/687 lands
+function getCompressionStream() {
+  if (typeof CompressionStream !== 'undefined') {
+    return new CompressionStream('gzip');
+  }
+}
+
+function getDecompressionStream() {
+  if (typeof DecompressionStream !== 'undefined') {
+    return new DecompressionStream('gzip');
+  }
+}
+
 export async function docFromHash(
   hash: string,
 ): Promise<SerializedDocument | null> {
@@ -58,7 +81,11 @@ export async function docFromHash(
   if (!m) {
     return null;
   }
-  const ds = new DecompressionStream('gzip');
+  const ds = getDecompressionStream();
+  if (!ds) {
+    CompressionAPIWarning();
+    return null;
+  }
   const writer = ds.writable.getWriter();
   const b64 = atob(m[1].replace(/_/g, '/').replace(/-/g, '+'));
   const array = new Uint8Array(b64.length);

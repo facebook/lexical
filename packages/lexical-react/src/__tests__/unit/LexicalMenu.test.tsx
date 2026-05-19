@@ -6,7 +6,7 @@
  *
  */
 
-import {LexicalEditor} from 'lexical';
+import {KEY_ENTER_COMMAND, LexicalEditor} from 'lexical';
 import {createTestEditor} from 'lexical/src/__tests__/utils';
 import * as React from 'react';
 import ReactDOM from 'react-dom';
@@ -225,6 +225,69 @@ describe('LexicalMenu', () => {
 
       const portal = anchorElement.querySelector('.typeahead-popover');
       expect(portal).toBeNull();
+    });
+
+    it('should not select an option when Enter is pressed with Shift (line break / fall-through)', async () => {
+      const onSelectOption = vi.fn();
+      const options = [new TestOption('Option A'), new TestOption('Option B')];
+
+      await ReactTestUtils.act(async () => {
+        reactRoot.render(
+          <LexicalMenu<TestOption>
+            close={vi.fn()}
+            editor={editor}
+            anchorElementRef={{current: anchorElement}}
+            resolution={createTestResolution('test')}
+            options={options}
+            onSelectOption={onSelectOption}
+            preselectFirstItem={true}
+          />,
+        );
+      });
+
+      const shiftEnter = {
+        preventDefault: vi.fn(),
+        shiftKey: true,
+        stopImmediatePropagation: vi.fn(),
+      } as unknown as KeyboardEvent;
+
+      await ReactTestUtils.act(async () => {
+        editor.dispatchCommand(KEY_ENTER_COMMAND, shiftEnter);
+      });
+
+      expect(onSelectOption).not.toHaveBeenCalled();
+    });
+
+    it('should select an option when Enter is pressed without Shift', async () => {
+      const onSelectOption = vi.fn();
+      const options = [new TestOption('Option A'), new TestOption('Option B')];
+
+      await ReactTestUtils.act(async () => {
+        reactRoot.render(
+          <LexicalMenu<TestOption>
+            close={vi.fn()}
+            editor={editor}
+            anchorElementRef={{current: anchorElement}}
+            resolution={createTestResolution('test')}
+            options={options}
+            onSelectOption={onSelectOption}
+            preselectFirstItem={true}
+          />,
+        );
+      });
+
+      const enter = {
+        preventDefault: vi.fn(),
+        shiftKey: false,
+        stopImmediatePropagation: vi.fn(),
+      } as unknown as KeyboardEvent;
+
+      await ReactTestUtils.act(async () => {
+        editor.dispatchCommand(KEY_ENTER_COMMAND, enter);
+      });
+
+      expect(onSelectOption).toHaveBeenCalledTimes(1);
+      expect(onSelectOption.mock.calls[0][0]).toBe(options[0]);
     });
 
     it('should render icon and title in default MenuItem', async () => {

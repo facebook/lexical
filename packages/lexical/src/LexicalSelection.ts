@@ -3043,6 +3043,7 @@ function $getElementAndOffsetForPoint(
   return [element, offset];
 }
 
+/** @internal */
 export function $updateDOMSelection(
   prevSelection: BaseSelection | null,
   nextSelection: BaseSelection | null,
@@ -3050,7 +3051,6 @@ export function $updateDOMSelection(
   domSelection: Selection,
   tags: Set<string>,
   rootElement: HTMLElement,
-  nodeCount: number,
 ): void {
   const activeElement = document.activeElement;
 

@@ -15,7 +15,7 @@
 
 [@lexical/dragon](/docs/api/modules/lexical_dragon)
 
-- [DragonExtension](/docs/api/modules/lexical_dragon#dragonextension) - Dragon (speech to text) support, included by default with RichTextExtension and PlainTextExtension
+- [DragonExtension](/docs/api/modules/lexical_dragon#dragonextension) - Dragon (speech to text) support, included by default with `RichTextExtension` and `PlainTextExtension`
 
 [@lexical/extension](/docs/api/modules/lexical_extension)
 
@@ -25,6 +25,8 @@
 - [HorizontalRuleExtension](/docs/api/modules/lexical_extension#horizontalruleextension) - HorizontalRuleNode (`<hr>` tag)
 - [InitialStateExtension](/docs/api/modules/lexical_extension#initialstateextension) - Sets the initial state of the editor (always included)
 - [NodeSelectionExtension](/docs/api/modules/lexical_extension#nodeselectionextension) - Tracks selection, typically for DecoratorNodes
+- [NormalizeInlineElementsExtension](/docs/api/modules/lexical_extension#normalizeinlineelementsextension) - Removes empty inline elements, included by default with `RichTextExtension` and `PlainTextExtension`
+- [NormalizeTripleClickSelectionExtension](/docs/api/modules/lexical_extension#normalizetripleclickselectionextension) - Corrects over-selection after triple click events, included by default with `RichTextExtension` and `PlainTextExtension`
 - [TabIndentationExtension](/docs/api/modules/lexical_extension#tabindentationextension) - Changes Tab key to insert tabs and indent instead of natively focusing the next field
 
 [@lexical/hashtag](/docs/api/modules/lexical_hashtag)

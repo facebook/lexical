@@ -6,7 +6,8 @@
  *
  */
 
-import {$createLinkNode} from '@lexical/link';
+import {buildEditorFromExtensions} from '@lexical/extension';
+import {$createLinkNode, LinkExtension} from '@lexical/link';
 import {
   $createListItemNode,
   $createListNode,
@@ -22,7 +23,11 @@ import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import {ListPlugin} from '@lexical/react/LexicalListPlugin';
 import {MarkdownShortcutPlugin} from '@lexical/react/LexicalMarkdownShortcutPlugin';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
-import {$createHeadingNode} from '@lexical/rich-text';
+import {
+  $createHeadingNode,
+  $isHeadingNode,
+  RichTextExtension,
+} from '@lexical/rich-text';
 import {
   $getSelectionStyleValueForProperty,
   $patchStyleText,
@@ -38,6 +43,7 @@ import {
   $getSelection,
   $isElementNode,
   $isLineBreakNode,
+  $isParagraphNode,
   $isRangeSelection,
   $isTextNode,
   $setSelection,
@@ -3152,210 +3158,143 @@ describe('LexicalSelection tests', () => {
       );
     });
 
-    test('Triple-click overselection: focus at offset 0 of next block is skipped', async () => {
-      const testEditor = createTestEditor();
-      const element = document.createElement('div');
-      testEditor.setRootElement(element);
+    test('Triple-click overselection: focus at offset 0 of next block is skipped', () => {
+      using testEditor = buildEditorFromExtensions({
+        $initialEditorState: () => {
+          const text1 = $createTextNode('text 1');
+          const text2 = $createTextNode('text 2');
+          $getRoot().append(
+            $createParagraphNode().append(text1),
+            $createParagraphNode().append(text2),
+          );
 
-      await testEditor.update(() => {
-        const root = $getRoot();
-        const paragraph1 = $createParagraphNode();
-        const text1 = $createTextNode('text 1');
-        const paragraph2 = $createParagraphNode();
-        const text2 = $createTextNode('text 2');
-        root.append(paragraph1, paragraph2);
-        paragraph1.append(text1);
-        paragraph2.append(text2);
+          // Browser triple-click: focus lands on the text node of the
+          // following block at offset 0, even though visually only
+          // paragraph1's content is selected.
+          const selection = text1.select().setTextNodeRange(text1, 0, text2, 0);
 
-        const selection = $createRangeSelection();
-        $setSelection(selection);
-        // Browser triple-click: focus lands on the text node of the
-        // following block at offset 0, even though visually only
-        // paragraph1's content is selected.
-        $setAnchorPoint({
-          key: text1.__key,
-          offset: 0,
-          type: 'text',
-        });
-        $setFocusPoint({
-          key: text2.__key,
-          offset: 0,
-          type: 'text',
-        });
-
-        $setBlocksType(selection, () => {
-          return $createHeadingNode('h1');
-        });
-
-        const rootChildren = root.getChildren();
-        expect(rootChildren[0].__type).toBe('heading');
-        expect(rootChildren[1].__type).toBe('paragraph');
+          $setBlocksType(selection, () => $createHeadingNode('h1'));
+        },
+        dependencies: [RichTextExtension],
+        name: '@test',
+      });
+      testEditor.read(() => {
+        const rootChildren = $getRoot().getChildren();
+        expect($isHeadingNode(rootChildren[0])).toBe(true);
+        expect($isParagraphNode(rootChildren[1])).toBe(true);
         expect(rootChildren.length).toBe(2);
       });
     });
 
-    test('Triple-click overselection: focus inside nested inline at offset 0 is skipped', async () => {
-      const testEditor = createTestEditor();
-      const element = document.createElement('div');
-      testEditor.setRootElement(element);
+    test('Triple-click overselection: focus inside nested inline at offset 0 is skipped', () => {
+      using testEditor = buildEditorFromExtensions({
+        $initialEditorState: () => {
+          const text1 = $createTextNode('text 1');
+          const text2 = $createTextNode('text 2');
+          $getRoot().append(
+            $createParagraphNode().append(text1),
+            $createParagraphNode().append(
+              $createLinkNode('https://lexical.dev').append(text2),
+            ),
+          );
 
-      await testEditor.update(() => {
-        const root = $getRoot();
-        const paragraph1 = $createParagraphNode();
-        const text1 = $createTextNode('text 1');
-        const paragraph2 = $createParagraphNode();
-        const link2 = $createLinkNode('https://lexical.dev');
-        const text2 = $createTextNode('link');
-        root.append(paragraph1, paragraph2);
-        paragraph1.append(text1);
-        paragraph2.append(link2.append(text2));
+          // Browser triple-click: focus lands on the text node of the
+          // following block at offset 0, even though visually only
+          // paragraph1's content is selected.
+          const selection = text1.select().setTextNodeRange(text1, 0, text2, 0);
 
-        const selection = $createRangeSelection();
-        $setSelection(selection);
-        $setAnchorPoint({
-          key: text1.__key,
-          offset: 0,
-          type: 'text',
-        });
-        // Focus on a text node nested inside an inline element that
-        // is the first descendant of paragraph2.
-        $setFocusPoint({
-          key: text2.__key,
-          offset: 0,
-          type: 'text',
-        });
-
-        $setBlocksType(selection, () => {
-          return $createHeadingNode('h1');
-        });
-
-        const rootChildren = root.getChildren();
-        expect(rootChildren[0].__type).toBe('heading');
-        expect(rootChildren[1].__type).toBe('paragraph');
+          $setBlocksType(selection, () => $createHeadingNode('h1'));
+        },
+        dependencies: [RichTextExtension, LinkExtension],
+        name: '@test',
+      });
+      testEditor.read(() => {
+        const rootChildren = $getRoot().getChildren();
+        expect($isHeadingNode(rootChildren[0])).toBe(true);
+        expect($isParagraphNode(rootChildren[1])).toBe(true);
         expect(rootChildren.length).toBe(2);
       });
     });
 
-    test('Non-zero focus offset in next block still converts both blocks', async () => {
-      const testEditor = createTestEditor();
-      const element = document.createElement('div');
-      testEditor.setRootElement(element);
+    test('Non-zero focus offset in next block still converts both blocks', () => {
+      using testEditor = buildEditorFromExtensions({
+        $initialEditorState: () => {
+          const text1 = $createTextNode('text 1');
+          const text2 = $createTextNode('text 2');
+          $getRoot().append(
+            $createParagraphNode().append(text1),
+            $createParagraphNode().append(text2),
+          );
 
-      await testEditor.update(() => {
-        const root = $getRoot();
-        const paragraph1 = $createParagraphNode();
-        const text1 = $createTextNode('text 1');
-        const paragraph2 = $createParagraphNode();
-        const text2 = $createTextNode('text 2');
-        root.append(paragraph1, paragraph2);
-        paragraph1.append(text1);
-        paragraph2.append(text2);
+          const selection = text1.select().setTextNodeRange(text1, 0, text2, 1);
 
-        const selection = $createRangeSelection();
-        $setSelection(selection);
-        $setAnchorPoint({
-          key: text1.__key,
-          offset: 0,
-          type: 'text',
-        });
-        $setFocusPoint({
-          key: text2.__key,
-          offset: 1,
-          type: 'text',
-        });
-
-        $setBlocksType(selection, () => {
-          return $createHeadingNode('h1');
-        });
-
-        const rootChildren = root.getChildren();
-        expect(rootChildren[0].__type).toBe('heading');
-        expect(rootChildren[1].__type).toBe('heading');
+          $setBlocksType(selection, () => $createHeadingNode('h1'));
+        },
+        dependencies: [RichTextExtension],
+        name: '@test',
+      });
+      testEditor.read(() => {
+        const rootChildren = $getRoot().getChildren();
+        expect($isHeadingNode(rootChildren[0])).toBe(true);
+        expect($isHeadingNode(rootChildren[1])).toBe(true);
         expect(rootChildren.length).toBe(2);
       });
     });
 
-    test('Triple-click overselection spanning multiple blocks skips only the focus block', async () => {
-      const testEditor = createTestEditor();
-      const element = document.createElement('div');
-      testEditor.setRootElement(element);
+    test('Triple-click overselection spanning multiple blocks skips only the focus block', () => {
+      using testEditor = buildEditorFromExtensions({
+        $initialEditorState: () => {
+          const text1 = $createTextNode('text 1');
+          const text2 = $createTextNode('text 2');
+          const text3 = $createTextNode('text 3');
+          $getRoot().append(
+            $createParagraphNode().append(text1),
+            $createParagraphNode().append(text2),
+            $createParagraphNode().append(text3),
+          );
 
-      await testEditor.update(() => {
-        const root = $getRoot();
-        const paragraph1 = $createParagraphNode();
-        const text1 = $createTextNode('text 1');
-        const paragraph2 = $createParagraphNode();
-        const text2 = $createTextNode('text 2');
-        const paragraph3 = $createParagraphNode();
-        const text3 = $createTextNode('text 3');
-        root.append(paragraph1, paragraph2, paragraph3);
-        paragraph1.append(text1);
-        paragraph2.append(text2);
-        paragraph3.append(text3);
+          const selection = text1.select().setTextNodeRange(text1, 0, text3, 0);
 
-        const selection = $createRangeSelection();
-        $setSelection(selection);
-        $setAnchorPoint({
-          key: text1.__key,
-          offset: 0,
-          type: 'text',
-        });
-        $setFocusPoint({
-          key: text3.__key,
-          offset: 0,
-          type: 'text',
-        });
-
-        $setBlocksType(selection, () => {
-          return $createHeadingNode('h1');
-        });
-
-        const rootChildren = root.getChildren();
-        expect(rootChildren[0].__type).toBe('heading');
-        expect(rootChildren[1].__type).toBe('heading');
-        expect(rootChildren[2].__type).toBe('paragraph');
+          $setBlocksType(selection, () => $createHeadingNode('h1'));
+        },
+        dependencies: [RichTextExtension],
+        name: '@test',
+      });
+      testEditor.read(() => {
+        const rootChildren = $getRoot().getChildren();
+        expect($isHeadingNode(rootChildren[0])).toBe(true);
+        expect($isHeadingNode(rootChildren[1])).toBe(true);
+        expect($isParagraphNode(rootChildren[2])).toBe(true);
         expect(rootChildren.length).toBe(3);
       });
     });
 
-    test('Focus at offset 0 in next block whose first descendant has a prior sibling still converts focus block', async () => {
-      const testEditor = createTestEditor();
-      const element = document.createElement('div');
-      testEditor.setRootElement(element);
+    test('Focus at offset 0 in next block whose first descendant has a prior sibling still converts focus block', () => {
+      using testEditor = buildEditorFromExtensions({
+        $initialEditorState: () => {
+          const text1 = $createTextNode('text 1');
+          const text2a = $createTextNode('foo');
+          const text2b = $createTextNode('bar').setFormat('bold');
+          $getRoot().append(
+            $createParagraphNode().append(text1),
+            // text2b is the second child; offset 0 of text2b is NOT at
+            // the start of paragraph2 (text2a precedes it).
+            $createParagraphNode().append(text2a, text2b),
+          );
 
-      await testEditor.update(() => {
-        const root = $getRoot();
-        const paragraph1 = $createParagraphNode();
-        const text1 = $createTextNode('text 1');
-        const paragraph2 = $createParagraphNode();
-        const text2a = $createTextNode('foo');
-        const text2b = $createTextNode('bar');
-        root.append(paragraph1, paragraph2);
-        paragraph1.append(text1);
-        // text2b is the second child; offset 0 of text2b is NOT at
-        // the start of paragraph2 (text2a precedes it).
-        paragraph2.append(text2a, text2b);
+          const selection = text1
+            .select()
+            .setTextNodeRange(text1, 0, text2b, 0);
 
-        const selection = $createRangeSelection();
-        $setSelection(selection);
-        $setAnchorPoint({
-          key: text1.__key,
-          offset: 0,
-          type: 'text',
-        });
-        $setFocusPoint({
-          key: text2b.__key,
-          offset: 0,
-          type: 'text',
-        });
-
-        $setBlocksType(selection, () => {
-          return $createHeadingNode('h1');
-        });
-
-        const rootChildren = root.getChildren();
-        expect(rootChildren[0].__type).toBe('heading');
-        expect(rootChildren[1].__type).toBe('heading');
+          $setBlocksType(selection, () => $createHeadingNode('h1'));
+        },
+        dependencies: [RichTextExtension],
+        name: '@test',
+      });
+      testEditor.read(() => {
+        const rootChildren = $getRoot().getChildren();
+        expect($isHeadingNode(rootChildren[0])).toBe(true);
+        expect($isHeadingNode(rootChildren[1])).toBe(true);
         expect(rootChildren.length).toBe(2);
       });
     });

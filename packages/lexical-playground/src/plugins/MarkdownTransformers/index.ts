@@ -115,7 +115,7 @@ export const EMOJI: TextMatchTransformer = {
 export const EQUATION: TextMatchTransformer = {
   dependencies: [EquationNode],
   export: node => {
-    if (!$isEquationNode(node)) {
+    if (!$isEquationNode(node) || !node.__inline) {
       return null;
     }
 
@@ -126,6 +126,26 @@ export const EQUATION: TextMatchTransformer = {
   replace: (textNode, match) => {
     const [, equation] = match;
     const equationNode = $createEquationNode(equation, true);
+    textNode.replace(equationNode);
+  },
+  trigger: '$',
+  type: 'text-match',
+};
+
+export const BLOCK_EQUATION: TextMatchTransformer = {
+  dependencies: [EquationNode],
+  export: node => {
+    if (!$isEquationNode(node) || node.__inline) {
+      return null;
+    }
+
+    return `$$${node.getEquation()}$$`;
+  },
+  importRegExp: /\$\$([^$]+?)\$\$/,
+  regExp: /\$\$([^$]+?)\$\$$/,
+  replace: (textNode, match) => {
+    const [, equation] = match;
+    const equationNode = $createEquationNode(equation, false);
     textNode.replace(equationNode);
   },
   trigger: '$',
@@ -314,6 +334,7 @@ export const PLAYGROUND_TRANSFORMERS: Array<Transformer> = [
   HR,
   IMAGE,
   EMOJI,
+  BLOCK_EQUATION,
   EQUATION,
   TWEET,
   CHECK_LIST,

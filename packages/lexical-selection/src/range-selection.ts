@@ -54,15 +54,15 @@ export function $copyBlockFormatIndent(
 }
 
 function $isPointAtBlockStart(point: Point, block: ElementNode): boolean {
-  if (point.type !== 'text' || point.offset !== 0) {
+  if (point.offset !== 0) {
     return false;
   }
   let node: LexicalNode = point.getNode();
-  while (node !== block) {
+  while (!node.is(block)) {
     if (node.getPreviousSibling() !== null) {
       return false;
     }
-    const parent: LexicalNode | null = node.getParent();
+    const parent = node.getParent();
     if (parent === null) {
       return false;
     }

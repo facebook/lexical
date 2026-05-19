@@ -34,7 +34,7 @@ export const CodeHighlightExtension = defineExtension({
   dependencies: [
     configExtension(CodePrismExtension, {disabled: true}),
     configExtension(CodeShikiExtension, {disabled: true}),
-    configExtension(CodeIndentExtension, {tabSize: 2}),
+    configExtension(CodeIndentExtension, {escapeWithArrows: true, tabSize: 2}),
   ],
   name: '@lexical/playground/CodeHighlight',
   register: (editor, config, state) => {

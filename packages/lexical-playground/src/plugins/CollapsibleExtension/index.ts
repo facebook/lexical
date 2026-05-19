@@ -95,7 +95,8 @@ const $onEscapeDown = () => {
               contentParagraph.getTextContentSize()) ||
           (titleParagraph !== null &&
             selection.anchor.key === titleParagraph.getKey() &&
-            selection.anchor.offset === titleParagraph.getTextContentSize())
+            selection.anchor.offset === titleParagraph.getTextContentSize() &&
+            !container.getOpen())
         ) {
           container.insertAfter($createParagraphNode());
         }

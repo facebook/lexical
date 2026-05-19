@@ -33,7 +33,13 @@ export const CodeHighlightExtension = defineExtension({
   config: safeCast<CodeHighlightConfig>({mode: 'off'}),
   dependencies: [
     configExtension(CodePrismExtension, {disabled: true}),
-    configExtension(CodeShikiExtension, {disabled: true}),
+    configExtension(CodeShikiExtension, {
+      disabled: true,
+      // `{light, dark}` registry entry => vars-only output (no inline
+      // color); `PlaygroundEditorTheme.css` reads `--shiki-light(-bg)`
+      // / `--shiki-dark(-bg)` to apply the active scheme.
+      themes: {default: {dark: 'one-dark-pro', light: 'one-light'}},
+    }),
     configExtension(CodeIndentExtension, {tabSize: 2}),
   ],
   name: '@lexical/playground/CodeHighlight',

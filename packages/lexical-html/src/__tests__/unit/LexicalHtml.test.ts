@@ -422,4 +422,104 @@ describe('HTML', () => {
       expect(importAndGetDirection(html)).toBe(expected);
     });
   });
+
+  describe('html.isInlineDomNode preserves whitespace around custom inline elements', () => {
+    test('whitespace is stripped around unknown custom elements by default', () => {
+      const editor = createHeadlessEditor();
+
+      editor.update(
+        () => {
+          const parser = new DOMParser();
+          const dom = parser.parseFromString(
+            '<p>Hello <tooltip>world</tooltip> foo</p>',
+            'text/html',
+          );
+          const nodes = $generateNodesFromDOM(editor, dom);
+          $getRoot().append(...nodes);
+        },
+        {discrete: true},
+      );
+
+      const text = editor.read(() => $getRoot().getTextContent());
+      // Without isInlineDomNode config, spaces around <tooltip> are stripped
+      expect(text).toBe('Helloworldfoo');
+    });
+
+    test('whitespace is preserved around custom elements when isInlineDomNode is provided', () => {
+      const editor = createHeadlessEditor({
+        html: {
+          isInlineDomNode: (node: Node) =>
+            node.nodeName.toLowerCase() === 'tooltip',
+        },
+      });
+
+      editor.update(
+        () => {
+          const parser = new DOMParser();
+          const dom = parser.parseFromString(
+            '<p>Hello <tooltip>world</tooltip> foo</p>',
+            'text/html',
+          );
+          const nodes = $generateNodesFromDOM(editor, dom);
+          $getRoot().append(...nodes);
+        },
+        {discrete: true},
+      );
+
+      const text = editor.read(() => $getRoot().getTextContent());
+      // With isInlineDomNode config, spaces around <tooltip> are preserved
+      expect(text).toBe('Hello world foo');
+    });
+
+    test('isInlineDomNode works with multiple custom elements', () => {
+      const customInlineTags = new Set(['tooltip', 'mention', 'badge']);
+      const editor = createHeadlessEditor({
+        html: {
+          isInlineDomNode: (node: Node) =>
+            customInlineTags.has(node.nodeName.toLowerCase()),
+        },
+      });
+
+      editor.update(
+        () => {
+          const parser = new DOMParser();
+          const dom = parser.parseFromString(
+            '<p>Hello <mention>@user</mention> and <badge>admin</badge> here</p>',
+            'text/html',
+          );
+          const nodes = $generateNodesFromDOM(editor, dom);
+          $getRoot().append(...nodes);
+        },
+        {discrete: true},
+      );
+
+      const text = editor.read(() => $getRoot().getTextContent());
+      expect(text).toBe('Hello @user and admin here');
+    });
+
+    test('isInlineDomNode does not affect native inline elements', () => {
+      const editor = createHeadlessEditor({
+        html: {
+          isInlineDomNode: () => false,
+        },
+      });
+
+      editor.update(
+        () => {
+          const parser = new DOMParser();
+          const dom = parser.parseFromString(
+            '<p>Hello <span>world</span> foo</p>',
+            'text/html',
+          );
+          const nodes = $generateNodesFromDOM(editor, dom);
+          $getRoot().append(...nodes);
+        },
+        {discrete: true},
+      );
+
+      const text = editor.read(() => $getRoot().getTextContent());
+      // Native inline elements still preserve whitespace regardless of custom check
+      expect(text).toBe('Hello world foo');
+    });
+  });
 });

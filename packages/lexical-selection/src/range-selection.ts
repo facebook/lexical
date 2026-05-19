@@ -8,6 +8,7 @@
 
 import type {
   BaseSelection,
+  DecoratorNode,
   ElementNode,
   LexicalNode,
   NodeKey,
@@ -53,6 +54,30 @@ export function $copyBlockFormatIndent(
   }
 }
 
+function $isPointAtBlockStart(point: Point, block: ElementNode): boolean {
+  if (point.offset !== 0) {
+    return false;
+  }
+  let node: LexicalNode = point.getNode();
+  // When an ElementNode is empty it's not possible to distinguish if
+  // the selection's intent is the entire block or the edge so we consider
+  // it to be the entire block
+  if ($isElementNode(node) && node.isEmpty()) {
+    return false;
+  }
+  while (!node.is(block)) {
+    if (node.getPreviousSibling() !== null) {
+      return false;
+    }
+    const parent = node.getParent();
+    if (parent === null) {
+      return false;
+    }
+    node = parent;
+  }
+  return true;
+}
+
 /**
  * Converts all nodes in the selection that are of one block type to another.
  * @param selection - The selected blocks to be converted.
@@ -67,12 +92,14 @@ export function $setBlocksType<T extends ElementNode>(
     newNodeDest: T,
   ) => void = $copyBlockFormatIndent,
 ): void {
-  if (selection === null) {
+  if (!selection) {
     return;
   }
   // Selections tend to not include their containing blocks so we effectively
   // expand it here
   const anchorAndFocus = selection.getStartEndPoints();
+  let skipFocusAtBlockStart = false;
+  let focusBlock: ElementNode | DecoratorNode<unknown> | null = null;
   const blockMap = new Map<NodeKey, ElementNode>();
   if (anchorAndFocus) {
     const [anchor, focus] = anchorAndFocus;
@@ -80,18 +107,25 @@ export function $setBlocksType<T extends ElementNode>(
       anchor.getNode(),
       INTERNAL_$isBlock,
     );
-    const focusBlock = $findMatchingParent(focus.getNode(), INTERNAL_$isBlock);
+    focusBlock = $findMatchingParent(focus.getNode(), INTERNAL_$isBlock);
+    skipFocusAtBlockStart =
+      $isElementNode(focusBlock) &&
+      !focusBlock.is(anchorBlock) &&
+      $isPointAtBlockStart(focus, focusBlock);
     if ($isElementNode(anchorBlock)) {
       blockMap.set(anchorBlock.getKey(), anchorBlock);
     }
-    if ($isElementNode(focusBlock)) {
+    if ($isElementNode(focusBlock) && !skipFocusAtBlockStart) {
       blockMap.set(focusBlock.getKey(), focusBlock);
     }
   }
   for (const node of selection.getNodes()) {
     if ($isElementNode(node) && INTERNAL_$isBlock(node)) {
+      if (skipFocusAtBlockStart && node.is(focusBlock)) {
+        continue;
+      }
       blockMap.set(node.getKey(), node);
-    } else if (anchorAndFocus === null) {
+    } else if (!anchorAndFocus) {
       const ancestorBlock = $findMatchingParent(node, INTERNAL_$isBlock);
       if ($isElementNode(ancestorBlock)) {
         blockMap.set(ancestorBlock.getKey(), ancestorBlock);
@@ -101,7 +135,7 @@ export function $setBlocksType<T extends ElementNode>(
   // Selection remapping is delegated to LexicalNode.replace (and the
   // ListItemNode.replace override): both remap an element-anchored point
   // on the replaced block to {key: replacement, offset: prevSize + offset}.
-  for (const [, prevNode] of blockMap) {
+  for (const prevNode of blockMap.values()) {
     const element = $createElement();
     $afterCreateElement(prevNode, element);
     prevNode.replace(element, true);

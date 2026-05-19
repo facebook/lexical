@@ -51,6 +51,11 @@ export {
   type NormalizeInlineElementsConfig,
   NormalizeInlineElementsExtension,
 } from './NormalizeInlineElementsExtension';
+export {
+  type NormalizeTripleClickSelectionConfig,
+  NormalizeTripleClickSelectionExtension,
+  type NormalizeTripleClickSelectionOutput,
+} from './NormalizeTripleClickSelectionExtension';
 export {SelectionAlwaysOnDisplayExtension} from './SelectionAlwaysOnDisplayExtension';
 export {
   batch,

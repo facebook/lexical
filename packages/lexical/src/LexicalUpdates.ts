@@ -605,7 +605,6 @@ export function $commitPendingUpdates(
   const normalizedNodes = editor._normalizedNodes;
   const tags = editor._updateTags;
   const deferred = editor._deferred;
-  const nodeCount = pendingEditorState._nodeMap.size;
 
   if (needsUpdate) {
     editor._dirtyType = NO_DIRTY_NODES;
@@ -656,7 +655,6 @@ export function $commitPendingUpdates(
           domSelection,
           tags,
           rootElement,
-          nodeCount,
         );
       }
       updateDOMBlockCursorElement(editor, rootElement, pendingSelection);

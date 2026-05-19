@@ -48,6 +48,43 @@ import {
 export {contextUpdater, contextValue} from './ContextRecord';
 export {domOverride} from './domOverride';
 export {DOMRenderExtension} from './DOMRenderExtension';
+export type {
+  AnyDOMImportRule,
+  AttrMatchOptions,
+  CapturesOfSelector,
+  ChildSchema,
+  CompiledSelector,
+  DOMImportContext,
+  DOMImportExtensionOutput,
+  DOMImportFn,
+  DOMImportRule,
+  ElementSelectorBuilder,
+  GenerateNodesFromDOMOptions,
+  ImportChildrenOpts,
+  ImportContextPairOrUpdater,
+  ImportNodeOpts,
+  ImportStateConfig,
+  NodeOfSelector,
+  StyleMatchOptions,
+} from './import';
+export {
+  $getImportContextValue,
+  $withImportContext,
+  BlockSchema,
+  createImportState,
+  defineImportRule,
+  type DOMImportConfig,
+  DOMImportExtension,
+  ImportSource,
+  type ImportSourceKind,
+  ImportTextFormat,
+  InlineSchema,
+  isElementOfTag,
+  NestedBlockSchema,
+  parseSelector,
+  RootSchema,
+  sel,
+} from './import';
 export {
   $getRenderContextValue,
   $withRenderContext,

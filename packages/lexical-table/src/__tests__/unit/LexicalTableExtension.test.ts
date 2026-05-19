@@ -16,6 +16,7 @@ import {
   $createTableNode,
   $createTableNodeWithDimensions,
   $createTableRowNode,
+  $createTableSelectionFrom,
   $isTableCellNode,
   $isTableNode,
   $isTableRowNode,
@@ -33,6 +34,7 @@ import {
   $isElementNode,
   $isParagraphNode,
   $isRangeSelection,
+  $setSelection,
   defineExtension,
   LexicalEditorWithDispose,
   NodeKey,
@@ -693,6 +695,65 @@ describe('TableExtension', () => {
           'Expected RangeSelection when paragraph exists after table',
         );
         expect($isTableSelection(selection)).toBe(false);
+      });
+    });
+
+    test('prevents pasting a single table into multi-cell selection when hasNestedTables is false', async () => {
+      // Set up a 2x3 table
+      editor.update(
+        () => {
+          const root = $getRoot().clear();
+          const table = $createTableNodeWithDimensions(2, 3, false);
+          root.append(table);
+        },
+        {discrete: true},
+      );
+
+      // Select multiple cells using TableSelection
+      editor.update(
+        () => {
+          const table = $getRoot().getFirstChild();
+          assert($isTableNode(table), 'Expected table node');
+          const row0 = table.getFirstChild();
+          assert($isTableRowNode(row0), 'Expected row');
+          const cell00 = row0.getFirstChild();
+          assert($isTableCellNode(cell00), 'Expected cell');
+          const row1 = table.getLastChild();
+          assert($isTableRowNode(row1), 'Expected row');
+          const cell11 = row1.getChildAtIndex(1);
+          assert($isTableCellNode(cell11), 'Expected cell');
+          $setSelection($createTableSelectionFrom(table, cell00, cell11));
+        },
+        {discrete: true},
+      );
+
+      editor.update(
+        () => {
+          const newTable = $createTableNodeWithDimensions(1, 1, false);
+          const selection = $getSelection();
+          assert($isTableSelection(selection), 'Expected table selection');
+          $insertGeneratedNodes(editor, [newTable], selection);
+        },
+        {discrete: true},
+      );
+
+      // Verify no nested table was created
+      editor.getEditorState().read(() => {
+        const root = $getRoot();
+        const table = root.getFirstChild();
+        assert($isTableNode(table), 'Expected table node');
+        // Check all cells in the table — none should contain a nested TableNode
+        const rows = table.getChildren();
+        for (let r = 0; r < rows.length; r++) {
+          const row = rows[r];
+          assert($isTableRowNode(row), 'Expected row');
+          const cells = row.getChildren();
+          for (let c = 0; c < cells.length; c++) {
+            const cell = cells[c];
+            assert($isTableCellNode(cell), 'Expected cell');
+            expect(cell.getChildren().some($isTableNode)).toBe(false);
+          }
+        }
       });
     });
   });

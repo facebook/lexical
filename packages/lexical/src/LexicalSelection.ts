@@ -580,9 +580,10 @@ export class RangeSelection implements BaseSelection {
     anchorOffset: number,
     focusNode: TextNode,
     focusOffset: number,
-  ): void {
+  ): this {
     this.anchor.set(anchorNode.__key, anchorOffset, 'text');
     this.focus.set(focusNode.__key, focusOffset, 'text');
+    return this;
   }
 
   /**

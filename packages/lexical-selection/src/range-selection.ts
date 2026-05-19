@@ -54,7 +54,7 @@ export function $copyBlockFormatIndent(
 }
 
 function $isPointAtBlockStart(point: Point, block: ElementNode): boolean {
-  if (point.offset !== 0) {
+  if (point.type !== 'text' || point.offset !== 0) {
     return false;
   }
   let node: LexicalNode = point.getNode();

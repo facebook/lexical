@@ -9,7 +9,7 @@
 /// <reference types="trusted-types" />
 
 import {getPeerDependencyFromEditor} from '@lexical/extension';
-import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
+import {$generateHtmlFromNodes} from '@lexical/html';
 import {$sliceSelectedTextNodeContent} from '@lexical/selection';
 import {objectKlassEquals} from '@lexical/utils';
 import {
@@ -51,6 +51,8 @@ import {
 } from 'lexical';
 import caretFromPoint from 'shared/caretFromPoint';
 import invariant from 'shared/invariant';
+
+import {getClipboardImporter} from './ClipboardImportExtension';
 
 export interface LexicalClipboardData {
   'text/html'?: string | undefined;
@@ -181,7 +183,8 @@ export function $insertDataTransferForRichText(
         trustHTML(htmlString) as string,
         'text/html',
       );
-      const nodes = $generateNodesFromDOM(editor, dom);
+      const importer = getClipboardImporter(editor);
+      const nodes = importer(editor, dom);
       return $insertGeneratedNodes(editor, nodes, selection);
     } catch (error) {
       console.error(error);

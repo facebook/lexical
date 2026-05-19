@@ -27,3 +27,8 @@ export {
   type LexicalClipboardData,
   setLexicalClipboardDataTransfer,
 } from './clipboard';
+export {
+  type ClipboardImportConfig,
+  type ClipboardImporter,
+  ClipboardImportExtension,
+} from './ClipboardImportExtension';

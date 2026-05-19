@@ -68,9 +68,12 @@ export type {
   StyleMatchOptions,
 } from './import';
 export {
+  $generateNodesFromDOMViaExtension,
   $getImportContextValue,
   $withImportContext,
   BlockSchema,
+  CoreImportExtension,
+  CoreImportRules,
   createImportState,
   defineImportRule,
   type DOMImportConfig,

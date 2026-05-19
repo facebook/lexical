@@ -12,7 +12,13 @@ import type {
   ImportContextPairOrUpdater,
 } from './types';
 
-import {defineExtension, shallowMergeConfig} from 'lexical';
+import {getExtensionDependencyFromEditor} from '@lexical/extension';
+import {
+  defineExtension,
+  type LexicalEditor,
+  type LexicalNode,
+  shallowMergeConfig,
+} from 'lexical';
 
 import {DOMImportExtensionName} from '../constants';
 import {contextFromPairs} from '../ContextRecord';
@@ -96,3 +102,24 @@ export const DOMImportExtension = defineExtension<
   },
   name: DOMImportExtensionName,
 });
+
+/**
+ * Look up the editor's {@link DOMImportExtension} and run its
+ * `$generateNodesFromDOM`. Designed as a drop-in replacement for the
+ * legacy `$generateNodesFromDOM(editor, dom)` signature so it can be
+ * supplied to `ClipboardImportExtension.$generateNodesFromDOM` (or any
+ * other consumer that wants to route through the extension pipeline).
+ *
+ * Throws if the editor was not built with {@link DOMImportExtension} as a
+ * dependency.
+ *
+ * @experimental
+ */
+export function $generateNodesFromDOMViaExtension(
+  editor: LexicalEditor,
+  dom: Document | ParentNode,
+  options?: GenerateNodesFromDOMOptions,
+): LexicalNode[] {
+  const dep = getExtensionDependencyFromEditor(editor, DOMImportExtension);
+  return dep.output.$generateNodesFromDOM(dom, options);
+}

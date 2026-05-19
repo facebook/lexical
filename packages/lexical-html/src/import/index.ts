@@ -27,8 +27,14 @@ export const sel = {
   text: selBase.text,
 };
 
+export {CoreImportExtension} from './CoreImportExtension';
+export {CoreImportRules} from './coreImportRules';
 export {defineImportRule} from './defineImportRule';
-export {type DOMImportConfig, DOMImportExtension} from './DOMImportExtension';
+export {
+  $generateNodesFromDOMViaExtension,
+  type DOMImportConfig,
+  DOMImportExtension,
+} from './DOMImportExtension';
 export {
   $getImportContextValue,
   $withImportContext,

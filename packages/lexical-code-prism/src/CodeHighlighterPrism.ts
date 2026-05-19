@@ -12,10 +12,12 @@ import {
   $isCodeHighlightNode,
   $isCodeNode,
   CodeExtension,
+  CodeGutterExtension,
   CodeHighlightNode,
   CodeIndentExtension,
   CodeNode,
   DEFAULT_CODE_LANGUAGE,
+  registerCodeGutter,
   registerCodeIndentation,
 } from '@lexical/code-core';
 import {effect, namedSignals} from '@lexical/extension';
@@ -84,30 +86,6 @@ function $textNodeTransform(
     // code highlight nodes converted back to normal text
     node.replace($createTextNode(node.__text));
   }
-}
-
-function updateCodeGutter(node: CodeNode, editor: LexicalEditor): void {
-  const codeElement = editor.getElementByKey(node.getKey());
-  if (codeElement === null) {
-    return;
-  }
-  const children = node.getChildren();
-  const childrenLength = children.length;
-  // @ts-ignore: internal field
-  if (childrenLength === codeElement.__cachedChildrenLength) {
-    // Avoid updating the attribute if the children length hasn't changed.
-    return;
-  }
-  // @ts-ignore:: internal field
-  codeElement.__cachedChildrenLength = childrenLength;
-  let gutter = '1';
-  let count = 1;
-  for (let i = 0; i < childrenLength; i++) {
-    if ($isLineBreakNode(children[i])) {
-      gutter += '\n' + ++count;
-    }
-  }
-  codeElement.setAttribute('data-gutter', gutter);
 }
 
 function $codeNodeTransform(
@@ -312,17 +290,19 @@ interface TransformState {
 
 /**
  * @internal
- * Register only the Prism highlighting transforms and the gutter
- * mutation listener. No keyboard / indent handlers — those are the
- * responsibility of
+ * Register only the Prism highlighting transforms. The gutter
+ * mutation listener is provided separately via
+ * {@link "@lexical/code-core".registerCodeGutter} /
+ * {@link "@lexical/code-core".CodeGutterExtension}, and the keyboard /
+ * indent handlers via
  * {@link "@lexical/code-core".registerCodeIndentation} /
  * {@link "@lexical/code-core".CodeIndentExtension}.
  *
- * Used by {@link CodePrismExtension}, whose `CodeIndentExtension`
- * dependency handles the indent side. The legacy
- * {@link registerCodeHighlighting} wrapper combines this helper with
- * `registerCodeIndentation` for direct callers that want the original
- * single-call setup.
+ * Used by {@link CodePrismExtension}, whose `CodeGutterExtension` and
+ * `CodeIndentExtension` dependencies handle the gutter and indent
+ * sides. The legacy {@link registerCodeHighlighting} wrapper combines
+ * this helper with both `registerCodeGutter` and `registerCodeIndentation`
+ * for direct callers that want the original single-call setup.
  *
  * Exported for use by the package's own unit tests; not re-exported
  * from the package entry point.
@@ -331,35 +311,11 @@ export function registerHighlightingOnly(
   editor: LexicalEditor,
   tokenizer: Tokenizer,
 ): () => void {
-  const registrations = [];
-
-  // Only register the mutation listener if not in headless mode
-  if (editor._headless !== true) {
-    registrations.push(
-      editor.registerMutationListener(
-        CodeNode,
-        mutations => {
-          editor.getEditorState().read(() => {
-            for (const [key, type] of mutations) {
-              if (type !== 'destroyed') {
-                const node = $getNodeByKey(key);
-                if (node !== null) {
-                  updateCodeGutter(node as CodeNode, editor);
-                }
-              }
-            }
-          });
-        },
-        {skipInitialization: false},
-      ),
-    );
-  }
-
   const transformState: TransformState = {
     didTransform: false,
     nodesCurrentlyHighlighting: new Set(),
   };
-  registrations.push(
+  return mergeRegister(
     editor.registerNodeTransform(
       CodeNode,
       $codeNodeTransform.bind(null, editor, tokenizer, transformState),
@@ -373,8 +329,6 @@ export function registerHighlightingOnly(
       $textNodeTransform.bind(null, editor, tokenizer, transformState),
     ),
   );
-
-  return mergeRegister(...registrations);
 }
 
 /**
@@ -394,6 +348,7 @@ export function registerCodeHighlighting(
   }
   return mergeRegister(
     registerHighlightingOnly(editor, tokenizer),
+    registerCodeGutter(editor),
     registerCodeIndentation(editor),
   );
 }
@@ -424,7 +379,7 @@ export const CodePrismExtension = defineExtension({
     disabled: false,
     tokenizer: PrismTokenizer,
   }),
-  dependencies: [CodeExtension, CodeIndentExtension],
+  dependencies: [CodeExtension, CodeGutterExtension, CodeIndentExtension],
   name: '@lexical/code-prism',
   register: (editor, config, state) => {
     const stores = state.getOutput();

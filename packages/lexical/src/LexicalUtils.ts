@@ -1944,6 +1944,8 @@ export function isBlockDomNode(
     : BLOCK_TAG_RE.test(node.nodeName);
 }
 
+const BlockNodeBrand: unique symbol = Symbol.for('@lexical/BlockNodeBrand');
+
 /**
  * @internal
  *
@@ -1959,7 +1961,7 @@ export function isBlockDomNode(
  */
 export function INTERNAL_$isBlock(
   node: LexicalNode,
-): node is ElementNode | DecoratorNode<unknown> {
+): node is (ElementNode | DecoratorNode<unknown>) & {[BlockNodeBrand]: never} {
   if ($isDecoratorNode(node) && !node.isInline()) {
     return true;
   }

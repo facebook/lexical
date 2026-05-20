@@ -912,31 +912,25 @@ test.describe.parallel('Selection', () => {
     );
   });
 
-  test(
-    'Can delete sibling elements forward',
-    {
-      tag: '@flaky',
-    },
-    async ({page, isPlainText}) => {
-      test.skip(isPlainText);
+  test('Can delete sibling elements forward', async ({page, isPlainText}) => {
+    test.skip(isPlainText);
 
-      await focusEditor(page);
-      await page.keyboard.press('Enter');
-      await page.keyboard.type('# Title');
-      await page.keyboard.press('ArrowUp');
-      await deleteForward(page);
-      await assertHTML(
-        page,
-        html`
-          <h1 class="PlaygroundEditorTheme__h1" dir="auto">
-            <span data-lexical-text="true">Title</span>
-          </h1>
-        `,
-      );
-    },
-  );
+    await focusEditor(page);
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('# Title');
+    await page.keyboard.press('ArrowUp');
+    await deleteForward(page);
+    await assertHTML(
+      page,
+      html`
+        <h1 class="PlaygroundEditorTheme__h1" dir="auto">
+          <span data-lexical-text="true">Title</span>
+        </h1>
+      `,
+    );
+  });
 
-  test('Can adjust triple click selection', async ({
+  test('Can adjust triple click selection paragraph', async ({
     page,
     isPlainText,
     isCollab,
@@ -950,6 +944,28 @@ test.describe.parallel('Selection', () => {
       .locator('div[contenteditable="true"] > p')
       .first()
       .click({clickCount: 3});
+    const expectedSelection = createHumanReadableSelection(
+      'the whole first paragraph',
+      {
+        anchorOffset: {desc: 'start of Paragraph 1 text', value: 0},
+        anchorPath: [
+          {desc: 'first paragraph', value: 0},
+          {desc: 'first span', value: 0},
+          {desc: 'Text node', value: 0},
+        ],
+        focusOffset: {
+          desc: 'end of Paragraph 1 text',
+          value: 'Paragraph 1'.length,
+        },
+        focusPath: [
+          {desc: 'first paragraph', value: 0},
+          {desc: 'first span', value: 0},
+          {desc: 'Text node', value: 0},
+        ],
+      },
+    );
+
+    await assertSelection(page, expectedSelection);
 
     await click(page, '.block-controls');
     await click(page, '.dropdown .item:has(.icon.h1)');
@@ -965,6 +981,72 @@ test.describe.parallel('Selection', () => {
         </p>
       `,
     );
+  });
+
+  test('Can adjust triple click selection linebreak', async ({
+    page,
+    isCollab,
+  }) => {
+    test.skip(isCollab);
+
+    await page.keyboard.type('Line 1');
+    await page.keyboard.down('Shift');
+    await page.keyboard.press('Enter');
+    await page.keyboard.down('Shift');
+    await page.keyboard.type('Line 2');
+    await page.keyboard.down('Shift');
+    await page.keyboard.press('Enter');
+    await page.keyboard.down('Shift');
+    await page.keyboard.type('Line 3');
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">Line 1</span>
+          <br />
+          <span data-lexical-text="true">Line 2</span>
+          <br />
+          <span data-lexical-text="true">Line 3</span>
+        </p>
+      `,
+    );
+    await page
+      .locator('div[contenteditable="true"] > p > span')
+      .nth(1)
+      .click({clickCount: 3});
+    const expectedSelection = createHumanReadableSelection(
+      'the whole second line',
+      {
+        anchorOffset: {desc: 'start of Line 2 text', value: 0},
+        anchorPath: [
+          {desc: 'first paragraph', value: 0},
+          {desc: 'second span after br', value: 2},
+          {desc: 'Text node', value: 0},
+        ],
+        focusOffset: {
+          desc: 'end of Line 2 text',
+          value: 'Line 2'.length,
+        },
+        focusPath: [
+          {desc: 'first paragraph', value: 0},
+          {desc: 'second span after br', value: 2},
+          {desc: 'Text node', value: 0},
+        ],
+      },
+    );
+
+    await assertSelection(page, expectedSelection);
+
+    expect(
+      await evaluate(page, () => {
+        const editor = document.querySelector(
+          'div[contenteditable="true"]',
+        ).__lexicalEditor;
+        return editor.read(() =>
+          editor._editorState._selection.getTextContent(),
+        );
+      }),
+    ).toEqual('Line 2');
   });
 
   test('Can adjust triple click selection with', async ({
@@ -1569,78 +1651,81 @@ test.describe.parallel('Selection', () => {
     });
   });
 
-  test(
-    'shift+arrowdown into a table, when the table is the last node, selects the whole table',
-    {tag: '@flaky'},
-    async ({page, isPlainText, isCollab, browserName}) => {
-      test.skip(isPlainText);
-      await focusEditor(page);
-      await insertTable(page, 2, 2);
-      await moveToEditorEnd(page);
-      await deleteBackward(page);
-      await moveToEditorBeginning(page);
-      await page.keyboard.down('Shift');
-      await page.keyboard.press('ArrowDown');
-      await page.keyboard.up('Shift');
-      await assertSelection(page, {
-        anchorOffset: 0,
-        anchorPath: [0],
-        focusOffset: 1,
-        focusPath: [1, 2, 1],
-      });
-    },
-  );
+  test('shift+arrowdown into a table, when the table is the last node, selects the whole table', async ({
+    page,
+    isPlainText,
+    isCollab,
+    browserName,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await insertTable(page, 2, 2);
+    await moveToEditorEnd(page);
+    await deleteBackward(page);
+    await moveToEditorBeginning(page);
+    await page.keyboard.down('Shift');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.up('Shift');
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [0],
+      focusOffset: 1,
+      focusPath: [1, 2, 1],
+    });
+  });
 
-  test(
-    'shift+arrowup into a table, when the table is the first node, selects the whole table',
-    {tag: '@flaky'},
-    async ({page, isPlainText, isCollab, browserName}) => {
-      test.skip(isPlainText);
-      await focusEditor(page);
-      await insertTable(page, 2, 2);
-      await moveToEditorBeginning(page);
-      await deleteBackward(page);
-      await moveToEditorEnd(page);
-      await page.keyboard.down('Shift');
-      await page.keyboard.press('ArrowUp');
-      await page.keyboard.up('Shift');
-      await assertSelection(page, {
-        anchorOffset: 0,
-        anchorPath: [1],
-        focusOffset: 0,
-        focusPath: [0, 1, 0],
-      });
-    },
-  );
+  test('shift+arrowup into a table, when the table is the first node, selects the whole table', async ({
+    page,
+    isPlainText,
+    isCollab,
+    browserName,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await insertTable(page, 2, 2);
+    await moveToEditorBeginning(page);
+    await deleteBackward(page);
+    await moveToEditorEnd(page);
+    await page.keyboard.down('Shift');
+    await page.keyboard.press('ArrowUp');
+    await page.keyboard.up('Shift');
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [1],
+      focusOffset: 0,
+      focusPath: [0, 1, 0],
+    });
+  });
 
-  test(
-    'shift+arrowdown into a table, when the table is the only node, selects the whole table',
-    {tag: '@flaky'},
-    async ({page, isPlainText, isCollab, browserName}) => {
-      test.skip(isPlainText);
-      await focusEditor(page);
-      await insertTable(page, 2, 2);
-      await moveToEditorBeginning(page);
-      await deleteBackward(page);
-      await moveToEditorEnd(page);
-      await deleteBackward(page);
-      await moveToEditorBeginning(page);
-      await moveUp(page, 1);
-      await assertSelection(page, {
-        anchorOffset: 0,
-        anchorPath: [],
-        focusOffset: 0,
-        focusPath: [],
-      });
-      await page.keyboard.down('Shift');
-      await page.keyboard.press('ArrowDown');
-      await page.keyboard.up('Shift');
-      await assertTableSelectionCoordinates(page, {
-        anchor: {x: 0, y: 0},
-        focus: {x: 1, y: 1},
-      });
-    },
-  );
+  test('shift+arrowdown into a table, when the table is the only node, selects the whole table', async ({
+    page,
+    isPlainText,
+    isCollab,
+    browserName,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await insertTable(page, 2, 2);
+    await moveToEditorBeginning(page);
+    await deleteBackward(page);
+    await moveToEditorEnd(page);
+    await deleteBackward(page);
+    await moveToEditorBeginning(page);
+    await moveUp(page, 1);
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [],
+      focusOffset: 0,
+      focusPath: [],
+    });
+    await page.keyboard.down('Shift');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.up('Shift');
+    await assertTableSelectionCoordinates(page, {
+      anchor: {x: 0, y: 0},
+      focus: {x: 1, y: 1},
+    });
+  });
 
   test('shift+arrowup into a table, when the table is the only node, selects the whole table', async ({
     page,

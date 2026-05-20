@@ -580,9 +580,10 @@ export class RangeSelection implements BaseSelection {
     anchorOffset: number,
     focusNode: TextNode,
     focusOffset: number,
-  ): void {
+  ): this {
     this.anchor.set(anchorNode.__key, anchorOffset, 'text');
     this.focus.set(focusNode.__key, focusOffset, 'text');
+    return this;
   }
 
   /**
@@ -3042,6 +3043,7 @@ function $getElementAndOffsetForPoint(
   return [element, offset];
 }
 
+/** @internal */
 export function $updateDOMSelection(
   prevSelection: BaseSelection | null,
   nextSelection: BaseSelection | null,
@@ -3049,7 +3051,6 @@ export function $updateDOMSelection(
   domSelection: Selection,
   tags: Set<string>,
   rootElement: HTMLElement,
-  nodeCount: number,
 ): void {
   const activeElement = document.activeElement;
 

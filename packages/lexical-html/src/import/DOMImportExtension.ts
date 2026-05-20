@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import type {ContextRecord} from '../types';
 import type {
   AnyDOMImportRule,
   DOMImportExtensionOutput,
@@ -12,8 +13,6 @@ import type {
   DOMPreprocessFn,
   GenerateNodesFromDOMOptions,
   ImportContextPairOrUpdater,
-  ImportSession,
-  ImportStateConfig,
 } from './types';
 
 import {getExtensionDependencyFromEditor} from '@lexical/extension';
@@ -24,11 +23,11 @@ import {
   shallowMergeConfig,
 } from 'lexical';
 
-import {DOMImportExtensionName} from '../constants';
-import {contextFromPairs, contextValue} from '../ContextRecord';
+import {DOMImportContextSymbol, DOMImportExtensionName} from '../constants';
+import {$withFullContext, contextFromPairs} from '../ContextRecord';
 import {type CompiledDispatch, compileImportRules} from './compileImportRules';
 import {defineImportRule} from './defineImportRule';
-import {$withImportContext, ImportSessionImpl} from './ImportContext';
+import {ImportSessionImpl} from './ImportContext';
 import {$inlineStylesFromStyleSheets} from './inlineStylesFromStyleSheets';
 import {$runImport} from './runImport';
 import {selBase} from './sel';
@@ -135,36 +134,38 @@ export const DOMImportExtension = defineExtension<
         dom: Document | ParentNode,
         options?: GenerateNodesFromDOMOptions,
       ) => {
-        const session: ImportSession = new ImportSessionImpl();
-        // Collected context pairs from preprocess-time setContext calls.
-        // Applied (on top of options.context) before the walk so the
-        // accumulated context is visible everywhere downstream.
-        const fromPreprocess: ImportContextPairOrUpdater[] = [];
-        const preprocessCtx: DOMPreprocessContext = {
-          editor,
-          session,
-          setContext<V>(cfg: ImportStateConfig<V>, value: V) {
-            fromPreprocess.push(contextValue(cfg, value));
-          },
-        };
+        // The session record IS the root layer of the walk's context.
+        // Start with per-call options.context applied on top of the
+        // editor's contextDefaults, then ensure we have a *fresh*
+        // mutable child (never the shared defaults record) so
+        // session.set writes never leak into the editor's config.
+        const fromOpts =
+          options && options.context
+            ? contextFromPairs(options.context, defaults)
+            : defaults;
+        const sessionRecord: ContextRecord<typeof DOMImportContextSymbol> =
+          fromOpts !== undefined && fromOpts !== defaults
+            ? fromOpts
+            : Object.create(defaults || null);
+        const session = new ImportSessionImpl(sessionRecord);
+        const preprocessCtx: DOMPreprocessContext = {editor, session};
         // Stack of preprocessors: config-level first, then per-call.
         // Top of stack (last in array) runs first; `next()` defers to
         // the next-lower one. Matches the GetClipboardDataExtension
         // convention so app-registered preprocessors can wrap built-in
-        // ones via `next()`.
+        // ones via `next()`. Preprocess writes via `ctx.session.set`
+        // mutate the session record directly.
         const stack: readonly DOMPreprocessFn[] =
           options && options.preprocess
             ? [...configPreprocess, ...options.preprocess]
             : configPreprocess;
         $runPreprocessStack(stack, dom, preprocessCtx);
-        const accumulatedContext: readonly ImportContextPairOrUpdater[] =
-          options && options.context
-            ? [...options.context, ...fromPreprocess]
-            : fromPreprocess;
-        const $run = () => $runImport(dispatch, editor, dom, session);
-        return accumulatedContext.length > 0
-          ? $withImportContext(accumulatedContext, editor)($run)
-          : $run();
+        return $withFullContext(
+          DOMImportContextSymbol,
+          sessionRecord,
+          () => $runImport(dispatch, editor, dom, session),
+          editor,
+        );
       },
       defaults,
     };

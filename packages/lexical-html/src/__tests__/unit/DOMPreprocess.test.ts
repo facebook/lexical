@@ -110,7 +110,7 @@ describe('DOMImportExtension preprocess', () => {
       if (meta && isHTMLElement(meta)) {
         const content = meta.getAttribute('content');
         if (content) {
-          ctx.setContext(SourceState, content);
+          ctx.session.set(SourceState, content);
         }
       }
       $next();

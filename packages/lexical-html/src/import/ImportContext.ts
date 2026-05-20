@@ -30,6 +30,8 @@ import {
   getContextValue,
 } from '../ContextRecord';
 
+type ImportContextRecord = ContextRecord<typeof DOMImportContextSymbol>;
+
 /**
  * Create an import context state. The phantom symbol prevents accidental
  * use of a render-context state in an import context (and vice versa).
@@ -184,22 +186,28 @@ export const ImportWhitespaceConfig: ImportStateConfig<WhitespaceImportConfig> =
     preservesWhitespace: defaultPreservesWhitespace,
   }));
 
-/** @internal */
+/**
+ * The session IS the root-layer {@link ContextRecord} of the walk. Reads
+ * fall through the prototype chain to the editor's `contextDefaults`,
+ * writes mutate the record's own properties, and any branch pushed by
+ * `$importChildren({context})` sits above this layer and can shadow
+ * (but does not overwrite) slots.
+ *
+ * @internal
+ */
 export class ImportSessionImpl implements ImportSession {
-  private values = new Map<symbol, unknown>();
+  constructor(readonly record: ImportContextRecord) {}
   get<V>(cfg: ImportStateConfig<V>): V {
-    return this.values.has(cfg.key)
-      ? (this.values.get(cfg.key) as V)
-      : cfg.defaultValue;
+    return getContextValue(this.record, cfg);
   }
   set<V>(cfg: ImportStateConfig<V>, value: V): void {
-    this.values.set(cfg.key, value);
+    this.record[cfg.key] = value;
   }
   update<V>(cfg: ImportStateConfig<V>, updater: (prev: V) => V): void {
-    this.set(cfg, updater(this.get(cfg)));
+    this.record[cfg.key] = updater(getContextValue(this.record, cfg));
   }
   has<V>(cfg: ImportStateConfig<V>): boolean {
-    return this.values.has(cfg.key);
+    return Object.prototype.hasOwnProperty.call(this.record, cfg.key);
   }
 }
 

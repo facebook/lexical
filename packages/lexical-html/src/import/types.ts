@@ -162,13 +162,11 @@ export type ImportStateConfig<V> = ContextConfig<
  * later can read — e.g. parse `<style>` or `<meta>` and influence
  * subsequent matching.
  *
- * The session and the scoped context share the same {@link ImportStateConfig}
- * keys: `ctx.get(cfg)` reads the current branch (immutable, unwinds on
- * return), while `ctx.session.get(cfg)` / `set` / `update` read and write
- * a single root-layer slot that survives the entire walk. Choose by
- * naming convention — values that flow parent-to-descendants belong in
- * scoped context; values that fan out from one document position to all
- * later ones belong in the session.
+ * Implemented as the root-layer {@link ContextRecord} of the import walk:
+ * `ctx.session.set(cfg, v)` mutates the slot on that root record, and
+ * every unshadowed `ctx.get(cfg)` read in any branch picks it up. A
+ * `$importChildren({context: [...]})` branch that explicitly writes the
+ * same slot shadows the session value for the duration of that branch.
  *
  * @experimental
  */
@@ -358,9 +356,9 @@ export type AnyDOMImportRule = DOMImportRule<any>;
  *
  * - Read editor state via {@link DOMPreprocessContext.editor}.
  * - Write to the per-import {@link ImportSession} (the same
- *   `ctx.session` rules see during the walk).
- * - Layer context pairs that become visible to the entire walk via
- *   {@link DOMPreprocessContext.setContext}.
+ *   `ctx.session` rules see during the walk). Writes mutate the
+ *   root-layer context record, so they are visible to every scoped
+ *   `ctx.get(cfg)` read that hasn't been shadowed by a branch.
  *
  * @experimental
  */
@@ -374,13 +372,6 @@ export interface DOMPreprocessContext {
    * importer rules.
    */
   readonly session: ImportSession;
-  /**
-   * Layer a context pair into the import context for the rest of the
-   * import (i.e. visible to rule `$import` functions and child
-   * `$importChildren` calls). Later calls override earlier ones for
-   * the same {@link ImportStateConfig}.
-   */
-  setContext<V>(cfg: ImportStateConfig<V>, value: V): void;
 }
 
 /**
@@ -389,9 +380,8 @@ export interface DOMPreprocessContext {
  *
  * - Mutate the input DOM in place (e.g. inline stylesheets, strip
  *   unsafe elements, normalize attributes).
- * - Write to {@link DOMPreprocessContext.session} for rules to read.
- * - Call {@link DOMPreprocessContext.setContext} to install context
- *   values for the upcoming walk.
+ * - Write to {@link DOMPreprocessContext.session} for rules to read
+ *   (and for unshadowed scoped reads to pick up).
  * - Call `$next()` to defer to the next-lower preprocessor in the
  *   stack; omit the call to short-circuit and skip the rest.
  *

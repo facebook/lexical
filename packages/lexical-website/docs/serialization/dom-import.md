@@ -508,10 +508,9 @@ Each step can:
 - Mutate the DOM in place (e.g. inline stylesheet rules onto
   matching elements, strip unsafe nodes, normalize attributes,
   resolve relative URLs).
-- Write to `ctx.session` (same session the walk will see on
-  `ctx.session`).
-- Call `ctx.setContext(cfg, value)` to install a context value for
-  the entire walk.
+- Write to `ctx.session` — the session IS the root layer of the
+  walk's context, so writes are visible to both `ctx.session.get`
+  and to unshadowed `ctx.get(cfg)` reads in any branch.
 - Call `$next()` to defer to the next-lower preprocessor (top of stack
   runs first); skip the call to short-circuit.
 
@@ -554,7 +553,7 @@ const $readMetaLang: DOMPreprocessFn = (dom, ctx, $next) => {
   const root = 'body' in dom ? dom.body : (dom as ParentNode);
   const meta = root.querySelector('meta[name="content-language"]');
   if (meta && meta.getAttribute('content')) {
-    ctx.setContext(DocumentLanguage, meta.getAttribute('content')!);
+    ctx.session.set(DocumentLanguage, meta.getAttribute('content')!);
   }
   $next();
 };

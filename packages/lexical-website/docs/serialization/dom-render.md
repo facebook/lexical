@@ -321,7 +321,7 @@ Mint a typed context key with `createRenderState`:
 ```ts
 import {createRenderState} from '@lexical/html';
 
-// True iff this serialization is heading to the clipboard (vs. an
+// True if this serialization is heading to the clipboard (vs. an
 // editor reconciliation).
 const ClipboardCopyState = createRenderState('clipboardCopy', Boolean);
 ```

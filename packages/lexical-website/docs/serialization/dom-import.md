@@ -401,10 +401,16 @@ interface WhitespaceImportConfig {
 ```
 
 The defaults match the legacy behavior: an element preserves
-whitespace iff its `nodeName` is `'PRE'` or its inline `style.whiteSpace`
-starts with `'pre'`; an element is inline iff its inline `style.display`
+whitespace if its `nodeName` is `'PRE'` or its inline `style.whiteSpace`
+starts with `'pre'`; an element is inline if its inline `style.display`
 starts with `'inline'` or its tag name is in the standard inline-tag
-set.
+set used by lexical core's `isInlineDomNode` / `isBlockDomNode`
+helpers (`a`, `abbr`, `acronym`, `b`, `cite`, `code`, `del`, `em`,
+`i`, `ins`, `kbd`, `label`, `mark`, `output`, `q`, `ruby`, `s`,
+`samp`, `span`, `strong`, `sub`, `sup`, `time`, `u`, `tt`, `var`).
+The canonical list lives in `packages/lexical/src/LexicalUtils.ts` —
+see the `INLINE_TAG_RE` / `BLOCK_TAG_RE` exports if you want to
+inspect or extend the defaults.
 
 To recognize custom tags (e.g. a custom `<tooltip>` that should be
 treated as inline so the spaces around it survive), override the
@@ -432,8 +438,7 @@ configExtension(DOMImportExtension, {
 ```
 
 This is the declarative replacement for setting `display: inline` on
-the element from inside an extended TextNode importer
-([#8391](https://github.com/facebook/lexical/issues/8391)).
+the element from inside an extended TextNode importer.
 
 ## Sessions
 

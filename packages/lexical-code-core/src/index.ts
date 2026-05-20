@@ -7,7 +7,6 @@
  */
 
 export {CodeExtension} from './CodeExtension';
-export {CodeGutterExtension} from './CodeGutterExtension';
 export {
   $createCodeHighlightNode,
   $isCodeHighlightNode,
@@ -21,6 +20,7 @@ export {
 export type {SerializedCodeNode} from './CodeNode';
 export {
   $createCodeNode,
+  $exitCodeNodeOnEnter,
   $isCodeNode,
   CodeNode,
   DEFAULT_CODE_LANGUAGE,

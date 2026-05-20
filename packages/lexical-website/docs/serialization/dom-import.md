@@ -448,10 +448,17 @@ document available to nodes visited later — e.g. a `<style>` /
 `<meta>` tag at the top of the document influencing how later
 elements are interpreted.
 
-```ts
-import {createImportSessionState} from '@lexical/html';
+The session reuses the same `ImportStateConfig` keys you create with
+`createImportState`. `ctx.get(cfg)` reads the current scoped branch
+(immutable, unwinds on return); `ctx.session.get/set/update(cfg)`
+reads and writes a single root-layer slot that survives the entire
+walk. A given key can be used either way — choose by the lifetime
+the value needs.
 
-const Stylesheets = createImportSessionState<string[]>(
+```ts
+import {createImportState} from '@lexical/html';
+
+const Stylesheets = createImportState<string[]>(
   'app/stylesheets',
   () => [],
 );
@@ -477,11 +484,11 @@ const ConsumesStyleSheetsRule = defineImportRule({
 ```
 
 A fresh `ImportSession` is created for every top-level
-`$generateNodesFromDOM` call. Compare with
-`ImportStateConfig` (which is **immutable** and **scoped** —
-`branch` to a child via `opts.context`, automatically restored on
-return) versus `ImportSession` (which is **mutable** and
-**flat** — write once, read anywhere in this import call).
+`$generateNodesFromDOM` call. Compare scoped reads via `ctx.get`
+(**immutable** and **scoped** — `branch` to a child via
+`opts.context`, automatically restored on return) versus session reads
+via `ctx.session.get` (**mutable** and **flat** — write once, read
+anywhere later in this import call).
 
 ## Preprocessors
 
@@ -729,7 +736,7 @@ ready to move a custom node, the translation is mechanical:
 | `after(children)` | `ctx.$importChildren(el, {$after})` |
 | `wrapContinuousInlines` (block ancestor case) | `ctx.$importChildren(el, {schema: BlockSchema})` |
 | `ArtificialNode__DO_NOT_USE` (nested block) | `ctx.$importChildren(el, {schema: NestedBlockSchema})` |
-| Cross-tag setup via shared state | `createImportState` + `ctx.get`, or `createImportSessionState` + `ctx.session` |
+| Cross-tag setup via shared state | `createImportState` + `ctx.get` (scoped) or `ctx.session.get/set` (flat) |
 | Mutating the DOM before walking | `DOMPreprocessFn` in `DOMImportConfig.preprocess` |
 | `html: {import: ...}` field on a node-providing extension | `configExtension(DOMImportExtension, {rules: […]})` |
 

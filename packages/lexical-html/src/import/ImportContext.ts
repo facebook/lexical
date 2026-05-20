@@ -10,7 +10,6 @@ import type {DOMImportExtension} from './DOMImportExtension';
 import type {
   ImportContextPairOrUpdater,
   ImportSession,
-  ImportSessionConfig,
   ImportStateConfig,
 } from './types';
 
@@ -185,37 +184,21 @@ export const ImportWhitespaceConfig: ImportStateConfig<WhitespaceImportConfig> =
     preservesWhitespace: defaultPreservesWhitespace,
   }));
 
-/**
- * Create a typed slot for the import session (see {@link ImportSession}).
- * Like {@link createImportState} but for mutable, document-order-shared
- * state.
- *
- * @experimental
- * @__NO_SIDE_EFFECTS__
- */
-export function createImportSessionState<V>(
-  name: string,
-  getDefault: () => V,
-): ImportSessionConfig<V> {
-  return {getDefault, key: Symbol(name)};
-}
-
 /** @internal */
 export class ImportSessionImpl implements ImportSession {
   private values = new Map<symbol, unknown>();
-  get<V>(cfg: ImportSessionConfig<V>): V {
-    const value = this.values.get(cfg.key);
-    return value === undefined && !this.values.has(cfg.key)
-      ? cfg.getDefault()
-      : (value as V);
+  get<V>(cfg: ImportStateConfig<V>): V {
+    return this.values.has(cfg.key)
+      ? (this.values.get(cfg.key) as V)
+      : cfg.defaultValue;
   }
-  set<V>(cfg: ImportSessionConfig<V>, value: V): void {
+  set<V>(cfg: ImportStateConfig<V>, value: V): void {
     this.values.set(cfg.key, value);
   }
-  update<V>(cfg: ImportSessionConfig<V>, updater: (prev: V) => V): void {
+  update<V>(cfg: ImportStateConfig<V>, updater: (prev: V) => V): void {
     this.set(cfg, updater(this.get(cfg)));
   }
-  has<V>(cfg: ImportSessionConfig<V>): boolean {
+  has<V>(cfg: ImportStateConfig<V>): boolean {
     return this.values.has(cfg.key);
   }
 }

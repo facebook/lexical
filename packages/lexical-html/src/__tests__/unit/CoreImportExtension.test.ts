@@ -14,7 +14,7 @@ import {
 import {
   contextValue,
   CoreImportExtension,
-  createImportSessionState,
+  createImportState,
   defaultIsInline,
   defaultPreservesWhitespace,
   defineImportRule,
@@ -295,7 +295,7 @@ describe('CoreImportExtension', () => {
   });
 
   test('session can be written by an early rule and read by a later one', () => {
-    const StyleSheets = createImportSessionState<string[]>(
+    const StyleSheets = createImportState<string[]>(
       'collected-styles',
       () => [],
     );

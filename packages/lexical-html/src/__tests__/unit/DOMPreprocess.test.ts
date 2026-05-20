@@ -13,7 +13,6 @@ import {
 } from '@lexical/extension';
 import {
   CoreImportExtension,
-  createImportSessionState,
   createImportState,
   defineImportRule,
   DOMImportExtension,
@@ -151,7 +150,7 @@ describe('DOMImportExtension preprocess', () => {
   test('preprocess can write to the import session (shared with rules)', () => {
     // Collect every <style> tag's text into a session value during
     // preprocess, then have a rule read it during the walk.
-    const Stylesheets = createImportSessionState<string[]>(
+    const Stylesheets = createImportState<string[]>(
       'test/stylesheets',
       () => [],
     );

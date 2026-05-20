@@ -46,7 +46,6 @@ export {
 export {
   $getImportContextValue,
   $withImportContext,
-  createImportSessionState,
   createImportState,
   defaultIsInline,
   defaultPreservesWhitespace,
@@ -85,7 +84,6 @@ export type {
   ImportContextPairOrUpdater,
   ImportNodeOpts,
   ImportSession,
-  ImportSessionConfig,
   ImportStateConfig,
   NodeOfSelector,
   StyleMatchOptions,

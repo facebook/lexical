@@ -157,38 +157,30 @@ export type ImportStateConfig<V> = ContextConfig<
 >;
 
 /**
- * A typed handle to a slot in {@link ImportSession}. Create one at module
- * scope with {@link createImportSessionState}. The default value is read
- * lazily the first time a session reads the slot.
- *
- * @experimental
- */
-export interface ImportSessionConfig<V> {
-  readonly key: symbol;
-  readonly getDefault: () => V;
-}
-
-/**
  * A mutable, document-order-shared store for the import pipeline. Lets a
  * rule visited early in the document write information that rules visited
  * later can read — e.g. parse `<style>` or `<meta>` and influence
  * subsequent matching.
  *
- * Use sparingly: state that flows from parents to descendants belongs in
- * {@link ImportStateConfig} (via `$importChildren({context: [...]})`),
- * which is immutable, scoped, and easier to reason about.
+ * The session and the scoped context share the same {@link ImportStateConfig}
+ * keys: `ctx.get(cfg)` reads the current branch (immutable, unwinds on
+ * return), while `ctx.session.get(cfg)` / `set` / `update` read and write
+ * a single root-layer slot that survives the entire walk. Choose by
+ * naming convention — values that flow parent-to-descendants belong in
+ * scoped context; values that fan out from one document position to all
+ * later ones belong in the session.
  *
  * @experimental
  */
 export interface ImportSession {
   /** Read the current value, returning the config's default if unset. */
-  get<V>(cfg: ImportSessionConfig<V>): V;
+  get<V>(cfg: ImportStateConfig<V>): V;
   /** Write `value` into the slot. */
-  set<V>(cfg: ImportSessionConfig<V>, value: V): void;
+  set<V>(cfg: ImportStateConfig<V>, value: V): void;
   /** Read-modify-write. */
-  update<V>(cfg: ImportSessionConfig<V>, updater: (prev: V) => V): void;
+  update<V>(cfg: ImportStateConfig<V>, updater: (prev: V) => V): void;
   /** Returns `true` if the slot has been written since session creation. */
-  has<V>(cfg: ImportSessionConfig<V>): boolean;
+  has<V>(cfg: ImportStateConfig<V>): boolean;
 }
 
 /**

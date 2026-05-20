@@ -14,6 +14,7 @@ import {
   $getImportContextValue,
   type AnyDOMImportRule,
   BlockSchema,
+  composeOverlayRules,
   contextValue,
   createImportState,
   defineImportRule,
@@ -575,6 +576,90 @@ describe('$importChildren `rules` overlay', () => {
     editor.read(() => {
       const [p] = $rootParagraphs();
       expect(p.getTextContent()).toBe('[main-x]');
+    });
+  });
+});
+
+describe('composeOverlayRules', () => {
+  test('merges two overlays with first-argument-wins priority', () => {
+    const overlayA = defineOverlayRules([
+      defineImportRule({
+        $import: () => {
+          const p = $createParagraphNode();
+          p.append($createTextNode('[A]'));
+          return [p];
+        },
+        match: sel.tag('x'),
+        name: 'test/A-x',
+      }),
+    ]);
+    const overlayB = defineOverlayRules([
+      defineImportRule({
+        $import: () => {
+          const p = $createParagraphNode();
+          p.append($createTextNode('[B-x]'));
+          return [p];
+        },
+        match: sel.tag('x'),
+        name: 'test/B-x',
+      }),
+      defineImportRule({
+        $import: () => {
+          const p = $createParagraphNode();
+          p.append($createTextNode('[B-y]'));
+          return [p];
+        },
+        match: sel.tag('y'),
+        name: 'test/B-y',
+      }),
+    ]);
+    const merged = composeOverlayRules(overlayA, overlayB);
+    const WrapRule = defineImportRule({
+      $import: (ctx, el) => ctx.$importChildren(el, {rules: merged}),
+      match: sel.tag('wrap'),
+      name: 'test/wrap-merged',
+    });
+    using editor = buildTestEditor([WrapRule]);
+    $importInto(editor, '<wrap><x>x</x><y>y</y></wrap>');
+    editor.read(() => {
+      const [p1, p2] = $rootParagraphs();
+      // overlayA's x rule wins over overlayB's x rule (first-arg priority).
+      expect(p1.getTextContent()).toBe('[A]');
+      // overlayB's y rule has no competing rule and fires normally.
+      expect(p2.getTextContent()).toBe('[B-y]');
+    });
+  });
+
+  test('lower-priority overlay rule fires when the higher one calls $next()', () => {
+    const overlayA = defineOverlayRules([
+      defineImportRule({
+        $import: (_ctx, _el, $next) => $next(),
+        match: sel.tag('x'),
+        name: 'test/A-defers',
+      }),
+    ]);
+    const overlayB = defineOverlayRules([
+      defineImportRule({
+        $import: () => {
+          const p = $createParagraphNode();
+          p.append($createTextNode('[B-fallback]'));
+          return [p];
+        },
+        match: sel.tag('x'),
+        name: 'test/B-fallback',
+      }),
+    ]);
+    const merged = composeOverlayRules(overlayA, overlayB);
+    const WrapRule = defineImportRule({
+      $import: (ctx, el) => ctx.$importChildren(el, {rules: merged}),
+      match: sel.tag('wrap'),
+      name: 'test/wrap-defers',
+    });
+    using editor = buildTestEditor([WrapRule]);
+    $importInto(editor, '<wrap><x>x</x></wrap>');
+    editor.read(() => {
+      const [p] = $rootParagraphs();
+      expect(p.getTextContent()).toBe('[B-fallback]');
     });
   });
 });

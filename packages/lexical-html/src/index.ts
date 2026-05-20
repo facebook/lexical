@@ -78,6 +78,7 @@ export {
   $inlineStylesFromStyleSheets,
   $withImportContext,
   BlockSchema,
+  composeOverlayRules,
   CoreImportExtension,
   CoreImportRules,
   createImportState,

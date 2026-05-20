@@ -32,6 +32,7 @@ export {CoreImportRules} from './coreImportRules';
 export {defineImportRule} from './defineImportRule';
 export {
   type CompiledOverlayRules,
+  composeOverlayRules,
   defineOverlayRules,
 } from './defineOverlayRules';
 export {

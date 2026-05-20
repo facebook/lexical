@@ -15,6 +15,10 @@ import {type CompiledDispatch, compileImportRules} from './compileImportRules';
  * {@link DOMImportContext.$importChildren} via
  * {@link ImportChildrenOpts.rules}.
  *
+ * Use {@link composeOverlayRules} to merge two or more overlays into a
+ * single one for cases where libraries each ship their own overlay and
+ * an app wants to install them together.
+ *
  * The internal shape is intentionally not part of the public API: it's a
  * compiled dispatch table tagged with `__type` so callers cannot pass a
  * raw rule array where a compiled overlay is expected.
@@ -25,6 +29,8 @@ export interface CompiledOverlayRules {
   readonly __type: 'CompiledOverlayRules';
   /** @internal */
   readonly dispatch: CompiledDispatch;
+  /** @internal — kept so {@link composeOverlayRules} can recompile. */
+  readonly rules: readonly AnyDOMImportRule[];
 }
 
 /**
@@ -45,5 +51,35 @@ export function defineOverlayRules(
   return {
     __type: 'CompiledOverlayRules',
     dispatch: compileImportRules(rules),
+    rules,
+  };
+}
+
+/**
+ * Compose two or more {@link CompiledOverlayRules} into a single overlay.
+ * Earlier arguments are higher priority — rules from `overlays[0]`
+ * dispatch first, then `overlays[1]`, etc. The merged rule list is
+ * recompiled once so the runtime cost matches a single overlay.
+ *
+ * This is the definition-time complement to runtime composition (one
+ * overlay rule calling `ctx.$importChildren(el, {rules: another})` to
+ * push a nested overlay): use this when you want a fixed merged
+ * overlay across an entire subtree.
+ *
+ * @experimental
+ */
+export function composeOverlayRules(
+  ...overlays: readonly CompiledOverlayRules[]
+): CompiledOverlayRules {
+  const rules: AnyDOMImportRule[] = [];
+  for (const overlay of overlays) {
+    for (const rule of overlay.rules) {
+      rules.push(rule);
+    }
+  }
+  return {
+    __type: 'CompiledOverlayRules',
+    dispatch: compileImportRules(rules),
+    rules,
   };
 }

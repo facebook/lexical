@@ -642,6 +642,32 @@ This is by design: a one-off overlay built inline on every walk would
 recompile the dispatcher each time, defeating the point of the overlay
 being a fast-path.
 
+### Composing overlays
+
+Two or more `CompiledOverlayRules` can be merged at module scope via
+`composeOverlayRules(...overlays)`. Earlier arguments are higher
+priority — rules from `overlays[0]` dispatch first, then `overlays[1]`,
+etc. The merged rule list is recompiled once, so installing the result
+costs the same as a single overlay.
+
+```ts
+import {composeOverlayRules} from '@lexical/html';
+
+const allOverlays = composeOverlayRules(
+  GitHubCodeTableOverlayRules,
+  ExcelTableOverlayRules,
+);
+
+ctx.$importChildren(el, {rules: allOverlays});
+```
+
+This is the definition-time complement to runtime composition (an
+overlay rule's `$import` calling
+`ctx.$importChildren(el, {rules: another})` to push a nested overlay
+on top of the current stack): use composition when you want a fixed
+merged overlay across an entire subtree, and nesting when the inner
+overlay should only apply for a deeper region.
+
 ## ClipboardImportExtension
 
 The clipboard's paste handler (`$insertDataTransferForRichText`)

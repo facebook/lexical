@@ -71,18 +71,18 @@ describe('DOMImportExtension preprocess', () => {
   });
 
   test('app preprocess can mutate the DOM before walking', () => {
-    const stripScripts: DOMPreprocessFn = (dom, _ctx, next) => {
+    const $stripScripts: DOMPreprocessFn = (dom, _ctx, $next) => {
       const root = 'body' in dom ? dom.body : (dom as ParentNode);
       for (const el of Array.from(root.querySelectorAll('script'))) {
         el.remove();
       }
-      next();
+      $next();
     };
     using editor = buildEditorFromExtensions(
       defineExtension({
         dependencies: [
           CoreImportExtension,
-          configExtension(DOMImportExtension, {preprocess: [stripScripts]}),
+          configExtension(DOMImportExtension, {preprocess: [$stripScripts]}),
         ],
         name: 'host',
       }),
@@ -105,7 +105,7 @@ describe('DOMImportExtension preprocess', () => {
       'test/import-source',
       () => 'unknown',
     );
-    const ReadSourceMeta: DOMPreprocessFn = (dom, ctx, next) => {
+    const $readSourceMeta: DOMPreprocessFn = (dom, ctx, $next) => {
       const root = 'body' in dom ? dom.body : (dom as ParentNode);
       const meta = root.querySelector('meta[name="lexical-source"]');
       if (meta && isHTMLElement(meta)) {
@@ -114,7 +114,7 @@ describe('DOMImportExtension preprocess', () => {
           ctx.setContext(SourceState, content);
         }
       }
-      next();
+      $next();
     };
     const SourceAwareDivRule = defineImportRule({
       $import: (ctx, _el) => {
@@ -130,7 +130,7 @@ describe('DOMImportExtension preprocess', () => {
         dependencies: [
           CoreImportExtension,
           configExtension(DOMImportExtension, {
-            preprocess: [ReadSourceMeta],
+            preprocess: [$readSourceMeta],
             rules: [SourceAwareDivRule],
           }),
         ],
@@ -155,7 +155,7 @@ describe('DOMImportExtension preprocess', () => {
       'test/stylesheets',
       () => [],
     );
-    const CollectStyleSheets: DOMPreprocessFn = (dom, ctx, next) => {
+    const $collectStyleSheets: DOMPreprocessFn = (dom, ctx, $next) => {
       const root = 'body' in dom ? dom.body : (dom as ParentNode);
       for (const el of Array.from(root.querySelectorAll('style'))) {
         ctx.session.update(Stylesheets, prev => [
@@ -163,7 +163,7 @@ describe('DOMImportExtension preprocess', () => {
           el.textContent || '',
         ]);
       }
-      next();
+      $next();
     };
     const ArticleRule = defineImportRule({
       $import: (ctx, _el) => {
@@ -180,7 +180,7 @@ describe('DOMImportExtension preprocess', () => {
         dependencies: [
           CoreImportExtension,
           configExtension(DOMImportExtension, {
-            preprocess: [CollectStyleSheets],
+            preprocess: [$collectStyleSheets],
             rules: [ArticleRule],
           }),
         ],
@@ -198,16 +198,16 @@ describe('DOMImportExtension preprocess', () => {
     });
   });
 
-  test('middleware chain: a wrapper preprocess can defer to a lower one via next()', () => {
+  test('middleware chain: a wrapper preprocess can defer to a lower one via $next()', () => {
     const log: string[] = [];
-    const innerPreprocess: DOMPreprocessFn = (_dom, _ctx, next) => {
+    const $innerPreprocess: DOMPreprocessFn = (_dom, _ctx, $next) => {
       log.push('inner-before');
-      next();
+      $next();
       log.push('inner-after');
     };
-    const wrapperPreprocess: DOMPreprocessFn = (_dom, _ctx, next) => {
+    const $wrapperPreprocess: DOMPreprocessFn = (_dom, _ctx, $next) => {
       log.push('wrapper-before');
-      next();
+      $next();
       log.push('wrapper-after');
     };
     using editor = buildEditorFromExtensions(
@@ -215,7 +215,7 @@ describe('DOMImportExtension preprocess', () => {
         dependencies: [
           CoreImportExtension,
           configExtension(DOMImportExtension, {
-            preprocess: [innerPreprocess, wrapperPreprocess],
+            preprocess: [$innerPreprocess, $wrapperPreprocess],
           }),
         ],
         name: 'host',
@@ -234,20 +234,20 @@ describe('DOMImportExtension preprocess', () => {
 
   test('per-call preprocess runs in addition to config-level ones', () => {
     const log: string[] = [];
-    const configPreprocess: DOMPreprocessFn = (_dom, _ctx, next) => {
+    const $configPreprocess: DOMPreprocessFn = (_dom, _ctx, $next) => {
       log.push('config');
-      next();
+      $next();
     };
-    const perCallPreprocess: DOMPreprocessFn = (_dom, _ctx, next) => {
+    const $perCallPreprocess: DOMPreprocessFn = (_dom, _ctx, $next) => {
       log.push('per-call');
-      next();
+      $next();
     };
     using editor = buildEditorFromExtensions(
       defineExtension({
         dependencies: [
           CoreImportExtension,
           configExtension(DOMImportExtension, {
-            preprocess: [configPreprocess],
+            preprocess: [$configPreprocess],
           }),
         ],
         name: 'host',
@@ -263,7 +263,7 @@ describe('DOMImportExtension preprocess', () => {
           `<!doctype html><html><body><p>x</p></body></html>`,
         );
         const nodes = dep.output.$generateNodesFromDOM(dom.window.document, {
-          preprocess: [perCallPreprocess],
+          preprocess: [$perCallPreprocess],
         });
         $getRoot().clear().splice(0, 0, nodes);
       },

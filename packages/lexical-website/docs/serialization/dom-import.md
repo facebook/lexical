@@ -492,7 +492,7 @@ preprocessors against the input DOM. They're middleware-shaped:
 type DOMPreprocessFn = (
   dom: Document | ParentNode,
   ctx: DOMPreprocessContext,
-  next: () => void,
+  $next: () => void,
 ) => void;
 ```
 
@@ -505,7 +505,7 @@ Each step can:
   `ctx.session`).
 - Call `ctx.setContext(cfg, value)` to install a context value for
   the entire walk.
-- Call `next()` to defer to the next-lower preprocessor (top of stack
+- Call `$next()` to defer to the next-lower preprocessor (top of stack
   runs first); skip the call to short-circuit.
 
 The default config registers
@@ -516,12 +516,12 @@ same Excel-flavored CSS preprocess the legacy
 `GenerateNodesFromDOMOptions.preprocess`.
 
 ```ts
-const StripScripts: DOMPreprocessFn = (dom, _ctx, next) => {
+const StripScripts: DOMPreprocessFn = (dom, _ctx, $next) => {
   const root = 'body' in dom ? dom.body : (dom as ParentNode);
   for (const el of Array.from(root.querySelectorAll('script'))) {
     el.remove();
   }
-  next();
+  $next();
 };
 
 configExtension(DOMImportExtension, {
@@ -543,13 +543,13 @@ const DocumentLanguage = createImportState<string>(
   () => 'unknown',
 );
 
-const ReadMetaLang: DOMPreprocessFn = (dom, ctx, next) => {
+const ReadMetaLang: DOMPreprocessFn = (dom, ctx, $next) => {
   const root = 'body' in dom ? dom.body : (dom as ParentNode);
   const meta = root.querySelector('meta[name="content-language"]');
   if (meta && meta.getAttribute('content')) {
     ctx.setContext(DocumentLanguage, meta.getAttribute('content')!);
   }
-  next();
+  $next();
 };
 ```
 

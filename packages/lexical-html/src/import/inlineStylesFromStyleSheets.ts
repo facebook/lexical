@@ -31,18 +31,18 @@ function isStyleRule(rule: CSSRule): rule is CSSStyleRule {
  *
  * @experimental
  */
-export const inlineStylesFromStyleSheets: DOMPreprocessFn = (
+export const $inlineStylesFromStyleSheets = (
   dom,
   _ctx,
-  next,
+  $next,
 ) => {
   if (!isDOMDocumentNode(dom)) {
-    next();
+    $next();
     return;
   }
   const doc = dom;
   if (doc.querySelector('style') === null) {
-    next();
+    $next();
     return;
   }
 
@@ -99,5 +99,7 @@ export const inlineStylesFromStyleSheets: DOMPreprocessFn = (
   } catch {
     // styleSheets API not supported in this environment
   }
-  next();
+  $next();
 };
+/** @deprecated renamed to {@link $inlineStylesFromStyleSheets} by @lexical/eslint-plugin rules-of-lexical */
+export const inlineStylesFromStyleSheets: DOMPreprocessFn = $inlineStylesFromStyleSheets;

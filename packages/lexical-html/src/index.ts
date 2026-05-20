@@ -134,8 +134,8 @@ export function $generateNodesFromDOM(
 ): Array<LexicalNode> {
   if (isDOMDocumentNode(dom)) {
     // The shared helper has a DOMPreprocessFn signature; the legacy
-    // pipeline doesn't have a real `ctx` or `next` to thread through,
-    // so we pass a no-op `next` and a minimal context placeholder.
+    // pipeline doesn't have a real `ctx` or `$next` to thread through,
+    // so we pass a no-op `$next` and a minimal context placeholder.
     inlineStylesFromStyleSheets(
       dom,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

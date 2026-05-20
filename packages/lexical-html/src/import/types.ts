@@ -394,12 +394,18 @@ export interface DOMPreprocessContext {
  * - Write to {@link DOMPreprocessContext.session} for rules to read.
  * - Call {@link DOMPreprocessContext.setContext} to install context
  *   values for the upcoming walk.
- * - Call `next()` to defer to the next-lower preprocessor in the stack;
- *   omit the call to short-circuit and skip the rest.
+ * - Call `$next()` to defer to the next-lower preprocessor in the
+ *   stack; omit the call to short-circuit and skip the rest.
+ *
+ * The preprocess phase runs inside the same editor read / update
+ * context as the walk that follows, so a preprocess function may call
+ * `$`-prefixed Lexical APIs (e.g. `$getState`, `$getRoot`) as needed.
+ * The `$next` parameter is named with a `$` prefix to make that
+ * editor-context expectation visible to readers and lints.
  *
  * Append-style merge applies: an extension's preprocessors are appended
  * to the existing stack, so later-registered preprocessors run first
- * and may delegate to earlier (lower-priority) ones via `next()`. Same
+ * and may delegate to earlier (lower-priority) ones via `$next()`. Same
  * convention as {@link ExportMimeTypeFunction} on the export side.
  *
  * @experimental
@@ -407,7 +413,7 @@ export interface DOMPreprocessContext {
 export type DOMPreprocessFn = (
   dom: Document | ParentNode,
   ctx: DOMPreprocessContext,
-  next: () => void,
+  $next: () => void,
 ) => void;
 
 /**

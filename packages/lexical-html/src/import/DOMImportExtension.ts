@@ -72,23 +72,23 @@ export interface DOMImportConfig {
 
 /**
  * Drive a stack of {@link DOMPreprocessFn}s top-to-bottom: the highest-
- * index fn runs first and may call `next()` to defer to the next-lower
+ * index fn runs first and may call `$next()` to defer to the next-lower
  * one. Matches the export-side `callExportMimeTypeFunctionStack` shape.
  */
-function runPreprocessStack(
+function $runPreprocessStack(
   stack: readonly DOMPreprocessFn[],
   dom: Document | ParentNode,
   ctx: DOMPreprocessContext,
 ): void {
   let i = stack.length - 1;
-  const next = () => {
+  const $next = () => {
     while (i >= 0) {
       const cur = stack[i--];
-      cur(dom, ctx, next);
+      cur(dom, ctx, $next);
       return;
     }
   };
-  next();
+  $next();
 }
 
 /**
@@ -156,7 +156,7 @@ export const DOMImportExtension = defineExtension<
           options && options.preprocess
             ? [...configPreprocess, ...options.preprocess]
             : configPreprocess;
-        runPreprocessStack(stack, dom, preprocessCtx);
+        $runPreprocessStack(stack, dom, preprocessCtx);
         const accumulatedContext: readonly ImportContextPairOrUpdater[] =
           options && options.context
             ? [...options.context, ...fromPreprocess]

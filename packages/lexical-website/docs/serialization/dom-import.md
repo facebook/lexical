@@ -442,18 +442,28 @@ the element from inside an extended TextNode importer.
 
 ## Sessions
 
-`ImportSession` is a mutable, document-order-shared store on `ctx`.
-Use it to make information from a node visited earlier in the
-document available to nodes visited later — e.g. a `<style>` /
-`<meta>` tag at the top of the document influencing how later
-elements are interpreted.
+`ImportSession` is the **root-layer context record** of the walk —
+a mutable, document-order-shared store on `ctx`. Use it to make
+information from a node visited earlier in the document available
+to nodes visited later — e.g. a `<style>` / `<meta>` tag at the
+top of the document influencing how later elements are interpreted.
 
-The session reuses the same `ImportStateConfig` keys you create with
-`createImportState`. `ctx.get(cfg)` reads the current scoped branch
-(immutable, unwinds on return); `ctx.session.get/set/update(cfg)`
-reads and writes a single root-layer slot that survives the entire
-walk. A given key can be used either way — choose by the lifetime
-the value needs.
+The session and the scoped context share the same
+`ImportStateConfig` keys you create with `createImportState`:
+
+- `ctx.get(cfg)` reads through the current branch's prototype chain
+  (a `$importChildren({context})` branch layered above the session
+  record, falling through to the session record itself, falling
+  through to the editor's `contextDefaults`, then to the config's
+  default).
+- `ctx.session.get(cfg)` reads the same chain starting at the
+  session record (skips any active branch overlay).
+- `ctx.session.set(cfg, v)` / `update` mutate the session record's
+  own properties. Every unshadowed `ctx.get(cfg)` later in the walk
+  (including in not-yet-entered branches) picks up the new value.
+- A branch that writes `cfg` shadows the session value for the
+  duration of the branch only; on return, scoped reads see the
+  session value again.
 
 ```ts
 import {createImportState} from '@lexical/html';
@@ -483,12 +493,11 @@ const ConsumesStyleSheetsRule = defineImportRule({
 });
 ```
 
-A fresh `ImportSession` is created for every top-level
-`$generateNodesFromDOM` call. Compare scoped reads via `ctx.get`
-(**immutable** and **scoped** — `branch` to a child via
-`opts.context`, automatically restored on return) versus session reads
-via `ctx.session.get` (**mutable** and **flat** — write once, read
-anywhere later in this import call).
+A fresh session record (a mutable child of the editor's
+`contextDefaults`) is created for every top-level
+`$generateNodesFromDOM` call. Per-call `options.context` pairs are
+seeded into it before any preprocessors run, and preprocess-time
+`ctx.session.set` writes mutate the same record.
 
 ## Preprocessors
 

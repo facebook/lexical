@@ -97,7 +97,7 @@ describe('DOMImportExtension preprocess', () => {
     });
   });
 
-  test('preprocess can setContext for the rest of the import', () => {
+  test('preprocess can write to the session for the rest of the import', () => {
     // Demo: read a <meta name="lexical-source"> tag and install a
     // typed context value the importer rules can branch on.
     const SourceState = createImportState<string>(

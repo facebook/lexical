@@ -39,7 +39,6 @@ import {
 } from './collaboration';
 import {useSettings} from './context/SettingsContext';
 import ActionsPlugin from './plugins/ActionsPlugin';
-import AutocompletePlugin from './plugins/AutocompletePlugin';
 import AutoEmbedPlugin from './plugins/AutoEmbedPlugin';
 import CodeActionMenuPlugin from './plugins/CodeActionMenuPlugin';
 import {CodeHighlightExtension} from './plugins/CodeHighlightExtension';
@@ -102,7 +101,6 @@ export default function Editor(): JSX.Element {
       isCodeShiki,
       isCollab,
       useCollabV2,
-      isAutocomplete,
       isMaxLength,
       isCharLimit,
       hasLinkAttributes,
@@ -291,7 +289,6 @@ export default function Editor(): JSX.Element {
             maxLength={5}
           />
         )}
-        {isAutocomplete && <AutocompletePlugin />}
         <div>{showTableOfContents && <TableOfContentsPlugin />}</div>
         {shouldUseLexicalContextMenu && <ContextMenuPlugin />}
         <ActionsPlugin

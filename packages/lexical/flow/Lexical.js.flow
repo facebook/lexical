@@ -161,6 +161,10 @@ type DOMConversionCache = Map<
   Array<(node: Node) => DOMConversion | null>,
 >;
 
+export type DOMSlotForNode<N: LexicalNode> = N extends ElementNode
+  ? ElementDOMSlot<HTMLElement>
+  : DOMSlot<HTMLElement>;
+
 export type EditorDOMRenderConfig = {
   /** @internal @experimental */
   $createDOM: <T extends LexicalNode>(
@@ -168,11 +172,11 @@ export type EditorDOMRenderConfig = {
     editor: LexicalEditor,
   ) => HTMLElement;
   /** @internal @experimental */
-  $getDOMSlot: <T extends LexicalNode>(
-    node: T,
+  $getDOMSlot: <N extends LexicalNode>(
+    node: N,
     dom: HTMLElement,
     editor: LexicalEditor,
-  ) => ElementDOMSlot<HTMLElement>;
+  ) => DOMSlotForNode<N>;
   /** @internal @experimental */
   $exportDOM: <T extends LexicalNode>(
     node: T,
@@ -513,6 +517,7 @@ declare export class LexicalNode {
     dom: HTMLElement,
     config: EditorConfig,
   ): boolean;
+  getDOMSlot(element: HTMLElement): DOMSlot<HTMLElement>;
   remove(preserveEmptyParent?: boolean): void;
   replace<N extends LexicalNode>(replaceWith: N): N;
   insertAfter(
@@ -897,26 +902,37 @@ declare export class ElementNode extends LexicalNode {
     nodesToInsert: Array<LexicalNode>,
   ): this;
   exportJSON(): SerializedElementNode;
-  getDOMSlot(dom: HTMLElement): ElementDOMSlot<HTMLElement>;
+  getDOMSlot(element: HTMLElement): ElementDOMSlot<HTMLElement>;
 }
 declare export function $isElementNode(
   node: ?LexicalNode,
 ): node is ElementNode;
 
 /**
- * ElementDOMSlot
+ * DOMSlot
  */
-declare export class ElementDOMSlot<+T extends HTMLElement> {
-  +element: HTMLElement;
+declare export class DOMSlot<+T extends HTMLElement = HTMLElement> {
+  +element: T;
   +before: Node | null;
   +after: Node | null;
-  constructor(element: HTMLElement, before?: Node | null | void, after?: Node | null | void): void;
+  constructor(element: T, before?: Node | null | void, after?: Node | null | void): void;
+  withBefore(before: Node | null | void): DOMSlot<T>;
+  withAfter(after: Node | null | void): DOMSlot<T>;
+  withElement<ElementType extends HTMLElement>(element: ElementType): DOMSlot<ElementType>;
+  insertChild(dom: Node): this;
+  removeChild(dom: Node): this;
+  replaceChild(dom: Node, prevDom: Node): this;
+  getFirstChild(): Node | null;
+}
+
+/**
+ * ElementDOMSlot
+ */
+declare export class ElementDOMSlot<+T extends HTMLElement = HTMLElement> extends DOMSlot<T> {
   withBefore(before: Node | null | void): ElementDOMSlot<T>;
   withAfter(after: Node | null | void): ElementDOMSlot<T>;
   withElement<ElementType extends HTMLElement>(element: ElementType): ElementDOMSlot<ElementType>;
   insertChild(dom: Node): this;
-  removeChild(dom: Node): this;
-  replaceChild(dom: Node, prevDom: Node): this;
   getFirstChild(): Node | null;
   //
   getManagedLineBreak(): HTMLElement | null;
@@ -1023,6 +1039,19 @@ declare export function $getEditor(): LexicalEditor;
 declare export function $getEditorDOMRenderConfig(
   editor?: LexicalEditor,
 ): EditorDOMRenderConfig;
+declare export function $getDOMSlot<N: LexicalNode>(
+  node: N,
+  dom: HTMLElement,
+  editor?: LexicalEditor,
+): DOMSlotForNode<N>;
+declare export function $getDOMTextNode(
+  node: TextNode,
+  dom: HTMLElement,
+  editor?: LexicalEditor,
+): Text | null;
+declare export function $isElementDOMSlot(
+  slot: DOMSlot<HTMLElement>,
+): slot is ElementDOMSlot<HTMLElement>;
 declare export var DEFAULT_EDITOR_DOM_CONFIG: EditorDOMRenderConfig;
 
 /**

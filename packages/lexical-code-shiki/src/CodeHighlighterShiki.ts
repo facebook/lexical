@@ -6,8 +6,6 @@
  *
  */
 
-import type {LexicalEditor, LexicalNode, NodeKey} from 'lexical';
-
 import {
   $isCodeHighlightNode,
   $isCodeNode,
@@ -20,20 +18,34 @@ import {
 } from '@lexical/code-core';
 import {effect, namedSignals} from '@lexical/extension';
 import {
+  $createLineBreakNode,
   $createTextNode,
+  $getDOMSlot,
   $getNodeByKey,
   $getSelection,
+  $isElementNode,
   $isLineBreakNode,
   $isRangeSelection,
   $isTabNode,
   $isTextNode,
   $onUpdate,
+  COMMAND_PRIORITY_LOW,
   defineExtension,
+  INSERT_LINE_BREAK_COMMAND,
+  INSERT_PARAGRAPH_COMMAND,
+  type LexicalEditor,
+  type LexicalNode,
   mergeRegister,
+  type NodeKey,
   safeCast,
   TextNode,
 } from 'lexical';
 
+import {
+  $createCodeLineNode,
+  $isCodeLineNode,
+  CodeLineNode,
+} from './CodeLineNode';
 import {
   $getHighlightNodes,
   isCodeLanguageLoaded,
@@ -70,13 +82,24 @@ function $textNodeTransform(
   editor: LexicalEditor,
   tokenizer: Tokenizer,
   transformState: TransformState,
+  enableLineNodes: boolean,
   node: TextNode,
 ): void {
-  // Since CodeNode has flat children structure we only need to check
-  // if node's parent is a code node and run highlighting if so
-  const parentNode = node.getParent();
+  // A CodeHighlightNode may live directly under CodeNode (flat mode)
+  // or one level deeper under a CodeLineNode (grouped mode). Walk up
+  // and trigger the CodeNode transform when we find one.
+  let parentNode = node.getParent();
+  if (enableLineNodes && $isCodeLineNode(parentNode)) {
+    parentNode = parentNode.getParent();
+  }
   if ($isCodeNode(parentNode)) {
-    $codeNodeTransform(editor, tokenizer, transformState, parentNode);
+    $codeNodeTransform(
+      editor,
+      tokenizer,
+      transformState,
+      enableLineNodes,
+      parentNode,
+    );
   } else if ($isCodeHighlightNode(node)) {
     // When code block converted into paragraph or other element
     // code highlight nodes converted back to normal text
@@ -84,20 +107,42 @@ function $textNodeTransform(
   }
 }
 
-function updateCodeGutter(node: CodeNode, editor: LexicalEditor): void {
-  const codeElement = editor.getElementByKey(node.getKey());
-  if (codeElement === null) {
+/**
+ * `data-gutter` updater used to drive the existing line-number CSS.
+ * In grouped mode (`enableLineNodes`) the CodeNode's direct children
+ * are `CodeLineNode`s — one per visible line, including empty
+ * trailing lines — so the gutter string is `1\n2\n...\nN` where `N`
+ * is the line count. In flat mode the gutter string is rebuilt from
+ * `LineBreakNode` occurrences as before.
+ */
+function $updateCodeGutter(node: CodeNode, editor: LexicalEditor): void {
+  const keyedDOM = editor.getElementByKey(node.getKey());
+  if (keyedDOM === null) {
     return;
   }
+  const codeElement = $getDOMSlot(node, keyedDOM, editor).element;
   const children = node.getChildren();
   const childrenLength = children.length;
   // @ts-ignore: internal field
   if (childrenLength === codeElement.__cachedChildrenLength) {
-    // Avoid updating the attribute if the children length hasn't changed.
     return;
   }
-  // @ts-ignore:: internal field
+  // @ts-ignore: internal field
   codeElement.__cachedChildrenLength = childrenLength;
+
+  const isGroupedMode =
+    childrenLength > 0 &&
+    children.every(c => $isElementNode(c) && !c.isInline());
+
+  if (isGroupedMode) {
+    let gutter = '';
+    for (let i = 0; i < childrenLength; i++) {
+      gutter += (i === 0 ? '' : '\n') + (i + 1);
+    }
+    codeElement.setAttribute('data-gutter', gutter);
+    return;
+  }
+
   let gutter = '1';
   let count = 1;
   for (let i = 0; i < childrenLength; i++) {
@@ -121,6 +166,7 @@ function $codeNodeTransform(
   editor: LexicalEditor,
   tokenizer: Tokenizer,
   transformState: TransformState,
+  enableLineNodes: boolean,
   node: CodeNode,
 ) {
   const nodeKey = node.getKey();
@@ -176,7 +222,7 @@ function $codeNodeTransform(
     });
   }
 
-  $updateAndRetainSelection(nodeKey, () => {
+  $updateAndRetainSelection(nodeKey, enableLineNodes, () => {
     const currentNode = $getNodeByKey(nodeKey);
 
     if (!$isCodeNode(currentNode) || !currentNode.isAttached()) {
@@ -185,7 +231,15 @@ function $codeNodeTransform(
 
     const lang = currentNode.getLanguage() || tokenizer.defaultLanguage;
     const highlightNodes = tokenizer.$tokenize(currentNode, lang);
-    const diffRange = getDiffRange(currentNode.getChildren(), highlightNodes);
+    // In grouped mode wrap the tokenizer's flat output into
+    // CodeLineNodes before diffing, so unchanged CodeLineNodes survive
+    // the splice with their identity intact. The selection retention
+    // step below then only has to handle restoring the cursor within
+    // the one line whose tokens actually changed.
+    const replacementNodes = enableLineNodes
+      ? $groupFlatNodesIntoLineNodes(highlightNodes)
+      : highlightNodes;
+    const diffRange = getDiffRange(currentNode.getChildren(), replacementNodes);
     const {from, to, nodesForReplacement} = diffRange;
 
     if (from !== to || nodesForReplacement.length) {
@@ -199,8 +253,10 @@ function $codeNodeTransform(
 
 // Wrapping update function into selection retainer, that tries to keep cursor at the same
 // position as before.
-function $updateAndRetainSelection(
+/** @internal */
+export function $updateAndRetainSelection(
   nodeKey: NodeKey,
+  enableLineNodes: boolean,
   updateFn: () => boolean,
 ): void {
   const node = $getNodeByKey(nodeKey);
@@ -217,6 +273,91 @@ function $updateAndRetainSelection(
 
   const anchor = selection.anchor;
   const anchorOffset = anchor.offset;
+
+  // Grouped-mode path: capture (lineIndex, columnOffset) inside the
+  // anchor's containing CodeLineNode. After the splice runs, find the
+  // CodeLineNode at the same index and walk its text children to the
+  // captured column to restore the cursor. Unchanged sibling lines
+  // keep their identity through the splice so their cursor would
+  // already be valid; this branch handles the case where the changed
+  // line is replaced.
+  if (enableLineNodes) {
+    const anchorNode: LexicalNode = anchor.getNode();
+    let containingLine: LexicalNode | null = anchorNode;
+    while (containingLine !== null && !$isCodeLineNode(containingLine)) {
+      containingLine = containingLine.getParent();
+    }
+    if ($isCodeLineNode(containingLine)) {
+      // Walk the line's children up to the anchor, counting
+      // `LineBreakNode`s as virtual sub-line boundaries. The original
+      // trigger was Shift+Enter inserting a `LineBreakNode` into the
+      // existing `CodeLineNode` before the tokenizer transform fired;
+      // the keyboard path is now intercepted upstream
+      // (`INSERT_LINE_BREAK_COMMAND` → `INSERT_PARAGRAPH_COMMAND` in
+      // `CodeShikiExtension.register`), so a within-line LB no longer
+      // arrives from keyboard input. This branch still matters for
+      // paste, programmatic edits, and other paths that drop a LB
+      // inside a line without going through Enter: each within-line LB
+      // becomes a new `CodeLineNode` after re-grouping, so the
+      // anchor's restored `lineIndex` skips ahead by the LB count seen
+      // on the way to the anchor, and the column offset resets after
+      // every LB.
+      const lineChildren = containingLine.getChildren();
+      const anchorChildIndex =
+        anchor.type === 'text' && anchorNode.getParent() === containingLine
+          ? anchorNode.getIndexWithinParent()
+          : anchor.type === 'element' && anchorNode === containingLine
+            ? anchorOffset
+            : -1;
+      let linesBefore = 0;
+      let columnOffset = 0;
+      if (anchorChildIndex >= 0) {
+        for (let i = 0; i < anchorChildIndex; i++) {
+          const child = lineChildren[i];
+          if ($isLineBreakNode(child)) {
+            linesBefore += 1;
+            columnOffset = 0;
+          } else {
+            columnOffset += child.getTextContentSize();
+          }
+        }
+        if (anchor.type === 'text') {
+          columnOffset += anchorOffset;
+        }
+      }
+      const lineIndex = containingLine.getIndexWithinParent() + linesBefore;
+      const hasChanges = updateFn();
+      if (!hasChanges) {
+        return;
+      }
+      const newLine = node.getChildAtIndex(lineIndex);
+      if ($isCodeLineNode(newLine)) {
+        let remaining = columnOffset;
+        const restoredChildren = newLine.getChildren();
+        for (const child of restoredChildren) {
+          if ($isTextNode(child)) {
+            const size = child.getTextContentSize();
+            if (size >= remaining) {
+              child.select(remaining, remaining);
+              return;
+            }
+            remaining -= size;
+          }
+        }
+        // Past the end of all text in the line: anchor on the line
+        // itself at the end so caret lands at line end.
+        newLine.select(restoredChildren.length, restoredChildren.length);
+      }
+      return;
+    }
+    // No containing line found (anchor is directly on CodeNode or
+    // outside the grouped structure). Don't fall through to the flat
+    // logic — that path assumes children are TextNode / LineBreakNode
+    // direct on CodeNode, which doesn't hold in grouped mode.
+    updateFn();
+    return;
+  }
+
   const isNewLineAnchor =
     anchor.type === 'element' &&
     $isLineBreakNode(node.getChildAtIndex(anchor.offset - 1));
@@ -311,8 +452,23 @@ function getDiffRange(
 }
 
 function isEqual(nodeA: LexicalNode, nodeB: LexicalNode): boolean {
-  // Only checking for code highlight nodes, tabs and linebreaks. If it's regular text node
-  // returning false so that it's transformed into code highlight node
+  // Only checking for code highlight nodes, tabs, linebreaks, and
+  // CodeLineNodes (the grouped-mode wrapper). Anything else returns
+  // false so it gets transformed into a code highlight node (or a
+  // CodeLineNode wrapping one).
+  if ($isCodeLineNode(nodeA) && $isCodeLineNode(nodeB)) {
+    const aChildren = nodeA.getChildren();
+    const bChildren = nodeB.getChildren();
+    if (aChildren.length !== bChildren.length) {
+      return false;
+    }
+    for (let i = 0; i < aChildren.length; i++) {
+      if (!isEqual(aChildren[i], bChildren[i])) {
+        return false;
+      }
+    }
+    return true;
+  }
   return (
     ($isCodeHighlightNode(nodeA) &&
       $isCodeHighlightNode(nodeB) &&
@@ -344,10 +500,10 @@ function isEqual(nodeA: LexicalNode, nodeB: LexicalNode): boolean {
 export function registerHighlightingOnly(
   editor: LexicalEditor,
   tokenizer: Tokenizer,
+  enableLineNodes: boolean = false,
 ): () => void {
   const registrations = [];
 
-  // Only register the mutation listener if not in headless mode
   if (editor._headless !== true) {
     registrations.push(
       editor.registerMutationListener(
@@ -358,7 +514,7 @@ export function registerHighlightingOnly(
               if (type !== 'destroyed') {
                 const node = $getNodeByKey(key);
                 if (node !== null) {
-                  updateCodeGutter(node as CodeNode, editor);
+                  $updateCodeGutter(node as CodeNode, editor);
                 }
               }
             }
@@ -376,15 +532,33 @@ export function registerHighlightingOnly(
   registrations.push(
     editor.registerNodeTransform(
       CodeNode,
-      $codeNodeTransform.bind(null, editor, tokenizer, transformState),
+      $codeNodeTransform.bind(
+        null,
+        editor,
+        tokenizer,
+        transformState,
+        enableLineNodes,
+      ),
     ),
     editor.registerNodeTransform(
       TextNode,
-      $textNodeTransform.bind(null, editor, tokenizer, transformState),
+      $textNodeTransform.bind(
+        null,
+        editor,
+        tokenizer,
+        transformState,
+        enableLineNodes,
+      ),
     ),
     editor.registerNodeTransform(
       CodeHighlightNode,
-      $textNodeTransform.bind(null, editor, tokenizer, transformState),
+      $textNodeTransform.bind(
+        null,
+        editor,
+        tokenizer,
+        transformState,
+        enableLineNodes,
+      ),
     ),
   );
 
@@ -412,6 +586,103 @@ export function registerCodeHighlighting(
   );
 }
 
+/**
+ * Group a flat sequence of inline nodes into `CodeLineNode`s on the
+ * `LineBreakNode` boundary. The input nodes may or may not already have
+ * a parent: `line.append(node)` will detach from any prior parent.
+ *
+ * `LineBreakNode`s mark line boundaries: each one ends the current
+ * group and starts a new (initially empty) one, so `[content, LB]`
+ * yields a trailing empty line and `[LB, LB]` yields two empty lines
+ * around a boundary.
+ */
+function $groupFlatNodesIntoLineNodes(
+  nodes: ReadonlyArray<LexicalNode>,
+): CodeLineNode[] {
+  const groups: LexicalNode[][] = [[]];
+  for (const node of nodes) {
+    if ($isLineBreakNode(node)) {
+      groups.push([]);
+    } else {
+      groups[groups.length - 1].push(node);
+    }
+  }
+  return groups.map(group => {
+    const line = $createCodeLineNode();
+    for (const node of group) {
+      // If a CodeLineNode somehow appears nested inside the flat
+      // segment (transient state during paste / programmatic edit),
+      // unwrap it so we don't end up with a CodeLineNode containing a
+      // CodeLineNode.
+      if ($isCodeLineNode(node)) {
+        for (const inner of node.getChildren()) {
+          line.append(inner);
+        }
+      } else {
+        line.append(node);
+      }
+    }
+    return line;
+  });
+}
+
+/**
+ * Re-group a `CodeNode`'s flat children into `CodeLineNode`s.
+ *
+ * Idempotent: when the `CodeNode` is already grouped (no `LineBreakNode`s
+ * and every child is a `CodeLineNode`) this is a no-op, so it composes
+ * with the existing Shiki tokenizer transform without forming an update
+ * loop. Mostly handles input that arrives in the flat shape — pasted
+ * code, programmatic edits, or content loaded from a serialized form
+ * that pre-dates the grouping option.
+ */
+/** @internal */
+export function $groupChildrenIntoLineNodes(codeNode: CodeNode): void {
+  const children = codeNode.getChildren();
+  let hasLineBreak = false;
+  let allLineNodes = children.length > 0;
+  for (const child of children) {
+    if ($isLineBreakNode(child)) {
+      hasLineBreak = true;
+      allLineNodes = false;
+    } else if (!$isCodeLineNode(child)) {
+      allLineNodes = false;
+    }
+  }
+  if (!hasLineBreak && allLineNodes) {
+    return;
+  }
+  const lineNodes = $groupFlatNodesIntoLineNodes(children);
+  codeNode.clear();
+  codeNode.append(...lineNodes);
+}
+
+/**
+ * Flatten a `CodeLineNode` back into its inline children when it has
+ * left its `CodeNode` parent (e.g. cut-and-pasted into a paragraph).
+ *
+ * Inserts a `LineBreakNode` *before* this line's content when there is
+ * an existing previous sibling that isn't already a `LineBreakNode`,
+ * so the line boundary survives the flatten regardless of the order
+ * sibling lines transform in (lexical's transform dispatch order is
+ * dirty-set order, not document order).
+ */
+/** @internal */
+export function $flattenLineNodeIfDetached(lineNode: CodeLineNode): void {
+  const parent = lineNode.getParent();
+  if (parent === null || $isCodeNode(parent)) {
+    return;
+  }
+  const prev = lineNode.getPreviousSibling();
+  if (prev !== null && !$isLineBreakNode(prev)) {
+    lineNode.insertBefore($createLineBreakNode());
+  }
+  for (const child of lineNode.getChildren()) {
+    lineNode.insertBefore(child);
+  }
+  lineNode.remove();
+}
+
 export interface CodeShikiConfig {
   /**
    * When true, the Shiki code highlighter is not registered on the editor.
@@ -420,6 +691,17 @@ export interface CodeShikiConfig {
    * highlighters without rebuilding the editor.
    */
   disabled: boolean;
+  /**
+   * When true, the `CodeNode`'s flat children are re-grouped into
+   * block-per-line `CodeLineNode`s so each visible line is its own
+   * lexical block. Native browser navigation (arrow keys, line wrap)
+   * then operates on real block boundaries instead of a stretch of
+   * inline content separated by `LineBreakNode`s. The flat shape is
+   * restored on serialization and when a `CodeLineNode` moves out of
+   * its `CodeNode`, so consumers that don't know about
+   * `CodeLineNode` are unaffected.
+   */
+  enableLineNodes: boolean;
   tokenizer: Tokenizer;
 }
 
@@ -436,18 +718,77 @@ export const CodeShikiExtension = defineExtension({
   build: (editor, config) => namedSignals(config),
   config: safeCast<CodeShikiConfig>({
     disabled: false,
+    enableLineNodes: false,
     tokenizer: ShikiTokenizer,
   }),
   dependencies: [CodeExtension, CodeIndentExtension],
   name: '@lexical/code-shiki',
+  nodes: () => [CodeLineNode],
   register: (editor, config, state) => {
     const stores = state.getOutput();
-    return effect(() => {
-      if (stores.disabled.value) {
-        return;
-      }
-      return registerHighlightingOnly(editor, stores.tokenizer.value);
-    });
+    return mergeRegister(
+      effect(() => {
+        if (stores.disabled.value) {
+          return;
+        }
+        return registerHighlightingOnly(
+          editor,
+          stores.tokenizer.value,
+          stores.enableLineNodes.value,
+        );
+      }),
+      effect(() => {
+        if (stores.disabled.value || !stores.enableLineNodes.value) {
+          return;
+        }
+        return mergeRegister(
+          editor.registerNodeTransform(CodeNode, $groupChildrenIntoLineNodes),
+          editor.registerNodeTransform(
+            CodeLineNode,
+            $flattenLineNodeIfDetached,
+          ),
+          // Shift+Enter inside a code block goes through the same
+          // line-splitting path as Enter — the original flat CodeNode
+          // resolves both to a `LineBreakNode` insertion which renders
+          // identically, but grouped mode would otherwise leave a
+          // within-line `LineBreakNode` for one frame before the
+          // tokenizer re-splits the line. Route INSERT_LINE_BREAK_COMMAND
+          // through INSERT_PARAGRAPH_COMMAND inside `CodeNode` so the
+          // visible outcome matches Enter immediately.
+          //
+          // The dispatch back into INSERT_PARAGRAPH_COMMAND assumes the
+          // rich-text (or plain-text equivalent) handler is registered.
+          // `enableLineNodes` is wired through `CodeShikiExtension`,
+          // which is intended to compose with rich-text in the host
+          // editor; a plain-text-only host would see the dispatch
+          // return false here and fall through to the default
+          // `INSERT_LINE_BREAK_COMMAND` handler.
+          editor.registerCommand(
+            INSERT_LINE_BREAK_COMMAND,
+            () => {
+              const selection = $getSelection();
+              if (!$isRangeSelection(selection)) {
+                return false;
+              }
+              for (
+                let n: LexicalNode | null = selection.anchor.getNode();
+                n !== null;
+                n = n.getParent()
+              ) {
+                if ($isCodeNode(n)) {
+                  return editor.dispatchCommand(
+                    INSERT_PARAGRAPH_COMMAND,
+                    undefined,
+                  );
+                }
+              }
+              return false;
+            },
+            COMMAND_PRIORITY_LOW,
+          ),
+        );
+      }),
+    );
   },
 });
 

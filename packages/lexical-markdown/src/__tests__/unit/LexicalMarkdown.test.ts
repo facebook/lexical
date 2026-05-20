@@ -868,7 +868,9 @@ describe('Markdown', () => {
       );
 
       expect(
-        editor.getEditorState().read(() => $generateHtmlFromNodes(editor)),
+        editor
+          .getEditorState()
+          .read(() => $generateHtmlFromNodes(editor), {editor}),
       ).toBe(html);
     });
   }

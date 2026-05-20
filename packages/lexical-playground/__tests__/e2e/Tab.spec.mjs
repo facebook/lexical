@@ -107,12 +107,13 @@ test.describe('Tab', () => {
           class="PlaygroundEditorTheme__code"
           dir="auto"
           spellcheck="false"
-          data-gutter="1"
           data-highlight-language="javascript"
-          data-language="javascript">
+          data-language="javascript"
+          data-lexical-code-gutter-active="true">
           <span
             class="PlaygroundEditorTheme__tabNode"
-            data-lexical-text="true"></span>
+            data-lexical-text="true"
+            data-line-number="1"></span>
           <span
             class="PlaygroundEditorTheme__tokenAttr"
             data-lexical-text="true">

@@ -6,7 +6,7 @@
  *
  */
 
-import {CodeIndentExtension} from '@lexical/code-core';
+import {CodeGutterExtension, CodeIndentExtension} from '@lexical/code-core';
 import {CodePrismExtension} from '@lexical/code-prism';
 import {CodeShikiExtension} from '@lexical/code-shiki';
 import {
@@ -32,6 +32,7 @@ export const CodeHighlightExtension = defineExtension({
   build: (editor, config) => namedSignals(config),
   config: safeCast<CodeHighlightConfig>({mode: 'off'}),
   dependencies: [
+    CodeGutterExtension,
     configExtension(CodePrismExtension, {disabled: true}),
     configExtension(CodeShikiExtension, {disabled: true}),
     configExtension(CodeIndentExtension, {tabSize: 2}),

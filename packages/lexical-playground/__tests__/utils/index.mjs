@@ -416,7 +416,25 @@ async function assertSelectionOnPageOrFrame(page, expected) {
         if (parent === null || node === rootElement) {
           break;
         }
-        path.push(Array.from(parent.childNodes).indexOf(node));
+        // The slot-managed code line-number gutter (from
+        // CodeGutterExtension) is a contentEditable=false sibling of
+        // CodeNode's managed children. It is not part of the lexical
+        // content, so skip it when computing selection paths.
+        let index = 0;
+        for (const sibling of parent.childNodes) {
+          if (sibling === node) {
+            break;
+          }
+          if (
+            sibling.nodeType === Node.ELEMENT_NODE &&
+            sibling.getAttribute &&
+            sibling.getAttribute('data-lexical-code-gutter') === 'true'
+          ) {
+            continue;
+          }
+          index++;
+        }
+        path.push(index);
         node = parent;
       }
       return path.reverse();
@@ -654,7 +672,11 @@ export async function focusEditor(page, parentSelector = '.editor-shell') {
 }
 
 export async function getHTML(page, selector = 'div[contenteditable="true"]') {
-  return await locate(page, selector).innerHTML();
+  // Strip the same Safari-only `<img data-lexical-linebreak>` hack that
+  // `assertHTML` filters out — otherwise an `originalHTML` captured on
+  // webkit will contain the img and fail to match itself after
+  // `assertHTML` strips the same img on the next comparison.
+  return removeSafariLinebreakImgHack(await locate(page, selector).innerHTML());
 }
 
 export function getEditorElement(page, parentSelector = '.editor-shell') {

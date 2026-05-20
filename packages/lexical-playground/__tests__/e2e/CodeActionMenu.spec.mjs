@@ -50,9 +50,7 @@ test.describe('CodeActionMenu', () => {
           class="PlaygroundEditorTheme__code"
           dir="ltr"
           spellcheck="false"
-          data-gutter="123"
-          data-highlight-language="javascript">
-          <span data-lexical-text="true"></span>
+          data-highlight-language="javascript" data-lexical-code-gutter-active="true"><span data-lexical-text="true" data-line-number="1"></span>
           <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
             const
           </span>
@@ -65,7 +63,7 @@ test.describe('CodeActionMenu', () => {
             'Hello'
           </span>
           <br />
-          <span data-lexical-text="true"></span>
+          <span data-lexical-text="true" data-line-number="2"></span>
           <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
             const
           </span>
@@ -78,7 +76,7 @@ test.describe('CodeActionMenu', () => {
             'World'
           </span>
           <br />
-          <span data-lexical-text="true"></span>
+          <span data-lexical-text="true" data-line-number="3"></span>
         </code>
       `,
     );
@@ -120,9 +118,7 @@ test.describe('CodeActionMenu', () => {
           class="PlaygroundEditorTheme__code"
           dir="ltr"
           spellcheck="false"
-          data-gutter="12345"
-          data-highlight-language="javascript">
-          <span data-lexical-text="true"></span>
+          data-highlight-language="javascript" data-lexical-code-gutter-active="true"><span data-lexical-text="true" data-line-number="1"></span>
           <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
             const
           </span>
@@ -135,7 +131,7 @@ test.describe('CodeActionMenu', () => {
             'Hello'
           </span>
           <br />
-          <span data-lexical-text="true"></span>
+          <span data-lexical-text="true" data-line-number="2"></span>
           <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
             const
           </span>
@@ -148,7 +144,7 @@ test.describe('CodeActionMenu', () => {
             'World'
           </span>
           <br />
-          <span data-lexical-text="true"></span>
+          <span data-lexical-text="true" data-line-number="3"></span>
           <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
             const
           </span>
@@ -161,7 +157,7 @@ test.describe('CodeActionMenu', () => {
             'Hello'
           </span>
           <br />
-          <span data-lexical-text="true"></span>
+          <span data-lexical-text="true" data-line-number="4"></span>
           <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
             const
           </span>
@@ -174,7 +170,7 @@ test.describe('CodeActionMenu', () => {
             'World'
           </span>
           <br />
-          <span data-lexical-text="true"></span>
+          <span data-lexical-text="true" data-line-number="5"></span>
         </code>
       `,
     );
@@ -199,10 +195,8 @@ test.describe('CodeActionMenu', () => {
           class="PlaygroundEditorTheme__code"
           dir="auto"
           spellcheck="false"
-          data-gutter="1"
           data-language="javascript"
-          data-highlight-language="javascript">
-          <span data-lexical-text="true"></span>
+          data-highlight-language="javascript" data-lexical-code-gutter-active="true"><span data-lexical-text="true" data-line-number="1"></span>
           <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
             const
           </span>
@@ -230,10 +224,8 @@ test.describe('CodeActionMenu', () => {
         class="PlaygroundEditorTheme__code"
         dir="auto"
         spellcheck="false"
-        data-gutter="12"
         data-language="javascript"
-        data-highlight-language="javascript">
-          <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
+        data-highlight-language="javascript" data-lexical-code-gutter-active="true"><span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true" data-line-number="1">
             const
           </span>
           <span data-lexical-text="true">luci</span>
@@ -249,7 +241,7 @@ test.describe('CodeActionMenu', () => {
             data-lexical-text="true">
             ;
           </span>
-          <br />
+          <span data-lexical-code-linebreak-wrap="true" data-line-number-trailing="2" class="code-linebreak-wrap"><br /></span>
           <br />
         </code>
       `,
@@ -275,10 +267,8 @@ test.describe('CodeActionMenu', () => {
           class="PlaygroundEditorTheme__code"
           dir="auto"
           spellcheck="false"
-          data-gutter="1"
           data-language="javascript"
-          data-highlight-language="javascript">
-          <span data-lexical-text="true">cons luci</span>
+          data-highlight-language="javascript" data-lexical-code-gutter-active="true"><span data-lexical-text="true" data-line-number="1">cons luci</span>
           <span class="PlaygroundEditorTheme__tokenOperator" data-lexical-text="true">
             =
           </span>

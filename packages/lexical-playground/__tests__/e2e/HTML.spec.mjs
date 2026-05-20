@@ -51,10 +51,13 @@ test.describe('HTML', () => {
         class="PlaygroundEditorTheme__code"
         dir="auto"
         spellcheck="false"
-        data-gutter="*"
         data-highlight-language="javascript"
-        data-language="javascript">
-        <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
+        data-language="javascript"
+        data-lexical-code-gutter-active="true">
+        <span
+          class="PlaygroundEditorTheme__tokenAttr"
+          data-lexical-text="true"
+          data-line-number="1">
           const
         </span>
         <span data-lexical-text="true">x</span>
@@ -94,7 +97,11 @@ test.describe('HTML', () => {
       // Custom modification: replace the date text and data-lexical-datetime value with wildcards for matching
       actualHtml =>
         actualHtml
-          .replace(/data-gutter="[^"]*"/g, 'data-gutter="*"')
+          .replace(
+            /(data-lexical-code-gutter="true">)([\s\S]*?)(<\/span>)/g,
+            (m, p1, content, p3) =>
+              p1 + content.replace(/\d+(?:\s+\d+)*/, '*') + p3,
+          )
           .replace(/(<div[^>]*>)(.*?)(<\/div>)/, '$1*$3')
           .replace(
             /data-lexical-datetime="[^"]*"/,
@@ -111,9 +118,9 @@ test.describe('HTML', () => {
           class="PlaygroundEditorTheme__code"
           dir="auto"
           spellcheck="false"
-          data-gutter="*"
           data-highlight-language="html"
-          data-language="html">
+          data-language="html"
+          data-lexical-code-gutter-active="true">
           *
         </code>
       `,
@@ -121,7 +128,11 @@ test.describe('HTML', () => {
       {ignoreInlineStyles: true},
       actualHtml =>
         actualHtml
-          .replace(/data-gutter="[^"]*"/g, 'data-gutter="*"')
+          .replace(
+            /(data-lexical-code-gutter="true">)([\s\S]*?)(<\/span>)/g,
+            (m, p1, content, p3) =>
+              p1 + content.replace(/\d+(?:\s+\d+)*/, '*') + p3,
+          )
           .replace(/(<code[^>]*>)([\s\S]*)(<\/code>)/, '$1\n  *\n$3'),
     );
 
@@ -135,7 +146,11 @@ test.describe('HTML', () => {
       // Custom modification: replace the date text and data-lexical-datetime value with wildcards for matching
       actualHtml =>
         actualHtml
-          .replace(/data-gutter="[^"]*"/g, 'data-gutter="*"')
+          .replace(
+            /(data-lexical-code-gutter="true">)([\s\S]*?)(<\/span>)/g,
+            (m, p1, content, p3) =>
+              p1 + content.replace(/\d+(?:\s+\d+)*/, '*') + p3,
+          )
           .replace(/(<div[^>]*>)(.*?)(<\/div>)/g, '$1*$3')
           .replace(
             /data-lexical-datetime="[^"]*"/g,
@@ -157,9 +172,9 @@ test.describe('HTML', () => {
           class="PlaygroundEditorTheme__code"
           dir="auto"
           spellcheck="false"
-          data-gutter="*"
           data-highlight-language="html"
-          data-language="html">
+          data-language="html"
+          data-lexical-code-gutter-active="true">
           *
         </code>
       `,
@@ -167,7 +182,11 @@ test.describe('HTML', () => {
       {ignoreInlineStyles: true},
       actualHtml =>
         actualHtml
-          .replace(/data-gutter="[^"]*"/g, 'data-gutter="*"')
+          .replace(
+            /(data-lexical-code-gutter="true">)([\s\S]*?)(<\/span>)/g,
+            (m, p1, content, p3) =>
+              p1 + content.replace(/\d+(?:\s+\d+)*/, '*') + p3,
+          )
           .replace(/(<code[^>]*>)([\s\S]*)(<\/code>)/, '$1\n  *\n$3'),
     );
 
@@ -192,12 +211,13 @@ test.describe('HTML', () => {
           class="PlaygroundEditorTheme__code"
           dir="auto"
           spellcheck="false"
-          data-gutter="*"
           data-highlight-language="javascript"
-          data-language="javascript">
+          data-language="javascript"
+          data-lexical-code-gutter-active="true">
           <span
             class="PlaygroundEditorTheme__tokenAttr"
-            data-lexical-text="true">
+            data-lexical-text="true"
+            data-line-number="1">
             const
           </span>
           <span data-lexical-text="true">x</span>
@@ -230,7 +250,11 @@ test.describe('HTML', () => {
       undefined,
       {ignoreInlineStyles: true},
       actualHtml =>
-        actualHtml.replace(/data-gutter="[^"]*"/g, 'data-gutter="*"'),
+        actualHtml.replace(
+          /(data-lexical-code-gutter="true">)([\s\S]*?)(<\/span>)/g,
+          (m, p1, content, p3) =>
+            p1 + content.replace(/\d+(?:\s+\d+)*/, '*') + p3,
+        ),
     );
   });
 

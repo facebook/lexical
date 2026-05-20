@@ -10,6 +10,7 @@ import {
   AutoFocusExtension,
   ClearEditorExtension,
   DecoratorTextExtension,
+  getExtensionDependencyFromEditor,
   HorizontalRuleExtension,
   SelectionAlwaysOnDisplayExtension,
 } from '@lexical/extension';
@@ -28,6 +29,7 @@ import {
 } from '@lexical/list';
 import {PlainTextExtension} from '@lexical/plain-text';
 import {LexicalCollaboration} from '@lexical/react/LexicalCollaborationContext';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
 import {
   $createHeadingNode,
@@ -41,7 +43,7 @@ import {
   configExtension,
   defineExtension,
 } from 'lexical';
-import {type JSX, useMemo} from 'react';
+import {type JSX, useEffect, useMemo} from 'react';
 
 import {isDevPlayground} from './appSettings';
 import {buildHTMLConfig} from './buildHTMLConfig';
@@ -52,6 +54,7 @@ import Editor from './Editor';
 import logo from './images/logo.svg';
 import {KeywordsExtension} from './nodes/KeywordNode';
 import PlaygroundNodes from './nodes/PlaygroundNodes';
+import {AutocompleteExtension} from './plugins/AutocompleteExtension';
 import {PlaygroundAutoLinkExtension} from './plugins/AutoLinkExtension';
 import {CodeHighlightExtension} from './plugins/CodeHighlightExtension';
 import {CollapsibleExtension} from './plugins/CollapsibleExtension';
@@ -72,6 +75,7 @@ import {TerseExportExtension} from './plugins/TerseExportExtension';
 import TestRecorderPlugin from './plugins/TestRecorderPlugin';
 import {TwitterExtension} from './plugins/TwitterExtension';
 import TypingPerfPlugin from './plugins/TypingPerfPlugin';
+import {VisibleLineBreakExtension} from './plugins/VisibleLineBreakExtension';
 import {YouTubeExtension} from './plugins/YouTubeExtension';
 import Settings from './Settings';
 import PlaygroundEditorTheme from './themes/PlaygroundEditorTheme';
@@ -219,9 +223,12 @@ const AppExtension = defineExtension({
  * different editor configurations based on the query string.
  */
 function buildExtensionFromSettings(
-  settings: Record<'isCollab' | 'emptyEditor' | 'isRichText', boolean>,
+  settings: Record<
+    'isCollab' | 'emptyEditor' | 'isRichText' | 'isAutocomplete',
+    boolean
+  >,
 ) {
-  const {isCollab, emptyEditor, isRichText} = settings;
+  const {isCollab, emptyEditor, isRichText, isAutocomplete} = settings;
   return defineExtension({
     $initialEditorState: isCollab
       ? null
@@ -232,24 +239,52 @@ function buildExtensionFromSettings(
       AppExtension,
       configExtension(HistoryExtension, {disabled: isCollab}),
       isRichText ? PlaygroundRichTextExtension : PlainTextExtension,
+      ...(isAutocomplete ? [AutocompleteExtension] : []),
+      VisibleLineBreakExtension,
     ],
     name: '@lexical/playground/dynamic-config',
   });
 }
 
+function VisibleLineBreakBridge({disabled}: {disabled: boolean}): null {
+  const [editor] = useLexicalComposerContext();
+  useEffect(() => {
+    const dep = getExtensionDependencyFromEditor(
+      editor,
+      VisibleLineBreakExtension,
+    );
+    dep.output.disabled.value = disabled;
+  }, [editor, disabled]);
+  return null;
+}
+
 function App(): JSX.Element {
   const {
-    settings: {isCollab, emptyEditor, isRichText, measureTypingPerf},
+    settings: {
+      isAutocomplete,
+      isCollab,
+      emptyEditor,
+      isRichText,
+      isVisibleLineBreak,
+      measureTypingPerf,
+    },
   } = useSettings();
 
   const app = useMemo(
-    () => buildExtensionFromSettings({emptyEditor, isCollab, isRichText}),
-    [emptyEditor, isCollab, isRichText],
+    () =>
+      buildExtensionFromSettings({
+        emptyEditor,
+        isAutocomplete,
+        isCollab,
+        isRichText,
+      }),
+    [emptyEditor, isAutocomplete, isCollab, isRichText],
   );
 
   return (
     <LexicalCollaboration>
       <LexicalExtensionComposer extension={app} contentEditable={null}>
+        <VisibleLineBreakBridge disabled={!isVisibleLineBreak} />
         <ToolbarContext>
           <header>
             <a href="https://lexical.dev" target="_blank" rel="noreferrer">

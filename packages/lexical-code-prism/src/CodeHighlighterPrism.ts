@@ -6,12 +6,11 @@
  *
  */
 
-import type {LexicalEditor, LexicalNode, NodeKey} from 'lexical';
-
 import {
   $isCodeHighlightNode,
   $isCodeNode,
   CodeExtension,
+  CodeGutterExtension,
   CodeHighlightNode,
   CodeIndentExtension,
   CodeNode,
@@ -21,6 +20,7 @@ import {
 import {effect, namedSignals} from '@lexical/extension';
 import {
   $createTextNode,
+  $getDOMSlot,
   $getNodeByKey,
   $getSelection,
   $isLineBreakNode,
@@ -28,8 +28,12 @@ import {
   $isTabNode,
   $isTextNode,
   $onUpdate,
+  declarePeerDependency,
   defineExtension,
+  type LexicalEditor,
+  type LexicalNode,
   mergeRegister,
+  type NodeKey,
   safeCast,
   TextNode,
 } from 'lexical';
@@ -86,16 +90,31 @@ function $textNodeTransform(
   }
 }
 
-function updateCodeGutter(node: CodeNode, editor: LexicalEditor): void {
-  const codeElement = editor.getElementByKey(node.getKey());
-  if (codeElement === null) {
+/**
+ * Legacy `data-gutter` updater used by the {@link registerCodeHighlighting}
+ * direct-API path. Sets a `data-gutter="1\n2\n…"` attribute on the
+ * `<code>` element, which a CSS `::before` pseudo with
+ * `content: attr(data-gutter)` renders as the line-number gutter.
+ *
+ * The extension-framework path ({@link CodePrismExtension}) treats
+ * `CodeGutterExtension` from `@lexical/code-core` as a peer dependency;
+ * when it's registered, `registerHighlightingOnly` skips this mutation
+ * listener entirely and per-line `data-line-number` attributes from
+ * `CodeGutterExtension` drive the gutter instead. This `$updateCodeGutter`
+ * function is retained for legacy callers that use
+ * `registerCodeHighlighting` on a plain editor without the Extension
+ * framework.
+ */
+function $updateCodeGutter(node: CodeNode, editor: LexicalEditor): void {
+  const keyedDOM = editor.getElementByKey(node.getKey());
+  if (keyedDOM === null) {
     return;
   }
+  const codeElement = $getDOMSlot(node, keyedDOM, editor).element;
   const children = node.getChildren();
   const childrenLength = children.length;
   // @ts-ignore: internal field
   if (childrenLength === codeElement.__cachedChildrenLength) {
-    // Avoid updating the attribute if the children length hasn't changed.
     return;
   }
   // @ts-ignore:: internal field
@@ -330,11 +349,16 @@ interface TransformState {
 export function registerHighlightingOnly(
   editor: LexicalEditor,
   tokenizer: Tokenizer,
+  hasGutterPeer: boolean = false,
 ): () => void {
   const registrations = [];
 
-  // Only register the mutation listener if not in headless mode
-  if (editor._headless !== true) {
+  // Legacy `data-gutter` mutation listener: keeps the attribute in sync
+  // for direct-API callers (`registerCodeHighlighting`) on a plain
+  // editor. When called from `CodePrismExtension.register` with
+  // `hasGutterPeer = true`, per-line `data-line-number` attributes from
+  // `CodeGutterExtension` drive the gutter and this listener is skipped.
+  if (editor._headless !== true && !hasGutterPeer) {
     registrations.push(
       editor.registerMutationListener(
         CodeNode,
@@ -344,7 +368,7 @@ export function registerHighlightingOnly(
               if (type !== 'destroyed') {
                 const node = $getNodeByKey(key);
                 if (node !== null) {
-                  updateCodeGutter(node as CodeNode, editor);
+                  $updateCodeGutter(node as CodeNode, editor);
                 }
               }
             }
@@ -426,13 +450,25 @@ export const CodePrismExtension = defineExtension({
   }),
   dependencies: [CodeExtension, CodeIndentExtension],
   name: '@lexical/code-prism',
+  peerDependencies: [
+    declarePeerDependency<typeof CodeGutterExtension>(
+      '@lexical/code/CodeGutter',
+    ),
+  ],
   register: (editor, config, state) => {
     const stores = state.getOutput();
+    const hasGutterPeer =
+      state.getPeer<typeof CodeGutterExtension>('@lexical/code/CodeGutter') !==
+      undefined;
     return effect(() => {
       if (stores.disabled.value) {
         return;
       }
-      return registerHighlightingOnly(editor, stores.tokenizer.value);
+      return registerHighlightingOnly(
+        editor,
+        stores.tokenizer.value,
+        hasGutterPeer,
+      );
     });
   },
 });

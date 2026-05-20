@@ -56,21 +56,21 @@ function isMonospaceDescendant(node: HTMLElement): boolean {
 }
 
 /**
- * GitHub renders raw file views with a `<table class="js-file-line-container">`
- * whose rows hold one source line per `<td class="js-file-line">`. The
- * legacy converter detects this shape and turns the whole table into a
- * single CodeNode whose content is the text of each `<td>` separated by
- * line breaks. We collapse to the same shape via a per-table rule plus
- * "ignore" rules on the wrapping `<tr>` / `<td>` so they don't try to
- * become table cells or paragraphs.
+ * Overlay rules active only while {@link GitHubCodeTableRule} is
+ * processing its children. Inside the code-table subtree, every `<tr>`
+ * and `<td>` unwraps unconditionally — they never become table-row /
+ * table-cell nodes (even when `@lexical/table` registers its rules for
+ * those tags). Outside the subtree, this overlay isn't installed, so
+ * the cost of these rules is never paid against unrelated `<tr>` /
+ * `<td>` pastes.
  */
-function isGitHubCodeTable(table: HTMLTableElement): boolean {
-  return table.classList.contains('js-file-line-container');
-}
-
-function isGitHubCodeCell(cell: HTMLTableCellElement): boolean {
-  return cell.classList.contains('js-file-line');
-}
+const GitHubCodeTableOverlayRules = [
+  defineImportRule({
+    $import: (ctx, el) => ctx.$importChildren(el),
+    match: sel.tag('tr', 'td'),
+    name: '@lexical/code/github-code-table/unwrap',
+  }),
+];
 
 const PreRule = defineImportRule({
   $import: (ctx, el) => {
@@ -129,15 +129,20 @@ const DivRule = defineImportRule({
 });
 
 /**
- * GitHub raw-file-view `<table>`s are turned into a single CodeNode.
+ * GitHub raw-file-view `<table class="js-file-line-container">` becomes
+ * a CodeNode. Walking the table's children pushes an overlay (see
+ * {@link GitHubCodeTableOverlayRules}) so `<tr>` / `<td>` inside this
+ * subtree unwrap unconditionally — without paying the predicate cost
+ * on every other `<tr>` / `<td>` paste elsewhere.
  */
 const GitHubCodeTableRule = defineImportRule({
-  $import: (ctx, el, $next) => {
-    if (!isGitHubCodeTable(el)) {
-      return $next();
-    }
+  $import: (ctx, el) => {
     const node = $createCodeNode();
-    node.splice(0, 0, ctx.$importChildren(el));
+    node.splice(
+      0,
+      0,
+      ctx.$importChildren(el, {rules: GitHubCodeTableOverlayRules}),
+    );
     return [node];
   },
   match: sel.tag('table').classAll('js-file-line-container'),
@@ -145,39 +150,15 @@ const GitHubCodeTableRule = defineImportRule({
 });
 
 /**
- * GitHub raw-file-view `<td>`s: when the cell is a code line, or when
- * nested inside a code table, emit nothing of our own and let descendant
- * text flow up. This mirrors the legacy `convertCodeNoop` behavior.
+ * Stray `<td class="js-file-line">` (cell with the explicit GitHub code-
+ * line class but no surrounding code-table wrapper) — unwrap so the
+ * descendant text flows up into whatever context the cell is in. The
+ * class is part of the selector itself, so no runtime guard.
  */
-const GitHubCodeCellRule = defineImportRule({
-  $import: (ctx, el, $next) => {
-    const table = el.closest('table');
-    if (
-      !isGitHubCodeCell(el) &&
-      !(
-        table instanceof Object &&
-        isHTMLElement(table) &&
-        isGitHubCodeTable(table as HTMLTableElement)
-      )
-    ) {
-      return $next();
-    }
-    return ctx.$importChildren(el);
-  },
-  match: sel.tag('td'),
-  name: '@lexical/code/github-code-cell',
-});
-
-const GitHubCodeRowRule = defineImportRule({
-  $import: (ctx, el, $next) => {
-    const table = el.closest('table');
-    if (!table || !isHTMLElement(table) || !isGitHubCodeTable(table)) {
-      return $next();
-    }
-    return ctx.$importChildren(el);
-  },
-  match: sel.tag('tr'),
-  name: '@lexical/code/github-code-row',
+const GitHubCodeCellByClassRule = defineImportRule({
+  $import: (ctx, el) => ctx.$importChildren(el),
+  match: sel.tag('td').classAll('js-file-line'),
+  name: '@lexical/code/github-code-cell-by-class',
 });
 
 /**
@@ -192,8 +173,7 @@ const GitHubCodeRowRule = defineImportRule({
 export const CodeImportRules = [
   // Higher-priority (more-specific) rules first:
   GitHubCodeTableRule,
-  GitHubCodeCellRule,
-  GitHubCodeRowRule,
+  GitHubCodeCellByClassRule,
   MultilineCodeRule,
   PreRule,
   DivRule,

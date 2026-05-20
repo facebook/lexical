@@ -491,6 +491,95 @@ describe('regression sanity for the existing $generateNodesFromDOM', () => {
   });
 });
 
+describe('$importChildren `rules` overlay', () => {
+  test('overlay rules take precedence over main rules inside the subtree, and are absent outside', () => {
+    // A `<wrap>` element that, while its descendants are imported,
+    // overrides the meaning of `<x>`. Outside the `<wrap>` subtree the
+    // overlay isn't installed, so the cost of the overlay rule isn't
+    // paid for unrelated `<x>` elements.
+    let overlayHits = 0;
+    const WrapRule = defineImportRule({
+      $import: (ctx, el) => {
+        const out: LexicalNode[] = [];
+        const overlay: AnyDOMImportRule[] = [
+          defineImportRule({
+            $import: () => {
+              overlayHits++;
+              const p = $createParagraphNode();
+              p.append($createTextNode('[overlay-x]'));
+              return [p];
+            },
+            match: sel.tag('x'),
+            name: 'test/overlay-x',
+          }),
+        ];
+        for (const node of ctx.$importChildren(el, {rules: overlay})) {
+          out.push(node);
+        }
+        return out;
+      },
+      match: sel.tag('wrap'),
+      name: 'test/wrap',
+    });
+    // A second top-level `<x>` rule that produces a different marker.
+    // Without the overlay it should win.
+    const PlainXRule = defineImportRule({
+      $import: () => {
+        const p = $createParagraphNode();
+        p.append($createTextNode('[main-x]'));
+        return [p];
+      },
+      match: sel.tag('x'),
+      name: 'test/main-x',
+    });
+    using editor = buildTestEditor([WrapRule, PlainXRule]);
+    $importInto(editor, '<wrap><x></x></wrap><x></x>');
+    editor.read(() => {
+      const ps = $rootParagraphs();
+      expect(ps.map(p => p.getTextContent())).toEqual([
+        '[overlay-x]',
+        '[main-x]',
+      ]);
+    });
+    expect(overlayHits).toBe(1);
+  });
+
+  test('overlay rule `$next()` falls through to the main dispatcher', () => {
+    const PlainXRule = defineImportRule({
+      $import: () => {
+        const p = $createParagraphNode();
+        p.append($createTextNode('[main-x]'));
+        return [p];
+      },
+      match: sel.tag('x'),
+      name: 'test/main-x',
+    });
+    const WrapRule = defineImportRule({
+      $import: (ctx, el) => {
+        const overlay: AnyDOMImportRule[] = [
+          defineImportRule({
+            $import: (_ctx, _el, $next) => {
+              // Defer to the main rule.
+              return $next();
+            },
+            match: sel.tag('x'),
+            name: 'test/overlay-x-deferred',
+          }),
+        ];
+        return ctx.$importChildren(el, {rules: overlay});
+      },
+      match: sel.tag('wrap'),
+      name: 'test/wrap',
+    });
+    using editor = buildTestEditor([WrapRule, PlainXRule]);
+    $importInto(editor, '<wrap><x></x></wrap>');
+    editor.read(() => {
+      const [p] = $rootParagraphs();
+      expect(p.getTextContent()).toBe('[main-x]');
+    });
+  });
+});
+
 describe('ImportContext helpers', () => {
   test('$getImportContextValue reads default outside an active import', () => {
     using editor = buildTestEditor([]);

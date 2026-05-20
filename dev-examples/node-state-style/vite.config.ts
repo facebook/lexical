@@ -8,7 +8,11 @@
 import react from '@vitejs/plugin-react';
 import {defineConfig} from 'vite';
 
-// https://vitejs.dev/config/
+import lexicalMonorepoPlugin from '../../packages/shared/lexicalMonorepoPlugin';
+
+// `dev-examples/` always builds against the lexical workspace source —
+// unlike `examples/`, which builds against the published packages and
+// opts into monorepo mode via a separate `vite.config.monorepo.ts`.
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), lexicalMonorepoPlugin()],
 });

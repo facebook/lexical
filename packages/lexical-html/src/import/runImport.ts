@@ -6,6 +6,7 @@
  *
  */
 import type {
+  AnyDOMImportRule,
   ChildSchema,
   DOMImportContext,
   ImportChildrenOpts,
@@ -19,13 +20,10 @@ import {isDOMDocumentNode, type LexicalEditor, type LexicalNode} from 'lexical';
 import {
   type CompiledDispatch,
   type CompiledRule,
+  compileImportRules,
   getDispatchIndices,
 } from './compileImportRules';
-import {
-  $getImportContextValue,
-  $withImportContext,
-  ImportSessionImpl,
-} from './ImportContext';
+import {$getImportContextValue, $withImportContext} from './ImportContext';
 import {applySchema, RootSchema} from './schemas';
 
 const NO_CAPTURES: Record<string, RegExpMatchArray> = Object.freeze(
@@ -36,6 +34,16 @@ interface Runtime {
   readonly dispatch: CompiledDispatch;
   readonly editor: LexicalEditor;
   readonly session: ImportSession;
+  /**
+   * Stack of overlay dispatchers installed via `$importChildren({rules})`.
+   * The most recently pushed overlay is at the highest index and is
+   * tried first; rules within an overlay are dispatched in their own
+   * registration order. When all overlay rules for a node have been
+   * exhausted (or have called `$next()` to defer), the main dispatcher
+   * is consulted. This lets app rules scope cost-bearing predicates to
+   * the subtrees where they apply.
+   */
+  readonly overlays: CompiledDispatch[];
 }
 
 function makeContext(
@@ -61,10 +69,23 @@ function $importChildrenInternal(
   parent: ParentNode,
   opts: ImportChildrenOpts | undefined,
 ): LexicalNode[] {
-  const run = () => $importChildrenRun(runtime, parent, opts);
-  return opts && opts.context
-    ? $withImportContext(opts.context, runtime.editor)(run)
-    : run();
+  const overlay =
+    opts && opts.rules && opts.rules.length > 0
+      ? compileImportRules(opts.rules as readonly AnyDOMImportRule[])
+      : undefined;
+  if (overlay) {
+    runtime.overlays.push(overlay);
+  }
+  try {
+    const run = () => $importChildrenRun(runtime, parent, opts);
+    return opts && opts.context
+      ? $withImportContext(opts.context, runtime.editor)(run)
+      : run();
+  } finally {
+    if (overlay) {
+      runtime.overlays.pop();
+    }
+  }
 }
 
 function $importChildrenRun(
@@ -105,35 +126,70 @@ function $importOneInternal(
   return out as LexicalNode[];
 }
 
+/**
+ * Build the candidate (dispatch, indices) list for `node`. Overlays are
+ * tried first in top-of-stack order; the main dispatcher comes last. The
+ * `$next()` chain walks through all of them in sequence — an overlay rule
+ * can defer to a lower overlay rule, or all the way through to a main
+ * rule, just by calling `$next()`.
+ */
+function getCandidates(
+  runtime: Runtime,
+  node: Node,
+): readonly {dispatch: CompiledDispatch; indices: readonly number[]}[] {
+  const candidates: {
+    dispatch: CompiledDispatch;
+    indices: readonly number[];
+  }[] = [];
+  for (let i = runtime.overlays.length - 1; i >= 0; i--) {
+    const d = runtime.overlays[i];
+    const idx = getDispatchIndices(d, node);
+    if (idx.length > 0) {
+      candidates.push({dispatch: d, indices: idx});
+    }
+  }
+  const mainIdx = getDispatchIndices(runtime.dispatch, node);
+  if (mainIdx.length > 0) {
+    candidates.push({dispatch: runtime.dispatch, indices: mainIdx});
+  }
+  return candidates;
+}
+
 function $dispatch(runtime: Runtime, node: Node): readonly LexicalNode[] {
-  const indices = getDispatchIndices(runtime.dispatch, node);
-  if (indices.length === 0) {
+  const candidates = getCandidates(runtime, node);
+  if (candidates.length === 0) {
     return $hoistChildrenOf(runtime, node);
   }
-  let cursor = 0;
+  let groupCursor = 0;
+  let ruleCursor = 0;
   const $next = (): readonly LexicalNode[] => {
-    while (cursor < indices.length) {
-      const idx = indices[cursor++];
-      const rule: CompiledRule = runtime.dispatch.rules[idx];
-      const captures: Record<string, RegExpMatchArray> = {};
-      if (rule.predicate(node, captures)) {
-        const ctx = makeContext(
-          runtime,
-          Object.keys(captures).length === 0 ? NO_CAPTURES : captures,
-        );
-        try {
-          return rule.$import(ctx, node, $next);
-        } catch (e) {
-          if (__DEV__) {
-            console.error(
-              `[lexical] DOM import rule "${rule.name}" threw on node`,
-              node,
-              e,
-            );
+    while (groupCursor < candidates.length) {
+      const {dispatch, indices} = candidates[groupCursor];
+      while (ruleCursor < indices.length) {
+        const idx = indices[ruleCursor++];
+        const rule: CompiledRule = dispatch.rules[idx];
+        const captures: Record<string, RegExpMatchArray> = {};
+        if (rule.predicate(node, captures)) {
+          const ctx = makeContext(
+            runtime,
+            Object.keys(captures).length === 0 ? NO_CAPTURES : captures,
+          );
+          try {
+            return rule.$import(ctx, node, $next);
+          } catch (e) {
+            if (__DEV__) {
+              console.error(
+                `[lexical] DOM import rule "${rule.name}" threw on node`,
+                node,
+                e,
+              );
+            }
+            throw e;
           }
-          throw e;
         }
       }
+      groupCursor++;
+      ruleCursor = 0;
     }
     return $hoistChildrenOf(runtime, node);
   };
@@ -176,8 +232,9 @@ export function $runImport(
   dispatch: CompiledDispatch,
   editor: LexicalEditor,
   dom: Document | ParentNode,
+  session: ImportSession,
 ): LexicalNode[] {
-  const runtime: Runtime = {dispatch, editor, session: new ImportSessionImpl()};
+  const runtime: Runtime = {dispatch, editor, overlays: [], session};
   const rootParent: ParentNode = isDOMDocumentNode(dom) ? dom.body : dom;
   return $importChildrenRun(runtime, rootParent, {schema: RootSchema});
 }

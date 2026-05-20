@@ -8,8 +8,12 @@
 import type {
   AnyDOMImportRule,
   DOMImportExtensionOutput,
+  DOMPreprocessContext,
+  DOMPreprocessFn,
   GenerateNodesFromDOMOptions,
   ImportContextPairOrUpdater,
+  ImportSession,
+  ImportStateConfig,
 } from './types';
 
 import {getExtensionDependencyFromEditor} from '@lexical/extension';
@@ -21,10 +25,11 @@ import {
 } from 'lexical';
 
 import {DOMImportExtensionName} from '../constants';
-import {contextFromPairs} from '../ContextRecord';
+import {contextFromPairs, contextValue} from '../ContextRecord';
 import {type CompiledDispatch, compileImportRules} from './compileImportRules';
 import {defineImportRule} from './defineImportRule';
-import {$withImportContext} from './ImportContext';
+import {$withImportContext, ImportSessionImpl} from './ImportContext';
+import {inlineStylesFromStyleSheets} from './inlineStylesFromStyleSheets';
 import {$runImport} from './runImport';
 import {selBase} from './sel';
 
@@ -50,6 +55,40 @@ export interface DOMImportConfig {
    * {@link GenerateNodesFromDOMOptions.context}.
    */
   readonly contextDefaults: readonly ImportContextPairOrUpdater[];
+  /**
+   * Functions run in order on the DOM before walking begins, mutating in
+   * place. The default config registers
+   * {@link inlineStylesFromStyleSheets} (resolves `<style>` rules to
+   * inline styles so the rules' style-driven matchers see them); apps
+   * append additional preprocessors (e.g. strip unsafe elements,
+   * normalize attributes, resolve relative URLs).
+   *
+   * `mergeConfig` appends, so each contributing extension's preprocessors
+   * run in dependency order. Per-call preprocessors registered via
+   * {@link GenerateNodesFromDOMOptions.preprocess} run AFTER these.
+   */
+  readonly preprocess: readonly DOMPreprocessFn[];
+}
+
+/**
+ * Drive a stack of {@link DOMPreprocessFn}s top-to-bottom: the highest-
+ * index fn runs first and may call `next()` to defer to the next-lower
+ * one. Matches the export-side `callExportMimeTypeFunctionStack` shape.
+ */
+function runPreprocessStack(
+  stack: readonly DOMPreprocessFn[],
+  dom: Document | ParentNode,
+  ctx: DOMPreprocessContext,
+): void {
+  let i = stack.length - 1;
+  const next = () => {
+    while (i >= 0) {
+      const cur = stack[i--];
+      cur(dom, ctx, next);
+      return;
+    }
+  };
+  next();
 }
 
 /**
@@ -90,20 +129,49 @@ export const DOMImportExtension = defineExtension<
   build(editor, config) {
     const dispatch: CompiledDispatch = compileImportRules(config.rules);
     const defaults = contextFromPairs(config.contextDefaults, undefined);
+    const configPreprocess = config.preprocess;
     return {
       $generateNodesFromDOM: (
         dom: Document | ParentNode,
         options?: GenerateNodesFromDOMOptions,
       ) => {
-        const ctx = options && options.context;
-        const $run = () => $runImport(dispatch, editor, dom);
-        return ctx ? $withImportContext(ctx, editor)($run) : $run();
+        const session: ImportSession = new ImportSessionImpl();
+        // Collected context pairs from preprocess-time setContext calls.
+        // Applied (on top of options.context) before the walk so the
+        // accumulated context is visible everywhere downstream.
+        const fromPreprocess: ImportContextPairOrUpdater[] = [];
+        const preprocessCtx: DOMPreprocessContext = {
+          editor,
+          session,
+          setContext<V>(cfg: ImportStateConfig<V>, value: V) {
+            fromPreprocess.push(contextValue(cfg, value));
+          },
+        };
+        // Stack of preprocessors: config-level first, then per-call.
+        // Top of stack (last in array) runs first; `next()` defers to
+        // the next-lower one. Matches the GetClipboardDataExtension
+        // convention so app-registered preprocessors can wrap built-in
+        // ones via `next()`.
+        const stack: readonly DOMPreprocessFn[] =
+          options && options.preprocess
+            ? [...configPreprocess, ...options.preprocess]
+            : configPreprocess;
+        runPreprocessStack(stack, dom, preprocessCtx);
+        const accumulatedContext: readonly ImportContextPairOrUpdater[] =
+          options && options.context
+            ? [...options.context, ...fromPreprocess]
+            : fromPreprocess;
+        const $run = () => $runImport(dispatch, editor, dom, session);
+        return accumulatedContext.length > 0
+          ? $withImportContext(accumulatedContext, editor)($run)
+          : $run();
       },
       defaults,
     };
   },
   config: {
     contextDefaults: [],
+    preprocess: [inlineStylesFromStyleSheets],
     rules: [DefaultHoistRule],
   },
   mergeConfig(config, partial) {
@@ -115,6 +183,12 @@ export const DOMImportExtension = defineExtension<
       (merged.contextDefaults as unknown[]) = [
         ...config.contextDefaults,
         ...partial.contextDefaults,
+      ];
+    }
+    if (partial.preprocess) {
+      (merged.preprocess as unknown[]) = [
+        ...config.preprocess,
+        ...partial.preprocess,
       ];
     }
     return merged;

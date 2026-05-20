@@ -19,14 +19,16 @@ Everything else (the `DOMRenderExtension` overrides for export, the
 state-management helpers, the React app shell) is identical.
 
 This example lives in `dev-examples/` (not `examples/`) because it
-depends on workspace versions of the Lexical packages — the workspace
-manifest only includes `dev-examples/*` for unpublished
-development-only examples.
+depends on unreleased Lexical functionality. Unlike `examples/`, a
+`dev-examples/` package builds against the Lexical workspace source
+directly (via `lexicalMonorepoPlugin` in the default `vite.config.ts`
+and the root `tsconfig.json`'s path mappings inherited via `extends`).
+No publish step is involved.
 
-**Run it locally** (from the repo root):
+**Run it locally** (from the repo root, after the workspace's
+`pnpm install`):
 
 ```sh
-pnpm i
 cd dev-examples/node-state-style
-pnpm run monorepo:dev
+pnpm run dev
 ```

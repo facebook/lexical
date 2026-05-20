@@ -346,7 +346,7 @@ export function createStyleImportRule(
   styleMapping: StyleMapping = input => input,
 ) {
   return defineImportRule({
-    $import: (ctx, el, $next) => {
+    $import: (_ctx, el, $next) => {
       const extra = el.hasAttribute('style') ? extractExtraStyles(el) : null;
       const out = $next();
       if (extra) {
@@ -380,26 +380,37 @@ export const StyleStateExtension = defineExtension({
     }),
     configExtension(DOMRenderExtension, {
       overrides: [
-        // Remove pre-wrap from TextNode export when not needed
+        // Remove pre-wrap from TextNode export when not needed, and
+        // strip any resulting empty `style=""` attributes (which can be
+        // left behind by `el.style.removeProperty(...)` in some browsers
+        // / JSDOM, or added incidentally by an upstream `el.style.foo = …`
+        // followed by another override that clears that property).
         domOverride([TextNode], {
           $exportDOM(_node, $next) {
             const result = $next();
             if (isHTMLElement(result.element)) {
+              const textContent = result.element.textContent || '';
+              // We know there aren't tabs or newlines, but if there are
+              // leading, trailing, or adjacent spaces we need pre-wrap to
+              // preserve them.
+              const needsPreWrap = /^\s|\s$|\s\s/.test(textContent);
               for (const el of [
                 result.element,
                 ...result.element.querySelectorAll('*'),
               ]) {
-                if (
-                  isHTMLElement(el) &&
-                  el.style.whiteSpace === 'pre-wrap' && // we know there aren't tabs or newlines but if there are
-                  // leading, trailing, or adjacent spaces then we need the
-                  // pre-wrap to preserve the content
-                  !/^\s|\s$|\s\s/.test(result.element.textContent)
-                ) {
-                  el.style.setProperty('white-space', null);
-                  if (el.style.cssText === '') {
-                    el.removeAttribute('style');
-                  }
+                if (!isHTMLElement(el)) {
+                  continue;
+                }
+                if (!needsPreWrap && el.style.whiteSpace === 'pre-wrap') {
+                  el.style.removeProperty('white-space');
+                }
+                // Strip an empty `style` attribute regardless of how it
+                // got there — `removeProperty` above can leave the
+                // attribute as `style=""`, and so can any earlier
+                // override that cleared its only set property.
+                const styleAttr = el.getAttribute('style');
+                if (styleAttr !== null && styleAttr.trim() === '') {
+                  el.removeAttribute('style');
                 }
               }
             }

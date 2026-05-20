@@ -259,6 +259,19 @@ export interface ImportChildrenOpts {
   readonly $after?: (children: LexicalNode[]) => LexicalNode[];
   /** Context overrides scoped to the children traversal. */
   readonly context?: readonly ImportContextPairOrUpdater[];
+  /**
+   * Additional {@link DOMImportRule}s active only for this children
+   * traversal (and any nested `$importChildren` calls that don't push
+   * their own overlay). The overlay is checked BEFORE the main
+   * dispatcher, so its rules take precedence; calling `$next()` from an
+   * overlay rule falls through to the next overlay-or-main rule.
+   *
+   * Use this to scope cost-bearing rules to where they apply. For
+   * example, a GitHub code-table rule installs an overlay that
+   * unwraps `<tr>` / `<td>` inside the table, without paying that
+   * predicate cost on every other `<tr>` / `<td>` paste.
+   */
+  readonly rules?: readonly DOMImportRule[];
 }
 
 /** @experimental */
@@ -343,6 +356,61 @@ export interface DOMImportRule<S extends CompiledSelector = CompiledSelector> {
 export type AnyDOMImportRule = DOMImportRule<any>;
 
 /**
+ * Context exposed to a {@link DOMPreprocessFn}. Lets the preprocessor:
+ *
+ * - Read editor state via {@link DOMPreprocessContext.editor}.
+ * - Write to the per-import {@link ImportSession} (the same
+ *   `ctx.session` rules see during the walk).
+ * - Layer context pairs that become visible to the entire walk via
+ *   {@link DOMPreprocessContext.setContext}.
+ *
+ * @experimental
+ */
+export interface DOMPreprocessContext {
+  /** The editor driving this import. */
+  readonly editor: LexicalEditor;
+  /**
+   * Document-order-shared store, same instance as `ctx.session` in
+   * rules. Use to pass info from the DOM preprocess phase (e.g.
+   * inspected `<meta>` tags, collected `<style>` text) to the
+   * importer rules.
+   */
+  readonly session: ImportSession;
+  /**
+   * Layer a context pair into the import context for the rest of the
+   * import (i.e. visible to rule `$import` functions and child
+   * `$importChildren` calls). Later calls override earlier ones for
+   * the same {@link ImportStateConfig}.
+   */
+  setContext<V>(cfg: ImportStateConfig<V>, value: V): void;
+}
+
+/**
+ * A middleware step in the DOM-preprocess chain. Runs before walking
+ * begins and may:
+ *
+ * - Mutate the input DOM in place (e.g. inline stylesheets, strip
+ *   unsafe elements, normalize attributes).
+ * - Write to {@link DOMPreprocessContext.session} for rules to read.
+ * - Call {@link DOMPreprocessContext.setContext} to install context
+ *   values for the upcoming walk.
+ * - Call `next()` to defer to the next-lower preprocessor in the stack;
+ *   omit the call to short-circuit and skip the rest.
+ *
+ * Append-style merge applies: an extension's preprocessors are appended
+ * to the existing stack, so later-registered preprocessors run first
+ * and may delegate to earlier (lower-priority) ones via `next()`. Same
+ * convention as {@link ExportMimeTypeFunction} on the export side.
+ *
+ * @experimental
+ */
+export type DOMPreprocessFn = (
+  dom: Document | ParentNode,
+  ctx: DOMPreprocessContext,
+  next: () => void,
+) => void;
+
+/**
  * Per-call options to the extension's `$generateNodesFromDOM`.
  *
  * @experimental
@@ -353,6 +421,12 @@ export interface GenerateNodesFromDOMOptions {
    * use to communicate per-call info such as the {@link ImportSource}.
    */
   readonly context?: readonly ImportContextPairOrUpdater[];
+  /**
+   * Additional preprocessors to run on this call only, on top of the
+   * extension's configured {@link DOMImportConfig.preprocess}. Per-call
+   * preprocessors run AFTER the configured ones.
+   */
+  readonly preprocess?: readonly DOMPreprocessFn[];
 }
 
 /**

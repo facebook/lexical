@@ -39,6 +39,7 @@ import {
 import invariant from 'shared/invariant';
 
 import {contextValue} from './ContextRecord';
+import {inlineStylesFromStyleSheets} from './import/inlineStylesFromStyleSheets';
 import {
   $withRenderContext,
   RenderContextExport,
@@ -58,6 +59,8 @@ export type {
   DOMImportExtensionOutput,
   DOMImportFn,
   DOMImportRule,
+  DOMPreprocessContext,
+  DOMPreprocessFn,
   ElementSelectorBuilder,
   GenerateNodesFromDOMOptions,
   ImportChildrenOpts,
@@ -90,6 +93,7 @@ export {
   ImportTextFormat,
   ImportWhitespaceConfig,
   InlineSchema,
+  inlineStylesFromStyleSheets,
   isElementOfTag,
   type IsInlineForWhitespace,
   type IsPreserveWhitespaceDom,
@@ -117,80 +121,6 @@ export type {
   NodeMatch,
 } from './types';
 
-function isStyleRule(rule: CSSRule): rule is CSSStyleRule {
-  return rule.constructor.name === CSSStyleRule.name;
-}
-
-/**
- * Inlines CSS rules from <style> tags onto matching elements as inline styles.
- * This is needed because apps like Excel generate HTML where styles live in
- * class-based <style> rules (e.g. `.xl65 { background: #FFFF00; color: blue; }`)
- * rather than inline styles. Since Lexical's import converters read inline styles,
- * we resolve stylesheet rules into inline styles before conversion.
- *
- * Mutates the DOM in-place. Original inline styles always take precedence over
- * stylesheet rules (matching CSS specificity behavior).
- */
-function inlineStylesFromStyleSheets(doc: Document): void {
-  if (doc.querySelector('style') === null) {
-    return;
-  }
-
-  const originalInlineStyles = new Map<HTMLElement, Set<string>>();
-
-  function getOriginalInlineProps(el: HTMLElement): Set<string> {
-    let props = originalInlineStyles.get(el);
-    if (props === undefined) {
-      props = new Set<string>();
-      for (let i = 0; i < el.style.length; i++) {
-        props.add(el.style[i]);
-      }
-      originalInlineStyles.set(el, props);
-    }
-    return props;
-  }
-
-  try {
-    for (const sheet of Array.from(doc.styleSheets)) {
-      let rules: CSSRuleList;
-      try {
-        rules = sheet.cssRules;
-      } catch {
-        continue;
-      }
-      for (const rule of Array.from(rules)) {
-        if (!isStyleRule(rule)) {
-          continue;
-        }
-        let elements: NodeListOf<Element>;
-        try {
-          elements = doc.querySelectorAll(rule.selectorText);
-        } catch {
-          continue;
-        }
-        for (const el of Array.from(elements)) {
-          if (!isHTMLElement(el)) {
-            continue;
-          }
-          const originalProps = getOriginalInlineProps(el);
-          for (let i = 0; i < rule.style.length; i++) {
-            const prop = rule.style[i];
-            if (!originalProps.has(prop)) {
-              el.style.setProperty(
-                prop,
-                rule.style.getPropertyValue(prop),
-                rule.style.getPropertyPriority(prop),
-              );
-            }
-          }
-        }
-      }
-    }
-  } catch {
-    // styleSheets API not supported in this environment
-  }
-}
-
 const IGNORE_TAGS = new Set(['STYLE', 'SCRIPT']);
 
 /**
@@ -203,7 +133,15 @@ export function $generateNodesFromDOM(
   dom: Document | ParentNode,
 ): Array<LexicalNode> {
   if (isDOMDocumentNode(dom)) {
-    inlineStylesFromStyleSheets(dom);
+    // The shared helper has a DOMPreprocessFn signature; the legacy
+    // pipeline doesn't have a real `ctx` or `next` to thread through,
+    // so we pass a no-op `next` and a minimal context placeholder.
+    inlineStylesFromStyleSheets(
+      dom,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      {} as any,
+      () => {},
+    );
   }
 
   const elements = isDOMDocumentNode(dom)

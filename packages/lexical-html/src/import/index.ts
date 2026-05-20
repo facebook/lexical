@@ -54,6 +54,7 @@ export {
   type IsPreserveWhitespaceDom,
   type WhitespaceImportConfig,
 } from './ImportContext';
+export {inlineStylesFromStyleSheets} from './inlineStylesFromStyleSheets';
 export {parseSelector} from './parseCss';
 export {
   BlockSchema,
@@ -72,6 +73,8 @@ export type {
   DOMImportExtensionOutput,
   DOMImportFn,
   DOMImportRule,
+  DOMPreprocessContext,
+  DOMPreprocessFn,
   ElementSelectorBuilder,
   GenerateNodesFromDOMOptions,
   ImportChildrenOpts,

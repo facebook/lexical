@@ -5,7 +5,6 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "monorepo:dev": "vite -c vite.config.monorepo.ts",
     "build": "tsc && vite build",
     "preview": "vite preview"
   },

@@ -621,7 +621,7 @@ Outside the code table, the `tr` / `td` rule from `@lexical/table` is
 the only one consulted; the overlay isn't installed unless we enter
 a code-table subtree.
 
-`ImportChildrenOpts.rules` only accepts a {@link CompiledOverlayRules}
+`ImportChildrenOpts.rules` only accepts a `CompiledOverlayRules`
 produced by `defineOverlayRules` — a raw rule array won't typecheck.
 This is by design: a one-off overlay built inline on every walk would
 recompile the dispatcher each time, defeating the point of the overlay

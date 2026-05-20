@@ -1,5 +1,22 @@
 # DOMImportExtension
 
+:::warning Experimental
+
+`DOMImportExtension` and everything described on this page are marked
+`@experimental` and may change between any two Lexical releases —
+including breaking renames, signature changes, or behavior changes —
+until the API stabilizes. We track issues and proposals in the
+[GitHub repo](https://github.com/facebook/lexical); breaking changes
+will be called out in release notes. Apps that depend on this
+pipeline should pin their Lexical version and treat upgrades as
+intentional.
+
+The legacy static `importDOM` machinery and `$generateNodesFromDOM`
+entry are unchanged and remain the supported default for production
+apps that don't want to track an experimental API.
+
+:::
+
 The DOM import system in `@lexical/html` lets you convert any HTML or
 DOM tree into Lexical nodes. The legacy entry — the static
 `importDOM` declared on each node class — still works, but for new

@@ -14,7 +14,6 @@ import {
   $getImportContextValue,
   type AnyDOMImportRule,
   BlockSchema,
-  composeOverlayRules,
   contextValue,
   createImportState,
   defineImportRule,
@@ -580,8 +579,8 @@ describe('$importChildren `rules` overlay', () => {
   });
 });
 
-describe('composeOverlayRules', () => {
-  test('merges two overlays with first-argument-wins priority', () => {
+describe('overlay composition via defineOverlayRules', () => {
+  test('inlines nested overlays in priority order (earlier entry wins)', () => {
     const overlayA = defineOverlayRules([
       defineImportRule({
         $import: () => {
@@ -613,7 +612,7 @@ describe('composeOverlayRules', () => {
         name: 'test/B-y',
       }),
     ]);
-    const merged = composeOverlayRules(overlayA, overlayB);
+    const merged = defineOverlayRules([overlayA, overlayB]);
     const WrapRule = defineImportRule({
       $import: (ctx, el) => ctx.$importChildren(el, {rules: merged}),
       match: sel.tag('wrap'),
@@ -649,7 +648,7 @@ describe('composeOverlayRules', () => {
         name: 'test/B-fallback',
       }),
     ]);
-    const merged = composeOverlayRules(overlayA, overlayB);
+    const merged = defineOverlayRules([overlayA, overlayB]);
     const WrapRule = defineImportRule({
       $import: (ctx, el) => ctx.$importChildren(el, {rules: merged}),
       match: sel.tag('wrap'),

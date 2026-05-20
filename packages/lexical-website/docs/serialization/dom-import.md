@@ -644,29 +644,34 @@ being a fast-path.
 
 ### Composing overlays
 
-Two or more `CompiledOverlayRules` can be merged at module scope via
-`composeOverlayRules(...overlays)`. Earlier arguments are higher
-priority — rules from `overlays[0]` dispatch first, then `overlays[1]`,
-etc. The merged rule list is recompiled once, so installing the result
-costs the same as a single overlay.
+`defineOverlayRules` accepts both raw `DOMImportRule`s and other
+`CompiledOverlayRules` in the same list (the union is
+`DOMImportRuleEntry`). Existing overlays are inlined at their position
+in priority order — earlier entries dispatch first — so any number of
+overlays compose with a single call, recompiled once.
 
 ```ts
-import {composeOverlayRules} from '@lexical/html';
-
-const allOverlays = composeOverlayRules(
+const allOverlays = defineOverlayRules([
   GitHubCodeTableOverlayRules,
   ExcelTableOverlayRules,
-);
+  // ...plus inline rules if you want them at this priority position:
+  defineImportRule({match: sel.tag('foo'), $import: …}),
+]);
 
 ctx.$importChildren(el, {rules: allOverlays});
 ```
 
+The same `DOMImportRuleEntry` union is accepted by
+`DOMImportConfig.rules` (the extension-level rule list), so a library
+that ships a `CompiledOverlayRules` can be dropped straight into
+`configExtension(DOMImportExtension, {rules: […]})` without unpacking.
+
 This is the definition-time complement to runtime composition (an
 overlay rule's `$import` calling
 `ctx.$importChildren(el, {rules: another})` to push a nested overlay
-on top of the current stack): use composition when you want a fixed
-merged overlay across an entire subtree, and nesting when the inner
-overlay should only apply for a deeper region.
+on top of the current stack): compose when you want a fixed merged
+overlay across an entire subtree, nest when the inner overlay should
+only apply for a deeper region.
 
 ## ClipboardImportExtension
 

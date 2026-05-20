@@ -6,8 +6,8 @@
  *
  */
 import type {ContextRecord} from '../types';
+import type {DOMImportRuleEntry} from './defineOverlayRules';
 import type {
-  AnyDOMImportRule,
   DOMImportExtensionOutput,
   DOMPreprocessContext,
   DOMPreprocessFn,
@@ -27,6 +27,7 @@ import {DOMImportContextSymbol, DOMImportExtensionName} from '../constants';
 import {$withFullContext, contextFromPairs} from '../ContextRecord';
 import {type CompiledDispatch, compileImportRules} from './compileImportRules';
 import {defineImportRule} from './defineImportRule';
+import {flattenRuleEntries} from './defineOverlayRules';
 import {ImportSessionImpl} from './ImportContext';
 import {$inlineStylesFromStyleSheets} from './inlineStylesFromStyleSheets';
 import {$runImport} from './runImport';
@@ -39,15 +40,20 @@ import {selBase} from './sel';
  */
 export interface DOMImportConfig {
   /**
-   * The set of {@link DOMImportRule}s contributed by this extension and its
-   * dependencies. Rules are dispatched in priority order: rules contributed
-   * by extensions merged later (i.e. closer to the editor root) run first
+   * The set of rules contributed by this extension and its dependencies.
+   * Entries can be raw {@link DOMImportRule}s or a
+   * {@link CompiledOverlayRules} produced by {@link defineOverlayRules}
+   * (the latter is inlined in priority order — useful for libraries
+   * that already publish a compiled overlay).
+   *
+   * Rules are dispatched in priority order: rules contributed by
+   * extensions merged later (i.e. closer to the editor root) run first
    * and may call `$next()` to delegate to lower-priority rules.
    *
    * `mergeConfig` prepends `partial.rules` to existing `rules`, so later
    * configuration carries higher priority.
    */
-  readonly rules: readonly AnyDOMImportRule[];
+  readonly rules: readonly DOMImportRuleEntry[];
   /**
    * Default context pairs applied to every `$generateNodesFromDOM` call.
    * Per-call overrides can be supplied via
@@ -126,7 +132,9 @@ export const DOMImportExtension = defineExtension<
   void
 >({
   build(editor, config) {
-    const dispatch: CompiledDispatch = compileImportRules(config.rules);
+    const dispatch: CompiledDispatch = compileImportRules(
+      flattenRuleEntries(config.rules),
+    );
     const defaults = contextFromPairs(config.contextDefaults, undefined);
     const configPreprocess = config.preprocess;
     return {

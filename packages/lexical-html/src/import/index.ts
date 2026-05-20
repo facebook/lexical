@@ -32,8 +32,8 @@ export {CoreImportRules} from './coreImportRules';
 export {defineImportRule} from './defineImportRule';
 export {
   type CompiledOverlayRules,
-  composeOverlayRules,
   defineOverlayRules,
+  type DOMImportRuleEntry,
 } from './defineOverlayRules';
 export {
   $generateNodesFromDOMViaExtension,

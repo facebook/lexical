@@ -15,9 +15,9 @@ import {type CompiledDispatch, compileImportRules} from './compileImportRules';
  * {@link DOMImportContext.$importChildren} via
  * {@link ImportChildrenOpts.rules}.
  *
- * Use {@link composeOverlayRules} to merge two or more overlays into a
- * single one for cases where libraries each ship their own overlay and
- * an app wants to install them together.
+ * To merge two or more overlays into a single one, pass them (alongside
+ * raw {@link DOMImportRule}s if desired) to a fresh
+ * {@link defineOverlayRules} — earlier arguments are higher priority.
  *
  * The internal shape is intentionally not part of the public API: it's a
  * compiled dispatch table tagged with `__type` so callers cannot pass a
@@ -29,14 +29,62 @@ export interface CompiledOverlayRules {
   readonly __type: 'CompiledOverlayRules';
   /** @internal */
   readonly dispatch: CompiledDispatch;
-  /** @internal — kept so {@link composeOverlayRules} can recompile. */
+  /**
+   * @internal — flattened source rules retained so an overlay can be
+   * recompiled when it is passed to another {@link defineOverlayRules}
+   * call or as part of {@link DOMImportConfig.rules}.
+   */
   readonly rules: readonly AnyDOMImportRule[];
 }
 
 /**
- * Pre-compile a set of {@link DOMImportRule}s into a {@link CompiledOverlayRules}
- * handle that can be installed via
+ * An entry accepted everywhere rules are configured (overlay
+ * definitions, {@link DOMImportConfig.rules}). Either a single
+ * {@link DOMImportRule} or a {@link CompiledOverlayRules} produced by
+ * a previous {@link defineOverlayRules} call — passing the latter
+ * inlines the overlay's rules at this position in priority order.
+ *
+ * @experimental
+ */
+export type DOMImportRuleEntry = AnyDOMImportRule | CompiledOverlayRules;
+
+/** @internal */
+export function flattenRuleEntries(
+  entries: readonly DOMImportRuleEntry[],
+): AnyDOMImportRule[] {
+  const out: AnyDOMImportRule[] = [];
+  for (const entry of entries) {
+    if (isCompiledOverlayRules(entry)) {
+      for (const r of entry.rules) {
+        out.push(r);
+      }
+    } else {
+      out.push(entry);
+    }
+  }
+  return out;
+}
+
+function isCompiledOverlayRules(
+  entry: DOMImportRuleEntry,
+): entry is CompiledOverlayRules {
+  return (
+    typeof entry === 'object' &&
+    entry !== null &&
+    '__type' in entry &&
+    entry.__type === 'CompiledOverlayRules'
+  );
+}
+
+/**
+ * Pre-compile a set of {@link DOMImportRuleEntry}s into a
+ * {@link CompiledOverlayRules} handle that can be installed via
  * `ctx.$importChildren(el, {rules: …})`.
+ *
+ * Entries can be raw {@link DOMImportRule}s or other
+ * {@link CompiledOverlayRules} (the latter are inlined at their
+ * position in priority order, so the same call composes any number of
+ * overlays). Earlier entries are higher priority.
  *
  * Overlay rules installed as a raw array would be re-compiled on every
  * `$importChildren` call. For overlays that are reused (e.g. a GitHub
@@ -46,37 +94,9 @@ export interface CompiledOverlayRules {
  * @experimental
  */
 export function defineOverlayRules(
-  rules: readonly AnyDOMImportRule[],
+  entries: readonly DOMImportRuleEntry[],
 ): CompiledOverlayRules {
-  return {
-    __type: 'CompiledOverlayRules',
-    dispatch: compileImportRules(rules),
-    rules,
-  };
-}
-
-/**
- * Compose two or more {@link CompiledOverlayRules} into a single overlay.
- * Earlier arguments are higher priority — rules from `overlays[0]`
- * dispatch first, then `overlays[1]`, etc. The merged rule list is
- * recompiled once so the runtime cost matches a single overlay.
- *
- * This is the definition-time complement to runtime composition (one
- * overlay rule calling `ctx.$importChildren(el, {rules: another})` to
- * push a nested overlay): use this when you want a fixed merged
- * overlay across an entire subtree.
- *
- * @experimental
- */
-export function composeOverlayRules(
-  ...overlays: readonly CompiledOverlayRules[]
-): CompiledOverlayRules {
-  const rules: AnyDOMImportRule[] = [];
-  for (const overlay of overlays) {
-    for (const rule of overlay.rules) {
-      rules.push(rule);
-    }
-  }
+  const rules = flattenRuleEntries(entries);
   return {
     __type: 'CompiledOverlayRules',
     dispatch: compileImportRules(rules),

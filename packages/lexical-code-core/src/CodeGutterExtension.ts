@@ -10,6 +10,7 @@ import {
   $isLineBreakNode,
   configExtension,
   defineExtension,
+  isHTMLElement,
   LineBreakNode,
 } from 'lexical';
 import {IS_APPLE_WEBKIT, IS_IOS, IS_SAFARI} from 'shared/environment';
@@ -126,6 +127,13 @@ export const CodeGutterExtension = defineExtension({
             }
             wrap.appendChild(inner);
             return wrap;
+          },
+          $getDOMSlot: (_node, dom, $next, _editor) => {
+            // Match a `<br>` anywhere inside the wrap, not just as a
+            // direct child — another extension (e.g. VisibleLineBreak)
+            // may wrap the `<br>` again inside this wrap.
+            const br = dom.querySelector('br');
+            return isHTMLElement(br) ? $next().withElement(br) : $next();
           },
           $updateDOM: (node, _prev, dom, $next, _editor) => {
             const wantsWrap = $needsWrap(node);

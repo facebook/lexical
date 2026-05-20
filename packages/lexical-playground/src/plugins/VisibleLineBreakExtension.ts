@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import {$isCodeNode} from '@lexical/code-core';
 import {
   effect,
   getExtensionDependencyFromEditor,
@@ -36,7 +37,6 @@ import {
  * `$updateDOM` overrides below.
  */
 const VISIBLE_LINEBREAK_CLASS = 'visible-linebreak';
-const VISIBLE_LINEBREAK_MARKER = '↵';
 const VISIBLE_LINEBREAK_ATTR = 'data-lexical-visible-linebreak';
 
 export interface VisibleLineBreakConfig {
@@ -46,6 +46,13 @@ export interface VisibleLineBreakConfig {
 function $isDisabled(editor: LexicalEditor): boolean {
   return getExtensionDependencyFromEditor(editor, VisibleLineBreakExtension)
     .output.disabled.value;
+}
+
+function $skipForCodeChild(node: LineBreakNode): boolean {
+  // Code blocks already convey line structure visually (and the
+  // playground composes CodeGutterExtension for line numbers), so a
+  // visible `↵` marker on top is redundant noise.
+  return $isCodeNode(node.getParent());
 }
 
 function hasOurWrap(dom: HTMLElement): boolean {
@@ -59,19 +66,14 @@ export const VisibleLineBreakExtension = defineExtension({
     configExtension(DOMRenderExtension, {
       overrides: [
         domOverride([LineBreakNode], {
-          $createDOM: (_node, $next, editor) => {
+          $createDOM: (node, $next, editor) => {
             const inner = $next();
-            if ($isDisabled(editor)) {
+            if ($isDisabled(editor) || $skipForCodeChild(node)) {
               return inner;
             }
             const wrapper = document.createElement('span');
             wrapper.className = VISIBLE_LINEBREAK_CLASS;
             wrapper.setAttribute(VISIBLE_LINEBREAK_ATTR, 'true');
-            const marker = document.createElement('span');
-            marker.textContent = VISIBLE_LINEBREAK_MARKER;
-            marker.setAttribute('aria-hidden', 'true');
-            marker.contentEditable = 'false';
-            wrapper.appendChild(marker);
             wrapper.appendChild(inner);
             return wrapper;
           },
@@ -79,8 +81,8 @@ export const VisibleLineBreakExtension = defineExtension({
             const br = dom.querySelector(':scope > br');
             return isHTMLElement(br) ? $next().withElement(br) : $next();
           },
-          $updateDOM: (_node, _prev, dom, $next, editor) => {
-            const wantsWrap = !$isDisabled(editor);
+          $updateDOM: (node, _prev, dom, $next, editor) => {
+            const wantsWrap = !$isDisabled(editor) && !$skipForCodeChild(node);
             if (wantsWrap !== hasOurWrap(dom)) {
               return true;
             }

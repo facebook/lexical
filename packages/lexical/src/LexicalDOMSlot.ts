@@ -106,6 +106,70 @@ export class DOMSlot<T extends HTMLElement = HTMLElement> {
       : this.element.firstChild;
     return firstChild === this.before ? null : firstChild;
   }
+  /**
+   * Map a DOM selection point landing at or inside `leafDOM` (the node's
+   * keyed DOM) to whether the caret is positioned BEFORE or AFTER the
+   * node in document order. The default implementation derives the
+   * boundary from `this.element`'s index inside `leafDOM`:
+   *
+   * - When `this.element === leafDOM` (no wrap exposed an inner content
+   *   element via `withElement`): only a DOM caret directly on
+   *   `leafDOM` at offset 0 counts as "before". Matches the historical
+   *   decorator rule.
+   * - When `this.element !== leafDOM` (wrap pattern that exposed the
+   *   inner content element via `withElement`, e.g. a `<br>` inside a
+   *   decoration `<span>`): caret positions at or before the content
+   *   element are "before", later positions are "after". Handles
+   *   nested wraps by walking each side up to its top-level child of
+   *   `leafDOM`.
+   *
+   * Symmetric with {@link ElementDOMSlot.resolveChildIndex}, which
+   * performs the analogous mapping for ElementNode children. Together
+   * they let the slot abstraction own all DOM-offset to lexical-offset
+   * translation.
+   *
+   * @experimental
+   */
+  resolveLeafPosition(
+    leafDOM: HTMLElement,
+    initialDOM: Node,
+    initialOffset: number,
+  ): 'before' | 'after' {
+    if (this.element === leafDOM) {
+      return initialDOM === leafDOM && initialOffset === 0 ? 'before' : 'after';
+    }
+    const innerChild = $topLevelChildOf(leafDOM, this.element);
+    if (innerChild === null) {
+      return 'after';
+    }
+    const innerIndex = Array.prototype.indexOf.call(
+      leafDOM.childNodes,
+      innerChild,
+    );
+    if (innerIndex < 0) {
+      return 'after';
+    }
+    if (initialDOM === leafDOM) {
+      return initialOffset <= innerIndex ? 'before' : 'after';
+    }
+    const initialChild = $topLevelChildOf(leafDOM, initialDOM);
+    if (initialChild === null) {
+      return 'after';
+    }
+    const childIndex = Array.prototype.indexOf.call(
+      leafDOM.childNodes,
+      initialChild,
+    );
+    return childIndex >= 0 && childIndex <= innerIndex ? 'before' : 'after';
+  }
+}
+
+function $topLevelChildOf(parent: HTMLElement, descendant: Node): Node | null {
+  let node: Node | null = descendant;
+  while (node !== null && node.parentNode !== parent) {
+    node = node.parentNode;
+  }
+  return node;
 }
 
 /**

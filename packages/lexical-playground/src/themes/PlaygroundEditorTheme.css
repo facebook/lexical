@@ -778,3 +778,10 @@
     min-height: var(--page-height);
   }
 }
+[data-lexical-visible-linebreak]::before {
+  content: '↵';
+  color: #999;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}

@@ -90,6 +90,7 @@ export {
   DOMImportExtension,
   HorizontalRuleImportExtension,
   HorizontalRuleImportRules,
+  ImportOverlays,
   ImportSource,
   type ImportSourceKind,
   ImportTextFormat,

@@ -6,6 +6,7 @@
  *
  */
 import type {ContextRecord} from '../types';
+import type {CompiledOverlayRules} from './defineOverlayRules';
 import type {DOMImportExtension} from './DOMImportExtension';
 import type {
   ImportContextPairOrUpdater,
@@ -185,6 +186,31 @@ export const ImportWhitespaceConfig: ImportStateConfig<WhitespaceImportConfig> =
     isInline: defaultIsInline,
     preservesWhitespace: defaultPreservesWhitespace,
   }));
+
+/**
+ * Built-in session slot for runtime overlay rules that should be in
+ * effect for the entire walk. A preprocessor writes here when it wants
+ * to conditionally install handling for a particular paste source
+ * (e.g. "if the Microsoft Word generator meta tag is present, push the
+ * Word-paste overlay"). Each entry contributes an overlay dispatcher
+ * to the runtime's overlay stack; later array entries are higher
+ * priority. Use `ctx.session.update(ImportOverlays, prev => […])` to
+ * append.
+ *
+ * This is the walk-wide counterpart to
+ * `$importChildren({rules: …})` (which scopes an overlay to one
+ * subtree): write to {@link ImportOverlays} when the overlay should
+ * apply for the whole document; use `$importChildren`'s `rules` when
+ * the overlay should only apply for a deeper region.
+ *
+ * @experimental
+ */
+export const ImportOverlays: ImportStateConfig<
+  readonly CompiledOverlayRules[]
+> = createImportState<readonly CompiledOverlayRules[]>(
+  'importOverlays',
+  () => [],
+);
 
 /**
  * The session IS the root-layer {@link ContextRecord} of the walk. Reads

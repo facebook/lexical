@@ -50,6 +50,7 @@ export {
   createImportState,
   defaultIsInline,
   defaultPreservesWhitespace,
+  ImportOverlays,
   ImportSource,
   type ImportSourceKind,
   ImportTextFormat,

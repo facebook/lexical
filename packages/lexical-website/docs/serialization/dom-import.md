@@ -673,6 +673,45 @@ on top of the current stack): compose when you want a fixed merged
 overlay across an entire subtree, nest when the inner overlay should
 only apply for a deeper region.
 
+### Walk-wide overlays installed by a preprocessor
+
+A preprocessor can install an overlay for the entire walk by writing to
+the built-in `ImportOverlays` session slot. The runtime reads it once
+before walking and seeds the overlay stack from it, so rules don't have
+to bracket each subtree with `$importChildren({rules: …})`.
+
+This is how you handle paste-source-conditional rule sets: detect the
+source in preprocess, install only the relevant overlay, and pay
+nothing for other sources.
+
+```ts
+import {
+  defineOverlayRules,
+  type DOMPreprocessFn,
+  ImportOverlays,
+} from '@lexical/html';
+
+const WordPasteOverlay = defineOverlayRules([
+  WordOPRule,
+  WordListParagraphRule,
+  // …
+]);
+
+const $installWordOverlay: DOMPreprocessFn = (dom, ctx, $next) => {
+  const meta = dom.querySelector('meta[name="Generator"]');
+  if (meta && /Microsoft Word/i.test(meta.getAttribute('content') || '')) {
+    ctx.session.update(ImportOverlays, (prev) => [...prev, WordPasteOverlay]);
+  }
+  $next();
+};
+```
+
+See `packages/lexical-list/src/__tests__/unit/ListImportExtension.test.ts`
+("MS Word paste — preprocess-installed overlay") for a worked example that
+groups Word's flat `<p class="MsoListParagraph*">` runs into nested
+`ListNode` trees by walking forward through siblings and tracking
+already-consumed elements via session state.
+
 ## ClipboardImportExtension
 
 The clipboard's paste handler (`$insertDataTransferForRichText`)

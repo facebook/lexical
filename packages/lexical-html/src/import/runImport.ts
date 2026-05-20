@@ -21,7 +21,11 @@ import {
   type CompiledRule,
   getDispatchIndices,
 } from './compileImportRules';
-import {$getImportContextValue, $withImportContext} from './ImportContext';
+import {
+  $getImportContextValue,
+  $withImportContext,
+  ImportOverlays,
+} from './ImportContext';
 import {applySchema, RootSchema} from './schemas';
 
 const NO_CAPTURES: Record<string, RegExpMatchArray> = Object.freeze(
@@ -229,7 +233,16 @@ export function $runImport(
   dom: Document | ParentNode,
   session: ImportSession,
 ): LexicalNode[] {
-  const runtime: Runtime = {dispatch, editor, overlays: [], session};
+  // Prime the overlay stack with any overlays a preprocess wrote to
+  // ImportOverlays. These remain in effect for the entire walk; nested
+  // `$importChildren({rules})` calls push on top.
+  const installed = session.get(ImportOverlays);
+  const runtime: Runtime = {
+    dispatch,
+    editor,
+    overlays: installed.map(o => o.dispatch),
+    session,
+  };
   const rootParent: ParentNode = isDOMDocumentNode(dom) ? dom.body : dom;
   return $importChildrenRun(runtime, rootParent, {schema: RootSchema});
 }

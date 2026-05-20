@@ -27,3 +27,13 @@ export {
   type LexicalClipboardData,
   setLexicalClipboardDataTransfer,
 } from './clipboard';
+export {
+  type ClipboardImportConfig,
+  ClipboardImportExtension,
+  type ClipboardImportOutput,
+  DEFAULT_IMPORT_MIME_TYPE,
+  DEFAULT_IMPORT_MIME_TYPE_PRIORITY,
+  type ImportMimeTypeConfig,
+  type ImportMimeTypeFunction,
+  type ImportMimeTypePriority,
+} from './ClipboardImportExtension';

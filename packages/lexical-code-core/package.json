@@ -13,7 +13,8 @@
   "types": "index.d.ts",
   "dependencies": {
     "@lexical/extension": "workspace:*",
-    "lexical": "workspace:*"
+    "lexical": "workspace:*",
+    "@lexical/html": "workspace:*"
   },
   "repository": {
     "type": "git",

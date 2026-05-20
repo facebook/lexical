@@ -40,6 +40,7 @@
     "@lexical/extension": "workspace:*",
     "@lexical/selection": "workspace:*",
     "@lexical/utils": "workspace:*",
-    "lexical": "workspace:*"
+    "lexical": "workspace:*",
+    "@lexical/html": "workspace:*"
   }
 }

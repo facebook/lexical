@@ -45,6 +45,12 @@ import {$createListNode, $isListNode, ListNode} from './LexicalListNode';
 import {$getListDepth} from './utils';
 
 export {
+  ListImportExtension,
+  ListImportRules,
+  ListSchema,
+} from './ListImportExtension';
+
+export {
   $createListItemNode,
   $createListNode,
   $getListDepth,

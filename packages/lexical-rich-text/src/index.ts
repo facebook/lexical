@@ -1382,6 +1382,11 @@ export function registerRichText(
  * })
  * ```
  */
+export {
+  RichTextImportExtension,
+  RichTextImportRules,
+} from './RichTextImportExtension';
+
 export const RichTextExtension = defineExtension({
   build: (_editor, config) => namedSignals(config),
   config: safeCast<RichTextConfig>(DEFAULT_RICH_TEXT_CONFIG),

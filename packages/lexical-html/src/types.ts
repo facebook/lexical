@@ -6,7 +6,7 @@
  *
  */
 
-import type {DOMRenderContextSymbol} from './constants';
+import type {DOMImportContextSymbol, DOMRenderContextSymbol} from './constants';
 import type {
   BaseSelection,
   DOMExportOutput,
@@ -20,9 +20,11 @@ import type {
 /**
  * @experimental
  *
- * Any ContextSymbol for {@link ContextConfig} (currently only {@link DOMRenderContextSymbol})
+ * Any ContextSymbol for {@link ContextConfig} (DOM render or DOM import).
  */
-export type AnyContextSymbol = typeof DOMRenderContextSymbol;
+export type AnyContextSymbol =
+  | typeof DOMRenderContextSymbol
+  | typeof DOMImportContextSymbol;
 
 /**
  * @experimental

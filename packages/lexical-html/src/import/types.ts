@@ -11,6 +11,7 @@ import type {
   ContextConfig,
   ContextRecord,
 } from '../types';
+import type {CompiledOverlayRules} from './defineOverlayRules';
 import type {LexicalEditor, LexicalNode} from 'lexical';
 
 /**
@@ -270,8 +271,13 @@ export interface ImportChildrenOpts {
    * example, a GitHub code-table rule installs an overlay that
    * unwraps `<tr>` / `<td>` inside the table, without paying that
    * predicate cost on every other `<tr>` / `<td>` paste.
+   *
+   * The value must be produced by
+   * {@link defineOverlayRules}; this forces the dispatcher to be
+   * compiled once at module scope and reused across
+   * `$importChildren` calls, instead of being recompiled per invocation.
    */
-  readonly rules?: readonly DOMImportRule[];
+  readonly rules?: CompiledOverlayRules;
 }
 
 /** @experimental */

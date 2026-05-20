@@ -39,7 +39,7 @@ import {
 import invariant from 'shared/invariant';
 
 import {contextValue} from './ContextRecord';
-import {inlineStylesFromStyleSheets} from './import/inlineStylesFromStyleSheets';
+import {$inlineStylesFromStyleSheets} from './import/inlineStylesFromStyleSheets';
 import {
   $withRenderContext,
   RenderContextExport,
@@ -54,6 +54,7 @@ export type {
   AttrMatchOptions,
   CapturesOfSelector,
   ChildSchema,
+  CompiledOverlayRules,
   CompiledSelector,
   DOMImportContext,
   DOMImportExtensionOutput,
@@ -75,6 +76,7 @@ export type {
 export {
   $generateNodesFromDOMViaExtension,
   $getImportContextValue,
+  $inlineStylesFromStyleSheets,
   $withImportContext,
   BlockSchema,
   CoreImportExtension,
@@ -84,6 +86,7 @@ export {
   defaultIsInline,
   defaultPreservesWhitespace,
   defineImportRule,
+  defineOverlayRules,
   type DOMImportConfig,
   DOMImportExtension,
   HorizontalRuleImportExtension,
@@ -93,7 +96,6 @@ export {
   ImportTextFormat,
   ImportWhitespaceConfig,
   InlineSchema,
-  inlineStylesFromStyleSheets,
   isElementOfTag,
   type IsInlineForWhitespace,
   type IsPreserveWhitespaceDom,
@@ -136,7 +138,7 @@ export function $generateNodesFromDOM(
     // The shared helper has a DOMPreprocessFn signature; the legacy
     // pipeline doesn't have a real `ctx` or `$next` to thread through,
     // so we pass a no-op `$next` and a minimal context placeholder.
-    inlineStylesFromStyleSheets(
+    $inlineStylesFromStyleSheets(
       dom,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       {} as any,

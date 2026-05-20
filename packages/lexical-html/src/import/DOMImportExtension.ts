@@ -29,7 +29,7 @@ import {contextFromPairs, contextValue} from '../ContextRecord';
 import {type CompiledDispatch, compileImportRules} from './compileImportRules';
 import {defineImportRule} from './defineImportRule';
 import {$withImportContext, ImportSessionImpl} from './ImportContext';
-import {inlineStylesFromStyleSheets} from './inlineStylesFromStyleSheets';
+import {$inlineStylesFromStyleSheets} from './inlineStylesFromStyleSheets';
 import {$runImport} from './runImport';
 import {selBase} from './sel';
 
@@ -58,7 +58,7 @@ export interface DOMImportConfig {
   /**
    * Functions run in order on the DOM before walking begins, mutating in
    * place. The default config registers
-   * {@link inlineStylesFromStyleSheets} (resolves `<style>` rules to
+   * {@link $inlineStylesFromStyleSheets} (resolves `<style>` rules to
    * inline styles so the rules' style-driven matchers see them); apps
    * append additional preprocessors (e.g. strip unsafe elements,
    * normalize attributes, resolve relative URLs).
@@ -171,7 +171,7 @@ export const DOMImportExtension = defineExtension<
   },
   config: {
     contextDefaults: [],
-    preprocess: [inlineStylesFromStyleSheets],
+    preprocess: [$inlineStylesFromStyleSheets],
     rules: [DefaultHoistRule],
   },
   mergeConfig(config, partial) {

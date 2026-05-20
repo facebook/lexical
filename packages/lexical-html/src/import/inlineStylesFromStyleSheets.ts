@@ -31,7 +31,7 @@ function isStyleRule(rule: CSSRule): rule is CSSStyleRule {
  *
  * @experimental
  */
-export const $inlineStylesFromStyleSheets = (
+export const $inlineStylesFromStyleSheets: DOMPreprocessFn = (
   dom,
   _ctx,
   $next,
@@ -101,5 +101,3 @@ export const $inlineStylesFromStyleSheets = (
   }
   $next();
 };
-/** @deprecated renamed to {@link $inlineStylesFromStyleSheets} by @lexical/eslint-plugin rules-of-lexical */
-export const inlineStylesFromStyleSheets: DOMPreprocessFn = $inlineStylesFromStyleSheets;

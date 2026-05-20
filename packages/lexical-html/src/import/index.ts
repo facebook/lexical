@@ -31,6 +31,10 @@ export {CoreImportExtension} from './CoreImportExtension';
 export {CoreImportRules} from './coreImportRules';
 export {defineImportRule} from './defineImportRule';
 export {
+  type CompiledOverlayRules,
+  defineOverlayRules,
+} from './defineOverlayRules';
+export {
   $generateNodesFromDOMViaExtension,
   type DOMImportConfig,
   DOMImportExtension,
@@ -54,7 +58,7 @@ export {
   type IsPreserveWhitespaceDom,
   type WhitespaceImportConfig,
 } from './ImportContext';
-export {inlineStylesFromStyleSheets} from './inlineStylesFromStyleSheets';
+export {$inlineStylesFromStyleSheets} from './inlineStylesFromStyleSheets';
 export {parseSelector} from './parseCss';
 export {
   BlockSchema,

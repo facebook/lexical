@@ -6,7 +6,6 @@
  *
  */
 import type {
-  AnyDOMImportRule,
   ChildSchema,
   DOMImportContext,
   ImportChildrenOpts,
@@ -20,7 +19,6 @@ import {isDOMDocumentNode, type LexicalEditor, type LexicalNode} from 'lexical';
 import {
   type CompiledDispatch,
   type CompiledRule,
-  compileImportRules,
   getDispatchIndices,
 } from './compileImportRules';
 import {$getImportContextValue, $withImportContext} from './ImportContext';
@@ -69,10 +67,7 @@ function $importChildrenInternal(
   parent: ParentNode,
   opts: ImportChildrenOpts | undefined,
 ): LexicalNode[] {
-  const overlay =
-    opts && opts.rules && opts.rules.length > 0
-      ? compileImportRules(opts.rules as readonly AnyDOMImportRule[])
-      : undefined;
+  const overlay = opts && opts.rules ? opts.rules.dispatch : undefined;
   if (overlay) {
     runtime.overlays.push(overlay);
   }

@@ -9,6 +9,7 @@
 import {
   CoreImportExtension,
   defineImportRule,
+  defineOverlayRules,
   DOMImportExtension,
   sel,
 } from '@lexical/html';
@@ -64,13 +65,13 @@ function isMonospaceDescendant(node: HTMLElement): boolean {
  * the cost of these rules is never paid against unrelated `<tr>` /
  * `<td>` pastes.
  */
-const GitHubCodeTableOverlayRules = [
+const GitHubCodeTableOverlayRules = defineOverlayRules([
   defineImportRule({
     $import: (ctx, el) => ctx.$importChildren(el),
     match: sel.tag('tr', 'td'),
     name: '@lexical/code/github-code-table/unwrap',
   }),
-];
+]);
 
 const PreRule = defineImportRule({
   $import: (ctx, el) => {

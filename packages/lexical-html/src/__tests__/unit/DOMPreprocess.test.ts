@@ -50,7 +50,7 @@ function $importInto(editor: LexicalEditor, html: string): void {
 }
 
 describe('DOMImportExtension preprocess', () => {
-  test('default inlineStylesFromStyleSheets resolves <style> rules to inline styles', () => {
+  test('default $inlineStylesFromStyleSheets resolves <style> rules to inline styles', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({
         dependencies: [CoreImportExtension],

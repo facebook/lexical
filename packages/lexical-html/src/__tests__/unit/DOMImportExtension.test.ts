@@ -17,6 +17,7 @@ import {
   contextValue,
   createImportState,
   defineImportRule,
+  defineOverlayRules,
   DOMImportExtension,
   ImportSource,
   ImportTextFormat,
@@ -501,18 +502,6 @@ describe('$importChildren `rules` overlay', () => {
     const WrapRule = defineImportRule({
       $import: (ctx, el) => {
         const out: LexicalNode[] = [];
-        const overlay: AnyDOMImportRule[] = [
-          defineImportRule({
-            $import: () => {
-              overlayHits++;
-              const p = $createParagraphNode();
-              p.append($createTextNode('[overlay-x]'));
-              return [p];
-            },
-            match: sel.tag('x'),
-            name: 'test/overlay-x',
-          }),
-        ];
         for (const node of ctx.$importChildren(el, {rules: overlay})) {
           out.push(node);
         }
@@ -521,6 +510,18 @@ describe('$importChildren `rules` overlay', () => {
       match: sel.tag('wrap'),
       name: 'test/wrap',
     });
+    const overlay = defineOverlayRules([
+      defineImportRule({
+        $import: () => {
+          overlayHits++;
+          const p = $createParagraphNode();
+          p.append($createTextNode('[overlay-x]'));
+          return [p];
+        },
+        match: sel.tag('x'),
+        name: 'test/overlay-x',
+      }),
+    ]);
     // A second top-level `<x>` rule that produces a different marker.
     // Without the overlay it should win.
     const PlainXRule = defineImportRule({
@@ -554,20 +555,18 @@ describe('$importChildren `rules` overlay', () => {
       match: sel.tag('x'),
       name: 'test/main-x',
     });
+    const overlay = defineOverlayRules([
+      defineImportRule({
+        $import: (_ctx, _el, $next) => {
+          // Defer to the main rule.
+          return $next();
+        },
+        match: sel.tag('x'),
+        name: 'test/overlay-x-deferred',
+      }),
+    ]);
     const WrapRule = defineImportRule({
-      $import: (ctx, el) => {
-        const overlay: AnyDOMImportRule[] = [
-          defineImportRule({
-            $import: (_ctx, _el, $next) => {
-              // Defer to the main rule.
-              return $next();
-            },
-            match: sel.tag('x'),
-            name: 'test/overlay-x-deferred',
-          }),
-        ];
-        return ctx.$importChildren(el, {rules: overlay});
-      },
+      $import: (ctx, el) => ctx.$importChildren(el, {rules: overlay}),
       match: sel.tag('wrap'),
       name: 'test/wrap',
     });

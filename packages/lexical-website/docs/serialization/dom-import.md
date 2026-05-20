@@ -509,14 +509,14 @@ Each step can:
   runs first); skip the call to short-circuit.
 
 The default config registers
-[`inlineStylesFromStyleSheets`](#inlinestylesfromstylesheets) — the
+[`$inlineStylesFromStyleSheets`](#inlinestylesfromstylesheets) — the
 same Excel-flavored CSS preprocess the legacy
 `$generateNodesFromDOM` uses. Apps append more preprocessors via
 `DOMImportConfig.preprocess` or per-call via
 `GenerateNodesFromDOMOptions.preprocess`.
 
 ```ts
-const StripScripts: DOMPreprocessFn = (dom, _ctx, $next) => {
+const $stripScripts: DOMPreprocessFn = (dom, _ctx, $next) => {
   const root = 'body' in dom ? dom.body : (dom as ParentNode);
   for (const el of Array.from(root.querySelectorAll('script'))) {
     el.remove();
@@ -525,7 +525,7 @@ const StripScripts: DOMPreprocessFn = (dom, _ctx, $next) => {
 };
 
 configExtension(DOMImportExtension, {
-  preprocess: [StripScripts],
+  preprocess: [$stripScripts],
 })
 ```
 
@@ -543,7 +543,7 @@ const DocumentLanguage = createImportState<string>(
   () => 'unknown',
 );
 
-const ReadMetaLang: DOMPreprocessFn = (dom, ctx, $next) => {
+const $readMetaLang: DOMPreprocessFn = (dom, ctx, $next) => {
   const root = 'body' in dom ? dom.body : (dom as ParentNode);
   const meta = root.querySelector('meta[name="content-language"]');
   if (meta && meta.getAttribute('content')) {
@@ -553,7 +553,7 @@ const ReadMetaLang: DOMPreprocessFn = (dom, ctx, $next) => {
 };
 ```
 
-### `inlineStylesFromStyleSheets`
+### `$inlineStylesFromStyleSheets`
 
 The default preprocessor resolves CSS rules from `<style>` tags onto
 matching elements as inline styles, so the rest of the pipeline can
@@ -564,26 +564,26 @@ Re-exported as a `DOMPreprocessFn` for apps that want to compose
 their own preprocess pipeline:
 
 ```ts
-import {inlineStylesFromStyleSheets} from '@lexical/html';
+import {$inlineStylesFromStyleSheets} from '@lexical/html';
 
 configExtension(DOMImportExtension, {
   preprocess: [
     // Run before the default — useful if your custom preprocess
     // expects the styles to already be inlined.
-    inlineStylesFromStyleSheets,
-    AppPreprocess,
+    $inlineStylesFromStyleSheets,
+    $appPreprocess,
   ],
 });
 ```
 
 ## `$importChildren` rules overlay
 
-`ctx.$importChildren(parent, {rules: [...]})` installs an **overlay**
-dispatcher active only for the duration of that children traversal
-(and nested `$importChildren` calls that don't push their own
-overlay). Overlay rules are checked BEFORE the main dispatcher;
-calling `$next()` from an overlay rule falls through to the next
-overlay-or-main rule.
+`ctx.$importChildren(parent, {rules: defineOverlayRules([...])})`
+installs an **overlay** dispatcher active only for the duration of
+that children traversal (and nested `$importChildren` calls that
+don't push their own overlay). Overlay rules are checked BEFORE the
+main dispatcher; calling `$next()` from an overlay rule falls through
+to the next overlay-or-main rule.
 
 This lets you scope cost-bearing rules to the subtrees where they
 apply, rather than paying the predicate cost on every paste. The
@@ -592,13 +592,16 @@ the overlay to unwrap `<tr>` / `<td>` only while processing a code
 table:
 
 ```ts
-const GitHubCodeTableOverlayRules = [
+// Compile once at module scope. `defineOverlayRules` builds the same
+// tag-bucketed dispatch table the main config uses, so each
+// $importChildren call reuses it instead of recompiling.
+const GitHubCodeTableOverlayRules = defineOverlayRules([
   defineImportRule({
     match: sel.tag('tr', 'td'),
     $import: (ctx, el) => ctx.$importChildren(el),
     name: '@lexical/code/github-code-table/unwrap',
   }),
-];
+]);
 
 const GitHubCodeTableRule = defineImportRule({
   match: sel.tag('table').classAll('js-file-line-container'),
@@ -615,8 +618,14 @@ const GitHubCodeTableRule = defineImportRule({
 ```
 
 Outside the code table, the `tr` / `td` rule from `@lexical/table` is
-the only one consulted; the overlay's unwrap rule isn't even compiled
-unless we enter a code-table subtree.
+the only one consulted; the overlay isn't installed unless we enter
+a code-table subtree.
+
+`ImportChildrenOpts.rules` only accepts a {@link CompiledOverlayRules}
+produced by `defineOverlayRules` — a raw rule array won't typecheck.
+This is by design: a one-off overlay built inline on every walk would
+recompile the dispatcher each time, defeating the point of the overlay
+being a fast-path.
 
 ## ClipboardImportExtension
 
@@ -730,6 +739,76 @@ an `after` callback with either `$after` (when the post-processing
 runs on this rule's children) or a schema's `packageRun` / `finalize`
 (when the same logic belongs to anything appending to this kind of
 parent).
+
+### Importing children is explicit
+
+The most consequential difference: the legacy `DOMConversion` pipeline
+walked an element's children for you (via `wrapContinuousInlines` /
+the post-conversion runner). In `DOMImportExtension`, a rule that
+wants its element's children must call `ctx.$importChildren(el)`
+itself.
+
+This is deliberate. A rule decides:
+
+- Whether to recurse at all (skip children to drop them, or look at
+  `el` only)
+- Which schema the children must satisfy
+  (`schema: BlockSchema | InlineSchema | NestedBlockSchema | …`)
+- Whether to install a subtree-scoped overlay
+  (`rules: defineOverlayRules([...])`)
+- Where the produced children attach — usually
+  `parent.splice(0, 0, ctx.$importChildren(el))`, but a rule that
+  wants flat output can just return the array.
+
+### Concrete example: blockquote
+
+A typical legacy `importDOM` for a quote-like node:
+
+```ts
+// Legacy
+class QuoteNode extends ElementNode {
+  static importDOM(): DOMConversionMap | null {
+    return {
+      blockquote: () => ({
+        conversion: (_el) => ({node: $createQuoteNode()}),
+        priority: 0,
+      }),
+    };
+  }
+}
+```
+
+The migrated rule:
+
+```ts
+import {
+  $createQuoteNode,
+  BlockSchema,
+  defineImportRule,
+  InlineSchema,
+  sel,
+} from '@lexical/html';
+
+const QuoteRule = defineImportRule({
+  $import: (ctx, el) => {
+    const node = $createQuoteNode();
+    // The recursion is explicit. QuoteNode contains inline children
+    // only, so we constrain the schema; rejected blocks hoist out.
+    node.splice(0, 0, ctx.$importChildren(el, {schema: InlineSchema}));
+    return [node];
+  },
+  match: sel.tag('blockquote'),
+  name: '@app/quote',
+});
+
+configExtension(DOMImportExtension, {rules: [QuoteRule]});
+```
+
+The legacy pipeline would have inferred the recursion + wrapping
+behavior from `QuoteNode`'s position in the tree and its acceptance
+rules. In the new pipeline both are stated at the call site: the rule
+asks for inline children, gets them packaged by `InlineSchema`, and
+attaches them via the normal `ElementNode.splice` primitive.
 
 ## Capabilities
 

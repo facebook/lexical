@@ -34,6 +34,7 @@ import {
   TextNode,
 } from 'lexical';
 import {expectHtmlToBeEqual, html} from 'lexical/src/__tests__/utils';
+import invariant from 'shared/invariant';
 import {describe, expect, test} from 'vitest';
 
 const idState = createState('id', {
@@ -558,12 +559,10 @@ describe('DOMRenderExtension', () => {
     editor.setRootElement(root);
     editor.read(() => {
       const paragraph = $getRoot().getFirstChildOrThrow();
-      if (!$isElementNode(paragraph)) {
-        throw new Error('expected paragraph to be an ElementNode');
-      }
+      invariant($isElementNode(paragraph), 'expected paragraph');
       const dom = editor.getElementByKey(paragraph.getKey())!;
       const slot = $getDOMSlot(paragraph, dom, editor);
-      expect($isElementDOMSlot(slot)).toBe(true);
+      invariant($isElementDOMSlot(slot), 'slot must be an ElementDOMSlot');
       expect(slot.element).toBe(dom);
     });
   });

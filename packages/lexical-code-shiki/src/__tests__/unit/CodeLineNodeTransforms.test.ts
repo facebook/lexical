@@ -6,7 +6,11 @@
  *
  */
 
-import {$createCodeHighlightNode,$createCodeNode, $isCodeNode} from '@lexical/code';
+import {
+  $createCodeHighlightNode,
+  $createCodeNode,
+  $isCodeNode,
+} from '@lexical/code';
 import {$exitCodeNodeOnEnter} from '@lexical/code-core';
 import {
   $createCodeLineNode,
@@ -63,7 +67,7 @@ describe('CodeLineNode transforms', () => {
       {discrete: true},
     );
 
-    const shape = editor.getEditorState().read(() => {
+    const shape = editor.read(() => {
       const code = $getRoot().getFirstChildOrThrow();
       if (!$isCodeNode(code)) {
         return [];
@@ -148,7 +152,7 @@ describe('CodeLineNode transforms', () => {
       {discrete: true},
     );
 
-    const shape = editor.getEditorState().read(() => {
+    const shape = editor.read(() => {
       const code = $getRoot().getFirstChildOrThrow();
       if (!$isCodeNode(code)) {
         return [];
@@ -227,7 +231,7 @@ describe('CodeLineNode transforms', () => {
       {discrete: true},
     );
 
-    const cursor = editor.getEditorState().read(() => {
+    const cursor = editor.read(() => {
       const selection = $getSelection();
       if (!$isRangeSelection(selection)) {
         return null;
@@ -296,7 +300,7 @@ describe('CodeLineNode transforms', () => {
 
     expect(exitResultType).toBe('paragraph');
 
-    const shape = editor.getEditorState().read(() => {
+    const shape = editor.read(() => {
       return $getRoot()
         .getChildren()
         .map(c => ({
@@ -345,7 +349,7 @@ describe('CodeLineNode transforms', () => {
       {discrete: true},
     );
 
-    const shape = editor.getEditorState().read(() => {
+    const shape = editor.read(() => {
       const code = $getRoot().getFirstChildOrThrow();
       if (!$isCodeNode(code)) {
         return null;
@@ -416,7 +420,7 @@ describe('CodeLineNode transforms', () => {
       {discrete: true},
     );
 
-    const lines = editor.getEditorState().read(() => {
+    const lines = editor.read(() => {
       const code = $getRoot().getFirstChildOrThrow();
       if (!$isCodeNode(code)) {
         return [];
@@ -460,7 +464,7 @@ describe('CodeLineNode transforms', () => {
       {discrete: true},
     );
 
-    const lines = editor.getEditorState().read(() => {
+    const lines = editor.read(() => {
       const code = $getRoot().getFirstChildOrThrow();
       if (!$isCodeNode(code)) {
         return [];
@@ -498,7 +502,7 @@ describe('CodeLineNode transforms', () => {
       {discrete: true},
     );
 
-    const shape = editor.getEditorState().read(() => {
+    const shape = editor.read(() => {
       const code = $getRoot().getFirstChildOrThrow();
       if (!$isCodeNode(code)) {
         return null;
@@ -724,7 +728,7 @@ function runUngroupOrderTest(orderTag: ['forward' | 'reverse']) {
     {discrete: true},
   );
 
-  const finalShape = editor.getEditorState().read(() => {
+  const finalShape = editor.read(() => {
     const paragraph = $getRoot().getFirstChildOrThrow();
     return ($isElementNode(paragraph) ? paragraph.getChildren() : []).map(
       (node: LexicalNode) => ({

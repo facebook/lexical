@@ -49,10 +49,21 @@ function $isDisabled(editor: LexicalEditor): boolean {
 }
 
 function $skipForCodeChild(node: LineBreakNode): boolean {
-  // Code blocks already convey line structure visually (and the
-  // playground composes CodeGutterExtension for line numbers), so a
-  // visible `↵` marker on top is redundant noise.
-  return $isCodeNode(node.getParent());
+  // Code blocks convey line structure visually, and Shiki +
+  // `enableLineNodes` routes through a `CodeLineNode` (so the
+  // LineBreakNode's direct parent is a `CodeLineNode`, not the
+  // `CodeNode`). Walk up to the nearest non-inline ancestor and skip
+  // the wrap if we're anywhere inside a `CodeNode`.
+  for (
+    let ancestor = node.getParent();
+    ancestor !== null;
+    ancestor = ancestor.getParent()
+  ) {
+    if ($isCodeNode(ancestor)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function hasOurWrap(dom: HTMLElement): boolean {

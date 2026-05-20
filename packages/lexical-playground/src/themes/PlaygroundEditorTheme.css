@@ -168,8 +168,6 @@
   line-height: 1.53;
   font-size: 13px;
   padding-top: 8px;
-  padding-bottom: 8px;
-  padding-left: 52px;
   margin: 0;
   margin-top: 8px;
   margin-bottom: 8px;
@@ -180,60 +178,67 @@
   max-width: 100%;
   box-sizing: border-box;
 }
-.PlaygroundEditorTheme__code[data-lexical-code-gutter-active]::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 42px;
+.PlaygroundEditorTheme__code:before {
+  content: attr(data-gutter);
+  position: sticky;
   background-color: #eee;
-  border-right: 1px solid #ccc;
-  pointer-events: none;
-}
-.PlaygroundEditorTheme__code [data-line-number]::before {
-  content: attr(data-line-number);
-  display: inline-block;
-  position: relative;
-  z-index: 1;
-  width: 32px;
-  margin-left: -52px;
-  margin-right: 20px;
-  text-align: right;
-  color: #777;
-  user-select: none;
-  -webkit-user-select: none;
-  pointer-events: none;
-}
-.PlaygroundEditorTheme__code[data-lexical-code-gutter-active]:not(
-    :has([data-line-number])
-  )::after {
-  content: '1';
-  position: absolute;
   left: 0;
-  top: 8px;
-  z-index: 1;
-  width: 32px;
-  text-align: right;
+  float: left;
+  top: 0;
+  z-index: 3;
+  min-height: 100%;
+  border-right: 1px solid #ccc;
+  padding: 8px;
   color: #777;
-  pointer-events: none;
+  white-space: pre-wrap;
+  text-align: right;
+  min-width: 25px;
+  margin-right: 10px;
+  margin-top: -8px;
+  padding: 8px;
 }
-.PlaygroundEditorTheme__code [data-lexical-code-linebreak-wrap] {
-  display: inline;
+/* Grouped mode (CodeShikiExtension `enableLineNodes`): drop the sticky
+ * `::before` gutter strip — its `float: left` collides with the
+ * block-per-line `[data-code-line]` layout (first line aligns next to
+ * the float, the rest fall under it). Paint the gutter band through
+ * a left-edge background gradient on `<code>` instead, and render each
+ * line's number through `attr(data-line-number)` on the per-line
+ * pseudo-element. This is the base every `CodeLineNode` line shares;
+ * a follow-up PR can flip `white-space` to `pre-wrap` once the
+ * wrap-aware behaviour is validated. */
+.PlaygroundEditorTheme__code:has([data-code-line]) {
+  padding-left: 52px;
+  padding-bottom: 8px;
+  background: linear-gradient(
+    to right,
+    #eee 0,
+    #eee 41px,
+    #ccc 41px,
+    #ccc 42px,
+    rgb(240, 242, 245) 42px
+  );
 }
-.PlaygroundEditorTheme__code [data-line-number-trailing]::after {
-  content: attr(data-line-number-trailing);
-  display: inline-block;
+.PlaygroundEditorTheme__code:has([data-code-line]):before {
+  content: none;
+}
+.PlaygroundEditorTheme__code [data-code-line] {
   position: relative;
-  z-index: 1;
-  width: 32px;
-  margin-left: -52px;
-  margin-right: 20px;
+  min-height: 1.53em;
+}
+.PlaygroundEditorTheme__code [data-code-line]:before {
+  /* Width matches the legacy sticky gutter's `min-width: 25px`; the
+   * 19px right-side breathing room (number → text) comes out of
+   * `padding-left (52) - (left + width) = 52 - (44 - 25) ... = 19`,
+   * matching the legacy `padding 8 + border 1 + margin 10` gap. */
+  content: attr(data-line-number);
+  position: absolute;
+  top: 0;
+  left: -44px;
+  width: 25px;
   text-align: right;
   color: #777;
-  user-select: none;
-  -webkit-user-select: none;
   pointer-events: none;
+  user-select: none;
 }
 .PlaygroundEditorTheme__tableScrollableWrapper {
   overflow-x: auto;

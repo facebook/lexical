@@ -108,12 +108,16 @@ function $textNodeTransform(
 }
 
 /**
- * `data-gutter` updater used to drive the existing line-number CSS.
- * In grouped mode (`enableLineNodes`) the CodeNode's direct children
- * are `CodeLineNode`s — one per visible line, including empty
- * trailing lines — so the gutter string is `1\n2\n...\nN` where `N`
- * is the line count. In flat mode the gutter string is rebuilt from
- * `LineBreakNode` occurrences as before.
+ * Line-number gutter updater. In flat mode the gutter string lives on
+ * `<code data-gutter>` and is rebuilt from `LineBreakNode` occurrences,
+ * driving the legacy sticky pseudo-element. In grouped mode
+ * (`enableLineNodes`) each `CodeLineNode` carries its own
+ * `data-line-number`, so the line number can be positioned by a
+ * per-line CSS pseudo-element and survive a future `white-space: pre-wrap`
+ * (the `\n`-joined `data-gutter` would lose alignment once a line wraps).
+ * The cache key includes the child-key list so that grouping-induced
+ * line replacements (same count, new keys) re-attach `data-line-number`
+ * to the freshly-minted line DOM.
  */
 function $updateCodeGutter(node: CodeNode, editor: LexicalEditor): void {
   const keyedDOM = editor.getElementByKey(node.getKey());
@@ -123,21 +127,29 @@ function $updateCodeGutter(node: CodeNode, editor: LexicalEditor): void {
   const codeElement = $getDOMSlot(node, keyedDOM, editor).element;
   const children = node.getChildren();
   const childrenLength = children.length;
-  // @ts-ignore: internal field
-  if (childrenLength === codeElement.__cachedChildrenLength) {
-    return;
-  }
-  // @ts-ignore: internal field
-  codeElement.__cachedChildrenLength = childrenLength;
 
   const isGroupedMode =
     childrenLength > 0 &&
     children.every(c => $isElementNode(c) && !c.isInline());
 
+  const cacheKey = isGroupedMode
+    ? childrenLength + ':' + children.map(c => c.getKey()).join(',')
+    : String(childrenLength);
+  // @ts-ignore: internal field
+  if (cacheKey === codeElement.__cachedGutterKey) {
+    return;
+  }
+  // @ts-ignore: internal field
+  codeElement.__cachedGutterKey = cacheKey;
+
   if (isGroupedMode) {
     let gutter = '';
     for (let i = 0; i < childrenLength; i++) {
       gutter += (i === 0 ? '' : '\n') + (i + 1);
+      const childDOM = editor.getElementByKey(children[i].getKey());
+      if (childDOM) {
+        childDOM.setAttribute('data-line-number', String(i + 1));
+      }
     }
     codeElement.setAttribute('data-gutter', gutter);
     return;

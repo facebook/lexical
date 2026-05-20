@@ -2409,20 +2409,21 @@ function $internalResolveSelectionPoint(
         }
       } else {
         const index = resolvedElement.getIndexWithinParent();
-        // Delegate "before vs after this leaf" to the slot's
-        // resolveLeafPosition. The default impl preserves the
-        // historical decorator rule (DOM offset 0 directly on the
-        // keyed DOM = "before", else "after") when no wrap exposed an
-        // inner content element via `withElement`, and uses the
-        // exposed inner element's index inside the keyed DOM
-        // otherwise — symmetric with ElementDOMSlot.resolveChildIndex.
-        // This unifies the previously ad-hoc DecoratorNode /
-        // LineBreakNode branches behind a single slot-driven mapping.
+        // For wrap patterns (slot exposes an inner content element via
+        // `withElement`) defer to `slot.resolveLeafPosition` so the
+        // wrap's structure determines "before vs after". For bare leaf
+        // DOM we preserve the historical rule: only a DecoratorNode at
+        // DOM offset 0 resolves to "before"; everything else (including
+        // bare LineBreakNode) resolves to "after".
         const elementDOM = editor.getElementByKey(resolvedElement.getKey());
         let position: 'before' | 'after' = 'after';
         if (elementDOM !== null && $getNodeFromDOM(dom) === resolvedElement) {
           const slot = $getDOMSlot(resolvedElement, elementDOM, editor);
-          position = slot.resolveLeafPosition(elementDOM, dom, offset);
+          if (slot.element !== elementDOM) {
+            position = slot.resolveLeafPosition(elementDOM, dom, offset);
+          } else if (offset === 0 && $isDecoratorNode(resolvedElement)) {
+            position = 'before';
+          }
         }
         resolvedOffset = position === 'before' ? index : index + 1;
         resolvedElement = resolvedElement.getParentOrThrow();

@@ -25,74 +25,92 @@ import {
 import {afterEach, describe, expect, test} from 'vitest';
 
 import {$internalCreateRangeSelection} from '../../LexicalSelection';
-import {initializeUnitTest, invariant} from '../utils';
+import {invariant} from '../utils';
 
 describe('Selection resolution for leaf nodes (resolveLeafPosition)', () => {
-  initializeUnitTest(testEnv => {
-    test('DOM caret directly on a bare <br> at offset 0 resolves to "after" the LineBreakNode', async () => {
-      const {editor} = testEnv;
+  const mountedRoots: HTMLElement[] = [];
+  afterEach(() => {
+    while (mountedRoots.length > 0) {
+      const node = mountedRoots.pop();
+      if (node && node.parentNode) {
+        node.parentNode.removeChild(node);
+      }
+    }
+  });
 
-      let linebreakKey = '';
-      await editor.update(
-        () => {
-          const paragraph = $createParagraphNode().append(
-            $createTextNode('before'),
-            $createLineBreakNode(),
-            $createTextNode('after'),
-          );
-          $getRoot().clear().append(paragraph);
+  function mountRoot(editor: ReturnType<typeof buildEditorFromExtensions>) {
+    const root = document.createElement('div');
+    document.body.appendChild(root);
+    mountedRoots.push(root);
+    editor.setRootElement(root);
+  }
+
+  test('DOM caret directly on a bare <br> at offset 0 resolves to "after" the LineBreakNode', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: () => {
+          $getRoot()
+            .clear()
+            .append(
+              $createParagraphNode().append(
+                $createTextNode('before'),
+                $createLineBreakNode(),
+                $createTextNode('after'),
+              ),
+            );
+        },
+        name: '[bare-leaf-resolve]',
+      }),
+    );
+    mountRoot(editor);
+
+    let linebreakKey = '';
+    editor.update(
+      () => {
+        const paragraph = $getRoot().getFirstChildOrThrow();
+        if ($isElementNode(paragraph)) {
           const br = paragraph.getChildAtIndex(1);
           invariant(br !== null);
           linebreakKey = br.getKey();
-        },
-        {discrete: true},
-      );
+        }
+      },
+      {discrete: true},
+    );
 
-      const brDOM = editor.getElementByKey(linebreakKey);
-      invariant(brDOM !== null);
+    const brDOM = editor.getElementByKey(linebreakKey);
+    invariant(brDOM !== null);
 
-      const domSelection = getDOMSelection(editor._window ?? window);
-      const range = document.createRange();
-      range.setStart(brDOM, 0);
-      range.collapse(true);
-      domSelection?.removeAllRanges();
-      domSelection?.addRange(range);
+    const domSelection = getDOMSelection(editor._window ?? window);
+    const range = document.createRange();
+    range.setStart(brDOM, 0);
+    range.collapse(true);
+    domSelection?.removeAllRanges();
+    domSelection?.addRange(range);
 
-      await editor.update(
-        () => {
-          const selection = $internalCreateRangeSelection(
-            $getSelection(),
-            domSelection,
-            editor,
-            {type: 'selectionchange'} as Event,
-          );
-          invariant(selection !== null);
-          invariant($isRangeSelection(selection));
-          const paragraph = $getRoot().getFirstChildOrThrow();
-          // Pre-PR behavior: caret on bare <br> at offset 0 resolves
-          // to "after" the LineBreakNode, i.e. paragraph element
-          // offset == linebreak.index + 1 (= 2 here: between LB and
-          // the "after" TextNode).
-          expect(selection.anchor.key).toBe(paragraph.getKey());
-          expect(selection.anchor.type).toBe('element');
-          expect(selection.anchor.offset).toBe(2);
-        },
-        {discrete: true},
-      );
-    });
+    editor.update(
+      () => {
+        const selection = $internalCreateRangeSelection(
+          $getSelection(),
+          domSelection,
+          editor,
+          {type: 'selectionchange'} as Event,
+        );
+        invariant(selection !== null);
+        invariant($isRangeSelection(selection));
+        const paragraph = $getRoot().getFirstChildOrThrow();
+        // Pre-PR behavior: caret on bare <br> at offset 0 resolves
+        // to "after" the LineBreakNode, i.e. paragraph element
+        // offset == linebreak.index + 1 (= 2 here: between LB and
+        // the "after" TextNode).
+        expect(selection.anchor.key).toBe(paragraph.getKey());
+        expect(selection.anchor.type).toBe('element');
+        expect(selection.anchor.offset).toBe(2);
+      },
+      {discrete: true},
+    );
   });
 
   describe('wrap pattern via DOMRenderExtension override', () => {
-    const mountedRoots: HTMLElement[] = [];
-    afterEach(() => {
-      while (mountedRoots.length > 0) {
-        const node = mountedRoots.pop();
-        if (node && node.parentNode) {
-          node.parentNode.removeChild(node);
-        }
-      }
-    });
-
     function buildWrapEditor() {
       return buildEditorFromExtensions(
         defineExtension({

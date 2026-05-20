@@ -48,13 +48,12 @@ test.describe('Regression test #1384', () => {
           class="PlaygroundEditorTheme__code"
           dir="auto"
           spellcheck="false"
+          data-gutter="123"
           data-highlight-language="javascript"
-          data-language="javascript"
-          data-lexical-code-gutter-active="true">
+          data-language="javascript">
           <span
             class="PlaygroundEditorTheme__tokenFunction"
-            data-lexical-text="true"
-            data-line-number="1">
+            data-lexical-text="true">
             alert
           </span>
           <span
@@ -100,8 +99,7 @@ test.describe('Regression test #1384', () => {
           <br />
           <span
             class="PlaygroundEditorTheme__tokenFunction"
-            data-lexical-text="true"
-            data-line-number="2">
+            data-lexical-text="true">
             alert
           </span>
           <span
@@ -127,8 +125,7 @@ test.describe('Regression test #1384', () => {
           <br />
           <span
             class="PlaygroundEditorTheme__tokenFunction"
-            data-lexical-text="true"
-            data-line-number="3">
+            data-lexical-text="true">
             alert
           </span>
           <span

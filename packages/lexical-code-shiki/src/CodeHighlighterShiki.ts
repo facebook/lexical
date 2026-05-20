@@ -119,12 +119,17 @@ function $textNodeTransform(
  * line replacements (same count, new keys) re-attach `data-line-number`
  * to the freshly-minted line DOM.
  */
+interface CodeGutterPrivateDOM {
+  __cachedGutterKey?: string;
+}
+
 function $updateCodeGutter(node: CodeNode, editor: LexicalEditor): void {
   const keyedDOM = editor.getElementByKey(node.getKey());
   if (keyedDOM === null) {
     return;
   }
-  const codeElement = $getDOMSlot(node, keyedDOM, editor).element;
+  const codeElement = $getDOMSlot(node, keyedDOM, editor)
+    .element as HTMLElement & CodeGutterPrivateDOM;
   const children = node.getChildren();
   const childrenLength = children.length;
 
@@ -135,11 +140,9 @@ function $updateCodeGutter(node: CodeNode, editor: LexicalEditor): void {
   const cacheKey = isGroupedMode
     ? childrenLength + ':' + children.map(c => c.getKey()).join(',')
     : String(childrenLength);
-  // @ts-ignore: internal field
   if (cacheKey === codeElement.__cachedGutterKey) {
     return;
   }
-  // @ts-ignore: internal field
   codeElement.__cachedGutterKey = cacheKey;
 
   if (isGroupedMode) {

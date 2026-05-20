@@ -174,9 +174,13 @@ const TableRule = defineImportRule({
         node.setColWidths(columns);
       }
     }
-    const children = ctx.$importChildren(el);
-    node.splice(0, 0, $descendantsMatching(children, $isTableRowNode));
-    return [node];
+    return [
+      node.splice(
+        0,
+        0,
+        $descendantsMatching(ctx.$importChildren(el), $isTableRowNode),
+      ),
+    ];
   },
   match: sel.tag('table'),
   name: '@lexical/table/table',
@@ -188,10 +192,13 @@ const TableRowRule = defineImportRule({
     if (PIXEL_VALUE_REG_EXP.test(el.style.height)) {
       height = parseFloat(el.style.height);
     }
-    const node = $createTableRowNode(height);
-    const children = ctx.$importChildren(el);
-    node.splice(0, 0, $descendantsMatching(children, $isTableCellNode));
-    return [node];
+    return [
+      $createTableRowNode(height).splice(
+        0,
+        0,
+        $descendantsMatching(ctx.$importChildren(el), $isTableCellNode),
+      ),
+    ];
   },
   match: sel.tag('tr'),
   name: '@lexical/table/tr',
@@ -247,9 +254,7 @@ const TableCellRule = defineImportRule({
     }
     const rawChildren = ctx.$importChildren(el);
     applyCellStyleToTextDescendants(el.style, rawChildren);
-    const packaged = $packageCellChildren(rawChildren);
-    cell.splice(0, 0, packaged);
-    return [cell];
+    return [cell.splice(0, 0, $packageCellChildren(rawChildren))];
   },
   match: sel.tag('td', 'th'),
   name: '@lexical/table/cell',
@@ -266,12 +271,9 @@ export const TableSchema: ChildSchema = {
   accepts: child => $isTableRowNode(child),
   name: 'TableSchema',
   packageRun(run) {
-    if (run.every($isTableCellNode)) {
-      const row = $createTableRowNode();
-      row.splice(0, 0, run);
-      return [row];
-    }
-    return [];
+    return run.every($isTableCellNode)
+      ? [$createTableRowNode().splice(0, 0, run)]
+      : [];
   },
 };
 

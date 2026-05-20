@@ -416,8 +416,7 @@ const ParagraphRule = defineImportRule({
     // We deliberately pass no schema: paragraphs accept any inline run as-is.
     // The enclosing context (root / block) is responsible for ensuring the
     // paragraph itself is a valid block child.
-    p.splice(0, 0, ctx.$importChildren(el));
-    return [p];
+    return [p.splice(0, 0, ctx.$importChildren(el))];
   },
   match: sel.tag('p'),
   name: '@lexical/html/p',

@@ -104,9 +104,13 @@ const ListRule = defineImportRule({
       node = $createListNode('bullet');
     }
     $setDirectionFromDOM(node, el);
-    const children = ctx.$importChildren(el);
-    node.splice(0, 0, $normalizeListChildren(children, node.getListType()));
-    return [node];
+    return [
+      node.splice(
+        0,
+        0,
+        $normalizeListChildren(ctx.$importChildren(el), node.getListType()),
+      ),
+    ];
   },
   match: sel.tag('ol', 'ul'),
   name: '@lexical/list/list',
@@ -149,12 +153,13 @@ const ListItemRule = defineImportRule({
     const node = $createListItemNode(checked);
     $setFormatFromDOM(node, el);
     $setDirectionFromDOM(node, el);
-    const children = liftFormatFromSingleParagraph(
-      node,
-      ctx.$importChildren(el),
-    );
-    node.splice(0, 0, children);
-    return [node];
+    return [
+      node.splice(
+        0,
+        0,
+        liftFormatFromSingleParagraph(node, ctx.$importChildren(el)),
+      ),
+    ];
   },
   match: sel.tag('li'),
   name: '@lexical/list/li',
@@ -177,9 +182,13 @@ function $buildChecklistItem(
   const node = $createListItemNode(checked);
   $setFormatFromDOM(node, el);
   $setDirectionFromDOM(node, el);
-  const children = liftFormatFromSingleParagraph(node, ctx.$importChildren(el));
-  node.splice(0, 0, children);
-  return [node];
+  return [
+    node.splice(
+      0,
+      0,
+      liftFormatFromSingleParagraph(node, ctx.$importChildren(el)),
+    ),
+  ];
 }
 
 function isElement(node: Node, tag: string): boolean {
@@ -226,14 +235,12 @@ export const ListSchema: ChildSchema = {
   accepts: child => $isListItemNode(child) || $isListNode(child),
   name: 'ListSchema',
   packageRun(run) {
-    const item = $createListItemNode();
     // Inline runs inside a `<ul>`/`<ol>` (e.g. text between two `<li>`s)
     // become a paragraph inside a synthetic list item, preserving the
     // structure invariant.
-    const wrap = $createParagraphNode();
-    wrap.splice(0, 0, run);
-    item.append(wrap);
-    return [item];
+    return [
+      $createListItemNode().append($createParagraphNode().splice(0, 0, run)),
+    ];
   },
 };
 

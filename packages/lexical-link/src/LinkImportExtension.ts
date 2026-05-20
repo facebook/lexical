@@ -24,13 +24,13 @@ const AnchorRule = defineImportRule({
     if ((content === null || content === '') && el.children.length === 0) {
       return [];
     }
-    const link = $createLinkNode(el.getAttribute('href') || '', {
-      rel: el.getAttribute('rel'),
-      target: el.getAttribute('target'),
-      title: el.getAttribute('title'),
-    });
-    link.splice(0, 0, ctx.$importChildren(el, {schema: InlineSchema}));
-    return [link];
+    return [
+      $createLinkNode(el.getAttribute('href') || '', {
+        rel: el.getAttribute('rel'),
+        target: el.getAttribute('target'),
+        title: el.getAttribute('title'),
+      }).splice(0, 0, ctx.$importChildren(el, {schema: InlineSchema})),
+    ];
   },
   match: sel.tag('a'),
   name: '@lexical/link/a',

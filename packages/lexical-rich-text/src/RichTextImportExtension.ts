@@ -50,8 +50,7 @@ const HeadingRule = defineImportRule({
     setNodeIndentFromDOM(el, node);
     $setFormatFromDOM(node, el);
     $setDirectionFromDOM(node, el);
-    node.splice(0, 0, ctx.$importChildren(el));
-    return [node];
+    return [node.splice(0, 0, ctx.$importChildren(el))];
   },
   match: sel.tag('h1', 'h2', 'h3', 'h4', 'h5', 'h6'),
   name: '@lexical/rich-text/heading',
@@ -63,8 +62,7 @@ const QuoteRule = defineImportRule({
     $setFormatFromDOM(node, el);
     setNodeIndentFromDOM(el, node);
     $setDirectionFromDOM(node, el);
-    node.splice(0, 0, ctx.$importChildren(el));
-    return [node];
+    return [node.splice(0, 0, ctx.$importChildren(el))];
   },
   match: sel.tag('blockquote'),
   name: '@lexical/rich-text/blockquote',
@@ -90,14 +88,10 @@ const GoogleDocsTitleParagraphRule = defineImportRule({
 });
 
 const GoogleDocsTitleSpanRule = defineImportRule({
-  $import: (ctx, el, $next) => {
-    if (el.style.fontSize !== '26pt') {
-      return $next();
-    }
-    const node = $createHeadingNode('h1');
-    node.splice(0, 0, ctx.$importChildren(el));
-    return [node];
-  },
+  $import: (ctx, el, $next) =>
+    el.style.fontSize !== '26pt'
+      ? $next()
+      : [$createHeadingNode('h1').splice(0, 0, ctx.$importChildren(el))],
   match: sel.tag('span'),
   name: '@lexical/rich-text/google-docs-title-span',
 });

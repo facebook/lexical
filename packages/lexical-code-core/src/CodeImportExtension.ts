@@ -74,12 +74,13 @@ const GitHubCodeTableOverlayRules = defineOverlayRules([
 ]);
 
 const PreRule = defineImportRule({
-  $import: (ctx, el) => {
-    const language = el.getAttribute(LANGUAGE_DATA_ATTRIBUTE);
-    const node = $createCodeNode(language);
-    node.splice(0, 0, ctx.$importChildren(el));
-    return [node];
-  },
+  $import: (ctx, el) => [
+    $createCodeNode(el.getAttribute(LANGUAGE_DATA_ATTRIBUTE)).splice(
+      0,
+      0,
+      ctx.$importChildren(el),
+    ),
+  ],
   match: sel.tag('pre'),
   name: '@lexical/code/pre',
 });
@@ -97,10 +98,13 @@ const MultilineCodeRule = defineImportRule({
     if (!isMultiLine) {
       return $next();
     }
-    const language = el.getAttribute(LANGUAGE_DATA_ATTRIBUTE);
-    const node = $createCodeNode(language);
-    node.splice(0, 0, ctx.$importChildren(el));
-    return [node];
+    return [
+      $createCodeNode(el.getAttribute(LANGUAGE_DATA_ATTRIBUTE)).splice(
+        0,
+        0,
+        ctx.$importChildren(el),
+      ),
+    ];
   },
   match: sel.tag('code'),
   name: '@lexical/code/code-multiline',
@@ -115,9 +119,7 @@ const MultilineCodeRule = defineImportRule({
 const DivRule = defineImportRule({
   $import: (ctx, el, $next) => {
     if (isMonospaceElement(el)) {
-      const node = $createCodeNode();
-      node.splice(0, 0, ctx.$importChildren(el));
-      return [node];
+      return [$createCodeNode().splice(0, 0, ctx.$importChildren(el))];
     }
     if (isMonospaceDescendant(el)) {
       // Unwrap so children flow into the enclosing CodeNode.

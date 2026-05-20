@@ -35,6 +35,7 @@ import {JSDOM} from 'jsdom';
 import {
   $getRoot,
   defineExtension,
+  getStyleObjectFromCSS,
   isHTMLElement,
   type LexicalEditor,
   type LexicalNode,
@@ -171,19 +172,32 @@ const WordListConsumed = createImportState<WeakSet<Element>>(
 );
 
 const WORD_LIST_CLASS_RE = /^MsoListParagraph(CxSp(First|Middle|Last))?$/;
-const WORD_MARKER_SELECTOR = '[style*="mso-list:Ignore"]';
 const WORD_NUMBERED_RE = /^[A-Za-z0-9]+[.)]/;
 
+function readMsoStyles(el: Element): Record<string, string> {
+  // mso-* are Microsoft non-standard CSS properties; browsers and JSDOM
+  // don't surface them via el.style, so parse the raw style attribute.
+  return getStyleObjectFromCSS(el.getAttribute('style') || '');
+}
+
 function readWordListLevel(el: HTMLElement): number {
-  // mso-list is a Microsoft non-standard CSS property; browsers and JSDOM
-  // don't surface it via el.style, so read the raw style attribute.
-  const style = el.getAttribute('style') || '';
-  const m = style.match(/mso-list:\s*l\d+\s+level(\d+)/i);
+  // mso-list looks like "l<N> level<M> lfo<X>"; pluck the level number.
+  const msoList = readMsoStyles(el)['mso-list'] || '';
+  const m = msoList.match(/level(\d+)/);
   return m ? parseInt(m[1], 10) : 1;
 }
 
-function readWordMarker(el: HTMLElement): string {
-  const span = el.querySelector(WORD_MARKER_SELECTOR);
+function $findMarkerSpan(el: HTMLElement): HTMLElement | null {
+  for (const span of Array.from(el.querySelectorAll('span'))) {
+    if (readMsoStyles(span)['mso-list'] === 'Ignore') {
+      return span;
+    }
+  }
+  return null;
+}
+
+function $readWordMarker(el: HTMLElement): string {
+  const span = $findMarkerSpan(el);
   return span ? (span.textContent || '').trim() : '';
 }
 
@@ -194,7 +208,7 @@ function classifyWordListType(marker: string): 'number' | 'bullet' {
 function $stripWordMarker(el: HTMLElement): void {
   // The marker span is wrapped in an outer <span> directly under the
   // <p>; remove that outer wrapper.
-  const inner = el.querySelector(WORD_MARKER_SELECTOR);
+  const inner = $findMarkerSpan(el);
   if (!inner) {
     return;
   }
@@ -259,7 +273,7 @@ const WordListParagraphRule = defineImportRule({
       items.push({
         el: cur,
         level: readWordListLevel(cur),
-        marker: readWordMarker(cur),
+        marker: $readWordMarker(cur),
       });
       // Stop at the explicitly-terminal class. The standalone
       // MsoListParagraph (no CxSp suffix) is a single-item run.

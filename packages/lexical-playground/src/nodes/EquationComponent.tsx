@@ -13,12 +13,16 @@ import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
 import {mergeRegister} from '@lexical/utils';
 import {
+  $createParagraphNode,
   $getNodeByKey,
+  $getSelection,
   $isElementNode,
+  $isNodeSelection,
   $isTextNode,
   CLICK_COMMAND,
   COMMAND_PRIORITY_HIGH,
   COMMAND_PRIORITY_LOW,
+  KEY_ENTER_COMMAND,
   KEY_ESCAPE_COMMAND,
   NodeKey,
   SELECTION_CHANGE_COMMAND,
@@ -88,6 +92,51 @@ export default function EquationComponent({
     }
     return editor.registerCommand(CLICK_COMMAND, onClick, COMMAND_PRIORITY_LOW);
   }, [editor, isEditable, onClick]);
+
+  // Pressing Enter while this equation is the lone NodeSelection
+  // inserts a fresh empty paragraph right after it and moves the caret
+  // into the new paragraph. Without this, the default rich-text path
+  // (lifted to a RangeSelection past the decorator via
+  // RichTextExtension's block-decorator branch) leaves the caret on a
+  // root-level element point that swallows further keystrokes — the
+  // user sees an editor that won't accept text after a fresh equation.
+  const $onEnter = useCallback(
+    (event: KeyboardEvent) => {
+      const latestSelection = $getSelection();
+      if (
+        !(
+          $isNodeSelection(latestSelection) &&
+          latestSelection.has(nodeKey) &&
+          latestSelection.getNodes().length === 1
+        )
+      ) {
+        return false;
+      }
+      event.preventDefault();
+      editor.update(() => {
+        const node = $getNodeByKey(nodeKey);
+        if (!$isEquationNode(node)) {
+          return;
+        }
+        const paragraph = $createParagraphNode();
+        node.insertAfter(paragraph);
+        paragraph.select();
+      });
+      return true;
+    },
+    [editor, nodeKey],
+  );
+
+  useEffect(() => {
+    if (!isEditable) {
+      return undefined;
+    }
+    return editor.registerCommand(
+      KEY_ENTER_COMMAND,
+      $onEnter,
+      COMMAND_PRIORITY_LOW,
+    );
+  }, [editor, isEditable, $onEnter]);
 
   // Remove this equation when the user presses Backspace inside an
   // already-empty `EquationEditor`. Without this, the LaTeX input

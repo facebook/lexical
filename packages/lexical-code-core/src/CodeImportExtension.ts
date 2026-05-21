@@ -10,18 +10,20 @@ import type {DOMPreprocessFn} from '@lexical/html';
 
 import {
   CoreImportExtension,
+  createImportState,
   defineImportRule,
   defineOverlayRules,
   DOMImportExtension,
+  ImportOverlays,
   sel,
 } from '@lexical/html';
 import {
+  $createTextNode,
   configExtension,
   defineExtension,
   isDOMDocumentNode,
   isHTMLElement,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
 import {CodeExtension} from './CodeExtension';
 import {$createCodeNode} from './CodeNode';
@@ -200,23 +202,118 @@ function splitMonospaceWrapperLines(el: HTMLElement): string[] | null {
   return lines;
 }
 
-function $replaceWithPre(
-  range: readonly Node[],
-  parent: ParentNode,
-  text: string,
-): HTMLPreElement {
-  const doc = parent.ownerDocument;
-  invariant(doc !== null, 'expected owning document');
-  const pre = doc.createElement('pre');
-  pre.textContent = text;
-  parent.insertBefore(pre, range[0]);
-  for (const node of range) {
-    if (node.parentNode === parent) {
-      parent.removeChild(node);
+/**
+ * Per-import session WeakSet used by the VS Code line-run rule to mark
+ * sibling code lines that have already been absorbed by an earlier
+ * sibling's pass, so the framework's normal child iteration treats
+ * them as no-ops.
+ */
+const VscodeRunConsumed = createImportState<WeakSet<Element>>(
+  '@lexical/code/vscode-run-consumed',
+  () => new WeakSet(),
+);
+
+/**
+ * Returns `true` if `root` contains the structural signature of a
+ * VS Code code-block paste:
+ *
+ *  - a monospace+pre `<div>` wrapper with at least one block (`<div>` /
+ *    `<br>`) child — the Chrome shape, or
+ *  - two or more consecutive monospace+pre siblings — the Safari shape.
+ *
+ * Walked once in preprocess; the matching overlay is only installed
+ * when this returns `true` so an unrelated paste doesn't pay for the
+ * detection or rule cost.
+ */
+function looksLikeVscodePaste(root: ParentNode): boolean {
+  for (const child of Array.from(root.children)) {
+    if (isHTMLElement(child) && isMonospacePreElement(child)) {
+      const lines = splitMonospaceWrapperLines(child);
+      if (lines !== null) {
+        return true;
+      }
+      const next = child.nextElementSibling;
+      if (next && isMonospacePreElement(next)) {
+        return true;
+      }
+      continue;
+    }
+    if (looksLikeVscodePaste(child)) {
+      return true;
     }
   }
-  return pre;
+  return false;
 }
+
+/**
+ * Match a monospace+pre `<div>` whose direct children include block
+ * (`<div>` / `<br>`) elements — the Chrome shape, one outer wrapper
+ * around per-line `<div>`s and `<br>`s. Emits a single CodeNode whose
+ * text is the wrapper's lines joined by `\n`.
+ */
+const VscodeWrapperRule = defineImportRule({
+  $import: (_ctx, el, $next) => {
+    if (!isMonospacePreElement(el) || isMonospaceDescendant(el)) {
+      return $next();
+    }
+    const lines = splitMonospaceWrapperLines(el);
+    if (lines === null || lines.length === 0) {
+      return $next();
+    }
+    return [
+      $createCodeNode().splice(0, 0, [$createTextNode(lines.join('\n'))]),
+    ];
+  },
+  match: sel.tag('div'),
+  name: '@lexical/code/vscode-wrapper',
+});
+
+/**
+ * Match the first of a run of consecutive monospace+pre `<div>` /
+ * `<br>` siblings (the Safari shape) and emit one CodeNode for the
+ * whole run. Siblings consumed by a previous pass are tracked in
+ * session state so the framework's per-child dispatch on them
+ * returns nothing.
+ */
+const VscodeLineRunRule = defineImportRule({
+  $import: (ctx, el, $next) => {
+    if (!isMonospacePreElement(el) || isMonospaceDescendant(el)) {
+      return $next();
+    }
+    const consumed = ctx.session.get(VscodeRunConsumed);
+    if (consumed.has(el)) {
+      return [];
+    }
+    const prev = el.previousElementSibling;
+    if (prev && isMonospacePreElement(prev)) {
+      // We were consumed by an earlier sibling's walk on a previous
+      // dispatch (defensive — the consumed-set branch above would
+      // normally cover this).
+      return [];
+    }
+    const lines: string[] = [];
+    let cur: Element | null = el;
+    while (cur && isMonospacePreElement(cur)) {
+      consumed.add(cur);
+      lines.push(cur.tagName === 'BR' ? '' : cur.textContent || '');
+      cur = cur.nextElementSibling;
+    }
+    trimBlankLines(lines);
+    if (lines.length < 2) {
+      return $next();
+    }
+    return [
+      $createCodeNode().splice(0, 0, [$createTextNode(lines.join('\n'))]),
+    ];
+  },
+  match: sel.tag('div', 'br'),
+  name: '@lexical/code/vscode-line-run',
+});
+
+const VscodeCodePasteOverlay = defineOverlayRules([
+  VscodeWrapperRule,
+  VscodeLineRunRule,
+]);
 
 /**
  * VS Code → browser code-block pastes ship the block as either:
@@ -225,89 +322,35 @@ function $replaceWithPre(
  *    `<div style="font-family: …monospace…; white-space: pre">…</div>`
  *    wrapping per-line `<div>`s and `<br>`s.
  *  - **Safari**: a flat run of sibling
- *    `<div style="…monospace…; white-space: pre">…</div>`
- *    and `<br style="…monospace…; …">` elements with no wrapping
+ *    `<div style="…monospace…; white-space: pre">…</div>` and
+ *    `<br style="…monospace…; …">` elements with no wrapping
  *    monospace ancestor (the styles are duplicated onto every
  *    element).
  *
- * The legacy `<div>` rule produces one CodeNode per `<div>` on
- * Safari and concatenates inner divs without separating `\n`s on
- * Chrome. This preprocess detects either shape and rewrites the
- * affected DOM into a single `<pre>` with the joined text content,
- * which the existing {@link PreRule} then imports as a single
- * CodeNode. The rewrite is global on purpose — we only consolidate
- * if the structural signal (monospace+pre wrapper OR a run of two
- * or more monospace+pre siblings) is unambiguous.
+ * The legacy `<div>` rule (and {@link DivRule}) produces one CodeNode
+ * per `<div>` on Safari and concatenates inner divs without
+ * separating `\n`s on Chrome. This preprocess scans once for the
+ * structural signature and, only when it matches, pushes
+ * {@link VscodeCodePasteOverlay} onto {@link ImportOverlays} so the
+ * VS Code-specific rules participate in the walk. Pastes from other
+ * sources pay only the detection cost.
  *
  * @experimental
  */
-export const $consolidateVscodeCodePaste: DOMPreprocessFn = (
+export const $installVscodeCodePasteOverlay: DOMPreprocessFn = (
   dom,
-  _ctx,
+  ctx,
   $next,
 ) => {
   const root: ParentNode = isDOMDocumentNode(dom) ? dom.body : dom;
-  $walkConsolidate(root);
+  if (looksLikeVscodePaste(root)) {
+    ctx.session.update(ImportOverlays, prev => [
+      ...prev,
+      VscodeCodePasteOverlay,
+    ]);
+  }
   $next();
 };
-
-function $walkConsolidate(parent: ParentNode): void {
-  // First, consolidate any monospace+pre WRAPPER children (the Chrome
-  // shape): replace each with a <pre> containing the joined text of
-  // its line-children. We do this before scanning sibling runs so a
-  // wrapper that ends up at the same level as other wrappers doesn't
-  // accidentally pair with them.
-  for (const child of Array.from(parent.children)) {
-    if (isHTMLElement(child) && isMonospacePreElement(child)) {
-      const lines = splitMonospaceWrapperLines(child);
-      if (lines !== null && lines.length > 0) {
-        $replaceWithPre([child], parent, lines.join('\n'));
-      }
-      // A monospace-pre leaf (no block children) isn't a wrapper — leave
-      // it to the sibling-run pass below.
-      continue;
-    }
-    // Recurse into non-monospace children so we find nested wrappers
-    // (e.g. a code paste inside a quote).
-    $walkConsolidate(child);
-  }
-  // Then look for runs of consecutive monospace+pre siblings (the
-  // Safari shape) at this level.
-  let cursor: ChildNode | null = parent.firstChild;
-  while (cursor) {
-    if (!isHTMLElement(cursor) || !isMonospacePreElement(cursor)) {
-      cursor = cursor.nextSibling;
-      continue;
-    }
-    const run: ChildNode[] = [];
-    const lines: string[] = [];
-    let probe: ChildNode | null = cursor;
-    while (probe) {
-      if (isHTMLElement(probe) && isMonospacePreElement(probe)) {
-        run.push(probe);
-        lines.push(probe.tagName === 'BR' ? '' : probe.textContent || '');
-        probe = probe.nextSibling;
-      } else if (
-        probe.nodeType === 3 &&
-        (probe.textContent || '').trim() === ''
-      ) {
-        // Whitespace text between monospace siblings — absorb into the
-        // run so removing the run also drops the interstitial whitespace.
-        run.push(probe);
-        probe = probe.nextSibling;
-      } else {
-        break;
-      }
-    }
-    if (run.length > 1) {
-      trimBlankLines(lines);
-      const pre = $replaceWithPre(run, parent, lines.join('\n'));
-      cursor = pre.nextSibling;
-    } else {
-      cursor = run[run.length - 1].nextSibling;
-    }
-  }
-}
 
 /**
  * A `<div style="font-family: …monospace…">` (Google-Docs-style code
@@ -396,7 +439,7 @@ export const CodeImportExtension = defineExtension({
     // $createCodeNode.
     CodeExtension,
     configExtension(DOMImportExtension, {
-      preprocess: [$consolidateVscodeCodePaste],
+      preprocess: [$installVscodeCodePasteOverlay],
       rules: CodeImportRules,
     }),
   ],

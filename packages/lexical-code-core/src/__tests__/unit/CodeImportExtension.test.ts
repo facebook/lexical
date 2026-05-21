@@ -219,4 +219,22 @@ describe('CodeImportExtension — VS Code paste', () => {
       expect(codeNodes[0].getTextContent()).toBe(VSCODE_EXPECTED);
     });
   });
+
+  test('paste without the VS Code structural signal does not install the overlay', () => {
+    // A single bare monospace+pre `<div>` with only inline content
+    // doesn't match either "wrapper" (no block children) or "sibling
+    // run" (no monospace+pre siblings). The conditional overlay must
+    // NOT be installed, so the input falls through to the existing
+    // DivRule which produces a one-line CodeNode.
+    using editor = buildEditor();
+    $importInto(
+      editor,
+      `<div style="font-family: monospace; white-space: pre;">just one line</div>`,
+    );
+    editor.read(() => {
+      const codeNodes = $getRoot().getChildren().filter($isCodeNode);
+      expect(codeNodes).toHaveLength(1);
+      expect(codeNodes[0].getTextContent()).toBe('just one line');
+    });
+  });
 });

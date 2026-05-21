@@ -4,7 +4,7 @@ import {HistoryExtension} from '@lexical/history';
 import {ListExtension} from '@lexical/list';
 import {RichTextExtension} from '@lexical/rich-text';
 import {LinkExtension} from '@lexical/link';
-import {defineExtension} from 'lexical';
+import {configExtension, defineExtension} from 'lexical';
 
 const myTheme = {
   text: {
@@ -27,7 +27,11 @@ const editorExtension = defineExtension({
   theme: myTheme,
   dependencies: [
     RichTextExtension,
-    HistoryExtension,
+    // Match ProseMirror's history defaults so the benchmark is comparing
+    // apples to apples: prosemirror-history defaults to depth: 100 and
+    // newGroupDelay: 500ms, so a continuous typing burst collapses into one
+    // history event and at most 100 entries are retained.
+    configExtension(HistoryExtension, {delay: 500, maxDepth: 100}),
     ListExtension,
     LinkExtension,
   ],

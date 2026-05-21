@@ -1,0 +1,40 @@
+{
+  "name": "@lexical/dev-dom-import-example",
+  "private": true,
+  "version": "0.44.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@lexical/code-core": "workspace:*",
+    "@lexical/extension": "workspace:*",
+    "@lexical/history": "workspace:*",
+    "@lexical/html": "workspace:*",
+    "@lexical/link": "workspace:*",
+    "@lexical/list": "workspace:*",
+    "@lexical/markdown": "workspace:*",
+    "@lexical/react": "workspace:*",
+    "@lexical/rich-text": "workspace:*",
+    "@lexical/table": "workspace:*",
+    "@lexical/utils": "workspace:*",
+    "lexical": "workspace:*",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.2",
+    "@types/react-dom": "^19.1.2",
+    "@vitejs/plugin-react": "^5.0.2",
+    "typescript": "^5.9.2",
+    "vite": "^7.3.2"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "4.52.0",
+    "@rollup/rollup-darwin-arm64": "4.52.0",
+    "@rollup/rollup-win32-x64-msvc": "4.52.0",
+    "@rollup/wasm-node": "4.52.0"
+  }
+}

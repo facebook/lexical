@@ -1,0 +1,152 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
+import {$generateNodesFromDOMViaExtension} from '@lexical/html';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {$getRoot, $insertNodes} from 'lexical';
+import {useCallback, useRef, useState} from 'react';
+
+const SAMPLE_HTML = `<p>Paste raw HTML here, or try the bundled Word fixture:</p>
+<button data-action="paste-word">Paste Word fixture</button>`;
+
+// Trimmed Word-paste fixture: enough to exercise the conditional overlay.
+const WORD_FIXTURE = `<!doctype html>
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:w="urn:schemas-microsoft-com:office:word">
+<head><meta name="Generator" content="Microsoft Word 15"></head>
+<body>
+  <p class="MsoNormal">A normal paragraph from Word<o:p></o:p></p>
+
+  <p class="MsoListParagraphCxSpFirst" style="mso-list:l2 level1 lfo1">
+    <span><span style="mso-list:Ignore">1.</span></span>
+    Numbered item 1<o:p></o:p>
+  </p>
+  <p class="MsoListParagraphCxSpMiddle" style="mso-list:l2 level1 lfo1">
+    <span><span style="mso-list:Ignore">2.</span></span>
+    Numbered item 2<o:p></o:p>
+  </p>
+  <p class="MsoListParagraphCxSpLast" style="mso-list:l2 level1 lfo1">
+    <span><span style="mso-list:Ignore">3.</span></span>
+    Numbered item 3<o:p></o:p>
+  </p>
+
+  <p class="MsoListParagraphCxSpFirst" style="mso-list:l1 level1 lfo3">
+    <span><span style="mso-list:Ignore">1)</span></span>
+    Outline 1<o:p></o:p>
+  </p>
+  <p class="MsoListParagraphCxSpMiddle" style="mso-list:l1 level2 lfo3">
+    <span><span style="mso-list:Ignore">a)</span></span>
+    Outline 1.a<o:p></o:p>
+  </p>
+  <p class="MsoListParagraphCxSpMiddle" style="mso-list:l1 level2 lfo3">
+    <span><span style="mso-list:Ignore">b)</span></span>
+    Outline 1.b<o:p></o:p>
+  </p>
+  <p class="MsoListParagraphCxSpLast" style="mso-list:l1 level1 lfo3">
+    <span><span style="mso-list:Ignore">2)</span></span>
+    Outline 2<o:p></o:p>
+  </p>
+</body>
+</html>`;
+
+export function ImportHtmlButton() {
+  const [editor] = useLexicalComposerContext();
+  const dialogRef = useRef<HTMLDialogElement | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const [replace, setReplace] = useState(true);
+
+  const open = useCallback(() => {
+    const dlg = dialogRef.current;
+    if (!dlg) return;
+    if (textareaRef.current && !textareaRef.current.value) {
+      textareaRef.current.value = SAMPLE_HTML;
+    }
+    dlg.showModal();
+  }, []);
+
+  const close = useCallback(() => {
+    if (dialogRef.current) {
+      dialogRef.current.close();
+    }
+  }, []);
+
+  const doImport = useCallback(() => {
+    const html = textareaRef.current ? textareaRef.current.value : '';
+    if (!html.trim()) {
+      close();
+      return;
+    }
+    editor.update(() => {
+      const parser = new DOMParser();
+      const dom = parser.parseFromString(html, 'text/html');
+      const nodes = $generateNodesFromDOMViaExtension(editor, dom);
+      if (replace) {
+        $getRoot().clear().splice(0, 0, nodes);
+      } else {
+        $insertNodes(nodes);
+      }
+    });
+    close();
+  }, [editor, replace, close]);
+
+  const fillWord = useCallback(() => {
+    if (textareaRef.current) {
+      textareaRef.current.value = WORD_FIXTURE;
+    }
+  }, []);
+
+  return (
+    <>
+      <button
+        type="button"
+        className="toolbar-item spaced"
+        onClick={open}
+        aria-label="Import HTML">
+        Import HTML
+      </button>
+      <dialog ref={dialogRef} className="import-dialog">
+        <form method="dialog" onSubmit={e => e.preventDefault()}>
+          <h2>Import HTML</h2>
+          <p>
+            Paste raw HTML below — handy when the source is a code editor or a
+            GitHub issue body and the clipboard doesn't carry a
+            <code> text/html </code>
+            slot for the paste handler to consume.
+          </p>
+          <textarea
+            ref={textareaRef}
+            rows={12}
+            spellCheck={false}
+            autoComplete="off"
+            placeholder="<p>...</p>"
+          />
+          <div className="import-dialog-controls">
+            <button type="button" onClick={fillWord}>
+              Load Word fixture
+            </button>
+            <label>
+              <input
+                type="checkbox"
+                checked={replace}
+                onChange={e => setReplace(e.target.checked)}
+              />
+              Replace document
+            </label>
+            <span className="import-dialog-spacer" />
+            <button type="button" onClick={close}>
+              Cancel
+            </button>
+            <button type="button" onClick={doImport} className="primary">
+              Import
+            </button>
+          </div>
+        </form>
+      </dialog>
+    </>
+  );
+}

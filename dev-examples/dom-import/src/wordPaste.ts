@@ -1,0 +1,196 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
+import {configExtension} from '@lexical/extension';
+import {
+  defineImportRule,
+  defineOverlayRules,
+  type DOMImportContext,
+  DOMImportExtension,
+  type DOMPreprocessFn,
+  ImportOverlays,
+  InlineSchema,
+  sel,
+} from '@lexical/html';
+import {
+  $createListItemNode,
+  $createListNode,
+  $isListItemNode,
+  type ListNode,
+} from '@lexical/list';
+import {defineExtension, getStyleObjectFromCSS, isHTMLElement} from 'lexical';
+
+const WORD_LIST_CLASS_RE = /^MsoListParagraph(CxSp(First|Middle|Last))?$/;
+const WORD_NUMBERED_RE = /^[A-Za-z0-9]+[.)]/;
+const WORD_GENERATOR_RE = /Microsoft Word/i;
+
+function readMsoStyles(el: Element): Record<string, string> {
+  // mso-* are Microsoft non-standard CSS properties; browsers don't surface
+  // them via el.style, so parse the raw style attribute.
+  return getStyleObjectFromCSS(el.getAttribute('style') || '');
+}
+
+function readWordListLevel(el: HTMLElement): number {
+  // mso-list looks like "l<N> level<M> lfo<X>"; pluck the level number.
+  const msoList = readMsoStyles(el)['mso-list'] || '';
+  const m = msoList.match(/level(\d+)/);
+  return m ? parseInt(m[1], 10) : 1;
+}
+
+function $findMarkerSpan(el: HTMLElement): HTMLElement | null {
+  for (const span of Array.from(el.querySelectorAll('span'))) {
+    if (readMsoStyles(span)['mso-list'] === 'Ignore') {
+      return span;
+    }
+  }
+  return null;
+}
+
+function $readWordMarker(el: HTMLElement): string {
+  const span = $findMarkerSpan(el);
+  return span ? (span.textContent || '').trim() : '';
+}
+
+function classifyWordListType(marker: string): 'number' | 'bullet' {
+  return WORD_NUMBERED_RE.test(marker) ? 'number' : 'bullet';
+}
+
+function $stripWordMarker(el: HTMLElement): void {
+  // The marker span is wrapped in an outer <span> directly under the
+  // <p>; remove that outer wrapper.
+  const inner = $findMarkerSpan(el);
+  if (!inner) {
+    return;
+  }
+  let outer: Element = inner;
+  while (
+    outer.parentElement &&
+    outer.parentElement !== el &&
+    outer.parentElement.nodeName === 'SPAN'
+  ) {
+    outer = outer.parentElement;
+  }
+  outer.remove();
+}
+
+function isWordListParagraph(node: Node): node is HTMLElement {
+  return isHTMLElement(node) && WORD_LIST_CLASS_RE.test(node.className);
+}
+
+interface WordListItem {
+  el: HTMLElement;
+  level: number;
+  marker: string;
+}
+
+function $buildWordListTree(
+  ctx: DOMImportContext,
+  items: readonly WordListItem[],
+): ListNode {
+  const root = $createListNode(classifyWordListType(items[0].marker));
+  type Frame = {list: ListNode; level: number};
+  const stack: Frame[] = [{level: items[0].level, list: root}];
+  for (const item of items) {
+    while (stack.length > 1 && stack[stack.length - 1].level > item.level) {
+      stack.pop();
+    }
+    if (item.level > stack[stack.length - 1].level) {
+      const sub = $createListNode(classifyWordListType(item.marker));
+      const parentList = stack[stack.length - 1].list;
+      const lastLi = parentList.getLastChild();
+      if ($isListItemNode(lastLi)) {
+        lastLi.append(sub);
+      } else {
+        parentList.append(sub);
+      }
+      stack.push({level: item.level, list: sub});
+    }
+    $stripWordMarker(item.el);
+    const li = $createListItemNode();
+    li.splice(0, 0, ctx.$importChildren(item.el, {schema: InlineSchema}));
+    stack[stack.length - 1].list.append(li);
+  }
+  return root;
+}
+
+/**
+ * Tracks `<p class="MsoListParagraph*">` elements already absorbed by an
+ * earlier sibling's list-construction pass, so the framework's normal
+ * child iteration treats them as no-ops.
+ */
+const WordListConsumed = new WeakSet<Element>();
+
+const WordListParagraphRule = defineImportRule({
+  $import: (ctx, el) => {
+    if (WordListConsumed.has(el)) {
+      return [];
+    }
+    const items: WordListItem[] = [];
+    let cur: Node | null = el;
+    while (cur && isWordListParagraph(cur)) {
+      WordListConsumed.add(cur);
+      items.push({
+        el: cur,
+        level: readWordListLevel(cur),
+        marker: $readWordMarker(cur),
+      });
+      if (
+        cur.classList.contains('MsoListParagraphCxSpLast') ||
+        cur.className === 'MsoListParagraph'
+      ) {
+        break;
+      }
+      cur = cur.nextElementSibling;
+    }
+    return [$buildWordListTree(ctx, items)];
+  },
+  match: sel
+    .tag('p')
+    .classAny(
+      'MsoListParagraph',
+      'MsoListParagraphCxSpFirst',
+      'MsoListParagraphCxSpMiddle',
+      'MsoListParagraphCxSpLast',
+    ),
+  name: 'word/list-paragraph',
+});
+
+// <o:p> is Office's "paragraph end" marker; always produces nothing.
+const WordOPRule = defineImportRule({
+  $import: () => [],
+  match: sel.tag('o:p'),
+  name: 'word/o-p',
+});
+
+const WordPasteOverlay = defineOverlayRules([
+  WordOPRule,
+  WordListParagraphRule,
+]);
+
+const $installWordOverlay: DOMPreprocessFn = (dom, ctx, $next) => {
+  const meta = dom.querySelector('meta[name="Generator"]');
+  if (meta && WORD_GENERATOR_RE.test(meta.getAttribute('content') || '')) {
+    ctx.session.update(ImportOverlays, prev => [...prev, WordPasteOverlay]);
+  }
+  $next();
+};
+
+/**
+ * Extension that registers a DOM preprocess hook: if the input
+ * carries `<meta name="Generator" content="Microsoft Word…">`, push a
+ * Word-specific overlay onto {@link ImportOverlays} so the rest of the
+ * walk picks it up. Pastes from other sources pay nothing.
+ */
+export const WordPasteExtension = defineExtension({
+  dependencies: [
+    configExtension(DOMImportExtension, {
+      preprocess: [$installWordOverlay],
+    }),
+  ],
+  name: '@lexical/examples/word-paste',
+});

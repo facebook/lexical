@@ -270,6 +270,80 @@ importers:
         specifier: ^2.1.0
         version: 2.1.0(yjs@13.6.30)
 
+  dev-examples/dom-import:
+    dependencies:
+      '@lexical/code-core':
+        specifier: workspace:*
+        version: link:../../packages/lexical-code-core
+      '@lexical/extension':
+        specifier: workspace:*
+        version: link:../../packages/lexical-extension
+      '@lexical/history':
+        specifier: workspace:*
+        version: link:../../packages/lexical-history
+      '@lexical/html':
+        specifier: workspace:*
+        version: link:../../packages/lexical-html
+      '@lexical/link':
+        specifier: workspace:*
+        version: link:../../packages/lexical-link
+      '@lexical/list':
+        specifier: workspace:*
+        version: link:../../packages/lexical-list
+      '@lexical/markdown':
+        specifier: workspace:*
+        version: link:../../packages/lexical-markdown
+      '@lexical/react':
+        specifier: workspace:*
+        version: link:../../packages/lexical-react
+      '@lexical/rich-text':
+        specifier: workspace:*
+        version: link:../../packages/lexical-rich-text
+      '@lexical/table':
+        specifier: workspace:*
+        version: link:../../packages/lexical-table
+      '@lexical/utils':
+        specifier: workspace:*
+        version: link:../../packages/lexical-utils
+      lexical:
+        specifier: workspace:*
+        version: link:../../packages/lexical
+      react:
+        specifier: 19.2.5
+        version: 19.2.5
+      react-dom:
+        specifier: 19.2.5
+        version: 19.2.5(react@19.2.5)
+    devDependencies:
+      '@types/react':
+        specifier: ^19.1.2
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.1.2
+        version: 19.2.3(@types/react@19.2.14)
+      '@vitejs/plugin-react':
+        specifier: ^5.0.2
+        version: 5.2.0(vite@7.3.3(@types/node@25.6.0)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.2)(yaml@2.8.4))
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
+      vite:
+        specifier: ^7.3.2
+        version: 7.3.3(@types/node@25.6.0)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.2)(yaml@2.8.4)
+    optionalDependencies:
+      '@rollup/rollup-darwin-arm64':
+        specifier: 4.52.0
+        version: 4.52.0
+      '@rollup/rollup-linux-x64-gnu':
+        specifier: 4.52.0
+        version: 4.52.0
+      '@rollup/rollup-win32-x64-msvc':
+        specifier: 4.52.0
+        version: 4.52.0
+      '@rollup/wasm-node':
+        specifier: 4.52.0
+        version: 4.52.0
+
   dev-examples/node-state-style:
     dependencies:
       '@ark-ui/react':

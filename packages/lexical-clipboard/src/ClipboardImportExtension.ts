@@ -35,6 +35,15 @@ import {
  * - `next` defers to the next-lower handler in the stack (i.e. the handler
  *   that was registered earlier). Returns `true` if that handler claimed
  *   the data; `false` if no handler accepted it.
+ * - `dataTransfer` is the full {@link DataTransfer} the paste/drop came
+ *   from, so a handler can inspect companion MIME types or attached
+ *   files in addition to the slot it was invoked for (e.g. peek at
+ *   `'application/x-vscode-source'` while handling `'text/html'`). When
+ *   threading through the new pipeline, pass this into
+ *   `$generateNodesFromDOMViaExtension(editor, dom, {
+ *     context: [contextValue(ImportSourceDataTransfer, dataTransfer)],
+ *   })` so rules and preprocessors can read it via
+ *   `ctx.get(ImportSourceDataTransfer)`.
  *
  * The function should return `true` if it consumed the data (the caller
  * stops trying further handlers for this MIME type and does not move on to
@@ -50,6 +59,7 @@ export type ImportMimeTypeFunction = (
   selection: BaseSelection,
   editor: LexicalEditor,
   next: () => boolean,
+  dataTransfer: DataTransfer,
 ) => boolean;
 
 /**
@@ -275,12 +285,15 @@ function callImportMimeTypeFunctionStack(
   data: string,
   selection: BaseSelection,
   editor: LexicalEditor,
+  dataTransfer: DataTransfer,
 ): boolean {
   if (!fns) {
     return false;
   }
   const callAt = (i: number): boolean =>
-    fns[i] ? fns[i](data, selection, editor, callAt.bind(null, i - 1)) : false;
+    fns[i]
+      ? fns[i](data, selection, editor, callAt.bind(null, i - 1), dataTransfer)
+      : false;
   return callAt(fns.length - 1);
 }
 
@@ -334,6 +347,7 @@ function $runImport(
         data,
         selection,
         editor,
+        dataTransfer,
       )
     ) {
       return true;
@@ -393,6 +407,7 @@ export function $getImportOutput(editor: LexicalEditor): ClipboardImportOutput {
  *   contextValue,
  *   DOMImportExtension,
  *   ImportSource,
+ *   ImportSourceDataTransfer,
  *   $generateNodesFromDOMViaExtension,
  * } from '@lexical/html';
  *
@@ -403,11 +418,14 @@ export function $getImportOutput(editor: LexicalEditor): ClipboardImportOutput {
  *     configExtension(ClipboardImportExtension, {
  *       $importMimeType: {
  *         'text/html': [
- *           (html, selection, editor) => {
+ *           (html, selection, editor, _next, dataTransfer) => {
  *             const parser = new DOMParser();
  *             const dom = parser.parseFromString(html, 'text/html');
  *             const nodes = $generateNodesFromDOMViaExtension(editor, dom, {
- *               context: [contextValue(ImportSource, 'paste')],
+ *               context: [
+ *                 contextValue(ImportSource, 'paste'),
+ *                 contextValue(ImportSourceDataTransfer, dataTransfer),
+ *               ],
  *             });
  *             $insertGeneratedNodes(editor, nodes, selection);
  *             return true;

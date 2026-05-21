@@ -52,6 +52,7 @@ export {
   defaultPreservesWhitespace,
   ImportOverlays,
   ImportSource,
+  ImportSourceDataTransfer,
   type ImportSourceKind,
   ImportTextFormat,
   ImportWhitespaceConfig,

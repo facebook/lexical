@@ -92,6 +92,7 @@ export {
   HorizontalRuleImportRules,
   ImportOverlays,
   ImportSource,
+  ImportSourceDataTransfer,
   type ImportSourceKind,
   ImportTextFormat,
   ImportWhitespaceConfig,

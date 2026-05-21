@@ -1,10 +1,7 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "target": "ES2022",
     "useDefineForClassFields": true,
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "module": "ESNext",
     "skipLibCheck": true,
 
     /* Bundler mode */
@@ -17,7 +14,12 @@
 
     /* Linting */
     "strict": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+
+    /* Inherit lib + paths from the workspace root so reaching into
+     * workspace package source picks up node globals (`process`,
+     * `global`), `Symbol.dispose`, `findLastIndex`, etc. */
+    "types": ["node"]
   },
   "include": ["src", "../../libdefs/globals.d.ts"],
   "references": [{"path": "./tsconfig.node.json"}]

@@ -80,6 +80,35 @@ export const ImportSource: ImportStateConfig<ImportSourceKind> =
   createImportState<ImportSourceKind>('importSource', () => 'unknown');
 
 /**
+ * Built-in import-context state holding the {@link DataTransfer} the
+ * import was sourced from, if any. `null` outside paste/drop flows.
+ *
+ * The clipboard import pipeline passes the original `DataTransfer`
+ * through to its per-MIME-type handler stack (see
+ * {@link ImportMimeTypeFunction}); handlers that route HTML through
+ * the {@link DOMImportExtension} pipeline should forward it into the
+ * walk via `context: [contextValue(ImportSourceDataTransfer,
+ * dataTransfer)]` so rules and preprocessors can call
+ * `ctx.get(ImportSourceDataTransfer)` to inspect companion MIME types
+ * (e.g. an `'application/rtf'` alternative or an attached
+ * `'application/x-officedrawing'` payload), the file list, or any
+ * custom drag-and-drop slot.
+ *
+ * Use sparingly: the safer pattern is to decide *which* MIME-type
+ * payload to walk in the clipboard handler stack and hand a finalized
+ * DOM to the rules; only fall back to peeking at `ImportSourceDataTransfer`
+ * when the source-detection signal genuinely lives in a companion
+ * slot.
+ *
+ * @experimental
+ */
+export const ImportSourceDataTransfer: ImportStateConfig<DataTransfer | null> =
+  createImportState<DataTransfer | null>(
+    'importSourceDataTransfer',
+    () => null,
+  );
+
+/**
  * Built-in import-context state holding the bit-packed
  * {@link TextFormatType} formats that should apply to {@link TextNode}s
  * produced during the current subtree. Used by inline-format wrappers

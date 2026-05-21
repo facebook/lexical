@@ -25,7 +25,7 @@ export interface GalleryExample {
   description: string;
   /** Filter tags (e.g. 'opensource', 'favorite') */
   tags: string[];
-  /** Query string appended to the StackBlitz embed URL */
+  /** Query string appended to the StackBlitz URL */
   stackblitzQuery: string;
   /**
    * CSS selector to wait for before taking a screenshot.
@@ -64,7 +64,7 @@ export const galleryExamples: GalleryExample[] = [
     description: 'Learn how to create an editor with Emojis',
     dir: 'vanilla-js-plugin',
     stackblitzQuery:
-      'embed=1&file=src%2Femoji-plugin%2FEmojiPlugin.ts&terminalHeight=0&ctl=0',
+      'file=src%2Femoji-plugin%2FEmojiPlugin.ts&terminalHeight=0&ctl=0',
     tags: ['opensource', 'vanilla', 'emoji'],
     title: 'EmojiPlugin',
     waitForSelector: '[data-lexical-editor]',
@@ -72,7 +72,7 @@ export const galleryExamples: GalleryExample[] = [
   {
     description: 'Learn how to create an editor with Real Time Collaboration',
     dir: 'react-rich-collab',
-    stackblitzQuery: 'ctl=0&file=src%2Fmain.tsx&terminalHeight=0&embed=1',
+    stackblitzQuery: 'ctl=0&file=src%2Fmain.tsx&terminalHeight=0',
     tags: ['opensource', 'favorite', 'react', 'collab', 'toolbar'],
     title: 'Collab RichText',
     // Editor is inside iframes, so wait for the iframe elements instead
@@ -81,7 +81,7 @@ export const galleryExamples: GalleryExample[] = [
   {
     description: 'Learn how to create an editor with Tables',
     dir: 'react-table',
-    stackblitzQuery: 'embed=1&file=src%2Fmain.tsx&terminalHeight=0&ctl=0',
+    stackblitzQuery: 'file=src%2Fmain.tsx&terminalHeight=0&ctl=0',
     tags: ['opensource', 'react', 'tables', 'toolbar'],
     title: 'TablePlugin',
     waitForSelector: '[data-lexical-editor]',
@@ -89,7 +89,7 @@ export const galleryExamples: GalleryExample[] = [
   {
     description: 'Tables using the Extension architecture',
     dir: 'extension-react-table',
-    stackblitzQuery: 'embed=1&file=src%2Fmain.tsx&terminalHeight=0&ctl=0',
+    stackblitzQuery: 'file=src%2Fmain.tsx&terminalHeight=0&ctl=0',
     tags: ['opensource', 'extension', 'favorite', 'react', 'tables', 'toolbar'],
     title: 'Extension: React Table',
     waitForSelector: '[data-lexical-editor]',
@@ -98,7 +98,7 @@ export const galleryExamples: GalleryExample[] = [
     description: 'SSR and hydration with Svelte 5 and the Extension API',
     dir: 'extension-sveltekit-ssr-hydration',
     stackblitzQuery:
-      'embed=1&file=src%2Froutes%2F%2Bpage.svelte&terminalHeight=0&ctl=0',
+      'file=src%2Froutes%2F%2Bpage.svelte&terminalHeight=0&ctl=0',
     tags: ['opensource', 'svelte', 'ssr', 'extension', 'tailwind', 'simple'],
     title: 'Extension: SvelteKit SSR',
     viteConfig: 'vite.config.ts',
@@ -107,7 +107,7 @@ export const galleryExamples: GalleryExample[] = [
   {
     description: 'Mount React plugins into a vanilla JS Extension editor',
     dir: 'extension-vanilla-react-plugin-host',
-    stackblitzQuery: 'embed=1&file=src%2Fmain.ts&terminalHeight=0&ctl=0',
+    stackblitzQuery: 'file=src%2Fmain.ts&terminalHeight=0&ctl=0',
     tags: ['opensource', 'vanilla', 'react', 'extension', 'tailwind'],
     title: 'Extension: React Plugin Host',
     waitForSelector: '[data-lexical-editor]',
@@ -115,7 +115,7 @@ export const galleryExamples: GalleryExample[] = [
   {
     description: 'Split-view markdown WYSIWYG editor with live preview',
     dir: 'markdown-editor',
-    stackblitzQuery: 'embed=1&file=src%2Fmain.tsx&terminalHeight=0&ctl=0',
+    stackblitzQuery: 'file=src%2Fmain.tsx&terminalHeight=0&ctl=0',
     tags: [
       'opensource',
       'favorite',
@@ -132,7 +132,7 @@ export const galleryExamples: GalleryExample[] = [
   {
     description: 'Vanilla JS checklist editor with Extensions and Tailwind',
     dir: 'extension-vanilla-tailwind',
-    stackblitzQuery: 'embed=1&file=src%2Fmain.ts&terminalHeight=0&ctl=0',
+    stackblitzQuery: 'file=src%2Fmain.ts&terminalHeight=0&ctl=0',
     tags: ['opensource', 'vanilla', 'extension', 'tailwind', 'simple'],
     title: 'Extension: Vanilla Tailwind',
     waitForSelector: '[data-lexical-editor]',
@@ -141,7 +141,7 @@ export const galleryExamples: GalleryExample[] = [
     description:
       'AI-powered editor with paragraph generation and named entity recognition',
     dir: 'agent-example',
-    stackblitzQuery: 'embed=1&file=src%2Fmain.tsx&terminalHeight=0&ctl=0',
+    stackblitzQuery: 'file=src%2Fmain.tsx&terminalHeight=0&ctl=0',
     tags: [
       'opensource',
       'extension',
@@ -159,7 +159,7 @@ export const galleryExamples: GalleryExample[] = [
   {
     description: 'Chat interface with multiple rich text editor instances',
     dir: 'website-chat',
-    stackblitzQuery: 'embed=1&file=src%2Fmain.tsx&terminalHeight=0&ctl=0',
+    stackblitzQuery: 'file=src%2Fmain.tsx&terminalHeight=0&ctl=0',
     tags: [
       'opensource',
       'extension',
@@ -177,7 +177,7 @@ export const galleryExamples: GalleryExample[] = [
     description:
       'Notion-style editor with slash commands and drag-and-drop blocks',
     dir: 'website-notion',
-    stackblitzQuery: 'embed=1&file=src%2Fmain.tsx&terminalHeight=0&ctl=0',
+    stackblitzQuery: 'file=src%2Fmain.tsx&terminalHeight=0&ctl=0',
     tags: ['opensource', 'favorite', 'block', 'react', 'extension', 'tailwind'],
     title: 'Notion-style block editor',
     viteConfig: 'vite.config.ts',
@@ -186,7 +186,7 @@ export const galleryExamples: GalleryExample[] = [
   {
     description: 'Simple rich text input with hashtag support',
     dir: 'website-rich-input',
-    stackblitzQuery: 'embed=1&file=src%2Fmain.tsx&terminalHeight=0&ctl=0',
+    stackblitzQuery: 'file=src%2Fmain.tsx&terminalHeight=0&ctl=0',
     tags: [
       'opensource',
       'favorite',
@@ -202,7 +202,7 @@ export const galleryExamples: GalleryExample[] = [
   {
     description: 'Rich text editor with a formatting toolbar',
     dir: 'website-toolbar',
-    stackblitzQuery: 'embed=1&file=src%2Fmain.tsx&terminalHeight=0&ctl=0',
+    stackblitzQuery: 'file=src%2Fmain.tsx&terminalHeight=0&ctl=0',
     tags: [
       'opensource',
       'favorite',

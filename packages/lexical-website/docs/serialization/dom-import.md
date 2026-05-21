@@ -710,9 +710,12 @@ See `packages/lexical-list/src/__tests__/unit/ListImportExtension.test.ts`
 ("MS Word paste — preprocess-installed overlay") for a worked unit
 test, and [`dev-examples/dom-import`](https://github.com/facebook/lexical/tree/main/dev-examples/dom-import)
 for a running editor that exercises the same overlay end-to-end (a
-reduced rich-text editor with lists, tables, markdown shortcuts, and
-an "Import HTML" dialog so you can paste raw HTML without needing a
-real clipboard `text/html` slot).
+reduced rich-text editor with lists, tables, code blocks, markdown
+shortcuts, and an "Import HTML" dialog so you can paste raw HTML
+without needing a real clipboard `text/html` slot). The dev-example
+also ships a VS Code → Safari paste fixture and the matching
+`@lexical/code-core` preprocess that turns the flat sibling run of
+monospace+pre divs into a single `CodeNode`.
 
 ## ClipboardImportExtension
 

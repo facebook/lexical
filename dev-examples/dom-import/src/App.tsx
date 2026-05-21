@@ -6,21 +6,44 @@
  *
  */
 
-import {AutoFocusExtension} from '@lexical/extension';
+import {CodeNode} from '@lexical/code-core';
+import {
+  AutoFocusExtension,
+  configExtension,
+  HorizontalRuleExtension,
+  HorizontalRuleNode,
+} from '@lexical/extension';
 import {HistoryExtension} from '@lexical/history';
 import {
   $generateNodesFromDOMViaExtension,
   CoreImportExtension,
+  HorizontalRuleImportExtension,
 } from '@lexical/html';
-import {LinkImportExtension} from '@lexical/link';
-import {ListExtension, ListImportExtension} from '@lexical/list';
+import {LinkExtension, LinkImportExtension, LinkNode} from '@lexical/link';
+import {
+  ListExtension,
+  ListImportExtension,
+  ListItemNode,
+  ListNode,
+} from '@lexical/list';
 import {CheckListPlugin} from '@lexical/react/LexicalCheckListPlugin';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
 import {MarkdownShortcutPlugin} from '@lexical/react/LexicalMarkdownShortcutPlugin';
 import {TablePlugin} from '@lexical/react/LexicalTablePlugin';
-import {RichTextExtension, RichTextImportExtension} from '@lexical/rich-text';
-import {TableExtension, TableImportExtension} from '@lexical/table';
+import {
+  HeadingNode,
+  QuoteNode,
+  RichTextExtension,
+  RichTextImportExtension,
+} from '@lexical/rich-text';
+import {
+  TableCellNode,
+  TableExtension,
+  TableImportExtension,
+  TableNode,
+  TableRowNode,
+} from '@lexical/table';
 import {defineExtension, ParagraphNode, TextNode} from 'lexical';
 
 import ExampleTheme from './ExampleTheme';
@@ -35,7 +58,12 @@ const editorExtension = defineExtension({
   dependencies: [
     RichTextExtension,
     ListExtension,
-    TableExtension,
+    // Disable hasHorizontalScroll: the demo theme doesn't define the
+    // scrollable-wrapper class, and tables here aren't wide enough to
+    // need it.
+    configExtension(TableExtension, {hasHorizontalScroll: false}),
+    LinkExtension,
+    HorizontalRuleExtension,
     HistoryExtension,
     AutoFocusExtension,
     // DOMImportExtension pipeline — rules contributed per node package.
@@ -44,12 +72,28 @@ const editorExtension = defineExtension({
     ListImportExtension,
     LinkImportExtension,
     TableImportExtension,
+    HorizontalRuleImportExtension,
     // Word-only overlay, installed conditionally by a preprocess.
     WordPasteExtension,
   ],
   name: '@lexical/examples/dom-import',
   namespace: 'DOM Import Demo',
-  nodes: [ParagraphNode, TextNode],
+  // Markdown transformers in the default set require these nodes to
+  // be present in the editor config.
+  nodes: [
+    ParagraphNode,
+    TextNode,
+    HeadingNode,
+    QuoteNode,
+    ListNode,
+    ListItemNode,
+    LinkNode,
+    CodeNode,
+    HorizontalRuleNode,
+    TableNode,
+    TableRowNode,
+    TableCellNode,
+  ],
   onError(error: Error) {
     throw error;
   },

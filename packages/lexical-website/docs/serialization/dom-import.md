@@ -707,10 +707,12 @@ const $installWordOverlay: DOMPreprocessFn = (dom, ctx, $next) => {
 ```
 
 See `packages/lexical-list/src/__tests__/unit/ListImportExtension.test.ts`
-("MS Word paste — preprocess-installed overlay") for a worked example that
-groups Word's flat `<p class="MsoListParagraph*">` runs into nested
-`ListNode` trees by walking forward through siblings and tracking
-already-consumed elements via session state.
+("MS Word paste — preprocess-installed overlay") for a worked unit
+test, and [`dev-examples/dom-import`](https://github.com/facebook/lexical/tree/main/dev-examples/dom-import)
+for a running editor that exercises the same overlay end-to-end (a
+reduced rich-text editor with lists, tables, markdown shortcuts, and
+an "Import HTML" dialog so you can paste raw HTML without needing a
+real clipboard `text/html` slot).
 
 ## ClipboardImportExtension
 
@@ -730,9 +732,13 @@ export interface ClipboardImportConfig {
 ```
 
 - `$importMimeType` — per-MIME-type stack of middleware functions
-  `(data, selection, editor, next) => boolean`. Top of stack runs
-  first; `next()` defers to the next-lower; return `true` to claim
-  the data.
+  `(data, selection, editor, next, dataTransfer) => boolean`. Top of
+  stack runs first; `next()` defers to the next-lower; return `true`
+  to claim the data. The `dataTransfer` is the original `DataTransfer`
+  the paste/drop came from, so a handler can peek at companion MIME
+  types or attached files (see
+  [`ImportSourceDataTransfer`](#importsourcedatatransfer) for how to
+  surface it to rules).
 - `priority` — a per-MIME-type weight map (`Record<string, number>`,
   lower runs first). Composable: each extension contributes weights
   for its own MIME types without coordinating with others.
@@ -770,6 +776,7 @@ import {
   CoreImportExtension,
   DOMImportExtension,
   ImportSource,
+  ImportSourceDataTransfer,
 } from '@lexical/html';
 
 defineExtension({
@@ -779,11 +786,14 @@ defineExtension({
     configExtension(ClipboardImportExtension, {
       $importMimeType: {
         'text/html': [
-          (html, selection, editor) => {
+          (html, selection, editor, _next, dataTransfer) => {
             const parser = new DOMParser();
             const dom = parser.parseFromString(html, 'text/html');
             const nodes = $generateNodesFromDOMViaExtension(editor, dom, {
-              context: [contextValue(ImportSource, 'paste')],
+              context: [
+                contextValue(ImportSource, 'paste'),
+                contextValue(ImportSourceDataTransfer, dataTransfer),
+              ],
             });
             $insertGeneratedNodes(editor, nodes, selection);
             return true;
@@ -799,6 +809,38 @@ Apps that don't configure `ClipboardImportExtension` keep the legacy
 behavior — `$insertDataTransferForRichText` falls back to the same
 defaults the legacy code path uses, including the legacy
 `$generateNodesFromDOM` for HTML.
+
+### `ImportSourceDataTransfer`
+
+A builtin `ImportStateConfig<DataTransfer | null>` slot for surfacing
+the original paste/drop `DataTransfer` to import rules and
+preprocessors. The clipboard handler shown above forwards it via
+`context`; rules can then read it during the walk:
+
+```ts
+import {ImportSourceDataTransfer} from '@lexical/html';
+
+const ExcelAwareTableRule = defineImportRule({
+  match: sel.tag('table'),
+  $import: (ctx, el, $next) => {
+    const transfer = ctx.get(ImportSourceDataTransfer);
+    // Excel ships an HTML alternative alongside a real RTF payload; if
+    // we see both, we may want to defer to the RTF handler instead of
+    // parsing Excel's HTML quirks.
+    if (transfer && transfer.types.includes('application/rtf')) {
+      return $next();
+    }
+    // …handle the table…
+  },
+});
+```
+
+Defaults to `null` outside of clipboard imports (e.g. headless
+`$generateNodesFromDOM` calls). Use sparingly — the safer pattern is
+to decide *which* MIME-type payload to walk in the clipboard handler
+stack and hand a finalized DOM to the rules; only fall back to peeking
+at `ImportSourceDataTransfer` when the source-detection signal
+genuinely lives in a companion slot.
 
 ## Migrating from `importDOM`
 

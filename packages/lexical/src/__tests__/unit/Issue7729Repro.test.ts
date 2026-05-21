@@ -43,9 +43,9 @@ function $importHtml(html: string) {
 describe('Issue #7729: paragraph indent round-trip via data-lexical-indent', () => {
   test('exportDOM emits data-lexical-indent and importDOM round-trips', () => {
     using editor = setUpEditor(() => {
-      const para = $createParagraphNode().append($createTextNode('hi'));
-      para.setIndent(2);
-      $getRoot().append(para);
+      $getRoot().append(
+        $createParagraphNode().append($createTextNode('hi')).setIndent(2),
+      );
     });
 
     const html = editor.read(() => $generateHtmlFromNodes(editor));

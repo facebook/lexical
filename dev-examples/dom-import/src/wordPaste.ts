@@ -20,7 +20,6 @@ import {
 import {
   $createListItemNode,
   $createListNode,
-  $isListItemNode,
   type ListNode,
 } from '@lexical/list';
 import {defineExtension, getStyleObjectFromCSS, isHTMLElement} from 'lexical';
@@ -100,14 +99,15 @@ function $buildWordListTree(
       stack.pop();
     }
     if (item.level > stack[stack.length - 1].level) {
+      // Lexical's nested-list convention (see `isNestedListNode` in
+      // @lexical/list): a sublist lives inside its OWN ListItemNode
+      // wrapper that is a sibling of the items above it, not inside
+      // the previous content item. The wrapper has no own content,
+      // just the sublist as its first child.
       const sub = $createListNode(classifyWordListType(item.marker));
-      const parentList = stack[stack.length - 1].list;
-      const lastLi = parentList.getLastChild();
-      if ($isListItemNode(lastLi)) {
-        lastLi.append(sub);
-      } else {
-        parentList.append(sub);
-      }
+      const wrapper = $createListItemNode();
+      wrapper.append(sub);
+      stack[stack.length - 1].list.append(wrapper);
       stack.push({level: item.level, list: sub});
     }
     $stripWordMarker(item.el);

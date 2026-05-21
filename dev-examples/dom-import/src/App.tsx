@@ -12,6 +12,7 @@ import {
   configExtension,
   HorizontalRuleExtension,
   HorizontalRuleNode,
+  TabIndentationExtension,
 } from '@lexical/extension';
 import {HistoryExtension} from '@lexical/history';
 import {
@@ -66,6 +67,9 @@ const editorExtension = defineExtension({
     HorizontalRuleExtension,
     HistoryExtension,
     AutoFocusExtension,
+    // Tab / Shift-Tab indent at the cursor (nests/un-nests list items,
+    // indents paragraphs). Pairs with ListItemNode.canIndent.
+    TabIndentationExtension,
     MarkdownShortcutsExtension,
     ToolbarExtension,
     // DOMImportExtension pipeline — rules contributed per node package.

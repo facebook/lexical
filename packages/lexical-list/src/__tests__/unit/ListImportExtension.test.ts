@@ -239,16 +239,16 @@ function $buildWordListTree(
     while (stack.length > 1 && stack[stack.length - 1].level > item.level) {
       stack.pop();
     }
-    // Open a new sublist if we just stepped deeper.
+    // Open a new sublist if we just stepped deeper. Lexical's
+    // nested-list convention (see `isNestedListNode` in @lexical/list):
+    // a sublist lives inside its OWN ListItemNode wrapper that is a
+    // sibling of the content items above it, not inside the previous
+    // one. The wrapper holds the sublist as its first (and only) child.
     if (item.level > stack[stack.length - 1].level) {
       const sub = $createListNode(classifyWordListType(item.marker));
-      const parentList = stack[stack.length - 1].list;
-      const lastLi = parentList.getLastChild();
-      if ($isListItemNode(lastLi)) {
-        lastLi.append(sub);
-      } else {
-        parentList.append(sub);
-      }
+      const wrapper = $createListItemNode();
+      wrapper.append(sub);
+      stack[stack.length - 1].list.append(wrapper);
       stack.push({level: item.level, list: sub});
     }
     $stripWordMarker(item.el);
@@ -424,24 +424,26 @@ describe('MS Word paste — preprocess-installed overlay', () => {
         'Bullet List Item 2',
       ]);
 
-      // Outline list: two top-level items, the first containing a nested
-      // 2-item sublist between them.
+      // Outline list (Lexical convention): three top-level
+      // ListItemNodes — the two content items "1" and "2" plus a
+      // *wrapper* item between them whose only child is the nested
+      // 2-item sublist.
       expect(outline.getListType()).toBe('number');
       const outlineItems = $items(outline);
-      expect(outlineItems).toHaveLength(2);
-      expect(outlineItems[0].getFirstChild()?.getTextContent().trim()).toBe(
-        'Outline numbered 1',
-      );
-      const nested = outlineItems[0].getChildren().filter($isListNode)[0];
-      assert(nested !== undefined, 'expected nested sublist');
+      expect(outlineItems).toHaveLength(3);
+      const firstContent = outlineItems[0].getFirstChild();
+      assert(firstContent !== null, 'expected first content child');
+      expect(firstContent.getTextContent().trim()).toBe('Outline numbered 1');
+      const nested = outlineItems[1].getFirstChild();
+      assert($isListNode(nested), 'expected nested sublist on wrapper item');
       expect(nested.getListType()).toBe('number');
       expect($items(nested).map(li => li.getTextContent().trim())).toEqual([
         'Outline numbered 1.a',
         'Outline numbered 1.b',
       ]);
-      expect(outlineItems[1].getFirstChild()?.getTextContent().trim()).toBe(
-        'Outline numbered 2',
-      );
+      const lastContent = outlineItems[2].getFirstChild();
+      assert(lastContent !== null, 'expected last content child');
+      expect(lastContent.getTextContent().trim()).toBe('Outline numbered 2');
     });
   });
 

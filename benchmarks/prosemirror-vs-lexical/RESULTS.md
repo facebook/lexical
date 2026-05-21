@@ -53,6 +53,7 @@ These are reconciler optimizations: they reduce per-keystroke work, which is con
 
 ## Caveats
 
+- **History is not apples-to-apples.** ProseMirror's `history()` plugin defaults to `depth: 100` events (FIFO-evicting older entries) plus `newGroupDelay: 500ms` so a continuous typing burst collapses into one history event — its undo stack stays small and bounded throughout the run. Lexical's `useHistory` has **no cap**: `undoStack.push(...)` runs unconditionally for every separate-history boundary. A large fraction of Lexical's 2.5 GB end-of-run heap is the unbounded undo stack holding a snapshot per history event; this is the same effect the upstream blog post observed when they noted "with the history plugin disabled in Lexical, the graph resembled the ProseMirror graph more closely." A fair next run should either match the cap (`depth: 100` in PM ↔ a future bounded undo stack in Lexical) or disable history on both.
 - This is a single run — no statistical confidence intervals. Useful for order-of-magnitude conclusions, not for fine differences.
 - Next.js was running in **dev mode** (matches the upstream config); production builds will be faster. The relative shape of the curves still tells the story.
 - Sandbox container with one busy CPU core for Chromium; absolute throughput will be higher on bare metal but the per-editor ratio should hold.

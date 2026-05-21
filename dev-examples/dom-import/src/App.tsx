@@ -21,16 +21,14 @@ import {
 } from '@lexical/html';
 import {LinkExtension, LinkImportExtension, LinkNode} from '@lexical/link';
 import {
+  CheckListExtension,
   ListExtension,
   ListImportExtension,
   ListItemNode,
   ListNode,
 } from '@lexical/list';
-import {CheckListPlugin} from '@lexical/react/LexicalCheckListPlugin';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
-import {MarkdownShortcutPlugin} from '@lexical/react/LexicalMarkdownShortcutPlugin';
-import {TablePlugin} from '@lexical/react/LexicalTablePlugin';
 import {
   HeadingNode,
   QuoteNode,
@@ -48,7 +46,8 @@ import {defineExtension, ParagraphNode, TextNode} from 'lexical';
 
 import ExampleTheme from './ExampleTheme';
 import {ImportHtmlButton} from './ImportHtmlDialog';
-import {ToolbarPlugin} from './ToolbarPlugin';
+import {MarkdownShortcutsExtension} from './MarkdownShortcutsExtension';
+import {Toolbar, ToolbarExtension} from './ToolbarExtension';
 import {WordPasteExtension} from './wordPaste';
 
 const placeholder =
@@ -58,6 +57,7 @@ const editorExtension = defineExtension({
   dependencies: [
     RichTextExtension,
     ListExtension,
+    CheckListExtension,
     // Disable hasHorizontalScroll: the demo theme doesn't define the
     // scrollable-wrapper class, and tables here aren't wide enough to
     // need it.
@@ -66,6 +66,8 @@ const editorExtension = defineExtension({
     HorizontalRuleExtension,
     HistoryExtension,
     AutoFocusExtension,
+    MarkdownShortcutsExtension,
+    ToolbarExtension,
     // DOMImportExtension pipeline — rules contributed per node package.
     CoreImportExtension,
     RichTextImportExtension,
@@ -109,9 +111,9 @@ export default function App() {
       extension={editorExtension}
       contentEditable={null}>
       <div className="editor-container">
-        <ToolbarPlugin>
+        <Toolbar>
           <ImportHtmlButton />
-        </ToolbarPlugin>
+        </Toolbar>
         <div className="editor-inner">
           <ContentEditable
             className="editor-input"
@@ -120,9 +122,6 @@ export default function App() {
               <div className="editor-placeholder">{placeholder}</div>
             }
           />
-          <TablePlugin />
-          <CheckListPlugin />
-          <MarkdownShortcutPlugin />
         </div>
       </div>
     </LexicalExtensionComposer>

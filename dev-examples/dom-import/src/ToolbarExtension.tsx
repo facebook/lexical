@@ -5,12 +5,17 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+
+import type {ReadonlySignal} from '@lexical/extension';
+
+import {signal} from '@lexical/extension';
 import {
   INSERT_CHECK_LIST_COMMAND,
   INSERT_ORDERED_LIST_COMMAND,
   INSERT_UNORDERED_LIST_COMMAND,
 } from '@lexical/list';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useExtensionDependency} from '@lexical/react/useExtensionComponent';
 import {INSERT_TABLE_COMMAND} from '@lexical/table';
 import {mergeRegister} from '@lexical/utils';
 import {
@@ -19,49 +24,58 @@ import {
   CAN_REDO_COMMAND,
   CAN_UNDO_COMMAND,
   COMMAND_PRIORITY_LOW,
+  defineExtension,
   FORMAT_TEXT_COMMAND,
   REDO_COMMAND,
   SELECTION_CHANGE_COMMAND,
   UNDO_COMMAND,
 } from 'lexical';
-import {type ReactNode, useCallback, useEffect, useState} from 'react';
+import {type ReactNode, useMemo, useSyncExternalStore} from 'react';
 
-function Divider() {
-  return <div className="divider" />;
+function useSignalValue<V>(s: ReadonlySignal<V>): V {
+  const [subscribe, getSnapshot] = useMemo(
+    () => [s.subscribe.bind(s), s.peek.bind(s)] as const,
+    [s],
+  );
+  return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
 
-interface Props {
-  children?: ReactNode;
-}
-
-export function ToolbarPlugin({children}: Props) {
-  const [editor] = useLexicalComposerContext();
-  const [canUndo, setCanUndo] = useState(false);
-  const [canRedo, setCanRedo] = useState(false);
-  const [isBold, setIsBold] = useState(false);
-  const [isItalic, setIsItalic] = useState(false);
-  const [isUnderline, setIsUnderline] = useState(false);
-  const [isStrikethrough, setIsStrikethrough] = useState(false);
-
-  const $updateToolbar = useCallback(() => {
-    const selection = $getSelection();
-    if ($isRangeSelection(selection)) {
-      setIsBold(selection.hasFormat('bold'));
-      setIsItalic(selection.hasFormat('italic'));
-      setIsUnderline(selection.hasFormat('underline'));
-      setIsStrikethrough(selection.hasFormat('strikethrough'));
-    }
-  }, []);
-
-  useEffect(() => {
+/**
+ * Owns the toolbar's reactive state as a small set of signals and
+ * keeps them in sync with the editor. The React `Toolbar` component
+ * reads from these signals via {@link useExtensionDependency}, so the
+ * editor-side and view-side responsibilities stay separated and the
+ * component itself holds no local state.
+ */
+export const ToolbarExtension = defineExtension({
+  build() {
+    return {
+      canRedo: signal(false),
+      canUndo: signal(false),
+      isBold: signal(false),
+      isItalic: signal(false),
+      isStrikethrough: signal(false),
+      isUnderline: signal(false),
+    };
+  },
+  name: '@lexical/examples/dom-import/Toolbar',
+  register(editor, _config, state) {
+    const out = state.getOutput();
+    const $sync = () => {
+      const selection = $getSelection();
+      if ($isRangeSelection(selection)) {
+        out.isBold.value = selection.hasFormat('bold');
+        out.isItalic.value = selection.hasFormat('italic');
+        out.isUnderline.value = selection.hasFormat('underline');
+        out.isStrikethrough.value = selection.hasFormat('strikethrough');
+      }
+    };
     return mergeRegister(
-      editor.registerUpdateListener(({editorState}) => {
-        editorState.read($updateToolbar);
-      }),
+      editor.registerUpdateListener(({editorState}) => editorState.read($sync)),
       editor.registerCommand(
         SELECTION_CHANGE_COMMAND,
         () => {
-          $updateToolbar();
+          $sync();
           return false;
         },
         COMMAND_PRIORITY_LOW,
@@ -69,7 +83,7 @@ export function ToolbarPlugin({children}: Props) {
       editor.registerCommand(
         CAN_UNDO_COMMAND,
         payload => {
-          setCanUndo(payload);
+          out.canUndo.value = payload;
           return false;
         },
         COMMAND_PRIORITY_LOW,
@@ -77,13 +91,32 @@ export function ToolbarPlugin({children}: Props) {
       editor.registerCommand(
         CAN_REDO_COMMAND,
         payload => {
-          setCanRedo(payload);
+          out.canRedo.value = payload;
           return false;
         },
         COMMAND_PRIORITY_LOW,
       ),
     );
-  }, [editor, $updateToolbar]);
+  },
+});
+
+function Divider() {
+  return <div className="divider" />;
+}
+
+interface ToolbarProps {
+  children?: ReactNode;
+}
+
+export function Toolbar({children}: ToolbarProps) {
+  const [editor] = useLexicalComposerContext();
+  const out = useExtensionDependency(ToolbarExtension).output;
+  const canUndo = useSignalValue(out.canUndo);
+  const canRedo = useSignalValue(out.canRedo);
+  const isBold = useSignalValue(out.isBold);
+  const isItalic = useSignalValue(out.isItalic);
+  const isUnderline = useSignalValue(out.isUnderline);
+  const isStrikethrough = useSignalValue(out.isStrikethrough);
 
   return (
     <div className="toolbar">

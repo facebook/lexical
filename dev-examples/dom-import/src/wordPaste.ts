@@ -28,22 +28,31 @@ const WORD_LIST_CLASS_RE = /^MsoListParagraph(CxSp(First|Middle|Last))?$/;
 const WORD_NUMBERED_RE = /^[A-Za-z0-9]+[.)]/;
 const WORD_GENERATOR_RE = /Microsoft Word/i;
 
-function readMsoStyles(el: Element): Record<string, string> {
-  // mso-* are Microsoft non-standard CSS properties; browsers don't surface
-  // them via el.style, so parse the raw style attribute.
-  return getStyleObjectFromCSS(el.getAttribute('style') || '');
+// The default `$inlineStylesFromStyleSheets` preprocess mutates each
+// element's inline style through CSSStyleDeclaration.setProperty, which
+// makes JSDOM (and real browsers) re-serialize the style attribute and
+// drop unknown properties like `mso-list`. The Word preprocess runs
+// FIRST (it's appended to the stack so it's on top), so it stashes
+// `mso-list` onto a `data-*` attribute that survives the later
+// stylesheet-inlining pass.
+const MSO_LIST_DATA_ATTR = 'data-mso-list';
+
+function readMsoListAttr(el: Element): string {
+  return (
+    el.getAttribute(MSO_LIST_DATA_ATTR) ||
+    getStyleObjectFromCSS(el.getAttribute('style') || '')['mso-list'] ||
+    ''
+  );
 }
 
 function readWordListLevel(el: HTMLElement): number {
-  // mso-list looks like "l<N> level<M> lfo<X>"; pluck the level number.
-  const msoList = readMsoStyles(el)['mso-list'] || '';
-  const m = msoList.match(/level(\d+)/);
+  const m = readMsoListAttr(el).match(/level(\d+)/);
   return m ? parseInt(m[1], 10) : 1;
 }
 
 function $findMarkerSpan(el: HTMLElement): HTMLElement | null {
   for (const span of Array.from(el.querySelectorAll('span'))) {
-    if (readMsoStyles(span)['mso-list'] === 'Ignore') {
+    if (readMsoListAttr(span) === 'Ignore') {
       return span;
     }
   }
@@ -175,6 +184,17 @@ const WordPasteOverlay = defineOverlayRules([
 const $installWordOverlay: DOMPreprocessFn = (dom, ctx, $next) => {
   const meta = dom.querySelector('meta[name="Generator"]');
   if (meta && WORD_GENERATOR_RE.test(meta.getAttribute('content') || '')) {
+    // Snapshot `mso-list` onto data-mso-list before the later
+    // stylesheet-inlining preprocess re-serializes the style attribute
+    // and drops unknown CSS properties.
+    for (const el of Array.from(dom.querySelectorAll('[style*="mso-list"]'))) {
+      const msoList = getStyleObjectFromCSS(el.getAttribute('style') || '')[
+        'mso-list'
+      ];
+      if (msoList) {
+        el.setAttribute(MSO_LIST_DATA_ATTR, msoList);
+      }
+    }
     ctx.session.update(ImportOverlays, prev => [...prev, WordPasteOverlay]);
   }
   $next();

@@ -13,12 +13,12 @@ import {RichTextExtension} from '@lexical/rich-text';
 import {
   $createParagraphNode,
   $createTextNode,
+  $getEditor,
   $getRoot,
   $isParagraphNode,
-  LexicalEditor,
-  ParagraphNode,
+  $selectAll,
 } from 'lexical';
-import {describe, expect, test} from 'vitest';
+import {assert, describe, expect, test} from 'vitest';
 
 function setUpEditor($initialEditorState?: () => void) {
   const editor = buildEditorFromExtensions(
@@ -32,13 +32,12 @@ function setUpEditor($initialEditorState?: () => void) {
   return editor;
 }
 
-function $importHtml(editor: LexicalEditor, html: string) {
-  const root = $getRoot();
-  root.clear();
+function $importHtml(html: string) {
+  const editor = $getEditor();
   const parser = new DOMParser();
   const dom = parser.parseFromString(html, 'text/html');
   const nodes = $generateNodesFromDOM(editor, dom);
-  $insertGeneratedNodes(editor, nodes, root.select(0));
+  $insertGeneratedNodes(editor, nodes, $selectAll());
 }
 
 describe('Issue #7729: paragraph indent round-trip via data-lexical-indent', () => {
@@ -46,7 +45,7 @@ describe('Issue #7729: paragraph indent round-trip via data-lexical-indent', () 
     using editor = setUpEditor(() => {
       const para = $createParagraphNode().append($createTextNode('hi'));
       para.setIndent(2);
-      $getRoot().clear().append(para);
+      $getRoot().append(para);
     });
 
     let html = '';
@@ -57,11 +56,11 @@ describe('Issue #7729: paragraph indent round-trip via data-lexical-indent', () 
     expect(html).toContain('data-lexical-indent="2"');
     expect(html).toContain('padding-inline-start: 80px');
 
-    editor.update(() => $importHtml(editor, html), {discrete: true});
+    editor.update(() => $importHtml(html), {discrete: true});
 
     editor.read(() => {
-      const para = $getRoot().getFirstChildOrThrow<ParagraphNode>();
-      expect($isParagraphNode(para)).toBe(true);
+      const para = $getRoot().getFirstChildOrThrow();
+      assert($isParagraphNode(para), 'expected ParagraphNode as first child');
       expect(para.getIndent()).toBe(2);
     });
   });
@@ -74,15 +73,14 @@ describe('Issue #7729: paragraph indent round-trip via data-lexical-indent', () 
     editor.update(
       () =>
         $importHtml(
-          editor,
           '<p data-lexical-indent="2" style="padding-inline-start: calc(2 * var(--lexical-indent-base-value, 40px));">hi</p>',
         ),
       {discrete: true},
     );
 
     editor.read(() => {
-      const para = $getRoot().getFirstChildOrThrow<ParagraphNode>();
-      expect($isParagraphNode(para)).toBe(true);
+      const para = $getRoot().getFirstChildOrThrow();
+      assert($isParagraphNode(para), 'expected ParagraphNode as first child');
       expect(para.getIndent()).toBe(2);
     });
   });
@@ -95,15 +93,14 @@ describe('Issue #7729: paragraph indent round-trip via data-lexical-indent', () 
     editor.update(
       () =>
         $importHtml(
-          editor,
           '<p data-lexical-indent="2" style="padding-inline-start: 32px;">hi</p>',
         ),
       {discrete: true},
     );
 
     editor.read(() => {
-      const para = $getRoot().getFirstChildOrThrow<ParagraphNode>();
-      expect($isParagraphNode(para)).toBe(true);
+      const para = $getRoot().getFirstChildOrThrow();
+      assert($isParagraphNode(para), 'expected ParagraphNode as first child');
       expect(para.getIndent()).toBe(2);
     });
   });
@@ -112,14 +109,13 @@ describe('Issue #7729: paragraph indent round-trip via data-lexical-indent', () 
     using editor = setUpEditor();
     // HTML from non-Lexical sources still uses the legacy padding heuristic.
     editor.update(
-      () =>
-        $importHtml(editor, '<p style="padding-inline-start: 80px;">hi</p>'),
+      () => $importHtml('<p style="padding-inline-start: 80px;">hi</p>'),
       {discrete: true},
     );
 
     editor.read(() => {
-      const para = $getRoot().getFirstChildOrThrow<ParagraphNode>();
-      expect($isParagraphNode(para)).toBe(true);
+      const para = $getRoot().getFirstChildOrThrow();
+      assert($isParagraphNode(para), 'expected ParagraphNode as first child');
       expect(para.getIndent()).toBe(2);
     });
   });

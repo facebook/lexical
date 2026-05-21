@@ -92,19 +92,9 @@ function PollOptionComponent({
           type="text"
           value={text}
           onChange={e => {
-            const target = e.target;
-            const value = target.value;
-            const selectionStart = target.selectionStart;
-            const selectionEnd = target.selectionEnd;
-            withPollNode(
-              node => {
-                node.setOptionText(option, value);
-              },
-              () => {
-                target.selectionStart = selectionStart;
-                target.selectionEnd = selectionEnd;
-              },
-            );
+            withPollNode(node => {
+              node.setOptionText(option, e.target.value);
+            });
           }}
           placeholder={`Option ${index + 1}`}
         />

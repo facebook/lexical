@@ -54,3 +54,5 @@ benchmarks/*/.swc
 benchmarks/*/next-env.d.ts
 benchmarks/*/playwright-report
 benchmarks/*/test-results
+# Live output directory for the stress test — re-committed by hand on completion
+benchmarks/*/test/results

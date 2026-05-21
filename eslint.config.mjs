@@ -76,6 +76,7 @@ export default [
       'playwright-report/',
       'test-results/',
       'examples/*svelte*/',
+      'benchmarks/',
       'libdefs/',
       '**/.wxt/',
       '**/*.www.cjs',

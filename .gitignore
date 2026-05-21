@@ -47,3 +47,10 @@ npm-debug.log*
 # locally as part of its build step — they don't need to be committed.
 examples/*/pnpm-lock.yaml
 scripts/__tests__/integration/fixtures/*/pnpm-lock.yaml
+
+# Build artifacts inside the standalone benchmark project
+benchmarks/*/.next
+benchmarks/*/.swc
+benchmarks/*/next-env.d.ts
+benchmarks/*/playwright-report
+benchmarks/*/test-results

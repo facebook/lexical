@@ -19,6 +19,7 @@ import {
   $isElementNode,
   $isNodeSelection,
   $isTextNode,
+  $setSelection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_HIGH,
   COMMAND_PRIORITY_LOW,
@@ -68,9 +69,6 @@ export default function EquationComponent({
   // RangeSelection attempt that follows the native `selectionchange`.
   const onClick = useCallback(
     (event: MouseEvent) => {
-      if (!isEditable) {
-        return false;
-      }
       const dom = editor.getElementByKey(nodeKey);
       if (dom === null || !dom.contains(event.target as Node)) {
         return false;
@@ -83,15 +81,12 @@ export default function EquationComponent({
       }
       return true;
     },
-    [clearSelection, editor, isEditable, isSelected, nodeKey, setSelected],
+    [clearSelection, editor, isSelected, nodeKey, setSelected],
   );
 
   useEffect(() => {
-    if (!isEditable) {
-      return undefined;
-    }
     return editor.registerCommand(CLICK_COMMAND, onClick, COMMAND_PRIORITY_LOW);
-  }, [editor, isEditable, onClick]);
+  }, [editor, onClick]);
 
   // Pressing Enter while this equation is the lone NodeSelection
   // inserts a fresh empty paragraph right after it and moves the caret
@@ -112,19 +107,33 @@ export default function EquationComponent({
       ) {
         return false;
       }
-      event.preventDefault();
-      editor.update(() => {
-        const node = $getNodeByKey(nodeKey);
-        if (!$isEquationNode(node)) {
-          return;
+      const node = $getNodeByKey(nodeKey);
+      if (!$isEquationNode(node)) {
+        return false;
+      }
+      // The KEY_ENTER_COMMAND handler runs inside an active editor
+      // scope, so lexical state mutations happen directly here (no
+      // `editor.update` wrap — wrapping would defer the work to a
+      // microtask, and the surrounding `event.preventDefault() +
+      // return true` would fall through to the default rich-text
+      // path before our paragraph insertion lands).
+      if (node.isInline()) {
+        const parent = node.getParent();
+        if (!$isElementNode(parent)) {
+          return false;
         }
+        const paragraph = $createParagraphNode();
+        parent.insertAfter(paragraph);
+        paragraph.select();
+      } else {
         const paragraph = $createParagraphNode();
         node.insertAfter(paragraph);
         paragraph.select();
-      });
+      }
+      event.preventDefault();
       return true;
     },
-    [editor, nodeKey],
+    [nodeKey],
   );
 
   useEffect(() => {
@@ -149,11 +158,30 @@ export default function EquationComponent({
       if (!$isEquationNode(node)) {
         return;
       }
-      const prevSibling = node.getPreviousSibling();
-      node.remove();
-      if ($isElementNode(prevSibling) || $isTextNode(prevSibling)) {
-        prevSibling.selectEnd();
+      if (node.isInline()) {
+        // Clear lexical's selection first (avoid stale NodeSelection
+        // node refs surviving the remove) and preserve the wrapper
+        // paragraph (`remove(true)`) so lexical doesn't try to chain-
+        // delete a now-empty parent during commit.
+        $setSelection(null);
+        node.remove(true);
+        return;
       }
+      const prevSibling = node.getPreviousSibling();
+      if ($isElementNode(prevSibling) || $isTextNode(prevSibling)) {
+        node.remove();
+        prevSibling.selectEnd();
+        return;
+      }
+      // Block equation with no previous sibling — naive `node.remove()`
+      // here would leave the root with zero children and no parkable
+      // cursor (lexical's `EditorState.isEmpty()` accepts an empty
+      // root, and rich-text does not re-seed a paragraph), forcing
+      // the user to reload. Swap the equation for a fresh empty
+      // paragraph instead.
+      const paragraph = $createParagraphNode();
+      node.replace(paragraph);
+      paragraph.select();
     });
   }, [editor, nodeKey]);
 

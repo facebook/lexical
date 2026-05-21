@@ -15,47 +15,39 @@ import {
   $createTextNode,
   $getRoot,
   $isParagraphNode,
+  LexicalEditor,
   ParagraphNode,
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
 
-function setUpEditor() {
+function setUpEditor($initialEditorState?: () => void) {
   const editor = buildEditorFromExtensions(
-    RichTextExtension,
-    defineExtension({name: 'issue-7729-repro'}),
+    defineExtension({
+      $initialEditorState,
+      dependencies: [RichTextExtension],
+      name: 'issue-7729-repro',
+    }),
   );
   editor.setRootElement(document.createElement('div'));
   return editor;
 }
 
-function $importHtml(editor: ReturnType<typeof setUpEditor>, html: string) {
-  editor.update(
-    () => {
-      const root = $getRoot();
-      root.clear();
-      const parser = new DOMParser();
-      const dom = parser.parseFromString(html, 'text/html');
-      const nodes = $generateNodesFromDOM(editor, dom);
-      $insertGeneratedNodes(editor, nodes, root.select(0));
-    },
-    {discrete: true},
-  );
+function $importHtml(editor: LexicalEditor, html: string) {
+  const root = $getRoot();
+  root.clear();
+  const parser = new DOMParser();
+  const dom = parser.parseFromString(html, 'text/html');
+  const nodes = $generateNodesFromDOM(editor, dom);
+  $insertGeneratedNodes(editor, nodes, root.select(0));
 }
 
 describe('Issue #7729: paragraph indent round-trip via data-lexical-indent', () => {
   test('exportDOM emits data-lexical-indent and importDOM round-trips', () => {
-    using editor = buildEditorFromExtensions(
-      RichTextExtension,
-      defineExtension({
-        $initialEditorState: () => {
-          const para = $createParagraphNode().append($createTextNode('hi'));
-          para.setIndent(2);
-          $getRoot().clear().append(para);
-        },
-        name: 'issue-7729-export',
-      }),
-    );
-    editor.setRootElement(document.createElement('div'));
+    using editor = setUpEditor(() => {
+      const para = $createParagraphNode().append($createTextNode('hi'));
+      para.setIndent(2);
+      $getRoot().clear().append(para);
+    });
 
     let html = '';
     editor.read(() => {
@@ -65,7 +57,7 @@ describe('Issue #7729: paragraph indent round-trip via data-lexical-indent', () 
     expect(html).toContain('data-lexical-indent="2"');
     expect(html).toContain('padding-inline-start: 80px');
 
-    $importHtml(editor, html);
+    editor.update(() => $importHtml(editor, html), {discrete: true});
 
     editor.read(() => {
       const para = $getRoot().getFirstChildOrThrow<ParagraphNode>();
@@ -79,9 +71,13 @@ describe('Issue #7729: paragraph indent round-trip via data-lexical-indent', () 
     // What live-DOM copy/paste produces: the reconciler writes a calc(...)
     // expression that parseInt cannot recover. The data attribute makes
     // this unambiguous.
-    $importHtml(
-      editor,
-      '<p data-lexical-indent="2" style="padding-inline-start: calc(2 * var(--lexical-indent-base-value, 40px));">hi</p>',
+    editor.update(
+      () =>
+        $importHtml(
+          editor,
+          '<p data-lexical-indent="2" style="padding-inline-start: calc(2 * var(--lexical-indent-base-value, 40px));">hi</p>',
+        ),
+      {discrete: true},
     );
 
     editor.read(() => {
@@ -96,9 +92,13 @@ describe('Issue #7729: paragraph indent round-trip via data-lexical-indent', () 
     // Simulates a custom --lexical-indent-base-value (e.g. 16px): the
     // padding value (32px) would round to indent=1 with the old heuristic;
     // the data attribute restores the true value.
-    $importHtml(
-      editor,
-      '<p data-lexical-indent="2" style="padding-inline-start: 32px;">hi</p>',
+    editor.update(
+      () =>
+        $importHtml(
+          editor,
+          '<p data-lexical-indent="2" style="padding-inline-start: 32px;">hi</p>',
+        ),
+      {discrete: true},
     );
 
     editor.read(() => {
@@ -111,7 +111,11 @@ describe('Issue #7729: paragraph indent round-trip via data-lexical-indent', () 
   test('falls back to padding heuristic when data-lexical-indent is absent', () => {
     using editor = setUpEditor();
     // HTML from non-Lexical sources still uses the legacy padding heuristic.
-    $importHtml(editor, '<p style="padding-inline-start: 80px;">hi</p>');
+    editor.update(
+      () =>
+        $importHtml(editor, '<p style="padding-inline-start: 80px;">hi</p>'),
+      {discrete: true},
+    );
 
     editor.read(() => {
       const para = $getRoot().getFirstChildOrThrow<ParagraphNode>();

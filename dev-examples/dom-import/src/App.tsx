@@ -6,7 +6,12 @@
  *
  */
 
-import {CodeNode} from '@lexical/code-core';
+import {
+  CodeHighlightNode,
+  CodeImportExtension,
+  CodeNode,
+} from '@lexical/code-core';
+import {CodeShikiExtension} from '@lexical/code-shiki';
 import {
   AutoFocusExtension,
   configExtension,
@@ -70,6 +75,9 @@ const editorExtension = defineExtension({
     // Tab / Shift-Tab indent at the cursor (nests/un-nests list items,
     // indents paragraphs). Pairs with ListItemNode.canIndent.
     TabIndentationExtension,
+    // Registers CodeNode + CodeHighlightNode and wires Shiki up as the
+    // syntax-highlighting tokenizer for code blocks in the editor.
+    CodeShikiExtension,
     MarkdownShortcutsExtension,
     ToolbarExtension,
     // DOMImportExtension pipeline — rules contributed per node package.
@@ -79,6 +87,7 @@ const editorExtension = defineExtension({
     LinkImportExtension,
     TableImportExtension,
     HorizontalRuleImportExtension,
+    CodeImportExtension,
     // Word-only overlay, installed conditionally by a preprocess.
     WordPasteExtension,
   ],
@@ -95,6 +104,7 @@ const editorExtension = defineExtension({
     ListItemNode,
     LinkNode,
     CodeNode,
+    CodeHighlightNode,
     HorizontalRuleNode,
     TableNode,
     TableRowNode,

@@ -141,3 +141,82 @@ describe('CodeImportExtension', () => {
     });
   });
 });
+
+// ----------------------------------------------------------------------------
+// VS Code → browser paste fixtures
+//
+// Both Chrome and Safari produce the same on-screen result when you paste a
+// code block copied out of VS Code, but the underlying `text/html` differs:
+//
+//   - Chrome wraps every line in a single outer
+//     `<div style="font-family: …monospace…; white-space: pre">…</div>`
+//     with the per-line `<div>`s (and `<br>`s for blank lines) inside.
+//   - Safari emits flat sibling `<div>` and `<br>` elements at the
+//     document root, each carrying the same `font-family: …monospace…;
+//     white-space: pre` inline style — no wrapping monospace ancestor.
+//
+// The legacy `CodeNode.importDOM` produces multiple CodeNodes for the
+// Safari case (one per `<div>`); the goal of `MonospacePreRunRule` is
+// to collapse the flat run into a single CodeNode so the result
+// matches the Chrome case.
+// ----------------------------------------------------------------------------
+
+const VSCODE_EXPECTED = `## 📱 iOS alpha four
+
+Biggest alpha update!
+
+- Animate on sending message and delete
+- Set online/offline
+- Show all users when @ is typed
+
+[Get it from TestFlight.](https://testflight.apple.com/join/yKKmzbhD)
+
+## Smaller improvements`;
+
+const VSCODE_CHROME_HTML = `<meta charset='utf-8'><div style="color: #cccccc;background-color: #1f1f1f;font-family: Menlo, Monaco, 'Courier New', monospace;font-weight: normal;font-size: 12px;line-height: 18px;white-space: pre;"><div><span style="color: #569cd6;font-weight: bold;">## 📱 iOS alpha four</span></div><br><div><span style="color: #cccccc;">Biggest alpha update!</span></div><br><div><span style="color: #6796e6;">-</span><span style="color: #cccccc;"> Animate on sending message and delete</span></div><div><span style="color: #6796e6;">-</span><span style="color: #cccccc;"> Set online/offline</span></div><div><span style="color: #6796e6;">-</span><span style="color: #cccccc;"> Show all users when @ is typed</span></div><br><div><span style="color: #cccccc;">[</span><span style="color: #ce9178;">Get it from TestFlight.</span><span style="color: #cccccc;">](</span><span style="color: #cccccc;text-decoration: underline;">https://testflight.apple.com/join/yKKmzbhD</span><span style="color: #cccccc;">)</span></div><br><div><span style="color: #569cd6;font-weight: bold;">## Smaller improvements</span></div></div>`;
+
+// Trimmed Safari payload (same structure as Safari's real output but
+// with only the inline styles MonospacePreRunRule reads on, so the
+// fixture stays readable).
+const SAFARI_LINE_STYLE =
+  'font-family: Menlo, Monaco, "Courier New", monospace; white-space: pre;';
+const VSCODE_SAFARI_HTML = [
+  `<div style='${SAFARI_LINE_STYLE}'><span style="color: rgb(86, 156, 214); font-weight: bold;">## 📱 iOS alpha four</span></div>`,
+  `<br style='${SAFARI_LINE_STYLE}'>`,
+  `<div style='${SAFARI_LINE_STYLE}'><span style="color: rgb(204, 204, 204);">Biggest alpha update!</span></div>`,
+  `<br style='${SAFARI_LINE_STYLE}'>`,
+  `<div style='${SAFARI_LINE_STYLE}'><span>-</span><span> Animate on sending message and delete</span></div>`,
+  `<div style='${SAFARI_LINE_STYLE}'><span>-</span><span> Set online/offline</span></div>`,
+  `<div style='${SAFARI_LINE_STYLE}'><span>-</span><span> Show all users when @ is typed</span></div>`,
+  `<br style='${SAFARI_LINE_STYLE}'>`,
+  `<div style='${SAFARI_LINE_STYLE}'><span>[</span><span>Get it from TestFlight.</span><span>](</span><span style="text-decoration: underline;">https://testflight.apple.com/join/yKKmzbhD</span><span>)</span></div>`,
+  `<br style='${SAFARI_LINE_STYLE}'>`,
+  `<div style='${SAFARI_LINE_STYLE}'><span style="color: rgb(86, 156, 214); font-weight: bold;">## Smaller improvements</span></div>`,
+].join('');
+
+describe('CodeImportExtension — VS Code paste', () => {
+  test('Chrome (single outer monospace wrapper) → one CodeNode', () => {
+    using editor = buildEditor();
+    $importInto(editor, VSCODE_CHROME_HTML);
+    editor.read(() => {
+      const root = $getRoot();
+      const codeNodes = root.getChildren().filter($isCodeNode);
+      expect(codeNodes).toHaveLength(1);
+      expect(codeNodes[0].getTextContent()).toBe(VSCODE_EXPECTED);
+    });
+  });
+
+  test('Safari (flat sibling monospace divs / brs) → one CodeNode', () => {
+    using editor = buildEditor();
+    $importInto(editor, VSCODE_SAFARI_HTML);
+    editor.read(() => {
+      const root = $getRoot();
+      const codeNodes = root.getChildren().filter($isCodeNode);
+      // The whole point of MonospacePreRunRule: the run collapses into
+      // a single CodeNode rather than one per div as the legacy
+      // importDOM produces.
+      expect(codeNodes).toHaveLength(1);
+      expect(codeNodes[0].getTextContent()).toBe(VSCODE_EXPECTED);
+    });
+  });
+});

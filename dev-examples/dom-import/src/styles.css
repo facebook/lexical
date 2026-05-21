@@ -219,6 +219,33 @@ body {
   font-size: 13px;
   border-radius: 4px;
   overflow-x: auto;
+  white-space: pre;
+}
+
+/* Shiki tokens — mapped from theme.codeHighlight in ExampleTheme.ts */
+.editor-token-comment {
+  color: slategray;
+}
+.editor-token-punctuation {
+  color: #999;
+}
+.editor-token-property {
+  color: #905;
+}
+.editor-token-selector {
+  color: #690;
+}
+.editor-token-operator {
+  color: #9a6e3a;
+}
+.editor-token-attr {
+  color: #07a;
+}
+.editor-token-variable {
+  color: #e90;
+}
+.editor-token-function {
+  color: #dd4a68;
 }
 
 /* Toolbar */

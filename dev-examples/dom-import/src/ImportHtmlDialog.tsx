@@ -15,8 +15,8 @@ import {useCallback, useRef, useState} from 'react';
 // time, so the dialog can ship the exact clipboard payloads (with the
 // full <style> block, mso-list definitions, conditional comments,
 // etc.) without escaping them into TS template literals.
-import VSCODE_SAFARI_FIXTURE from './vscodeSafariFixture.html?raw';
-import WORD_FIXTURE from './wordFixture.html?raw';
+import VSCODE_SAFARI_FIXTURE from './fixtures/vscode-safari.html?raw';
+import WORD_FIXTURE from './fixtures/word.html?raw';
 
 const SAMPLE_HTML =
   '<p>Paste raw HTML here, or load one of the bundled fixtures below.</p>';

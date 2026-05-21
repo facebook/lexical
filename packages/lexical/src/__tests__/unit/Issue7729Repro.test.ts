@@ -21,15 +21,13 @@ import {
 import {assert, describe, expect, test} from 'vitest';
 
 function setUpEditor($initialEditorState?: () => void) {
-  const editor = buildEditorFromExtensions(
+  return buildEditorFromExtensions(
     defineExtension({
       $initialEditorState,
       dependencies: [RichTextExtension],
       name: 'issue-7729-repro',
     }),
   );
-  editor.setRootElement(document.createElement('div'));
-  return editor;
 }
 
 function $importHtml(html: string) {

@@ -8,8 +8,9 @@
 
 import {
   $createHorizontalRuleNode,
-$isHorizontalRuleNode,
-  HorizontalRuleNode} from '@lexical/extension';
+  $isHorizontalRuleNode,
+  HorizontalRuleNode,
+} from '@lexical/extension';
 import {
   type ElementTransformer,
   registerMarkdownShortcuts,

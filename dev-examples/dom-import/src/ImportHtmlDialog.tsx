@@ -11,48 +11,14 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$getRoot, $insertNodes} from 'lexical';
 import {useCallback, useRef, useState} from 'react';
 
-const SAMPLE_HTML = `<p>Paste raw HTML here, or try the bundled Word fixture:</p>
-<button data-action="paste-word">Paste Word fixture</button>`;
+// Vite's `?raw` query inlines the file contents as a string at build
+// time, so the dialog can ship the exact Word clipboard payload (with
+// the full <style> block, mso-list definitions, conditional comments,
+// etc.) without escaping it into a TS template literal.
+import WORD_FIXTURE from './wordFixture.html?raw';
 
-// Trimmed Word-paste fixture: enough to exercise the conditional overlay.
-const WORD_FIXTURE = `<!doctype html>
-<html xmlns:o="urn:schemas-microsoft-com:office:office"
-      xmlns:w="urn:schemas-microsoft-com:office:word">
-<head><meta name="Generator" content="Microsoft Word 15"></head>
-<body>
-  <p class="MsoNormal">A normal paragraph from Word<o:p></o:p></p>
-
-  <p class="MsoListParagraphCxSpFirst" style="mso-list:l2 level1 lfo1">
-    <span><span style="mso-list:Ignore">1.</span></span>
-    Numbered item 1<o:p></o:p>
-  </p>
-  <p class="MsoListParagraphCxSpMiddle" style="mso-list:l2 level1 lfo1">
-    <span><span style="mso-list:Ignore">2.</span></span>
-    Numbered item 2<o:p></o:p>
-  </p>
-  <p class="MsoListParagraphCxSpLast" style="mso-list:l2 level1 lfo1">
-    <span><span style="mso-list:Ignore">3.</span></span>
-    Numbered item 3<o:p></o:p>
-  </p>
-
-  <p class="MsoListParagraphCxSpFirst" style="mso-list:l1 level1 lfo3">
-    <span><span style="mso-list:Ignore">1)</span></span>
-    Outline 1<o:p></o:p>
-  </p>
-  <p class="MsoListParagraphCxSpMiddle" style="mso-list:l1 level2 lfo3">
-    <span><span style="mso-list:Ignore">a)</span></span>
-    Outline 1.a<o:p></o:p>
-  </p>
-  <p class="MsoListParagraphCxSpMiddle" style="mso-list:l1 level2 lfo3">
-    <span><span style="mso-list:Ignore">b)</span></span>
-    Outline 1.b<o:p></o:p>
-  </p>
-  <p class="MsoListParagraphCxSpLast" style="mso-list:l1 level1 lfo3">
-    <span><span style="mso-list:Ignore">2)</span></span>
-    Outline 2<o:p></o:p>
-  </p>
-</body>
-</html>`;
+const SAMPLE_HTML =
+  '<p>Paste raw HTML here, or load the bundled Word fixture below.</p>';
 
 export function ImportHtmlButton() {
   const [editor] = useLexicalComposerContext();

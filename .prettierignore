@@ -27,3 +27,5 @@ test-results
 /libdefs/*.js
 pnpm-lock.yaml
 **/.next/**
+# Verbatim Word clipboard HTML — preserve exactly as Word emitted it.
+dev-examples/dom-import/src/wordFixture.html

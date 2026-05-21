@@ -48,10 +48,7 @@ describe('Issue #7729: paragraph indent round-trip via data-lexical-indent', () 
       $getRoot().append(para);
     });
 
-    let html = '';
-    editor.read(() => {
-      html = $generateHtmlFromNodes(editor);
-    });
+    const html = editor.read(() => $generateHtmlFromNodes(editor));
 
     expect(html).toContain('data-lexical-indent="2"');
     expect(html).toContain('padding-inline-start: 80px');

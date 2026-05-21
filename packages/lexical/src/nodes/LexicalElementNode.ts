@@ -849,6 +849,11 @@ export class ElementNode extends LexicalNode {
         // We recommend keeping multiples of 40px to maintain consistency with list-items
         // (see https://github.com/facebook/lexical/pull/4025)
         element.style.paddingInlineStart = `${indent * 40}px`;
+        // Authoritative round-trip signal. padding-inline-start can be a
+        // non-40px multiple (custom `--lexical-indent-base-value`) or a
+        // `calc(...)` expression on the live DOM, neither of which the
+        // padding-based heuristic in setNodeIndentFromDOM can recover.
+        element.setAttribute('data-lexical-indent', String(indent));
       }
       const direction = this.getDirection();
       if (direction) {

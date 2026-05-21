@@ -29,3 +29,5 @@ pnpm-lock.yaml
 **/.next/**
 # Verbatim Word clipboard HTML — preserve exactly as Word emitted it.
 dev-examples/dom-import/src/wordFixture.html
+# Verbatim VS Code → Safari paste payload, preserve as Safari emits.
+dev-examples/dom-import/src/vscodeSafariFixture.html

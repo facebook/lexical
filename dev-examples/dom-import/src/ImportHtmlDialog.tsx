@@ -12,13 +12,14 @@ import {$getRoot, $insertNodes} from 'lexical';
 import {useCallback, useRef, useState} from 'react';
 
 // Vite's `?raw` query inlines the file contents as a string at build
-// time, so the dialog can ship the exact Word clipboard payload (with
-// the full <style> block, mso-list definitions, conditional comments,
-// etc.) without escaping it into a TS template literal.
+// time, so the dialog can ship the exact clipboard payloads (with the
+// full <style> block, mso-list definitions, conditional comments,
+// etc.) without escaping them into TS template literals.
+import VSCODE_SAFARI_FIXTURE from './vscodeSafariFixture.html?raw';
 import WORD_FIXTURE from './wordFixture.html?raw';
 
 const SAMPLE_HTML =
-  '<p>Paste raw HTML here, or load the bundled Word fixture below.</p>';
+  '<p>Paste raw HTML here, or load one of the bundled fixtures below.</p>';
 
 export function ImportHtmlButton() {
   const [editor] = useLexicalComposerContext();
@@ -60,9 +61,9 @@ export function ImportHtmlButton() {
     close();
   }, [editor, replace, close]);
 
-  const fillWord = useCallback(() => {
+  const fill = useCallback((html: string) => {
     if (textareaRef.current) {
-      textareaRef.current.value = WORD_FIXTURE;
+      textareaRef.current.value = html;
     }
   }, []);
 
@@ -92,8 +93,14 @@ export function ImportHtmlButton() {
             placeholder="<p>...</p>"
           />
           <div className="import-dialog-controls">
-            <button type="button" onClick={fillWord}>
+            <button type="button" onClick={() => fill(WORD_FIXTURE)}>
               Load Word fixture
+            </button>
+            <button
+              type="button"
+              onClick={() => fill(VSCODE_SAFARI_FIXTURE)}
+              title="A code block copied out of VS Code and pasted into Safari — flat sibling monospace+pre divs/brs with no wrapping monospace ancestor.">
+              Load VS Code → Safari fixture
             </button>
             <label>
               <input

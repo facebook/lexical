@@ -28,10 +28,15 @@ export default defineConfig({
     },
   ],
 
-  /* Run your local dev server before starting the tests */
+  /* Run the production server before starting the tests. Run
+   * `pnpm exec next build` once before invoking playwright — building
+   * inside webServer.command risks exceeding the startup timeout, and
+   * the prod bundle is what we actually want measured. Setting
+   * `BENCH_DEV=1` falls back to `next dev` for quick iteration. */
   webServer: {
-    command: 'pnpm run dev',
+    command: process.env.BENCH_DEV === '1' ? 'pnpm run dev' : 'pnpm run start',
     url: 'http://127.0.0.1:3000',
     reuseExistingServer: !process.env.CI,
+    timeout: 120000,
   },
 });

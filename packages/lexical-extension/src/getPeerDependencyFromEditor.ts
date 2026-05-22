@@ -27,6 +27,10 @@ import {LexicalBuilder} from './LexicalBuilder';
  *
  * Both the explicit Extension type and the name are required.
  *
+ * Inside an editor read/update, prefer {@link $getPeerDependency} — it
+ * resolves the editor via `$getEditor()` so you don't have to thread it
+ * through.
+ *
  *  @example
  * ```tsx
  * import type { HistoryExtension } from "@lexical/history";
@@ -62,6 +66,10 @@ export function getPeerDependencyFromEditor<
  * are avoiding a circular import).
  *
  * Both the explicit Extension type and the name are required.
+ *
+ * Inside an editor read/update, prefer {@link $getPeerDependencyOrThrow} —
+ * it resolves the editor via `$getEditor()` so you don't have to thread it
+ * through.
  *
  *  @example
  * ```tsx

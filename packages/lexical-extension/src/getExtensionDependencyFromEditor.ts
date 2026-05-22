@@ -24,6 +24,10 @@ import {LexicalBuilder} from './LexicalBuilder';
  *
  * It will throw if the Editor was not built using this Extension.
  *
+ * Inside an editor read/update, prefer {@link $getExtensionDependency} or
+ * {@link $getExtensionOutput} — they resolve the editor via `$getEditor()`
+ * so you don't have to thread it through.
+ *
  * @param editor - The editor that was built using extension
  * @param extension - The concrete reference to an Extension used to build this editor
  * @returns The config and output for that Extension

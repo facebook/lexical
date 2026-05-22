@@ -20,11 +20,31 @@ import {
 } from './getPeerDependencyFromEditor';
 
 /**
- * Convenience for the common pattern
- * `getExtensionDependencyFromEditor($getEditor(), extension)`. Must be called
- * inside an editor read/update; the active editor is resolved via
- * `$getEditor()`. Throws if the editor was not built with `extension` as a
- * dependency.
+ * Get the finalized config and output for `extension` from the editor
+ * currently in scope. A `$`-flavored shorthand for
+ * `getExtensionDependencyFromEditor($getEditor(), extension)` — must be
+ * called inside an editor read/update (e.g. from a node method, a rule
+ * body, or any code reachable from `editor.read` / `editor.update`).
+ *
+ * Throws if the editor was not built with `extension` as a dependency.
+ *
+ * @example
+ * ```ts
+ * import {$getExtensionDependency} from '@lexical/extension';
+ * import {KeywordsExtension} from './KeywordsExtension';
+ *
+ * class KeywordNode extends TextNode {
+ *   createDOM(config: EditorConfig): HTMLElement {
+ *     const dom = super.createDOM(config);
+ *     dom.className =
+ *       $getExtensionDependency(KeywordsExtension).config.className;
+ *     return dom;
+ *   }
+ * }
+ * ```
+ *
+ * @see {@link getExtensionDependencyFromEditor} when you have an explicit
+ *   editor reference (e.g. outside a read/update).
  */
 export function $getExtensionDependency<E extends AnyLexicalExtension>(
   extension: E,
@@ -33,9 +53,24 @@ export function $getExtensionDependency<E extends AnyLexicalExtension>(
 }
 
 /**
- * Convenience for `$getExtensionDependency(extension).output` — the most
- * common reason to look up an extension dependency. Throws if the editor
- * was not built with `extension` as a dependency.
+ * Shorthand for `$getExtensionDependency(extension).output` — the most
+ * common reason to look up an extension dependency. Must be called inside
+ * an editor read/update; throws if the editor was not built with
+ * `extension` as a dependency.
+ *
+ * @example
+ * ```ts
+ * import {$getExtensionOutput} from '@lexical/extension';
+ * import {DOMImportExtension} from '@lexical/html';
+ *
+ * const nodes = $getExtensionOutput(DOMImportExtension).$generateNodesFromDOM(
+ *   dom,
+ * );
+ * ```
+ *
+ * @see {@link $getExtensionDependency} when you need both `.config` and
+ *   `.output` (or want to mirror the shape of
+ *   {@link getExtensionDependencyFromEditor}).
  */
 export function $getExtensionOutput<E extends AnyLexicalExtension>(
   extension: E,
@@ -44,17 +79,31 @@ export function $getExtensionOutput<E extends AnyLexicalExtension>(
 }
 
 /**
- * Convenience for the common pattern
- * `getPeerDependencyFromEditor($getEditor(), extensionName)`. Returns
- * `undefined` if the editor was not built with the named extension.
+ * Get the finalized config and output for an optional peer extension by
+ * name, from the editor currently in scope. A `$`-flavored shorthand for
+ * `getPeerDependencyFromEditor($getEditor(), extensionName)` — must be
+ * called inside an editor read/update.
+ *
+ * Returns `undefined` if the editor was not built with the named
+ * extension; use {@link $getPeerDependencyOrThrow} when missing the peer
+ * should be an error. Both the explicit `Extension` type and the name
+ * are required so the returned `config` / `output` types are correct.
  *
  * @example
  * ```ts
+ * import {$getPeerDependency} from '@lexical/extension';
  * import type {HistoryExtension} from '@lexical/history';
+ *
  * const dep = $getPeerDependency<typeof HistoryExtension>(
  *   '@lexical/history/History',
  * );
+ * if (dep) {
+ *   // …read dep.config / dep.output…
+ * }
  * ```
+ *
+ * @see {@link getPeerDependencyFromEditor} when you have an explicit
+ *   editor reference.
  */
 export function $getPeerDependency<E extends AnyLexicalExtension = never>(
   extensionName: E['name'],
@@ -63,9 +112,34 @@ export function $getPeerDependency<E extends AnyLexicalExtension = never>(
 }
 
 /**
- * Convenience for the common pattern
- * `getPeerDependencyFromEditorOrThrow($getEditor(), extensionName)`. Throws
- * if the editor was not built with the named extension.
+ * Throwing variant of {@link $getPeerDependency}: get the finalized
+ * config and output for a peer extension by name from the editor in
+ * scope, and throw if the editor was not built with that extension.
+ *
+ * Convenient when the surrounding code can't proceed without the peer
+ * (e.g. a custom node that reads a peer extension's config in
+ * `createDOM`).
+ *
+ * @example
+ * ```ts
+ * import {$getPeerDependencyOrThrow} from '@lexical/extension';
+ * import type {EmojiExtension} from './EmojiExtension';
+ *
+ * class EmojiNode extends TextNode {
+ *   createDOM(config: EditorConfig): HTMLElement {
+ *     const dom = super.createDOM(config);
+ *     dom.classList.add(
+ *       $getPeerDependencyOrThrow<typeof EmojiExtension>(
+ *         '@lexical/playground/emoji',
+ *       ).config.emojiClass,
+ *     );
+ *     return dom;
+ *   }
+ * }
+ * ```
+ *
+ * @see {@link getPeerDependencyFromEditorOrThrow} when you have an
+ *   explicit editor reference.
  */
 export function $getPeerDependencyOrThrow<
   E extends AnyLexicalExtension = never,

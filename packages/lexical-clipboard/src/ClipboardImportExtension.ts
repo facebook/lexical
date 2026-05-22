@@ -6,7 +6,7 @@
  *
  */
 
-import type {BaseSelection} from 'lexical';
+import type {BaseSelection, RangeSelection} from 'lexical';
 
 import {$getPeerDependency, configExtension} from '@lexical/extension';
 import {
@@ -24,6 +24,7 @@ import {
   defineExtension,
   safeCast,
   shallowMergeConfig,
+  tokenizeRawText,
 } from 'lexical';
 
 import {
@@ -224,32 +225,28 @@ const $defaultHtmlImporter: ImportMimeTypeFunction = (
 };
 
 /**
- * Default handler for `'text/plain'`: split on newlines and tabs and
- * insert paragraphs / line breaks / tab nodes respectively for a
- * RangeSelection; otherwise insert as raw text.
+ * Default handler for `'text/plain'`. On a RangeSelection, drive the
+ * insertion off {@link tokenizeRawText} so each `\n` becomes a real
+ * paragraph break via `insertParagraph` (preserving current text
+ * format / style on the surrounding `insertText` calls). For other
+ * selection types, defer to the selection's own `insertRawText`.
  */
 const $defaultPlainTextImporter: ImportMimeTypeFunction = (data, selection) => {
-  if ($isRangeSelection(selection)) {
-    const parts = data.split(/(\r?\n|\t)/);
-    if (parts[parts.length - 1] === '') {
-      parts.pop();
-    }
-    for (let i = 0; i < parts.length; i++) {
-      const currentSelection = $getSelection();
-      if ($isRangeSelection(currentSelection)) {
-        const part = parts[i];
-        if (part === '\n' || part === '\r\n') {
-          currentSelection.insertParagraph();
-        } else if (part === '\t') {
-          currentSelection.insertNodes([$createTabNode()]);
-        } else {
-          currentSelection.insertText(part);
-        }
-      }
-    }
-  } else {
+  if (!$isRangeSelection(selection)) {
     selection.insertRawText(data);
+    return true;
   }
+  const withCurrentRange = (fn: (cur: RangeSelection) => void) => {
+    const cur = $getSelection();
+    if ($isRangeSelection(cur)) {
+      fn(cur);
+    }
+  };
+  tokenizeRawText(data, {
+    linebreak: () => withCurrentRange(cur => cur.insertParagraph()),
+    tab: () => withCurrentRange(cur => cur.insertNodes([$createTabNode()])),
+    text: part => withCurrentRange(cur => cur.insertText(part)),
+  });
   return true;
 };
 

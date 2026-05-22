@@ -3231,6 +3231,42 @@ export function $insertNodes(nodes: Array<LexicalNode>) {
 }
 
 /**
+ * Push-lexer visitor passed to {@link tokenizeRawText}. The tokenizer
+ * invokes one callback per token it emits; empty text runs are
+ * suppressed, so `text` is only invoked with a non-empty string.
+ */
+export interface RawTextVisitor {
+  readonly linebreak: () => void;
+  readonly tab: () => void;
+  readonly text: (text: string) => void;
+}
+
+/**
+ * Push-lex a raw text string into `linebreak` (`\n` / `\r\n`), `tab`
+ * (`\t`), and `text` (everything else) tokens, dispatching each to the
+ * matching callback on `visitor` in source order.
+ *
+ * Shared by {@link $generateNodesFromRawText} (which builds
+ * `LineBreakNode` / `TabNode` / `TextNode` siblings) and by
+ * `@lexical/clipboard`'s default `text/plain` clipboard importer
+ * (which maps `linebreak` to a real paragraph break via
+ * `insertParagraph` so multi-line plain text becomes multi-paragraph
+ * rich text). Empty text runs are dropped so callers don't need to
+ * special-case them.
+ */
+export function tokenizeRawText(text: string, visitor: RawTextVisitor): void {
+  for (const part of text.split(/(\r?\n|\t)/)) {
+    if (part === '\n' || part === '\r\n') {
+      visitor.linebreak();
+    } else if (part === '\t') {
+      visitor.tab();
+    } else if (part !== '') {
+      visitor.text(part);
+    }
+  }
+}
+
+/**
  * Convert a raw text string into a flat array of `TextNode`,
  * `LineBreakNode`, and `TabNode` siblings, splitting on `\n`, `\r\n`,
  * and `\t`. Use this when you need the same `\n` / `\t` → real-node
@@ -3241,17 +3277,12 @@ export function $insertNodes(nodes: Array<LexicalNode>) {
 export function $generateNodesFromRawText(
   text: string,
 ): (TextNode | LineBreakNode)[] {
-  const parts = text.split(/(\r?\n|\t)/);
   const nodes: (TextNode | LineBreakNode)[] = [];
-  for (const part of parts) {
-    if (part === '\n' || part === '\r\n') {
-      nodes.push($createLineBreakNode());
-    } else if (part === '\t') {
-      nodes.push($createTabNode());
-    } else if (part !== '') {
-      nodes.push($createTextNode(part));
-    }
-  }
+  tokenizeRawText(text, {
+    linebreak: () => nodes.push($createLineBreakNode()),
+    tab: () => nodes.push($createTabNode()),
+    text: part => nodes.push($createTextNode(part)),
+  });
   return nodes;
 }
 

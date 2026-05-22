@@ -247,6 +247,8 @@ export {
   $isNodeSelection,
   $isRangeSelection,
   $updateDOMSelection,
+  type RawTextVisitor,
+  tokenizeRawText,
 } from './LexicalSelection';
 export {$parseSerializedNode, isCurrentlyReadOnlyMode} from './LexicalUpdates';
 export {

@@ -247,7 +247,7 @@ describe('ClipboardImportExtension', () => {
                 (html, selection, e) => {
                   const parser = new DOMParser();
                   const dom = parser.parseFromString(html, 'text/html');
-                  const nodes = $generateNodesFromDOMViaExtension(e, dom, {
+                  const nodes = $generateNodesFromDOMViaExtension(dom, {
                     context: [contextValue(ImportSource, 'paste')],
                   });
                   $insertGeneratedNodes(e, nodes, selection);

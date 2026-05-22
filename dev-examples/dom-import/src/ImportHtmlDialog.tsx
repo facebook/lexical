@@ -51,7 +51,7 @@ export function ImportHtmlButton() {
     editor.update(() => {
       const parser = new DOMParser();
       const dom = parser.parseFromString(html, 'text/html');
-      const nodes = $generateNodesFromDOMViaExtension(editor, dom);
+      const nodes = $generateNodesFromDOMViaExtension(dom);
       if (replace) {
         $getRoot().clear().splice(0, 0, nodes);
       } else {

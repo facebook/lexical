@@ -17,8 +17,8 @@ import type {
 
 import {getExtensionDependencyFromEditor} from '@lexical/extension';
 import {
+  $getEditor,
   defineExtension,
-  type LexicalEditor,
   type LexicalNode,
   shallowMergeConfig,
 } from 'lexical';
@@ -218,10 +218,12 @@ export const DOMImportExtension = defineExtension<
  * @experimental
  */
 export function $generateNodesFromDOMViaExtension(
-  editor: LexicalEditor,
   dom: Document | ParentNode,
   options?: GenerateNodesFromDOMOptions,
 ): LexicalNode[] {
-  const dep = getExtensionDependencyFromEditor(editor, DOMImportExtension);
+  const dep = getExtensionDependencyFromEditor(
+    $getEditor(),
+    DOMImportExtension,
+  );
   return dep.output.$generateNodesFromDOM(dom, options);
 }

@@ -792,7 +792,7 @@ defineExtension({
           (html, selection, editor, _next, dataTransfer) => {
             const parser = new DOMParser();
             const dom = parser.parseFromString(html, 'text/html');
-            const nodes = $generateNodesFromDOMViaExtension(editor, dom, {
+            const nodes = $generateNodesFromDOMViaExtension(dom, {
               context: [
                 contextValue(ImportSource, 'paste'),
                 contextValue(ImportSourceDataTransfer, dataTransfer),

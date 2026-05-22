@@ -40,7 +40,7 @@ import {
  *   files in addition to the slot it was invoked for (e.g. peek at
  *   `'application/x-vscode-source'` while handling `'text/html'`). When
  *   threading through the new pipeline, pass this into
- *   `$generateNodesFromDOMViaExtension(editor, dom, {
+ *   `$generateNodesFromDOMViaExtension(dom, {
  *     context: [contextValue(ImportSourceDataTransfer, dataTransfer)],
  *   })` so rules and preprocessors can read it via
  *   `ctx.get(ImportSourceDataTransfer)`.
@@ -421,7 +421,7 @@ export function $getImportOutput(editor: LexicalEditor): ClipboardImportOutput {
  *           (html, selection, editor, _next, dataTransfer) => {
  *             const parser = new DOMParser();
  *             const dom = parser.parseFromString(html, 'text/html');
- *             const nodes = $generateNodesFromDOMViaExtension(editor, dom, {
+ *             const nodes = $generateNodesFromDOMViaExtension(dom, {
  *               context: [
  *                 contextValue(ImportSource, 'paste'),
  *                 contextValue(ImportSourceDataTransfer, dataTransfer),

@@ -21,7 +21,6 @@ import {
   $setFormatFromDOM,
   configExtension,
   defineExtension,
-  isHTMLElement,
   type LexicalNode,
 } from 'lexical';
 
@@ -38,19 +37,11 @@ import {$createListNode, $isListNode} from './LexicalListNode';
  * `@lexical/list`.
  */
 function isDomChecklist(domNode: HTMLElement): boolean {
-  if (
-    domNode.getAttribute('__lexicallisttype') === 'check' ||
-    domNode.classList.contains('contains-task-list') ||
-    domNode.getAttribute('data-is-checklist') === '1'
-  ) {
-    return true;
-  }
-  for (const child of domNode.childNodes) {
-    if (isHTMLElement(child) && child.hasAttribute('aria-checked')) {
-      return true;
-    }
-  }
-  return false;
+  return (
+    domNode.matches(
+      '[__lexicallisttype="check"], .contains-task-list, [data-is-checklist="1"]',
+    ) || domNode.querySelector(':scope > [aria-checked]') !== null
+  );
 }
 
 /**

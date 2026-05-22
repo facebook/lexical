@@ -31,22 +31,6 @@ import {$createCodeNode} from './CodeNode';
 const LANGUAGE_DATA_ATTRIBUTE = 'data-language';
 
 /**
- * True if `node` (or one of its descendants) has a child element with
- * `tagName`. Mirrors the legacy helper inside `@lexical/code-core/CodeNode`.
- */
-function hasChildDOMNodeTag(node: Node, tagName: string): boolean {
-  for (const child of node.childNodes) {
-    if (isHTMLElement(child) && child.tagName === tagName) {
-      return true;
-    }
-    if (hasChildDOMNodeTag(child, tagName)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-/**
  * True for elements whose `font-family` mentions `monospace` — the
  * heuristic the legacy `<div>` rule uses to spot copy-pasted code blocks
  * (e.g. Google Docs serializes a code block as a styled `<div>`).
@@ -104,7 +88,7 @@ const PreRule = defineImportRule({
 const MultilineCodeRule = defineImportRule({
   $import: (ctx, el, $next) => {
     const text = el.textContent || '';
-    const isMultiLine = /\r?\n/.test(text) || hasChildDOMNodeTag(el, 'BR');
+    const isMultiLine = /\r?\n/.test(text) || el.querySelector('br') !== null;
     if (!isMultiLine) {
       return $next();
     }

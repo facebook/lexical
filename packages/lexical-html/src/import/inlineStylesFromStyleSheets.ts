@@ -7,11 +7,8 @@
  */
 import type {DOMPreprocessFn} from './types';
 
+import {objectKlassEquals} from '@lexical/utils';
 import {isDOMDocumentNode, isHTMLElement} from 'lexical';
-
-function isStyleRule(rule: CSSRule): rule is CSSStyleRule {
-  return rule.constructor.name === CSSStyleRule.name;
-}
 
 /**
  * Inlines CSS rules from `<style>` tags onto matching elements as inline
@@ -74,7 +71,7 @@ export function $inlineStylesFromStyleSheetsDOM(
         continue;
       }
       for (const rule of Array.from(rules)) {
-        if (!isStyleRule(rule)) {
+        if (!objectKlassEquals(rule, CSSStyleRule)) {
           continue;
         }
         let elements: NodeListOf<Element>;

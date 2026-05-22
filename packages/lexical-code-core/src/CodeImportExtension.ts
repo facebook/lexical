@@ -21,6 +21,7 @@ import {
   configExtension,
   defineExtension,
   isDOMDocumentNode,
+  isDOMTextNode,
   isHTMLElement,
 } from 'lexical';
 
@@ -176,7 +177,7 @@ function splitMonospaceWrapperLines(el: HTMLElement): string[] | null {
         acc += child.textContent || '';
         hasAcc = true;
       }
-    } else if (child.nodeType === 3 /* text */) {
+    } else if (isDOMTextNode(child)) {
       const t = child.textContent || '';
       if (t.length > 0) {
         acc += t;

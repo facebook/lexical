@@ -18,6 +18,7 @@ import {getPeerDependencyFromEditor} from '@lexical/extension';
 import {
   $getEditor,
   isBlockDomNode,
+  isDOMTextNode,
   isHTMLElement,
   isInlineDomNode,
   type LexicalEditor,
@@ -213,7 +214,7 @@ export function defaultPreservesWhitespace(node: Node): boolean {
  * @experimental
  */
 export function defaultIsInline(node: Node): boolean {
-  if (node.nodeType === 3 /* TEXT_NODE */) {
+  if (isDOMTextNode(node)) {
     return true;
   }
   if (!isHTMLElement(node)) {

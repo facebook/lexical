@@ -132,12 +132,6 @@ function mergeStyles(
 }
 
 /**
- * Translate a {@link FormatStyle} into a {@link FormatOverride}. Explicit
- * "non-decorating" values (`font-weight: normal`, `text-decoration: none`,
- * `vertical-align: baseline`) produce `clear` bits, so an inner element
- * can remove a format inherited from its ancestors.
- */
-/**
  * The CSS property names {@link styleFormatOverride} reads — these are
  * "owned" by {@link ImportTextFormat} (the bit mask). When the
  * {@link ImportTextStyle} record is materialized onto a TextNode's
@@ -153,6 +147,12 @@ const FORMAT_BIT_STYLE_PROPS: ReadonlySet<string> = new Set([
   'vertical-align',
 ]);
 
+/**
+ * Translate a {@link FormatStyle} into a {@link FormatOverride}. Explicit
+ * "non-decorating" values (`font-weight: normal`, `text-decoration: none`,
+ * `vertical-align: baseline`) produce `clear` bits, so an inner element
+ * can remove a format inherited from its ancestors.
+ */
 function styleFormatOverride(style: FormatStyle): FormatOverride {
   let set = 0;
   let clear = 0;
@@ -436,9 +436,6 @@ const IgnoreScriptStyleRule = defineImportRule({
   name: '@lexical/html/script-style-ignore',
 });
 
-/**
- * `<br>` rule.
- */
 const LineBreakRule = defineImportRule({
   $import: () => [$createLineBreakNode()],
   match: sel.tag('br'),

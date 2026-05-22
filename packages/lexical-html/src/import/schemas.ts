@@ -100,7 +100,7 @@ export function $distributeInlineWrapper(
 /**
  * Apply a {@link ChildSchema} to a flat list of children produced by
  * `$importChildren`. Walks the list once, partitions into accepted vs.
- * rejected runs, packages or drops rejected runs, then runs `finalize`.
+ * rejected runs, packages or drops rejected runs, then runs `$finalize`.
  *
  * @internal
  */

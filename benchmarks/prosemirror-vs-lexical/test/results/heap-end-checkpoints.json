@@ -4,15 +4,47 @@
     "nodeCount": 0
   },
   {
-    "heapUsedMB": 14.452983856201172,
-    "nodeCount": 100
-  },
-  {
-    "heapUsedMB": 15.100532531738281,
+    "heapUsedMB": 15.099098205566406,
     "nodeCount": 200
   },
   {
-    "heapUsedMB": 15.100532531738281,
-    "nodeCount": 200
+    "heapUsedMB": 16.069419860839844,
+    "nodeCount": 400
+  },
+  {
+    "heapUsedMB": 14.916629791259766,
+    "nodeCount": 600
+  },
+  {
+    "heapUsedMB": 16.146316528320312,
+    "nodeCount": 800
+  },
+  {
+    "heapUsedMB": 16.375656127929688,
+    "nodeCount": 1000
+  },
+  {
+    "heapUsedMB": 15.996238708496094,
+    "nodeCount": 1200
+  },
+  {
+    "heapUsedMB": 16.895626068115234,
+    "nodeCount": 1400
+  },
+  {
+    "heapUsedMB": 18.506351470947266,
+    "nodeCount": 1600
+  },
+  {
+    "heapUsedMB": 18.702655792236328,
+    "nodeCount": 1800
+  },
+  {
+    "heapUsedMB": 18.59524154663086,
+    "nodeCount": 2000
+  },
+  {
+    "heapUsedMB": 18.59524154663086,
+    "nodeCount": 2000
   }
 ]

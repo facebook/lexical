@@ -34,6 +34,7 @@ import {defineExtension} from 'lexical';
 import ExampleTheme from './ExampleTheme';
 import {ImportHtmlButton} from './ImportHtmlDialog';
 import {MarkdownShortcutsExtension} from './MarkdownShortcutsExtension';
+import {RouteHtmlPasteViaExtension} from './RouteHtmlPasteViaExtension';
 import {Toolbar, ToolbarExtension} from './ToolbarExtension';
 import {WordPasteExtension} from './wordPaste';
 
@@ -71,6 +72,10 @@ const editorExtension = defineExtension({
     CodeImportExtension,
     // Word-only overlay, installed conditionally by a preprocess.
     WordPasteExtension,
+    // Route real `text/html` pastes through the DOMImportExtension
+    // pipeline so the rules / overlays above actually fire on pastes,
+    // not just on the "Import HTML" dialog.
+    RouteHtmlPasteViaExtension,
   ],
   name: '@lexical/examples/dom-import',
   namespace: 'DOM Import Demo',

@@ -12,7 +12,7 @@ import type {
   ContextRecord,
 } from '../types';
 import type {CompiledOverlayRules} from './defineOverlayRules';
-import type {LexicalEditor, LexicalNode} from 'lexical';
+import type {LexicalNode} from 'lexical';
 
 /**
  * Phantom-typed branding so consumers cannot construct or mutate a
@@ -190,8 +190,6 @@ export interface ImportSession {
 export interface DOMImportContext<
   C extends Record<string, RegExpMatchArray> = Record<string, never>,
 > {
-  /** The editor driving this import. */
-  readonly editor: LexicalEditor;
   /** Captures from this rule's selector. Fresh per rule invocation. */
   readonly captures: Readonly<C>;
   /**

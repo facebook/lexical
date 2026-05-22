@@ -57,7 +57,6 @@ function makeContext(
       $importChildrenInternal(runtime, parent, opts),
     $importOne: (node, opts) => $importOneInternal(runtime, node, opts),
     captures,
-    editor: runtime.editor,
     get<V>(cfg: ImportStateConfig<V>): V {
       return $getImportContextValue(cfg, runtime.editor);
     },

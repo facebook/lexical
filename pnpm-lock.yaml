@@ -272,6 +272,9 @@ importers:
 
   dev-examples/dom-import:
     dependencies:
+      '@lexical/clipboard':
+        specifier: workspace:*
+        version: link:../../packages/lexical-clipboard
       '@lexical/code-core':
         specifier: workspace:*
         version: link:../../packages/lexical-code-core

@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@lexical/clipboard": "workspace:*",
     "@lexical/code-core": "workspace:*",
     "@lexical/code-shiki": "workspace:*",
     "@lexical/extension": "workspace:*",

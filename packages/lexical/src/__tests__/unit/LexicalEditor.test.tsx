@@ -1189,6 +1189,48 @@ describe('LexicalEditor tests', () => {
     boldListener();
   });
 
+  it('Detects infinite recursivity on update listeners', async () => {
+    const errorListener = vi.fn();
+    init(errorListener);
+
+    const unregisterListener = editor.registerUpdateListener(() => {
+      editor.update(() => {
+        $getRoot().markDirty();
+      });
+    });
+
+    expect(errorListener).toHaveBeenCalledTimes(0);
+
+    editor.update(() => {
+      $getRoot().markDirty();
+    });
+
+    // drain the microtask chain produced by the cascade
+    for (let i = 0; i < 200 && errorListener.mock.calls.length === 0; i++) {
+      await Promise.resolve();
+    }
+
+    expect(errorListener).toHaveBeenCalledTimes(1);
+    expect(errorListener.mock.calls[0][0].message).toMatch(
+      /endlessly enqueueing/,
+    );
+
+    unregisterListener();
+
+    // editor should be usable again after the cascade is cut
+    editor.update(
+      () => {
+        $getRoot().markDirty();
+      },
+      {discrete: true},
+    );
+    // drain any lingering microtask chain to confirm no further cascade
+    for (let i = 0; i < 10; i++) {
+      await Promise.resolve();
+    }
+    expect(errorListener).toHaveBeenCalledTimes(1);
+  });
+
   it('Should be able to update an editor state without a root element', () => {
     const ref = createRef<HTMLDivElement>();
 

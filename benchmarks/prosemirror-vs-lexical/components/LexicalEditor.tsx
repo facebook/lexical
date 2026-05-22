@@ -1,10 +1,13 @@
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {getExtensionDependencyFromEditor} from '@lexical/extension';
 import {HistoryExtension} from '@lexical/history';
 import {ListExtension} from '@lexical/list';
 import {RichTextExtension} from '@lexical/rich-text';
 import {LinkExtension} from '@lexical/link';
 import {configExtension, defineExtension} from 'lexical';
+import {useEffect} from 'react';
 
 const myTheme = {
   text: {
@@ -37,11 +40,47 @@ const editorExtension = defineExtension({
   ],
 });
 
+// Tiny inner component that grabs the editor handle and stashes it on
+// window for the heap-probe spec. No-op in normal runs — the reference
+// is the same one the React tree already holds, so it does not extend
+// any object's lifetime.
+function ExposeForProbe() {
+  const [editor] = useLexicalComposerContext();
+  useEffect(() => {
+    const w = window as unknown as {
+      __lexicalEditor?: unknown;
+      __lexicalHistorySnapshot?: () => unknown;
+    };
+    w.__lexicalEditor = editor;
+    w.__lexicalHistorySnapshot = () => {
+      try {
+        const dep = getExtensionDependencyFromEditor(editor, HistoryExtension);
+        const hs = dep.output.historyState.peek();
+        return {
+          ok: true,
+          undoLen: hs.undoStack.length,
+          redoLen: hs.redoStack.length,
+          maxDepth: dep.output.maxDepth.peek(),
+          delay: dep.output.delay.peek(),
+        };
+      } catch (err) {
+        return {ok: false, error: String(err)};
+      }
+    };
+    return () => {
+      delete w.__lexicalEditor;
+      delete w.__lexicalHistorySnapshot;
+    };
+  }, [editor]);
+  return null;
+}
+
 const LexicalEditor = () => (
   <div className="editorwrapper--Lexical">
     <LexicalExtensionComposer
       extension={editorExtension}
       contentEditable={null}>
+      <ExposeForProbe />
       <ContentEditable
         className="ContentEditable__root"
         aria-label="Lexical editor"

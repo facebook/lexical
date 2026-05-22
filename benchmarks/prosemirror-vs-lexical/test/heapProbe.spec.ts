@@ -93,6 +93,26 @@ test('heap probe: drive Lexical to PROBE_NODES then snapshot', async ({
   // Final post-GC sample.
   checkpoints.push(await forceGcAndSample(session, PROBE_NODES));
 
+  // In-page introspection: read the History extension's actual undo/
+  // redo stack lengths so we can separate "history is unbounded" from
+  // "history is bounded but something else retains EditorStates".
+  // The LexicalEditor component exposes a probe-accessor on window.
+  const introspect = await page.evaluate(() => {
+    const w = window as unknown as {
+      __lexicalHistorySnapshot?: () => unknown;
+    };
+    if (typeof w.__lexicalHistorySnapshot !== 'function') {
+      return {error: 'no __lexicalHistorySnapshot on window'};
+    }
+    return w.__lexicalHistorySnapshot();
+  });
+  console.log('history introspection:', JSON.stringify(introspect, null, 2));
+  fs.writeFileSync(
+    path.join(folderPath, 'heap-end-introspect.json'),
+    JSON.stringify(introspect, null, 2),
+    'utf8',
+  );
+
   fs.writeFileSync(
     path.join(folderPath, 'heap-end-checkpoints.json'),
     JSON.stringify(checkpoints, null, 2),

@@ -74,9 +74,11 @@ export type {
   StyleMatchOptions,
 } from './import';
 export {
+  $distributeInlineWrapper,
   $generateNodesFromDOMViaExtension,
   $getImportContextValue,
   $inlineStylesFromStyleSheets,
+  $isBlockLevel,
   $withImportContext,
   BlockSchema,
   CoreImportExtension,

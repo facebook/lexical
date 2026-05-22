@@ -7,10 +7,10 @@
  */
 
 import {
+  $distributeInlineWrapper,
   CoreImportExtension,
   defineImportRule,
   DOMImportExtension,
-  InlineSchema,
   sel,
 } from '@lexical/html';
 import {configExtension, defineExtension} from 'lexical';
@@ -24,13 +24,21 @@ const AnchorRule = defineImportRule({
     if ((content === null || content === '') && el.children.length === 0) {
       return [];
     }
-    return [
-      $createLinkNode(el.getAttribute('href') || '', {
-        rel: el.getAttribute('rel'),
-        target: el.getAttribute('target'),
-        title: el.getAttribute('title'),
-      }).splice(0, 0, ctx.$importChildren(el, {schema: InlineSchema})),
-    ];
+    // Use no schema here: when the `<a>` contains block descendants
+    // (e.g. `<a><h1>x</h1><div>y</div></a>`), we want them lifted so each
+    // block becomes a sibling at the link's level, with the link wrapping
+    // its inline content. $distributeInlineWrapper handles both the
+    // common all-inline case (single LinkNode wrapping the run) and the
+    // mixed-block case (per-block recursion).
+    const href = el.getAttribute('href') || '';
+    const attrs = {
+      rel: el.getAttribute('rel'),
+      target: el.getAttribute('target'),
+      title: el.getAttribute('title'),
+    };
+    return $distributeInlineWrapper(ctx.$importChildren(el), () =>
+      $createLinkNode(href, attrs),
+    );
   },
   match: sel.tag('a'),
   name: '@lexical/link/a',

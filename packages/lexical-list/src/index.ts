@@ -29,9 +29,9 @@ import {$createListNode, $isListNode, ListNode} from './LexicalListNode';
 import {$getListDepth} from './utils';
 
 export {
-  CheckListConfig,
+  type CheckListConfig,
   CheckListExtension,
-  ListConfig,
+  type ListConfig,
   ListExtension,
 } from './LexicalListExtension';
 export {

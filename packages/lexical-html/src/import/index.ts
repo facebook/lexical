@@ -64,6 +64,8 @@ export {
 export {$inlineStylesFromStyleSheets} from './inlineStylesFromStyleSheets';
 export {parseSelector} from './parseCss';
 export {
+  $distributeInlineWrapper,
+  $isBlockLevel,
   BlockSchema,
   InlineSchema,
   NestedBlockSchema,

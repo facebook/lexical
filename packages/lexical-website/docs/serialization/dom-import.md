@@ -368,11 +368,35 @@ no `$packageRun` shape that produces "a list of blocks each holding
 the original inline wrapper" because the schema sees only the
 children, not the parent.
 
-This is a rule-level concern: the rule walks its produced children,
-emits each block in place, and wraps any inline run (whether inside
-a lifted block or between two blocks) in a fresh copy of its inline
-parent. See `@lexical/link`'s `AnchorRule` for a worked
-implementation.
+This is a rule-level concern, but `@lexical/html` ships the
+`$distributeInlineWrapper(children, $makeWrapper)` helper so rules
+that produce an inline parent (e.g. `LinkNode`, `MarkNode`) can
+opt in with one line:
+
+```ts
+import {
+  $distributeInlineWrapper,
+  defineImportRule,
+  sel,
+} from '@lexical/html';
+import {$createLinkNode} from '@lexical/link';
+
+const AnchorRule = defineImportRule({
+  match: sel.tag('a'),
+  $import: (ctx, el) => {
+    const href = el.getAttribute('href') || '';
+    return $distributeInlineWrapper(ctx.$importChildren(el), () =>
+      $createLinkNode(href),
+    );
+  },
+});
+```
+
+The helper walks the children: each block is descended into and its
+inline content is wrapped with a fresh instance from `$makeWrapper`;
+each contiguous inline run at the top level becomes its own wrapped
+node. The enclosing `BlockSchema` then packages the inline-wrapped
+runs into paragraphs as usual.
 
 ## Context
 

@@ -11,6 +11,8 @@ import {
   $createParagraphNode,
   $isBlockElementNode,
   $isDecoratorNode,
+  $isElementNode,
+  type ElementNode,
   isHTMLElement,
   type LexicalNode,
 } from 'lexical';
@@ -24,11 +26,80 @@ import {isAlignmentValue} from './coreImportRules';
  * ImageNode-as-block, etc.). Calls {@link DecoratorNode.isInline} when
  * applicable, so it must run inside an editor read/update. Used by
  * {@link BlockSchema}, {@link RootSchema}, and {@link NestedBlockSchema}.
+ *
+ * @experimental
  */
-function $isBlockLevel(node: LexicalNode): boolean {
+export function $isBlockLevel(node: LexicalNode): boolean {
   return (
     $isBlockElementNode(node) || ($isDecoratorNode(node) && !node.isInline())
   );
+}
+
+/**
+ * Distribute an inline wrapper (`LinkNode`, `MarkNode`, …) across a
+ * heterogeneous run of children produced by `$importChildren`, lifting
+ * any block children to the top level while keeping the wrapper around
+ * the leaf inline content.
+ *
+ * Use from a rule whose DOM source is an inline element that the
+ * browser permitted to enclose block elements — the canonical case is
+ * `<a href="…"><h1>title</h1><div>body</div></a>`, which a link rule
+ * wants to surface as two block siblings (heading + paragraph), each
+ * with its own link wrapping the original inline content. Schemas
+ * can't express this because they reason about a parent's children
+ * only — they cannot lift the parent out of itself.
+ *
+ * For each top-level child:
+ * - **Inline children** are collected into runs; each run is wrapped
+ *   in a single fresh wrapper (from `$makeWrapper()`).
+ * - **Block children** are descended into: their own children are
+ *   recursively distributed with `$makeWrapper`, then re-attached so
+ *   the block keeps its position at the top level.
+ *
+ * The returned list will contain a mix of blocks and wrapped inline
+ * runs. The enclosing schema (typically {@link BlockSchema}) will
+ * then package those inline wrappers into paragraphs as usual.
+ *
+ * Must run inside an editor read/update — calls `$is*` predicates
+ * and `ElementNode.splice` / `getChildren` on `LexicalNode`
+ * arguments.
+ *
+ * @experimental
+ */
+export function $distributeInlineWrapper(
+  children: readonly LexicalNode[],
+  $makeWrapper: () => ElementNode,
+): LexicalNode[] {
+  const out: LexicalNode[] = [];
+  let inlineRun: LexicalNode[] = [];
+
+  const flushInline = () => {
+    if (inlineRun.length === 0) {
+      return;
+    }
+    out.push($makeWrapper().splice(0, 0, inlineRun));
+    inlineRun = [];
+  };
+
+  for (const child of children) {
+    if ($isBlockLevel(child)) {
+      flushInline();
+      // Recursively distribute the wrapper into the block's own
+      // children. A block DecoratorNode (no children) is left alone.
+      if ($isElementNode(child)) {
+        const wrapped = $distributeInlineWrapper(
+          child.getChildren(),
+          $makeWrapper,
+        );
+        child.splice(0, child.getChildrenSize(), wrapped);
+      }
+      out.push(child);
+    } else {
+      inlineRun.push(child);
+    }
+  }
+  flushInline();
+  return out;
 }
 
 /**

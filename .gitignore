@@ -54,3 +54,5 @@ benchmarks/*/.swc
 benchmarks/*/next-env.d.ts
 benchmarks/*/playwright-report
 benchmarks/*/test-results
+# Chrome heap snapshots — too large for git; regenerate via heapProbe.spec.ts.
+benchmarks/*/test/results/*.heapsnapshot

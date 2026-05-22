@@ -128,6 +128,22 @@ function mergeStyles(
  * `vertical-align: baseline`) produce `clear` bits, so an inner element
  * can remove a format inherited from its ancestors.
  */
+/**
+ * The CSS property names {@link styleFormatOverride} reads — these are
+ * "owned" by {@link ImportTextFormat} (the bit mask). When the
+ * {@link ImportTextStyle} record is materialized onto a TextNode's
+ * inline style by {@link styleObjectToCSS}, these are skipped so the
+ * bit-mask side is the single source of truth and the same property
+ * doesn't end up in both places (where the inline-style version would
+ * shadow the format's themed CSS).
+ */
+const FORMAT_BIT_STYLE_PROPS: ReadonlySet<string> = new Set([
+  'font-weight',
+  'font-style',
+  'text-decoration',
+  'vertical-align',
+]);
+
 function styleFormatOverride(style: FormatStyle): FormatOverride {
   let set = 0;
   let clear = 0;
@@ -344,6 +360,11 @@ function applyFormat(node: LexicalNode, format: number): LexicalNode {
 function styleObjectToCSS(style: Readonly<Record<string, string>>): string {
   let css = '';
   for (const prop in style) {
+    if (FORMAT_BIT_STYLE_PROPS.has(prop)) {
+      // Owned by ImportTextFormat (bit mask) — skip so the format-bit
+      // CSS is the single source of truth on the rendered TextNode.
+      continue;
+    }
     css += `${prop}: ${style[prop]}; `;
   }
   return css.trimEnd();

@@ -1,4 +1,16 @@
 {
-  "ok": false,
-  "error": "TypeError: Cannot read properties of undefined (reading 'peek')"
+  "delay": 500,
+  "maxDepth": 100,
+  "ok": true,
+  "outputKeys": [
+    "delay",
+    "disabled",
+    "historyState",
+    "maxDepth",
+    "now",
+    "canRedo",
+    "canUndo"
+  ],
+  "redoLen": 0,
+  "undoLen": 100
 }

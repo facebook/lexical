@@ -6,20 +6,31 @@
  *
  */
 
+import {buildEditorFromExtensions} from '@lexical/extension';
 import {$generateNodesFromDOM} from '@lexical/html';
-import {$getRoot, $insertNodes} from 'lexical';
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getRoot,
+  $insertNodes,
+  $isParagraphNode,
+} from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 import {assert, describe, expect, it} from 'vitest';
 
+import {CollapsibleExtension} from '../../src/plugins/CollapsibleExtension';
 import {
+  $createCollapsibleContainerNode,
   $isCollapsibleContainerNode,
   CollapsibleContainerNode,
 } from '../../src/plugins/CollapsibleExtension/CollapsibleContainerNode';
 import {
+  $createCollapsibleContentNode,
   $isCollapsibleContentNode,
   CollapsibleContentNode,
 } from '../../src/plugins/CollapsibleExtension/CollapsibleContentNode';
 import {
+  $createCollapsibleTitleNode,
   $isCollapsibleTitleNode,
   CollapsibleTitleNode,
 } from '../../src/plugins/CollapsibleExtension/CollapsibleTitleNode';
@@ -235,4 +246,36 @@ describe('CollapsibleContainerNode HTML import (issue #8407)', () => {
       ],
     },
   );
+});
+
+describe('CollapsibleExtension transforms', () => {
+  it('wraps inline content children in paragraphs', () => {
+    using editor = buildEditorFromExtensions(CollapsibleExtension);
+
+    editor.update(
+      () => {
+        $getRoot()
+          .clear()
+          .append(
+            $createCollapsibleContainerNode(true).append(
+              $createCollapsibleTitleNode().append(
+                $createParagraphNode().append($createTextNode('Title')),
+              ),
+              $createCollapsibleContentNode().append($createTextNode('Body')),
+            ),
+          );
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const container = $getRoot().getFirstChildOrThrow();
+      assert($isCollapsibleContainerNode(container));
+      const content = container.getLastChildOrThrow();
+      assert($isCollapsibleContentNode(content));
+      const child = content.getFirstChildOrThrow();
+      assert($isParagraphNode(child));
+      expect(child.getTextContent()).toBe('Body');
+    });
+  });
 });

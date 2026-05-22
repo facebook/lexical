@@ -16,6 +16,7 @@ import {
 import {
   $createParagraphNode,
   $getSelection,
+  $isBlockElementNode,
   $isRangeSelection,
   COMMAND_PRIORITY_LOW,
   createCommand,
@@ -106,6 +107,22 @@ const $onEscapeDown = () => {
   return false;
 };
 
+const $wrapInlineContentChildren = (node: CollapsibleContentNode) => {
+  let paragraph: ReturnType<typeof $createParagraphNode> | null = null;
+
+  for (const child of node.getChildren()) {
+    if ($isBlockElementNode(child)) {
+      paragraph = null;
+      continue;
+    }
+    if (paragraph === null) {
+      paragraph = $createParagraphNode();
+      child.insertBefore(paragraph);
+    }
+    paragraph.append(child);
+  }
+};
+
 export const CollapsibleExtension = defineExtension({
   name: '@lexical/playground/Collapsible',
   nodes: [
@@ -126,7 +143,9 @@ export const CollapsibleExtension = defineExtension({
             node.insertBefore(child);
           }
           node.remove();
+          return;
         }
+        $wrapInlineContentChildren(node);
       }),
 
       editor.registerNodeTransform(CollapsibleTitleNode, node => {

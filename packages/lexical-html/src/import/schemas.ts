@@ -222,9 +222,7 @@ export const NestedBlockSchema: ChildSchema = {
    * groups" case never arises — adjacent inline siblings are already
    * coalesced into one run.
    */
-  $packageRun(run) {
-    return run;
-  },
+  $packageRun: run => run,
   name: 'NestedBlockSchema',
 };
 

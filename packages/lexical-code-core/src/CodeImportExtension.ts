@@ -389,15 +389,13 @@ const DivRule = defineImportRule({
  * on every other `<tr>` / `<td>` paste elsewhere.
  */
 const GitHubCodeTableRule = defineImportRule({
-  $import: (ctx, el) => {
-    const node = $createCodeNode();
-    node.splice(
+  $import: (ctx, el) => [
+    $createCodeNode().splice(
       0,
       0,
       ctx.$importChildren(el, {rules: GitHubCodeTableOverlayRules}),
-    );
-    return [node];
-  },
+    ),
+  ],
   match: sel.tag('table').classAll('js-file-line-container'),
   name: '@lexical/code/github-code-table',
 });

@@ -300,7 +300,7 @@ Per-package schemas:
 
 | Schema | Accepts | Rejected runs |
 | --- | --- | --- |
-| `ListSchema` (`@lexical/list`) | `ListItemNode`, nested `ListNode` | Wrapped in a paragraph inside a synthetic `ListItemNode` |
+| `ListSchema` (`@lexical/list`) | `ListItemNode`, nested `ListNode` | Wrapped in a synthetic `ListItemNode` (no intermediate paragraph) |
 | `TableSchema` (`@lexical/table`) | `TableRowNode` | If all cells, wrapped in a synthetic `TableRowNode`; else dropped |
 | `TableRowSchema` (`@lexical/table`) | `TableCellNode` | Dropped |
 

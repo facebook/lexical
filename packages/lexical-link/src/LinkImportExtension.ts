@@ -20,8 +20,7 @@ import {$createLinkNode} from './LexicalLinkNode';
 
 const AnchorRule = defineImportRule({
   $import: (ctx, el) => {
-    const content = el.textContent;
-    if ((content === null || content === '') && el.children.length === 0) {
+    if (!el.textContent && el.children.length === 0) {
       return [];
     }
     // Use no schema here: when the `<a>` contains block descendants

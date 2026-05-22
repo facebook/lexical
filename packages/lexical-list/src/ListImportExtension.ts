@@ -101,7 +101,7 @@ const ListRule = defineImportRule({
  * of the `<p>` inside the `<li>`). Mirrors the legacy
  * `setFormatFromChildren`.
  */
-function liftFormatFromSingleParagraph(
+function $liftFormatFromSingleParagraph(
   listItemNode: ListItemNode,
   children: LexicalNode[],
 ): LexicalNode[] {
@@ -136,7 +136,7 @@ const ListItemRule = defineImportRule({
       node.splice(
         0,
         0,
-        liftFormatFromSingleParagraph(node, ctx.$importChildren(el)),
+        $liftFormatFromSingleParagraph(node, ctx.$importChildren(el)),
       ),
     ];
   },
@@ -163,7 +163,7 @@ function $buildChecklistItem(
     node.splice(
       0,
       0,
-      liftFormatFromSingleParagraph(node, ctx.$importChildren(el)),
+      $liftFormatFromSingleParagraph(node, ctx.$importChildren(el)),
     ),
   ];
 }
@@ -206,14 +206,12 @@ const JoplinChecklistItemRule = defineImportRule({
  */
 export const ListSchema: ChildSchema = {
   $accepts: child => $isListItemNode(child) || $isListNode(child),
-  $packageRun(run) {
-    // Inline runs inside a `<ul>`/`<ol>` (e.g. text between two `<li>`s)
-    // become the children of a synthetic `ListItemNode`. `ListItemNode`
-    // is itself a block-level container of inlines, so no intermediate
-    // `ParagraphNode` is needed (and the demoted-paragraph normalization
-    // would strip one anyway).
-    return [$createListItemNode().splice(0, 0, run)];
-  },
+  // Inline runs inside a `<ul>`/`<ol>` (e.g. text between two `<li>`s)
+  // become the children of a synthetic `ListItemNode`. `ListItemNode`
+  // is itself a block-level container of inlines, so no intermediate
+  // `ParagraphNode` is needed (and the demoted-paragraph normalization
+  // would strip one anyway).
+  $packageRun: run => [$createListItemNode().splice(0, 0, run)],
   name: 'ListSchema',
 };
 

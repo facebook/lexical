@@ -163,10 +163,9 @@ const TableRule = defineImportRule({
 
 const TableRowRule = defineImportRule({
   $import: (ctx, el) => {
-    let height: number | undefined = undefined;
-    if (PIXEL_VALUE_REG_EXP.test(el.style.height)) {
-      height = parseFloat(el.style.height);
-    }
+    const height = PIXEL_VALUE_REG_EXP.test(el.style.height)
+      ? parseFloat(el.style.height)
+      : undefined;
     return [
       $createTableRowNode(height).splice(
         0,
@@ -182,10 +181,9 @@ const TableRowRule = defineImportRule({
 const TableCellRule = defineImportRule({
   $import: (ctx, el) => {
     const isHeader = el.nodeName === 'TH';
-    let width: number | undefined;
-    if (PIXEL_VALUE_REG_EXP.test(el.style.width)) {
-      width = parseFloat(el.style.width);
-    }
+    const width = PIXEL_VALUE_REG_EXP.test(el.style.width)
+      ? parseFloat(el.style.width)
+      : undefined;
     let headerState = TableCellHeaderStates.NO_STATUS;
     if (isHeader) {
       const scope = el.getAttribute('scope');
@@ -259,11 +257,10 @@ const TableCellRule = defineImportRule({
  */
 export const TableSchema: ChildSchema = {
   $accepts: $isTableRowNode,
-  $packageRun(run) {
-    return run.every($isTableCellNode)
+  $packageRun: run =>
+    run.every($isTableCellNode)
       ? [$createTableRowNode().splice(0, 0, run)]
-      : [];
-  },
+      : [],
   name: 'TableSchema',
 };
 

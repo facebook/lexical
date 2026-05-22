@@ -357,7 +357,7 @@ function collapseWhitespace(
   return textContent;
 }
 
-function applyFormat(node: LexicalNode, format: number): LexicalNode {
+function $applyFormat(node: LexicalNode, format: number): LexicalNode {
   return format !== 0 && $isTextNode(node) ? node.setFormat(format) : node;
 }
 
@@ -379,7 +379,7 @@ function styleObjectToCSS(style: Readonly<Record<string, string>>): string {
   return css.trimEnd();
 }
 
-function applyTextStyle(
+function $applyTextStyle(
   node: LexicalNode,
   style: Readonly<Record<string, string>>,
 ): LexicalNode {
@@ -406,8 +406,8 @@ const TextRule = defineImportRule({
     if (isInsidePreserveWhitespace(el, wsConfig)) {
       const out = $generateNodesFromRawText(el.textContent || '');
       for (const node of out) {
-        applyFormat(node, format);
-        applyTextStyle(node, style);
+        $applyFormat(node, format);
+        $applyTextStyle(node, style);
       }
       return out;
     }
@@ -416,8 +416,8 @@ const TextRule = defineImportRule({
       return [];
     }
     const text = $createTextNode(collapsed);
-    applyFormat(text, format);
-    applyTextStyle(text, style);
+    $applyFormat(text, format);
+    $applyTextStyle(text, style);
     return [text];
   },
   match: sel.text(),

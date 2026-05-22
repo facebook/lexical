@@ -25,6 +25,7 @@ import {
 import {
   $createParagraphNode,
   $createTextNode,
+  $getEditor,
   $getRoot,
   $getSelection,
   $isParagraphNode,
@@ -83,12 +84,12 @@ describe('ClipboardImportExtension', () => {
           configExtension(ClipboardImportExtension, {
             $importMimeType: {
               'text/html': [
-                (_html, selection, e) => {
+                (_html, selection) => {
                   called++;
                   const p = $createParagraphNode().append(
                     $createTextNode('[custom]'),
                   );
-                  $insertGeneratedNodes(e, [p], selection);
+                  $insertGeneratedNodes($getEditor(), [p], selection);
                   return true;
                 },
               ],
@@ -116,7 +117,7 @@ describe('ClipboardImportExtension', () => {
           configExtension(ClipboardImportExtension, {
             $importMimeType: {
               'text/html': [
-                (_html, _selection, _editor, next) => {
+                (_html, _selection, next) => {
                   deferred = true;
                   return next();
                 },
@@ -145,12 +146,12 @@ describe('ClipboardImportExtension', () => {
           configExtension(ClipboardImportExtension, {
             $importMimeType: {
               'application/vnd.myapp+json': [
-                (data, selection, e) => {
+                (data, selection) => {
                   saw = data;
                   const p = $createParagraphNode().append(
                     $createTextNode(`[${data}]`),
                   );
-                  $insertGeneratedNodes(e, [p], selection);
+                  $insertGeneratedNodes($getEditor(), [p], selection);
                   return true;
                 },
               ],
@@ -203,7 +204,7 @@ describe('ClipboardImportExtension', () => {
                 },
               ],
               'text/html': [
-                (_html, _selection, _e, next) => {
+                (_html, _selection, next) => {
                   htmlCalls++;
                   return next();
                 },
@@ -244,13 +245,13 @@ describe('ClipboardImportExtension', () => {
           configExtension(ClipboardImportExtension, {
             $importMimeType: {
               'text/html': [
-                (html, selection, e) => {
+                (html, selection) => {
                   const parser = new DOMParser();
                   const dom = parser.parseFromString(html, 'text/html');
                   const nodes = $generateNodesFromDOMViaExtension(dom, {
                     context: [contextValue(ImportSource, 'paste')],
                   });
-                  $insertGeneratedNodes(e, nodes, selection);
+                  $insertGeneratedNodes($getEditor(), nodes, selection);
                   return true;
                 },
               ],

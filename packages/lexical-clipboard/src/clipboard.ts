@@ -150,9 +150,12 @@ export function $insertDataTransferForPlainText(
 export function $insertDataTransferForRichText(
   dataTransfer: DataTransfer,
   selection: BaseSelection,
-  editor: LexicalEditor,
+  _editor: LexicalEditor,
 ): void {
-  $getImportOutput(editor).$insertDataTransfer(dataTransfer, selection, editor);
+  // `_editor` is retained on the public signature for backwards
+  // compatibility; the new pipeline reads the active editor with
+  // `$getEditor()` inside its handlers.
+  $getImportOutput().$insertDataTransfer(dataTransfer, selection);
 }
 
 const LEXICAL_DRAG_MIME_TYPE = 'application/x-lexical-drag';

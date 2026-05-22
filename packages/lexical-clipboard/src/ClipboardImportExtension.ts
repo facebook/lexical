@@ -6,7 +6,7 @@
  *
  */
 
-import type {BaseSelection, LexicalEditor} from 'lexical';
+import type {BaseSelection} from 'lexical';
 
 import {configExtension, getPeerDependencyFromEditor} from '@lexical/extension';
 import {
@@ -18,6 +18,7 @@ import {
 } from '@lexical/html';
 import {
   $createTabNode,
+  $getEditor,
   $getSelection,
   $isRangeSelection,
   defineExtension,
@@ -35,10 +36,13 @@ import {
  * A middleware function in a per-MIME-type clipboard-import stack. Mirrors
  * the shape of {@link ExportMimeTypeFunction} on the export side.
  *
+ * Runs inside an editor read/update — handlers should pick up the active
+ * editor with `$getEditor()` if they need it (e.g. to pass to
+ * `$insertGeneratedNodes`).
+ *
  * - `data` is the non-empty string returned by `DataTransfer.getData(mime)`
  *   for this MIME type.
  * - `selection` is the current editor selection at the insertion point.
- * - `editor` is the editor being mutated.
  * - `next` defers to the next-lower handler in the stack (i.e. the handler
  *   that was registered earlier). Returns `true` if that handler claimed
  *   the data; `false` if no handler accepted it.
@@ -64,7 +68,6 @@ import {
 export type ImportMimeTypeFunction = (
   data: string,
   selection: BaseSelection,
-  editor: LexicalEditor,
   next: () => boolean,
   dataTransfer: DataTransfer,
 ) => boolean;
@@ -179,10 +182,10 @@ function trustHTML(html: string): string | TrustedHTML {
 const $defaultLexicalEditorImporter: ImportMimeTypeFunction = (
   data,
   selection,
-  editor,
   next,
 ) => {
   try {
+    const editor = $getEditor();
     const payload = JSON.parse(data);
     if (
       payload &&
@@ -209,10 +212,10 @@ const $defaultLexicalEditorImporter: ImportMimeTypeFunction = (
 const $defaultHtmlImporter: ImportMimeTypeFunction = (
   data,
   selection,
-  editor,
   next,
 ) => {
   try {
+    const editor = $getEditor();
     const parser = new DOMParser();
     const dom = parser.parseFromString(trustHTML(data) as string, 'text/html');
     const nodes = $generateNodesFromDOM(editor, dom);
@@ -284,20 +287,20 @@ export interface ClipboardImportOutput extends ClipboardImportConfig {
   /**
    * Try every MIME type in `priority` order against the `DataTransfer`,
    * invoking the configured stack for the first one that has a non-empty
-   * payload. Returns `true` if any stack claimed the data.
+   * payload. Returns `true` if any stack claimed the data. Must be called
+   * inside an editor read/update; uses `$getEditor()` to identify the
+   * active editor.
    */
   $insertDataTransfer(
     dataTransfer: DataTransfer,
     selection: BaseSelection,
-    editor: LexicalEditor,
   ): boolean;
 }
 
-function callImportMimeTypeFunctionStack(
+function $callImportMimeTypeFunctionStack(
   fns: ImportMimeTypeFunction[] | undefined,
   data: string,
   selection: BaseSelection,
-  editor: LexicalEditor,
   dataTransfer: DataTransfer,
 ): boolean {
   if (!fns) {
@@ -305,7 +308,7 @@ function callImportMimeTypeFunctionStack(
   }
   const callAt = (i: number): boolean =>
     fns[i]
-      ? fns[i](data, selection, editor, callAt.bind(null, i - 1), dataTransfer)
+      ? fns[i](data, selection, callAt.bind(null, i - 1), dataTransfer)
       : false;
   return callAt(fns.length - 1);
 }
@@ -340,7 +343,6 @@ function $runImport(
   config: ClipboardImportConfig,
   dataTransfer: DataTransfer,
   selection: BaseSelection,
-  editor: LexicalEditor,
 ): boolean {
   // Read once for the iOS Safari heuristic that skips text/html when it
   // matches text/plain verbatim (iOS Safari autocorrect produces a
@@ -355,11 +357,10 @@ function $runImport(
       continue;
     }
     if (
-      callImportMimeTypeFunctionStack(
+      $callImportMimeTypeFunctionStack(
         config.$importMimeType[mime],
         data,
         selection,
-        editor,
         dataTransfer,
       )
     ) {
@@ -371,31 +372,30 @@ function $runImport(
 
 const DEFAULT_OUTPUT: ClipboardImportOutput = {
   $importMimeType: DEFAULT_IMPORT_MIME_TYPE,
-  $insertDataTransfer(dataTransfer, selection, editor) {
-    return $runImport(
+  $insertDataTransfer: (dataTransfer, selection) =>
+    $runImport(
       {
         $importMimeType: DEFAULT_IMPORT_MIME_TYPE,
         priority: DEFAULT_IMPORT_MIME_TYPE_PRIORITY,
       },
       dataTransfer,
       selection,
-      editor,
-    );
-  },
+    ),
   priority: DEFAULT_IMPORT_MIME_TYPE_PRIORITY,
 };
 
 /**
  * @internal
  *
- * Look up the {@link ClipboardImportOutput} on the editor. Returns a
- * static default-backed output when no {@link ClipboardImportExtension}
+ * Look up the {@link ClipboardImportOutput} on the active editor. Returns
+ * a static default-backed output when no {@link ClipboardImportExtension}
  * is configured, so callers can always invoke `output.$insertDataTransfer`
- * regardless of whether the editor opted in.
+ * regardless of whether the editor opted in. Must be called inside an
+ * editor read/update.
  */
-export function $getImportOutput(editor: LexicalEditor): ClipboardImportOutput {
+export function $getImportOutput(): ClipboardImportOutput {
   const dep = getPeerDependencyFromEditor<typeof ClipboardImportExtension>(
-    editor,
+    $getEditor(),
     ClipboardImportExtension.name,
   );
   return dep ? dep.output : DEFAULT_OUTPUT;
@@ -411,7 +411,7 @@ export function $getImportOutput(editor: LexicalEditor): ClipboardImportOutput {
  * Route `text/html` pastes through {@link DOMImportExtension}, leaving the
  * defaults for other MIME types untouched:
  * ```ts
- * import {configExtension, defineExtension} from 'lexical';
+ * import {configExtension, defineExtension, $getEditor} from 'lexical';
  * import {
  *   ClipboardImportExtension,
  *   $insertGeneratedNodes,
@@ -431,7 +431,7 @@ export function $getImportOutput(editor: LexicalEditor): ClipboardImportOutput {
  *     configExtension(ClipboardImportExtension, {
  *       $importMimeType: {
  *         'text/html': [
- *           (html, selection, editor, _next, dataTransfer) => {
+ *           (html, selection, _next, dataTransfer) => {
  *             const parser = new DOMParser();
  *             const dom = parser.parseFromString(html, 'text/html');
  *             const nodes = $generateNodesFromDOMViaExtension(dom, {
@@ -440,7 +440,7 @@ export function $getImportOutput(editor: LexicalEditor): ClipboardImportOutput {
  *                 contextValue(ImportSourceDataTransfer, dataTransfer),
  *               ],
  *             });
- *             $insertGeneratedNodes(editor, nodes, selection);
+ *             $insertGeneratedNodes($getEditor(), nodes, selection);
  *             return true;
  *           },
  *         ],
@@ -451,15 +451,12 @@ export function $getImportOutput(editor: LexicalEditor): ClipboardImportOutput {
  * ```
  */
 export const ClipboardImportExtension = defineExtension({
-  build(_editor, config): ClipboardImportOutput {
-    return {
-      $importMimeType: config.$importMimeType,
-      $insertDataTransfer(dataTransfer, selection, editor) {
-        return $runImport(config, dataTransfer, selection, editor);
-      },
-      priority: config.priority,
-    };
-  },
+  build: (_editor, config): ClipboardImportOutput => ({
+    $importMimeType: config.$importMimeType,
+    $insertDataTransfer: (dataTransfer, selection) =>
+      $runImport(config, dataTransfer, selection),
+    priority: config.priority,
+  }),
   config: safeCast<ClipboardImportConfig>({
     $importMimeType: DEFAULT_IMPORT_MIME_TYPE,
     priority: DEFAULT_IMPORT_MIME_TYPE_PRIORITY,
@@ -527,7 +524,7 @@ export const ClipboardDOMImportExtension = defineExtension({
     configExtension(ClipboardImportExtension, {
       $importMimeType: {
         'text/html': [
-          (html, selection, editor, _next, dataTransfer) => {
+          (html, selection, _next, dataTransfer) => {
             const parser = new DOMParser();
             const dom = parser.parseFromString(
               trustHTML(html) as string,
@@ -539,7 +536,7 @@ export const ClipboardDOMImportExtension = defineExtension({
                 contextValue(ImportSourceDataTransfer, dataTransfer),
               ],
             });
-            $insertGeneratedNodes(editor, nodes, selection);
+            $insertGeneratedNodes($getEditor(), nodes, selection);
             return true;
           },
         ],

@@ -837,11 +837,13 @@ export interface ClipboardImportConfig {
 ```
 
 - `$importMimeType` — per-MIME-type stack of middleware functions
-  `(data, selection, editor, next, dataTransfer) => boolean`. Top of
-  stack runs first; `next()` defers to the next-lower; return `true`
-  to claim the data. The `dataTransfer` is the original `DataTransfer`
-  the paste/drop came from, so a handler can peek at companion MIME
-  types or attached files (see
+  `(data, selection, next, dataTransfer) => boolean`. Top of stack runs
+  first; `next()` defers to the next-lower; return `true` to claim the
+  data. Handlers run inside an editor read/update — call `$getEditor()`
+  if you need the editor instance (e.g. to pass to
+  `$insertGeneratedNodes`). The `dataTransfer` is the original
+  `DataTransfer` the paste/drop came from, so a handler can peek at
+  companion MIME types or attached files (see
   [`ImportSourceDataTransfer`](#importsourcedatatransfer) for how to
   surface it to rules).
 - `priority` — a per-MIME-type weight map (`Record<string, number>`,
@@ -892,6 +894,7 @@ before walking, or pre-strip a known wrapper), stack your own handler
 manually via `configExtension(ClipboardImportExtension, …)` instead:
 
 ```ts
+import {$getEditor, configExtension, defineExtension} from 'lexical';
 import {
   ClipboardImportExtension,
   $insertGeneratedNodes,
@@ -912,7 +915,7 @@ defineExtension({
     configExtension(ClipboardImportExtension, {
       $importMimeType: {
         'text/html': [
-          (html, selection, editor, _next, dataTransfer) => {
+          (html, selection, _next, dataTransfer) => {
             const parser = new DOMParser();
             const dom = parser.parseFromString(html, 'text/html');
             const nodes = $generateNodesFromDOMViaExtension(dom, {
@@ -921,7 +924,7 @@ defineExtension({
                 contextValue(ImportSourceDataTransfer, dataTransfer),
               ],
             });
-            $insertGeneratedNodes(editor, nodes, selection);
+            $insertGeneratedNodes($getEditor(), nodes, selection);
             return true;
           },
         ],

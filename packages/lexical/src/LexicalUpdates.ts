@@ -843,12 +843,29 @@ export function triggerCommandListeners<
 function $triggerEnqueuedUpdates(editor: LexicalEditor): void {
   const queuedUpdates = editor._updates;
 
-  if (queuedUpdates.length !== 0) {
-    const queuedUpdate = queuedUpdates.shift();
-    if (queuedUpdate) {
-      const [updateFn, options] = queuedUpdate;
-      $beginUpdate(editor, updateFn, options);
+  if (queuedUpdates.length === 0) {
+    editor._cascadeCount = 0;
+    return;
+  }
+  if (editor._cascadeCount++ > 99) {
+    editor._updates = [];
+    editor._cascadeCount = 0;
+    try {
+      invariant(
+        false,
+        'One or more update listeners are endlessly enqueueing more updates. May have encountered infinite recursion caused by update listeners that trigger additional updates without a stop condition.',
+      );
+    } catch (error) {
+      if (error instanceof Error) {
+        editor._onError(error);
+      }
     }
+    return;
+  }
+  const queuedUpdate = queuedUpdates.shift();
+  if (queuedUpdate) {
+    const [updateFn, options] = queuedUpdate;
+    $beginUpdate(editor, updateFn, options);
   }
 }
 

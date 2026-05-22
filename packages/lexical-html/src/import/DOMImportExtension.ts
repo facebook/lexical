@@ -15,13 +15,8 @@ import type {
   ImportContextPairOrUpdater,
 } from './types';
 
-import {getExtensionDependencyFromEditor} from '@lexical/extension';
-import {
-  $getEditor,
-  defineExtension,
-  type LexicalNode,
-  shallowMergeConfig,
-} from 'lexical';
+import {$getExtensionOutput} from '@lexical/extension';
+import {defineExtension, type LexicalNode, shallowMergeConfig} from 'lexical';
 
 import {DOMImportContextSymbol, DOMImportExtensionName} from '../constants';
 import {$withFullContext, contextFromPairs} from '../ContextRecord';
@@ -219,9 +214,8 @@ export function $generateNodesFromDOMViaExtension(
   dom: Document | ParentNode,
   options?: GenerateNodesFromDOMOptions,
 ): LexicalNode[] {
-  const dep = getExtensionDependencyFromEditor(
-    $getEditor(),
-    DOMImportExtension,
+  return $getExtensionOutput(DOMImportExtension).$generateNodesFromDOM(
+    dom,
+    options,
   );
-  return dep.output.$generateNodesFromDOM(dom, options);
 }

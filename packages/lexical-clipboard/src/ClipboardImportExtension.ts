@@ -8,7 +8,7 @@
 
 import type {BaseSelection} from 'lexical';
 
-import {configExtension, getPeerDependencyFromEditor} from '@lexical/extension';
+import {$getPeerDependency, configExtension} from '@lexical/extension';
 import {
   $generateNodesFromDOM,
   $generateNodesFromDOMViaExtension,
@@ -394,8 +394,7 @@ const DEFAULT_OUTPUT: ClipboardImportOutput = {
  * editor read/update.
  */
 export function $getImportOutput(): ClipboardImportOutput {
-  const dep = getPeerDependencyFromEditor<typeof ClipboardImportExtension>(
-    $getEditor(),
+  const dep = $getPeerDependency<typeof ClipboardImportExtension>(
     ClipboardImportExtension.name,
   );
   return dep ? dep.output : DEFAULT_OUTPUT;

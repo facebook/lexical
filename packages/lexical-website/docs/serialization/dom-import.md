@@ -358,8 +358,12 @@ The desired output is to lift each block out of the link and
 redistribute the link onto the block's inline contents:
 
 ```
-HeadingNode  └─ LinkNode("link")     └─ TextNode("some text")
-ParagraphNode └─ LinkNode("link")    └─ TextNode("more text")
+HeadingNode
+└─ LinkNode("link")
+   └─ TextNode("some text")
+ParagraphNode
+└─ LinkNode("link")
+   └─ TextNode("more text")
 ```
 
 `InlineSchema` doesn't help here: with `onReject: 'drop'` the

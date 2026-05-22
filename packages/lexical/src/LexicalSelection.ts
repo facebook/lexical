@@ -49,10 +49,11 @@ import {
   CaretRange,
   ChildCaret,
   COLLABORATION_TAG,
+  type LineBreakNode,
   NodeCaret,
   PointCaret,
   SKIP_SCROLL_INTO_VIEW_TAG,
-  TextNode,
+  type TextNode,
 } from '.';
 import {TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
 import {
@@ -3237,9 +3238,11 @@ export function $insertNodes(nodes: Array<LexicalNode>) {
  * without a selection — e.g. when building a `CodeNode`'s children
  * inside a DOM-import rule.
  */
-export function $generateNodesFromRawText(text: string): LexicalNode[] {
+export function $generateNodesFromRawText(
+  text: string,
+): (TextNode | LineBreakNode)[] {
   const parts = text.split(/(\r?\n|\t)/);
-  const nodes: LexicalNode[] = [];
+  const nodes: (TextNode | LineBreakNode)[] = [];
   for (const part of parts) {
     if (part === '\n' || part === '\r\n') {
       nodes.push($createLineBreakNode());

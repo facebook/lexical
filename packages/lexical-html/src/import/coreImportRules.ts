@@ -333,14 +333,7 @@ function collapseWhitespace(
 }
 
 function applyFormat(node: LexicalNode, format: number): LexicalNode {
-  if (
-    format !== 0 &&
-    'setFormat' in node &&
-    typeof node.setFormat === 'function'
-  ) {
-    (node as unknown as {setFormat(f: number): void}).setFormat(format);
-  }
-  return node;
+  return format !== 0 && $isTextNode(node) ? node.setFormat(format) : node;
 }
 
 /**

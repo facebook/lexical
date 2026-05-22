@@ -22,6 +22,7 @@ import {
 import {
   $generateNodesFromSerializedNodes,
   $insertGeneratedNodes,
+  LexicalClipboardData,
 } from './clipboard';
 
 /**
@@ -80,7 +81,9 @@ export type ImportMimeTypeFunction = (
  */
 
 export type ImportMimeTypeConfig = {
-  [key: string]: ImportMimeTypeFunction[] | undefined;
+  [key in keyof LexicalClipboardData | (string & {})]?:
+    | ImportMimeTypeFunction[]
+    | undefined;
 };
 
 /**

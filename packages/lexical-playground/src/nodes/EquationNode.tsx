@@ -142,7 +142,13 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
   }
 
   isInline(): boolean {
-    return this.getLatest().__inline;
+    // `__inline` is fixed at construction (no setter, `clone` and
+    // `updateFromJSON` copy the same value). Reading it directly keeps
+    // `isInline()` safe to call on prev-state node references that the
+    // reconciler hands to `isLastChildLineBreakOrDecorator` while
+    // committing a removal — those references resolve to `null` under
+    // `getLatest()` once the node is dropped from the active node map.
+    return this.__inline;
   }
 
   getEquation(): string {

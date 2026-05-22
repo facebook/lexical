@@ -39,7 +39,7 @@ import {
 import invariant from 'shared/invariant';
 
 import {contextValue} from './ContextRecord';
-import {$inlineStylesFromStyleSheets} from './import/inlineStylesFromStyleSheets';
+import {$inlineStylesFromStyleSheetsDOM} from './import/inlineStylesFromStyleSheets';
 import {
   $withRenderContext,
   RenderContextExport,
@@ -136,17 +136,7 @@ export function $generateNodesFromDOM(
   editor: LexicalEditor,
   dom: Document | ParentNode,
 ): Array<LexicalNode> {
-  if (isDOMDocumentNode(dom)) {
-    // The shared helper has a DOMPreprocessFn signature; the legacy
-    // pipeline doesn't have a real `ctx` or `$next` to thread through,
-    // so we pass a no-op `$next` and a minimal context placeholder.
-    $inlineStylesFromStyleSheets(
-      dom,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      {} as any,
-      () => {},
-    );
-  }
+  $inlineStylesFromStyleSheetsDOM(dom);
 
   const elements = isDOMDocumentNode(dom)
     ? dom.body.childNodes

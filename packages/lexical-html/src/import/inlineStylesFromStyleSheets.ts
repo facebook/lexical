@@ -36,13 +36,18 @@ export const $inlineStylesFromStyleSheets: DOMPreprocessFn = (
   _ctx,
   $next,
 ) => {
+  $inlineStylesFromStyleSheetsDOM(dom);
+  $next();
+};
+
+export function $inlineStylesFromStyleSheetsDOM(
+  dom: Document | ParentNode,
+): void {
   if (!isDOMDocumentNode(dom)) {
-    $next();
     return;
   }
   const doc = dom;
   if (doc.querySelector('style') === null) {
-    $next();
     return;
   }
 
@@ -99,5 +104,4 @@ export const $inlineStylesFromStyleSheets: DOMPreprocessFn = (
   } catch {
     // styleSheets API not supported in this environment
   }
-  $next();
-};
+}

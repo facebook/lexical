@@ -156,7 +156,7 @@ export const DOMImportExtension = defineExtension<
             ? fromOpts
             : Object.create(defaults || null);
         const session = new ImportSessionImpl(sessionRecord);
-        const preprocessCtx: DOMPreprocessContext = {editor, session};
+        const preprocessCtx: DOMPreprocessContext = {session};
         // Stack of preprocessors: config-level first, then per-call.
         // Top of stack (last in array) runs first; `next()` defers to
         // the next-lower one. Matches the GetClipboardDataExtension

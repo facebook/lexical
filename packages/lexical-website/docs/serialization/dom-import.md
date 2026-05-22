@@ -325,7 +325,6 @@ required.
 `ImportContext` is the per-rule environment exposed as `ctx` to
 `$import`. It provides:
 
-- `ctx.editor` — the active `LexicalEditor`.
 - `ctx.captures` — typed regex captures from this rule's selector.
 - `ctx.get(cfg)` — read an `ImportStateConfig` value.
 - `ctx.$importChildren(parent, opts)` — recurse into children.

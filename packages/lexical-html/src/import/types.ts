@@ -354,7 +354,6 @@ export type AnyDOMImportRule = DOMImportRule<any>;
 /**
  * Context exposed to a {@link DOMPreprocessFn}. Lets the preprocessor:
  *
- * - Read editor state via {@link DOMPreprocessContext.editor}.
  * - Write to the per-import {@link ImportSession} (the same
  *   `ctx.session` rules see during the walk). Writes mutate the
  *   root-layer context record, so they are visible to every scoped
@@ -363,8 +362,6 @@ export type AnyDOMImportRule = DOMImportRule<any>;
  * @experimental
  */
 export interface DOMPreprocessContext {
-  /** The editor driving this import. */
-  readonly editor: LexicalEditor;
   /**
    * Document-order-shared store, same instance as `ctx.session` in
    * rules. Use to pass info from the DOM preprocess phase (e.g.

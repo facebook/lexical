@@ -29,5 +29,7 @@ No publish step is involved.
 `pnpm install`):
 
 ```sh
-pnpm -F @lexical/dev-node-state-style-example dev
+pnpm run start:dev-example node-state-style
 ```
+
+(or `pnpm -F @lexical/dev-node-state-style-example dev` directly.)

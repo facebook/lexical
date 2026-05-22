@@ -51,5 +51,7 @@ default `vite.config.ts`).
 `pnpm install`):
 
 ```sh
-pnpm -F @lexical/dev-dom-import-example dev
+pnpm run start:dev-example dom-import
 ```
+
+(or `pnpm -F @lexical/dev-dom-import-example dev` directly.)

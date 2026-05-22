@@ -483,7 +483,7 @@ the branched subtree see the unchanged inherited value.
   primes its overlay stack from this list before starting, so a
   preprocess can scope an overlay to the whole document based on a
   signal it detected (e.g. a Word `Generator` meta tag). See
-  [Preprocess](#preprocess).
+  [Preprocessors](#preprocessors).
 - **`ImportWhitespaceConfig`** — controls text-node whitespace
   handling (which DOM elements preserve whitespace, which count as
   inline siblings). See below.

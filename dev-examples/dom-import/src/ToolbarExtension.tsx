@@ -6,16 +6,14 @@
  *
  */
 
-import type {ReadonlySignal} from '@lexical/extension';
-
-import {signal} from '@lexical/extension';
+import {batch, signal} from '@lexical/extension';
 import {
   INSERT_CHECK_LIST_COMMAND,
   INSERT_ORDERED_LIST_COMMAND,
   INSERT_UNORDERED_LIST_COMMAND,
 } from '@lexical/list';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {useExtensionDependency} from '@lexical/react/useExtensionComponent';
+import {useExtensionSignalValue} from '@lexical/react/useExtensionSignalValue';
 import {INSERT_TABLE_COMMAND} from '@lexical/table';
 import {mergeRegister} from '@lexical/utils';
 import {
@@ -30,20 +28,12 @@ import {
   SELECTION_CHANGE_COMMAND,
   UNDO_COMMAND,
 } from 'lexical';
-import {type ReactNode, useMemo, useSyncExternalStore} from 'react';
-
-function useSignalValue<V>(s: ReadonlySignal<V>): V {
-  const [subscribe, getSnapshot] = useMemo(
-    () => [s.subscribe.bind(s), s.peek.bind(s)] as const,
-    [s],
-  );
-  return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
-}
+import {type ReactNode} from 'react';
 
 /**
  * Owns the toolbar's reactive state as a small set of signals and
  * keeps them in sync with the editor. The React `Toolbar` component
- * reads from these signals via {@link useExtensionDependency}, so the
+ * reads from these signals via {@link useExtensionSignalValue}, so the
  * editor-side and view-side responsibilities stay separated and the
  * component itself holds no local state.
  */
@@ -64,10 +54,15 @@ export const ToolbarExtension = defineExtension({
     const $sync = () => {
       const selection = $getSelection();
       if ($isRangeSelection(selection)) {
-        out.isBold.value = selection.hasFormat('bold');
-        out.isItalic.value = selection.hasFormat('italic');
-        out.isUnderline.value = selection.hasFormat('underline');
-        out.isStrikethrough.value = selection.hasFormat('strikethrough');
+        // `batch` coalesces the four writes into a single signal-system
+        // notification so subscribers re-render once per sync instead
+        // of once per format flip.
+        batch(() => {
+          out.isBold.value = selection.hasFormat('bold');
+          out.isItalic.value = selection.hasFormat('italic');
+          out.isUnderline.value = selection.hasFormat('underline');
+          out.isStrikethrough.value = selection.hasFormat('strikethrough');
+        });
       }
     };
     return mergeRegister(
@@ -110,13 +105,15 @@ interface ToolbarProps {
 
 export function Toolbar({children}: ToolbarProps) {
   const [editor] = useLexicalComposerContext();
-  const out = useExtensionDependency(ToolbarExtension).output;
-  const canUndo = useSignalValue(out.canUndo);
-  const canRedo = useSignalValue(out.canRedo);
-  const isBold = useSignalValue(out.isBold);
-  const isItalic = useSignalValue(out.isItalic);
-  const isUnderline = useSignalValue(out.isUnderline);
-  const isStrikethrough = useSignalValue(out.isStrikethrough);
+  const canUndo = useExtensionSignalValue(ToolbarExtension, 'canUndo');
+  const canRedo = useExtensionSignalValue(ToolbarExtension, 'canRedo');
+  const isBold = useExtensionSignalValue(ToolbarExtension, 'isBold');
+  const isItalic = useExtensionSignalValue(ToolbarExtension, 'isItalic');
+  const isUnderline = useExtensionSignalValue(ToolbarExtension, 'isUnderline');
+  const isStrikethrough = useExtensionSignalValue(
+    ToolbarExtension,
+    'isStrikethrough',
+  );
 
   return (
     <div className="toolbar">

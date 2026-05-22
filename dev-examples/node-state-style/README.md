@@ -29,6 +29,5 @@ No publish step is involved.
 `pnpm install`):
 
 ```sh
-cd dev-examples/node-state-style
-pnpm run dev
+pnpm -F @lexical/dev-node-state-style-example dev
 ```

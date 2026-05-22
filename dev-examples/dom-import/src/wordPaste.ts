@@ -8,6 +8,7 @@
 
 import {configExtension} from '@lexical/extension';
 import {
+  createImportState,
   defineImportRule,
   defineOverlayRules,
   type DOMImportContext,
@@ -128,21 +129,28 @@ function $buildWordListTree(
 }
 
 /**
- * Tracks `<p class="MsoListParagraph*">` elements already absorbed by an
- * earlier sibling's list-construction pass, so the framework's normal
- * child iteration treats them as no-ops.
+ * Per-import session WeakSet tracking `<p class="MsoListParagraph*">`
+ * elements already absorbed by an earlier sibling's list-construction
+ * pass, so the framework's normal child iteration treats them as
+ * no-ops. Lives in session state so each import has its own set —
+ * a module-global WeakSet would leak entries across hot-reloads and
+ * cross-frame DOMs.
  */
-const WordListConsumed = new WeakSet<Element>();
+const WordListConsumed = createImportState<WeakSet<Element>>(
+  'word/consumed-list-items',
+  () => new WeakSet(),
+);
 
 const WordListParagraphRule = defineImportRule({
   $import: (ctx, el) => {
-    if (WordListConsumed.has(el)) {
+    const consumed = ctx.session.get(WordListConsumed);
+    if (consumed.has(el)) {
       return [];
     }
     const items: WordListItem[] = [];
     let cur: Node | null = el;
     while (cur && isWordListParagraph(cur)) {
-      WordListConsumed.add(cur);
+      consumed.add(cur);
       items.push({
         el: cur,
         level: readWordListLevel(cur),

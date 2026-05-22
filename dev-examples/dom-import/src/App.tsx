@@ -16,7 +16,6 @@ import {
 } from '@lexical/extension';
 import {HistoryExtension} from '@lexical/history';
 import {
-  $generateNodesFromDOMViaExtension,
   CoreImportExtension,
   HorizontalRuleImportExtension,
 } from '@lexical/html';
@@ -77,9 +76,6 @@ const editorExtension = defineExtension({
   namespace: 'DOM Import Demo',
   theme: ExampleTheme,
 });
-
-// Expose the import helper to the dialog button without prop-drilling.
-export {$generateNodesFromDOMViaExtension};
 
 export default function App() {
   return (

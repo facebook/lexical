@@ -293,8 +293,6 @@ export const TableImportRules = [TableRule, TableRowRule, TableCellRule];
 export const TableImportExtension = defineExtension({
   dependencies: [
     CoreImportExtension,
-    // Registers TableNode, TableRowNode, TableCellNode so the rules can
-    // safely $create them.
     TableExtension,
     configExtension(DOMImportExtension, {rules: TableImportRules}),
   ],

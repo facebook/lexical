@@ -240,8 +240,6 @@ export const ListImportRules = [
 export const ListImportExtension = defineExtension({
   dependencies: [
     CoreImportExtension,
-    // Registers ListNode + ListItemNode so the rules can safely call their
-    // $create helpers.
     ListExtension,
     configExtension(DOMImportExtension, {rules: ListImportRules}),
   ],

@@ -46,8 +46,6 @@ export const HorizontalRuleImportRules = [HorizontalRuleRule];
 export const HorizontalRuleImportExtension = defineExtension({
   dependencies: [
     CoreImportExtension,
-    // Brings in the HorizontalRuleNode class registration; without it the
-    // rule would create a node the editor doesn't know how to render.
     HorizontalRuleExtension,
     configExtension(DOMImportExtension, {rules: HorizontalRuleImportRules}),
   ],

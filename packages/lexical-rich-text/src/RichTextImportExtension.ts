@@ -122,8 +122,6 @@ export const RichTextImportRules = [
 export const RichTextImportExtension = defineExtension({
   dependencies: [
     CoreImportExtension,
-    // Registers HeadingNode + QuoteNode so the rules can safely call their
-    // $create helpers.
     RichTextExtension,
     configExtension(DOMImportExtension, {rules: RichTextImportRules}),
   ],

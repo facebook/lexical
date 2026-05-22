@@ -61,7 +61,6 @@ export const LinkImportRules = [AnchorRule];
 export const LinkImportExtension = defineExtension({
   dependencies: [
     CoreImportExtension,
-    // Registers LinkNode so the import rules can safely $createLinkNode.
     LinkExtension,
     configExtension(DOMImportExtension, {rules: LinkImportRules}),
   ],

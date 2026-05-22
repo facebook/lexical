@@ -139,15 +139,6 @@ function isMonospacePreElement(el: Element): boolean {
   );
 }
 
-function trimBlankLines(lines: string[]): void {
-  while (lines.length > 0 && lines[0] === '') {
-    lines.shift();
-  }
-  while (lines.length > 0 && lines[lines.length - 1] === '') {
-    lines.pop();
-  }
-}
-
 /**
  * Split a monospace-pre wrapper element into logical code lines:
  * `<div>` children contribute their text content as one line,
@@ -194,11 +185,7 @@ function splitMonospaceWrapperLines(el: HTMLElement): string[] | null {
     }
   }
   flush();
-  if (!hasBlockChild) {
-    return null;
-  }
-  trimBlankLines(lines);
-  return lines;
+  return hasBlockChild ? lines : null;
 }
 
 /**
@@ -283,7 +270,6 @@ const VscodeLineRunRule = defineImportRule({
       lines.push(cur.tagName === 'BR' ? '' : cur.textContent || '');
       cur = cur.nextElementSibling;
     }
-    trimBlankLines(lines);
     if (lines.length < 2) {
       return $next();
     }
@@ -422,8 +408,6 @@ export const CodeImportRules = [
 export const CodeImportExtension = defineExtension({
   dependencies: [
     CoreImportExtension,
-    // Registers CodeNode (and CodeHighlightNode) so the rules can safely
-    // $createCodeNode.
     CodeExtension,
     configExtension(DOMImportExtension, {
       preprocess: [$installVscodeCodePasteOverlay],

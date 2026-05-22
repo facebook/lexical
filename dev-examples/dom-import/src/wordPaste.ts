@@ -132,18 +132,23 @@ function $buildWordListTree(
  * Per-import session WeakSet tracking `<p class="MsoListParagraph*">`
  * elements already absorbed by an earlier sibling's list-construction
  * pass, so the framework's normal child iteration treats them as
- * no-ops. Lives in session state so each import has its own set —
- * a module-global WeakSet would leak entries across hot-reloads and
- * cross-frame DOMs.
+ * no-ops. The state's default is `null`; the rule lazily initializes
+ * a fresh WeakSet into the session on first use, since
+ * `createImportState`'s default factory is called once at state
+ * creation and the result is shared (see ImportContext.ts).
  */
-const WordListConsumed = createImportState<WeakSet<Element>>(
+const WordListConsumed = createImportState<WeakSet<Element> | null>(
   'word/consumed-list-items',
-  () => new WeakSet(),
+  () => null,
 );
 
 const WordListParagraphRule = defineImportRule({
   $import: (ctx, el) => {
-    const consumed = ctx.session.get(WordListConsumed);
+    let consumed = ctx.session.get(WordListConsumed);
+    if (consumed === null) {
+      consumed = new WeakSet();
+      ctx.session.set(WordListConsumed, consumed);
+    }
     if (consumed.has(el)) {
       return [];
     }

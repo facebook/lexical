@@ -6,7 +6,7 @@
  *
  */
 
-import type {ChildSchema} from '@lexical/html';
+import type {ChildSchema, ImportContextPairOrUpdater} from '@lexical/html';
 
 import {
   contextValue,
@@ -231,18 +231,20 @@ const TableCellRule = defineImportRule({
     const cellStyle: Readonly<Record<string, string>> = color
       ? {...inheritedStyle, color}
       : inheritedStyle;
-    const branchContext = [];
+    const branchContext: ImportContextPairOrUpdater[] = [];
     if (cellFormat !== inheritedFormat) {
       branchContext.push(contextValue(ImportTextFormat, cellFormat));
     }
     if (cellStyle !== inheritedStyle) {
       branchContext.push(contextValue(ImportTextStyle, cellStyle));
     }
-    const rawChildren =
-      branchContext.length === 0
-        ? ctx.$importChildren(el)
-        : ctx.$importChildren(el, {context: branchContext});
-    return [cell.splice(0, 0, $packageCellChildren(rawChildren))];
+    return [
+      cell.splice(
+        0,
+        0,
+        $packageCellChildren(ctx.$importChildren(el, {context: branchContext})),
+      ),
+    ];
   },
   match: sel.tag('td', 'th'),
   name: '@lexical/table/cell',

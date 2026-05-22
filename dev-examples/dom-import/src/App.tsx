@@ -6,17 +6,12 @@
  *
  */
 
-import {
-  CodeHighlightNode,
-  CodeImportExtension,
-  CodeNode,
-} from '@lexical/code-core';
+import {CodeImportExtension} from '@lexical/code-core';
 import {CodeShikiExtension} from '@lexical/code-shiki';
 import {
   AutoFocusExtension,
   configExtension,
   HorizontalRuleExtension,
-  HorizontalRuleNode,
   TabIndentationExtension,
 } from '@lexical/extension';
 import {HistoryExtension} from '@lexical/history';
@@ -25,30 +20,17 @@ import {
   CoreImportExtension,
   HorizontalRuleImportExtension,
 } from '@lexical/html';
-import {LinkExtension, LinkImportExtension, LinkNode} from '@lexical/link';
+import {LinkExtension, LinkImportExtension} from '@lexical/link';
 import {
   CheckListExtension,
   ListExtension,
   ListImportExtension,
-  ListItemNode,
-  ListNode,
 } from '@lexical/list';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
-import {
-  HeadingNode,
-  QuoteNode,
-  RichTextExtension,
-  RichTextImportExtension,
-} from '@lexical/rich-text';
-import {
-  TableCellNode,
-  TableExtension,
-  TableImportExtension,
-  TableNode,
-  TableRowNode,
-} from '@lexical/table';
-import {defineExtension, ParagraphNode, TextNode} from 'lexical';
+import {RichTextExtension, RichTextImportExtension} from '@lexical/rich-text';
+import {TableExtension, TableImportExtension} from '@lexical/table';
+import {defineExtension} from 'lexical';
 
 import ExampleTheme from './ExampleTheme';
 import {ImportHtmlButton} from './ImportHtmlDialog';
@@ -93,26 +75,6 @@ const editorExtension = defineExtension({
   ],
   name: '@lexical/examples/dom-import',
   namespace: 'DOM Import Demo',
-  // Markdown transformers in the default set require these nodes to
-  // be present in the editor config.
-  nodes: [
-    ParagraphNode,
-    TextNode,
-    HeadingNode,
-    QuoteNode,
-    ListNode,
-    ListItemNode,
-    LinkNode,
-    CodeNode,
-    CodeHighlightNode,
-    HorizontalRuleNode,
-    TableNode,
-    TableRowNode,
-    TableCellNode,
-  ],
-  onError(error: Error) {
-    throw error;
-  },
   theme: ExampleTheme,
 });
 

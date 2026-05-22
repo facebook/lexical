@@ -23,9 +23,8 @@ import {isAlignmentValue} from './coreImportRules';
  * True if the node fills a block slot at the root or inside another
  * block — covers both ElementNode-style blocks (paragraph, heading,
  * quote) and block-level DecoratorNodes (HorizontalRuleNode,
- * ImageNode-as-block, etc.). Calls {@link DecoratorNode.isInline} when
- * applicable, so it must run inside an editor read/update. Used by
- * {@link BlockSchema}, {@link RootSchema}, and {@link NestedBlockSchema}.
+ * ImageNode-as-block, etc.). Used by {@link BlockSchema},
+ * {@link RootSchema}, and {@link NestedBlockSchema}.
  *
  * @experimental
  */
@@ -59,10 +58,6 @@ export function $isBlockLevel(node: LexicalNode): boolean {
  * The returned list will contain a mix of blocks and wrapped inline
  * runs. The enclosing schema (typically {@link BlockSchema}) will
  * then package those inline wrappers into paragraphs as usual.
- *
- * Must run inside an editor read/update — calls `$is*` predicates
- * and `ElementNode.splice` / `getChildren` on `LexicalNode`
- * arguments.
  *
  * @experimental
  */

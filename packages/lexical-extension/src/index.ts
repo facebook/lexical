@@ -26,7 +26,6 @@ export {
   $getExtensionDependency,
   $getExtensionOutput,
   $getPeerDependency,
-  $getPeerDependencyOrThrow,
 } from './getExtensionDependency';
 export {getExtensionDependencyFromEditor} from './getExtensionDependencyFromEditor';
 export {

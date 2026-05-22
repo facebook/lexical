@@ -139,22 +139,20 @@ export function $insertDataTransferForPlainText(
 }
 
 /**
- * Attempts to insert content of the mime-types application/x-lexical-editor, text/html,
- * text/plain, or text/uri-list (in descending order of priority) from the provided DataTransfer
- * object into the editor at the provided selection.
+ * Insert the contents of `dataTransfer` at `selection` using the rich-text
+ * import pipeline (`application/x-lexical-editor` → `text/html` → `text/plain`
+ * → `text/uri-list`, in descending order of priority).
  *
  * @param dataTransfer an object conforming to the [DataTransfer interface] (https://html.spec.whatwg.org/multipage/dnd.html#the-datatransfer-interface)
  * @param selection the selection to use as the insertion point for the content in the DataTransfer object
- * @param editor the LexicalEditor the content is being inserted into.
+ * @param _editor unused; retained for backwards compatibility. Safe to
+ *   omit on new call sites.
  */
 export function $insertDataTransferForRichText(
   dataTransfer: DataTransfer,
   selection: BaseSelection,
-  _editor: LexicalEditor,
+  _editor?: LexicalEditor,
 ): void {
-  // `_editor` is retained on the public signature for backwards
-  // compatibility; the new pipeline reads the active editor with
-  // `$getEditor()` inside its handlers.
   $getImportOutput().$insertDataTransfer(dataTransfer, selection);
 }
 

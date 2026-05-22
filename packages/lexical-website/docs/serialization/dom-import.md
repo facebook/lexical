@@ -837,15 +837,12 @@ export interface ClipboardImportConfig {
 ```
 
 - `$importMimeType` — per-MIME-type stack of middleware functions
-  `(data, selection, next, dataTransfer) => boolean`. Top of stack runs
-  first; `next()` defers to the next-lower; return `true` to claim the
-  data. Handlers run inside an editor read/update — call `$getEditor()`
-  if you need the editor instance (e.g. to pass to
-  `$insertGeneratedNodes`). The `dataTransfer` is the original
-  `DataTransfer` the paste/drop came from, so a handler can peek at
-  companion MIME types or attached files (see
-  [`ImportSourceDataTransfer`](#importsourcedatatransfer) for how to
-  surface it to rules).
+  `(data, selection, $next, dataTransfer) => boolean`. Top of stack runs
+  first; `$next()` defers to the next-lower; return `true` to claim the
+  data. The `dataTransfer` is the original `DataTransfer` the paste/drop
+  came from, so a handler can peek at companion MIME types or attached
+  files (see [`ImportSourceDataTransfer`](#importsourcedatatransfer) for
+  how to surface it to rules).
 - `priority` — a per-MIME-type weight map (`Record<string, number>`,
   lower runs first). Composable: each extension contributes weights
   for its own MIME types without coordinating with others.
@@ -915,7 +912,7 @@ defineExtension({
     configExtension(ClipboardImportExtension, {
       $importMimeType: {
         'text/html': [
-          (html, selection, _next, dataTransfer) => {
+          (html, selection, _$next, dataTransfer) => {
             const parser = new DOMParser();
             const dom = parser.parseFromString(html, 'text/html');
             const nodes = $generateNodesFromDOMViaExtension(dom, {

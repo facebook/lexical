@@ -36,14 +36,10 @@ import {
  * A middleware function in a per-MIME-type clipboard-import stack. Mirrors
  * the shape of {@link ExportMimeTypeFunction} on the export side.
  *
- * Runs inside an editor read/update — handlers should pick up the active
- * editor with `$getEditor()` if they need it (e.g. to pass to
- * `$insertGeneratedNodes`).
- *
  * - `data` is the non-empty string returned by `DataTransfer.getData(mime)`
  *   for this MIME type.
  * - `selection` is the current editor selection at the insertion point.
- * - `next` defers to the next-lower handler in the stack (i.e. the handler
+ * - `$next` defers to the next-lower handler in the stack (i.e. the handler
  *   that was registered earlier). Returns `true` if that handler claimed
  *   the data; `false` if no handler accepted it.
  * - `dataTransfer` is the full {@link DataTransfer} the paste/drop came
@@ -58,7 +54,7 @@ import {
  *
  * The function should return `true` if it consumed the data (the caller
  * stops trying further handlers for this MIME type and does not move on to
- * the next MIME type). Return `next()` to delegate. Return `false` if the
+ * the next MIME type). Return `$next()` to delegate. Return `false` if the
  * function decided not to handle the data after inspecting it (e.g. the
  * JSON namespace didn't match) so a lower-priority handler — or the next
  * MIME type — gets a chance.
@@ -68,7 +64,7 @@ import {
 export type ImportMimeTypeFunction = (
   data: string,
   selection: BaseSelection,
-  next: () => boolean,
+  $next: () => boolean,
   dataTransfer: DataTransfer,
 ) => boolean;
 
@@ -182,7 +178,7 @@ function trustHTML(html: string): string | TrustedHTML {
 const $defaultLexicalEditorImporter: ImportMimeTypeFunction = (
   data,
   selection,
-  next,
+  $next,
 ) => {
   try {
     const editor = $getEditor();
@@ -199,7 +195,7 @@ const $defaultLexicalEditorImporter: ImportMimeTypeFunction = (
   } catch (error) {
     console.error(error);
   }
-  return next();
+  return $next();
 };
 
 /**
@@ -212,7 +208,7 @@ const $defaultLexicalEditorImporter: ImportMimeTypeFunction = (
 const $defaultHtmlImporter: ImportMimeTypeFunction = (
   data,
   selection,
-  next,
+  $next,
 ) => {
   try {
     const editor = $getEditor();
@@ -223,7 +219,7 @@ const $defaultHtmlImporter: ImportMimeTypeFunction = (
     return true;
   } catch (error) {
     console.error(error);
-    return next();
+    return $next();
   }
 };
 
@@ -287,9 +283,7 @@ export interface ClipboardImportOutput extends ClipboardImportConfig {
   /**
    * Try every MIME type in `priority` order against the `DataTransfer`,
    * invoking the configured stack for the first one that has a non-empty
-   * payload. Returns `true` if any stack claimed the data. Must be called
-   * inside an editor read/update; uses `$getEditor()` to identify the
-   * active editor.
+   * payload. Returns `true` if any stack claimed the data.
    */
   $insertDataTransfer(
     dataTransfer: DataTransfer,
@@ -390,8 +384,7 @@ const DEFAULT_OUTPUT: ClipboardImportOutput = {
  * Look up the {@link ClipboardImportOutput} on the active editor. Returns
  * a static default-backed output when no {@link ClipboardImportExtension}
  * is configured, so callers can always invoke `output.$insertDataTransfer`
- * regardless of whether the editor opted in. Must be called inside an
- * editor read/update.
+ * regardless of whether the editor opted in.
  */
 export function $getImportOutput(): ClipboardImportOutput {
   const dep = $getPeerDependency<typeof ClipboardImportExtension>(
@@ -430,7 +423,7 @@ export function $getImportOutput(): ClipboardImportOutput {
  *     configExtension(ClipboardImportExtension, {
  *       $importMimeType: {
  *         'text/html': [
- *           (html, selection, _next, dataTransfer) => {
+ *           (html, selection, _$next, dataTransfer) => {
  *             const parser = new DOMParser();
  *             const dom = parser.parseFromString(html, 'text/html');
  *             const nodes = $generateNodesFromDOMViaExtension(dom, {
@@ -523,7 +516,7 @@ export const ClipboardDOMImportExtension = defineExtension({
     configExtension(ClipboardImportExtension, {
       $importMimeType: {
         'text/html': [
-          (html, selection, _next, dataTransfer) => {
+          (html, selection, _$next, dataTransfer) => {
             const parser = new DOMParser();
             const dom = parser.parseFromString(
               trustHTML(html) as string,

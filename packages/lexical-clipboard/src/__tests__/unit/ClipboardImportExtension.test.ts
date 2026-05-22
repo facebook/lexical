@@ -117,9 +117,9 @@ describe('ClipboardImportExtension', () => {
           configExtension(ClipboardImportExtension, {
             $importMimeType: {
               'text/html': [
-                (_html, _selection, next) => {
+                (_html, _selection, $next) => {
                   deferred = true;
-                  return next();
+                  return $next();
                 },
               ],
             },
@@ -204,9 +204,9 @@ describe('ClipboardImportExtension', () => {
                 },
               ],
               'text/html': [
-                (_html, _selection, next) => {
+                (_html, _selection, $next) => {
                   htmlCalls++;
-                  return next();
+                  return $next();
                 },
               ],
             },

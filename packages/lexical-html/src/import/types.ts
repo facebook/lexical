@@ -295,8 +295,6 @@ export interface ChildSchema {
   readonly name?: string;
   /**
    * Returns `true` if `child` is a valid child of `parent` in this position.
-   * Invoked inside an editor read/update — receives `LexicalNode` arguments,
-   * so it can call `$is*` predicates and node methods directly.
    */
   $accepts(child: LexicalNode, parent: LexicalNode | null): boolean;
   /**
@@ -305,7 +303,7 @@ export interface ChildSchema {
    * same position in the child list and are not re-checked against
    * `$accepts` — the caller is trusted to return valid children. If
    * omitted, or if it returns an empty array, {@link ChildSchema.onReject}
-   * is consulted instead. Invoked inside an editor read/update.
+   * is consulted instead.
    */
   $packageRun?(
     rejected: LexicalNode[],
@@ -334,8 +332,7 @@ export interface ChildSchema {
   /**
    * Final pass over the assembled child list (after `$packageRun`). Returns
    * the children to actually attach. Use to enforce structural invariants
-   * (e.g. drop empty runs, pad short table rows). Invoked inside an editor
-   * read/update.
+   * (e.g. drop empty runs, pad short table rows).
    */
   $finalize?(
     children: LexicalNode[],

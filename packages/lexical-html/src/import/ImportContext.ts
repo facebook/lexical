@@ -120,6 +120,29 @@ export const ImportTextFormat: ImportStateConfig<number> = createImportState(
 );
 
 /**
+ * Built-in import-context state holding a parsed CSS-style record
+ * (the {@link getStyleObjectFromCSS} shape) that should apply to
+ * {@link TextNode}s produced during the current subtree. Mirrors the
+ * format-bit propagation in {@link ImportTextFormat} for properties
+ * that don't fit into the format bit mask — `color`, `font-family`,
+ * `font-size`, etc.
+ *
+ * Ancestor rules that contribute a style branch the context with a
+ * merged record; the core `#text` rule materializes the non-empty
+ * record to a CSS string and calls `setStyle` on the new TextNode.
+ * Once TextNode adopts a parsed style record, the materialization
+ * step will go away.
+ *
+ * @experimental
+ */
+export const ImportTextStyle: ImportStateConfig<
+  Readonly<Record<string, string>>
+> = createImportState<Readonly<Record<string, string>>>(
+  'textStyle',
+  () => ({}),
+);
+
+/**
  * Determines whether a given DOM element should be treated as preserving
  * whitespace (i.e. text content under it is not collapsed and is split on
  * `\n` / `\t` into `LineBreakNode` / `TabNode`). The default matches the

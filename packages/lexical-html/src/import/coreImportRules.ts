@@ -31,6 +31,7 @@ import {contextValue} from '../ContextRecord';
 import {defineImportRule} from './defineImportRule';
 import {
   ImportTextFormat,
+  ImportTextStyle,
   ImportWhitespaceConfig,
   type WhitespaceImportConfig,
 } from './ImportContext';
@@ -343,6 +344,32 @@ function applyFormat(node: LexicalNode, format: number): LexicalNode {
 }
 
 /**
+ * Inverse of {@link getStyleObjectFromCSS}: serialize a parsed style
+ * record back into a CSS declaration string suitable for
+ * `TextNode.setStyle`. Returns the empty string for an empty record.
+ */
+function styleObjectToCSS(style: Readonly<Record<string, string>>): string {
+  let css = '';
+  for (const prop in style) {
+    css += `${prop}: ${style[prop]}; `;
+  }
+  return css.trimEnd();
+}
+
+function applyTextStyle(
+  node: LexicalNode,
+  style: Readonly<Record<string, string>>,
+): LexicalNode {
+  if ($isTextNode(node)) {
+    const css = styleObjectToCSS(style);
+    if (css !== '') {
+      node.setStyle(css);
+    }
+  }
+  return node;
+}
+
+/**
  * `#text` rule. Inside a `<pre>` ancestor, preserve whitespace and split
  * on `\n` and `\t` into `LineBreakNode`/`TabNode` siblings. Otherwise
  * collapse whitespace using the same neighbor-aware rules as the legacy
@@ -351,13 +378,13 @@ function applyFormat(node: LexicalNode, format: number): LexicalNode {
 const TextRule = defineImportRule({
   $import: (ctx, el) => {
     const format = ctx.get(ImportTextFormat);
+    const style = ctx.get(ImportTextStyle);
     const wsConfig = ctx.get(ImportWhitespaceConfig);
     if (isInsidePreserveWhitespace(el, wsConfig)) {
       const out = $generateNodesFromRawText(el.textContent || '');
       for (const node of out) {
-        if ($isTextNode(node)) {
-          applyFormat(node, format);
-        }
+        applyFormat(node, format);
+        applyTextStyle(node, style);
       }
       return out;
     }
@@ -365,7 +392,10 @@ const TextRule = defineImportRule({
     if (collapsed === '') {
       return [];
     }
-    return [applyFormat($createTextNode(collapsed), format)];
+    const text = $createTextNode(collapsed);
+    applyFormat(text, format);
+    applyTextStyle(text, style);
+    return [text];
   },
   match: sel.text(),
   name: '@lexical/html/#text',

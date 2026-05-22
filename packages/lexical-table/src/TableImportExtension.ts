@@ -14,12 +14,12 @@ import {
   defineImportRule,
   DOMImportExtension,
   ImportTextFormat,
+  ImportTextStyle,
   sel,
 } from '@lexical/html';
 import {$descendantsMatching} from '@lexical/utils';
 import {
   $createParagraphNode,
-  $isElementNode,
   $isInlineElementOrDecoratorNode,
   $isLineBreakNode,
   $isTextNode,
@@ -72,38 +72,6 @@ function cellTextFormatMask(style: CSSStyleDeclaration): number {
     mask |= IS_STRIKETHROUGH;
   }
   return mask;
-}
-
-/**
- * Apply the cell's `color` inline style to every descendant TextNode
- * that doesn't already declare its own `color:` style. Format bits
- * (`bold` / `italic` / `underline` / `strikethrough`) propagate via
- * the {@link ImportTextFormat} context instead — the cell rule
- * branches the context before walking its children, so the core
- * `#text` rule applies them at construction time.
- */
-function applyCellColorToTextDescendants(
-  color: string,
-  children: readonly LexicalNode[],
-): void {
-  if (!color) {
-    return;
-  }
-  const decl = `color: ${color};`;
-  const visit = (node: LexicalNode) => {
-    if ($isElementNode(node)) {
-      for (const text of node.getAllTextNodes()) {
-        if (!text.getStyle().includes('color:')) {
-          text.setStyle(text.getStyle() + decl);
-        }
-      }
-    } else if ($isTextNode(node) && !node.getStyle().includes('color:')) {
-      node.setStyle(node.getStyle() + decl);
-    }
-  };
-  for (const child of children) {
-    visit(child);
-  }
 }
 
 /**
@@ -259,20 +227,27 @@ const TableCellRule = defineImportRule({
       cell.__verticalAlign = verticalAlign;
     }
     // Propagate the cell's bold/italic/underline/strikethrough as
-    // format bits via context, so the core `#text` rule applies them
-    // at construction time on every descendant TextNode — no post-walk
-    // needed for these.
+    // format bits, and the cell's `color` as a parsed-style record.
+    // The core `#text` rule reads both at construction time and
+    // applies them to each TextNode — no post-walk needed.
     const inheritedFormat = ctx.get(ImportTextFormat);
     const cellFormat = inheritedFormat | cellTextFormatMask(el.style);
+    const inheritedStyle = ctx.get(ImportTextStyle);
+    const color = el.style.color;
+    const cellStyle: Readonly<Record<string, string>> = color
+      ? {...inheritedStyle, color}
+      : inheritedStyle;
+    const branchContext = [];
+    if (cellFormat !== inheritedFormat) {
+      branchContext.push(contextValue(ImportTextFormat, cellFormat));
+    }
+    if (cellStyle !== inheritedStyle) {
+      branchContext.push(contextValue(ImportTextStyle, cellStyle));
+    }
     const rawChildren =
-      cellFormat === inheritedFormat
+      branchContext.length === 0
         ? ctx.$importChildren(el)
-        : ctx.$importChildren(el, {
-            context: [contextValue(ImportTextFormat, cellFormat)],
-          });
-    // `color` isn't a format bit; apply it to every descendant TextNode
-    // that doesn't already have its own `color:` style.
-    applyCellColorToTextDescendants(el.style.color, rawChildren);
+        : ctx.$importChildren(el, {context: branchContext});
     return [cell.splice(0, 0, $packageCellChildren(rawChildren))];
   },
   match: sel.tag('td', 'th'),

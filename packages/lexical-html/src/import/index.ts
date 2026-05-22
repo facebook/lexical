@@ -55,6 +55,7 @@ export {
   ImportSourceDataTransfer,
   type ImportSourceKind,
   ImportTextFormat,
+  ImportTextStyle,
   ImportWhitespaceConfig,
   type IsInlineForWhitespace,
   type IsPreserveWhitespaceDom,

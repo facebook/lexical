@@ -95,6 +95,7 @@ export {
   ImportSourceDataTransfer,
   type ImportSourceKind,
   ImportTextFormat,
+  ImportTextStyle,
   ImportWhitespaceConfig,
   InlineSchema,
   isElementOfTag,

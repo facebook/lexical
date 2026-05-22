@@ -43,7 +43,7 @@ test.describe('Regression tests for #6974', () => {
             height="0"
             src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
             width="0" />
-          <span role="button" tabindex="-1">
+          <span>
             <span>
               <span aria-hidden="true">
                 <span>
@@ -77,7 +77,7 @@ test.describe('Regression tests for #6974', () => {
             height="0"
             src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
             width="0" />
-          <span role="button" tabindex="-1">
+          <span>
             <span>
               <span aria-hidden="true">
                 <span>

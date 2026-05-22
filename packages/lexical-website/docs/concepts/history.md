@@ -61,3 +61,73 @@ Any actions like copy and paste typically trigger events that are not part of th
 
 **In Conclusion**
 Text undo coalescing greatly improves the usability of undo in that it allows the user to bypass all the intermediate events that went into forming or re-forming text within a paragraph. Given the modeless nature of text editing, limiting continuous typing to strictly three events allows for a robust and clean implementation. Implementers will need tight bottlenecks to trap selection changes, key focus changes as well as changes from collaborative clients. While the above is not complete by any means, I hope readers will find it helpful.
+
+## Tuning HistoryExtension for memory and long sessions
+
+`HistoryExtension` ships with config values chosen for the common case
+of a short-lived editor on a richly interactive surface. For
+applications that keep an editor mounted for a long time — chat
+threads, long documents, anything where the user may produce thousands
+of distinct history events without reloading the page — two settings
+are worth tuning explicitly.
+
+### `maxDepth` — cap the undo stack
+
+By default `maxDepth` is `null`, meaning the undo stack is
+**unbounded**. Every separate-history boundary (see "What Constitutes
+Continuous Typing?" above) pushes a `HistoryStateEntry` that retains a
+full `EditorState` snapshot. Snapshots share a copy-on-write
+`NodeMap`, so the marginal cost of any one entry is small, but it is
+not zero — and an unbounded stack accumulates a long tail over time.
+
+Set a finite `maxDepth` to keep the stack at a fixed length. The
+extension FIFO-evicts the oldest entries past the cap; older snapshots
+become unreachable and can be collected.
+
+```ts
+import {configExtension} from 'lexical';
+import {HistoryExtension} from '@lexical/history';
+
+const editorExtension = defineExtension({
+  // ...
+  dependencies: [
+    // 100 events is a reasonable starting point — it matches the
+    // ProseMirror history plugin's default depth and supports a deep
+    // enough undo stack for almost any interactive editing session.
+    configExtension(HistoryExtension, {maxDepth: 100}),
+  ],
+});
+```
+
+The cap is also exposed as a writable signal on
+`HistoryExtension.output.maxDepth`, so it can be reconfigured at
+runtime (the new value applies to future pushes — the current stack
+is not retroactively trimmed when the cap is lowered).
+
+### `delay` — coalesce more aggressively
+
+`delay` is the merge window during which adjacent edits collapse into
+the current history entry instead of pushing a new one. The default is
+`300`ms. A longer delay means fewer history events for the same
+typing burst, which:
+
+- reduces the rate at which `undoStack` grows, multiplying the effect
+  of any `maxDepth` cap, and
+- gives the user undo gestures that match larger semantic chunks of
+  their writing.
+
+For text-heavy editors a value in the `500`–`1000`ms range is common —
+ProseMirror's history plugin defaults to `newGroupDelay: 500`ms.
+
+```ts
+configExtension(HistoryExtension, {delay: 500, maxDepth: 100}),
+```
+
+### When NOT to cap history
+
+If your editor is short-lived (mounted only for the duration of a
+modal, page form, or single message draft) and undo is expected to
+reach back to the document's initial state, the default `maxDepth:
+null` is fine — the stack will be discarded with the editor instance.
+The cap matters when an editor is **long-lived** and can accumulate
+thousands of distinct history events without unmounting.

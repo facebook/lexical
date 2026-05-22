@@ -6,8 +6,13 @@ import {HistoryExtension} from '@lexical/history';
 import {ListExtension} from '@lexical/list';
 import {RichTextExtension} from '@lexical/rich-text';
 import {LinkExtension} from '@lexical/link';
+import {CodeExtension} from '@lexical/code';
+import {HorizontalRuleExtension} from '@lexical/extension';
 import {configExtension, defineExtension} from 'lexical';
 import {useEffect} from 'react';
+
+import {ToolbarStateExtension} from './extensions/ToolbarStateExtension';
+import {Toolbar} from './Toolbar';
 
 const myTheme = {
   text: {
@@ -37,6 +42,9 @@ const editorExtension = defineExtension({
     configExtension(HistoryExtension, {delay: 500, maxDepth: 100}),
     ListExtension,
     LinkExtension,
+    CodeExtension,
+    HorizontalRuleExtension,
+    ToolbarStateExtension,
   ],
 });
 
@@ -90,6 +98,7 @@ const LexicalEditor = () => (
       extension={editorExtension}
       contentEditable={null}>
       <ExposeForProbe />
+      <Toolbar />
       <ContentEditable
         className="ContentEditable__root"
         aria-label="Lexical editor"

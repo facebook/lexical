@@ -59,8 +59,9 @@ export function createImportState<V>(
 /**
  * The kind of operation that produced this import. Lets rules adapt
  * their behavior (e.g. preserve more whitespace on `'paste'`).
- * Defaults to `'unknown'`. Apps can extend the union via TypeScript
- * declaration merging if they want to distinguish more sources.
+ * Defaults to `'unknown'`. Apps that need a different vocabulary can
+ * define their own {@link ImportStateConfig} with whatever value type
+ * they want.
  *
  * @experimental
  */

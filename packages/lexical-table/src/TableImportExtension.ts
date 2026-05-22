@@ -9,19 +9,26 @@
 import type {ChildSchema} from '@lexical/html';
 
 import {
+  contextValue,
   CoreImportExtension,
   defineImportRule,
   DOMImportExtension,
+  ImportTextFormat,
   sel,
 } from '@lexical/html';
 import {$descendantsMatching} from '@lexical/utils';
 import {
   $createParagraphNode,
+  $isElementNode,
   $isInlineElementOrDecoratorNode,
   $isLineBreakNode,
   $isTextNode,
   configExtension,
   defineExtension,
+  IS_BOLD,
+  IS_ITALIC,
+  IS_STRIKETHROUGH,
+  IS_UNDERLINE,
   isHTMLElement,
   type LexicalNode,
   type ParagraphNode,
@@ -44,59 +51,58 @@ function isValidVerticalAlign(
 }
 
 /**
- * Read the inline-style format bits on a `<th>` / `<td>` and apply them
- * to TextNode descendants. Mirrors the legacy `$convertTableCellNodeElement`
- * post-processing — but expressed as a per-child mutation on the imported
- * lexical nodes rather than a forChild hook.
+ * Bitmask of TextNode format bits implied by a `<th>` / `<td>`'s
+ * inline styles (`font-weight: bold`, `font-style: italic`, and
+ * `underline` / `line-through` in `text-decoration`).
  */
-function applyCellStyleToTextDescendants(
-  cellStyle: CSSStyleDeclaration,
-  children: LexicalNode[],
-): void {
-  const textDecoration = ((cellStyle && cellStyle.textDecoration) || '').split(
-    ' ',
-  );
-  const hasBold =
-    cellStyle.fontWeight === '700' || cellStyle.fontWeight === 'bold';
-  const hasLineThrough = textDecoration.includes('line-through');
-  const hasItalic = cellStyle.fontStyle === 'italic';
-  const hasUnderline = textDecoration.includes('underline');
-  const color = cellStyle.color;
+function cellTextFormatMask(style: CSSStyleDeclaration): number {
+  let mask = 0;
+  const fontWeight = style.fontWeight;
+  if (fontWeight === '700' || fontWeight === 'bold') {
+    mask |= IS_BOLD;
+  }
+  if (style.fontStyle === 'italic') {
+    mask |= IS_ITALIC;
+  }
+  const decoration = (style.textDecoration || '').split(' ');
+  if (decoration.includes('underline')) {
+    mask |= IS_UNDERLINE;
+  }
+  if (decoration.includes('line-through')) {
+    mask |= IS_STRIKETHROUGH;
+  }
+  return mask;
+}
 
-  const apply = (node: LexicalNode): void => {
-    if ($isTextNode(node)) {
-      if (hasBold) {
-        node.toggleFormat('bold');
-      }
-      if (hasLineThrough) {
-        node.toggleFormat('strikethrough');
-      }
-      if (hasItalic) {
-        node.toggleFormat('italic');
-      }
-      if (hasUnderline) {
-        node.toggleFormat('underline');
-      }
-      if (color) {
-        const existingStyle = node.getStyle();
-        if (!existingStyle.includes('color:')) {
-          node.setStyle(existingStyle + `color: ${color};`);
+/**
+ * Apply the cell's `color` inline style to every descendant TextNode
+ * that doesn't already declare its own `color:` style. Format bits
+ * (`bold` / `italic` / `underline` / `strikethrough`) propagate via
+ * the {@link ImportTextFormat} context instead — the cell rule
+ * branches the context before walking its children, so the core
+ * `#text` rule applies them at construction time.
+ */
+function applyCellColorToTextDescendants(
+  color: string,
+  children: readonly LexicalNode[],
+): void {
+  if (!color) {
+    return;
+  }
+  const decl = `color: ${color};`;
+  const visit = (node: LexicalNode) => {
+    if ($isElementNode(node)) {
+      for (const text of node.getAllTextNodes()) {
+        if (!text.getStyle().includes('color:')) {
+          text.setStyle(text.getStyle() + decl);
         }
       }
-    } else if (
-      'getChildren' in node &&
-      typeof node.getChildren === 'function'
-    ) {
-      const inner = (
-        node as unknown as {getChildren(): LexicalNode[]}
-      ).getChildren();
-      for (const c of inner) {
-        apply(c);
-      }
+    } else if ($isTextNode(node) && !node.getStyle().includes('color:')) {
+      node.setStyle(node.getStyle() + decl);
     }
   };
   for (const child of children) {
-    apply(child);
+    visit(child);
   }
 }
 
@@ -252,8 +258,21 @@ const TableCellRule = defineImportRule({
     if (isValidVerticalAlign(verticalAlign)) {
       cell.__verticalAlign = verticalAlign;
     }
-    const rawChildren = ctx.$importChildren(el);
-    applyCellStyleToTextDescendants(el.style, rawChildren);
+    // Propagate the cell's bold/italic/underline/strikethrough as
+    // format bits via context, so the core `#text` rule applies them
+    // at construction time on every descendant TextNode — no post-walk
+    // needed for these.
+    const inheritedFormat = ctx.get(ImportTextFormat);
+    const cellFormat = inheritedFormat | cellTextFormatMask(el.style);
+    const rawChildren =
+      cellFormat === inheritedFormat
+        ? ctx.$importChildren(el)
+        : ctx.$importChildren(el, {
+            context: [contextValue(ImportTextFormat, cellFormat)],
+          });
+    // `color` isn't a format bit; apply it to every descendant TextNode
+    // that doesn't already have its own `color:` style.
+    applyCellColorToTextDescendants(el.style.color, rawChildren);
     return [cell.splice(0, 0, $packageCellChildren(rawChildren))];
   },
   match: sel.tag('td', 'th'),

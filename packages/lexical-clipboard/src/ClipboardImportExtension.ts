@@ -104,7 +104,11 @@ export type ImportMimeTypeConfig = {
  *
  * @experimental
  */
-export type ImportMimeTypePriority = Readonly<Record<string, number>>;
+export type ImportMimeTypePriority = {
+  readonly [key in keyof LexicalClipboardData | (string & {})]?:
+    | number
+    | undefined;
+};
 
 /**
  * Configuration for {@link ClipboardImportExtension}.

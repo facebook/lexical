@@ -982,7 +982,7 @@ test.describe.parallel('Markdown', () => {
               height="0"
               src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
               width="0" />
-            <span role="button" tabindex="-1">
+            <span>
               <span class="katex">
                 <span class="katex-html" aria-hidden="true">
                   <span class="base">

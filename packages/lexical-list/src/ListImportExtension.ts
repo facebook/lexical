@@ -12,6 +12,7 @@ import {
   CoreImportExtension,
   defineImportRule,
   DOMImportExtension,
+  isElementOfTag,
   sel,
 } from '@lexical/html';
 import {
@@ -95,9 +96,8 @@ function $normalizeListChildren(
 const ListRule = defineImportRule({
   $import: (ctx, el) => {
     let node;
-    if (el.nodeName === 'OL') {
-      const start = (el as HTMLOListElement).start;
-      node = $createListNode('number', start);
+    if (isElementOfTag(el, 'ol')) {
+      node = $createListNode('number', el.start);
     } else if (isDomChecklist(el)) {
       node = $createListNode('check');
     } else {
@@ -170,11 +170,9 @@ function $buildChecklistItem(
   el: HTMLElement,
   checkboxOwner: Element,
 ): LexicalNode[] {
-  const checkboxInput = isElement(checkboxOwner, 'input')
-    ? (checkboxOwner as HTMLInputElement)
-    : (checkboxOwner.querySelector(
-        'input[type="checkbox"]',
-      ) as HTMLInputElement | null);
+  const checkboxInput = isElementOfTag(checkboxOwner, 'input')
+    ? checkboxOwner
+    : checkboxOwner.querySelector<HTMLInputElement>('input[type="checkbox"]');
   if (!checkboxInput || checkboxInput.getAttribute('type') !== 'checkbox') {
     return [];
   }
@@ -189,10 +187,6 @@ function $buildChecklistItem(
       liftFormatFromSingleParagraph(node, ctx.$importChildren(el)),
     ),
   ];
-}
-
-function isElement(node: Node, tag: string): boolean {
-  return isHTMLElement(node) && node.nodeName === tag.toUpperCase();
 }
 
 const TaskListItemRule = defineImportRule({

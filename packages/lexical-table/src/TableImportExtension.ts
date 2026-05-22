@@ -29,7 +29,7 @@ import {
   IS_ITALIC,
   IS_STRIKETHROUGH,
   IS_UNDERLINE,
-  isHTMLElement,
+  isHTMLTableRowElement,
   type LexicalNode,
   type ParagraphNode,
 } from 'lexical';
@@ -133,8 +133,10 @@ const TableRule = defineImportRule({
     const colGroup = el.querySelector(':scope > colgroup');
     if (colGroup) {
       let columns: number[] | undefined = [];
-      for (const col of colGroup.querySelectorAll(':scope > col')) {
-        let width = (col as HTMLElement).style.width || '';
+      for (const col of colGroup.querySelectorAll<HTMLTableColElement>(
+        ':scope > col',
+      )) {
+        let width = col.style.width || '';
         if (!PIXEL_VALUE_REG_EXP.test(width)) {
           width = col.getAttribute('width') || '';
           if (!/^\d+$/.test(width)) {
@@ -195,12 +197,11 @@ const TableCellRule = defineImportRule({
       } else {
         const parentRow = el.parentElement;
         const isInHeaderRow =
-          isHTMLElement(parentRow) &&
-          parentRow.nodeName === 'TR' &&
-          isHTMLElement(parentRow.parentElement) &&
-          (parentRow.parentElement.nodeName === 'THEAD' ||
-            (parentRow as HTMLTableRowElement).rowIndex === 0);
-        const isFirstColumn = (el as HTMLTableCellElement).cellIndex === 0;
+          isHTMLTableRowElement(parentRow) &&
+          ((parentRow.parentElement &&
+            parentRow.parentElement.nodeName === 'THEAD') ||
+            parentRow.rowIndex === 0);
+        const isFirstColumn = el.cellIndex === 0;
         if (isInHeaderRow) {
           headerState |= TableCellHeaderStates.ROW;
         }
@@ -212,12 +213,8 @@ const TableCellRule = defineImportRule({
         }
       }
     }
-    const cell = $createTableCellNode(
-      headerState,
-      (el as HTMLTableCellElement).colSpan,
-      width,
-    );
-    cell.__rowSpan = (el as HTMLTableCellElement).rowSpan;
+    const cell = $createTableCellNode(headerState, el.colSpan, width);
+    cell.__rowSpan = el.rowSpan;
     const backgroundColor = el.style.backgroundColor;
     if (backgroundColor !== '') {
       cell.__backgroundColor = backgroundColor;

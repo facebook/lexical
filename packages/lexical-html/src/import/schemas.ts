@@ -12,6 +12,7 @@ import {
   $isBlockElementNode,
   $isDecoratorNode,
   type ElementFormatType,
+  isHTMLElement,
   type LexicalNode,
 } from 'lexical';
 
@@ -95,10 +96,9 @@ function $paragraphPackageRun(
   domParent: Node | null,
 ): LexicalNode[] {
   const paragraph = $createParagraphNode();
-  const textAlign =
-    domParent && (domParent as HTMLElement).style
-      ? ((domParent as HTMLElement).style.textAlign as ElementFormatType)
-      : ('' as ElementFormatType);
+  const textAlign = isHTMLElement(domParent)
+    ? (domParent.style.textAlign as ElementFormatType)
+    : ('' as ElementFormatType);
   if (textAlign) {
     paragraph.setFormat(textAlign);
   }

@@ -6,6 +6,7 @@
  *
  */
 
+import {ClipboardDOMImportExtension} from '@lexical/clipboard';
 import {CodeImportExtension} from '@lexical/code-core';
 import {CodeShikiExtension} from '@lexical/code-shiki';
 import {
@@ -34,7 +35,6 @@ import {defineExtension} from 'lexical';
 import ExampleTheme from './ExampleTheme';
 import {ImportHtmlButton} from './ImportHtmlDialog';
 import {MarkdownShortcutsExtension} from './MarkdownShortcutsExtension';
-import {RouteHtmlPasteViaExtension} from './RouteHtmlPasteViaExtension';
 import {Toolbar, ToolbarExtension} from './ToolbarExtension';
 import {WordPasteExtension} from './wordPaste';
 
@@ -75,7 +75,7 @@ const editorExtension = defineExtension({
     // Route real `text/html` pastes through the DOMImportExtension
     // pipeline so the rules / overlays above actually fire on pastes,
     // not just on the "Import HTML" dialog.
-    RouteHtmlPasteViaExtension,
+    ClipboardDOMImportExtension,
   ],
   name: '@lexical/examples/dom-import',
   namespace: 'DOM Import Demo',

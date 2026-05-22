@@ -8,8 +8,14 @@
 
 import type {BaseSelection, LexicalEditor} from 'lexical';
 
-import {getPeerDependencyFromEditor} from '@lexical/extension';
-import {$generateNodesFromDOM} from '@lexical/html';
+import {configExtension, getPeerDependencyFromEditor} from '@lexical/extension';
+import {
+  $generateNodesFromDOM,
+  $generateNodesFromDOMViaExtension,
+  contextValue,
+  ImportSource,
+  ImportSourceDataTransfer,
+} from '@lexical/html';
 import {
   $createTabNode,
   $getSelection,
@@ -481,4 +487,64 @@ export const ClipboardImportExtension = defineExtension({
     return merged;
   },
   name: '@lexical/clipboard/Import',
+});
+
+/**
+ * @experimental
+ *
+ * Drop-in extension that routes `text/html` clipboard pastes and drops
+ * through the {@link DOMImportExtension} pipeline (rules, schemas,
+ * preprocessors, overlays) instead of the legacy
+ * {@link $generateNodesFromDOM}. Add to your extension dependencies along
+ * with the per-package import extensions you want active
+ * ({@link CoreImportExtension}, {@link RichTextImportExtension}, etc.).
+ *
+ * The original {@link DataTransfer} and `'paste'` source kind are forwarded
+ * into the import context so rules and preprocessors can read them via
+ * `ctx.get(ImportSourceDataTransfer)` / `ctx.get(ImportSource)`.
+ *
+ * Equivalent to stacking this `text/html` handler manually via
+ * `configExtension(ClipboardImportExtension, {...})`.
+ *
+ * @example
+ * ```ts
+ * import {defineExtension} from 'lexical';
+ * import {ClipboardDOMImportExtension} from '@lexical/clipboard';
+ * import {CoreImportExtension, RichTextImportExtension} from '@lexical/html';
+ *
+ * defineExtension({
+ *   name: 'app',
+ *   dependencies: [
+ *     CoreImportExtension,
+ *     RichTextImportExtension,
+ *     ClipboardDOMImportExtension,
+ *   ],
+ * });
+ * ```
+ */
+export const ClipboardDOMImportExtension = defineExtension({
+  dependencies: [
+    configExtension(ClipboardImportExtension, {
+      $importMimeType: {
+        'text/html': [
+          (html, selection, editor, _next, dataTransfer) => {
+            const parser = new DOMParser();
+            const dom = parser.parseFromString(
+              trustHTML(html) as string,
+              'text/html',
+            );
+            const nodes = $generateNodesFromDOMViaExtension(dom, {
+              context: [
+                contextValue(ImportSource, 'paste'),
+                contextValue(ImportSourceDataTransfer, dataTransfer),
+              ],
+            });
+            $insertGeneratedNodes(editor, nodes, selection);
+            return true;
+          },
+        ],
+      },
+    }),
+  ],
+  name: '@lexical/clipboard/DOMImport',
 });

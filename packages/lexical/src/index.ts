@@ -302,6 +302,8 @@ export {
   isExactShortcutMatch,
   isHTMLAnchorElement,
   isHTMLElement,
+  isHTMLTableCellElement,
+  isHTMLTableRowElement,
   isInlineDomNode,
   isLexicalEditor,
   isModifierMatch,

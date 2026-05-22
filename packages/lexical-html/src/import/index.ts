@@ -25,7 +25,7 @@ export const sel = {
   css: parseSelector,
   tag: selBase.tag,
   text: selBase.text,
-};
+} as const;
 
 export {CoreImportExtension} from './CoreImportExtension';
 export {CoreImportRules} from './coreImportRules';

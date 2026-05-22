@@ -19,6 +19,7 @@ import {
   defineImportRule,
   defineOverlayRules,
   DOMImportExtension,
+  type GenerateNodesFromDOMOptions,
   ImportSource,
   ImportTextFormat,
   InlineSchema,
@@ -31,6 +32,7 @@ import {JSDOM} from 'jsdom';
 import {
   $createParagraphNode,
   $createTextNode,
+  $getEditor,
   $getRoot,
   $getState,
   $isParagraphNode,
@@ -203,27 +205,23 @@ function buildTestEditor(extraRules: AnyDOMImportRule[]) {
 }
 
 function $generate(
-  editor: LexicalEditor,
   html: string,
-  options?: Parameters<
-    ReturnType<
-      typeof getExtensionDependencyFromEditor<typeof DOMImportExtension>
-    >['output']['$generateNodesFromDOM']
-  >[1],
+  options?: GenerateNodesFromDOMOptions,
 ): LexicalNode[] {
+  const editor = $getEditor();
   const dep = getExtensionDependencyFromEditor(editor, DOMImportExtension);
   const dom = new JSDOM(`<!doctype html><html><body>${html}</body></html>`);
   return dep.output.$generateNodesFromDOM(dom.window.document, options);
 }
 
-function $importInto(
+function importInto(
   editor: LexicalEditor,
   html: string,
-  options?: Parameters<typeof $generate>[2],
+  options?: GenerateNodesFromDOMOptions,
 ): void {
   editor.update(
     () => {
-      const nodes = $generate(editor, html, options);
+      const nodes = $generate(html, options);
       $getRoot().clear().splice(0, 0, nodes);
     },
     {discrete: true},
@@ -242,7 +240,7 @@ describe('DOMImportExtension', () => {
       ParagraphRule,
       TextRule,
     ]);
-    $importInto(editor, '<p><a id="x" href="https://example.com">link</a></p>');
+    importInto(editor, '<p><a id="x" href="https://example.com">link</a></p>');
     editor.read(() => {
       const [para] = $rootParagraphs();
       const link = para.getFirstChild();
@@ -264,7 +262,7 @@ describe('DOMImportExtension', () => {
       ParagraphRule,
       TextRule,
     ]);
-    $importInto(editor, '<p>plain <b>bold <i>italicbold</i></b></p>');
+    importInto(editor, '<p>plain <b>bold <i>italicbold</i></b></p>');
     editor.read(() => {
       const texts = $getRoot().getAllTextNodes();
       expect(texts).toHaveLength(3);
@@ -283,7 +281,7 @@ describe('DOMImportExtension', () => {
 
   test('RootSchema wraps stray inline runs in paragraphs', () => {
     using editor = buildTestEditor([ParagraphRule, TextRule, BoldRule]);
-    $importInto(editor, 'orphan <b>inlines</b> at root');
+    importInto(editor, 'orphan <b>inlines</b> at root');
     editor.read(() => {
       const root = $getRoot();
       expect(root.getChildrenSize()).toBe(1);
@@ -294,7 +292,7 @@ describe('DOMImportExtension', () => {
 
   test('sibling-emitting rule (<figure> -> two paragraphs)', () => {
     using editor = buildTestEditor([FigureRule, ParagraphRule, TextRule]);
-    $importInto(
+    importInto(
       editor,
       '<figure><img src="x" alt="cat"/><figcaption>A cat.</figcaption></figure>',
     );
@@ -308,7 +306,7 @@ describe('DOMImportExtension', () => {
 
   test('$next() deferral: code rule defers to next on non-language code', () => {
     using editor = buildTestEditor([CodeRule, ParagraphRule, TextRule]);
-    $importInto(
+    importInto(
       editor,
       '<pre><code class="language-js">x</code></pre><pre><code>y</code></pre>',
     );
@@ -322,7 +320,7 @@ describe('DOMImportExtension', () => {
 
   test('regex capture is exposed on ctx.captures without re-running', () => {
     using editor = buildTestEditor([CodeCaptureRule]);
-    $importInto(editor, '<pre data-language="rust">irrelevant</pre>');
+    importInto(editor, '<pre data-language="rust">irrelevant</pre>');
     editor.read(() => {
       const [p] = $rootParagraphs();
       expect(p.getTextContent()).toBe('[capture:rust]');
@@ -331,25 +329,25 @@ describe('DOMImportExtension', () => {
 
   test('per-call context: ImportSource flows to rule body', () => {
     using editor = buildTestEditor([SourceAwareRule, TextRule]);
-    $importInto(editor, '<div>x</div>', {
+    importInto(editor, '<div>x</div>', {
       context: [contextValue(ImportSource, 'paste')],
     });
     editor.read(() => {
       const [p] = $rootParagraphs();
       expect($getState(p, sourceState)).toBe('paste');
     });
-    $importInto(editor, '<div>x</div>', {
-      context: [contextValue(ImportSource, 'deserialize')],
+    importInto(editor, '<div>x</div>', {
+      context: [contextValue(ImportSource, 'paste')],
     });
     editor.read(() => {
       const [p] = $rootParagraphs();
-      expect($getState(p, sourceState)).toBe('deserialize');
+      expect($getState(p, sourceState)).toBe('paste');
     });
   });
 
   test('per-call context default is "unknown"', () => {
     using editor = buildTestEditor([SourceAwareRule, TextRule]);
-    $importInto(editor, '<div>x</div>');
+    importInto(editor, '<div>x</div>');
     editor.read(() => {
       const [p] = $rootParagraphs();
       expect($getState(p, sourceState)).toBe('unknown');
@@ -363,7 +361,7 @@ describe('DOMImportExtension', () => {
       ParagraphRule,
       TextRule,
     ]);
-    $importInto(editor, '<p><a id="link-x" href="/y">click</a></p>');
+    importInto(editor, '<p><a id="link-x" href="/y">click</a></p>');
     editor.read(() => {
       const link = $rootParagraphs()[0].getFirstChild();
       assert($isLinkNode(link), 'expected LinkNode');
@@ -382,7 +380,7 @@ describe('DOMImportExtension', () => {
       name: 'test/css-pfoo',
     });
     using editor = buildTestEditor([cssRule, ParagraphRule, TextRule]);
-    $importInto(editor, '<p class="foo">x</p><p>y</p>');
+    importInto(editor, '<p class="foo">x</p><p>y</p>');
     editor.read(() => {
       const ps = $rootParagraphs();
       expect(ps[0].getTextContent()).toBe('[matched]');
@@ -404,7 +402,7 @@ describe('DOMImportExtension', () => {
       name: 'test/css-combinator',
     });
     using editor = buildTestEditor([chained]);
-    $importInto(editor, '<span class="highlight" data-lang="go">x</span>');
+    importInto(editor, '<span class="highlight" data-lang="go">x</span>');
     editor.read(() => {
       const [p] = $rootParagraphs();
       expect(p.getTextContent()).toBe('[combo:go]');
@@ -425,7 +423,7 @@ describe('DOMImportExtension', () => {
 
   test('compileImportRules: unknown tags hit wildcard bucket', () => {
     using editor = buildTestEditor([IdAttributeRule, ParagraphRule, TextRule]);
-    $importInto(editor, '<my-thing id="custom">z</my-thing>');
+    importInto(editor, '<my-thing id="custom">z</my-thing>');
     editor.read(() => {
       // Custom element with an id — only the id decorator matches; the
       // dispatcher then hoists children (the text "z") which RootSchema
@@ -459,7 +457,7 @@ describe('BlockSchema / InlineSchema', () => {
 
   test('BlockSchema wraps inline runs in paragraphs', () => {
     using editor = buildTestEditor([BlockRule, ParagraphRule, TextRule]);
-    $importInto(editor, '<section>inline<p>block</p>more inline</section>');
+    importInto(editor, '<section>inline<p>block</p>more inline</section>');
     editor.read(() => {
       const [p] = $rootParagraphs();
       // 3 children: paragraph("inline"), paragraph("block"), paragraph("more inline")
@@ -473,8 +471,8 @@ describe('regression sanity for the existing $generateNodesFromDOM', () => {
     using editor = buildTestEditor([BoldRule, ParagraphRule, TextRule]);
     editor.update(
       () => {
-        const a = $generate(editor, '<p><b>x</b></p>');
-        const b = $generate(editor, '<p>y</p>');
+        const a = $generate('<p><b>x</b></p>');
+        const b = $generate('<p>y</p>');
         $getRoot()
           .clear()
           .splice(0, 0, [...a, ...b]);
@@ -534,7 +532,7 @@ describe('$importChildren `rules` overlay', () => {
       name: 'test/main-x',
     });
     using editor = buildTestEditor([WrapRule, PlainXRule]);
-    $importInto(editor, '<wrap><x></x></wrap><x></x>');
+    importInto(editor, '<wrap><x></x></wrap><x></x>');
     editor.read(() => {
       const ps = $rootParagraphs();
       expect(ps.map(p => p.getTextContent())).toEqual([
@@ -571,7 +569,7 @@ describe('$importChildren `rules` overlay', () => {
       name: 'test/wrap',
     });
     using editor = buildTestEditor([WrapRule, PlainXRule]);
-    $importInto(editor, '<wrap><x></x></wrap>');
+    importInto(editor, '<wrap><x></x></wrap>');
     editor.read(() => {
       const [p] = $rootParagraphs();
       expect(p.getTextContent()).toBe('[main-x]');
@@ -619,7 +617,7 @@ describe('overlay composition via defineOverlayRules', () => {
       name: 'test/wrap-merged',
     });
     using editor = buildTestEditor([WrapRule]);
-    $importInto(editor, '<wrap><x>x</x><y>y</y></wrap>');
+    importInto(editor, '<wrap><x>x</x><y>y</y></wrap>');
     editor.read(() => {
       const [p1, p2] = $rootParagraphs();
       // overlayA's x rule wins over overlayB's x rule (first-arg priority).
@@ -655,7 +653,7 @@ describe('overlay composition via defineOverlayRules', () => {
       name: 'test/wrap-defers',
     });
     using editor = buildTestEditor([WrapRule]);
-    $importInto(editor, '<wrap><x>x</x></wrap>');
+    importInto(editor, '<wrap><x>x</x></wrap>');
     editor.read(() => {
       const [p] = $rootParagraphs();
       expect(p.getTextContent()).toBe('[B-fallback]');

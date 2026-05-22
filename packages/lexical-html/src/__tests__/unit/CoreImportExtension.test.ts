@@ -26,6 +26,7 @@ import {JSDOM} from 'jsdom';
 import {
   $createParagraphNode,
   $createTextNode,
+  $getEditor,
   $getRoot,
   $isLineBreakNode,
   $isParagraphNode,
@@ -46,16 +47,17 @@ function buildEditor() {
   );
 }
 
-function $generate(editor: LexicalEditor, html: string): LexicalNode[] {
+function $generate(html: string): LexicalNode[] {
+  const editor = $getEditor();
   const dep = getExtensionDependencyFromEditor(editor, DOMImportExtension);
   const dom = new JSDOM(`<!doctype html><html><body>${html}</body></html>`);
   return dep.output.$generateNodesFromDOM(dom.window.document);
 }
 
-function $importInto(editor: LexicalEditor, html: string): void {
+function importInto(editor: LexicalEditor, html: string): void {
   editor.update(
     () => {
-      const nodes = $generate(editor, html);
+      const nodes = $generate(html);
       $getRoot()
         .clear()
         .append(...nodes);
@@ -77,7 +79,7 @@ function $findTextByContent(content: string) {
 describe('CoreImportExtension', () => {
   test('paragraph + text', () => {
     using editor = buildEditor();
-    $importInto(editor, '<p>Hello world</p>');
+    importInto(editor, '<p>Hello world</p>');
     editor.read(() => {
       const para = $getRoot().getFirstChild();
       assert($isParagraphNode(para), 'expected paragraph');
@@ -87,10 +89,7 @@ describe('CoreImportExtension', () => {
 
   test('inline format tags propagate via ImportTextFormat', () => {
     using editor = buildEditor();
-    $importInto(
-      editor,
-      '<p>a <strong>b <em>c</em></strong> <code>d</code></p>',
-    );
+    importInto(editor, '<p>a <strong>b <em>c</em></strong> <code>d</code></p>');
     editor.read(() => {
       expect($findTextByContent('a ').getFormat()).toBe(0);
       expect($findTextByContent('b ').hasFormat('bold')).toBe(true);
@@ -103,7 +102,7 @@ describe('CoreImportExtension', () => {
 
   test('span with Google-Docs-style CSS pushes formats into context', () => {
     using editor = buildEditor();
-    $importInto(
+    importInto(
       editor,
       '<p><span style="font-weight:700">bold</span> <span style="font-style:italic">italic</span> <span style="text-decoration:underline line-through">both</span></p>',
     );
@@ -117,7 +116,7 @@ describe('CoreImportExtension', () => {
 
   test('<b style="font-weight:normal"> (Google Docs wrapper) does NOT add bold', () => {
     using editor = buildEditor();
-    $importInto(editor, '<b style="font-weight:normal"><p>plain</p></b>');
+    importInto(editor, '<b style="font-weight:normal"><p>plain</p></b>');
     editor.read(() => {
       const text = $findTextByContent('plain');
       expect(text.hasFormat('bold')).toBe(false);
@@ -126,7 +125,7 @@ describe('CoreImportExtension', () => {
 
   test('<pre> preserves whitespace, splits on \\n into LineBreakNode', () => {
     using editor = buildEditor();
-    $importInto(editor, '<pre>line1\nline2</pre>');
+    importInto(editor, '<pre>line1\nline2</pre>');
     editor.read(() => {
       // <pre> isn't matched by any specific rule so the framework hoists its
       // children. Result: text "line1", linebreak, text "line2" wrapped by
@@ -145,7 +144,7 @@ describe('CoreImportExtension', () => {
 
   test('whitespace collapsing matches legacy behavior', () => {
     using editor = buildEditor();
-    $importInto(editor, '<p>  hello   world  </p>');
+    importInto(editor, '<p>  hello   world  </p>');
     editor.read(() => {
       const para = $getRoot().getFirstChild();
       assert($isParagraphNode(para), 'expected paragraph');
@@ -155,7 +154,7 @@ describe('CoreImportExtension', () => {
 
   test('<br> creates a LineBreakNode', () => {
     using editor = buildEditor();
-    $importInto(editor, '<p>a<br>b</p>');
+    importInto(editor, '<p>a<br>b</p>');
     editor.read(() => {
       const para = $getRoot().getFirstChild();
       assert($isParagraphNode(para), 'expected paragraph');
@@ -167,7 +166,7 @@ describe('CoreImportExtension', () => {
 
   test('paragraph align attribute fallback', () => {
     using editor = buildEditor();
-    $importInto(editor, '<p align="center">center</p>');
+    importInto(editor, '<p align="center">center</p>');
     editor.read(() => {
       const p = $getRoot().getFirstChild();
       assert($isParagraphNode(p), 'expected paragraph');
@@ -177,7 +176,7 @@ describe('CoreImportExtension', () => {
 
   test('inline style with font-weight:normal clears inherited bold', () => {
     using editor = buildEditor();
-    $importInto(
+    importInto(
       editor,
       '<p><strong>bold <span style="font-weight: normal">plain</span> bold</strong></p>',
     );
@@ -202,7 +201,7 @@ describe('CoreImportExtension', () => {
 
   test('sub/sup mutex: <sub><sup>x</sup></sub> ⇒ superscript only', () => {
     using editor = buildEditor();
-    $importInto(editor, '<p><sub><sup>x</sup></sub></p>');
+    importInto(editor, '<p><sub><sup>x</sup></sub></p>');
     editor.read(() => {
       const text = $getRoot().getAllTextNodes()[0];
       expect(text.hasFormat('superscript')).toBe(true);
@@ -212,7 +211,7 @@ describe('CoreImportExtension', () => {
 
   test('text-decoration:none clears inherited underline/strikethrough', () => {
     using editor = buildEditor();
-    $importInto(
+    importInto(
       editor,
       '<p><u><s>both <span style="text-decoration: none">neither</span></s></u></p>',
     );
@@ -250,7 +249,7 @@ describe('CoreImportExtension', () => {
         name: 'host',
       }),
     );
-    $importInto(editor, '<div class="keep-ws">a   b\nc</div>');
+    importInto(editor, '<div class="keep-ws">a   b\nc</div>');
     editor.read(() => {
       const para = $getRoot().getFirstChild();
       assert($isParagraphNode(para), 'expected paragraph');
@@ -285,7 +284,7 @@ describe('CoreImportExtension', () => {
         name: 'host',
       }),
     );
-    $importInto(editor, '<p>a <hr>b</p>');
+    importInto(editor, '<p>a <hr>b</p>');
     editor.read(() => {
       const all = $getRoot().getAllTextNodes();
       // With <hr> treated as inline, the trailing space after "a" is kept.
@@ -333,7 +332,7 @@ describe('CoreImportExtension', () => {
         name: 'host',
       }),
     );
-    $importInto(
+    importInto(
       editor,
       '<style>.a{}</style><style>.b{}</style><article>body</article>',
     );
@@ -364,7 +363,7 @@ describe('CoreImportExtension', () => {
         name: 'host',
       }),
     );
-    $importInto(editor, '<style>.foo{color:red}</style><p>x</p>');
+    importInto(editor, '<style>.foo{color:red}</style><p>x</p>');
     expect(captured).toBe('.foo{color:red}');
     editor.read(() => {
       const para = $getRoot().getFirstChild();

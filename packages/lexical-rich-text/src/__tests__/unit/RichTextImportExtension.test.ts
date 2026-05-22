@@ -20,6 +20,7 @@ import {
 } from '@lexical/rich-text';
 import {JSDOM} from 'jsdom';
 import {
+  $getEditor,
   $getRoot,
   defineExtension,
   type LexicalEditor,
@@ -37,16 +38,17 @@ function buildEditor() {
   );
 }
 
-function $generate(editor: LexicalEditor, html: string): LexicalNode[] {
+function $generate(html: string): LexicalNode[] {
+  const editor = $getEditor();
   const dep = getExtensionDependencyFromEditor(editor, DOMImportExtension);
   const dom = new JSDOM(`<!doctype html><html><body>${html}</body></html>`);
   return dep.output.$generateNodesFromDOM(dom.window.document);
 }
 
-function $importInto(editor: LexicalEditor, html: string): void {
+function importInto(editor: LexicalEditor, html: string): void {
   editor.update(
     () => {
-      const nodes = $generate(editor, html);
+      const nodes = $generate(html);
       $getRoot()
         .clear()
         .append(...nodes);
@@ -65,7 +67,7 @@ describe('RichTextImportExtension', () => {
     ['<h6>x</h6>', 'h6'],
   ])('%s imports as heading %s', (html, tag) => {
     using editor = buildEditor();
-    $importInto(editor, html);
+    importInto(editor, html);
     editor.read(() => {
       const node = $getRoot().getFirstChild();
       assert($isHeadingNode(node), 'expected HeadingNode');
@@ -75,7 +77,7 @@ describe('RichTextImportExtension', () => {
 
   test('blockquote imports as quote', () => {
     using editor = buildEditor();
-    $importInto(editor, '<blockquote>quoted</blockquote>');
+    importInto(editor, '<blockquote>quoted</blockquote>');
     editor.read(() => {
       const node = $getRoot().getFirstChild();
       assert($isQuoteNode(node), 'expected QuoteNode');
@@ -85,7 +87,7 @@ describe('RichTextImportExtension', () => {
 
   test('Google Docs title (26pt span) promoted to h1', () => {
     using editor = buildEditor();
-    $importInto(editor, '<p><span style="font-size:26pt">Title</span></p>');
+    importInto(editor, '<p><span style="font-size:26pt">Title</span></p>');
     editor.read(() => {
       const node = $getRoot().getFirstChild();
       assert($isHeadingNode(node), 'expected HeadingNode');

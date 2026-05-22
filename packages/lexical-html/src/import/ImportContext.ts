@@ -57,18 +57,14 @@ export function createImportState<V>(
 }
 
 /**
- * The kind of operation that produced this import. Lets rules adapt their
- * behavior (e.g. preserve more whitespace on `'paste'`, be lenient on
- * `'deserialize'`, etc.). Defaults to `'unknown'`.
+ * The kind of operation that produced this import. Lets rules adapt
+ * their behavior (e.g. preserve more whitespace on `'paste'`).
+ * Defaults to `'unknown'`. Apps can extend the union via TypeScript
+ * declaration merging if they want to distinguish more sources.
  *
  * @experimental
  */
-export type ImportSourceKind =
-  | 'paste'
-  | 'drop'
-  | 'deserialize'
-  | 'headless'
-  | 'unknown';
+export type ImportSourceKind = 'paste' | 'unknown';
 
 /**
  * Built-in import-context state identifying how this import was initiated.

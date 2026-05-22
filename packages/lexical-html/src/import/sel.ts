@@ -297,7 +297,7 @@ export const selBase = {
   text(): CompiledSelector<Text> {
     return TEXT_SELECTOR;
   },
-};
+} as const;
 
 /**
  * Cross-frame-safe replacement for `node instanceof HTMLXxxElement`. Returns

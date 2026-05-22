@@ -14,6 +14,7 @@ import {
 import {DOMImportExtension} from '@lexical/html';
 import {JSDOM} from 'jsdom';
 import {
+  $getEditor,
   $getRoot,
   $isParagraphNode,
   defineExtension,
@@ -33,16 +34,17 @@ function buildEditor() {
   );
 }
 
-function $generate(editor: LexicalEditor, html: string): LexicalNode[] {
+function $generate(html: string): LexicalNode[] {
+  const editor = $getEditor();
   const dep = getExtensionDependencyFromEditor(editor, DOMImportExtension);
   const dom = new JSDOM(`<!doctype html><html><body>${html}</body></html>`);
   return dep.output.$generateNodesFromDOM(dom.window.document);
 }
 
-function $importInto(editor: LexicalEditor, html: string): void {
+function importInto(editor: LexicalEditor, html: string): void {
   editor.update(
     () => {
-      const nodes = $generate(editor, html);
+      const nodes = $generate(html);
       $getRoot().clear().splice(0, 0, nodes);
     },
     {discrete: true},
@@ -58,7 +60,7 @@ function $rootCode(): CodeNode {
 describe('CodeImportExtension', () => {
   test('<pre> imports as CodeNode', () => {
     using editor = buildEditor();
-    $importInto(editor, '<pre>const x = 1;</pre>');
+    importInto(editor, '<pre>const x = 1;</pre>');
     editor.read(() => {
       const node = $rootCode();
       expect(node.getTextContent()).toContain('const x = 1;');
@@ -67,7 +69,7 @@ describe('CodeImportExtension', () => {
 
   test('<pre data-language="ts"> sets the language', () => {
     using editor = buildEditor();
-    $importInto(editor, '<pre data-language="ts">x</pre>');
+    importInto(editor, '<pre data-language="ts">x</pre>');
     editor.read(() => {
       const node = $rootCode();
       expect(node.getLanguage()).toBe('ts');
@@ -76,7 +78,7 @@ describe('CodeImportExtension', () => {
 
   test('multi-line <code> imports as CodeNode (not inline)', () => {
     using editor = buildEditor();
-    $importInto(editor, '<code>line1\nline2</code>');
+    importInto(editor, '<code>line1\nline2</code>');
     editor.read(() => {
       const node = $rootCode();
       expect(node.getTextContent()).toContain('line1');
@@ -86,7 +88,7 @@ describe('CodeImportExtension', () => {
 
   test('single-line <code> defers to inline-format (no CodeNode)', () => {
     using editor = buildEditor();
-    $importInto(editor, '<p><code>inline</code></p>');
+    importInto(editor, '<p><code>inline</code></p>');
     editor.read(() => {
       const para = $getRoot().getFirstChild();
       assert($isParagraphNode(para), 'expected paragraph');
@@ -99,10 +101,7 @@ describe('CodeImportExtension', () => {
 
   test('<div style="font-family: monospace"> imports as CodeNode', () => {
     using editor = buildEditor();
-    $importInto(
-      editor,
-      '<div style="font-family: Menlo, monospace">a\nb</div>',
-    );
+    importInto(editor, '<div style="font-family: Menlo, monospace">a\nb</div>');
     editor.read(() => {
       const node = $rootCode();
       expect(node.getTextContent()).toContain('a');
@@ -112,7 +111,7 @@ describe('CodeImportExtension', () => {
 
   test('GitHub raw-file-view table imports as CodeNode', () => {
     using editor = buildEditor();
-    $importInto(
+    importInto(
       editor,
       [
         '<table class="js-file-line-container">',
@@ -131,7 +130,7 @@ describe('CodeImportExtension', () => {
 
   test('plain <table> falls through (no CodeNode)', () => {
     using editor = buildEditor();
-    $importInto(editor, '<table><tr><td>a</td></tr></table>');
+    importInto(editor, '<table><tr><td>a</td></tr></table>');
     editor.read(() => {
       const root = $getRoot();
       assert(
@@ -197,7 +196,7 @@ const VSCODE_SAFARI_HTML = [
 describe('CodeImportExtension — VS Code paste', () => {
   test('Chrome (single outer monospace wrapper) → one CodeNode', () => {
     using editor = buildEditor();
-    $importInto(editor, VSCODE_CHROME_HTML);
+    importInto(editor, VSCODE_CHROME_HTML);
     editor.read(() => {
       const root = $getRoot();
       const codeNodes = root.getChildren().filter($isCodeNode);
@@ -208,7 +207,7 @@ describe('CodeImportExtension — VS Code paste', () => {
 
   test('Safari (flat sibling monospace divs / brs) → one CodeNode', () => {
     using editor = buildEditor();
-    $importInto(editor, VSCODE_SAFARI_HTML);
+    importInto(editor, VSCODE_SAFARI_HTML);
     editor.read(() => {
       const root = $getRoot();
       const codeNodes = root.getChildren().filter($isCodeNode);
@@ -227,7 +226,7 @@ describe('CodeImportExtension — VS Code paste', () => {
     // NOT be installed, so the input falls through to the existing
     // DivRule which produces a one-line CodeNode.
     using editor = buildEditor();
-    $importInto(
+    importInto(
       editor,
       `<div style="font-family: monospace; white-space: pre;">just one line</div>`,
     );

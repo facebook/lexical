@@ -9,7 +9,7 @@ import type {AnyDOMImportRule, DOMImportFn} from './types';
 
 import {isDOMTextNode, isHTMLElement} from 'lexical';
 
-import {getSelectorImpl, type Predicate} from './sel';
+import {getSelectorImpl, type Predicate, type SelectorImpl} from './sel';
 
 /** @internal */
 export interface CompiledRule {
@@ -135,10 +135,7 @@ export function compileImportRules(
   };
 }
 
-function defaultRuleName(
-  sel: ReturnType<typeof getSelectorImpl>,
-  index: number,
-): string {
+function defaultRuleName(sel: SelectorImpl, index: number): string {
   if (sel.kind === 'text') {
     return `#text@${index}`;
   }

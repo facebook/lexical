@@ -8,8 +8,9 @@
 import {
   $createLineBreakNode,
   $createParagraphNode,
-  $createTabNode,
   $createTextNode,
+  $generateNodesFromRawText,
+  $isTextNode,
   $setDirectionFromDOM,
   $setFormatFromDOM,
   type ElementFormatType,
@@ -352,16 +353,10 @@ const TextRule = defineImportRule({
     const format = ctx.get(ImportTextFormat);
     const wsConfig = ctx.get(ImportWhitespaceConfig);
     if (isInsidePreserveWhitespace(el, wsConfig)) {
-      const raw = el.textContent || '';
-      const parts = raw.split(/(\r?\n|\t)/);
-      const out: LexicalNode[] = [];
-      for (const part of parts) {
-        if (part === '\n' || part === '\r\n') {
-          out.push($createLineBreakNode());
-        } else if (part === '\t') {
-          out.push($createTabNode());
-        } else if (part !== '') {
-          out.push(applyFormat($createTextNode(part), format));
+      const out = $generateNodesFromRawText(el.textContent || '');
+      for (const node of out) {
+        if ($isTextNode(node)) {
+          applyFormat(node, format);
         }
       }
       return out;

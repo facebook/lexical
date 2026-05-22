@@ -33,6 +33,7 @@ import {
 } from '@lexical/list';
 import {JSDOM} from 'jsdom';
 import {
+  $getEditor,
   $getRoot,
   defineExtension,
   getStyleObjectFromCSS,
@@ -52,16 +53,17 @@ function buildEditor() {
   );
 }
 
-function $generate(editor: LexicalEditor, html: string): LexicalNode[] {
+function $generate(html: string): LexicalNode[] {
+  const editor = $getEditor();
   const dep = getExtensionDependencyFromEditor(editor, DOMImportExtension);
   const dom = new JSDOM(`<!doctype html><html><body>${html}</body></html>`);
   return dep.output.$generateNodesFromDOM(dom.window.document);
 }
 
-function $importInto(editor: LexicalEditor, html: string): void {
+function importInto(editor: LexicalEditor, html: string): void {
   editor.update(
     () => {
-      const nodes = $generate(editor, html);
+      const nodes = $generate(html);
       $getRoot()
         .clear()
         .append(...nodes);
@@ -83,7 +85,7 @@ function $items(list: ListNode): ListItemNode[] {
 describe('ListImportExtension', () => {
   test('<ul><li>a</li><li>b</li></ul> → bullet list with two items', () => {
     using editor = buildEditor();
-    $importInto(editor, '<ul><li>a</li><li>b</li></ul>');
+    importInto(editor, '<ul><li>a</li><li>b</li></ul>');
     editor.read(() => {
       const list = $rootList();
       expect(list.getListType()).toBe('bullet');
@@ -96,7 +98,7 @@ describe('ListImportExtension', () => {
 
   test('<ol start="3"> → number list with start=3', () => {
     using editor = buildEditor();
-    $importInto(editor, '<ol start="3"><li>x</li></ol>');
+    importInto(editor, '<ol start="3"><li>x</li></ol>');
     editor.read(() => {
       const list = $rootList();
       expect(list.getListType()).toBe('number');
@@ -106,7 +108,7 @@ describe('ListImportExtension', () => {
 
   test('GitHub task-list-item → checklist item', () => {
     using editor = buildEditor();
-    $importInto(
+    importInto(
       editor,
       '<ul class="contains-task-list"><li class="task-list-item"><input type="checkbox" checked/>done</li><li class="task-list-item"><input type="checkbox"/>todo</li></ul>',
     );
@@ -122,7 +124,7 @@ describe('ListImportExtension', () => {
 
   test('aria-checked drives checklist state', () => {
     using editor = buildEditor();
-    $importInto(editor, '<ul><li aria-checked="true">a</li></ul>');
+    importInto(editor, '<ul><li aria-checked="true">a</li></ul>');
     editor.read(() => {
       const list = $rootList();
       expect(list.getListType()).toBe('check');
@@ -133,7 +135,7 @@ describe('ListImportExtension', () => {
 
   test('stray text inside <ul> gets wrapped via $normalizeListChildren', () => {
     using editor = buildEditor();
-    $importInto(editor, '<ul>stray <li>real item</li></ul>');
+    importInto(editor, '<ul>stray <li>real item</li></ul>');
     editor.read(() => {
       const list = $rootList();
       const items = $items(list);
@@ -335,7 +337,7 @@ function buildWordPasteEditor() {
   );
 }
 
-function $importHTMLDocument(editor: LexicalEditor, html: string): void {
+function importHTMLDocument(editor: LexicalEditor, html: string): void {
   editor.update(
     () => {
       const dep = getExtensionDependencyFromEditor(editor, DOMImportExtension);
@@ -404,7 +406,7 @@ const WORD_HTML_WITH_LISTS = `<!doctype html>
 describe('MS Word paste — preprocess-installed overlay', () => {
   test('converts MsoListParagraph runs into nested ListNodes', () => {
     using editor = buildWordPasteEditor();
-    $importHTMLDocument(editor, WORD_HTML_WITH_LISTS);
+    importHTMLDocument(editor, WORD_HTML_WITH_LISTS);
     editor.read(() => {
       const lists = $getRoot().getChildren().filter($isListNode);
       expect(lists).toHaveLength(3);
@@ -456,7 +458,7 @@ describe('MS Word paste — preprocess-installed overlay', () => {
       /<meta name="Generator"[^>]*>/,
       '',
     );
-    $importHTMLDocument(editor, htmlWithoutMeta);
+    importHTMLDocument(editor, htmlWithoutMeta);
     editor.read(() => {
       expect($getRoot().getChildren().some($isListNode)).toBe(false);
     });

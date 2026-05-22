@@ -237,6 +237,7 @@ export {
   $createPoint,
   $createRangeSelection,
   $createRangeSelectionFromDom,
+  $generateNodesFromRawText,
   $getCharacterOffsets,
   $getPreviousSelection,
   $getSelection,

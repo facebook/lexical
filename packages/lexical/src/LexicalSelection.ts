@@ -753,20 +753,7 @@ export class RangeSelection implements BaseSelection {
    * @param text the text to insert into the Selection
    */
   insertRawText(text: string): void {
-    const parts = text.split(/(\r?\n|\t)/);
-    const nodes = [];
-    const length = parts.length;
-    for (let i = 0; i < length; i++) {
-      const part = parts[i];
-      if (part === '\n' || part === '\r\n') {
-        nodes.push($createLineBreakNode());
-      } else if (part === '\t') {
-        nodes.push($createTabNode());
-      } else {
-        nodes.push($createTextNode(part));
-      }
-    }
-    this.insertNodes(nodes);
+    this.insertNodes($generateNodesFromRawText(text));
   }
 
   /**
@@ -3240,6 +3227,29 @@ export function $insertNodes(nodes: Array<LexicalNode>) {
     selection = $getRoot().selectEnd();
   }
   selection.insertNodes(nodes);
+}
+
+/**
+ * Convert a raw text string into a flat array of `TextNode`,
+ * `LineBreakNode`, and `TabNode` siblings, splitting on `\n`, `\r\n`,
+ * and `\t`. Use this when you need the same `\n` / `\t` → real-node
+ * conversion that {@link RangeSelection.insertRawText} performs but
+ * without a selection — e.g. when building a `CodeNode`'s children
+ * inside a DOM-import rule.
+ */
+export function $generateNodesFromRawText(text: string): LexicalNode[] {
+  const parts = text.split(/(\r?\n|\t)/);
+  const nodes: LexicalNode[] = [];
+  for (const part of parts) {
+    if (part === '\n' || part === '\r\n') {
+      nodes.push($createLineBreakNode());
+    } else if (part === '\t') {
+      nodes.push($createTabNode());
+    } else if (part !== '') {
+      nodes.push($createTextNode(part));
+    }
+  }
+  return nodes;
 }
 
 export function $getTextContent(): string {

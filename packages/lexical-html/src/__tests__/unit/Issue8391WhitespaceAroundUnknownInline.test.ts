@@ -55,6 +55,7 @@ import {
 import {JSDOM} from 'jsdom';
 import {
   $createTextNode,
+  $getEditor,
   $getRoot,
   $isParagraphNode,
   defineExtension,
@@ -83,16 +84,17 @@ const TooltipRule = defineImportRule({
   name: 'test/tooltip',
 });
 
-function $generate(editor: LexicalEditor, html: string): LexicalNode[] {
+function $generate(html: string): LexicalNode[] {
+  const editor = $getEditor();
   const dep = getExtensionDependencyFromEditor(editor, DOMImportExtension);
   const dom = new JSDOM(`<!doctype html><html><body>${html}</body></html>`);
   return dep.output.$generateNodesFromDOM(dom.window.document);
 }
 
-function $importInto(editor: LexicalEditor, html: string): void {
+function importInto(editor: LexicalEditor, html: string): void {
   editor.update(
     () => {
-      const nodes = $generate(editor, html);
+      const nodes = $generate(html);
       $getRoot().clear().splice(0, 0, nodes);
     },
     {discrete: true},
@@ -116,7 +118,7 @@ describe('issue #8391 — whitespace around unknown inline elements', () => {
         name: 'host',
       }),
     );
-    $importInto(editor, HTML);
+    importInto(editor, HTML);
     editor.read(() => {
       const texts = $rootParagraphTextContents();
       // Default `isInline` doesn't know <tooltip>, so the surrounding
@@ -153,7 +155,7 @@ describe('issue #8391 — whitespace around unknown inline elements', () => {
         name: 'host',
       }),
     );
-    $importInto(editor, HTML);
+    importInto(editor, HTML);
     editor.read(() => {
       const texts = $rootParagraphTextContents();
       expect(texts[0]).toBe('In web development, the DOM ');
@@ -164,8 +166,8 @@ describe('issue #8391 — whitespace around unknown inline elements', () => {
 
   test('per-call override: pass the isInline predicate via the context option', () => {
     // Same as above but supplied as a per-`$generateNodesFromDOM` context
-    // override rather than a contextDefault — useful for paste vs. drop
-    // vs. deserialize having different whitespace rules.
+    // override rather than a contextDefault — useful when one editor
+    // needs source-specific whitespace rules.
     using editor = buildEditorFromExtensions(
       defineExtension({
         dependencies: [

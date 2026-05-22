@@ -14,6 +14,7 @@ import {DOMImportExtension} from '@lexical/html';
 import {$isLinkNode, LinkImportExtension, LinkNode} from '@lexical/link';
 import {JSDOM} from 'jsdom';
 import {
+  $getEditor,
   $getRoot,
   $isParagraphNode,
   defineExtension,
@@ -32,16 +33,17 @@ function buildEditor() {
   );
 }
 
-function $generate(editor: LexicalEditor, html: string): LexicalNode[] {
+function $generate(html: string): LexicalNode[] {
+  const editor = $getEditor();
   const dep = getExtensionDependencyFromEditor(editor, DOMImportExtension);
   const dom = new JSDOM(`<!doctype html><html><body>${html}</body></html>`);
   return dep.output.$generateNodesFromDOM(dom.window.document);
 }
 
-function $importInto(editor: LexicalEditor, html: string): void {
+function importInto(editor: LexicalEditor, html: string): void {
   editor.update(
     () => {
-      const nodes = $generate(editor, html);
+      const nodes = $generate(html);
       $getRoot()
         .clear()
         .append(...nodes);
@@ -61,7 +63,7 @@ function $firstLink(): LinkNode {
 describe('LinkImportExtension', () => {
   test('<a href="…">text</a> → LinkNode with TextNode child', () => {
     using editor = buildEditor();
-    $importInto(editor, '<p><a href="https://example.com">click</a></p>');
+    importInto(editor, '<p><a href="https://example.com">click</a></p>');
     editor.read(() => {
       const link = $firstLink();
       // href is read via getAttribute, so JSDOM's URL resolution is bypassed.
@@ -72,7 +74,7 @@ describe('LinkImportExtension', () => {
 
   test('rel, target, title preserved', () => {
     using editor = buildEditor();
-    $importInto(
+    importInto(
       editor,
       '<p><a href="/x" target="_blank" rel="noopener" title="hello">x</a></p>',
     );
@@ -86,7 +88,7 @@ describe('LinkImportExtension', () => {
 
   test('empty <a> with no children is skipped', () => {
     using editor = buildEditor();
-    $importInto(editor, '<p>before<a href="/x"></a>after</p>');
+    importInto(editor, '<p>before<a href="/x"></a>after</p>');
     editor.read(() => {
       const para = $getRoot().getFirstChild();
       assert($isParagraphNode(para), 'expected paragraph');

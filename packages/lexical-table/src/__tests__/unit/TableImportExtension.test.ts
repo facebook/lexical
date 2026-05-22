@@ -22,6 +22,7 @@ import {
 } from '@lexical/table';
 import {JSDOM} from 'jsdom';
 import {
+  $getEditor,
   $getRoot,
   defineExtension,
   type LexicalEditor,
@@ -39,16 +40,17 @@ function buildEditor() {
   );
 }
 
-function $generate(editor: LexicalEditor, html: string): LexicalNode[] {
+function $generate(html: string): LexicalNode[] {
+  const editor = $getEditor();
   const dep = getExtensionDependencyFromEditor(editor, DOMImportExtension);
   const dom = new JSDOM(`<!doctype html><html><body>${html}</body></html>`);
   return dep.output.$generateNodesFromDOM(dom.window.document);
 }
 
-function $importInto(editor: LexicalEditor, html: string): void {
+function importInto(editor: LexicalEditor, html: string): void {
   editor.update(
     () => {
-      const nodes = $generate(editor, html);
+      const nodes = $generate(html);
       $getRoot()
         .clear()
         .append(...nodes);
@@ -74,7 +76,7 @@ function $cells(row: TableRowNode): TableCellNode[] {
 describe('TableImportExtension', () => {
   test('basic 2x2 table imports with correct structure', () => {
     using editor = buildEditor();
-    $importInto(
+    importInto(
       editor,
       '<table><tr><td>a</td><td>b</td></tr><tr><td>c</td><td>d</td></tr></table>',
     );
@@ -91,7 +93,7 @@ describe('TableImportExtension', () => {
 
   test('<th scope="col"> → header cell', () => {
     using editor = buildEditor();
-    $importInto(editor, '<table><tr><th scope="col">H</th></tr></table>');
+    importInto(editor, '<table><tr><th scope="col">H</th></tr></table>');
     editor.read(() => {
       const cell = $cells($rows($rootTable())[0])[0];
       expect(cell.hasHeader()).toBe(true);
@@ -100,7 +102,7 @@ describe('TableImportExtension', () => {
 
   test('table picks up <thead>/<tbody> rows via $descendantsMatching', () => {
     using editor = buildEditor();
-    $importInto(
+    importInto(
       editor,
       '<table><thead><tr><th>H</th></tr></thead><tbody><tr><td>B</td></tr></tbody></table>',
     );
@@ -114,7 +116,7 @@ describe('TableImportExtension', () => {
 
   test('row picks up cells via $descendantsMatching', () => {
     using editor = buildEditor();
-    $importInto(editor, '<table><tr><td>a</td></tr></table>');
+    importInto(editor, '<table><tr><td>a</td></tr></table>');
     editor.read(() => {
       const cell = $cells($rows($rootTable())[0])[0];
       expect(cell.getTextContent()).toBe('a');

@@ -23,6 +23,7 @@ import {JSDOM} from 'jsdom';
 import {
   $createParagraphNode,
   $createTextNode,
+  $getEditor,
   $getRoot,
   $isParagraphNode,
   defineExtension,
@@ -32,16 +33,17 @@ import {
 } from 'lexical';
 import {assert, describe, expect, test} from 'vitest';
 
-function $generate(editor: LexicalEditor, html: string): LexicalNode[] {
+function $generate(html: string): LexicalNode[] {
+  const editor = $getEditor();
   const dep = getExtensionDependencyFromEditor(editor, DOMImportExtension);
   const dom = new JSDOM(`<!doctype html><html><body>${html}</body></html>`);
   return dep.output.$generateNodesFromDOM(dom.window.document);
 }
 
-function $importInto(editor: LexicalEditor, html: string): void {
+function importInto(editor: LexicalEditor, html: string): void {
   editor.update(
     () => {
-      const nodes = $generate(editor, html);
+      const nodes = $generate(html);
       $getRoot().clear().splice(0, 0, nodes);
     },
     {discrete: true},
@@ -59,7 +61,7 @@ describe('DOMImportExtension preprocess', () => {
     // Excel-style HTML: classes carry the styles via a <style> block.
     // The default preprocess inlines those styles, then the span import
     // rule sees `style="font-weight: 700"` and produces a bold TextNode.
-    $importInto(
+    importInto(
       editor,
       '<style>.xl1 { font-weight: 700; }</style><p><span class="xl1">bold</span></p>',
     );
@@ -86,7 +88,7 @@ describe('DOMImportExtension preprocess', () => {
         name: 'host',
       }),
     );
-    $importInto(editor, '<p>before<script>alert(1)</script>after</p>');
+    importInto(editor, '<p>before<script>alert(1)</script>after</p>');
     editor.read(() => {
       const para = $getRoot().getFirstChild();
       assert($isParagraphNode(para), 'expected paragraph');
@@ -136,7 +138,7 @@ describe('DOMImportExtension preprocess', () => {
         name: 'host',
       }),
     );
-    $importInto(
+    importInto(
       editor,
       '<meta name="lexical-source" content="paste"><div>x</div>',
     );
@@ -186,7 +188,7 @@ describe('DOMImportExtension preprocess', () => {
         name: 'host',
       }),
     );
-    $importInto(
+    importInto(
       editor,
       '<style>.a{}</style><style>.b{}</style><article>body</article>',
     );
@@ -220,7 +222,7 @@ describe('DOMImportExtension preprocess', () => {
         name: 'host',
       }),
     );
-    $importInto(editor, '<p>x</p>');
+    importInto(editor, '<p>x</p>');
     // Top of stack runs first: wrapper (last in array) wraps inner
     // (registered earlier).
     expect(log).toEqual([

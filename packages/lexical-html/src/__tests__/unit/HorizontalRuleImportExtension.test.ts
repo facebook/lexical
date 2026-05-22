@@ -14,6 +14,7 @@ import {
 import {DOMImportExtension, HorizontalRuleImportExtension} from '@lexical/html';
 import {JSDOM} from 'jsdom';
 import {
+  $getEditor,
   $getRoot,
   $isParagraphNode,
   defineExtension,
@@ -31,16 +32,17 @@ function buildEditor() {
   );
 }
 
-function $generate(editor: LexicalEditor, html: string): LexicalNode[] {
+function $generate(html: string): LexicalNode[] {
+  const editor = $getEditor();
   const dep = getExtensionDependencyFromEditor(editor, DOMImportExtension);
   const dom = new JSDOM(`<!doctype html><html><body>${html}</body></html>`);
   return dep.output.$generateNodesFromDOM(dom.window.document);
 }
 
-function $importInto(editor: LexicalEditor, html: string): void {
+function importInto(editor: LexicalEditor, html: string): void {
   editor.update(
     () => {
-      const nodes = $generate(editor, html);
+      const nodes = $generate(html);
       $getRoot().clear().splice(0, 0, nodes);
     },
     {discrete: true},
@@ -50,7 +52,7 @@ function $importInto(editor: LexicalEditor, html: string): void {
 describe('HorizontalRuleImportExtension', () => {
   test('<hr> imports as HorizontalRuleNode', () => {
     using editor = buildEditor();
-    $importInto(editor, '<hr>');
+    importInto(editor, '<hr>');
     editor.read(() => {
       const node = $getRoot().getFirstChild();
       assert($isHorizontalRuleNode(node), 'expected HorizontalRuleNode');
@@ -59,7 +61,7 @@ describe('HorizontalRuleImportExtension', () => {
 
   test('<hr> between paragraphs preserves surrounding structure', () => {
     using editor = buildEditor();
-    $importInto(editor, '<p>before</p><hr><p>after</p>');
+    importInto(editor, '<p>before</p><hr><p>after</p>');
     editor.read(() => {
       const children = $getRoot().getChildren();
       expect(children).toHaveLength(3);

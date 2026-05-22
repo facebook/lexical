@@ -18,7 +18,7 @@ import {
   sel,
 } from '@lexical/html';
 import {
-  $createTextNode,
+  $generateNodesFromRawText,
   configExtension,
   defineExtension,
   isDOMDocumentNode,
@@ -261,7 +261,11 @@ const VscodeWrapperRule = defineImportRule({
       return $next();
     }
     return [
-      $createCodeNode().splice(0, 0, [$createTextNode(lines.join('\n'))]),
+      $createCodeNode().splice(
+        0,
+        0,
+        $generateNodesFromRawText(lines.join('\n')),
+      ),
     ];
   },
   match: sel.tag('div'),
@@ -303,7 +307,11 @@ const VscodeLineRunRule = defineImportRule({
       return $next();
     }
     return [
-      $createCodeNode().splice(0, 0, [$createTextNode(lines.join('\n'))]),
+      $createCodeNode().splice(
+        0,
+        0,
+        $generateNodesFromRawText(lines.join('\n')),
+      ),
     ];
   },
   match: sel.tag('div', 'br'),

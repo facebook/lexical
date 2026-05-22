@@ -10,7 +10,6 @@ import type {DOMPreprocessFn} from '@lexical/html';
 
 import {
   CoreImportExtension,
-  createImportState,
   defineImportRule,
   defineOverlayRules,
   DOMImportExtension,
@@ -203,17 +202,6 @@ function splitMonospaceWrapperLines(el: HTMLElement): string[] | null {
 }
 
 /**
- * Per-import session WeakSet used by the VS Code line-run rule to mark
- * sibling code lines that have already been absorbed by an earlier
- * sibling's pass, so the framework's normal child iteration treats
- * them as no-ops.
- */
-const VscodeRunConsumed = createImportState<WeakSet<Element>>(
-  '@lexical/code/vscode-run-consumed',
-  () => new WeakSet(),
-);
-
-/**
  * Returns `true` if `root` contains the structural signature of a
  * VS Code code-block paste:
  *
@@ -275,30 +263,23 @@ const VscodeWrapperRule = defineImportRule({
 /**
  * Match the first of a run of consecutive monospace+pre `<div>` /
  * `<br>` siblings (the Safari shape) and emit one CodeNode for the
- * whole run. Siblings consumed by a previous pass are tracked in
- * session state so the framework's per-child dispatch on them
- * returns nothing.
+ * whole run. When the framework's per-child dispatch lands on a
+ * subsequent sibling in the same run, the prev-sibling check below
+ * returns `[]` so the run is only emitted once.
  */
 const VscodeLineRunRule = defineImportRule({
-  $import: (ctx, el, $next) => {
+  $import: (_ctx, el, $next) => {
     if (!isMonospacePreElement(el) || isMonospaceDescendant(el)) {
       return $next();
     }
-    const consumed = ctx.session.get(VscodeRunConsumed);
-    if (consumed.has(el)) {
-      return [];
-    }
     const prev = el.previousElementSibling;
     if (prev && isMonospacePreElement(prev)) {
-      // We were consumed by an earlier sibling's walk on a previous
-      // dispatch (defensive — the consumed-set branch above would
-      // normally cover this).
+      // An earlier sibling's walk already absorbed `el` into its run.
       return [];
     }
     const lines: string[] = [];
     let cur: Element | null = el;
     while (cur && isMonospacePreElement(cur)) {
-      consumed.add(cur);
       lines.push(cur.tagName === 'BR' ? '' : cur.textContent || '');
       cur = cur.nextElementSibling;
     }

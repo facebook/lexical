@@ -40,6 +40,13 @@ type ImportContextRecord = ContextRecord<typeof DOMImportContextSymbol>;
  * Note: to support the value-or-updater pattern, `V` cannot be a function
  * type; wrap it in an array or object if needed.
  *
+ * `getDefaultValue` is called **once at state creation** and the result is
+ * shared between every session that reads the state without first writing
+ * a value. Defaults must therefore be immutable (primitives, frozen
+ * objects, or read-only arrays / records). If your state needs mutable
+ * per-session storage, lazily initialize it inside your rule (e.g.
+ * `if (!ctx.session.has(cfg)) ctx.session.set(cfg, new …())`).
+ *
  * @experimental
  * @__NO_SIDE_EFFECTS__
  */

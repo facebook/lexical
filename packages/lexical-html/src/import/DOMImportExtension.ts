@@ -184,23 +184,21 @@ export const DOMImportExtension = defineExtension<
     rules: [DefaultHoistRule],
   },
   mergeConfig(config, partial) {
-    const merged = shallowMergeConfig(config, partial);
-    if (partial.rules) {
-      (merged.rules as unknown[]) = [...partial.rules, ...config.rules];
-    }
-    if (partial.contextDefaults) {
-      (merged.contextDefaults as unknown[]) = [
-        ...config.contextDefaults,
-        ...partial.contextDefaults,
-      ];
-    }
-    if (partial.preprocess) {
-      (merged.preprocess as unknown[]) = [
-        ...config.preprocess,
-        ...partial.preprocess,
-      ];
-    }
-    return merged;
+    return shallowMergeConfig(config, {
+      ...partial,
+      ...(partial.contextDefaults && {
+        contextDefaults: [
+          ...config.contextDefaults,
+          ...partial.contextDefaults,
+        ],
+      }),
+      ...(partial.preprocess && {
+        preprocess: [...config.preprocess, ...partial.preprocess],
+      }),
+      ...(partial.rules && {
+        rules: [...partial.rules, ...config.rules],
+      }),
+    });
   },
   name: DOMImportExtensionName,
 });

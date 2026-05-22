@@ -26,7 +26,7 @@ import {
   $withImportContext,
   ImportOverlays,
 } from './ImportContext';
-import {applySchema, RootSchema} from './schemas';
+import {$applySchema, RootSchema} from './schemas';
 
 const NO_CAPTURES: Record<string, RegExpMatchArray> = Object.freeze(
   {} as Record<string, RegExpMatchArray>,
@@ -107,7 +107,7 @@ function $importChildrenRun(
   if (!schema) {
     return afterApplied;
   }
-  return applySchema(schema, afterApplied, null, parent);
+  return $applySchema(schema, afterApplied, null, parent);
 }
 
 function $importOneInternal(
@@ -201,15 +201,11 @@ function $dispatch(runtime: Runtime, node: Node): readonly LexicalNode[] {
  * `$createNodesFromDOM` hoisting behavior.
  */
 function $hoistChildrenOf(runtime: Runtime, node: Node): LexicalNode[] {
-  if (!('childNodes' in node)) {
-    return [];
-  }
-  const parent = node as ParentNode;
-  if (parent.childNodes.length === 0) {
+  if (node.childNodes.length === 0) {
     return [];
   }
   const collected: LexicalNode[] = [];
-  for (const child of Array.from(parent.childNodes)) {
+  for (const child of Array.from(node.childNodes)) {
     const produced = $importOneInternal(runtime, child, undefined);
     for (const lex of produced) {
       collected.push(lex);

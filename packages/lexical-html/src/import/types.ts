@@ -242,7 +242,7 @@ export interface ImportChildrenOpts {
   readonly $onChild?: (child: LexicalNode) => LexicalNode | null | undefined;
   /**
    * Called once with the full child array after all DOM children have been
-   * recursively imported but before {@link ChildSchema.packageRun} is
+   * recursively imported but before {@link ChildSchema.$packageRun} is
    * applied. Equivalent to the old `after` hook.
    */
   readonly $after?: (children: LexicalNode[]) => LexicalNode[];
@@ -279,35 +279,68 @@ export interface ImportNodeOpts {
  * `wrapContinuousInlines` / `ArtificialNode__DO_NOT_USE` logic is the
  * `BlockSchema` and `NestedBlockSchema` cases of this primitive.
  *
+ * A schema only controls how the *children* are assembled before being
+ * appended to the parent the calling rule already chose. It cannot
+ * change the parent itself. Cases where the parent's shape needs to
+ * change in response to its children — e.g. an inline `<a>` that
+ * encloses a block `<h1>`, which must be lifted so the heading takes
+ * the link's place and the link is redistributed onto the heading's
+ * inline contents — belong in the rule body, not the schema. See the
+ * "Lifting blocks out of an inline parent" section of the docs.
+ *
  * @experimental
  */
 export interface ChildSchema {
   /** Optional name for debug output. */
   readonly name?: string;
-  /** Returns `true` if `child` is a valid child of `parent` in this position. */
-  accepts(child: LexicalNode, parent: LexicalNode | null): boolean;
+  /**
+   * Returns `true` if `child` is a valid child of `parent` in this position.
+   * Invoked inside an editor read/update — receives `LexicalNode` arguments,
+   * so it can call `$is*` predicates and node methods directly.
+   */
+  $accepts(child: LexicalNode, parent: LexicalNode | null): boolean;
   /**
    * Package a maximal run of non-accepted siblings into zero or more
-   * accepted nodes. If omitted, {@link ChildSchema.onReject} is consulted
-   * instead.
+   * accepted nodes. The returned nodes replace the rejected run at the
+   * same position in the child list and are not re-checked against
+   * `$accepts` — the caller is trusted to return valid children. If
+   * omitted, or if it returns an empty array, {@link ChildSchema.onReject}
+   * is consulted instead. Invoked inside an editor read/update.
    */
-  packageRun?(
+  $packageRun?(
     rejected: LexicalNode[],
     parent: LexicalNode | null,
     domParent: Node | null,
   ): LexicalNode[];
   /**
-   * Strategy for non-accepted children when `packageRun` is missing or
-   * returns an empty array. `'hoist'` lifts them up as siblings of the
-   * parent; `'drop'` silently removes them.
+   * Fallback strategy for a run of non-accepted children when
+   * `$packageRun` is missing or returns an empty array:
+   *
+   * - `'drop'` (default) — silently discards the run. Use when the
+   *   schema is strict and rejected content is meaningless in this
+   *   position (e.g. text between table rows).
+   * - `'hoist'` — emits the rejected nodes unchanged at the same
+   *   position in the assembled child list. The caller's parent then
+   *   receives them as-is, which is only useful if the calling rule
+   *   intends to surface mixed content to *its* parent (a less common
+   *   pattern; usually `$packageRun` should re-shape the run first).
+   *
+   * `'hoist'` does NOT lift the run all the way up out of the calling
+   * rule's parent — that requires the rule itself to detect the
+   * situation and emit a different parent structure (see the
+   * "Lifting blocks out of an inline parent" section).
    */
   readonly onReject?: 'hoist' | 'drop';
   /**
-   * Final pass over the assembled child list (after `packageRun`). Returns
+   * Final pass over the assembled child list (after `$packageRun`). Returns
    * the children to actually attach. Use to enforce structural invariants
-   * (e.g. drop empty runs, pad short table rows).
+   * (e.g. drop empty runs, pad short table rows). Invoked inside an editor
+   * read/update.
    */
-  finalize?(children: LexicalNode[], parent: LexicalNode | null): LexicalNode[];
+  $finalize?(
+    children: LexicalNode[],
+    parent: LexicalNode | null,
+  ): LexicalNode[];
 }
 
 /**

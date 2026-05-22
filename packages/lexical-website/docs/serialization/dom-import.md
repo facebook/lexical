@@ -276,12 +276,16 @@ are allowed in this position and how to package non-conforming runs:
 
 ```ts
 interface ChildSchema {
-  accepts(child: LexicalNode, parent: LexicalNode | null): boolean;
-  packageRun?(rejected: LexicalNode[], ...): LexicalNode[];
+  $accepts(child: LexicalNode, parent: LexicalNode | null): boolean;
+  $packageRun?(rejected: LexicalNode[], ...): LexicalNode[];
   onReject?: 'hoist' | 'drop';
-  finalize?(children: LexicalNode[], ...): LexicalNode[];
+  $finalize?(children: LexicalNode[], ...): LexicalNode[];
 }
 ```
+
+The `$`-prefixed members are invoked inside the import walk (which
+already runs inside `editor.update`), so they can call `$is*`
+predicates and node methods on the `LexicalNode` arguments directly.
 
 Built-ins, all from `@lexical/html`:
 
@@ -316,9 +320,59 @@ const HeadingRule = defineImportRule({
 });
 ```
 
-Custom schemas implement `ChildSchema` directly. Both `accepts` and
-the optional `packageRun` are pure functions — no editor state
-required.
+Custom schemas implement `ChildSchema` directly. `$accepts`,
+`$packageRun`, and `$finalize` are invoked inside the editor context
+of the surrounding walk, so they receive `LexicalNode` arguments and
+can call `$is*` predicates / node methods without setting up their
+own `editor.read`.
+
+### When `$packageRun` runs and `onReject` doesn't
+
+The schema walks the assembled child array once, partitioning into
+accepted children (passed through individually) and maximal runs of
+non-accepted children. For each rejected run, `$packageRun` runs
+first; if it's missing or returns `[]`, `onReject` decides:
+
+- `'drop'` (default) silently discards the run.
+- `'hoist'` emits the run unchanged at the same position. This
+  surfaces the mixed content to the calling rule's parent — only
+  useful when the rule's caller is prepared to receive mixed
+  children. It does NOT lift the run *out* of the calling rule's
+  parent.
+
+`$packageRun` is the right hook when the rejected content has a
+sensible re-shape that still belongs *inside* the rule's parent —
+e.g. `BlockSchema` wraps a run of inline siblings in a
+`ParagraphNode`, `TableSchema` wraps cells in a synthesized row.
+
+### Lifting blocks out of an inline parent
+
+Schemas cannot change the parent the rule already created. The
+canonical example is an inline element with block children:
+
+```html
+<a href="link"><h1>some text</h1><div>more text</div></a>
+```
+
+The desired output is to lift each block out of the link and
+redistribute the link onto the block's inline contents:
+
+```
+HeadingNode  └─ LinkNode("link")     └─ TextNode("some text")
+ParagraphNode └─ LinkNode("link")    └─ TextNode("more text")
+```
+
+`InlineSchema` doesn't help here: with `onReject: 'drop'` the
+headings are lost, with `'hoist'` they emerge unwrapped, and there's
+no `$packageRun` shape that produces "a list of blocks each holding
+the original inline wrapper" because the schema sees only the
+children, not the parent.
+
+This is a rule-level concern: the rule walks its produced children,
+emits each block in place, and wraps any inline run (whether inside
+a lifted block or between two blocks) in a fresh copy of its inline
+parent. See `@lexical/link`'s `AnchorRule` for a worked
+implementation.
 
 ## Context
 
@@ -351,6 +405,8 @@ for every import call) or as a per-call `context` override on
 `$generateNodesFromDOM`:
 
 ```ts
+import {contextValue} from '@lexical/html';
+
 dep.output.$generateNodesFromDOM(dom, {
   context: [contextValue(ImportMode, 'deserialize')],
 });
@@ -360,6 +416,9 @@ A nested `$importChildren` can also branch context for its descendants
 via `opts.context`:
 
 ```ts
+import {contextValue, ImportTextFormat} from '@lexical/html';
+import {IS_BOLD} from 'lexical';
+
 ctx.$importChildren(el, {
   context: [contextValue(ImportTextFormat, ctx.get(ImportTextFormat) | IS_BOLD)],
 });
@@ -372,15 +431,35 @@ the branched subtree see the unchanged inherited value.
 
 `@lexical/html` ships several states out of the box:
 
-- **`ImportSource`** (`'paste' | 'drop' | 'deserialize' | 'headless' | 'unknown'`)
-  — identifies how this import started. Rules can branch on it to
-  adapt behavior (be lenient on `'deserialize'`, preserve whitespace
-  on `'paste'`).
+- **`ImportSource`** (`'paste' | 'unknown'`) — identifies how this
+  import started. Defaults to `'unknown'`; the clipboard handler sets
+  `'paste'`. Rules can branch on it to adapt behavior (e.g. preserve
+  more whitespace on `'paste'`). Apps that need a richer vocabulary
+  (e.g. `'drop'`, `'deserialize'`) can define their own
+  `ImportStateConfig` and pass it through the same `context` slot.
+- **`ImportSourceDataTransfer`** (`DataTransfer | null`) — the original
+  `DataTransfer` the paste/drop came from, surfaced so rules can peek
+  at companion MIME types or attached files. `null` outside clipboard
+  imports. See [below](#importsourcedatatransfer).
 - **`ImportTextFormat`** (`number`, a `TextFormatType` bitmask) —
   used by the inline-format rules (`<b>`, `<strong>`, `<em>`, …) to
   propagate format bits to descendant TextNodes. Replaces the legacy
   `forChild` chain that the inline tags previously used. Build your
   own format propagation by branching this state.
+- **`ImportTextStyle`** (`Readonly<Record<string, string>>`) — parsed
+  CSS-property record (e.g. `{color: 'red', 'font-family': 'serif'}`)
+  inherited by descendant TextNodes and materialized onto their
+  `style` string. Used by the core `#text` rule to pick up
+  inheritable cell/span styles like `color`. Properties already
+  covered by `ImportTextFormat` (`font-weight`, `font-style`,
+  `text-decoration`, `vertical-align`) are filtered out so they
+  remain owned by the format-bit path.
+- **`ImportOverlays`** — session slot (`{dispatch: CompiledDispatch}[]`)
+  holding overlays installed during the preprocess phase. The walker
+  primes its overlay stack from this list before starting, so a
+  preprocess can scope an overlay to the whole document based on a
+  signal it detected (e.g. a Word `Generator` meta tag). See
+  [Preprocess](#preprocess).
 - **`ImportWhitespaceConfig`** — controls text-node whitespace
   handling (which DOM elements preserve whitespace, which count as
   inline siblings). See below.
@@ -763,9 +842,30 @@ configExtension(ClipboardImportExtension, {
 
 ### Routing pastes through `DOMImportExtension`
 
-Pair `ClipboardImportExtension` with
-`$generateNodesFromDOMViaExtension` to send pasted HTML through the
-new pipeline:
+The easy on-switch is `ClipboardDOMImportExtension` from
+`@lexical/clipboard` — add it to your dependencies and `text/html`
+pastes and drops route through the new pipeline (forwarding
+`ImportSource='paste'` and `ImportSourceDataTransfer` automatically):
+
+```ts
+import {defineExtension} from 'lexical';
+import {ClipboardDOMImportExtension} from '@lexical/clipboard';
+import {CoreImportExtension, RichTextImportExtension} from '@lexical/html';
+
+defineExtension({
+  name: 'app',
+  dependencies: [
+    CoreImportExtension,
+    RichTextImportExtension,
+    // …other per-package import extensions you want active…
+    ClipboardDOMImportExtension,
+  ],
+});
+```
+
+If you need to customize the per-MIME stack (e.g. inspect the HTML
+before walking, or pre-strip a known wrapper), stack your own handler
+manually via `configExtension(ClipboardImportExtension, …)` instead:
 
 ```ts
 import {
@@ -865,7 +965,7 @@ ready to move a custom node, the translation is mechanical:
 A migrated rule typically replaces a forChild chain with explicit
 context propagation (clearer + survives across rule boundaries), and
 an `after` callback with either `$after` (when the post-processing
-runs on this rule's children) or a schema's `packageRun` / `finalize`
+runs on this rule's children) or a schema's `$packageRun` / `$finalize`
 (when the same logic belongs to anything appending to this kind of
 parent).
 

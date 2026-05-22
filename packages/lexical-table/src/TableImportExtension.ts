@@ -101,8 +101,7 @@ function $packageCellChildren(children: LexicalNode[]): LexicalNode[] {
       if (paragraph !== null) {
         paragraph.append(child);
       } else {
-        paragraph = $createParagraphNode();
-        paragraph.append(child);
+        paragraph = $createParagraphNode().append(child);
         result.push(paragraph);
       }
     } else {
@@ -259,13 +258,13 @@ const TableCellRule = defineImportRule({
  * @experimental
  */
 export const TableSchema: ChildSchema = {
-  accepts: child => $isTableRowNode(child),
-  name: 'TableSchema',
-  packageRun(run) {
+  $accepts: $isTableRowNode,
+  $packageRun(run) {
     return run.every($isTableCellNode)
       ? [$createTableRowNode().splice(0, 0, run)]
       : [];
   },
+  name: 'TableSchema',
 };
 
 /**
@@ -276,7 +275,7 @@ export const TableSchema: ChildSchema = {
  * @experimental
  */
 export const TableRowSchema: ChildSchema = {
-  accepts: child => $isTableCellNode(child),
+  $accepts: $isTableCellNode,
   name: 'TableRowSchema',
 };
 

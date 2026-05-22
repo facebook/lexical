@@ -16,7 +16,6 @@ import {
   sel,
 } from '@lexical/html';
 import {
-  $createParagraphNode,
   $isParagraphNode,
   $setDirectionFromDOM,
   $setFormatFromDOM,
@@ -26,17 +25,13 @@ import {
   type LexicalNode,
 } from 'lexical';
 
+import {ListExtension} from './LexicalListExtension';
 import {
   $createListItemNode,
   $isListItemNode,
-  ListItemNode,
+  type ListItemNode,
 } from './LexicalListItemNode';
-import {
-  $createListNode,
-  $isListNode,
-  ListNode,
-  type ListType,
-} from './LexicalListNode';
+import {$createListNode, $isListNode} from './LexicalListNode';
 
 /**
  * Mirrors the legacy `isDomChecklist` heuristic from
@@ -63,10 +58,7 @@ function isDomChecklist(domNode: HTMLElement): boolean {
  * `ListItemNode`s (the legacy `$normalizeChildren` shape). Also wraps any
  * non-`ListItemNode` children in a new `ListItemNode`.
  */
-function $normalizeListChildren(
-  children: LexicalNode[],
-  listType: ListType,
-): ListItemNode[] {
+function $normalizeListChildren(children: LexicalNode[]): ListItemNode[] {
   const out: ListItemNode[] = [];
   for (const child of children) {
     if ($isListItemNode(child)) {
@@ -75,21 +67,14 @@ function $normalizeListChildren(
       if (innerChildren.length > 1) {
         for (const inner of innerChildren) {
           if ($isListNode(inner)) {
-            const wrap = $createListItemNode();
-            wrap.append(inner);
-            out.push(wrap);
+            out.push($createListItemNode().append(inner));
           }
         }
       }
     } else {
-      const wrap = $createListItemNode();
-      wrap.append(child);
-      out.push(wrap);
+      out.push($createListItemNode().append(child));
     }
   }
-  // Read listType to keep the public signature meaningful even though the
-  // legacy implementation does not vary by listType.
-  void listType;
   return out;
 }
 
@@ -104,13 +89,7 @@ const ListRule = defineImportRule({
       node = $createListNode('bullet');
     }
     $setDirectionFromDOM(node, el);
-    return [
-      node.splice(
-        0,
-        0,
-        $normalizeListChildren(ctx.$importChildren(el), node.getListType()),
-      ),
-    ];
+    return [node.splice(0, 0, $normalizeListChildren(ctx.$importChildren(el)))];
   },
   match: sel.tag('ol', 'ul'),
   name: '@lexical/list/list',
@@ -226,16 +205,16 @@ const JoplinChecklistItemRule = defineImportRule({
  * @experimental
  */
 export const ListSchema: ChildSchema = {
-  accepts: child => $isListItemNode(child) || $isListNode(child),
-  name: 'ListSchema',
-  packageRun(run) {
+  $accepts: child => $isListItemNode(child) || $isListNode(child),
+  $packageRun(run) {
     // Inline runs inside a `<ul>`/`<ol>` (e.g. text between two `<li>`s)
-    // become a paragraph inside a synthetic list item, preserving the
-    // structure invariant.
-    return [
-      $createListItemNode().append($createParagraphNode().splice(0, 0, run)),
-    ];
+    // become the children of a synthetic `ListItemNode`. `ListItemNode`
+    // is itself a block-level container of inlines, so no intermediate
+    // `ParagraphNode` is needed (and the demoted-paragraph normalization
+    // would strip one anyway).
+    return [$createListItemNode().splice(0, 0, run)];
   },
+  name: 'ListSchema',
 };
 
 /**
@@ -263,13 +242,10 @@ export const ListImportRules = [
 export const ListImportExtension = defineExtension({
   dependencies: [
     CoreImportExtension,
+    // Registers ListNode + ListItemNode so the rules can safely call their
+    // $create helpers.
+    ListExtension,
     configExtension(DOMImportExtension, {rules: ListImportRules}),
   ],
   name: '@lexical/list/Import',
-  // Register ListNode + ListItemNode lazily so the rules can safely call
-  // their $create helpers. We can't depend on ListExtension directly
-  // because it's defined in this package's ./index — a module-init
-  // cycle. Apps that want the full ListExtension behavior (commands,
-  // transforms) should depend on it separately.
-  nodes: () => [ListNode, ListItemNode],
 });

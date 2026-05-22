@@ -11,19 +11,21 @@ import {
   $createParagraphNode,
   $isBlockElementNode,
   $isDecoratorNode,
-  type ElementFormatType,
   isHTMLElement,
   type LexicalNode,
 } from 'lexical';
+
+import {isAlignmentValue} from './coreImportRules';
 
 /**
  * True if the node fills a block slot at the root or inside another
  * block — covers both ElementNode-style blocks (paragraph, heading,
  * quote) and block-level DecoratorNodes (HorizontalRuleNode,
- * ImageNode-as-block, etc.). Used by {@link BlockSchema},
- * {@link RootSchema}, and {@link NestedBlockSchema}.
+ * ImageNode-as-block, etc.). Calls {@link DecoratorNode.isInline} when
+ * applicable, so it must run inside an editor read/update. Used by
+ * {@link BlockSchema}, {@link RootSchema}, and {@link NestedBlockSchema}.
  */
-function isBlockLevel(node: LexicalNode): boolean {
+function $isBlockLevel(node: LexicalNode): boolean {
   return (
     $isBlockElementNode(node) || ($isDecoratorNode(node) && !node.isInline())
   );
@@ -36,7 +38,7 @@ function isBlockLevel(node: LexicalNode): boolean {
  *
  * @internal
  */
-export function applySchema(
+export function $applySchema(
   schema: ChildSchema,
   children: LexicalNode[],
   parent: LexicalNode | null,
@@ -51,8 +53,8 @@ export function applySchema(
     }
     const rejected = run;
     run = null;
-    if (schema.packageRun) {
-      const packaged = schema.packageRun(rejected, parent, domParent);
+    if (schema.$packageRun) {
+      const packaged = schema.$packageRun(rejected, parent, domParent);
       if (packaged.length > 0) {
         for (const n of packaged) {
           out.push(n);
@@ -60,7 +62,7 @@ export function applySchema(
         return;
       }
     }
-    // No packageRun (or it returned []) — apply onReject. 'drop' (default)
+    // No $packageRun (or it returned []) — apply onReject. 'drop' (default)
     // discards the run. 'hoist' lets it through unchanged at this level.
     if (schema.onReject === 'hoist') {
       for (const n of rejected) {
@@ -70,7 +72,7 @@ export function applySchema(
   };
 
   for (const child of children) {
-    if (schema.accepts(child, parent)) {
+    if (schema.$accepts(child, parent)) {
       flushRun();
       out.push(child);
     } else {
@@ -82,7 +84,7 @@ export function applySchema(
   }
   flushRun();
 
-  return schema.finalize ? schema.finalize(out, parent) : out;
+  return schema.$finalize ? schema.$finalize(out, parent) : out;
 }
 
 /**
@@ -96,11 +98,11 @@ function $paragraphPackageRun(
   domParent: Node | null,
 ): LexicalNode[] {
   const paragraph = $createParagraphNode();
-  const textAlign = isHTMLElement(domParent)
-    ? (domParent.style.textAlign as ElementFormatType)
-    : ('' as ElementFormatType);
-  if (textAlign) {
-    paragraph.setFormat(textAlign);
+  if (isHTMLElement(domParent)) {
+    const textAlign = domParent.style.textAlign;
+    if (isAlignmentValue(textAlign)) {
+      paragraph.setFormat(textAlign);
+    }
   }
   return [paragraph.splice(0, 0, run)];
 }
@@ -113,9 +115,9 @@ function $paragraphPackageRun(
  * @experimental
  */
 export const BlockSchema: ChildSchema = {
-  accepts: isBlockLevel,
+  $accepts: $isBlockLevel,
+  $packageRun: $paragraphPackageRun,
   name: 'BlockSchema',
-  packageRun: $paragraphPackageRun,
 };
 
 /**
@@ -126,7 +128,7 @@ export const BlockSchema: ChildSchema = {
  * @experimental
  */
 export const InlineSchema: ChildSchema = {
-  accepts: child => !isBlockLevel(child),
+  $accepts: child => !$isBlockLevel(child),
   name: 'InlineSchema',
 };
 
@@ -141,8 +143,7 @@ export const InlineSchema: ChildSchema = {
  * @experimental
  */
 export const NestedBlockSchema: ChildSchema = {
-  accepts: isBlockLevel,
-  name: 'NestedBlockSchema',
+  $accepts: $isBlockLevel,
   /**
    * Pass an inline run through unchanged. Because the schema iterator only
    * groups *maximal* rejected runs (each separated from the next by an
@@ -150,9 +151,10 @@ export const NestedBlockSchema: ChildSchema = {
    * groups" case never arises — adjacent inline siblings are already
    * coalesced into one run.
    */
-  packageRun(run) {
+  $packageRun(run) {
     return run;
   },
+  name: 'NestedBlockSchema',
 };
 
 /**
@@ -164,7 +166,7 @@ export const NestedBlockSchema: ChildSchema = {
  * @experimental
  */
 export const RootSchema: ChildSchema = {
-  accepts: isBlockLevel,
+  $accepts: $isBlockLevel,
+  $packageRun: $paragraphPackageRun,
   name: 'RootSchema',
-  packageRun: $paragraphPackageRun,
 };

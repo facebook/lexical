@@ -39,15 +39,24 @@ import {selBase} from './sel';
 
 const sel = selBase;
 
-const ALIGNMENT_VALUES: ReadonlySet<ElementFormatType> =
-  new Set<ElementFormatType>([
-    'center',
-    'end',
-    'justify',
-    'left',
-    'right',
-    'start',
-  ]);
+const ALIGNMENT_VALUES: ReadonlySet<string> = new Set<ElementFormatType>([
+  'center',
+  'end',
+  'justify',
+  'left',
+  'right',
+  'start',
+]);
+
+/**
+ * True if `value` is a non-empty {@link ElementFormatType} (matches one of
+ * the supported `text-align` / legacy `align`-attribute values).
+ *
+ * @internal
+ */
+export function isAlignmentValue(value: string): value is ElementFormatType {
+  return ALIGNMENT_VALUES.has(value);
+}
 
 /**
  * A pair of bitmasks describing which {@link TextFormatType} bits to set
@@ -447,8 +456,8 @@ const ParagraphRule = defineImportRule({
     setNodeIndentFromDOM(el, p);
     if (p.getFormatType() === '') {
       const align = el.getAttribute('align');
-      if (align && ALIGNMENT_VALUES.has(align as ElementFormatType)) {
-        p.setFormat(align as ElementFormatType);
+      if (align && isAlignmentValue(align)) {
+        p.setFormat(align);
       }
     }
     $setDirectionFromDOM(p, el);

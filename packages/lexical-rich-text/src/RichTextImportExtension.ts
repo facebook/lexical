@@ -24,10 +24,9 @@ import {
 import {
   $createHeadingNode,
   $createQuoteNode,
-  HeadingNode,
   type HeadingTagType,
-  QuoteNode,
 } from './index';
+import {RichTextExtension} from './LexicalRichTextExtension';
 
 /**
  * Heuristic copied (in spirit) from the legacy `isGoogleDocsTitle`:
@@ -123,14 +122,10 @@ export const RichTextImportRules = [
 export const RichTextImportExtension = defineExtension({
   dependencies: [
     CoreImportExtension,
+    // Registers HeadingNode + QuoteNode so the rules can safely call their
+    // $create helpers.
+    RichTextExtension,
     configExtension(DOMImportExtension, {rules: RichTextImportRules}),
   ],
   name: '@lexical/rich-text/Import',
-  // Register HeadingNode + QuoteNode lazily so the rules can safely call
-  // $createHeadingNode / $createQuoteNode. We can't depend on
-  // RichTextExtension directly because it's defined in this package's
-  // ./index — that introduces a module-init cycle. Apps that want the
-  // full RichTextExtension behavior (paste/cut handlers, format
-  // triggers) should depend on it separately.
-  nodes: () => [HeadingNode, QuoteNode],
 });

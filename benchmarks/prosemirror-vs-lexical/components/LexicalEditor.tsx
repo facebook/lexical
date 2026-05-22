@@ -55,16 +55,25 @@ function ExposeForProbe() {
     w.__lexicalHistorySnapshot = () => {
       try {
         const dep = getExtensionDependencyFromEditor(editor, HistoryExtension);
-        const hs = dep.output.historyState.peek();
+        const out = dep.output;
+        const outputKeys = Object.keys(out as unknown as object);
+        const hs = out.historyState.peek();
         return {
+          delay:
+            typeof out.delay?.peek === 'function'
+              ? out.delay.peek()
+              : undefined,
+          maxDepth:
+            typeof out.maxDepth?.peek === 'function'
+              ? out.maxDepth.peek()
+              : undefined,
           ok: true,
-          undoLen: hs.undoStack.length,
+          outputKeys,
           redoLen: hs.redoStack.length,
-          maxDepth: dep.output.maxDepth.peek(),
-          delay: dep.output.delay.peek(),
+          undoLen: hs.undoStack.length,
         };
       } catch (err) {
-        return {ok: false, error: String(err)};
+        return {error: String(err), ok: false};
       }
     };
     return () => {

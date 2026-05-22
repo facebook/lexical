@@ -1,0 +1,4 @@
+{
+  "ok": false,
+  "error": "TypeError: Cannot read properties of undefined (reading 'peek')"
+}

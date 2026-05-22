@@ -755,6 +755,10 @@ describe('Markdown', () => {
       md: '*text**text***',
     },
     {
+      html: '<p><b><strong style="white-space: pre-wrap;">text</strong></b><i><b><strong style="white-space: pre-wrap;">text</strong></b></i></p>',
+      md: '**text*text***',
+    },
+    {
       html: '<p><i><em style="white-space: pre-wrap;">foo**bar</em></i></p>',
       md: '*foo**bar*',
       mdAfterExport: '*foo\\*\\*bar*',

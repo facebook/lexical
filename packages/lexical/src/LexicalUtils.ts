@@ -33,6 +33,7 @@ import {IS_APPLE, IS_APPLE_WEBKIT, IS_IOS, IS_SAFARI} from 'shared/environment';
 import invariant from 'shared/invariant';
 
 import {
+  $createParagraphNode,
   $createTextNode,
   $getPreviousSelection,
   $getSelection,
@@ -1571,6 +1572,46 @@ export function $isInlineElementOrDecoratorNode<T>(node: LexicalNode): node is (
     ($isElementNode(node) && node.isInline()) ||
     ($isDecoratorNode(node) && node.isInline())
   );
+}
+
+export function $wrapInlineNodes(nodes: LexicalNode[]) {
+  // We temporarily insert the topLevelNodes into an arbitrary ElementNode,
+  // since insertAfter does not work on nodes that have no parent (TO-DO: fix that).
+  const virtualRoot = $createParagraphNode();
+
+  let currentBlock = null;
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i];
+
+    const isLineBreakNode = $isLineBreakNode(node);
+
+    if (
+      isLineBreakNode ||
+      ($isDecoratorNode(node) && node.isInline()) ||
+      ($isElementNode(node) && node.isInline()) ||
+      $isTextNode(node) ||
+      node.isParentRequired()
+    ) {
+      if (currentBlock === null) {
+        currentBlock = node.createParentElementNode();
+        virtualRoot.append(currentBlock);
+        // In the case of LineBreakNode, we just need to
+        // add an empty ParagraphNode to the topLevelBlocks.
+        if (isLineBreakNode) {
+          continue;
+        }
+      }
+
+      if (currentBlock !== null) {
+        currentBlock.append(node);
+      }
+    } else {
+      virtualRoot.append(node);
+      currentBlock = null;
+    }
+  }
+
+  return virtualRoot;
 }
 
 export function $getNearestRootOrShadowRoot(

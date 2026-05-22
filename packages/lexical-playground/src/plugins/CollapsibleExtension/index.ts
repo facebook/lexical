@@ -108,6 +108,11 @@ const $onEscapeDown = () => {
 };
 
 const $wrapInlineContentChildren = (node: CollapsibleContentNode) => {
+  if (node.isEmpty()) {
+    node.append($createParagraphNode());
+    return;
+  }
+
   let paragraph: ReturnType<typeof $createParagraphNode> | null = null;
 
   for (const child of node.getChildren()) {

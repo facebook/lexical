@@ -278,4 +278,89 @@ describe('CollapsibleExtension transforms', () => {
       expect(child.getTextContent()).toBe('Body');
     });
   });
+
+  it('adds a paragraph to empty content loaded from serialized state', () => {
+    using editor = buildEditorFromExtensions(CollapsibleExtension);
+
+    const state = editor.parseEditorState(
+      JSON.stringify({
+        root: {
+          children: [
+            {
+              children: [
+                {
+                  children: [
+                    {
+                      children: [
+                        {
+                          detail: 0,
+                          format: 0,
+                          mode: 'normal',
+                          style: '',
+                          text: 'Title',
+                          type: 'text',
+                          version: 1,
+                        },
+                      ],
+                      direction: null,
+                      format: '',
+                      indent: 0,
+                      textFormat: 0,
+                      textStyle: '',
+                      type: 'paragraph',
+                      version: 1,
+                    },
+                  ],
+                  direction: null,
+                  format: '',
+                  indent: 0,
+                  type: 'collapsible-title',
+                  version: 1,
+                },
+                {
+                  children: [],
+                  direction: null,
+                  format: '',
+                  indent: 0,
+                  type: 'collapsible-content',
+                  version: 1,
+                },
+              ],
+              direction: null,
+              format: '',
+              indent: 0,
+              open: true,
+              type: 'collapsible-container',
+              version: 1,
+            },
+          ],
+          direction: null,
+          format: '',
+          indent: 0,
+          type: 'root',
+          version: 1,
+        },
+      }),
+    );
+
+    editor.setEditorState(state);
+    editor.update(
+      () => {
+        const container = $getRoot().getFirstChildOrThrow();
+        assert($isCollapsibleContainerNode(container));
+        const content = container.getLastChildOrThrow();
+        assert($isCollapsibleContentNode(content));
+        content.markDirty();
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const container = $getRoot().getFirstChildOrThrow();
+      assert($isCollapsibleContainerNode(container));
+      const content = container.getLastChildOrThrow();
+      assert($isCollapsibleContentNode(content));
+      expect($isParagraphNode(content.getFirstChild())).toBe(true);
+    });
+  });
 });

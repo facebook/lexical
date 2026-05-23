@@ -181,6 +181,12 @@ export type TabIndentationConfig = {
   maxIndent: null | number;
 }
 declare export var TabIndentationExtension: LexicalExtension<TabIndentationConfig, "@lexical/extension/TabIndentation", NamedSignalsOutput<TabIndentationConfig>, void>;
+
+export type TouchIndentationConfig = {
+  disabled: boolean;
+  swipeThreshold: number;
+}
+declare export var TouchIndentationExtension: LexicalExtension<TouchIndentationConfig, "@lexical/extension/TouchIndentation", NamedSignalsOutput<TouchIndentationConfig>, void>;
 declare export function watchedSignal<T>(
   getSnapshot: () => T,
   register: (self: Signal<T>) => () => void,

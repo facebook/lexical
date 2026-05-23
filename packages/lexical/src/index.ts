@@ -281,7 +281,6 @@ export {
   $setFormatFromDOM,
   $setSelection,
   $splitNode,
-  $wrapInlineNodes,
   getDOMOwnerDocument,
   getDOMSelection,
   getDOMSelectionFromTarget,

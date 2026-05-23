@@ -75,7 +75,6 @@ export {
   $findMatchingParent,
   $getAdjacentSiblingOrParentSiblingCaret,
   $splitNode,
-  $wrapInlineNodes,
   addClassNamesToElement,
   isBlockDomNode,
   isHTMLAnchorElement,

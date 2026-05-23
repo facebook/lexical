@@ -11,7 +11,6 @@ import './Collapsible.css';
 import {
   $findMatchingParent,
   $insertNodeToNearestRoot,
-  $wrapInlineNodes,
   mergeRegister,
 } from '@lexical/utils';
 import {
@@ -116,17 +115,24 @@ const $wrapInlineContentChildren = (node: CollapsibleContentNode) => {
     return;
   }
 
-  const children = node.getChildren();
-  if (
-    children.some(
-      child =>
-        $isInlineElementOrDecoratorNode(child) ||
-        $isLineBreakNode(child) ||
-        $isTextNode(child) ||
-        child.isParentRequired(),
-    )
-  ) {
-    node.append(...$wrapInlineNodes(children).getChildren());
+  let paragraph: ReturnType<typeof $createParagraphNode> | null = null;
+
+  for (const child of node.getChildren()) {
+    if (
+      !$isInlineElementOrDecoratorNode(child) &&
+      !$isLineBreakNode(child) &&
+      !$isTextNode(child) &&
+      !child.isParentRequired()
+    ) {
+      paragraph = null;
+      continue;
+    }
+
+    if (paragraph === null) {
+      paragraph = $createParagraphNode();
+      child.insertBefore(paragraph);
+    }
+    paragraph.append(child);
   }
 };
 

@@ -252,6 +252,21 @@ export interface LexicalPrivateDOM {
    */
   __lexicalFirstTextKey?: NodeKey | null | undefined;
   __lexicalLineBreak?: HTMLBRElement | HTMLImageElement | undefined | null;
+  /**
+   * Kind of last child recorded for this element during the previous
+   * reconcile, used by `$reconcileElementTerminatingLineBreak` to decide
+   * whether the trailing-`<br>` shape needs to change without calling
+   * `isInline()` on the prev-state node reference (which would resolve
+   * to a detached node once the last child has been removed in this
+   * commit). Set alongside `setManagedLineBreak` / cleared alongside
+   * `removeManagedLineBreak`.
+   */
+  __lexicalLastChildKind?:
+    | 'line-break'
+    | 'decorator'
+    | 'empty'
+    | null
+    | undefined;
   __lexicalDir?: 'ltr' | 'rtl' | null | undefined;
   __lexicalUnmanaged?: boolean | undefined;
 }

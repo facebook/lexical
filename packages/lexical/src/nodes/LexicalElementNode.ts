@@ -189,6 +189,8 @@ export class ElementDOMSlot<T extends HTMLElement = HTMLElement> {
   setManagedLineBreak(
     lineBreakType: null | 'empty' | 'line-break' | 'decorator',
   ): void {
+    const element: HTMLElement & LexicalPrivateDOM = this.element;
+    element.__lexicalLastChildKind = lineBreakType;
     if (lineBreakType === null) {
       this.removeManagedLineBreak();
     } else {

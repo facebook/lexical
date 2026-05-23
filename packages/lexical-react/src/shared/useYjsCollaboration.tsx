@@ -676,19 +676,25 @@ function clearEditorSkipCollab(editor: LexicalEditor, binding: BaseBinding) {
     return;
   }
 
-  // reset cursors in dom
-  const cursorsArr = Array.from(cursors.values());
-
-  for (let i = 0; i < cursorsArr.length; i++) {
-    const cursor = cursorsArr[i];
+  for (const cursor of cursors.values()) {
     const selection = cursor.selection;
-
-    if (selection && selection.selections != null) {
-      const selections = selection.selections;
-
-      for (let j = 0; j < selections.length; j++) {
-        cursorsContainer.removeChild(selections[i]);
+    if (selection === null) {
+      continue;
+    }
+    if (selection.highlight !== null) {
+      CSS.highlights.delete(selection.highlightName);
+    }
+    if (selection.styleEl !== null) {
+      selection.styleEl.remove();
+    }
+    if (selection.caret.parentNode === cursorsContainer) {
+      cursorsContainer.removeChild(selection.caret);
+    }
+    for (const span of selection.selections) {
+      if (span.parentNode === cursorsContainer) {
+        cursorsContainer.removeChild(span);
       }
     }
+    cursor.selection = null;
   }
 }

@@ -70,6 +70,13 @@ export type TextOperation = {
   },
 };
 
+// CSS Custom Highlight API; lib.dom in TS but not in Flow's bundled defs.
+declare class Highlight {
+  constructor(...initialRanges: Array<Range>): void;
+  add(range: Range): Highlight;
+  clear(): void;
+}
+
 export type CursorSelection = {
   anchor: {
     key: NodeKey,
@@ -81,8 +88,11 @@ export type CursorSelection = {
     key: NodeKey,
     offset: number,
   },
+  highlight: Highlight | null,
+  highlightName: string,
   name: HTMLSpanElement,
   selections: Array<HTMLElement>,
+  styleEl: HTMLStyleElement | null,
 };
 
 export type Cursor = {

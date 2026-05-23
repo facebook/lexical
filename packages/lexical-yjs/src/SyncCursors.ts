@@ -61,9 +61,21 @@ export type CursorSelection = {
     key: NodeKey;
     offset: number;
   };
+  // Modern path: one CSS Custom Highlight per remote cursor. `null` on the
+  // legacy rect-overlay fallback path for browsers without the API.
+  highlight: Highlight | null;
+  highlightName: string;
   name: HTMLSpanElement;
+  styleEl: HTMLStyleElement | null;
+  // Legacy fallback only: absolutely-positioned rect spans, one per visual rect.
   selections: Array<HTMLElement>;
 };
+
+const SUPPORTS_CSS_HIGHLIGHTS =
+  typeof Highlight !== 'undefined' &&
+  typeof CSS !== 'undefined' &&
+  'highlights' in CSS;
+
 export type Cursor = {
   color: string;
   name: string;
@@ -189,13 +201,22 @@ function createCursor(name: string, color: string): Cursor {
 }
 
 function destroySelection(binding: BaseBinding, selection: CursorSelection) {
+  if (selection.highlight !== null) {
+    CSS.highlights.delete(selection.highlightName);
+  }
+  if (selection.styleEl !== null) {
+    selection.styleEl.remove();
+  }
   const cursorsContainer = binding.cursorsContainer;
-
-  if (cursorsContainer !== null) {
-    const selections = selection.selections;
-    const selectionsLength = selections.length;
-
-    for (let i = 0; i < selectionsLength; i++) {
+  if (cursorsContainer === null) {
+    return;
+  }
+  if (selection.caret.parentNode === cursorsContainer) {
+    cursorsContainer.removeChild(selection.caret);
+  }
+  const selections = selection.selections;
+  for (let i = 0; i < selections.length; i++) {
+    if (selections[i].parentNode === cursorsContainer) {
       cursorsContainer.removeChild(selections[i]);
     }
   }
@@ -211,11 +232,12 @@ function destroyCursor(binding: BaseBinding, cursor: Cursor) {
 
 function createCursorSelection(
   cursor: Cursor,
+  clientID: number,
   anchorKey: NodeKey,
   anchorOffset: number,
   focusKey: NodeKey,
   focusOffset: number,
-  theme: {cursor?: string; cursorName?: string} = {},
+  theme: {cursor?: string; cursorName?: string; selection?: string} = {},
 ): CursorSelection {
   const color = cursor.color;
   const caret = document.createElement('span');
@@ -259,6 +281,24 @@ function createCursorSelection(
     });
   }
   caret.appendChild(name);
+
+  const highlightName = `lexical-cursor-${clientID}`;
+  let highlight: Highlight | null = null;
+  let styleEl: HTMLStyleElement | null = null;
+  if (SUPPORTS_CSS_HIGHLIGHTS) {
+    highlight = new Highlight();
+
+    CSS.highlights.set(highlightName, highlight);
+
+    // If the theme supplies a ::highlight(...) rule, defer to it; otherwise
+    // inject a per-client stylesheet so the selection paints in the user's color.
+    if (!theme.selection) {
+      styleEl = document.createElement('style');
+      styleEl.textContent = `::highlight(${highlightName}) { background-color: color-mix(in srgb, ${color} 30%, transparent); color: inherit; }`; // Using color-mix because highlight api doesn't support opacity.
+      document.head.appendChild(styleEl);
+    }
+  }
+
   return {
     anchor: {
       key: anchorKey,
@@ -270,8 +310,11 @@ function createCursorSelection(
       key: focusKey,
       offset: focusOffset,
     },
+    highlight,
+    highlightName,
     name,
     selections: [],
+    styleEl,
   };
 }
 
@@ -312,7 +355,7 @@ function updateCursor(
 
   const caret = nextSelection.caret;
   const color = nextSelection.color;
-  const selections = nextSelection.selections;
+  const highlight = nextSelection.highlight;
   const anchor = nextSelection.anchor;
   const focus = nextSelection.focus;
   const anchorKey = anchor.key;
@@ -323,6 +366,60 @@ function updateCursor(
   if (anchorNode == null || focusNode == null) {
     return;
   }
+
+  if (highlight !== null) {
+    // modern path: CSS Custom Highlight AP
+    const range = createDOMRange(
+      editor,
+      anchorNode,
+      anchor.offset,
+      focusNode,
+      focus.offset,
+    );
+    if (range === null) {
+      return;
+    }
+
+    // The browser handles line wrapping, RTL, and font metrics — no rect math.
+    highlight.clear();
+    if (!range.collapsed) {
+      highlight.add(range);
+    }
+
+    // Caret stays as a positioned element; anchor it to the focus end.
+    const caretRange = range.cloneRange();
+    caretRange.collapse(false);
+    let caretRect: DOMRect = caretRange.getBoundingClientRect();
+    if (caretRect.height === 0 && $isLineBreakNode(focusNode)) {
+      // Bare <br>: collapsed range reports zero size. Fall back to the
+      // line break's own box so the caret still renders.
+      const focusEl = editor.getElementByKey(focusKey) as HTMLElement | null;
+      if (focusEl !== null) {
+        caretRect = focusEl.getBoundingClientRect();
+      }
+    }
+
+    setDOMStyleObject(caret.style, {
+      'background-color': theme.selection ? '' : color,
+      bottom: '',
+      height: `${caretRect.height || 16}px`,
+      left: `${caretRect.left - containerRect.left}px`,
+      'pointer-events': 'none',
+      position: 'absolute',
+      right: '',
+      top: `${caretRect.top - containerRect.top}px`,
+      width: '1px',
+      'z-index': '10',
+    });
+
+    if (caret.parentNode !== cursorsContainer) {
+      cursorsContainer.appendChild(caret);
+    }
+    return;
+  }
+
+  // legacy fallback path: per-rect absolutely-positioned span
+  const selections = nextSelection.selections;
   let selectionRects: Array<DOMRect>;
 
   // In the case of a collapsed selection on a linebreak, we need
@@ -726,6 +823,7 @@ export function syncCursorPositions(
           if (selection === null) {
             selection = createCursorSelection(
               cursor,
+              clientID,
               anchorKey,
               anchorOffset,
               focusKey,

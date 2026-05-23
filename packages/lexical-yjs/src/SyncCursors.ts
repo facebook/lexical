@@ -284,10 +284,10 @@ function createCursorSelection(
   anchorOffset: number,
   focusKey: NodeKey,
   focusOffset: number,
+  selectionHighlight: boolean,
   theme: {
     cursor?: string;
     cursorName?: string;
-    selectionHighlight?: boolean;
   } = {},
 ): CursorSelection {
   const color = cursor.color;
@@ -335,10 +335,10 @@ function createCursorSelection(
 
   const highlightName = `lexical-cursor-${clientID}`;
   let highlight: Highlight | null = null;
-  // Opt-in: the Highlight API path is only used when the theme declares
-  // `selectionHighlight`. Without that, fall through to the legacy rect-overlay
-  // path so existing themes that style `collaboration.selection` keep working.
-  if (theme.selectionHighlight && SUPPORTS_CSS_HIGHLIGHTS) {
+  // Opt-in via the plugin's `selectionHighlight` prop. Without it, fall
+  // through to the legacy rect-overlay path so existing setups that style
+  // `theme.collaboration.selection` keep working.
+  if (selectionHighlight && SUPPORTS_CSS_HIGHLIGHTS) {
     highlight = new Highlight();
     CSS.highlights.set(highlightName, highlight);
     addCursorHighlightRule(highlightName, color);
@@ -821,6 +821,9 @@ export type SyncCursorPositionsOptions = {
     binding: BaseBinding,
     provider: Provider,
   ) => Map<number, UserState>;
+  // Opt in to the CSS Custom Highlight API rendering for remote selections.
+  // Plumbed in from the React collaboration plugin's `selectionHighlight` prop.
+  selectionHighlight?: boolean;
 };
 
 function getAwarenessStatesDefault(
@@ -835,7 +838,10 @@ export function syncCursorPositions(
   provider: Provider,
   options?: SyncCursorPositionsOptions,
 ): void {
-  const {getAwarenessStates = getAwarenessStatesDefault} = options ?? {};
+  const {
+    getAwarenessStates = getAwarenessStatesDefault,
+    selectionHighlight = false,
+  } = options ?? {};
   const awarenessStates = Array.from(getAwarenessStates(binding, provider));
   const localClientID = binding.clientID;
   const cursors = binding.cursors;
@@ -876,6 +882,7 @@ export function syncCursorPositions(
               anchorOffset,
               focusKey,
               focusOffset,
+              selectionHighlight,
               collabTheme,
             );
           } else {

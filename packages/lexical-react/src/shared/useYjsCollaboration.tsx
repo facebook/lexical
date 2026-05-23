@@ -80,6 +80,7 @@ export function useYjsCollaboration(
   initialEditorState?: InitialEditorStateType,
   awarenessData?: object,
   syncCursorPositionsFn: SyncCursorPositionsFn = syncCursorPositions,
+  selectionHighlight: boolean = false,
 ): JSX.Element {
   const isReloadingDoc = useRef(false);
 
@@ -171,7 +172,7 @@ export function useYjsCollaboration(
     onBootstrap,
   );
 
-  useAwareness(binding, provider);
+  useAwareness(binding, provider, selectionHighlight);
 
   return useYjsCursors(binding, cursorsContainerRef);
 }
@@ -188,6 +189,7 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
     awarenessData?: object;
     excludedProperties?: ExcludedProperties;
     rootName?: string;
+    selectionHighlight?: boolean;
     __shouldBootstrapUnsafe?: boolean;
   } = {},
 ): BindingV2 {
@@ -195,6 +197,7 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
     awarenessData,
     excludedProperties,
     rootName,
+    selectionHighlight = false,
     __shouldBootstrapUnsafe: shouldBootstrap,
   } = options;
 
@@ -318,7 +321,7 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
     onBootstrap,
   );
 
-  useAwareness(binding, provider);
+  useAwareness(binding, provider, selectionHighlight);
 
   return binding;
 }
@@ -448,18 +451,22 @@ function useProvider(
   }, [provider]);
 }
 
-function useAwareness(binding: Binding | BindingV2, provider: Provider) {
+function useAwareness(
+  binding: Binding | BindingV2,
+  provider: Provider,
+  selectionHighlight: boolean,
+) {
   useEffect(() => {
     const {awareness} = provider;
     const onAwarenessUpdate = () => {
-      syncCursorPositions(binding, provider);
+      syncCursorPositions(binding, provider, {selectionHighlight});
     };
     awareness.on('update', onAwarenessUpdate);
 
     return () => {
       awareness.off('update', onAwarenessUpdate);
     };
-  }, [binding, provider]);
+  }, [binding, provider, selectionHighlight]);
 }
 
 export function useYjsCursors(

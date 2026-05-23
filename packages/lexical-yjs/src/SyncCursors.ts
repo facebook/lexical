@@ -66,7 +66,6 @@ export type CursorSelection = {
   highlight: Highlight | null;
   highlightName: string;
   name: HTMLSpanElement;
-  styleEl: HTMLStyleElement | null;
   // Legacy fallback only: absolutely-positioned rect spans, one per visual rect.
   selections: Array<HTMLElement>;
 };
@@ -75,6 +74,56 @@ const SUPPORTS_CSS_HIGHLIGHTS =
   typeof Highlight !== 'undefined' &&
   typeof CSS !== 'undefined' &&
   'highlights' in CSS;
+
+// Shared stylesheet for ::highlight() rules, in case the CSP disallows dynamic stylesheets.s
+let cursorHighlightSheet: CSSStyleSheet | null = null;
+
+function getCursorHighlightSheet(): CSSStyleSheet {
+  if (cursorHighlightSheet === null) {
+    cursorHighlightSheet = new CSSStyleSheet();
+    document.adoptedStyleSheets = [
+      ...document.adoptedStyleSheets,
+      cursorHighlightSheet,
+    ];
+  }
+  return cursorHighlightSheet;
+}
+
+function addCursorHighlightRule(highlightName: string, color: string): void {
+  // `color` flows in from peer-controlled awareness state. Reject anything
+  // the browser doesn't recognize as a valid <color> so an malicious user can't
+  // inject extra declarations through string interpolation below.
+  if (!CSS.supports('color', color)) {
+    return;
+  }
+  const sheet = getCursorHighlightSheet();
+  const idx = sheet.insertRule(
+    `::highlight(${highlightName}) { }`,
+    sheet.cssRules.length,
+  );
+  const rule = sheet.cssRules[idx] as CSSStyleRule;
+  // color-mix because the Highlight API doesn't honor opacity on highlights.
+  rule.style.setProperty(
+    'background-color',
+    `color-mix(in srgb, ${color} 30%, transparent)`,
+  );
+  rule.style.setProperty('color', 'inherit');
+}
+
+export function removeCursorHighlightRule(highlightName: string): void {
+  const sheet = cursorHighlightSheet;
+  if (sheet === null) {
+    return;
+  }
+  const selector = `::highlight(${highlightName})`;
+  for (let i = sheet.cssRules.length - 1; i >= 0; i--) {
+    const rule = sheet.cssRules[i];
+    if (rule instanceof CSSStyleRule && rule.selectorText === selector) {
+      sheet.deleteRule(i);
+      return;
+    }
+  }
+}
 
 export type Cursor = {
   color: string;
@@ -203,9 +252,7 @@ function createCursor(name: string, color: string): Cursor {
 function destroySelection(binding: BaseBinding, selection: CursorSelection) {
   if (selection.highlight !== null) {
     CSS.highlights.delete(selection.highlightName);
-  }
-  if (selection.styleEl !== null) {
-    selection.styleEl.remove();
+    removeCursorHighlightRule(selection.highlightName);
   }
   const cursorsContainer = binding.cursorsContainer;
   if (cursorsContainer === null) {
@@ -240,7 +287,7 @@ function createCursorSelection(
   theme: {
     cursor?: string;
     cursorName?: string;
-    selectionHighlight?: string;
+    selectionHighlight?: boolean;
   } = {},
 ): CursorSelection {
   const color = cursor.color;
@@ -288,16 +335,13 @@ function createCursorSelection(
 
   const highlightName = `lexical-cursor-${clientID}`;
   let highlight: Highlight | null = null;
-  let styleEl: HTMLStyleElement | null = null;
   // Opt-in: the Highlight API path is only used when the theme declares
   // `selectionHighlight`. Without that, fall through to the legacy rect-overlay
   // path so existing themes that style `collaboration.selection` keep working.
   if (theme.selectionHighlight && SUPPORTS_CSS_HIGHLIGHTS) {
     highlight = new Highlight();
     CSS.highlights.set(highlightName, highlight);
-    styleEl = document.createElement('style');
-    styleEl.textContent = `::highlight(${highlightName}) { background-color: color-mix(in srgb, ${color} 30%, transparent); color: inherit; }`; // Using color-mix because highlight api doesn't support opacity.
-    document.head.appendChild(styleEl);
+    addCursorHighlightRule(highlightName, color);
   }
 
   return {
@@ -315,7 +359,6 @@ function createCursorSelection(
     highlightName,
     name,
     selections: [],
-    styleEl,
   };
 }
 

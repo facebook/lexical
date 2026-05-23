@@ -25,6 +25,7 @@ import {
   createUndoManager,
   DIFF_VERSIONS_COMMAND__EXPERIMENTAL,
   initLocalState,
+  removeCursorHighlightRule,
   renderSnapshot__EXPERIMENTAL,
   setLocalStateFocus,
   syncCursorPositions,
@@ -683,9 +684,7 @@ function clearEditorSkipCollab(editor: LexicalEditor, binding: BaseBinding) {
     }
     if (selection.highlight !== null) {
       CSS.highlights.delete(selection.highlightName);
-    }
-    if (selection.styleEl !== null) {
-      selection.styleEl.remove();
+      removeCursorHighlightRule(selection.highlightName);
     }
     if (selection.caret.parentNode === cursorsContainer) {
       cursorsContainer.removeChild(selection.caret);

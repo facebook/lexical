@@ -92,7 +92,6 @@ export type CursorSelection = {
   highlightName: string,
   name: HTMLSpanElement,
   selections: Array<HTMLElement>,
-  styleEl: HTMLStyleElement | null,
 };
 
 export type Cursor = {
@@ -360,6 +359,8 @@ declare export function syncCursorPositions(
   binding: Binding,
   provider: Provider,
 ): void;
+
+declare export function removeCursorHighlightRule(highlightName: string): void;
 
 declare export function syncLexicalUpdateToYjs(
   binding: Binding,

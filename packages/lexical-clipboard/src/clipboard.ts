@@ -38,6 +38,7 @@ import {
   COMMAND_PRIORITY_CRITICAL,
   COPY_COMMAND,
   defineExtension,
+  EditorUpdateOptions,
   getDOMSelection,
   isSelectionWithinEditor,
   LexicalEditor,
@@ -138,6 +139,46 @@ export function $insertDataTransferForPlainText(
 }
 
 /**
+ * Inserts plain text into the editor at the provided selection, splitting on
+ * newlines and tabs so multi-line text becomes separate paragraphs (matching
+ * the rich-text paste behavior) rather than a single paragraph with line
+ * breaks (which is what {@link RangeSelection.insertRawText} produces).
+ *
+ * For non-range selections this falls back to `selection.insertRawText(text)`
+ * since paragraph splitting only makes sense inside a block context. Empty
+ * input is a no-op.
+ *
+ * @param text the plain text to insert
+ * @param selection the selection to use as the insertion point
+ */
+export function $insertRichTextFromText(
+  text: string,
+  selection: BaseSelection,
+): void {
+  if (!$isRangeSelection(selection)) {
+    selection.insertRawText(text);
+    return;
+  }
+  const parts = text.split(/(\r?\n|\t)/);
+  if (parts[parts.length - 1] === '') {
+    parts.pop();
+  }
+  for (let i = 0; i < parts.length; i++) {
+    const currentSelection = $getSelection();
+    if ($isRangeSelection(currentSelection)) {
+      const part = parts[i];
+      if (part === '\n' || part === '\r\n') {
+        currentSelection.insertParagraph();
+      } else if (part === '\t') {
+        currentSelection.insertNodes([$createTabNode()]);
+      } else {
+        currentSelection.insertText(part);
+      }
+    }
+  }
+}
+
+/**
  * Attempts to insert content of the mime-types application/x-lexical-editor, text/html,
  * text/plain, or text/uri-list (in descending order of priority) from the provided DataTransfer
  * object into the editor at the provided selection.
@@ -188,33 +229,38 @@ export function $insertDataTransferForRichText(
     }
   }
 
-  // Multi-line plain text in rich text mode pasted as separate paragraphs
-  // instead of single paragraph with linebreaks.
+  // Multi-line plain text in rich text mode is split into separate paragraphs
+  // rather than a single paragraph with linebreaks; see $insertRichTextFromText.
   // Webkit-specific: Supports read 'text/uri-list' in clipboard.
   const text = plainString || dataTransfer.getData('text/uri-list');
   if (text != null) {
-    if ($isRangeSelection(selection)) {
-      const parts = text.split(/(\r?\n|\t)/);
-      if (parts[parts.length - 1] === '') {
-        parts.pop();
-      }
-      for (let i = 0; i < parts.length; i++) {
-        const currentSelection = $getSelection();
-        if ($isRangeSelection(currentSelection)) {
-          const part = parts[i];
-          if (part === '\n' || part === '\r\n') {
-            currentSelection.insertParagraph();
-          } else if (part === '\t') {
-            currentSelection.insertNodes([$createTabNode()]);
-          } else {
-            currentSelection.insertText(part);
-          }
-        }
-      }
-    } else {
-      selection.insertRawText(text);
-    }
+    $insertRichTextFromText(text, selection);
   }
+}
+
+/**
+ * Replaces all content in the editor's root with the given plain text, split
+ * on newlines and tabs so each line becomes its own paragraph (with tab nodes
+ * preserved). Use this — instead of `editor.setEditorState` — when restoring
+ * from a plain-text store and you want node transforms (e.g. mention/variable
+ * detection) to run on the inserted text. The trade-off vs `setEditorState`
+ * is that each line is inserted through the normal pipeline (per-paragraph
+ * insert + transforms) rather than a single state reconciliation.
+ *
+ * @param editor the LexicalEditor whose root content is being replaced
+ * @param text the plain text to insert in place of the existing content
+ * @param options forwarded to the underlying `editor.update` (e.g. pass
+ *   `{tag: HISTORY_MERGE_TAG}` to avoid creating a separate history entry
+ *   when restoring on boot)
+ */
+export function replaceContentWithRichText(
+  editor: LexicalEditor,
+  text: string,
+  options?: EditorUpdateOptions,
+): void {
+  editor.update(() => {
+    $insertRichTextFromText(text, $getRoot().clear().select());
+  }, options);
 }
 
 const LEXICAL_DRAG_MIME_TYPE = 'application/x-lexical-drag';

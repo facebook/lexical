@@ -18,6 +18,7 @@ export {
   $insertDataTransferForPlainText,
   $insertDataTransferForRichText,
   $insertGeneratedNodes,
+  $insertRichTextFromText,
   $writeDragSourceToDataTransfer,
   copyToClipboard,
   type ExportMimeTypeConfig,
@@ -25,5 +26,6 @@ export {
   type GetClipboardDataConfig,
   GetClipboardDataExtension,
   type LexicalClipboardData,
+  replaceContentWithRichText,
   setLexicalClipboardDataTransfer,
 } from './clipboard';

@@ -9,6 +9,7 @@
 
 import type {
   BaseSelection,
+  EditorUpdateOptions,
   LexicalEditor,
   RangeSelection,
   LexicalNode,
@@ -22,6 +23,17 @@ declare export function $insertDataTransferForRichText(
   dataTransfer: DataTransfer,
   selection: BaseSelection,
   editor: LexicalEditor,
+): void;
+
+declare export function $insertRichTextFromText(
+  text: string,
+  selection: BaseSelection,
+): void;
+
+declare export function replaceContentWithRichText(
+  editor: LexicalEditor,
+  text: string,
+  options?: EditorUpdateOptions,
 ): void;
 
 declare export function $getHtmlContent(

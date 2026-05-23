@@ -237,7 +237,11 @@ function createCursorSelection(
   anchorOffset: number,
   focusKey: NodeKey,
   focusOffset: number,
-  theme: {cursor?: string; cursorName?: string; selection?: string} = {},
+  theme: {
+    cursor?: string;
+    cursorName?: string;
+    selectionHighlight?: string;
+  } = {},
 ): CursorSelection {
   const color = cursor.color;
   const caret = document.createElement('span');
@@ -285,18 +289,15 @@ function createCursorSelection(
   const highlightName = `lexical-cursor-${clientID}`;
   let highlight: Highlight | null = null;
   let styleEl: HTMLStyleElement | null = null;
-  if (SUPPORTS_CSS_HIGHLIGHTS) {
+  // Opt-in: the Highlight API path is only used when the theme declares
+  // `selectionHighlight`. Without that, fall through to the legacy rect-overlay
+  // path so existing themes that style `collaboration.selection` keep working.
+  if (theme.selectionHighlight && SUPPORTS_CSS_HIGHLIGHTS) {
     highlight = new Highlight();
-
     CSS.highlights.set(highlightName, highlight);
-
-    // If the theme supplies a ::highlight(...) rule, defer to it; otherwise
-    // inject a per-client stylesheet so the selection paints in the user's color.
-    if (!theme.selection) {
-      styleEl = document.createElement('style');
-      styleEl.textContent = `::highlight(${highlightName}) { background-color: color-mix(in srgb, ${color} 30%, transparent); color: inherit; }`; // Using color-mix because highlight api doesn't support opacity.
-      document.head.appendChild(styleEl);
-    }
+    styleEl = document.createElement('style');
+    styleEl.textContent = `::highlight(${highlightName}) { background-color: color-mix(in srgb, ${color} 30%, transparent); color: inherit; }`; // Using color-mix because highlight api doesn't support opacity.
+    document.head.appendChild(styleEl);
   }
 
   return {
@@ -323,7 +324,11 @@ function updateCursor(
   cursor: Cursor,
   nextSelection: null | CursorSelection,
   nodeMap: NodeMap,
-  theme: {selection?: string; selectionBg?: string} = {},
+  theme: {
+    cursor?: string;
+    selection?: string;
+    selectionBg?: string;
+  } = {},
 ): void {
   const editor = binding.editor;
   const rootElement = editor.getRootElement();
@@ -400,7 +405,7 @@ function updateCursor(
     }
 
     setDOMStyleObject(caret.style, {
-      'background-color': theme.selection ? '' : color,
+      'background-color': theme.cursor ? '' : color,
       bottom: '',
       height: `${caretRect.height || 16}px`,
       left: `${caretRect.left - containerRect.left}px`,

@@ -200,6 +200,8 @@ export interface EditorThemeClasses {
     cursorName?: EditorThemeClassName;
     selection?: EditorThemeClassName;
     selectionBg?: EditorThemeClassName;
+    /** Opt in to the new CSS Highlights-based selection rendering (if supported by the browser). */
+    selectionHighlight?: true;
   };
   embedBlock?: {
     base?: EditorThemeClassName;

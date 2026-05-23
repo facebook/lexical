@@ -570,7 +570,7 @@ function $reconcileElementTerminatingLineBreak(
     dom,
     activeEditor,
   );
-  const slotElement = slot.element as HTMLElement & LexicalPrivateDOM;
+  const slotElement: HTMLElement & LexicalPrivateDOM = slot.element;
   const prevLineBreak = slotElement.__lexicalLastChildKind ?? null;
   const nextLineBreak = isLastChildLineBreakOrDecorator(
     nextElement,

@@ -385,6 +385,11 @@ describe('Markdown', () => {
       md: '**Hello** world',
     },
     {
+      html: '<p><b><strong style="white-space: pre-wrap;">Bold label:</strong></b><span style="white-space: pre-wrap;">&nbsp;Following paragraph text.</span></p>',
+      md: '**Bold label:**\u00A0Following paragraph text.',
+      skipExport: true,
+    },
+    {
       html: '<p><i><b><strong style="white-space: pre-wrap;">Hello</strong></b></i><span style="white-space: pre-wrap;"> world</span></p>',
       md: '***Hello*** world',
     },
@@ -748,6 +753,10 @@ describe('Markdown', () => {
     {
       html: '<p><i><em style="white-space: pre-wrap;">text</em></i><i><b><strong style="white-space: pre-wrap;">text</strong></b></i></p>',
       md: '*text**text***',
+    },
+    {
+      html: '<p><b><strong style="white-space: pre-wrap;">text</strong></b><i><b><strong style="white-space: pre-wrap;">text</strong></b></i></p>',
+      md: '**text*text***',
     },
     {
       html: '<p><i><em style="white-space: pre-wrap;">foo**bar</em></i></p>',

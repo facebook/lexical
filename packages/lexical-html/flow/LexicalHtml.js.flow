@@ -24,13 +24,13 @@ import type {
 
 type AnyContextSymbol = symbol;
 
-type ContextRecord<K extends symbol> = {+[string | symbol]: unknown};
+type ContextRecord<K extends symbol> = {readonly [string | symbol]: unknown};
 
 type ContextConfig<Sym extends symbol, V> = StateConfig<symbol, V>;
 
 type ContextConfigUpdater<Ctx extends AnyContextSymbol, V> = {
-  +cfg: ContextConfig<Ctx, V>,
-  +updater: (prev: V) => V,
+  readonly cfg: ContextConfig<Ctx, V>,
+  readonly updater: (prev: V) => V,
 };
 
 type ContextConfigPair<Ctx extends AnyContextSymbol, V> = Readonly<
@@ -75,49 +75,49 @@ export type NodeMatch<T extends LexicalNode> =
   | ((node: LexicalNode) => boolean);
 
 export type DOMRenderMatch<T extends LexicalNode> = {
-  +nodes: '*' | ReadonlyArray<NodeMatch<T>>,
-  +$getDOMSlot?: <N extends LexicalNode>(
+  readonly nodes: '*' | ReadonlyArray<NodeMatch<T>>,
+  readonly $getDOMSlot?: <N extends LexicalNode>(
     node: N,
     dom: HTMLElement,
     $next: () => DOMSlot<HTMLElement>,
     editor: LexicalEditor,
   ) => DOMSlot<HTMLElement>,
-  +$createDOM?: (
+  readonly $createDOM?: (
     node: T,
     $next: () => HTMLElement,
     editor: LexicalEditor,
   ) => HTMLElement,
-  +$updateDOM?: (
+  readonly $updateDOM?: (
     nextNode: T,
     prevNode: T,
     dom: HTMLElement,
     $next: () => boolean,
     editor: LexicalEditor,
   ) => boolean,
-  +$decorateDOM?: (
+  readonly $decorateDOM?: (
     nextNode: T,
     prevNode: T | null,
     dom: HTMLElement,
     editor: LexicalEditor,
   ) => void,
-  +$exportDOM?: (
+  readonly $exportDOM?: (
     node: T,
     $next: () => DOMExportOutput,
     editor: LexicalEditor,
   ) => DOMExportOutput,
-  +$shouldExclude?: (
+  readonly $shouldExclude?: (
     node: T,
     selection: null | BaseSelection,
     $next: () => boolean,
     editor: LexicalEditor,
   ) => boolean,
-  +$shouldInclude?: (
+  readonly $shouldInclude?: (
     node: T,
     selection: null | BaseSelection,
     $next: () => boolean,
     editor: LexicalEditor,
   ) => boolean,
-  +$extractWithChild?: (
+  readonly $extractWithChild?: (
     node: T,
     childNode: LexicalNode,
     selection: null | BaseSelection,

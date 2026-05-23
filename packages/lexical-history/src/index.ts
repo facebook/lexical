@@ -452,6 +452,12 @@ function clearHistory(
  * NOT invoked when a candidate update is discarded without changing the
  * stacks. Useful for keeping derived values (e.g. signals) in sync with the
  * current `HistoryState`.
+ * @param maxDepth - The maximum number of entries the undo stack may hold.
+ * When the cap is exceeded a new history event has been pushed the oldest
+ * entries are dropped from the front of the stack until the stack length is
+ * `maxDepth`. Pass `null` (the default) to keep the stack unbounded — the
+ * historical behavior. May be a plain number or a `ReadonlySignal<number | null>`
+ * for reactive reconfiguration.
  * @returns The listeners cleanup callback function.
  */
 export function registerHistory(
@@ -460,8 +466,13 @@ export function registerHistory(
   delay: number | ReadonlySignal<number>,
   dateNow: () => number = Date.now,
   onHistoryStateChange?: (state: HistoryState) => void,
+  maxDepth: number | null | ReadonlySignal<number | null> = null,
 ): () => void {
   const getMergeAction = createMergeActionGetter(editor, delay, dateNow);
+  const readMaxDepth = (): number | null =>
+    typeof maxDepth === 'number' || maxDepth === null
+      ? maxDepth
+      : maxDepth.peek();
 
   const notifyChange = () => {
     if (onHistoryStateChange) {
@@ -510,6 +521,14 @@ export function registerHistory(
         undoStack.push({
           ...current,
         });
+        const cap = readMaxDepth();
+        if (cap !== null && undoStack.length > cap) {
+          // FIFO-evict the oldest entries so the stack stays at `cap`.
+          // Editing the array in place keeps the same `historyState.undoStack`
+          // reference that callers (e.g. SharedHistoryExtension) may hold on
+          // to.
+          undoStack.splice(0, undoStack.length - cap);
+        }
         editor.dispatchCommand(CAN_UNDO_COMMAND, true);
       }
     } else if (mergeAction === DISCARD_HISTORY_CANDIDATE) {
@@ -597,6 +616,18 @@ export interface HistoryConfig {
    * The now() function, defaults to Date.now.
    */
   now: () => number;
+  /**
+   * The maximum number of entries the undo stack may hold. When the cap is
+   * exceeded the oldest entries are dropped (FIFO) so the stack stays at this
+   * length. Defaults to `null`, which keeps the stack unbounded — the
+   * historical behavior. Setting a finite cap is recommended for editors that
+   * may receive a very large number of distinct history events (long writing
+   * sessions, automated input, etc.) since each entry retains a full
+   * `EditorState` snapshot.
+   *
+   * For reference, ProseMirror's `history()` plugin defaults to `depth: 100`.
+   */
+  maxDepth: number | null;
 }
 
 /** Internal writable signals created during the init phase. */
@@ -631,6 +662,12 @@ export interface HistoryExtensionOutput {
   disabled: Signal<boolean>;
   /** The active {@link HistoryState} instance. */
   historyState: Signal<HistoryState>;
+  /**
+   * Maximum number of entries the undo stack may hold. `null` disables the
+   * cap. Changes apply to the next history event — the current undo stack is
+   * not retroactively trimmed when the value is lowered.
+   */
+  maxDepth: Signal<number | null>;
   /** The clock function forwarded to {@link registerHistory}. */
   now: Signal<() => number>;
 }
@@ -642,7 +679,7 @@ export interface HistoryExtensionOutput {
 export const HistoryExtension = defineExtension({
   build: (
     editor,
-    {delay, createInitialHistoryState, disabled, now},
+    {delay, createInitialHistoryState, disabled, maxDepth, now},
     state,
   ): HistoryExtensionOutput => {
     // The init phase already created writable Signal<boolean> instances for
@@ -655,6 +692,7 @@ export const HistoryExtension = defineExtension({
         delay,
         disabled,
         historyState: createInitialHistoryState(editor),
+        maxDepth,
         now,
       }),
       ...state.getInitResult(),
@@ -664,6 +702,7 @@ export const HistoryExtension = defineExtension({
     createInitialHistoryState: createEmptyHistoryState,
     delay: 300,
     disabled: typeof window === 'undefined',
+    maxDepth: null,
     now: Date.now,
   }),
   init: (): HistoryExtensionInit => ({
@@ -696,6 +735,7 @@ export const HistoryExtension = defineExtension({
         stores.delay,
         () => stores.now.peek()(),
         syncFromHistoryState,
+        stores.maxDepth,
       );
     });
   },

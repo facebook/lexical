@@ -1785,11 +1785,6 @@ test.describe.parallel('Tables', () => {
     test.skip(isPlainText);
     await initialize({isCollab, page});
 
-    if (isCollab) {
-      // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
-      page.setViewportSize({height: 1000, width: 3000});
-    }
-
     await focusEditor(page);
 
     await insertTable(page, 3, 3);
@@ -1870,11 +1865,6 @@ test.describe.parallel('Tables', () => {
     async ({page, isPlainText, isCollab}) => {
       test.skip(isPlainText);
       await initialize({isCollab, page});
-
-      if (isCollab) {
-        // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
-        page.setViewportSize({height: 1000, width: 3000});
-      }
 
       await focusEditor(page);
 
@@ -1971,11 +1961,6 @@ test.describe.parallel('Tables', () => {
     test.fixme(IS_COLLAB && IS_LINUX && browserName === 'firefox');
     await initialize({isCollab, page});
 
-    if (isCollab) {
-      // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
-      page.setViewportSize({height: 1000, width: 3000});
-    }
-
     await focusEditor(page);
 
     await insertTable(page, 3, 3);
@@ -2062,11 +2047,6 @@ test.describe.parallel('Tables', () => {
   test('Merge/unmerge cells (1)', async ({page, isPlainText, isCollab}) => {
     test.skip(isPlainText);
     await initialize({isCollab, page});
-
-    if (isCollab) {
-      // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
-      page.setViewportSize({height: 1000, width: 3000});
-    }
 
     await focusEditor(page);
 
@@ -2159,11 +2139,6 @@ test.describe.parallel('Tables', () => {
   test('Merge/unmerge cells (2)', async ({page, isPlainText, isCollab}) => {
     test.skip(isPlainText);
     await initialize({isCollab, page});
-
-    if (isCollab) {
-      // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
-      page.setViewportSize({height: 1000, width: 3000});
-    }
 
     await focusEditor(page);
 
@@ -2311,11 +2286,6 @@ test.describe.parallel('Tables', () => {
     async ({page, isPlainText, isCollab}) => {
       test.skip(isPlainText);
       await initialize({isCollab, page});
-
-      if (isCollab) {
-        // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
-        page.setViewportSize({height: 1000, width: 3000});
-      }
 
       await focusEditor(page);
 
@@ -3027,11 +2997,6 @@ test.describe.parallel('Tables', () => {
     test.skip(isPlainText);
     await initialize({isCollab, page});
 
-    if (isCollab) {
-      // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
-      page.setViewportSize({height: 1000, width: 3000});
-    }
-
     await focusEditor(page);
 
     await insertTable(page, 3, 3);
@@ -3480,11 +3445,6 @@ test.describe.parallel('Tables', () => {
     test.skip(isPlainText);
     await initialize({isCollab, page});
 
-    if (isCollab) {
-      // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
-      page.setViewportSize({height: 1000, width: 3000});
-    }
-
     await focusEditor(page);
 
     await insertTable(page, 2, 2);
@@ -3552,11 +3512,6 @@ test.describe.parallel('Tables', () => {
     test.skip(isPlainText);
     await initialize({isCollab, page});
 
-    if (isCollab) {
-      // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
-      page.setViewportSize({height: 1000, width: 3000});
-    }
-
     await focusEditor(page);
 
     await insertTable(page, 2, 2);
@@ -3620,11 +3575,6 @@ test.describe.parallel('Tables', () => {
     test.skip(isPlainText);
     await initialize({isCollab, page});
 
-    if (isCollab) {
-      // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
-      page.setViewportSize({height: 1000, width: 3000});
-    }
-
     await focusEditor(page);
 
     await insertTable(page, 2, 1);
@@ -3682,11 +3632,6 @@ test.describe.parallel('Tables', () => {
   }) => {
     test.skip(isPlainText);
     await initialize({isCollab, page});
-
-    if (isCollab) {
-      // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
-      page.setViewportSize({height: 1000, width: 3000});
-    }
 
     await focusEditor(page);
 
@@ -3766,11 +3711,6 @@ test.describe.parallel('Tables', () => {
       test.skip(isPlainText);
       await initialize({isCollab, page});
 
-      if (isCollab) {
-        // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
-        page.setViewportSize({height: 1000, width: 3000});
-      }
-
       await focusEditor(page);
 
       await insertTable(page, 4, 2);
@@ -3843,11 +3783,6 @@ test.describe.parallel('Tables', () => {
   }) => {
     test.skip(isPlainText);
     await initialize({isCollab, page});
-
-    if (isCollab) {
-      // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
-      page.setViewportSize({height: 1000, width: 3000});
-    }
 
     await focusEditor(page);
 
@@ -4043,11 +3978,6 @@ test.describe.parallel('Tables', () => {
   }) => {
     test.skip(isPlainText);
     await initialize({isCollab, page});
-
-    if (isCollab) {
-      // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
-      page.setViewportSize({height: 1000, width: 3000});
-    }
 
     await focusEditor(page);
 
@@ -4249,11 +4179,6 @@ test.describe.parallel('Tables', () => {
     test.skip(isPlainText);
     await initialize({isCollab, page});
 
-    if (isCollab) {
-      // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
-      page.setViewportSize({height: 1000, width: 3000});
-    }
-
     await focusEditor(page);
 
     await insertTable(page, 10, 5);
@@ -4454,11 +4379,6 @@ test.describe.parallel('Tables', () => {
     test.skip(isPlainText);
     await initialize({isCollab, page});
 
-    if (isCollab) {
-      // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
-      page.setViewportSize({height: 1000, width: 3000});
-    }
-
     await focusEditor(page);
 
     await insertTable(page, 2, 4);
@@ -4523,11 +4443,6 @@ test.describe.parallel('Tables', () => {
       test.skip(isPlainText);
       await initialize({isCollab, page});
 
-      if (isCollab) {
-        // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
-        page.setViewportSize({height: 1000, width: 3000});
-      }
-
       await focusEditor(page);
 
       await insertTable(page, 2, 4);
@@ -4583,11 +4498,6 @@ test.describe.parallel('Tables', () => {
     test.skip(isPlainText);
     await initialize({isCollab, page});
 
-    if (isCollab) {
-      // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
-      page.setViewportSize({height: 1000, width: 3000});
-    }
-
     await focusEditor(page);
 
     await insertTable(page, 2, 4);
@@ -4638,11 +4548,6 @@ test.describe.parallel('Tables', () => {
     test.skip(isPlainText);
     await initialize({isCollab, page});
 
-    if (isCollab) {
-      // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
-      page.setViewportSize({height: 1000, width: 3000});
-    }
-
     await focusEditor(page);
 
     await page.keyboard.type('123');
@@ -4662,11 +4567,6 @@ test.describe.parallel('Tables', () => {
   test('Background color to cell', async ({page, isPlainText, isCollab}) => {
     test.skip(isPlainText);
     await initialize({isCollab, page});
-
-    if (isCollab) {
-      // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
-      page.setViewportSize({height: 1000, width: 3000});
-    }
 
     await focusEditor(page);
 
@@ -4843,11 +4743,6 @@ test.describe.parallel('Tables', () => {
   }) => {
     test.skip(isPlainText);
     await initialize({isCollab, page});
-
-    if (isCollab) {
-      // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
-      page.setViewportSize({height: 1000, width: 3000});
-    }
 
     await focusEditor(page);
 
@@ -5037,11 +4932,6 @@ test.describe.parallel('Tables', () => {
   }) => {
     test.skip(isPlainText);
     await initialize({isCollab, page});
-
-    if (isCollab) {
-      // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
-      page.setViewportSize({height: 1000, width: 3000});
-    }
 
     const pageOrFrame = getPageOrFrame(page);
 
@@ -6991,11 +6881,6 @@ test.describe.parallel('Tables', () => {
     test.skip(isPlainText);
     test.fixme(IS_COLLAB && IS_LINUX && browserName === 'firefox');
     await initialize({isCollab, page});
-
-    if (isCollab) {
-      // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
-      page.setViewportSize({height: 1000, width: 3000});
-    }
 
     await focusEditor(page);
 

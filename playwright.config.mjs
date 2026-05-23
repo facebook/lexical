@@ -8,8 +8,18 @@
 
 import {devices} from '@playwright/test';
 
-const {CI} = process.env;
+const {CI, E2E_EDITOR_MODE, PWDEBUG} = process.env;
 const IS_CI = CI === 'true';
+// PWDEBUG=1 is set by Playwright's `--debug` flag before this config loads;
+// retries during a debug run only add confusion (the test already paused once).
+const IS_DEBUG = PWDEBUG === '1';
+const IS_COLLAB =
+  E2E_EDITOR_MODE === 'rich-text-with-collab' ||
+  E2E_EDITOR_MODE === 'rich-text-with-collab-v2';
+// Collab mode needs extra horizontal space because the contextual menu is
+// hardcoded to the right side; non-collab needs enough room that text
+// doesn't wrap and break CMD+ArrowRight/Left navigation.
+const viewport = {height: 1000, width: IS_COLLAB ? 3000 : 1250};
 
 const config = {
   forbidOnly: IS_CI,
@@ -23,6 +33,7 @@ const config = {
           slowMo: 50,
         },
         userAgent: undefined,
+        viewport,
       },
     },
     {
@@ -34,6 +45,7 @@ const config = {
           slowMo: 50,
         },
         userAgent: undefined,
+        viewport,
       },
     },
     {
@@ -45,10 +57,11 @@ const config = {
           slowMo: 50,
         },
         userAgent: undefined,
+        viewport,
       },
     },
   ],
-  retries: IS_CI ? 4 : 1,
+  retries: IS_DEBUG ? 0 : IS_CI ? 4 : 1,
   testIgnore: /\/__tests__\/unit\//,
   timeout: 150000,
   use: {

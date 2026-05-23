@@ -245,6 +245,7 @@ export {
   $isBlockElementNode,
   $isNodeSelection,
   $isRangeSelection,
+  $updateDOMSelection,
 } from './LexicalSelection';
 export {$parseSerializedNode, isCurrentlyReadOnlyMode} from './LexicalUpdates';
 export {

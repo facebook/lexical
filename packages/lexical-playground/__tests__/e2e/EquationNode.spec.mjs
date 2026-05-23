@@ -37,7 +37,7 @@ function equationHtml(inline = true) {
               height="0"
               src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
               width="0" />
-            <span role="button" tabindex="-1">
+            <span>
               ${inline ? '' : `<span class="katex-display">`}
               <span class="katex">
                 <span class="katex-html" aria-hidden="true">

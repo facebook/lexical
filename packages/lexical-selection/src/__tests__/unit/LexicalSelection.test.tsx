@@ -6,7 +6,8 @@
  *
  */
 
-import {$createLinkNode} from '@lexical/link';
+import {buildEditorFromExtensions} from '@lexical/extension';
+import {$createLinkNode, LinkExtension} from '@lexical/link';
 import {
   $createListItemNode,
   $createListNode,
@@ -22,7 +23,11 @@ import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import {ListPlugin} from '@lexical/react/LexicalListPlugin';
 import {MarkdownShortcutPlugin} from '@lexical/react/LexicalMarkdownShortcutPlugin';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
-import {$createHeadingNode} from '@lexical/rich-text';
+import {
+  $createHeadingNode,
+  $isHeadingNode,
+  RichTextExtension,
+} from '@lexical/rich-text';
 import {
   $getSelectionStyleValueForProperty,
   $patchStyleText,
@@ -38,6 +43,7 @@ import {
   $getSelection,
   $isElementNode,
   $isLineBreakNode,
+  $isParagraphNode,
   $isRangeSelection,
   $isTextNode,
   $setSelection,
@@ -3150,6 +3156,202 @@ describe('LexicalSelection tests', () => {
       expect(element.innerHTML).toStrictEqual(
         `<h1 dir="auto"><span data-lexical-text="true">1</span></h1><h1 dir="auto" style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px));"><span data-lexical-text="true">1.1</span></h1>`,
       );
+    });
+
+    test('Triple-click overselection: focus at element offset 0 of non-empty next block is skipped', () => {
+      using testEditor = buildEditorFromExtensions({
+        $initialEditorState: () => {
+          const text1 = $createTextNode('text 1');
+          const paragraph2 = $createParagraphNode();
+          $getRoot().append(
+            $createParagraphNode().append(text1),
+            paragraph2.append($createLineBreakNode()),
+          );
+
+          // Browser triple-click: focus lands on the text node of the
+          // following block at offset 0, even though visually only
+          // paragraph1's content is selected.
+          const selection = text1.selectStart();
+          selection.focus.set(paragraph2.getKey(), 0, 'element');
+
+          $setBlocksType(selection, () => $createHeadingNode('h1'));
+        },
+        dependencies: [RichTextExtension],
+        name: '@test',
+      });
+      testEditor.read(() => {
+        const rootChildren = $getRoot().getChildren();
+        expect($isHeadingNode(rootChildren[0])).toBe(true);
+        expect($isParagraphNode(rootChildren[1])).toBe(true);
+        expect(rootChildren.length).toBe(2);
+      });
+    });
+
+    test('Triple-click overselection: focus at element offset 0 of empty next block is converted', () => {
+      using testEditor = buildEditorFromExtensions({
+        $initialEditorState: () => {
+          const text1 = $createTextNode('text 1');
+          const paragraph2 = $createParagraphNode();
+          $getRoot().append($createParagraphNode().append(text1), paragraph2);
+
+          // Browser triple-click: focus lands on the text node of the
+          // following block at offset 0, even though visually only
+          // paragraph1's content is selected.
+          const selection = text1.selectStart();
+          selection.focus.set(paragraph2.getKey(), 0, 'element');
+
+          $setBlocksType(selection, () => $createHeadingNode('h1'));
+        },
+        dependencies: [RichTextExtension],
+        name: '@test',
+      });
+      testEditor.read(() => {
+        const rootChildren = $getRoot().getChildren();
+        expect($isHeadingNode(rootChildren[0])).toBe(true);
+        expect($isHeadingNode(rootChildren[1])).toBe(true);
+        expect(rootChildren.length).toBe(2);
+      });
+    });
+
+    test('Triple-click overselection: focus at offset 0 of next block is skipped', () => {
+      using testEditor = buildEditorFromExtensions({
+        $initialEditorState: () => {
+          const text1 = $createTextNode('text 1');
+          const text2 = $createTextNode('text 2');
+          $getRoot().append(
+            $createParagraphNode().append(text1),
+            $createParagraphNode().append(text2),
+          );
+
+          // Browser triple-click: focus lands on the text node of the
+          // following block at offset 0, even though visually only
+          // paragraph1's content is selected.
+          const selection = text1.select().setTextNodeRange(text1, 0, text2, 0);
+
+          $setBlocksType(selection, () => $createHeadingNode('h1'));
+        },
+        dependencies: [RichTextExtension],
+        name: '@test',
+      });
+      testEditor.read(() => {
+        const rootChildren = $getRoot().getChildren();
+        expect($isHeadingNode(rootChildren[0])).toBe(true);
+        expect($isParagraphNode(rootChildren[1])).toBe(true);
+        expect(rootChildren.length).toBe(2);
+      });
+    });
+
+    test('Triple-click overselection: focus inside nested inline at offset 0 is skipped', () => {
+      using testEditor = buildEditorFromExtensions({
+        $initialEditorState: () => {
+          const text1 = $createTextNode('text 1');
+          const text2 = $createTextNode('text 2');
+          $getRoot().append(
+            $createParagraphNode().append(text1),
+            $createParagraphNode().append(
+              $createLinkNode('https://lexical.dev').append(text2),
+            ),
+          );
+
+          // Browser triple-click: focus lands on the text node of the
+          // following block at offset 0, even though visually only
+          // paragraph1's content is selected.
+          const selection = text1.select().setTextNodeRange(text1, 0, text2, 0);
+
+          $setBlocksType(selection, () => $createHeadingNode('h1'));
+        },
+        dependencies: [RichTextExtension, LinkExtension],
+        name: '@test',
+      });
+      testEditor.read(() => {
+        const rootChildren = $getRoot().getChildren();
+        expect($isHeadingNode(rootChildren[0])).toBe(true);
+        expect($isParagraphNode(rootChildren[1])).toBe(true);
+        expect(rootChildren.length).toBe(2);
+      });
+    });
+
+    test('Non-zero focus offset in next block still converts both blocks', () => {
+      using testEditor = buildEditorFromExtensions({
+        $initialEditorState: () => {
+          const text1 = $createTextNode('text 1');
+          const text2 = $createTextNode('text 2');
+          $getRoot().append(
+            $createParagraphNode().append(text1),
+            $createParagraphNode().append(text2),
+          );
+
+          const selection = text1.select().setTextNodeRange(text1, 0, text2, 1);
+
+          $setBlocksType(selection, () => $createHeadingNode('h1'));
+        },
+        dependencies: [RichTextExtension],
+        name: '@test',
+      });
+      testEditor.read(() => {
+        const rootChildren = $getRoot().getChildren();
+        expect($isHeadingNode(rootChildren[0])).toBe(true);
+        expect($isHeadingNode(rootChildren[1])).toBe(true);
+        expect(rootChildren.length).toBe(2);
+      });
+    });
+
+    test('Triple-click overselection spanning multiple blocks skips only the focus block', () => {
+      using testEditor = buildEditorFromExtensions({
+        $initialEditorState: () => {
+          const text1 = $createTextNode('text 1');
+          const text2 = $createTextNode('text 2');
+          const text3 = $createTextNode('text 3');
+          $getRoot().append(
+            $createParagraphNode().append(text1),
+            $createParagraphNode().append(text2),
+            $createParagraphNode().append(text3),
+          );
+
+          const selection = text1.select().setTextNodeRange(text1, 0, text3, 0);
+
+          $setBlocksType(selection, () => $createHeadingNode('h1'));
+        },
+        dependencies: [RichTextExtension],
+        name: '@test',
+      });
+      testEditor.read(() => {
+        const rootChildren = $getRoot().getChildren();
+        expect($isHeadingNode(rootChildren[0])).toBe(true);
+        expect($isHeadingNode(rootChildren[1])).toBe(true);
+        expect($isParagraphNode(rootChildren[2])).toBe(true);
+        expect(rootChildren.length).toBe(3);
+      });
+    });
+
+    test('Focus at offset 0 in next block whose first descendant has a prior sibling still converts focus block', () => {
+      using testEditor = buildEditorFromExtensions({
+        $initialEditorState: () => {
+          const text1 = $createTextNode('text 1');
+          const text2a = $createTextNode('foo');
+          const text2b = $createTextNode('bar').setFormat('bold');
+          $getRoot().append(
+            $createParagraphNode().append(text1),
+            // text2b is the second child; offset 0 of text2b is NOT at
+            // the start of paragraph2 (text2a precedes it).
+            $createParagraphNode().append(text2a, text2b),
+          );
+
+          const selection = text1
+            .select()
+            .setTextNodeRange(text1, 0, text2b, 0);
+
+          $setBlocksType(selection, () => $createHeadingNode('h1'));
+        },
+        dependencies: [RichTextExtension],
+        name: '@test',
+      });
+      testEditor.read(() => {
+        const rootChildren = $getRoot().getChildren();
+        expect($isHeadingNode(rootChildren[0])).toBe(true);
+        expect($isHeadingNode(rootChildren[1])).toBe(true);
+        expect(rootChildren.length).toBe(2);
+      });
     });
 
     test('Nested list with listItem twice indented from its parent', async () => {

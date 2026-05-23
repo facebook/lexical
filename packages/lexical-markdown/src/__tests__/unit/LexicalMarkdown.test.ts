@@ -401,6 +401,11 @@ describe('Markdown', () => {
       md: '**Hello** world',
     },
     {
+      html: '<p><b><strong style="white-space: pre-wrap;">Bold label:</strong></b><span style="white-space: pre-wrap;">&nbsp;Following paragraph text.</span></p>',
+      md: '**Bold label:**\u00A0Following paragraph text.',
+      skipExport: true,
+    },
+    {
       html: '<p><i><b><strong style="white-space: pre-wrap;">Hello</strong></b></i><span style="white-space: pre-wrap;"> world</span></p>',
       md: '***Hello*** world',
     },
@@ -764,6 +769,10 @@ describe('Markdown', () => {
     {
       html: '<p><i><em style="white-space: pre-wrap;">text</em></i><i><b><strong style="white-space: pre-wrap;">text</strong></b></i></p>',
       md: '*text**text***',
+    },
+    {
+      html: '<p><b><strong style="white-space: pre-wrap;">text</strong></b><i><b><strong style="white-space: pre-wrap;">text</strong></b></i></p>',
+      md: '**text*text***',
     },
     {
       html: '<p><i><em style="white-space: pre-wrap;">foo**bar</em></i></p>',
@@ -1411,6 +1420,102 @@ describe('Markdown', () => {
 
       expect(editor.read(() => $generateHtmlFromNodes(editor))).toBe(
         '<p><span style="white-space: pre-wrap;">```</span></p>',
+      );
+    });
+
+    it('should transform element markdown on Enter when trailing space was not required (custom element transformer)', () => {
+      const ELEMENT_TRIGGERED_FENCE: ElementTransformer = {
+        dependencies: [CodeNode],
+        export: () => null,
+        regExp: /^`{3,}(\w+)?$/,
+        replace: (parentNode, children, match, isImport) => {
+          const node = $createCodeNode(match[1]);
+          node.append(...children);
+          parentNode.replace(node);
+          if (!isImport) {
+            node.select(0, 0);
+          }
+        },
+        triggerOnEnter: true,
+        type: 'element',
+      };
+
+      const editor = createHeadlessEditor({
+        nodes: [
+          HeadingNode,
+          ListNode,
+          ListItemNode,
+          QuoteNode,
+          CodeNode,
+          LinkNode,
+        ],
+      });
+
+      registerMarkdownShortcuts(editor, [ELEMENT_TRIGGERED_FENCE]);
+
+      editor.update(
+        () => {
+          const root = $getRoot();
+          const paragraph = $createParagraphNode();
+          root.append(paragraph);
+          paragraph.selectEnd();
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            selection.insertText('```');
+          }
+        },
+        {discrete: true},
+      );
+
+      editor.update(
+        () => {
+          editor.dispatchCommand(KEY_ENTER_COMMAND, null);
+        },
+        {discrete: true},
+      );
+
+      expect(editor.read(() => $generateHtmlFromNodes(editor))).toBe(
+        '<pre spellcheck="false"></pre>',
+      );
+    });
+
+    it('should transform heading on Enter when a line was inserted at once (no trailing space listener trigger)', () => {
+      const editor = createHeadlessEditor({
+        nodes: [
+          HeadingNode,
+          ListNode,
+          ListItemNode,
+          QuoteNode,
+          CodeNode,
+          LinkNode,
+        ],
+      });
+
+      registerMarkdownShortcuts(editor, [HEADING]);
+
+      editor.update(
+        () => {
+          const root = $getRoot();
+          const paragraph = $createParagraphNode();
+          root.append(paragraph);
+          paragraph.selectEnd();
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            selection.insertText('## ');
+          }
+        },
+        {discrete: true},
+      );
+
+      editor.update(
+        () => {
+          editor.dispatchCommand(KEY_ENTER_COMMAND, null);
+        },
+        {discrete: true},
+      );
+
+      expect(editor.read(() => $generateHtmlFromNodes(editor))).toBe(
+        '<h2><br></h2>',
       );
     });
   });

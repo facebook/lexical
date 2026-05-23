@@ -79,7 +79,7 @@ declare export class Signal<T = unknown> {
   value: T;
 }
 export interface ReadonlySignal<T = unknown> {
-  +value: T;
+  readonly value: T;
   peek(): T;
   subscribe(fn: (value: T) => void): () => void;
   valueOf(): T;

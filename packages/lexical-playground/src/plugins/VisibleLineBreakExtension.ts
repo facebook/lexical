@@ -49,11 +49,8 @@ function $isDisabled(editor: LexicalEditor): boolean {
 }
 
 function $skipForCodeChild(node: LineBreakNode): boolean {
-  // Code blocks convey line structure visually, and Shiki +
-  // `enableLineNodes` routes through a `CodeLineNode` (so the
-  // LineBreakNode's direct parent is a `CodeLineNode`, not the
-  // `CodeNode`). Walk up to the nearest non-inline ancestor and skip
-  // the wrap if we're anywhere inside a `CodeNode`.
+  // Code blocks convey line structure visually — skip the visible
+  // linebreak wrap anywhere inside a `CodeNode`.
   for (
     let ancestor = node.getParent();
     ancestor !== null;

@@ -161,7 +161,7 @@ type DOMConversionCache = Map<
   Array<(node: Node) => DOMConversion | null>,
 >;
 
-export type DOMSlotForNode<N: LexicalNode> = N extends ElementNode
+export type DOMSlotForNode<N extends LexicalNode> = N extends ElementNode
   ? ElementDOMSlot<HTMLElement>
   : DOMSlot<HTMLElement>;
 
@@ -911,7 +911,7 @@ declare export function $isElementNode(
 /**
  * DOMSlot
  */
-declare export class DOMSlot<out T extends HTMLElement = HTMLElement> {
+declare export class DOMSlot<out T extends HTMLElement> {
   readonly element: T;
   readonly before: Node | null;
   readonly after: Node | null;
@@ -928,7 +928,7 @@ declare export class DOMSlot<out T extends HTMLElement = HTMLElement> {
 /**
  * ElementDOMSlot
  */
-declare export class ElementDOMSlot<out T extends HTMLElement = HTMLElement> extends DOMSlot<T> {
+declare export class ElementDOMSlot<out T extends HTMLElement> extends DOMSlot<T> {
   withBefore(before: Node | null | void): ElementDOMSlot<T>;
   withAfter(after: Node | null | void): ElementDOMSlot<T>;
   withElement<ElementType extends HTMLElement>(element: ElementType): ElementDOMSlot<ElementType>;
@@ -1039,7 +1039,7 @@ declare export function $getEditor(): LexicalEditor;
 declare export function $getEditorDOMRenderConfig(
   editor?: LexicalEditor,
 ): EditorDOMRenderConfig;
-declare export function $getDOMSlot<N: LexicalNode>(
+declare export function $getDOMSlot<N extends LexicalNode>(
   node: N,
   dom: HTMLElement,
   editor?: LexicalEditor,
@@ -1585,7 +1585,7 @@ declare export class NodeState<T extends LexicalNode> {
   ): this;
   getValue<K extends string, V>(stateConfig: StateConfig<K, V>): V;
   getInternalState(): [
-    {+[k in string]: unknown} | void,
+    {readonly [k in string]: unknown} | void,
     ReadonlyMap<AnyStateConfig, unknown>,
   ];
   toJSON(): NodeStateJSON<T>;
@@ -1743,10 +1743,10 @@ export type LexicalExtensionArgument<
 > =
   | LexicalExtension<Config, Name, Output, Init>
   | NormalizedLexicalExtensionArgument<Config, Name, Output, Init>;
-export type LexicalExtensionConfig<+Extension extends AnyLexicalExtension> =
+export type LexicalExtensionConfig<out Extension extends AnyLexicalExtension> =
   NonNullable<Extension[typeof configTypeSymbol]>;
 export interface LexicalExtensionDependency<
-  readonly Dependency extends AnyLexicalExtension,
+  out Dependency extends AnyLexicalExtension,
 > {
   readonly config: LexicalExtensionConfig<Dependency>;
   readonly output: LexicalExtensionOutput<Dependency>;
@@ -1766,7 +1766,7 @@ interface LexicalExtensionInternalOutput<Output> {
 export type LexicalExtensionName<Extension extends AnyLexicalExtension> =
   Extension['name'];
 
-export type LexicalExtensionOutput<+Extension extends AnyLexicalExtension> =
+export type LexicalExtensionOutput<out Extension extends AnyLexicalExtension> =
   NonNullable<Extension[typeof outputTypeSymbol]>;
 declare export const peerDependencySymbol: symbol;
 export type NormalizedLexicalExtensionArgument<
@@ -1778,7 +1778,7 @@ export type NormalizedLexicalExtensionArgument<
 export type NormalizedPeerDependency<Extension extends AnyLexicalExtension> = [
   Extension['name'],
   Partial<LexicalExtensionConfig<Extension>> | void,
-] & {+[typeof peerDependencySymbol]: Extension};
+] & {readonly [typeof peerDependencySymbol]: Extension};
 export type OutputComponentExtension<ComponentType> =
   // $FlowFixMe[unclear-type]
   LexicalExtension<any, any, {Component: ComponentType}, any>;

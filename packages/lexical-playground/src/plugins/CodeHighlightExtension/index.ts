@@ -33,10 +33,7 @@ export const CodeHighlightExtension = defineExtension({
   config: safeCast<CodeHighlightConfig>({mode: 'off'}),
   dependencies: [
     configExtension(CodePrismExtension, {disabled: true}),
-    configExtension(CodeShikiExtension, {
-      disabled: true,
-      enableLineNodes: true,
-    }),
+    configExtension(CodeShikiExtension, {disabled: true}),
     configExtension(CodeIndentExtension, {tabSize: 2}),
   ],
   name: '@lexical/playground/CodeHighlight',

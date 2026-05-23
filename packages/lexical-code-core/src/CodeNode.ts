@@ -30,7 +30,6 @@ import {
   $createParagraphNode,
   $createTabNode,
   $getEditor,
-  $isElementNode,
   $isLineBreakNode,
   $isTabNode,
   $isTextNode,
@@ -285,49 +284,9 @@ export class CodeNode extends ElementNode {
       .setTheme(serializedNode.theme);
   }
 
-  /**
-   * `CodeNode` children are inline (`CodeHighlightNode`, `TabNode`,
-   * `LineBreakNode`) by invariant — the only way a block child appears
-   * directly under `CodeNode` is as an implementation detail of an
-   * extension that groups inline tokens into per-line wrappers
-   * (e.g. `CodeLineNode` from `@lexical/code-shiki`'s `enableLineNodes`
-   * mode). Block children are not part of the public `CodeNode` shape,
-   * so `exportJSON` flattens them back into the inline,
-   * `LineBreakNode`-delimited form code-core consumers know.
-   * Consumers that don't register the wrapper still read the same JSON;
-   * the grouping transform re-applies on deserialization when the
-   * wrapper extension is present.
-   */
   exportJSON(): SerializedCodeNode {
-    const json = super.exportJSON();
-    const liveChildren = this.getChildren();
-    const hasBlockChild = liveChildren.some(
-      c => $isElementNode(c) && !c.isInline(),
-    );
-    if (hasBlockChild && Array.isArray(json.children)) {
-      const flat: SerializedElementNode['children'] = [];
-      liveChildren.forEach((child, idx) => {
-        const childJson = json.children[idx];
-        if (
-          $isElementNode(child) &&
-          !child.isInline() &&
-          childJson &&
-          Array.isArray((childJson as SerializedElementNode).children)
-        ) {
-          for (const inner of (childJson as SerializedElementNode).children) {
-            flat.push(inner);
-          }
-          if (idx < liveChildren.length - 1) {
-            flat.push({type: 'linebreak', version: 1});
-          }
-        } else {
-          flat.push(childJson);
-        }
-      });
-      json.children = flat;
-    }
     return {
-      ...json,
+      ...super.exportJSON(),
       language: this.getLanguage(),
       theme: this.getTheme(),
     };
@@ -409,45 +368,6 @@ export class CodeNode extends ElementNode {
 
   canIndent(): false {
     return false;
-  }
-
-  // The default ElementNode.getTextContent joins non-inline block
-  // children with a double newline (paragraph-style separation). For a
-  // code block, a single newline represents one line boundary; the
-  // double-newline default would make a downstream tokenizer (Shiki,
-  // Prism) read each line boundary as two newlines and emit a spurious
-  // empty line per boundary. Override with single-newline separators
-  // so block-per-line wrappers (e.g. CodeLineNode in code-shiki) round
-  // trip through `getTextContent` without inflating the line count.
-  // Flat-mode CodeNode children are inline (CodeHighlightNode, TabNode,
-  // LineBreakNode) and never trigger the separator branch, so flat
-  // behavior is unchanged.
-  getTextContent(): string {
-    let textContent = '';
-    const children = this.getChildren();
-    const lastIndex = children.length - 1;
-    for (let i = 0; i < children.length; i++) {
-      const child = children[i];
-      textContent += child.getTextContent();
-      if ($isElementNode(child) && i !== lastIndex && !child.isInline()) {
-        textContent += '\n';
-      }
-    }
-    return textContent;
-  }
-
-  getTextContentSize(): number {
-    let size = 0;
-    const children = this.getChildren();
-    const lastIndex = children.length - 1;
-    for (let i = 0; i < children.length; i++) {
-      const child = children[i];
-      size += child.getTextContentSize();
-      if ($isElementNode(child) && i !== lastIndex && !child.isInline()) {
-        size += 1;
-      }
-    }
-    return size;
   }
 
   collapseAtStart(): boolean {
@@ -558,48 +478,23 @@ export function $exitCodeNodeOnEnter(
   selection: RangeSelection,
 ): null | ParagraphNode {
   const {anchor} = selection;
-  if (!selection.isCollapsed() || anchor.type !== 'element') {
-    return null;
-  }
-  const anchorNode = anchor.getNode();
-  // Flat structure: the caret sits on the `CodeNode` itself at the end,
-  // with the last two children being `LineBreakNode`s (the user pressed
-  // Enter to create the trailing blank line, then again to exit).
-  if ($isCodeNode(anchorNode)) {
-    const childrenSize = anchorNode.getChildrenSize();
-    if (childrenSize >= 2 && anchor.offset === childrenSize) {
-      const lastChild = anchorNode.getLastChild();
-      if (
-        $isLineBreakNode(lastChild) &&
-        $isLineBreakNode(lastChild.getPreviousSibling())
-      ) {
-        const newElement = $createParagraphNode();
-        anchorNode
-          .splice(childrenSize - 2, 2, [])
-          .insertAfter(newElement, false);
-        newElement.select();
-        return newElement;
-      }
-    }
-    return null;
-  }
-  // Block-per-line structure (e.g. `CodeLineNode` from
-  // `@lexical/code-shiki`'s `enableLineNodes` mode): the caret sits on
-  // an empty block child of the `CodeNode`, and the previous sibling is
-  // also an empty block child — the same "two trailing blank lines"
-  // shape as the flat case, just with block wrappers in place of
-  // `LineBreakNode` pairs.
-  if ($isElementNode(anchorNode) && anchorNode.isEmpty()) {
-    const parent = anchorNode.getParent();
-    if ($isCodeNode(parent)) {
-      const prev = anchorNode.getPreviousSibling();
-      if ($isElementNode(prev) && prev.isEmpty()) {
-        const newElement = $createParagraphNode();
-        anchorNode.remove();
-        prev.remove();
-        parent.insertAfter(newElement, false);
-        newElement.select();
-        return newElement;
+  if (selection.isCollapsed() && anchor.type === 'element') {
+    const codeNode = anchor.getNode();
+    if ($isCodeNode(codeNode)) {
+      const childrenSize = codeNode.getChildrenSize();
+      if (childrenSize >= 2 && anchor.offset === childrenSize) {
+        const lastChild = codeNode.getLastChild();
+        if (
+          $isLineBreakNode(lastChild) &&
+          $isLineBreakNode(lastChild.getPreviousSibling())
+        ) {
+          const newElement = $createParagraphNode();
+          codeNode
+            .splice(childrenSize - 2, 2, [])
+            .insertAfter(newElement, false);
+          newElement.select();
+          return newElement;
+        }
       }
     }
   }

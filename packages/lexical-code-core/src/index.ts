@@ -20,7 +20,6 @@ export {
 export type {SerializedCodeNode} from './CodeNode';
 export {
   $createCodeNode,
-  $exitCodeNodeOnEnter,
   $isCodeNode,
   CodeNode,
   DEFAULT_CODE_LANGUAGE,

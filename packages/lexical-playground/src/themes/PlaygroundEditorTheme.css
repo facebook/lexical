@@ -197,49 +197,6 @@
   margin-top: -8px;
   padding: 8px;
 }
-/* Grouped mode (CodeShikiExtension `enableLineNodes`): drop the sticky
- * `::before` gutter strip — its `float: left` collides with the
- * block-per-line `[data-code-line]` layout (first line aligns next to
- * the float, the rest fall under it). Paint the gutter band through
- * a left-edge background gradient on `<code>` instead, and render each
- * line's number through `attr(data-line-number)` on the per-line
- * pseudo-element. This is the base every `CodeLineNode` line shares;
- * a follow-up PR can flip `white-space` to `pre-wrap` once the
- * wrap-aware behaviour is validated. */
-.PlaygroundEditorTheme__code:has([data-code-line]) {
-  padding-left: 52px;
-  padding-bottom: 8px;
-  background: linear-gradient(
-    to right,
-    #eee 0,
-    #eee 41px,
-    #ccc 41px,
-    #ccc 42px,
-    rgb(240, 242, 245) 42px
-  );
-}
-.PlaygroundEditorTheme__code:has([data-code-line]):before {
-  content: none;
-}
-.PlaygroundEditorTheme__code [data-code-line] {
-  position: relative;
-  min-height: 1.53em;
-}
-.PlaygroundEditorTheme__code [data-code-line]:before {
-  /* Width matches the legacy sticky gutter's `min-width: 25px`; the
-   * 19px right-side breathing room (number → text) comes out of
-   * `padding-left (52) - (left + width) = 52 - (44 - 25) ... = 19`,
-   * matching the legacy `padding 8 + border 1 + margin 10` gap. */
-  content: attr(data-line-number);
-  position: absolute;
-  top: 0;
-  left: -44px;
-  width: 25px;
-  text-align: right;
-  color: #777;
-  pointer-events: none;
-  user-select: none;
-}
 .PlaygroundEditorTheme__tableScrollableWrapper {
   overflow-x: auto;
   margin: 0px 0px 5px 0px;

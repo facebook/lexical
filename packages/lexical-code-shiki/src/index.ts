@@ -16,11 +16,6 @@ export {
   type Tokenizer,
 } from './CodeHighlighterShiki';
 export {
-  $createCodeLineNode,
-  $isCodeLineNode,
-  type CodeLineNode,
-} from './CodeLineNode';
-export {
   getCodeLanguageOptions,
   getCodeThemeOptions,
   isCodeLanguageLoaded,

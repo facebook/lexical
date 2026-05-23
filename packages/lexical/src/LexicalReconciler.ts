@@ -563,18 +563,19 @@ function $reconcileElementTerminatingLineBreak(
   nextElement: ElementNode,
   dom: HTMLElement & LexicalPrivateDOM,
 ): void {
-  const prevLineBreak = isLastChildLineBreakOrDecorator(
-    prevElement,
-    activePrevNodeMap,
-  );
+  // Read previous render's last-child kind from the slot element's cache
+  // so the prev-state DecoratorNode reference's isInline() (which routes
+  // through getLatest() and would throw once the key is detached from the
+  // active node map) is never called.
+  const slot = $getDOMSlot(nextElement, dom, activeEditor);
+  const slotElement: HTMLElement & LexicalPrivateDOM = slot.element;
+  const prevLineBreak = slotElement.__lexicalLastChildKind ?? null;
   const nextLineBreak = isLastChildLineBreakOrDecorator(
     nextElement,
     activeNextNodeMap,
   );
   if (prevLineBreak !== nextLineBreak) {
-    $getDOMSlot(nextElement, dom, activeEditor).setManagedLineBreak(
-      nextLineBreak,
-    );
+    slot.setManagedLineBreak(nextLineBreak);
   }
 }
 

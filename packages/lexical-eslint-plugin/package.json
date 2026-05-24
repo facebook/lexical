@@ -27,6 +27,7 @@
   },
   "exports": {
     ".": {
+      "source": "./src/index.ts",
       "import": {
         "types": "./dist/index.d.ts",
         "development": "./dist/LexicalEslintPlugin.dev.mjs",
@@ -49,6 +50,13 @@
   "module": "./dist/LexicalEslintPlugin.mjs",
   "files": [
     "dist",
+    "src",
+    "!src/__tests__",
+    "!src/__bench__",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "!src/**/*.bench.ts",
+    "!src/**/*.bench.tsx",
     "README.md",
     "LICENSE"
   ]

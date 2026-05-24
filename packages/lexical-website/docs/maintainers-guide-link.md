@@ -1,0 +1,105 @@
+---
+sidebar_position: 99
+---
+
+# Developing against a local Lexical checkout
+
+If you're iterating on Lexical itself and want a downstream app to pick
+up your changes without publishing, the Lexical packages support two
+linking workflows.
+
+Both rely on the fact that each `packages/<name>/` directory is its own
+publishable npm package: after a build, `packages/lexical/package.json`
+plus the `dist/` it sits next to is a complete tarball. There is no
+intermediate `npm/` directory and no copy step — `pnpm pack` /
+`pnpm publish` run straight from the package root.
+
+## Option A: built artifacts (works for any consumer)
+
+Build the artifacts, then point your downstream project at the package
+directory:
+
+```bash
+# in the Lexical checkout
+pnpm install
+pnpm run build-release   # produces dist/<Name>.{dev,prod,node}.{js,mjs} + .d.ts + .js.flow
+
+# in your downstream app
+pnpm add link:/path/to/lexical/packages/lexical
+pnpm add link:/path/to/lexical/packages/lexical-react   # etc.
+```
+
+`pnpm` follows the `link:` protocol by creating a real symlink into your
+`node_modules/`, so subsequent rebuilds of Lexical (e.g.
+`pnpm run build` in the Lexical checkout) become visible immediately.
+Standard `exports` resolution picks up the `development` /
+`production` / `node` conditions, so dev builds load the unminified
+variants and prod builds load the minified ones automatically.
+
+If you prefer the dev-only loop (faster builds, no minification), use
+`pnpm run build` instead of `build-release`. The fork modules emitted
+by a dev-only build re-export the `.dev` variant unconditionally; you
+won't be able to `pnpm publish` from such a checkout because the
+publish guard will report missing `.prod` files.
+
+`file:/path/to/...` works too if your package manager treats it as a
+symlink (modern pnpm does); npm copies the directory into
+`node_modules` instead, which loses any live-reload benefit but is
+otherwise equivalent for one-shot installs.
+
+## Option B: TypeScript source (no Lexical build needed)
+
+For the tightest dev loop — edit a Lexical source file and have your
+downstream bundler pick it up on the next request — opt into the
+`source` export condition. Each public package's `exports` map exposes
+its `./src/<entry>.tsx?` next to the compiled `import`/`require`
+conditions, so a bundler configured with
+`resolve.conditions: ['source', …]` will load TypeScript directly out
+of the linked package.
+
+Two caveats apply:
+
+1. **Bundler support.** Your consumer's bundler has to be configured to
+   pick up the `source` condition AND to transform `.ts`/`.tsx` from
+   inside `node_modules`. Vite, Rspack, and Parcel can all be told to
+   do this; webpack needs a loader override for the linked package.
+2. **`shared/` aliasing.** Lexical source files import from
+   `shared/*` (a private monorepo module space — `packages/shared/`
+   — that is intentionally never published). When you consume source
+   from a linked checkout, you must alias `shared/*` to the monorepo's
+   `packages/shared/src/*`. This works because the link is a symlink
+   back into the checkout, so the consumer can reach `packages/shared`.
+   It does *not* work with `file:` (which copies the package) or with
+   npm-installed published artifacts (which never include `shared/`).
+
+### Minimal Vite setup
+
+```ts
+// vite.config.ts
+import fs from 'node:fs';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {defineConfig} from 'vite';
+
+const here = path.dirname(fileURLToPath(import.meta.url));
+const lexicalRoot = fs.realpathSync(
+  path.resolve(here, 'node_modules/lexical'),
+);
+const sharedSrc = path.resolve(lexicalRoot, '..', 'shared', 'src');
+
+export default defineConfig({
+  define: {__DEV__: 'true'},
+  resolve: {
+    alias: [
+      {find: /^shared\/(.*)$/, replacement: `${sharedSrc}/$1.ts`},
+      {find: /^shared$/, replacement: `${sharedSrc}/index.ts`},
+    ],
+    conditions: ['source', 'development', 'module', 'browser', 'default'],
+  },
+});
+```
+
+The integration fixture at
+`scripts/__tests__/integration/fixtures/lexical-link-source-mode/`
+exercises exactly this setup and is the canonical reference if you need
+a fuller example.

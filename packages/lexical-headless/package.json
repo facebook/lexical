@@ -17,6 +17,7 @@
   "sideEffects": false,
   "exports": {
     "./dom": {
+      "source": "./src/dom.ts",
       "browser": {
         "types": "./dist/dom.d.ts",
         "development": "./dist/LexicalHeadlessDom.browser.dev.mjs",
@@ -38,6 +39,7 @@
       }
     },
     ".": {
+      "source": "./src/index.ts",
       "import": {
         "types": "./dist/index.d.ts",
         "development": "./dist/LexicalHeadless.dev.mjs",
@@ -59,6 +61,13 @@
   },
   "files": [
     "dist",
+    "src",
+    "!src/__tests__",
+    "!src/__bench__",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "!src/**/*.bench.ts",
+    "!src/**/*.bench.tsx",
     "README.md",
     "LICENSE"
   ]

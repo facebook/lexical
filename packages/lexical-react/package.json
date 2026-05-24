@@ -47,6 +47,7 @@
   },
   "exports": {
     "./ExtensionComponent": {
+      "source": "./src/ExtensionComponent.tsx",
       "import": {
         "types": "./dist/ExtensionComponent.d.ts",
         "development": "./dist/LexicalExtensionComponent.dev.mjs",
@@ -62,6 +63,7 @@
       }
     },
     "./ExtensionComponent.js": {
+      "source": "./src/ExtensionComponent.tsx",
       "import": {
         "types": "./dist/ExtensionComponent.d.ts",
         "development": "./dist/LexicalExtensionComponent.dev.mjs",
@@ -77,6 +79,7 @@
       }
     },
     "./LexicalAutoEmbedPlugin": {
+      "source": "./src/LexicalAutoEmbedPlugin.tsx",
       "import": {
         "types": "./dist/LexicalAutoEmbedPlugin.d.ts",
         "development": "./dist/LexicalAutoEmbedPlugin.dev.mjs",
@@ -92,6 +95,7 @@
       }
     },
     "./LexicalAutoEmbedPlugin.js": {
+      "source": "./src/LexicalAutoEmbedPlugin.tsx",
       "import": {
         "types": "./dist/LexicalAutoEmbedPlugin.d.ts",
         "development": "./dist/LexicalAutoEmbedPlugin.dev.mjs",
@@ -107,6 +111,7 @@
       }
     },
     "./LexicalAutoFocusPlugin": {
+      "source": "./src/LexicalAutoFocusPlugin.ts",
       "import": {
         "types": "./dist/LexicalAutoFocusPlugin.d.ts",
         "development": "./dist/LexicalAutoFocusPlugin.dev.mjs",
@@ -122,6 +127,7 @@
       }
     },
     "./LexicalAutoFocusPlugin.js": {
+      "source": "./src/LexicalAutoFocusPlugin.ts",
       "import": {
         "types": "./dist/LexicalAutoFocusPlugin.d.ts",
         "development": "./dist/LexicalAutoFocusPlugin.dev.mjs",
@@ -137,6 +143,7 @@
       }
     },
     "./LexicalAutoLinkPlugin": {
+      "source": "./src/LexicalAutoLinkPlugin.ts",
       "import": {
         "types": "./dist/LexicalAutoLinkPlugin.d.ts",
         "development": "./dist/LexicalAutoLinkPlugin.dev.mjs",
@@ -152,6 +159,7 @@
       }
     },
     "./LexicalAutoLinkPlugin.js": {
+      "source": "./src/LexicalAutoLinkPlugin.ts",
       "import": {
         "types": "./dist/LexicalAutoLinkPlugin.d.ts",
         "development": "./dist/LexicalAutoLinkPlugin.dev.mjs",
@@ -167,6 +175,7 @@
       }
     },
     "./LexicalBlockWithAlignableContents": {
+      "source": "./src/LexicalBlockWithAlignableContents.tsx",
       "import": {
         "types": "./dist/LexicalBlockWithAlignableContents.d.ts",
         "development": "./dist/LexicalBlockWithAlignableContents.dev.mjs",
@@ -182,6 +191,7 @@
       }
     },
     "./LexicalBlockWithAlignableContents.js": {
+      "source": "./src/LexicalBlockWithAlignableContents.tsx",
       "import": {
         "types": "./dist/LexicalBlockWithAlignableContents.d.ts",
         "development": "./dist/LexicalBlockWithAlignableContents.dev.mjs",
@@ -197,6 +207,7 @@
       }
     },
     "./LexicalCharacterLimitPlugin": {
+      "source": "./src/LexicalCharacterLimitPlugin.tsx",
       "import": {
         "types": "./dist/LexicalCharacterLimitPlugin.d.ts",
         "development": "./dist/LexicalCharacterLimitPlugin.dev.mjs",
@@ -212,6 +223,7 @@
       }
     },
     "./LexicalCharacterLimitPlugin.js": {
+      "source": "./src/LexicalCharacterLimitPlugin.tsx",
       "import": {
         "types": "./dist/LexicalCharacterLimitPlugin.d.ts",
         "development": "./dist/LexicalCharacterLimitPlugin.dev.mjs",
@@ -227,6 +239,7 @@
       }
     },
     "./LexicalCheckListPlugin": {
+      "source": "./src/LexicalCheckListPlugin.tsx",
       "import": {
         "types": "./dist/LexicalCheckListPlugin.d.ts",
         "development": "./dist/LexicalCheckListPlugin.dev.mjs",
@@ -242,6 +255,7 @@
       }
     },
     "./LexicalCheckListPlugin.js": {
+      "source": "./src/LexicalCheckListPlugin.tsx",
       "import": {
         "types": "./dist/LexicalCheckListPlugin.d.ts",
         "development": "./dist/LexicalCheckListPlugin.dev.mjs",
@@ -257,6 +271,7 @@
       }
     },
     "./LexicalClearEditorPlugin": {
+      "source": "./src/LexicalClearEditorPlugin.ts",
       "import": {
         "types": "./dist/LexicalClearEditorPlugin.d.ts",
         "development": "./dist/LexicalClearEditorPlugin.dev.mjs",
@@ -272,6 +287,7 @@
       }
     },
     "./LexicalClearEditorPlugin.js": {
+      "source": "./src/LexicalClearEditorPlugin.ts",
       "import": {
         "types": "./dist/LexicalClearEditorPlugin.d.ts",
         "development": "./dist/LexicalClearEditorPlugin.dev.mjs",
@@ -287,6 +303,7 @@
       }
     },
     "./LexicalClickableLinkPlugin": {
+      "source": "./src/LexicalClickableLinkPlugin.tsx",
       "import": {
         "types": "./dist/LexicalClickableLinkPlugin.d.ts",
         "development": "./dist/LexicalClickableLinkPlugin.dev.mjs",
@@ -302,6 +319,7 @@
       }
     },
     "./LexicalClickableLinkPlugin.js": {
+      "source": "./src/LexicalClickableLinkPlugin.tsx",
       "import": {
         "types": "./dist/LexicalClickableLinkPlugin.d.ts",
         "development": "./dist/LexicalClickableLinkPlugin.dev.mjs",
@@ -317,6 +335,7 @@
       }
     },
     "./LexicalCollaborationContext": {
+      "source": "./src/LexicalCollaborationContext.tsx",
       "import": {
         "types": "./dist/LexicalCollaborationContext.d.ts",
         "development": "./dist/LexicalCollaborationContext.dev.mjs",
@@ -332,6 +351,7 @@
       }
     },
     "./LexicalCollaborationContext.js": {
+      "source": "./src/LexicalCollaborationContext.tsx",
       "import": {
         "types": "./dist/LexicalCollaborationContext.d.ts",
         "development": "./dist/LexicalCollaborationContext.dev.mjs",
@@ -347,6 +367,7 @@
       }
     },
     "./LexicalCollaborationPlugin": {
+      "source": "./src/LexicalCollaborationPlugin.tsx",
       "import": {
         "types": "./dist/LexicalCollaborationPlugin.d.ts",
         "development": "./dist/LexicalCollaborationPlugin.dev.mjs",
@@ -362,6 +383,7 @@
       }
     },
     "./LexicalCollaborationPlugin.js": {
+      "source": "./src/LexicalCollaborationPlugin.tsx",
       "import": {
         "types": "./dist/LexicalCollaborationPlugin.d.ts",
         "development": "./dist/LexicalCollaborationPlugin.dev.mjs",
@@ -377,6 +399,7 @@
       }
     },
     "./LexicalComposer": {
+      "source": "./src/LexicalComposer.tsx",
       "import": {
         "types": "./dist/LexicalComposer.d.ts",
         "development": "./dist/LexicalComposer.dev.mjs",
@@ -392,6 +415,7 @@
       }
     },
     "./LexicalComposer.js": {
+      "source": "./src/LexicalComposer.tsx",
       "import": {
         "types": "./dist/LexicalComposer.d.ts",
         "development": "./dist/LexicalComposer.dev.mjs",
@@ -407,6 +431,7 @@
       }
     },
     "./LexicalComposerContext": {
+      "source": "./src/LexicalComposerContext.ts",
       "import": {
         "types": "./dist/LexicalComposerContext.d.ts",
         "development": "./dist/LexicalComposerContext.dev.mjs",
@@ -422,6 +447,7 @@
       }
     },
     "./LexicalComposerContext.js": {
+      "source": "./src/LexicalComposerContext.ts",
       "import": {
         "types": "./dist/LexicalComposerContext.d.ts",
         "development": "./dist/LexicalComposerContext.dev.mjs",
@@ -437,6 +463,7 @@
       }
     },
     "./LexicalContentEditable": {
+      "source": "./src/LexicalContentEditable.tsx",
       "import": {
         "types": "./dist/LexicalContentEditable.d.ts",
         "development": "./dist/LexicalContentEditable.dev.mjs",
@@ -452,6 +479,7 @@
       }
     },
     "./LexicalContentEditable.js": {
+      "source": "./src/LexicalContentEditable.tsx",
       "import": {
         "types": "./dist/LexicalContentEditable.d.ts",
         "development": "./dist/LexicalContentEditable.dev.mjs",
@@ -467,6 +495,7 @@
       }
     },
     "./LexicalDecoratorBlockNode": {
+      "source": "./src/LexicalDecoratorBlockNode.ts",
       "import": {
         "types": "./dist/LexicalDecoratorBlockNode.d.ts",
         "development": "./dist/LexicalDecoratorBlockNode.dev.mjs",
@@ -482,6 +511,7 @@
       }
     },
     "./LexicalDecoratorBlockNode.js": {
+      "source": "./src/LexicalDecoratorBlockNode.ts",
       "import": {
         "types": "./dist/LexicalDecoratorBlockNode.d.ts",
         "development": "./dist/LexicalDecoratorBlockNode.dev.mjs",
@@ -497,6 +527,7 @@
       }
     },
     "./LexicalDraggableBlockPlugin": {
+      "source": "./src/LexicalDraggableBlockPlugin.tsx",
       "import": {
         "types": "./dist/LexicalDraggableBlockPlugin.d.ts",
         "development": "./dist/LexicalDraggableBlockPlugin.dev.mjs",
@@ -512,6 +543,7 @@
       }
     },
     "./LexicalDraggableBlockPlugin.js": {
+      "source": "./src/LexicalDraggableBlockPlugin.tsx",
       "import": {
         "types": "./dist/LexicalDraggableBlockPlugin.d.ts",
         "development": "./dist/LexicalDraggableBlockPlugin.dev.mjs",
@@ -527,6 +559,7 @@
       }
     },
     "./LexicalEditorRefPlugin": {
+      "source": "./src/LexicalEditorRefPlugin.tsx",
       "import": {
         "types": "./dist/LexicalEditorRefPlugin.d.ts",
         "development": "./dist/LexicalEditorRefPlugin.dev.mjs",
@@ -542,6 +575,7 @@
       }
     },
     "./LexicalEditorRefPlugin.js": {
+      "source": "./src/LexicalEditorRefPlugin.tsx",
       "import": {
         "types": "./dist/LexicalEditorRefPlugin.d.ts",
         "development": "./dist/LexicalEditorRefPlugin.dev.mjs",
@@ -557,6 +591,7 @@
       }
     },
     "./LexicalErrorBoundary": {
+      "source": "./src/LexicalErrorBoundary.tsx",
       "import": {
         "types": "./dist/LexicalErrorBoundary.d.ts",
         "development": "./dist/LexicalErrorBoundary.dev.mjs",
@@ -572,6 +607,7 @@
       }
     },
     "./LexicalErrorBoundary.js": {
+      "source": "./src/LexicalErrorBoundary.tsx",
       "import": {
         "types": "./dist/LexicalErrorBoundary.d.ts",
         "development": "./dist/LexicalErrorBoundary.dev.mjs",
@@ -587,6 +623,7 @@
       }
     },
     "./LexicalExtensionComposer": {
+      "source": "./src/LexicalExtensionComposer.tsx",
       "import": {
         "types": "./dist/LexicalExtensionComposer.d.ts",
         "development": "./dist/LexicalExtensionComposer.dev.mjs",
@@ -602,6 +639,7 @@
       }
     },
     "./LexicalExtensionComposer.js": {
+      "source": "./src/LexicalExtensionComposer.tsx",
       "import": {
         "types": "./dist/LexicalExtensionComposer.d.ts",
         "development": "./dist/LexicalExtensionComposer.dev.mjs",
@@ -617,6 +655,7 @@
       }
     },
     "./LexicalExtensionEditorComposer": {
+      "source": "./src/LexicalExtensionEditorComposer.tsx",
       "import": {
         "types": "./dist/LexicalExtensionEditorComposer.d.ts",
         "development": "./dist/LexicalExtensionEditorComposer.dev.mjs",
@@ -632,6 +671,7 @@
       }
     },
     "./LexicalExtensionEditorComposer.js": {
+      "source": "./src/LexicalExtensionEditorComposer.tsx",
       "import": {
         "types": "./dist/LexicalExtensionEditorComposer.d.ts",
         "development": "./dist/LexicalExtensionEditorComposer.dev.mjs",
@@ -647,6 +687,7 @@
       }
     },
     "./LexicalHashtagPlugin": {
+      "source": "./src/LexicalHashtagPlugin.ts",
       "import": {
         "types": "./dist/LexicalHashtagPlugin.d.ts",
         "development": "./dist/LexicalHashtagPlugin.dev.mjs",
@@ -662,6 +703,7 @@
       }
     },
     "./LexicalHashtagPlugin.js": {
+      "source": "./src/LexicalHashtagPlugin.ts",
       "import": {
         "types": "./dist/LexicalHashtagPlugin.d.ts",
         "development": "./dist/LexicalHashtagPlugin.dev.mjs",
@@ -677,6 +719,7 @@
       }
     },
     "./LexicalHistoryPlugin": {
+      "source": "./src/LexicalHistoryPlugin.ts",
       "import": {
         "types": "./dist/LexicalHistoryPlugin.d.ts",
         "development": "./dist/LexicalHistoryPlugin.dev.mjs",
@@ -692,6 +735,7 @@
       }
     },
     "./LexicalHistoryPlugin.js": {
+      "source": "./src/LexicalHistoryPlugin.ts",
       "import": {
         "types": "./dist/LexicalHistoryPlugin.d.ts",
         "development": "./dist/LexicalHistoryPlugin.dev.mjs",
@@ -707,6 +751,7 @@
       }
     },
     "./LexicalHorizontalRuleNode": {
+      "source": "./src/LexicalHorizontalRuleNode.tsx",
       "import": {
         "types": "./dist/LexicalHorizontalRuleNode.d.ts",
         "development": "./dist/LexicalHorizontalRuleNode.dev.mjs",
@@ -722,6 +767,7 @@
       }
     },
     "./LexicalHorizontalRuleNode.js": {
+      "source": "./src/LexicalHorizontalRuleNode.tsx",
       "import": {
         "types": "./dist/LexicalHorizontalRuleNode.d.ts",
         "development": "./dist/LexicalHorizontalRuleNode.dev.mjs",
@@ -737,6 +783,7 @@
       }
     },
     "./LexicalHorizontalRulePlugin": {
+      "source": "./src/LexicalHorizontalRulePlugin.ts",
       "import": {
         "types": "./dist/LexicalHorizontalRulePlugin.d.ts",
         "development": "./dist/LexicalHorizontalRulePlugin.dev.mjs",
@@ -752,6 +799,7 @@
       }
     },
     "./LexicalHorizontalRulePlugin.js": {
+      "source": "./src/LexicalHorizontalRulePlugin.ts",
       "import": {
         "types": "./dist/LexicalHorizontalRulePlugin.d.ts",
         "development": "./dist/LexicalHorizontalRulePlugin.dev.mjs",
@@ -767,6 +815,7 @@
       }
     },
     "./LexicalLinkPlugin": {
+      "source": "./src/LexicalLinkPlugin.ts",
       "import": {
         "types": "./dist/LexicalLinkPlugin.d.ts",
         "development": "./dist/LexicalLinkPlugin.dev.mjs",
@@ -782,6 +831,7 @@
       }
     },
     "./LexicalLinkPlugin.js": {
+      "source": "./src/LexicalLinkPlugin.ts",
       "import": {
         "types": "./dist/LexicalLinkPlugin.d.ts",
         "development": "./dist/LexicalLinkPlugin.dev.mjs",
@@ -797,6 +847,7 @@
       }
     },
     "./LexicalListPlugin": {
+      "source": "./src/LexicalListPlugin.ts",
       "import": {
         "types": "./dist/LexicalListPlugin.d.ts",
         "development": "./dist/LexicalListPlugin.dev.mjs",
@@ -812,6 +863,7 @@
       }
     },
     "./LexicalListPlugin.js": {
+      "source": "./src/LexicalListPlugin.ts",
       "import": {
         "types": "./dist/LexicalListPlugin.d.ts",
         "development": "./dist/LexicalListPlugin.dev.mjs",
@@ -827,6 +879,7 @@
       }
     },
     "./LexicalMarkdownShortcutPlugin": {
+      "source": "./src/LexicalMarkdownShortcutPlugin.tsx",
       "import": {
         "types": "./dist/LexicalMarkdownShortcutPlugin.d.ts",
         "development": "./dist/LexicalMarkdownShortcutPlugin.dev.mjs",
@@ -842,6 +895,7 @@
       }
     },
     "./LexicalMarkdownShortcutPlugin.js": {
+      "source": "./src/LexicalMarkdownShortcutPlugin.tsx",
       "import": {
         "types": "./dist/LexicalMarkdownShortcutPlugin.d.ts",
         "development": "./dist/LexicalMarkdownShortcutPlugin.dev.mjs",
@@ -857,6 +911,7 @@
       }
     },
     "./LexicalNestedComposer": {
+      "source": "./src/LexicalNestedComposer.tsx",
       "import": {
         "types": "./dist/LexicalNestedComposer.d.ts",
         "development": "./dist/LexicalNestedComposer.dev.mjs",
@@ -872,6 +927,7 @@
       }
     },
     "./LexicalNestedComposer.js": {
+      "source": "./src/LexicalNestedComposer.tsx",
       "import": {
         "types": "./dist/LexicalNestedComposer.d.ts",
         "development": "./dist/LexicalNestedComposer.dev.mjs",
@@ -887,6 +943,7 @@
       }
     },
     "./LexicalNodeContextMenuPlugin": {
+      "source": "./src/LexicalNodeContextMenuPlugin.tsx",
       "import": {
         "types": "./dist/LexicalNodeContextMenuPlugin.d.ts",
         "development": "./dist/LexicalNodeContextMenuPlugin.dev.mjs",
@@ -902,6 +959,7 @@
       }
     },
     "./LexicalNodeContextMenuPlugin.js": {
+      "source": "./src/LexicalNodeContextMenuPlugin.tsx",
       "import": {
         "types": "./dist/LexicalNodeContextMenuPlugin.d.ts",
         "development": "./dist/LexicalNodeContextMenuPlugin.dev.mjs",
@@ -917,6 +975,7 @@
       }
     },
     "./LexicalNodeEventPlugin": {
+      "source": "./src/LexicalNodeEventPlugin.ts",
       "import": {
         "types": "./dist/LexicalNodeEventPlugin.d.ts",
         "development": "./dist/LexicalNodeEventPlugin.dev.mjs",
@@ -932,6 +991,7 @@
       }
     },
     "./LexicalNodeEventPlugin.js": {
+      "source": "./src/LexicalNodeEventPlugin.ts",
       "import": {
         "types": "./dist/LexicalNodeEventPlugin.d.ts",
         "development": "./dist/LexicalNodeEventPlugin.dev.mjs",
@@ -947,6 +1007,7 @@
       }
     },
     "./LexicalNodeMenuPlugin": {
+      "source": "./src/LexicalNodeMenuPlugin.tsx",
       "import": {
         "types": "./dist/LexicalNodeMenuPlugin.d.ts",
         "development": "./dist/LexicalNodeMenuPlugin.dev.mjs",
@@ -962,6 +1023,7 @@
       }
     },
     "./LexicalNodeMenuPlugin.js": {
+      "source": "./src/LexicalNodeMenuPlugin.tsx",
       "import": {
         "types": "./dist/LexicalNodeMenuPlugin.d.ts",
         "development": "./dist/LexicalNodeMenuPlugin.dev.mjs",
@@ -977,6 +1039,7 @@
       }
     },
     "./LexicalOnChangePlugin": {
+      "source": "./src/LexicalOnChangePlugin.ts",
       "import": {
         "types": "./dist/LexicalOnChangePlugin.d.ts",
         "development": "./dist/LexicalOnChangePlugin.dev.mjs",
@@ -992,6 +1055,7 @@
       }
     },
     "./LexicalOnChangePlugin.js": {
+      "source": "./src/LexicalOnChangePlugin.ts",
       "import": {
         "types": "./dist/LexicalOnChangePlugin.d.ts",
         "development": "./dist/LexicalOnChangePlugin.dev.mjs",
@@ -1007,6 +1071,7 @@
       }
     },
     "./LexicalPlainTextPlugin": {
+      "source": "./src/LexicalPlainTextPlugin.tsx",
       "import": {
         "types": "./dist/LexicalPlainTextPlugin.d.ts",
         "development": "./dist/LexicalPlainTextPlugin.dev.mjs",
@@ -1022,6 +1087,7 @@
       }
     },
     "./LexicalPlainTextPlugin.js": {
+      "source": "./src/LexicalPlainTextPlugin.tsx",
       "import": {
         "types": "./dist/LexicalPlainTextPlugin.d.ts",
         "development": "./dist/LexicalPlainTextPlugin.dev.mjs",
@@ -1037,6 +1103,7 @@
       }
     },
     "./LexicalRichTextPlugin": {
+      "source": "./src/LexicalRichTextPlugin.tsx",
       "import": {
         "types": "./dist/LexicalRichTextPlugin.d.ts",
         "development": "./dist/LexicalRichTextPlugin.dev.mjs",
@@ -1052,6 +1119,7 @@
       }
     },
     "./LexicalRichTextPlugin.js": {
+      "source": "./src/LexicalRichTextPlugin.tsx",
       "import": {
         "types": "./dist/LexicalRichTextPlugin.d.ts",
         "development": "./dist/LexicalRichTextPlugin.dev.mjs",
@@ -1067,6 +1135,7 @@
       }
     },
     "./LexicalSelectionAlwaysOnDisplay": {
+      "source": "./src/LexicalSelectionAlwaysOnDisplay.tsx",
       "import": {
         "types": "./dist/LexicalSelectionAlwaysOnDisplay.d.ts",
         "development": "./dist/LexicalSelectionAlwaysOnDisplay.dev.mjs",
@@ -1082,6 +1151,7 @@
       }
     },
     "./LexicalSelectionAlwaysOnDisplay.js": {
+      "source": "./src/LexicalSelectionAlwaysOnDisplay.tsx",
       "import": {
         "types": "./dist/LexicalSelectionAlwaysOnDisplay.d.ts",
         "development": "./dist/LexicalSelectionAlwaysOnDisplay.dev.mjs",
@@ -1097,6 +1167,7 @@
       }
     },
     "./LexicalTabIndentationPlugin": {
+      "source": "./src/LexicalTabIndentationPlugin.tsx",
       "import": {
         "types": "./dist/LexicalTabIndentationPlugin.d.ts",
         "development": "./dist/LexicalTabIndentationPlugin.dev.mjs",
@@ -1112,6 +1183,7 @@
       }
     },
     "./LexicalTabIndentationPlugin.js": {
+      "source": "./src/LexicalTabIndentationPlugin.tsx",
       "import": {
         "types": "./dist/LexicalTabIndentationPlugin.d.ts",
         "development": "./dist/LexicalTabIndentationPlugin.dev.mjs",
@@ -1127,6 +1199,7 @@
       }
     },
     "./LexicalTableOfContentsPlugin": {
+      "source": "./src/LexicalTableOfContentsPlugin.tsx",
       "import": {
         "types": "./dist/LexicalTableOfContentsPlugin.d.ts",
         "development": "./dist/LexicalTableOfContentsPlugin.dev.mjs",
@@ -1142,6 +1215,7 @@
       }
     },
     "./LexicalTableOfContentsPlugin.js": {
+      "source": "./src/LexicalTableOfContentsPlugin.tsx",
       "import": {
         "types": "./dist/LexicalTableOfContentsPlugin.d.ts",
         "development": "./dist/LexicalTableOfContentsPlugin.dev.mjs",
@@ -1157,6 +1231,7 @@
       }
     },
     "./LexicalTablePlugin": {
+      "source": "./src/LexicalTablePlugin.ts",
       "import": {
         "types": "./dist/LexicalTablePlugin.d.ts",
         "development": "./dist/LexicalTablePlugin.dev.mjs",
@@ -1172,6 +1247,7 @@
       }
     },
     "./LexicalTablePlugin.js": {
+      "source": "./src/LexicalTablePlugin.ts",
       "import": {
         "types": "./dist/LexicalTablePlugin.d.ts",
         "development": "./dist/LexicalTablePlugin.dev.mjs",
@@ -1187,6 +1263,7 @@
       }
     },
     "./LexicalTreeView": {
+      "source": "./src/LexicalTreeView.tsx",
       "import": {
         "types": "./dist/LexicalTreeView.d.ts",
         "development": "./dist/LexicalTreeView.dev.mjs",
@@ -1202,6 +1279,7 @@
       }
     },
     "./LexicalTreeView.js": {
+      "source": "./src/LexicalTreeView.tsx",
       "import": {
         "types": "./dist/LexicalTreeView.d.ts",
         "development": "./dist/LexicalTreeView.dev.mjs",
@@ -1217,6 +1295,7 @@
       }
     },
     "./LexicalTypeaheadMenuPlugin": {
+      "source": "./src/LexicalTypeaheadMenuPlugin.tsx",
       "import": {
         "types": "./dist/LexicalTypeaheadMenuPlugin.d.ts",
         "development": "./dist/LexicalTypeaheadMenuPlugin.dev.mjs",
@@ -1232,6 +1311,7 @@
       }
     },
     "./LexicalTypeaheadMenuPlugin.js": {
+      "source": "./src/LexicalTypeaheadMenuPlugin.tsx",
       "import": {
         "types": "./dist/LexicalTypeaheadMenuPlugin.d.ts",
         "development": "./dist/LexicalTypeaheadMenuPlugin.dev.mjs",
@@ -1247,6 +1327,7 @@
       }
     },
     "./ReactExtension": {
+      "source": "./src/ReactExtension.tsx",
       "import": {
         "types": "./dist/ReactExtension.d.ts",
         "development": "./dist/LexicalReactExtension.dev.mjs",
@@ -1262,6 +1343,7 @@
       }
     },
     "./ReactExtension.js": {
+      "source": "./src/ReactExtension.tsx",
       "import": {
         "types": "./dist/ReactExtension.d.ts",
         "development": "./dist/LexicalReactExtension.dev.mjs",
@@ -1277,6 +1359,7 @@
       }
     },
     "./ReactPluginHostExtension": {
+      "source": "./src/ReactPluginHostExtension.tsx",
       "import": {
         "types": "./dist/ReactPluginHostExtension.d.ts",
         "development": "./dist/LexicalReactPluginHostExtension.dev.mjs",
@@ -1292,6 +1375,7 @@
       }
     },
     "./ReactPluginHostExtension.js": {
+      "source": "./src/ReactPluginHostExtension.tsx",
       "import": {
         "types": "./dist/ReactPluginHostExtension.d.ts",
         "development": "./dist/LexicalReactPluginHostExtension.dev.mjs",
@@ -1307,6 +1391,7 @@
       }
     },
     "./ReactProviderExtension": {
+      "source": "./src/ReactProviderExtension.tsx",
       "import": {
         "types": "./dist/ReactProviderExtension.d.ts",
         "development": "./dist/LexicalReactProviderExtension.dev.mjs",
@@ -1322,6 +1407,7 @@
       }
     },
     "./ReactProviderExtension.js": {
+      "source": "./src/ReactProviderExtension.tsx",
       "import": {
         "types": "./dist/ReactProviderExtension.d.ts",
         "development": "./dist/LexicalReactProviderExtension.dev.mjs",
@@ -1337,6 +1423,7 @@
       }
     },
     "./TreeViewExtension": {
+      "source": "./src/TreeViewExtension.tsx",
       "import": {
         "types": "./dist/TreeViewExtension.d.ts",
         "development": "./dist/LexicalTreeViewExtension.dev.mjs",
@@ -1352,6 +1439,7 @@
       }
     },
     "./TreeViewExtension.js": {
+      "source": "./src/TreeViewExtension.tsx",
       "import": {
         "types": "./dist/TreeViewExtension.d.ts",
         "development": "./dist/LexicalTreeViewExtension.dev.mjs",
@@ -1367,6 +1455,7 @@
       }
     },
     "./useExtensionComponent": {
+      "source": "./src/useExtensionComponent.tsx",
       "import": {
         "types": "./dist/useExtensionComponent.d.ts",
         "development": "./dist/useLexicalExtensionComponent.dev.mjs",
@@ -1382,6 +1471,7 @@
       }
     },
     "./useExtensionComponent.js": {
+      "source": "./src/useExtensionComponent.tsx",
       "import": {
         "types": "./dist/useExtensionComponent.d.ts",
         "development": "./dist/useLexicalExtensionComponent.dev.mjs",
@@ -1397,6 +1487,7 @@
       }
     },
     "./useExtensionSignalValue": {
+      "source": "./src/useExtensionSignalValue.ts",
       "import": {
         "types": "./dist/useExtensionSignalValue.d.ts",
         "development": "./dist/useLexicalExtensionSignalValue.dev.mjs",
@@ -1412,6 +1503,7 @@
       }
     },
     "./useExtensionSignalValue.js": {
+      "source": "./src/useExtensionSignalValue.ts",
       "import": {
         "types": "./dist/useExtensionSignalValue.d.ts",
         "development": "./dist/useLexicalExtensionSignalValue.dev.mjs",
@@ -1427,6 +1519,7 @@
       }
     },
     "./useLexicalEditable": {
+      "source": "./src/useLexicalEditable.ts",
       "import": {
         "types": "./dist/useLexicalEditable.d.ts",
         "development": "./dist/useLexicalEditable.dev.mjs",
@@ -1442,6 +1535,7 @@
       }
     },
     "./useLexicalEditable.js": {
+      "source": "./src/useLexicalEditable.ts",
       "import": {
         "types": "./dist/useLexicalEditable.d.ts",
         "development": "./dist/useLexicalEditable.dev.mjs",
@@ -1457,6 +1551,7 @@
       }
     },
     "./useLexicalIsTextContentEmpty": {
+      "source": "./src/useLexicalIsTextContentEmpty.ts",
       "import": {
         "types": "./dist/useLexicalIsTextContentEmpty.d.ts",
         "development": "./dist/useLexicalIsTextContentEmpty.dev.mjs",
@@ -1472,6 +1567,7 @@
       }
     },
     "./useLexicalIsTextContentEmpty.js": {
+      "source": "./src/useLexicalIsTextContentEmpty.ts",
       "import": {
         "types": "./dist/useLexicalIsTextContentEmpty.d.ts",
         "development": "./dist/useLexicalIsTextContentEmpty.dev.mjs",
@@ -1487,6 +1583,7 @@
       }
     },
     "./useLexicalNodeSelection": {
+      "source": "./src/useLexicalNodeSelection.ts",
       "import": {
         "types": "./dist/useLexicalNodeSelection.d.ts",
         "development": "./dist/useLexicalNodeSelection.dev.mjs",
@@ -1502,6 +1599,7 @@
       }
     },
     "./useLexicalNodeSelection.js": {
+      "source": "./src/useLexicalNodeSelection.ts",
       "import": {
         "types": "./dist/useLexicalNodeSelection.d.ts",
         "development": "./dist/useLexicalNodeSelection.dev.mjs",
@@ -1517,6 +1615,7 @@
       }
     },
     "./useLexicalSubscription": {
+      "source": "./src/useLexicalSubscription.tsx",
       "import": {
         "types": "./dist/useLexicalSubscription.d.ts",
         "development": "./dist/useLexicalSubscription.dev.mjs",
@@ -1532,6 +1631,7 @@
       }
     },
     "./useLexicalSubscription.js": {
+      "source": "./src/useLexicalSubscription.tsx",
       "import": {
         "types": "./dist/useLexicalSubscription.d.ts",
         "development": "./dist/useLexicalSubscription.dev.mjs",
@@ -1547,6 +1647,7 @@
       }
     },
     "./useLexicalTextEntity": {
+      "source": "./src/useLexicalTextEntity.ts",
       "import": {
         "types": "./dist/useLexicalTextEntity.d.ts",
         "development": "./dist/useLexicalTextEntity.dev.mjs",
@@ -1562,6 +1663,7 @@
       }
     },
     "./useLexicalTextEntity.js": {
+      "source": "./src/useLexicalTextEntity.ts",
       "import": {
         "types": "./dist/useLexicalTextEntity.d.ts",
         "development": "./dist/useLexicalTextEntity.dev.mjs",
@@ -1584,6 +1686,13 @@
   },
   "files": [
     "dist",
+    "src",
+    "!src/__tests__",
+    "!src/__bench__",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "!src/**/*.bench.ts",
+    "!src/**/*.bench.tsx",
     "README.md",
     "LICENSE"
   ]

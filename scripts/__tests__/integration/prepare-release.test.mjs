@@ -12,7 +12,12 @@ import path from 'node:path';
 import {describe, expect, test} from 'vitest';
 
 import {packagesManager} from '../../shared/packagesManager.mjs';
-import {describeDevExample, describeExample} from './utils.mjs';
+import {
+  describeDevExample,
+  describeExample,
+  describeLinkedFixture,
+  hasLinkProtocolDeps,
+} from './utils.mjs';
 
 describe('prepare-release tests', () => {
   for (const pkg of packagesManager.getPublicPackages()) {
@@ -26,11 +31,21 @@ describe('prepare-release tests', () => {
     });
   }
 });
+// Fixtures that declare `link:` deps are exercised through pnpm's symlink
+// flow (`pnpm install --ignore-workspace`); the rest are installed from
+// the packed tarballs prepare-release just produced.
 ['examples', 'scripts/__tests__/integration/fixtures']
   .flatMap(packagesDir =>
     glob.sync(`${packagesDir}/*/package.json`, {windowsPathsNoEscape: true}),
   )
-  .forEach(exampleJsonPath => describeExample(exampleJsonPath));
+  .forEach(packageJsonPath => {
+    const packageJson = fs.readJsonSync(packageJsonPath);
+    if (hasLinkProtocolDeps(packageJson)) {
+      describeLinkedFixture(packageJsonPath);
+    } else {
+      describeExample(packageJsonPath);
+    }
+  });
 // dev-examples use workspace:* deps and are tested with pnpm workspace
 // linking rather than published tarballs
 glob

@@ -190,13 +190,25 @@ of these scripts you might as well run them all.
 
 ### pnpm run prepare-release
 
-This runs all of the pre-release steps and will let you inspect the artifacts
-that would be uploaded to npm. Each public package will have a npm directory, e.g.
-`packages/lexical/npm` that contains those artifacts.
+This runs `build-release` to produce all of the artifacts each public
+package needs (the `dev`/`prod`/`node` ESM and CJS variants plus their
+fork modules, `.d.ts` declarations, and `.flow` stubs under
+`packages/<name>/dist/`), then runs the publish-time guard in
+`scripts/npm/prepare-release.mjs` to confirm every path the package's
+`exports`/`main`/`module`/`types` fields reference actually exists on
+disk. The guard fails the build if e.g. you ran `pnpm run build` (dev
+only) and then tried to publish — the `.prod.{js,mjs}` files would be
+missing.
 
-This will also update scripts/error-codes/codes.json, the mapping of
-production error codes to error messages. It's imperative to commit the result
-of this before tagging a release.
+Each package is its own publish root: `packages/<name>/` IS the
+publishable npm package after `build-release`. `pnpm publish` is run
+directly from that directory by `scripts/npm/release.mjs` so pnpm's
+automatic `workspace:*` rewriting and the `files` whitelist do the
+right thing without an intermediate `npm/` copy step.
+
+This will also update `scripts/error-codes/codes.json`, the mapping of
+production error codes to error messages. It's imperative to commit the
+result of this before tagging a release.
 
 ### pnpm run ci-check
 

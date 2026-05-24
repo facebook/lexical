@@ -105,15 +105,25 @@ const DIST_DIR = 'dist';
  *
  * @param {string} basename the name of the entry point module without an extension (e.g. 'index')
  * @param {string} [typesBasename]
+ * @param {string} [sourceRelPath] path relative to the package root for the
+ *   TypeScript (or CJS) source backing this entry. When provided, a
+ *   `source` condition is added so bundlers configured with
+ *   `resolve.conditions: ['source', ...]` can consume the package
+ *   without a build step (useful for `pnpm link` / `file:` consumers).
  * @returns {ImportRequireExports} The export map for this file
  */
-function exportEntry(basename, typesBasename = `${basename}.d.ts`) {
+function exportEntry(
+  basename,
+  typesBasename = `${basename}.d.ts`,
+  sourceRelPath,
+) {
   // Bundlers such as webpack require 'types' to be first and 'default' to be
   // last per #5731. Keys are in descending priority order.
   const prefix = `./${DIST_DIR}/${basename}`;
   const types = `./${DIST_DIR}/${typesBasename}`;
   return {
     /* eslint-disable sort-keys-fix/sort-keys-fix */
+    ...(sourceRelPath ? {source: `./${sourceRelPath}`} : null),
     import: {
       types,
       ...withEnvironments(`${prefix}.mjs`),
@@ -148,7 +158,10 @@ function withBrowser(exports) {
       return [[k, v.replace(/((?:\.dev|\.prod)?\.m?js)$/, '.browser$1')]];
     }),
   );
-  return {browser, ...exports};
+  // Keep `source` first so a consumer that opts in with
+  // `resolve.conditions: ['source', ...]` always wins over `browser`.
+  const {source, ...rest} = exports;
+  return {...(source ? {source} : null), browser, ...rest};
 }
 
 /**
@@ -167,9 +180,23 @@ function stripDistPrefix(value) {
 /**
  * Files that should be present alongside package.json in every public
  * package directory so it ships as a complete npm package without any
- * separate copy-into-`npm/` step. Listed in publish order.
+ * separate copy-into-`npm/` step. `src` is included (minus tests and
+ * benchmarks) so the `source` export condition (added by `exportEntry`)
+ * resolves for npm consumers that opt in via
+ * `resolve.conditions: ['source', ...]`.
  */
-const PUBLIC_FILES_FIELD = ['dist', 'README.md', 'LICENSE'];
+const PUBLIC_FILES_FIELD = [
+  'dist',
+  'src',
+  '!src/__tests__',
+  '!src/__bench__',
+  '!src/**/*.test.ts',
+  '!src/**/*.test.tsx',
+  '!src/**/*.bench.ts',
+  '!src/**/*.bench.tsx',
+  'README.md',
+  'LICENSE',
+];
 
 /**
  * Copy the monorepo LICENSE into the package directory. The published
@@ -182,6 +209,33 @@ const PUBLIC_FILES_FIELD = ['dist', 'README.md', 'LICENSE'];
 function ensureLicense(pkg) {
   const dest = pkg.resolve('LICENSE');
   fs.copySync(path.resolve('LICENSE'), dest);
+}
+
+/**
+ * Find the source file backing a `main`-style entry. The build always
+ * compiles `src/index.{ts,tsx}` into the `main` output regardless of
+ * what `main` is named, so check for index first; fall back to
+ * `src/<basename>.{ts,tsx,js}` to cover any custom layout.
+ *
+ * @param {PackageMetadata} pkg
+ * @param {string} basename
+ * @returns {string | undefined}
+ */
+function findMainSourceRelPath(pkg, basename) {
+  const candidates = [
+    'index.ts',
+    'index.tsx',
+    'index.js',
+    `${basename}.ts`,
+    `${basename}.tsx`,
+    `${basename}.js`,
+  ];
+  for (const fn of candidates) {
+    if (fs.existsSync(pkg.resolve('src', fn))) {
+      return `src/${fn}`;
+    }
+  }
+  return undefined;
 }
 
 /**
@@ -206,8 +260,16 @@ function updatePublicPackage(pkg) {
     if (typesBase) {
       packageJson.types = `./${DIST_DIR}/${typesBase}`;
     }
+    const sourceRelPath = findMainSourceRelPath(
+      pkg,
+      replaceExtension(mainBase, ''),
+    );
     packageJson.exports = {
-      '.': exportEntry(replaceExtension(mainBase, ''), typesBase),
+      '.': exportEntry(
+        replaceExtension(mainBase, ''),
+        typesBase,
+        sourceRelPath,
+      ),
     };
   } else {
     const exports = {};
@@ -224,7 +286,7 @@ function updatePublicPackage(pkg) {
           ? packageName
           : `${packageName}/${basename}`;
         const entryName = npmToWwwName(entryNameInput);
-        let entry = exportEntry(entryName, `${basename}.d.ts`);
+        let entry = exportEntry(entryName, `${basename}.d.ts`, `src/${fn}`);
         if (hasBrowser) {
           entry = withBrowser(entry);
         }
@@ -263,9 +325,15 @@ function updateDependencies(pkg) {
     peerDependencies = {},
     devDependencies = {},
   } = packageJson;
+  // Pinned-locally deps (link:..., file:...) are intentional — a fixture
+  // or example may want to resolve through pnpm's link protocol against
+  // the local checkout. Leave those alone; only normalize semver-style
+  // pins to the canonical monorepo version.
+  const isLocalProtocol = v =>
+    typeof v === 'string' && /^(link|file|portal):/.test(v);
   [dependencies, devDependencies].forEach(deps => {
     Object.keys(deps).forEach(dep => {
-      if (publicNpmNames.has(dep)) {
+      if (publicNpmNames.has(dep) && !isLocalProtocol(deps[dep])) {
         deps[dep] = depVersion;
       }
     });

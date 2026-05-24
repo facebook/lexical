@@ -49,8 +49,9 @@ type CollaborationPluginProps = {
   // `awarenessData` parameter allows arbitrary data to be added to the awareness.
   awarenessData?: object;
   syncCursorPositionsFn?: SyncCursorPositionsFn;
-  // Opt in to rendering remote selections via the CSS Custom Highlight API
-  // (falls back to the legacy rect-overlay path if the browser lacks support).
+  /** Opt in to the new CSS Highlights-based selection rendering (if supported by the browser).
+   * Fallback to legacy method if not enabled or not supported.
+   */
   selectionHighlight?: boolean;
 };
 
@@ -180,6 +181,9 @@ function YjsCollaborationCursors({
   awarenessData?: object;
   collabContext: CollaborationContextType;
   syncCursorPositionsFn?: SyncCursorPositionsFn;
+  /** Opt in to the new CSS Highlights-based selection rendering (if supported by the browser).
+   * Fallback to legacy method if not enabled or not supported.
+   */
   selectionHighlight?: boolean;
 }) {
   const cursors = useYjsCollaboration(
@@ -216,6 +220,9 @@ type CollaborationPluginV2Props = {
   excludedProperties?: ExcludedProperties;
   // `awarenessData` parameter allows arbitrary data to be added to the awareness.
   awarenessData?: object;
+  /** Opt in to the new CSS Highlights-based selection rendering (if supported by the browser).
+   * Fallback to legacy method if not enabled or not supported.
+   */
   selectionHighlight?: boolean;
 };
 

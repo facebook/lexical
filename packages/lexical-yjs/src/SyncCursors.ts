@@ -91,7 +91,7 @@ function getCursorHighlightSheet(): CSSStyleSheet {
 
 function addCursorHighlightRule(highlightName: string, color: string): void {
   // `color` flows in from peer-controlled awareness state. Reject anything
-  // the browser doesn't recognize as a valid <color> so an malicious user can't
+  // the browser doesn't recognize as a valid <color> so a malicious user can't
   // inject extra declarations through string interpolation below.
   if (!CSS.supports('color', color)) {
     return;
@@ -419,7 +419,7 @@ function updateCursor(
   }
 
   if (highlight !== null) {
-    // modern path: CSS Custom Highlight AP
+    // modern path: CSS Custom Highlight API
     const range = createDOMRange(
       editor,
       anchorNode,

@@ -9,8 +9,8 @@
   ],
   "license": "MIT",
   "version": "0.44.0",
-  "main": "LexicalHtml.js",
-  "types": "index.d.ts",
+  "main": "./dist/LexicalHtml.js",
+  "types": "./dist/index.d.ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/facebook/lexical.git",
@@ -22,23 +22,28 @@
     "@lexical/utils": "workspace:*",
     "lexical": "workspace:*"
   },
-  "module": "LexicalHtml.mjs",
+  "module": "./dist/LexicalHtml.mjs",
   "sideEffects": false,
   "exports": {
     ".": {
       "import": {
-        "types": "./index.d.ts",
-        "development": "./LexicalHtml.dev.mjs",
-        "production": "./LexicalHtml.prod.mjs",
-        "node": "./LexicalHtml.node.mjs",
-        "default": "./LexicalHtml.mjs"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalHtml.dev.mjs",
+        "production": "./dist/LexicalHtml.prod.mjs",
+        "node": "./dist/LexicalHtml.node.mjs",
+        "default": "./dist/LexicalHtml.mjs"
       },
       "require": {
-        "types": "./index.d.ts",
-        "development": "./LexicalHtml.dev.js",
-        "production": "./LexicalHtml.prod.js",
-        "default": "./LexicalHtml.js"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalHtml.dev.js",
+        "production": "./dist/LexicalHtml.prod.js",
+        "default": "./dist/LexicalHtml.js"
       }
     }
-  }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ]
 }

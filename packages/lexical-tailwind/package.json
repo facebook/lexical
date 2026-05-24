@@ -14,8 +14,8 @@
     "url": "git+https://github.com/facebook/lexical.git",
     "directory": "packages/lexical-tailwind"
   },
-  "main": "LexicalTailwind.js",
-  "types": "index.d.ts",
+  "main": "./dist/LexicalTailwind.js",
+  "types": "./dist/index.d.ts",
   "bugs": {
     "url": "https://github.com/facebook/lexical/issues"
   },
@@ -31,22 +31,27 @@
   },
   "description": "This package contains an extension to use Tailwind for the editor theme",
   "sideEffects": false,
-  "module": "LexicalTailwind.mjs",
+  "module": "./dist/LexicalTailwind.mjs",
   "exports": {
     ".": {
       "import": {
-        "types": "./index.d.ts",
-        "development": "./LexicalTailwind.dev.mjs",
-        "production": "./LexicalTailwind.prod.mjs",
-        "node": "./LexicalTailwind.node.mjs",
-        "default": "./LexicalTailwind.mjs"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalTailwind.dev.mjs",
+        "production": "./dist/LexicalTailwind.prod.mjs",
+        "node": "./dist/LexicalTailwind.node.mjs",
+        "default": "./dist/LexicalTailwind.mjs"
       },
       "require": {
-        "types": "./index.d.ts",
-        "development": "./LexicalTailwind.dev.js",
-        "production": "./LexicalTailwind.prod.js",
-        "default": "./LexicalTailwind.js"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalTailwind.dev.js",
+        "production": "./dist/LexicalTailwind.prod.js",
+        "default": "./dist/LexicalTailwind.js"
       }
     }
-  }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ]
 }

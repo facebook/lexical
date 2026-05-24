@@ -79,6 +79,9 @@ const distModuleResolution = (
         .getNormalizedNpmModuleExportEntries()
         .map((entry: NpmModuleExportEntry) => {
           const [name, moduleExports] = entry;
+          // Paths in the exports map are now relative to the package root
+          // and already include the `./dist/` segment, so just resolve
+          // them against the package directory.
           const replacements = ([environment, 'default'] as const).flatMap(
             condition =>
               [
@@ -86,15 +89,16 @@ const distModuleResolution = (
                   moduleExports.browser &&
                   moduleExports.browser[condition],
                 moduleExports.import[condition],
-              ].flatMap(fn => (fn ? [pkg.resolve('dist', fn)] : [])),
+              ].flatMap(fn => (fn ? [pkg.resolve(fn)] : [])),
+          );
+          const distRel = path.relative(
+            pkg.resolve('.'),
+            replacements[1] || '',
           );
           const replacement = replacements.find(fs.existsSync.bind(fs));
           if (!replacement) {
             throw new Error(
-              `ERROR: Missing ./${path.relative(
-                '../..',
-                replacements[1],
-              )}. Did you run \`pnpm run build\` in the monorepo first?`,
+              `ERROR: Missing ${distRel}. Did you run \`pnpm run build\` in the monorepo first?`,
             );
           }
           return {

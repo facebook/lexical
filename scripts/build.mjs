@@ -382,11 +382,11 @@ function getComment() {
 }
 
 function getFileName(fileName, isProd, format) {
-  const extension = getExtension(format);
-  if (isWWW || isRelease) {
-    return `${fileName}.${isProd ? 'prod' : 'dev'}${extension}`;
-  }
-  return `${fileName}${extension}`;
+  // Both www and npm builds use the `.dev`/`.prod` suffix. The bare
+  // `Foo.mjs`/`Foo.js` names are reserved for the fork module emitted by
+  // buildForkModules so the published exports map can resolve cleanly
+  // regardless of which variants were built.
+  return `${fileName}.${isProd ? 'prod' : 'dev'}${getExtension(format)}`;
 }
 
 /**
@@ -411,6 +411,7 @@ function moveTSDeclarationFilesIntoDist(packageName, outputPath) {
  * @typedef {Object} ForkModuleContentOptions
  * @property {string} devFileName
  * @property {Array<string>} exports
+ * @property {'dev'|'prod'|'both'} mode which variants this build produced
  * @property {string} outputFileName
  * @property {string} prodFileName
  */
@@ -422,27 +423,45 @@ function moveTSDeclarationFilesIntoDist(packageName, outputPath) {
  * @returns {string}
  */
 function forkModuleContent(
-  {devFileName, exports, outputFileName, prodFileName},
+  {devFileName, exports, mode, outputFileName, prodFileName},
   target,
 ) {
   const lines = [getComment()];
   if (target === 'cjs') {
-    lines.push(
-      `'use strict'`,
-      `const ${outputFileName} = process.env.NODE_ENV !== 'production' ? require('${devFileName}') : require('${prodFileName}');`,
-      `module.exports = ${outputFileName};`,
-    );
+    lines.push(`'use strict'`);
+    if (mode === 'both') {
+      lines.push(
+        `const ${outputFileName} = process.env.NODE_ENV !== 'production' ? require('${devFileName}') : require('${prodFileName}');`,
+      );
+    } else if (mode === 'dev') {
+      lines.push(`const ${outputFileName} = require('${devFileName}');`);
+    } else {
+      lines.push(`const ${outputFileName} = require('${prodFileName}');`);
+    }
+    lines.push(`module.exports = ${outputFileName};`);
   } else {
     if (target === 'esm') {
-      lines.push(
-        `import * as modDev from '${devFileName}';`,
-        `import * as modProd from '${prodFileName}';`,
-        `const mod = process.env.NODE_ENV !== 'production' ? modDev : modProd;`,
-      );
+      if (mode === 'both') {
+        lines.push(
+          `import * as modDev from '${devFileName}';`,
+          `import * as modProd from '${prodFileName}';`,
+          `const mod = process.env.NODE_ENV !== 'production' ? modDev : modProd;`,
+        );
+      } else if (mode === 'dev') {
+        lines.push(`import * as mod from '${devFileName}';`);
+      } else {
+        lines.push(`import * as mod from '${prodFileName}';`);
+      }
     } else if (target === 'node') {
-      lines.push(
-        `const mod = await (process.env.NODE_ENV !== 'production' ? import('${devFileName}') : import('${prodFileName}'));`,
-      );
+      if (mode === 'both') {
+        lines.push(
+          `const mod = await (process.env.NODE_ENV !== 'production' ? import('${devFileName}') : import('${prodFileName}'));`,
+        );
+      } else if (mode === 'dev') {
+        lines.push(`const mod = await import('${devFileName}');`);
+      } else {
+        lines.push(`const mod = await import('${prodFileName}');`);
+      }
     }
     for (const name of exports) {
       lines.push(
@@ -461,12 +480,13 @@ function forkModuleContent(
  * @param {string} outputFileName
  * @param {'cjs'|'esm'} format
  * @param {Array<string>} exports
+ * @param {'dev'|'prod'|'both'} mode
  */
-function buildForkModules(outputPath, outputFileName, format, exports) {
+function buildForkModules(outputPath, outputFileName, format, exports, mode) {
   const extension = getExtension(format);
   const devFileName = `./${outputFileName}.dev${extension}`;
   const prodFileName = `./${outputFileName}.prod${extension}`;
-  const opts = {devFileName, exports, outputFileName, prodFileName};
+  const opts = {devFileName, exports, mode, outputFileName, prodFileName};
   fs.outputFileSync(
     path.resolve(outputPath, `${outputFileName}${extension}`),
     forkModuleContent(opts, format),
@@ -479,8 +499,30 @@ function buildForkModules(outputPath, outputFileName, format, exports) {
   }
 }
 
+/**
+ * Copy the package's hand-written Flow stubs from `flow/` into the build
+ * output directory so Flow consumers find `<Name>.js.flow` next to the
+ * matching `<Name>.js` shipped in the published package.
+ *
+ * @param {import('./shared/PackageMetadata.mjs').PackageMetadata} pkg
+ * @param {string} outputPath
+ */
+function copyFlowStubsIntoDist(pkg, outputPath) {
+  const flowDir = pkg.resolve('flow');
+  if (!fs.existsSync(flowDir)) {
+    return;
+  }
+  for (const fn of fs.readdirSync(flowDir)) {
+    if (fn.endsWith('.flow')) {
+      fs.copySync(path.resolve(flowDir, fn), path.resolve(outputPath, fn));
+    }
+  }
+}
+
 async function buildAll() {
-  if (!isWWW && (isRelease || isProduction)) {
+  // Always emit .d.ts for npm builds so a `pnpm link` consumer gets types
+  // out of the box. Skip for www (it consumes Flow stubs instead).
+  if (!isWWW) {
     await buildTSDeclarationFiles();
   }
 
@@ -503,7 +545,7 @@ async function buildAll() {
             inputFile = wwwCjs;
           }
         }
-        await build(
+        const primaryExports = await build(
           `${name}${module.name ? '-' + module.name : ''}`,
           inputFile,
           outputPath,
@@ -517,27 +559,43 @@ async function buildAll() {
           pkg,
         );
 
+        // In release mode, also build the opposite variant so the published
+        // package contains both .dev and .prod files for every entry point.
+        let secondaryExports;
         if (isRelease) {
-          const exports = await build(
+          secondaryExports = await build(
             name,
             inputFile,
             outputPath,
             path.resolve(
               outputPath,
-              getFileName(outputFileName, false, format),
+              getFileName(outputFileName, !isProduction, format),
             ),
-            false,
+            !isProduction,
             format,
             version,
             pkg,
           );
-          buildForkModules(outputPath, outputFileName, format, exports);
+        }
+
+        // www has its own consolidation step (prepare-www) and does not use
+        // the npm-style fork modules.
+        if (!isWWW) {
+          const mode = isRelease ? 'both' : isProduction ? 'prod' : 'dev';
+          buildForkModules(
+            outputPath,
+            outputFileName,
+            format,
+            primaryExports.length > 0 ? primaryExports : secondaryExports,
+            mode,
+          );
         }
       }
     }
 
-    if (!isWWW && (isRelease || isProduction)) {
+    if (!isWWW) {
       moveTSDeclarationFilesIntoDist(packageName, outputPath);
+      copyFlowStubsIntoDist(pkg, outputPath);
     }
   }
 }

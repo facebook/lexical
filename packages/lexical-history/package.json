@@ -9,8 +9,8 @@
   ],
   "license": "MIT",
   "version": "0.44.0",
-  "main": "LexicalHistory.js",
-  "types": "index.d.ts",
+  "main": "./dist/LexicalHistory.js",
+  "types": "./dist/index.d.ts",
   "dependencies": {
     "@lexical/extension": "workspace:*",
     "@lexical/utils": "workspace:*",
@@ -21,23 +21,28 @@
     "url": "git+https://github.com/facebook/lexical.git",
     "directory": "packages/lexical-history"
   },
-  "module": "LexicalHistory.mjs",
+  "module": "./dist/LexicalHistory.mjs",
   "sideEffects": false,
   "exports": {
     ".": {
       "import": {
-        "types": "./index.d.ts",
-        "development": "./LexicalHistory.dev.mjs",
-        "production": "./LexicalHistory.prod.mjs",
-        "node": "./LexicalHistory.node.mjs",
-        "default": "./LexicalHistory.mjs"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalHistory.dev.mjs",
+        "production": "./dist/LexicalHistory.prod.mjs",
+        "node": "./dist/LexicalHistory.node.mjs",
+        "default": "./dist/LexicalHistory.mjs"
       },
       "require": {
-        "types": "./index.d.ts",
-        "development": "./LexicalHistory.dev.js",
-        "production": "./LexicalHistory.prod.js",
-        "default": "./LexicalHistory.js"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalHistory.dev.js",
+        "production": "./dist/LexicalHistory.prod.js",
+        "default": "./dist/LexicalHistory.js"
       }
     }
-  }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ]
 }

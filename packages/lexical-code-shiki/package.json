@@ -9,8 +9,8 @@
   ],
   "license": "MIT",
   "version": "0.44.0",
-  "main": "LexicalCodeShiki.js",
-  "types": "index.d.ts",
+  "main": "./dist/LexicalCodeShiki.js",
+  "types": "./dist/index.d.ts",
   "dependencies": {
     "@lexical/code-core": "workspace:*",
     "@lexical/extension": "workspace:*",
@@ -29,23 +29,28 @@
   "devDependencies": {
     "@shikijs/types": "^4.0.2"
   },
-  "module": "LexicalCodeShiki.mjs",
+  "module": "./dist/LexicalCodeShiki.mjs",
   "sideEffects": true,
   "exports": {
     ".": {
       "import": {
-        "types": "./index.d.ts",
-        "development": "./LexicalCodeShiki.dev.mjs",
-        "production": "./LexicalCodeShiki.prod.mjs",
-        "node": "./LexicalCodeShiki.node.mjs",
-        "default": "./LexicalCodeShiki.mjs"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalCodeShiki.dev.mjs",
+        "production": "./dist/LexicalCodeShiki.prod.mjs",
+        "node": "./dist/LexicalCodeShiki.node.mjs",
+        "default": "./dist/LexicalCodeShiki.mjs"
       },
       "require": {
-        "types": "./index.d.ts",
-        "development": "./LexicalCodeShiki.dev.js",
-        "production": "./LexicalCodeShiki.prod.js",
-        "default": "./LexicalCodeShiki.js"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalCodeShiki.dev.js",
+        "production": "./dist/LexicalCodeShiki.prod.js",
+        "default": "./dist/LexicalCodeShiki.js"
       }
     }
-  }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ]
 }

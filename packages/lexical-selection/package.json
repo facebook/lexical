@@ -10,33 +10,38 @@
   ],
   "license": "MIT",
   "version": "0.44.0",
-  "main": "LexicalSelection.js",
-  "types": "index.d.ts",
+  "main": "./dist/LexicalSelection.js",
+  "types": "./dist/index.d.ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/facebook/lexical.git",
     "directory": "packages/lexical-selection"
   },
-  "module": "LexicalSelection.mjs",
+  "module": "./dist/LexicalSelection.mjs",
   "sideEffects": false,
   "exports": {
     ".": {
       "import": {
-        "types": "./index.d.ts",
-        "development": "./LexicalSelection.dev.mjs",
-        "production": "./LexicalSelection.prod.mjs",
-        "node": "./LexicalSelection.node.mjs",
-        "default": "./LexicalSelection.mjs"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalSelection.dev.mjs",
+        "production": "./dist/LexicalSelection.prod.mjs",
+        "node": "./dist/LexicalSelection.node.mjs",
+        "default": "./dist/LexicalSelection.mjs"
       },
       "require": {
-        "types": "./index.d.ts",
-        "development": "./LexicalSelection.dev.js",
-        "production": "./LexicalSelection.prod.js",
-        "default": "./LexicalSelection.js"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalSelection.dev.js",
+        "production": "./dist/LexicalSelection.prod.js",
+        "default": "./dist/LexicalSelection.js"
       }
     }
   },
   "dependencies": {
     "lexical": "workspace:*"
-  }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ]
 }

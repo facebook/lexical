@@ -9,8 +9,8 @@
   ],
   "license": "MIT",
   "version": "0.44.0",
-  "main": "LexicalMark.js",
-  "types": "index.d.ts",
+  "main": "./dist/LexicalMark.js",
+  "types": "./dist/index.d.ts",
   "dependencies": {
     "@lexical/utils": "workspace:*",
     "lexical": "workspace:*"
@@ -20,23 +20,28 @@
     "url": "git+https://github.com/facebook/lexical.git",
     "directory": "packages/lexical-mark"
   },
-  "module": "LexicalMark.mjs",
+  "module": "./dist/LexicalMark.mjs",
   "sideEffects": false,
   "exports": {
     ".": {
       "import": {
-        "types": "./index.d.ts",
-        "development": "./LexicalMark.dev.mjs",
-        "production": "./LexicalMark.prod.mjs",
-        "node": "./LexicalMark.node.mjs",
-        "default": "./LexicalMark.mjs"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalMark.dev.mjs",
+        "production": "./dist/LexicalMark.prod.mjs",
+        "node": "./dist/LexicalMark.node.mjs",
+        "default": "./dist/LexicalMark.mjs"
       },
       "require": {
-        "types": "./index.d.ts",
-        "development": "./LexicalMark.dev.js",
-        "production": "./LexicalMark.prod.js",
-        "default": "./LexicalMark.js"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalMark.dev.js",
+        "production": "./dist/LexicalMark.prod.js",
+        "default": "./dist/LexicalMark.js"
       }
     }
-  }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ]
 }

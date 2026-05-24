@@ -93,6 +93,14 @@ function withEnvironments(fileName) {
 }
 
 /**
+ * The subdirectory of a package that holds built artifacts (and is what
+ * the public exports/main/types fields resolve into). Keeping this in one
+ * place makes the package directory itself a publishable npm package and
+ * allows `pnpm link` / `file:` consumers to point at the package root.
+ */
+const DIST_DIR = 'dist';
+
+/**
  * Build an export map for a particular entry point in the package.json
  *
  * @param {string} basename the name of the entry point module without an extension (e.g. 'index')
@@ -102,8 +110,8 @@ function withEnvironments(fileName) {
 function exportEntry(basename, typesBasename = `${basename}.d.ts`) {
   // Bundlers such as webpack require 'types' to be first and 'default' to be
   // last per #5731. Keys are in descending priority order.
-  const prefix = `./${basename}`;
-  const types = `./${typesBasename}`;
+  const prefix = `./${DIST_DIR}/${basename}`;
+  const types = `./${DIST_DIR}/${typesBasename}`;
   return {
     /* eslint-disable sort-keys-fix/sort-keys-fix */
     import: {
@@ -144,6 +152,39 @@ function withBrowser(exports) {
 }
 
 /**
+ * Strip any leading './' or 'dist/' segment from a path stored in
+ * package.json. Existing package.json fields may be `Lexical.js`,
+ * `./Lexical.js`, or `./dist/Lexical.js` depending on when they were
+ * last written; normalize to the bare basename for derivation.
+ *
+ * @param {string} value
+ * @returns {string}
+ */
+function stripDistPrefix(value) {
+  return value.replace(/^(\.\/)?(dist\/)?/, '');
+}
+
+/**
+ * Files that should be present alongside package.json in every public
+ * package directory so it ships as a complete npm package without any
+ * separate copy-into-`npm/` step. Listed in publish order.
+ */
+const PUBLIC_FILES_FIELD = ['dist', 'README.md', 'LICENSE'];
+
+/**
+ * Copy the monorepo LICENSE into the package directory. The published
+ * tarball must contain the LICENSE next to package.json; doing this
+ * during `update-packages` keeps the working tree publishable without
+ * relying on the previous prepare-release copy step.
+ *
+ * @param {PackageMetadata} pkg
+ */
+function ensureLicense(pkg) {
+  const dest = pkg.resolve('LICENSE');
+  fs.copySync(path.resolve('LICENSE'), dest);
+}
+
+/**
  * Update the public package's packageJson in-place to add default configurations
  * for `sideEffects` and `module` as well as to maintain the `exports` map.
  *
@@ -156,12 +197,17 @@ function updatePublicPackage(pkg) {
   }
   // If there's a main we expect a single entry point
   if (packageJson.main) {
-    packageJson.module = replaceExtension(packageJson.main, '.mjs');
+    const mainBase = stripDistPrefix(packageJson.main);
+    const typesBase = packageJson.types
+      ? stripDistPrefix(packageJson.types)
+      : undefined;
+    packageJson.main = `./${DIST_DIR}/${mainBase}`;
+    packageJson.module = `./${DIST_DIR}/${replaceExtension(mainBase, '.mjs')}`;
+    if (typesBase) {
+      packageJson.types = `./${DIST_DIR}/${typesBase}`;
+    }
     packageJson.exports = {
-      '.': exportEntry(
-        replaceExtension(packageJson.main, ''),
-        packageJson.types,
-      ),
+      '.': exportEntry(replaceExtension(mainBase, ''), typesBase),
     };
   } else {
     const exports = {};
@@ -193,6 +239,10 @@ function updatePublicPackage(pkg) {
     }
     packageJson.exports = exports;
   }
+  // Whitelist what ships to npm. The package root is the publish root, so
+  // we no longer need a separate `npm/` copy step.
+  packageJson.files = [...PUBLIC_FILES_FIELD];
+  ensureLicense(pkg);
 }
 
 /**

@@ -10,33 +10,38 @@
   ],
   "license": "MIT",
   "version": "0.44.0",
-  "main": "LexicalText.js",
-  "types": "index.d.ts",
+  "main": "./dist/LexicalText.js",
+  "types": "./dist/index.d.ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/facebook/lexical.git",
     "directory": "packages/lexical-text"
   },
-  "module": "LexicalText.mjs",
+  "module": "./dist/LexicalText.mjs",
   "sideEffects": false,
   "exports": {
     ".": {
       "import": {
-        "types": "./index.d.ts",
-        "development": "./LexicalText.dev.mjs",
-        "production": "./LexicalText.prod.mjs",
-        "node": "./LexicalText.node.mjs",
-        "default": "./LexicalText.mjs"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalText.dev.mjs",
+        "production": "./dist/LexicalText.prod.mjs",
+        "node": "./dist/LexicalText.node.mjs",
+        "default": "./dist/LexicalText.mjs"
       },
       "require": {
-        "types": "./index.d.ts",
-        "development": "./LexicalText.dev.js",
-        "production": "./LexicalText.prod.js",
-        "default": "./LexicalText.js"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalText.dev.js",
+        "production": "./dist/LexicalText.prod.js",
+        "default": "./dist/LexicalText.js"
       }
     }
   },
   "dependencies": {
     "lexical": "workspace:*"
-  }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ]
 }

@@ -9,8 +9,8 @@
   ],
   "license": "MIT",
   "version": "0.44.0",
-  "main": "LexicalLink.js",
-  "types": "index.d.ts",
+  "main": "./dist/LexicalLink.js",
+  "types": "./dist/index.d.ts",
   "dependencies": {
     "@lexical/extension": "workspace:*",
     "@lexical/utils": "workspace:*",
@@ -21,23 +21,28 @@
     "url": "git+https://github.com/facebook/lexical.git",
     "directory": "packages/lexical-link"
   },
-  "module": "LexicalLink.mjs",
+  "module": "./dist/LexicalLink.mjs",
   "sideEffects": false,
   "exports": {
     ".": {
       "import": {
-        "types": "./index.d.ts",
-        "development": "./LexicalLink.dev.mjs",
-        "production": "./LexicalLink.prod.mjs",
-        "node": "./LexicalLink.node.mjs",
-        "default": "./LexicalLink.mjs"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalLink.dev.mjs",
+        "production": "./dist/LexicalLink.prod.mjs",
+        "node": "./dist/LexicalLink.node.mjs",
+        "default": "./dist/LexicalLink.mjs"
       },
       "require": {
-        "types": "./index.d.ts",
-        "development": "./LexicalLink.dev.js",
-        "production": "./LexicalLink.prod.js",
-        "default": "./LexicalLink.js"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalLink.dev.js",
+        "production": "./dist/LexicalLink.prod.js",
+        "default": "./dist/LexicalLink.js"
       }
     }
-  }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ]
 }

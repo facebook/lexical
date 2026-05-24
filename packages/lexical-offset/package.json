@@ -9,33 +9,38 @@
   ],
   "license": "MIT",
   "version": "0.44.0",
-  "main": "LexicalOffset.js",
-  "types": "index.d.ts",
+  "main": "./dist/LexicalOffset.js",
+  "types": "./dist/index.d.ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/facebook/lexical.git",
     "directory": "packages/lexical-offset"
   },
-  "module": "LexicalOffset.mjs",
+  "module": "./dist/LexicalOffset.mjs",
   "sideEffects": false,
   "exports": {
     ".": {
       "import": {
-        "types": "./index.d.ts",
-        "development": "./LexicalOffset.dev.mjs",
-        "production": "./LexicalOffset.prod.mjs",
-        "node": "./LexicalOffset.node.mjs",
-        "default": "./LexicalOffset.mjs"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalOffset.dev.mjs",
+        "production": "./dist/LexicalOffset.prod.mjs",
+        "node": "./dist/LexicalOffset.node.mjs",
+        "default": "./dist/LexicalOffset.mjs"
       },
       "require": {
-        "types": "./index.d.ts",
-        "development": "./LexicalOffset.dev.js",
-        "production": "./LexicalOffset.prod.js",
-        "default": "./LexicalOffset.js"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalOffset.dev.js",
+        "production": "./dist/LexicalOffset.prod.js",
+        "default": "./dist/LexicalOffset.js"
       }
     }
   },
   "dependencies": {
     "lexical": "workspace:*"
-  }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ]
 }

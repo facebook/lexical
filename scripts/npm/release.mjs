@@ -41,8 +41,10 @@ async function publish() {
   for (const pkg of pkgs) {
     console.info(`Publishing ${pkg.getNpmName()}...`);
     if (dryRun === undefined || dryRun === 0) {
+      // Publish from the package root. pnpm rewrites `workspace:*` for us
+      // and honors the `files` field so only the declared assets ship.
       await exec(
-        `cd ./packages/${pkg.getDirectoryName()}/npm && pnpm publish --access public --tag ${channel} --no-git-checks`,
+        `cd ./packages/${pkg.getDirectoryName()} && pnpm publish --access public --tag ${channel} --no-git-checks`,
       ).catch(err => {
         if (
           ignorePreviouslyPublished &&

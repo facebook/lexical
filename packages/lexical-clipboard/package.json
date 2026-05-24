@@ -10,8 +10,8 @@
   ],
   "license": "MIT",
   "version": "0.44.0",
-  "main": "LexicalClipboard.js",
-  "types": "index.d.ts",
+  "main": "./dist/LexicalClipboard.js",
+  "types": "./dist/index.d.ts",
   "dependencies": {
     "@lexical/extension": "workspace:*",
     "@lexical/html": "workspace:*",
@@ -26,23 +26,28 @@
     "url": "git+https://github.com/facebook/lexical.git",
     "directory": "packages/lexical-clipboard"
   },
-  "module": "LexicalClipboard.mjs",
+  "module": "./dist/LexicalClipboard.mjs",
   "sideEffects": false,
   "exports": {
     ".": {
       "import": {
-        "types": "./index.d.ts",
-        "development": "./LexicalClipboard.dev.mjs",
-        "production": "./LexicalClipboard.prod.mjs",
-        "node": "./LexicalClipboard.node.mjs",
-        "default": "./LexicalClipboard.mjs"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalClipboard.dev.mjs",
+        "production": "./dist/LexicalClipboard.prod.mjs",
+        "node": "./dist/LexicalClipboard.node.mjs",
+        "default": "./dist/LexicalClipboard.mjs"
       },
       "require": {
-        "types": "./index.d.ts",
-        "development": "./LexicalClipboard.dev.js",
-        "production": "./LexicalClipboard.prod.js",
-        "default": "./LexicalClipboard.js"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalClipboard.dev.js",
+        "production": "./dist/LexicalClipboard.prod.js",
+        "default": "./dist/LexicalClipboard.js"
       }
     }
-  }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ]
 }

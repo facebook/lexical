@@ -291,6 +291,7 @@
     "**/dist/**",
     "**/npm/**",
     "**/node_modules/**",
+    "./packages/*/*.js",
     "./packages/lexical-devtools/**",
     "./packages/lexical-website/**"
   ],

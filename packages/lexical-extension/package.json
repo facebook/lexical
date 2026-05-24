@@ -13,15 +13,15 @@
     "url": "git+https://github.com/facebook/lexical.git",
     "directory": "packages/lexical-extension"
   },
-  "main": "LexicalExtension.js",
-  "types": "index.d.ts",
+  "main": "./dist/LexicalExtension.js",
+  "types": "./dist/index.d.ts",
   "bugs": {
     "url": "https://github.com/facebook/lexical/issues"
   },
   "homepage": "https://github.com/facebook/lexical#readme",
   "description": "This package provides the extension functionality for Lexical.",
   "sideEffects": false,
-  "module": "LexicalExtension.mjs",
+  "module": "./dist/LexicalExtension.mjs",
   "dependencies": {
     "@lexical/utils": "workspace:*",
     "@preact/signals-core": "^1.14.1",
@@ -30,18 +30,23 @@
   "exports": {
     ".": {
       "import": {
-        "types": "./index.d.ts",
-        "development": "./LexicalExtension.dev.mjs",
-        "production": "./LexicalExtension.prod.mjs",
-        "node": "./LexicalExtension.node.mjs",
-        "default": "./LexicalExtension.mjs"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalExtension.dev.mjs",
+        "production": "./dist/LexicalExtension.prod.mjs",
+        "node": "./dist/LexicalExtension.node.mjs",
+        "default": "./dist/LexicalExtension.mjs"
       },
       "require": {
-        "types": "./index.d.ts",
-        "development": "./LexicalExtension.dev.js",
-        "production": "./LexicalExtension.prod.js",
-        "default": "./LexicalExtension.js"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalExtension.dev.js",
+        "production": "./dist/LexicalExtension.prod.js",
+        "default": "./dist/LexicalExtension.js"
       }
     }
-  }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ]
 }

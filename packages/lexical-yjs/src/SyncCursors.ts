@@ -279,6 +279,7 @@ function destroyCursor(binding: BaseBinding, cursor: Cursor) {
 
 function createCursorSelection(
   cursor: Cursor,
+  bindingId: string,
   clientID: number,
   anchorKey: NodeKey,
   anchorOffset: number,
@@ -333,7 +334,9 @@ function createCursorSelection(
   }
   caret.appendChild(name);
 
-  const highlightName = `lexical-cursor-${clientID}`;
+  // CSS.highlights is a document-wide registry, but multiple editors can be
+  // mounted in same page.
+  const highlightName = `lexical-cursor-${bindingId}-${clientID}`;
   let highlight: Highlight | null = null;
   // Opt-in via the plugin's `selectionHighlight` prop. Without it, fall
   // through to the legacy rect-overlay path so existing setups that style
@@ -877,6 +880,7 @@ export function syncCursorPositions(
           if (selection === null) {
             selection = createCursorSelection(
               cursor,
+              binding.id,
               clientID,
               anchorKey,
               anchorOffset,

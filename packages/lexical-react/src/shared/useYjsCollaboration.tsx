@@ -691,7 +691,7 @@ function clearEditorSkipCollab(editor: LexicalEditor, binding: BaseBinding) {
     }
     if (selection.highlight !== null) {
       CSS.highlights.delete(selection.highlightName);
-      removeCursorHighlightRule(selection.highlightName);
+      removeCursorHighlightRule(binding, selection.highlightName);
     }
     if (selection.caret.parentNode === cursorsContainer) {
       cursorsContainer.removeChild(selection.caret);

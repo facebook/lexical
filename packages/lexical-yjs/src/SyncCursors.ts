@@ -61,12 +61,11 @@ export type CursorSelection = {
     key: NodeKey;
     offset: number;
   };
-  // Modern path: one CSS Custom Highlight per remote cursor. `null` on the
-  // legacy rect-overlay fallback path for browsers without the API.
+  /** Modern path: one CSS Custom Highlight per remote cursor. */
   highlight: Highlight | null;
   highlightName: string;
   name: HTMLSpanElement;
-  // Legacy fallback only: absolutely-positioned rect spans, one per visual rect.
+  /** Legacy fallback only: absolutely-positioned rect spans, one per visual rect. */
   selections: Array<HTMLElement>;
 };
 
@@ -75,28 +74,37 @@ const SUPPORTS_CSS_HIGHLIGHTS =
   typeof CSS !== 'undefined' &&
   'highlights' in CSS;
 
-// Shared stylesheet for ::highlight() rules, in case the CSP disallows dynamic stylesheets.s
-let cursorHighlightSheet: CSSStyleSheet | null = null;
-
-function getCursorHighlightSheet(): CSSStyleSheet {
-  if (cursorHighlightSheet === null) {
-    cursorHighlightSheet = new CSSStyleSheet();
-    document.adoptedStyleSheets = [
-      ...document.adoptedStyleSheets,
-      cursorHighlightSheet,
+/**
+ * Resolve the per-binding stylesheet that hosts `::highlight(...)` rules.
+ */
+function getCursorHighlightSheet(binding: BaseBinding): CSSStyleSheet {
+  if (binding.cursorHighlightSheet === null) {
+    const rootElement = binding.editor.getRootElement();
+    const ownerDocument =
+      rootElement !== null ? rootElement.ownerDocument : document;
+    const view = ownerDocument.defaultView || window;
+    const sheet = new view.CSSStyleSheet();
+    ownerDocument.adoptedStyleSheets = [
+      ...ownerDocument.adoptedStyleSheets,
+      sheet,
     ];
+    binding.cursorHighlightSheet = sheet;
   }
-  return cursorHighlightSheet;
+  return binding.cursorHighlightSheet;
 }
 
-function addCursorHighlightRule(highlightName: string, color: string): void {
+function addCursorHighlightRule(
+  binding: BaseBinding,
+  highlightName: string,
+  color: string,
+): void {
   // `color` flows in from peer-controlled awareness state. Reject anything
   // the browser doesn't recognize as a valid <color> so a malicious user can't
   // inject extra declarations through string interpolation below.
   if (!CSS.supports('color', color)) {
     return;
   }
-  const sheet = getCursorHighlightSheet();
+  const sheet = getCursorHighlightSheet(binding);
   const idx = sheet.insertRule(
     `::highlight(${highlightName}) { }`,
     sheet.cssRules.length,
@@ -110,15 +118,20 @@ function addCursorHighlightRule(highlightName: string, color: string): void {
   rule.style.setProperty('color', 'inherit');
 }
 
-export function removeCursorHighlightRule(highlightName: string): void {
-  const sheet = cursorHighlightSheet;
+export function removeCursorHighlightRule(
+  binding: BaseBinding,
+  highlightName: string,
+): void {
+  const sheet = binding.cursorHighlightSheet;
   if (sheet === null) {
     return;
   }
   const selector = `::highlight(${highlightName})`;
   for (let i = sheet.cssRules.length - 1; i >= 0; i--) {
-    const rule = sheet.cssRules[i];
-    if (rule instanceof CSSStyleRule && rule.selectorText === selector) {
+    const rule = sheet.cssRules[i] as CSSStyleRule;
+    // Structural check rather than `instanceof CSSStyleRule`: editors in
+    // different frames have their own `CSSStyleRule` constructor.
+    if (rule != null && rule.selectorText === selector) {
       sheet.deleteRule(i);
       return;
     }
@@ -252,7 +265,7 @@ function createCursor(name: string, color: string): Cursor {
 function destroySelection(binding: BaseBinding, selection: CursorSelection) {
   if (selection.highlight !== null) {
     CSS.highlights.delete(selection.highlightName);
-    removeCursorHighlightRule(selection.highlightName);
+    removeCursorHighlightRule(binding, selection.highlightName);
   }
   const cursorsContainer = binding.cursorsContainer;
   if (cursorsContainer === null) {
@@ -279,7 +292,7 @@ function destroyCursor(binding: BaseBinding, cursor: Cursor) {
 
 function createCursorSelection(
   cursor: Cursor,
-  bindingId: string,
+  binding: BaseBinding,
   clientID: number,
   anchorKey: NodeKey,
   anchorOffset: number,
@@ -336,7 +349,7 @@ function createCursorSelection(
 
   // CSS.highlights is a document-wide registry, but multiple editors can be
   // mounted in same page.
-  const highlightName = `lexical-cursor-${bindingId}-${clientID}`;
+  const highlightName = `lexical-cursor-${binding.id}-${clientID}`;
   let highlight: Highlight | null = null;
   // Opt-in via the plugin's `selectionHighlight` prop. Without it, fall
   // through to the legacy rect-overlay path so existing setups that style
@@ -344,7 +357,7 @@ function createCursorSelection(
   if (selectionHighlight && SUPPORTS_CSS_HIGHLIGHTS) {
     highlight = new Highlight();
     CSS.highlights.set(highlightName, highlight);
-    addCursorHighlightRule(highlightName, color);
+    addCursorHighlightRule(binding, highlightName, color);
   }
 
   return {
@@ -880,7 +893,7 @@ export function syncCursorPositions(
           if (selection === null) {
             selection = createCursorSelection(
               cursor,
-              binding.id,
+              binding,
               clientID,
               anchorKey,
               anchorOffset,

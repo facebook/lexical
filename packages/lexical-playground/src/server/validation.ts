@@ -19,7 +19,9 @@ const port = 1235;
 
 let stringifiedEditorStateJSON = '';
 
-global.__DEV__ = true;
+// Force Lexical's dev assertions on for this validation server. Lexical
+// source branches on `process.env.NODE_ENV !== 'production'`.
+process.env.NODE_ENV = 'development';
 
 const editor = createHeadlessEditor({
   namespace: 'validation',

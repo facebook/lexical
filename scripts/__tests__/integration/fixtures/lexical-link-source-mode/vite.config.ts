@@ -9,11 +9,12 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {defineConfig} from 'vite';
 
-// Consuming lexical via the `source` export condition needs no aliases:
-// lexical's source imports resolve through normal package resolution
+// Consuming lexical via the `source` export condition needs zero extra
+// config: imports resolve through normal package resolution
 // (`@lexical/internal/*` is a real dependency, the react/test helpers are
-// package-internal). The only consumer-side setup is opting into the
-// `source` condition and defining the `__DEV__` build-time global.
+// package-internal) and the dev/prod branch uses `process.env.NODE_ENV`,
+// which Vite substitutes out of the box. The only opt-in is the `source`
+// resolve condition.
 const fixtureDir = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
@@ -28,7 +29,6 @@ export default defineConfig({
     sourcemap: false,
     target: 'es2022',
   },
-  define: {__DEV__: 'true'},
   resolve: {
     conditions: ['source', 'development', 'module', 'browser', 'default'],
   },

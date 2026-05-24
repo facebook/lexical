@@ -8,7 +8,7 @@
 
 /*@__INLINE__*/
 export default function warnOnlyOnce(message: string): () => void {
-  if (__DEV__) {
+  if (process.env.NODE_ENV !== 'production') {
     let run = false;
     return () => {
       if (!run) {

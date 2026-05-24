@@ -7,12 +7,12 @@
  */
 
 /**
- * If `!cond`, throw in `__DEV__` like an invariant and warn in prod.
+ * If `!cond`, throw in development like an invariant and warn in prod.
  *
  * A production build rewrites call sites via `transformErrorMessages`
  * (throwing dev message in dev, `formatProdWarningMessage` in prod), so this
  * body is only reached when consumed as untransformed source. It interpolates
- * `%s` placeholders and throws under `__DEV__`, otherwise warns.
+ * `%s` placeholders and throws outside production, otherwise warns.
  */
 export default function devInvariant(
   cond?: boolean,
@@ -27,7 +27,7 @@ export default function devInvariant(
     (msg, arg) => msg.replace('%s', String(arg)),
     message,
   );
-  if (__DEV__) {
+  if (process.env.NODE_ENV !== 'production') {
     throw new Error(formatted);
   } else {
     console.warn(formatted);

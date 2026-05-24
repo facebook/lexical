@@ -803,7 +803,7 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
       void getStaticNodeConfig(klass);
 
       // Ensure custom nodes implement required methods and replaceWithKlass is instance of base klass.
-      if (__DEV__) {
+      if (process.env.NODE_ENV !== 'production') {
         // ArtificialNode__DO_NOT_USE can get renamed, so we use the type
         const name = klass.name;
         const nodeType =
@@ -1464,7 +1464,7 @@ export class LexicalEditor {
         if (classNames != null) {
           nextRootElement.classList.add(...classNames);
         }
-        if (__DEV__) {
+        if (process.env.NODE_ENV !== 'production') {
           const nextRootElementParent = nextRootElement.parentElement;
           if (
             nextRootElementParent != null &&

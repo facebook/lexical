@@ -417,14 +417,14 @@ export function $setState<Node extends LexicalNode, K extends string, V>(
  * @internal
  *
  * Register the config to this node's sharedConfigMap and throw an exception in
- * `__DEV__` when a collision is detected.
+ * development when a collision is detected.
  */
 function $checkCollision<Node extends LexicalNode, K extends string, V>(
   node: Node,
   stateConfig: StateConfig<K, V>,
   state: NodeState<Node>,
 ): void {
-  if (__DEV__) {
+  if (process.env.NODE_ENV !== 'production') {
     const collision = state.sharedNodeState.sharedConfigMap.get(
       stateConfig.key,
     );
@@ -576,7 +576,7 @@ export class NodeState<T extends LexicalNode> {
       size !== undefined
         ? size
         : computeSize(sharedConfigMap, unknownState, knownState);
-    if (__DEV__) {
+    if (process.env.NODE_ENV !== 'production') {
       invariant(
         size === undefined || computedSize === size,
         'NodeState: size != computedSize (%s != %s)',

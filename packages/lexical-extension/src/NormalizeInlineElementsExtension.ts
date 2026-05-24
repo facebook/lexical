@@ -24,7 +24,7 @@ export interface NormalizeInlineElementsConfig {
 function deleteEmptyInline(node: LexicalNode) {
   if ($isElementNode(node) && node.isInline() && node.isEmpty()) {
     node.remove();
-    if (__DEV__ && node.canBeEmpty()) {
+    if (process.env.NODE_ENV !== 'production' && node.canBeEmpty()) {
       console.warn(
         `Empty inline elements are removed from the EditorState, so returning 'true' from ${node.constructor.name}.canBeEmpty() is not allowed`,
       );

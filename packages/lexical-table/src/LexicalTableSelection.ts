@@ -385,7 +385,7 @@ export function $isTableSelection(x: unknown): x is TableSelection {
 export function $createTableSelection(): TableSelection {
   // TODO this is a suboptimal design, it doesn't make sense to have
   // a table selection that isn't associated with a table. This
-  // constructor should have required arguments and in __DEV__ we
+  // constructor should have required arguments and in development we
   // should check that they point to a table and are element points to
   // cell nodes of that table.
   const anchor = $createPoint('root', 0, 'element');
@@ -401,7 +401,7 @@ export function $createTableSelectionFrom(
   const tableNodeKey = tableNode.getKey();
   const anchorCellKey = anchorCell.getKey();
   const focusCellKey = focusCell.getKey();
-  if (__DEV__) {
+  if (process.env.NODE_ENV !== 'production') {
     invariant(
       tableNode.isAttached(),
       '$createTableSelectionFrom: tableNode %s is not attached',

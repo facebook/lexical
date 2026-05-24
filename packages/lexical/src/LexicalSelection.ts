@@ -137,7 +137,7 @@ export class Point {
   _selection: BaseSelection | null;
 
   constructor(key: NodeKey, offset: number, type: 'text' | 'element') {
-    if (__DEV__) {
+    if (process.env.NODE_ENV !== 'production') {
       // This prevents a circular reference error when serialized as JSON,
       // which happens on unit test failures
       Object.defineProperty(this, '_selection', {
@@ -196,7 +196,7 @@ export class Point {
     this.key = key;
     this.offset = offset;
     this.type = type;
-    if (__DEV__) {
+    if (process.env.NODE_ENV !== 'production') {
       const node = $getNodeByKey(key);
       invariant(
         type === 'text' ? $isTextNode(node) : $isElementNode(node),
@@ -552,7 +552,7 @@ export class RangeSelection implements BaseSelection {
       'next',
     );
     const nodes = $getNodesFromCaretRangeCompat(range);
-    if (__DEV__) {
+    if (process.env.NODE_ENV !== 'production') {
       if (this.isCollapsed() && nodes.length > 1) {
         invariant(
           false,
@@ -2187,7 +2187,7 @@ function $updateCaretSelectionForUnicodeCharacter(
 }
 
 function shouldDeleteExactlyOneCodeUnit(text: string) {
-  if (__DEV__) {
+  if (process.env.NODE_ENV !== 'production') {
     invariant(
       text.length > 1,
       'shouldDeleteExactlyOneCodeUnit: expecting to be called only with sequences of two or more code units',
@@ -2557,7 +2557,7 @@ function $internalResolveSelectionPoints(
   if (resolvedFocusPoint === null) {
     return null;
   }
-  if (__DEV__) {
+  if (process.env.NODE_ENV !== 'production') {
     $validatePoint('anchor', resolvedAnchorPoint);
     $validatePoint('focus', resolvedFocusPoint);
   }
@@ -3021,7 +3021,7 @@ function setDOMSelectionBaseAndExtent(
     // If we encounter an error, continue. This can sometimes
     // occur with FF and there's no good reason as to why it
     // should happen.
-    if (__DEV__) {
+    if (process.env.NODE_ENV !== 'production') {
       console.warn(error);
     }
   }

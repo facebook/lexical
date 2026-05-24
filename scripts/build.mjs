@@ -311,12 +311,17 @@ async function build(
       replace(
         Object.assign(
           {
-            __DEV__: isProd ? 'false' : 'true',
             delimiters: ['', ''],
             preventAssignment: true,
             'process.env.LEXICAL_VERSION': JSON.stringify(
               `${version}+${isProd ? 'prod' : 'dev'}.${format}`,
             ),
+            // Lexical source branches on `process.env.NODE_ENV !== 'production'`
+            // (no bare `__DEV__` global). Baking the literal per-variant lets
+            // terser dead-code-eliminate the dev branches in prod builds, and
+            // lets source-mode consumers rely on their bundler's standard
+            // `process.env.NODE_ENV` substitution with no extra config.
+            'process.env.NODE_ENV': isProd ? '"production"' : '"development"',
           },
           isWWW && strictWWWMappings,
         ),

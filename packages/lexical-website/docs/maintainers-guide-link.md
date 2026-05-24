@@ -57,22 +57,18 @@ conditions, so a bundler configured with
 `resolve.conditions: ['source', …]` will load TypeScript directly out
 of the linked package.
 
-Two caveats apply:
+The only requirement is **bundler support**: your consumer's bundler has to
+be configured to pick up the `source` condition AND to transform
+`.ts`/`.tsx` from inside `node_modules`. Vite, Rspack, and Parcel can all be
+told to do this; webpack needs a loader override for the linked package.
 
-1. **Bundler support.** Your consumer's bundler has to be configured to
-   pick up the `source` condition AND to transform `.ts`/`.tsx` from
-   inside `node_modules`. Vite, Rspack, and Parcel can all be told to
-   do this; webpack needs a loader override for the linked package.
-2. **`__DEV__` define.** Lexical source guards dev-only code behind the
-   `__DEV__` global, which the production build replaces statically. In
-   source mode your bundler must define it (e.g. `define: {__DEV__: 'true'}`),
-   exactly like React's `process.env.NODE_ENV` requirement.
-
-There is **no aliasing to set up**. Internal utilities the source depends
-on are a real (internal) dependency, `@lexical/internal`, which resolves
-through normal package resolution; the React/test helpers are
-package-internal. So `source` mode works without any `resolve.alias`
-entries — including for the transitive `@lexical/*` packages.
+There is **no aliasing and no extra `define` to set up**. Internal utilities
+the source depends on are a real (internal) dependency, `@lexical/internal`,
+which resolves through normal package resolution; the React/test helpers are
+package-internal; and the dev/prod branch is `process.env.NODE_ENV !==
+'production'`, which every mainstream bundler substitutes by default. So
+`source` mode works without any `resolve.alias` entries or build-time globals
+— including for the transitive `@lexical/*` packages.
 
 ### Minimal Vite setup
 
@@ -81,7 +77,6 @@ entries — including for the transitive `@lexical/*` packages.
 import {defineConfig} from 'vite';
 
 export default defineConfig({
-  define: {__DEV__: 'true'},
   resolve: {
     conditions: ['source', 'development', 'module', 'browser', 'default'],
   },

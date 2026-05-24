@@ -437,7 +437,7 @@ export function parseEditorState(
     // Make the editorState immutable
     editorState._readOnly = true;
 
-    if (__DEV__) {
+    if (process.env.NODE_ENV !== 'production') {
       handleDEVOnlyPendingUpdateGuarantees(editorState);
     }
   } catch (error) {
@@ -590,7 +590,7 @@ export function $commitPendingUpdates(
 
   if (!pendingEditorState._readOnly) {
     pendingEditorState._readOnly = true;
-    if (__DEV__) {
+    if (process.env.NODE_ENV !== 'production') {
       handleDEVOnlyPendingUpdateGuarantees(pendingEditorState);
       if ($isRangeSelection(pendingSelection)) {
         Object.freeze(pendingSelection.anchor);

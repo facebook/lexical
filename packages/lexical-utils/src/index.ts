@@ -886,13 +886,14 @@ export function $lastToFirstIterator(node: ElementNode): Iterable<LexicalNode> {
 function $childIterator<D extends CaretDirection>(
   startCaret: NodeCaret<D>,
 ): IterableIterator<LexicalNode> {
-  const seen = __DEV__ ? new Set<NodeKey>() : null;
+  const seen =
+    process.env.NODE_ENV !== 'production' ? new Set<NodeKey>() : null;
   return makeStepwiseIterator({
     hasNext: $isSiblingCaret,
     initial: startCaret.getAdjacentCaret(),
     map: caret => {
       const origin = caret.origin.getLatest();
-      if (__DEV__ && seen !== null) {
+      if (process.env.NODE_ENV !== 'production' && seen !== null) {
         const key = origin.getKey();
         invariant(
           !seen.has(key),

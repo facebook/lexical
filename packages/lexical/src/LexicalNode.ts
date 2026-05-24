@@ -638,7 +638,7 @@ export class LexicalNode {
     Object.defineProperty(this, CACHED_TEXT_SIZE_KEY, NON_ENUMERABLE_PROP_DESC);
     $setNodeKey(this, key);
 
-    if (__DEV__) {
+    if (process.env.NODE_ENV !== 'production') {
       if (this.__type !== 'root') {
         errorOnTypeKlassMismatch(this.__type, this.constructor);
       }

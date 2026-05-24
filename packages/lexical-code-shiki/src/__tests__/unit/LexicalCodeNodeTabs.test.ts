@@ -47,7 +47,7 @@ import {
   initializeUnitTest,
   tabKeyboardEvent,
 } from 'lexical/src/__tests__/utils';
-import {describe, expect, test} from 'vitest';
+import {assert, describe, expect, test} from 'vitest';
 
 import {
   $runOutdentScenario,
@@ -129,10 +129,10 @@ describe('LexicalCodeNode tests', () => {
               return getRawTextWithSelection(input).replaceAll('|', '');
             };
 
-            await loadCodeLanguage(ShikiTokenizer.defaultLanguage);
-            expect(isCodeLanguageLoaded(ShikiTokenizer.defaultLanguage)).toBe(
-              true,
-            );
+            const tokenizerDefault = ShikiTokenizer.defaultLanguage;
+            assert(tokenizerDefault !== null, 'expected default language');
+            await loadCodeLanguage(tokenizerDefault);
+            expect(isCodeLanguageLoaded(tokenizerDefault)).toBe(true);
             await loadCodeTheme(ShikiTokenizer.defaultTheme);
             expect(isCodeThemeLoaded(ShikiTokenizer.defaultTheme)).toBe(true);
             registerRichText(editor);
@@ -292,7 +292,9 @@ describe('LexicalCodeNode tests', () => {
     });
   });
   describe('tabSize (#8410): outdent space-indented lines', async () => {
-    await loadCodeLanguage(ShikiTokenizer.defaultLanguage);
+    const tokenizerDefault = ShikiTokenizer.defaultLanguage;
+    assert(tokenizerDefault !== null, 'expected default language');
+    await loadCodeLanguage(tokenizerDefault);
     await loadCodeTheme(ShikiTokenizer.defaultTheme);
     test.for(OUTDENT_SCENARIOS)(
       '$name',

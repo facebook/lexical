@@ -11,6 +11,7 @@ import type {LexicalEditor, LexicalNode, NodeKey} from 'lexical';
 import {
   $isCodeHighlightNode,
   $isCodeNode,
+  $plainifyCodeContent,
   CodeExtension,
   CodeHighlightNode,
   CodeIndentExtension,
@@ -43,7 +44,14 @@ import {
 } from './FacadeShiki';
 
 export interface Tokenizer {
-  defaultLanguage: string;
+  /**
+   * Language to fall back to when a {@link CodeNode} doesn't carry one.
+   * Set to `null` to opt out of the implicit fallback — code blocks
+   * without a language stay untouched (no `data-language` attribute, no
+   * syntax highlighting) so a markdown round-trip can preserve ``` with
+   * no info string.
+   */
+  defaultLanguage: string | null;
   defaultTheme: string;
   $tokenize: (
     this: Tokenizer,
@@ -60,7 +68,10 @@ export const ShikiTokenizer: Tokenizer = {
     codeNode: CodeNode,
     language?: string,
   ): LexicalNode[] {
-    return $getHighlightNodes(codeNode, language || this.defaultLanguage);
+    const lang = language || this.defaultLanguage;
+    return lang === null
+      ? $plainifyCodeContent(codeNode.getTextContent())
+      : $getHighlightNodes(codeNode, lang);
   },
   defaultLanguage: DEFAULT_CODE_LANGUAGE,
   defaultTheme: DEFAULT_CODE_THEME,
@@ -126,9 +137,12 @@ function $codeNodeTransform(
   const nodeKey = node.getKey();
   const {nodesCurrentlyHighlighting} = transformState;
 
-  // When new code block inserted it might not have language selected
+  // When new code block inserted it might not have language selected.
+  // Tokenizers configured with `defaultLanguage: null` opt out of the
+  // implicit fallback — leave the node unset and skip highlighting so
+  // markdown round-trips ``` (no info string) without injecting one.
   let language = node.getLanguage();
-  if (!language) {
+  if (!language && tokenizer.defaultLanguage !== null) {
     language = tokenizer.defaultLanguage;
     node.setLanguage(language);
   }
@@ -147,16 +161,20 @@ function $codeNodeTransform(
   }
 
   // dynamic import of languages
-  if (isCodeLanguageLoaded(language)) {
-    if (!node.getIsSyntaxHighlightSupported()) {
-      node.setIsSyntaxHighlightSupported(true);
+  if (language) {
+    if (isCodeLanguageLoaded(language)) {
+      if (!node.getIsSyntaxHighlightSupported()) {
+        node.setIsSyntaxHighlightSupported(true);
+      }
+    } else {
+      if (node.getIsSyntaxHighlightSupported()) {
+        node.setIsSyntaxHighlightSupported(false);
+      }
+      loadCodeLanguage(language, editor, nodeKey);
+      inFlight = true;
     }
-  } else {
-    if (node.getIsSyntaxHighlightSupported()) {
-      node.setIsSyntaxHighlightSupported(false);
-    }
-    loadCodeLanguage(language, editor, nodeKey);
-    inFlight = true;
+  } else if (node.getIsSyntaxHighlightSupported()) {
+    node.setIsSyntaxHighlightSupported(false);
   }
 
   if (inFlight) {
@@ -184,7 +202,7 @@ function $codeNodeTransform(
     }
 
     const lang = currentNode.getLanguage() || tokenizer.defaultLanguage;
-    const highlightNodes = tokenizer.$tokenize(currentNode, lang);
+    const highlightNodes = tokenizer.$tokenize(currentNode, lang ?? undefined);
     const diffRange = getDiffRange(currentNode.getChildren(), highlightNodes);
     const {from, to, nodesForReplacement} = diffRange;
 

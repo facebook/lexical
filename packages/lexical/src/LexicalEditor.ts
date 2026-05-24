@@ -17,7 +17,8 @@ import type {
 } from './LexicalNode';
 import type {ElementDOMSlot} from './nodes/LexicalElementNode';
 
-import invariant from 'shared/invariant';
+import invariant from '@lexical/internal/invariant';
+import {LEXICAL_VERSION} from '@lexical/internal/version';
 
 import {
   $getRoot,
@@ -1700,4 +1701,4 @@ export class LexicalEditor {
   }
 }
 
-LexicalEditor.version = process.env.LEXICAL_VERSION;
+LexicalEditor.version = LEXICAL_VERSION;

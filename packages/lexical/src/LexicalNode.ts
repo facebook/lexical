@@ -14,7 +14,7 @@ import type {
 } from './LexicalEditor';
 import type {BaseSelection, RangeSelection} from './LexicalSelection';
 
-import invariant from 'shared/invariant';
+import invariant from '@lexical/internal/invariant';
 
 import {
   $createParagraphNode,

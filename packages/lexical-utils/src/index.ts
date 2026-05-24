@@ -6,6 +6,21 @@
  *
  */
 
+// This underscore postfixing is used as a hotfix so we do not
+// export shared types from this module #5918
+import {CAN_USE_DOM as CAN_USE_DOM_} from '@lexical/internal/canUseDOM';
+import {
+  CAN_USE_BEFORE_INPUT as CAN_USE_BEFORE_INPUT_,
+  IS_ANDROID as IS_ANDROID_,
+  IS_ANDROID_CHROME as IS_ANDROID_CHROME_,
+  IS_APPLE as IS_APPLE_,
+  IS_APPLE_WEBKIT as IS_APPLE_WEBKIT_,
+  IS_CHROME as IS_CHROME_,
+  IS_FIREFOX as IS_FIREFOX_,
+  IS_IOS as IS_IOS_,
+  IS_SAFARI as IS_SAFARI_,
+} from '@lexical/internal/environment';
+import invariant from '@lexical/internal/invariant';
 import {
   $caretFromPoint,
   $caretRangeFromSelection,
@@ -52,21 +67,6 @@ import {
   StateConfig,
   ValueOrUpdater,
 } from 'lexical';
-// This underscore postfixing is used as a hotfix so we do not
-// export shared types from this module #5918
-import {CAN_USE_DOM as CAN_USE_DOM_} from 'shared/canUseDOM';
-import {
-  CAN_USE_BEFORE_INPUT as CAN_USE_BEFORE_INPUT_,
-  IS_ANDROID as IS_ANDROID_,
-  IS_ANDROID_CHROME as IS_ANDROID_CHROME_,
-  IS_APPLE as IS_APPLE_,
-  IS_APPLE_WEBKIT as IS_APPLE_WEBKIT_,
-  IS_CHROME as IS_CHROME_,
-  IS_FIREFOX as IS_FIREFOX_,
-  IS_IOS as IS_IOS_,
-  IS_SAFARI as IS_SAFARI_,
-} from 'shared/environment';
-import invariant from 'shared/invariant';
 
 export {default as markSelection} from './markSelection';
 export {default as positionNodeOnRange} from './positionNodeOnRange';

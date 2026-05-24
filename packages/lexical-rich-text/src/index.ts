@@ -43,6 +43,13 @@ import {
   ReadonlySignal,
   signal,
 } from '@lexical/extension';
+import caretFromPoint from '@lexical/internal/caretFromPoint';
+import {
+  CAN_USE_BEFORE_INPUT,
+  IS_APPLE_WEBKIT,
+  IS_IOS,
+  IS_SAFARI,
+} from '@lexical/internal/environment';
 import {
   $isParentRTL,
   $moveCharacter,
@@ -119,13 +126,6 @@ import {
   setNodeIndentFromDOM,
   shallowMergeConfig,
 } from 'lexical';
-import caretFromPoint from 'shared/caretFromPoint';
-import {
-  CAN_USE_BEFORE_INPUT,
-  IS_APPLE_WEBKIT,
-  IS_IOS,
-  IS_SAFARI,
-} from 'shared/environment';
 
 export type SerializedHeadingNode = Spread<
   {

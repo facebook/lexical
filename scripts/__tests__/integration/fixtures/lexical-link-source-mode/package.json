@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "version": "0.44.0",
-  "description": "Integration fixture: consume lexical via pnpm's link: protocol and the `source` export condition (TypeScript source, no build of lexical required). Source mode needs the monorepo's packages/shared/ reachable through the symlink, so this exercises pnpm link / pnpm add link:..., not file:.",
+  "description": "Integration fixture: consume lexical via pnpm's link: protocol and the `source` export condition (TypeScript source, no build of lexical required, and no consumer-side aliases).",
   "scripts": {
     "build": "vite build",
     "test": "node ./verify-bundle.mjs"

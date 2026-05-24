@@ -16,6 +16,7 @@ import type {
   TabNode,
 } from 'lexical';
 
+import invariant from '@lexical/internal/invariant';
 import {
   $getSiblingCaret,
   $isElementNode,
@@ -23,7 +24,6 @@ import {
   $isTabNode,
   getTextDirection,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
 import {$isCodeHighlightNode} from './CodeHighlightNode';
 

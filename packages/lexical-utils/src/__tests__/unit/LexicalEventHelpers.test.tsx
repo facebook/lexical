@@ -22,10 +22,10 @@ import {
   pasteHTML,
 } from '@lexical/selection/src/__tests__/utils';
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
+import * as ReactTestUtils from '@lexical/test-utils';
 import {LexicalEditor} from 'lexical';
 import {initializeClipboard, TestComposer} from 'lexical/src/__tests__/utils';
 import {createRoot} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
 import {afterEach, beforeEach, describe, expect, test} from 'vitest';
 
 Range.prototype.getBoundingClientRect = function (): DOMRect {

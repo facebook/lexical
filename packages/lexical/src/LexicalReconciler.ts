@@ -22,7 +22,7 @@ import type {
 } from './LexicalNode';
 import type {ElementDOMSlot, ElementNode} from './nodes/LexicalElementNode';
 
-import invariant from 'shared/invariant';
+import invariant from '@lexical/internal/invariant';
 
 import {
   $isDecoratorNode,

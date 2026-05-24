@@ -16,12 +16,12 @@ import {
   MenuResolution,
 } from '@lexical/react/LexicalNodeMenuPlugin';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
+import * as ReactTestUtils from '@lexical/test-utils';
 import {TextNode} from 'lexical';
 import * as React from 'react';
 import {useCallback} from 'react';
 import ReactDOM from 'react-dom';
 import {createRoot, Root} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
 class TestNodeMenuOption extends MenuOption {

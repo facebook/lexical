@@ -17,6 +17,7 @@ import {
   MenuRenderFn,
   useBasicTypeaheadTriggerMatch,
 } from '@lexical/react/LexicalTypeaheadMenuPlugin';
+import * as ReactTestUtils from '@lexical/test-utils';
 import {
   $createParagraphNode,
   $getRoot,
@@ -29,7 +30,6 @@ import * as React from 'react';
 import {useCallback} from 'react';
 import ReactDOM from 'react-dom';
 import {createRoot, Root} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
 class TestMenuOption extends MenuOption {

@@ -44,7 +44,10 @@ async function updateTsconfig({
         .replace(/^(?!\.)/, './');
 
     if (pkg.isPrivate()) {
-      if (pkg.getDirectoryName() !== 'shared') {
+      // lexical-test-utils is a private package whose modules are imported
+      // (by their package name) from unit tests across the monorepo, so it
+      // needs tsconfig path entries just like the old `shared` package did.
+      if (pkg.getDirectoryName() !== 'lexical-test-utils') {
         continue;
       }
       for (const {name, sourceFileName} of pkg.getPrivateModuleEntries()) {

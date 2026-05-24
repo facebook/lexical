@@ -19,11 +19,11 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
+import * as ReactTestUtils from '@lexical/test-utils';
 import {Provider, UserState} from '@lexical/yjs';
 import {LexicalEditor} from 'lexical';
 import * as React from 'react';
 import {type Container, createRoot, type Root} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
 import {expect} from 'vitest';
 import * as Y from 'yjs';
 

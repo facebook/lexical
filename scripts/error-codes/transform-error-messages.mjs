@@ -138,9 +138,11 @@ export default function transformErrorMessages(babel, opts) {
               const moduleName =
                 prodErrorId === undefined && !noMinify ? prodNoCode : dev;
               const formatDevErrorMessageIdentifier =
-                helperModuleImports.addDefault(path, `shared/${moduleName}`, {
-                  nameHint: moduleName,
-                });
+                helperModuleImports.addDefault(
+                  path,
+                  `@lexical/internal/${moduleName}`,
+                  {nameHint: moduleName},
+                );
               callExpression = t.callExpression(
                 formatDevErrorMessageIdentifier,
                 [devMessage],
@@ -155,9 +157,11 @@ export default function transformErrorMessages(babel, opts) {
 
               // Import ReactErrorProd
               const formatProdErrorMessageIdentifier =
-                helperModuleImports.addDefault(path, `shared/${prod}`, {
-                  nameHint: prod,
-                });
+                helperModuleImports.addDefault(
+                  path,
+                  `@lexical/internal/${prod}`,
+                  {nameHint: prod},
+                );
 
               // Outputs:
               //   formatProdErrorMessage(ERR_CODE, adj, noun);

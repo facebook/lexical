@@ -8,9 +8,9 @@
 
 import {vi} from 'vitest';
 
-vi.mock('shared/invariant');
-vi.mock('shared/devInvariant');
-vi.mock('shared/warnOnlyOnce');
+vi.mock('@lexical/internal/invariant');
+vi.mock('@lexical/internal/devInvariant');
+vi.mock('@lexical/internal/warnOnlyOnce');
 
 // jsdom workarounds for the unit-test environment. Real browsers (and the
 // playwright e2e suite) do not need any of these patches, so we gate on the

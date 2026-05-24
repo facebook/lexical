@@ -16,6 +16,7 @@ import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {ReactExtension} from '@lexical/react/ReactExtension';
 import {ReactPluginHostExtension} from '@lexical/react/ReactPluginHostExtension';
 import {ReactProviderExtension} from '@lexical/react/ReactProviderExtension';
+import * as ReactTestUtils from '@lexical/test-utils';
 import {toHaveNoViolations} from 'jest-axe';
 import {
   $applyNodeReplacement,
@@ -45,7 +46,6 @@ import {
 } from 'lexical/src/__tests__/utils';
 import * as React from 'react';
 import {createRoot, Root} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
 import {afterEach, beforeEach, describe, expect, test} from 'vitest';
 
 expect.extend(toHaveNoViolations);

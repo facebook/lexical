@@ -9,7 +9,7 @@
 import type {LexicalNode, SerializedLexicalNode} from '../LexicalNode';
 import type {SerializedElementNode} from './LexicalElementNode';
 
-import invariant from 'shared/invariant';
+import invariant from '@lexical/internal/invariant';
 
 import {NO_DIRTY_NODES} from '../LexicalConstants';
 import {getActiveEditor, isCurrentlyReadOnlyMode} from '../LexicalUpdates';

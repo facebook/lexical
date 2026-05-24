@@ -11,7 +11,7 @@ import react from '@vitejs/plugin-react';
 import {defineConfig} from 'vite';
 
 import transformErrorMessages from '../../scripts/error-codes/transform-error-messages.mjs';
-import viteMonorepoResolutionPlugin from '../shared/lexicalMonorepoPlugin';
+import viteMonorepoResolutionPlugin from '../../scripts/vite/lexicalMonorepoPlugin';
 import viteCopyEsm from './viteCopyEsm';
 import viteCopyExcalidrawAssets from './viteCopyExcalidrawAssets';
 

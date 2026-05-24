@@ -8,6 +8,7 @@
 
 import type {JSX} from 'react';
 
+import {IS_FIREFOX} from '@lexical/internal/environment';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {eventFiles} from '@lexical/rich-text';
 import {calculateZoomLevel, isHTMLElement, mergeRegister} from '@lexical/utils';
@@ -33,7 +34,6 @@ import {
   useState,
 } from 'react';
 import {createPortal} from 'react-dom';
-import {IS_FIREFOX} from 'shared/environment';
 
 import {Point} from './shared/point';
 import {Rectangle} from './shared/rect';

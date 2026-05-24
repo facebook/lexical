@@ -63,37 +63,26 @@ Two caveats apply:
    pick up the `source` condition AND to transform `.ts`/`.tsx` from
    inside `node_modules`. Vite, Rspack, and Parcel can all be told to
    do this; webpack needs a loader override for the linked package.
-2. **`shared/` aliasing.** Lexical source files import from
-   `shared/*` (a private monorepo module space — `packages/shared/`
-   — that is intentionally never published). When you consume source
-   from a linked checkout, you must alias `shared/*` to the monorepo's
-   `packages/shared/src/*`. This works because the link is a symlink
-   back into the checkout, so the consumer can reach `packages/shared`.
-   It does *not* work with `file:` (which copies the package) or with
-   npm-installed published artifacts (which never include `shared/`).
+2. **`__DEV__` define.** Lexical source guards dev-only code behind the
+   `__DEV__` global, which the production build replaces statically. In
+   source mode your bundler must define it (e.g. `define: {__DEV__: 'true'}`),
+   exactly like React's `process.env.NODE_ENV` requirement.
+
+There is **no aliasing to set up**. Internal utilities the source depends
+on are a real (internal) dependency, `@lexical/internal`, which resolves
+through normal package resolution; the React/test helpers are
+package-internal. So `source` mode works without any `resolve.alias`
+entries — including for the transitive `@lexical/*` packages.
 
 ### Minimal Vite setup
 
 ```ts
 // vite.config.ts
-import fs from 'node:fs';
-import path from 'node:path';
-import {fileURLToPath} from 'node:url';
 import {defineConfig} from 'vite';
-
-const here = path.dirname(fileURLToPath(import.meta.url));
-const lexicalRoot = fs.realpathSync(
-  path.resolve(here, 'node_modules/lexical'),
-);
-const sharedSrc = path.resolve(lexicalRoot, '..', 'shared', 'src');
 
 export default defineConfig({
   define: {__DEV__: 'true'},
   resolve: {
-    alias: [
-      {find: /^shared\/(.*)$/, replacement: `${sharedSrc}/$1.ts`},
-      {find: /^shared$/, replacement: `${sharedSrc}/index.ts`},
-    ],
     conditions: ['source', 'development', 'module', 'browser', 'default'],
   },
 });
@@ -103,3 +92,8 @@ The integration fixture at
 `scripts/__tests__/integration/fixtures/lexical-link-source-mode/`
 exercises exactly this setup and is the canonical reference if you need
 a fuller example.
+
+> [!NOTE]
+> `@lexical/internal` is published only so this resolution works (and for
+> direct internal consumers); the compiled `dist/` artifacts inline it, so
+> a normal `npm install` of `lexical` never executes a separate copy.

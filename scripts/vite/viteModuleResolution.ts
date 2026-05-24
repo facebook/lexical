@@ -10,13 +10,13 @@ import type {
   ModuleExportEntry,
   NpmModuleExportEntry,
   PackageMetadata,
-} from '../../scripts/shared/PackageMetadata.mjs';
+} from '../shared/PackageMetadata.mjs';
 import type {Alias} from 'vite';
 
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
-import {packagesManager} from '../../scripts/shared/packagesManager.mjs';
+import {packagesManager} from '../shared/packagesManager.mjs';
 
 /**
  * Escape a string for exact match in a RegExp
@@ -61,7 +61,7 @@ const sourceModuleResolution = (isSsrBuild = false) => {
       .flatMap(pkg =>
         pkg.getExportedNpmModuleEntries().map(toAlias.bind(null, pkg)),
       ),
-    ...['shared']
+    ...['lexical-test-utils']
       .map(name => packagesManager.getPackageByDirectoryName(name))
       .flatMap(pkg =>
         pkg.getPrivateModuleEntries().map(toAlias.bind(null, pkg)),
@@ -107,14 +107,15 @@ const distModuleResolution = (
           };
         }),
     ),
-    ...[packagesManager.getPackageByDirectoryName('shared')].flatMap(
-      (pkg: PackageMetadata) =>
-        pkg.getPrivateModuleEntries().map((entry: ModuleExportEntry) => {
-          return {
-            find: entryFindRegExp(entry.name),
-            replacement: pkg.resolve('src', entry.sourceFileName),
-          };
-        }),
+    ...[
+      packagesManager.getPackageByDirectoryName('lexical-test-utils'),
+    ].flatMap((pkg: PackageMetadata) =>
+      pkg.getPrivateModuleEntries().map((entry: ModuleExportEntry) => {
+        return {
+          find: entryFindRegExp(entry.name),
+          replacement: pkg.resolve('src', entry.sourceFileName),
+        };
+      }),
     ),
   ];
 };

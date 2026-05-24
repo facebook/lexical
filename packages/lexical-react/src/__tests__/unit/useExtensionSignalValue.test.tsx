@@ -19,9 +19,9 @@ import {
   useExtensionSignalValue,
   useSignalValue,
 } from '@lexical/react/useExtensionSignalValue';
+import * as ReactTestUtils from '@lexical/test-utils';
 import * as React from 'react';
 import {createRoot, Root} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
 import {afterEach, beforeEach, describe, expect, test} from 'vitest';
 
 describe('useSignalValue', () => {

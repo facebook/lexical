@@ -8,6 +8,7 @@
 
 import type {JSX} from 'react';
 
+import {CAN_USE_DOM} from '@lexical/internal/canUseDOM';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {mergeRegister} from '@lexical/utils';
 import {
@@ -35,8 +36,8 @@ import {
   useState,
 } from 'react';
 import ReactDOM from 'react-dom';
-import {CAN_USE_DOM} from 'shared/canUseDOM';
-import useLayoutEffect from 'shared/useLayoutEffect';
+
+import useLayoutEffect from './useLayoutEffect';
 
 export type MenuTextMatch = {
   leadOffset: number;

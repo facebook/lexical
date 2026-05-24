@@ -35,6 +35,8 @@ import {
   $getClipboardDataFromSelection,
   copyToClipboard,
 } from '@lexical/clipboard';
+import {IS_FIREFOX} from '@lexical/internal/environment';
+import invariant from '@lexical/internal/invariant';
 import {
   $findMatchingParent,
   addClassNamesToElement,
@@ -87,8 +89,6 @@ import {
   KEY_TAB_COMMAND,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
-import {IS_FIREFOX} from 'shared/environment';
-import invariant from 'shared/invariant';
 
 import {$isTableCellNode} from './LexicalTableCellNode';
 import {

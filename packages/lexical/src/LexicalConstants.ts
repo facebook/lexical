@@ -18,7 +18,7 @@ import {
   IS_FIREFOX,
   IS_IOS,
   IS_SAFARI,
-} from 'shared/environment';
+} from '@lexical/internal/environment';
 
 // DOM
 export const DOM_ELEMENT_TYPE = 1;

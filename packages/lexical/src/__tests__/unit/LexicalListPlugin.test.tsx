@@ -15,6 +15,7 @@ import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {ListPlugin} from '@lexical/react/LexicalListPlugin';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {$setBlocksType} from '@lexical/selection';
+import * as ReactTestUtils from '@lexical/test-utils';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -31,7 +32,6 @@ import {
   TestComposer,
 } from 'lexical/src/__tests__/utils';
 import {createRoot, Root} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
 import {afterEach, beforeEach, describe, test, vi} from 'vitest';
 
 import {

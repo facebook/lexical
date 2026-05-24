@@ -20,6 +20,12 @@ import {
   NormalizeTripleClickSelectionExtension,
 } from '@lexical/extension';
 import {
+  CAN_USE_BEFORE_INPUT,
+  IS_APPLE_WEBKIT,
+  IS_IOS,
+  IS_SAFARI,
+} from '@lexical/internal/environment';
+import {
   $moveCharacter,
   $shouldOverrideDefaultCharacterSelection,
 } from '@lexical/selection';
@@ -50,12 +56,6 @@ import {
   REMOVE_TEXT_COMMAND,
   SELECT_ALL_COMMAND,
 } from 'lexical';
-import {
-  CAN_USE_BEFORE_INPUT,
-  IS_APPLE_WEBKIT,
-  IS_IOS,
-  IS_SAFARI,
-} from 'shared/environment';
 
 function onCopyForPlainText(
   event: CommandPayloadType<typeof COPY_COMMAND>,

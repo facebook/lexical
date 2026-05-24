@@ -17,6 +17,7 @@ import type {
   TextNode,
 } from 'lexical';
 
+import invariant from '@lexical/internal/invariant';
 import {TableSelection} from '@lexical/table';
 import {
   $caretFromPoint,
@@ -36,7 +37,6 @@ import {
   getStyleObjectFromCSS,
   INTERNAL_$isBlock,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
 import {$getComputedStyleForElement, $getComputedStyleForParent} from './utils';
 

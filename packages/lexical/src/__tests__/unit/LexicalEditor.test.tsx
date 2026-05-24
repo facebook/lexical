@@ -9,6 +9,7 @@
 import type {JSX} from 'react';
 
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
+import invariant from '@lexical/internal/invariant';
 import {
   $createListItemNode,
   $createListNode,
@@ -26,6 +27,7 @@ import {
   TableCellNode,
   TableRowNode,
 } from '@lexical/table';
+import * as ReactTestUtils from '@lexical/test-utils';
 import {JSDOM} from 'jsdom';
 import * as lexical from 'lexical';
 import {
@@ -80,8 +82,6 @@ import {
 } from 'react';
 import {createPortal} from 'react-dom';
 import {createRoot, Root} from 'react-dom/client';
-import invariant from 'shared/invariant';
-import * as ReactTestUtils from 'shared/react-test-utils';
 import {afterEach, assert, beforeEach, describe, expect, it, vi} from 'vitest';
 
 import {emptyFunction} from '../../LexicalUtils';

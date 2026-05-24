@@ -21,6 +21,7 @@
     "@lexical/code-shiki": "workspace:*",
     "@lexical/file": "workspace:*",
     "@lexical/hashtag": "workspace:*",
+    "@lexical/internal": "workspace:*",
     "@lexical/link": "workspace:*",
     "@lexical/list": "workspace:*",
     "@lexical/mark": "workspace:*",

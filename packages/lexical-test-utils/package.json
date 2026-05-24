@@ -1,0 +1,22 @@
+{
+  "name": "@lexical/test-utils",
+  "description": "Private React testing helpers shared across Lexical package unit tests. Not published.",
+  "private": true,
+  "license": "MIT",
+  "version": "0.44.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/facebook/lexical.git",
+    "directory": "packages/lexical-test-utils"
+  },
+  "peerDependencies": {
+    "react": ">=17.x",
+    "react-dom": ">=17.x"
+  },
+  "sideEffects": false
+}

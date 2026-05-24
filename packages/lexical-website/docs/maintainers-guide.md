@@ -24,11 +24,20 @@ Some packages in the monorepo do not get published to npm, for example:
   [playground.lexical.dev](https://playground.lexical.dev/) demo site
 * `packages/lexical-website` - the [lexical.dev](https://lexical.dev/)
   docusaurus website that you may even be reading right now
-* `packages/shared` - internal code that is used by more than one repository
-  but should not be a public API
+* `packages/lexical-test-utils` - `@lexical/test-utils`, private React
+  testing helpers shared across package unit tests
 
-It is required that these packages, and any other package that should not be
-published to npm, have a `"private": true` property in their `package.json`.
+Internal runtime code shared by more than one package lives in
+`packages/lexical-internal` (`@lexical/internal`). Unlike the others above
+it **is** published, but only so its source resolves through normal package
+resolution (the `source` export condition used by linked-checkout
+consumers); the compiled packages inline it, so it is never executed as a
+separate runtime dependency. It is not a public API and has no semver
+guarantees — see [Developing against a local Lexical
+checkout](./maintainers-guide-link.md).
+
+It is required that private packages, and any other package that should not
+be published to npm, have a `"private": true` property in their `package.json`.
 If you have an in-progress package that will eventually be public, but is
 not ready for consumption, it should probably still be set to
 `"private": true` otherwise the tooling will find it and publish it.

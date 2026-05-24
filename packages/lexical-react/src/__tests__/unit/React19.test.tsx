@@ -6,9 +6,9 @@
  *
  */
 
+import * as ReactTestUtils from '@lexical/test-utils';
 import * as React from 'react';
 import {createRoot, Root} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
 import {beforeEach, describe, expect, test, vi} from 'vitest';
 
 const IS_REACT_19 = parseInt(React.version.split('.')[0], 10) >= 19;

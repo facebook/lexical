@@ -48,5 +48,8 @@
     "!src/**/*.bench.tsx",
     "README.md",
     "LICENSE"
-  ]
+  ],
+  "dependencies": {
+    "@lexical/internal": "workspace:*"
+  }
 }

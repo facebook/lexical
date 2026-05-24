@@ -6,6 +6,7 @@
  *
  */
 
+import invariant from '@lexical/internal/invariant';
 import {
   $descendantsMatching,
   addClassNamesToElement,
@@ -33,7 +34,6 @@ import {
   setDOMUnmanaged,
   Spread,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
 import {PIXEL_VALUE_REG_EXP} from './constants';
 import {$isTableCellNode, type TableCellNode} from './LexicalTableCellNode';

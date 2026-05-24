@@ -11,14 +11,14 @@ import type {CollabElementNode} from './CollabElementNode';
 import type {NodeKey, NodeMap, TextNode} from 'lexical';
 import type {Map as YMap} from 'yjs';
 
+import invariant from '@lexical/internal/invariant';
+import simpleDiffWithCursor from '@lexical/internal/simpleDiffWithCursor';
 import {
   $getNodeByKey,
   $getSelection,
   $isRangeSelection,
   $isTextNode,
 } from 'lexical';
-import invariant from 'shared/invariant';
-import simpleDiffWithCursor from 'shared/simpleDiffWithCursor';
 
 import {$syncPropertiesFromYjs, syncPropertiesFromLexical} from './Utils';
 

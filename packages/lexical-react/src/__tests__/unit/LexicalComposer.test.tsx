@@ -8,6 +8,7 @@
 
 import {LexicalComposer} from '@lexical/react/LexicalComposer';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import * as ReactTestUtils from '@lexical/test-utils';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -16,7 +17,6 @@ import {
 } from 'lexical';
 import * as React from 'react';
 import {createRoot, Root} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
 describe('LexicalComposer tests', () => {

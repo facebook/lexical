@@ -14,7 +14,7 @@ import * as path from 'path';
 import {defineConfig, UserManifest} from 'wxt';
 
 import transformErrorMessages from '../../scripts/error-codes/transform-error-messages.mjs';
-import moduleResolution from '../shared/viteModuleResolution';
+import moduleResolution from '../../scripts/vite/viteModuleResolution';
 
 // See https://wxt.dev/api/config.html
 export default defineConfig({

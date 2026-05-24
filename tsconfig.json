@@ -48,6 +48,42 @@
       "@lexical/headless/dom": ["./packages/lexical-headless/src/dom.ts"],
       "@lexical/history": ["./packages/lexical-history/src/index.ts"],
       "@lexical/html": ["./packages/lexical-html/src/index.ts"],
+      "@lexical/internal/canUseDOM": [
+        "./packages/lexical-internal/src/canUseDOM.ts"
+      ],
+      "@lexical/internal/caretFromPoint": [
+        "./packages/lexical-internal/src/caretFromPoint.ts"
+      ],
+      "@lexical/internal/devInvariant": [
+        "./packages/lexical-internal/src/devInvariant.ts"
+      ],
+      "@lexical/internal/environment": [
+        "./packages/lexical-internal/src/environment.ts"
+      ],
+      "@lexical/internal/formatDevErrorMessage": [
+        "./packages/lexical-internal/src/formatDevErrorMessage.ts"
+      ],
+      "@lexical/internal/formatDevWarningMessage": [
+        "./packages/lexical-internal/src/formatDevWarningMessage.ts"
+      ],
+      "@lexical/internal/formatProdErrorMessage": [
+        "./packages/lexical-internal/src/formatProdErrorMessage.ts"
+      ],
+      "@lexical/internal/formatProdWarningMessage": [
+        "./packages/lexical-internal/src/formatProdWarningMessage.ts"
+      ],
+      "@lexical/internal/invariant": [
+        "./packages/lexical-internal/src/invariant.ts"
+      ],
+      "@lexical/internal/simpleDiffWithCursor": [
+        "./packages/lexical-internal/src/simpleDiffWithCursor.ts"
+      ],
+      "@lexical/internal/version": [
+        "./packages/lexical-internal/src/version.ts"
+      ],
+      "@lexical/internal/warnOnlyOnce": [
+        "./packages/lexical-internal/src/warnOnlyOnce.ts"
+      ],
       "@lexical/link": ["./packages/lexical-link/src/index.ts"],
       "@lexical/list": ["./packages/lexical-list/src/index.ts"],
       "@lexical/mark": ["./packages/lexical-mark/src/index.ts"],
@@ -215,30 +251,7 @@
       "@lexical/text": ["./packages/lexical-text/src/index.ts"],
       "@lexical/utils": ["./packages/lexical-utils/src/index.ts"],
       "@lexical/yjs": ["./packages/lexical-yjs/src/index.ts"],
-      "shared/canUseDOM": ["./packages/shared/src/canUseDOM.ts"],
-      "shared/caretFromPoint": ["./packages/shared/src/caretFromPoint.ts"],
-      "shared/devInvariant": ["./packages/shared/src/devInvariant.ts"],
-      "shared/environment": ["./packages/shared/src/environment.ts"],
-      "shared/formatDevErrorMessage": [
-        "./packages/shared/src/formatDevErrorMessage.ts"
-      ],
-      "shared/formatDevWarningMessage": [
-        "./packages/shared/src/formatDevWarningMessage.ts"
-      ],
-      "shared/formatProdErrorMessage": [
-        "./packages/shared/src/formatProdErrorMessage.ts"
-      ],
-      "shared/formatProdWarningMessage": [
-        "./packages/shared/src/formatProdWarningMessage.ts"
-      ],
-      "shared/invariant": ["./packages/shared/src/invariant.ts"],
-      "shared/react-test-utils": ["./packages/shared/src/react-test-utils.ts"],
-      "shared/reactPatches": ["./packages/shared/src/reactPatches.ts"],
-      "shared/simpleDiffWithCursor": [
-        "./packages/shared/src/simpleDiffWithCursor.ts"
-      ],
-      "shared/useLayoutEffect": ["./packages/shared/src/useLayoutEffect.ts"],
-      "shared/warnOnlyOnce": ["./packages/shared/src/warnOnlyOnce.ts"],
+      "@lexical/test-utils": ["./packages/lexical-test-utils/src/index.ts"],
       "lexical/src": ["./packages/lexical/src"],
       "lexical/src/__tests__/utils": [
         "./packages/lexical/src/__tests__/utils/index.tsx"
@@ -260,6 +273,7 @@
       ],
       "@lexical/history/src": ["./packages/lexical-history/src"],
       "@lexical/html/src": ["./packages/lexical-html/src"],
+      "@lexical/internal/src": ["./packages/lexical-internal/src"],
       "@lexical/link/src": ["./packages/lexical-link/src"],
       "@lexical/list/src": ["./packages/lexical-list/src"],
       "@lexical/mark/src": ["./packages/lexical-mark/src"],
@@ -278,10 +292,10 @@
       ],
       "@lexical/table/src": ["./packages/lexical-table/src"],
       "@lexical/tailwind/src": ["./packages/lexical-tailwind/src"],
+      "@lexical/test-utils/src": ["./packages/lexical-test-utils/src"],
       "@lexical/text/src": ["./packages/lexical-text/src"],
       "@lexical/utils/src": ["./packages/lexical-utils/src"],
-      "@lexical/yjs/src": ["./packages/lexical-yjs/src"],
-      "shared/src": ["./packages/shared/src"]
+      "@lexical/yjs/src": ["./packages/lexical-yjs/src"]
     }
   },
   "include": ["./libdefs", "./packages"],

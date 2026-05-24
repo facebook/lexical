@@ -1,0 +1,416 @@
+{
+  "name": "@lexical/internal",
+  "description": "Internal Lexical utilities shared across packages. Do not import directly; no semver guarantees apply to its API.",
+  "keywords": [
+    "lexical",
+    "editor",
+    "rich-text",
+    "internal"
+  ],
+  "license": "MIT",
+  "version": "0.44.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/facebook/lexical.git",
+    "directory": "packages/lexical-internal"
+  },
+  "sideEffects": false,
+  "exports": {
+    "./canUseDOM": {
+      "source": "./src/canUseDOM.ts",
+      "import": {
+        "types": "./dist/canUseDOM.d.ts",
+        "development": "./dist/LexicalInternalCanUseDOM.dev.mjs",
+        "production": "./dist/LexicalInternalCanUseDOM.prod.mjs",
+        "node": "./dist/LexicalInternalCanUseDOM.node.mjs",
+        "default": "./dist/LexicalInternalCanUseDOM.mjs"
+      },
+      "require": {
+        "types": "./dist/canUseDOM.d.ts",
+        "development": "./dist/LexicalInternalCanUseDOM.dev.js",
+        "production": "./dist/LexicalInternalCanUseDOM.prod.js",
+        "default": "./dist/LexicalInternalCanUseDOM.js"
+      }
+    },
+    "./canUseDOM.js": {
+      "source": "./src/canUseDOM.ts",
+      "import": {
+        "types": "./dist/canUseDOM.d.ts",
+        "development": "./dist/LexicalInternalCanUseDOM.dev.mjs",
+        "production": "./dist/LexicalInternalCanUseDOM.prod.mjs",
+        "node": "./dist/LexicalInternalCanUseDOM.node.mjs",
+        "default": "./dist/LexicalInternalCanUseDOM.mjs"
+      },
+      "require": {
+        "types": "./dist/canUseDOM.d.ts",
+        "development": "./dist/LexicalInternalCanUseDOM.dev.js",
+        "production": "./dist/LexicalInternalCanUseDOM.prod.js",
+        "default": "./dist/LexicalInternalCanUseDOM.js"
+      }
+    },
+    "./caretFromPoint": {
+      "source": "./src/caretFromPoint.ts",
+      "import": {
+        "types": "./dist/caretFromPoint.d.ts",
+        "development": "./dist/LexicalInternalCaretFromPoint.dev.mjs",
+        "production": "./dist/LexicalInternalCaretFromPoint.prod.mjs",
+        "node": "./dist/LexicalInternalCaretFromPoint.node.mjs",
+        "default": "./dist/LexicalInternalCaretFromPoint.mjs"
+      },
+      "require": {
+        "types": "./dist/caretFromPoint.d.ts",
+        "development": "./dist/LexicalInternalCaretFromPoint.dev.js",
+        "production": "./dist/LexicalInternalCaretFromPoint.prod.js",
+        "default": "./dist/LexicalInternalCaretFromPoint.js"
+      }
+    },
+    "./caretFromPoint.js": {
+      "source": "./src/caretFromPoint.ts",
+      "import": {
+        "types": "./dist/caretFromPoint.d.ts",
+        "development": "./dist/LexicalInternalCaretFromPoint.dev.mjs",
+        "production": "./dist/LexicalInternalCaretFromPoint.prod.mjs",
+        "node": "./dist/LexicalInternalCaretFromPoint.node.mjs",
+        "default": "./dist/LexicalInternalCaretFromPoint.mjs"
+      },
+      "require": {
+        "types": "./dist/caretFromPoint.d.ts",
+        "development": "./dist/LexicalInternalCaretFromPoint.dev.js",
+        "production": "./dist/LexicalInternalCaretFromPoint.prod.js",
+        "default": "./dist/LexicalInternalCaretFromPoint.js"
+      }
+    },
+    "./devInvariant": {
+      "source": "./src/devInvariant.ts",
+      "import": {
+        "types": "./dist/devInvariant.d.ts",
+        "development": "./dist/LexicalInternalDevInvariant.dev.mjs",
+        "production": "./dist/LexicalInternalDevInvariant.prod.mjs",
+        "node": "./dist/LexicalInternalDevInvariant.node.mjs",
+        "default": "./dist/LexicalInternalDevInvariant.mjs"
+      },
+      "require": {
+        "types": "./dist/devInvariant.d.ts",
+        "development": "./dist/LexicalInternalDevInvariant.dev.js",
+        "production": "./dist/LexicalInternalDevInvariant.prod.js",
+        "default": "./dist/LexicalInternalDevInvariant.js"
+      }
+    },
+    "./devInvariant.js": {
+      "source": "./src/devInvariant.ts",
+      "import": {
+        "types": "./dist/devInvariant.d.ts",
+        "development": "./dist/LexicalInternalDevInvariant.dev.mjs",
+        "production": "./dist/LexicalInternalDevInvariant.prod.mjs",
+        "node": "./dist/LexicalInternalDevInvariant.node.mjs",
+        "default": "./dist/LexicalInternalDevInvariant.mjs"
+      },
+      "require": {
+        "types": "./dist/devInvariant.d.ts",
+        "development": "./dist/LexicalInternalDevInvariant.dev.js",
+        "production": "./dist/LexicalInternalDevInvariant.prod.js",
+        "default": "./dist/LexicalInternalDevInvariant.js"
+      }
+    },
+    "./environment": {
+      "source": "./src/environment.ts",
+      "import": {
+        "types": "./dist/environment.d.ts",
+        "development": "./dist/LexicalInternalEnvironment.dev.mjs",
+        "production": "./dist/LexicalInternalEnvironment.prod.mjs",
+        "node": "./dist/LexicalInternalEnvironment.node.mjs",
+        "default": "./dist/LexicalInternalEnvironment.mjs"
+      },
+      "require": {
+        "types": "./dist/environment.d.ts",
+        "development": "./dist/LexicalInternalEnvironment.dev.js",
+        "production": "./dist/LexicalInternalEnvironment.prod.js",
+        "default": "./dist/LexicalInternalEnvironment.js"
+      }
+    },
+    "./environment.js": {
+      "source": "./src/environment.ts",
+      "import": {
+        "types": "./dist/environment.d.ts",
+        "development": "./dist/LexicalInternalEnvironment.dev.mjs",
+        "production": "./dist/LexicalInternalEnvironment.prod.mjs",
+        "node": "./dist/LexicalInternalEnvironment.node.mjs",
+        "default": "./dist/LexicalInternalEnvironment.mjs"
+      },
+      "require": {
+        "types": "./dist/environment.d.ts",
+        "development": "./dist/LexicalInternalEnvironment.dev.js",
+        "production": "./dist/LexicalInternalEnvironment.prod.js",
+        "default": "./dist/LexicalInternalEnvironment.js"
+      }
+    },
+    "./formatDevErrorMessage": {
+      "source": "./src/formatDevErrorMessage.ts",
+      "import": {
+        "types": "./dist/formatDevErrorMessage.d.ts",
+        "development": "./dist/LexicalInternalFormatDevErrorMessage.dev.mjs",
+        "production": "./dist/LexicalInternalFormatDevErrorMessage.prod.mjs",
+        "node": "./dist/LexicalInternalFormatDevErrorMessage.node.mjs",
+        "default": "./dist/LexicalInternalFormatDevErrorMessage.mjs"
+      },
+      "require": {
+        "types": "./dist/formatDevErrorMessage.d.ts",
+        "development": "./dist/LexicalInternalFormatDevErrorMessage.dev.js",
+        "production": "./dist/LexicalInternalFormatDevErrorMessage.prod.js",
+        "default": "./dist/LexicalInternalFormatDevErrorMessage.js"
+      }
+    },
+    "./formatDevErrorMessage.js": {
+      "source": "./src/formatDevErrorMessage.ts",
+      "import": {
+        "types": "./dist/formatDevErrorMessage.d.ts",
+        "development": "./dist/LexicalInternalFormatDevErrorMessage.dev.mjs",
+        "production": "./dist/LexicalInternalFormatDevErrorMessage.prod.mjs",
+        "node": "./dist/LexicalInternalFormatDevErrorMessage.node.mjs",
+        "default": "./dist/LexicalInternalFormatDevErrorMessage.mjs"
+      },
+      "require": {
+        "types": "./dist/formatDevErrorMessage.d.ts",
+        "development": "./dist/LexicalInternalFormatDevErrorMessage.dev.js",
+        "production": "./dist/LexicalInternalFormatDevErrorMessage.prod.js",
+        "default": "./dist/LexicalInternalFormatDevErrorMessage.js"
+      }
+    },
+    "./formatDevWarningMessage": {
+      "source": "./src/formatDevWarningMessage.ts",
+      "import": {
+        "types": "./dist/formatDevWarningMessage.d.ts",
+        "development": "./dist/LexicalInternalFormatDevWarningMessage.dev.mjs",
+        "production": "./dist/LexicalInternalFormatDevWarningMessage.prod.mjs",
+        "node": "./dist/LexicalInternalFormatDevWarningMessage.node.mjs",
+        "default": "./dist/LexicalInternalFormatDevWarningMessage.mjs"
+      },
+      "require": {
+        "types": "./dist/formatDevWarningMessage.d.ts",
+        "development": "./dist/LexicalInternalFormatDevWarningMessage.dev.js",
+        "production": "./dist/LexicalInternalFormatDevWarningMessage.prod.js",
+        "default": "./dist/LexicalInternalFormatDevWarningMessage.js"
+      }
+    },
+    "./formatDevWarningMessage.js": {
+      "source": "./src/formatDevWarningMessage.ts",
+      "import": {
+        "types": "./dist/formatDevWarningMessage.d.ts",
+        "development": "./dist/LexicalInternalFormatDevWarningMessage.dev.mjs",
+        "production": "./dist/LexicalInternalFormatDevWarningMessage.prod.mjs",
+        "node": "./dist/LexicalInternalFormatDevWarningMessage.node.mjs",
+        "default": "./dist/LexicalInternalFormatDevWarningMessage.mjs"
+      },
+      "require": {
+        "types": "./dist/formatDevWarningMessage.d.ts",
+        "development": "./dist/LexicalInternalFormatDevWarningMessage.dev.js",
+        "production": "./dist/LexicalInternalFormatDevWarningMessage.prod.js",
+        "default": "./dist/LexicalInternalFormatDevWarningMessage.js"
+      }
+    },
+    "./formatProdErrorMessage": {
+      "source": "./src/formatProdErrorMessage.ts",
+      "import": {
+        "types": "./dist/formatProdErrorMessage.d.ts",
+        "development": "./dist/LexicalInternalFormatProdErrorMessage.dev.mjs",
+        "production": "./dist/LexicalInternalFormatProdErrorMessage.prod.mjs",
+        "node": "./dist/LexicalInternalFormatProdErrorMessage.node.mjs",
+        "default": "./dist/LexicalInternalFormatProdErrorMessage.mjs"
+      },
+      "require": {
+        "types": "./dist/formatProdErrorMessage.d.ts",
+        "development": "./dist/LexicalInternalFormatProdErrorMessage.dev.js",
+        "production": "./dist/LexicalInternalFormatProdErrorMessage.prod.js",
+        "default": "./dist/LexicalInternalFormatProdErrorMessage.js"
+      }
+    },
+    "./formatProdErrorMessage.js": {
+      "source": "./src/formatProdErrorMessage.ts",
+      "import": {
+        "types": "./dist/formatProdErrorMessage.d.ts",
+        "development": "./dist/LexicalInternalFormatProdErrorMessage.dev.mjs",
+        "production": "./dist/LexicalInternalFormatProdErrorMessage.prod.mjs",
+        "node": "./dist/LexicalInternalFormatProdErrorMessage.node.mjs",
+        "default": "./dist/LexicalInternalFormatProdErrorMessage.mjs"
+      },
+      "require": {
+        "types": "./dist/formatProdErrorMessage.d.ts",
+        "development": "./dist/LexicalInternalFormatProdErrorMessage.dev.js",
+        "production": "./dist/LexicalInternalFormatProdErrorMessage.prod.js",
+        "default": "./dist/LexicalInternalFormatProdErrorMessage.js"
+      }
+    },
+    "./formatProdWarningMessage": {
+      "source": "./src/formatProdWarningMessage.ts",
+      "import": {
+        "types": "./dist/formatProdWarningMessage.d.ts",
+        "development": "./dist/LexicalInternalFormatProdWarningMessage.dev.mjs",
+        "production": "./dist/LexicalInternalFormatProdWarningMessage.prod.mjs",
+        "node": "./dist/LexicalInternalFormatProdWarningMessage.node.mjs",
+        "default": "./dist/LexicalInternalFormatProdWarningMessage.mjs"
+      },
+      "require": {
+        "types": "./dist/formatProdWarningMessage.d.ts",
+        "development": "./dist/LexicalInternalFormatProdWarningMessage.dev.js",
+        "production": "./dist/LexicalInternalFormatProdWarningMessage.prod.js",
+        "default": "./dist/LexicalInternalFormatProdWarningMessage.js"
+      }
+    },
+    "./formatProdWarningMessage.js": {
+      "source": "./src/formatProdWarningMessage.ts",
+      "import": {
+        "types": "./dist/formatProdWarningMessage.d.ts",
+        "development": "./dist/LexicalInternalFormatProdWarningMessage.dev.mjs",
+        "production": "./dist/LexicalInternalFormatProdWarningMessage.prod.mjs",
+        "node": "./dist/LexicalInternalFormatProdWarningMessage.node.mjs",
+        "default": "./dist/LexicalInternalFormatProdWarningMessage.mjs"
+      },
+      "require": {
+        "types": "./dist/formatProdWarningMessage.d.ts",
+        "development": "./dist/LexicalInternalFormatProdWarningMessage.dev.js",
+        "production": "./dist/LexicalInternalFormatProdWarningMessage.prod.js",
+        "default": "./dist/LexicalInternalFormatProdWarningMessage.js"
+      }
+    },
+    "./invariant": {
+      "source": "./src/invariant.ts",
+      "import": {
+        "types": "./dist/invariant.d.ts",
+        "development": "./dist/LexicalInternalInvariant.dev.mjs",
+        "production": "./dist/LexicalInternalInvariant.prod.mjs",
+        "node": "./dist/LexicalInternalInvariant.node.mjs",
+        "default": "./dist/LexicalInternalInvariant.mjs"
+      },
+      "require": {
+        "types": "./dist/invariant.d.ts",
+        "development": "./dist/LexicalInternalInvariant.dev.js",
+        "production": "./dist/LexicalInternalInvariant.prod.js",
+        "default": "./dist/LexicalInternalInvariant.js"
+      }
+    },
+    "./invariant.js": {
+      "source": "./src/invariant.ts",
+      "import": {
+        "types": "./dist/invariant.d.ts",
+        "development": "./dist/LexicalInternalInvariant.dev.mjs",
+        "production": "./dist/LexicalInternalInvariant.prod.mjs",
+        "node": "./dist/LexicalInternalInvariant.node.mjs",
+        "default": "./dist/LexicalInternalInvariant.mjs"
+      },
+      "require": {
+        "types": "./dist/invariant.d.ts",
+        "development": "./dist/LexicalInternalInvariant.dev.js",
+        "production": "./dist/LexicalInternalInvariant.prod.js",
+        "default": "./dist/LexicalInternalInvariant.js"
+      }
+    },
+    "./simpleDiffWithCursor": {
+      "source": "./src/simpleDiffWithCursor.ts",
+      "import": {
+        "types": "./dist/simpleDiffWithCursor.d.ts",
+        "development": "./dist/LexicalInternalSimpleDiffWithCursor.dev.mjs",
+        "production": "./dist/LexicalInternalSimpleDiffWithCursor.prod.mjs",
+        "node": "./dist/LexicalInternalSimpleDiffWithCursor.node.mjs",
+        "default": "./dist/LexicalInternalSimpleDiffWithCursor.mjs"
+      },
+      "require": {
+        "types": "./dist/simpleDiffWithCursor.d.ts",
+        "development": "./dist/LexicalInternalSimpleDiffWithCursor.dev.js",
+        "production": "./dist/LexicalInternalSimpleDiffWithCursor.prod.js",
+        "default": "./dist/LexicalInternalSimpleDiffWithCursor.js"
+      }
+    },
+    "./simpleDiffWithCursor.js": {
+      "source": "./src/simpleDiffWithCursor.ts",
+      "import": {
+        "types": "./dist/simpleDiffWithCursor.d.ts",
+        "development": "./dist/LexicalInternalSimpleDiffWithCursor.dev.mjs",
+        "production": "./dist/LexicalInternalSimpleDiffWithCursor.prod.mjs",
+        "node": "./dist/LexicalInternalSimpleDiffWithCursor.node.mjs",
+        "default": "./dist/LexicalInternalSimpleDiffWithCursor.mjs"
+      },
+      "require": {
+        "types": "./dist/simpleDiffWithCursor.d.ts",
+        "development": "./dist/LexicalInternalSimpleDiffWithCursor.dev.js",
+        "production": "./dist/LexicalInternalSimpleDiffWithCursor.prod.js",
+        "default": "./dist/LexicalInternalSimpleDiffWithCursor.js"
+      }
+    },
+    "./version": {
+      "source": "./src/version.ts",
+      "import": {
+        "types": "./dist/version.d.ts",
+        "development": "./dist/LexicalInternalVersion.dev.mjs",
+        "production": "./dist/LexicalInternalVersion.prod.mjs",
+        "node": "./dist/LexicalInternalVersion.node.mjs",
+        "default": "./dist/LexicalInternalVersion.mjs"
+      },
+      "require": {
+        "types": "./dist/version.d.ts",
+        "development": "./dist/LexicalInternalVersion.dev.js",
+        "production": "./dist/LexicalInternalVersion.prod.js",
+        "default": "./dist/LexicalInternalVersion.js"
+      }
+    },
+    "./version.js": {
+      "source": "./src/version.ts",
+      "import": {
+        "types": "./dist/version.d.ts",
+        "development": "./dist/LexicalInternalVersion.dev.mjs",
+        "production": "./dist/LexicalInternalVersion.prod.mjs",
+        "node": "./dist/LexicalInternalVersion.node.mjs",
+        "default": "./dist/LexicalInternalVersion.mjs"
+      },
+      "require": {
+        "types": "./dist/version.d.ts",
+        "development": "./dist/LexicalInternalVersion.dev.js",
+        "production": "./dist/LexicalInternalVersion.prod.js",
+        "default": "./dist/LexicalInternalVersion.js"
+      }
+    },
+    "./warnOnlyOnce": {
+      "source": "./src/warnOnlyOnce.ts",
+      "import": {
+        "types": "./dist/warnOnlyOnce.d.ts",
+        "development": "./dist/LexicalInternalWarnOnlyOnce.dev.mjs",
+        "production": "./dist/LexicalInternalWarnOnlyOnce.prod.mjs",
+        "node": "./dist/LexicalInternalWarnOnlyOnce.node.mjs",
+        "default": "./dist/LexicalInternalWarnOnlyOnce.mjs"
+      },
+      "require": {
+        "types": "./dist/warnOnlyOnce.d.ts",
+        "development": "./dist/LexicalInternalWarnOnlyOnce.dev.js",
+        "production": "./dist/LexicalInternalWarnOnlyOnce.prod.js",
+        "default": "./dist/LexicalInternalWarnOnlyOnce.js"
+      }
+    },
+    "./warnOnlyOnce.js": {
+      "source": "./src/warnOnlyOnce.ts",
+      "import": {
+        "types": "./dist/warnOnlyOnce.d.ts",
+        "development": "./dist/LexicalInternalWarnOnlyOnce.dev.mjs",
+        "production": "./dist/LexicalInternalWarnOnlyOnce.prod.mjs",
+        "node": "./dist/LexicalInternalWarnOnlyOnce.node.mjs",
+        "default": "./dist/LexicalInternalWarnOnlyOnce.mjs"
+      },
+      "require": {
+        "types": "./dist/warnOnlyOnce.d.ts",
+        "development": "./dist/LexicalInternalWarnOnlyOnce.dev.js",
+        "production": "./dist/LexicalInternalWarnOnlyOnce.prod.js",
+        "default": "./dist/LexicalInternalWarnOnlyOnce.js"
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/__tests__",
+    "!src/__bench__",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "!src/**/*.bench.ts",
+    "!src/**/*.bench.tsx",
+    "README.md",
+    "LICENSE"
+  ]
+}

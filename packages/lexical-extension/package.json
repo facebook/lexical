@@ -23,6 +23,7 @@
   "sideEffects": false,
   "module": "./dist/LexicalExtension.mjs",
   "dependencies": {
+    "@lexical/internal": "workspace:*",
     "@lexical/utils": "workspace:*",
     "@preact/signals-core": "^1.14.1",
     "lexical": "workspace:*"

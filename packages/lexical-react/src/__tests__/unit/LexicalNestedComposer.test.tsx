@@ -12,6 +12,7 @@ import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {LexicalNestedComposer} from '@lexical/react/LexicalNestedComposer';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
+import * as ReactTestUtils from '@lexical/test-utils';
 import {mergeRegister} from '@lexical/utils';
 import {axe, toHaveNoViolations} from 'jest-axe';
 import {
@@ -39,7 +40,6 @@ import {
 import * as React from 'react';
 import {useEffect} from 'react';
 import {createRoot, Root} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
 import {
   afterEach,
   beforeEach,

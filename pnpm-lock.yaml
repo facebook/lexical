@@ -270,7 +270,11 @@ importers:
         specifier: ^2.1.0
         version: 2.1.0(yjs@13.6.30)
 
-  packages/lexical: {}
+  packages/lexical:
+    dependencies:
+      '@lexical/internal':
+        specifier: workspace:*
+        version: link:../lexical-internal
 
   packages/lexical-clipboard:
     dependencies:
@@ -280,6 +284,9 @@ importers:
       '@lexical/html':
         specifier: workspace:*
         version: link:../lexical-html
+      '@lexical/internal':
+        specifier: workspace:*
+        version: link:../lexical-internal
       '@lexical/list':
         specifier: workspace:*
         version: link:../lexical-list
@@ -316,6 +323,9 @@ importers:
       '@lexical/extension':
         specifier: workspace:*
         version: link:../lexical-extension
+      '@lexical/internal':
+        specifier: workspace:*
+        version: link:../lexical-internal
       lexical:
         specifier: workspace:*
         version: link:../lexical
@@ -381,6 +391,9 @@ importers:
       '@emotion/styled':
         specifier: ^11.11.5
         version: 11.14.1(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.5))(@types/react@19.2.14)(react@19.2.5)
+      '@lexical/internal':
+        specifier: workspace:*
+        version: link:../lexical-internal
       '@webext-pegasus/rpc':
         specifier: ^0.3.0
         version: 0.3.6
@@ -494,6 +507,9 @@ importers:
 
   packages/lexical-extension:
     dependencies:
+      '@lexical/internal':
+        specifier: workspace:*
+        version: link:../lexical-internal
       '@lexical/utils':
         specifier: workspace:*
         version: link:../lexical-utils
@@ -524,6 +540,9 @@ importers:
 
   packages/lexical-headless:
     dependencies:
+      '@lexical/internal':
+        specifier: workspace:*
+        version: link:../lexical-internal
       happy-dom:
         specifier: ^20.9.0
         version: 20.9.0
@@ -548,6 +567,9 @@ importers:
       '@lexical/extension':
         specifier: workspace:*
         version: link:../lexical-extension
+      '@lexical/internal':
+        specifier: workspace:*
+        version: link:../lexical-internal
       '@lexical/selection':
         specifier: workspace:*
         version: link:../lexical-selection
@@ -558,11 +580,16 @@ importers:
         specifier: workspace:*
         version: link:../lexical
 
+  packages/lexical-internal: {}
+
   packages/lexical-link:
     dependencies:
       '@lexical/extension':
         specifier: workspace:*
         version: link:../lexical-extension
+      '@lexical/internal':
+        specifier: workspace:*
+        version: link:../lexical-internal
       '@lexical/utils':
         specifier: workspace:*
         version: link:../lexical-utils
@@ -575,6 +602,9 @@ importers:
       '@lexical/extension':
         specifier: workspace:*
         version: link:../lexical-extension
+      '@lexical/internal':
+        specifier: workspace:*
+        version: link:../lexical-internal
       '@lexical/utils':
         specifier: workspace:*
         version: link:../lexical-utils
@@ -596,6 +626,9 @@ importers:
       '@lexical/code-core':
         specifier: workspace:*
         version: link:../lexical-code-core
+      '@lexical/internal':
+        specifier: workspace:*
+        version: link:../lexical-internal
       '@lexical/link':
         specifier: workspace:*
         version: link:../lexical-link
@@ -620,6 +653,9 @@ importers:
 
   packages/lexical-offset:
     dependencies:
+      '@lexical/internal':
+        specifier: workspace:*
+        version: link:../lexical-internal
       lexical:
         specifier: workspace:*
         version: link:../lexical
@@ -641,6 +677,9 @@ importers:
       '@lexical/extension':
         specifier: workspace:*
         version: link:../lexical-extension
+      '@lexical/internal':
+        specifier: workspace:*
+        version: link:../lexical-internal
       '@lexical/selection':
         specifier: workspace:*
         version: link:../lexical-selection
@@ -683,6 +722,9 @@ importers:
       '@lexical/hashtag':
         specifier: workspace:*
         version: link:../lexical-hashtag
+      '@lexical/internal':
+        specifier: workspace:*
+        version: link:../lexical-internal
       '@lexical/link':
         specifier: workspace:*
         version: link:../lexical-link
@@ -801,6 +843,9 @@ importers:
       '@lexical/history':
         specifier: workspace:*
         version: link:../lexical-history
+      '@lexical/internal':
+        specifier: workspace:*
+        version: link:../lexical-internal
       '@lexical/link':
         specifier: workspace:*
         version: link:../lexical-link
@@ -868,6 +913,9 @@ importers:
       '@lexical/extension':
         specifier: workspace:*
         version: link:../lexical-extension
+      '@lexical/internal':
+        specifier: workspace:*
+        version: link:../lexical-internal
       '@lexical/selection':
         specifier: workspace:*
         version: link:../lexical-selection
@@ -880,6 +928,9 @@ importers:
 
   packages/lexical-selection:
     dependencies:
+      '@lexical/internal':
+        specifier: workspace:*
+        version: link:../lexical-internal
       lexical:
         specifier: workspace:*
         version: link:../lexical
@@ -892,6 +943,9 @@ importers:
       '@lexical/extension':
         specifier: workspace:*
         version: link:../lexical-extension
+      '@lexical/internal':
+        specifier: workspace:*
+        version: link:../lexical-internal
       '@lexical/utils':
         specifier: workspace:*
         version: link:../lexical-utils
@@ -918,14 +972,29 @@ importers:
         specifier: ^4.2.4
         version: 4.2.4
 
+  packages/lexical-test-utils:
+    dependencies:
+      react:
+        specifier: 19.2.5
+        version: 19.2.5
+      react-dom:
+        specifier: 19.2.5
+        version: 19.2.5(react@19.2.5)
+
   packages/lexical-text:
     dependencies:
+      '@lexical/internal':
+        specifier: workspace:*
+        version: link:../lexical-internal
       lexical:
         specifier: workspace:*
         version: link:../lexical
 
   packages/lexical-utils:
     dependencies:
+      '@lexical/internal':
+        specifier: workspace:*
+        version: link:../lexical-internal
       '@lexical/selection':
         specifier: workspace:*
         version: link:../lexical-selection
@@ -1068,6 +1137,9 @@ importers:
 
   packages/lexical-yjs:
     dependencies:
+      '@lexical/internal':
+        specifier: workspace:*
+        version: link:../lexical-internal
       '@lexical/selection':
         specifier: workspace:*
         version: link:../lexical-selection
@@ -1078,12 +1150,6 @@ importers:
       yjs:
         specifier: ^13.6.30
         version: 13.6.30
-
-  packages/shared:
-    dependencies:
-      lexical:
-        specifier: workspace:*
-        version: link:../lexical
 
 packages:
 
@@ -14706,7 +14772,7 @@ snapshots:
 
   '@docusaurus/react-loadable@6.0.0(react@19.2.5)':
     dependencies:
-      '@types/react': 19.2.14
+      '@types/react': 19.2.15
       react: 19.2.5
 
   '@docusaurus/theme-classic@3.10.1(@docusaurus/faster@3.10.1(@docusaurus/types@3.10.1(@swc/core@1.15.24(@swc/helpers@0.5.21))(esbuild@0.27.7)(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(@swc/helpers@0.5.21)(esbuild@0.27.7))(@rspack/core@1.7.11(@swc/helpers@0.5.21))(@swc/core@1.15.24(@swc/helpers@0.5.21))(@types/react@19.2.15)(esbuild@0.27.7)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@6.0.3)':
@@ -17476,7 +17542,7 @@ snapshots:
   '@types/react-router@5.1.20':
     dependencies:
       '@types/history': 4.7.11
-      '@types/react': 19.2.14
+      '@types/react': 19.2.15
 
   '@types/react@19.2.14':
     dependencies:

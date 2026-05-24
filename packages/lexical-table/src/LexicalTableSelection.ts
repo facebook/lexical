@@ -6,6 +6,7 @@
  *
  */
 
+import invariant from '@lexical/internal/invariant';
 import {$findMatchingParent} from '@lexical/utils';
 import {
   $createPoint,
@@ -24,7 +25,6 @@ import {
   TextFormatType,
   TextNode,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
 import {$isTableCellNode, TableCellNode} from './LexicalTableCellNode';
 import {$isTableNode, TableNode} from './LexicalTableNode';

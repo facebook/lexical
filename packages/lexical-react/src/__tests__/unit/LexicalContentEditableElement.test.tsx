@@ -7,10 +7,10 @@
  */
 
 import {ContentEditableElement} from '@lexical/react/LexicalContentEditable';
+import * as ReactTestUtils from '@lexical/test-utils';
 import {axe, toHaveNoViolations} from 'jest-axe';
 import {createEditor, LexicalEditor} from 'lexical';
 import {createRoot, Root} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
 describe('ContentEditableElement tests', () => {

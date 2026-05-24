@@ -27,6 +27,7 @@ import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {$createQuoteNode} from '@lexical/rich-text';
 import {$setBlocksType} from '@lexical/selection';
+import * as ReactTestUtils from '@lexical/test-utils';
 import {$restoreEditorState} from '@lexical/utils';
 import {
   $applyNodeReplacement,
@@ -71,7 +72,6 @@ import {
   TestComposer,
 } from 'lexical/src/__tests__/utils';
 import {createRoot, Root} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
 import {
   afterEach,
   assert,

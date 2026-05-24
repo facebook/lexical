@@ -51,6 +51,7 @@ function updatePackage(pkg) {
  *
  */
 function updateVersion() {
+  regenerateInternalVersionModule();
   packagesManager.getPackages().forEach(updatePackage);
   glob
     .sync([
@@ -60,6 +61,60 @@ function updateVersion() {
     .forEach(packageJsonPath =>
       updatePackage(new PackageMetadata(packageJsonPath)),
     );
+}
+
+const INTERNAL_PACKAGE_NAME = '@lexical/internal';
+
+/**
+ * Rewrite the generated literal in @lexical/internal's version module to the
+ * current monorepo version. In a Rollup build `process.env.LEXICAL_VERSION`
+ * is statically replaced with a build-specific string; this literal is the
+ * fallback used when the source is consumed without that build step.
+ */
+function regenerateInternalVersionModule() {
+  const versionPath = path.resolve('packages/lexical-internal/src/version.ts');
+  if (!fs.existsSync(versionPath)) {
+    return;
+  }
+  const next = fs
+    .readFileSync(versionPath, 'utf8')
+    .replace(
+      /(process\.env\.LEXICAL_VERSION \?\? ')[^']*(')/,
+      `$1${version}+source$2`,
+    );
+  fs.writeFileSync(versionPath, next);
+}
+
+/**
+ * Return true if any non-test source file in the package imports from
+ * `@lexical/internal/...`, meaning the package needs it as a runtime
+ * dependency (so the `source` export condition resolves for npm consumers).
+ *
+ * @param {PackageMetadata} pkg
+ * @returns {boolean}
+ */
+function srcImportsInternalPackage(pkg) {
+  const srcDir = pkg.resolve('src');
+  if (!fs.existsSync(srcDir)) {
+    return false;
+  }
+  const stack = [srcDir];
+  while (stack.length > 0) {
+    const dir = stack.pop();
+    for (const ent of fs.readdirSync(dir, {withFileTypes: true})) {
+      if (ent.isDirectory()) {
+        if (ent.name !== '__tests__' && ent.name !== '__bench__') {
+          stack.push(path.join(dir, ent.name));
+        }
+      } else if (/\.tsx?$/.test(ent.name)) {
+        const contents = fs.readFileSync(path.join(dir, ent.name), 'utf8');
+        if (contents.includes(`from '${INTERNAL_PACKAGE_NAME}/`)) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
 }
 
 /**
@@ -346,6 +401,16 @@ function updateDependencies(pkg) {
       dependencies[peerDep] = depVersion;
     }
   });
+  // Any package whose source imports @lexical/internal needs it as a runtime
+  // dependency so the `source` export condition resolves for npm consumers.
+  // (@lexical/internal must not depend on itself.)
+  if (
+    pkg.getNpmName() !== INTERNAL_PACKAGE_NAME &&
+    srcImportsInternalPackage(pkg) &&
+    !isLocalProtocol(dependencies[INTERNAL_PACKAGE_NAME])
+  ) {
+    dependencies[INTERNAL_PACKAGE_NAME] = depVersion;
+  }
   pkg
     .sortDependencies('dependencies', dependencies)
     .sortDependencies('devDependencies', devDependencies)

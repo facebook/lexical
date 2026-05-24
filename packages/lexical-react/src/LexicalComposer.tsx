@@ -9,6 +9,7 @@
 import type {LexicalComposerContextType} from '@lexical/react/LexicalComposerContext';
 import type {JSX} from 'react';
 
+import {CAN_USE_DOM} from '@lexical/internal/canUseDOM';
 import {
   createLexicalComposerContext,
   LexicalComposerContext,
@@ -29,8 +30,8 @@ import {
 } from 'lexical';
 import * as React from 'react';
 import {useMemo} from 'react';
-import {CAN_USE_DOM} from 'shared/canUseDOM';
-import useLayoutEffect from 'shared/useLayoutEffect';
+
+import useLayoutEffect from './shared/useLayoutEffect';
 
 const HISTORY_MERGE_OPTIONS = {tag: HISTORY_MERGE_TAG};
 

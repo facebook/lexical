@@ -13,6 +13,7 @@ import {PlainTextExtension} from '@lexical/plain-text';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
 import {RichTextExtension} from '@lexical/rich-text';
+import * as ReactTestUtils from '@lexical/test-utils';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -21,7 +22,6 @@ import {
 } from 'lexical';
 import {useEffect} from 'react';
 import {createRoot, type Root} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
 import {afterEach, beforeEach, describe, expect, it} from 'vitest';
 
 describe('LexicalExtensionComposer', () => {

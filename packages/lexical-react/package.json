@@ -16,6 +16,7 @@
     "@lexical/extension": "workspace:*",
     "@lexical/hashtag": "workspace:*",
     "@lexical/history": "workspace:*",
+    "@lexical/internal": "workspace:*",
     "@lexical/link": "workspace:*",
     "@lexical/list": "workspace:*",
     "@lexical/mark": "workspace:*",

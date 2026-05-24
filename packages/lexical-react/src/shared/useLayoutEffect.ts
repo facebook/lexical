@@ -6,8 +6,8 @@
  *
  */
 
+import {CAN_USE_DOM} from '@lexical/internal/canUseDOM';
 import {useEffect, useLayoutEffect} from 'react';
-import {CAN_USE_DOM} from 'shared/canUseDOM';
 
 // This workaround is no longer necessary in React 19,
 // but we currently support React >=17.x

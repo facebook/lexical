@@ -18,9 +18,9 @@ import {
   IS_FIREFOX,
   IS_IOS,
   IS_SAFARI,
-} from 'shared/environment';
-import invariant from 'shared/invariant';
-import warnOnlyOnce from 'shared/warnOnlyOnce';
+} from '@lexical/internal/environment';
+import invariant from '@lexical/internal/invariant';
+import warnOnlyOnce from '@lexical/internal/warnOnlyOnce';
 
 import {
   $getPreviousSelection,

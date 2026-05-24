@@ -18,6 +18,7 @@ import {PlainTextPlugin} from '@lexical/react/LexicalPlainTextPlugin';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
+import * as ReactTestUtils from '@lexical/test-utils';
 import {$rootTextContent} from '@lexical/text';
 import {
   $createParagraphNode,
@@ -29,7 +30,6 @@ import {
 } from 'lexical';
 import * as React from 'react';
 import {createRoot, Root} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
 const RICH_TEXT_NODES = [

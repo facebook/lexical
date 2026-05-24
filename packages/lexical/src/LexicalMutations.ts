@@ -12,7 +12,7 @@ import type {EditorState} from './LexicalEditorState';
 import type {LexicalPrivateDOM} from './LexicalNode';
 import type {BaseSelection} from './LexicalSelection';
 
-import {IS_FIREFOX} from 'shared/environment';
+import {IS_FIREFOX} from '@lexical/internal/environment';
 
 import {
   $getSelection,

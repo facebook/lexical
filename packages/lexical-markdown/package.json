@@ -13,6 +13,7 @@
   "types": "./dist/index.d.ts",
   "dependencies": {
     "@lexical/code-core": "workspace:*",
+    "@lexical/internal": "workspace:*",
     "@lexical/link": "workspace:*",
     "@lexical/list": "workspace:*",
     "@lexical/rich-text": "workspace:*",

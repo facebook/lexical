@@ -6,12 +6,12 @@
  *
  */
 
+import * as ReactTestUtils from '@lexical/test-utils';
 import {KEY_ENTER_COMMAND, LexicalEditor} from 'lexical';
 import {createTestEditor} from 'lexical/src/__tests__/utils';
 import * as React from 'react';
 import ReactDOM from 'react-dom';
 import {createRoot, Root} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
 import {

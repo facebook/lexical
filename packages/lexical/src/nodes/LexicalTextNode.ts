@@ -28,8 +28,8 @@ import type {
 } from '../LexicalSelection';
 import type {ElementNode} from './LexicalElementNode';
 
-import {IS_FIREFOX} from 'shared/environment';
-import invariant from 'shared/invariant';
+import {IS_FIREFOX} from '@lexical/internal/environment';
+import invariant from '@lexical/internal/invariant';
 
 import {
   COMPOSITION_SUFFIX,

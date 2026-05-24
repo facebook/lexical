@@ -11,7 +11,7 @@ import type {
   LexicalExtensionDependency,
 } from 'lexical';
 
-import invariant from 'shared/invariant';
+import invariant from '@lexical/internal/invariant';
 
 import {LexicalBuilder} from './LexicalBuilder';
 

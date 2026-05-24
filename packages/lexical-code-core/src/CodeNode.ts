@@ -24,6 +24,7 @@ import type {
 } from 'lexical';
 
 import {getPeerDependencyFromEditor} from '@lexical/extension';
+import warnOnlyOnce from '@lexical/internal/warnOnlyOnce';
 import {
   $create,
   $createLineBreakNode,
@@ -38,7 +39,6 @@ import {
   isHTMLElement,
   setDOMStyleFromCSS,
 } from 'lexical';
-import warnOnlyOnce from 'shared/warnOnlyOnce';
 
 import {
   $createCodeHighlightNode,

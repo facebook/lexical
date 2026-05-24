@@ -6,10 +6,10 @@
  *
  */
 
+import * as ReactTestUtils from '@lexical/test-utils';
 import {createTestEditor} from 'lexical/src/__tests__/utils';
 import * as React from 'react';
 import {createRoot, Root} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
 import {useMenuAnchorRef} from '../../shared/LexicalMenu';
@@ -18,7 +18,7 @@ vi.mock('@lexical/react/LexicalComposerContext', () => ({
   useLexicalComposerContext: () => [createTestEditor()],
 }));
 
-vi.mock('shared/canUseDOM', () => ({
+vi.mock('@lexical/internal/canUseDOM', () => ({
   CAN_USE_DOM: false,
 }));
 

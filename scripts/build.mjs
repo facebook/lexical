@@ -40,11 +40,22 @@ const isRelease = argv.release;
 const isWWW = argv.www;
 const extractCodes = argv.codes;
 
+// @lexical/internal is a published package (so its source resolves for the
+// `source` export condition and for direct consumers), but within the
+// monorepo build we keep inlining it into every other package — exactly as
+// the old private `shared` alias did. Excluding it here keeps it out of the
+// externals/www-rewrite sets and the undeclared-dependency check, so the
+// `@lexical/internal` alias below bundles it.
+const INLINED_PACKAGES = new Set(['@lexical/internal']);
+
 const modulePackageMappings = Object.fromEntries(
-  packagesManager.getPublicPackages().flatMap(pkg => {
-    const pkgName = pkg.getNpmName();
-    return pkg.getExportedNpmModuleNames().map(npm => [npm, pkgName]);
-  }),
+  packagesManager
+    .getPublicPackages()
+    .filter(pkg => !INLINED_PACKAGES.has(pkg.getNpmName()))
+    .flatMap(pkg => {
+      const pkgName = pkg.getNpmName();
+      return pkg.getExportedNpmModuleNames().map(npm => [npm, pkgName]);
+    }),
 );
 
 function getShikiAssets(assetType) {
@@ -263,7 +274,10 @@ async function build(
         : []),
       alias({
         entries: [
-          {find: 'shared', replacement: path.resolve('packages/shared/src')},
+          {
+            find: '@lexical/internal',
+            replacement: path.resolve('packages/lexical-internal/src'),
+          },
           {find: 'buffer', replacement: 'buffer'},
         ],
       }),

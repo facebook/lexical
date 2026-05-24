@@ -6,6 +6,7 @@
  *
  */
 
+import * as ReactTestUtils from '@lexical/test-utils';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -27,7 +28,6 @@ import {
 import * as React from 'react';
 import {createRef, useEffect, useMemo} from 'react';
 import {createRoot} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
 import {afterEach, beforeEach, describe, expect, test} from 'vitest';
 
 import {

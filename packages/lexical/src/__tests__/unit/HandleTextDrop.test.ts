@@ -38,7 +38,7 @@ const caretFromPointState = vi.hoisted(() => ({
     null,
 }));
 
-vi.mock('shared/caretFromPoint', () => ({
+vi.mock('@lexical/internal/caretFromPoint', () => ({
   default: (x: number, y: number) => caretFromPointState.current(x, y),
 }));
 

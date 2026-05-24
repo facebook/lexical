@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import invariant from 'shared/invariant';
+import invariant from '@lexical/internal/invariant';
 
 export function withDOM<T>(f: (window: Window) => T): T {
   invariant(

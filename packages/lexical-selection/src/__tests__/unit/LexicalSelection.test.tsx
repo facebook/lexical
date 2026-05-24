@@ -34,6 +34,7 @@ import {
   $setBlocksType,
 } from '@lexical/selection';
 import {$createTableNodeWithDimensions} from '@lexical/table';
+import * as ReactTestUtils from '@lexical/test-utils';
 import {
   $createLineBreakNode,
   $createParagraphNode,
@@ -68,7 +69,6 @@ import {
   TestComposer,
 } from 'lexical/src/__tests__/utils';
 import {createRoot, Root} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
 import {afterEach, beforeEach, describe, expect, it, test, vi} from 'vitest';
 
 import {

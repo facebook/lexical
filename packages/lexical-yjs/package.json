@@ -15,6 +15,7 @@
   "main": "./dist/LexicalYjs.js",
   "types": "./dist/index.d.ts",
   "dependencies": {
+    "@lexical/internal": "workspace:*",
     "@lexical/selection": "workspace:*",
     "lexical": "workspace:*"
   },

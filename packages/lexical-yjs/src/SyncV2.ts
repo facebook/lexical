@@ -24,6 +24,8 @@
  * prefix. (NB: '$' couldn't be used as the prefix because it breaks XmlElement.toDOM().)
  */
 
+import invariant from '@lexical/internal/invariant';
+import simpleDiffWithCursor from '@lexical/internal/simpleDiffWithCursor';
 import {
   $getSelection,
   $getWritableNodeState,
@@ -35,8 +37,6 @@ import {
   RootNode,
   TextNode,
 } from 'lexical';
-import invariant from 'shared/invariant';
-import simpleDiffWithCursor from 'shared/simpleDiffWithCursor';
 import {
   ContentFormat,
   ContentString,

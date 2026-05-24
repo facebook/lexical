@@ -28,9 +28,14 @@ import type {
 } from './LexicalSelection';
 import type {RootNode} from './nodes/LexicalRootNode';
 
-import {CAN_USE_DOM} from 'shared/canUseDOM';
-import {IS_APPLE, IS_APPLE_WEBKIT, IS_IOS, IS_SAFARI} from 'shared/environment';
-import invariant from 'shared/invariant';
+import {CAN_USE_DOM} from '@lexical/internal/canUseDOM';
+import {
+  IS_APPLE,
+  IS_APPLE_WEBKIT,
+  IS_IOS,
+  IS_SAFARI,
+} from '@lexical/internal/environment';
+import invariant from '@lexical/internal/invariant';
 
 import {
   $createTextNode,

@@ -38,6 +38,7 @@
     }
   },
   "dependencies": {
+    "@lexical/internal": "workspace:*",
     "lexical": "workspace:*"
   },
   "files": [

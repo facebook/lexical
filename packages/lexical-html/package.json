@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@lexical/extension": "workspace:*",
+    "@lexical/internal": "workspace:*",
     "@lexical/selection": "workspace:*",
     "@lexical/utils": "workspace:*",
     "lexical": "workspace:*"

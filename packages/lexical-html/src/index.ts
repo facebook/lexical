@@ -17,6 +17,7 @@ import type {
   LexicalNode,
 } from 'lexical';
 
+import invariant from '@lexical/internal/invariant';
 import {$sliceSelectedTextNodeContent} from '@lexical/selection';
 import {
   $createLineBreakNode,
@@ -36,7 +37,6 @@ import {
   isHTMLElement,
   isInlineDomNode,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
 import {contextValue} from './ContextRecord';
 import {

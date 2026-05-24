@@ -7,6 +7,7 @@
  */
 
 import {useLexicalIsTextContentEmpty} from '@lexical/react/useLexicalIsTextContentEmpty';
+import * as ReactTestUtils from '@lexical/test-utils';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -18,7 +19,6 @@ import {
 import * as React from 'react';
 import {createRef} from 'react';
 import {createRoot, Root} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
 import {afterEach, beforeEach, describe, expect, test, vi} from 'vitest';
 
 describe('useLexicalIsTextContentEmpty', () => {

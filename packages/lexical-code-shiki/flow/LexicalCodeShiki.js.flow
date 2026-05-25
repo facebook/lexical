@@ -18,6 +18,17 @@ import type {CodeNode} from '@lexical/code';
  * LexicalCodeShiki
  */
 
+export type ShikiThemeDef = string | {light: string, dark: string};
+export type ShikiThemeSpec =
+  | ShikiThemeDef
+  | ((codeNode: CodeNode) => ShikiThemeDef);
+export type ShikiThemeContext = {
+  themes: {[name: string]: ShikiThemeSpec},
+  defaultTheme: string,
+  resolveTheme: (codeNode: CodeNode) => ShikiThemeDef,
+};
+
+/** @deprecated Provide CodeShikiConfig.defaultLanguage and $tokenize directly. */
 export type Tokenizer = {
   defaultLanguage: string;
   defaultTheme: string;
@@ -25,7 +36,15 @@ export type Tokenizer = {
 }
 export type CodeShikiConfig = {
   disabled: boolean,
-  tokenizer: Tokenizer,
+  defaultLanguage: string,
+  $tokenize: (
+    codeNode: CodeNode,
+    lang: string,
+    themeContext: ShikiThemeContext,
+  ) => LexicalNode[],
+  themes: {[name: string]: ShikiThemeSpec},
+  defaultTheme: string,
+  tokenizer: Tokenizer | null,
 };
 declare export var ShikiTokenizer: Tokenizer;
 declare export var CodeShikiExtension: LexicalExtension<CodeShikiConfig, "@lexical/code-shiki", NamedSignalsOutput<CodeShikiConfig>, void>;

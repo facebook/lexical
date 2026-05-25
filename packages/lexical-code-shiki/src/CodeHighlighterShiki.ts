@@ -31,6 +31,7 @@ import {
   defineExtension,
   mergeRegister,
   safeCast,
+  shallowMergeConfig,
   TextNode,
 } from 'lexical';
 
@@ -42,6 +43,42 @@ import {
   loadCodeTheme,
 } from './FacadeShiki';
 
+/**
+ * A Shiki theme. A bare string is a single theme id and renders inline
+ * as the `color` / `background-color` style. A `{light, dark}` pair
+ * renders as `--shiki-light` / `--shiki-dark` CSS variables with no
+ * inline color, so the consuming page's CSS picks the active scheme.
+ */
+export type ShikiThemeDef = string | {light: string; dark: string};
+
+/**
+ * A registry entry. Either a static {@link ShikiThemeDef} or a function
+ * that resolves to one for a given code node, allowing per-node theme
+ * decisions at runtime.
+ */
+export type ShikiThemeSpec =
+  | ShikiThemeDef
+  | ((codeNode: CodeNode) => ShikiThemeDef);
+
+/**
+ * The theme context handed to {@link CodeShikiConfig.$tokenize}. Holds
+ * the registry, the active default key, and a `resolveTheme` helper
+ * that picks the right entry for a given code node (per-node
+ * `__theme` first, {@link defaultTheme} fallback, raw Shiki id with a
+ * dev warning for keys missing from the registry).
+ */
+export interface ShikiThemeContext {
+  themes: Record<string, ShikiThemeSpec>;
+  defaultTheme: string;
+  resolveTheme(codeNode: CodeNode): ShikiThemeDef;
+}
+
+/**
+ * @deprecated Provide {@link CodeShikiConfig.defaultLanguage} and
+ * {@link CodeShikiConfig.$tokenize} directly. Kept exported for
+ * backward compatibility with {@link CodeHighlighterShikiExtension} and
+ * existing direct callers of {@link registerCodeHighlighting}.
+ */
 export interface Tokenizer {
   defaultLanguage: string;
   defaultTheme: string;
@@ -53,6 +90,7 @@ export interface Tokenizer {
 }
 
 const DEFAULT_CODE_THEME = 'one-light';
+const DEFAULT_THEME_KEY = 'default';
 
 export const ShikiTokenizer: Tokenizer = {
   $tokenize(
@@ -60,15 +98,73 @@ export const ShikiTokenizer: Tokenizer = {
     codeNode: CodeNode,
     language?: string,
   ): LexicalNode[] {
-    return $getHighlightNodes(codeNode, language || this.defaultLanguage);
+    // Honor the per-node `__theme` override before falling back to the
+    // tokenizer's default. Mirrors the historical behavior of the
+    // pre-multi-theme `$getHighlightNodes` (`codeNode.getTheme() || theme`)
+    // so legacy `registerCodeHighlighting` callers and
+    // `CodeHighlighterShikiExtension` users with custom tokenizers keep
+    // working when a code node carries a per-node theme.
+    return $getHighlightNodes(
+      codeNode,
+      language || this.defaultLanguage,
+      codeNode.getTheme() || this.defaultTheme,
+    );
   },
   defaultLanguage: DEFAULT_CODE_LANGUAGE,
   defaultTheme: DEFAULT_CODE_THEME,
 };
 
+function createThemeContext(
+  themes: Record<string, ShikiThemeSpec>,
+  defaultTheme: string,
+): ShikiThemeContext {
+  // Dedupe missing-key warnings per (editor instance, theme key). Without
+  // this the warn fires once per transform invocation, which on a long
+  // document with N code nodes turns into N warnings per edit.
+  const warnedKeys = new Set<string>();
+  return {
+    defaultTheme,
+    resolveTheme(codeNode) {
+      const themeKey = codeNode.getTheme() || defaultTheme;
+      const spec = themes[themeKey];
+      if (spec === undefined) {
+        if (!warnedKeys.has(themeKey)) {
+          warnedKeys.add(themeKey);
+          console.warn(
+            `[lexical-code-shiki] Theme "${themeKey}" is not in CodeShikiConfig.themes; treating it as a raw Shiki theme id. Add it to the registry for explicit registration.`,
+          );
+        }
+        return themeKey;
+      }
+      return typeof spec === 'function' ? spec(codeNode) : spec;
+    },
+    themes,
+  };
+}
+
+function $defaultShikiTokenize(
+  codeNode: CodeNode,
+  lang: string,
+  themeContext: ShikiThemeContext,
+): LexicalNode[] {
+  return $getHighlightNodes(
+    codeNode,
+    lang,
+    themeContext.resolveTheme(codeNode),
+  );
+}
+
+type TokenizeFn = (
+  codeNode: CodeNode,
+  lang: string,
+  themeContext: ShikiThemeContext,
+) => LexicalNode[];
+
 function $textNodeTransform(
   editor: LexicalEditor,
-  tokenizer: Tokenizer,
+  tokenize: TokenizeFn,
+  defaultLanguage: string,
+  themeContext: ShikiThemeContext,
   transformState: TransformState,
   node: TextNode,
 ): void {
@@ -76,7 +172,14 @@ function $textNodeTransform(
   // if node's parent is a code node and run highlighting if so
   const parentNode = node.getParent();
   if ($isCodeNode(parentNode)) {
-    $codeNodeTransform(editor, tokenizer, transformState, parentNode);
+    $codeNodeTransform(
+      editor,
+      tokenize,
+      defaultLanguage,
+      themeContext,
+      transformState,
+      parentNode,
+    );
   } else if ($isCodeHighlightNode(node)) {
     // When code block converted into paragraph or other element
     // code highlight nodes converted back to normal text
@@ -119,7 +222,9 @@ interface TransformState {
 
 function $codeNodeTransform(
   editor: LexicalEditor,
-  tokenizer: Tokenizer,
+  tokenize: TokenizeFn,
+  defaultLanguage: string,
+  themeContext: ShikiThemeContext,
   transformState: TransformState,
   node: CodeNode,
 ) {
@@ -129,21 +234,24 @@ function $codeNodeTransform(
   // When new code block inserted it might not have language selected
   let language = node.getLanguage();
   if (!language) {
-    language = tokenizer.defaultLanguage;
+    language = defaultLanguage;
     node.setLanguage(language);
   }
 
-  let theme = node.getTheme();
-  if (!theme) {
-    theme = tokenizer.defaultTheme;
-    node.setTheme(theme);
-  }
-
-  // dynamic import of themes
+  // Resolve the theme spec for this node and ensure all underlying
+  // Shiki themes are loaded. The registry may produce either a single
+  // theme id (inline path) or a `{light, dark}` pair (vars-only path).
   let inFlight = false;
-  if (!isCodeThemeLoaded(theme)) {
-    loadCodeTheme(theme, editor, nodeKey);
-    inFlight = true;
+  const resolvedSpec = themeContext.resolveTheme(node);
+  const themeIdsToLoad =
+    typeof resolvedSpec === 'string'
+      ? [resolvedSpec]
+      : [resolvedSpec.light, resolvedSpec.dark];
+  for (const themeId of themeIdsToLoad) {
+    if (!isCodeThemeLoaded(themeId)) {
+      loadCodeTheme(themeId, editor, nodeKey);
+      inFlight = true;
+    }
   }
 
   // dynamic import of languages
@@ -183,8 +291,8 @@ function $codeNodeTransform(
       return false;
     }
 
-    const lang = currentNode.getLanguage() || tokenizer.defaultLanguage;
-    const highlightNodes = tokenizer.$tokenize(currentNode, lang);
+    const lang = currentNode.getLanguage() || defaultLanguage;
+    const highlightNodes = tokenize(currentNode, lang, themeContext);
     const diffRange = getDiffRange(currentNode.getChildren(), highlightNodes);
     const {from, to, nodesForReplacement} = diffRange;
 
@@ -343,7 +451,9 @@ function isEqual(nodeA: LexicalNode, nodeB: LexicalNode): boolean {
  */
 export function registerHighlightingOnly(
   editor: LexicalEditor,
-  tokenizer: Tokenizer,
+  tokenize: TokenizeFn,
+  defaultLanguage: string,
+  themeContext: ShikiThemeContext,
 ): () => void {
   const registrations = [];
 
@@ -376,15 +486,36 @@ export function registerHighlightingOnly(
   registrations.push(
     editor.registerNodeTransform(
       CodeNode,
-      $codeNodeTransform.bind(null, editor, tokenizer, transformState),
+      $codeNodeTransform.bind(
+        null,
+        editor,
+        tokenize,
+        defaultLanguage,
+        themeContext,
+        transformState,
+      ),
     ),
     editor.registerNodeTransform(
       TextNode,
-      $textNodeTransform.bind(null, editor, tokenizer, transformState),
+      $textNodeTransform.bind(
+        null,
+        editor,
+        tokenize,
+        defaultLanguage,
+        themeContext,
+        transformState,
+      ),
     ),
     editor.registerNodeTransform(
       CodeHighlightNode,
-      $textNodeTransform.bind(null, editor, tokenizer, transformState),
+      $textNodeTransform.bind(
+        null,
+        editor,
+        tokenize,
+        defaultLanguage,
+        themeContext,
+        transformState,
+      ),
     ),
   );
 
@@ -406,8 +537,22 @@ export function registerCodeHighlighting(
       'CodeHighlightPlugin: CodeNode or CodeHighlightNode not registered on editor',
     );
   }
+  // Wrap the legacy `Tokenizer` shape into the new tokenize signature.
+  // The legacy `defaultTheme` is mapped to a singleton registry so per-
+  // node `__theme` resolution still works the same way.
+  const $tokenize: TokenizeFn = (codeNode, lang, _themeContext) =>
+    tokenizer.$tokenize(codeNode, lang);
+  const themeContext = createThemeContext(
+    {[DEFAULT_THEME_KEY]: tokenizer.defaultTheme},
+    DEFAULT_THEME_KEY,
+  );
   return mergeRegister(
-    registerHighlightingOnly(editor, tokenizer),
+    registerHighlightingOnly(
+      editor,
+      $tokenize,
+      tokenizer.defaultLanguage,
+      themeContext,
+    ),
     registerCodeIndentation(editor),
   );
 }
@@ -420,7 +565,70 @@ export interface CodeShikiConfig {
    * highlighters without rebuilding the editor.
    */
   disabled: boolean;
-  tokenizer: Tokenizer;
+  /**
+   * The default language for code blocks that have no explicit language
+   * set. Applied via {@link CodeNode.setLanguage} on first transform.
+   *
+   * Top-level wins over the deprecated {@link tokenizer}'s
+   * `defaultLanguage`; the legacy value is consulted only when this
+   * field equals the framework default (`@lexical/code-core`'s
+   * `DEFAULT_CODE_LANGUAGE`). Setting this field to the framework
+   * default value alongside a legacy tokenizer with a custom
+   * `defaultLanguage` will silently route through the tokenizer's
+   * value — prefer setting this field directly to avoid the footgun.
+   */
+  defaultLanguage: string;
+  /**
+   * Tokenize function. Receives a code node, the resolved language, and
+   * a {@link ShikiThemeContext}. The default implementation reads the
+   * per-node theme via `themeContext.resolveTheme(codeNode)` and
+   * dispatches: a string spec renders inline (single theme), a
+   * `{light, dark}` spec renders as CSS variables (multi-theme,
+   * vars-only).
+   *
+   * Top-level wins over the deprecated {@link tokenizer}'s `$tokenize`;
+   * the legacy implementation is consulted only when this field is the
+   * exact `$defaultShikiTokenize` reference. Replacing the reference
+   * with a structurally identical function disables the BC fallback.
+   */
+  $tokenize: TokenizeFn;
+  /**
+   * Registry of theme specs keyed by string. Per-node `__theme` and the
+   * top-level {@link defaultTheme} are looked up here.
+   *
+   * Static entries are either a single Shiki theme id (rendered inline)
+   * or a `{light, dark}` pair (rendered as `--shiki-light` /
+   * `--shiki-dark` CSS variables, no inline color). Function entries
+   * `(codeNode) => ShikiThemeDef` resolve at tokenize time, allowing
+   * per-node decisions.
+   */
+  themes: Record<string, ShikiThemeSpec>;
+  /**
+   * Default registry key. Used when a code node's per-node `__theme` is
+   * unset. Should be a key of {@link themes}; unknown keys fall back to
+   * being treated as a raw Shiki theme id with a development warning.
+   */
+  defaultTheme: string;
+  /**
+   * @deprecated Provide {@link defaultLanguage} and {@link $tokenize}
+   * directly on the config. Kept for backward compatibility with the
+   * legacy {@link CodeHighlighterShikiExtension} wrapper.
+   */
+  tokenizer: Tokenizer | null;
+}
+
+function mergeShikiConfig(
+  config: CodeShikiConfig,
+  overrides: Partial<CodeShikiConfig>,
+): CodeShikiConfig {
+  const merged = shallowMergeConfig(config, overrides);
+  // `themes` is a registry. Without a deep merge, two `configExtension(...)`
+  // calls each contributing different theme keys would have the second
+  // wholesale replace the first.
+  if (overrides.themes) {
+    merged.themes = {...config.themes, ...overrides.themes};
+  }
+  return merged;
 }
 
 /**
@@ -435,10 +643,15 @@ export interface CodeShikiConfig {
 export const CodeShikiExtension = defineExtension({
   build: (editor, config) => namedSignals(config),
   config: safeCast<CodeShikiConfig>({
+    $tokenize: $defaultShikiTokenize,
+    defaultLanguage: DEFAULT_CODE_LANGUAGE,
+    defaultTheme: DEFAULT_THEME_KEY,
     disabled: false,
-    tokenizer: ShikiTokenizer,
+    themes: {[DEFAULT_THEME_KEY]: DEFAULT_CODE_THEME},
+    tokenizer: null,
   }),
   dependencies: [CodeExtension, CodeIndentExtension],
+  mergeConfig: mergeShikiConfig,
   name: '@lexical/code-shiki',
   register: (editor, config, state) => {
     const stores = state.getOutput();
@@ -446,7 +659,39 @@ export const CodeShikiExtension = defineExtension({
       if (stores.disabled.value) {
         return;
       }
-      return registerHighlightingOnly(editor, stores.tokenizer.value);
+      const themes = stores.themes.value;
+      const defaultTheme = stores.defaultTheme.value;
+      const userDefaultLanguage = stores.defaultLanguage.value;
+      const userTokenize = stores.$tokenize.value;
+      const tokenizer = stores.tokenizer.value;
+
+      // BC routing: top-level `$tokenize` always wins. If the user only
+      // supplied a legacy `tokenizer` (top-level `$tokenize` is still
+      // the framework default), route through that tokenizer.
+      const tokenize: TokenizeFn =
+        userTokenize !== $defaultShikiTokenize
+          ? userTokenize
+          : tokenizer
+            ? (codeNode, lang, _ctx) => tokenizer.$tokenize(codeNode, lang)
+            : $defaultShikiTokenize;
+
+      // Same identity-equality fallback for `defaultLanguage`. Top-level
+      // wins; the legacy tokenizer's value only applies when top-level
+      // is still at the framework default.
+      const defaultLanguage =
+        userDefaultLanguage !== DEFAULT_CODE_LANGUAGE
+          ? userDefaultLanguage
+          : tokenizer
+            ? tokenizer.defaultLanguage
+            : userDefaultLanguage;
+
+      const themeContext = createThemeContext(themes, defaultTheme);
+      return registerHighlightingOnly(
+        editor,
+        tokenize,
+        defaultLanguage,
+        themeContext,
+      );
     });
   },
 });
@@ -474,7 +719,8 @@ export const CodeHighlighterShikiExtension = defineExtension({
   dependencies: [CodeShikiExtension],
   init: (editorConfig, config, state) => {
     // Forward the flat Tokenizer config to CodeShikiExtension's `tokenizer`
-    // field before it builds.
+    // field before it builds. Top-level `defaultLanguage` and `$tokenize`
+    // routing then picks up the legacy values via the BC fallback.
     state.getDependency(CodeShikiExtension).config.tokenizer = config;
   },
   name: '@lexical/code-shiki/legacy',

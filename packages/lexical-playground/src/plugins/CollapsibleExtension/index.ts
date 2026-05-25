@@ -23,6 +23,7 @@ import {
   COMMAND_PRIORITY_LOW,
   createCommand,
   defineExtension,
+  ElementNode,
   INSERT_PARAGRAPH_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
@@ -115,7 +116,7 @@ const $wrapInlineContentChildren = (node: CollapsibleContentNode) => {
     return;
   }
 
-  let paragraph: ReturnType<typeof $createParagraphNode> | null = null;
+  let paragraph: ElementNode | null = null;
 
   for (const child of node.getChildren()) {
     if (
@@ -129,7 +130,7 @@ const $wrapInlineContentChildren = (node: CollapsibleContentNode) => {
     }
 
     if (paragraph === null) {
-      paragraph = $createParagraphNode();
+      paragraph = child.createParentElementNode();
       child.insertBefore(paragraph);
     }
     paragraph.append(child);

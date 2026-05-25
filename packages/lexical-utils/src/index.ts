@@ -6,19 +6,17 @@
  *
  */
 
-// This underscore postfixing is used as a hotfix so we do not
-// export shared types from this module #5918
-import {CAN_USE_DOM as CAN_USE_DOM_} from '@lexical/internal/canUseDOM';
+import {CAN_USE_DOM} from '@lexical/internal/canUseDOM';
 import {
-  CAN_USE_BEFORE_INPUT as CAN_USE_BEFORE_INPUT_,
-  IS_ANDROID as IS_ANDROID_,
-  IS_ANDROID_CHROME as IS_ANDROID_CHROME_,
-  IS_APPLE as IS_APPLE_,
-  IS_APPLE_WEBKIT as IS_APPLE_WEBKIT_,
-  IS_CHROME as IS_CHROME_,
-  IS_FIREFOX as IS_FIREFOX_,
-  IS_IOS as IS_IOS_,
-  IS_SAFARI as IS_SAFARI_,
+  CAN_USE_BEFORE_INPUT,
+  IS_ANDROID,
+  IS_ANDROID_CHROME,
+  IS_APPLE,
+  IS_APPLE_WEBKIT,
+  IS_CHROME,
+  IS_FIREFOX,
+  IS_IOS,
+  IS_SAFARI,
 } from '@lexical/internal/environment';
 import invariant from '@lexical/internal/invariant';
 import {
@@ -83,17 +81,21 @@ export {
   mergeRegister,
   removeClassNamesFromElement,
 } from 'lexical';
-// Hotfix to export these with inlined types #5918
-export const CAN_USE_BEFORE_INPUT: boolean = CAN_USE_BEFORE_INPUT_;
-export const CAN_USE_DOM: boolean = CAN_USE_DOM_;
-export const IS_ANDROID: boolean = IS_ANDROID_;
-export const IS_ANDROID_CHROME: boolean = IS_ANDROID_CHROME_;
-export const IS_APPLE: boolean = IS_APPLE_;
-export const IS_APPLE_WEBKIT: boolean = IS_APPLE_WEBKIT_;
-export const IS_CHROME: boolean = IS_CHROME_;
-export const IS_FIREFOX: boolean = IS_FIREFOX_;
-export const IS_IOS: boolean = IS_IOS_;
-export const IS_SAFARI: boolean = IS_SAFARI_;
+// @lexical/internal is a published (if internal) package, so these can be
+// re-exported directly — no need for the old underscore-aliasing hotfix that
+// avoided referencing the formerly-private `shared` module in the d.ts (#5918).
+export {
+  CAN_USE_BEFORE_INPUT,
+  CAN_USE_DOM,
+  IS_ANDROID,
+  IS_ANDROID_CHROME,
+  IS_APPLE,
+  IS_APPLE_WEBKIT,
+  IS_CHROME,
+  IS_FIREFOX,
+  IS_IOS,
+  IS_SAFARI,
+};
 
 /**
  * Returns true if the file type matches the types passed within the acceptableMimeTypes array, false otherwise.

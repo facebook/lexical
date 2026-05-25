@@ -710,18 +710,33 @@ importers:
       '@lexical/code':
         specifier: workspace:*
         version: link:../lexical-code
+      '@lexical/code-core':
+        specifier: workspace:*
+        version: link:../lexical-code-core
       '@lexical/code-prism':
         specifier: workspace:*
         version: link:../lexical-code-prism
       '@lexical/code-shiki':
         specifier: workspace:*
         version: link:../lexical-code-shiki
+      '@lexical/extension':
+        specifier: workspace:*
+        version: link:../lexical-extension
       '@lexical/file':
         specifier: workspace:*
         version: link:../lexical-file
       '@lexical/hashtag':
         specifier: workspace:*
         version: link:../lexical-hashtag
+      '@lexical/headless':
+        specifier: workspace:*
+        version: link:../lexical-headless
+      '@lexical/history':
+        specifier: workspace:*
+        version: link:../lexical-history
+      '@lexical/html':
+        specifier: workspace:*
+        version: link:../lexical-html
       '@lexical/internal':
         specifier: workspace:*
         version: link:../lexical-internal
@@ -734,6 +749,9 @@ importers:
       '@lexical/mark':
         specifier: workspace:*
         version: link:../lexical-mark
+      '@lexical/markdown':
+        specifier: workspace:*
+        version: link:../lexical-markdown
       '@lexical/overflow':
         specifier: workspace:*
         version: link:../lexical-overflow
@@ -752,9 +770,15 @@ importers:
       '@lexical/table':
         specifier: workspace:*
         version: link:../lexical-table
+      '@lexical/text':
+        specifier: workspace:*
+        version: link:../lexical-text
       '@lexical/utils':
         specifier: workspace:*
         version: link:../lexical-utils
+      '@lexical/yjs':
+        specifier: workspace:*
+        version: link:../lexical-yjs
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0

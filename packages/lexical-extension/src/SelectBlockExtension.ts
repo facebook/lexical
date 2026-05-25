@@ -19,61 +19,59 @@ import {
   COMMAND_PRIORITY_LOW,
   defineExtension,
   ElementNode,
+  LexicalNode,
   RangeSelection,
   safeCast,
   SELECT_ALL_COMMAND,
 } from 'lexical';
 
-import {TextNode} from '../../lexical/Lexical';
 import {PreventSelectAllExtension} from '.';
 import {namedSignals} from './namedSignals';
 import {effect} from './signals';
 
-const getEndOffset = (node: TextNode | ElementNode): number =>
-  $isTextNode(node) ? node.getTextContentSize() : node.getChildrenSize();
+const getEndOffset = (node: LexicalNode): number =>
+  $isTextNode(node)
+    ? node.getTextContentSize()
+    : $isElementNode(node)
+      ? node.getChildrenSize()
+      : 0;
 
 function $isBlockFullySelected(
   blockNode: ElementNode,
   selection: RangeSelection,
 ): boolean {
-  const anchor = selection.anchor;
-  const focus = selection.focus;
+  const firstDesc = blockNode.getFirstDescendant();
+  const lastDesc = blockNode.getLastDescendant();
 
-  const first = blockNode.getFirstDescendant();
-  const last = blockNode.getLastDescendant();
-
-  if (!first || !last) return false;
-
-  const anchorNode = anchor.getNode();
-  const focusNode = focus.getNode();
+  if (!firstDesc || !lastDesc) return false;
+  // type narrowing
+  const first = firstDesc;
+  const last = lastDesc;
 
   function isAtStart(node: LexicalNode, offset: number): boolean {
     if (node.is(first) && offset === 0) return true;
     // anchor/focus on top-level before first child decorator
-    if ($isElementNode(node) && node.is(first.getTopLevelElement())) {
-      return offset === first.getIndexWithinParent();
+    if ($isElementNode(node) && node.isParentOf(first)) {
+      return offset === 0;
     }
     return false;
   }
 
   function isAtEnd(node: LexicalNode, offset: number): boolean {
-    if (node.is(last)) {
-      return offset === getEndOffset(node);
-    }
+    if (node.is(last) && offset === getEndOffset(last)) return true;
     // anchor/focus on top-level after last child decorator
-    if ($isElementNode(node) && node.is(last.getTopLevelElement())) {
-      return offset === last.getIndexWithinParent() + 1;
+    if ($isElementNode(node) && node.isParentOf(last)) {
+      return offset === node.getChildrenSize();
     }
     return false;
   }
 
-  const anchorAtStart = isAtStart(anchorNode, anchor.offset);
-  const focusAtEnd = isAtEnd(focusNode, focus.offset);
+  const [startPoint, endPoint] = selection.getStartEndPoints();
 
-  const focusAtStart = isAtStart(focusNode, focus.offset);
-  const anchorAtEnd = isAtEnd(anchorNode, anchor.offset);
-
-  return (anchorAtStart && focusAtEnd) || (focusAtStart && anchorAtEnd);
+  return (
+    isAtStart(startPoint.getNode(), startPoint.offset) &&
+    isAtEnd(endPoint.getNode(), endPoint.offset)
+  );
 }
 
 export interface SelectBlockConfig {
@@ -122,7 +120,9 @@ export const SelectBlockExtension = defineExtension({
                   topParent.is(firstNode)
                 ) {
                   prevSelectionAll = $selectAll();
-                } else {
+                  // This is type narrowing.
+                  // If firstNode is a decorator, then it is equal to topParent
+                } else if ($isElementNode(topParent)) {
                   $setSelection(
                     topParent.select(0, topParent.getChildrenSize()),
                   );

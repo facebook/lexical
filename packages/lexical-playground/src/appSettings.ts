@@ -26,6 +26,7 @@ export const DEFAULT_SETTINGS = {
   isRichText: true,
   listStrictIndent: false,
   measureTypingPerf: false,
+  selectBlock: false,
   selectionAlwaysOnDisplay: false,
   shouldAllowHighlightingWithBrackets: false,
   shouldDisableFocusOnClickChecklist: false,

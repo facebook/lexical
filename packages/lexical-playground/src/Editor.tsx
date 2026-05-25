@@ -9,6 +9,7 @@
 import type {JSX} from 'react';
 
 import {
+  SelectBlockExtension,
   SelectionAlwaysOnDisplayExtension,
   type Signal,
 } from '@lexical/extension';
@@ -121,6 +122,7 @@ export default function Editor(): JSX.Element {
       selectionAlwaysOnDisplay,
       listStrictIndent,
       shouldDisableFocusOnClickChecklist,
+      selectBlock,
     },
   } = useSettings();
   const isEditable = useLexicalEditable();
@@ -171,6 +173,7 @@ export default function Editor(): JSX.Element {
     'disabled',
     !selectionAlwaysOnDisplay,
   );
+  useSyncExtensionSignal(SelectBlockExtension, 'disabled', !selectBlock);
 
   useEffect(() => {
     const updateViewPortWidth = () => {

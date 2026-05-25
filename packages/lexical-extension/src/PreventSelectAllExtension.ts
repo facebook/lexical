@@ -19,7 +19,7 @@ import {effect} from './signals';
 
 const stopKeydownPropagation = (e: Event) => e.stopPropagation();
 
-function captureKeydown(e: Event) {
+function captureKeydown(e: KeyboardEvent) {
   const target = e.target;
   if (
     isExactShortcutMatch(e, 'a', {ctrlKey: !IS_APPLE, metaKey: IS_APPLE}) &&

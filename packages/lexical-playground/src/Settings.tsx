@@ -36,6 +36,7 @@ export default function Settings(): JSX.Element {
       shouldPreserveNewLinesInMarkdown,
       shouldAllowHighlightingWithBrackets,
       selectionAlwaysOnDisplay,
+      selectBlock,
       isCodeHighlighted,
       isCodeShiki,
     },
@@ -190,6 +191,14 @@ export default function Settings(): JSX.Element {
             }}
             checked={selectionAlwaysOnDisplay}
             text="Retain selection"
+          />
+
+          <Switch
+            onClick={() => {
+              setOption('selectBlock', !selectBlock);
+            }}
+            checked={selectBlock}
+            text="Block selection"
           />
 
           <Switch

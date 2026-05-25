@@ -218,45 +218,80 @@
       "lexical/src/__tests__/utils": [
         "./packages/lexical/src/__tests__/utils/index.tsx"
       ],
+      "lexical/src/*": ["./packages/lexical/src/*"],
       "@lexical/clipboard/src": ["./packages/lexical-clipboard/src"],
+      "@lexical/clipboard/src/*": ["./packages/lexical-clipboard/src/*"],
       "@lexical/code/src": ["./packages/lexical-code/src"],
+      "@lexical/code/src/*": ["./packages/lexical-code/src/*"],
       "@lexical/code-core/src": ["./packages/lexical-code-core/src"],
+      "@lexical/code-core/src/*": ["./packages/lexical-code-core/src/*"],
       "@lexical/code-prism/src": ["./packages/lexical-code-prism/src"],
+      "@lexical/code-prism/src/*": ["./packages/lexical-code-prism/src/*"],
       "@lexical/code-shiki/src": ["./packages/lexical-code-shiki/src"],
+      "@lexical/code-shiki/src/*": ["./packages/lexical-code-shiki/src/*"],
       "@lexical/devtools-core/src": ["./packages/lexical-devtools-core/src"],
+      "@lexical/devtools-core/src/*": [
+        "./packages/lexical-devtools-core/src/*"
+      ],
       "@lexical/dragon/src": ["./packages/lexical-dragon/src"],
+      "@lexical/dragon/src/*": ["./packages/lexical-dragon/src/*"],
       "@lexical/eslint-plugin/src": ["./packages/lexical-eslint-plugin/src"],
+      "@lexical/eslint-plugin/src/*": [
+        "./packages/lexical-eslint-plugin/src/*"
+      ],
       "@lexical/extension/src": ["./packages/lexical-extension/src"],
+      "@lexical/extension/src/*": ["./packages/lexical-extension/src/*"],
       "@lexical/file/src": ["./packages/lexical-file/src"],
+      "@lexical/file/src/*": ["./packages/lexical-file/src/*"],
       "@lexical/hashtag/src": ["./packages/lexical-hashtag/src"],
+      "@lexical/hashtag/src/*": ["./packages/lexical-hashtag/src/*"],
       "@lexical/headless/src": ["./packages/lexical-headless/src"],
       "@lexical/headless/src/__tests__/utils": [
         "./packages/lexical-headless/src/__tests__/utils/index.ts"
       ],
+      "@lexical/headless/src/*": ["./packages/lexical-headless/src/*"],
       "@lexical/history/src": ["./packages/lexical-history/src"],
+      "@lexical/history/src/*": ["./packages/lexical-history/src/*"],
       "@lexical/html/src": ["./packages/lexical-html/src"],
+      "@lexical/html/src/*": ["./packages/lexical-html/src/*"],
       "@lexical/internal/src": ["./packages/lexical-internal/src"],
+      "@lexical/internal/src/*": ["./packages/lexical-internal/src/*"],
       "@lexical/link/src": ["./packages/lexical-link/src"],
+      "@lexical/link/src/*": ["./packages/lexical-link/src/*"],
       "@lexical/list/src": ["./packages/lexical-list/src"],
+      "@lexical/list/src/*": ["./packages/lexical-list/src/*"],
       "@lexical/mark/src": ["./packages/lexical-mark/src"],
+      "@lexical/mark/src/*": ["./packages/lexical-mark/src/*"],
       "@lexical/markdown/src": ["./packages/lexical-markdown/src"],
+      "@lexical/markdown/src/*": ["./packages/lexical-markdown/src/*"],
       "@lexical/offset/src": ["./packages/lexical-offset/src"],
+      "@lexical/offset/src/*": ["./packages/lexical-offset/src/*"],
       "@lexical/overflow/src": ["./packages/lexical-overflow/src"],
+      "@lexical/overflow/src/*": ["./packages/lexical-overflow/src/*"],
       "@lexical/plain-text/src": ["./packages/lexical-plain-text/src"],
+      "@lexical/plain-text/src/*": ["./packages/lexical-plain-text/src/*"],
       "@lexical/react/src": ["./packages/lexical-react/src"],
       "@lexical/react/src/__tests__/utils": [
         "./packages/lexical-react/src/__tests__/utils/index.tsx"
       ],
+      "@lexical/react/src/*": ["./packages/lexical-react/src/*"],
       "@lexical/rich-text/src": ["./packages/lexical-rich-text/src"],
+      "@lexical/rich-text/src/*": ["./packages/lexical-rich-text/src/*"],
       "@lexical/selection/src": ["./packages/lexical-selection/src"],
       "@lexical/selection/src/__tests__/utils": [
         "./packages/lexical-selection/src/__tests__/utils/index.ts"
       ],
+      "@lexical/selection/src/*": ["./packages/lexical-selection/src/*"],
       "@lexical/table/src": ["./packages/lexical-table/src"],
+      "@lexical/table/src/*": ["./packages/lexical-table/src/*"],
       "@lexical/tailwind/src": ["./packages/lexical-tailwind/src"],
+      "@lexical/tailwind/src/*": ["./packages/lexical-tailwind/src/*"],
       "@lexical/text/src": ["./packages/lexical-text/src"],
+      "@lexical/text/src/*": ["./packages/lexical-text/src/*"],
       "@lexical/utils/src": ["./packages/lexical-utils/src"],
-      "@lexical/yjs/src": ["./packages/lexical-yjs/src"]
+      "@lexical/utils/src/*": ["./packages/lexical-utils/src/*"],
+      "@lexical/yjs/src": ["./packages/lexical-yjs/src"],
+      "@lexical/yjs/src/*": ["./packages/lexical-yjs/src/*"]
     }
   },
   "include": ["./libdefs", "./packages"],

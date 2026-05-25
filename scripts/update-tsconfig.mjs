@@ -61,6 +61,14 @@ async function updateTsconfig({
           [resolveRelative(fn)],
         ]);
       }
+      // Deep source imports (e.g. `lexical/src/environment`). Tests need to
+      // address a package's internal modules by a stable specifier so that
+      // `vi.mock` can intercept the exact module the source imports relatively
+      // (e.g. environment constants or `@internal` helpers like caretFromPoint).
+      testPaths.push([
+        `${pkg.getNpmName()}/src/*`,
+        [resolveRelative('src', '*')],
+      ]);
     }
   }
   const paths = Object.fromEntries([

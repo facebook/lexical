@@ -18,7 +18,10 @@ vi.mock('@lexical/react/LexicalComposerContext', () => ({
   useLexicalComposerContext: () => [createTestEditor()],
 }));
 
-vi.mock('lexical', () => ({
+// Only force CAN_USE_DOM; keep every other real `lexical` export so modules
+// pulled in transitively (e.g. @lexical/extension's defineExtension) still work.
+vi.mock('lexical', async importOriginal => ({
+  ...(await importOriginal<typeof import('lexical')>()),
   CAN_USE_DOM: false,
 }));
 

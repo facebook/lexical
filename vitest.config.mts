@@ -19,16 +19,28 @@ import {defineConfig} from 'vitest/config';
 // native `resolve.tsconfigPaths` only reads the root tsconfig, so we build
 // the aliases explicitly from tsconfig.test.json instead.
 const ROOT_DIR = path.dirname(fileURLToPath(import.meta.url));
+const escapeRegExp = (value: string) =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 function tsconfigTestAliases(): {find: RegExp; replacement: string}[] {
   const {compilerOptions} = JSON.parse(
     fs.readFileSync(path.join(ROOT_DIR, 'tsconfig.test.json'), 'utf8'),
   );
   return Object.entries(
     (compilerOptions.paths || {}) as Record<string, string[]>,
-  ).map(([find, [replacement]]) => ({
-    find: new RegExp(`^${find.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`),
-    replacement: path.resolve(ROOT_DIR, replacement),
-  }));
+  ).map(([find, [replacement]]) => {
+    // Wildcard entries like `lexical/src/*` -> `./packages/lexical/src/*`
+    // become a capture-group alias so deep source imports resolve.
+    if (find.endsWith('/*') && replacement.endsWith('/*')) {
+      return {
+        find: new RegExp(`^${escapeRegExp(find.slice(0, -2))}/(.*)$`),
+        replacement: `${path.resolve(ROOT_DIR, replacement.slice(0, -2))}/$1`,
+      };
+    }
+    return {
+      find: new RegExp(`^${escapeRegExp(find)}$`),
+      replacement: path.resolve(ROOT_DIR, replacement),
+    };
+  });
 }
 
 export default defineConfig({

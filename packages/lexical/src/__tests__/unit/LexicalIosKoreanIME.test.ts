@@ -38,7 +38,9 @@ import {afterEach, beforeEach, describe, expect, test, vi} from 'vitest';
 
 // `vi.mock` is hoisted above all imports, so LexicalEvents.ts /
 // LexicalConstants.ts observe IS_IOS=true and CAN_USE_BEFORE_INPUT=true.
-vi.mock('@lexical/internal/environment', () => ({
+// Mock the exact module the core imports relatively (`./environment`); the
+// `lexical/src/environment` test alias resolves to that same file.
+vi.mock('lexical/src/environment', () => ({
   CAN_USE_BEFORE_INPUT: true,
   IS_ANDROID: false,
   IS_ANDROID_CHROME: false,

@@ -360,9 +360,9 @@ export {
 } from './LexicalUpdateTags';
 
 // LexicalExtension
-export {CAN_USE_DOM} from './canUseDOM';
 export {
   CAN_USE_BEFORE_INPUT,
+  CAN_USE_DOM,
   IS_ANDROID,
   IS_ANDROID_CHROME,
   IS_APPLE,

@@ -42,6 +42,7 @@ import {afterEach, beforeEach, describe, expect, test, vi} from 'vitest';
 // `lexical/src/environment` test alias resolves to that same file.
 vi.mock('lexical/src/environment', () => ({
   CAN_USE_BEFORE_INPUT: true,
+  CAN_USE_DOM: true,
   IS_ANDROID: false,
   IS_ANDROID_CHROME: false,
   IS_APPLE: true,

@@ -51,8 +51,13 @@ import {
   normalizeClassNames,
   UpdateTag,
 } from '.';
-import {CAN_USE_DOM} from './canUseDOM';
-import {IS_APPLE, IS_APPLE_WEBKIT, IS_IOS, IS_SAFARI} from './environment';
+import {
+  CAN_USE_DOM,
+  IS_APPLE,
+  IS_APPLE_WEBKIT,
+  IS_IOS,
+  IS_SAFARI,
+} from './environment';
 import {
   COMPOSITION_START_CHAR,
   COMPOSITION_SUFFIX,

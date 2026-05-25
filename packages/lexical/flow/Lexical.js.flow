@@ -923,6 +923,7 @@ declare export class DOMSlot<out T extends HTMLElement> {
   removeChild(dom: Node): this;
   replaceChild(dom: Node, prevDom: Node): this;
   getFirstChild(): Node | null;
+  resolveLeafPosition(leafDOM: HTMLElement, initialDOM: Node, initialOffset: number): 'before' | 'after';
 }
 
 /**
@@ -932,8 +933,6 @@ declare export class ElementDOMSlot<out T extends HTMLElement> extends DOMSlot<T
   withBefore(before: Node | null | void): ElementDOMSlot<T>;
   withAfter(after: Node | null | void): ElementDOMSlot<T>;
   withElement<ElementType extends HTMLElement>(element: ElementType): ElementDOMSlot<ElementType>;
-  insertChild(dom: Node): this;
-  getFirstChild(): Node | null;
   //
   getManagedLineBreak(): HTMLElement | null;
   removeManagedLineBreak(): void;

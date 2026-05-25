@@ -12,8 +12,7 @@ import type {
   BaseSelection,
   DOMExportOutput,
   EditorDOMRenderConfig,
-  DOMSlot,
-  ElementDOMSlot,
+  DOMSlotForNode,
   LexicalEditor,
   LexicalExtension,
   LexicalNode,
@@ -76,12 +75,12 @@ export type NodeMatch<T extends LexicalNode> =
 
 export type DOMRenderMatch<T extends LexicalNode> = {
   readonly nodes: '*' | ReadonlyArray<NodeMatch<T>>,
-  readonly $getDOMSlot?: <N extends LexicalNode>(
-    node: N,
+  readonly $getDOMSlot?: (
+    node: T,
     dom: HTMLElement,
-    $next: () => DOMSlot<HTMLElement>,
+    $next: () => DOMSlotForNode<T>,
     editor: LexicalEditor,
-  ) => DOMSlot<HTMLElement>,
+  ) => DOMSlotForNode<T>,
   readonly $createDOM?: (
     node: T,
     $next: () => HTMLElement,

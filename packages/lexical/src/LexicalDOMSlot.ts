@@ -65,11 +65,12 @@ export class DOMSlot<T extends HTMLElement = HTMLElement> {
    * the end).
    */
   insertChild(dom: Node): this {
+    const before = this.getInsertionAnchor();
     invariant(
-      this.before === null || this.before.parentElement === this.element,
+      before === null || before.parentElement === this.element,
       'DOMSlot.insertChild: before is not in element',
     );
-    this.element.insertBefore(dom, this.before);
+    this.element.insertBefore(dom, before);
     return this;
   }
   /**
@@ -104,7 +105,7 @@ export class DOMSlot<T extends HTMLElement = HTMLElement> {
     const firstChild = this.after
       ? this.after.nextSibling
       : this.element.firstChild;
-    return firstChild === this.before ? null : firstChild;
+    return firstChild === this.getInsertionAnchor() ? null : firstChild;
   }
   /**
    * Map a DOM selection point landing at or inside `leafDOM` (the node's
@@ -162,6 +163,17 @@ export class DOMSlot<T extends HTMLElement = HTMLElement> {
     );
     return childIndex >= 0 && childIndex <= innerIndex ? 'before' : 'after';
   }
+
+  /**
+   * @internal
+   *
+   * The node managed children are inserted before, or `null` to append.
+   * Subclasses widen this to reserve trailing scaffolding (e.g.
+   * {@link ElementDOMSlot} keeps the managed line break last).
+   */
+  getInsertionAnchor(): Node | null {
+    return this.before;
+  }
 }
 
 function $topLevelChildOf(parent: HTMLElement, descendant: Node): Node | null {
@@ -203,31 +215,10 @@ export class ElementDOMSlot<
     return new ElementDOMSlot(element, this.before, this.after);
   }
   /**
-   * Insert the given child before {@link DOMSlot.before} or the managed
-   * line break (whichever marks the lexical end of children), or append if
-   * neither is set.
+   * @internal
    */
-  insertChild(dom: Node): this {
-    const before = this.before || this.getManagedLineBreak();
-    invariant(
-      before === null || before.parentElement === this.element,
-      'ElementDOMSlot.insertChild: before is not in element',
-    );
-    this.element.insertBefore(dom, before);
-    return this;
-  }
-  /**
-   * Returns the first managed child, skipping `before`, `after`, and the
-   * managed line break.
-   */
-  getFirstChild(): ChildNode | null {
-    const firstChild = this.after
-      ? this.after.nextSibling
-      : this.element.firstChild;
-    return firstChild === this.before ||
-      firstChild === this.getManagedLineBreak()
-      ? null
-      : firstChild;
+  override getInsertionAnchor(): Node | null {
+    return super.getInsertionAnchor() || this.getManagedLineBreak();
   }
   /**
    * @internal

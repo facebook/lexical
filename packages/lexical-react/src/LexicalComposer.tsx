@@ -9,7 +9,6 @@
 import type {LexicalComposerContextType} from '@lexical/react/LexicalComposerContext';
 import type {JSX} from 'react';
 
-import {CAN_USE_DOM} from '@lexical/internal/canUseDOM';
 import {
   createLexicalComposerContext,
   LexicalComposerContext,
@@ -18,6 +17,7 @@ import {
   $createParagraphNode,
   $getRoot,
   $getSelection,
+  CAN_USE_DOM,
   createEditor,
   EditorState,
   EditorThemeClasses,

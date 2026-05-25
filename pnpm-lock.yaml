@@ -388,9 +388,6 @@ importers:
       '@emotion/styled':
         specifier: ^11.11.5
         version: 11.14.1(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.5))(@types/react@19.2.14)(react@19.2.5)
-      '@lexical/internal':
-        specifier: workspace:*
-        version: link:../lexical-internal
       '@webext-pegasus/rpc':
         specifier: ^0.3.0
         version: 0.3.6
@@ -674,9 +671,6 @@ importers:
       '@lexical/extension':
         specifier: workspace:*
         version: link:../lexical-extension
-      '@lexical/internal':
-        specifier: workspace:*
-        version: link:../lexical-internal
       '@lexical/selection':
         specifier: workspace:*
         version: link:../lexical-selection
@@ -934,9 +928,6 @@ importers:
       '@lexical/extension':
         specifier: workspace:*
         version: link:../lexical-extension
-      '@lexical/internal':
-        specifier: workspace:*
-        version: link:../lexical-internal
       '@lexical/selection':
         specifier: workspace:*
         version: link:../lexical-selection

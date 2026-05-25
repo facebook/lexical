@@ -7,7 +7,7 @@
  */
 import type {StoreApi} from 'zustand';
 
-import {IS_FIREFOX, IS_SAFARI} from '@lexical/internal/environment';
+import {IS_FIREFOX, IS_SAFARI} from 'lexical';
 
 import {ExtensionState} from '../../store';
 

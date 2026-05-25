@@ -18,7 +18,7 @@ vi.mock('@lexical/react/LexicalComposerContext', () => ({
   useLexicalComposerContext: () => [createTestEditor()],
 }));
 
-vi.mock('@lexical/internal/canUseDOM', () => ({
+vi.mock('lexical', () => ({
   CAN_USE_DOM: false,
 }));
 

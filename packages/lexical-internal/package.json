@@ -16,70 +16,6 @@
   },
   "sideEffects": false,
   "exports": {
-    "./canUseDOM": {
-      "source": "./src/canUseDOM.ts",
-      "import": {
-        "types": "./dist/canUseDOM.d.ts",
-        "development": "./dist/LexicalInternalCanUseDOM.dev.mjs",
-        "production": "./dist/LexicalInternalCanUseDOM.prod.mjs",
-        "node": "./dist/LexicalInternalCanUseDOM.node.mjs",
-        "default": "./dist/LexicalInternalCanUseDOM.mjs"
-      },
-      "require": {
-        "types": "./dist/canUseDOM.d.ts",
-        "development": "./dist/LexicalInternalCanUseDOM.dev.js",
-        "production": "./dist/LexicalInternalCanUseDOM.prod.js",
-        "default": "./dist/LexicalInternalCanUseDOM.js"
-      }
-    },
-    "./canUseDOM.js": {
-      "source": "./src/canUseDOM.ts",
-      "import": {
-        "types": "./dist/canUseDOM.d.ts",
-        "development": "./dist/LexicalInternalCanUseDOM.dev.mjs",
-        "production": "./dist/LexicalInternalCanUseDOM.prod.mjs",
-        "node": "./dist/LexicalInternalCanUseDOM.node.mjs",
-        "default": "./dist/LexicalInternalCanUseDOM.mjs"
-      },
-      "require": {
-        "types": "./dist/canUseDOM.d.ts",
-        "development": "./dist/LexicalInternalCanUseDOM.dev.js",
-        "production": "./dist/LexicalInternalCanUseDOM.prod.js",
-        "default": "./dist/LexicalInternalCanUseDOM.js"
-      }
-    },
-    "./caretFromPoint": {
-      "source": "./src/caretFromPoint.ts",
-      "import": {
-        "types": "./dist/caretFromPoint.d.ts",
-        "development": "./dist/LexicalInternalCaretFromPoint.dev.mjs",
-        "production": "./dist/LexicalInternalCaretFromPoint.prod.mjs",
-        "node": "./dist/LexicalInternalCaretFromPoint.node.mjs",
-        "default": "./dist/LexicalInternalCaretFromPoint.mjs"
-      },
-      "require": {
-        "types": "./dist/caretFromPoint.d.ts",
-        "development": "./dist/LexicalInternalCaretFromPoint.dev.js",
-        "production": "./dist/LexicalInternalCaretFromPoint.prod.js",
-        "default": "./dist/LexicalInternalCaretFromPoint.js"
-      }
-    },
-    "./caretFromPoint.js": {
-      "source": "./src/caretFromPoint.ts",
-      "import": {
-        "types": "./dist/caretFromPoint.d.ts",
-        "development": "./dist/LexicalInternalCaretFromPoint.dev.mjs",
-        "production": "./dist/LexicalInternalCaretFromPoint.prod.mjs",
-        "node": "./dist/LexicalInternalCaretFromPoint.node.mjs",
-        "default": "./dist/LexicalInternalCaretFromPoint.mjs"
-      },
-      "require": {
-        "types": "./dist/caretFromPoint.d.ts",
-        "development": "./dist/LexicalInternalCaretFromPoint.dev.js",
-        "production": "./dist/LexicalInternalCaretFromPoint.prod.js",
-        "default": "./dist/LexicalInternalCaretFromPoint.js"
-      }
-    },
     "./devInvariant": {
       "source": "./src/devInvariant.ts",
       "import": {
@@ -110,38 +46,6 @@
         "development": "./dist/LexicalInternalDevInvariant.dev.js",
         "production": "./dist/LexicalInternalDevInvariant.prod.js",
         "default": "./dist/LexicalInternalDevInvariant.js"
-      }
-    },
-    "./environment": {
-      "source": "./src/environment.ts",
-      "import": {
-        "types": "./dist/environment.d.ts",
-        "development": "./dist/LexicalInternalEnvironment.dev.mjs",
-        "production": "./dist/LexicalInternalEnvironment.prod.mjs",
-        "node": "./dist/LexicalInternalEnvironment.node.mjs",
-        "default": "./dist/LexicalInternalEnvironment.mjs"
-      },
-      "require": {
-        "types": "./dist/environment.d.ts",
-        "development": "./dist/LexicalInternalEnvironment.dev.js",
-        "production": "./dist/LexicalInternalEnvironment.prod.js",
-        "default": "./dist/LexicalInternalEnvironment.js"
-      }
-    },
-    "./environment.js": {
-      "source": "./src/environment.ts",
-      "import": {
-        "types": "./dist/environment.d.ts",
-        "development": "./dist/LexicalInternalEnvironment.dev.mjs",
-        "production": "./dist/LexicalInternalEnvironment.prod.mjs",
-        "node": "./dist/LexicalInternalEnvironment.node.mjs",
-        "default": "./dist/LexicalInternalEnvironment.mjs"
-      },
-      "require": {
-        "types": "./dist/environment.d.ts",
-        "development": "./dist/LexicalInternalEnvironment.dev.js",
-        "production": "./dist/LexicalInternalEnvironment.prod.js",
-        "default": "./dist/LexicalInternalEnvironment.js"
       }
     },
     "./formatDevErrorMessage": {
@@ -302,38 +206,6 @@
         "development": "./dist/LexicalInternalInvariant.dev.js",
         "production": "./dist/LexicalInternalInvariant.prod.js",
         "default": "./dist/LexicalInternalInvariant.js"
-      }
-    },
-    "./simpleDiffWithCursor": {
-      "source": "./src/simpleDiffWithCursor.ts",
-      "import": {
-        "types": "./dist/simpleDiffWithCursor.d.ts",
-        "development": "./dist/LexicalInternalSimpleDiffWithCursor.dev.mjs",
-        "production": "./dist/LexicalInternalSimpleDiffWithCursor.prod.mjs",
-        "node": "./dist/LexicalInternalSimpleDiffWithCursor.node.mjs",
-        "default": "./dist/LexicalInternalSimpleDiffWithCursor.mjs"
-      },
-      "require": {
-        "types": "./dist/simpleDiffWithCursor.d.ts",
-        "development": "./dist/LexicalInternalSimpleDiffWithCursor.dev.js",
-        "production": "./dist/LexicalInternalSimpleDiffWithCursor.prod.js",
-        "default": "./dist/LexicalInternalSimpleDiffWithCursor.js"
-      }
-    },
-    "./simpleDiffWithCursor.js": {
-      "source": "./src/simpleDiffWithCursor.ts",
-      "import": {
-        "types": "./dist/simpleDiffWithCursor.d.ts",
-        "development": "./dist/LexicalInternalSimpleDiffWithCursor.dev.mjs",
-        "production": "./dist/LexicalInternalSimpleDiffWithCursor.prod.mjs",
-        "node": "./dist/LexicalInternalSimpleDiffWithCursor.node.mjs",
-        "default": "./dist/LexicalInternalSimpleDiffWithCursor.mjs"
-      },
-      "require": {
-        "types": "./dist/simpleDiffWithCursor.d.ts",
-        "development": "./dist/LexicalInternalSimpleDiffWithCursor.dev.js",
-        "production": "./dist/LexicalInternalSimpleDiffWithCursor.prod.js",
-        "default": "./dist/LexicalInternalSimpleDiffWithCursor.js"
       }
     },
     "./version": {

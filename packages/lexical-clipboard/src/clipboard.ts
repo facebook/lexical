@@ -10,7 +10,6 @@
 
 import {getPeerDependencyFromEditor} from '@lexical/extension';
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
-import caretFromPoint from '@lexical/internal/caretFromPoint';
 import invariant from '@lexical/internal/invariant';
 import {$sliceSelectedTextNodeContent} from '@lexical/selection';
 import {objectKlassEquals} from '@lexical/utils';
@@ -51,6 +50,8 @@ import {
   SerializedElementNode,
   shallowMergeConfig,
 } from 'lexical';
+
+import {caretFromPoint} from './caretFromPoint';
 
 export interface LexicalClipboardData {
   'text/html'?: string | undefined;

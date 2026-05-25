@@ -35,7 +35,6 @@ import {
   $getClipboardDataFromSelection,
   copyToClipboard,
 } from '@lexical/clipboard';
-import {IS_FIREFOX} from '@lexical/internal/environment';
 import invariant from '@lexical/internal/invariant';
 import {
   $findMatchingParent,
@@ -77,6 +76,7 @@ import {
   FORMAT_TEXT_COMMAND,
   getDOMSelection,
   INSERT_PARAGRAPH_COMMAND,
+  IS_FIREFOX,
   isDOMNode,
   isHTMLElement,
   KEY_ARROW_DOWN_COMMAND,

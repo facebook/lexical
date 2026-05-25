@@ -23,17 +23,8 @@
       "@lexical/headless/dom": ["./packages/lexical-headless/src/dom.ts"],
       "@lexical/history": ["./packages/lexical-history/src/index.ts"],
       "@lexical/html": ["./packages/lexical-html/src/index.ts"],
-      "@lexical/internal/canUseDOM": [
-        "./packages/lexical-internal/src/canUseDOM.ts"
-      ],
-      "@lexical/internal/caretFromPoint": [
-        "./packages/lexical-internal/src/caretFromPoint.ts"
-      ],
       "@lexical/internal/devInvariant": [
         "./packages/lexical-internal/src/devInvariant.ts"
-      ],
-      "@lexical/internal/environment": [
-        "./packages/lexical-internal/src/environment.ts"
       ],
       "@lexical/internal/formatDevErrorMessage": [
         "./packages/lexical-internal/src/formatDevErrorMessage.ts"
@@ -49,9 +40,6 @@
       ],
       "@lexical/internal/invariant": [
         "./packages/lexical-internal/src/invariant.ts"
-      ],
-      "@lexical/internal/simpleDiffWithCursor": [
-        "./packages/lexical-internal/src/simpleDiffWithCursor.ts"
       ],
       "@lexical/internal/version": [
         "./packages/lexical-internal/src/version.ts"

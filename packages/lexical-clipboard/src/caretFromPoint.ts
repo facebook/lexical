@@ -6,7 +6,8 @@
  *
  */
 
-export default function caretFromPoint(
+/** @internal Not a public API; exported only for use within the Lexical packages. */
+export function caretFromPoint(
   x: number,
   y: number,
 ): null | {

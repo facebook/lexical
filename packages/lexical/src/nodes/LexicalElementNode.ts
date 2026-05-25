@@ -25,13 +25,9 @@ import type {
   TextFormatType,
 } from 'lexical';
 
-import {
-  IS_APPLE_WEBKIT,
-  IS_IOS,
-  IS_SAFARI,
-} from '@lexical/internal/environment';
 import invariant from '@lexical/internal/invariant';
 
+import {IS_APPLE_WEBKIT, IS_IOS, IS_SAFARI} from '../environment';
 import {$isTextNode, TextNode} from '../index';
 import {
   DOUBLE_LINE_BREAK,

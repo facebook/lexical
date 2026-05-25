@@ -12,7 +12,6 @@ import type {NodeKey} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextFormatType} from './nodes/LexicalTextNode';
 
-import {IS_FIREFOX} from '@lexical/internal/environment';
 import invariant from '@lexical/internal/invariant';
 
 import {
@@ -54,6 +53,7 @@ import {
   SKIP_SCROLL_INTO_VIEW_TAG,
   TextNode,
 } from '.';
+import {IS_FIREFOX} from './environment';
 import {TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
 import {
   markCollapsedSelectionFormat,

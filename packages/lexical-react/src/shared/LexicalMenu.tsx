@@ -8,12 +8,12 @@
 
 import type {JSX} from 'react';
 
-import {CAN_USE_DOM} from '@lexical/internal/canUseDOM';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {mergeRegister} from '@lexical/utils';
 import {
   $getSelection,
   $isRangeSelection,
+  CAN_USE_DOM,
   COMMAND_PRIORITY_LOW,
   CommandListenerPriority,
   createCommand,

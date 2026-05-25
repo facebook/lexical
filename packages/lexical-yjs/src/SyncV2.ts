@@ -25,7 +25,6 @@
  */
 
 import invariant from '@lexical/internal/invariant';
-import simpleDiffWithCursor from '@lexical/internal/simpleDiffWithCursor';
 import {
   $getSelection,
   $getWritableNodeState,
@@ -53,6 +52,7 @@ import {
 } from 'yjs';
 
 import {BindingV2} from './Bindings';
+import simpleDiffWithCursor from './simpleDiffWithCursor';
 import {$syncPropertiesFromYjs, getDefaultNodeProperties} from './Utils';
 
 type ComputeYChange = (

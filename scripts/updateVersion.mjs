@@ -401,15 +401,19 @@ function updateDependencies(pkg) {
       dependencies[peerDep] = depVersion;
     }
   });
-  // Any package whose source imports @lexical/internal needs it as a runtime
-  // dependency so the `source` export condition resolves for npm consumers.
-  // (@lexical/internal must not depend on itself.)
+  // Reconcile the @lexical/internal dependency: a package needs it iff its
+  // source imports it (so the `source` export condition resolves for npm
+  // consumers). Add it when imported, remove it when no longer imported.
+  // (@lexical/internal must not depend on itself; leave local-protocol pins.)
   if (
     pkg.getNpmName() !== INTERNAL_PACKAGE_NAME &&
-    srcImportsInternalPackage(pkg) &&
     !isLocalProtocol(dependencies[INTERNAL_PACKAGE_NAME])
   ) {
-    dependencies[INTERNAL_PACKAGE_NAME] = depVersion;
+    if (srcImportsInternalPackage(pkg)) {
+      dependencies[INTERNAL_PACKAGE_NAME] = depVersion;
+    } else {
+      delete dependencies[INTERNAL_PACKAGE_NAME];
+    }
   }
   pkg
     .sortDependencies('dependencies', dependencies)

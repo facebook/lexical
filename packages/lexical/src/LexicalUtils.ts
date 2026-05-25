@@ -28,13 +28,6 @@ import type {
 } from './LexicalSelection';
 import type {RootNode} from './nodes/LexicalRootNode';
 
-import {CAN_USE_DOM} from '@lexical/internal/canUseDOM';
-import {
-  IS_APPLE,
-  IS_APPLE_WEBKIT,
-  IS_IOS,
-  IS_SAFARI,
-} from '@lexical/internal/environment';
 import invariant from '@lexical/internal/invariant';
 
 import {
@@ -58,6 +51,8 @@ import {
   normalizeClassNames,
   UpdateTag,
 } from '.';
+import {CAN_USE_DOM} from './canUseDOM';
+import {IS_APPLE, IS_APPLE_WEBKIT, IS_IOS, IS_SAFARI} from './environment';
 import {
   COMPOSITION_START_CHAR,
   COMPOSITION_SUFFIX,

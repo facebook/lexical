@@ -360,6 +360,18 @@ export {
 } from './LexicalUpdateTags';
 
 // LexicalExtension
+export {CAN_USE_DOM} from './canUseDOM';
+export {
+  CAN_USE_BEFORE_INPUT,
+  IS_ANDROID,
+  IS_ANDROID_CHROME,
+  IS_APPLE,
+  IS_APPLE_WEBKIT,
+  IS_CHROME,
+  IS_FIREFOX,
+  IS_IOS,
+  IS_SAFARI,
+} from './environment';
 export {
   type AnyLexicalExtension,
   type AnyLexicalExtensionArgument,

@@ -30,7 +30,6 @@
     "@chakra-ui/react": "^3.35.0",
     "@emotion/react": "^11.11.4",
     "@emotion/styled": "^11.11.5",
-    "@lexical/internal": "workspace:*",
     "@webext-pegasus/rpc": "^0.3.0",
     "@webext-pegasus/store-zustand": "^0.3.0",
     "@webext-pegasus/transport": "^0.3.0",

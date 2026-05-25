@@ -31,6 +31,7 @@ import {
   $handleRichTextDrop,
   $insertDataTransferForRichText,
   $writeDragSourceToDataTransfer,
+  caretFromPoint,
   copyToClipboard,
   setLexicalClipboardDataTransfer,
 } from '@lexical/clipboard';
@@ -43,13 +44,6 @@ import {
   ReadonlySignal,
   signal,
 } from '@lexical/extension';
-import caretFromPoint from '@lexical/internal/caretFromPoint';
-import {
-  CAN_USE_BEFORE_INPUT,
-  IS_APPLE_WEBKIT,
-  IS_IOS,
-  IS_SAFARI,
-} from '@lexical/internal/environment';
 import {
   $isParentRTL,
   $moveCharacter,
@@ -85,6 +79,7 @@ import {
   $setDirectionFromDOM,
   $setFormatFromDOM,
   $setSelection,
+  CAN_USE_BEFORE_INPUT,
   CLICK_COMMAND,
   COMMAND_PRIORITY_EDITOR,
   CONTROLLED_TEXT_INSERTION_COMMAND,
@@ -105,6 +100,9 @@ import {
   INSERT_LINE_BREAK_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
   INSERT_TAB_COMMAND,
+  IS_APPLE_WEBKIT,
+  IS_IOS,
+  IS_SAFARI,
   isDOMNode,
   isSelectionCapturedInDecoratorInput,
   KEY_ARROW_DOWN_COMMAND,

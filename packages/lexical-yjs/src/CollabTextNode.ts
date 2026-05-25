@@ -12,7 +12,6 @@ import type {NodeKey, NodeMap, TextNode} from 'lexical';
 import type {Map as YMap} from 'yjs';
 
 import invariant from '@lexical/internal/invariant';
-import simpleDiffWithCursor from '@lexical/internal/simpleDiffWithCursor';
 import {
   $getNodeByKey,
   $getSelection,
@@ -20,6 +19,7 @@ import {
   $isTextNode,
 } from 'lexical';
 
+import simpleDiffWithCursor from './simpleDiffWithCursor';
 import {$syncPropertiesFromYjs, syncPropertiesFromLexical} from './Utils';
 
 function $diffTextContentAndApplyDelta(

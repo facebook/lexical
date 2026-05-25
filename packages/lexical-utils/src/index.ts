@@ -6,9 +6,10 @@
  *
  */
 
-import {CAN_USE_DOM} from '@lexical/internal/canUseDOM';
+import invariant from '@lexical/internal/invariant';
 import {
   CAN_USE_BEFORE_INPUT,
+  CAN_USE_DOM,
   IS_ANDROID,
   IS_ANDROID_CHROME,
   IS_APPLE,
@@ -17,8 +18,7 @@ import {
   IS_FIREFOX,
   IS_IOS,
   IS_SAFARI,
-} from '@lexical/internal/environment';
-import invariant from '@lexical/internal/invariant';
+} from 'lexical';
 import {
   $caretFromPoint,
   $caretRangeFromSelection,

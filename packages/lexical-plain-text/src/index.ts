@@ -20,12 +20,6 @@ import {
   NormalizeTripleClickSelectionExtension,
 } from '@lexical/extension';
 import {
-  CAN_USE_BEFORE_INPUT,
-  IS_APPLE_WEBKIT,
-  IS_IOS,
-  IS_SAFARI,
-} from '@lexical/internal/environment';
-import {
   $moveCharacter,
   $shouldOverrideDefaultCharacterSelection,
 } from '@lexical/selection';
@@ -34,6 +28,7 @@ import {
   $getSelection,
   $isRangeSelection,
   $selectAll,
+  CAN_USE_BEFORE_INPUT,
   COMMAND_PRIORITY_EDITOR,
   CONTROLLED_TEXT_INSERTION_COMMAND,
   COPY_COMMAND,
@@ -46,6 +41,9 @@ import {
   DROP_COMMAND,
   INSERT_LINE_BREAK_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
+  IS_APPLE_WEBKIT,
+  IS_IOS,
+  IS_SAFARI,
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
   KEY_BACKSPACE_COMMAND,

@@ -8,7 +8,6 @@
 
 import type {JSX} from 'react';
 
-import {IS_FIREFOX} from '@lexical/internal/environment';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {eventFiles} from '@lexical/rich-text';
 import {calculateZoomLevel, isHTMLElement, mergeRegister} from '@lexical/utils';
@@ -23,6 +22,7 @@ import {
   COMMAND_PRIORITY_LOW,
   DRAGOVER_COMMAND,
   DROP_COMMAND,
+  IS_FIREFOX,
   LexicalEditor,
 } from 'lexical';
 import {

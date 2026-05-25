@@ -6,6 +6,7 @@
  *
  */
 
+import {effect, watchedSignal} from '@lexical/extension';
 import {$isAtNodeEnd} from '@lexical/selection';
 import {mergeRegister} from '@lexical/utils';
 import {
@@ -129,16 +130,23 @@ function syncGhost(
   dom.appendChild(ghost);
 }
 
-/**
- * Picks up etrepum's review nudge on PR #8519 — the previous
- * `AutocompletePlugin` React component held no JSX or hooks-driven state
- * (only `useEffect` doing side-effect registrations), so it's collapsed
- * here into a pure {@link defineExtension} consumed by the playground's
- * dynamic-config extension list.
- */
 export const AutocompleteExtension = defineExtension({
   name: '@lexical/playground/autocomplete',
   register: (editor: LexicalEditor) => {
+    const editableSignal = watchedSignal(
+      () => editor.isEditable(),
+      signal =>
+        editor.registerEditableListener(editable => {
+          signal.value = editable;
+        }),
+    );
+    const rootElemSignal = watchedSignal(
+      () => editor.getRootElement(),
+      signal =>
+        editor.registerRootListener(rootElem => {
+          signal.value = rootElem;
+        }),
+    );
     let activeTextNodeKey: NodeKey | null = null;
     let lastMatch: string | null = null;
     let lastSuggestion: string | null = null;
@@ -296,29 +304,30 @@ export const AutocompleteExtension = defineExtension({
       }
     }
 
-    const rootElem = editor.getRootElement();
-
-    return mergeRegister(
-      editor.registerUpdateListener(handleUpdate),
-      editor.registerCommand(
-        KEY_TAB_COMMAND,
-        $handleCommitCommand,
-        COMMAND_PRIORITY_LOW,
-      ),
-      editor.registerCommand(
-        KEY_ARROW_RIGHT_COMMAND,
-        $handleCommitCommand,
-        COMMAND_PRIORITY_LOW,
-      ),
-      ...(rootElem !== null
-        ? [addSwipeRightListener(rootElem, handleSwipeRight)]
-        : []),
-      () => {
+    return effect(() => {
+      const rootElem = rootElemSignal.value;
+      const editable = editableSignal.value;
+      if (!rootElem || !editable) {
+        return;
+      }
+      return mergeRegister(
+        editor.registerUpdateListener(handleUpdate),
+        editor.registerCommand(
+          KEY_TAB_COMMAND,
+          $handleCommitCommand,
+          COMMAND_PRIORITY_LOW,
+        ),
+        editor.registerCommand(
+          KEY_ARROW_RIGHT_COMMAND,
+          $handleCommitCommand,
+          COMMAND_PRIORITY_LOW,
+        ),
+        addSwipeRightListener(rootElem, handleSwipeRight),
         // Tear down on dispose: clear any ghost still attached so a fresh
         // build doesn't see leftover decoration.
-        dismiss();
-      },
-    );
+        dismiss,
+      );
+    });
   },
 });
 

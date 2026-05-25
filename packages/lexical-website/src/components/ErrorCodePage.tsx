@@ -42,11 +42,7 @@ function ErrorFinder() {
   const [codes, setCodes] = useState<ErrorCodes | null>(null);
 
   useEffect(() => {
-    const isFBInternal =
-      typeof process !== 'undefined' &&
-      process.env != null &&
-      Boolean(process.env.FB_INTERNAL);
-    if (!isFBInternal) {
+    if (!process.env.FB_INTERNAL) {
       import('../../../../scripts/error-codes/codes.json').then(module =>
         setCodes(module as unknown as ErrorCodes),
       );

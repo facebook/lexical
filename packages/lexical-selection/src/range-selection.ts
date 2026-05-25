@@ -6,6 +6,7 @@
  *
  */
 
+import type {TableSelection} from '@lexical/table';
 import type {
   BaseSelection,
   DecoratorNode,
@@ -18,7 +19,6 @@ import type {
 } from 'lexical';
 
 import invariant from '@lexical/internal/invariant';
-import {TableSelection} from '@lexical/table';
 import {
   $caretFromPoint,
   $extendCaretToRange,

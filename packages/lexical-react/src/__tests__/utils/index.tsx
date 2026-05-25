@@ -19,10 +19,10 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
-import * as ReactTestUtils from '@lexical/test-utils';
 import {Provider, UserState} from '@lexical/yjs';
 import {LexicalEditor} from 'lexical';
 import * as React from 'react';
+import {act} from 'react';
 import {type Container, createRoot, type Root} from 'react-dom/client';
 import {expect} from 'vitest';
 import * as Y from 'yjs';
@@ -188,7 +188,7 @@ export class Client implements Provider {
 
     rootContainer.appendChild(container);
 
-    ReactTestUtils.act(() => {
+    act(() => {
       reactRoot.render(
         <LexicalCollaboration>
           <LexicalComposer
@@ -214,7 +214,7 @@ export class Client implements Provider {
   }
 
   stop() {
-    ReactTestUtils.act(() => {
+    act(() => {
       this._reactRoot!.render(null);
     });
 
@@ -307,7 +307,7 @@ export function createTestConnection(useCollabV2: boolean) {
 }
 
 export async function waitForReact(cb: () => void) {
-  await ReactTestUtils.act(async () => {
+  await act(async () => {
     cb();
     await Promise.resolve().then();
   });

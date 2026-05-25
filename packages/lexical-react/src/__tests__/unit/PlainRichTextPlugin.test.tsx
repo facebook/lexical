@@ -18,7 +18,6 @@ import {PlainTextPlugin} from '@lexical/react/LexicalPlainTextPlugin';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
-import * as ReactTestUtils from '@lexical/test-utils';
 import {$rootTextContent} from '@lexical/text';
 import {
   $createParagraphNode,
@@ -29,6 +28,7 @@ import {
   LexicalEditor,
 } from 'lexical';
 import * as React from 'react';
+import {act} from 'react';
 import {createRoot, Root} from 'react-dom/client';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
@@ -108,7 +108,7 @@ describe('LexicalNodeHelpers tests', () => {
         );
       }
 
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         reactRoot.render(<App />);
       });
 
@@ -159,7 +159,7 @@ describe('LexicalNodeHelpers tests', () => {
         );
       }
 
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         reactRoot.render(<App />);
       });
 
@@ -226,7 +226,7 @@ describe('LexicalNodeHelpers tests', () => {
         );
       }
 
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         reactRoot.render(<App />);
       });
 
@@ -236,7 +236,7 @@ describe('LexicalNodeHelpers tests', () => {
       }
 
       expect(placeholderText()).toBe('My placeholder');
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         editor.setEditable(false);
         reactRoot.render(<App />);
       });

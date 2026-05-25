@@ -12,8 +12,8 @@ import {LexicalComposer} from '@lexical/react/LexicalComposer';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
-import * as ReactTestUtils from '@lexical/test-utils';
 import * as React from 'react';
+import {act} from 'react';
 import {createRoot, Root} from 'react-dom/client';
 import {beforeEach, describe, expect, test, vi} from 'vitest';
 import * as Y from 'yjs';
@@ -88,7 +88,7 @@ describe(`LexicalCollaborationPlugin`, () => {
         </LexicalCollaboration>
       );
     }
-    ReactTestUtils.act(() => {
+    act(() => {
       reactRoot.render(
         <React.StrictMode>
           <MemoComponent />

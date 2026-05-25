@@ -6,7 +6,6 @@
  *
  */
 
-import * as ReactTestUtils from '@lexical/test-utils';
 import {
   $applyNodeReplacement,
   $createParagraphNode,
@@ -22,7 +21,7 @@ import {
   TextNode,
 } from 'lexical';
 import * as React from 'react';
-import {createRef, useEffect} from 'react';
+import {act, createRef, useEffect} from 'react';
 import {createRoot} from 'react-dom/client';
 import {afterEach, beforeEach, describe, expect, it, test} from 'vitest';
 
@@ -77,7 +76,7 @@ describe('LexicalElementNode tests', () => {
       return <div ref={ref} contentEditable={true} />;
     }
 
-    ReactTestUtils.act(() => {
+    act(() => {
       createRoot(container).render(<TestBase />);
     });
 

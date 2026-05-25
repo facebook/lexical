@@ -17,7 +17,6 @@ import {
   MenuRenderFn,
   useBasicTypeaheadTriggerMatch,
 } from '@lexical/react/LexicalTypeaheadMenuPlugin';
-import * as ReactTestUtils from '@lexical/test-utils';
 import {
   $createParagraphNode,
   $getRoot,
@@ -27,7 +26,7 @@ import {
   TextNode,
 } from 'lexical';
 import * as React from 'react';
-import {useCallback} from 'react';
+import {act, useCallback} from 'react';
 import ReactDOM from 'react-dom';
 import {createRoot, Root} from 'react-dom/client';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
@@ -194,7 +193,7 @@ describe('LexicalTypeaheadMenuPlugin', () => {
     it('should render without errors when menuRenderFn is provided', async () => {
       const App = createApp(<TypeaheadPluginWithMenuRenderFn />);
 
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         reactRoot.render(<App />);
       });
 
@@ -209,7 +208,7 @@ describe('LexicalTypeaheadMenuPlugin', () => {
       // This is a compile-time check that also confirms the prop is wired.
       const App = createApp(<TypeaheadPluginWithMenuRenderFn options={[]} />);
 
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         reactRoot.render(<App />);
       });
 
@@ -221,7 +220,7 @@ describe('LexicalTypeaheadMenuPlugin', () => {
     it('should render without errors when menuRenderFn is omitted', async () => {
       const App = createApp(<TypeaheadPluginWithoutMenuRenderFn />);
 
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         reactRoot.render(<App />);
       });
 
@@ -234,7 +233,7 @@ describe('LexicalTypeaheadMenuPlugin', () => {
         <TypeaheadPluginWithoutMenuRenderFn options={[]} />,
       );
 
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         reactRoot.render(<App />);
       });
 
@@ -367,14 +366,14 @@ describe('LexicalTypeaheadMenuPlugin', () => {
         [ParagraphNode],
       );
 
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         reactRoot.render(<App />);
       });
 
       const editor = editorRef.current;
       expect(editor).not.toBeNull();
 
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         editor!.update(() => {
           $getRoot()
             .clear()
@@ -389,7 +388,7 @@ describe('LexicalTypeaheadMenuPlugin', () => {
       ).not.toBeNull();
       expect(onClose).not.toHaveBeenCalled();
 
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         editor!.dispatchCommand(DELETE_CHARACTER_COMMAND, true);
         await Promise.resolve();
       });
@@ -399,7 +398,7 @@ describe('LexicalTypeaheadMenuPlugin', () => {
         document.querySelector('[data-testid="custom-typeahead"]'),
       ).not.toBeNull();
 
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         resolveOnClose();
         await Promise.resolve();
       });
@@ -471,14 +470,14 @@ describe('LexicalTypeaheadMenuPlugin', () => {
         [ParagraphNode],
       );
 
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         reactRoot.render(<App />);
       });
 
       const editor = editorRef.current;
       expect(editor).not.toBeNull();
 
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         editor!.update(() => {
           $getRoot()
             .clear()
@@ -488,7 +487,7 @@ describe('LexicalTypeaheadMenuPlugin', () => {
         });
       });
 
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         editor!.dispatchCommand(DELETE_CHARACTER_COMMAND, true);
         await Promise.resolve();
       });

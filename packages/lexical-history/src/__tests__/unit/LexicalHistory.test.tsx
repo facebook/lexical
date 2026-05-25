@@ -27,7 +27,6 @@ import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {$createQuoteNode} from '@lexical/rich-text';
 import {$setBlocksType} from '@lexical/selection';
-import * as ReactTestUtils from '@lexical/test-utils';
 import {$restoreEditorState} from '@lexical/utils';
 import {
   $applyNodeReplacement,
@@ -71,6 +70,7 @@ import {
   html,
   TestComposer,
 } from 'lexical/src/__tests__/utils';
+import {act} from 'react';
 import {createRoot, Root} from 'react-dom/client';
 import {
   afterEach,
@@ -250,7 +250,7 @@ describe('LexicalHistory tests', () => {
     let canRedo = true;
     let canUndo = true;
 
-    ReactTestUtils.act(() => {
+    act(() => {
       reactRoot.render(<Test key="smth" />);
     });
 
@@ -274,7 +274,7 @@ describe('LexicalHistory tests', () => {
 
     await Promise.resolve().then();
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined);
     });
 
@@ -283,14 +283,14 @@ describe('LexicalHistory tests', () => {
   });
 
   test('LexicalHistory.Redo after Quote Node', async () => {
-    ReactTestUtils.act(() => {
+    act(() => {
       reactRoot.render(<Test key="smth" />);
     });
 
     // Wait for update to complete
     await Promise.resolve().then();
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       await editor.update(() => {
         const root = $getRoot();
         const paragraph1 = $createParagraphNodeWithText('AAA');
@@ -305,7 +305,7 @@ describe('LexicalHistory tests', () => {
 
     const initialJSONState = editor.getEditorState().toJSON();
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       await editor.update(() => {
         const root = $getRoot();
         const selection = $createRangeSelection();
@@ -339,7 +339,7 @@ describe('LexicalHistory tests', () => {
       ).text,
     ).toBe('AAA');
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       await editor.update(() => {
         editor.dispatchCommand(UNDO_COMMAND, undefined);
       });
@@ -354,7 +354,7 @@ describe('LexicalHistory tests', () => {
     let canRedo = false;
     let canUndo = false;
 
-    ReactTestUtils.act(() => {
+    act(() => {
       reactRoot.render(<Test key="smth" />);
     });
 
@@ -377,7 +377,7 @@ describe('LexicalHistory tests', () => {
     );
 
     // focus (needs the focus to initialize)
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       editor.focus();
     });
 
@@ -385,7 +385,7 @@ describe('LexicalHistory tests', () => {
     expect(canUndo).toBe(false);
 
     // change
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       await editor.update(() => {
         const root = $getRoot();
         const paragraph = $createParagraphNodeWithText('foo');
@@ -396,7 +396,7 @@ describe('LexicalHistory tests', () => {
     expect(canUndo).toBe(true);
 
     // undo
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       await editor.update(() => {
         editor.dispatchCommand(UNDO_COMMAND, undefined);
       });
@@ -405,7 +405,7 @@ describe('LexicalHistory tests', () => {
     expect(canUndo).toBe(false);
 
     // redo
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       await editor.update(() => {
         editor.dispatchCommand(REDO_COMMAND, undefined);
       });
@@ -414,7 +414,7 @@ describe('LexicalHistory tests', () => {
     expect(canUndo).toBe(true);
 
     // undo
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       await editor.update(() => {
         editor.dispatchCommand(UNDO_COMMAND, undefined);
       });
@@ -423,7 +423,7 @@ describe('LexicalHistory tests', () => {
     expect(canUndo).toBe(false);
 
     // change
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       await editor.update(() => {
         const root = $getRoot();
         const paragraph = $createParagraphNodeWithText('foo');

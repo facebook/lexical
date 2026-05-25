@@ -8,7 +8,6 @@
 
 import {LexicalComposer} from '@lexical/react/LexicalComposer';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import * as ReactTestUtils from '@lexical/test-utils';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -16,6 +15,7 @@ import {
   LexicalEditor,
 } from 'lexical';
 import * as React from 'react';
+import {act} from 'react';
 import {createRoot, Root} from 'react-dom/client';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
@@ -61,7 +61,7 @@ describe('LexicalComposer tests', () => {
       );
     }
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(<App />);
     });
   });
@@ -103,7 +103,7 @@ describe('LexicalComposer tests', () => {
         );
       }
       it(`renders ${size} editors under ${name}`, async () => {
-        await ReactTestUtils.act(async () => {
+        await act(async () => {
           reactRoot.render(
             <Wrapper>
               <App />

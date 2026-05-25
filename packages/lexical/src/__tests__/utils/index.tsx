@@ -25,7 +25,6 @@ import {
 } from '@lexical/react/LexicalComposerContext';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
-import * as ReactTestUtils from '@lexical/test-utils';
 import prettier from '@prettier/sync';
 import {
   $isRangeSelection,
@@ -46,7 +45,7 @@ import {
   TextNode,
 } from 'lexical';
 import * as React from 'react';
-import {createRef} from 'react';
+import {act, createRef} from 'react';
 import {createRoot} from 'react-dom/client';
 import {afterEach, beforeEach, expect, type Mock, vi} from 'vitest';
 
@@ -140,7 +139,7 @@ export function initializeUnitTest(
       );
     };
 
-    ReactTestUtils.act(() => {
+    act(() => {
       createRoot(testEnv.container).render(<Editor />);
     });
   });

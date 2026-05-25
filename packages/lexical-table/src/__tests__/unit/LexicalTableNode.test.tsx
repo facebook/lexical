@@ -22,7 +22,6 @@ import {
   $isTableNode,
   TableNode,
 } from '@lexical/table';
-import {act} from '@lexical/test-utils';
 import {$dfs} from '@lexical/utils';
 import {
   $createParagraphNode,
@@ -43,7 +42,7 @@ import {
   invariant,
   polyfillContentEditable,
 } from 'lexical/src/__tests__/utils';
-import {useState} from 'react';
+import {act, useState} from 'react';
 import {beforeEach, describe, expect, type Mock, test, vi} from 'vitest';
 
 export class ClipboardDataMock {

@@ -34,7 +34,6 @@ async function updateTsconfig({
   const prevTsconfigContents = fs.readFileSync(jsonFileName, 'utf8');
   const tsconfig = JSON.parse(prevTsconfigContents);
   const publicPaths = [];
-  const privatePaths = [];
   const testPaths = [];
   const configDir = path.resolve(path.dirname(jsonFileName));
   for (const pkg of packagesManager.getPackages()) {
@@ -43,20 +42,13 @@ async function updateTsconfig({
         .relative(configDir, pkg.resolve(...subPaths))
         .replace(/^(?!\.)/, './');
 
+    // Private packages are not published and not imported by their package
+    // name across the monorepo, so they need no path aliases.
     if (pkg.isPrivate()) {
-      // lexical-test-utils is a private package whose modules are imported
-      // (by their package name) from unit tests across the monorepo, so it
-      // needs tsconfig path entries just like the old `shared` package did.
-      if (pkg.getDirectoryName() !== 'lexical-test-utils') {
-        continue;
-      }
-      for (const {name, sourceFileName} of pkg.getPrivateModuleEntries()) {
-        privatePaths.push([name, [resolveRelative('src', sourceFileName)]]);
-      }
-    } else {
-      for (const {name, sourceFileName} of pkg.getExportedNpmModuleEntries()) {
-        publicPaths.push([name, [resolveRelative('src', sourceFileName)]]);
-      }
+      continue;
+    }
+    for (const {name, sourceFileName} of pkg.getExportedNpmModuleEntries()) {
+      publicPaths.push([name, [resolveRelative('src', sourceFileName)]]);
     }
     if (test) {
       testPaths.push([`${pkg.getNpmName()}/src`, [resolveRelative('src')]]);
@@ -74,7 +66,6 @@ async function updateTsconfig({
   const paths = Object.fromEntries([
     ...extraPaths,
     ...publicPaths,
-    ...privatePaths,
     ...testPaths,
   ]);
   tsconfig.compilerOptions.paths = paths;

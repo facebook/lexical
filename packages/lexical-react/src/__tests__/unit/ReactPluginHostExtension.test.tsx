@@ -19,7 +19,6 @@ import {
   ReactPluginHostExtension,
 } from '@lexical/react/ReactPluginHostExtension';
 import {RichTextExtension} from '@lexical/rich-text';
-import {act} from '@lexical/test-utils';
 import {
   $createLineBreakNode,
   $createParagraphNode,
@@ -27,6 +26,7 @@ import {
   $getRoot,
   type LexicalEditor,
 } from 'lexical';
+import {act} from 'react';
 import {afterEach, beforeEach, describe, expect, it, Mock, vi} from 'vitest';
 
 function $prepopulatedRichText() {

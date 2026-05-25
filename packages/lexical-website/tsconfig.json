@@ -232,8 +232,7 @@
       "@lexical/tailwind": ["../lexical-tailwind/src/index.ts"],
       "@lexical/text": ["../lexical-text/src/index.ts"],
       "@lexical/utils": ["../lexical-utils/src/index.ts"],
-      "@lexical/yjs": ["../lexical-yjs/src/index.ts"],
-      "@lexical/test-utils": ["../lexical-test-utils/src/index.ts"]
+      "@lexical/yjs": ["../lexical-yjs/src/index.ts"]
     }
   },
   "include": [

@@ -49,9 +49,8 @@ function resolveSource(
 
 // Only public packages need aliasing here. The former private `shared`
 // module space is now the public `@lexical/internal` package (handled by
-// the loop below), and the remaining private package (`@lexical/test-utils`)
-// is test-only — resolved by vitest via tsconfig paths, never imported by
-// the vite-built apps/examples that use this resolver.
+// the loop below), and there are no remaining private packages whose
+// modules are imported by name from the vite-built apps/examples.
 const sourceModuleResolution = (isSsrBuild = false) => {
   function toAlias(pkg: PackageMetadata, entry: ModuleExportEntry) {
     return {

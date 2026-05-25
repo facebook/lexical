@@ -6,10 +6,10 @@
  *
  */
 
-import * as ReactTestUtils from '@lexical/test-utils';
 import {KEY_ENTER_COMMAND, LexicalEditor} from 'lexical';
 import {createTestEditor} from 'lexical/src/__tests__/utils';
 import * as React from 'react';
+import {act} from 'react';
 import ReactDOM from 'react-dom';
 import {createRoot, Root} from 'react-dom/client';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
@@ -160,7 +160,7 @@ describe('LexicalMenu', () => {
         new TestOption('Option C'),
       ];
 
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         reactRoot.render(
           <LexicalMenu<TestOption>
             close={vi.fn()}
@@ -190,7 +190,7 @@ describe('LexicalMenu', () => {
     it('should apply selected class to preselected first item', async () => {
       const options = [new TestOption('First'), new TestOption('Second')];
 
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         reactRoot.render(
           <LexicalMenu<TestOption>
             close={vi.fn()}
@@ -210,7 +210,7 @@ describe('LexicalMenu', () => {
     });
 
     it('should render nothing when options array is empty', async () => {
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         reactRoot.render(
           <LexicalMenu<TestOption>
             close={vi.fn()}
@@ -231,7 +231,7 @@ describe('LexicalMenu', () => {
       const onSelectOption = vi.fn();
       const options = [new TestOption('Option A'), new TestOption('Option B')];
 
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         reactRoot.render(
           <LexicalMenu<TestOption>
             close={vi.fn()}
@@ -251,7 +251,7 @@ describe('LexicalMenu', () => {
         stopImmediatePropagation: vi.fn(),
       } as unknown as KeyboardEvent;
 
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         editor.dispatchCommand(KEY_ENTER_COMMAND, shiftEnter);
       });
 
@@ -262,7 +262,7 @@ describe('LexicalMenu', () => {
       const onSelectOption = vi.fn();
       const options = [new TestOption('Option A'), new TestOption('Option B')];
 
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         reactRoot.render(
           <LexicalMenu<TestOption>
             close={vi.fn()}
@@ -282,7 +282,7 @@ describe('LexicalMenu', () => {
         stopImmediatePropagation: vi.fn(),
       } as unknown as KeyboardEvent;
 
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         editor.dispatchCommand(KEY_ENTER_COMMAND, enter);
       });
 
@@ -294,7 +294,7 @@ describe('LexicalMenu', () => {
       const option = new TestOption('With Icon');
       option.icon = <i className="custom-icon" />;
 
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         reactRoot.render(
           <LexicalMenu<TestOption>
             close={vi.fn()}
@@ -344,7 +344,7 @@ describe('LexicalMenu', () => {
           : null;
       };
 
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         reactRoot.render(
           <LexicalMenu<TestOption>
             close={vi.fn()}
@@ -387,7 +387,7 @@ describe('LexicalMenu', () => {
         return null;
       };
 
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         reactRoot.render(
           <LexicalMenu<TestOption>
             close={vi.fn()}
@@ -422,7 +422,7 @@ describe('LexicalMenu', () => {
         return null;
       };
 
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         reactRoot.render(
           <LexicalMenu<TestOption>
             close={vi.fn()}
@@ -452,7 +452,7 @@ describe('LexicalMenu', () => {
         return null;
       };
 
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         reactRoot.render(
           <LexicalMenu<TestOption>
             close={vi.fn()}

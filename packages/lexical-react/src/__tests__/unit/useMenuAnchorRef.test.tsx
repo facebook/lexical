@@ -6,9 +6,9 @@
  *
  */
 
-import * as ReactTestUtils from '@lexical/test-utils';
 import {createTestEditor} from 'lexical/src/__tests__/utils';
 import * as React from 'react';
+import {act} from 'react';
 import {createRoot, Root} from 'react-dom/client';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
@@ -56,7 +56,7 @@ describe('useMenuAnchorRef', () => {
       return null;
     }
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(<App />);
     });
 

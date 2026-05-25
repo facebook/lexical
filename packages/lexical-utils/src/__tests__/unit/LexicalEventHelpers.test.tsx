@@ -22,9 +22,9 @@ import {
   pasteHTML,
 } from '@lexical/selection/src/__tests__/utils';
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
-import * as ReactTestUtils from '@lexical/test-utils';
 import {LexicalEditor} from 'lexical';
 import {initializeClipboard, TestComposer} from 'lexical/src/__tests__/utils';
+import {act} from 'react';
 import {createRoot} from 'react-dom/client';
 import {afterEach, beforeEach, describe, expect, test} from 'vitest';
 
@@ -155,13 +155,13 @@ describe('LexicalEventHelpers', () => {
       );
     }
 
-    ReactTestUtils.act(() => {
+    act(() => {
       createRoot(container!).render(<TestBase />);
     });
   }
 
   async function update(fn: () => void) {
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       await editor!.update(fn);
     });
 

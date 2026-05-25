@@ -6,8 +6,8 @@
  *
  */
 
-import * as ReactTestUtils from '@lexical/test-utils';
 import * as React from 'react';
+import {act} from 'react';
 import {createRoot, Root} from 'react-dom/client';
 import {beforeEach, describe, expect, test, vi} from 'vitest';
 
@@ -39,7 +39,7 @@ describe(`React expectations (${React.version}) OVERRIDE_REACT_VERSION=${OVERRID
     function MemoComponent() {
       return React.useMemo(memoFun, []);
     }
-    ReactTestUtils.act(() => {
+    act(() => {
       reactRoot.render(
         <React.StrictMode>
           <MemoComponent />

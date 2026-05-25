@@ -226,7 +226,6 @@
       "@lexical/text": ["./packages/lexical-text/src/index.ts"],
       "@lexical/utils": ["./packages/lexical-utils/src/index.ts"],
       "@lexical/yjs": ["./packages/lexical-yjs/src/index.ts"],
-      "@lexical/test-utils": ["./packages/lexical-test-utils/src/index.ts"],
       "lexical/src": ["./packages/lexical/src"],
       "lexical/src/__tests__/utils": [
         "./packages/lexical/src/__tests__/utils/index.tsx"
@@ -267,7 +266,6 @@
       ],
       "@lexical/table/src": ["./packages/lexical-table/src"],
       "@lexical/tailwind/src": ["./packages/lexical-tailwind/src"],
-      "@lexical/test-utils/src": ["./packages/lexical-test-utils/src"],
       "@lexical/text/src": ["./packages/lexical-text/src"],
       "@lexical/utils/src": ["./packages/lexical-utils/src"],
       "@lexical/yjs/src": ["./packages/lexical-yjs/src"]

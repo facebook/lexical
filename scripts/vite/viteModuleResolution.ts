@@ -47,6 +47,11 @@ function resolveSource(
   return pkg.resolve('src', sourceFileName);
 }
 
+// Only public packages need aliasing here. The former private `shared`
+// module space is now the public `@lexical/internal` package (handled by
+// the loop below), and the remaining private package (`@lexical/test-utils`)
+// is test-only — resolved by vitest via tsconfig paths, never imported by
+// the vite-built apps/examples that use this resolver.
 const sourceModuleResolution = (isSsrBuild = false) => {
   function toAlias(pkg: PackageMetadata, entry: ModuleExportEntry) {
     return {
@@ -55,69 +60,47 @@ const sourceModuleResolution = (isSsrBuild = false) => {
     };
   }
 
-  return [
-    ...packagesManager
-      .getPublicPackages()
-      .flatMap(pkg =>
-        pkg.getExportedNpmModuleEntries().map(toAlias.bind(null, pkg)),
-      ),
-    ...['lexical-test-utils']
-      .map(name => packagesManager.getPackageByDirectoryName(name))
-      .flatMap(pkg =>
-        pkg.getPrivateModuleEntries().map(toAlias.bind(null, pkg)),
-      ),
-  ];
+  return packagesManager
+    .getPublicPackages()
+    .flatMap(pkg =>
+      pkg.getExportedNpmModuleEntries().map(toAlias.bind(null, pkg)),
+    );
 };
 
 const distModuleResolution = (
   environment: 'development' | 'production',
   isSsrBuild = false,
 ) => {
-  return [
-    ...packagesManager.getPublicPackages().flatMap(pkg =>
-      pkg
-        .getNormalizedNpmModuleExportEntries()
-        .map((entry: NpmModuleExportEntry) => {
-          const [name, moduleExports] = entry;
-          // Paths in the exports map are now relative to the package root
-          // and already include the `./dist/` segment, so just resolve
-          // them against the package directory.
-          const replacements = ([environment, 'default'] as const).flatMap(
-            condition =>
-              [
-                !isSsrBuild &&
-                  moduleExports.browser &&
-                  moduleExports.browser[condition],
-                moduleExports.import[condition],
-              ].flatMap(fn => (fn ? [pkg.resolve(fn)] : [])),
+  return packagesManager.getPublicPackages().flatMap(pkg =>
+    pkg
+      .getNormalizedNpmModuleExportEntries()
+      .map((entry: NpmModuleExportEntry) => {
+        const [name, moduleExports] = entry;
+        // Paths in the exports map are now relative to the package root
+        // and already include the `./dist/` segment, so just resolve
+        // them against the package directory.
+        const replacements = ([environment, 'default'] as const).flatMap(
+          condition =>
+            [
+              !isSsrBuild &&
+                moduleExports.browser &&
+                moduleExports.browser[condition],
+              moduleExports.import[condition],
+            ].flatMap(fn => (fn ? [pkg.resolve(fn)] : [])),
+        );
+        const distRel = path.relative(pkg.resolve('.'), replacements[1] || '');
+        const replacement = replacements.find(fs.existsSync.bind(fs));
+        if (!replacement) {
+          throw new Error(
+            `ERROR: Missing ${distRel}. Did you run \`pnpm run build\` in the monorepo first?`,
           );
-          const distRel = path.relative(
-            pkg.resolve('.'),
-            replacements[1] || '',
-          );
-          const replacement = replacements.find(fs.existsSync.bind(fs));
-          if (!replacement) {
-            throw new Error(
-              `ERROR: Missing ${distRel}. Did you run \`pnpm run build\` in the monorepo first?`,
-            );
-          }
-          return {
-            find: entryFindRegExp(name),
-            replacement,
-          };
-        }),
-    ),
-    ...[
-      packagesManager.getPackageByDirectoryName('lexical-test-utils'),
-    ].flatMap((pkg: PackageMetadata) =>
-      pkg.getPrivateModuleEntries().map((entry: ModuleExportEntry) => {
+        }
         return {
-          find: entryFindRegExp(entry.name),
-          replacement: pkg.resolve('src', entry.sourceFileName),
+          find: entryFindRegExp(name),
+          replacement,
         };
       }),
-    ),
-  ];
+  );
 };
 
 export default function moduleResolution(

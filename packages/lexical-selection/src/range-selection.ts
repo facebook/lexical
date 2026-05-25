@@ -6,7 +6,6 @@
  *
  */
 
-import type {TableSelection} from '@lexical/table';
 import type {
   BaseSelection,
   DecoratorNode,
@@ -602,31 +601,33 @@ function $getNodeStyleValueForProperty(
  * @returns The value of the property for the selected TextNodes.
  */
 export function $getSelectionStyleValueForProperty(
-  selection: RangeSelection | TableSelection,
+  selection: BaseSelection,
   styleProperty: string,
   defaultValue = '',
 ): string {
   let styleValue: string | null = null;
   const nodes = selection.getNodes();
-  const anchor = selection.anchor;
-  const focus = selection.focus;
-  const isBackward = selection.isBackward();
-  const startNode = isBackward ? focus.getNode() : anchor.getNode();
-  const endNode = isBackward ? anchor.getNode() : focus.getNode();
-  const startOffset = isBackward ? focus.offset : anchor.offset;
-  const endOffset = isBackward ? anchor.offset : focus.offset;
 
-  if (
-    $isRangeSelection(selection) &&
-    selection.isCollapsed() &&
-    selection.style !== ''
-  ) {
-    const css = selection.style;
-    const styleObject = getStyleObjectFromCSS(css);
+  // The anchor/focus boundary handling below is specific to RangeSelection;
+  // other selection types (e.g. table) style every node they contain.
+  let startNode: LexicalNode | undefined;
+  let endNode: LexicalNode | undefined;
+  let startOffset = 0;
+  let endOffset = 0;
+  if ($isRangeSelection(selection)) {
+    if (selection.isCollapsed() && selection.style !== '') {
+      const styleObject = getStyleObjectFromCSS(selection.style);
 
-    if (styleObject !== null && styleProperty in styleObject) {
-      return styleObject[styleProperty];
+      if (styleObject !== null && styleProperty in styleObject) {
+        return styleObject[styleProperty];
+      }
     }
+    const {anchor, focus} = selection;
+    const isBackward = selection.isBackward();
+    startNode = isBackward ? focus.getNode() : anchor.getNode();
+    endNode = isBackward ? anchor.getNode() : focus.getNode();
+    startOffset = isBackward ? focus.offset : anchor.offset;
+    endOffset = isBackward ? anchor.offset : focus.offset;
   }
 
   for (let i = 0; i < nodes.length; i++) {
@@ -634,6 +635,7 @@ export function $getSelectionStyleValueForProperty(
 
     if (
       i === 0 &&
+      startNode !== undefined &&
       node.is(startNode) &&
       $isTextNode(node) &&
       startOffset === node.getTextContentSize()
@@ -641,7 +643,12 @@ export function $getSelectionStyleValueForProperty(
       continue;
     }
 
-    if (i !== 0 && node.is(endNode) && endOffset === 0) {
+    if (
+      i !== 0 &&
+      endNode !== undefined &&
+      node.is(endNode) &&
+      endOffset === 0
+    ) {
       continue;
     }
 

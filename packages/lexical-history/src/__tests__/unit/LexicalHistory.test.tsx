@@ -250,7 +250,7 @@ describe('LexicalHistory tests', () => {
     let canRedo = true;
     let canUndo = true;
 
-    act(() => {
+    await act(() => {
       reactRoot.render(<Test key="smth" />);
     });
 
@@ -272,8 +272,6 @@ describe('LexicalHistory tests', () => {
       COMMAND_PRIORITY_CRITICAL,
     );
 
-    await Promise.resolve().then();
-
     await act(async () => {
       editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined);
     });
@@ -283,12 +281,9 @@ describe('LexicalHistory tests', () => {
   });
 
   test('LexicalHistory.Redo after Quote Node', async () => {
-    act(() => {
+    await act(() => {
       reactRoot.render(<Test key="smth" />);
     });
-
-    // Wait for update to complete
-    await Promise.resolve().then();
 
     await act(async () => {
       await editor.update(() => {
@@ -354,7 +349,7 @@ describe('LexicalHistory tests', () => {
     let canRedo = false;
     let canUndo = false;
 
-    act(() => {
+    await act(() => {
       reactRoot.render(<Test key="smth" />);
     });
 

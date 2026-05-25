@@ -612,8 +612,6 @@ export function $getSelectionStyleValueForProperty(
   // other selection types (e.g. table) style every node they contain.
   let startNode: LexicalNode | undefined;
   let endNode: LexicalNode | undefined;
-  let startOffset = 0;
-  let endOffset = 0;
   if ($isRangeSelection(selection)) {
     if (selection.isCollapsed() && selection.style !== '') {
       const styleObject = getStyleObjectFromCSS(selection.style);
@@ -624,31 +622,32 @@ export function $getSelectionStyleValueForProperty(
     }
     const {anchor, focus} = selection;
     const isBackward = selection.isBackward();
-    startNode = isBackward ? focus.getNode() : anchor.getNode();
-    endNode = isBackward ? anchor.getNode() : focus.getNode();
-    startOffset = isBackward ? focus.offset : anchor.offset;
-    endOffset = isBackward ? anchor.offset : focus.offset;
+    const firstNode = isBackward ? focus.getNode() : anchor.getNode();
+    const lastNode = isBackward ? anchor.getNode() : focus.getNode();
+    const startOffset = isBackward ? focus.offset : anchor.offset;
+    const endOffset = isBackward ? anchor.offset : focus.offset;
+    // A boundary node contributes no styled text when the selection merely
+    // touches its edge: the first node when the start offset is at its very
+    // end, and the last node when the end offset is at its very beginning.
+    if (
+      $isTextNode(firstNode) &&
+      startOffset === firstNode.getTextContentSize()
+    ) {
+      startNode = firstNode;
+    }
+    if (endOffset === 0) {
+      endNode = lastNode;
+    }
   }
 
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
 
-    if (
-      i === 0 &&
-      startNode !== undefined &&
-      node.is(startNode) &&
-      $isTextNode(node) &&
-      startOffset === node.getTextContentSize()
-    ) {
+    if (i === 0 && node.is(startNode)) {
       continue;
     }
 
-    if (
-      i !== 0 &&
-      endNode !== undefined &&
-      node.is(endNode) &&
-      endOffset === 0
-    ) {
+    if (i !== 0 && node.is(endNode)) {
       continue;
     }
 

@@ -7,6 +7,8 @@
  * @flow strict
  */
 
-/**
- * LexicalInternalInvariant
- */
+declare export default function invariant(
+  cond?: boolean,
+  message?: string,
+  ...args: Array<string>
+): void;

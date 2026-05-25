@@ -7,6 +7,4 @@
  * @flow strict
  */
 
-/**
- * LexicalInternalWarnOnlyOnce
- */
+declare export default function warnOnlyOnce(message: string): () => void;

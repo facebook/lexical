@@ -7,6 +7,4 @@
  * @flow strict
  */
 
-/**
- * LexicalInternalFormatDevWarningMessage
- */
+declare export default function formatDevWarningMessage(message: string): void;

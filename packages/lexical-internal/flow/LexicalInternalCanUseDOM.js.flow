@@ -7,6 +7,4 @@
  * @flow strict
  */
 
-/**
- * LexicalInternalCanUseDOM
- */
+declare export var CAN_USE_DOM: boolean;

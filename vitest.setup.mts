@@ -8,8 +8,12 @@
 
 import {vi} from 'vitest';
 
-vi.mock('@lexical/internal/invariant');
-vi.mock('@lexical/internal/devInvariant');
+// `warnOnlyOnce` is auto-mocked so each test observes the warning
+// independently — the real implementation dedupes via a module-level
+// closure that would otherwise leak state across tests. `invariant` and
+// `devInvariant` are NOT mocked: their real implementations interpolate
+// `%s` and throw without the build-time transform, so tests exercise the
+// shipped behavior directly.
 vi.mock('@lexical/internal/warnOnlyOnce');
 
 // jsdom workarounds for the unit-test environment. Real browsers (and the

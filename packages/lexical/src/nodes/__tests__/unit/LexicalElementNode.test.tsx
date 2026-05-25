@@ -6,6 +6,7 @@
  *
  */
 
+import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
 import {
   $applyNodeReplacement,
   $createParagraphNode,
@@ -26,8 +27,10 @@ import * as ReactTestUtils from 'shared/react-test-utils';
 import {afterEach, beforeEach, describe, expect, it, test} from 'vitest';
 
 import {
+  $createTestDecoratorNode,
   $createTestElementNode,
   createTestEditor,
+  TestDecoratorNode,
 } from '../../../__tests__/utils';
 import {ElementDOMSlot, indexPath} from '../../../LexicalDOMSlot';
 import {SerializedElementNode} from '../../LexicalElementNode';
@@ -846,6 +849,31 @@ describe('ElementDOMSlot class', () => {
   function makeElement(): HTMLElement {
     return document.createElement('div');
   }
+  // getFirstChild / getFirstChildOffset consult the active editor (to skip the
+  // block cursor), so they must run inside an editor context. `setCursor`, when
+  // provided, installs a block cursor element for that read.
+  function inEditor<T>(
+    fn: () => T,
+    setCursor?: (editor: LexicalEditor) => void,
+  ): T {
+    let result: T | undefined;
+    const editor = createTestEditor();
+    editor.update(
+      () => {
+        if (setCursor) {
+          setCursor(editor);
+        }
+        result = fn();
+      },
+      {discrete: true},
+    );
+    return result as T;
+  }
+  function setBlockCursor(editor: LexicalEditor, cursor: HTMLElement): void {
+    (
+      editor as unknown as {_blockCursorElement: HTMLElement | null}
+    )._blockCursorElement = cursor;
+  }
 
   test('constructor defaults before/after to null', () => {
     const el = makeElement();
@@ -935,7 +963,7 @@ describe('ElementDOMSlot class', () => {
   test('getFirstChild returns null for empty element', () => {
     const el = makeElement();
     const slot = new ElementDOMSlot(el);
-    expect(slot.getFirstChild()).toBe(null);
+    expect(inEditor(() => slot.getFirstChild())).toBe(null);
   });
 
   test('getFirstChild skips past slot.after sibling', () => {
@@ -945,7 +973,7 @@ describe('ElementDOMSlot class', () => {
     el.appendChild(leading);
     el.appendChild(lexicalChild);
     const slot = new ElementDOMSlot(el, null, leading);
-    expect(slot.getFirstChild()).toBe(lexicalChild);
+    expect(inEditor(() => slot.getFirstChild())).toBe(lexicalChild);
   });
 
   test('getFirstChild returns null when only slot.before is present', () => {
@@ -953,13 +981,13 @@ describe('ElementDOMSlot class', () => {
     const trailing = document.createElement('button');
     el.appendChild(trailing);
     const slot = new ElementDOMSlot(el, trailing);
-    expect(slot.getFirstChild()).toBe(null);
+    expect(inEditor(() => slot.getFirstChild())).toBe(null);
   });
 
   test('getFirstChildOffset is 0 with no after', () => {
     const el = makeElement();
     const slot = new ElementDOMSlot(el);
-    expect(slot.getFirstChildOffset()).toBe(0);
+    expect(inEditor(() => slot.getFirstChildOffset())).toBe(0);
   });
 
   test('getFirstChildOffset counts DOM siblings up to and including after', () => {
@@ -970,9 +998,112 @@ describe('ElementDOMSlot class', () => {
     el.appendChild(a);
     el.appendChild(b);
     el.appendChild(c);
-    expect(new ElementDOMSlot(el, null, a).getFirstChildOffset()).toBe(1);
-    expect(new ElementDOMSlot(el, null, b).getFirstChildOffset()).toBe(2);
-    expect(new ElementDOMSlot(el, null, c).getFirstChildOffset()).toBe(3);
+    expect(
+      inEditor(() => new ElementDOMSlot(el, null, a).getFirstChildOffset()),
+    ).toBe(1);
+    expect(
+      inEditor(() => new ElementDOMSlot(el, null, b).getFirstChildOffset()),
+    ).toBe(2);
+    expect(
+      inEditor(() => new ElementDOMSlot(el, null, c).getFirstChildOffset()),
+    ).toBe(3);
+  });
+
+  // Edge cases for block-cursor handling (#8561). The block cursor is the
+  // editor's single transient caret element; when it sits at the head of an
+  // element's managed children, getFirstChild / getFirstChildOffset must skip
+  // / account for it. getFirstChildOffset must also stop at the trailing
+  // boundary (slot.before / managed line break) when there are no children.
+  test('getFirstChild skips a head block cursor (no slot.after)', () => {
+    const el = makeElement();
+    const cursor = document.createElement('div');
+    const child = document.createElement('span');
+    el.appendChild(cursor);
+    el.appendChild(child);
+    const slot = new ElementDOMSlot(el);
+    expect(
+      inEditor(
+        () => slot.getFirstChild(),
+        editor => setBlockCursor(editor, cursor),
+      ),
+    ).toBe(child);
+  });
+
+  test('getFirstChild skips a head block cursor after slot.after', () => {
+    const el = makeElement();
+    const leading = document.createElement('button');
+    const cursor = document.createElement('div');
+    const child = document.createElement('span');
+    el.append(leading, cursor, child);
+    const slot = new ElementDOMSlot(el, null, leading);
+    expect(
+      inEditor(
+        () => slot.getFirstChild(),
+        editor => setBlockCursor(editor, cursor),
+      ),
+    ).toBe(child);
+  });
+
+  test('getFirstChild ignores a non-head block cursor', () => {
+    const el = makeElement();
+    const child = document.createElement('span');
+    const cursor = document.createElement('div');
+    el.append(child, cursor);
+    const slot = new ElementDOMSlot(el);
+    expect(
+      inEditor(
+        () => slot.getFirstChild(),
+        editor => setBlockCursor(editor, cursor),
+      ),
+    ).toBe(child);
+  });
+
+  test('getFirstChildOffset counts a head block cursor (no slot.after)', () => {
+    const el = makeElement();
+    const cursor = document.createElement('div');
+    const child = document.createElement('span');
+    el.append(cursor, child);
+    const slot = new ElementDOMSlot(el);
+    expect(
+      inEditor(
+        () => slot.getFirstChildOffset(),
+        editor => setBlockCursor(editor, cursor),
+      ),
+    ).toBe(1);
+  });
+
+  test('getFirstChildOffset counts slot.after and a head block cursor', () => {
+    const el = makeElement();
+    const leading = document.createElement('button');
+    const cursor = document.createElement('div');
+    const child = document.createElement('span');
+    el.append(leading, cursor, child);
+    const slot = new ElementDOMSlot(el, null, leading);
+    expect(
+      inEditor(
+        () => slot.getFirstChildOffset(),
+        editor => setBlockCursor(editor, cursor),
+      ),
+    ).toBe(2);
+  });
+
+  test('getFirstChildOffset stops at slot.before when there are no children', () => {
+    const el = makeElement();
+    const leading = document.createElement('button');
+    const trailing = document.createElement('button');
+    el.append(leading, trailing);
+    // Managed children would begin after `leading` (offset 1); `trailing` is
+    // the trailing boundary, so the walk must stop there rather than count it.
+    const slot = new ElementDOMSlot(el, trailing, leading);
+    expect(inEditor(() => slot.getFirstChildOffset())).toBe(1);
+  });
+
+  test('getFirstChildOffset is 0 for an empty element with only slot.before', () => {
+    const el = makeElement();
+    const trailing = document.createElement('button');
+    el.appendChild(trailing);
+    const slot = new ElementDOMSlot(el, trailing);
+    expect(inEditor(() => slot.getFirstChildOffset())).toBe(0);
   });
 });
 
@@ -1145,6 +1276,50 @@ describe('ElementDOMSlot integration: leading decoration (slot.after)', () => {
       ]);
     });
   });
+
+  test('resolveChildIndex skips a block cursor interleaved between children', () => {
+    let block: LeadingDecorElementNode;
+    editor.update(
+      () => {
+        block = $createLeadingDecorNode().append(
+          $createTextNode('a').setMode('token'),
+          $createTextNode('b').setMode('token'),
+        );
+        $getRoot().clear().append(block);
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      const blockDom = container.querySelector('[data-block]') as HTMLElement;
+      const slot = block.getDOMSlot(blockDom);
+      // Park a block cursor between the two children: [marker, a, cursor, b].
+      const cursor = document.createElement('div');
+      cursor.setAttribute('data-lexical-cursor', 'true');
+      const bDom = blockDom.querySelectorAll('[data-lexical-text="true"]')[1];
+      blockDom.insertBefore(cursor, bDom);
+      (
+        editor as unknown as {_blockCursorElement: HTMLElement}
+      )._blockCursorElement = cursor;
+      // The interleaved cursor is not leading, so firstChildOffset stays 1.
+      expect(slot.getFirstChildOffset()).toBe(1);
+      // DOM offset 2 = after `a`, before the cursor → lexical 1.
+      expect(slot.resolveChildIndex(block, blockDom, blockDom, 2)).toEqual([
+        block,
+        1,
+      ]);
+      // DOM offset 3 = after the cursor, before `b` → lexical 1 (the cursor's
+      // DOM slot must not count as a child).
+      expect(slot.resolveChildIndex(block, blockDom, blockDom, 3)).toEqual([
+        block,
+        1,
+      ]);
+      // DOM offset 4 = after `b` → lexical 2.
+      expect(slot.resolveChildIndex(block, blockDom, blockDom, 4)).toEqual([
+        block,
+        2,
+      ]);
+    });
+  });
 });
 
 describe('ElementDOMSlot integration: trailing decoration (slot.before)', () => {
@@ -1299,5 +1474,129 @@ describe('ElementDOMSlot integration: trailing decoration (slot.before)', () => 
     const marker = blockDom.querySelector('[data-marker]');
     expect(marker).not.toBe(null);
     expect(blockDom.querySelector('[data-lexical-text="true"]')).toBe(null);
+  });
+});
+
+// Regression coverage for facebook/lexical#8561. A node whose `getDOMSlot`
+// wraps its content (keyed DOM !== slot.element) crashed when the selection
+// layer parked the block cursor: the cursor was inserted into the keyed
+// wrapper, but the reference child it must sit before lives in `slot.element`,
+// so the insert threw "node is not a child" and the edit never displayed.
+//
+// These tests drive the real editor pipeline (focused editor + collapsed
+// element selection before a block decorator) so the internal block-cursor
+// plumbing runs as it would in the app, and assert on observable DOM only.
+describe('ElementDOMSlot block cursor handling', () => {
+  let container: HTMLElement;
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+  });
+
+  afterEach(() => {
+    document.body.removeChild(container);
+    // @ts-ignore
+    container = null;
+  });
+
+  // An ElementNode whose content lives in an inner element exposed via
+  // `getDOMSlot().withElement(...)`, so the keyed DOM is a wrapper.
+  class InnerWrapElementNode extends ElementNode {
+    $config() {
+      return this.config('inner-wrap', {});
+    }
+    createDOM(): HTMLElement {
+      const el = document.createElement('div');
+      el.setAttribute('data-wrap', 'true');
+      const inner = document.createElement('div');
+      inner.setAttribute('data-inner', 'true');
+      el.appendChild(inner);
+      return el;
+    }
+    updateDOM(): false {
+      return false;
+    }
+    getDOMSlot(dom: HTMLElement): ElementDOMSlot {
+      return super
+        .getDOMSlot(dom)
+        .withElement(dom.querySelector('[data-inner]') as HTMLElement);
+    }
+  }
+  function $createInnerWrapNode(): InnerWrapElementNode {
+    return $applyNodeReplacement(new InnerWrapElementNode());
+  }
+
+  function createFocusedEditor() {
+    const editor = buildEditorFromExtensions(
+      defineExtension({
+        name: '[block-cursor]',
+        nodes: [InnerWrapElementNode, TestDecoratorNode],
+      }),
+    );
+    editor.setRootElement(container);
+    // The block-cursor code path only runs while the editor is focused.
+    container.tabIndex = 0;
+    container.focus();
+    expect(container.contains(document.activeElement)).toBe(true);
+    return editor;
+  }
+
+  test('renders the block cursor inside the slot content element, not the keyed wrapper', () => {
+    using editor = createFocusedEditor();
+
+    // Collapsed element selection at offset 0 of the wrapped node, just before
+    // a block decorator that needs the block cursor.
+    editor.update(
+      () => {
+        const wrap = $createInnerWrapNode();
+        // setIsInline(false) makes this a block decorator (needsBlockCursor).
+        wrap.append($createTestDecoratorNode().setIsInline(false));
+        $getRoot().clear().append(wrap);
+        wrap.select(0, 0);
+      },
+      {discrete: true},
+    );
+
+    const inner = container.querySelector('[data-inner]') as HTMLElement;
+    const cursor = container.querySelector('[data-lexical-cursor]');
+    // The cursor must have been placed (proving the path ran without throwing)
+    // and must live in the content element, not the keyed wrapper.
+    expect(cursor).not.toBe(null);
+    expect(cursor!.parentElement).toBe(inner);
+  });
+
+  test('inserting a child at offset 0 while the block cursor is showing displays the child (#8561)', () => {
+    using editor = createFocusedEditor();
+
+    editor.update(
+      () => {
+        const wrap = $createInnerWrapNode();
+        wrap.append($createTestDecoratorNode().setIsInline(false));
+        $getRoot().clear().append(wrap);
+        wrap.select(0, 0);
+      },
+      {discrete: true},
+    );
+
+    // Sanity: the block cursor is showing before we insert.
+    expect(container.querySelector('[data-lexical-cursor]')).not.toBe(null);
+
+    // Insert a new child at the head of the wrapped node without touching the
+    // selection — the scenario from the issue.
+    editor.update(
+      () => {
+        const wrap = $getRoot().getFirstChildOrThrow<ElementNode>();
+        wrap.getFirstChildOrThrow().insertBefore($createTextNode('inserted'));
+      },
+      {discrete: true},
+    );
+
+    const inner = container.querySelector('[data-inner]') as HTMLElement;
+    const text = inner.querySelector('[data-lexical-text="true"]');
+    // The inserted node must display, inside the content element.
+    expect(text).not.toBe(null);
+    expect(text!.textContent).toBe('inserted');
+    expect(text!.parentElement).toBe(inner);
   });
 });

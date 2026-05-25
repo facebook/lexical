@@ -12,6 +12,21 @@ import type {ElementNode} from './nodes/LexicalElementNode';
 import {IS_APPLE_WEBKIT, IS_IOS, IS_SAFARI} from 'shared/environment';
 import invariant from 'shared/invariant';
 
+import {$getEditor} from './LexicalUtils';
+
+/**
+ * The editor has at most one block cursor element
+ * ({@link LexicalEditor._blockCursorElement}) — a transient, non-lexical
+ * element the selection layer inserts among an ElementNode's children when a
+ * collapsed element selection is adjacent to a node that can't host the caret
+ * (a block decorator, or a non-empty-capable block). Slots must skip it so it
+ * is never mistaken for managed content. There is only ever one, read from the
+ * active editor.
+ */
+function $getActiveBlockCursorElement(): HTMLElement | null {
+  return $getEditor()._blockCursorElement;
+}
+
 /**
  * Base class for DOM slots — a pointer to the content-bearing element of a
  * node's DOM, plus optional `before` / `after` boundaries marking where the
@@ -102,10 +117,21 @@ export class DOMSlot<T extends HTMLElement = HTMLElement> {
    * reconciler-managed scaffolding such as the managed line break.
    */
   getFirstChild(): ChildNode | null {
-    const firstChild = this.after
-      ? this.after.nextSibling
-      : this.element.firstChild;
+    const anchor = this.getFirstChildAnchor();
+    const firstChild = anchor ? anchor.nextSibling : this.element.firstChild;
     return firstChild === this.getInsertionAnchor() ? null : firstChild;
+  }
+  /**
+   * @internal
+   *
+   * The leading-boundary counterpart to {@link getInsertionAnchor}: the node
+   * the lexical-managed range starts immediately after (its `nextSibling` is
+   * the first managed child), or `null` when managed children begin at
+   * `this.element.firstChild`. The base slot uses `this.after`; subclasses
+   * extend it to skip leading non-lexical scaffolding (e.g. the block cursor).
+   */
+  getFirstChildAnchor(): Node | null {
+    return this.after;
   }
   /**
    * Map a DOM selection point landing at or inside `leafDOM` (the node's
@@ -129,7 +155,7 @@ export class DOMSlot<T extends HTMLElement = HTMLElement> {
    * they let the slot abstraction own all DOM-offset to lexical-offset
    * translation.
    *
-   * @experimental
+   * @internal
    */
   resolveLeafPosition(
     leafDOM: HTMLElement,
@@ -222,6 +248,22 @@ export class ElementDOMSlot<
   }
   /**
    * @internal
+   *
+   * Extends the leading boundary to skip the editor's transient block cursor
+   * when it sits at the head of the managed range (a collapsed element
+   * selection at offset 0), mirroring how {@link getInsertionAnchor} extends
+   * the trailing boundary past the managed line break. Only ElementNodes host
+   * a block cursor among their children, so the base slot stays editor-free.
+   */
+  override getFirstChildAnchor(): Node | null {
+    const after = super.getFirstChildAnchor();
+    const firstChild = after ? after.nextSibling : this.element.firstChild;
+    return firstChild !== null && firstChild === $getActiveBlockCursorElement()
+      ? firstChild
+      : after;
+  }
+  /**
+   * @internal
    */
   getManagedLineBreak(): Exclude<
     LexicalPrivateDOM['__lexicalLineBreak'],
@@ -289,11 +331,22 @@ export class ElementDOMSlot<
   /**
    * @internal
    *
-   * Returns the offset of the first child
+   * The DOM child index at which the first managed child appears — i.e. the
+   * count of leading non-lexical nodes (the `this.after` region, plus the
+   * block cursor when it sits at the head). Walks forward from the start,
+   * stopping at the first managed child, or at the trailing boundary
+   * (`this.before` / the managed line break via {@link getInsertionAnchor})
+   * when there are no managed children.
    */
   getFirstChildOffset(): number {
+    const firstChild = this.getFirstChild();
+    const insertionAnchor = this.getInsertionAnchor();
     let i = 0;
-    for (let node = this.after; node !== null; node = node.previousSibling) {
+    for (
+      let node = this.element.firstChild;
+      node !== null && node !== firstChild && node !== insertionAnchor;
+      node = node.nextSibling
+    ) {
       i++;
     }
     return i;
@@ -309,18 +362,24 @@ export class ElementDOMSlot<
     initialOffset: number,
   ): [node: ElementNode, idx: number] {
     if (initialDOM === this.element) {
-      // `firstChildOffset` is the DOM index of the first lexical child:
-      // 0 in the common case, or `N` when the slot carries `N` non-lexical
-      // prelude nodes via `after` (e.g. an extension prepending a UI
-      // affordance before the lexical content). Clamp `initialOffset`
-      // (a DOM index) to the lexical-children window, then shift it back
-      // into the element's lexical offset space.
+      // Map a raw DOM child index (`initialOffset`) to a lexical child index by
+      // counting the managed children in DOM positions
+      // `[firstChildOffset, initialOffset)`, skipping the editor's block cursor
+      // when it is interleaved between two block children (it occupies a DOM
+      // slot but is not a lexical child). `firstChildOffset` already accounts
+      // for leading scaffolding (the `this.after` region and a head cursor);
+      // the clamp keeps the result within the element's lexical range.
       const firstChildOffset = this.getFirstChildOffset();
-      const clamped = Math.min(
-        firstChildOffset + element.getChildrenSize(),
-        Math.max(firstChildOffset, initialOffset),
-      );
-      return [element, clamped - firstChildOffset];
+      const blockCursor = $getActiveBlockCursorElement();
+      const childNodes = this.element.childNodes;
+      const limit = Math.min(initialOffset, childNodes.length);
+      let idx = 0;
+      for (let i = firstChildOffset; i < limit; i++) {
+        if (childNodes[i] !== blockCursor) {
+          idx++;
+        }
+      }
+      return [element, Math.min(idx, element.getChildrenSize())];
     }
     // The resolved offset must be before or after the children
     const initialPath = indexPath(elementDOM, initialDOM);

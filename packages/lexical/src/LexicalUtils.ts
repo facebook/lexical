@@ -1742,7 +1742,7 @@ export function removeDOMBlockCursorElement(
   }
 }
 
-export function updateDOMBlockCursorElement(
+export function $updateDOMBlockCursorElement(
   editor: LexicalEditor,
   rootElement: HTMLElement,
   nextSelection: null | BaseSelection,
@@ -1778,9 +1778,16 @@ export function updateDOMBlockCursorElement(
       }
     }
     if (isBlockCursor) {
-      const elementDOM = editor.getElementByKey(
-        elementNode.__key,
-      ) as HTMLElement;
+      // Route through the slot so the cursor lands in the content-bearing
+      // element. For a node whose `getDOMSlot` wraps its content, the keyed
+      // DOM is the wrapper but the managed children (and `insertBeforeElement`)
+      // live in `slot.element`; inserting into the keyed wrapper would throw
+      // because the reference node is not its child.
+      const elementDOM = $getDOMSlot(
+        elementNode,
+        editor.getElementByKey(elementNode.__key) as HTMLElement,
+        editor,
+      ).element;
       if (blockCursorElement === null) {
         editor._blockCursorElement = blockCursorElement =
           createBlockCursorElement(editor._config);

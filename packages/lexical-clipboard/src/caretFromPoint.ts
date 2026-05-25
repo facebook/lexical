@@ -6,7 +6,7 @@
  *
  */
 
-/** @internal Not a public API; exported only for use within the Lexical packages. */
+/** @internal */
 export function caretFromPoint(
   x: number,
   y: number,

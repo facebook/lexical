@@ -186,6 +186,7 @@ export type {
 } from './LexicalEditorState';
 export {$isEditorState} from './LexicalEditorState';
 export type {EventHandler} from './LexicalEvents';
+export {stopLexicalPropagation} from './LexicalEvents';
 export type {
   BaseStaticNodeConfig,
   DOMChildConversion,

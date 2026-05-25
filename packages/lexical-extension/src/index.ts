@@ -12,6 +12,12 @@ export {
   ClearEditorExtension,
   registerClearEditor,
 } from './ClearEditorExtension';
+export {
+  $defaultShouldInsertAfter,
+  type ClickAfterLastBlockConfig,
+  ClickAfterLastBlockExtension,
+  type ClickAfterLastBlockOutput,
+} from './ClickAfterLastBlockExtension';
 export {getKnownTypesAndNodes, type KnownTypesAndNodes} from './config';
 export {
   $isDecoratorTextNode,

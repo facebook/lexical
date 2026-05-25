@@ -643,15 +643,9 @@ export function $getSelectionStyleValueForProperty(
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
 
-    if (i === 0 && node.is(startNode)) {
-      continue;
-    }
-
-    if (i !== 0 && node.is(endNode)) {
-      continue;
-    }
-
-    if ($isTextNode(node)) {
+    // Skip the excluded boundary node for this position (startNode at the
+    // head, endNode elsewhere); both are undefined when nothing is excluded.
+    if ($isTextNode(node) && !node.is(i === 0 ? startNode : endNode)) {
       const nodeStyleValue = $getNodeStyleValueForProperty(
         node,
         styleProperty,

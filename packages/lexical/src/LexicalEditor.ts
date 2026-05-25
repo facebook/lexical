@@ -626,6 +626,7 @@ export function resetEditor(
   if (!options || !options.preserveUpdateQueue) {
     editor._updateTags = new Set();
     editor._updates = [];
+    editor._cascadeCount = 0;
   }
   editor._blockCursorElement = null;
 
@@ -946,6 +947,8 @@ export class LexicalEditor {
   /** @internal */
   _updating: boolean;
   /** @internal */
+  _cascadeCount: number;
+  /** @internal */
   _listeners: Listeners;
   /** @internal */
   _commands: Commands;
@@ -1012,6 +1015,7 @@ export class LexicalEditor {
     this._keyToDOMMap = new GenMap();
     this._updates = [];
     this._updating = false;
+    this._cascadeCount = 0;
     // Listeners
     this._listeners = {
       decorator: new Map(),

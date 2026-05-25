@@ -9,7 +9,7 @@
 const __DEV__ = process.env.NODE_ENV !== 'production';
 
 /**
- * If `!cond`, throw in development like an invariant and warn in prod.
+ * If `!cond`, throw in `__DEV__` like an invariant and warn in prod.
  *
  * A production build rewrites call sites via `transformErrorMessages`
  * (throwing dev message in dev, `formatProdWarningMessage` in prod), so this

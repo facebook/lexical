@@ -83,9 +83,6 @@ export {
 } from 'lexical';
 
 const __DEV__ = process.env.NODE_ENV !== 'production';
-// @lexical/internal is a published (if internal) package, so these can be
-// re-exported directly — no need for the old underscore-aliasing hotfix that
-// avoided referencing the formerly-private `shared` module in the d.ts (#5918).
 export {
   CAN_USE_BEFORE_INPUT,
   CAN_USE_DOM,

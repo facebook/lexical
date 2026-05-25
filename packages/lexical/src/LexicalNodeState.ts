@@ -419,7 +419,7 @@ export function $setState<Node extends LexicalNode, K extends string, V>(
  * @internal
  *
  * Register the config to this node's sharedConfigMap and throw an exception in
- * development when a collision is detected.
+ * `__DEV__` when a collision is detected.
  */
 function $checkCollision<Node extends LexicalNode, K extends string, V>(
   node: Node,

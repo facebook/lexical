@@ -26,6 +26,5 @@
     "**/__tests__/**",
     "**/__bench__/**"
   ],
-  "typedocOptions": {"logLevel": "Verbose"},
-  "ts-node": {"require": ["tsconfig-paths/register"], "transpileOnly": true}
+  "typedocOptions": {"logLevel": "Verbose"}
 }

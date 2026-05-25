@@ -341,17 +341,5 @@
   "339": "Node class %s with type %s not registered in editor",
   "340": "ListItemNode.createParentElementNode() must return a ListNode",
   "341": "getTableElement: Expecting table in DOM node for %s of type %s with key %s, not %s",
-  "342": "$insertNodeToNearestRootAtCaret node %s of type %s can not be inserted into itself",
-  "343": "One or more update listeners are endlessly enqueueing more updates. May have encountered infinite recursion caused by update listeners that trigger additional updates without a stop condition.",
-  "344": "cachedTextSize: missing __lexicalTextContent for ElementNode of type %s",
-  "345": "cachedTextSize: missing entry for leaf %s key %s",
-  "346": "$bubbleChildFirstText: missing __lexicalFirstTextKey on element keyed DOM",
-  "347": "$createChildren: Element with key %s missing from keyToDOMMap",
-  "348": "tryReconcileSuffixWithSizeDelta: missing __lexicalTextContent on child of type %s after suffix reconcile",
-  "349": "$reconcileChildren: Element with key %s missing from keyToDOMMap",
-  "350": "reconcileChildren same-size suffix: missing __lexicalTextContent on child of type %s after reconcile",
-  "351": "reconcileChildren: $tryReconcileSuffixWithSizeDelta returned true without writing __lexicalTextContent",
-  "352": "reconcileChildren structurally-clean walk: missing __lexicalTextContent on non-dirty child of type %s",
-  "353": "reconcileNode: missing __lexicalTextContent on non-dirty element of type %s",
-  "354": "reconcileNode: missing __lexicalTextContent on cloned non-dirty element of type %s"
+  "342": "$insertNodeToNearestRootAtCaret node %s of type %s can not be inserted into itself"
 }

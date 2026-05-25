@@ -23,6 +23,8 @@ import {PROTOTYPE_CONFIG_METHOD} from './LexicalConstants';
 import {errorOnReadOnly} from './LexicalUpdates';
 import {getRegisteredNodeOrThrow, getStaticNodeConfig} from './LexicalUtils';
 
+const __DEV__ = process.env.NODE_ENV !== 'production';
+
 /**
  * Get the value type (V) from a StateConfig
  */
@@ -424,7 +426,7 @@ function $checkCollision<Node extends LexicalNode, K extends string, V>(
   stateConfig: StateConfig<K, V>,
   state: NodeState<Node>,
 ): void {
-  if (process.env.NODE_ENV !== 'production') {
+  if (__DEV__) {
     const collision = state.sharedNodeState.sharedConfigMap.get(
       stateConfig.key,
     );
@@ -576,7 +578,7 @@ export class NodeState<T extends LexicalNode> {
       size !== undefined
         ? size
         : computeSize(sharedConfigMap, unknownState, knownState);
-    if (process.env.NODE_ENV !== 'production') {
+    if (__DEV__) {
       invariant(
         size === undefined || computedSize === size,
         'NodeState: size != computedSize (%s != %s)',

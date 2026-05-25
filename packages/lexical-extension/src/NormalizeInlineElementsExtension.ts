@@ -17,6 +17,8 @@ import {
 import {namedSignals} from './namedSignals';
 import {effect} from './signals';
 
+const __DEV__ = process.env.NODE_ENV !== 'production';
+
 export interface NormalizeInlineElementsConfig {
   disabled: boolean;
 }
@@ -24,7 +26,7 @@ export interface NormalizeInlineElementsConfig {
 function deleteEmptyInline(node: LexicalNode) {
   if ($isElementNode(node) && node.isInline() && node.isEmpty()) {
     node.remove();
-    if (process.env.NODE_ENV !== 'production' && node.canBeEmpty()) {
+    if (__DEV__ && node.canBeEmpty()) {
       console.warn(
         `Empty inline elements are removed from the EditorState, so returning 'true' from ${node.constructor.name}.canBeEmpty() is not allowed`,
       );

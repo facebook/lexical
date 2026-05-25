@@ -53,6 +53,8 @@ import {
   setNodeKeyOnDOMNode,
 } from './LexicalUtils';
 
+const __DEV__ = process.env.NODE_ENV !== 'production';
+
 type IntentionallyMarkedAsDirtyElement = boolean;
 
 /**
@@ -460,7 +462,7 @@ function $createNode(key: NodeKey, slot: ElementDOMSlot | null): HTMLElement {
   // Same cached-text-size invariant as $reconcileNode — every node leaving
   // a reconciler entry point in the next state carries a current label.
   $setCachedTextSize(node);
-  if (process.env.NODE_ENV !== 'production') {
+  if (__DEV__) {
     // Freeze the node in DEV to prevent accidental mutations
     Object.freeze(node);
   }
@@ -1466,7 +1468,7 @@ function $reconcileNode(
       const nextRootNode = latestRoot.getWritable();
       nextRootNode.__cachedText = subTreeTextContent;
       // This invariant from #8099 is left commented out for performance reasons
-      // if (process.env.NODE_ENV !== 'production') {
+      // if (__DEV__) {
       //   const computedTextContent =
       //     ElementNode.prototype.getTextContent.call(nextRootNode);
       //   devInvariant(
@@ -1492,7 +1494,7 @@ function $reconcileNode(
   // instance are O(1) and never need to fall through to a recursive walk
   // that would resolve via `getLatest()` -> next state.
   $setCachedTextSize(nextNode);
-  if (process.env.NODE_ENV !== 'production') {
+  if (__DEV__) {
     // Freeze the node in DEV to prevent accidental mutations
     Object.freeze(nextNode);
   }

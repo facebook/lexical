@@ -95,6 +95,8 @@ import {
 } from './LexicalUpdates';
 import {type TextFormatType, TextNode} from './nodes/LexicalTextNode';
 
+const __DEV__ = process.env.NODE_ENV !== 'production';
+
 export const emptyFunction = () => {
   return;
 };
@@ -318,7 +320,7 @@ export function $setNodeKey(
   const pendingNode = getPendingNodeToClone();
   existingKey = existingKey || (pendingNode && pendingNode.__key);
   if (existingKey != null) {
-    if (process.env.NODE_ENV !== 'production') {
+    if (__DEV__) {
       errorOnNodeKeyConstructorMismatch(node, existingKey, pendingNode);
     }
     node.__key = existingKey;
@@ -648,7 +650,7 @@ export function $setSelection(selection: null | BaseSelection): void {
   errorOnReadOnly();
   const editorState = getActiveEditorState();
   if (selection !== null) {
-    if (process.env.NODE_ENV !== 'production') {
+    if (__DEV__) {
       if (Object.isFrozen(selection)) {
         invariant(
           false,
@@ -2062,7 +2064,7 @@ export function $cloneWithProperties<T extends LexicalNode>(latestNode: T): T {
   const constructor = latestNode.constructor;
   const mutableNode = constructor.clone(latestNode) as T;
   mutableNode.afterCloneFrom(latestNode);
-  if (process.env.NODE_ENV !== 'production') {
+  if (__DEV__) {
     invariant(
       mutableNode.__key === latestNode.__key,
       "$cloneWithProperties: %s.clone(node) (with type '%s') did not return a node with the same key, make sure to specify node.__key as the last argument to the constructor",
@@ -2270,7 +2272,7 @@ export function getStaticNodeConfig(klass: Klass<LexicalNode>): {
       // TextNode.length > 0 will only be true if the compiler output
       // is not ES6 compliant, in which case we can not provide this
       // warning
-      if (process.env.NODE_ENV !== 'production' && TextNode.length === 0) {
+      if (__DEV__ && TextNode.length === 0) {
         invariant(
           klass.length === 0,
           '%s (type %s) must implement a static clone method since its constructor has %s required arguments (expecting 0). Use an explicit default in the first argument of your constructor(prop: T=X, nodeKey?: NodeKey).',
@@ -2285,7 +2287,7 @@ export function getStaticNodeConfig(klass: Klass<LexicalNode>): {
       };
     }
     if (!hasOwnStaticMethod(klass, 'importJSON')) {
-      if (process.env.NODE_ENV !== 'production' && TextNode.length === 0) {
+      if (__DEV__ && TextNode.length === 0) {
         invariant(
           klass.length === 0,
           '%s (type %s) must implement a static importJSON method since its constructor has %s required arguments (expecting 0). Use an explicit default in the first argument of your constructor(prop: T=X, nodeKey?: NodeKey).',

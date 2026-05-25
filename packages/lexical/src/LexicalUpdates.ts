@@ -64,6 +64,8 @@ import {
   updateDOMBlockCursorElement,
 } from './LexicalUtils';
 
+const __DEV__ = process.env.NODE_ENV !== 'production';
+
 let activeEditorState: null | EditorState = null;
 let activeEditor: null | LexicalEditor = null;
 let isReadOnlyMode = false;
@@ -437,7 +439,7 @@ export function parseEditorState(
     // Make the editorState immutable
     editorState._readOnly = true;
 
-    if (process.env.NODE_ENV !== 'production') {
+    if (__DEV__) {
       handleDEVOnlyPendingUpdateGuarantees(editorState);
     }
   } catch (error) {
@@ -590,7 +592,7 @@ export function $commitPendingUpdates(
 
   if (!pendingEditorState._readOnly) {
     pendingEditorState._readOnly = true;
-    if (process.env.NODE_ENV !== 'production') {
+    if (__DEV__) {
       handleDEVOnlyPendingUpdateGuarantees(pendingEditorState);
       if ($isRangeSelection(pendingSelection)) {
         Object.freeze(pendingSelection.anchor);

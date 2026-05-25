@@ -71,6 +71,8 @@ import {ParagraphNode} from './nodes/LexicalParagraphNode';
 import {RootNode} from './nodes/LexicalRootNode';
 import {TabNode} from './nodes/LexicalTabNode';
 
+const __DEV__ = process.env.NODE_ENV !== 'production';
+
 export type Spread<T1, T2> = Omit<T2, keyof T1> & T1;
 
 // https://github.com/microsoft/TypeScript/issues/3841
@@ -803,7 +805,7 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
       void getStaticNodeConfig(klass);
 
       // Ensure custom nodes implement required methods and replaceWithKlass is instance of base klass.
-      if (process.env.NODE_ENV !== 'production') {
+      if (__DEV__) {
         // ArtificialNode__DO_NOT_USE can get renamed, so we use the type
         const name = klass.name;
         const nodeType =
@@ -1464,7 +1466,7 @@ export class LexicalEditor {
         if (classNames != null) {
           nextRootElement.classList.add(...classNames);
         }
-        if (process.env.NODE_ENV !== 'production') {
+        if (__DEV__) {
           const nextRootElementParent = nextRootElement.parentElement;
           if (
             nextRootElementParent != null &&

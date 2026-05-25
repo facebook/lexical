@@ -6,9 +6,11 @@
  *
  */
 
+const __DEV__ = process.env.NODE_ENV !== 'production';
+
 /*@__INLINE__*/
 export default function warnOnlyOnce(message: string): () => void {
-  if (process.env.NODE_ENV !== 'production') {
+  if (__DEV__) {
     let run = false;
     return () => {
       if (!run) {

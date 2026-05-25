@@ -47,6 +47,8 @@ import {
 } from './LexicalTableSelectionHelpers';
 import {$computeTableMapSkipCellCheck} from './LexicalTableUtils';
 
+const __DEV__ = process.env.NODE_ENV !== 'production';
+
 function isHTMLDivElement(element: unknown): element is HTMLDivElement {
   return isHTMLElement(element) && element.nodeName === 'DIV';
 }
@@ -160,10 +162,7 @@ export function setScrollableTablesActive(
   active: boolean,
 ): void {
   if (active) {
-    if (
-      process.env.NODE_ENV !== 'production' &&
-      !editor._config.theme.tableScrollableWrapper
-    ) {
+    if (__DEV__ && !editor._config.theme.tableScrollableWrapper) {
       console.warn(
         'TableNode: hasHorizontalScroll is active but theme.tableScrollableWrapper is not defined.',
       );
@@ -195,9 +194,7 @@ export class TableNode extends ElementNode {
     const self = this.getWritable();
     // NOTE: Node properties should be immutable. Freeze to prevent accidental mutation.
     self.__colWidths =
-      colWidths !== undefined && process.env.NODE_ENV !== 'production'
-        ? Object.freeze(colWidths)
-        : colWidths;
+      colWidths !== undefined && __DEV__ ? Object.freeze(colWidths) : colWidths;
     return self;
   }
 

@@ -96,6 +96,8 @@ import {
 } from './LexicalUtils';
 import {$createTabNode, $isTabNode} from './nodes/LexicalTabNode';
 
+const __DEV__ = process.env.NODE_ENV !== 'production';
+
 export type TextPointType = {
   _selection: BaseSelection;
   getNode: () => TextNode;
@@ -137,7 +139,7 @@ export class Point {
   _selection: BaseSelection | null;
 
   constructor(key: NodeKey, offset: number, type: 'text' | 'element') {
-    if (process.env.NODE_ENV !== 'production') {
+    if (__DEV__) {
       // This prevents a circular reference error when serialized as JSON,
       // which happens on unit test failures
       Object.defineProperty(this, '_selection', {
@@ -196,7 +198,7 @@ export class Point {
     this.key = key;
     this.offset = offset;
     this.type = type;
-    if (process.env.NODE_ENV !== 'production') {
+    if (__DEV__) {
       const node = $getNodeByKey(key);
       invariant(
         type === 'text' ? $isTextNode(node) : $isElementNode(node),
@@ -552,7 +554,7 @@ export class RangeSelection implements BaseSelection {
       'next',
     );
     const nodes = $getNodesFromCaretRangeCompat(range);
-    if (process.env.NODE_ENV !== 'production') {
+    if (__DEV__) {
       if (this.isCollapsed() && nodes.length > 1) {
         invariant(
           false,
@@ -2187,7 +2189,7 @@ function $updateCaretSelectionForUnicodeCharacter(
 }
 
 function shouldDeleteExactlyOneCodeUnit(text: string) {
-  if (process.env.NODE_ENV !== 'production') {
+  if (__DEV__) {
     invariant(
       text.length > 1,
       'shouldDeleteExactlyOneCodeUnit: expecting to be called only with sequences of two or more code units',
@@ -2557,7 +2559,7 @@ function $internalResolveSelectionPoints(
   if (resolvedFocusPoint === null) {
     return null;
   }
-  if (process.env.NODE_ENV !== 'production') {
+  if (__DEV__) {
     $validatePoint('anchor', resolvedAnchorPoint);
     $validatePoint('focus', resolvedFocusPoint);
   }
@@ -3021,7 +3023,7 @@ function setDOMSelectionBaseAndExtent(
     // If we encounter an error, continue. This can sometimes
     // occur with FF and there's no good reason as to why it
     // should happen.
-    if (process.env.NODE_ENV !== 'production') {
+    if (__DEV__) {
       console.warn(error);
     }
   }

@@ -81,6 +81,8 @@ export {
   mergeRegister,
   removeClassNamesFromElement,
 } from 'lexical';
+
+const __DEV__ = process.env.NODE_ENV !== 'production';
 // @lexical/internal is a published (if internal) package, so these can be
 // re-exported directly — no need for the old underscore-aliasing hotfix that
 // avoided referencing the formerly-private `shared` module in the d.ts (#5918).
@@ -888,14 +890,13 @@ export function $lastToFirstIterator(node: ElementNode): Iterable<LexicalNode> {
 function $childIterator<D extends CaretDirection>(
   startCaret: NodeCaret<D>,
 ): IterableIterator<LexicalNode> {
-  const seen =
-    process.env.NODE_ENV !== 'production' ? new Set<NodeKey>() : null;
+  const seen = __DEV__ ? new Set<NodeKey>() : null;
   return makeStepwiseIterator({
     hasNext: $isSiblingCaret,
     initial: startCaret.getAdjacentCaret(),
     map: caret => {
       const origin = caret.origin.getLatest();
-      if (process.env.NODE_ENV !== 'production' && seen !== null) {
+      if (__DEV__ && seen !== null) {
         const key = origin.getKey();
         invariant(
           !seen.has(key),

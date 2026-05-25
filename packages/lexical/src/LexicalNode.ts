@@ -66,6 +66,8 @@ import {
   removeFromParent,
 } from './LexicalUtils';
 
+const __DEV__ = process.env.NODE_ENV !== 'production';
+
 export type NodeMap = Map<NodeKey, LexicalNode>;
 
 /**
@@ -638,7 +640,7 @@ export class LexicalNode {
     Object.defineProperty(this, CACHED_TEXT_SIZE_KEY, NON_ENUMERABLE_PROP_DESC);
     $setNodeKey(this, key);
 
-    if (process.env.NODE_ENV !== 'production') {
+    if (__DEV__) {
       if (this.__type !== 'root') {
         errorOnTypeKlassMismatch(this.__type, this.constructor);
       }

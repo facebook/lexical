@@ -36,6 +36,8 @@ import {
   $getTableCellNodeRect,
 } from './LexicalTableUtils';
 
+const __DEV__ = process.env.NODE_ENV !== 'production';
+
 export type TableSelectionShape = {
   fromX: number;
   fromY: number;
@@ -401,7 +403,7 @@ export function $createTableSelectionFrom(
   const tableNodeKey = tableNode.getKey();
   const anchorCellKey = anchorCell.getKey();
   const focusCellKey = focusCell.getKey();
-  if (process.env.NODE_ENV !== 'production') {
+  if (__DEV__) {
     invariant(
       tableNode.isAttached(),
       '$createTableSelectionFrom: tableNode %s is not attached',

@@ -6,6 +6,8 @@
  *
  */
 
+const __DEV__ = process.env.NODE_ENV !== 'production';
+
 /**
  * If `!cond`, throw in development like an invariant and warn in prod.
  *
@@ -27,7 +29,7 @@ export default function devInvariant(
     (msg, arg) => msg.replace('%s', String(arg)),
     message,
   );
-  if (process.env.NODE_ENV !== 'production') {
+  if (__DEV__) {
     throw new Error(formatted);
   } else {
     console.warn(formatted);

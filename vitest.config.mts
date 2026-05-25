@@ -7,13 +7,35 @@
  */
 
 import react from '@vitejs/plugin-react';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import {fileURLToPath} from 'node:url';
 import {defineConfig} from 'vitest/config';
+
+// Resolve monorepo imports to TypeScript source from the test tsconfig's
+// `paths`. This includes the cross-package and deep `*/src/__tests__/utils`
+// aliases that the unit tests rely on but that the lean root tsconfig (which
+// resolves via the `source` export condition) intentionally omits. Vite's
+// native `resolve.tsconfigPaths` only reads the root tsconfig, so we build
+// the aliases explicitly from tsconfig.test.json instead.
+const ROOT_DIR = path.dirname(fileURLToPath(import.meta.url));
+function tsconfigTestAliases(): {find: RegExp; replacement: string}[] {
+  const {compilerOptions} = JSON.parse(
+    fs.readFileSync(path.join(ROOT_DIR, 'tsconfig.test.json'), 'utf8'),
+  );
+  return Object.entries(
+    (compilerOptions.paths || {}) as Record<string, string[]>,
+  ).map(([find, [replacement]]) => ({
+    find: new RegExp(`^${find.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`),
+    replacement: path.resolve(ROOT_DIR, replacement),
+  }));
+}
 
 export default defineConfig({
   resolve: {
+    alias: tsconfigTestAliases(),
     conditions: ['development', 'import', 'module', 'browser', 'default'],
     dedupe: ['react', 'react-dom'],
-    tsconfigPaths: true,
   },
   test: {
     clearMocks: true,

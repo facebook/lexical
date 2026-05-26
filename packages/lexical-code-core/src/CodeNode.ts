@@ -56,6 +56,7 @@ export type SerializedCodeNode = Spread<
 >;
 
 export const DEFAULT_CODE_LANGUAGE = 'javascript';
+/** @internal Configurable through the extensions. */
 export const getDefaultCodeLanguage = (): string => DEFAULT_CODE_LANGUAGE;
 
 function hasChildDOMNodeTag(node: Node, tagName: string) {

@@ -893,7 +893,7 @@ export default function ToolbarPlugin({
   }, [activeEditor, setIsLinkEditMode, toolbarState.isLink]);
 
   const onCodeLanguageSelect = useCallback(
-    (value: string) => {
+    (value: string | null) => {
       activeEditor.update(() => {
         $addUpdateTag(SKIP_SELECTION_FOCUS_TAG);
         if (selectedElementKey !== null) {
@@ -970,13 +970,23 @@ export default function ToolbarPlugin({
               disabled={!isEditable}
               buttonClassName="toolbar-item code-language"
               buttonLabel={
-                (CODE_LANGUAGE_OPTIONS_PRISM.find(
-                  opt =>
-                    opt[0] ===
-                    normalizeCodeLanguagePrism(toolbarState.codeLanguage),
-                ) || ['', ''])[1]
+                toolbarState.codeLanguage
+                  ? (CODE_LANGUAGE_OPTIONS_PRISM.find(
+                      opt =>
+                        opt[0] ===
+                        normalizeCodeLanguagePrism(toolbarState.codeLanguage),
+                    ) || ['', ''])[1]
+                  : '(No language)'
               }
               buttonAriaLabel="Select language">
+              <DropDownItem
+                className={`item ${dropDownActiveClass(
+                  !toolbarState.codeLanguage,
+                )}`}
+                onClick={() => onCodeLanguageSelect(null)}
+                key="__no_language__">
+                <span className="text">(No language)</span>
+              </DropDownItem>
               {CODE_LANGUAGE_OPTIONS_PRISM.map(([value, name]) => {
                 return (
                   <DropDownItem
@@ -997,13 +1007,23 @@ export default function ToolbarPlugin({
                 disabled={!isEditable}
                 buttonClassName="toolbar-item code-language"
                 buttonLabel={
-                  (CODE_LANGUAGE_OPTIONS_SHIKI.find(
-                    opt =>
-                      opt[0] ===
-                      normalizeCodeLanguageShiki(toolbarState.codeLanguage),
-                  ) || ['', ''])[1]
+                  toolbarState.codeLanguage
+                    ? (CODE_LANGUAGE_OPTIONS_SHIKI.find(
+                        opt =>
+                          opt[0] ===
+                          normalizeCodeLanguageShiki(toolbarState.codeLanguage),
+                      ) || ['', ''])[1]
+                    : '(No language)'
                 }
                 buttonAriaLabel="Select language">
+                <DropDownItem
+                  className={`item ${dropDownActiveClass(
+                    !toolbarState.codeLanguage,
+                  )}`}
+                  onClick={() => onCodeLanguageSelect(null)}
+                  key="__no_language__">
+                  <span className="text">(No language)</span>
+                </DropDownItem>
                 {CODE_LANGUAGE_OPTIONS_SHIKI.map(([value, name]) => {
                   return (
                     <DropDownItem

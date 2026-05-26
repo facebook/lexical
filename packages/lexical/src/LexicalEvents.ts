@@ -1508,7 +1508,8 @@ function onDocumentSelectionChange(event: Event): void {
   }
 }
 
-function stopLexicalPropagation(event: Event): void {
+/** @internal */
+export function stopLexicalPropagation(event: Event): void {
   // We attach a special property to ensure the same event doesn't re-fire
   // for parent editors.
   // @ts-ignore

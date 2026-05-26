@@ -446,6 +446,14 @@ function $handleMoveTo(
   const direction = $getCodeLineDirection(focusLineNode);
   const moveToStart = direction === 'rtl' ? !isMoveToStart : isMoveToStart;
 
+  // Shift variant: let the non-shift branches resolve the target via
+  // framework helpers (`selectNext` / `selectStart` / `setTextNodeRange` /
+  // `node.select`), then restore the original anchor so we end up with an
+  // extended selection rather than a collapsed caret. This keeps point
+  // shapes (text vs. element) consistent between shift and non-shift.
+  const originalAnchorKey = anchor.key;
+  const originalAnchorOffset = anchor.offset;
+  const originalAnchorType = anchor.type;
   if (moveToStart) {
     const start = $getStartOfCodeInLine(focusLineNode, focus.offset);
     if (start !== null) {
@@ -461,6 +469,13 @@ function $handleMoveTo(
   } else {
     const node = $getEndOfCodeInLine(focusLineNode);
     node.select();
+  }
+  if (event.shiftKey) {
+    selection.anchor.set(
+      originalAnchorKey,
+      originalAnchorOffset,
+      originalAnchorType,
+    );
   }
 
   event.preventDefault();

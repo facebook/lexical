@@ -973,6 +973,19 @@ function $reconcileChildren(
   const sizeDelta = nextChildrenSize - prevChildrenSize;
   if (
     !__benchOnly.skipChildrenFastPath &&
+    // A FULL_RECONCILE (e.g. `setEditorState`, which backs history
+    // undo/redo) swaps the whole node map wholesale without routing
+    // structural changes through `getWritable()`, so `_cloneNotNeeded`
+    // is empty even when prev and next children differ by key. That
+    // breaks the `sizeDelta === 0` walk below, which starts at
+    // `prevElement.__first` but advances via the next map's `__next`
+    // pointers — assuming both lists hold the same keys in the same
+    // order. With a same-size key swap (undo replacing a CodeNode with
+    // the paragraphs it came from) the walk reaches a next-only key and
+    // `$reconcileNode` throws on the missing prev node (#8563). Dirty
+    // tracking is meaningless in this mode anyway, so fall through to the
+    // general key-diffing path.
+    !treatAllNodesAsDirty &&
     Math.abs(sizeDelta) <= 1 &&
     prevChildrenSize >= MIN_FAST_PATH_CHILDREN &&
     prevElement.__first === nextElement.__first &&

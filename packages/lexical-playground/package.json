@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host --port 3000",
-    "build-dev": "vite build",
+    "build-dev": "vite build --mode development",
     "build-prod": "vite build --mode production",
     "build-vercel": "(cd ../../ && node ./scripts/build.mjs) && pnpm run build-dev",
     "preview": "vite preview --port 4000 --host"

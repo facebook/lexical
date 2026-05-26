@@ -17,6 +17,7 @@ import {fileURLToPath} from 'node:url';
 import {themes} from 'prism-react-renderer';
 
 import {packagesManager} from '../../scripts/shared/packagesManager.mjs';
+import copyPageButtonPlugin from './plugins/copy-page-button/index.mjs';
 import packageDocsPlugin from './plugins/package-docs/index.mjs';
 import slugifyPlugin from './src/plugins/lexical-remark-slugify-anchors/index.js';
 
@@ -345,11 +346,27 @@ const config: Config = {
           },
         ],
     './plugins/webpack-buffer',
+    copyPageButtonPlugin,
     async function webpackLexicalModules() {
       return {
         configureWebpack() {
           const alias: Record<string, string | false | string[]> = {
             ...buildLexicalWebpackAliases(),
+            // Dedupe the docs client module so swizzled theme components under
+            // src/theme share the same DocProvider React context as
+            // @docusaurus/theme-classic. pnpm can otherwise resolve a second
+            // copy of @docusaurus/plugin-content-docs, which would make
+            // useDoc() throw a ReactContextError during SSG.
+            '@docusaurus/plugin-content-docs/client$': require.resolve(
+              '@docusaurus/plugin-content-docs/client',
+              {
+                paths: [
+                  path.dirname(
+                    require.resolve('@docusaurus/theme-classic/package.json'),
+                  ),
+                ],
+              },
+            ),
             '@examples/agent-example': path.resolve(
               __dirname,
               '../../examples/agent-example/src',

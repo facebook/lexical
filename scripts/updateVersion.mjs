@@ -79,10 +79,7 @@ async function regenerateInternalVersionModule() {
   }
   const next = fs
     .readFileSync(versionPath, 'utf8')
-    .replace(
-      /(process\.env\.LEXICAL_VERSION \?\? ')[^']*(')/,
-      `$1${version}+source$2`,
-    );
+    .replace(/'[^']*\+source'/, `'${version}+source'`);
   const prettierConfig = (await prettier.resolveConfig(versionPath)) || {};
   fs.writeFileSync(
     versionPath,

@@ -71,7 +71,7 @@ type IntentionallyMarkedAsDirtyElement = boolean;
  * `internalMarkParentElementsAsDirty` but does not `getWritable()` them), so
  * the same — DEV-frozen — instance would need its size rewritten when its
  * text changes, which the skip-if-set guard cannot do. Element sizes come
- * from `dom.__lexicalTextContent` instead (see `$cachedTextSize`).
+ * from `dom.__lexicalTextContent` instead (see `$prevSuffixTextSize`).
  *
  * Leaf writes are skipped when the slot is already not `undefined`. The
  * setter is only re-entered for the same instance via cross-parent moves
@@ -92,67 +92,21 @@ type IntentionallyMarkedAsDirtyElement = boolean;
  */
 export const CACHED_TEXT_SIZE_KEY = Symbol.for('@lexical/CachedTextSize');
 
-// Previous-cycle text size of a suffix child, for the `oldSuffixLength`
-// computation that decides how much of the parent's cached text to splice out.
-//
-// MUST run inside `activePrevEditorState.read(...)` (see `$prevSuffixTextSize`):
-// the moved-element branch and any `isInline()` the caller pairs with this call
-// resolve node methods through `getLatest()`, which is only safe against the
-// PREVIOUS node map. Reading the previous state there avoids both the
-// `getLatest()` -> next-state trap and the throw on a node that no longer
-// exists in the next state.
-function $cachedTextSize(node: LexicalNode): number {
-  if ($isElementNode(node)) {
-    // An element that moved to a different parent this cycle may have already
-    // been reconciled under its new parent, overwriting the shared keyed-DOM
-    // text cache with its NEW size (see
-    // https://github.com/facebook/lexical/pull/8564 for the sibling fast-path
-    // hazard). Recompute its previous size from the previous editor state
-    // instead. (`__parent === null` means detached/removed, not moved — its DOM
-    // cache is still its prev text.)
-    const nextNode = activeNextNodeMap.get(node.__key);
-    if (
-      nextNode !== undefined &&
-      $isElementNode(nextNode) &&
-      nextNode.__parent !== node.__parent
-    ) {
-      return node.getTextContentSize();
-    }
-    const keyedDom = activePrevKeyToDOMMap.get(node.__key);
-    const cached = keyedDom && keyedDom.__lexicalTextContent;
-    invariant(
-      typeof cached === 'string',
-      'cachedTextSize: missing __lexicalTextContent for ElementNode of type %s',
-      node.getType(),
-    );
-    return cached.length;
-  }
-  const cached = node[CACHED_TEXT_SIZE_KEY];
-  // $reconcileNode and $createNode set the size on every leaf they touch, so a
-  // missing entry here means the invariant was broken upstream. Falling back to
-  // getTextContentSize() would resolve via getLatest() against the next state
-  // and silently miscompute prev sizes — fail loudly instead.
-  invariant(
-    cached !== undefined,
-    'cachedTextSize: missing entry for leaf %s key %s',
-    node.getType(),
-    node.__key,
-  );
-  return cached;
-}
-
 // Total previous-render text length of the `count` suffix children starting at
 // `startKey` (in next-map order, which equals prev order across the size-0 and
 // size-±1 fast paths). This is the slice length removed from the parent's
 // cached text before the freshly reconciled suffix is appended.
 //
 // The whole walk runs inside `activePrevEditorState.read(...)` so that every
-// node method resolves against the PREVIOUS node map: `isInline()` returns the
-// node's previous-render value (a moved or re-typed node could answer
-// differently in the next state, and a node removed this cycle would throw),
-// and the moved-element branch of `$cachedTextSize` can recompute via
-// `getTextContentSize()`. Non-moved elements and leaves still read their O(1)
-// caches, so a large untouched suffix child is not re-walked.
+// node method resolves against the PREVIOUS node map: a moved element recomputes
+// its size via `getTextContentSize()` (its shared keyed-DOM cache may already
+// hold the NEW size, cf. https://github.com/facebook/lexical/pull/8564), and the
+// inter-sibling `isInline()` returns the node's previous-render value (a moved
+// or re-typed node could answer differently in the next state, and a node
+// removed this cycle would throw). The per-child size logic is inlined here
+// rather than shared so it cannot be called outside this read. Non-moved
+// elements and leaves still read their O(1) caches, so a large untouched suffix
+// child is not re-walked.
 function $prevSuffixTextSize(startKey: NodeKey, count: number): number {
   return activePrevEditorState.read(
     () => {
@@ -160,12 +114,50 @@ function $prevSuffixTextSize(startKey: NodeKey, count: number): number {
       let cur: NodeKey | null = startKey;
       for (let i = 0; i < count && cur !== null; i++) {
         const prevNode = activePrevNodeMap.get(cur);
-        if (prevNode === undefined) {
-          break;
-        }
-        size += $cachedTextSize(prevNode);
-        if (i < count - 1 && $isElementNode(prevNode) && !prevNode.isInline()) {
-          size += DOUBLE_LINE_BREAK.length;
+        // Callers validate every suffix key is present in the prev map, so a
+        // miss means a broken upstream invariant. Fail loudly (the reconciler
+        // catch recovers via a full reconcile) rather than slice a partial sum.
+        invariant(
+          prevNode !== undefined,
+          'prevSuffixTextSize: missing prev node for key %s',
+          cur,
+        );
+        if ($isElementNode(prevNode)) {
+          const nextNode = activeNextNodeMap.get(cur);
+          if (
+            nextNode !== undefined &&
+            $isElementNode(nextNode) &&
+            nextNode.__parent !== prevNode.__parent
+          ) {
+            // Moved to a different parent this cycle: the shared keyed-DOM text
+            // cache may already hold its NEW size, so recompute from the prev
+            // tree. (`__parent === null` means detached/removed, not moved — its
+            // DOM cache is still its prev text.)
+            size += prevNode.getTextContentSize();
+          } else {
+            const keyedDom = activePrevKeyToDOMMap.get(cur);
+            const cached = keyedDom && keyedDom.__lexicalTextContent;
+            invariant(
+              typeof cached === 'string',
+              'prevSuffixTextSize: missing __lexicalTextContent for ElementNode of type %s',
+              prevNode.getType(),
+            );
+            size += cached.length;
+          }
+          if (i < count - 1 && !prevNode.isInline()) {
+            size += DOUBLE_LINE_BREAK.length;
+          }
+        } else {
+          // $reconcileNode / $createNode set the size on every leaf they touch,
+          // so a missing entry means the invariant was broken upstream.
+          const cached = prevNode[CACHED_TEXT_SIZE_KEY];
+          invariant(
+            cached !== undefined,
+            'prevSuffixTextSize: missing cached size for leaf %s key %s',
+            prevNode.getType(),
+            cur,
+          );
+          size += cached;
         }
         cur = prevNode.__next;
       }

@@ -92,29 +92,31 @@ type IntentionallyMarkedAsDirtyElement = boolean;
  */
 export const CACHED_TEXT_SIZE_KEY = Symbol.for('@lexical/CachedTextSize');
 
+// Previous-cycle text size of a suffix child, for the `oldSuffixLength`
+// computation that decides how much of the parent's cached text to splice out.
+//
+// MUST run inside `activePrevEditorState.read(...)` (see `$prevSuffixTextSize`):
+// the moved-element branch and any `isInline()` the caller pairs with this call
+// resolve node methods through `getLatest()`, which is only safe against the
+// PREVIOUS node map. Reading the previous state there avoids both the
+// `getLatest()` -> next-state trap and the throw on a node that no longer
+// exists in the next state.
 function $cachedTextSize(node: LexicalNode): number {
   if ($isElementNode(node)) {
     // An element that moved to a different parent this cycle may have already
     // been reconciled under its new parent, overwriting the shared keyed-DOM
-    // text cache (`dom.__lexicalTextContent`) with its NEW size before this
-    // (old) parent's suffix walk reads it — the sibling fast-path hazard from
-    // https://github.com/facebook/lexical/pull/8564. Recover the previous size
-    // by reading it from the previous editor state, where `getChildren()` /
-    // `isInline()` resolve against the prev tree (so we neither read the
-    // forward-mutated DOM cache nor hit the `getLatest()` -> next-state trap
-    // that an `isInline()` call on a detached prev node would, cf. #8548).
-    // `ElementNode.getTextContentSize()` applies the same double-line-break
-    // rule as the reconciler's cache, so the value matches. (`__parent ===
-    // null` means detached/removed, not moved — its DOM cache is still valid.)
+    // text cache with its NEW size (see
+    // https://github.com/facebook/lexical/pull/8564 for the sibling fast-path
+    // hazard). Recompute its previous size from the previous editor state
+    // instead. (`__parent === null` means detached/removed, not moved — its DOM
+    // cache is still its prev text.)
     const nextNode = activeNextNodeMap.get(node.__key);
     if (
       nextNode !== undefined &&
       $isElementNode(nextNode) &&
       nextNode.__parent !== node.__parent
     ) {
-      return activePrevEditorState.read(() => node.getTextContentSize(), {
-        editor: activeEditor,
-      });
+      return node.getTextContentSize();
     }
     const keyedDom = activePrevKeyToDOMMap.get(node.__key);
     const cached = keyedDom && keyedDom.__lexicalTextContent;
@@ -137,6 +139,40 @@ function $cachedTextSize(node: LexicalNode): number {
     node.__key,
   );
   return cached;
+}
+
+// Total previous-render text length of the `count` suffix children starting at
+// `startKey` (in next-map order, which equals prev order across the size-0 and
+// size-±1 fast paths). This is the slice length removed from the parent's
+// cached text before the freshly reconciled suffix is appended.
+//
+// The whole walk runs inside `activePrevEditorState.read(...)` so that every
+// node method resolves against the PREVIOUS node map: `isInline()` returns the
+// node's previous-render value (a moved or re-typed node could answer
+// differently in the next state, and a node removed this cycle would throw),
+// and the moved-element branch of `$cachedTextSize` can recompute via
+// `getTextContentSize()`. Non-moved elements and leaves still read their O(1)
+// caches, so a large untouched suffix child is not re-walked.
+function $prevSuffixTextSize(startKey: NodeKey, count: number): number {
+  return activePrevEditorState.read(
+    () => {
+      let size = 0;
+      let cur: NodeKey | null = startKey;
+      for (let i = 0; i < count && cur !== null; i++) {
+        const prevNode = activePrevNodeMap.get(cur);
+        if (prevNode === undefined) {
+          break;
+        }
+        size += $cachedTextSize(prevNode);
+        if (i < count - 1 && $isElementNode(prevNode) && !prevNode.isInline()) {
+          size += DOUBLE_LINE_BREAK.length;
+        }
+        cur = prevNode.__next;
+      }
+      return size;
+    },
+    {editor: activeEditor},
+  );
 }
 
 function $setCachedTextSize(node: LexicalNode): void {
@@ -836,17 +872,10 @@ function $tryReconcileSuffixWithSizeDelta(
     ops.push({key: nextSuffixKeys[ni], kind: 'create', nextIndex: ni});
     ni++;
   }
-  let oldSuffixLength = 0;
-  for (let i = 0; i < kPrime; i++) {
-    const prevNode = activePrevNodeMap.get(prevSuffixKeys[i]);
-    if (prevNode === undefined) {
-      return false;
-    }
-    oldSuffixLength += $cachedTextSize(prevNode);
-    if (i < kPrime - 1 && $isElementNode(prevNode) && !prevNode.isInline()) {
-      oldSuffixLength += DOUBLE_LINE_BREAK.length;
-    }
-  }
+  // `prevSuffixKeys` was built above by walking the prev map from
+  // `prevSuffixStartKey`, so every key is present there and the helper
+  // reproduces the same `kPrime`-length traversal.
+  const oldSuffixLength = $prevSuffixTextSize(prevSuffixStartKey, kPrime);
   for (const op of ops) {
     const saved = $beginCaptureGuard();
     if (op.kind === 'reconcile') {
@@ -1043,25 +1072,12 @@ function $reconcileChildren(
       if (suffixStartKey !== null) {
         const k = dirtyChildren.size;
         if (sizeDelta === 0) {
-          let oldSuffixLength = 0;
+          // Same keys in the same order across prev and next (gated by
+          // `prevElement.__first === nextElement.__first`, no clone), so the
+          // prev-map walk visits exactly this suffix.
+          const oldSuffixLength = $prevSuffixTextSize(suffixStartKey, k);
           let cur: NodeKey | null = suffixStartKey;
           let i = 0;
-          while (cur !== null && i < k) {
-            const prevNode = activePrevNodeMap.get(cur);
-            if (prevNode === undefined) {
-              break;
-            }
-            oldSuffixLength += $cachedTextSize(prevNode);
-            if (i < k - 1 && $isElementNode(prevNode) && !prevNode.isInline()) {
-              oldSuffixLength += DOUBLE_LINE_BREAK.length;
-            }
-            const nextNodeForLink = activeNextNodeMap.get(cur);
-            cur = nextNodeForLink ? nextNodeForLink.__next : null;
-            i++;
-          }
-
-          cur = suffixStartKey;
-          i = 0;
           while (cur !== null && i < k) {
             const node = activeNextNodeMap.get(cur);
             if (node === undefined) {

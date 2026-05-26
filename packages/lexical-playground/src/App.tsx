@@ -6,9 +6,12 @@
  *
  */
 
+import {$isCodeNode} from '@lexical/code';
 import {
+  $defaultShouldInsertAfter,
   AutoFocusExtension,
   ClearEditorExtension,
+  ClickAfterLastBlockExtension,
   DecoratorTextExtension,
   HorizontalRuleExtension,
   SelectionAlwaysOnDisplayExtension,
@@ -205,6 +208,10 @@ const AppExtension = defineExtension({
     ClickableLinkExtension,
     SelectionAlwaysOnDisplayExtension,
     TerseExportExtension,
+    configExtension(ClickAfterLastBlockExtension, {
+      $shouldInsertAfter: node =>
+        $defaultShouldInsertAfter(node) || $isCodeNode(node),
+    }),
   ],
   html: buildHTMLConfig(),
   name: '@lexical/playground',

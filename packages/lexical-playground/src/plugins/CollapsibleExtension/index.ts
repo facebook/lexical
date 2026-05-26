@@ -16,10 +16,14 @@ import {
 import {
   $createParagraphNode,
   $getSelection,
+  $isInlineElementOrDecoratorNode,
+  $isLineBreakNode,
   $isRangeSelection,
+  $isTextNode,
   COMMAND_PRIORITY_LOW,
   createCommand,
   defineExtension,
+  ElementNode,
   INSERT_PARAGRAPH_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
@@ -106,6 +110,33 @@ const $onEscapeDown = () => {
   return false;
 };
 
+const $wrapInlineContentChildren = (node: CollapsibleContentNode) => {
+  if (node.isEmpty()) {
+    node.append($createParagraphNode());
+    return;
+  }
+
+  let paragraph: ElementNode | null = null;
+
+  for (const child of node.getChildren()) {
+    if (
+      !$isInlineElementOrDecoratorNode(child) &&
+      !$isLineBreakNode(child) &&
+      !$isTextNode(child) &&
+      !child.isParentRequired()
+    ) {
+      paragraph = null;
+      continue;
+    }
+
+    if (paragraph === null) {
+      paragraph = child.createParentElementNode();
+      child.insertBefore(paragraph);
+    }
+    paragraph.append(child);
+  }
+};
+
 export const CollapsibleExtension = defineExtension({
   name: '@lexical/playground/Collapsible',
   nodes: [
@@ -126,7 +157,9 @@ export const CollapsibleExtension = defineExtension({
             node.insertBefore(child);
           }
           node.remove();
+          return;
         }
+        $wrapInlineContentChildren(node);
       }),
 
       editor.registerNodeTransform(CollapsibleTitleNode, node => {

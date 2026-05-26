@@ -419,6 +419,7 @@ const config: Config = {
         ],
       },
     ],
+    'docusaurus-plugin-copy-page-button',
   ].filter(plugin => plugin != null),
   presets: [
     [

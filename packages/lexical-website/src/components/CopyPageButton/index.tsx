@@ -10,7 +10,13 @@ import {useDoc} from '@docusaurus/plugin-content-docs/client';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import clsx from 'clsx';
-import React, {useCallback, useEffect, useRef, useState} from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 
 import styles from './styles.module.css';
 
@@ -20,6 +26,25 @@ import styles from './styles.module.css';
  * `OUTPUT_NAMESPACE`.
  */
 const MARKDOWN_NAMESPACE = 'llms';
+
+// location.origin can't change without a full navigation (which remounts), so
+// there is nothing to subscribe to.
+const subscribeToOrigin = () => () => {};
+const getClientOrigin = () => window.location.origin;
+
+/**
+ * The origin to build absolute Markdown URLs from. Renders with the configured
+ * Docusaurus site URL on the server (stable for hydration) and reconciles to
+ * the real browser origin on the client, so links are correct on production,
+ * preview, and local deployments alike.
+ */
+function useOrigin(serverOrigin: string): string {
+  return useSyncExternalStore(
+    subscribeToOrigin,
+    getClientOrigin,
+    () => serverOrigin,
+  );
+}
 
 function CopyIcon() {
   return (
@@ -210,22 +235,15 @@ export default function CopyPageButton(): React.ReactNode {
     }
   }, [markdownPath]);
 
-  const openInAI = useCallback(
-    (base: string, extraParams: Record<string, string> = {}) => {
-      // Resolve the Markdown URL against the live origin so it points at the
-      // current deployment (production, preview, or local) rather than a
-      // hard-coded host.
-      const absoluteMarkdownUrl = new URL(
-        markdownPath,
-        window.location.origin,
-      ).toString();
-      const prompt = `Please read and explain this documentation page: ${absoluteMarkdownUrl}\n\nPlease provide a clear summary and help me understand the key concepts covered in this documentation.`;
-      const params = new URLSearchParams({q: prompt, ...extraParams});
-      window.open(`${base}?${params.toString()}`, '_blank', 'noopener');
-    },
-    [markdownPath],
-  );
+  // Absolute URL of the Markdown file for AI tools to fetch.
+  const origin = useOrigin(new URL(siteConfig.url).origin);
+  const aiPrompt = `Please read and explain this documentation page: ${origin}${markdownPath}\n\nPlease provide a clear summary and help me understand the key concepts covered in this documentation.`;
+  const aiHref = (base: string, extraParams: Record<string, string> = {}) =>
+    `${base}?${new URLSearchParams({q: aiPrompt, ...extraParams}).toString()}`;
 
+  // "Open in <tool>" links are plain anchors (target=_blank) rather than
+  // window.open() calls: anchors are treated as user-initiated navigations and
+  // aren't silently swallowed by popup blockers.
   const items: MenuItem[] = [
     {
       description: copied
@@ -245,30 +263,30 @@ export default function CopyPageButton(): React.ReactNode {
     },
     {
       description: 'Ask ChatGPT about this page',
+      href: aiHref('https://chatgpt.com/'),
       icon: <ChatGPTIcon />,
       id: 'chatgpt',
-      onSelect: () => openInAI('https://chatgpt.com/'),
       title: 'Open in ChatGPT',
     },
     {
       description: 'Ask Claude about this page',
+      href: aiHref('https://claude.ai/new'),
       icon: <ClaudeIcon />,
       id: 'claude',
-      onSelect: () => openInAI('https://claude.ai/new'),
       title: 'Open in Claude',
     },
     {
       description: 'Ask Perplexity about this page',
+      href: aiHref('https://www.perplexity.ai/search'),
       icon: <PerplexityIcon />,
       id: 'perplexity',
-      onSelect: () => openInAI('https://www.perplexity.ai/search'),
       title: 'Open in Perplexity',
     },
     {
       description: 'Ask Gemini about this page',
+      href: aiHref('https://www.google.com/search', {udm: '50'}),
       icon: <GeminiIcon />,
       id: 'gemini',
-      onSelect: () => openInAI('https://www.google.com/search', {udm: '50'}),
       title: 'Open in Gemini',
     },
   ];

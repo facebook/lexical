@@ -8,7 +8,7 @@
 .copyPage {
   position: relative;
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
 }
 
 .trigger {
@@ -49,7 +49,7 @@
 .menu {
   position: absolute;
   top: calc(100% + 0.4rem);
-  right: 0;
+  left: 0;
   z-index: var(--ifm-z-index-dropdown, 200);
   min-width: 280px;
   padding: 0.3rem;

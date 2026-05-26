@@ -579,6 +579,52 @@ describe('LexicalCodeNode tests', () => {
             );
           });
         });
+
+        test('Shift+MOVE_TO_END preserves anchor and extends focus', async () => {
+          const {editor} = testEnv;
+          await setupRTLCode(editor);
+          const event = new KeyboardEventMock('keydown');
+          event.shiftKey = true;
+
+          const before = editor.read(() => {
+            const s = $getSelection();
+            invariant($isRangeSelection(s));
+            return {key: s.anchor.key, offset: s.anchor.offset};
+          });
+
+          editor.dispatchCommand(MOVE_TO_END, event);
+
+          editor.read(() => {
+            const selection = $getSelection();
+            invariant($isRangeSelection(selection));
+            expect(selection.isCollapsed()).toBe(false);
+            expect(selection.anchor.key).toBe(before.key);
+            expect(selection.anchor.offset).toBe(before.offset);
+          });
+        });
+
+        test('Shift+MOVE_TO_START preserves anchor and extends focus', async () => {
+          const {editor} = testEnv;
+          await setupRTLCode(editor);
+          const event = new KeyboardEventMock('keydown');
+          event.shiftKey = true;
+
+          const before = editor.read(() => {
+            const s = $getSelection();
+            invariant($isRangeSelection(s));
+            return {key: s.anchor.key, offset: s.anchor.offset};
+          });
+
+          editor.dispatchCommand(MOVE_TO_START, event);
+
+          editor.read(() => {
+            const selection = $getSelection();
+            invariant($isRangeSelection(selection));
+            expect(selection.isCollapsed()).toBe(false);
+            expect(selection.anchor.key).toBe(before.key);
+            expect(selection.anchor.offset).toBe(before.offset);
+          });
+        });
       });
 
       for (const moveTo of ['start', 'end']) {

@@ -44,8 +44,10 @@ export interface VisibleLineBreakConfig {
 }
 
 function $isDisabled(editor: LexicalEditor): boolean {
-  return getExtensionDependencyFromEditor(editor, VisibleLineBreakExtension)
-    .output.disabled.value;
+  return getExtensionDependencyFromEditor(
+    editor,
+    VisibleLineBreakExtension,
+  ).output.disabled.peek();
 }
 
 function $skipForCodeChild(node: LineBreakNode): boolean {

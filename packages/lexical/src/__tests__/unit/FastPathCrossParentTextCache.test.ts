@@ -16,6 +16,7 @@ import {
   $getRoot,
   $isElementNode,
 } from 'lexical';
+import invariant from 'shared/invariant';
 import {describe, expect, test} from 'vitest';
 
 // Regression test for the $reconcileChildren suffix fast path computing a
@@ -82,10 +83,10 @@ describe('children fast path: cross-parent move and sibling text cache', () => {
         const root = $getRoot();
         const p0 = root.getFirstChildOrThrow();
         const p1 = root.getLastChildOrThrow();
-        if ($isElementNode(p0) && $isElementNode(p1)) {
-          const trailingLink = p1.getLastChildOrThrow();
-          p0.getFirstChildOrThrow().insertBefore(trailingLink);
-        }
+        invariant($isElementNode(p0), 'p0 must be an ElementNode');
+        invariant($isElementNode(p1), 'p1 must be an ElementNode');
+        const trailingLink = p1.getLastChildOrThrow();
+        p0.getFirstChildOrThrow().insertBefore(trailingLink);
       },
       {discrete: true},
     );

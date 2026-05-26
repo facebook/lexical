@@ -27,6 +27,14 @@ import styles from './styles.module.css';
  */
 const MARKDOWN_NAMESPACE = 'llms';
 
+/**
+ * Whether to show the "Open in <AI tool>" menu items. Disabled because the
+ * assistants tend to hallucinate having read the linked Markdown rather than
+ * actually fetching it. The handlers are kept (see `aiToolItems`) so they can
+ * be restored by flipping this flag.
+ */
+const ENABLE_AI_TOOL_LINKS: boolean = false;
+
 // location.origin can't change without a full navigation (which remounts), so
 // there is nothing to subscribe to.
 const subscribeToOrigin = () => () => {};
@@ -243,24 +251,9 @@ export default function CopyPageButton(): React.ReactNode {
 
   // "Open in <tool>" links are plain anchors (target=_blank) rather than
   // window.open() calls: anchors are treated as user-initiated navigations and
-  // aren't silently swallowed by popup blockers.
-  const items: MenuItem[] = [
-    {
-      description: copied
-        ? 'Copied to clipboard'
-        : 'Copy this page as Markdown for LLMs',
-      icon: copied ? <CheckIcon /> : <CopyIcon />,
-      id: 'copy',
-      onSelect: copyMarkdown,
-      title: copied ? 'Copied!' : 'Copy as Markdown',
-    },
-    {
-      description: 'View this page as plain Markdown',
-      href: markdownPath,
-      icon: <ViewIcon />,
-      id: 'view',
-      title: 'View as Markdown',
-    },
+  // aren't silently swallowed by popup blockers. Currently gated off by
+  // ENABLE_AI_TOOL_LINKS.
+  const aiToolItems: MenuItem[] = [
     {
       description: 'Ask ChatGPT about this page',
       href: aiHref('https://chatgpt.com/'),
@@ -289,6 +282,26 @@ export default function CopyPageButton(): React.ReactNode {
       id: 'gemini',
       title: 'Open in Gemini',
     },
+  ];
+
+  const items: MenuItem[] = [
+    {
+      description: copied
+        ? 'Copied to clipboard'
+        : 'Copy this page as Markdown for LLMs',
+      icon: copied ? <CheckIcon /> : <CopyIcon />,
+      id: 'copy',
+      onSelect: copyMarkdown,
+      title: copied ? 'Copied!' : 'Copy as Markdown',
+    },
+    {
+      description: 'View this page as plain Markdown',
+      href: markdownPath,
+      icon: <ViewIcon />,
+      id: 'view',
+      title: 'View as Markdown',
+    },
+    ...(ENABLE_AI_TOOL_LINKS ? aiToolItems : []),
   ];
 
   return (

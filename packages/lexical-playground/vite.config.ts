@@ -26,15 +26,17 @@ export default defineConfig(({mode}) => ({
       },
     },
     target: 'es2022',
-    ...(mode === 'production' && {
-      minify: 'terser',
-      terserOptions: {
-        compress: {
-          toplevel: true,
-        },
-        keep_classnames: true,
-      },
-    }),
+    ...(mode === 'production'
+      ? {
+          minify: 'terser',
+          terserOptions: {
+            compress: {
+              toplevel: true,
+            },
+            keep_classnames: true,
+          },
+        }
+      : {minify: false}),
   },
   plugins: [
     viteMonorepoResolutionPlugin(),

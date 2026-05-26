@@ -245,6 +245,7 @@ const PUBLIC_FILES_FIELD = [
   'src',
   '!src/__tests__',
   '!src/__bench__',
+  '!src/__mocks__',
   '!src/**/*.test.ts',
   '!src/**/*.test.tsx',
   '!src/**/*.bench.ts',

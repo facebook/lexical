@@ -10,6 +10,7 @@
     "./libdefs/*.js",
     "**/__tests__/**",
     "**/__bench__/**",
+    "**/__mocks__/**",
     "**/dist/**",
     "**/npm/**",
     "**/node_modules/**",

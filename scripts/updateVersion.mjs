@@ -9,6 +9,7 @@
 import fs from 'fs-extra';
 import {glob} from 'glob';
 import path from 'node:path';
+import prettier from 'prettier';
 
 import {PackageMetadata} from './shared/PackageMetadata.mjs';
 import {packagesManager} from './shared/packagesManager.mjs';
@@ -50,8 +51,8 @@ function updatePackage(pkg) {
  * - Update the exports map and set other required default fields
  *
  */
-function updateVersion() {
-  regenerateInternalVersionModule();
+async function updateVersion() {
+  await regenerateInternalVersionModule();
   packagesManager.getPackages().forEach(updatePackage);
   glob
     .sync([
@@ -71,7 +72,7 @@ const INTERNAL_PACKAGE_NAME = '@lexical/internal';
  * is statically replaced with a build-specific string; this literal is the
  * fallback used when the source is consumed without that build step.
  */
-function regenerateInternalVersionModule() {
+async function regenerateInternalVersionModule() {
   const versionPath = path.resolve('packages/lexical-internal/src/version.ts');
   if (!fs.existsSync(versionPath)) {
     return;
@@ -82,7 +83,11 @@ function regenerateInternalVersionModule() {
       /(process\.env\.LEXICAL_VERSION \?\? ')[^']*(')/,
       `$1${version}+source$2`,
     );
-  fs.writeFileSync(versionPath, next);
+  const prettierConfig = (await prettier.resolveConfig(versionPath)) || {};
+  fs.writeFileSync(
+    versionPath,
+    await prettier.format(next, {...prettierConfig, filepath: versionPath}),
+  );
 }
 
 /**

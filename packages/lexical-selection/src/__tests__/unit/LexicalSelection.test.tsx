@@ -3181,8 +3181,8 @@ describe('LexicalSelection tests', () => {
       });
       testEditor.read(() => {
         const rootChildren = $getRoot().getChildren();
-        invariant($isHeadingNode(rootChildren[0]), 'expected HeadingNode');
-        invariant($isParagraphNode(rootChildren[1]), 'expected ParagraphNode');
+        expect($isHeadingNode(rootChildren[0])).toBe(true);
+        expect($isParagraphNode(rootChildren[1])).toBe(true);
         expect(rootChildren.length).toBe(2);
       });
     });
@@ -3207,8 +3207,8 @@ describe('LexicalSelection tests', () => {
       });
       testEditor.read(() => {
         const rootChildren = $getRoot().getChildren();
-        invariant($isHeadingNode(rootChildren[0]), 'expected HeadingNode');
-        invariant($isHeadingNode(rootChildren[1]), 'expected HeadingNode');
+        expect($isHeadingNode(rootChildren[0])).toBe(true);
+        expect($isHeadingNode(rootChildren[1])).toBe(true);
         expect(rootChildren.length).toBe(2);
       });
     });
@@ -3235,8 +3235,8 @@ describe('LexicalSelection tests', () => {
       });
       testEditor.read(() => {
         const rootChildren = $getRoot().getChildren();
-        invariant($isHeadingNode(rootChildren[0]), 'expected HeadingNode');
-        invariant($isParagraphNode(rootChildren[1]), 'expected ParagraphNode');
+        expect($isHeadingNode(rootChildren[0])).toBe(true);
+        expect($isParagraphNode(rootChildren[1])).toBe(true);
         expect(rootChildren.length).toBe(2);
       });
     });
@@ -3265,8 +3265,8 @@ describe('LexicalSelection tests', () => {
       });
       testEditor.read(() => {
         const rootChildren = $getRoot().getChildren();
-        invariant($isHeadingNode(rootChildren[0]), 'expected HeadingNode');
-        invariant($isParagraphNode(rootChildren[1]), 'expected ParagraphNode');
+        expect($isHeadingNode(rootChildren[0])).toBe(true);
+        expect($isParagraphNode(rootChildren[1])).toBe(true);
         expect(rootChildren.length).toBe(2);
       });
     });
@@ -3290,8 +3290,8 @@ describe('LexicalSelection tests', () => {
       });
       testEditor.read(() => {
         const rootChildren = $getRoot().getChildren();
-        invariant($isHeadingNode(rootChildren[0]), 'expected HeadingNode');
-        invariant($isHeadingNode(rootChildren[1]), 'expected HeadingNode');
+        expect($isHeadingNode(rootChildren[0])).toBe(true);
+        expect($isHeadingNode(rootChildren[1])).toBe(true);
         expect(rootChildren.length).toBe(2);
       });
     });
@@ -3317,9 +3317,9 @@ describe('LexicalSelection tests', () => {
       });
       testEditor.read(() => {
         const rootChildren = $getRoot().getChildren();
-        invariant($isHeadingNode(rootChildren[0]), 'expected HeadingNode');
-        invariant($isHeadingNode(rootChildren[1]), 'expected HeadingNode');
-        invariant($isParagraphNode(rootChildren[2]), 'expected ParagraphNode');
+        expect($isHeadingNode(rootChildren[0])).toBe(true);
+        expect($isHeadingNode(rootChildren[1])).toBe(true);
+        expect($isParagraphNode(rootChildren[2])).toBe(true);
         expect(rootChildren.length).toBe(3);
       });
     });
@@ -3348,8 +3348,8 @@ describe('LexicalSelection tests', () => {
       });
       testEditor.read(() => {
         const rootChildren = $getRoot().getChildren();
-        invariant($isHeadingNode(rootChildren[0]), 'expected HeadingNode');
-        invariant($isHeadingNode(rootChildren[1]), 'expected HeadingNode');
+        expect($isHeadingNode(rootChildren[0])).toBe(true);
+        expect($isHeadingNode(rootChildren[1])).toBe(true);
         expect(rootChildren.length).toBe(2);
       });
     });

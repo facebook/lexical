@@ -18,14 +18,11 @@ import React, {
   useSyncExternalStore,
 } from 'react';
 
+import {
+  MARKDOWN_NAMESPACE,
+  relativeMarkdownPath,
+} from '../../../plugins/copy-page-button/markdownPath.mjs';
 import styles from './styles.module.css';
-
-/**
- * The path namespace under which the build-time `copy-page-button` plugin emits
- * a Markdown copy of every doc page. Must stay in sync with the plugin's
- * `OUTPUT_NAMESPACE`.
- */
-const MARKDOWN_NAMESPACE = 'llms';
 
 /**
  * Whether to show the "Open in <AI tool>" menu items. Disabled because the
@@ -192,14 +189,11 @@ export default function CopyPageButton(): React.ReactNode {
   const {metadata} = useDoc();
   const {siteConfig} = useDocusaurusContext();
 
-  // `permalink` already includes the site baseUrl. Strip it so useBaseUrl can
-  // re-add it, keeping the namespace path correct under any baseUrl.
-  const baseUrl = siteConfig.baseUrl;
-  const relativePermalink = metadata.permalink.startsWith(baseUrl)
-    ? metadata.permalink.slice(baseUrl.length)
-    : metadata.permalink.replace(/^\/+/, '');
+  // useBaseUrl re-adds the baseUrl that relativeMarkdownPath stripped, keeping
+  // the path correct under any baseUrl. The shared helper is also what the
+  // build-time plugin uses to name the file, so the two always agree.
   const markdownPath = useBaseUrl(
-    `${MARKDOWN_NAMESPACE}/${relativePermalink.replace(/^\/+/, '')}.md`,
+    `${MARKDOWN_NAMESPACE}/${relativeMarkdownPath(metadata.permalink, siteConfig.baseUrl)}.md`,
   );
 
   const [open, setOpen] = useState(false);

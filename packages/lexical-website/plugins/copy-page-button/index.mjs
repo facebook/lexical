@@ -9,15 +9,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const SITE_ALIAS = '@site';
+import {MARKDOWN_NAMESPACE, relativeMarkdownPath} from './markdownPath.mjs';
 
-/**
- * Path namespace (under `static/`) where a Markdown copy of every doc page is
- * emitted, e.g. the page `/docs/intro` is written to `static/llms/docs/intro.md`
- * and served at `/llms/docs/intro.md`. Must stay in sync with the
- * `MARKDOWN_NAMESPACE` constant in `src/theme/CopyPageButton/index.tsx`.
- */
-const OUTPUT_NAMESPACE = 'llms';
+const SITE_ALIAS = '@site';
 
 function stripFrontMatter(raw) {
   return raw.replace(/^\uFEFF?---\r?\n[\s\S]*?\r?\n---\r?\n?/, '');
@@ -41,15 +35,6 @@ function stripLeadingMdxStatements(body) {
   return lines.slice(index).join('\n');
 }
 
-function relativePermalink(permalink, baseUrl) {
-  let rel = permalink;
-  if (baseUrl && rel.startsWith(baseUrl)) {
-    rel = rel.slice(baseUrl.length);
-  }
-  rel = rel.replace(/^\/+/, '').replace(/\/+$/, '');
-  return rel || 'index';
-}
-
 /**
  * Emit a clean Markdown copy of every doc page at build time so the
  * server-rendered CopyPageButton can link to / copy / hand off real Markdown
@@ -60,7 +45,7 @@ function relativePermalink(permalink, baseUrl) {
 const copyPageButtonPlugin = async function (context) {
   const {siteDir, siteConfig} = context;
   const {baseUrl, url: siteUrl} = siteConfig;
-  const outputRoot = path.join(siteDir, 'static', OUTPUT_NAMESPACE);
+  const outputRoot = path.join(siteDir, 'static', MARKDOWN_NAMESPACE);
 
   const resolveSource = source => {
     if (source.startsWith(SITE_ALIAS)) {
@@ -109,7 +94,7 @@ const copyPageButtonPlugin = async function (context) {
 
             const outputPath = path.join(
               outputRoot,
-              `${relativePermalink(doc.permalink, baseUrl)}.md`,
+              `${relativeMarkdownPath(doc.permalink, baseUrl)}.md`,
             );
             fs.mkdirSync(path.dirname(outputPath), {recursive: true});
             fs.writeFileSync(outputPath, `${header}${body}\n`);

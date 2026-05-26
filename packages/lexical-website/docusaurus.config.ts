@@ -352,21 +352,6 @@ const config: Config = {
         configureWebpack() {
           const alias: Record<string, string | false | string[]> = {
             ...buildLexicalWebpackAliases(),
-            // Dedupe the docs client module so swizzled theme components under
-            // src/theme share the same DocProvider React context as
-            // @docusaurus/theme-classic. pnpm can otherwise resolve a second
-            // copy of @docusaurus/plugin-content-docs, which would make
-            // useDoc() throw a ReactContextError during SSG.
-            '@docusaurus/plugin-content-docs/client$': require.resolve(
-              '@docusaurus/plugin-content-docs/client',
-              {
-                paths: [
-                  path.dirname(
-                    require.resolve('@docusaurus/theme-classic/package.json'),
-                  ),
-                ],
-              },
-            ),
             '@examples/agent-example': path.resolve(
               __dirname,
               '../../examples/agent-example/src',

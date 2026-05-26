@@ -6,13 +6,11 @@
  *
  */
 
-// Ambient stubs for third-party modules used only by build/release scripts
-// that don't ship (or don't have installed) type declarations. The scripts
-// type-check (tsconfig.scripts.json) verifies our own logic, not these APIs,
-// so treating them as untyped is acceptable here.
-declare module 'minimist';
-declare module 'semver';
-declare module '@babel/core';
+// Ambient stubs for the Hermes Flow-tooling modules used by the flow scripts.
+// They ship no TypeScript declarations and have no @types package, so they
+// resolve as untyped here (the scripts type-check verifies our own logic, not
+// these APIs). Other third-party modules (minimist, semver, @babel/core) have
+// real @types packages installed instead.
 declare module 'hermes-estree';
 declare module 'hermes-parser';
 declare module 'hermes-transform';

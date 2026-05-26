@@ -66,7 +66,7 @@ const invariantExpressions = [
 /**
  * @param {import('@babel/core')} babel
  * @param {Partial<TransformErrorMessagesOptions>} opts
- * @returns {Promise<import('@babel/core').PluginObj>}
+ * @returns {{visitor: {CallExpression: (path: any, file: any) => void}}} a Babel plugin (path/file are untyped Babel AST nodes)
  */
 export default function transformErrorMessages(babel, opts) {
   const t = babel.types;
@@ -123,7 +123,7 @@ export default function transformErrorMessages(babel, opts) {
             // so we can extractCodes in a non-production build.
             let prodErrorId = errorMap.getOrAddToErrorMap(
               errorMsgLiteral,
-              extractCodes,
+              extractCodes ?? false,
             );
 
             /** @type {babel.types.CallExpression} */

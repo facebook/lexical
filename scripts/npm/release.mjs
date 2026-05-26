@@ -68,6 +68,9 @@ async function publish() {
   }
 }
 
+/**
+ * @returns {Promise<void>}
+ */
 async function waitForInput() {
   return new Promise(resolve => {
     const rl = readline.createInterface({

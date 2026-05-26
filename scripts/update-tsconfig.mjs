@@ -22,7 +22,7 @@ import {packagesManager} from './shared/packagesManager.mjs';
  */
 
 /**
- * @param {opts} UpdateTsconfigOptions
+ * @param {UpdateTsconfigOptions} options
  * @returns {Promise<void>}
  */
 async function updateTsconfig({
@@ -37,7 +37,7 @@ async function updateTsconfig({
   const testPaths = [];
   const configDir = path.resolve(path.dirname(jsonFileName));
   for (const pkg of packagesManager.getPackages()) {
-    const resolveRelative = (...subPaths) =>
+    const resolveRelative = (/** @type {string[]} */ ...subPaths) =>
       path
         .relative(configDir, pkg.resolve(...subPaths))
         .replace(/^(?!\.)/, './');

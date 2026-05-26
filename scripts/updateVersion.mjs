@@ -25,7 +25,7 @@ const publicNpmNames = new Set(
 );
 
 /**
- * @typedef {Record<'import'|'require', Record<string,string>>} ImportRequireExports
+ * @typedef {{source?: string; import: Record<string, string>; require: Record<string, string>}} ImportRequireExports
  */
 
 /**
@@ -105,7 +105,7 @@ function srcImportsInternalPackage(pkg) {
   }
   const stack = [srcDir];
   while (stack.length > 0) {
-    const dir = stack.pop();
+    const dir = /** @type {string} */ (stack.pop());
     for (const ent of fs.readdirSync(dir, {withFileTypes: true})) {
       if (ent.isDirectory()) {
         if (ent.name !== '__tests__' && ent.name !== '__bench__') {
@@ -202,8 +202,6 @@ function exportEntry(
 /**
  * Add a browser condition for a particular entry point in the package.json
  *
- * @param {string} basename the name of the entry point module without an extension (e.g. 'index')
- * @param {string} [typesBasename]
  * @param {ImportRequireExports} exports
  * @returns {Record<'browser'|'import'|'require', Record<string,string>>} The export map for this file
  */
@@ -333,6 +331,7 @@ function updatePublicPackage(pkg) {
       ),
     };
   } else {
+    /** @type {Record<string, unknown>} */
     const exports = {};
     // Export all src/*.tsx? files that do not have a prefix extension (e.g. no .d.ts)
     for (const fn of fs.readdirSync(pkg.resolve('src'))) {
@@ -390,7 +389,7 @@ function updateDependencies(pkg) {
   // or example may want to resolve through pnpm's link protocol against
   // the local checkout. Leave those alone; only normalize semver-style
   // pins to the canonical monorepo version.
-  const isLocalProtocol = v =>
+  const isLocalProtocol = (/** @type {unknown} */ v) =>
     typeof v === 'string' && /^(link|file|portal):/.test(v);
   [dependencies, devDependencies].forEach(deps => {
     Object.keys(deps).forEach(dep => {

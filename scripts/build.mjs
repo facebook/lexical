@@ -58,6 +58,10 @@ const modulePackageMappings = Object.fromEntries(
     }),
 );
 
+/**
+ * @param {string} assetType
+ * @returns {string[]}
+ */
 function getShikiAssets(assetType) {
   return glob
     .sync(
@@ -151,11 +155,12 @@ const thirdPartyExternalsRegExp = new RegExp(
   `^(${thirdPartyExternals.join('|')})(\\/|$)`,
 );
 
+/** @type {Record<string, string>} */
 const strictWWWMappings = {};
 
 // Add quotes around mappings to make them more strict.
-Object.keys(wwwMappings).forEach(mapping => {
-  strictWWWMappings[`'${mapping}'`] = `'${wwwMappings[mapping]}'`;
+Object.entries(wwwMappings).forEach(([mapping, target]) => {
+  strictWWWMappings[`'${mapping}'`] = `'${target}'`;
 });
 
 /**
@@ -189,6 +194,7 @@ async function build(
   pkg,
 ) {
   const extensions = ['.js', '.jsx', '.ts', '.tsx'];
+  /** @type {import('rollup').RollupOptions} */
   const inputOptions = {
     external(modulePath, src) {
       const modulePkgName = modulePackageMappings[modulePath];
@@ -202,7 +208,7 @@ async function build(
         console.error(
           `Error: ${path.relative(
             '.',
-            src,
+            src ?? inputFile,
           )} has an undeclared dependency in its import of ${modulePath}.\nAdd the following to the dependencies in ${path.relative(
             '.',
             pkg.resolve('package.json'),
@@ -256,16 +262,17 @@ async function build(
             /* in www we do not use export conditions so we build a virtual fork module instead */
             {
               name: 'server-only-hack',
-              renderChunk(source) {
+              renderChunk(/** @type {string} */ source) {
                 // Ugly hack to effectively undo the hoist of require('jsdom')
                 const m = source.match(
                   /require\(':server-only-hack:([^']+)'\);/,
                 );
                 if (m) {
+                  const matchIndex = m.index ?? 0;
                   return (
-                    source.slice(0, m.index) +
+                    source.slice(0, matchIndex) +
                     `typeof window === 'undefined' ? require('${m[1]}') : undefined;` +
-                    source.slice(m.index + m[0].length)
+                    source.slice(matchIndex + m[0].length)
                   );
                 }
               },
@@ -336,6 +343,7 @@ async function build(
           module: format === 'esm',
         }),
       {
+        name: 'lexical-comment-banner',
         renderChunk(source) {
           // Assets pipeline might use "export" word in the beginning of the line
           // as a dependency, avoiding it with empty comment in front
@@ -400,6 +408,12 @@ function getComment() {
   return lines.join('\n');
 }
 
+/**
+ * @param {string} fileName
+ * @param {boolean} isProd
+ * @param {'esm' | 'cjs'} format
+ * @returns {string}
+ */
 function getFileName(fileName, isProd, format) {
   // Both www and npm builds use the `.dev`/`.prod` suffix. The bare
   // `Foo.mjs`/`Foo.js` names are reserved for the fork module emitted by
@@ -408,12 +422,7 @@ function getFileName(fileName, isProd, format) {
   return `${fileName}.${isProd ? 'prod' : 'dev'}${getExtension(format)}`;
 }
 
-/**
- *
- * @param {string} packageName
- * @param {string} outputPath
- */
-async function buildTSDeclarationFiles(packageName, outputPath) {
+async function buildTSDeclarationFiles() {
   await exec('tsc -p ./tsconfig.build.json');
 }
 
@@ -545,6 +554,7 @@ async function buildAll() {
     await buildTSDeclarationFiles();
   }
 
+  /** @type {Array<'cjs' | 'esm'>} */
   const formats = isWWW ? ['cjs'] : ['cjs', 'esm'];
   for (const pkg of packagesManager.getPublicPackages()) {
     const {name, sourcePath, outputPath, packageName, modules} =
@@ -565,7 +575,7 @@ async function buildAll() {
           }
         }
         const primaryExports = await build(
-          `${name}${module.name ? '-' + module.name : ''}`,
+          name,
           inputFile,
           outputPath,
           path.resolve(
@@ -605,7 +615,9 @@ async function buildAll() {
             outputPath,
             outputFileName,
             format,
-            primaryExports.length > 0 ? primaryExports : secondaryExports,
+            primaryExports.length > 0
+              ? primaryExports
+              : (secondaryExports ?? []),
             mode,
           );
         }

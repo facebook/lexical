@@ -14,6 +14,8 @@ import {exec} from '../../shared/childProcess.mjs';
 import {packagesManager} from '../../shared/packagesManager.mjs';
 import readMonorepoPackageJson from '../../shared/readMonorepoPackageJson.mjs';
 
+/** @typedef {import('../../shared/PackageMetadata.mjs').PackageMetadata} PackageMetadata */
+
 const monorepoVersion = readMonorepoPackageJson().version;
 
 const LONG_TIMEOUT = 240 * 1000;
@@ -37,7 +39,7 @@ async function withCwd(dir, cb) {
 
 /**
  * @param {string} cmd
- * @returns {Promise<string>}
+ * @returns {Promise<{stdout: string; stderr: string}>}
  */
 function expectSuccessfulExec(cmd) {
   // Filter out VITEST_WORKER_ID to prevent Playwright from detecting Vitest environment
@@ -62,12 +64,12 @@ function expectSuccessfulExec(cmd) {
  */
 
 /**
- * @param {ctx} ExampleContext
+ * @param {ExampleContext} ctx
  * @returns {Promise<Map<string, PackageMetadata>>} The installed monorepo dependency map
  */
 async function buildExample({packageJson, exampleDir}) {
   let hasPlaywright = false;
-  /** @type {Map<string, string} */
+  /** @type {Map<string, string>} */
   const allDeps = new Map();
   for (const depType of [
     'dependencies',
@@ -109,8 +111,8 @@ async function buildExample({packageJson, exampleDir}) {
 /**
  * Build the example project with prerelease lexical artifacts
  *
- * @param {string} packgeJsonPath
- * @param {undefined | (ctx: ExampleContext) => void} [bodyFun=undefined]
+ * @param {string} packageJsonPath
+ * @param {undefined | ((ctx: ExampleContext) => void)} [bodyFun=undefined]
  */
 function describeExample(packageJsonPath, bodyFun = undefined) {
   const packageJson = fs.readJsonSync(packageJsonPath);

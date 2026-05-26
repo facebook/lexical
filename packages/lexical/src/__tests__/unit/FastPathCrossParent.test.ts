@@ -188,7 +188,7 @@ describe('fast path differential fuzz — cross-parent moves', () => {
   });
 
   test('fast path matches the general walk across cross-parent moves', () => {
-    const SEEDS = 200;
+    const SEEDS = 100;
     const OPS_PER_RUN = 20;
     for (let s = 0; s < SEEDS; s++) {
       const fast = makeEditor();

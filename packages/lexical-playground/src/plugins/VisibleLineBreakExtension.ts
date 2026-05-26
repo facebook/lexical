@@ -74,6 +74,7 @@ export const VisibleLineBreakExtension = defineExtension({
   config: safeCast<VisibleLineBreakConfig>({disabled: false}),
   dependencies: [
     configExtension(DOMRenderExtension, {
+      // TODO use an #8567 overlay when we have that feature
       overrides: [
         domOverride([LineBreakNode], {
           $createDOM: (node, $next, editor) => {

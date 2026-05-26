@@ -31,6 +31,7 @@ import {
   defineExtension,
   isHTMLElement,
   LineBreakNode,
+  setDOMUnmanaged,
   TextNode,
 } from 'lexical';
 import {expectHtmlToBeEqual, html} from 'lexical/src/__tests__/utils';
@@ -565,5 +566,82 @@ describe('DOMRenderExtension', () => {
       invariant($isElementDOMSlot(slot), 'slot must be an ElementDOMSlot');
       expect(slot.element).toBe(dom);
     });
+  });
+
+  test('$setTextContent routes text writes through a TextNode $getDOMSlot override', () => {
+    // A DOMRenderExtension parks a contentEditable=false prelude as the first
+    // child of each TextNode's span and exposes the text-bearing range as
+    // starting after it (slot.after). An in-place text edit must consult this
+    // editor-level $getDOMSlot override — not dom.firstChild — so it updates
+    // the text node sitting after the prelude rather than mangling the prelude
+    // or appending a duplicate text node.
+    const PRELUDE_ATTR = 'data-test-prelude';
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: () => {
+          $getRoot().append(
+            $createParagraphNode().append($createTextNode('hello')),
+          );
+        },
+        dependencies: [
+          configExtension(DOMRenderExtension, {
+            overrides: [
+              domOverride([TextNode], {
+                $createDOM: (_node, $next) => {
+                  const el = $next();
+                  const prelude = document.createElement('span');
+                  prelude.setAttribute(PRELUDE_ATTR, 'true');
+                  prelude.contentEditable = 'false';
+                  prelude.textContent = '§';
+                  // Keep the mutation observer from evicting the decoration.
+                  setDOMUnmanaged(prelude);
+                  el.insertBefore(prelude, el.firstChild);
+                  return el;
+                },
+                $getDOMSlot: (_node, dom, $next) => {
+                  const prelude = dom.querySelector(
+                    `:scope > [${PRELUDE_ATTR}]`,
+                  );
+                  return isHTMLElement(prelude)
+                    ? $next().withAfter(prelude)
+                    : $next();
+                },
+              }),
+            ],
+          }),
+        ],
+        name: 'textnode-slot-reroute',
+      }),
+    );
+    const root = document.createElement('div');
+    editor.setRootElement(root);
+
+    let textKey = '';
+    editor.read(() => {
+      textKey = $getRoot().getAllTextNodes()[0].getKey();
+    });
+    const span = editor.getElementByKey(textKey) as HTMLElement;
+    const textNodesIn = (el: HTMLElement) =>
+      Array.from(el.childNodes).filter(n => n.nodeType === Node.TEXT_NODE);
+
+    // Initial render: [prelude, "hello"].
+    expect(span.querySelector(`[${PRELUDE_ATTR}]`)).not.toBe(null);
+    expect(textNodesIn(span).map(n => n.nodeValue)).toEqual(['hello']);
+
+    // In-place text edit.
+    editor.update(
+      () => {
+        $getRoot().getAllTextNodes()[0].setTextContent('world');
+      },
+      {discrete: true},
+    );
+
+    // The prelude stays the leading child and the single text node after it is
+    // updated in place — proving the write went through the slot, not
+    // dom.firstChild (which would mangle the prelude or duplicate the text).
+    const prelude = span.querySelector(`[${PRELUDE_ATTR}]`);
+    expect(prelude).not.toBe(null);
+    expect(span.firstChild).toBe(prelude);
+    expect(textNodesIn(span).map(n => n.nodeValue)).toEqual(['world']);
   });
 });

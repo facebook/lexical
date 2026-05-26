@@ -66,10 +66,12 @@ type IntentionallyMarkedAsDirtyElement = boolean;
  * so all instances share the same V8 hidden-class shape and the setter is
  * a stable inline cache hit instead of a per-instance shape transition.
  *
- * ElementNodes already carry their computed text content in
- * `dom.__lexicalTextContent` (written at the end of `$reconcileChildren`),
- * so we never set this on ElementNodes — `$cachedTextSize` routes them to
- * the DOM cache instead.
+ * ElementNodes are NOT stored here: an element can be dirty without being
+ * cloned (a descendant edit marks ancestors dirty via
+ * `internalMarkParentElementsAsDirty` but does not `getWritable()` them), so
+ * the same — DEV-frozen — instance would need its size rewritten when its
+ * text changes, which the skip-if-set guard cannot do. Element sizes come
+ * from `dom.__lexicalTextContent` instead (see `$cachedTextSize`).
  *
  * Leaf writes are skipped when the slot is already not `undefined`. The
  * setter is only re-entered for the same instance via cross-parent moves
@@ -90,17 +92,39 @@ type IntentionallyMarkedAsDirtyElement = boolean;
  */
 export const CACHED_TEXT_SIZE_KEY = Symbol.for('@lexical/CachedTextSize');
 
-function $cachedTextSize(node: LexicalNode): number {
-  if ($isElementNode(node)) {
-    const keyedDom = activePrevKeyToDOMMap.get(node.__key);
-    const cached = keyedDom && keyedDom.__lexicalTextContent;
-    invariant(
-      typeof cached === 'string',
-      'cachedTextSize: missing __lexicalTextContent for ElementNode of type %s',
-      node.getType(),
-    );
-    return cached.length;
+// Previous-cycle text size of a node, computed entirely from the previous
+// node map. Used for an element that moved to a different parent this cycle:
+// its keyed `dom.__lexicalTextContent` is shared between prev and next and is
+// overwritten in place when the element is reconciled under its NEW parent —
+// which, if that parent reconciles first, happens before its OLD parent's
+// suffix walk reads it (see https://github.com/facebook/lexical/pull/8564 for
+// the sibling fast-path hazard). Walking the prev map avoids both that stale
+// read and the `getLatest()` -> next-state trap. Leaf sizes still come from
+// the per-instance cache on the previous-state leaf instances.
+function $prevTextContentSize(node: LexicalNode): number {
+  if (!$isElementNode(node)) {
+    return $leafCachedTextSize(node);
   }
+  let size = 0;
+  let childKey: NodeKey | null = node.__first;
+  let i = 0;
+  const lastIndex = node.__size - 1;
+  while (childKey !== null) {
+    const child = activePrevNodeMap.get(childKey);
+    if (child === undefined) {
+      break;
+    }
+    size += $prevTextContentSize(child);
+    if (i < lastIndex && $isElementNode(child) && !child.isInline()) {
+      size += DOUBLE_LINE_BREAK.length;
+    }
+    childKey = child.__next;
+    i++;
+  }
+  return size;
+}
+
+function $leafCachedTextSize(node: LexicalNode): number {
   const cached = node[CACHED_TEXT_SIZE_KEY];
   // $reconcileNode and $createNode set the size on every leaf they touch, so a
   // missing entry here means the invariant was broken upstream. Falling back to
@@ -113,6 +137,33 @@ function $cachedTextSize(node: LexicalNode): number {
     node.__key,
   );
   return cached;
+}
+
+function $cachedTextSize(node: LexicalNode): number {
+  if ($isElementNode(node)) {
+    // An element that moved to a different parent this cycle may have already
+    // been reconciled under its new parent, overwriting the shared keyed-DOM
+    // text cache with its NEW size. Recover the previous-cycle size from the
+    // prev node map instead. (`__parent === null` means detached/removed, not
+    // moved — its DOM cache is still its prev text.)
+    const nextNode = activeNextNodeMap.get(node.__key);
+    if (
+      nextNode !== undefined &&
+      $isElementNode(nextNode) &&
+      nextNode.__parent !== node.__parent
+    ) {
+      return $prevTextContentSize(node);
+    }
+    const keyedDom = activePrevKeyToDOMMap.get(node.__key);
+    const cached = keyedDom && keyedDom.__lexicalTextContent;
+    invariant(
+      typeof cached === 'string',
+      'cachedTextSize: missing __lexicalTextContent for ElementNode of type %s',
+      node.getType(),
+    );
+    return cached.length;
+  }
+  return $leafCachedTextSize(node);
 }
 
 function $setCachedTextSize(node: LexicalNode): void {

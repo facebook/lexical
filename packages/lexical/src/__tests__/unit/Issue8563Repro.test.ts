@@ -6,26 +6,10 @@
  *
  */
 
-import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
+import {buildEditorFromExtensions} from '@lexical/extension';
 import {RichTextExtension} from '@lexical/rich-text';
 import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
 import {describe, expect, test} from 'vitest';
-
-// Attaches a root element so DOM reconciliation runs, and returns a dispose
-// that detaches it. `buildEditorFromExtensions` disposal calls both this
-// cleanup and `editor.setRootElement(null)`, so a `using` editor tears the
-// whole thing down at end of scope.
-const TestRootElementExtension = defineExtension({
-  name: 'issue-8563-root',
-  register(editor) {
-    const root = document.createElement('div');
-    document.body.appendChild(root);
-    editor.setRootElement(root);
-    return () => {
-      document.body.removeChild(root);
-    };
-  },
-});
 
 // Regression test for https://github.com/facebook/lexical/issues/8563
 //
@@ -43,12 +27,16 @@ describe('Issue #8563: full reconcile with same-size child key swap', () => {
   test('undo (setEditorState) does not crash when a child is replaced by a different-key child of equal count', () => {
     const errors: Error[] = [];
     using editor = buildEditorFromExtensions({
-      dependencies: [RichTextExtension, TestRootElementExtension],
+      dependencies: [RichTextExtension],
       name: 'issue-8563-repro',
       onError: e => {
         errors.push(e);
       },
     });
+    // A root element makes DOM reconciliation run; the crash is in node-map
+    // lookups so the element does not need to be attached to the document.
+    // `using` disposal calls setRootElement(null).
+    editor.setRootElement(document.createElement('div'));
 
     // State A: enough children to engage the fast path (>= 4).
     editor.update(

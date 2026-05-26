@@ -2033,7 +2033,7 @@ export function $getDOMSlot<N extends LexicalNode>(
   const slot = $getEditorDOMRenderConfig(editor).$getDOMSlot(node, dom, editor);
   if ($isElementNode(node)) {
     invariant(
-      slot instanceof ElementDOMSlot,
+      $isElementDOMSlot(slot),
       '$getDOMSlot: expected ElementDOMSlot for ElementNode (key %s type %s)',
       node.getKey(),
       node.getType(),

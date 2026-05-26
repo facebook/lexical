@@ -6,7 +6,7 @@
  *
  */
 
-import {effect, watchedSignal} from '@lexical/extension';
+import {effect, namedSignals, watchedSignal} from '@lexical/extension';
 import {$isAtNodeEnd} from '@lexical/selection';
 import {mergeRegister} from '@lexical/utils';
 import {
@@ -22,6 +22,7 @@ import {
   KEY_TAB_COMMAND,
   type LexicalEditor,
   type NodeKey,
+  safeCast,
   setDOMUnmanaged,
 } from 'lexical';
 
@@ -130,9 +131,15 @@ function syncGhost(
   dom.appendChild(ghost);
 }
 
+export interface AutocompleteConfig {
+  disabled: boolean;
+}
+
 export const AutocompleteExtension = defineExtension({
+  build: (editor, config) => namedSignals(config),
+  config: safeCast<AutocompleteConfig>({disabled: false}),
   name: '@lexical/playground/autocomplete',
-  register: (editor: LexicalEditor) => {
+  register: (editor: LexicalEditor, config, state) => {
     const editableSignal = watchedSignal(
       () => editor.isEditable(),
       signal =>
@@ -304,10 +311,11 @@ export const AutocompleteExtension = defineExtension({
       }
     }
 
+    const output = state.getOutput();
     return effect(() => {
       const rootElem = rootElemSignal.value;
       const editable = editableSignal.value;
-      if (!rootElem || !editable) {
+      if (output.disabled.value || !rootElem || !editable) {
         return;
       }
       return mergeRegister(

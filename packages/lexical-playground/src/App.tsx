@@ -13,7 +13,6 @@ import {
   ClearEditorExtension,
   ClickAfterLastBlockExtension,
   DecoratorTextExtension,
-  getExtensionDependencyFromEditor,
   HorizontalRuleExtension,
   SelectionAlwaysOnDisplayExtension,
 } from '@lexical/extension';
@@ -32,7 +31,6 @@ import {
 } from '@lexical/list';
 import {PlainTextExtension} from '@lexical/plain-text';
 import {LexicalCollaboration} from '@lexical/react/LexicalCollaborationContext';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
 import {
   $createHeadingNode,
@@ -46,7 +44,7 @@ import {
   configExtension,
   defineExtension,
 } from 'lexical';
-import {type JSX, useEffect, useMemo} from 'react';
+import {type JSX, useMemo} from 'react';
 
 import {isDevPlayground} from './appSettings';
 import {buildHTMLConfig} from './buildHTMLConfig';
@@ -216,6 +214,8 @@ const AppExtension = defineExtension({
       $shouldInsertAfter: node =>
         $defaultShouldInsertAfter(node) || $isCodeNode(node),
     }),
+    configExtension(AutocompleteExtension, {disabled: true}),
+    configExtension(VisibleLineBreakExtension, {disabled: true}),
   ],
   html: buildHTMLConfig(),
   name: '@lexical/playground',
@@ -230,12 +230,9 @@ const AppExtension = defineExtension({
  * different editor configurations based on the query string.
  */
 function buildExtensionFromSettings(
-  settings: Record<
-    'isCollab' | 'emptyEditor' | 'isRichText' | 'isAutocomplete',
-    boolean
-  >,
+  settings: Record<'isCollab' | 'emptyEditor' | 'isRichText', boolean>,
 ) {
-  const {isCollab, emptyEditor, isRichText, isAutocomplete} = settings;
+  const {isCollab, emptyEditor, isRichText} = settings;
   return defineExtension({
     $initialEditorState: isCollab
       ? null
@@ -246,52 +243,29 @@ function buildExtensionFromSettings(
       AppExtension,
       configExtension(HistoryExtension, {disabled: isCollab}),
       isRichText ? PlaygroundRichTextExtension : PlainTextExtension,
-      ...(isAutocomplete ? [AutocompleteExtension] : []),
-      VisibleLineBreakExtension,
     ],
     name: '@lexical/playground/dynamic-config',
   });
 }
 
-function VisibleLineBreakBridge({disabled}: {disabled: boolean}): null {
-  const [editor] = useLexicalComposerContext();
-  useEffect(() => {
-    const dep = getExtensionDependencyFromEditor(
-      editor,
-      VisibleLineBreakExtension,
-    );
-    dep.output.disabled.value = disabled;
-  }, [editor, disabled]);
-  return null;
-}
-
 function App(): JSX.Element {
   const {
-    settings: {
-      isAutocomplete,
-      isCollab,
-      emptyEditor,
-      isRichText,
-      isVisibleLineBreak,
-      measureTypingPerf,
-    },
+    settings: {isCollab, emptyEditor, isRichText, measureTypingPerf},
   } = useSettings();
 
   const app = useMemo(
     () =>
       buildExtensionFromSettings({
         emptyEditor,
-        isAutocomplete,
         isCollab,
         isRichText,
       }),
-    [emptyEditor, isAutocomplete, isCollab, isRichText],
+    [emptyEditor, isCollab, isRichText],
   );
 
   return (
     <LexicalCollaboration>
       <LexicalExtensionComposer extension={app} contentEditable={null}>
-        <VisibleLineBreakBridge disabled={!isVisibleLineBreak} />
         <ToolbarContext>
           <header>
             <a href="https://lexical.dev" target="_blank" rel="noreferrer">

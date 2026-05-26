@@ -6,7 +6,10 @@
  *
  */
 
-import {buildEditorFromExtensions} from '@lexical/extension';
+import {
+  buildEditorFromExtensions,
+  type LexicalEditorWithDispose,
+} from '@lexical/extension';
 import {domOverride, DOMRenderExtension} from '@lexical/html';
 import {
   $createLineBreakNode,
@@ -37,11 +40,12 @@ describe('Selection resolution for leaf nodes (resolveLeafPosition)', () => {
     }
   });
 
-  function mountRoot(editor: ReturnType<typeof buildEditorFromExtensions>) {
+  function mountRoot(editor: LexicalEditorWithDispose) {
     const root = document.createElement('div');
     document.body.appendChild(root);
     mountedRoots.push(root);
     editor.setRootElement(root);
+    return root;
   }
 
   test('DOM caret directly on a bare <br> at offset 0 resolves to "after" the LineBreakNode', () => {
@@ -147,7 +151,7 @@ describe('Selection resolution for leaf nodes (resolveLeafPosition)', () => {
       );
     }
 
-    function getLineBreakKey(editor: ReturnType<typeof buildWrapEditor>) {
+    function getLineBreakKey(editor: LexicalEditorWithDispose) {
       let lbKey = '';
       editor.update(
         () => {
@@ -166,10 +170,7 @@ describe('Selection resolution for leaf nodes (resolveLeafPosition)', () => {
 
     test('DOM caret inside the wrap <span> at offset 0 (before the inner <br>) resolves to "before" the LineBreakNode', () => {
       using editor = buildWrapEditor();
-      const root = document.createElement('div');
-      document.body.appendChild(root);
-      mountedRoots.push(root);
-      editor.setRootElement(root);
+      mountRoot(editor);
       const lbKey = getLineBreakKey(editor);
       const wrapDOM = editor.getElementByKey(lbKey);
       assert(wrapDOM !== null);
@@ -206,10 +207,7 @@ describe('Selection resolution for leaf nodes (resolveLeafPosition)', () => {
 
     test('DOM caret inside the wrap <span> at offset 1 (after the inner <br>) resolves to "after" the LineBreakNode', () => {
       using editor = buildWrapEditor();
-      const root = document.createElement('div');
-      document.body.appendChild(root);
-      mountedRoots.push(root);
-      editor.setRootElement(root);
+      mountRoot(editor);
       const lbKey = getLineBreakKey(editor);
       const wrapDOM = editor.getElementByKey(lbKey);
       assert(wrapDOM !== null);

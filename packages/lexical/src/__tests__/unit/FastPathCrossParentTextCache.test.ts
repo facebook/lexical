@@ -95,17 +95,22 @@ describe('children fast path: cross-parent move and sibling text cache', () => {
     // `getTextContent()` on the root reads `RootNode.__cachedText`, which the
     // fast path maintains incrementally. Compare it against the text computed
     // fresh from the children (ElementNode.getTextContent walks the tree and
-    // does not use the root cache).
-    const {cached, fresh} = editor.read(() => {
-      const root = $getRoot();
-      return {
-        cached: root.getTextContent(),
-        fresh: root
-          .getChildren()
-          .map(child => child.getTextContent())
-          .join('\n\n'),
-      };
-    });
+    // does not use the root cache). Read from the committed editor state (not
+    // `editor.read`, which would flush any pending update first) so this
+    // observation is the same snapshot the reconcile just produced.
+    const {cached, fresh} = editor.getEditorState().read(
+      () => {
+        const root = $getRoot();
+        return {
+          cached: root.getTextContent(),
+          fresh: root
+            .getChildren()
+            .map(child => child.getTextContent())
+            .join('\n\n'),
+        };
+      },
+      {editor},
+    );
 
     expect(cached).toBe(fresh);
   });

@@ -167,10 +167,14 @@ function snapshot(editor: LexicalEditor): {
   text: string;
   dom: string;
 } {
+  // Read JSON and text from the SAME committed editor state so all three
+  // observations are one consistent snapshot. `editor.read` would flush any
+  // pending update first and could read a different state than `toJSON`.
+  const state = editor.getEditorState();
   return {
     dom: editor.getRootElement()!.innerHTML,
-    json: JSON.stringify(editor.getEditorState().toJSON()),
-    text: editor.read(() => $getRoot().getTextContent()),
+    json: JSON.stringify(state.toJSON()),
+    text: state.read(() => $getRoot().getTextContent(), {editor}),
   };
 }
 

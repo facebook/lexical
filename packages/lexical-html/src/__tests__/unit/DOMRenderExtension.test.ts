@@ -35,8 +35,7 @@ import {
   TextNode,
 } from 'lexical';
 import {expectHtmlToBeEqual, html} from 'lexical/src/__tests__/utils';
-import invariant from 'shared/invariant';
-import {describe, expect, test} from 'vitest';
+import {assert, describe, expect, test} from 'vitest';
 
 const idState = createState('id', {
   parse: v => (typeof v === 'string' ? v : null),
@@ -533,9 +532,10 @@ describe('DOMRenderExtension', () => {
     editor.setRootElement(root);
     editor.read(() => {
       const paragraph = $getRoot().getFirstChildOrThrow();
-      if (!$isElementNode(paragraph)) {
-        throw new Error('expected paragraph to be an ElementNode');
-      }
+      assert(
+        $isElementNode(paragraph),
+        'expected paragraph to be an ElementNode',
+      );
       const [linebreak] = paragraph.getChildren();
       const dom = editor.getElementByKey(linebreak.getKey())!;
       const slot = linebreak.getDOMSlot(dom);
@@ -560,10 +560,10 @@ describe('DOMRenderExtension', () => {
     editor.setRootElement(root);
     editor.read(() => {
       const paragraph = $getRoot().getFirstChildOrThrow();
-      invariant($isElementNode(paragraph), 'expected paragraph');
+      assert($isElementNode(paragraph), 'expected paragraph');
       const dom = editor.getElementByKey(paragraph.getKey())!;
       const slot = $getDOMSlot(paragraph, dom, editor);
-      invariant($isElementDOMSlot(slot), 'slot must be an ElementDOMSlot');
+      assert($isElementDOMSlot(slot), 'slot must be an ElementDOMSlot');
       expect(slot.element).toBe(dom);
     });
   });

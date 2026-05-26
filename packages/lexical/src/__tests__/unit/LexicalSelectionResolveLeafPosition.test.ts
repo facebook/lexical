@@ -22,10 +22,9 @@ import {
   isHTMLElement,
   LineBreakNode,
 } from 'lexical';
-import {afterEach, describe, expect, test} from 'vitest';
+import {afterEach, assert, describe, expect, test} from 'vitest';
 
 import {$internalCreateRangeSelection} from '../../LexicalSelection';
-import {invariant} from '../utils';
 
 describe('Selection resolution for leaf nodes (resolveLeafPosition)', () => {
   const mountedRoots: HTMLElement[] = [];
@@ -70,7 +69,7 @@ describe('Selection resolution for leaf nodes (resolveLeafPosition)', () => {
         const paragraph = $getRoot().getFirstChildOrThrow();
         if ($isElementNode(paragraph)) {
           const br = paragraph.getChildAtIndex(1);
-          invariant(br !== null);
+          assert(br !== null);
           linebreakKey = br.getKey();
         }
       },
@@ -78,7 +77,7 @@ describe('Selection resolution for leaf nodes (resolveLeafPosition)', () => {
     );
 
     const brDOM = editor.getElementByKey(linebreakKey);
-    invariant(brDOM !== null);
+    assert(brDOM !== null);
 
     const domSelection = getDOMSelection(editor._window ?? window);
     const range = document.createRange();
@@ -95,8 +94,8 @@ describe('Selection resolution for leaf nodes (resolveLeafPosition)', () => {
           editor,
           {type: 'selectionchange'} as Event,
         );
-        invariant(selection !== null);
-        invariant($isRangeSelection(selection));
+        assert(selection !== null);
+        assert($isRangeSelection(selection));
         const paragraph = $getRoot().getFirstChildOrThrow();
         // Pre-PR behavior: caret on bare <br> at offset 0 resolves
         // to "after" the LineBreakNode, i.e. paragraph element
@@ -173,7 +172,7 @@ describe('Selection resolution for leaf nodes (resolveLeafPosition)', () => {
       editor.setRootElement(root);
       const lbKey = getLineBreakKey(editor);
       const wrapDOM = editor.getElementByKey(lbKey);
-      invariant(wrapDOM !== null);
+      assert(wrapDOM !== null);
       // Sanity: the keyed DOM is the wrap span, not the <br>.
       expect(wrapDOM.tagName).toBe('SPAN');
       expect(wrapDOM.getAttribute('data-wrap')).toBe('true');
@@ -193,8 +192,8 @@ describe('Selection resolution for leaf nodes (resolveLeafPosition)', () => {
             editor,
             {type: 'selectionchange'} as Event,
           );
-          invariant(selection !== null);
-          invariant($isRangeSelection(selection));
+          assert(selection !== null);
+          assert($isRangeSelection(selection));
           const paragraph = $getRoot().getFirstChildOrThrow();
           expect(selection.anchor.key).toBe(paragraph.getKey());
           expect(selection.anchor.type).toBe('element');
@@ -213,7 +212,7 @@ describe('Selection resolution for leaf nodes (resolveLeafPosition)', () => {
       editor.setRootElement(root);
       const lbKey = getLineBreakKey(editor);
       const wrapDOM = editor.getElementByKey(lbKey);
-      invariant(wrapDOM !== null);
+      assert(wrapDOM !== null);
 
       const domSelection = getDOMSelection(editor._window ?? window);
       const range = document.createRange();
@@ -230,8 +229,8 @@ describe('Selection resolution for leaf nodes (resolveLeafPosition)', () => {
             editor,
             {type: 'selectionchange'} as Event,
           );
-          invariant(selection !== null);
-          invariant($isRangeSelection(selection));
+          assert(selection !== null);
+          assert($isRangeSelection(selection));
           const paragraph = $getRoot().getFirstChildOrThrow();
           expect(selection.anchor.key).toBe(paragraph.getKey());
           expect(selection.anchor.type).toBe('element');

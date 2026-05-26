@@ -11,8 +11,8 @@
     "astro": "astro"
   },
   "dependencies": {
-    "@astrojs/check": "^0.10.0",
-    "@astrojs/react": "^5.0.0",
+    "@astrojs/check": "^0.9.9",
+    "@astrojs/react": "^5.0.5",
     "@lexical/code": "0.44.0",
     "@lexical/react": "0.44.0",
     "@types/react": "^19.2.14",

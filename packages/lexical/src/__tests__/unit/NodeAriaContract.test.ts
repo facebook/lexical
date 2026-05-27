@@ -136,4 +136,46 @@ describe('LexicalNode ARIA contract', () => {
     )! as HTMLElement;
     expect(spanAfter.getAttribute('aria-label')).toBe('Custom: world');
   });
+
+  test('external attribute mutation is restored on the next reconcile', () => {
+    const editor = mountEditor();
+    editor.update(
+      () => {
+        const root = $getRoot().clear();
+        const para = $createParagraphNode().append(
+          $createAriaTextNode('hello'),
+        );
+        root.append(para);
+      },
+      {discrete: true},
+    );
+    const span = container!.querySelector(
+      'span[data-lexical-text="true"]',
+    )! as HTMLElement;
+    expect(span.getAttribute('role')).toBe('note');
+
+    // An external party (browser extension, host code, etc.) clears our
+    // attribute outside the reconciler.
+    span.removeAttribute('role');
+    expect(span.getAttribute('role')).toBeNull();
+
+    // Any next-cycle dirty mark on the node re-runs syncAriaContract via
+    // updateDOM and restores the attribute.
+    editor.update(
+      () => {
+        const para = $getRoot().getFirstChildOrThrow();
+        if ($isElementNode(para)) {
+          const text = para.getFirstChild();
+          if (text !== null) {
+            (text as AriaTextNode).setTextContent('hello-2');
+          }
+        }
+      },
+      {discrete: true},
+    );
+    const spanAfter = container!.querySelector(
+      'span[data-lexical-text="true"]',
+    )! as HTMLElement;
+    expect(spanAfter.getAttribute('role')).toBe('note');
+  });
 });

@@ -244,22 +244,29 @@ function $syncAriaAttribute(
   cacheKey: '__lexicalRole' | '__lexicalAriaLabel',
   next: string | undefined,
 ): void {
+  const currentDOM = dom.getAttribute(attribute);
+  // If our cache and the live DOM disagree, an external party (a browser
+  // extension, the host application, etc.) mutated the attribute outside
+  // the reconciler. Treat the cache as cold so the next subclass value
+  // is re-applied cleanly on this cycle.
   const cached = dom[cacheKey];
+  const effectiveCached =
+    cached != null && currentDOM === cached ? cached : null;
   // Until a subclass returns a non-undefined value the reconciler stays out
   // of the attribute entirely. This keeps external attributes (e.g. the
   // editor root's `role="textbox"` set by `setRootElement`) untouched even
   // when the node's `getRole()` returns the default `undefined`.
-  if (cached == null) {
+  if (effectiveCached == null) {
     if (next === undefined) {
       return;
     }
-    if (!dom.hasAttribute(attribute)) {
+    if (currentDOM !== next) {
       dom.setAttribute(attribute, next);
     }
     dom[cacheKey] = next;
     return;
   }
-  if (next === cached) {
+  if (next === effectiveCached) {
     return;
   }
   if (next === undefined) {

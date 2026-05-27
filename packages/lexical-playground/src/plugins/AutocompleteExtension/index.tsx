@@ -6,7 +6,12 @@
  *
  */
 
-import {effect, namedSignals, watchedSignal} from '@lexical/extension';
+import {
+  effect,
+  namedSignals,
+  shallowMergeConfig,
+  watchedSignal,
+} from '@lexical/extension';
 import {$isAtNodeEnd} from '@lexical/selection';
 import {mergeRegister} from '@lexical/utils';
 import {
@@ -34,11 +39,17 @@ import {addSwipeRightListener} from '../../utils/swipe';
 import {detectLanguage as defaultDetectLanguage} from './detectLanguage';
 import {ENGLISH_WORDS} from './dictionaries/english';
 import {KOREAN_WORDS} from './dictionaries/korean';
-import {type AutocompleteDictionary, WordlistDictionary} from './dictionary';
+import {
+  type AutocompleteDictionary,
+  createWordlistDictionary,
+} from './dictionary';
 
 export {detectLanguage} from './detectLanguage';
-export type {AutocompleteDictionary} from './dictionary';
-export {WordlistDictionary} from './dictionary';
+export type {
+  AutocompleteDictionary,
+  WordlistDictionaryOptions,
+} from './dictionary';
+export {createWordlistDictionary} from './dictionary';
 
 /**
  * Default dictionaries shipped with `AutocompleteExtension` — English
@@ -49,17 +60,19 @@ export {WordlistDictionary} from './dictionary';
  * ```ts
  * configExtension(AutocompleteExtension, {
  *   dictionaries: {
- *     ...defaultDictionaries,
- *     ja: new WordlistDictionary(JAPANESE_WORDS),
+ *     ja: createWordlistDictionary(JAPANESE_WORDS),
  *   },
  * });
  * ```
+ *
+ * (The extension's `mergeConfig` deep-merges this `dictionaries` map
+ * into the defaults, so spreading is not required.)
  */
 export const defaultDictionaries: Readonly<
   Record<string, AutocompleteDictionary>
 > = {
-  en: new WordlistDictionary(ENGLISH_WORDS, 4),
-  ko: new WordlistDictionary(KOREAN_WORDS, 2),
+  en: createWordlistDictionary(ENGLISH_WORDS, {minPrefixLength: 4}),
+  ko: createWordlistDictionary(KOREAN_WORDS),
 };
 
 /** Default debounce window (ms) for composition-idle suggestions. */
@@ -159,7 +172,8 @@ function query(
  * otherwise corrupt language detection (last-codepoint dispatch on
  * an invisible space would fall through to `en`).
  */
-function extractTrailingWord(text: string): string {
+/** @internal — exposed for unit tests. */
+export function extractTrailingWord(text: string): string {
   const trimmed = text.replace(/\s+$/u, '');
   const match = trimmed.match(/\S+$/u);
   return match === null ? '' : match[0];
@@ -177,7 +191,8 @@ function extractTrailingWord(text: string): string {
  * Hangul / kana / kanji codepoints instead of an invisible trailing
  * `\u200B` that would force-fallback to English.
  */
-function getCompositionTextFromDOM(dom: HTMLElement): string {
+/** @internal — exposed for unit tests. */
+export function getCompositionTextFromDOM(dom: HTMLElement): string {
   let text = '';
   for (const node of dom.childNodes) {
     if (node.nodeType === Node.TEXT_NODE) {
@@ -270,6 +285,20 @@ export interface AutocompleteConfig {
   compositionIdleDebounceMs: number;
 }
 
+function mergeAutocompleteConfig(
+  config: AutocompleteConfig,
+  overrides: Partial<AutocompleteConfig>,
+): AutocompleteConfig {
+  const merged = shallowMergeConfig(config, overrides);
+  if (overrides.dictionaries) {
+    merged.dictionaries = {
+      ...config.dictionaries,
+      ...overrides.dictionaries,
+    };
+  }
+  return merged;
+}
+
 export const AutocompleteExtension = defineExtension({
   build: (editor, config) => namedSignals(config),
   config: safeCast<AutocompleteConfig>({
@@ -278,6 +307,7 @@ export const AutocompleteExtension = defineExtension({
     dictionaries: defaultDictionaries,
     disabled: false,
   }),
+  mergeConfig: mergeAutocompleteConfig,
   name: '@lexical/playground/autocomplete',
   register: (editor: LexicalEditor, config, state) => {
     const editableSignal = watchedSignal(
@@ -416,13 +446,18 @@ export const AutocompleteExtension = defineExtension({
     function onCompositionEndDOM() {
       clearPendingCompositionTimer();
       compositionTextNodeKey = null;
-      // Safari / WebKit defers the COMPOSITION_END_TAG-tagged update
-      // until the next keydown, which would leave any composition-idle
-      // ghost stale until the user presses another key. Force a
-      // synthetic handleUpdate on the microtask queue so the post-IME
-      // ghost re-evaluates immediately. Chrome / Firefox fire their own
-      // COMPOSITION_END_TAG update synchronously and the duplicate
-      // handleUpdate call is idempotent.
+      // Safari / WebKit defers Lexical's COMPOSITION_END_TAG-tagged
+      // update until the next keydown, so any composition-idle ghost
+      // would otherwise stay stale until the user presses another key.
+      // The synthetic handleUpdate here doesn't *replace* that pending
+      // update — at microtask time the EditorState may still reflect
+      // pre-end state. It just forces handleUpdate to be considered
+      // once with the tag set, bypassing the `editor.isComposing()`
+      // skip; the real post-commit ghost lands when Lexical's actual
+      // tagged update arrives shortly after. Chrome / Firefox fire
+      // their tagged update synchronously, so the microtask hits a
+      // post-commit state and the later real update is the redundant
+      // (idempotent) one.
       Promise.resolve().then(() => {
         handleUpdate({
           editorState: editor.getEditorState(),
@@ -565,7 +600,7 @@ export const AutocompleteExtension = defineExtension({
           const fullText = liveText + lastSuggestion;
           node.setTextContent(fullText);
           $setCompositionKey(null);
-          node.select(fullText.length, fullText.length);
+          node.select();
           dismiss();
           return true;
         }
@@ -628,6 +663,10 @@ export const AutocompleteExtension = defineExtension({
         editor.registerCommand(
           COMPOSITION_START_COMMAND,
           () => {
+            // Reset first so a previous composition whose compositionend
+            // DOM event was missed (e.g. the root was detached mid-compose)
+            // can't leak its key into this one.
+            compositionTextNodeKey = null;
             const selection = $getSelection();
             if ($isRangeSelection(selection)) {
               const node = selection.getNodes()[0];
@@ -653,6 +692,7 @@ export const AutocompleteExtension = defineExtension({
         addSwipeRightListener(rootElem, handleSwipeRight),
         () => {
           clearPendingCompositionTimer();
+          compositionTextNodeKey = null;
           rootElem.removeEventListener(
             'compositionupdate',
             onCompositionUpdateDOM,

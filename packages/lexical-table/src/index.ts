@@ -89,3 +89,9 @@ export {
   $removeTableRowAtIndex,
   $unmergeCell,
 } from './LexicalTableUtils';
+export {
+  TableImportExtension,
+  TableImportRules,
+  TableRowSchema,
+  TableSchema,
+} from './TableImportExtension';

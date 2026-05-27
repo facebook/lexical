@@ -14,7 +14,8 @@
   "dependencies": {
     "@lexical/extension": "workspace:*",
     "@lexical/utils": "workspace:*",
-    "lexical": "workspace:*"
+    "lexical": "workspace:*",
+    "@lexical/html": "workspace:*"
   },
   "repository": {
     "type": "git",

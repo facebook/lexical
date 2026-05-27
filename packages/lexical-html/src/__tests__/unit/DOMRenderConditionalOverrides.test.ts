@@ -20,6 +20,7 @@ import {
   $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
+  $getNodeByKey,
   $getRoot,
   $isElementNode,
   $isLineBreakNode,
@@ -134,6 +135,39 @@ describe('DOMRender conditional overrides', () => {
     expect(reenabledDom?.tagName).toBe('SPAN');
     expect(reenabledDom).not.toBe(enabledDom);
     expect(reenabledDom).not.toBe(disabledDom);
+  });
+
+  test('disabledForEditor re-render reuses node instances (no node map clone)', () => {
+    using editor = makeEditor();
+    editor.setRootElement(document.createElement('div'));
+
+    let lbKey = '';
+    editor.read(() => {
+      const paragraph = $getRoot().getFirstChild();
+      if ($isElementNode(paragraph)) {
+        for (const child of paragraph.getChildren()) {
+          if ($isLineBreakNode(child)) {
+            lbKey = child.getKey();
+          }
+        }
+      }
+    });
+
+    let before: unknown;
+    let after: unknown;
+    editor.read(() => {
+      before = $getNodeByKey(lbKey);
+    });
+    $setRenderContextValue(WrapDisabled, true, editor);
+    editor.read(() => {
+      after = $getNodeByKey(lbKey);
+    });
+
+    // A full reconcile recreates the DOM but reuses the same node instance —
+    // unlike marking nodes dirty, which clones them — so editor state /
+    // collaboration is untouched.
+    expect(after).not.toBe(null);
+    expect(after).toBe(before);
   });
 
   test('disabledForSession gates export participation', () => {

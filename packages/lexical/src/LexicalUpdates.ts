@@ -130,6 +130,19 @@ export function getActiveEditor(): LexicalEditor {
   return activeEditor;
 }
 
+/**
+ * Schedule a full reconcile of the active editor, so that every node is
+ * re-rendered through the current {@link EditorDOMRenderConfig} on the next
+ * commit. Unlike {@link LexicalNode.markDirty}, this does not clone or
+ * otherwise mutate the node map, so no mutation/collaboration listeners
+ * observe a change. Must be called within an `editor.update`.
+ *
+ * @internal
+ */
+export function $fullReconcile(): void {
+  getActiveEditor()._dirtyType = FULL_RECONCILE;
+}
+
 function collectBuildInformation(): string {
   let compatibleEditors = 0;
   const incompatibleEditors = new Set<string>();

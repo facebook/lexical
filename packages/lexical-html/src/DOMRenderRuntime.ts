@@ -22,8 +22,7 @@ import type {
 } from 'lexical';
 
 import {
-  $getRoot,
-  $isElementNode,
+  $fullReconcile,
   $isLexicalNode,
   DEFAULT_EDITOR_DOM_CONFIG,
 } from 'lexical';
@@ -113,81 +112,54 @@ function symmetricDiff(
 }
 
 /**
- * The node types affected by an override, or `all` when the override targets
- * everything (`'*'`) or uses a guard predicate we can not enumerate by type.
+ * Build a predicate matching the nodes an override targets — `'*'` matches
+ * everything, a node class matches by `instanceof`, and a guard is used as-is.
  */
-function overrideTypes(o: AnyDOMRenderMatch): {all: boolean; types: string[]} {
+function nodeMatcher(o: AnyDOMRenderMatch): (node: LexicalNode) => boolean {
   if (o.nodes === '*') {
-    return {all: true, types: []};
+    return () => true;
   }
-  const types: string[] = [];
-  for (const match of o.nodes) {
+  const matchers = o.nodes.map(match => {
     const klass = match as Klass<LexicalNode>;
-    if ($isLexicalNode(klass.prototype)) {
-      types.push(klass.getType());
-    } else {
-      // A guard predicate can match a subset we can not enumerate by type.
-      return {all: true, types: []};
-    }
-  }
-  return {all: false, types};
+    return $isLexicalNode(klass.prototype)
+      ? (node: LexicalNode) => node instanceof klass
+      : (match as (node: LexicalNode) => boolean);
+  });
+  return node => matchers.some(f => f(node));
 }
 
-interface ChangeAnalysis {
-  /** Some changed override affects live reconciliation. */
+/**
+ * Inspect the overrides added/removed by a context change.
+ *
+ * @returns `rerender` — whether any changed override affects live
+ * reconciliation (export-only hooks need none); and `recreate` — a predicate
+ * matching nodes whose DOM must be unmounted and recreated (structural
+ * `$createDOM`/`$getDOMSlot` overrides), or `null` when re-running
+ * `$updateDOM`/`$decorateDOM` in place is enough.
+ */
+function analyzeChange(changed: readonly AnyDOMRenderMatch[]): {
+  recreate: ((node: LexicalNode) => boolean) | null;
   rerender: boolean;
-  /** Some changed override changes element structure (`$createDOM`/`$getDOMSlot`). */
-  recreate: boolean;
-  /** The change affects every node type. */
-  all: boolean;
-  /** The specific node types affected (when not `all`). */
-  types: Set<string>;
-}
-
-function analyzeChange(changed: readonly AnyDOMRenderMatch[]): ChangeAnalysis {
-  const result: ChangeAnalysis = {
-    all: false,
-    recreate: false,
-    rerender: false,
-    types: new Set(),
-  };
+} {
+  let rerender = false;
+  const structural: ((node: LexicalNode) => boolean)[] = [];
   for (const o of changed) {
-    const structural = Boolean(o.$createDOM || o.$getDOMSlot);
-    const reconcile = structural || Boolean(o.$updateDOM || o.$decorateDOM);
-    if (!reconcile) {
-      // Export-only hooks ($exportDOM/$shouldInclude/…) do not affect the
-      // live DOM; recompiling the resident config is enough.
+    const isStructural = Boolean(o.$createDOM || o.$getDOMSlot);
+    if (!(isStructural || o.$updateDOM || o.$decorateDOM)) {
+      // Export-only hooks ($exportDOM/$shouldInclude/…) don't affect the live
+      // DOM; recompiling the resident config is enough.
       continue;
     }
-    result.rerender = true;
-    if (structural) {
-      result.recreate = true;
-    }
-    const {all, types} = overrideTypes(o);
-    if (all) {
-      result.all = true;
-    } else {
-      for (const t of types) {
-        result.types.add(t);
-      }
+    rerender = true;
+    if (isStructural) {
+      structural.push(nodeMatcher(o));
     }
   }
-  return result;
-}
-
-function $markDirtyByType(all: boolean, types: ReadonlySet<string>): void {
-  const stack: LexicalNode[] = [$getRoot()];
-  while (stack.length > 0) {
-    const node = stack.pop()!;
-    if (all || types.has(node.getType())) {
-      node.markDirty();
-    }
-    if ($isElementNode(node)) {
-      for (const child of node.getChildren()) {
-        stack.push(child);
-      }
-    }
-  }
+  return {
+    recreate:
+      structural.length === 0 ? null : node => structural.some(f => f(node)),
+    rerender,
+  };
 }
 
 /**
@@ -208,9 +180,6 @@ export class DOMRenderRuntimeImpl implements DOMRenderRuntime {
   readonly hasSessionGates: boolean;
   installed: readonly AnyDOMRenderMatch[];
 
-  /** Node types (or all) to recreate (force `$updateDOM` → true) for one pass. */
-  private forceRecreateAll = false;
-  private readonly forceRecreateTypes = new Set<string>();
   /** Memoized session configs keyed by the set of session-disabled overrides. */
   private readonly sessionCache = new Map<string, EditorDOMRenderConfig>();
 
@@ -238,28 +207,35 @@ export class DOMRenderRuntimeImpl implements DOMRenderRuntime {
     const changed = symmetricDiff(prev, next);
     this.installed = next;
     this.sessionCache.clear();
-    this.editor._config.dom = this.compileInstalled(next);
+    const dom = compileDOMRenderConfigOverrides(this.initialEditorConfig, {
+      overrides: next as AnyDOMRenderMatch[],
+    });
+    this.editor._config.dom = dom;
 
-    const {rerender, recreate, all, types} = analyzeChange(changed);
+    const {rerender, recreate} = analyzeChange(changed);
     if (!rerender) {
       return;
     }
+
+    // Re-render every node through the new config with a full reconcile, which
+    // reuses the existing node instances (no node-map mutation, so no spurious
+    // mutation/collaboration changes). For structural overrides the affected
+    // nodes must be unmounted and recreated — the removed override may have
+    // known how to revert its own DOM — so install a transient $updateDOM that
+    // reports a recreate for matching nodes, restored once the reconcile is done.
+    let restore: undefined | (() => void);
     if (recreate) {
-      if (all) {
-        this.forceRecreateAll = true;
-      } else {
-        for (const t of types) {
-          this.forceRecreateTypes.add(t);
-        }
-      }
+      const base = dom.$updateDOM;
+      dom.$updateDOM = (nextNode, prevNode, el, editor) =>
+        recreate(nextNode) ? true : base(nextNode, prevNode, el, editor);
+      restore = () => {
+        dom.$updateDOM = base;
+      };
     }
     // `discrete` so the toggle re-renders synchronously, like the initial mount.
-    this.editor.update(() => $markDirtyByType(all, types), {
+    this.editor.update(() => $fullReconcile(), {
       discrete: true,
-      onUpdate: () => {
-        this.forceRecreateAll = false;
-        this.forceRecreateTypes.clear();
-      },
+      onUpdate: restore,
       tag: 'history-merge',
     });
   }
@@ -294,28 +270,5 @@ export class DOMRenderRuntimeImpl implements DOMRenderRuntime {
       this.sessionCache.set(key, cfg);
     }
     return cfg;
-  }
-
-  private compileInstalled(
-    installed: readonly AnyDOMRenderMatch[],
-  ): EditorDOMRenderConfig {
-    const dom = compileDOMRenderConfigOverrides(this.initialEditorConfig, {
-      overrides: installed as AnyDOMRenderMatch[],
-    });
-    // Honor a transient force-recreate by reporting that the structurally
-    // affected nodes need to be unmounted and recreated through the new
-    // config, since the override that knew how to revert its own DOM may have
-    // just been removed.
-    const base = dom.$updateDOM;
-    dom.$updateDOM = (nextNode, prevNode, el, editor) => {
-      if (
-        this.forceRecreateAll ||
-        this.forceRecreateTypes.has(nextNode.getType())
-      ) {
-        return true;
-      }
-      return base(nextNode, prevNode, el, editor);
-    };
-    return dom;
   }
 }

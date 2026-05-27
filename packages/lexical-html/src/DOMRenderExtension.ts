@@ -6,12 +6,23 @@
  *
  */
 import type {DOMRenderConfig, DOMRenderExtensionOutput} from './types';
+import type {InitialEditorConfig} from 'lexical';
 
 import {defineExtension, RootNode, shallowMergeConfig} from 'lexical';
 
 import {compileDOMRenderConfigOverrides} from './compileDOMRenderConfigOverrides';
 import {DOMRenderExtensionName} from './constants';
-import {contextFromPairs} from './ContextRecord';
+import {
+  createEditorContextRecord,
+  DOMRenderRuntimeImpl,
+  filterEditorInstalled,
+} from './DOMRenderRuntime';
+
+/** @internal The result returned from {@link DOMRenderExtension}'s `init`. */
+interface DOMRenderInitResult {
+  /** `{...editorConfig}` captured before `dom` is overwritten with the compiled config. */
+  recompileConfig: InitialEditorConfig;
+}
 
 /**
  * @experimental
@@ -24,12 +35,18 @@ export const DOMRenderExtension = defineExtension<
   DOMRenderConfig,
   typeof DOMRenderExtensionName,
   DOMRenderExtensionOutput,
-  void
+  DOMRenderInitResult
 >({
   build(editor, config, state) {
-    return {
-      defaults: contextFromPairs(config.contextDefaults, undefined),
-    };
+    const {recompileConfig} = state.getInitResult();
+    const editorContext = createEditorContextRecord(config.contextDefaults);
+    const runtime = new DOMRenderRuntimeImpl(
+      editor,
+      recompileConfig,
+      config.overrides,
+      editorContext,
+    );
+    return {defaults: editorContext, runtime};
   },
   config: {
     contextDefaults: [],
@@ -49,7 +66,15 @@ export const DOMRenderExtension = defineExtension<
     ]),
   },
   init(editorConfig, config) {
-    editorConfig.dom = compileDOMRenderConfigOverrides(editorConfig, config);
+    // Capture the clean base config (with the user's `dom`, before we overwrite
+    // it) so the runtime can recompile from scratch when overrides toggle.
+    const recompileConfig: InitialEditorConfig = {...editorConfig};
+    const editorContext = createEditorContextRecord(config.contextDefaults);
+    const installed = filterEditorInstalled(config.overrides, editorContext);
+    editorConfig.dom = compileDOMRenderConfigOverrides(editorConfig, {
+      overrides: installed,
+    });
+    return {recompileConfig};
   },
   mergeConfig(config, partial) {
     const merged = shallowMergeConfig(config, partial);

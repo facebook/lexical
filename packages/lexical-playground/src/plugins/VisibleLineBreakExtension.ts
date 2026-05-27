@@ -6,17 +6,17 @@
  *
  */
 import {$isCodeNode} from '@lexical/code-core';
+import {effect, namedSignals} from '@lexical/extension';
 import {
-  effect,
-  getExtensionDependencyFromEditor,
-  namedSignals,
-} from '@lexical/extension';
-import {domOverride, DOMRenderExtension} from '@lexical/html';
+  $setRenderContextValue,
+  createRenderState,
+  domOverride,
+  DOMRenderExtension,
+} from '@lexical/html';
 import {
   configExtension,
   defineExtension,
   isHTMLElement,
-  type LexicalEditor,
   LineBreakNode,
   safeCast,
 } from 'lexical';
@@ -31,10 +31,12 @@ import {
  * `LineBreakNode` subclass required, behaviour attaches via
  * `DOMRenderExtension` configuration.
  *
- * `disabled` toggles the wrap at runtime without recreating the editor.
- * Flipping the signal forces a no-op `LineBreakNode` transform so every
- * existing `LineBreakNode` gets re-rendered through the `$createDOM` /
- * `$updateDOM` overrides below.
+ * `disabled` toggles the wrap at runtime without recreating the editor. The
+ * override is installed conditionally via `disabledForEditor`, so when disabled
+ * it is removed from the render pipeline entirely rather than no-oping per
+ * node. Flipping the signal mirrors it into the editor render context with
+ * `$setRenderContextValue`, which recompiles the render config and recreates
+ * the existing `LineBreakNode` DOM through the new config.
  */
 const VISIBLE_LINEBREAK_CLASS = 'visible-linebreak';
 const VISIBLE_LINEBREAK_ATTR = 'data-lexical-visible-linebreak';
@@ -43,12 +45,13 @@ export interface VisibleLineBreakConfig {
   disabled: boolean;
 }
 
-function $isDisabled(editor: LexicalEditor): boolean {
-  return getExtensionDependencyFromEditor(
-    editor,
-    VisibleLineBreakExtension,
-  ).output.disabled.peek();
-}
+/**
+ * Editor render context state mirroring the extension's `disabled` signal.
+ */
+export const VisibleLineBreakDisabled = createRenderState(
+  'visibleLineBreakDisabled',
+  () => false,
+);
 
 function $skipForCodeChild(node: LineBreakNode): boolean {
   // Code blocks convey line structure visually — skip the visible
@@ -74,32 +77,35 @@ export const VisibleLineBreakExtension = defineExtension({
   config: safeCast<VisibleLineBreakConfig>({disabled: false}),
   dependencies: [
     configExtension(DOMRenderExtension, {
-      // TODO use an #8567 overlay when we have that feature
       overrides: [
-        domOverride([LineBreakNode], {
-          $createDOM: (node, $next, editor) => {
-            const inner = $next();
-            if ($isDisabled(editor) || $skipForCodeChild(node)) {
-              return inner;
-            }
-            const wrapper = document.createElement('span');
-            wrapper.className = VISIBLE_LINEBREAK_CLASS;
-            wrapper.setAttribute(VISIBLE_LINEBREAK_ATTR, 'true');
-            wrapper.appendChild(inner);
-            return wrapper;
+        domOverride(
+          [LineBreakNode],
+          {
+            $createDOM: (node, $next) => {
+              const inner = $next();
+              if ($skipForCodeChild(node)) {
+                return inner;
+              }
+              const wrapper = document.createElement('span');
+              wrapper.className = VISIBLE_LINEBREAK_CLASS;
+              wrapper.setAttribute(VISIBLE_LINEBREAK_ATTR, 'true');
+              wrapper.appendChild(inner);
+              return wrapper;
+            },
+            $getDOMSlot: (_node, dom, $next) => {
+              const br = dom.querySelector(':scope > br');
+              return isHTMLElement(br) ? $next().withElement(br) : $next();
+            },
+            $updateDOM: (node, _prev, dom, $next) => {
+              const wantsWrap = !$skipForCodeChild(node);
+              if (wantsWrap !== hasOurWrap(dom)) {
+                return true;
+              }
+              return $next();
+            },
           },
-          $getDOMSlot: (_node, dom, $next, _editor) => {
-            const br = dom.querySelector(':scope > br');
-            return isHTMLElement(br) ? $next().withElement(br) : $next();
-          },
-          $updateDOM: (node, _prev, dom, $next, editor) => {
-            const wantsWrap = !$isDisabled(editor) && !$skipForCodeChild(node);
-            if (wantsWrap !== hasOurWrap(dom)) {
-              return true;
-            }
-            return $next();
-          },
-        }),
+          {disabledForEditor: ctx => ctx.get(VisibleLineBreakDisabled)},
+        ),
       ],
     }),
   ],
@@ -107,12 +113,11 @@ export const VisibleLineBreakExtension = defineExtension({
   register: (editor, _config, state) => {
     const stores = state.getOutput();
     return effect(() => {
-      // Subscribe to the signal so the effect re-runs on every flip.
-      void stores.disabled.value;
-      // Force every existing LineBreakNode to re-render via the overrides
-      // by registering and immediately unregistering a no-op transform —
-      // the register call marks all existing LineBreakNode instances dirty.
-      editor.registerNodeTransform(LineBreakNode, () => {})();
+      $setRenderContextValue(
+        VisibleLineBreakDisabled,
+        stores.disabled.value,
+        editor,
+      );
     });
   },
 });

@@ -40,6 +40,7 @@ import invariant from 'shared/invariant';
 
 import {contextValue} from './ContextRecord';
 import {
+  $getSessionDOMRenderConfig,
   $withRenderContext,
   RenderContextExport,
   RenderContextRoot,
@@ -50,6 +51,9 @@ export {domOverride} from './domOverride';
 export {DOMRenderExtension} from './DOMRenderExtension';
 export {
   $getRenderContextValue,
+  $getSessionDOMRenderConfig,
+  $setRenderContextValue,
+  $updateRenderContextValue,
   $withRenderContext,
   createRenderState,
   RenderContextExport,
@@ -60,10 +64,12 @@ export type {
   AnyRenderStateConfig,
   AnyRenderStateConfigPairOrUpdater,
   ContextPairOrUpdater,
+  DOMOverrideOptions,
   DOMRenderConfig,
   DOMRenderExtensionOutput,
   DOMRenderMatch,
   NodeMatch,
+  RenderContextReader,
 } from './types';
 
 function isStyleRule(rule: CSSRule): rule is CSSStyleRule {
@@ -195,7 +201,7 @@ export function $generateDOMFromNodes<T extends HTMLElement | DocumentFragment>(
     editor,
   )(() => {
     const root = $getRoot();
-    const domConfig = $getEditorDOMRenderConfig(editor);
+    const domConfig = $getSessionDOMRenderConfig(editor);
 
     const parentElementAppend = container.append.bind(container);
     for (const topLevelNode of root.getChildren()) {
@@ -229,7 +235,7 @@ export function $generateDOMFromRoot<T extends HTMLElement | DocumentFragment>(
     editor,
   )(() => {
     const selection = null;
-    const domConfig = $getEditorDOMRenderConfig(editor);
+    const domConfig = $getSessionDOMRenderConfig(editor);
     const parentElementAppend = container.append.bind(container);
     $appendNodesToHTML(editor, root, parentElementAppend, selection, domConfig);
     return container;

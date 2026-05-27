@@ -391,7 +391,7 @@ function identity<T>(v: T) {
 
 export function compileDOMRenderConfigOverrides(
   editorConfig: InitialEditorConfig,
-  {overrides}: DOMRenderConfig,
+  {overrides}: Pick<DOMRenderConfig, 'overrides'>,
 ): EditorDOMRenderConfig {
   const prerender = precompileDOMRenderConfigOverrides(editorConfig, overrides);
   const dom = {

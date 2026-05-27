@@ -1426,6 +1426,36 @@
         "default": "./useLexicalExtensionSignalValue.js"
       }
     },
+    "./useFocusTrap": {
+      "import": {
+        "types": "./useFocusTrap.d.ts",
+        "development": "./useFocusTrap.dev.mjs",
+        "production": "./useFocusTrap.prod.mjs",
+        "node": "./useFocusTrap.node.mjs",
+        "default": "./useFocusTrap.mjs"
+      },
+      "require": {
+        "types": "./useFocusTrap.d.ts",
+        "development": "./useFocusTrap.dev.js",
+        "production": "./useFocusTrap.prod.js",
+        "default": "./useFocusTrap.js"
+      }
+    },
+    "./useFocusTrap.js": {
+      "import": {
+        "types": "./useFocusTrap.d.ts",
+        "development": "./useFocusTrap.dev.mjs",
+        "production": "./useFocusTrap.prod.mjs",
+        "node": "./useFocusTrap.node.mjs",
+        "default": "./useFocusTrap.mjs"
+      },
+      "require": {
+        "types": "./useFocusTrap.d.ts",
+        "development": "./useFocusTrap.dev.js",
+        "production": "./useFocusTrap.prod.js",
+        "default": "./useFocusTrap.js"
+      }
+    },
     "./useLexicalEditable": {
       "import": {
         "types": "./useLexicalEditable.d.ts",

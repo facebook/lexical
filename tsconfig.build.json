@@ -171,6 +171,9 @@
       "@lexical/react/useExtensionSignalValue": [
         "./packages/lexical-react/src/useExtensionSignalValue.ts"
       ],
+      "@lexical/react/useFocusTrap": [
+        "./packages/lexical-react/src/useFocusTrap.ts"
+      ],
       "@lexical/react/useLexicalEditable": [
         "./packages/lexical-react/src/useLexicalEditable.ts"
       ],

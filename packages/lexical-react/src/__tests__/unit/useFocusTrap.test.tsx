@@ -6,13 +6,12 @@
  *
  */
 
+import {useFocusTrap} from '@lexical/react/useFocusTrap';
 import * as React from 'react';
 import {useRef} from 'react';
 import {createRoot, type Root} from 'react-dom/client';
 import * as ReactTestUtils from 'shared/react-test-utils';
 import {afterEach, beforeEach, describe, expect, test} from 'vitest';
-
-import {useFocusTrap} from '../../src/hooks/useFocusTrap';
 
 function Trap({isActive, buttons = 3}: {isActive: boolean; buttons?: number}) {
   const ref = useRef<HTMLDivElement>(null);

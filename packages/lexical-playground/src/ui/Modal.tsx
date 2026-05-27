@@ -10,12 +10,11 @@ import type {JSX} from 'react';
 
 import './Modal.css';
 
+import {useFocusTrap} from '@lexical/react/useFocusTrap';
 import {isDOMNode} from 'lexical';
 import * as React from 'react';
 import {ReactNode, useEffect, useId, useRef} from 'react';
 import {createPortal} from 'react-dom';
-
-import {useFocusTrap} from '../hooks/useFocusTrap';
 
 function PortalImpl({
   onClose,

@@ -12,8 +12,7 @@ import type {NodeKey} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextFormatType} from './nodes/LexicalTextNode';
 
-import {IS_FIREFOX} from 'shared/environment';
-import invariant from 'shared/invariant';
+import invariant from '@lexical/internal/invariant';
 
 import {
   $caretFromPoint,
@@ -55,6 +54,7 @@ import {
   SKIP_SCROLL_INTO_VIEW_TAG,
   type TextNode,
 } from '.';
+import {IS_FIREFOX} from './environment';
 import {TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
 import {
   markCollapsedSelectionFormat,
@@ -96,6 +96,8 @@ import {
   toggleTextFormatType,
 } from './LexicalUtils';
 import {$createTabNode, $isTabNode} from './nodes/LexicalTabNode';
+
+const __DEV__ = process.env.NODE_ENV !== 'production';
 
 export type TextPointType = {
   _selection: BaseSelection;

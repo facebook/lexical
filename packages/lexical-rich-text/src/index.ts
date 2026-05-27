@@ -31,6 +31,7 @@ import {
   $handleRichTextDrop,
   $insertDataTransferForRichText,
   $writeDragSourceToDataTransfer,
+  caretFromPoint,
   copyToClipboard,
   setLexicalClipboardDataTransfer,
 } from '@lexical/clipboard';
@@ -70,6 +71,7 @@ import {
   $setDirectionFromDOM,
   $setFormatFromDOM,
   $setSelection,
+  CAN_USE_BEFORE_INPUT,
   CLICK_COMMAND,
   COMMAND_PRIORITY_EDITOR,
   CONTROLLED_TEXT_INSERTION_COMMAND,
@@ -89,6 +91,9 @@ import {
   INSERT_LINE_BREAK_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
   INSERT_TAB_COMMAND,
+  IS_APPLE_WEBKIT,
+  IS_IOS,
+  IS_SAFARI,
   isDOMNode,
   isSelectionCapturedInDecoratorInput,
   KEY_ARROW_DOWN_COMMAND,
@@ -110,13 +115,6 @@ import {
   SELECT_ALL_COMMAND,
   setNodeIndentFromDOM,
 } from 'lexical';
-import caretFromPoint from 'shared/caretFromPoint';
-import {
-  CAN_USE_BEFORE_INPUT,
-  IS_APPLE_WEBKIT,
-  IS_IOS,
-  IS_SAFARI,
-} from 'shared/environment';
 
 export type SerializedHeadingNode = Spread<
   {

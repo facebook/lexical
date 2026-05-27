@@ -28,6 +28,8 @@ import {
 } from './ImportContext';
 import {$applySchema, RootSchema} from './schemas';
 
+const __DEV__ = process.env.NODE_ENV !== 'production';
+
 const NO_CAPTURES: Record<string, RegExpMatchArray> = Object.freeze(
   {} as Record<string, RegExpMatchArray>,
 );

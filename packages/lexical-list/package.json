@@ -9,36 +9,51 @@
   ],
   "license": "MIT",
   "version": "0.44.0",
-  "main": "LexicalList.js",
-  "types": "index.d.ts",
+  "main": "./dist/LexicalList.js",
+  "types": "./dist/index.d.ts",
   "dependencies": {
     "@lexical/extension": "workspace:*",
+    "@lexical/html": "workspace:*",
+    "@lexical/internal": "workspace:*",
     "@lexical/utils": "workspace:*",
-    "lexical": "workspace:*",
-    "@lexical/html": "workspace:*"
+    "lexical": "workspace:*"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/facebook/lexical.git",
     "directory": "packages/lexical-list"
   },
-  "module": "LexicalList.mjs",
+  "module": "./dist/LexicalList.mjs",
   "sideEffects": false,
   "exports": {
     ".": {
+      "source": "./src/index.ts",
       "import": {
-        "types": "./index.d.ts",
-        "development": "./LexicalList.dev.mjs",
-        "production": "./LexicalList.prod.mjs",
-        "node": "./LexicalList.node.mjs",
-        "default": "./LexicalList.mjs"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalList.dev.mjs",
+        "production": "./dist/LexicalList.prod.mjs",
+        "node": "./dist/LexicalList.node.mjs",
+        "default": "./dist/LexicalList.mjs"
       },
       "require": {
-        "types": "./index.d.ts",
-        "development": "./LexicalList.dev.js",
-        "production": "./LexicalList.prod.js",
-        "default": "./LexicalList.js"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalList.dev.js",
+        "production": "./dist/LexicalList.prod.js",
+        "default": "./dist/LexicalList.js"
       }
     }
-  }
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/__tests__",
+    "!src/__bench__",
+    "!src/__mocks__",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "!src/**/*.bench.ts",
+    "!src/**/*.bench.tsx",
+    "README.md",
+    "LICENSE"
+  ]
 }

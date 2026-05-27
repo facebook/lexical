@@ -10,6 +10,7 @@ import type {Binding} from '.';
 import type {ElementNode, NodeKey, NodeMap} from 'lexical';
 import type {AbstractType, Map as YMap, XmlElement, XmlText} from 'yjs';
 
+import invariant from '@lexical/internal/invariant';
 import {
   $createChildrenArray,
   $getNodeByKey,
@@ -19,7 +20,6 @@ import {
   $isTextNode,
   removeFromParent,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
 import {CollabDecoratorNode} from './CollabDecoratorNode';
 import {CollabLineBreakNode} from './CollabLineBreakNode';

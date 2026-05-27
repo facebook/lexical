@@ -12,8 +12,8 @@ import type {
   StyleMatchOptions,
 } from './types';
 
+import invariant from '@lexical/internal/invariant';
 import {isDOMTextNode, isHTMLElement} from 'lexical';
-import invariant from 'shared/invariant';
 
 /**
  * @internal

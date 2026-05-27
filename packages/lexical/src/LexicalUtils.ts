@@ -29,9 +29,7 @@ import type {
 } from './LexicalSelection';
 import type {RootNode} from './nodes/LexicalRootNode';
 
-import {CAN_USE_DOM} from 'shared/canUseDOM';
-import {IS_APPLE, IS_APPLE_WEBKIT, IS_IOS, IS_SAFARI} from 'shared/environment';
-import invariant from 'shared/invariant';
+import invariant from '@lexical/internal/invariant';
 
 import {
   $createTextNode,
@@ -54,6 +52,13 @@ import {
   normalizeClassNames,
   UpdateTag,
 } from '.';
+import {
+  CAN_USE_DOM,
+  IS_APPLE,
+  IS_APPLE_WEBKIT,
+  IS_IOS,
+  IS_SAFARI,
+} from './environment';
 import {
   COMPOSITION_START_CHAR,
   COMPOSITION_SUFFIX,
@@ -91,6 +96,8 @@ import {
   triggerCommandListeners,
 } from './LexicalUpdates';
 import {type TextFormatType, TextNode} from './nodes/LexicalTextNode';
+
+const __DEV__ = process.env.NODE_ENV !== 'production';
 
 export const emptyFunction = () => {
   return;

@@ -8,7 +8,7 @@
 import react from '@vitejs/plugin-react';
 import {defineConfig} from 'vite';
 
-import lexicalMonorepoPlugin from '../../packages/shared/lexicalMonorepoPlugin';
+import lexicalMonorepoPlugin from '../../scripts/vite/lexicalMonorepoPlugin';
 
 // `dev-examples/` always builds against the lexical workspace source —
 // unlike `examples/`, which builds against the published packages and

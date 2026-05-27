@@ -8,7 +8,7 @@
 import type {Predicate} from './sel';
 import type {ElementSelectorBuilder} from './types';
 
-import invariant from 'shared/invariant';
+import invariant from '@lexical/internal/invariant';
 
 import {buildAttrPredicate, buildClassAllPredicate, buildSelector} from './sel';
 

@@ -6,6 +6,8 @@
  *
  */
 
+import invariant from '@lexical/internal/invariant';
+import {LEXICAL_VERSION} from '@lexical/internal/version';
 import {
   type AnyLexicalExtension,
   type AnyLexicalExtensionArgument,
@@ -22,7 +24,6 @@ import {
   type LexicalNode,
   mergeRegister,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
 import {getNodeConfig} from './config';
 import {deepThemeMergeInPlace} from './deepThemeMergeInPlace';
@@ -108,7 +109,7 @@ function normalizeExtensionArgument(
   return Array.isArray(arg) ? arg : [arg];
 }
 
-const PACKAGE_VERSION = process.env.LEXICAL_VERSION!;
+const PACKAGE_VERSION = LEXICAL_VERSION;
 
 /** @internal */
 export class LexicalBuilder {

@@ -9,33 +9,47 @@
   ],
   "license": "MIT",
   "version": "0.44.0",
-  "main": "LexicalOverflow.js",
-  "types": "index.d.ts",
+  "main": "./dist/LexicalOverflow.js",
+  "types": "./dist/index.d.ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/facebook/lexical.git",
     "directory": "packages/lexical-overflow"
   },
-  "module": "LexicalOverflow.mjs",
+  "module": "./dist/LexicalOverflow.mjs",
   "sideEffects": false,
   "exports": {
     ".": {
+      "source": "./src/index.ts",
       "import": {
-        "types": "./index.d.ts",
-        "development": "./LexicalOverflow.dev.mjs",
-        "production": "./LexicalOverflow.prod.mjs",
-        "node": "./LexicalOverflow.node.mjs",
-        "default": "./LexicalOverflow.mjs"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalOverflow.dev.mjs",
+        "production": "./dist/LexicalOverflow.prod.mjs",
+        "node": "./dist/LexicalOverflow.node.mjs",
+        "default": "./dist/LexicalOverflow.mjs"
       },
       "require": {
-        "types": "./index.d.ts",
-        "development": "./LexicalOverflow.dev.js",
-        "production": "./LexicalOverflow.prod.js",
-        "default": "./LexicalOverflow.js"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalOverflow.dev.js",
+        "production": "./dist/LexicalOverflow.prod.js",
+        "default": "./dist/LexicalOverflow.js"
       }
     }
   },
   "dependencies": {
     "lexical": "workspace:*"
-  }
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/__tests__",
+    "!src/__bench__",
+    "!src/__mocks__",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "!src/**/*.bench.ts",
+    "!src/**/*.bench.tsx",
+    "README.md",
+    "LICENSE"
+  ]
 }

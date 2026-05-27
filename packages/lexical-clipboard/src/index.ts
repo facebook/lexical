@@ -6,6 +6,7 @@
  *
  */
 
+export {caretFromPoint} from './caretFromPoint';
 export {
   $exportMimeTypeFromSelection,
   $generateJSONFromSelectedNodes,

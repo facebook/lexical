@@ -9,7 +9,7 @@
 import type {SerializedEditorState} from './LexicalEditorState';
 import type {LexicalNode, SerializedLexicalNode} from './LexicalNode';
 
-import invariant from 'shared/invariant';
+import invariant from '@lexical/internal/invariant';
 
 import {
   $isElementNode,
@@ -63,6 +63,8 @@ import {
   scheduleMicroTask,
   setPendingNodeToClone,
 } from './LexicalUtils';
+
+const __DEV__ = process.env.NODE_ENV !== 'production';
 
 let activeEditorState: null | EditorState = null;
 let activeEditor: null | LexicalEditor = null;

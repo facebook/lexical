@@ -6,6 +6,7 @@
  *
  */
 
+import invariant from '@lexical/internal/invariant';
 import {
   $create,
   $createLineBreakNode,
@@ -28,7 +29,6 @@ import {
   SerializedTextNode,
   TextNode,
 } from 'lexical';
-import invariant from 'shared/invariant';
 import {
   afterAll,
   beforeAll,

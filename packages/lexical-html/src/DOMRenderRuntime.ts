@@ -178,7 +178,7 @@ function analyzeChange(changed: readonly AnyDOMRenderMatch[]): ChangeAnalysis {
 function $markDirtyByType(all: boolean, types: ReadonlySet<string>): void {
   const stack: LexicalNode[] = [$getRoot()];
   while (stack.length > 0) {
-    const node = stack.pop() as LexicalNode;
+    const node = stack.pop()!;
     if (all || types.has(node.getType())) {
       node.markDirty();
     }

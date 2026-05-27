@@ -52,11 +52,13 @@ function isZeroWidthOrControl(cp: number): boolean {
  * and `'ja'` for both kana-bearing prefixes and prefixes whose last
  * visible codepoint is a CJK Unified Ideograph. The CJK Unified range
  * is shared between Japanese kanji and Chinese hanzi; the default
- * dictionary set covers Japanese (kana + kanji readings) but not
- * Chinese, so kanji-after-conversion from a Japanese IME still routes
- * to the Japanese dictionary. Hosts that ship a Chinese dictionary
- * should pass a custom `detectLanguage` that distinguishes Chinese
- * from Japanese using application context (locale, user preference).
+ * dictionary set covers English and Korean only, so kana and CJK
+ * Unified prefixes produce no suggestion until a host registers a
+ * dictionary under the `ja` (or `zh`) key. Japanese is omitted from
+ * the defaults because the platform IMEs already provide their own
+ * dropdown autocompletion. Hosts that need to distinguish Chinese
+ * from Japanese should pass a custom `detectLanguage` that uses
+ * application context (locale, user preference).
  */
 export function detectLanguage(text: string): string {
   for (let i = text.length - 1; i >= 0; i--) {

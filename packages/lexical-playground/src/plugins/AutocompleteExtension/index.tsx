@@ -62,7 +62,7 @@ export const defaultDictionaries: Readonly<
 };
 
 /** Default debounce window (ms) for composition-idle suggestions. */
-const DEFAULT_COMPOSITION_IDLE_DEBOUNCE_MS = 300;
+const DEFAULT_COMPOSITION_IDLE_DEBOUNCE_MS = 200;
 
 declare global {
   interface Navigator {
@@ -263,7 +263,7 @@ export interface AutocompleteConfig {
    * where the IME never fires `compositionend` on its own — becomes
    * the trigger for the ghost.
    *
-   * Default `300`. Set to `0` to disable the soft-commit path entirely
+   * Default `200`. Set to `0` to disable the soft-commit path entirely
    * and only show ghosts on explicit composition end.
    */
   compositionIdleDebounceMs: number;

@@ -49,10 +49,11 @@ import {
   CaretRange,
   ChildCaret,
   COLLABORATION_TAG,
+  type LineBreakNode,
   NodeCaret,
   PointCaret,
   SKIP_SCROLL_INTO_VIEW_TAG,
-  TextNode,
+  type TextNode,
 } from '.';
 import {TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
 import {
@@ -753,20 +754,7 @@ export class RangeSelection implements BaseSelection {
    * @param text the text to insert into the Selection
    */
   insertRawText(text: string): void {
-    const parts = text.split(/(\r?\n|\t)/);
-    const nodes = [];
-    const length = parts.length;
-    for (let i = 0; i < length; i++) {
-      const part = parts[i];
-      if (part === '\n' || part === '\r\n') {
-        nodes.push($createLineBreakNode());
-      } else if (part === '\t') {
-        nodes.push($createTabNode());
-      } else {
-        nodes.push($createTextNode(part));
-      }
-    }
-    this.insertNodes(nodes);
+    this.insertNodes($generateNodesFromRawText(text));
   }
 
   /**
@@ -3244,6 +3232,62 @@ export function $insertNodes(nodes: Array<LexicalNode>) {
     selection = $getRoot().selectEnd();
   }
   selection.insertNodes(nodes);
+}
+
+/**
+ * Push-lexer visitor passed to {@link tokenizeRawText}. The tokenizer
+ * invokes one callback per token it emits; empty text runs are
+ * suppressed, so `text` is only invoked with a non-empty string.
+ */
+export interface RawTextVisitor {
+  readonly linebreak: () => void;
+  readonly tab: () => void;
+  readonly text: (text: string) => void;
+}
+
+/**
+ * Push-lex a raw text string into `linebreak` (`\n` / `\r\n`), `tab`
+ * (`\t`), and `text` (everything else) tokens, dispatching each to the
+ * matching callback on `visitor` in source order.
+ *
+ * Shared by {@link $generateNodesFromRawText} (which builds
+ * `LineBreakNode` / `TabNode` / `TextNode` siblings) and by
+ * `@lexical/clipboard`'s default `text/plain` clipboard importer
+ * (which maps `linebreak` to a real paragraph break via
+ * `insertParagraph` so multi-line plain text becomes multi-paragraph
+ * rich text). Empty text runs are dropped so callers don't need to
+ * special-case them.
+ */
+export function tokenizeRawText(text: string, visitor: RawTextVisitor): void {
+  for (const part of text.split(/(\r?\n|\t)/)) {
+    if (part === '\n' || part === '\r\n') {
+      visitor.linebreak();
+    } else if (part === '\t') {
+      visitor.tab();
+    } else if (part !== '') {
+      visitor.text(part);
+    }
+  }
+}
+
+/**
+ * Convert a raw text string into a flat array of `TextNode`,
+ * `LineBreakNode`, and `TabNode` siblings, splitting on `\n`, `\r\n`,
+ * and `\t`. Use this when you need the same `\n` / `\t` → real-node
+ * conversion that {@link RangeSelection.insertRawText} performs but
+ * without a selection — e.g. when building a `CodeNode`'s children
+ * inside a DOM-import rule.
+ */
+export function $generateNodesFromRawText(
+  text: string,
+): (TextNode | LineBreakNode)[] {
+  const nodes: (TextNode | LineBreakNode)[] = [];
+  tokenizeRawText(text, {
+    linebreak: () => nodes.push($createLineBreakNode()),
+    tab: () => nodes.push($createTabNode()),
+    text: part => nodes.push($createTextNode(part)),
+  });
+  return nodes;
 }
 
 export function $getTextContent(): string {

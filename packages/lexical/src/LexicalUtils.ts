@@ -1895,6 +1895,23 @@ export function isHTMLAnchorElement(x: unknown): x is HTMLAnchorElement {
 
 /**
  * @param x - The element being tested
+ * @returns Returns true if x is an HTML `<tr>` element, false otherwise
+ */
+export function isHTMLTableRowElement(x: unknown): x is HTMLTableRowElement {
+  return isHTMLElement(x) && x.tagName === 'TR';
+}
+
+/**
+ * @param x - The element being tested
+ * @returns Returns true if x is an HTML `<td>` or `<th>` element, false
+ *   otherwise
+ */
+export function isHTMLTableCellElement(x: unknown): x is HTMLTableCellElement {
+  return isHTMLElement(x) && (x.tagName === 'TD' || x.tagName === 'TH');
+}
+
+/**
+ * @param x - The element being tested
  * @returns Returns true if x is an HTML element, false otherwise.
  */
 export function isHTMLElement(x: unknown): x is HTMLElement {

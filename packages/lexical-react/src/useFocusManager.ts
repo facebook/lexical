@@ -81,6 +81,11 @@ export function useFocusManager(
         return;
       }
       event.preventDefault();
+      // `editor.focus()` restores the prior selection so commands resume
+      // where the cursor was before the jump; the `rootElement.focus()`
+      // fallback covers test environments where `editor.focus()` does not
+      // also move DOM focus.
+      editor.focus();
       rootElement.focus();
     };
     toolbar.addEventListener('keydown', handler);

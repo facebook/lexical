@@ -1,0 +1,20 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @flow strict
+ */
+
+export type RovingOrientation = 'horizontal' | 'vertical' | 'both';
+
+export type RovingTabIndexOptions = {
+  orientation?: RovingOrientation,
+  itemSelector?: string,
+};
+
+declare export function useRovingTabIndex(
+  containerRef: {current: HTMLElement | null, ...},
+  options?: RovingTabIndexOptions,
+): void;

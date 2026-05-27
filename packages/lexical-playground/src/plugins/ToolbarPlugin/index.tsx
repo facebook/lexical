@@ -23,6 +23,7 @@ import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
 import {$isListNode, ListNode} from '@lexical/list';
 import {ExtensionComponent} from '@lexical/react/ExtensionComponent';
 import {INSERT_EMBED_COMMAND} from '@lexical/react/LexicalAutoEmbedPlugin';
+import {useRovingTabIndex} from '@lexical/react/useRovingTabIndex';
 import {$isHeadingNode} from '@lexical/rich-text';
 import {
   $getSelectionStyleValueForProperty,
@@ -67,7 +68,7 @@ import {
   TextFormatType,
   UNDO_COMMAND,
 } from 'lexical';
-import {Dispatch, useCallback, useEffect, useState} from 'react';
+import {Dispatch, useCallback, useEffect, useRef, useState} from 'react';
 
 import {useSettings} from '../../context/SettingsContext';
 import {
@@ -578,6 +579,8 @@ export default function ToolbarPlugin({
   const [modal, showModal] = useModal();
   const [isEditable, setIsEditable] = useState(() => editor.isEditable());
   const {toolbarState, updateToolbarState} = useToolbarState();
+  const toolbarRef = useRef<HTMLDivElement>(null);
+  useRovingTabIndex(toolbarRef);
 
   const dispatchToolbarCommand = <T extends LexicalCommand<unknown>>(
     command: T,
@@ -928,7 +931,11 @@ export default function ToolbarPlugin({
   const canViewerSeeInsertCodeButton = !toolbarState.isImageCaption;
 
   return (
-    <div className="toolbar" role="toolbar" aria-label="Editor toolbar">
+    <div
+      ref={toolbarRef}
+      className="toolbar"
+      role="toolbar"
+      aria-label="Editor toolbar">
       <button
         disabled={!toolbarState.canUndo || !isEditable}
         onClick={e =>

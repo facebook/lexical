@@ -189,6 +189,9 @@
       "@lexical/react/useLexicalTextEntity": [
         "./packages/lexical-react/src/useLexicalTextEntity.ts"
       ],
+      "@lexical/react/useRovingTabIndex": [
+        "./packages/lexical-react/src/useRovingTabIndex.ts"
+      ],
       "@lexical/rich-text": ["./packages/lexical-rich-text/src/index.ts"],
       "@lexical/selection": ["./packages/lexical-selection/src/index.ts"],
       "@lexical/table": ["./packages/lexical-table/src/index.ts"],

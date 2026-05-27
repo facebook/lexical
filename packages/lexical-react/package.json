@@ -1605,6 +1605,36 @@
         "production": "./useLexicalTextEntity.prod.js",
         "default": "./useLexicalTextEntity.js"
       }
+    },
+    "./useRovingTabIndex": {
+      "import": {
+        "types": "./useRovingTabIndex.d.ts",
+        "development": "./useLexicalRovingTabIndex.dev.mjs",
+        "production": "./useLexicalRovingTabIndex.prod.mjs",
+        "node": "./useLexicalRovingTabIndex.node.mjs",
+        "default": "./useLexicalRovingTabIndex.mjs"
+      },
+      "require": {
+        "types": "./useRovingTabIndex.d.ts",
+        "development": "./useLexicalRovingTabIndex.dev.js",
+        "production": "./useLexicalRovingTabIndex.prod.js",
+        "default": "./useLexicalRovingTabIndex.js"
+      }
+    },
+    "./useRovingTabIndex.js": {
+      "import": {
+        "types": "./useRovingTabIndex.d.ts",
+        "development": "./useLexicalRovingTabIndex.dev.mjs",
+        "production": "./useLexicalRovingTabIndex.prod.mjs",
+        "node": "./useLexicalRovingTabIndex.node.mjs",
+        "default": "./useLexicalRovingTabIndex.mjs"
+      },
+      "require": {
+        "types": "./useRovingTabIndex.d.ts",
+        "development": "./useLexicalRovingTabIndex.dev.js",
+        "production": "./useLexicalRovingTabIndex.prod.js",
+        "default": "./useLexicalRovingTabIndex.js"
+      }
     }
   },
   "sideEffects": false,

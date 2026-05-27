@@ -96,6 +96,7 @@ module.name_mapper='^@lexical/react/useLexicalIsTextContentEmpty$' -> '<PROJECT_
 module.name_mapper='^@lexical/react/useLexicalNodeSelection$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalNodeSelection.js.flow'
 module.name_mapper='^@lexical/react/useLexicalSubscription$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalSubscription.js.flow'
 module.name_mapper='^@lexical/react/useLexicalTextEntity$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalTextEntity.js.flow'
+module.name_mapper='^@lexical/react/useRovingTabIndex$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalRovingTabIndex.js.flow'
 module.name_mapper='^@lexical/rich-text$' -> '<PROJECT_ROOT>/packages/lexical-rich-text/flow/LexicalRichText.js.flow'
 module.name_mapper='^@lexical/selection$' -> '<PROJECT_ROOT>/packages/lexical-selection/flow/LexicalSelection.js.flow'
 module.name_mapper='^@lexical/table$' -> '<PROJECT_ROOT>/packages/lexical-table/flow/LexicalTable.js.flow'

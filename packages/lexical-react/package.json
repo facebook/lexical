@@ -1426,6 +1426,36 @@
         "default": "./useLexicalExtensionSignalValue.js"
       }
     },
+    "./useFocusManager": {
+      "import": {
+        "types": "./useFocusManager.d.ts",
+        "development": "./useLexicalFocusManager.dev.mjs",
+        "production": "./useLexicalFocusManager.prod.mjs",
+        "node": "./useLexicalFocusManager.node.mjs",
+        "default": "./useLexicalFocusManager.mjs"
+      },
+      "require": {
+        "types": "./useFocusManager.d.ts",
+        "development": "./useLexicalFocusManager.dev.js",
+        "production": "./useLexicalFocusManager.prod.js",
+        "default": "./useLexicalFocusManager.js"
+      }
+    },
+    "./useFocusManager.js": {
+      "import": {
+        "types": "./useFocusManager.d.ts",
+        "development": "./useLexicalFocusManager.dev.mjs",
+        "production": "./useLexicalFocusManager.prod.mjs",
+        "node": "./useLexicalFocusManager.node.mjs",
+        "default": "./useLexicalFocusManager.mjs"
+      },
+      "require": {
+        "types": "./useFocusManager.d.ts",
+        "development": "./useLexicalFocusManager.dev.js",
+        "production": "./useLexicalFocusManager.prod.js",
+        "default": "./useLexicalFocusManager.js"
+      }
+    },
     "./useFocusTrap": {
       "import": {
         "types": "./useFocusTrap.d.ts",

@@ -23,6 +23,7 @@ import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
 import {$isListNode, ListNode} from '@lexical/list';
 import {ExtensionComponent} from '@lexical/react/ExtensionComponent';
 import {INSERT_EMBED_COMMAND} from '@lexical/react/LexicalAutoEmbedPlugin';
+import {useFocusManager} from '@lexical/react/useFocusManager';
 import {useRovingTabIndex} from '@lexical/react/useRovingTabIndex';
 import {$isHeadingNode} from '@lexical/rich-text';
 import {
@@ -581,6 +582,7 @@ export default function ToolbarPlugin({
   const {toolbarState, updateToolbarState} = useToolbarState();
   const toolbarRef = useRef<HTMLDivElement>(null);
   useRovingTabIndex(toolbarRef);
+  useFocusManager(activeEditor, toolbarRef);
 
   const dispatchToolbarCommand = <T extends LexicalCommand<unknown>>(
     command: T,

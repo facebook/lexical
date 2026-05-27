@@ -23,6 +23,8 @@ Plugin authors who want to intercept `Escape` (modal close, dropdown close, etc.
 
 Handlers that return `false` let the chain continue, so Escape can still fall through to the default blur even after a higher-priority handler runs.
 
+Some host modals (e.g. the playground's `Modal` component) bind their close handler directly to `window.addEventListener('keydown', ...)` rather than going through `KEY_ESCAPE_COMMAND`. That path runs alongside the table above; it does not participate in the editor's command priority chain.
+
 ## Toolbar focus jump
 
 The playground uses `useFocusManager` (`@lexical/react/useFocusManager`) to provide a documented shortcut for moving focus from the editor to the toolbar without tabbing through the page. The hook listens for `Alt+F10` inside the editor and moves focus to the toolbar's first focusable item. While focus is in the toolbar, pressing `Escape` restores both focus and the editor's prior selection via `editor.focus()`.
@@ -44,5 +46,5 @@ Toolbars that opt into `useRovingTabIndex` (`@lexical/react/useRovingTabIndex`) 
 ## What this page does not cover
 
 - Browser-specific behaviors. Safari intercepts `Escape` while in fullscreen mode; that is a browser concern, not a Lexical one.
-- Touch / mobile screen reader gestures. The hooks above work with desktop screen readers; mobile (TalkBack, VoiceOver iOS) is exercised through the same DOM contracts.
+- Touch / mobile screen reader gestures. The hooks above work with desktop screen readers; mobile (TalkBack, VoiceOver iOS) shares the same DOM contracts but has not been exercised in this set of changes.
 - High contrast / forced-colors theming. See the playground's `index.css` `@media (forced-colors: active)` block for a baseline.

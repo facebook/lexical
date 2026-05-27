@@ -47,6 +47,7 @@ import CommentPlugin from './plugins/CommentPlugin';
 import ComponentPickerPlugin from './plugins/ComponentPickerPlugin';
 import ContextMenuPlugin from './plugins/ContextMenuPlugin';
 import DraggableBlockPlugin from './plugins/DraggableBlockPlugin';
+import EditorModeAnnouncePlugin from './plugins/EditorModeAnnouncePlugin';
 import EmojiPickerPlugin from './plugins/EmojiPickerPlugin';
 import EquationsPlugin from './plugins/EquationsPlugin';
 import ExcalidrawPlugin from './plugins/ExcalidrawPlugin';
@@ -191,6 +192,7 @@ export default function Editor(): JSX.Element {
 
   return (
     <>
+      <EditorModeAnnouncePlugin />
       {isRichText && (
         <ToolbarPlugin
           editor={editor}

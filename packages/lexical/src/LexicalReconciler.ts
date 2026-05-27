@@ -403,6 +403,19 @@ function $createNode(key: NodeKey, slot: ElementDOMSlot | null): HTMLElement {
     dom.setAttribute('data-lexical-decorator', 'true');
   }
 
+  // Opt-in ARIA contract: subclasses that override `getRole` / `getAriaLabel`
+  // declare semantic role information once at create time. Defaults return
+  // `undefined` so existing nodes get no DOM change. Skip if the node's own
+  // `createDOM` already populated the attribute.
+  const role = node.getRole();
+  if (role !== undefined && !dom.hasAttribute('role')) {
+    dom.setAttribute('role', role);
+  }
+  const ariaLabel = node.getAriaLabel();
+  if (ariaLabel !== undefined && !dom.hasAttribute('aria-label')) {
+    dom.setAttribute('aria-label', ariaLabel);
+  }
+
   if ($isElementNode(node)) {
     const indent = node.__indent;
     const childrenSize = node.__size;

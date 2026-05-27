@@ -141,6 +141,14 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
     return this.getEquation();
   }
 
+  getRole(): string {
+    return 'math';
+  }
+
+  getAriaLabel(): string {
+    return `Equation: ${this.getEquation()}`;
+  }
+
   isInline(): boolean {
     return this.getLatest().__inline;
   }

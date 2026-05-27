@@ -1136,6 +1136,31 @@ export class LexicalNode {
     return this.getTextContent().length;
   }
 
+  /**
+   * Optional ARIA role to apply to this node's DOM element at create time.
+   * Defaults to `undefined`, which leaves the DOM untouched. Subclasses
+   * override to expose semantic role information (e.g. an equation node
+   * returning `'math'`).
+   *
+   * The role is only applied at `$createNode` — dynamic changes within a
+   * cycle are not currently re-applied. If a subclass's own `createDOM`
+   * already sets `role`, the reconciler does not overwrite it.
+   *
+   */
+  getRole(): string | undefined {
+    return undefined;
+  }
+
+  /**
+   * Optional ARIA label to apply to this node's DOM element at create time.
+   * Defaults to `undefined`. See {@link LexicalNode.getRole} for application
+   * semantics.
+   *
+   */
+  getAriaLabel(): string | undefined {
+    return undefined;
+  }
+
   // View
 
   /**

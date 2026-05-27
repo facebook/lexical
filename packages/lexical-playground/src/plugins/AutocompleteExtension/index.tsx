@@ -16,8 +16,11 @@ import {
   $isTextNode,
   type BaseSelection,
   COMMAND_PRIORITY_LOW,
+  COMPOSITION_END_TAG,
+  COMPOSITION_START_COMMAND,
   defineExtension,
   type EditorState,
+  isHTMLElement,
   KEY_ARROW_RIGHT_COMMAND,
   KEY_TAB_COMMAND,
   type LexicalEditor,
@@ -139,6 +142,55 @@ function query(
   });
 }
 
+/**
+ * Backward word-scan on a raw string. Mirrors {@link $search} but
+ * operates on DOM text directly — used by the composition-idle path
+ * which reads `<span data-lexical-text>` content while a composition
+ * is in progress, since the corresponding TextNode in EditorState
+ * lags the IME's incremental compositionupdate stream.
+ *
+ * `\s` here (not a literal `' '` as in `$search`) intentionally
+ * matches the wider Unicode whitespace set — Safari's Korean IME
+ * commits a U+00A0 NBSP instead of U+0020 between composed text
+ * and the caret, and U+3000 IDEOGRAPHIC SPACE shows up in some
+ * Chinese / Japanese IME flows. Treating all of these as boundaries
+ * keeps the prefix free of trailing whitespace artifacts that would
+ * otherwise corrupt language detection (last-codepoint dispatch on
+ * an invisible space would fall through to `en`).
+ */
+function extractTrailingWord(text: string): string {
+  const trimmed = text.replace(/\s+$/u, '');
+  const match = trimmed.match(/\S+$/u);
+  return match === null ? '' : match[0];
+}
+
+/**
+ * Read the visible text of a TextNode's keyed DOM, excluding any
+ * autocomplete ghost child the extension may have appended. Direct
+ * `dom.textContent` would fold in the ghost's "...권 (TAB)" suffix
+ * and feed it back into the next query.
+ *
+ * Zero-width formatting characters (ZWSP, ZWNJ, ZWJ, BOM) that
+ * browsers and some IMEs scatter into composition spans for caret
+ * positioning are stripped so language detection sees the real
+ * Hangul / kana / kanji codepoints instead of an invisible trailing
+ * `\u200B` that would force-fallback to English.
+ */
+function getCompositionTextFromDOM(dom: HTMLElement): string {
+  let text = '';
+  for (const node of dom.childNodes) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      text += node.textContent ?? '';
+    } else if (
+      isHTMLElement(node) &&
+      !node.hasAttribute(AUTOCOMPLETE_GHOST_ATTR)
+    ) {
+      text += node.textContent ?? '';
+    }
+  }
+  return text.replace(/[\u200B-\u200D\uFEFF]/g, '');
+}
+
 function formatSuggestionText(suggestion: string): string {
   // eslint-disable-next-line compat/compat
   const userAgentData = window.navigator.userAgentData;
@@ -246,6 +298,12 @@ export const AutocompleteExtension = defineExtension({
     let lastSuggestion: string | null = null;
     let searchController: AbortController | null = null;
     let pendingCompositionTimer: number | null = null;
+    // Key of the TextNode the IME is currently composing on. Captured at
+    // COMPOSITION_START_COMMAND time from the selection anchor and cleared
+    // on compositionend. Used by `tryCompositionSuggestion` to locate the
+    // DOM whose text content reflects the IME's in-flight syllables —
+    // EditorState lags during composition and would yield a stale prefix.
+    let compositionTextNodeKey: NodeKey | null = null;
 
     function clearPendingCompositionTimer() {
       if (pendingCompositionTimer !== null) {
@@ -267,9 +325,73 @@ export const AutocompleteExtension = defineExtension({
 
     function tryCompositionSuggestion() {
       pendingCompositionTimer = null;
-      // TODO(F2): Read DOM text of the active composition node, extract
-      // the trailing prefix, and route through the same async query path
-      // as `handleUpdate`. F1 only wires the debounce timer scaffold.
+      if (compositionTextNodeKey === null) {
+        return;
+      }
+      const dom = editor.getElementByKey(compositionTextNodeKey);
+      if (dom === null) {
+        return;
+      }
+      const text = getCompositionTextFromDOM(dom);
+      if (text.length === 0) {
+        return;
+      }
+      const prefix = extractTrailingWord(text);
+      if (prefix.length === 0 || prefix === lastMatch) {
+        return;
+      }
+      if (searchController !== null) {
+        searchController.abort();
+      }
+      syncGhost(editor, null, null);
+      lastMatch = prefix;
+      lastSuggestion = null;
+      activeTextNodeKey = null;
+      const controller = new AbortController();
+      searchController = controller;
+      const composingKey = compositionTextNodeKey;
+      const language = output.detectLanguage.value(prefix);
+      query(output.dictionaries.value[language], prefix, controller.signal)
+        .then(newSuggestion => {
+          applyCompositionSuggestion(
+            controller,
+            composingKey,
+            prefix,
+            newSuggestion,
+          );
+        })
+        .catch(e => {
+          if (!(e instanceof DOMException && e.name === 'AbortError')) {
+            console.error(e);
+          }
+        });
+    }
+
+    function applyCompositionSuggestion(
+      refController: AbortController,
+      composingKey: NodeKey,
+      prefix: string,
+      newSuggestion: string | null,
+    ) {
+      if (
+        searchController !== refController ||
+        newSuggestion === null ||
+        compositionTextNodeKey !== composingKey
+      ) {
+        return;
+      }
+      const dom = editor.getElementByKey(composingKey);
+      if (dom === null) {
+        return;
+      }
+      // Re-read DOM at resolve time — the user may have typed past the
+      // prefix while the query was in flight (e.g. 200ms latency).
+      if (extractTrailingWord(getCompositionTextFromDOM(dom)) !== prefix) {
+        return;
+      }
+      activeTextNodeKey = composingKey;
+      lastSuggestion = newSuggestion;
+      syncGhost(editor, composingKey, formatSuggestionText(newSuggestion));
     }
 
     function onCompositionUpdateDOM() {
@@ -292,6 +414,7 @@ export const AutocompleteExtension = defineExtension({
 
     function onCompositionEndDOM() {
       clearPendingCompositionTimer();
+      compositionTextNodeKey = null;
     }
 
     function applyAsyncSuggestion(
@@ -328,7 +451,22 @@ export const AutocompleteExtension = defineExtension({
       );
     }
 
-    function handleUpdate({editorState}: {editorState: EditorState}) {
+    function handleUpdate({
+      editorState,
+      tags,
+    }: {
+      editorState: EditorState;
+      tags: Set<string>;
+    }) {
+      // Skip the normal update path while a composition is in progress —
+      // querying on every committed `compositionupdate` flickers the ghost
+      // as Korean 자모 / Japanese kana stream through partial syllables.
+      // The composition-idle debounce (`tryCompositionSuggestion`) takes
+      // over while composing; the post-commit update (with the
+      // `COMPOSITION_END_TAG` tag) re-enters this path.
+      if (!tags.has(COMPOSITION_END_TAG) && editor.isComposing()) {
+        return;
+      }
       editorState.read(
         () => {
           const selection = $getSelection();
@@ -446,6 +584,26 @@ export const AutocompleteExtension = defineExtension({
       rootElem.addEventListener('compositionend', onCompositionEndDOM);
       return mergeRegister(
         editor.registerUpdateListener(handleUpdate),
+        // Capture the composition target's TextNode key the moment a
+        // composition starts so `tryCompositionSuggestion` can find the
+        // right DOM during the idle debounce. Also dismiss any stale
+        // ghost (carried over from pre-composition keyboard input) so
+        // the user gets a clean slate while typing the new prefix.
+        editor.registerCommand(
+          COMPOSITION_START_COMMAND,
+          () => {
+            const selection = $getSelection();
+            if ($isRangeSelection(selection)) {
+              const node = selection.getNodes()[0];
+              if ($isTextNode(node)) {
+                compositionTextNodeKey = node.getKey();
+              }
+            }
+            dismiss();
+            return false;
+          },
+          COMMAND_PRIORITY_LOW,
+        ),
         editor.registerCommand(
           KEY_TAB_COMMAND,
           $handleCommitCommand,

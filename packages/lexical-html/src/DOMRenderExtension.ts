@@ -21,7 +21,7 @@ import {
 /** @internal The result returned from {@link DOMRenderExtension}'s `init`. */
 interface DOMRenderInitResult {
   /** `{...editorConfig}` captured before `dom` is overwritten with the compiled config. */
-  recompileConfig: InitialEditorConfig;
+  initialEditorConfig: InitialEditorConfig;
 }
 
 /**
@@ -38,11 +38,11 @@ export const DOMRenderExtension = defineExtension<
   DOMRenderInitResult
 >({
   build(editor, config, state) {
-    const {recompileConfig} = state.getInitResult();
+    const {initialEditorConfig} = state.getInitResult();
     const editorContext = createEditorContextRecord(config.contextDefaults);
     const runtime = new DOMRenderRuntimeImpl(
       editor,
-      recompileConfig,
+      initialEditorConfig,
       config.overrides,
       editorContext,
     );
@@ -68,13 +68,13 @@ export const DOMRenderExtension = defineExtension<
   init(editorConfig, config) {
     // Capture the clean base config (with the user's `dom`, before we overwrite
     // it) so the runtime can recompile from scratch when overrides toggle.
-    const recompileConfig: InitialEditorConfig = {...editorConfig};
+    const initialEditorConfig: InitialEditorConfig = {...editorConfig};
     const editorContext = createEditorContextRecord(config.contextDefaults);
     const installed = filterEditorInstalled(config.overrides, editorContext);
     editorConfig.dom = compileDOMRenderConfigOverrides(editorConfig, {
       overrides: installed,
     });
-    return {recompileConfig};
+    return {initialEditorConfig};
   },
   mergeConfig(config, partial) {
     const merged = shallowMergeConfig(config, partial);

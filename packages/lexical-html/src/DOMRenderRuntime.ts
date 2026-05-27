@@ -198,8 +198,12 @@ function $markDirtyByType(all: boolean, types: ReadonlySet<string>): void {
  */
 export class DOMRenderRuntimeImpl implements DOMRenderRuntime {
   readonly editor: LexicalEditor;
-  /** `{...editorConfig, dom: baseDom}` — the clean base for every recompile. */
-  readonly recompileConfig: InitialEditorConfig;
+  /**
+   * The editor config captured at `init` (before its `dom` was overwritten
+   * with the compiled config), so its `dom` is the clean base used for every
+   * recompile.
+   */
+  readonly initialEditorConfig: InitialEditorConfig;
   readonly overrides: readonly AnyDOMRenderMatch[];
   readonly editorContext: RenderContextRecord;
   readonly hasSessionGates: boolean;
@@ -213,12 +217,12 @@ export class DOMRenderRuntimeImpl implements DOMRenderRuntime {
 
   constructor(
     editor: LexicalEditor,
-    recompileConfig: InitialEditorConfig,
+    initialEditorConfig: InitialEditorConfig,
     overrides: readonly AnyDOMRenderMatch[],
     editorContext: RenderContextRecord,
   ) {
     this.editor = editor;
-    this.recompileConfig = recompileConfig;
+    this.initialEditorConfig = initialEditorConfig;
     this.overrides = overrides;
     this.editorContext = editorContext;
     this.installed = filterEditorInstalled(overrides, editorContext);
@@ -285,7 +289,7 @@ export class DOMRenderRuntimeImpl implements DOMRenderRuntime {
     const key = disabledKeys.join(',');
     let cfg = this.sessionCache.get(key);
     if (!cfg) {
-      cfg = compileDOMRenderConfigOverrides(this.recompileConfig, {
+      cfg = compileDOMRenderConfigOverrides(this.initialEditorConfig, {
         overrides: sessionSet,
       });
       this.sessionCache.set(key, cfg);
@@ -296,7 +300,7 @@ export class DOMRenderRuntimeImpl implements DOMRenderRuntime {
   private compileInstalled(
     installed: readonly AnyDOMRenderMatch[],
   ): EditorDOMRenderConfig {
-    const dom = compileDOMRenderConfigOverrides(this.recompileConfig, {
+    const dom = compileDOMRenderConfigOverrides(this.initialEditorConfig, {
       overrides: installed as AnyDOMRenderMatch[],
     });
     // Honor a transient force-recreate by reporting that the structurally

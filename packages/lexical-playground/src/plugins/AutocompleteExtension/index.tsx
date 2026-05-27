@@ -245,6 +245,14 @@ export const AutocompleteExtension = defineExtension({
     let lastMatch: string | null = null;
     let lastSuggestion: string | null = null;
     let searchController: AbortController | null = null;
+    let pendingCompositionTimer: number | null = null;
+
+    function clearPendingCompositionTimer() {
+      if (pendingCompositionTimer !== null) {
+        clearTimeout(pendingCompositionTimer);
+        pendingCompositionTimer = null;
+      }
+    }
 
     function dismiss() {
       activeTextNodeKey = null;
@@ -255,6 +263,35 @@ export const AutocompleteExtension = defineExtension({
         searchController = null;
       }
       syncGhost(editor, null, null);
+    }
+
+    function tryCompositionSuggestion() {
+      pendingCompositionTimer = null;
+      // TODO(F2): Read DOM text of the active composition node, extract
+      // the trailing prefix, and route through the same async query path
+      // as `handleUpdate`. F1 only wires the debounce timer scaffold.
+    }
+
+    function onCompositionUpdateDOM() {
+      const debounceMs = output.compositionIdleDebounceMs.value;
+      if (debounceMs <= 0) {
+        return;
+      }
+      // Don't dismiss the existing ghost here — if the user has just paused
+      // (ghost shown), then pressed Tab, the IME typically fires one final
+      // `compositionupdate` for the in-flight syllable right before
+      // `compositionend`. Dismissing would clear `lastSuggestion` between
+      // the ghost render and the Tab commit. The debounced query that lands
+      // in `tryCompositionSuggestion` replaces (or clears) the stale ghost.
+      clearPendingCompositionTimer();
+      pendingCompositionTimer = window.setTimeout(
+        tryCompositionSuggestion,
+        debounceMs,
+      );
+    }
+
+    function onCompositionEndDOM() {
+      clearPendingCompositionTimer();
     }
 
     function applyAsyncSuggestion(
@@ -405,6 +442,8 @@ export const AutocompleteExtension = defineExtension({
       if (output.disabled.value || !rootElem || !editable) {
         return;
       }
+      rootElem.addEventListener('compositionupdate', onCompositionUpdateDOM);
+      rootElem.addEventListener('compositionend', onCompositionEndDOM);
       return mergeRegister(
         editor.registerUpdateListener(handleUpdate),
         editor.registerCommand(
@@ -418,6 +457,14 @@ export const AutocompleteExtension = defineExtension({
           COMMAND_PRIORITY_LOW,
         ),
         addSwipeRightListener(rootElem, handleSwipeRight),
+        () => {
+          clearPendingCompositionTimer();
+          rootElem.removeEventListener(
+            'compositionupdate',
+            onCompositionUpdateDOM,
+          );
+          rootElem.removeEventListener('compositionend', onCompositionEndDOM);
+        },
         // Tear down on dispose: clear any ghost still attached so a fresh
         // build doesn't see leftover decoration.
         dismiss,

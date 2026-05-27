@@ -29,6 +29,7 @@ import {
   NODE_STATE_KEY,
 } from '.';
 import {PROTOTYPE_CONFIG_METHOD} from './LexicalConstants';
+import {DOMSlot} from './LexicalDOMSlot';
 import {
   $updateStateFromJSON,
   type NodeState,
@@ -1170,6 +1171,24 @@ export class LexicalNode {
     _config: EditorConfig,
   ): boolean {
     invariant(false, 'updateDOM: base method not extended');
+  }
+
+  /**
+   * Returns a {@link DOMSlot} pointing at the content-bearing element of this
+   * node's DOM. The default returns a slot wrapping the keyed DOM as-is.
+   *
+   * Override this when {@link createDOM} returns a wrapper around the
+   * content-bearing element (e.g. `<span><br/></span>` for a styled line
+   * break), so selection / reconciliation logic can target the inner element.
+   *
+   * {@link ElementNode} overrides this to return an {@link ElementDOMSlot}
+   * with children-management semantics (used by the reconciler to place
+   * managed children).
+   *
+   * @experimental
+   */
+  getDOMSlot(element: HTMLElement): DOMSlot<HTMLElement> {
+    return new DOMSlot(element);
   }
 
   /**

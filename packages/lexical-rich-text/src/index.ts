@@ -101,6 +101,8 @@ import {
   KEY_ESCAPE_COMMAND,
   KEY_SPACE_COMMAND,
   KEY_TAB_COMMAND,
+  MOVE_TO_END,
+  MOVE_TO_START,
   OUTDENT_CONTENT_COMMAND,
   PASTE_COMMAND,
   PASTE_TAG,
@@ -1274,6 +1276,91 @@ export function registerRichText(
         }
 
         return false;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    ),
+    editor.registerCommand<KeyboardEvent>(
+      MOVE_TO_END,
+      event => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) {
+          return false;
+        }
+        const {anchor} = selection;
+        if (anchor.type !== 'element' || anchor.offset !== 0) {
+          return false;
+        }
+        const element = anchor.getNode();
+        if (!$isElementNode(element)) {
+          return false;
+        }
+        const firstChild = element.getFirstChild();
+        if (!$isDecoratorNode(firstChild) || !firstChild.isInline()) {
+          return false;
+        }
+        // Native browser cursor traversal stops at the inline decorator's
+        // contenteditable=false boundary when the caret starts at element
+        // offset 0, so MOVE_TO_END leaves the caret stuck. Move it ourselves.
+        const elementKey = element.getKey();
+        const ending = element.selectEnd();
+        if (event.shiftKey) {
+          ending.anchor.set(elementKey, 0, 'element');
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        return true;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    ),
+    editor.registerCommand<KeyboardEvent>(
+      MOVE_TO_START,
+      event => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) {
+          return false;
+        }
+        const {anchor, focus} = selection;
+        const focusBlock = $findMatchingParent(
+          focus.getNode(),
+          (node): node is ElementNode =>
+            $isElementNode(node) && !node.isInline(),
+        );
+        if (focusBlock === null) {
+          return false;
+        }
+        const firstChild = focusBlock.getFirstChild();
+        if (!$isDecoratorNode(firstChild) || !firstChild.isInline()) {
+          return false;
+        }
+        // Cross-block selections fall through to native handling. The
+        // Chromium boundary bug only matters when both endpoints sit
+        // inside the block whose first child is the inline decorator.
+        const anchorBlock = $findMatchingParent(
+          anchor.getNode(),
+          (node): node is ElementNode =>
+            $isElementNode(node) && !node.isInline(),
+        );
+        if (anchorBlock !== focusBlock) {
+          return false;
+        }
+        const blockKey = focusBlock.getKey();
+        if (
+          focus.type === 'element' &&
+          focus.key === blockKey &&
+          focus.offset === 0
+        ) {
+          return false;
+        }
+        // Symmetric to the MOVE_TO_END case: Chromium stops the native
+        // caret at the inline decorator's contenteditable=false boundary
+        // when moving backwards, so element offset 0 is unreachable.
+        selection.focus.set(blockKey, 0, 'element');
+        if (!event.shiftKey) {
+          selection.anchor.set(blockKey, 0, 'element');
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        return true;
       },
       COMMAND_PRIORITY_EDITOR,
     ),

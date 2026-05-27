@@ -51,6 +51,7 @@ import {
 } from './LexicalSelection';
 import {
   $getCompositionKey,
+  $updateDOMBlockCursorElement,
   getDOMSelection,
   getEditorPropertyFromDOMNode,
   getEditorStateTextContent,
@@ -61,7 +62,6 @@ import {
   removeDOMBlockCursorElement,
   scheduleMicroTask,
   setPendingNodeToClone,
-  updateDOMBlockCursorElement,
 } from './LexicalUtils';
 
 let activeEditorState: null | EditorState = null;
@@ -657,7 +657,7 @@ export function $commitPendingUpdates(
           rootElement,
         );
       }
-      updateDOMBlockCursorElement(editor, rootElement, pendingSelection);
+      $updateDOMBlockCursorElement(editor, rootElement, pendingSelection);
     } finally {
       if (observer !== null) {
         observer.observe(rootElement, observerOptions);

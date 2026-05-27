@@ -193,6 +193,15 @@ function merge3<T, N extends LexicalNode, A>(
   };
 }
 
+const merge3GetDOMSlot = merge3 as (
+  acc: EditorDOMRenderConfig['$getDOMSlot'],
+  $getOverride: (n: LexicalNode) => DOMRenderMatch<LexicalNode>['$getDOMSlot'],
+) => EditorDOMRenderConfig['$getDOMSlot'];
+
+const ignoreNext3GetDOMSlot = ignoreNext3 as (
+  fn: EditorDOMRenderConfig['$getDOMSlot'],
+) => DOMRenderMatch<LexicalNode>['$getDOMSlot'];
+
 function merge4<T, N extends LexicalNode, A, B>(
   $acc: AccFn<T, N, [A, B]>,
   $getOverride: GetOverrideFn<T, N, [A, B]>,
@@ -392,7 +401,13 @@ export function compileDOMRenderConfigOverrides(
   compilePrerenderKey(prerender, '$createDOM', dom, merge2, ignoreNext2);
   compilePrerenderKey(prerender, '$exportDOM', dom, merge2, ignoreNext2);
   compilePrerenderKey(prerender, '$extractWithChild', dom, merge5, ignoreNext5);
-  compilePrerenderKey(prerender, '$getDOMSlot', dom, merge3, ignoreNext3);
+  compilePrerenderKey(
+    prerender,
+    '$getDOMSlot',
+    dom,
+    merge3GetDOMSlot,
+    ignoreNext3GetDOMSlot,
+  );
   compilePrerenderKey(prerender, '$shouldExclude', dom, merge3, ignoreNext3);
   compilePrerenderKey(prerender, '$shouldInclude', dom, merge3, ignoreNext3);
   compilePrerenderKey(prerender, '$updateDOM', dom, merge4, ignoreNext4);

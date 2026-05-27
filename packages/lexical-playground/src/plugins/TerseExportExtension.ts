@@ -22,6 +22,7 @@ export const RenderContextTerse = createRenderState('isTerse', Boolean);
 export const TerseExportExtension = defineExtension({
   dependencies: [
     configExtension(DOMRenderExtension, {
+      // TODO use an #8567 overlay when we have that feature
       overrides: [
         domOverride('*', {
           $exportDOM: (node, $next, editor) => {

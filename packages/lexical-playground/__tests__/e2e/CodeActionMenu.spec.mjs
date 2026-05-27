@@ -199,21 +199,8 @@ test.describe('CodeActionMenu', () => {
           class="PlaygroundEditorTheme__code"
           dir="auto"
           spellcheck="false"
-          data-gutter="1"
-          data-language="javascript"
-          data-highlight-language="javascript">
-          <span data-lexical-text="true"></span>
-          <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
-            const
-          </span>
-          <span data-lexical-text="true">luci</span>
-          <span class="PlaygroundEditorTheme__tokenOperator" data-lexical-text="true">
-            =
-          </span>
-          <span data-lexical-text="true"></span>
-          <span class="PlaygroundEditorTheme__tokenSelector" data-lexical-text="true">
-            'Hello World'
-          </span>
+          data-gutter="1">
+          <span data-lexical-text="true">const luci = 'Hello World'</span>
         </code>
       `,
     );
@@ -230,25 +217,8 @@ test.describe('CodeActionMenu', () => {
         class="PlaygroundEditorTheme__code"
         dir="auto"
         spellcheck="false"
-        data-gutter="12"
-        data-language="javascript"
-        data-highlight-language="javascript">
-          <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
-            const
-          </span>
-          <span data-lexical-text="true">luci</span>
-          <span class="PlaygroundEditorTheme__tokenOperator" data-lexical-text="true">
-            =
-          </span>
-          <span data-lexical-text="true"></span>
-          <span class="PlaygroundEditorTheme__tokenSelector" data-lexical-text="true">
-            "Hello World"
-          </span>
-          <span
-            class="PlaygroundEditorTheme__tokenPunctuation"
-            data-lexical-text="true">
-            ;
-          </span>
+        data-gutter="12">
+          <span data-lexical-text="true">const luci = "Hello World";</span>
           <br />
           <br />
         </code>
@@ -275,17 +245,8 @@ test.describe('CodeActionMenu', () => {
           class="PlaygroundEditorTheme__code"
           dir="auto"
           spellcheck="false"
-          data-gutter="1"
-          data-language="javascript"
-          data-highlight-language="javascript">
-          <span data-lexical-text="true">cons luci</span>
-          <span class="PlaygroundEditorTheme__tokenOperator" data-lexical-text="true">
-            =
-          </span>
-          <span data-lexical-text="true"></span>
-          <span class="PlaygroundEditorTheme__tokenSelector" data-lexical-text="true">
-            'Hello World'
-          </span>
+          data-gutter="1">
+          <span data-lexical-text="true">cons luci = 'Hello World'</span>
         </code>
       `,
     );

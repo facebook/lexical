@@ -221,6 +221,16 @@ export function $generateDOMFromRoot<T extends HTMLElement | DocumentFragment>(
   });
 }
 
+/**
+ * Generate an HTML string from the editor's current state (or `selection`
+ * if provided).
+ *
+ * Must be called inside an active editor scope — i.e. `editor.update(...)`,
+ * `editor.read(...)`, or `editor.getEditorState().read(callback, {editor})`.
+ * The legacy `editor.getEditorState().read(callback)` call (without the
+ * `{editor}` option) does not set an active editor and is not supported;
+ * `editor.read(...)` is the drop-in replacement.
+ */
 export function $generateHtmlFromNodes(
   editor: LexicalEditor,
   selection: BaseSelection | null = null,

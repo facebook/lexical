@@ -33,4 +33,5 @@ export {
   $getLastCodeNodeOfLine,
   $getStartOfCodeInLine,
   $outdentLeadingSpaces,
+  $plainifyCodeContent,
 } from './FlatStructureUtils';

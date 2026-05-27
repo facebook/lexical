@@ -132,12 +132,15 @@ export {
   NODE_STATE_KEY,
   TEXT_TYPE_TO_FORMAT,
 } from './LexicalConstants';
+export type {DOMSlot} from './LexicalDOMSlot';
+export type {ElementDOMSlot} from './LexicalDOMSlot';
 export type {
   CommandListener,
   CommandListenerPriority,
   CommandListenerPriorityBefore,
   CommandPayloadType,
   CreateEditorArgs,
+  DOMSlotForNode,
   EditableListener,
   EditorConfig,
   EditorDOMRenderConfig,
@@ -183,6 +186,7 @@ export type {
 } from './LexicalEditorState';
 export {$isEditorState} from './LexicalEditorState';
 export type {EventHandler} from './LexicalEvents';
+export {stopLexicalPropagation} from './LexicalEvents';
 export type {
   BaseStaticNodeConfig,
   DOMChildConversion,
@@ -261,6 +265,8 @@ export {
   $createChildrenArray,
   $findMatchingParent,
   $getAdjacentNode,
+  $getDOMSlot,
+  $getDOMTextNode,
   $getEditor,
   $getEditorDOMRenderConfig,
   $getNearestNodeFromDOMNode,
@@ -271,6 +277,7 @@ export {
   $getRoot,
   $hasAncestor,
   $hasUpdateTag,
+  $isElementDOMSlot,
   $isInlineElementOrDecoratorNode,
   $isLeafNode,
   $isRootOrShadowRoot,
@@ -320,7 +327,6 @@ export {
 export {ArtificialNode__DO_NOT_USE} from './nodes/ArtificialNode';
 export {$isDecoratorNode, DecoratorNode} from './nodes/LexicalDecoratorNode';
 export type {
-  ElementDOMSlot,
   ElementFormatType,
   SerializedElementNode,
 } from './nodes/LexicalElementNode';

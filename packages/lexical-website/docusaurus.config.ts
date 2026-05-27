@@ -347,7 +347,7 @@ const config: Config = {
     './plugins/webpack-buffer',
     async function webpackLexicalModules() {
       return {
-        configureWebpack() {
+        configureWebpack(_config, _isServer, {currentBundler}) {
           const alias: Record<string, string | false | string[]> = {
             ...buildLexicalWebpackAliases(),
             '@examples/agent-example': path.resolve(
@@ -393,7 +393,19 @@ const config: Config = {
             'onnxruntime-node': false,
             sharp: false,
           };
-          return {resolve: {alias}};
+          return {
+            plugins: [
+              // FB_INTERNAL only exists in Meta's internal build. Define it for
+              // the browser bundle so client code (e.g. ErrorCodePage) can read
+              // process.env.FB_INTERNAL without a ReferenceError on `process`.
+              new currentBundler.instance.DefinePlugin({
+                'process.env.FB_INTERNAL': JSON.stringify(
+                  process.env.FB_INTERNAL ?? '',
+                ),
+              }),
+            ],
+            resolve: {alias},
+          };
         },
         name: 'webpack-lexical-modules',
       };

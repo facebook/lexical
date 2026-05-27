@@ -944,6 +944,9 @@ importers:
       '@docusaurus/plugin-client-redirects':
         specifier: ^3.10.1
         version: 3.10.1(@docusaurus/faster@3.10.1(@docusaurus/types@3.10.1(@swc/core@1.15.24(@swc/helpers@0.5.21))(esbuild@0.27.7)(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(@swc/helpers@0.5.21)(esbuild@0.27.7))(@mdx-js/react@3.1.1(@types/react@19.2.15)(react@19.2.5))(@rspack/core@1.7.11(@swc/helpers@0.5.21))(@swc/core@1.15.24(@swc/helpers@0.5.21))(esbuild@0.27.7)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@6.0.3)
+      '@docusaurus/plugin-content-docs':
+        specifier: ^3.10.1
+        version: 3.10.1(@docusaurus/faster@3.10.1(@docusaurus/types@3.10.1(@swc/core@1.15.24(@swc/helpers@0.5.21))(esbuild@0.27.7)(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(@swc/helpers@0.5.21)(esbuild@0.27.7))(@mdx-js/react@3.1.1(@types/react@19.2.15)(react@19.2.5))(@rspack/core@1.7.11(@swc/helpers@0.5.21))(@swc/core@1.15.24(@swc/helpers@0.5.21))(esbuild@0.27.7)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@6.0.3)
       '@docusaurus/preset-classic':
         specifier: ^3.10.1
         version: 3.10.1(@algolia/client-search@5.46.0)(@docusaurus/faster@3.10.1(@docusaurus/types@3.10.1(@swc/core@1.15.24(@swc/helpers@0.5.21))(esbuild@0.27.7)(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(@swc/helpers@0.5.21)(esbuild@0.27.7))(@mdx-js/react@3.1.1(@types/react@19.2.15)(react@19.2.5))(@rspack/core@1.7.11(@swc/helpers@0.5.21))(@swc/core@1.15.24(@swc/helpers@0.5.21))(@types/react@19.2.15)(esbuild@0.27.7)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(search-insights@2.17.3)(typescript@6.0.3)
@@ -14706,7 +14709,7 @@ snapshots:
 
   '@docusaurus/react-loadable@6.0.0(react@19.2.5)':
     dependencies:
-      '@types/react': 19.2.14
+      '@types/react': 19.2.15
       react: 19.2.5
 
   '@docusaurus/theme-classic@3.10.1(@docusaurus/faster@3.10.1(@docusaurus/types@3.10.1(@swc/core@1.15.24(@swc/helpers@0.5.21))(esbuild@0.27.7)(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(@swc/helpers@0.5.21)(esbuild@0.27.7))(@rspack/core@1.7.11(@swc/helpers@0.5.21))(@swc/core@1.15.24(@swc/helpers@0.5.21))(@types/react@19.2.15)(esbuild@0.27.7)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@6.0.3)':

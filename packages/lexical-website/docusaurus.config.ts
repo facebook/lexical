@@ -17,6 +17,7 @@ import {fileURLToPath} from 'node:url';
 import {themes} from 'prism-react-renderer';
 
 import {packagesManager} from '../../scripts/shared/packagesManager.mjs';
+import copyPageButtonPlugin from './plugins/copy-page-button/index.mjs';
 import packageDocsPlugin from './plugins/package-docs/index.mjs';
 import slugifyPlugin from './src/plugins/lexical-remark-slugify-anchors/index.js';
 
@@ -345,6 +346,7 @@ const config: Config = {
           },
         ],
     './plugins/webpack-buffer',
+    copyPageButtonPlugin,
     async function webpackLexicalModules() {
       return {
         configureWebpack(_config, _isServer, {currentBundler}) {

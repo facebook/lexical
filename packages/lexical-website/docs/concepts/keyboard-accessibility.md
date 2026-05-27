@@ -41,7 +41,7 @@ Toolbars that opt into `useRovingTabIndex` (`@lexical/react/useRovingTabIndex`) 
 
 ## Screen reader announcements
 
-`useAriaLiveRegion` (`@lexical/react/useAriaLiveRegion`) mounts a visually-hidden `aria-live` region (default `polite`) and returns an `announce(message)` function. The region is removed on unmount. Useful for status announcements (mode changes, format toggles, etc.) — see the playground's `EditorModeAnnouncePlugin` for an example that pairs the hook with `editor.registerEditableListener`.
+`useAriaLiveRegion` (`@lexical/react/useAriaLiveRegion`) mounts a visually-hidden `aria-live` region (default `polite`) and returns an `announce(message)` function. The region is removed on unmount. Two plugins ship as ready-made examples that pair the hook with editor events: `EditorModeAnnouncePlugin` (mode transitions via `registerEditableListener`) and `HistoryAnnouncePlugin` (undo / redo via `UNDO_COMMAND` / `REDO_COMMAND`). Both accept an optional `messages` prop for i18n.
 
 ## Component ARIA quick reference
 

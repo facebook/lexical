@@ -25,6 +25,7 @@ import {
 } from '@lexical/react/LexicalCollaborationPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {EditorModeAnnouncePlugin} from '@lexical/react/LexicalEditorModeAnnouncePlugin';
+import {HistoryAnnouncePlugin} from '@lexical/react/LexicalHistoryAnnouncePlugin';
 import {TabIndentationPlugin} from '@lexical/react/LexicalTabIndentationPlugin';
 import {TablePlugin} from '@lexical/react/LexicalTablePlugin';
 import {useOptionalExtensionDependency} from '@lexical/react/useExtensionComponent';
@@ -193,6 +194,7 @@ export default function Editor(): JSX.Element {
   return (
     <>
       <EditorModeAnnouncePlugin />
+      <HistoryAnnouncePlugin />
       {isRichText && (
         <ToolbarPlugin
           editor={editor}

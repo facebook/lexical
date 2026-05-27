@@ -676,6 +676,36 @@
         "default": "./LexicalExtensionEditorComposer.js"
       }
     },
+    "./LexicalHistoryAnnouncePlugin": {
+      "import": {
+        "types": "./LexicalHistoryAnnouncePlugin.d.ts",
+        "development": "./LexicalHistoryAnnouncePlugin.dev.mjs",
+        "production": "./LexicalHistoryAnnouncePlugin.prod.mjs",
+        "node": "./LexicalHistoryAnnouncePlugin.node.mjs",
+        "default": "./LexicalHistoryAnnouncePlugin.mjs"
+      },
+      "require": {
+        "types": "./LexicalHistoryAnnouncePlugin.d.ts",
+        "development": "./LexicalHistoryAnnouncePlugin.dev.js",
+        "production": "./LexicalHistoryAnnouncePlugin.prod.js",
+        "default": "./LexicalHistoryAnnouncePlugin.js"
+      }
+    },
+    "./LexicalHistoryAnnouncePlugin.js": {
+      "import": {
+        "types": "./LexicalHistoryAnnouncePlugin.d.ts",
+        "development": "./LexicalHistoryAnnouncePlugin.dev.mjs",
+        "production": "./LexicalHistoryAnnouncePlugin.prod.mjs",
+        "node": "./LexicalHistoryAnnouncePlugin.node.mjs",
+        "default": "./LexicalHistoryAnnouncePlugin.mjs"
+      },
+      "require": {
+        "types": "./LexicalHistoryAnnouncePlugin.d.ts",
+        "development": "./LexicalHistoryAnnouncePlugin.dev.js",
+        "production": "./LexicalHistoryAnnouncePlugin.prod.js",
+        "default": "./LexicalHistoryAnnouncePlugin.js"
+      }
+    },
     "./LexicalHashtagPlugin": {
       "import": {
         "types": "./LexicalHashtagPlugin.d.ts",

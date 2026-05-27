@@ -66,6 +66,7 @@ module.name_mapper='^@lexical/react/LexicalErrorBoundary$' -> '<PROJECT_ROOT>/pa
 module.name_mapper='^@lexical/react/LexicalExtensionComposer$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalExtensionComposer.js.flow'
 module.name_mapper='^@lexical/react/LexicalExtensionEditorComposer$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalExtensionEditorComposer.js.flow'
 module.name_mapper='^@lexical/react/LexicalHashtagPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalHashtagPlugin.js.flow'
+module.name_mapper='^@lexical/react/LexicalHistoryAnnouncePlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalHistoryAnnouncePlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalHistoryPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalHistoryPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalHorizontalRuleNode$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalHorizontalRuleNode.js.flow'
 module.name_mapper='^@lexical/react/LexicalHorizontalRulePlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalHorizontalRulePlugin.js.flow'

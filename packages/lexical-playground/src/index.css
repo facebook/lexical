@@ -1829,3 +1829,34 @@ button.item.dropdown-item-active i {
     scroll-behavior: auto !important;
   }
 }
+
+@media (forced-colors: active) {
+  .toolbar {
+    border-bottom: 1px solid CanvasText;
+  }
+  .toolbar .toolbar-item {
+    border: 1px solid CanvasText;
+  }
+  .toolbar .toolbar-item:focus,
+  .toolbar .toolbar-item:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+  .toolbar .toolbar-item.active {
+    background-color: Highlight;
+    color: HighlightText;
+  }
+  .toolbar .divider {
+    background-color: CanvasText;
+    forced-color-adjust: none;
+  }
+  .Modal__overlay {
+    background-color: Canvas;
+  }
+  .Modal__modal {
+    border: 1px solid CanvasText;
+  }
+  .editor-shell .editor-container .editor-input {
+    border: 1px solid CanvasText;
+  }
+}

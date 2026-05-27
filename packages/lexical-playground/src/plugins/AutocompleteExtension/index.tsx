@@ -415,6 +415,19 @@ export const AutocompleteExtension = defineExtension({
     function onCompositionEndDOM() {
       clearPendingCompositionTimer();
       compositionTextNodeKey = null;
+      // Safari / WebKit defers the COMPOSITION_END_TAG-tagged update
+      // until the next keydown, which would leave any composition-idle
+      // ghost stale until the user presses another key. Force a
+      // synthetic handleUpdate on the microtask queue so the post-IME
+      // ghost re-evaluates immediately. Chrome / Firefox fire their own
+      // COMPOSITION_END_TAG update synchronously and the duplicate
+      // handleUpdate call is idempotent.
+      Promise.resolve().then(() => {
+        handleUpdate({
+          editorState: editor.getEditorState(),
+          tags: new Set([COMPOSITION_END_TAG]),
+        });
+      });
     }
 
     function applyAsyncSuggestion(

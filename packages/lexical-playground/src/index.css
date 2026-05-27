@@ -1856,7 +1856,7 @@ button.item.dropdown-item-active i {
   .Modal__modal {
     border: 1px solid CanvasText;
   }
-  .editor-shell .editor-container .editor-input {
+  .editor-shell .editor-container .ContentEditable__root {
     border: 1px solid CanvasText;
   }
 }

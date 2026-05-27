@@ -7,8 +7,6 @@
  * @flow strict
  */
 
-import type {ElementRef} from 'react';
-
 declare export function useFocusTrap(
   containerRef: {current: HTMLElement | null, ...},
   isActive: boolean,

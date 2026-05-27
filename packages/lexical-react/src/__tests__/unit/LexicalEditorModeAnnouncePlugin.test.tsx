@@ -8,13 +8,12 @@
 
 import {LexicalComposer} from '@lexical/react/LexicalComposer';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {EditorModeAnnouncePlugin} from '@lexical/react/LexicalEditorModeAnnouncePlugin';
 import {type LexicalEditor} from 'lexical';
 import * as React from 'react';
 import {createRoot, type Root} from 'react-dom/client';
 import * as ReactTestUtils from 'shared/react-test-utils';
 import {afterEach, beforeEach, describe, expect, test} from 'vitest';
-
-import EditorModeAnnouncePlugin from '../../src/plugins/EditorModeAnnouncePlugin';
 
 function Probe({onEditor}: {onEditor: (editor: LexicalEditor) => void}) {
   const [editor] = useLexicalComposerContext();
@@ -45,14 +44,13 @@ describe('EditorModeAnnouncePlugin', () => {
       root.unmount();
     });
     document.body.removeChild(container);
-    document.body.querySelectorAll('[aria-live]').forEach(el => el.remove());
   });
 
   function findRegion(): HTMLElement | null {
     return document.body.querySelector<HTMLElement>('[aria-live]');
   }
 
-  test('announces mode change and toggles aria-readonly on the root element', () => {
+  function mount(): LexicalEditor {
     let editor: LexicalEditor | null = null;
     ReactTestUtils.act(() => {
       root.render(
@@ -78,18 +76,60 @@ describe('EditorModeAnnouncePlugin', () => {
     if (editor === null) {
       throw new Error('editor not ready');
     }
-    const e: LexicalEditor = editor;
+    return editor;
+  }
+
+  test('does not announce on mount (registerEditableListener does not fire-on-register)', () => {
+    mount();
+    expect(findRegion()!.textContent).toBe('');
+  });
+
+  test('announces mode transitions via the live region', () => {
+    const e = mount();
 
     ReactTestUtils.act(() => {
       e.setEditable(false);
     });
     expect(findRegion()!.textContent).toBe('Editor is read-only');
-    expect(e.getRootElement()!.getAttribute('aria-readonly')).toBe('true');
 
     ReactTestUtils.act(() => {
       e.setEditable(true);
     });
     expect(findRegion()!.textContent).toBe('Editor is editable');
-    expect(e.getRootElement()!.getAttribute('aria-readonly')).toBe('false');
+  });
+
+  test('custom messages override the default English strings', () => {
+    let editor: LexicalEditor | null = null;
+    ReactTestUtils.act(() => {
+      root.render(
+        <LexicalComposer
+          initialConfig={{
+            editorState: null,
+            namespace: 'mode-announce-i18n',
+            nodes: [],
+            onError: e => {
+              throw e;
+            },
+            theme: {},
+          }}>
+          <EditorModeAnnouncePlugin
+            messages={{editable: '편집 가능', readOnly: '읽기 전용'}}
+          />
+          <Probe
+            onEditor={e => {
+              editor = e;
+            }}
+          />
+        </LexicalComposer>,
+      );
+    });
+    if (editor === null) {
+      throw new Error('editor not ready');
+    }
+    const e: LexicalEditor = editor;
+    ReactTestUtils.act(() => {
+      e.setEditable(false);
+    });
+    expect(findRegion()!.textContent).toBe('읽기 전용');
   });
 });

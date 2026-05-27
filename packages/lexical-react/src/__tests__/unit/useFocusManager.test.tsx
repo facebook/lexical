@@ -137,7 +137,20 @@ describe('useFocusManager', () => {
       toolbarBtn.focus();
     });
     expect(document.activeElement).toBe(toolbarBtn);
-    dispatchKey(toolbarBtn, {key: 'Escape'});
+
+    let bubbled = false;
+    const windowSpy = () => {
+      bubbled = true;
+    };
+    window.addEventListener('keydown', windowSpy);
+    try {
+      dispatchKey(toolbarBtn, {key: 'Escape'});
+    } finally {
+      window.removeEventListener('keydown', windowSpy);
+    }
     expect(document.activeElement).toBe(byId('editor-root'));
+    // stopPropagation prevents window-level handlers (e.g. modal close)
+    // from also reacting.
+    expect(bubbled).toBe(false);
   });
 });

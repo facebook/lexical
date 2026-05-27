@@ -81,6 +81,9 @@
       "@lexical/react/LexicalDraggableBlockPlugin": [
         "./packages/lexical-react/src/LexicalDraggableBlockPlugin.tsx"
       ],
+      "@lexical/react/LexicalEditorModeAnnouncePlugin": [
+        "./packages/lexical-react/src/LexicalEditorModeAnnouncePlugin.ts"
+      ],
       "@lexical/react/LexicalEditorRefPlugin": [
         "./packages/lexical-react/src/LexicalEditorRefPlugin.tsx"
       ],

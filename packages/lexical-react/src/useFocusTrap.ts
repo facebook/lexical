@@ -91,6 +91,9 @@ export function useFocusTrap(
       container.removeEventListener('keydown', handler);
       if (
         previouslyFocused !== null &&
+        // `isHTMLElement` admits any `Element` whose nodeType is 1, so SVG
+        // and other non-focusable elements can pass — keep the runtime
+        // `focus` check as a guard against that.
         typeof previouslyFocused.focus === 'function' &&
         document.contains(previouslyFocused)
       ) {

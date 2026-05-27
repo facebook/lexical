@@ -60,6 +60,7 @@ module.name_mapper='^@lexical/react/LexicalComposerContext$' -> '<PROJECT_ROOT>/
 module.name_mapper='^@lexical/react/LexicalContentEditable$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalContentEditable.js.flow'
 module.name_mapper='^@lexical/react/LexicalDecoratorBlockNode$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalDecoratorBlockNode.js.flow'
 module.name_mapper='^@lexical/react/LexicalDraggableBlockPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalDraggableBlockPlugin.js.flow'
+module.name_mapper='^@lexical/react/LexicalEditorModeAnnouncePlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalEditorModeAnnouncePlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalEditorRefPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalEditorRefPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalErrorBoundary$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalErrorBoundary.js.flow'
 module.name_mapper='^@lexical/react/LexicalExtensionComposer$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalExtensionComposer.js.flow'

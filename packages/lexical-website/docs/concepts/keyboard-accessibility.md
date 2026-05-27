@@ -12,7 +12,7 @@ The optional `TabIndentationPlugin` (`@lexical/react/LexicalTabIndentationPlugin
 
 Pressing `Escape` while the editor has focus calls `editor.blur()` via the rich-text Escape command handler (registered at `COMMAND_PRIORITY_EDITOR`). After blur, the next `Tab` advances to the page's next focusable element — this is what makes the `TabIndentationPlugin` compliant with WCAG 2.1.2.
 
-Plugin authors who want to intercept `Escape` (modal close, dropdown close, etc.) should register their handler at a higher priority and return `true` to stop propagation. Common patterns already established in the codebase:
+Plugin authors who want to intercept `Escape` (modal close, dropdown close, etc.) should register their handler at a higher priority and return `true` to stop the command chain. Common patterns already established in the codebase:
 
 | Priority | Caller | Purpose |
 | --- | --- | --- |
@@ -52,7 +52,8 @@ Where Lexical already applies ARIA attributes today (set directly in each compon
 | `ToolbarPlugin` (playground) | `toolbar` | `aria-label` |
 | `Modal` (playground) | `dialog` | `aria-modal`, `aria-labelledby` |
 | `LexicalListItemNode` (check list leaf) | `checkbox` | `aria-checked` |
-| `LexicalMenu` typeahead popup | `listbox` | `aria-label`, `aria-controls` |
+| `LexicalMenu` typeahead popup | `listbox` | `aria-label` |
+| Editor root (while typeahead is open) | — | `aria-controls` |
 | `EquationNode` (playground) | `math` | `aria-label` |
 | `useAriaLiveRegion` region | `status` | `aria-live`, `aria-atomic` |
 

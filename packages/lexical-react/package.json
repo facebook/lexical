@@ -526,6 +526,36 @@
         "default": "./LexicalDraggableBlockPlugin.js"
       }
     },
+    "./LexicalEditorModeAnnouncePlugin": {
+      "import": {
+        "types": "./LexicalEditorModeAnnouncePlugin.d.ts",
+        "development": "./LexicalEditorModeAnnouncePlugin.dev.mjs",
+        "production": "./LexicalEditorModeAnnouncePlugin.prod.mjs",
+        "node": "./LexicalEditorModeAnnouncePlugin.node.mjs",
+        "default": "./LexicalEditorModeAnnouncePlugin.mjs"
+      },
+      "require": {
+        "types": "./LexicalEditorModeAnnouncePlugin.d.ts",
+        "development": "./LexicalEditorModeAnnouncePlugin.dev.js",
+        "production": "./LexicalEditorModeAnnouncePlugin.prod.js",
+        "default": "./LexicalEditorModeAnnouncePlugin.js"
+      }
+    },
+    "./LexicalEditorModeAnnouncePlugin.js": {
+      "import": {
+        "types": "./LexicalEditorModeAnnouncePlugin.d.ts",
+        "development": "./LexicalEditorModeAnnouncePlugin.dev.mjs",
+        "production": "./LexicalEditorModeAnnouncePlugin.prod.mjs",
+        "node": "./LexicalEditorModeAnnouncePlugin.node.mjs",
+        "default": "./LexicalEditorModeAnnouncePlugin.mjs"
+      },
+      "require": {
+        "types": "./LexicalEditorModeAnnouncePlugin.d.ts",
+        "development": "./LexicalEditorModeAnnouncePlugin.dev.js",
+        "production": "./LexicalEditorModeAnnouncePlugin.prod.js",
+        "default": "./LexicalEditorModeAnnouncePlugin.js"
+      }
+    },
     "./LexicalEditorRefPlugin": {
       "import": {
         "types": "./LexicalEditorRefPlugin.d.ts",

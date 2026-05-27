@@ -24,6 +24,7 @@ import {
   CollaborationPluginV2__EXPERIMENTAL,
 } from '@lexical/react/LexicalCollaborationPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {EditorModeAnnouncePlugin} from '@lexical/react/LexicalEditorModeAnnouncePlugin';
 import {TabIndentationPlugin} from '@lexical/react/LexicalTabIndentationPlugin';
 import {TablePlugin} from '@lexical/react/LexicalTablePlugin';
 import {useOptionalExtensionDependency} from '@lexical/react/useExtensionComponent';
@@ -47,7 +48,6 @@ import CommentPlugin from './plugins/CommentPlugin';
 import ComponentPickerPlugin from './plugins/ComponentPickerPlugin';
 import ContextMenuPlugin from './plugins/ContextMenuPlugin';
 import DraggableBlockPlugin from './plugins/DraggableBlockPlugin';
-import EditorModeAnnouncePlugin from './plugins/EditorModeAnnouncePlugin';
 import EmojiPickerPlugin from './plugins/EmojiPickerPlugin';
 import EquationsPlugin from './plugins/EquationsPlugin';
 import ExcalidrawPlugin from './plugins/ExcalidrawPlugin';

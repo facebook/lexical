@@ -69,11 +69,6 @@ declare global {
   }
 }
 
-type SearchPromise = {
-  dismiss: () => void;
-  promise: Promise<null | string>;
-};
-
 /**
  * Marker attribute on the per-suggestion ghost decoration element. The
  * element is appended directly into the TextNode's keyed DOM (the
@@ -121,23 +116,27 @@ const QUERY_LATENCY_MS = 200;
 function query(
   dictionary: AutocompleteDictionary | undefined,
   searchText: string,
-): SearchPromise {
-  let isDismissed = false;
-  const dismiss = () => {
-    isDismissed = true;
-  };
-  const promise: Promise<null | string> = new Promise((resolve, reject) => {
-    setTimeout(() => {
-      if (isDismissed) {
-        return reject('Dismissed');
-      }
+  signal: AbortSignal,
+): Promise<null | string> {
+  return new Promise((resolve, reject) => {
+    if (signal.aborted) {
+      reject(signal.reason);
+      return;
+    }
+    const onAbort = () => {
+      clearTimeout(timeout);
+      reject(signal.reason);
+    };
+    const timeout = setTimeout(() => {
+      signal.removeEventListener('abort', onAbort);
       if (dictionary === undefined) {
-        return resolve(null);
+        resolve(null);
+        return;
       }
-      return resolve(dictionary.query(searchText));
+      resolve(dictionary.query(searchText));
     }, QUERY_LATENCY_MS);
+    signal.addEventListener('abort', onAbort, {once: true});
   });
-  return {dismiss, promise};
 }
 
 function formatSuggestionText(suggestion: string): string {
@@ -245,24 +244,24 @@ export const AutocompleteExtension = defineExtension({
     let activeTextNodeKey: NodeKey | null = null;
     let lastMatch: string | null = null;
     let lastSuggestion: string | null = null;
-    let searchPromise: SearchPromise | null = null;
+    let searchController: AbortController | null = null;
 
     function dismiss() {
       activeTextNodeKey = null;
       lastMatch = null;
       lastSuggestion = null;
-      if (searchPromise !== null) {
-        searchPromise.dismiss();
-        searchPromise = null;
+      if (searchController !== null) {
+        searchController.abort();
+        searchController = null;
       }
       syncGhost(editor, null, null);
     }
 
     function applyAsyncSuggestion(
-      refPromise: SearchPromise,
+      refController: AbortController,
       newSuggestion: string | null,
     ) {
-      if (searchPromise !== refPromise || newSuggestion === null) {
+      if (searchController !== refController || newSuggestion === null) {
         return;
       }
       editor.getEditorState().read(
@@ -324,23 +323,22 @@ export const AutocompleteExtension = defineExtension({
           }
           // New prefix — clear any stale ghost while waiting for the async
           // suggestion, then kick off a fresh query.
-          if (searchPromise !== null) {
-            searchPromise.dismiss();
+          if (searchController !== null) {
+            searchController.abort();
           }
           syncGhost(editor, null, null);
           lastMatch = match;
           lastSuggestion = null;
           activeTextNodeKey = null;
+          const controller = new AbortController();
+          searchController = controller;
           const language = output.detectLanguage.value(match);
-          searchPromise = query(output.dictionaries.value[language], match);
-          searchPromise.promise
+          query(output.dictionaries.value[language], match, controller.signal)
             .then(newSuggestion => {
-              if (searchPromise !== null) {
-                applyAsyncSuggestion(searchPromise, newSuggestion);
-              }
+              applyAsyncSuggestion(controller, newSuggestion);
             })
             .catch(e => {
-              if (e !== 'Dismissed') {
+              if (!(e instanceof DOMException && e.name === 'AbortError')) {
                 console.error(e);
               }
             });

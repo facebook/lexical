@@ -26,25 +26,17 @@ export interface AriaLiveRegionOptions {
   owner?: HTMLElement;
 }
 
-const VISUALLY_HIDDEN: Readonly<Partial<CSSStyleDeclaration>> = Object.freeze({
-  border: '0',
-  clip: 'rect(0 0 0 0)',
-  height: '1px',
-  margin: '-1px',
-  overflow: 'hidden',
-  padding: '0',
-  position: 'absolute',
-  whiteSpace: 'nowrap',
-  width: '1px',
-});
-
 function applyVisuallyHidden(el: HTMLElement): void {
-  for (const key in VISUALLY_HIDDEN) {
-    const value = VISUALLY_HIDDEN[key as keyof typeof VISUALLY_HIDDEN];
-    if (typeof value === 'string') {
-      (el.style as unknown as Record<string, string>)[key] = value;
-    }
-  }
+  const style = el.style;
+  style.border = '0';
+  style.clip = 'rect(0 0 0 0)';
+  style.height = '1px';
+  style.margin = '-1px';
+  style.overflow = 'hidden';
+  style.padding = '0';
+  style.position = 'absolute';
+  style.whiteSpace = 'nowrap';
+  style.width = '1px';
 }
 
 /**

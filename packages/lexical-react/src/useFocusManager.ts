@@ -81,6 +81,10 @@ export function useFocusManager(
         return;
       }
       event.preventDefault();
+      // Keep Escape inside the toolbar — don't let it bubble to a window-
+      // level Modal close handler or to Lexical's `KEY_ESCAPE_COMMAND`
+      // priority chain (which would blur the editor).
+      event.stopPropagation();
       // `editor.focus()` restores the prior selection so commands resume
       // where the cursor was before the jump; the `rootElement.focus()`
       // fallback covers test environments where `editor.focus()` does not

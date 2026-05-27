@@ -60,8 +60,7 @@ Custom nodes follow the same pattern: set the attributes in `createDOM` and re-a
 
 ## Browser notes
 
-- Chrome (macOS) and Safari (macOS, normal window) both run the editor's `Escape` chain — `editor.blur()` fires and the next `Tab` moves to the page's next focusable element.
-- Safari in **fullscreen** intercepts `Escape` at the browser level to exit fullscreen, so the editor's handler does not see the key. That is the browser's `Escape` contract, not Lexical's.
+Lexical relies on the standard DOM `Escape` contract — verified on Chrome and Safari (macOS, normal window). Safari in fullscreen intercepts `Escape` at the browser level to exit fullscreen; that is the browser's contract, not Lexical's.
 
 ## What this page does not cover
 

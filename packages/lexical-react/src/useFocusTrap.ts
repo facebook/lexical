@@ -6,6 +6,7 @@
  *
  */
 
+import {isHTMLElement} from 'lexical';
 import {RefObject, useEffect} from 'react';
 
 const FOCUSABLE_SELECTOR = [
@@ -44,7 +45,9 @@ export function useFocusTrap(
       return;
     }
 
-    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const previouslyFocused = isHTMLElement(document.activeElement)
+      ? document.activeElement
+      : null;
 
     const focusable = getFocusableElements(container);
     if (focusable.length > 0) {

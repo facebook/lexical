@@ -20,8 +20,12 @@ import {
 
 /** @internal The result returned from {@link DOMRenderExtension}'s `init`. */
 interface DOMRenderInitResult {
-  /** `{...editorConfig}` captured before `dom` is overwritten with the compiled config. */
-  initialEditorConfig: InitialEditorConfig;
+  /**
+   * The `nodes` and base `dom` captured from the editor config before `dom`
+   * is overwritten with the compiled config — the only fields the runtime
+   * needs to recompile.
+   */
+  initialEditorConfig: Pick<InitialEditorConfig, 'nodes' | 'dom'>;
 }
 
 /**
@@ -66,9 +70,12 @@ export const DOMRenderExtension = defineExtension<
     ]),
   },
   init(editorConfig, config) {
-    // Capture the clean base config (with the user's `dom`, before we overwrite
-    // it) so the runtime can recompile from scratch when overrides toggle.
-    const initialEditorConfig: InitialEditorConfig = {...editorConfig};
+    // Capture the user's base `dom` (before we overwrite it) and `nodes` so the
+    // runtime can recompile from scratch when overrides toggle.
+    const initialEditorConfig: Pick<InitialEditorConfig, 'nodes' | 'dom'> = {
+      dom: editorConfig.dom,
+      nodes: editorConfig.nodes,
+    };
     const editorContext = createEditorContextRecord(config.contextDefaults);
     const installed = filterEditorInstalled(config.overrides, editorContext);
     editorConfig.dom = compileDOMRenderConfigOverrides(editorConfig, {

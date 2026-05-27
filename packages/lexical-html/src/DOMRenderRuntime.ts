@@ -199,11 +199,10 @@ function $markDirtyByType(all: boolean, types: ReadonlySet<string>): void {
 export class DOMRenderRuntimeImpl implements DOMRenderRuntime {
   readonly editor: LexicalEditor;
   /**
-   * The editor config captured at `init` (before its `dom` was overwritten
-   * with the compiled config), so its `dom` is the clean base used for every
-   * recompile.
+   * The `nodes` and base `dom` captured at `init` (before `dom` was
+   * overwritten with the compiled config) — the clean base for every recompile.
    */
-  readonly initialEditorConfig: InitialEditorConfig;
+  readonly initialEditorConfig: Pick<InitialEditorConfig, 'nodes' | 'dom'>;
   readonly overrides: readonly AnyDOMRenderMatch[];
   readonly editorContext: RenderContextRecord;
   readonly hasSessionGates: boolean;
@@ -217,7 +216,7 @@ export class DOMRenderRuntimeImpl implements DOMRenderRuntime {
 
   constructor(
     editor: LexicalEditor,
-    initialEditorConfig: InitialEditorConfig,
+    initialEditorConfig: Pick<InitialEditorConfig, 'nodes' | 'dom'>,
     overrides: readonly AnyDOMRenderMatch[],
     editorContext: RenderContextRecord,
   ) {

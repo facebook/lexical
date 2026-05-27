@@ -171,8 +171,9 @@ function query(
  * keeps the prefix free of trailing whitespace artifacts that would
  * otherwise corrupt language detection (last-codepoint dispatch on
  * an invisible space would fall through to `en`).
+ *
+ * @internal Exposed for unit tests.
  */
-/** @internal — exposed for unit tests. */
 export function extractTrailingWord(text: string): string {
   const trimmed = text.replace(/\s+$/u, '');
   const match = trimmed.match(/\S+$/u);
@@ -190,8 +191,9 @@ export function extractTrailingWord(text: string): string {
  * positioning are stripped so language detection sees the real
  * Hangul / kana / kanji codepoints instead of an invisible trailing
  * `\u200B` that would force-fallback to English.
+ *
+ * @internal Exposed for unit tests.
  */
-/** @internal — exposed for unit tests. */
 export function getCompositionTextFromDOM(dom: HTMLElement): string {
   let text = '';
   for (const node of dom.childNodes) {

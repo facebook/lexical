@@ -71,7 +71,8 @@ import {SKIP_SELECTION_FOCUS_TAG} from './LexicalUpdateTags';
 import {
   $findMatchingParent,
   $getCompositionKey,
-  $getEditorDOMRenderConfig,
+  $getDOMSlot,
+  $getDOMTextNode,
   $getNearestRootOrShadowRoot,
   $getNodeByKey,
   $getNodeFromDOM,
@@ -83,7 +84,6 @@ import {
   $setCompositionKey,
   doesContainSurrogatePair,
   getDOMSelection,
-  getDOMTextNode,
   getElementByKeyOrThrow,
   getWindow,
   INTERNAL_$isBlock,
@@ -1616,19 +1616,21 @@ export class RangeSelection implements BaseSelection {
       removeDOMBlockCursorElement(blockCursorElement, editor, rootElement);
     }
     if (this.dirty) {
-      let nextAnchorDOM: HTMLElement | Text | null = getElementByKeyOrThrow(
-        editor,
-        this.anchor.key,
-      );
-      let nextFocusDOM: HTMLElement | Text | null = getElementByKeyOrThrow(
-        editor,
-        this.focus.key,
-      );
+      const anchorKeyedDOM = getElementByKeyOrThrow(editor, this.anchor.key);
+      const focusKeyedDOM = getElementByKeyOrThrow(editor, this.focus.key);
+      let nextAnchorDOM: HTMLElement | Text | null = anchorKeyedDOM;
+      let nextFocusDOM: HTMLElement | Text | null = focusKeyedDOM;
       if (this.anchor.type === 'text') {
-        nextAnchorDOM = getDOMTextNode(nextAnchorDOM);
+        const node = this.anchor.getNode();
+        nextAnchorDOM = $isTextNode(node)
+          ? $getDOMTextNode(node, anchorKeyedDOM, editor)
+          : null;
       }
       if (this.focus.type === 'text') {
-        nextFocusDOM = getDOMTextNode(nextFocusDOM);
+        const node = this.focus.getNode();
+        nextFocusDOM = $isTextNode(node)
+          ? $getDOMTextNode(node, focusKeyedDOM, editor)
+          : null;
       }
       if (nextAnchorDOM && nextFocusDOM) {
         setDOMSelectionBaseAndExtent(
@@ -2353,11 +2355,7 @@ function $internalResolveSelectionPoint(
           elementDOM !== null,
           '$internalResolveSelectionPoint: node in DOM but not keyToDOMMap',
         );
-        const slot = $getEditorDOMRenderConfig(editor).$getDOMSlot(
-          resolvedElement,
-          elementDOM,
-          editor,
-        );
+        const slot = $getDOMSlot(resolvedElement, elementDOM, editor);
         [resolvedElement, resolvedOffset] = slot.resolveChildIndex(
           resolvedElement,
           elementDOM,
@@ -2413,17 +2411,23 @@ function $internalResolveSelectionPoint(
         }
       } else {
         const index = resolvedElement.getIndexWithinParent();
-        // When selecting decorators, there can be some selection issues when using resolvedOffset,
-        // and instead we should be checking if we're using the offset
-        if (
-          offset === 0 &&
-          $isDecoratorNode(resolvedElement) &&
-          $getNodeFromDOM(dom) === resolvedElement
-        ) {
-          resolvedOffset = index;
-        } else {
-          resolvedOffset = index + 1;
+        // For wrap patterns (slot exposes an inner content element via
+        // `withElement`) defer to `slot.resolveLeafPosition` so the
+        // wrap's structure determines "before vs after". For bare leaf
+        // DOM we preserve the historical rule: only a DecoratorNode at
+        // DOM offset 0 resolves to "before"; everything else (including
+        // bare LineBreakNode) resolves to "after".
+        const elementDOM = editor.getElementByKey(resolvedElement.getKey());
+        let position: 'before' | 'after' = 'after';
+        if (elementDOM !== null && $getNodeFromDOM(dom) === resolvedElement) {
+          const slot = $getDOMSlot(resolvedElement, elementDOM, editor);
+          if (slot.element !== elementDOM) {
+            position = slot.resolveLeafPosition(elementDOM, dom, offset);
+          } else if (offset === 0 && $isDecoratorNode(resolvedElement)) {
+            position = 'before';
+          }
         }
+        resolvedOffset = position === 'before' ? index : index + 1;
         resolvedElement = resolvedElement.getParentOrThrow();
       }
       if ($isElementNode(resolvedElement)) {
@@ -3036,11 +3040,7 @@ function $getElementAndOffsetForPoint(
 ): [HTMLElement, number] {
   const element = getElementByKeyOrThrow(editor, node.getKey());
   if ($isElementNode(node)) {
-    const slot = $getEditorDOMRenderConfig(editor).$getDOMSlot(
-      node,
-      element,
-      editor,
-    );
+    const slot = $getDOMSlot(node, element, editor);
     return [slot.element, offset + slot.getFirstChildOffset()];
   }
   return [element, offset];
@@ -3114,7 +3114,9 @@ export function $updateDOMSelection(
   let anchorFormatOrStyleChanged = false;
 
   if (anchor.type === 'text') {
-    nextAnchorNode = getDOMTextNode(anchorDOM);
+    nextAnchorNode = $isTextNode(anchorNode)
+      ? $getDOMTextNode(anchorNode, anchorDOM, editor)
+      : null;
     anchorFormatOrStyleChanged =
       anchorNode.getFormat() !== nextFormat ||
       anchorNode.getStyle() !== nextStyle;
@@ -3126,7 +3128,9 @@ export function $updateDOMSelection(
   }
 
   if (focus.type === 'text') {
-    nextFocusNode = getDOMTextNode(focusDOM);
+    nextFocusNode = $isTextNode(focusNode)
+      ? $getDOMTextNode(focusNode, focusDOM, editor)
+      : null;
   }
 
   // If we can't get an underlying text node for selection, then

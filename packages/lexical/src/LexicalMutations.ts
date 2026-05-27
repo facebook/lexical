@@ -205,7 +205,11 @@ function flushMutations(
               parentDOM != null &&
               addedDOM !== blockCursorElement &&
               node === null &&
-              !isManagedLineBreak(addedDOM, parentDOM, editor)
+              !isManagedLineBreak(addedDOM, parentDOM, editor) &&
+              // Skip externally-added DOM that's explicitly opted out of
+              // mutation tracking (e.g. an extension-rendered decoration
+              // inside a TextNode's span, like the autocomplete ghost).
+              !isDOMUnmanaged(addedDOM)
             ) {
               if (IS_FIREFOX) {
                 const possibleText =

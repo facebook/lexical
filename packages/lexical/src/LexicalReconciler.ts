@@ -6,6 +6,7 @@
  *
  */
 
+import type {ElementDOMSlot} from './LexicalDOMSlot';
 import type {
   EditorConfig,
   EditorDOMRenderConfig,
@@ -20,7 +21,7 @@ import type {
   NodeKey,
   NodeMap,
 } from './LexicalNode';
-import type {ElementDOMSlot, ElementNode} from './nodes/LexicalElementNode';
+import type {ElementNode} from './nodes/LexicalElementNode';
 
 import invariant from '@lexical/internal/invariant';
 
@@ -46,6 +47,7 @@ import {EditorState} from './LexicalEditorState';
 import {cloneMap} from './LexicalGenMap';
 import {
   $createChildrenArray,
+  $getDOMSlot,
   $isRootOrShadowRoot,
   cloneDecorators,
   getElementByKeyOrThrow,
@@ -426,7 +428,7 @@ function $createNode(key: NodeKey, slot: ElementDOMSlot | null): HTMLElement {
         node,
         0,
         endIndex,
-        activeEditorDOMRenderConfig.$getDOMSlot(node, dom, activeEditor),
+        $getDOMSlot(node, dom, activeEditor),
       );
     }
 
@@ -564,14 +566,10 @@ function $reconcileElementTerminatingLineBreak(
   dom: HTMLElement & LexicalPrivateDOM,
 ): void {
   // Read previous render's last-child kind from the slot element's cache
-  // so the prev-state `DecoratorNode` reference's `isInline()` (which
-  // routes through `getLatest()` and would throw once the key is detached
-  // from the active node map) is never called.
-  const slot = activeEditorDOMRenderConfig.$getDOMSlot(
-    nextElement,
-    dom,
-    activeEditor,
-  );
+  // so the prev-state DecoratorNode reference's isInline() (which routes
+  // through getLatest() and would throw once the key is detached from the
+  // active node map) is never called.
+  const slot = $getDOMSlot(nextElement, dom, activeEditor);
   const slotElement: HTMLElement & LexicalPrivateDOM = slot.element;
   const prevLineBreak = slotElement.__lexicalLastChildKind ?? null;
   const nextLineBreak = isLastChildLineBreakOrDecorator(
@@ -614,7 +612,7 @@ function $reconcileChildrenWithDirection(
   $reconcileChildren(
     prevElement,
     nextElement,
-    activeEditorDOMRenderConfig.$getDOMSlot(nextElement, dom, activeEditor),
+    $getDOMSlot(nextElement, dom, activeEditor),
   );
   if (!$isRootOrShadowRoot(nextElement)) {
     // RootNode / ShadowRootNode never expose `__textFormat` / `__textStyle`
@@ -839,7 +837,12 @@ function $tryReconcileSuffixWithSizeDelta(
           break;
         }
       }
-      $createNode(op.key, slot.withBefore(beforeDOM));
+      // No lexical sibling found: insertion goes at the end of the lexical
+      // range, which is still bounded by `slot.before` for slots carrying a
+      // trailing non-lexical decoration (e.g. a drag handle pinned as the
+      // last DOM child of the parent). Falling back to `slot.before` keeps
+      // those decorations behind the new child.
+      $createNode(op.key, slot.withBefore(beforeDOM ?? slot.before));
     }
     if (op.kind !== 'destroy') {
       const opNode = activeNextNodeMap.get(op.key);
@@ -1596,14 +1599,17 @@ function $reconcileNodeChildren(
         continue;
       }
       if (!prevChildrenSet.has(nextKey)) {
-        // Create next
-        $createNode(nextKey, slot.withBefore(siblingDOM));
+        // Create next. When siblingDOM is null we're appending at the end
+        // of the lexical range; fall back to `slot.before` so slots with a
+        // trailing non-lexical decoration (e.g. block drag handle) keep
+        // that decoration after the new child.
+        $createNode(nextKey, slot.withBefore(siblingDOM ?? slot.before));
         nextIndex++;
       } else {
         // Move next
         const childDOM = getElementByKeyOrThrow(activeEditor, nextKey);
         if (childDOM !== siblingDOM) {
-          slot.withBefore(siblingDOM).insertChild(childDOM);
+          slot.withBefore(siblingDOM ?? slot.before).insertChild(childDOM);
         }
         siblingDOM = getNextSibling($reconcileNode(nextKey, slot.element));
 
@@ -1644,7 +1650,9 @@ function $reconcileNodeChildren(
       nextElement,
       nextIndex,
       nextEndIndex,
-      slot.withBefore(insertDOM),
+      // Preserve the slot's trailing decoration anchor when appending at
+      // the end (insertDOM === null).
+      slot.withBefore(insertDOM ?? slot.before),
     );
   } else if (removeOldChildren && !appendNewChildren) {
     $destroyChildren(prevChildren, prevIndex, prevEndIndex, slot.element);

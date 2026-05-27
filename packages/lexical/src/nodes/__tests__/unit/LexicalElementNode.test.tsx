@@ -14,7 +14,6 @@ import {
   $getSelection,
   $isRangeSelection,
   createEditor,
-  ElementDOMSlot,
   ElementNode,
   LexicalEditor,
   LexicalNode,
@@ -29,7 +28,8 @@ import {
   $createTestElementNode,
   createTestEditor,
 } from '../../../__tests__/utils';
-import {indexPath, SerializedElementNode} from '../../LexicalElementNode';
+import {ElementDOMSlot, indexPath} from '../../../LexicalDOMSlot';
+import {SerializedElementNode} from '../../LexicalElementNode';
 
 describe('LexicalElementNode tests', () => {
   let container: HTMLElement;

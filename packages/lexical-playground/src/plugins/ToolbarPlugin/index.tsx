@@ -927,7 +927,7 @@ export default function ToolbarPlugin({
   const canViewerSeeInsertCodeButton = !toolbarState.isImageCaption;
 
   return (
-    <div className="toolbar">
+    <div className="toolbar" role="toolbar" aria-label="Editor toolbar">
       <button
         disabled={!toolbarState.canUndo || !isEditable}
         onClick={e =>

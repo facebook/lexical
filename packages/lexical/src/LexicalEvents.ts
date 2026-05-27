@@ -98,6 +98,7 @@ import {
   $findMatchingParent,
   $flushMutations,
   $getAdjacentNode,
+  $getDOMTextNode,
   $getNodeByKey,
   $isSelectionCapturedInDecorator,
   $isTokenOrSegmented,
@@ -111,7 +112,6 @@ import {
   getAnchorTextFromDOM,
   getDOMSelection,
   getDOMSelectionFromTarget,
-  getDOMTextNode,
   getEditorPropertyFromDOMNode,
   getEditorsToPropagate,
   getNearestEditorFromDOMNode,
@@ -264,7 +264,8 @@ function $shouldPreventDefaultAndInsertText(
     ((isBeforeInput || !CAN_USE_BEFORE_INPUT) &&
       backingAnchorElement !== null &&
       !anchorNode.isComposing() &&
-      domAnchorNode !== getDOMTextNode(backingAnchorElement)) ||
+      domAnchorNode !==
+        $getDOMTextNode(anchorNode, backingAnchorElement, editor)) ||
     // If TargetRange is not the same as the DOM selection; browser trying to edit random parts
     // of the editor.
     (domSelection !== null &&
@@ -1240,7 +1241,10 @@ function $onCompositionEndImpl(editor: LexicalEditor, data?: string): void {
     if (data === '') {
       const node = $getNodeByKey(compositionKey);
       const domElement = editor.getElementByKey(compositionKey);
-      const textNode = getDOMTextNode(domElement);
+      const textNode =
+        domElement !== null && $isTextNode(node)
+          ? $getDOMTextNode(node, domElement, editor)
+          : null;
 
       if (
         textNode !== null &&

@@ -43,8 +43,12 @@ Toolbars that opt into `useRovingTabIndex` (`@lexical/react/useRovingTabIndex`) 
 
 `useAriaLiveRegion` (`@lexical/react/useAriaLiveRegion`) mounts a visually-hidden `aria-live` region (default `polite`) and returns an `announce(message)` function. The region is removed on unmount. Useful for status announcements (mode changes, format toggles, etc.) — see the playground's `EditorModeAnnouncePlugin` for an example that pairs the hook with `editor.registerEditableListener`.
 
+## Browser notes
+
+- Chrome (macOS) and Safari (macOS, normal window) both run the editor's `Escape` chain — `editor.blur()` fires and the next `Tab` moves to the page's next focusable element.
+- Safari in **fullscreen** intercepts `Escape` at the browser level to exit fullscreen, so the editor's handler does not see the key. That is the browser's `Escape` contract, not Lexical's.
+
 ## What this page does not cover
 
-- Browser-specific behaviors. Safari intercepts `Escape` while in fullscreen mode; that is a browser concern, not a Lexical one.
-- Touch / mobile screen reader gestures. The hooks above work with desktop screen readers; mobile (TalkBack, VoiceOver iOS) shares the same DOM contracts but has not been exercised in this set of changes.
+- Touch / mobile screen reader gestures. The hooks above share the same DOM contracts with mobile (TalkBack, VoiceOver iOS) but mobile has not been exercised in this set of changes.
 - High contrast / forced-colors theming. See the playground's `index.css` `@media (forced-colors: active)` block for a baseline.

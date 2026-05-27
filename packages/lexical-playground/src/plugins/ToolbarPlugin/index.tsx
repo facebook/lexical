@@ -98,6 +98,7 @@ import {INSERT_PAGE_BREAK} from '../PageBreakExtension';
 import {PagesReactExtension} from '../PagesReactExtension';
 import {InsertPollDialog} from '../PollPlugin';
 import {SHORTCUTS} from '../ShortcutsPlugin/shortcuts';
+import ShortcutsHelpDialog from '../ShortcutsPlugin/ShortcutsHelpDialog';
 import {InsertTableDialog} from '../TablePlugin';
 import FontSize, {parseFontSizeForToolbar} from './fontSize';
 import {
@@ -1449,6 +1450,17 @@ export default function ToolbarPlugin({
         editor={activeEditor}
         isRTL={toolbarState.isRTL}
       />
+      <Divider />
+      <button
+        type="button"
+        className="toolbar-item spaced"
+        title="Keyboard shortcuts"
+        aria-label="Show keyboard shortcuts"
+        onClick={() =>
+          showModal('Keyboard shortcuts', () => <ShortcutsHelpDialog />)
+        }>
+        <span className="text">?</span>
+      </button>
 
       {modal}
     </div>

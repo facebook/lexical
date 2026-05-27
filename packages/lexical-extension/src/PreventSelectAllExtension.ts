@@ -12,12 +12,11 @@ import {
   isExactShortcutMatch,
   isHTMLElement,
   safeCast,
+  stopLexicalPropagation,
 } from 'lexical';
 
 import {namedSignals} from './namedSignals';
 import {effect} from './signals';
-
-const stopKeydownPropagation = (e: Event) => e.stopPropagation();
 
 function captureKeydown(e: KeyboardEvent) {
   const target = e.target;
@@ -27,7 +26,7 @@ function captureKeydown(e: KeyboardEvent) {
     (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')
   ) {
     // prevents the event bubbling before it reaches the lexical scope
-    target.addEventListener('keydown', stopKeydownPropagation, {once: true});
+    target.addEventListener('keydown', stopLexicalPropagation, {once: true});
   }
 }
 

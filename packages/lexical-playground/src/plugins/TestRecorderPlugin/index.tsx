@@ -106,33 +106,37 @@ export function isSelectAll(event: KeyboardEvent): boolean {
   );
 }
 
-// stolen from LexicalSelection-test
-function sanitizeSelection(selection: Selection) {
-  const {anchorNode, focusNode} = selection;
-  let {anchorOffset, focusOffset} = selection;
-  if (anchorOffset !== 0) {
-    anchorOffset--;
+function fixOffset(node: Node, offset: number) {
+  // If the selection offset is at the br of a webkit img+br linebreak
+  // then move the offset to the img so the tests are consistent across
+  // browsers
+  if (node && node.nodeType === Node.ELEMENT_NODE && offset > 0) {
+    const child = (node as Element).children[offset - 1];
+    if (
+      child &&
+      child.nodeType === Node.ELEMENT_NODE &&
+      child.getAttribute('data-lexical-linebreak') === 'true'
+    ) {
+      return offset - 1;
+    }
   }
-  if (focusOffset !== 0) {
-    focusOffset--;
-  }
-  return {anchorNode, anchorOffset, focusNode, focusOffset};
+  return offset;
 }
 
 function getPathFromNodeToEditor(node: Node, rootElement: HTMLElement | null) {
-  let currentNode: Node | null | undefined = node;
   const path = [];
-  while (currentNode !== rootElement) {
-    if (currentNode !== null && currentNode !== undefined) {
-      path.unshift(
-        Array.from(currentNode?.parentNode?.childNodes ?? []).indexOf(
-          currentNode as ChildNode,
-        ),
-      );
-    }
-    currentNode = currentNode?.parentNode;
+  if (node === rootElement) {
+    return [];
   }
-  return path;
+  while (node !== null) {
+    const parent = node.parentNode;
+    if (parent === null || node === rootElement) {
+      break;
+    }
+    path.push(Array.from(parent.childNodes).indexOf(node));
+    node = parent;
+  }
+  return path.reverse();
 }
 
 const keyPresses = new Set([
@@ -388,8 +392,7 @@ ${steps.map(formatStep).join(`\n`)}
     ) {
       return;
     }
-    const {anchorNode, anchorOffset, focusNode, focusOffset} =
-      sanitizeSelection(browserSelection);
+    const {anchorNode, anchorOffset, focusNode, focusOffset} = browserSelection;
     const rootElement = getCurrentEditor().getRootElement();
     let anchorPath;
     if (anchorNode !== null) {
@@ -401,10 +404,10 @@ ${steps.map(formatStep).join(`\n`)}
     }
     pushStep('snapshot', {
       anchorNode,
-      anchorOffset,
+      anchorOffset: fixOffset(anchorNode, anchorOffset),
       anchorPath,
       focusNode,
-      focusOffset,
+      focusOffset: fixOffset(focusNode, focusOffset),
       focusPath,
     });
   }, [pushStep, isRecording, getCurrentEditor]);

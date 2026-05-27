@@ -649,9 +649,7 @@ export class KeyboardEventMock extends EventMock implements KeyboardEvent {
   get isComposing(): boolean {
     throw new Error('Getter not implemented.');
   }
-  get key(): string {
-    throw new Error('Getter not implemented.');
-  }
+  key = '';
   get keyCode(): number {
     throw new Error('Getter not implemented.');
   }

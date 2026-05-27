@@ -7,7 +7,6 @@
  */
 
 import {
-  $createNodeSelection,
   $getSelection,
   $isElementNode,
   $isNodeSelection,
@@ -78,16 +77,15 @@ export interface SelectBlockConfig {
   disabled: boolean;
 }
 
-// TODO test-cases:
-// - select_all on paragraph with simple text only
-// - select_all on paragraph with mixed text
-// - select_all on paragraph with decoratornode (decorator at the start / at the middle / at the end)
-//   - edge text with inline element parent
-// - select_all on decoratornode
-// - select_all on several decoratornodes
-// - select_all on empty paragraph -> ?
-// - select_all on partial selection -> select block -> select all
-// - select_all on paragraph within shadow root
+function $hasCommonTopParent(
+  nodes: LexicalNode[],
+  commonTopParent: LexicalNode,
+) {
+  return nodes.every(node => {
+    const topParent = node.getTopLevelElement();
+    return topParent && topParent.is(commonTopParent);
+  });
+}
 
 // TODO:
 // - select_all from nested editor
@@ -110,14 +108,17 @@ export const SelectBlockExtension = defineExtension({
             triggerEditor.update(() => {
               const selection = $getSelection();
               if ($isNodeSelection(selection)) {
-                const firstNode = selection.getNodes()[0];
-                if (!firstNode) return false;
+                const selectedNodes = selection.getNodes();
+                const firstNode = selectedNodes[0];
 
                 const topParent = firstNode.getTopLevelElement();
                 if (
                   !topParent ||
                   $isRootNode(topParent) ||
-                  topParent.is(firstNode)
+                  topParent.is(firstNode) ||
+                  // if multiple nodes are selected and they do not share a common ancestor
+                  (selectedNodes.length > 1 &&
+                    !$hasCommonTopParent(selectedNodes, topParent))
                 ) {
                   prevSelectionAll = $selectAll();
                   // This is type narrowing.
@@ -131,7 +132,6 @@ export const SelectBlockExtension = defineExtension({
                 return true;
               }
 
-              // TODO: tableselection?
               if (!$isRangeSelection(selection)) {
                 return false;
               }
@@ -141,20 +141,16 @@ export const SelectBlockExtension = defineExtension({
               if (
                 !selection.is(prevSelectionAll) &&
                 blockNode &&
+                !blockNode.isEmpty() &&
                 !$isBlockFullySelected(blockNode, selection)
               ) {
                 prevSelectionAll = null;
-                // TODO: tableselection?
-                if (blockNode.isEmpty()) {
-                  const nodeSelection = $createNodeSelection();
-                  nodeSelection.add(blockNode.getKey());
-                  $setSelection(nodeSelection);
-                } else {
-                  $setSelection(
-                    blockNode.select(0, blockNode.getChildrenSize()),
-                  );
-                }
-              } else if (!prevSelectionAll) {
+                $setSelection(blockNode.select(0, blockNode.getChildrenSize()));
+              } else if (
+                (blockNode && blockNode.isEmpty()) ||
+                // don't trigger selectAll if it's already set
+                !prevSelectionAll
+              ) {
                 prevSelectionAll = $selectAll();
               }
             });

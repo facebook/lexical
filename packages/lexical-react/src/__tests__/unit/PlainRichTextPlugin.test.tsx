@@ -28,8 +28,8 @@ import {
   LexicalEditor,
 } from 'lexical';
 import * as React from 'react';
+import {act} from 'react';
 import {createRoot, Root} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
 const RICH_TEXT_NODES = [
@@ -108,7 +108,7 @@ describe('LexicalNodeHelpers tests', () => {
         );
       }
 
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         reactRoot.render(<App />);
       });
 
@@ -159,7 +159,7 @@ describe('LexicalNodeHelpers tests', () => {
         );
       }
 
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         reactRoot.render(<App />);
       });
 
@@ -226,7 +226,7 @@ describe('LexicalNodeHelpers tests', () => {
         );
       }
 
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         reactRoot.render(<App />);
       });
 
@@ -236,7 +236,7 @@ describe('LexicalNodeHelpers tests', () => {
       }
 
       expect(placeholderText()).toBe('My placeholder');
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         editor.setEditable(false);
         reactRoot.render(<App />);
       });

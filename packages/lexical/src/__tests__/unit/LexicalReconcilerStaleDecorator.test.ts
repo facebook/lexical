@@ -7,12 +7,12 @@
  */
 
 import {buildEditorFromExtensions} from '@lexical/extension';
+import invariant from '@lexical/internal/invariant';
 import {$createParagraphNode, $getNodeByKey, $getRoot, NodeKey} from 'lexical';
 import {
   $createTestDecoratorNode,
   TestDecoratorNode,
 } from 'lexical/src/__tests__/utils';
-import invariant from 'shared/invariant';
 import {describe, expect, test} from 'vitest';
 
 describe('LexicalReconciler — last-child decorator removal', () => {

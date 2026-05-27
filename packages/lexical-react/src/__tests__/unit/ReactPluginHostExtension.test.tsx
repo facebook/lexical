@@ -26,7 +26,7 @@ import {
   $getRoot,
   type LexicalEditor,
 } from 'lexical';
-import {act} from 'shared/react-test-utils';
+import {act} from 'react';
 import {afterEach, beforeEach, describe, expect, it, Mock, vi} from 'vitest';
 
 function $prepopulatedRichText() {

@@ -482,7 +482,6 @@ import type {
   EditorConfig,
   LexicalNode,
   SerializedTextNode,
-  $getEditor,
 } from "lexical";
 import {
   $create,
@@ -492,7 +491,7 @@ import {
   safeCast,
 } from "lexical";
 import {
-  getExtensionDependencyFromEditor,
+  $getExtensionDependency,
 } from "@lexical/extension";
 // highlight-end
 import { registerLexicalTextEntity } from "@lexical/text";
@@ -517,10 +516,7 @@ export class KeywordNode extends TextNode {
     dom.style.cursor = "default";
     // highlight-start
     // This lets us configure the class name!
-    dom.className = getExtensionDependencyFromEditor(
-      $getEditor(),
-      KeywordsExtension,
-    ).config.className;
+    dom.className = $getExtensionDependency(KeywordsExtension).config.className;
     // highlight-end
     return dom;
   }

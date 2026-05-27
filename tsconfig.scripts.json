@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "checkJs": true,
+    "noEmit": true
+  },
+  "include": ["scripts"],
+  "exclude": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "scripts/**/__tests__/unit/**",
+    "scripts/__tests__/integration/fixtures/**"
+  ],
+  "extends": "./tsconfig.json"
+}

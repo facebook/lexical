@@ -9,9 +9,9 @@
 import type {LexicalPrivateDOM} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 
-import {IS_APPLE_WEBKIT, IS_IOS, IS_SAFARI} from 'shared/environment';
-import invariant from 'shared/invariant';
+import invariant from '@lexical/internal/invariant';
 
+import {IS_APPLE_WEBKIT, IS_IOS, IS_SAFARI} from './environment';
 import {$getEditor} from './LexicalUtils';
 
 /**

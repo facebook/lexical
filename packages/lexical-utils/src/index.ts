@@ -6,6 +6,19 @@
  *
  */
 
+import invariant from '@lexical/internal/invariant';
+import {
+  CAN_USE_BEFORE_INPUT,
+  CAN_USE_DOM,
+  IS_ANDROID,
+  IS_ANDROID_CHROME,
+  IS_APPLE,
+  IS_APPLE_WEBKIT,
+  IS_CHROME,
+  IS_FIREFOX,
+  IS_IOS,
+  IS_SAFARI,
+} from 'lexical';
 import {
   $caretFromPoint,
   $caretRangeFromSelection,
@@ -52,21 +65,6 @@ import {
   StateConfig,
   ValueOrUpdater,
 } from 'lexical';
-// This underscore postfixing is used as a hotfix so we do not
-// export shared types from this module #5918
-import {CAN_USE_DOM as CAN_USE_DOM_} from 'shared/canUseDOM';
-import {
-  CAN_USE_BEFORE_INPUT as CAN_USE_BEFORE_INPUT_,
-  IS_ANDROID as IS_ANDROID_,
-  IS_ANDROID_CHROME as IS_ANDROID_CHROME_,
-  IS_APPLE as IS_APPLE_,
-  IS_APPLE_WEBKIT as IS_APPLE_WEBKIT_,
-  IS_CHROME as IS_CHROME_,
-  IS_FIREFOX as IS_FIREFOX_,
-  IS_IOS as IS_IOS_,
-  IS_SAFARI as IS_SAFARI_,
-} from 'shared/environment';
-import invariant from 'shared/invariant';
 
 export {default as markSelection} from './markSelection';
 export {default as positionNodeOnRange} from './positionNodeOnRange';
@@ -83,17 +81,20 @@ export {
   mergeRegister,
   removeClassNamesFromElement,
 } from 'lexical';
-// Hotfix to export these with inlined types #5918
-export const CAN_USE_BEFORE_INPUT: boolean = CAN_USE_BEFORE_INPUT_;
-export const CAN_USE_DOM: boolean = CAN_USE_DOM_;
-export const IS_ANDROID: boolean = IS_ANDROID_;
-export const IS_ANDROID_CHROME: boolean = IS_ANDROID_CHROME_;
-export const IS_APPLE: boolean = IS_APPLE_;
-export const IS_APPLE_WEBKIT: boolean = IS_APPLE_WEBKIT_;
-export const IS_CHROME: boolean = IS_CHROME_;
-export const IS_FIREFOX: boolean = IS_FIREFOX_;
-export const IS_IOS: boolean = IS_IOS_;
-export const IS_SAFARI: boolean = IS_SAFARI_;
+
+const __DEV__ = process.env.NODE_ENV !== 'production';
+export {
+  CAN_USE_BEFORE_INPUT,
+  CAN_USE_DOM,
+  IS_ANDROID,
+  IS_ANDROID_CHROME,
+  IS_APPLE,
+  IS_APPLE_WEBKIT,
+  IS_CHROME,
+  IS_FIREFOX,
+  IS_IOS,
+  IS_SAFARI,
+};
 
 /**
  * Returns true if the file type matches the types passed within the acceptableMimeTypes array, false otherwise.

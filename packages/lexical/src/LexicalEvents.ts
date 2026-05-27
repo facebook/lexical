@@ -11,16 +11,8 @@ import type {NodeKey} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextNode} from './nodes/LexicalTextNode';
 
-import {
-  CAN_USE_BEFORE_INPUT,
-  IS_ANDROID_CHROME,
-  IS_APPLE_WEBKIT,
-  IS_FIREFOX,
-  IS_IOS,
-  IS_SAFARI,
-} from 'shared/environment';
-import invariant from 'shared/invariant';
-import warnOnlyOnce from 'shared/warnOnlyOnce';
+import invariant from '@lexical/internal/invariant';
+import warnOnlyOnce from '@lexical/internal/warnOnlyOnce';
 
 import {
   $getPreviousSelection,
@@ -75,6 +67,14 @@ import {
   SKIP_SELECTION_FOCUS_TAG,
   UNDO_COMMAND,
 } from '.';
+import {
+  CAN_USE_BEFORE_INPUT,
+  IS_ANDROID_CHROME,
+  IS_APPLE_WEBKIT,
+  IS_FIREFOX,
+  IS_IOS,
+  IS_SAFARI,
+} from './environment';
 import {
   BEFORE_INPUT_COMMAND,
   COMPOSITION_END_COMMAND,

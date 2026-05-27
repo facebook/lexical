@@ -51,12 +51,20 @@ const sidebars = {
         'concepts/selection',
         'concepts/read-only',
         'concepts/history',
-        'concepts/serialization',
         'concepts/dom-events',
         'concepts/traversals',
         'concepts/updates',
       ],
       label: 'Concepts',
+      type: 'category',
+    },
+    {
+      items: [
+        'serialization/serialization',
+        'serialization/dom-import',
+        'serialization/dom-render',
+      ],
+      label: 'Serialization',
       type: 'category',
     },
     {

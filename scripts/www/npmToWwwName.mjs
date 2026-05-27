@@ -14,7 +14,6 @@
  * '@lexical/react/useLexicalEditor' -> 'useLexicalEditor'
  *
  * @param {string} name the npm or directory name of a package
- * @param {boolean} [forTypes] true to match the name that typescript will produce
  * @returns {string} the name of the package in www format
  */
 export default function npmToWwwName(name) {

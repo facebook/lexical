@@ -133,7 +133,13 @@ export function contextFromPairs<Ctx extends AnyContextSymbol>(
     if (rval === parent && getContextValue(rval, k) === v) {
       continue;
     }
-    const ctx = rval || createChildContext(parent);
+    // If we haven't branched away from `parent` yet, create a fresh child
+    // context so we never mutate the caller's parent record. Subsequent
+    // pairs in this loop accumulate into the same child. Inside the loop
+    // `rval` is non-null after the first iteration, since createChildContext
+    // never returns null/undefined.
+    const ctx: ContextRecord<Ctx> =
+      rval === parent || rval === undefined ? createChildContext(parent) : rval;
     ctx[key] = v;
     rval = ctx;
   }

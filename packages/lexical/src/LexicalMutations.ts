@@ -12,8 +12,6 @@ import type {EditorState} from './LexicalEditorState';
 import type {LexicalPrivateDOM} from './LexicalNode';
 import type {BaseSelection} from './LexicalSelection';
 
-import {IS_FIREFOX} from 'shared/environment';
-
 import {
   $getSelection,
   $isDecoratorNode,
@@ -21,6 +19,7 @@ import {
   $isTextNode,
   $setSelection,
 } from '.';
+import {IS_FIREFOX} from './environment';
 import {updateEditorSync} from './LexicalUpdates';
 import {
   $getNodeByKey,

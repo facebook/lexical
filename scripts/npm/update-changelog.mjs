@@ -10,11 +10,17 @@
 
 import {exec} from '../shared/childProcess.mjs';
 
-const isPrerelease = process.env.npm_package_version.indexOf('-') !== -1;
+// The npm_package_version environment variable is set by npm/pnpm when this
+// script is run via a package.json script, so it is required to be present.
+const npmPackageVersion = /** @type {string} */ (
+  process.env.npm_package_version
+);
+
+const isPrerelease = npmPackageVersion.indexOf('-') !== -1;
 
 async function updateChangelog() {
   const date = (await exec(`git show --format=%as | head -1`)).stdout.trim();
-  const header = `## v${process.env.npm_package_version} (${date})`;
+  const header = `## v${npmPackageVersion} (${date})`;
   const changelogContent = (
     await exec(
       `git --no-pager log --oneline ${process.env.LATEST_RELEASE}...HEAD~1 --pretty=format:"- %s %an"`,

@@ -16,13 +16,11 @@ runs:
       id: vars
       shell: bash
       run: echo "cache_playwright_path=${{ runner.os == 'macOS' && '~/Library/Caches/ms-playwright' || runner.os == 'Windows' && 'C:\\Users\\runneradmin\\AppData\\Local\\ms-playwright' || '~/.cache/ms-playwright' }}" >> "$GITHUB_OUTPUT"
-    - name: Install required ubuntu-latest packages
+    # setup-pnpm must be completed before this point
+    - name: Install playwright system dependencies
       shell: bash
       if: runner.os == 'Linux'
-      run: |
-        sudo apt-get update
-        sudo apt-get install xvfb
-    # setup-pnpm must be completed before this point
+      run: pnpm exec playwright install-deps
     - name: Restore playwright from cache
       uses: actions/cache/restore@v5
       id: playwright-cache

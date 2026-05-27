@@ -241,6 +241,7 @@ export {
   $createPoint,
   $createRangeSelection,
   $createRangeSelectionFromDom,
+  $generateNodesFromRawText,
   $getCharacterOffsets,
   $getPreviousSelection,
   $getSelection,
@@ -250,6 +251,8 @@ export {
   $isNodeSelection,
   $isRangeSelection,
   $updateDOMSelection,
+  type RawTextVisitor,
+  tokenizeRawText,
 } from './LexicalSelection';
 export {$parseSerializedNode, isCurrentlyReadOnlyMode} from './LexicalUpdates';
 export {
@@ -308,6 +311,8 @@ export {
   isExactShortcutMatch,
   isHTMLAnchorElement,
   isHTMLElement,
+  isHTMLTableCellElement,
+  isHTMLTableRowElement,
   isInlineDomNode,
   isLexicalEditor,
   isModifierMatch,

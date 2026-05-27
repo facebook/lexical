@@ -9,7 +9,7 @@
 /// <reference types="trusted-types" />
 
 import {getPeerDependencyFromEditor} from '@lexical/extension';
-import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
+import {$generateHtmlFromNodes} from '@lexical/html';
 import invariant from '@lexical/internal/invariant';
 import {$sliceSelectedTextNodeContent} from '@lexical/selection';
 import {objectKlassEquals} from '@lexical/utils';
@@ -17,7 +17,6 @@ import {
   $caretFromPoint,
   $caretRangeFromSelection,
   $comparePointCaretNext,
-  $createTabNode,
   $getCaretRange,
   $getCaretRangeInDirection,
   $getChildCaret,
@@ -52,6 +51,7 @@ import {
 } from 'lexical';
 
 import {caretFromPoint} from './caretFromPoint';
+import {$getImportOutput} from './ClipboardImportExtension';
 
 export interface LexicalClipboardData {
   'text/html'?: string | undefined;
@@ -139,83 +139,21 @@ export function $insertDataTransferForPlainText(
 }
 
 /**
- * Attempts to insert content of the mime-types application/x-lexical-editor, text/html,
- * text/plain, or text/uri-list (in descending order of priority) from the provided DataTransfer
- * object into the editor at the provided selection.
+ * Insert the contents of `dataTransfer` at `selection` using the rich-text
+ * import pipeline (`application/x-lexical-editor` → `text/html` → `text/plain`
+ * → `text/uri-list`, in descending order of priority).
  *
  * @param dataTransfer an object conforming to the [DataTransfer interface] (https://html.spec.whatwg.org/multipage/dnd.html#the-datatransfer-interface)
  * @param selection the selection to use as the insertion point for the content in the DataTransfer object
- * @param editor the LexicalEditor the content is being inserted into.
+ * @param _editor unused; retained for backwards compatibility. Safe to
+ *   omit on new call sites.
  */
 export function $insertDataTransferForRichText(
   dataTransfer: DataTransfer,
   selection: BaseSelection,
-  editor: LexicalEditor,
+  _editor?: LexicalEditor,
 ): void {
-  const lexicalString = dataTransfer.getData('application/x-lexical-editor');
-
-  if (lexicalString) {
-    try {
-      const payload = JSON.parse(lexicalString);
-      if (
-        payload.namespace === editor._config.namespace &&
-        Array.isArray(payload.nodes)
-      ) {
-        const nodes = $generateNodesFromSerializedNodes(payload.nodes);
-        return $insertGeneratedNodes(editor, nodes, selection);
-      }
-    } catch (error) {
-      console.error(error);
-    }
-  }
-
-  const htmlString = dataTransfer.getData('text/html');
-  const plainString = dataTransfer.getData('text/plain');
-
-  // Skip HTML handling if it matches the plain text representation.
-  // This avoids unnecessary processing for plain text strings created by
-  // iOS Safari autocorrect, which incorrectly includes a `text/html` type.
-  if (htmlString && plainString !== htmlString) {
-    try {
-      const parser = new DOMParser();
-      const dom = parser.parseFromString(
-        trustHTML(htmlString) as string,
-        'text/html',
-      );
-      const nodes = $generateNodesFromDOM(editor, dom);
-      return $insertGeneratedNodes(editor, nodes, selection);
-    } catch (error) {
-      console.error(error);
-    }
-  }
-
-  // Multi-line plain text in rich text mode pasted as separate paragraphs
-  // instead of single paragraph with linebreaks.
-  // Webkit-specific: Supports read 'text/uri-list' in clipboard.
-  const text = plainString || dataTransfer.getData('text/uri-list');
-  if (text != null) {
-    if ($isRangeSelection(selection)) {
-      const parts = text.split(/(\r?\n|\t)/);
-      if (parts[parts.length - 1] === '') {
-        parts.pop();
-      }
-      for (let i = 0; i < parts.length; i++) {
-        const currentSelection = $getSelection();
-        if ($isRangeSelection(currentSelection)) {
-          const part = parts[i];
-          if (part === '\n' || part === '\r\n') {
-            currentSelection.insertParagraph();
-          } else if (part === '\t') {
-            currentSelection.insertNodes([$createTabNode()]);
-          } else {
-            currentSelection.insertText(part);
-          }
-        }
-      }
-    } else {
-      selection.insertRawText(text);
-    }
-  }
+  $getImportOutput().$insertDataTransfer(dataTransfer, selection);
 }
 
 const LEXICAL_DRAG_MIME_TYPE = 'application/x-lexical-drag';
@@ -442,16 +380,6 @@ export function $handlePlainTextDrop(
   return $doDrop(event, editor, (dataTransfer, selection) =>
     $insertDataTransferForPlainText(dataTransfer, selection),
   );
-}
-
-function trustHTML(html: string): string | TrustedHTML {
-  if (window.trustedTypes && window.trustedTypes.createPolicy) {
-    const policy = window.trustedTypes.createPolicy('lexical', {
-      createHTML: input => input,
-    });
-    return policy.createHTML(html);
-  }
-  return html;
 }
 
 /**

@@ -70,10 +70,12 @@ type IntentionallyMarkedAsDirtyElement = boolean;
  * so all instances share the same V8 hidden-class shape and the setter is
  * a stable inline cache hit instead of a per-instance shape transition.
  *
- * ElementNodes already carry their computed text content in
- * `dom.__lexicalTextContent` (written at the end of `$reconcileChildren`),
- * so we never set this on ElementNodes — `$cachedTextSize` routes them to
- * the DOM cache instead.
+ * ElementNodes are NOT stored here: an element can be dirty without being
+ * cloned (a descendant edit marks ancestors dirty via
+ * `internalMarkParentElementsAsDirty` but does not `getWritable()` them), so
+ * the same — DEV-frozen — instance would need its size rewritten when its
+ * text changes, which the skip-if-set guard cannot do. Element sizes come
+ * from `dom.__lexicalTextContent` instead (see `$prevSuffixTextSize`).
  *
  * Leaf writes are skipped when the slot is already not `undefined`. The
  * setter is only re-entered for the same instance via cross-parent moves
@@ -94,29 +96,79 @@ type IntentionallyMarkedAsDirtyElement = boolean;
  */
 export const CACHED_TEXT_SIZE_KEY = Symbol.for('@lexical/CachedTextSize');
 
-function $cachedTextSize(node: LexicalNode): number {
-  if ($isElementNode(node)) {
-    const keyedDom = activePrevKeyToDOMMap.get(node.__key);
-    const cached = keyedDom && keyedDom.__lexicalTextContent;
-    invariant(
-      typeof cached === 'string',
-      'cachedTextSize: missing __lexicalTextContent for ElementNode of type %s',
-      node.getType(),
-    );
-    return cached.length;
-  }
-  const cached = node[CACHED_TEXT_SIZE_KEY];
-  // $reconcileNode and $createNode set the size on every leaf they touch, so a
-  // missing entry here means the invariant was broken upstream. Falling back to
-  // getTextContentSize() would resolve via getLatest() against the next state
-  // and silently miscompute prev sizes — fail loudly instead.
-  invariant(
-    cached !== undefined,
-    'cachedTextSize: missing entry for leaf %s key %s',
-    node.getType(),
-    node.__key,
+// Total previous-render text length of the `count` suffix children starting at
+// `startKey` (in next-map order, which equals prev order across the size-0 and
+// size-±1 fast paths). This is the slice length removed from the parent's
+// cached text before the freshly reconciled suffix is appended.
+//
+// The whole walk runs inside `activePrevEditorState.read(...)` so that every
+// node method resolves against the PREVIOUS node map: a moved element recomputes
+// its size via `getTextContentSize()` (its shared keyed-DOM cache may already
+// hold the NEW size, cf. https://github.com/facebook/lexical/pull/8564), and the
+// inter-sibling `isInline()` returns the node's previous-render value (a moved
+// or re-typed node could answer differently in the next state, and a node
+// removed this cycle would throw). The per-child size logic is inlined here
+// rather than shared so it cannot be called outside this read. Non-moved
+// elements and leaves still read their O(1) caches, so a large untouched suffix
+// child is not re-walked.
+function $prevSuffixTextSize(startKey: NodeKey, count: number): number {
+  return activePrevEditorState.read(
+    () => {
+      let size = 0;
+      let cur: NodeKey | null = startKey;
+      for (let i = 0; i < count && cur !== null; i++) {
+        const prevNode = activePrevNodeMap.get(cur);
+        // Callers validate every suffix key is present in the prev map, so a
+        // miss means a broken upstream invariant. Fail loudly (the reconciler
+        // catch recovers via a full reconcile) rather than slice a partial sum.
+        invariant(
+          prevNode !== undefined,
+          'prevSuffixTextSize: missing prev node for key %s',
+          cur,
+        );
+        if ($isElementNode(prevNode)) {
+          const nextNode = activeNextNodeMap.get(cur);
+          if (
+            nextNode !== undefined &&
+            $isElementNode(nextNode) &&
+            nextNode.__parent !== prevNode.__parent
+          ) {
+            // Moved to a different parent this cycle: the shared keyed-DOM text
+            // cache may already hold its NEW size, so recompute from the prev
+            // tree. (`__parent === null` means detached/removed, not moved — its
+            // DOM cache is still its prev text.)
+            size += prevNode.getTextContentSize();
+          } else {
+            const keyedDom = activePrevKeyToDOMMap.get(cur);
+            const cached = keyedDom && keyedDom.__lexicalTextContent;
+            invariant(
+              typeof cached === 'string',
+              'prevSuffixTextSize: missing __lexicalTextContent for ElementNode of type %s',
+              prevNode.getType(),
+            );
+            size += cached.length;
+          }
+          if (i < count - 1 && !prevNode.isInline()) {
+            size += DOUBLE_LINE_BREAK.length;
+          }
+        } else {
+          // $reconcileNode / $createNode set the size on every leaf they touch,
+          // so a missing entry means the invariant was broken upstream.
+          const cached = prevNode[CACHED_TEXT_SIZE_KEY];
+          invariant(
+            cached !== undefined,
+            'prevSuffixTextSize: missing cached size for leaf %s key %s',
+            prevNode.getType(),
+            cur,
+          );
+          size += cached;
+        }
+        cur = prevNode.__next;
+      }
+      return size;
+    },
+    {editor: activeEditor},
   );
-  return cached;
 }
 
 function $setCachedTextSize(node: LexicalNode): void {
@@ -236,6 +288,7 @@ let activeMutationListeners: MutationListeners;
 let activeDirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>;
 let activeDirtyLeaves: Set<NodeKey>;
 let activePrevNodeMap: NodeMap;
+let activePrevEditorState: EditorState;
 let activeNextNodeMap: NodeMap;
 let activePrevKeyToDOMMap: Map<NodeKey, HTMLElement & LexicalPrivateDOM>;
 let activeDirtyChildrenByParent: Map<NodeKey, Set<NodeKey>>;
@@ -811,17 +864,10 @@ function $tryReconcileSuffixWithSizeDelta(
     ops.push({key: nextSuffixKeys[ni], kind: 'create', nextIndex: ni});
     ni++;
   }
-  let oldSuffixLength = 0;
-  for (let i = 0; i < kPrime; i++) {
-    const prevNode = activePrevNodeMap.get(prevSuffixKeys[i]);
-    if (prevNode === undefined) {
-      return false;
-    }
-    oldSuffixLength += $cachedTextSize(prevNode);
-    if (i < kPrime - 1 && $isElementNode(prevNode) && !prevNode.isInline()) {
-      oldSuffixLength += DOUBLE_LINE_BREAK.length;
-    }
-  }
+  // `prevSuffixKeys` was built above by walking the prev map from
+  // `prevSuffixStartKey`, so every key is present there and the helper
+  // reproduces the same `kPrime`-length traversal.
+  const oldSuffixLength = $prevSuffixTextSize(prevSuffixStartKey, kPrime);
   for (const op of ops) {
     const saved = $beginCaptureGuard();
     if (op.kind === 'reconcile') {
@@ -1023,25 +1069,12 @@ function $reconcileChildren(
       if (suffixStartKey !== null) {
         const k = dirtyChildren.size;
         if (sizeDelta === 0) {
-          let oldSuffixLength = 0;
+          // Same keys in the same order across prev and next (gated by
+          // `prevElement.__first === nextElement.__first`, no clone), so the
+          // prev-map walk visits exactly this suffix.
+          const oldSuffixLength = $prevSuffixTextSize(suffixStartKey, k);
           let cur: NodeKey | null = suffixStartKey;
           let i = 0;
-          while (cur !== null && i < k) {
-            const prevNode = activePrevNodeMap.get(cur);
-            if (prevNode === undefined) {
-              break;
-            }
-            oldSuffixLength += $cachedTextSize(prevNode);
-            if (i < k - 1 && $isElementNode(prevNode) && !prevNode.isInline()) {
-              oldSuffixLength += DOUBLE_LINE_BREAK.length;
-            }
-            const nextNodeForLink = activeNextNodeMap.get(cur);
-            cur = nextNodeForLink ? nextNodeForLink.__next : null;
-            i++;
-          }
-
-          cur = suffixStartKey;
-          i = 0;
           while (cur !== null && i < k) {
             const node = activeNextNodeMap.get(cur);
             if (node === undefined) {
@@ -1686,6 +1719,7 @@ export function $reconcileRoot(
   activeDirtyElements = dirtyElements;
   activeDirtyLeaves = dirtyLeaves;
   activePrevNodeMap = prevEditorState._nodeMap;
+  activePrevEditorState = prevEditorState;
   activeNextNodeMap = nextEditorState._nodeMap;
   activeEditorStateReadOnly = nextEditorState._readOnly;
   activePrevKeyToDOMMap = cloneMap(editor._keyToDOMMap);
@@ -1709,6 +1743,8 @@ export function $reconcileRoot(
   activeDirtyLeaves = undefined;
   // @ts-ignore
   activePrevNodeMap = undefined;
+  // @ts-ignore
+  activePrevEditorState = undefined;
   // @ts-ignore
   activeNextNodeMap = undefined;
   // @ts-ignore

@@ -17,6 +17,19 @@ import {$generateHtmlFromNodes} from '@lexical/html';
 const htmlString = $generateHtmlFromNodes(editor, selection | null);
 ```
 
+:::tip
+
+For new code, consider [`DOMRenderExtension`](./dom-render.md)
+instead of (or in addition to) `exportDOM` on each node class. It lets
+you declare `$exportDOM` / `$createDOM` / `$updateDOM` /
+`$decorateDOM` / `$getDOMSlot` / `$shouldExclude` / `$shouldInclude` /
+`$extractWithChild` overrides per node class (or globally) in a
+middleware-style chain that composes cleanly across extensions. The
+same declaration applies to both in-editor reconciliation and HTML
+export, so you don't have to maintain two parallel code paths.
+
+:::
+
 #### `LexicalNode.exportDOM()`
 You can control how a `LexicalNode` is represented as HTML by adding an `exportDOM()` method.
 
@@ -38,6 +51,24 @@ export type DOMExportOutput = {
 If the element property is null in the return value of exportDOM, that Node will not be represented in the serialized output.
 
 ### HTML -> Lexical
+
+:::tip
+
+For new code, consider [`DOMImportExtension`](./dom-import.md)
+instead of (or in addition to) `static importDOM()` on each node
+class. It replaces the `DOMConversionMap` machinery with typed
+selectors (`sel.tag(...)`, `sel.css(...)`), middleware-style rules
+(`$next()` instead of numeric priority), structural schemas
+(`BlockSchema` / `InlineSchema` / `ListSchema` / `TableSchema`),
+configurable text whitespace handling
+(`ImportWhitespaceConfig`), a DOM preprocess chain (default:
+stylesheet inlining), and a typed context system for cross-rule
+communication. Per-package bundles ship for rich-text, list, link,
+table, code, and horizontal-rule. Pair with
+[`ClipboardImportExtension`](./dom-import.md#clipboardimportextension)
+to route pastes through the new pipeline.
+
+:::
 
 ```js
 import {$generateNodesFromDOM} from '@lexical/html';
@@ -333,12 +364,12 @@ function patchStyleConversion(
 
 :::tip
 
-If your custom node uses [`$config`](./nodes.mdx#creating-custom-nodes-with-config-and-nodestate)
+If your custom node uses [`$config`](../concepts/nodes.mdx#creating-custom-nodes-with-config-and-nodestate)
 with `NodeState`, `exportJSON`, `importJSON`, and `updateFromJSON` are
 generated for you. Flat state keys are lifted to the top level of the
 serialized node and the rest are nested under `'$'` — see
-[Flat serialization with `$config`](./node-state.md#flat-serialization-with-config)
-and the [legacy-property upgrade recipe](./node-state.md#upgrading-a-legacy-json-property-to-nodestate).
+[Flat serialization with `$config`](../concepts/node-state.md#flat-serialization-with-config)
+and the [legacy-property upgrade recipe](../concepts/node-state.md#upgrading-a-legacy-json-property-to-nodestate).
 
 :::
 

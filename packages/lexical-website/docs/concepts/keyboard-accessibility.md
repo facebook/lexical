@@ -43,6 +43,21 @@ Toolbars that opt into `useRovingTabIndex` (`@lexical/react/useRovingTabIndex`) 
 
 `useAriaLiveRegion` (`@lexical/react/useAriaLiveRegion`) mounts a visually-hidden `aria-live` region (default `polite`) and returns an `announce(message)` function. The region is removed on unmount. Useful for status announcements (mode changes, format toggles, etc.) — see the playground's `EditorModeAnnouncePlugin` for an example that pairs the hook with `editor.registerEditableListener`.
 
+## Component ARIA quick reference
+
+Where Lexical already applies ARIA attributes today (set directly in each component's `createDOM` / `updateDOM` or, for non-node UI, in the surrounding React tree):
+
+| Component | role | aria-\* attributes |
+| --- | --- | --- |
+| `ToolbarPlugin` (playground) | `toolbar` | `aria-label` |
+| `Modal` (playground) | `dialog` | `aria-modal`, `aria-labelledby` |
+| `LexicalListItemNode` (check list leaf) | `checkbox` | `aria-checked` |
+| `LexicalMenu` typeahead popup | `listbox` | `aria-label`, `aria-controls` |
+| `EquationNode` (playground) | `math` | `aria-label` |
+| `useAriaLiveRegion` region | `status` | `aria-live`, `aria-atomic` |
+
+Custom nodes follow the same pattern: set the attributes in `createDOM` and re-apply in `updateDOM` when the state they reflect changes. There is no central ARIA contract on `LexicalNode`; treat each subclass's `createDOM` as the source of truth.
+
 ## Browser notes
 
 - Chrome (macOS) and Safari (macOS, normal window) both run the editor's `Escape` chain — `editor.blur()` fires and the next `Tab` moves to the page's next focusable element.

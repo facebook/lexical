@@ -14,6 +14,7 @@ import {
   $getSelection,
   $isRangeSelection,
   $isTextNode,
+  $setCompositionKey,
   type BaseSelection,
   COMMAND_PRIORITY_LOW,
   COMPOSITION_END_TAG,
@@ -546,6 +547,28 @@ export const AutocompleteExtension = defineExtension({
         // cycles a fresh suggestion instead of leaving a no-op Tab press.
         dismiss();
         return false;
+      }
+      // Mid-composition Tab on the same TextNode (the composition-idle
+      // UX path — ghost rendered while the IME is still composing). A
+      // plain spliceText would race the in-flight syllable and the
+      // resulting DOM lands torn ("사용 |용" instead of "사용권"). Read
+      // the settled text from the DOM, write the combined string, and
+      // clear the composition key so the IME stops trying to merge into
+      // a node it no longer controls.
+      if (
+        editor.isComposing() &&
+        compositionTextNodeKey === activeTextNodeKey
+      ) {
+        const dom = editor.getElementByKey(activeTextNodeKey);
+        if (dom !== null) {
+          const liveText = getCompositionTextFromDOM(dom);
+          const fullText = liveText + lastSuggestion;
+          node.setTextContent(fullText);
+          $setCompositionKey(null);
+          node.select(fullText.length, fullText.length);
+          dismiss();
+          return true;
+        }
       }
       // Append the raw suggestion text (without the "(TAB)" hint) at the
       // end of the active text node.

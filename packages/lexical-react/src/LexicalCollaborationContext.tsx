@@ -8,8 +8,8 @@
 
 import type {Doc} from 'yjs';
 
+import devInvariant from '@lexical/internal/devInvariant';
 import {createContext, useContext, useMemo} from 'react';
-import devInvariant from 'shared/devInvariant';
 
 export type CollaborationContextType = {
   color: string;

@@ -16,6 +16,7 @@ import type {
   TabNode,
 } from 'lexical';
 
+import invariant from '@lexical/internal/invariant';
 import {
   $createLineBreakNode,
   $createTabNode,
@@ -25,7 +26,6 @@ import {
   $isTabNode,
   getTextDirection,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
 import {
   $createCodeHighlightNode,

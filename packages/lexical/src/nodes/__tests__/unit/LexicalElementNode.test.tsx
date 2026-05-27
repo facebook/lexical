@@ -14,23 +14,22 @@ import {
   $getSelection,
   $isRangeSelection,
   createEditor,
-  ElementDOMSlot,
   ElementNode,
   LexicalEditor,
   LexicalNode,
   TextNode,
 } from 'lexical';
 import * as React from 'react';
-import {createRef, useEffect} from 'react';
+import {act, createRef, useEffect} from 'react';
 import {createRoot} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
 import {afterEach, beforeEach, describe, expect, it, test} from 'vitest';
 
 import {
   $createTestElementNode,
   createTestEditor,
 } from '../../../__tests__/utils';
-import {indexPath, SerializedElementNode} from '../../LexicalElementNode';
+import {ElementDOMSlot, indexPath} from '../../../LexicalDOMSlot';
+import {SerializedElementNode} from '../../LexicalElementNode';
 
 describe('LexicalElementNode tests', () => {
   let container: HTMLElement;
@@ -77,7 +76,7 @@ describe('LexicalElementNode tests', () => {
       return <div ref={ref} contentEditable={true} />;
     }
 
-    ReactTestUtils.act(() => {
+    act(() => {
       createRoot(container).render(<TestBase />);
     });
 

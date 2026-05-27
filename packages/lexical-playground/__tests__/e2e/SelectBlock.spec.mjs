@@ -22,7 +22,6 @@ import {
   insertDateTime,
   insertSampleImage,
   pressInsertLinkButton,
-  selectFromInsertDropdown,
   test,
 } from '../utils/index.mjs';
 

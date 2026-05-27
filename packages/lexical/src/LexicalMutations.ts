@@ -12,8 +12,6 @@ import type {EditorState} from './LexicalEditorState';
 import type {LexicalPrivateDOM} from './LexicalNode';
 import type {BaseSelection} from './LexicalSelection';
 
-import {IS_FIREFOX} from 'shared/environment';
-
 import {
   $getSelection,
   $isDecoratorNode,
@@ -21,6 +19,7 @@ import {
   $isTextNode,
   $setSelection,
 } from '.';
+import {IS_FIREFOX} from './environment';
 import {updateEditorSync} from './LexicalUpdates';
 import {
   $getNodeByKey,
@@ -206,7 +205,11 @@ function flushMutations(
               parentDOM != null &&
               addedDOM !== blockCursorElement &&
               node === null &&
-              !isManagedLineBreak(addedDOM, parentDOM, editor)
+              !isManagedLineBreak(addedDOM, parentDOM, editor) &&
+              // Skip externally-added DOM that's explicitly opted out of
+              // mutation tracking (e.g. an extension-rendered decoration
+              // inside a TextNode's span, like the autocomplete ghost).
+              !isDOMUnmanaged(addedDOM)
             ) {
               if (IS_FIREFOX) {
                 const possibleText =

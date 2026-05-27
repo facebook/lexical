@@ -6,11 +6,11 @@
  *
  */
 
-import type {DOMRenderContextSymbol} from './constants';
+import type {DOMImportContextSymbol, DOMRenderContextSymbol} from './constants';
 import type {
   BaseSelection,
   DOMExportOutput,
-  ElementDOMSlot,
+  DOMSlotForNode,
   Klass,
   LexicalEditor,
   LexicalNode,
@@ -20,9 +20,11 @@ import type {
 /**
  * @experimental
  *
- * Any ContextSymbol for {@link ContextConfig} (currently only {@link DOMRenderContextSymbol})
+ * Any ContextSymbol for {@link ContextConfig} (DOM render or DOM import).
  */
-export type AnyContextSymbol = typeof DOMRenderContextSymbol;
+export type AnyContextSymbol =
+  | typeof DOMRenderContextSymbol
+  | typeof DOMImportContextSymbol;
 
 /**
  * @experimental
@@ -194,21 +196,24 @@ export interface DOMRenderMatch<T extends LexicalNode> {
    * after the children. The root of the node returned by createDOM must
    * still be exactly one HTMLElement.
    *
-   * Generally you will call `$next()` to get an ElementDOMSlot and then use
-   * its methods to create a new one.
+   * Generally you will call `$next()` to get a slot and then use its methods
+   * to create a new one. The slot type is narrowed via {@link DOMSlotForNode}:
+   * for `ElementNode` it resolves to {@link ElementDOMSlot} with
+   * children-management semantics; for non-Element nodes the base
+   * {@link DOMSlot} pointing at the keyed DOM.
    *
    * @param node The LexicalNode
    * @param dom The rendered HTMLElement
    * @param $next Call the next implementation
    * @param editor The editor
-   * @returns The `ElementDOMSlot` for this node
+   * @returns The slot for this node
    */
-  $getDOMSlot?: <N extends LexicalNode>(
-    node: N,
+  $getDOMSlot?: (
+    node: T,
     dom: HTMLElement,
-    $next: () => ElementDOMSlot<HTMLElement>,
+    $next: () => DOMSlotForNode<T>,
     editor: LexicalEditor,
-  ) => ElementDOMSlot<HTMLElement>;
+  ) => DOMSlotForNode<T>;
   /**
    * Called during the reconciliation process to determine which nodes
    * to insert into the DOM for this Lexical Node. This is also the default

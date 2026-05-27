@@ -9,6 +9,7 @@
 import fs from 'fs-extra';
 import {glob} from 'glob';
 import path from 'node:path';
+import prettier from 'prettier';
 
 import {PackageMetadata} from './shared/PackageMetadata.mjs';
 import {packagesManager} from './shared/packagesManager.mjs';
@@ -24,7 +25,7 @@ const publicNpmNames = new Set(
 );
 
 /**
- * @typedef {Record<'import'|'require', Record<string,string>>} ImportRequireExports
+ * @typedef {{source?: string; import: Record<string, string>; require: Record<string, string>}} ImportRequireExports
  */
 
 /**
@@ -50,7 +51,8 @@ function updatePackage(pkg) {
  * - Update the exports map and set other required default fields
  *
  */
-function updateVersion() {
+async function updateVersion() {
+  await regenerateInternalVersionModule();
   packagesManager.getPackages().forEach(updatePackage);
   glob
     .sync([
@@ -60,6 +62,61 @@ function updateVersion() {
     .forEach(packageJsonPath =>
       updatePackage(new PackageMetadata(packageJsonPath)),
     );
+}
+
+const INTERNAL_PACKAGE_NAME = '@lexical/internal';
+
+/**
+ * Rewrite the generated literal in @lexical/internal's version module to the
+ * current monorepo version. In a Rollup build `process.env.LEXICAL_VERSION`
+ * is statically replaced with a build-specific string; this literal is the
+ * fallback used when the source is consumed without that build step.
+ */
+async function regenerateInternalVersionModule() {
+  const versionPath = path.resolve('packages/lexical-internal/src/version.ts');
+  if (!fs.existsSync(versionPath)) {
+    return;
+  }
+  const next = fs
+    .readFileSync(versionPath, 'utf8')
+    .replace(/'[^']*\+source'/, `'${version}+source'`);
+  const prettierConfig = (await prettier.resolveConfig(versionPath)) || {};
+  fs.writeFileSync(
+    versionPath,
+    await prettier.format(next, {...prettierConfig, filepath: versionPath}),
+  );
+}
+
+/**
+ * Return true if any non-test source file in the package imports from
+ * `@lexical/internal/...`, meaning the package needs it as a runtime
+ * dependency (so the `source` export condition resolves for npm consumers).
+ *
+ * @param {PackageMetadata} pkg
+ * @returns {boolean}
+ */
+function srcImportsInternalPackage(pkg) {
+  const srcDir = pkg.resolve('src');
+  if (!fs.existsSync(srcDir)) {
+    return false;
+  }
+  const stack = [srcDir];
+  while (stack.length > 0) {
+    const dir = /** @type {string} */ (stack.pop());
+    for (const ent of fs.readdirSync(dir, {withFileTypes: true})) {
+      if (ent.isDirectory()) {
+        if (ent.name !== '__tests__' && ent.name !== '__bench__') {
+          stack.push(path.join(dir, ent.name));
+        }
+      } else if (/\.tsx?$/.test(ent.name)) {
+        const contents = fs.readFileSync(path.join(dir, ent.name), 'utf8');
+        if (contents.includes(`from '${INTERNAL_PACKAGE_NAME}/`)) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
 }
 
 /**
@@ -93,19 +150,37 @@ function withEnvironments(fileName) {
 }
 
 /**
+ * The subdirectory of a package that holds built artifacts (and is what
+ * the public exports/main/types fields resolve into). Keeping this in one
+ * place makes the package directory itself a publishable npm package and
+ * allows `pnpm link` / `file:` consumers to point at the package root.
+ */
+const DIST_DIR = 'dist';
+
+/**
  * Build an export map for a particular entry point in the package.json
  *
  * @param {string} basename the name of the entry point module without an extension (e.g. 'index')
  * @param {string} [typesBasename]
+ * @param {string} [sourceRelPath] path relative to the package root for the
+ *   TypeScript (or CJS) source backing this entry. When provided, a
+ *   `source` condition is added so bundlers configured with
+ *   `resolve.conditions: ['source', ...]` can consume the package
+ *   without a build step (useful for `pnpm link` / `file:` consumers).
  * @returns {ImportRequireExports} The export map for this file
  */
-function exportEntry(basename, typesBasename = `${basename}.d.ts`) {
+function exportEntry(
+  basename,
+  typesBasename = `${basename}.d.ts`,
+  sourceRelPath,
+) {
   // Bundlers such as webpack require 'types' to be first and 'default' to be
   // last per #5731. Keys are in descending priority order.
-  const prefix = `./${basename}`;
-  const types = `./${typesBasename}`;
+  const prefix = `./${DIST_DIR}/${basename}`;
+  const types = `./${DIST_DIR}/${typesBasename}`;
   return {
     /* eslint-disable sort-keys-fix/sort-keys-fix */
+    ...(sourceRelPath ? {source: `./${sourceRelPath}`} : null),
     import: {
       types,
       ...withEnvironments(`${prefix}.mjs`),
@@ -124,8 +199,6 @@ function exportEntry(basename, typesBasename = `${basename}.d.ts`) {
 /**
  * Add a browser condition for a particular entry point in the package.json
  *
- * @param {string} basename the name of the entry point module without an extension (e.g. 'index')
- * @param {string} [typesBasename]
  * @param {ImportRequireExports} exports
  * @returns {Record<'browser'|'import'|'require', Record<string,string>>} The export map for this file
  */
@@ -140,7 +213,85 @@ function withBrowser(exports) {
       return [[k, v.replace(/((?:\.dev|\.prod)?\.m?js)$/, '.browser$1')]];
     }),
   );
-  return {browser, ...exports};
+  // Keep `source` first so a consumer that opts in with
+  // `resolve.conditions: ['source', ...]` always wins over `browser`.
+  const {source, ...rest} = exports;
+  return {...(source ? {source} : null), browser, ...rest};
+}
+
+/**
+ * Strip any leading './' or 'dist/' segment from a path stored in
+ * package.json. Existing package.json fields may be `Lexical.js`,
+ * `./Lexical.js`, or `./dist/Lexical.js` depending on when they were
+ * last written; normalize to the bare basename for derivation.
+ *
+ * @param {string} value
+ * @returns {string}
+ */
+function stripDistPrefix(value) {
+  return value.replace(/^(\.\/)?(dist\/)?/, '');
+}
+
+/**
+ * Files that should be present alongside package.json in every public
+ * package directory so it ships as a complete npm package without any
+ * separate copy-into-`npm/` step. `src` is included (minus tests and
+ * benchmarks) so the `source` export condition (added by `exportEntry`)
+ * resolves for npm consumers that opt in via
+ * `resolve.conditions: ['source', ...]`.
+ */
+const PUBLIC_FILES_FIELD = [
+  'dist',
+  'src',
+  '!src/__tests__',
+  '!src/__bench__',
+  '!src/__mocks__',
+  '!src/**/*.test.ts',
+  '!src/**/*.test.tsx',
+  '!src/**/*.bench.ts',
+  '!src/**/*.bench.tsx',
+  'README.md',
+  'LICENSE',
+];
+
+/**
+ * Copy the monorepo LICENSE into the package directory. The published
+ * tarball must contain the LICENSE next to package.json; doing this
+ * during `update-packages` keeps the working tree publishable without
+ * relying on the previous prepare-release copy step.
+ *
+ * @param {PackageMetadata} pkg
+ */
+function ensureLicense(pkg) {
+  const dest = pkg.resolve('LICENSE');
+  fs.copySync(path.resolve('LICENSE'), dest);
+}
+
+/**
+ * Find the source file backing a `main`-style entry. The build always
+ * compiles `src/index.{ts,tsx}` into the `main` output regardless of
+ * what `main` is named, so check for index first; fall back to
+ * `src/<basename>.{ts,tsx,js}` to cover any custom layout.
+ *
+ * @param {PackageMetadata} pkg
+ * @param {string} basename
+ * @returns {string | undefined}
+ */
+function findMainSourceRelPath(pkg, basename) {
+  const candidates = [
+    'index.ts',
+    'index.tsx',
+    'index.js',
+    `${basename}.ts`,
+    `${basename}.tsx`,
+    `${basename}.js`,
+  ];
+  for (const fn of candidates) {
+    if (fs.existsSync(pkg.resolve('src', fn))) {
+      return `src/${fn}`;
+    }
+  }
+  return undefined;
 }
 
 /**
@@ -156,14 +307,28 @@ function updatePublicPackage(pkg) {
   }
   // If there's a main we expect a single entry point
   if (packageJson.main) {
-    packageJson.module = replaceExtension(packageJson.main, '.mjs');
+    const mainBase = stripDistPrefix(packageJson.main);
+    const typesBase = packageJson.types
+      ? stripDistPrefix(packageJson.types)
+      : undefined;
+    packageJson.main = `./${DIST_DIR}/${mainBase}`;
+    packageJson.module = `./${DIST_DIR}/${replaceExtension(mainBase, '.mjs')}`;
+    if (typesBase) {
+      packageJson.types = `./${DIST_DIR}/${typesBase}`;
+    }
+    const sourceRelPath = findMainSourceRelPath(
+      pkg,
+      replaceExtension(mainBase, ''),
+    );
     packageJson.exports = {
       '.': exportEntry(
-        replaceExtension(packageJson.main, ''),
-        packageJson.types,
+        replaceExtension(mainBase, ''),
+        typesBase,
+        sourceRelPath,
       ),
     };
   } else {
+    /** @type {Record<string, unknown>} */
     const exports = {};
     // Export all src/*.tsx? files that do not have a prefix extension (e.g. no .d.ts)
     for (const fn of fs.readdirSync(pkg.resolve('src'))) {
@@ -178,7 +343,7 @@ function updatePublicPackage(pkg) {
           ? packageName
           : `${packageName}/${basename}`;
         const entryName = npmToWwwName(entryNameInput);
-        let entry = exportEntry(entryName, `${basename}.d.ts`);
+        let entry = exportEntry(entryName, `${basename}.d.ts`, `src/${fn}`);
         if (hasBrowser) {
           entry = withBrowser(entry);
         }
@@ -193,6 +358,10 @@ function updatePublicPackage(pkg) {
     }
     packageJson.exports = exports;
   }
+  // Whitelist what ships to npm. The package root is the publish root, so
+  // we no longer need a separate `npm/` copy step.
+  packageJson.files = [...PUBLIC_FILES_FIELD];
+  ensureLicense(pkg);
 }
 
 /**
@@ -213,9 +382,15 @@ function updateDependencies(pkg) {
     peerDependencies = {},
     devDependencies = {},
   } = packageJson;
+  // Pinned-locally deps (link:..., file:...) are intentional — a fixture
+  // or example may want to resolve through pnpm's link protocol against
+  // the local checkout. Leave those alone; only normalize semver-style
+  // pins to the canonical monorepo version.
+  const isLocalProtocol = (/** @type {unknown} */ v) =>
+    typeof v === 'string' && /^(link|file|portal):/.test(v);
   [dependencies, devDependencies].forEach(deps => {
     Object.keys(deps).forEach(dep => {
-      if (publicNpmNames.has(dep)) {
+      if (publicNpmNames.has(dep) && !isLocalProtocol(deps[dep])) {
         deps[dep] = depVersion;
       }
     });
@@ -228,6 +403,20 @@ function updateDependencies(pkg) {
       dependencies[peerDep] = depVersion;
     }
   });
+  // Reconcile the @lexical/internal dependency: a package needs it iff its
+  // source imports it (so the `source` export condition resolves for npm
+  // consumers). Add it when imported, remove it when no longer imported.
+  // (@lexical/internal must not depend on itself; leave local-protocol pins.)
+  if (
+    pkg.getNpmName() !== INTERNAL_PACKAGE_NAME &&
+    !isLocalProtocol(dependencies[INTERNAL_PACKAGE_NAME])
+  ) {
+    if (srcImportsInternalPackage(pkg)) {
+      dependencies[INTERNAL_PACKAGE_NAME] = depVersion;
+    } else {
+      delete dependencies[INTERNAL_PACKAGE_NAME];
+    }
+  }
   pkg
     .sortDependencies('dependencies', dependencies)
     .sortDependencies('devDependencies', devDependencies)

@@ -133,7 +133,7 @@ function getPathFromNodeToEditor(node: Node, rootElement: HTMLElement | null) {
     if (parent === null || node === rootElement) {
       break;
     }
-    path.push(Array.from(parent.childNodes).indexOf(node));
+    path.push(Array.from(parent.childNodes).indexOf(node as ChildNode));
     node = parent;
   }
   return path.reverse();

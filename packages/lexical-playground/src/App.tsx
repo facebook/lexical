@@ -56,6 +56,7 @@ import Editor from './Editor';
 import logo from './images/logo.svg';
 import {KeywordsExtension} from './nodes/KeywordNode';
 import PlaygroundNodes from './nodes/PlaygroundNodes';
+import {AutocompleteExtension} from './plugins/AutocompleteExtension';
 import {PlaygroundAutoLinkExtension} from './plugins/AutoLinkExtension';
 import {CodeHighlightExtension} from './plugins/CodeHighlightExtension';
 import {CollapsibleExtension} from './plugins/CollapsibleExtension';
@@ -76,6 +77,7 @@ import {TerseExportExtension} from './plugins/TerseExportExtension';
 import TestRecorderPlugin from './plugins/TestRecorderPlugin';
 import {TwitterExtension} from './plugins/TwitterExtension';
 import TypingPerfPlugin from './plugins/TypingPerfPlugin';
+import {VisibleLineBreakExtension} from './plugins/VisibleLineBreakExtension';
 import {YouTubeExtension} from './plugins/YouTubeExtension';
 import Settings from './Settings';
 import PlaygroundEditorTheme from './themes/PlaygroundEditorTheme';
@@ -214,6 +216,8 @@ const AppExtension = defineExtension({
       $shouldInsertAfter: node =>
         $defaultShouldInsertAfter(node) || $isCodeNode(node),
     }),
+    configExtension(AutocompleteExtension, {disabled: true}),
+    configExtension(VisibleLineBreakExtension, {disabled: true}),
   ],
   html: buildHTMLConfig(),
   name: '@lexical/playground',
@@ -252,7 +256,12 @@ function App(): JSX.Element {
   } = useSettings();
 
   const app = useMemo(
-    () => buildExtensionFromSettings({emptyEditor, isCollab, isRichText}),
+    () =>
+      buildExtensionFromSettings({
+        emptyEditor,
+        isCollab,
+        isRichText,
+      }),
     [emptyEditor, isCollab, isRichText],
   );
 

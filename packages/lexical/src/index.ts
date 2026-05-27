@@ -132,12 +132,15 @@ export {
   NODE_STATE_KEY,
   TEXT_TYPE_TO_FORMAT,
 } from './LexicalConstants';
+export type {DOMSlot} from './LexicalDOMSlot';
+export type {ElementDOMSlot} from './LexicalDOMSlot';
 export type {
   CommandListener,
   CommandListenerPriority,
   CommandListenerPriorityBefore,
   CommandPayloadType,
   CreateEditorArgs,
+  DOMSlotForNode,
   EditableListener,
   EditorConfig,
   EditorDOMRenderConfig,
@@ -238,6 +241,7 @@ export {
   $createPoint,
   $createRangeSelection,
   $createRangeSelectionFromDom,
+  $generateNodesFromRawText,
   $getCharacterOffsets,
   $getPreviousSelection,
   $getSelection,
@@ -247,6 +251,8 @@ export {
   $isNodeSelection,
   $isRangeSelection,
   $updateDOMSelection,
+  type RawTextVisitor,
+  tokenizeRawText,
 } from './LexicalSelection';
 export {$parseSerializedNode, isCurrentlyReadOnlyMode} from './LexicalUpdates';
 export {
@@ -259,6 +265,8 @@ export {
   $createChildrenArray,
   $findMatchingParent,
   $getAdjacentNode,
+  $getDOMSlot,
+  $getDOMTextNode,
   $getEditor,
   $getEditorDOMRenderConfig,
   $getNearestNodeFromDOMNode,
@@ -269,6 +277,7 @@ export {
   $getRoot,
   $hasAncestor,
   $hasUpdateTag,
+  $isElementDOMSlot,
   $isInlineElementOrDecoratorNode,
   $isLeafNode,
   $isRootOrShadowRoot,
@@ -302,6 +311,8 @@ export {
   isExactShortcutMatch,
   isHTMLAnchorElement,
   isHTMLElement,
+  isHTMLTableCellElement,
+  isHTMLTableRowElement,
   isInlineDomNode,
   isLexicalEditor,
   isModifierMatch,
@@ -316,7 +327,6 @@ export {
 export {ArtificialNode__DO_NOT_USE} from './nodes/ArtificialNode';
 export {$isDecoratorNode, DecoratorNode} from './nodes/LexicalDecoratorNode';
 export type {
-  ElementDOMSlot,
   ElementFormatType,
   SerializedElementNode,
 } from './nodes/LexicalElementNode';
@@ -361,6 +371,18 @@ export {
 } from './LexicalUpdateTags';
 
 // LexicalExtension
+export {
+  CAN_USE_BEFORE_INPUT,
+  CAN_USE_DOM,
+  IS_ANDROID,
+  IS_ANDROID_CHROME,
+  IS_APPLE,
+  IS_APPLE_WEBKIT,
+  IS_CHROME,
+  IS_FIREFOX,
+  IS_IOS,
+  IS_SAFARI,
+} from './environment';
 export {
   type AnyLexicalExtension,
   type AnyLexicalExtensionArgument,

@@ -9,6 +9,7 @@
 import type {TableMapType, TableMapValueType} from './LexicalTableSelection';
 import type {ElementNode, PointType} from 'lexical';
 
+import invariant from '@lexical/internal/invariant';
 import {$findMatchingParent} from '@lexical/utils';
 import {
   $createParagraphNode,
@@ -18,7 +19,6 @@ import {
   $isRangeSelection,
   LexicalNode,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
 import {InsertTableCommandPayloadHeaders} from '.';
 import {

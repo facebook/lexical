@@ -45,9 +45,8 @@ import {
   TextNode,
 } from 'lexical';
 import * as React from 'react';
-import {createRef} from 'react';
+import {act, createRef} from 'react';
 import {createRoot} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
 import {afterEach, beforeEach, expect, type Mock, vi} from 'vitest';
 
 import {
@@ -140,7 +139,7 @@ export function initializeUnitTest(
       );
     };
 
-    ReactTestUtils.act(() => {
+    act(() => {
       createRoot(testEnv.container).render(<Editor />);
     });
   });

@@ -42,8 +42,7 @@ import {
   invariant,
   polyfillContentEditable,
 } from 'lexical/src/__tests__/utils';
-import {useState} from 'react';
-import {act} from 'shared/react-test-utils';
+import {act, useState} from 'react';
 import {beforeEach, describe, expect, type Mock, test, vi} from 'vitest';
 
 export class ClipboardDataMock {

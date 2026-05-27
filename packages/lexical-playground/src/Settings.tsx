@@ -29,6 +29,7 @@ export default function Settings(): JSX.Element {
       isCharLimit,
       isCharLimitUtf8,
       isAutocomplete,
+      isVisibleLineBreak,
       showTreeView,
       showNestedEditorTreeView,
       showTableOfContents,
@@ -146,6 +147,11 @@ export default function Settings(): JSX.Element {
             onClick={() => setOption('isAutocomplete', !isAutocomplete)}
             checked={isAutocomplete}
             text="Autocomplete"
+          />
+          <Switch
+            onClick={() => setOption('isVisibleLineBreak', !isVisibleLineBreak)}
+            checked={isVisibleLineBreak}
+            text="Visible Line Break"
           />
           <Switch
             onClick={() => {

@@ -187,6 +187,9 @@
       "@lexical/react/TreeViewExtension": [
         "./packages/lexical-react/src/TreeViewExtension.tsx"
       ],
+      "@lexical/react/useAriaLiveRegion": [
+        "./packages/lexical-react/src/useAriaLiveRegion.ts"
+      ],
       "@lexical/react/useExtensionComponent": [
         "./packages/lexical-react/src/useExtensionComponent.tsx"
       ],

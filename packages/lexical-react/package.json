@@ -1366,6 +1366,36 @@
         "default": "./LexicalTreeViewExtension.js"
       }
     },
+    "./useAriaLiveRegion": {
+      "import": {
+        "types": "./useAriaLiveRegion.d.ts",
+        "development": "./useLexicalAriaLiveRegion.dev.mjs",
+        "production": "./useLexicalAriaLiveRegion.prod.mjs",
+        "node": "./useLexicalAriaLiveRegion.node.mjs",
+        "default": "./useLexicalAriaLiveRegion.mjs"
+      },
+      "require": {
+        "types": "./useAriaLiveRegion.d.ts",
+        "development": "./useLexicalAriaLiveRegion.dev.js",
+        "production": "./useLexicalAriaLiveRegion.prod.js",
+        "default": "./useLexicalAriaLiveRegion.js"
+      }
+    },
+    "./useAriaLiveRegion.js": {
+      "import": {
+        "types": "./useAriaLiveRegion.d.ts",
+        "development": "./useLexicalAriaLiveRegion.dev.mjs",
+        "production": "./useLexicalAriaLiveRegion.prod.mjs",
+        "node": "./useLexicalAriaLiveRegion.node.mjs",
+        "default": "./useLexicalAriaLiveRegion.mjs"
+      },
+      "require": {
+        "types": "./useAriaLiveRegion.d.ts",
+        "development": "./useLexicalAriaLiveRegion.dev.js",
+        "production": "./useLexicalAriaLiveRegion.prod.js",
+        "default": "./useLexicalAriaLiveRegion.js"
+      }
+    },
     "./useExtensionComponent": {
       "import": {
         "types": "./useExtensionComponent.d.ts",

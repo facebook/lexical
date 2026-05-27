@@ -88,6 +88,7 @@ module.name_mapper='^@lexical/react/ReactExtension$' -> '<PROJECT_ROOT>/packages
 module.name_mapper='^@lexical/react/ReactPluginHostExtension$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalReactPluginHostExtension.js.flow'
 module.name_mapper='^@lexical/react/ReactProviderExtension$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalReactProviderExtension.js.flow'
 module.name_mapper='^@lexical/react/TreeViewExtension$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalTreeViewExtension.js.flow'
+module.name_mapper='^@lexical/react/useAriaLiveRegion$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalAriaLiveRegion.js.flow'
 module.name_mapper='^@lexical/react/useExtensionComponent$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalExtensionComponent.js.flow'
 module.name_mapper='^@lexical/react/useExtensionSignalValue$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalExtensionSignalValue.js.flow'
 module.name_mapper='^@lexical/react/useFocusManager$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalFocusManager.js.flow'

@@ -269,6 +269,18 @@ export interface LexicalPrivateDOM {
     | undefined;
   __lexicalDir?: 'ltr' | 'rtl' | null | undefined;
   __lexicalUnmanaged?: boolean | undefined;
+  /**
+   * Cached value of `node.getRole()` last applied to this DOM element by the
+   * reconciler. `undefined` means the contract has not yet been observed on
+   * this DOM. Used to skip unnecessary `setAttribute` / `removeAttribute`
+   * calls when a subclass returns the same value across cycles.
+   */
+  __lexicalRole?: string | null | undefined;
+  /**
+   * Cached value of `node.getAriaLabel()` last applied to this DOM element
+   * by the reconciler. See {@link LexicalPrivateDOM.__lexicalRole}.
+   */
+  __lexicalAriaLabel?: string | null | undefined;
 }
 
 export function $removeNode(

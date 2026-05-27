@@ -10,6 +10,7 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  $isElementNode,
   createEditor,
   ParagraphNode,
   type SerializedTextNode,
@@ -99,5 +100,40 @@ describe('LexicalNode ARIA contract', () => {
     const span = container!.querySelector('span[data-lexical-text="true"]')!;
     expect(span.getAttribute('role')).toBe('note');
     expect(span.getAttribute('aria-label')).toBe('Custom: hello');
+  });
+
+  test('aria-label tracks node text on subsequent updates', () => {
+    const editor = mountEditor();
+    editor.update(
+      () => {
+        const root = $getRoot().clear();
+        const para = $createParagraphNode().append(
+          $createAriaTextNode('hello'),
+        );
+        root.append(para);
+      },
+      {discrete: true},
+    );
+    const span = container!.querySelector(
+      'span[data-lexical-text="true"]',
+    )! as HTMLElement;
+    expect(span.getAttribute('aria-label')).toBe('Custom: hello');
+
+    editor.update(
+      () => {
+        const para = $getRoot().getFirstChildOrThrow();
+        if ($isElementNode(para)) {
+          const text = para.getFirstChild();
+          if (text !== null) {
+            (text as AriaTextNode).setTextContent('world');
+          }
+        }
+      },
+      {discrete: true},
+    );
+    const spanAfter = container!.querySelector(
+      'span[data-lexical-text="true"]',
+    )! as HTMLElement;
+    expect(spanAfter.getAttribute('aria-label')).toBe('Custom: world');
   });
 });

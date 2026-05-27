@@ -238,59 +238,6 @@ let activeDirtyChildrenByParent: Map<NodeKey, Set<NodeKey>>;
 let mutatedNodes: MutatedNodes;
 let activeEditorDOMRenderConfig: EditorDOMRenderConfig;
 
-function $syncAriaAttribute(
-  dom: HTMLElement & LexicalPrivateDOM,
-  attribute: 'role' | 'aria-label',
-  cacheKey: '__lexicalRole' | '__lexicalAriaLabel',
-  next: string | undefined,
-): void {
-  const currentDOM = dom.getAttribute(attribute);
-  // If our cache and the live DOM disagree, an external party (a browser
-  // extension, the host application, etc.) mutated the attribute outside
-  // the reconciler. Treat the cache as cold so the next subclass value
-  // is re-applied cleanly on this cycle.
-  const cached = dom[cacheKey];
-  const effectiveCached =
-    cached != null && currentDOM === cached ? cached : null;
-  // Until a subclass returns a non-undefined value the reconciler stays out
-  // of the attribute entirely. This keeps external attributes (e.g. the
-  // editor root's `role="textbox"` set by `setRootElement`) untouched even
-  // when the node's `getRole()` returns the default `undefined`.
-  if (effectiveCached == null) {
-    if (next === undefined) {
-      return;
-    }
-    if (currentDOM !== next) {
-      dom.setAttribute(attribute, next);
-    }
-    dom[cacheKey] = next;
-    return;
-  }
-  if (next === effectiveCached) {
-    return;
-  }
-  if (next === undefined) {
-    dom.removeAttribute(attribute);
-    dom[cacheKey] = null;
-  } else {
-    dom.setAttribute(attribute, next);
-    dom[cacheKey] = next;
-  }
-}
-
-function $syncAriaContract(
-  node: LexicalNode,
-  dom: HTMLElement & LexicalPrivateDOM,
-): void {
-  $syncAriaAttribute(dom, 'role', '__lexicalRole', node.getRole());
-  $syncAriaAttribute(
-    dom,
-    'aria-label',
-    '__lexicalAriaLabel',
-    node.getAriaLabel(),
-  );
-}
-
 function $destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
   const node = activePrevNodeMap.get(key);
   // A node "moved" across parents in the same transaction still exists in
@@ -455,13 +402,6 @@ function $createNode(key: NodeKey, slot: ElementDOMSlot | null): HTMLElement {
   } else if ($isDecoratorNode(node)) {
     dom.setAttribute('data-lexical-decorator', 'true');
   }
-
-  // Opt-in ARIA contract: subclasses that override `getRole` / `getAriaLabel`
-  // declare semantic role information; the reconciler applies and updates
-  // the corresponding DOM attribute across cycles. Defaults return
-  // `undefined`, leaving the DOM untouched. The subclass's own `createDOM`
-  // takes precedence when it has already populated the attribute.
-  $syncAriaContract(node, dom);
 
   if ($isElementNode(node)) {
     const indent = node.__indent;
@@ -1445,8 +1385,6 @@ function $reconcileNode(
     $destroyNode(key, null);
     return replacementDOM;
   }
-
-  $syncAriaContract(nextNode, dom);
 
   if ($isElementNode(prevNode)) {
     invariant(

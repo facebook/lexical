@@ -269,18 +269,6 @@ export interface LexicalPrivateDOM {
     | undefined;
   __lexicalDir?: 'ltr' | 'rtl' | null | undefined;
   __lexicalUnmanaged?: boolean | undefined;
-  /**
-   * Cached value of `node.getRole()` last applied to this DOM element by the
-   * reconciler. `undefined` means the contract has not yet been observed on
-   * this DOM. Used to skip unnecessary `setAttribute` / `removeAttribute`
-   * calls when a subclass returns the same value across cycles.
-   */
-  __lexicalRole?: string | null | undefined;
-  /**
-   * Cached value of `node.getAriaLabel()` last applied to this DOM element
-   * by the reconciler. See {@link LexicalPrivateDOM.__lexicalRole}.
-   */
-  __lexicalAriaLabel?: string | null | undefined;
 }
 
 export function $removeNode(
@@ -1146,31 +1134,6 @@ export class LexicalNode {
    */
   getTextContentSize(): number {
     return this.getTextContent().length;
-  }
-
-  /**
-   * Optional ARIA role to apply to this node's DOM element at create time.
-   * Defaults to `undefined`, which leaves the DOM untouched. Subclasses
-   * override to expose semantic role information (e.g. an equation node
-   * returning `'math'`).
-   *
-   * The role is only applied at `$createNode` — dynamic changes within a
-   * cycle are not currently re-applied. If a subclass's own `createDOM`
-   * already sets `role`, the reconciler does not overwrite it.
-   *
-   */
-  getRole(): string | undefined {
-    return undefined;
-  }
-
-  /**
-   * Optional ARIA label to apply to this node's DOM element at create time.
-   * Defaults to `undefined`. See {@link LexicalNode.getRole} for application
-   * semantics.
-   *
-   */
-  getAriaLabel(): string | undefined {
-    return undefined;
   }
 
   // View

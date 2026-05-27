@@ -23,7 +23,6 @@ export {registerTabIndentation};
 export function TabIndentationPlugin({
   maxIndent,
   $canIndent,
-  releaseOnEscape,
 }: {
   maxIndent?: number;
   /**
@@ -31,19 +30,11 @@ export function TabIndentationPlugin({
    * This option allows you to set indents for specific nodes without overriding the method for others.
    */
   $canIndent?: CanIndentPredicate;
-  /**
-   * When true, pressing Escape inside the editor sets a one-shot release so
-   * that the next Tab falls through to the browser's default focus
-   * navigation. WCAG 2.1.2 escape hatch for keyboard-only users.
-   */
-  releaseOnEscape?: boolean;
 }): null {
   const [editor] = useLexicalComposerContext();
   useEffect(() => {
-    return registerTabIndentation(editor, maxIndent, $canIndent, {
-      releaseOnEscape,
-    });
-  }, [editor, maxIndent, $canIndent, releaseOnEscape]);
+    return registerTabIndentation(editor, maxIndent, $canIndent);
+  }, [editor, maxIndent, $canIndent]);
 
   return null;
 }

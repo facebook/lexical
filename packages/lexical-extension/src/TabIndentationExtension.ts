@@ -25,11 +25,9 @@ import {
   $normalizeSelection__EXPERIMENTAL,
   COMMAND_PRIORITY_CRITICAL,
   COMMAND_PRIORITY_EDITOR,
-  COMMAND_PRIORITY_LOW,
   defineExtension,
   INDENT_CONTENT_COMMAND,
   INSERT_TAB_COMMAND,
-  KEY_ESCAPE_COMMAND,
   KEY_TAB_COMMAND,
   mergeRegister,
   OUTDENT_CONTENT_COMMAND,
@@ -75,39 +73,17 @@ function $defaultCanIndent(node: ElementNode) {
   return node.canIndent();
 }
 
-export interface TabIndentationOptions {
-  /**
-   * When true, pressing Escape inside the editor sets a one-shot release so
-   * that the next Tab falls through to the browser's default focus
-   * navigation (out of the editor) instead of inserting indent. The release
-   * resets after that single Tab. Default false — the legacy behavior.
-   *
-   * WCAG 2.1.2 (No Keyboard Trap) compliance pattern for keyboard-only
-   * users who would otherwise be unable to leave an editor that owns the
-   * Tab key.
-   */
-  releaseOnEscape?: boolean;
-}
-
 export function registerTabIndentation(
   editor: LexicalEditor,
   maxIndent?: number | ReadonlySignal<null | number>,
   $canIndent:
     | CanIndentPredicate
     | ReadonlySignal<CanIndentPredicate> = $defaultCanIndent,
-  options: TabIndentationOptions = {},
 ) {
-  const releaseOnEscape = options.releaseOnEscape ?? false;
-  let isReleased = false;
-
   return mergeRegister(
     editor.registerCommand<KeyboardEvent>(
       KEY_TAB_COMMAND,
       event => {
-        if (releaseOnEscape && isReleased) {
-          isReleased = false;
-          return false;
-        }
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
           return false;
@@ -122,18 +98,6 @@ export function registerTabIndentation(
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    ...(releaseOnEscape
-      ? [
-          editor.registerCommand<KeyboardEvent>(
-            KEY_ESCAPE_COMMAND,
-            () => {
-              isReleased = true;
-              return false;
-            },
-            COMMAND_PRIORITY_LOW,
-          ),
-        ]
-      : []),
 
     editor.registerCommand(
       INDENT_CONTENT_COMMAND,
@@ -175,12 +139,6 @@ export interface TabIndentationConfig {
    * This option allows you to set indents for specific nodes without overriding the method for others.
    */
   $canIndent: CanIndentPredicate;
-  /**
-   * When true, pressing Escape inside the editor sets a one-shot release so
-   * that the next Tab falls through to the browser's default focus
-   * navigation. WCAG 2.1.2 escape hatch.
-   */
-  releaseOnEscape: boolean;
 }
 
 /**
@@ -196,17 +154,13 @@ export const TabIndentationExtension = defineExtension({
     $canIndent: $defaultCanIndent,
     disabled: false,
     maxIndent: null,
-    releaseOnEscape: false,
   }),
   name: '@lexical/extension/TabIndentation',
   register(editor, config, state) {
-    const {disabled, maxIndent, $canIndent, releaseOnEscape} =
-      state.getOutput();
+    const {disabled, maxIndent, $canIndent} = state.getOutput();
     return effect(() => {
       if (!disabled.value) {
-        return registerTabIndentation(editor, maxIndent, $canIndent, {
-          releaseOnEscape: releaseOnEscape.value,
-        });
+        return registerTabIndentation(editor, maxIndent, $canIndent);
       }
     });
   },

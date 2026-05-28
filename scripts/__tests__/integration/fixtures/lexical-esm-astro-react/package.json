@@ -24,7 +24,7 @@
   },
   "sideEffects": false,
   "devDependencies": {
-    "@playwright/test": "^1.51.1",
+    "@playwright/test": "^1.60.0",
     "typescript": "^5.9.2"
   },
   "optionalDependencies": {

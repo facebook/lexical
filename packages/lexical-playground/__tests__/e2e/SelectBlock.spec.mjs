@@ -22,6 +22,7 @@ import {
   insertDateTime,
   insertSampleImage,
   pressInsertLinkButton,
+  SAMPLE_IMAGE_URL,
   test,
 } from '../utils/index.mjs';
 
@@ -412,7 +413,7 @@ test.describe('SelectBlock', () => {
                 <img
                   alt="Yellow flower in tilt shift lens"
                   draggable="false"
-                  src="/src/images/yellow-flower.jpg" />
+                  src="${SAMPLE_IMAGE_URL}" />
               </div>
             </span>
             <br />
@@ -427,7 +428,7 @@ test.describe('SelectBlock', () => {
                 <img
                   alt="Yellow flower in tilt shift lens"
                   draggable="false"
-                  src="/src/images/yellow-flower.jpg" />
+                  src="${SAMPLE_IMAGE_URL}" />
               </div>
             </span>
             <span
@@ -439,7 +440,7 @@ test.describe('SelectBlock', () => {
                   class="focused"
                   alt="Yellow flower in tilt shift lens"
                   draggable="false"
-                  src="/src/images/yellow-flower.jpg" />
+                  src="${SAMPLE_IMAGE_URL}" />
               </div>
             </span>
             <br />
@@ -533,7 +534,7 @@ test.describe('SelectBlock', () => {
                 <img
                   alt="Yellow flower in tilt shift lens"
                   draggable="false"
-                  src="/src/images/yellow-flower.jpg" />
+                  src="${SAMPLE_IMAGE_URL}" />
               </div>
             </span>
             <br />
@@ -549,7 +550,7 @@ test.describe('SelectBlock', () => {
                   class="focused draggable"
                   alt="Yellow flower in tilt shift lens"
                   draggable="false"
-                  src="/src/images/yellow-flower.jpg" />
+                  src="${SAMPLE_IMAGE_URL}" />
               </div>
               <div>
                 <button class="image-caption-button">Add Caption</button>
@@ -572,7 +573,7 @@ test.describe('SelectBlock', () => {
                   class="focused draggable"
                   alt="Yellow flower in tilt shift lens"
                   draggable="false"
-                  src="/src/images/yellow-flower.jpg" />
+                  src="${SAMPLE_IMAGE_URL}" />
               </div>
               <div>
                 <button class="image-caption-button">Add Caption</button>
@@ -678,7 +679,7 @@ test.describe('SelectBlock', () => {
                   class="focused draggable"
                   alt="Yellow flower in tilt shift lens"
                   draggable="false"
-                  src="/src/images/yellow-flower.jpg" />
+                  src="${SAMPLE_IMAGE_URL}" />
               </div>
               <div>
                 <button class="image-caption-button">Add Caption</button>
@@ -705,7 +706,7 @@ test.describe('SelectBlock', () => {
                   class="focused draggable"
                   alt="Yellow flower in tilt shift lens"
                   draggable="false"
-                  src="/src/images/yellow-flower.jpg" />
+                  src="${SAMPLE_IMAGE_URL}" />
               </div>
               <div>
                 <button class="image-caption-button">Add Caption</button>
@@ -727,7 +728,7 @@ test.describe('SelectBlock', () => {
                 <img
                   alt="Yellow flower in tilt shift lens"
                   draggable="false"
-                  src="/src/images/yellow-flower.jpg" />
+                  src="${SAMPLE_IMAGE_URL}" />
               </div>
             </span>
             <br />

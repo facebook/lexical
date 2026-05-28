@@ -290,6 +290,48 @@ plus creating a tag in git, and likely other steps.
 
 Runs prepare-release to do a full build and then uploads to npm.
 
+### pnpm run setup-trusted-publishing
+
+One-time (idempotent) helper to register every public package with
+[npm trusted publishing](https://docs.npmjs.com/trusted-publishers).
+Re-run it whenever a new public package is added.
+
+Run in check-only mode first:
+
+```bash
+pnpm run setup-trusted-publishing
+```
+
+For each public package in the monorepo, it queries
+`https://registry.npmjs.org` and reports whether the name is already
+claimed. Packages that *do* exist get a deep link to their
+`npmjs.com/.../access` page along with the exact values to enter
+(repository owner, repository name, workflow filename
+`call-release.yml`, empty environment).
+
+If any packages are missing from the registry, re-run with
+`--bootstrap` to publish a deprecated `0.0.0-bootstrap.0` placeholder
+under the `bootstrap` dist-tag so the name can be claimed and then
+configured for trusted publishing:
+
+```bash
+npm login --registry https://registry.npmjs.org   # or set NPM_TOKEN
+pnpm run setup-trusted-publishing -- --bootstrap
+```
+
+Useful flags:
+
+- `--dry-run` — print what would be published without touching the registry
+- `--workflow <filename>` — override the workflow filename (default `call-release.yml`)
+- `--repo <owner/name>` — override the GitHub repo (default `facebook/lexical`)
+- `--stub-version <semver>` — override the placeholder version (default `0.0.0-bootstrap.0`)
+- `--registry <url>` — override the npm registry
+
+The script does not call any private npm APIs; configuring trusted
+publishing itself still has to be done in the npm web UI, but the
+script tells you exactly what to enter and links you to the right
+page.
+
 ## Release Procedure
 
 This is the current release procedure for public releases, at least as of

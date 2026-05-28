@@ -7,6 +7,7 @@
  */
 // @ts-check
 import fs from 'fs-extra';
+import {glob} from 'glob';
 import path from 'node:path';
 import {beforeAll, describe, expect, test} from 'vitest';
 
@@ -125,14 +126,7 @@ async function buildExample({packageJson, packageJsonPath, exampleDir}) {
   try {
     fs.writeJsonSync(packageJsonPath, augmentedPackageJson, {spaces: 2});
     await withCwd(exampleDir, async () => {
-      // `--shamefully-hoist` (== node-linker=hoisted) keeps the example's
-      // node_modules layout close to npm's flat tree, so the
-      // `installed lexical X.Y.Z` assertion below can find transitive
-      // monorepo deps like `@lexical/internal` at the top level instead
-      // of buried under `.pnpm/`.
-      await expectSuccessfulExec(
-        'pnpm install --ignore-workspace --shamefully-hoist',
-      );
+      await expectSuccessfulExec('pnpm install --ignore-workspace');
       await expectSuccessfulExec('pnpm run build');
       if (hasPlaywright) {
         await expectSuccessfulExec('pnpm exec playwright install');
@@ -171,17 +165,34 @@ function describeExample(packageJsonPath, bodyFun = undefined) {
       const packageNames = deps.map(pkg => pkg.getNpmName());
       expect(packageNames).toContain('lexical');
       for (const pkg of deps) {
-        const installedPath = path.join(
-          exampleDir,
-          'node_modules',
-          pkg.getNpmName(),
-        );
-        expect({[installedPath]: fs.existsSync(installedPath)}).toEqual({
-          [installedPath]: true,
+        const name = pkg.getNpmName();
+        // Direct deps surface as `node_modules/<name>/` symlinks (pnpm)
+        // or real dirs (npm). Transitive deps without a top-level entry
+        // live under `node_modules/.pnpm/<encoded>@<ver>[+peer-hash]/
+        // node_modules/<name>/`, so glob both shapes and pick the first
+        // package.json with a matching name + version.
+        const candidates = [
+          path.join(exampleDir, 'node_modules', name, 'package.json'),
+          ...glob.sync(
+            `node_modules/.pnpm/*/node_modules/${name}/package.json`,
+            {
+              absolute: true,
+              cwd: exampleDir,
+            },
+          ),
+        ];
+        const match = candidates.find(candidate => {
+          if (!fs.existsSync(candidate)) {
+            return false;
+          }
+          const json = fs.readJsonSync(candidate);
+          return json.name === name && json.version === monorepoVersion;
         });
-        expect(
-          fs.readJsonSync(path.join(installedPath, 'package.json')),
-        ).toMatchObject({name: pkg.getNpmName(), version: monorepoVersion});
+        if (match === undefined) {
+          throw new Error(
+            `Could not find ${name}@${monorepoVersion} under ${exampleDir}/node_modules (searched ${candidates.length} candidate${candidates.length === 1 ? '' : 's'})`,
+          );
+        }
       }
     });
     if (packageJson.scripts.test) {

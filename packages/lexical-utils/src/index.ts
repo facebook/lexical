@@ -25,6 +25,7 @@ import {
   $cloneWithProperties,
   $createParagraphNode,
   $findMatchingParent,
+  $fullReconcile,
   $getAdjacentChildCaret,
   $getAdjacentSiblingOrParentSiblingCaret,
   $getCaretInDirection,
@@ -477,7 +478,6 @@ export function $restoreEditorState(
   editor: LexicalEditor,
   editorState: EditorState,
 ): void {
-  const FULL_RECONCILE = 2;
   const nodeMap = new Map();
   const activeEditorState = editor._pendingEditorState;
 
@@ -489,7 +489,7 @@ export function $restoreEditorState(
     activeEditorState._nodeMap = nodeMap;
   }
 
-  editor._dirtyType = FULL_RECONCILE;
+  $fullReconcile();
   const selection = editorState._selection;
   $setSelection(selection === null ? null : selection.clone());
 }

@@ -6,26 +6,21 @@ on:
 
 permissions:
   contents: write
+  id-token: write
 
 concurrency:
   group: ${{ github.workflow }}
   cancel-in-progress: false
 
 jobs:
-  increment-version:
+  release:
     # prevents this action from running on forks
     if: github.repository_owner == 'facebook'
-    uses: ./.github/workflows/call-increment-version.yml
+    uses: ./.github/workflows/call-release.yml
     with:
-      channel: nightly
+      increment-version: true
+      publish: true
       increment: prerelease
-      dry-run: false
-  npm-release:
-    uses: ./.github/workflows/call-npm-publish.yml
-    needs: [increment-version]
-    with:
-      ref: ${{ needs.increment-version.outputs.tag-ref }}
-      dry-run: false
       channel: nightly
       ignore-previously-published: true
     secrets:

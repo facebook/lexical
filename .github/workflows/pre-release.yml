@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: write
+  id-token: write
 
 concurrency:
   group: ${{ github.workflow }}
@@ -17,16 +18,12 @@ concurrency:
 
 jobs:
   release:
-    uses: ./.github/workflows/call-npm-publish.yml
+    uses: ./.github/workflows/call-release.yml
     with:
+      publish: true
+      post-release: true
       ref: main
-      dry-run: false
       channel: latest
       ignore-previously-published: ${{ inputs.ignore-previously-published }}
     secrets:
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-  post-release:
-    uses: ./.github/workflows/call-post-release.yml
-    needs: release
-    with:
-      ref: main

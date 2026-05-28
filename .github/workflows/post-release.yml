@@ -1,0 +1,26 @@
+name: Post-release branch with updated examples
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'git ref to source from'
+        required: true
+        type: string
+        default: main
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  post-release:
+    uses: ./.github/workflows/call-release.yml
+    with:
+      post-release: true
+      ref: ${{ inputs.ref }}
+      # channel is required by call-release.yml but unused when only
+      # post-release runs; pass a valid value.
+      channel: latest

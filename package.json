@@ -4,7 +4,7 @@
   "version": "0.44.0",
   "license": "MIT",
   "private": true,
-  "packageManager": "pnpm@10.33.0",
+  "packageManager": "pnpm@10.34.1",
   "workspaces": [
     "packages/*",
     "dev-examples/*"

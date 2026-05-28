@@ -44,7 +44,7 @@ async function publish() {
       // Publish from the package root. pnpm rewrites `workspace:*` for us
       // and honors the `files` field so only the declared assets ship.
       await exec(
-        `cd ./packages/${pkg.getDirectoryName()} && pnpm publish --access public --tag ${channel} --no-git-checks`,
+        `cd ./packages/${pkg.getDirectoryName()} && pnpm publish --access public --tag ${channel} --no-git-checks --provenance`,
       ).catch(err => {
         if (
           ignorePreviouslyPublished &&

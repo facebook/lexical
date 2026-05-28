@@ -1164,7 +1164,10 @@ export function isMoveBackward(event: KeyboardEventModifiers): boolean {
 }
 
 export function isMoveToStart(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'ArrowLeft', CONTROL_OR_META);
+  return isExactShortcutMatch(event, 'ArrowLeft', {
+    ...CONTROL_OR_META,
+    shiftKey: 'any',
+  });
 }
 
 export function isMoveForward(event: KeyboardEventModifiers): boolean {
@@ -1174,7 +1177,10 @@ export function isMoveForward(event: KeyboardEventModifiers): boolean {
 }
 
 export function isMoveToEnd(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'ArrowRight', CONTROL_OR_META);
+  return isExactShortcutMatch(event, 'ArrowRight', {
+    ...CONTROL_OR_META,
+    shiftKey: 'any',
+  });
 }
 
 export function isMoveUp(event: KeyboardEventModifiers): boolean {

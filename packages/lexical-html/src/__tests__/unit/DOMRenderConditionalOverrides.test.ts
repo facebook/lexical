@@ -29,6 +29,7 @@ import {
   isHTMLElement,
   type LexicalNode,
   LineBreakNode,
+  ParagraphNode,
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
 
@@ -170,6 +171,49 @@ describe('DOMRender conditional overrides', () => {
     // collaboration untouched).
     expect(after).not.toBe(null);
     expect(after).toBe(before);
+  });
+
+  test('disabledForEditor $decorateDOM recreates to apply and revert decoration', () => {
+    const DecorateDisabled = createRenderState('decorateDisabled', () => false);
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: () => {
+          $getRoot().append(
+            $createParagraphNode().append($createTextNode('x')),
+          );
+        },
+        dependencies: [
+          configExtension(DOMRenderExtension, {
+            overrides: [
+              domOverride(
+                [ParagraphNode],
+                {
+                  $decorateDOM: (_node, _prev, dom) => {
+                    dom.setAttribute('data-decorated', 'true');
+                  },
+                },
+                {disabledForEditor: ctx => ctx.get(DecorateDisabled)},
+              ),
+            ],
+          }),
+        ],
+        name: 'decorate-test',
+      }),
+    );
+    const div = document.createElement('div');
+    editor.setRootElement(div);
+
+    // Enabled by default: $decorateDOM applied.
+    expect(div.querySelector('p[data-decorated]')).not.toBe(null);
+
+    // Disable: the node is recreated, so the additive decoration is gone — a
+    // plain re-render of the remaining decorate chain could not remove it.
+    $setRenderContextValue(DecorateDisabled, true, editor);
+    expect(div.querySelector('p[data-decorated]')).toBe(null);
+
+    // Re-enable: decoration re-applied.
+    $setRenderContextValue(DecorateDisabled, false, editor);
+    expect(div.querySelector('p[data-decorated]')).not.toBe(null);
   });
 
   test('disabledForSession gates export participation', () => {

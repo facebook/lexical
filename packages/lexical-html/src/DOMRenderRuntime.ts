@@ -129,37 +129,27 @@ function nodeMatcher(o: AnyDOMRenderMatch): (node: LexicalNode) => boolean {
 }
 
 /**
- * Inspect the overrides added/removed by a context change.
+ * Build a predicate matching the nodes whose DOM must be recreated for the
+ * given override change, or `null` when no live re-render is needed.
  *
- * @returns `rerender` — whether any changed override affects live
- * reconciliation (export-only hooks need none); and `recreate` — a predicate
- * matching nodes whose DOM must be unmounted and recreated (structural
- * `$createDOM`/`$getDOMSlot` overrides), or `null` when re-running
- * `$updateDOM`/`$decorateDOM` in place is enough.
+ * `$createDOM`/`$getDOMSlot` produce the element and slot, and `$decorateDOM`
+ * may add DOM that only a fresh `$createDOM` can revert — so toggling any of
+ * them recreates the affected nodes. `$updateDOM` is diff-driven and applies on
+ * the next node update, and export-only hooks ($exportDOM/$shouldInclude/…)
+ * don't touch the live DOM, so neither needs a re-render. Recreating every
+ * affected node is the simple, always-correct choice; toggles are rare, so the
+ * cost is acceptable and can be optimized later if needed.
  */
-function analyzeChange(changed: readonly AnyDOMRenderMatch[]): {
-  recreate: ((node: LexicalNode) => boolean) | null;
-  rerender: boolean;
-} {
-  let rerender = false;
-  const structural: ((node: LexicalNode) => boolean)[] = [];
+function recreatePredicate(
+  changed: readonly AnyDOMRenderMatch[],
+): ((node: LexicalNode) => boolean) | null {
+  const matchers: ((node: LexicalNode) => boolean)[] = [];
   for (const o of changed) {
-    const isStructural = Boolean(o.$createDOM || o.$getDOMSlot);
-    if (!(isStructural || o.$updateDOM || o.$decorateDOM)) {
-      // Export-only hooks ($exportDOM/$shouldInclude/…) don't affect the live
-      // DOM; recompiling the resident config is enough.
-      continue;
-    }
-    rerender = true;
-    if (isStructural) {
-      structural.push(nodeMatcher(o));
+    if (o.$createDOM || o.$getDOMSlot || o.$decorateDOM) {
+      matchers.push(nodeMatcher(o));
     }
   }
-  return {
-    recreate:
-      structural.length === 0 ? null : node => structural.some(f => f(node)),
-    rerender,
-  };
+  return matchers.length === 0 ? null : node => matchers.some(f => f(node));
 }
 
 /**
@@ -212,30 +202,26 @@ export class DOMRenderRuntimeImpl implements DOMRenderRuntime {
     });
     this.editor._config.dom = dom;
 
-    const {rerender, recreate} = analyzeChange(changed);
-    if (!rerender) {
+    const recreate = recreatePredicate(changed);
+    if (!recreate) {
+      // $updateDOM-only or export-only change: the recompiled config is enough.
       return;
     }
 
-    // Re-render every node through the new config with a full reconcile, which
-    // reuses the existing node instances (no node-map mutation, so no spurious
-    // mutation/collaboration changes). For structural overrides the affected
-    // nodes must be unmounted and recreated — the removed override may have
-    // known how to revert its own DOM — so install a transient $updateDOM that
-    // reports a recreate for matching nodes, restored once the reconcile is done.
-    let restore: undefined | (() => void);
-    if (recreate) {
-      const base = dom.$updateDOM;
-      dom.$updateDOM = (nextNode, prevNode, el, editor) =>
-        recreate(nextNode) ? true : base(nextNode, prevNode, el, editor);
-      restore = () => {
-        dom.$updateDOM = base;
-      };
-    }
-    // `discrete` so the toggle re-renders synchronously, like the initial mount.
+    // Re-render through a full reconcile, which reuses the existing node
+    // instances (no node-map mutation, so no spurious mutation/collaboration
+    // changes). The affected nodes are unmounted and recreated — the removed
+    // override may have produced or decorated DOM that only a fresh $createDOM
+    // reverts — by installing a transient $updateDOM that reports a recreate for
+    // matching nodes, restored once the (synchronous) reconcile is done.
+    const base = dom.$updateDOM;
+    dom.$updateDOM = (nextNode, prevNode, el, editor) =>
+      recreate(nextNode) ? true : base(nextNode, prevNode, el, editor);
     this.editor.update(() => $fullReconcile(), {
       discrete: true,
-      onUpdate: restore,
+      onUpdate: () => {
+        dom.$updateDOM = base;
+      },
       tag: 'history-merge',
     });
   }

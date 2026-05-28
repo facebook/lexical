@@ -125,7 +125,14 @@ async function buildExample({packageJson, packageJsonPath, exampleDir}) {
   try {
     fs.writeJsonSync(packageJsonPath, augmentedPackageJson, {spaces: 2});
     await withCwd(exampleDir, async () => {
-      await expectSuccessfulExec('pnpm install --ignore-workspace');
+      // `--shamefully-hoist` (== node-linker=hoisted) keeps the example's
+      // node_modules layout close to npm's flat tree, so the
+      // `installed lexical X.Y.Z` assertion below can find transitive
+      // monorepo deps like `@lexical/internal` at the top level instead
+      // of buried under `.pnpm/`.
+      await expectSuccessfulExec(
+        'pnpm install --ignore-workspace --shamefully-hoist',
+      );
       await expectSuccessfulExec('pnpm run build');
       if (hasPlaywright) {
         await expectSuccessfulExec('pnpm exec playwright install');

@@ -129,6 +129,10 @@ you always want to layer on top of what others have already done.
 
 :::
 
+`domOverride` also accepts an optional third `options` argument to install
+an override only under certain conditions — see
+[Conditional overrides](#conditional-overrides).
+
 ### Matching nodes
 
 `domOverride` takes either `'*'` (matches every node) or an array of
@@ -369,6 +373,14 @@ const html = $withRenderContext(
 )(() => $generateHtmlFromNodes(editor, selection));
 ```
 
+For a value that should **persist on the editor** rather than scope to a
+single callback, set it imperatively with `$setRenderContextValue` (or
+`$updateRenderContextValue` for an updater). This is the editor-scoped,
+persistent counterpart to `$withRenderContext`, and it's what drives
+[conditional overrides](#conditional-overrides): a write that changes a value
+read by a `disabledForEditor` predicate recompiles the render config and
+re-renders the affected nodes.
+
 ### Built-in render states
 
 `@lexical/html` ships two render states out of the box:
@@ -382,6 +394,132 @@ const html = $withRenderContext(
   being serialized as a `<div role="textbox">` wrapper). Useful when
   the root node should appear differently in a full-document export
   than as a child of some other element.
+
+## Conditional overrides
+
+By default every override is always installed. Pass an optional third
+`options` argument to `domOverride` to install an override only under certain
+conditions, decided purely from the [render context](#render-context):
+
+```ts
+domOverride(nodes, config, {
+  // Install in the editor's render pipeline (reconciliation + the base for
+  // export) only when this returns false. Default: always installed.
+  disabledForEditor?: (ctx) => boolean,
+  // Participate in a single export/generate session only when this returns
+  // false. Default: always participates.
+  disabledForSession?: (ctx) => boolean,
+});
+```
+
+Each predicate receives a read-only view of the render context
+(`ctx.get(state)`) and decides *whether the override exists*, rather than
+running on every node and bailing out internally.
+
+### `disabledForEditor` — runtime toggles
+
+`disabledForEditor` reads the **persistent editor context** and gates whether
+the override is part of the editor's compiled render config. Since the
+in-editor render path uses that config, this is the scope that controls live
+reconciliation.
+
+Toggle it with `$setRenderContextValue` (see
+[Render context](#render-context)). When a write flips the predicate's result,
+the config is recompiled and the affected nodes are re-rendered — recreating
+their DOM, since an override that produced or decorated an element can only be
+undone by a fresh `createDOM`.
+
+```ts
+import {
+  $setRenderContextValue,
+  createRenderState,
+  domOverride,
+  DOMRenderExtension,
+} from '@lexical/html';
+import {LineBreakNode} from 'lexical';
+
+const LineBreakWrapDisabled = createRenderState(
+  'lineBreakWrapDisabled',
+  () => false,
+);
+
+configExtension(DOMRenderExtension, {
+  overrides: [
+    domOverride(
+      [LineBreakNode],
+      {
+        $createDOM(node, $next) {
+          const wrapper = document.createElement('span');
+          wrapper.className = 'visible-linebreak';
+          wrapper.appendChild($next());
+          return wrapper;
+        },
+        // … $getDOMSlot to expose the inner <br>, $updateDOM to recreate when
+        // the wrap state changes …
+      },
+      {disabledForEditor: (ctx) => ctx.get(LineBreakWrapDisabled)},
+    ),
+  ],
+});
+
+// Later — e.g. from a settings change. The override is removed from the
+// pipeline entirely when disabled (no per-node checks remain), and existing
+// line breaks re-render without the wrapper.
+$setRenderContextValue(LineBreakWrapDisabled, true, editor);
+```
+
+Because the override isn't in the dispatch chain at all when disabled, there's
+no per-node cost — the advantage over checking a flag inside the hook.
+
+### `disabledForSession` — per-export gating
+
+`disabledForSession` is evaluated once at the start of each export/generate
+session (`$generateHtmlFromNodes`, `$generateDOMFromNodes`,
+`$generateDOMFromRoot`) against that session's context. It controls whether the
+override participates in *that walk only*, and has **no effect on live
+reconciliation** — reconciliation isn't a session, so there's nothing for the
+predicate to read.
+
+This suits export transforms you only want for certain serializations (e.g. a
+"terse" copy) without paying for the middleware on every export:
+
+```ts
+const TerseExport = createRenderState('terseExport', () => false);
+
+configExtension(DOMRenderExtension, {
+  overrides: [
+    domOverride(
+      '*',
+      {
+        $exportDOM(node, $next) {
+          const result = $next();
+          // … strip theme classes / unneeded styles …
+          return result;
+        },
+      },
+      {disabledForSession: (ctx) => !ctx.get(TerseExport)},
+    ),
+  ],
+});
+
+// A normal export skips the override entirely…
+const html = editor.read(() => $generateHtmlFromNodes(editor));
+
+// …while a terse export opts in for that one walk:
+const terseHtml = editor.read(() =>
+  $withRenderContext([contextValue(TerseExport, true)], editor)(() =>
+    $generateHtmlFromNodes(editor),
+  ),
+);
+```
+
+### Choosing a scope
+
+| You want to… | Use |
+| --- | --- |
+| Turn a render behavior on/off for the whole editor at runtime | `disabledForEditor` + `$setRenderContextValue` |
+| Include an export transform only for certain serializations | `disabledForSession` + `$withRenderContext` |
+| Branch behavior inside an always-installed override | read the context with `$getRenderContextValue` (no options needed) |
 
 ## Entry points
 
@@ -408,6 +546,9 @@ Current:
   `RenderContextRoot`) lets overrides branch on the calling mode.
 - A single declaration applies to both in-editor reconciliation and
   HTML export.
+- Conditional installation via `disabledForEditor` / `disabledForSession`,
+  with imperative `$setRenderContextValue` / `$updateRenderContextValue` to
+  toggle editor-scoped overrides at runtime.
 
 Future:
 

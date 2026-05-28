@@ -82,7 +82,7 @@ describe('LayoutContainerNode HTML serialization', () => {
       });
     });
 
-    it('returns null for div without data-lexical-layout-container', () => {
+    it('does not import a div without data-lexical-layout-container', () => {
       using editor = buildEditorFromExtensions(LayoutTestExtension);
       editor.update(
         () => {

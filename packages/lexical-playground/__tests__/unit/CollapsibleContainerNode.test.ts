@@ -230,6 +230,60 @@ describe('CollapsibleContainerNode HTML import (issue #8407)', () => {
       );
     });
   });
+
+  describe('importDOM + transforms', () => {
+    it('well-formed <details> survives transforms intact', () => {
+      using editor = buildEditorFromExtensions(CollapsibleImportTestExtension);
+
+      editor.update(
+        () => {
+          $getRoot().clear().select();
+          $importHtml(
+            '<details open><summary>Title</summary><p>Body</p></details>',
+          );
+        },
+        {discrete: true},
+      );
+
+      editor.read(() => {
+        const container = $getRoot().getFirstChildOrThrow();
+        assert($isCollapsibleContainerNode(container));
+        expect(container.getOpen()).toBe(true);
+        const [title, content] = container.getChildren();
+        assert($isCollapsibleTitleNode(title));
+        assert($isCollapsibleContentNode(content));
+        expect(title.getTextContent()).toBe('Title');
+        expect(content.getTextContent()).toBe('Body');
+      });
+    });
+
+    it('missing <summary> unwraps to bare paragraphs after transforms', () => {
+      using editor = buildEditorFromExtensions(CollapsibleImportTestExtension);
+
+      editor.update(
+        () => {
+          $getRoot().clear().select();
+          $importHtml('<details>Just some loose text</details>');
+        },
+        {discrete: true},
+      );
+
+      // After transforms: the empty Title is removed by its $transform,
+      // then the resulting 1-child Container is unwrapped by
+      // CollapsibleExtension, and the orphaned Content is unwrapped
+      // again because its parent is no longer a Container — leaving the
+      // body paragraph at the root.
+      editor.read(() => {
+        const root = $getRoot();
+        expect(root.getChildren().some($isCollapsibleContainerNode)).toBe(
+          false,
+        );
+        expect(root.getTextContent().trim()).toBe('Just some loose text');
+        const first = root.getFirstChildOrThrow();
+        assert($isParagraphNode(first));
+      });
+    });
+  });
 });
 
 describe('CollapsibleExtension transforms', () => {

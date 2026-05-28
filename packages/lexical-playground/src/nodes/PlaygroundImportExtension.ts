@@ -126,9 +126,10 @@ export const PlaygroundImportRules = [
   CollapsibleContainerImportRule,
   CollapsibleContentImportRule,
   CollapsibleTitleImportRule,
-  // Inline-style overlay runs after the more-specific node rules so it
-  // doesn't accidentally intercept span-shaped data attributes used by
-  // PollNode / DateTimeNode / MentionNode above.
+  // The inline-style overlay matches every <span>/<b>/<i>/... and would,
+  // if it ran first, $next() into the specialized rules above and then
+  // smear playground inline styles onto their TextNode descendants.
+  // Registering it last lets those rules consume the element first.
   PlaygroundInlineStyleRule,
 ];
 

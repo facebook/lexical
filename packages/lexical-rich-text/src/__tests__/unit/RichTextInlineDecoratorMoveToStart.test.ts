@@ -153,15 +153,6 @@ describe('MOVE_TO_START no-op cases (Issue #8555)', () => {
         paragraph.select(0, 0);
       },
     },
-    {
-      label: 'decorator-only element (no selectable text)',
-      setup: () => {
-        const decorator = $createTestDecoratorNode().setIsInline(true);
-        const paragraph = $createParagraphNode().append(decorator);
-        $getRoot().clear().append(paragraph);
-        paragraph.select(1, 1);
-      },
-    },
   ])('no-op: $label', ({setup}) => {
     using editor = buildEditorFromExtensions({
       $initialEditorState: setup,
@@ -170,16 +161,22 @@ describe('MOVE_TO_START no-op cases (Issue #8555)', () => {
       nodes: [TestDecoratorNode],
     });
 
-    const before = snapshotSelection(editor);
-
+    // Same selection-unchanged expectation for Cmd+Arrow and
+    // Shift+Cmd+Arrow — the handler's guards don't branch on
+    // shiftKey, and the matcher accepts either, so both should
+    // fall through to native browser behavior.
+    const beforeNoShift = snapshotSelection(editor);
     dispatchMoveToStart(editor, false);
+    expect(snapshotSelection(editor)).toEqual(beforeNoShift);
 
-    expect(snapshotSelection(editor)).toEqual(before);
+    const beforeWithShift = snapshotSelection(editor);
+    dispatchMoveToStart(editor, true);
+    expect(snapshotSelection(editor)).toEqual(beforeWithShift);
   });
 });
 
-describe('MOVE_TO_START decorator-only safety (crash fix)', () => {
-  test('Cmd+ArrowLeft on decorator-only element does not throw', () => {
+describe('MOVE_TO_START decorator-only element (no selectable text)', () => {
+  test('Cmd+ArrowLeft moves caret before the decorator', () => {
     using editor = buildEditorFromExtensions({
       $initialEditorState: () => {
         const decorator = $createTestDecoratorNode().setIsInline(true);
@@ -197,7 +194,35 @@ describe('MOVE_TO_START decorator-only safety (crash fix)', () => {
     editor.read(() => {
       const selection = $getSelection();
       assert($isRangeSelection(selection));
-      expect(selection.anchor.type).toBeDefined();
+      expect(selection.isCollapsed()).toBe(true);
+      expect(selection.anchor.type).toBe('element');
+      expect(selection.anchor.offset).toBe(0);
+    });
+  });
+
+  test('Shift+Cmd+ArrowLeft extends selection over the decorator', () => {
+    using editor = buildEditorFromExtensions({
+      $initialEditorState: () => {
+        const decorator = $createTestDecoratorNode().setIsInline(true);
+        const paragraph = $createParagraphNode().append(decorator);
+        $getRoot().clear().append(paragraph);
+        paragraph.select(1, 1);
+      },
+      dependencies: [RichTextExtension],
+      name: 'test',
+      nodes: [TestDecoratorNode],
+    });
+
+    expect(() => dispatchMoveToStart(editor, true)).not.toThrow();
+
+    editor.read(() => {
+      const selection = $getSelection();
+      assert($isRangeSelection(selection));
+      expect(selection.isCollapsed()).toBe(false);
+      expect(selection.anchor.type).toBe('element');
+      expect(selection.anchor.offset).toBe(1);
+      expect(selection.focus.type).toBe('element');
+      expect(selection.focus.offset).toBe(0);
     });
   });
 });

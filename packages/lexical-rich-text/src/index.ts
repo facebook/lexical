@@ -1296,16 +1296,20 @@ export function registerRichText(
         if (!$isDecoratorNode(firstChild) || !firstChild.isInline()) {
           return false;
         }
-        const lastDescendant = element.getLastDescendant();
-        if (lastDescendant == null || $isDecoratorNode(lastDescendant)) {
-          // No selectable text — fall through to native browser behavior.
-          return false;
-        }
         // Native browser cursor traversal stops at the inline decorator's
         // contenteditable=false boundary when the caret starts at element
         // offset 0, so MOVE_TO_END leaves the caret stuck. Move it ourselves.
         const elementKey = element.getKey();
-        const ending = element.selectEnd();
+        const lastDescendant = element.getLastDescendant();
+        const ending = $isTextNode(lastDescendant)
+          ? lastDescendant.select()
+          : // Decorator-only element: target the position after the decorator
+            // explicitly rather than recursing through element.selectEnd() →
+            // decorator.selectEnd() → parent.select(childrenSize, ...).
+            element.select(
+              element.getChildrenSize(),
+              element.getChildrenSize(),
+            );
         if (event.shiftKey) {
           ending.anchor.set(elementKey, 0, 'element');
         }
@@ -1333,11 +1337,6 @@ export function registerRichText(
         }
         const firstChild = focusBlock.getFirstChild();
         if (!$isDecoratorNode(firstChild) || !firstChild.isInline()) {
-          return false;
-        }
-        const lastDescendant = focusBlock.getLastDescendant();
-        if (lastDescendant == null || $isDecoratorNode(lastDescendant)) {
-          // No selectable text — fall through to native browser behavior.
           return false;
         }
         // Cross-block selections fall through to native handling. The

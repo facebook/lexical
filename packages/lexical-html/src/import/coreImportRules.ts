@@ -39,7 +39,7 @@ import {
   ImportWhitespaceConfig,
   type WhitespaceImportConfig,
 } from './ImportContext';
-import {$propagateTextAlignToBlockChildren,BlockSchema} from './schemas';
+import {$propagateTextAlignToBlockChildren, BlockSchema} from './schemas';
 import {selBase} from './sel';
 
 const sel = selBase;

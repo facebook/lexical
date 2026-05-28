@@ -2318,22 +2318,29 @@ function $internalResolveSelectionPoint(
     if (resolvedOffset === childNodesLength && childNodesLength > 0) {
       moveSelectionToEnd = true;
       resolvedOffset = childNodesLength - 1;
-    } else if (
-      childNodesLength === 0 &&
-      getNodeKeyFromDOMNode(dom, editor) === undefined
+    }
+    if (
+      getNodeKeyFromDOMNode(dom, editor) === undefined &&
+      dom !== editor.getRootElement()
     ) {
-      // Void/empty element with no Lexical key (e.g. <col> inside an
-      // unmanaged <colgroup>): the DOM caret has no real position
-      // within Lexical content. Resolution will walk up to find a
-      // Lexical ancestor below; tell the caller to sync DOM so the
-      // user's cursor doesn't remain stranded inside the unmanaged
-      // subtree.
+      // The DOM caret is sitting on a node that has no Lexical key
+      // (e.g. <col> inside an unmanaged <colgroup>, or any unmanaged
+      // scaffolding around a DOMSlot — wrap elements, contenteditable=false
+      // labels, badges, etc.). Resolution will walk up to find a Lexical
+      // ancestor below, so the resulting Lexical position will not
+      // correspond to where the DOM caret currently is. Mark the
+      // selection dirty so the reconciler writes a valid DOM caret back
+      // at the resolved Lexical position.
+      //
+      // The editor root element is exempted: it has no __lexicalKey_*
+      // attribute (it's tracked separately in _keyToDOMMap as 'root')
+      // but root-level clicks are a normal flow whose existing
+      // resolution doesn't need a forced DOM rewrite.
       //
       // Void elements that ARE Lexical nodes (LineBreakNode <br>,
-      // empty decorator containers, etc.) are skipped: the existing
-      // resolution to a before/after-leaf point in the parent already
-      // maps to a visually identical DOM caret, and decorator inputs
-      // are excluded earlier by isSelectionWithinEditor.
+      // empty decorator containers, etc.) have keys, so this check
+      // leaves their existing resolution-to-parent behavior alone, and
+      // decorator inputs are excluded earlier by isSelectionWithinEditor.
       dirty = true;
     }
     let childDOM = childNodes[resolvedOffset];

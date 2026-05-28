@@ -80,6 +80,7 @@ import {
   $getRoot,
   $hasAncestor,
   $isRootOrShadowRoot,
+  $isSelectionCapturedInDecorator,
   $isTokenOrSegmented,
   $isTokenOrTab,
   $setCompositionKey,
@@ -2321,7 +2322,8 @@ function $internalResolveSelectionPoint(
     }
     if (
       getNodeKeyFromDOMNode(dom, editor) === undefined &&
-      dom !== editor.getRootElement()
+      dom !== editor.getRootElement() &&
+      !$isSelectionCapturedInDecorator(dom)
     ) {
       // The DOM caret is sitting on a node that has no Lexical key
       // (e.g. <col> inside an unmanaged <colgroup>, or any unmanaged
@@ -2332,15 +2334,18 @@ function $internalResolveSelectionPoint(
       // selection dirty so the reconciler writes a valid DOM caret back
       // at the resolved Lexical position.
       //
-      // The editor root element is exempted: it has no __lexicalKey_*
-      // attribute (it's tracked separately in _keyToDOMMap as 'root')
-      // but root-level clicks are a normal flow whose existing
-      // resolution doesn't need a forced DOM rewrite.
+      // Exceptions where the DOM caret is intentionally somewhere
+      // Lexical doesn't own and we should NOT force-sync it:
+      //  - the editor root element (tracked separately in
+      //    _keyToDOMMap as 'root'; has no __lexicalKey_* attribute);
+      //  - anything inside a DecoratorNode subtree (the decorator owns
+      //    its own DOM and may manage its own selection — for inputs
+      //    isSelectionCapturedInDecoratorInput rejects earlier, but
+      //    non-input decorator content also shouldn't be force-synced).
       //
       // Void elements that ARE Lexical nodes (LineBreakNode <br>,
       // empty decorator containers, etc.) have keys, so this check
-      // leaves their existing resolution-to-parent behavior alone, and
-      // decorator inputs are excluded earlier by isSelectionWithinEditor.
+      // leaves their existing resolution-to-parent behavior alone.
       dirty = true;
     }
     let childDOM = childNodes[resolvedOffset];

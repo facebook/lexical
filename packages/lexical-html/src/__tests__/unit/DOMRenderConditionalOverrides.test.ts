@@ -20,14 +20,14 @@ import {
   $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
-  $getNodeByKey,
+  $getNodeByKeyOrThrow,
   $getRoot,
   $isElementNode,
   $isLineBreakNode,
   configExtension,
   defineExtension,
   isHTMLElement,
-  type LexicalNode,
+  type LexicalEditor,
   LineBreakNode,
   ParagraphNode,
 } from 'lexical';
@@ -98,23 +98,27 @@ function makeEditor() {
   );
 }
 
+function getLineBreakKey(editor: LexicalEditor): string {
+  return editor.read(() => {
+    const paragraph = $getRoot().getFirstChild();
+    if ($isElementNode(paragraph)) {
+      for (const child of paragraph.getChildren()) {
+        if ($isLineBreakNode(child)) {
+          return child.getKey();
+        }
+      }
+    }
+    return '';
+  });
+}
+
 describe('DOMRender conditional overrides', () => {
   test('disabledForEditor removes the override and recreates live DOM', () => {
     using editor = makeEditor();
     const div = document.createElement('div');
     editor.setRootElement(div);
 
-    let lbKey = '';
-    editor.getEditorState().read(() => {
-      const paragraph = $getRoot().getFirstChild();
-      if ($isElementNode(paragraph)) {
-        for (const child of paragraph.getChildren()) {
-          if ($isLineBreakNode(child)) {
-            lbKey = child.getKey();
-          }
-        }
-      }
-    });
+    const lbKey = getLineBreakKey(editor);
 
     // Enabled by default (disabled=false): the node's DOM is the <span> wrapper.
     const enabledDom = editor.getElementByKey(lbKey);
@@ -143,34 +147,17 @@ describe('DOMRender conditional overrides', () => {
     using editor = makeEditor();
     editor.setRootElement(document.createElement('div'));
 
-    let lbKey = '';
-    editor.read(() => {
-      const paragraph = $getRoot().getFirstChild();
-      if ($isElementNode(paragraph)) {
-        for (const child of paragraph.getChildren()) {
-          if ($isLineBreakNode(child)) {
-            lbKey = child.getKey();
-          }
-        }
-      }
-    });
-
-    let before: null | LexicalNode = null;
-    let after: null | LexicalNode = null;
-    editor.read(() => {
-      before = $getNodeByKey(lbKey);
-    });
+    const lbKey = getLineBreakKey(editor);
+    const before = editor.read(() => $getNodeByKeyOrThrow(lbKey));
     $setRenderContextValue(WrapDisabled, true, editor);
-    editor.read(() => {
-      after = $getNodeByKey(lbKey);
-    });
 
     // A full reconcile recreates the DOM but reuses the same node instance —
     // marking a read-only node writable always returns a new instance, so
     // identity equality proves the node was never cloned (editor state /
     // collaboration untouched).
-    expect(after).not.toBe(null);
-    expect(after).toBe(before);
+    editor.read(() => {
+      expect($getNodeByKeyOrThrow(lbKey)).toBe(before);
+    });
   });
 
   test('disabledForEditor $decorateDOM recreates to apply and revert decoration', () => {
@@ -220,22 +207,19 @@ describe('DOMRender conditional overrides', () => {
     using editor = makeEditor();
     editor.setRootElement(document.createElement('div'));
 
-    let coldHtml = '';
-    let terseHtml = '';
-    editor.read(() => {
-      coldHtml = $generateHtmlFromNodes(editor);
-      $withRenderContext(
-        [contextValue(Terse, true)],
-        editor,
-      )(() => {
-        terseHtml = $generateHtmlFromNodes(editor);
-      });
-    });
-
     // Cold export: the per-session override is not installed.
-    expect(coldHtml).not.toContain('data-terse');
+    editor.read(() => {
+      expect($generateHtmlFromNodes(editor)).not.toContain('data-terse');
+    });
     // Terse export: the per-session override is installed for this walk.
-    expect(terseHtml).toContain('data-terse');
+    editor.read(() => {
+      expect(
+        $withRenderContext(
+          [contextValue(Terse, true)],
+          editor,
+        )(() => $generateHtmlFromNodes(editor)),
+      ).toContain('data-terse');
+    });
   });
 
   test('disabledForSession does not affect live reconciliation', () => {

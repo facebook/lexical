@@ -196,10 +196,9 @@ async function main() {
       try {
         await publishStub(pkg);
       } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
         console.error(
-          `Failed to publish stub for ${pkg.getNpmName()}: ${
-            err && err.message ? err.message : err
-          }`,
+          `Failed to publish stub for ${pkg.getNpmName()}: ${message}`,
         );
         failures.push(pkg.getNpmName());
       }

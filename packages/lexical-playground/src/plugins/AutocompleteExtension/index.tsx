@@ -8,6 +8,7 @@
 
 import {
   effect,
+  IMEExtension,
   namedSignals,
   shallowMergeConfig,
   watchedSignal,
@@ -340,9 +341,11 @@ export const AutocompleteExtension = defineExtension({
     dictionaries: defaultDictionaries,
     disabled: false,
   }),
+  dependencies: [IMEExtension],
   mergeConfig: mergeAutocompleteConfig,
   name: '@lexical/playground/autocomplete',
   register: (editor: LexicalEditor, config, state) => {
+    const ime = state.getDependency(IMEExtension).output;
     const editableSignal = watchedSignal(
       () => editor.isEditable(),
       signal =>
@@ -383,13 +386,6 @@ export const AutocompleteExtension = defineExtension({
       }
       return cached;
     }
-    // Key of the TextNode the IME is currently composing on. Captured at
-    // COMPOSITION_START_COMMAND time from the selection anchor and cleared
-    // on compositionend. Used by `tryCompositionSuggestion` to locate the
-    // DOM whose text content reflects the IME's in-flight syllables —
-    // EditorState lags during composition and would yield a stale prefix.
-    let compositionTextNodeKey: NodeKey | null = null;
-
     function clearPendingCompositionTimer() {
       if (pendingCompositionTimer !== null) {
         clearTimeout(pendingCompositionTimer);
@@ -410,10 +406,12 @@ export const AutocompleteExtension = defineExtension({
 
     function tryCompositionSuggestion() {
       pendingCompositionTimer = null;
-      if (compositionTextNodeKey === null) {
+      const composingNode = ime.composingTextNode.value;
+      if (composingNode === null) {
         return;
       }
-      const dom = editor.getElementByKey(compositionTextNodeKey);
+      const composingKey = composingNode.getKey();
+      const dom = editor.getElementByKey(composingKey);
       if (dom === null) {
         return;
       }
@@ -434,7 +432,6 @@ export const AutocompleteExtension = defineExtension({
       activeTextNodeKey = null;
       const controller = new AbortController();
       searchController = controller;
-      const composingKey = compositionTextNodeKey;
       const language = output.detectLanguage.value(prefix);
       query(
         loadDictionary(output.dictionaries.value[language]),
@@ -462,10 +459,12 @@ export const AutocompleteExtension = defineExtension({
       prefix: string,
       newSuggestion: string | null,
     ) {
+      const composingNode = ime.composingTextNode.value;
       if (
         searchController !== refController ||
         newSuggestion === null ||
-        compositionTextNodeKey !== composingKey
+        composingNode === null ||
+        composingNode.getKey() !== composingKey
       ) {
         return;
       }
@@ -503,7 +502,6 @@ export const AutocompleteExtension = defineExtension({
 
     function onCompositionEndDOM() {
       clearPendingCompositionTimer();
-      compositionTextNodeKey = null;
       // Safari / WebKit defers Lexical's COMPOSITION_END_TAG-tagged
       // update until the next keydown, so any composition-idle ghost
       // would otherwise stay stale until the user presses another key.
@@ -652,9 +650,10 @@ export const AutocompleteExtension = defineExtension({
       // the settled text from the DOM, write the combined string, and
       // clear the composition key so the IME stops trying to merge into
       // a node it no longer controls.
+      const composingNode = ime.composingTextNode.value;
       if (
-        editor.isComposing() &&
-        compositionTextNodeKey === activeTextNodeKey
+        composingNode !== null &&
+        composingNode.getKey() === activeTextNodeKey
       ) {
         const dom = editor.getElementByKey(activeTextNodeKey);
         if (dom !== null) {
@@ -724,25 +723,13 @@ export const AutocompleteExtension = defineExtension({
       rootElem.addEventListener('compositionend', onCompositionEndDOM);
       return mergeRegister(
         editor.registerUpdateListener(handleUpdate),
-        // Capture the composition target's TextNode key the moment a
-        // composition starts so `tryCompositionSuggestion` can find the
-        // right DOM during the idle debounce. Also dismiss any stale
-        // ghost (carried over from pre-composition keyboard input) so
-        // the user gets a clean slate while typing the new prefix.
+        // Dismiss any stale ghost (carried over from pre-composition
+        // keyboard input) so the user gets a clean slate while typing
+        // the new prefix. The composition target's TextNode key is
+        // tracked by IMEExtension and consumed via `ime.composingTextNode`.
         editor.registerCommand(
           COMPOSITION_START_COMMAND,
           () => {
-            // Reset first so a previous composition whose compositionend
-            // DOM event was missed (e.g. the root was detached mid-compose)
-            // can't leak its key into this one.
-            compositionTextNodeKey = null;
-            const selection = $getSelection();
-            if ($isRangeSelection(selection)) {
-              const node = selection.getNodes()[0];
-              if ($isTextNode(node)) {
-                compositionTextNodeKey = node.getKey();
-              }
-            }
             dismiss();
             return false;
           },
@@ -761,7 +748,6 @@ export const AutocompleteExtension = defineExtension({
         addSwipeRightListener(rootElem, handleSwipeRight),
         () => {
           clearPendingCompositionTimer();
-          compositionTextNodeKey = null;
           rootElem.removeEventListener(
             'compositionupdate',
             onCompositionUpdateDOM,

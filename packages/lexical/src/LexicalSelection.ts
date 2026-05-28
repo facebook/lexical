@@ -86,6 +86,7 @@ import {
   doesContainSurrogatePair,
   getDOMSelection,
   getElementByKeyOrThrow,
+  getNodeKeyFromDOMNode,
   getWindow,
   INTERNAL_$isBlock,
   isHTMLElement,
@@ -2317,10 +2318,22 @@ function $internalResolveSelectionPoint(
     if (resolvedOffset === childNodesLength && childNodesLength > 0) {
       moveSelectionToEnd = true;
       resolvedOffset = childNodesLength - 1;
-    } else if (childNodesLength === 0) {
-      // Void/empty element (e.g. <col>): the DOM caret has no real
-      // position within Lexical content. Resolution will walk up to
-      // find a Lexical ancestor below; tell the caller to sync DOM.
+    } else if (
+      childNodesLength === 0 &&
+      getNodeKeyFromDOMNode(dom, editor) === undefined
+    ) {
+      // Void/empty element with no Lexical key (e.g. <col> inside an
+      // unmanaged <colgroup>): the DOM caret has no real position
+      // within Lexical content. Resolution will walk up to find a
+      // Lexical ancestor below; tell the caller to sync DOM so the
+      // user's cursor doesn't remain stranded inside the unmanaged
+      // subtree.
+      //
+      // Void elements that ARE Lexical nodes (LineBreakNode <br>,
+      // empty decorator containers, etc.) are skipped: the existing
+      // resolution to a before/after-leaf point in the parent already
+      // maps to a visually identical DOM caret, and decorator inputs
+      // are excluded earlier by isSelectionWithinEditor.
       dirty = true;
     }
     let childDOM = childNodes[resolvedOffset];

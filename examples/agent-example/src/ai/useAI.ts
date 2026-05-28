@@ -7,8 +7,8 @@
  */
 
 import {useExtensionDependency} from '@lexical/react/useExtensionComponent';
+import {useSignalValue} from '@lexical/react/useExtensionSignalValue';
 
-import {useSignalValue} from '../utils/useExtensionHooks';
 import {AIExtension} from './AIExtension';
 
 type ModelStatus = 'idle' | 'loading' | 'ready' | 'error';

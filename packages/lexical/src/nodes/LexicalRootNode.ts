@@ -9,7 +9,7 @@
 import type {LexicalNode, SerializedLexicalNode} from '../LexicalNode';
 import type {SerializedElementNode} from './LexicalElementNode';
 
-import invariant from 'shared/invariant';
+import invariant from '@lexical/internal/invariant';
 
 import {NO_DIRTY_NODES} from '../LexicalConstants';
 import {getActiveEditor, isCurrentlyReadOnlyMode} from '../LexicalUpdates';
@@ -48,15 +48,11 @@ export class RootNode extends ElementNode {
 
   getTextContent(): string {
     const cachedText = this.__cachedText;
-    if (
-      isCurrentlyReadOnlyMode() ||
-      getActiveEditor()._dirtyType === NO_DIRTY_NODES
-    ) {
-      if (cachedText !== null) {
-        return cachedText;
-      }
-    }
-    return super.getTextContent();
+    return cachedText !== null &&
+      (isCurrentlyReadOnlyMode() ||
+        getActiveEditor()._dirtyType === NO_DIRTY_NODES)
+      ? cachedText
+      : super.getTextContent();
   }
 
   remove(): never {

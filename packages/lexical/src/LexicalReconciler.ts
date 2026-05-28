@@ -23,7 +23,7 @@ import type {
 } from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 
-import invariant from 'shared/invariant';
+import invariant from '@lexical/internal/invariant';
 
 import {
   $isDecoratorNode,
@@ -54,6 +54,8 @@ import {
   setMutatedNode,
   setNodeKeyOnDOMNode,
 } from './LexicalUtils';
+
+const __DEV__ = process.env.NODE_ENV !== 'production';
 
 type IntentionallyMarkedAsDirtyElement = boolean;
 

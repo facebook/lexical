@@ -17,6 +17,7 @@ import type {
   LexicalNode,
 } from 'lexical';
 
+import invariant from '@lexical/internal/invariant';
 import {$sliceSelectedTextNodeContent} from '@lexical/selection';
 import {
   $createLineBreakNode,
@@ -36,10 +37,11 @@ import {
   isHTMLElement,
   isInlineDomNode,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
 import {contextValue} from './ContextRecord';
+import {$inlineStylesFromStyleSheetsDOM} from './import/inlineStylesFromStyleSheets';
 import {
+  $getSessionDOMRenderConfig,
   $withRenderContext,
   RenderContextExport,
   RenderContextRoot,
@@ -48,8 +50,71 @@ import {
 export {contextUpdater, contextValue} from './ContextRecord';
 export {domOverride} from './domOverride';
 export {DOMRenderExtension} from './DOMRenderExtension';
+export type {
+  AnyDOMImportRule,
+  AttrMatchOptions,
+  CapturesOfSelector,
+  ChildSchema,
+  CompiledOverlayRules,
+  CompiledSelector,
+  DOMImportContext,
+  DOMImportExtensionOutput,
+  DOMImportFn,
+  DOMImportRule,
+  DOMImportRuleEntry,
+  DOMPreprocessContext,
+  DOMPreprocessFn,
+  ElementSelectorBuilder,
+  GenerateNodesFromDOMOptions,
+  ImportChildrenOpts,
+  ImportContextPairOrUpdater,
+  ImportNodeOpts,
+  ImportSession,
+  ImportStateConfig,
+  NodeOfSelector,
+  StyleMatchOptions,
+} from './import';
+export {
+  $distributeInlineWrapper,
+  $generateNodesFromDOMViaExtension,
+  $getImportContextValue,
+  $inlineStylesFromStyleSheets,
+  $isBlockLevel,
+  $withImportContext,
+  BlockSchema,
+  CoreImportExtension,
+  CoreImportRules,
+  createImportState,
+  defaultIsInline,
+  defaultPreservesWhitespace,
+  defineImportRule,
+  defineOverlayRules,
+  type DOMImportConfig,
+  DOMImportExtension,
+  HorizontalRuleImportExtension,
+  HorizontalRuleImportRules,
+  ImportOverlays,
+  ImportSource,
+  ImportSourceDataTransfer,
+  type ImportSourceKind,
+  ImportTextFormat,
+  ImportTextStyle,
+  ImportWhitespaceConfig,
+  InlineSchema,
+  isElementOfTag,
+  type IsInlineForWhitespace,
+  type IsPreserveWhitespaceDom,
+  NestedBlockSchema,
+  parseSelector,
+  RootSchema,
+  sel,
+  type WhitespaceImportConfig,
+} from './import';
 export {
   $getRenderContextValue,
+  $getSessionDOMRenderConfig,
+  $setRenderContextValue,
+  $updateRenderContextValue,
   $withRenderContext,
   createRenderState,
   RenderContextExport,
@@ -60,85 +125,14 @@ export type {
   AnyRenderStateConfig,
   AnyRenderStateConfigPairOrUpdater,
   ContextPairOrUpdater,
+  DOMOverrideOptions,
   DOMRenderConfig,
   DOMRenderExtensionOutput,
   DOMRenderMatch,
+  DOMRenderMatchConfig,
   NodeMatch,
+  RenderContextReader,
 } from './types';
-
-function isStyleRule(rule: CSSRule): rule is CSSStyleRule {
-  return rule.constructor.name === CSSStyleRule.name;
-}
-
-/**
- * Inlines CSS rules from <style> tags onto matching elements as inline styles.
- * This is needed because apps like Excel generate HTML where styles live in
- * class-based <style> rules (e.g. `.xl65 { background: #FFFF00; color: blue; }`)
- * rather than inline styles. Since Lexical's import converters read inline styles,
- * we resolve stylesheet rules into inline styles before conversion.
- *
- * Mutates the DOM in-place. Original inline styles always take precedence over
- * stylesheet rules (matching CSS specificity behavior).
- */
-function inlineStylesFromStyleSheets(doc: Document): void {
-  if (doc.querySelector('style') === null) {
-    return;
-  }
-
-  const originalInlineStyles = new Map<HTMLElement, Set<string>>();
-
-  function getOriginalInlineProps(el: HTMLElement): Set<string> {
-    let props = originalInlineStyles.get(el);
-    if (props === undefined) {
-      props = new Set<string>();
-      for (let i = 0; i < el.style.length; i++) {
-        props.add(el.style[i]);
-      }
-      originalInlineStyles.set(el, props);
-    }
-    return props;
-  }
-
-  try {
-    for (const sheet of Array.from(doc.styleSheets)) {
-      let rules: CSSRuleList;
-      try {
-        rules = sheet.cssRules;
-      } catch {
-        continue;
-      }
-      for (const rule of Array.from(rules)) {
-        if (!isStyleRule(rule)) {
-          continue;
-        }
-        let elements: NodeListOf<Element>;
-        try {
-          elements = doc.querySelectorAll(rule.selectorText);
-        } catch {
-          continue;
-        }
-        for (const el of Array.from(elements)) {
-          if (!isHTMLElement(el)) {
-            continue;
-          }
-          const originalProps = getOriginalInlineProps(el);
-          for (let i = 0; i < rule.style.length; i++) {
-            const prop = rule.style[i];
-            if (!originalProps.has(prop)) {
-              el.style.setProperty(
-                prop,
-                rule.style.getPropertyValue(prop),
-                rule.style.getPropertyPriority(prop),
-              );
-            }
-          }
-        }
-      }
-    }
-  } catch {
-    // styleSheets API not supported in this environment
-  }
-}
 
 const IGNORE_TAGS = new Set(['STYLE', 'SCRIPT']);
 
@@ -151,9 +145,7 @@ export function $generateNodesFromDOM(
   editor: LexicalEditor,
   dom: Document | ParentNode,
 ): Array<LexicalNode> {
-  if (isDOMDocumentNode(dom)) {
-    inlineStylesFromStyleSheets(dom);
-  }
+  $inlineStylesFromStyleSheetsDOM(dom);
 
   const elements = isDOMDocumentNode(dom)
     ? dom.body.childNodes
@@ -195,7 +187,7 @@ export function $generateDOMFromNodes<T extends HTMLElement | DocumentFragment>(
     editor,
   )(() => {
     const root = $getRoot();
-    const domConfig = $getEditorDOMRenderConfig(editor);
+    const domConfig = $getSessionDOMRenderConfig(editor);
 
     const parentElementAppend = container.append.bind(container);
     for (const topLevelNode of root.getChildren()) {
@@ -229,7 +221,7 @@ export function $generateDOMFromRoot<T extends HTMLElement | DocumentFragment>(
     editor,
   )(() => {
     const selection = null;
-    const domConfig = $getEditorDOMRenderConfig(editor);
+    const domConfig = $getSessionDOMRenderConfig(editor);
     const parentElementAppend = container.append.bind(container);
     $appendNodesToHTML(editor, root, parentElementAppend, selection, domConfig);
     return container;

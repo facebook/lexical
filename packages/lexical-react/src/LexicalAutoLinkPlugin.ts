@@ -10,10 +10,10 @@ import type {ChangeHandler, LinkMatcher} from '@lexical/link';
 import type {ElementNode, LexicalEditor} from 'lexical';
 import type {JSX} from 'react';
 
+import invariant from '@lexical/internal/invariant';
 import {AutoLinkNode, registerAutoLink} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useEffect} from 'react';
-import invariant from 'shared/invariant';
 
 export {
   type ChangeHandler,

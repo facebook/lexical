@@ -17,6 +17,8 @@ import {
 import {namedSignals} from './namedSignals';
 import {effect} from './signals';
 
+const __DEV__ = process.env.NODE_ENV !== 'production';
+
 export interface NormalizeInlineElementsConfig {
   disabled: boolean;
 }

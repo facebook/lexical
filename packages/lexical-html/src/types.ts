@@ -6,11 +6,12 @@
  *
  */
 
-import type {DOMRenderContextSymbol} from './constants';
+import type {DOMImportContextSymbol, DOMRenderContextSymbol} from './constants';
 import type {
   BaseSelection,
   DOMExportOutput,
   DOMSlotForNode,
+  EditorDOMRenderConfig,
   Klass,
   LexicalEditor,
   LexicalNode,
@@ -20,9 +21,11 @@ import type {
 /**
  * @experimental
  *
- * Any ContextSymbol for {@link ContextConfig} (currently only {@link DOMRenderContextSymbol})
+ * Any ContextSymbol for {@link ContextConfig} (DOM render or DOM import).
  */
-export type AnyContextSymbol = typeof DOMRenderContextSymbol;
+export type AnyContextSymbol =
+  | typeof DOMRenderContextSymbol
+  | typeof DOMImportContextSymbol;
 
 /**
  * @experimental
@@ -89,6 +92,76 @@ export type AnyContextConfigPairOrUpdater<Ctx extends AnyContextSymbol> =
 export interface DOMRenderExtensionOutput {
   /** @internal */
   defaults: undefined | ContextRecord<typeof DOMRenderContextSymbol>;
+  /** @internal */
+  runtime: DOMRenderRuntime;
+}
+
+/**
+ * @experimental
+ *
+ * A read-only view of a render context layer, passed to the
+ * {@link DOMOverrideOptions} predicates so they can decide whether an
+ * override should be installed based only on context values.
+ */
+export interface RenderContextReader {
+  get<V>(cfg: RenderStateConfig<V>): V;
+}
+
+/**
+ * @experimental
+ * @internal
+ *
+ * Per-editor runtime state for {@link DOMRenderExtension} that backs the
+ * imperative editor context ({@link createRenderState} writes via
+ * `$setRenderContextValue`) and the conditional install of overrides.
+ */
+export interface DOMRenderRuntime {
+  /**
+   * The mutable, persistent editor-level context record. Reads of a
+   * {@link RenderStateConfig} during reconciliation (and as the base layer
+   * during a session) fall through to this record. It is also the layer
+   * that {@link DOMOverrideOptions.disabledForEditor} predicates read from.
+   */
+  readonly editorContext: ContextRecord<typeof DOMRenderContextSymbol>;
+  /**
+   * Imperatively set a value in the editor context. If the change flips any
+   * override's `disabledForEditor` result, the resident render config is
+   * recompiled and the affected nodes are re-rendered (recreating DOM for
+   * structural overrides).
+   */
+  setContextValue<V>(cfg: RenderStateConfig<V>, value: V): void;
+  /**
+   * Resolve the {@link EditorDOMRenderConfig} for the current export/generate
+   * session, applying any {@link DOMOverrideOptions.disabledForSession}
+   * predicates against the active session context. Returns the resident
+   * config when no session gating applies.
+   */
+  getSessionConfig(): EditorDOMRenderConfig;
+}
+
+/**
+ * @experimental
+ *
+ * Options for {@link domOverride} controlling *whether* an override is
+ * installed, based only on render context. Both predicates default to
+ * "not disabled".
+ */
+export interface DOMOverrideOptions {
+  /**
+   * Gate residency in the editor's render config (used by reconciliation and
+   * as the base for export/generate). Evaluated against the persistent editor
+   * context at compile time, and re-evaluated when that context changes via
+   * `$setRenderContextValue`; a change recompiles the config and re-renders
+   * affected nodes. Return `true` to remove the override. Default: not disabled.
+   */
+  disabledForEditor?: (ctx: RenderContextReader) => boolean;
+  /**
+   * Gate participation in a single export/generate session. Evaluated once at
+   * the start of each session against that session's context. Has no effect on
+   * live reconciliation (which is not a session). Return `true` to remove the
+   * override for that session. Default: not disabled.
+   */
+  disabledForSession?: (ctx: RenderContextReader) => boolean;
 }
 
 /**
@@ -372,4 +445,26 @@ export interface DOMRenderMatch<T extends LexicalNode> {
     $next: () => boolean,
     editor: LexicalEditor,
   ) => boolean;
+  /**
+   * Set via {@link domOverride}'s options argument, not directly. See
+   * {@link DOMOverrideOptions.disabledForEditor}.
+   */
+  disabledForEditor?: (ctx: RenderContextReader) => boolean;
+  /**
+   * Set via {@link domOverride}'s options argument, not directly. See
+   * {@link DOMOverrideOptions.disabledForSession}.
+   */
+  disabledForSession?: (ctx: RenderContextReader) => boolean;
 }
+
+/**
+ * @experimental
+ *
+ * The hook fields of a {@link DOMRenderMatch} — i.e. without `nodes` or the
+ * {@link DOMOverrideOptions} predicates, which are passed separately to
+ * {@link domOverride}.
+ */
+export type DOMRenderMatchConfig<T extends LexicalNode> = Omit<
+  DOMRenderMatch<T>,
+  'nodes' | keyof DOMOverrideOptions
+>;

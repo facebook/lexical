@@ -9,6 +9,7 @@
 import {$isDecoratorTextNode, signal} from '@lexical/extension';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useExtensionDependency} from '@lexical/react/useExtensionComponent';
+import {useSignalValue} from '@lexical/react/useExtensionSignalValue';
 import {
   $createHeadingNode,
   $createQuoteNode,
@@ -37,7 +38,6 @@ import {type CSSProperties, type JSX, useRef} from 'react';
 
 import {AIExtension} from './ai/AIExtension';
 import {useAI, type UseAIReturn} from './ai/useAI';
-import {useSignalValue} from './utils/useExtensionHooks';
 
 const BLOCK_TYPES = [
   {label: 'Normal', value: 'paragraph'},

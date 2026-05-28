@@ -15,8 +15,8 @@
     "url": "git+https://github.com/facebook/lexical.git",
     "directory": "packages/lexical-eslint-plugin"
   },
-  "main": "LexicalEslintPlugin.js",
-  "types": "index.d.ts",
+  "main": "./dist/LexicalEslintPlugin.js",
+  "types": "./dist/index.d.ts",
   "bugs": {
     "url": "https://github.com/facebook/lexical/issues"
   },
@@ -27,18 +27,19 @@
   },
   "exports": {
     ".": {
+      "source": "./src/index.ts",
       "import": {
-        "types": "./index.d.ts",
-        "development": "./LexicalEslintPlugin.dev.mjs",
-        "production": "./LexicalEslintPlugin.prod.mjs",
-        "node": "./LexicalEslintPlugin.node.mjs",
-        "default": "./LexicalEslintPlugin.mjs"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalEslintPlugin.dev.mjs",
+        "production": "./dist/LexicalEslintPlugin.prod.mjs",
+        "node": "./dist/LexicalEslintPlugin.node.mjs",
+        "default": "./dist/LexicalEslintPlugin.mjs"
       },
       "require": {
-        "types": "./index.d.ts",
-        "development": "./LexicalEslintPlugin.dev.js",
-        "production": "./LexicalEslintPlugin.prod.js",
-        "default": "./LexicalEslintPlugin.js"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalEslintPlugin.dev.js",
+        "production": "./dist/LexicalEslintPlugin.prod.js",
+        "default": "./dist/LexicalEslintPlugin.js"
       }
     }
   },
@@ -46,5 +47,18 @@
     "@types/eslint": "^9.6.1",
     "@types/estree": "^1.0.6"
   },
-  "module": "LexicalEslintPlugin.mjs"
+  "module": "./dist/LexicalEslintPlugin.mjs",
+  "files": [
+    "dist",
+    "src",
+    "!src/__tests__",
+    "!src/__bench__",
+    "!src/__mocks__",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "!src/**/*.bench.ts",
+    "!src/**/*.bench.tsx",
+    "README.md",
+    "LICENSE"
+  ]
 }

@@ -1814,3 +1814,13 @@ declare export function setDOMStyleFromCSS(
   cssText: string,
   prevCSSText?: string,
 ): void;
+declare export var CAN_USE_BEFORE_INPUT: boolean;
+declare export var CAN_USE_DOM: boolean;
+declare export var IS_ANDROID: boolean;
+declare export var IS_ANDROID_CHROME: boolean;
+declare export var IS_APPLE: boolean;
+declare export var IS_APPLE_WEBKIT: boolean;
+declare export var IS_CHROME: boolean;
+declare export var IS_FIREFOX: boolean;
+declare export var IS_IOS: boolean;
+declare export var IS_SAFARI: boolean;

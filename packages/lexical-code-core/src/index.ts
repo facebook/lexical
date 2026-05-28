@@ -12,6 +12,7 @@ export {
   $isCodeHighlightNode,
   CodeHighlightNode,
 } from './CodeHighlightNode';
+export {CodeImportExtension, CodeImportRules} from './CodeImportExtension';
 export {
   type CodeIndentConfig,
   CodeIndentExtension,

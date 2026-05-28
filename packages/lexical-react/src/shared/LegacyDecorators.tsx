@@ -8,9 +8,9 @@
 import type {JSX} from 'react';
 
 import {LexicalBuilder} from '@lexical/extension';
+import invariant from '@lexical/internal/invariant';
 import {ReactProviderExtension} from '@lexical/react/ReactProviderExtension';
 import {type LexicalEditor} from 'lexical';
-import invariant from 'shared/invariant';
 
 import {type ErrorBoundaryType, useDecorators} from './useDecorators';
 

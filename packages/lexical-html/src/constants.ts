@@ -10,4 +10,9 @@ export const DOMRenderContextSymbol = Symbol.for(
   '@lexical/html/DOMExportContext',
 );
 
+export const DOMImportExtensionName = '@lexical/html/DOMImport';
+export const DOMImportContextSymbol = Symbol.for(
+  '@lexical/html/DOMImportContext',
+);
+
 export const ALWAYS_TRUE = () => true as const;

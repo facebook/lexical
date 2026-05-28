@@ -28,6 +28,11 @@ export {
   type SerializedDecoratorTextNode,
 } from './DecoratorTextExtension';
 export {EditorStateExtension} from './EditorStateExtension';
+export {
+  $getExtensionDependency,
+  $getExtensionOutput,
+  $getPeerDependency,
+} from './getExtensionDependency';
 export {getExtensionDependencyFromEditor} from './getExtensionDependencyFromEditor';
 export {
   getPeerDependencyFromEditor,

@@ -14,7 +14,7 @@ import type {
 } from './LexicalEditor';
 import type {BaseSelection, RangeSelection} from './LexicalSelection';
 
-import invariant from 'shared/invariant';
+import invariant from '@lexical/internal/invariant';
 
 import {
   $createParagraphNode,
@@ -66,6 +66,8 @@ import {
   internalMarkNodeAsDirty,
   removeFromParent,
 } from './LexicalUtils';
+
+const __DEV__ = process.env.NODE_ENV !== 'production';
 
 export type NodeMap = Map<NodeKey, LexicalNode>;
 

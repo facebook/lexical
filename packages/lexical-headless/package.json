@@ -17,44 +17,60 @@
   "sideEffects": false,
   "exports": {
     "./dom": {
+      "source": "./src/dom.ts",
       "browser": {
-        "types": "./dom.d.ts",
-        "development": "./LexicalHeadlessDom.browser.dev.mjs",
-        "production": "./LexicalHeadlessDom.browser.prod.mjs",
-        "default": "./LexicalHeadlessDom.browser.mjs"
+        "types": "./dist/dom.d.ts",
+        "development": "./dist/LexicalHeadlessDom.browser.dev.mjs",
+        "production": "./dist/LexicalHeadlessDom.browser.prod.mjs",
+        "default": "./dist/LexicalHeadlessDom.browser.mjs"
       },
       "import": {
-        "types": "./dom.d.ts",
-        "development": "./LexicalHeadlessDom.dev.mjs",
-        "production": "./LexicalHeadlessDom.prod.mjs",
-        "node": "./LexicalHeadlessDom.node.mjs",
-        "default": "./LexicalHeadlessDom.mjs"
+        "types": "./dist/dom.d.ts",
+        "development": "./dist/LexicalHeadlessDom.dev.mjs",
+        "production": "./dist/LexicalHeadlessDom.prod.mjs",
+        "node": "./dist/LexicalHeadlessDom.node.mjs",
+        "default": "./dist/LexicalHeadlessDom.mjs"
       },
       "require": {
-        "types": "./dom.d.ts",
-        "development": "./LexicalHeadlessDom.dev.js",
-        "production": "./LexicalHeadlessDom.prod.js",
-        "default": "./LexicalHeadlessDom.js"
+        "types": "./dist/dom.d.ts",
+        "development": "./dist/LexicalHeadlessDom.dev.js",
+        "production": "./dist/LexicalHeadlessDom.prod.js",
+        "default": "./dist/LexicalHeadlessDom.js"
       }
     },
     ".": {
+      "source": "./src/index.ts",
       "import": {
-        "types": "./index.d.ts",
-        "development": "./LexicalHeadless.dev.mjs",
-        "production": "./LexicalHeadless.prod.mjs",
-        "node": "./LexicalHeadless.node.mjs",
-        "default": "./LexicalHeadless.mjs"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalHeadless.dev.mjs",
+        "production": "./dist/LexicalHeadless.prod.mjs",
+        "node": "./dist/LexicalHeadless.node.mjs",
+        "default": "./dist/LexicalHeadless.mjs"
       },
       "require": {
-        "types": "./index.d.ts",
-        "development": "./LexicalHeadless.dev.js",
-        "production": "./LexicalHeadless.prod.js",
-        "default": "./LexicalHeadless.js"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalHeadless.dev.js",
+        "production": "./dist/LexicalHeadless.prod.js",
+        "default": "./dist/LexicalHeadless.js"
       }
     }
   },
   "dependencies": {
+    "@lexical/internal": "workspace:*",
     "happy-dom": "^20.9.0",
     "lexical": "workspace:*"
-  }
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/__tests__",
+    "!src/__bench__",
+    "!src/__mocks__",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "!src/**/*.bench.ts",
+    "!src/**/*.bench.tsx",
+    "README.md",
+    "LICENSE"
+  ]
 }

@@ -17,6 +17,7 @@ import {
   $createParagraphNode,
   $getRoot,
   $getSelection,
+  CAN_USE_DOM,
   createEditor,
   EditorState,
   EditorThemeClasses,
@@ -29,8 +30,8 @@ import {
 } from 'lexical';
 import * as React from 'react';
 import {useMemo} from 'react';
-import {CAN_USE_DOM} from 'shared/canUseDOM';
-import useLayoutEffect from 'shared/useLayoutEffect';
+
+import useLayoutEffect from './shared/useLayoutEffect';
 
 const HISTORY_MERGE_OPTIONS = {tag: HISTORY_MERGE_TAG};
 

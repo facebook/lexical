@@ -16,6 +16,7 @@ import type {
 import type {ElementNode, LexicalEditor, TextNode} from 'lexical';
 
 import {$isCodeNode} from '@lexical/code-core';
+import invariant from '@lexical/internal/invariant';
 import {
   $addUpdateTag,
   $createRangeSelection,
@@ -33,7 +34,6 @@ import {
   KEY_ENTER_COMMAND,
   mergeRegister,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
 import {canContainTransformableMarkdown} from './importTextTransformers';
 import {TRANSFORMERS} from './MarkdownTransformers';

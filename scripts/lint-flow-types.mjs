@@ -14,6 +14,18 @@ import ts from 'typescript';
 
 import {packagesManager} from './shared/packagesManager.mjs';
 
+/** @typedef {import('./shared/PackageMetadata.mjs').PackageMetadata} PackageMetadata */
+
+/**
+ * The subset of a hermes-estree `Identifier` node that this script reads. The
+ * full node is an untyped AST value (hermes-estree ships no types), so only the
+ * fields consumed when reporting missing TypeScript declarations are described.
+ *
+ * @typedef {Object} FlowIdentifier
+ * @property {string} name
+ * @property {{source: string, start: {line: number, column: number}}} loc
+ */
+
 const pretty = process.env.CI !== 'true';
 
 /** @type {ts.FormatDiagnosticsHost} */
@@ -40,8 +52,17 @@ function lintFlowTypes() {
   }
 }
 
+/**
+ * Collect the names and identifier nodes of every export declared in a parsed
+ * .flow AST.
+ *
+ * @param {any} flowAst the untyped hermes-parser AST of a .flow file
+ * @returns {Map<string, FlowIdentifier>}
+ */
 function collectFlowExports(flowAst) {
+  /** @type {Map<string, FlowIdentifier>} */
   const exportNames = new Map();
+  /** @param {any} node an untyped hermes-estree AST node */
   const exportId = node => {
     const identifier =
       node.type === 'Identifier'
@@ -56,6 +77,10 @@ function collectFlowExports(flowAst) {
     return false;
   };
   hermesParser.SimpleTraverser.traverse(flowAst, {
+    /**
+     * @param {any} node an untyped hermes-estree AST node
+     * @param {any} parent the untyped parent AST node, if any
+     */
     enter: (node, parent) => {
       if (
         parent &&
@@ -89,7 +114,7 @@ function compareFlowDts(
   /** @type {string} */ flowFilePath,
   /** @type {tsMorph.SourceFile} */ entrypoint,
   /** @type {ts.Diagnostic[]} */ diagnostics,
-  /** @type {import('hermes-estree').Identifier[]} */ flowDiagnostics,
+  /** @type {FlowIdentifier[]} */ flowDiagnostics,
 ) {
   const flowAst = hermesParser.parse(fs.readFileSync(flowFilePath, 'utf-8'), {
     enableExperimentalComponentSyntax: true,
@@ -137,7 +162,7 @@ function lintFlowTypesForPackage(
   }
   /** @type {ts.Diagnostic[]} */
   const diagnostics = [];
-  /** @type {import('hermes-estree').Identifier[]} */
+  /** @type {FlowIdentifier[]} */
   const flowDiagnostics = [];
   for (const {outputFileName, sourceFileName} of def.modules) {
     const entrypoint = project.addSourceFileAtPath(

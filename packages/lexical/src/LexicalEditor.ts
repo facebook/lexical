@@ -18,7 +18,8 @@ import type {
 } from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 
-import invariant from 'shared/invariant';
+import invariant from '@lexical/internal/invariant';
+import {LEXICAL_VERSION} from '@lexical/internal/version';
 
 import {
   $getRoot,
@@ -70,6 +71,8 @@ import {LineBreakNode} from './nodes/LexicalLineBreakNode';
 import {ParagraphNode} from './nodes/LexicalParagraphNode';
 import {RootNode} from './nodes/LexicalRootNode';
 import {TabNode} from './nodes/LexicalTabNode';
+
+const __DEV__ = process.env.NODE_ENV !== 'production';
 
 export type Spread<T1, T2> = Omit<T2, keyof T1> & T1;
 
@@ -1717,4 +1720,4 @@ export class LexicalEditor {
   }
 }
 
-LexicalEditor.version = process.env.LEXICAL_VERSION;
+LexicalEditor.version = LEXICAL_VERSION;

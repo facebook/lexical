@@ -22,6 +22,7 @@ import {
   COMMAND_PRIORITY_LOW,
   DRAGOVER_COMMAND,
   DROP_COMMAND,
+  IS_FIREFOX,
   LexicalEditor,
 } from 'lexical';
 import {
@@ -33,7 +34,6 @@ import {
   useState,
 } from 'react';
 import {createPortal} from 'react-dom';
-import {IS_FIREFOX} from 'shared/environment';
 
 import {Point} from './shared/point';
 import {Rectangle} from './shared/rect';

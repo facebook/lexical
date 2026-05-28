@@ -241,6 +241,7 @@ export {
   $createPoint,
   $createRangeSelection,
   $createRangeSelectionFromDom,
+  $generateNodesFromRawText,
   $getCharacterOffsets,
   $getPreviousSelection,
   $getSelection,
@@ -250,8 +251,14 @@ export {
   $isNodeSelection,
   $isRangeSelection,
   $updateDOMSelection,
+  type RawTextVisitor,
+  tokenizeRawText,
 } from './LexicalSelection';
-export {$parseSerializedNode, isCurrentlyReadOnlyMode} from './LexicalUpdates';
+export {
+  $fullReconcile,
+  $parseSerializedNode,
+  isCurrentlyReadOnlyMode,
+} from './LexicalUpdates';
 export {
   $addUpdateTag,
   $applyNodeReplacement,
@@ -308,6 +315,8 @@ export {
   isExactShortcutMatch,
   isHTMLAnchorElement,
   isHTMLElement,
+  isHTMLTableCellElement,
+  isHTMLTableRowElement,
   isInlineDomNode,
   isLexicalEditor,
   isModifierMatch,
@@ -366,6 +375,18 @@ export {
 } from './LexicalUpdateTags';
 
 // LexicalExtension
+export {
+  CAN_USE_BEFORE_INPUT,
+  CAN_USE_DOM,
+  IS_ANDROID,
+  IS_ANDROID_CHROME,
+  IS_APPLE,
+  IS_APPLE_WEBKIT,
+  IS_CHROME,
+  IS_FIREFOX,
+  IS_IOS,
+  IS_SAFARI,
+} from './environment';
 export {
   type AnyLexicalExtension,
   type AnyLexicalExtensionArgument,

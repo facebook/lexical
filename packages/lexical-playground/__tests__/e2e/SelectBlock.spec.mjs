@@ -780,4 +780,39 @@ test.describe('SelectBlock', () => {
       focusPath: [5],
     });
   });
+
+  test('Select within nested editor', async ({page, isPlainText}) => {
+    test.skip(isPlainText);
+    await setupMultiContent(page);
+    await page.keyboard.type('my text');
+    await insertSampleImage(page);
+    await click(page, 'p:last-of-type .editor-image:nth-of-type(2) img');
+    await click(page, 'button.image-caption-button');
+    await page.keyboard.type('caption text');
+    // current selection
+    await assertSelection(page, {
+      anchorOffset: 12,
+      anchorPath: [3, 1, 1, 0, 0, 0, 0],
+      focusOffset: 12,
+      focusPath: [3, 1, 1, 0, 0, 0, 0],
+    });
+
+    // select paragraph within caption
+    await selectAll(page);
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [3, 1, 1, 0, 0, 0, 0],
+      focusOffset: 12,
+      focusPath: [3, 1, 1, 0, 0, 0, 0],
+    });
+
+    // select all content
+    await selectAll(page);
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [0, 0, 0],
+      focusOffset: 2,
+      focusPath: [3],
+    });
+  });
 });

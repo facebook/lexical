@@ -7,6 +7,7 @@
  */
 
 import {
+  $getRoot,
   $getSelection,
   $isElementNode,
   $isNodeSelection,
@@ -28,14 +29,28 @@ import {PreventSelectAllExtension} from '.';
 import {namedSignals} from './namedSignals';
 import {effect} from './signals';
 
-const getEndOffset = (node: LexicalNode): number =>
-  $isTextNode(node)
+function getEndOffset(node: LexicalNode): number {
+  return $isTextNode(node)
     ? node.getTextContentSize()
     : $isElementNode(node)
       ? node.getChildrenSize()
       : 0;
+}
 
-function $isBlockFullySelected(
+function $hasCommonTopParent(
+  nodes: LexicalNode[],
+  commonTopParent: LexicalNode,
+): boolean {
+  return nodes.every(node => {
+    const topParent = node.getTopLevelElement();
+    return topParent && topParent.is(commonTopParent);
+  });
+}
+
+/**
+ * Checks that the selection's bounds are on the given element
+ */
+export function $isBlockFullySelected(
   blockNode: ElementNode,
   selection: RangeSelection,
 ): boolean {
@@ -74,25 +89,21 @@ function $isBlockFullySelected(
 }
 
 export interface SelectBlockConfig {
+  /** `true` to disable this extension */
   disabled: boolean;
+  /** `true` to trigger selectAll if all content is selected in the nested editor */
+  cascadeSelection: boolean;
 }
 
-function $hasCommonTopParent(
-  nodes: LexicalNode[],
-  commonTopParent: LexicalNode,
-) {
-  return nodes.every(node => {
-    const topParent = node.getTopLevelElement();
-    return topParent && topParent.is(commonTopParent);
-  });
-}
-
-// TODO:
-// - select_all from nested editor
-
+/**
+ * This extension includes block selection.
+ * If you press Ctrl + A, the nearest block element, for example paragraph, is selected first.
+ * Pressing Ctrl + A again selects all content in the document
+ */
 export const SelectBlockExtension = defineExtension({
   build: (editor, config, state) => namedSignals(config),
   config: safeCast<SelectBlockConfig>({
+    cascadeSelection: false,
     disabled: false,
   }),
   dependencies: [PreventSelectAllExtension],
@@ -105,6 +116,25 @@ export const SelectBlockExtension = defineExtension({
         return editor.registerCommand(
           SELECT_ALL_COMMAND,
           (event, triggerEditor) => {
+            if (stores.cascadeSelection.value && triggerEditor !== editor) {
+              const isAllSelected = triggerEditor.getEditorState().read(() => {
+                const nestedSelection = $getSelection();
+                return (
+                  $isRangeSelection(nestedSelection) &&
+                  $isBlockFullySelected($getRoot(), nestedSelection)
+                );
+              });
+
+              if (!isAllSelected) {
+                return false;
+              }
+
+              editor.update(() => {
+                prevSelectionAll = $selectAll();
+              });
+              return true;
+            }
+
             triggerEditor.update(() => {
               const selection = $getSelection();
               if ($isNodeSelection(selection)) {

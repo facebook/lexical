@@ -6,10 +6,9 @@
  *
  */
 
+import {defineImportRule, sel} from '@lexical/html';
 import {
   $applyNodeReplacement,
-  type DOMConversionMap,
-  type DOMConversionOutput,
   type DOMExportOutput,
   type EditorConfig,
   type LexicalNode,
@@ -25,25 +24,6 @@ export type SerializedMentionNode = Spread<
   },
   SerializedTextNode
 >;
-
-function $convertMentionElement(
-  domNode: HTMLElement,
-): DOMConversionOutput | null {
-  const textContent = domNode.textContent;
-  const mentionName = domNode.getAttribute('data-lexical-mention-name');
-
-  if (textContent !== null) {
-    const node = $createMentionNode(
-      typeof mentionName === 'string' ? mentionName : textContent,
-      textContent,
-    );
-    return {
-      node,
-    };
-  }
-
-  return null;
-}
 
 const mentionBackgroundColor = 'rgba(24, 119, 232, 0.2)';
 export class MentionNode extends TextNode {
@@ -93,20 +73,6 @@ export class MentionNode extends TextNode {
     return {element};
   }
 
-  static importDOM(): DOMConversionMap | null {
-    return {
-      span: (domNode: HTMLElement) => {
-        if (!domNode.hasAttribute('data-lexical-mention')) {
-          return null;
-        }
-        return {
-          conversion: $convertMentionElement,
-          priority: 1,
-        };
-      },
-    };
-  }
-
   isTextEntity(): true {
     return true;
   }
@@ -134,3 +100,21 @@ export function $isMentionNode(
 ): node is MentionNode {
   return node instanceof MentionNode;
 }
+
+export const MentionImportRule = defineImportRule({
+  $import: (_ctx, el, $next) => {
+    const textContent = el.textContent;
+    if (textContent === null) {
+      return $next();
+    }
+    const mentionName = el.getAttribute('data-lexical-mention-name');
+    return [
+      $createMentionNode(
+        typeof mentionName === 'string' ? mentionName : textContent,
+        textContent,
+      ),
+    ];
+  },
+  match: sel.tag('span').attr('data-lexical-mention', true),
+  name: '@lexical/playground/mention',
+});

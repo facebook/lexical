@@ -6,10 +6,9 @@
  *
  */
 
+import {defineImportRule, sel} from '@lexical/html';
 import {IS_CHROME, IS_FIREFOX} from '@lexical/utils';
 import {
-  DOMConversionMap,
-  DOMConversionOutput,
   DOMExportOutput,
   EditorConfig,
   ElementNode,
@@ -22,15 +21,6 @@ import {$isCollapsibleContainerNode} from './CollapsibleContainerNode';
 import {domOnBeforeMatch, setDomHiddenUntilFound} from './CollapsibleUtils';
 
 type SerializedCollapsibleContentNode = SerializedElementNode;
-
-export function $convertCollapsibleContentElement(
-  domNode: HTMLElement,
-): DOMConversionOutput | null {
-  const node = $createCollapsibleContentNode();
-  return {
-    node,
-  };
-}
 
 export class CollapsibleContentNode extends ElementNode {
   static getType(): string {
@@ -77,20 +67,6 @@ export class CollapsibleContentNode extends ElementNode {
     return false;
   }
 
-  static importDOM(): DOMConversionMap | null {
-    return {
-      div: (domNode: HTMLElement) => {
-        if (!domNode.hasAttribute('data-lexical-collapsible-content')) {
-          return null;
-        }
-        return {
-          conversion: $convertCollapsibleContentElement,
-          priority: 2,
-        };
-      },
-    };
-  }
-
   exportDOM(): DOMExportOutput {
     const element = document.createElement('div');
     element.classList.add('Collapsible__content');
@@ -118,3 +94,11 @@ export function $isCollapsibleContentNode(
 ): node is CollapsibleContentNode {
   return node instanceof CollapsibleContentNode;
 }
+
+export const CollapsibleContentImportRule = defineImportRule({
+  $import: (ctx, el) => [
+    $createCollapsibleContentNode().splice(0, 0, ctx.$importChildren(el)),
+  ],
+  match: sel.tag('div').attr('data-lexical-collapsible-content', true),
+  name: '@lexical/playground/collapsible-content',
+});

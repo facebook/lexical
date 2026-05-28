@@ -7,8 +7,6 @@
  */
 
 import type {
-  DOMConversionMap,
-  DOMConversionOutput,
   DOMExportOutput,
   EditorConfig,
   LexicalEditor,
@@ -19,6 +17,7 @@ import type {
 } from 'lexical';
 import type {JSX} from 'react';
 
+import {defineImportRule, sel} from '@lexical/html';
 import {DecoratorNode} from 'lexical';
 import * as React from 'react';
 
@@ -35,25 +34,19 @@ export type SerializedExcalidrawNode = Spread<
   SerializedLexicalNode
 >;
 
-function $convertExcalidrawElement(
-  domNode: HTMLElement,
-): DOMConversionOutput | null {
-  const excalidrawData = domNode.getAttribute('data-lexical-excalidraw-json');
-  const styleAttributes = window.getComputedStyle(domNode);
+function $convertExcalidrawElement(el: HTMLElement): ExcalidrawNode | null {
+  const excalidrawData = el.getAttribute('data-lexical-excalidraw-json');
+  if (!excalidrawData) {
+    return null;
+  }
+  const styleAttributes = window.getComputedStyle(el);
   const heightStr = styleAttributes.getPropertyValue('height');
   const widthStr = styleAttributes.getPropertyValue('width');
   const height =
     !heightStr || heightStr === 'inherit' ? 'inherit' : parseInt(heightStr, 10);
   const width =
     !widthStr || widthStr === 'inherit' ? 'inherit' : parseInt(widthStr, 10);
-
-  if (excalidrawData) {
-    const node = $createExcalidrawNode(excalidrawData, width, height);
-    return {
-      node,
-    };
-  }
-  return null;
+  return $createExcalidrawNode(excalidrawData, width, height);
 }
 
 export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
@@ -116,20 +109,6 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
 
   updateDOM(): false {
     return false;
-  }
-
-  static importDOM(): DOMConversionMap<HTMLSpanElement> | null {
-    return {
-      span: (domNode: HTMLSpanElement) => {
-        if (!domNode.hasAttribute('data-lexical-excalidraw-json')) {
-          return null;
-        }
-        return {
-          conversion: $convertExcalidrawElement,
-          priority: 1,
-        };
-      },
-    };
   }
 
   exportDOM(editor: LexicalEditor): DOMExportOutput {
@@ -205,3 +184,12 @@ export function $isExcalidrawNode(
 ): node is ExcalidrawNode {
   return node instanceof ExcalidrawNode;
 }
+
+export const ExcalidrawImportRule = defineImportRule({
+  $import: (_ctx, el, $next) => {
+    const node = $convertExcalidrawElement(el);
+    return node ? [node] : $next();
+  },
+  match: sel.tag('span').attr('data-lexical-excalidraw-json', true),
+  name: '@lexical/playground/excalidraw',
+});

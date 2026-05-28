@@ -7,8 +7,6 @@
  */
 
 import type {
-  DOMConversionMap,
-  DOMConversionOutput,
   DOMExportOutput,
   EditorConfig,
   ElementFormatType,
@@ -19,6 +17,7 @@ import type {
 } from 'lexical';
 import type {JSX} from 'react';
 
+import {defineImportRule, sel} from '@lexical/html';
 import {BlockWithAlignableContents} from '@lexical/react/LexicalBlockWithAlignableContents';
 import {
   DecoratorBlockNode,
@@ -41,17 +40,6 @@ type TweetComponentProps = Readonly<{
   onLoad?: () => void;
   tweetID: string;
 }>;
-
-function $convertTweetElement(
-  domNode: HTMLDivElement,
-): DOMConversionOutput | null {
-  const id = domNode.getAttribute('data-lexical-tweet-id');
-  if (id) {
-    const node = $createTweetNode(id);
-    return {node};
-  }
-  return null;
-}
 
 let isTwitterScriptLoading = true;
 
@@ -154,20 +142,6 @@ export class TweetNode extends DecoratorBlockNode {
     };
   }
 
-  static importDOM(): DOMConversionMap<HTMLDivElement> | null {
-    return {
-      div: (domNode: HTMLDivElement) => {
-        if (!domNode.hasAttribute('data-lexical-tweet-id')) {
-          return null;
-        }
-        return {
-          conversion: $convertTweetElement,
-          priority: 2,
-        };
-      },
-    };
-  }
-
   exportDOM(): DOMExportOutput {
     const element = document.createElement('div');
     element.setAttribute('data-lexical-tweet-id', this.__id);
@@ -219,3 +193,12 @@ export function $isTweetNode(
 ): node is TweetNode {
   return node instanceof TweetNode;
 }
+
+export const TweetImportRule = defineImportRule({
+  $import: (_ctx, el, $next) => {
+    const id = el.getAttribute('data-lexical-tweet-id');
+    return id ? [$createTweetNode(id)] : $next();
+  },
+  match: sel.tag('div').attr('data-lexical-tweet-id', true),
+  name: '@lexical/playground/tweet',
+});

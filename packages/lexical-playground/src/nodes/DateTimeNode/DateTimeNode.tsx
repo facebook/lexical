@@ -14,13 +14,12 @@ import {
   DecoratorTextNode,
   SerializedDecoratorTextNode,
 } from '@lexical/extension';
+import {defineImportRule, sel} from '@lexical/html';
 import {
   $getState,
   $isTextNode,
   $setState,
-  buildImportMap,
   createState,
-  DOMConversionOutput,
   DOMExportOutput,
   LexicalNode,
   Spread,
@@ -62,37 +61,15 @@ export type SerializedDateTimeNode = Spread<
   SerializedDecoratorTextNode
 >;
 
-function $convertDateTimeElement(
-  domNode: HTMLElement,
-): DOMConversionOutput | null {
-  const dateTimeValue = domNode.getAttribute('data-lexical-datetime');
-  if (dateTimeValue) {
-    const node = $createDateTimeNode(new Date(Date.parse(dateTimeValue)));
-    return {
-      after: childLexicalNodes => {
-        // exportDOM returns only one child text, so only the first node of the array is taken
-        const firstChild = childLexicalNodes[0];
-        if ($isTextNode(firstChild)) {
-          node.setFormat(firstChild.getFormat());
-        }
-        return childLexicalNodes;
-      },
-      node,
-    };
+function isGoogleDocsDateRichLinks(value: string | null): boolean {
+  if (!value) {
+    return false;
   }
-  const gDocsDateTimePayload = domNode.getAttribute('data-rich-links');
-  if (!gDocsDateTimePayload) {
-    return null;
+  try {
+    return JSON.parse(value).type === 'date';
+  } catch {
+    return false;
   }
-  const parsed = JSON.parse(gDocsDateTimePayload);
-  const parsedDate =
-    parsed?.dat_df?.dfie_ts?.tv?.tv_s * 1000 ||
-    Date.parse(parsed?.dat_df?.dfie_dt || '');
-  if (isNaN(parsedDate)) {
-    return null;
-  }
-  const dateTimeNode = $createDateTimeNode(new Date(parsedDate));
-  return {node: applyFormatFromStyle(dateTimeNode, domNode.style)};
 }
 
 const dateTimeState = createState('dateTime', {
@@ -104,19 +81,6 @@ export class DateTimeNode extends DecoratorTextNode {
   $config() {
     return this.config('datetime', {
       extends: DecoratorTextNode,
-      importDOM: buildImportMap({
-        span: domNode =>
-          domNode.getAttribute('data-lexical-datetime') !== null ||
-          // GDocs Support
-          (domNode.getAttribute('data-rich-links') !== null &&
-            JSON.parse(domNode.getAttribute('data-rich-links') || '{}').type ===
-              'date')
-            ? {
-                conversion: $convertDateTimeElement,
-                priority: 2,
-              }
-            : null,
-      }),
       stateConfigs: [{flat: true, stateConfig: dateTimeState}],
     });
   }
@@ -182,3 +146,44 @@ export function $isDateTimeNode(
 ): node is DateTimeNode {
   return node instanceof DateTimeNode;
 }
+
+const DateTimeRule = defineImportRule({
+  $import: (ctx, el, $next) => {
+    const dateTimeValue = el.getAttribute('data-lexical-datetime');
+    if (dateTimeValue) {
+      const node = $createDateTimeNode(new Date(Date.parse(dateTimeValue)));
+      const imported = ctx.$importChildren(el);
+      const firstChild = imported[0];
+      if ($isTextNode(firstChild)) {
+        node.setFormat(firstChild.getFormat());
+      }
+      return [node];
+    }
+    return $next();
+  },
+  match: sel.tag('span').attr('data-lexical-datetime', true),
+  name: '@lexical/playground/datetime',
+});
+
+const GoogleDocsDateRule = defineImportRule({
+  $import: (_ctx, el, $next) => {
+    const payload = el.getAttribute('data-rich-links');
+    if (!isGoogleDocsDateRichLinks(payload)) {
+      return $next();
+    }
+    const parsed = JSON.parse(payload!);
+    const parsedDate =
+      parsed?.dat_df?.dfie_ts?.tv?.tv_s * 1000 ||
+      Date.parse(parsed?.dat_df?.dfie_dt || '');
+    if (isNaN(parsedDate)) {
+      return $next();
+    }
+    return [
+      applyFormatFromStyle($createDateTimeNode(new Date(parsedDate)), el.style),
+    ];
+  },
+  match: sel.tag('span').attr('data-rich-links', true),
+  name: '@lexical/playground/datetime-google-docs',
+});
+
+export const DateTimeImportRules = [DateTimeRule, GoogleDocsDateRule];

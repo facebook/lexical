@@ -8,13 +8,12 @@
 
 import type {JSX} from 'react';
 
+import {defineImportRule, sel} from '@lexical/html';
 import {
   $getState,
   $setState,
-  buildImportMap,
   createState,
   DecoratorNode,
-  DOMConversionOutput,
   DOMExportOutput,
   LexicalNode,
   SerializedLexicalNode,
@@ -69,16 +68,13 @@ export type SerializedPollNode = Spread<
   SerializedLexicalNode
 >;
 
-function $convertPollElement(
-  domNode: HTMLSpanElement,
-): DOMConversionOutput | null {
-  const question = domNode.getAttribute('data-lexical-poll-question');
-  const options = domNode.getAttribute('data-lexical-poll-options');
-  if (question !== null && options !== null) {
-    const node = $createPollNode(question, JSON.parse(options));
-    return {node};
+function $convertPollElement(el: HTMLElement): PollNode | null {
+  const question = el.getAttribute('data-lexical-poll-question');
+  const options = el.getAttribute('data-lexical-poll-options');
+  if (question === null || options === null) {
+    return null;
   }
-  return null;
+  return $createPollNode(question, JSON.parse(options));
 }
 
 function parseOptions(json: unknown): Options {
@@ -112,15 +108,6 @@ export class PollNode extends DecoratorNode<JSX.Element> {
   $config() {
     return this.config('poll', {
       extends: DecoratorNode,
-      importDOM: buildImportMap({
-        span: domNode =>
-          domNode.getAttribute('data-lexical-poll-question') !== null
-            ? {
-                conversion: $convertPollElement,
-                priority: 2,
-              }
-            : null,
-      }),
       stateConfigs: [
         {flat: true, stateConfig: questionState},
         {flat: true, stateConfig: optionsState},
@@ -228,3 +215,12 @@ export function $isPollNode(
 ): node is PollNode {
   return node instanceof PollNode;
 }
+
+export const PollImportRule = defineImportRule({
+  $import: (_ctx, el, $next) => {
+    const node = $convertPollElement(el);
+    return node ? [node] : $next();
+  },
+  match: sel.tag('span').attr('data-lexical-poll-question', true),
+  name: '@lexical/playground/poll',
+});

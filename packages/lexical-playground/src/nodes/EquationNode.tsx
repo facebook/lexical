@@ -7,8 +7,6 @@
  */
 
 import type {
-  DOMConversionMap,
-  DOMConversionOutput,
   EditorConfig,
   LexicalNode,
   NodeKey,
@@ -17,6 +15,7 @@ import type {
 } from 'lexical';
 import type {JSX} from 'react';
 
+import {defineImportRule, sel} from '@lexical/html';
 import katex from 'katex';
 import {$applyNodeReplacement, DecoratorNode, DOMExportOutput} from 'lexical';
 import * as React from 'react';
@@ -31,19 +30,17 @@ export type SerializedEquationNode = Spread<
   SerializedLexicalNode
 >;
 
-function $convertEquationElement(
-  domNode: HTMLElement,
-): null | DOMConversionOutput {
-  let equation = domNode.getAttribute('data-lexical-equation');
-  const inline = domNode.getAttribute('data-lexical-inline') === 'true';
-  // Decode the equation from base64
-  equation = atob(equation || '');
-  if (equation) {
-    const node = $createEquationNode(equation, inline);
-    return {node};
+function $convertEquationElement(el: HTMLElement): EquationNode | null {
+  const encoded = el.getAttribute('data-lexical-equation');
+  if (!encoded) {
+    return null;
   }
-
-  return null;
+  const equation = atob(encoded);
+  if (!equation) {
+    return null;
+  }
+  const inline = el.getAttribute('data-lexical-inline') === 'true';
+  return $createEquationNode(equation, inline);
 }
 
 export class EquationNode extends DecoratorNode<JSX.Element> {
@@ -109,29 +106,6 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
     return {element};
   }
 
-  static importDOM(): DOMConversionMap | null {
-    return {
-      div: (domNode: HTMLElement) => {
-        if (!domNode.hasAttribute('data-lexical-equation')) {
-          return null;
-        }
-        return {
-          conversion: $convertEquationElement,
-          priority: 2,
-        };
-      },
-      span: (domNode: HTMLElement) => {
-        if (!domNode.hasAttribute('data-lexical-equation')) {
-          return null;
-        }
-        return {
-          conversion: $convertEquationElement,
-          priority: 1,
-        };
-      },
-    };
-  }
-
   updateDOM(prevNode: this): boolean {
     // If the inline property changes, replace the element
     return this.__inline !== prevNode.__inline;
@@ -179,3 +153,14 @@ export function $isEquationNode(
 ): node is EquationNode {
   return node instanceof EquationNode;
 }
+
+export const EquationImportRules = [
+  defineImportRule({
+    $import: (_ctx, el, $next) => {
+      const node = $convertEquationElement(el);
+      return node ? [node] : $next();
+    },
+    match: sel.tag('div', 'span').attr('data-lexical-equation', true),
+    name: '@lexical/playground/equation',
+  }),
+];

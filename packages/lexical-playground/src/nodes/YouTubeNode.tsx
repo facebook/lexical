@@ -7,8 +7,6 @@
  */
 
 import type {
-  DOMConversionMap,
-  DOMConversionOutput,
   DOMExportOutput,
   EditorConfig,
   ElementFormatType,
@@ -19,6 +17,7 @@ import type {
 } from 'lexical';
 import type {JSX} from 'react';
 
+import {defineImportRule, sel} from '@lexical/html';
 import {BlockWithAlignableContents} from '@lexical/react/LexicalBlockWithAlignableContents';
 import {
   DecoratorBlockNode,
@@ -66,17 +65,6 @@ export type SerializedYouTubeNode = Spread<
   },
   SerializedDecoratorBlockNode
 >;
-
-function $convertYoutubeElement(
-  domNode: HTMLElement,
-): null | DOMConversionOutput {
-  const videoID = domNode.getAttribute('data-lexical-youtube');
-  if (videoID) {
-    const node = $createYouTubeNode(videoID);
-    return {node};
-  }
-  return null;
-}
 
 export class YouTubeNode extends DecoratorBlockNode {
   __id: string;
@@ -126,20 +114,6 @@ export class YouTubeNode extends DecoratorBlockNode {
     return {element};
   }
 
-  static importDOM(): DOMConversionMap | null {
-    return {
-      iframe: (domNode: HTMLElement) => {
-        if (!domNode.hasAttribute('data-lexical-youtube')) {
-          return null;
-        }
-        return {
-          conversion: $convertYoutubeElement,
-          priority: 1,
-        };
-      },
-    };
-  }
-
   updateDOM(): false {
     return false;
   }
@@ -181,3 +155,12 @@ export function $isYouTubeNode(
 ): node is YouTubeNode {
   return node instanceof YouTubeNode;
 }
+
+export const YouTubeImportRule = defineImportRule({
+  $import: (_ctx, el, $next) => {
+    const videoID = el.getAttribute('data-lexical-youtube');
+    return videoID ? [$createYouTubeNode(videoID)] : $next();
+  },
+  match: sel.tag('iframe').attr('data-lexical-youtube', true),
+  name: '@lexical/playground/youtube',
+});

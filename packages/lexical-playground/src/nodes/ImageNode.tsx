@@ -7,8 +7,6 @@
  */
 
 import type {
-  DOMConversionMap,
-  DOMConversionOutput,
   DOMExportOutput,
   EditorConfig,
   LexicalEditorWithDispose,
@@ -28,7 +26,12 @@ import {
 } from '@lexical/extension';
 import {HashtagExtension} from '@lexical/hashtag';
 import {HistoryExtension} from '@lexical/history';
-import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
+import {
+  $generateHtmlFromNodes,
+  $generateNodesFromDOM,
+  defineImportRule,
+  sel,
+} from '@lexical/html';
 import {LinkExtension} from '@lexical/link';
 import {ReactExtension} from '@lexical/react/ReactExtension';
 import {ReactProviderExtension} from '@lexical/react/ReactProviderExtension';
@@ -114,15 +117,13 @@ function isGoogleDocCheckboxImg(img: HTMLImageElement): boolean {
   );
 }
 
-function $convertImageElement(domNode: Node): null | DOMConversionOutput {
-  const img = domNode as HTMLImageElement;
+function $convertImageElement(img: HTMLImageElement): ImageNode | null {
   const src = img.getAttribute('src');
   if (!src || src.startsWith('file:///') || isGoogleDocCheckboxImg(img)) {
     return null;
   }
   const {alt: altText, width, height} = img;
-  const node = $createImageNode({altText, height, src, width});
-  return {node};
+  return $createImageNode({altText, height, src, width});
 }
 
 export function $isCaptionEditorEmpty(): boolean {
@@ -247,46 +248,6 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     }
 
     return {element: imgElement};
-  }
-
-  static importDOM(): DOMConversionMap | null {
-    return {
-      figcaption: () => ({
-        conversion: () => ({node: null}),
-        priority: 0,
-      }),
-      figure: () => ({
-        conversion: node => {
-          return {
-            after: childNodes => {
-              const imageNodes = childNodes.filter($isImageNode);
-              const figcaption = node.querySelector('figcaption');
-              if (figcaption) {
-                for (const imgNode of imageNodes) {
-                  imgNode.setShowCaption(true);
-                  imgNode.__caption.update(
-                    () => {
-                      $selectAll().insertNodes(
-                        $generateNodesFromDOM(imgNode.__caption, figcaption),
-                      );
-                      $setSelection(null);
-                    },
-                    {tag: SKIP_DOM_SELECTION_TAG},
-                  );
-                }
-              }
-              return imageNodes;
-            },
-            node: null,
-          };
-        },
-        priority: 0,
-      }),
-      img: () => ({
-        conversion: $convertImageElement,
-        priority: 0,
-      }),
-    };
   }
 
   constructor(
@@ -414,3 +375,45 @@ export function $isImageNode(
 ): node is ImageNode {
   return node instanceof ImageNode;
 }
+
+const ImgRule = defineImportRule({
+  $import: (_ctx, el, $next) => {
+    const node = $convertImageElement(el);
+    return node ? [node] : $next();
+  },
+  match: sel.tag('img'),
+  name: '@lexical/playground/img',
+});
+
+const FigcaptionRule = defineImportRule({
+  $import: () => [],
+  match: sel.tag('figcaption'),
+  name: '@lexical/playground/figcaption',
+});
+
+const FigureRule = defineImportRule({
+  $import: (ctx, el) => {
+    const imported = ctx.$importChildren(el);
+    const imageNodes = imported.filter($isImageNode);
+    const figcaption = el.querySelector('figcaption');
+    if (figcaption) {
+      for (const imgNode of imageNodes) {
+        imgNode.setShowCaption(true);
+        imgNode.__caption.update(
+          () => {
+            $selectAll().insertNodes(
+              $generateNodesFromDOM(imgNode.__caption, figcaption),
+            );
+            $setSelection(null);
+          },
+          {tag: SKIP_DOM_SELECTION_TAG},
+        );
+      }
+    }
+    return imageNodes;
+  },
+  match: sel.tag('figure'),
+  name: '@lexical/playground/figure',
+});
+
+export const ImageImportRules = [FigcaptionRule, FigureRule, ImgRule];

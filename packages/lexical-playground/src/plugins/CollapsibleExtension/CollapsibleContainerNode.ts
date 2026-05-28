@@ -6,6 +6,7 @@
  *
  */
 
+import {defineImportRule, sel} from '@lexical/html';
 import {IS_CHROME, IS_FIREFOX} from '@lexical/utils';
 import {
   $createParagraphNode,
@@ -13,8 +14,6 @@ import {
   $isBlockElementNode,
   $isElementNode,
   $rewindSiblingCaret,
-  DOMConversionMap,
-  DOMConversionOutput,
   DOMExportOutput,
   EditorConfig,
   ElementNode,
@@ -46,72 +45,65 @@ type SerializedCollapsibleContainerNode = Spread<
   SerializedElementNode
 >;
 
-export function $convertDetailsElement(
-  domNode: HTMLDetailsElement,
-): DOMConversionOutput | null {
-  const isOpen = domNode.open !== undefined ? domNode.open : true;
-  const node = $createCollapsibleContainerNode(isOpen);
-  return {
-    after: childLexicalNodes => {
-      // CollapsibleContainerNode is a shadow root that requires exactly two
-      // children: a CollapsibleTitleNode (from <summary>) followed by a
-      // CollapsibleContentNode. Arbitrary <details> markup may include loose
-      // text or block siblings; reshape the imported children into the
-      // expected structure so the editor doesn't end up with TextNodes
-      // directly under the shadow root.
-      let titleNode: CollapsibleTitleNode | null = null;
-      let contentNode: CollapsibleContentNode | null = null;
-      const bodyNodes: LexicalNode[] = [];
-      for (const child of childLexicalNodes) {
-        if (titleNode === null && $isCollapsibleTitleNode(child)) {
-          titleNode = child;
-        } else if ($isCollapsibleContentNode(child)) {
-          if (contentNode === null) {
-            // Lexical-exported markup wraps the body in a
-            // CollapsibleContentNode; reuse it instead of rebuilding.
-            contentNode = child;
-          } else {
-            // Multiple content nodes (rare): fold the extras into bodyNodes
-            // so they get appended to the canonical one below.
-            for (const grandchild of child.getChildren()) {
-              bodyNodes.push(grandchild);
-            }
-          }
-        } else {
-          bodyNodes.push(child);
-        }
-      }
-      if (titleNode === null) {
-        titleNode = $createCollapsibleTitleNode();
-      }
+function $assembleDetailsChildren(
+  childLexicalNodes: LexicalNode[],
+): [CollapsibleTitleNode, CollapsibleContentNode] {
+  // CollapsibleContainerNode is a shadow root that requires exactly two
+  // children: a CollapsibleTitleNode (from <summary>) followed by a
+  // CollapsibleContentNode. Arbitrary <details> markup may include loose
+  // text or block siblings; reshape the imported children into the
+  // expected structure so the editor doesn't end up with TextNodes
+  // directly under the shadow root.
+  let titleNode: CollapsibleTitleNode | null = null;
+  let contentNode: CollapsibleContentNode | null = null;
+  const bodyNodes: LexicalNode[] = [];
+  for (const child of childLexicalNodes) {
+    if (titleNode === null && $isCollapsibleTitleNode(child)) {
+      titleNode = child;
+    } else if ($isCollapsibleContentNode(child)) {
       if (contentNode === null) {
-        contentNode = $createCollapsibleContentNode();
-      }
-      // CollapsibleContentNode is also a shadow root, so wrap any inline
-      // siblings in a paragraph before appending.
-      let pending: LexicalNode[] = [];
-      const flushPending = () => {
-        if (pending.length === 0) {
-          return;
-        }
-        const paragraph = $createParagraphNode();
-        paragraph.append(...pending);
-        contentNode.append(paragraph);
-        pending = [];
-      };
-      for (const body of bodyNodes) {
-        if ($isBlockElementNode(body)) {
-          flushPending();
-          contentNode.append(body);
-        } else {
-          pending.push(body);
+        // Lexical-exported markup wraps the body in a
+        // CollapsibleContentNode; reuse it instead of rebuilding.
+        contentNode = child;
+      } else {
+        // Multiple content nodes (rare): fold the extras into bodyNodes
+        // so they get appended to the canonical one below.
+        for (const grandchild of child.getChildren()) {
+          bodyNodes.push(grandchild);
         }
       }
-      flushPending();
-      return [titleNode, contentNode];
-    },
-    node,
+    } else {
+      bodyNodes.push(child);
+    }
+  }
+  if (titleNode === null) {
+    titleNode = $createCollapsibleTitleNode();
+  }
+  if (contentNode === null) {
+    contentNode = $createCollapsibleContentNode();
+  }
+  // CollapsibleContentNode is also a shadow root, so wrap any inline
+  // siblings in a paragraph before appending.
+  let pending: LexicalNode[] = [];
+  const flushPending = () => {
+    if (pending.length === 0) {
+      return;
+    }
+    const paragraph = $createParagraphNode();
+    paragraph.append(...pending);
+    contentNode!.append(paragraph);
+    pending = [];
   };
+  for (const body of bodyNodes) {
+    if ($isBlockElementNode(body)) {
+      flushPending();
+      contentNode.append(body);
+    } else {
+      pending.push(body);
+    }
+  }
+  flushPending();
+  return [titleNode, contentNode];
 }
 
 export class CollapsibleContainerNode extends ElementNode {
@@ -206,17 +198,6 @@ export class CollapsibleContainerNode extends ElementNode {
     return false;
   }
 
-  static importDOM(): DOMConversionMap<HTMLDetailsElement> | null {
-    return {
-      details: (domNode: HTMLDetailsElement) => {
-        return {
-          conversion: $convertDetailsElement,
-          priority: 1,
-        };
-      },
-    };
-  }
-
   static importJSON(
     serializedNode: SerializedCollapsibleContainerNode,
   ): CollapsibleContainerNode {
@@ -265,3 +246,17 @@ export function $isCollapsibleContainerNode(
 ): node is CollapsibleContainerNode {
   return node instanceof CollapsibleContainerNode;
 }
+
+export const CollapsibleContainerImportRule = defineImportRule({
+  $import: (ctx, el) => {
+    const isOpen = el.open !== undefined ? el.open : true;
+    const [titleNode, contentNode] = $assembleDetailsChildren(
+      ctx.$importChildren(el),
+    );
+    return [
+      $createCollapsibleContainerNode(isOpen).append(titleNode, contentNode),
+    ];
+  },
+  match: sel.tag('details'),
+  name: '@lexical/playground/details',
+});

@@ -10,16 +10,14 @@ import type {JSX} from 'react';
 
 import './index.css';
 
+import {defineImportRule, sel} from '@lexical/html';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
 import {mergeRegister} from '@lexical/utils';
 import {
   CLICK_COMMAND,
-  COMMAND_PRIORITY_HIGH,
   COMMAND_PRIORITY_LOW,
   DecoratorNode,
-  DOMConversionMap,
-  DOMConversionOutput,
   LexicalNode,
   NodeKey,
   SerializedLexicalNode,
@@ -79,22 +77,6 @@ export class PageBreakNode extends DecoratorNode<JSX.Element> {
     return $createPageBreakNode().updateFromJSON(serializedNode);
   }
 
-  static importDOM(): DOMConversionMap | null {
-    return {
-      figure: (domNode: HTMLElement) => {
-        const tp = domNode.getAttribute('type');
-        if (tp !== this.getType()) {
-          return null;
-        }
-
-        return {
-          conversion: $convertPageBreakElement,
-          priority: COMMAND_PRIORITY_HIGH,
-        };
-      },
-    };
-  }
-
   createDOM(): HTMLElement {
     const el = document.createElement('figure');
     el.style.pageBreakAfter = 'always';
@@ -119,10 +101,6 @@ export class PageBreakNode extends DecoratorNode<JSX.Element> {
   }
 }
 
-function $convertPageBreakElement(): DOMConversionOutput {
-  return {node: $createPageBreakNode()};
-}
-
 export function $createPageBreakNode(): PageBreakNode {
   return new PageBreakNode();
 }
@@ -132,3 +110,9 @@ export function $isPageBreakNode(
 ): node is PageBreakNode {
   return node instanceof PageBreakNode;
 }
+
+export const PageBreakImportRule = defineImportRule({
+  $import: () => [$createPageBreakNode()],
+  match: sel.tag('figure').attr('type', PageBreakNode.getType()),
+  name: '@lexical/playground/page-break',
+});

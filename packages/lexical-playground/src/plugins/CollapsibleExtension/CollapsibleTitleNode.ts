@@ -6,12 +6,11 @@
  *
  */
 
+import {defineImportRule, sel} from '@lexical/html';
 import {IS_CHROME, IS_FIREFOX} from '@lexical/utils';
 import {
   $createParagraphNode,
   $isElementNode,
-  buildImportMap,
-  DOMConversionOutput,
   EditorConfig,
   ElementNode,
   LexicalEditor,
@@ -21,15 +20,6 @@ import {
 
 import {$isCollapsibleContainerNode} from './CollapsibleContainerNode';
 import {$isCollapsibleContentNode} from './CollapsibleContentNode';
-
-export function $convertSummaryElement(
-  domNode: HTMLElement,
-): DOMConversionOutput | null {
-  const node = $createCollapsibleTitleNode();
-  return {
-    node,
-  };
-}
 
 /** @noInheritDoc */
 export class CollapsibleTitleNode extends ElementNode {
@@ -42,12 +32,6 @@ export class CollapsibleTitleNode extends ElementNode {
         }
       },
       extends: ElementNode,
-      importDOM: buildImportMap({
-        summary: () => ({
-          conversion: $convertSummaryElement,
-          priority: 1,
-        }),
-      }),
     });
   }
 
@@ -116,3 +100,11 @@ export function $isCollapsibleTitleNode(
 ): node is CollapsibleTitleNode {
   return node instanceof CollapsibleTitleNode;
 }
+
+export const CollapsibleTitleImportRule = defineImportRule({
+  $import: (ctx, el) => [
+    $createCollapsibleTitleNode().splice(0, 0, ctx.$importChildren(el)),
+  ],
+  match: sel.tag('summary'),
+  name: '@lexical/playground/summary',
+});

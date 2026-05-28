@@ -7,8 +7,6 @@
  */
 
 import type {
-  DOMConversionMap,
-  DOMConversionOutput,
   DOMExportOutput,
   EditorConfig,
   LexicalNode,
@@ -18,6 +16,7 @@ import type {
   Spread,
 } from 'lexical';
 
+import {defineImportRule, sel} from '@lexical/html';
 import {addClassNamesToElement} from '@lexical/utils';
 import {ElementNode} from 'lexical';
 
@@ -27,17 +26,6 @@ export type SerializedLayoutContainerNode = Spread<
   },
   SerializedElementNode
 >;
-
-function $convertLayoutContainerElement(
-  domNode: HTMLElement,
-): DOMConversionOutput | null {
-  const templateColumns = domNode.style.gridTemplateColumns;
-  if (templateColumns) {
-    const node = $createLayoutContainerNode(templateColumns);
-    return {node};
-  }
-  return null;
-}
 
 export class LayoutContainerNode extends ElementNode {
   __templateColumns: string;
@@ -76,20 +64,6 @@ export class LayoutContainerNode extends ElementNode {
       dom.style.gridTemplateColumns = this.__templateColumns;
     }
     return false;
-  }
-
-  static importDOM(): DOMConversionMap | null {
-    return {
-      div: (domNode: HTMLElement) => {
-        if (!domNode.hasAttribute('data-lexical-layout-container')) {
-          return null;
-        }
-        return {
-          conversion: $convertLayoutContainerElement,
-          priority: 2,
-        };
-      },
-    };
   }
 
   static importJSON(json: SerializedLayoutContainerNode): LayoutContainerNode {
@@ -141,3 +115,21 @@ export function $isLayoutContainerNode(
 ): node is LayoutContainerNode {
   return node instanceof LayoutContainerNode;
 }
+
+export const LayoutContainerImportRule = defineImportRule({
+  $import: (ctx, el, $next) => {
+    const templateColumns = el.style.gridTemplateColumns;
+    if (!templateColumns) {
+      return $next();
+    }
+    return [
+      $createLayoutContainerNode(templateColumns).splice(
+        0,
+        0,
+        ctx.$importChildren(el),
+      ),
+    ];
+  },
+  match: sel.tag('div').attr('data-lexical-layout-container', true),
+  name: '@lexical/playground/layout-container',
+});

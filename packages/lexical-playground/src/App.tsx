@@ -6,7 +6,9 @@
  *
  */
 
+import {ClipboardDOMImportExtension} from '@lexical/clipboard';
 import {$isCodeNode} from '@lexical/code';
+import {CodeImportExtension} from '@lexical/code-core';
 import {
   $defaultShouldInsertAfter,
   AutoFocusExtension,
@@ -19,15 +21,21 @@ import {
 import {HashtagExtension} from '@lexical/hashtag';
 import {HistoryExtension} from '@lexical/history';
 import {
+  CoreImportExtension,
+  HorizontalRuleImportExtension,
+} from '@lexical/html';
+import {
   $createLinkNode,
   ClickableLinkExtension,
   LinkExtension,
+  LinkImportExtension,
 } from '@lexical/link';
 import {
   $createListItemNode,
   $createListNode,
   CheckListExtension,
   ListExtension,
+  ListImportExtension,
 } from '@lexical/list';
 import {PlainTextExtension} from '@lexical/plain-text';
 import {LexicalCollaboration} from '@lexical/react/LexicalCollaborationContext';
@@ -36,7 +44,9 @@ import {
   $createHeadingNode,
   $createQuoteNode,
   RichTextExtension,
+  RichTextImportExtension,
 } from '@lexical/rich-text';
+import {TableImportExtension} from '@lexical/table';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -47,14 +57,15 @@ import {
 import {type JSX, useMemo} from 'react';
 
 import {isDevPlayground} from './appSettings';
-import {buildHTMLConfig} from './buildHTMLConfig';
 import {FlashMessageContext} from './context/FlashMessageContext';
 import {SettingsContext, useSettings} from './context/SettingsContext';
 import {ToolbarContext} from './context/ToolbarContext';
 import Editor from './Editor';
 import logo from './images/logo.svg';
 import {KeywordsExtension} from './nodes/KeywordNode';
+import {PlaygroundImportExtension} from './nodes/PlaygroundImportExtension';
 import PlaygroundNodes from './nodes/PlaygroundNodes';
+import {PlaygroundDOMRenderExtension} from './PlaygroundDOMRenderExtension';
 import {AutocompleteExtension} from './plugins/AutocompleteExtension';
 import {PlaygroundAutoLinkExtension} from './plugins/AutoLinkExtension';
 import {CodeHighlightExtension} from './plugins/CodeHighlightExtension';
@@ -216,8 +227,23 @@ const AppExtension = defineExtension({
     }),
     configExtension(AutocompleteExtension, {disabled: true}),
     configExtension(VisibleLineBreakExtension, {disabled: true}),
+    // DOMImportExtension pipeline — rules contributed per node package
+    // plus the playground-specific overlay for inline styles and custom
+    // nodes (images, polls, mentions, ...).
+    CoreImportExtension,
+    RichTextImportExtension,
+    ListImportExtension,
+    LinkImportExtension,
+    TableImportExtension,
+    CodeImportExtension,
+    HorizontalRuleImportExtension,
+    PlaygroundImportExtension,
+    // Route real text/html pastes through the DOMImportExtension pipeline
+    // so the rules above fire on pastes, not just programmatic imports.
+    ClipboardDOMImportExtension,
+    // Replaces the legacy `buildHTMLConfig().export` overrides.
+    PlaygroundDOMRenderExtension,
   ],
-  html: buildHTMLConfig(),
   name: '@lexical/playground',
   namespace: 'Playground',
   nodes: PlaygroundNodes,

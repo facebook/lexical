@@ -6,22 +6,13 @@
  *
  */
 
-import type {
-  DOMConversionMap,
-  DOMConversionOutput,
-  EditorConfig,
-  LexicalNode,
-  SerializedElementNode,
-} from 'lexical';
+import type {EditorConfig, LexicalNode, SerializedElementNode} from 'lexical';
 
+import {defineImportRule, sel} from '@lexical/html';
 import {addClassNamesToElement} from '@lexical/utils';
 import {$isParagraphNode, ElementNode} from 'lexical';
 
 export type SerializedLayoutItemNode = SerializedElementNode;
-
-function $convertLayoutItemElement(): DOMConversionOutput | null {
-  return {node: $createLayoutItemNode()};
-}
 
 export function $isEmptyLayoutItemNode(node: LexicalNode): boolean {
   if (!$isLayoutItemNode(node) || node.getChildrenSize() !== 1) {
@@ -65,20 +56,6 @@ export class LayoutItemNode extends ElementNode {
     return false;
   }
 
-  static importDOM(): DOMConversionMap | null {
-    return {
-      div: (domNode: HTMLElement) => {
-        if (!domNode.hasAttribute('data-lexical-layout-item')) {
-          return null;
-        }
-        return {
-          conversion: $convertLayoutItemElement,
-          priority: 2,
-        };
-      },
-    };
-  }
-
   static importJSON(serializedNode: SerializedLayoutItemNode): LayoutItemNode {
     return $createLayoutItemNode().updateFromJSON(serializedNode);
   }
@@ -97,3 +74,11 @@ export function $isLayoutItemNode(
 ): node is LayoutItemNode {
   return node instanceof LayoutItemNode;
 }
+
+export const LayoutItemImportRule = defineImportRule({
+  $import: (ctx, el) => [
+    $createLayoutItemNode().splice(0, 0, ctx.$importChildren(el)),
+  ],
+  match: sel.tag('div').attr('data-lexical-layout-item', true),
+  name: '@lexical/playground/layout-item',
+});

@@ -16,6 +16,9 @@ default `$generateHtmlFromNodes` entry are unchanged and remain the
 supported default for production apps that don't want to track an
 experimental API.
 
+The DOMRenderExtension API was introduced in Lexical v0.44.0,
+with significant additions in v0.45.0
+
 :::
 
 `DOMRenderExtension` lets you override how Lexical nodes are rendered

@@ -47,3 +47,4 @@ npm-debug.log*
 # locally as part of its build step — they don't need to be committed.
 examples/*/pnpm-lock.yaml
 scripts/__tests__/integration/fixtures/*/pnpm-lock.yaml
+*.tsbuildinfo

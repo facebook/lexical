@@ -38,7 +38,6 @@
     "flow-typed-install": "flow-typed install -s -o --ignoreDeps dev peer bundled",
     "tsc": "tsc",
     "tsc-scripts": "tsc -p ./tsconfig.scripts.json",
-    "tsc-test": "tsc -p ./tsconfig.test.json",
     "tsc-extension": "pnpm --filter @lexical/devtools run compile",
     "tsc-website": "pnpm --filter @lexical/website run tsc",
     "tsc-watch": "tsc -w",

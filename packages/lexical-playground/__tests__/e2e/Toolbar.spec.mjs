@@ -28,6 +28,7 @@ import {
   selectFromAlignDropdown,
   selectFromInsertDropdown,
   test,
+  waitForSelector,
 } from '../utils/index.mjs';
 
 test.describe('Toolbar', () => {
@@ -40,233 +41,232 @@ test.describe('Toolbar', () => {
     }),
   );
 
-  test(
-    'Insert image caption + table',
-    {
-      tag: '@flaky',
-    },
-    async ({page, isPlainText}) => {
-      // TODO(collab-v2): nested editors are not supported yet
-      test.skip(isPlainText || IS_COLLAB_V2);
-      await focusEditor(page);
+  test('Insert image caption + table', async ({page, isPlainText}) => {
+    // TODO(collab-v2): nested editors are not supported yet
+    test.skip(isPlainText || IS_COLLAB_V2);
+    await focusEditor(page);
 
-      // Add caption
-      await insertSampleImage(page);
-      // Catch flakiness earlier
-      await assertHTML(
-        page,
-        html`
-          <p dir="auto">
-            <span contenteditable="false" data-lexical-decorator="true">
-              <div draggable="false">
-                <img
-                  alt="Yellow flower in tilt shift lens"
-                  draggable="false"
-                  src="${SAMPLE_IMAGE_URL}" />
+    // Add caption
+    await insertSampleImage(page);
+    // The image is rendered behind React.Suspense (fallback={null}) and only
+    // appears once the sample asset finishes loading; under parallel load
+    // that can exceed assertHTML's 5s retry window, leaving an empty
+    // decorator. Wait for the <img> explicitly before asserting.
+    await waitForSelector(page, '.editor-image img', {timeout: 30000});
+    // Catch flakiness earlier
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <span contenteditable="false" data-lexical-decorator="true">
+            <div draggable="false">
+              <img
+                alt="Yellow flower in tilt shift lens"
+                draggable="false"
+                src="${SAMPLE_IMAGE_URL}" />
+            </div>
+          </span>
+          <br />
+        </p>
+      `,
+      undefined,
+      {
+        ignoreClasses: true,
+        ignoreInlineStyles: true,
+      },
+    );
+    await click(page, '.editor-image img');
+    await click(page, '.image-caption-button');
+    await focus(page, '.ImageNode__contentEditable');
+    await page.keyboard.type('Yellow flower in tilt shift lens');
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <span contenteditable="false" data-lexical-decorator="true">
+            <div draggable="false">
+              <img
+                alt="Yellow flower in tilt shift lens"
+                draggable="false"
+                src="${SAMPLE_IMAGE_URL}" />
+            </div>
+            <div>
+              <div
+                contenteditable="true"
+                role="textbox"
+                spellcheck="true"
+                aria-placeholder="Enter a caption..."
+                data-lexical-editor="true">
+                <p dir="auto">
+                  <span data-lexical-text="true">
+                    Yellow flower in tilt shift lens
+                  </span>
+                </p>
               </div>
-            </span>
-            <br />
-          </p>
-        `,
-        undefined,
-        {
-          ignoreClasses: true,
-          ignoreInlineStyles: true,
-        },
-      );
-      await click(page, '.editor-image img');
-      await click(page, '.image-caption-button');
-      await focus(page, '.ImageNode__contentEditable');
-      await page.keyboard.type('Yellow flower in tilt shift lens');
-      await assertHTML(
-        page,
-        html`
-          <p dir="auto">
-            <span contenteditable="false" data-lexical-decorator="true">
-              <div draggable="false">
-                <img
-                  alt="Yellow flower in tilt shift lens"
-                  draggable="false"
-                  src="${SAMPLE_IMAGE_URL}" />
-              </div>
-              <div>
-                <div
-                  contenteditable="true"
-                  role="textbox"
-                  spellcheck="true"
-                  aria-placeholder="Enter a caption..."
-                  data-lexical-editor="true">
-                  <p dir="auto">
-                    <span data-lexical-text="true">
-                      Yellow flower in tilt shift lens
-                    </span>
-                  </p>
-                </div>
-              </div>
-            </span>
-            <br />
-          </p>
-        `,
-        undefined,
-        {
-          ignoreClasses: true,
-          ignoreInlineStyles: true,
-        },
-        actualHtml =>
-          // flaky fix: remove the extra <p dir="auto"><br /></p> that appears occasionally in CI runs
-          actualHtml.replace(
-            html`
-              <p dir="auto">
-                <span data-lexical-text="true">
-                  Yellow flower in tilt shift lens
-                </span>
-              </p>
+            </div>
+          </span>
+          <br />
+        </p>
+      `,
+      undefined,
+      {
+        ignoreClasses: true,
+        ignoreInlineStyles: true,
+      },
+      actualHtml =>
+        // flaky fix: remove the extra <p dir="auto"><br /></p> that appears occasionally in CI runs
+        actualHtml.replace(
+          html`
+            <p dir="auto">
+              <span data-lexical-text="true">
+                Yellow flower in tilt shift lens
+              </span>
+            </p>
+            <p dir="auto"><br /></p>
+          `,
+          html`
+            <p dir="auto">
+              <span data-lexical-text="true">
+                Yellow flower in tilt shift lens
+              </span>
+            </p>
+          `,
+        ),
+    );
+
+    // Delete image
+    // TODO Revisit the a11y side of NestedEditors
+    await evaluate(page, () => {
+      const p = document.querySelector('[contenteditable="true"] p');
+      document.getSelection().setBaseAndExtent(p, 0, p, 0);
+    });
+    await selectAll(page);
+    await page.keyboard.press('Delete');
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto"><br /></p>
+      `,
+      undefined,
+      {
+        ignoreClasses: true,
+        ignoreInlineStyles: true,
+      },
+    );
+
+    // Add table
+    await selectFromInsertDropdown(page, '.table');
+    await click(page, '[data-test-id="table-model-confirm-insert"] button');
+
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto">
+          <br />
+        </p>
+        <table dir="auto">
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
+          <tr dir="auto">
+            <th dir="auto">
               <p dir="auto"><br /></p>
-            `,
-            html`
-              <p dir="auto">
-                <span data-lexical-text="true">
-                  Yellow flower in tilt shift lens
-                </span>
-              </p>
-            `,
-          ),
-      );
-
-      // Delete image
-      // TODO Revisit the a11y side of NestedEditors
-      await evaluate(page, () => {
-        const p = document.querySelector('[contenteditable="true"] p');
-        document.getSelection().setBaseAndExtent(p, 0, p, 0);
-      });
-      await selectAll(page);
-      await page.keyboard.press('Delete');
-      await assertHTML(
-        page,
-        html`
-          <p dir="auto"><br /></p>
-        `,
-        undefined,
-        {
-          ignoreClasses: true,
-          ignoreInlineStyles: true,
-        },
-      );
-
-      // Add table
-      await selectFromInsertDropdown(page, '.table');
-      await click(page, '[data-test-id="table-model-confirm-insert"] button');
-
-      await assertHTML(
-        page,
-        html`
-          <p dir="auto">
-            <br />
-          </p>
-          <table dir="auto">
-            <colgroup>
-              <col style="width: 92px" />
-              <col style="width: 92px" />
-              <col style="width: 92px" />
-              <col style="width: 92px" />
-              <col style="width: 92px" />
-            </colgroup>
-            <tr dir="auto">
-              <th dir="auto">
-                <p dir="auto"><br /></p>
-              </th>
-              <th dir="auto">
-                <p dir="auto"><br /></p>
-              </th>
-              <th dir="auto">
-                <p dir="auto"><br /></p>
-              </th>
-              <th dir="auto">
-                <p dir="auto"><br /></p>
-              </th>
-              <th dir="auto">
-                <p dir="auto"><br /></p>
-              </th>
-            </tr>
-            <tr dir="auto">
-              <th dir="auto">
-                <p dir="auto"><br /></p>
-              </th>
-              <td dir="auto">
-                <p dir="auto"><br /></p>
-              </td>
-              <td dir="auto">
-                <p dir="auto"><br /></p>
-              </td>
-              <td dir="auto">
-                <p dir="auto"><br /></p>
-              </td>
-              <td dir="auto">
-                <p dir="auto"><br /></p>
-              </td>
-            </tr>
-            <tr dir="auto">
-              <th dir="auto">
-                <p dir="auto"><br /></p>
-              </th>
-              <td dir="auto">
-                <p dir="auto"><br /></p>
-              </td>
-              <td dir="auto">
-                <p dir="auto"><br /></p>
-              </td>
-              <td dir="auto">
-                <p dir="auto"><br /></p>
-              </td>
-              <td dir="auto">
-                <p dir="auto"><br /></p>
-              </td>
-            </tr>
-            <tr dir="auto">
-              <th dir="auto">
-                <p dir="auto"><br /></p>
-              </th>
-              <td dir="auto">
-                <p dir="auto"><br /></p>
-              </td>
-              <td dir="auto">
-                <p dir="auto"><br /></p>
-              </td>
-              <td dir="auto">
-                <p dir="auto"><br /></p>
-              </td>
-              <td dir="auto">
-                <p dir="auto"><br /></p>
-              </td>
-            </tr>
-            <tr dir="auto">
-              <th dir="auto">
-                <p dir="auto"><br /></p>
-              </th>
-              <td dir="auto">
-                <p dir="auto"><br /></p>
-              </td>
-              <td dir="auto">
-                <p dir="auto"><br /></p>
-              </td>
-              <td dir="auto">
-                <p dir="auto"><br /></p>
-              </td>
-              <td dir="auto">
-                <p dir="auto"><br /></p>
-              </td>
-            </tr>
-          </table>
-          <p dir="auto"><br /></p>
-        `,
-        undefined,
-        {
-          ignoreClasses: true,
-          ignoreInlineStyles: true,
-        },
-      );
-    },
-  );
+            </th>
+            <th dir="auto">
+              <p dir="auto"><br /></p>
+            </th>
+            <th dir="auto">
+              <p dir="auto"><br /></p>
+            </th>
+            <th dir="auto">
+              <p dir="auto"><br /></p>
+            </th>
+            <th dir="auto">
+              <p dir="auto"><br /></p>
+            </th>
+          </tr>
+          <tr dir="auto">
+            <th dir="auto">
+              <p dir="auto"><br /></p>
+            </th>
+            <td dir="auto">
+              <p dir="auto"><br /></p>
+            </td>
+            <td dir="auto">
+              <p dir="auto"><br /></p>
+            </td>
+            <td dir="auto">
+              <p dir="auto"><br /></p>
+            </td>
+            <td dir="auto">
+              <p dir="auto"><br /></p>
+            </td>
+          </tr>
+          <tr dir="auto">
+            <th dir="auto">
+              <p dir="auto"><br /></p>
+            </th>
+            <td dir="auto">
+              <p dir="auto"><br /></p>
+            </td>
+            <td dir="auto">
+              <p dir="auto"><br /></p>
+            </td>
+            <td dir="auto">
+              <p dir="auto"><br /></p>
+            </td>
+            <td dir="auto">
+              <p dir="auto"><br /></p>
+            </td>
+          </tr>
+          <tr dir="auto">
+            <th dir="auto">
+              <p dir="auto"><br /></p>
+            </th>
+            <td dir="auto">
+              <p dir="auto"><br /></p>
+            </td>
+            <td dir="auto">
+              <p dir="auto"><br /></p>
+            </td>
+            <td dir="auto">
+              <p dir="auto"><br /></p>
+            </td>
+            <td dir="auto">
+              <p dir="auto"><br /></p>
+            </td>
+          </tr>
+          <tr dir="auto">
+            <th dir="auto">
+              <p dir="auto"><br /></p>
+            </th>
+            <td dir="auto">
+              <p dir="auto"><br /></p>
+            </td>
+            <td dir="auto">
+              <p dir="auto"><br /></p>
+            </td>
+            <td dir="auto">
+              <p dir="auto"><br /></p>
+            </td>
+            <td dir="auto">
+              <p dir="auto"><br /></p>
+            </td>
+          </tr>
+        </table>
+        <p dir="auto"><br /></p>
+      `,
+      undefined,
+      {
+        ignoreClasses: true,
+        ignoreInlineStyles: true,
+      },
+    );
+  });
 
   test('Center align image', async ({page, isPlainText, isCollab}) => {
     // Image selection can't be synced in collab

@@ -151,12 +151,16 @@ async function exposeLexicalEditor(page) {
     await Promise.all(
       ['left', 'right'].map(async name => {
         const frameLocator = page.frameLocator(`[name="${name}"]`);
+        // Collab startup connects to a single shared y-websocket server; under
+        // parallel test load the websocket connect (and its reconnect backoff)
+        // can exceed the default 5s expect timeout, which was the dominant
+        // source of @flaky collab failures. Give the connection generous time.
         await expect(
           frameLocator.locator('.action-button.connect'),
-        ).toHaveAttribute('title', /Disconnect/);
+        ).toHaveAttribute('title', /Disconnect/, {timeout: 30000});
         await expect(
           frameLocator.locator('[data-lexical-editor="true"] p'),
-        ).toBeVisible();
+        ).toBeVisible({timeout: 30000});
       }),
     );
     // Ensure that they started up with the correct empty state

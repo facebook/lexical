@@ -327,20 +327,17 @@ Current:
 - Pre-registration system for nodes to declare expected state
   and serialize them as top-level properties (`flat`) with `$config`
   (see [#7260](https://github.com/facebook/lexical/issues/7260)).
+- Can be integrated with
+  [DOMRenderExtension](../serialization/dom-render.md) for editor
+  rendering and HTML export
+- Can be integrated with
+  [DOMImportExtension](../serialization/dom-import.md) for HTML import
 
 Future:
 
-- Does not yet integrate directly with importDOM, createDOM or
-  exportDOM (see [#7259](https://github.com/facebook/lexical/issues/7259))
 - Does not yet support direct integration with Yjs, e.g.
   you can not store a Y.Map as a NodeState value
   (see [#7293](https://github.com/facebook/lexical/issues/7293))
-- There isn't yet an easy way to listen for updates to NodeState
-  without registering listeners for every class
-  (see [#7321](https://github.com/facebook/lexical/pull/7321))
-- Similarly, there isn't the equivalent of a node transform for
-  NodeState. Transforms must be registered on individual node
-  classes.
 
 ## Node State Style Example
 

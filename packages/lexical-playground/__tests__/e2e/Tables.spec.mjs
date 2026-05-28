@@ -31,6 +31,7 @@ import {
   deleteTableColumns,
   deleteTableRows,
   dragMouse,
+  evaluate,
   expect,
   focusEditor,
   getExpectedDateTimeHtml,
@@ -134,6 +135,58 @@ test.describe.parallel('Tables', () => {
       undefined,
       {ignoreClasses: true},
     );
+  });
+
+  test(`Selection placed on a <col> element resolves into the first cell`, async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await initialize({isCollab, page});
+
+    await focusEditor(page);
+    await insertTable(page, 2, 2);
+
+    // Type into the last cell so Lexical has a definite prior selection
+    // there. Without the fix, prior to landing the caret on <col>, the
+    // resolution falls back to that last cell.
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Tab');
+    await page.keyboard.type('last');
+
+    // Force the DOM caret onto a <col> child of the table's <colgroup>,
+    // mimicking what Firefox 150+ does on some navigation actions.
+    await evaluate(page, () => {
+      const col = document.querySelector(
+        'div[contenteditable="true"] table > colgroup > col',
+      );
+      window.getSelection().setBaseAndExtent(col, 0, col, 0);
+    });
+
+    // Allow Lexical to process the selection change.
+    await sleep(50);
+
+    // The DOM caret must not be left inside the <col> / <colgroup> region
+    // (the reconciler should have written it back to the resolved cell).
+    const domAnchorNodeName = await evaluate(
+      page,
+      () => window.getSelection().anchorNode?.nodeName ?? null,
+    );
+    expect(domAnchorNodeName).not.toBe('COL');
+    expect(domAnchorNodeName).not.toBe('COLGROUP');
+
+    // Typing should land in the first cell, not extend "last".
+    await page.keyboard.type('X');
+    const cellTexts = await evaluate(page, () => {
+      const cells = document.querySelectorAll(
+        'div[contenteditable="true"] table th, div[contenteditable="true"] table td',
+      );
+      return Array.from(cells).map(c => c.textContent);
+    });
+    expect(cellTexts[0]).toBe('X');
+    expect(cellTexts[cellTexts.length - 1]).toBe('last');
   });
 
   test(`Can type inside of table cell`, async ({

@@ -15,6 +15,8 @@ The legacy static `importDOM` machinery and `$generateNodesFromDOM`
 entry are unchanged and remain the supported default for production
 apps that don't want to track an experimental API.
 
+The DOMImportExtension API was introduced in Lexical v0.45.0
+
 :::
 
 The DOM import system in `@lexical/html` lets you convert any HTML or

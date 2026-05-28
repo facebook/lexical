@@ -27,6 +27,7 @@ import {
   configExtension,
   defineExtension,
   isHTMLElement,
+  type LexicalNode,
   LineBreakNode,
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
@@ -153,8 +154,8 @@ describe('DOMRender conditional overrides', () => {
       }
     });
 
-    let before: unknown;
-    let after: unknown;
+    let before: null | LexicalNode = null;
+    let after: null | LexicalNode = null;
     editor.read(() => {
       before = $getNodeByKey(lbKey);
     });
@@ -164,8 +165,9 @@ describe('DOMRender conditional overrides', () => {
     });
 
     // A full reconcile recreates the DOM but reuses the same node instance —
-    // unlike marking nodes dirty, which clones them — so editor state /
-    // collaboration is untouched.
+    // marking a read-only node writable always returns a new instance, so
+    // identity equality proves the node was never cloned (editor state /
+    // collaboration untouched).
     expect(after).not.toBe(null);
     expect(after).toBe(before);
   });

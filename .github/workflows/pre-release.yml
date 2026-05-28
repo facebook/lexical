@@ -7,6 +7,11 @@ on:
         required: true
         default: false
         type: boolean
+      use-trusted-publishing:
+        description: Ignore the NPM_TOKEN secret and force npm trusted publishing (OIDC). Use to verify the trusted-publishing setup without removing the repo secret.
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -25,5 +30,6 @@ jobs:
       ref: main
       channel: latest
       ignore-previously-published: ${{ inputs.ignore-previously-published }}
+      use-trusted-publishing: ${{ inputs.use-trusted-publishing }}
     secrets:
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

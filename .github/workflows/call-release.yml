@@ -44,6 +44,15 @@ on:
         required: false
         default: false
         type: boolean
+      use-trusted-publishing:
+        description: |
+          Force npm trusted publishing (OIDC) for the publish step,
+          ignoring any NPM_TOKEN secret that was passed through. Useful
+          for verifying the trusted-publishing setup without removing the
+          NPM_TOKEN repository secret.
+        required: false
+        default: false
+        type: boolean
     secrets:
       NPM_TOKEN:
         description: |
@@ -115,8 +124,11 @@ jobs:
       - name: Configure npm auth
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          USE_TRUSTED_PUBLISHING: ${{ inputs.use-trusted-publishing && '1' || '' }}
         run: |
-          if [ -n "${NPM_TOKEN:-}" ]; then
+          if [ -n "${USE_TRUSTED_PUBLISHING:-}" ]; then
+            echo "npm auth: trusted publishing (OIDC) forced via use-trusted-publishing input; NPM_TOKEN ignored"
+          elif [ -n "${NPM_TOKEN:-}" ]; then
             echo "::add-mask::$NPM_TOKEN"
             echo "NODE_AUTH_TOKEN=$NPM_TOKEN" >> "$GITHUB_ENV"
             echo "npm auth: using NPM_TOKEN secret"

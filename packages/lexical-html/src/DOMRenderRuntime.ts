@@ -210,16 +210,23 @@ export class DOMRenderRuntimeImpl implements DOMRenderRuntime {
 
     // Re-render through a full reconcile, which reuses the existing node
     // instances (no node-map mutation, so no spurious mutation/collaboration
-    // changes). The affected nodes are unmounted and recreated — the removed
+    // changes). The affected nodes must be unmounted and recreated — the removed
     // override may have produced or decorated DOM that only a fresh $createDOM
-    // reverts — by installing a transient $updateDOM that reports a recreate for
-    // matching nodes, restored once the (synchronous) reconcile is done.
+    // reverts — so install a transient $updateDOM that reports a recreate for
+    // matching nodes.
+    //
+    // This mutates the (shared) active config, so the reconcile MUST run and
+    // finish synchronously before the original is restored on the next line —
+    // hence `discrete`, and hence this must not be called from within an
+    // editor.update (where the commit would defer). A deferred update would
+    // either restore the wrapper before the reconcile reads it (no recreate) or
+    // leave it armed across a window where an unrelated reconcile would
+    // spuriously recreate matching nodes. No history tag is needed: a full
+    // reconcile marks no nodes dirty, which history merges/discards without
+    // pushing.
     const base = dom.$updateDOM;
     dom.$updateDOM = (nextNode, prevNode, el, editor) =>
       recreate(nextNode) ? true : base(nextNode, prevNode, el, editor);
-    // `discrete` so the synchronous reconcile uses the wrapper before we restore
-    // it below. No history tag is needed: a full reconcile marks no nodes dirty,
-    // and history merges/discards a no-dirty-node update without pushing.
     this.editor.update($fullReconcile, {discrete: true});
     dom.$updateDOM = base;
   }

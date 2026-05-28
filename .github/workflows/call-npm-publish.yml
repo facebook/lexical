@@ -34,6 +34,20 @@ jobs:
         with:
           node-version: 24.x
           registry-url: 'https://registry.npmjs.org'
+      # Fail fast (before the build) if the token can't authenticate, so a
+      # bad/expired/unauthorized NPM_TOKEN surfaces clearly instead of as a
+      # misleading 404 from every `pnpm publish`. Skipped on dry runs, which
+      # never publish and so don't need a token.
+      - name: Verify npm authentication
+        if: ${{ !inputs.dry-run }}
+        run: |
+          if ! whoami="$(npm whoami --registry=https://registry.npmjs.org)"; then
+            echo "::error::npm authentication failed for https://registry.npmjs.org. The NPM_TOKEN secret is missing, expired, revoked, or not authorized to publish these packages."
+            exit 1
+          fi
+          echo "Authenticated to https://registry.npmjs.org as ${whoami}"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - run: pnpm run prepare-release
       - run: node ./scripts/npm/release.mjs --non-interactive $DRY_RUN_ARG $IGNORE_PREVIOUSLY_PUBLISHED_ARG --channel='${{ inputs.channel }}'
         env:

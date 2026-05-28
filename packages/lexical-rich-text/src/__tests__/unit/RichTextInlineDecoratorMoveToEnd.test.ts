@@ -201,7 +201,7 @@ describe('MOVE_TO_END decorator-only safety (crash fix)', () => {
     });
   });
 
-  test('Shift+Cmd+ArrowRight on decorator-only element does not dispatch MOVE_TO_END', () => {
+  test('Shift+Cmd+ArrowRight on decorator-only element does not throw', () => {
     using editor = buildEditorFromExtensions({
       $initialEditorState: () => {
         const decorator = $createTestDecoratorNode().setIsInline(true);
@@ -216,7 +216,7 @@ describe('MOVE_TO_END decorator-only safety (crash fix)', () => {
 
     const before = snapshotSelection(editor);
 
-    // Shift+Cmd+Arrow should no longer match isMoveToEnd (matcher tightened)
+    // Handler bails safely on decorator-only elements (no selectable text)
     dispatchMoveToEnd(editor, true);
 
     // Selection unchanged — handler returned false

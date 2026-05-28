@@ -8,10 +8,13 @@
 import type {ChildSchema} from './types';
 
 import {
+  $createLineBreakNode,
   $createParagraphNode,
   $isBlockElementNode,
   $isDecoratorNode,
   $isElementNode,
+  $isLineBreakNode,
+  ArtificialNode__DO_NOT_USE,
   type ElementNode,
   isHTMLElement,
   type LexicalNode,
@@ -154,6 +157,132 @@ export function $applySchema(
 }
 
 /**
+ * Inline-context equivalent of `wrapContinuousInlines` from the legacy
+ * `$generateNodesFromDOM`: when a block container's imported children
+ * mix inline runs with block descendants (typically
+ * {@link ArtificialNode__DO_NOT_USE} stand-ins emitted by transparent
+ * block rules like the `<div>` rule), wrap each inline run in its own
+ * artificial node, insert a {@link $createLineBreakNode} between every
+ * pair of adjacent artificials, and finally unwrap each artificial in
+ * place. The net effect on a list item or table cell is the legacy
+ * `<li>1<div>2</div>3</li>` → `<li>1<br>2<br>3</li>` shape — no
+ * paragraph wrappers, just the surrounding text/element children with
+ * line breaks marking the former block boundaries.
+ *
+ * Block containers ({@link ListItemRule}, {@link TableCellRule}, the
+ * blockquote rule, etc.) pipe `$importChildren(...)` through this
+ * helper after their own format/style processing. No-op when the
+ * imported children are exclusively inlines (the typical case) or
+ * exclusively blocks (no inline runs to flush).
+ *
+ * @experimental
+ */
+export function $insertLineBreaksBetweenBlockArtificials(
+  children: LexicalNode[],
+): LexicalNode[] {
+  // Fast-path: nothing to do unless the run contains at least one
+  // ArtificialNode stand-in *and* at least one neighbor (either another
+  // ArtificialNode or a non-block sibling) that warrants a separator.
+  let hasArtificial = false;
+  for (const child of children) {
+    if (child instanceof ArtificialNode__DO_NOT_USE) {
+      hasArtificial = true;
+      break;
+    }
+  }
+  if (!hasArtificial) {
+    return children;
+  }
+  // Wrap each maximal run of non-block siblings around the artificials
+  // in fresh ArtificialNodes so the gap walk only has to consider
+  // ArtificialNode pairs.
+  const wrapped: LexicalNode[] = [];
+  let inlineRun: LexicalNode[] | null = null;
+  const flushInlineRun = () => {
+    if (inlineRun && inlineRun.length > 0) {
+      const wrapper = new ArtificialNode__DO_NOT_USE();
+      wrapper.splice(0, 0, inlineRun);
+      wrapped.push(wrapper);
+    }
+    inlineRun = null;
+  };
+  for (const child of children) {
+    if (
+      child instanceof ArtificialNode__DO_NOT_USE ||
+      $isBlockElementNode(child)
+    ) {
+      flushInlineRun();
+      wrapped.push(child);
+    } else {
+      if (inlineRun === null) {
+        inlineRun = [];
+      }
+      inlineRun.push(child);
+    }
+  }
+  flushInlineRun();
+  // Insert a LineBreakNode between adjacent ArtificialNodes (legacy
+  // `$unwrapArtificialNodes`, pass 1), then unwrap each artificial in
+  // place (pass 2).
+  const withBreaks: LexicalNode[] = [];
+  for (let i = 0; i < wrapped.length; i++) {
+    const node = wrapped[i];
+    withBreaks.push(node);
+    const next = wrapped[i + 1];
+    if (
+      node instanceof ArtificialNode__DO_NOT_USE &&
+      next instanceof ArtificialNode__DO_NOT_USE
+    ) {
+      withBreaks.push($createLineBreakNode());
+    }
+  }
+  const final: LexicalNode[] = [];
+  for (const node of withBreaks) {
+    if (node instanceof ArtificialNode__DO_NOT_USE) {
+      for (const grand of node.getChildren()) {
+        final.push(grand);
+      }
+    } else {
+      final.push(node);
+    }
+  }
+  return final;
+}
+
+/**
+ * Apply a parent DOM element's `text-align` (when set to one of the
+ * supported {@link ElementFormatType} values) to each block-level child
+ * Lexical node that does not yet have its own format.
+ *
+ * Mirrors the part of the legacy `wrapContinuousInlines` that wrote
+ * `node.setFormat(textAlign)` onto pre-existing block children when the
+ * DOM parent carried `style.textAlign`. Pair with
+ * {@link $paragraphPackageRun} (which carries the same propagation onto
+ * paragraphs synthesized around inline runs) to fully replicate the
+ * legacy behavior on a run of mixed children.
+ *
+ * @experimental
+ */
+export function $propagateTextAlignToBlockChildren(
+  children: LexicalNode[],
+  domParent: Node | null,
+): LexicalNode[] {
+  if (!isHTMLElement(domParent)) {
+    return children;
+  }
+  const textAlign = domParent.style.textAlign;
+  if (!isAlignmentValue(textAlign)) {
+    return children;
+  }
+  for (const child of children) {
+    if ($isBlockElementNode(child) && child.getFormatType() === '') {
+      child.setFormat(textAlign);
+    }
+  }
+  return children;
+}
+
+/**
  * Wrap a run of inline lexical nodes in a fresh paragraph, propagating the
  * `text-align` of `domParent` as the paragraph's format type (matching the
  * legacy `wrapContinuousInlines` behavior).
@@ -163,6 +292,16 @@ function $paragraphPackageRun(
   _parent: LexicalNode | null,
   domParent: Node | null,
 ): LexicalNode[] {
+  // Mirror the legacy `$wrapInlineNodes` (driven by
+  // `selection.insertNodes`) shortcut where a lone `<br>` at this
+  // level (a `LineBreakNode` is the only thing in the rejected run)
+  // becomes an *empty* paragraph rather than a paragraph wrapping a
+  // visible line break — that's the form clipboard pastes ending in a
+  // trailing `<br>` (Google Docs, Gmail, …) rely on for the editor's
+  // "extra trailing empty line" expectation.
+  if (run.length === 1 && $isLineBreakNode(run[0])) {
+    run = [];
+  }
   const paragraph = $createParagraphNode();
   if (isHTMLElement(domParent)) {
     const textAlign = domParent.style.textAlign;

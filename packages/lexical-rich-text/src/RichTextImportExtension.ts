@@ -7,9 +7,11 @@
  */
 
 import {
+  contextValue,
   CoreImportExtension,
   defineImportRule,
   DOMImportExtension,
+  ImportInBlockContext,
   sel,
 } from '@lexical/html';
 import {
@@ -49,7 +51,15 @@ const HeadingRule = defineImportRule({
     setNodeIndentFromDOM(el, node);
     $setFormatFromDOM(node, el);
     $setDirectionFromDOM(node, el);
-    return [node.splice(0, 0, ctx.$importChildren(el))];
+    return [
+      node.splice(
+        0,
+        0,
+        ctx.$importChildren(el, {
+          context: [contextValue(ImportInBlockContext, true)],
+        }),
+      ),
+    ];
   },
   match: sel.tag('h1', 'h2', 'h3', 'h4', 'h5', 'h6'),
   name: '@lexical/rich-text/heading',
@@ -61,7 +71,15 @@ const QuoteRule = defineImportRule({
     $setFormatFromDOM(node, el);
     setNodeIndentFromDOM(el, node);
     $setDirectionFromDOM(node, el);
-    return [node.splice(0, 0, ctx.$importChildren(el))];
+    return [
+      node.splice(
+        0,
+        0,
+        ctx.$importChildren(el, {
+          context: [contextValue(ImportInBlockContext, true)],
+        }),
+      ),
+    ];
   },
   match: sel.tag('blockquote'),
   name: '@lexical/rich-text/blockquote',

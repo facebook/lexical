@@ -9,9 +9,13 @@
 import type {ChildSchema, DOMImportContext} from '@lexical/html';
 
 import {
+  $insertLineBreaksBetweenBlockArtificials,
+  $propagateTextAlignToBlockChildren,
+  contextValue,
   CoreImportExtension,
   defineImportRule,
   DOMImportExtension,
+  ImportInBlockContext,
   isElementOfTag,
   sel,
 } from '@lexical/html';
@@ -80,7 +84,21 @@ const ListRule = defineImportRule({
       node = $createListNode('bullet');
     }
     $setDirectionFromDOM(node, el);
-    return [node.splice(0, 0, $normalizeListChildren(ctx.$importChildren(el)))];
+    // Propagate the list's `text-align` onto each `ListItemNode` child
+    // (legacy `wrapContinuousInlines` did the same), so pasting
+    // `<ul style="text-align: left"><li>…</li></ul>` ends up with the
+    // alignment on the list items where the reconciler renders it as
+    // `style="text-align: left"`.
+    return [
+      node.splice(
+        0,
+        0,
+        $propagateTextAlignToBlockChildren(
+          $normalizeListChildren(ctx.$importChildren(el)),
+          el,
+        ),
+      ),
+    ];
   },
   match: sel.tag('ol', 'ul'),
   name: '@lexical/list/list',
@@ -127,7 +145,14 @@ const ListItemRule = defineImportRule({
       node.splice(
         0,
         0,
-        $liftFormatFromSingleParagraph(node, ctx.$importChildren(el)),
+        $liftFormatFromSingleParagraph(
+          node,
+          $insertLineBreaksBetweenBlockArtificials(
+            ctx.$importChildren(el, {
+              context: [contextValue(ImportInBlockContext, true)],
+            }),
+          ),
+        ),
       ),
     ];
   },
@@ -154,7 +179,14 @@ function $buildChecklistItem(
     node.splice(
       0,
       0,
-      $liftFormatFromSingleParagraph(node, ctx.$importChildren(el)),
+      $liftFormatFromSingleParagraph(
+        node,
+        $insertLineBreaksBetweenBlockArtificials(
+          ctx.$importChildren(el, {
+            context: [contextValue(ImportInBlockContext, true)],
+          }),
+        ),
+      ),
     ),
   ];
 }

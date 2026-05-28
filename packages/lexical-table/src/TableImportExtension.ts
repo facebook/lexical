@@ -9,10 +9,12 @@
 import type {ChildSchema, ImportContextPairOrUpdater} from '@lexical/html';
 
 import {
+  $propagateTextAlignToBlockChildren,
   contextValue,
   CoreImportExtension,
   defineImportRule,
   DOMImportExtension,
+  ImportInBlockContext,
   ImportTextFormat,
   ImportTextStyle,
   sel,
@@ -23,6 +25,7 @@ import {
   $isInlineElementOrDecoratorNode,
   $isLineBreakNode,
   $isTextNode,
+  ArtificialNode__DO_NOT_USE,
   configExtension,
   defineExtension,
   IS_BOLD,
@@ -75,9 +78,15 @@ function cellTextFormatMask(style: CSSStyleDeclaration): number {
 }
 
 /**
- * Coalesce inline + line-break runs in a cell into paragraphs. Mirrors
- * the legacy `removeSingleLineBreakNode` cleanup so a sole `<br>` doesn't
- * survive as a paragraph's only child.
+ * Coalesce inline + line-break runs in a cell into paragraphs and turn
+ * each {@link ArtificialNode__DO_NOT_USE} stand-in (emitted by
+ * transparent block rules like the `<div>` rule when nested in a block
+ * container — see {@link ImportInBlockContext}) into its own
+ * `ParagraphNode`. Mirrors the legacy `<td>`-importer behavior where
+ * a bare `<td>789<div>000</div></td>` ended up as two sibling
+ * paragraphs (`<p>789</p><p>000</p>`) rather than a single paragraph
+ * with a line break, and also drops a sole leading `<br>` that the
+ * legacy `removeSingleLineBreakNode` cleanup would have removed.
  */
 function $packageCellChildren(children: LexicalNode[]): LexicalNode[] {
   const result: LexicalNode[] = [];
@@ -103,6 +112,16 @@ function $packageCellChildren(children: LexicalNode[]): LexicalNode[] {
       } else {
         paragraph = $createParagraphNode().append(child);
         result.push(paragraph);
+      }
+    } else if (child instanceof ArtificialNode__DO_NOT_USE) {
+      flushSingleLineBreak();
+      paragraph = null;
+      // Repackage the artificial stand-in's own children through the
+      // same logic so nested transparent block runs (e.g. `<div><div>X
+      // </div></div>` in a cell) each surface as their own paragraph
+      // sibling and any leading `<br>` is stripped.
+      for (const grand of $packageCellChildren(child.getChildren())) {
+        result.push(grand);
       }
     } else {
       flushSingleLineBreak();
@@ -231,20 +250,36 @@ const TableCellRule = defineImportRule({
     const cellStyle: Readonly<Record<string, string>> = color
       ? {...inheritedStyle, color}
       : inheritedStyle;
-    const branchContext: ImportContextPairOrUpdater[] = [];
+    const branchContext: ImportContextPairOrUpdater[] = [
+      // The cell is a block lexical container — let nested transparent
+      // block rules (e.g. `<div>`) hoist their children instead of
+      // synthesizing an extra paragraph wrapper inside the cell.
+      contextValue(ImportInBlockContext, true),
+    ];
     if (cellFormat !== inheritedFormat) {
       branchContext.push(contextValue(ImportTextFormat, cellFormat));
     }
     if (cellStyle !== inheritedStyle) {
       branchContext.push(contextValue(ImportTextStyle, cellStyle));
     }
-    return [
-      cell.splice(
-        0,
-        0,
-        $packageCellChildren(ctx.$importChildren(el, {context: branchContext})),
-      ),
-    ];
+    // {@link $packageCellChildren} translates each
+    // {@link ArtificialNode__DO_NOT_USE} (emitted by the `<div>` rule
+    // when in {@link ImportInBlockContext}) into its own sibling
+    // paragraph — matching legacy `<td>`'s `<td>789<div>000</div></td>`
+    // → `<p>789</p><p>000</p>` shape.
+    const packaged = $packageCellChildren(
+      ctx.$importChildren(el, {context: branchContext}),
+    );
+    // Only `<td>` propagates `text-align` onto its block children —
+    // mirroring legacy `wrapContinuousInlines`, which runs only for
+    // `isBlockDomNode` elements. `<th>` is intentionally absent from
+    // the block-tag set (see `BLOCK_TAG_RE` in `LexicalUtils.ts`), so a
+    // `<th style="text-align: start">` wrapping a bare `<p>` leaves the
+    // paragraph format empty.
+    const children = isHeader
+      ? packaged
+      : $propagateTextAlignToBlockChildren(packaged, el);
+    return [cell.splice(0, 0, children)];
   },
   match: sel.tag('td', 'th'),
   name: '@lexical/table/cell',

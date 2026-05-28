@@ -13,6 +13,7 @@ import {
   $isTextNode,
   $setDirectionFromDOM,
   $setFormatFromDOM,
+  ArtificialNode__DO_NOT_USE,
   type ElementFormatType,
   IS_BOLD,
   IS_CODE,
@@ -23,6 +24,8 @@ import {
   IS_SUPERSCRIPT,
   IS_UNDERLINE,
   isDOMTextNode,
+  isLastChildInBlockNode,
+  isOnlyChildInBlockNode,
   type LexicalNode,
   setNodeIndentFromDOM,
 } from 'lexical';
@@ -30,11 +33,13 @@ import {
 import {contextValue} from '../ContextRecord';
 import {defineImportRule} from './defineImportRule';
 import {
+  ImportInBlockContext,
   ImportTextFormat,
   ImportTextStyle,
   ImportWhitespaceConfig,
   type WhitespaceImportConfig,
 } from './ImportContext';
+import {$propagateTextAlignToBlockChildren,BlockSchema} from './schemas';
 import {selBase} from './sel';
 
 const sel = selBase;
@@ -437,7 +442,16 @@ const IgnoreScriptStyleRule = defineImportRule({
 });
 
 const LineBreakRule = defineImportRule({
-  $import: () => [$createLineBreakNode()],
+  // Mirror the legacy LineBreakNode.importDOM filter: stray `<br>` that
+  // are the sole or trailing child of a block parent (e.g. Apple's
+  // `<br class="Apple-interchange-newline">` clipboard sentinel, or the
+  // trailing `<br>` browsers insert after the last text in a `<div>`)
+  // would otherwise survive as a LineBreakNode and tack an extra blank
+  // line onto the imported content.
+  $import: (_ctx, el) =>
+    isOnlyChildInBlockNode(el) || isLastChildInBlockNode(el)
+      ? []
+      : [$createLineBreakNode()],
   match: sel.tag('br'),
   name: '@lexical/html/br',
 });
@@ -461,10 +475,69 @@ const ParagraphRule = defineImportRule({
     // We deliberately pass no schema: paragraphs accept any inline run as-is.
     // The enclosing context (root / block) is responsible for ensuring the
     // paragraph itself is a valid block child.
-    return [p.splice(0, 0, ctx.$importChildren(el))];
+    return [
+      p.splice(
+        0,
+        0,
+        ctx.$importChildren(el, {
+          context: [contextValue(ImportInBlockContext, true)],
+        }),
+      ),
+    ];
   },
   match: sel.tag('p'),
   name: '@lexical/html/p',
+});
+
+/**
+ * `<div>` rule. Without this `<div>` would fall through to the
+ * dispatcher's `$hoistChildrenOf` fallback, which transparently lifts
+ * children up to the enclosing context. That works structurally, but
+ * any `text-align` set on the `<div>` is lost because the synthesized
+ * paragraph (built by the enclosing schema) sees the *grandparent* as
+ * `domParent` — not the `<div>`.
+ *
+ * Mirrors the legacy `$createNodesFromDOM` branch that ran
+ * `wrapContinuousInlines` on every `isBlockDomNode` whose ancestor
+ * chain was free of block-level lexical nodes: at the root we wrap
+ * inline children in paragraphs (`BlockSchema`) so {@link
+ * $paragraphPackageRun} can pull the `<div>`'s `text-align` into the
+ * wrapper; inside an existing block lexical container
+ * ({@link ImportInBlockContext} is `true`) we just hoist children
+ * — the surrounding `<li>`/`<td>`/etc. handles inline content
+ * directly and would only have to strip a spurious paragraph wrapper
+ * back off again.
+ *
+ * In both branches we explicitly walk the resulting block children so
+ * an inner `<p>` (which would otherwise survive untouched) inherits
+ * the `<div>`'s `text-align`.
+ */
+const DivRule = defineImportRule({
+  $import: (ctx, el) => {
+    if (ctx.get(ImportInBlockContext)) {
+      // Mirror the legacy ArtificialNode flow: hoist the children but
+      // wrap them in a stand-in block node so the enclosing container
+      // (run through {@link $insertLineBreaksBetweenBlockArtificials})
+      // can drop a `LineBreakNode` between this run and any neighboring
+      // block-derived run — exactly what the legacy
+      // `wrapContinuousInlines` + `$unwrapArtificialNodes` pair did for
+      // `<li>1<div>2</div>3</li>`.
+      const artificial = new ArtificialNode__DO_NOT_USE();
+      return [
+        artificial.splice(
+          0,
+          0,
+          $propagateTextAlignToBlockChildren(ctx.$importChildren(el), el),
+        ),
+      ];
+    }
+    return $propagateTextAlignToBlockChildren(
+      ctx.$importChildren(el, {schema: BlockSchema}),
+      el,
+    );
+  },
+  match: sel.tag('div'),
+  name: '@lexical/html/div',
 });
 
 /**
@@ -479,6 +552,7 @@ const ParagraphRule = defineImportRule({
 export const CoreImportRules = [
   IgnoreScriptStyleRule,
   ParagraphRule,
+  DivRule,
   TextRule,
   LineBreakRule,
   InlineFormatRule,

@@ -69,6 +69,7 @@ import {
   ELEMENT_TYPE_TO_FORMAT,
   HAS_DIRTY_NODES,
   LTR_REGEX,
+  NO_DIRTY_NODES,
   PROTOTYPE_CONFIG_METHOD,
   RTL_REGEX,
   TEXT_TYPE_TO_FORMAT,
@@ -341,7 +342,10 @@ export function $setNodeKey(
     editor._dirtyLeaves.add(key);
   }
   editor._cloneNotNeeded.add(key);
-  editor._dirtyType = HAS_DIRTY_NODES;
+  // Don't downgrade FULL_RECONCILE; upgrade only when nothing has been marked yet.
+  if (editor._dirtyType === NO_DIRTY_NODES) {
+    editor._dirtyType = HAS_DIRTY_NODES;
+  }
   node.__key = key;
 }
 
@@ -483,7 +487,10 @@ export function internalMarkNodeAsDirty(node: LexicalNode): void {
     internalMarkParentElementsAsDirty(parent, nodeMap, dirtyElements);
   }
   const key = latest.__key;
-  editor._dirtyType = HAS_DIRTY_NODES;
+  // Don't downgrade FULL_RECONCILE; upgrade only when nothing has been marked yet.
+  if (editor._dirtyType === NO_DIRTY_NODES) {
+    editor._dirtyType = HAS_DIRTY_NODES;
+  }
   if ($isElementNode(node)) {
     dirtyElements.set(key, true);
   } else {

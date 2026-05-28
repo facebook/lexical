@@ -137,7 +137,7 @@ test.describe.parallel('Tables', () => {
     );
   });
 
-  test(`Selection placed on a <col> element resolves into a table cell`, async ({
+  test(`Selection placed on a <col> element resolves into the first cell`, async ({
     page,
     isPlainText,
     isCollab,
@@ -148,7 +148,9 @@ test.describe.parallel('Tables', () => {
     await focusEditor(page);
     await insertTable(page, 2, 2);
 
-    // Type into the last cell so Lexical has a definite prior selection.
+    // Type into the last cell so Lexical has a definite prior selection
+    // there. Without the fix, prior to landing the caret on <col>, the
+    // resolution falls back to that last cell.
     await page.keyboard.press('Tab');
     await page.keyboard.press('Tab');
     await page.keyboard.press('Tab');
@@ -166,39 +168,25 @@ test.describe.parallel('Tables', () => {
     // Allow Lexical to process the selection change.
     await sleep(50);
 
-    const state = await evaluate(page, () => {
-      const editor = document.querySelector(
-        'div[contenteditable="true"]',
-      ).__lexicalEditor;
-      const dom = window.getSelection();
-      const lex = editor.read(() => {
-        const sel = editor.getEditorState()._selection;
-        if (sel == null || !('anchor' in sel)) {
-          return null;
-        }
-        return {
-          anchorNodeType: sel.anchor.getNode().getType(),
-          anchorOffset: sel.anchor.offset,
-          anchorType: sel.anchor.type,
-          focusNodeType: sel.focus.getNode().getType(),
-          focusOffset: sel.focus.offset,
-          focusType: sel.focus.type,
-          isCollapsed: sel.isCollapsed(),
-        };
-      });
-      return {
-        domAnchorNodeName: dom.anchorNode ? dom.anchorNode.nodeName : null,
-        domAnchorOffset: dom.anchorOffset,
-        lex,
-      };
-    });
+    // The DOM caret must not be left inside the <col> / <colgroup> region
+    // (the reconciler should have written it back to the resolved cell).
+    const domAnchorNodeName = await evaluate(
+      page,
+      () => window.getSelection().anchorNode?.nodeName ?? null,
+    );
+    expect(domAnchorNodeName).not.toBe('COL');
+    expect(domAnchorNodeName).not.toBe('COLGROUP');
 
-    // The DOM caret should not be left inside the <col> / <colgroup> region.
-    expect(state.domAnchorNodeName).not.toBe('COL');
-    expect(state.domAnchorNodeName).not.toBe('COLGROUP');
-    // Lexical's selection should resolve to something inside a cell.
-    expect(state.lex).not.toBeNull();
-    expect(state.lex.anchorNodeType).not.toBe('table');
+    // Typing should land in the first cell, not extend "last".
+    await page.keyboard.type('X');
+    const cellTexts = await evaluate(page, () => {
+      const cells = document.querySelectorAll(
+        'div[contenteditable="true"] table th, div[contenteditable="true"] table td',
+      );
+      return Array.from(cells).map(c => c.textContent);
+    });
+    expect(cellTexts[0]).toBe('X');
+    expect(cellTexts[cellTexts.length - 1]).toBe('last');
   });
 
   test(`Can type inside of table cell`, async ({

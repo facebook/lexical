@@ -28,31 +28,20 @@ import {CollapsibleExtension} from '../../src/plugins/CollapsibleExtension';
 import {
   $createCollapsibleContainerNode,
   $isCollapsibleContainerNode,
-  CollapsibleContainerNode,
 } from '../../src/plugins/CollapsibleExtension/CollapsibleContainerNode';
 import {
   $createCollapsibleContentNode,
   $isCollapsibleContentNode,
-  CollapsibleContentNode,
 } from '../../src/plugins/CollapsibleExtension/CollapsibleContentNode';
 import {
   $createCollapsibleTitleNode,
   $isCollapsibleTitleNode,
-  CollapsibleTitleNode,
 } from '../../src/plugins/CollapsibleExtension/CollapsibleTitleNode';
 
-// This deliberately omits CollapsibleExtension: those transforms (which
-// unwrap a Container that isn't shaped exactly [Title, Content]) would
-// hide whether the importer itself produced sane structure.
 const CollapsibleImportTestExtension = defineExtension({
   $initialEditorState: null,
-  dependencies: [PlaygroundImportExtension],
+  dependencies: [CollapsibleExtension, PlaygroundImportExtension],
   name: '[test-collapsible-import]',
-  nodes: [
-    CollapsibleContainerNode,
-    CollapsibleContentNode,
-    CollapsibleTitleNode,
-  ],
 });
 
 function $importHtml(html: string): void {
@@ -75,34 +64,32 @@ describe('CollapsibleContainerNode HTML import (issue #8407)', () => {
               '  Something small enough to escape casual notice.\n' +
               '</details>',
           );
+          const container = $getRoot()
+            .getChildren()
+            .find($isCollapsibleContainerNode);
+          assert(
+            container != null,
+            'CollapsibleContainerNode must be a child of RootNode',
+          );
+          const children = container.getChildren();
+          expect(children.length).toBe(2);
+          assert(
+            $isCollapsibleTitleNode(children[0]),
+            'First child must be CollapsibleTitleNode',
+          );
+          assert(
+            $isCollapsibleContentNode(children[1]),
+            'Second child must be CollapsibleContentNode',
+          );
+          expect(children[0].getTextContent()).toBe('Details');
+          expect(children[1].getTextContent().trim()).toBe(
+            'Something small enough to escape casual notice.',
+          );
+          // No `open` attribute on the source element should map to closed.
+          expect(container.getOpen()).toBe(false);
         },
         {discrete: true},
       );
-
-      editor.read(() => {
-        const root = $getRoot();
-        const container = root.getChildren().find($isCollapsibleContainerNode);
-        assert(
-          container != null,
-          'CollapsibleContainerNode must be a child of RootNode',
-        );
-        const children = container.getChildren();
-        expect(children.length).toBe(2);
-        assert(
-          $isCollapsibleTitleNode(children[0]),
-          'First child must be CollapsibleTitleNode',
-        );
-        assert(
-          $isCollapsibleContentNode(children[1]),
-          'Second child must be CollapsibleContentNode',
-        );
-        expect(children[0].getTextContent()).toBe('Details');
-        expect(children[1].getTextContent().trim()).toBe(
-          'Something small enough to escape casual notice.',
-        );
-        // No `open` attribute on the source element should map to closed.
-        expect(container.getOpen()).toBe(false);
-      });
     });
 
     it('preserves the open attribute on import', () => {
@@ -112,16 +99,13 @@ describe('CollapsibleContainerNode HTML import (issue #8407)', () => {
         () => {
           $getRoot().clear().select();
           $importHtml('<details open><summary>S</summary>body</details>');
+          const container = $getRoot()
+            .getChildren()
+            .find($isCollapsibleContainerNode)!;
+          expect(container.getOpen()).toBe(true);
         },
         {discrete: true},
       );
-
-      editor.read(() => {
-        const container = $getRoot()
-          .getChildren()
-          .find($isCollapsibleContainerNode)!;
-        expect(container.getOpen()).toBe(true);
-      });
     });
 
     it('handles <summary> appearing after body content', () => {
@@ -133,27 +117,24 @@ describe('CollapsibleContainerNode HTML import (issue #8407)', () => {
           $importHtml(
             '<details><p>Body before</p><summary>Title</summary></details>',
           );
+          const container = $getRoot()
+            .getChildren()
+            .find($isCollapsibleContainerNode)!;
+          const children = container.getChildren();
+          expect(children.length).toBe(2);
+          assert(
+            $isCollapsibleTitleNode(children[0]),
+            'First child must be CollapsibleTitleNode',
+          );
+          assert(
+            $isCollapsibleContentNode(children[1]),
+            'Second child must be CollapsibleContentNode',
+          );
+          expect(children[0].getTextContent()).toBe('Title');
+          expect(children[1].getTextContent().trim()).toBe('Body before');
         },
         {discrete: true},
       );
-
-      editor.read(() => {
-        const container = $getRoot()
-          .getChildren()
-          .find($isCollapsibleContainerNode)!;
-        const children = container.getChildren();
-        expect(children.length).toBe(2);
-        assert(
-          $isCollapsibleTitleNode(children[0]),
-          'First child must be CollapsibleTitleNode',
-        );
-        assert(
-          $isCollapsibleContentNode(children[1]),
-          'Second child must be CollapsibleContentNode',
-        );
-        expect(children[0].getTextContent()).toBe('Title');
-        expect(children[1].getTextContent().trim()).toBe('Body before');
-      });
     });
 
     it('imports <details> with no <summary> without crashing', () => {
@@ -163,27 +144,30 @@ describe('CollapsibleContainerNode HTML import (issue #8407)', () => {
         () => {
           $getRoot().clear().select();
           $importHtml('<details>Just some loose text</details>');
+          const container = $getRoot()
+            .getChildren()
+            .find($isCollapsibleContainerNode)!;
+          // The importer always emits [Title, Content]; even when the
+          // <summary> is missing, the synthesized empty Title still sits
+          // here pre-transform. The crucial invariant is that no raw
+          // TextNode sits directly under the shadow root.
+          const children = container.getChildren();
+          expect(children.length).toBe(2);
+          assert(
+            $isCollapsibleTitleNode(children[0]),
+            'First child must be CollapsibleTitleNode',
+          );
+          assert(
+            $isCollapsibleContentNode(children[1]),
+            'Second child must be CollapsibleContentNode',
+          );
+          expect(children[0].isEmpty()).toBe(true);
+          expect(children[1].getTextContent().trim()).toBe(
+            'Just some loose text',
+          );
         },
         {discrete: true},
       );
-
-      editor.read(() => {
-        const container = $getRoot()
-          .getChildren()
-          .find($isCollapsibleContainerNode)!;
-        // The empty CollapsibleTitleNode created for missing <summary>
-        // is removed by CollapsibleTitleNode's $transform, leaving the
-        // body wrapped in a single CollapsibleContentNode. The crucial
-        // invariant is that no raw TextNode sits directly under the
-        // shadow root.
-        const children = container.getChildren();
-        expect(children.length).toBe(1);
-        assert(
-          $isCollapsibleContentNode(children[0]),
-          'Sole child must be CollapsibleContentNode',
-        );
-        expect(children[0].getTextContent()).toBe('Just some loose text');
-      });
     });
 
     it('imports <details> with summary and block body siblings', () => {
@@ -195,26 +179,23 @@ describe('CollapsibleContainerNode HTML import (issue #8407)', () => {
           $importHtml(
             '<details><summary>Title</summary><p>Para one.</p><p>Para two.</p></details>',
           );
+          const container = $getRoot()
+            .getChildren()
+            .find($isCollapsibleContainerNode)!;
+          const children = container.getChildren();
+          expect(children.length).toBe(2);
+          assert(
+            $isCollapsibleTitleNode(children[0]),
+            'First child must be CollapsibleTitleNode',
+          );
+          assert(
+            $isCollapsibleContentNode(children[1]),
+            'Second child must be CollapsibleContentNode',
+          );
+          expect(children[1].getChildren().length).toBe(2);
         },
         {discrete: true},
       );
-
-      editor.read(() => {
-        const container = $getRoot()
-          .getChildren()
-          .find($isCollapsibleContainerNode)!;
-        const children = container.getChildren();
-        expect(children.length).toBe(2);
-        assert(
-          $isCollapsibleTitleNode(children[0]),
-          'First child must be CollapsibleTitleNode',
-        );
-        assert(
-          $isCollapsibleContentNode(children[1]),
-          'Second child must be CollapsibleContentNode',
-        );
-        expect(children[1].getChildren().length).toBe(2);
-      });
     });
 
     it('imports <details> with element body (round-trip shape)', () => {
@@ -231,25 +212,22 @@ describe('CollapsibleContainerNode HTML import (issue #8407)', () => {
               '</div>' +
               '</details>',
           );
+          const container = $getRoot()
+            .getChildren()
+            .find($isCollapsibleContainerNode)!;
+          const children = container.getChildren();
+          expect(children.length).toBe(2);
+          assert(
+            $isCollapsibleTitleNode(children[0]),
+            'First child must be CollapsibleTitleNode',
+          );
+          assert(
+            $isCollapsibleContentNode(children[1]),
+            'Second child must be CollapsibleContentNode',
+          );
         },
         {discrete: true},
       );
-
-      editor.read(() => {
-        const container = $getRoot()
-          .getChildren()
-          .find($isCollapsibleContainerNode)!;
-        const children = container.getChildren();
-        expect(children.length).toBe(2);
-        assert(
-          $isCollapsibleTitleNode(children[0]),
-          'First child must be CollapsibleTitleNode',
-        );
-        assert(
-          $isCollapsibleContentNode(children[1]),
-          'Second child must be CollapsibleContentNode',
-        );
-      });
     });
   });
 });

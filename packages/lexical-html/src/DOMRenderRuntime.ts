@@ -25,7 +25,6 @@ import {
   $fullReconcile,
   $isLexicalNode,
   DEFAULT_EDITOR_DOM_CONFIG,
-  HISTORY_MERGE_TAG,
 } from 'lexical';
 
 import {compileDOMRenderConfigOverrides} from './compileDOMRenderConfigOverrides';
@@ -218,10 +217,10 @@ export class DOMRenderRuntimeImpl implements DOMRenderRuntime {
     const base = dom.$updateDOM;
     dom.$updateDOM = (nextNode, prevNode, el, editor) =>
       recreate(nextNode) ? true : base(nextNode, prevNode, el, editor);
-    this.editor.update($fullReconcile, {
-      discrete: true,
-      tag: HISTORY_MERGE_TAG,
-    });
+    // `discrete` so the synchronous reconcile uses the wrapper before we restore
+    // it below. No history tag is needed: a full reconcile marks no nodes dirty,
+    // and history merges/discards a no-dirty-node update without pushing.
+    this.editor.update($fullReconcile, {discrete: true});
     dom.$updateDOM = base;
   }
 

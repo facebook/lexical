@@ -8,12 +8,7 @@
 
 import {effect, namedSignals} from '@lexical/extension';
 import {mergeRegister} from '@lexical/utils';
-import {
-  $fullReconcile,
-  defineExtension,
-  HISTORY_MERGE_TAG,
-  safeCast,
-} from 'lexical';
+import {$fullReconcile, defineExtension, safeCast} from 'lexical';
 
 import {TableCellNode} from './LexicalTableCellNode';
 import {
@@ -79,14 +74,11 @@ export const TableExtension = defineExtension({
         const hadHorizontalScroll = $isScrollableTablesActive(editor);
         if (hadHorizontalScroll !== hasHorizontalScroll) {
           setScrollableTablesActive(editor, hasHorizontalScroll);
-          // Re-render existing tables through the new scroll-wrapper config. A
-          // full reconcile reuses the existing node instances, so it doesn't
-          // clone every TableNode (polluting mutation/collaboration listeners)
-          // the way marking them dirty would.
-          editor.update($fullReconcile, {
-            discrete: true,
-            tag: HISTORY_MERGE_TAG,
-          });
+          // Re-render existing tables through the new scroll-wrapper config
+          // without cloning every TableNode the way marking them dirty would. A
+          // full reconcile marks no nodes dirty, so it's deferred (no
+          // synchronous render from this effect) and produces no history entry.
+          editor.update($fullReconcile);
         }
       }),
       registerTablePlugin(editor, stores),

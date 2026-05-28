@@ -18,7 +18,7 @@ import {
   setScrollableTablesActive,
   TableCellNode,
 } from '@lexical/table';
-import {$fullReconcile, HISTORY_MERGE_TAG} from 'lexical';
+import {$fullReconcile} from 'lexical';
 import {useEffect, useState} from 'react';
 
 export interface TablePluginProps {
@@ -66,11 +66,11 @@ export function TablePlugin({
     const hadHorizontalScroll = $isScrollableTablesActive(editor);
     if (hadHorizontalScroll !== hasHorizontalScroll) {
       setScrollableTablesActive(editor, hasHorizontalScroll);
-      // Re-render existing tables through the new scroll-wrapper config. A full
-      // reconcile reuses the existing node instances, so it doesn't clone every
-      // TableNode (polluting mutation/collaboration listeners) the way marking
-      // them dirty would.
-      editor.update($fullReconcile, {discrete: true, tag: HISTORY_MERGE_TAG});
+      // Re-render existing tables through the new scroll-wrapper config without
+      // cloning every TableNode the way marking them dirty would. A full
+      // reconcile marks no nodes dirty, so it's deferred (no synchronous render
+      // from this effect) and produces no history entry.
+      editor.update($fullReconcile);
     }
   }, [editor, hasHorizontalScroll]);
 

@@ -135,6 +135,23 @@ jobs:
           else
             echo "npm auth: using trusted publishing (OIDC); ensure this workflow is registered on npmjs.com"
           fi
+      # Fail fast (before the build) if the token can't authenticate, so a
+      # bad/expired/unauthorized NPM_TOKEN surfaces clearly instead of as a
+      # misleading 404 from every `pnpm publish`. Skipped on dry runs and
+      # in trusted-publishing mode, neither of which uses a persistent
+      # NODE_AUTH_TOKEN to verify up front.
+      - name: Verify npm authentication
+        if: ${{ !inputs.dry-run && !inputs.use-trusted-publishing }}
+        run: |
+          if [ -z "${NODE_AUTH_TOKEN:-}" ]; then
+            echo "Skipping npm whoami check: no NPM_TOKEN configured, trusted publishing (OIDC) will be attempted at publish time"
+            exit 0
+          fi
+          if ! whoami="$(npm whoami --registry=https://registry.npmjs.org)"; then
+            echo "::error::npm authentication failed for https://registry.npmjs.org. The NPM_TOKEN secret is missing, expired, revoked, or not authorized to publish these packages."
+            exit 1
+          fi
+          echo "Authenticated to https://registry.npmjs.org as ${whoami}"
       - run: pnpm run prepare-release
       - run: node ./scripts/npm/release.mjs --non-interactive $DRY_RUN_ARG $IGNORE_PREVIOUSLY_PUBLISHED_ARG --channel='${{ inputs.channel }}'
 

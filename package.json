@@ -126,7 +126,7 @@
     "@eslint/js": "^10.0.0",
     "@lexical/eslint-plugin": "workspace:*",
     "@lexical/eslint-plugin-internal": "workspace:*",
-    "@playwright/test": "^1.59.1",
+    "@playwright/test": "^1.60.0",
     "@prettier/sync": "^0.6.1",
     "@rollup/plugin-alias": "^6.0.0",
     "@rollup/plugin-babel": "^7.0.0",

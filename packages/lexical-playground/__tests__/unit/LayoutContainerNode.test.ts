@@ -13,10 +13,11 @@ import {
 } from '@lexical/html';
 import {$getRoot, $insertNodes, defineExtension} from 'lexical';
 import {expectHtmlToBeEqual, html} from 'lexical/src/__tests__/utils';
-import {describe, expect, it} from 'vitest';
+import {assert, describe, expect, it} from 'vitest';
 
 import {
   $createLayoutContainerNode,
+  $isLayoutContainerNode,
   LayoutContainerNode,
 } from '../../src/nodes/LayoutContainerNode';
 import {LayoutItemNode} from '../../src/nodes/LayoutItemNode';
@@ -73,12 +74,12 @@ describe('LayoutContainerNode HTML serialization', () => {
         {discrete: true},
       );
       editor.read(() => {
-        const root = $getRoot();
-        const container = root.getFirstChild();
-        expect(container).toBeInstanceOf(LayoutContainerNode);
-        expect((container as LayoutContainerNode).getTemplateColumns()).toBe(
-          '1fr 1fr',
+        const container = $getRoot().getFirstChild();
+        assert(
+          $isLayoutContainerNode(container),
+          'first child must be a LayoutContainerNode',
         );
+        expect(container.getTemplateColumns()).toBe('1fr 1fr');
       });
     });
 
@@ -92,11 +93,9 @@ describe('LayoutContainerNode HTML serialization', () => {
         {discrete: true},
       );
       editor.read(() => {
-        const root = $getRoot();
-        const children = root.getChildren();
-        const hasLayoutContainer = children.some(
-          child => child instanceof LayoutContainerNode,
-        );
+        const hasLayoutContainer = $getRoot()
+          .getChildren()
+          .some($isLayoutContainerNode);
         expect(hasLayoutContainer).toBe(false);
       });
     });
@@ -130,12 +129,12 @@ describe('LayoutContainerNode HTML serialization', () => {
 
       // Step 3: Verify the imported node has the correct templateColumns
       editor.read(() => {
-        const root = $getRoot();
-        const container = root.getFirstChild();
-        expect(container).toBeInstanceOf(LayoutContainerNode);
-        expect((container as LayoutContainerNode).getTemplateColumns()).toBe(
-          templateColumns,
+        const container = $getRoot().getFirstChild();
+        assert(
+          $isLayoutContainerNode(container),
+          'first child must be a LayoutContainerNode',
         );
+        expect(container.getTemplateColumns()).toBe(templateColumns);
       });
     });
 
@@ -163,12 +162,12 @@ describe('LayoutContainerNode HTML serialization', () => {
       );
 
       editor.read(() => {
-        const root = $getRoot();
-        const container = root.getFirstChild();
-        expect(container).toBeInstanceOf(LayoutContainerNode);
-        expect((container as LayoutContainerNode).getTemplateColumns()).toBe(
-          templateColumns,
+        const container = $getRoot().getFirstChild();
+        assert(
+          $isLayoutContainerNode(container),
+          'first child must be a LayoutContainerNode',
         );
+        expect(container.getTemplateColumns()).toBe(templateColumns);
       });
     });
   });

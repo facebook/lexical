@@ -26,6 +26,11 @@ body {
   padding: 0 20px;
 }
 
+colgroup {
+  /* avoid targeting this element in firefox selection */
+  user-select: none;
+}
+
 header {
   max-width: 580px;
   margin: auto;

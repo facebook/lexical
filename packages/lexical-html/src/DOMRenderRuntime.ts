@@ -25,6 +25,7 @@ import {
   $fullReconcile,
   $isLexicalNode,
   DEFAULT_EDITOR_DOM_CONFIG,
+  HISTORY_MERGE_TAG,
 } from 'lexical';
 
 import {compileDOMRenderConfigOverrides} from './compileDOMRenderConfigOverrides';
@@ -217,13 +218,11 @@ export class DOMRenderRuntimeImpl implements DOMRenderRuntime {
     const base = dom.$updateDOM;
     dom.$updateDOM = (nextNode, prevNode, el, editor) =>
       recreate(nextNode) ? true : base(nextNode, prevNode, el, editor);
-    this.editor.update(() => $fullReconcile(), {
+    this.editor.update($fullReconcile, {
       discrete: true,
-      onUpdate: () => {
-        dom.$updateDOM = base;
-      },
-      tag: 'history-merge',
+      tag: HISTORY_MERGE_TAG,
     });
+    dom.$updateDOM = base;
   }
 
   getSessionConfig(): EditorDOMRenderConfig {

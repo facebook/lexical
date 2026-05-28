@@ -25,7 +25,6 @@ import {
 } from '@lexical/react/LexicalCollaborationPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {TabIndentationPlugin} from '@lexical/react/LexicalTabIndentationPlugin';
-import {TablePlugin} from '@lexical/react/LexicalTablePlugin';
 import {useOptionalExtensionDependency} from '@lexical/react/useExtensionComponent';
 import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
 import {CAN_USE_DOM} from '@lexical/utils';
@@ -103,7 +102,6 @@ export default function Editor(): JSX.Element {
       isMaxLength,
       isCharLimit,
       hasLinkAttributes,
-      hasNestedTables,
       hasFitNestedTables,
       isCharLimitUtf8,
       isRichText,
@@ -111,9 +109,6 @@ export default function Editor(): JSX.Element {
       showTableOfContents,
       shouldUseLexicalContextMenu,
       shouldPreserveNewLinesInMarkdown,
-      tableCellMerge,
-      tableCellBackgroundColor,
-      tableHorizontalScroll,
       shouldAllowHighlightingWithBrackets,
       selectionAlwaysOnDisplay,
       listStrictIndent,
@@ -248,12 +243,6 @@ export default function Editor(): JSX.Element {
                 <ContentEditable placeholder={placeholder} />
               </div>
             </div>
-            <TablePlugin
-              hasCellMerge={tableCellMerge}
-              hasCellBackgroundColor={tableCellBackgroundColor}
-              hasHorizontalScroll={tableHorizontalScroll && !hasFitNestedTables}
-              hasNestedTables={hasNestedTables}
-            />
             {hasFitNestedTables ? <TableFitNestedTablePlugin /> : null}
             <TableCellResizer />
             <TableScrollShadowPlugin />

@@ -46,7 +46,7 @@ import {
   RichTextExtension,
   RichTextImportExtension,
 } from '@lexical/rich-text';
-import {TableImportExtension} from '@lexical/table';
+import {TableExtension, TableImportExtension} from '@lexical/table';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -265,10 +265,28 @@ const AppExtension = defineExtension({
  * possible, but this is a special case where we build fundamentally
  * different editor configurations based on the query string.
  */
-function buildExtensionFromSettings(
-  settings: Record<'isCollab' | 'emptyEditor' | 'isRichText', boolean>,
-) {
-  const {isCollab, emptyEditor, isRichText} = settings;
+interface DynamicSettings {
+  isCollab: boolean;
+  emptyEditor: boolean;
+  isRichText: boolean;
+  tableCellMerge: boolean;
+  tableCellBackgroundColor: boolean;
+  tableHorizontalScroll: boolean;
+  hasNestedTables: boolean;
+  hasFitNestedTables: boolean;
+}
+
+function buildExtensionFromSettings(settings: DynamicSettings) {
+  const {
+    isCollab,
+    emptyEditor,
+    isRichText,
+    tableCellMerge,
+    tableCellBackgroundColor,
+    tableHorizontalScroll,
+    hasNestedTables,
+    hasFitNestedTables,
+  } = settings;
   return defineExtension({
     $initialEditorState: isCollab
       ? null
@@ -278,6 +296,12 @@ function buildExtensionFromSettings(
     dependencies: [
       AppExtension,
       configExtension(HistoryExtension, {disabled: isCollab}),
+      configExtension(TableExtension, {
+        hasCellBackgroundColor: tableCellBackgroundColor,
+        hasCellMerge: tableCellMerge,
+        hasHorizontalScroll: tableHorizontalScroll && !hasFitNestedTables,
+        hasNestedTables,
+      }),
       isRichText ? PlaygroundRichTextExtension : PlainTextExtension,
     ],
     name: '@lexical/playground/dynamic-config',
@@ -286,17 +310,41 @@ function buildExtensionFromSettings(
 
 function App(): JSX.Element {
   const {
-    settings: {isCollab, emptyEditor, isRichText, measureTypingPerf},
+    settings: {
+      isCollab,
+      emptyEditor,
+      isRichText,
+      measureTypingPerf,
+      tableCellMerge,
+      tableCellBackgroundColor,
+      tableHorizontalScroll,
+      hasNestedTables,
+      hasFitNestedTables,
+    },
   } = useSettings();
 
   const app = useMemo(
     () =>
       buildExtensionFromSettings({
         emptyEditor,
+        hasFitNestedTables,
+        hasNestedTables,
         isCollab,
         isRichText,
+        tableCellBackgroundColor,
+        tableCellMerge,
+        tableHorizontalScroll,
       }),
-    [emptyEditor, isCollab, isRichText],
+    [
+      emptyEditor,
+      isCollab,
+      isRichText,
+      tableCellMerge,
+      tableCellBackgroundColor,
+      tableHorizontalScroll,
+      hasNestedTables,
+      hasFitNestedTables,
+    ],
   );
 
   return (

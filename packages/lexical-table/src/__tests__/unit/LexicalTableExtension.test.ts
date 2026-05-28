@@ -98,6 +98,41 @@ describe('TableExtension', () => {
     });
   });
 
+  it('repaints existing tables when hasHorizontalScroll toggles', () => {
+    const div = document.createElement('div');
+    editor.setRootElement(div);
+    editor.update(
+      () => {
+        $getRoot().selectEnd();
+        editor.dispatchCommand(INSERT_TABLE_COMMAND, {columns: '2', rows: '2'});
+      },
+      {discrete: true},
+    );
+
+    const {hasHorizontalScroll} = getExtensionDependencyFromEditor(
+      editor,
+      TableExtension,
+    ).output;
+
+    // Default config enables horizontal scroll: the table is wrapped in the
+    // scrollable <div>.
+    expect(div.querySelector('.table-scrollable-wrapper > table')).not.toBe(
+      null,
+    );
+
+    // Toggling the signal re-renders the existing table via $fullReconcile, so
+    // the wrapper is removed.
+    hasHorizontalScroll.value = false;
+    expect(div.querySelector('.table-scrollable-wrapper')).toBe(null);
+    expect(div.querySelector('table')).not.toBe(null);
+
+    // And restored when re-enabled.
+    hasHorizontalScroll.value = true;
+    expect(div.querySelector('.table-scrollable-wrapper > table')).not.toBe(
+      null,
+    );
+  });
+
   it('Prevents nested tables by default', async () => {
     editor.update(
       () => {

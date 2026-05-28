@@ -713,6 +713,13 @@ export const AutocompleteExtension = defineExtension({
       if (output.disabled.value || !rootElem || !editable) {
         return;
       }
+      // Pre-warm the dictionary cache so the dynamic `import()` lands in
+      // the background instead of on the user's first keystroke. The
+      // promises sit in `dictionaryCache` and the first `query` call
+      // resolves against the already-in-flight (or settled) load.
+      for (const loader of Object.values(output.dictionaries.value)) {
+        loadDictionary(loader);
+      }
       rootElem.addEventListener('compositionupdate', onCompositionUpdateDOM);
       rootElem.addEventListener('compositionend', onCompositionEndDOM);
       return mergeRegister(

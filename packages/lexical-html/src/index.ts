@@ -129,6 +129,7 @@ export type {
   DOMRenderConfig,
   DOMRenderExtensionOutput,
   DOMRenderMatch,
+  DOMRenderMatchConfig,
   NodeMatch,
   RenderContextReader,
 } from './types';

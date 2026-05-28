@@ -72,7 +72,7 @@ export const DOMRenderExtension = defineExtension<
   init(editorConfig, config) {
     // Capture the user's base `dom` (before we overwrite it) and `nodes` so the
     // runtime can recompile from scratch when overrides toggle.
-    const initialEditorConfig: Pick<InitialEditorConfig, 'nodes' | 'dom'> = {
+    const initialEditorConfig: DOMRenderInitResult['initialEditorConfig'] = {
       dom: editorConfig.dom,
       nodes: editorConfig.nodes,
     };

@@ -456,3 +456,15 @@ export interface DOMRenderMatch<T extends LexicalNode> {
    */
   disabledForSession?: (ctx: RenderContextReader) => boolean;
 }
+
+/**
+ * @experimental
+ *
+ * The hook fields of a {@link DOMRenderMatch} — i.e. without `nodes` or the
+ * {@link DOMOverrideOptions} predicates, which are passed separately to
+ * {@link domOverride}.
+ */
+export type DOMRenderMatchConfig<T extends LexicalNode> = Omit<
+  DOMRenderMatch<T>,
+  'nodes' | keyof DOMOverrideOptions
+>;

@@ -9,15 +9,10 @@ import type {
   AnyDOMRenderMatch,
   DOMOverrideOptions,
   DOMRenderMatch,
+  DOMRenderMatchConfig,
   NodeMatch,
 } from './types';
 import type {LexicalNode} from 'lexical';
-
-/** The hook fields of a {@link DOMRenderMatch}, excluding `nodes` and options. */
-type DOMRenderMatchConfig<T extends LexicalNode> = Omit<
-  DOMRenderMatch<T>,
-  'nodes' | keyof DOMOverrideOptions
->;
 
 /**
  * A convenience function for type inference when constructing DOM overrides for

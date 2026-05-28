@@ -2303,7 +2303,7 @@ function $internalResolveSelectionPoint(
     const blockCursorElement = editor._blockCursorElement;
     // If the anchor is the same as length, then this means we
     // need to select the very last text node.
-    if (resolvedOffset === childNodesLength) {
+    if (resolvedOffset === childNodesLength && childNodesLength > 0) {
       moveSelectionToEnd = true;
       resolvedOffset = childNodesLength - 1;
     }

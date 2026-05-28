@@ -9,15 +9,12 @@
 import type {JSX} from 'react';
 
 import {
-  applyFormatFromStyle,
   applyFormatToDom,
   DecoratorTextNode,
   SerializedDecoratorTextNode,
 } from '@lexical/extension';
-import {defineImportRule, sel} from '@lexical/html';
 import {
   $getState,
-  $isTextNode,
   $setState,
   createState,
   DOMExportOutput,
@@ -60,17 +57,6 @@ export type SerializedDateTimeNode = Spread<
   },
   SerializedDecoratorTextNode
 >;
-
-function isGoogleDocsDateRichLinks(value: string | null): boolean {
-  if (!value) {
-    return false;
-  }
-  try {
-    return JSON.parse(value).type === 'date';
-  } catch {
-    return false;
-  }
-}
 
 const dateTimeState = createState('dateTime', {
   parse: v => new Date(v as string),
@@ -146,44 +132,3 @@ export function $isDateTimeNode(
 ): node is DateTimeNode {
   return node instanceof DateTimeNode;
 }
-
-const DateTimeRule = defineImportRule({
-  $import: (ctx, el, $next) => {
-    const dateTimeValue = el.getAttribute('data-lexical-datetime');
-    if (dateTimeValue) {
-      const node = $createDateTimeNode(new Date(Date.parse(dateTimeValue)));
-      const imported = ctx.$importChildren(el);
-      const firstChild = imported[0];
-      if ($isTextNode(firstChild)) {
-        node.setFormat(firstChild.getFormat());
-      }
-      return [node];
-    }
-    return $next();
-  },
-  match: sel.tag('span').attr('data-lexical-datetime', true),
-  name: '@lexical/playground/datetime',
-});
-
-const GoogleDocsDateRule = defineImportRule({
-  $import: (_ctx, el, $next) => {
-    const payload = el.getAttribute('data-rich-links');
-    if (!isGoogleDocsDateRichLinks(payload)) {
-      return $next();
-    }
-    const parsed = JSON.parse(payload!);
-    const parsedDate =
-      parsed?.dat_df?.dfie_ts?.tv?.tv_s * 1000 ||
-      Date.parse(parsed?.dat_df?.dfie_dt || '');
-    if (isNaN(parsedDate)) {
-      return $next();
-    }
-    return [
-      applyFormatFromStyle($createDateTimeNode(new Date(parsedDate)), el.style),
-    ];
-  },
-  match: sel.tag('span').attr('data-rich-links', true),
-  name: '@lexical/playground/datetime-google-docs',
-});
-
-export const DateTimeImportRules = [DateTimeRule, GoogleDocsDateRule];

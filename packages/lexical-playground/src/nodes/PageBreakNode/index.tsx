@@ -10,7 +10,6 @@ import type {JSX} from 'react';
 
 import './index.css';
 
-import {defineImportRule, sel} from '@lexical/html';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
 import {mergeRegister} from '@lexical/utils';
@@ -110,9 +109,3 @@ export function $isPageBreakNode(
 ): node is PageBreakNode {
   return node instanceof PageBreakNode;
 }
-
-export const PageBreakImportRule = defineImportRule({
-  $import: () => [$createPageBreakNode()],
-  match: sel.tag('figure').attr('type', PageBreakNode.getType()),
-  name: '@lexical/playground/page-break',
-});

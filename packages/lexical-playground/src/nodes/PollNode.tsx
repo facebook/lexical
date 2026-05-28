@@ -8,7 +8,6 @@
 
 import type {JSX} from 'react';
 
-import {defineImportRule, sel} from '@lexical/html';
 import {
   $getState,
   $setState,
@@ -67,15 +66,6 @@ export type SerializedPollNode = Spread<
   },
   SerializedLexicalNode
 >;
-
-function $convertPollElement(el: HTMLElement): PollNode | null {
-  const question = el.getAttribute('data-lexical-poll-question');
-  const options = el.getAttribute('data-lexical-poll-options');
-  if (question === null || options === null) {
-    return null;
-  }
-  return $createPollNode(question, JSON.parse(options));
-}
 
 function parseOptions(json: unknown): Options {
   const options = [];
@@ -215,12 +205,3 @@ export function $isPollNode(
 ): node is PollNode {
   return node instanceof PollNode;
 }
-
-export const PollImportRule = defineImportRule({
-  $import: (_ctx, el, $next) => {
-    const node = $convertPollElement(el);
-    return node ? [node] : $next();
-  },
-  match: sel.tag('span').attr('data-lexical-poll-question', true),
-  name: '@lexical/playground/poll',
-});

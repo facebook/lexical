@@ -6,7 +6,6 @@
  *
  */
 
-import {defineImportRule, sel} from '@lexical/html';
 import {IS_CHROME, IS_FIREFOX} from '@lexical/utils';
 import {
   DOMExportOutput,
@@ -94,11 +93,3 @@ export function $isCollapsibleContentNode(
 ): node is CollapsibleContentNode {
   return node instanceof CollapsibleContentNode;
 }
-
-export const CollapsibleContentImportRule = defineImportRule({
-  $import: (ctx, el) => [
-    $createCollapsibleContentNode().splice(0, 0, ctx.$importChildren(el)),
-  ],
-  match: sel.tag('div').attr('data-lexical-collapsible-content', true),
-  name: '@lexical/playground/collapsible-content',
-});

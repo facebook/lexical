@@ -18,16 +18,13 @@ import {assert, describe, expect, it} from 'vitest';
 import {
   $createLayoutContainerNode,
   $isLayoutContainerNode,
-  LayoutContainerNode,
 } from '../../src/nodes/LayoutContainerNode';
-import {LayoutItemNode} from '../../src/nodes/LayoutItemNode';
-import {PlaygroundImportExtension} from '../../src/nodes/PlaygroundImportExtension';
+import {LayoutExtension} from '../../src/plugins/LayoutExtension/LayoutExtension';
 
 const LayoutTestExtension = defineExtension({
   $initialEditorState: null,
-  dependencies: [PlaygroundImportExtension],
+  dependencies: [LayoutExtension],
   name: '[test-layout]',
-  nodes: [LayoutContainerNode, LayoutItemNode],
 });
 
 function $importHtml(source: string): void {

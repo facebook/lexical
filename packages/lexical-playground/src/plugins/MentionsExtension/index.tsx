@@ -8,6 +8,12 @@
 
 import type {JSX} from 'react';
 
+import {
+  CoreImportExtension,
+  defineImportRule,
+  DOMImportExtension,
+  sel,
+} from '@lexical/html';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   LexicalTypeaheadMenuPlugin,
@@ -15,10 +21,30 @@ import {
   MenuTextMatch,
   useBasicTypeaheadTriggerMatch,
 } from '@lexical/react/LexicalTypeaheadMenuPlugin';
-import {TextNode} from 'lexical';
+import {configExtension, defineExtension, TextNode} from 'lexical';
 import {useCallback, useEffect, useMemo, useState} from 'react';
 
-import {$createMentionNode} from '../../nodes/MentionNode';
+import {$createMentionNode, MentionNode} from '../../nodes/MentionNode';
+
+const MentionImportRule = defineImportRule({
+  $import: (_ctx, el) => {
+    const textContent = el.textContent ?? '';
+    const mentionName =
+      el.getAttribute('data-lexical-mention-name') ?? textContent;
+    return [$createMentionNode(mentionName, textContent)];
+  },
+  match: sel.tag('span').attr('data-lexical-mention', true),
+  name: '@lexical/playground/mention',
+});
+
+export const MentionsExtension = defineExtension({
+  dependencies: [
+    CoreImportExtension,
+    configExtension(DOMImportExtension, {rules: [MentionImportRule]}),
+  ],
+  name: '@lexical/playground/Mentions',
+  nodes: [MentionNode],
+});
 
 const PUNCTUATION =
   '\\.,\\+\\*\\?\\$\\@\\|#{}\\(\\)\\^\\-\\[\\]\\\\/!%\'"~=<>_:;';

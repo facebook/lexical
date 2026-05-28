@@ -8,7 +8,6 @@
 
 import type {EditorConfig, LexicalNode, SerializedElementNode} from 'lexical';
 
-import {defineImportRule, sel} from '@lexical/html';
 import {addClassNamesToElement} from '@lexical/utils';
 import {$isParagraphNode, ElementNode} from 'lexical';
 
@@ -74,11 +73,3 @@ export function $isLayoutItemNode(
 ): node is LayoutItemNode {
   return node instanceof LayoutItemNode;
 }
-
-export const LayoutItemImportRule = defineImportRule({
-  $import: (ctx, el) => [
-    $createLayoutItemNode().splice(0, 0, ctx.$importChildren(el)),
-  ],
-  match: sel.tag('div').attr('data-lexical-layout-item', true),
-  name: '@lexical/playground/layout-item',
-});

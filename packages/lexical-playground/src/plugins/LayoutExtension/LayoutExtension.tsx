@@ -8,7 +8,12 @@
 
 import type {ElementNode, LexicalCommand, LexicalNode, NodeKey} from 'lexical';
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {
+  CoreImportExtension,
+  defineImportRule,
+  DOMImportExtension,
+  sel,
+} from '@lexical/html';
 import {
   $findMatchingParent,
   $insertNodeToNearestRoot,
@@ -21,13 +26,14 @@ import {
   $isRangeSelection,
   COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_LOW,
+  configExtension,
   createCommand,
+  defineExtension,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
   KEY_ARROW_UP_COMMAND,
 } from 'lexical';
-import {useEffect} from 'react';
 
 import {
   $createLayoutContainerNode,
@@ -48,79 +54,103 @@ export const UPDATE_LAYOUT_COMMAND: LexicalCommand<{
   nodeKey: NodeKey;
 }> = createCommand<{template: string; nodeKey: NodeKey}>();
 
-export function LayoutPlugin(): null {
-  const [editor] = useLexicalComposerContext();
-  useEffect(() => {
-    if (!editor.hasNodes([LayoutContainerNode, LayoutItemNode])) {
-      throw new Error(
-        'LayoutPlugin: LayoutContainerNode, or LayoutItemNode not registered on editor',
-      );
-    }
+function getItemsCountFromTemplate(template: string): number {
+  return template.trim().split(/\s+/).length;
+}
 
-    const $onEscape = (before: boolean) => {
-      const selection = $getSelection();
+const LayoutContainerImportRule = defineImportRule({
+  $import: (ctx, el) => [
+    $createLayoutContainerNode(el.style.gridTemplateColumns).splice(
+      0,
+      0,
+      ctx.$importChildren(el),
+    ),
+  ],
+  match: sel.tag('div').attr('data-lexical-layout-container', true),
+  name: '@lexical/playground/layout-container',
+});
+
+const LayoutItemImportRule = defineImportRule({
+  $import: (ctx, el) => [
+    $createLayoutItemNode().splice(0, 0, ctx.$importChildren(el)),
+  ],
+  match: sel.tag('div').attr('data-lexical-layout-item', true),
+  name: '@lexical/playground/layout-item',
+});
+
+const $onEscape = (before: boolean) => {
+  const selection = $getSelection();
+  if (
+    $isRangeSelection(selection) &&
+    selection.isCollapsed() &&
+    selection.anchor.offset === 0
+  ) {
+    const container = $findMatchingParent(
+      selection.anchor.getNode(),
+      $isLayoutContainerNode,
+    );
+
+    if ($isLayoutContainerNode(container)) {
+      const parent = container.getParent<ElementNode>();
+      const child =
+        parent &&
+        (before
+          ? parent.getFirstChild<LexicalNode>()
+          : parent?.getLastChild<LexicalNode>());
+      const descendant = before
+        ? container.getFirstDescendant<LexicalNode>()?.getKey()
+        : container.getLastDescendant<LexicalNode>()?.getKey();
+
       if (
-        $isRangeSelection(selection) &&
-        selection.isCollapsed() &&
-        selection.anchor.offset === 0
+        parent !== null &&
+        child === container &&
+        selection.anchor.key === descendant
       ) {
-        const container = $findMatchingParent(
-          selection.anchor.getNode(),
-          $isLayoutContainerNode,
-        );
-
-        if ($isLayoutContainerNode(container)) {
-          const parent = container.getParent<ElementNode>();
-          const child =
-            parent &&
-            (before
-              ? parent.getFirstChild<LexicalNode>()
-              : parent?.getLastChild<LexicalNode>());
-          const descendant = before
-            ? container.getFirstDescendant<LexicalNode>()?.getKey()
-            : container.getLastDescendant<LexicalNode>()?.getKey();
-
-          if (
-            parent !== null &&
-            child === container &&
-            selection.anchor.key === descendant
-          ) {
-            if (before) {
-              container.insertBefore($createParagraphNode());
-            } else {
-              container.insertAfter($createParagraphNode());
-            }
-          }
+        if (before) {
+          container.insertBefore($createParagraphNode());
+        } else {
+          container.insertAfter($createParagraphNode());
         }
       }
+    }
+  }
 
-      return false;
-    };
+  return false;
+};
 
-    const $fillLayoutItemIfEmpty = (node: LayoutItemNode) => {
-      if (node.isEmpty()) {
-        node.append($createParagraphNode());
-      }
-    };
+const $fillLayoutItemIfEmpty = (node: LayoutItemNode) => {
+  if (node.isEmpty()) {
+    node.append($createParagraphNode());
+  }
+};
 
-    const $removeIsolatedLayoutItem = (node: LayoutItemNode): boolean => {
-      const parent = node.getParent<ElementNode>();
-      if (!$isLayoutContainerNode(parent)) {
-        const children = node.getChildren<LexicalNode>();
-        for (const child of children) {
-          node.insertBefore(child);
-        }
-        node.remove();
-        return true;
-      }
-      return false;
-    };
+const $removeIsolatedLayoutItem = (node: LayoutItemNode): boolean => {
+  const parent = node.getParent<ElementNode>();
+  if (!$isLayoutContainerNode(parent)) {
+    const children = node.getChildren<LexicalNode>();
+    for (const child of children) {
+      node.insertBefore(child);
+    }
+    node.remove();
+    return true;
+  }
+  return false;
+};
 
-    return mergeRegister(
-      // When layout is the last child pressing down/right arrow will insert paragraph
-      // below it to allow adding more content. It's similar what $insertBlockNode
-      // (mainly for decorators), except it'll always be possible to continue adding
-      // new content even if trailing paragraph is accidentally deleted
+export const LayoutExtension = defineExtension({
+  dependencies: [
+    CoreImportExtension,
+    configExtension(DOMImportExtension, {
+      rules: [LayoutContainerImportRule, LayoutItemImportRule],
+    }),
+  ],
+  name: '@lexical/playground/Layout',
+  nodes: [LayoutContainerNode, LayoutItemNode],
+  register: editor =>
+    mergeRegister(
+      // When layout is the last child pressing down/right arrow will insert
+      // a paragraph below it, mirroring `$insertBlockNode`. Continues to
+      // work even if a trailing paragraph is accidentally deleted.
       editor.registerCommand(
         KEY_ARROW_DOWN_COMMAND,
         () => $onEscape(false),
@@ -131,10 +161,7 @@ export function LayoutPlugin(): null {
         () => $onEscape(false),
         COMMAND_PRIORITY_LOW,
       ),
-      // When layout is the first child pressing up/left arrow will insert paragraph
-      // above it to allow adding more content. It's similar what $insertBlockNode
-      // (mainly for decorators), except it'll always be possible to continue adding
-      // new content even if leading paragraph is accidentally deleted
+      // Inverse: leading paragraph escape on up/left.
       editor.registerCommand(
         KEY_ARROW_UP_COMMAND,
         () => $onEscape(true),
@@ -181,7 +208,7 @@ export function LayoutPlugin(): null {
               container.getTemplateColumns(),
             );
 
-            // Add or remove extra columns if new template does not match existing one
+            // Add or remove columns to match the new template.
             if (itemsCount > prevItemsCount) {
               for (let i = prevItemsCount; i < itemsCount; i++) {
                 container.append(
@@ -206,15 +233,13 @@ export function LayoutPlugin(): null {
         COMMAND_PRIORITY_EDITOR,
       ),
 
+      // Structure-enforcing transforms. If nesting isn't `Container > Item`,
+      // unwrap and treat the content as regular blocks.
       editor.registerNodeTransform(LayoutItemNode, node => {
-        // Structure enforcing transformers for each node type. In case nesting structure is not
-        // "Container > Item" it'll unwrap nodes and convert it back
-        // to regular content.
         const isRemoved = $removeIsolatedLayoutItem(node);
 
         if (!isRemoved) {
-          // Layout item should always have a child. this function will listen
-          // for any empty layout item and fill it with a paragraph node
+          // Layout items should never be empty; backfill with a paragraph.
           $fillLayoutItemIfEmpty(node);
         }
       }),
@@ -227,12 +252,5 @@ export function LayoutPlugin(): null {
           node.remove();
         }
       }),
-    );
-  }, [editor]);
-
-  return null;
-}
-
-function getItemsCountFromTemplate(template: string): number {
-  return template.trim().split(/\s+/).length;
-}
+    ),
+});

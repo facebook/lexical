@@ -6,7 +6,6 @@
  *
  */
 
-import {defineImportRule, sel} from '@lexical/html';
 import {IS_CHROME, IS_FIREFOX} from '@lexical/utils';
 import {
   $createParagraphNode,
@@ -100,11 +99,3 @@ export function $isCollapsibleTitleNode(
 ): node is CollapsibleTitleNode {
   return node instanceof CollapsibleTitleNode;
 }
-
-export const CollapsibleTitleImportRule = defineImportRule({
-  $import: (ctx, el) => [
-    $createCollapsibleTitleNode().splice(0, 0, ctx.$importChildren(el)),
-  ],
-  match: sel.tag('summary'),
-  name: '@lexical/playground/summary',
-});

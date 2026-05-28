@@ -17,7 +17,6 @@ import type {
 } from 'lexical';
 import type {JSX} from 'react';
 
-import {defineImportRule, sel} from '@lexical/html';
 import {BlockWithAlignableContents} from '@lexical/react/LexicalBlockWithAlignableContents';
 import {
   DecoratorBlockNode,
@@ -193,12 +192,3 @@ export function $isTweetNode(
 ): node is TweetNode {
   return node instanceof TweetNode;
 }
-
-export const TweetImportRule = defineImportRule({
-  $import: (_ctx, el, $next) => {
-    const id = el.getAttribute('data-lexical-tweet-id');
-    return id ? [$createTweetNode(id)] : $next();
-  },
-  match: sel.tag('div').attr('data-lexical-tweet-id', true),
-  name: '@lexical/playground/tweet',
-});

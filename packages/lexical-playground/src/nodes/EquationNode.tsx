@@ -15,7 +15,6 @@ import type {
 } from 'lexical';
 import type {JSX} from 'react';
 
-import {defineImportRule, sel} from '@lexical/html';
 import katex from 'katex';
 import {$applyNodeReplacement, DecoratorNode, DOMExportOutput} from 'lexical';
 import * as React from 'react';
@@ -29,19 +28,6 @@ export type SerializedEquationNode = Spread<
   },
   SerializedLexicalNode
 >;
-
-function $convertEquationElement(el: HTMLElement): EquationNode | null {
-  const encoded = el.getAttribute('data-lexical-equation');
-  if (!encoded) {
-    return null;
-  }
-  const equation = atob(encoded);
-  if (!equation) {
-    return null;
-  }
-  const inline = el.getAttribute('data-lexical-inline') === 'true';
-  return $createEquationNode(equation, inline);
-}
 
 export class EquationNode extends DecoratorNode<JSX.Element> {
   __equation: string;
@@ -153,14 +139,3 @@ export function $isEquationNode(
 ): node is EquationNode {
   return node instanceof EquationNode;
 }
-
-export const EquationImportRules = [
-  defineImportRule({
-    $import: (_ctx, el, $next) => {
-      const node = $convertEquationElement(el);
-      return node ? [node] : $next();
-    },
-    match: sel.tag('div', 'span').attr('data-lexical-equation', true),
-    name: '@lexical/playground/equation',
-  }),
-];

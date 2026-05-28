@@ -16,7 +16,6 @@ import type {
   Spread,
 } from 'lexical';
 
-import {defineImportRule, sel} from '@lexical/html';
 import {addClassNamesToElement} from '@lexical/utils';
 import {ElementNode} from 'lexical';
 
@@ -115,21 +114,3 @@ export function $isLayoutContainerNode(
 ): node is LayoutContainerNode {
   return node instanceof LayoutContainerNode;
 }
-
-export const LayoutContainerImportRule = defineImportRule({
-  $import: (ctx, el, $next) => {
-    const templateColumns = el.style.gridTemplateColumns;
-    if (!templateColumns) {
-      return $next();
-    }
-    return [
-      $createLayoutContainerNode(templateColumns).splice(
-        0,
-        0,
-        ctx.$importChildren(el),
-      ),
-    ];
-  },
-  match: sel.tag('div').attr('data-lexical-layout-container', true),
-  name: '@lexical/playground/layout-container',
-});

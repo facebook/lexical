@@ -74,13 +74,18 @@ import {DateTimeExtension} from './plugins/DateTimeExtension';
 import DocsPlugin from './plugins/DocsPlugin';
 import {DragDropPasteExtension} from './plugins/DragDropPasteExtension';
 import {EmojisExtension} from './plugins/EmojisExtension';
+import {EquationsExtension} from './plugins/EquationsExtension';
+import {ExcalidrawExtension} from './plugins/ExcalidrawExtension';
 import {FigmaExtension} from './plugins/FigmaExtension';
 import {ImagesExtension} from './plugins/ImagesExtension';
+import {LayoutExtension} from './plugins/LayoutExtension/LayoutExtension';
 import {PlaygroundMarkdownShortcutsExtension} from './plugins/MarkdownShortcutsExtension';
 import {MaxLengthExtension} from './plugins/MaxLengthPlugin';
+import {MentionsExtension} from './plugins/MentionsExtension';
 import {PageBreakExtension} from './plugins/PageBreakExtension';
 import {PagesReactExtension} from './plugins/PagesReactExtension';
 import PasteLogPlugin from './plugins/PasteLogPlugin';
+import {PollExtension} from './plugins/PollExtension';
 import {SpecialTextExtension} from './plugins/SpecialTextExtension';
 import {TabFocusExtension} from './plugins/TabFocusExtension';
 import {TerseExportExtension} from './plugins/TerseExportExtension';
@@ -199,6 +204,10 @@ const PlaygroundRichTextExtension = defineExtension({
     PlaygroundMarkdownShortcutsExtension,
     PageBreakExtension,
     PagesReactExtension,
+    PollExtension,
+    EquationsExtension,
+    LayoutExtension,
+    ExcalidrawExtension,
   ],
   name: '@lexical/playground/RichText',
 });
@@ -216,6 +225,7 @@ const AppExtension = defineExtension({
     SpecialTextExtension,
     DragDropPasteExtension,
     EmojisExtension,
+    MentionsExtension,
     configExtension(LinkExtension, {validateUrl}),
     PlaygroundAutoLinkExtension,
     ClickableLinkExtension,

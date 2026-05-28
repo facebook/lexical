@@ -17,7 +17,6 @@ import type {
 } from 'lexical';
 import type {JSX} from 'react';
 
-import {defineImportRule, sel} from '@lexical/html';
 import {BlockWithAlignableContents} from '@lexical/react/LexicalBlockWithAlignableContents';
 import {
   DecoratorBlockNode,
@@ -155,12 +154,3 @@ export function $isYouTubeNode(
 ): node is YouTubeNode {
   return node instanceof YouTubeNode;
 }
-
-export const YouTubeImportRule = defineImportRule({
-  $import: (_ctx, el, $next) => {
-    const videoID = el.getAttribute('data-lexical-youtube');
-    return videoID ? [$createYouTubeNode(videoID)] : $next();
-  },
-  match: sel.tag('iframe').attr('data-lexical-youtube', true),
-  name: '@lexical/playground/youtube',
-});

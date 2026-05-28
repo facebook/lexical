@@ -6,7 +6,6 @@
  *
  */
 
-import {defineImportRule, sel} from '@lexical/html';
 import {
   $applyNodeReplacement,
   type DOMExportOutput,
@@ -100,21 +99,3 @@ export function $isMentionNode(
 ): node is MentionNode {
   return node instanceof MentionNode;
 }
-
-export const MentionImportRule = defineImportRule({
-  $import: (_ctx, el, $next) => {
-    const textContent = el.textContent;
-    if (textContent === null) {
-      return $next();
-    }
-    const mentionName = el.getAttribute('data-lexical-mention-name');
-    return [
-      $createMentionNode(
-        typeof mentionName === 'string' ? mentionName : textContent,
-        textContent,
-      ),
-    ];
-  },
-  match: sel.tag('span').attr('data-lexical-mention', true),
-  name: '@lexical/playground/mention',
-});

@@ -48,14 +48,11 @@ import ComponentPickerPlugin from './plugins/ComponentPickerPlugin';
 import ContextMenuPlugin from './plugins/ContextMenuPlugin';
 import DraggableBlockPlugin from './plugins/DraggableBlockPlugin';
 import EmojiPickerPlugin from './plugins/EmojiPickerPlugin';
-import EquationsPlugin from './plugins/EquationsPlugin';
-import ExcalidrawPlugin from './plugins/ExcalidrawPlugin';
+import ExcalidrawPlugin from './plugins/ExcalidrawExtension';
 import FloatingLinkEditorPlugin from './plugins/FloatingLinkEditorPlugin';
 import FloatingTextFormatToolbarPlugin from './plugins/FloatingTextFormatToolbarPlugin';
-import {LayoutPlugin} from './plugins/LayoutPlugin/LayoutPlugin';
 import {MaxLengthExtension} from './plugins/MaxLengthPlugin';
-import MentionsPlugin from './plugins/MentionsPlugin';
-import PollPlugin from './plugins/PollPlugin';
+import MentionsPlugin from './plugins/MentionsExtension';
 import ShortcutsPlugin from './plugins/ShortcutsPlugin';
 import {SpecialTextExtension} from './plugins/SpecialTextExtension';
 import SpeechToTextPlugin from './plugins/SpeechToTextPlugin';
@@ -260,11 +257,8 @@ export default function Editor(): JSX.Element {
             {hasFitNestedTables ? <TableFitNestedTablePlugin /> : null}
             <TableCellResizer />
             <TableScrollShadowPlugin />
-            <PollPlugin />
-            <EquationsPlugin />
             <ExcalidrawPlugin />
             <TabIndentationPlugin maxIndent={7} />
-            <LayoutPlugin />
             {floatingAnchorElem && (
               <>
                 <FloatingLinkEditorPlugin

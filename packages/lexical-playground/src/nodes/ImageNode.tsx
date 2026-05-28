@@ -26,12 +26,7 @@ import {
 } from '@lexical/extension';
 import {HashtagExtension} from '@lexical/hashtag';
 import {HistoryExtension} from '@lexical/history';
-import {
-  $generateHtmlFromNodes,
-  $generateNodesFromDOM,
-  defineImportRule,
-  sel,
-} from '@lexical/html';
+import {$generateHtmlFromNodes} from '@lexical/html';
 import {LinkExtension} from '@lexical/link';
 import {ReactExtension} from '@lexical/react/ReactExtension';
 import {ReactProviderExtension} from '@lexical/react/ReactProviderExtension';
@@ -44,17 +39,14 @@ import {
   $getRoot,
   $isElementNode,
   $isParagraphNode,
-  $selectAll,
-  $setSelection,
   configExtension,
   DecoratorNode,
   defineExtension,
-  SKIP_DOM_SELECTION_TAG,
 } from 'lexical';
 import * as React from 'react';
 
 import {EmojisExtension} from '../plugins/EmojisExtension';
-import MentionsPlugin from '../plugins/MentionsPlugin';
+import MentionsPlugin from '../plugins/MentionsExtension';
 import ContentEditable from '../ui/ContentEditable';
 import {EmojiNode} from './EmojiNode';
 import {KeywordsExtension} from './KeywordNode';
@@ -106,24 +98,6 @@ export interface ImagePayload {
   src: string;
   width?: number;
   captionsEnabled?: boolean;
-}
-
-function isGoogleDocCheckboxImg(img: HTMLImageElement): boolean {
-  return (
-    img.parentElement != null &&
-    img.parentElement.tagName === 'LI' &&
-    img.previousSibling === null &&
-    img.getAttribute('aria-roledescription') === 'checkbox'
-  );
-}
-
-function $convertImageElement(img: HTMLImageElement): ImageNode | null {
-  const src = img.getAttribute('src');
-  if (!src || src.startsWith('file:///') || isGoogleDocCheckboxImg(img)) {
-    return null;
-  }
-  const {alt: altText, width, height} = img;
-  return $createImageNode({altText, height, src, width});
 }
 
 export function $isCaptionEditorEmpty(): boolean {
@@ -375,45 +349,3 @@ export function $isImageNode(
 ): node is ImageNode {
   return node instanceof ImageNode;
 }
-
-const ImgRule = defineImportRule({
-  $import: (_ctx, el, $next) => {
-    const node = $convertImageElement(el);
-    return node ? [node] : $next();
-  },
-  match: sel.tag('img'),
-  name: '@lexical/playground/img',
-});
-
-const FigcaptionRule = defineImportRule({
-  $import: () => [],
-  match: sel.tag('figcaption'),
-  name: '@lexical/playground/figcaption',
-});
-
-const FigureRule = defineImportRule({
-  $import: (ctx, el) => {
-    const imported = ctx.$importChildren(el);
-    const imageNodes = imported.filter($isImageNode);
-    const figcaption = el.querySelector('figcaption');
-    if (figcaption) {
-      for (const imgNode of imageNodes) {
-        imgNode.setShowCaption(true);
-        imgNode.__caption.update(
-          () => {
-            $selectAll().insertNodes(
-              $generateNodesFromDOM(imgNode.__caption, figcaption),
-            );
-            $setSelection(null);
-          },
-          {tag: SKIP_DOM_SELECTION_TAG},
-        );
-      }
-    }
-    return imageNodes;
-  },
-  match: sel.tag('figure'),
-  name: '@lexical/playground/figure',
-});
-
-export const ImageImportRules = [FigcaptionRule, FigureRule, ImgRule];

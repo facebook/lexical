@@ -31,6 +31,7 @@ import {
   deleteTableColumns,
   deleteTableRows,
   dragMouse,
+  evaluate,
   expect,
   focusEditor,
   getExpectedDateTimeHtml,
@@ -134,6 +135,70 @@ test.describe.parallel('Tables', () => {
       undefined,
       {ignoreClasses: true},
     );
+  });
+
+  test(`Selection placed on a <col> element resolves into a table cell`, async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await initialize({isCollab, page});
+
+    await focusEditor(page);
+    await insertTable(page, 2, 2);
+
+    // Type into the last cell so Lexical has a definite prior selection.
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Tab');
+    await page.keyboard.type('last');
+
+    // Force the DOM caret onto a <col> child of the table's <colgroup>,
+    // mimicking what Firefox 150+ does on some navigation actions.
+    await evaluate(page, () => {
+      const col = document.querySelector(
+        'div[contenteditable="true"] table > colgroup > col',
+      );
+      window.getSelection().setBaseAndExtent(col, 0, col, 0);
+    });
+
+    // Allow Lexical to process the selection change.
+    await sleep(50);
+
+    const state = await evaluate(page, () => {
+      const editor = document.querySelector(
+        'div[contenteditable="true"]',
+      ).__lexicalEditor;
+      const dom = window.getSelection();
+      const lex = editor.read(() => {
+        const sel = editor.getEditorState()._selection;
+        if (sel == null || !('anchor' in sel)) {
+          return null;
+        }
+        return {
+          anchorNodeType: sel.anchor.getNode().getType(),
+          anchorOffset: sel.anchor.offset,
+          anchorType: sel.anchor.type,
+          focusNodeType: sel.focus.getNode().getType(),
+          focusOffset: sel.focus.offset,
+          focusType: sel.focus.type,
+          isCollapsed: sel.isCollapsed(),
+        };
+      });
+      return {
+        domAnchorNodeName: dom.anchorNode ? dom.anchorNode.nodeName : null,
+        domAnchorOffset: dom.anchorOffset,
+        lex,
+      };
+    });
+
+    // The DOM caret should not be left inside the <col> / <colgroup> region.
+    expect(state.domAnchorNodeName).not.toBe('COL');
+    expect(state.domAnchorNodeName).not.toBe('COLGROUP');
+    // Lexical's selection should resolve to something inside a cell.
+    expect(state.lex).not.toBeNull();
+    expect(state.lex.anchorNodeType).not.toBe('table');
   });
 
   test(`Can type inside of table cell`, async ({

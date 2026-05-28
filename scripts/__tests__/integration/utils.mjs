@@ -67,7 +67,7 @@ function expectSuccessfulExec(cmd) {
  * @param {ExampleContext} ctx
  * @returns {Promise<Map<string, PackageMetadata>>} The installed monorepo dependency map
  */
-async function buildExample({packageJson, exampleDir}) {
+async function buildExample({packageJson, packageJsonPath, exampleDir}) {
   let hasPlaywright = false;
   /** @type {Map<string, string>} */
   const allDeps = new Map();
@@ -89,22 +89,54 @@ async function buildExample({packageJson, exampleDir}) {
   if (depsMap.size === 0) {
     throw new Error(`No lexical dependencies detected: ${exampleDir}`);
   }
-  const installDeps = Array.from(depsMap.entries(), ([dep, pkg]) =>
-    path.resolve('npm', `${pkg.getDirectoryName()}-${monorepoVersion}.tgz`),
+  // Build pnpm.overrides entries pointing each monorepo dep at its
+  // freshly built tarball. We layer them on top of any pnpm.overrides
+  // the example already declares (e.g. agent-example's stubs for
+  // onnxruntime-node / sharp) so the existing overrides keep firing.
+  const lexicalOverrides = Object.fromEntries(
+    Array.from(depsMap.entries(), ([dep, pkg]) => [
+      dep,
+      `file:${path.resolve(
+        'npm',
+        `${pkg.getDirectoryName()}-${monorepoVersion}.tgz`,
+      )}`,
+    ]),
   );
-  ['node_modules', 'dist', 'build', '.next', '.svelte-kit'].forEach(cleanDir =>
-    fs.removeSync(path.resolve(exampleDir, cleanDir)),
-  );
+  const augmentedPackageJson = {
+    ...packageJson,
+    pnpm: {
+      ...(packageJson.pnpm || {}),
+      overrides: {
+        ...((packageJson.pnpm && packageJson.pnpm.overrides) || {}),
+        ...lexicalOverrides,
+      },
+    },
+  };
+  const originalPackageJsonBytes = fs.readFileSync(packageJsonPath);
+  [
+    'node_modules',
+    'dist',
+    'build',
+    '.next',
+    '.svelte-kit',
+    'pnpm-lock.yaml',
+  ].forEach(cleanPath => fs.removeSync(path.resolve(exampleDir, cleanPath)));
 
-  await withCwd(exampleDir, async () => {
-    await expectSuccessfulExec(
-      `npm install --no-save ${installDeps.map(fn => `'${fn}'`).join(' ')}`,
-    );
-    await expectSuccessfulExec('npm run build');
-    if (hasPlaywright) {
-      await expectSuccessfulExec('npx playwright install');
-    }
-  });
+  try {
+    fs.writeJsonSync(packageJsonPath, augmentedPackageJson, {spaces: 2});
+    await withCwd(exampleDir, async () => {
+      await expectSuccessfulExec('pnpm install --ignore-workspace');
+      await expectSuccessfulExec('pnpm run build');
+      if (hasPlaywright) {
+        await expectSuccessfulExec('pnpm exec playwright install');
+      }
+    });
+  } finally {
+    // Restore the unmodified package.json so the test doesn't leave a
+    // dirty working tree behind (the file-path overrides reference an
+    // absolute path on the runner that wouldn't make sense elsewhere).
+    fs.writeFileSync(packageJsonPath, originalPackageJsonBytes);
+  }
   return depsMap;
 }
 
@@ -149,7 +181,9 @@ function describeExample(packageJsonPath, bodyFun = undefined) {
       test(
         'tests pass',
         async () => {
-          await withCwd(exampleDir, () => expectSuccessfulExec('npm run test'));
+          await withCwd(exampleDir, () =>
+            expectSuccessfulExec('pnpm run test'),
+          );
         },
         LONG_TIMEOUT,
       );

@@ -3123,179 +3123,177 @@ test.describe.parallel('Tables', () => {
     );
   });
 
-  test(
-    'Select multiple merged cells (selection expands to a rectangle)',
-    {
-      tag: '@flaky',
-    },
-    async ({page, isPlainText, isCollab}) => {
-      test.skip(isPlainText);
-      await initialize({isCollab, page});
+  test('Select multiple merged cells (selection expands to a rectangle)', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+    await initialize({isCollab, page});
 
-      await focusEditor(page);
+    await focusEditor(page);
 
-      await insertTable(page, 3, 3);
+    await insertTable(page, 3, 3);
 
-      await click(page, '.PlaygroundEditorTheme__tableCell');
-      await moveDown(page, 1);
-      await selectCellsFromTableCords(
-        page,
-        {x: 0, y: 0},
-        {x: 0, y: 1},
-        true,
-        true,
-      );
-      await mergeTableCells(page);
+    await click(page, '.PlaygroundEditorTheme__tableCell');
+    await moveDown(page, 1);
+    await selectCellsFromTableCords(
+      page,
+      {x: 0, y: 0},
+      {x: 0, y: 1},
+      true,
+      true,
+    );
+    await mergeTableCells(page);
 
-      await moveRight(page, 1);
-      await selectCellsFromTableCords(
-        page,
-        {x: 1, y: 0},
-        {x: 2, y: 0},
-        true,
-        true,
-      );
-      await mergeTableCells(page);
+    await moveRight(page, 1);
+    await selectCellsFromTableCords(
+      page,
+      {x: 1, y: 0},
+      {x: 2, y: 0},
+      true,
+      true,
+    );
+    await mergeTableCells(page);
 
-      await selectCellsFromTableCords(
-        page,
-        {x: 0, y: 0},
-        {x: 1, y: 0},
-        true,
-        true,
-      );
+    await selectCellsFromTableCords(
+      page,
+      {x: 0, y: 0},
+      {x: 1, y: 0},
+      true,
+      true,
+    );
 
-      await assertHTML(
-        page,
-        html`
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-          <table
-            class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection"
-            dir="auto">
-            <colgroup>
-              <col style="width: 92px" />
-              <col style="width: 92px" />
-              <col style="width: 92px" />
-            </colgroup>
-            <tr dir="auto">
-              <th
-                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected"
-                dir="auto"
-                rowspan="2">
-                <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                  <br />
-                </p>
-              </th>
-              <th
-                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected"
-                colspan="2"
-                dir="auto">
-                <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                  <br />
-                </p>
-              </th>
-            </tr>
-            <tr dir="auto">
-              <td
-                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
-                dir="auto">
-                <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                  <br />
-                </p>
-              </td>
-              <td
-                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
-                dir="auto">
-                <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                  <br />
-                </p>
-              </td>
-            </tr>
-            <tr dir="auto">
-              <th
-                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-                dir="auto">
-                <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                  <br />
-                </p>
-              </th>
-              <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-                <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                  <br />
-                </p>
-              </td>
-              <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-                <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                  <br />
-                </p>
-              </td>
-            </tr>
-          </table>
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-        `,
-        html`
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-          <table class="PlaygroundEditorTheme__table" dir="auto">
-            <colgroup>
-              <col style="width: 92px" />
-              <col style="width: 92px" />
-              <col style="width: 92px" />
-            </colgroup>
-            <tr dir="auto">
-              <th
-                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-                dir="auto"
-                rowspan="2">
-                <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                  <br />
-                </p>
-              </th>
-              <th
-                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-                colspan="2"
-                dir="auto">
-                <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                  <br />
-                </p>
-              </th>
-            </tr>
-            <tr dir="auto">
-              <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-                <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                  <br />
-                </p>
-              </td>
-              <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-                <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                  <br />
-                </p>
-              </td>
-            </tr>
-            <tr dir="auto">
-              <th
-                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-                dir="auto">
-                <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                  <br />
-                </p>
-              </th>
-              <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-                <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                  <br />
-                </p>
-              </td>
-              <td class="PlaygroundEditorTheme__tableCell" dir="auto">
-                <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                  <br />
-                </p>
-              </td>
-            </tr>
-          </table>
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-        `,
-      );
-    },
-  );
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <table
+          class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection"
+          dir="auto">
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
+          <tr dir="auto">
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected"
+              dir="auto"
+              rowspan="2">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br />
+              </p>
+            </th>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader PlaygroundEditorTheme__tableCellSelected"
+              colspan="2"
+              dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br />
+              </p>
+            </th>
+          </tr>
+          <tr dir="auto">
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
+              dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br />
+              </p>
+            </td>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellSelected"
+              dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br />
+              </p>
+            </td>
+          </tr>
+          <tr dir="auto">
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+              dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br />
+              </p>
+            </th>
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br />
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br />
+              </p>
+            </td>
+          </tr>
+        </table>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+      `,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <table class="PlaygroundEditorTheme__table" dir="auto">
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
+          <tr dir="auto">
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+              dir="auto"
+              rowspan="2">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br />
+              </p>
+            </th>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+              colspan="2"
+              dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br />
+              </p>
+            </th>
+          </tr>
+          <tr dir="auto">
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br />
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br />
+              </p>
+            </td>
+          </tr>
+          <tr dir="auto">
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+              dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br />
+              </p>
+            </th>
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br />
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell" dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br />
+              </p>
+            </td>
+          </tr>
+        </table>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+      `,
+    );
+  });
 
   test('Merge multiple merged cells and then unmerge', async ({
     page,
@@ -4868,89 +4866,87 @@ test.describe.parallel('Tables', () => {
     );
   });
 
-  test(
-    'Can align text using Table selection',
-    {
-      tag: '@flaky',
-    },
-    async ({page, isPlainText, isCollab}) => {
-      test.skip(isPlainText);
-      await initialize({isCollab, page});
+  test('Can align text using Table selection', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+    await initialize({isCollab, page});
 
-      await focusEditor(page);
-      await insertTable(page, 2, 3);
+    await focusEditor(page);
+    await insertTable(page, 2, 3);
 
-      await fillTablePartiallyWithText(page);
-      await selectCellsFromTableCords(
-        page,
-        {x: 0, y: 0},
-        {x: 1, y: 1},
-        true,
-        false,
-      );
+    await fillTablePartiallyWithText(page);
+    await selectCellsFromTableCords(
+      page,
+      {x: 0, y: 0},
+      {x: 1, y: 1},
+      true,
+      false,
+    );
 
-      await selectFromAlignDropdown(page, '.center-align');
+    await selectFromAlignDropdown(page, '.center-align');
 
-      await assertHTML(
-        page,
-        html`
-          <p dir="auto"><br /></p>
-          <table dir="auto">
-            <colgroup>
-              <col style="width: 92px" />
-              <col style="width: 92px" />
-              <col style="width: 92px" />
-            </colgroup>
-            <tr dir="auto">
-              <th
-                class="PlaygroundEditorTheme__tableCellSelected"
-                dir="auto"
-                style="text-align: center">
-                <p dir="auto" style="text-align: center">
-                  <span data-lexical-text="true">a</span>
-                </p>
-              </th>
-              <th
-                class="PlaygroundEditorTheme__tableCellSelected"
-                dir="auto"
-                style="text-align: center">
-                <p dir="auto" style="text-align: center">
-                  <span data-lexical-text="true">bb</span>
-                </p>
-              </th>
-              <th dir="auto">
-                <p dir="auto"><span data-lexical-text="true">cc</span></p>
-              </th>
-            </tr>
-            <tr dir="auto">
-              <th
-                class="PlaygroundEditorTheme__tableCellSelected"
-                dir="auto"
-                style="text-align: center">
-                <p dir="auto" style="text-align: center">
-                  <span data-lexical-text="true">d</span>
-                </p>
-              </th>
-              <td
-                class="PlaygroundEditorTheme__tableCellSelected"
-                dir="auto"
-                style="text-align: center">
-                <p dir="auto" style="text-align: center">
-                  <span data-lexical-text="true">e</span>
-                </p>
-              </td>
-              <td dir="auto">
-                <p dir="auto"><span data-lexical-text="true">f</span></p>
-              </td>
-            </tr>
-          </table>
-          <p dir="auto"><br /></p>
-        `,
-        undefined,
-        {ignoreClasses: true},
-      );
-    },
-  );
+    await assertHTML(
+      page,
+      html`
+        <p dir="auto"><br /></p>
+        <table dir="auto">
+          <colgroup>
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+            <col style="width: 92px" />
+          </colgroup>
+          <tr dir="auto">
+            <th
+              class="PlaygroundEditorTheme__tableCellSelected"
+              dir="auto"
+              style="text-align: center">
+              <p dir="auto" style="text-align: center">
+                <span data-lexical-text="true">a</span>
+              </p>
+            </th>
+            <th
+              class="PlaygroundEditorTheme__tableCellSelected"
+              dir="auto"
+              style="text-align: center">
+              <p dir="auto" style="text-align: center">
+                <span data-lexical-text="true">bb</span>
+              </p>
+            </th>
+            <th dir="auto">
+              <p dir="auto"><span data-lexical-text="true">cc</span></p>
+            </th>
+          </tr>
+          <tr dir="auto">
+            <th
+              class="PlaygroundEditorTheme__tableCellSelected"
+              dir="auto"
+              style="text-align: center">
+              <p dir="auto" style="text-align: center">
+                <span data-lexical-text="true">d</span>
+              </p>
+            </th>
+            <td
+              class="PlaygroundEditorTheme__tableCellSelected"
+              dir="auto"
+              style="text-align: center">
+              <p dir="auto" style="text-align: center">
+                <span data-lexical-text="true">e</span>
+              </p>
+            </td>
+            <td dir="auto">
+              <p dir="auto"><span data-lexical-text="true">f</span></p>
+            </td>
+          </tr>
+        </table>
+        <p dir="auto"><br /></p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
 
   test('Paste and insert new lines after unmerging cells', async ({
     page,

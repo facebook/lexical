@@ -148,21 +148,36 @@ export async function initialize({
  */
 async function exposeLexicalEditor(page) {
   if (IS_COLLAB) {
-    await Promise.all(
-      ['left', 'right'].map(async name => {
-        const frameLocator = page.frameLocator(`[name="${name}"]`);
-        // Collab startup connects to a single shared y-websocket server; under
-        // parallel test load the websocket connect (and its reconnect backoff)
-        // can exceed the default 5s expect timeout, which was the dominant
-        // source of @flaky collab failures. Give the connection generous time.
-        await expect(
-          frameLocator.locator('.action-button.connect'),
-        ).toHaveAttribute('title', /Disconnect/, {timeout: 30000});
-        await expect(
-          frameLocator.locator('[data-lexical-editor="true"] p'),
-        ).toBeVisible({timeout: 30000});
-      }),
-    );
+    // The split view loads the playground in two iframes that connect to a
+    // single shared y-websocket server. Under parallel test load one frame
+    // occasionally fails to boot/activate collab within the timeout (its
+    // ".action-button.connect" toolbar button never appears, or the websocket
+    // connect/backoff runs long) -- the dominant residual source of @flaky
+    // collab failures. Reload and retry a few times so a transient
+    // boot/connect hiccup during setup doesn't fail the whole test.
+    const waitForCollabFramesReady = () =>
+      Promise.all(
+        ['left', 'right'].map(async name => {
+          const frameLocator = page.frameLocator(`[name="${name}"]`);
+          await expect(
+            frameLocator.locator('.action-button.connect'),
+          ).toHaveAttribute('title', /Disconnect/, {timeout: 15000});
+          await expect(
+            frameLocator.locator('[data-lexical-editor="true"] p'),
+          ).toBeVisible({timeout: 15000});
+        }),
+      );
+    for (let attempt = 0; ; attempt++) {
+      try {
+        await waitForCollabFramesReady();
+        break;
+      } catch (err) {
+        if (attempt >= 2) {
+          throw err;
+        }
+        await page.reload();
+      }
+    }
     // Ensure that they started up with the correct empty state
     await assertHTML(
       page,

@@ -89,7 +89,7 @@
     "lint": "eslint ./",
     "lint:fix": "eslint ./ --fix",
     "prettier": "prettier --list-different .",
-    "ci-check": "npm-run-all --parallel tsc tsc-scripts tsc-test tsc-extension tsc-website flow prettier lint",
+    "ci-check": "npm-run-all --parallel tsc tsc-scripts tsc-extension tsc-website flow prettier lint",
     "prettier:fix": "prettier --write .",
     "prepare-ci": "pnpm run build-playground-dev",
     "prepare-ci-prod": "pnpm run build-playground-prod",

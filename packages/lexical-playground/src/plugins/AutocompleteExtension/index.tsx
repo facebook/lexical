@@ -37,8 +37,6 @@ import {
 
 import {addSwipeRightListener} from '../../utils/swipe';
 import {detectLanguage as defaultDetectLanguage} from './detectLanguage';
-import {ENGLISH_WORDS} from './dictionaries/english';
-import {KOREAN_WORDS} from './dictionaries/korean';
 import {
   type AutocompleteDictionary,
   createWordlistDictionary,
@@ -52,15 +50,28 @@ export type {
 export {createWordlistDictionary} from './dictionary';
 
 /**
+ * Factory that resolves to an {@link AutocompleteDictionary}. Loaders
+ * are invoked lazily inside `register` so wordlists are only fetched
+ * when the extension is actually enabled — host bundles that never
+ * activate `AutocompleteExtension` don't pay for the data.
+ */
+export type AutocompleteDictionaryLoader =
+  () => Promise<AutocompleteDictionary>;
+
+/**
  * Default dictionaries shipped with `AutocompleteExtension` — English
  * (top common words) and Korean (multi-syllable nouns sourced from
- * open-korean-text, Apache 2.0). Spread this and merge to extend
- * coverage:
+ * open-korean-text, Apache 2.0). Each value is a loader that
+ * dynamically imports its wordlist on first use so the data ships as
+ * its own bundler chunk. Add a language by passing another loader:
  *
  * ```ts
  * configExtension(AutocompleteExtension, {
  *   dictionaries: {
- *     ja: createWordlistDictionary(JAPANESE_WORDS),
+ *     ja: () =>
+ *       import('./japanese-dict').then(({JAPANESE_WORDS}) =>
+ *         createWordlistDictionary(JAPANESE_WORDS),
+ *       ),
  *   },
  * });
  * ```
@@ -69,10 +80,16 @@ export {createWordlistDictionary} from './dictionary';
  * into the defaults, so spreading is not required.)
  */
 export const defaultDictionaries: Readonly<
-  Record<string, AutocompleteDictionary>
+  Record<string, AutocompleteDictionaryLoader>
 > = {
-  en: createWordlistDictionary(ENGLISH_WORDS, {minPrefixLength: 4}),
-  ko: createWordlistDictionary(KOREAN_WORDS),
+  en: () =>
+    import('./dictionaries/english').then(({ENGLISH_WORDS}) =>
+      createWordlistDictionary(ENGLISH_WORDS, {minPrefixLength: 4}),
+    ),
+  ko: () =>
+    import('./dictionaries/korean').then(({KOREAN_WORDS}) =>
+      createWordlistDictionary(KOREAN_WORDS),
+    ),
 };
 
 /** Default debounce window (ms) for composition-idle suggestions. */
@@ -131,7 +148,7 @@ function $search(selection: null | BaseSelection): [boolean, string] {
 const QUERY_LATENCY_MS = 200;
 
 function query(
-  dictionary: AutocompleteDictionary | undefined,
+  dictionaryPromise: Promise<AutocompleteDictionary | undefined>,
   searchText: string,
   signal: AbortSignal,
 ): Promise<null | string> {
@@ -144,8 +161,19 @@ function query(
       clearTimeout(timeout);
       reject(signal.reason);
     };
-    const timeout = setTimeout(() => {
+    const timeout = setTimeout(async () => {
       signal.removeEventListener('abort', onAbort);
+      let dictionary: AutocompleteDictionary | undefined;
+      try {
+        dictionary = await dictionaryPromise;
+      } catch (e) {
+        reject(e);
+        return;
+      }
+      if (signal.aborted) {
+        reject(signal.reason);
+        return;
+      }
       if (dictionary === undefined) {
         resolve(null);
         return;
@@ -261,12 +289,15 @@ function syncGhost(
 export interface AutocompleteConfig {
   disabled: boolean;
   /**
-   * Map of language tag to {@link AutocompleteDictionary}. The extension
-   * picks the dictionary by passing the typed prefix through
-   * `detectLanguage` and looking up the result. Default is
-   * {@link defaultDictionaries} (English + Korean).
+   * Map of language tag to a loader that resolves to an
+   * {@link AutocompleteDictionary}. The extension picks the loader by
+   * passing the typed prefix through `detectLanguage` and looking up
+   * the result, then invokes it on first use and caches the resolved
+   * dictionary. Default is {@link defaultDictionaries} (English +
+   * Korean) — each value uses a dynamic `import()` so wordlists are
+   * code-split and only fetched when the extension is enabled.
    */
-  dictionaries: Readonly<Record<string, AutocompleteDictionary>>;
+  dictionaries: Readonly<Record<string, AutocompleteDictionaryLoader>>;
   /**
    * Override default language detection. Receives the typed prefix and
    * returns the language tag to look up in `dictionaries`. Default is
@@ -331,6 +362,27 @@ export const AutocompleteExtension = defineExtension({
     let lastSuggestion: string | null = null;
     let searchController: AbortController | null = null;
     let pendingCompositionTimer: number | null = null;
+    // Caches resolved dictionaries by loader identity so each dynamic
+    // import only runs once per loader. A host that swaps the loader
+    // for a language gets a fresh load on the next query.
+    const dictionaryCache = new Map<
+      AutocompleteDictionaryLoader,
+      Promise<AutocompleteDictionary>
+    >();
+
+    function loadDictionary(
+      loader: AutocompleteDictionaryLoader | undefined,
+    ): Promise<AutocompleteDictionary | undefined> {
+      if (loader === undefined) {
+        return Promise.resolve(undefined);
+      }
+      let cached = dictionaryCache.get(loader);
+      if (cached === undefined) {
+        cached = loader();
+        dictionaryCache.set(loader, cached);
+      }
+      return cached;
+    }
     // Key of the TextNode the IME is currently composing on. Captured at
     // COMPOSITION_START_COMMAND time from the selection anchor and cleared
     // on compositionend. Used by `tryCompositionSuggestion` to locate the
@@ -384,7 +436,11 @@ export const AutocompleteExtension = defineExtension({
       searchController = controller;
       const composingKey = compositionTextNodeKey;
       const language = output.detectLanguage.value(prefix);
-      query(output.dictionaries.value[language], prefix, controller.signal)
+      query(
+        loadDictionary(output.dictionaries.value[language]),
+        prefix,
+        controller.signal,
+      )
         .then(newSuggestion => {
           applyCompositionSuggestion(
             controller,
@@ -559,7 +615,11 @@ export const AutocompleteExtension = defineExtension({
           const controller = new AbortController();
           searchController = controller;
           const language = output.detectLanguage.value(match);
-          query(output.dictionaries.value[language], match, controller.signal)
+          query(
+            loadDictionary(output.dictionaries.value[language]),
+            match,
+            controller.signal,
+          )
             .then(newSuggestion => {
               applyAsyncSuggestion(controller, newSuggestion);
             })

@@ -1296,6 +1296,11 @@ export function registerRichText(
         if (!$isDecoratorNode(firstChild) || !firstChild.isInline()) {
           return false;
         }
+        const lastDescendant = element.getLastDescendant();
+        if (lastDescendant == null || $isDecoratorNode(lastDescendant)) {
+          // No selectable text — fall through to native browser behavior.
+          return false;
+        }
         // Native browser cursor traversal stops at the inline decorator's
         // contenteditable=false boundary when the caret starts at element
         // offset 0, so MOVE_TO_END leaves the caret stuck. Move it ourselves.
@@ -1328,6 +1333,11 @@ export function registerRichText(
         }
         const firstChild = focusBlock.getFirstChild();
         if (!$isDecoratorNode(firstChild) || !firstChild.isInline()) {
+          return false;
+        }
+        const lastDescendant = focusBlock.getLastDescendant();
+        if (lastDescendant == null || $isDecoratorNode(lastDescendant)) {
+          // No selectable text — fall through to native browser behavior.
           return false;
         }
         // Cross-block selections fall through to native handling. The

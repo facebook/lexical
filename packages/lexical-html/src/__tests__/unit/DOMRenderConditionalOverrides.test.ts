@@ -100,7 +100,7 @@ function makeEditor() {
 
 function getLineBreakKey(editor: LexicalEditor): string {
   return editor.read(() => {
-    const paragraph = $getRoot().getFirstChild();
+    const paragraph = $getRoot().getFirstChildOrThrow();
     if ($isElementNode(paragraph)) {
       for (const child of paragraph.getChildren()) {
         if ($isLineBreakNode(child)) {
@@ -108,7 +108,7 @@ function getLineBreakKey(editor: LexicalEditor): string {
         }
       }
     }
-    return '';
+    throw new Error('Expected a LineBreakNode in the first paragraph');
   });
 }
 

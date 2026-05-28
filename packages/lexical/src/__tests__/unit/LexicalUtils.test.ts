@@ -323,7 +323,7 @@ describe('LexicalUtils tests', () => {
       );
     });
 
-    test('isMoveToEnd() / isMoveToStart() accept Shift modifier', () => {
+    test('isMoveToEnd() / isMoveToStart() reject Shift modifier', () => {
       const modifier = IS_APPLE ? {metaKey: true} : {ctrlKey: true};
 
       const rightWithoutShift = new KeyboardEvent('keydown', {
@@ -346,9 +346,9 @@ describe('LexicalUtils tests', () => {
       });
 
       expect(isMoveToEnd(rightWithoutShift)).toBe(true);
-      expect(isMoveToEnd(rightWithShift)).toBe(true);
+      expect(isMoveToEnd(rightWithShift)).toBe(false);
       expect(isMoveToStart(leftWithoutShift)).toBe(true);
-      expect(isMoveToStart(leftWithShift)).toBe(true);
+      expect(isMoveToStart(leftWithShift)).toBe(false);
 
       // Wrong direction rejected
       expect(isMoveToEnd(leftWithoutShift)).toBe(false);

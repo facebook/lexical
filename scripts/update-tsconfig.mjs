@@ -114,19 +114,28 @@ const WEBSITE_EXTRA_PATHS = [
   ['@site/*', ['./*']],
 ];
 
-// The monorepo's package path aliases only need to exist for the configs
-// that resolve undeclared cross-package imports: the unit-test typecheck
-// (tests import sibling packages without declaring them) and the website
-// (it type-checks the @examples sources). The root tsconfig.json and
-// tsconfig.build.json are hand-maintained and resolve via the `source`
-// export condition (customConditions) instead, so they are not generated
-// here.
+// The monorepo's package path aliases exist for two reasons:
+// - The unit-test typecheck (tsconfig.test.json) needs them because tests
+//   import sibling packages without declaring them, including deep subpaths
+//   like `*/src/__tests__/utils` that aren't part of the public exports.
+// - VSCode walks up from a test file to the nearest tsconfig.json (the root
+//   one) and uses that for editor diagnostics. To make those resolve to the
+//   same source the unit tests use, the root tsconfig also carries the test
+//   paths. tsconfig.build.json is hand-maintained and resolves via the
+//   `source` export condition (customConditions) instead — it is not
+//   generated here.
 async function updateAllTsconfig() {
   const prettierConfig =
     (await prettier.resolveConfig(new URL(import.meta.url).pathname)) || {};
   await updateTsconfig({
     extraPaths: [],
     jsonFileName: './tsconfig.test.json',
+    prettierConfig,
+    test: true,
+  });
+  await updateTsconfig({
+    extraPaths: [],
+    jsonFileName: './tsconfig.json',
     prettierConfig,
     test: true,
   });

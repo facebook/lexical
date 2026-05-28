@@ -151,6 +151,15 @@ describe('MOVE_TO_END no-op cases (Issue #8555)', () => {
         paragraph.select(1, 1);
       },
     },
+    {
+      label: 'decorator-only element (no selectable text)',
+      setup: () => {
+        const decorator = $createTestDecoratorNode().setIsInline(true);
+        const paragraph = $createParagraphNode().append(decorator);
+        $getRoot().clear().append(paragraph);
+        paragraph.select(0, 0);
+      },
+    },
   ])('no-op: $label', ({setup}) => {
     using editor = buildEditorFromExtensions({
       $initialEditorState: setup,
@@ -163,6 +172,54 @@ describe('MOVE_TO_END no-op cases (Issue #8555)', () => {
 
     dispatchMoveToEnd(editor, false);
 
+    expect(snapshotSelection(editor)).toEqual(before);
+  });
+});
+
+describe('MOVE_TO_END decorator-only safety (crash fix)', () => {
+  test('Cmd+ArrowRight on decorator-only element does not throw', () => {
+    using editor = buildEditorFromExtensions({
+      $initialEditorState: () => {
+        const decorator = $createTestDecoratorNode().setIsInline(true);
+        const paragraph = $createParagraphNode().append(decorator);
+        $getRoot().clear().append(paragraph);
+        paragraph.select(0, 0);
+      },
+      dependencies: [RichTextExtension],
+      name: 'test',
+      nodes: [TestDecoratorNode],
+    });
+
+    // Should not throw — previously this would crash with selectEnd() on empty element
+    expect(() => dispatchMoveToEnd(editor, false)).not.toThrow();
+
+    editor.read(() => {
+      const selection = $getSelection();
+      assert($isRangeSelection(selection));
+      // Selection remains valid
+      expect(selection.anchor.type).toBeDefined();
+    });
+  });
+
+  test('Shift+Cmd+ArrowRight on decorator-only element does not dispatch MOVE_TO_END', () => {
+    using editor = buildEditorFromExtensions({
+      $initialEditorState: () => {
+        const decorator = $createTestDecoratorNode().setIsInline(true);
+        const paragraph = $createParagraphNode().append(decorator);
+        $getRoot().clear().append(paragraph);
+        paragraph.select(0, 0);
+      },
+      dependencies: [RichTextExtension],
+      name: 'test',
+      nodes: [TestDecoratorNode],
+    });
+
+    const before = snapshotSelection(editor);
+
+    // Shift+Cmd+Arrow should no longer match isMoveToEnd (matcher tightened)
+    dispatchMoveToEnd(editor, true);
+
+    // Selection unchanged — handler returned false
     expect(snapshotSelection(editor)).toEqual(before);
   });
 });

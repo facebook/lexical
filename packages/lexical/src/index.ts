@@ -255,6 +255,7 @@ export {
   tokenizeRawText,
 } from './LexicalSelection';
 export {
+  $assumeActiveEditor,
   $fullReconcile,
   $parseSerializedNode,
   isCurrentlyReadOnlyMode,

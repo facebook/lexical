@@ -11,7 +11,8 @@ import type {LexicalEditor} from 'lexical';
 import {registerDragonSupport} from '@lexical/dragon';
 import {registerRichText} from '@lexical/rich-text';
 import {mergeRegister} from '@lexical/utils';
-import useLayoutEffect from 'shared/useLayoutEffect';
+
+import useLayoutEffect from './useLayoutEffect';
 
 export function useRichTextSetup(editor: LexicalEditor): void {
   useLayoutEffect(() => {

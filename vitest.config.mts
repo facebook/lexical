@@ -7,13 +7,47 @@
  */
 
 import react from '@vitejs/plugin-react';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import {fileURLToPath} from 'node:url';
 import {defineConfig} from 'vitest/config';
+
+// Resolve monorepo imports to TypeScript source from the test tsconfig's
+// `paths`. This includes the cross-package and deep `*/src/__tests__/utils`
+// aliases that the unit tests rely on but that the lean root tsconfig (which
+// resolves via the `source` export condition) intentionally omits. Vite's
+// native `resolve.tsconfigPaths` only reads the root tsconfig, so we build
+// the aliases explicitly from tsconfig.test.json instead.
+const ROOT_DIR = path.dirname(fileURLToPath(import.meta.url));
+const escapeRegExp = (value: string) =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+function tsconfigTestAliases(): {find: RegExp; replacement: string}[] {
+  const {compilerOptions} = JSON.parse(
+    fs.readFileSync(path.join(ROOT_DIR, 'tsconfig.test.json'), 'utf8'),
+  );
+  return Object.entries(
+    (compilerOptions.paths || {}) as Record<string, string[]>,
+  ).map(([find, [replacement]]) => {
+    // Wildcard entries like `lexical/src/*` -> `./packages/lexical/src/*`
+    // become a capture-group alias so deep source imports resolve.
+    if (find.endsWith('/*') && replacement.endsWith('/*')) {
+      return {
+        find: new RegExp(`^${escapeRegExp(find.slice(0, -2))}/(.*)$`),
+        replacement: `${path.resolve(ROOT_DIR, replacement.slice(0, -2))}/$1`,
+      };
+    }
+    return {
+      find: new RegExp(`^${escapeRegExp(find)}$`),
+      replacement: path.resolve(ROOT_DIR, replacement),
+    };
+  });
+}
 
 export default defineConfig({
   resolve: {
+    alias: tsconfigTestAliases(),
     conditions: ['development', 'import', 'module', 'browser', 'default'],
     dedupe: ['react', 'react-dom'],
-    tsconfigPaths: true,
   },
   test: {
     clearMocks: true,
@@ -22,7 +56,6 @@ export default defineConfig({
         define: {
           // https://react.dev/blog/2022/03/08/react-18-upgrade-guide#configuring-your-testing-environment
           IS_REACT_ACT_ENVIRONMENT: true,
-          __DEV__: true,
         },
         extends: true,
         plugins: [react()],
@@ -72,7 +105,6 @@ export default defineConfig({
       {
         define: {
           IS_REACT_ACT_ENVIRONMENT: true,
-          __DEV__: true,
         },
         extends: true,
         plugins: [react()],

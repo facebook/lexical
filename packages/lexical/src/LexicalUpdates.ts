@@ -9,7 +9,7 @@
 import type {SerializedEditorState} from './LexicalEditorState';
 import type {LexicalNode, SerializedLexicalNode} from './LexicalNode';
 
-import invariant from 'shared/invariant';
+import invariant from '@lexical/internal/invariant';
 
 import {
   $isElementNode,
@@ -51,6 +51,7 @@ import {
 } from './LexicalSelection';
 import {
   $getCompositionKey,
+  $updateDOMBlockCursorElement,
   getDOMSelection,
   getEditorPropertyFromDOMNode,
   getEditorStateTextContent,
@@ -61,8 +62,9 @@ import {
   removeDOMBlockCursorElement,
   scheduleMicroTask,
   setPendingNodeToClone,
-  updateDOMBlockCursorElement,
 } from './LexicalUtils';
+
+const __DEV__ = process.env.NODE_ENV !== 'production';
 
 let activeEditorState: null | EditorState = null;
 let activeEditor: null | LexicalEditor = null;
@@ -113,6 +115,18 @@ export function getActiveEditorState(): EditorState {
   return activeEditorState;
 }
 
+/** @internal */
+export function $assumeActiveEditor(editor: LexicalEditor): void {
+  // Throw if called outside of an update
+  if (getActiveEditorState() !== null && activeEditor === null) {
+    activeEditor = editor;
+  }
+  invariant(
+    activeEditor === editor,
+    'The given editor argument does not match $getEditor() in this context. Use editor.getEditorState().read(..., {editor}) if this cross-editor call is intentional.',
+  );
+}
+
 export function getActiveEditor(): LexicalEditor {
   if (activeEditor === null) {
     invariant(
@@ -126,6 +140,19 @@ export function getActiveEditor(): LexicalEditor {
     );
   }
   return activeEditor;
+}
+
+/**
+ * Schedule a full reconcile of the active editor, so that every node is
+ * re-rendered through the current {@link EditorDOMRenderConfig} on the next
+ * commit. Unlike {@link LexicalNode.markDirty}, this does not clone or
+ * otherwise mutate the node map, so no mutation/collaboration listeners
+ * observe a change. Must be called within an `editor.update`.
+ *
+ * @internal
+ */
+export function $fullReconcile(): void {
+  getActiveEditor()._dirtyType = FULL_RECONCILE;
 }
 
 function collectBuildInformation(): string {
@@ -420,7 +447,7 @@ export function parseEditorState(
   editor._dirtyElements = new Map();
   editor._dirtyLeaves = new Set();
   editor._cloneNotNeeded = new Set();
-  editor._dirtyType = 0;
+  editor._dirtyType = NO_DIRTY_NODES;
   activeEditorState = editorState;
   isReadOnlyMode = false;
   activeEditor = editor;
@@ -605,7 +632,6 @@ export function $commitPendingUpdates(
   const normalizedNodes = editor._normalizedNodes;
   const tags = editor._updateTags;
   const deferred = editor._deferred;
-  const nodeCount = pendingEditorState._nodeMap.size;
 
   if (needsUpdate) {
     editor._dirtyType = NO_DIRTY_NODES;
@@ -656,10 +682,9 @@ export function $commitPendingUpdates(
           domSelection,
           tags,
           rootElement,
-          nodeCount,
         );
       }
-      updateDOMBlockCursorElement(editor, rootElement, pendingSelection);
+      $updateDOMBlockCursorElement(editor, rootElement, pendingSelection);
     } finally {
       if (observer !== null) {
         observer.observe(rootElement, observerOptions);
@@ -845,12 +870,29 @@ export function triggerCommandListeners<
 function $triggerEnqueuedUpdates(editor: LexicalEditor): void {
   const queuedUpdates = editor._updates;
 
-  if (queuedUpdates.length !== 0) {
-    const queuedUpdate = queuedUpdates.shift();
-    if (queuedUpdate) {
-      const [updateFn, options] = queuedUpdate;
-      $beginUpdate(editor, updateFn, options);
+  if (queuedUpdates.length === 0) {
+    editor._cascadeCount = 0;
+    return;
+  }
+  if (editor._cascadeCount++ > 99) {
+    editor._updates = [];
+    editor._cascadeCount = 0;
+    try {
+      invariant(
+        false,
+        'One or more update listeners are endlessly enqueueing more updates. May have encountered infinite recursion caused by update listeners that trigger additional updates without a stop condition.',
+      );
+    } catch (error) {
+      if (error instanceof Error) {
+        editor._onError(error);
+      }
     }
+    return;
+  }
+  const queuedUpdate = queuedUpdates.shift();
+  if (queuedUpdate) {
+    const [updateFn, options] = queuedUpdate;
+    $beginUpdate(editor, updateFn, options);
   }
 }
 

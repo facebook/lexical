@@ -12,7 +12,7 @@ import type {BaseSelection} from './LexicalSelection';
 import type {SerializedElementNode} from './nodes/LexicalElementNode';
 import type {SerializedRootNode} from './nodes/LexicalRootNode';
 
-import invariant from 'shared/invariant';
+import invariant from '@lexical/internal/invariant';
 
 import {cloneMap} from './LexicalGenMap';
 import {readEditorState} from './LexicalUpdates';

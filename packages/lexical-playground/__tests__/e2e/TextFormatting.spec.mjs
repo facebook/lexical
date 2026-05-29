@@ -1179,63 +1179,63 @@ test.describe.parallel('TextFormatting', () => {
     expect(isButtonActiveStatusDisplayedCorrectly).toBe(true);
   });
 
-  test(
-    'Regression #2523: can toggle format when selecting a TextNode edge followed by a non TextNode; ',
-    {tag: '@flaky'},
-    async ({page, isCollab, isPlainText}) => {
-      test.skip(isPlainText);
-      await focusEditor(page);
+  test('Regression #2523: can toggle format when selecting a TextNode edge followed by a non TextNode; ', async ({
+    page,
+    isCollab,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
 
-      await page.keyboard.type('A');
-      await insertDateTime(page);
-      await page.keyboard.type('BC');
+    await page.keyboard.type('A');
+    await insertDateTime(page);
+    await page.keyboard.type('BC');
 
-      await moveLeft(page, 1);
-      await selectCharacters(page, 'left', 2);
+    await moveLeft(page, 1);
+    await selectCharacters(page, 'left', 2);
 
-      if (!isCollab) {
-        await assertHTML(
-          page,
-          html`
-            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-              <span data-lexical-text="true">A</span>
-              ${getExpectedDateTimeHtml({selected: true})}
-              <span data-lexical-text="true">BC</span>
-            </p>
-          `,
-        );
-      }
-      await toggleBold(page);
+    if (!isCollab) {
       await assertHTML(
         page,
         html`
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">A</span>
-            ${getExpectedDateTimeHtml({formats: ['bold']})}
-            <strong
-              class="PlaygroundEditorTheme__textBold"
-              data-lexical-text="true">
-              B
-            </strong>
-            <span data-lexical-text="true">C</span>
-          </p>
-        `,
-      );
-      await toggleBold(page);
-      await assertHTML(
-        page,
-        // After formatting the text, the selection will be reset from the decorator node,
-        // so it will retain its previous format when toggleBold is triggered again
-        html`
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-            <span data-lexical-text="true">A</span>
-            ${getExpectedDateTimeHtml({formats: ['bold']})}
+            ${getExpectedDateTimeHtml({selected: true})}
             <span data-lexical-text="true">BC</span>
           </p>
         `,
       );
-    },
-  );
+    }
+    await toggleBold(page);
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">A</span>
+          ${getExpectedDateTimeHtml({formats: ['bold']})}
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true">
+            B
+          </strong>
+          <span data-lexical-text="true">C</span>
+        </p>
+      `,
+    );
+    await toggleBold(page);
+    await assertHTML(
+      page,
+      // After formatting the text, the selection will be reset from the decorator node,
+      // so it will retain its previous format when toggleBold is triggered again
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">A</span>
+          ${getExpectedDateTimeHtml({formats: ['bold']})}
+          <span data-lexical-text="true">BC</span>
+        </p>
+      `,
+    );
+  });
 
   test('Multiline selection format ignores new lines', async ({
     page,

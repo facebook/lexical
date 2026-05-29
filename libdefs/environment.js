@@ -8,8 +8,6 @@
 
 'use strict';
 
-declare var __DEV__: boolean;
-
 declare var queueMicrotask: (fn: () => void) => void;
 
 declare class CompositionEvent extends UIEvent {

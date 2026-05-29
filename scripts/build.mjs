@@ -40,13 +40,28 @@ const isRelease = argv.release;
 const isWWW = argv.www;
 const extractCodes = argv.codes;
 
+// @lexical/internal is a published package (so its source resolves for the
+// `source` export condition and for direct consumers), but within the
+// monorepo build we keep inlining it into every other package — exactly as
+// the old private `shared` alias did. Excluding it here keeps it out of the
+// externals/www-rewrite sets and the undeclared-dependency check, so the
+// `@lexical/internal` alias below bundles it.
+const INLINED_PACKAGES = new Set(['@lexical/internal']);
+
 const modulePackageMappings = Object.fromEntries(
-  packagesManager.getPublicPackages().flatMap(pkg => {
-    const pkgName = pkg.getNpmName();
-    return pkg.getExportedNpmModuleNames().map(npm => [npm, pkgName]);
-  }),
+  packagesManager
+    .getPublicPackages()
+    .filter(pkg => !INLINED_PACKAGES.has(pkg.getNpmName()))
+    .flatMap(pkg => {
+      const pkgName = pkg.getNpmName();
+      return pkg.getExportedNpmModuleNames().map(npm => [npm, pkgName]);
+    }),
 );
 
+/**
+ * @param {string} assetType
+ * @returns {string[]}
+ */
 function getShikiAssets(assetType) {
   return glob
     .sync(
@@ -126,6 +141,12 @@ const thirdPartyExternals = [
   'y-websocket',
   'happy-dom',
   'jsdom',
+  // The @lexical/code-shiki package declares shiki and @shikijs/* as
+  // npm dependencies and loads languages/themes via dynamic import, so
+  // they must remain external in the published bundle rather than be
+  // inlined by Rollup.
+  'shiki',
+  '@shikijs',
   ...(isWWW
     ? [':server-only-hack:.*']
     : ['react-error-boundary', '@floating-ui/react']),
@@ -134,11 +155,12 @@ const thirdPartyExternalsRegExp = new RegExp(
   `^(${thirdPartyExternals.join('|')})(\\/|$)`,
 );
 
+/** @type {Record<string, string>} */
 const strictWWWMappings = {};
 
 // Add quotes around mappings to make them more strict.
-Object.keys(wwwMappings).forEach(mapping => {
-  strictWWWMappings[`'${mapping}'`] = `'${wwwMappings[mapping]}'`;
+Object.entries(wwwMappings).forEach(([mapping, target]) => {
+  strictWWWMappings[`'${mapping}'`] = `'${target}'`;
 });
 
 /**
@@ -172,6 +194,7 @@ async function build(
   pkg,
 ) {
   const extensions = ['.js', '.jsx', '.ts', '.tsx'];
+  /** @type {import('rollup').RollupOptions} */
   const inputOptions = {
     external(modulePath, src) {
       const modulePkgName = modulePackageMappings[modulePath];
@@ -185,7 +208,7 @@ async function build(
         console.error(
           `Error: ${path.relative(
             '.',
-            src,
+            src ?? inputFile,
           )} has an undeclared dependency in its import of ${modulePath}.\nAdd the following to the dependencies in ${path.relative(
             '.',
             pkg.resolve('package.json'),
@@ -239,16 +262,17 @@ async function build(
             /* in www we do not use export conditions so we build a virtual fork module instead */
             {
               name: 'server-only-hack',
-              renderChunk(source) {
+              renderChunk(/** @type {string} */ source) {
                 // Ugly hack to effectively undo the hoist of require('jsdom')
                 const m = source.match(
                   /require\(':server-only-hack:([^']+)'\);/,
                 );
                 if (m) {
+                  const matchIndex = m.index ?? 0;
                   return (
-                    source.slice(0, m.index) +
+                    source.slice(0, matchIndex) +
                     `typeof window === 'undefined' ? require('${m[1]}') : undefined;` +
-                    source.slice(m.index + m[0].length)
+                    source.slice(matchIndex + m[0].length)
                   );
                 }
               },
@@ -257,7 +281,10 @@ async function build(
         : []),
       alias({
         entries: [
-          {find: 'shared', replacement: path.resolve('packages/shared/src')},
+          {
+            find: '@lexical/internal',
+            replacement: path.resolve('packages/lexical-internal/src'),
+          },
           {find: 'buffer', replacement: 'buffer'},
         ],
       }),
@@ -291,12 +318,17 @@ async function build(
       replace(
         Object.assign(
           {
-            __DEV__: isProd ? 'false' : 'true',
             delimiters: ['', ''],
             preventAssignment: true,
             'process.env.LEXICAL_VERSION': JSON.stringify(
               `${version}+${isProd ? 'prod' : 'dev'}.${format}`,
             ),
+            // Lexical source branches on `process.env.NODE_ENV !== 'production'`
+            // (no bare `__DEV__` global). Baking the literal per-variant lets
+            // terser dead-code-eliminate the dev branches in prod builds, and
+            // lets source-mode consumers rely on their bundler's standard
+            // `process.env.NODE_ENV` substitution with no extra config.
+            'process.env.NODE_ENV': isProd ? '"production"' : '"development"',
           },
           isWWW && strictWWWMappings,
         ),
@@ -311,6 +343,7 @@ async function build(
           module: format === 'esm',
         }),
       {
+        name: 'lexical-comment-banner',
         renderChunk(source) {
           // Assets pipeline might use "export" word in the beginning of the line
           // as a dependency, avoiding it with empty comment in front
@@ -322,11 +355,7 @@ async function build(
       },
     ],
     // Lexical Code: this ensures PrismJS imports get included in the bundle
-    // Lexical Code Shiki: 'recommended' preset has treeshake.tryCatchDeoptimization: true which avoids
-    //                     feature detection of oniguruma-to-es to be optimized out and cause a bug
-    treeshake: ['smallest', false, 'recommended'][
-      1 + ['Lexical Code Prism', 'Lexical Code Shiki'].indexOf(name)
-    ],
+    treeshake: name === 'Lexical Code Prism' ? false : 'smallest',
   };
   /** @type {import('rollup').OutputOptions} */
   const outputOptions = {
@@ -379,20 +408,21 @@ function getComment() {
   return lines.join('\n');
 }
 
+/**
+ * @param {string} fileName
+ * @param {boolean} isProd
+ * @param {'esm' | 'cjs'} format
+ * @returns {string}
+ */
 function getFileName(fileName, isProd, format) {
-  const extension = getExtension(format);
-  if (isWWW || isRelease) {
-    return `${fileName}.${isProd ? 'prod' : 'dev'}${extension}`;
-  }
-  return `${fileName}${extension}`;
+  // Both www and npm builds use the `.dev`/`.prod` suffix. The bare
+  // `Foo.mjs`/`Foo.js` names are reserved for the fork module emitted by
+  // buildForkModules so the published exports map can resolve cleanly
+  // regardless of which variants were built.
+  return `${fileName}.${isProd ? 'prod' : 'dev'}${getExtension(format)}`;
 }
 
-/**
- *
- * @param {string} packageName
- * @param {string} outputPath
- */
-async function buildTSDeclarationFiles(packageName, outputPath) {
+async function buildTSDeclarationFiles() {
   await exec('tsc -p ./tsconfig.build.json');
 }
 
@@ -409,6 +439,7 @@ function moveTSDeclarationFilesIntoDist(packageName, outputPath) {
  * @typedef {Object} ForkModuleContentOptions
  * @property {string} devFileName
  * @property {Array<string>} exports
+ * @property {'dev'|'prod'|'both'} mode which variants this build produced
  * @property {string} outputFileName
  * @property {string} prodFileName
  */
@@ -420,27 +451,45 @@ function moveTSDeclarationFilesIntoDist(packageName, outputPath) {
  * @returns {string}
  */
 function forkModuleContent(
-  {devFileName, exports, outputFileName, prodFileName},
+  {devFileName, exports, mode, outputFileName, prodFileName},
   target,
 ) {
   const lines = [getComment()];
   if (target === 'cjs') {
-    lines.push(
-      `'use strict'`,
-      `const ${outputFileName} = process.env.NODE_ENV !== 'production' ? require('${devFileName}') : require('${prodFileName}');`,
-      `module.exports = ${outputFileName};`,
-    );
+    lines.push(`'use strict'`);
+    if (mode === 'both') {
+      lines.push(
+        `const ${outputFileName} = process.env.NODE_ENV !== 'production' ? require('${devFileName}') : require('${prodFileName}');`,
+      );
+    } else if (mode === 'dev') {
+      lines.push(`const ${outputFileName} = require('${devFileName}');`);
+    } else {
+      lines.push(`const ${outputFileName} = require('${prodFileName}');`);
+    }
+    lines.push(`module.exports = ${outputFileName};`);
   } else {
     if (target === 'esm') {
-      lines.push(
-        `import * as modDev from '${devFileName}';`,
-        `import * as modProd from '${prodFileName}';`,
-        `const mod = process.env.NODE_ENV !== 'production' ? modDev : modProd;`,
-      );
+      if (mode === 'both') {
+        lines.push(
+          `import * as modDev from '${devFileName}';`,
+          `import * as modProd from '${prodFileName}';`,
+          `const mod = process.env.NODE_ENV !== 'production' ? modDev : modProd;`,
+        );
+      } else if (mode === 'dev') {
+        lines.push(`import * as mod from '${devFileName}';`);
+      } else {
+        lines.push(`import * as mod from '${prodFileName}';`);
+      }
     } else if (target === 'node') {
-      lines.push(
-        `const mod = await (process.env.NODE_ENV !== 'production' ? import('${devFileName}') : import('${prodFileName}'));`,
-      );
+      if (mode === 'both') {
+        lines.push(
+          `const mod = await (process.env.NODE_ENV !== 'production' ? import('${devFileName}') : import('${prodFileName}'));`,
+        );
+      } else if (mode === 'dev') {
+        lines.push(`const mod = await import('${devFileName}');`);
+      } else {
+        lines.push(`const mod = await import('${prodFileName}');`);
+      }
     }
     for (const name of exports) {
       lines.push(
@@ -459,12 +508,13 @@ function forkModuleContent(
  * @param {string} outputFileName
  * @param {'cjs'|'esm'} format
  * @param {Array<string>} exports
+ * @param {'dev'|'prod'|'both'} mode
  */
-function buildForkModules(outputPath, outputFileName, format, exports) {
+function buildForkModules(outputPath, outputFileName, format, exports, mode) {
   const extension = getExtension(format);
   const devFileName = `./${outputFileName}.dev${extension}`;
   const prodFileName = `./${outputFileName}.prod${extension}`;
-  const opts = {devFileName, exports, outputFileName, prodFileName};
+  const opts = {devFileName, exports, mode, outputFileName, prodFileName};
   fs.outputFileSync(
     path.resolve(outputPath, `${outputFileName}${extension}`),
     forkModuleContent(opts, format),
@@ -477,11 +527,34 @@ function buildForkModules(outputPath, outputFileName, format, exports) {
   }
 }
 
+/**
+ * Copy the package's hand-written Flow stubs from `flow/` into the build
+ * output directory so Flow consumers find `<Name>.js.flow` next to the
+ * matching `<Name>.js` shipped in the published package.
+ *
+ * @param {import('./shared/PackageMetadata.mjs').PackageMetadata} pkg
+ * @param {string} outputPath
+ */
+function copyFlowStubsIntoDist(pkg, outputPath) {
+  const flowDir = pkg.resolve('flow');
+  if (!fs.existsSync(flowDir)) {
+    return;
+  }
+  for (const fn of fs.readdirSync(flowDir)) {
+    if (fn.endsWith('.flow')) {
+      fs.copySync(path.resolve(flowDir, fn), path.resolve(outputPath, fn));
+    }
+  }
+}
+
 async function buildAll() {
-  if (!isWWW && (isRelease || isProduction)) {
+  // Always emit .d.ts for npm builds so a `pnpm link` consumer gets types
+  // out of the box. Skip for www (it consumes Flow stubs instead).
+  if (!isWWW) {
     await buildTSDeclarationFiles();
   }
 
+  /** @type {Array<'cjs' | 'esm'>} */
   const formats = isWWW ? ['cjs'] : ['cjs', 'esm'];
   for (const pkg of packagesManager.getPublicPackages()) {
     const {name, sourcePath, outputPath, packageName, modules} =
@@ -501,8 +574,8 @@ async function buildAll() {
             inputFile = wwwCjs;
           }
         }
-        await build(
-          `${name}${module.name ? '-' + module.name : ''}`,
+        const primaryExports = await build(
+          name,
           inputFile,
           outputPath,
           path.resolve(
@@ -515,27 +588,45 @@ async function buildAll() {
           pkg,
         );
 
+        // In release mode, also build the opposite variant so the published
+        // package contains both .dev and .prod files for every entry point.
+        let secondaryExports;
         if (isRelease) {
-          const exports = await build(
+          secondaryExports = await build(
             name,
             inputFile,
             outputPath,
             path.resolve(
               outputPath,
-              getFileName(outputFileName, false, format),
+              getFileName(outputFileName, !isProduction, format),
             ),
-            false,
+            !isProduction,
             format,
             version,
             pkg,
           );
-          buildForkModules(outputPath, outputFileName, format, exports);
+        }
+
+        // www has its own consolidation step (prepare-www) and does not use
+        // the npm-style fork modules.
+        if (!isWWW) {
+          const mode = isRelease ? 'both' : isProduction ? 'prod' : 'dev';
+          buildForkModules(
+            outputPath,
+            outputFileName,
+            format,
+            primaryExports.length > 0
+              ? primaryExports
+              : (secondaryExports ?? []),
+            mode,
+          );
         }
       }
     }
 
-    if (!isWWW && (isRelease || isProduction)) {
+    if (!isWWW) {
       moveTSDeclarationFilesIntoDist(packageName, outputPath);
+      copyFlowStubsIntoDist(pkg, outputPath);
     }
   }
 }

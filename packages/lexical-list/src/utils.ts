@@ -8,8 +8,8 @@
 
 import type {LexicalNode, Spread} from 'lexical';
 
+import invariant from '@lexical/internal/invariant';
 import {$findMatchingParent} from '@lexical/utils';
-import invariant from 'shared/invariant';
 
 import {$isListItemNode, $isListNode, ListItemNode, ListNode} from './';
 

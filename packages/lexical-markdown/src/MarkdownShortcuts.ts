@@ -16,6 +16,7 @@ import type {
 import type {ElementNode, LexicalEditor, TextNode} from 'lexical';
 
 import {$isCodeNode} from '@lexical/code-core';
+import invariant from '@lexical/internal/invariant';
 import {
   $addUpdateTag,
   $createRangeSelection,
@@ -33,7 +34,6 @@ import {
   KEY_ENTER_COMMAND,
   mergeRegister,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
 import {canContainTransformableMarkdown} from './importTextTransformers';
 import {TRANSFORMERS} from './MarkdownTransformers';
@@ -44,6 +44,7 @@ function runElementTransformers(
   anchorNode: TextNode,
   anchorOffset: number,
   elementTransformers: ReadonlyArray<ElementTransformer>,
+  triggerOnEnter?: boolean,
 ): boolean {
   const grandParentNode = parentNode.getParent();
 
@@ -62,18 +63,21 @@ function runElementTransformers(
   // TODO:
   // Can have a quick check if caret is close enough to the beginning of the string (e.g. offset less than 10-20)
   // since otherwise it won't be a markdown shortcut, but tables are exception
-  if (textContent[anchorOffset - 1] !== ' ') {
-    return false;
+  if (!triggerOnEnter) {
+    if (textContent[anchorOffset - 1] !== ' ') {
+      return false;
+    }
   }
 
   for (const {regExp, replace} of elementTransformers) {
     const match = textContent.match(regExp);
 
-    if (
-      match &&
-      match[0].length ===
-        (match[0].endsWith(' ') ? anchorOffset : anchorOffset - 1)
-    ) {
+    const expectedMatchLength =
+      triggerOnEnter || (match && match[0].endsWith(' '))
+        ? anchorOffset
+        : anchorOffset - 1;
+
+    if (match && match[0].length === expectedMatchLength) {
       const nextSiblings = anchorNode.getNextSiblings();
       const [leadingNode, remainderNode] = anchorNode.splitText(anchorOffset);
       const siblings = remainderNode
@@ -437,6 +441,9 @@ export function registerMarkdownShortcuts(
   transformers: Array<Transformer> = TRANSFORMERS,
 ): () => void {
   const byType = transformersByType(transformers);
+  const elementTransformersForEnter = byType.element.filter(
+    t => t.triggerOnEnter,
+  );
   const textFormatTransformersByTrigger = indexBy(
     byType.textFormat,
     ({tag}) => tag[tag.length - 1],
@@ -646,6 +653,13 @@ export function registerMarkdownShortcuts(
             anchorNode,
             anchorOffset,
             byType.multilineElement,
+            true,
+          ) ||
+          runElementTransformers(
+            parentNode,
+            anchorNode,
+            anchorOffset,
+            elementTransformersForEnter,
             true,
           )
         ) {

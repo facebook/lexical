@@ -6,7 +6,7 @@
  *
  */
 
-import invariant from 'shared/invariant';
+import invariant from '@lexical/internal/invariant';
 
 import {
   $getEditor,
@@ -22,6 +22,8 @@ import {
 import {PROTOTYPE_CONFIG_METHOD} from './LexicalConstants';
 import {errorOnReadOnly} from './LexicalUpdates';
 import {getRegisteredNodeOrThrow, getStaticNodeConfig} from './LexicalUtils';
+
+const __DEV__ = process.env.NODE_ENV !== 'production';
 
 /**
  * Get the value type (V) from a StateConfig

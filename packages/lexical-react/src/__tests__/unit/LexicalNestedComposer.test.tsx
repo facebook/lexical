@@ -37,9 +37,8 @@ import {
   invariant,
 } from 'lexical/src/__tests__/utils';
 import * as React from 'react';
-import {useEffect} from 'react';
+import {act, useEffect} from 'react';
 import {createRoot, Root} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
 import {
   afterEach,
   beforeEach,
@@ -167,7 +166,7 @@ describe('LexicalNestedComposer', () => {
       );
     }
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(<App />);
     });
     invariant(editor !== undefined, 'editor defined');
@@ -201,7 +200,7 @@ describe('LexicalNestedComposer', () => {
         </div>
       `,
     );
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(null);
     });
   });
@@ -259,7 +258,7 @@ describe('LexicalNestedComposer', () => {
       );
     }
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(<App />);
     });
     invariant(editor !== undefined, 'editor defined');
@@ -300,7 +299,7 @@ describe('LexicalNestedComposer', () => {
         </div>
       `,
     );
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(null);
     });
   });
@@ -362,7 +361,7 @@ describe('LexicalNestedComposer', () => {
       );
     }
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(<App />);
     });
     invariant(editor !== undefined, 'editor defined');
@@ -402,7 +401,7 @@ describe('LexicalNestedComposer', () => {
         `LexicalNestedComposer initialNodes is deprecated and will be removed in v0.32.0, it has never worked correctly.\nYou can configure your editor's nodes with createEditor({nodes: [], parentEditor: $getEditor()})`,
       ],
     ]);
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(null);
     });
   });
@@ -462,7 +461,7 @@ describe('LexicalNestedComposer', () => {
       );
     }
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(<App />);
     });
     invariant(editor !== undefined, 'editor defined');
@@ -500,7 +499,7 @@ describe('LexicalNestedComposer', () => {
       `,
     );
     expect(warn.mock.calls).toEqual([]);
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(null);
     });
   });
@@ -564,7 +563,7 @@ describe('LexicalNestedComposer', () => {
       );
     }
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(<App />);
     });
     invariant(editor !== undefined, 'editor defined');
@@ -608,7 +607,7 @@ describe('LexicalNestedComposer', () => {
     const editableA11yResults = await axe(container!);
     expect(editableA11yResults).toHaveNoViolations();
     expect(warn.mock.calls).toEqual([]);
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       editor!.setEditable(false);
     });
     expect(editor.isEditable()).toBe(false);
@@ -644,13 +643,13 @@ describe('LexicalNestedComposer', () => {
     );
     const uneditableA11yResults = await axe(container!);
     expect(uneditableA11yResults).toHaveNoViolations();
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       editor!.setEditable(true);
     });
     expect(editor.isEditable()).toBe(true);
     expect(nestedEditor.isEditable()).toBe(true);
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(null);
     });
   });
@@ -715,7 +714,7 @@ describe('LexicalNestedComposer', () => {
       );
     }
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(<App />);
     });
     invariant(editor !== undefined, 'editor defined');
@@ -761,7 +760,7 @@ describe('LexicalNestedComposer', () => {
     const editableA11yResults = await axe(container!);
     expect(editableA11yResults).toHaveNoViolations();
     expect(warn.mock.calls).toEqual([]);
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       editor!.setEditable(false);
     });
     expect(editor.isEditable()).toBe(false);
@@ -797,13 +796,13 @@ describe('LexicalNestedComposer', () => {
     );
     const uneditableA11yResults = await axe(container!);
     expect(uneditableA11yResults).toHaveNoViolations();
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       editor!.setEditable(true);
     });
     expect(editor.isEditable()).toBe(true);
     expect(nestedEditor.isEditable()).toBe(false);
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(null);
     });
   });
@@ -899,7 +898,7 @@ describe('LexicalNestedComposer', () => {
       );
     }
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(<App />);
     });
     invariant(editor !== undefined, 'editor defined');
@@ -914,7 +913,7 @@ describe('LexicalNestedComposer', () => {
         .sort(),
     );
     expect(warn.mock.calls).toEqual([]);
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       expect(editor?.dispatchCommand(DELEGATED_COMMAND, undefined)).toBe(false);
       expect($commandListener.mock.calls).toEqual([
         [
@@ -1038,7 +1037,7 @@ describe('LexicalNestedComposer', () => {
       $commandListener.mockClear();
     });
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(null);
     });
   });
@@ -1114,7 +1113,7 @@ describe('LexicalNestedComposer', () => {
       );
     }
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(<App />);
     });
     invariant(editor !== undefined, 'editor defined');
@@ -1135,7 +1134,7 @@ describe('LexicalNestedComposer', () => {
       );
     }
     expect(warn.mock.calls).toEqual([]);
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(null);
     });
   });

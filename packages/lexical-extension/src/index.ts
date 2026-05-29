@@ -12,6 +12,12 @@ export {
   ClearEditorExtension,
   registerClearEditor,
 } from './ClearEditorExtension';
+export {
+  $defaultShouldInsertAfter,
+  type ClickAfterLastBlockConfig,
+  ClickAfterLastBlockExtension,
+  type ClickAfterLastBlockOutput,
+} from './ClickAfterLastBlockExtension';
 export {getKnownTypesAndNodes, type KnownTypesAndNodes} from './config';
 export {
   $isDecoratorTextNode,
@@ -22,6 +28,11 @@ export {
   type SerializedDecoratorTextNode,
 } from './DecoratorTextExtension';
 export {EditorStateExtension} from './EditorStateExtension';
+export {
+  $getExtensionDependency,
+  $getExtensionOutput,
+  $getPeerDependency,
+} from './getExtensionDependency';
 export {getExtensionDependencyFromEditor} from './getExtensionDependencyFromEditor';
 export {
   getPeerDependencyFromEditor,
@@ -51,6 +62,11 @@ export {
   type NormalizeInlineElementsConfig,
   NormalizeInlineElementsExtension,
 } from './NormalizeInlineElementsExtension';
+export {
+  type NormalizeTripleClickSelectionConfig,
+  NormalizeTripleClickSelectionExtension,
+  type NormalizeTripleClickSelectionOutput,
+} from './NormalizeTripleClickSelectionExtension';
 export {SelectionAlwaysOnDisplayExtension} from './SelectionAlwaysOnDisplayExtension';
 export {
   batch,

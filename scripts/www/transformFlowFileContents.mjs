@@ -59,7 +59,11 @@ export default async function transformFlowFileContents(source) {
   return unwrapCode(
     await transform(
       wrapCode(source),
+      // `context` and the visited `node`s are untyped hermes-transform AST
+      // values (hermes-transform ships no types), so they are `any` here.
+      /** @param {any} context */
       context => ({
+        /** @param {any} node */
         ExportNamedDeclaration(node) {
           const exportSource = node.source;
           if (!exportSource) {
@@ -70,12 +74,14 @@ export default async function transformFlowFileContents(source) {
             context.replaceNode(node.source, t.StringLiteral({value}));
           }
         },
+        /** @param {any} node */
         ImportDeclaration(node) {
           const value = wwwMappings[node.source.value];
           if (value) {
             context.replaceNode(node.source, t.StringLiteral({value}));
           }
         },
+        /** @param {any} node */
         Program(node) {
           if (
             node.docblock &&

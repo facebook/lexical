@@ -36,6 +36,7 @@ const HR: ElementTransformer = {
 
     line.selectNext();
   },
+  triggerOnEnter: true,
   type: 'element',
 };
 export const DEFAULT_TRANSFORMERS = [HR, ...TRANSFORMERS];

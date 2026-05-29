@@ -16,9 +16,8 @@ import {
   ParagraphNode,
 } from 'lexical';
 import * as React from 'react';
-import {createRef} from 'react';
+import {act, createRef} from 'react';
 import {createRoot, Root} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
 import {afterEach, beforeEach, describe, expect, test, vi} from 'vitest';
 
 describe('useLexicalIsTextContentEmpty', () => {
@@ -75,11 +74,11 @@ describe('useLexicalIsTextContentEmpty', () => {
       return <div ref={ref} contentEditable={true} />;
     }
 
-    ReactTestUtils.act(() => {
+    act(() => {
       reactRoot.render(<TestBase />);
     });
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       await editor.update(() => {
         const root = $getRoot();
 

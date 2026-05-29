@@ -184,14 +184,14 @@ declare export function $getAdjacentSiblingOrParentSiblingCaret<
 ): null | [NodeCaret<D>, number];
 
 export type StateConfigWrapper<K extends string, V> = {
-  +stateConfig: StateConfig<K, V>;
-  +$get: <T extends LexicalNode>(node: T) => V;
-  +$set: <T extends LexicalNode>(
+  readonly stateConfig: StateConfig<K, V>;
+  readonly $get: <T extends LexicalNode>(node: T) => V;
+  readonly $set: <T extends LexicalNode>(
     node: T,
     valueOrUpdater: ValueOrUpdater<V>,
   ) => T;
   /** `[$get, $set]` */
-  +accessors: Readonly<[$get: StateConfigWrapper<K, V>['$get'], $set: StateConfigWrapper<K, V>['$set']]>;
+  readonly accessors: Readonly<[$get: StateConfigWrapper<K, V>['$get'], $set: StateConfigWrapper<K, V>['$set']]>;
   /**
    * `() => function () { return $get(this) }`
    *

@@ -42,10 +42,12 @@ export function ChatInput({onSubmit}: ChatInputProps) {
       contentEditable={null}>
       <div className="flex w-full items-end gap-2 border-t [border-top-style:solid] border-zinc-200 bg-white px-3 py-2.5 dark:border-white/[0.08] dark:bg-[#232325]">
         <EmojiPlugin />
-        <ContentEditable
-          className="max-h-[120px] min-h-[36px] flex-1 overflow-y-auto rounded-[20px] border border-solid border-transparent bg-zinc-100 px-2.5 py-1.5 text-sm leading-relaxed transition-[border-color] duration-150 outline-none focus:border-indigo-300 focus:bg-white dark:bg-[#3a3a3c] dark:text-zinc-200 dark:focus:border-indigo-500 dark:focus:bg-[#2e2e32]"
-          aria-label="Message input"
-        />
+        <div className="min-w-0 flex-1">
+          <ContentEditable
+            className="max-h-[120px] min-h-[36px] w-full overflow-y-auto rounded-[20px] border border-solid border-transparent bg-zinc-100 px-2.5 py-1.5 text-sm leading-relaxed transition-[border-color] duration-150 outline-none focus:border-indigo-300 focus:bg-white dark:bg-[#3a3a3c] dark:text-zinc-200 dark:focus:border-indigo-500 dark:focus:bg-[#2e2e32]"
+            aria-label="Message input"
+          />
+        </div>
         <SubmitOnEnterPlugin onSubmit={onSubmit} />
         <SendButtonPlugin onSubmit={onSubmit} />
       </div>

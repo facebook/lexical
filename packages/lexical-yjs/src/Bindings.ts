@@ -13,8 +13,8 @@ import type {CollabTextNode} from './CollabTextNode';
 import type {Cursor} from './SyncCursors';
 import type {LexicalEditor, NodeKey} from 'lexical';
 
+import invariant from '@lexical/internal/invariant';
 import {Klass, LexicalNode} from 'lexical';
-import invariant from 'shared/invariant';
 import {Doc, XmlElement, XmlText} from 'yjs';
 
 import {Provider} from '.';
@@ -127,9 +127,9 @@ export function createBindingV2__EXPERIMENTAL(
 }
 
 export function isBindingV1(binding: BaseBinding): binding is Binding {
-  return Object.hasOwn(binding, 'collabNodeMap');
+  return Object.prototype.hasOwnProperty.call(binding, 'collabNodeMap');
 }
 
 export function isBindingV2(binding: BaseBinding): binding is BindingV2 {
-  return Object.hasOwn(binding, 'mapping');
+  return Object.prototype.hasOwnProperty.call(binding, 'mapping');
 }

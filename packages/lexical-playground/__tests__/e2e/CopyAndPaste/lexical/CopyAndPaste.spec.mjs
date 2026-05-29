@@ -816,61 +816,59 @@ test.describe('CopyAndPaste', () => {
     );
   });
 
-  test(
-    'Pasting a decorator node on a blank line inserts before the line',
-    {
-      tag: '@flaky',
-    },
-    async ({page, isCollab, isPlainText}) => {
-      // TODO: This is skipped on collab because the right frame won't have the block cursor HTML
-      test.skip(isPlainText || isCollab);
+  test('Pasting a decorator node on a blank line inserts before the line', async ({
+    page,
+    isCollab,
+    isPlainText,
+  }) => {
+    // TODO: This is skipped on collab because the right frame won't have the block cursor HTML
+    test.skip(isPlainText || isCollab);
 
-      // copying and pasting the node is easier than creating the clipboard data
-      await focusEditor(page);
-      await insertYouTubeEmbed(page, YOUTUBE_SAMPLE_URL);
-      await page.keyboard.press('ArrowLeft'); // this selects the node
-      await withExclusiveClipboardAccess(async () => {
-        const clipboard = await copyToClipboard(page);
-        await page.keyboard.press('ArrowRight'); // this moves to a new line (empty paragraph node)
-        await pasteFromClipboard(page, clipboard);
+    // copying and pasting the node is easier than creating the clipboard data
+    await focusEditor(page);
+    await insertYouTubeEmbed(page, YOUTUBE_SAMPLE_URL);
+    await page.keyboard.press('ArrowLeft'); // this selects the node
+    await withExclusiveClipboardAccess(async () => {
+      const clipboard = await copyToClipboard(page);
+      await page.keyboard.press('ArrowRight'); // this moves to a new line (empty paragraph node)
+      await pasteFromClipboard(page, clipboard);
 
-        await assertHTML(
-          page,
-          html`
-            <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-            <div contenteditable="false" data-lexical-decorator="true">
-              <div class="PlaygroundEditorTheme__embedBlock">
-                <iframe
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowfullscreen=""
-                  frameborder="0"
-                  height="315"
-                  src="https://www.youtube-nocookie.com/embed/jNQXAC9IVRw"
-                  title="YouTube video"
-                  width="560"></iframe>
-              </div>
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+          <div contenteditable="false" data-lexical-decorator="true">
+            <div class="PlaygroundEditorTheme__embedBlock">
+              <iframe
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen=""
+                frameborder="0"
+                height="315"
+                src="https://www.youtube-nocookie.com/embed/jNQXAC9IVRw"
+                title="YouTube video"
+                width="560"></iframe>
             </div>
-            <div contenteditable="false" data-lexical-decorator="true">
-              <div class="PlaygroundEditorTheme__embedBlock">
-                <iframe
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowfullscreen=""
-                  frameborder="0"
-                  height="315"
-                  src="https://www.youtube-nocookie.com/embed/jNQXAC9IVRw"
-                  title="YouTube video"
-                  width="560"></iframe>
-              </div>
+          </div>
+          <div contenteditable="false" data-lexical-decorator="true">
+            <div class="PlaygroundEditorTheme__embedBlock">
+              <iframe
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen=""
+                frameborder="0"
+                height="315"
+                src="https://www.youtube-nocookie.com/embed/jNQXAC9IVRw"
+                title="YouTube video"
+                width="560"></iframe>
             </div>
-            <div
-              class="PlaygroundEditorTheme__blockCursor"
-              contenteditable="false"
-              data-lexical-cursor="true"></div>
-          `,
-        );
-      });
-    },
-  );
+          </div>
+          <div
+            class="PlaygroundEditorTheme__blockCursor"
+            contenteditable="false"
+            data-lexical-cursor="true"></div>
+        `,
+      );
+    });
+  });
 
   test('Copy and paste paragraph into quote', async ({page, isPlainText}) => {
     test.skip(isPlainText);

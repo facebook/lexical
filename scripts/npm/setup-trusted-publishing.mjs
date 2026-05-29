@@ -13,7 +13,7 @@ import minimist from 'minimist';
 import os from 'node:os';
 import path from 'node:path';
 
-import {exec} from '../shared/childProcess.mjs';
+import {exec, spawn} from '../shared/childProcess.mjs';
 import {packagesManager} from '../shared/packagesManager.mjs';
 
 const argv = minimist(process.argv.slice(2));
@@ -117,52 +117,151 @@ async function publishStub(pkg) {
 }
 
 /**
- * Run `npm trust github` for one package. The CLI is idempotent in spirit:
- * if the same (repository, workflow, environment) tuple is already
- * registered, it rejects with a duplicate-style error which we treat as
- * success.
+ * @param {number} ms
+ * @returns {Promise<void>}
+ */
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Encode a package name the same way npm-package-arg's
+ * `spec.escapedName` does for registry URLs: scoped names have their
+ * `/` escaped to `%2F`, the leading `@` is preserved, unscoped names
+ * are passed through.
+ *
+ * @param {string} name
+ * @returns {string}
+ */
+function escapedName(name) {
+  return name.startsWith('@') ? name.replace('/', '%2F') : name;
+}
+
+/**
+ * Read the npm auth token for the configured registry, preferring the
+ * NPM_TOKEN env var and falling back to whatever the user's npmrc
+ * resolves `_authToken` to. Used for read-only registry calls that
+ * don't go through the npm CLI (so they don't trigger OTP prompts).
+ *
+ * @returns {Promise<string | null>}
+ */
+async function fetchAuthToken() {
+  if (process.env.NPM_TOKEN) {
+    const tok = process.env.NPM_TOKEN.trim();
+    if (tok) {
+      return tok;
+    }
+  }
+  const host = new URL(registry).host;
+  try {
+    const {stdout} = await exec(`npm config get //${host}/:_authToken`);
+    const token = stdout.trim();
+    return token && token !== 'undefined' ? token : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Fetch the current list of trusted publisher configurations for a
+ * package via the registry HTTP API. Returns null when the request
+ * can't be made or evaluated (no auth, network error, unexpected
+ * status). Returns [] when the registry says the package has no
+ * trust configurations.
+ *
+ * @param {string} name
+ * @param {string | null} token
+ * @returns {Promise<Array<any> | null>}
+ */
+async function fetchTrustConfigs(name, token) {
+  if (!token) {
+    return null;
+  }
+  try {
+    const res = await fetch(
+      `${registry}/-/package/${escapedName(name)}/trust`,
+      {headers: {Authorization: `Bearer ${token}`}},
+    );
+    if (res.status === 404) {
+      return [];
+    }
+    if (!res.ok) {
+      return null;
+    }
+    const data = await res.json();
+    if (Array.isArray(data)) {
+      return data;
+    }
+    return data ? [data] : [];
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Check whether a stored trust configuration entry matches the
+ * (repository, workflow, no-environment, publish) tuple we're about
+ * to register.
+ *
+ * @param {any} config
+ * @returns {boolean}
+ */
+function configMatches(config) {
+  if (!config || config.type !== 'github') {
+    return false;
+  }
+  const claims = config.claims || {};
+  if (claims.repository !== repo) {
+    return false;
+  }
+  const wf = claims.workflow_ref || {};
+  if (wf.file !== workflow) {
+    return false;
+  }
+  if (claims.environment) {
+    return false;
+  }
+  return (
+    Array.isArray(config.permissions) &&
+    config.permissions.includes('createPackage')
+  );
+}
+
+/**
+ * Run `npm trust github` for one package. Invokes the npm CLI with
+ * `stdio: 'inherit'` so the OTP / web-auth URL prints to the user's
+ * terminal in real time (buffering via `exec` previously caused the
+ * one-time URL to only surface after it had already expired).
  *
  * @param {import('../shared/PackageMetadata.mjs').PackageMetadata} pkg
- * @returns {Promise<'configured' | 'already-configured' | 'dry-run' | 'failed'>}
+ * @returns {Promise<'configured' | 'dry-run' | 'failed'>}
  */
 async function addTrustConfig(pkg) {
   const name = pkg.getNpmName();
-  const cmd =
-    `npm trust github ${name} --file ${workflow} --repo ${repo} ` +
-    `--registry ${registry} --allow-publish -y`;
+  const args = [
+    'trust',
+    'github',
+    name,
+    '--file',
+    workflow,
+    '--repo',
+    repo,
+    '--registry',
+    registry,
+    '--allow-publish',
+    '-y',
+  ];
   if (dryRun) {
-    console.log(`  ${name} ... [dry-run] ${cmd}`);
+    console.log(`  ${name} ... [dry-run] npm ${args.join(' ')}`);
     return 'dry-run';
   }
+  console.log(`\nConfiguring ${name} (npm will prompt for OTP / web auth):`);
   try {
-    await exec(cmd);
-    console.log(`  ${name} ... configured`);
+    await spawn('npm', args, {stdio: 'inherit'});
+    console.log(`  ${name} ... configured\n`);
     return 'configured';
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    const stderr =
-      err && typeof err === 'object' && 'stderr' in err
-        ? String(/** @type {{stderr?: unknown}} */ (err).stderr || '')
-        : '';
-    const combined = `${message}\n${stderr}`;
-    if (
-      /already.*(trust|configur|exist)/i.test(combined) ||
-      /\b409\b/.test(combined) ||
-      /conflict/i.test(combined)
-    ) {
-      console.log(`  ${name} ... already configured`);
-      return 'already-configured';
-    }
-    console.error(`  ${name} ... FAILED`);
-    if (stderr.trim()) {
-      console.error(
-        stderr
-          .trim()
-          .split('\n')
-          .map(l => `    ${l}`)
-          .join('\n'),
-      );
-    }
+  } catch {
+    console.error(`  ${name} ... FAILED\n`);
     return 'failed';
   }
 }
@@ -271,9 +370,7 @@ async function main() {
   }
 
   // Packages that should get trust configured: everything that exists on
-  // the registry, plus any stubs we just published. The npm trust github
-  // command short-circuits idempotently for packages that are already
-  // configured (see addTrustConfig).
+  // the registry, plus any stubs we just published.
   const trustCandidates = [
     ...existing,
     ...(bootstrap
@@ -281,20 +378,69 @@ async function main() {
       : []),
   ];
 
+  // Pre-flight registry check: skip packages whose trust config already
+  // matches what we'd configure. This avoids forcing the maintainer to
+  // satisfy an OTP / web-auth challenge per package on re-runs. The check
+  // is read-only and uses whatever npm auth token the user already has
+  // configured locally — it never prompts.
+  /** @type {Array<import('../shared/PackageMetadata.mjs').PackageMetadata>} */
+  const trustToConfigure = [];
+  /** @type {Array<import('../shared/PackageMetadata.mjs').PackageMetadata>} */
+  const trustUnknown = [];
+  if (trustCandidates.length > 0) {
+    const token = await fetchAuthToken();
+    console.log(`\nChecking existing trust configuration:`);
+    for (const pkg of trustCandidates) {
+      const name = pkg.getNpmName();
+      process.stdout.write(`  ${name} ... `);
+      const configs = await fetchTrustConfigs(name, token);
+      if (configs === null) {
+        console.log('unable to check');
+        trustUnknown.push(pkg);
+      } else if (configs.some(configMatches)) {
+        console.log('already configured');
+      } else {
+        console.log('needs configuration');
+        trustToConfigure.push(pkg);
+      }
+    }
+  }
+
+  // Anything we couldn't pre-check still needs `npm trust github` to be
+  // attempted; npm itself will reject duplicate registrations.
+  const toRegister = [...trustToConfigure, ...trustUnknown];
+
   if (setupTrust) {
-    if (trustCandidates.length > 0) {
+    if (toRegister.length > 0) {
       console.log(
-        `\nConfiguring trusted publishing for ${trustCandidates.length} package(s)...`,
+        `\n${toRegister.length} package(s) need a trusted publisher registered.`,
       );
-      for (const pkg of trustCandidates) {
+      console.log(
+        `\nOn the first OTP / web-auth prompt, open the URL npm prints in your`,
+      );
+      console.log(
+        `browser and select "Skip two-factor authentication for the next 5`,
+      );
+      console.log(
+        `minutes" — subsequent packages in this run will then go through`,
+      );
+      console.log(`without re-prompting.\n`);
+      for (let i = 0; i < toRegister.length; i++) {
+        const pkg = toRegister[i];
+        // Brief pause between calls to stay under the registry's
+        // E429 rate limit (npm docs recommend a short delay between
+        // back-to-back `npm trust` calls).
+        if (i > 0) {
+          await sleep(2000);
+        }
         const result = await addTrustConfig(pkg);
         if (result === 'failed') {
           failures.push(pkg.getNpmName());
         }
       }
     }
-  } else if (trustCandidates.length > 0) {
-    printManualSetup(trustCandidates);
+  } else if (toRegister.length > 0) {
+    printManualSetup(toRegister);
   }
 
   if (failures.length > 0) {

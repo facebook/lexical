@@ -316,15 +316,24 @@ pnpm run setup-trusted-publishing --bootstrap
 
 Once a package exists on the registry, you can configure trusted
 publishing for it programmatically by adding `--setup-trust`. This
-runs `npm trust github` under the hood (requires `npm` ≥ 11.5 and an
-authenticated session with 2FA on the publishing account), and is
-idempotent — packages that already have a matching trust
-configuration are reported as `already configured` and skipped:
+runs `npm trust github` under the hood (requires `npm` ≥ 11.10 and an
+authenticated session with account-level 2FA on the publishing
+account), and is idempotent — the script reads the existing trust
+configuration for each package via a read-only registry call (no OTP)
+and skips packages whose config already matches:
 
 ```bash
 npm login --registry https://registry.npmjs.org
 pnpm run setup-trusted-publishing --setup-trust
 ```
+
+`npm trust github` is a write operation, so each package that *does*
+need configuring will trigger a one-time-password / web-auth prompt.
+On the first prompt npm prints a URL; open it in a browser, sign in,
+and tick **"Skip two-factor authentication for the next 5 minutes"**.
+Subsequent packages in the same run will then go through without
+re-prompting. The script also inserts a small (~2 s) pause between
+calls to stay under the registry's `E429` rate limit.
 
 For full first-time setup of a brand-new monorepo (or when adding a
 new package to an existing one), combine both flags:

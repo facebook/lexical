@@ -8,13 +8,6 @@
 
 import type {JSX} from 'react';
 
-import {batch, SelectionAlwaysOnDisplayExtension} from '@lexical/extension';
-import {
-  ClickableLinkExtension,
-  LinkAttributes,
-  LinkExtension,
-} from '@lexical/link';
-import {CheckListExtension, ListExtension} from '@lexical/list';
 import {CharacterLimitPlugin} from '@lexical/react/LexicalCharacterLimitPlugin';
 import {
   CollaborationPlugin,
@@ -22,9 +15,6 @@ import {
 } from '@lexical/react/LexicalCollaborationPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {TabIndentationPlugin} from '@lexical/react/LexicalTabIndentationPlugin';
-import {useOptionalExtensionDependency} from '@lexical/react/useExtensionComponent';
-import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
-import {TableExtension} from '@lexical/table';
 import {CAN_USE_DOM} from '@lexical/utils';
 import {useEffect, useMemo, useState} from 'react';
 import {Doc} from 'yjs';
@@ -34,11 +24,10 @@ import {
   createWebsocketProviderWithDoc,
 } from './collaboration';
 import {useSettings} from './context/SettingsContext';
+import {useSynchronizeSettings} from './hooks/useSynchronizeSettings';
 import ActionsPlugin from './plugins/ActionsPlugin';
-import {AutocompleteExtension} from './plugins/AutocompleteExtension';
 import AutoEmbedPlugin from './plugins/AutoEmbedPlugin';
 import CodeActionMenuPlugin from './plugins/CodeActionMenuPlugin';
-import {CodeHighlightExtension} from './plugins/CodeHighlightExtension';
 import CommentPlugin from './plugins/CommentPlugin';
 import ComponentPickerPlugin from './plugins/ComponentPickerPlugin';
 import ContextMenuPlugin from './plugins/ContextMenuPlugin';
@@ -47,10 +36,8 @@ import EmojiPickerPlugin from './plugins/EmojiPickerPlugin';
 import {ExcalidrawPlugin} from './plugins/ExcalidrawExtension';
 import FloatingLinkEditorPlugin from './plugins/FloatingLinkEditorPlugin';
 import FloatingTextFormatToolbarPlugin from './plugins/FloatingTextFormatToolbarPlugin';
-import {MaxLengthExtension} from './plugins/MaxLengthPlugin';
 import {MentionsPlugin} from './plugins/MentionsExtension';
 import ShortcutsPlugin from './plugins/ShortcutsPlugin';
-import {SpecialTextExtension} from './plugins/SpecialTextExtension';
 import SpeechToTextPlugin from './plugins/SpeechToTextPlugin';
 import TableCellActionMenuPlugin from './plugins/TableActionMenuPlugin';
 import TableCellResizer from './plugins/TableCellResizer';
@@ -61,7 +48,6 @@ import TableScrollShadowPlugin from './plugins/TableScrollShadowPlugin';
 import ToolbarPlugin from './plugins/ToolbarPlugin';
 import TreeViewPlugin from './plugins/TreeViewPlugin';
 import {VersionsPlugin} from './plugins/VersionsPlugin';
-import {VisibleLineBreakExtension} from './plugins/VisibleLineBreakExtension';
 import ContentEditable from './ui/ContentEditable';
 
 const COLLAB_DOC_ID = 'main';
@@ -70,41 +56,25 @@ const skipCollaborationInit =
   // @ts-expect-error
   window.parent != null && window.parent.frames.right === window;
 
-const DEFAULT_LINK_ATTRIBUTES: LinkAttributes = {
-  rel: 'noopener noreferrer',
-  target: '_blank',
-};
-
 export default function Editor(): JSX.Element {
   const {
     settings: {
-      isCodeHighlighted,
-      isCodeShiki,
       isCollab,
       useCollabV2,
-      isMaxLength,
       isCharLimit,
-      hasLinkAttributes,
       hasFitNestedTables,
-      tableCellMerge,
-      tableCellBackgroundColor,
-      tableHorizontalScroll,
-      hasNestedTables,
       isCharLimitUtf8,
       isRichText,
       showTreeView,
       showTableOfContents,
       shouldUseLexicalContextMenu,
       shouldPreserveNewLinesInMarkdown,
-      shouldAllowHighlightingWithBrackets,
-      selectionAlwaysOnDisplay,
-      listStrictIndent,
-      shouldDisableFocusOnClickChecklist,
-      isAutocomplete,
-      isVisibleLineBreak,
     },
   } = useSettings();
-  const isEditable = useLexicalEditable();
+  // Mirror the settings context onto the editor's reactive extension config
+  // signals (NOT via App.tsx's DynamicSettings, which would rebuild the
+  // editor). See the hook for details.
+  useSynchronizeSettings();
   const placeholder = isCollab
     ? 'Enter some collaborative rich text...'
     : isRichText
@@ -123,113 +93,6 @@ export default function Editor(): JSX.Element {
       setFloatingAnchorElem(_floatingAnchorElem);
     }
   };
-
-  // Settings that a live editor can react to are mirrored into their
-  // extensions' reactive config signals here — NOT in App.tsx's
-  // DynamicSettings, which would tear down and rebuild the whole editor on
-  // every change. A @preact/signals-core write is a no-op when the value is
-  // unchanged (strict `!==`), so toggling one setting only does work for the
-  // signal that changed, and `batch` coalesces the resulting extension effects
-  // (e.g. TableExtension's reconcile) into a single flush.
-  const autocomplete = useOptionalExtensionDependency(
-    AutocompleteExtension,
-  )?.output;
-  const visibleLineBreak = useOptionalExtensionDependency(
-    VisibleLineBreakExtension,
-  )?.output;
-  const maxLength = useOptionalExtensionDependency(MaxLengthExtension)?.output;
-  const codeHighlight = useOptionalExtensionDependency(
-    CodeHighlightExtension,
-  )?.output;
-  const specialText =
-    useOptionalExtensionDependency(SpecialTextExtension)?.output;
-  const link = useOptionalExtensionDependency(LinkExtension)?.output;
-  const list = useOptionalExtensionDependency(ListExtension)?.output;
-  const table = useOptionalExtensionDependency(TableExtension)?.output;
-  const checkList = useOptionalExtensionDependency(CheckListExtension)?.output;
-  const clickableLink = useOptionalExtensionDependency(
-    ClickableLinkExtension,
-  )?.output;
-  const selectionDisplay = useOptionalExtensionDependency(
-    SelectionAlwaysOnDisplayExtension,
-  )?.output;
-
-  useEffect(() => {
-    batch(() => {
-      if (autocomplete) {
-        autocomplete.disabled.value = !isAutocomplete;
-      }
-      if (visibleLineBreak) {
-        visibleLineBreak.disabled.value = !isVisibleLineBreak;
-      }
-      if (maxLength) {
-        maxLength.disabled.value = !isMaxLength;
-      }
-      if (codeHighlight) {
-        codeHighlight.mode.value = !isCodeHighlighted
-          ? 'off'
-          : isCodeShiki
-            ? 'shiki'
-            : 'prism';
-      }
-      if (specialText) {
-        specialText.disabled.value = !shouldAllowHighlightingWithBrackets;
-      }
-      if (link) {
-        link.attributes.value = hasLinkAttributes
-          ? DEFAULT_LINK_ATTRIBUTES
-          : undefined;
-      }
-      if (list) {
-        list.hasStrictIndent.value = listStrictIndent;
-      }
-      if (table) {
-        table.hasCellMerge.value = tableCellMerge;
-        table.hasCellBackgroundColor.value = tableCellBackgroundColor;
-        table.hasHorizontalScroll.value =
-          tableHorizontalScroll && !hasFitNestedTables;
-        table.hasNestedTables.value = hasNestedTables;
-      }
-      if (checkList) {
-        checkList.disableTakeFocusOnClick.value =
-          shouldDisableFocusOnClickChecklist;
-      }
-      if (clickableLink) {
-        clickableLink.disabled.value = isEditable;
-      }
-      if (selectionDisplay) {
-        selectionDisplay.disabled.value = !selectionAlwaysOnDisplay;
-      }
-    });
-  }, [
-    autocomplete,
-    visibleLineBreak,
-    maxLength,
-    codeHighlight,
-    specialText,
-    link,
-    list,
-    table,
-    checkList,
-    clickableLink,
-    selectionDisplay,
-    isAutocomplete,
-    isVisibleLineBreak,
-    isMaxLength,
-    isCodeHighlighted,
-    isCodeShiki,
-    shouldAllowHighlightingWithBrackets,
-    hasLinkAttributes,
-    listStrictIndent,
-    tableCellMerge,
-    tableCellBackgroundColor,
-    tableHorizontalScroll,
-    hasNestedTables,
-    hasFitNestedTables,
-    shouldDisableFocusOnClickChecklist,
-    isEditable,
-    selectionAlwaysOnDisplay,
-  ]);
 
   useEffect(() => {
     const updateViewPortWidth = () => {

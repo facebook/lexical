@@ -15,6 +15,7 @@ import {
   DecoratorTextExtension,
   HorizontalRuleExtension,
   SelectionAlwaysOnDisplayExtension,
+  WatchEditableExtension,
 } from '@lexical/extension';
 import {HashtagExtension} from '@lexical/hashtag';
 import {HistoryExtension} from '@lexical/history';
@@ -51,6 +52,7 @@ import {FlashMessageContext} from './context/FlashMessageContext';
 import {SettingsContext, useSettings} from './context/SettingsContext';
 import {ToolbarContext} from './context/ToolbarContext';
 import Editor from './Editor';
+import {registerSettingsSynchronization} from './hooks/useSynchronizeSettings';
 import logo from './images/logo.svg';
 import {KeywordsExtension} from './nodes/KeywordNode';
 import {PlaygroundImportExtension} from './nodes/PlaygroundImportExtension';
@@ -207,6 +209,9 @@ const AppExtension = defineExtension({
     AutoFocusExtension,
     ClearEditorExtension,
     DecoratorTextExtension,
+    // Exposes editor.isEditable() as a signal; consumed by
+    // registerSettingsSynchronization to drive ClickableLinkExtension.
+    WatchEditableExtension,
     HistoryExtension,
     KeywordsExtension,
     HashtagExtension,
@@ -279,6 +284,10 @@ function buildExtensionFromSettings(settings: DynamicSettings) {
       isRichText ? PlaygroundRichTextExtension : PlainTextExtension,
     ],
     name: '@lexical/playground/dynamic-config',
+    // Apply INITIAL_SETTINGS to the extension config signals synchronously as
+    // the editor is built (and wire the editable→clickable-link signal),
+    // before the React useSynchronizeSettings effect takes over live updates.
+    register: registerSettingsSynchronization,
   });
 }
 

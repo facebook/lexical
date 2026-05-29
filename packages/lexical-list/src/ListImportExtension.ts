@@ -147,9 +147,9 @@ function $liftFormatFromSingleParagraph(
  * so it is preserved here rather than unwrapped.
  */
 function $flattenListItemBlocks(children: LexicalNode[]): LexicalNode[] {
-  const isBoundary = (node: LexicalNode): boolean =>
+  const $isBoundary = (node: LexicalNode): boolean =>
     $isBlockLevel(node) && !$isListNode(node);
-  if (!children.some(isBoundary)) {
+  if (!children.some($isBoundary)) {
     return children;
   }
   // Partition into segments — each maximal run of inline siblings, and each
@@ -163,7 +163,7 @@ function $flattenListItemBlocks(children: LexicalNode[]): LexicalNode[] {
     }
   };
   for (const child of children) {
-    if (isBoundary(child)) {
+    if ($isBoundary(child)) {
       flushInlineRun();
       // Unwrap a block ElementNode to its inline content; a childless block
       // DecoratorNode stands on its own line.

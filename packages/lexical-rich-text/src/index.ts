@@ -31,18 +31,11 @@ import {
   $handleRichTextDrop,
   $insertDataTransferForRichText,
   $writeDragSourceToDataTransfer,
+  caretFromPoint,
   copyToClipboard,
   setLexicalClipboardDataTransfer,
 } from '@lexical/clipboard';
-import {DragonExtension} from '@lexical/dragon';
-import {
-  effect,
-  namedSignals,
-  NormalizeInlineElementsExtension,
-  NormalizeTripleClickSelectionExtension,
-  ReadonlySignal,
-  signal,
-} from '@lexical/extension';
+import {ReadonlySignal, signal} from '@lexical/extension';
 import {
   $isParentRTL,
   $moveCharacter,
@@ -78,13 +71,13 @@ import {
   $setDirectionFromDOM,
   $setFormatFromDOM,
   $setSelection,
+  CAN_USE_BEFORE_INPUT,
   CLICK_COMMAND,
   COMMAND_PRIORITY_EDITOR,
   CONTROLLED_TEXT_INSERTION_COMMAND,
   COPY_COMMAND,
   createCommand,
   CUT_COMMAND,
-  defineExtension,
   DELETE_CHARACTER_COMMAND,
   DELETE_LINE_COMMAND,
   DELETE_WORD_COMMAND,
@@ -98,6 +91,9 @@ import {
   INSERT_LINE_BREAK_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
   INSERT_TAB_COMMAND,
+  IS_APPLE_WEBKIT,
+  IS_IOS,
+  IS_SAFARI,
   isDOMNode,
   isSelectionCapturedInDecoratorInput,
   KEY_ARROW_DOWN_COMMAND,
@@ -110,22 +106,15 @@ import {
   KEY_ESCAPE_COMMAND,
   KEY_SPACE_COMMAND,
   KEY_TAB_COMMAND,
+  MOVE_TO_END,
+  MOVE_TO_START,
   OUTDENT_CONTENT_COMMAND,
   PASTE_COMMAND,
   PASTE_TAG,
   REMOVE_TEXT_COMMAND,
-  safeCast,
   SELECT_ALL_COMMAND,
   setNodeIndentFromDOM,
-  shallowMergeConfig,
 } from 'lexical';
-import caretFromPoint from 'shared/caretFromPoint';
-import {
-  CAN_USE_BEFORE_INPUT,
-  IS_APPLE_WEBKIT,
-  IS_IOS,
-  IS_SAFARI,
-} from 'shared/environment';
 
 export type SerializedHeadingNode = Spread<
   {
@@ -600,51 +589,6 @@ export type EscapeFormatTriggerConfig = {
   [K in TextFormatType]?: TriggerConfig | null;
 };
 
-/**
- * Configuration for {@link RichTextExtension}.
- *
- * @property escapeFormatTriggers - Per-format trigger configuration that
- *   controls which text formats are automatically cleared from the selection
- *   on specific user interactions.
- *
- *   Defaults to:
- *   ```ts
- *   {
- *     capitalize: {enter: true, space: true, tab: true},
- *     lowercase: {enter: true, space: true, tab: true},
- *     uppercase: {enter: true, space: true, tab: true},
- *   }
- *   ```
- *
- *   To opt in to escaping `code` formatting at text node boundaries:
- *   ```ts
- *   configExtension(RichTextExtension, {
- *     escapeFormatTriggers: {
- *       code: {onlyAtBoundary: true, enter: true, click: true, arrow: true},
- *     },
- *   })
- *   ```
- *
- * @property normalizeInlineElements - Adds normalization for each
- * subclass of ElementNode, which removes empty inline elements.
- * This option is intended to facilitate a smooth migration
- * from the plugin API and may be removed in the future
- *
- * Default: true
- *
- */
-export interface RichTextConfig {
-  escapeFormatTriggers: EscapeFormatTriggerConfig;
-}
-
-const DEFAULT_RICH_TEXT_CONFIG: RichTextConfig = {
-  escapeFormatTriggers: {
-    capitalize: {enter: true, space: true, tab: true},
-    lowercase: {enter: true, space: true, tab: true},
-    uppercase: {enter: true, space: true, tab: true},
-  },
-};
-
 function $escapeFormatsForTrigger(
   selection: RangeSelection,
   trigger: EscapeFormatTrigger,
@@ -698,45 +642,16 @@ function $escapeFormatsForTrigger(
   }
 }
 
-function mergeEscapeFormatTriggers(
-  config: EscapeFormatTriggerConfig,
-  overrides: EscapeFormatTriggerConfig,
-) {
-  const merged = shallowMergeConfig(config, overrides);
-  for (const k of Object.keys(overrides) as TextFormatType[]) {
-    merged[k] = mergeTriggerConfig(config[k], overrides[k]);
-  }
-  return merged;
-}
-
-function mergeTriggerConfig(
-  config: TriggerConfig | null | undefined,
-  override: TriggerConfig | null | undefined,
-): TriggerConfig | null | undefined {
-  if (!config || override === null) {
-    return override;
-  }
-  return shallowMergeConfig(config, override);
-}
-
-function mergeRichTextConfig(
-  config: RichTextConfig,
-  overrides: Partial<RichTextConfig>,
-): RichTextConfig {
-  const merged = shallowMergeConfig(config, overrides);
-  if (overrides.escapeFormatTriggers) {
-    merged.escapeFormatTriggers = mergeEscapeFormatTriggers(
-      config.escapeFormatTriggers,
-      overrides.escapeFormatTriggers,
-    );
-  }
-  return merged;
-}
+const DEFAULT_ESCAPE_FORMAT_TRIGGERS: EscapeFormatTriggerConfig = {
+  capitalize: {enter: true, space: true, tab: true},
+  lowercase: {enter: true, space: true, tab: true},
+  uppercase: {enter: true, space: true, tab: true},
+};
 
 export function registerRichText(
   editor: LexicalEditor,
   escapeFormatTriggers: ReadonlySignal<EscapeFormatTriggerConfig> = signal(
-    DEFAULT_RICH_TEXT_CONFIG.escapeFormatTriggers,
+    DEFAULT_ESCAPE_FORMAT_TRIGGERS,
   ),
 ): () => void {
   const removeListener = mergeRegister(
@@ -1362,40 +1277,110 @@ export function registerRichText(
       },
       COMMAND_PRIORITY_EDITOR,
     ),
+    editor.registerCommand<KeyboardEvent>(
+      MOVE_TO_END,
+      event => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) {
+          return false;
+        }
+        const {anchor} = selection;
+        if (anchor.type !== 'element' || anchor.offset !== 0) {
+          return false;
+        }
+        const element = anchor.getNode();
+        if (!$isElementNode(element)) {
+          return false;
+        }
+        const firstChild = element.getFirstChild();
+        if (!$isDecoratorNode(firstChild) || !firstChild.isInline()) {
+          return false;
+        }
+        const lastDescendant = element.getLastDescendant();
+        if (lastDescendant == null || $isDecoratorNode(lastDescendant)) {
+          // No selectable text — fall through to native browser behavior.
+          return false;
+        }
+        // Native browser cursor traversal stops at the inline decorator's
+        // contenteditable=false boundary when the caret starts at element
+        // offset 0, so MOVE_TO_END leaves the caret stuck. Move it ourselves.
+        const elementKey = element.getKey();
+        const ending = element.selectEnd();
+        if (event.shiftKey) {
+          ending.anchor.set(elementKey, 0, 'element');
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        return true;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    ),
+    editor.registerCommand<KeyboardEvent>(
+      MOVE_TO_START,
+      event => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) {
+          return false;
+        }
+        const {anchor, focus} = selection;
+        const focusBlock = $findMatchingParent(
+          focus.getNode(),
+          (node): node is ElementNode =>
+            $isElementNode(node) && !node.isInline(),
+        );
+        if (focusBlock === null) {
+          return false;
+        }
+        const firstChild = focusBlock.getFirstChild();
+        if (!$isDecoratorNode(firstChild) || !firstChild.isInline()) {
+          return false;
+        }
+        const lastDescendant = focusBlock.getLastDescendant();
+        if (lastDescendant == null || $isDecoratorNode(lastDescendant)) {
+          // No selectable text — fall through to native browser behavior.
+          return false;
+        }
+        // Cross-block selections fall through to native handling. The
+        // Chromium boundary bug only matters when both endpoints sit
+        // inside the block whose first child is the inline decorator.
+        const anchorBlock = $findMatchingParent(
+          anchor.getNode(),
+          (node): node is ElementNode =>
+            $isElementNode(node) && !node.isInline(),
+        );
+        if (anchorBlock !== focusBlock) {
+          return false;
+        }
+        const blockKey = focusBlock.getKey();
+        if (
+          focus.type === 'element' &&
+          focus.key === blockKey &&
+          focus.offset === 0
+        ) {
+          return false;
+        }
+        // Symmetric to the MOVE_TO_END case: Chromium stops the native
+        // caret at the inline decorator's contenteditable=false boundary
+        // when moving backwards, so element offset 0 is unreachable.
+        selection.focus.set(blockKey, 0, 'element');
+        if (!event.shiftKey) {
+          selection.anchor.set(blockKey, 0, 'element');
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        return true;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    ),
   );
   return removeListener;
 }
 
-/**
- * An extension to register \@lexical/rich-text behavior and nodes
- * ({@link HeadingNode}, {@link QuoteNode}).
- *
- * Includes configurable format escape via `escapeFormatTriggers`.
- * Use `configExtension` to customize which formats escape on which triggers.
- *
- * @example
- * ```ts
- * configExtension(RichTextExtension, {
- *   escapeFormatTriggers: {
- *     code: {click: true, arrow: true},
- *   },
- * })
- * ```
- */
-export const RichTextExtension = defineExtension({
-  build: (_editor, config) => namedSignals(config),
-  config: safeCast<RichTextConfig>(DEFAULT_RICH_TEXT_CONFIG),
-  conflictsWith: ['@lexical/plain-text'],
-  dependencies: [
-    DragonExtension,
-    NormalizeInlineElementsExtension,
-    NormalizeTripleClickSelectionExtension,
-  ],
-  mergeConfig: mergeRichTextConfig,
-  name: '@lexical/rich-text',
-  nodes: () => [HeadingNode, QuoteNode],
-  register: (editor, _config, state) =>
-    effect(() =>
-      registerRichText(editor, state.getOutput().escapeFormatTriggers),
-    ),
-});
+export {
+  type RichTextConfig,
+  RichTextExtension,
+} from './LexicalRichTextExtension';
+export {
+  RichTextImportExtension,
+  RichTextImportRules,
+} from './RichTextImportExtension';

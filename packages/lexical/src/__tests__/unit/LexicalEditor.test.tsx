@@ -9,6 +9,7 @@
 import type {JSX} from 'react';
 
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
+import invariant from '@lexical/internal/invariant';
 import {
   $createListItemNode,
   $createListNode,
@@ -71,6 +72,7 @@ import {
 } from 'lexical';
 import * as React from 'react';
 import {
+  act,
   createRef,
   ReactNode,
   useCallback,
@@ -80,8 +82,6 @@ import {
 } from 'react';
 import {createPortal} from 'react-dom';
 import {createRoot, Root} from 'react-dom/client';
-import invariant from 'shared/invariant';
-import * as ReactTestUtils from 'shared/react-test-utils';
 import {afterEach, assert, beforeEach, describe, expect, it, vi} from 'vitest';
 
 import {emptyFunction} from '../../LexicalUtils';
@@ -236,7 +236,7 @@ describe('LexicalEditor tests', () => {
       return <div ref={ref} contentEditable={true} />;
     }
 
-    ReactTestUtils.act(() => {
+    act(() => {
       reactRoot.render(<TestBase />);
     });
   }
@@ -1189,6 +1189,48 @@ describe('LexicalEditor tests', () => {
     boldListener();
   });
 
+  it('Detects infinite recursivity on update listeners', async () => {
+    const errorListener = vi.fn();
+    init(errorListener);
+
+    const unregisterListener = editor.registerUpdateListener(() => {
+      editor.update(() => {
+        $getRoot().markDirty();
+      });
+    });
+
+    expect(errorListener).toHaveBeenCalledTimes(0);
+
+    editor.update(() => {
+      $getRoot().markDirty();
+    });
+
+    // drain the microtask chain produced by the cascade
+    for (let i = 0; i < 200 && errorListener.mock.calls.length === 0; i++) {
+      await Promise.resolve();
+    }
+
+    expect(errorListener).toHaveBeenCalledTimes(1);
+    expect(errorListener.mock.calls[0][0].message).toMatch(
+      /endlessly enqueueing/,
+    );
+
+    unregisterListener();
+
+    // editor should be usable again after the cascade is cut
+    editor.update(
+      () => {
+        $getRoot().markDirty();
+      },
+      {discrete: true},
+    );
+    // drain any lingering microtask chain to confirm no further cascade
+    for (let i = 0; i < 10; i++) {
+      await Promise.resolve();
+    }
+    expect(errorListener).toHaveBeenCalledTimes(1);
+  });
+
   it('Should be able to update an editor state without a root element', () => {
     const ref = createRef<HTMLDivElement>();
 
@@ -1202,7 +1244,7 @@ describe('LexicalEditor tests', () => {
       return <div ref={ref} contentEditable={true} />;
     }
 
-    ReactTestUtils.act(() => {
+    act(() => {
       reactRoot.render(<TestBase element={null} />);
     });
     editor.update(() => {
@@ -1215,7 +1257,7 @@ describe('LexicalEditor tests', () => {
 
     expect(container.innerHTML).toBe('<div contenteditable="true"></div>');
 
-    ReactTestUtils.act(() => {
+    act(() => {
       reactRoot.render(<TestBase element={ref.current} />);
     });
 
@@ -1305,7 +1347,7 @@ describe('LexicalEditor tests', () => {
       );
     }
 
-    await ReactTestUtils.act(() => {
+    await act(() => {
       reactRoot.render(<TestBase changeElement={false} />);
     });
 
@@ -1313,7 +1355,7 @@ describe('LexicalEditor tests', () => {
       '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">Not changed</span></p></div>',
     );
 
-    await ReactTestUtils.act(() => {
+    await act(() => {
       reactRoot.render(<TestBase changeElement={true} />);
     });
 
@@ -1417,7 +1459,7 @@ describe('LexicalEditor tests', () => {
 
     afterEach(async () => {
       // Clean up so we are not calling setState outside of act
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         reactRoot.render(null);
         await Promise.resolve().then();
       });
@@ -1447,11 +1489,11 @@ describe('LexicalEditor tests', () => {
         );
       }
 
-      ReactTestUtils.act(() => {
+      act(() => {
         reactRoot.render(<Test />);
       });
       // Update the editor with the decorator
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         await editor.update(() => {
           const paragraph = $createParagraphNode();
           const test = $createTestDecoratorNode();
@@ -1497,7 +1539,7 @@ describe('LexicalEditor tests', () => {
         );
       }
 
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         reactRoot.render(<Test divKey={0} />);
         // Wait for update to complete
         await Promise.resolve().then();
@@ -1508,7 +1550,7 @@ describe('LexicalEditor tests', () => {
         '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><br></p></div>',
       );
 
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         reactRoot.render(<Test divKey={1} />);
         // Wait for update to complete
         await Promise.resolve().then();
@@ -2281,7 +2323,7 @@ describe('LexicalEditor tests', () => {
       return <div ref={ref} contentEditable={true} />;
     }
 
-    ReactTestUtils.act(() => {
+    act(() => {
       reactRoot.render(<TestBase />);
     });
 
@@ -2378,7 +2420,7 @@ describe('LexicalEditor tests', () => {
       return <div ref={ref} contentEditable={true} />;
     }
 
-    ReactTestUtils.act(() => {
+    act(() => {
       reactRoot.render(<TestBase />);
     });
 

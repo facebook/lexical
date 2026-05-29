@@ -13,6 +13,7 @@ import type {
 } from './shared/types';
 import type {LexicalComposerContextWithEditor} from '@lexical/react/LexicalComposerContext';
 
+import invariant from '@lexical/internal/invariant';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {ReactProviderExtension} from '@lexical/react/ReactProviderExtension';
@@ -21,7 +22,6 @@ import {
   defineExtension,
   shallowMergeConfig,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
 import {buildEditorComponent} from './shared/buildEditorComponent';
 

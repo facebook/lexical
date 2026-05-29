@@ -14,6 +14,8 @@ import {exec} from '../../shared/childProcess.mjs';
 import {packagesManager} from '../../shared/packagesManager.mjs';
 import readMonorepoPackageJson from '../../shared/readMonorepoPackageJson.mjs';
 
+/** @typedef {import('../../shared/PackageMetadata.mjs').PackageMetadata} PackageMetadata */
+
 const monorepoVersion = readMonorepoPackageJson().version;
 
 const LONG_TIMEOUT = 240 * 1000;
@@ -37,7 +39,7 @@ async function withCwd(dir, cb) {
 
 /**
  * @param {string} cmd
- * @returns {Promise<string>}
+ * @returns {Promise<{stdout: string; stderr: string}>}
  */
 function expectSuccessfulExec(cmd) {
   // Filter out VITEST_WORKER_ID to prevent Playwright from detecting Vitest environment
@@ -62,12 +64,12 @@ function expectSuccessfulExec(cmd) {
  */
 
 /**
- * @param {ctx} ExampleContext
+ * @param {ExampleContext} ctx
  * @returns {Promise<Map<string, PackageMetadata>>} The installed monorepo dependency map
  */
 async function buildExample({packageJson, exampleDir}) {
   let hasPlaywright = false;
-  /** @type {Map<string, string} */
+  /** @type {Map<string, string>} */
   const allDeps = new Map();
   for (const depType of [
     'dependencies',
@@ -109,8 +111,8 @@ async function buildExample({packageJson, exampleDir}) {
 /**
  * Build the example project with prerelease lexical artifacts
  *
- * @param {string} packgeJsonPath
- * @param {undefined | (ctx: ExampleContext) => void} [bodyFun=undefined]
+ * @param {string} packageJsonPath
+ * @param {undefined | ((ctx: ExampleContext) => void)} [bodyFun=undefined]
  */
 function describeExample(packageJsonPath, bodyFun = undefined) {
   const packageJson = fs.readJsonSync(packageJsonPath);
@@ -191,4 +193,69 @@ function describeDevExample(packageJsonPath) {
   });
 }
 
-export {describeDevExample, describeExample, expectSuccessfulExec, withCwd};
+/**
+ * Describe a fixture that consumes monorepo packages via pnpm's link:
+ * protocol. The fixture is intentionally outside the pnpm workspace, so
+ * `pnpm install --ignore-workspace` resolves link: deps as real symlinks
+ * into packages/ — the workflow real consumers use with `pnpm link`.
+ *
+ * @param {string} packageJsonPath
+ */
+function describeLinkedFixture(packageJsonPath) {
+  const packageJson = fs.readJsonSync(packageJsonPath);
+  const exampleDir = path.dirname(packageJsonPath);
+  describe(exampleDir, () => {
+    beforeAll(async () => {
+      // Wipe lockfile + node_modules so each run hits the linked package
+      // freshly (paranoia against stale pnpm content-addressable caches).
+      for (const cleanPath of ['node_modules', 'pnpm-lock.yaml', 'dist']) {
+        fs.removeSync(path.resolve(exampleDir, cleanPath));
+      }
+      await withCwd(exampleDir, async () => {
+        await expectSuccessfulExec('pnpm install --ignore-workspace');
+        await expectSuccessfulExec('pnpm run build');
+      });
+    }, LONG_TIMEOUT);
+    test('build succeeded', () => {
+      expect(true).toBe(true);
+    });
+    if (packageJson.scripts && packageJson.scripts.test) {
+      test(
+        'tests pass',
+        async () => {
+          await withCwd(exampleDir, () =>
+            expectSuccessfulExec('pnpm run test'),
+          );
+        },
+        LONG_TIMEOUT,
+      );
+    }
+  });
+}
+
+/**
+ * @param {Record<string, any>} packageJson
+ * @returns {boolean} true if any dependency uses pnpm's link: protocol
+ */
+function hasLinkProtocolDeps(packageJson) {
+  for (const depType of ['dependencies', 'devDependencies']) {
+    const deps = packageJson[depType] || {};
+    if (
+      Object.values(deps).some(
+        v => typeof v === 'string' && v.startsWith('link:'),
+      )
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+export {
+  describeDevExample,
+  describeExample,
+  describeLinkedFixture,
+  expectSuccessfulExec,
+  hasLinkProtocolDeps,
+  withCwd,
+};

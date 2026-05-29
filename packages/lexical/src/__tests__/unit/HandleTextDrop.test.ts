@@ -38,8 +38,11 @@ const caretFromPointState = vi.hoisted(() => ({
     null,
 }));
 
-vi.mock('shared/caretFromPoint', () => ({
-  default: (x: number, y: number) => caretFromPointState.current(x, y),
+// `$handleRichTextDrop` (in @lexical/clipboard) resolves the drop caret via
+// `./caretFromPoint`, which jsdom can't hit-test. Mock that exact module via
+// its `@lexical/clipboard/src/caretFromPoint` test alias.
+vi.mock('@lexical/clipboard/src/caretFromPoint', () => ({
+  caretFromPoint: (x: number, y: number) => caretFromPointState.current(x, y),
 }));
 
 function setCaretFromPoint(node: Node, offset: number): void {

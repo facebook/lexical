@@ -20,6 +20,7 @@ import {
   $setState,
   createEditor,
   createState,
+  IS_APPLE,
   isSelectionWithinEditor,
   ParagraphNode,
   resetRandomKey,
@@ -36,6 +37,8 @@ import {
   getTextDirection,
   isArray,
   isExactShortcutMatch,
+  isMoveToEnd,
+  isMoveToStart,
   scheduleMicroTask,
   scrollIntoViewIfNeeded,
 } from '../../LexicalUtils';
@@ -318,6 +321,46 @@ describe('LexicalUtils tests', () => {
       expect(isExactShortcutMatch(eventWithoutCtrl, 'a', {ctrlKey: true})).toBe(
         false,
       );
+    });
+
+    test('isMoveToEnd() / isMoveToStart() accept Shift modifier', () => {
+      const modifier = IS_APPLE ? {metaKey: true} : {ctrlKey: true};
+
+      const rightWithoutShift = new KeyboardEvent('keydown', {
+        ...modifier,
+        key: 'ArrowRight',
+      });
+      const rightWithShift = new KeyboardEvent('keydown', {
+        ...modifier,
+        key: 'ArrowRight',
+        shiftKey: true,
+      });
+      const leftWithoutShift = new KeyboardEvent('keydown', {
+        ...modifier,
+        key: 'ArrowLeft',
+      });
+      const leftWithShift = new KeyboardEvent('keydown', {
+        ...modifier,
+        key: 'ArrowLeft',
+        shiftKey: true,
+      });
+
+      expect(isMoveToEnd(rightWithoutShift)).toBe(true);
+      expect(isMoveToEnd(rightWithShift)).toBe(true);
+      expect(isMoveToStart(leftWithoutShift)).toBe(true);
+      expect(isMoveToStart(leftWithShift)).toBe(true);
+
+      // Wrong direction rejected
+      expect(isMoveToEnd(leftWithoutShift)).toBe(false);
+      expect(isMoveToStart(rightWithoutShift)).toBe(false);
+
+      // Extra Alt modifier rejected
+      const rightWithAlt = new KeyboardEvent('keydown', {
+        ...modifier,
+        altKey: true,
+        key: 'ArrowRight',
+      });
+      expect(isMoveToEnd(rightWithAlt)).toBe(false);
     });
 
     test('isTokenOrSegmented()', async () => {

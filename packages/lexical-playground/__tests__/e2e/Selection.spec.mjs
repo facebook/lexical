@@ -159,9 +159,7 @@ test.describe.parallel('Selection', () => {
           class="PlaygroundEditorTheme__code"
           dir="auto"
           spellcheck="false"
-          data-gutter="1"
-          data-highlight-language="javascript"
-          data-language="javascript">
+          data-gutter="1">
           <span data-lexical-text="true">Line2</span>
         </code>
       `,
@@ -1307,10 +1305,8 @@ test.describe.parallel('Selection', () => {
     page,
     isPlainText,
     isCollab,
-    browserName,
   }) => {
     test.skip(isPlainText || isCollab);
-    test.skip(browserName === 'firefox');
     await page.keyboard.type('קצת');
     await insertDateTime(page);
     await moveLeft(page);

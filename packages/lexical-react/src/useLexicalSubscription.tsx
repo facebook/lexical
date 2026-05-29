@@ -10,7 +10,8 @@ import type {LexicalEditor} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useMemo, useRef, useState} from 'react';
-import useLayoutEffect from 'shared/useLayoutEffect';
+
+import useLayoutEffect from './shared/useLayoutEffect';
 
 export type LexicalSubscription<T> = {
   initialValueFn: () => T;

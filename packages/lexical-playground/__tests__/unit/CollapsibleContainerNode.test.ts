@@ -6,20 +6,37 @@
  *
  */
 
+import {buildEditorFromExtensions} from '@lexical/extension';
 import {$generateNodesFromDOM} from '@lexical/html';
-import {$getRoot, $insertNodes} from 'lexical';
-import {initializeUnitTest} from 'lexical/src/__tests__/utils';
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getRoot,
+  $insertNodes,
+  $isDecoratorNode,
+  $isParagraphNode,
+  defineExtension,
+} from 'lexical';
+import {
+  $createTestDecoratorNode,
+  initializeUnitTest,
+  TestDecoratorNode,
+} from 'lexical/src/__tests__/utils';
 import {assert, describe, expect, it} from 'vitest';
 
+import {CollapsibleExtension} from '../../src/plugins/CollapsibleExtension';
 import {
+  $createCollapsibleContainerNode,
   $isCollapsibleContainerNode,
   CollapsibleContainerNode,
 } from '../../src/plugins/CollapsibleExtension/CollapsibleContainerNode';
 import {
+  $createCollapsibleContentNode,
   $isCollapsibleContentNode,
   CollapsibleContentNode,
 } from '../../src/plugins/CollapsibleExtension/CollapsibleContentNode';
 import {
+  $createCollapsibleTitleNode,
   $isCollapsibleTitleNode,
   CollapsibleTitleNode,
 } from '../../src/plugins/CollapsibleExtension/CollapsibleTitleNode';
@@ -235,4 +252,167 @@ describe('CollapsibleContainerNode HTML import (issue #8407)', () => {
       ],
     },
   );
+});
+
+describe('CollapsibleExtension transforms', () => {
+  const TestDecoratorExtension = defineExtension({
+    name: 'TestDecorator',
+    nodes: [TestDecoratorNode],
+  });
+
+  it('wraps inline content children in paragraphs', () => {
+    using editor = buildEditorFromExtensions(CollapsibleExtension);
+
+    editor.update(
+      () => {
+        $getRoot()
+          .clear()
+          .append(
+            $createCollapsibleContainerNode(true).append(
+              $createCollapsibleTitleNode().append(
+                $createParagraphNode().append($createTextNode('Title')),
+              ),
+              $createCollapsibleContentNode().append($createTextNode('Body')),
+            ),
+          );
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const container = $getRoot().getFirstChildOrThrow();
+      assert($isCollapsibleContainerNode(container));
+      const content = container.getLastChildOrThrow();
+      assert($isCollapsibleContentNode(content));
+      const child = content.getFirstChildOrThrow();
+      assert($isParagraphNode(child));
+      expect(child.getTextContent()).toBe('Body');
+    });
+  });
+
+  it('adds a paragraph to empty content loaded from serialized state', () => {
+    using editor = buildEditorFromExtensions(CollapsibleExtension);
+
+    const state = editor.parseEditorState(
+      JSON.stringify({
+        root: {
+          children: [
+            {
+              children: [
+                {
+                  children: [
+                    {
+                      children: [
+                        {
+                          detail: 0,
+                          format: 0,
+                          mode: 'normal',
+                          style: '',
+                          text: 'Title',
+                          type: 'text',
+                          version: 1,
+                        },
+                      ],
+                      direction: null,
+                      format: '',
+                      indent: 0,
+                      textFormat: 0,
+                      textStyle: '',
+                      type: 'paragraph',
+                      version: 1,
+                    },
+                  ],
+                  direction: null,
+                  format: '',
+                  indent: 0,
+                  type: 'collapsible-title',
+                  version: 1,
+                },
+                {
+                  children: [],
+                  direction: null,
+                  format: '',
+                  indent: 0,
+                  type: 'collapsible-content',
+                  version: 1,
+                },
+              ],
+              direction: null,
+              format: '',
+              indent: 0,
+              open: true,
+              type: 'collapsible-container',
+              version: 1,
+            },
+          ],
+          direction: null,
+          format: '',
+          indent: 0,
+          type: 'root',
+          version: 1,
+        },
+      }),
+    );
+
+    editor.setEditorState(state);
+    editor.update(
+      () => {
+        const container = $getRoot().getFirstChildOrThrow();
+        assert($isCollapsibleContainerNode(container));
+        const content = container.getLastChildOrThrow();
+        assert($isCollapsibleContentNode(content));
+        content.markDirty();
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const container = $getRoot().getFirstChildOrThrow();
+      assert($isCollapsibleContainerNode(container));
+      const content = container.getLastChildOrThrow();
+      assert($isCollapsibleContentNode(content));
+      expect($isParagraphNode(content.getFirstChild())).toBe(true);
+    });
+  });
+
+  it('leaves block decorator content children unwrapped', () => {
+    using editor = buildEditorFromExtensions(
+      CollapsibleExtension,
+      TestDecoratorExtension,
+    );
+
+    editor.update(
+      () => {
+        $getRoot()
+          .clear()
+          .append(
+            $createCollapsibleContainerNode(true).append(
+              $createCollapsibleTitleNode().append(
+                $createParagraphNode().append($createTextNode('Title')),
+              ),
+              $createCollapsibleContentNode().append(
+                $createTextNode('Before'),
+                $createTestDecoratorNode().setIsInline(false),
+                $createTestDecoratorNode(),
+              ),
+            ),
+          );
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const container = $getRoot().getFirstChildOrThrow();
+      assert($isCollapsibleContainerNode(container));
+      const content = container.getLastChildOrThrow();
+      assert($isCollapsibleContentNode(content));
+      const children = content.getChildren();
+
+      expect($isParagraphNode(children[0])).toBe(true);
+      expect($isDecoratorNode(children[1]) && !children[1].isInline()).toBe(
+        true,
+      );
+      expect($isParagraphNode(children[2])).toBe(true);
+    });
+  });
 });

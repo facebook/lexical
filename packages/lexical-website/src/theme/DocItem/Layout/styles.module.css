@@ -1,0 +1,41 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+.docItemContainer header + *,
+.docItemContainer article > *:first-child {
+  margin-top: 0;
+}
+
+/* Always reserve space for the right column on desktop so the layout (and the
+ * Copy page button) stays consistent across pages with and without a TOC. */
+@media (min-width: 997px) {
+  .docItemCol {
+    max-width: 75% !important;
+  }
+}
+
+/* The right column always renders on desktop but is hidden on mobile, where the
+ * button falls back to the top of the article. */
+@media (max-width: 996px) {
+  .tocCol {
+    display: none;
+  }
+}
+
+.copyPageDesktop {
+  margin-bottom: 1rem;
+}
+
+.copyPageMobile {
+  margin-bottom: 0.75rem;
+}
+
+@media (min-width: 997px) {
+  .copyPageMobile {
+    display: none;
+  }
+}

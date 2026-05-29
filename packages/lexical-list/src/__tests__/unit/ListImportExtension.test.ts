@@ -19,6 +19,7 @@ import {
   type DOMImportContext,
   DOMImportExtension,
   type DOMPreprocessFn,
+  HorizontalRuleImportExtension,
   ImportOverlays,
   InlineSchema,
   sel,
@@ -465,6 +466,75 @@ describe('MS Word paste — preprocess-installed overlay', () => {
     importHTMLDocument(editor, htmlWithoutMeta);
     editor.read(() => {
       expect($getRoot().getChildren().some($isListNode)).toBe(false);
+    });
+  });
+});
+
+describe('ListItemNode block flattening', () => {
+  function $liChildTypes(): string[] {
+    const list = $getRoot().getFirstChild();
+    assert($isListNode(list), 'expected a ListNode');
+    const li = list.getFirstChild();
+    assert($isListItemNode(li), 'expected a ListItemNode');
+    return li.getChildren().map(c => `${c.getType()}:${c.getTextContent()}`);
+  }
+
+  test('keeps contiguous inlines together, breaking only at block boundaries', () => {
+    using editor = buildEditor();
+    importInto(editor, '<ul><li>a <b>b</b><div>c</div></li></ul>');
+    editor.read(() => {
+      // `a ` and `b` are inline siblings and must stay on the same line; the
+      // <div> (lowered to a ParagraphNode) is the sole boundary.
+      expect($liChildTypes()).toEqual([
+        'text:a ',
+        'text:b',
+        'linebreak:\n',
+        'text:c',
+      ]);
+    });
+  });
+
+  test('treats a non-paragraph block (<hr>) as a boundary, not inline content', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [
+          CoreImportExtension,
+          HorizontalRuleImportExtension,
+          ListImportExtension,
+        ],
+        name: 'list-hr-host',
+        nodes: [ListNode, ListItemNode],
+      }),
+    );
+    importInto(editor, '<ul><li>x<hr />y</li></ul>');
+    editor.read(() => {
+      // A HorizontalRuleNode is block-level but not a ParagraphNode; it must
+      // still split the run rather than be spliced inline between x and y.
+      expect($liChildTypes().map(s => s.split(':')[0])).toEqual([
+        'text',
+        'linebreak',
+        'horizontalrule',
+        'linebreak',
+        'text',
+      ]);
+    });
+  });
+
+  test('preserves a nested list instead of flattening it', () => {
+    using editor = buildEditor();
+    importInto(editor, '<ul><li>parent<ul><li>child</li></ul></li></ul>');
+    editor.read(() => {
+      const findNested = (node: LexicalNode): boolean => {
+        if ($isListItemNode(node)) {
+          return node.getChildren().some($isListNode);
+        }
+        return $isListNode(node) && node.getChildren().some(findNested);
+      };
+      // The nested <ul> survives as a ListNode (lifted into a sibling item by
+      // $normalizeListChildren), not demoted to line-break-separated text.
+      const outer = $getRoot().getFirstChild();
+      assert($isListNode(outer), 'expected a ListNode');
+      expect(outer.getChildren().some(findNested)).toBe(true);
     });
   });
 });

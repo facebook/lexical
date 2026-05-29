@@ -9,6 +9,7 @@
 import type {ChildSchema, DOMImportContext} from '@lexical/html';
 
 import {
+  $isBlockLevel,
   $propagateTextAlignToBlockChildren,
   defineImportRule,
   DOMImportExtension,
@@ -17,6 +18,7 @@ import {
 } from '@lexical/html';
 import {
   $createLineBreakNode,
+  $isElementNode,
   $isParagraphNode,
   $setDirectionFromDOM,
   $setFormatFromDOM,
@@ -127,32 +129,56 @@ function $liftFormatFromSingleParagraph(
 }
 
 /**
- * Collapse `ParagraphNode` children of a `<li>` into inline-with-line-break
- * form: each `<p>` (or its transparent-block stand-in, e.g. `<div>` which
- * the {@link TransparentBlockRule} also lowers to a `ParagraphNode`) is
- * unwrapped, and a {@link $createLineBreakNode} is inserted at every
- * boundary where the paragraph would otherwise butt up against a non-empty
- * neighbor. Equivalent to the legacy `wrapContinuousInlines` +
- * `$unwrapArtificialNodes` pair from `$generateNodesFromDOM`, but without
- * the `ArtificialNode__DO_NOT_USE` marker — the `ParagraphNode` is now the
- * source of truth for "this run was its own block in the source HTML".
+ * Collapse block children of a `<li>` into inline-with-line-break form: a
+ * `ListItemNode` is an inline-level container, so any block child marks a
+ * boundary. Contiguous inline siblings are kept together as a single run and
+ * one {@link $createLineBreakNode} is inserted between runs — reproducing the
+ * legacy `wrapContinuousInlines` + `$unwrapArtificialNodes` shape
+ * (`<li>1<div>2</div>3</li>` → `1<br>2<br>3`) without the
+ * `ArtificialNode__DO_NOT_USE` marker.
+ *
+ * Boundaries are detected with {@link $isBlockLevel}, NOT `$isParagraphNode`:
+ * the `<div>`/`<section>`/… `TransparentBlockRule` happens to emit
+ * `ParagraphNode`s, but a `<blockquote>` (`QuoteNode`), heading
+ * (`HeadingNode`), or block decorator (`HorizontalRuleNode`, …) is just as
+ * much a block boundary and must not be silently spliced into the list item
+ * as-is. A nested `ListNode` is the one deliberate exception — it is a valid
+ * list-item child that {@link $normalizeListChildren} lifts into a sibling,
+ * so it is preserved here rather than unwrapped.
  */
-function $flattenParagraphChildren(children: LexicalNode[]): LexicalNode[] {
-  if (!children.some($isParagraphNode)) {
+function $flattenListItemBlocks(children: LexicalNode[]): LexicalNode[] {
+  const isBoundary = (node: LexicalNode): boolean =>
+    $isBlockLevel(node) && !$isListNode(node);
+  if (!children.some(isBoundary)) {
     return children;
   }
-  const out: LexicalNode[] = [];
+  // Partition into segments — each maximal run of inline siblings, and each
+  // boundary's own content — then join the segments with a single line break.
+  const segments: LexicalNode[][] = [];
+  let inlineRun: LexicalNode[] = [];
+  const flushInlineRun = () => {
+    if (inlineRun.length > 0) {
+      segments.push(inlineRun);
+      inlineRun = [];
+    }
+  };
   for (const child of children) {
+    if (isBoundary(child)) {
+      flushInlineRun();
+      // Unwrap a block ElementNode to its inline content; a childless block
+      // DecoratorNode stands on its own line.
+      segments.push($isElementNode(child) ? child.getChildren() : [child]);
+    } else {
+      inlineRun.push(child);
+    }
+  }
+  flushInlineRun();
+  const out: LexicalNode[] = [];
+  for (const segment of segments) {
     if (out.length > 0) {
       out.push($createLineBreakNode());
     }
-    if ($isParagraphNode(child)) {
-      for (const grand of child.getChildren()) {
-        out.push(grand);
-      }
-    } else {
-      out.push(child);
-    }
+    out.push(...segment);
   }
   return out;
 }
@@ -173,9 +199,11 @@ const ListItemRule = defineImportRule({
       node.splice(
         0,
         0,
-        $liftFormatFromSingleParagraph(
-          node,
-          $flattenParagraphChildren(ctx.$importChildren(el)),
+        // Lift a sole wrapping paragraph's format onto the item *before*
+        // flattening, otherwise the paragraph would already be unwrapped and
+        // its alignment lost.
+        $flattenListItemBlocks(
+          $liftFormatFromSingleParagraph(node, ctx.$importChildren(el)),
         ),
       ),
     ];
@@ -203,9 +231,8 @@ function $buildChecklistItem(
     node.splice(
       0,
       0,
-      $liftFormatFromSingleParagraph(
-        node,
-        $flattenParagraphChildren(ctx.$importChildren(el)),
+      $flattenListItemBlocks(
+        $liftFormatFromSingleParagraph(node, ctx.$importChildren(el)),
       ),
     ),
   ];

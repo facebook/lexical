@@ -1069,6 +1069,13 @@ rules. In the new pipeline both are stated at the call site: the rule
 asks for inline children, gets them packaged by `InlineSchema`, and
 attaches them via the normal `ElementNode.splice` primitive.
 
+### Concrete example: playground
+
+The lexical-playground application was migrated in
+[#8590](https://github.com/facebook/lexical/pull/8590), which should
+be a good example of what it would take to move an entire application
+from `importDOM` to `DOMImportExtension` (while adding test coverage).
+
 ## Capabilities
 
 Current:

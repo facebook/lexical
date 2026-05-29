@@ -23,6 +23,7 @@ import {
   IS_SUBSCRIPT,
   IS_SUPERSCRIPT,
   IS_UNDERLINE,
+  isBlockDomNode,
   isDOMTextNode,
   isLastChildInBlockNode,
   isOnlyChildInBlockNode,
@@ -490,18 +491,27 @@ const ParagraphRule = defineImportRule({
 });
 
 /**
- * `<div>` rule. Without this `<div>` would fall through to the
- * dispatcher's `$hoistChildrenOf` fallback, which transparently lifts
- * children up to the enclosing context. That works structurally, but
- * any `text-align` set on the `<div>` is lost because the synthesized
- * paragraph (built by the enclosing schema) sees the *grandparent* as
- * `domParent` — not the `<div>`.
+ * Transparent block-container rule for any unconverted block-level DOM
+ * element — `<div>`, but also `<section>`, `<article>`, `<header>`,
+ * `<figure>`, … (everything {@link isBlockDomNode} recognizes via the
+ * legacy `BLOCK_TAG_RE`). Without it these would fall through to the
+ * dispatcher's `$hoistChildrenOf` / `DefaultHoistRule` fallback, which
+ * transparently lifts children up to the enclosing context. That works
+ * structurally, but (a) two sibling `<section>`s collapse into a single
+ * paragraph instead of two, and (b) any `text-align` set on the element
+ * is lost because the synthesized paragraph (built by the enclosing
+ * schema) sees the *grandparent* as `domParent`.
+ *
+ * The rule is registered as a `sel.any()` wildcard and defers (via
+ * `$next()`) for non-block elements so inline tags still reach the inline
+ * rules. Higher-priority tag rules (`<p>`, `<li>`, `<td>`, headings, …)
+ * are dispatched first and never reach here.
  *
  * Mirrors the legacy `$createNodesFromDOM` branch that ran
  * `wrapContinuousInlines` on every `isBlockDomNode` whose ancestor
  * chain was free of block-level lexical nodes: at the root we wrap
  * inline children in paragraphs (`BlockSchema`) so {@link
- * $paragraphPackageRun} can pull the `<div>`'s `text-align` into the
+ * $paragraphPackageRun} can pull the element's `text-align` into the
  * wrapper; inside an existing block lexical container
  * ({@link ImportInBlockContext} is `true`) we just hoist children
  * — the surrounding `<li>`/`<td>`/etc. handles inline content
@@ -510,10 +520,15 @@ const ParagraphRule = defineImportRule({
  *
  * In both branches we explicitly walk the resulting block children so
  * an inner `<p>` (which would otherwise survive untouched) inherits
- * the `<div>`'s `text-align`.
+ * the element's `text-align`.
  */
-const DivRule = defineImportRule({
-  $import: (ctx, el) => {
+const TransparentBlockRule = defineImportRule({
+  $import: (ctx, el, $next) => {
+    if (!isBlockDomNode(el)) {
+      // Inline element with no dedicated rule — let the inline rules (or
+      // the default hoist) handle it.
+      return $next();
+    }
     if (ctx.get(ImportInBlockContext)) {
       // Mirror the legacy ArtificialNode flow: hoist the children but
       // wrap them in a stand-in block node so the enclosing container
@@ -536,8 +551,8 @@ const DivRule = defineImportRule({
       el,
     );
   },
-  match: sel.tag('div'),
-  name: '@lexical/html/div',
+  match: sel.any(),
+  name: '@lexical/html/transparent-block',
 });
 
 /**
@@ -552,7 +567,7 @@ const DivRule = defineImportRule({
 export const CoreImportRules = [
   IgnoreScriptStyleRule,
   ParagraphRule,
-  DivRule,
+  TransparentBlockRule,
   TextRule,
   LineBreakRule,
   InlineFormatRule,

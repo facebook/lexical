@@ -27,6 +27,7 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {TabIndentationPlugin} from '@lexical/react/LexicalTabIndentationPlugin';
 import {useOptionalExtensionDependency} from '@lexical/react/useExtensionComponent';
 import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
+import {TableExtension} from '@lexical/table';
 import {CAN_USE_DOM} from '@lexical/utils';
 import {OutputExtension} from 'lexical';
 import {useEffect, useMemo, useState} from 'react';
@@ -103,6 +104,10 @@ export default function Editor(): JSX.Element {
       isCharLimit,
       hasLinkAttributes,
       hasFitNestedTables,
+      tableCellMerge,
+      tableCellBackgroundColor,
+      tableHorizontalScroll,
+      hasNestedTables,
       isCharLimitUtf8,
       isRichText,
       showTreeView,
@@ -160,6 +165,21 @@ export default function Editor(): JSX.Element {
     hasLinkAttributes ? DEFAULT_LINK_ATTRIBUTES : undefined,
   );
   useSyncExtensionSignal(ListExtension, 'hasStrictIndent', listStrictIndent);
+  // Table behavior toggles are reactive TableExtension config — sync them
+  // through its signals so flipping a setting updates the live editor rather
+  // than forcing a full editor rebuild (see DynamicSettings in App.tsx).
+  useSyncExtensionSignal(TableExtension, 'hasCellMerge', tableCellMerge);
+  useSyncExtensionSignal(
+    TableExtension,
+    'hasCellBackgroundColor',
+    tableCellBackgroundColor,
+  );
+  useSyncExtensionSignal(
+    TableExtension,
+    'hasHorizontalScroll',
+    tableHorizontalScroll && !hasFitNestedTables,
+  );
+  useSyncExtensionSignal(TableExtension, 'hasNestedTables', hasNestedTables);
   useSyncExtensionSignal(
     CheckListExtension,
     'disableTakeFocusOnClick',

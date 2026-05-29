@@ -37,7 +37,6 @@ import {
   $createQuoteNode,
   RichTextExtension,
 } from '@lexical/rich-text';
-import {TableExtension} from '@lexical/table';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -244,32 +243,30 @@ const AppExtension = defineExtension({
 });
 
 /**
- * This is not a recommended pattern, extensions should be as static as
- * possible, but this is a special case where we build fundamentally
- * different editor configurations based on the query string.
+ * The *only* settings that require tearing down and rebuilding the editor,
+ * because they change the set of extensions in use (and therefore the initial
+ * editor state). Building a dynamic extension from settings at all is an
+ * anti-pattern — extensions should be as static as possible — and is tolerated
+ * here only because the playground builds fundamentally different editors from
+ * the query string.
+ *
+ * IMPORTANT: Do NOT add a setting here unless changing it genuinely requires a
+ * different extension graph. Anything a live editor can react to through an
+ * extension's config signals — table behavior toggles, link attributes,
+ * character limits, autocomplete, etc. — MUST instead be synced with
+ * `useSyncExtensionSignal` in `Editor.tsx`. Adding such a setting here forces a
+ * full editor rebuild (discarding content, selection, and history) on every
+ * toggle, which is exactly the bug that moving the table settings out of here
+ * fixed.
  */
 interface DynamicSettings {
   isCollab: boolean;
   emptyEditor: boolean;
   isRichText: boolean;
-  tableCellMerge: boolean;
-  tableCellBackgroundColor: boolean;
-  tableHorizontalScroll: boolean;
-  hasNestedTables: boolean;
-  hasFitNestedTables: boolean;
 }
 
 function buildExtensionFromSettings(settings: DynamicSettings) {
-  const {
-    isCollab,
-    emptyEditor,
-    isRichText,
-    tableCellMerge,
-    tableCellBackgroundColor,
-    tableHorizontalScroll,
-    hasNestedTables,
-    hasFitNestedTables,
-  } = settings;
+  const {isCollab, emptyEditor, isRichText} = settings;
   return defineExtension({
     $initialEditorState: isCollab
       ? null
@@ -279,12 +276,6 @@ function buildExtensionFromSettings(settings: DynamicSettings) {
     dependencies: [
       AppExtension,
       configExtension(HistoryExtension, {disabled: isCollab}),
-      configExtension(TableExtension, {
-        hasCellBackgroundColor: tableCellBackgroundColor,
-        hasCellMerge: tableCellMerge,
-        hasHorizontalScroll: tableHorizontalScroll && !hasFitNestedTables,
-        hasNestedTables,
-      }),
       isRichText ? PlaygroundRichTextExtension : PlainTextExtension,
     ],
     name: '@lexical/playground/dynamic-config',
@@ -293,41 +284,16 @@ function buildExtensionFromSettings(settings: DynamicSettings) {
 
 function App(): JSX.Element {
   const {
-    settings: {
-      isCollab,
-      emptyEditor,
-      isRichText,
-      measureTypingPerf,
-      tableCellMerge,
-      tableCellBackgroundColor,
-      tableHorizontalScroll,
-      hasNestedTables,
-      hasFitNestedTables,
-    },
+    settings: {isCollab, emptyEditor, isRichText, measureTypingPerf},
   } = useSettings();
 
+  // Only the editor-recreating settings belong in this memo's deps. Table
+  // behavior toggles (and other live-reconfigurable settings) are applied
+  // reactively in Editor.tsx via useSyncExtensionSignal, so they must NOT
+  // appear here or they would rebuild the whole editor on every change.
   const app = useMemo(
-    () =>
-      buildExtensionFromSettings({
-        emptyEditor,
-        hasFitNestedTables,
-        hasNestedTables,
-        isCollab,
-        isRichText,
-        tableCellBackgroundColor,
-        tableCellMerge,
-        tableHorizontalScroll,
-      }),
-    [
-      emptyEditor,
-      isCollab,
-      isRichText,
-      tableCellMerge,
-      tableCellBackgroundColor,
-      tableHorizontalScroll,
-      hasNestedTables,
-      hasFitNestedTables,
-    ],
+    () => buildExtensionFromSettings({emptyEditor, isCollab, isRichText}),
+    [emptyEditor, isCollab, isRichText],
   );
 
   return (

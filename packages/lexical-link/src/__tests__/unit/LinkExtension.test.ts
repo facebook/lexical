@@ -30,6 +30,7 @@ import {
   $isParagraphNode,
   $isRangeSelection,
   $isTextNode,
+  configExtension,
   LexicalEditorWithDispose,
   PASTE_COMMAND,
   TextNode,
@@ -368,7 +369,7 @@ describe('Link', () => {
           $getRoot().append(code);
         },
         dependencies: [
-          [LinkExtension, {validateUrl: () => true}],
+          configExtension(LinkExtension, {validateUrl: () => true}),
           RichTextExtension,
           CodeExtension,
         ],
@@ -399,7 +400,7 @@ describe('Link', () => {
           $getRoot().append(p);
         },
         dependencies: [
-          [LinkExtension, {validateUrl: () => true}],
+          configExtension(LinkExtension, {validateUrl: () => true}),
           RichTextExtension,
         ],
         name: '[root-paste]',

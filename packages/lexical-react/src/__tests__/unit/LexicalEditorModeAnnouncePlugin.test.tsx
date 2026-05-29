@@ -12,7 +12,7 @@ import {EditorModeAnnouncePlugin} from '@lexical/react/LexicalEditorModeAnnounce
 import {type LexicalEditor} from 'lexical';
 import * as React from 'react';
 import {createRoot, type Root} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
+import {act} from 'react-dom/test-utils';
 import {afterEach, beforeEach, describe, expect, test} from 'vitest';
 
 function Probe({onEditor}: {onEditor: (editor: LexicalEditor) => void}) {
@@ -40,7 +40,7 @@ describe('EditorModeAnnouncePlugin', () => {
   });
 
   afterEach(() => {
-    ReactTestUtils.act(() => {
+    act(() => {
       root.unmount();
     });
     document.body.removeChild(container);
@@ -52,7 +52,7 @@ describe('EditorModeAnnouncePlugin', () => {
 
   function mount(): LexicalEditor {
     let editor: LexicalEditor | null = null;
-    ReactTestUtils.act(() => {
+    act(() => {
       root.render(
         <LexicalComposer
           initialConfig={{
@@ -87,12 +87,12 @@ describe('EditorModeAnnouncePlugin', () => {
   test('announces mode transitions via the live region', () => {
     const e = mount();
 
-    ReactTestUtils.act(() => {
+    act(() => {
       e.setEditable(false);
     });
     expect(findRegion()!.textContent).toBe('Editor is read-only');
 
-    ReactTestUtils.act(() => {
+    act(() => {
       e.setEditable(true);
     });
     expect(findRegion()!.textContent).toBe('Editor is editable');
@@ -100,7 +100,7 @@ describe('EditorModeAnnouncePlugin', () => {
 
   test('custom messages override the default English strings', () => {
     let editor: LexicalEditor | null = null;
-    ReactTestUtils.act(() => {
+    act(() => {
       root.render(
         <LexicalComposer
           initialConfig={{
@@ -127,7 +127,7 @@ describe('EditorModeAnnouncePlugin', () => {
       throw new Error('editor not ready');
     }
     const e: LexicalEditor = editor;
-    ReactTestUtils.act(() => {
+    act(() => {
       e.setEditable(false);
     });
     expect(findRegion()!.textContent).toBe('읽기 전용');

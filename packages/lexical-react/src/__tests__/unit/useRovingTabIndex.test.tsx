@@ -10,7 +10,7 @@ import {useRovingTabIndex} from '@lexical/react/useRovingTabIndex';
 import * as React from 'react';
 import {useRef} from 'react';
 import {createRoot, type Root} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
+import {act} from 'react-dom/test-utils';
 import {afterEach, beforeEach, describe, expect, test} from 'vitest';
 
 function Group({
@@ -50,7 +50,7 @@ describe('useRovingTabIndex', () => {
   });
 
   afterEach(() => {
-    ReactTestUtils.act(() => {
+    act(() => {
       root.unmount();
     });
     document.body.removeChild(container);
@@ -65,7 +65,7 @@ describe('useRovingTabIndex', () => {
   }
 
   test('sets tabindex=0 on the first item, -1 on the rest', () => {
-    ReactTestUtils.act(() => {
+    act(() => {
       root.render(<Group />);
     });
     expect(byId('btn-0').tabIndex).toBe(0);
@@ -74,10 +74,10 @@ describe('useRovingTabIndex', () => {
   });
 
   test('ArrowRight moves focus to the next item and updates tabindex', () => {
-    ReactTestUtils.act(() => {
+    act(() => {
       root.render(<Group />);
     });
-    ReactTestUtils.act(() => {
+    act(() => {
       byId('btn-0').focus();
     });
     dispatchKey(byId('btn-0'), 'ArrowRight');
@@ -87,10 +87,10 @@ describe('useRovingTabIndex', () => {
   });
 
   test('ArrowLeft wraps from the first item to the last', () => {
-    ReactTestUtils.act(() => {
+    act(() => {
       root.render(<Group />);
     });
-    ReactTestUtils.act(() => {
+    act(() => {
       byId('btn-0').focus();
     });
     dispatchKey(byId('btn-0'), 'ArrowLeft');
@@ -98,10 +98,10 @@ describe('useRovingTabIndex', () => {
   });
 
   test('ArrowRight wraps from the last item to the first', () => {
-    ReactTestUtils.act(() => {
+    act(() => {
       root.render(<Group />);
     });
-    ReactTestUtils.act(() => {
+    act(() => {
       byId('btn-2').focus();
     });
     dispatchKey(byId('btn-2'), 'ArrowRight');
@@ -109,10 +109,10 @@ describe('useRovingTabIndex', () => {
   });
 
   test('Home jumps to the first item, End to the last', () => {
-    ReactTestUtils.act(() => {
+    act(() => {
       root.render(<Group />);
     });
-    ReactTestUtils.act(() => {
+    act(() => {
       byId('btn-1').focus();
     });
     dispatchKey(byId('btn-1'), 'Home');
@@ -122,10 +122,10 @@ describe('useRovingTabIndex', () => {
   });
 
   test('vertical orientation ignores ArrowLeft/Right', () => {
-    ReactTestUtils.act(() => {
+    act(() => {
       root.render(<Group orientation="vertical" />);
     });
-    ReactTestUtils.act(() => {
+    act(() => {
       byId('btn-0').focus();
     });
     dispatchKey(byId('btn-0'), 'ArrowRight');
@@ -135,7 +135,7 @@ describe('useRovingTabIndex', () => {
   });
 
   test('does nothing when the group is empty', () => {
-    ReactTestUtils.act(() => {
+    act(() => {
       root.render(<Group count={0} />);
     });
     const group = byId('group');

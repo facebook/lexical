@@ -13,8 +13,8 @@ import type {CollabTextNode} from './CollabTextNode';
 import type {Cursor} from './SyncCursors';
 import type {LexicalEditor, NodeKey} from 'lexical';
 
+import invariant from '@lexical/internal/invariant';
 import {Klass, LexicalNode} from 'lexical';
-import invariant from 'shared/invariant';
 import {Doc, XmlElement, XmlText} from 'yjs';
 
 import {Provider} from '.';

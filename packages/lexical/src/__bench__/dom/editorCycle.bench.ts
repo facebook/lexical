@@ -8,7 +8,7 @@
 
 import type {LexicalEditor} from '../../';
 
-import invariant from 'shared/invariant';
+import invariant from '@lexical/internal/invariant';
 import {bench, describe} from 'vitest';
 
 import {

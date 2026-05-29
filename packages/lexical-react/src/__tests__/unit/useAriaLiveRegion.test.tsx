@@ -10,7 +10,7 @@ import {useAriaLiveRegion} from '@lexical/react/useAriaLiveRegion';
 import * as React from 'react';
 import {useImperativeHandle} from 'react';
 import {createRoot, type Root} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
+import {act} from 'react-dom/test-utils';
 import {afterEach, beforeEach, describe, expect, test} from 'vitest';
 
 type Handle = {announce: (message: string) => void};
@@ -34,7 +34,7 @@ describe('useAriaLiveRegion', () => {
   });
 
   afterEach(() => {
-    ReactTestUtils.act(() => {
+    act(() => {
       root.unmount();
     });
     document.body.removeChild(container);
@@ -45,7 +45,7 @@ describe('useAriaLiveRegion', () => {
   }
 
   test('mounts an aria-live region with polite default and aria-atomic', () => {
-    ReactTestUtils.act(() => {
+    act(() => {
       root.render(<Harness ref={React.createRef()} />);
     });
     const region = findRegion();
@@ -57,10 +57,10 @@ describe('useAriaLiveRegion', () => {
 
   test('writes a message into the region when announce is called', () => {
     const ref = React.createRef<Handle>();
-    ReactTestUtils.act(() => {
+    act(() => {
       root.render(<Harness ref={ref} />);
     });
-    ReactTestUtils.act(() => {
+    act(() => {
       ref.current!.announce('Bold on');
     });
     expect(findRegion()!.textContent).toBe('Bold on');
@@ -68,32 +68,32 @@ describe('useAriaLiveRegion', () => {
 
   test('repeating the same message toggles a zero-width space so SR re-announces', () => {
     const ref = React.createRef<Handle>();
-    ReactTestUtils.act(() => {
+    act(() => {
       root.render(<Harness ref={ref} />);
     });
-    ReactTestUtils.act(() => {
+    act(() => {
       ref.current!.announce('Italic on');
     });
     expect(findRegion()!.textContent).toBe('Italic on');
-    ReactTestUtils.act(() => {
+    act(() => {
       ref.current!.announce('Italic on');
     });
     expect(findRegion()!.textContent).toBe('Italic on\u200B');
   });
 
   test('politeness=assertive sets aria-live="assertive"', () => {
-    ReactTestUtils.act(() => {
+    act(() => {
       root.render(<Harness ref={React.createRef()} politeness="assertive" />);
     });
     expect(findRegion()!.getAttribute('aria-live')).toBe('assertive');
   });
 
   test('removes the region on unmount', () => {
-    ReactTestUtils.act(() => {
+    act(() => {
       root.render(<Harness ref={React.createRef()} />);
     });
     expect(findRegion()).not.toBeNull();
-    ReactTestUtils.act(() => {
+    act(() => {
       root.unmount();
     });
     expect(findRegion()).toBeNull();

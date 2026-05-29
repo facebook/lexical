@@ -10,7 +10,7 @@ import {useFocusTrap} from '@lexical/react/useFocusTrap';
 import * as React from 'react';
 import {useRef} from 'react';
 import {createRoot, type Root} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
+import {act} from 'react-dom/test-utils';
 import {afterEach, beforeEach, describe, expect, test} from 'vitest';
 
 function Trap({
@@ -57,7 +57,7 @@ describe('useFocusTrap', () => {
   });
 
   afterEach(() => {
-    ReactTestUtils.act(() => {
+    act(() => {
       root.unmount();
     });
     document.body.removeChild(container);
@@ -72,19 +72,19 @@ describe('useFocusTrap', () => {
   }
 
   test('focuses the first focusable element on activate', () => {
-    ReactTestUtils.act(() => {
+    act(() => {
       root.render(<Trap isActive={true} />);
     });
     expect(document.activeElement).toBe(getByTestId('btn-0'));
   });
 
   test('wraps Tab from the last focusable back to the first', () => {
-    ReactTestUtils.act(() => {
+    act(() => {
       root.render(<Trap isActive={true} />);
     });
     const last = getByTestId('btn-2');
     const first = getByTestId('btn-0');
-    ReactTestUtils.act(() => {
+    act(() => {
       last.focus();
     });
     expect(document.activeElement).toBe(last);
@@ -93,12 +93,12 @@ describe('useFocusTrap', () => {
   });
 
   test('wraps Shift+Tab from the first focusable back to the last', () => {
-    ReactTestUtils.act(() => {
+    act(() => {
       root.render(<Trap isActive={true} />);
     });
     const first = getByTestId('btn-0');
     const last = getByTestId('btn-2');
-    ReactTestUtils.act(() => {
+    act(() => {
       first.focus();
     });
     dispatchTab(first, true);
@@ -112,12 +112,12 @@ describe('useFocusTrap', () => {
     opener.focus();
     expect(document.activeElement).toBe(opener);
 
-    ReactTestUtils.act(() => {
+    act(() => {
       root.render(<Trap isActive={true} />);
     });
     expect(document.activeElement).not.toBe(opener);
 
-    ReactTestUtils.act(() => {
+    act(() => {
       root.render(<Trap isActive={false} />);
     });
     expect(document.activeElement).toBe(opener);
@@ -132,12 +132,12 @@ describe('useFocusTrap', () => {
     opener.focus();
     expect(document.activeElement).toBe(opener);
 
-    ReactTestUtils.act(() => {
+    act(() => {
       root.render(<Trap isActive={true} />);
     });
     expect(document.activeElement).not.toBe(opener);
 
-    ReactTestUtils.act(() => {
+    act(() => {
       root.render(<></>);
     });
     expect(document.activeElement).toBe(opener);
@@ -149,7 +149,7 @@ describe('useFocusTrap', () => {
     const opener = document.createElement('button');
     document.body.appendChild(opener);
     opener.focus();
-    ReactTestUtils.act(() => {
+    act(() => {
       root.render(<Trap isActive={false} />);
     });
     expect(document.activeElement).toBe(opener);
@@ -157,25 +157,25 @@ describe('useFocusTrap', () => {
   });
 
   test('handles an empty container by preventing Tab without throwing', () => {
-    ReactTestUtils.act(() => {
+    act(() => {
       root.render(<Trap isActive={true} buttons={0} />);
     });
     const trap = getByTestId('trap');
-    ReactTestUtils.act(() => {
+    act(() => {
       trap.focus();
     });
     expect(() => dispatchTab(trap)).not.toThrow();
   });
 
   test("focuses the container itself when initialFocus is 'container'", () => {
-    ReactTestUtils.act(() => {
+    act(() => {
       root.render(<Trap isActive={true} initialFocus="container" />);
     });
     expect(document.activeElement).toBe(getByTestId('trap'));
   });
 
   test("Tab from container (initialFocus 'container') lands on first focusable", () => {
-    ReactTestUtils.act(() => {
+    act(() => {
       root.render(<Trap isActive={true} initialFocus="container" />);
     });
     const trap = getByTestId('trap');
@@ -184,7 +184,7 @@ describe('useFocusTrap', () => {
   });
 
   test("Shift+Tab from container (initialFocus 'container') lands on last focusable", () => {
-    ReactTestUtils.act(() => {
+    act(() => {
       root.render(<Trap isActive={true} initialFocus="container" />);
     });
     const trap = getByTestId('trap');
@@ -193,11 +193,11 @@ describe('useFocusTrap', () => {
   });
 
   test('advances Tab through middle focusables', () => {
-    ReactTestUtils.act(() => {
+    act(() => {
       root.render(<Trap isActive={true} buttons={4} />);
     });
     const btn1 = getByTestId('btn-1');
-    ReactTestUtils.act(() => {
+    act(() => {
       btn1.focus();
     });
     dispatchTab(btn1);
@@ -205,11 +205,11 @@ describe('useFocusTrap', () => {
   });
 
   test('advances Shift+Tab through middle focusables', () => {
-    ReactTestUtils.act(() => {
+    act(() => {
       root.render(<Trap isActive={true} buttons={4} />);
     });
     const btn2 = getByTestId('btn-2');
-    ReactTestUtils.act(() => {
+    act(() => {
       btn2.focus();
     });
     dispatchTab(btn2, true);
@@ -220,10 +220,10 @@ describe('useFocusTrap', () => {
     const outside = document.createElement('button');
     outside.textContent = 'Outside';
     document.body.appendChild(outside);
-    ReactTestUtils.act(() => {
+    act(() => {
       root.render(<Trap isActive={true} />);
     });
-    ReactTestUtils.act(() => {
+    act(() => {
       outside.focus();
     });
     expect(document.activeElement).toBe(getByTestId('btn-0'));

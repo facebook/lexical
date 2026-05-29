@@ -19,9 +19,8 @@ import {
   $getRoot,
   defineExtension,
 } from 'lexical';
-import {useEffect} from 'react';
+import {act, useEffect} from 'react';
 import {createRoot, type Root} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
 import {afterEach, beforeEach, describe, expect, it} from 'vitest';
 
 describe('LexicalExtensionComposer', () => {
@@ -41,20 +40,20 @@ describe('LexicalExtensionComposer', () => {
 
   beforeEach(() => {
     container = document.createElement('div');
-    ReactTestUtils.act(() => {
+    act(() => {
       reactRoot = createRoot(container);
     });
     document.body.appendChild(container);
   });
   afterEach(() => {
-    ReactTestUtils.act(() => {
+    act(() => {
       reactRoot.unmount();
     });
     document.body.removeChild(container);
     // container = null;
   });
   it('Renders', () => {
-    ReactTestUtils.act(() => {
+    act(() => {
       reactRoot.render(<MyEditor />);
     });
     expect(container.innerHTML).toEqual(
@@ -120,7 +119,7 @@ describe('LexicalExtensionComposer', () => {
       }, [editor]);
       return null;
     }
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(
         <MyEditor>
           <InitialPlugin />

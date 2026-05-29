@@ -6,6 +6,7 @@
  *
  */
 
+import invariant from '@lexical/internal/invariant';
 import {$findMatchingParent} from '@lexical/utils';
 import {
   $createPoint,
@@ -24,7 +25,6 @@ import {
   TextFormatType,
   TextNode,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
 import {$isTableCellNode, TableCellNode} from './LexicalTableCellNode';
 import {$isTableNode, TableNode} from './LexicalTableNode';
@@ -35,6 +35,8 @@ import {
   $computeTableMap,
   $getTableCellNodeRect,
 } from './LexicalTableUtils';
+
+const __DEV__ = process.env.NODE_ENV !== 'production';
 
 export type TableSelectionShape = {
   fromX: number;

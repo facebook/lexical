@@ -8,10 +8,11 @@
     "utils"
   ],
   "license": "MIT",
-  "version": "0.44.0",
-  "main": "LexicalUtils.js",
-  "types": "index.d.ts",
+  "version": "0.45.0",
+  "main": "./dist/LexicalUtils.js",
+  "types": "./dist/index.d.ts",
   "dependencies": {
+    "@lexical/internal": "workspace:*",
     "@lexical/selection": "workspace:*",
     "lexical": "workspace:*"
   },
@@ -20,23 +21,37 @@
     "url": "git+https://github.com/facebook/lexical.git",
     "directory": "packages/lexical-utils"
   },
-  "module": "LexicalUtils.mjs",
+  "module": "./dist/LexicalUtils.mjs",
   "sideEffects": false,
   "exports": {
     ".": {
+      "source": "./src/index.ts",
       "import": {
-        "types": "./index.d.ts",
-        "development": "./LexicalUtils.dev.mjs",
-        "production": "./LexicalUtils.prod.mjs",
-        "node": "./LexicalUtils.node.mjs",
-        "default": "./LexicalUtils.mjs"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalUtils.dev.mjs",
+        "production": "./dist/LexicalUtils.prod.mjs",
+        "node": "./dist/LexicalUtils.node.mjs",
+        "default": "./dist/LexicalUtils.mjs"
       },
       "require": {
-        "types": "./index.d.ts",
-        "development": "./LexicalUtils.dev.js",
-        "production": "./LexicalUtils.prod.js",
-        "default": "./LexicalUtils.js"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalUtils.dev.js",
+        "production": "./dist/LexicalUtils.prod.js",
+        "default": "./dist/LexicalUtils.js"
       }
     }
-  }
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/__tests__",
+    "!src/__bench__",
+    "!src/__mocks__",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "!src/**/*.bench.ts",
+    "!src/**/*.bench.tsx",
+    "README.md",
+    "LICENSE"
+  ]
 }

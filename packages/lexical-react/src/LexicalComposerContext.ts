@@ -8,8 +8,8 @@
 
 import type {EditorThemeClasses, LexicalEditor} from 'lexical';
 
+import invariant from '@lexical/internal/invariant';
 import {createContext as createReactContext, useContext} from 'react';
-import invariant from 'shared/invariant';
 
 export type LexicalComposerContextType = {
   getTheme: () => EditorThemeClasses | null | undefined;

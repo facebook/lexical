@@ -29,9 +29,9 @@ import {
   TextNode,
 } from 'lexical';
 import {useCallback, useEffect, useState} from 'react';
-import {startTransition} from 'shared/reactPatches';
 
 import {LexicalMenu, MenuOption, useMenuAnchorRef} from './shared/LexicalMenu';
+import {startTransition} from './shared/reactPatches';
 
 export const PUNCTUATION =
   '\\.,\\+\\*\\?\\$\\@\\|#{}\\(\\)\\^\\-\\[\\]\\\\/!%\'"~=<>_:;';

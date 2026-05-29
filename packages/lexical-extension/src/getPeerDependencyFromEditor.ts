@@ -11,7 +11,7 @@ import type {
   LexicalExtensionDependency,
 } from 'lexical';
 
-import invariant from 'shared/invariant';
+import invariant from '@lexical/internal/invariant';
 
 import {LexicalBuilder} from './LexicalBuilder';
 
@@ -26,6 +26,10 @@ import {LexicalBuilder} from './LexicalBuilder';
  * are avoiding a circular import).
  *
  * Both the explicit Extension type and the name are required.
+ *
+ * Inside an editor read/update, prefer {@link $getPeerDependency} — it
+ * resolves the editor via `$getEditor()` so you don't have to thread it
+ * through.
  *
  *  @example
  * ```tsx
@@ -62,6 +66,10 @@ export function getPeerDependencyFromEditor<
  * are avoiding a circular import).
  *
  * Both the explicit Extension type and the name are required.
+ *
+ * Inside an editor read/update, prefer {@link $getPeerDependency} (which
+ * resolves the editor via `$getEditor()`) and add your own invariant if
+ * the peer is required.
  *
  *  @example
  * ```tsx

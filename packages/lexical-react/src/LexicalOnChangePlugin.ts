@@ -10,7 +10,8 @@ import type {EditorState, LexicalEditor} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {HISTORY_MERGE_TAG} from 'lexical';
-import useLayoutEffect from 'shared/useLayoutEffect';
+
+import useLayoutEffect from './shared/useLayoutEffect';
 
 export function OnChangePlugin({
   ignoreHistoryMergeTagChange = true,

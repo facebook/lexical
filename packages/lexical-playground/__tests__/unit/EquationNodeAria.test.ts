@@ -7,9 +7,9 @@
  */
 
 import {buildEditorFromExtensions} from '@lexical/extension';
+import invariant from '@lexical/internal/invariant';
 import {RichTextExtension} from '@lexical/rich-text';
 import {$createParagraphNode, $getRoot, $isElementNode} from 'lexical';
-import invariant from 'shared/invariant';
 import {describe, expect, test} from 'vitest';
 
 import {

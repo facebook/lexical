@@ -12,7 +12,7 @@ import {HistoryAnnouncePlugin} from '@lexical/react/LexicalHistoryAnnouncePlugin
 import {type LexicalEditor, REDO_COMMAND, UNDO_COMMAND} from 'lexical';
 import * as React from 'react';
 import {createRoot, type Root} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
+import {act} from 'react-dom/test-utils';
 import {afterEach, beforeEach, describe, expect, test} from 'vitest';
 
 function Probe({onEditor}: {onEditor: (editor: LexicalEditor) => void}) {
@@ -40,7 +40,7 @@ describe('HistoryAnnouncePlugin', () => {
   });
 
   afterEach(() => {
-    ReactTestUtils.act(() => {
+    act(() => {
       root.unmount();
     });
     document.body.removeChild(container);
@@ -54,7 +54,7 @@ describe('HistoryAnnouncePlugin', () => {
     extraProps?: React.ComponentProps<typeof HistoryAnnouncePlugin>,
   ): LexicalEditor {
     let editor: LexicalEditor | null = null;
-    ReactTestUtils.act(() => {
+    act(() => {
       root.render(
         <LexicalComposer
           initialConfig={{
@@ -84,11 +84,11 @@ describe('HistoryAnnouncePlugin', () => {
 
   test('announces "Undone" / "Redone" on the corresponding command', () => {
     const editor = mount();
-    ReactTestUtils.act(() => {
+    act(() => {
       editor.dispatchCommand(UNDO_COMMAND, undefined);
     });
     expect(findRegion()!.textContent).toBe('Undone');
-    ReactTestUtils.act(() => {
+    act(() => {
       editor.dispatchCommand(REDO_COMMAND, undefined);
     });
     expect(findRegion()!.textContent).toBe('Redone');
@@ -96,11 +96,11 @@ describe('HistoryAnnouncePlugin', () => {
 
   test('custom messages override the defaults', () => {
     const editor = mount({messages: {redone: '재실행', undone: '되돌림'}});
-    ReactTestUtils.act(() => {
+    act(() => {
       editor.dispatchCommand(UNDO_COMMAND, undefined);
     });
     expect(findRegion()!.textContent).toBe('되돌림');
-    ReactTestUtils.act(() => {
+    act(() => {
       editor.dispatchCommand(REDO_COMMAND, undefined);
     });
     expect(findRegion()!.textContent).toBe('재실행');

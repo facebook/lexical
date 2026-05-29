@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import invariant from '@lexical/internal/invariant';
+import warnOnlyOnce from '@lexical/internal/warnOnlyOnce';
 import {
   $caretRangeFromSelection,
   $cloneWithPropertiesEphemeral,
@@ -28,8 +30,6 @@ import {
   RangeSelection,
   TextNode,
 } from 'lexical';
-import invariant from 'shared/invariant';
-import warnOnlyOnce from 'shared/warnOnlyOnce';
 
 import {getCSSFromStyleObject} from './utils';
 

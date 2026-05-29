@@ -31,7 +31,9 @@ function equationHtml(inline = true) {
   return `<${tag}
             class="editor-equation"
             contenteditable="false"
-            data-lexical-decorator="true">
+            data-lexical-decorator="true"
+            role="math"
+            aria-label="Equation: 1">
             <img
               alt=""
               height="0"

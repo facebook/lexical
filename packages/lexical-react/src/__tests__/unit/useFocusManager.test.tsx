@@ -11,7 +11,7 @@ import {createEditor, type LexicalEditor} from 'lexical';
 import * as React from 'react';
 import {useEffect, useMemo, useRef} from 'react';
 import {createRoot, type Root} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
+import {act} from 'react-dom/test-utils';
 import {afterEach, beforeEach, describe, expect, test, vi} from 'vitest';
 
 function Harness({onEditor}: {onEditor: (editor: LexicalEditor) => void}) {
@@ -81,7 +81,7 @@ describe('useFocusManager', () => {
   });
 
   afterEach(() => {
-    ReactTestUtils.act(() => {
+    act(() => {
       root.unmount();
     });
     document.body.removeChild(container);
@@ -97,11 +97,11 @@ describe('useFocusManager', () => {
 
   test('Alt+F10 inside the editor focuses the first toolbar item', () => {
     const onEditor = vi.fn();
-    ReactTestUtils.act(() => {
+    act(() => {
       root.render(<Harness onEditor={onEditor} />);
     });
     const editorRoot = byId('editor-root');
-    ReactTestUtils.act(() => {
+    act(() => {
       editorRoot.focus();
     });
     dispatchKey(editorRoot, {altKey: true, key: 'F10'});
@@ -110,11 +110,11 @@ describe('useFocusManager', () => {
 
   test('Alt+F10 without Alt modifier is a no-op', () => {
     const onEditor = vi.fn();
-    ReactTestUtils.act(() => {
+    act(() => {
       root.render(<Harness onEditor={onEditor} />);
     });
     const editorRoot = byId('editor-root');
-    ReactTestUtils.act(() => {
+    act(() => {
       editorRoot.focus();
     });
     dispatchKey(editorRoot, {key: 'F10'});
@@ -123,7 +123,7 @@ describe('useFocusManager', () => {
 
   test('Escape inside the toolbar returns focus to the editor', () => {
     const editorRef: {current: LexicalEditor | null} = {current: null};
-    ReactTestUtils.act(() => {
+    act(() => {
       root.render(
         <Harness
           onEditor={e => {
@@ -133,7 +133,7 @@ describe('useFocusManager', () => {
       );
     });
     const toolbarBtn = byId('btn-0');
-    ReactTestUtils.act(() => {
+    act(() => {
       toolbarBtn.focus();
     });
     expect(document.activeElement).toBe(toolbarBtn);

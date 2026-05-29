@@ -7,7 +7,7 @@
  */
 
 import {SerializedDocument} from '@lexical/file';
-import warnOnlyOnce from 'shared/warnOnlyOnce';
+import warnOnlyOnce from '@lexical/internal/warnOnlyOnce';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function* generateReader<T = any>(

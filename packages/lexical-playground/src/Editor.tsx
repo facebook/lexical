@@ -41,7 +41,7 @@ import {
 } from './collaboration';
 import {useSettings} from './context/SettingsContext';
 import ActionsPlugin from './plugins/ActionsPlugin';
-import AutocompletePlugin from './plugins/AutocompletePlugin';
+import {AutocompleteExtension} from './plugins/AutocompleteExtension';
 import AutoEmbedPlugin from './plugins/AutoEmbedPlugin';
 import CodeActionMenuPlugin from './plugins/CodeActionMenuPlugin';
 import {CodeHighlightExtension} from './plugins/CodeHighlightExtension';
@@ -70,6 +70,7 @@ import TableScrollShadowPlugin from './plugins/TableScrollShadowPlugin';
 import ToolbarPlugin from './plugins/ToolbarPlugin';
 import TreeViewPlugin from './plugins/TreeViewPlugin';
 import {VersionsPlugin} from './plugins/VersionsPlugin';
+import {VisibleLineBreakExtension} from './plugins/VisibleLineBreakExtension';
 import ContentEditable from './ui/ContentEditable';
 
 const COLLAB_DOC_ID = 'main';
@@ -104,7 +105,6 @@ export default function Editor(): JSX.Element {
       isCodeShiki,
       isCollab,
       useCollabV2,
-      isAutocomplete,
       isMaxLength,
       isCharLimit,
       hasLinkAttributes,
@@ -123,6 +123,8 @@ export default function Editor(): JSX.Element {
       selectionAlwaysOnDisplay,
       listStrictIndent,
       shouldDisableFocusOnClickChecklist,
+      isAutocomplete,
+      isVisibleLineBreak,
     },
   } = useSettings();
   const isEditable = useLexicalEditable();
@@ -145,6 +147,12 @@ export default function Editor(): JSX.Element {
     }
   };
 
+  useSyncExtensionSignal(AutocompleteExtension, 'disabled', !isAutocomplete);
+  useSyncExtensionSignal(
+    VisibleLineBreakExtension,
+    'disabled',
+    !isVisibleLineBreak,
+  );
   useSyncExtensionSignal(MaxLengthExtension, 'disabled', !isMaxLength);
   useSyncExtensionSignal(
     CodeHighlightExtension,
@@ -295,7 +303,6 @@ export default function Editor(): JSX.Element {
             maxLength={5}
           />
         )}
-        {isAutocomplete && <AutocompletePlugin />}
         <div>{showTableOfContents && <TableOfContentsPlugin />}</div>
         {shouldUseLexicalContextMenu && <ContextMenuPlugin />}
         <ActionsPlugin

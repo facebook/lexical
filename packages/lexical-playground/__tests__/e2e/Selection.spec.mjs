@@ -1305,10 +1305,8 @@ test.describe.parallel('Selection', () => {
     page,
     isPlainText,
     isCollab,
-    browserName,
   }) => {
     test.skip(isPlainText || isCollab);
-    test.skip(browserName === 'firefox');
     await page.keyboard.type('קצת');
     await insertDateTime(page);
     await moveLeft(page);

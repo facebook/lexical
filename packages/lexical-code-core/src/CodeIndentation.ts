@@ -17,6 +17,7 @@ import type {
 } from 'lexical';
 
 import {effect, namedSignals} from '@lexical/extension';
+import invariant from '@lexical/internal/invariant';
 import {
   $createLineBreakNode,
   $createPoint,
@@ -45,7 +46,6 @@ import {
   OUTDENT_CONTENT_COMMAND,
   safeCast,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
 import {CodeExtension} from './CodeExtension';
 import {$isCodeHighlightNode} from './CodeHighlightNode';

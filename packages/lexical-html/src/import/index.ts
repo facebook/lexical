@@ -50,7 +50,6 @@ export {
   createImportState,
   defaultIsInline,
   defaultPreservesWhitespace,
-  ImportInBlockContext,
   ImportOverlays,
   ImportSource,
   ImportSourceDataTransfer,
@@ -66,7 +65,6 @@ export {$inlineStylesFromStyleSheets} from './inlineStylesFromStyleSheets';
 export {parseSelector} from './parseCss';
 export {
   $distributeInlineWrapper,
-  $insertLineBreaksBetweenBlockArtificials,
   $isBlockLevel,
   $propagateTextAlignToBlockChildren,
   BlockSchema,

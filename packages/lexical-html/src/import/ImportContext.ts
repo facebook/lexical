@@ -114,27 +114,6 @@ export const ImportSourceDataTransfer: ImportStateConfig<DataTransfer | null> =
   );
 
 /**
- * Built-in import-context flag that tracks whether the current subtree
- * is being imported inside a block-level Lexical container (a list
- * item, a table cell, a blockquote, etc.). Mirrors the legacy
- * `hasBlockAncestorLexicalNode` flag in `$createNodesFromDOM`: rules
- * for transparent block DOM elements (notably `<div>`) consult it to
- * decide whether to synthesize a `ParagraphNode` around inline
- * children. At the root they should (so the parent receives a valid
- * block); nested inside an existing block they should hoist the inline
- * children straight up instead.
- *
- * Block-container rules — `ListItemRule`, `TableCellRule`,
- * `BlockquoteRule`, the schemas that wrap inlines for `RootSchema`,
- * etc. — set this to `true` for the children they import; nested rules
- * read it via `ctx.get(ImportInBlockContext)`.
- *
- * @experimental
- */
-export const ImportInBlockContext: ImportStateConfig<boolean> =
-  createImportState<boolean>('importInBlockContext', () => false);
-
-/**
  * Built-in import-context state holding the bit-packed
  * {@link TextFormatType} formats that should apply to {@link TextNode}s
  * produced during the current subtree. Used by inline-format wrappers

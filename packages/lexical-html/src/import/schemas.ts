@@ -8,13 +8,11 @@
 import type {ChildSchema} from './types';
 
 import {
-  $createLineBreakNode,
   $createParagraphNode,
   $isBlockElementNode,
   $isDecoratorNode,
   $isElementNode,
   $isLineBreakNode,
-  ArtificialNode__DO_NOT_USE,
   type ElementNode,
   isHTMLElement,
   type LexicalNode,
@@ -154,99 +152,6 @@ export function $applySchema(
   flushRun();
 
   return schema.$finalize ? schema.$finalize(out, parent) : out;
-}
-
-/**
- * Inline-context equivalent of `wrapContinuousInlines` from the legacy
- * `$generateNodesFromDOM`: when a block container's imported children
- * mix inline runs with block descendants (typically
- * {@link ArtificialNode__DO_NOT_USE} stand-ins emitted by transparent
- * block rules like the `<div>` rule), wrap each inline run in its own
- * artificial node, insert a {@link $createLineBreakNode} between every
- * pair of adjacent artificials, and finally unwrap each artificial in
- * place. The net effect on a list item or table cell is the legacy
- * `<li>1<div>2</div>3</li>` → `<li>1<br>2<br>3</li>` shape — no
- * paragraph wrappers, just the surrounding text/element children with
- * line breaks marking the former block boundaries.
- *
- * Block containers ({@link ListItemRule}, {@link TableCellRule}, the
- * blockquote rule, etc.) pipe `$importChildren(...)` through this
- * helper after their own format/style processing. No-op when the
- * imported children are exclusively inlines (the typical case) or
- * exclusively blocks (no inline runs to flush).
- *
- * @experimental
- */
-export function $insertLineBreaksBetweenBlockArtificials(
-  children: LexicalNode[],
-): LexicalNode[] {
-  // Fast-path: nothing to do unless the run contains at least one
-  // ArtificialNode stand-in *and* at least one neighbor (either another
-  // ArtificialNode or a non-block sibling) that warrants a separator.
-  let hasArtificial = false;
-  for (const child of children) {
-    if (child instanceof ArtificialNode__DO_NOT_USE) {
-      hasArtificial = true;
-      break;
-    }
-  }
-  if (!hasArtificial) {
-    return children;
-  }
-  // Wrap each maximal run of non-block siblings around the artificials
-  // in fresh ArtificialNodes so the gap walk only has to consider
-  // ArtificialNode pairs.
-  const wrapped: LexicalNode[] = [];
-  let inlineRun: LexicalNode[] | null = null;
-  const flushInlineRun = () => {
-    if (inlineRun && inlineRun.length > 0) {
-      const wrapper = new ArtificialNode__DO_NOT_USE();
-      wrapper.splice(0, 0, inlineRun);
-      wrapped.push(wrapper);
-    }
-    inlineRun = null;
-  };
-  for (const child of children) {
-    if (
-      child instanceof ArtificialNode__DO_NOT_USE ||
-      $isBlockElementNode(child)
-    ) {
-      flushInlineRun();
-      wrapped.push(child);
-    } else {
-      if (inlineRun === null) {
-        inlineRun = [];
-      }
-      inlineRun.push(child);
-    }
-  }
-  flushInlineRun();
-  // Insert a LineBreakNode between adjacent ArtificialNodes (legacy
-  // `$unwrapArtificialNodes`, pass 1), then unwrap each artificial in
-  // place (pass 2).
-  const withBreaks: LexicalNode[] = [];
-  for (let i = 0; i < wrapped.length; i++) {
-    const node = wrapped[i];
-    withBreaks.push(node);
-    const next = wrapped[i + 1];
-    if (
-      node instanceof ArtificialNode__DO_NOT_USE &&
-      next instanceof ArtificialNode__DO_NOT_USE
-    ) {
-      withBreaks.push($createLineBreakNode());
-    }
-  }
-  const final: LexicalNode[] = [];
-  for (const node of withBreaks) {
-    if (node instanceof ArtificialNode__DO_NOT_USE) {
-      for (const grand of node.getChildren()) {
-        final.push(grand);
-      }
-    } else {
-      final.push(node);
-    }
-  }
-  return final;
 }
 
 /**

@@ -13,7 +13,6 @@ import {
   $isTextNode,
   $setDirectionFromDOM,
   $setFormatFromDOM,
-  ArtificialNode__DO_NOT_USE,
   type ElementFormatType,
   IS_BOLD,
   IS_CODE,
@@ -34,7 +33,6 @@ import {
 import {contextValue} from '../ContextRecord';
 import {defineImportRule} from './defineImportRule';
 import {
-  ImportInBlockContext,
   ImportTextFormat,
   ImportTextStyle,
   ImportWhitespaceConfig,
@@ -476,15 +474,7 @@ const ParagraphRule = defineImportRule({
     // We deliberately pass no schema: paragraphs accept any inline run as-is.
     // The enclosing context (root / block) is responsible for ensuring the
     // paragraph itself is a valid block child.
-    return [
-      p.splice(
-        0,
-        0,
-        ctx.$importChildren(el, {
-          context: [contextValue(ImportInBlockContext, true)],
-        }),
-      ),
-    ];
+    return [p.splice(0, 0, ctx.$importChildren(el))];
   },
   match: sel.tag('p'),
   name: '@lexical/html/p',
@@ -507,20 +497,18 @@ const ParagraphRule = defineImportRule({
  * rules. Higher-priority tag rules (`<p>`, `<li>`, `<td>`, headings, …)
  * are dispatched first and never reach here.
  *
- * Mirrors the legacy `$createNodesFromDOM` branch that ran
- * `wrapContinuousInlines` on every `isBlockDomNode` whose ancestor
- * chain was free of block-level lexical nodes: at the root we wrap
- * inline children in paragraphs (`BlockSchema`) so {@link
- * $paragraphPackageRun} can pull the element's `text-align` into the
- * wrapper; inside an existing block lexical container
- * ({@link ImportInBlockContext} is `true`) we just hoist children
- * — the surrounding `<li>`/`<td>`/etc. handles inline content
- * directly and would only have to strip a spurious paragraph wrapper
- * back off again.
- *
- * In both branches we explicitly walk the resulting block children so
- * an inner `<p>` (which would otherwise survive untouched) inherits
- * the element's `text-align`.
+ * The element's children run through {@link BlockSchema} so each inline
+ * run becomes its own `ParagraphNode` (with the element's `text-align`
+ * picked up via {@link $paragraphPackageRun}'s `domParent`), and any
+ * pre-existing block children get the same alignment applied via
+ * {@link $propagateTextAlignToBlockChildren}. The resulting block-level
+ * nodes are what the enclosing context sees — at the root a sibling
+ * paragraph is the natural shape; inside a block lexical container the
+ * container rule (e.g. {@link ListItemRule}) collapses paragraph
+ * children back into inline-with-line-break form. That way both `<p>`
+ * and transparent blocks (`<div>`, `<section>`, …) project to the same
+ * `ParagraphNode` intermediate, and there is no need for a marker node
+ * to distinguish them.
  */
 const TransparentBlockRule = defineImportRule({
   $import: (ctx, el, $next) => {
@@ -528,23 +516,6 @@ const TransparentBlockRule = defineImportRule({
       // Inline element with no dedicated rule — let the inline rules (or
       // the default hoist) handle it.
       return $next();
-    }
-    if (ctx.get(ImportInBlockContext)) {
-      // Mirror the legacy ArtificialNode flow: hoist the children but
-      // wrap them in a stand-in block node so the enclosing container
-      // (run through {@link $insertLineBreaksBetweenBlockArtificials})
-      // can drop a `LineBreakNode` between this run and any neighboring
-      // block-derived run — exactly what the legacy
-      // `wrapContinuousInlines` + `$unwrapArtificialNodes` pair did for
-      // `<li>1<div>2</div>3</li>`.
-      const artificial = new ArtificialNode__DO_NOT_USE();
-      return [
-        artificial.splice(
-          0,
-          0,
-          $propagateTextAlignToBlockChildren(ctx.$importChildren(el), el),
-        ),
-      ];
     }
     return $propagateTextAlignToBlockChildren(
       ctx.$importChildren(el, {schema: BlockSchema}),

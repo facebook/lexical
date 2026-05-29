@@ -9,16 +9,14 @@
 import type {ChildSchema, DOMImportContext} from '@lexical/html';
 
 import {
-  $insertLineBreaksBetweenBlockArtificials,
   $propagateTextAlignToBlockChildren,
-  contextValue,
   defineImportRule,
   DOMImportExtension,
-  ImportInBlockContext,
   isElementOfTag,
   sel,
 } from '@lexical/html';
 import {
+  $createLineBreakNode,
   $isParagraphNode,
   $setDirectionFromDOM,
   $setFormatFromDOM,
@@ -128,6 +126,37 @@ function $liftFormatFromSingleParagraph(
   return children;
 }
 
+/**
+ * Collapse `ParagraphNode` children of a `<li>` into inline-with-line-break
+ * form: each `<p>` (or its transparent-block stand-in, e.g. `<div>` which
+ * the {@link TransparentBlockRule} also lowers to a `ParagraphNode`) is
+ * unwrapped, and a {@link $createLineBreakNode} is inserted at every
+ * boundary where the paragraph would otherwise butt up against a non-empty
+ * neighbor. Equivalent to the legacy `wrapContinuousInlines` +
+ * `$unwrapArtificialNodes` pair from `$generateNodesFromDOM`, but without
+ * the `ArtificialNode__DO_NOT_USE` marker — the `ParagraphNode` is now the
+ * source of truth for "this run was its own block in the source HTML".
+ */
+function $flattenParagraphChildren(children: LexicalNode[]): LexicalNode[] {
+  if (!children.some($isParagraphNode)) {
+    return children;
+  }
+  const out: LexicalNode[] = [];
+  for (const child of children) {
+    if (out.length > 0) {
+      out.push($createLineBreakNode());
+    }
+    if ($isParagraphNode(child)) {
+      for (const grand of child.getChildren()) {
+        out.push(grand);
+      }
+    } else {
+      out.push(child);
+    }
+  }
+  return out;
+}
+
 const ListItemRule = defineImportRule({
   $import: (ctx, el) => {
     const ariaChecked = el.getAttribute('aria-checked');
@@ -146,11 +175,7 @@ const ListItemRule = defineImportRule({
         0,
         $liftFormatFromSingleParagraph(
           node,
-          $insertLineBreaksBetweenBlockArtificials(
-            ctx.$importChildren(el, {
-              context: [contextValue(ImportInBlockContext, true)],
-            }),
-          ),
+          $flattenParagraphChildren(ctx.$importChildren(el)),
         ),
       ),
     ];
@@ -180,11 +205,7 @@ function $buildChecklistItem(
       0,
       $liftFormatFromSingleParagraph(
         node,
-        $insertLineBreaksBetweenBlockArtificials(
-          ctx.$importChildren(el, {
-            context: [contextValue(ImportInBlockContext, true)],
-          }),
-        ),
+        $flattenParagraphChildren(ctx.$importChildren(el)),
       ),
     ),
   ];

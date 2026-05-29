@@ -35,11 +35,7 @@ import {
 } from 'lexical';
 import {beforeEach, describe, expect, test} from 'vitest';
 
-import {
-  DataTransferMock,
-  initializeUnitTest,
-  invariant,
-} from '../../../__tests__/utils';
+import {initializeUnitTest, invariant} from '../../../__tests__/utils';
 
 describe('LexicalTabNode tests', () => {
   initializeUnitTest(testEnv => {
@@ -55,7 +51,7 @@ describe('LexicalTabNode tests', () => {
 
     test('can paste plain text with tabs and newlines in plain text', async () => {
       const {editor} = testEnv;
-      const dataTransfer = new DataTransferMock();
+      const dataTransfer = new DataTransfer();
       dataTransfer.setData('text/plain', 'hello\tworld\nhello\tworld');
       await editor.update(() => {
         const selection = $getSelection();
@@ -69,7 +65,7 @@ describe('LexicalTabNode tests', () => {
 
     test('can paste plain text with tabs and newlines in rich text', async () => {
       const {editor} = testEnv;
-      const dataTransfer = new DataTransferMock();
+      const dataTransfer = new DataTransfer();
       dataTransfer.setData('text/plain', 'hello\tworld\nhello\tworld');
       await editor.update(() => {
         const selection = $getSelection();
@@ -84,7 +80,7 @@ describe('LexicalTabNode tests', () => {
     // TODO fixme
     // test('can paste HTML with tabs and new lines #4429', async () => {
     //       const {editor} = testEnv;
-    //       const dataTransfer = new DataTransferMock();
+    //       const dataTransfer = new DataTransfer();
     //       // https://codepen.io/zurfyx/pen/bGmrzMR
     //       dataTransfer.setData(
     //         'text/html',
@@ -103,7 +99,7 @@ describe('LexicalTabNode tests', () => {
 
     test('can paste HTML with tabs and new lines (2)', async () => {
       const {editor} = testEnv;
-      const dataTransfer = new DataTransferMock();
+      const dataTransfer = new DataTransfer();
       // GDoc 2-liner hello\tworld (like previous test)
       dataTransfer.setData(
         'text/html',

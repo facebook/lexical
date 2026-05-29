@@ -43,6 +43,7 @@ import {
   $getRoot,
   $isElementNode,
   $isParagraphNode,
+  $isRootNode,
   $isTextNode,
   $parseSerializedNode,
   $setCompositionKey,
@@ -390,8 +391,9 @@ describe('LexicalEditor tests', () => {
       editor.read(() => {
         const rootElement = editor.getRootElement();
         expect(rootElement).toBeDefined();
-        // The root never works for this call
-        expect($getNearestNodeFromDOMNode(rootElement!)).toBe(null);
+        // The root element now carries __lexicalKey_* = 'root' so
+        // $getNearestNodeFromDOMNode resolves it to the RootNode.
+        assert($isRootNode($getNearestNodeFromDOMNode(rootElement!)));
         const paragraphDom = rootElement!.querySelector('p');
         expect(paragraphDom).toBeDefined();
         expect(

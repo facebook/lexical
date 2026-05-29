@@ -80,7 +80,6 @@ import {
   $getRoot,
   $hasAncestor,
   $isRootOrShadowRoot,
-  $isSelectionCapturedInDecorator,
   $isTokenOrSegmented,
   $isTokenOrTab,
   $setCompositionKey,
@@ -90,6 +89,7 @@ import {
   getNodeKeyFromDOMNode,
   getWindow,
   INTERNAL_$isBlock,
+  isDOMCapturingSelection,
   isHTMLElement,
   isSelectionCapturedInDecoratorInput,
   isSelectionWithinEditor,
@@ -2322,8 +2322,7 @@ function $internalResolveSelectionPoint(
     }
     if (
       getNodeKeyFromDOMNode(dom, editor) === undefined &&
-      dom !== editor.getRootElement() &&
-      !$isSelectionCapturedInDecorator(dom)
+      !isDOMCapturingSelection(dom, editor)
     ) {
       // The DOM caret is sitting on a node that has no Lexical key
       // (e.g. <col> inside an unmanaged <colgroup>, or any unmanaged
@@ -2334,14 +2333,14 @@ function $internalResolveSelectionPoint(
       // selection dirty so the reconciler writes a valid DOM caret back
       // at the resolved Lexical position.
       //
-      // Exceptions where the DOM caret is intentionally somewhere
-      // Lexical doesn't own and we should NOT force-sync it:
-      //  - the editor root element (tracked separately in
-      //    _keyToDOMMap as 'root'; has no __lexicalKey_* attribute);
-      //  - anything inside a DecoratorNode subtree (the decorator owns
-      //    its own DOM and may manage its own selection — for inputs
-      //    isSelectionCapturedInDecoratorInput rejects earlier, but
-      //    non-input decorator content also shouldn't be force-synced).
+      // Exclusions split across the two guard clauses:
+      //  - The first clause (`key !== undefined`) covers any DOM node
+      //    with a `__lexicalKey_*` attribute — Lexical-managed elements
+      //    and the editor root (stashed in `resetEditor`).
+      //  - `isDOMCapturingSelection` covers DecoratorNode subtrees (which
+      //    own their own DOM) and subtrees marked via
+      //    `setDOMUnmanaged(dom, {captureSelection: true})` —
+      //    extension-owned widgets that keep a native caret.
       //
       // Void elements that ARE Lexical nodes (LineBreakNode <br>,
       // empty decorator containers, etc.) have keys, so this check

@@ -308,6 +308,7 @@ export {
   INTERNAL_$isBlock,
   isBlockDomNode,
   isDocumentFragment,
+  isDOMCapturingSelection,
   isDOMDocumentNode,
   isDOMNode,
   isDOMTextNode,
@@ -325,6 +326,7 @@ export {
   removeFromParent,
   resetRandomKey,
   setDOMUnmanaged,
+  type SetDOMUnmanagedOptions,
   setNodeIndentFromDOM,
   toggleTextFormatType,
 } from './LexicalUtils';

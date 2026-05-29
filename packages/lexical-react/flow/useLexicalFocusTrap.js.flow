@@ -10,4 +10,5 @@
 declare export function useFocusTrap(
   containerRef: {current: HTMLElement | null, ...},
   isActive: boolean,
+  initialFocus?: 'firstFocusable' | 'container',
 ): void;

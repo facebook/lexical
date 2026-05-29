@@ -30,7 +30,7 @@ function PortalImpl({
   const modalRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
 
-  useFocusTrap(modalRef, true);
+  useFocusTrap(modalRef, true, 'container');
 
   useEffect(() => {
     let modalOverlayElement: HTMLElement | null = null;

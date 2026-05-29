@@ -13,9 +13,17 @@ import {createRoot, type Root} from 'react-dom/client';
 import * as ReactTestUtils from 'shared/react-test-utils';
 import {afterEach, beforeEach, describe, expect, test} from 'vitest';
 
-function Trap({isActive, buttons = 3}: {isActive: boolean; buttons?: number}) {
+function Trap({
+  isActive,
+  buttons = 3,
+  initialFocus = 'firstFocusable',
+}: {
+  isActive: boolean;
+  buttons?: number;
+  initialFocus?: 'firstFocusable' | 'container';
+}) {
   const ref = useRef<HTMLDivElement>(null);
-  useFocusTrap(ref, isActive);
+  useFocusTrap(ref, isActive, initialFocus);
   return (
     <div ref={ref} tabIndex={-1} data-testid="trap">
       {Array.from({length: buttons}, (_, i) => (
@@ -117,6 +125,26 @@ describe('useFocusTrap', () => {
     document.body.removeChild(opener);
   });
 
+  test('restores focus to the previously-focused element on unmount', () => {
+    const opener = document.createElement('button');
+    opener.textContent = 'Opener';
+    document.body.appendChild(opener);
+    opener.focus();
+    expect(document.activeElement).toBe(opener);
+
+    ReactTestUtils.act(() => {
+      root.render(<Trap isActive={true} />);
+    });
+    expect(document.activeElement).not.toBe(opener);
+
+    ReactTestUtils.act(() => {
+      root.render(<></>);
+    });
+    expect(document.activeElement).toBe(opener);
+
+    document.body.removeChild(opener);
+  });
+
   test('no-op when isActive is false', () => {
     const opener = document.createElement('button');
     document.body.appendChild(opener);
@@ -137,5 +165,68 @@ describe('useFocusTrap', () => {
       trap.focus();
     });
     expect(() => dispatchTab(trap)).not.toThrow();
+  });
+
+  test("focuses the container itself when initialFocus is 'container'", () => {
+    ReactTestUtils.act(() => {
+      root.render(<Trap isActive={true} initialFocus="container" />);
+    });
+    expect(document.activeElement).toBe(getByTestId('trap'));
+  });
+
+  test("Tab from container (initialFocus 'container') lands on first focusable", () => {
+    ReactTestUtils.act(() => {
+      root.render(<Trap isActive={true} initialFocus="container" />);
+    });
+    const trap = getByTestId('trap');
+    dispatchTab(trap);
+    expect(document.activeElement).toBe(getByTestId('btn-0'));
+  });
+
+  test("Shift+Tab from container (initialFocus 'container') lands on last focusable", () => {
+    ReactTestUtils.act(() => {
+      root.render(<Trap isActive={true} initialFocus="container" />);
+    });
+    const trap = getByTestId('trap');
+    dispatchTab(trap, true);
+    expect(document.activeElement).toBe(getByTestId('btn-2'));
+  });
+
+  test('advances Tab through middle focusables', () => {
+    ReactTestUtils.act(() => {
+      root.render(<Trap isActive={true} buttons={4} />);
+    });
+    const btn1 = getByTestId('btn-1');
+    ReactTestUtils.act(() => {
+      btn1.focus();
+    });
+    dispatchTab(btn1);
+    expect(document.activeElement).toBe(getByTestId('btn-2'));
+  });
+
+  test('advances Shift+Tab through middle focusables', () => {
+    ReactTestUtils.act(() => {
+      root.render(<Trap isActive={true} buttons={4} />);
+    });
+    const btn2 = getByTestId('btn-2');
+    ReactTestUtils.act(() => {
+      btn2.focus();
+    });
+    dispatchTab(btn2, true);
+    expect(document.activeElement).toBe(getByTestId('btn-1'));
+  });
+
+  test('focusin safety net pulls focus back inside when it escapes', () => {
+    const outside = document.createElement('button');
+    outside.textContent = 'Outside';
+    document.body.appendChild(outside);
+    ReactTestUtils.act(() => {
+      root.render(<Trap isActive={true} />);
+    });
+    ReactTestUtils.act(() => {
+      outside.focus();
+    });
+    expect(document.activeElement).toBe(getByTestId('btn-0'));
+    document.body.removeChild(outside);
   });
 });

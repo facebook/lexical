@@ -345,6 +345,31 @@ In the default (check-only) mode the script also prints the npmjs.com
 `/access` URL for each existing package and the exact values to enter
 manually, as a fallback for when `npm trust github` isn't an option.
 
+### Testing trusted publishing from a PR branch
+
+The "Publish to NPM" workflow (`pre-release.yml`) exposes `ref`,
+`channel`, and `post-release` inputs in addition to
+`use-trusted-publishing` so it doubles as a test harness. Picking a
+branch in the "Run workflow" dropdown selects which version of the
+workflow files run, and the inputs determine what actually gets
+published.
+
+A safe end-to-end test of the trusted-publishing flow looks like:
+
+| Input | Value |
+| -- | -- |
+| Branch (dropdown) | your PR branch |
+| `ref` | your PR branch (same value) |
+| `channel` | `dev` |
+| `post-release` | unchecked |
+| `use-trusted-publishing` | checked |
+| `ignore-previously-published` | unchecked |
+
+This publishes the monorepo from your branch under the `dev` dist-tag
+(so the `latest` tag is untouched), exercises the OIDC token exchange,
+and skips the post-release branch force-push. After it succeeds, `npm
+view <pkg>@dev` should show the new version and provenance attached.
+
 ## Release Procedure
 
 This is the current release procedure for public releases, at least as of

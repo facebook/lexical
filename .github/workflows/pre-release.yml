@@ -12,6 +12,24 @@ on:
         required: true
         default: false
         type: boolean
+      ref:
+        description: 'git ref to publish from. Defaults to main; override when testing trusted publishing from a non-main branch.'
+        required: true
+        default: main
+        type: string
+      channel:
+        description: 'npm dist-tag for the publish. Use dev for safe end-to-end tests that do not move the latest tag.'
+        required: true
+        default: latest
+        type: choice
+        options:
+          - latest
+          - dev
+      post-release:
+        description: 'Run the post-release examples-update branch. Disable when testing on a non-main ref to avoid force-pushing the post-release-<latest> branch.'
+        required: true
+        default: true
+        type: boolean
 
 permissions:
   contents: write
@@ -26,9 +44,9 @@ jobs:
     uses: ./.github/workflows/call-release.yml
     with:
       publish: true
-      post-release: true
-      ref: main
-      channel: latest
+      post-release: ${{ inputs.post-release }}
+      ref: ${{ inputs.ref }}
+      channel: ${{ inputs.channel }}
       ignore-previously-published: ${{ inputs.ignore-previously-published }}
       use-trusted-publishing: ${{ inputs.use-trusted-publishing }}
     secrets:

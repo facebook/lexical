@@ -25,11 +25,6 @@ on:
         options:
           - latest
           - dev
-      post-release:
-        description: 'Run the post-release examples-update branch. Disable when testing on a non-main ref to avoid force-pushing the post-release-<latest> branch.'
-        required: true
-        default: true
-        type: boolean
 
 permissions:
   contents: write
@@ -44,7 +39,6 @@ jobs:
     uses: ./.github/workflows/call-release.yml
     with:
       publish: true
-      post-release: ${{ inputs.post-release }}
       ref: ${{ inputs.ref }}
       channel: ${{ inputs.channel }}
       ignore-previously-published: ${{ inputs.ignore-previously-published }}

@@ -12,11 +12,6 @@ on:
         required: false
         default: false
         type: boolean
-      post-release:
-        description: 'Run the post-release examples-update stage'
-        required: false
-        default: false
-        type: boolean
       increment:
         description: 'Version increment (prerelease/patch/minor); used when increment-version is true'
         required: false
@@ -28,9 +23,9 @@ on:
         type: string
       ref:
         description: |
-          git ref to operate on for publish and post-release. When
+          git ref to check out for the publish stage. When
           increment-version runs in the same call, its newly created
-          tag-ref is used for publish instead.
+          tag-ref is used instead.
         required: false
         default: ''
         type: string
@@ -154,28 +149,3 @@ jobs:
           echo "Authenticated to https://registry.npmjs.org as ${whoami}"
       - run: pnpm run prepare-release
       - run: node ./scripts/npm/release.mjs --non-interactive $DRY_RUN_ARG $IGNORE_PREVIOUSLY_PUBLISHED_ARG --channel='${{ inputs.channel }}'
-
-  post-release:
-    if: ${{ inputs.post-release && !cancelled() && !failure() }}
-    needs: [publish]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ inputs.ref }}
-      - id: latest
-        uses: ./.github/actions/get-latest-release
-      - uses: ./.github/actions/setup-pnpm
-        with:
-          node-version: 24.x
-          pnpm-install-args: ''
-      - run: pnpm run update-examples
-      - uses: stefanzweifel/git-auto-commit-action@v7
-        with:
-          commit_message: 'Update examples for ${{ steps.latest.outputs.release }}'
-          commit_user_name: 'Lexical GitHub Actions Bot'
-          branch: post-release-${{ steps.latest.outputs.release }}
-          create_branch: true
-          push_options: '--force'

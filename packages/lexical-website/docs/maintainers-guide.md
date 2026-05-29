@@ -347,12 +347,11 @@ manually, as a fallback for when `npm trust github` isn't an option.
 
 ### Testing trusted publishing from a PR branch
 
-The "Publish to NPM" workflow (`pre-release.yml`) exposes `ref`,
-`channel`, and `post-release` inputs in addition to
-`use-trusted-publishing` so it doubles as a test harness. Picking a
-branch in the "Run workflow" dropdown selects which version of the
-workflow files run, and the inputs determine what actually gets
-published.
+The "Publish to NPM" workflow (`pre-release.yml`) exposes `ref` and
+`channel` inputs in addition to `use-trusted-publishing` so it doubles
+as a test harness. Picking a branch in the "Run workflow" dropdown
+selects which version of the workflow files run, and the inputs
+determine what actually gets published.
 
 A safe end-to-end test of the trusted-publishing flow looks like:
 
@@ -361,14 +360,13 @@ A safe end-to-end test of the trusted-publishing flow looks like:
 | Branch (dropdown) | your PR branch |
 | `ref` | your PR branch (same value) |
 | `channel` | `dev` |
-| `post-release` | unchecked |
 | `use-trusted-publishing` | checked |
 | `ignore-previously-published` | unchecked |
 
 This publishes the monorepo from your branch under the `dev` dist-tag
-(so the `latest` tag is untouched), exercises the OIDC token exchange,
-and skips the post-release branch force-push. After it succeeds, `npm
-view <pkg>@dev` should show the new version and provenance attached.
+(so the `latest` tag is untouched) and exercises the OIDC token
+exchange. After it succeeds, `npm view <pkg>@dev` should show the new
+version and provenance attached.
 
 ## Release Procedure
 
@@ -386,7 +384,6 @@ from main in step 4).
 4. After PR is merged to main, publish to NPM with the Github Actions "Publish to NPM" workflow (`pre-release.yml`)
 5. Create a GitHub release from the tag created in step 1, manually editing the release notes
 6. Announce the release in #announcements on Discord
-7. If a post-release-* version branch was created, raise a PR against it (may be created by `call-release.yml` via `pre-release.yml`) to update the examples. Since v0.44.0 this is no longer likely because we do not commit lockfiles for examples.
 
 ## Release Protocol
 

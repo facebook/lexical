@@ -20,6 +20,7 @@ import type {
 import invariant from '@lexical/internal/invariant';
 import {$sliceSelectedTextNodeContent} from '@lexical/selection';
 import {
+  $assumeActiveEditor,
   $createLineBreakNode,
   $createParagraphNode,
   $getEditor,
@@ -253,25 +254,10 @@ export function $generateHtmlFromNodes(
   }
   // BC: $setTextContent now requires an active-editor scope (added in #8519).
   // If the caller is in a legacy `editorState.read(cb)` scope (no active editor),
-  // establish one via a discrete editor.update(). This provides both the active
-  // editor AND a mutable context required by DOM export's internal caching.
-  // If already in an active editor scope, run inline.
-  const generate = () =>
-    $generateDOMFromNodes(document.createElement('div'), selection, editor)
-      .innerHTML;
-  try {
-    $getEditor();
-    return generate();
-  } catch {
-    let result = '';
-    editor.update(
-      () => {
-        result = generate();
-      },
-      {discrete: true},
-    );
-    return result;
-  }
+  // establish one via internal API.
+  $assumeActiveEditor(editor);
+  return $generateDOMFromNodes(document.createElement('div'), selection, editor)
+    .innerHTML;
 }
 
 function $appendNodesToHTML(

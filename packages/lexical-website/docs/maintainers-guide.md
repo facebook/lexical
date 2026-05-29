@@ -311,7 +311,7 @@ name can be claimed:
 
 ```bash
 npm login --registry https://registry.npmjs.org   # or set NPM_TOKEN
-pnpm run setup-trusted-publishing -- --bootstrap
+pnpm run setup-trusted-publishing --bootstrap
 ```
 
 Once a package exists on the registry, you can configure trusted
@@ -323,14 +323,14 @@ configuration are reported as `already configured` and skipped:
 
 ```bash
 npm login --registry https://registry.npmjs.org
-pnpm run setup-trusted-publishing -- --setup-trust
+pnpm run setup-trusted-publishing --setup-trust
 ```
 
 For full first-time setup of a brand-new monorepo (or when adding a
 new package to an existing one), combine both flags:
 
 ```bash
-pnpm run setup-trusted-publishing -- --bootstrap --setup-trust
+pnpm run setup-trusted-publishing --bootstrap --setup-trust
 ```
 
 Useful flags:

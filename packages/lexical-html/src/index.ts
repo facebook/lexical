@@ -20,6 +20,7 @@ import type {
 import invariant from '@lexical/internal/invariant';
 import {$sliceSelectedTextNodeContent} from '@lexical/selection';
 import {
+  $assumeActiveEditor,
   $createLineBreakNode,
   $createParagraphNode,
   $getEditor,
@@ -252,6 +253,10 @@ export function $generateHtmlFromNodes(
       'To use $generateHtmlFromNodes in headless mode please initialize a headless browser implementation such as JSDom or use withDOM from @lexical/headless/dom before calling this function.',
     );
   }
+  // BC: $setTextContent now requires an active-editor scope (added in #8519).
+  // If the caller is in a legacy `editorState.read(cb)` scope (no active editor),
+  // establish one via internal API.
+  $assumeActiveEditor(editor);
   return $generateDOMFromNodes(document.createElement('div'), selection, editor)
     .innerHTML;
 }

@@ -8,6 +8,7 @@
 import {
   $createCodeHighlightNode,
   $createCodeNode,
+  $isCodeNode,
   CodeExtension,
 } from '@lexical/code-core';
 import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
@@ -26,38 +27,14 @@ import {
   $createTextNode,
   $getRoot,
   $getSelection,
-  $isElementNode,
   $isParagraphNode,
   $isRangeSelection,
   $isTextNode,
-  LexicalNode,
+  LexicalEditorWithDispose,
   PASTE_COMMAND,
   TextNode,
 } from 'lexical';
 import {assert, describe, expect, it} from 'vitest';
-
-// jsdom doesn't provide ClipboardEvent; create a mock whose constructor name
-// matches so that objectKlassEquals(event, ClipboardEvent) returns true.
-class ClipboardEvent extends Event {
-  clipboardData: {
-    getData: (type: string) => string;
-    types: string[];
-    files: File[];
-  };
-  constructor(type: string, init?: {clipboardText?: string}) {
-    super(type);
-    const text = init?.clipboardText ?? '';
-    this.clipboardData = {
-      files: [],
-      getData: (t: string) => (t === 'text' || t === 'text/plain' ? text : ''),
-      types: ['text/plain'],
-    };
-  }
-}
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- test polyfill
-(globalThis as any).ClipboardEvent = ClipboardEvent;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- test polyfill
-(globalThis as any).DragEvent = class DragEvent extends Event {};
 
 describe('Link', () => {
   const extension = defineExtension({
@@ -375,12 +352,12 @@ describe('Link', () => {
   describe('PASTE_COMMAND with URLs', () => {
     const pasteUrl = 'https://lexical.dev/';
 
-    function dispatchPaste(
-      editor: ReturnType<typeof buildEditorFromExtensions>,
-    ) {
-      const event = new ClipboardEvent('paste', {clipboardText: pasteUrl});
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- mock event
-      editor.dispatchCommand(PASTE_COMMAND, event as any);
+    function dispatchPaste(editor: LexicalEditorWithDispose) {
+      const clipboardData = new DataTransfer();
+      clipboardData.setData('text/plain', pasteUrl);
+      clipboardData.setData('text/html', pasteUrl);
+      const event = new ClipboardEvent('paste', {clipboardData});
+      editor.dispatchCommand(PASTE_COMMAND, event);
     }
 
     it('does not convert pasted URL to link inside a code block', () => {
@@ -409,11 +386,8 @@ describe('Link', () => {
       );
       editor.read(() => {
         const code = $getRoot().getFirstChild()!;
-        assert($isElementNode(code), 'Expected an ElementNode');
-        expect(code.getType()).toBe('code');
-        expect(
-          code.getChildren().every((c: LexicalNode) => !$isLinkNode(c)),
-        ).toBe(true);
+        assert($isCodeNode(code), 'Expected a CodeNode');
+        expect(code.getChildren().some($isLinkNode)).toBe(false);
       });
     });
 

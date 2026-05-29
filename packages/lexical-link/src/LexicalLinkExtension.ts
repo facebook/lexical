@@ -114,8 +114,11 @@ export function registerLink(
           // Skip link wrapping for non-simple text nodes (e.g. code blocks).
           const nodes = selection.getNodes();
           if (
-            !nodes.some(node => $isElementNode(node)) &&
-            nodes.every(node => !$isTextNode(node) || node.isSimpleText())
+            !nodes.some(
+              node =>
+                $isElementNode(node) ||
+                ($isTextNode(node) && !node.isSimpleText()),
+            )
           ) {
             editor.dispatchCommand(TOGGLE_LINK_COMMAND, {
               ...attributes,

@@ -123,7 +123,7 @@ export function $assumeActiveEditor(editor: LexicalEditor): void {
   }
   invariant(
     activeEditor === editor,
-    'The given editor argument does not match $getEditor() in this context. Use editor.getEditorState().read(..., editor) if this cross-editor call is intentional.',
+    'The given editor argument does not match $getEditor() in this context. Use editor.getEditorState().read(..., {editor}) if this cross-editor call is intentional.',
   );
 }
 

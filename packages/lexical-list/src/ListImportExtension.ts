@@ -12,7 +12,6 @@ import {
   $insertLineBreaksBetweenBlockArtificials,
   $propagateTextAlignToBlockChildren,
   contextValue,
-  CoreImportExtension,
   defineImportRule,
   DOMImportExtension,
   ImportInBlockContext,
@@ -255,14 +254,16 @@ export const ListImportRules = [
 ];
 
 /**
- * Bundles {@link ListImportRules} (plus {@link CoreImportExtension}) into
- * a single dependency.
+ * Bundles {@link ListImportRules} together with the runtime
+ * {@link ListExtension}. The application is expected to already have
+ * `CoreImportExtension` (or some equivalent) in its dependency graph —
+ * the core/text/paragraph/inline-format rules are a shared baseline,
+ * not something this leaf importer should re-declare.
  *
  * @experimental
  */
 export const ListImportExtension = defineExtension({
   dependencies: [
-    CoreImportExtension,
     ListExtension,
     configExtension(DOMImportExtension, {rules: ListImportRules}),
   ],

@@ -8,12 +8,7 @@
 
 import type {ElementNode, LexicalCommand, LexicalNode, NodeKey} from 'lexical';
 
-import {
-  CoreImportExtension,
-  defineImportRule,
-  DOMImportExtension,
-  sel,
-} from '@lexical/html';
+import {defineImportRule, DOMImportExtension, sel} from '@lexical/html';
 import {
   $findMatchingParent,
   $insertNodeToNearestRoot,
@@ -139,7 +134,6 @@ const $removeIsolatedLayoutItem = (node: LayoutItemNode): boolean => {
 
 export const LayoutExtension = defineExtension({
   dependencies: [
-    CoreImportExtension,
     configExtension(DOMImportExtension, {
       rules: [LayoutContainerImportRule, LayoutItemImportRule],
     }),

@@ -10,7 +10,6 @@ import './Collapsible.css';
 
 import {
   BlockSchema,
-  CoreImportExtension,
   defineImportRule,
   DOMImportExtension,
   sel,
@@ -219,7 +218,6 @@ const $wrapInlineContentChildren = (node: CollapsibleContentNode) => {
 
 export const CollapsibleExtension = defineExtension({
   dependencies: [
-    CoreImportExtension,
     configExtension(DOMImportExtension, {
       rules: [DetailsRule, SummaryRule, CollapsibleContentRule],
     }),

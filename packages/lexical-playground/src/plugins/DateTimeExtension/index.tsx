@@ -7,12 +7,7 @@
  */
 
 import {applyFormatFromStyle} from '@lexical/extension';
-import {
-  CoreImportExtension,
-  defineImportRule,
-  DOMImportExtension,
-  sel,
-} from '@lexical/html';
+import {defineImportRule, DOMImportExtension, sel} from '@lexical/html';
 import {$insertNodeIntoLeaf, $wrapNodeInElement} from '@lexical/utils';
 import {
   $createParagraphNode,
@@ -80,7 +75,6 @@ const GoogleDocsDateRule = defineImportRule({
 
 export const DateTimeExtension = defineExtension({
   dependencies: [
-    CoreImportExtension,
     configExtension(DOMImportExtension, {
       rules: [DateTimeRule, GoogleDocsDateRule],
     }),

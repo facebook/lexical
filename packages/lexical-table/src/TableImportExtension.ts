@@ -11,7 +11,6 @@ import type {ChildSchema, ImportContextPairOrUpdater} from '@lexical/html';
 import {
   $propagateTextAlignToBlockChildren,
   contextValue,
-  CoreImportExtension,
   defineImportRule,
   DOMImportExtension,
   ImportInBlockContext,
@@ -322,14 +321,16 @@ export const TableRowSchema: ChildSchema = {
 export const TableImportRules = [TableRule, TableRowRule, TableCellRule];
 
 /**
- * Bundles {@link TableImportRules} (plus {@link CoreImportExtension})
- * into a single dependency.
+ * Bundles {@link TableImportRules} together with the runtime
+ * {@link TableExtension}. The application is expected to already have
+ * `CoreImportExtension` (or some equivalent) in its dependency graph —
+ * the core/text/paragraph/inline-format rules are a shared baseline,
+ * not something this leaf importer should re-declare.
  *
  * @experimental
  */
 export const TableImportExtension = defineExtension({
   dependencies: [
-    CoreImportExtension,
     TableExtension,
     configExtension(DOMImportExtension, {rules: TableImportRules}),
   ],

@@ -10,12 +10,7 @@ import type {JSX} from 'react';
 
 import 'katex/dist/katex.css';
 
-import {
-  CoreImportExtension,
-  defineImportRule,
-  DOMImportExtension,
-  sel,
-} from '@lexical/html';
+import {defineImportRule, DOMImportExtension, sel} from '@lexical/html';
 import {
   $insertNodeIntoLeaf,
   $insertNodeToNearestRoot,
@@ -68,7 +63,6 @@ const EquationImportRule = defineImportRule({
 
 export const EquationsExtension = defineExtension({
   dependencies: [
-    CoreImportExtension,
     configExtension(DOMImportExtension, {rules: [EquationImportRule]}),
   ],
   name: '@lexical/playground/Equations',

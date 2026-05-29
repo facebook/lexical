@@ -8,12 +8,7 @@
 
 import type {JSX} from 'react';
 
-import {
-  CoreImportExtension,
-  defineImportRule,
-  DOMImportExtension,
-  sel,
-} from '@lexical/html';
+import {defineImportRule, DOMImportExtension, sel} from '@lexical/html';
 import {$wrapNodeInElement} from '@lexical/utils';
 import {
   $createParagraphNode,
@@ -61,7 +56,6 @@ const PollImportRule = defineImportRule({
 
 export const PollExtension = defineExtension({
   dependencies: [
-    CoreImportExtension,
     configExtension(DOMImportExtension, {rules: [PollImportRule]}),
   ],
   name: '@lexical/playground/Poll',

@@ -11,12 +11,7 @@ import type {JSX} from 'react';
 
 import '@excalidraw/excalidraw/index.css';
 
-import {
-  CoreImportExtension,
-  defineImportRule,
-  DOMImportExtension,
-  sel,
-} from '@lexical/html';
+import {defineImportRule, DOMImportExtension, sel} from '@lexical/html';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$wrapNodeInElement} from '@lexical/utils';
 import {
@@ -61,14 +56,13 @@ const ExcalidrawImportRule = defineImportRule({
 
 export const ExcalidrawExtension = defineExtension({
   dependencies: [
-    CoreImportExtension,
     configExtension(DOMImportExtension, {rules: [ExcalidrawImportRule]}),
   ],
   name: '@lexical/playground/Excalidraw',
   nodes: [ExcalidrawNode],
 });
 
-export default function ExcalidrawPlugin(): JSX.Element | null {
+export function ExcalidrawPlugin(): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
   const [isModalOpen, setModalOpen] = useState<boolean>(false);
 

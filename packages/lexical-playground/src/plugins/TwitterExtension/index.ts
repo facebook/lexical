@@ -6,12 +6,7 @@
  *
  */
 
-import {
-  CoreImportExtension,
-  defineImportRule,
-  DOMImportExtension,
-  sel,
-} from '@lexical/html';
+import {defineImportRule, DOMImportExtension, sel} from '@lexical/html';
 import {$insertNodeToNearestRoot} from '@lexical/utils';
 import {
   COMMAND_PRIORITY_EDITOR,
@@ -35,7 +30,6 @@ const TweetImportRule = defineImportRule({
 
 export const TwitterExtension = defineExtension({
   dependencies: [
-    CoreImportExtension,
     configExtension(DOMImportExtension, {rules: [TweetImportRule]}),
   ],
   name: '@lexical/playground/Twitter',

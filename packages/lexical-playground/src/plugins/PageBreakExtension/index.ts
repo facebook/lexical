@@ -6,12 +6,7 @@
  *
  */
 
-import {
-  CoreImportExtension,
-  defineImportRule,
-  DOMImportExtension,
-  sel,
-} from '@lexical/html';
+import {defineImportRule, DOMImportExtension, sel} from '@lexical/html';
 import {$insertNodeToNearestRoot} from '@lexical/utils';
 import {
   $getSelection,
@@ -35,7 +30,6 @@ const PageBreakImportRule = defineImportRule({
 
 export const PageBreakExtension = defineExtension({
   dependencies: [
-    CoreImportExtension,
     configExtension(DOMImportExtension, {rules: [PageBreakImportRule]}),
   ],
   name: '@lexical/playground/PageBreak',

@@ -46,7 +46,7 @@ import {
 import * as React from 'react';
 
 import {EmojisExtension} from '../plugins/EmojisExtension';
-import MentionsPlugin from '../plugins/MentionsExtension';
+import {MentionsPlugin} from '../plugins/MentionsExtension';
 import ContentEditable from '../ui/ContentEditable';
 import {EmojiNode} from './EmojiNode';
 import {KeywordsExtension} from './KeywordNode';

@@ -8,12 +8,7 @@
 
 import type {JSX} from 'react';
 
-import {
-  CoreImportExtension,
-  defineImportRule,
-  DOMImportExtension,
-  sel,
-} from '@lexical/html';
+import {defineImportRule, DOMImportExtension, sel} from '@lexical/html';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   LexicalTypeaheadMenuPlugin,
@@ -39,7 +34,6 @@ const MentionImportRule = defineImportRule({
 
 export const MentionsExtension = defineExtension({
   dependencies: [
-    CoreImportExtension,
     configExtension(DOMImportExtension, {rules: [MentionImportRule]}),
   ],
   name: '@lexical/playground/Mentions',
@@ -603,7 +597,7 @@ class MentionTypeaheadOption extends MenuOption {
   }
 }
 
-export default function NewMentionsPlugin(): JSX.Element | null {
+export function MentionsPlugin(): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
 
   const [queryString, setQueryString] = useState<string | null>(null);

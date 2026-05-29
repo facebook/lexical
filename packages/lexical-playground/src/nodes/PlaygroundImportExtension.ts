@@ -8,12 +8,19 @@
 
 import type {LexicalNode} from 'lexical';
 
+import {ClipboardDOMImportExtension} from '@lexical/clipboard';
+import {CodeImportExtension} from '@lexical/code-core';
 import {
   CoreImportExtension,
   defineImportRule,
   DOMImportExtension,
+  HorizontalRuleImportExtension,
   sel,
 } from '@lexical/html';
+import {LinkImportExtension} from '@lexical/link';
+import {ListImportExtension} from '@lexical/list';
+import {RichTextImportExtension} from '@lexical/rich-text';
+import {TableImportExtension} from '@lexical/table';
 import {
   $isElementNode,
   $isTextNode,
@@ -99,13 +106,32 @@ const PlaygroundInlineStyleRule = defineImportRule({
 export const PlaygroundImportRules = [PlaygroundInlineStyleRule];
 
 /**
- * Bundles {@link PlaygroundImportRules} into a single dependency that wires
- * the legacy playground HTML-import behavior into the new
- * {@link DOMImportExtension} pipeline.
+ * Aggregates every DOM-import dependency the playground needs:
+ *
+ *  - {@link CoreImportExtension} (the shared core baseline)
+ *  - each per-package import extension (`@lexical/rich-text`,
+ *    `@lexical/list`, `@lexical/link`, `@lexical/table`,
+ *    `@lexical/code-core`, `@lexical/html`'s `HorizontalRule`)
+ *  - the playground-specific {@link PlaygroundImportRules} overlay
+ *  - {@link ClipboardDOMImportExtension} so clipboard pastes flow
+ *    through the same pipeline
+ *
+ * The per-package import extensions deliberately do *not* re-declare
+ * `CoreImportExtension` themselves — the playground (or any other
+ * application using more than one of them) is expected to add it once
+ * here, which is also why bundling them all up at this layer keeps the
+ * leaf packages small.
  */
 export const PlaygroundImportExtension = defineExtension({
   dependencies: [
     CoreImportExtension,
+    RichTextImportExtension,
+    ListImportExtension,
+    LinkImportExtension,
+    TableImportExtension,
+    CodeImportExtension,
+    HorizontalRuleImportExtension,
+    ClipboardDOMImportExtension,
     configExtension(DOMImportExtension, {rules: PlaygroundImportRules}),
   ],
   name: '@lexical/playground/Import',

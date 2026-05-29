@@ -10,7 +10,6 @@ import type {JSX} from 'react';
 
 import {
   $generateNodesFromDOM,
-  CoreImportExtension,
   defineImportRule,
   DOMImportExtension,
   sel,
@@ -300,7 +299,6 @@ export function InsertImageDialog({
 
 export const ImagesExtension = defineExtension({
   dependencies: [
-    CoreImportExtension,
     configExtension(DOMImportExtension, {
       rules: [FigcaptionRule, FigureRule, ImgRule],
     }),

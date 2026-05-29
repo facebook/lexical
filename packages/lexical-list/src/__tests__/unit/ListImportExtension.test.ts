@@ -12,6 +12,7 @@ import {
   getExtensionDependencyFromEditor,
 } from '@lexical/extension';
 import {
+  CoreImportExtension,
   createImportState,
   defineImportRule,
   defineOverlayRules,
@@ -46,7 +47,9 @@ import {assert, describe, expect, test} from 'vitest';
 function buildEditor() {
   return buildEditorFromExtensions(
     defineExtension({
-      dependencies: [ListImportExtension],
+      // Leaf importer extensions no longer pull `CoreImportExtension`
+      // in by themselves — the application is expected to add it once.
+      dependencies: [CoreImportExtension, ListImportExtension],
       name: 'list-host',
       nodes: [ListNode, ListItemNode],
     }),
@@ -326,6 +329,7 @@ function buildWordPasteEditor() {
   return buildEditorFromExtensions(
     defineExtension({
       dependencies: [
+        CoreImportExtension,
         ListImportExtension,
         configExtension(DOMImportExtension, {
           preprocess: [$installWordOverlay],

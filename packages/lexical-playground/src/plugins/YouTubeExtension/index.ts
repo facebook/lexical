@@ -6,12 +6,7 @@
  *
  */
 
-import {
-  CoreImportExtension,
-  defineImportRule,
-  DOMImportExtension,
-  sel,
-} from '@lexical/html';
+import {defineImportRule, DOMImportExtension, sel} from '@lexical/html';
 import {$insertNodeToNearestRoot} from '@lexical/utils';
 import {
   COMMAND_PRIORITY_EDITOR,
@@ -37,7 +32,6 @@ const YouTubeImportRule = defineImportRule({
 
 export const YouTubeExtension = defineExtension({
   dependencies: [
-    CoreImportExtension,
     configExtension(DOMImportExtension, {rules: [YouTubeImportRule]}),
   ],
   name: '@lexical/playground/YouTube',

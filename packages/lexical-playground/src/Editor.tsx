@@ -8,10 +8,7 @@
 
 import type {JSX} from 'react';
 
-import {
-  SelectionAlwaysOnDisplayExtension,
-  type Signal,
-} from '@lexical/extension';
+import {batch, SelectionAlwaysOnDisplayExtension} from '@lexical/extension';
 import {
   ClickableLinkExtension,
   LinkAttributes,
@@ -29,7 +26,6 @@ import {useOptionalExtensionDependency} from '@lexical/react/useExtensionCompone
 import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
 import {TableExtension} from '@lexical/table';
 import {CAN_USE_DOM} from '@lexical/utils';
-import {OutputExtension} from 'lexical';
 import {useEffect, useMemo, useState} from 'react';
 import {Doc} from 'yjs';
 
@@ -73,20 +69,6 @@ const COLLAB_DOC_ID = 'main';
 const skipCollaborationInit =
   // @ts-expect-error
   window.parent != null && window.parent.frames.right === window;
-
-export function useSyncExtensionSignal<
-  K extends string,
-  V,
-  Output extends {[Key in K]: Signal<V>},
->(extension: OutputExtension<Output>, prop: K, value: V) {
-  const signal = useOptionalExtensionDependency(extension)?.output[prop];
-  useEffect(() => {
-    if (signal) {
-      // eslint-disable-next-line react-hooks/immutability
-      signal.value = value;
-    }
-  }, [signal, value]);
-}
 
 const DEFAULT_LINK_ATTRIBUTES: LinkAttributes = {
   rel: 'noopener noreferrer',
@@ -142,55 +124,112 @@ export default function Editor(): JSX.Element {
     }
   };
 
-  useSyncExtensionSignal(AutocompleteExtension, 'disabled', !isAutocomplete);
-  useSyncExtensionSignal(
+  // Settings that a live editor can react to are mirrored into their
+  // extensions' reactive config signals here — NOT in App.tsx's
+  // DynamicSettings, which would tear down and rebuild the whole editor on
+  // every change. A @preact/signals-core write is a no-op when the value is
+  // unchanged (strict `!==`), so toggling one setting only does work for the
+  // signal that changed, and `batch` coalesces the resulting extension effects
+  // (e.g. TableExtension's reconcile) into a single flush.
+  const autocomplete = useOptionalExtensionDependency(
+    AutocompleteExtension,
+  )?.output;
+  const visibleLineBreak = useOptionalExtensionDependency(
     VisibleLineBreakExtension,
-    'disabled',
-    !isVisibleLineBreak,
-  );
-  useSyncExtensionSignal(MaxLengthExtension, 'disabled', !isMaxLength);
-  useSyncExtensionSignal(
+  )?.output;
+  const maxLength = useOptionalExtensionDependency(MaxLengthExtension)?.output;
+  const codeHighlight = useOptionalExtensionDependency(
     CodeHighlightExtension,
-    'mode',
-    !isCodeHighlighted ? 'off' : isCodeShiki ? 'shiki' : 'prism',
-  );
-  useSyncExtensionSignal(
-    SpecialTextExtension,
-    'disabled',
-    !shouldAllowHighlightingWithBrackets,
-  );
-  useSyncExtensionSignal(
-    LinkExtension,
-    'attributes',
-    hasLinkAttributes ? DEFAULT_LINK_ATTRIBUTES : undefined,
-  );
-  useSyncExtensionSignal(ListExtension, 'hasStrictIndent', listStrictIndent);
-  // Table behavior toggles are reactive TableExtension config — sync them
-  // through its signals so flipping a setting updates the live editor rather
-  // than forcing a full editor rebuild (see DynamicSettings in App.tsx).
-  useSyncExtensionSignal(TableExtension, 'hasCellMerge', tableCellMerge);
-  useSyncExtensionSignal(
-    TableExtension,
-    'hasCellBackgroundColor',
-    tableCellBackgroundColor,
-  );
-  useSyncExtensionSignal(
-    TableExtension,
-    'hasHorizontalScroll',
-    tableHorizontalScroll && !hasFitNestedTables,
-  );
-  useSyncExtensionSignal(TableExtension, 'hasNestedTables', hasNestedTables);
-  useSyncExtensionSignal(
-    CheckListExtension,
-    'disableTakeFocusOnClick',
-    shouldDisableFocusOnClickChecklist,
-  );
-  useSyncExtensionSignal(ClickableLinkExtension, 'disabled', isEditable);
-  useSyncExtensionSignal(
+  )?.output;
+  const specialText =
+    useOptionalExtensionDependency(SpecialTextExtension)?.output;
+  const link = useOptionalExtensionDependency(LinkExtension)?.output;
+  const list = useOptionalExtensionDependency(ListExtension)?.output;
+  const table = useOptionalExtensionDependency(TableExtension)?.output;
+  const checkList = useOptionalExtensionDependency(CheckListExtension)?.output;
+  const clickableLink = useOptionalExtensionDependency(
+    ClickableLinkExtension,
+  )?.output;
+  const selectionDisplay = useOptionalExtensionDependency(
     SelectionAlwaysOnDisplayExtension,
-    'disabled',
-    !selectionAlwaysOnDisplay,
-  );
+  )?.output;
+
+  useEffect(() => {
+    batch(() => {
+      if (autocomplete) {
+        autocomplete.disabled.value = !isAutocomplete;
+      }
+      if (visibleLineBreak) {
+        visibleLineBreak.disabled.value = !isVisibleLineBreak;
+      }
+      if (maxLength) {
+        maxLength.disabled.value = !isMaxLength;
+      }
+      if (codeHighlight) {
+        codeHighlight.mode.value = !isCodeHighlighted
+          ? 'off'
+          : isCodeShiki
+            ? 'shiki'
+            : 'prism';
+      }
+      if (specialText) {
+        specialText.disabled.value = !shouldAllowHighlightingWithBrackets;
+      }
+      if (link) {
+        link.attributes.value = hasLinkAttributes
+          ? DEFAULT_LINK_ATTRIBUTES
+          : undefined;
+      }
+      if (list) {
+        list.hasStrictIndent.value = listStrictIndent;
+      }
+      if (table) {
+        table.hasCellMerge.value = tableCellMerge;
+        table.hasCellBackgroundColor.value = tableCellBackgroundColor;
+        table.hasHorizontalScroll.value =
+          tableHorizontalScroll && !hasFitNestedTables;
+        table.hasNestedTables.value = hasNestedTables;
+      }
+      if (checkList) {
+        checkList.disableTakeFocusOnClick.value =
+          shouldDisableFocusOnClickChecklist;
+      }
+      if (clickableLink) {
+        clickableLink.disabled.value = isEditable;
+      }
+      if (selectionDisplay) {
+        selectionDisplay.disabled.value = !selectionAlwaysOnDisplay;
+      }
+    });
+  }, [
+    autocomplete,
+    visibleLineBreak,
+    maxLength,
+    codeHighlight,
+    specialText,
+    link,
+    list,
+    table,
+    checkList,
+    clickableLink,
+    selectionDisplay,
+    isAutocomplete,
+    isVisibleLineBreak,
+    isMaxLength,
+    isCodeHighlighted,
+    isCodeShiki,
+    shouldAllowHighlightingWithBrackets,
+    hasLinkAttributes,
+    listStrictIndent,
+    tableCellMerge,
+    tableCellBackgroundColor,
+    tableHorizontalScroll,
+    hasNestedTables,
+    hasFitNestedTables,
+    shouldDisableFocusOnClickChecklist,
+    isEditable,
+    selectionAlwaysOnDisplay,
+  ]);
 
   useEffect(() => {
     const updateViewPortWidth = () => {

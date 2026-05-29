@@ -6,7 +6,7 @@
  *
  */
 
-import {devices} from '@playwright/test';
+import {defineConfig, devices} from '@playwright/test';
 
 const {CI, E2E_EDITOR_MODE, PWDEBUG} = process.env;
 const IS_CI = CI === 'true';
@@ -21,45 +21,34 @@ const IS_COLLAB =
 // doesn't wrap and break CMD+ArrowRight/Left navigation.
 const viewport = {height: 1000, width: IS_COLLAB ? 3000 : 1250};
 
-const config = {
+/**
+ *
+ * @param {string} name
+ * @param {keyof typeof devices} deviceName
+ * @returns
+ */
+function project(name, deviceName) {
+  return {
+    name,
+    testDir: './packages/lexical-playground/__tests__/',
+    use: {
+      ...devices[deviceName],
+      launchOptions: {
+        slowMo: 50,
+      },
+      userAgent: undefined,
+      viewport,
+    },
+  };
+}
+
+const config = defineConfig({
   forbidOnly: IS_CI,
+  fullyParallel: !IS_DEBUG,
   projects: [
-    {
-      name: 'chromium',
-      testDir: './packages/lexical-playground/__tests__/',
-      use: {
-        ...devices['Desktop Chrome'],
-        launchOptions: {
-          slowMo: 50,
-        },
-        userAgent: undefined,
-        viewport,
-      },
-    },
-    {
-      name: 'firefox',
-      testDir: './packages/lexical-playground/__tests__/',
-      use: {
-        ...devices['Desktop Firefox'],
-        launchOptions: {
-          slowMo: 50,
-        },
-        userAgent: undefined,
-        viewport,
-      },
-    },
-    {
-      name: 'webkit',
-      testDir: './packages/lexical-playground/__tests__/',
-      use: {
-        ...devices['Desktop Safari'],
-        launchOptions: {
-          slowMo: 50,
-        },
-        userAgent: undefined,
-        viewport,
-      },
-    },
+    project('chromium', 'Dekstop Chrome'),
+    project('firefox', 'Desktop Firefox'),
+    project('webkit', 'Desktop Safari'),
   ],
   retries: IS_DEBUG ? 0 : IS_CI ? 4 : 1,
   testIgnore: /\/__tests__\/unit\//,
@@ -79,6 +68,6 @@ const config = {
         timeout: 120 * 1000,
       }
     : undefined,
-  workers: 4,
-};
+  workers: IS_DEBUG ? 1 : undefined,
+});
 export default config;

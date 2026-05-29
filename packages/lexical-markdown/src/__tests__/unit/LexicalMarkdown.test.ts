@@ -9,6 +9,7 @@
 import {$createCodeNode, CodeNode} from '@lexical/code-core';
 import {createHeadlessEditor} from '@lexical/headless';
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
+import invariant from '@lexical/internal/invariant';
 import {$createLinkNode, LinkNode} from '@lexical/link';
 import {
   $createListItemNode,
@@ -41,7 +42,6 @@ import {
   KEY_ENTER_COMMAND,
   type TextNode,
 } from 'lexical';
-import invariant from 'shared/invariant';
 import {assert, describe, expect, it} from 'vitest';
 
 import {
@@ -893,7 +893,9 @@ describe('Markdown', () => {
       );
 
       expect(
-        editor.getEditorState().read(() => $generateHtmlFromNodes(editor)),
+        editor
+          .getEditorState()
+          .read(() => $generateHtmlFromNodes(editor), {editor}),
       ).toBe(html);
     });
   }

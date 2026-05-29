@@ -8,12 +8,14 @@
     "table"
   ],
   "license": "MIT",
-  "version": "0.44.0",
-  "main": "LexicalTable.js",
-  "types": "index.d.ts",
+  "version": "0.45.0",
+  "main": "./dist/LexicalTable.js",
+  "types": "./dist/index.d.ts",
   "dependencies": {
     "@lexical/clipboard": "workspace:*",
     "@lexical/extension": "workspace:*",
+    "@lexical/html": "workspace:*",
+    "@lexical/internal": "workspace:*",
     "@lexical/utils": "workspace:*",
     "lexical": "workspace:*"
   },
@@ -22,23 +24,37 @@
     "url": "git+https://github.com/facebook/lexical.git",
     "directory": "packages/lexical-table"
   },
-  "module": "LexicalTable.mjs",
+  "module": "./dist/LexicalTable.mjs",
   "sideEffects": false,
   "exports": {
     ".": {
+      "source": "./src/index.ts",
       "import": {
-        "types": "./index.d.ts",
-        "development": "./LexicalTable.dev.mjs",
-        "production": "./LexicalTable.prod.mjs",
-        "node": "./LexicalTable.node.mjs",
-        "default": "./LexicalTable.mjs"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalTable.dev.mjs",
+        "production": "./dist/LexicalTable.prod.mjs",
+        "node": "./dist/LexicalTable.node.mjs",
+        "default": "./dist/LexicalTable.mjs"
       },
       "require": {
-        "types": "./index.d.ts",
-        "development": "./LexicalTable.dev.js",
-        "production": "./LexicalTable.prod.js",
-        "default": "./LexicalTable.js"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalTable.dev.js",
+        "production": "./dist/LexicalTable.prod.js",
+        "default": "./dist/LexicalTable.js"
       }
     }
-  }
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/__tests__",
+    "!src/__bench__",
+    "!src/__mocks__",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "!src/**/*.bench.ts",
+    "!src/**/*.bench.tsx",
+    "README.md",
+    "LICENSE"
+  ]
 }

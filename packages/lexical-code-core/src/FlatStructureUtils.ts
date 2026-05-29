@@ -16,6 +16,7 @@ import type {
   TabNode,
 } from 'lexical';
 
+import invariant from '@lexical/internal/invariant';
 import {
   $createLineBreakNode,
   $createTabNode,
@@ -24,8 +25,8 @@ import {
   $isLineBreakNode,
   $isTabNode,
   getTextDirection,
+  tokenizeRawText,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
 import {
   $createCodeHighlightNode,
@@ -237,20 +238,10 @@ export function $getEndOfCodeInLine(
  */
 export function $plainifyCodeContent(text: string): LexicalNode[] {
   const out: LexicalNode[] = [];
-  const lines = text.split('\n');
-  lines.forEach((line, lineIdx) => {
-    if (lineIdx > 0) {
-      out.push($createLineBreakNode());
-    }
-    const tabParts = line.split('\t');
-    tabParts.forEach((part, partIdx) => {
-      if (partIdx > 0) {
-        out.push($createTabNode());
-      }
-      if (part.length > 0) {
-        out.push($createCodeHighlightNode(part));
-      }
-    });
+  tokenizeRawText(text, {
+    linebreak: () => out.push($createLineBreakNode()),
+    tab: () => out.push($createTabNode()),
+    text: part => out.push($createCodeHighlightNode(part)),
   });
   return out;
 }

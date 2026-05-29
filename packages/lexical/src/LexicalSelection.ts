@@ -12,8 +12,7 @@ import type {NodeKey} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextFormatType} from './nodes/LexicalTextNode';
 
-import {IS_FIREFOX} from 'shared/environment';
-import invariant from 'shared/invariant';
+import invariant from '@lexical/internal/invariant';
 
 import {
   $caretFromPoint,
@@ -49,11 +48,13 @@ import {
   CaretRange,
   ChildCaret,
   COLLABORATION_TAG,
+  type LineBreakNode,
   NodeCaret,
   PointCaret,
   SKIP_SCROLL_INTO_VIEW_TAG,
-  TextNode,
+  type TextNode,
 } from '.';
+import {IS_FIREFOX} from './environment';
 import {TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
 import {
   markCollapsedSelectionFormat,
@@ -71,20 +72,22 @@ import {SKIP_SELECTION_FOCUS_TAG} from './LexicalUpdateTags';
 import {
   $findMatchingParent,
   $getCompositionKey,
-  $getEditorDOMRenderConfig,
+  $getDOMSlot,
+  $getDOMTextNode,
   $getNearestRootOrShadowRoot,
   $getNodeByKey,
   $getNodeFromDOM,
   $getRoot,
   $hasAncestor,
   $isRootOrShadowRoot,
+  $isSelectionCapturedInDecorator,
   $isTokenOrSegmented,
   $isTokenOrTab,
   $setCompositionKey,
   doesContainSurrogatePair,
   getDOMSelection,
-  getDOMTextNode,
   getElementByKeyOrThrow,
+  getNodeKeyFromDOMNode,
   getWindow,
   INTERNAL_$isBlock,
   isHTMLElement,
@@ -95,6 +98,8 @@ import {
   toggleTextFormatType,
 } from './LexicalUtils';
 import {$createTabNode, $isTabNode} from './nodes/LexicalTabNode';
+
+const __DEV__ = process.env.NODE_ENV !== 'production';
 
 export type TextPointType = {
   _selection: BaseSelection;
@@ -674,7 +679,7 @@ export class RangeSelection implements BaseSelection {
     if (resolvedSelectionPoints === null) {
       return;
     }
-    const [anchorPoint, focusPoint] = resolvedSelectionPoints;
+    const [anchorPoint, focusPoint, dirty] = resolvedSelectionPoints;
     this.anchor.set(
       anchorPoint.key,
       anchorPoint.offset,
@@ -682,6 +687,9 @@ export class RangeSelection implements BaseSelection {
       true,
     );
     this.focus.set(focusPoint.key, focusPoint.offset, focusPoint.type, true);
+    if (dirty) {
+      this.dirty = true;
+    }
     // Firefox will use an element point rather than a text point in some cases,
     // so we normalize for that
     $normalizeSelection(this);
@@ -753,20 +761,7 @@ export class RangeSelection implements BaseSelection {
    * @param text the text to insert into the Selection
    */
   insertRawText(text: string): void {
-    const parts = text.split(/(\r?\n|\t)/);
-    const nodes = [];
-    const length = parts.length;
-    for (let i = 0; i < length; i++) {
-      const part = parts[i];
-      if (part === '\n' || part === '\r\n') {
-        nodes.push($createLineBreakNode());
-      } else if (part === '\t') {
-        nodes.push($createTabNode());
-      } else {
-        nodes.push($createTextNode(part));
-      }
-    }
-    this.insertNodes(nodes);
+    this.insertNodes($generateNodesFromRawText(text));
   }
 
   /**
@@ -1614,19 +1609,21 @@ export class RangeSelection implements BaseSelection {
       removeDOMBlockCursorElement(blockCursorElement, editor, rootElement);
     }
     if (this.dirty) {
-      let nextAnchorDOM: HTMLElement | Text | null = getElementByKeyOrThrow(
-        editor,
-        this.anchor.key,
-      );
-      let nextFocusDOM: HTMLElement | Text | null = getElementByKeyOrThrow(
-        editor,
-        this.focus.key,
-      );
+      const anchorKeyedDOM = getElementByKeyOrThrow(editor, this.anchor.key);
+      const focusKeyedDOM = getElementByKeyOrThrow(editor, this.focus.key);
+      let nextAnchorDOM: HTMLElement | Text | null = anchorKeyedDOM;
+      let nextFocusDOM: HTMLElement | Text | null = focusKeyedDOM;
       if (this.anchor.type === 'text') {
-        nextAnchorDOM = getDOMTextNode(nextAnchorDOM);
+        const node = this.anchor.getNode();
+        nextAnchorDOM = $isTextNode(node)
+          ? $getDOMTextNode(node, anchorKeyedDOM, editor)
+          : null;
       }
       if (this.focus.type === 'text') {
-        nextFocusDOM = getDOMTextNode(nextFocusDOM);
+        const node = this.focus.getNode();
+        nextFocusDOM = $isTextNode(node)
+          ? $getDOMTextNode(node, focusKeyedDOM, editor)
+          : null;
       }
       if (nextAnchorDOM && nextFocusDOM) {
         setDOMSelectionBaseAndExtent(
@@ -2293,9 +2290,17 @@ function $internalResolveSelectionPoint(
   offset: number,
   lastPoint: null | PointType,
   editor: LexicalEditor,
-): null | PointType {
+): null | [point: PointType, dirty: boolean] {
   let resolvedOffset = offset;
   let resolvedNode: TextNode | LexicalNode | null;
+  // True when the DOM position is not directly representable in the
+  // Lexical tree (e.g. the caret landed inside a void/empty element
+  // such as <col> or in another unmanaged subtree) and the resolution
+  // had to walk up to a Lexical ancestor. The caller marks the
+  // resulting selection dirty so the reconciler writes a valid DOM
+  // caret back instead of leaving the user's cursor "stuck" inside
+  // unmanaged DOM.
+  let dirty = false;
   // If we have selection on an element, we will
   // need to figure out (using the offset) what text
   // node should be selected.
@@ -2311,9 +2316,37 @@ function $internalResolveSelectionPoint(
     const blockCursorElement = editor._blockCursorElement;
     // If the anchor is the same as length, then this means we
     // need to select the very last text node.
-    if (resolvedOffset === childNodesLength) {
+    if (resolvedOffset === childNodesLength && childNodesLength > 0) {
       moveSelectionToEnd = true;
       resolvedOffset = childNodesLength - 1;
+    }
+    if (
+      getNodeKeyFromDOMNode(dom, editor) === undefined &&
+      dom !== editor.getRootElement() &&
+      !$isSelectionCapturedInDecorator(dom)
+    ) {
+      // The DOM caret is sitting on a node that has no Lexical key
+      // (e.g. <col> inside an unmanaged <colgroup>, or any unmanaged
+      // scaffolding around a DOMSlot — wrap elements, contenteditable=false
+      // labels, badges, etc.). Resolution will walk up to find a Lexical
+      // ancestor below, so the resulting Lexical position will not
+      // correspond to where the DOM caret currently is. Mark the
+      // selection dirty so the reconciler writes a valid DOM caret back
+      // at the resolved Lexical position.
+      //
+      // Exceptions where the DOM caret is intentionally somewhere
+      // Lexical doesn't own and we should NOT force-sync it:
+      //  - the editor root element (tracked separately in
+      //    _keyToDOMMap as 'root'; has no __lexicalKey_* attribute);
+      //  - anything inside a DecoratorNode subtree (the decorator owns
+      //    its own DOM and may manage its own selection — for inputs
+      //    isSelectionCapturedInDecoratorInput rejects earlier, but
+      //    non-input decorator content also shouldn't be force-synced).
+      //
+      // Void elements that ARE Lexical nodes (LineBreakNode <br>,
+      // empty decorator containers, etc.) have keys, so this check
+      // leaves their existing resolution-to-parent behavior alone.
+      dirty = true;
     }
     let childDOM = childNodes[resolvedOffset];
     let hasBlockCursor = false;
@@ -2351,11 +2384,7 @@ function $internalResolveSelectionPoint(
           elementDOM !== null,
           '$internalResolveSelectionPoint: node in DOM but not keyToDOMMap',
         );
-        const slot = $getEditorDOMRenderConfig(editor).$getDOMSlot(
-          resolvedElement,
-          elementDOM,
-          editor,
-        );
+        const slot = $getDOMSlot(resolvedElement, elementDOM, editor);
         [resolvedElement, resolvedOffset] = slot.resolveChildIndex(
           resolvedElement,
           elementDOM,
@@ -2411,21 +2440,30 @@ function $internalResolveSelectionPoint(
         }
       } else {
         const index = resolvedElement.getIndexWithinParent();
-        // When selecting decorators, there can be some selection issues when using resolvedOffset,
-        // and instead we should be checking if we're using the offset
-        if (
-          offset === 0 &&
-          $isDecoratorNode(resolvedElement) &&
-          $getNodeFromDOM(dom) === resolvedElement
-        ) {
-          resolvedOffset = index;
-        } else {
-          resolvedOffset = index + 1;
+        // For wrap patterns (slot exposes an inner content element via
+        // `withElement`) defer to `slot.resolveLeafPosition` so the
+        // wrap's structure determines "before vs after". For bare leaf
+        // DOM we preserve the historical rule: only a DecoratorNode at
+        // DOM offset 0 resolves to "before"; everything else (including
+        // bare LineBreakNode) resolves to "after".
+        const elementDOM = editor.getElementByKey(resolvedElement.getKey());
+        let position: 'before' | 'after' = 'after';
+        if (elementDOM !== null && $getNodeFromDOM(dom) === resolvedElement) {
+          const slot = $getDOMSlot(resolvedElement, elementDOM, editor);
+          if (slot.element !== elementDOM) {
+            position = slot.resolveLeafPosition(elementDOM, dom, offset);
+          } else if (offset === 0 && $isDecoratorNode(resolvedElement)) {
+            position = 'before';
+          }
         }
+        resolvedOffset = position === 'before' ? index : index + 1;
         resolvedElement = resolvedElement.getParentOrThrow();
       }
       if ($isElementNode(resolvedElement)) {
-        return $createPoint(resolvedElement.__key, resolvedOffset, 'element');
+        return [
+          $createPoint(resolvedElement.__key, resolvedOffset, 'element'),
+          dirty,
+        ];
       }
     }
   } else {
@@ -2435,11 +2473,14 @@ function $internalResolveSelectionPoint(
   if (!$isTextNode(resolvedNode)) {
     return null;
   }
-  return $createPoint(
-    resolvedNode.__key,
-    $getTextNodeOffset(resolvedNode, resolvedOffset, 'clamp'),
-    'text',
-  );
+  return [
+    $createPoint(
+      resolvedNode.__key,
+      $getTextNodeOffset(resolvedNode, resolvedOffset, 'clamp'),
+      'text',
+    ),
+    dirty,
+  ];
 }
 
 function resolveSelectionPointOnBoundary(
@@ -2531,7 +2572,7 @@ function $internalResolveSelectionPoints(
   focusOffset: number,
   editor: LexicalEditor,
   lastSelection: null | BaseSelection,
-): null | [PointType, PointType] {
+): null | [anchor: PointType, focus: PointType, dirty: boolean] {
   if (
     anchorDOM === null ||
     focusDOM === null ||
@@ -2539,24 +2580,26 @@ function $internalResolveSelectionPoints(
   ) {
     return null;
   }
-  const resolvedAnchorPoint = $internalResolveSelectionPoint(
+  const resolvedAnchor = $internalResolveSelectionPoint(
     anchorDOM,
     anchorOffset,
     $isRangeSelection(lastSelection) ? lastSelection.anchor : null,
     editor,
   );
-  if (resolvedAnchorPoint === null) {
+  if (resolvedAnchor === null) {
     return null;
   }
-  const resolvedFocusPoint = $internalResolveSelectionPoint(
+  const resolvedFocus = $internalResolveSelectionPoint(
     focusDOM,
     focusOffset,
     $isRangeSelection(lastSelection) ? lastSelection.focus : null,
     editor,
   );
-  if (resolvedFocusPoint === null) {
+  if (resolvedFocus === null) {
     return null;
   }
+  const [resolvedAnchorPoint, anchorDirty] = resolvedAnchor;
+  const [resolvedFocusPoint, focusDirty] = resolvedFocus;
   if (__DEV__) {
     $validatePoint('anchor', resolvedAnchorPoint);
     $validatePoint('focus', resolvedFocusPoint);
@@ -2582,7 +2625,7 @@ function $internalResolveSelectionPoints(
     lastSelection,
   );
 
-  return [resolvedAnchorPoint, resolvedFocusPoint];
+  return [resolvedAnchorPoint, resolvedFocusPoint, anchorDirty || focusDirty];
 }
 
 export function $isBlockElementNode(
@@ -2722,7 +2765,8 @@ export function $internalCreateRangeSelection(
   if (resolvedSelectionPoints === null) {
     return null;
   }
-  const [resolvedAnchorPoint, resolvedFocusPoint] = resolvedSelectionPoints;
+  const [resolvedAnchorPoint, resolvedFocusPoint, dirty] =
+    resolvedSelectionPoints;
   let format = 0;
   let style = '';
   if ($isRangeSelection(lastSelection)) {
@@ -2741,12 +2785,16 @@ export function $internalCreateRangeSelection(
       }
     }
   }
-  return new RangeSelection(
+  const newSelection = new RangeSelection(
     resolvedAnchorPoint,
     resolvedFocusPoint,
     format,
     style,
   );
+  if (dirty) {
+    newSelection.dirty = true;
+  }
+  return newSelection;
 }
 
 function $validatePoint(name: 'anchor' | 'focus', point: PointType): void {
@@ -3034,11 +3082,7 @@ function $getElementAndOffsetForPoint(
 ): [HTMLElement, number] {
   const element = getElementByKeyOrThrow(editor, node.getKey());
   if ($isElementNode(node)) {
-    const slot = $getEditorDOMRenderConfig(editor).$getDOMSlot(
-      node,
-      element,
-      editor,
-    );
+    const slot = $getDOMSlot(node, element, editor);
     return [slot.element, offset + slot.getFirstChildOffset()];
   }
   return [element, offset];
@@ -3112,7 +3156,9 @@ export function $updateDOMSelection(
   let anchorFormatOrStyleChanged = false;
 
   if (anchor.type === 'text') {
-    nextAnchorNode = getDOMTextNode(anchorDOM);
+    nextAnchorNode = $isTextNode(anchorNode)
+      ? $getDOMTextNode(anchorNode, anchorDOM, editor)
+      : null;
     anchorFormatOrStyleChanged =
       anchorNode.getFormat() !== nextFormat ||
       anchorNode.getStyle() !== nextStyle;
@@ -3124,7 +3170,9 @@ export function $updateDOMSelection(
   }
 
   if (focus.type === 'text') {
-    nextFocusNode = getDOMTextNode(focusDOM);
+    nextFocusNode = $isTextNode(focusNode)
+      ? $getDOMTextNode(focusNode, focusDOM, editor)
+      : null;
   }
 
   // If we can't get an underlying text node for selection, then
@@ -3240,6 +3288,62 @@ export function $insertNodes(nodes: Array<LexicalNode>) {
     selection = $getRoot().selectEnd();
   }
   selection.insertNodes(nodes);
+}
+
+/**
+ * Push-lexer visitor passed to {@link tokenizeRawText}. The tokenizer
+ * invokes one callback per token it emits; empty text runs are
+ * suppressed, so `text` is only invoked with a non-empty string.
+ */
+export interface RawTextVisitor {
+  readonly linebreak: () => void;
+  readonly tab: () => void;
+  readonly text: (text: string) => void;
+}
+
+/**
+ * Push-lex a raw text string into `linebreak` (`\n` / `\r\n`), `tab`
+ * (`\t`), and `text` (everything else) tokens, dispatching each to the
+ * matching callback on `visitor` in source order.
+ *
+ * Shared by {@link $generateNodesFromRawText} (which builds
+ * `LineBreakNode` / `TabNode` / `TextNode` siblings) and by
+ * `@lexical/clipboard`'s default `text/plain` clipboard importer
+ * (which maps `linebreak` to a real paragraph break via
+ * `insertParagraph` so multi-line plain text becomes multi-paragraph
+ * rich text). Empty text runs are dropped so callers don't need to
+ * special-case them.
+ */
+export function tokenizeRawText(text: string, visitor: RawTextVisitor): void {
+  for (const part of text.split(/(\r?\n|\t)/)) {
+    if (part === '\n' || part === '\r\n') {
+      visitor.linebreak();
+    } else if (part === '\t') {
+      visitor.tab();
+    } else if (part !== '') {
+      visitor.text(part);
+    }
+  }
+}
+
+/**
+ * Convert a raw text string into a flat array of `TextNode`,
+ * `LineBreakNode`, and `TabNode` siblings, splitting on `\n`, `\r\n`,
+ * and `\t`. Use this when you need the same `\n` / `\t` → real-node
+ * conversion that {@link RangeSelection.insertRawText} performs but
+ * without a selection — e.g. when building a `CodeNode`'s children
+ * inside a DOM-import rule.
+ */
+export function $generateNodesFromRawText(
+  text: string,
+): (TextNode | LineBreakNode)[] {
+  const nodes: (TextNode | LineBreakNode)[] = [];
+  tokenizeRawText(text, {
+    linebreak: () => nodes.push($createLineBreakNode()),
+    tab: () => nodes.push($createTabNode()),
+    text: part => nodes.push($createTextNode(part)),
+  });
+  return nodes;
 }
 
 export function $getTextContent(): string {

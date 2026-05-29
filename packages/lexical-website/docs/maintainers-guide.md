@@ -24,11 +24,20 @@ Some packages in the monorepo do not get published to npm, for example:
   [playground.lexical.dev](https://playground.lexical.dev/) demo site
 * `packages/lexical-website` - the [lexical.dev](https://lexical.dev/)
   docusaurus website that you may even be reading right now
-* `packages/shared` - internal code that is used by more than one repository
-  but should not be a public API
+* `packages/lexical-test-utils` - `@lexical/test-utils`, private React
+  testing helpers shared across package unit tests
 
-It is required that these packages, and any other package that should not be
-published to npm, have a `"private": true` property in their `package.json`.
+Internal runtime code shared by more than one package lives in
+`packages/lexical-internal` (`@lexical/internal`). Unlike the others above
+it **is** published, but only so its source resolves through normal package
+resolution (the `source` export condition used by linked-checkout
+consumers); the compiled packages inline it, so it is never executed as a
+separate runtime dependency. It is not a public API and has no semver
+guarantees — see [Developing against a local Lexical
+checkout](./maintainers-guide-link.md).
+
+It is required that private packages, and any other package that should not
+be published to npm, have a `"private": true` property in their `package.json`.
 If you have an in-progress package that will eventually be public, but is
 not ready for consumption, it should probably still be set to
 `"private": true` otherwise the tooling will find it and publish it.
@@ -190,13 +199,25 @@ of these scripts you might as well run them all.
 
 ### pnpm run prepare-release
 
-This runs all of the pre-release steps and will let you inspect the artifacts
-that would be uploaded to npm. Each public package will have a npm directory, e.g.
-`packages/lexical/npm` that contains those artifacts.
+This runs `build-release` to produce all of the artifacts each public
+package needs (the `dev`/`prod`/`node` ESM and CJS variants plus their
+fork modules, `.d.ts` declarations, and `.flow` stubs under
+`packages/<name>/dist/`), then runs the publish-time guard in
+`scripts/npm/prepare-release.mjs` to confirm every path the package's
+`exports`/`main`/`module`/`types` fields reference actually exists on
+disk. The guard fails the build if e.g. you ran `pnpm run build` (dev
+only) and then tried to publish — the `.prod.{js,mjs}` files would be
+missing.
 
-This will also update scripts/error-codes/codes.json, the mapping of
-production error codes to error messages. It's imperative to commit the result
-of this before tagging a release.
+Each package is its own publish root: `packages/<name>/` IS the
+publishable npm package after `build-release`. `pnpm publish` is run
+directly from that directory by `scripts/npm/release.mjs` so pnpm's
+automatic `workspace:*` rewriting and the `files` whitelist do the
+right thing without an intermediate `npm/` copy step.
+
+This will also update `scripts/error-codes/codes.json`, the mapping of
+production error codes to error messages. It's imperative to commit the
+result of this before tagging a release.
 
 ### pnpm run ci-check
 

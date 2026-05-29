@@ -11,16 +11,8 @@ import type {NodeKey} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextNode} from './nodes/LexicalTextNode';
 
-import {
-  CAN_USE_BEFORE_INPUT,
-  IS_ANDROID_CHROME,
-  IS_APPLE_WEBKIT,
-  IS_FIREFOX,
-  IS_IOS,
-  IS_SAFARI,
-} from 'shared/environment';
-import invariant from 'shared/invariant';
-import warnOnlyOnce from 'shared/warnOnlyOnce';
+import invariant from '@lexical/internal/invariant';
+import warnOnlyOnce from '@lexical/internal/warnOnlyOnce';
 
 import {
   $getPreviousSelection,
@@ -76,6 +68,14 @@ import {
   UNDO_COMMAND,
 } from '.';
 import {
+  CAN_USE_BEFORE_INPUT,
+  IS_ANDROID_CHROME,
+  IS_APPLE_WEBKIT,
+  IS_FIREFOX,
+  IS_IOS,
+  IS_SAFARI,
+} from './environment';
+import {
   BEFORE_INPUT_COMMAND,
   COMPOSITION_END_COMMAND,
   COMPOSITION_START_COMMAND,
@@ -98,6 +98,7 @@ import {
   $findMatchingParent,
   $flushMutations,
   $getAdjacentNode,
+  $getDOMTextNode,
   $getNodeByKey,
   $isSelectionCapturedInDecorator,
   $isTokenOrSegmented,
@@ -111,7 +112,6 @@ import {
   getAnchorTextFromDOM,
   getDOMSelection,
   getDOMSelectionFromTarget,
-  getDOMTextNode,
   getEditorPropertyFromDOMNode,
   getEditorsToPropagate,
   getNearestEditorFromDOMNode,
@@ -264,7 +264,8 @@ function $shouldPreventDefaultAndInsertText(
     ((isBeforeInput || !CAN_USE_BEFORE_INPUT) &&
       backingAnchorElement !== null &&
       !anchorNode.isComposing() &&
-      domAnchorNode !== getDOMTextNode(backingAnchorElement)) ||
+      domAnchorNode !==
+        $getDOMTextNode(anchorNode, backingAnchorElement, editor)) ||
     // If TargetRange is not the same as the DOM selection; browser trying to edit random parts
     // of the editor.
     (domSelection !== null &&
@@ -1240,7 +1241,10 @@ function $onCompositionEndImpl(editor: LexicalEditor, data?: string): void {
     if (data === '') {
       const node = $getNodeByKey(compositionKey);
       const domElement = editor.getElementByKey(compositionKey);
-      const textNode = getDOMTextNode(domElement);
+      const textNode =
+        domElement !== null && $isTextNode(node)
+          ? $getDOMTextNode(node, domElement, editor)
+          : null;
 
       if (
         textNode !== null &&

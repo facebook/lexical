@@ -9,6 +9,7 @@
 import type {EditorState, NodeKey} from 'lexical';
 import type {ContentType, Transaction as YTransaction} from 'yjs';
 
+import invariant from '@lexical/internal/invariant';
 import {
   $addUpdateTag,
   $createParagraphNode,
@@ -22,7 +23,6 @@ import {
   HISTORIC_TAG,
   SKIP_SCROLL_INTO_VIEW_TAG,
 } from 'lexical';
-import invariant from 'shared/invariant';
 import {
   Item,
   iterateDeletedStructs,

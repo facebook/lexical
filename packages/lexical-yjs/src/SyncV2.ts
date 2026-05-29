@@ -24,6 +24,7 @@
  * prefix. (NB: '$' couldn't be used as the prefix because it breaks XmlElement.toDOM().)
  */
 
+import invariant from '@lexical/internal/invariant';
 import {
   $getSelection,
   $getWritableNodeState,
@@ -35,8 +36,6 @@ import {
   RootNode,
   TextNode,
 } from 'lexical';
-import invariant from 'shared/invariant';
-import simpleDiffWithCursor from 'shared/simpleDiffWithCursor';
 import {
   ContentFormat,
   ContentString,
@@ -53,6 +52,7 @@ import {
 } from 'yjs';
 
 import {BindingV2} from './Bindings';
+import simpleDiffWithCursor from './simpleDiffWithCursor';
 import {$syncPropertiesFromYjs, getDefaultNodeProperties} from './Utils';
 
 type ComputeYChange = (

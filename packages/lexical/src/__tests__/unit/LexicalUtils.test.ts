@@ -20,6 +20,7 @@ import {
   $setState,
   createEditor,
   createState,
+  IS_APPLE,
   isSelectionWithinEditor,
   ParagraphNode,
   resetRandomKey,
@@ -27,7 +28,6 @@ import {
   SerializedTextNode,
   TextNode,
 } from 'lexical';
-import {IS_APPLE} from 'shared/environment';
 import {describe, expect, test, vi} from 'vitest';
 
 import {

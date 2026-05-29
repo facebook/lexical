@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import invariant from '@lexical/internal/invariant';
 import {$getRoot, $getState, createState, LexicalNode} from 'lexical';
-import invariant from 'shared/invariant';
 import {
   emptySnapshot,
   ID,

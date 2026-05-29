@@ -25,6 +25,26 @@
       "@lexical/headless/dom": ["../lexical-headless/src/dom.ts"],
       "@lexical/history": ["../lexical-history/src/index.ts"],
       "@lexical/html": ["../lexical-html/src/index.ts"],
+      "@lexical/internal/devInvariant": [
+        "../lexical-internal/src/devInvariant.ts"
+      ],
+      "@lexical/internal/formatDevErrorMessage": [
+        "../lexical-internal/src/formatDevErrorMessage.ts"
+      ],
+      "@lexical/internal/formatDevWarningMessage": [
+        "../lexical-internal/src/formatDevWarningMessage.ts"
+      ],
+      "@lexical/internal/formatProdErrorMessage": [
+        "../lexical-internal/src/formatProdErrorMessage.ts"
+      ],
+      "@lexical/internal/formatProdWarningMessage": [
+        "../lexical-internal/src/formatProdWarningMessage.ts"
+      ],
+      "@lexical/internal/invariant": ["../lexical-internal/src/invariant.ts"],
+      "@lexical/internal/version": ["../lexical-internal/src/version.ts"],
+      "@lexical/internal/warnOnlyOnce": [
+        "../lexical-internal/src/warnOnlyOnce.ts"
+      ],
       "@lexical/link": ["../lexical-link/src/index.ts"],
       "@lexical/list": ["../lexical-list/src/index.ts"],
       "@lexical/mark": ["../lexical-mark/src/index.ts"],
@@ -191,29 +211,7 @@
       "@lexical/tailwind": ["../lexical-tailwind/src/index.ts"],
       "@lexical/text": ["../lexical-text/src/index.ts"],
       "@lexical/utils": ["../lexical-utils/src/index.ts"],
-      "@lexical/yjs": ["../lexical-yjs/src/index.ts"],
-      "shared/canUseDOM": ["../shared/src/canUseDOM.ts"],
-      "shared/caretFromPoint": ["../shared/src/caretFromPoint.ts"],
-      "shared/devInvariant": ["../shared/src/devInvariant.ts"],
-      "shared/environment": ["../shared/src/environment.ts"],
-      "shared/formatDevErrorMessage": [
-        "../shared/src/formatDevErrorMessage.ts"
-      ],
-      "shared/formatDevWarningMessage": [
-        "../shared/src/formatDevWarningMessage.ts"
-      ],
-      "shared/formatProdErrorMessage": [
-        "../shared/src/formatProdErrorMessage.ts"
-      ],
-      "shared/formatProdWarningMessage": [
-        "../shared/src/formatProdWarningMessage.ts"
-      ],
-      "shared/invariant": ["../shared/src/invariant.ts"],
-      "shared/react-test-utils": ["../shared/src/react-test-utils.ts"],
-      "shared/reactPatches": ["../shared/src/reactPatches.ts"],
-      "shared/simpleDiffWithCursor": ["../shared/src/simpleDiffWithCursor.ts"],
-      "shared/useLayoutEffect": ["../shared/src/useLayoutEffect.ts"],
-      "shared/warnOnlyOnce": ["../shared/src/warnOnlyOnce.ts"]
+      "@lexical/yjs": ["../lexical-yjs/src/index.ts"]
     }
   },
   "exclude": ["../.output", "../../libdefs/*.js"]

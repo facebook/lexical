@@ -198,7 +198,11 @@ function TextFormatFloatingToolbar({
   }, [editor, $updateTextFormatFloatingToolbar]);
 
   return (
-    <div ref={mergedRef} className="floating-text-format-popup">
+    <div
+      ref={mergedRef}
+      className="floating-text-format-popup"
+      role="toolbar"
+      aria-label="Floating text format toolbar">
       {editor.isEditable() && (
         <>
           <button

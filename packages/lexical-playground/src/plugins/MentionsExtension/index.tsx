@@ -8,7 +8,12 @@
 
 import type {JSX} from 'react';
 
-import {defineImportRule, DOMImportExtension, sel} from '@lexical/html';
+import {
+  CoreImportExtension,
+  defineImportRule,
+  DOMImportExtension,
+  sel,
+} from '@lexical/html';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   LexicalTypeaheadMenuPlugin,
@@ -33,7 +38,12 @@ const MentionImportRule = defineImportRule({
 });
 
 export const MentionsExtension = defineExtension({
+  // Depend on CoreImportExtension so the `<span data-lexical-mention>` rule is
+  // merged after — and therefore out-prioritizes — the core inline-format
+  // `<span>` rule, regardless of where the app lists this extension relative
+  // to the import baseline.
   dependencies: [
+    CoreImportExtension,
     configExtension(DOMImportExtension, {rules: [MentionImportRule]}),
   ],
   name: '@lexical/playground/Mentions',

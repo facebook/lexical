@@ -7,7 +7,12 @@
  */
 
 import {applyFormatFromStyle} from '@lexical/extension';
-import {defineImportRule, DOMImportExtension, sel} from '@lexical/html';
+import {
+  CoreImportExtension,
+  defineImportRule,
+  DOMImportExtension,
+  sel,
+} from '@lexical/html';
 import {$insertNodeIntoLeaf, $wrapNodeInElement} from '@lexical/utils';
 import {
   $createParagraphNode,
@@ -74,7 +79,13 @@ const GoogleDocsDateRule = defineImportRule({
 });
 
 export const DateTimeExtension = defineExtension({
+  // Depend on CoreImportExtension so this extension's rules are merged after
+  // the core rules (later-merged rules win dispatch). Without this the core
+  // inline-format `<span>` rule could out-prioritize the `<span
+  // data-lexical-datetime>` rule below, depending on where the app lists this
+  // extension relative to the import baseline.
   dependencies: [
+    CoreImportExtension,
     configExtension(DOMImportExtension, {
       rules: [DateTimeRule, GoogleDocsDateRule],
     }),

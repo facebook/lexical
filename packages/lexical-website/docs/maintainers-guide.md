@@ -304,33 +304,46 @@ pnpm run setup-trusted-publishing
 
 For each public package in the monorepo, it queries
 `https://registry.npmjs.org` and reports whether the name is already
-claimed. Packages that *do* exist get a deep link to their
-`npmjs.com/.../access` page along with the exact values to enter
-(repository owner, repository name, workflow filename
-`call-release.yml`, empty environment).
-
-If any packages are missing from the registry, re-run with
-`--bootstrap` to publish a deprecated `0.0.0-bootstrap.0` placeholder
-under the `bootstrap` dist-tag so the name can be claimed and then
-configured for trusted publishing:
+claimed. Packages that *don't* exist on the registry are listed; you
+can re-run with `--bootstrap` to publish a deprecated
+`0.0.0-bootstrap.0` placeholder under the `bootstrap` dist-tag so the
+name can be claimed:
 
 ```bash
 npm login --registry https://registry.npmjs.org   # or set NPM_TOKEN
 pnpm run setup-trusted-publishing -- --bootstrap
 ```
 
+Once a package exists on the registry, you can configure trusted
+publishing for it programmatically by adding `--setup-trust`. This
+runs `npm trust github` under the hood (requires `npm` ≥ 11.5 and an
+authenticated session with 2FA on the publishing account), and is
+idempotent — packages that already have a matching trust
+configuration are reported as `already configured` and skipped:
+
+```bash
+npm login --registry https://registry.npmjs.org
+pnpm run setup-trusted-publishing -- --setup-trust
+```
+
+For full first-time setup of a brand-new monorepo (or when adding a
+new package to an existing one), combine both flags:
+
+```bash
+pnpm run setup-trusted-publishing -- --bootstrap --setup-trust
+```
+
 Useful flags:
 
-- `--dry-run` — print what would be published without touching the registry
+- `--dry-run` — print what would happen without touching the registry (works with both `--bootstrap` and `--setup-trust`)
 - `--workflow <filename>` — override the workflow filename (default `call-release.yml`)
 - `--repo <owner/name>` — override the GitHub repo (default `facebook/lexical`)
 - `--stub-version <semver>` — override the placeholder version (default `0.0.0-bootstrap.0`)
 - `--registry <url>` — override the npm registry
 
-The script does not call any private npm APIs; configuring trusted
-publishing itself still has to be done in the npm web UI, but the
-script tells you exactly what to enter and links you to the right
-page.
+In the default (check-only) mode the script also prints the npmjs.com
+`/access` URL for each existing package and the exact values to enter
+manually, as a fallback for when `npm trust github` isn't an option.
 
 ## Release Procedure
 

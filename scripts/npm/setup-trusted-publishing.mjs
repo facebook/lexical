@@ -18,6 +18,7 @@ import {packagesManager} from '../shared/packagesManager.mjs';
 
 const argv = minimist(process.argv.slice(2));
 const bootstrap = !!argv.bootstrap;
+const setupTrust = !!argv['setup-trust'];
 const dryRun = !!argv['dry-run'];
 const registry = (argv.registry || 'https://registry.npmjs.org').replace(
   /\/+$/,
@@ -105,7 +106,9 @@ async function publishStub(pkg) {
       `npm deprecate --registry ${registry} ${name}@${stubVersion} "Bootstrap placeholder for trusted publishing setup; do not install"`,
     ).catch(err => {
       console.warn(
-        `(Could not deprecate ${name}@${stubVersion}: ${err.message || err})`,
+        `(Could not deprecate ${name}@${stubVersion}: ${
+          err instanceof Error ? err.message : String(err)
+        })`,
       );
     });
   } finally {
@@ -114,35 +117,88 @@ async function publishStub(pkg) {
 }
 
 /**
+ * Run `npm trust github` for one package. The CLI is idempotent in spirit:
+ * if the same (repository, workflow, environment) tuple is already
+ * registered, it rejects with a duplicate-style error which we treat as
+ * success.
+ *
+ * @param {import('../shared/PackageMetadata.mjs').PackageMetadata} pkg
+ * @returns {Promise<'configured' | 'already-configured' | 'dry-run' | 'failed'>}
+ */
+async function addTrustConfig(pkg) {
+  const name = pkg.getNpmName();
+  const cmd =
+    `npm trust github ${name} --file ${workflow} --repo ${repo} ` +
+    `--registry ${registry} --allow-publish -y`;
+  if (dryRun) {
+    console.log(`  ${name} ... [dry-run] ${cmd}`);
+    return 'dry-run';
+  }
+  try {
+    await exec(cmd);
+    console.log(`  ${name} ... configured`);
+    return 'configured';
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    const stderr =
+      err && typeof err === 'object' && 'stderr' in err
+        ? String(/** @type {{stderr?: unknown}} */ (err).stderr || '')
+        : '';
+    const combined = `${message}\n${stderr}`;
+    if (
+      /already.*(trust|configur|exist)/i.test(combined) ||
+      /\b409\b/.test(combined) ||
+      /conflict/i.test(combined)
+    ) {
+      console.log(`  ${name} ... already configured`);
+      return 'already-configured';
+    }
+    console.error(`  ${name} ... FAILED`);
+    if (stderr.trim()) {
+      console.error(
+        stderr
+          .trim()
+          .split('\n')
+          .map(l => `    ${l}`)
+          .join('\n'),
+      );
+    }
+    return 'failed';
+  }
+}
+
+async function checkAuth() {
+  try {
+    const {stdout} = await exec(`npm whoami --registry ${registry}`);
+    return stdout.trim();
+  } catch {
+    return null;
+  }
+}
+
+/**
  * @param {Array<import('../shared/PackageMetadata.mjs').PackageMetadata>} pkgs
  */
-function printTrustedPublishingSetup(pkgs) {
+function printManualSetup(pkgs) {
+  if (pkgs.length === 0) {
+    return;
+  }
   console.log('\n--- Trusted publishing setup ---');
   console.log(
-    'On npmjs.com, configure each package below as a trusted publisher with:',
+    `Re-run with --setup-trust to configure these via \`npm trust github\`,`,
   );
+  console.log('or set them up manually on npmjs.com with:');
   console.log('  Publisher:         GitHub Actions');
   console.log(`  Repository owner:  ${repoOwner}`);
   console.log(`  Repository name:   ${repoName}`);
   console.log(`  Workflow filename: ${workflow}`);
   console.log('  Environment:       (leave empty)');
+  console.log('  Permissions:       Allow publish');
   console.log('');
   for (const pkg of pkgs) {
     const name = pkg.getNpmName();
     console.log(`  ${name}`);
     console.log(`    https://www.npmjs.com/package/${name}/access`);
-  }
-}
-
-async function checkAuthForBootstrap() {
-  try {
-    const {stdout} = await exec(`npm whoami --registry ${registry}`);
-    console.log(`Authenticated to ${registry} as ${stdout.trim()}\n`);
-  } catch {
-    console.error(
-      `npm whoami failed for ${registry}. Run 'npm login --registry ${registry}' (or set NPM_TOKEN) before re-running with --bootstrap.`,
-    );
-    process.exit(1);
   }
 }
 
@@ -152,8 +208,16 @@ async function main() {
     `Checking ${pkgs.length} public package(s) against ${registry}\n`,
   );
 
-  if (bootstrap && !dryRun) {
-    await checkAuthForBootstrap();
+  const willWrite = (bootstrap || setupTrust) && !dryRun;
+  if (willWrite) {
+    const authedUser = await checkAuth();
+    if (!authedUser) {
+      console.error(
+        `npm whoami failed for ${registry}. Run 'npm login --registry ${registry}' (or set NPM_TOKEN) before re-running.`,
+      );
+      process.exit(1);
+    }
+    console.log(`Authenticated to ${registry} as ${authedUser}\n`);
   }
 
   /** @type {Array<import('../shared/PackageMetadata.mjs').PackageMetadata>} */
@@ -175,46 +239,67 @@ async function main() {
 
   /** @type {string[]} */
   const failures = [];
-  if (missing.length === 0) {
-    console.log(
-      `\nAll ${pkgs.length} package(s) already exist on the registry.`,
-    );
-  } else if (!bootstrap) {
-    console.log(`\n${missing.length} package(s) are not on the registry yet:`);
-    for (const pkg of missing) {
-      console.log(`  - ${pkg.getNpmName()}`);
-    }
-    console.log(
-      `\nRe-run with --bootstrap to publish placeholder stubs that claim ` +
-        `these names, then configure trusted publishing on npmjs.com.`,
-    );
-  } else {
-    console.log(
-      `\nPublishing ${missing.length} placeholder stub(s) at version ${stubVersion}...`,
-    );
-    for (const pkg of missing) {
-      try {
-        await publishStub(pkg);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        console.error(
-          `Failed to publish stub for ${pkg.getNpmName()}: ${message}`,
-        );
-        failures.push(pkg.getNpmName());
+
+  if (missing.length > 0) {
+    if (!bootstrap) {
+      console.log(
+        `\n${missing.length} package(s) are not on the registry yet:`,
+      );
+      for (const pkg of missing) {
+        console.log(`  - ${pkg.getNpmName()}`);
+      }
+      console.log(
+        `\nRe-run with --bootstrap to publish placeholder stubs that claim ` +
+          `these names, then configure trusted publishing on npmjs.com.`,
+      );
+    } else {
+      console.log(
+        `\nPublishing ${missing.length} placeholder stub(s) at version ${stubVersion}...`,
+      );
+      for (const pkg of missing) {
+        try {
+          await publishStub(pkg);
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          console.error(
+            `Failed to publish stub for ${pkg.getNpmName()}: ${message}`,
+          );
+          failures.push(pkg.getNpmName());
+        }
       }
     }
   }
 
-  const setupCandidates = bootstrap
-    ? [...existing, ...missing.filter(p => !failures.includes(p.getNpmName()))]
-    : existing;
-  if (setupCandidates.length > 0) {
-    printTrustedPublishingSetup(setupCandidates);
+  // Packages that should get trust configured: everything that exists on
+  // the registry, plus any stubs we just published. The npm trust github
+  // command short-circuits idempotently for packages that are already
+  // configured (see addTrustConfig).
+  const trustCandidates = [
+    ...existing,
+    ...(bootstrap
+      ? missing.filter(p => !failures.includes(p.getNpmName()))
+      : []),
+  ];
+
+  if (setupTrust) {
+    if (trustCandidates.length > 0) {
+      console.log(
+        `\nConfiguring trusted publishing for ${trustCandidates.length} package(s)...`,
+      );
+      for (const pkg of trustCandidates) {
+        const result = await addTrustConfig(pkg);
+        if (result === 'failed') {
+          failures.push(pkg.getNpmName());
+        }
+      }
+    }
+  } else if (trustCandidates.length > 0) {
+    printManualSetup(trustCandidates);
   }
 
   if (failures.length > 0) {
     throw new Error(
-      `Failed to publish ${failures.length} stub(s):\n - ${failures.join(
+      `Setup did not complete for ${failures.length} package(s):\n - ${failures.join(
         '\n - ',
       )}`,
     );

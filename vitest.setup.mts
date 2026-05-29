@@ -149,10 +149,10 @@ if (isJsdom) {
 
   polyfill('ClipboardEvent')(
     class ClipboardEventMock extends Event implements ClipboardEvent {
-      clipboardData: null | DataTransfer = null;
+      clipboardData: null | DataTransfer;
       constructor(type: string, options?: ClipboardEventInit) {
-        super(type);
-        Object.assign(this, options);
+        super(type, options);
+        this.clipboardData = (options && options.clipboardData) || null;
       }
     },
   );

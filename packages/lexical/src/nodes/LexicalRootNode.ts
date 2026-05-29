@@ -48,15 +48,11 @@ export class RootNode extends ElementNode {
 
   getTextContent(): string {
     const cachedText = this.__cachedText;
-    if (
-      isCurrentlyReadOnlyMode() ||
-      getActiveEditor()._dirtyType === NO_DIRTY_NODES
-    ) {
-      if (cachedText !== null) {
-        return cachedText;
-      }
-    }
-    return super.getTextContent();
+    return cachedText !== null &&
+      (isCurrentlyReadOnlyMode() ||
+        getActiveEditor()._dirtyType === NO_DIRTY_NODES)
+      ? cachedText
+      : super.getTextContent();
   }
 
   remove(): never {

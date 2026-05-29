@@ -21,4 +21,4 @@ try {
 } catch {
   // `process` is not defined in some browser bundles; use the fallback.
 }
-export const LEXICAL_VERSION: string = envLexicalVersion ?? '0.44.0+source';
+export const LEXICAL_VERSION: string = envLexicalVersion ?? '0.45.0+source';

@@ -20,6 +20,7 @@ import type {
 import invariant from '@lexical/internal/invariant';
 import {$sliceSelectedTextNodeContent} from '@lexical/selection';
 import {
+  $assumeActiveEditor,
   $createLineBreakNode,
   $createParagraphNode,
   $getEditor,
@@ -41,6 +42,7 @@ import {
 import {contextValue} from './ContextRecord';
 import {$inlineStylesFromStyleSheetsDOM} from './import/inlineStylesFromStyleSheets';
 import {
+  $getSessionDOMRenderConfig,
   $withRenderContext,
   RenderContextExport,
   RenderContextRoot,
@@ -111,6 +113,9 @@ export {
 } from './import';
 export {
   $getRenderContextValue,
+  $getSessionDOMRenderConfig,
+  $setRenderContextValue,
+  $updateRenderContextValue,
   $withRenderContext,
   createRenderState,
   RenderContextExport,
@@ -121,10 +126,13 @@ export type {
   AnyRenderStateConfig,
   AnyRenderStateConfigPairOrUpdater,
   ContextPairOrUpdater,
+  DOMOverrideOptions,
   DOMRenderConfig,
   DOMRenderExtensionOutput,
   DOMRenderMatch,
+  DOMRenderMatchConfig,
   NodeMatch,
+  RenderContextReader,
 } from './types';
 
 const IGNORE_TAGS = new Set(['STYLE', 'SCRIPT']);
@@ -180,7 +188,7 @@ export function $generateDOMFromNodes<T extends HTMLElement | DocumentFragment>(
     editor,
   )(() => {
     const root = $getRoot();
-    const domConfig = $getEditorDOMRenderConfig(editor);
+    const domConfig = $getSessionDOMRenderConfig(editor);
 
     const parentElementAppend = container.append.bind(container);
     for (const topLevelNode of root.getChildren()) {
@@ -214,7 +222,7 @@ export function $generateDOMFromRoot<T extends HTMLElement | DocumentFragment>(
     editor,
   )(() => {
     const selection = null;
-    const domConfig = $getEditorDOMRenderConfig(editor);
+    const domConfig = $getSessionDOMRenderConfig(editor);
     const parentElementAppend = container.append.bind(container);
     $appendNodesToHTML(editor, root, parentElementAppend, selection, domConfig);
     return container;
@@ -244,6 +252,10 @@ export function $generateHtmlFromNodes(
       'To use $generateHtmlFromNodes in headless mode please initialize a headless browser implementation such as JSDom or use withDOM from @lexical/headless/dom before calling this function.',
     );
   }
+  // BC: $setTextContent now requires an active-editor scope (added in #8519).
+  // If the caller is in a legacy `editorState.read(cb)` scope (no active editor),
+  // establish one via internal API.
+  $assumeActiveEditor(editor);
   return $generateDOMFromNodes(document.createElement('div'), selection, editor)
     .innerHTML;
 }

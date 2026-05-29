@@ -254,7 +254,12 @@ export {
   type RawTextVisitor,
   tokenizeRawText,
 } from './LexicalSelection';
-export {$parseSerializedNode, isCurrentlyReadOnlyMode} from './LexicalUpdates';
+export {
+  $assumeActiveEditor,
+  $fullReconcile,
+  $parseSerializedNode,
+  isCurrentlyReadOnlyMode,
+} from './LexicalUpdates';
 export {
   $addUpdateTag,
   $applyNodeReplacement,

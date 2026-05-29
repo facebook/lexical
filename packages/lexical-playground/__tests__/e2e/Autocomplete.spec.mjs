@@ -28,49 +28,45 @@ test.describe('Autocomplete', () => {
   test.beforeEach(({isCollab, page}) =>
     initialize({isAutocomplete: true, isCollab, page}),
   );
-  test(
-    'Can autocomplete a word',
-    {tag: '@flaky'},
-    async ({page, isPlainText}) => {
-      await focusEditor(page);
-      await page.keyboard.type('Sort by alpha');
-      await sleep(500);
-      // The ghost is a DOM-only decoration on the active TextNode's span and
-      // is intentionally not part of EditorState, so it doesn't sync through
-      // Yjs to the right collab frame.
-      await assertHTML(
-        page,
-        html`
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-            <span data-lexical-text="true">
-              Sort by alpha
-              <span
-                class="PlaygroundEditorTheme__autocomplete"
-                contenteditable="false"
-                data-autocomplete-ghost="true">
-                betical (TAB)
-              </span>
+  test('Can autocomplete a word', async ({page, isPlainText}) => {
+    await focusEditor(page);
+    await page.keyboard.type('Sort by alpha');
+    await sleep(500);
+    // The ghost is a DOM-only decoration on the active TextNode's span and
+    // is intentionally not part of EditorState, so it doesn't sync through
+    // Yjs to the right collab frame.
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">
+            Sort by alpha
+            <span
+              class="PlaygroundEditorTheme__autocomplete"
+              contenteditable="false"
+              data-autocomplete-ghost="true">
+              betical (TAB)
             </span>
-          </p>
-        `,
-        html`
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-            <span data-lexical-text="true">Sort by alpha</span>
-          </p>
-        `,
-      );
-      await page.keyboard.press('Tab');
-      await page.keyboard.type(' order:');
-      await assertHTML(
-        page,
-        html`
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-            <span data-lexical-text="true">Sort by alphabetical order:</span>
-          </p>
-        `,
-      );
-    },
-  );
+          </span>
+        </p>
+      `,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">Sort by alpha</span>
+        </p>
+      `,
+    );
+    await page.keyboard.press('Tab');
+    await page.keyboard.type(' order:');
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">Sort by alphabetical order:</span>
+        </p>
+      `,
+    );
+  });
 
   test('Can autocomplete in the same format as the original text', async ({
     page,

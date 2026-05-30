@@ -31,7 +31,6 @@ import {
   $isParagraphNode,
   $isRangeSelection,
 } from 'lexical';
-import {DataTransferMock} from 'lexical/src/__tests__/utils';
 import {assert, describe, expect, test} from 'vitest';
 
 function $initialEditorState(): void {
@@ -39,7 +38,7 @@ function $initialEditorState(): void {
 }
 
 function dataTransferWithHtml(html: string): DataTransfer {
-  const dt = new DataTransferMock();
+  const dt = new DataTransfer();
   dt.setData('text/html', html);
   return dt as unknown as DataTransfer;
 }
@@ -165,7 +164,7 @@ describe('ClipboardImportExtension', () => {
         name: 'host',
       }),
     );
-    const dt = new DataTransferMock();
+    const dt = new DataTransfer();
     dt.setData('text/html', '<p>html-fallback</p>');
     dt.setData('application/vnd.myapp+json', '{"a":1}');
     editor.update(
@@ -217,7 +216,7 @@ describe('ClipboardImportExtension', () => {
         name: 'host',
       }),
     );
-    const dt = new DataTransferMock();
+    const dt = new DataTransfer();
     dt.setData('text/html', '<p>x</p>');
     dt.setData('application/vnd.myapp+json', '{}');
     editor.update(

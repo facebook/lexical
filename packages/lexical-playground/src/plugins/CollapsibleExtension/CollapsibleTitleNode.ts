@@ -10,8 +10,6 @@ import {IS_CHROME, IS_FIREFOX} from '@lexical/utils';
 import {
   $createParagraphNode,
   $isElementNode,
-  buildImportMap,
-  DOMConversionOutput,
   EditorConfig,
   ElementNode,
   LexicalEditor,
@@ -21,15 +19,6 @@ import {
 
 import {$isCollapsibleContainerNode} from './CollapsibleContainerNode';
 import {$isCollapsibleContentNode} from './CollapsibleContentNode';
-
-export function $convertSummaryElement(
-  domNode: HTMLElement,
-): DOMConversionOutput | null {
-  const node = $createCollapsibleTitleNode();
-  return {
-    node,
-  };
-}
 
 /** @noInheritDoc */
 export class CollapsibleTitleNode extends ElementNode {
@@ -42,12 +31,6 @@ export class CollapsibleTitleNode extends ElementNode {
         }
       },
       extends: ElementNode,
-      importDOM: buildImportMap({
-        summary: () => ({
-          conversion: $convertSummaryElement,
-          priority: 1,
-        }),
-      }),
     });
   }
 

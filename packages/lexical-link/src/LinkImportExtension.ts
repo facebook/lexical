@@ -8,7 +8,6 @@
 
 import {
   $distributeInlineWrapper,
-  CoreImportExtension,
   defineImportRule,
   DOMImportExtension,
   sel,
@@ -51,16 +50,16 @@ const AnchorRule = defineImportRule({
 export const LinkImportRules = [AnchorRule];
 
 /**
- * Bundles {@link LinkImportRules} (plus {@link CoreImportExtension}) into
- * a single dependency. Equivalent to the legacy
- * `LinkNode.importDOM` registration on the new
- * {@link DOMImportExtension} pipeline.
+ * Bundles {@link LinkImportRules} together with the runtime
+ * {@link LinkExtension}. The application is expected to already have
+ * `CoreImportExtension` (or some equivalent) in its dependency graph —
+ * the core/text/paragraph/inline-format rules are a shared baseline,
+ * not something this leaf importer should re-declare.
  *
  * @experimental
  */
 export const LinkImportExtension = defineExtension({
   dependencies: [
-    CoreImportExtension,
     LinkExtension,
     configExtension(DOMImportExtension, {rules: LinkImportRules}),
   ],

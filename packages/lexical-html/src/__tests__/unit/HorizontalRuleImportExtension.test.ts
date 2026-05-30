@@ -11,7 +11,11 @@ import {
   buildEditorFromExtensions,
   getExtensionDependencyFromEditor,
 } from '@lexical/extension';
-import {DOMImportExtension, HorizontalRuleImportExtension} from '@lexical/html';
+import {
+  CoreImportExtension,
+  DOMImportExtension,
+  HorizontalRuleImportExtension,
+} from '@lexical/html';
 import {JSDOM} from 'jsdom';
 import {
   $getEditor,
@@ -26,7 +30,9 @@ import {assert, describe, expect, test} from 'vitest';
 function buildEditor() {
   return buildEditorFromExtensions(
     defineExtension({
-      dependencies: [HorizontalRuleImportExtension],
+      // Leaf importer extensions no longer pull `CoreImportExtension`
+      // in by themselves — the application is expected to add it once.
+      dependencies: [CoreImportExtension, HorizontalRuleImportExtension],
       name: 'hr-host',
     }),
   );

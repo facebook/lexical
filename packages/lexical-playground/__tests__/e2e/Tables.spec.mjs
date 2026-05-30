@@ -92,7 +92,7 @@ const nthTableSelector = nth =>
     ? `div.PlaygroundEditorTheme__tableScrollableWrapper:nth-of-type(${nth}) > table`
     : `table:nth-of-type(${nth})`;
 
-test.describe.parallel('Tables', () => {
+test.describe('Tables', () => {
   test(`Can a table be inserted from the toolbar`, async ({
     page,
     isPlainText,
@@ -235,8 +235,7 @@ test.describe.parallel('Tables', () => {
     );
   });
 
-  test.describe
-    .parallel(`Can exit table with the horizontal arrow keys`, () => {
+  test.describe(`Can exit table with the horizontal arrow keys`, () => {
     test(`Can exit the first cell of a table`, async ({
       page,
       isPlainText,
@@ -673,7 +672,7 @@ test.describe.parallel('Tables', () => {
     });
   });
 
-  test.describe.parallel(`Can navigate table with keyboard`, () => {
+  test.describe(`Can navigate table with keyboard`, () => {
     test(`Can navigate cells horizontally`, async ({
       page,
       isPlainText,

@@ -6,7 +6,7 @@
  *
  */
 
-const IMPORTANT_REG_EXP = /\s*!important\s*$/i;
+const IMPORTANT_FLAG = '!important';
 
 /**
  * Parses inline CSS text into an object that is compatible with
@@ -144,11 +144,25 @@ function setDOMStyleProperty(
   property: string,
   value: string,
 ): void {
-  const priority = IMPORTANT_REG_EXP.test(value) ? 'important' : '';
-  const nextValue =
-    priority === '' ? value : value.replace(IMPORTANT_REG_EXP, '').trim();
+  // Detect (and strip) a trailing `!important` flag using plain string
+  // operations. A regexp such as `/\s*!important\s*$/i` runs in O(n^2) time on
+  // whitespace-heavy values (the leading `\s*` backtracks from every starting
+  // offset), whereas `trimEnd` + `slice` is linear.
+  const trimmedValue = value.trimEnd();
+  const flagStart = trimmedValue.length - IMPORTANT_FLAG.length;
+  const hasImportant =
+    flagStart >= 0 &&
+    trimmedValue.slice(flagStart).toLowerCase() === IMPORTANT_FLAG;
 
-  domStyle.setProperty(property, nextValue, priority);
+  if (hasImportant) {
+    domStyle.setProperty(
+      property,
+      trimmedValue.slice(0, flagStart).trim(),
+      'important',
+    );
+  } else {
+    domStyle.setProperty(property, value, '');
+  }
 }
 
 /**

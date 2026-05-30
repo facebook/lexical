@@ -153,7 +153,55 @@ export const TWEET: ElementTransformer = {
 
 // Very primitive table setup
 const TABLE_ROW_REG_EXP = /^(?:\|)(.+)(?:\|)\s?$/;
-const TABLE_ROW_DIVIDER_REG_EXP = /^(\| ?:?-*:? ?)+\|\s?$/;
+
+/**
+ * Whether `line` is a Markdown table delimiter row such as `| --- | :--: |`.
+ *
+ * This is the linear-time equivalent of `/^(\| ?:?-*:? ?)+\|\s?$/`. That
+ * pattern nests `-*` inside a `(...)+` group, a shape that backtracking regexp
+ * engines (e.g. Safari/JavaScriptCore) may run in super-linear time. A manual
+ * scan is guaranteed O(n).
+ */
+function isTableRowDivider(line: string): boolean {
+  // Must start with a leading pipe.
+  if (line[0] !== '|') {
+    return false;
+  }
+  const {length} = line;
+  let i = 1;
+  let cells = 0;
+  // Each iteration consumes one ` ?:?-*:? ?\|` cell-and-pipe unit. Cell
+  // characters (space, colon, dash) are disjoint from the `|` delimiter, so a
+  // greedy scan never needs to backtrack.
+  while (i < length) {
+    let j = i;
+    if (line[j] === ' ') {
+      j++;
+    }
+    if (line[j] === ':') {
+      j++;
+    }
+    while (line[j] === '-') {
+      j++;
+    }
+    if (line[j] === ':') {
+      j++;
+    }
+    if (line[j] === ' ') {
+      j++;
+    }
+    if (line[j] !== '|') {
+      break;
+    }
+    cells++;
+    i = j + 1;
+  }
+  // Require at least one cell, then an optional single trailing whitespace
+  // character (`\s?`) before the end of the line (`$`).
+  return (
+    cells > 0 && (i === length || (i === length - 1 && /\s/.test(line[i])))
+  );
+}
 
 export const TABLE: ElementTransformer = {
   dependencies: [TableNode, TableRowNode, TableCellNode],
@@ -196,7 +244,7 @@ export const TABLE: ElementTransformer = {
   regExp: TABLE_ROW_REG_EXP,
   replace: (parentNode, _1, match) => {
     // Header row
-    if (TABLE_ROW_DIVIDER_REG_EXP.test(match[0])) {
+    if (isTableRowDivider(match[0])) {
       const table = parentNode.getPreviousSibling();
       if (!table || !$isTableNode(table)) {
         return;

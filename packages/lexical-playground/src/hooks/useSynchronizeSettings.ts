@@ -52,9 +52,10 @@ function output<Extension extends AnyLexicalExtension>(
 }
 
 /**
- * Output of an extension that may be absent: `CheckListExtension` and the
- * playground `CodeHighlightExtension` only exist in rich-text mode, so resolve
- * them with the optional (peer) form and skip them when not built.
+ * Output of an extension that may be absent: the rich-text-only extensions
+ * (`List`, `Table`, `CheckList`, and the playground `CodeHighlight`) don't
+ * exist in plain-text mode, so resolve them with the optional (peer) form and
+ * skip them when not built.
  */
 function peerOutput<Extension extends AnyLexicalExtension>(
   editor: LexicalEditor,
@@ -101,14 +102,18 @@ export function synchronizeSettingsToSignals(
     output(editor, LinkExtension).attributes.value = settings.hasLinkAttributes
       ? DEFAULT_LINK_ATTRIBUTES
       : undefined;
-    output(editor, ListExtension).hasStrictIndent.value =
-      settings.listStrictIndent;
-    const table = output(editor, TableExtension);
-    table.hasCellMerge.value = settings.tableCellMerge;
-    table.hasCellBackgroundColor.value = settings.tableCellBackgroundColor;
-    table.hasHorizontalScroll.value =
-      settings.tableHorizontalScroll && !settings.hasFitNestedTables;
-    table.hasNestedTables.value = settings.hasNestedTables;
+    const list = peerOutput(editor, ListExtension);
+    if (list) {
+      list.hasStrictIndent.value = settings.listStrictIndent;
+    }
+    const table = peerOutput(editor, TableExtension);
+    if (table) {
+      table.hasCellMerge.value = settings.tableCellMerge;
+      table.hasCellBackgroundColor.value = settings.tableCellBackgroundColor;
+      table.hasHorizontalScroll.value =
+        settings.tableHorizontalScroll && !settings.hasFitNestedTables;
+      table.hasNestedTables.value = settings.hasNestedTables;
+    }
     const checkList = peerOutput(editor, CheckListExtension);
     if (checkList) {
       checkList.disableTakeFocusOnClick.value =

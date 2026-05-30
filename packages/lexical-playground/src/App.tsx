@@ -55,7 +55,10 @@ import Editor from './Editor';
 import {registerSettingsSynchronization} from './hooks/useSynchronizeSettings';
 import logo from './images/logo.svg';
 import {KeywordsExtension} from './nodes/KeywordNode';
-import {PlaygroundImportExtension} from './nodes/PlaygroundImportExtension';
+import {
+  PlaygroundImportExtension,
+  PlaygroundRichTextImportExtension,
+} from './nodes/PlaygroundImportExtension';
 import PlaygroundNodes from './nodes/PlaygroundNodes';
 import {PlaygroundDOMRenderExtension} from './PlaygroundDOMRenderExtension';
 import {AutocompleteExtension} from './plugins/AutocompleteExtension';
@@ -182,6 +185,10 @@ const PlaygroundRichTextExtension = defineExtension({
         code: {arrow: true, click: true, enter: true, onlyAtBoundary: true},
       },
     }),
+    // Rich-text-only DOM importers (rich-text/list/table/code/hr); kept out of
+    // the always-on PlaygroundImportExtension so plain-text mode doesn't pull
+    // in RichTextExtension (which conflicts with PlainTextExtension).
+    PlaygroundRichTextImportExtension,
     ImagesExtension,
     HorizontalRuleExtension,
     PageBreakExtension,

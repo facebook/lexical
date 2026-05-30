@@ -13,6 +13,8 @@ import {
   domOverride,
   DOMRenderExtension,
 } from '@lexical/html';
+import {ListItemNode} from '@lexical/list';
+import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {$canShowPlaceholder} from '@lexical/text';
 import {
   configExtension,
@@ -30,8 +32,11 @@ import {
  * - `LineBreakNode` (`↵`) — wraps each `<br>` in a `<span>` carrying the
  *   marker, and exposes the inner `<br>` through `$getDOMSlot` so selection /
  *   caret logic targets the canonical content element.
- * - `ParagraphNode` (`¶`) — adds a marker `data-` attribute to the block;
- *   the visual is rendered via CSS `::after`.
+ * - `ParagraphNode` / `HeadingNode` / `ListItemNode` / `QuoteNode` (`¶`) —
+ *   adds a shared `data-lexical-visible-non-printing-block` attribute to each
+ *   block's DOM; the visual is rendered via CSS `::after`. Positioned
+ *   absolutely so a trailing line-break (Shift+Enter at end) shares the empty
+ *   line instead of bumping the marker onto a new one.
  * - `TabNode` (`→`) — adds a marker `data-` attribute to the span; the
  *   visual is rendered via CSS `::before`.
  *
@@ -49,10 +54,12 @@ import {
 const VISIBLE_NON_PRINTING_LINEBREAK_CLASS = 'visible-non-printing-linebreak';
 const VISIBLE_NON_PRINTING_LINEBREAK_ATTR =
   'data-lexical-visible-non-printing-linebreak';
-const VISIBLE_NON_PRINTING_PARAGRAPH_ATTR =
-  'data-lexical-visible-non-printing-paragraph';
+const VISIBLE_NON_PRINTING_BLOCK_ATTR =
+  'data-lexical-visible-non-printing-block';
 const VISIBLE_NON_PRINTING_EMPTY_ROOT_ATTR =
   'data-lexical-visible-non-printing-empty-root';
+const VISIBLE_NON_PRINTING_ACTIVE_ATTR =
+  'data-lexical-visible-non-printing-active';
 const VISIBLE_NON_PRINTING_TAB_ATTR = 'data-lexical-visible-non-printing-tab';
 
 export interface VisibleNonPrintingConfig {
@@ -87,6 +94,17 @@ function hasOurWrap(dom: HTMLElement): boolean {
     dom.tagName === 'SPAN' &&
     dom.hasAttribute(VISIBLE_NON_PRINTING_LINEBREAK_ATTR)
   );
+}
+
+function $createBlockDOM(
+  _node: unknown,
+  $next: () => HTMLElement,
+): HTMLElement {
+  const dom = $next();
+  if (isHTMLElement(dom)) {
+    dom.setAttribute(VISIBLE_NON_PRINTING_BLOCK_ATTR, 'true');
+  }
+  return dom;
 }
 
 export const VisibleNonPrintingExtension = defineExtension({
@@ -125,15 +143,22 @@ export const VisibleNonPrintingExtension = defineExtension({
         ),
         domOverride(
           [ParagraphNode],
-          {
-            $createDOM: (_node, $next) => {
-              const dom = $next();
-              if (isHTMLElement(dom)) {
-                dom.setAttribute(VISIBLE_NON_PRINTING_PARAGRAPH_ATTR, 'true');
-              }
-              return dom;
-            },
-          },
+          {$createDOM: $createBlockDOM},
+          {disabledForEditor: ctx => ctx.get(VisibleNonPrintingDisabled)},
+        ),
+        domOverride(
+          [HeadingNode],
+          {$createDOM: $createBlockDOM},
+          {disabledForEditor: ctx => ctx.get(VisibleNonPrintingDisabled)},
+        ),
+        domOverride(
+          [ListItemNode],
+          {$createDOM: $createBlockDOM},
+          {disabledForEditor: ctx => ctx.get(VisibleNonPrintingDisabled)},
+        ),
+        domOverride(
+          [QuoteNode],
+          {$createDOM: $createBlockDOM},
           {disabledForEditor: ctx => ctx.get(VisibleNonPrintingDisabled)},
         ),
         domOverride(
@@ -168,12 +193,20 @@ export const VisibleNonPrintingExtension = defineExtension({
         showPlaceholder,
       );
     };
+    const syncActiveAttr = (disabled: boolean) => {
+      const rootElement = editor.getRootElement();
+      if (rootElement === null) {
+        return;
+      }
+      rootElement.toggleAttribute(VISIBLE_NON_PRINTING_ACTIVE_ATTR, !disabled);
+    };
     const cleanupSignal = effect(() => {
       $setRenderContextValue(
         VisibleNonPrintingDisabled,
         stores.disabled.value,
         editor,
       );
+      syncActiveAttr(stores.disabled.value);
     });
     const cleanupUpdateListener =
       editor.registerUpdateListener(syncEmptyRootAttr);

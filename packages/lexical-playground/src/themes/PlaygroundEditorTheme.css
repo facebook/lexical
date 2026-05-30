@@ -747,24 +747,51 @@
   user-select: none;
   -webkit-user-select: none;
 }
-[data-lexical-visible-non-printing-paragraph]::after {
+[data-lexical-visible-non-printing-block] {
+  position: relative;
+}
+[data-lexical-visible-non-printing-block]::after {
   content: '¶';
   color: #999;
   pointer-events: none;
   user-select: none;
   -webkit-user-select: none;
+  position: absolute;
 }
-[data-lexical-visible-non-printing-paragraph] > br:only-child {
-  display: none;
+[data-lexical-visible-non-printing-block]:has(> br:last-child)::after {
+  bottom: 0;
 }
 [data-lexical-visible-non-printing-empty-root]
-  [data-lexical-visible-non-printing-paragraph]::after {
+  [data-lexical-visible-non-printing-block]::after {
   content: '\200B';
+}
+[data-lexical-visible-non-printing-tab] {
+  position: relative;
 }
 [data-lexical-visible-non-printing-tab]::before {
   content: '→';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
   color: #999;
   pointer-events: none;
   user-select: none;
   -webkit-user-select: none;
+}
+@font-face {
+  font-family: 'LexicalSpaceDot';
+  src: url('data:font/woff2;base64,d09GMgABAAAAAAEwAAoAAAAAAoQAAADpAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAABmAANAoYNwE2AiQDBgsGAAQgBXgHJhvoAYCeh7ExrfgWW63EKzG5+FNE1bD13C0xyk9CE6NDOKSNGouxFBqhEJKiPGisnUeZN5lMDNP3fVJfJOrWQX3l5X84jk6OT3QguPDB6KARtkVhhHnKIsUmqeb5F/VUXiSFDHDeBiOjPvqPPvIJkN/2DkagoWNTF2wqI5QSjP5psgVAA4WgMA0oQOp+IfO3Y5IABOFrev/NysnfbPoPfF/8qJVMfOQVdA2EAotSeEABAJAUCJoS0AAAUPYExAoCmhkrutScGNjOsVm2c2ecKn6ozuv+jfoGKkOTEq7bhDLZcjVmeJw4ImsAAA==')
+    format('woff2');
+  unicode-range: U+0020;
+  font-display: block;
+}
+[data-lexical-visible-non-printing-active] {
+  font-family:
+    'LexicalSpaceDot',
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    '.SFNSText-Regular',
+    sans-serif;
 }

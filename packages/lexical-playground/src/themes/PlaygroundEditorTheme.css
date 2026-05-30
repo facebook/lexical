@@ -761,3 +761,10 @@
   [data-lexical-visible-non-printing-paragraph]::after {
   content: '\200B';
 }
+[data-lexical-visible-non-printing-tab]::before {
+  content: '→';
+  color: #999;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}

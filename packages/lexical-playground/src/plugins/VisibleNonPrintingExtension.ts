@@ -21,6 +21,7 @@ import {
   LineBreakNode,
   ParagraphNode,
   safeCast,
+  TabNode,
 } from 'lexical';
 
 /**
@@ -31,6 +32,8 @@ import {
  *   caret logic targets the canonical content element.
  * - `ParagraphNode` (`¶`) — adds a marker `data-` attribute to the block;
  *   the visual is rendered via CSS `::after`.
+ * - `TabNode` (`→`) — adds a marker `data-` attribute to the span; the
+ *   visual is rendered via CSS `::before`.
  *
  * Demonstrates the extension-driven path for leaf and block node categories:
  * no subclassing required, behaviour attaches via `DOMRenderExtension`
@@ -50,6 +53,7 @@ const VISIBLE_NON_PRINTING_PARAGRAPH_ATTR =
   'data-lexical-visible-non-printing-paragraph';
 const VISIBLE_NON_PRINTING_EMPTY_ROOT_ATTR =
   'data-lexical-visible-non-printing-empty-root';
+const VISIBLE_NON_PRINTING_TAB_ATTR = 'data-lexical-visible-non-printing-tab';
 
 export interface VisibleNonPrintingConfig {
   disabled: boolean;
@@ -126,6 +130,19 @@ export const VisibleNonPrintingExtension = defineExtension({
               const dom = $next();
               if (isHTMLElement(dom)) {
                 dom.setAttribute(VISIBLE_NON_PRINTING_PARAGRAPH_ATTR, 'true');
+              }
+              return dom;
+            },
+          },
+          {disabledForEditor: ctx => ctx.get(VisibleNonPrintingDisabled)},
+        ),
+        domOverride(
+          [TabNode],
+          {
+            $createDOM: (_node, $next) => {
+              const dom = $next();
+              if (isHTMLElement(dom)) {
+                dom.setAttribute(VISIBLE_NON_PRINTING_TAB_ATTR, 'true');
               }
               return dom;
             },

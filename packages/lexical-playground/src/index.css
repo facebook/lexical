@@ -416,11 +416,13 @@ i.bucket {
 }
 
 i.bold {
-  background-image: url(images/icons/type-bold.svg);
+  -webkit-mask-image: url(images/icons/type-bold.svg);
+  mask-image: url(images/icons/type-bold.svg);
 }
 
 i.italic {
-  background-image: url(images/icons/type-italic.svg);
+  -webkit-mask-image: url(images/icons/type-italic.svg);
+  mask-image: url(images/icons/type-italic.svg);
 }
 
 i.clear {
@@ -428,11 +430,13 @@ i.clear {
 }
 
 i.code {
-  background-image: url(images/icons/code.svg);
+  -webkit-mask-image: url(images/icons/code.svg);
+  mask-image: url(images/icons/code.svg);
 }
 
 i.underline {
-  background-image: url(images/icons/type-underline.svg);
+  -webkit-mask-image: url(images/icons/type-underline.svg);
+  mask-image: url(images/icons/type-underline.svg);
 }
 
 i.uppercase {
@@ -1540,7 +1544,9 @@ button.toolbar-item.spaced {
 }
 
 button.toolbar-item i.format {
-  background-size: contain;
+  background-color: CanvasText;
+  -webkit-mask-size: contain;
+  mask-size: contain;
   display: inline-block;
   height: 18px;
   width: 18px;

@@ -15,6 +15,7 @@ import {
   $isRangeSelection,
   $isTextNode,
   type BaseSelection,
+  BLUR_COMMAND,
   COMMAND_PRIORITY_LOW,
   defineExtension,
   type EditorState,
@@ -154,6 +155,16 @@ export const AutocompleteExtension = defineExtension({
           signal.value = rootElem;
         }),
     );
+    // Only suggest in the editor that currently holds focus. Without this, a
+    // collaborator's idle editor whose synced selection happens to land at a
+    // word end (notably under the v2 collab binding) would render a ghost in an
+    // editor nobody is typing in. Checked at update time (rather than tracked
+    // via FOCUS/BLUR) so it is robust to autofocus racing extension setup.
+    function isEditorFocused(): boolean {
+      const rootElem = editor.getRootElement();
+      const active = rootElem && rootElem.ownerDocument.activeElement;
+      return rootElem != null && active != null && rootElem.contains(active);
+    }
     let activeTextNodeKey: NodeKey | null = null;
     let lastMatch: string | null = null;
     let lastSuggestion: string | null = null;
@@ -175,6 +186,9 @@ export const AutocompleteExtension = defineExtension({
       newSuggestion: string | null,
     ) {
       if (searchPromise !== refPromise || newSuggestion === null) {
+        return;
+      }
+      if (!isEditorFocused()) {
         return;
       }
       editor.getEditorState().read(
@@ -205,6 +219,12 @@ export const AutocompleteExtension = defineExtension({
     }
 
     function handleUpdate({editorState}: {editorState: EditorState}) {
+      // Suggestions belong only to the focused editor. In collab the idle peer
+      // receives the same updates, but its ghost would be noise.
+      if (!isEditorFocused()) {
+        dismiss();
+        return;
+      }
       editorState.read(
         () => {
           const selection = $getSelection();
@@ -320,6 +340,16 @@ export const AutocompleteExtension = defineExtension({
       }
       return mergeRegister(
         editor.registerUpdateListener(handleUpdate),
+        // Drop the ghost as soon as the editor loses focus, rather than
+        // waiting for the next update.
+        editor.registerCommand(
+          BLUR_COMMAND,
+          () => {
+            dismiss();
+            return false;
+          },
+          COMMAND_PRIORITY_LOW,
+        ),
         editor.registerCommand(
           KEY_TAB_COMMAND,
           $handleCommitCommand,

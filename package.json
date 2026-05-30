@@ -4,7 +4,7 @@
   "version": "0.45.0",
   "license": "MIT",
   "private": true,
-  "packageManager": "pnpm@10.33.0",
+  "packageManager": "pnpm@10.34.1",
   "workspaces": [
     "packages/*",
     "dev-examples/*"
@@ -109,7 +109,8 @@
     "update-packages": "pnpm run update-version && pnpm run update-tsconfig && pnpm run update-flowconfig && pnpm run create-docs && pnpm run create-www-stubs",
     "postversion": "node ./scripts/npm/postversion.mjs",
     "publish-extension": "pnpm --filter @lexical/devtools run zip && pnpm --filter @lexical/devtools run publish",
-    "release": "pnpm run prepare-release && node ./scripts/npm/release.mjs"
+    "release": "pnpm run prepare-release && node ./scripts/npm/release.mjs",
+    "setup-trusted-publishing": "node ./scripts/npm/setup-trusted-publishing.mjs"
   },
   "devDependencies": {
     "@babel/core": "^7.29.0",

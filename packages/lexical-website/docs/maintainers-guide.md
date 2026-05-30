@@ -290,6 +290,121 @@ plus creating a tag in git, and likely other steps.
 
 Runs prepare-release to do a full build and then uploads to npm.
 
+### pnpm run setup-trusted-publishing
+
+One-time (idempotent) helper to register every public package with
+[npm trusted publishing](https://docs.npmjs.com/trusted-publishers).
+Re-run it whenever a new public package is added.
+
+#### Prerequisites
+
+- Node.js — whatever the repo's root `package.json#engines.node` says (currently `>=20.19.0`). Running with Node 24+ is recommended because that's what CI uses for publishes.
+- pnpm — pinned by `package.json#packageManager` (currently `pnpm@10.34.1`). Activate with [corepack](https://nodejs.org/api/corepack.html) or install directly.
+- npm CLI — **`npm ≥ 11.10`** (`npm i -g npm@latest`). The `npm trust` subcommand was added in npm 11; older versions will fail the preflight check.
+- An authenticated npm session (`npm login --registry https://registry.npmjs.org` or `NPM_TOKEN` in env) on a publisher account that has **account-level 2FA enabled** and write access to every `@lexical/*` package.
+
+#### Usage
+
+Run in check-only mode first:
+
+```bash
+pnpm run setup-trusted-publishing
+```
+
+For each public package in the monorepo, it queries
+`https://registry.npmjs.org` and reports whether the name is already
+claimed. Packages that *don't* exist on the registry are listed; you
+can re-run with `--bootstrap` to publish a deprecated
+`0.0.0-bootstrap.0` placeholder under the `bootstrap` dist-tag so the
+name can be claimed:
+
+```bash
+npm login --registry https://registry.npmjs.org   # or set NPM_TOKEN
+pnpm run setup-trusted-publishing --bootstrap
+```
+
+Once a package exists on the registry, you can configure trusted
+publishing for it programmatically by adding `--setup-trust`. This
+runs `npm trust github` under the hood (requires `npm` ≥ 11.10 and an
+authenticated session with account-level 2FA on the publishing
+account), and is idempotent — the script reads the existing trust
+configuration for each package via a read-only registry call (no OTP)
+and skips packages whose config already matches:
+
+```bash
+npm login --registry https://registry.npmjs.org
+pnpm run setup-trusted-publishing --setup-trust
+```
+
+`npm trust github` is a write operation, so each package that *does*
+need configuring will trigger a one-time-password / web-auth prompt.
+On the first prompt npm prints a URL; open it in a browser, sign in,
+and tick **"Skip two-factor authentication for the next 5 minutes"**.
+Subsequent packages in the same run will then go through without
+re-prompting. The script also inserts a small (~2 s) pause between
+calls to stay under the registry's `E429` rate limit.
+
+For full first-time setup of a brand-new monorepo (or when adding a
+new package to an existing one), combine both flags:
+
+```bash
+pnpm run setup-trusted-publishing --bootstrap --setup-trust
+```
+
+Useful flags:
+
+- `--dry-run` — print what would happen without touching the registry (works with both `--bootstrap` and `--setup-trust`)
+- `--workflow <filename>` — override the workflow filename (default `call-release.yml`)
+- `--repo <owner/name>` — override the GitHub repo (default `facebook/lexical`)
+- `--stub-version <semver>` — override the placeholder version (default `0.0.0-bootstrap.0`)
+- `--registry <url>` — override the npm registry
+
+In the default (check-only) mode the script also prints the npmjs.com
+`/access` URL for each existing package and the exact values to enter
+manually, as a fallback for when `npm trust github` isn't an option.
+
+### Testing trusted publishing from a PR branch
+
+The "Publish to NPM" workflow (`pre-release.yml`) exposes `ref`,
+`channel`, and `increment-version` inputs in addition to
+`use-trusted-publishing` so it doubles as a test harness. Picking a
+branch in the "Run workflow" dropdown selects which version of the
+workflow files run, and the inputs determine what actually gets
+published.
+
+A safe end-to-end test of the trusted-publishing flow looks like:
+
+| Input | Value |
+| -- | -- |
+| Branch (dropdown) | your PR branch |
+| `ref` | your PR branch (same value) |
+| `channel` | `dev` |
+| `increment-version` | checked |
+| `use-trusted-publishing` | checked |
+| `ignore-previously-published` | unchecked |
+
+With `increment-version` on, the run bumps `package.json` to a fresh
+prerelease (e.g. `0.46.0-dev.0`), commits + tags it on a `dev__release`
+branch on origin, and publishes the monorepo under the `dev` dist-tag
+via OIDC. The `latest` tag is untouched, so default `npm install`
+users are unaffected. After it succeeds:
+
+```bash
+npm view lexical@dev version     # → the just-published prerelease
+npm view lexical@latest version  # → unchanged
+```
+
+Cleanup (the prerelease itself can't be reused, but the git refs
+should go):
+
+```bash
+git push --delete origin v0.46.0-dev.0 dev__release 0.46.0-dev.0__release
+```
+
+The `increment-version=true + channel=latest` combination is refused
+by the workflow's guard job — real `latest` releases must go through
+`version.yml` first.
+
 ## Release Procedure
 
 This is the current release procedure for public releases, at least as of
@@ -306,7 +421,6 @@ from main in step 4).
 4. After PR is merged to main, publish to NPM with the Github Actions "Publish to NPM" workflow (`pre-release.yml`)
 5. Create a GitHub release from the tag created in step 1, manually editing the release notes
 6. Announce the release in #announcements on Discord
-7. If a post-release-* version branch was created, raise a PR against it (may be created by `call-post-release.yml` via `pre-release.yml`) to update the examples. Since v0.44.0 this is no longer likely because we do not commit lockfiles for examples.
 
 ## Release Protocol
 

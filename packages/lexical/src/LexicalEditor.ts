@@ -63,7 +63,6 @@ import {
   getDOMSelection,
   getRegisteredNode,
   getStaticNodeConfig,
-  hasOwnExportDOM,
   hasOwnStaticMethod,
   markNodesWithTypesAsDirty,
   setNodeKeyOnDOMNode,
@@ -864,14 +863,6 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
               console.warn(`${name} must implement static "${method}" method`);
             }
           });
-          if (
-            !hasOwnStaticMethod(klass, 'importDOM') &&
-            hasOwnExportDOM(klass)
-          ) {
-            console.warn(
-              `${name} should implement "importDOM" if using a custom "exportDOM" method to ensure HTML serialization (important for copy & paste) works as expected`,
-            );
-          }
           if (!hasOwnStaticMethod(klass, 'importJSON')) {
             console.warn(
               `${name} should implement "importJSON" method to ensure JSON and default HTML serialization works as expected`,

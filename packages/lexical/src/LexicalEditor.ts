@@ -54,6 +54,7 @@ import {
   $addUpdateTag,
   $onUpdate,
   $setSelection,
+  clearNodeKeyOnDOMNode,
   createUID,
   dispatchCommand,
   getCachedClassNameArray,
@@ -65,6 +66,7 @@ import {
   hasOwnExportDOM,
   hasOwnStaticMethod,
   markNodesWithTypesAsDirty,
+  setNodeKeyOnDOMNode,
 } from './LexicalUtils';
 import {ArtificialNode__DO_NOT_USE} from './nodes/ArtificialNode';
 import {LineBreakNode} from './nodes/LexicalLineBreakNode';
@@ -664,11 +666,19 @@ export function resetEditor(
   // Remove all the DOM nodes from the root element
   if (prevRootElement !== null) {
     prevRootElement.textContent = '';
+    clearNodeKeyOnDOMNode(prevRootElement, editor);
   }
 
   if (nextRootElement !== null) {
     nextRootElement.textContent = '';
     keyNodeMap.set('root', nextRootElement);
+    // Stash __lexicalKey_${editor._key} = 'root' on the root element so it
+    // participates in the unified key lookup (selection resolution in
+    // $internalResolveSelectionPoint, mutation handling in
+    // $getNearestManagedNodePairFromDOMNode, $getNodeFromDOM, and
+    // $getNearestNodeFromDOMNode) instead of requiring a dedicated
+    // editor.getRootElement() carveout at each call site.
+    setNodeKeyOnDOMNode(nextRootElement, editor, 'root');
   }
 }
 

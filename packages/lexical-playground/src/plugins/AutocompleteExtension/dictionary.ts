@@ -67,66 +67,62 @@ export function createWordlistDictionary(
   options: WordlistDictionaryOptions = {},
 ): AutocompleteDictionary {
   const {minPrefixLength = 2, caseSensitive = false} = options;
-  // Trie keyed on the case-folded character; each terminal stores the
-  // original word so the returned suffix preserves the source casing.
-  // Traversal order matches `words` insertion (Map iteration), so
-  // `query` returns the earliest-listed match for a prefix — same
-  // semantics as the previous linear scan, but O(prefix.length) per
-  // lookup instead of O(N * prefix.length).
-  const root: TrieNode = {children: new Map(), word: null};
-  for (const word of words) {
-    const key = caseSensitive ? word : word.toLowerCase();
-    let node = root;
-    for (const char of key) {
-      let child = node.children.get(char);
-      if (child === undefined) {
-        child = {children: new Map(), word: null};
-        node.children.set(char, child);
-      }
-      node = child;
-    }
-    if (node.word === null) {
-      node.word = word;
-    }
-  }
+  const fold = (text: string): string =>
+    caseSensitive ? text : text.toLowerCase();
+  // Index the wordlist for prefix lookups with a single integer of
+  // overhead per word. `order` holds the word indices sorted by their
+  // case-folded text, so the words sharing any given prefix form one
+  // contiguous block. `query` binary-searches for the start of that
+  // block and scans it for the earliest-listed (highest-priority) word
+  // longer than the prefix — the same word a linear `Array.find` scan
+  // would return, but without scanning the whole list. Folded text is
+  // only needed to build the order and is recomputed on the fly during
+  // lookup, so nothing but `order` (a `Uint32Array`) is retained.
+  const folded = words.map(fold);
+  const order = Uint32Array.from(
+    words
+      .map((_, index) => index)
+      .sort((a, b) =>
+        folded[a] < folded[b] ? -1 : folded[a] > folded[b] ? 1 : a - b,
+      ),
+  );
   return {
     minPrefixLength,
     query(prefix: string): null | string {
       if (prefix.length < minPrefixLength) {
         return null;
       }
-      const needle = caseSensitive ? prefix : prefix.toLowerCase();
-      let node = root;
-      for (const char of needle) {
-        const next = node.children.get(char);
-        if (next === undefined) {
-          return null;
+      const needle = fold(prefix);
+      // Lower bound: first position whose folded word is >= needle.
+      let lo = 0;
+      let hi = order.length;
+      while (lo < hi) {
+        const mid = (lo + hi) >>> 1;
+        if (fold(words[order[mid]]) < needle) {
+          lo = mid + 1;
+        } else {
+          hi = mid;
         }
-        node = next;
       }
-      const match = findFirstSuggestion(node, prefix.length);
-      return match === null ? null : match.substring(prefix.length);
+      // Scan the contiguous block of words that start with `needle` for
+      // the earliest-listed entry strictly longer than the prefix.
+      let bestIndex = -1;
+      let bestWord: string | null = null;
+      for (let k = lo; k < order.length; k++) {
+        const index = order[k];
+        const word = words[index];
+        if (!fold(word).startsWith(needle)) {
+          break;
+        }
+        if (
+          word.length > prefix.length &&
+          (bestIndex === -1 || index < bestIndex)
+        ) {
+          bestIndex = index;
+          bestWord = word;
+        }
+      }
+      return bestWord === null ? null : bestWord.substring(prefix.length);
     },
   };
-}
-
-interface TrieNode {
-  children: Map<string, TrieNode>;
-  word: string | null;
-}
-
-function findFirstSuggestion(
-  node: TrieNode,
-  prefixLength: number,
-): string | null {
-  if (node.word !== null && node.word.length > prefixLength) {
-    return node.word;
-  }
-  for (const child of node.children.values()) {
-    const found = findFirstSuggestion(child, prefixLength);
-    if (found !== null) {
-      return found;
-    }
-  }
-  return null;
 }

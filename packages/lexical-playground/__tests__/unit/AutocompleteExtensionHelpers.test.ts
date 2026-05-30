@@ -146,4 +146,73 @@ describe('createWordlistDictionary', () => {
     const dict = createWordlistDictionary(words, {minPrefixLength: 3});
     expect(dict.minPrefixLength).toBe(3);
   });
+
+  // The list is a priority order (most-common / highest-ranked first), so
+  // `query` must return the *earliest-listed* completion for a prefix —
+  // never merely the shortest one that happens to share it.
+  test('returns the earliest-listed match, not the shortest, for nested words', () => {
+    // 'conditions' precedes the shorter 'condition' it contains; the
+    // earlier entry must still win.
+    const dict = createWordlistDictionary(['conditions', 'condition'], {
+      minPrefixLength: 4,
+    });
+    expect(dict.query('cond')).toBe('itions');
+  });
+
+  test('a sorted nested pair resolves to the earlier (shorter) entry', () => {
+    const dict = createWordlistDictionary(['condition', 'conditions'], {
+      minPrefixLength: 4,
+    });
+    expect(dict.query('cond')).toBe('ition');
+  });
+
+  test('picks the highest-priority of several matches at each prefix length', () => {
+    const dict = createWordlistDictionary(['apply', 'apple', 'application']);
+    expect(dict.query('app')).toBe('ly');
+    expect(dict.query('appl')).toBe('y');
+  });
+
+  test('a word equal to the prefix is never its own suggestion', () => {
+    // 'form' leaves no suffix, so the longer 'formal' answers instead.
+    const dict = createWordlistDictionary(['form', 'formal']);
+    expect(dict.query('form')).toBe('al');
+  });
+
+  test('returns null when the only match equals the prefix', () => {
+    const dict = createWordlistDictionary(['form']);
+    expect(dict.query('form')).toBeNull();
+  });
+
+  test('returns null for a prefix longer than every entry', () => {
+    const dict = createWordlistDictionary(['test']);
+    expect(dict.query('testing')).toBeNull();
+  });
+
+  test('an empty wordlist yields no suggestions', () => {
+    const dict = createWordlistDictionary([]);
+    expect(dict.query('anything')).toBeNull();
+  });
+
+  test('builds and queries multi-byte (Hangul) words', () => {
+    const dict = createWordlistDictionary(['사용', '사용법', '사용자']);
+    expect(dict.query('사용')).toBe('법'); // 사용법 is listed first
+    expect(dict.query('사')).toBeNull(); // below the default minPrefixLength
+  });
+
+  test('matches case-insensitively while preserving the source casing in the suffix', () => {
+    const dict = createWordlistDictionary(['JavaScript']);
+    expect(dict.query('java')).toBe('Script');
+    expect(dict.query('JAVA')).toBe('Script');
+  });
+
+  test('minPrefixLength shortens the set of queryable prefixes', () => {
+    const dict = createWordlistDictionary(['testing'], {minPrefixLength: 4});
+    expect(dict.query('tes')).toBeNull();
+    expect(dict.query('test')).toBe('ing');
+  });
+
+  test('duplicate entries are handled and the first occurrence wins', () => {
+    const dict = createWordlistDictionary(['testing', 'testing', 'tester']);
+    expect(dict.query('test')).toBe('ing');
+  });
 });

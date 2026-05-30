@@ -10,6 +10,7 @@ import {expect} from '@playwright/test';
 
 import {
   moveLeft,
+  moveToLineBeginning,
   moveToLineEnd,
   selectCharacters,
   toggleBold,
@@ -422,12 +423,12 @@ test.describe('Collaboration', () => {
       `,
     );
 
-    // Right collaborator types in the middle of the bold word.
-    await page
-      .frameLocator('iframe[name="right"]')
-      .locator('[data-lexical-editor="true"]')
-      .focus();
-    await page.keyboard.press('ArrowDown', {delay: 50});
+    // Right collaborator types in the middle of the bold word. Click to place
+    // the caret (real remote-user positioning), then step left from the line
+    // end — relying on a default caret position + ArrowDown is fragile because
+    // the idle frame's synced selection isn't guaranteed to start at the top.
+    await page.frameLocator('iframe[name="right"]').locator('p').click();
+    await moveToLineEnd(page);
     await page.keyboard.press('ArrowLeft');
     await page.keyboard.press('ArrowLeft');
     await page.keyboard.type('BOLD');
@@ -489,17 +490,16 @@ test.describe('Collaboration', () => {
       `,
     );
 
-    // Collaboration should still work.
-    await page
-      .frameLocator('iframe[name="right"]')
-      .locator('[data-lexical-editor="true"]')
-      .focus();
-    // TODO this is a workaround for Firefox so that the
-    // selection picks up the text format
+    // Collaboration should still work. Click into the paragraph and move to the
+    // line end, rather than relying on a default caret position + ArrowDown.
+    await page.frameLocator('iframe[name="right"]').locator('p').click();
+    await moveToLineEnd(page);
+    // Firefox doesn't carry the bold format to a caret at the very end of the
+    // bold run, so re-enter the run and return so the appended text inherits it.
     if (browserName === 'firefox') {
-      await page.keyboard.press('ArrowLeft', {delay: 50});
+      await page.keyboard.press('ArrowLeft');
+      await page.keyboard.press('ArrowRight');
     }
-    await page.keyboard.press('ArrowDown', {delay: 50});
     await page.keyboard.type(' text');
 
     await assertHTML(
@@ -623,12 +623,11 @@ test.describe('Collaboration', () => {
       `,
     );
 
-    // Collaboration should still work.
-    await page
-      .frameLocator('iframe[name="right"]')
-      .locator('[data-lexical-editor="true"]')
-      .focus();
-    await page.keyboard.press('ArrowDown', {delay: 50});
+    // Collaboration should still work. Click into the paragraph and move to the
+    // line end to append after "now!", rather than relying on a default caret
+    // position + ArrowDown.
+    await page.frameLocator('iframe[name="right"]').locator('p').click();
+    await moveToLineEnd(page);
     await page.keyboard.type(' Check it out.');
 
     await assertHTML(
@@ -696,10 +695,11 @@ test.describe('Collaboration', () => {
         </p>
       `,
     );
-    await page
-      .frameLocator('iframe[name="right"]')
-      .locator('[data-lexical-editor="true"]')
-      .focus();
+    // Right collaborator deletes "B". Click into the paragraph and move to the
+    // line start so forward-Delete removes the leading bold "B", rather than
+    // relying on a default caret position.
+    await page.frameLocator('iframe[name="right"]').locator('p').click();
+    await moveToLineBeginning(page);
     await page.keyboard.press('Delete');
 
     await assertHTML(

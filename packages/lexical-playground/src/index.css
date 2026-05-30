@@ -468,7 +468,8 @@ i.highlight {
 }
 
 i.link {
-  background-image: url(images/icons/link.svg);
+  -webkit-mask-image: url(images/icons/link.svg);
+  mask-image: url(images/icons/link.svg);
 }
 
 i.horizontal-rule {
@@ -593,11 +594,13 @@ i.outdent {
 }
 
 i.undo {
-  background-image: url(images/icons/arrow-counterclockwise.svg);
+  -webkit-mask-image: url(images/icons/arrow-counterclockwise.svg);
+  mask-image: url(images/icons/arrow-counterclockwise.svg);
 }
 
 i.redo {
-  background-image: url(images/icons/arrow-clockwise.svg);
+  -webkit-mask-image: url(images/icons/arrow-clockwise.svg);
+  mask-image: url(images/icons/arrow-clockwise.svg);
 }
 
 i.sticky {

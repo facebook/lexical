@@ -35,15 +35,21 @@ input[type='number'] {
 }
 
 .add-icon {
-  background-image: url(../../images/icons/add-sign.svg);
-  background-repeat: no-repeat;
-  background-position: center;
+  -webkit-mask-image: url(../../images/icons/add-sign.svg);
+  mask-image: url(../../images/icons/add-sign.svg);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
 }
 
 .minus-icon {
-  background-image: url(../../images/icons/minus-sign.svg);
-  background-repeat: no-repeat;
-  background-position: center;
+  -webkit-mask-image: url(../../images/icons/minus-sign.svg);
+  mask-image: url(../../images/icons/minus-sign.svg);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
 }
 
 button.font-decrement {

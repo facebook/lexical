@@ -1855,6 +1855,9 @@ button.item.dropdown-item-active i {
     background-color: Highlight;
     color: HighlightText;
   }
+  button.toolbar-item:not(:disabled) i.format {
+    opacity: 1;
+  }
   .toolbar .divider {
     background-color: CanvasText;
     forced-color-adjust: none;

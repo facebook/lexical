@@ -12,7 +12,7 @@ import {
   $getSelection,
   $isRangeSelection,
   $isTextNode,
-  COMMAND_PRIORITY_LOW,
+  COMMAND_PRIORITY_BEFORE_EDITOR,
   COMPOSITION_START_COMMAND,
   COMPOSITION_START_TAG,
   defineExtension,
@@ -65,19 +65,19 @@ export const IMEExtension = defineExtension({
     const removeStartCommand = editor.registerCommand(
       COMPOSITION_START_COMMAND,
       () => {
-        // The LOW-priority listener bucket here runs in its own
-        // `updateEditorSync` invocation, sequenced immediately
-        // before Lexical's own EDITOR-priority handler that calls
-        // `$setCompositionKey(anchor.key)` (in a separate
-        // `updateEditorSync`). Both ultimately write the same
-        // `selection.anchor.key`.
+        // `BEFORE_EDITOR` lands at the head of the EDITOR-priority
+        // bucket, sequenced immediately before Lexical's own
+        // EDITOR-priority `$handleCompositionStart` that calls
+        // `$setCompositionKey(anchor.key)`. Both write the same
+        // `selection.anchor.key`. The lower nominal priority keeps
+        // room for downstream extensions to override.
         const selection = $getSelection();
         if ($isRangeSelection(selection)) {
           compositionKey.value = selection.anchor.key;
         }
         return false;
       },
-      COMMAND_PRIORITY_LOW,
+      COMMAND_PRIORITY_BEFORE_EDITOR,
     );
 
     // Stage 1: react to compositionKey transitions. Resolve the key

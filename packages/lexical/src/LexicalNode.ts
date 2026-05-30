@@ -272,6 +272,14 @@ export interface LexicalPrivateDOM {
     | undefined;
   __lexicalDir?: 'ltr' | 'rtl' | null | undefined;
   __lexicalUnmanaged?: boolean | undefined;
+  /**
+   * When true, the DOM subtree owns its own window selection — analogous to
+   * a DecoratorNode subtree. Resolution logic that would otherwise force the
+   * Lexical selection back onto a managed position treats the caret as
+   * intentional and leaves it alone. Set via the `captureSelection` option
+   * on {@link setDOMUnmanaged}.
+   */
+  __lexicalCapturedSelection?: boolean | undefined;
 }
 
 export function $removeNode(

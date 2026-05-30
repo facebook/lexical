@@ -190,6 +190,73 @@ test.describe('Tables', () => {
     expect(cellTexts[cellTexts.length - 1]).toBe('last');
   });
 
+  test(`TableSelection converts to RangeSelection when DOM selection extends onto the editor root (Issue #8584 follow-up)`, async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await initialize({isCollab, page});
+
+    await focusEditor(page);
+    await insertTable(page, 2, 2);
+
+    // Create a TableSelection across the first header cell (th at
+    // {x:0,y:0}) and the last body cell (td at {x:1,y:1}). The default
+    // insertTable marks row 0 and column 0 as headers, so {x:1,y:1} is
+    // the only plain td in a 2x2 table.
+    await selectCellsFromTableCords(
+      page,
+      {x: 0, y: 0},
+      {x: 1, y: 1},
+      true,
+      false,
+    );
+
+    // Sanity check: the editor selection is a TableSelection.
+    const isTableSelection = await evaluate(page, () => {
+      const editor = window.lexicalEditor;
+      const sel = editor.getEditorState()._selection;
+      return Boolean(sel && 'tableKey' in sel);
+    });
+    expect(isTableSelection).toBe(true);
+
+    // Move the DOM focus onto the editor root element itself (outside the
+    // table). Before #8584 root carried no `__lexicalKey_*`, so
+    // `$getNearestNodeFromDOMNode(rootElement)` returned null and the
+    // `isFocusOutside` check in `$fixTableSelectionForSelectedTable`
+    // short-circuited — the TableSelection was never converted. After
+    // #8584 root resolves to RootNode, so `isFocusOutside` is truthy and
+    // the selection is correctly switched to a RangeSelection.
+    //
+    // The TableObserver clears the window selection when it enters
+    // TableSelection mode, so we cannot rely on the prior anchorNode —
+    // build a fresh range with a known cell as the anchor instead.
+    await evaluate(page, () => {
+      const root = document.querySelector('div[contenteditable="true"]');
+      const firstCell = document.querySelector(
+        'div[contenteditable="true"] table th, div[contenteditable="true"] table td',
+      );
+      window
+        .getSelection()
+        .setBaseAndExtent(firstCell, 0, root, root.childNodes.length);
+    });
+    await sleep(50);
+
+    const selectionAfter = await evaluate(page, () => {
+      const editor = window.lexicalEditor;
+      const sel = editor.getEditorState()._selection;
+      return {
+        isRange: Boolean(
+          sel && 'anchor' in sel && 'focus' in sel && !('tableKey' in sel),
+        ),
+        isTable: Boolean(sel && 'tableKey' in sel),
+      };
+    });
+    expect(selectionAfter.isTable).toBe(false);
+    expect(selectionAfter.isRange).toBe(true);
+  });
+
   test(`Can type inside of table cell`, async ({
     page,
     isPlainText,

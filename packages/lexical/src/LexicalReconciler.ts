@@ -51,6 +51,7 @@ import {
   $isRootOrShadowRoot,
   cloneDecorators,
   getElementByKeyOrThrow,
+  setDOMUnmanaged,
   setMutatedNode,
   setNodeKeyOnDOMNode,
 } from './LexicalUtils';
@@ -458,6 +459,13 @@ function $createNode(key: NodeKey, slot: ElementDOMSlot | null): HTMLElement {
     dom.setAttribute('data-lexical-text', 'true');
   } else if ($isDecoratorNode(node)) {
     dom.setAttribute('data-lexical-decorator', 'true');
+    // DecoratorNode DOM is selection-captured: window selection inside
+    // a decorator subtree (e.g. an embedded input) is owned by the
+    // decorator, not by Lexical's caret management. Marking it via
+    // setDOMUnmanaged unifies the decorator case with extension-owned
+    // unmanaged subtrees so callers only need isDOMCapturingSelection /
+    // isDOMUnmanaged.
+    setDOMUnmanaged(dom, {captureSelection: true});
   }
 
   if ($isElementNode(node)) {

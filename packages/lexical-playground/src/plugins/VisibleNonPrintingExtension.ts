@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import type {DOMOverrideOptions} from '@lexical/html';
+
 import {$isCodeNode} from '@lexical/code-core';
 import {effect, namedSignals} from '@lexical/extension';
 import {
@@ -16,6 +18,7 @@ import {
 import {ListItemNode} from '@lexical/list';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {$canShowPlaceholder} from '@lexical/text';
+import {$findMatchingParent, mergeRegister} from '@lexical/utils';
 import {
   configExtension,
   defineExtension,
@@ -25,6 +28,7 @@ import {
   ParagraphNode,
   safeCast,
   TabNode,
+  TextNode,
 } from 'lexical';
 
 /**
@@ -50,9 +54,12 @@ import {
  *   distinct.
  * - Space (` `, U+0020) (`·`) — an inline WOFF2 with `unicode-range: U+0020`
  *   remaps only the space glyph to a middle-dot shape, gated by the editor
- *   root's `data-lexical-visible-non-printing-active` attribute. Zero DOM
- *   mutation on `TextNode`, so IME composition, selection, and caret behaviour
- *   stay intact.
+ *   root's `data-lexical-visible-non-printing-active` attribute. A
+ *   `TextNode` `$createDOM` / `$updateDOM` override prepends our font in
+ *   front of any inline `style="font-family"` so the toolbar font-family
+ *   selector can't strip the marker via specificity. Zero text-content
+ *   mutation, so IME composition, selection, and caret behaviour stay
+ *   intact.
  *
  * Demonstrates the extension-driven path for leaf and block node categories:
  * no subclassing required, behaviour attaches via `DOMRenderExtension`
@@ -92,16 +99,7 @@ export const VisibleNonPrintingDisabled = createRenderState(
 function $skipForCodeChild(node: LineBreakNode): boolean {
   // Code blocks convey line structure visually — skip the visible
   // linebreak wrap anywhere inside a `CodeNode`.
-  for (
-    let ancestor = node.getParent();
-    ancestor !== null;
-    ancestor = ancestor.getParent()
-  ) {
-    if ($isCodeNode(ancestor)) {
-      return true;
-    }
-  }
-  return false;
+  return $findMatchingParent(node, $isCodeNode) !== null;
 }
 
 function hasOurWrap(dom: HTMLElement): boolean {
@@ -122,11 +120,25 @@ function $createBlockDOM(
   return dom;
 }
 
+const LEXICAL_SPACE_DOT_FONT = "'LexicalSpaceDot'";
+
+// Prepend our space-dot font in front of any inline `font-family` set on a
+// TextNode's span (e.g. by the playground's font-family toolbar). The root
+// rule's `font-family` stack already covers spans without an inline style;
+// the inline one wins specificity, so we have to apply the override at the
+// node level. `unicode-range: U+0020` still scopes the substitution to the
+// space glyph alone, so the user's chosen face renders every other glyph.
+function applyTextFontPrepend(dom: HTMLElement): void {
+  const inline = dom.style.fontFamily;
+  if (inline === '' || inline.startsWith(LEXICAL_SPACE_DOT_FONT)) {
+    return;
+  }
+  dom.style.fontFamily = `${LEXICAL_SPACE_DOT_FONT}, ${inline}`;
+}
+
 const disabledForEditor = {
-  disabledForEditor: (ctx: {
-    get: (state: typeof VisibleNonPrintingDisabled) => boolean;
-  }) => ctx.get(VisibleNonPrintingDisabled),
-};
+  disabledForEditor: ctx => ctx.get(VisibleNonPrintingDisabled),
+} satisfies DOMOverrideOptions;
 
 export const VisibleNonPrintingExtension = defineExtension({
   build: (editor, config) => namedSignals(config),
@@ -179,44 +191,64 @@ export const VisibleNonPrintingExtension = defineExtension({
           },
           disabledForEditor,
         ),
+        domOverride(
+          [TextNode],
+          {
+            $createDOM: (_node, $next) => {
+              const dom = $next();
+              if (isHTMLElement(dom)) {
+                applyTextFontPrepend(dom);
+              }
+              return dom;
+            },
+            $updateDOM: (_node, _prev, dom, $next) => {
+              const result = $next();
+              if (isHTMLElement(dom)) {
+                applyTextFontPrepend(dom);
+              }
+              return result;
+            },
+          },
+          disabledForEditor,
+        ),
       ],
     }),
   ],
   name: '@lexical/playground/visible-non-printing',
   register: (editor, _config, state) => {
     const stores = state.getOutput();
-    const syncEmptyRootAttr = () => {
-      const rootElement = editor.getRootElement();
-      if (rootElement === null) {
-        return;
-      }
-      const showPlaceholder = editor
-        .getEditorState()
-        .read(() => $canShowPlaceholder(editor.isComposing()));
-      rootElement.toggleAttribute(
-        VISIBLE_NON_PRINTING_EMPTY_ROOT_ATTR,
-        showPlaceholder,
-      );
-    };
     return effect(() => {
       const isDisabled = stores.disabled.value;
       $setRenderContextValue(VisibleNonPrintingDisabled, isDisabled, editor);
-      const rootElement = editor.getRootElement();
-      if (rootElement !== null) {
-        rootElement.toggleAttribute(
-          VISIBLE_NON_PRINTING_ACTIVE_ATTR,
-          !isDisabled,
-        );
-      }
       if (isDisabled) {
-        if (rootElement !== null) {
-          rootElement.removeAttribute(VISIBLE_NON_PRINTING_EMPTY_ROOT_ATTR);
-        }
         return;
       }
-      const cleanupListener = editor.registerUpdateListener(syncEmptyRootAttr);
-      syncEmptyRootAttr();
-      return cleanupListener;
+      return editor.registerRootListener(nextRoot => {
+        if (nextRoot === null) {
+          return;
+        }
+        nextRoot.setAttribute(VISIBLE_NON_PRINTING_ACTIVE_ATTR, 'true');
+        const syncEmptyRootAttr = () => {
+          const showPlaceholder = editor
+            .getEditorState()
+            .read(() => $canShowPlaceholder(editor.isComposing()));
+          nextRoot.toggleAttribute(
+            VISIBLE_NON_PRINTING_EMPTY_ROOT_ATTR,
+            showPlaceholder,
+          );
+        };
+        syncEmptyRootAttr();
+        // mergeRegister tears down in LIFO order: the attribute removal runs
+        // before the update listener unregister, so `syncEmptyRootAttr` can't
+        // refire on a half-cleaned root between the two cleanups.
+        return mergeRegister(
+          editor.registerUpdateListener(syncEmptyRootAttr),
+          () => {
+            nextRoot.removeAttribute(VISIBLE_NON_PRINTING_ACTIVE_ATTR);
+            nextRoot.removeAttribute(VISIBLE_NON_PRINTING_EMPTY_ROOT_ATTR);
+          },
+        );
+      });
     });
   },
 });

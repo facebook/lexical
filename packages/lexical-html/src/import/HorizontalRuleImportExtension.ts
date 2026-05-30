@@ -12,7 +12,6 @@ import {
 } from '@lexical/extension';
 import {configExtension, defineExtension} from 'lexical';
 
-import {CoreImportExtension} from './CoreImportExtension';
 import {defineImportRule} from './defineImportRule';
 import {DOMImportExtension} from './DOMImportExtension';
 import {selBase} from './sel';
@@ -31,21 +30,21 @@ const HorizontalRuleRule = defineImportRule({
 export const HorizontalRuleImportRules = [HorizontalRuleRule];
 
 /**
- * Bundles {@link HorizontalRuleImportRules} (plus
- * {@link CoreImportExtension}) into a single dependency. The legacy
- * {@link HorizontalRuleExtension.importDOM} continues to work in parallel;
- * depend on this extension to opt into the new pipeline.
+ * Bundles {@link HorizontalRuleImportRules} together with the runtime
+ * {@link HorizontalRuleExtension}. The application is expected to
+ * already have `CoreImportExtension` (or some equivalent) in its
+ * dependency graph — the core/text/paragraph/inline-format rules are a
+ * shared baseline, not something this leaf importer should re-declare.
  *
  * Lives in `@lexical/html` (not `@lexical/extension`) because
  * {@link DOMImportExtension} itself is in `@lexical/html`, and
  * `@lexical/extension` is upstream of `@lexical/html` in the dependency
- * graph — same arrangement as {@link CoreImportExtension}.
+ * graph.
  *
  * @experimental
  */
 export const HorizontalRuleImportExtension = defineExtension({
   dependencies: [
-    CoreImportExtension,
     HorizontalRuleExtension,
     configExtension(DOMImportExtension, {rules: HorizontalRuleImportRules}),
   ],

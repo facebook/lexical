@@ -166,7 +166,7 @@ test.describe('Checklist focus option', () => {
   });
 });
 
-test.describe.parallel('Nested List', () => {
+test.describe('Nested List', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
 
   test(`Can create a list and partially copy some content out of it`, async ({

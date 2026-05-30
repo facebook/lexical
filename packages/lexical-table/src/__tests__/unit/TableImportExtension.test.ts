@@ -10,7 +10,7 @@ import {
   buildEditorFromExtensions,
   getExtensionDependencyFromEditor,
 } from '@lexical/extension';
-import {DOMImportExtension} from '@lexical/html';
+import {CoreImportExtension, DOMImportExtension} from '@lexical/html';
 import {
   $isTableCellNode,
   $isTableNode,
@@ -33,7 +33,9 @@ import {assert, describe, expect, test} from 'vitest';
 function buildEditor() {
   return buildEditorFromExtensions(
     defineExtension({
-      dependencies: [TableImportExtension],
+      // Leaf importer extensions no longer pull `CoreImportExtension`
+      // in by themselves — the application is expected to add it once.
+      dependencies: [CoreImportExtension, TableImportExtension],
       name: 'table-host',
       nodes: [TableNode, TableRowNode, TableCellNode],
     }),

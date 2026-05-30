@@ -20,7 +20,7 @@ import {
 } from '@lexical/file';
 import {
   $generateHtmlFromNodes,
-  $generateNodesFromDOM,
+  $generateNodesFromDOMViaExtension,
   $withRenderContext,
   contextValue,
 } from '@lexical/html';
@@ -168,7 +168,7 @@ export default function ActionsPlugin({
             const parser = new DOMParser();
             const content = root.getTextContent();
             const dom = parser.parseFromString(content, 'text/html');
-            const nodes = $generateNodesFromDOM(editor, dom);
+            const nodes = $generateNodesFromDOMViaExtension(dom);
             root.clear().select();
             $insertNodes(nodes);
             if (root.isEmpty()) {

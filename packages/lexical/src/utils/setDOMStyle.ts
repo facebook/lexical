@@ -29,8 +29,16 @@ export function getStyleObjectFromCSS(css: string): Record<string, string> {
   let isEscaped = false;
   let isParsingValue = false;
   let parenthesisDepth = 0;
+  const length = css.length;
+  // Characters that belong to the current property/value (normal text, quotes,
+  // escapes and parentheses) are accumulated as contiguous slices rather than
+  // appended one-by-one, which avoids O(n) per-character string concatenation.
+  // `chunkStart` marks the start of the pending run, or -1 when nothing is
+  // pending. The run is flushed whenever a character is dropped (a comment) or
+  // acts as a delimiter (`:` or `;`).
+  let chunkStart = -1;
 
-  for (let i = 0; i < css.length; i++) {
+  for (let i = 0; i < length; i++) {
     const char = css[i];
 
     if (inComment) {
@@ -42,20 +50,16 @@ export function getStyleObjectFromCSS(css: string): Record<string, string> {
     }
 
     if (isEscaped) {
-      if (isParsingValue) {
-        currentValue += char;
-      } else {
-        currentProperty += char;
+      if (chunkStart === -1) {
+        chunkStart = i;
       }
       isEscaped = false;
       continue;
     }
 
     if (currentQuote !== null) {
-      if (isParsingValue) {
-        currentValue += char;
-      } else {
-        currentProperty += char;
+      if (chunkStart === -1) {
+        chunkStart = i;
       }
 
       if (char === '\\') {
@@ -68,47 +72,63 @@ export function getStyleObjectFromCSS(css: string): Record<string, string> {
     }
 
     if (char === '/' && css[i + 1] === '*') {
+      // The comment is dropped, so flush everything accumulated before it.
+      if (chunkStart !== -1) {
+        if (isParsingValue) {
+          currentValue += css.slice(chunkStart, i);
+        } else {
+          currentProperty += css.slice(chunkStart, i);
+        }
+        chunkStart = -1;
+      }
       inComment = true;
       i++;
       continue;
     }
 
     if (char === '"' || char === "'") {
-      currentQuote = char;
-      if (isParsingValue) {
-        currentValue += char;
-      } else {
-        currentProperty += char;
+      if (chunkStart === -1) {
+        chunkStart = i;
       }
+      currentQuote = char;
       continue;
     }
 
     if (char === '(') {
-      parenthesisDepth++;
-      if (isParsingValue) {
-        currentValue += char;
-      } else {
-        currentProperty += char;
+      if (chunkStart === -1) {
+        chunkStart = i;
       }
+      parenthesisDepth++;
       continue;
     }
 
     if (char === ')') {
-      parenthesisDepth = Math.max(0, parenthesisDepth - 1);
-      if (isParsingValue) {
-        currentValue += char;
-      } else {
-        currentProperty += char;
+      if (chunkStart === -1) {
+        chunkStart = i;
       }
+      parenthesisDepth = Math.max(0, parenthesisDepth - 1);
       continue;
     }
 
     if (!isParsingValue && char === ':' && parenthesisDepth === 0) {
+      // The separator is dropped; flush the accumulated property name.
+      if (chunkStart !== -1) {
+        currentProperty += css.slice(chunkStart, i);
+        chunkStart = -1;
+      }
       isParsingValue = true;
       continue;
     }
 
     if (char === ';' && parenthesisDepth === 0) {
+      if (chunkStart !== -1) {
+        if (isParsingValue) {
+          currentValue += css.slice(chunkStart, i);
+        } else {
+          currentProperty += css.slice(chunkStart, i);
+        }
+        chunkStart = -1;
+      }
       const property = currentProperty.trim();
       const value = currentValue.trim();
 
@@ -122,10 +142,16 @@ export function getStyleObjectFromCSS(css: string): Record<string, string> {
       continue;
     }
 
+    if (chunkStart === -1) {
+      chunkStart = i;
+    }
+  }
+
+  if (chunkStart !== -1) {
     if (isParsingValue) {
-      currentValue += char;
+      currentValue += css.slice(chunkStart, length);
     } else {
-      currentProperty += char;
+      currentProperty += css.slice(chunkStart, length);
     }
   }
 

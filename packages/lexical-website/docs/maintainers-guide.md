@@ -365,11 +365,12 @@ manually, as a fallback for when `npm trust github` isn't an option.
 
 ### Testing trusted publishing from a PR branch
 
-The "Publish to NPM" workflow (`pre-release.yml`) exposes `ref` and
-`channel` inputs in addition to `use-trusted-publishing` so it doubles
-as a test harness. Picking a branch in the "Run workflow" dropdown
-selects which version of the workflow files run, and the inputs
-determine what actually gets published.
+The "Publish to NPM" workflow (`pre-release.yml`) exposes `ref`,
+`channel`, and `increment-version` inputs in addition to
+`use-trusted-publishing` so it doubles as a test harness. Picking a
+branch in the "Run workflow" dropdown selects which version of the
+workflow files run, and the inputs determine what actually gets
+published.
 
 A safe end-to-end test of the trusted-publishing flow looks like:
 
@@ -378,13 +379,31 @@ A safe end-to-end test of the trusted-publishing flow looks like:
 | Branch (dropdown) | your PR branch |
 | `ref` | your PR branch (same value) |
 | `channel` | `dev` |
+| `increment-version` | checked |
 | `use-trusted-publishing` | checked |
 | `ignore-previously-published` | unchecked |
 
-This publishes the monorepo from your branch under the `dev` dist-tag
-(so the `latest` tag is untouched) and exercises the OIDC token
-exchange. After it succeeds, `npm view <pkg>@dev` should show the new
-version and provenance attached.
+With `increment-version` on, the run bumps `package.json` to a fresh
+prerelease (e.g. `0.46.0-dev.0`), commits + tags it on a `dev__release`
+branch on origin, and publishes the monorepo under the `dev` dist-tag
+via OIDC. The `latest` tag is untouched, so default `npm install`
+users are unaffected. After it succeeds:
+
+```bash
+npm view lexical@dev version     # → the just-published prerelease
+npm view lexical@latest version  # → unchanged
+```
+
+Cleanup (the prerelease itself can't be reused, but the git refs
+should go):
+
+```bash
+git push --delete origin v0.46.0-dev.0 dev__release 0.46.0-dev.0__release
+```
+
+The `increment-version=true + channel=latest` combination is refused
+by the workflow's guard job — real `latest` releases must go through
+`version.yml` first.
 
 ## Release Procedure
 

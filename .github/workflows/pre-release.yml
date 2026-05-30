@@ -25,6 +25,16 @@ on:
         options:
           - latest
           - dev
+      increment-version:
+        description: |
+          Bump version + push tag/branch before publish (same flow nightly uses).
+          Use ONLY with channel=dev for end-to-end tests of the trusted-publishing
+          setup. Pairing with channel=latest is refused — it would move the latest
+          dist-tag to a prerelease. Real latest releases must go through version.yml
+          first.
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -35,9 +45,23 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  guard:
+    # Refuse the unsafe combo: bumping a fresh version and tagging it as
+    # `latest` would move every user on the default dist-tag to a
+    # prerelease.
+    if: ${{ inputs.increment-version && inputs.channel == 'latest' }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "::error::increment-version=true is not allowed with channel=latest — it would move the latest dist-tag to a prerelease. Use channel=dev for testing, or run version.yml first for a real latest release."
+          exit 1
+
   release:
+    needs: guard
+    if: ${{ !failure() && !cancelled() }}
     uses: ./.github/workflows/call-release.yml
     with:
+      increment-version: ${{ inputs.increment-version }}
       publish: true
       ref: ${{ inputs.ref }}
       channel: ${{ inputs.channel }}

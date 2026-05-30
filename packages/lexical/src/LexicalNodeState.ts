@@ -490,6 +490,20 @@ export function createSharedNodeState(
 
 type KnownStateMap = Map<AnyStateConfig, unknown>;
 type UnknownStateRecord = Record<string, unknown>;
+
+/**
+ * Keys that must never be written into an {@link UnknownStateRecord} from
+ * serialized (potentially untrusted) input. Writing a `__proto__` entry would
+ * re-parent the record's prototype, and because {@link NodeState.getValue}
+ * resolves keys with the `in` operator (which walks the prototype chain) an
+ * attacker could otherwise inject arbitrary state values via a crafted
+ * `__proto__`. These are never produced by {@link createState}.
+ */
+const UNSAFE_STATE_KEYS: ReadonlySet<string> = new Set([
+  '__proto__',
+  'constructor',
+  'prototype',
+]);
 /**
  * @internal
  *
@@ -746,6 +760,9 @@ export class NodeState<T extends LexicalNode> {
    * @param v The unknown value from an UnknownStateRecord
    */
   updateFromUnknown(k: string, v: unknown): void {
+    if (UNSAFE_STATE_KEYS.has(k)) {
+      return;
+    }
     const stateConfig = this.sharedNodeState.sharedConfigMap.get(k);
     if (stateConfig) {
       this.updateFromKnown(stateConfig, stateConfig.parse(v));
@@ -932,6 +949,9 @@ function parseAndPruneNextUnknownState(
   let nextUnknownState: undefined | UnknownStateRecord = undefined;
   if (unknownState) {
     for (const [k, v] of Object.entries(unknownState)) {
+      if (UNSAFE_STATE_KEYS.has(k)) {
+        continue;
+      }
       const stateConfig = sharedConfigMap.get(k);
       if (stateConfig) {
         if (!nextKnownState.has(stateConfig)) {

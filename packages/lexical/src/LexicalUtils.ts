@@ -2365,13 +2365,6 @@ export function hasOwnStaticMethod(
   return hasOwn(klass, k) && klass[k] !== LexicalNode[k];
 }
 
-/**
- * @internal
- */
-export function hasOwnExportDOM(klass: Klass<LexicalNode>) {
-  return hasOwn(klass.prototype, 'exportDOM');
-}
-
 /** @internal */
 function isAbstractNodeClass(klass: Klass<LexicalNode>): boolean {
   if (!(klass === LexicalNode || klass.prototype instanceof LexicalNode)) {

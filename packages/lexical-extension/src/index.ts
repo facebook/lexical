@@ -46,6 +46,7 @@ export {
   INSERT_HORIZONTAL_RULE_COMMAND,
   type SerializedHorizontalRuleNode,
 } from './HorizontalRuleExtension';
+export {IMEExtension} from './IMEExtension';
 export {
   type InitialStateConfig,
   InitialStateExtension,

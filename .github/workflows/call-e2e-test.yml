@@ -37,15 +37,15 @@ jobs:
           node-version: ${{ inputs.node-version }}
           fail-on-cache-miss: ${{ inputs.fail-on-cache-miss }}
       - name: Run tests
-        if: inputs.editor-mode != 'rich-text-with-collab'
+        if: ${{ !startsWith(inputs.editor-mode, 'rich-text-with-collab') }}
         run: pnpm run test-e2e-${{ inputs.prod && 'prod-' || '' }}${{ inputs.browser }}
       - name: Run collab tests
-        if: inputs.editor-mode == 'rich-text-with-collab'
+        if: ${{ startsWith(inputs.editor-mode, 'rich-text-with-collab') }}
         shell: bash
         run: |
           pnpm exec concurrently -k -s first \
             "pnpm run collab" \
-            "pnpm run test-e2e-collab-${{ inputs.prod && 'prod-' || '' }}${{ inputs.browser }}"
+            "pnpm run test-e2e-collab-${{ inputs.editor-mode == 'rich-text-with-collab-v2' && 'v2-' || '' }}${{ inputs.prod && 'prod-' || '' }}${{ inputs.browser }}"
       - name: Upload Artifacts
         if: failure()
         uses: actions/upload-artifact@v7

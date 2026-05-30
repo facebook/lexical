@@ -165,17 +165,18 @@ test.describe('Tables', () => {
       window.getSelection().setBaseAndExtent(col, 0, col, 0);
     });
 
-    // Allow Lexical to process the selection change.
-    await sleep(50);
-
     // The DOM caret must not be left inside the <col> / <colgroup> region
     // (the reconciler should have written it back to the resolved cell).
-    const domAnchorNodeName = await evaluate(
-      page,
-      () => window.getSelection().anchorNode?.nodeName ?? null,
-    );
-    expect(domAnchorNodeName).not.toBe('COL');
-    expect(domAnchorNodeName).not.toBe('COLGROUP');
+    // Poll for the selectionchange -> reconcile round-trip instead of sleeping
+    // a fixed time, which can be too short under load.
+    await expect
+      .poll(() =>
+        evaluate(
+          page,
+          () => window.getSelection().anchorNode?.nodeName ?? null,
+        ),
+      )
+      .not.toMatch(/^COL(GROUP)?$/);
 
     // Typing should land in the first cell, not extend "last".
     await page.keyboard.type('X');

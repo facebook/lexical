@@ -237,7 +237,7 @@ const TABLE_ROW_REG_EXP = /^(?:\|)(.+)(?:\|)\s?$/;
  * engines (e.g. Safari/JavaScriptCore) may run in super-linear time. A manual
  * scan is guaranteed O(n).
  */
-function isTableRowDivider(line: string): boolean {
+export function isTableRowDivider(line: string): boolean {
   // Must start with a leading pipe.
   if (line[0] !== '|') {
     return false;

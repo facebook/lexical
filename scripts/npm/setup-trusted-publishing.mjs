@@ -597,7 +597,7 @@ async function main() {
     const authedUser = await checkAuth();
     if (!authedUser) {
       console.error(
-        `npm whoami failed for ${registry}. Run 'npm login --registry ${registry}' (or set NPM_TOKEN) before re-running.`,
+        `npm whoami failed for ${registry}. Run 'npm login --registry ${registry}' before re-running.`,
       );
       process.exit(1);
     }

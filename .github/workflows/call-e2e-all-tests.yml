@@ -198,19 +198,3 @@ jobs:
       node-version: ${{ matrix.node-version }}
       browser: ${{ matrix.browser }}
       editor-mode: ${{ matrix.editor-mode }}
-  flaky:
-    # There aren't currently any flaky tests
-    if: false
-    needs: [build-ubuntu]
-    strategy:
-      matrix:
-        node-version: [24.x]
-        browser: ['chromium', 'firefox']
-        editor-mode: ['rich-text', 'plain-text', 'rich-text-with-collab']
-    uses: ./.github/workflows/call-e2e-test.yml
-    with:
-      os: 'ubuntu-latest'
-      flaky: true
-      node-version: ${{ matrix.node-version }}
-      browser: ${{ matrix.browser }}
-      editor-mode: ${{ matrix.editor-mode }}

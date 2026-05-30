@@ -323,5 +323,29 @@ describe('LexicalTabNode tests', () => {
         });
       });
     });
+
+    test('setTextContent normalizes back to \\t without throwing (#8596)', () => {
+      // Safari's MutationObserver can deliver mid-IME-composition text writes
+      // straight onto the TabNode's `\t` text node (verified with Korean), and
+      // `flushMutations` then calls `TabNode.setTextContent` with the
+      // in-flight composition payload (e.g. `'\tㅁ'`). The call must not throw
+      // — a throw cascades through `onError` and freezes the editor.
+      const {editor} = testEnv;
+      editor.update(
+        () => {
+          const paragraph = $getRoot().getFirstChild();
+          invariant($isElementNode(paragraph));
+          const tabNode = $createTabNode();
+          paragraph.append(tabNode);
+          expect(() => tabNode.setTextContent('\tㅁ')).not.toThrow();
+          expect(tabNode.getTextContent()).toBe('\t');
+          expect(() => tabNode.setTextContent('arbitrary')).not.toThrow();
+          expect(tabNode.getTextContent()).toBe('\t');
+          expect(() => tabNode.setTextContent('')).not.toThrow();
+          expect(tabNode.getTextContent()).toBe('\t');
+        },
+        {discrete: true},
+      );
+    });
   });
 });

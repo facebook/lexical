@@ -89,14 +89,10 @@ export const IMEExtension = defineExtension({
         composingTextNode.value = null;
         return;
       }
-      let resolved: null | TextNode = null;
-      editor.getEditorState().read(() => {
+      composingTextNode.value = editor.getEditorState().read(() => {
         const node = $getNodeByKey(key);
-        if ($isTextNode(node)) {
-          resolved = node;
-        }
+        return $isTextNode(node) ? node : null;
       });
-      composingTextNode.value = resolved;
     });
 
     // Stage 2: after Lexical's ZWSP heuristic inserts the actual
@@ -122,12 +118,7 @@ export const IMEExtension = defineExtension({
       },
     );
 
-    let removeRootScopedListener: undefined | (() => void);
-    const attach = (rootElem: HTMLElement | null) => {
-      if (removeRootScopedListener) {
-        removeRootScopedListener();
-        removeRootScopedListener = undefined;
-      }
+    const removeRootListener = editor.registerRootListener(rootElem => {
       if (rootElem === null) {
         compositionKey.value = null;
         return;
@@ -136,23 +127,16 @@ export const IMEExtension = defineExtension({
         compositionKey.value = null;
       };
       rootElem.addEventListener('compositionend', onCompositionEnd);
-      removeRootScopedListener = () => {
+      return () => {
         rootElem.removeEventListener('compositionend', onCompositionEnd);
       };
-    };
-    attach(editor.getRootElement());
-    const removeRootListener = editor.registerRootListener(attach);
+    });
 
     return mergeRegister(
       removeStartCommand,
       stopKeyEffect,
       removeUpdateListener,
       removeRootListener,
-      () => {
-        if (removeRootScopedListener) {
-          removeRootScopedListener();
-        }
-      },
     );
   },
 });

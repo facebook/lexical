@@ -11,6 +11,7 @@ import {
   IMEExtension,
   namedSignals,
   shallowMergeConfig,
+  WatchEditableExtension,
   watchedSignal,
 } from '@lexical/extension';
 import {$isAtNodeEnd} from '@lexical/selection';
@@ -22,6 +23,7 @@ import {
   $isTextNode,
   $setCompositionKey,
   type BaseSelection,
+  BLUR_COMMAND,
   COMMAND_PRIORITY_LOW,
   COMPOSITION_END_TAG,
   COMPOSITION_START_COMMAND,
@@ -341,18 +343,12 @@ export const AutocompleteExtension = defineExtension({
     dictionaries: defaultDictionaries,
     disabled: false,
   }),
-  dependencies: [IMEExtension],
+  dependencies: [IMEExtension, WatchEditableExtension],
   mergeConfig: mergeAutocompleteConfig,
   name: '@lexical/playground/autocomplete',
   register: (editor: LexicalEditor, config, state) => {
     const ime = state.getDependency(IMEExtension).output;
-    const editableSignal = watchedSignal(
-      () => editor.isEditable(),
-      signal =>
-        editor.registerEditableListener(editable => {
-          signal.value = editable;
-        }),
-    );
+    const editableSignal = state.getDependency(WatchEditableExtension).output;
     const rootElemSignal = watchedSignal(
       () => editor.getRootElement(),
       signal =>
@@ -391,6 +387,18 @@ export const AutocompleteExtension = defineExtension({
         clearTimeout(pendingCompositionTimer);
         pendingCompositionTimer = null;
       }
+    }
+
+    // Suggestions belong only to the editor that currently holds focus. In
+    // collab the idle peer receives the same content updates, and under the v2
+    // binding its synced selection lands at a word end — without this it would
+    // render a ghost in an editor nobody is typing in. Checked at update time
+    // (rather than tracked via FOCUS/BLUR) so it is robust to autofocus racing
+    // extension registration.
+    function isEditorFocused(): boolean {
+      const rootElem = editor.getRootElement();
+      const active = rootElem && rootElem.ownerDocument.activeElement;
+      return rootElem != null && active != null && rootElem.contains(active);
     }
 
     function dismiss() {
@@ -529,6 +537,9 @@ export const AutocompleteExtension = defineExtension({
       if (searchController !== refController || newSuggestion === null) {
         return;
       }
+      if (!isEditorFocused()) {
+        return;
+      }
       editor.getEditorState().read(
         () => {
           const selection = $getSelection();
@@ -563,6 +574,11 @@ export const AutocompleteExtension = defineExtension({
       editorState: EditorState;
       tags: Set<string>;
     }) {
+      // Only the focused editor shows suggestions (see isEditorFocused).
+      if (!isEditorFocused()) {
+        dismiss();
+        return;
+      }
       // Skip the normal update path while a composition is in progress —
       // querying on every committed `compositionupdate` flickers the ghost
       // as Korean 자모 / Japanese kana stream through partial syllables.
@@ -723,6 +739,16 @@ export const AutocompleteExtension = defineExtension({
       rootElem.addEventListener('compositionend', onCompositionEndDOM);
       return mergeRegister(
         editor.registerUpdateListener(handleUpdate),
+        // Drop the ghost as soon as the editor loses focus, rather than
+        // waiting for the next update.
+        editor.registerCommand(
+          BLUR_COMMAND,
+          () => {
+            dismiss();
+            return false;
+          },
+          COMMAND_PRIORITY_LOW,
+        ),
         // Dismiss any stale ghost (carried over from pre-composition
         // keyboard input) so the user gets a clean slate while typing
         // the new prefix. The composition target's TextNode key is

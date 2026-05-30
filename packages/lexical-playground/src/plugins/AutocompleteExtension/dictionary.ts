@@ -67,6 +67,28 @@ export function createWordlistDictionary(
   options: WordlistDictionaryOptions = {},
 ): AutocompleteDictionary {
   const {minPrefixLength = 2, caseSensitive = false} = options;
+  // Trie keyed on the case-folded character; each terminal stores the
+  // original word so the returned suffix preserves the source casing.
+  // Traversal order matches `words` insertion (Map iteration), so
+  // `query` returns the earliest-listed match for a prefix — same
+  // semantics as the previous linear scan, but O(prefix.length) per
+  // lookup instead of O(N * prefix.length).
+  const root: TrieNode = {children: new Map(), word: null};
+  for (const word of words) {
+    const key = caseSensitive ? word : word.toLowerCase();
+    let node = root;
+    for (const char of key) {
+      let child = node.children.get(char);
+      if (child === undefined) {
+        child = {children: new Map(), word: null};
+        node.children.set(char, child);
+      }
+      node = child;
+    }
+    if (node.word === null) {
+      node.word = word;
+    }
+  }
   return {
     minPrefixLength,
     query(prefix: string): null | string {
@@ -74,13 +96,37 @@ export function createWordlistDictionary(
         return null;
       }
       const needle = caseSensitive ? prefix : prefix.toLowerCase();
-      for (const word of words) {
-        const candidate = caseSensitive ? word : word.toLowerCase();
-        if (candidate.length > prefix.length && candidate.startsWith(needle)) {
-          return word.substring(prefix.length);
+      let node = root;
+      for (const char of needle) {
+        const next = node.children.get(char);
+        if (next === undefined) {
+          return null;
         }
+        node = next;
       }
-      return null;
+      const match = findFirstSuggestion(node, prefix.length);
+      return match === null ? null : match.substring(prefix.length);
     },
   };
+}
+
+interface TrieNode {
+  children: Map<string, TrieNode>;
+  word: string | null;
+}
+
+function findFirstSuggestion(
+  node: TrieNode,
+  prefixLength: number,
+): string | null {
+  if (node.word !== null && node.word.length > prefixLength) {
+    return node.word;
+  }
+  for (const child of node.children.values()) {
+    const found = findFirstSuggestion(child, prefixLength);
+    if (found !== null) {
+      return found;
+    }
+  }
+  return null;
 }

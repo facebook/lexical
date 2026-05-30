@@ -779,6 +779,10 @@
   user-select: none;
   -webkit-user-select: none;
 }
+/* Inline WOFF2 (304 bytes) whose only glyph is a 120×120 unit square dot
+   centered at (130, 350) in a 1000 UPM space slot — maps U+0020 to a middle
+   dot for the VisibleNonPrintingExtension. Generated via Python fontTools;
+   see PR #8592 for the regeneration script. */
 @font-face {
   font-family: 'LexicalSpaceDot';
   src: url('data:font/woff2;base64,d09GMgABAAAAAAEwAAoAAAAAAoQAAADpAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAABmAANAoYNwE2AiQDBgsGAAQgBXgHJhvoAYCeh7ExrfgWW63EKzG5+FNE1bD13C0xyk9CE6NDOKSNGouxFBqhEJKiPGisnUeZN5lMDNP3fVJfJOrWQX3l5X84jk6OT3QguPDB6KARtkVhhHnKIsUmqeb5F/VUXiSFDHDeBiOjPvqPPvIJkN/2DkagoWNTF2wqI5QSjP5psgVAA4WgMA0oQOp+IfO3Y5IABOFrev/NysnfbPoPfF/8qJVMfOQVdA2EAotSeEABAJAUCJoS0AAAUPYExAoCmhkrutScGNjOsVm2c2ecKn6ozuv+jfoGKkOTEq7bhDLZcjVmeJw4ImsAAA==')

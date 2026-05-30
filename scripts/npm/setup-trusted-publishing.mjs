@@ -197,8 +197,10 @@ function configEnvironment(config) {
  * the npm CLI so it uses npm's own auth resolution — exactly the auth
  * `npm whoami` and `npm trust github` already use — rather than a
  * hand-rolled token lookup that can silently come up empty (e.g. after
- * a browser `npm login` on macOS). `npm trust list` is a read, so it
- * never triggers an OTP prompt.
+ * a browser `npm login` on macOS). It captures stdout to parse the
+ * JSON; the session must already be authenticated (see warmTrustAuth)
+ * because a captured (non-TTY-stdout) call can't satisfy a fresh OTP
+ * challenge.
  *
  * Returns `{configs}` ([] when the package has no trust config, else
  * the parsed config entries), or `{error}` with a human-readable

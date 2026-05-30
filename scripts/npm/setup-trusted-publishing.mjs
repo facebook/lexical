@@ -25,7 +25,25 @@ const registry = (argv.registry || 'https://registry.npmjs.org').replace(
   '',
 );
 const stubVersion = argv['stub-version'] || '0.0.0-bootstrap.0';
-const workflow = argv.workflow || 'call-release.yml';
+// `workflow` is the *calling* workflow filename — the one that
+// triggered the run, not the reusable workflow that contains the
+// publish job. npm matches `claims.workflow_ref.file` against the OIDC
+// token's `workflow_ref` claim, which is the caller (same as PyPI;
+// the OIDC `job_workflow_ref` claim points at the reusable file but
+// npm doesn't check that).
+//
+// npm currently enforces one trust configuration per package — POSTing
+// a second config (even for a different workflow) returns E409. So
+// `--workflow` takes a single filename; switching workflows means
+// revoking the old config first, which `--replace` automates.
+const workflow = argv.workflow || 'pre-release.yml';
+if (typeof workflow !== 'string' || workflow.includes(',')) {
+  console.error(
+    `--workflow takes a single filename (npm allows one trust config per package). Got: ${workflow}`,
+  );
+  process.exit(1);
+}
+const replace = !!argv.replace;
 const repo = argv.repo || 'facebook/lexical';
 
 const [repoOwner, repoName] = repo.split('/');
@@ -125,142 +143,120 @@ function sleep(ms) {
 }
 
 /**
- * Encode a package name the same way npm-package-arg's
- * `spec.escapedName` does for registry URLs: scoped names have their
- * `/` escaped to `%2F`, the leading `@` is preserved, unscoped names
- * are passed through.
+ * Extract the workflow filename from a stored trust config. Handles
+ * both the flattened shape returned by `npm trust list --json`
+ * (`{file}`) and the raw registry shape (`{claims:{workflow_ref:
+ * {file}}}`).
  *
- * @param {string} name
- * @returns {string}
+ * @param {any} config
+ * @returns {string | undefined}
  */
-function escapedName(name) {
-  return name.startsWith('@') ? name.replaceAll('/', '%2F') : name;
+function configFile(config) {
+  if (!config || typeof config !== 'object') {
+    return undefined;
+  }
+  if (config.file) {
+    return config.file;
+  }
+  const claims = config.claims || {};
+  const ref = claims.workflow_ref || {};
+  return ref.file;
 }
 
 /**
- * Read every `//<host>/:_authToken=<token>` line out of an .npmrc file
- * at the given path, returning a host → token map. Returns an empty
- * map when the file can't be read.
+ * Extract the repository (owner/name) from a stored trust config,
+ * handling both the flattened and raw shapes.
  *
- * @param {string} npmrcPath
- * @returns {Promise<Map<string, string>>}
+ * @param {any} config
+ * @returns {string | undefined}
  */
-async function readNpmrcAuthTokens(npmrcPath) {
-  /** @type {Map<string, string>} */
-  const tokens = new Map();
-  let contents = '';
-  try {
-    contents = await fs.readFile(npmrcPath, 'utf8');
-  } catch {
-    return tokens;
+function configRepo(config) {
+  if (!config || typeof config !== 'object') {
+    return undefined;
   }
-  for (const rawLine of contents.split(/\r?\n/)) {
-    const line = rawLine.trim();
-    if (!line || line.startsWith('#') || line.startsWith(';')) {
-      continue;
-    }
-    // Match  //registry.example.com/:_authToken=VALUE
-    const m = line.match(/^\/\/([^/]+)\/:_authToken=(.+)$/);
-    if (!m) {
-      continue;
-    }
-    let value = m[2].trim();
-    // Strip surrounding quotes if any
-    if (
-      (value.startsWith('"') && value.endsWith('"')) ||
-      (value.startsWith("'") && value.endsWith("'"))
-    ) {
-      value = value.slice(1, -1);
-    }
-    // Expand ${VAR} references against process.env
-    value = value.replace(
-      /\$\{([^}]+)\}/g,
-      (_, name) => process.env[name] || '',
-    );
-    if (value) {
-      tokens.set(m[1], value);
-    }
-  }
-  return tokens;
+  return config.repository || (config.claims && config.claims.repository);
 }
 
 /**
- * Read the npm auth token for the configured registry. Tries in
- * order: NPM_TOKEN env var, project ./.npmrc, user ~/.npmrc, then
- * `npm config get`. The direct-file paths handle the common macOS
- * web-auth case where `npm config get //host/:_authToken` resolves to
- * the literal string "undefined" even though the token is right there
- * in ~/.npmrc.
+ * Extract the environment name from a stored trust config (empty/
+ * undefined means "no environment"), handling both shapes.
  *
- * @returns {Promise<{token: string | null, source: string}>}
+ * @param {any} config
+ * @returns {string | undefined}
  */
-async function fetchAuthToken() {
-  if (process.env.NPM_TOKEN) {
-    const tok = process.env.NPM_TOKEN.trim();
-    if (tok) {
-      return {source: 'NPM_TOKEN env var', token: tok};
-    }
+function configEnvironment(config) {
+  if (!config || typeof config !== 'object') {
+    return undefined;
   }
-  const host = new URL(registry).host;
-  const candidates = [
-    {label: 'project .npmrc', path: path.resolve('.npmrc')},
-    {label: 'user ~/.npmrc', path: path.join(os.homedir(), '.npmrc')},
-  ];
-  for (const {label, path: npmrcPath} of candidates) {
-    const tokens = await readNpmrcAuthTokens(npmrcPath);
-    const token = tokens.get(host);
-    if (token) {
-      return {source: label, token};
-    }
-  }
-  try {
-    const {stdout} = await exec(`npm config get //${host}/:_authToken`, {
-      env: npmCleanEnv(),
-    });
-    const token = stdout.trim();
-    if (token && token !== 'undefined') {
-      return {source: 'npm config get', token};
-    }
-  } catch {
-    // fall through
-  }
-  return {source: '', token: null};
+  return config.environment || (config.claims && config.claims.environment);
 }
 
 /**
  * Fetch the current list of trusted publisher configurations for a
- * package via the registry HTTP API. Returns null when the request
- * can't be made or evaluated (no auth, network error, unexpected
- * status). Returns [] when the registry says the package has no
- * trust configurations.
+ * package via `npm trust list --json`. This deliberately shells out to
+ * the npm CLI so it uses npm's own auth resolution — exactly the auth
+ * `npm whoami` and `npm trust github` already use — rather than a
+ * hand-rolled token lookup that can silently come up empty (e.g. after
+ * a browser `npm login` on macOS). `npm trust list` is a read, so it
+ * never triggers an OTP prompt.
+ *
+ * Returns [] when the package has no trust config, an array of configs
+ * when it has one, or null when the lookup genuinely failed (network /
+ * unexpected error) so the caller can decide how cautious to be.
  *
  * @param {string} name
- * @param {string | null} token
  * @returns {Promise<Array<any> | null>}
  */
-async function fetchTrustConfigs(name, token) {
-  if (!token) {
-    return null;
-  }
+async function fetchTrustConfigs(name) {
+  let stdout = '';
+  let stderr = '';
   try {
-    const res = await fetch(
-      `${registry}/-/package/${escapedName(name)}/trust`,
-      {headers: {Authorization: `Bearer ${token}`}},
-    );
-    if (res.status === 404) {
+    ({stdout} = await exec(
+      `npm trust list ${name} --json --registry ${registry}`,
+      {env: npmCleanEnv()},
+    ));
+  } catch (err) {
+    stdout =
+      err && typeof err === 'object' && 'stdout' in err
+        ? String(/** @type {{stdout?: unknown}} */ (err).stdout || '')
+        : '';
+    stderr =
+      err && typeof err === 'object' && 'stderr' in err
+        ? String(/** @type {{stderr?: unknown}} */ (err).stderr || '')
+        : '';
+    // A package that simply has no trust config yet 404s — treat as
+    // "no configs", not an error.
+    if (/E404|not found/i.test(`${stdout}\n${stderr}`)) {
       return [];
     }
-    if (!res.ok) {
-      return null;
-    }
-    const data = await res.json();
-    if (Array.isArray(data)) {
-      return data;
-    }
-    return data ? [data] : [];
+  }
+  const text = stdout.trim();
+  if (!text) {
+    // Empty output on success means no trust configs.
+    return stderr ? null : [];
+  }
+  let parsed;
+  try {
+    parsed = JSON.parse(text);
   } catch {
     return null;
   }
+  if (parsed && parsed.error) {
+    const code = String(parsed.error.code || '');
+    return /E404/i.test(code) ? [] : null;
+  }
+  const items = Array.isArray(parsed) ? parsed : [parsed];
+  return items.filter(Boolean);
+}
+
+/**
+ * One-line summary of a stored trust config for log lines.
+ *
+ * @param {any} config
+ * @returns {string}
+ */
+function describeConfig(config) {
+  return configFile(config) || (config && config.type) || '?';
 }
 
 /**
@@ -275,15 +271,13 @@ function configMatches(config) {
   if (!config || config.type !== 'github') {
     return false;
   }
-  const claims = config.claims || {};
-  if (claims.repository !== repo) {
+  if (configRepo(config) !== repo) {
     return false;
   }
-  const wf = claims.workflow_ref || {};
-  if (wf.file !== workflow) {
+  if (configFile(config) !== workflow) {
     return false;
   }
-  if (claims.environment) {
+  if (configEnvironment(config)) {
     return false;
   }
   return (
@@ -358,6 +352,38 @@ function runNpm(args) {
 const MAX_TRUST_ATTEMPTS = 4;
 const RATE_LIMIT_BACKOFF_BASE_MS = 5_000;
 const RATE_LIMIT_BACKOFF_MAX_MS = 60_000;
+
+/**
+ * Revoke a single trust config by ID.
+ *
+ * @param {string} pkgName
+ * @param {string} id
+ * @returns {Promise<boolean>} true on success
+ */
+async function revokeTrustConfig(pkgName, id) {
+  if (dryRun) {
+    console.log(
+      `  ${pkgName} ... [dry-run] npm trust revoke ${pkgName} --id=${id}`,
+    );
+    return true;
+  }
+  console.log(`\nRevoking existing trust config ${id} on ${pkgName}:`);
+  const args = [
+    'trust',
+    'revoke',
+    pkgName,
+    `--id=${id}`,
+    '--registry',
+    registry,
+  ];
+  const {code} = await runNpm(args);
+  if (code === 0) {
+    console.log(`  ${pkgName} ... revoked ${id}\n`);
+    return true;
+  }
+  console.error(`  ${pkgName} ... revoke FAILED (npm exit ${code})\n`);
+  return false;
+}
 
 /**
  * Run `npm trust github` for one package. stdio is wired up so the
@@ -474,15 +500,18 @@ async function checkNpmTrustSupport() {
 }
 
 /**
- * @param {Array<import('../shared/PackageMetadata.mjs').PackageMetadata>} pkgs
+ * @param {Array<{pkg: import('../shared/PackageMetadata.mjs').PackageMetadata, existing: Array<any>}>} entries
  */
-function printManualSetup(pkgs) {
-  if (pkgs.length === 0) {
+function printManualSetup(entries) {
+  if (entries.length === 0) {
     return;
   }
   console.log('\n--- Trusted publishing setup ---');
   console.log(
-    `Re-run with --setup-trust to configure these via \`npm trust github\`,`,
+    `Re-run with --setup-trust to configure these via \`npm trust github\``,
+  );
+  console.log(
+    `(use --replace if any package already has a non-matching config),`,
   );
   console.log('or set them up manually on npmjs.com with:');
   console.log('  Publisher:         GitHub Actions');
@@ -492,9 +521,13 @@ function printManualSetup(pkgs) {
   console.log('  Environment:       (leave empty)');
   console.log('  Permissions:       Allow publish');
   console.log('');
-  for (const pkg of pkgs) {
-    const name = pkg.getNpmName();
-    console.log(`  ${name}`);
+  for (const entry of entries) {
+    const name = entry.pkg.getNpmName();
+    const existingNote =
+      entry.existing.length > 0
+        ? ` (will conflict with ${entry.existing.length} existing config; use --replace)`
+        : '';
+    console.log(`  ${name}${existingNote}`);
     console.log(`    https://www.npmjs.com/package/${name}/access`);
   }
 }
@@ -585,52 +618,77 @@ async function main() {
       : []),
   ];
 
-  // Pre-flight registry check: skip packages whose trust config already
-  // matches what we'd configure. This avoids forcing the maintainer to
-  // satisfy an OTP / web-auth challenge per package on re-runs. The check
-  // is read-only and uses whatever npm auth token the user already has
-  // configured locally — it never prompts.
-  /** @type {Array<import('../shared/PackageMetadata.mjs').PackageMetadata>} */
-  const trustToConfigure = [];
-  /** @type {Array<import('../shared/PackageMetadata.mjs').PackageMetadata>} */
-  const trustUnknown = [];
+  // Pre-flight registry check: classify each package as
+  //   - matching:  trust config already matches our target → skip
+  //   - conflict:  has trust config but for a different workflow →
+  //                blocked by npm's one-config-per-package limit;
+  //                needs --replace to revoke first
+  //   - none:      no trust config → safe to add
+  //   - unknown:   couldn't check (auth issue / network) → try the
+  //                add anyway and let npm decide
+  /** @type {Array<{pkg: import('../shared/PackageMetadata.mjs').PackageMetadata, existing: Array<any>}>} */
+  const toRegister = [];
+  /** @type {Array<{pkg: import('../shared/PackageMetadata.mjs').PackageMetadata, existing: Array<any>}>} */
+  const conflicts = [];
   if (trustCandidates.length > 0) {
-    const {source, token} = await fetchAuthToken();
-    if (token) {
-      console.log(`\nUsing npm auth token from ${source} for trust pre-check.`);
-    } else {
-      console.log(
-        `\nCould not locate an npm auth token (checked NPM_TOKEN, ./.npmrc, ~/.npmrc, and \`npm config get\`).`,
-      );
-      console.log(
-        `Pre-check will be skipped; npm trust github will be attempted for every package.`,
-      );
-    }
-    console.log(`\nChecking existing trust configuration:`);
+    console.log(`\nTarget workflow: ${workflow}`);
+    console.log(
+      `\nChecking existing trust configuration via \`npm trust list\` (read-only, no OTP):`,
+    );
+    let anyUnknown = false;
     for (const pkg of trustCandidates) {
       const name = pkg.getNpmName();
       process.stdout.write(`  ${name} ... `);
-      const configs = await fetchTrustConfigs(name, token);
+      const configs = await fetchTrustConfigs(name);
       if (configs === null) {
-        console.log('unable to check');
-        trustUnknown.push(pkg);
-      } else if (configs.some(configMatches)) {
-        console.log('already configured');
-      } else {
-        console.log('needs configuration');
-        trustToConfigure.push(pkg);
+        console.log('unable to check; will try anyway');
+        anyUnknown = true;
+        toRegister.push({existing: [], pkg});
+        continue;
       }
+      if (configs.some(configMatches)) {
+        console.log('already configured');
+        continue;
+      }
+      if (configs.length > 0) {
+        const summary = configs.map(c => describeConfig(c)).join(', ');
+        console.log(`CONFLICT: existing config(s) for [${summary}]`);
+        conflicts.push({existing: configs, pkg});
+        continue;
+      }
+      console.log('needs configuration');
+      toRegister.push({existing: [], pkg});
+    }
+    if (anyUnknown) {
+      console.log(
+        `\nWarning: some packages could not be pre-checked (\`npm trust list\` ` +
+          `failed — check that you are logged in with \`npm whoami\`). For ` +
+          `those, an existing config can't be revoked automatically, so ` +
+          `\`npm trust github\` may return E409 if one is already present.`,
+      );
     }
   }
 
-  // Anything we couldn't pre-check still needs `npm trust github` to be
-  // attempted; npm itself will reject duplicate registrations.
-  const toRegister = [...trustToConfigure, ...trustUnknown];
-
   if (setupTrust) {
-    if (toRegister.length > 0) {
+    if (conflicts.length > 0 && !replace) {
       console.log(
-        `\n${toRegister.length} package(s) need a trusted publisher registered.`,
+        `\n${conflicts.length} package(s) have a non-matching trust config that would block re-registration:`,
+      );
+      for (const {pkg, existing: conflictConfigs} of conflicts) {
+        const files = conflictConfigs.map(c => describeConfig(c)).join(', ');
+        console.log(`  - ${pkg.getNpmName()} (existing: ${files})`);
+      }
+      console.log(
+        `\nnpm allows only one trust configuration per package, so adding a new one returns E409 while the old one is present.`,
+      );
+      console.log(
+        `Re-run with --replace to revoke the old config(s) and register the new one (each revoke + add still requires npm auth; "Skip 2FA for the next 5 minutes" on the first prompt covers the run).`,
+      );
+    }
+    const actionable = replace ? [...toRegister, ...conflicts] : toRegister;
+    if (actionable.length > 0) {
+      console.log(
+        `\n${actionable.length} package(s) need a trusted publisher registered.`,
       );
       console.log(
         `\nOn the first OTP / web-auth prompt, open the URL npm prints in your`,
@@ -639,16 +697,35 @@ async function main() {
         `browser and select "Skip two-factor authentication for the next 5`,
       );
       console.log(
-        `minutes" — subsequent packages in this run will then go through`,
+        `minutes" — subsequent calls in this run will then go through`,
       );
       console.log(`without re-prompting.\n`);
-      for (let i = 0; i < toRegister.length; i++) {
-        const pkg = toRegister[i];
+      for (let i = 0; i < actionable.length; i++) {
+        const {pkg, existing: toRevoke} = actionable[i];
         // Brief pause between calls to stay under the registry's
         // E429 rate limit (npm docs recommend a short delay between
         // back-to-back `npm trust` calls).
         if (i > 0) {
           await sleep(2000);
+        }
+        if (toRevoke.length > 0) {
+          let revokeOk = true;
+          for (const cfg of toRevoke) {
+            const id = cfg && cfg.id;
+            if (!id) {
+              continue;
+            }
+            const ok = await revokeTrustConfig(pkg.getNpmName(), id);
+            if (!ok) {
+              revokeOk = false;
+              break;
+            }
+            await sleep(2000);
+          }
+          if (!revokeOk) {
+            failures.push(`${pkg.getNpmName()} (revoke failed)`);
+            continue;
+          }
         }
         const result = await addTrustConfig(pkg);
         if (result === 'failed') {
@@ -656,8 +733,8 @@ async function main() {
         }
       }
     }
-  } else if (toRegister.length > 0) {
-    printManualSetup(toRegister);
+  } else if (toRegister.length > 0 || conflicts.length > 0) {
+    printManualSetup([...toRegister, ...conflicts]);
   }
 
   if (failures.length > 0) {

@@ -8,7 +8,7 @@
 import react from '@vitejs/plugin-react';
 import {defineConfig} from 'vite';
 
-import lexicalMonorepoPlugin from '../../packages/shared/lexicalMonorepoPlugin';
+import lexicalMonorepoPlugin from '../../scripts/vite/lexicalMonorepoPlugin';
 
 export default defineConfig({
   plugins: [react(), lexicalMonorepoPlugin()],

@@ -52,7 +52,7 @@ async function checkHTMLExpectationsIncludingUndoRedo(
   await assertHTML(page, forwardHTML);
 }
 
-test.describe.parallel('Markdown', () => {
+test.describe('Markdown', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
   const triggersAndExpectations = [
     {
@@ -377,7 +377,7 @@ async function assertMarkdownImportExport(
   await assertHTML(page, expectedHTML);
 }
 
-test.describe.parallel('Markdown', () => {
+test.describe('Markdown', () => {
   test.beforeEach(({isCollab, isPlainText, page}) => {
     test.skip(isPlainText);
     return initialize({isCollab, page});

@@ -11,9 +11,9 @@ import type {ForwardedRef, JSX, RefCallback} from 'react';
 
 import * as React from 'react';
 import {forwardRef, useCallback, useMemo, useState} from 'react';
-import useLayoutEffect from 'shared/useLayoutEffect';
 
 import {mergeRefs} from './mergeRefs';
+import useLayoutEffect from './useLayoutEffect';
 
 export type ContentEditableElementProps = {
   editor: LexicalEditor;

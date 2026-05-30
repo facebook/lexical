@@ -11,6 +11,8 @@ import {isDOMTextNode, isHTMLElement} from 'lexical';
 
 import {getSelectorImpl, type Predicate, type SelectorImpl} from './sel';
 
+const __DEV__ = process.env.NODE_ENV !== 'production';
+
 /** @internal */
 export interface CompiledRule {
   readonly name: string;

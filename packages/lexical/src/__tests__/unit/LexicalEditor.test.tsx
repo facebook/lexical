@@ -9,6 +9,7 @@
 import type {JSX} from 'react';
 
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
+import invariant from '@lexical/internal/invariant';
 import {
   $createListItemNode,
   $createListNode,
@@ -42,6 +43,7 @@ import {
   $getRoot,
   $isElementNode,
   $isParagraphNode,
+  $isRootNode,
   $isTextNode,
   $parseSerializedNode,
   $setCompositionKey,
@@ -71,6 +73,7 @@ import {
 } from 'lexical';
 import * as React from 'react';
 import {
+  act,
   createRef,
   ReactNode,
   useCallback,
@@ -80,8 +83,6 @@ import {
 } from 'react';
 import {createPortal} from 'react-dom';
 import {createRoot, Root} from 'react-dom/client';
-import invariant from 'shared/invariant';
-import * as ReactTestUtils from 'shared/react-test-utils';
 import {afterEach, assert, beforeEach, describe, expect, it, vi} from 'vitest';
 
 import {emptyFunction} from '../../LexicalUtils';
@@ -236,7 +237,7 @@ describe('LexicalEditor tests', () => {
       return <div ref={ref} contentEditable={true} />;
     }
 
-    ReactTestUtils.act(() => {
+    act(() => {
       reactRoot.render(<TestBase />);
     });
   }
@@ -390,8 +391,9 @@ describe('LexicalEditor tests', () => {
       editor.read(() => {
         const rootElement = editor.getRootElement();
         expect(rootElement).toBeDefined();
-        // The root never works for this call
-        expect($getNearestNodeFromDOMNode(rootElement!)).toBe(null);
+        // The root element now carries __lexicalKey_* = 'root' so
+        // $getNearestNodeFromDOMNode resolves it to the RootNode.
+        assert($isRootNode($getNearestNodeFromDOMNode(rootElement!)));
         const paragraphDom = rootElement!.querySelector('p');
         expect(paragraphDom).toBeDefined();
         expect(
@@ -1244,7 +1246,7 @@ describe('LexicalEditor tests', () => {
       return <div ref={ref} contentEditable={true} />;
     }
 
-    ReactTestUtils.act(() => {
+    act(() => {
       reactRoot.render(<TestBase element={null} />);
     });
     editor.update(() => {
@@ -1257,7 +1259,7 @@ describe('LexicalEditor tests', () => {
 
     expect(container.innerHTML).toBe('<div contenteditable="true"></div>');
 
-    ReactTestUtils.act(() => {
+    act(() => {
       reactRoot.render(<TestBase element={ref.current} />);
     });
 
@@ -1347,7 +1349,7 @@ describe('LexicalEditor tests', () => {
       );
     }
 
-    await ReactTestUtils.act(() => {
+    await act(() => {
       reactRoot.render(<TestBase changeElement={false} />);
     });
 
@@ -1355,7 +1357,7 @@ describe('LexicalEditor tests', () => {
       '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">Not changed</span></p></div>',
     );
 
-    await ReactTestUtils.act(() => {
+    await act(() => {
       reactRoot.render(<TestBase changeElement={true} />);
     });
 
@@ -1459,7 +1461,7 @@ describe('LexicalEditor tests', () => {
 
     afterEach(async () => {
       // Clean up so we are not calling setState outside of act
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         reactRoot.render(null);
         await Promise.resolve().then();
       });
@@ -1489,11 +1491,11 @@ describe('LexicalEditor tests', () => {
         );
       }
 
-      ReactTestUtils.act(() => {
+      act(() => {
         reactRoot.render(<Test />);
       });
       // Update the editor with the decorator
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         await editor.update(() => {
           const paragraph = $createParagraphNode();
           const test = $createTestDecoratorNode();
@@ -1539,7 +1541,7 @@ describe('LexicalEditor tests', () => {
         );
       }
 
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         reactRoot.render(<Test divKey={0} />);
         // Wait for update to complete
         await Promise.resolve().then();
@@ -1550,7 +1552,7 @@ describe('LexicalEditor tests', () => {
         '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><br></p></div>',
       );
 
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         reactRoot.render(<Test divKey={1} />);
         // Wait for update to complete
         await Promise.resolve().then();
@@ -2323,7 +2325,7 @@ describe('LexicalEditor tests', () => {
       return <div ref={ref} contentEditable={true} />;
     }
 
-    ReactTestUtils.act(() => {
+    act(() => {
       reactRoot.render(<TestBase />);
     });
 
@@ -2420,7 +2422,7 @@ describe('LexicalEditor tests', () => {
       return <div ref={ref} contentEditable={true} />;
     }
 
-    ReactTestUtils.act(() => {
+    act(() => {
       reactRoot.render(<TestBase />);
     });
 

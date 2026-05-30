@@ -8,36 +8,51 @@
     "code"
   ],
   "license": "MIT",
-  "version": "0.44.0",
-  "main": "LexicalCodeCore.js",
-  "types": "index.d.ts",
+  "version": "0.45.0",
+  "main": "./dist/LexicalCodeCore.js",
+  "types": "./dist/index.d.ts",
   "dependencies": {
     "@lexical/extension": "workspace:*",
-    "lexical": "workspace:*",
-    "@lexical/html": "workspace:*"
+    "@lexical/html": "workspace:*",
+    "@lexical/internal": "workspace:*",
+    "lexical": "workspace:*"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/facebook/lexical.git",
     "directory": "packages/lexical-code-core"
   },
-  "module": "LexicalCodeCore.mjs",
+  "module": "./dist/LexicalCodeCore.mjs",
   "sideEffects": false,
   "exports": {
     ".": {
+      "source": "./src/index.ts",
       "import": {
-        "types": "./index.d.ts",
-        "development": "./LexicalCodeCore.dev.mjs",
-        "production": "./LexicalCodeCore.prod.mjs",
-        "node": "./LexicalCodeCore.node.mjs",
-        "default": "./LexicalCodeCore.mjs"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalCodeCore.dev.mjs",
+        "production": "./dist/LexicalCodeCore.prod.mjs",
+        "node": "./dist/LexicalCodeCore.node.mjs",
+        "default": "./dist/LexicalCodeCore.mjs"
       },
       "require": {
-        "types": "./index.d.ts",
-        "development": "./LexicalCodeCore.dev.js",
-        "production": "./LexicalCodeCore.prod.js",
-        "default": "./LexicalCodeCore.js"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalCodeCore.dev.js",
+        "production": "./dist/LexicalCodeCore.prod.js",
+        "default": "./dist/LexicalCodeCore.js"
       }
     }
-  }
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/__tests__",
+    "!src/__bench__",
+    "!src/__mocks__",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "!src/**/*.bench.ts",
+    "!src/**/*.bench.tsx",
+    "README.md",
+    "LICENSE"
+  ]
 }

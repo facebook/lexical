@@ -254,7 +254,12 @@ export {
   type RawTextVisitor,
   tokenizeRawText,
 } from './LexicalSelection';
-export {$parseSerializedNode, isCurrentlyReadOnlyMode} from './LexicalUpdates';
+export {
+  $assumeActiveEditor,
+  $fullReconcile,
+  $parseSerializedNode,
+  isCurrentlyReadOnlyMode,
+} from './LexicalUpdates';
 export {
   $addUpdateTag,
   $applyNodeReplacement,
@@ -304,6 +309,7 @@ export {
   INTERNAL_$isBlock,
   isBlockDomNode,
   isDocumentFragment,
+  isDOMCapturingSelection,
   isDOMDocumentNode,
   isDOMNode,
   isDOMTextNode,
@@ -321,6 +327,7 @@ export {
   removeFromParent,
   resetRandomKey,
   setDOMUnmanaged,
+  type SetDOMUnmanagedOptions,
   setNodeIndentFromDOM,
   toggleTextFormatType,
 } from './LexicalUtils';
@@ -335,6 +342,8 @@ export type {SerializedLineBreakNode} from './nodes/LexicalLineBreakNode';
 export {
   $createLineBreakNode,
   $isLineBreakNode,
+  isLastChildInBlockNode,
+  isOnlyChildInBlockNode,
   LineBreakNode,
 } from './nodes/LexicalLineBreakNode';
 export type {SerializedParagraphNode} from './nodes/LexicalParagraphNode';
@@ -371,6 +380,18 @@ export {
 } from './LexicalUpdateTags';
 
 // LexicalExtension
+export {
+  CAN_USE_BEFORE_INPUT,
+  CAN_USE_DOM,
+  IS_ANDROID,
+  IS_ANDROID_CHROME,
+  IS_APPLE,
+  IS_APPLE_WEBKIT,
+  IS_CHROME,
+  IS_FIREFOX,
+  IS_IOS,
+  IS_SAFARI,
+} from './environment';
 export {
   type AnyLexicalExtension,
   type AnyLexicalExtensionArgument,

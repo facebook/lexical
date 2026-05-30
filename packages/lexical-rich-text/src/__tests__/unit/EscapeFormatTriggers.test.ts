@@ -30,7 +30,6 @@ import {
   RangeSelection,
   TEXT_TYPE_TO_FORMAT,
 } from 'lexical';
-import {KeyboardEventMock} from 'lexical/src/__tests__/utils';
 import {assert, describe, expect, test} from 'vitest';
 
 // This simulates what the $updateSelectionFormatStyleFromTextNode infrastructure
@@ -204,7 +203,7 @@ describe('RichTextExtension escapeFormatTriggers', () => {
         $updateSelectionFormat($getRoot().selectEnd(), IS_CODE);
       });
 
-      const keyEvent = new KeyboardEventMock();
+      const keyEvent = new KeyboardEvent('keydown');
       editor.dispatchCommand(KEY_ARROW_RIGHT_COMMAND, keyEvent);
 
       editor.read(() => {
@@ -221,8 +220,10 @@ describe('RichTextExtension escapeFormatTriggers', () => {
         $updateSelectionFormat($getRoot().selectEnd(), IS_CODE);
       });
 
-      const keyEvent = new KeyboardEventMock();
-      keyEvent.shiftKey = true;
+      const keyEvent = new KeyboardEvent('keydown', {
+        key: 'ArrowRight',
+        shiftKey: true,
+      });
       editor.dispatchCommand(KEY_ARROW_RIGHT_COMMAND, keyEvent);
 
       editor.read(() => {
@@ -238,7 +239,7 @@ describe('RichTextExtension escapeFormatTriggers', () => {
         $updateSelectionFormat($getFirstTextNode().select(3, 3), IS_CODE);
       });
 
-      const keyEvent = new KeyboardEventMock();
+      const keyEvent = new KeyboardEvent('keydown', {key: 'ArrowRight'});
       editor.dispatchCommand(KEY_ARROW_RIGHT_COMMAND, keyEvent);
 
       editor.read(() => {
@@ -256,7 +257,7 @@ describe('RichTextExtension escapeFormatTriggers', () => {
         $updateSelectionFormat($getRoot().selectStart(), IS_CODE);
       });
 
-      const keyEvent = new KeyboardEventMock();
+      const keyEvent = new KeyboardEvent('keydown', {key: 'ArrowLeft'});
       editor.dispatchCommand(KEY_ARROW_LEFT_COMMAND, keyEvent);
 
       editor.read(() => {
@@ -273,8 +274,10 @@ describe('RichTextExtension escapeFormatTriggers', () => {
         $updateSelectionFormat($getRoot().selectStart(), IS_CODE);
       });
 
-      const keyEvent = new KeyboardEventMock();
-      keyEvent.shiftKey = true;
+      const keyEvent = new KeyboardEvent('keydown', {
+        key: 'ArrowLeft',
+        shiftKey: true,
+      });
       editor.dispatchCommand(KEY_ARROW_LEFT_COMMAND, keyEvent);
 
       editor.read(() => {
@@ -290,7 +293,7 @@ describe('RichTextExtension escapeFormatTriggers', () => {
         $updateSelectionFormat($getFirstTextNode().select(3, 3), IS_CODE);
       });
 
-      const keyEvent = new KeyboardEventMock();
+      const keyEvent = new KeyboardEvent('keydown', {key: 'ArrowLeft'});
       editor.dispatchCommand(KEY_ARROW_LEFT_COMMAND, keyEvent);
 
       editor.read(() => {
@@ -332,7 +335,7 @@ describe('RichTextExtension default capitalization reset', () => {
         test(`clears on ${COMMAND.type}`, () => {
           using editor = createDefaultEditor();
 
-          editor.dispatchCommand(COMMAND, new KeyboardEventMock());
+          editor.dispatchCommand(COMMAND, new KeyboardEvent('keydown'));
 
           editor.read(() => {
             const selection = $getSelection();

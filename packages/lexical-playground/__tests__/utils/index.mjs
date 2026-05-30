@@ -138,27 +138,87 @@ export async function initialize({
     isCollab ? 'split/' : ''
   }?${urlParams.toString()}`;
 
+  // Start listening for uncaught page errors *before* navigating so that a
+  // failure during the editor's initial build (e.g. a misconfigured or
+  // conflicting extension set) fails the test fast, instead of silently
+  // waiting for the editor selector until the long per-test timeout -- which,
+  // multiplied across retries and every test in a mode, can hang a whole CI
+  // shard for hours.
+  const pageError = rejectOnPageError(page);
+
   await page.goto(url);
 
-  await exposeLexicalEditor(page);
+  await exposeLexicalEditor(page, pageError);
+}
+
+/**
+ * Returns a promise that rejects as soon as the page emits an uncaught
+ * ("pageerror") exception, so callers can race it against an editor-ready
+ * wait and fail fast when the app crashes on load instead of timing out.
+ * Attach this *before* navigating so an error thrown during the initial
+ * render is not missed.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @returns {Promise<never>}
+ */
+function rejectOnPageError(page) {
+  const promise = new Promise((_resolve, reject) => {
+    page.on('pageerror', error => {
+      reject(
+        new Error(
+          'The page threw an uncaught error before the editor was ready. ' +
+            'This usually means the editor failed to build for this mode ' +
+            '(check the extension configuration):\n' +
+            (error.stack || error.message || String(error)),
+        ),
+      );
+    });
+  });
+  // The race below may not be attached yet when the error fires (it can throw
+  // during navigation), so swallow here to avoid an unhandled rejection; the
+  // race still observes the same rejection when it awaits this promise.
+  promise.catch(() => {});
+  return promise;
 }
 
 /**
  * @param {import('@playwright/test').Page} page
+ * @param {Promise<never> | null} pageError a promise that rejects if the page
+ *   throws an uncaught error, so a broken load fails fast instead of waiting
+ *   for the editor selector until the test timeout. See {@link rejectOnPageError}.
  */
-async function exposeLexicalEditor(page) {
+async function exposeLexicalEditor(page, pageError = null) {
   if (IS_COLLAB) {
-    await Promise.all(
-      ['left', 'right'].map(async name => {
-        const frameLocator = page.frameLocator(`[name="${name}"]`);
-        await expect(
-          frameLocator.locator('.action-button.connect'),
-        ).toHaveAttribute('title', /Disconnect/);
-        await expect(
-          frameLocator.locator('[data-lexical-editor="true"] p'),
-        ).toBeVisible();
-      }),
-    );
+    // The split view loads the playground in two iframes that connect to a
+    // single shared y-websocket server. Under parallel test load one frame
+    // occasionally fails to boot/activate collab within the timeout (its
+    // ".action-button.connect" toolbar button never appears, or the websocket
+    // connect/backoff runs long) -- the dominant residual source of @flaky
+    // collab failures. Reload and retry a few times so a transient
+    // boot/connect hiccup during setup doesn't fail the whole test.
+    const waitForCollabFramesReady = () =>
+      Promise.all(
+        ['left', 'right'].map(async name => {
+          const frameLocator = page.frameLocator(`[name="${name}"]`);
+          await expect(
+            frameLocator.locator('.action-button.connect'),
+          ).toHaveAttribute('title', /Disconnect/, {timeout: 15000});
+          await expect(
+            frameLocator.locator('[data-lexical-editor="true"] p'),
+          ).toBeVisible({timeout: 15000});
+        }),
+      );
+    for (let attempt = 0; ; attempt++) {
+      try {
+        await waitForCollabFramesReady();
+        break;
+      } catch (err) {
+        if (attempt >= 2) {
+          throw err;
+        }
+        await page.reload();
+      }
+    }
     // Ensure that they started up with the correct empty state
     await assertHTML(
       page,
@@ -168,7 +228,11 @@ async function exposeLexicalEditor(page) {
     );
   }
   const leftFrame = getPageOrFrame(page);
-  await leftFrame.waitForSelector('.tree-view-output pre');
+  await Promise.race(
+    [leftFrame.waitForSelector('.tree-view-output pre'), pageError].filter(
+      Boolean,
+    ),
+  );
   await leftFrame.evaluate(() => {
     window.lexicalEditor = document.querySelector(
       '[data-lexical-editor="true"]',

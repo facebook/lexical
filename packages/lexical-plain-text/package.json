@@ -7,39 +7,53 @@
     "plain-text"
   ],
   "license": "MIT",
-  "version": "0.44.0",
-  "main": "LexicalPlainText.js",
-  "types": "index.d.ts",
+  "version": "0.45.0",
+  "main": "./dist/LexicalPlainText.js",
+  "types": "./dist/index.d.ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/facebook/lexical.git",
     "directory": "packages/lexical-plain-text"
   },
-  "module": "LexicalPlainText.mjs",
+  "module": "./dist/LexicalPlainText.mjs",
   "sideEffects": false,
   "exports": {
     ".": {
+      "source": "./src/index.ts",
       "import": {
-        "types": "./index.d.ts",
-        "development": "./LexicalPlainText.dev.mjs",
-        "production": "./LexicalPlainText.prod.mjs",
-        "node": "./LexicalPlainText.node.mjs",
-        "default": "./LexicalPlainText.mjs"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalPlainText.dev.mjs",
+        "production": "./dist/LexicalPlainText.prod.mjs",
+        "node": "./dist/LexicalPlainText.node.mjs",
+        "default": "./dist/LexicalPlainText.mjs"
       },
       "require": {
-        "types": "./index.d.ts",
-        "development": "./LexicalPlainText.dev.js",
-        "production": "./LexicalPlainText.prod.js",
-        "default": "./LexicalPlainText.js"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalPlainText.dev.js",
+        "production": "./dist/LexicalPlainText.prod.js",
+        "default": "./dist/LexicalPlainText.js"
       }
     }
   },
   "dependencies": {
     "@lexical/clipboard": "workspace:*",
-    "@lexical/extension": "workspace:*",
     "@lexical/dragon": "workspace:*",
+    "@lexical/extension": "workspace:*",
     "@lexical/selection": "workspace:*",
     "@lexical/utils": "workspace:*",
     "lexical": "workspace:*"
-  }
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/__tests__",
+    "!src/__bench__",
+    "!src/__mocks__",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "!src/**/*.bench.ts",
+    "!src/**/*.bench.tsx",
+    "README.md",
+    "LICENSE"
+  ]
 }

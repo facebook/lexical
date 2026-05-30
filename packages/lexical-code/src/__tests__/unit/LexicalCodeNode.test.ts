@@ -42,7 +42,6 @@ import {
   expectHtmlToBeEqual,
   initializeUnitTest,
   invariant,
-  KeyboardEventMock,
   shiftTabKeyboardEvent,
   tabKeyboardEvent,
 } from 'lexical/src/__tests__/utils';
@@ -468,8 +467,10 @@ describe('LexicalCodeNode tests', () => {
         code.selectStart();
         $getSelection()!.insertRawText('abc\tdef\nghi\tjkl');
       });
-      const keyEvent = new KeyboardEventMock();
-      keyEvent.altKey = true;
+      const keyEvent = new KeyboardEvent('keydown', {
+        altKey: true,
+        key: 'ArrowUp',
+      });
       await editor.dispatchCommand(KEY_ARROW_UP_COMMAND, keyEvent);
       expect(testEnv.innerHTML)
         .toBe(`<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="auto" data-gutter="1
@@ -501,8 +502,10 @@ describe('LexicalCodeNode tests', () => {
         selection.focus.set(secondCodeText.getKey(), 1, 'text');
         $setSelection(selection);
       });
-      const keyEvent = new KeyboardEventMock();
-      keyEvent.altKey = true;
+      const keyEvent = new KeyboardEvent('keydown', {
+        altKey: true,
+        key: 'ArrowDown',
+      });
       await editor.dispatchCommand(KEY_ARROW_DOWN_COMMAND, keyEvent);
       expect(testEnv.innerHTML)
         .toBe(`<code spellcheck="false" data-language="javascript" data-highlight-language="javascript" dir="auto" data-gutter="1
@@ -540,7 +543,7 @@ describe('LexicalCodeNode tests', () => {
 
           await editor.dispatchCommand(
             MOVE_TO_END,
-            new KeyboardEventMock('keydown'),
+            new KeyboardEvent('keydown'),
           );
 
           await editor.update(() => {
@@ -562,7 +565,7 @@ describe('LexicalCodeNode tests', () => {
 
           await editor.dispatchCommand(
             MOVE_TO_START,
-            new KeyboardEventMock('keydown'),
+            new KeyboardEvent('keydown'),
           );
 
           await editor.update(() => {
@@ -583,8 +586,7 @@ describe('LexicalCodeNode tests', () => {
         test('Shift+MOVE_TO_END preserves anchor and extends focus', async () => {
           const {editor} = testEnv;
           await setupRTLCode(editor);
-          const event = new KeyboardEventMock('keydown');
-          event.shiftKey = true;
+          const event = new KeyboardEvent('keydown', {shiftKey: true});
 
           const before = editor.read(() => {
             const s = $getSelection();
@@ -606,8 +608,7 @@ describe('LexicalCodeNode tests', () => {
         test('Shift+MOVE_TO_START preserves anchor and extends focus', async () => {
           const {editor} = testEnv;
           await setupRTLCode(editor);
-          const event = new KeyboardEventMock('keydown');
-          event.shiftKey = true;
+          const event = new KeyboardEvent('keydown', {shiftKey: true});
 
           const before = editor.read(() => {
             const s = $getSelection();
@@ -662,12 +663,12 @@ describe('LexicalCodeNode tests', () => {
               if (moveTo === 'start') {
                 await editor.dispatchCommand(
                   MOVE_TO_START,
-                  new KeyboardEventMock('keydown'),
+                  new KeyboardEvent('keydown'),
                 );
               } else {
                 await editor.dispatchCommand(
                   MOVE_TO_END,
-                  new KeyboardEventMock('keydown'),
+                  new KeyboardEvent('keydown'),
                 );
               }
               await editor.update(() => {

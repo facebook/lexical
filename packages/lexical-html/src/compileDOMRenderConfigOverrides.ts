@@ -6,6 +6,7 @@
  *
  */
 import {getKnownTypesAndNodes} from '@lexical/extension';
+import invariant from '@lexical/internal/invariant';
 import {
   $isLexicalNode,
   DEFAULT_EDITOR_DOM_CONFIG,
@@ -16,7 +17,6 @@ import {
   LexicalEditor,
   type LexicalNode,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
 import {ALWAYS_TRUE} from './constants';
 import {AnyDOMRenderMatch, DOMRenderConfig, DOMRenderMatch} from './types';
@@ -390,8 +390,8 @@ function identity<T>(v: T) {
 }
 
 export function compileDOMRenderConfigOverrides(
-  editorConfig: InitialEditorConfig,
-  {overrides}: DOMRenderConfig,
+  editorConfig: Pick<InitialEditorConfig, 'nodes' | 'dom'>,
+  {overrides}: Pick<DOMRenderConfig, 'overrides'>,
 ): EditorDOMRenderConfig {
   const prerender = precompileDOMRenderConfigOverrides(editorConfig, overrides);
   const dom = {

@@ -22,6 +22,7 @@ import type {
   SerializedElementNode,
 } from 'lexical';
 
+import invariant from '@lexical/internal/invariant';
 import {
   $findMatchingParent,
   $insertNodeToNearestRootAtCaret,
@@ -47,7 +48,6 @@ import {
   ElementNode,
   Spread,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
 export type LinkAttributes = {
   rel?: null | string;

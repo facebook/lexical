@@ -1,7 +1,7 @@
 {
   "name": "@lexical/agent-example",
   "private": true,
-  "version": "0.44.0",
+  "version": "0.45.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -14,13 +14,13 @@
   },
   "dependencies": {
     "@huggingface/transformers": "^4.0.1",
-    "@lexical/extension": "0.44.0",
-    "@lexical/history": "0.44.0",
-    "@lexical/react": "0.44.0",
-    "@lexical/rich-text": "0.44.0",
-    "@lexical/selection": "0.44.0",
-    "@lexical/utils": "0.44.0",
-    "lexical": "0.44.0",
+    "@lexical/extension": "0.45.0",
+    "@lexical/history": "0.45.0",
+    "@lexical/react": "0.45.0",
+    "@lexical/rich-text": "0.45.0",
+    "@lexical/selection": "0.45.0",
+    "@lexical/utils": "0.45.0",
+    "lexical": "0.45.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5"
   },
@@ -31,6 +31,8 @@
     "@vitejs/plugin-react": "^5.0.2",
     "cross-env": "^7.0.3",
     "jsdom": "^26.1.0",
+    "onnxruntime-node": "file:./stubs/empty",
+    "sharp": "file:./stubs/empty",
     "tailwindcss": "^4.2.1",
     "typescript": "^5.9.2",
     "vite": "^7.3.2",
@@ -41,6 +43,10 @@
     "@rollup/rollup-darwin-arm64": "4.52.0",
     "@rollup/rollup-win32-x64-msvc": "4.52.0",
     "@rollup/wasm-node": "4.52.0"
+  },
+  "overrides": {
+    "onnxruntime-node": "$onnxruntime-node",
+    "sharp": "$sharp"
   },
   "pnpm": {
     "overrides": {

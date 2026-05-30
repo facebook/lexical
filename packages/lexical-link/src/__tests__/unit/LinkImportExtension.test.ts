@@ -10,7 +10,7 @@ import {
   buildEditorFromExtensions,
   getExtensionDependencyFromEditor,
 } from '@lexical/extension';
-import {DOMImportExtension} from '@lexical/html';
+import {CoreImportExtension, DOMImportExtension} from '@lexical/html';
 import {$isLinkNode, LinkImportExtension, LinkNode} from '@lexical/link';
 import {
   $isHeadingNode,
@@ -32,7 +32,9 @@ import {assert, describe, expect, test} from 'vitest';
 function buildEditor() {
   return buildEditorFromExtensions(
     defineExtension({
-      dependencies: [LinkImportExtension],
+      // Leaf importer extensions no longer pull `CoreImportExtension`
+      // in by themselves — the application is expected to add it once.
+      dependencies: [CoreImportExtension, LinkImportExtension],
       name: 'link-host',
       nodes: [LinkNode],
     }),
@@ -107,7 +109,11 @@ describe('LinkImportExtension — block children lifted out of inline parent', (
   function buildRichEditor() {
     return buildEditorFromExtensions(
       defineExtension({
-        dependencies: [LinkImportExtension, RichTextImportExtension],
+        dependencies: [
+          CoreImportExtension,
+          LinkImportExtension,
+          RichTextImportExtension,
+        ],
         name: 'rich-link-host',
         nodes: [LinkNode, HeadingNode, QuoteNode],
       }),

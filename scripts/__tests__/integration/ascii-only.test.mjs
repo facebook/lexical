@@ -15,7 +15,7 @@ import {packagesManager} from '../../shared/packagesManager.mjs';
 describe('prod ascii-only check', () => {
   for (const pkg of packagesManager.getPublicPackages()) {
     test(pkg.getNpmName(), () => {
-      const files = glob.sync(pkg.resolve('npm', '*.prod.{mjs,js}'), {
+      const files = glob.sync(pkg.resolve('dist', '*.prod.{mjs,js}'), {
         windowsPathsNoEscape: true,
       });
       expect(files).not.toHaveLength(0);

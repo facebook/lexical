@@ -6,9 +6,9 @@
  *
  */
 
+import invariant from '@lexical/internal/invariant';
 import {createRectsFromDOMRange} from '@lexical/selection';
 import {isHTMLElement, type LexicalEditor} from 'lexical';
-import invariant from 'shared/invariant';
 
 import px from './px';
 

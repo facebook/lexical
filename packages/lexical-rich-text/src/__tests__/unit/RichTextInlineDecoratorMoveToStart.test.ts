@@ -153,6 +153,15 @@ describe('MOVE_TO_START no-op cases (Issue #8555)', () => {
         paragraph.select(0, 0);
       },
     },
+    {
+      label: 'decorator-only element (no selectable text)',
+      setup: () => {
+        const decorator = $createTestDecoratorNode().setIsInline(true);
+        const paragraph = $createParagraphNode().append(decorator);
+        $getRoot().clear().append(paragraph);
+        paragraph.select(1, 1);
+      },
+    },
   ])('no-op: $label', ({setup}) => {
     using editor = buildEditorFromExtensions({
       $initialEditorState: setup,
@@ -166,5 +175,29 @@ describe('MOVE_TO_START no-op cases (Issue #8555)', () => {
     dispatchMoveToStart(editor, false);
 
     expect(snapshotSelection(editor)).toEqual(before);
+  });
+});
+
+describe('MOVE_TO_START decorator-only safety (crash fix)', () => {
+  test('Cmd+ArrowLeft on decorator-only element does not throw', () => {
+    using editor = buildEditorFromExtensions({
+      $initialEditorState: () => {
+        const decorator = $createTestDecoratorNode().setIsInline(true);
+        const paragraph = $createParagraphNode().append(decorator);
+        $getRoot().clear().append(paragraph);
+        paragraph.select(1, 1);
+      },
+      dependencies: [RichTextExtension],
+      name: 'test',
+      nodes: [TestDecoratorNode],
+    });
+
+    expect(() => dispatchMoveToStart(editor, false)).not.toThrow();
+
+    editor.read(() => {
+      const selection = $getSelection();
+      assert($isRangeSelection(selection));
+      expect(selection.anchor.type).toBeDefined();
+    });
   });
 });

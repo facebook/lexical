@@ -19,7 +19,12 @@ import {
   stringifyTokenStyle,
 } from '@shikijs/core';
 import {createJavaScriptRegexEngine} from '@shikijs/engine-javascript';
-import {$createLineBreakNode, $createTabNode, $getNodeByKey} from 'lexical';
+import {
+  $createLineBreakNode,
+  $createTabNode,
+  $getNodeByKey,
+  tokenizeRawText,
+} from 'lexical';
 import {bundledLanguagesInfo} from 'shiki/langs';
 import {bundledThemesInfo} from 'shiki/themes';
 
@@ -195,19 +200,17 @@ function mapTokensToLexicalStructure(
         }
       }
 
-      const parts = text.split('\t');
-      parts.forEach((part: string, pidx: number) => {
-        if (pidx) {
-          nodes.push($createTabNode());
-        }
-        if (part !== '') {
+      const style = stringifyTokenStyle(
+        token.htmlStyle || getTokenStyleObject(token),
+      );
+      tokenizeRawText(text, {
+        linebreak: () => nodes.push($createLineBreakNode()),
+        tab: () => nodes.push($createTabNode()),
+        text: (part: string) => {
           const node = $createCodeHighlightNode(part);
-          const style = stringifyTokenStyle(
-            token.htmlStyle || getTokenStyleObject(token),
-          );
           node.setStyle(style);
           nodes.push(node);
-        }
+        },
       });
     });
   });

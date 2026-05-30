@@ -8,6 +8,7 @@
 
 import type {LexicalEditor, LexicalNode} from 'lexical';
 
+import invariant from '@lexical/internal/invariant';
 import {
   $createOverflowNode,
   $isOverflowNode,
@@ -32,7 +33,6 @@ import {
   HISTORY_MERGE_TAG,
 } from 'lexical';
 import {useEffect} from 'react';
-import invariant from 'shared/invariant';
 
 type OptionalProps = {
   remainingCharacters?: (characters: number) => void;

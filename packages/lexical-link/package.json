@@ -8,37 +8,52 @@
     "link"
   ],
   "license": "MIT",
-  "version": "0.44.0",
-  "main": "LexicalLink.js",
-  "types": "index.d.ts",
+  "version": "0.45.0",
+  "main": "./dist/LexicalLink.js",
+  "types": "./dist/index.d.ts",
   "dependencies": {
     "@lexical/extension": "workspace:*",
+    "@lexical/html": "workspace:*",
+    "@lexical/internal": "workspace:*",
     "@lexical/utils": "workspace:*",
-    "lexical": "workspace:*",
-    "@lexical/html": "workspace:*"
+    "lexical": "workspace:*"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/facebook/lexical.git",
     "directory": "packages/lexical-link"
   },
-  "module": "LexicalLink.mjs",
+  "module": "./dist/LexicalLink.mjs",
   "sideEffects": false,
   "exports": {
     ".": {
+      "source": "./src/index.ts",
       "import": {
-        "types": "./index.d.ts",
-        "development": "./LexicalLink.dev.mjs",
-        "production": "./LexicalLink.prod.mjs",
-        "node": "./LexicalLink.node.mjs",
-        "default": "./LexicalLink.mjs"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalLink.dev.mjs",
+        "production": "./dist/LexicalLink.prod.mjs",
+        "node": "./dist/LexicalLink.node.mjs",
+        "default": "./dist/LexicalLink.mjs"
       },
       "require": {
-        "types": "./index.d.ts",
-        "development": "./LexicalLink.dev.js",
-        "production": "./LexicalLink.prod.js",
-        "default": "./LexicalLink.js"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalLink.dev.js",
+        "production": "./dist/LexicalLink.prod.js",
+        "default": "./dist/LexicalLink.js"
       }
     }
-  }
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/__tests__",
+    "!src/__bench__",
+    "!src/__mocks__",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "!src/**/*.bench.ts",
+    "!src/**/*.bench.tsx",
+    "README.md",
+    "LICENSE"
+  ]
 }

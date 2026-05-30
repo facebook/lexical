@@ -7,6 +7,7 @@
  */
 
 import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
+import invariant from '@lexical/internal/invariant';
 import {$createLinkNode, LinkExtension} from '@lexical/link';
 import {RichTextExtension} from '@lexical/rich-text';
 import {
@@ -26,7 +27,6 @@ import {
   ParagraphNode,
   type SerializedElementNode,
 } from 'lexical';
-import invariant from 'shared/invariant';
 import {afterEach, describe, expect, test, vi} from 'vitest';
 
 import {$getReconciledDirection} from '../../LexicalReconciler';

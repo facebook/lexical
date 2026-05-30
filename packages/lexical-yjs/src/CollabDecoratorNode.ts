@@ -11,8 +11,8 @@ import type {CollabElementNode} from './CollabElementNode';
 import type {DecoratorNode, NodeKey, NodeMap} from 'lexical';
 import type {XmlElement} from 'yjs';
 
+import invariant from '@lexical/internal/invariant';
 import {$getNodeByKey, $isDecoratorNode} from 'lexical';
-import invariant from 'shared/invariant';
 
 import {$syncPropertiesFromYjs, syncPropertiesFromLexical} from './Utils';
 

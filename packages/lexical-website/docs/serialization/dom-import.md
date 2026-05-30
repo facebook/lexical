@@ -15,6 +15,8 @@ The legacy static `importDOM` machinery and `$generateNodesFromDOM`
 entry are unchanged and remain the supported default for production
 apps that don't want to track an experimental API.
 
+The DOMImportExtension API was introduced in Lexical v0.45.0
+
 :::
 
 The DOM import system in `@lexical/html` lets you convert any HTML or
@@ -1066,6 +1068,13 @@ behavior from `QuoteNode`'s position in the tree and its acceptance
 rules. In the new pipeline both are stated at the call site: the rule
 asks for inline children, gets them packaged by `InlineSchema`, and
 attaches them via the normal `ElementNode.splice` primitive.
+
+### Concrete example: playground
+
+The lexical-playground application was migrated in
+[#8590](https://github.com/facebook/lexical/pull/8590), which should
+be a good example of what it would take to move an entire application
+from `importDOM` to `DOMImportExtension` (while adding test coverage).
 
 ## Capabilities
 

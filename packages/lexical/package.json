@@ -9,31 +9,48 @@
     "rich-text"
   ],
   "license": "MIT",
-  "version": "0.44.0",
-  "main": "Lexical.js",
-  "types": "index.d.ts",
+  "version": "0.45.0",
+  "main": "./dist/Lexical.js",
+  "types": "./dist/index.d.ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/facebook/lexical.git",
     "directory": "packages/lexical"
   },
-  "module": "Lexical.mjs",
+  "module": "./dist/Lexical.mjs",
   "sideEffects": false,
   "exports": {
     ".": {
+      "source": "./src/index.ts",
       "import": {
-        "types": "./index.d.ts",
-        "development": "./Lexical.dev.mjs",
-        "production": "./Lexical.prod.mjs",
-        "node": "./Lexical.node.mjs",
-        "default": "./Lexical.mjs"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/Lexical.dev.mjs",
+        "production": "./dist/Lexical.prod.mjs",
+        "node": "./dist/Lexical.node.mjs",
+        "default": "./dist/Lexical.mjs"
       },
       "require": {
-        "types": "./index.d.ts",
-        "development": "./Lexical.dev.js",
-        "production": "./Lexical.prod.js",
-        "default": "./Lexical.js"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/Lexical.dev.js",
+        "production": "./dist/Lexical.prod.js",
+        "default": "./dist/Lexical.js"
       }
     }
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/__tests__",
+    "!src/__bench__",
+    "!src/__mocks__",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "!src/**/*.bench.ts",
+    "!src/**/*.bench.tsx",
+    "README.md",
+    "LICENSE"
+  ],
+  "dependencies": {
+    "@lexical/internal": "workspace:*"
   }
 }

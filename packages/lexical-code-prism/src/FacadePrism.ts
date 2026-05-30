@@ -29,7 +29,7 @@ import 'prismjs/components/prism-java';
 import 'prismjs/components/prism-cpp';
 
 import {$createCodeHighlightNode} from '@lexical/code-core';
-import {$createLineBreakNode, $createTabNode} from 'lexical';
+import {$createLineBreakNode, $createTabNode, tokenizeRawText} from 'lexical';
 
 declare global {
   interface Window {
@@ -272,18 +272,11 @@ function $mapTokensToLexicalStructure(
 
   for (const token of tokens) {
     if (typeof token === 'string') {
-      const partials = token.split(/(\n|\t)/);
-      const partialsLength = partials.length;
-      for (let i = 0; i < partialsLength; i++) {
-        const part = partials[i];
-        if (part === '\n' || part === '\r\n') {
-          nodes.push($createLineBreakNode());
-        } else if (part === '\t') {
-          nodes.push($createTabNode());
-        } else if (part.length > 0) {
-          nodes.push($createCodeHighlightNode(part, type));
-        }
-      }
+      tokenizeRawText(token, {
+        linebreak: () => nodes.push($createLineBreakNode()),
+        tab: () => nodes.push($createTabNode()),
+        text: part => nodes.push($createCodeHighlightNode(part, type)),
+      });
     } else {
       const {content, alias} = token;
       if (typeof content === 'string') {

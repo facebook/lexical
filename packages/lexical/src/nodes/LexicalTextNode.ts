@@ -28,9 +28,9 @@ import type {
 } from '../LexicalSelection';
 import type {ElementNode} from './LexicalElementNode';
 
-import {IS_FIREFOX} from 'shared/environment';
-import invariant from 'shared/invariant';
+import invariant from '@lexical/internal/invariant';
 
+import {IS_FIREFOX} from '../environment';
 import {
   COMPOSITION_SUFFIX,
   DETAIL_TYPE_TO_DETAIL,
@@ -53,6 +53,7 @@ import {
 import {LexicalNode} from '../LexicalNode';
 import {$cloneNodeState} from '../LexicalNodeState';
 import {
+  $generateNodesFromRawText,
   $getSelection,
   $internalMakeRangeSelection,
   $isRangeSelection,
@@ -74,8 +75,6 @@ import {
   toggleTextFormatType,
 } from '../LexicalUtils';
 import {setDOMStyleFromCSS} from '../utils/setDOMStyle';
-import {$createLineBreakNode} from './LexicalLineBreakNode';
-import {$createTabNode} from './LexicalTabNode';
 
 export type SerializedTextNode = Spread<
   {
@@ -1262,20 +1261,7 @@ function $convertTextDOMNode(domNode: Node): DOMConversionOutput {
   let textContent = domNode_.textContent || '';
   // No collapse and preserve segment break for pre, pre-wrap and pre-line
   if (findParentPreDOMNode(domNode_) !== null) {
-    const parts = textContent.split(/(\r?\n|\t)/);
-    const nodes: Array<LexicalNode> = [];
-    const length = parts.length;
-    for (let i = 0; i < length; i++) {
-      const part = parts[i];
-      if (part === '\n' || part === '\r\n') {
-        nodes.push($createLineBreakNode());
-      } else if (part === '\t') {
-        nodes.push($createTabNode());
-      } else if (part !== '') {
-        nodes.push($createTextNode(part));
-      }
-    }
-    return {node: nodes};
+    return {node: $generateNodesFromRawText(textContent)};
   }
   textContent = textContent.replace(/\r/g, '').replace(/[ \t\n]+/g, ' ');
   if (textContent === '') {

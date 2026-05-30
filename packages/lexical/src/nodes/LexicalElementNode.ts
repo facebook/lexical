@@ -24,7 +24,7 @@ import type {
   TextFormatType,
 } from 'lexical';
 
-import invariant from 'shared/invariant';
+import invariant from '@lexical/internal/invariant';
 
 import {$isTextNode, TextNode} from '../index';
 import {

@@ -14,7 +14,7 @@ import type {
 } from './LexicalEditor';
 import type {BaseSelection, RangeSelection} from './LexicalSelection';
 
-import invariant from 'shared/invariant';
+import invariant from '@lexical/internal/invariant';
 
 import {
   $createParagraphNode,
@@ -66,6 +66,8 @@ import {
   internalMarkNodeAsDirty,
   removeFromParent,
 } from './LexicalUtils';
+
+const __DEV__ = process.env.NODE_ENV !== 'production';
 
 export type NodeMap = Map<NodeKey, LexicalNode>;
 
@@ -270,6 +272,14 @@ export interface LexicalPrivateDOM {
     | undefined;
   __lexicalDir?: 'ltr' | 'rtl' | null | undefined;
   __lexicalUnmanaged?: boolean | undefined;
+  /**
+   * When true, the DOM subtree owns its own window selection — analogous to
+   * a DecoratorNode subtree. Resolution logic that would otherwise force the
+   * Lexical selection back onto a managed position treats the caret as
+   * intentional and leaves it alone. Set via the `captureSelection` option
+   * on {@link setDOMUnmanaged}.
+   */
+  __lexicalCapturedSelection?: boolean | undefined;
 }
 
 export function $removeNode(

@@ -371,4 +371,26 @@ describe('CoreImportExtension', () => {
       expect(para.getTextContent()).toBe('x');
     });
   });
+
+  test('unconverted block elements (not just <div>) preserve block boundaries', () => {
+    using editor = buildEditor();
+    // The legacy $generateNodesFromDOM treated every isBlockDomNode the
+    // same; sibling block containers must not collapse into one paragraph.
+    importInto(editor, '<section>a</section><article>b</article>');
+    editor.read(() => {
+      const children = $getRoot().getChildren();
+      expect(children.map(n => n.getTextContent())).toEqual(['a', 'b']);
+      expect(children.every($isParagraphNode)).toBe(true);
+    });
+  });
+
+  test('text-align on a non-<div> block element is propagated to its paragraph', () => {
+    using editor = buildEditor();
+    importInto(editor, '<header style="text-align: right">x</header>');
+    editor.read(() => {
+      const para = $getRoot().getFirstChild();
+      assert($isParagraphNode(para), 'expected paragraph');
+      expect(para.getFormatType()).toBe('right');
+    });
+  });
 });

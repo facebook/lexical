@@ -7,6 +7,7 @@
  */
 
 import {buildEditorFromExtensions} from '@lexical/extension';
+import invariant from '@lexical/internal/invariant';
 import {$createLinkNode, LinkExtension} from '@lexical/link';
 import {RichTextExtension} from '@lexical/rich-text';
 import {
@@ -19,7 +20,6 @@ import {
   ElementNode,
   type SerializedElementNode,
 } from 'lexical';
-import invariant from 'shared/invariant';
 import {describe, expect, test} from 'vitest';
 
 // An element whose inline-ness is mutable state read through `getLatest()`. A

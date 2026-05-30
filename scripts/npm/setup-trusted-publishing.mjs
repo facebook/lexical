@@ -134,7 +134,7 @@ function sleep(ms) {
  * @returns {string}
  */
 function escapedName(name) {
-  return name.startsWith('@') ? name.replace('/', '%2F') : name;
+  return name.startsWith('@') ? name.replaceAll('/', '%2F') : name;
 }
 
 /**
@@ -227,6 +227,29 @@ function configMatches(config) {
   );
 }
 
+// pnpm exports its own (and pnpm-only) settings as `npm_config_*` env
+// vars when running scripts. npm 11+ warns about every one of these it
+// doesn't recognise ("Unknown env config ...") and threatens to error
+// in npm 12. Strip the known pnpm-only ones from the env we pass to
+// spawned `npm` so the maintainer doesn't see a wall of warnings on
+// each trust call.
+const PNPM_ONLY_NPM_CONFIG_KEYS = [
+  'npm-globalconfig',
+  'verify-deps-before-run',
+  '_jsr-registry',
+];
+
+/**
+ * @returns {NodeJS.ProcessEnv}
+ */
+function npmCleanEnv() {
+  const env = {...process.env};
+  for (const key of PNPM_ONLY_NPM_CONFIG_KEYS) {
+    delete env[`npm_config_${key}`];
+  }
+  return env;
+}
+
 /**
  * Run `npm trust github` for one package. Invokes the npm CLI with
  * `stdio: 'inherit'` so the OTP / web-auth URL prints to the user's
@@ -257,11 +280,17 @@ async function addTrustConfig(pkg) {
   }
   console.log(`\nConfiguring ${name} (npm will prompt for OTP / web auth):`);
   try {
-    await spawn('npm', args, {stdio: 'inherit'});
+    await spawn('npm', args, {env: npmCleanEnv(), stdio: 'inherit'});
     console.log(`  ${name} ... configured\n`);
     return 'configured';
-  } catch {
-    console.error(`  ${name} ... FAILED\n`);
+  } catch (err) {
+    const code =
+      err && typeof err === 'object' && 'code' in err
+        ? /** @type {{code?: unknown}} */ (err).code
+        : undefined;
+    console.error(
+      `  ${name} ... FAILED${code !== undefined ? ` (npm exit ${code})` : ''}\n`,
+    );
     return 'failed';
   }
 }
@@ -273,6 +302,48 @@ async function checkAuth() {
   } catch {
     return null;
   }
+}
+
+/**
+ * Ensure the local npm CLI supports `npm trust github`. The subcommand
+ * was added in npm 11.5; we require 11.10+ to match the upstream
+ * trusted-publishing docs.
+ *
+ * @returns {Promise<{ok: true, version: string} | {ok: false, reason: string}>}
+ */
+async function checkNpmTrustSupport() {
+  /** @type {string} */
+  let version;
+  try {
+    const {stdout} = await exec(`npm --version`);
+    version = stdout.trim();
+  } catch (err) {
+    return {
+      ok: false,
+      reason: `Could not run 'npm --version': ${
+        err instanceof Error ? err.message : String(err)
+      }`,
+    };
+  }
+  const parts = version.split('.').map(n => parseInt(n, 10));
+  const [major = 0, minor = 0] = parts;
+  if (major < 11 || (major === 11 && minor < 10)) {
+    return {
+      ok: false,
+      reason: `npm ${version} is too old for 'npm trust github'. Upgrade to npm >= 11.10 (\`npm i -g npm@latest\`) and re-run.`,
+    };
+  }
+  try {
+    await exec(`npm trust --help`);
+  } catch (err) {
+    return {
+      ok: false,
+      reason: `'npm trust' is not available in this npm (${version}): ${
+        err instanceof Error ? err.message : String(err)
+      }`,
+    };
+  }
+  return {ok: true, version};
 }
 
 /**
@@ -317,6 +388,15 @@ async function main() {
       process.exit(1);
     }
     console.log(`Authenticated to ${registry} as ${authedUser}\n`);
+  }
+
+  if (setupTrust && !dryRun) {
+    const trustSupport = await checkNpmTrustSupport();
+    if (!trustSupport.ok) {
+      console.error(trustSupport.reason);
+      process.exit(1);
+    }
+    console.log(`Using npm ${trustSupport.version} (supports 'npm trust')\n`);
   }
 
   /** @type {Array<import('../shared/PackageMetadata.mjs').PackageMetadata>} */

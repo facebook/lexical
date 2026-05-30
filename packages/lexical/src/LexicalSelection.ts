@@ -90,6 +90,7 @@ import {
   getNodeKeyFromDOMNode,
   getWindow,
   INTERNAL_$isBlock,
+  isDOMTextNode,
   isHTMLElement,
   isSelectionCapturedInDecoratorInput,
   isSelectionWithinEditor,
@@ -3267,18 +3268,42 @@ export function $updateDOMSelection(
           : null;
     if (selectionTarget !== null) {
       let selectionRect: DOMRect;
-      if (selectionTarget instanceof Text) {
+      if (isDOMTextNode(selectionTarget)) {
         const range = document.createRange();
         range.selectNode(selectionTarget);
         selectionRect = range.getBoundingClientRect();
       } else {
         selectionRect = selectionTarget.getBoundingClientRect();
       }
-      scrollIntoViewIfNeeded(editor, selectionRect, rootElement);
+      scrollIntoViewIfNeeded(
+        editor,
+        selectionRect,
+        rootElement,
+        getDOMScrollChainStartForCaret(selectionTarget),
+      );
     }
   }
 
   markSelectionChangeFromDOMUpdate();
+}
+
+function getDOMScrollChainStartForCaret(
+  selectionTarget: Range | HTMLElement | Text,
+): HTMLElement | null {
+  if (isDOMTextNode(selectionTarget)) {
+    return selectionTarget.parentElement;
+  }
+  if (isHTMLElement(selectionTarget)) {
+    return selectionTarget;
+  }
+  const startContainer = selectionTarget.startContainer;
+  if (isDOMTextNode(startContainer)) {
+    return startContainer.parentElement;
+  }
+  if (isHTMLElement(startContainer)) {
+    return startContainer;
+  }
+  return null;
 }
 
 export function $insertNodes(nodes: Array<LexicalNode>) {

@@ -13,34 +13,43 @@ import {
   domOverride,
   DOMRenderExtension,
 } from '@lexical/html';
+import {$canShowPlaceholder} from '@lexical/text';
 import {
   configExtension,
   defineExtension,
   isHTMLElement,
   LineBreakNode,
+  ParagraphNode,
   safeCast,
 } from 'lexical';
 
 /**
- * Worked example for the generalized `getDOMSlot` abstraction — wraps each
- * `LineBreakNode`'s `<br>` in a `<span>` carrying a visible `↵` marker, and
- * exposes the inner `<br>` through `$getDOMSlot` so selection / caret logic
- * targets the canonical content element instead of the wrapper.
+ * Surfaces a visible marker for each non-printing character in the editor.
+ * Currently covers:
+ * - `LineBreakNode` (`↵`) — wraps each `<br>` in a `<span>` carrying the
+ *   marker, and exposes the inner `<br>` through `$getDOMSlot` so selection /
+ *   caret logic targets the canonical content element.
+ * - `ParagraphNode` (`¶`) — adds a marker `data-` attribute to the block;
+ *   the visual is rendered via CSS `::after`.
  *
- * Demonstrates the extension-driven path for a leaf node category: no
- * `LineBreakNode` subclass required, behaviour attaches via
- * `DOMRenderExtension` configuration.
+ * Demonstrates the extension-driven path for leaf and block node categories:
+ * no subclassing required, behaviour attaches via `DOMRenderExtension`
+ * configuration.
  *
- * `disabled` toggles the wrap at runtime without recreating the editor. The
- * override is installed conditionally via `disabledForEditor`, so when disabled
- * it is removed from the render pipeline entirely rather than no-oping per
- * node. Flipping the signal mirrors it into the editor render context with
- * `$setRenderContextValue`, which recompiles the render config and recreates
- * the existing `LineBreakNode` DOM through the new config.
+ * `disabled` toggles the markers at runtime without recreating the editor.
+ * The overrides are installed conditionally via `disabledForEditor`, so when
+ * disabled they are removed from the render pipeline entirely rather than
+ * no-oping per node. Flipping the signal mirrors it into the editor render
+ * context with `$setRenderContextValue`, which recompiles the render config
+ * and recreates the existing DOM through the new config.
  */
 const VISIBLE_NON_PRINTING_LINEBREAK_CLASS = 'visible-non-printing-linebreak';
 const VISIBLE_NON_PRINTING_LINEBREAK_ATTR =
   'data-lexical-visible-non-printing-linebreak';
+const VISIBLE_NON_PRINTING_PARAGRAPH_ATTR =
+  'data-lexical-visible-non-printing-paragraph';
+const VISIBLE_NON_PRINTING_EMPTY_ROOT_ATTR =
+  'data-lexical-visible-non-printing-empty-root';
 
 export interface VisibleNonPrintingConfig {
   disabled: boolean;
@@ -110,18 +119,51 @@ export const VisibleNonPrintingExtension = defineExtension({
           },
           {disabledForEditor: ctx => ctx.get(VisibleNonPrintingDisabled)},
         ),
+        domOverride(
+          [ParagraphNode],
+          {
+            $createDOM: (_node, $next) => {
+              const dom = $next();
+              if (isHTMLElement(dom)) {
+                dom.setAttribute(VISIBLE_NON_PRINTING_PARAGRAPH_ATTR, 'true');
+              }
+              return dom;
+            },
+          },
+          {disabledForEditor: ctx => ctx.get(VisibleNonPrintingDisabled)},
+        ),
       ],
     }),
   ],
   name: '@lexical/playground/visible-non-printing',
   register: (editor, _config, state) => {
     const stores = state.getOutput();
-    return effect(() => {
+    const syncEmptyRootAttr = () => {
+      const rootElement = editor.getRootElement();
+      if (rootElement === null) {
+        return;
+      }
+      const showPlaceholder = editor
+        .getEditorState()
+        .read(() => $canShowPlaceholder(editor.isComposing()));
+      rootElement.toggleAttribute(
+        VISIBLE_NON_PRINTING_EMPTY_ROOT_ATTR,
+        showPlaceholder,
+      );
+    };
+    const cleanupSignal = effect(() => {
       $setRenderContextValue(
         VisibleNonPrintingDisabled,
         stores.disabled.value,
         editor,
       );
     });
+    const cleanupUpdateListener =
+      editor.registerUpdateListener(syncEmptyRootAttr);
+    syncEmptyRootAttr();
+    return () => {
+      cleanupSignal();
+      cleanupUpdateListener();
+    };
   },
 });

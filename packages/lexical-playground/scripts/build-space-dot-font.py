@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run --script
 #
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 #

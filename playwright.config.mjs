@@ -50,7 +50,7 @@ const config = defineConfig({
     project('firefox', 'Desktop Firefox'),
     project('webkit', 'Desktop Safari'),
   ],
-  retries: IS_DEBUG ? 0 : IS_CI ? 4 : 1,
+  retries: IS_DEBUG ? 0 : IS_CI ? 2 : 1,
   testIgnore: /\/__tests__\/unit\//,
   timeout: 150000,
   use: {
@@ -63,11 +63,11 @@ const config = defineConfig({
   webServer: IS_CI
     ? {
         command: 'pnpm run start-test-server',
-        port: 4000,
-        reuseExistingServer: true,
+        reuseExistingServer: false,
         timeout: 120 * 1000,
+        url: 'http://localhost:4000',
       }
     : undefined,
-  workers: IS_DEBUG ? 1 : undefined,
+  workers: IS_DEBUG ? 1 : IS_CI ? 4 : undefined,
 });
 export default config;

@@ -10,6 +10,7 @@ import {expect} from '@playwright/test';
 
 import {
   moveLeft,
+  moveToLineEnd,
   selectCharacters,
   toggleBold,
   undo,
@@ -232,16 +233,17 @@ test.describe('Collaboration', () => {
     await advanceHistoryClock(page);
     await page.keyboard.type('This is a test. ');
 
-    // Right collaborator types at the end of paragraph 2. Wait for the left
-    // edits to converge to the right frame (instead of sleeping) before it
-    // types, so its caret navigation lands in the synced second paragraph.
-    const rightEditor = page
-      .frameLocator('iframe[name="right"]')
-      .locator('[data-lexical-editor="true"]');
-    await expect(rightEditor).toContainText('This is a test.');
-    await rightEditor.focus();
-    await page.keyboard.press('ArrowDown'); // Move caret to end of paragraph 2
-    await page.keyboard.press('ArrowDown');
+    // Right collaborator types at the end of paragraph 2. Click into that
+    // paragraph to place the caret — a real remote user positions the cursor
+    // with a click — then move to the line end. Relying on a default caret
+    // position + ArrowDown is fragile: once content has synced in, the idle
+    // frame's selection is not guaranteed to start at the top of the document.
+    const rightFrame = page.frameLocator('iframe[name="right"]');
+    await expect(
+      rightFrame.locator('[data-lexical-editor="true"]'),
+    ).toContainText('This is a test.');
+    await rightFrame.locator('p').nth(1).click();
+    await moveToLineEnd(page);
     await page.keyboard.type('Word');
 
     await assertHTML(
@@ -331,12 +333,11 @@ test.describe('Collaboration', () => {
       `,
     );
 
-    // Right collaborator types at the end of the paragraph.
-    await page
-      .frameLocator('iframe[name="right"]')
-      .locator('[data-lexical-editor="true"]')
-      .focus();
-    await page.keyboard.press('ArrowDown', {delay: 50}); // Move caret to end of paragraph
+    // Right collaborator types at the end of the paragraph. Click to place the
+    // caret (real remote user positioning) then move to the line end, rather
+    // than relying on a default caret position + ArrowDown.
+    await page.frameLocator('iframe[name="right"]').locator('p').click();
+    await moveToLineEnd(page);
     await page.keyboard.type('BOLD');
 
     await assertHTML(
@@ -553,12 +554,11 @@ test.describe('Collaboration', () => {
       `,
     );
 
-    // Right collaborator adds some text.
-    await page
-      .frameLocator('iframe[name="right"]')
-      .locator('[data-lexical-editor="true"]')
-      .focus();
-    await page.keyboard.press('ArrowDown', {delay: 50});
+    // Right collaborator adds some text just before the trailing "!". Click to
+    // place the caret (real remote user positioning), move to the line end,
+    // then step left over "!", rather than relying on a default caret position.
+    await page.frameLocator('iframe[name="right"]').locator('p').click();
+    await moveToLineEnd(page);
     await page.keyboard.press('ArrowLeft');
     await page.keyboard.type(' now');
 

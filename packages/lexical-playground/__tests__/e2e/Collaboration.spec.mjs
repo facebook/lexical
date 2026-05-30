@@ -22,7 +22,6 @@ import {
   focusEditor,
   html,
   initialize,
-  sleep,
   test,
 } from '../utils/index.mjs';
 
@@ -233,14 +232,14 @@ test.describe('Collaboration', () => {
     await advanceHistoryClock(page);
     await page.keyboard.type('This is a test. ');
 
-    // Right collaborator types at the end of paragraph 2. This waits for the
-    // left edit to propagate to the right frame before it types — a cross-frame
-    // sync wait, not a history merge boundary, so it stays a sleep.
-    await sleep(1050);
-    await page
+    // Right collaborator types at the end of paragraph 2. Wait for the left
+    // edits to converge to the right frame (instead of sleeping) before it
+    // types, so its caret navigation lands in the synced second paragraph.
+    const rightEditor = page
       .frameLocator('iframe[name="right"]')
-      .locator('[data-lexical-editor="true"]')
-      .focus();
+      .locator('[data-lexical-editor="true"]');
+    await expect(rightEditor).toContainText('This is a test.');
+    await rightEditor.focus();
     await page.keyboard.press('ArrowDown'); // Move caret to end of paragraph 2
     await page.keyboard.press('ArrowDown');
     await page.keyboard.type('Word');
@@ -354,11 +353,14 @@ test.describe('Collaboration', () => {
       `,
     );
 
-    // Left collaborator undoes their bold text. This is a cross-frame settle
-    // before the undo (waiting for the right edit above to converge), not a
-    // history merge boundary, so it stays a sleep.
-    await sleep(1050);
-    await page.frameLocator('iframe[name="left"]').getByLabel('Undo').click();
+    // Left collaborator undoes their bold text. The assertHTML above already
+    // confirmed both frames converged, so wait for the undo control to be
+    // actionable instead of sleeping.
+    const undoButton = page
+      .frameLocator('iframe[name="left"]')
+      .getByLabel('Undo');
+    await expect(undoButton).toBeEnabled();
+    await undoButton.click();
 
     // The undo also removed bold the text node from YJS.
     // Check that the dangling text from right user was merged into the preceding text node.

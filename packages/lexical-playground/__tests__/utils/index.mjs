@@ -704,6 +704,46 @@ export async function sleep(delay) {
   await new Promise(resolve => setTimeout(resolve, delay));
 }
 
+/**
+ * Force a new @lexical/history undo group (a "merge boundary") deterministically
+ * — a drop-in replacement for `sleep(delay + overhead)`.
+ *
+ * History coalesces consecutive same-type edits while
+ * `now() < prevChangeTime + delay`, so tests used to sleep just past the merge
+ * `delay` to make the next edit begin a new undo entry. That is slow and, under
+ * CI load, flaky: a timer that fires late can coalesce edits that were meant to
+ * stay separate (or vice versa). Instead we drive the history extension's `now`
+ * signal directly — the lever called out in the task — freezing it
+ * `delay + overheadMs` past its current value. The next edit is then guaranteed
+ * to exceed the merge window (new boundary), while every later edit observes a
+ * fixed time so genuinely fast edits still coalesce exactly as in production.
+ * History reads `now` via `peek()`, so reassigning the signal neither
+ * re-registers history nor disturbs the in-progress merge bookkeeping.
+ *
+ * Only valid for the local-history editor: collab disables @lexical/history in
+ * favor of the Yjs UndoManager, so the tests that use this skip collab.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {number} [overheadMs] slack added past `delay`, mirroring the old
+ *   `sleep(delay + 50)` convention.
+ */
+export async function advanceHistoryClock(page, overheadMs = 50) {
+  await evaluate(
+    page,
+    overhead => {
+      const editor = document.querySelector(
+        '[data-lexical-editor="true"]',
+      ).__lexicalEditor;
+      const {output} = editor[
+        Symbol.for('@lexical/extension/LexicalBuilder')
+      ].extensionNameMap.get('@lexical/history/History').state;
+      const frozen = output.now.peek()() + output.delay.peek() + overhead;
+      output.now.value = () => frozen;
+    },
+    overheadMs,
+  );
+}
+
 // Fair time for the browser to process a newly inserted image
 export async function sleepInsertImage(count = 1) {
   return await sleep(1000 * count);

@@ -37,7 +37,11 @@ test.describe('Regression tests for #6974', () => {
     await page.keyboard.type(testString);
     const beforeHtml = html`
       <p dir="auto">
-        <span contenteditable="false" data-lexical-decorator="true">
+        <span
+          contenteditable="false"
+          role="math"
+          aria-label="Equation: x"
+          data-lexical-decorator="true">
           <img
             alt=""
             height="0"
@@ -71,7 +75,11 @@ test.describe('Regression tests for #6974', () => {
     await deleteBackward(page);
     const afterHtml = html`
       <p dir="auto">
-        <span contenteditable="false" data-lexical-decorator="true">
+        <span
+          contenteditable="false"
+          role="math"
+          aria-label="Equation: x"
+          data-lexical-decorator="true">
           <img
             alt=""
             height="0"

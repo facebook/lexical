@@ -53,7 +53,6 @@ import {SettingsContext, useSettings} from './context/SettingsContext';
 import {ToolbarContext} from './context/ToolbarContext';
 import Editor from './Editor';
 import {registerSettingsSynchronization} from './hooks/useSynchronizeSettings';
-import logo from './images/logo.svg';
 import {KeywordsExtension} from './nodes/KeywordNode';
 import {
   PlaygroundImportExtension,
@@ -318,7 +317,7 @@ function App(): JSX.Element {
         <ToolbarContext>
           <header>
             <a href="https://lexical.dev" target="_blank" rel="noreferrer">
-              <img src={logo} alt="Lexical Logo" />
+              <span className="logo" role="img" aria-label="Lexical Logo" />
             </a>
           </header>
           <div className="editor-shell">

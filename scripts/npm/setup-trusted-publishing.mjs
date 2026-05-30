@@ -200,53 +200,54 @@ function configEnvironment(config) {
  * a browser `npm login` on macOS). `npm trust list` is a read, so it
  * never triggers an OTP prompt.
  *
- * Returns [] when the package has no trust config, an array of configs
- * when it has one, or null when the lookup genuinely failed (network /
- * unexpected error) so the caller can decide how cautious to be.
+ * Returns `{configs}` ([] when the package has no trust config, else
+ * the parsed config entries), or `{error}` with a human-readable
+ * message when the lookup genuinely failed (auth / network / OTP),
+ * so the caller can surface it instead of silently swallowing it.
  *
  * @param {string} name
- * @returns {Promise<Array<any> | null>}
+ * @returns {Promise<{configs?: Array<any>, error?: string}>}
  */
 async function fetchTrustConfigs(name) {
-  let stdout = '';
-  let stderr = '';
-  try {
-    ({stdout} = await exec(
-      `npm trust list ${name} --json --registry ${registry}`,
-      {env: npmCleanEnv()},
-    ));
-  } catch (err) {
-    stdout =
-      err && typeof err === 'object' && 'stdout' in err
-        ? String(/** @type {{stdout?: unknown}} */ (err).stdout || '')
-        : '';
-    stderr =
-      err && typeof err === 'object' && 'stderr' in err
-        ? String(/** @type {{stderr?: unknown}} */ (err).stderr || '')
-        : '';
-    // A package that simply has no trust config yet 404s — treat as
-    // "no configs", not an error.
-    if (/E404|not found/i.test(`${stdout}\n${stderr}`)) {
-      return [];
-    }
+  const {code, stdout, stderr} = await runNpm(
+    ['trust', 'list', name, '--json', '--registry', registry],
+    {captureStdout: true},
+  );
+  const combined = `${stdout}\n${stderr}`;
+  // A package with no trust config yet 404s — treat as "no configs".
+  if (/E404|not found/i.test(combined)) {
+    return {configs: []};
   }
   const text = stdout.trim();
-  if (!text) {
-    // Empty output on success means no trust configs.
-    return stderr ? null : [];
+  if (text) {
+    let parsed;
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      parsed = null;
+    }
+    if (parsed && parsed.error) {
+      const errCode = String(parsed.error.code || '');
+      if (/E404/i.test(errCode)) {
+        return {configs: []};
+      }
+      return {error: parsed.error.summary || errCode || 'unknown error'};
+    }
+    if (parsed) {
+      const items = Array.isArray(parsed) ? parsed : [parsed];
+      return {configs: items.filter(Boolean)};
+    }
   }
-  let parsed;
-  try {
-    parsed = JSON.parse(text);
-  } catch {
-    return null;
+  if (code === 0) {
+    // Succeeded with no parseable output → no configs.
+    return {configs: []};
   }
-  if (parsed && parsed.error) {
-    const code = String(parsed.error.code || '');
-    return /E404/i.test(code) ? [] : null;
-  }
-  const items = Array.isArray(parsed) ? parsed : [parsed];
-  return items.filter(Boolean);
+  // Surface the first meaningful stderr line so the failure isn't silent.
+  const firstLine = stderr
+    .split('\n')
+    .map(l => l.replace(/^npm (error|warn)\s*/i, '').trim())
+    .find(l => l && !/^code\s/i.test(l));
+  return {error: firstLine || `npm exited ${code}`};
 }
 
 /**
@@ -313,36 +314,87 @@ function npmCleanEnv() {
 }
 
 /**
- * Spawn `npm` with `stdio: ['inherit', 'inherit', 'pipe']` — keeps the
- * OTP / web-auth URL streaming to the terminal, but also captures
- * stderr so we can distinguish a benign "already-configured" 409 from
- * a real failure.
+ * Spawn `npm`, capturing stderr so we can classify failures (E409
+ * already-configured, E429 rate-limit, etc.).
+ *
+ * stdin and stdout are inherited by default so npm's interactive
+ * web-auth / OTP flow works — npm only attempts that recovery when
+ * BOTH stdin and stdout are TTYs (see otplease in npm's source). For
+ * commands whose stdout we need to read back (e.g. `npm trust list
+ * --json`), pass `captureStdout: true`; note that piping stdout makes
+ * it a non-TTY, so a fresh OTP challenge can't be satisfied during a
+ * captured call — warm the auth session first (see warmTrustAuth).
  *
  * @param {string[]} args
- * @returns {Promise<{code: number | null, signal: NodeJS.Signals | null, stderr: string}>}
+ * @param {{captureStdout?: boolean}} [options]
+ * @returns {Promise<{code: number | null, stdout: string, stderr: string}>}
  */
-function runNpm(args) {
+function runNpm(args, {captureStdout = false} = {}) {
   return new Promise(resolve => {
     // Lazy import; keeps top of file tidy and avoids extra weight on
     // dry-run/check-only paths.
     import('node:child_process').then(({spawn: spawnCb}) => {
       const child = spawnCb('npm', args, {
         env: npmCleanEnv(),
-        stdio: ['inherit', 'inherit', 'pipe'],
+        stdio: ['inherit', captureStdout ? 'pipe' : 'inherit', 'pipe'],
       });
+      let stdout = '';
       let stderr = '';
+      if (child.stdout) {
+        child.stdout.on('data', chunk => {
+          stdout += chunk.toString();
+        });
+      }
       if (child.stderr) {
         child.stderr.on('data', chunk => {
           process.stderr.write(chunk);
           stderr += chunk.toString();
         });
       }
-      child.on('close', (code, signal) => {
-        resolve({code, signal, stderr});
+      child.on('close', code => {
+        resolve({code, stderr, stdout});
       });
       child.on('error', err => {
-        resolve({code: -1, signal: null, stderr: stderr + String(err)});
+        resolve({code: -1, stderr: stderr + String(err), stdout});
       });
+    });
+  });
+}
+
+/**
+ * Establish an authenticated trust-API session interactively, so the
+ * captured `npm trust list` reads that follow don't each hit an OTP
+ * challenge they can't satisfy (a captured call pipes stdout, and npm
+ * only does web-auth when stdout is a TTY).
+ *
+ * Runs `npm trust list <sampleName>` with all stdio inherited (full
+ * TTY) so npm can open the browser / prompt. The user should pick
+ * "skip two-factor authentication for the next 5 minutes" so the rest
+ * of the run sails through. Returns true if the sample read succeeded.
+ *
+ * @param {string} sampleName
+ * @returns {Promise<boolean>}
+ */
+async function warmTrustAuth(sampleName) {
+  console.log(
+    `\nAuthenticating for trust API access via \`npm trust list ${sampleName}\`.`,
+  );
+  console.log(
+    `If npm prompts, complete the web auth and choose "Skip two-factor`,
+  );
+  console.log(
+    `authentication for the next 5 minutes" so the per-package checks and`,
+  );
+  console.log(`updates that follow don't each re-prompt.\n`);
+  return new Promise(resolve => {
+    import('node:child_process').then(({spawn: spawnCb}) => {
+      const child = spawnCb(
+        'npm',
+        ['trust', 'list', sampleName, '--registry', registry],
+        {env: npmCleanEnv(), stdio: 'inherit'},
+      );
+      child.on('close', code => resolve(code === 0));
+      child.on('error', () => resolve(false));
     });
   });
 }
@@ -631,17 +683,32 @@ async function main() {
   /** @type {Array<{pkg: import('../shared/PackageMetadata.mjs').PackageMetadata, existing: Array<any>}>} */
   const conflicts = [];
   if (trustCandidates.length > 0) {
+    // Reading the trust API (`npm trust list`) requires auth and may
+    // require OTP. npm only runs its interactive web-auth recovery when
+    // BOTH stdin and stdout are TTYs, but the per-package checks below
+    // capture stdout (so they can parse JSON), which makes stdout a
+    // non-TTY and prevents a fresh OTP challenge from being satisfied.
+    // So do one fully-interactive read first to establish the session;
+    // the user can pick "skip 2FA for 5 minutes" and the captured reads
+    // then succeed within the window.
+    const warmed = await warmTrustAuth(trustCandidates[0].getNpmName());
+    if (!warmed) {
+      console.log(
+        `\nWarning: could not establish a trust-API session (the warmup ` +
+          `\`npm trust list\` failed). Per-package checks may report ` +
+          `"unable to check". Make sure \`npm whoami\` works.`,
+      );
+    }
+
     console.log(`\nTarget workflow: ${workflow}`);
-    console.log(
-      `\nChecking existing trust configuration via \`npm trust list\` (read-only, no OTP):`,
-    );
+    console.log(`\nChecking existing trust configuration:`);
     let anyUnknown = false;
     for (const pkg of trustCandidates) {
       const name = pkg.getNpmName();
       process.stdout.write(`  ${name} ... `);
-      const configs = await fetchTrustConfigs(name);
-      if (configs === null) {
-        console.log('unable to check; will try anyway');
+      const {configs, error} = await fetchTrustConfigs(name);
+      if (error || !configs) {
+        console.log(`unable to check (${error || 'unknown'}); will try anyway`);
         anyUnknown = true;
         toRegister.push({existing: [], pkg});
         continue;
@@ -661,10 +728,10 @@ async function main() {
     }
     if (anyUnknown) {
       console.log(
-        `\nWarning: some packages could not be pre-checked (\`npm trust list\` ` +
-          `failed — check that you are logged in with \`npm whoami\`). For ` +
-          `those, an existing config can't be revoked automatically, so ` +
-          `\`npm trust github\` may return E409 if one is already present.`,
+        `\nWarning: some packages could not be pre-checked. For those, an ` +
+          `existing config can't be revoked automatically, so ` +
+          `\`npm trust github\` may return E409 if one is already present. ` +
+          `Confirm \`npm whoami\` succeeds and re-run.`,
       );
     }
   }

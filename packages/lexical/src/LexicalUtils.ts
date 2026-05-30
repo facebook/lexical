@@ -159,10 +159,6 @@ export const scheduleMicroTask: (fn: () => void) => void =
         Promise.resolve().then(fn);
       };
 
-export function $isSelectionCapturedInDecorator(node: Node): boolean {
-  return $isDecoratorNode($getNearestNodeFromDOMNode(node));
-}
-
 export function isSelectionCapturedInDecoratorInput(anchorDOM: Node): boolean {
   const activeElement = document.activeElement;
 
@@ -571,6 +567,11 @@ export function setNodeKeyOnDOMNode(
   (dom as Node & Record<typeof prop, NodeKey | undefined>)[prop] = key;
 }
 
+export function clearNodeKeyOnDOMNode(dom: Node, editor: LexicalEditor) {
+  const prop = `__lexicalKey_${editor._key}`;
+  delete (dom as Node & Record<typeof prop, NodeKey | undefined>)[prop];
+}
+
 export function getNodeKeyFromDOMNode(
   dom: Node,
   editor: LexicalEditor,
@@ -683,10 +684,6 @@ export function $getNodeFromDOM(dom: Node): null | LexicalNode {
   const editor = getActiveEditor();
   const nodeKey = getNodeKeyFromDOMTree(dom, editor);
   if (nodeKey === null) {
-    const rootElement = editor.getRootElement();
-    if (dom === rootElement) {
-      return $getNodeByKey('root');
-    }
     return null;
   }
   return $getNodeByKey(nodeKey);
@@ -2266,17 +2263,44 @@ export function $setFormatFromDOM<T extends ElementNode>(
 }
 
 /**
+ * Options accepted by {@link setDOMUnmanaged}.
+ *
+ * @experimental
+ */
+export interface SetDOMUnmanagedOptions {
+  /**
+   * When true, the marked subtree owns its own window selection — analogous
+   * to a DecoratorNode subtree. Selection resolution that would otherwise
+   * mark the selection dirty for a caret position inside unmanaged DOM
+   * leaves it alone, so the embedded interaction (custom input, focusable
+   * widget, etc.) can keep its native caret.
+   *
+   * Pass `false` to clear a previously-set marker; omit the field to leave
+   * `__lexicalCapturedSelection` untouched.
+   */
+  captureSelection?: boolean;
+}
+
+/**
  * Mark this DOM element as unmanaged by lexical's mutation observer (like
  * decorator nodes are). Extensions that inject non-lexical decoration
  * elements into a node's DOM should mark them so the mutation observer
  * doesn't evict them as "unknown DOM children" during cleanup.
  *
+ * Pass `{captureSelection: true}` to additionally treat the subtree's
+ * window selection as decorator-like, so resolution does not force-sync
+ * the caret out of unmanaged DOM (see {@link isDOMCapturingSelection}).
+ *
  * @experimental
  */
 export function setDOMUnmanaged(
   elementDom: HTMLElement & LexicalPrivateDOM,
+  options?: SetDOMUnmanagedOptions,
 ): void {
   elementDom.__lexicalUnmanaged = true;
+  if (options && options.captureSelection !== undefined) {
+    elementDom.__lexicalCapturedSelection = options.captureSelection;
+  }
 }
 
 /**
@@ -2286,6 +2310,40 @@ export function setDOMUnmanaged(
  */
 export function isDOMUnmanaged(elementDom: Node & LexicalPrivateDOM): boolean {
   return elementDom.__lexicalUnmanaged === true;
+}
+
+/**
+ * True if the DOM node sits inside a subtree marked with
+ * `{captureSelection: true}` via {@link setDOMUnmanaged}. Walks ancestors
+ * so any descendant of a marked subtree (e.g. an `<input>` inside a marked
+ * `<div>`) reports as captured too.
+ *
+ * The walk aborts at the first DOM node that corresponds to a Lexical
+ * node in `editor` — that boundary is the implicit owner of the subtree's
+ * selection, so a captureSelection marker above it (in non-Lexical
+ * scaffolding around the editor) does not leak in.
+ *
+ * DecoratorNode DOM is marked with `setDOMUnmanaged({captureSelection:
+ * true})` by the reconciler, so decorator subtrees also report as
+ * captured here.
+ *
+ * @experimental
+ */
+export function isDOMCapturingSelection(
+  elementDom: Node & LexicalPrivateDOM,
+  editor: LexicalEditor,
+): boolean {
+  let dom: (Node & LexicalPrivateDOM) | null = elementDom;
+  while (dom != null) {
+    if (dom.__lexicalCapturedSelection === true) {
+      return true;
+    }
+    if (getNodeKeyFromDOMNode(dom, editor) !== undefined) {
+      return false;
+    }
+    dom = getParentElement(dom);
+  }
+  return false;
 }
 
 /**
@@ -2305,13 +2363,6 @@ export function hasOwnStaticMethod(
   k: keyof Klass<LexicalNode>,
 ): boolean {
   return hasOwn(klass, k) && klass[k] !== LexicalNode[k];
-}
-
-/**
- * @internal
- */
-export function hasOwnExportDOM(klass: Klass<LexicalNode>) {
-  return hasOwn(klass.prototype, 'exportDOM');
 }
 
 /** @internal */

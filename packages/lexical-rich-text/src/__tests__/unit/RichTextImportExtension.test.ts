@@ -10,7 +10,7 @@ import {
   buildEditorFromExtensions,
   getExtensionDependencyFromEditor,
 } from '@lexical/extension';
-import {DOMImportExtension} from '@lexical/html';
+import {CoreImportExtension, DOMImportExtension} from '@lexical/html';
 import {
   $isHeadingNode,
   $isQuoteNode,
@@ -31,7 +31,9 @@ import {assert, describe, expect, test} from 'vitest';
 function buildEditor() {
   return buildEditorFromExtensions(
     defineExtension({
-      dependencies: [RichTextImportExtension],
+      // Leaf importer extensions no longer pull `CoreImportExtension`
+      // in by themselves — the application is expected to add it once.
+      dependencies: [CoreImportExtension, RichTextImportExtension],
       name: 'rich-text-host',
       nodes: [HeadingNode, QuoteNode],
     }),

@@ -6,12 +6,7 @@
  *
  */
 
-import {
-  CoreImportExtension,
-  defineImportRule,
-  DOMImportExtension,
-  sel,
-} from '@lexical/html';
+import {defineImportRule, DOMImportExtension, sel} from '@lexical/html';
 import {
   $setDirectionFromDOM,
   $setFormatFromDOM,
@@ -112,16 +107,16 @@ export const RichTextImportRules = [
 ];
 
 /**
- * Bundles {@link RichTextImportRules} (plus {@link CoreImportExtension})
- * into a single dependency. Use this in editors that want the legacy
- * `@lexical/rich-text` DOM import behavior under the new
- * {@link DOMImportExtension} pipeline.
+ * Bundles {@link RichTextImportRules} together with the runtime
+ * {@link RichTextExtension}. The application is expected to already
+ * have `CoreImportExtension` (or some equivalent) in its dependency
+ * graph — the core/text/paragraph/inline-format rules are a shared
+ * baseline, not something this leaf importer should re-declare.
  *
  * @experimental
  */
 export const RichTextImportExtension = defineExtension({
   dependencies: [
-    CoreImportExtension,
     RichTextExtension,
     configExtension(DOMImportExtension, {rules: RichTextImportRules}),
   ],

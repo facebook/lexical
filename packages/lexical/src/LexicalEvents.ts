@@ -100,7 +100,6 @@ import {
   $getAdjacentNode,
   $getDOMTextNode,
   $getNodeByKey,
-  $isSelectionCapturedInDecorator,
   $isTokenOrSegmented,
   $isTokenOrTab,
   $setSelection,
@@ -127,6 +126,7 @@ import {
   isDeleteLineForward,
   isDeleteWordBackward,
   isDeleteWordForward,
+  isDOMCapturingSelection,
   isDOMNode,
   isDOMTextNode,
   isEscape,
@@ -560,7 +560,7 @@ function onPointerDown(event: PointerEvent, editor: LexicalEditor) {
     updateEditorSync(editor, () => {
       // Drag & drop should not recompute selection until mouse up; otherwise the initially
       // selected content is lost.
-      if (!$isSelectionCapturedInDecorator(target)) {
+      if (!isDOMCapturingSelection(target, editor)) {
         isSelectionChangeFromMouseDown = true;
       }
     });
@@ -1082,14 +1082,13 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
 }
 
 function $handleInput(event: InputEvent): boolean {
+  const editor = getActiveEditor();
   if (
     isHTMLElement(event.target) &&
-    $isSelectionCapturedInDecorator(event.target)
+    isDOMCapturingSelection(event.target, editor)
   ) {
     return true;
   }
-
-  const editor = getActiveEditor();
   const selection = $getSelection();
   const data = event.data;
   const targetRange = getTargetRange(event);

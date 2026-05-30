@@ -26,7 +26,7 @@ import {
   test,
 } from '../utils/index.mjs';
 
-test.describe.parallel('Auto Links', () => {
+test.describe('Auto Links', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
 
   test('Can convert url-like text into links', async ({page, isPlainText}) => {

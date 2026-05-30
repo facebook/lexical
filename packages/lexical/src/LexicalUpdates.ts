@@ -115,6 +115,18 @@ export function getActiveEditorState(): EditorState {
   return activeEditorState;
 }
 
+/** @internal */
+export function $assumeActiveEditor(editor: LexicalEditor): void {
+  // Throw if called outside of an update
+  if (getActiveEditorState() !== null && activeEditor === null) {
+    activeEditor = editor;
+  }
+  invariant(
+    activeEditor === editor,
+    'The given editor argument does not match $getEditor() in this context. Use editor.getEditorState().read(..., {editor}) if this cross-editor call is intentional.',
+  );
+}
+
 export function getActiveEditor(): LexicalEditor {
   if (activeEditor === null) {
     invariant(

@@ -66,6 +66,7 @@ export {parseSelector} from './parseCss';
 export {
   $distributeInlineWrapper,
   $isBlockLevel,
+  $propagateTextAlignToBlockChildren,
   BlockSchema,
   InlineSchema,
   NestedBlockSchema,

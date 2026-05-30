@@ -9,7 +9,7 @@
     "paste"
   ],
   "license": "MIT",
-  "version": "0.45.0",
+  "version": "0.45.1-dev.0",
   "main": "./dist/LexicalClipboard.js",
   "types": "./dist/index.d.ts",
   "dependencies": {

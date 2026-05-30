@@ -941,8 +941,16 @@ declare export class ElementDOMSlot<out T extends HTMLElement> extends DOMSlot<T
   resolveChildIndex(element: ElementNode, elementDOM: HTMLElement, initialDOM: Node, initialOffset: number): [node: ElementNode, idx: number];
 }
 
-declare export function setDOMUnmanaged(elementDOM: HTMLElement): void;
+export type SetDOMUnmanagedOptions = {captureSelection?: boolean};
+declare export function setDOMUnmanaged(
+  elementDOM: HTMLElement,
+  options?: SetDOMUnmanagedOptions,
+): void;
 declare export function isDOMUnmanaged(elementDOM: HTMLElement): boolean;
+declare export function isDOMCapturingSelection(
+  elementDOM: Node,
+  editor: LexicalEditor,
+): boolean;
 
 /**
  * LexicalDecoratorNode

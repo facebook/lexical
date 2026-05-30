@@ -34,7 +34,7 @@ import {
   test,
 } from '../utils/index.mjs';
 
-test.describe.parallel('TextFormatting', () => {
+test.describe('TextFormatting', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
   test(`Can create bold text using the shortcut`, async ({
     page,

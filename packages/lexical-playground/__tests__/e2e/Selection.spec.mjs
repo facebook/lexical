@@ -56,7 +56,7 @@ import {
   YOUTUBE_SAMPLE_URL,
 } from '../utils/index.mjs';
 
-test.describe.parallel('Selection', () => {
+test.describe('Selection', () => {
   test.beforeEach(({isCollab, page}) =>
     initialize({isCollab, page, tableHorizontalScroll: false}),
   );

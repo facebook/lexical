@@ -90,7 +90,15 @@ export function $isLineBreakNode(
   return node instanceof LineBreakNode;
 }
 
-function isOnlyChildInBlockNode(node: Node): boolean {
+/**
+ * True when `node` is the sole non-whitespace child of a block DOM
+ * element. Used by the LineBreak importer to drop stray `<br>` elements
+ * that the legacy `$generateNodesFromDOM` also skipped (matches the
+ * behavior of `LineBreakNode.importDOM`).
+ *
+ * @experimental
+ */
+export function isOnlyChildInBlockNode(node: Node): boolean {
   const parentElement = node.parentElement;
   if (parentElement !== null && isBlockDomNode(parentElement)) {
     const firstChild = parentElement.firstChild!;
@@ -111,7 +119,15 @@ function isOnlyChildInBlockNode(node: Node): boolean {
   return false;
 }
 
-function isLastChildInBlockNode(node: Node): boolean {
+/**
+ * True when `node` is the trailing non-whitespace child of a block DOM
+ * element (excluding the only-child case). Used by the LineBreak
+ * importer to drop trailing `<br>` elements like the Apple-interchange
+ * clipboard artifact (matches `LineBreakNode.importDOM`).
+ *
+ * @experimental
+ */
+export function isLastChildInBlockNode(node: Node): boolean {
   const parentElement = node.parentElement;
   if (parentElement !== null && isBlockDomNode(parentElement)) {
     // check if node is first child, because only child dont count

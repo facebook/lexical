@@ -87,7 +87,7 @@ import {TerseExportExtension} from './plugins/TerseExportExtension';
 import TestRecorderPlugin from './plugins/TestRecorderPlugin';
 import {TwitterExtension} from './plugins/TwitterExtension';
 import TypingPerfPlugin from './plugins/TypingPerfPlugin';
-import {VisibleLineBreakExtension} from './plugins/VisibleLineBreakExtension';
+import {VisibleNonPrintingExtension} from './plugins/VisibleNonPrintingExtension';
 import {YouTubeExtension} from './plugins/YouTubeExtension';
 import Settings from './Settings';
 import PlaygroundEditorTheme from './themes/PlaygroundEditorTheme';
@@ -238,7 +238,7 @@ const AppExtension = defineExtension({
         $defaultShouldInsertAfter(node) || $isCodeNode(node),
     }),
     configExtension(AutocompleteExtension, {disabled: true}),
-    configExtension(VisibleLineBreakExtension, {disabled: true}),
+    configExtension(VisibleNonPrintingExtension, {disabled: true}),
     // DOMImportExtension pipeline — `PlaygroundImportExtension` bundles
     // the shared `CoreImportExtension` baseline, every per-package
     // import extension (rich-text, list, link, table, code, hr), the

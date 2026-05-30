@@ -740,7 +740,7 @@
     min-height: var(--page-height);
   }
 }
-[data-lexical-visible-linebreak]::before {
+[data-lexical-visible-non-printing-linebreak]::before {
   content: '↵';
   color: #999;
   pointer-events: none;

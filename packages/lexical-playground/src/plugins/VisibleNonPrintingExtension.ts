@@ -38,18 +38,19 @@ import {
  * `$setRenderContextValue`, which recompiles the render config and recreates
  * the existing `LineBreakNode` DOM through the new config.
  */
-const VISIBLE_LINEBREAK_CLASS = 'visible-linebreak';
-const VISIBLE_LINEBREAK_ATTR = 'data-lexical-visible-linebreak';
+const VISIBLE_NON_PRINTING_LINEBREAK_CLASS = 'visible-non-printing-linebreak';
+const VISIBLE_NON_PRINTING_LINEBREAK_ATTR =
+  'data-lexical-visible-non-printing-linebreak';
 
-export interface VisibleLineBreakConfig {
+export interface VisibleNonPrintingConfig {
   disabled: boolean;
 }
 
 /**
  * Editor render context state mirroring the extension's `disabled` signal.
  */
-export const VisibleLineBreakDisabled = createRenderState(
-  'visibleLineBreakDisabled',
+export const VisibleNonPrintingDisabled = createRenderState(
+  'visibleNonPrintingDisabled',
   () => false,
 );
 
@@ -69,12 +70,15 @@ function $skipForCodeChild(node: LineBreakNode): boolean {
 }
 
 function hasOurWrap(dom: HTMLElement): boolean {
-  return dom.tagName === 'SPAN' && dom.hasAttribute(VISIBLE_LINEBREAK_ATTR);
+  return (
+    dom.tagName === 'SPAN' &&
+    dom.hasAttribute(VISIBLE_NON_PRINTING_LINEBREAK_ATTR)
+  );
 }
 
-export const VisibleLineBreakExtension = defineExtension({
+export const VisibleNonPrintingExtension = defineExtension({
   build: (editor, config) => namedSignals(config),
-  config: safeCast<VisibleLineBreakConfig>({disabled: false}),
+  config: safeCast<VisibleNonPrintingConfig>({disabled: false}),
   dependencies: [
     configExtension(DOMRenderExtension, {
       overrides: [
@@ -87,8 +91,8 @@ export const VisibleLineBreakExtension = defineExtension({
                 return inner;
               }
               const wrapper = document.createElement('span');
-              wrapper.className = VISIBLE_LINEBREAK_CLASS;
-              wrapper.setAttribute(VISIBLE_LINEBREAK_ATTR, 'true');
+              wrapper.className = VISIBLE_NON_PRINTING_LINEBREAK_CLASS;
+              wrapper.setAttribute(VISIBLE_NON_PRINTING_LINEBREAK_ATTR, 'true');
               wrapper.appendChild(inner);
               return wrapper;
             },
@@ -104,17 +108,17 @@ export const VisibleLineBreakExtension = defineExtension({
               return $next();
             },
           },
-          {disabledForEditor: ctx => ctx.get(VisibleLineBreakDisabled)},
+          {disabledForEditor: ctx => ctx.get(VisibleNonPrintingDisabled)},
         ),
       ],
     }),
   ],
-  name: '@lexical/playground/visible-linebreak',
+  name: '@lexical/playground/visible-non-printing',
   register: (editor, _config, state) => {
     const stores = state.getOutput();
     return effect(() => {
       $setRenderContextValue(
-        VisibleLineBreakDisabled,
+        VisibleNonPrintingDisabled,
         stores.disabled.value,
         editor,
       );

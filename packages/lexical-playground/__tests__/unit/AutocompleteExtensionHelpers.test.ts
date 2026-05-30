@@ -24,6 +24,22 @@ describe('detectLanguage', () => {
     {expected: 'ja', input: 'あり', label: 'hiragana'},
     {expected: 'ja', input: 'カタカナ', label: 'katakana'},
     {expected: 'ja', input: '漢字', label: 'CJK Unified ideograph'},
+    {expected: 'ja', input: '㐀', label: 'CJK Extension A (BMP)'},
+    {
+      expected: 'ja',
+      input: '\u{20000}',
+      label: 'supplementary-plane CJK ideograph (Ext B)',
+    },
+    {
+      expected: 'ja',
+      input: 'foo \u{20000}',
+      label: 'trailing supplementary-plane ideograph after ascii',
+    },
+    {
+      expected: 'en',
+      input: '\u{1F642}',
+      label: 'astral emoji is not a CJK/Hangul script',
+    },
     {
       expected: 'en',
       input: '안녕 hi',
@@ -214,5 +230,57 @@ describe('createWordlistDictionary', () => {
   test('duplicate entries are handled and the first occurrence wins', () => {
     const dict = createWordlistDictionary(['testing', 'testing', 'tester']);
     expect(dict.query('test')).toBe('ing');
+  });
+});
+
+describe('createWordlistDictionary — Korean (non-ASCII) wordlist', () => {
+  // A small slice of real multi-syllable Korean nouns. Several share the
+  // '사용' ("use") and '학' ("study / school") stems, so prefix lookups,
+  // priority order, and minPrefixLength gating are all exercised on
+  // Hangul rather than ASCII. Hangul syllables are single UTF-16 units,
+  // so a two-syllable prefix has length 2.
+  const koreanWords = [
+    '사용', // use
+    '사용법', // instructions
+    '사용자', // user
+    '학교', // school
+    '학생', // student
+    '학생회', // student council
+  ];
+
+  test('completes a Hangul prefix to its earliest-listed longer word', () => {
+    const dict = createWordlistDictionary(koreanWords);
+    expect(dict.query('사용')).toBe('법'); // 사용법 precedes 사용자
+    expect(dict.query('학생')).toBe('회'); // 학생회 is the only longer 학생*
+  });
+
+  test('respects the default minPrefixLength of 2 on Hangul', () => {
+    const dict = createWordlistDictionary(koreanWords);
+    expect(dict.query('사')).toBeNull(); // single syllable, below the minimum
+    expect(dict.query('학')).toBeNull();
+  });
+
+  test('a complete word with no longer entry yields no suggestion', () => {
+    const dict = createWordlistDictionary(koreanWords);
+    expect(dict.query('학교')).toBeNull(); // 학교 is a leaf
+  });
+
+  test('returns null when no entry shares the Hangul prefix', () => {
+    const dict = createWordlistDictionary(koreanWords);
+    expect(dict.query('컴퓨')).toBeNull(); // 컴퓨터 (computer) is not in the list
+  });
+
+  test('honours the priority order among words sharing a stem', () => {
+    // Re-ordered so 사용자 outranks 사용법; the earliest-listed wins.
+    const dict = createWordlistDictionary(['사용자', '사용법', '사용권']);
+    expect(dict.query('사용')).toBe('자');
+  });
+
+  test('a custom minPrefixLength gates shorter Hangul prefixes', () => {
+    const dict = createWordlistDictionary(['학생회', '학생회장'], {
+      minPrefixLength: 3,
+    });
+    expect(dict.query('학생')).toBeNull(); // 2 syllables < 3
+    expect(dict.query('학생회')).toBe('장'); // 3-syllable prefix completes
   });
 });

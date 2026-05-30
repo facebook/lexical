@@ -51,6 +51,12 @@ export interface WordlistDictionaryOptions {
  * wordlist. Returns the first word in the list that starts with the
  * prefix (and is longer than it), case-insensitive by default.
  *
+ * Case-insensitive matching assumes case folding preserves length,
+ * which holds for the scripts this targets (Latin, Hangul, kana, Han).
+ * Scripts where `toLowerCase()` changes length — e.g. Turkish `İ`
+ * (U+0130) folds to two code points — are not handled specially; pass
+ * `caseSensitive: true` for wordlists in those scripts.
+ *
  * For most languages this is the minimum useful implementation. Plug
  * one in as:
  *

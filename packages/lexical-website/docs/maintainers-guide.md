@@ -296,6 +296,15 @@ One-time (idempotent) helper to register every public package with
 [npm trusted publishing](https://docs.npmjs.com/trusted-publishers).
 Re-run it whenever a new public package is added.
 
+#### Prerequisites
+
+- Node.js — whatever the repo's root `package.json#engines.node` says (currently `>=20.19.0`). Running with Node 24+ is recommended because that's what CI uses for publishes.
+- pnpm — pinned by `package.json#packageManager` (currently `pnpm@10.34.1`). Activate with [corepack](https://nodejs.org/api/corepack.html) or install directly.
+- npm CLI — **`npm ≥ 11.10`** (`npm i -g npm@latest`). The `npm trust` subcommand was added in npm 11; older versions will fail the preflight check.
+- An authenticated npm session (`npm login --registry https://registry.npmjs.org` or `NPM_TOKEN` in env) on a publisher account that has **account-level 2FA enabled** and write access to every `@lexical/*` package.
+
+#### Usage
+
 Run in check-only mode first:
 
 ```bash

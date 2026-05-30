@@ -705,27 +705,33 @@ export async function sleep(delay) {
 }
 
 /**
- * Force a new @lexical/history undo group (a "merge boundary") deterministically
- * — a drop-in replacement for `sleep(delay + overhead)`.
+ * Force a new undo group (a "merge boundary") deterministically — a drop-in
+ * replacement for `sleep(mergeWindow + overhead)`. Works in both editor modes
+ * and picks the right mechanism automatically:
  *
- * History coalesces consecutive same-type edits while
- * `now() < prevChangeTime + delay`, so tests used to sleep just past the merge
- * `delay` to make the next edit begin a new undo entry. That is slow and, under
- * CI load, flaky: a timer that fires late can coalesce edits that were meant to
- * stay separate (or vice versa). Instead we drive the history extension's `now`
- * signal directly — the lever called out in the task — freezing it
- * `delay + overheadMs` past its current value. The next edit is then guaranteed
- * to exceed the merge window (new boundary), while every later edit observes a
- * fixed time so genuinely fast edits still coalesce exactly as in production.
- * History reads `now` via `peek()`, so reassigning the signal neither
- * re-registers history nor disturbs the in-progress merge bookkeeping.
+ * - **Local history** (`@lexical/history`): coalesces consecutive same-type
+ *   edits while `now() < prevChangeTime + delay`. We drive the extension's
+ *   `now` output signal directly — the lever called out in the task — freezing
+ *   it `delay + overheadMs` past its current value. The next edit is then
+ *   guaranteed to exceed the merge window (new boundary), while later edits
+ *   observe a fixed time so genuinely fast edits still coalesce as in
+ *   production. History reads `now` via `peek()`, so reassigning the signal
+ *   neither re-registers history nor disturbs in-progress merge bookkeeping.
+ * - **Collab** (Yjs `UndoManager`, which `@lexical/history` is disabled in
+ *   favor of): the manager coalesces changes within its own `captureTimeout`
+ *   using `Date.now()`, which isn't injectable. Its public `stopCapturing()`
+ *   resets the window (`lastChange = 0`) so the next change starts a fresh
+ *   stack item — the deterministic equivalent of advancing past the window.
+ *   The manager is published on the editor by `useYjsUndoManager`; see
+ *   `Symbol.for('@lexical/yjs/UndoManager')`.
  *
- * Only valid for the local-history editor: collab disables @lexical/history in
- * favor of the Yjs UndoManager, so the tests that use this skip collab.
+ * Both replace wall-clock sleeps, which are slow and, under CI load, flaky: a
+ * timer that fires late can coalesce edits meant to stay separate (or vice
+ * versa).
  *
  * @param {import('@playwright/test').Page} page
- * @param {number} [overheadMs] slack added past `delay`, mirroring the old
- *   `sleep(delay + 50)` convention.
+ * @param {number} [overheadMs] slack added past the local-history `delay`,
+ *   mirroring the old `sleep(delay + 50)` convention.
  */
 export async function advanceHistoryClock(page, overheadMs = 50) {
   await evaluate(
@@ -734,11 +740,26 @@ export async function advanceHistoryClock(page, overheadMs = 50) {
       const editor = document.querySelector(
         '[data-lexical-editor="true"]',
       ).__lexicalEditor;
-      const {output} = editor[
-        Symbol.for('@lexical/extension/LexicalBuilder')
-      ].extensionNameMap.get('@lexical/history/History').state;
-      const frozen = output.now.peek()() + output.delay.peek() + overhead;
-      output.now.value = () => frozen;
+      // Collab: reset the Yjs UndoManager's capture window.
+      const undoManager = editor[Symbol.for('@lexical/yjs/UndoManager')];
+      if (undoManager) {
+        undoManager.stopCapturing();
+        return;
+      }
+      // Local history: freeze `now` past the merge delay.
+      const builder = editor[Symbol.for('@lexical/extension/LexicalBuilder')];
+      const output = builder?.extensionNameMap.get('@lexical/history/History')
+        ?.state?.output;
+      if (output && !output.disabled.value) {
+        const frozen = output.now.peek()() + output.delay.peek() + overhead;
+        output.now.value = () => frozen;
+        return;
+      }
+      throw new Error(
+        'advanceHistoryClock: no active undo mechanism found on the editor ' +
+          '(expected the Yjs UndoManager in collab, or an enabled ' +
+          '@lexical/history extension otherwise)',
+      );
     },
     overheadMs,
   );

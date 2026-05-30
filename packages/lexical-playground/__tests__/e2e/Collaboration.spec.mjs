@@ -15,6 +15,7 @@ import {
   undo,
 } from '../keyboardShortcuts/index.mjs';
 import {
+  advanceHistoryClock,
   assertHTML,
   assertSelection,
   click,
@@ -46,7 +47,7 @@ test.describe('Collaboration', () => {
     await page.keyboard.press('Enter');
     await page.keyboard.press('Enter');
     await page.keyboard.type('world');
-    await sleep(1050); // default merge interval is 1000, add 50ms as overhead due to CI latency.
+    await advanceHistoryClock(page);
     await page.keyboard.press('ArrowUp');
     await page.keyboard.type('hello world again');
 
@@ -229,10 +230,12 @@ test.describe('Collaboration', () => {
     await focusEditor(page);
     await page.keyboard.type('Line 1');
     await page.keyboard.press('Enter');
-    await sleep(1050); // default merge interval is 1000, add 50ms as overhead due to CI latency.
+    await advanceHistoryClock(page);
     await page.keyboard.type('This is a test. ');
 
-    // Right collaborator types at the end of paragraph 2
+    // Right collaborator types at the end of paragraph 2. This waits for the
+    // left edit to propagate to the right frame before it types — a cross-frame
+    // sync wait, not a history merge boundary, so it stays a sleep.
     await sleep(1050);
     await page
       .frameLocator('iframe[name="right"]')
@@ -311,7 +314,7 @@ test.describe('Collaboration', () => {
         </p>
       `,
     );
-    await sleep(1050);
+    await advanceHistoryClock(page);
     await toggleBold(page);
     await page.keyboard.type('bold');
 
@@ -351,7 +354,9 @@ test.describe('Collaboration', () => {
       `,
     );
 
-    // Left collaborator undoes their bold text.
+    // Left collaborator undoes their bold text. This is a cross-frame settle
+    // before the undo (waiting for the right edit above to converge), not a
+    // history merge boundary, so it stays a sleep.
     await sleep(1050);
     await page.frameLocator('iframe[name="left"]').getByLabel('Undo').click();
 
@@ -396,7 +401,7 @@ test.describe('Collaboration', () => {
     await focusEditor(page);
     await page.keyboard.type('normal bold');
 
-    await sleep(1050);
+    await advanceHistoryClock(page);
     await selectCharacters(page, 'left', 'bold'.length);
     await toggleBold(page);
 
@@ -521,7 +526,7 @@ test.describe('Collaboration', () => {
     await focusEditor(page);
     await page.keyboard.type('Check out the website!');
 
-    await sleep(1050);
+    await advanceHistoryClock(page);
     await page.keyboard.press('ArrowLeft');
     await selectCharacters(page, 'left', 'website'.length);
     await page
@@ -674,7 +679,7 @@ test.describe('Collaboration', () => {
     );
 
     // Left collaborator deletes A, right deletes B.
-    await sleep(1050);
+    await advanceHistoryClock(page);
     await page.keyboard.press('Delete');
     await assertHTML(
       page,

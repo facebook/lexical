@@ -22,6 +22,7 @@ import {
   undo,
 } from '../keyboardShortcuts/index.mjs';
 import {
+  advanceHistoryClock,
   assertSelection,
   assertTableHTML as assertHTML,
   assertTableSelectionCoordinates,
@@ -7417,10 +7418,10 @@ test.describe('Tables', () => {
       false,
       false,
     );
-    // undo is used so we need to wait for history
-    await sleep(1050);
-
-    await sleep(1050);
+    // undo is used below, so force a new undo group here. Mode-agnostic:
+    // freezes the @lexical/history clock locally, or resets the Yjs
+    // UndoManager capture window in collab.
+    await advanceHistoryClock(page);
 
     await withExclusiveClipboardAccess(async () => {
       const clipboard = await copyToClipboard(page);

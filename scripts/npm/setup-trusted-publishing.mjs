@@ -353,11 +353,18 @@ function runNpm(args) {
   });
 }
 
+// Per-package retry policy for E429 (registry rate-limit). Exponential
+// backoff starting at 5 s, capped at 60 s, up to 4 attempts total.
+const MAX_TRUST_ATTEMPTS = 4;
+const RATE_LIMIT_BACKOFF_BASE_MS = 5_000;
+const RATE_LIMIT_BACKOFF_MAX_MS = 60_000;
+
 /**
  * Run `npm trust github` for one package. stdio is wired up so the
  * OTP / web-auth URL streams to the terminal while we still capture
  * stderr to tell an `E409 Conflict` (the registry's way of saying
- * "this exact trust config already exists") apart from real failures.
+ * "this exact trust config already exists") apart from real failures,
+ * and to back off and retry on `E429 Too Many Requests`.
  *
  * @param {import('../shared/PackageMetadata.mjs').PackageMetadata} pkg
  * @returns {Promise<'configured' | 'already-configured' | 'dry-run' | 'failed'>}
@@ -382,16 +389,36 @@ async function addTrustConfig(pkg) {
     return 'dry-run';
   }
   console.log(`\nConfiguring ${name} (npm will prompt for OTP / web auth):`);
-  const {code, stderr} = await runNpm(args);
-  if (code === 0) {
-    console.log(`  ${name} ... configured\n`);
-    return 'configured';
+  for (let attempt = 1; attempt <= MAX_TRUST_ATTEMPTS; attempt++) {
+    const {code, stderr} = await runNpm(args);
+    if (code === 0) {
+      console.log(`  ${name} ... configured\n`);
+      return 'configured';
+    }
+    if (/code E409|409 Conflict/i.test(stderr)) {
+      console.log(`  ${name} ... already configured (server returned 409)\n`);
+      return 'already-configured';
+    }
+    if (
+      /code E429|429 Too Many Requests/i.test(stderr) &&
+      attempt < MAX_TRUST_ATTEMPTS
+    ) {
+      const backoff = Math.min(
+        RATE_LIMIT_BACKOFF_MAX_MS,
+        RATE_LIMIT_BACKOFF_BASE_MS * 2 ** (attempt - 1),
+      );
+      console.log(
+        `  ${name} ... rate-limited (E429); waiting ${Math.round(backoff / 1000)}s before retry (attempt ${attempt + 1}/${MAX_TRUST_ATTEMPTS})`,
+      );
+      await sleep(backoff);
+      continue;
+    }
+    console.error(`  ${name} ... FAILED (npm exit ${code})\n`);
+    return 'failed';
   }
-  if (/code E409|409 Conflict/i.test(stderr)) {
-    console.log(`  ${name} ... already configured (server returned 409)\n`);
-    return 'already-configured';
-  }
-  console.error(`  ${name} ... FAILED (npm exit ${code})\n`);
+  console.error(
+    `  ${name} ... FAILED (gave up after ${MAX_TRUST_ATTEMPTS} attempts)\n`,
+  );
   return 'failed';
 }
 

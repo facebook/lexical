@@ -730,6 +730,33 @@ export async function waitForSelector(page, selector, options) {
   await getPageOrFrame(page).waitForSelector(selector, options);
 }
 
+/**
+ * Wait until `optionText` is the *highlighted* (aria-selected) option in the
+ * typeahead / mentions menu, so a subsequent `Enter` deterministically commits
+ * it.
+ *
+ * The mentions lookup is asynchronous and incremental: while e.g. "@Luke" is
+ * being typed, the partial query "Lu" also matches options that sort earlier —
+ * the "Lu" results list "Agent Kallus" (kal**lu**s) at index 0 and only list
+ * "Luke Skywalker" at index 2. Those intermediate result sets resolve on their
+ * own timers, so waiting merely for the option *text* to be present and then
+ * pressing Enter (which commits the highlighted index 0) is racy: under load
+ * the Enter can land while an intermediate list is showing and commit the wrong
+ * option. Waiting for the option to be highlighted is deterministic because the
+ * settled list always highlights the intended option at index 0.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {string} optionText
+ * @param {Parameters<import('@playwright/test').Page['waitForSelector']>[1]} [options]
+ */
+export async function waitForTypeaheadMenuOption(page, optionText, options) {
+  await waitForSelector(
+    page,
+    `#typeahead-menu ul li[aria-selected="true"]:has-text("${optionText}")`,
+    options,
+  );
+}
+
 export function locate(page, selector) {
   return getPageOrFrame(page).locator(selector);
 }

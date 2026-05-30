@@ -27,6 +27,7 @@ import {
   keyUpCtrlOrMeta,
   test,
   waitForSelector,
+  waitForTypeaheadMenuOption,
 } from '../utils/index.mjs';
 
 test.use({launchOptions: {slowMo: 50}});
@@ -644,7 +645,7 @@ test.describe('Composition', () => {
       await enableCompositionKeyEvents(page);
 
       await page.keyboard.type('@Luke');
-      await waitForSelector(page, '#typeahead-menu ul li');
+      await waitForTypeaheadMenuOption(page, 'Luke Skywalker');
       await page.keyboard.press('Enter');
 
       await waitForSelector(page, '.mention');
@@ -754,7 +755,7 @@ test.describe('Composition', () => {
       await enableCompositionKeyEvents(page);
 
       await page.keyboard.type('@Luke');
-      await waitForSelector(page, '#typeahead-menu ul li');
+      await waitForTypeaheadMenuOption(page, 'Luke Skywalker');
       await page.keyboard.press('Enter');
 
       await waitForSelector(page, '.mention');
@@ -861,7 +862,7 @@ test.describe('Composition', () => {
       await enableCompositionKeyEvents(page);
 
       await page.keyboard.type('@Luke');
-      await waitForSelector(page, '#typeahead-menu ul li');
+      await waitForTypeaheadMenuOption(page, 'Luke Skywalker');
       await page.keyboard.press('Enter');
 
       const client = await page.context().newCDPSession(page);
@@ -1284,7 +1285,7 @@ test.describe('Composition', () => {
       await enableCompositionKeyEvents(page);
 
       await page.keyboard.type('@Luke');
-      await waitForSelector(page, '#typeahead-menu ul li');
+      await waitForTypeaheadMenuOption(page, 'Luke Skywalker');
 
       const client = await page.context().newCDPSession(page);
 

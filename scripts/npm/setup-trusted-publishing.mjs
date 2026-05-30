@@ -13,7 +13,7 @@ import minimist from 'minimist';
 import os from 'node:os';
 import path from 'node:path';
 
-import {exec, spawn} from '../shared/childProcess.mjs';
+import {exec} from '../shared/childProcess.mjs';
 import {packagesManager} from '../shared/packagesManager.mjs';
 
 const argv = minimist(process.argv.slice(2));
@@ -138,28 +138,93 @@ function escapedName(name) {
 }
 
 /**
- * Read the npm auth token for the configured registry, preferring the
- * NPM_TOKEN env var and falling back to whatever the user's npmrc
- * resolves `_authToken` to. Used for read-only registry calls that
- * don't go through the npm CLI (so they don't trigger OTP prompts).
+ * Read every `//<host>/:_authToken=<token>` line out of an .npmrc file
+ * at the given path, returning a host → token map. Returns an empty
+ * map when the file can't be read.
  *
- * @returns {Promise<string | null>}
+ * @param {string} npmrcPath
+ * @returns {Promise<Map<string, string>>}
+ */
+async function readNpmrcAuthTokens(npmrcPath) {
+  /** @type {Map<string, string>} */
+  const tokens = new Map();
+  let contents = '';
+  try {
+    contents = await fs.readFile(npmrcPath, 'utf8');
+  } catch {
+    return tokens;
+  }
+  for (const rawLine of contents.split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith('#') || line.startsWith(';')) {
+      continue;
+    }
+    // Match  //registry.example.com/:_authToken=VALUE
+    const m = line.match(/^\/\/([^/]+)\/:_authToken=(.+)$/);
+    if (!m) {
+      continue;
+    }
+    let value = m[2].trim();
+    // Strip surrounding quotes if any
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+    // Expand ${VAR} references against process.env
+    value = value.replace(
+      /\$\{([^}]+)\}/g,
+      (_, name) => process.env[name] || '',
+    );
+    if (value) {
+      tokens.set(m[1], value);
+    }
+  }
+  return tokens;
+}
+
+/**
+ * Read the npm auth token for the configured registry. Tries in
+ * order: NPM_TOKEN env var, project ./.npmrc, user ~/.npmrc, then
+ * `npm config get`. The direct-file paths handle the common macOS
+ * web-auth case where `npm config get //host/:_authToken` resolves to
+ * the literal string "undefined" even though the token is right there
+ * in ~/.npmrc.
+ *
+ * @returns {Promise<{token: string | null, source: string}>}
  */
 async function fetchAuthToken() {
   if (process.env.NPM_TOKEN) {
     const tok = process.env.NPM_TOKEN.trim();
     if (tok) {
-      return tok;
+      return {source: 'NPM_TOKEN env var', token: tok};
     }
   }
   const host = new URL(registry).host;
-  try {
-    const {stdout} = await exec(`npm config get //${host}/:_authToken`);
-    const token = stdout.trim();
-    return token && token !== 'undefined' ? token : null;
-  } catch {
-    return null;
+  const candidates = [
+    {label: 'project .npmrc', path: path.resolve('.npmrc')},
+    {label: 'user ~/.npmrc', path: path.join(os.homedir(), '.npmrc')},
+  ];
+  for (const {label, path: npmrcPath} of candidates) {
+    const tokens = await readNpmrcAuthTokens(npmrcPath);
+    const token = tokens.get(host);
+    if (token) {
+      return {source: label, token};
+    }
   }
+  try {
+    const {stdout} = await exec(`npm config get //${host}/:_authToken`, {
+      env: npmCleanEnv(),
+    });
+    const token = stdout.trim();
+    if (token && token !== 'undefined') {
+      return {source: 'npm config get', token};
+    }
+  } catch {
+    // fall through
+  }
+  return {source: '', token: null};
 }
 
 /**
@@ -230,13 +295,15 @@ function configMatches(config) {
 // pnpm exports its own (and pnpm-only) settings as `npm_config_*` env
 // vars when running scripts. npm 11+ warns about every one of these it
 // doesn't recognise ("Unknown env config ...") and threatens to error
-// in npm 12. Strip the known pnpm-only ones from the env we pass to
-// spawned `npm` so the maintainer doesn't see a wall of warnings on
-// each trust call.
+// in npm 12. The actual env var names use underscores in place of the
+// hyphens you'd see in the config key (npm normalizes back to hyphens
+// when reading), so we strip both spellings to cover all observed
+// shapes.
 const PNPM_ONLY_NPM_CONFIG_KEYS = [
   'npm-globalconfig',
   'verify-deps-before-run',
   '_jsr-registry',
+  'manage-package-manager-versions',
 ];
 
 /**
@@ -246,18 +313,61 @@ function npmCleanEnv() {
   const env = {...process.env};
   for (const key of PNPM_ONLY_NPM_CONFIG_KEYS) {
     delete env[`npm_config_${key}`];
+    delete env[`npm_config_${key.replace(/-/g, '_')}`];
   }
   return env;
 }
 
 /**
- * Run `npm trust github` for one package. Invokes the npm CLI with
- * `stdio: 'inherit'` so the OTP / web-auth URL prints to the user's
- * terminal in real time (buffering via `exec` previously caused the
- * one-time URL to only surface after it had already expired).
+ * Spawn `npm` with `stdio: ['inherit', 'inherit', 'pipe']` — keeps the
+ * OTP / web-auth URL streaming to the terminal, but also captures
+ * stderr so we can distinguish a benign "already-configured" 409 from
+ * a real failure.
+ *
+ * @param {string[]} args
+ * @returns {Promise<{code: number | null, signal: NodeJS.Signals | null, stderr: string}>}
+ */
+function runNpm(args) {
+  return new Promise(resolve => {
+    // Lazy import; keeps top of file tidy and avoids extra weight on
+    // dry-run/check-only paths.
+    import('node:child_process').then(({spawn: spawnCb}) => {
+      const child = spawnCb('npm', args, {
+        env: npmCleanEnv(),
+        stdio: ['inherit', 'inherit', 'pipe'],
+      });
+      let stderr = '';
+      if (child.stderr) {
+        child.stderr.on('data', chunk => {
+          process.stderr.write(chunk);
+          stderr += chunk.toString();
+        });
+      }
+      child.on('close', (code, signal) => {
+        resolve({code, signal, stderr});
+      });
+      child.on('error', err => {
+        resolve({code: -1, signal: null, stderr: stderr + String(err)});
+      });
+    });
+  });
+}
+
+// Per-package retry policy for E429 (registry rate-limit). Exponential
+// backoff starting at 5 s, capped at 60 s, up to 4 attempts total.
+const MAX_TRUST_ATTEMPTS = 4;
+const RATE_LIMIT_BACKOFF_BASE_MS = 5_000;
+const RATE_LIMIT_BACKOFF_MAX_MS = 60_000;
+
+/**
+ * Run `npm trust github` for one package. stdio is wired up so the
+ * OTP / web-auth URL streams to the terminal while we still capture
+ * stderr to tell an `E409 Conflict` (the registry's way of saying
+ * "this exact trust config already exists") apart from real failures,
+ * and to back off and retry on `E429 Too Many Requests`.
  *
  * @param {import('../shared/PackageMetadata.mjs').PackageMetadata} pkg
- * @returns {Promise<'configured' | 'dry-run' | 'failed'>}
+ * @returns {Promise<'configured' | 'already-configured' | 'dry-run' | 'failed'>}
  */
 async function addTrustConfig(pkg) {
   const name = pkg.getNpmName();
@@ -279,20 +389,37 @@ async function addTrustConfig(pkg) {
     return 'dry-run';
   }
   console.log(`\nConfiguring ${name} (npm will prompt for OTP / web auth):`);
-  try {
-    await spawn('npm', args, {env: npmCleanEnv(), stdio: 'inherit'});
-    console.log(`  ${name} ... configured\n`);
-    return 'configured';
-  } catch (err) {
-    const code =
-      err && typeof err === 'object' && 'code' in err
-        ? /** @type {{code?: unknown}} */ (err).code
-        : undefined;
-    console.error(
-      `  ${name} ... FAILED${code !== undefined ? ` (npm exit ${code})` : ''}\n`,
-    );
+  for (let attempt = 1; attempt <= MAX_TRUST_ATTEMPTS; attempt++) {
+    const {code, stderr} = await runNpm(args);
+    if (code === 0) {
+      console.log(`  ${name} ... configured\n`);
+      return 'configured';
+    }
+    if (/code E409|409 Conflict/i.test(stderr)) {
+      console.log(`  ${name} ... already configured (server returned 409)\n`);
+      return 'already-configured';
+    }
+    if (
+      /code E429|429 Too Many Requests/i.test(stderr) &&
+      attempt < MAX_TRUST_ATTEMPTS
+    ) {
+      const backoff = Math.min(
+        RATE_LIMIT_BACKOFF_MAX_MS,
+        RATE_LIMIT_BACKOFF_BASE_MS * 2 ** (attempt - 1),
+      );
+      console.log(
+        `  ${name} ... rate-limited (E429); waiting ${Math.round(backoff / 1000)}s before retry (attempt ${attempt + 1}/${MAX_TRUST_ATTEMPTS})`,
+      );
+      await sleep(backoff);
+      continue;
+    }
+    console.error(`  ${name} ... FAILED (npm exit ${code})\n`);
     return 'failed';
   }
+  console.error(
+    `  ${name} ... FAILED (gave up after ${MAX_TRUST_ATTEMPTS} attempts)\n`,
+  );
+  return 'failed';
 }
 
 async function checkAuth() {
@@ -468,7 +595,17 @@ async function main() {
   /** @type {Array<import('../shared/PackageMetadata.mjs').PackageMetadata>} */
   const trustUnknown = [];
   if (trustCandidates.length > 0) {
-    const token = await fetchAuthToken();
+    const {source, token} = await fetchAuthToken();
+    if (token) {
+      console.log(`\nUsing npm auth token from ${source} for trust pre-check.`);
+    } else {
+      console.log(
+        `\nCould not locate an npm auth token (checked NPM_TOKEN, ./.npmrc, ~/.npmrc, and \`npm config get\`).`,
+      );
+      console.log(
+        `Pre-check will be skipped; npm trust github will be attempted for every package.`,
+      );
+    }
     console.log(`\nChecking existing trust configuration:`);
     for (const pkg of trustCandidates) {
       const name = pkg.getNpmName();

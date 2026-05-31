@@ -153,15 +153,6 @@ describe('MOVE_TO_START no-op cases (Issue #8555)', () => {
         paragraph.select(0, 0);
       },
     },
-    {
-      label: 'decorator-only element (no selectable text)',
-      setup: () => {
-        const decorator = $createTestDecoratorNode().setIsInline(true);
-        const paragraph = $createParagraphNode().append(decorator);
-        $getRoot().clear().append(paragraph);
-        paragraph.select(1, 1);
-      },
-    },
   ])('no-op: $label', ({setup}) => {
     using editor = buildEditorFromExtensions({
       $initialEditorState: setup,
@@ -178,8 +169,8 @@ describe('MOVE_TO_START no-op cases (Issue #8555)', () => {
   });
 });
 
-describe('MOVE_TO_START decorator-only safety (crash fix)', () => {
-  test('Cmd+ArrowLeft on decorator-only element does not throw', () => {
+describe('MOVE_TO_START with no leading text (Issue #8601)', () => {
+  test('Cmd+ArrowLeft on decorator-only element moves caret to element offset 0', () => {
     using editor = buildEditorFromExtensions({
       $initialEditorState: () => {
         const decorator = $createTestDecoratorNode().setIsInline(true);
@@ -192,12 +183,82 @@ describe('MOVE_TO_START decorator-only safety (crash fix)', () => {
       nodes: [TestDecoratorNode],
     });
 
-    expect(() => dispatchMoveToStart(editor, false)).not.toThrow();
+    dispatchMoveToStart(editor, false);
 
     editor.read(() => {
       const selection = $getSelection();
       assert($isRangeSelection(selection));
-      expect(selection.anchor.type).toBeDefined();
+      const paragraph = $getRoot().getFirstChildOrThrow();
+      expect(selection.isCollapsed()).toBe(true);
+      expect(selection.anchor.type).toBe('element');
+      expect(selection.anchor.key).toBe(paragraph.getKey());
+      expect(selection.anchor.offset).toBe(0);
+    });
+  });
+
+  test('Cmd+ArrowLeft from text caret inside [decorator][text][decorator] moves to element offset 0', () => {
+    using editor = buildEditorFromExtensions({
+      $initialEditorState: () => {
+        const leading = $createTestDecoratorNode().setIsInline(true);
+        const text = $createTextNode('hello');
+        const trailing = $createTestDecoratorNode().setIsInline(true);
+        const paragraph = $createParagraphNode().append(
+          leading,
+          text,
+          trailing,
+        );
+        $getRoot().clear().append(paragraph);
+        text.select(2, 2);
+      },
+      dependencies: [RichTextExtension],
+      name: 'test',
+      nodes: [TestDecoratorNode],
+    });
+
+    dispatchMoveToStart(editor, false);
+
+    editor.read(() => {
+      const selection = $getSelection();
+      assert($isRangeSelection(selection));
+      const paragraph = $getRoot().getFirstChildOrThrow();
+      expect(selection.isCollapsed()).toBe(true);
+      expect(selection.anchor.type).toBe('element');
+      expect(selection.anchor.key).toBe(paragraph.getKey());
+      expect(selection.anchor.offset).toBe(0);
+    });
+  });
+
+  test('Shift+Cmd+ArrowLeft from text caret inside [decorator][text][decorator] selects back to element offset 0', () => {
+    using editor = buildEditorFromExtensions({
+      $initialEditorState: () => {
+        const leading = $createTestDecoratorNode().setIsInline(true);
+        const text = $createTextNode('hello');
+        const trailing = $createTestDecoratorNode().setIsInline(true);
+        const paragraph = $createParagraphNode().append(
+          leading,
+          text,
+          trailing,
+        );
+        $getRoot().clear().append(paragraph);
+        text.select(3, 3);
+      },
+      dependencies: [RichTextExtension],
+      name: 'test',
+      nodes: [TestDecoratorNode],
+    });
+
+    dispatchMoveToStart(editor, true);
+
+    editor.read(() => {
+      const selection = $getSelection();
+      assert($isRangeSelection(selection));
+      const paragraph = $getRoot().getFirstChildOrThrow();
+      expect(selection.isCollapsed()).toBe(false);
+      expect(selection.anchor.type).toBe('text');
+      expect(selection.anchor.offset).toBe(3);
+      expect(selection.focus.type).toBe('element');
+      expect(selection.focus.key).toBe(paragraph.getKey());
+      expect(selection.focus.offset).toBe(0);
     });
   });
 });

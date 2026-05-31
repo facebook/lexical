@@ -151,15 +151,6 @@ describe('MOVE_TO_END no-op cases (Issue #8555)', () => {
         paragraph.select(1, 1);
       },
     },
-    {
-      label: 'decorator-only element (no selectable text)',
-      setup: () => {
-        const decorator = $createTestDecoratorNode().setIsInline(true);
-        const paragraph = $createParagraphNode().append(decorator);
-        $getRoot().clear().append(paragraph);
-        paragraph.select(0, 0);
-      },
-    },
   ])('no-op: $label', ({setup}) => {
     using editor = buildEditorFromExtensions({
       $initialEditorState: setup,
@@ -176,8 +167,8 @@ describe('MOVE_TO_END no-op cases (Issue #8555)', () => {
   });
 });
 
-describe('MOVE_TO_END decorator-only safety (crash fix)', () => {
-  test('Cmd+ArrowRight on decorator-only element does not throw', () => {
+describe('MOVE_TO_END with no trailing text (Issue #8601)', () => {
+  test('Cmd+ArrowRight on decorator-only element moves caret past the last child', () => {
     using editor = buildEditorFromExtensions({
       $initialEditorState: () => {
         const decorator = $createTestDecoratorNode().setIsInline(true);
@@ -190,18 +181,20 @@ describe('MOVE_TO_END decorator-only safety (crash fix)', () => {
       nodes: [TestDecoratorNode],
     });
 
-    // Should not throw — previously this would crash with selectEnd() on empty element
-    expect(() => dispatchMoveToEnd(editor, false)).not.toThrow();
+    dispatchMoveToEnd(editor, false);
 
     editor.read(() => {
       const selection = $getSelection();
       assert($isRangeSelection(selection));
-      // Selection remains valid
-      expect(selection.anchor.type).toBeDefined();
+      const paragraph = $getRoot().getFirstChildOrThrow();
+      expect(selection.isCollapsed()).toBe(true);
+      expect(selection.focus.type).toBe('element');
+      expect(selection.focus.key).toBe(paragraph.getKey());
+      expect(selection.focus.offset).toBe(1);
     });
   });
 
-  test('Shift+Cmd+ArrowRight on decorator-only element does not throw', () => {
+  test('Shift+Cmd+ArrowRight on decorator-only element selects past the last child', () => {
     using editor = buildEditorFromExtensions({
       $initialEditorState: () => {
         const decorator = $createTestDecoratorNode().setIsInline(true);
@@ -214,12 +207,51 @@ describe('MOVE_TO_END decorator-only safety (crash fix)', () => {
       nodes: [TestDecoratorNode],
     });
 
-    const before = snapshotSelection(editor);
-
-    // Handler bails safely on decorator-only elements (no selectable text)
     dispatchMoveToEnd(editor, true);
 
-    // Selection unchanged — handler returned false
-    expect(snapshotSelection(editor)).toEqual(before);
+    editor.read(() => {
+      const selection = $getSelection();
+      assert($isRangeSelection(selection));
+      const paragraph = $getRoot().getFirstChildOrThrow();
+      expect(selection.isCollapsed()).toBe(false);
+      expect(selection.anchor.type).toBe('element');
+      expect(selection.anchor.key).toBe(paragraph.getKey());
+      expect(selection.anchor.offset).toBe(0);
+      expect(selection.focus.type).toBe('element');
+      expect(selection.focus.key).toBe(paragraph.getKey());
+      expect(selection.focus.offset).toBe(1);
+    });
+  });
+
+  test('Cmd+ArrowRight on [decorator][text][decorator] sandwich moves caret past the trailing decorator', () => {
+    using editor = buildEditorFromExtensions({
+      $initialEditorState: () => {
+        const leading = $createTestDecoratorNode().setIsInline(true);
+        const text = $createTextNode('hello');
+        const trailing = $createTestDecoratorNode().setIsInline(true);
+        const paragraph = $createParagraphNode().append(
+          leading,
+          text,
+          trailing,
+        );
+        $getRoot().clear().append(paragraph);
+        paragraph.select(0, 0);
+      },
+      dependencies: [RichTextExtension],
+      name: 'test',
+      nodes: [TestDecoratorNode],
+    });
+
+    dispatchMoveToEnd(editor, false);
+
+    editor.read(() => {
+      const selection = $getSelection();
+      assert($isRangeSelection(selection));
+      const paragraph = $getRoot().getFirstChildOrThrow();
+      expect(selection.isCollapsed()).toBe(true);
+      expect(selection.focus.type).toBe('element');
+      expect(selection.focus.key).toBe(paragraph.getKey());
+      expect(selection.focus.offset).toBe(3);
+    });
   });
 });

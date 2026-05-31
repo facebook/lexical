@@ -20,7 +20,7 @@ export interface FocusManagerOptions {
   /**
    * Selector used to find the toolbar's first focusable item when activating
    * via the shortcut. Defaults to non-disabled direct-child buttons (the same
-   * scope used by `useRovingTabIndex`), so the active roving item naturally
+   * scope used by `useLexicalRovingTabIndex`), so the active roving item naturally
    * receives focus.
    */
   toolbarItemSelector?: string;
@@ -36,7 +36,7 @@ export interface FocusManagerOptions {
  * editor's own focus handling; the editor's last selection is preserved
  * across the jump so that toolbar commands act on the same range.
  */
-export function useFocusManager(
+export function useLexicalFocusManager(
   editor: LexicalEditor,
   toolbarRef: RefObject<HTMLElement | null>,
   options: FocusManagerOptions = {},

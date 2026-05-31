@@ -1519,8 +1519,8 @@
         "default": "./dist/LexicalTreeViewExtension.js"
       }
     },
-    "./useAriaLiveRegion": {
-      "source": "./src/useAriaLiveRegion.ts",
+    "./useLexicalAriaLiveRegion": {
+      "source": "./src/useLexicalAriaLiveRegion.ts",
       "import": {
         "types": "./dist/useLexicalAriaLiveRegion.d.ts",
         "development": "./dist/useLexicalAriaLiveRegion.dev.mjs",
@@ -1535,8 +1535,8 @@
         "default": "./dist/useLexicalAriaLiveRegion.js"
       }
     },
-    "./useAriaLiveRegion.js": {
-      "source": "./src/useAriaLiveRegion.ts",
+    "./useLexicalAriaLiveRegion.js": {
+      "source": "./src/useLexicalAriaLiveRegion.ts",
       "import": {
         "types": "./dist/useLexicalAriaLiveRegion.d.ts",
         "development": "./dist/useLexicalAriaLiveRegion.dev.mjs",
@@ -1615,8 +1615,8 @@
         "default": "./dist/useLexicalExtensionSignalValue.js"
       }
     },
-    "./useFocusManager": {
-      "source": "./src/useFocusManager.ts",
+    "./useLexicalFocusManager": {
+      "source": "./src/useLexicalFocusManager.ts",
       "import": {
         "types": "./dist/useLexicalFocusManager.d.ts",
         "development": "./dist/useLexicalFocusManager.dev.mjs",
@@ -1631,8 +1631,8 @@
         "default": "./dist/useLexicalFocusManager.js"
       }
     },
-    "./useFocusManager.js": {
-      "source": "./src/useFocusManager.ts",
+    "./useLexicalFocusManager.js": {
+      "source": "./src/useLexicalFocusManager.ts",
       "import": {
         "types": "./dist/useLexicalFocusManager.d.ts",
         "development": "./dist/useLexicalFocusManager.dev.mjs",
@@ -1647,8 +1647,8 @@
         "default": "./dist/useLexicalFocusManager.js"
       }
     },
-    "./useFocusTrap": {
-      "source": "./src/useFocusTrap.ts",
+    "./useLexicalFocusTrap": {
+      "source": "./src/useLexicalFocusTrap.ts",
       "import": {
         "types": "./dist/useLexicalFocusTrap.d.ts",
         "development": "./dist/useLexicalFocusTrap.dev.mjs",
@@ -1663,8 +1663,8 @@
         "default": "./dist/useLexicalFocusTrap.js"
       }
     },
-    "./useFocusTrap.js": {
-      "source": "./src/useFocusTrap.ts",
+    "./useLexicalFocusTrap.js": {
+      "source": "./src/useLexicalFocusTrap.ts",
       "import": {
         "types": "./dist/useLexicalFocusTrap.d.ts",
         "development": "./dist/useLexicalFocusTrap.dev.mjs",
@@ -1839,8 +1839,8 @@
         "default": "./dist/useLexicalTextEntity.js"
       }
     },
-    "./useRovingTabIndex": {
-      "source": "./src/useRovingTabIndex.ts",
+    "./useLexicalRovingTabIndex": {
+      "source": "./src/useLexicalRovingTabIndex.ts",
       "import": {
         "types": "./dist/useLexicalRovingTabIndex.d.ts",
         "development": "./dist/useLexicalRovingTabIndex.dev.mjs",
@@ -1855,8 +1855,8 @@
         "default": "./dist/useLexicalRovingTabIndex.js"
       }
     },
-    "./useRovingTabIndex.js": {
-      "source": "./src/useRovingTabIndex.ts",
+    "./useLexicalRovingTabIndex.js": {
+      "source": "./src/useLexicalRovingTabIndex.ts",
       "import": {
         "types": "./dist/useLexicalRovingTabIndex.d.ts",
         "development": "./dist/useLexicalRovingTabIndex.dev.mjs",

@@ -48,7 +48,7 @@ function applyVisuallyHidden(el: HTMLElement): void {
  * space so screen readers register the change and re-announce. WAI-ARIA
  * status message pattern (WCAG 4.1.3).
  */
-export function useAriaLiveRegion(
+export function useLexicalAriaLiveRegion(
   options: AriaLiveRegionOptions = {},
 ): (message: string) => void {
   const politeness = options.politeness ?? 'polite';

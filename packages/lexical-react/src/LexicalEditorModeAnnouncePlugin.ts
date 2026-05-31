@@ -7,7 +7,7 @@
  */
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {useAriaLiveRegion} from '@lexical/react/useAriaLiveRegion';
+import {useLexicalAriaLiveRegion} from '@lexical/react/useLexicalAriaLiveRegion';
 import {useEffect} from 'react';
 
 export interface EditorModeAnnouncePluginProps {
@@ -35,7 +35,7 @@ export function EditorModeAnnouncePlugin({
   messages,
 }: EditorModeAnnouncePluginProps = {}): null {
   const [editor] = useLexicalComposerContext();
-  const announce = useAriaLiveRegion();
+  const announce = useLexicalAriaLiveRegion();
   const {
     editable: editableMessage = DEFAULT_EDITABLE,
     readOnly: readOnlyMessage = DEFAULT_READ_ONLY,

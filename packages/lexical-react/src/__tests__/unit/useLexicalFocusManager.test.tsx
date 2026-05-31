@@ -6,7 +6,7 @@
  *
  */
 
-import {useFocusManager} from '@lexical/react/useFocusManager';
+import {useLexicalFocusManager} from '@lexical/react/useLexicalFocusManager';
 import {createEditor, type LexicalEditor} from 'lexical';
 import * as React from 'react';
 import {useEffect, useMemo, useRef} from 'react';
@@ -28,7 +28,7 @@ function Harness({onEditor}: {onEditor: (editor: LexicalEditor) => void}) {
   const editorRootRef = useRef<HTMLDivElement>(null);
   const toolbarRef = useRef<HTMLDivElement>(null);
 
-  useFocusManager(editor, toolbarRef);
+  useLexicalFocusManager(editor, toolbarRef);
 
   useEffect(() => {
     const root = editorRootRef.current;
@@ -70,7 +70,7 @@ function dispatchKey(
   return event;
 }
 
-describe('useFocusManager', () => {
+describe('useLexicalFocusManager', () => {
   let container: HTMLDivElement;
   let root: Root;
 

@@ -363,5 +363,6 @@
   "361": "sel.attr(%s, ...) requires true, a string, or a RegExp",
   "362": "sel.styleAny(%s, ...) requires a string or a RegExp",
   "363": "sel.tag() requires at least one tag name",
-  "364": "invalid CSS selector at col %s: %s in %s"
+  "364": "invalid CSS selector at col %s: %s in %s",
+  "365": "The given editor argument does not match $getEditor() in this context. Use editor.getEditorState().read(..., {editor}) if this cross-editor call is intentional."
 }

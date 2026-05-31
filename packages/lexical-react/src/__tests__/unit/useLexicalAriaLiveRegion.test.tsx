@@ -6,7 +6,7 @@
  *
  */
 
-import {useAriaLiveRegion} from '@lexical/react/useAriaLiveRegion';
+import {useLexicalAriaLiveRegion} from '@lexical/react/useLexicalAriaLiveRegion';
 import * as React from 'react';
 import {useImperativeHandle} from 'react';
 import {createRoot, type Root} from 'react-dom/client';
@@ -17,13 +17,15 @@ type Handle = {announce: (message: string) => void};
 
 const Harness = React.forwardRef<Handle, {politeness?: 'polite' | 'assertive'}>(
   function HarnessImpl({politeness}, ref) {
-    const announce = useAriaLiveRegion(politeness ? {politeness} : undefined);
+    const announce = useLexicalAriaLiveRegion(
+      politeness ? {politeness} : undefined,
+    );
     useImperativeHandle(ref, () => ({announce}), [announce]);
     return null;
   },
 );
 
-describe('useAriaLiveRegion', () => {
+describe('useLexicalAriaLiveRegion', () => {
   let container: HTMLDivElement;
   let root: Root;
 

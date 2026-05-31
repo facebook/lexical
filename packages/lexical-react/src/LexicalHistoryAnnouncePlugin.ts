@@ -7,7 +7,7 @@
  */
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {useAriaLiveRegion} from '@lexical/react/useAriaLiveRegion';
+import {useLexicalAriaLiveRegion} from '@lexical/react/useLexicalAriaLiveRegion';
 import {
   COMMAND_PRIORITY_LOW,
   mergeRegister,
@@ -41,7 +41,7 @@ export function HistoryAnnouncePlugin({
   messages,
 }: HistoryAnnouncePluginProps = {}): null {
   const [editor] = useLexicalComposerContext();
-  const announce = useAriaLiveRegion();
+  const announce = useLexicalAriaLiveRegion();
   const {
     undone: undoneMessage = DEFAULT_UNDONE,
     redone: redoneMessage = DEFAULT_REDONE,

@@ -202,8 +202,8 @@
       "@lexical/react/TreeViewExtension": [
         "./packages/lexical-react/src/TreeViewExtension.tsx"
       ],
-      "@lexical/react/useAriaLiveRegion": [
-        "./packages/lexical-react/src/useAriaLiveRegion.ts"
+      "@lexical/react/useLexicalAriaLiveRegion": [
+        "./packages/lexical-react/src/useLexicalAriaLiveRegion.ts"
       ],
       "@lexical/react/useExtensionComponent": [
         "./packages/lexical-react/src/useExtensionComponent.tsx"
@@ -211,11 +211,11 @@
       "@lexical/react/useExtensionSignalValue": [
         "./packages/lexical-react/src/useExtensionSignalValue.ts"
       ],
-      "@lexical/react/useFocusManager": [
-        "./packages/lexical-react/src/useFocusManager.ts"
+      "@lexical/react/useLexicalFocusManager": [
+        "./packages/lexical-react/src/useLexicalFocusManager.ts"
       ],
-      "@lexical/react/useFocusTrap": [
-        "./packages/lexical-react/src/useFocusTrap.ts"
+      "@lexical/react/useLexicalFocusTrap": [
+        "./packages/lexical-react/src/useLexicalFocusTrap.ts"
       ],
       "@lexical/react/useLexicalEditable": [
         "./packages/lexical-react/src/useLexicalEditable.ts"
@@ -232,8 +232,8 @@
       "@lexical/react/useLexicalTextEntity": [
         "./packages/lexical-react/src/useLexicalTextEntity.ts"
       ],
-      "@lexical/react/useRovingTabIndex": [
-        "./packages/lexical-react/src/useRovingTabIndex.ts"
+      "@lexical/react/useLexicalRovingTabIndex": [
+        "./packages/lexical-react/src/useLexicalRovingTabIndex.ts"
       ],
       "@lexical/rich-text": ["./packages/lexical-rich-text/src/index.ts"],
       "@lexical/selection": ["./packages/lexical-selection/src/index.ts"],

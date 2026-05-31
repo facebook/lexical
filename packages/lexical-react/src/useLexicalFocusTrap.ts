@@ -56,7 +56,7 @@ function getFocusableElements(container: HTMLElement): HTMLElement[] {
  *
  * Escape is not intercepted — the owner handles close-key behavior itself.
  */
-export function useFocusTrap(
+export function useLexicalFocusTrap(
   containerRef: RefObject<HTMLElement | null>,
   isActive: boolean,
   initialFocus: 'firstFocusable' | 'container' = 'firstFocusable',
@@ -87,7 +87,7 @@ export function useFocusTrap(
     // Boundary-only cycling let Safari's default Tab route out to the
     // browser chrome (URL bar) between presses, producing a visible
     // focus flash. This trades contentEditable Tab indent for a
-    // reliable trap; useFocusTrap is Modal-only today.
+    // reliable trap; useLexicalFocusTrap is Modal-only today.
     const keydownHandler = (event: KeyboardEvent) => {
       if (event.key !== 'Tab') {
         return;

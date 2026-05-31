@@ -37,7 +37,7 @@ const DEFAULT_SELECTOR = ':scope > button:not([disabled])';
  * Items are queried lazily on every interaction so additions or removals
  * during the lifetime of the group are picked up without extra wiring.
  */
-export function useRovingTabIndex(
+export function useLexicalRovingTabIndex(
   containerRef: RefObject<HTMLElement | null>,
   options: RovingTabIndexOptions = {},
 ): void {

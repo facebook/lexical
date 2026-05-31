@@ -14,7 +14,7 @@ import {useMergeRefs} from '@floating-ui/react';
 import {$isCodeHighlightNode} from '@lexical/code';
 import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {useRovingTabIndex} from '@lexical/react/useRovingTabIndex';
+import {useLexicalRovingTabIndex} from '@lexical/react/useLexicalRovingTabIndex';
 import {mergeRegister} from '@lexical/utils';
 import {
   $getSelection,
@@ -71,7 +71,7 @@ function TextFormatFloatingToolbar({
 }): JSX.Element {
   const popupCharStylesEditorRef = useRef<HTMLDivElement | null>(null);
   const mergedRef = useMergeRefs([popupCharStylesEditorRef, ref]);
-  useRovingTabIndex(popupCharStylesEditorRef);
+  useLexicalRovingTabIndex(popupCharStylesEditorRef);
 
   const insertLink = useCallback(() => {
     if (!isLink) {

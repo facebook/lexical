@@ -10,7 +10,7 @@ import type {JSX} from 'react';
 
 import './Modal.css';
 
-import {useFocusTrap} from '@lexical/react/useFocusTrap';
+import {useLexicalFocusTrap} from '@lexical/react/useLexicalFocusTrap';
 import {isDOMNode} from 'lexical';
 import * as React from 'react';
 import {ReactNode, useEffect, useId, useRef} from 'react';
@@ -30,7 +30,7 @@ function PortalImpl({
   const modalRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
 
-  useFocusTrap(modalRef, true, 'container');
+  useLexicalFocusTrap(modalRef, true, 'container');
 
   useEffect(() => {
     let modalOverlayElement: HTMLElement | null = null;

@@ -6,7 +6,7 @@
  *
  */
 
-import {useRovingTabIndex} from '@lexical/react/useRovingTabIndex';
+import {useLexicalRovingTabIndex} from '@lexical/react/useLexicalRovingTabIndex';
 import * as React from 'react';
 import {useRef} from 'react';
 import {createRoot, type Root} from 'react-dom/client';
@@ -21,7 +21,7 @@ function Group({
   orientation?: 'horizontal' | 'vertical' | 'both';
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  useRovingTabIndex(ref, orientation ? {orientation} : undefined);
+  useLexicalRovingTabIndex(ref, orientation ? {orientation} : undefined);
   return (
     <div ref={ref} data-testid="group">
       {Array.from({length: count}, (_, i) => (
@@ -39,7 +39,7 @@ function dispatchKey(target: HTMLElement, key: string): void {
   );
 }
 
-describe('useRovingTabIndex', () => {
+describe('useLexicalRovingTabIndex', () => {
   let container: HTMLDivElement;
   let root: Root;
 

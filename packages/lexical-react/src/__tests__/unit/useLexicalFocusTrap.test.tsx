@@ -6,7 +6,7 @@
  *
  */
 
-import {useFocusTrap} from '@lexical/react/useFocusTrap';
+import {useLexicalFocusTrap} from '@lexical/react/useLexicalFocusTrap';
 import * as React from 'react';
 import {useRef} from 'react';
 import {createRoot, type Root} from 'react-dom/client';
@@ -23,7 +23,7 @@ function Trap({
   initialFocus?: 'firstFocusable' | 'container';
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  useFocusTrap(ref, isActive, initialFocus);
+  useLexicalFocusTrap(ref, isActive, initialFocus);
   return (
     <div ref={ref} tabIndex={-1} data-testid="trap">
       {Array.from({length: buttons}, (_, i) => (
@@ -46,7 +46,7 @@ function dispatchTab(target: HTMLElement, shiftKey = false): void {
   );
 }
 
-describe('useFocusTrap', () => {
+describe('useLexicalFocusTrap', () => {
   let container: HTMLDivElement;
   let root: Root;
 

@@ -756,9 +756,18 @@
   pointer-events: none;
   user-select: none;
   -webkit-user-select: none;
+  font-size: var(--text-font-size, inherit);
+  font-weight: var(--text-font-weight, inherit);
+  font-family: var(--text-font-family, inherit);
+  text-decoration: none;
   position: absolute;
 }
-[data-lexical-visible-non-printing-block]:has(> br:last-child)::after {
+[data-lexical-visible-non-printing-block]:has(br:only-child) {
+  font-size: var(--text-font-size, inherit);
+  font-weight: var(--text-font-weight, inherit);
+  font-family: var(--text-font-family, inherit);
+}
+[data-lexical-visible-non-printing-block]:has(br:last-child)::after {
   bottom: 0;
 }
 [data-lexical-visible-non-printing-empty-root]
@@ -799,13 +808,4 @@
     format('woff2');
   unicode-range: U+0020;
   font-display: block;
-}
-[data-lexical-visible-non-printing-active] {
-  font-family:
-    'LexicalSpaceDot',
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    '.SFNSText-Regular',
-    sans-serif;
 }

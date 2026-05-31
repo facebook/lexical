@@ -20,9 +20,11 @@ import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {$canShowPlaceholder} from '@lexical/text';
 import {$findMatchingParent, mergeRegister} from '@lexical/utils';
 import {
+  $isTabNode,
   configExtension,
   defineExtension,
   ElementNode,
+  getStyleObjectFromCSS,
   isHTMLElement,
   LineBreakNode,
   ParagraphNode,
@@ -109,17 +111,6 @@ function hasOurWrap(dom: HTMLElement): boolean {
   );
 }
 
-function $createBlockDOM(
-  _node: ElementNode,
-  $next: () => HTMLElement,
-): HTMLElement {
-  const dom = $next();
-  if (isHTMLElement(dom)) {
-    dom.setAttribute(VISIBLE_NON_PRINTING_BLOCK_ATTR, 'true');
-  }
-  return dom;
-}
-
 const LEXICAL_SPACE_DOT_FONT = "'LexicalSpaceDot'";
 
 // Prepend our space-dot font in front of any inline `font-family` set on a
@@ -175,18 +166,25 @@ export const VisibleNonPrintingExtension = defineExtension({
         ),
         domOverride<ElementNode>(
           [ParagraphNode, HeadingNode, ListItemNode, QuoteNode],
-          {$createDOM: $createBlockDOM},
+          {
+            $decorateDOM: (node, _prevNode, dom) => {
+              dom.setAttribute(VISIBLE_NON_PRINTING_BLOCK_ATTR, 'true');
+              const nextTextStyle = getStyleObjectFromCSS(node.__textStyle);
+              for (const prop of ['font-size', 'font-weight', 'font-family']) {
+                dom.style.setProperty(
+                  `--text-${prop}`,
+                  nextTextStyle[prop] || null,
+                );
+              }
+            },
+          },
           disabledForEditor,
         ),
         domOverride(
           [TabNode],
           {
-            $createDOM: (_node, $next) => {
-              const dom = $next();
-              if (isHTMLElement(dom)) {
-                dom.setAttribute(VISIBLE_NON_PRINTING_TAB_ATTR, 'true');
-              }
-              return dom;
+            $decorateDOM: (_node, _prevNode, dom) => {
+              dom.setAttribute(VISIBLE_NON_PRINTING_TAB_ATTR, 'true');
             },
           },
           disabledForEditor,
@@ -194,19 +192,10 @@ export const VisibleNonPrintingExtension = defineExtension({
         domOverride(
           [TextNode],
           {
-            $createDOM: (_node, $next) => {
-              const dom = $next();
-              if (isHTMLElement(dom)) {
+            $decorateDOM: (node, _prev, dom) => {
+              if (!$isTabNode(node)) {
                 applyTextFontPrepend(dom);
               }
-              return dom;
-            },
-            $updateDOM: (_node, _prev, dom, $next) => {
-              const result = $next();
-              if (isHTMLElement(dom)) {
-                applyTextFontPrepend(dom);
-              }
-              return result;
             },
           },
           disabledForEditor,

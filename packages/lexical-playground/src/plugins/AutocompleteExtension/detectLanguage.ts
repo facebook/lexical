@@ -7,7 +7,8 @@
  */
 
 // Script-range helpers. Add a new entry when introducing a new language;
-// the BMP ranges below cover the common ones for IME-using languages.
+// the ranges below cover the common scripts for IME-using languages,
+// including the supplementary-plane CJK ideographs.
 
 function isHangul(cp: number): boolean {
   return (
@@ -26,8 +27,13 @@ function isJapaneseKana(cp: number): boolean {
   );
 }
 
-function isCJKUnified(cp: number): boolean {
-  return cp >= 0x4e00 && cp <= 0x9fff;
+function isCJKIdeograph(cp: number): boolean {
+  return (
+    (cp >= 0x3400 && cp <= 0x4dbf) || // CJK Unified Ideographs Extension A
+    (cp >= 0x4e00 && cp <= 0x9fff) || // CJK Unified Ideographs
+    (cp >= 0xf900 && cp <= 0xfaff) || // CJK Compatibility Ideographs
+    (cp >= 0x20000 && cp <= 0x2fa1f) // Supplementary Ideographic Plane (Ext B–F + Compatibility Supplement)
+  );
 }
 
 function isZeroWidthOrControl(cp: number): boolean {
@@ -50,10 +56,11 @@ function isZeroWidthOrControl(cp: number): boolean {
  *
  * Returns `'en'` for ASCII / Latin (the catch-all), `'ko'` for Hangul,
  * and `'ja'` for both kana-bearing prefixes and prefixes whose last
- * visible codepoint is a CJK Unified Ideograph. The CJK Unified range
- * is shared between Japanese kanji and Chinese hanzi; the default
+ * visible codepoint is a CJK ideograph (CJK Unified, Extension A,
+ * Compatibility Ideographs, or the supplementary plane). That range is
+ * shared between Japanese kanji and Chinese hanzi; the default
  * dictionary set covers English and Korean only, so kana and CJK
- * Unified prefixes produce no suggestion until a host registers a
+ * ideograph prefixes produce no suggestion until a host registers a
  * dictionary under the `ja` (or `zh`) key. Japanese is omitted from
  * the defaults because the platform IMEs already provide their own
  * dropdown autocompletion. Hosts that need to distinguish Chinese
@@ -61,15 +68,19 @@ function isZeroWidthOrControl(cp: number): boolean {
  * application context (locale, user preference).
  */
 export function detectLanguage(text: string): string {
-  for (let i = text.length - 1; i >= 0; i--) {
-    const cp = text.codePointAt(i);
+  // Iterate real code points from the end so a trailing supplementary-
+  // plane ideograph is read whole rather than as its lone low surrogate,
+  // skipping zero-width and control characters.
+  const codePoints = Array.from(text);
+  for (let i = codePoints.length - 1; i >= 0; i--) {
+    const cp = codePoints[i].codePointAt(0);
     if (cp === undefined || isZeroWidthOrControl(cp)) {
       continue;
     }
     if (isHangul(cp)) {
       return 'ko';
     }
-    if (isJapaneseKana(cp) || isCJKUnified(cp)) {
+    if (isJapaneseKana(cp) || isCJKIdeograph(cp)) {
       return 'ja';
     }
     return 'en';

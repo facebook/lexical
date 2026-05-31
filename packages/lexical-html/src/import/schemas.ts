@@ -12,6 +12,7 @@ import {
   $isBlockElementNode,
   $isDecoratorNode,
   $isElementNode,
+  $isLineBreakNode,
   type ElementNode,
   isHTMLElement,
   type LexicalNode,
@@ -154,6 +155,39 @@ export function $applySchema(
 }
 
 /**
+ * Apply a parent DOM element's `text-align` (when set to one of the
+ * supported {@link ElementFormatType} values) to each block-level child
+ * Lexical node that does not yet have its own format.
+ *
+ * Mirrors the part of the legacy `wrapContinuousInlines` that wrote
+ * `node.setFormat(textAlign)` onto pre-existing block children when the
+ * DOM parent carried `style.textAlign`. Pair with
+ * {@link $paragraphPackageRun} (which carries the same propagation onto
+ * paragraphs synthesized around inline runs) to fully replicate the
+ * legacy behavior on a run of mixed children.
+ *
+ * @experimental
+ */
+export function $propagateTextAlignToBlockChildren(
+  children: LexicalNode[],
+  domParent: Node | null,
+): LexicalNode[] {
+  if (!isHTMLElement(domParent)) {
+    return children;
+  }
+  const textAlign = domParent.style.textAlign;
+  if (!isAlignmentValue(textAlign)) {
+    return children;
+  }
+  for (const child of children) {
+    if ($isBlockElementNode(child) && child.getFormatType() === '') {
+      child.setFormat(textAlign);
+    }
+  }
+  return children;
+}
+
+/**
  * Wrap a run of inline lexical nodes in a fresh paragraph, propagating the
  * `text-align` of `domParent` as the paragraph's format type (matching the
  * legacy `wrapContinuousInlines` behavior).
@@ -163,6 +197,16 @@ function $paragraphPackageRun(
   _parent: LexicalNode | null,
   domParent: Node | null,
 ): LexicalNode[] {
+  // Mirror the legacy `$wrapInlineNodes` (driven by
+  // `selection.insertNodes`) shortcut where a lone `<br>` at this
+  // level (a `LineBreakNode` is the only thing in the rejected run)
+  // becomes an *empty* paragraph rather than a paragraph wrapping a
+  // visible line break — that's the form clipboard pastes ending in a
+  // trailing `<br>` (Google Docs, Gmail, …) rely on for the editor's
+  // "extra trailing empty line" expectation.
+  if (run.length === 1 && $isLineBreakNode(run[0])) {
+    run = [];
+  }
   const paragraph = $createParagraphNode();
   if (isHTMLElement(domParent)) {
     const textAlign = domParent.style.textAlign;

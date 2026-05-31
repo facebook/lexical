@@ -20,6 +20,7 @@ e2e-screenshots
 test-results
 playwright-report
 /SOURCE_CODE_REVIEW.md
+/playwright.local.config.mjs
 
 npm-debug.log*
 

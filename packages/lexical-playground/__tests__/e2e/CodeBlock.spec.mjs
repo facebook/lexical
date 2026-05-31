@@ -19,7 +19,6 @@ import {
   assertHTML,
   assertSelection,
   click,
-  expect,
   focusEditor,
   html,
   initialize,

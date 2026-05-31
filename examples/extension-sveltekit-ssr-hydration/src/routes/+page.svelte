@@ -16,7 +16,7 @@
 	).output;
 	const editableSignal = extension.getExtensionDependencyFromEditor(
 		editor,
-		buildEditor.WatchEditableExtension
+		extension.WatchEditableExtension
 	).output;
 	$effect(() => {
 		if (browser && editorRef) {

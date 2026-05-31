@@ -7,6 +7,7 @@
  */
 // @ts-check
 import fs from 'fs-extra';
+import {glob} from 'glob';
 import path from 'node:path';
 import {beforeAll, describe, expect, test} from 'vitest';
 
@@ -67,7 +68,7 @@ function expectSuccessfulExec(cmd) {
  * @param {ExampleContext} ctx
  * @returns {Promise<Map<string, PackageMetadata>>} The installed monorepo dependency map
  */
-async function buildExample({packageJson, exampleDir}) {
+async function buildExample({packageJson, packageJsonPath, exampleDir}) {
   let hasPlaywright = false;
   /** @type {Map<string, string>} */
   const allDeps = new Map();
@@ -89,22 +90,54 @@ async function buildExample({packageJson, exampleDir}) {
   if (depsMap.size === 0) {
     throw new Error(`No lexical dependencies detected: ${exampleDir}`);
   }
-  const installDeps = Array.from(depsMap.entries(), ([dep, pkg]) =>
-    path.resolve('npm', `${pkg.getDirectoryName()}-${monorepoVersion}.tgz`),
+  // Build pnpm.overrides entries pointing each monorepo dep at its
+  // freshly built tarball. We layer them on top of any pnpm.overrides
+  // the example already declares (e.g. agent-example's stubs for
+  // onnxruntime-node / sharp) so the existing overrides keep firing.
+  const lexicalOverrides = Object.fromEntries(
+    Array.from(depsMap.entries(), ([dep, pkg]) => [
+      dep,
+      `file:${path.resolve(
+        'npm',
+        `${pkg.getDirectoryName()}-${monorepoVersion}.tgz`,
+      )}`,
+    ]),
   );
-  ['node_modules', 'dist', 'build', '.next', '.svelte-kit'].forEach(cleanDir =>
-    fs.removeSync(path.resolve(exampleDir, cleanDir)),
-  );
+  const augmentedPackageJson = {
+    ...packageJson,
+    pnpm: {
+      ...(packageJson.pnpm || {}),
+      overrides: {
+        ...((packageJson.pnpm && packageJson.pnpm.overrides) || {}),
+        ...lexicalOverrides,
+      },
+    },
+  };
+  const originalPackageJsonBytes = fs.readFileSync(packageJsonPath);
+  [
+    'node_modules',
+    'dist',
+    'build',
+    '.next',
+    '.svelte-kit',
+    'pnpm-lock.yaml',
+  ].forEach(cleanPath => fs.removeSync(path.resolve(exampleDir, cleanPath)));
 
-  await withCwd(exampleDir, async () => {
-    await expectSuccessfulExec(
-      `npm install --no-save ${installDeps.map(fn => `'${fn}'`).join(' ')}`,
-    );
-    await expectSuccessfulExec('npm run build');
-    if (hasPlaywright) {
-      await expectSuccessfulExec('npx playwright install');
-    }
-  });
+  try {
+    fs.writeJsonSync(packageJsonPath, augmentedPackageJson, {spaces: 2});
+    await withCwd(exampleDir, async () => {
+      await expectSuccessfulExec('pnpm install --ignore-workspace');
+      await expectSuccessfulExec('pnpm run build');
+      if (hasPlaywright) {
+        await expectSuccessfulExec('pnpm exec playwright install');
+      }
+    });
+  } finally {
+    // Restore the unmodified package.json so the test doesn't leave a
+    // dirty working tree behind (the file-path overrides reference an
+    // absolute path on the runner that wouldn't make sense elsewhere).
+    fs.writeFileSync(packageJsonPath, originalPackageJsonBytes);
+  }
   return depsMap;
 }
 
@@ -132,24 +165,43 @@ function describeExample(packageJsonPath, bodyFun = undefined) {
       const packageNames = deps.map(pkg => pkg.getNpmName());
       expect(packageNames).toContain('lexical');
       for (const pkg of deps) {
-        const installedPath = path.join(
-          exampleDir,
-          'node_modules',
-          pkg.getNpmName(),
-        );
-        expect({[installedPath]: fs.existsSync(installedPath)}).toEqual({
-          [installedPath]: true,
+        const name = pkg.getNpmName();
+        // Direct deps surface as `node_modules/<name>/` symlinks (pnpm)
+        // or real dirs (npm). Transitive deps without a top-level entry
+        // live under `node_modules/.pnpm/<encoded>@<ver>[+peer-hash]/
+        // node_modules/<name>/`, so glob both shapes and pick the first
+        // package.json with a matching name + version.
+        const candidates = [
+          path.join(exampleDir, 'node_modules', name, 'package.json'),
+          ...glob.sync(
+            `node_modules/.pnpm/*/node_modules/${name}/package.json`,
+            {
+              absolute: true,
+              cwd: exampleDir,
+            },
+          ),
+        ];
+        const match = candidates.find(candidate => {
+          if (!fs.existsSync(candidate)) {
+            return false;
+          }
+          const json = fs.readJsonSync(candidate);
+          return json.name === name && json.version === monorepoVersion;
         });
-        expect(
-          fs.readJsonSync(path.join(installedPath, 'package.json')),
-        ).toMatchObject({name: pkg.getNpmName(), version: monorepoVersion});
+        if (match === undefined) {
+          throw new Error(
+            `Could not find ${name}@${monorepoVersion} under ${exampleDir}/node_modules (searched ${candidates.length} candidate${candidates.length === 1 ? '' : 's'})`,
+          );
+        }
       }
     });
     if (packageJson.scripts.test) {
       test(
         'tests pass',
         async () => {
-          await withCwd(exampleDir, () => expectSuccessfulExec('npm run test'));
+          await withCwd(exampleDir, () =>
+            expectSuccessfulExec('pnpm run test'),
+          );
         },
         LONG_TIMEOUT,
       );

@@ -11,6 +11,7 @@ import type {JSX} from 'react';
 
 import '@excalidraw/excalidraw/index.css';
 
+import {defineImportRule, DOMImportExtension, sel} from '@lexical/html';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$wrapNodeInElement} from '@lexical/utils';
 import {
@@ -18,7 +19,9 @@ import {
   $insertNodes,
   $isRootOrShadowRoot,
   COMMAND_PRIORITY_EDITOR,
+  configExtension,
   createCommand,
+  defineExtension,
   LexicalCommand,
 } from 'lexical';
 import {useEffect, useState} from 'react';
@@ -33,7 +36,33 @@ export const INSERT_EXCALIDRAW_COMMAND: LexicalCommand<void> = createCommand(
   'INSERT_EXCALIDRAW_COMMAND',
 );
 
-export default function ExcalidrawPlugin(): JSX.Element | null {
+const ExcalidrawImportRule = defineImportRule({
+  $import: (ctx, el) => {
+    const data = el.getAttribute('data-lexical-excalidraw-json')!;
+    const styles = window.getComputedStyle(el);
+    const parseDimension = (v: string) =>
+      !v || v === 'inherit' ? 'inherit' : parseInt(v, 10);
+    return [
+      $createExcalidrawNode(
+        data,
+        parseDimension(styles.getPropertyValue('width')),
+        parseDimension(styles.getPropertyValue('height')),
+      ),
+    ];
+  },
+  match: sel.tag('span').attr('data-lexical-excalidraw-json', true),
+  name: '@lexical/playground/excalidraw',
+});
+
+export const ExcalidrawExtension = defineExtension({
+  dependencies: [
+    configExtension(DOMImportExtension, {rules: [ExcalidrawImportRule]}),
+  ],
+  name: '@lexical/playground/Excalidraw',
+  nodes: [ExcalidrawNode],
+});
+
+export function ExcalidrawPlugin(): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
   const [isModalOpen, setModalOpen] = useState<boolean>(false);
 

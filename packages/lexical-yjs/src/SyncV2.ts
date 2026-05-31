@@ -172,8 +172,11 @@ export const $createOrUpdateNodeFromYElement = (
   const state: Record<string, unknown> = {};
   for (const k in attrs) {
     if (k.startsWith(STATE_KEY_PREFIX)) {
+      // State keys route through NodeState.updateFromJSON, which guards
+      // against prototype-polluting keys.
       state[attrKeyToStateKey(k)] = attrs[k];
-    } else {
+    } else if (k !== '__proto__' && k !== 'constructor' && k !== 'prototype') {
+      // Skip prototype-polluting property keys from untrusted remote attrs.
       properties[k] = attrs[k];
     }
   }

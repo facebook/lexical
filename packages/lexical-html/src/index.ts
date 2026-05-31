@@ -81,6 +81,7 @@ export {
   $getImportContextValue,
   $inlineStylesFromStyleSheets,
   $isBlockLevel,
+  $propagateTextAlignToBlockChildren,
   $withImportContext,
   BlockSchema,
   CoreImportExtension,

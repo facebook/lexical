@@ -7,8 +7,6 @@
  */
 
 import type {
-  DOMConversionMap,
-  DOMConversionOutput,
   DOMExportOutput,
   EditorConfig,
   LexicalEditorWithDispose,
@@ -28,7 +26,7 @@ import {
 } from '@lexical/extension';
 import {HashtagExtension} from '@lexical/hashtag';
 import {HistoryExtension} from '@lexical/history';
-import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
+import {$generateHtmlFromNodes} from '@lexical/html';
 import {LinkExtension} from '@lexical/link';
 import {ReactExtension} from '@lexical/react/ReactExtension';
 import {ReactProviderExtension} from '@lexical/react/ReactProviderExtension';
@@ -41,17 +39,14 @@ import {
   $getRoot,
   $isElementNode,
   $isParagraphNode,
-  $selectAll,
-  $setSelection,
   configExtension,
   DecoratorNode,
   defineExtension,
-  SKIP_DOM_SELECTION_TAG,
 } from 'lexical';
 import * as React from 'react';
 
 import {EmojisExtension} from '../plugins/EmojisExtension';
-import MentionsPlugin from '../plugins/MentionsPlugin';
+import {MentionsPlugin} from '../plugins/MentionsExtension';
 import ContentEditable from '../ui/ContentEditable';
 import {EmojiNode} from './EmojiNode';
 import {KeywordsExtension} from './KeywordNode';
@@ -103,26 +98,6 @@ export interface ImagePayload {
   src: string;
   width?: number;
   captionsEnabled?: boolean;
-}
-
-function isGoogleDocCheckboxImg(img: HTMLImageElement): boolean {
-  return (
-    img.parentElement != null &&
-    img.parentElement.tagName === 'LI' &&
-    img.previousSibling === null &&
-    img.getAttribute('aria-roledescription') === 'checkbox'
-  );
-}
-
-function $convertImageElement(domNode: Node): null | DOMConversionOutput {
-  const img = domNode as HTMLImageElement;
-  const src = img.getAttribute('src');
-  if (!src || src.startsWith('file:///') || isGoogleDocCheckboxImg(img)) {
-    return null;
-  }
-  const {alt: altText, width, height} = img;
-  const node = $createImageNode({altText, height, src, width});
-  return {node};
 }
 
 export function $isCaptionEditorEmpty(): boolean {
@@ -247,46 +222,6 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     }
 
     return {element: imgElement};
-  }
-
-  static importDOM(): DOMConversionMap | null {
-    return {
-      figcaption: () => ({
-        conversion: () => ({node: null}),
-        priority: 0,
-      }),
-      figure: () => ({
-        conversion: node => {
-          return {
-            after: childNodes => {
-              const imageNodes = childNodes.filter($isImageNode);
-              const figcaption = node.querySelector('figcaption');
-              if (figcaption) {
-                for (const imgNode of imageNodes) {
-                  imgNode.setShowCaption(true);
-                  imgNode.__caption.update(
-                    () => {
-                      $selectAll().insertNodes(
-                        $generateNodesFromDOM(imgNode.__caption, figcaption),
-                      );
-                      $setSelection(null);
-                    },
-                    {tag: SKIP_DOM_SELECTION_TAG},
-                  );
-                }
-              }
-              return imageNodes;
-            },
-            node: null,
-          };
-        },
-        priority: 0,
-      }),
-      img: () => ({
-        conversion: $convertImageElement,
-        priority: 0,
-      }),
-    };
   }
 
   constructor(

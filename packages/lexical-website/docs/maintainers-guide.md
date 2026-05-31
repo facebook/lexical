@@ -301,7 +301,7 @@ Re-run it whenever a new public package is added.
 - Node.js — whatever the repo's root `package.json#engines.node` says (currently `>=20.19.0`). Running with Node 24+ is recommended because that's what CI uses for publishes.
 - pnpm — pinned by `package.json#packageManager` (currently `pnpm@10.34.1`). Activate with [corepack](https://nodejs.org/api/corepack.html) or install directly.
 - npm CLI — **`npm ≥ 11.10`** (`npm i -g npm@latest`). The `npm trust` subcommand was added in npm 11; older versions will fail the preflight check.
-- An authenticated npm session (`npm login --registry https://registry.npmjs.org` or `NPM_TOKEN` in env) on a publisher account that has **account-level 2FA enabled** and write access to every `@lexical/*` package.
+- An authenticated npm session (`npm login --registry https://registry.npmjs.org`) on a publisher account that has **account-level 2FA enabled** and write access to every `@lexical/*` package.
 
 #### Usage
 
@@ -319,7 +319,7 @@ can re-run with `--bootstrap` to publish a deprecated
 name can be claimed:
 
 ```bash
-npm login --registry https://registry.npmjs.org   # or set NPM_TOKEN
+npm login --registry https://registry.npmjs.org
 pnpm run setup-trusted-publishing --bootstrap
 ```
 
@@ -366,13 +366,15 @@ manually, as a fallback for when `npm trust github` isn't an option.
 ### Testing trusted publishing from a PR branch
 
 The "Publish to NPM" workflow (`pre-release.yml`) exposes `ref`,
-`channel`, and `increment-version` inputs in addition to
-`use-trusted-publishing` so it doubles as a test harness. Picking a
-branch in the "Run workflow" dropdown selects which version of the
-workflow files run, and the inputs determine what actually gets
-published.
+`channel`, and `increment-version` inputs so it doubles as a test
+harness. Picking a branch in the "Run workflow" dropdown selects
+which version of the workflow files run, and the inputs determine
+what actually gets published. The workflow has no NPM_TOKEN secret to
+fall back on — publishes always go through OIDC trusted publishing —
+so a misconfigured trust setup fails loudly rather than silently
+falling through to token auth.
 
-A safe end-to-end test of the trusted-publishing flow looks like:
+A safe end-to-end test looks like:
 
 | Input | Value |
 | -- | -- |
@@ -380,7 +382,6 @@ A safe end-to-end test of the trusted-publishing flow looks like:
 | `ref` | your PR branch (same value) |
 | `channel` | `dev` |
 | `increment-version` | checked |
-| `use-trusted-publishing` | checked |
 | `ignore-previously-published` | unchecked |
 
 With `increment-version` on, the run bumps `package.json` to a fresh

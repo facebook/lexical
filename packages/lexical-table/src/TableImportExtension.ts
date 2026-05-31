@@ -9,8 +9,8 @@
 import type {ChildSchema, ImportContextPairOrUpdater} from '@lexical/html';
 
 import {
+  $propagateTextAlignToBlockChildren,
   contextValue,
-  CoreImportExtension,
   defineImportRule,
   DOMImportExtension,
   ImportTextFormat,
@@ -75,9 +75,15 @@ function cellTextFormatMask(style: CSSStyleDeclaration): number {
 }
 
 /**
- * Coalesce inline + line-break runs in a cell into paragraphs. Mirrors
- * the legacy `removeSingleLineBreakNode` cleanup so a sole `<br>` doesn't
- * survive as a paragraph's only child.
+ * Coalesce inline + line-break runs inside a `<td>`/`<th>` into their own
+ * `ParagraphNode`s, leaving any pre-existing `ParagraphNode` children
+ * (real `<p>` elements, or the `ParagraphNode` stand-ins that
+ * {@link TransparentBlockRule} lowers `<div>`/`<section>`/… to) in
+ * place as their own paragraph siblings. Mirrors the legacy `<td>`
+ * importer where a bare `<td>789<div>000</div></td>` ended up as two
+ * paragraphs (`<p>789</p><p>000</p>`), and also drops a sole leading
+ * `<br>` that the legacy `removeSingleLineBreakNode` cleanup would have
+ * removed.
  */
 function $packageCellChildren(children: LexicalNode[]): LexicalNode[] {
   const result: LexicalNode[] = [];
@@ -105,9 +111,12 @@ function $packageCellChildren(children: LexicalNode[]): LexicalNode[] {
         result.push(paragraph);
       }
     } else {
+      // Block children (paragraphs, nested tables, decorator blocks, …)
+      // start their own sibling — any inline run that was being
+      // accumulated into `paragraph` is closed off here.
       flushSingleLineBreak();
-      result.push(child);
       paragraph = null;
+      result.push(child);
     }
   }
   flushSingleLineBreak();
@@ -238,13 +247,24 @@ const TableCellRule = defineImportRule({
     if (cellStyle !== inheritedStyle) {
       branchContext.push(contextValue(ImportTextStyle, cellStyle));
     }
-    return [
-      cell.splice(
-        0,
-        0,
-        $packageCellChildren(ctx.$importChildren(el, {context: branchContext})),
-      ),
-    ];
+    // {@link $packageCellChildren} keeps each `ParagraphNode` child
+    // (from a real `<p>`, or from {@link TransparentBlockRule}'s
+    // lowering of `<div>`/`<section>`/…) as its own sibling paragraph
+    // — matching legacy `<td>`'s `<td>789<div>000</div></td>` →
+    // `<p>789</p><p>000</p>` shape.
+    const packaged = $packageCellChildren(
+      ctx.$importChildren(el, {context: branchContext}),
+    );
+    // Only `<td>` propagates `text-align` onto its block children —
+    // mirroring legacy `wrapContinuousInlines`, which runs only for
+    // `isBlockDomNode` elements. `<th>` is intentionally absent from
+    // the block-tag set (see `BLOCK_TAG_RE` in `LexicalUtils.ts`), so a
+    // `<th style="text-align: start">` wrapping a bare `<p>` leaves the
+    // paragraph format empty.
+    const children = isHeader
+      ? packaged
+      : $propagateTextAlignToBlockChildren(packaged, el);
+    return [cell.splice(0, 0, children)];
   },
   match: sel.tag('td', 'th'),
   name: '@lexical/table/cell',
@@ -287,14 +307,16 @@ export const TableRowSchema: ChildSchema = {
 export const TableImportRules = [TableRule, TableRowRule, TableCellRule];
 
 /**
- * Bundles {@link TableImportRules} (plus {@link CoreImportExtension})
- * into a single dependency.
+ * Bundles {@link TableImportRules} together with the runtime
+ * {@link TableExtension}. The application is expected to already have
+ * `CoreImportExtension` (or some equivalent) in its dependency graph —
+ * the core/text/paragraph/inline-format rules are a shared baseline,
+ * not something this leaf importer should re-declare.
  *
  * @experimental
  */
 export const TableImportExtension = defineExtension({
   dependencies: [
-    CoreImportExtension,
     TableExtension,
     configExtension(DOMImportExtension, {rules: TableImportRules}),
   ],

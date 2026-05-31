@@ -1,0 +1,151 @@
+name: (call) Release
+on:
+  workflow_call:
+    inputs:
+      increment-version:
+        description: 'Run the version increment + tag/push stage'
+        required: false
+        default: false
+        type: boolean
+      publish:
+        description: 'Run the npm publish stage'
+        required: false
+        default: false
+        type: boolean
+      increment:
+        description: 'Version increment (prerelease/patch/minor); used when increment-version is true'
+        required: false
+        default: 'prerelease'
+        type: string
+      channel:
+        description: 'npm dist-tag channel (next/latest/nightly/dev)'
+        required: true
+        type: string
+      ref:
+        description: |
+          git ref to check out for the publish stage. When
+          increment-version runs in the same call, its newly created
+          tag-ref is used instead.
+        required: false
+        default: ''
+        type: string
+      dry-run:
+        description: 'Dry run mode'
+        required: false
+        default: false
+        type: boolean
+      ignore-previously-published:
+        description: "Ignore 'You cannot publish over the previously published version' errors"
+        required: false
+        default: false
+        type: boolean
+      use-trusted-publishing:
+        description: |
+          Force npm trusted publishing (OIDC) for the publish step,
+          ignoring any NPM_TOKEN secret that was passed through. Useful
+          for verifying the trusted-publishing setup without removing the
+          NPM_TOKEN repository secret.
+        required: false
+        default: false
+        type: boolean
+    secrets:
+      NPM_TOKEN:
+        description: |
+          Optional npm auth token. When unset, the publish step uses npm
+          trusted publishing (OIDC) and the calling workflow must grant
+          `id-token: write`.
+        required: false
+    outputs:
+      version:
+        description: 'New package.json version (only set when increment-version ran)'
+        value: ${{ jobs.increment-version.outputs.version }}
+      tag-ref:
+        description: 'New tag ref, e.g. "refs/tags/v0.45.0" (only set when increment-version ran)'
+        value: ${{ jobs.increment-version.outputs.tag-ref }}
+      latest-release:
+        description: 'Tag name of the most recent non-draft GitHub release before this run'
+        value: ${{ jobs.increment-version.outputs.latest-release }}
+
+permissions: {}
+
+jobs:
+  increment-version:
+    if: inputs.increment-version
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      version: ${{ steps.increment-version.outputs.version }}
+      tag-ref: ${{ steps.increment-version.outputs.tag-ref }}
+      latest-release: ${{ steps.latest.outputs.release }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup-pnpm
+        with:
+          node-version: 24.x
+      - run: |
+          git config user.name "Lexical GitHub Actions Bot"
+          git config user.email "<>"
+      - id: latest
+        uses: ./.github/actions/get-latest-release
+      - id: increment-version
+        run: pnpm run increment-version
+        env:
+          INCREMENT: ${{ inputs.increment }}
+          CHANNEL: ${{ inputs.channel }}
+          LATEST_RELEASE: ${{ steps.latest.outputs.release }}
+          DRY_RUN: ${{ inputs.dry-run && '1' || '' }}
+
+  publish:
+    if: ${{ inputs.publish && !cancelled() && !failure() }}
+    needs: [increment-version]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      DRY_RUN_ARG: ${{ inputs.dry-run && '--dry-run' || '' }}
+      IGNORE_PREVIOUSLY_PUBLISHED_ARG: ${{ inputs.ignore-previously-published && '--ignore-previously-published' || '' }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.increment-version.outputs.tag-ref || inputs.ref }}
+      - uses: ./.github/actions/setup-pnpm
+        with:
+          node-version: 24.x
+          registry-url: 'https://registry.npmjs.org'
+      - name: Configure npm auth
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          USE_TRUSTED_PUBLISHING: ${{ inputs.use-trusted-publishing && '1' || '' }}
+        run: |
+          if [ -n "${USE_TRUSTED_PUBLISHING:-}" ]; then
+            echo "npm auth: trusted publishing (OIDC) forced via use-trusted-publishing input; NPM_TOKEN ignored"
+          elif [ -n "${NPM_TOKEN:-}" ]; then
+            echo "::add-mask::$NPM_TOKEN"
+            echo "NODE_AUTH_TOKEN=$NPM_TOKEN" >> "$GITHUB_ENV"
+            echo "npm auth: using NPM_TOKEN secret"
+          else
+            echo "npm auth: using trusted publishing (OIDC); ensure this workflow is registered on npmjs.com"
+          fi
+      # Fail fast (before the build) if the token can't authenticate, so a
+      # bad/expired/unauthorized NPM_TOKEN surfaces clearly instead of as a
+      # misleading 404 from every `pnpm publish`. Skipped on dry runs and
+      # in trusted-publishing mode, neither of which uses a persistent
+      # NODE_AUTH_TOKEN to verify up front.
+      - name: Verify npm authentication
+        if: ${{ !inputs.dry-run && !inputs.use-trusted-publishing }}
+        run: |
+          if [ -z "${NODE_AUTH_TOKEN:-}" ]; then
+            echo "Skipping npm whoami check: no NPM_TOKEN configured, trusted publishing (OIDC) will be attempted at publish time"
+            exit 0
+          fi
+          if ! whoami="$(npm whoami --registry=https://registry.npmjs.org)"; then
+            echo "::error::npm authentication failed for https://registry.npmjs.org. The NPM_TOKEN secret is missing, expired, revoked, or not authorized to publish these packages."
+            exit 1
+          fi
+          echo "Authenticated to https://registry.npmjs.org as ${whoami}"
+      - run: pnpm run prepare-release
+      - run: node ./scripts/npm/release.mjs --non-interactive $DRY_RUN_ARG $IGNORE_PREVIOUSLY_PUBLISHED_ARG --channel='${{ inputs.channel }}'

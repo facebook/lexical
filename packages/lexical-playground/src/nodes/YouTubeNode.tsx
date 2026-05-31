@@ -7,8 +7,6 @@
  */
 
 import type {
-  DOMConversionMap,
-  DOMConversionOutput,
   DOMExportOutput,
   EditorConfig,
   ElementFormatType,
@@ -67,17 +65,6 @@ export type SerializedYouTubeNode = Spread<
   SerializedDecoratorBlockNode
 >;
 
-function $convertYoutubeElement(
-  domNode: HTMLElement,
-): null | DOMConversionOutput {
-  const videoID = domNode.getAttribute('data-lexical-youtube');
-  if (videoID) {
-    const node = $createYouTubeNode(videoID);
-    return {node};
-  }
-  return null;
-}
-
 export class YouTubeNode extends DecoratorBlockNode {
   __id: string;
 
@@ -124,20 +111,6 @@ export class YouTubeNode extends DecoratorBlockNode {
     element.setAttribute('allowfullscreen', 'true');
     element.setAttribute('title', 'YouTube video');
     return {element};
-  }
-
-  static importDOM(): DOMConversionMap | null {
-    return {
-      iframe: (domNode: HTMLElement) => {
-        if (!domNode.hasAttribute('data-lexical-youtube')) {
-          return null;
-        }
-        return {
-          conversion: $convertYoutubeElement,
-          priority: 1,
-        };
-      },
-    };
   }
 
   updateDOM(): false {

@@ -9,13 +9,16 @@
 import type {ChildSchema, DOMImportContext} from '@lexical/html';
 
 import {
-  CoreImportExtension,
+  $isBlockLevel,
+  $propagateTextAlignToBlockChildren,
   defineImportRule,
   DOMImportExtension,
   isElementOfTag,
   sel,
 } from '@lexical/html';
 import {
+  $createLineBreakNode,
+  $isElementNode,
   $isParagraphNode,
   $setDirectionFromDOM,
   $setFormatFromDOM,
@@ -80,7 +83,21 @@ const ListRule = defineImportRule({
       node = $createListNode('bullet');
     }
     $setDirectionFromDOM(node, el);
-    return [node.splice(0, 0, $normalizeListChildren(ctx.$importChildren(el)))];
+    // Propagate the list's `text-align` onto each `ListItemNode` child
+    // (legacy `wrapContinuousInlines` did the same), so pasting
+    // `<ul style="text-align: left"><li>…</li></ul>` ends up with the
+    // alignment on the list items where the reconciler renders it as
+    // `style="text-align: left"`.
+    return [
+      node.splice(
+        0,
+        0,
+        $propagateTextAlignToBlockChildren(
+          $normalizeListChildren(ctx.$importChildren(el)),
+          el,
+        ),
+      ),
+    ];
   },
   match: sel.tag('ol', 'ul'),
   name: '@lexical/list/list',
@@ -111,6 +128,61 @@ function $liftFormatFromSingleParagraph(
   return children;
 }
 
+/**
+ * Collapse block children of a `<li>` into inline-with-line-break form: a
+ * `ListItemNode` is an inline-level container, so any block child marks a
+ * boundary. Contiguous inline siblings are kept together as a single run and
+ * one {@link $createLineBreakNode} is inserted between runs — reproducing the
+ * legacy `wrapContinuousInlines` + `$unwrapArtificialNodes` shape
+ * (`<li>1<div>2</div>3</li>` → `1<br>2<br>3`) without the
+ * `ArtificialNode__DO_NOT_USE` marker.
+ *
+ * Boundaries are detected with {@link $isBlockLevel}, NOT `$isParagraphNode`:
+ * the `<div>`/`<section>`/… `TransparentBlockRule` happens to emit
+ * `ParagraphNode`s, but a `<blockquote>` (`QuoteNode`), heading
+ * (`HeadingNode`), or block decorator (`HorizontalRuleNode`, …) is just as
+ * much a block boundary and must not be silently spliced into the list item
+ * as-is. A nested `ListNode` is the one deliberate exception — it is a valid
+ * list-item child that {@link $normalizeListChildren} lifts into a sibling,
+ * so it is preserved here rather than unwrapped.
+ */
+function $flattenListItemBlocks(children: LexicalNode[]): LexicalNode[] {
+  const $isBoundary = (node: LexicalNode): boolean =>
+    $isBlockLevel(node) && !$isListNode(node);
+  if (!children.some($isBoundary)) {
+    return children;
+  }
+  // Partition into segments — each maximal run of inline siblings, and each
+  // boundary's own content — then join the segments with a single line break.
+  const segments: LexicalNode[][] = [];
+  let inlineRun: LexicalNode[] = [];
+  const flushInlineRun = () => {
+    if (inlineRun.length > 0) {
+      segments.push(inlineRun);
+      inlineRun = [];
+    }
+  };
+  for (const child of children) {
+    if ($isBoundary(child)) {
+      flushInlineRun();
+      // Unwrap a block ElementNode to its inline content; a childless block
+      // DecoratorNode stands on its own line.
+      segments.push($isElementNode(child) ? child.getChildren() : [child]);
+    } else {
+      inlineRun.push(child);
+    }
+  }
+  flushInlineRun();
+  const out: LexicalNode[] = [];
+  for (const segment of segments) {
+    if (out.length > 0) {
+      out.push($createLineBreakNode());
+    }
+    out.push(...segment);
+  }
+  return out;
+}
+
 const ListItemRule = defineImportRule({
   $import: (ctx, el) => {
     const ariaChecked = el.getAttribute('aria-checked');
@@ -127,7 +199,12 @@ const ListItemRule = defineImportRule({
       node.splice(
         0,
         0,
-        $liftFormatFromSingleParagraph(node, ctx.$importChildren(el)),
+        // Lift a sole wrapping paragraph's format onto the item *before*
+        // flattening, otherwise the paragraph would already be unwrapped and
+        // its alignment lost.
+        $flattenListItemBlocks(
+          $liftFormatFromSingleParagraph(node, ctx.$importChildren(el)),
+        ),
       ),
     ];
   },
@@ -154,7 +231,9 @@ function $buildChecklistItem(
     node.splice(
       0,
       0,
-      $liftFormatFromSingleParagraph(node, ctx.$importChildren(el)),
+      $flattenListItemBlocks(
+        $liftFormatFromSingleParagraph(node, ctx.$importChildren(el)),
+      ),
     ),
   ];
 }
@@ -223,14 +302,16 @@ export const ListImportRules = [
 ];
 
 /**
- * Bundles {@link ListImportRules} (plus {@link CoreImportExtension}) into
- * a single dependency.
+ * Bundles {@link ListImportRules} together with the runtime
+ * {@link ListExtension}. The application is expected to already have
+ * `CoreImportExtension` (or some equivalent) in its dependency graph —
+ * the core/text/paragraph/inline-format rules are a shared baseline,
+ * not something this leaf importer should re-declare.
  *
  * @experimental
  */
 export const ListImportExtension = defineExtension({
   dependencies: [
-    CoreImportExtension,
     ListExtension,
     configExtension(DOMImportExtension, {rules: ListImportRules}),
   ],

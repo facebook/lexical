@@ -46,6 +46,7 @@ export {
   INSERT_HORIZONTAL_RULE_COMMAND,
   type SerializedHorizontalRuleNode,
 } from './HorizontalRuleExtension';
+export {IMEExtension} from './IMEExtension';
 export {
   type InitialStateConfig,
   InitialStateExtension,
@@ -93,6 +94,7 @@ export {
   type TabIndentationConfig,
   TabIndentationExtension,
 } from './TabIndentationExtension';
+export {WatchEditableExtension} from './WatchEditableExtension';
 export {watchedSignal} from './watchedSignal';
 export {
   type AnyLexicalExtension,

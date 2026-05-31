@@ -198,6 +198,31 @@ describe('LexicalNode state', () => {
         });
       });
 
+      test('importJSON ignores prototype-polluting state keys', () => {
+        const {editor} = testEnv;
+        editor.update(() => {
+          // `__proto__` is only an own enumerable key when produced by
+          // JSON.parse; an object literal would invoke the setter instead.
+          const malicious = JSON.parse(
+            `{"type":"paragraph","version":1,"${NODE_STATE_KEY}":{"__proto__":{"injectedKey":"evil"}}}`,
+          );
+          const paragraph = ParagraphNode.importJSON(malicious);
+          // The global prototype is untouched.
+          expect(({} as Record<string, unknown>).injectedKey).toBeUndefined();
+          expect(Object.prototype).not.toHaveProperty('injectedKey');
+          // The smuggled `__proto__` must not re-parent the state record:
+          // because getValue resolves keys with the `in` operator (which walks
+          // the prototype chain), an unguarded merge would let it inject this
+          // value. Reading the matching key must return the default instead.
+          const injectedState = createState('injectedKey', {
+            parse: v => (typeof v === 'string' ? v : 'default'),
+          });
+          expect($getState(paragraph, injectedState)).toBe('default');
+          // The dangerous key is dropped, so no node state is emitted.
+          expect(paragraph.exportJSON()).not.toHaveProperty(NODE_STATE_KEY);
+        });
+      });
+
       test('states cannot be registered with the same key string', () => {
         const {editor} = testEnv;
         editor.update(

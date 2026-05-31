@@ -16,6 +16,7 @@ import {
   HorizontalRuleExtension,
   SelectBlockExtension,
   SelectionAlwaysOnDisplayExtension,
+  WatchEditableExtension,
 } from '@lexical/extension';
 import {HashtagExtension} from '@lexical/hashtag';
 import {HistoryExtension} from '@lexical/history';
@@ -48,14 +49,19 @@ import {
 import {type JSX, useMemo} from 'react';
 
 import {isDevPlayground} from './appSettings';
-import {buildHTMLConfig} from './buildHTMLConfig';
 import {FlashMessageContext} from './context/FlashMessageContext';
 import {SettingsContext, useSettings} from './context/SettingsContext';
 import {ToolbarContext} from './context/ToolbarContext';
 import Editor from './Editor';
+import {registerSettingsSynchronization} from './hooks/useSynchronizeSettings';
 import logo from './images/logo.svg';
 import {KeywordsExtension} from './nodes/KeywordNode';
+import {
+  PlaygroundImportExtension,
+  PlaygroundRichTextImportExtension,
+} from './nodes/PlaygroundImportExtension';
 import PlaygroundNodes from './nodes/PlaygroundNodes';
+import {PlaygroundDOMRenderExtension} from './PlaygroundDOMRenderExtension';
 import {AutocompleteExtension} from './plugins/AutocompleteExtension';
 import {PlaygroundAutoLinkExtension} from './plugins/AutoLinkExtension';
 import {CodeHighlightExtension} from './plugins/CodeHighlightExtension';
@@ -64,13 +70,18 @@ import {DateTimeExtension} from './plugins/DateTimeExtension';
 import DocsPlugin from './plugins/DocsPlugin';
 import {DragDropPasteExtension} from './plugins/DragDropPasteExtension';
 import {EmojisExtension} from './plugins/EmojisExtension';
+import {EquationsExtension} from './plugins/EquationsExtension';
+import {ExcalidrawExtension} from './plugins/ExcalidrawExtension';
 import {FigmaExtension} from './plugins/FigmaExtension';
 import {ImagesExtension} from './plugins/ImagesExtension';
+import {LayoutExtension} from './plugins/LayoutExtension/LayoutExtension';
 import {PlaygroundMarkdownShortcutsExtension} from './plugins/MarkdownShortcutsExtension';
 import {MaxLengthExtension} from './plugins/MaxLengthPlugin';
+import {MentionsExtension} from './plugins/MentionsExtension';
 import {PageBreakExtension} from './plugins/PageBreakExtension';
 import {PagesReactExtension} from './plugins/PagesReactExtension';
 import PasteLogPlugin from './plugins/PasteLogPlugin';
+import {PollExtension} from './plugins/PollExtension';
 import {SpecialTextExtension} from './plugins/SpecialTextExtension';
 import {TabFocusExtension} from './plugins/TabFocusExtension';
 import {TerseExportExtension} from './plugins/TerseExportExtension';
@@ -175,6 +186,10 @@ const PlaygroundRichTextExtension = defineExtension({
         code: {arrow: true, click: true, enter: true, onlyAtBoundary: true},
       },
     }),
+    // Rich-text-only DOM importers (rich-text/list/table/code/hr); kept out of
+    // the always-on PlaygroundImportExtension so plain-text mode doesn't pull
+    // in RichTextExtension (which conflicts with PlainTextExtension).
+    PlaygroundRichTextImportExtension,
     ImagesExtension,
     HorizontalRuleExtension,
     PageBreakExtension,
@@ -189,6 +204,10 @@ const PlaygroundRichTextExtension = defineExtension({
     PlaygroundMarkdownShortcutsExtension,
     PageBreakExtension,
     PagesReactExtension,
+    PollExtension,
+    EquationsExtension,
+    LayoutExtension,
+    ExcalidrawExtension,
   ],
   name: '@lexical/playground/RichText',
 });
@@ -198,6 +217,9 @@ const AppExtension = defineExtension({
     AutoFocusExtension,
     ClearEditorExtension,
     DecoratorTextExtension,
+    // Exposes editor.isEditable() as a signal; consumed by
+    // registerSettingsSynchronization to drive ClickableLinkExtension.
+    WatchEditableExtension,
     HistoryExtension,
     KeywordsExtension,
     HashtagExtension,
@@ -206,6 +228,7 @@ const AppExtension = defineExtension({
     SpecialTextExtension,
     DragDropPasteExtension,
     EmojisExtension,
+    MentionsExtension,
     configExtension(LinkExtension, {validateUrl}),
     PlaygroundAutoLinkExtension,
     ClickableLinkExtension,
@@ -218,8 +241,15 @@ const AppExtension = defineExtension({
     }),
     configExtension(AutocompleteExtension, {disabled: true}),
     configExtension(VisibleLineBreakExtension, {disabled: true}),
+    // DOMImportExtension pipeline — `PlaygroundImportExtension` bundles
+    // the shared `CoreImportExtension` baseline, every per-package
+    // import extension (rich-text, list, link, table, code, hr), the
+    // playground-specific inline-style overlay and the
+    // `ClipboardDOMImportExtension` paste handler.
+    PlaygroundImportExtension,
+    // Replaces the legacy `buildHTMLConfig().export` overrides.
+    PlaygroundDOMRenderExtension,
   ],
-  html: buildHTMLConfig(),
   name: '@lexical/playground',
   namespace: 'Playground',
   nodes: PlaygroundNodes,
@@ -227,13 +257,29 @@ const AppExtension = defineExtension({
 });
 
 /**
- * This is not a recommended pattern, extensions should be as static as
- * possible, but this is a special case where we build fundamentally
- * different editor configurations based on the query string.
+ * The *only* settings that require tearing down and rebuilding the editor,
+ * because they change the set of extensions in use (and therefore the initial
+ * editor state). Building a dynamic extension from settings at all is an
+ * anti-pattern — extensions should be as static as possible — and is tolerated
+ * here only because the playground builds fundamentally different editors from
+ * the query string.
+ *
+ * IMPORTANT: Do NOT add a setting here unless changing it genuinely requires a
+ * different extension graph. Anything a live editor can react to through an
+ * extension's config signals — table behavior toggles, link attributes,
+ * character limits, autocomplete, etc. — MUST instead be synced with
+ * `useSyncExtensionSignal` in `Editor.tsx`. Adding such a setting here forces a
+ * full editor rebuild (discarding content, selection, and history) on every
+ * toggle, which is exactly the bug that moving the table settings out of here
+ * fixed.
  */
-function buildExtensionFromSettings(
-  settings: Record<'isCollab' | 'emptyEditor' | 'isRichText', boolean>,
-) {
+interface DynamicSettings {
+  isCollab: boolean;
+  emptyEditor: boolean;
+  isRichText: boolean;
+}
+
+function buildExtensionFromSettings(settings: DynamicSettings) {
   const {isCollab, emptyEditor, isRichText} = settings;
   return defineExtension({
     $initialEditorState: isCollab
@@ -247,6 +293,10 @@ function buildExtensionFromSettings(
       isRichText ? PlaygroundRichTextExtension : PlainTextExtension,
     ],
     name: '@lexical/playground/dynamic-config',
+    // Apply INITIAL_SETTINGS to the extension config signals synchronously as
+    // the editor is built (and wire the editable→clickable-link signal),
+    // before the React useSynchronizeSettings effect takes over live updates.
+    register: registerSettingsSynchronization,
   });
 }
 
@@ -255,13 +305,12 @@ function App(): JSX.Element {
     settings: {isCollab, emptyEditor, isRichText, measureTypingPerf},
   } = useSettings();
 
+  // Only the editor-recreating settings belong in this memo's deps. Table
+  // behavior toggles (and other live-reconfigurable settings) are applied
+  // reactively in Editor.tsx via useSyncExtensionSignal, so they must NOT
+  // appear here or they would rebuild the whole editor on every change.
   const app = useMemo(
-    () =>
-      buildExtensionFromSettings({
-        emptyEditor,
-        isCollab,
-        isRichText,
-      }),
+    () => buildExtensionFromSettings({emptyEditor, isCollab, isRichText}),
     [emptyEditor, isCollab, isRichText],
   );
 

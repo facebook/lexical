@@ -255,6 +255,7 @@ export {
   tokenizeRawText,
 } from './LexicalSelection';
 export {
+  $assumeActiveEditor,
   $fullReconcile,
   $parseSerializedNode,
   isCurrentlyReadOnlyMode,
@@ -308,6 +309,7 @@ export {
   INTERNAL_$isBlock,
   isBlockDomNode,
   isDocumentFragment,
+  isDOMCapturingSelection,
   isDOMDocumentNode,
   isDOMNode,
   isDOMTextNode,
@@ -325,6 +327,7 @@ export {
   removeFromParent,
   resetRandomKey,
   setDOMUnmanaged,
+  type SetDOMUnmanagedOptions,
   setNodeIndentFromDOM,
   toggleTextFormatType,
 } from './LexicalUtils';
@@ -339,6 +342,8 @@ export type {SerializedLineBreakNode} from './nodes/LexicalLineBreakNode';
 export {
   $createLineBreakNode,
   $isLineBreakNode,
+  isLastChildInBlockNode,
+  isOnlyChildInBlockNode,
   LineBreakNode,
 } from './nodes/LexicalLineBreakNode';
 export type {SerializedParagraphNode} from './nodes/LexicalParagraphNode';

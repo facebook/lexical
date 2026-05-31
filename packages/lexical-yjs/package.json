@@ -11,7 +11,7 @@
     "crdt"
   ],
   "license": "MIT",
-  "version": "0.44.0",
+  "version": "0.45.0",
   "main": "./dist/LexicalYjs.js",
   "types": "./dist/index.d.ts",
   "dependencies": {

@@ -113,20 +113,6 @@ function hasOurWrap(dom: HTMLElement): boolean {
 
 const LEXICAL_SPACE_DOT_FONT = "'LexicalSpaceDot'";
 
-// Prepend our space-dot font in front of any inline `font-family` set on a
-// TextNode's span (e.g. by the playground's font-family toolbar). The root
-// rule's `font-family` stack already covers spans without an inline style;
-// the inline one wins specificity, so we have to apply the override at the
-// node level. `unicode-range: U+0020` still scopes the substitution to the
-// space glyph alone, so the user's chosen face renders every other glyph.
-function applyTextFontPrepend(dom: HTMLElement): void {
-  const inline = dom.style.fontFamily;
-  if (inline === '' || inline.startsWith(LEXICAL_SPACE_DOT_FONT)) {
-    return;
-  }
-  dom.style.fontFamily = `${LEXICAL_SPACE_DOT_FONT}, ${inline}`;
-}
-
 const disabledForEditor = {
   disabledForEditor: ctx => ctx.get(VisibleNonPrintingDisabled),
 } satisfies DOMOverrideOptions;
@@ -181,21 +167,28 @@ export const VisibleNonPrintingExtension = defineExtension({
           disabledForEditor,
         ),
         domOverride(
-          [TabNode],
-          {
-            $decorateDOM: (_node, _prevNode, dom) => {
-              dom.setAttribute(VISIBLE_NON_PRINTING_TAB_ATTR, 'true');
-            },
-          },
-          disabledForEditor,
-        ),
-        domOverride(
-          [TextNode],
+          [TextNode, TabNode],
           {
             $decorateDOM: (node, _prev, dom) => {
-              if (!$isTabNode(node)) {
-                applyTextFontPrepend(dom);
+              // TabNode descends from TextNode so we are going to hit this case either way
+              if ($isTabNode(node)) {
+                dom.setAttribute(VISIBLE_NON_PRINTING_TAB_ATTR, 'true');
+                return;
               }
+              // Prepend our space-dot font in front of any inline `font-family` set on a
+              // TextNode's span (e.g. by the playground's font-family toolbar). The root
+              // rule's `font-family` stack already covers spans without an inline style;
+              // the inline one wins specificity, so we have to apply the override at the
+              // node level. `unicode-range: U+0020` still scopes the substitution to the
+              // space glyph alone, so the user's chosen face renders every other glyph.
+              const inline =
+                dom.style.fontFamily ||
+                getStyleObjectFromCSS(node.__style)['font-family'] ||
+                'var(--font-family)';
+              if (inline.startsWith(LEXICAL_SPACE_DOT_FONT)) {
+                return;
+              }
+              dom.style.fontFamily = `${LEXICAL_SPACE_DOT_FONT}, ${inline}`;
             },
           },
           disabledForEditor,

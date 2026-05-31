@@ -118,6 +118,7 @@
 .PlaygroundEditorTheme__textCode {
   background-color: rgb(240, 242, 245);
   padding: 1px 0.25rem;
+  --font-family: Menlo, Consolas, Monaco, monospace;
   font-family: Menlo, Consolas, Monaco, monospace;
   font-size: 94%;
 }
@@ -164,6 +165,7 @@
 .PlaygroundEditorTheme__code {
   background-color: rgb(240, 242, 245);
   font-family: Menlo, Consolas, Monaco, monospace;
+  --font-family: Menlo, Consolas, Monaco, monospace;
   display: block;
   line-height: 1.53;
   font-size: 13px;
@@ -746,6 +748,7 @@
   pointer-events: none;
   user-select: none;
   -webkit-user-select: none;
+  position: absolute;
 }
 [data-lexical-visible-non-printing-block] {
   position: relative;

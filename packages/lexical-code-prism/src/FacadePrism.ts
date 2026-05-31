@@ -18,6 +18,7 @@ import 'prismjs/components/prism-markup';
 import 'prismjs/components/prism-markdown';
 import 'prismjs/components/prism-c';
 import 'prismjs/components/prism-css';
+import 'prismjs/components/prism-go';
 import 'prismjs/components/prism-objectivec';
 import 'prismjs/components/prism-sql';
 import 'prismjs/components/prism-powershell';
@@ -45,6 +46,7 @@ export const CODE_LANGUAGE_FRIENDLY_NAME_MAP: Record<string, string> = {
   clike: 'C-like',
   cpp: 'C++',
   css: 'CSS',
+  go: 'Go',
   html: 'HTML',
   java: 'Java',
   js: 'JavaScript',
@@ -62,6 +64,7 @@ export const CODE_LANGUAGE_FRIENDLY_NAME_MAP: Record<string, string> = {
 
 export const CODE_LANGUAGE_MAP: Record<string, string> = {
   cpp: 'cpp',
+  golang: 'go',
   java: 'java',
   javascript: 'js',
   md: 'markdown',

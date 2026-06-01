@@ -22,6 +22,7 @@ import {
   undo,
 } from '../keyboardShortcuts/index.mjs';
 import {
+  advanceHistoryClock,
   assertSelection,
   assertTableHTML as assertHTML,
   assertTableSelectionCoordinates,
@@ -165,17 +166,18 @@ test.describe('Tables', () => {
       window.getSelection().setBaseAndExtent(col, 0, col, 0);
     });
 
-    // Allow Lexical to process the selection change.
-    await sleep(50);
-
     // The DOM caret must not be left inside the <col> / <colgroup> region
     // (the reconciler should have written it back to the resolved cell).
-    const domAnchorNodeName = await evaluate(
-      page,
-      () => window.getSelection().anchorNode?.nodeName ?? null,
-    );
-    expect(domAnchorNodeName).not.toBe('COL');
-    expect(domAnchorNodeName).not.toBe('COLGROUP');
+    // Poll for the selectionchange -> reconcile round-trip instead of sleeping
+    // a fixed time, which can be too short under load.
+    await expect
+      .poll(() =>
+        evaluate(
+          page,
+          () => window.getSelection().anchorNode?.nodeName ?? null,
+        ),
+      )
+      .not.toMatch(/^COL(GROUP)?$/);
 
     // Typing should land in the first cell, not extend "last".
     await page.keyboard.type('X');
@@ -7416,10 +7418,10 @@ test.describe('Tables', () => {
       false,
       false,
     );
-    // undo is used so we need to wait for history
-    await sleep(1050);
-
-    await sleep(1050);
+    // undo is used below, so force a new undo group here. Mode-agnostic:
+    // freezes the @lexical/history clock locally, or resets the Yjs
+    // UndoManager capture window in collab.
+    await advanceHistoryClock(page);
 
     await withExclusiveClipboardAccess(async () => {
       const clipboard = await copyToClipboard(page);

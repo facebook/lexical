@@ -73,6 +73,7 @@ export type Cursor = {
 function createRelativePosition(
   point: Point,
   binding: Binding,
+  assoc: number = 0,
 ): null | RelativePosition {
   const collabNodeMap = binding.collabNodeMap;
   const collabNode = collabNodeMap.get(point.key);
@@ -113,12 +114,13 @@ function createRelativePosition(
     offset = accumulatedOffset;
   }
 
-  return createRelativePositionFromTypeIndex(sharedType, offset);
+  return createRelativePositionFromTypeIndex(sharedType, offset, assoc);
 }
 
 function createRelativePositionV2(
   point: Point,
   binding: BindingV2,
+  assoc: number = 0,
 ): null | RelativePosition {
   const {mapping} = binding;
   const {offset} = point;
@@ -135,7 +137,7 @@ function createRelativePositionV2(
       adjustedOffset += prevSibling.getTextContentSize();
       prevSibling = prevSibling.getPreviousSibling();
     }
-    return createRelativePositionFromTypeIndex(yType, adjustedOffset);
+    return createRelativePositionFromTypeIndex(yType, adjustedOffset, assoc);
   } else if (point.type === 'element') {
     invariant($isElementNode(node), 'Element point must be an element node');
     let i = 0;
@@ -150,7 +152,7 @@ function createRelativePositionV2(
       i++;
       child = child.getNextSibling();
     }
-    return createRelativePositionFromTypeIndex(yType, i);
+    return createRelativePositionFromTypeIndex(yType, i, assoc);
   }
   return null;
 }
@@ -797,12 +799,24 @@ export function syncLexicalSelectionToYjs(
   }
 
   if ($isRangeSelection(nextSelection)) {
+    // For a non-collapsed range, give each endpoint an assoc that sticks it to
+    // the character it should track rather than the gap between characters:
+    //   left endpoint  (assoc >= 0): anchors to the first selected character,
+    //                                so inserts before the selection stay outside.
+    //   right endpoint (assoc  < 0): anchors to the last selected character,
+    //                                so inserts after the selection stay outside.
+    // Collapsed carets keep assoc = 0 on both sides (the default) so the caret
+    // naturally follows typing, matching the pre-existing behaviour.
+    const isCollapsed = nextSelection.isCollapsed();
+    const isBackward = !isCollapsed && nextSelection.isBackward();
+    const anchorAssoc = isBackward ? -1 : 0;
+    const focusAssoc = !isCollapsed && !isBackward ? -1 : 0;
     if (isBindingV1(binding)) {
-      anchorPos = createRelativePosition(nextSelection.anchor, binding);
-      focusPos = createRelativePosition(nextSelection.focus, binding);
+      anchorPos = createRelativePosition(nextSelection.anchor, binding, anchorAssoc);
+      focusPos = createRelativePosition(nextSelection.focus, binding, focusAssoc);
     } else {
-      anchorPos = createRelativePositionV2(nextSelection.anchor, binding);
-      focusPos = createRelativePositionV2(nextSelection.focus, binding);
+      anchorPos = createRelativePositionV2(nextSelection.anchor, binding, anchorAssoc);
+      focusPos = createRelativePositionV2(nextSelection.focus, binding, focusAssoc);
     }
   }
 

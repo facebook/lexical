@@ -10,7 +10,9 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  $getSelection,
   $getState,
+  $isRangeSelection,
   $setState,
   createState,
   ParagraphNode,
@@ -450,6 +452,65 @@ describe('Collaboration', () => {
         );
         expect(client1.getHTML()).toEqual(client2.getHTML());
         expect(client1.getDocJSON()).toEqual(client2.getDocJSON());
+
+        client1.stop();
+        client2.stop();
+      });
+
+      it('Should not grow local selection when remote client types at the right edge', async () => {
+        const connector = createTestConnection(useCollabV2);
+        const client1 = connector.createClient('1');
+        const client2 = connector.createClient('2');
+        client1.start(container!);
+        client2.start(container!);
+
+        await expectCorrectInitialContent(client1, client2);
+
+        // Client 1 inserts "foo bar"
+        await waitForReact(() => {
+          client1.update(() => {
+            $getRoot()
+              .getFirstChild<ParagraphNode>()!
+              .append($createTextNode('foo bar'));
+          });
+        });
+
+        expect(client1.getHTML()).toEqual(client2.getHTML());
+
+        // Client 1 selects the full text "foo bar" (forward range, anchor=0 focus=7)
+        await waitForReact(() => {
+          client1.update(() => {
+            const text = $getRoot()
+              .getFirstChild<ParagraphNode>()!
+              .getFirstChild<TextNode>()!;
+            text.select(0, text.getTextContentSize());
+          });
+        });
+
+        // Client 2 appends "ZZZ" immediately after client 1's right selection edge
+        await waitForReact(() => {
+          client2.update(() => {
+            const text = $getRoot()
+              .getFirstChild<ParagraphNode>()!
+              .getFirstChild<TextNode>()!;
+            text.spliceText(text.getTextContentSize(), 0, 'ZZZ');
+          });
+        });
+
+        // Both clients should now see "foo barZZZ" in the document
+        expect(client1.getHTML()).toContain('foo barZZZ');
+        expect(client1.getHTML()).toEqual(client2.getHTML());
+
+        // Client 1's local selection must still cover only the original "foo bar",
+        // not the "ZZZ" that was inserted after it by client 2 (regression: #8608).
+        const selectedText = client1
+          .getEditor()
+          .getEditorState()
+          .read(() => {
+            const sel = $getSelection();
+            return $isRangeSelection(sel) ? sel.getTextContent() : null;
+          });
+        expect(selectedText).toBe('foo bar');
 
         client1.stop();
         client2.stop();

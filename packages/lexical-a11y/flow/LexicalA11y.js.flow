@@ -22,3 +22,60 @@ export type AriaLiveRegionHandle = {
 declare export function registerAriaLiveRegion(
   options?: AriaLiveRegionOptions,
 ): AriaLiveRegionHandle;
+
+export type FocusTrapInitialFocus = 'firstFocusable' | 'container';
+
+export type FocusTrapOptions = {
+  initialFocus?: FocusTrapInitialFocus,
+};
+
+declare export function registerFocusTrap(
+  container: HTMLElement,
+  options?: FocusTrapOptions,
+): () => void;
+
+export type RovingOrientation = 'horizontal' | 'vertical' | 'both';
+
+export type RovingTabIndexOptions = {
+  orientation?: RovingOrientation,
+  itemSelector?: string,
+};
+
+declare export function registerRovingTabIndex(
+  container: HTMLElement,
+  options?: RovingTabIndexOptions,
+): () => void;
+
+import type {LexicalEditor} from 'lexical';
+
+export type FocusManagerOptions = {
+  toolbarItemSelector?: string,
+};
+
+declare export function registerFocusManager(
+  editor: LexicalEditor,
+  toolbar: HTMLElement,
+  options?: FocusManagerOptions,
+): () => void;
+
+export type HistoryAnnounceOptions = {
+  undone?: string,
+  redone?: string,
+};
+
+declare export function registerHistoryAnnounce(
+  editor: LexicalEditor,
+  announce: (message: string) => void,
+  options?: HistoryAnnounceOptions,
+): () => void;
+
+export type EditorModeAnnounceOptions = {
+  editable?: string,
+  readOnly?: string,
+};
+
+declare export function registerEditorModeAnnounce(
+  editor: LexicalEditor,
+  announce: (message: string) => void,
+  options?: EditorModeAnnounceOptions,
+): () => void;

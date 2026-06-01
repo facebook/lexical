@@ -6,20 +6,15 @@
  *
  */
 
+import {registerHistoryAnnounce} from '@lexical/a11y';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalAriaLiveRegion} from '@lexical/react/useLexicalAriaLiveRegion';
-import {
-  COMMAND_PRIORITY_LOW,
-  mergeRegister,
-  REDO_COMMAND,
-  UNDO_COMMAND,
-} from 'lexical';
 import {useEffect} from 'react';
 
 export interface HistoryAnnouncePluginProps {
   /**
-   * Messages announced after the corresponding history command runs. Hosts
-   * supply localized strings; defaults are English.
+   * Messages announced after the corresponding history command runs.
+   * Hosts supply localized strings; defaults are English.
    */
   messages?: {
     undone?: string;
@@ -27,46 +22,23 @@ export interface HistoryAnnouncePluginProps {
   };
 }
 
-const DEFAULT_UNDONE = 'Undone';
-const DEFAULT_REDONE = 'Redone';
-
 /**
- * Announces undo / redo into a polite `aria-live` region so screen readers
- * pick up history navigation. The announcement fires at
- * `COMMAND_PRIORITY_LOW` so the history extension's own handler runs first
- * and is unaffected; the handler returns `false` to keep the command chain
- * intact.
+ * React wrapper around `registerHistoryAnnounce` from `@lexical/a11y`.
+ *
+ * Announces undo / redo into a polite `aria-live` region (provided by
+ * `useLexicalAriaLiveRegion`) so screen readers pick up history
+ * navigation.
  */
 export function HistoryAnnouncePlugin({
   messages,
 }: HistoryAnnouncePluginProps = {}): null {
   const [editor] = useLexicalComposerContext();
   const announce = useLexicalAriaLiveRegion();
-  const {
-    undone: undoneMessage = DEFAULT_UNDONE,
-    redone: redoneMessage = DEFAULT_REDONE,
-  } = messages || {};
+  const {undone, redone} = messages || {};
 
   useEffect(() => {
-    return mergeRegister(
-      editor.registerCommand(
-        UNDO_COMMAND,
-        () => {
-          announce(undoneMessage);
-          return false;
-        },
-        COMMAND_PRIORITY_LOW,
-      ),
-      editor.registerCommand(
-        REDO_COMMAND,
-        () => {
-          announce(redoneMessage);
-          return false;
-        },
-        COMMAND_PRIORITY_LOW,
-      ),
-    );
-  }, [editor, announce, undoneMessage, redoneMessage]);
+    return registerHistoryAnnounce(editor, announce, {redone, undone});
+  }, [editor, announce, undone, redone]);
 
   return null;
 }

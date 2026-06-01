@@ -6,14 +6,15 @@
  *
  */
 
+import {registerEditorModeAnnounce} from '@lexical/a11y';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalAriaLiveRegion} from '@lexical/react/useLexicalAriaLiveRegion';
 import {useEffect} from 'react';
 
 export interface EditorModeAnnouncePluginProps {
   /**
-   * Messages announced when the editor transitions between modes. Hosts
-   * supply localized strings; defaults are English.
+   * Messages announced when the editor transitions between modes.
+   * Hosts supply localized strings; defaults are English.
    */
   messages?: {
     editable?: string;
@@ -21,31 +22,22 @@ export interface EditorModeAnnouncePluginProps {
   };
 }
 
-const DEFAULT_EDITABLE = 'Editor is editable';
-const DEFAULT_READ_ONLY = 'Editor is read-only';
-
 /**
- * Announces editor mode transitions (`editor.setEditable(true|false)`) into
- * a polite `aria-live` region so screen readers pick up the change. The
- * `aria-readonly` attribute on the editor root is already managed by
- * `LexicalContentEditableElement`; this plugin only contributes the
- * announcement.
+ * React wrapper around `registerEditorModeAnnounce` from `@lexical/a11y`.
+ *
+ * Announces `editor.setEditable(true|false)` transitions into a polite
+ * `aria-live` region (provided by `useLexicalAriaLiveRegion`).
  */
 export function EditorModeAnnouncePlugin({
   messages,
 }: EditorModeAnnouncePluginProps = {}): null {
   const [editor] = useLexicalComposerContext();
   const announce = useLexicalAriaLiveRegion();
-  const {
-    editable: editableMessage = DEFAULT_EDITABLE,
-    readOnly: readOnlyMessage = DEFAULT_READ_ONLY,
-  } = messages || {};
+  const {editable, readOnly} = messages || {};
 
   useEffect(() => {
-    return editor.registerEditableListener(editable => {
-      announce(editable ? editableMessage : readOnlyMessage);
-    });
-  }, [editor, announce, editableMessage, readOnlyMessage]);
+    return registerEditorModeAnnounce(editor, announce, {editable, readOnly});
+  }, [editor, announce, editable, readOnly]);
 
   return null;
 }

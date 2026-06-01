@@ -450,7 +450,7 @@ configExtension(DOMRenderExtension, {
       {
         $createDOM(node, $next) {
           const wrapper = document.createElement('span');
-          wrapper.className = 'visible-linebreak';
+          wrapper.className = 'visible-non-printing-linebreak';
           wrapper.appendChild($next());
           return wrapper;
         },

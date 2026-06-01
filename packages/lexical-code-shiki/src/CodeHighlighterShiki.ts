@@ -174,10 +174,11 @@ function $codeNodeTransform(
         node.setIsSyntaxHighlightSupported(true);
       }
     } else {
-      if (node.getIsSyntaxHighlightSupported()) {
+      const loadingTask = loadCodeLanguage(language, editor, nodeKey);
+      // if the language is not supported, the download will not occur
+      if (!loadingTask && node.getIsSyntaxHighlightSupported()) {
         node.setIsSyntaxHighlightSupported(false);
       }
-      loadCodeLanguage(language, editor, nodeKey);
       inFlight = true;
     }
   } else if (node.getIsSyntaxHighlightSupported()) {

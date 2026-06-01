@@ -33,7 +33,7 @@ import {AutocompleteExtension} from '../plugins/AutocompleteExtension';
 import {CodeHighlightExtension} from '../plugins/CodeHighlightExtension';
 import {MaxLengthExtension} from '../plugins/MaxLengthPlugin';
 import {SpecialTextExtension} from '../plugins/SpecialTextExtension';
-import {VisibleLineBreakExtension} from '../plugins/VisibleLineBreakExtension';
+import {VisibleNonPrintingExtension} from '../plugins/VisibleNonPrintingExtension';
 
 const DEFAULT_LINK_ATTRIBUTES: LinkAttributes = {
   rel: 'noopener noreferrer',
@@ -87,8 +87,8 @@ export function synchronizeSettingsToSignals(
   batch(() => {
     output(editor, AutocompleteExtension).disabled.value =
       !settings.isAutocomplete;
-    output(editor, VisibleLineBreakExtension).disabled.value =
-      !settings.isVisibleLineBreak;
+    output(editor, VisibleNonPrintingExtension).disabled.value =
+      !settings.isVisibleNonPrinting;
     output(editor, MaxLengthExtension).disabled.value = !settings.isMaxLength;
     const codeHighlight = peerOutput(editor, CodeHighlightExtension);
     if (codeHighlight) {

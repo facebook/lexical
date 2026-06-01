@@ -208,7 +208,13 @@ test.describe('CodeActionMenu', () => {
     await mouseMoveToSelector(page, 'code.PlaygroundEditorTheme__code');
     await click(page, 'button[aria-label=prettier]');
 
-    await page.waitForTimeout(3000);
+    // Prettier loads and formats asynchronously; wait for the reformatted
+    // result instead of a fixed timeout. Formatting turns the single input
+    // line into multiple lines, so a <br> inside the code block is a reliable
+    // "prettier finished" signal (attached, not visible: <br> has no box).
+    await waitForSelector(page, 'code.PlaygroundEditorTheme__code br', {
+      state: 'attached',
+    });
 
     await assertHTML(
       page,
@@ -254,7 +260,9 @@ test.describe('CodeActionMenu', () => {
     await mouseMoveToSelector(page, 'code.PlaygroundEditorTheme__code');
     await click(page, 'button[aria-label=prettier]');
 
-    await page.waitForTimeout(3000);
+    // Prettier reports invalid syntax asynchronously; wait for the error badge
+    // to appear instead of a fixed timeout (the assertions below do not retry).
+    await waitForSelector(page, 'i.format.prettier-error');
 
     expect(await page.$('i.format.prettier-error')).toBeTruthy();
 

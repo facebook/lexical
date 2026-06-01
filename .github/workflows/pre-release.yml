@@ -1,5 +1,11 @@
 name: Publish to NPM
 on:
+  # Nightly schedule (Mon-Fri 02:30 UTC) runs the prerelease path so a
+  # single workflow file owns all publishes — npm allows only one
+  # trusted-publisher config per package, so every publish has to come
+  # through here for OIDC to work.
+  schedule:
+    - cron: '30 2 * * 1-5'
   workflow_dispatch:
     inputs:
       ignore-previously-published:
@@ -7,13 +13,8 @@ on:
         required: true
         default: false
         type: boolean
-      use-trusted-publishing:
-        description: Ignore the NPM_TOKEN secret and force npm trusted publishing (OIDC). Use to verify the trusted-publishing setup without removing the repo secret.
-        required: true
-        default: false
-        type: boolean
       ref:
-        description: 'git ref to publish from. Defaults to main; override when testing trusted publishing from a non-main branch.'
+        description: 'git ref to publish from. Defaults to main; override when testing from a non-main branch.'
         required: true
         default: main
         type: string
@@ -25,13 +26,13 @@ on:
         options:
           - latest
           - dev
+          - nightly
       increment-version:
         description: |
           Bump version + push tag/branch before publish (same flow nightly uses).
-          Use ONLY with channel=dev for end-to-end tests of the trusted-publishing
-          setup. Pairing with channel=latest is refused — it would move the latest
-          dist-tag to a prerelease. Real latest releases must go through version.yml
-          first.
+          Use ONLY with channel=dev or channel=nightly. Pairing with
+          channel=latest is refused — it would move the latest dist-tag to a
+          prerelease. Real latest releases must go through version.yml first.
         required: true
         default: false
         type: boolean
@@ -48,8 +49,9 @@ jobs:
   guard:
     # Refuse the unsafe combo: bumping a fresh version and tagging it as
     # `latest` would move every user on the default dist-tag to a
-    # prerelease.
-    if: ${{ inputs.increment-version && inputs.channel == 'latest' }}
+    # prerelease. Only relevant for workflow_dispatch; the schedule path
+    # always uses channel=nightly.
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.increment-version && inputs.channel == 'latest' }}
     runs-on: ubuntu-latest
     steps:
       - run: |
@@ -58,14 +60,16 @@ jobs:
 
   release:
     needs: guard
-    if: ${{ !failure() && !cancelled() }}
+    # prevents this workflow from running on forks (matters most for the
+    # scheduled trigger; manual dispatch is already gated to maintainers)
+    if: ${{ !failure() && !cancelled() && github.repository_owner == 'facebook' }}
     uses: ./.github/workflows/call-release.yml
     with:
-      increment-version: ${{ inputs.increment-version }}
+      # Schedule path == nightly behavior: bump + publish under nightly
+      # dist-tag, ignoring previously-published collisions. Manual dispatch
+      # uses the inputs as provided.
+      increment-version: ${{ github.event_name == 'schedule' || inputs.increment-version }}
       publish: true
-      ref: ${{ inputs.ref }}
-      channel: ${{ inputs.channel }}
-      ignore-previously-published: ${{ inputs.ignore-previously-published }}
-      use-trusted-publishing: ${{ inputs.use-trusted-publishing }}
-    secrets:
-      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      ref: ${{ github.event_name == 'schedule' && 'main' || inputs.ref }}
+      channel: ${{ github.event_name == 'schedule' && 'nightly' || inputs.channel }}
+      ignore-previously-published: ${{ github.event_name == 'schedule' || inputs.ignore-previously-published }}

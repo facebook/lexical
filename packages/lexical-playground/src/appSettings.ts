@@ -24,7 +24,7 @@ export const DEFAULT_SETTINGS = {
   isCollab: false,
   isMaxLength: false,
   isRichText: true,
-  isVisibleLineBreak: false,
+  isVisibleNonPrinting: false,
   listStrictIndent: false,
   measureTypingPerf: false,
   selectBlock: false,

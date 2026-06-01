@@ -39,22 +39,6 @@ on:
         required: false
         default: false
         type: boolean
-      use-trusted-publishing:
-        description: |
-          Force npm trusted publishing (OIDC) for the publish step,
-          ignoring any NPM_TOKEN secret that was passed through. Useful
-          for verifying the trusted-publishing setup without removing the
-          NPM_TOKEN repository secret.
-        required: false
-        default: false
-        type: boolean
-    secrets:
-      NPM_TOKEN:
-        description: |
-          Optional npm auth token. When unset, the publish step uses npm
-          trusted publishing (OIDC) and the calling workflow must grant
-          `id-token: write`.
-        required: false
     outputs:
       version:
         description: 'New package.json version (only set when increment-version ran)'
@@ -104,6 +88,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      # Required for npm trusted publishing (OIDC) — every `@lexical/*`
+      # package on npmjs.com is configured to trust this workflow file
+      # via the GitHub Actions OIDC `workflow_ref` claim.
       id-token: write
     env:
       DRY_RUN_ARG: ${{ inputs.dry-run && '--dry-run' || '' }}
@@ -116,36 +103,5 @@ jobs:
         with:
           node-version: 24.x
           registry-url: 'https://registry.npmjs.org'
-      - name: Configure npm auth
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-          USE_TRUSTED_PUBLISHING: ${{ inputs.use-trusted-publishing && '1' || '' }}
-        run: |
-          if [ -n "${USE_TRUSTED_PUBLISHING:-}" ]; then
-            echo "npm auth: trusted publishing (OIDC) forced via use-trusted-publishing input; NPM_TOKEN ignored"
-          elif [ -n "${NPM_TOKEN:-}" ]; then
-            echo "::add-mask::$NPM_TOKEN"
-            echo "NODE_AUTH_TOKEN=$NPM_TOKEN" >> "$GITHUB_ENV"
-            echo "npm auth: using NPM_TOKEN secret"
-          else
-            echo "npm auth: using trusted publishing (OIDC); ensure this workflow is registered on npmjs.com"
-          fi
-      # Fail fast (before the build) if the token can't authenticate, so a
-      # bad/expired/unauthorized NPM_TOKEN surfaces clearly instead of as a
-      # misleading 404 from every `pnpm publish`. Skipped on dry runs and
-      # in trusted-publishing mode, neither of which uses a persistent
-      # NODE_AUTH_TOKEN to verify up front.
-      - name: Verify npm authentication
-        if: ${{ !inputs.dry-run && !inputs.use-trusted-publishing }}
-        run: |
-          if [ -z "${NODE_AUTH_TOKEN:-}" ]; then
-            echo "Skipping npm whoami check: no NPM_TOKEN configured, trusted publishing (OIDC) will be attempted at publish time"
-            exit 0
-          fi
-          if ! whoami="$(npm whoami --registry=https://registry.npmjs.org)"; then
-            echo "::error::npm authentication failed for https://registry.npmjs.org. The NPM_TOKEN secret is missing, expired, revoked, or not authorized to publish these packages."
-            exit 1
-          fi
-          echo "Authenticated to https://registry.npmjs.org as ${whoami}"
       - run: pnpm run prepare-release
       - run: node ./scripts/npm/release.mjs --non-interactive $DRY_RUN_ARG $IGNORE_PREVIOUSLY_PUBLISHED_ARG --channel='${{ inputs.channel }}'

@@ -14,13 +14,13 @@ import {
   undo,
 } from '../keyboardShortcuts/index.mjs';
 import {
+  advanceHistoryClock,
   assertHTML,
   assertSelection,
   enableCompositionKeyEvents,
   focusEditor,
   html,
   initialize,
-  sleep,
   test,
 } from '../utils/index.mjs';
 
@@ -34,7 +34,7 @@ test.describe('History', () => {
     test.skip(isCollab);
     await page.focus('div[contenteditable="true"]');
     await page.keyboard.type('hello');
-    await sleep(1050); // default merge interval is 1000, add 50ms as overhead due to CI latency.
+    await advanceHistoryClock(page);
     await page.keyboard.type(' world');
     await page.keyboard.press('Enter');
     await page.keyboard.type('hello world again');
@@ -553,11 +553,11 @@ test.describe('History - IME', () => {
       text: 'すし',
     });
 
-    await sleep(1050); // default merge interval is 1000, add 50ms as overhead due to CI latency.
+    await advanceHistoryClock(page);
 
     await page.keyboard.type(' ');
 
-    await sleep(1050);
+    await advanceHistoryClock(page);
 
     // await page.keyboard.imeSetComposition('m', 1, 1);
     await client.send('Input.imeSetComposition', {
@@ -578,7 +578,7 @@ test.describe('History - IME', () => {
       text: 'もj',
     });
 
-    await sleep(1050);
+    await advanceHistoryClock(page);
 
     // await page.keyboard.imeSetComposition('もじ', 2, 2);
     await client.send('Input.imeSetComposition', {
@@ -742,7 +742,7 @@ test.describe('History - IME', () => {
       text: 'a',
     });
 
-    await sleep(1050);
+    await advanceHistoryClock(page);
 
     await client.send('Input.imeSetComposition', {
       selectionStart: 1,
@@ -825,7 +825,7 @@ test.describe('History - IME', () => {
       text: 'a',
     });
 
-    await sleep(1050);
+    await advanceHistoryClock(page);
 
     await client.send('Input.imeSetComposition', {
       selectionStart: 2,
@@ -901,7 +901,7 @@ test.describe('History - IME', () => {
     await client.send('Input.insertText', {
       text: 'ab',
     });
-    await sleep(1050);
+    await advanceHistoryClock(page);
 
     await page.keyboard.down('Shift');
     await moveLeft(page, 1);

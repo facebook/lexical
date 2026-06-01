@@ -18,6 +18,7 @@ import type {
   LexicalNode,
   LexicalUpdateJSON,
   NodeKey,
+  NodeSelection,
   ParagraphNode,
   PasteCommandType,
   RangeSelection,
@@ -647,6 +648,61 @@ const DEFAULT_ESCAPE_FORMAT_TRIGGERS: EscapeFormatTriggerConfig = {
   lowercase: {enter: true, space: true, tab: true},
   uppercase: {enter: true, space: true, tab: true},
 };
+
+/**
+ * Collapse a NodeSelection to a caret at the surrounding block's edge for
+ * MOVE_TO_START / MOVE_TO_END. Picks the first node in the selection's
+ * iteration order for MOVE_TO_START (`isBackward = true`) or the last for
+ * MOVE_TO_END, walks up to the picked node's nearest non-inline ancestor,
+ * and lands the caret at that block's offset `0` or `childrenSize`.
+ *
+ * A decorator nested inside an element-decorator host (e.g. inside a card
+ * title paragraph) promotes to the surrounding paragraph rather than the
+ * host's edge — the `n !== targetNode` guard excludes the node itself, so
+ * a whole-element NodeSelection (the host) snaps to its parent block, not
+ * its own interior. Falls back to the root when no non-inline ancestor
+ * below the root matches, which lands the caret at the document edge.
+ *
+ * `NodeSelection.getNodes()` iterates `_nodes: Set<NodeKey>` in
+ * Set-insertion order, not strict document order. In practice a
+ * NodeSelection is single-node (image / mention click), so the framing
+ * is "first / last in the selection" rather than "first / last in the
+ * document".
+ *
+ * Distinct from `KEY_ARROW_LEFT_COMMAND` / `KEY_ARROW_RIGHT_COMMAND`,
+ * which step to the immediate sibling via `selectPrevious` /
+ * `selectNext`. Cmd+Arrow is a line-end command rather than a one-step
+ * caret move, so the block edge is the intended target. `event.shiftKey`
+ * is not honored — NodeSelection has no natural "extend toward block
+ * edge" semantic.
+ *
+ * Always calls `preventDefault` and `stopPropagation` so Chrome's
+ * native Cmd+Arrow page-navigate cannot fall through.
+ *
+ * @internal
+ */
+function $promoteNodeSelectionToBlockEdge(
+  selection: NodeSelection,
+  isBackward: boolean,
+  event: KeyboardEvent,
+): boolean {
+  event.preventDefault();
+  event.stopPropagation();
+  const nodes = selection.getNodes();
+  if (nodes.length === 0) {
+    return true;
+  }
+  const targetNode = isBackward ? nodes[0] : nodes[nodes.length - 1];
+  const block: ElementNode =
+    $findMatchingParent(
+      targetNode,
+      (n): n is ElementNode =>
+        n !== targetNode && $isElementNode(n) && !n.isInline(),
+    ) ?? $getRoot();
+  const offset = isBackward ? 0 : block.getChildrenSize();
+  block.select(offset, offset);
+  return true;
+}
 
 export function registerRichText(
   editor: LexicalEditor,
@@ -1281,6 +1337,9 @@ export function registerRichText(
       MOVE_TO_END,
       event => {
         const selection = $getSelection();
+        if ($isNodeSelection(selection)) {
+          return $promoteNodeSelectionToBlockEdge(selection, false, event);
+        }
         if (!$isRangeSelection(selection)) {
           return false;
         }
@@ -1324,6 +1383,9 @@ export function registerRichText(
       MOVE_TO_START,
       event => {
         const selection = $getSelection();
+        if ($isNodeSelection(selection)) {
+          return $promoteNodeSelectionToBlockEdge(selection, true, event);
+        }
         if (!$isRangeSelection(selection)) {
           return false;
         }

@@ -9,11 +9,13 @@
 import {buildEditorFromExtensions} from '@lexical/extension';
 import {$createHeadingNode, RichTextExtension} from '@lexical/rich-text';
 import {
+  $createNodeSelection,
   $createParagraphNode,
   $createTextNode,
   $getRoot,
   $getSelection,
   $isRangeSelection,
+  $setSelection,
   LexicalEditor,
   MOVE_TO_END,
 } from 'lexical';
@@ -252,6 +254,96 @@ describe('MOVE_TO_END with no trailing text (Issue #8601)', () => {
       expect(selection.focus.type).toBe('element');
       expect(selection.focus.key).toBe(paragraph.getKey());
       expect(selection.focus.offset).toBe(3);
+    });
+  });
+});
+
+describe('MOVE_TO_END on a NodeSelection (Issue #8604)', () => {
+  test.for([
+    {
+      expected: () => {
+        const paragraph = $getRoot().getFirstChildOrThrow();
+        return {key: paragraph.getKey(), offset: 2};
+      },
+      label: 'single inline decorator collapses to the block end',
+      setup: () => {
+        const decorator = $createTestDecoratorNode().setIsInline(true);
+        const text = $createTextNode('hello');
+        const paragraph = $createParagraphNode().append(decorator, text);
+        $getRoot().clear().append(paragraph);
+        const ns = $createNodeSelection();
+        ns.add(decorator.getKey());
+        $setSelection(ns);
+      },
+    },
+    {
+      expected: () => {
+        const secondParagraph = $getRoot().getChildAtIndex(1);
+        assert(secondParagraph !== null);
+        return {key: secondParagraph.getKey(), offset: 2};
+      },
+      label: 'multi-node selection picks the iteration-order last node',
+      setup: () => {
+        const firstDecorator = $createTestDecoratorNode().setIsInline(true);
+        const firstText = $createTextNode('A');
+        const firstParagraph = $createParagraphNode().append(
+          firstDecorator,
+          firstText,
+        );
+        const secondDecorator = $createTestDecoratorNode().setIsInline(true);
+        const secondText = $createTextNode('B');
+        const secondParagraph = $createParagraphNode().append(
+          secondDecorator,
+          secondText,
+        );
+        $getRoot().clear().append(firstParagraph, secondParagraph);
+        const ns = $createNodeSelection();
+        ns.add(firstDecorator.getKey());
+        ns.add(secondDecorator.getKey());
+        $setSelection(ns);
+      },
+    },
+    {
+      // Whole-element NodeSelection on a non-inline ElementNode (the
+      // paragraph itself). The helper's `n !== targetNode` guard skips
+      // the paragraph and walks up; with no other non-inline ancestor
+      // below the root, the lookup falls back to root. Without the
+      // guard, the paragraph would resolve to itself and the caret
+      // would land at the paragraph's trailing edge — this case pins
+      // down the include-self regression.
+      expected: () => ({
+        key: 'root',
+        offset: $getRoot().getChildrenSize(),
+      }),
+      label: 'whole-element non-inline ElementNode resolves to its parent',
+      setup: () => {
+        const text = $createTextNode('hello');
+        const paragraph = $createParagraphNode().append(text);
+        $getRoot().clear().append(paragraph);
+        const ns = $createNodeSelection();
+        ns.add(paragraph.getKey());
+        $setSelection(ns);
+      },
+    },
+  ])('$label', ({setup, expected}) => {
+    using editor = buildEditorFromExtensions({
+      dependencies: [RichTextExtension],
+      name: 'test',
+      nodes: [TestDecoratorNode],
+    });
+
+    editor.update(setup, {discrete: true});
+
+    dispatchMoveToEnd(editor, false);
+
+    editor.read(() => {
+      const selection = $getSelection();
+      assert($isRangeSelection(selection));
+      const {key, offset} = expected();
+      expect(selection.isCollapsed()).toBe(true);
+      expect(selection.anchor.type).toBe('element');
+      expect(selection.anchor.key).toBe(key);
+      expect(selection.anchor.offset).toBe(offset);
     });
   });
 });

@@ -64,7 +64,7 @@ export function isCodeLanguageLoaded(language: string) {
  * @param editor - Lexical editor instance to update after the language loads.
  * @param codeNodeKey - Key of the {@link CodeNode} to mark as syntax-highlight-supported.
  * @returns A Promise that resolves when the language is ready,
- * or `undefined` if the {@link language} was already loaded or is not supported.
+ * or `undefined` if the `language` was already loaded or is not supported.
  */
 export function loadCodeLanguage(
   language: string,

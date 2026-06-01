@@ -53,6 +53,7 @@ import {
 } from '@lexical/utils';
 import {
   $applyNodeReplacement,
+  $comparePointCaretNext,
   $createParagraphNode,
   $createRangeSelection,
   $createTabNode,
@@ -60,6 +61,7 @@ import {
   $getNearestNodeFromDOMNode,
   $getRoot,
   $getSelection,
+  $getSiblingCaret,
   $insertNodes,
   $isDecoratorNode,
   $isElementNode,
@@ -651,23 +653,24 @@ const DEFAULT_ESCAPE_FORMAT_TRIGGERS: EscapeFormatTriggerConfig = {
 
 /**
  * Collapse a NodeSelection to a caret at the surrounding block's edge for
- * MOVE_TO_START / MOVE_TO_END. Picks the first node in the selection's
- * iteration order for MOVE_TO_START (`isBackward = true`) or the last for
- * MOVE_TO_END, walks up to the picked node's nearest non-inline ancestor,
- * and lands the caret at that block's offset `0` or `childrenSize`.
+ * MOVE_TO_START / MOVE_TO_END. Picks the document-order first node for
+ * MOVE_TO_START (`isBackward = true`) or last for MOVE_TO_END, walks up
+ * to the picked node's nearest non-inline ancestor, and lands the caret
+ * at that block's offset `0` or `childrenSize`.
  *
- * A decorator nested inside an element-decorator host (e.g. inside a card
- * title paragraph) promotes to the surrounding paragraph rather than the
- * host's edge — the `n !== targetNode` guard excludes the node itself, so
- * a whole-element NodeSelection (the host) snaps to its parent block, not
- * its own interior. Falls back to the root when no non-inline ancestor
- * below the root matches, which lands the caret at the document edge.
+ * Document order is resolved via `$comparePointCaretNext` over each
+ * selected node's `'next'` sibling caret — `NodeSelection.getNodes()`
+ * iterates `_nodes: Set<NodeKey>` in click-insertion order, so a Set-
+ * index pick would land on the most-recently-clicked node, not the
+ * document-order first / last.
  *
- * `NodeSelection.getNodes()` iterates `_nodes: Set<NodeKey>` in
- * Set-insertion order, not strict document order. In practice a
- * NodeSelection is single-node (image / mention click), so the framing
- * is "first / last in the selection" rather than "first / last in the
- * document".
+ * A decorator nested inside an element-decorator host (e.g. inside a
+ * card title paragraph) promotes to the surrounding paragraph rather
+ * than the host's edge — the `n !== targetNode` guard excludes the
+ * node itself, so a whole-element NodeSelection (the host) snaps to
+ * its parent block, not its own interior. Falls back to the root when
+ * no non-inline ancestor below the root matches, which lands the
+ * caret at the document edge.
  *
  * Distinct from `KEY_ARROW_LEFT_COMMAND` / `KEY_ARROW_RIGHT_COMMAND`,
  * which step to the immediate sibling via `selectPrevious` /
@@ -692,7 +695,11 @@ function $promoteNodeSelectionToBlockEdge(
   if (nodes.length === 0) {
     return true;
   }
-  const targetNode = isBackward ? nodes[0] : nodes[nodes.length - 1];
+  const sorted = nodes
+    .map(node => $getSiblingCaret(node, 'next'))
+    .sort($comparePointCaretNext);
+  const targetNode = (isBackward ? sorted[0] : sorted[sorted.length - 1])
+    .origin;
   const block: ElementNode =
     $findMatchingParent(
       targetNode,
@@ -1357,19 +1364,14 @@ export function registerRichText(
         }
         // Native browser cursor traversal stops at the inline decorator's
         // contenteditable=false boundary when the caret starts at element
-        // offset 0, so MOVE_TO_END leaves the caret stuck. Move it ourselves.
-        // When the block has no trailing text (only decorators, or a
-        // [decorator…decorator] sandwich), land the caret at the element
-        // offset past the last child so it clears the trailing boundary too.
+        // offset 0, so MOVE_TO_END leaves the caret stuck. Move it
+        // ourselves. `element.selectEnd()` already handles every
+        // last-descendant case correctly — text descendant produces a
+        // text-type selection at the end of the run, decorator descendant
+        // and the empty-element fallback both produce an element-type
+        // selection at offset childrenSize.
         const elementKey = element.getKey();
-        const lastDescendant = element.getLastDescendant();
-        const ending =
-          lastDescendant == null || $isDecoratorNode(lastDescendant)
-            ? element.select(
-                element.getChildrenSize(),
-                element.getChildrenSize(),
-              )
-            : element.selectEnd();
+        const ending = element.selectEnd();
         if (event.shiftKey) {
           ending.anchor.set(elementKey, 0, 'element');
         }

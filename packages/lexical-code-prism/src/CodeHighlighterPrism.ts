@@ -143,17 +143,17 @@ function $codeNodeTransform(
   const language = node.getLanguage() || tokenizer.defaultLanguage;
   if (language) {
     if (isCodeLanguageLoaded(language)) {
-      if (!node.getIsSyntaxHighlightSupported()) {
+      if (node.getIsSyntaxHighlightSupported() !== true) {
         node.setIsSyntaxHighlightSupported(true);
       }
     } else {
-      if (node.getIsSyntaxHighlightSupported()) {
+      if (node.getIsSyntaxHighlightSupported() !== false) {
         node.setIsSyntaxHighlightSupported(false);
       }
       loadCodeLanguage(language, editor, nodeKey);
       return;
     }
-  } else if (node.getIsSyntaxHighlightSupported()) {
+  } else if (node.getIsSyntaxHighlightSupported() !== false) {
     node.setIsSyntaxHighlightSupported(false);
   }
 

@@ -77,7 +77,7 @@ export function loadCodeLanguage(
             if (
               $isCodeNode(codeNode) &&
               codeNode.getLanguage() === language &&
-              !codeNode.getIsSyntaxHighlightSupported()
+              codeNode.getIsSyntaxHighlightSupported() !== true
             ) {
               codeNode.setIsSyntaxHighlightSupported(true);
             }

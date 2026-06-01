@@ -18,6 +18,7 @@ import type {
   LexicalNode,
   LexicalUpdateJSON,
   NodeKey,
+  NodeSelection,
   ParagraphNode,
   PasteCommandType,
   RangeSelection,
@@ -52,6 +53,7 @@ import {
 } from '@lexical/utils';
 import {
   $applyNodeReplacement,
+  $comparePointCaretNext,
   $createParagraphNode,
   $createRangeSelection,
   $createTabNode,
@@ -59,6 +61,7 @@ import {
   $getNearestNodeFromDOMNode,
   $getRoot,
   $getSelection,
+  $getSiblingCaret,
   $insertNodes,
   $isDecoratorNode,
   $isElementNode,
@@ -647,6 +650,66 @@ const DEFAULT_ESCAPE_FORMAT_TRIGGERS: EscapeFormatTriggerConfig = {
   lowercase: {enter: true, space: true, tab: true},
   uppercase: {enter: true, space: true, tab: true},
 };
+
+/**
+ * Collapse a NodeSelection to a caret at the surrounding block's edge for
+ * MOVE_TO_START / MOVE_TO_END. Picks the document-order first node for
+ * MOVE_TO_START (`isBackward = true`) or last for MOVE_TO_END, walks up
+ * to the picked node's nearest non-inline ancestor, and lands the caret
+ * at that block's offset `0` or `childrenSize`.
+ *
+ * Document order is resolved via `$comparePointCaretNext` over each
+ * selected node's `'next'` sibling caret — `NodeSelection.getNodes()`
+ * iterates `_nodes: Set<NodeKey>` in click-insertion order, so a Set-
+ * index pick would land on the most-recently-clicked node, not the
+ * document-order first / last.
+ *
+ * A decorator nested inside an element-decorator host (e.g. inside a
+ * card title paragraph) promotes to the surrounding paragraph rather
+ * than the host's edge — the `n !== targetNode` guard excludes the
+ * node itself, so a whole-element NodeSelection (the host) snaps to
+ * its parent block, not its own interior. Falls back to the root when
+ * no non-inline ancestor below the root matches, which lands the
+ * caret at the document edge.
+ *
+ * Distinct from `KEY_ARROW_LEFT_COMMAND` / `KEY_ARROW_RIGHT_COMMAND`,
+ * which step to the immediate sibling via `selectPrevious` /
+ * `selectNext`. Cmd+Arrow is a line-end command rather than a one-step
+ * caret move, so the block edge is the intended target. `event.shiftKey`
+ * is not honored — NodeSelection has no natural "extend toward block
+ * edge" semantic.
+ *
+ * Always calls `preventDefault` and `stopPropagation` so Chrome's
+ * native Cmd+Arrow page-navigate cannot fall through.
+ *
+ * @internal
+ */
+function $promoteNodeSelectionToBlockEdge(
+  selection: NodeSelection,
+  isBackward: boolean,
+  event: KeyboardEvent,
+): boolean {
+  event.preventDefault();
+  event.stopPropagation();
+  const nodes = selection.getNodes();
+  if (nodes.length === 0) {
+    return true;
+  }
+  const sorted = nodes
+    .map(node => $getSiblingCaret(node, 'next'))
+    .sort($comparePointCaretNext);
+  const targetNode = (isBackward ? sorted[0] : sorted[sorted.length - 1])
+    .origin;
+  const block: ElementNode =
+    $findMatchingParent(
+      targetNode,
+      (n): n is ElementNode =>
+        n !== targetNode && $isElementNode(n) && !n.isInline(),
+    ) ?? $getRoot();
+  const offset = isBackward ? 0 : block.getChildrenSize();
+  block.select(offset, offset);
+  return true;
+}
 
 export function registerRichText(
   editor: LexicalEditor,
@@ -1281,6 +1344,9 @@ export function registerRichText(
       MOVE_TO_END,
       event => {
         const selection = $getSelection();
+        if ($isNodeSelection(selection)) {
+          return $promoteNodeSelectionToBlockEdge(selection, false, event);
+        }
         if (!$isRangeSelection(selection)) {
           return false;
         }
@@ -1296,14 +1362,14 @@ export function registerRichText(
         if (!$isDecoratorNode(firstChild) || !firstChild.isInline()) {
           return false;
         }
-        const lastDescendant = element.getLastDescendant();
-        if (lastDescendant == null || $isDecoratorNode(lastDescendant)) {
-          // No selectable text — fall through to native browser behavior.
-          return false;
-        }
         // Native browser cursor traversal stops at the inline decorator's
         // contenteditable=false boundary when the caret starts at element
-        // offset 0, so MOVE_TO_END leaves the caret stuck. Move it ourselves.
+        // offset 0, so MOVE_TO_END leaves the caret stuck. Move it
+        // ourselves. `element.selectEnd()` already handles every
+        // last-descendant case correctly — text descendant produces a
+        // text-type selection at the end of the run, decorator descendant
+        // and the empty-element fallback both produce an element-type
+        // selection at offset childrenSize.
         const elementKey = element.getKey();
         const ending = element.selectEnd();
         if (event.shiftKey) {
@@ -1319,6 +1385,9 @@ export function registerRichText(
       MOVE_TO_START,
       event => {
         const selection = $getSelection();
+        if ($isNodeSelection(selection)) {
+          return $promoteNodeSelectionToBlockEdge(selection, true, event);
+        }
         if (!$isRangeSelection(selection)) {
           return false;
         }
@@ -1333,11 +1402,6 @@ export function registerRichText(
         }
         const firstChild = focusBlock.getFirstChild();
         if (!$isDecoratorNode(firstChild) || !firstChild.isInline()) {
-          return false;
-        }
-        const lastDescendant = focusBlock.getLastDescendant();
-        if (lastDescendant == null || $isDecoratorNode(lastDescendant)) {
-          // No selectable text — fall through to native browser behavior.
           return false;
         }
         // Cross-block selections fall through to native handling. The

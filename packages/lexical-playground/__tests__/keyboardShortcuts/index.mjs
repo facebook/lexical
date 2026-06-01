@@ -8,6 +8,8 @@
 
 import {
   E2E_BROWSER,
+  evaluate,
+  IS_LINUX,
   IS_MAC,
   keyDownCtrlOrAlt,
   keyDownCtrlOrMeta,
@@ -160,9 +162,24 @@ export async function moveToParagraphEnd(page) {
 }
 
 export async function selectAll(page) {
-  await keyDownCtrlOrMeta(page);
-  await page.keyboard.press('a');
-  await keyUpCtrlOrMeta(page);
+  if (E2E_BROWSER === 'firefox' && IS_LINUX) {
+    await evaluate(page, () => {
+      const rootElement = document.querySelector('div[contenteditable="true"]');
+      rootElement.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          bubbles: true,
+          cancelable: true,
+          code: 'KeyA',
+          ctrlKey: true,
+          key: 'a',
+        }),
+      );
+    });
+  } else {
+    await keyDownCtrlOrMeta(page);
+    await page.keyboard.press('a');
+    await keyUpCtrlOrMeta(page);
+  }
 }
 
 export async function undo(page) {

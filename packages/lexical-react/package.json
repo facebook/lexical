@@ -11,6 +11,7 @@
   "version": "0.45.0",
   "dependencies": {
     "@floating-ui/react": "^0.27.19",
+    "@lexical/a11y": "workspace:*",
     "@lexical/devtools-core": "workspace:*",
     "@lexical/dragon": "workspace:*",
     "@lexical/extension": "workspace:*",
@@ -719,38 +720,6 @@
         "default": "./dist/LexicalExtensionEditorComposer.js"
       }
     },
-    "./LexicalHistoryAnnouncePlugin": {
-      "source": "./src/LexicalHistoryAnnouncePlugin.ts",
-      "import": {
-        "types": "./dist/LexicalHistoryAnnouncePlugin.d.ts",
-        "development": "./dist/LexicalHistoryAnnouncePlugin.dev.mjs",
-        "production": "./dist/LexicalHistoryAnnouncePlugin.prod.mjs",
-        "node": "./dist/LexicalHistoryAnnouncePlugin.node.mjs",
-        "default": "./dist/LexicalHistoryAnnouncePlugin.mjs"
-      },
-      "require": {
-        "types": "./dist/LexicalHistoryAnnouncePlugin.d.ts",
-        "development": "./dist/LexicalHistoryAnnouncePlugin.dev.js",
-        "production": "./dist/LexicalHistoryAnnouncePlugin.prod.js",
-        "default": "./dist/LexicalHistoryAnnouncePlugin.js"
-      }
-    },
-    "./LexicalHistoryAnnouncePlugin.js": {
-      "source": "./src/LexicalHistoryAnnouncePlugin.ts",
-      "import": {
-        "types": "./dist/LexicalHistoryAnnouncePlugin.d.ts",
-        "development": "./dist/LexicalHistoryAnnouncePlugin.dev.mjs",
-        "production": "./dist/LexicalHistoryAnnouncePlugin.prod.mjs",
-        "node": "./dist/LexicalHistoryAnnouncePlugin.node.mjs",
-        "default": "./dist/LexicalHistoryAnnouncePlugin.mjs"
-      },
-      "require": {
-        "types": "./dist/LexicalHistoryAnnouncePlugin.d.ts",
-        "development": "./dist/LexicalHistoryAnnouncePlugin.dev.js",
-        "production": "./dist/LexicalHistoryAnnouncePlugin.prod.js",
-        "default": "./dist/LexicalHistoryAnnouncePlugin.js"
-      }
-    },
     "./LexicalHashtagPlugin": {
       "source": "./src/LexicalHashtagPlugin.ts",
       "import": {
@@ -781,6 +750,38 @@
         "development": "./dist/LexicalHashtagPlugin.dev.js",
         "production": "./dist/LexicalHashtagPlugin.prod.js",
         "default": "./dist/LexicalHashtagPlugin.js"
+      }
+    },
+    "./LexicalHistoryAnnouncePlugin": {
+      "source": "./src/LexicalHistoryAnnouncePlugin.ts",
+      "import": {
+        "types": "./dist/LexicalHistoryAnnouncePlugin.d.ts",
+        "development": "./dist/LexicalHistoryAnnouncePlugin.dev.mjs",
+        "production": "./dist/LexicalHistoryAnnouncePlugin.prod.mjs",
+        "node": "./dist/LexicalHistoryAnnouncePlugin.node.mjs",
+        "default": "./dist/LexicalHistoryAnnouncePlugin.mjs"
+      },
+      "require": {
+        "types": "./dist/LexicalHistoryAnnouncePlugin.d.ts",
+        "development": "./dist/LexicalHistoryAnnouncePlugin.dev.js",
+        "production": "./dist/LexicalHistoryAnnouncePlugin.prod.js",
+        "default": "./dist/LexicalHistoryAnnouncePlugin.js"
+      }
+    },
+    "./LexicalHistoryAnnouncePlugin.js": {
+      "source": "./src/LexicalHistoryAnnouncePlugin.ts",
+      "import": {
+        "types": "./dist/LexicalHistoryAnnouncePlugin.d.ts",
+        "development": "./dist/LexicalHistoryAnnouncePlugin.dev.mjs",
+        "production": "./dist/LexicalHistoryAnnouncePlugin.prod.mjs",
+        "node": "./dist/LexicalHistoryAnnouncePlugin.node.mjs",
+        "default": "./dist/LexicalHistoryAnnouncePlugin.mjs"
+      },
+      "require": {
+        "types": "./dist/LexicalHistoryAnnouncePlugin.d.ts",
+        "development": "./dist/LexicalHistoryAnnouncePlugin.dev.js",
+        "production": "./dist/LexicalHistoryAnnouncePlugin.prod.js",
+        "default": "./dist/LexicalHistoryAnnouncePlugin.js"
       }
     },
     "./LexicalHistoryPlugin": {
@@ -1519,38 +1520,6 @@
         "default": "./dist/LexicalTreeViewExtension.js"
       }
     },
-    "./useLexicalAriaLiveRegion": {
-      "source": "./src/useLexicalAriaLiveRegion.ts",
-      "import": {
-        "types": "./dist/useLexicalAriaLiveRegion.d.ts",
-        "development": "./dist/useLexicalAriaLiveRegion.dev.mjs",
-        "production": "./dist/useLexicalAriaLiveRegion.prod.mjs",
-        "node": "./dist/useLexicalAriaLiveRegion.node.mjs",
-        "default": "./dist/useLexicalAriaLiveRegion.mjs"
-      },
-      "require": {
-        "types": "./dist/useLexicalAriaLiveRegion.d.ts",
-        "development": "./dist/useLexicalAriaLiveRegion.dev.js",
-        "production": "./dist/useLexicalAriaLiveRegion.prod.js",
-        "default": "./dist/useLexicalAriaLiveRegion.js"
-      }
-    },
-    "./useLexicalAriaLiveRegion.js": {
-      "source": "./src/useLexicalAriaLiveRegion.ts",
-      "import": {
-        "types": "./dist/useLexicalAriaLiveRegion.d.ts",
-        "development": "./dist/useLexicalAriaLiveRegion.dev.mjs",
-        "production": "./dist/useLexicalAriaLiveRegion.prod.mjs",
-        "node": "./dist/useLexicalAriaLiveRegion.node.mjs",
-        "default": "./dist/useLexicalAriaLiveRegion.mjs"
-      },
-      "require": {
-        "types": "./dist/useLexicalAriaLiveRegion.d.ts",
-        "development": "./dist/useLexicalAriaLiveRegion.dev.js",
-        "production": "./dist/useLexicalAriaLiveRegion.prod.js",
-        "default": "./dist/useLexicalAriaLiveRegion.js"
-      }
-    },
     "./useExtensionComponent": {
       "source": "./src/useExtensionComponent.tsx",
       "import": {
@@ -1613,6 +1582,70 @@
         "development": "./dist/useLexicalExtensionSignalValue.dev.js",
         "production": "./dist/useLexicalExtensionSignalValue.prod.js",
         "default": "./dist/useLexicalExtensionSignalValue.js"
+      }
+    },
+    "./useLexicalAriaLiveRegion": {
+      "source": "./src/useLexicalAriaLiveRegion.ts",
+      "import": {
+        "types": "./dist/useLexicalAriaLiveRegion.d.ts",
+        "development": "./dist/useLexicalAriaLiveRegion.dev.mjs",
+        "production": "./dist/useLexicalAriaLiveRegion.prod.mjs",
+        "node": "./dist/useLexicalAriaLiveRegion.node.mjs",
+        "default": "./dist/useLexicalAriaLiveRegion.mjs"
+      },
+      "require": {
+        "types": "./dist/useLexicalAriaLiveRegion.d.ts",
+        "development": "./dist/useLexicalAriaLiveRegion.dev.js",
+        "production": "./dist/useLexicalAriaLiveRegion.prod.js",
+        "default": "./dist/useLexicalAriaLiveRegion.js"
+      }
+    },
+    "./useLexicalAriaLiveRegion.js": {
+      "source": "./src/useLexicalAriaLiveRegion.ts",
+      "import": {
+        "types": "./dist/useLexicalAriaLiveRegion.d.ts",
+        "development": "./dist/useLexicalAriaLiveRegion.dev.mjs",
+        "production": "./dist/useLexicalAriaLiveRegion.prod.mjs",
+        "node": "./dist/useLexicalAriaLiveRegion.node.mjs",
+        "default": "./dist/useLexicalAriaLiveRegion.mjs"
+      },
+      "require": {
+        "types": "./dist/useLexicalAriaLiveRegion.d.ts",
+        "development": "./dist/useLexicalAriaLiveRegion.dev.js",
+        "production": "./dist/useLexicalAriaLiveRegion.prod.js",
+        "default": "./dist/useLexicalAriaLiveRegion.js"
+      }
+    },
+    "./useLexicalEditable": {
+      "source": "./src/useLexicalEditable.ts",
+      "import": {
+        "types": "./dist/useLexicalEditable.d.ts",
+        "development": "./dist/useLexicalEditable.dev.mjs",
+        "production": "./dist/useLexicalEditable.prod.mjs",
+        "node": "./dist/useLexicalEditable.node.mjs",
+        "default": "./dist/useLexicalEditable.mjs"
+      },
+      "require": {
+        "types": "./dist/useLexicalEditable.d.ts",
+        "development": "./dist/useLexicalEditable.dev.js",
+        "production": "./dist/useLexicalEditable.prod.js",
+        "default": "./dist/useLexicalEditable.js"
+      }
+    },
+    "./useLexicalEditable.js": {
+      "source": "./src/useLexicalEditable.ts",
+      "import": {
+        "types": "./dist/useLexicalEditable.d.ts",
+        "development": "./dist/useLexicalEditable.dev.mjs",
+        "production": "./dist/useLexicalEditable.prod.mjs",
+        "node": "./dist/useLexicalEditable.node.mjs",
+        "default": "./dist/useLexicalEditable.mjs"
+      },
+      "require": {
+        "types": "./dist/useLexicalEditable.d.ts",
+        "development": "./dist/useLexicalEditable.dev.js",
+        "production": "./dist/useLexicalEditable.prod.js",
+        "default": "./dist/useLexicalEditable.js"
       }
     },
     "./useLexicalFocusManager": {
@@ -1679,38 +1712,6 @@
         "default": "./dist/useLexicalFocusTrap.js"
       }
     },
-    "./useLexicalEditable": {
-      "source": "./src/useLexicalEditable.ts",
-      "import": {
-        "types": "./dist/useLexicalEditable.d.ts",
-        "development": "./dist/useLexicalEditable.dev.mjs",
-        "production": "./dist/useLexicalEditable.prod.mjs",
-        "node": "./dist/useLexicalEditable.node.mjs",
-        "default": "./dist/useLexicalEditable.mjs"
-      },
-      "require": {
-        "types": "./dist/useLexicalEditable.d.ts",
-        "development": "./dist/useLexicalEditable.dev.js",
-        "production": "./dist/useLexicalEditable.prod.js",
-        "default": "./dist/useLexicalEditable.js"
-      }
-    },
-    "./useLexicalEditable.js": {
-      "source": "./src/useLexicalEditable.ts",
-      "import": {
-        "types": "./dist/useLexicalEditable.d.ts",
-        "development": "./dist/useLexicalEditable.dev.mjs",
-        "production": "./dist/useLexicalEditable.prod.mjs",
-        "node": "./dist/useLexicalEditable.node.mjs",
-        "default": "./dist/useLexicalEditable.mjs"
-      },
-      "require": {
-        "types": "./dist/useLexicalEditable.d.ts",
-        "development": "./dist/useLexicalEditable.dev.js",
-        "production": "./dist/useLexicalEditable.prod.js",
-        "default": "./dist/useLexicalEditable.js"
-      }
-    },
     "./useLexicalIsTextContentEmpty": {
       "source": "./src/useLexicalIsTextContentEmpty.ts",
       "import": {
@@ -1775,6 +1776,38 @@
         "default": "./dist/useLexicalNodeSelection.js"
       }
     },
+    "./useLexicalRovingTabIndex": {
+      "source": "./src/useLexicalRovingTabIndex.ts",
+      "import": {
+        "types": "./dist/useLexicalRovingTabIndex.d.ts",
+        "development": "./dist/useLexicalRovingTabIndex.dev.mjs",
+        "production": "./dist/useLexicalRovingTabIndex.prod.mjs",
+        "node": "./dist/useLexicalRovingTabIndex.node.mjs",
+        "default": "./dist/useLexicalRovingTabIndex.mjs"
+      },
+      "require": {
+        "types": "./dist/useLexicalRovingTabIndex.d.ts",
+        "development": "./dist/useLexicalRovingTabIndex.dev.js",
+        "production": "./dist/useLexicalRovingTabIndex.prod.js",
+        "default": "./dist/useLexicalRovingTabIndex.js"
+      }
+    },
+    "./useLexicalRovingTabIndex.js": {
+      "source": "./src/useLexicalRovingTabIndex.ts",
+      "import": {
+        "types": "./dist/useLexicalRovingTabIndex.d.ts",
+        "development": "./dist/useLexicalRovingTabIndex.dev.mjs",
+        "production": "./dist/useLexicalRovingTabIndex.prod.mjs",
+        "node": "./dist/useLexicalRovingTabIndex.node.mjs",
+        "default": "./dist/useLexicalRovingTabIndex.mjs"
+      },
+      "require": {
+        "types": "./dist/useLexicalRovingTabIndex.d.ts",
+        "development": "./dist/useLexicalRovingTabIndex.dev.js",
+        "production": "./dist/useLexicalRovingTabIndex.prod.js",
+        "default": "./dist/useLexicalRovingTabIndex.js"
+      }
+    },
     "./useLexicalSubscription": {
       "source": "./src/useLexicalSubscription.tsx",
       "import": {
@@ -1837,38 +1870,6 @@
         "development": "./dist/useLexicalTextEntity.dev.js",
         "production": "./dist/useLexicalTextEntity.prod.js",
         "default": "./dist/useLexicalTextEntity.js"
-      }
-    },
-    "./useLexicalRovingTabIndex": {
-      "source": "./src/useLexicalRovingTabIndex.ts",
-      "import": {
-        "types": "./dist/useLexicalRovingTabIndex.d.ts",
-        "development": "./dist/useLexicalRovingTabIndex.dev.mjs",
-        "production": "./dist/useLexicalRovingTabIndex.prod.mjs",
-        "node": "./dist/useLexicalRovingTabIndex.node.mjs",
-        "default": "./dist/useLexicalRovingTabIndex.mjs"
-      },
-      "require": {
-        "types": "./dist/useLexicalRovingTabIndex.d.ts",
-        "development": "./dist/useLexicalRovingTabIndex.dev.js",
-        "production": "./dist/useLexicalRovingTabIndex.prod.js",
-        "default": "./dist/useLexicalRovingTabIndex.js"
-      }
-    },
-    "./useLexicalRovingTabIndex.js": {
-      "source": "./src/useLexicalRovingTabIndex.ts",
-      "import": {
-        "types": "./dist/useLexicalRovingTabIndex.d.ts",
-        "development": "./dist/useLexicalRovingTabIndex.dev.mjs",
-        "production": "./dist/useLexicalRovingTabIndex.prod.mjs",
-        "node": "./dist/useLexicalRovingTabIndex.node.mjs",
-        "default": "./dist/useLexicalRovingTabIndex.mjs"
-      },
-      "require": {
-        "types": "./dist/useLexicalRovingTabIndex.d.ts",
-        "development": "./dist/useLexicalRovingTabIndex.dev.js",
-        "production": "./dist/useLexicalRovingTabIndex.prod.js",
-        "default": "./dist/useLexicalRovingTabIndex.js"
       }
     }
   },

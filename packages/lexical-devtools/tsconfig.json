@@ -10,6 +10,7 @@
     "paths": {
       "lexicalOriginal": ["../lexical/src/"],
       "lexical": ["../lexical/src/index.ts"],
+      "@lexical/a11y": ["../lexical-a11y/src/index.ts"],
       "@lexical/clipboard": ["../lexical-clipboard/src/index.ts"],
       "@lexical/code": ["../lexical-code/src/index.ts"],
       "@lexical/code-core": ["../lexical-code-core/src/index.ts"],
@@ -190,14 +191,17 @@
       "@lexical/react/TreeViewExtension": [
         "../lexical-react/src/TreeViewExtension.tsx"
       ],
-      "@lexical/react/useLexicalAriaLiveRegion": [
-        "../lexical-react/src/useLexicalAriaLiveRegion.ts"
-      ],
       "@lexical/react/useExtensionComponent": [
         "../lexical-react/src/useExtensionComponent.tsx"
       ],
       "@lexical/react/useExtensionSignalValue": [
         "../lexical-react/src/useExtensionSignalValue.ts"
+      ],
+      "@lexical/react/useLexicalAriaLiveRegion": [
+        "../lexical-react/src/useLexicalAriaLiveRegion.ts"
+      ],
+      "@lexical/react/useLexicalEditable": [
+        "../lexical-react/src/useLexicalEditable.ts"
       ],
       "@lexical/react/useLexicalFocusManager": [
         "../lexical-react/src/useLexicalFocusManager.ts"
@@ -205,23 +209,20 @@
       "@lexical/react/useLexicalFocusTrap": [
         "../lexical-react/src/useLexicalFocusTrap.ts"
       ],
-      "@lexical/react/useLexicalEditable": [
-        "../lexical-react/src/useLexicalEditable.ts"
-      ],
       "@lexical/react/useLexicalIsTextContentEmpty": [
         "../lexical-react/src/useLexicalIsTextContentEmpty.ts"
       ],
       "@lexical/react/useLexicalNodeSelection": [
         "../lexical-react/src/useLexicalNodeSelection.ts"
       ],
+      "@lexical/react/useLexicalRovingTabIndex": [
+        "../lexical-react/src/useLexicalRovingTabIndex.ts"
+      ],
       "@lexical/react/useLexicalSubscription": [
         "../lexical-react/src/useLexicalSubscription.tsx"
       ],
       "@lexical/react/useLexicalTextEntity": [
         "../lexical-react/src/useLexicalTextEntity.ts"
-      ],
-      "@lexical/react/useLexicalRovingTabIndex": [
-        "../lexical-react/src/useLexicalRovingTabIndex.ts"
       ],
       "@lexical/rich-text": ["../lexical-rich-text/src/index.ts"],
       "@lexical/selection": ["../lexical-selection/src/index.ts"],

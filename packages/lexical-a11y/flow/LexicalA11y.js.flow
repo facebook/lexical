@@ -1,0 +1,24 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @flow strict
+ */
+
+export type AriaPoliteness = 'polite' | 'assertive';
+
+export type AriaLiveRegionOptions = {
+  politeness?: AriaPoliteness,
+  owner?: HTMLElement,
+};
+
+export type AriaLiveRegionHandle = {
+  announce: (message: string) => void,
+  dispose: () => void,
+};
+
+declare export function registerAriaLiveRegion(
+  options?: AriaLiveRegionOptions,
+): AriaLiveRegionHandle;

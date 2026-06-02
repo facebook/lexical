@@ -656,7 +656,7 @@ export interface CodeIndentConfig {
    */
   tabSize: number | undefined;
   /**
-   * When `true`, When set to true, this enables the ability to exit a code block
+   * When `true`, this enables the ability to exit a code block
    * that has no adjacent elements using the ArrowLeft/ArrowUp keys
    * if the cursor is at the beginning, or the ArrowRight/ArrowDown keys
    * if the cursor is at the end.

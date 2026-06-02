@@ -11,8 +11,10 @@ This file provides detailed guidance for AI agents and automated tools working w
 - `pnpm run build-types` - Build TypeScript type definitions and validate them
 
 ### Testing
-- `pnpm run test-unit` - Run all unit tests (Vitest)
+- `pnpm run test-unit` - Run all unit tests (Vitest, jsdom)
 - `pnpm run test-unit-watch` - Run unit tests in watch mode
+- `pnpm run test-browser` - Run browser-mode unit tests (Vitest + Playwright, real browser)
+- `pnpm run test-browser-watch` - Run browser-mode tests in watch mode
 - `pnpm run test-e2e-chromium` - Run E2E tests in Chromium (requires dev server running)
 - `pnpm run test-e2e-firefox` - Run E2E tests in Firefox
 - `pnpm run test-e2e-webkit` - Run E2E tests in WebKit
@@ -174,7 +176,15 @@ When adding/modifying APIs, types must be maintained for both systems.
 Always access node properties/methods within read/update context. Nodes automatically resolve to their latest version via their key. Don't store node references across update boundaries.
 
 ### Testing Strategy
-- **Unit tests** - Vitest, located in `packages/**/__tests__/unit/**/*.test.{ts,tsx}`
+- **Unit tests** - Vitest (jsdom), located in `packages/**/__tests__/unit/**/*.test.{ts,tsx}`
+- **Browser tests** - Vitest browser mode driven by the Playwright runner, located in
+  `packages/**/__tests__/browser/**/*.test.{ts,tsx}`. Use these for behavior that depends on
+  a real layout/selection engine instead of stubbing the missing jsdom functionality from
+  `vitest.setup.mts` (e.g. `Range.getBoundingClientRect`, the Selection API). Run with
+  `pnpm run test-browser`; the browser set is controlled by the `VITEST_BROWSER` env var
+  (comma-separated, default `chromium`). Prefer building editors with the extension APIs
+  (`buildEditorFromExtensions`, or `LexicalExtensionComposer`/`LexicalExtensionEditorComposer`
+  in React).
 - **E2E tests** - Playwright, located in `packages/lexical-playground/__tests__/e2e/**/*.spec.{ts,mjs}`
 - E2E tests require the playground dev server running
 - Use `pnpm run debug-test-e2e-chromium` to debug E2E tests with browser UI

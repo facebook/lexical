@@ -37,3 +37,13 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - run: pnpm run test-unit
+
+  # Default browser-mode run: linux + chromium only. The extended suite
+  # (tests-extended.yml) fans these out across more browsers and operating
+  # systems.
+  browser:
+    uses: ./.github/workflows/call-browser-tests.yml
+    with:
+      os: 'ubuntu-latest'
+      node-version: '24.x'
+      browser: 'chromium'

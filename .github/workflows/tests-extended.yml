@@ -175,3 +175,17 @@ jobs:
     needs: check_should_run
     if: needs.check_should_run.outputs.should_run == 'true'
     uses: ./.github/workflows/call-integration-tests.yml
+
+  browser-tests:
+    needs: check_should_run
+    if: needs.check_should_run.outputs.should_run == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ['ubuntu-latest', 'macos-latest', 'windows-2022']
+        browser: ['chromium', 'firefox', 'webkit']
+    uses: ./.github/workflows/call-browser-tests.yml
+    with:
+      os: ${{ matrix.os }}
+      node-version: '24.x'
+      browser: ${{ matrix.browser }}

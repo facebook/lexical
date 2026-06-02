@@ -812,11 +812,27 @@ export function syncLexicalSelectionToYjs(
     const anchorAssoc = isBackward ? -1 : 0;
     const focusAssoc = !isCollapsed && !isBackward ? -1 : 0;
     if (isBindingV1(binding)) {
-      anchorPos = createRelativePosition(nextSelection.anchor, binding, anchorAssoc);
-      focusPos = createRelativePosition(nextSelection.focus, binding, focusAssoc);
+      anchorPos = createRelativePosition(
+        nextSelection.anchor,
+        binding,
+        anchorAssoc,
+      );
+      focusPos = createRelativePosition(
+        nextSelection.focus,
+        binding,
+        focusAssoc,
+      );
     } else {
-      anchorPos = createRelativePositionV2(nextSelection.anchor, binding, anchorAssoc);
-      focusPos = createRelativePositionV2(nextSelection.focus, binding, focusAssoc);
+      anchorPos = createRelativePositionV2(
+        nextSelection.anchor,
+        binding,
+        anchorAssoc,
+      );
+      focusPos = createRelativePositionV2(
+        nextSelection.focus,
+        binding,
+        focusAssoc,
+      );
     }
   }
 

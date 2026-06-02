@@ -11,6 +11,7 @@ import {
   $createTextNode,
   $getRoot,
   $getState,
+  $isTextNode,
   $setState,
   createState,
   ParagraphNode,
@@ -18,7 +19,7 @@ import {
   UNDO_COMMAND,
 } from 'lexical';
 import {act} from 'react';
-import {afterEach, beforeEach, describe, expect, it} from 'vitest';
+import {afterEach, assert, beforeEach, describe, expect, it} from 'vitest';
 import * as Y from 'yjs';
 
 import {
@@ -467,20 +468,24 @@ describe('Collaboration', () => {
         // Client 1 inserts "foo bar".
         await waitForReact(() => {
           client1.update(() => {
-            $getRoot()
-              .getFirstChild<ParagraphNode>()!
-              .append($createTextNode('foo bar'));
+            $getRoot().selectEnd().insertRawText('foo bar');
           });
         });
+        expect(client1.getHTML()).toEqual(
+          '<p dir="auto"><span data-lexical-text="true">foo bar</span></p>',
+        );
         expect(client1.getHTML()).toEqual(client2.getHTML());
 
         // Client 1 selects the whole word as a forward range (anchor 0 -> focus 7).
         await waitForReact(() => {
           client1.update(() => {
-            const text = $getRoot()
-              .getFirstChild<ParagraphNode>()!
-              .getFirstChild<TextNode>()!;
-            text.select(0, text.getTextContentSize());
+            const firstNode = $getRoot().getFirstDescendant();
+            assert(
+              $isTextNode(firstNode),
+              'First descendant must be a TextNode',
+            );
+            expect(firstNode.getTextContent()).toBe('foo bar');
+            firstNode.select(0);
           });
         });
 
@@ -509,15 +514,20 @@ describe('Collaboration', () => {
         // Client 2 types "ZZZ" immediately after the right edge of the selection.
         await waitForReact(() => {
           client2.update(() => {
-            const text = $getRoot()
-              .getFirstChild<ParagraphNode>()!
-              .getFirstChild<TextNode>()!;
-            text.spliceText(text.getTextContentSize(), 0, 'ZZZ');
+            const firstNode = $getRoot().getFirstDescendant();
+            assert(
+              $isTextNode(firstNode),
+              'First descendant must be a TextNode',
+            );
+            expect(firstNode.getTextContent()).toBe('foo bar');
+            firstNode.select().insertRawText('ZZZ');
           });
         });
 
         // The edit itself propagates to both clients (document content is correct).
-        expect(client1.getHTML()).toContain('foo barZZZ');
+        expect(client1.getHTML()).toEqual(
+          '<p dir="auto"><span data-lexical-text="true">foo barZZZ</span></p>',
+        );
         expect(client1.getHTML()).toEqual(client2.getHTML());
 
         // Re-resolve the same focus position against the updated document. With the

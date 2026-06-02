@@ -880,7 +880,8 @@ function $triggerEnqueuedUpdates(editor: LexicalEditor): void {
     try {
       invariant(
         false,
-        'One or more update listeners are endlessly enqueueing more updates. May have encountered infinite recursion caused by update listeners that trigger additional updates without a stop condition.',
+        'One or more update listeners are endlessly enqueueing more updates. May have encountered infinite recursion caused by update listeners that trigger additional updates without a stop condition. Editor namespace: %s',
+        editor._config.namespace,
       );
     } catch (error) {
       if (error instanceof Error) {

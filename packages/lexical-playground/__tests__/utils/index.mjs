@@ -138,27 +138,87 @@ export async function initialize({
     isCollab ? 'split/' : ''
   }?${urlParams.toString()}`;
 
+  // Start listening for uncaught page errors *before* navigating so that a
+  // failure during the editor's initial build (e.g. a misconfigured or
+  // conflicting extension set) fails the test fast, instead of silently
+  // waiting for the editor selector until the long per-test timeout -- which,
+  // multiplied across retries and every test in a mode, can hang a whole CI
+  // shard for hours.
+  const pageError = rejectOnPageError(page);
+
   await page.goto(url);
 
-  await exposeLexicalEditor(page);
+  await exposeLexicalEditor(page, pageError);
+}
+
+/**
+ * Returns a promise that rejects as soon as the page emits an uncaught
+ * ("pageerror") exception, so callers can race it against an editor-ready
+ * wait and fail fast when the app crashes on load instead of timing out.
+ * Attach this *before* navigating so an error thrown during the initial
+ * render is not missed.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @returns {Promise<never>}
+ */
+function rejectOnPageError(page) {
+  const promise = new Promise((_resolve, reject) => {
+    page.on('pageerror', error => {
+      reject(
+        new Error(
+          'The page threw an uncaught error before the editor was ready. ' +
+            'This usually means the editor failed to build for this mode ' +
+            '(check the extension configuration):\n' +
+            (error.stack || error.message || String(error)),
+        ),
+      );
+    });
+  });
+  // The race below may not be attached yet when the error fires (it can throw
+  // during navigation), so swallow here to avoid an unhandled rejection; the
+  // race still observes the same rejection when it awaits this promise.
+  promise.catch(() => {});
+  return promise;
 }
 
 /**
  * @param {import('@playwright/test').Page} page
+ * @param {Promise<never> | null} pageError a promise that rejects if the page
+ *   throws an uncaught error, so a broken load fails fast instead of waiting
+ *   for the editor selector until the test timeout. See {@link rejectOnPageError}.
  */
-async function exposeLexicalEditor(page) {
+async function exposeLexicalEditor(page, pageError = null) {
   if (IS_COLLAB) {
-    await Promise.all(
-      ['left', 'right'].map(async name => {
-        const frameLocator = page.frameLocator(`[name="${name}"]`);
-        await expect(
-          frameLocator.locator('.action-button.connect'),
-        ).toHaveAttribute('title', /Disconnect/);
-        await expect(
-          frameLocator.locator('[data-lexical-editor="true"] p'),
-        ).toBeVisible();
-      }),
-    );
+    // The split view loads the playground in two iframes that connect to a
+    // single shared y-websocket server. Under parallel test load one frame
+    // occasionally fails to boot/activate collab within the timeout (its
+    // ".action-button.connect" toolbar button never appears, or the websocket
+    // connect/backoff runs long) -- the dominant residual source of @flaky
+    // collab failures. Reload and retry a few times so a transient
+    // boot/connect hiccup during setup doesn't fail the whole test.
+    const waitForCollabFramesReady = () =>
+      Promise.all(
+        ['left', 'right'].map(async name => {
+          const frameLocator = page.frameLocator(`[name="${name}"]`);
+          await expect(
+            frameLocator.locator('.action-button.connect'),
+          ).toHaveAttribute('title', /Disconnect/, {timeout: 15000});
+          await expect(
+            frameLocator.locator('[data-lexical-editor="true"] p'),
+          ).toBeVisible({timeout: 15000});
+        }),
+      );
+    for (let attempt = 0; ; attempt++) {
+      try {
+        await waitForCollabFramesReady();
+        break;
+      } catch (err) {
+        if (attempt >= 2) {
+          throw err;
+        }
+        await page.reload();
+      }
+    }
     // Ensure that they started up with the correct empty state
     await assertHTML(
       page,
@@ -168,7 +228,11 @@ async function exposeLexicalEditor(page) {
     );
   }
   const leftFrame = getPageOrFrame(page);
-  await leftFrame.waitForSelector('.tree-view-output pre');
+  await Promise.race(
+    [leftFrame.waitForSelector('.tree-view-output pre'), pageError].filter(
+      Boolean,
+    ),
+  );
   await leftFrame.evaluate(() => {
     window.lexicalEditor = document.querySelector(
       '[data-lexical-editor="true"]',
@@ -640,6 +704,67 @@ export async function sleep(delay) {
   await new Promise(resolve => setTimeout(resolve, delay));
 }
 
+/**
+ * Force a new undo group (a "merge boundary") deterministically — a drop-in
+ * replacement for `sleep(mergeWindow + overhead)`. Works in both editor modes
+ * and picks the right mechanism automatically:
+ *
+ * - **Local history** (`@lexical/history`): coalesces consecutive same-type
+ *   edits while `now() < prevChangeTime + delay`. We drive the extension's
+ *   `now` output signal directly — the lever called out in the task — freezing
+ *   it `delay + overheadMs` past its current value. The next edit is then
+ *   guaranteed to exceed the merge window (new boundary), while later edits
+ *   observe a fixed time so genuinely fast edits still coalesce as in
+ *   production. History reads `now` via `peek()`, so reassigning the signal
+ *   neither re-registers history nor disturbs in-progress merge bookkeeping.
+ * - **Collab** (Yjs `UndoManager`, which `@lexical/history` is disabled in
+ *   favor of): the manager coalesces changes within its own `captureTimeout`
+ *   using `Date.now()`, which isn't injectable. Its public `stopCapturing()`
+ *   resets the window (`lastChange = 0`) so the next change starts a fresh
+ *   stack item — the deterministic equivalent of advancing past the window.
+ *   The manager is published on the editor by `useYjsUndoManager`; see
+ *   `Symbol.for('@lexical/yjs/UndoManager')`.
+ *
+ * Both replace wall-clock sleeps, which are slow and, under CI load, flaky: a
+ * timer that fires late can coalesce edits meant to stay separate (or vice
+ * versa).
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {number} [overheadMs] slack added past the local-history `delay`,
+ *   mirroring the old `sleep(delay + 50)` convention.
+ */
+export async function advanceHistoryClock(page, overheadMs = 50) {
+  await evaluate(
+    page,
+    overhead => {
+      const editor = document.querySelector(
+        '[data-lexical-editor="true"]',
+      ).__lexicalEditor;
+      // Collab: reset the Yjs UndoManager's capture window.
+      const undoManager = editor[Symbol.for('@lexical/yjs/UndoManager')];
+      if (undoManager) {
+        undoManager.stopCapturing();
+        return;
+      }
+      // Local history: freeze `now` past the merge delay.
+      const builder = editor[Symbol.for('@lexical/extension/LexicalBuilder')];
+      const output = builder?.extensionNameMap.get('@lexical/history/History')
+        ?.state?.output;
+      if (output && !output.disabled.value) {
+        const frozen = output.now.peek()() + output.delay.peek() + overhead;
+        output.now.value = () => frozen;
+        return;
+      }
+      throw new Error(
+        'advanceHistoryClock: no active undo mechanism found on the editor ' +
+          '(expected the Yjs UndoManager in collab, or an enabled ' +
+          '@lexical/history extension otherwise)',
+      );
+    },
+    overheadMs,
+  );
+}
+
 // Fair time for the browser to process a newly inserted image
 export async function sleepInsertImage(count = 1) {
   return await sleep(1000 * count);
@@ -664,6 +789,33 @@ export function getEditorElement(page, parentSelector = '.editor-shell') {
 
 export async function waitForSelector(page, selector, options) {
   await getPageOrFrame(page).waitForSelector(selector, options);
+}
+
+/**
+ * Wait until `optionText` is the *highlighted* (aria-selected) option in the
+ * typeahead / mentions menu, so a subsequent `Enter` deterministically commits
+ * it.
+ *
+ * The mentions lookup is asynchronous and incremental: while e.g. "@Luke" is
+ * being typed, the partial query "Lu" also matches options that sort earlier —
+ * the "Lu" results list "Agent Kallus" (kal**lu**s) at index 0 and only list
+ * "Luke Skywalker" at index 2. Those intermediate result sets resolve on their
+ * own timers, so waiting merely for the option *text* to be present and then
+ * pressing Enter (which commits the highlighted index 0) is racy: under load
+ * the Enter can land while an intermediate list is showing and commit the wrong
+ * option. Waiting for the option to be highlighted is deterministic because the
+ * settled list always highlights the intended option at index 0.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {string} optionText
+ * @param {Parameters<import('@playwright/test').Page['waitForSelector']>[1]} [options]
+ */
+export async function waitForTypeaheadMenuOption(page, optionText, options) {
+  await waitForSelector(
+    page,
+    `#typeahead-menu ul li[aria-selected="true"]:has-text("${optionText}")`,
+    options,
+  );
 }
 
 export function locate(page, selector) {

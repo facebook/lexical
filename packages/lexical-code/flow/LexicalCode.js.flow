@@ -127,7 +127,7 @@ export interface Token {
   content: TokenContent;
 }
 export interface Tokenizer {
-  defaultLanguage: string;
+  defaultLanguage: string | null;
   tokenize(code: string, language?: string): (string | Token)[];
 }
 declare export var PrismTokenizer: Tokenizer;

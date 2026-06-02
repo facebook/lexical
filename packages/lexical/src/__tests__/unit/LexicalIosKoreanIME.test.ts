@@ -34,12 +34,23 @@ import {
   LexicalEditor,
 } from 'lexical';
 import {createTestEditor, invariant} from 'lexical/src/__tests__/utils';
-import {afterEach, beforeEach, describe, expect, test, vi} from 'vitest';
+import {
+  afterEach,
+  assert,
+  beforeEach,
+  describe,
+  expect,
+  test,
+  vi,
+} from 'vitest';
 
 // `vi.mock` is hoisted above all imports, so LexicalEvents.ts /
 // LexicalConstants.ts observe IS_IOS=true and CAN_USE_BEFORE_INPUT=true.
-vi.mock('shared/environment', () => ({
+// Mock the exact module the core imports relatively (`./environment`); the
+// `lexical/src/environment` test alias resolves to that same file.
+vi.mock('lexical/src/environment', () => ({
   CAN_USE_BEFORE_INPUT: true,
+  CAN_USE_DOM: true,
   IS_ANDROID: false,
   IS_ANDROID_CHROME: false,
   IS_APPLE: true,
@@ -56,9 +67,9 @@ vi.mock('shared/environment', () => ({
 
 function getDOMTextNode(editor: LexicalEditor, textKey: string): Text {
   const span = editor.getElementByKey(textKey);
-  invariant(span !== null, 'span is null');
+  assert(span !== null, 'span is null');
   const textNode = span.firstChild;
-  invariant(
+  assert(
     textNode !== null && textNode.nodeType === Node.TEXT_NODE,
     'expected DOM text node',
   );

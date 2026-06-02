@@ -22,6 +22,7 @@ import type {
   Spread,
 } from 'lexical';
 
+import invariant from '@lexical/internal/invariant';
 import {
   $insertNodeToNearestRootAtCaret,
   addClassNamesToElement,
@@ -48,7 +49,6 @@ import {
   normalizeClassNames,
   setDOMStyleFromCSS,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
 import {$createListNode, $isListNode} from './';
 import {$handleIndent, $handleOutdent, mergeLists} from './formatList';

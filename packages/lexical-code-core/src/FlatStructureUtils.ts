@@ -16,16 +16,22 @@ import type {
   TabNode,
 } from 'lexical';
 
+import invariant from '@lexical/internal/invariant';
 import {
+  $createLineBreakNode,
+  $createTabNode,
   $getSiblingCaret,
   $isElementNode,
   $isLineBreakNode,
   $isTabNode,
   getTextDirection,
+  tokenizeRawText,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
-import {$isCodeHighlightNode} from './CodeHighlightNode';
+import {
+  $createCodeHighlightNode,
+  $isCodeHighlightNode,
+} from './CodeHighlightNode';
 
 function $getLastMatchingCodeNode<D extends CaretDirection>(
   anchor: CodeHighlightNode | TabNode | LineBreakNode,
@@ -220,6 +226,24 @@ export function $getEndOfCodeInLine(
     'Unexpected lineBreakNode in getEndOfCodeInLine',
   );
   return lastNode;
+}
+
+/**
+ * Plain split of code text into CodeHighlightNodes (with no highlight
+ * type) + LineBreakNodes + TabNodes. Used when the tokenizer opts out
+ * of a default language so a previously highlighted block still
+ * renders its `\n` / `\t` as real line breaks / tabs, while staying
+ * compatible with the indent / shift-lines handlers that only accept
+ * CodeHighlightNode + TabNode + LineBreakNode inside a CodeNode.
+ */
+export function $plainifyCodeContent(text: string): LexicalNode[] {
+  const out: LexicalNode[] = [];
+  tokenizeRawText(text, {
+    linebreak: () => out.push($createLineBreakNode()),
+    tab: () => out.push($createTabNode()),
+    text: part => out.push($createCodeHighlightNode(part)),
+  });
+  return out;
 }
 
 /**

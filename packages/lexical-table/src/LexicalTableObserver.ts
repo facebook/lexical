@@ -6,6 +6,7 @@
  *
  */
 
+import invariant from '@lexical/internal/invariant';
 import {
   addClassNamesToElement,
   removeClassNamesFromElement,
@@ -28,7 +29,6 @@ import {
   SELECTION_CHANGE_COMMAND,
   type TextFormatType,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
 import {$isTableCellNode, TableCellNode} from './LexicalTableCellNode';
 import {$isTableNode, TableNode} from './LexicalTableNode';

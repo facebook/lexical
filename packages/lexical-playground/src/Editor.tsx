@@ -8,16 +8,6 @@
 
 import type {JSX} from 'react';
 
-import {
-  SelectionAlwaysOnDisplayExtension,
-  type Signal,
-} from '@lexical/extension';
-import {
-  ClickableLinkExtension,
-  LinkAttributes,
-  LinkExtension,
-} from '@lexical/link';
-import {CheckListExtension, ListExtension} from '@lexical/list';
 import {CharacterLimitPlugin} from '@lexical/react/LexicalCharacterLimitPlugin';
 import {
   CollaborationPlugin,
@@ -25,11 +15,7 @@ import {
 } from '@lexical/react/LexicalCollaborationPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {TabIndentationPlugin} from '@lexical/react/LexicalTabIndentationPlugin';
-import {TablePlugin} from '@lexical/react/LexicalTablePlugin';
-import {useOptionalExtensionDependency} from '@lexical/react/useExtensionComponent';
-import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
 import {CAN_USE_DOM} from '@lexical/utils';
-import {OutputExtension} from 'lexical';
 import {useEffect, useMemo, useState} from 'react';
 import {Doc} from 'yjs';
 
@@ -38,26 +24,20 @@ import {
   createWebsocketProviderWithDoc,
 } from './collaboration';
 import {useSettings} from './context/SettingsContext';
+import {useSynchronizeSettings} from './hooks/useSynchronizeSettings';
 import ActionsPlugin from './plugins/ActionsPlugin';
-import AutocompletePlugin from './plugins/AutocompletePlugin';
 import AutoEmbedPlugin from './plugins/AutoEmbedPlugin';
 import CodeActionMenuPlugin from './plugins/CodeActionMenuPlugin';
-import {CodeHighlightExtension} from './plugins/CodeHighlightExtension';
 import CommentPlugin from './plugins/CommentPlugin';
 import ComponentPickerPlugin from './plugins/ComponentPickerPlugin';
 import ContextMenuPlugin from './plugins/ContextMenuPlugin';
 import DraggableBlockPlugin from './plugins/DraggableBlockPlugin';
 import EmojiPickerPlugin from './plugins/EmojiPickerPlugin';
-import EquationsPlugin from './plugins/EquationsPlugin';
-import ExcalidrawPlugin from './plugins/ExcalidrawPlugin';
+import {ExcalidrawPlugin} from './plugins/ExcalidrawExtension';
 import FloatingLinkEditorPlugin from './plugins/FloatingLinkEditorPlugin';
 import FloatingTextFormatToolbarPlugin from './plugins/FloatingTextFormatToolbarPlugin';
-import {LayoutPlugin} from './plugins/LayoutPlugin/LayoutPlugin';
-import {MaxLengthExtension} from './plugins/MaxLengthPlugin';
-import MentionsPlugin from './plugins/MentionsPlugin';
-import PollPlugin from './plugins/PollPlugin';
+import {MentionsPlugin} from './plugins/MentionsExtension';
 import ShortcutsPlugin from './plugins/ShortcutsPlugin';
-import {SpecialTextExtension} from './plugins/SpecialTextExtension';
 import SpeechToTextPlugin from './plugins/SpeechToTextPlugin';
 import TableCellActionMenuPlugin from './plugins/TableActionMenuPlugin';
 import TableCellResizer from './plugins/TableCellResizer';
@@ -76,37 +56,12 @@ const skipCollaborationInit =
   // @ts-expect-error
   window.parent != null && window.parent.frames.right === window;
 
-export function useSyncExtensionSignal<
-  K extends string,
-  V,
-  Output extends {[Key in K]: Signal<V>},
->(extension: OutputExtension<Output>, prop: K, value: V) {
-  const signal = useOptionalExtensionDependency(extension)?.output[prop];
-  useEffect(() => {
-    if (signal) {
-      // eslint-disable-next-line react-hooks/immutability
-      signal.value = value;
-    }
-  }, [signal, value]);
-}
-
-const DEFAULT_LINK_ATTRIBUTES: LinkAttributes = {
-  rel: 'noopener noreferrer',
-  target: '_blank',
-};
-
 export default function Editor(): JSX.Element {
   const {
     settings: {
-      isCodeHighlighted,
-      isCodeShiki,
       isCollab,
       useCollabV2,
-      isAutocomplete,
-      isMaxLength,
       isCharLimit,
-      hasLinkAttributes,
-      hasNestedTables,
       hasFitNestedTables,
       isCharLimitUtf8,
       isRichText,
@@ -114,16 +69,12 @@ export default function Editor(): JSX.Element {
       showTableOfContents,
       shouldUseLexicalContextMenu,
       shouldPreserveNewLinesInMarkdown,
-      tableCellMerge,
-      tableCellBackgroundColor,
-      tableHorizontalScroll,
-      shouldAllowHighlightingWithBrackets,
-      selectionAlwaysOnDisplay,
-      listStrictIndent,
-      shouldDisableFocusOnClickChecklist,
     },
   } = useSettings();
-  const isEditable = useLexicalEditable();
+  // Mirror the settings context onto the editor's reactive extension config
+  // signals (NOT via App.tsx's DynamicSettings, which would rebuild the
+  // editor). See the hook for details.
+  useSynchronizeSettings();
   const placeholder = isCollab
     ? 'Enter some collaborative rich text...'
     : isRichText
@@ -142,35 +93,6 @@ export default function Editor(): JSX.Element {
       setFloatingAnchorElem(_floatingAnchorElem);
     }
   };
-
-  useSyncExtensionSignal(MaxLengthExtension, 'disabled', !isMaxLength);
-  useSyncExtensionSignal(
-    CodeHighlightExtension,
-    'mode',
-    !isCodeHighlighted ? 'off' : isCodeShiki ? 'shiki' : 'prism',
-  );
-  useSyncExtensionSignal(
-    SpecialTextExtension,
-    'disabled',
-    !shouldAllowHighlightingWithBrackets,
-  );
-  useSyncExtensionSignal(
-    LinkExtension,
-    'attributes',
-    hasLinkAttributes ? DEFAULT_LINK_ATTRIBUTES : undefined,
-  );
-  useSyncExtensionSignal(ListExtension, 'hasStrictIndent', listStrictIndent);
-  useSyncExtensionSignal(
-    CheckListExtension,
-    'disableTakeFocusOnClick',
-    shouldDisableFocusOnClickChecklist,
-  );
-  useSyncExtensionSignal(ClickableLinkExtension, 'disabled', isEditable);
-  useSyncExtensionSignal(
-    SelectionAlwaysOnDisplayExtension,
-    'disabled',
-    !selectionAlwaysOnDisplay,
-  );
 
   useEffect(() => {
     const updateViewPortWidth = () => {
@@ -244,20 +166,11 @@ export default function Editor(): JSX.Element {
                 <ContentEditable placeholder={placeholder} />
               </div>
             </div>
-            <TablePlugin
-              hasCellMerge={tableCellMerge}
-              hasCellBackgroundColor={tableCellBackgroundColor}
-              hasHorizontalScroll={tableHorizontalScroll && !hasFitNestedTables}
-              hasNestedTables={hasNestedTables}
-            />
             {hasFitNestedTables ? <TableFitNestedTablePlugin /> : null}
             <TableCellResizer />
             <TableScrollShadowPlugin />
-            <PollPlugin />
-            <EquationsPlugin />
             <ExcalidrawPlugin />
             <TabIndentationPlugin maxIndent={7} />
-            <LayoutPlugin />
             {floatingAnchorElem && (
               <>
                 <FloatingLinkEditorPlugin
@@ -292,7 +205,6 @@ export default function Editor(): JSX.Element {
             maxLength={5}
           />
         )}
-        {isAutocomplete && <AutocompletePlugin />}
         <div>{showTableOfContents && <TableOfContentsPlugin />}</div>
         {shouldUseLexicalContextMenu && <ContextMenuPlugin />}
         <ActionsPlugin

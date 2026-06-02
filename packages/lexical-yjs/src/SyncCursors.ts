@@ -14,6 +14,7 @@ import type {
   Point,
 } from 'lexical';
 
+import invariant from '@lexical/internal/invariant';
 import {createDOMRange, createRectsFromDOMRange} from '@lexical/selection';
 import {
   $getNodeByKey,
@@ -24,7 +25,6 @@ import {
   $isTextNode,
   setDOMStyleObject,
 } from 'lexical';
-import invariant from 'shared/invariant';
 import {
   AbsolutePosition,
   compareRelativePositions,

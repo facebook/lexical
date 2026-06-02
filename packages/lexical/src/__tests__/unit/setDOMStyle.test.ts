@@ -91,4 +91,23 @@ describe('setDOMStyle', () => {
     expect(element.style.getPropertyPriority('margin')).toBe('important');
     expect(element.style.padding).toBe('');
   });
+
+  it('drops comments and respects quotes and parentheses', () => {
+    // A comment in the middle of a value is removed, joining the surrounding
+    // text.
+    expect(getStyleObjectFromCSS('color: re/* x */d; margin: 0')).toEqual({
+      color: 'red',
+      margin: '0',
+    });
+    // Consecutive comments in a property name are also removed.
+    expect(getStyleObjectFromCSS('a/* c1 *//* c2 */b: c')).toEqual({ab: 'c'});
+    // Escaped quotes, ';' and ':' inside a quoted value are preserved.
+    expect(getStyleObjectFromCSS('content: "a\\"b;c:d"')).toEqual({
+      content: '"a\\"b;c:d"',
+    });
+    // ';' and ':' inside parentheses are not treated as delimiters.
+    expect(getStyleObjectFromCSS('background: url(http://x/a;b);')).toEqual({
+      background: 'url(http://x/a;b)',
+    });
+  });
 });

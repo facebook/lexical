@@ -7,6 +7,7 @@
  */
 
 import {NamedSignalsOutput, Signal, signal} from '@lexical/extension';
+import invariant from '@lexical/internal/invariant';
 import {
   $dfs,
   $findMatchingParent,
@@ -39,7 +40,6 @@ import {
   SELECTION_CHANGE_COMMAND,
   SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
 import {
   $createTableCellNode,

@@ -115,17 +115,19 @@ function waitForServer(port: number, timeoutMs = 60000): Promise<void> {
 function installDeps(exampleDir: string): void {
   // --ignore-workspace so pnpm installs this example's own deps
   // rather than running the monorepo workspace install.
-  // shell: true isolates the child from the tsx loader.
+  // shell: true isolates the child from the tsx loader. @types/node narrows
+  // `ExecSyncOptions.shell` to `string`, but Node forwards a boolean to the
+  // underlying spawnSync at runtime, so the value is cast to satisfy the types.
   execSync('pnpm install --ignore-workspace', {
     cwd: exampleDir,
-    shell: true,
+    shell: true as unknown as string,
     stdio: 'pipe',
   });
   // Run the prepare script if it exists (e.g. svelte-kit sync)
   try {
     execSync('pnpm run --if-present prepare', {
       cwd: exampleDir,
-      shell: true,
+      shell: true as unknown as string,
       stdio: 'pipe',
     });
   } catch {

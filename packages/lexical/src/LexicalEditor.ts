@@ -6,6 +6,7 @@
  *
  */
 
+import type {DOMSlot, ElementDOMSlot} from './LexicalDOMSlot';
 import type {EditorState, SerializedEditorState} from './LexicalEditorState';
 import type {
   DOMConversion,
@@ -15,9 +16,10 @@ import type {
   LexicalPrivateDOM,
   NodeKey,
 } from './LexicalNode';
-import type {ElementDOMSlot} from './nodes/LexicalElementNode';
+import type {ElementNode} from './nodes/LexicalElementNode';
 
-import invariant from 'shared/invariant';
+import invariant from '@lexical/internal/invariant';
+import {LEXICAL_VERSION} from '@lexical/internal/version';
 
 import {
   $getRoot,
@@ -52,6 +54,7 @@ import {
   $addUpdateTag,
   $onUpdate,
   $setSelection,
+  clearNodeKeyOnDOMNode,
   createUID,
   dispatchCommand,
   getCachedClassNameArray,
@@ -60,15 +63,17 @@ import {
   getDOMSelection,
   getRegisteredNode,
   getStaticNodeConfig,
-  hasOwnExportDOM,
   hasOwnStaticMethod,
   markNodesWithTypesAsDirty,
+  setNodeKeyOnDOMNode,
 } from './LexicalUtils';
 import {ArtificialNode__DO_NOT_USE} from './nodes/ArtificialNode';
 import {LineBreakNode} from './nodes/LexicalLineBreakNode';
 import {ParagraphNode} from './nodes/LexicalParagraphNode';
 import {RootNode} from './nodes/LexicalRootNode';
 import {TabNode} from './nodes/LexicalTabNode';
+
+const __DEV__ = process.env.NODE_ENV !== 'production';
 
 export type Spread<T1, T2> = Omit<T2, keyof T1> & T1;
 
@@ -258,6 +263,19 @@ export type HTMLConfig = {
  */
 export type LexicalNodeConfig = Klass<LexicalNode> | LexicalNodeReplacement;
 
+/**
+ * @experimental
+ *
+ * The slot type produced by `$getDOMSlot` for a given node, narrowed via
+ * the node's static class: `ElementNode` resolves to {@link ElementDOMSlot}
+ * (with children-management methods), other nodes to the base
+ * {@link DOMSlot}. Callers passing a known node type get the narrowed slot
+ * without manual `instanceof` checks.
+ */
+export type DOMSlotForNode<N extends LexicalNode> = N extends ElementNode
+  ? ElementDOMSlot<HTMLElement>
+  : DOMSlot<HTMLElement>;
+
 /** @internal @experimental */
 export interface EditorDOMRenderConfig {
   /** @internal @experimental */
@@ -265,12 +283,19 @@ export interface EditorDOMRenderConfig {
     node: T,
     editor: LexicalEditor,
   ) => HTMLElement;
-  /** @internal @experimental */
-  $getDOMSlot: <T extends LexicalNode>(
-    node: T,
+  /**
+   * @internal @experimental
+   *
+   * The default impl dispatches to `node.getDOMSlot(dom)`. The return type is
+   * narrowed via {@link DOMSlotForNode}: callers passing an `ElementNode` get
+   * an {@link ElementDOMSlot} with children-management methods, callers
+   * passing a non-Element node get the base {@link DOMSlot}.
+   */
+  $getDOMSlot: <N extends LexicalNode>(
+    node: N,
     dom: HTMLElement,
     editor: LexicalEditor,
-  ) => ElementDOMSlot<HTMLElement>;
+  ) => DOMSlotForNode<N>;
   /** @internal @experimental */
   $exportDOM: <T extends LexicalNode>(
     node: T,
@@ -640,11 +665,19 @@ export function resetEditor(
   // Remove all the DOM nodes from the root element
   if (prevRootElement !== null) {
     prevRootElement.textContent = '';
+    clearNodeKeyOnDOMNode(prevRootElement, editor);
   }
 
   if (nextRootElement !== null) {
     nextRootElement.textContent = '';
     keyNodeMap.set('root', nextRootElement);
+    // Stash __lexicalKey_${editor._key} = 'root' on the root element so it
+    // participates in the unified key lookup (selection resolution in
+    // $internalResolveSelectionPoint, mutation handling in
+    // $getNearestManagedNodePairFromDOMNode, $getNodeFromDOM, and
+    // $getNearestNodeFromDOMNode) instead of requiring a dedicated
+    // editor.getRootElement() carveout at each call site.
+    setNodeKeyOnDOMNode(nextRootElement, editor, 'root');
   }
 }
 
@@ -734,15 +767,11 @@ export const DEFAULT_EDITOR_DOM_CONFIG: EditorDOMRenderConfig = {
   $extractWithChild: (node, childNode, selection, destination, _editor) =>
     $isElementNode(node) &&
     node.extractWithChild(childNode, selection, destination),
-  $getDOMSlot: (node, dom, _editor) => {
-    invariant(
-      $isElementNode(node),
-      '$getDOMSlot called on a non-ElementNode (key %s type %s)',
-      node.getKey(),
-      node.getType(),
-    );
-    return node.getDOMSlot(dom);
-  },
+  $getDOMSlot: <N extends LexicalNode>(
+    node: N,
+    dom: HTMLElement,
+    _editor: LexicalEditor,
+  ): DOMSlotForNode<N> => node.getDOMSlot(dom) as DOMSlotForNode<N>,
   $shouldExclude: (node, _selection, _editor) =>
     $isElementNode(node) && node.excludeFromCopy('html'),
   $shouldInclude: (node, selection, _editor) =>
@@ -834,14 +863,6 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
               console.warn(`${name} must implement static "${method}" method`);
             }
           });
-          if (
-            !hasOwnStaticMethod(klass, 'importDOM') &&
-            hasOwnExportDOM(klass)
-          ) {
-            console.warn(
-              `${name} should implement "importDOM" if using a custom "exportDOM" method to ensure HTML serialization (important for copy & paste) works as expected`,
-            );
-          }
           if (!hasOwnStaticMethod(klass, 'importJSON')) {
             console.warn(
               `${name} should implement "importJSON" method to ensure JSON and default HTML serialization works as expected`,
@@ -1700,4 +1721,4 @@ export class LexicalEditor {
   }
 }
 
-LexicalEditor.version = process.env.LEXICAL_VERSION;
+LexicalEditor.version = LEXICAL_VERSION;

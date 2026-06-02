@@ -44,8 +44,8 @@ import {
   invariant,
 } from 'lexical/src/__tests__/utils';
 import * as React from 'react';
+import {act} from 'react';
 import {createRoot, Root} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
 import {afterEach, beforeEach, describe, expect, test} from 'vitest';
 
 expect.extend(toHaveNoViolations);
@@ -147,7 +147,7 @@ describe('LexicalExtensionEditorComposer', () => {
     function App() {
       return <LexicalExtensionComposer extension={ParentExtension} />;
     }
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(<App />);
     });
     invariant(editor !== undefined, 'editor defined');
@@ -184,14 +184,14 @@ describe('LexicalExtensionEditorComposer', () => {
     // By default editors are editable
     expect(editor.isEditable()).toBe(true);
     expect(nestedEditor.isEditable()).toBe(true);
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       editor!.setEditable(false);
     });
     // By default editable is not inherited
     expect(editor.isEditable()).toBe(false);
     expect(nestedEditor.isEditable()).toBe(true);
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(null);
       await Promise.resolve();
     });
@@ -213,7 +213,7 @@ describe('LexicalExtensionEditorComposer', () => {
       COMMAND_PRIORITY_EDITOR,
     );
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(
         <LexicalExtensionEditorComposer initialEditor={editor} />,
       );
@@ -222,7 +222,7 @@ describe('LexicalExtensionEditorComposer', () => {
     expect(editor.dispatchCommand(TestCommand, 1)).toBe(true);
     expect(handled).toEqual([1]);
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(null);
       await Promise.resolve();
     });
@@ -247,7 +247,7 @@ describe('LexicalExtensionEditorComposer', () => {
     );
 
     // First mount
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(
         <LexicalExtensionEditorComposer initialEditor={editor} />,
       );
@@ -257,7 +257,7 @@ describe('LexicalExtensionEditorComposer', () => {
     expect(firstRoot).not.toBe(null);
 
     // Unmount
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(null);
       await Promise.resolve();
     });
@@ -265,7 +265,7 @@ describe('LexicalExtensionEditorComposer', () => {
     // Remount with the same editor instance — this mirrors the image-caption
     // open/close/open cycle that previously broke because the editor was
     // disposed on first unmount.
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(
         <LexicalExtensionEditorComposer initialEditor={editor} />,
       );
@@ -274,7 +274,7 @@ describe('LexicalExtensionEditorComposer', () => {
     expect(editor.getRootElement()).not.toBe(null);
 
     // Editor still functions for updates after the remount.
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       editor.update(
         () =>
           $getRoot()

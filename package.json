@@ -149,7 +149,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@types/semver": "^7.7.1",
-    "@vitejs/plugin-react": "^6.0.1",
+    "@vitejs/plugin-react": "^6.0.2",
     "@vitest/browser-playwright": "^4.1.8",
     "baseline-browser-mapping": "^2.10.25",
     "chokidar": "^5.0.0",
@@ -197,7 +197,7 @@
     "typedoc": "^0.28.19",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.59.1",
-    "vite": "^8.0.10",
+    "vite": "^8.0.16",
     "vitest": "^4.1.8",
     "y-websocket": "^2.1.0"
   },

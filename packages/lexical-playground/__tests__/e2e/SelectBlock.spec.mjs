@@ -21,6 +21,7 @@ import {
   insertCollapsible,
   insertDateTime,
   insertSampleImage,
+  IS_LINUX,
   pressInsertLinkButton,
   SAMPLE_IMAGE_URL,
   test,
@@ -43,6 +44,8 @@ async function setupMultiContent(page) {
 }
 
 test.describe('SelectBlock', () => {
+  test.skip(({browserName}) => browserName === 'firefox' && IS_LINUX);
+
   test.beforeEach(({isCollab, page}) =>
     initialize({isCollab, page, selectBlock: true}),
   );

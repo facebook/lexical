@@ -1033,7 +1033,8 @@ export function $onEscapeUp(
     if (containerNode) {
       const parent = containerNode.getParent();
       if (parent !== null && parent.getFirstChild() === containerNode) {
-        const firstDescendant = containerNode.getFirstDescendant();
+        const firstDescendant =
+          containerNode.getFirstDescendant() ?? containerNode;
         const anchorNode = selection.anchor.getNode();
         if (
           firstDescendant !== null &&
@@ -1078,7 +1079,8 @@ export function $onEscapeDown(
     if (containerNode) {
       const parent = containerNode.getParent();
       if (parent !== null && parent.getLastChild() === containerNode) {
-        const lastDescendant = containerNode.getLastDescendant();
+        const lastDescendant =
+          containerNode.getLastDescendant() ?? containerNode;
         const anchorNode = selection.anchor.getNode();
         if (
           lastDescendant !== null &&

@@ -243,6 +243,74 @@ describe('CodeIndentExtension', () => {
       },
     );
 
+    it.each([
+      ['ArrowUp', KEY_ARROW_UP_COMMAND],
+      ['ArrowLeft', KEY_ARROW_LEFT_COMMAND],
+    ])(
+      'should escape code block to a new paragraph by %s when cursor is inside an empty block',
+      (key, command) => {
+        const ext = defineExtension({
+          $initialEditorState: () => {
+            const codeNode = $createCodeNode('javascript');
+            $getRoot().append(codeNode);
+            codeNode.selectStart();
+          },
+          dependencies: [
+            configExtension(CodeIndentExtension, {escapeWithArrows: true}),
+            RichTextExtension,
+          ],
+          name: '[root-middle]',
+        });
+        using editor = buildEditorFromExtensions(ext);
+
+        editor.dispatchCommand(command, new KeyboardEvent('keydown', {key}));
+
+        editor.update(
+          () => {
+            const root = $getRoot();
+            expect(root.getChildrenSize()).toBe(2);
+            const paragraph = root.getFirstChildOrThrow();
+            expect($isParagraphNode(paragraph)).toBe(true);
+          },
+          {discrete: true},
+        );
+      },
+    );
+
+    it.each([
+      ['ArrowDown', KEY_ARROW_DOWN_COMMAND],
+      ['ArrowRight', KEY_ARROW_RIGHT_COMMAND],
+    ])(
+      'should escape code block to a new paragraph by %s when cursor is inside an empty block',
+      (key, command) => {
+        const ext = defineExtension({
+          $initialEditorState: () => {
+            const codeNode = $createCodeNode('javascript');
+            $getRoot().append(codeNode);
+            codeNode.selectStart();
+          },
+          dependencies: [
+            configExtension(CodeIndentExtension, {escapeWithArrows: true}),
+            RichTextExtension,
+          ],
+          name: '[root-middle]',
+        });
+        using editor = buildEditorFromExtensions(ext);
+
+        editor.dispatchCommand(command, new KeyboardEvent('keydown', {key}));
+
+        editor.update(
+          () => {
+            const root = $getRoot();
+            expect(root.getChildrenSize()).toBe(2);
+            const paragraph = root.getLastChildOrThrow();
+            expect($isParagraphNode(paragraph)).toBe(true);
+          },
+          {discrete: true},
+        );
+      },
+    );
+
     it('should not escape code block to a new paragraph by Alt/Option + ArrowDown when cursor is at the end', () => {
       const ext = defineExtension({
         $initialEditorState: () => {

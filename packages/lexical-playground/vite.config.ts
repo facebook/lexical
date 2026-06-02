@@ -15,11 +15,15 @@ import viteMonorepoResolutionPlugin from '../../scripts/vite/lexicalMonorepoPlug
 import viteCopyEsm from './viteCopyEsm';
 import viteCopyExcalidrawAssets from './viteCopyExcalidrawAssets';
 
+// react() returns Plugin[]; widening it to PluginOption[] here lets the plugins
+// array below infer as PluginOption[] (every other entry is a Plugin, which is
+// a PluginOption) without annotating the whole array. That matters because
+// comparing the inferred plugin union against vite's recursively-defined
+// PluginOption type overflows with "Excessive stack depth" on newer vite type
+// definitions; widening the one array-valued entry keeps the check shallow.
+const reactPlugins: PluginOption[] = react();
+
 // https://vitejs.dev/config/
-// The return type is annotated as UserConfig so TypeScript checks the config
-// object against it directly instead of bidirectionally comparing the inferred
-// `plugins` union against vite's overload signatures, which overflows with
-// "Excessive stack depth" on newer vite type definitions.
 export default defineConfig(
   ({mode}): UserConfig => ({
     build: {
@@ -66,9 +70,9 @@ export default defineConfig(
         ],
         presets: [['@babel/preset-react', {runtime: 'automatic'}]],
       }),
-      react(),
+      ...reactPlugins,
       ...viteCopyExcalidrawAssets(),
       viteCopyEsm(),
-    ] as PluginOption[],
+    ],
   }),
 );

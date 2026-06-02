@@ -182,8 +182,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ['ubuntu-latest', 'macos-latest', 'windows-2022']
-        browser: ['chromium', 'firefox', 'webkit']
+        # Each combination is fully specified. ubuntu + chromium is already
+        # covered by the default browser run in call-core-tests.yml, and WebKit
+        # is only exercised on macOS, so neither is repeated here.
+        include:
+          - {os: 'ubuntu-latest', browser: 'firefox'}
+          - {os: 'macos-latest', browser: 'chromium'}
+          - {os: 'macos-latest', browser: 'firefox'}
+          - {os: 'macos-latest', browser: 'webkit'}
+          - {os: 'windows-2022', browser: 'chromium'}
+          - {os: 'windows-2022', browser: 'firefox'}
     uses: ./.github/workflows/call-browser-tests.yml
     with:
       os: ${{ matrix.os }}

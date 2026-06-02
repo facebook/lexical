@@ -12,8 +12,6 @@ permissions: {}
 jobs:
   browser-test:
     runs-on: ${{ inputs.os }}
-    # WebKit is only reliable on macOS runners in CI, matching the e2e matrix.
-    if: (inputs.browser != 'webkit' || inputs.os == 'macos-latest')
     env:
       CI: true
       # Drives the `instances` selection in vitest.config.mts.

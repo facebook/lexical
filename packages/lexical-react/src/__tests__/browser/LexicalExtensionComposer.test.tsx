@@ -10,10 +10,9 @@ import {defineExtension} from '@lexical/extension';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
 import {RichTextExtension} from '@lexical/rich-text';
 import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
-import * as React from 'react';
-import {act} from 'react';
-import {createRoot, type Root} from 'react-dom/client';
-import {afterEach, describe, expect, test} from 'vitest';
+import {act, type ReactElement} from 'react';
+import {createRoot} from 'react-dom/client';
+import {describe, expect, test} from 'vitest';
 
 function $prepopulate(): void {
   $getRoot().append(
@@ -29,36 +28,33 @@ const extension = defineExtension({
   name: '[root]',
 });
 
-let container: HTMLDivElement | null = null;
-let root: Root | null = null;
-
-afterEach(() => {
-  if (root) {
-    const currentRoot = root;
-    act(() => currentRoot.unmount());
-    root = null;
-  }
-  if (container) {
-    container.remove();
-    container = null;
-  }
-});
-
-function render(ui: React.ReactElement): HTMLElement {
-  container = document.createElement('div');
+// Mounts `ui` into a fresh container and returns a Disposable, so callers use
+// `using view = renderReact(...)` and React unmounts at the end of the block
+// instead of in an afterEach. document.body is reset between tests, so the
+// container itself needs no explicit removal.
+function renderReact(ui: ReactElement): Disposable & {container: HTMLElement} {
+  const container = document.createElement('div');
   document.body.appendChild(container);
-  const currentContainer = container;
+  const root = createRoot(container);
   act(() => {
-    root = createRoot(currentContainer);
     root.render(ui);
   });
-  return currentContainer;
+  return {
+    container,
+    [Symbol.dispose]() {
+      act(() => {
+        root.unmount();
+      });
+    },
+  };
 }
 
 describe('LexicalExtensionComposer (browser)', () => {
   test('renders a real contentEditable with the initial editor state', () => {
-    const el = render(<LexicalExtensionComposer extension={extension} />);
-    const contentEditable = el.querySelector(
+    using view = renderReact(
+      <LexicalExtensionComposer extension={extension} />,
+    );
+    const contentEditable = view.container.querySelector(
       '[contenteditable="true"]',
     ) as HTMLElement | null;
     expect(contentEditable).not.toBeNull();

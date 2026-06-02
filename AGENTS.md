@@ -185,6 +185,12 @@ Always access node properties/methods within read/update context. Nodes automati
   (comma-separated, default `chromium`). Prefer building editors with the extension APIs
   (`buildEditorFromExtensions`, or `LexicalExtensionComposer`/`LexicalExtensionEditorComposer`
   in React).
+  - **Do not use `using`/`Disposable` in browser tests (or any browser-facing code).**
+    Explicit Resource Management (`using`, `Symbol.dispose`, `Disposable`) is not supported
+    in WebKit/Safari yet, so the syntax throws a `SyntaxError` there. `using` is fine in unit
+    tests (jsdom/Node), but browser tests should clean up with
+    `onTestFinished(() => editor.dispose())` instead — `editor.dispose()` is a plain method
+    available on the result of `buildEditorFromExtensions`.
 - **E2E tests** - Playwright, located in `packages/lexical-playground/__tests__/e2e/**/*.spec.{ts,mjs}`
 - E2E tests require the playground dev server running
 - Use `pnpm run debug-test-e2e-chromium` to debug E2E tests with browser UI

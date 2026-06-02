@@ -9,13 +9,17 @@
 import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
 import {RichTextExtension} from '@lexical/rich-text';
 import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
-import {describe, expect, test} from 'vitest';
+import {describe, expect, onTestFinished, test} from 'vitest';
 
 // These tests intentionally avoid the jsdom polyfills in vitest.setup.mts and
 // instead assert against a real layout/selection engine. The same assertions
 // would require stubbing Range.getBoundingClientRect and the Selection API
 // under jsdom (see vitest.setup.mts), which is exactly the kind of mocking the
 // browser project lets us drop.
+//
+// Note: `using`/`Disposable` (Explicit Resource Management) is not supported in
+// WebKit/Safari yet, so browser tests dispose with onTestFinished instead of
+// the `using` keyword. See AGENTS.md.
 
 function $prepopulate(): void {
   $getRoot().append(
@@ -23,19 +27,20 @@ function $prepopulate(): void {
   );
 }
 
-// `buildEditorFromExtensions` returns a Disposable editor, so callers use
-// `using editor = setUpEditor()` and the editor tears itself down at the end of
-// the block. The contentEditable is reachable via editor.getRootElement(), and
-// document.body is reset between tests, so nothing else needs cleaning up.
+// Builds an editor whose contentEditable is created in the afterRegistration
+// phase (the earliest point setRootElement should run) and removed when the
+// editor is disposed. The contentEditable is reachable via
+// editor.getRootElement(), and the editor is disposed via onTestFinished — see
+// the note above about `using` not being available in browser tests.
 function setUpEditor() {
-  return buildEditorFromExtensions(
+  const editor = buildEditorFromExtensions(
     defineExtension({
       $initialEditorState: $prepopulate,
-      afterRegistration(editor, _config, _state) {
+      afterRegistration(builtEditor, _config, _state) {
         const rootElement = document.createElement('div');
         rootElement.contentEditable = 'true';
         document.body.appendChild(rootElement);
-        editor.setRootElement(rootElement);
+        builtEditor.setRootElement(rootElement);
         return () => {
           document.body.removeChild(rootElement);
         };
@@ -44,11 +49,13 @@ function setUpEditor() {
       name: '[root]',
     }),
   );
+  onTestFinished(() => editor.dispose());
+  return editor;
 }
 
 describe('buildEditorFromExtensions (browser)', () => {
   test('reconciles the initial editor state into the real DOM', () => {
-    using editor = setUpEditor();
+    const editor = setUpEditor();
     const contentEditable = editor.getRootElement()!;
     expect(contentEditable.querySelector('p')).not.toBeNull();
     expect(contentEditable.textContent).toBe('Hello from a real browser');
@@ -58,7 +65,7 @@ describe('buildEditorFromExtensions (browser)', () => {
   });
 
   test('Range.getBoundingClientRect reports real layout', () => {
-    using editor = setUpEditor();
+    const editor = setUpEditor();
     const textSpan = editor
       .getRootElement()!
       .querySelector('[data-lexical-text="true"]')!;
@@ -72,7 +79,7 @@ describe('buildEditorFromExtensions (browser)', () => {
   });
 
   test('the native Selection API round-trips a real range', () => {
-    using editor = setUpEditor();
+    const editor = setUpEditor();
     // Lexical renders text inside a <span data-lexical-text="true">, so the
     // actual Text node is its first child.
     const textNode = editor

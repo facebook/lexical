@@ -12,7 +12,7 @@ import {RichTextExtension} from '@lexical/rich-text';
 import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
 import {act, type ReactElement} from 'react';
 import {createRoot} from 'react-dom/client';
-import {describe, expect, test} from 'vitest';
+import {describe, expect, onTestFinished, test} from 'vitest';
 
 function $prepopulate(): void {
   $getRoot().append(
@@ -28,33 +28,32 @@ const extension = defineExtension({
   name: '[root]',
 });
 
-// Mounts `ui` into a fresh container and returns a Disposable, so callers use
-// `using view = renderReact(...)` and React unmounts at the end of the block
-// instead of in an afterEach. document.body is reset between tests, so the
-// container itself needs no explicit removal.
-function renderReact(ui: ReactElement): Disposable & {container: HTMLElement} {
+// Renders `ui` into a fresh container and unmounts when the test finishes.
+// Cleanup uses onTestFinished rather than a `using`/Disposable helper because
+// Explicit Resource Management is not supported in WebKit/Safari yet (see
+// AGENTS.md). document.body is reset between tests, so the container itself
+// needs no explicit removal.
+function renderReact(ui: ReactElement): {container: HTMLElement} {
   const container = document.createElement('div');
   document.body.appendChild(container);
   const root = createRoot(container);
   act(() => {
     root.render(ui);
   });
-  return {
-    container,
-    [Symbol.dispose]() {
-      act(() => {
-        root.unmount();
-      });
-    },
-  };
+  onTestFinished(() => {
+    act(() => {
+      root.unmount();
+    });
+  });
+  return {container};
 }
 
 describe('LexicalExtensionComposer (browser)', () => {
   test('renders a real contentEditable with the initial editor state', () => {
-    using view = renderReact(
+    const {container} = renderReact(
       <LexicalExtensionComposer extension={extension} />,
     );
-    const contentEditable = view.container.querySelector(
+    const contentEditable = container.querySelector(
       '[contenteditable="true"]',
     ) as HTMLElement | null;
     expect(contentEditable).not.toBeNull();

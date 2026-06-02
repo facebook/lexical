@@ -28,15 +28,22 @@ function $prepopulate(): void {
 // the block. The contentEditable is reachable via editor.getRootElement(), and
 // document.body is reset between tests, so nothing else needs cleaning up.
 function setUpEditor() {
-  const editor = buildEditorFromExtensions(
-    RichTextExtension,
-    defineExtension({$initialEditorState: $prepopulate, name: '[root]'}),
+  return buildEditorFromExtensions(
+    defineExtension({
+      $initialEditorState: $prepopulate,
+      afterRegistration(editor, _config, _state) {
+        const rootElement = document.createElement('div');
+        rootElement.contentEditable = 'true';
+        document.body.appendChild(rootElement);
+        editor.setRootElement(rootElement);
+        return () => {
+          document.body.removeChild(rootElement);
+        };
+      },
+      dependencies: [RichTextExtension],
+      name: '[root]',
+    }),
   );
-  const rootElement = document.createElement('div');
-  rootElement.contentEditable = 'true';
-  document.body.appendChild(rootElement);
-  editor.setRootElement(rootElement);
-  return editor;
 }
 
 describe('buildEditorFromExtensions (browser)', () => {

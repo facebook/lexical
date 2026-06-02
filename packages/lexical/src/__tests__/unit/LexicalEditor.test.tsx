@@ -1216,6 +1216,12 @@ describe('LexicalEditor tests', () => {
     expect(errorListener.mock.calls[0][0].message).toMatch(
       /endlessly enqueueing/,
     );
+    // The error message should include the editor's namespace so the loop can
+    // be attributed to a specific product/editor in error aggregation, even
+    // when the production stack is minified to core frames.
+    expect(errorListener.mock.calls[0][0].message).toContain(
+      `Editor namespace: ${editor._config.namespace}`,
+    );
 
     unregisterListener();
 

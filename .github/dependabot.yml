@@ -36,6 +36,11 @@ updates:
           - 'rollup'
           - 'rollup-*'
 
+      shikijs:
+        patterns:
+          - '@shikijs/*'
+          - 'shiki'
+
       dev-dependencies:
         dependency-type: 'development'
         patterns:

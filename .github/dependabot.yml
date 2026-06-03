@@ -30,6 +30,12 @@ updates:
           - 'flow-*'
           - '@babel/preset-flow'
 
+      rollup:
+        patterns:
+          - '@rollup/*'
+          - 'rollup'
+          - 'rollup-*'
+
       shikijs:
         patterns:
           - '@shikijs/*'

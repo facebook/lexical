@@ -22,7 +22,7 @@
     "@docusaurus/preset-classic": "^3.10.1",
     "@docusaurus/theme-common": "^3.10.1",
     "@docusaurus/theme-mermaid": "^3.10.1",
-    "@easyops-cn/docusaurus-search-local": "^0.55.1",
+    "@easyops-cn/docusaurus-search-local": "^0.55.2",
     "@huggingface/transformers": "^4.0.1",
     "@lexical/extension": "workspace:*",
     "@lexical/hashtag": "workspace:*",
@@ -45,7 +45,7 @@
     "prism-react-renderer": "^2.4.1",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
-    "typedoc-plugin-markdown": "^4.11.0",
+    "typedoc-plugin-markdown": "^4.12.0",
     "typedoc-plugin-no-inherit": "^1.6.1",
     "typedoc-plugin-rename-defaults": "^0.7.3",
     "unist-util-visit": "^5.1.0"

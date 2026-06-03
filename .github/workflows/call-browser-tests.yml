@@ -1,0 +1,38 @@
+name: Lexical browser test runner
+
+on:
+  workflow_call:
+    inputs:
+      os: {required: false, type: string, default: 'ubuntu-latest'}
+      node-version: {required: false, type: string, default: '24.x'}
+      browser: {required: false, type: string, default: 'chromium'}
+
+permissions: {}
+
+jobs:
+  browser-test:
+    runs-on: ${{ inputs.os }}
+    env:
+      CI: true
+      # Drives the `instances` selection in vitest.config.mts.
+      VITEST_BROWSER: ${{ inputs.browser }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-pnpm
+        with:
+          node-version: ${{ inputs.node-version }}
+      - uses: ./.github/actions/setup-playwright
+        with:
+          node-version: ${{ inputs.node-version }}
+      - name: Run browser tests
+        run: pnpm run test-browser
+      - name: Upload Artifacts
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: Browser Test Results ${{ inputs.os }}-${{ inputs.browser }}-${{ inputs.node-version }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            .vitest-attachments/
+            packages/**/__tests__/browser/**/__screenshots__/
+          if-no-files-found: ignore
+          retention-days: 7

@@ -42,7 +42,7 @@
     "@babel/plugin-transform-flow-strip-types": "^7.27.1",
     "@babel/preset-react": "^7.28.5",
     "@lexical/devtools-core": "workspace:*",
-    "@rollup/plugin-babel": "^7.0.0",
+    "@rollup/plugin-babel": "^7.1.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",

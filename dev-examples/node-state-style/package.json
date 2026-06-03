@@ -21,7 +21,7 @@
     "@shikijs/themes": "^4.2.0",
     "@zag-js/combobox": "^1.9.2",
     "lexical": "workspace:*",
-    "lucide-react": "^0.503.0",
+    "lucide-react": "^1.17.0",
     "prettier": "^3.5.3",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",

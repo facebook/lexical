@@ -15,7 +15,7 @@
     "@lexical/code-core": "workspace:*",
     "@lexical/extension": "workspace:*",
     "@shikijs/core": "^4.0.2",
-    "@shikijs/engine-javascript": "^4.0.2",
+    "@shikijs/engine-javascript": "^4.2.0",
     "@shikijs/langs": "^4.0.2",
     "@shikijs/themes": "^4.0.2",
     "lexical": "workspace:*",

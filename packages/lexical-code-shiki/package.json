@@ -14,12 +14,12 @@
   "dependencies": {
     "@lexical/code-core": "workspace:*",
     "@lexical/extension": "workspace:*",
-    "@shikijs/core": "^4.0.2",
+    "@shikijs/core": "^4.2.0",
     "@shikijs/engine-javascript": "^4.2.0",
-    "@shikijs/langs": "^4.0.2",
-    "@shikijs/themes": "^4.0.2",
+    "@shikijs/langs": "^4.2.0",
+    "@shikijs/themes": "^4.2.0",
     "lexical": "workspace:*",
-    "shiki": "^4.0.2"
+    "shiki": "^4.2.0"
   },
   "repository": {
     "type": "git",
@@ -27,7 +27,7 @@
     "directory": "packages/lexical-code-shiki"
   },
   "devDependencies": {
-    "@shikijs/types": "^4.0.2"
+    "@shikijs/types": "^4.2.0"
   },
   "module": "./dist/LexicalCodeShiki.mjs",
   "sideEffects": true,

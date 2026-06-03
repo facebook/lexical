@@ -30,6 +30,11 @@ updates:
           - 'flow-*'
           - '@babel/preset-flow'
 
+      shikijs:
+        patterns:
+          - '@shikijs/*'
+          - 'shiki'
+
       dev-dependencies:
         dependency-type: 'development'
         patterns:

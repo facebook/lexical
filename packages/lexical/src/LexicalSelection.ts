@@ -79,6 +79,7 @@ import {
   $getNodeFromDOM,
   $getRoot,
   $hasAncestor,
+  $isInlineElementOrDecoratorNode,
   $isRootOrShadowRoot,
   $isTokenOrSegmented,
   $isTokenOrTab,
@@ -3446,28 +3447,17 @@ function $wrapInlineNodes(nodes: LexicalNode[]) {
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
 
-    const isLineBreakNode = $isLineBreakNode(node);
-
     if (
-      isLineBreakNode ||
-      ($isDecoratorNode(node) && node.isInline()) ||
-      ($isElementNode(node) && node.isInline()) ||
+      $isLineBreakNode(node) ||
+      $isInlineElementOrDecoratorNode(node) ||
       $isTextNode(node) ||
       node.isParentRequired()
     ) {
       if (currentBlock === null) {
         currentBlock = node.createParentElementNode();
         virtualRoot.append(currentBlock);
-        // In the case of LineBreakNode, we just need to
-        // add an empty ParagraphNode to the topLevelBlocks.
-        if (isLineBreakNode) {
-          continue;
-        }
       }
-
-      if (currentBlock !== null) {
-        currentBlock.append(node);
-      }
+      currentBlock.append(node);
     } else {
       virtualRoot.append(node);
       currentBlock = null;

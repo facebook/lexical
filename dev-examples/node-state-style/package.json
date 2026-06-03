@@ -37,7 +37,7 @@
     "vite": "^7.3.2"
   },
   "optionalDependencies": {
-    "@rollup/rollup-linux-x64-gnu": "4.52.0",
+    "@rollup/rollup-linux-x64-gnu": "4.61.0",
     "@rollup/rollup-darwin-arm64": "4.52.0",
     "@rollup/rollup-win32-x64-msvc": "4.52.0",
     "@rollup/wasm-node": "4.52.0"

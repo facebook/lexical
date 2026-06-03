@@ -29,7 +29,6 @@ import {
   getNodeKeyFromDOMNode,
   getParentElement,
   getWindow,
-  internalGetRoot,
   isDOMTextNode,
   isDOMUnmanaged,
   isFirefoxClipboardEvents,
@@ -118,7 +117,6 @@ function $getNearestManagedNodePairFromDOMNode(
   startingDOM: Node,
   editor: LexicalEditor,
   editorState: EditorState,
-  rootElement: HTMLElement | null,
 ): [HTMLElement, LexicalNode] | undefined {
   for (
     let dom: Node | null = startingDOM;
@@ -134,16 +132,6 @@ function $getNearestManagedNodePairFromDOMNode(
           ? undefined
           : [dom, node];
       }
-    } else if (dom === rootElement) {
-      // Fallback when the root element's `__lexicalKey_*` stash (set in
-      // resetEditor by #8588) is not observable for this mutation target —
-      // e.g. a DOM mutation that targets the root element directly while
-      // typing into a fresh/near-empty editor, before a managed child has
-      // received the input. Mapping the root element to the RootNode here
-      // keeps such mutations from being silently skipped (which previously
-      // dropped typed text → word-count gate stayed at 0). This restores
-      // the carveout removed in #8588 without regressing the stash.
-      return [rootElement, internalGetRoot(editorState)];
     }
   }
 }
@@ -160,7 +148,6 @@ function flushMutations(
     updateEditorSync(editor, () => {
       const selection = $getSelection() || getLastSelection(editor);
       const badDOMTargets = new Map<HTMLElement, LexicalNode>();
-      const rootElement = editor.getRootElement();
       // We use the current editor state, as that reflects what is
       // actually "on screen".
       const currentEditorState = editor._editorState;
@@ -176,7 +163,6 @@ function flushMutations(
           targetDOM,
           editor,
           currentEditorState,
-          rootElement,
         );
         if (!pair) {
           continue;

@@ -27,7 +27,7 @@
     "directory": "packages/lexical-code-shiki"
   },
   "devDependencies": {
-    "@shikijs/types": "^4.0.2"
+    "@shikijs/types": "^4.2.0"
   },
   "module": "./dist/LexicalCodeShiki.mjs",
   "sideEffects": true,

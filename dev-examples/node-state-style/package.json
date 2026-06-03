@@ -17,7 +17,7 @@
     "@lexical/rich-text": "workspace:*",
     "@lexical/selection": "workspace:*",
     "@lexical/utils": "workspace:*",
-    "@shikijs/langs": "^3.3.0",
+    "@shikijs/langs": "^4.2.0",
     "@shikijs/themes": "^3.3.0",
     "@zag-js/combobox": "^1.9.2",
     "lexical": "workspace:*",

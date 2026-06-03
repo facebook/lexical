@@ -13,7 +13,7 @@ overrides:
   uuid: '>=14.0.0'
   onnxruntime-node: link:./stubs/empty
   sharp: link:./stubs/empty
-  yjs: ^13.6.30
+  yjs: ^13.6.31
 
 importers:
 
@@ -23,8 +23,8 @@ importers:
         specifier: ^7.7.4
         version: 7.7.4
       yjs:
-        specifier: ^13.6.30
-        version: 13.6.30
+        specifier: ^13.6.31
+        version: 13.6.31
     devDependencies:
       '@babel/core':
         specifier: ^7.29.0
@@ -280,7 +280,7 @@ importers:
         version: 4.1.8(@opentelemetry/api@1.9.0)(@types/node@25.6.0)(@vitest/browser-playwright@4.1.8)(happy-dom@20.9.0)(jsdom@29.1.1)(vite@8.0.16(@types/node@25.6.0)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.46.2)(yaml@2.8.4))
       y-websocket:
         specifier: ^2.1.0
-        version: 2.1.0(yjs@13.6.30)
+        version: 2.1.0(yjs@13.6.31)
 
   dev-examples/dom-import:
     dependencies:
@@ -992,10 +992,10 @@ importers:
         version: 6.1.1(react@19.2.5)
       y-websocket:
         specifier: ^2.1.0
-        version: 2.1.0(yjs@13.6.30)
+        version: 2.1.0(yjs@13.6.31)
       yjs:
-        specifier: ^13.6.30
-        version: 13.6.30
+        specifier: ^13.6.31
+        version: 13.6.31
     devDependencies:
       '@babel/plugin-transform-flow-strip-types':
         specifier: ^7.27.1
@@ -1100,8 +1100,8 @@ importers:
         specifier: ^6.1.1
         version: 6.1.1(react@19.2.5)
       yjs:
-        specifier: ^13.6.30
-        version: 13.6.30
+        specifier: ^13.6.31
+        version: 13.6.31
     devDependencies:
       '@types/jest-axe':
         specifier: ^3.5.9
@@ -1353,8 +1353,8 @@ importers:
         version: link:../lexical
     devDependencies:
       yjs:
-        specifier: ^13.6.30
-        version: 13.6.30
+        specifier: ^13.6.31
+        version: 13.6.31
 
 packages:
 
@@ -12833,20 +12833,20 @@ packages:
   y-leveldb@0.1.2:
     resolution: {integrity: sha512-6ulEn5AXfXJYi89rXPEg2mMHAyyw8+ZfeMMdOtBbV8FJpQ1NOrcgi6DTAcXof0dap84NjHPT2+9d0rb6cFsjEg==}
     peerDependencies:
-      yjs: ^13.6.30
+      yjs: ^13.6.31
 
   y-protocols@1.0.7:
     resolution: {integrity: sha512-YSVsLoXxO67J6eE/nV4AtFtT3QEotZf5sK5BHxFBXso7VDUT3Tx07IfA6hsu5Q5OmBdMkQVmFZ9QOA7fikWvnw==}
     engines: {node: '>=16.0.0', npm: '>=8.0.0'}
     peerDependencies:
-      yjs: ^13.6.30
+      yjs: ^13.6.31
 
   y-websocket@2.1.0:
     resolution: {integrity: sha512-WHYDRqomaGkkaujtowCDwL8KYk+t1zQCGIgKyvxvchhjTQlMgWXRHJK+FDEcWmHA7I7o/4fy0eniOrtmz0e4mA==}
     engines: {node: '>=16.0.0', npm: '>=8.0.0'}
     hasBin: true
     peerDependencies:
-      yjs: ^13.6.30
+      yjs: ^13.6.31
 
   y18n@4.0.3:
     resolution: {integrity: sha512-JKhqTOwSrqNA1NY5lSztJ1GrBiUodLMmIZuLiDaMRJ+itFd+ABVE8XBjOvIWL+rSqNDC74LCSFmlb/U4UZ4hJQ==}
@@ -12888,8 +12888,8 @@ packages:
     resolution: {integrity: sha512-7dSzzRQ++CKnNI/krKnYRV7JKKPUXMEh61soaHKg9mrWEhzFWhFnxPxGl+69cD1Ou63C13NUPCnmIcrvqCuM6w==}
     engines: {node: '>=12'}
 
-  yjs@13.6.30:
-    resolution: {integrity: sha512-vv/9h42eCMC81ZHDFswuu/MKzkl/vyq1BhaNGfHyOonwlG4CJbQF4oiBBJPvfdeCt/PlVDWh7Nov9D34YY09uQ==}
+  yjs@13.6.31:
+    resolution: {integrity: sha512-Eq+5BRfbeGyqGVrTJL3bEcr8gKkxPuyuoHmAwpk52fDb8kOVMrfVSTRPd6yiGgX5Fskb96qCRjzjbRjrL4YEnw==}
     engines: {node: '>=16.0.0', npm: '>=8.0.0'}
 
   yocto-queue@0.1.0:
@@ -14764,7 +14764,7 @@ snapshots:
       postcss: 8.5.13
       postcss-loader: 7.3.4(postcss@8.5.13)(typescript@6.0.3)(webpack@5.106.2(esbuild@0.27.7))
       postcss-preset-env: 10.6.1(postcss@8.5.13)
-      terser-webpack-plugin: 5.5.0(@swc/core@1.15.24(@swc/helpers@0.5.21))(esbuild@0.27.7)(webpack@5.106.2(esbuild@0.27.7))
+      terser-webpack-plugin: 5.5.0(esbuild@0.27.7)(webpack@5.106.2(esbuild@0.27.7))
       tslib: 2.8.1
       url-loader: 4.1.1(file-loader@6.2.0(webpack@5.106.2(esbuild@0.27.7)))(webpack@5.106.2(esbuild@0.27.7))
       webpack: 5.106.2(esbuild@0.27.7)
@@ -15015,7 +15015,7 @@ snapshots:
       browserslist: 4.28.2
       lightningcss: 1.32.0
       semver: 7.7.4
-      swc-loader: 0.2.7(@swc/core@1.15.24(@swc/helpers@0.5.21))(webpack@5.106.2(esbuild@0.27.7))
+      swc-loader: 0.2.7(@swc/core@1.15.24(@swc/helpers@0.5.21))(webpack@5.106.2(@swc/core@1.15.24(@swc/helpers@0.5.21))(esbuild@0.27.7))
       tslib: 2.8.1
       webpack: 5.106.2(@swc/core@1.15.24(@swc/helpers@0.5.21))(esbuild@0.27.7)
     transitivePeerDependencies:
@@ -26355,13 +26355,6 @@ snapshots:
       '@swc/counter': 0.1.3
       webpack: 5.106.2(@swc/core@1.15.24(@swc/helpers@0.5.21))(esbuild@0.27.7)
 
-  swc-loader@0.2.7(@swc/core@1.15.24(@swc/helpers@0.5.21))(webpack@5.106.2(esbuild@0.27.7)):
-    dependencies:
-      '@swc/core': 1.15.24(@swc/helpers@0.5.21)
-      '@swc/counter': 0.1.3
-      webpack: 5.106.2(esbuild@0.27.7)
-    optional: true
-
   swr@2.3.8(react@19.2.5):
     dependencies:
       dequal: 2.0.3
@@ -26397,7 +26390,7 @@ snapshots:
       '@swc/core': 1.15.24(@swc/helpers@0.5.21)
       esbuild: 0.27.7
 
-  terser-webpack-plugin@5.5.0(@swc/core@1.15.24(@swc/helpers@0.5.21))(esbuild@0.27.7)(webpack@5.106.2(esbuild@0.27.7)):
+  terser-webpack-plugin@5.5.0(esbuild@0.27.7)(webpack@5.106.2(esbuild@0.27.7)):
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
       jest-worker: 27.5.1
@@ -26405,7 +26398,6 @@ snapshots:
       terser: 5.46.2
       webpack: 5.106.2(esbuild@0.27.7)
     optionalDependencies:
-      '@swc/core': 1.15.24(@swc/helpers@0.5.21)
       esbuild: 0.27.7
 
   terser@5.44.0:
@@ -27319,7 +27311,7 @@ snapshots:
       neo-async: 2.6.2
       schema-utils: 4.3.3
       tapable: 2.3.3
-      terser-webpack-plugin: 5.5.0(@swc/core@1.15.24(@swc/helpers@0.5.21))(esbuild@0.27.7)(webpack@5.106.2(esbuild@0.27.7))
+      terser-webpack-plugin: 5.5.0(esbuild@0.27.7)(webpack@5.106.2(esbuild@0.27.7))
       watchpack: 2.5.1
       webpack-sources: 3.4.1
     transitivePeerDependencies:
@@ -27631,27 +27623,27 @@ snapshots:
   xtend@4.0.2:
     optional: true
 
-  y-leveldb@0.1.2(yjs@13.6.30):
+  y-leveldb@0.1.2(yjs@13.6.31):
     dependencies:
       level: 6.0.1
       lib0: 0.2.117
-      yjs: 13.6.30
+      yjs: 13.6.31
     optional: true
 
-  y-protocols@1.0.7(yjs@13.6.30):
+  y-protocols@1.0.7(yjs@13.6.31):
     dependencies:
       lib0: 0.2.117
-      yjs: 13.6.30
+      yjs: 13.6.31
 
-  y-websocket@2.1.0(yjs@13.6.30):
+  y-websocket@2.1.0(yjs@13.6.31):
     dependencies:
       lib0: 0.2.117
       lodash.debounce: 4.0.8
-      y-protocols: 1.0.7(yjs@13.6.30)
-      yjs: 13.6.30
+      y-protocols: 1.0.7(yjs@13.6.31)
+      yjs: 13.6.31
     optionalDependencies:
       ws: 6.2.3
-      y-leveldb: 0.1.2(yjs@13.6.30)
+      y-leveldb: 0.1.2(yjs@13.6.31)
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -27699,7 +27691,7 @@ snapshots:
       y18n: 5.0.8
       yargs-parser: 21.1.1
 
-  yjs@13.6.30:
+  yjs@13.6.31:
     dependencies:
       lib0: 0.2.117
 

@@ -725,6 +725,7 @@ declare module 'yjs' {
   declare export function createRelativePositionFromTypeIndex(
     type: XmlText | Map | XmlElement,
     index: number,
+    assoc?: number,
   ): RelativePosition;
 
   declare export function createRelativePositionFromJSON(

@@ -18,14 +18,14 @@
     "@lexical/selection": "workspace:*",
     "@lexical/utils": "workspace:*",
     "@shikijs/langs": "^4.2.0",
-    "@shikijs/themes": "^3.3.0",
+    "@shikijs/themes": "^4.2.0",
     "@zag-js/combobox": "^1.9.2",
     "lexical": "workspace:*",
     "lucide-react": "^0.503.0",
     "prettier": "^3.5.3",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "shiki": "^3.3.0"
+    "shiki": "^4.2.0"
   },
   "devDependencies": {
     "@types/react": "^19.1.2",

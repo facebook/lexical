@@ -20,7 +20,7 @@
     "lexical": "workspace:*"
   },
   "devDependencies": {
-    "yjs": "^13.6.30"
+    "yjs": "^13.6.31"
   },
   "peerDependencies": {
     "yjs": ">=13.5.22"

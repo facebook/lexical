@@ -203,7 +203,7 @@
   },
   "dependencies": {
     "semver": "^7.7.4",
-    "yjs": "^13.6.30"
+    "yjs": "^13.6.31"
   },
   "browserslist": [
     "Chrome >= 86",

@@ -9,6 +9,7 @@
 import type {SerializedEditorState} from './LexicalEditorState';
 import type {LexicalNode, SerializedLexicalNode} from './LexicalNode';
 
+import devInvariant from '@lexical/internal/devInvariant';
 import invariant from '@lexical/internal/invariant';
 
 import {
@@ -121,7 +122,7 @@ export function $assumeActiveEditor(editor: LexicalEditor): void {
   if (getActiveEditorState() !== null && activeEditor === null) {
     activeEditor = editor;
   }
-  invariant(
+  devInvariant(
     activeEditor === editor,
     'The given editor argument does not match $getEditor() in this context. Use editor.getEditorState().read(..., {editor}) if this cross-editor call is intentional.',
   );

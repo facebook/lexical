@@ -684,6 +684,12 @@ export function $getNodeFromDOM(dom: Node): null | LexicalNode {
   const editor = getActiveEditor();
   const nodeKey = getNodeKeyFromDOMTree(dom, editor);
   if (nodeKey === null) {
+    // Fallback for the root element when its `__lexicalKey_*` stash (set in
+    // resetEditor by #8588) is not observable here — keeps selection/mutation
+    // resolution that lands on the bare root element mapped to the RootNode.
+    if (dom === editor.getRootElement()) {
+      return $getNodeByKey('root');
+    }
     return null;
   }
   return $getNodeByKey(nodeKey);

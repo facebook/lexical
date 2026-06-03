@@ -39,8 +39,8 @@ importers:
         specifier: ^7.29.3
         version: 7.29.3(@babel/core@7.29.0)
       '@babel/preset-flow':
-        specifier: ^7.27.1
-        version: 7.27.1(@babel/core@7.29.0)
+        specifier: ^7.29.7
+        version: 7.29.7(@babel/core@7.29.0)
       '@babel/preset-react':
         specifier: ^7.28.5
         version: 7.28.5(@babel/core@7.29.0)
@@ -186,8 +186,8 @@ importers:
         specifier: ^1.1.2
         version: 1.1.2
       flow-bin:
-        specifier: ^0.314.0
-        version: 0.314.0
+        specifier: ^0.316.0
+        version: 0.316.0
       flow-typed:
         specifier: ^4.1.1
         version: 4.1.1
@@ -204,14 +204,14 @@ importers:
         specifier: ^7.0.0
         version: 7.0.0
       hermes-estree:
-        specifier: ^0.36.0
-        version: 0.36.0
+        specifier: ^0.36.1
+        version: 0.36.1
       hermes-parser:
-        specifier: ^0.36.0
-        version: 0.36.0
+        specifier: ^0.36.1
+        version: 0.36.1
       hermes-transform:
-        specifier: ^0.36.0
-        version: 0.36.0(prettier-plugin-hermes-parser@0.36.0(prettier@3.8.1))(prettier@3.8.1)
+        specifier: ^0.36.1
+        version: 0.36.1(prettier-plugin-hermes-parser@0.36.0(prettier@3.8.1))(prettier@3.8.1)
       husky:
         specifier: ^9.1.7
         version: 9.1.7
@@ -1635,6 +1635,10 @@ packages:
     resolution: {integrity: sha512-S9gzZ/bz83GRysI7gAD4wPT/AI3uCnY+9xn+Mx/KPs2JwHJIz1W8PZkg2cqyt3RNOBM8ejcXhV6y8Og7ly/Dug==}
     engines: {node: '>=6.9.0'}
 
+  '@babel/helper-plugin-utils@7.29.7':
+    resolution: {integrity: sha512-G7sHYigPY17oO5SYWnfD/0MTBwVR781S/JI643e/JhUYgVgWE/61SoW3NH9KWUKyKq5LVh3npif99Wkt6j86Jw==}
+    engines: {node: '>=6.9.0'}
+
   '@babel/helper-remap-async-to-generator@7.27.1':
     resolution: {integrity: sha512-7fiA521aVw8lSPeI4ZOD3vRFkoqkJcS+z4hFo82bFSH/2tNd6eJ5qCVMS5OzDmZh/kaHQeBaeyxK6wljcPtveA==}
     engines: {node: '>=6.9.0'}
@@ -1755,6 +1759,12 @@ packages:
 
   '@babel/plugin-syntax-flow@7.28.6':
     resolution: {integrity: sha512-D+OrJumc9McXNEBI/JmFnc/0uCM2/Y3PEBG3gfV3QIYkKv5pvnpzFrl1kYCrcHJP8nOeFB/SHi1IHz29pNGuew==}
+    engines: {node: '>=6.9.0'}
+    peerDependencies:
+      '@babel/core': ^7.0.0-0
+
+  '@babel/plugin-syntax-flow@7.29.7':
+    resolution: {integrity: sha512-ajMX6QPcyomotqwpzhkYGxcK2i/us0rs1Qo9QvUpa+Fca0FTmqrzKrctoIYLMxcOhGZldGT/BAVkRGTWBiR8gQ==}
     engines: {node: '>=6.9.0'}
     peerDependencies:
       '@babel/core': ^7.0.0-0
@@ -1893,6 +1903,12 @@ packages:
 
   '@babel/plugin-transform-flow-strip-types@7.27.1':
     resolution: {integrity: sha512-G5eDKsu50udECw7DL2AcsysXiQyB7Nfg521t2OAJ4tbfTJ27doHLeF/vlI1NZGlLdbb/v+ibvtL1YBQqYOwJGg==}
+    engines: {node: '>=6.9.0'}
+    peerDependencies:
+      '@babel/core': ^7.0.0-0
+
+  '@babel/plugin-transform-flow-strip-types@7.29.7':
+    resolution: {integrity: sha512-wRHeUjUjCZnMHmiO5bRgjFLcoEh7JyTdByOW11ahhwNa4V0bmeGEaIvt51yq0zQp2yWIpqfxXXPyUP6GFJZHOQ==}
     engines: {node: '>=6.9.0'}
     peerDependencies:
       '@babel/core': ^7.0.0-0
@@ -2161,8 +2177,8 @@ packages:
     peerDependencies:
       '@babel/core': ^7.0.0-0
 
-  '@babel/preset-flow@7.27.1':
-    resolution: {integrity: sha512-ez3a2it5Fn6P54W8QkbfIyyIbxlXvcxyWHHvno1Wg0Ej5eiJY5hBb8ExttoIOJJk7V2dZE6prP7iby5q2aQ0Lg==}
+  '@babel/preset-flow@7.29.7':
+    resolution: {integrity: sha512-KYIRV0BuaN68CDdsqFkAD7MU7yipUqQNuNElwATdxaIdpTjhvtY82QvkBJs7zV3Evxj2jFAAZ1iO8nyy0nhjqA==}
     engines: {node: '>=6.9.0'}
     peerDependencies:
       '@babel/core': ^7.0.0-0
@@ -7918,8 +7934,8 @@ packages:
   flatted@3.4.2:
     resolution: {integrity: sha512-PjDse7RzhcPkIJwy5t7KPWQSZ9cAbzQXcafsetQoD7sOJRQlGikNbx7yZp2OotDnJyrDcbyRq3Ttb18iYOqkxA==}
 
-  flow-bin@0.314.0:
-    resolution: {integrity: sha512-cQmUJPsW8G0FGbVKDqmQv4YCXfuykQPHVxia7gwX4R3dpOCfJqNm28CHFqzUg29Zk0biqbXtpe+kWdfh7bYPbw==}
+  flow-bin@0.316.0:
+    resolution: {integrity: sha512-AzmAMRTcTGtEa86c6z6eFKF4E5j1z8+S7uBMl0fe24rEvb+FROmaSHPXmg8Dsjnn7yaoaERKMl2pgBrOP49uIw==}
     engines: {node: '>=0.10.0'}
     hasBin: true
 
@@ -8285,23 +8301,23 @@ packages:
     resolution: {integrity: sha512-F/1DnUGPopORZi0ni+CvrCgHQ5FyEAHRLSApuYWMmrbSwoN2Mn/7k+Gl38gJnR7yyDZk6WLXwiGod1JOWNDKGw==}
     hasBin: true
 
-  hermes-eslint@0.36.0:
-    resolution: {integrity: sha512-oEmTrP/Onp8kA5N23/yF4kGgSKB+9KH0CsrY+zGsgq6nK4CqY0y7Atv51X+F4deBHxWngLOvYBLt32HtOps78Q==}
+  hermes-eslint@0.36.1:
+    resolution: {integrity: sha512-aX8LUlLRHLAkELYWdz4IhRnZ/+Sbmmo5TzDEtsDiDuPIplaStzMnX84aTmPufQOyxZir5GjGxAiqdt+y4GcooA==}
 
   hermes-estree@0.25.1:
     resolution: {integrity: sha512-0wUoCcLp+5Ev5pDW2OriHC2MJCbwLwuRx+gAqMTOkGKJJiBCLjtrvy4PWUGn6MIVefecRpzoOZ/UV6iGdOr+Cw==}
 
-  hermes-estree@0.36.0:
-    resolution: {integrity: sha512-A1+8zn5oss2CFP7pKsOaxorQG6FNIz1WU1VDqruLPPZl3LVgeE2C5xfFg8Ow6/Ow4mSslLLtYP1J3n38eKyW9w==}
+  hermes-estree@0.36.1:
+    resolution: {integrity: sha512-guv1nQ6IJ7S83NRFPWc3SA7IBZrdNC9kapwOq6uXvF4wP+sDCgjzQbKPCoyYmoyZRzztF/n/c36l/rccCZSiCw==}
 
   hermes-parser@0.25.1:
     resolution: {integrity: sha512-6pEjquH3rqaI6cYAXYPcz9MS4rY6R4ngRgrgfDshRptUZIc3lw0MCIJIGDj9++mfySOuPTHB4nrSW99BCvOPIA==}
 
-  hermes-parser@0.36.0:
-    resolution: {integrity: sha512-GdpwMmH5x6IpC1cijvcvYnlPB60Mh6kTSF/NFdYV/j56gYdi+0RIakYs+eqOV+bbO0SW7mgVVGSsTJxyPQfo3w==}
+  hermes-parser@0.36.1:
+    resolution: {integrity: sha512-GApNk4zLHi2UWoWZZkx7LNCOSzLSc5lB55pZ/PhK7ycFeg7u5LcF88p/WbpIi1XUDtE0MpHE3uRR3u3KB7TjSQ==}
 
-  hermes-transform@0.36.0:
-    resolution: {integrity: sha512-GB4vu6D/JMNX4jpgyr2suZCNdR8toaMdxF2598UiBzQhP89lAFs8c/pMWYEbfX8Y44Bvzzx0ztfJnrWzKls8HA==}
+  hermes-transform@0.36.1:
+    resolution: {integrity: sha512-Sqkm+EqykT6fj6AYgxfhaMU55hQ6Zs0z8myIugWNSTAMeuX+zAR9Ptv/HJvE75kDsj523vxj75DVxNXw9q/JGA==}
     peerDependencies:
       prettier: 3.8.1
       prettier-plugin-hermes-parser: '*'
@@ -13433,6 +13449,8 @@ snapshots:
 
   '@babel/helper-plugin-utils@7.28.6': {}
 
+  '@babel/helper-plugin-utils@7.29.7': {}
+
   '@babel/helper-remap-async-to-generator@7.27.1(@babel/core@7.29.0)':
     dependencies:
       '@babel/core': 7.29.0
@@ -13559,15 +13577,15 @@ snapshots:
       '@babel/core': 7.29.0
       '@babel/helper-plugin-utils': 7.28.6
 
-  '@babel/plugin-syntax-flow@7.28.6(@babel/core@7.29.0)':
-    dependencies:
-      '@babel/core': 7.29.0
-      '@babel/helper-plugin-utils': 7.28.6
-
   '@babel/plugin-syntax-flow@7.28.6(@babel/core@7.29.7)':
     dependencies:
       '@babel/core': 7.29.7
       '@babel/helper-plugin-utils': 7.28.6
+
+  '@babel/plugin-syntax-flow@7.29.7(@babel/core@7.29.0)':
+    dependencies:
+      '@babel/core': 7.29.0
+      '@babel/helper-plugin-utils': 7.29.7
 
   '@babel/plugin-syntax-import-assertions@7.28.6(@babel/core@7.29.0)':
     dependencies:
@@ -13715,17 +13733,17 @@ snapshots:
       '@babel/core': 7.29.0
       '@babel/helper-plugin-utils': 7.28.6
 
-  '@babel/plugin-transform-flow-strip-types@7.27.1(@babel/core@7.29.0)':
-    dependencies:
-      '@babel/core': 7.29.0
-      '@babel/helper-plugin-utils': 7.28.6
-      '@babel/plugin-syntax-flow': 7.28.6(@babel/core@7.29.0)
-
   '@babel/plugin-transform-flow-strip-types@7.27.1(@babel/core@7.29.7)':
     dependencies:
       '@babel/core': 7.29.7
       '@babel/helper-plugin-utils': 7.28.6
       '@babel/plugin-syntax-flow': 7.28.6(@babel/core@7.29.7)
+
+  '@babel/plugin-transform-flow-strip-types@7.29.7(@babel/core@7.29.0)':
+    dependencies:
+      '@babel/core': 7.29.0
+      '@babel/helper-plugin-utils': 7.29.7
+      '@babel/plugin-syntax-flow': 7.29.7(@babel/core@7.29.0)
 
   '@babel/plugin-transform-for-of@7.27.1(@babel/core@7.29.0)':
     dependencies:
@@ -14118,12 +14136,12 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@babel/preset-flow@7.27.1(@babel/core@7.29.0)':
+  '@babel/preset-flow@7.29.7(@babel/core@7.29.0)':
     dependencies:
       '@babel/core': 7.29.0
-      '@babel/helper-plugin-utils': 7.28.6
-      '@babel/helper-validator-option': 7.27.1
-      '@babel/plugin-transform-flow-strip-types': 7.27.1(@babel/core@7.29.0)
+      '@babel/helper-plugin-utils': 7.29.7
+      '@babel/helper-validator-option': 7.29.7
+      '@babel/plugin-transform-flow-strip-types': 7.29.7(@babel/core@7.29.0)
 
   '@babel/preset-modules@0.1.6-no-external-plugins(@babel/core@7.29.0)':
     dependencies:
@@ -18440,7 +18458,7 @@ snapshots:
   '@types/react-router@5.1.20':
     dependencies:
       '@types/history': 4.7.11
-      '@types/react': 19.2.15
+      '@types/react': 19.2.16
 
   '@types/react@19.2.14':
     dependencies:
@@ -21755,7 +21773,7 @@ snapshots:
 
   flatted@3.4.2: {}
 
-  flow-bin@0.314.0: {}
+  flow-bin@0.316.0: {}
 
   flow-enums-runtime@0.0.6: {}
 
@@ -21784,7 +21802,7 @@ snapshots:
 
   flowgen@1.21.0:
     dependencies:
-      '@babel/code-frame': 7.29.0
+      '@babel/code-frame': 7.29.7
       '@babel/highlight': 7.25.9
       commander: 6.2.1
       lodash: 4.18.1
@@ -22240,32 +22258,32 @@ snapshots:
 
   he@1.2.0: {}
 
-  hermes-eslint@0.36.0:
+  hermes-eslint@0.36.1:
     dependencies:
       esrecurse: 4.3.0
-      hermes-estree: 0.36.0
-      hermes-parser: 0.36.0
+      hermes-estree: 0.36.1
+      hermes-parser: 0.36.1
 
   hermes-estree@0.25.1: {}
 
-  hermes-estree@0.36.0: {}
+  hermes-estree@0.36.1: {}
 
   hermes-parser@0.25.1:
     dependencies:
       hermes-estree: 0.25.1
 
-  hermes-parser@0.36.0:
+  hermes-parser@0.36.1:
     dependencies:
-      hermes-estree: 0.36.0
+      hermes-estree: 0.36.1
 
-  hermes-transform@0.36.0(prettier-plugin-hermes-parser@0.36.0(prettier@3.8.1))(prettier@3.8.1):
+  hermes-transform@0.36.1(prettier-plugin-hermes-parser@0.36.0(prettier@3.8.1))(prettier@3.8.1):
     dependencies:
-      '@babel/code-frame': 7.29.0
+      '@babel/code-frame': 7.29.7
       esquery: 1.7.0
       flow-enums-runtime: 0.0.6
-      hermes-eslint: 0.36.0
-      hermes-estree: 0.36.0
-      hermes-parser: 0.36.0
+      hermes-eslint: 0.36.1
+      hermes-estree: 0.36.1
+      hermes-parser: 0.36.1
       prettier: 3.8.1
       string-width: 4.2.3
     optionalDependencies:

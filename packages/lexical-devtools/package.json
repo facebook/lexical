@@ -39,17 +39,17 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
-    "@babel/plugin-transform-flow-strip-types": "^7.27.1",
-    "@babel/preset-react": "^7.28.5",
+    "@babel/plugin-transform-flow-strip-types": "^7.29.7",
+    "@babel/preset-react": "^7.29.7",
     "@lexical/devtools-core": "workspace:*",
     "@rollup/plugin-babel": "^7.1.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.1",
+    "@vitejs/plugin-react": "^6.0.2",
     "lexical": "workspace:*",
     "typescript": "^6.0.3",
-    "vite": "^8.0.10",
-    "wxt": "^0.20.25"
+    "vite": "^8.0.16",
+    "wxt": "^0.20.26"
   },
   "sideEffects": false
 }

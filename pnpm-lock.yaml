@@ -401,8 +401,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/lexical
       lucide-react:
-        specifier: ^0.503.0
-        version: 0.503.0(react@19.2.5)
+        specifier: ^1.17.0
+        version: 1.17.0(react@19.2.5)
       prettier:
         specifier: 3.8.1
         version: 3.8.1
@@ -9393,8 +9393,8 @@ packages:
   ltgt@2.2.1:
     resolution: {integrity: sha512-AI2r85+4MquTw9ZYqabu4nMwy9Oftlfa/e/52t9IjtfG+mGBbTNdAoZ3RQKLHR6r0wQnwZnPIEh/Ya6XTWAKNA==}
 
-  lucide-react@0.503.0:
-    resolution: {integrity: sha512-HGGkdlPWQ0vTF8jJ5TdIqhQXZi6uh3LnNgfZ8MHiuxFfX3RZeA79r2MW2tHAZKlAVfoNE8esm3p+O6VkIvpj6w==}
+  lucide-react@1.17.0:
+    resolution: {integrity: sha512-9FA9evdox/JQL5PT57fdA1x/yg8T7knJ98+zjTL3UfKza6pflQUUh3XtaQIHKvnsJw1lmsEyHVlt5jchYxOQ5w==}
     peerDependencies:
       react: 19.2.5
 
@@ -23344,7 +23344,7 @@ snapshots:
   ltgt@2.2.1:
     optional: true
 
-  lucide-react@0.503.0(react@19.2.5):
+  lucide-react@1.17.0(react@19.2.5):
     dependencies:
       react: 19.2.5
 

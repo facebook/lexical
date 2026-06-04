@@ -38,17 +38,8 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
   __width: Dimension;
   __height: Dimension;
 
-  static getType(): string {
-    return 'excalidraw';
-  }
-
-  static clone(node: ExcalidrawNode): ExcalidrawNode {
-    return new ExcalidrawNode(
-      node.__data,
-      node.__width,
-      node.__height,
-      node.__key,
-    );
+  $config() {
+    return this.config('excalidraw', {extends: DecoratorNode});
   }
 
   static importJSON(serializedNode: SerializedExcalidrawNode): ExcalidrawNode {

@@ -14,6 +14,7 @@ import type {
   RangeSelection,
   SiblingCaret,
   TabNode,
+  TextNode,
 } from 'lexical';
 
 import invariant from '@lexical/internal/invariant';
@@ -33,11 +34,15 @@ import {
   $isCodeHighlightNode,
 } from './CodeHighlightNode';
 
-function $getLastMatchingCodeNode<D extends CaretDirection>(
-  anchor: CodeHighlightNode | TabNode | LineBreakNode,
-  direction: D,
-): CodeHighlightNode | TabNode | LineBreakNode {
-  let matchingNode: CodeHighlightNode | TabNode | LineBreakNode = anchor;
+// The anchor is generic (rather than the narrower
+// `CodeHighlightNode | TabNode | LineBreakNode`) because callers may have only
+// narrowed as far as TextNode; the matched siblings are always
+// CodeHighlightNode/TabNode, and an unmatched anchor is returned unchanged.
+function $getLastMatchingCodeNode<
+  T extends TextNode | LineBreakNode,
+  D extends CaretDirection,
+>(anchor: T, direction: D): T | CodeHighlightNode | TabNode {
+  let matchingNode: T | CodeHighlightNode | TabNode = anchor;
   for (
     let caret: null | SiblingCaret<LexicalNode, D> = $getSiblingCaret(
       anchor,
@@ -51,15 +56,15 @@ function $getLastMatchingCodeNode<D extends CaretDirection>(
   return matchingNode;
 }
 
-export function $getFirstCodeNodeOfLine(
-  anchor: CodeHighlightNode | TabNode | LineBreakNode,
-): CodeHighlightNode | TabNode | LineBreakNode {
+export function $getFirstCodeNodeOfLine<T extends TextNode | LineBreakNode>(
+  anchor: T,
+): T | CodeHighlightNode | TabNode {
   return $getLastMatchingCodeNode(anchor, 'previous');
 }
 
-export function $getLastCodeNodeOfLine(
-  anchor: CodeHighlightNode | TabNode | LineBreakNode,
-): CodeHighlightNode | TabNode | LineBreakNode {
+export function $getLastCodeNodeOfLine<T extends TextNode | LineBreakNode>(
+  anchor: T,
+): T | CodeHighlightNode | TabNode {
   return $getLastMatchingCodeNode(anchor, 'next');
 }
 

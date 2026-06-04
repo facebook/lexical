@@ -37,25 +37,13 @@ export class MarkNode extends ElementNode {
   /** @internal */
   __ids: readonly string[];
 
-  static getType(): string {
-    return 'mark';
-  }
-
-  static clone(node: MarkNode): MarkNode {
-    return new MarkNode(node.__ids, node.__key);
+  $config() {
+    return this.config('mark', {extends: ElementNode});
   }
 
   afterCloneFrom(prevNode: this): void {
     super.afterCloneFrom(prevNode);
     this.__ids = prevNode.__ids;
-  }
-
-  static importDOM(): null {
-    return null;
-  }
-
-  static importJSON(serializedNode: SerializedMarkNode): MarkNode {
-    return $createMarkNode().updateFromJSON(serializedNode);
   }
 
   updateFromJSON(serializedNode: LexicalUpdateJSON<SerializedMarkNode>): this {

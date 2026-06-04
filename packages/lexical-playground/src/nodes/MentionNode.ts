@@ -28,8 +28,8 @@ const mentionBackgroundColor = 'rgba(24, 119, 232, 0.2)';
 export class MentionNode extends TextNode {
   __mention: string;
 
-  static getType(): string {
-    return 'mention';
+  $config() {
+    return this.config('mention', {extends: TextNode});
   }
 
   static clone(node: MentionNode): MentionNode {

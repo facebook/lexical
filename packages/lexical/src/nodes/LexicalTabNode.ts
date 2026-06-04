@@ -6,7 +6,7 @@
  *
  */
 
-import type {DOMConversionMap, NodeKey} from '../LexicalNode';
+import type {NodeKey} from '../LexicalNode';
 
 import invariant from '@lexical/internal/invariant';
 
@@ -25,21 +25,16 @@ export type SerializedTabNode = SerializedTextNode;
 
 /** @noInheritDoc */
 export class TabNode extends TextNode {
-  static getType(): string {
-    return 'tab';
+  $config() {
+    return this.config('tab', {extends: TextNode});
   }
 
-  static clone(node: TabNode): TabNode {
-    return new TabNode(node.__key);
-  }
-
-  constructor(key?: NodeKey) {
+  // `key` carries an explicit `undefined` default (rather than the usual `?`)
+  // so the constructor reports zero required arguments, which lets `$config`
+  // synthesize the static `clone` by invoking the no-argument constructor.
+  constructor(key: NodeKey | undefined = undefined) {
     super('\t', key);
     this.__detail = IS_UNMERGEABLE;
-  }
-
-  static importDOM(): DOMConversionMap | null {
-    return null;
   }
 
   createDOM(config: EditorConfig): HTMLElement {
@@ -51,10 +46,6 @@ export class TabNode extends TextNode {
       domClassList.add(...classNames);
     }
     return dom;
-  }
-
-  static importJSON(serializedTabNode: SerializedTabNode): TabNode {
-    return $createTabNode().updateFromJSON(serializedTabNode);
   }
 
   /**
@@ -96,11 +87,16 @@ export class TabNode extends TextNode {
     return this;
   }
 
-  canInsertTextBefore(): boolean {
+  // The `false` literal return types (rather than the inherited `boolean`) are
+  // load-bearing: a TabNode never permits adjacent text insertion, and they
+  // also keep TabNode nominally distinct from its structurally-identical
+  // TextNode base so that `$isTabNode()` can narrow a `TextNode` to the
+  // remaining non-tab case instead of collapsing it to `never`.
+  canInsertTextBefore(): false {
     return false;
   }
 
-  canInsertTextAfter(): boolean {
+  canInsertTextAfter(): false {
     return false;
   }
 }

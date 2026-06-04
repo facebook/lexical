@@ -79,7 +79,10 @@ describe('LexicalAutoAutoLinkNode tests', () => {
       await editor.update(() => {
         const autoLinkNode = new AutoLinkNode('/');
 
+        // With $config the static clone is the shallow primitive (key only);
+        // afterCloneFrom completes the copy, exactly as $copyNode does.
         const clone = AutoLinkNode.clone(autoLinkNode);
+        clone.afterCloneFrom(autoLinkNode);
 
         expect(clone).not.toBe(autoLinkNode);
         expect(clone).toStrictEqual(autoLinkNode);

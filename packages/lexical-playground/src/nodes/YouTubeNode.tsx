@@ -68,8 +68,8 @@ export type SerializedYouTubeNode = Spread<
 export class YouTubeNode extends DecoratorBlockNode {
   __id: string;
 
-  static getType(): string {
-    return 'youtube';
+  $config() {
+    return this.config('youtube', {extends: DecoratorBlockNode});
   }
 
   static clone(node: YouTubeNode): YouTubeNode {

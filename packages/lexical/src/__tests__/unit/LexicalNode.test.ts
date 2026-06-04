@@ -100,7 +100,17 @@ class InlineDecoratorNode extends DecoratorNode<string> {
 
 describe('LexicalNode tests', () => {
   beforeAll(() => {
-    vi.spyOn(LexicalNode, 'getType').mockImplementation(() => 'node');
+    // Give the abstract base a concrete type for `new LexicalNode()` tests, but
+    // delegate for subclasses: now that ported nodes derive their type from
+    // `$config` (instead of their own static `getType`), they reach this base
+    // method until `getStaticNodeConfig` injects their own, so it must resolve
+    // the real type rather than collapsing every subclass to 'node'.
+    const realGetType = LexicalNode.getType;
+    vi.spyOn(LexicalNode, 'getType').mockImplementation(function (
+      this: typeof LexicalNode,
+    ) {
+      return this === LexicalNode ? 'node' : realGetType.call(this);
+    });
   });
   afterAll(() => {
     vi.restoreAllMocks();
@@ -1532,7 +1542,7 @@ describe('LexicalNode tests', () => {
                 text: 'codegen!',
                 type: 'custom-text',
                 version: 1,
-              });
+              } as SerializedTextNode);
               expect(node).toBeInstanceOf(CustomTextNode);
               expect(node.getType()).toBe('custom-text');
               expect(node.getTextContent()).toBe('codegen!');

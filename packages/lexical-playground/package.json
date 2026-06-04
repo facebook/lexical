@@ -53,16 +53,16 @@
     "yjs": "^13.6.31"
   },
   "devDependencies": {
-    "@babel/plugin-transform-flow-strip-types": "^7.27.1",
-    "@babel/preset-react": "^7.28.5",
+    "@babel/plugin-transform-flow-strip-types": "^7.29.7",
+    "@babel/preset-react": "^7.29.7",
     "@prettier/sync": "^0.6.1",
     "@rollup/plugin-babel": "^7.1.0",
     "@rollup/plugin-commonjs": "^29.0.3",
     "@types/lodash": "^4.17.24",
     "@types/lodash-es": "^4.14.182",
-    "@vitejs/plugin-react": "^6.0.1",
+    "@vitejs/plugin-react": "^6.0.2",
     "rollup-plugin-copy": "^3.5.0",
-    "vite": "^8.0.10",
+    "vite": "^8.0.16",
     "vite-plugin-static-copy": "^4.1.0"
   },
   "sideEffects": false

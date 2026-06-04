@@ -45,7 +45,7 @@
   },
   "devDependencies": {
     "@types/eslint": "^9.6.1",
-    "@types/estree": "^1.0.6"
+    "@types/estree": "^1.0.9"
   },
   "module": "./dist/LexicalEslintPlugin.mjs",
   "files": [

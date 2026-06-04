@@ -2093,4 +2093,50 @@ describe('LexicalNode.$config() without registration', () => {
       );
     }
   });
+
+  test('abstract base class declares shared $config under a Symbol key', () => {
+    // An abstract base class has no concrete node `type`, so it publishes the
+    // configuration it shares with its subclasses (here a $transform) under a
+    // well-known symbol rather than a string key. getStaticNodeConfig must
+    // resolve that symbol-keyed config so the transform is collected for the
+    // concrete subclass.
+    const transformed: string[] = [];
+    class AbstractBaseNode extends ElementNode {
+      $config() {
+        return this.config(Symbol.for('AbstractBaseNode'), {
+          $transform: (node: AbstractBaseNode) => {
+            transformed.push(node.getType());
+          },
+        });
+      }
+    }
+    class ConcreteChildNode extends AbstractBaseNode {
+      $config() {
+        return this.config('concrete-child-node', {extends: AbstractBaseNode});
+      }
+      createDOM(): HTMLElement {
+        return document.createElement('div');
+      }
+    }
+    // The abstract base must not be assigned a concrete type or static methods.
+    expect(() => AbstractBaseNode.getType()).toThrow(
+      /does not implement \.getType/,
+    );
+
+    const editor = createEditor({
+      nodes: [ConcreteChildNode],
+      onError(err) {
+        throw err;
+      },
+    });
+    editor.update(
+      () => {
+        $getRoot().append(new ConcreteChildNode());
+      },
+      {discrete: true},
+    );
+
+    expect(ConcreteChildNode.getType()).toEqual('concrete-child-node');
+    expect(transformed).toEqual(['concrete-child-node']);
+  });
 });

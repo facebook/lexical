@@ -22,6 +22,7 @@ import {
   assertSelection,
   click,
   focusEditor,
+  freezeCollabUndoGrouping,
   html,
   initialize,
   test,
@@ -44,6 +45,11 @@ test.describe('Collaboration', () => {
     test.skip(!isCollab);
 
     await focusEditor(page);
+    // The two `undo`s below each expect to revert an entire edit group as a unit
+    // (the "hello world again" burst, then the whole checklist). Disable the Yjs
+    // UndoManager's wall-clock capture window so a CI stall can't split a group
+    // across stack items and leave a partial revert — see the helper's doc.
+    await freezeCollabUndoGrouping(page);
     await page.keyboard.type('hello');
     await page.keyboard.press('Enter');
     await page.keyboard.press('Enter');

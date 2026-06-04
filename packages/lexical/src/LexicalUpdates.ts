@@ -71,6 +71,9 @@ let activeEditorState: null | EditorState = null;
 let activeEditor: null | LexicalEditor = null;
 let isReadOnlyMode = false;
 let isAttemptingToRecoverFromReconcilerError = false;
+// Tracks editors that have a pending macrotask scheduled to reset their cascade
+// budget. See `$scheduleCascadeReset`.
+const editorsWithPendingCascadeReset = new Set<LexicalEditor>();
 let infiniteTransformCount = 0;
 
 const observerOptions = {
@@ -868,6 +871,29 @@ export function triggerCommandListeners<
   return false;
 }
 
+function $scheduleCascadeReset(editor: LexicalEditor): void {
+  // The cascade budget (`_cascadeCount`) is meant to catch *non-terminating*
+  // recursion — an update listener that synchronously re-enqueues more work
+  // without a stop condition. Such a runaway is a microtask storm: it never
+  // yields control back to the event loop, so a macrotask scheduled here is
+  // starved and never runs before the budget is exhausted and the guard trips.
+  //
+  // By contrast, heavy-but-bounded activity (e.g. fast typing while an
+  // autocomplete listener re-enqueues one ghost-sync update per commit) is
+  // driven by separate user input events. The queue stays bounded and control
+  // returns to the event loop between actions, which lets this macrotask run
+  // and reset the budget — so legitimate sustained activity never accumulates
+  // toward the limit. This is what distinguishes throughput from recursion.
+  if (editorsWithPendingCascadeReset.has(editor)) {
+    return;
+  }
+  editorsWithPendingCascadeReset.add(editor);
+  setTimeout(() => {
+    editorsWithPendingCascadeReset.delete(editor);
+    editor._cascadeCount = 0;
+  }, 0);
+}
+
 function $triggerEnqueuedUpdates(editor: LexicalEditor): void {
   const queuedUpdates = editor._updates;
 
@@ -875,8 +901,21 @@ function $triggerEnqueuedUpdates(editor: LexicalEditor): void {
     editor._cascadeCount = 0;
     return;
   }
+  // Arrange for the cascade budget to be reset once control returns to the
+  // event loop. Genuine non-terminating recursion is a synchronous microtask
+  // storm that starves this macrotask and still trips below; bounded activity
+  // spread across user input events lets it run and prevents false positives.
+  $scheduleCascadeReset(editor);
   if (editor._cascadeCount++ > 99) {
-    editor._updates = [];
+    // Non-destructive remediation: drop only the update at the head of the
+    // queue (the one driving the runaway cascade) instead of clearing the
+    // entire `_updates` queue with `editor._updates = []`. Clearing the whole
+    // queue also discards the user's legitimate in-flight work — e.g. a pending
+    // keystroke or selection update that has not been processed yet — which
+    // produces a visible cursor hang on the next interaction. Cutting a single
+    // link breaks the cascade while preserving unrelated pending updates so the
+    // editor keeps working.
+    editor._updates.shift();
     editor._cascadeCount = 0;
     try {
       invariant(

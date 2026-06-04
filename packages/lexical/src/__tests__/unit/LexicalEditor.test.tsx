@@ -83,7 +83,16 @@ import {
 } from 'react';
 import {createPortal} from 'react-dom';
 import {createRoot, Root} from 'react-dom/client';
-import {afterEach, assert, beforeEach, describe, expect, it, vi} from 'vitest';
+import {
+  afterEach,
+  assert,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  Mock,
+  vi,
+} from 'vitest';
 
 import {emptyFunction} from '../../LexicalUtils';
 import {SerializedParagraphNode} from '../../nodes/LexicalParagraphNode';
@@ -171,42 +180,32 @@ function computeUpdateListenerPayload(
   });
 }
 
-// Controllable mock of @lexical/internal/devInvariant.
-//
-// The real devInvariant throws in development/tests and only warns in
-// production. The update-recursion guard in $triggerEnqueuedUpdates relies on
-// that split: in dev a developer sees a loud failure, in prod a recovered
-// internal condition is downgraded to a warning instead of being reported as
-// an uncaught error. To verify BOTH branches from a single test file we mock
-// the module and let each test pick the behavior via __devInvariantMock.
-const __devInvariantMock = vi.hoisted(() => {
-  let mode: 'throw' | 'warn' = 'throw';
-  return {
-    impl(cond?: boolean, message = '', ...args: string[]): void {
-      if (cond) {
-        return;
-      }
-      const formatted = args.reduce(
-        (msg, arg) => msg.replace('%s', String(arg)),
-        message,
-      );
-      if (mode === 'throw') {
-        throw new Error(formatted);
-      } else {
-        // eslint-disable-next-line no-console
-        console.warn(formatted);
-      }
-    },
-    setMode(next: 'throw' | 'warn'): void {
-      mode = next;
-    },
-  };
-});
+async function setDevInvariantWarnOnce(): Promise<
+  Mock<(message: string) => void>
+> {
+  const actual = (
+    await vi.importActual<typeof import('@lexical/internal/devInvariant')>(
+      '@lexical/internal/devInvariant',
+    )
+  ).default;
+  const fn = (await import('@lexical/internal/devInvariant')).default;
+  assert(vi.isMockFunction(fn), 'Expecting devInvariant to be mocked');
+  const callback = vi.fn();
+  fn.mockImplementationOnce((...args) => {
+    try {
+      return actual(...args);
+    } catch (e) {
+      callback((e as Error).message);
+    }
+  });
+  return callback;
+}
 
-vi.mock('@lexical/internal/devInvariant', () => ({
-  default: (cond?: boolean, message?: string, ...args: string[]) =>
-    __devInvariantMock.impl(cond, message, ...args),
-}));
+vi.mock('@lexical/internal/devInvariant', async importOriginal => {
+  const mod =
+    await importOriginal<typeof import('@lexical/internal/devInvariant')>();
+  return {default: vi.fn(mod.default)};
+});
 
 describe('LexicalEditor tests', () => {
   let container: HTMLElement;
@@ -1231,7 +1230,7 @@ describe('LexicalEditor tests', () => {
   // The recursion guard in $triggerEnqueuedUpdates calls devInvariant after it
   // has already broken the cascade (cleared the update queue). devInvariant
   // throws in development/tests and only warns in production, so the two
-  // branches behave differently. We mock the module (see __devInvariantMock
+  // branches behave differently. We mock the module (see setDevInvariantWarnOnce
   // above) so a single test file can exercise BOTH: the dev branch that
   // throws (surfacing via the scheduled microtask, NOT editor._onError) and
   // the prod branch that only warns (no throw, nothing routed to _onError).
@@ -1258,7 +1257,6 @@ describe('LexicalEditor tests', () => {
     // signals, so the throw surfaces from the scheduled microtask rather than
     // synchronously from editor.update(), and is NOT routed through
     // editor._onError.
-    __devInvariantMock.setMode('throw');
     const {errorListener, unregister} = runCascade();
 
     const caught: Error[] = [];
@@ -1316,8 +1314,7 @@ describe('LexicalEditor tests', () => {
     // uncaught error (neither via editor._onError nor as an unhandled
     // rejection/exception) — that was the whole point of switching to
     // devInvariant.
-    __devInvariantMock.setMode('warn');
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const warnSpy = await setDevInvariantWarnOnce();
     const {errorListener, unregister} = runCascade();
 
     const caught: Error[] = [];
@@ -1355,7 +1352,6 @@ describe('LexicalEditor tests', () => {
     expect(errorListener).toHaveBeenCalledTimes(0);
 
     unregister();
-    warnSpy.mockRestore();
 
     // editor should still be usable after the cascade is cut
     editor.update(
@@ -1368,9 +1364,6 @@ describe('LexicalEditor tests', () => {
       await Promise.resolve();
     }
     expect(errorListener).toHaveBeenCalledTimes(0);
-
-    // Restore the default (throw) behavior for any subsequent tests.
-    __devInvariantMock.setMode('throw');
   });
 
   it('Should be able to update an editor state without a root element', () => {

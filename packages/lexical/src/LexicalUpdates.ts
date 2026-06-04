@@ -827,6 +827,21 @@ export function triggerCommandListeners<
   const editors = getEditorsToPropagate(editor);
   let updatingParentEditor: undefined | LexicalEditor;
 
+  // A dispatched command is a fresh, externally-triggered action (a keystroke,
+  // paste, selection change, etc.), not part of an in-flight update-listener
+  // cascade. Reset the cascade budget for the editors it touches so the
+  // infinite-update-loop detector measures recursion depth *within a single
+  // action* rather than accumulating across many independent actions. This
+  // makes the guard robust to fast/synchronous input bursts (rapid typing, key
+  // repeat) that don't yield to the event loop between keystrokes. Genuine
+  // non-terminating recursion re-enqueues updates directly from a listener
+  // without dispatching new commands, so it never resets here and still trips.
+  for (let e = 0; e < editors.length; e++) {
+    if (!editors[e]._updating) {
+      editors[e]._cascadeCount = 0;
+    }
+  }
+
   for (let i = 4; i >= 0; i--) {
     for (let e = 0; e < editors.length; e++) {
       const currentEditor = editors[e];

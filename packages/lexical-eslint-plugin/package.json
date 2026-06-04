@@ -16,19 +16,21 @@
     "directory": "packages/lexical-eslint-plugin"
   },
   "main": "./dist/LexicalEslintPlugin.js",
-  "types": "./dist/index.d.ts",
+  "types": "./dist/typescript-too-old.d.ts",
   "bugs": {
     "url": "https://github.com/facebook/lexical/issues"
   },
   "homepage": "https://lexical.dev/docs/packages/lexical-eslint-plugin",
   "sideEffects": false,
   "peerDependencies": {
-    "eslint": ">=7.31.0"
+    "eslint": ">=7.31.0",
+    "typescript": ">=5.2"
   },
   "exports": {
     ".": {
       "source": "./src/index.ts",
       "import": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
         "types": "./dist/index.d.ts",
         "development": "./dist/LexicalEslintPlugin.dev.mjs",
         "production": "./dist/LexicalEslintPlugin.prod.mjs",
@@ -36,6 +38,7 @@
         "default": "./dist/LexicalEslintPlugin.mjs"
       },
       "require": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
         "types": "./dist/index.d.ts",
         "development": "./dist/LexicalEslintPlugin.dev.js",
         "production": "./dist/LexicalEslintPlugin.prod.js",
@@ -60,5 +63,17 @@
     "!src/**/*.bench.tsx",
     "README.md",
     "LICENSE"
-  ]
+  ],
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./dist/typescript-too-old.d.ts"
+      ]
+    }
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
+  }
 }

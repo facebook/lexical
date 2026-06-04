@@ -458,6 +458,9 @@ importers:
       '@lexical/internal':
         specifier: workspace:*
         version: link:../lexical-internal
+      typescript:
+        specifier: '>=5.2'
+        version: 6.0.3
 
   packages/lexical-clipboard:
     dependencies:
@@ -485,6 +488,9 @@ importers:
       lexical:
         specifier: workspace:*
         version: link:../lexical
+      typescript:
+        specifier: '>=5.2'
+        version: 6.0.3
 
   packages/lexical-code:
     dependencies:
@@ -500,6 +506,9 @@ importers:
       lexical:
         specifier: workspace:*
         version: link:../lexical
+      typescript:
+        specifier: '>=5.2'
+        version: 6.0.3
 
   packages/lexical-code-core:
     dependencies:
@@ -515,6 +524,9 @@ importers:
       lexical:
         specifier: workspace:*
         version: link:../lexical
+      typescript:
+        specifier: '>=5.2'
+        version: 6.0.3
 
   packages/lexical-code-prism:
     dependencies:
@@ -530,6 +542,9 @@ importers:
       prismjs:
         specifier: ^1.30.0
         version: 1.30.0
+      typescript:
+        specifier: '>=5.2'
+        version: 6.0.3
     devDependencies:
       '@types/prismjs':
         specifier: ^1.26.6
@@ -561,6 +576,9 @@ importers:
       shiki:
         specifier: ^4.2.0
         version: 4.2.0
+      typescript:
+        specifier: '>=5.2'
+        version: 6.0.3
     devDependencies:
       '@shikijs/types':
         specifier: ^4.2.0
@@ -659,6 +677,9 @@ importers:
       react-dom:
         specifier: 19.2.5
         version: 19.2.5(react@19.2.5)
+      typescript:
+        specifier: '>=5.2'
+        version: 6.0.3
 
   packages/lexical-dragon:
     dependencies:
@@ -668,12 +689,18 @@ importers:
       lexical:
         specifier: workspace:*
         version: link:../lexical
+      typescript:
+        specifier: '>=5.2'
+        version: 6.0.3
 
   packages/lexical-eslint-plugin:
     dependencies:
       eslint:
         specifier: '>=7.31.0'
         version: 10.3.0(jiti@2.7.0)
+      typescript:
+        specifier: '>=5.2'
+        version: 6.0.3
     devDependencies:
       '@types/eslint':
         specifier: ^9.6.1
@@ -702,12 +729,18 @@ importers:
       lexical:
         specifier: workspace:*
         version: link:../lexical
+      typescript:
+        specifier: '>=5.2'
+        version: 6.0.3
 
   packages/lexical-file:
     dependencies:
       lexical:
         specifier: workspace:*
         version: link:../lexical
+      typescript:
+        specifier: '>=5.2'
+        version: 6.0.3
 
   packages/lexical-hashtag:
     dependencies:
@@ -720,6 +753,9 @@ importers:
       lexical:
         specifier: workspace:*
         version: link:../lexical
+      typescript:
+        specifier: '>=5.2'
+        version: 6.0.3
 
   packages/lexical-headless:
     dependencies:
@@ -732,6 +768,9 @@ importers:
       lexical:
         specifier: workspace:*
         version: link:../lexical
+      typescript:
+        specifier: '>=5.2'
+        version: 6.0.3
 
   packages/lexical-history:
     dependencies:
@@ -744,6 +783,9 @@ importers:
       lexical:
         specifier: workspace:*
         version: link:../lexical
+      typescript:
+        specifier: '>=5.2'
+        version: 6.0.3
 
   packages/lexical-html:
     dependencies:
@@ -762,8 +804,15 @@ importers:
       lexical:
         specifier: workspace:*
         version: link:../lexical
+      typescript:
+        specifier: '>=5.2'
+        version: 6.0.3
 
-  packages/lexical-internal: {}
+  packages/lexical-internal:
+    dependencies:
+      typescript:
+        specifier: '>=5.2'
+        version: 6.0.3
 
   packages/lexical-link:
     dependencies:
@@ -782,6 +831,9 @@ importers:
       lexical:
         specifier: workspace:*
         version: link:../lexical
+      typescript:
+        specifier: '>=5.2'
+        version: 6.0.3
 
   packages/lexical-list:
     dependencies:
@@ -800,6 +852,9 @@ importers:
       lexical:
         specifier: workspace:*
         version: link:../lexical
+      typescript:
+        specifier: '>=5.2'
+        version: 6.0.3
 
   packages/lexical-mark:
     dependencies:
@@ -809,6 +864,9 @@ importers:
       lexical:
         specifier: workspace:*
         version: link:../lexical
+      typescript:
+        specifier: '>=5.2'
+        version: 6.0.3
 
   packages/lexical-markdown:
     dependencies:
@@ -839,6 +897,9 @@ importers:
       lexical:
         specifier: workspace:*
         version: link:../lexical
+      typescript:
+        specifier: '>=5.2'
+        version: 6.0.3
 
   packages/lexical-offset:
     dependencies:
@@ -848,12 +909,18 @@ importers:
       lexical:
         specifier: workspace:*
         version: link:../lexical
+      typescript:
+        specifier: '>=5.2'
+        version: 6.0.3
 
   packages/lexical-overflow:
     dependencies:
       lexical:
         specifier: workspace:*
         version: link:../lexical
+      typescript:
+        specifier: '>=5.2'
+        version: 6.0.3
 
   packages/lexical-plain-text:
     dependencies:
@@ -875,6 +942,9 @@ importers:
       lexical:
         specifier: workspace:*
         version: link:../lexical
+      typescript:
+        specifier: '>=5.2'
+        version: 6.0.3
 
   packages/lexical-playground:
     dependencies:
@@ -1101,6 +1171,9 @@ importers:
       react-error-boundary:
         specifier: ^6.1.1
         version: 6.1.1(react@19.2.5)
+      typescript:
+        specifier: '>=5.2'
+        version: 6.0.3
       yjs:
         specifier: ^13.6.31
         version: 13.6.31
@@ -1135,6 +1208,9 @@ importers:
       lexical:
         specifier: workspace:*
         version: link:../lexical
+      typescript:
+        specifier: '>=5.2'
+        version: 6.0.3
 
   packages/lexical-selection:
     dependencies:
@@ -1144,6 +1220,9 @@ importers:
       lexical:
         specifier: workspace:*
         version: link:../lexical
+      typescript:
+        specifier: '>=5.2'
+        version: 6.0.3
 
   packages/lexical-table:
     dependencies:
@@ -1165,6 +1244,9 @@ importers:
       lexical:
         specifier: workspace:*
         version: link:../lexical
+      typescript:
+        specifier: '>=5.2'
+        version: 6.0.3
 
   packages/lexical-tailwind:
     dependencies:
@@ -1174,6 +1256,9 @@ importers:
       lexical:
         specifier: workspace:*
         version: link:../lexical
+      typescript:
+        specifier: '>=5.2'
+        version: 6.0.3
     devDependencies:
       '@tailwindcss/cli':
         specifier: ^4.3.0
@@ -1193,6 +1278,9 @@ importers:
       lexical:
         specifier: workspace:*
         version: link:../lexical
+      typescript:
+        specifier: '>=5.2'
+        version: 6.0.3
 
   packages/lexical-utils:
     dependencies:
@@ -1205,6 +1293,9 @@ importers:
       lexical:
         specifier: workspace:*
         version: link:../lexical
+      typescript:
+        specifier: '>=5.2'
+        version: 6.0.3
 
   packages/lexical-website:
     dependencies:
@@ -1353,6 +1444,9 @@ importers:
       lexical:
         specifier: workspace:*
         version: link:../lexical
+      typescript:
+        specifier: '>=5.2'
+        version: 6.0.3
     devDependencies:
       yjs:
         specifier: ^13.6.31

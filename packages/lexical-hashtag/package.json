@@ -8,9 +8,9 @@
     "hashtag"
   ],
   "license": "MIT",
-  "version": "0.44.0",
-  "main": "LexicalHashtag.js",
-  "types": "index.d.ts",
+  "version": "0.45.0",
+  "main": "./dist/LexicalHashtag.js",
+  "types": "./dist/index.d.ts",
   "dependencies": {
     "@lexical/text": "workspace:*",
     "@lexical/utils": "workspace:*",
@@ -21,23 +21,37 @@
     "url": "git+https://github.com/facebook/lexical.git",
     "directory": "packages/lexical-hashtag"
   },
-  "module": "LexicalHashtag.mjs",
+  "module": "./dist/LexicalHashtag.mjs",
   "sideEffects": false,
   "exports": {
     ".": {
+      "source": "./src/index.ts",
       "import": {
-        "types": "./index.d.ts",
-        "development": "./LexicalHashtag.dev.mjs",
-        "production": "./LexicalHashtag.prod.mjs",
-        "node": "./LexicalHashtag.node.mjs",
-        "default": "./LexicalHashtag.mjs"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalHashtag.dev.mjs",
+        "production": "./dist/LexicalHashtag.prod.mjs",
+        "node": "./dist/LexicalHashtag.node.mjs",
+        "default": "./dist/LexicalHashtag.mjs"
       },
       "require": {
-        "types": "./index.d.ts",
-        "development": "./LexicalHashtag.dev.js",
-        "production": "./LexicalHashtag.prod.js",
-        "default": "./LexicalHashtag.js"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalHashtag.dev.js",
+        "production": "./dist/LexicalHashtag.prod.js",
+        "default": "./dist/LexicalHashtag.js"
       }
     }
-  }
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/__tests__",
+    "!src/__bench__",
+    "!src/__mocks__",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "!src/**/*.bench.ts",
+    "!src/**/*.bench.tsx",
+    "README.md",
+    "LICENSE"
+  ]
 }

@@ -28,9 +28,9 @@ import type {
 } from '../LexicalSelection';
 import type {ElementNode} from './LexicalElementNode';
 
-import {IS_FIREFOX} from 'shared/environment';
-import invariant from 'shared/invariant';
+import invariant from '@lexical/internal/invariant';
 
+import {IS_FIREFOX} from '../environment';
 import {
   COMPOSITION_SUFFIX,
   DETAIL_TYPE_TO_DETAIL,
@@ -53,6 +53,7 @@ import {
 import {LexicalNode} from '../LexicalNode';
 import {$cloneNodeState} from '../LexicalNodeState';
 import {
+  $generateNodesFromRawText,
   $getSelection,
   $internalMakeRangeSelection,
   $isRangeSelection,
@@ -63,6 +64,8 @@ import {errorOnReadOnly} from '../LexicalUpdates';
 import {
   $applyNodeReplacement,
   $getCompositionKey,
+  $getEditor,
+  $getEditorDOMRenderConfig,
   $setCompositionKey,
   getCachedClassNameArray,
   internalMarkSiblingsAsDirty,
@@ -72,8 +75,6 @@ import {
   toggleTextFormatType,
 } from '../LexicalUtils';
 import {setDOMStyleFromCSS} from '../utils/setDOMStyle';
-import {$createLineBreakNode} from './LexicalLineBreakNode';
-import {$createTabNode} from './LexicalTabNode';
 
 export type SerializedTextNode = Spread<
   {
@@ -221,43 +222,58 @@ function diffComposedText(a: string, b: string): [number, number, string] {
   return [left, aLength - left - right, b.slice(left, bLength - right)];
 }
 
-function setTextContent(
+function $setTextContent(
   nextText: string,
   dom: HTMLElement,
   node: TextNode,
 ): void {
-  const firstChild = dom.firstChild;
   const isComposing = node.isComposing();
   // Always add a suffix if we're composing a node
   const suffix = isComposing ? COMPOSITION_SUFFIX : '';
   const text: string = nextText + suffix;
 
-  if (firstChild == null) {
-    dom.textContent = text;
-  } else {
-    const nodeValue = firstChild.nodeValue;
-    if (nodeValue !== text) {
-      if (isComposing || IS_FIREFOX) {
-        // We also use the diff composed text for general text in FF to avoid
-        // the spellcheck red line from flickering.
-        const [index, remove, insert] = diffComposedText(
-          nodeValue as string,
-          text,
-        );
-        if (remove !== 0) {
-          // @ts-expect-error
-          firstChild.deleteData(index, remove);
-        }
-        // @ts-expect-error
-        firstChild.insertData(index, insert);
-      } else {
-        firstChild.nodeValue = text;
-      }
+  // Route through the editor-level `$getDOMSlot` hook so that
+  // `DOMRenderExtension` overrides targeting TextNode (e.g. extensions
+  // injecting `contentEditable=false` siblings around the text) can
+  // intercept. The default impl delegates to `node.getDOMSlot(dom)`.
+  //
+  // Practical contract for extensions that append non-lexical siblings to a
+  // vanilla TextNode's DOM (e.g. an autocomplete ghost rendered into the
+  // same `<span>`): append-only is safe because the default
+  // `DOMSlot.getFirstChild()` returns the first DOM child (the text node)
+  // and `insertChild` puts new content before `slot.before` (defaulting to
+  // append). Prepending a sibling, or wrapping the text node, requires
+  // either a TextNode subclass with its own `getDOMSlot` override, an
+  // extension that returns a slot with a managed `slot.before` / `slot.after`
+  // boundary, or both.
+  const editor = $getEditor();
+  const slot = $getEditorDOMRenderConfig(editor).$getDOMSlot(node, dom, editor);
+  const firstChild = slot.getFirstChild();
+
+  if (firstChild === null || firstChild.nodeType !== Node.TEXT_NODE) {
+    slot.insertChild(document.createTextNode(text));
+    return;
+  }
+
+  const textChild = firstChild as Text;
+  const nodeValue = textChild.nodeValue;
+  if (nodeValue === text) {
+    return;
+  }
+  if (isComposing || IS_FIREFOX) {
+    // We also use the diff composed text for general text in FF to avoid
+    // the spellcheck red line from flickering.
+    const [index, remove, insert] = diffComposedText(nodeValue as string, text);
+    if (remove !== 0) {
+      textChild.deleteData(index, remove);
     }
+    textChild.insertData(index, insert);
+  } else {
+    textChild.nodeValue = text;
   }
 }
 
-function createTextInnerDOM(
+function $createTextInnerDOM(
   innerDOM: HTMLElement,
   node: TextNode,
   innerTag: string,
@@ -265,7 +281,7 @@ function createTextInnerDOM(
   text: string,
   config: EditorConfig,
 ): void {
-  setTextContent(text, innerDOM, node);
+  $setTextContent(text, innerDOM, node);
   const theme = config.theme;
   // Apply theme class names
   const textClassNames = theme.text;
@@ -500,7 +516,7 @@ export class TextNode extends LexicalNode {
       dom.appendChild(innerDOM);
     }
     const text = this.__text;
-    createTextInnerDOM(innerDOM, this, innerTag, format, text, config);
+    $createTextInnerDOM(innerDOM, this, innerTag, format, text, config);
     const style = this.__style;
     if (style !== '') {
       setDOMStyleFromCSS(dom.style, style);
@@ -529,7 +545,7 @@ export class TextNode extends LexicalNode {
         invariant(false, 'updateDOM: prevInnerDOM is null or undefined');
       }
       const nextInnerDOM = document.createElement(nextInnerTag);
-      createTextInnerDOM(
+      $createTextInnerDOM(
         nextInnerDOM,
         this,
         nextInnerTag,
@@ -549,7 +565,7 @@ export class TextNode extends LexicalNode {
         }
       }
     }
-    setTextContent(nextText, innerDOM, this);
+    $setTextContent(nextText, innerDOM, this);
     const theme = config.theme;
     // Apply theme class names
     const textClassNames = theme.text;
@@ -1245,20 +1261,7 @@ function $convertTextDOMNode(domNode: Node): DOMConversionOutput {
   let textContent = domNode_.textContent || '';
   // No collapse and preserve segment break for pre, pre-wrap and pre-line
   if (findParentPreDOMNode(domNode_) !== null) {
-    const parts = textContent.split(/(\r?\n|\t)/);
-    const nodes: Array<LexicalNode> = [];
-    const length = parts.length;
-    for (let i = 0; i < length; i++) {
-      const part = parts[i];
-      if (part === '\n' || part === '\r\n') {
-        nodes.push($createLineBreakNode());
-      } else if (part === '\t') {
-        nodes.push($createTabNode());
-      } else if (part !== '') {
-        nodes.push($createTextNode(part));
-      }
-    }
-    return {node: nodes};
+    return {node: $generateNodesFromRawText(textContent)};
   }
   textContent = textContent.replace(/\r/g, '').replace(/[ \t\n]+/g, ' ');
   if (textContent === '') {

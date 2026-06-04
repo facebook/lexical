@@ -7,8 +7,6 @@
  */
 
 import type {
-  DOMConversionMap,
-  DOMConversionOutput,
   DOMExportOutput,
   EditorConfig,
   ElementFormatType,
@@ -41,17 +39,6 @@ type TweetComponentProps = Readonly<{
   onLoad?: () => void;
   tweetID: string;
 }>;
-
-function $convertTweetElement(
-  domNode: HTMLDivElement,
-): DOMConversionOutput | null {
-  const id = domNode.getAttribute('data-lexical-tweet-id');
-  if (id) {
-    const node = $createTweetNode(id);
-    return {node};
-  }
-  return null;
-}
 
 let isTwitterScriptLoading = true;
 
@@ -151,20 +138,6 @@ export class TweetNode extends DecoratorBlockNode {
     return {
       ...super.exportJSON(),
       id: this.getId(),
-    };
-  }
-
-  static importDOM(): DOMConversionMap<HTMLDivElement> | null {
-    return {
-      div: (domNode: HTMLDivElement) => {
-        if (!domNode.hasAttribute('data-lexical-tweet-id')) {
-          return null;
-        }
-        return {
-          conversion: $convertTweetElement,
-          priority: 2,
-        };
-      },
     };
   }
 

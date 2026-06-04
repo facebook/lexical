@@ -1,0 +1,45 @@
+{
+  "name": "@lexical/dev-node-state-style-example",
+  "private": true,
+  "version": "0.44.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@ark-ui/react": "^5.6.0",
+    "@lexical/extension": "workspace:*",
+    "@lexical/history": "workspace:*",
+    "@lexical/html": "workspace:*",
+    "@lexical/react": "workspace:*",
+    "@lexical/rich-text": "workspace:*",
+    "@lexical/selection": "workspace:*",
+    "@lexical/utils": "workspace:*",
+    "@shikijs/langs": "^4.2.0",
+    "@shikijs/themes": "^4.2.0",
+    "@zag-js/combobox": "^1.9.2",
+    "lexical": "workspace:*",
+    "lucide-react": "^1.17.0",
+    "prettier": "^3.5.3",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "shiki": "^4.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.2",
+    "@types/react-dom": "^19.1.2",
+    "@vitejs/plugin-react": "^6.0.2",
+    "cross-env": "^10.1.0",
+    "csstype": "^3.1.3",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.16"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "4.61.0",
+    "@rollup/rollup-darwin-arm64": "4.61.0",
+    "@rollup/rollup-win32-x64-msvc": "4.61.0",
+    "@rollup/wasm-node": "4.61.0"
+  }
+}

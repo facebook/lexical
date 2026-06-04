@@ -24,6 +24,7 @@ import {
   pasteFromClipboard,
   test,
   waitForSelector,
+  waitForTypeaheadMenuOption,
 } from '../utils/index.mjs';
 
 test.describe('Mentions', () => {
@@ -39,10 +40,7 @@ test.describe('Mentions', () => {
       focusPath: [0, 0, 0],
     });
 
-    await waitForSelector(
-      page,
-      '#typeahead-menu ul li:has-text("Luke Skywalker")',
-    );
+    await waitForTypeaheadMenuOption(page, 'Luke Skywalker');
 
     await assertHTML(
       page,
@@ -114,10 +112,7 @@ test.describe('Mentions', () => {
       focusPath: [0, 0, 0],
     });
 
-    await waitForSelector(
-      page,
-      '#typeahead-menu ul li:has-text("Luke Skywalker")',
-    );
+    await waitForTypeaheadMenuOption(page, 'Luke Skywalker');
 
     await assertHTML(
       page,
@@ -209,10 +204,7 @@ test.describe('Mentions', () => {
       focusPath: [0, 0, 0],
     });
 
-    await waitForSelector(
-      page,
-      '#typeahead-menu ul li:has-text("Luke Skywalker")',
-    );
+    await waitForTypeaheadMenuOption(page, 'Luke Skywalker');
 
     await assertHTML(
       page,
@@ -285,10 +277,7 @@ test.describe('Mentions', () => {
       focusPath: [0, 0, 0],
     });
 
-    await waitForSelector(
-      page,
-      '#typeahead-menu ul li:has-text("Luke Skywalker")',
-    );
+    await waitForTypeaheadMenuOption(page, 'Luke Skywalker');
 
     await assertHTML(
       page,
@@ -361,10 +350,7 @@ test.describe('Mentions', () => {
       focusPath: [0, 0, 0],
     });
 
-    await waitForSelector(
-      page,
-      '#typeahead-menu ul li:has-text("Luke Skywalker")',
-    );
+    await waitForTypeaheadMenuOption(page, 'Luke Skywalker');
 
     await assertHTML(
       page,
@@ -458,10 +444,7 @@ test.describe('Mentions', () => {
 
     await page.keyboard.type('@Luke');
 
-    await waitForSelector(
-      page,
-      '#typeahead-menu ul li:has-text("Luke Skywalker")',
-    );
+    await waitForTypeaheadMenuOption(page, 'Luke Skywalker');
 
     await assertHTML(
       page,
@@ -534,10 +517,7 @@ test.describe('Mentions', () => {
       focusPath: [0, 0, 0],
     });
 
-    await waitForSelector(
-      page,
-      '#typeahead-menu ul li:has-text("Luke Skywalker")',
-    );
+    await waitForTypeaheadMenuOption(page, 'Luke Skywalker');
     await page.keyboard.press('Enter');
 
     await waitForSelector(page, '.mention');
@@ -546,10 +526,7 @@ test.describe('Mentions', () => {
 
     await page.keyboard.type('@Luke');
 
-    await waitForSelector(
-      page,
-      '#typeahead-menu ul li:has-text("Luke Skywalker")',
-    );
+    await waitForTypeaheadMenuOption(page, 'Luke Skywalker');
     await page.keyboard.press('Enter');
 
     await waitForSelector(page, '.mention:nth-child(1)');
@@ -558,10 +535,7 @@ test.describe('Mentions', () => {
 
     await page.keyboard.type('@Luke');
 
-    await waitForSelector(
-      page,
-      '#typeahead-menu ul li:has-text("Luke Skywalker")',
-    );
+    await waitForTypeaheadMenuOption(page, 'Luke Skywalker');
     await page.keyboard.press('Enter');
 
     await waitForSelector(page, '.mention:nth-child(3)');
@@ -570,10 +544,7 @@ test.describe('Mentions', () => {
 
     await page.keyboard.type('@Luke');
 
-    await waitForSelector(
-      page,
-      '#typeahead-menu ul li:has-text("Luke Skywalker")',
-    );
+    await waitForTypeaheadMenuOption(page, 'Luke Skywalker');
     await page.keyboard.press('Enter');
 
     await waitForSelector(page, '.mention:nth-child(5)');
@@ -867,10 +838,7 @@ test.describe('Mentions', () => {
       focusPath: [0, 0, 0],
     });
 
-    await waitForSelector(
-      page,
-      '#typeahead-menu ul li:has-text("Luke Skywalker")',
-    );
+    await waitForTypeaheadMenuOption(page, 'Luke Skywalker');
     await page.keyboard.press('Enter');
 
     await waitForSelector(page, '.mention');
@@ -947,10 +915,7 @@ test.describe('Mentions', () => {
       focusPath: [0, 0, 0],
     });
 
-    await waitForSelector(
-      page,
-      '#typeahead-menu ul li:has-text("Luke Skywalker")',
-    );
+    await waitForTypeaheadMenuOption(page, 'Luke Skywalker');
     await page.keyboard.press('Enter');
 
     await waitForSelector(page, '.mention');

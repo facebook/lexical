@@ -12,6 +12,12 @@ import path from 'node:path';
 
 import {packagesManager} from './shared/packagesManager.mjs';
 
+/**
+ * @param {string} npmName the npm package name, e.g. '@lexical/rich-text'
+ * @param {string} directoryName the package directory name, e.g. 'lexical-rich-text'
+ * @param {string} description the package description
+ * @returns {string} the rendered README.md contents
+ */
 function readmeTemplate(npmName, directoryName, description) {
   const apiModuleName = directoryName.replace(/-/g, '_');
   return (

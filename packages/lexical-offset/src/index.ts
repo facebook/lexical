@@ -15,6 +15,7 @@ import type {
   RootNode,
 } from 'lexical';
 
+import invariant from '@lexical/internal/invariant';
 import {
   $createChildrenArray as $createChildrenArray_,
   $createRangeSelection,
@@ -22,7 +23,6 @@ import {
   $isElementNode,
   $isTextNode,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
 type OffsetElementNode = {
   child: null | OffsetNode;

@@ -6,6 +6,7 @@
  *
  */
 
+import invariant from '@lexical/internal/invariant';
 import {
   $createTextNode,
   $isTextNode,
@@ -14,7 +15,6 @@ import {
   LexicalNode,
   TextNode,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
 export type EntityMatch = {end: number; start: number};
 

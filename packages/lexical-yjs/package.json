@@ -11,15 +11,16 @@
     "crdt"
   ],
   "license": "MIT",
-  "version": "0.44.0",
-  "main": "LexicalYjs.js",
-  "types": "index.d.ts",
+  "version": "0.45.0",
+  "main": "./dist/LexicalYjs.js",
+  "types": "./dist/index.d.ts",
   "dependencies": {
+    "@lexical/internal": "workspace:*",
     "@lexical/selection": "workspace:*",
     "lexical": "workspace:*"
   },
   "devDependencies": {
-    "yjs": "^13.6.30"
+    "yjs": "^13.6.31"
   },
   "peerDependencies": {
     "yjs": ">=13.5.22"
@@ -29,23 +30,37 @@
     "url": "git+https://github.com/facebook/lexical.git",
     "directory": "packages/lexical-yjs"
   },
-  "module": "LexicalYjs.mjs",
+  "module": "./dist/LexicalYjs.mjs",
   "sideEffects": false,
   "exports": {
     ".": {
+      "source": "./src/index.ts",
       "import": {
-        "types": "./index.d.ts",
-        "development": "./LexicalYjs.dev.mjs",
-        "production": "./LexicalYjs.prod.mjs",
-        "node": "./LexicalYjs.node.mjs",
-        "default": "./LexicalYjs.mjs"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalYjs.dev.mjs",
+        "production": "./dist/LexicalYjs.prod.mjs",
+        "node": "./dist/LexicalYjs.node.mjs",
+        "default": "./dist/LexicalYjs.mjs"
       },
       "require": {
-        "types": "./index.d.ts",
-        "development": "./LexicalYjs.dev.js",
-        "production": "./LexicalYjs.prod.js",
-        "default": "./LexicalYjs.js"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalYjs.dev.js",
+        "production": "./dist/LexicalYjs.prod.js",
+        "default": "./dist/LexicalYjs.js"
       }
     }
-  }
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/__tests__",
+    "!src/__bench__",
+    "!src/__mocks__",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "!src/**/*.bench.ts",
+    "!src/**/*.bench.tsx",
+    "README.md",
+    "LICENSE"
+  ]
 }

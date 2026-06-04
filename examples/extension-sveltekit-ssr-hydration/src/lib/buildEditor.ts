@@ -16,7 +16,7 @@ import {
 	buildEditorFromExtensions,
 	EditorStateExtension,
 	effect,
-	watchedSignal
+	WatchEditableExtension
 } from '@lexical/extension';
 import { RichTextExtension } from '@lexical/rich-text';
 import { TailwindExtension } from '@lexical/tailwind';
@@ -93,19 +93,6 @@ interface LexicalHMRState {
 	editorState: EditorState;
 }
 const HMR_KEY = 'lexicalHMR';
-
-export const WatchEditableExtension = defineExtension({
-	name: '@lexical/extension/WatchEditable',
-	build(editor) {
-		return watchedSignal(
-			() => editor.isEditable(),
-			(signal) =>
-				editor.registerEditableListener((editable) => {
-					signal.value = editable;
-				})
-		);
-	}
-});
 
 const HMRExtension = defineExtension({
 	name: '@lexical/examples/hmr',

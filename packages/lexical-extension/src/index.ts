@@ -28,6 +28,11 @@ export {
   type SerializedDecoratorTextNode,
 } from './DecoratorTextExtension';
 export {EditorStateExtension} from './EditorStateExtension';
+export {
+  $getExtensionDependency,
+  $getExtensionOutput,
+  $getPeerDependency,
+} from './getExtensionDependency';
 export {getExtensionDependencyFromEditor} from './getExtensionDependencyFromEditor';
 export {
   getPeerDependencyFromEditor,
@@ -41,6 +46,7 @@ export {
   INSERT_HORIZONTAL_RULE_COMMAND,
   type SerializedHorizontalRuleNode,
 } from './HorizontalRuleExtension';
+export {IMEExtension} from './IMEExtension';
 export {
   type InitialStateConfig,
   InitialStateExtension,
@@ -79,6 +85,7 @@ export {
   type TabIndentationConfig,
   TabIndentationExtension,
 } from './TabIndentationExtension';
+export {WatchEditableExtension} from './WatchEditableExtension';
 export {watchedSignal} from './watchedSignal';
 export {
   type AnyLexicalExtension,

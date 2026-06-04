@@ -27,3 +27,5 @@ test-results
 /libdefs/*.js
 pnpm-lock.yaml
 **/.next/**
+# Verbatim clipboard payloads — preserved exactly as the source app emitted.
+dev-examples/dom-import/src/fixtures/

@@ -29,6 +29,7 @@ export default function Settings(): JSX.Element {
       isCharLimit,
       isCharLimitUtf8,
       isAutocomplete,
+      isVisibleNonPrinting,
       showTreeView,
       showNestedEditorTreeView,
       showTableOfContents,
@@ -145,6 +146,13 @@ export default function Settings(): JSX.Element {
             onClick={() => setOption('isAutocomplete', !isAutocomplete)}
             checked={isAutocomplete}
             text="Autocomplete"
+          />
+          <Switch
+            onClick={() =>
+              setOption('isVisibleNonPrinting', !isVisibleNonPrinting)
+            }
+            checked={isVisibleNonPrinting}
+            text="Visible Non-Printing"
           />
           <Switch
             onClick={() => {

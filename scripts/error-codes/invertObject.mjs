@@ -6,17 +6,17 @@
  *
  */
 
-/*:: import type { ErrorMap } from './Types' */
-
 /**
  * turns
  *   { 'MUCH ERROR': '0', 'SUCH WRONG': '1' }
  * into
  *   { 0: 'MUCH ERROR', 1: 'SUCH WRONG' }
+ *
+ * @param {Record<string, string>} targetObj
+ * @returns {Record<string, string>}
  */
-export default function invertObject(
-  targetObj /* : ErrorMap */,
-) /* : ErrorMap */ {
+export default function invertObject(targetObj) {
+  /** @type {Record<string, string>} */
   const result = {};
   const mapKeys = Object.keys(targetObj);
 

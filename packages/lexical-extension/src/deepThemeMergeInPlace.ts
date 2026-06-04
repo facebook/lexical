@@ -22,6 +22,12 @@
  * expect(a).toEqual({ a: "a", b: "b", nested: { a: 1, b: 2 } });
  * ```
  */
+// Keys that must never be merged: assigning or recursing through them can
+// mutate the prototype chain (prototype pollution). A malicious `__proto__`
+// entry — e.g. from `JSON.parse('{"__proto__": {...}}')` — would otherwise
+// leak into `Object.prototype` and affect every object in the realm.
+const UNSAFE_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
 export function deepThemeMergeInPlace(a: unknown, b: unknown) {
   if (
     a &&
@@ -33,6 +39,13 @@ export function deepThemeMergeInPlace(a: unknown, b: unknown) {
     const aObj = a as Record<string, unknown>;
     const bObj = b as Record<string, unknown>;
     for (const k in bObj) {
+      // Only merge own, prototype-safe keys.
+      if (
+        UNSAFE_KEYS.has(k) ||
+        !Object.prototype.hasOwnProperty.call(bObj, k)
+      ) {
+        continue;
+      }
       aObj[k] = deepThemeMergeInPlace(aObj[k], bObj[k]);
     }
     return a;

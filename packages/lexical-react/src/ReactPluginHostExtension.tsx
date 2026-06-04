@@ -14,6 +14,7 @@ import {
   signal,
   untracked,
 } from '@lexical/extension';
+import invariant from '@lexical/internal/invariant';
 import {ReactExtension} from '@lexical/react/ReactExtension';
 import {ReactProviderExtension} from '@lexical/react/ReactProviderExtension';
 import {mergeRegister} from '@lexical/utils';
@@ -31,7 +32,6 @@ import * as React from 'react';
 import {Suspense, useEffect, useState} from 'react';
 import {createPortal} from 'react-dom';
 import {type Container, createRoot, type Root} from 'react-dom/client';
-import invariant from 'shared/invariant';
 
 export type {DecoratorComponentProps};
 

@@ -157,7 +157,14 @@ function $codeNodeTransform(
   let inFlight = false;
   if (!isCodeThemeLoaded(theme)) {
     loadCodeTheme(theme, editor, nodeKey);
-    inFlight = true;
+    // Only the highlight path (a resolved language) consumes the theme. With
+    // no language the text is plainified, which needs no theme, so don't defer
+    // the split on a theme load that won't be used — otherwise a code block
+    // with `defaultLanguage: null` stays an unsplit TextNode until the theme
+    // happens to finish loading.
+    if (language) {
+      inFlight = true;
+    }
   }
 
   // dynamic import of languages
@@ -167,10 +174,11 @@ function $codeNodeTransform(
         node.setIsSyntaxHighlightSupported(true);
       }
     } else {
-      if (node.getIsSyntaxHighlightSupported()) {
+      const loadingTask = loadCodeLanguage(language, editor, nodeKey);
+      // if the language is not supported, the download will not occur
+      if (!loadingTask && node.getIsSyntaxHighlightSupported()) {
         node.setIsSyntaxHighlightSupported(false);
       }
-      loadCodeLanguage(language, editor, nodeKey);
       inFlight = true;
     }
   } else if (node.getIsSyntaxHighlightSupported()) {

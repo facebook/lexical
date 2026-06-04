@@ -13,6 +13,7 @@ import {mergeRegister} from '@lexical/utils';
 import {
   $getSelection,
   $isRangeSelection,
+  CAN_USE_DOM,
   COMMAND_PRIORITY_LOW,
   CommandListenerPriority,
   createCommand,
@@ -35,8 +36,8 @@ import {
   useState,
 } from 'react';
 import ReactDOM from 'react-dom';
-import {CAN_USE_DOM} from 'shared/canUseDOM';
-import useLayoutEffect from 'shared/useLayoutEffect';
+
+import useLayoutEffect from './useLayoutEffect';
 
 export type MenuTextMatch = {
   leadOffset: number;

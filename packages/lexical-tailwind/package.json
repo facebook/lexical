@@ -7,15 +7,15 @@
     "theme",
     "css"
   ],
-  "version": "0.44.0",
+  "version": "0.45.0",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/facebook/lexical.git",
     "directory": "packages/lexical-tailwind"
   },
-  "main": "LexicalTailwind.js",
-  "types": "index.d.ts",
+  "main": "./dist/LexicalTailwind.js",
+  "types": "./dist/index.d.ts",
   "bugs": {
     "url": "https://github.com/facebook/lexical/issues"
   },
@@ -25,28 +25,42 @@
     "lexical": "workspace:*"
   },
   "devDependencies": {
-    "@tailwindcss/cli": "^4.2.4",
-    "tailwind-merge": "^3.5.0",
-    "tailwindcss": "^4.2.4"
+    "@tailwindcss/cli": "^4.3.0",
+    "tailwind-merge": "^3.6.0",
+    "tailwindcss": "^4.3.0"
   },
   "description": "This package contains an extension to use Tailwind for the editor theme",
   "sideEffects": false,
-  "module": "LexicalTailwind.mjs",
+  "module": "./dist/LexicalTailwind.mjs",
   "exports": {
     ".": {
+      "source": "./src/index.ts",
       "import": {
-        "types": "./index.d.ts",
-        "development": "./LexicalTailwind.dev.mjs",
-        "production": "./LexicalTailwind.prod.mjs",
-        "node": "./LexicalTailwind.node.mjs",
-        "default": "./LexicalTailwind.mjs"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalTailwind.dev.mjs",
+        "production": "./dist/LexicalTailwind.prod.mjs",
+        "node": "./dist/LexicalTailwind.node.mjs",
+        "default": "./dist/LexicalTailwind.mjs"
       },
       "require": {
-        "types": "./index.d.ts",
-        "development": "./LexicalTailwind.dev.js",
-        "production": "./LexicalTailwind.prod.js",
-        "default": "./LexicalTailwind.js"
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalTailwind.dev.js",
+        "production": "./dist/LexicalTailwind.prod.js",
+        "default": "./dist/LexicalTailwind.js"
       }
     }
-  }
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/__tests__",
+    "!src/__bench__",
+    "!src/__mocks__",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "!src/**/*.bench.ts",
+    "!src/**/*.bench.tsx",
+    "README.md",
+    "LICENSE"
+  ]
 }

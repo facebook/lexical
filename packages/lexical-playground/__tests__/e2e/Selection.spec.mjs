@@ -53,10 +53,11 @@ import {
   selectFromFormatDropdown,
   sleep,
   test,
+  waitForSelector,
   YOUTUBE_SAMPLE_URL,
 } from '../utils/index.mjs';
 
-test.describe.parallel('Selection', () => {
+test.describe('Selection', () => {
   test.beforeEach(({isCollab, page}) =>
     initialize({isCollab, page, tableHorizontalScroll: false}),
   );
@@ -538,7 +539,10 @@ test.describe.parallel('Selection', () => {
     await pasteFromClipboard(page, {
       'text/html': `<a href="https://test.com">link</a>`,
     });
-    await sleep(3000);
+    // Paste inserts the link and places the caret after it in a single update,
+    // so wait for the link to be reconciled rather than sleeping a fixed time
+    // before asserting the (non-retrying) selection.
+    await waitForSelector(page, 'a[href="https://test.com"]');
     await assertSelection(page, {
       anchorOffset: 4,
       anchorPath: [0, 1, 0, 0],
@@ -1305,10 +1309,8 @@ test.describe.parallel('Selection', () => {
     page,
     isPlainText,
     isCollab,
-    browserName,
   }) => {
     test.skip(isPlainText || isCollab);
-    test.skip(browserName === 'firefox');
     await page.keyboard.type('קצת');
     await insertDateTime(page);
     await moveLeft(page);

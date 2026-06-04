@@ -6,6 +6,7 @@
  *
  */
 
+import invariant from '@lexical/internal/invariant';
 import {$getNearestNodeOfType} from '@lexical/utils';
 import {
   $copyNode,
@@ -24,7 +25,6 @@ import {
   NodeKey,
   ParagraphNode,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
 import {
   $createListItemNode,

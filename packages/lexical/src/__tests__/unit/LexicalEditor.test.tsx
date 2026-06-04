@@ -1203,23 +1203,39 @@ describe('LexicalEditor tests', () => {
 
     expect(errorListener).toHaveBeenCalledTimes(0);
 
-    editor.update(() => {
-      $getRoot().markDirty();
-    });
+    // The recursion guard uses devInvariant: in development (and tests) it
+    // throws once the cascade limit is exceeded, while in production it only
+    // warns via console (so a recovered condition is no longer reported as an
+    // uncaught error via _onError). The cascade is broken (the update queue is
+    // cleared) before the guard signals, so the throw surfaces from the
+    // scheduled microtask rather than synchronously from editor.update().
+    const caught: Error[] = [];
+    const onUnhandled = (reason: unknown) => {
+      caught.push(reason instanceof Error ? reason : new Error(String(reason)));
+    };
+    process.on('unhandledRejection', onUnhandled);
+    process.on('uncaughtException', onUnhandled);
 
-    // drain the microtask chain produced by the cascade
-    for (let i = 0; i < 200 && errorListener.mock.calls.length === 0; i++) {
-      await Promise.resolve();
+    try {
+      editor.update(() => {
+        $getRoot().markDirty();
+      });
+
+      // drain the microtask chain produced by the cascade
+      for (let i = 0; i < 200 && caught.length === 0; i++) {
+        await Promise.resolve();
+      }
+    } finally {
+      process.off('unhandledRejection', onUnhandled);
+      process.off('uncaughtException', onUnhandled);
     }
 
-    expect(errorListener).toHaveBeenCalledTimes(1);
-    expect(errorListener.mock.calls[0][0].message).toMatch(
-      /endlessly enqueueing/,
-    );
+    expect(caught).toHaveLength(1);
+    expect(caught[0].message).toMatch(/endlessly enqueueing/);
     // The error message should include the editor's namespace so the loop can
     // be attributed to a specific product/editor in error aggregation, even
     // when the production stack is minified to core frames.
-    expect(errorListener.mock.calls[0][0].message).toContain(
+    expect(caught[0].message).toContain(
       `Editor namespace: ${editor._config.namespace}`,
     );
 
@@ -1236,7 +1252,9 @@ describe('LexicalEditor tests', () => {
     for (let i = 0; i < 10; i++) {
       await Promise.resolve();
     }
-    expect(errorListener).toHaveBeenCalledTimes(1);
+    // The guard no longer routes through editor._onError — it surfaces via
+    // devInvariant (throw in dev / warn in prod) instead.
+    expect(errorListener).toHaveBeenCalledTimes(0);
   });
 
   it('Should be able to update an editor state without a root element', () => {

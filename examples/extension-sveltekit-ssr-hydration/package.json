@@ -34,7 +34,7 @@
     "@sveltejs/vite-plugin-svelte": "^6.2.4",
     "@tailwindcss/vite": "^4.2.1",
     "@types/node": "^22.19.13",
-    "@vitest/browser": "^3.2.4",
+    "@vitest/browser": "^4.1.8",
     "eslint": "^10.0.2",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-svelte": "^3.15.0",
@@ -51,7 +51,7 @@
     "typescript-eslint": "^8.56.1",
     "vite": "^7.3.2",
     "vite-plugin-devtools-json": "^1.0.0",
-    "vitest": "^3.2.4",
+    "vitest": "^4.1.8",
     "vitest-browser-svelte": "^0.1.0"
   },
   "optionalDependencies": {

@@ -10,7 +10,7 @@
   "license": "MIT",
   "version": "0.45.0",
   "main": "./dist/LexicalCodeCore.js",
-  "types": "./dist/index.d.ts",
+  "types": "./dist/typescript-too-old.d.ts",
   "dependencies": {
     "@lexical/extension": "workspace:*",
     "@lexical/html": "workspace:*",
@@ -28,6 +28,7 @@
     ".": {
       "source": "./src/index.ts",
       "import": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
         "types": "./dist/index.d.ts",
         "development": "./dist/LexicalCodeCore.dev.mjs",
         "production": "./dist/LexicalCodeCore.prod.mjs",
@@ -35,6 +36,7 @@
         "default": "./dist/LexicalCodeCore.mjs"
       },
       "require": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
         "types": "./dist/index.d.ts",
         "development": "./dist/LexicalCodeCore.dev.js",
         "production": "./dist/LexicalCodeCore.prod.js",
@@ -54,5 +56,20 @@
     "!src/**/*.bench.tsx",
     "README.md",
     "LICENSE"
-  ]
+  ],
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./dist/typescript-too-old.d.ts"
+      ]
+    }
+  },
+  "peerDependencies": {
+    "typescript": ">=5.2"
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
+  }
 }

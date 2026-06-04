@@ -10,16 +10,16 @@
   "license": "MIT",
   "version": "0.45.0",
   "main": "./dist/LexicalCodeShiki.js",
-  "types": "./dist/index.d.ts",
+  "types": "./dist/typescript-too-old.d.ts",
   "dependencies": {
     "@lexical/code-core": "workspace:*",
     "@lexical/extension": "workspace:*",
-    "@shikijs/core": "^4.0.2",
-    "@shikijs/engine-javascript": "^4.0.2",
-    "@shikijs/langs": "^4.0.2",
-    "@shikijs/themes": "^4.0.2",
+    "@shikijs/core": "^4.2.0",
+    "@shikijs/engine-javascript": "^4.2.0",
+    "@shikijs/langs": "^4.2.0",
+    "@shikijs/themes": "^4.2.0",
     "lexical": "workspace:*",
-    "shiki": "^4.0.2"
+    "shiki": "^4.2.0"
   },
   "repository": {
     "type": "git",
@@ -27,7 +27,7 @@
     "directory": "packages/lexical-code-shiki"
   },
   "devDependencies": {
-    "@shikijs/types": "^4.0.2"
+    "@shikijs/types": "^4.2.0"
   },
   "module": "./dist/LexicalCodeShiki.mjs",
   "sideEffects": true,
@@ -35,6 +35,7 @@
     ".": {
       "source": "./src/index.ts",
       "import": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
         "types": "./dist/index.d.ts",
         "development": "./dist/LexicalCodeShiki.dev.mjs",
         "production": "./dist/LexicalCodeShiki.prod.mjs",
@@ -42,6 +43,7 @@
         "default": "./dist/LexicalCodeShiki.mjs"
       },
       "require": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
         "types": "./dist/index.d.ts",
         "development": "./dist/LexicalCodeShiki.dev.js",
         "production": "./dist/LexicalCodeShiki.prod.js",
@@ -61,5 +63,20 @@
     "!src/**/*.bench.tsx",
     "README.md",
     "LICENSE"
-  ]
+  ],
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./dist/typescript-too-old.d.ts"
+      ]
+    }
+  },
+  "peerDependencies": {
+    "typescript": ">=5.2"
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
+  }
 }

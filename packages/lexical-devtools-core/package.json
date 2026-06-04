@@ -10,7 +10,7 @@
   "license": "MIT",
   "version": "0.45.0",
   "main": "./dist/LexicalDevtoolsCore.js",
-  "types": "./dist/index.d.ts",
+  "types": "./dist/typescript-too-old.d.ts",
   "dependencies": {
     "@lexical/html": "workspace:*",
     "@lexical/link": "workspace:*",
@@ -21,7 +21,8 @@
   },
   "peerDependencies": {
     "react": ">=17.x",
-    "react-dom": ">=17.x"
+    "react-dom": ">=17.x",
+    "typescript": ">=5.2"
   },
   "repository": {
     "type": "git",
@@ -34,6 +35,7 @@
     ".": {
       "source": "./src/index.ts",
       "import": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
         "types": "./dist/index.d.ts",
         "development": "./dist/LexicalDevtoolsCore.dev.mjs",
         "production": "./dist/LexicalDevtoolsCore.prod.mjs",
@@ -41,6 +43,7 @@
         "default": "./dist/LexicalDevtoolsCore.mjs"
       },
       "require": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
         "types": "./dist/index.d.ts",
         "development": "./dist/LexicalDevtoolsCore.dev.js",
         "production": "./dist/LexicalDevtoolsCore.prod.js",
@@ -60,5 +63,17 @@
     "!src/**/*.bench.tsx",
     "README.md",
     "LICENSE"
-  ]
+  ],
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./dist/typescript-too-old.d.ts"
+      ]
+    }
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
+  }
 }

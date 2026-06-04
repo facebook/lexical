@@ -12,6 +12,12 @@ import * as path from 'node:path';
 import {describe, expect, it, test} from 'vitest';
 
 import {packagesManager} from '../../shared/packagesManager';
+import {
+  MIN_TYPESCRIPT_VERSION,
+  tooOldStubPath,
+  tooOldTypesVersions,
+  TYPESCRIPT_TOO_OLD_CONDITION,
+} from '../../shared/typescriptTooOld';
 import npmToWwwName from '../../www/npmToWwwName';
 
 const monorepoPackageJson = (
@@ -81,6 +87,50 @@ describe('public package.json audits (`pnpm run update-packages` to fix most iss
           );
         },
       );
+      describe('TypeScript "too old" guard (clear error for stale TypeScript)', () => {
+        const tombstone = tooOldStubPath('dist');
+        it('points the legacy "types" field at the stub', () => {
+          // Only consumers that cannot read "exports" resolve "types", so the
+          // stub is what an old/classic-resolution TypeScript sees.
+          expect(packageJson.types).toBe(tombstone);
+        });
+        it('redirects the root and every subpath via "typesVersions"', () => {
+          expect(packageJson.typesVersions).toEqual(
+            tooOldTypesVersions('dist'),
+          );
+        });
+        const exportsEntries = Object.entries(
+          packageJson.exports as Record<
+            string,
+            Record<string, Record<string, string>>
+          >,
+        );
+        test.each(exportsEntries)(
+          'exports["%s"] redirects sub-minimum TypeScript before the "types" condition',
+          (_subpath, entry) => {
+            for (const group of [entry.import, entry.require]) {
+              if (!group) {
+                continue;
+              }
+              const keys = Object.keys(group);
+              expect(group[TYPESCRIPT_TOO_OLD_CONDITION]).toBe(tombstone);
+              // The versioned condition must sit immediately before plain
+              // `types` so it wins for the (old) versions it matches.
+              expect(keys.indexOf(TYPESCRIPT_TOO_OLD_CONDITION)).toBe(
+                keys.indexOf('types') - 1,
+              );
+            }
+          },
+        );
+        it('declares an optional typescript peer dependency at the minimum version', () => {
+          expect(packageJson.peerDependencies?.typescript).toBe(
+            `>=${MIN_TYPESCRIPT_VERSION}`,
+          );
+          expect(packageJson.peerDependenciesMeta?.typescript).toEqual({
+            optional: true,
+          });
+        });
+      });
       if (!sourceFiles.includes('index')) {
         it('must not export a top-level module without an index.tsx?', () => {
           expect(exportedModules).not.toContain(npmName);

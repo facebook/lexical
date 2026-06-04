@@ -767,6 +767,55 @@ export async function advanceHistoryClock(page, overheadMs = 50) {
   );
 }
 
+/**
+ * Make collaborative undo grouping deterministic by removing the Yjs
+ * `UndoManager`'s wall-clock capture window for the editor under test.
+ *
+ * In collab, `@lexical/history` is disabled in favor of the Yjs `UndoManager`,
+ * which coalesces consecutive local edits into a single undo stack item only
+ * while each lands within `captureTimeout` (500ms by default) of the previous
+ * one, measured with `Date.now()`. Unlike the local-history clock that
+ * {@link advanceHistoryClock} drives, that timer isn't injectable — so under CI
+ * load a stall longer than the window silently splits one logical edit group
+ * across several stack items. A later `undo()` then reverts only the last
+ * fragment, which is the intermittent "expected an empty paragraph, received
+ * leftover typed text / a leftover list item" failure this guards against.
+ *
+ * Setting `captureTimeout` to Infinity drops the time dimension entirely:
+ * grouping is then governed solely by explicit boundaries — `advanceHistoryClock`
+ * (which calls `stopCapturing()`) and the `stopCapturing()` the `UndoManager`
+ * performs automatically after every undo/redo. Both reset `lastChange` to 0 so
+ * the next edit opens a fresh stack item, while everything in between always
+ * coalesces regardless of timing. This makes "type a burst, then undo it as a
+ * unit" reliable without changing any behavior the tests assert: a run that
+ * happened to stay under the 500ms window already grouped the same way.
+ *
+ * No-op outside collab, where `advanceHistoryClock` already drives a
+ * deterministic clock.
+ *
+ * @param {import('@playwright/test').Page} page
+ */
+export async function freezeCollabUndoGrouping(page) {
+  if (!IS_COLLAB) {
+    return;
+  }
+  // Collab connects asynchronously, so the UndoManager may not be published the
+  // instant the editor mounts — poll until it is, then disable the capture
+  // window in place. The predicate's mutation is intentional and idempotent: it
+  // returns true (ending the poll) only on the tick it runs.
+  await getPageOrFrame(page).waitForFunction(() => {
+    const editor = document.querySelector(
+      '[data-lexical-editor="true"]',
+    )?.__lexicalEditor;
+    const undoManager = editor?.[Symbol.for('@lexical/yjs/UndoManager')];
+    if (!undoManager) {
+      return false;
+    }
+    undoManager.captureTimeout = Infinity;
+    return true;
+  });
+}
+
 // Fair time for the browser to process a newly inserted image
 export async function sleepInsertImage(count = 1) {
   return await sleep(1000 * count);

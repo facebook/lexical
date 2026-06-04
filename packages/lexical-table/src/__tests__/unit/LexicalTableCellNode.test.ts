@@ -222,7 +222,7 @@ describe('LexicalTableCellNode tests', () => {
 
     // Simulates the Lexical Paste Engine finding and running the converter
     const convertHTMLTag = (element: HTMLElement) => {
-      const importDOMMap = TableCellNode.importDOM();
+      const importDOMMap = TableCellNode.importDOM!();
 
       // look up tag name (e.g., 'th') in the import map
       const handler = importDOMMap![element.tagName.toLowerCase()];

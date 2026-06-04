@@ -81,7 +81,10 @@ describe('LexicalLinkNode tests', () => {
       await editor.update(() => {
         const linkNode = $createLinkNode('/');
 
+        // With $config the static clone is the shallow primitive (key only);
+        // afterCloneFrom completes the copy, exactly as $copyNode does.
         const linkNodeClone = LinkNode.clone(linkNode);
+        linkNodeClone.afterCloneFrom(linkNode);
 
         expect(linkNodeClone).not.toBe(linkNode);
         expect(linkNodeClone).toStrictEqual(linkNode);

@@ -2415,9 +2415,25 @@ export function getStaticNodeConfig(klass: Klass<LexicalNode>): {
     if (nodeType) {
       ownNodeConfig = nodeConfigRecord[nodeType];
     } else {
+      // No static getType(): derive the type and config from the $config
+      // record. The common case is a concrete node keyed by its string `type`.
       for (const [k, v] of Object.entries(nodeConfigRecord)) {
         ownNodeType = k;
         ownNodeConfig = v;
+      }
+      // Fall back to a well-known symbol key (e.g. Symbol.for('ElementNode'))
+      // for an abstract base class that has no concrete node type, using the
+      // first symbol whose value is a config record.
+      if (!ownNodeConfig) {
+        for (const symbolKey of Object.getOwnPropertySymbols(
+          nodeConfigRecord,
+        )) {
+          const symbolConfig = nodeConfigRecord[symbolKey];
+          if (symbolConfig) {
+            ownNodeConfig = symbolConfig;
+            break;
+          }
+        }
       }
     }
   }

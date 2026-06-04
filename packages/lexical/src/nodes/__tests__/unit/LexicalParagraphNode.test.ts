@@ -152,7 +152,7 @@ describe('LexicalParagraphNode tests', () => {
       const {editor} = testEnv;
 
       const convertParagraph = (element: HTMLElement) => {
-        const importDOMMap = ParagraphNode.importDOM();
+        const importDOMMap = ParagraphNode.importDOM!();
         const handler = importDOMMap![element.tagName.toLowerCase()];
         if (!handler) {
           throw new Error(`No handler found for tag: ${element.tagName}`);

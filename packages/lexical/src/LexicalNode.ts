@@ -101,11 +101,16 @@ export type SerializedLexicalNode = {
  */
 export interface StaticNodeConfigValue<
   T extends LexicalNode,
-  Type extends string,
+  Type extends string | symbol,
 > {
   /**
    * The exact type of T.getType(), e.g. 'text' - the method itself must
    * have a more generic 'string' type to be compatible wtih subclassing.
+   *
+   * For a concrete node this is its string `type`. An abstract base class is
+   * keyed in {@link BaseStaticNodeConfig} by a symbol (it has no concrete node
+   * `type`), so `Type` is widened to `string | symbol`; the `type` field is
+   * never populated for a symbol-keyed config.
    */
   readonly type?: Type;
   /**
@@ -181,11 +186,9 @@ export interface StaticNodeConfigValue<
  * debugger and can never collide with a real node `type`.
  */
 export type BaseStaticNodeConfig = {
-  readonly [K in string]?: StaticNodeConfigValue<LexicalNode, string>;
-} & {
-  readonly [key: symbol]:
-    | StaticNodeConfigValue<LexicalNode, string>
-    | undefined;
+  readonly [K in string | symbol]?:
+    | undefined
+    | StaticNodeConfigValue<LexicalNode, K>;
 };
 
 /**

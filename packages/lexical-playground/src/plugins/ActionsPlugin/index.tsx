@@ -39,9 +39,7 @@ import {
   $isParagraphNode,
   CLEAR_EDITOR_COMMAND,
   CLEAR_HISTORY_COMMAND,
-  COLLABORATION_TAG,
   COMMAND_PRIORITY_EDITOR,
-  HISTORIC_TAG,
   RootNode,
 } from 'lexical';
 import {
@@ -67,44 +65,6 @@ import {
 } from '../SpeechToTextPlugin';
 import {RenderContextTerse} from '../TerseExportExtension';
 import {SHOW_VERSIONS_COMMAND} from '../VersionsPlugin';
-
-async function sendEditorState(editor: LexicalEditor): Promise<void> {
-  const stringifiedEditorState = JSON.stringify(editor.getEditorState());
-  try {
-    await fetch('http://localhost:1235/setEditorState', {
-      body: stringifiedEditorState,
-      headers: {
-        Accept: 'application/json',
-        'Content-type': 'application/json',
-      },
-      method: 'POST',
-    });
-  } catch {
-    // NO-OP
-  }
-}
-
-async function validateEditorState(editor: LexicalEditor): Promise<void> {
-  const stringifiedEditorState = JSON.stringify(editor.getEditorState());
-  let response = null;
-  try {
-    response = await fetch('http://localhost:1235/validateEditorState', {
-      body: stringifiedEditorState,
-      headers: {
-        Accept: 'application/json',
-        'Content-type': 'application/json',
-      },
-      method: 'POST',
-    });
-  } catch {
-    // NO-OP
-  }
-  if (response !== null && response.status === 403) {
-    throw new Error(
-      'Editor state validation failed! Server did not accept changes.',
-    );
-  }
-}
 
 async function shareDoc(doc: SerializedDocument): Promise<void> {
   const url = new URL(window.location.toString());
@@ -283,36 +243,24 @@ export default function ActionsPlugin({
   }, [editor]);
 
   useEffect(() => {
-    return editor.registerUpdateListener(
-      ({dirtyElements, prevEditorState, tags}) => {
-        // If we are in read only mode, send the editor state
-        // to server and ask for validation if possible.
-        if (
-          !isEditable &&
-          dirtyElements.size > 0 &&
-          !tags.has(HISTORIC_TAG) &&
-          !tags.has(COLLABORATION_TAG)
-        ) {
-          validateEditorState(editor);
-        }
-        editor.getEditorState().read(() => {
-          const root = $getRoot();
-          const children = root.getChildren();
+    return editor.registerUpdateListener(() => {
+      editor.getEditorState().read(() => {
+        const root = $getRoot();
+        const children = root.getChildren();
 
-          if (children.length > 1) {
-            setIsEditorEmpty(false);
+        if (children.length > 1) {
+          setIsEditorEmpty(false);
+        } else {
+          if ($isParagraphNode(children[0])) {
+            const paragraphChildren = children[0].getChildren();
+            setIsEditorEmpty(paragraphChildren.length === 0);
           } else {
-            if ($isParagraphNode(children[0])) {
-              const paragraphChildren = children[0].getChildren();
-              setIsEditorEmpty(paragraphChildren.length === 0);
-            } else {
-              setIsEditorEmpty(false);
-            }
+            setIsEditorEmpty(false);
           }
-        });
-      },
-    );
-  }, [editor, isEditable]);
+        }
+      });
+    });
+  }, [editor]);
 
   const toggleMode = (targetMode: 'html' | 'markdown') => {
     startTransition(() => {
@@ -401,10 +349,6 @@ export default function ActionsPlugin({
       <button
         className={`action-button ${!isEditable ? 'unlock' : 'lock'}`}
         onClick={() => {
-          // Send latest editor state to commenting validation server
-          if (isEditable) {
-            sendEditorState(editor);
-          }
           editor.setEditable(!editor.isEditable());
         }}
         title="Read-Only Mode"

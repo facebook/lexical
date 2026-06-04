@@ -11,7 +11,7 @@
   "license": "MIT",
   "version": "0.45.0",
   "main": "./dist/LexicalText.js",
-  "types": "./dist/index.d.ts",
+  "types": "./dist/typescript-too-old.d.ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/facebook/lexical.git",
@@ -23,6 +23,7 @@
     ".": {
       "source": "./src/index.ts",
       "import": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
         "types": "./dist/index.d.ts",
         "development": "./dist/LexicalText.dev.mjs",
         "production": "./dist/LexicalText.prod.mjs",
@@ -30,6 +31,7 @@
         "default": "./dist/LexicalText.mjs"
       },
       "require": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
         "types": "./dist/index.d.ts",
         "development": "./dist/LexicalText.dev.js",
         "production": "./dist/LexicalText.prod.js",
@@ -53,5 +55,20 @@
     "!src/**/*.bench.tsx",
     "README.md",
     "LICENSE"
-  ]
+  ],
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./dist/typescript-too-old.d.ts"
+      ]
+    }
+  },
+  "peerDependencies": {
+    "typescript": ">=5.2"
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
+  }
 }

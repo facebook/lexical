@@ -2398,7 +2398,9 @@ function isAbstractNodeClass(klass: Klass<LexicalNode>): boolean {
 /** @internal */
 export function getStaticNodeConfig(klass: Klass<LexicalNode>): {
   ownNodeType: undefined | string;
-  ownNodeConfig: undefined | StaticNodeConfigValue<LexicalNode, string>;
+  ownNodeConfig:
+    | undefined
+    | StaticNodeConfigValue<LexicalNode, string | symbol>;
 } {
   const nodeConfigRecord =
     PROTOTYPE_CONFIG_METHOD in klass.prototype
@@ -2409,7 +2411,9 @@ export function getStaticNodeConfig(klass: Klass<LexicalNode>): {
     !isAbstract && hasOwnStaticMethod(klass, 'getType')
       ? klass.getType()
       : undefined;
-  let ownNodeConfig: undefined | StaticNodeConfigValue<LexicalNode, string>;
+  let ownNodeConfig:
+    | undefined
+    | StaticNodeConfigValue<LexicalNode, string | symbol>;
   let ownNodeType = nodeType;
   if (nodeConfigRecord) {
     if (nodeType) {

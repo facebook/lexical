@@ -86,6 +86,14 @@ export type ElementTransformer = {
      * Whether the match is from an import operation (e.g. through `$convertFromMarkdownString`) or not (e.g. through typing in the editor).
      */
     isImport: boolean,
+    /**
+     * During an import operation, a recursive block-importer that runs the
+     * element/text transformers on `lineText` and appends the resulting nodes
+     * to `targetNode`. Transformers can use this to import nested block
+     * structures (e.g. a blockquote inside a blockquote). Undefined when the
+     * transform is triggered through markdown shortcuts (typing in the editor).
+     */
+    importBlock?: (lineText: string, targetNode: ElementNode) => void,
   ) => boolean | void;
   type: 'element';
   /**
@@ -218,12 +226,12 @@ export type TextMatchTransformer = Readonly<{
   type: 'text-match';
 }>;
 
-const ORDERED_LIST_REGEX = /^(\s*)(\d{1,})\.\s/;
-const UNORDERED_LIST_REGEX = /^(\s*)[-*+]\s/;
-const CHECK_LIST_REGEX = /^(\s*)(?:[-*+]\s)?\s?(\[(\s|x)?\])\s/i;
+export const ORDERED_LIST_REGEX = /^(\s*)(\d{1,})\.\s/;
+export const UNORDERED_LIST_REGEX = /^(\s*)[-*+]\s/;
+export const CHECK_LIST_REGEX = /^(\s*)(?:[-*+]\s)?\s?(\[(\s|x)?\])\s/i;
 const HEADING_REGEX = /^(#{1,6})\s/;
-const QUOTE_REGEX = /^>\s/;
-const CODE_START_REGEX = /^([ \t]*`{3,})([\w-]+)?[ \t]?/;
+export const QUOTE_REGEX = /^>\s/;
+export const CODE_START_REGEX = /^([ \t]*`{3,})([\w-]+)?[ \t]?/;
 const CODE_END_REGEX = /^[ \t]*`{3,}$/;
 const CODE_SINGLE_LINE_REGEX =
   /^[ \t]*```[^`]+(?:(?:`{1,2}|`{4,})[^`]+)*```(?:[^`]|$)/;
@@ -515,6 +523,17 @@ const $listExport = (
       if (listType !== 'number') {
         childrenText = childrenText.replace(/^(\s{0,3}\d+)(\.\s)/, '$1\\$2');
       }
+      // Indent continuation lines produced by nested block children (e.g. a
+      // code block or quote inside the list item) so they stay aligned under
+      // the list item's content and round-trip back into the same list item on
+      // import.
+      const continuationIndent = indent + ' '.repeat(prefix.length);
+      childrenText = childrenText
+        .split('\n')
+        .map((line, lineIndex) =>
+          lineIndex === 0 ? line : continuationIndent + line,
+        )
+        .join('\n');
       output.push(indent + prefix + childrenText);
       index++;
     }
@@ -556,10 +575,24 @@ export const QUOTE: ElementTransformer = {
     return output.join('\n');
   },
   regExp: QUOTE_REGEX,
-  replace: (parentNode, children, _match, isImport) => {
+  replace: (parentNode, children, _match, isImport, importBlock) => {
     if (isImport) {
       const previousNode = parentNode.getPreviousSibling();
       if ($isQuoteNode(previousNode)) {
+        // The line continues an existing blockquote. If the remaining text is
+        // itself a blockquote line (`> > nested`), import it recursively as a
+        // nested blockquote child instead of keeping the inner `>` as literal
+        // text. A line break separates it from the preceding content so the
+        // structure round-trips back to `> > nested` on export.
+        const innerText = children
+          .map(child => child.getTextContent())
+          .join('');
+        if (importBlock && QUOTE_REGEX.test(innerText)) {
+          previousNode.append($createMarkdownLineBreakNode(previousNode));
+          importBlock(innerText, previousNode);
+          parentNode.remove();
+          return;
+        }
         previousNode.splice(previousNode.getChildrenSize(), 0, [
           $createMarkdownLineBreakNode(previousNode),
           ...children,

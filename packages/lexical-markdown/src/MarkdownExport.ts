@@ -355,6 +355,7 @@ function $exportTopLevelElements(
     const result = transformer.export(node, _node =>
       $exportChildren(
         _node,
+        elementTransformers,
         textTransformersIndex,
         textMatchTransformers,
         undefined,
@@ -371,6 +372,7 @@ function $exportTopLevelElements(
   if ($isElementNode(node)) {
     return $exportChildren(
       node,
+      elementTransformers,
       textTransformersIndex,
       textMatchTransformers,
       undefined,
@@ -386,6 +388,7 @@ function $exportTopLevelElements(
 
 function $exportChildren(
   node: ElementNode,
+  elementTransformers: Array<ElementTransformer | MultilineElementTransformer>,
   textTransformersIndex: Array<TextFormatTransformer>,
   textMatchTransformers: Array<TextMatchTransformer>,
   unclosedTags?: Array<{format: TextFormatType; tag: string}>,
@@ -413,6 +416,7 @@ function $exportChildren(
         parentNode =>
           $exportChildren(
             parentNode,
+            elementTransformers,
             textTransformersIndex,
             textMatchTransformers,
             unclosedTags,
@@ -455,17 +459,19 @@ function $exportChildren(
         ),
       );
     } else if ($isElementNode(child)) {
-      // empty paragraph returns ""
-      output.push(
-        $exportChildren(
-          child,
-          textTransformersIndex,
-          textMatchTransformers,
-          unclosedTags,
-          unclosableTags,
-          shouldPreserveNewLines,
-        ),
+      // Recurse through the element transformers so nested block elements
+      // (e.g. a quote inside a quote, or a code block / quote inside a list
+      // item) are exported via their own transformer instead of being
+      // flattened to plain text. Falls back to a plain children export when no
+      // element transformer matches (e.g. an empty paragraph returns "").
+      const childResult = $exportTopLevelElements(
+        child,
+        elementTransformers,
+        textTransformersIndex,
+        textMatchTransformers,
+        shouldPreserveNewLines,
       );
+      output.push(childResult != null ? childResult : '');
     } else if ($isDecoratorNode(child)) {
       output.push(child.getTextContent());
     }

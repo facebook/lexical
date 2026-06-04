@@ -30,8 +30,17 @@ import {
 } from 'lexical';
 
 import {importTextTransformers} from './importTextTransformers';
-import {$createMarkdownLineBreakNode} from './MarkdownTransformers';
+import {
+  $createMarkdownLineBreakNode,
+  CHECK_LIST_REGEX,
+  CODE_START_REGEX,
+  ORDERED_LIST_REGEX,
+  QUOTE_REGEX,
+  UNORDERED_LIST_REGEX,
+} from './MarkdownTransformers';
 import {isEmptyParagraph, transformersByType} from './utils';
+
+type ByTypeTransformers = ReturnType<typeof transformersByType>;
 
 export type TextFormatTransformersIndex = Readonly<{
   fullMatchRegExpByTag: Readonly<Record<string, RegExp>>;
@@ -53,38 +62,16 @@ export function createMarkdownImport(
 
   return (markdownString, node) => {
     const lines = markdownString.split('\n');
-    const linesLength = lines.length;
     const root = node || $getRoot();
     root.clear();
 
-    for (let i = 0; i < linesLength; i++) {
-      const lineText = lines[i];
-
-      const [imported, shiftedIndex] = $importMultiline(
-        lines,
-        i,
-        byType.multilineElement,
-        root,
-      );
-
-      if (imported) {
-        // If a multiline markdown element was imported, we don't want to process the lines that were part of it anymore.
-        // There could be other sub-markdown elements (both multiline and normal ones) matching within this matched multiline element's children.
-        // However, it would be the responsibility of the matched multiline transformer to decide how it wants to handle them.
-        // We cannot handle those, as there is no way for us to know how to maintain the correct order of generated lexical nodes for possible children.
-        i = shiftedIndex; // Next loop will start from the line after the last line of the multiline element
-        continue;
-      }
-
-      $importBlocks(
-        lineText,
-        root,
-        byType.element,
-        textFormatTransformersIndex,
-        byType.textMatch,
-        shouldPreserveNewLines,
-      );
-    }
+    $importLines(
+      lines,
+      root,
+      byType,
+      textFormatTransformersIndex,
+      shouldPreserveNewLines,
+    );
 
     const children = root.getChildren();
     for (const child of children) {
@@ -111,6 +98,173 @@ export function createMarkdownImport(
       root.selectStart();
     }
   };
+}
+
+/**
+ * Imports an array of markdown lines into `rootNode`, running multiline and
+ * block transformers line by line. Extracted so it can be called recursively to
+ * import nested block structures (e.g. a fenced code block or blockquote nested
+ * inside a list item).
+ */
+function $importLines(
+  lines: Array<string>,
+  rootNode: ElementNode,
+  byType: ByTypeTransformers,
+  textFormatTransformersIndex: TextFormatTransformersIndex,
+  shouldPreserveNewLines: boolean,
+): void {
+  const linesLength = lines.length;
+
+  for (let i = 0; i < linesLength; i++) {
+    const lineText = lines[i];
+
+    if (!shouldPreserveNewLines) {
+      // A blockquote or fenced code block indented under the current list item
+      // is imported as a nested block child of that item rather than being
+      // flattened to literal text / pulled out of the list.
+      const nestedEndIndex = $importNestedListBlock(
+        lines,
+        i,
+        rootNode,
+        byType,
+        textFormatTransformersIndex,
+        shouldPreserveNewLines,
+      );
+      if (nestedEndIndex >= 0) {
+        i = nestedEndIndex;
+        continue;
+      }
+    }
+
+    const [imported, shiftedIndex] = $importMultiline(
+      lines,
+      i,
+      byType.multilineElement,
+      rootNode,
+    );
+
+    if (imported) {
+      // If a multiline markdown element was imported, we don't want to process the lines that were part of it anymore.
+      // There could be other sub-markdown elements (both multiline and normal ones) matching within this matched multiline element's children.
+      // However, it would be the responsibility of the matched multiline transformer to decide how it wants to handle them.
+      // We cannot handle those, as there is no way for us to know how to maintain the correct order of generated lexical nodes for possible children.
+      i = shiftedIndex; // Next loop will start from the line after the last line of the multiline element
+      continue;
+    }
+
+    $importBlocks(
+      lineText,
+      rootNode,
+      byType.element,
+      textFormatTransformersIndex,
+      byType.textMatch,
+      shouldPreserveNewLines,
+    );
+  }
+}
+
+/**
+ * Detects a blockquote or fenced code block that is indented under the current
+ * list item and imports it (dedented) as a nested block child of that item.
+ *
+ * Nested lists keep their existing handling (indent → `ListItemNode.setIndent`),
+ * so list-item lines are never consumed here.
+ *
+ * @returns the index of the last consumed line, or -1 when the lines at
+ * `startIndex` are not a nested block under a list item.
+ */
+function $importNestedListBlock(
+  lines: Array<string>,
+  startIndex: number,
+  rootNode: ElementNode,
+  byType: ByTypeTransformers,
+  textFormatTransformersIndex: TextFormatTransformersIndex,
+  shouldPreserveNewLines: boolean,
+): number {
+  const listNode = rootNode.getLastChild();
+  if (!$isListNode(listNode)) {
+    return -1;
+  }
+
+  const firstMatch = lines[startIndex].match(/^(\s+)(\S.*)$/);
+  if (!firstMatch) {
+    return -1;
+  }
+  const baseIndent = firstMatch[1].length;
+  const firstDedented = firstMatch[2];
+
+  // Only blockquotes and fenced code blocks are nested here; other indented
+  // continuations keep their existing behavior.
+  if (
+    !(QUOTE_REGEX.test(firstDedented) || CODE_START_REGEX.test(firstDedented))
+  ) {
+    return -1;
+  }
+
+  const targetItem = $getDeepestLastListItem(listNode);
+  if (targetItem == null || targetItem.getTextContentSize() === 0) {
+    return -1;
+  }
+
+  // Gather consecutive indented lines (at least `baseIndent` deep) that are not
+  // themselves list items, dedenting each by `baseIndent`.
+  const subLines: Array<string> = [];
+  let endIndex = startIndex;
+  for (let i = startIndex; i < lines.length; i++) {
+    const line = lines[i];
+    const match = line.match(/^(\s+)(\S.*)$/);
+    if (
+      !match ||
+      match[1].length < baseIndent ||
+      UNORDERED_LIST_REGEX.test(line) ||
+      ORDERED_LIST_REGEX.test(line) ||
+      CHECK_LIST_REGEX.test(line)
+    ) {
+      break;
+    }
+    subLines.push(line.slice(baseIndent));
+    endIndex = i;
+  }
+
+  if (subLines.length === 0) {
+    return -1;
+  }
+
+  // Import the dedented block into the list's container first, then move the
+  // resulting block node(s) into the list item. Importing directly into the
+  // list item does not work: ListItemNode.canMergeWith(ParagraphNode) unwraps
+  // the intermediate paragraph that block transformers create. The dedented
+  // lines are no longer indented, so this does not re-trigger nested handling.
+  const beforeCount = rootNode.getChildrenSize();
+  $importLines(
+    subLines,
+    rootNode,
+    byType,
+    textFormatTransformersIndex,
+    shouldPreserveNewLines,
+  );
+  const importedNodes = rootNode.getChildren().slice(beforeCount);
+
+  if (importedNodes.length === 0) {
+    return -1;
+  }
+
+  // Separate the nested block from the list item's own content so it round-trips
+  // back to an indented block on export.
+  targetItem.append($createMarkdownLineBreakNode(targetItem));
+  for (const importedNode of importedNodes) {
+    targetItem.append(importedNode);
+  }
+
+  return endIndex;
+}
+
+function $getDeepestLastListItem(listNode: ElementNode): ListItemNode | null {
+  const lastDescendant = listNode.getLastDescendant();
+  if (lastDescendant == null) {
+    return null;
+  }
+  return $findMatchingParent(lastDescendant, $isListItemNode);
 }
 
 /**
@@ -242,12 +396,26 @@ function $importBlocks(
   elementNode.append(textNode);
   rootNode.append(elementNode);
 
+  // Recursive block-importer handed to element transformers so they can import
+  // nested block structures (e.g. a blockquote inside a blockquote).
+  const importBlock = (nestedLineText: string, targetNode: ElementNode) =>
+    $importBlocks(
+      nestedLineText,
+      targetNode,
+      elementTransformers,
+      textFormatTransformersIndex,
+      textMatchTransformers,
+      shouldPreserveNewLines,
+    );
+
   for (const {regExp, replace} of elementTransformers) {
     const match = lineText.match(regExp);
 
     if (match) {
       textNode.setTextContent(lineText.slice(match[0].length));
-      if (replace(elementNode, [textNode], match, true) !== false) {
+      if (
+        replace(elementNode, [textNode], match, true, importBlock) !== false
+      ) {
         break;
       }
     }

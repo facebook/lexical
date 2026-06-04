@@ -23,6 +23,10 @@ import {rollup} from 'rollup';
 import transformErrorMessages from './error-codes/transform-error-messages.mjs';
 import {exec} from './shared/childProcess.mjs';
 import {packagesManager} from './shared/packagesManager.mjs';
+import {
+  getTypeScriptTooOldStub,
+  TYPESCRIPT_TOO_OLD_BASENAME,
+} from './shared/typescriptTooOld.mjs';
 import npmToWwwName from './www/npmToWwwName.mjs';
 
 const __dirname = import.meta.dirname;
@@ -547,6 +551,22 @@ function copyFlowStubsIntoDist(pkg, outputPath) {
   }
 }
 
+/**
+ * Emit the "TypeScript too old" stub declaration into the build output. The
+ * package.json `types`, `typesVersions`, and `types@<min>` export condition
+ * (set by scripts/updateVersion.mjs) all point at this file so a consumer
+ * whose TypeScript cannot read the package.json "exports" map gets a clear
+ * upgrade message instead of a misleading "Cannot find module".
+ *
+ * @param {string} outputPath
+ */
+function writeTypeScriptTooOldStub(outputPath) {
+  fs.writeFileSync(
+    path.resolve(outputPath, TYPESCRIPT_TOO_OLD_BASENAME),
+    getTypeScriptTooOldStub(),
+  );
+}
+
 async function buildAll() {
   // Always emit .d.ts for npm builds so a `pnpm link` consumer gets types
   // out of the box. Skip for www (it consumes Flow stubs instead).
@@ -626,6 +646,7 @@ async function buildAll() {
 
     if (!isWWW) {
       moveTSDeclarationFilesIntoDist(packageName, outputPath);
+      writeTypeScriptTooOldStub(outputPath);
       copyFlowStubsIntoDist(pkg, outputPath);
     }
   }

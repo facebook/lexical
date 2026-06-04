@@ -171,6 +171,43 @@ function computeUpdateListenerPayload(
   });
 }
 
+// Controllable mock of @lexical/internal/devInvariant.
+//
+// The real devInvariant throws in development/tests and only warns in
+// production. The update-recursion guard in $triggerEnqueuedUpdates relies on
+// that split: in dev a developer sees a loud failure, in prod a recovered
+// internal condition is downgraded to a warning instead of being reported as
+// an uncaught error. To verify BOTH branches from a single test file we mock
+// the module and let each test pick the behavior via __devInvariantMock.
+const __devInvariantMock = vi.hoisted(() => {
+  let mode: 'throw' | 'warn' = 'throw';
+  return {
+    impl(cond?: boolean, message = '', ...args: string[]): void {
+      if (cond) {
+        return;
+      }
+      const formatted = args.reduce(
+        (msg, arg) => msg.replace('%s', String(arg)),
+        message,
+      );
+      if (mode === 'throw') {
+        throw new Error(formatted);
+      } else {
+        // eslint-disable-next-line no-console
+        console.warn(formatted);
+      }
+    },
+    setMode(next: 'throw' | 'warn'): void {
+      mode = next;
+    },
+  };
+});
+
+vi.mock('@lexical/internal/devInvariant', () => ({
+  default: (cond?: boolean, message?: string, ...args: string[]) =>
+    __devInvariantMock.impl(cond, message, ...args),
+}));
+
 describe('LexicalEditor tests', () => {
   let container: HTMLElement;
   let reactRoot: Root;
@@ -1191,24 +1228,39 @@ describe('LexicalEditor tests', () => {
     boldListener();
   });
 
-  it('Detects infinite recursivity on update listeners', async () => {
+  // The recursion guard in $triggerEnqueuedUpdates calls devInvariant after it
+  // has already broken the cascade (cleared the update queue). devInvariant
+  // throws in development/tests and only warns in production, so the two
+  // branches behave differently. We mock the module (see __devInvariantMock
+  // above) so a single test file can exercise BOTH: the dev branch that
+  // throws (surfacing via the scheduled microtask, NOT editor._onError) and
+  // the prod branch that only warns (no throw, nothing routed to _onError).
+  function runCascade(): {
+    errorListener: ReturnType<typeof vi.fn>;
+    unregister: () => void;
+  } {
     const errorListener = vi.fn();
     init(errorListener);
 
-    const unregisterListener = editor.registerUpdateListener(() => {
+    const unregister = editor.registerUpdateListener(() => {
       editor.update(() => {
         $getRoot().markDirty();
       });
     });
 
     expect(errorListener).toHaveBeenCalledTimes(0);
+    return {errorListener, unregister};
+  }
 
-    // The recursion guard uses devInvariant: in development (and tests) it
-    // throws once the cascade limit is exceeded, while in production it only
-    // warns via console (so a recovered condition is no longer reported as an
-    // uncaught error via _onError). The cascade is broken (the update queue is
-    // cleared) before the guard signals, so the throw surfaces from the
-    // scheduled microtask rather than synchronously from editor.update().
+  it('Detects infinite recursivity on update listeners (dev: devInvariant throws)', async () => {
+    // Development behavior: devInvariant throws once the cascade limit is
+    // exceeded. The cascade is broken (update queue cleared) before the guard
+    // signals, so the throw surfaces from the scheduled microtask rather than
+    // synchronously from editor.update(), and is NOT routed through
+    // editor._onError.
+    __devInvariantMock.setMode('throw');
+    const {errorListener, unregister} = runCascade();
+
     const caught: Error[] = [];
     const onUnhandled = (reason: unknown) => {
       caught.push(reason instanceof Error ? reason : new Error(String(reason)));
@@ -1239,7 +1291,7 @@ describe('LexicalEditor tests', () => {
       `Editor namespace: ${editor._config.namespace}`,
     );
 
-    unregisterListener();
+    unregister();
 
     // editor should be usable again after the cascade is cut
     editor.update(
@@ -1255,6 +1307,70 @@ describe('LexicalEditor tests', () => {
     // The guard no longer routes through editor._onError — it surfaces via
     // devInvariant (throw in dev / warn in prod) instead.
     expect(errorListener).toHaveBeenCalledTimes(0);
+  });
+
+  it('Detects infinite recursivity on update listeners (prod: devInvariant warns)', async () => {
+    // Production behavior: devInvariant does NOT throw, it only warns via
+    // console. The cascade must still be broken and the editor must remain
+    // usable, and crucially the recovered condition must NOT be reported as an
+    // uncaught error (neither via editor._onError nor as an unhandled
+    // rejection/exception) — that was the whole point of switching to
+    // devInvariant.
+    __devInvariantMock.setMode('warn');
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const {errorListener, unregister} = runCascade();
+
+    const caught: Error[] = [];
+    const onUnhandled = (reason: unknown) => {
+      caught.push(reason instanceof Error ? reason : new Error(String(reason)));
+    };
+    process.on('unhandledRejection', onUnhandled);
+    process.on('uncaughtException', onUnhandled);
+
+    try {
+      editor.update(() => {
+        $getRoot().markDirty();
+      });
+
+      // drain the microtask chain produced by the cascade; in the warn path
+      // nothing is thrown, so just give the queue a chance to settle.
+      for (let i = 0; i < 200; i++) {
+        await Promise.resolve();
+      }
+    } finally {
+      process.off('unhandledRejection', onUnhandled);
+      process.off('uncaughtException', onUnhandled);
+    }
+
+    // The guard warned exactly once, with the namespace-tagged message...
+    const matchingWarns = warnSpy.mock.calls.filter(([msg]) =>
+      typeof msg === 'string' ? /endlessly enqueueing/.test(msg) : false,
+    );
+    expect(matchingWarns).toHaveLength(1);
+    expect(String(matchingWarns[0][0])).toContain(
+      `Editor namespace: ${editor._config.namespace}`,
+    );
+    // ...and nothing surfaced as an uncaught error or via editor._onError.
+    expect(caught).toHaveLength(0);
+    expect(errorListener).toHaveBeenCalledTimes(0);
+
+    unregister();
+    warnSpy.mockRestore();
+
+    // editor should still be usable after the cascade is cut
+    editor.update(
+      () => {
+        $getRoot().markDirty();
+      },
+      {discrete: true},
+    );
+    for (let i = 0; i < 10; i++) {
+      await Promise.resolve();
+    }
+    expect(errorListener).toHaveBeenCalledTimes(0);
+
+    // Restore the default (throw) behavior for any subsequent tests.
+    __devInvariantMock.setMode('throw');
   });
 
   it('Should be able to update an editor state without a root element', () => {

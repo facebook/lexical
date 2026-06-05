@@ -219,6 +219,7 @@ export type CreateEditorArgs = {
   namespace?: string;
   nodes?: ReadonlyArray<Class<LexicalNode> | LexicalNodeReplacement>;
   onError?: ErrorHandler;
+  onWarn?: ErrorHandler;
   parentEditor?: LexicalEditor;
   editable?: boolean;
   theme?: EditorThemeClasses;
@@ -240,6 +241,7 @@ declare export class LexicalEditor {
   _commands: Commands;
   _nodes: RegisteredNodes;
   _onError: ErrorHandler;
+  _onWarn: ErrorHandler;
   _decorators: {
     [NodeKey]: unknown,
   };
@@ -1694,6 +1696,7 @@ export interface InitialEditorConfig {
   html?: CreateEditorArgs['html'];
   editable?: CreateEditorArgs['editable'];
   onError?: (error: Error, editor: LexicalEditor) => void;
+  onWarn?: (error: Error, editor: LexicalEditor) => void;
   $initialEditorState?: InitialEditorStateType;
 }
 export type InitialEditorStateType =

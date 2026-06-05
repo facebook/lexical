@@ -416,7 +416,7 @@ export function $reverseDfsWithSlots(
  * before children, so the mirror visits them last: a host's slot subtrees are
  * emitted (in reverse slot order) only once its linked-list subtree is fully
  * traversed. Because the caret spine streams nodes, "left the host subtree" is
- * detected when a node at depth <= the host's depth arrives, flushing the
+ * detected when a node at the host's depth or shallower arrives, flushing the
  * host's pending slots. The caret iterator drives the spine untouched.
  * @param startNode - The node to start the search (inclusive), defaults to the root node.
  * @param endNode - The node to end the search (inclusive), defaults to all descendants of startNode.

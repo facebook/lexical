@@ -29,8 +29,10 @@ import {
   createCommand,
   defineExtension,
   isHTMLElement,
+  KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
+  KEY_ARROW_UP_COMMAND,
 } from 'lexical';
 
 import {
@@ -43,6 +45,18 @@ export const INSERT_FIGURE_COMMAND: LexicalCommand<void> = createCommand(
   'INSERT_FIGURE_COMMAND',
 );
 
+// True when the keydown originated inside the equation editor's LaTeX
+// textarea / input, where every arrow key belongs to that field's native
+// caret. Consuming such a key (return true without preventDefault) lets the
+// native caret move and stops the lower-priority lexical-rich-text arrow
+// handler — which preventDefaults and steps the host's NodeSelection out,
+// trapping the caret — from running. Mirrors the guard in
+// $resolveFigureChromeTarget.
+function isWithinSlotEditor(event: KeyboardEvent | null): boolean {
+  const target = event?.target;
+  return isHTMLElement(target) && target.closest('textarea, input') !== null;
+}
+
 // Promote a RangeSelection adjacent to a FigureNode boundary into a
 // NodeSelection on the Figure, mirroring CardExtension. The Figure's only
 // slot value is an atomic (non-inline) decorator, so the caret should step
@@ -51,6 +65,9 @@ function $handleFigureArrow(
   event: KeyboardEvent | null,
   isBackward: boolean,
 ): boolean {
+  if (isWithinSlotEditor(event)) {
+    return true;
+  }
   const selection = $getSelection();
   if (!$isRangeSelection(selection) || event?.shiftKey) {
     return false;
@@ -146,6 +163,20 @@ export const FigureExtension = defineExtension({
       editor.registerCommand<KeyboardEvent | null>(
         KEY_ARROW_LEFT_COMMAND,
         event => $handleFigureArrow(event, true),
+        COMMAND_PRIORITY_BEFORE_EDITOR,
+      ),
+      // Up / down don't promote the Figure (there's no vertical step onto an
+      // atom), but the equation editor still needs them: consume them while
+      // its textarea is focused so the rich-text NodeSelection arrow handler
+      // doesn't trap the caret.
+      editor.registerCommand<KeyboardEvent | null>(
+        KEY_ARROW_UP_COMMAND,
+        isWithinSlotEditor,
+        COMMAND_PRIORITY_BEFORE_EDITOR,
+      ),
+      editor.registerCommand<KeyboardEvent | null>(
+        KEY_ARROW_DOWN_COMMAND,
+        isWithinSlotEditor,
         COMMAND_PRIORITY_BEFORE_EDITOR,
       ),
       // A click anywhere on the Figure (its only content is an atomic

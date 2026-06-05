@@ -132,4 +132,50 @@ test.describe('Figure atomic decorator slot', () => {
     await sleep(150);
     expect(await equationEditorOpen(page)).toBe(true);
   });
+
+  test('arrow keys move the caret inside the equation editor, not trapped by the figure', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await insertFigure(page);
+    await page.dblclick(
+      '.lexical-figure-node [data-lexical-slot="media"] .editor-equation',
+    );
+    await sleep(150);
+    expect(await equationEditorOpen(page)).toBe(true);
+    // Place the caret at offset 3 inside the LaTeX textarea, then press
+    // ArrowLeft. If the figure traps the key (a lexical arrow handler runs
+    // against the host's NodeSelection and preventDefaults), the textarea
+    // caret stays put or the editor closes; it should move to offset 2.
+    await evaluate(page, () => {
+      const ta = document.querySelector('.EquationEditor_blockEditor');
+      ta.focus();
+      ta.setSelectionRange(3, 3);
+    });
+    await sleep(60);
+    await page.keyboard.press('ArrowLeft');
+    await sleep(80);
+    expect(await equationEditorOpen(page)).toBe(true);
+    const caretAfterLeft = await evaluate(page, () => {
+      const ta = document.querySelector('.EquationEditor_blockEditor');
+      return ta ? ta.selectionStart : -1;
+    });
+    expect(caretAfterLeft).toBe(2);
+    // Up / down are also trapped by the same NodeSelection arrow handler.
+    // ArrowUp on the single-line LaTeX moves the native caret to line start.
+    await evaluate(page, () => {
+      const ta = document.querySelector('.EquationEditor_blockEditor');
+      ta.focus();
+      ta.setSelectionRange(3, 3);
+    });
+    await sleep(60);
+    await page.keyboard.press('ArrowUp');
+    await sleep(80);
+    expect(await equationEditorOpen(page)).toBe(true);
+    const caretAfterUp = await evaluate(page, () => {
+      const ta = document.querySelector('.EquationEditor_blockEditor');
+      return ta ? ta.selectionStart : -1;
+    });
+    expect(caretAfterUp).toBe(0);
+  });
 });

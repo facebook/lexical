@@ -188,6 +188,7 @@ export {$isEditorState} from './LexicalEditorState';
 export type {EventHandler} from './LexicalEvents';
 export {stopLexicalPropagation} from './LexicalEvents';
 export type {
+  AbstractStaticNodeConfigRecord,
   BaseStaticNodeConfig,
   DOMChildConversion,
   DOMConversion,
@@ -206,8 +207,10 @@ export type {
   NodeMap,
   SerializedLexicalNode,
   StaticNodeConfig,
+  StaticNodeConfigAccessor,
   StaticNodeConfigRecord,
   StaticNodeConfigValue,
+  StaticNodeTypeAccessor,
 } from './LexicalNode';
 export {$isLexicalNode, buildImportMap} from './LexicalNode';
 export {

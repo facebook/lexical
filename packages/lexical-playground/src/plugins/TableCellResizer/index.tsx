@@ -42,6 +42,8 @@ import {
 } from 'react';
 import {createPortal} from 'react-dom';
 
+import {$setTableColumnWidthsManuallyResized} from '../MarkdownTransformers';
+
 type PointerPosition = {
   x: number;
   y: number;
@@ -313,6 +315,7 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
           const newWidth = Math.max(width + widthChange, MIN_COLUMN_WIDTH);
           newColWidths[columnIndex] = newWidth;
           tableNode.setColWidths(newColWidths);
+          $setTableColumnWidthsManuallyResized(tableNode, true);
         },
         {tag: SKIP_SCROLL_INTO_VIEW_TAG},
       );

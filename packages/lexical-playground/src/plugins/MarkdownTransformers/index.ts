@@ -38,8 +38,11 @@ import {
 } from '@lexical/table';
 import {
   $createTextNode,
+  $getState,
   $isParagraphNode,
   $isTextNode,
+  $setState,
+  createState,
   LexicalNode,
 } from 'lexical';
 
@@ -154,6 +157,53 @@ export const TWEET: ElementTransformer = {
 
 // Very primitive table setup
 const TABLE_ROW_REG_EXP = /^(?:\|)(.+)(?:\|)\s?$/;
+const TABLE_COL_WIDTHS_REG_EXP =
+  /^<!--\s*lexical-table-column-widths:\s*([0-9.,\s]+)\s*-->\s?$/;
+const MARKDOWN_TABLE_MIN_COLUMN_WIDTH = 75;
+const MARKDOWN_TABLE_COLUMN_PADDING = 32;
+const MARKDOWN_TABLE_CHAR_WIDTH = 8;
+const tableColumnWidthsManuallyResizedState = createState(
+  'tableColumnWidthsManuallyResized',
+  {
+    parse: Boolean,
+  },
+);
+
+export function $setTableColumnWidthsManuallyResized(
+  table: TableNode,
+  value: boolean,
+): TableNode {
+  return $setState(table, tableColumnWidthsManuallyResizedState, value);
+}
+
+function $hasTableColumnWidthsManuallyResized(table: TableNode): boolean {
+  return $getState(table, tableColumnWidthsManuallyResizedState);
+}
+
+export const TABLE_COL_WIDTHS: ElementTransformer = {
+  dependencies: [TableNode],
+  export: () => null,
+  regExp: TABLE_COL_WIDTHS_REG_EXP,
+  replace: (parentNode, _1, match) => {
+    const previousSibling = parentNode.getPreviousSibling();
+    if (!$isTableNode(previousSibling)) {
+      return false;
+    }
+
+    const colWidths = parseTableColumnWidths(match[1]);
+    if (
+      colWidths == null ||
+      colWidths.length !== getTableColumnsSize(previousSibling)
+    ) {
+      return false;
+    }
+
+    previousSibling.setColWidths(colWidths);
+    $setTableColumnWidthsManuallyResized(previousSibling, true);
+    parentNode.remove();
+  },
+  type: 'element',
+};
 
 export const TABLE: ElementTransformer = {
   dependencies: [TableNode, TableRowNode, TableCellNode],
@@ -189,6 +239,19 @@ export const TABLE: ElementTransformer = {
       if (isHeaderRow) {
         output.push(`| ${rowOutput.map(_ => '---').join(' | ')} |`);
       }
+    }
+
+    const colWidths = node.getColWidths();
+    if (
+      colWidths != null &&
+      colWidths.length > 0 &&
+      $hasTableColumnWidthsManuallyResized(node)
+    ) {
+      output.push(
+        `<!-- lexical-table-column-widths: ${colWidths
+          .map(width => Math.round(width))
+          .join(',')} -->`,
+      );
     }
 
     return output.join('\n');
@@ -263,6 +326,7 @@ export const TABLE: ElementTransformer = {
     }
 
     const table = $createTableNode();
+    const newColWidths = getEstimatedTableColumnWidths(rows, maxCells);
 
     for (const cells of rows) {
       const tableRow = $createTableRowNode();
@@ -278,9 +342,13 @@ export const TABLE: ElementTransformer = {
       $isTableNode(previousSibling) &&
       getTableColumnsSize(previousSibling) === maxCells
     ) {
+      previousSibling.setColWidths(
+        mergeTableColumnWidths(previousSibling.getColWidths(), newColWidths),
+      );
       previousSibling.append(...table.getChildren());
       parentNode.remove();
     } else {
+      table.setColWidths(newColWidths);
       parentNode.replace(table);
     }
 
@@ -292,6 +360,45 @@ export const TABLE: ElementTransformer = {
 function getTableColumnsSize(table: TableNode) {
   const row = table.getFirstChild();
   return $isTableRowNode(row) ? row.getChildrenSize() : 0;
+}
+
+function parseTableColumnWidths(textContent: string): Array<number> | null {
+  const colWidths = textContent.split(',').map(width => Number(width.trim()));
+  return colWidths.length > 0 &&
+    colWidths.every(width => Number.isFinite(width) && width > 0)
+    ? colWidths
+    : null;
+}
+
+function getEstimatedTableColumnWidths(
+  rows: Array<Array<TableCellNode>>,
+  columnCount: number,
+): Array<number> {
+  return Array.from({length: columnCount}, (_, columnIndex) => {
+    const maxTextLength = rows.reduce((maxLength, cells) => {
+      const textContent = cells[columnIndex]?.getTextContent() || '';
+      return Math.max(maxLength, textContent.length);
+    }, 0);
+    return Math.max(
+      MARKDOWN_TABLE_MIN_COLUMN_WIDTH,
+      Math.ceil(
+        maxTextLength * MARKDOWN_TABLE_CHAR_WIDTH +
+          MARKDOWN_TABLE_COLUMN_PADDING,
+      ),
+    );
+  });
+}
+
+function mergeTableColumnWidths(
+  prevColWidths: readonly number[] | undefined,
+  nextColWidths: readonly number[],
+): Array<number> {
+  if (prevColWidths == null) {
+    return [...nextColWidths];
+  }
+  return nextColWidths.map((width, columnIndex) =>
+    Math.max(width, prevColWidths[columnIndex] || 0),
+  );
 }
 
 const $createTableCell = (textContent: string): TableCellNode => {
@@ -310,6 +417,7 @@ const mapToTableCells = (textContent: string): Array<TableCellNode> | null => {
 };
 
 export const PLAYGROUND_TRANSFORMERS: Array<Transformer> = [
+  TABLE_COL_WIDTHS,
   TABLE,
   HR,
   IMAGE,

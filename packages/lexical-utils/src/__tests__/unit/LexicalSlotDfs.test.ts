@@ -22,7 +22,7 @@ import {
 } from 'lexical/src/__tests__/utils';
 import {describe, expect, test} from 'vitest';
 
-import {$dfs, $reverseDfs} from '../..';
+import {$dfsWithSlots, $reverseDfsWithSlots} from '../..';
 
 // Slots-first preorder traversal: the shape a slot-aware $dfs must produce.
 function* slotAwareDfs(
@@ -96,12 +96,12 @@ describe('named-slots: $dfs traversal', () => {
     nodes: [TestShadowRootNode],
   });
 
-  test('$dfs visits slot subtrees, slots-first, ahead of children', () => {
+  test('$dfsWithSlots visits slot subtrees, slots-first, ahead of children', () => {
     using editor = buildEditorFromExtensions(slotTreeExtension);
 
     editor.read(() => {
       const host = $getRoot().getFirstChild<ParagraphNode>()!;
-      const visited = $dfs(host).map(({depth, node}) => ({
+      const visited = $dfsWithSlots(host).map(({depth, node}) => ({
         depth,
         key: node.getKey(),
       }));
@@ -118,12 +118,12 @@ describe('named-slots: $dfs traversal', () => {
     });
   });
 
-  test('$dfs slot traversal matches the reference slots-first walk', () => {
+  test('$dfsWithSlots slot traversal matches the reference slots-first walk', () => {
     using editor = buildEditorFromExtensions(slotTreeExtension);
 
     editor.read(() => {
       const host = $getRoot().getFirstChild<ParagraphNode>()!;
-      const fromDfs = $dfs(host).map(({depth, node}) => ({
+      const fromDfs = $dfsWithSlots(host).map(({depth, node}) => ({
         depth,
         key: node.getKey(),
       }));
@@ -133,12 +133,12 @@ describe('named-slots: $dfs traversal', () => {
     });
   });
 
-  test('$reverseDfs visits slots-last, mirroring $dfs (#7112 invariant)', () => {
+  test('$reverseDfsWithSlots visits slots-last, mirroring $dfsWithSlots (#7112 invariant)', () => {
     using editor = buildEditorFromExtensions(slotTreeExtension);
 
     editor.read(() => {
       const host = $getRoot().getFirstChild<ParagraphNode>()!;
-      const visited = $reverseDfs(host).map(({depth, node}) => ({
+      const visited = $reverseDfsWithSlots(host).map(({depth, node}) => ({
         depth,
         key: node.getKey(),
       }));

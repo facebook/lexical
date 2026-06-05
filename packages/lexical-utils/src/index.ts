@@ -221,17 +221,33 @@ export function $dfsIterator(
   startNode?: LexicalNode,
   endNode?: LexicalNode,
 ): IterableIterator<DFSNode> {
-  return $dfsSlotInterleavedIterator(startNode, endNode);
+  return $dfsCaretIterator('next', startNode, endNode);
 }
 
 /**
- * Slots are not on the linked-list spine that the caret iterator walks, so a
- * host's slot subtrees are emitted slots-first, right after the host node and
- * before its linked-list children. The caret iterator continues to drive the
- * spine untouched (selection/editing are unaffected). Note: $reverseDfs and the
- * caret iterators remain slot-blind.
+ * Like {@link $dfs}, but also descends into named slots. Slots are not on the
+ * linked-list spine, so each host's slot subtrees are emitted slots-first,
+ * right after the host node and before its linked-list children.
+ * @param startNode - The node to start the search (inclusive), defaults to the root node.
+ * @param endNode - The node to end the search (inclusive), defaults to all descendants of startNode.
+ * @returns An array of DFSNodes. It will always return at least 1 node (the start node).
  */
-function* $dfsSlotInterleavedIterator(
+export function $dfsWithSlots(
+  startNode?: LexicalNode,
+  endNode?: LexicalNode,
+): Array<DFSNode> {
+  return Array.from($dfsWithSlotsIterator(startNode, endNode));
+}
+
+/**
+ * Slot-aware {@link $dfsIterator}: a host's slot subtrees are emitted
+ * slots-first, right after the host node and before its linked-list children.
+ * The caret iterator drives the linked-list spine untouched.
+ * @param startNode - The node to start the search (inclusive), defaults to the root node.
+ * @param endNode - The node to end the search (inclusive), defaults to all descendants of startNode.
+ * @returns An iterator, each yielded value is a DFSNode. It will always return at least 1 node (the start node).
+ */
+export function* $dfsWithSlotsIterator(
   startNode?: LexicalNode,
   endNode?: LexicalNode,
 ): IterableIterator<DFSNode> {
@@ -251,7 +267,7 @@ function* $dfsSlotInterleavedIterator(
 
 /**
  * Slots-first preorder traversal of a self-contained subtree (a slot node and
- * everything it owns). Used to splice slot subtrees into $dfsIterator.
+ * everything it owns). Used to splice slot subtrees into $dfsWithSlotsIterator.
  */
 function* $dfsSubtreeIterator(
   node: LexicalNode,
@@ -378,18 +394,35 @@ export function $reverseDfsIterator(
   startNode?: LexicalNode,
   endNode?: LexicalNode,
 ): IterableIterator<DFSNode> {
-  return $reverseDfsSlotInterleavedIterator(startNode, endNode);
+  return $dfsCaretIterator('previous', startNode, endNode);
 }
 
 /**
- * Right-to-left mirror of $dfsSlotInterleavedIterator. Forward visits slots
+ * Like {@link $reverseDfs}, but also descends into named slots. Mirror of
+ * {@link $dfsWithSlots}.
+ * @param startNode - The node to start the search (inclusive), defaults to the root node.
+ * @param endNode - The node to end the search (inclusive), defaults to all descendants of startNode.
+ * @returns An array of DFSNodes. It will always return at least 1 node (the start node).
+ */
+export function $reverseDfsWithSlots(
+  startNode?: LexicalNode,
+  endNode?: LexicalNode,
+): Array<DFSNode> {
+  return Array.from($reverseDfsWithSlotsIterator(startNode, endNode));
+}
+
+/**
+ * Right-to-left mirror of {@link $dfsWithSlotsIterator}. Forward visits slots
  * before children, so the mirror visits them last: a host's slot subtrees are
  * emitted (in reverse slot order) only once its linked-list subtree is fully
  * traversed. Because the caret spine streams nodes, "left the host subtree" is
  * detected when a node at depth <= the host's depth arrives, flushing the
  * host's pending slots. The caret iterator drives the spine untouched.
+ * @param startNode - The node to start the search (inclusive), defaults to the root node.
+ * @param endNode - The node to end the search (inclusive), defaults to all descendants of startNode.
+ * @returns An iterator, each yielded value is a DFSNode. It will always return at least 1 node (the start node).
  */
-function* $reverseDfsSlotInterleavedIterator(
+export function* $reverseDfsWithSlotsIterator(
   startNode?: LexicalNode,
   endNode?: LexicalNode,
 ): IterableIterator<DFSNode> {

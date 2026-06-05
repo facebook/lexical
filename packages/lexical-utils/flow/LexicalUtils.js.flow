@@ -52,6 +52,14 @@ declare export function $dfsIterator(
   startNode?: LexicalNode,
   endNode?: LexicalNode,
 ): DFSIterator;
+declare export function $dfsWithSlots(
+  startNode?: LexicalNode,
+  endNode?: LexicalNode,
+): Array<DFSNode>;
+declare export function $dfsWithSlotsIterator(
+  startNode?: LexicalNode,
+  endNode?: LexicalNode,
+): DFSIterator;
 declare export function $getNextSiblingOrParentSibling(
   node: LexicalNode,
 ): null | [LexicalNode, number];
@@ -163,6 +171,16 @@ declare export function $reverseDfs(
 ): Array<DFSNode>;
 
 declare export function $reverseDfsIterator(
+  startNode?: LexicalNode,
+  endNode?: LexicalNode,
+): Iterable<DFSNode>;
+
+declare export function $reverseDfsWithSlots(
+  startNode?: LexicalNode,
+  endNode?: LexicalNode,
+): Array<DFSNode>;
+
+declare export function $reverseDfsWithSlotsIterator(
   startNode?: LexicalNode,
   endNode?: LexicalNode,
 ): Iterable<DFSNode>;

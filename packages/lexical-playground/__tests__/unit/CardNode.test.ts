@@ -12,16 +12,24 @@ import {
 } from '@lexical/clipboard';
 import {buildEditorFromExtensions} from '@lexical/extension';
 import {
+  $generateHtmlFromNodes,
+  $generateNodesFromDOMViaExtension,
+  CoreImportExtension,
+  DOMImportExtension,
+} from '@lexical/html';
+import {
   $createNodeSelection,
   $getRoot,
   $isElementNode,
   $selectAll,
   $setSelection,
+  configExtension,
   defineExtension,
 } from 'lexical';
 import {assert, describe, expect, it} from 'vitest';
 
 import {$createCardNode, $isCardNode, CardNode} from '../../src/nodes/CardNode';
+import {PlaygroundRichTextImportRules} from '../../src/nodes/PlaygroundImportExtension';
 import {
   $isSlotContainerNode,
   SlotContainerNode,
@@ -32,6 +40,20 @@ const CardTestExtension = defineExtension({
   $initialEditorState: null,
   dependencies: [CardExtension],
   name: '[test-card]',
+  nodes: [CardNode, SlotContainerNode],
+});
+
+// Adds the DOM import pipeline: CoreImportExtension imports the paragraphs
+// inside each slot wrapper; the card rule (PlaygroundRichTextImportRules)
+// rebuilds the host and re-attaches slots via setSlot.
+const CardImportTestExtension = defineExtension({
+  $initialEditorState: null,
+  dependencies: [
+    CardExtension,
+    CoreImportExtension,
+    configExtension(DOMImportExtension, {rules: PlaygroundRichTextImportRules}),
+  ],
+  name: '[test-card-import]',
   nodes: [CardNode, SlotContainerNode],
 });
 
@@ -64,6 +86,40 @@ describe('CardNode named slots', () => {
     editor.read(() => {
       const card = $getRoot().getFirstChild();
       assert($isCardNode(card), 'Pasted top-level node must be a CardNode');
+      expect(card.getSlotNames().sort()).toEqual(['body', 'title']);
+      expect(card.getSlot('title')?.getTextContent()).toBe('Title');
+      expect(card.getSlot('body')?.getTextContent()).toBe('Body');
+    });
+  });
+
+  it('round-trips title/body slots through HTML export -> DOMImportExtension', () => {
+    using editor = buildEditorFromExtensions(CardImportTestExtension);
+
+    editor.update(
+      () => {
+        $getRoot().clear().append($createCardNode());
+      },
+      {discrete: true},
+    );
+    const html = editor.read(() => $generateHtmlFromNodes(editor, null));
+
+    // Each slot rides in its own named wrapper — explicit serialization from
+    // CardNode.exportDOM, not the removed automatic slot export.
+    expect(html).toContain('data-lexical-slot="title"');
+    expect(html).toContain('data-lexical-slot="body"');
+
+    editor.update(
+      () => {
+        $getRoot().clear().select();
+        const dom = new DOMParser().parseFromString(html, 'text/html');
+        $getRoot().append(...$generateNodesFromDOMViaExtension(dom));
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const card = $getRoot().getFirstChild();
+      assert($isCardNode(card), 'Imported top-level node must be a CardNode');
       expect(card.getSlotNames().sort()).toEqual(['body', 'title']);
       expect(card.getSlot('title')?.getTextContent()).toBe('Title');
       expect(card.getSlot('body')?.getTextContent()).toBe('Body');

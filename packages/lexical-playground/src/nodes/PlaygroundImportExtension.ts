@@ -25,6 +25,8 @@ import {
 
 import {parseAllowedFontSize} from '../plugins/ToolbarPlugin/fontSize';
 import {parseAllowedColor} from '../ui/ColorPicker';
+import {$createCardNode} from './CardNode';
+import {$createSlotContainerNode} from './SlotContainerNode';
 
 function getPlaygroundExtraStyles(element: HTMLElement): string {
   // Parse styles from pasted input, but only if they match exactly the
@@ -94,11 +96,47 @@ const PlaygroundInlineStyleRule = /* @__PURE__ */ defineImportRule({
 });
 
 /**
+ * Reconstruct a {@link CardNode} from its exported HTML. `CardNode.exportDOM`
+ * emits each named slot as a `<div data-lexical-slot="name">` child; this rule
+ * imports each wrapper's contents and re-attaches them via `setSlot`, closing
+ * the explicit slot HTML round-trip. Slots are intentionally NOT auto-imported
+ * (mirroring the export side and NodeState) — a host opts in with a rule.
+ */
+const CardImportRule = defineImportRule({
+  $import: (ctx, el) => {
+    const card = $createCardNode();
+    for (const wrapper of Array.from(
+      el.querySelectorAll(':scope > [data-lexical-slot]'),
+    )) {
+      const name = wrapper.getAttribute('data-lexical-slot');
+      if (name === null) {
+        continue;
+      }
+      card.setSlot(
+        name,
+        $createSlotContainerNode().append(...ctx.$importChildren(wrapper)),
+      );
+    }
+    return [card];
+  },
+  match: sel.tag('div').classAll('lexical-card-node'),
+  name: '@lexical/playground/card',
+});
+
+/**
  * Aggregate of every playground-specific DOM import rule, ordered so the
  * more-specific selectors win dispatch over the generic ones (rule at
  * index 0 has the highest priority).
  */
 export const PlaygroundImportRules = [PlaygroundInlineStyleRule];
+
+/**
+ * Rich-text-only playground import rules. Lives with
+ * {@link PlaygroundRichTextImportExtension} so plain-text editors — which never
+ * register `CardNode` — don't carry a rule that would build an unregistered
+ * node.
+ */
+export const PlaygroundRichTextImportRules = [CardImportRule];
 
 /**
  * Plain-text-safe DOM-import baseline, added in `AppExtension` so it applies in
@@ -128,4 +166,22 @@ export const PlaygroundImportExtension = /* @__PURE__ */ defineExtension({
     }),
   ],
   name: '@lexical/playground/Import',
+});
+
+/**
+ * The rich-text-only per-package importers, mirroring the rich-text node set.
+ * Added to `PlaygroundRichTextExtension` (not the always-on
+ * {@link PlaygroundImportExtension}) so plain-text editors never pull in
+ * `RichText`/`List`/`Table`/`Code`/`HorizontalRule`.
+ */
+export const PlaygroundRichTextImportExtension = defineExtension({
+  dependencies: [
+    RichTextImportExtension,
+    ListImportExtension,
+    TableImportExtension,
+    CodeImportExtension,
+    HorizontalRuleImportExtension,
+    configExtension(DOMImportExtension, {rules: PlaygroundRichTextImportRules}),
+  ],
+  name: '@lexical/playground/RichTextImport',
 });

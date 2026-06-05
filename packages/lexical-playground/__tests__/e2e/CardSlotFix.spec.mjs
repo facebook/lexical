@@ -12,10 +12,12 @@ import {
 } from '../keyboardShortcuts/index.mjs';
 import {
   click,
+  copyToClipboard,
   evaluate,
   expect,
   focusEditor,
   initialize,
+  pasteFromClipboard,
   sleep,
   test,
 } from '../utils/index.mjs';
@@ -211,5 +213,43 @@ test.describe('Card slot deletion boundaries', () => {
     await page.keyboard.press('Delete');
     await sleep(120);
     await assertCardIntact(page, {body: 'Body', title: 'TitleSECOND'});
+  });
+});
+
+test.describe('Card HTML serialization round-trip', () => {
+  test.beforeEach(async ({isCollab, isPlainText, page}) => {
+    test.skip(isPlainText);
+    await initialize({isCollab, page});
+  });
+
+  test('copying a card and pasting it as HTML-only rebuilds its slots', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await insertCard(page);
+    await assertCardIntact(page, {body: 'Body', title: 'Title'});
+
+    // Select the whole card through its chrome — the 12px padding outside the
+    // slots, which CardExtension promotes to a NodeSelection. A click in the
+    // slot interior would drop the caret inside the slot instead.
+    await click(page, '.lexical-card-node', {position: {x: 6, y: 6}});
+    await sleep(100);
+
+    const clipboard = await copyToClipboard(page);
+    // Export side: each slot rides in its own named wrapper, the explicit
+    // serialization from CardNode.exportDOM.
+    expect(clipboard['text/html']).toContain('data-lexical-slot="title"');
+    expect(clipboard['text/html']).toContain('data-lexical-slot="body"');
+
+    // Drop the whole card, then paste HTML-only. The clipboard also carries
+    // lexical JSON, which paste would prefer; passing text/html alone forces
+    // the DOMImportExtension card rule — the import path this change adds.
+    await page.keyboard.press('Backspace');
+    await sleep(120);
+    expect(await cardCount(page)).toBe(0);
+    await pasteFromClipboard(page, {'text/html': clipboard['text/html']});
+    await sleep(200);
+
+    await assertCardIntact(page, {body: 'Body', title: 'Title'});
   });
 });

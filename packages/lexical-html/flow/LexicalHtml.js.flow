@@ -197,3 +197,10 @@ declare export function $generateHtmlFromNodes(
   selection?: BaseSelection | null,
 ): string;
 
+declare export function $appendNodeToHTML(
+  editor: LexicalEditor,
+  node: LexicalNode,
+  parentElement: HTMLElement | DocumentFragment,
+  selection?: BaseSelection | null,
+): boolean;
+

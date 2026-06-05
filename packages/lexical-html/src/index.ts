@@ -318,25 +318,6 @@ function $appendNodesToHTML(
     }
   }
 
-  // Slots live in a separate Map off the child list, so neither getChildren()
-  // nor a custom $getChildNodes sees them. They ride with the host like the
-  // JSON exporters: emit them only when the host itself is emitted, and export
-  // each slot whole with a null selection because a slot is a shadow root the
-  // outer selection can't descend into (its nodes never appear in
-  // selection.getNodes(), so a selection-scoped walk would drop it). Prepend so
-  // slots stay ahead of children.
-  if (shouldInclude && !shouldExclude && $isElementNode(target)) {
-    const slotFragment = document.createDocumentFragment();
-    const slotAppend = slotFragment.append.bind(slotFragment);
-    for (const slotName of target.getSlotNames()) {
-      const slot = target.getSlot(slotName);
-      if (slot !== null) {
-        $appendNodesToHTML(editor, slot, slotAppend, null, domConfig);
-      }
-    }
-    fragment.prepend(slotFragment);
-  }
-
   if (shouldInclude && !shouldExclude) {
     if (isHTMLElement(element) || isDocumentFragment(element)) {
       if (append) {
@@ -362,6 +343,28 @@ function $appendNodesToHTML(
   }
 
   return shouldInclude;
+}
+
+/**
+ * Serialize a single node (and its subtree) into `parentElement`, the same way
+ * the top-level HTML exporter serializes the nodes it walks. Slots are not part
+ * of any node's child list and — like {@link LexicalNode.exportJSON} vs
+ * `exportDOM` for NodeState — are intentionally NOT auto-serialized to HTML;
+ * a host node opts in by calling this from its own `exportDOM`, e.g. to render
+ * each slot value into a `data-lexical-slot` wrapper.
+ */
+export function $appendNodeToHTML(
+  editor: LexicalEditor,
+  node: LexicalNode,
+  parentElement: HTMLElement | DocumentFragment,
+  selection: BaseSelection | null = null,
+): boolean {
+  return $appendNodesToHTML(
+    editor,
+    node,
+    parentElement.append.bind(parentElement),
+    selection,
+  );
 }
 
 function getConversionFunction(

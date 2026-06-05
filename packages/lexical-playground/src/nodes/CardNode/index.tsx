@@ -6,9 +6,15 @@
  *
  */
 
-import type {LexicalNode} from 'lexical';
+import type {DOMExportOutput, LexicalEditor, LexicalNode} from 'lexical';
 
-import {$createParagraphNode, $createTextNode, ElementNode} from 'lexical';
+import {$appendNodeToHTML} from '@lexical/html';
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $isElementNode,
+  ElementNode,
+} from 'lexical';
 
 import {$createSlotContainerNode} from '../SlotContainerNode';
 
@@ -25,6 +31,28 @@ export class CardNode extends ElementNode {
 
   updateDOM(): false {
     return false;
+  }
+
+  // Slots ride in a separate Map, so the HTML exporter never descends into
+  // them on its own — like NodeState, slot serialization is opt-in. Emit each
+  // slot's contents into a `data-lexical-slot` wrapper the import rule maps
+  // back to setSlot(). JSON still serializes slots automatically.
+  exportDOM(editor: LexicalEditor): DOMExportOutput {
+    const element = document.createElement('div');
+    element.className = 'lexical-card-node';
+    for (const name of this.getSlotNames()) {
+      const slot = this.getSlot(name);
+      if (!$isElementNode(slot)) {
+        continue;
+      }
+      const wrapper = document.createElement('div');
+      wrapper.setAttribute('data-lexical-slot', name);
+      for (const child of slot.getChildren()) {
+        $appendNodeToHTML(editor, child, wrapper);
+      }
+      element.append(wrapper);
+    }
+    return {element};
   }
 }
 

@@ -429,7 +429,7 @@ describe('HTML', () => {
     });
   });
 
-  test('[Lexical -> HTML]: export includes slot text', () => {
+  test('[Lexical -> HTML]: slots are not auto-serialized to HTML', () => {
     const editor = createHeadlessEditor({
       namespace: 'slot',
       nodes: [TestShadowRootNode],
@@ -449,45 +449,9 @@ describe('HTML', () => {
     editor.read(() => {
       html = $generateHtmlFromNodes(editor);
     });
-    expect(html).toContain('SLOTTEXT');
-  });
-
-  test('[Lexical -> HTML]: export includes slot text under a provided selection', () => {
-    const editor = createHeadlessEditor({
-      namespace: 'slot-sel',
-      nodes: [TestShadowRootNode],
-    });
-    let selection: RangeSelection | null = null;
-    editor.update(
-      () => {
-        const root = $getRoot();
-        const before = $createTextNode('BEFORE');
-        const after = $createTextNode('AFTER');
-        const host = $createParagraphNode().append($createTextNode('CHILD'));
-        const slot = $createTestShadowRootNode().append(
-          $createParagraphNode().append($createTextNode('SLOTTEXT')),
-        );
-        host.setSlot('title', slot);
-        root
-          .append($createParagraphNode().append(before))
-          .append(host)
-          .append($createParagraphNode().append(after));
-        // Selection fully encloses the host (the realistic copy scenario), so
-        // the host is selected and emitted whole — its slot must ride along.
-        selection = $createRangeSelection();
-        selection.setTextNodeRange(
-          before,
-          0,
-          after,
-          after.getTextContentSize(),
-        );
-      },
-      {discrete: true},
-    );
-    let html = '';
-    editor.read(() => {
-      html = $generateHtmlFromNodes(editor, selection);
-    });
-    expect(html).toContain('SLOTTEXT');
+    // Like NodeState, slots live in a separate channel and are NOT auto-
+    // exported to HTML; a host opts in from its own exportDOM via
+    // $appendNodeToHTML (see CardNode in the playground). JSON stays automatic.
+    expect(html).not.toContain('SLOTTEXT');
   });
 });

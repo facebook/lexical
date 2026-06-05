@@ -101,11 +101,16 @@ export type SerializedLexicalNode = {
  */
 export interface StaticNodeConfigValue<
   T extends LexicalNode,
-  Type extends string,
+  Type extends string | symbol,
 > {
   /**
    * The exact type of T.getType(), e.g. 'text' - the method itself must
    * have a more generic 'string' type to be compatible wtih subclassing.
+   *
+   * For a concrete node this is its string `type`. An abstract base class is
+   * keyed in {@link BaseStaticNodeConfig} by a symbol (it has no concrete node
+   * `type`), so `Type` is widened to `string | symbol`; the `type` field is
+   * never populated for a symbol-keyed config.
    */
   readonly type?: Type;
   /**
@@ -170,9 +175,20 @@ export interface StaticNodeConfigValue<
 /**
  * This is the type of LexicalNode.$config() that can be
  * overridden by subclasses.
+ *
+ * Concrete nodes are keyed by their string `type`. An abstract base class
+ * (such as ElementNode or DecoratorNode) has no concrete node `type`, so when
+ * it needs to declare configuration that is shared with its concrete
+ * subclasses (for example required {@link RequiredNodeStateConfig} state or a
+ * `$transform`) it is keyed instead by a well-known symbol, by convention
+ * `Symbol.for(<NodeClassName>)` (e.g. `Symbol.for('ElementNode')`). The
+ * descriptive, globally-registered symbol keeps the config easy to find in a
+ * debugger and can never collide with a real node `type`.
  */
 export type BaseStaticNodeConfig = {
-  readonly [K in string]?: StaticNodeConfigValue<LexicalNode, string>;
+  readonly [K in string | symbol]?:
+    | undefined
+    | StaticNodeConfigValue<LexicalNode, K>;
 };
 
 /**
@@ -551,15 +567,33 @@ export class LexicalNode {
    * This is a convenience method for $config that
    * aids in type inference. See {@link LexicalNode.$config}
    * for example usage.
+   *
+   * An abstract base class that has no concrete node `type` may pass a
+   * well-known symbol (by convention `Symbol.for(<NodeClassName>)`) instead of
+   * a string `type` to declare configuration shared with its subclasses.
    */
+  config<Config extends StaticNodeConfigValue<this, string>>(
+    type: symbol,
+    config: Config,
+  ): BaseStaticNodeConfig;
   config<Type extends string, Config extends StaticNodeConfigValue<this, Type>>(
     type: Type,
     config: Config,
-  ): StaticNodeConfigRecord<Type, Config> {
+  ): StaticNodeConfigRecord<Type, Config>;
+  config(
+    type: string | symbol,
+    config: AnyStaticNodeConfigValue,
+  ): BaseStaticNodeConfig {
     const parentKlass =
       config.extends || Object.getPrototypeOf(this.constructor);
-    Object.assign(config, {extends: parentKlass, type});
-    return {[type]: config} as StaticNodeConfigRecord<Type, Config>;
+    Object.assign(config, {extends: parentKlass});
+    // A concrete node records its string `type`; an abstract base class is
+    // keyed by a well-known symbol (e.g. Symbol.for('ElementNode')) and has no
+    // concrete node `type`.
+    if (typeof type === 'string') {
+      Object.assign(config, {type});
+    }
+    return {[type]: config} as BaseStaticNodeConfig;
   }
 
   /**

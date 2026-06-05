@@ -6,29 +6,21 @@
  *
  */
 
-import type {EditorConfig, LexicalNode, SerializedTextNode} from 'lexical';
+import type {EditorConfig, LexicalNode} from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/utils';
 import {$applyNodeReplacement, TextNode} from 'lexical';
 
 /** @noInheritDoc */
 export class HashtagNode extends TextNode {
-  static getType(): string {
-    return 'hashtag';
-  }
-
-  static clone(node: HashtagNode): HashtagNode {
-    return new HashtagNode(node.__text, node.__key);
+  $config() {
+    return this.config('hashtag', {extends: TextNode});
   }
 
   createDOM(config: EditorConfig): HTMLElement {
     const element = super.createDOM(config);
     addClassNamesToElement(element, config.theme.hashtag);
     return element;
-  }
-
-  static importJSON(serializedNode: SerializedTextNode): HashtagNode {
-    return $createHashtagNode().updateFromJSON(serializedNode);
   }
 
   canInsertTextBefore(): boolean {

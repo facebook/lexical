@@ -100,7 +100,17 @@ class InlineDecoratorNode extends DecoratorNode<string> {
 
 describe('LexicalNode tests', () => {
   beforeAll(() => {
-    vi.spyOn(LexicalNode, 'getType').mockImplementation(() => 'node');
+    // Give the abstract base a concrete type for `new LexicalNode()` tests, but
+    // delegate for subclasses: now that ported nodes derive their type from
+    // `$config` (instead of their own static `getType`), they reach this base
+    // method until `getStaticNodeConfig` injects their own, so it must resolve
+    // the real type rather than collapsing every subclass to 'node'.
+    const realGetType = LexicalNode.getType;
+    vi.spyOn(LexicalNode, 'getType').mockImplementation(function (
+      this: typeof LexicalNode,
+    ) {
+      return this === LexicalNode ? 'node' : realGetType.call(this);
+    });
   });
   afterAll(() => {
     vi.restoreAllMocks();
@@ -1532,7 +1542,7 @@ describe('LexicalNode tests', () => {
                 text: 'codegen!',
                 type: 'custom-text',
                 version: 1,
-              });
+              } as SerializedTextNode);
               expect(node).toBeInstanceOf(CustomTextNode);
               expect(node.getType()).toBe('custom-text');
               expect(node.getTextContent()).toBe('codegen!');
@@ -2082,5 +2092,51 @@ describe('LexicalNode.$config() without registration', () => {
         'correct-custom-decorator',
       );
     }
+  });
+
+  test('abstract base class declares shared $config under a Symbol key', () => {
+    // An abstract base class has no concrete node `type`, so it publishes the
+    // configuration it shares with its subclasses (here a $transform) under a
+    // well-known symbol rather than a string key. getStaticNodeConfig must
+    // resolve that symbol-keyed config so the transform is collected for the
+    // concrete subclass.
+    const transformed: string[] = [];
+    class AbstractBaseNode extends ElementNode {
+      $config() {
+        return this.config(Symbol.for('AbstractBaseNode'), {
+          $transform: (node: AbstractBaseNode) => {
+            transformed.push(node.getType());
+          },
+        });
+      }
+    }
+    class ConcreteChildNode extends AbstractBaseNode {
+      $config() {
+        return this.config('concrete-child-node', {extends: AbstractBaseNode});
+      }
+      createDOM(): HTMLElement {
+        return document.createElement('div');
+      }
+    }
+    // The abstract base must not be assigned a concrete type or static methods.
+    expect(() => AbstractBaseNode.getType()).toThrow(
+      /does not implement \.getType/,
+    );
+
+    const editor = createEditor({
+      nodes: [ConcreteChildNode],
+      onError(err) {
+        throw err;
+      },
+    });
+    editor.update(
+      () => {
+        $getRoot().append(new ConcreteChildNode());
+      },
+      {discrete: true},
+    );
+
+    expect(ConcreteChildNode.getType()).toEqual('concrete-child-node');
+    expect(transformed).toEqual(['concrete-child-node']);
   });
 });

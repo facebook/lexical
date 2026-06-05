@@ -18,7 +18,6 @@ import {
   $getEditor,
   $getNearestNodeFromDOMNode,
   BaseSelection,
-  DOMConversionMap,
   DOMConversionOutput,
   DOMExportOutput,
   EditorConfig,
@@ -176,13 +175,21 @@ export function setScrollableTablesActive(
 /** @noInheritDoc */
 export class TableNode extends ElementNode {
   /** @internal */
-  __rowStriping: boolean;
-  __frozenColumnCount: number;
-  __frozenRowCount: number;
+  __rowStriping: boolean = false;
+  __frozenColumnCount: number = 0;
+  __frozenRowCount: number = 0;
   __colWidths?: readonly number[];
 
-  static getType(): string {
-    return 'table';
+  $config() {
+    return this.config('table', {
+      extends: ElementNode,
+      importDOM: {
+        table: () => ({
+          conversion: $convertTableElement,
+          priority: 1,
+        }),
+      },
+    });
   }
 
   getColWidths(): readonly number[] | undefined {
@@ -198,29 +205,12 @@ export class TableNode extends ElementNode {
     return self;
   }
 
-  static clone(node: TableNode): TableNode {
-    return new TableNode(node.__key);
-  }
-
   afterCloneFrom(prevNode: this) {
     super.afterCloneFrom(prevNode);
     this.__colWidths = prevNode.__colWidths;
     this.__rowStriping = prevNode.__rowStriping;
     this.__frozenColumnCount = prevNode.__frozenColumnCount;
     this.__frozenRowCount = prevNode.__frozenRowCount;
-  }
-
-  static importDOM(): DOMConversionMap | null {
-    return {
-      table: (_node: Node) => ({
-        conversion: $convertTableElement,
-        priority: 1,
-      }),
-    };
-  }
-
-  static importJSON(serializedNode: SerializedTableNode): TableNode {
-    return $createTableNode().updateFromJSON(serializedNode);
   }
 
   updateFromJSON(serializedNode: LexicalUpdateJSON<SerializedTableNode>): this {
@@ -230,14 +220,6 @@ export class TableNode extends ElementNode {
       .setFrozenColumns(serializedNode.frozenColumnCount || 0)
       .setFrozenRows(serializedNode.frozenRowCount || 0)
       .setColWidths(serializedNode.colWidths);
-  }
-
-  constructor(key?: NodeKey) {
-    super(key);
-    this.__rowStriping = false;
-    this.__frozenColumnCount = 0;
-    this.__frozenRowCount = 0;
-    this.__colWidths = undefined;
   }
 
   exportJSON(): SerializedTableNode {

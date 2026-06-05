@@ -28,6 +28,19 @@ function $getActiveBlockCursorElement(): HTMLElement | null {
 }
 
 /**
+ * A slot value renders slots-first into its own `[data-lexical-slot]`
+ * container, prepended ahead of the host's linked-list children. The leading
+ * boundary skips these so they are never counted as managed children.
+ */
+function isSlotContainerDOM(node: Node | null): node is Element {
+  return (
+    node !== null &&
+    node.nodeType === 1 &&
+    (node as Element).hasAttribute('data-lexical-slot')
+  );
+}
+
+/**
  * Base class for DOM slots — a pointer to the content-bearing element of a
  * node's DOM, plus optional `before` / `after` boundaries marking where the
  * lexical-managed content sits inside that element.
@@ -256,11 +269,19 @@ export class ElementDOMSlot<
    * a block cursor among their children, so the base slot stays editor-free.
    */
   override getFirstChildAnchor(): Node | null {
-    const after = super.getFirstChildAnchor();
-    const firstChild = after ? after.nextSibling : this.element.firstChild;
+    let anchor = super.getFirstChildAnchor();
+    // Advance past the prepended slot containers (a separate channel, not
+    // managed children) so the first slot is never mistaken for the first
+    // child — which would shift every child DOM index by the slot count.
+    let node = anchor ? anchor.nextSibling : this.element.firstChild;
+    while (isSlotContainerDOM(node)) {
+      anchor = node;
+      node = node.nextSibling;
+    }
+    const firstChild = anchor ? anchor.nextSibling : this.element.firstChild;
     return firstChild !== null && firstChild === $getActiveBlockCursorElement()
       ? firstChild
-      : after;
+      : anchor;
   }
   /**
    * @internal

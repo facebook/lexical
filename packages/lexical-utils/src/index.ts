@@ -221,7 +221,55 @@ export function $dfsIterator(
   startNode?: LexicalNode,
   endNode?: LexicalNode,
 ): IterableIterator<DFSNode> {
-  return $dfsCaretIterator('next', startNode, endNode);
+  return $dfsSlotInterleavedIterator(startNode, endNode);
+}
+
+/**
+ * Slots are not on the linked-list spine that the caret iterator walks, so a
+ * host's slot subtrees are emitted slots-first, right after the host node and
+ * before its linked-list children. The caret iterator continues to drive the
+ * spine untouched (selection/editing are unaffected). Note: $reverseDfs and the
+ * caret iterators remain slot-blind.
+ */
+function* $dfsSlotInterleavedIterator(
+  startNode?: LexicalNode,
+  endNode?: LexicalNode,
+): IterableIterator<DFSNode> {
+  for (const dfsNode of $dfsCaretIterator('next', startNode, endNode)) {
+    yield dfsNode;
+    const {node, depth} = dfsNode;
+    if ($isElementNode(node)) {
+      for (const name of node.getSlotNames()) {
+        const slot = node.getSlot(name);
+        if (slot !== null) {
+          yield* $dfsSubtreeIterator(slot, depth + 1);
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Slots-first preorder traversal of a self-contained subtree (a slot node and
+ * everything it owns). Used to splice slot subtrees into $dfsIterator.
+ */
+function* $dfsSubtreeIterator(
+  node: LexicalNode,
+  depth: number,
+): IterableIterator<DFSNode> {
+  yield {depth, node};
+  if ($isElementNode(node)) {
+    const childDepth = depth + 1;
+    for (const name of node.getSlotNames()) {
+      const slot = node.getSlot(name);
+      if (slot !== null) {
+        yield* $dfsSubtreeIterator(slot, childDepth);
+      }
+    }
+    for (const child of node.getChildren()) {
+      yield* $dfsSubtreeIterator(child, childDepth);
+    }
+  }
 }
 
 function $getEndCaret<D extends CaretDirection>(
@@ -294,7 +342,8 @@ export function $getDepth(node: null | LexicalNode): number {
   for (
     let innerNode = node;
     innerNode !== null;
-    innerNode = innerNode.getParent()
+    // A slotted node has no parent; climb its slot host instead.
+    innerNode = innerNode.getParent() ?? innerNode.getSlotHost()
   ) {
     depth++;
   }
@@ -329,7 +378,73 @@ export function $reverseDfsIterator(
   startNode?: LexicalNode,
   endNode?: LexicalNode,
 ): IterableIterator<DFSNode> {
-  return $dfsCaretIterator('previous', startNode, endNode);
+  return $reverseDfsSlotInterleavedIterator(startNode, endNode);
+}
+
+/**
+ * Right-to-left mirror of $dfsSlotInterleavedIterator. Forward visits slots
+ * before children, so the mirror visits them last: a host's slot subtrees are
+ * emitted (in reverse slot order) only once its linked-list subtree is fully
+ * traversed. Because the caret spine streams nodes, "left the host subtree" is
+ * detected when a node at depth <= the host's depth arrives, flushing the
+ * host's pending slots. The caret iterator drives the spine untouched.
+ */
+function* $reverseDfsSlotInterleavedIterator(
+  startNode?: LexicalNode,
+  endNode?: LexicalNode,
+): IterableIterator<DFSNode> {
+  const pending: Array<{depth: number; node: ElementNode}> = [];
+  for (const dfsNode of $dfsCaretIterator('previous', startNode, endNode)) {
+    while (
+      pending.length > 0 &&
+      dfsNode.depth <= pending[pending.length - 1].depth
+    ) {
+      const host = pending.pop()!;
+      yield* $reverseSlotsOf(host.node, host.depth + 1);
+    }
+    yield dfsNode;
+    const {node, depth} = dfsNode;
+    if ($isElementNode(node) && node.getSlotNames().length > 0) {
+      pending.push({depth, node});
+    }
+  }
+  while (pending.length > 0) {
+    const host = pending.pop()!;
+    yield* $reverseSlotsOf(host.node, host.depth + 1);
+  }
+}
+
+/** Emit a host's slot subtrees in reverse slot order (mirror of slots-first). */
+function* $reverseSlotsOf(
+  host: ElementNode,
+  childDepth: number,
+): IterableIterator<DFSNode> {
+  const names = host.getSlotNames();
+  for (let i = names.length - 1; i >= 0; i--) {
+    const slot = host.getSlot(names[i]);
+    if (slot !== null) {
+      yield* $reverseDfsSubtreeIterator(slot, childDepth);
+    }
+  }
+}
+
+/**
+ * Right-to-left slots-last preorder of a self-contained subtree: children in
+ * reverse order, then slots in reverse order. Mirror of $dfsSubtreeIterator.
+ */
+function* $reverseDfsSubtreeIterator(
+  node: LexicalNode,
+  depth: number,
+): IterableIterator<DFSNode> {
+  yield {depth, node};
+  if ($isElementNode(node)) {
+    const childDepth = depth + 1;
+    const children = node.getChildren();
+    for (let i = children.length - 1; i >= 0; i--) {
+      yield* $reverseDfsSubtreeIterator(children[i], childDepth);
+    }
+    yield* $reverseSlotsOf(node, childDepth);
+  }
 }
 
 /**

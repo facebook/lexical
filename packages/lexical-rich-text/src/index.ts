@@ -1110,21 +1110,20 @@ export function registerRichText(
       KEY_ENTER_COMMAND,
       event => {
         let selection = $getSelection();
-        // When a block-level DecoratorNode is selected as a NodeSelection
-        // (e.g. it is the only root child after the user removed all
-        // surrounding paragraphs), Enter has no RangeSelection to act on
-        // and the default handler bails out, leaving the editor stuck.
-        // Convert to a RangeSelection past the decorator so the default
-        // RangeSelection handler below inserts a paragraph and places
-        // the caret.
+        // When a block-level DecoratorNode is selected as a
+        // NodeSelection (e.g. it is the only root child after the user
+        // removed all surrounding paragraphs, or the host's chrome was
+        // clicked), Enter has no RangeSelection to act on and the
+        // default handler bails out, leaving the editor stuck. Convert
+        // to a RangeSelection past the node so the default RangeSelection
+        // handler below inserts a paragraph and places the caret.
         if ($isNodeSelection(selection)) {
           const nodes = selection.getNodes();
-          if (
-            nodes.length === 1 &&
-            $isDecoratorNode(nodes[0]) &&
-            !nodes[0].isInline()
-          ) {
-            selection = nodes[0].selectNext();
+          if (nodes.length === 1) {
+            const node = nodes[0];
+            if ($isDecoratorNode(node) && !node.isInline()) {
+              selection = node.selectNext();
+            }
           }
         }
         if (!$isRangeSelection(selection)) {
@@ -1263,8 +1262,11 @@ export function registerRichText(
     editor.registerCommand(
       SELECT_ALL_COMMAND,
       () => {
-        $selectAll();
-
+        // Pass the current RangeSelection so $selectAll honors shadow-root
+        // scope (e.g. a named-slot container, TableCell) — without it the
+        // else branch runs root.select() and overruns the shadow boundary.
+        const selection = $getSelection();
+        $selectAll($isRangeSelection(selection) ? selection : null);
         return true;
       },
       COMMAND_PRIORITY_EDITOR,

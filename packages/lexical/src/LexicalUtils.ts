@@ -87,6 +87,7 @@ import {
   type StaticNodeConfigValue,
 } from './LexicalNode';
 import {$normalizeSelection} from './LexicalNormalization';
+import {$clampRangeSelectionToSlotFrame} from './LexicalSelection';
 import {
   errorOnInfiniteTransforms,
   errorOnReadOnly,
@@ -402,7 +403,11 @@ function internalMarkParentElementsAsDirty(
       break;
     }
     dirtyElements.set(nextParentKey, false);
-    nextParentKey = node.__parent;
+    // @experimental named-slots. A slotted node has no __parent; its
+    // up-pointer is __slotHost. Crossing that boundary here lets a slot
+    // content edit dirty the host so it re-reconciles. Non-slot trees keep
+    // __slotHost === null, so this is the plain __parent walk there.
+    nextParentKey = node.__parent !== null ? node.__parent : node.__slotHost;
   }
 }
 
@@ -420,6 +425,12 @@ function internalMarkParentElementsAsDirty(
  * Please do not use it as it may change in the future.
  */
 export function removeFromParent(node: LexicalNode): void {
+  invariant(
+    node.getLatest().__slotHost === null,
+    'removeFromParent: node %s is slotted into host %s; a slotted node and a child are mutually exclusive. Remove it from its slot first.',
+    node.__key,
+    String(node.getLatest().__slotHost),
+  );
   const oldParent = node.getParent();
   if (oldParent !== null) {
     const writableNode = node.getWritable();
@@ -474,7 +485,11 @@ export function internalMarkNodeAsDirty(node: LexicalNode): void {
     node.__type,
   );
   const latest = node.getLatest();
-  const parent = latest.__parent;
+  // @experimental named-slots. A slotted node's up-pointer is __slotHost,
+  // not __parent; start the dirty walk from whichever is set so a slot
+  // content edit propagates into the host. Non-slot trees keep
+  // __slotHost === null, so this is the plain __parent start there.
+  const parent = latest.__parent !== null ? latest.__parent : latest.__slotHost;
   const editorState = getActiveEditorState();
   const editor = getActiveEditor();
   const nodeMap = editorState._nodeMap;
@@ -688,6 +703,12 @@ export function $setSelection(selection: null | BaseSelection): void {
     }
     selection.dirty = true;
     selection.setCachedNodes(null);
+    // @experimental named-slots. A RangeSelection committed through the API
+    // must not straddle a slot boundary (slots are shadow-root-isolated), the
+    // programmatic counterpart of the DOM-read clamp in selection resolution.
+    if ($isRangeSelection(selection)) {
+      $clampRangeSelectionToSlotFrame(selection);
+    }
   }
   editorState._selection = selection;
 }

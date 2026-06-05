@@ -26,7 +26,7 @@ import type {
 
 import invariant from '@lexical/internal/invariant';
 
-import {$isTextNode, TextNode} from '../index';
+import {$isDecoratorNode, $isTextNode, TextNode} from '../index';
 import {
   DOUBLE_LINE_BREAK,
   ELEMENT_FORMAT_TO_TYPE,
@@ -103,6 +103,8 @@ export class ElementNode extends LexicalNode {
   __textFormat: number;
   /** @internal */
   __textStyle: string;
+  /** @internal Named slots: slot name -> slotted node key. Traversed before element children. */
+  __slots: Map<string, NodeKey>;
 
   constructor(key?: NodeKey) {
     super(key);
@@ -115,6 +117,7 @@ export class ElementNode extends LexicalNode {
     this.__dir = null;
     this.__textFormat = 0;
     this.__textStyle = '';
+    this.__slots = new Map();
   }
 
   afterCloneFrom(prevNode: this) {
@@ -123,6 +126,7 @@ export class ElementNode extends LexicalNode {
       this.__first = prevNode.__first;
       this.__last = prevNode.__last;
       this.__size = prevNode.__size;
+      this.__slots = new Map(prevNode.__slots);
     }
     this.__indent = prevNode.__indent;
     this.__format = prevNode.__format;
@@ -132,6 +136,90 @@ export class ElementNode extends LexicalNode {
     this.__textStyle = prevNode.__textStyle;
   }
 
+  /**
+   * Returns the node occupying the named slot, or null if the slot is empty.
+   * Slots are a shadow-root-isolated channel kept separate from children; see
+   * {@link LexicalNode.getSlotHost} for the reverse up-link.
+   *
+   * @experimental
+   */
+  getSlot<T extends LexicalNode>(name: string): T | null {
+    const key = this.getLatest().__slots.get(name);
+    return key === undefined ? null : $getNodeByKey<T>(key);
+  }
+  /**
+   * Returns the names of this node's occupied slots, in insertion order.
+   *
+   * @experimental
+   */
+  getSlotNames(): Array<string> {
+    return Array.from(this.getLatest().__slots.keys());
+  }
+  /**
+   * Places `node` into the named slot, replacing any existing value under that
+   * name. A slot value must be a shadow-root {@link ElementNode} or a
+   * non-inline {@link DecoratorNode}, and must be detached (no parent and not
+   * already slotted) — a slotted node and a child are mutually exclusive.
+   *
+   * @experimental
+   */
+  setSlot(name: string, node: LexicalNode): this {
+    errorOnReadOnly();
+    invariant(
+      name !== '__proto__' && name !== 'constructor' && name !== 'prototype',
+      'setSlot: "%s" is a reserved slot name; __proto__, constructor, and prototype break the plain-object serialization of slots',
+      name,
+    );
+    invariant(
+      ($isElementNode(node) && node.isShadowRoot()) ||
+        ($isDecoratorNode(node) && !node.isInline()),
+      'setSlot: node %s is not a valid slot value; a slot must be a shadow-root ElementNode or a non-inline DecoratorNode.',
+      node.__key,
+    );
+    invariant(
+      node.__parent === null,
+      'setSlot: node %s already has a parent; a slotted node and a child are mutually exclusive.',
+      node.__key,
+    );
+    invariant(
+      node.__slotHost === null,
+      'setSlot: node %s is already slotted into host %s; remove it from its current slot first.',
+      node.__key,
+      String(node.__slotHost),
+    );
+    const writableSelf = this.getWritable();
+    const previousKey = writableSelf.__slots.get(name);
+    if (previousKey !== undefined && previousKey !== node.__key) {
+      const previous = $getNodeByKey(previousKey);
+      if (previous !== null) {
+        previous.getWritable().__slotHost = null;
+      }
+    }
+    const writableNode = node.getWritable();
+    writableNode.__slotHost = writableSelf.__key;
+    writableSelf.__slots.set(name, writableNode.__key);
+    getActiveEditor()._slotsUsed = true;
+    return writableSelf;
+  }
+  /**
+   * Removes the named slot, detaching its value (its slot up-link is cleared).
+   * No-op if the slot is empty.
+   *
+   * @experimental
+   */
+  removeSlot(name: string): this {
+    errorOnReadOnly();
+    const writableSelf = this.getWritable();
+    const previousKey = writableSelf.__slots.get(name);
+    if (previousKey !== undefined) {
+      const previous = $getNodeByKey(previousKey);
+      if (previous !== null) {
+        previous.getWritable().__slotHost = null;
+      }
+      writableSelf.__slots.delete(name);
+    }
+    return writableSelf;
+  }
   getFormat(): number {
     const self = this.getLatest();
     return self.__format;
@@ -182,7 +270,10 @@ export class ElementNode extends LexicalNode {
     return self.__size;
   }
   isEmpty(): boolean {
-    return this.getChildrenSize() === 0;
+    // A host that holds content only in its slots is not empty: otherwise
+    // $removeNode would cascade-prune it once its last child is gone and orphan
+    // the slot subtrees.
+    return this.getChildrenSize() === 0 && this.getSlotNames().length === 0;
   }
   isDirty(): boolean {
     const editor = getActiveEditor();
@@ -195,8 +286,20 @@ export class ElementNode extends LexicalNode {
     return parentLastChild !== null && parentLastChild.is(self);
   }
   getAllTextNodes(): Array<TextNode> {
-    const textNodes = [];
-    let child = this.getFirstChild();
+    const textNodes: Array<TextNode> = [];
+    // Slots are read slots-first, ahead of the linked-list children, to match
+    // getTextContent. This is a content read; descendant navigation
+    // (getFirstDescendant / getLastDescendant) stays children-only so slots
+    // never leak into selection placement. A slot value is always a non-inline
+    // element or decorator (setSlot enforces this), so only element slots
+    // contribute text nodes.
+    for (const name of this.getSlotNames()) {
+      const slot = this.getSlot(name);
+      if ($isElementNode(slot)) {
+        textNodes.push(...slot.getAllTextNodes());
+      }
+    }
+    let child: LexicalNode | null = this.getFirstChild();
     while (child !== null) {
       if ($isTextNode(child)) {
         textNodes.push(child);
@@ -212,6 +315,9 @@ export class ElementNode extends LexicalNode {
   /**
    * Returns the deepest first descendant of this node,
    * or null if it has no children.
+   *
+   * Descendant navigation is children-only by design: it feeds selectStart /
+   * selectEnd and selection, which must not see slots (slots are isolated).
    */
   getFirstDescendant(): null | LexicalNode;
   /**
@@ -396,6 +502,13 @@ export class ElementNode extends LexicalNode {
   }
   getTextContent(): string {
     let textContent = '';
+    // Slots are read slots-first, ahead of the linked-list children.
+    for (const name of this.getSlotNames()) {
+      const slot = this.getSlot(name);
+      if (slot !== null) {
+        textContent += slot.getTextContent();
+      }
+    }
     const children = this.getChildren();
     const childrenLength = children.length;
     for (let i = 0; i < childrenLength; i++) {
@@ -414,6 +527,13 @@ export class ElementNode extends LexicalNode {
   }
   getTextContentSize(): number {
     let textContentSize = 0;
+    // Slots are counted slots-first, ahead of the linked-list children.
+    for (const name of this.getSlotNames()) {
+      const slot = this.getSlot(name);
+      if (slot !== null) {
+        textContentSize += slot.getTextContentSize();
+      }
+    }
     const children = this.getChildren();
     const childrenLength = children.length;
     for (let i = 0; i < childrenLength; i++) {

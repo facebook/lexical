@@ -44,6 +44,7 @@ import {initMutationObserver} from './LexicalMutations';
 import {$normalizeTextNode} from './LexicalNormalization';
 import {$reconcileRoot} from './LexicalReconciler';
 import {
+  $clampRangeSelectionToSlotFrame,
   $internalCreateSelection,
   $isNodeSelection,
   $isRangeSelection,
@@ -378,6 +379,7 @@ function $applyAllTransforms(
 
 type InternalSerializedNode = {
   children?: Array<InternalSerializedNode>;
+  slots?: Record<string, InternalSerializedNode>;
   type: string;
   version: number;
 };
@@ -426,6 +428,14 @@ function $parseSerializedNodeImpl<
         registeredNodes,
       );
       node.append(childNode);
+    }
+  }
+
+  const slots = serializedNode.slots;
+  if ($isElementNode(node) && slots) {
+    for (const name in slots) {
+      const slotNode = $parseSerializedNodeImpl(slots[name], registeredNodes);
+      node.setSlot(name, slotNode);
     }
   }
 
@@ -1078,6 +1088,13 @@ function $beginUpdate(
     const pendingSelection = pendingEditorState._selection;
 
     if ($isRangeSelection(pendingSelection)) {
+      // Slot containment: a RangeSelection must not straddle a slot boundary.
+      // Every committed selection passes here, including ones produced by an
+      // in-place point mutation that bypassed `$setSelection`. Gated on
+      // `_slotsUsed` so editors that never slot anything skip the frame walk.
+      if (editor._slotsUsed) {
+        $clampRangeSelectionToSlotFrame(pendingSelection);
+      }
       const pendingNodeMap = pendingEditorState._nodeMap;
       const anchorKey = pendingSelection.anchor.key;
       const focusKey = pendingSelection.focus.key;

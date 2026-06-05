@@ -253,7 +253,7 @@ export class TestShadowRootNode extends ElementNode {
   }
 
   static clone(node: TestShadowRootNode) {
-    return new TestElementNode(node.__key);
+    return new TestShadowRootNode(node.__key);
   }
 
   static importJSON(

@@ -401,6 +401,15 @@ export type LexicalUpdateJSON<T extends SerializedLexicalNode> = Omit<
 export interface LexicalPrivateDOM {
   __lexicalTextContent?: string | undefined | null;
   /**
+   * @experimental named-slots. Byte length of the slot text folded slots-first
+   * into the front of `__lexicalTextContent` for a host element. The suffix
+   * fast path splices the linked-list child suffix, which lives after this
+   * prefix, so it strips this many leading chars to recover the child-only
+   * text before splicing and lets the slot fold re-prepend the slot text.
+   * Absent / `0` for non-host elements, so non-slot trees splice unchanged.
+   */
+  __lexicalSlotTextLength?: number | undefined;
+  /**
    * NodeKey of the deep first text descendant (DFS order) of this
    * element, or `null` if the subtree carries no text descendants.
    * Maintained alongside `__lexicalTextContent` and used by the
@@ -446,6 +455,12 @@ export function $removeNode(
   const key = nodeToRemove.__key;
   const parent = nodeToRemove.getParent();
   if (parent === null) {
+    invariant(
+      nodeToRemove.getLatest().__slotHost === null,
+      '$removeNode: node %s is slotted into host %s; use removeSlot on the host instead of remove().',
+      key,
+      String(nodeToRemove.getLatest().__slotHost),
+    );
     return;
   }
   const selection = $maybeMoveChildrenSelectionToParent(nodeToRemove);
@@ -639,6 +654,8 @@ export class LexicalNode {
   __key: string;
   /** @internal */
   __parent: null | NodeKey;
+  /** @internal Up-pointer to the host when this node occupies a named slot. Mutually exclusive with __parent. */
+  __slotHost: null | NodeKey;
   /** @internal */
   __prev: null | NodeKey;
   /** @internal */
@@ -788,6 +805,14 @@ export class LexicalNode {
   afterCloneFrom(prevNode: this): void {
     if (this.__key === prevNode.__key) {
       this.__parent = prevNode.__parent;
+      this.__slotHost = prevNode.__slotHost;
+      invariant(
+        this.__slotHost === null || this.__parent === null,
+        'LexicalNode: node %s is both slotted into host %s and a child of parent %s; __slotHost and __parent are mutually exclusive',
+        this.__key,
+        String(this.__slotHost),
+        String(this.__parent),
+      );
       this.__next = prevNode.__next;
       this.__prev = prevNode.__prev;
       this.__state = prevNode.__state;
@@ -813,6 +838,7 @@ export class LexicalNode {
   constructor(key?: NodeKey) {
     this.__type = this.constructor.getType();
     this.__parent = null;
+    this.__slotHost = null;
     this.__prev = null;
     this.__next = null;
     Object.defineProperty(this, '__state', NON_ENUMERABLE_PROP_DESC);
@@ -864,7 +890,8 @@ export class LexicalNode {
       if (node === null) {
         break;
       }
-      nodeKey = node.__parent;
+      // A slotted node has no __parent; follow its slot host up toward root.
+      nodeKey = node.__parent !== null ? node.__parent : node.__slotHost;
     }
     return false;
   }
@@ -986,6 +1013,21 @@ export class LexicalNode {
   }
 
   /**
+   * Returns the host element when this node occupies one of its named slots,
+   * or null if this node is not slotted. The up-link is kept separate from
+   * {@link getParent} so the slot boundary behaves like a shadow root.
+   *
+   * @experimental
+   */
+  getSlotHost<T extends ElementNode>(): T | null {
+    const slotHost = this.getLatest().__slotHost;
+    if (slotHost === null) {
+      return null;
+    }
+    return $getNodeByKey<T>(slotHost);
+  }
+
+  /**
    * Returns the highest (in the EditorState tree)
    * non-root ancestor of this node, or null if none is found. See {@link lexical!$isRootOrShadowRoot}
    * for more information on which Elements comprise "roots".
@@ -996,7 +1038,9 @@ export class LexicalNode {
       // Annotation breaks a circular inference through the loop (TS7022),
       // remove when the deprecated generic signatures from #8661 are removed
       const parent: ElementNode | null = node.getParent();
-      if ($isRootOrShadowRoot(parent)) {
+      // A slot value's host acts as a shadow root, so the slot boundary is
+      // the top of the isolated scope and this node is its top-level element.
+      if ($isRootOrShadowRoot(parent) || node.getSlotHost() !== null) {
         invariant(
           $isElementNode(node) || (node === this && $isDecoratorNode(node)),
           'Children of root nodes must be elements or decorators',
@@ -1606,6 +1650,17 @@ export class LexicalNode {
         0,
         this.getChildren(),
       );
+      // Slots live in a separate Map keyed off __slotHost, not the child
+      // list, so the splice above doesn't move them. Re-home each onto the
+      // replacement (removeSlot clears the old __slotHost so setSlot's
+      // "already slotted" invariant passes); otherwise they orphan and GC.
+      for (const slotName of this.getSlotNames()) {
+        const slot = this.getSlot(slotName);
+        if (slot !== null) {
+          this.removeSlot(slotName);
+          writableReplaceWith.setSlot(slotName, slot);
+        }
+      }
     }
     if ($isRangeSelection(selection)) {
       $setSelection(selection);
@@ -1694,6 +1749,8 @@ export class LexicalNode {
           -1,
         );
       }
+    } else {
+      removeFromParent(writableNodeToInsert);
     }
     const nextSibling = this.getNextSibling();
     const writableParent = this.getParentOrThrow().getWritable();

@@ -358,8 +358,11 @@ export function registerPlainText(editor: LexicalEditor): () => void {
     editor.registerCommand(
       SELECT_ALL_COMMAND,
       () => {
-        $selectAll();
-
+        // Pass the current RangeSelection so $selectAll honors shadow-root
+        // scope (e.g. a named-slot container, TableCell) — without it the
+        // else branch runs root.select() and overruns the shadow boundary.
+        const selection = $getSelection();
+        $selectAll($isRangeSelection(selection) ? selection : null);
         return true;
       },
       COMMAND_PRIORITY_EDITOR,

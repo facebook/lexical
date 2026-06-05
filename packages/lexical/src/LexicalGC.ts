@@ -71,6 +71,28 @@ function $garbageCollectDetachedDeepChildNodes(
     }
     child = child.getNextSibling();
   }
+
+  // Slot nodes are not in the linked-list child channel; reach them through
+  // the slot map, gating on the slot host the mirror of the __parent check.
+  for (const slotKey of node.__slots.values()) {
+    const slotNode = nodeMap.get(slotKey);
+    if (slotNode !== undefined && slotNode.__slotHost === parentKey) {
+      if ($isElementNode(slotNode)) {
+        $garbageCollectDetachedDeepChildNodes(
+          slotNode,
+          slotKey,
+          prevNodeMap,
+          nodeMap,
+          nodeMapDelete,
+          dirtyNodes,
+        );
+      }
+      if (!prevNodeMap.has(slotKey)) {
+        dirtyNodes.delete(slotKey);
+      }
+      nodeMapDelete.push(slotKey);
+    }
+  }
 }
 
 export function $garbageCollectDetachedNodes(

@@ -315,6 +315,27 @@ function $destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
     return;
   }
 
+  // Invoke the cleanup returned by `$onDOMMount`, if any. Run before
+  // the DOM-map delete so the cleanup can still read `getElementByKey`
+  // if it needs to (e.g. to unmount a framework view bound to the host
+  // DOM). Errors are routed through `editor._onError` instead of
+  // bubbling so a misbehaving cleanup can't break the rest of the
+  // teardown sweep.
+  const onDOMMountCleanup = activeEditor._onDOMMountCleanup.get(key);
+  if (onDOMMountCleanup !== undefined) {
+    try {
+      try {
+        onDOMMountCleanup();
+      } catch (error) {
+        if (error instanceof Error) {
+          activeEditor._onError(error);
+        }
+      }
+    } finally {
+      activeEditor._onDOMMountCleanup.delete(key);
+    }
+  }
+
   // This logic is really important, otherwise we will leak DOM nodes
   // when their corresponding LexicalNodes are removed from the editor state.
   activeEditor._keyToDOMMap.delete(key);
@@ -407,7 +428,15 @@ export function $getReconciledDirection(
   if ($isRootNode(node)) {
     return null;
   }
-  const parent = node.getParentOrThrow();
+  const parent = node.getParent();
+  if (parent === null) {
+    // A slotted node has no parent (its up-pointer is __slotHost); it is
+    // the root of an isolated slot subtree, so it behaves like a
+    // top-level block and bidi-auto-detects, matching the root-child
+    // case below. In non-slot trees every non-root element has a parent,
+    // so this branch is unreachable and behavior is unchanged.
+    return 'auto';
+  }
   if (!$isRootOrShadowRoot(parent) || parent.__dir !== null) {
     return null;
   }
@@ -421,6 +450,139 @@ function $setElementDirection(dom: HTMLElement, node: ElementNode): void {
   } else {
     dom.removeAttribute('dir');
   }
+}
+
+// @experimental named-slots. Slots are a separate channel from the
+// linked-list children: each slot subtree renders into its own
+// non-keyed container nested in the host DOM, ahead of the children
+// (slots-first), and its text is concatenated with no separator to
+// match `ElementNode.getTextContent`. Only the wrapper is scaffolding;
+// the slot subtree inside carries its own NodeKey and reconciles
+// normally. Leaves `subTreeTextContent` unchanged (restored on exit);
+// the caller folds the returned text in slots-first.
+function $mountSlotChildren(
+  node: ElementNode,
+  hostDom: HTMLElement,
+  slots: ReadonlyMap<string, NodeKey>,
+): string {
+  const previousSubTreeTextContent = subTreeTextContent;
+  const outerSaved = $beginCaptureGuard();
+  subTreeTextContent = '';
+  let totalText = '';
+  for (const [name, slotKey] of slots) {
+    const container = document.createElement('div');
+    container.setAttribute('data-lexical-slot', name);
+    hostDom.appendChild(container);
+    subTreeTextContent = '';
+    const saved = $beginCaptureGuard();
+    $createNode(slotKey, $getDOMSlot(node, container, activeEditor));
+    $endCaptureGuard(saved);
+    totalText += subTreeTextContent;
+  }
+  $endCaptureGuard(outerSaved);
+  subTreeTextContent = previousSubTreeTextContent;
+  return totalText;
+}
+
+// @experimental named-slots. Direct-child lookup of a slot's container by name.
+// Equivalent to `hostDom.querySelector(':scope > [data-lexical-slot="<name>"]')`
+// (first matching direct child) but matches the name by string equality, so an
+// arbitrary slot name can't break out of — or be injected into — a selector.
+function $getSlotContainer(
+  hostDom: HTMLElement,
+  name: string,
+): HTMLElement | null {
+  for (const child of hostDom.children) {
+    if (child.getAttribute('data-lexical-slot') === name) {
+      return child as HTMLElement;
+    }
+  }
+  return null;
+}
+
+// @experimental named-slots. Reconcile mirror of `$mountSlotChildren`.
+// Slot containers already sit slots-first in the host DOM from the create
+// path, so reconciling each in place keeps DOM order. Same name + key →
+// reconcile in place; same name + new key → destroy old subtree, mount the
+// new one into the existing container; removed name → destroy + drop its
+// container; new name → mount a fresh container before the first non-slot
+// child so a slot added after the host's initial render stays slots-first.
+// Looks containers up via `$getSlotContainer` (direct children only) so a slot
+// subtree's own nested slot containers aren't matched. Like the mount helper
+// this leaves `subTreeTextContent` unchanged and returns the concatenated slot
+// text for the caller to fold in slots-first.
+function $reconcileSlotChildren(
+  prevNode: ElementNode,
+  nextNode: ElementNode,
+  hostDom: HTMLElement,
+): string {
+  const prevSlots = prevNode.__slots;
+  const nextSlots = nextNode.__slots;
+  for (const [name, prevSlotKey] of prevSlots) {
+    if (!nextSlots.has(name)) {
+      $destroyNode(prevSlotKey, null);
+      const staleContainer = $getSlotContainer(hostDom, name);
+      if (staleContainer !== null) {
+        hostDom.removeChild(staleContainer);
+      }
+    }
+  }
+  const previousSubTreeTextContent = subTreeTextContent;
+  const outerSaved = $beginCaptureGuard();
+  let totalText = '';
+  let prevContainer: Element | null = null;
+  for (const [name, nextSlotKey] of nextSlots) {
+    let container = $getSlotContainer(hostDom, name);
+    const prevSlotKey = prevSlots.get(name);
+    subTreeTextContent = '';
+    const saved = $beginCaptureGuard();
+    if (container === null) {
+      container = document.createElement('div');
+      container.setAttribute('data-lexical-slot', name);
+      // Keep slots-first: a slot added after the host's initial render must
+      // land ahead of the linked-list children (and the terminating <br>),
+      // not appended after them. Insert before the first non-slot child;
+      // earlier slot containers are skipped, so several slots added in one
+      // update preserve their Map order at the front.
+      let firstNonSlot: Element | null = null;
+      for (const child of hostDom.children) {
+        if (!child.hasAttribute('data-lexical-slot')) {
+          firstNonSlot = child;
+          break;
+        }
+      }
+      hostDom.insertBefore(container, firstNonSlot);
+      $createNode(nextSlotKey, $getDOMSlot(nextNode, container, activeEditor));
+    } else if (prevSlotKey === nextSlotKey) {
+      $reconcileNode(nextSlotKey, container);
+    } else {
+      // Reusing the container, so the old subtree's DOM must be detached
+      // from it (pass the container as parentDOM) before mounting the new
+      // one; otherwise both render side by side.
+      if (prevSlotKey !== undefined) {
+        $destroyNode(prevSlotKey, container);
+      }
+      $createNode(nextSlotKey, $getDOMSlot(nextNode, container, activeEditor));
+    }
+    $endCaptureGuard(saved);
+    totalText += subTreeTextContent;
+    // Keep DOM container order in sync with the slot Map order. A reused
+    // container stays where it was first mounted, so a remove + re-add of an
+    // existing name (which moves it to the Map's tail) would otherwise leave
+    // its container stranded at its old DOM position, diverging from the model
+    // order that getSlotNames / the text fold / the exporters all read. Anchor
+    // each container right after the previous slot's (the first at the very
+    // front), staying slots-first ahead of the linked-list children.
+    const anchor: ChildNode | null =
+      prevContainer === null ? hostDom.firstChild : prevContainer.nextSibling;
+    if (anchor !== container) {
+      hostDom.insertBefore(container, anchor);
+    }
+    prevContainer = container;
+  }
+  $endCaptureGuard(outerSaved);
+  subTreeTextContent = previousSubTreeTextContent;
+  return totalText;
 }
 
 function $createNode(key: NodeKey, slot: ElementDOMSlot | null): HTMLElement {
@@ -450,7 +612,50 @@ function $createNode(key: NodeKey, slot: ElementDOMSlot | null): HTMLElement {
 
   const dom: HTMLElement & LexicalPrivateDOM =
     activeEditorDOMRenderConfig.$createDOM(node, activeEditor);
+
+  // Recreate path safety: when `$updateDOM` returns `true`,
+  // `$reconcileNode` invokes `$createNode(key, null)` for the same key
+  // and then `$destroyNode(key, null)`. `$destroyNode` short-circuits
+  // on `isMoved` (the key is still in the next node map) and skips
+  // cleanup, so the previous mount's cleanup would never run unless we
+  // do it here — and its reference would be overwritten by the new
+  // registration below.
+  //
+  // The invocation is placed BEFORE `storeDOMWithKey` so any cleanup
+  // that reads `editor.getElementByKey(key)` still resolves to the
+  // OLD DOM. (Cleanup observes the OLD DOM still attached to its
+  // parent — `parentDOM.replaceChild` runs after `$createNode`
+  // returns.)
+  const previousOnDOMMountCleanup = activeEditor._onDOMMountCleanup.get(key);
+  if (previousOnDOMMountCleanup !== undefined) {
+    try {
+      try {
+        previousOnDOMMountCleanup();
+      } catch (error) {
+        if (error instanceof Error) {
+          activeEditor._onError(error);
+        }
+      }
+    } finally {
+      activeEditor._onDOMMountCleanup.delete(key);
+    }
+  }
+
   storeDOMWithKey(key, dom, activeEditor);
+
+  // Run the host's `$onDOMMount` immediately after the DOM is
+  // registered. Children mount into this DOM further down — running
+  // before them is intentional: a framework integration that owns the
+  // host DOM (e.g. a React root rendered through `$onDOMMount`) is set
+  // up before its child content reconciles into it.
+  const onDOMMountCleanup = activeEditorDOMRenderConfig.$onDOMMount(
+    node,
+    dom,
+    activeEditor,
+  );
+  if (typeof onDOMMountCleanup === 'function') {
+    activeEditor._onDOMMountCleanup.set(key, onDOMMountCleanup);
+  }
 
   // This helps preserve the text, and stops spell check tools from
   // merging or break the spans (which happens if they are missing
@@ -475,13 +680,27 @@ function $createNode(key: NodeKey, slot: ElementDOMSlot | null): HTMLElement {
     if (indent !== 0) {
       setElementIndent(dom, indent);
     }
+    // @experimental named-slots. Slots render slots-first, ahead of the
+    // linked-list children, each into its own container nested in the
+    // host DOM. Their text folds into the host's cache ahead of the
+    // child text to match `ElementNode.getTextContent`. The slots'
+    // first-text key is deliberately kept out of __lexicalFirstTextKey,
+    // which feeds children-only navigation / selection.
+    const slots = node.__slots;
+    const slotTextContent =
+      slots.size > 0 ? $mountSlotChildren(node, dom, slots) : '';
     if (childrenSize === 0) {
       // Empty element: $createChildren's cache write is skipped, so set
       // the cache explicitly on the keyed DOM. Symmetric with the
       // (keyed-DOM) writes in $createChildren / $reconcileChildren.
-      dom.__lexicalTextContent = '';
+      dom.__lexicalTextContent = slotTextContent;
       dom.__lexicalFirstTextKey = null;
+      subTreeTextContent += slotTextContent;
+      if (slots.size > 0) {
+        dom.__lexicalSlotTextLength = slotTextContent.length;
+      }
     } else {
+      const outerBefore = subTreeTextContent;
       const endIndex = childrenSize - 1;
       const children = $createChildrenArray(node, activeNextNodeMap);
       $createChildren(
@@ -491,6 +710,20 @@ function $createNode(key: NodeKey, slot: ElementDOMSlot | null): HTMLElement {
         endIndex,
         $getDOMSlot(node, dom, activeEditor),
       );
+      // $createChildren set dom.__lexicalTextContent to the child-only
+      // text and subTreeTextContent to outerBefore + childText. Rebuild
+      // both slots-first (slot text precedes child text) so the host's
+      // contribution to the parent accumulator stays in document order.
+      // __lexicalFirstTextKey is left as the children's — slots stay out
+      // of navigation / selection.
+      if (slotTextContent !== '') {
+        const childText = dom.__lexicalTextContent || '';
+        dom.__lexicalTextContent = slotTextContent + childText;
+        subTreeTextContent = outerBefore + slotTextContent + childText;
+      }
+      if (slots.size > 0) {
+        dom.__lexicalSlotTextLength = slotTextContent.length;
+      }
     }
 
     const format = node.__format;
@@ -615,7 +848,12 @@ function isLastChildLineBreakOrDecorator(
             : null;
       }
     }
-    return 'empty';
+    // A host with slots but no linked-list children is not empty (the slots
+    // carry its content). The 'empty' line break exists to give a truly empty
+    // block a caret target; on a slots-only host that <br> would instead be a
+    // stray caret target in the host's own child area, after the slot
+    // containers — text typed there leaks out of the slot. Skip it.
+    return element.__slots.size > 0 ? null : 'empty';
   }
   return null;
 }
@@ -932,10 +1170,17 @@ function $tryReconcileSuffixWithSizeDelta(
       newSuffix += DOUBLE_LINE_BREAK;
     }
   }
-  const newParentText =
-    cachedParentText.slice(0, cachedParentText.length - oldSuffixLength) +
-    newSuffix;
-  cacheDom.__lexicalTextContent = newParentText;
+  // @experimental named-slots. `cachedParentText` holds the host's combined
+  // cache (slot text folded slots-first ahead of the child text). The suffix
+  // we just rebuilt is child-only, so strip the slot prefix to recover the
+  // child-only cache before splicing, and write child-only here — the slot
+  // fold in `$reconcileNode` re-prepends the slot text. `slotLen` is `0` for
+  // non-slot hosts, so the slice is a no-op and they splice unchanged.
+  const slotLen = cacheDom.__lexicalSlotTextLength || 0;
+  const prevChildText =
+    slotLen > 0 ? cachedParentText.slice(slotLen) : cachedParentText;
+  cacheDom.__lexicalTextContent =
+    prevChildText.slice(0, prevChildText.length - oldSuffixLength) + newSuffix;
   return true;
 }
 
@@ -1138,13 +1383,19 @@ function $reconcileChildren(
             i++;
           }
 
-          const newParentText =
-            cachedParentText.slice(
-              0,
-              cachedParentText.length - oldSuffixLength,
-            ) + newSuffix;
-          cacheDom.__lexicalTextContent = newParentText;
-          subTreeTextContent = previousSubTreeTextContent + newParentText;
+          // @experimental named-slots. Strip the slot prefix to recover the
+          // child-only cache, splice the child suffix, and write child-only —
+          // the slot fold in `$reconcileNode` re-prepends the slot text.
+          // `slotLen` is `0` for non-slot hosts (slice is a no-op), so their
+          // cache stays bit-identical and the fold leaves it untouched.
+          const slotLen = cacheDom.__lexicalSlotTextLength || 0;
+          const prevChildText =
+            slotLen > 0 ? cachedParentText.slice(slotLen) : cachedParentText;
+          const newChildText =
+            prevChildText.slice(0, prevChildText.length - oldSuffixLength) +
+            newSuffix;
+          cacheDom.__lexicalTextContent = newChildText;
+          subTreeTextContent = previousSubTreeTextContent + newChildText;
           // Recover the canonical first-text format/style for this parent.
           // If the prefix carries it, `reconcileTextFormat` no-ops via
           // equality. If the prefix has no text descendant, the
@@ -1315,6 +1566,11 @@ function $reconcileChildren(
         const canUseFastPath =
           slot.after == null &&
           slot.before == null &&
+          // Slot containers are prepended into this same DOM (slots-first), so
+          // clearing it with `textContent = ''` would wipe them along with the
+          // children. Fall back to the keyed slow path, which removes only the
+          // child DOM nodes and leaves the slot containers intact.
+          nextElement.__slots.size === 0 &&
           (slot.element as HTMLElement & LexicalPrivateDOM)
             .__lexicalLineBreak == null;
         $destroyChildren(
@@ -1432,6 +1688,17 @@ function $reconcileNode(
     return replacementDOM;
   }
 
+  // DOM was preserved across the update — notify the host so it can
+  // re-render its framework view. Skipped on the recreate path above
+  // because `$destroyNode` + `$createNode` already drive the
+  // unmount/mount cycle.
+  activeEditorDOMRenderConfig.$onDOMUpdate(
+    nextNode,
+    prevNode,
+    dom,
+    activeEditor,
+  );
+
   if ($isElementNode(prevNode)) {
     invariant(
       $isElementNode(nextNode),
@@ -1449,10 +1716,34 @@ function $reconcileNode(
     if (treatAllNodesAsDirty || nextFormat !== prevNode.__format) {
       setElementFormat(dom, nextFormat);
     }
+    // @experimental named-slots reconcile. Slot edits dirty the host
+    // through __slotHost propagation, so a clean host means its slots are
+    // unchanged and the cache already holds their text — only diff when
+    // dirty and the node has (or had) slots. Returns the slot text to fold
+    // slots-first ahead of the child text in each dirty branch below.
+    const slotTextContent =
+      isDirty && (nextNode.__slots.size > 0 || prevNode.__slots.size > 0)
+        ? $reconcileSlotChildren(prevNode, nextNode, dom)
+        : '';
     if (isDirty) {
+      const outerBefore = subTreeTextContent;
       $reconcileChildrenWithDirection(prevNode, nextNode, dom);
       if (!$isRootNode(nextNode) && !nextNode.isInline()) {
         $reconcileElementTerminatingLineBreak(prevNode, nextNode, dom);
+      }
+      // Fold slot text slots-first, ahead of the child text the children
+      // reconcile just wrote, matching `ElementNode.getTextContent` and the
+      // create path's else branch.
+      if (slotTextContent !== '') {
+        const childText = dom.__lexicalTextContent || '';
+        dom.__lexicalTextContent = slotTextContent + childText;
+        subTreeTextContent = outerBefore + slotTextContent + childText;
+        dom.__lexicalSlotTextLength = slotTextContent.length;
+      } else if (nextNode.__slots.size > 0 || prevNode.__slots.size > 0) {
+        // Slot existed but produced no text this cycle (removed or emptied):
+        // clear the stale prefix length so the next suffix fast path strips
+        // nothing from the now child-only cache.
+        dom.__lexicalSlotTextLength = 0;
       }
     } else {
       // Currently unreachable under normal flow — `getWritable()` always

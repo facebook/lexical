@@ -86,6 +86,26 @@ function exportNodeToJSON<SerializedNode extends SerializedLexicalNode>(
       const serializedChildNode = exportNodeToJSON(child);
       serializedChildren.push(serializedChildNode);
     }
+
+    const slotNames = node.getSlotNames();
+    if (slotNames.length > 0) {
+      const serializedSlots: Record<string, SerializedLexicalNode> = {};
+      for (const name of slotNames) {
+        const slotNode = node.getSlot(name);
+        invariant(
+          slotNode !== null,
+          'LexicalNode: Node %s has slot "%s" but it resolved to no node during export.',
+          nodeClass.name,
+          name,
+        );
+        serializedSlots[name] = exportNodeToJSON(slotNode);
+      }
+      (
+        serializedNode as SerializedElementNode & {
+          slots?: Record<string, SerializedLexicalNode>;
+        }
+      ).slots = serializedSlots;
+    }
   }
 
   // @ts-expect-error

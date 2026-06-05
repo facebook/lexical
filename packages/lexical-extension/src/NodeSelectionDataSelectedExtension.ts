@@ -8,8 +8,10 @@
 
 import {
   $getSelection,
+  $isLexicalNode,
   $isNodeSelection,
   defineExtension,
+  getStaticNodeConfig,
   type Klass,
   type LexicalNode,
   type NodeKey,
@@ -17,12 +19,15 @@ import {
   shallowMergeConfig,
 } from 'lexical';
 
+import {getKnownTypesAndNodes} from './config';
+
 export interface NodeSelectionDataSelectedConfig {
   /**
    * The node types whose host DOM should reflect their {@link NodeSelection}
-   * membership. Pass the node classes (e.g. `[CardNode, FigureNode]`); the
-   * extension matches by {@link LexicalNode.getType} so subclasses are not
-   * implicitly included.
+   * membership. Pass the node classes (e.g. `[CardNode, FigureNode]`).
+   * Registered subclasses of these classes are matched too, resolved to their
+   * own {@link LexicalNode.getType} during init (before the editor is created)
+   * so the update listener never needs a runtime `instanceof`.
    */
   nodes: Klass<LexicalNode>[];
   /**
@@ -52,6 +57,27 @@ export const NodeSelectionDataSelectedExtension = defineExtension({
     attribute: 'data-selected',
     nodes: [],
   }),
+  // Expand the configured classes to the types of every registered subclass,
+  // so a subclass instance still matches without a runtime `instanceof`. This
+  // needs the editor's node list, which is only available before creation.
+  init(editorConfig, config) {
+    const wantedTypes = new Set(config.nodes.map(klass => klass.getType()));
+    const matchTypes = new Set(wantedTypes);
+    for (const klass of getKnownTypesAndNodes(editorConfig).nodes) {
+      for (
+        let current = klass;
+        $isLexicalNode(current.prototype);
+        current = Object.getPrototypeOf(current)
+      ) {
+        const {ownNodeType} = getStaticNodeConfig(current);
+        if (ownNodeType && wantedTypes.has(ownNodeType)) {
+          matchTypes.add(klass.getType());
+          break;
+        }
+      }
+    }
+    return {matchTypes};
+  },
   // Each consuming extension contributes its own node type through a separate
   // `configExtension` call, but they all resolve to this single named
   // extension. The default shallow merge would let the last `nodes` array win
@@ -63,9 +89,9 @@ export const NodeSelectionDataSelectedExtension = defineExtension({
     });
   },
   name: '@lexical/extension/NodeSelectionDataSelected',
-  register(editor, config) {
+  register(editor, config, state) {
     const {attribute} = config;
-    const types = new Set(config.nodes.map(klass => klass.getType()));
+    const {matchTypes} = state.getInitResult();
     let selectedKeys = new Set<NodeKey>();
     return editor.registerUpdateListener(({editorState}) => {
       const nextKeys = new Set<NodeKey>();
@@ -73,7 +99,7 @@ export const NodeSelectionDataSelectedExtension = defineExtension({
         const selection = $getSelection();
         if ($isNodeSelection(selection)) {
           for (const node of selection.getNodes()) {
-            if (types.has(node.getType())) {
+            if (matchTypes.has(node.getType())) {
               nextKeys.add(node.getKey());
             }
           }

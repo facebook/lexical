@@ -186,7 +186,7 @@ export type NodeSelectionDataSelectedConfig = {
   nodes: Class<LexicalNode>[];
   attribute: string;
 }
-declare export var NodeSelectionDataSelectedExtension: LexicalExtension<NodeSelectionDataSelectedConfig, "@lexical/extension/NodeSelectionDataSelected", void, void>;
+declare export var NodeSelectionDataSelectedExtension: LexicalExtension<NodeSelectionDataSelectedConfig, "@lexical/extension/NodeSelectionDataSelected", void, {matchTypes: Set<string>}>;
 
 export type TabIndentationConfig = {
   disabled: boolean;

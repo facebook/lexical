@@ -2398,7 +2398,9 @@ function isAbstractNodeClass(klass: Klass<LexicalNode>): boolean {
 /** @internal */
 export function getStaticNodeConfig(klass: Klass<LexicalNode>): {
   ownNodeType: undefined | string;
-  ownNodeConfig: undefined | StaticNodeConfigValue<LexicalNode, string>;
+  ownNodeConfig:
+    | undefined
+    | StaticNodeConfigValue<LexicalNode, string | symbol>;
 } {
   const nodeConfigRecord =
     PROTOTYPE_CONFIG_METHOD in klass.prototype
@@ -2409,15 +2411,33 @@ export function getStaticNodeConfig(klass: Klass<LexicalNode>): {
     !isAbstract && hasOwnStaticMethod(klass, 'getType')
       ? klass.getType()
       : undefined;
-  let ownNodeConfig: undefined | StaticNodeConfigValue<LexicalNode, string>;
+  let ownNodeConfig:
+    | undefined
+    | StaticNodeConfigValue<LexicalNode, string | symbol>;
   let ownNodeType = nodeType;
   if (nodeConfigRecord) {
     if (nodeType) {
       ownNodeConfig = nodeConfigRecord[nodeType];
     } else {
+      // No static getType(): derive the type and config from the $config
+      // record. The common case is a concrete node keyed by its string `type`.
       for (const [k, v] of Object.entries(nodeConfigRecord)) {
         ownNodeType = k;
         ownNodeConfig = v;
+      }
+      // Fall back to a well-known symbol key (e.g. Symbol.for('ElementNode'))
+      // for an abstract base class that has no concrete node type, using the
+      // first symbol whose value is a config record.
+      if (!ownNodeConfig) {
+        for (const symbolKey of Object.getOwnPropertySymbols(
+          nodeConfigRecord,
+        )) {
+          const symbolConfig = nodeConfigRecord[symbolKey];
+          if (symbolConfig) {
+            ownNodeConfig = symbolConfig;
+            break;
+          }
+        }
       }
     }
   }

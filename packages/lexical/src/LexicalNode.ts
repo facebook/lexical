@@ -101,11 +101,16 @@ export type SerializedLexicalNode = {
  */
 export interface StaticNodeConfigValue<
   T extends LexicalNode,
-  Type extends string,
+  Type extends string | symbol,
 > {
   /**
    * The exact type of T.getType(), e.g. 'text' - the method itself must
    * have a more generic 'string' type to be compatible wtih subclassing.
+   *
+   * For a concrete node this is its string `type`. An abstract base class is
+   * keyed in {@link BaseStaticNodeConfig} by a symbol (it has no concrete node
+   * `type`), so `Type` is widened to `string | symbol`; the `type` field is
+   * never populated for a symbol-keyed config.
    */
   readonly type?: Type;
   /**
@@ -170,9 +175,20 @@ export interface StaticNodeConfigValue<
 /**
  * This is the type of LexicalNode.$config() that can be
  * overridden by subclasses.
+ *
+ * Concrete nodes are keyed by their string `type`. An abstract base class
+ * (such as ElementNode or DecoratorNode) has no concrete node `type`, so when
+ * it needs to declare configuration that is shared with its concrete
+ * subclasses (for example required {@link RequiredNodeStateConfig} state or a
+ * `$transform`) it is keyed instead by a well-known symbol, by convention
+ * `Symbol.for(<NodeClassName>)` (e.g. `Symbol.for('ElementNode')`). The
+ * descriptive, globally-registered symbol keeps the config easy to find in a
+ * debugger and can never collide with a real node `type`.
  */
 export type BaseStaticNodeConfig = {
-  readonly [K in string]?: StaticNodeConfigValue<LexicalNode, string>;
+  readonly [K in string | symbol]?:
+    | undefined
+    | StaticNodeConfigValue<LexicalNode, K>;
 };
 
 /**
@@ -194,15 +210,75 @@ export type AnyStaticNodeConfigValue = StaticNodeConfigValue<any, any>;
 /**
  * @internal
  *
+ * Type-only key under which a {@link StaticNodeConfigRecord} carries the node's
+ * own (most-derived) `type` as a nullary accessor `() => Type`.
+ *
+ * TypeScript's type system is structural, so a node subclass that adds no
+ * type-distinguishable members over its base (e.g. {@link TabNode} over
+ * {@link TextNode}, which only overrides methods with identical signatures) is
+ * structurally identical to that base despite being a distinct class — the
+ * negative branch of an `instanceof`-style guard like `$isTabNode()` would
+ * otherwise collapse to `never` because TypeScript concludes the base is also
+ * assignable to the subclass.
+ *
+ * Encoding the type as a *function* (rather than a bare `Type`) lets the
+ * accessor accumulate down the `extends` chain by intersection: a subclass'
+ * record is `ParentRecord & {[STATIC_NODE_TYPE]: () => OwnType}`, so the key
+ * holds `(() => ParentType) & (() => OwnType)`. TypeScript resolves an
+ * intersection of call signatures as an overload set, which has two effects:
+ *
+ * - {@link GetStaticNodeType} reads `ReturnType<...>`, which selects the *last*
+ *   overload — the most-derived own `type` — rather than a union of the chain.
+ * - A node stays assignable to each of its ancestors (the intersection
+ *   satisfies every `() => AncestorType`) while an ancestor is not assignable
+ *   to it (it lacks the `() => OwnType` signature), so guards narrow correctly
+ *   at every level of the hierarchy — not just one.
+ *
+ * This keeps the node classes themselves nominally distinguishable along their
+ * real hierarchy; it is not a cross-cutting trait marker. The accessor is never
+ * read at runtime — `config()` does not set this key — so it is `declare`-only
+ * and carries no runtime cost. It is `@internal` (surfaced via the
+ * {@link StaticNodeTypeAccessor} interface so that inferred `$config()` return
+ * types remain nameable in generated declaration files) and a node never
+ * references it. Distinction is automatic for any node that declares its
+ * `extends`; a subclass adds nothing by hand.
+ */
+export declare const STATIC_NODE_TYPE: unique symbol;
+
+/**
+ * @internal
+ *
+ * Carries a node's own `type` under the {@link STATIC_NODE_TYPE} accessor. This
+ * is an `interface` (rather than an inline object type) on purpose: it is never
+ * inlined in generated declaration files, so a subclass' `$config()` return type
+ * references it by name (`StaticNodeTypeAccessor<'tab'>`) and the symbol key
+ * stays encapsulated here rather than leaking — unnamed — into every node's
+ * `.d.ts`.
+ */
+export interface StaticNodeTypeAccessor<Type extends string> {
+  readonly [STATIC_NODE_TYPE]: () => Type;
+}
+
+/**
+ * @internal
+ *
  * This is the more specific type than BaseStaticNodeConfig that a subclass
- * should return from $config()
+ * should return from $config().
+ *
+ * A node that declares its `extends` accumulates the configuration of its
+ * superclass and records its own `type` under {@link STATIC_NODE_TYPE}, so that
+ * it is nominally distinct from — yet still assignable to — that superclass.
  */
 export type StaticNodeConfigRecord<
   Type extends string,
   Config extends AnyStaticNodeConfigValue,
-> = BaseStaticNodeConfig & {
-  readonly [K in Type]?: Config;
-};
+> = Config extends {
+  extends: abstract new (...args: never) => infer Inst extends LexicalNode;
+}
+  ? ReturnType<Inst[typeof PROTOTYPE_CONFIG_METHOD]> & {
+      readonly [K in Type]?: Config;
+    } & StaticNodeTypeAccessor<Type>
+  : BaseStaticNodeConfig & {readonly [K in Type]?: Config};
 
 /**
  * Extract the type from a node based on its $config
@@ -214,12 +290,16 @@ export type StaticNodeConfigRecord<
  * ```
  */
 export type GetStaticNodeType<T extends LexicalNode> =
-  ReturnType<T[typeof PROTOTYPE_CONFIG_METHOD]> extends StaticNodeConfig<
-    T,
-    infer Type
-  >
-    ? Type
-    : string;
+  ReturnType<T[typeof PROTOTYPE_CONFIG_METHOD]> extends {
+    readonly [STATIC_NODE_TYPE]: infer Accessor extends () => string;
+  }
+    ? ReturnType<Accessor>
+    : ReturnType<T[typeof PROTOTYPE_CONFIG_METHOD]> extends StaticNodeConfig<
+          T,
+          infer Type
+        >
+      ? Type
+      : string;
 
 /**
  * The most precise type we can infer for the JSON that will
@@ -551,15 +631,33 @@ export class LexicalNode {
    * This is a convenience method for $config that
    * aids in type inference. See {@link LexicalNode.$config}
    * for example usage.
+   *
+   * An abstract base class that has no concrete node `type` may pass a
+   * well-known symbol (by convention `Symbol.for(<NodeClassName>)`) instead of
+   * a string `type` to declare configuration shared with its subclasses.
    */
+  config<Config extends StaticNodeConfigValue<this, string>>(
+    type: symbol,
+    config: Config,
+  ): BaseStaticNodeConfig;
   config<Type extends string, Config extends StaticNodeConfigValue<this, Type>>(
     type: Type,
     config: Config,
-  ): StaticNodeConfigRecord<Type, Config> {
+  ): StaticNodeConfigRecord<Type, Config>;
+  config(
+    type: string | symbol,
+    config: AnyStaticNodeConfigValue,
+  ): BaseStaticNodeConfig {
     const parentKlass =
       config.extends || Object.getPrototypeOf(this.constructor);
-    Object.assign(config, {extends: parentKlass, type});
-    return {[type]: config} as StaticNodeConfigRecord<Type, Config>;
+    Object.assign(config, {extends: parentKlass});
+    // A concrete node records its string `type`; an abstract base class is
+    // keyed by a well-known symbol (e.g. Symbol.for('ElementNode')) and has no
+    // concrete node `type`.
+    if (typeof type === 'string') {
+      Object.assign(config, {type});
+    }
+    return {[type]: config} as BaseStaticNodeConfig;
   }
 
   /**
@@ -1237,7 +1335,9 @@ export class LexicalNode {
    * See [Serialization & Deserialization](https://lexical.dev/docs/concepts/serialization#lexical---html).
    *
    * */
-  static importJSON(_serializedNode: SerializedLexicalNode): LexicalNode {
+  static importJSON(
+    _serializedNode: SerializedLexicalNode & Record<string, unknown>,
+  ): LexicalNode {
     invariant(
       false,
       'LexicalNode: Node %s does not implement .importJSON().',

@@ -208,6 +208,7 @@ export type {
   StaticNodeConfig,
   StaticNodeConfigRecord,
   StaticNodeConfigValue,
+  StaticNodeTypeAccessor,
 } from './LexicalNode';
 export {$isLexicalNode, buildImportMap} from './LexicalNode';
 export {

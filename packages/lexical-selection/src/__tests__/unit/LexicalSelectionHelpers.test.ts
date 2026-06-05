@@ -2679,7 +2679,8 @@ describe('insertNodes', () => {
     });
     editor.getEditorState().read(() => {
       expect(element.innerHTML).toBe(
-        '<h1 dir="auto"><span data-lexical-text="true">heading</span></h1><p dir="auto"><br></p>',
+        // one managed linebreak and the second node
+        '<h1 dir="auto"><span data-lexical-text="true">heading</span></h1><p dir="auto"><br><br></p>',
       );
       const selectedNode = ($getSelection() as RangeSelection).anchor.getNode();
       expect($isParagraphNode(selectedNode)).toBeTruthy();

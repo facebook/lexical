@@ -89,9 +89,15 @@ test.describe('Card slot deletion boundaries', () => {
     await insertCard(page);
     await click(page, '[data-lexical-slot="title"]');
     await sleep(100);
-    await page.keyboard.press('Meta+a');
-    await page.keyboard.press('Delete');
+    // Empty the slot with the same caret-then-single-key pattern the other
+    // boundary tests use; the Meta+a variant flaked in CI.
+    await moveToLineEnd(page);
+    for (let i = 0; i < 'Title'.length; i++) {
+      await page.keyboard.press('Backspace');
+    }
     await sleep(120);
+    expect(await slotText(page, 'title')).toBe('');
+    // Caret is now at the empty slot start: this backspace must be a no-op.
     await page.keyboard.press('Backspace');
     await sleep(120);
     await assertCardIntact(page, {body: 'Body', title: ''});

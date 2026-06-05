@@ -6,7 +6,11 @@
  *
  */
 
-import type {AnyStaticNodeConfigValue, GetStaticNodeType} from './LexicalNode';
+import type {
+  AnyStaticNodeConfigValue,
+  GetStaticNodeOwnConfig,
+  GetStaticNodeType,
+} from './LexicalNode';
 
 import invariant from '@lexical/internal/invariant';
 
@@ -105,15 +109,20 @@ export type CollectStateJSON<
   {[K in keyof Tuple]: RequiredNodeStateConfigJSON<Tuple[K], Flat>}[number]
 >;
 
-// Read the node's own config out of its $config() record. The record is keyed
-// by the node's own `type`, so we resolve that type first (see
-// {@link GetStaticNodeType}) and index by it rather than reverse-inferring
-// through the StaticNodeConfigRecord shape, which accumulates ancestor keys.
-// The own type is read through a mapped type (`{[P in Type]: ...}[Type]`) so
-// that the indexed access resolves against the concrete key literal rather than
-// the record's broad string index signature when `T` is still generic.
-type GetStaticNodeConfig<T extends LexicalNode> =
-  GetStaticNodeType<T> extends infer Type extends string
+// Read a node's own config out of its $config() record. Preferentially read it
+// from the STATIC_NODE_CONFIG accessor (see {@link GetStaticNodeOwnConfig}),
+// which resolves the most-derived own config directly — including for an
+// abstract base class keyed by a symbol, which has no string `type` to index by.
+// A record produced by the {@link BaseStaticNodeConfig} fallback (a node that
+// declares no `extends`, or a legacy node) sets no accessor; for those we fall
+// back to resolving the own `type` (see {@link GetStaticNodeType}) and indexing
+// by it. The own type is read through a mapped type (`{[P in Type]: ...}[Type]`)
+// so that the indexed access resolves against the concrete key literal rather
+// than the record's broad string index signature when `T` is still generic.
+type GetStaticNodeConfig<T extends LexicalNode> = [
+  GetStaticNodeOwnConfig<T>,
+] extends [never]
+  ? GetStaticNodeType<T> extends infer Type extends string
     ? string extends Type
       ? never
       : {
@@ -123,6 +132,10 @@ type GetStaticNodeConfig<T extends LexicalNode> =
           }[Type] extends infer Config extends AnyStaticNodeConfigValue
         ? Config & {readonly type: Type}
         : never
+    : never
+  : GetStaticNodeOwnConfig<T> extends infer Config extends
+        AnyStaticNodeConfigValue
+    ? Config & {readonly type: GetStaticNodeType<T>}
     : never;
 type GetStaticNodeConfigs<T extends LexicalNode> =
   GetStaticNodeConfig<T> extends infer OwnConfig

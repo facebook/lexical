@@ -262,12 +262,48 @@ export interface StaticNodeTypeAccessor<Type extends string> {
 /**
  * @internal
  *
+ * Type-only key under which a {@link StaticNodeConfigRecord} carries the node's
+ * own configuration (the value passed to {@link LexicalNode.config}) as a
+ * nullary accessor `() => Config`.
+ *
+ * This mirrors {@link STATIC_NODE_TYPE}: encoding the config as a *function*
+ * lets it accumulate down the `extends` chain by call-signature intersection so
+ * that `ReturnType<...>` resolves the most-derived own config. It exists so that
+ * an abstract base class keyed by a symbol — which has no string `type` to index
+ * the record by — can still expose its own config to the state-config
+ * collectors, and so that such a base's symbol-keyed `$config()` return remains
+ * a valid override of an accessor-bearing superclass `$config()` (it inherits
+ * the superclass record, hence that record's {@link STATIC_NODE_TYPE} accessor).
+ * Never read at runtime — `config()` does not set this key — so it is
+ * `declare`-only and carries no runtime cost.
+ */
+export declare const STATIC_NODE_CONFIG: unique symbol;
+
+/**
+ * @internal
+ *
+ * Carries a node's own config under the {@link STATIC_NODE_CONFIG} accessor.
+ * Like {@link StaticNodeTypeAccessor} this is a named `interface` so the symbol
+ * key stays encapsulated and inferred `$config()` return types remain nameable
+ * in generated declaration files.
+ */
+export interface StaticNodeConfigAccessor<
+  Config extends AnyStaticNodeConfigValue,
+> {
+  readonly [STATIC_NODE_CONFIG]: () => Config;
+}
+
+/**
+ * @internal
+ *
  * This is the more specific type than BaseStaticNodeConfig that a subclass
  * should return from $config().
  *
  * A node that declares its `extends` accumulates the configuration of its
- * superclass and records its own `type` under {@link STATIC_NODE_TYPE}, so that
- * it is nominally distinct from — yet still assignable to — that superclass.
+ * superclass and records its own `type` under {@link STATIC_NODE_TYPE} and its
+ * own config under {@link STATIC_NODE_CONFIG}, so that it is nominally distinct
+ * from — yet still assignable to — that superclass, and so the state-config
+ * collectors can read its own config without indexing by `type`.
  */
 export type StaticNodeConfigRecord<
   Type extends string,
@@ -277,8 +313,29 @@ export type StaticNodeConfigRecord<
 }
   ? ReturnType<Inst[typeof PROTOTYPE_CONFIG_METHOD]> & {
       readonly [K in Type]?: Config;
-    } & StaticNodeTypeAccessor<Type>
+    } & StaticNodeTypeAccessor<Type> &
+      StaticNodeConfigAccessor<Config>
   : BaseStaticNodeConfig & {readonly [K in Type]?: Config};
+
+/**
+ * @internal
+ *
+ * The record returned by {@link LexicalNode.config} for an abstract base class
+ * keyed by a symbol. Unlike {@link StaticNodeConfigRecord} it records no string
+ * `type` and adds no {@link STATIC_NODE_TYPE} accessor (an abstract base has no
+ * concrete node type), but it does inherit its superclass record and expose its
+ * own config under {@link STATIC_NODE_CONFIG}. Inheriting the superclass record
+ * is what keeps the override valid when the superclass is a concrete node whose
+ * `$config()` return already carries a {@link STATIC_NODE_TYPE} accessor.
+ */
+export type AbstractStaticNodeConfigRecord<
+  Config extends AnyStaticNodeConfigValue,
+> = Config extends {
+  extends: abstract new (...args: never) => infer Inst extends LexicalNode;
+}
+  ? ReturnType<Inst[typeof PROTOTYPE_CONFIG_METHOD]> &
+      StaticNodeConfigAccessor<Config>
+  : BaseStaticNodeConfig & StaticNodeConfigAccessor<Config>;
 
 /**
  * Extract the type from a node based on its $config
@@ -300,6 +357,24 @@ export type GetStaticNodeType<T extends LexicalNode> =
         >
       ? Type
       : string;
+
+/**
+ * @internal
+ *
+ * A node's own config (the value it passed to {@link LexicalNode.config}), read
+ * from the {@link STATIC_NODE_CONFIG} accessor, or `never` for a node whose
+ * `$config()` does not set that accessor (a legacy node, or one whose record
+ * uses the {@link BaseStaticNodeConfig} fallback). Unlike indexing the record by
+ * a resolved string `type`, this also resolves the own config of an abstract
+ * base class keyed by a symbol.
+ */
+export type GetStaticNodeOwnConfig<T extends LexicalNode> =
+  ReturnType<T[typeof PROTOTYPE_CONFIG_METHOD]> extends {
+    readonly [STATIC_NODE_CONFIG]: infer Accessor extends
+      () => AnyStaticNodeConfigValue;
+  }
+    ? ReturnType<Accessor>
+    : never;
 
 /**
  * The most precise type we can infer for the JSON that will
@@ -639,7 +714,7 @@ export class LexicalNode {
   config<Config extends StaticNodeConfigValue<this, string>>(
     type: symbol,
     config: Config,
-  ): BaseStaticNodeConfig;
+  ): AbstractStaticNodeConfigRecord<Config>;
   config<Type extends string, Config extends StaticNodeConfigValue<this, Type>>(
     type: Type,
     config: Config,

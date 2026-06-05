@@ -318,6 +318,25 @@ function $appendNodesToHTML(
     }
   }
 
+  // Slots live in a separate Map off the child list, so neither getChildren()
+  // nor a custom $getChildNodes sees them. They ride with the host like the
+  // JSON exporters: emit them only when the host itself is emitted, and export
+  // each slot whole with a null selection because a slot is a shadow root the
+  // outer selection can't descend into (its nodes never appear in
+  // selection.getNodes(), so a selection-scoped walk would drop it). Prepend so
+  // slots stay ahead of children.
+  if (shouldInclude && !shouldExclude && $isElementNode(target)) {
+    const slotFragment = document.createDocumentFragment();
+    const slotAppend = slotFragment.append.bind(slotFragment);
+    for (const slotName of target.getSlotNames()) {
+      const slot = target.getSlot(slotName);
+      if (slot !== null) {
+        $appendNodesToHTML(editor, slot, slotAppend, null, domConfig);
+      }
+    }
+    fragment.prepend(slotFragment);
+  }
+
   if (shouldInclude && !shouldExclude) {
     if (isHTMLElement(element) || isDocumentFragment(element)) {
       if (append) {

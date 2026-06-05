@@ -30,6 +30,10 @@ import {
   ParagraphNode,
   RangeSelection,
 } from 'lexical';
+import {
+  $createTestShadowRootNode,
+  TestShadowRootNode,
+} from 'lexical/src/__tests__/utils';
 import {assert, describe, expect, test} from 'vitest';
 
 describe('HTML', () => {
@@ -423,5 +427,67 @@ describe('HTML', () => {
     ])('$name', ({html, expected}) => {
       expect(importAndGetDirection(html)).toBe(expected);
     });
+  });
+
+  test('[Lexical -> HTML]: export includes slot text', () => {
+    const editor = createHeadlessEditor({
+      namespace: 'slot',
+      nodes: [TestShadowRootNode],
+    });
+    editor.update(
+      () => {
+        const host = $createParagraphNode();
+        const slot = $createTestShadowRootNode().append(
+          $createParagraphNode().append($createTextNode('SLOTTEXT')),
+        );
+        $getRoot().append(host);
+        host.setSlot('title', slot);
+      },
+      {discrete: true},
+    );
+    let html = '';
+    editor.read(() => {
+      html = $generateHtmlFromNodes(editor);
+    });
+    expect(html).toContain('SLOTTEXT');
+  });
+
+  test('[Lexical -> HTML]: export includes slot text under a provided selection', () => {
+    const editor = createHeadlessEditor({
+      namespace: 'slot-sel',
+      nodes: [TestShadowRootNode],
+    });
+    let selection: RangeSelection | null = null;
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const before = $createTextNode('BEFORE');
+        const after = $createTextNode('AFTER');
+        const host = $createParagraphNode().append($createTextNode('CHILD'));
+        const slot = $createTestShadowRootNode().append(
+          $createParagraphNode().append($createTextNode('SLOTTEXT')),
+        );
+        host.setSlot('title', slot);
+        root
+          .append($createParagraphNode().append(before))
+          .append(host)
+          .append($createParagraphNode().append(after));
+        // Selection fully encloses the host (the realistic copy scenario), so
+        // the host is selected and emitted whole — its slot must ride along.
+        selection = $createRangeSelection();
+        selection.setTextNodeRange(
+          before,
+          0,
+          after,
+          after.getTextContentSize(),
+        );
+      },
+      {discrete: true},
+    );
+    let html = '';
+    editor.read(() => {
+      html = $generateHtmlFromNodes(editor, selection);
+    });
+    expect(html).toContain('SLOTTEXT');
   });
 });

@@ -524,6 +524,48 @@ function $appendNodesToJSON(
     }
   }
 
+  // Slots are shadow-root isolated, so they can't be partially selected by a
+  // RangeSelection — when the host is included, each slot subtree is copied
+  // whole. Pass a null selection to deep-export the slot regardless of the
+  // outer selection, mirroring the EditorState slot serialization. Gate on the
+  // same condition as the push below (and as the HTML exporter): only emit
+  // slots for a host that is itself emitted, so a host outside the selection
+  // is never walked — its slots must not influence (or break) this export.
+  if (shouldInclude && !shouldExclude && $isElementNode(target)) {
+    const slotNames = target.getSlotNames();
+    if (slotNames.length > 0) {
+      const serializedSlots: Record<string, BaseSerializedNode> = {};
+      for (const name of slotNames) {
+        const slotNode = target.getSlot(name);
+        invariant(
+          slotNode !== null,
+          'LexicalNode: Node %s has slot "%s" but it resolved to no node during export.',
+          target.constructor.name,
+          name,
+        );
+        const slotArray: Array<BaseSerializedNode> = [];
+        $appendNodesToJSON(editor, null, slotNode, slotArray);
+        // A whole-slot export must serialize to exactly the slot node. A slot
+        // value that overrides excludeFromCopy would otherwise make
+        // $appendNodesToJSON splice up its children (or emit nothing), leaving
+        // a dangling/undefined slot entry that breaks on paste.
+        invariant(
+          slotArray.length === 1,
+          'LexicalNode: slot "%s" on %s did not serialize to a single node (got %s); a slot value must not be excluded from copy.',
+          name,
+          target.constructor.name,
+          String(slotArray.length),
+        );
+        serializedSlots[name] = slotArray[0];
+      }
+      (
+        serializedNode as BaseSerializedNode & {
+          slots?: Record<string, BaseSerializedNode>;
+        }
+      ).slots = serializedSlots;
+    }
+  }
+
   if (shouldInclude && !shouldExclude) {
     targetArray.push(serializedNode);
   } else if (Array.isArray(serializedNode.children)) {

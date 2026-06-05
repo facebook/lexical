@@ -193,7 +193,7 @@ describe('named-slots: core foundation', () => {
     });
   });
 
-  test('setSlot rejects a node that already has a parent', () => {
+  test('setSlot detaches a node that already has a parent', () => {
     using editor = createSlotEditor();
 
     editor.update(
@@ -201,7 +201,15 @@ describe('named-slots: core foundation', () => {
         const host = $createParagraphNode();
         const parented = $createTestShadowRootNode();
         $getRoot().append(host).append(parented);
-        expect(() => host.setSlot('title', parented)).toThrow();
+        expect(parented.getParent()).toBe($getRoot());
+
+        host.setSlot('title', parented);
+
+        // setSlot detaches it from the child list, then slots it; a slotted
+        // node and a child are mutually exclusive, so its parent is now null.
+        expect(parented.getParent()).toBe(null);
+        expect($getRoot().getChildrenSize()).toBe(1);
+        expect(host.getSlot('title')!.getKey()).toBe(parented.getKey());
       },
       {discrete: true},
     );

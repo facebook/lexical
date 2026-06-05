@@ -158,8 +158,10 @@ export class ElementNode extends LexicalNode {
   /**
    * Places `node` into the named slot, replacing any existing value under that
    * name. A slot value must be a shadow-root {@link ElementNode} or a
-   * non-inline {@link DecoratorNode}, and must be detached (no parent and not
-   * already slotted) — a slotted node and a child are mutually exclusive.
+   * non-inline {@link DecoratorNode}. If `node` is currently a child of another
+   * element it is detached first; it must not already be slotted elsewhere —
+   * a slotted node and a child are mutually exclusive. The replaced value, if
+   * any, is detached.
    *
    * @experimental
    */
@@ -177,11 +179,6 @@ export class ElementNode extends LexicalNode {
       node.__key,
     );
     invariant(
-      node.__parent === null,
-      'setSlot: node %s already has a parent; a slotted node and a child are mutually exclusive.',
-      node.__key,
-    );
-    invariant(
       node.__slotHost === null,
       'setSlot: node %s is already slotted into host %s; remove it from its current slot first.',
       node.__key,
@@ -193,9 +190,11 @@ export class ElementNode extends LexicalNode {
       const previous = $getNodeByKey(previousKey);
       if (previous !== null) {
         previous.getWritable().__slotHost = null;
+        previous.remove();
       }
     }
     const writableNode = node.getWritable();
+    writableNode.remove();
     writableNode.__slotHost = writableSelf.__key;
     writableSelf.__slots.set(name, writableNode.__key);
     getActiveEditor()._slotsUsed = true;
@@ -215,6 +214,7 @@ export class ElementNode extends LexicalNode {
       const previous = $getNodeByKey(previousKey);
       if (previous !== null) {
         previous.getWritable().__slotHost = null;
+        previous.remove();
       }
       writableSelf.__slots.delete(name);
     }

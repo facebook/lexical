@@ -289,7 +289,7 @@ export function createLexicalNodeFromCollabNode(
     | CollabTextNode
     | CollabDecoratorNode
     | CollabLineBreakNode,
-  parentKey: NodeKey,
+  parentKey: NodeKey | null,
 ): LexicalNode {
   const type = collabNode.getType();
   const registeredNodes = binding.editor._nodes;

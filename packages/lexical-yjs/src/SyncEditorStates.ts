@@ -110,7 +110,7 @@ function $syncEvent(binding: Binding, event: any): void {
     if (hostCollab instanceof CollabElementNode) {
       const hostNode = hostCollab.getNode();
       if (hostNode) {
-        hostCollab.syncSlotsFromYjs(binding, hostNode, hostNode.getKey());
+        hostCollab.syncSlotsFromYjs(binding, hostNode);
       }
     }
     return;

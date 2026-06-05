@@ -406,7 +406,7 @@ export class CollabElementNode {
       }
     }
 
-    this.syncSlotsFromYjs(binding, lexicalNode, key);
+    this.syncSlotsFromYjs(binding, lexicalNode);
   }
 
   // Reconcile named slots from the `slots` Y.Map attribute on this element's
@@ -417,11 +417,7 @@ export class CollabElementNode {
   // is added, a name present on the lexical node but gone from the Y.Map is
   // removed, and a name present on both is left untouched (its own
   // text/children edits flow through the slot's CollabElementNode YTextEvent).
-  syncSlotsFromYjs(
-    binding: Binding,
-    lexicalNode: ElementNode,
-    key: NodeKey,
-  ): void {
+  syncSlotsFromYjs(binding: Binding, lexicalNode: ElementNode): void {
     const slotsY = this._xmlText.getAttribute(SLOTS_ATTR_KEY) as unknown;
     const yNames =
       slotsY instanceof YMap ? new Set(slotsY.keys()) : new Set<string>();
@@ -458,12 +454,8 @@ export class CollabElementNode {
       const slotLexicalNode = createLexicalNodeFromCollabNode(
         binding,
         slotCollab,
-        key,
+        null,
       );
-      // createLexicalNodeFromCollabNode wires __parent to the host key, but a
-      // slotted node must be parentless (its up-pointer is __slotHost, set by
-      // setSlot). Detach before slotting so the setSlot invariant holds.
-      slotLexicalNode.getWritable().__parent = null;
       lexicalNode.setSlot(name, slotLexicalNode);
     }
   }

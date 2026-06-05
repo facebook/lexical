@@ -13,6 +13,7 @@ import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
 import {mergeRegister} from '@lexical/utils';
 import {
+  $createNodeSelection,
   $createParagraphNode,
   $getNodeByKey,
   $getSelection,
@@ -158,6 +159,13 @@ export default function EquationComponent({
       if (!$isEquationNode(node)) {
         return;
       }
+      // Slotted into a host: the slot value is part of the host structure
+      // and not independently deletable (deletion is host-unit only), so a
+      // Backspace inside the empty editor is a no-op rather than a remove/
+      // replace that would throw on a parentless slot value.
+      if (node.getSlotHost() !== null) {
+        return;
+      }
       if (node.isInline()) {
         // Clear lexical's selection first (avoid stale NodeSelection
         // node refs surviving the remove) and preserve the wrapper
@@ -210,7 +218,17 @@ export default function EquationComponent({
         if ($isEquationNode(node)) {
           node.setEquation(equationValue);
           if (restoreSelection) {
-            node.selectNext(0, 0);
+            const host = node.getSlotHost();
+            if (host !== null) {
+              // Slotted: selectNext would throw (the slot value has no
+              // parent). Restore the selection onto the host instead,
+              // matching the host-selection behavior of clicks/arrows.
+              const nodeSelection = $createNodeSelection();
+              nodeSelection.add(host.getKey());
+              $setSelection(nodeSelection);
+            } else {
+              node.selectNext(0, 0);
+            }
           }
         }
       });

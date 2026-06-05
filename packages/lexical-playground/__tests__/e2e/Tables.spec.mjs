@@ -1134,6 +1134,9 @@ test.describe('Tables', () => {
 
     await focusEditor(page);
     await insertTable(page, 2, 3);
+    // SELECT_ALL scopes to a cell when anchored inside the table's shadow
+    // root, so move out first to select the whole document.
+    await moveToEditorBeginning(page);
     await selectAll(page);
 
     // Apply style on empty table
@@ -1525,6 +1528,9 @@ test.describe('Tables', () => {
     await page.keyboard.press('Enter');
     await page.keyboard.type('Text after');
     await insertTable(page, 2, 3);
+    // SELECT_ALL scopes to a cell when anchored inside the table's shadow
+    // root, so move out first to select the whole document.
+    await moveToEditorBeginning(page);
     await selectAll(page);
     await page.keyboard.press('Backspace');
     await assertHTML(
@@ -1535,7 +1541,7 @@ test.describe('Tables', () => {
     );
   });
 
-  test('Can delete all with range selection anchored in table', async ({
+  test('SELECT_ALL anchored in a table cell scopes to that cell', async ({
     page,
     isCollab,
     isPlainText,
@@ -1563,7 +1569,8 @@ test.describe('Tables', () => {
         <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
       `,
     );
-    // Select all but from the table
+    // SELECT_ALL anchored inside the cell's shadow root scopes to the cell,
+    // not the whole document, so deleting it leaves the table intact.
     const modifier = process.platform === 'darwin' ? 'Meta' : 'Control';
     await page.keyboard.press(`${modifier}+A`);
     // The observer is active
@@ -1572,6 +1579,16 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       html`
+        <table class="PlaygroundEditorTheme__table" dir="auto">
+          <colgroup><col style="width: 92px" /></colgroup>
+          <tr dir="auto">
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+              dir="auto">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+            </th>
+          </tr>
+        </table>
         <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
       `,
     );
@@ -6299,6 +6316,9 @@ test.describe('Tables', () => {
     // Create and copy a table
     await insertTable(page, 2, 2);
     await page.keyboard.type('test');
+    // SELECT_ALL scopes to a cell when anchored inside the table's shadow
+    // root, so move out first to select (and copy) the whole document.
+    await moveToEditorBeginning(page);
     await selectAll(page);
     await withExclusiveClipboardAccess(async () => {
       const clipboard = await copyToClipboard(page);
@@ -6357,6 +6377,9 @@ test.describe('Tables', () => {
     // Create and copy a table
     await insertTable(page, 2, 2);
     await page.keyboard.type('test inner table');
+    // SELECT_ALL scopes to a cell when anchored inside the table's shadow
+    // root, so move out first to select (and copy) the whole document.
+    await moveToEditorBeginning(page);
     await selectAll(page);
     await withExclusiveClipboardAccess(async () => {
       const clipboard = await copyToClipboard(page);

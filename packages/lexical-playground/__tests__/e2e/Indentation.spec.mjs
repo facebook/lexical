@@ -6,7 +6,7 @@
  *
  */
 
-import {selectAll} from '../keyboardShortcuts/index.mjs';
+import {moveToEditorBeginning, selectAll} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   click,
@@ -77,6 +77,9 @@ test.describe('Identation', () => {
 
     await page.keyboard.type('foo');
 
+    // SELECT_ALL scopes to a cell when anchored inside the table's shadow
+    // root, so move out first to select the whole document.
+    await moveToEditorBeginning(page);
     await selectAll(page);
 
     await assertHTML(

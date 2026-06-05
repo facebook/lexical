@@ -61,6 +61,7 @@ import PlaygroundNodes from './nodes/PlaygroundNodes';
 import {PlaygroundDOMRenderExtension} from './PlaygroundDOMRenderExtension';
 import {AutocompleteExtension} from './plugins/AutocompleteExtension';
 import {PlaygroundAutoLinkExtension} from './plugins/AutoLinkExtension';
+import {CardExtension} from './plugins/CardExtension';
 import {CodeHighlightExtension} from './plugins/CodeHighlightExtension';
 import {CollapsibleExtension} from './plugins/CollapsibleExtension';
 import {DateTimeExtension} from './plugins/DateTimeExtension';
@@ -70,6 +71,7 @@ import {EmojisExtension} from './plugins/EmojisExtension';
 import {EquationsExtension} from './plugins/EquationsExtension';
 import {ExcalidrawExtension} from './plugins/ExcalidrawExtension';
 import {FigmaExtension} from './plugins/FigmaExtension';
+import {FigureExtension} from './plugins/FigureExtension';
 import {ImagesExtension} from './plugins/ImagesExtension';
 import {LayoutExtension} from './plugins/LayoutExtension/LayoutExtension';
 import {PlaygroundMarkdownShortcutsExtension} from './plugins/MarkdownShortcutsExtension';
@@ -208,6 +210,8 @@ const PlaygroundRichTextExtension = /* @__PURE__ */ defineExtension({
     EquationsExtension,
     LayoutExtension,
     ExcalidrawExtension,
+    CardExtension,
+    FigureExtension,
   ],
   name: '@lexical/playground/RichText',
 });

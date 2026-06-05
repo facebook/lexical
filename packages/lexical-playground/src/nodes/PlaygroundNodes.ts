@@ -21,11 +21,13 @@ import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
 import {CollapsibleContainerNode} from '../plugins/CollapsibleExtension/CollapsibleContainerNode';
 import {CollapsibleContentNode} from '../plugins/CollapsibleExtension/CollapsibleContentNode';
 import {CollapsibleTitleNode} from '../plugins/CollapsibleExtension/CollapsibleTitleNode';
+import {CardNode} from './CardNode';
 import {DateTimeNode} from './DateTimeNode/DateTimeNode';
 import {EmojiNode} from './EmojiNode';
 import {EquationNode} from './EquationNode';
 import {ExcalidrawNode} from './ExcalidrawNode';
 import {FigmaNode} from './FigmaNode';
+import {FigureNode} from './FigureNode';
 import {ImageNode} from './ImageNode';
 import {KeywordNode} from './KeywordNode';
 import {LayoutContainerNode} from './LayoutContainerNode';
@@ -33,6 +35,7 @@ import {LayoutItemNode} from './LayoutItemNode';
 import {MentionNode} from './MentionNode';
 import {PageBreakNode} from './PageBreakNode';
 import {PollNode} from './PollNode';
+import {SlotContainerNode} from './SlotContainerNode';
 import {SpecialTextNode} from './SpecialTextNode';
 import {StickyNode} from './StickyNode';
 import {TweetNode} from './TweetNode';
@@ -73,6 +76,9 @@ const PlaygroundNodes: Array<Klass<LexicalNode>> = [
   LayoutItemNode,
   SpecialTextNode,
   DateTimeNode,
+  CardNode,
+  SlotContainerNode,
+  FigureNode,
 ];
 
 export default PlaygroundNodes;

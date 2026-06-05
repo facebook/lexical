@@ -38,10 +38,12 @@ import {useCallback, useMemo, useState} from 'react';
 import useModal from '../../hooks/useModal';
 import catTypingGif from '../../images/cat-typing.gif';
 import {EmbedConfigs} from '../AutoEmbedPlugin';
+import {INSERT_CARD_COMMAND} from '../CardExtension';
 import {INSERT_COLLAPSIBLE_COMMAND} from '../CollapsibleExtension';
 import {INSERT_DATETIME_COMMAND} from '../DateTimeExtension';
 import {InsertEquationDialog} from '../EquationsExtension';
 import {INSERT_EXCALIDRAW_COMMAND} from '../ExcalidrawExtension';
+import {INSERT_FIGURE_COMMAND} from '../FigureExtension';
 import {INSERT_IMAGE_COMMAND, InsertImageDialog} from '../ImagesExtension';
 import InsertLayoutDialog from '../LayoutExtension/InsertLayoutDialog';
 import {INSERT_PAGE_BREAK} from '../PageBreakExtension';
@@ -331,6 +333,16 @@ export function getBaseOptions(editor: LexicalEditor, showModal: ShowModal) {
       keywords: ['collapse', 'collapsible', 'toggle'],
       onSelect: () =>
         editor.dispatchCommand(INSERT_COLLAPSIBLE_COMMAND, undefined),
+    }),
+    new ComponentPickerOption('Card', {
+      icon: <i className="icon caret-right" />,
+      keywords: ['card', 'slot', 'named slots'],
+      onSelect: () => editor.dispatchCommand(INSERT_CARD_COMMAND, undefined),
+    }),
+    new ComponentPickerOption('Figure', {
+      icon: <i className="icon caret-right" />,
+      keywords: ['figure', 'equation', 'media', 'slot', 'decorator slot'],
+      onSelect: () => editor.dispatchCommand(INSERT_FIGURE_COMMAND, undefined),
     }),
     new ComponentPickerOption('Columns Layout', {
       icon: <i className="icon columns" />,

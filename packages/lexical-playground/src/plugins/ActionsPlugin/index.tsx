@@ -9,7 +9,7 @@
 import type {LexicalEditor} from 'lexical';
 import type {JSX} from 'react';
 
-import {$createCodeNode, $isCodeNode} from '@lexical/code';
+import {$createCodeNode, $isCodeNode, CodeIndentExtension} from '@lexical/code';
 import {getPeerDependencyFromEditor} from '@lexical/extension';
 import {
   editorStateFromSerializedDocument,
@@ -191,9 +191,15 @@ export default function ActionsPlugin({
       editor,
       PagesExtension.name,
     )?.output.disabled;
+    const escapeWithArrows = getPeerDependencyFromEditor<
+      typeof CodeIndentExtension
+    >(editor, CodeIndentExtension.name)?.output.escapeWithArrows;
     const isCodeBlockEditor = mode !== 'wysiwyg';
     if (pagesDisabled !== undefined) {
       pagesDisabled.value = isCodeBlockEditor;
+    }
+    if (escapeWithArrows !== undefined) {
+      escapeWithArrows.value = !isCodeBlockEditor;
     }
 
     if (isCodeBlockEditor) {

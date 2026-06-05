@@ -115,7 +115,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
     editor: LexicalEditor,
     binding: ReturnType<typeof createBindingV2__EXPERIMENTAL>,
   ) {
-    editor.getEditorState().read(() => {
+    editor.read(() => {
       binding.doc.transact(() => {
         $updateYFragment(
           binding.doc,
@@ -223,7 +223,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
       {discrete: true},
     );
 
-    editor2.getEditorState().read(() => {
+    editor2.read(() => {
       const hostR = $getRoot().getFirstChild();
       assert($isElementNode(hostR));
       // the linked-list child survives the round-trip
@@ -274,7 +274,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
       {discrete: true},
     );
 
-    editor2.getEditorState().read(() => {
+    editor2.read(() => {
       const hostR = $getRoot().getFirstChild();
       assert($isElementNode(hostR));
       expect(hostR.getTextContent()).toContain('Body');
@@ -347,7 +347,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
       {discrete: true},
     );
 
-    editor2.getEditorState().read(() => {
+    editor2.read(() => {
       const hostR = $getRoot().getFirstChild();
       assert($isElementNode(hostR));
       const titleR = hostR.getSlot('title');
@@ -419,7 +419,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
       {discrete: true},
     );
 
-    editor2.getEditorState().read(() => {
+    editor2.read(() => {
       const hostR = $getRoot().getFirstChild();
       assert($isElementNode(hostR));
       expect(hostR.getSlotNames().sort()).toEqual(['subtitle', 'title']);
@@ -478,7 +478,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
       {discrete: true},
     );
 
-    editor2.getEditorState().read(() => {
+    editor2.read(() => {
       const hostR = $getRoot().getFirstChild();
       assert($isElementNode(hostR));
       expect(hostR.getSlotNames()).toEqual([]);

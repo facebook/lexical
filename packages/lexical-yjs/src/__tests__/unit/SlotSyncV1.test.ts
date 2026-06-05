@@ -102,7 +102,7 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
     editor: LexicalEditor,
     binding: ReturnType<typeof createBinding>,
   ) {
-    editor.getEditorState().read(() => {
+    editor.read(() => {
       binding.doc.transact(() => {
         binding.root.syncChildrenFromLexical(
           binding,
@@ -232,7 +232,7 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
   test('round-trip: a serialized slot restores into a fresh editor', () => {
     const {editor2} = setupRestoredSlotTree();
 
-    editor2.getEditorState().read(() => {
+    editor2.read(() => {
       const hostR = $getRoot().getFirstChild();
       assert($isElementNode(hostR));
       // the linked-list child survives the round-trip
@@ -256,7 +256,7 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
     mutate: () => void,
   ) {
     const sharedRoot = binding.root.getSharedType();
-    const handler = (events: Array<YEvent<YText>>) => {
+    const handler = (events: YEvent<YText>[]) => {
       syncYjsChangesToLexical(
         binding,
         null as unknown as Provider,
@@ -293,7 +293,7 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
     });
     await flush();
 
-    editor2.getEditorState().read(() => {
+    editor2.read(() => {
       const hostR = $getRoot().getFirstChild();
       assert($isElementNode(hostR));
       expect(hostR.getSlotNames()).toEqual([]);
@@ -320,7 +320,7 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
     });
     await flush();
 
-    editor2.getEditorState().read(() => {
+    editor2.read(() => {
       const hostR = $getRoot().getFirstChild();
       assert($isElementNode(hostR));
       expect(hostR.getSlotNames().sort()).toEqual(['subtitle', 'title']);
@@ -355,7 +355,7 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
     });
     await flush();
 
-    editor2.getEditorState().read(() => {
+    editor2.read(() => {
       const hostR = $getRoot().getFirstChild();
       assert($isElementNode(hostR));
       const titleR = hostR.getSlot('title');
@@ -511,7 +511,7 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
     const {binding, editor, hostCollab} = setupLocalSlotTree();
 
     let slotKey = '';
-    editor.getEditorState().read(() => {
+    editor.read(() => {
       const host = $getRoot().getFirstChild();
       assert($isElementNode(host));
       const title = host.getSlot('title');
@@ -541,7 +541,7 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
     const {binding, editor, hostCollab} = setupLocalSlotTree();
 
     let oldKey = '';
-    editor.getEditorState().read(() => {
+    editor.read(() => {
       const host = $getRoot().getFirstChild();
       assert($isElementNode(host));
       const title = host.getSlot('title');
@@ -580,7 +580,7 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
 
     let slotKey = '';
     let hostKey = '';
-    editor.getEditorState().read(() => {
+    editor.read(() => {
       const host = $getRoot().getFirstChild();
       assert($isElementNode(host));
       hostKey = host.__key;
@@ -607,7 +607,7 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
     const {binding2, doc2, editor2, slotsY} = setupRestoredSlotTree();
 
     let slotKey = '';
-    editor2.getEditorState().read(() => {
+    editor2.read(() => {
       const hostR = $getRoot().getFirstChild();
       assert($isElementNode(hostR));
       const title = hostR.getSlot('title');

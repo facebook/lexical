@@ -152,7 +152,7 @@ export class ElementNode extends LexicalNode {
    *
    * @experimental
    */
-  getSlotNames(): Array<string> {
+  getSlotNames(): string[] {
     return Array.from(this.getLatest().__slots.keys());
   }
   /**
@@ -286,7 +286,7 @@ export class ElementNode extends LexicalNode {
     return parentLastChild !== null && parentLastChild.is(self);
   }
   getAllTextNodes(): Array<TextNode> {
-    const textNodes: Array<TextNode> = [];
+    const textNodes: TextNode[] = [];
     // Slots are read slots-first, ahead of the linked-list children, to match
     // getTextContent. This is a content read; descendant navigation
     // (getFirstDescendant / getLastDescendant) stays children-only so slots

@@ -14,6 +14,7 @@ import {
   $createParagraphNode,
   $createRangeSelection,
   $createTextNode,
+  $getNodeByKey,
   $getRoot,
   $getSelection,
   $isRangeSelection,
@@ -22,6 +23,7 @@ import {
   defineExtension,
   getDOMSelection,
   LexicalNode,
+  type TextNode,
 } from 'lexical';
 import {afterEach, assert, describe, expect, test} from 'vitest';
 
@@ -259,10 +261,7 @@ describe('named-slots: selection containment (slot isolation)', () => {
 
     editor.update(
       () => {
-        const selection = $createRangeSelection();
-        selection.anchor.set(keys.bodyText, 1, 'text');
-        selection.focus.set(keys.bodyText, 3, 'text');
-        $setSelection(selection);
+        $getNodeByKey<TextNode>(keys.bodyText)!.select(1, 3);
 
         const active = $getSelection();
         assert($isRangeSelection(active));
@@ -281,10 +280,7 @@ describe('named-slots: selection containment (slot isolation)', () => {
     // commit a body-only selection first so there is an active RangeSelection
     editor.update(
       () => {
-        const selection = $createRangeSelection();
-        selection.anchor.set(keys.bodyText, 1, 'text');
-        selection.focus.set(keys.bodyText, 2, 'text');
-        $setSelection(selection);
+        $getNodeByKey<TextNode>(keys.bodyText)!.select(1, 2);
       },
       {discrete: true},
     );
@@ -300,7 +296,7 @@ describe('named-slots: selection containment (slot isolation)', () => {
       {discrete: true},
     );
 
-    editor.getEditorState().read(() => {
+    editor.read(() => {
       const active = $getSelection();
       assert($isRangeSelection(active));
       // anchor stays in the body, focus was pushed out of the slot at commit
@@ -315,11 +311,8 @@ describe('named-slots: selection containment (slot isolation)', () => {
 
     editor.update(
       () => {
-        const selection = $createRangeSelection();
         // caret inside the title slot's text
-        selection.anchor.set(keys.titleText, 1, 'text');
-        selection.focus.set(keys.titleText, 1, 'text');
-        $setSelection(selection);
+        const selection = $getNodeByKey<TextNode>(keys.titleText)!.select(1, 1);
 
         const out = $selectAll(selection);
         // scope is the slot's shadow root: both points stay inside the title
@@ -336,11 +329,8 @@ describe('named-slots: selection containment (slot isolation)', () => {
 
     editor.update(
       () => {
-        const selection = $createRangeSelection();
         // caret in the body (outside any slot)
-        selection.anchor.set(keys.bodyText, 1, 'text');
-        selection.focus.set(keys.bodyText, 1, 'text');
-        $setSelection(selection);
+        const selection = $getNodeByKey<TextNode>(keys.bodyText)!.select(1, 1);
 
         const out = $selectAll(selection);
         // scope is the document, not a slot: the slot fix must not shrink

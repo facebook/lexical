@@ -6,6 +6,7 @@
  *
  */
 
+import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -17,7 +18,7 @@ import {
 } from 'lexical';
 import {
   $createTestShadowRootNode,
-  initializeUnitTest,
+  TestShadowRootNode,
 } from 'lexical/src/__tests__/utils';
 import {describe, expect, test} from 'vitest';
 
@@ -66,107 +67,107 @@ function* reverseSlotAwareDfs(
 }
 
 describe('named-slots: $dfs traversal', () => {
-  initializeUnitTest(testEnv => {
-    // host -> (slot title: shadow root -> para -> "Title") + (child body -> "Body")
-    const keys: Record<string, NodeKey> = {};
-    function $buildTree(): void {
-      const host = $createParagraphNode();
-      const title = $createTestShadowRootNode();
-      const titlePara = $createParagraphNode();
-      const titleText = $createTextNode('Title');
-      titlePara.append(titleText);
-      title.append(titlePara);
-      const body = $createParagraphNode();
-      const bodyText = $createTextNode('Body');
-      body.append(bodyText);
-      $getRoot().append(host);
-      host.append(body);
-      host.setSlot('title', title);
-      keys.host = host.getKey();
-      keys.title = title.getKey();
-      keys.titlePara = titlePara.getKey();
-      keys.titleText = titleText.getKey();
-      keys.body = body.getKey();
-      keys.bodyText = bodyText.getKey();
-    }
+  // host -> (slot title: shadow root -> para -> "Title") + (child body -> "Body")
+  const keys: Record<string, NodeKey> = {};
+  function $buildTree(): void {
+    const host = $createParagraphNode();
+    const title = $createTestShadowRootNode();
+    const titlePara = $createParagraphNode();
+    const titleText = $createTextNode('Title');
+    titlePara.append(titleText);
+    title.append(titlePara);
+    const body = $createParagraphNode();
+    const bodyText = $createTextNode('Body');
+    body.append(bodyText);
+    $getRoot().append(host);
+    host.append(body);
+    host.setSlot('title', title);
+    keys.host = host.getKey();
+    keys.title = title.getKey();
+    keys.titlePara = titlePara.getKey();
+    keys.titleText = titleText.getKey();
+    keys.body = body.getKey();
+    keys.bodyText = bodyText.getKey();
+  }
 
-    test('$dfs visits slot subtrees, slots-first, ahead of children', async () => {
-      const {editor} = testEnv;
-      await editor.update($buildTree);
+  const slotTreeExtension = defineExtension({
+    $initialEditorState: $buildTree,
+    name: '[slot-dfs]',
+    nodes: [TestShadowRootNode],
+  });
 
-      editor.getEditorState().read(() => {
-        const host = $getRoot().getFirstChild<ParagraphNode>()!;
-        const visited = $dfs(host).map(({depth, node}) => ({
-          depth,
-          key: node.getKey(),
-        }));
-        // depth is absolute from root: host(1) -> title slot subtree
-        // (shadow root 2 -> para 3 -> text 4) -> body child subtree(2,3)
-        expect(visited).toEqual([
-          {depth: 1, key: keys.host},
-          {depth: 2, key: keys.title},
-          {depth: 3, key: keys.titlePara},
-          {depth: 4, key: keys.titleText},
-          {depth: 2, key: keys.body},
-          {depth: 3, key: keys.bodyText},
-        ]);
-      });
+  test('$dfs visits slot subtrees, slots-first, ahead of children', () => {
+    using editor = buildEditorFromExtensions(slotTreeExtension);
+
+    editor.read(() => {
+      const host = $getRoot().getFirstChild<ParagraphNode>()!;
+      const visited = $dfs(host).map(({depth, node}) => ({
+        depth,
+        key: node.getKey(),
+      }));
+      // depth is absolute from root: host(1) -> title slot subtree
+      // (shadow root 2 -> para 3 -> text 4) -> body child subtree(2,3)
+      expect(visited).toEqual([
+        {depth: 1, key: keys.host},
+        {depth: 2, key: keys.title},
+        {depth: 3, key: keys.titlePara},
+        {depth: 4, key: keys.titleText},
+        {depth: 2, key: keys.body},
+        {depth: 3, key: keys.bodyText},
+      ]);
     });
+  });
 
-    test('$dfs slot traversal matches the reference slots-first walk', async () => {
-      const {editor} = testEnv;
-      await editor.update($buildTree);
+  test('$dfs slot traversal matches the reference slots-first walk', () => {
+    using editor = buildEditorFromExtensions(slotTreeExtension);
 
-      editor.getEditorState().read(() => {
-        const host = $getRoot().getFirstChild<ParagraphNode>()!;
-        const fromDfs = $dfs(host).map(({depth, node}) => ({
-          depth,
-          key: node.getKey(),
-        }));
-        // host sits at absolute depth 1 (direct child of root)
-        const reference = [...slotAwareDfs(1, host)];
-        expect(fromDfs).toEqual(reference);
-      });
+    editor.read(() => {
+      const host = $getRoot().getFirstChild<ParagraphNode>()!;
+      const fromDfs = $dfs(host).map(({depth, node}) => ({
+        depth,
+        key: node.getKey(),
+      }));
+      // host sits at absolute depth 1 (direct child of root)
+      const reference = [...slotAwareDfs(1, host)];
+      expect(fromDfs).toEqual(reference);
     });
+  });
 
-    test('$reverseDfs visits slots-last, mirroring $dfs (#7112 invariant)', async () => {
-      const {editor} = testEnv;
-      await editor.update($buildTree);
+  test('$reverseDfs visits slots-last, mirroring $dfs (#7112 invariant)', () => {
+    using editor = buildEditorFromExtensions(slotTreeExtension);
 
-      editor.getEditorState().read(() => {
-        const host = $getRoot().getFirstChild<ParagraphNode>()!;
-        const visited = $reverseDfs(host).map(({depth, node}) => ({
-          depth,
-          key: node.getKey(),
-        }));
-        // host(1) -> body child reverse(2,3) -> title slot reverse
-        // (shadow root 2 -> para 3 -> text 4)
-        expect(visited).toEqual([
-          {depth: 1, key: keys.host},
-          {depth: 2, key: keys.body},
-          {depth: 3, key: keys.bodyText},
-          {depth: 2, key: keys.title},
-          {depth: 3, key: keys.titlePara},
-          {depth: 4, key: keys.titleText},
-        ]);
-        // matches the reference right-to-left mirror
-        expect(visited).toEqual([...reverseSlotAwareDfs(1, host)]);
-      });
+    editor.read(() => {
+      const host = $getRoot().getFirstChild<ParagraphNode>()!;
+      const visited = $reverseDfs(host).map(({depth, node}) => ({
+        depth,
+        key: node.getKey(),
+      }));
+      // host(1) -> body child reverse(2,3) -> title slot reverse
+      // (shadow root 2 -> para 3 -> text 4)
+      expect(visited).toEqual([
+        {depth: 1, key: keys.host},
+        {depth: 2, key: keys.body},
+        {depth: 3, key: keys.bodyText},
+        {depth: 2, key: keys.title},
+        {depth: 3, key: keys.titlePara},
+        {depth: 4, key: keys.titleText},
+      ]);
+      // matches the reference right-to-left mirror
+      expect(visited).toEqual([...reverseSlotAwareDfs(1, host)]);
     });
+  });
 
-    test('reconciler text cache includes slot text (RootNode.__cachedText)', async () => {
-      const {editor} = testEnv;
-      await editor.update($buildTree);
+  test('reconciler text cache includes slot text (RootNode.__cachedText)', () => {
+    using editor = buildEditorFromExtensions(slotTreeExtension);
 
-      editor.getEditorState().read(() => {
-        const root = $getRoot();
-        const host = root.getFirstChild<ParagraphNode>()!;
-        // the uncached element walk is slot-aware (slots-first)
-        expect(host.getTextContent()).toBe('TitleBody');
-        // RootNode.getTextContent() returns the reconciler-built cache,
-        // which now folds slot text in slots-first, matching the walk.
-        expect(root.getTextContent()).toBe('TitleBody');
-      });
+    editor.read(() => {
+      const root = $getRoot();
+      const host = root.getFirstChild<ParagraphNode>()!;
+      // the uncached element walk is slot-aware (slots-first)
+      expect(host.getTextContent()).toBe('TitleBody');
+      // RootNode.getTextContent() returns the reconciler-built cache,
+      // which now folds slot text in slots-first, matching the walk.
+      expect(root.getTextContent()).toBe('TitleBody');
     });
   });
 });

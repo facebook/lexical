@@ -543,7 +543,7 @@ function $appendNodesToJSON(
           target.constructor.name,
           name,
         );
-        const slotArray: Array<BaseSerializedNode> = [];
+        const slotArray: BaseSerializedNode[] = [];
         $appendNodesToJSON(editor, null, slotNode, slotArray);
         // A whole-slot export must serialize to exactly the slot node. A slot
         // value that overrides excludeFromCopy would otherwise make

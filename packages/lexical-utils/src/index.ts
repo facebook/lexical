@@ -393,7 +393,7 @@ function* $reverseDfsSlotInterleavedIterator(
   startNode?: LexicalNode,
   endNode?: LexicalNode,
 ): IterableIterator<DFSNode> {
-  const pending: Array<{depth: number; node: ElementNode}> = [];
+  const pending: {depth: number; node: ElementNode}[] = [];
   for (const dfsNode of $dfsCaretIterator('previous', startNode, endNode)) {
     while (
       pending.length > 0 &&

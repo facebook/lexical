@@ -10,13 +10,13 @@ import {$generateJSONFromSelectedNodes} from '@lexical/clipboard';
 import {createHeadlessEditor} from '@lexical/headless';
 import {
   $createParagraphNode,
-  $createRangeSelection,
   $createTextNode,
+  $getNodeByKey,
   $getRoot,
   $getSelection,
-  $setSelection,
   ElementNode,
   type SerializedElementNode,
+  type TextNode,
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
 
@@ -94,10 +94,7 @@ describe('slot clipboard export', () => {
     );
     editor.update(
       () => {
-        const sel = $createRangeSelection();
-        sel.anchor.set(beforeKey, 0, 'text');
-        sel.focus.set(beforeKey, 6, 'text');
-        $setSelection(sel);
+        $getNodeByKey<TextNode>(beforeKey)!.select(0, 6);
       },
       {discrete: true},
     );

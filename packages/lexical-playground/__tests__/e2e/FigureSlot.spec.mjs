@@ -8,6 +8,7 @@
 
 import {
   click,
+  doubleClick,
   evaluate,
   expect,
   focusEditor,
@@ -126,7 +127,8 @@ test.describe('Figure atomic decorator slot', () => {
   test('double-click still opens the equation editor', async ({page}) => {
     await focusEditor(page);
     await insertFigure(page);
-    await page.dblclick(
+    await doubleClick(
+      page,
       '.lexical-figure-node [data-lexical-slot="media"] .editor-equation',
     );
     await sleep(150);
@@ -138,7 +140,8 @@ test.describe('Figure atomic decorator slot', () => {
   }) => {
     await focusEditor(page);
     await insertFigure(page);
-    await page.dblclick(
+    await doubleClick(
+      page,
       '.lexical-figure-node [data-lexical-slot="media"] .editor-equation',
     );
     await sleep(150);

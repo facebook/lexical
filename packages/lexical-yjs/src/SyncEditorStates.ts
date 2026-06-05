@@ -311,6 +311,12 @@ export function syncLexicalUpdateToYjs(
           dirtyElements,
           dirtyLeaves,
         );
+        // If a local edit emptied the root, schedule recovery outside the
+        // collaboration/historic tag so the paragraph syncs back to Yjs.
+        // Mirrors the $ensureEditorNotEmpty call in syncYjsChangesToLexical's onUpdate.
+        if (nextLexicalRoot.getChildrenSize() === 0) {
+          binding.editor.update(() => $ensureEditorNotEmpty());
+        }
       }
 
       const selection = $getSelection();
@@ -452,13 +458,20 @@ export function syncLexicalUpdateToYjsV2__EXPERIMENTAL(
   syncWithTransaction(binding, () => {
     currEditorState.read(() => {
       if (dirtyElements.has('root')) {
+        const nextLexicalRoot = $getRoot();
         $updateYFragment(
           binding.doc,
           binding.root,
-          $getRoot(),
+          nextLexicalRoot,
           binding,
           new Set(dirtyElements.keys()),
         );
+        // If a local edit emptied the root, schedule recovery outside the
+        // collaboration/historic tag so the paragraph syncs back to Yjs.
+        // Mirrors the $ensureEditorNotEmpty call in syncYjsChangesToLexicalV2's onUpdate.
+        if (!isFromYjs && nextLexicalRoot.getChildrenSize() === 0) {
+          binding.editor.update(() => $ensureEditorNotEmpty());
+        }
       }
 
       const selection = $getSelection();

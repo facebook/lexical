@@ -456,6 +456,67 @@ describe('Collaboration', () => {
         client2.stop();
       });
 
+      /**
+       * When a local editor directly clears all nodes (e.g. $getRoot().clear()), the empty
+       * state is synced to Yjs. Because the observeDeep callback skips events originating
+       * from the local binding, $ensureEditorNotEmpty never runs, leaving both Lexical and
+       * Yjs permanently empty. The fix adds the same recovery guard to syncLexicalUpdateToYjs
+       * that already exists in syncYjsChangesToLexical's onUpdate callback.
+       */
+      it('Should recover from a direct clear-all and stay in sync with other clients (#8086)', async () => {
+        const connector = createTestConnection(useCollabV2);
+
+        const client1 = connector.createClient('1');
+        const client2 = connector.createClient('2');
+
+        client1.start(container!);
+        client2.start(container!);
+
+        await expectCorrectInitialContent(client1, client2);
+
+        await waitForReact(() => {
+          client1.update(() => {
+            const paragraph = $getRoot().getFirstChild<ParagraphNode>()!;
+            paragraph.append($createTextNode('Hello'));
+          });
+        });
+
+        expect(client1.getHTML()).toEqual(
+          '<p dir="auto"><span data-lexical-text="true">Hello</span></p>',
+        );
+        expect(client1.getHTML()).toEqual(client2.getHTML());
+
+        // Directly clear all nodes — not via undo, but a programmatic clear
+        await waitForReact(() => {
+          client1.update(() => {
+            $getRoot().clear();
+          });
+        });
+
+        // The safety check should auto-insert a paragraph and sync it to Yjs
+        expect(client1.getHTML()).toEqual('<p dir="auto"><br></p>');
+        expect(client1.getHTML()).toEqual(client2.getHTML());
+        expect(client1.getDocJSON()).toEqual(client2.getDocJSON());
+
+        // Subsequent edits must still sync correctly (the main desync symptom)
+        await waitForReact(() => {
+          client1.update(() => {
+            const paragraph = $createParagraphNode();
+            paragraph.append($createTextNode('World'));
+            $getRoot().append(paragraph);
+          });
+        });
+
+        expect(client1.getHTML()).toEqual(
+          '<p dir="auto"><br></p><p dir="auto"><span data-lexical-text="true">World</span></p>',
+        );
+        expect(client1.getHTML()).toEqual(client2.getHTML());
+        expect(client1.getDocJSON()).toEqual(client2.getDocJSON());
+
+        client1.stop();
+        client2.stop();
+      });
+
       it('Should not grow a selection when a remote peer types at its right edge (#8608)', async () => {
         const connector = createTestConnection(useCollabV2);
         const client1 = connector.createClient('1');

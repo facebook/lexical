@@ -6,26 +6,22 @@
  *
  */
 
-import type {
-  LexicalCommand,
-  LexicalEditor,
-  LexicalNode,
-  NodeKey,
-} from 'lexical';
+import type {LexicalCommand, LexicalEditor, LexicalNode} from 'lexical';
 
+import {NodeSelectionDataSelectedExtension} from '@lexical/extension';
 import {$insertNodeToNearestRoot, mergeRegister} from '@lexical/utils';
 import {
   $createNodeSelection,
   $getAdjacentNode,
   $getNearestNodeFromDOMNode,
   $getSelection,
-  $isNodeSelection,
   $isRangeSelection,
   $setSelection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_BEFORE_EDITOR,
   COMMAND_PRIORITY_BEFORE_LOW,
   COMMAND_PRIORITY_EDITOR,
+  configExtension,
   createCommand,
   defineExtension,
   isHTMLElement,
@@ -38,7 +34,7 @@ import {
 import {
   $createFigureNode,
   $isFigureNode,
-  type FigureNode,
+  FigureNode,
 } from '../../nodes/FigureNode';
 
 export const INSERT_FIGURE_COMMAND: LexicalCommand<void> = createCommand(
@@ -125,15 +121,15 @@ function $resolveFigureChromeTarget(
 }
 
 export const FigureExtension = defineExtension({
-  name: '@lexical/playground/Figure',
-  register: editor => {
+  dependencies: [
     // The slotted decorator owns `useLexicalNodeSelection` for its own
     // selected outline, but the Figure host is a plain ElementNode with no
-    // decorate() path. Mirror the host's NodeSelection state onto a
+    // decorate() path. This mirrors the host's NodeSelection state onto a
     // `data-selected` attribute so CSS can render the host outline.
-    // `selectedKeys` tracks the previous frame so we only clear figures
-    // that left the selection.
-    let selectedKeys: Set<NodeKey> = new Set();
+    configExtension(NodeSelectionDataSelectedExtension, {nodes: [FigureNode]}),
+  ],
+  name: '@lexical/playground/Figure',
+  register: editor => {
     const onChromeMouseDown = (event: MouseEvent) => {
       const target = event.target;
       if (!isHTMLElement(target)) {
@@ -222,28 +218,6 @@ export const FigureExtension = defineExtension({
         if (rootElement !== null) {
           rootElement.addEventListener('mousedown', onChromeMouseDown);
         }
-      }),
-      editor.registerUpdateListener(({editorState}) => {
-        const nextKeys = new Set<NodeKey>();
-        editorState.read(() => {
-          const selection = $getSelection();
-          if ($isNodeSelection(selection)) {
-            for (const selected of selection.getNodes()) {
-              if ($isFigureNode(selected)) {
-                nextKeys.add(selected.getKey());
-              }
-            }
-          }
-        });
-        for (const key of selectedKeys) {
-          if (!nextKeys.has(key)) {
-            editor.getElementByKey(key)?.removeAttribute('data-selected');
-          }
-        }
-        for (const key of nextKeys) {
-          editor.getElementByKey(key)?.setAttribute('data-selected', 'true');
-        }
-        selectedKeys = nextKeys;
       }),
     );
   },

@@ -6,11 +6,12 @@
  *
  */
 
-import type {LexicalCommand, LexicalEditor, NodeKey} from 'lexical';
+import type {LexicalCommand, LexicalEditor} from 'lexical';
 
 import {
   $defaultShouldInsertAfter,
   ClickAfterLastBlockExtension,
+  NodeSelectionDataSelectedExtension,
 } from '@lexical/extension';
 import {
   $findMatchingParent,
@@ -22,7 +23,6 @@ import {
   $getAdjacentNode,
   $getNearestNodeFromDOMNode,
   $getSelection,
-  $isNodeSelection,
   $isRangeSelection,
   $setSelection,
   CLICK_COMMAND,
@@ -36,11 +36,7 @@ import {
   KEY_ARROW_RIGHT_COMMAND,
 } from 'lexical';
 
-import {
-  $createCardNode,
-  $isCardNode,
-  type CardNode,
-} from '../../nodes/CardNode';
+import {$createCardNode, $isCardNode, CardNode} from '../../nodes/CardNode';
 
 export const INSERT_CARD_COMMAND: LexicalCommand<void> = createCommand(
   'INSERT_CARD_COMMAND',
@@ -122,15 +118,14 @@ export const CardExtension = defineExtension({
       $shouldInsertAfter: node =>
         $defaultShouldInsertAfter(node) || $isCardNode(node),
     }),
+    // CardNode is an ElementNode, so there's no `decorate()` path to hang
+    // `useLexicalNodeSelection` off. This mirrors the NodeSelection state
+    // onto a `data-selected` attribute on each Card's host DOM so CSS can
+    // render the selected outline.
+    configExtension(NodeSelectionDataSelectedExtension, {nodes: [CardNode]}),
   ],
   name: '@lexical/playground/Card',
   register: editor => {
-    // CardNode is an ElementNode, so there's no `decorate()` path to hang
-    // `useLexicalNodeSelection` off. Mirror the NodeSelection state onto a
-    // `data-selected` attribute on each Card's host DOM so CSS can render
-    // the selected outline. `selectedKeys` tracks the previous frame so we
-    // only clear the cards that left the selection.
-    let selectedKeys: Set<NodeKey> = new Set();
     const onChromeMouseDown = (event: MouseEvent) => {
       const target = event.target;
       if (!isHTMLElement(target)) {
@@ -199,28 +194,6 @@ export const CardExtension = defineExtension({
         if (rootElement !== null) {
           rootElement.addEventListener('mousedown', onChromeMouseDown);
         }
-      }),
-      editor.registerUpdateListener(({editorState}) => {
-        const nextKeys = new Set<NodeKey>();
-        editorState.read(() => {
-          const selection = $getSelection();
-          if ($isNodeSelection(selection)) {
-            for (const selected of selection.getNodes()) {
-              if ($isCardNode(selected)) {
-                nextKeys.add(selected.getKey());
-              }
-            }
-          }
-        });
-        for (const key of selectedKeys) {
-          if (!nextKeys.has(key)) {
-            editor.getElementByKey(key)?.removeAttribute('data-selected');
-          }
-        }
-        for (const key of nextKeys) {
-          editor.getElementByKey(key)?.setAttribute('data-selected', 'true');
-        }
-        selectedKeys = nextKeys;
       }),
     );
   },

@@ -62,6 +62,15 @@ async function cardCount(page) {
   );
 }
 
+async function selectedCardCount(page) {
+  return evaluate(
+    page,
+    () =>
+      document.querySelectorAll('.lexical-card-node[data-selected="true"]')
+        .length,
+  );
+}
+
 async function slotCount(page, name) {
   return evaluate(
     page,
@@ -251,5 +260,29 @@ test.describe('Card HTML serialization round-trip', () => {
     await sleep(200);
 
     await assertCardIntact(page, {body: 'Body', title: 'Title'});
+  });
+});
+
+test.describe('Card host data-selected mirroring', () => {
+  test.beforeEach(async ({isCollab, isPlainText, page}) => {
+    test.skip(isPlainText);
+    await initialize({isCollab, page});
+  });
+
+  // CardNode and FigureNode both register the shared
+  // NodeSelectionDataSelectedExtension under one name, each contributing its
+  // own node type. The two `nodes` arrays must concatenate during config
+  // merge; a plain shallow merge would let the last contributor win and the
+  // Card host would never mirror its selection. This guards the Card side
+  // (FigureSlot guards the Figure side, so the pair covers the merge).
+  test('selecting a card sets data-selected on its host', async ({page}) => {
+    await focusEditor(page);
+    await insertCard(page);
+    expect(await selectedCardCount(page)).toBe(0);
+    // Click the chrome (the 12px padding outside the slots) to promote the
+    // whole card to a NodeSelection.
+    await click(page, '.lexical-card-node', {position: {x: 6, y: 6}});
+    await sleep(120);
+    expect(await selectedCardCount(page)).toBe(1);
   });
 });

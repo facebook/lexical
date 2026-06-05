@@ -43,6 +43,7 @@ import {
   ID,
   isDeleted,
   Item,
+  Map as YMap,
   Snapshot,
   Text as YText,
   typeListToArraySnapshot,
@@ -53,7 +54,11 @@ import {
 
 import {BindingV2} from './Bindings';
 import simpleDiffWithCursor from './simpleDiffWithCursor';
-import {$syncPropertiesFromYjs, getDefaultNodeProperties} from './Utils';
+import {
+  $syncPropertiesFromYjs,
+  getDefaultNodeProperties,
+  SLOTS_ATTR_KEY,
+} from './Utils';
 
 type ComputeYChange = (
   event: 'removed' | 'added',
@@ -175,8 +180,14 @@ export const $createOrUpdateNodeFromYElement = (
       // State keys route through NodeState.updateFromJSON, which guards
       // against prototype-polluting keys.
       state[attrKeyToStateKey(k)] = attrs[k];
-    } else if (k !== '__proto__' && k !== 'constructor' && k !== 'prototype') {
+    } else if (
+      k !== SLOTS_ATTR_KEY &&
+      k !== '__proto__' &&
+      k !== 'constructor' &&
+      k !== 'prototype'
+    ) {
       // Skip prototype-polluting property keys from untrusted remote attrs.
+      // `slots` is a dedicated channel restored below, not a node property.
       properties[k] = attrs[k];
     }
   }
@@ -190,6 +201,54 @@ export const $createOrUpdateNodeFromYElement = (
       if (changedKey.startsWith(STATE_KEY_PREFIX)) {
         const stateKey = attrKeyToStateKey(changedKey);
         writableState.updateFromUnknown(stateKey, state[stateKey]);
+      }
+    }
+  }
+
+  // Reconcile the dedicated `slots` channel against the host's `slots` Y.Map.
+  // Diff (not blind setSlot) so the observer path is safe: re-setSlot on an
+  // already-slotted node would trip setSlot's `__slotHost === null` invariant.
+  if (node instanceof ElementNode) {
+    // `slots` is stored as a Y.Map attribute; widen to unknown so instanceof
+    // can narrow it (getAttribute is typed as returning a string).
+    const slotsY = el.getAttribute(SLOTS_ATTR_KEY) as unknown;
+    const yNames = new Set<string>();
+    if (slotsY instanceof YMap) {
+      for (const [name, slotType] of slotsY.entries()) {
+        yNames.add(name);
+        let slotNode: LexicalNode | null = null;
+        if (slotType instanceof XmlElement) {
+          slotNode = $createOrUpdateNodeFromYElement(
+            slotType,
+            binding,
+            new Set(),
+            false,
+            snapshot,
+            prevSnapshot,
+            computeYChange,
+          );
+        }
+        if (slotNode === null) {
+          continue;
+        }
+        // Same node already occupies this slot -> its content was updated in
+        // place by the calls above, so skip setSlot (which would re-fire its
+        // invariant). A different (or absent) key means a fresh/replaced node;
+        // setSlot detaches the previous occupant (LexicalElementNode setSlot).
+        const existingSlot = node.getSlot(name);
+        if (
+          existingSlot === null ||
+          existingSlot.getKey() !== slotNode.getKey()
+        ) {
+          node.setSlot(name, slotNode);
+        }
+      }
+    }
+    // Drop slots that no longer exist in yjs. getSlotNames returns a snapshot
+    // array, so mutating __slots via removeSlot during iteration is safe.
+    for (const name of node.getSlotNames()) {
+      if (!yNames.has(name)) {
+        node.removeSlot(name);
       }
     }
   }
@@ -341,7 +400,93 @@ const $createTypeFromTextNodes = (
   return type;
 };
 
-const createTypeFromElementNode = (
+// Build a `Y.Map<name, XmlElement>` mirroring the host's `__slots`. Each slot
+// root is a non-inline ElementNode or DecoratorNode (enforced by setSlot), so
+// it is serialized through `createTypeFromElementNode` and nested slots fold in
+// recursively. Returns undefined for a host with no slots so non-slot hosts set
+// no attribute.
+const $createSlotsYType = (
+  node: ElementNode,
+  binding: BindingV2,
+): YMap<XmlElement> | undefined => {
+  const names = node.getSlotNames();
+  if (names.length === 0) {
+    return undefined;
+  }
+  const slotsY = new YMap<XmlElement>();
+  for (const name of names) {
+    const slotNode = node.getSlot(name);
+    if (slotNode == null) {
+      continue;
+    }
+    slotsY.set(name, $createTypeFromElementNode(slotNode, binding));
+  }
+  return slotsY;
+};
+
+// Per-slot diff of the host's `__slots` against its `slots` Y.Map, applied in
+// place during a host update (the lexical->yjs counterpart of the yjs->lexical
+// slot reconcile in $createOrUpdateNodeFromYElement). Names gone from lexical
+// are deleted; a slot whose node identity is preserved is recursed via
+// $updateYFragment only when dirty (so in-slot edits propagate while unchanged
+// slots keep their yjs IDs instead of being recreated); a new or replaced slot
+// is (re)created. The creation-time path (createTypeFromElementNode) still seeds
+// slots for a freshly inserted host.
+const $updateSlotsYType = (
+  yDomFragment: XmlElement,
+  node: ElementNode,
+  binding: BindingV2,
+  dirtyElements: Set<NodeKey>,
+  y: YDoc,
+): void => {
+  const names = node.getSlotNames();
+  const existing = yDomFragment.getAttribute(SLOTS_ATTR_KEY) as unknown;
+
+  if (names.length === 0) {
+    if (existing !== undefined) {
+      yDomFragment.removeAttribute(SLOTS_ATTR_KEY);
+    }
+    return;
+  }
+
+  let slotsY: YMap<XmlElement>;
+  if (existing instanceof YMap) {
+    slotsY = existing as YMap<XmlElement>;
+  } else {
+    slotsY = new YMap<XmlElement>();
+    // TODO(collab-v2): typing for XmlElement generic
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    yDomFragment.setAttribute(SLOTS_ATTR_KEY, slotsY as any);
+  }
+
+  const nextNames = new Set(names);
+  for (const name of Array.from(slotsY.keys())) {
+    if (!nextNames.has(name)) {
+      slotsY.delete(name);
+    }
+  }
+
+  for (const name of names) {
+    const slotNode = node.getSlot(name);
+    if (slotNode == null) {
+      continue;
+    }
+    const slotY = slotsY.get(name);
+    if (
+      slotY instanceof XmlElement &&
+      slotNode instanceof ElementNode &&
+      slotY === binding.mapping.getSharedType(slotNode)
+    ) {
+      if (dirtyElements.has(slotNode.getKey())) {
+        $updateYFragment(y, slotY, slotNode, binding, dirtyElements);
+      }
+    } else {
+      slotsY.set(name, $createTypeFromElementNode(slotNode, binding));
+    }
+  }
+};
+
+const $createTypeFromElementNode = (
   node: LexicalNode,
   binding: BindingV2,
 ): XmlElement => {
@@ -361,6 +506,12 @@ const createTypeFromElementNode = (
   if (!(node instanceof ElementNode)) {
     return type;
   }
+  const slotsY = $createSlotsYType(node, binding);
+  if (slotsY !== undefined) {
+    // TODO(collab-v2): typing for XmlElement generic
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    type.setAttribute(SLOTS_ATTR_KEY, slotsY as any);
+  }
   type.insert(
     0,
     normalizeNodeContent(node).map(n =>
@@ -377,7 +528,7 @@ const $createTypeFromTextOrElementNode = (
 ): XmlElement | XmlText =>
   node instanceof Array
     ? $createTypeFromTextNodes(node, meta)
-    : createTypeFromElementNode(node, meta);
+    : $createTypeFromElementNode(node, meta);
 
 const isObject = (
   val: unknown,
@@ -719,11 +870,18 @@ export const $updateYFragment = (
         yDomFragment.removeAttribute(key);
       }
     }
-    // remove all keys that are no longer in pAttrs
+    // remove all keys that are no longer in pAttrs. The slots channel is set
+    // manually below (not in `lexicalAttrs`), so exclude it here or every
+    // update would strip it.
     for (const key in yDomAttrs) {
-      if (lexicalAttrs[key] === undefined) {
+      if (key !== SLOTS_ATTR_KEY && lexicalAttrs[key] === undefined) {
         yDomFragment.removeAttribute(key);
       }
+    }
+    // @experimental named-slots. Diff the slots channel in place (preserving
+    // the yjs IDs of unchanged slots) rather than rebuilding it wholesale.
+    if (node instanceof ElementNode) {
+      $updateSlotsYType(yDomFragment, node, binding, dirtyElements, y);
     }
   }
   // update children

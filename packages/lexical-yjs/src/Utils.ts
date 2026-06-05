@@ -48,14 +48,22 @@ const baseExcludedProperties = new Set<string>([
   '__next',
   '__prev',
   '__state',
+  '__slotHost',
 ]);
 const elementExcludedProperties = new Set<string>([
   '__first',
   '__last',
   '__size',
+  '__slots',
 ]);
 const rootExcludedProperties = new Set<string>(['__cachedText']);
 const textExcludedProperties = new Set<string>(['__text']);
+
+// @experimental named-slots. Slots are a structural channel separate from the
+// linked-list children (excluded from the auto property->attribute path via the
+// sets above) and live under this reserved attribute key. '$' can't prefix the
+// key — it breaks XmlElement.toDOM — so a plain key is used.
+export const SLOTS_ATTR_KEY = 'slots';
 
 function isExcludedProperty(
   name: string,
@@ -164,6 +172,29 @@ export function $createCollabNodeFromLexicalNode(
     collabNode = $createCollabElementNode(xmlText, parent, nodeType);
     collabNode.syncPropertiesFromLexical(binding, lexicalNode, null);
     collabNode.syncChildrenFromLexical(binding, lexicalNode, null, null, null);
+    const slotNames = lexicalNode.getSlotNames();
+    if (slotNames.length > 0) {
+      const slotsY = new YMap();
+      let hasSlot = false;
+      for (const name of slotNames) {
+        const slotNode = lexicalNode.getSlot(name);
+        if (slotNode === null) {
+          continue;
+        }
+        const slotCollab = $createCollabNodeFromLexicalNode(
+          binding,
+          slotNode,
+          collabNode,
+        );
+        binding.collabNodeMap.set(slotNode.__key, slotCollab);
+        slotsY.set(name, slotCollab.getSharedType());
+        hasSlot = true;
+      }
+      if (hasSlot) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        xmlText.setAttribute(SLOTS_ATTR_KEY, slotsY as any);
+      }
+    }
   } else if ($isTextNode(lexicalNode)) {
     // TODO create a token text node for token, segmented nodes.
     const map = new YMap();

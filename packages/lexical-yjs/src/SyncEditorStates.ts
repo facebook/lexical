@@ -53,6 +53,7 @@ import {
   $moveSelectionToPreviousNode,
   doesSelectionNeedRecovering,
   getNodeTypeFromSharedType,
+  SLOTS_ATTR_KEY,
   syncWithTransaction,
 } from './Utils';
 
@@ -91,6 +92,29 @@ function $syncEvent(binding: Binding, event: any): void {
     return;
   }
   const {target} = event;
+  // Slots channel: a slot add / delete lands on the host `_xmlText`'s `slots`
+  // attribute Y.Map (parentSub === 'slots', parent === the host XmlText). The
+  // Y.Map carries no `__type`, so the default dispatch below would trip the
+  // shared-type invariant. Re-route it to a host slot reconcile instead.
+  if (
+    event instanceof YMapEvent &&
+    target instanceof YMap &&
+    target._item != null &&
+    target._item.parentSub === SLOTS_ATTR_KEY &&
+    target.parent instanceof XmlText
+  ) {
+    const hostCollab = $getOrInitCollabNodeFromSharedType(
+      binding,
+      target.parent,
+    );
+    if (hostCollab instanceof CollabElementNode) {
+      const hostNode = hostCollab.getNode();
+      if (hostNode) {
+        hostCollab.syncSlotsFromYjs(binding, hostNode, hostNode.getKey());
+      }
+    }
+    return;
+  }
   const collabNode = $getOrInitCollabNodeFromSharedType(binding, target);
 
   if (collabNode instanceof CollabElementNode && event instanceof YTextEvent) {
@@ -336,7 +360,7 @@ export function syncLexicalUpdateToYjs(
 
 function $syncEventV2(
   binding: BindingV2,
-  event: YEvent<XmlElement | XmlText>,
+  event: YEvent<XmlElement | XmlText | YMap<unknown>>,
 ): void {
   const {target} = event;
   if (target instanceof XmlElement && event instanceof YXmlEvent) {
@@ -354,6 +378,20 @@ function $syncEventV2(
       $createOrUpdateNodeFromYElement(parent, binding, new Set(), true);
     } else {
       invariant(false, 'Expected XmlElement parent for XmlText');
+    }
+  } else if (target instanceof YMap && event instanceof YMapEvent) {
+    // A slot add/remove arrives as a YMapEvent on the host's `slots` Y.Map.
+    // Re-route to the host element so its slots channel gets reconciled.
+    const parent = target.parent;
+    if (parent instanceof XmlElement) {
+      $createOrUpdateNodeFromYElement(
+        parent,
+        binding,
+        new Set([SLOTS_ATTR_KEY]),
+        false,
+      );
+    } else {
+      invariant(false, 'Expected XmlElement parent for slots Y.Map');
     }
   } else {
     invariant(false, 'Expected xml or text event');

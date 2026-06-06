@@ -457,22 +457,30 @@ describe('Collaboration', () => {
       });
 
       /**
-       * When a local editor directly clears all nodes (e.g. $getRoot().clear()), the empty
-       * state is synced to Yjs. Because the observeDeep callback skips events originating
-       * from the local binding, $ensureEditorNotEmpty never runs, leaving both Lexical and
-       * Yjs permanently empty. The fix adds the same recovery guard to syncLexicalUpdateToYjs
-       * that already exists in syncYjsChangesToLexical's onUpdate callback.
+       * When a local editor directly clears all nodes while no other peer is live,
+       * syncLexicalUpdateToYjs syncs the empty state to Yjs. The observeDeep callback
+       * skips events originating from the local binding, so $ensureEditorNotEmpty never
+       * runs via the existing Yjs→Lexical guard. The fix adds the same recovery to the
+       * Lexical→Yjs direction so the paragraph is in the Yjs doc before any peer connects.
+       *
+       * Isolation: client2 is registered in the connector before the clear so all of
+       * client1's updates (including the recovery paragraph) queue to client2 while it is
+       * not yet started. When client2 cold-starts it applies those queued updates.
+       * Without the fix the last queued update leaves the root empty and client2 loads
+       * an empty document. With the fix the recovery paragraph is present and client2
+       * loads correctly — the assertion on client2's HTML is the regression guard.
        */
-      it('Should recover from a direct clear-all and stay in sync with other clients (#8086)', async () => {
+      it('Should sync recovered paragraph to a later-joining client after direct clear-all (#8086)', async () => {
         const connector = createTestConnection(useCollabV2);
-
         const client1 = connector.createClient('1');
+        // Register client2 now so updates queue to it while client1 operates alone
         const client2 = connector.createClient('2');
 
+        // Only client1 is active — no live peer to trigger the existing
+        // Yjs→Lexical recovery guard and mask the missing Lexical→Yjs guard
         client1.start(container!);
-        client2.start(container!);
-
-        await expectCorrectInitialContent(client1, client2);
+        await Promise.resolve().then();
+        expect(client1.getHTML()).toEqual('<p dir="auto"><br></p>');
 
         await waitForReact(() => {
           client1.update(() => {
@@ -484,21 +492,32 @@ describe('Collaboration', () => {
         expect(client1.getHTML()).toEqual(
           '<p dir="auto"><span data-lexical-text="true">Hello</span></p>',
         );
-        expect(client1.getHTML()).toEqual(client2.getHTML());
 
-        // Directly clear all nodes — not via undo, but a programmatic clear
+        // Clear with no live peer — only syncLexicalUpdateToYjs (our fix) can
+        // schedule the recovery; syncYjsChangesToLexical's existing guard cannot
+        // fire because the observeDeep event is skipped for locally-originated changes
         await waitForReact(() => {
           client1.update(() => {
             $getRoot().clear();
           });
         });
 
-        // The safety check should auto-insert a paragraph and sync it to Yjs
+        // client1's own Lexical view should recover (the fix schedules
+        // $ensureEditorNotEmpty in a tag-free update that also syncs back to Yjs)
         expect(client1.getHTML()).toEqual('<p dir="auto"><br></p>');
+
+        // client2 cold-starts and applies all queued Yjs updates from client1.
+        // Regression assertion: without the fix, client2 receives only the clear
+        // and loads an empty document (getHTML() === ''). With the fix the recovery
+        // paragraph is in the queue and client2 loads '<p dir="auto"><br></p>'.
+        client2.start(container!);
+        await Promise.resolve().then();
+
+        expect(client2.getHTML()).toEqual('<p dir="auto"><br></p>');
         expect(client1.getHTML()).toEqual(client2.getHTML());
         expect(client1.getDocJSON()).toEqual(client2.getDocJSON());
 
-        // Subsequent edits must still sync correctly (the main desync symptom)
+        // Subsequent edits must sync in both directions — the main desync symptom
         await waitForReact(() => {
           client1.update(() => {
             const paragraph = $createParagraphNode();

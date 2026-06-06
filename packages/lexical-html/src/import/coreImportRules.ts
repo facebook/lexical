@@ -22,7 +22,10 @@ import {
   IS_SUBSCRIPT,
   IS_SUPERSCRIPT,
   IS_UNDERLINE,
+  isBlockDomNode,
   isDOMTextNode,
+  isLastChildInBlockNode,
+  isOnlyChildInBlockNode,
   type LexicalNode,
   setNodeIndentFromDOM,
 } from 'lexical';
@@ -35,6 +38,7 @@ import {
   ImportWhitespaceConfig,
   type WhitespaceImportConfig,
 } from './ImportContext';
+import {$propagateTextAlignToBlockChildren, BlockSchema} from './schemas';
 import {selBase} from './sel';
 
 const sel = selBase;
@@ -437,7 +441,16 @@ const IgnoreScriptStyleRule = defineImportRule({
 });
 
 const LineBreakRule = defineImportRule({
-  $import: () => [$createLineBreakNode()],
+  // Mirror the legacy LineBreakNode.importDOM filter: stray `<br>` that
+  // are the sole or trailing child of a block parent (e.g. Apple's
+  // `<br class="Apple-interchange-newline">` clipboard sentinel, or the
+  // trailing `<br>` browsers insert after the last text in a `<div>`)
+  // would otherwise survive as a LineBreakNode and tack an extra blank
+  // line onto the imported content.
+  $import: (_ctx, el) =>
+    isOnlyChildInBlockNode(el) || isLastChildInBlockNode(el)
+      ? []
+      : [$createLineBreakNode()],
   match: sel.tag('br'),
   name: '@lexical/html/br',
 });
@@ -468,6 +481,52 @@ const ParagraphRule = defineImportRule({
 });
 
 /**
+ * Transparent block-container rule for any unconverted block-level DOM
+ * element — `<div>`, but also `<section>`, `<article>`, `<header>`,
+ * `<figure>`, … (everything {@link isBlockDomNode} recognizes via the
+ * legacy `BLOCK_TAG_RE`). Without it these would fall through to the
+ * dispatcher's `$hoistChildrenOf` / `DefaultHoistRule` fallback, which
+ * transparently lifts children up to the enclosing context. That works
+ * structurally, but (a) two sibling `<section>`s collapse into a single
+ * paragraph instead of two, and (b) any `text-align` set on the element
+ * is lost because the synthesized paragraph (built by the enclosing
+ * schema) sees the *grandparent* as `domParent`.
+ *
+ * The rule is registered as a `sel.any()` wildcard and defers (via
+ * `$next()`) for non-block elements so inline tags still reach the inline
+ * rules. Higher-priority tag rules (`<p>`, `<li>`, `<td>`, headings, …)
+ * are dispatched first and never reach here.
+ *
+ * The element's children run through {@link BlockSchema} so each inline
+ * run becomes its own `ParagraphNode` (with the element's `text-align`
+ * picked up via {@link $paragraphPackageRun}'s `domParent`), and any
+ * pre-existing block children get the same alignment applied via
+ * {@link $propagateTextAlignToBlockChildren}. The resulting block-level
+ * nodes are what the enclosing context sees — at the root a sibling
+ * paragraph is the natural shape; inside a block lexical container the
+ * container rule (e.g. {@link ListItemRule}) collapses paragraph
+ * children back into inline-with-line-break form. That way both `<p>`
+ * and transparent blocks (`<div>`, `<section>`, …) project to the same
+ * `ParagraphNode` intermediate, and there is no need for a marker node
+ * to distinguish them.
+ */
+const TransparentBlockRule = defineImportRule({
+  $import: (ctx, el, $next) => {
+    if (!isBlockDomNode(el)) {
+      // Inline element with no dedicated rule — let the inline rules (or
+      // the default hoist) handle it.
+      return $next();
+    }
+    return $propagateTextAlignToBlockChildren(
+      ctx.$importChildren(el, {schema: BlockSchema}),
+      el,
+    );
+  },
+  match: sel.any(),
+  name: '@lexical/html/transparent-block',
+});
+
+/**
  * Rules covering the {@link ParagraphNode}, {@link TextNode},
  * {@link LineBreakNode}, and {@link TabNode} cases that the legacy
  * `importDOM` machinery in `@lexical/lexical` handled. Intended to be
@@ -479,6 +538,7 @@ const ParagraphRule = defineImportRule({
 export const CoreImportRules = [
   IgnoreScriptStyleRule,
   ParagraphRule,
+  TransparentBlockRule,
   TextRule,
   LineBreakRule,
   InlineFormatRule,

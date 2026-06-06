@@ -13,11 +13,7 @@ import {
   $getSelection,
   $isRangeSelection,
 } from 'lexical';
-import {
-  DataTransferMock,
-  initializeUnitTest,
-  invariant,
-} from 'lexical/src/__tests__/utils';
+import {initializeUnitTest, invariant} from 'lexical/src/__tests__/utils';
 import {beforeEach, describe, expect, test} from 'vitest';
 
 describe('CodeBlock tests', () => {
@@ -122,7 +118,7 @@ describe('CodeBlock tests', () => {
         test(`Code block html paste: ${testCase.name}`, async () => {
           const {editor} = testEnv;
 
-          const dataTransfer = new DataTransferMock();
+          const dataTransfer = new DataTransfer();
           dataTransfer.setData('text/html', testCase.pastedHTML);
           await editor.update(() => {
             const selection = $getSelection();

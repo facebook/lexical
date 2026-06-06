@@ -493,6 +493,7 @@ export default function ImageComponent({
                   id={caption.getKey()}
                   providerFactory={createWebsocketProvider}
                   shouldBootstrap={true}
+                  selectionHighlight={true}
                 />
               ) : null}
               {showNestedEditorTreeView === true ? <TreeViewPlugin /> : null}

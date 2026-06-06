@@ -9,6 +9,7 @@
 import type {SerializedEditorState} from './LexicalEditorState';
 import type {LexicalNode, SerializedLexicalNode} from './LexicalNode';
 
+import devInvariant from '@lexical/internal/devInvariant';
 import invariant from '@lexical/internal/invariant';
 
 import {
@@ -121,7 +122,7 @@ export function $assumeActiveEditor(editor: LexicalEditor): void {
   if (getActiveEditorState() !== null && activeEditor === null) {
     activeEditor = editor;
   }
-  invariant(
+  devInvariant(
     activeEditor === editor,
     'The given editor argument does not match $getEditor() in this context. Use editor.getEditorState().read(..., {editor}) if this cross-editor call is intentional.',
   );
@@ -877,16 +878,16 @@ function $triggerEnqueuedUpdates(editor: LexicalEditor): void {
   if (editor._cascadeCount++ > 99) {
     editor._updates = [];
     editor._cascadeCount = 0;
-    try {
-      invariant(
-        false,
-        'One or more update listeners are endlessly enqueueing more updates. May have encountered infinite recursion caused by update listeners that trigger additional updates without a stop condition.',
-      );
-    } catch (error) {
-      if (error instanceof Error) {
-        editor._onError(error);
-      }
-    }
+    // The cascade has already been broken above by clearing the update queue,
+    // so this is a recoverable internal guard rather than a fatal error. Use
+    // devInvariant so it throws loudly in development but only warns in
+    // production, instead of routing a recovered condition through _onError
+    // (typically console.error) and reporting it as an uncaught error.
+    devInvariant(
+      false,
+      'One or more update listeners are endlessly enqueueing more updates. May have encountered infinite recursion caused by update listeners that trigger additional updates without a stop condition. Editor namespace: %s',
+      editor._config.namespace,
+    );
     return;
   }
   const queuedUpdate = queuedUpdates.shift();

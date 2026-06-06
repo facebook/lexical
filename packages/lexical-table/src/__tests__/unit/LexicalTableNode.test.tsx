@@ -35,7 +35,6 @@ import {
   ParagraphNode,
 } from 'lexical';
 import {
-  DataTransferMock,
   expectHtmlToBeEqual,
   html,
   initializeUnitTest,
@@ -43,37 +42,7 @@ import {
   polyfillContentEditable,
 } from 'lexical/src/__tests__/utils';
 import {act, useState} from 'react';
-import {beforeEach, describe, expect, type Mock, test, vi} from 'vitest';
-
-export class ClipboardDataMock {
-  getData: Mock<(type: string) => [string]>;
-  setData: Mock<() => [string, string]>;
-
-  constructor() {
-    this.getData = vi.fn();
-    this.setData = vi.fn();
-  }
-}
-
-export class ClipboardEventMock extends Event {
-  clipboardData: ClipboardDataMock;
-
-  constructor(type: string, options?: EventInit) {
-    super(type, options);
-    this.clipboardData = new ClipboardDataMock();
-  }
-}
-
-global.document.execCommand = function execCommandMock(
-  commandId: string,
-  showUI?: boolean,
-  value?: string,
-): boolean {
-  return true;
-};
-Object.defineProperty(window, 'ClipboardEvent', {
-  value: new ClipboardEventMock('cut'),
-});
+import {beforeEach, describe, expect, test} from 'vitest';
 
 const editorConfig = Object.freeze({
   namespace: '',
@@ -404,7 +373,7 @@ describe('LexicalTableNode tests', () => {
           test('Copy table from an external source', async () => {
             const {editor} = testEnv;
 
-            const dataTransfer = new DataTransferMock();
+            const dataTransfer = new DataTransfer();
             dataTransfer.setData(
               'text/html',
               '<html><body><meta charset="utf-8"><b style="font-weight:normal;" id="docs-internal-guid-16a69100-7fff-6cb9-b829-cb1def16a58d"><div dir="ltr" style="margin-left:0pt;" align="left"><table style="border:none;border-collapse:collapse;table-layout:fixed"><colgroup><col style="width:100px"/><col style="width:200px"/></colgroup><tbody><tr style="height:22.015pt"><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">Hello there</span></p></td><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">General Kenobi!</span></p></td></tr><tr style="height:22.015pt"><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">Lexical is nice</span></p></td><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><br /></td></tr></tbody></table></div></b><!--EndFragment--></body></html>',
@@ -455,7 +424,7 @@ describe('LexicalTableNode tests', () => {
           test('Copy table with caption/tbody/thead/tfoot from an external source', async () => {
             const {editor} = testEnv;
 
-            const dataTransfer = new DataTransferMock();
+            const dataTransfer = new DataTransfer();
             dataTransfer.setData(
               'text/html',
               // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/thead
@@ -599,7 +568,7 @@ describe('LexicalTableNode tests', () => {
           test('Copy table with caption from an external source', async () => {
             const {editor} = testEnv;
 
-            const dataTransfer = new DataTransferMock();
+            const dataTransfer = new DataTransfer();
             dataTransfer.setData(
               'text/html',
               // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/caption
@@ -769,7 +738,7 @@ describe('LexicalTableNode tests', () => {
           test('Copy table from an external source like gdoc with formatting', async () => {
             const {editor} = testEnv;
 
-            const dataTransfer = new DataTransferMock();
+            const dataTransfer = new DataTransfer();
             dataTransfer.setData(
               'text/html',
               '<google-sheets-html-origin><style type="text/css"><!--td {border: 1px solid #cccccc;}br {mso-data-placement:same-cell;}--></style><table xmlns="http://www.w3.org/1999/xhtml" cellspacing="0" cellpadding="0" dir="ltr" border="1" style="table-layout:fixed;font-size:10pt;font-family:Arial;width:0px;border-collapse:collapse;border:none" data-sheets-root="1"><colgroup><col width="100"/><col width="189"/><col width="171"/></colgroup><tbody><tr style="height:21px;"><td style="overflow:hidden;padding:2px 3px 2px 3px;vertical-align:bottom;font-weight:bold;" data-sheets-value="{&quot;1&quot;:2,&quot;2&quot;:&quot;Surface&quot;}">Surface</td><td style="overflow:hidden;padding:2px 3px 2px 3px;vertical-align:bottom;font-style:italic;" data-sheets-value="{&quot;1&quot;:2,&quot;2&quot;:&quot;MWP_WORK_LS_COMPOSER&quot;}">MWP_WORK_LS_COMPOSER</td><td style="overflow:hidden;padding:2px 3px 2px 3px;vertical-align:bottom;text-decoration:underline;text-align:right;" data-sheets-value="{&quot;1&quot;:3,&quot;3&quot;:77349}">77349</td></tr><tr style="height:21px;"><td style="overflow:hidden;padding:2px 3px 2px 3px;vertical-align:bottom;" data-sheets-value="{&quot;1&quot;:2,&quot;2&quot;:&quot;Lexical&quot;}">Lexical</td><td style="overflow:hidden;padding:2px 3px 2px 3px;vertical-align:bottom;text-decoration:line-through;" data-sheets-value="{&quot;1&quot;:2,&quot;2&quot;:&quot;XDS_RICH_TEXT_AREA&quot;}">XDS_RICH_TEXT_AREA</td><td style="overflow:hidden;padding:2px 3px 2px 3px;vertical-align:bottom;" data-sheets-value="{&quot;1&quot;:2,&quot;2&quot;:&quot;sdvd sdfvsfs&quot;}" data-sheets-textstyleruns="{&quot;1&quot;:0}{&quot;1&quot;:5,&quot;2&quot;:{&quot;5&quot;:1}}"><span style="font-size:10pt;font-family:Arial;font-style:normal;">sdvd </span><span style="font-size:10pt;font-family:Arial;font-weight:bold;font-style:normal;">sdfvsfs</span></td></tr></tbody></table>',
@@ -850,7 +819,7 @@ describe('LexicalTableNode tests', () => {
               $selectAll();
             });
             await editor.update(() => {
-              editor.dispatchCommand(CUT_COMMAND, {} as ClipboardEvent);
+              editor.dispatchCommand(CUT_COMMAND, new ClipboardEvent('cut'));
             });
 
             expectHtmlToBeEqual(
@@ -878,7 +847,7 @@ describe('LexicalTableNode tests', () => {
               $selectAll();
             });
             await editor.update(() => {
-              editor.dispatchCommand(CUT_COMMAND, {} as ClipboardEvent);
+              editor.dispatchCommand(CUT_COMMAND, new ClipboardEvent('cut'));
             });
 
             expectHtmlToBeEqual(
@@ -906,7 +875,7 @@ describe('LexicalTableNode tests', () => {
               $selectAll();
             });
             await editor.update(() => {
-              editor.dispatchCommand(CUT_COMMAND, {} as ClipboardEvent);
+              editor.dispatchCommand(CUT_COMMAND, new ClipboardEvent('cut'));
             });
 
             expectHtmlToBeEqual(
@@ -942,10 +911,10 @@ describe('LexicalTableNode tests', () => {
                     table?.getCellNodeFromCords(3, 3, DOMTable)?.__key || '',
                   );
                   $setSelection(selection);
-                  editor.dispatchCommand(CUT_COMMAND, {
-                    preventDefault: () => {},
-                    stopPropagation: () => {},
-                  } as ClipboardEvent);
+                  editor.dispatchCommand(
+                    CUT_COMMAND,
+                    new ClipboardEvent('cut'),
+                  );
                 }
               }
             });
@@ -983,10 +952,10 @@ describe('LexicalTableNode tests', () => {
                     table?.getCellNodeFromCords(2, 2, DOMTable)?.__key || '',
                   );
                   $setSelection(selection);
-                  editor.dispatchCommand(CUT_COMMAND, {
-                    preventDefault: () => {},
-                    stopPropagation: () => {},
-                  } as ClipboardEvent);
+                  editor.dispatchCommand(
+                    CUT_COMMAND,
+                    new ClipboardEvent('cut'),
+                  );
                 }
               }
             });

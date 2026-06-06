@@ -14,7 +14,7 @@ import {useState} from 'react';
 
 import Button from '../../ui/Button';
 import DropDown, {DropDownItem} from '../../ui/DropDown';
-import {INSERT_LAYOUT_COMMAND} from './LayoutPlugin';
+import {INSERT_LAYOUT_COMMAND} from './LayoutExtension';
 
 const LAYOUTS = [
   {label: '2 columns (equal width)', value: '1fr 1fr'},

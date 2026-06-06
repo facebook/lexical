@@ -22,6 +22,7 @@ import {
   undo,
 } from '../keyboardShortcuts/index.mjs';
 import {
+  advanceHistoryClock,
   assertSelection,
   assertTableHTML as assertHTML,
   assertTableSelectionCoordinates,
@@ -92,7 +93,7 @@ const nthTableSelector = nth =>
     ? `div.PlaygroundEditorTheme__tableScrollableWrapper:nth-of-type(${nth}) > table`
     : `table:nth-of-type(${nth})`;
 
-test.describe.parallel('Tables', () => {
+test.describe('Tables', () => {
   test(`Can a table be inserted from the toolbar`, async ({
     page,
     isPlainText,
@@ -165,17 +166,18 @@ test.describe.parallel('Tables', () => {
       window.getSelection().setBaseAndExtent(col, 0, col, 0);
     });
 
-    // Allow Lexical to process the selection change.
-    await sleep(50);
-
     // The DOM caret must not be left inside the <col> / <colgroup> region
     // (the reconciler should have written it back to the resolved cell).
-    const domAnchorNodeName = await evaluate(
-      page,
-      () => window.getSelection().anchorNode?.nodeName ?? null,
-    );
-    expect(domAnchorNodeName).not.toBe('COL');
-    expect(domAnchorNodeName).not.toBe('COLGROUP');
+    // Poll for the selectionchange -> reconcile round-trip instead of sleeping
+    // a fixed time, which can be too short under load.
+    await expect
+      .poll(() =>
+        evaluate(
+          page,
+          () => window.getSelection().anchorNode?.nodeName ?? null,
+        ),
+      )
+      .not.toMatch(/^COL(GROUP)?$/);
 
     // Typing should land in the first cell, not extend "last".
     await page.keyboard.type('X');
@@ -187,6 +189,73 @@ test.describe.parallel('Tables', () => {
     });
     expect(cellTexts[0]).toBe('X');
     expect(cellTexts[cellTexts.length - 1]).toBe('last');
+  });
+
+  test(`TableSelection converts to RangeSelection when DOM selection extends onto the editor root (Issue #8584 follow-up)`, async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await initialize({isCollab, page});
+
+    await focusEditor(page);
+    await insertTable(page, 2, 2);
+
+    // Create a TableSelection across the first header cell (th at
+    // {x:0,y:0}) and the last body cell (td at {x:1,y:1}). The default
+    // insertTable marks row 0 and column 0 as headers, so {x:1,y:1} is
+    // the only plain td in a 2x2 table.
+    await selectCellsFromTableCords(
+      page,
+      {x: 0, y: 0},
+      {x: 1, y: 1},
+      true,
+      false,
+    );
+
+    // Sanity check: the editor selection is a TableSelection.
+    const isTableSelection = await evaluate(page, () => {
+      const editor = window.lexicalEditor;
+      const sel = editor.getEditorState()._selection;
+      return Boolean(sel && 'tableKey' in sel);
+    });
+    expect(isTableSelection).toBe(true);
+
+    // Move the DOM focus onto the editor root element itself (outside the
+    // table). Before #8584 root carried no `__lexicalKey_*`, so
+    // `$getNearestNodeFromDOMNode(rootElement)` returned null and the
+    // `isFocusOutside` check in `$fixTableSelectionForSelectedTable`
+    // short-circuited — the TableSelection was never converted. After
+    // #8584 root resolves to RootNode, so `isFocusOutside` is truthy and
+    // the selection is correctly switched to a RangeSelection.
+    //
+    // The TableObserver clears the window selection when it enters
+    // TableSelection mode, so we cannot rely on the prior anchorNode —
+    // build a fresh range with a known cell as the anchor instead.
+    await evaluate(page, () => {
+      const root = document.querySelector('div[contenteditable="true"]');
+      const firstCell = document.querySelector(
+        'div[contenteditable="true"] table th, div[contenteditable="true"] table td',
+      );
+      window
+        .getSelection()
+        .setBaseAndExtent(firstCell, 0, root, root.childNodes.length);
+    });
+    await sleep(50);
+
+    const selectionAfter = await evaluate(page, () => {
+      const editor = window.lexicalEditor;
+      const sel = editor.getEditorState()._selection;
+      return {
+        isRange: Boolean(
+          sel && 'anchor' in sel && 'focus' in sel && !('tableKey' in sel),
+        ),
+        isTable: Boolean(sel && 'tableKey' in sel),
+      };
+    });
+    expect(selectionAfter.isTable).toBe(false);
+    expect(selectionAfter.isRange).toBe(true);
   });
 
   test(`Can type inside of table cell`, async ({
@@ -235,8 +304,7 @@ test.describe.parallel('Tables', () => {
     );
   });
 
-  test.describe
-    .parallel(`Can exit table with the horizontal arrow keys`, () => {
+  test.describe(`Can exit table with the horizontal arrow keys`, () => {
     test(`Can exit the first cell of a table`, async ({
       page,
       isPlainText,
@@ -673,7 +741,7 @@ test.describe.parallel('Tables', () => {
     });
   });
 
-  test.describe.parallel(`Can navigate table with keyboard`, () => {
+  test.describe(`Can navigate table with keyboard`, () => {
     test(`Can navigate cells horizontally`, async ({
       page,
       isPlainText,
@@ -7350,10 +7418,10 @@ test.describe.parallel('Tables', () => {
       false,
       false,
     );
-    // undo is used so we need to wait for history
-    await sleep(1050);
-
-    await sleep(1050);
+    // undo is used below, so force a new undo group here. Mode-agnostic:
+    // freezes the @lexical/history clock locally, or resets the Yjs
+    // UndoManager capture window in collab.
+    await advanceHistoryClock(page);
 
     await withExclusiveClipboardAccess(async () => {
       const clipboard = await copyToClipboard(page);

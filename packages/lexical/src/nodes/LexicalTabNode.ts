@@ -8,7 +8,6 @@
 
 import type {DOMConversionMap, NodeKey} from '../LexicalNode';
 
-import devInvariant from '@lexical/internal/devInvariant';
 import invariant from '@lexical/internal/invariant';
 
 import {IS_UNMERGEABLE} from '../LexicalConstants';
@@ -58,11 +57,18 @@ export class TabNode extends TextNode {
     return $createTabNode().updateFromJSON(serializedTabNode);
   }
 
-  setTextContent(text: string): this {
-    devInvariant(
-      text === '\t' || text === '',
-      'TabNode does not support setTextContent',
-    );
+  /**
+   * Always normalizes the stored content to `'\t'` regardless of input — see
+   * comment below for the rationale.
+   */
+  setTextContent(_text: string): this {
+    // The stored content is canonical regardless of input. Safari's
+    // MutationObserver can deliver mid-IME-composition writes onto the
+    // TabNode's `\t` text node (verified with Korean), and `flushMutations`
+    // then calls this with the in-flight composition payload; throwing here
+    // cascaded through `onError` and froze the editor (#8596). The dropped
+    // check was guarding caller assumptions, not stored state — the
+    // reconciler renders the canonical content on the next update.
     return super.setTextContent('\t');
   }
 

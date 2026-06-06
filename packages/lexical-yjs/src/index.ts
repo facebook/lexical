@@ -139,6 +139,7 @@ export function setLocalStateFocus(
 }
 export {
   getAnchorAndFocusCollabNodesForUserState,
+  removeCursorHighlightRule,
   syncCursorPositions,
   type SyncCursorPositionsFn,
 } from './SyncCursors';

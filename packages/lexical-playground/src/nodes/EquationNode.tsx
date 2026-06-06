@@ -7,8 +7,6 @@
  */
 
 import type {
-  DOMConversionMap,
-  DOMConversionOutput,
   EditorConfig,
   LexicalNode,
   NodeKey,
@@ -30,21 +28,6 @@ export type SerializedEquationNode = Spread<
   },
   SerializedLexicalNode
 >;
-
-function $convertEquationElement(
-  domNode: HTMLElement,
-): null | DOMConversionOutput {
-  let equation = domNode.getAttribute('data-lexical-equation');
-  const inline = domNode.getAttribute('data-lexical-inline') === 'true';
-  // Decode the equation from base64
-  equation = atob(equation || '');
-  if (equation) {
-    const node = $createEquationNode(equation, inline);
-    return {node};
-  }
-
-  return null;
-}
 
 export class EquationNode extends DecoratorNode<JSX.Element> {
   __equation: string;
@@ -107,29 +90,6 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
       trust: false,
     });
     return {element};
-  }
-
-  static importDOM(): DOMConversionMap | null {
-    return {
-      div: (domNode: HTMLElement) => {
-        if (!domNode.hasAttribute('data-lexical-equation')) {
-          return null;
-        }
-        return {
-          conversion: $convertEquationElement,
-          priority: 2,
-        };
-      },
-      span: (domNode: HTMLElement) => {
-        if (!domNode.hasAttribute('data-lexical-equation')) {
-          return null;
-        }
-        return {
-          conversion: $convertEquationElement,
-          priority: 1,
-        };
-      },
-    };
   }
 
   updateDOM(prevNode: this): boolean {

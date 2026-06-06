@@ -188,6 +188,7 @@ export {$isEditorState} from './LexicalEditorState';
 export type {EventHandler} from './LexicalEvents';
 export {stopLexicalPropagation} from './LexicalEvents';
 export type {
+  AbstractStaticNodeConfigRecord,
   BaseStaticNodeConfig,
   DOMChildConversion,
   DOMConversion,
@@ -206,8 +207,10 @@ export type {
   NodeMap,
   SerializedLexicalNode,
   StaticNodeConfig,
+  StaticNodeConfigAccessor,
   StaticNodeConfigRecord,
   StaticNodeConfigValue,
+  StaticNodeTypeAccessor,
 } from './LexicalNode';
 export {$isLexicalNode, buildImportMap} from './LexicalNode';
 export {
@@ -309,6 +312,7 @@ export {
   INTERNAL_$isBlock,
   isBlockDomNode,
   isDocumentFragment,
+  isDOMCapturingSelection,
   isDOMDocumentNode,
   isDOMNode,
   isDOMTextNode,
@@ -326,6 +330,7 @@ export {
   removeFromParent,
   resetRandomKey,
   setDOMUnmanaged,
+  type SetDOMUnmanagedOptions,
   setNodeIndentFromDOM,
   toggleTextFormatType,
 } from './LexicalUtils';
@@ -340,6 +345,8 @@ export type {SerializedLineBreakNode} from './nodes/LexicalLineBreakNode';
 export {
   $createLineBreakNode,
   $isLineBreakNode,
+  isLastChildInBlockNode,
+  isOnlyChildInBlockNode,
   LineBreakNode,
 } from './nodes/LexicalLineBreakNode';
 export type {SerializedParagraphNode} from './nodes/LexicalParagraphNode';

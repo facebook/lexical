@@ -6,6 +6,12 @@
  *
  */
 
+import type {
+  AnyStaticNodeConfigValue,
+  GetStaticNodeOwnConfig,
+  GetStaticNodeType,
+} from './LexicalNode';
+
 import invariant from '@lexical/internal/invariant';
 
 import {
@@ -17,7 +23,6 @@ import {
   NODE_STATE_KEY,
   type SerializedLexicalNode,
   type Spread,
-  type StaticNodeConfigRecord,
 } from '.';
 import {PROTOTYPE_CONFIG_METHOD} from './LexicalConstants';
 import {errorOnReadOnly} from './LexicalUpdates';
@@ -104,22 +109,46 @@ export type CollectStateJSON<
   {[K in keyof Tuple]: RequiredNodeStateConfigJSON<Tuple[K], Flat>}[number]
 >;
 
-type GetStaticNodeConfig<T extends LexicalNode> =
-  ReturnType<T[typeof PROTOTYPE_CONFIG_METHOD]> extends infer Record
-    ? Record extends StaticNodeConfigRecord<infer Type, infer Config>
-      ? Config & {readonly type: Type}
-      : never
+// Read a node's own config out of its $config() record. Preferentially read it
+// from the STATIC_NODE_CONFIG accessor (see {@link GetStaticNodeOwnConfig}),
+// which resolves the most-derived own config directly — including for an
+// abstract base class keyed by a symbol, which has no string `type` to index by.
+// A record produced by the {@link BaseStaticNodeConfig} fallback (a node that
+// declares no `extends`, or a legacy node) sets no accessor; for those we fall
+// back to resolving the own `type` (see {@link GetStaticNodeType}) and indexing
+// by it. The own type is read through a mapped type (`{[P in Type]: ...}[Type]`)
+// so that the indexed access resolves against the concrete key literal rather
+// than the record's broad string index signature when `T` is still generic.
+type GetStaticNodeConfig<T extends LexicalNode> = [
+  GetStaticNodeOwnConfig<T>,
+] extends [never]
+  ? GetStaticNodeType<T> extends infer Type extends string
+    ? string extends Type
+      ? never
+      : {
+            [P in Type]: NonNullable<
+              ReturnType<T[typeof PROTOTYPE_CONFIG_METHOD]>[P]
+            >;
+          }[Type] extends infer Config extends AnyStaticNodeConfigValue
+        ? Config & {readonly type: Type}
+        : never
+    : never
+  : GetStaticNodeOwnConfig<T> extends infer Config extends
+        AnyStaticNodeConfigValue
+    ? Config & {readonly type: GetStaticNodeType<T>}
     : never;
 type GetStaticNodeConfigs<T extends LexicalNode> =
   GetStaticNodeConfig<T> extends infer OwnConfig
-    ? OwnConfig extends never
+    ? // `[X] extends [never]` checks for never without distributing (a naked
+      // `never` would otherwise collapse the whole conditional to never). A node
+      // with no $config — e.g. a legacy node keyed only by static getType() —
+      // yields never here and contributes no state configs.
+      [OwnConfig] extends [never]
       ? []
       : OwnConfig extends {extends: Klass<infer Parent>}
-        ? GetStaticNodeConfig<Parent> extends infer ParentNodeConfig
-          ? ParentNodeConfig extends never
-            ? [OwnConfig]
-            : [OwnConfig, ...GetStaticNodeConfigs<Parent>]
-          : OwnConfig
+        ? [GetStaticNodeConfig<Parent>] extends [never]
+          ? [OwnConfig]
+          : [OwnConfig, ...GetStaticNodeConfigs<Parent>]
         : [OwnConfig]
     : [];
 
@@ -490,6 +519,20 @@ export function createSharedNodeState(
 
 type KnownStateMap = Map<AnyStateConfig, unknown>;
 type UnknownStateRecord = Record<string, unknown>;
+
+/**
+ * Keys that must never be written into an {@link UnknownStateRecord} from
+ * serialized (potentially untrusted) input. Writing a `__proto__` entry would
+ * re-parent the record's prototype, and because {@link NodeState.getValue}
+ * resolves keys with the `in` operator (which walks the prototype chain) an
+ * attacker could otherwise inject arbitrary state values via a crafted
+ * `__proto__`. These are never produced by {@link createState}.
+ */
+const UNSAFE_STATE_KEYS: ReadonlySet<string> = new Set([
+  '__proto__',
+  'constructor',
+  'prototype',
+]);
 /**
  * @internal
  *
@@ -746,6 +789,9 @@ export class NodeState<T extends LexicalNode> {
    * @param v The unknown value from an UnknownStateRecord
    */
   updateFromUnknown(k: string, v: unknown): void {
+    if (UNSAFE_STATE_KEYS.has(k)) {
+      return;
+    }
     const stateConfig = this.sharedNodeState.sharedConfigMap.get(k);
     if (stateConfig) {
       this.updateFromKnown(stateConfig, stateConfig.parse(v));
@@ -932,6 +978,9 @@ function parseAndPruneNextUnknownState(
   let nextUnknownState: undefined | UnknownStateRecord = undefined;
   if (unknownState) {
     for (const [k, v] of Object.entries(unknownState)) {
+      if (UNSAFE_STATE_KEYS.has(k)) {
+        continue;
+      }
       const stateConfig = sharedConfigMap.get(k);
       if (stateConfig) {
         if (!nextKnownState.has(stateConfig)) {

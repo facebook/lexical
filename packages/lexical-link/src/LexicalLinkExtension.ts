@@ -12,6 +12,7 @@ import {
   $getSelection,
   $isElementNode,
   $isRangeSelection,
+  $isTextNode,
   COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_LOW,
   defineExtension,
@@ -110,8 +111,15 @@ export function registerLink(
           if (!validateUrl(clipboardText)) {
             return false;
           }
-          // If we select nodes that are elements then avoid applying the link.
-          if (!selection.getNodes().some(node => $isElementNode(node))) {
+          // Skip link wrapping for non-simple text nodes (e.g. code blocks).
+          const nodes = selection.getNodes();
+          if (
+            !nodes.some(
+              node =>
+                $isElementNode(node) ||
+                ($isTextNode(node) && !node.isSimpleText()),
+            )
+          ) {
             editor.dispatchCommand(TOGGLE_LINK_COMMAND, {
               ...attributes,
               url: clipboardText,

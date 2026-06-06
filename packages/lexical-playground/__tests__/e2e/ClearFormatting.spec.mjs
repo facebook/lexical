@@ -28,7 +28,7 @@ import {
   selectFromBackgroundColorPicker,
   selectFromColorPicker,
   test,
-  waitForSelector,
+  waitForTypeaheadMenuOption,
 } from '../utils/index.mjs';
 
 test.describe('Clear All Formatting', () => {
@@ -131,14 +131,9 @@ test.describe('Clear All Formatting', () => {
 
     await page.keyboard.type('@Luke');
 
-    // Wait until "Luke Skywalker" is the *highlighted* option, not merely
-    // present: while "@Luke" is still being typed, the partial query "@Lu"
-    // also matches "Agent Kallus" (kal**lu**s), which sorts earlier in the
-    // list and is highlighted first, so pressing Enter too early selects it.
-    await waitForSelector(
-      page,
-      '#typeahead-menu ul li[aria-selected="true"]:has-text("Luke Skywalker")',
-    );
+    // Wait until "Luke Skywalker" is the *highlighted* option before pressing
+    // Enter; see waitForTypeaheadMenuOption for why merely-present is racy.
+    await waitForTypeaheadMenuOption(page, 'Luke Skywalker');
     await assertHTML(
       page,
       html`

@@ -32,7 +32,10 @@ function $getActiveBlockCursorElement(): HTMLElement | null {
  * container, prepended ahead of the host's linked-list children. The leading
  * boundary skips these so they are never counted as managed children.
  */
-function isSlotContainerDOM(node: Node | null): node is Element {
+declare const SlotContainerDOMBrand: unique symbol;
+function isSlotContainerDOM(
+  node: Node | null,
+): node is Element & {[SlotContainerDOMBrand]: never} {
   return (
     node !== null &&
     node.nodeType === 1 &&

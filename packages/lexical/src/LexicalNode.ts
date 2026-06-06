@@ -1019,12 +1019,14 @@ export class LexicalNode {
    *
    * @experimental
    */
-  getSlotHost<T extends ElementNode>(): T | null {
+  getSlotHost(): ElementNode | null {
     const slotHost = this.getLatest().__slotHost;
     if (slotHost === null) {
       return null;
     }
-    return $getNodeByKey<T>(slotHost);
+    const node = $getNodeByKey(slotHost);
+    invariant($isElementNode(node), 'slotHost must be an ElementNode');
+    return node;
   }
 
   /**

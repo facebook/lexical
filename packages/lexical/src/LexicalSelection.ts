@@ -64,6 +64,12 @@ import {getIsProcessingMutations} from './LexicalMutations';
 import {insertRangeAfter, LexicalNode} from './LexicalNode';
 import {$normalizeSelection} from './LexicalNormalization';
 import {
+  $getSlot,
+  $getSlotHost,
+  $getSlotHostKey,
+  $getSlotNames,
+} from './LexicalSlot';
+import {
   getActiveEditor,
   getActiveEditorState,
   isCurrentlyReadOnlyMode,
@@ -411,7 +417,7 @@ export class NodeSelection implements BaseSelection {
     // Skip them; if nothing tree-resident is selected there's nowhere to
     // anchor the insertion.
     const selectedNodes = this.getNodes().filter(
-      node => node.getSlotHost() === null,
+      node => $getSlotHostKey(node) === null,
     );
     const selectedNodesLength = selectedNodes.length;
     if (selectedNodesLength === 0) {
@@ -469,7 +475,9 @@ export class NodeSelection implements BaseSelection {
   deleteNodes(): void {
     // Slotted nodes are fixed parts of their host; skip them so we neither
     // build a caret from a parentless node nor hit $removeNode's slot guard.
-    const nodes = this.getNodes().filter(node => node.getSlotHost() === null);
+    const nodes = this.getNodes().filter(
+      node => $getSlotHostKey(node) === null,
+    );
     if (($getSelection() || $getPreviousSelection()) === this && nodes[0]) {
       const firstCaret = $getSiblingCaret(nodes[0], 'next');
       $setSelectionFromCaretRange($getCaretRange(firstCaret, firstCaret));
@@ -631,8 +639,8 @@ export class RangeSelection implements BaseSelection {
         // ElementNode.getTextContent) so a selection enclosing the host
         // carries its slot content.
         let slotText = '';
-        for (const slotName of node.getSlotNames()) {
-          const slot = node.getSlot(slotName);
+        for (const slotName of $getSlotNames(node)) {
+          const slot = $getSlot(node, slotName);
           if (slot !== null) {
             slotText += slot.getTextContent();
           }
@@ -1889,7 +1897,7 @@ export class RangeSelection implements BaseSelection {
           // them, since slots are not children and are not carried over. Leave
           // the caret in place instead: a slot-bearing host is removed only as
           // a unit by an explicit host deletion, never silently via backspace.
-          if (block.getSlotNames().length > 0) {
+          if ($getSlotNames(block).length > 0) {
             return;
           }
           // Empty adjacent block at the same nesting level: remove it
@@ -1925,7 +1933,7 @@ export class RangeSelection implements BaseSelection {
         // and select into the host. Stop instead when that edge is a slot.
         for (let node: LexicalNode | null = anchor.getNode(); node !== null; ) {
           if ($isElementNode(node) && node.isShadowRoot()) {
-            if (node.getSlotHost() !== null) {
+            if ($getSlotHostKey(node) !== null) {
               return;
             }
             break;
@@ -2513,7 +2521,7 @@ function $internalResolveSelectionPoint(
         // adjacent to the host (a normal child of its parent), since the slot
         // value itself has no parent to anchor in. Non-slotted leaves anchor
         // in their own parent as before.
-        const slotHost = resolvedElement.getSlotHost();
+        const slotHost = $getSlotHost(resolvedElement);
         const anchorNode = slotHost !== null ? slotHost : resolvedElement;
         const index = anchorNode.getIndexWithinParent();
         // For wrap patterns (slot exposes an inner content element via
@@ -2649,7 +2657,7 @@ function $normalizeSelectionPointsForBoundaries(
 function $getPointSlotFrame(point: PointType): LexicalNode | null {
   let node: LexicalNode | null = $getNodeByKey(point.key);
   while (node !== null) {
-    if (node.__slotHost !== null) {
+    if ($getSlotHostKey(node) !== null) {
       return node;
     }
     node = node.getParent();
@@ -2671,8 +2679,8 @@ function $slotStraddleFocusAfterAnchor(
   focusFrame: LexicalNode | null,
 ): boolean {
   if (anchorFrame !== null && focusFrame !== null) {
-    const anchorHost = anchorFrame.getSlotHost();
-    const focusHost = focusFrame.getSlotHost();
+    const anchorHost = $getSlotHost(anchorFrame);
+    const focusHost = $getSlotHost(focusFrame);
     if (anchorHost !== null && anchorHost.is(focusHost)) {
       // Two slots of the same host: __slots iteration is insertion order, which
       // is the order the reconciler renders them (content order).
@@ -2693,7 +2701,7 @@ function $slotStraddleFocusAfterAnchor(
       : true;
   }
   if (anchorFrame !== null) {
-    const anchorHost = anchorFrame.getSlotHost();
+    const anchorHost = $getSlotHost(anchorFrame);
     const focusNode = $getNodeByKey(focusPoint.key);
     if (anchorHost === null || focusNode === null) {
       return true;
@@ -2704,7 +2712,7 @@ function $slotStraddleFocusAfterAnchor(
     }
     return anchorHost.isBefore(focusNode);
   }
-  const focusHost = (focusFrame as LexicalNode).getSlotHost();
+  const focusHost = $getSlotHost(focusFrame as LexicalNode);
   const anchorNode = $getNodeByKey(anchorPoint.key);
   if (focusHost === null || anchorNode === null) {
     return false;
@@ -2764,7 +2772,7 @@ function $clampSelectionPointsToSlotFrame(
   }
   // Anchor sits outside, focus inside a slot: push the focus past the host
   // that owns the slot so the host is wholly contained.
-  const host = (focusFrame as LexicalNode).getSlotHost();
+  const host = $getSlotHost(focusFrame as LexicalNode);
   if (host === null) {
     return false;
   }

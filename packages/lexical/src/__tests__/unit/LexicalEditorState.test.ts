@@ -102,8 +102,6 @@ describe('LexicalEditorState tests', () => {
         __next: null,
         __parent: '1',
         __prev: null,
-        __slotHost: null,
-        __slots: null,
         __style: '',
         __text: 'foo',
         __type: 'text',

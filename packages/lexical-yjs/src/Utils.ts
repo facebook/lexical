@@ -12,6 +12,8 @@ import invariant from '@lexical/internal/invariant';
 import {
   $getNodeByKey,
   $getRoot,
+  $getSlot,
+  $getSlotNames,
   $getWritableNodeState,
   $isDecoratorNode,
   $isElementNode,
@@ -178,12 +180,12 @@ export function $createCollabNodeFromLexicalNode(
     collabNode = $createCollabElementNode(xmlText, parent, nodeType);
     collabNode.syncPropertiesFromLexical(binding, lexicalNode, null);
     collabNode.syncChildrenFromLexical(binding, lexicalNode, null, null, null);
-    const slotNames = lexicalNode.getSlotNames();
+    const slotNames = $getSlotNames(lexicalNode);
     if (slotNames.length > 0) {
       const slotsY = new YMap();
       let hasSlot = false;
       for (const name of slotNames) {
-        const slotNode = lexicalNode.getSlot(name);
+        const slotNode = $getSlot(lexicalNode, name);
         if (slotNode === null) {
           continue;
         }
@@ -233,12 +235,12 @@ export function $createCollabNodeFromLexicalNode(
     // so seed the slots Y.Map on its `_xmlElem` here (mirrors the element-host
     // seed above): a freshly appended host is created through this path, with no
     // matched key for syncSlotsFromLexical to recurse through.
-    const slotNames = lexicalNode.getSlotNames();
+    const slotNames = $getSlotNames(lexicalNode);
     if (slotNames.length > 0) {
       const slotsY = new YMap();
       let hasSlot = false;
       for (const name of slotNames) {
-        const slotNode = lexicalNode.getSlot(name);
+        const slotNode = $getSlot(lexicalNode, name);
         if (slotNode === null) {
           continue;
         }

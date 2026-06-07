@@ -26,6 +26,7 @@ import {
   type PointType,
   type RangeSelection,
 } from '../LexicalSelection';
+import {$getSlotNames} from '../LexicalSlot';
 import {
   $copyNode,
   $getNodeByKeyOrThrow,
@@ -439,7 +440,7 @@ function $getBlockMergeTargets(
   // owns (slots are not children, so they are not spliced onto anchorBlock).
   // Refuse to merge away a slot-bearing host so its slots can only be removed
   // as a unit by an explicit host deletion, never silently via backspace.
-  if (focusBlock && focusBlock.getSlotNames().length > 0) {
+  if (focusBlock && $getSlotNames(focusBlock).length > 0) {
     return null;
   }
   return anchorBlock && focusBlock ? [anchorBlock, focusBlock] : null;

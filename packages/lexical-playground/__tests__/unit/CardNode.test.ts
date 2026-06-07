@@ -20,6 +20,8 @@ import {
 import {
   $createNodeSelection,
   $getRoot,
+  $getSlot,
+  $getSlotNames,
   $isElementNode,
   $selectAll,
   $setSelection,
@@ -86,9 +88,9 @@ describe('CardNode named slots', () => {
     editor.read(() => {
       const card = $getRoot().getFirstChild();
       assert($isCardNode(card), 'Pasted top-level node must be a CardNode');
-      expect(card.getSlotNames().sort()).toEqual(['body', 'title']);
-      expect(card.getSlot('title')?.getTextContent()).toBe('Title');
-      expect(card.getSlot('body')?.getTextContent()).toBe('Body');
+      expect($getSlotNames(card).sort()).toEqual(['body', 'title']);
+      expect($getSlot(card, 'title')?.getTextContent()).toBe('Title');
+      expect($getSlot(card, 'body')?.getTextContent()).toBe('Body');
     });
   });
 
@@ -120,9 +122,9 @@ describe('CardNode named slots', () => {
     editor.read(() => {
       const card = $getRoot().getFirstChild();
       assert($isCardNode(card), 'Imported top-level node must be a CardNode');
-      expect(card.getSlotNames().sort()).toEqual(['body', 'title']);
-      expect(card.getSlot('title')?.getTextContent()).toBe('Title');
-      expect(card.getSlot('body')?.getTextContent()).toBe('Body');
+      expect($getSlotNames(card).sort()).toEqual(['body', 'title']);
+      expect($getSlot(card, 'title')?.getTextContent()).toBe('Title');
+      expect($getSlot(card, 'body')?.getTextContent()).toBe('Body');
     });
   });
 
@@ -140,7 +142,7 @@ describe('CardNode named slots', () => {
       const card = $getRoot().getFirstChild();
       assert($isCardNode(card), 'Top-level node must be a CardNode');
       for (const name of ['title', 'body']) {
-        const slot = card.getSlot(name);
+        const slot = $getSlot(card, name);
         assert(
           $isSlotContainerNode(slot),
           `Slot ${name} value must be a SlotContainerNode`,
@@ -171,7 +173,7 @@ describe('CardNode named slots', () => {
       () => {
         const card = $getRoot().getFirstChild();
         assert($isCardNode(card), 'Top-level node must be a CardNode');
-        const slot = card.getSlot('title');
+        const slot = $getSlot(card, 'title');
         assert($isSlotContainerNode(slot), 'title slot must be a container');
         const paragraph = slot.getFirstChild();
         assert($isElementNode(paragraph), 'slot must hold a paragraph');
@@ -209,7 +211,7 @@ describe('CardNode named slots', () => {
       () => {
         const card = $getRoot().getFirstChild();
         assert($isCardNode(card), 'Top-level node must be a CardNode');
-        const slot = card.getSlot('title');
+        const slot = $getSlot(card, 'title');
         assert($isSlotContainerNode(slot), 'title slot must be a container');
         const paragraph = slot.getFirstChild();
         assert($isElementNode(paragraph), 'slot must hold a paragraph');
@@ -227,8 +229,8 @@ describe('CardNode named slots', () => {
     editor.read(() => {
       const card = $getRoot().getFirstChild();
       assert($isCardNode(card), 'Card must survive backspace at slot start');
-      expect(card.getSlot('title')?.getTextContent()).toBe('Title');
-      expect(card.getSlot('body')?.getTextContent()).toBe('Body');
+      expect($getSlot(card, 'title')?.getTextContent()).toBe('Title');
+      expect($getSlot(card, 'body')?.getTextContent()).toBe('Body');
       // Nothing escaped into the root: the card is still the only child.
       expect($getRoot().getChildrenSize()).toBe(1);
     });

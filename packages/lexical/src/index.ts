@@ -206,6 +206,8 @@ export type {
   NodeKey,
   NodeMap,
   SerializedLexicalNode,
+  SlotChildNode,
+  SlotHostNode,
   StaticNodeConfig,
   StaticNodeConfigAccessor,
   StaticNodeConfigRecord,
@@ -258,6 +260,16 @@ export {
   tokenizeRawText,
 } from './LexicalSelection';
 export {
+  $getSlot,
+  $getSlotHost,
+  $getSlotHostKey,
+  $getSlotNames,
+  $isSlotChild,
+  $isSlotHost,
+  $removeSlot,
+  $setSlot,
+} from './LexicalSlot';
+export {
   $assumeActiveEditor,
   $fullReconcile,
   $parseSerializedNode,
@@ -294,6 +306,7 @@ export {
   $isTokenOrTab,
   $nodesOfType,
   $onUpdate,
+  $removeFromParent,
   $selectAll,
   $setCompositionKey,
   $setDirectionFromDOM,

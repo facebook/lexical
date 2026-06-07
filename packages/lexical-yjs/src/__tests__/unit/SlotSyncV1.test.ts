@@ -12,9 +12,13 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  $getSlot,
+  $getSlotNames,
   $isDecoratorNode,
   $isElementNode,
   $isTextNode,
+  $removeSlot,
+  $setSlot,
   createEditor,
   type LexicalEditor,
 } from 'lexical';
@@ -152,7 +156,7 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
         body.append($createTextNode('Body'));
         $getRoot().clear().append(host);
         host.append(body);
-        host.setSlot('title', title);
+        $setSlot(host, 'title', title);
       },
       {discrete: true},
     );
@@ -212,7 +216,7 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
         body.append($createTextNode('Body'));
         $getRoot().clear().append(host);
         host.append(body);
-        host.setSlot('title', title);
+        $setSlot(host, 'title', title);
       },
       {discrete: true},
     );
@@ -242,7 +246,7 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
       // the linked-list child survives the round-trip
       expect(hostR.getTextContent()).toContain('Body');
 
-      const titleR = hostR.getSlot('title');
+      const titleR = $getSlot(hostR, 'title');
       assert(titleR != null);
       assert($isElementNode(titleR));
       expect(titleR.getTextContent()).toBe('Title');
@@ -300,8 +304,8 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
     editor2.read(() => {
       const hostR = $getRoot().getFirstChild();
       assert($isElementNode(hostR));
-      expect(hostR.getSlotNames()).toEqual([]);
-      expect(hostR.getSlot('title')).toBe(null);
+      expect($getSlotNames(hostR)).toEqual([]);
+      expect($getSlot(hostR, 'title')).toBe(null);
       // the linked-list child is untouched by the slot removal
       expect(hostR.getTextContent()).toContain('Body');
     });
@@ -327,9 +331,9 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
     editor2.read(() => {
       const hostR = $getRoot().getFirstChild();
       assert($isElementNode(hostR));
-      expect(hostR.getSlotNames().sort()).toEqual(['subtitle', 'title']);
-      expect(hostR.getSlot('title')?.getTextContent()).toBe('Title');
-      const subR = hostR.getSlot('subtitle');
+      expect($getSlotNames(hostR).sort()).toEqual(['subtitle', 'title']);
+      expect($getSlot(hostR, 'title')?.getTextContent()).toBe('Title');
+      const subR = $getSlot(hostR, 'subtitle');
       assert(subR != null);
       assert($isElementNode(subR));
       expect(subR.getParent()).toBe(null);
@@ -362,7 +366,7 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
     editor2.read(() => {
       const hostR = $getRoot().getFirstChild();
       assert($isElementNode(hostR));
-      const titleR = hostR.getSlot('title');
+      const titleR = $getSlot(hostR, 'title');
       assert(titleR != null);
       assert($isElementNode(titleR));
       expect(titleR.getTextContent()).toBe('Title!!');
@@ -386,7 +390,7 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
         body.append($createTextNode('Body'));
         $getRoot().clear().append(host);
         host.append(body);
-        host.setSlot('title', title);
+        $setSlot(host, 'title', title);
       },
       {discrete: true},
     );
@@ -452,7 +456,7 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
       assert($isElementNode(host));
       const subtitle = $createTestShadowRootNode();
       subtitle.append($createParagraphNode().append($createTextNode('Sub')));
-      host.setSlot('subtitle', subtitle);
+      $setSlot(host, 'subtitle', subtitle);
     });
 
     const slotsY = hostCollab._xmlText.getAttribute('slots') as unknown;
@@ -475,7 +479,7 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
     applyLocalUpdate(binding, editor, () => {
       const host = $getRoot().getFirstChild();
       assert($isElementNode(host));
-      const title = host.getSlot('title');
+      const title = $getSlot(host, 'title');
       assert($isElementNode(title));
       const para = title.getFirstChild();
       assert($isElementNode(para));
@@ -499,7 +503,7 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
     applyLocalUpdate(binding, editor, () => {
       const host = $getRoot().getFirstChild();
       assert($isElementNode(host));
-      host.removeSlot('title');
+      $removeSlot(host, 'title');
     });
 
     const slotsY = hostCollab._xmlText.getAttribute('slots') as unknown;
@@ -518,7 +522,7 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
     editor.read(() => {
       const host = $getRoot().getFirstChild();
       assert($isElementNode(host));
-      const title = host.getSlot('title');
+      const title = $getSlot(host, 'title');
       assert(title != null);
       slotKey = title.__key;
     });
@@ -527,7 +531,7 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
     applyLocalUpdate(binding, editor, () => {
       const host = $getRoot().getFirstChild();
       assert($isElementNode(host));
-      host.removeSlot('title');
+      $removeSlot(host, 'title');
     });
 
     const slotsY = hostCollab._xmlText.getAttribute('slots') as unknown;
@@ -548,7 +552,7 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
     editor.read(() => {
       const host = $getRoot().getFirstChild();
       assert($isElementNode(host));
-      const title = host.getSlot('title');
+      const title = $getSlot(host, 'title');
       assert(title != null);
       oldKey = title.__key;
     });
@@ -560,7 +564,7 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
       assert($isElementNode(host));
       const next = $createTestShadowRootNode();
       next.append($createParagraphNode().append($createTextNode('NewTitle')));
-      host.setSlot('title', next);
+      $setSlot(host, 'title', next);
       newKey = next.__key;
     });
 
@@ -588,7 +592,7 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
       const host = $getRoot().getFirstChild();
       assert($isElementNode(host));
       hostKey = host.__key;
-      const title = host.getSlot('title');
+      const title = $getSlot(host, 'title');
       assert(title != null);
       slotKey = title.__key;
     });
@@ -614,7 +618,7 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
     editor2.read(() => {
       const hostR = $getRoot().getFirstChild();
       assert($isElementNode(hostR));
-      const title = hostR.getSlot('title');
+      const title = $getSlot(hostR, 'title');
       assert(title != null);
       slotKey = title.__key;
     });
@@ -815,7 +819,7 @@ describe('named-slots collab-v1: decorator host <-> yjs', () => {
         const title = $createTestShadowRootNode();
         title.append($createParagraphNode().append($createTextNode('Title')));
         $getRoot().clear().append(host);
-        host.setSlot('title', title);
+        $setSlot(host, 'title', title);
       },
       {discrete: true},
     );
@@ -861,7 +865,7 @@ describe('named-slots collab-v1: decorator host <-> yjs', () => {
         const title = $createTestShadowRootNode();
         title.append($createParagraphNode().append($createTextNode('Title')));
         $getRoot().clear().append(host);
-        host.setSlot('title', title);
+        $setSlot(host, 'title', title);
       },
       {discrete: true},
     );
@@ -888,7 +892,7 @@ describe('named-slots collab-v1: decorator host <-> yjs', () => {
     editor2.read(() => {
       const hostR = $getRoot().getFirstChild();
       assert($isDecoratorNode(hostR));
-      const titleR = hostR.getSlot('title');
+      const titleR = $getSlot(hostR, 'title');
       assert(titleR != null);
       assert($isElementNode(titleR));
       expect(titleR.getTextContent()).toBe('Title');
@@ -904,7 +908,7 @@ describe('named-slots collab-v1: decorator host <-> yjs', () => {
     editor2.read(() => {
       const hostR = $getRoot().getFirstChild();
       assert($isDecoratorNode(hostR));
-      const title = hostR.getSlot('title');
+      const title = $getSlot(hostR, 'title');
       assert(title != null);
       slotKey = title.__key;
     });
@@ -920,8 +924,8 @@ describe('named-slots collab-v1: decorator host <-> yjs', () => {
     editor2.read(() => {
       const hostR = $getRoot().getFirstChild();
       assert($isDecoratorNode(hostR));
-      expect(hostR.getSlotNames()).toEqual([]);
-      expect(hostR.getSlot('title')).toBe(null);
+      expect($getSlotNames(hostR)).toEqual([]);
+      expect($getSlot(hostR, 'title')).toBe(null);
     });
     // the slot's collab node must not dangle in the map after removal
     expect(binding2.collabNodeMap.has(slotKey)).toBe(false);
@@ -944,7 +948,7 @@ describe('named-slots collab-v1: decorator host <-> yjs', () => {
     editor2.read(() => {
       const hostR = $getRoot().getFirstChild();
       assert($isDecoratorNode(hostR));
-      const titleR = hostR.getSlot('title');
+      const titleR = $getSlot(hostR, 'title');
       assert(titleR != null);
       assert($isElementNode(titleR));
       expect(titleR.getTextContent()).toBe('Title!!');
@@ -961,7 +965,7 @@ describe('named-slots collab-v1: decorator host <-> yjs', () => {
         const title = $createTestShadowRootNode();
         title.append($createParagraphNode().append($createTextNode('Title')));
         $getRoot().clear().append(host);
-        host.setSlot('title', title);
+        $setSlot(host, 'title', title);
       },
       {discrete: true},
     );
@@ -981,7 +985,7 @@ describe('named-slots collab-v1: decorator host <-> yjs', () => {
       assert($isDecoratorNode(host));
       const subtitle = $createTestShadowRootNode();
       subtitle.append($createParagraphNode().append($createTextNode('Sub')));
-      host.setSlot('subtitle', subtitle);
+      $setSlot(host, 'subtitle', subtitle);
     });
 
     const slotsY = hostCollab._xmlElem.getAttribute('slots') as unknown;
@@ -1002,7 +1006,7 @@ describe('named-slots collab-v1: decorator host <-> yjs', () => {
     applyLocalUpdate(binding, editor, () => {
       const host = $getRoot().getFirstChild();
       assert($isDecoratorNode(host));
-      const title = host.getSlot('title');
+      const title = $getSlot(host, 'title');
       assert($isElementNode(title));
       const para = title.getFirstChild();
       assert($isElementNode(para));
@@ -1027,7 +1031,7 @@ describe('named-slots collab-v1: decorator host <-> yjs', () => {
       const host = $getRoot().getFirstChild();
       assert($isDecoratorNode(host));
       hostKey = host.__key;
-      const title = host.getSlot('title');
+      const title = $getSlot(host, 'title');
       assert(title != null);
       slotKey = title.__key;
     });

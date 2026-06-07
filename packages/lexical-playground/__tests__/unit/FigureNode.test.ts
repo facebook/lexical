@@ -14,6 +14,9 @@ import {buildEditorFromExtensions} from '@lexical/extension';
 import {
   $createNodeSelection,
   $getRoot,
+  $getSlot,
+  $getSlotHost,
+  $getSlotNames,
   $setSelection,
   defineExtension,
 } from 'lexical';
@@ -48,8 +51,8 @@ describe('FigureNode atomic decorator slot', () => {
     editor.read(() => {
       const figure = $getRoot().getFirstChild();
       assert($isFigureNode(figure), 'Top-level node must be a FigureNode');
-      expect(figure.getSlotNames()).toEqual(['media']);
-      const media = figure.getSlot('media');
+      expect($getSlotNames(figure)).toEqual(['media']);
+      const media = $getSlot(figure, 'media');
       assert(
         $isEquationNode(media),
         'media slot value must be an EquationNode',
@@ -74,7 +77,7 @@ describe('FigureNode atomic decorator slot', () => {
     editor.read(() => {
       const figure = $getRoot().getFirstChild();
       assert($isFigureNode(figure), 'Top-level node must be a FigureNode');
-      const media = figure.getSlot('media');
+      const media = $getSlot(figure, 'media');
       assert(
         $isEquationNode(media),
         'media slot value must be an EquationNode',
@@ -82,7 +85,7 @@ describe('FigureNode atomic decorator slot', () => {
       // Slot invariant: value has no parent and is reached through getSlotHost,
       // so it never appears in the host's child list.
       expect(media.getParent()).toBe(null);
-      expect(media.getSlotHost()).toBe(figure);
+      expect($getSlotHost(media)).toBe(figure);
       expect(figure.getChildrenSize()).toBe(0);
     });
   });
@@ -118,8 +121,8 @@ describe('FigureNode atomic decorator slot', () => {
         $isFigureNode(figure),
         'Pasted top-level node must be a FigureNode',
       );
-      expect(figure.getSlotNames()).toEqual(['media']);
-      const media = figure.getSlot('media');
+      expect($getSlotNames(figure)).toEqual(['media']);
+      const media = $getSlot(figure, 'media');
       assert(
         $isEquationNode(media),
         'Pasted media slot must be an EquationNode',

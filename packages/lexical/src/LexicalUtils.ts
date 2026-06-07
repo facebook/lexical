@@ -88,6 +88,7 @@ import {
 } from './LexicalNode';
 import {$normalizeSelection} from './LexicalNormalization';
 import {$clampRangeSelectionToSlotFrame} from './LexicalSelection';
+import {$getSlot, $getSlotHostKey, $isSlotChild} from './LexicalSlot';
 import {
   errorOnInfiniteTransforms,
   errorOnReadOnly,
@@ -414,7 +415,12 @@ function internalMarkParentElementsAsDirty(
     // up-pointer is __slotHost. Crossing that boundary here lets a slot
     // content edit dirty the host so it re-reconciles. Non-slot trees keep
     // __slotHost === null, so this is the plain __parent walk there.
-    nextParentKey = node.__parent !== null ? node.__parent : node.__slotHost;
+    nextParentKey =
+      node.__parent !== null
+        ? node.__parent
+        : $isSlotChild(node)
+          ? node.__slotHost
+          : null;
   }
 }
 
@@ -431,12 +437,12 @@ function internalMarkParentElementsAsDirty(
  * This function is for internal use of the library.
  * Please do not use it as it may change in the future.
  */
-export function removeFromParent(node: LexicalNode): void {
+export function $removeFromParent(node: LexicalNode): void {
   invariant(
-    node.getLatest().__slotHost === null,
-    'removeFromParent: node %s is slotted into host %s; a slotted node and a child are mutually exclusive. Remove it from its slot first.',
+    $getSlotHostKey(node) === null,
+    '$removeFromParent: node %s is slotted into host %s; a slotted node and a child are mutually exclusive. Remove it from its slot first.',
     node.__key,
-    String(node.getLatest().__slotHost),
+    String($getSlotHostKey(node)),
   );
   const oldParent = node.getParent();
   if (oldParent !== null) {
@@ -480,6 +486,8 @@ export function removeFromParent(node: LexicalNode): void {
     writableParent.__size--;
   }
 }
+/** @deprecated renamed to {@link $removeFromParent} by @lexical/eslint-plugin rules-of-lexical */
+export const removeFromParent = $removeFromParent;
 
 // Never use this function directly! It will break
 // the cloning heuristic. Instead use node.getWritable().
@@ -496,7 +504,12 @@ export function internalMarkNodeAsDirty(node: LexicalNode): void {
   // not __parent; start the dirty walk from whichever is set so a slot
   // content edit propagates into the host. Non-slot trees keep
   // __slotHost === null, so this is the plain __parent start there.
-  const parent = latest.__parent !== null ? latest.__parent : latest.__slotHost;
+  const parent =
+    latest.__parent !== null
+      ? latest.__parent
+      : $isSlotChild(latest)
+        ? latest.__slotHost
+        : null;
   const editorState = getActiveEditorState();
   const editor = getActiveEditor();
   const nodeMap = editorState._nodeMap;
@@ -2147,7 +2160,7 @@ export function $getSlotContainer(
   name: string,
   editor: LexicalEditor = $getEditor(),
 ): HTMLElement | null {
-  const slot = host.getSlot(name);
+  const slot = $getSlot(host, name);
   if (slot === null) {
     return null;
   }

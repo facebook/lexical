@@ -39,6 +39,9 @@ import {
   $getRoot,
   $getSelection,
   $getSiblingCaret,
+  $getSlot,
+  $getSlotHost,
+  $getSlotNames,
   $getState,
   $isChildCaret,
   $isElementNode,
@@ -255,8 +258,8 @@ export function* $dfsWithSlotsIterator(
     yield dfsNode;
     const {node, depth} = dfsNode;
     if ($isElementNode(node)) {
-      for (const name of node.getSlotNames()) {
-        const slot = node.getSlot(name);
+      for (const name of $getSlotNames(node)) {
+        const slot = $getSlot(node, name);
         if (slot !== null) {
           yield* $dfsSubtreeIterator(slot, depth + 1);
         }
@@ -276,8 +279,8 @@ function* $dfsSubtreeIterator(
   yield {depth, node};
   if ($isElementNode(node)) {
     const childDepth = depth + 1;
-    for (const name of node.getSlotNames()) {
-      const slot = node.getSlot(name);
+    for (const name of $getSlotNames(node)) {
+      const slot = $getSlot(node, name);
       if (slot !== null) {
         yield* $dfsSubtreeIterator(slot, childDepth);
       }
@@ -359,7 +362,7 @@ export function $getDepth(node: null | LexicalNode): number {
     let innerNode = node;
     innerNode !== null;
     // A slotted node has no parent; climb its slot host instead.
-    innerNode = innerNode.getParent() ?? innerNode.getSlotHost()
+    innerNode = innerNode.getParent() ?? $getSlotHost(innerNode)
   ) {
     depth++;
   }
@@ -437,7 +440,7 @@ export function* $reverseDfsWithSlotsIterator(
     }
     yield dfsNode;
     const {node, depth} = dfsNode;
-    if ($isElementNode(node) && node.getSlotNames().length > 0) {
+    if ($isElementNode(node) && $getSlotNames(node).length > 0) {
       pending.push({depth, node});
     }
   }
@@ -452,9 +455,9 @@ function* $reverseSlotsOf(
   host: ElementNode,
   childDepth: number,
 ): IterableIterator<DFSNode> {
-  const names = host.getSlotNames();
+  const names = $getSlotNames(host);
   for (let i = names.length - 1; i >= 0; i--) {
-    const slot = host.getSlot(names[i]);
+    const slot = $getSlot(host, names[i]);
     if (slot !== null) {
       yield* $reverseDfsSubtreeIterator(slot, childDepth);
     }

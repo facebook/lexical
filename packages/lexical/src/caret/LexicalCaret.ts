@@ -10,6 +10,7 @@ import type {LexicalNode, NodeKey} from '../LexicalNode';
 import devInvariant from '@lexical/internal/devInvariant';
 import invariant from '@lexical/internal/invariant';
 
+import {$getSlotHostKey} from '../LexicalSlot';
 import {$getRoot, $isRootOrShadowRoot} from '../LexicalUtils';
 import {$isElementNode, ElementNode} from '../nodes/LexicalElementNode';
 import {$isRootNode} from '../nodes/LexicalRootNode';
@@ -594,7 +595,7 @@ function $filterByMode<T extends ElementNode>(
   // thus getParentOrThrow()) returns null on it. It is a hard upward boundary
   // in every mode — like the root — so caret walks must stop at it instead of
   // trying to rewind past a parentless node.
-  return node.getLatest().__slotHost === null ? node : null;
+  return $getSlotHostKey(node) === null ? node : null;
 }
 
 abstract class AbstractSiblingCaret<

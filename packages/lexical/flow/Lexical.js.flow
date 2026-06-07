@@ -1175,6 +1175,36 @@ declare export function $getSlotContainer(
   name: string,
   editor?: LexicalEditor,
 ): HTMLElement | null;
+export interface SlotHostNode {
+  __slots: null | Map<string, NodeKey>;
+}
+export interface SlotChildNode {
+  __slotHost: null | NodeKey;
+}
+declare export function $isSlotHost(
+  node: LexicalNode,
+): node is LexicalNode & SlotHostNode;
+declare export function $isSlotChild(
+  node: LexicalNode,
+): node is LexicalNode & SlotChildNode;
+declare export function $getSlotHostKey(node: LexicalNode): null | NodeKey;
+declare export function $getSlotHost(
+  node: LexicalNode,
+): ElementNode | DecoratorNode<unknown> | null;
+declare export function $getSlotNames(node: LexicalNode): string[];
+declare export function $getSlot<T extends LexicalNode>(
+  node: LexicalNode,
+  name: string,
+): T | null;
+declare export function $setSlot<T extends LexicalNode & SlotHostNode>(
+  host: T,
+  name: string,
+  node: LexicalNode,
+): T;
+declare export function $removeSlot<T extends LexicalNode & SlotHostNode>(
+  host: T,
+  name: string,
+): T;
 declare export function $getDOMTextNode(
   node: TextNode,
   dom: HTMLElement,

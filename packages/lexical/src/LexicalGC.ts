@@ -11,6 +11,7 @@ import type {EditorState} from './LexicalEditorState';
 import type {LexicalNode, NodeKey, NodeMap} from './LexicalNode';
 
 import {$isElementNode} from '.';
+import {$isSlotChild, $isSlotHost} from './LexicalSlot';
 import {cloneDecorators} from './LexicalUtils';
 
 export function $garbageCollectDetachedDecorators(
@@ -51,7 +52,10 @@ function $garbageCollectDetachedDeepChildNodes(
       const childKey = child.__key;
       // TODO Revise condition below, redundant? LexicalNode already cleans up children when moving Nodes
       if (child.__parent === parentKey) {
-        if ($isElementNode(child) || child.__slots !== null) {
+        if (
+          $isElementNode(child) ||
+          ($isSlotHost(child) && child.__slots !== null)
+        ) {
           $garbageCollectDetachedDeepChildNodes(
             child,
             childKey,
@@ -77,10 +81,19 @@ function $garbageCollectDetachedDeepChildNodes(
   // the slot map, gating on the slot host the mirror of the __parent check.
   // Slots hang off any host (element or decorator), so this runs regardless
   // of the host node type.
-  for (const slotKey of node.__slots !== null ? node.__slots.values() : []) {
+  for (const slotKey of $isSlotHost(node) && node.__slots !== null
+    ? node.__slots.values()
+    : []) {
     const slotNode = nodeMap.get(slotKey);
-    if (slotNode !== undefined && slotNode.__slotHost === parentKey) {
-      if ($isElementNode(slotNode) || slotNode.__slots !== null) {
+    if (
+      slotNode !== undefined &&
+      $isSlotChild(slotNode) &&
+      slotNode.__slotHost === parentKey
+    ) {
+      if (
+        $isElementNode(slotNode) ||
+        ($isSlotHost(slotNode) && slotNode.__slots !== null)
+      ) {
         $garbageCollectDetachedDeepChildNodes(
           slotNode,
           slotKey,
@@ -141,7 +154,7 @@ export function $garbageCollectDetachedNodes(
       // reaches its slots; collect them here to avoid orphaning the slot
       // subtree. Deletion is deferred to the shared queue so the walk can
       // still read the slot nodes.
-      if (node.__slots !== null) {
+      if ($isSlotHost(node) && node.__slots !== null) {
         $garbageCollectDetachedDeepChildNodes(
           node,
           nodeKey,

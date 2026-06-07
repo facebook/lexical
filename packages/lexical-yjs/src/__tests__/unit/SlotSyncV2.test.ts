@@ -12,8 +12,12 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  $getSlot,
+  $getSlotNames,
   $isElementNode,
   $isTextNode,
+  $removeSlot,
+  $setSlot,
   createEditor,
   DecoratorNode,
   type Klass,
@@ -140,7 +144,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
         body.append($createTextNode('Body'));
         $getRoot().clear().append(host);
         host.append(body);
-        host.setSlot('title', title);
+        $setSlot(host, 'title', title);
       },
       {discrete: true},
     );
@@ -203,7 +207,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
         body.append($createTextNode('Body'));
         $getRoot().clear().append(host);
         host.append(body);
-        host.setSlot('title', title);
+        $setSlot(host, 'title', title);
       },
       {discrete: true},
     );
@@ -229,7 +233,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
       // the linked-list child survives the round-trip
       expect(hostR.getTextContent()).toContain('Body');
 
-      const titleR = hostR.getSlot('title');
+      const titleR = $getSlot(hostR, 'title');
       assert(titleR != null);
       assert($isElementNode(titleR));
       expect(titleR.getTextContent()).toBe('Title');
@@ -246,7 +250,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
         const host = $createParagraphNode();
         host.append($createTextNode('Body'));
         $getRoot().clear().append(host);
-        host.setSlot('cover', new BlockDecoratorNode());
+        $setSlot(host, 'cover', new BlockDecoratorNode());
       },
       {discrete: true},
     );
@@ -279,7 +283,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
       assert($isElementNode(hostR));
       expect(hostR.getTextContent()).toContain('Body');
 
-      const coverR = hostR.getSlot('cover');
+      const coverR = $getSlot(hostR, 'cover');
       assert(coverR instanceof BlockDecoratorNode);
       // the decorator survives setSlot's guard on restore (non-inline) and is
       // shadow-rooted: no parent in the children tree
@@ -304,7 +308,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
         title.append($createParagraphNode().append($createTextNode('Title')));
         host.append($createTextNode('Body'));
         $getRoot().clear().append(host);
-        host.setSlot('title', title);
+        $setSlot(host, 'title', title);
       },
       {discrete: true},
     );
@@ -350,7 +354,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
     editor2.read(() => {
       const hostR = $getRoot().getFirstChild();
       assert($isElementNode(hostR));
-      const titleR = hostR.getSlot('title');
+      const titleR = $getSlot(hostR, 'title');
       assert(titleR != null);
       assert($isElementNode(titleR));
       expect(titleR.getTextContent()).toBe('Title!!');
@@ -372,7 +376,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
         title.append($createParagraphNode().append($createTextNode('Title')));
         host.append($createTextNode('Body'));
         $getRoot().clear().append(host);
-        host.setSlot('title', title);
+        $setSlot(host, 'title', title);
       },
       {discrete: true},
     );
@@ -422,9 +426,9 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
     editor2.read(() => {
       const hostR = $getRoot().getFirstChild();
       assert($isElementNode(hostR));
-      expect(hostR.getSlotNames().sort()).toEqual(['subtitle', 'title']);
-      expect(hostR.getSlot('title')?.getTextContent()).toBe('Title');
-      expect(hostR.getSlot('subtitle')?.getTextContent()).toBe('Subtitle');
+      expect($getSlotNames(hostR).sort()).toEqual(['subtitle', 'title']);
+      expect($getSlot(hostR, 'title')?.getTextContent()).toBe('Title');
+      expect($getSlot(hostR, 'subtitle')?.getTextContent()).toBe('Subtitle');
     });
   });
 
@@ -440,7 +444,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
         title.append($createParagraphNode().append($createTextNode('Title')));
         host.append($createTextNode('Body'));
         $getRoot().clear().append(host);
-        host.setSlot('title', title);
+        $setSlot(host, 'title', title);
       },
       {discrete: true},
     );
@@ -481,8 +485,8 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
     editor2.read(() => {
       const hostR = $getRoot().getFirstChild();
       assert($isElementNode(hostR));
-      expect(hostR.getSlotNames()).toEqual([]);
-      expect(hostR.getSlot('title')).toBe(null);
+      expect($getSlotNames(hostR)).toEqual([]);
+      expect($getSlot(hostR, 'title')).toBe(null);
       // the linked-list child is untouched by the slot removal
       expect(hostR.getTextContent()).toContain('Body');
     });
@@ -504,7 +508,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
         body.append($createTextNode('Body'));
         $getRoot().clear().append(host);
         host.append(body);
-        host.setSlot('title', title);
+        $setSlot(host, 'title', title);
       },
       {discrete: true},
     );
@@ -566,7 +570,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
       assert($isElementNode(host));
       const subtitle = $createTestShadowRootNode();
       subtitle.append($createParagraphNode().append($createTextNode('Sub')));
-      host.setSlot('subtitle', subtitle);
+      $setSlot(host, 'subtitle', subtitle);
     });
 
     const slotsY = hostY.getAttribute('slots') as unknown;
@@ -593,7 +597,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
     applyLocalUpdate(binding, editor, () => {
       const host = $getRoot().getFirstChild();
       assert($isElementNode(host));
-      const title = host.getSlot('title');
+      const title = $getSlot(host, 'title');
       assert($isElementNode(title));
       const para = title.getFirstChild();
       assert($isElementNode(para));
@@ -621,7 +625,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
     applyLocalUpdate(binding, editor, () => {
       const host = $getRoot().getFirstChild();
       assert($isElementNode(host));
-      host.removeSlot('title');
+      $removeSlot(host, 'title');
     });
 
     const slotsY = hostY.getAttribute('slots') as unknown;
@@ -672,7 +676,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
           const host = $createParagraphNode();
           host.append($createTextNode('Body'));
           $getRoot().clear().append(host);
-          host.setSlot('caption', $createTextNode('Cap'));
+          $setSlot(host, 'caption', $createTextNode('Cap'));
         },
         {discrete: true},
       ),
@@ -698,7 +702,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
         const title = $createTestShadowRootNode();
         title.append($createParagraphNode().append($createTextNode('Title')));
         $getRoot().clear().append(host);
-        host.setSlot('title', title);
+        $setSlot(host, 'title', title);
       },
       {discrete: true},
     );
@@ -753,7 +757,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
         const title = $createTestShadowRootNode();
         title.append($createParagraphNode().append($createTextNode('Title')));
         $getRoot().clear().append(host);
-        host.setSlot('title', title);
+        $setSlot(host, 'title', title);
       },
       {discrete: true},
     );
@@ -775,7 +779,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
     editor2.read(() => {
       const hostR = $getRoot().getFirstChild();
       assert(hostR instanceof BlockDecoratorNode);
-      const titleR = hostR.getSlot('title');
+      const titleR = $getSlot(hostR, 'title');
       assert(titleR != null);
       assert($isElementNode(titleR));
       expect(titleR.getTextContent()).toBe('Title');
@@ -795,7 +799,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
         const title = $createTestShadowRootNode();
         title.append($createParagraphNode().append($createTextNode('Title')));
         $getRoot().clear().append(host);
-        host.setSlot('title', title);
+        $setSlot(host, 'title', title);
       },
       {discrete: true},
     );
@@ -838,7 +842,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
     editor2.read(() => {
       const hostR = $getRoot().getFirstChild();
       assert(hostR instanceof BlockDecoratorNode);
-      const titleR = hostR.getSlot('title');
+      const titleR = $getSlot(hostR, 'title');
       assert(titleR != null);
       assert($isElementNode(titleR));
       expect(titleR.getTextContent()).toBe('Title!!');
@@ -858,7 +862,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
         const title = $createTestShadowRootNode();
         title.append($createParagraphNode().append($createTextNode('Title')));
         $getRoot().clear().append(host);
-        host.setSlot('title', title);
+        $setSlot(host, 'title', title);
       },
       {discrete: true},
     );
@@ -900,8 +904,8 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
     editor2.read(() => {
       const hostR = $getRoot().getFirstChild();
       assert(hostR instanceof BlockDecoratorNode);
-      expect(hostR.getSlotNames()).toEqual([]);
-      expect(hostR.getSlot('title')).toBe(null);
+      expect($getSlotNames(hostR)).toEqual([]);
+      expect($getSlot(hostR, 'title')).toBe(null);
     });
   });
 
@@ -917,7 +921,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
         const title = $createTestShadowRootNode();
         title.append($createParagraphNode().append($createTextNode('Title')));
         $getRoot().clear().append(host);
-        host.setSlot('title', title);
+        $setSlot(host, 'title', title);
       },
       {discrete: true},
     );
@@ -932,7 +936,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
       assert(host instanceof BlockDecoratorNode);
       const subtitle = $createTestShadowRootNode();
       subtitle.append($createParagraphNode().append($createTextNode('Sub')));
-      host.setSlot('subtitle', subtitle);
+      $setSlot(host, 'subtitle', subtitle);
     });
 
     const slotsY = hostY.getAttribute('slots') as unknown;
@@ -959,7 +963,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
         const title = $createTestShadowRootNode();
         title.append($createParagraphNode().append($createTextNode('Title')));
         $getRoot().clear().append(host);
-        host.setSlot('title', title);
+        $setSlot(host, 'title', title);
       },
       {discrete: true},
     );
@@ -974,7 +978,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
     applyLocalUpdate(binding, editor, () => {
       const host = $getRoot().getFirstChild();
       assert(host instanceof BlockDecoratorNode);
-      const title = host.getSlot('title');
+      const title = $getSlot(host, 'title');
       assert($isElementNode(title));
       const para = title.getFirstChild();
       assert($isElementNode(para));

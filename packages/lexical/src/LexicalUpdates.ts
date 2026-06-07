@@ -51,6 +51,7 @@ import {
   $updateDOMSelection,
   applySelectionTransforms,
 } from './LexicalSelection';
+import {$isSlotHost, $setSlot} from './LexicalSlot';
 import {
   $getCompositionKey,
   $updateDOMBlockCursorElement,
@@ -435,9 +436,14 @@ function $parseSerializedNodeImpl<
   // DecoratorNode host), so re-attach them outside the element branch.
   const slots = serializedNode.slots;
   if (slots) {
+    invariant(
+      $isSlotHost(node),
+      'parseSerializedNode: node %s has slots but is not a valid slot host; only ElementNodes and DecoratorNodes can host slots.',
+      nodeClass.name,
+    );
     for (const name in slots) {
       const slotNode = $parseSerializedNodeImpl(slots[name], registeredNodes);
-      node.setSlot(name, slotNode);
+      $setSlot(node, name, slotNode);
     }
   }
 

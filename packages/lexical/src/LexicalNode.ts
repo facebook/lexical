@@ -47,6 +47,14 @@ import {
   moveSelectionPointToSibling,
 } from './LexicalSelection';
 import {
+  $getSlot,
+  $getSlotHostKey,
+  $getSlotNames,
+  $isSlotHost,
+  $removeSlot,
+  $setSlot,
+} from './LexicalSlot';
+import {
   errorOnReadOnly,
   getActiveEditor,
   getActiveEditorState,
@@ -57,6 +65,7 @@ import {
   $getNodeByKey,
   $isRootOrShadowRoot,
   $maybeMoveChildrenSelectionToParent,
+  $removeFromParent,
   $setCompositionKey,
   $setNodeKey,
   $setSelection,
@@ -64,7 +73,6 @@ import {
   getRegisteredNode,
   getStaticNodeConfig,
   internalMarkNodeAsDirty,
-  removeFromParent,
 } from './LexicalUtils';
 
 const __DEV__ = process.env.NODE_ENV !== 'production';
@@ -456,10 +464,10 @@ export function $removeNode(
   const parent = nodeToRemove.getParent();
   if (parent === null) {
     invariant(
-      nodeToRemove.getLatest().__slotHost === null,
+      $getSlotHostKey(nodeToRemove) === null,
       '$removeNode: node %s is slotted into host %s; use removeSlot on the host instead of remove().',
       key,
-      String(nodeToRemove.getLatest().__slotHost),
+      String($getSlotHostKey(nodeToRemove)),
     );
     return;
   }
@@ -499,10 +507,10 @@ export function $removeNode(
   if ($isRangeSelection(selection) && restoreSelection && !selectionMoved) {
     // Doing this is O(n) so lets avoid it unless we need to do it
     const index = nodeToRemove.getIndexWithinParent();
-    removeFromParent(nodeToRemove);
+    $removeFromParent(nodeToRemove);
     $updateElementSelectionOnCreateDeleteNode(selection, parent, index, -1);
   } else {
-    removeFromParent(nodeToRemove);
+    $removeFromParent(nodeToRemove);
   }
 
   if (
@@ -644,6 +652,33 @@ const NON_ENUMERABLE_PROP_DESC: PropertyDescriptor = {
   writable: true,
 };
 
+/**
+ * A node that can host named slots, implemented by {@link ElementNode} and
+ * {@link DecoratorNode}. The map is allocated lazily (null until the first
+ * {@link $setSlot}) since most nodes have none. Declaring this off the base
+ * {@link LexicalNode} is what lets {@link $setSlot} / {@link $removeSlot}
+ * reject a non-host at compile time.
+ *
+ * @experimental
+ */
+export interface SlotHostNode {
+  /** @internal */
+  __slots: null | Map<string, NodeKey>;
+}
+
+/**
+ * A node that can occupy a named slot, implemented by {@link ElementNode} and
+ * {@link DecoratorNode}. Its up-pointer is `__slotHost` rather than `__parent`
+ * (the two are mutually exclusive), so the slot boundary behaves like a shadow
+ * root.
+ *
+ * @experimental
+ */
+export interface SlotChildNode {
+  /** @internal */
+  __slotHost: null | NodeKey;
+}
+
 export class LexicalNode {
   /** @internal Allow us to look up the type including static props */
   declare ['constructor']: KlassConstructor<typeof LexicalNode>;
@@ -654,10 +689,6 @@ export class LexicalNode {
   __key: string;
   /** @internal */
   __parent: null | NodeKey;
-  /** @internal Up-pointer to the host when this node occupies a named slot. Mutually exclusive with __parent. */
-  __slotHost: null | NodeKey;
-  /** @internal Named slots: slot name -> slotted node key. Allocated lazily on first setSlot since most nodes have none. Traversed before element children. */
-  __slots: null | Map<string, NodeKey>;
   /** @internal */
   __prev: null | NodeKey;
   /** @internal */
@@ -807,18 +838,8 @@ export class LexicalNode {
   afterCloneFrom(prevNode: this): void {
     if (this.__key === prevNode.__key) {
       this.__parent = prevNode.__parent;
-      this.__slotHost = prevNode.__slotHost;
-      invariant(
-        this.__slotHost === null || this.__parent === null,
-        'LexicalNode: node %s is both slotted into host %s and a child of parent %s; __slotHost and __parent are mutually exclusive',
-        this.__key,
-        String(this.__slotHost),
-        String(this.__parent),
-      );
       this.__next = prevNode.__next;
       this.__prev = prevNode.__prev;
-      this.__slots =
-        prevNode.__slots === null ? null : new Map(prevNode.__slots);
       this.__state = prevNode.__state;
     } else if (prevNode.__state) {
       this.__state = prevNode.__state.getWritable(this);
@@ -842,8 +863,6 @@ export class LexicalNode {
   constructor(key?: NodeKey) {
     this.__type = this.constructor.getType();
     this.__parent = null;
-    this.__slotHost = null;
-    this.__slots = null;
     this.__prev = null;
     this.__next = null;
     Object.defineProperty(this, '__state', NON_ENUMERABLE_PROP_DESC);
@@ -896,7 +915,7 @@ export class LexicalNode {
         break;
       }
       // A slotted node has no __parent; follow its slot host up toward root.
-      nodeKey = node.__parent !== null ? node.__parent : node.__slotHost;
+      nodeKey = node.__parent !== null ? node.__parent : $getSlotHostKey(node);
     }
     return false;
   }
@@ -1018,128 +1037,6 @@ export class LexicalNode {
   }
 
   /**
-   * Returns the host element when this node occupies one of its named slots,
-   * or null if this node is not slotted. The up-link is kept separate from
-   * {@link getParent} so the slot boundary behaves like a shadow root.
-   *
-   * @experimental
-   */
-  getSlotHost(): ElementNode | DecoratorNode<unknown> | null {
-    const slotHost = this.getLatest().__slotHost;
-    if (slotHost === null) {
-      return null;
-    }
-    const node = $getNodeByKey(slotHost);
-    invariant(
-      $isElementNode(node) || $isDecoratorNode(node),
-      'slotHost must be an ElementNode or a DecoratorNode',
-    );
-    return node;
-  }
-
-  /**
-   * Returns the node occupying the named slot, or null if the slot is empty.
-   * Slots are a shadow-root-isolated channel kept separate from children; see
-   * {@link LexicalNode.getSlotHost} for the reverse up-link.
-   *
-   * @experimental
-   */
-  getSlot<T extends LexicalNode>(name: string): T | null {
-    const slots = this.getLatest().__slots;
-    if (slots === null) {
-      return null;
-    }
-    const key = slots.get(name);
-    return key === undefined ? null : $getNodeByKey<T>(key);
-  }
-
-  /**
-   * Returns the names of this node's occupied slots, in insertion order.
-   *
-   * @experimental
-   */
-  getSlotNames(): string[] {
-    const slots = this.getLatest().__slots;
-    return slots === null ? [] : Array.from(slots.keys());
-  }
-
-  /**
-   * Places `node` into the named slot, replacing any existing value under that
-   * name. A slot value must be a shadow-root {@link ElementNode} or a
-   * non-inline {@link DecoratorNode}. If `node` is currently a child of another
-   * element it is detached first; it must not already be slotted elsewhere —
-   * a slotted node and a child are mutually exclusive. The replaced value, if
-   * any, is detached.
-   *
-   * @experimental
-   */
-  setSlot(name: string, node: LexicalNode): this {
-    errorOnReadOnly();
-    invariant(
-      $isElementNode(this) || $isDecoratorNode(this),
-      'setSlot: node %s is not a valid slot host; only ElementNodes and DecoratorNodes can host slots.',
-      this.__key,
-    );
-    invariant(
-      name !== '__proto__' && name !== 'constructor' && name !== 'prototype',
-      'setSlot: "%s" is a reserved slot name; __proto__, constructor, and prototype break the plain-object serialization of slots',
-      name,
-    );
-    invariant(
-      ($isElementNode(node) && node.isShadowRoot()) ||
-        ($isDecoratorNode(node) && !node.isInline()),
-      'setSlot: node %s is not a valid slot value; a slot must be a shadow-root ElementNode or a non-inline DecoratorNode.',
-      node.__key,
-    );
-    invariant(
-      !node.is(this) && !node.isParentOf(this),
-      'setSlot: node %s cannot be slotted into %s; a node may not host itself or an ancestor — the slot up-link would form a cycle that loops isAttached/GC.',
-      node.__key,
-      this.__key,
-    );
-    invariant(
-      node.getLatest().__slotHost === null,
-      'setSlot: node %s is already slotted into host %s; remove it from its current slot first.',
-      node.__key,
-      String(node.getLatest().__slotHost),
-    );
-    const writableSelf = this.getWritable();
-    if (writableSelf.__slots === null) {
-      writableSelf.__slots = new Map();
-    }
-    const previousKey = writableSelf.__slots.get(name);
-    if (previousKey !== undefined && previousKey !== node.__key) {
-      $detachSlottedNode(previousKey);
-    }
-    const writableNode = node.getWritable();
-    writableNode.remove();
-    writableNode.__slotHost = writableSelf.__key;
-    writableSelf.__slots.set(name, writableNode.__key);
-    getActiveEditor()._slotsUsed = true;
-    return writableSelf;
-  }
-
-  /**
-   * Removes the named slot, detaching its value (its slot up-link is cleared).
-   * No-op if the slot is empty.
-   *
-   * @experimental
-   */
-  removeSlot(name: string): this {
-    errorOnReadOnly();
-    const writableSelf = this.getWritable();
-    if (writableSelf.__slots === null) {
-      return writableSelf;
-    }
-    const previousKey = writableSelf.__slots.get(name);
-    if (previousKey !== undefined) {
-      $detachSlottedNode(previousKey);
-      writableSelf.__slots.delete(name);
-    }
-    return writableSelf;
-  }
-
-  /**
    * Returns the highest (in the EditorState tree)
    * non-root ancestor of this node, or null if none is found. See {@link lexical!$isRootOrShadowRoot}
    * for more information on which Elements comprise "roots".
@@ -1152,7 +1049,7 @@ export class LexicalNode {
       const parent: ElementNode | null = node.getParent();
       // A slot value's host acts as a shadow root, so the slot boundary is
       // the top of the isolated scope and this node is its top-level element.
-      if ($isRootOrShadowRoot(parent) || node.getSlotHost() !== null) {
+      if ($isRootOrShadowRoot(parent) || $getSlotHostKey(node) !== null) {
         invariant(
           $isElementNode(node) || (node === this && $isDecoratorNode(node)),
           'Children of root nodes must be elements or decorators',
@@ -1518,8 +1415,8 @@ export class LexicalNode {
    */
   getSlotsTextContent(): string {
     let textContent = '';
-    for (const name of this.getSlotNames()) {
-      const slot = this.getSlot(name);
+    for (const name of $getSlotNames(this)) {
+      const slot = $getSlot(this, name);
       if (slot !== null) {
         textContent += slot.getTextContent();
       }
@@ -1536,8 +1433,8 @@ export class LexicalNode {
    */
   getSlotsTextContentSize(): number {
     let textContentSize = 0;
-    for (const name of this.getSlotNames()) {
-      const slot = this.getSlot(name);
+    for (const name of $getSlotNames(this)) {
+      const slot = $getSlot(this, name);
       if (slot !== null) {
         textContentSize += slot.getTextContentSize();
       }
@@ -1755,7 +1652,7 @@ export class LexicalNode {
       replaceWithOldParent !== null
         ? writableReplaceWith.getIndexWithinParent()
         : -1;
-    removeFromParent(writableReplaceWith);
+    $removeFromParent(writableReplaceWith);
     if (replaceWithOldParent !== null && $isRangeSelection(selection)) {
       $updateElementSelectionOnCreateDeleteNode(
         selection,
@@ -1809,11 +1706,22 @@ export class LexicalNode {
     // replacement regardless of includeChildren (removeSlot clears the old
     // __slotHost so setSlot's "already slotted" invariant passes); otherwise
     // they orphan and GC. Slot-less nodes have no names, so this is a no-op.
-    for (const slotName of this.getSlotNames()) {
-      const slot = this.getSlot(slotName);
-      if (slot !== null) {
-        this.removeSlot(slotName);
-        writableReplaceWith.setSlot(slotName, slot);
+    const slotNames = $getSlotNames(this);
+    if (slotNames.length > 0) {
+      if (!$isSlotHost(this) || !$isSlotHost(writableReplaceWith)) {
+        invariant(
+          false,
+          'replace: node %s has slots but %s cannot host them; only ElementNodes and DecoratorNodes can host slots.',
+          this.__key,
+          writableReplaceWith.__key,
+        );
+      }
+      for (const slotName of slotNames) {
+        const slot = $getSlot(this, slotName);
+        if (slot !== null) {
+          $removeSlot(this, slotName);
+          $setSlot(writableReplaceWith, slotName, slot);
+        }
       }
     }
     if ($isRangeSelection(selection)) {
@@ -1888,7 +1796,7 @@ export class LexicalNode {
           focus.key === oldParentKey &&
           focus.offset === oldIndex + 1;
       }
-      removeFromParent(writableNodeToInsert);
+      $removeFromParent(writableNodeToInsert);
       // Adjust element-anchored offsets in oldParent to track its reduced
       // child count. The boolean flags captured above
       // (elementAnchorSelectionOnNode / elementFocusSelectionOnNode) recorded
@@ -1904,7 +1812,7 @@ export class LexicalNode {
         );
       }
     } else {
-      removeFromParent(writableNodeToInsert);
+      $removeFromParent(writableNodeToInsert);
     }
     const nextSibling = this.getNextSibling();
     const writableParent = this.getParentOrThrow().getWritable();
@@ -1964,7 +1872,7 @@ export class LexicalNode {
       insertOldParent !== null
         ? writableNodeToInsert.getIndexWithinParent()
         : -1;
-    removeFromParent(writableNodeToInsert);
+    $removeFromParent(writableNodeToInsert);
     if (
       insertOldParent !== null &&
       restoreSelection &&
@@ -2155,15 +2063,4 @@ export function $isLexicalNode(
   node: null | undefined | LexicalNode,
 ): node is LexicalNode {
   return node instanceof LexicalNode;
-}
-
-// @experimental named-slots. Detaches the node currently slotted under a key,
-// clearing its slot up-link before remove() so it isn't reprocessed as a
-// still-slotted node. Shared by setSlot (replacing an occupant) and removeSlot.
-function $detachSlottedNode(slotKey: NodeKey): void {
-  const previous = $getNodeByKey(slotKey);
-  if (previous !== null) {
-    previous.getWritable().__slotHost = null;
-    previous.remove();
-  }
 }

@@ -27,10 +27,14 @@
 import invariant from '@lexical/internal/invariant';
 import {
   $getSelection,
+  $getSlot,
+  $getSlotNames,
   $getWritableNodeState,
   $isDecoratorNode,
   $isRangeSelection,
   $isTextNode,
+  $removeSlot,
+  $setSlot,
   ElementNode,
   LexicalNode,
   NodeKey,
@@ -238,20 +242,20 @@ export const $createOrUpdateNodeFromYElement = (
         // place by the calls above, so skip setSlot (which would re-fire its
         // invariant). A different (or absent) key means a fresh/replaced node;
         // setSlot detaches the previous occupant (LexicalElementNode setSlot).
-        const existingSlot = node.getSlot(name);
+        const existingSlot = $getSlot(node, name);
         if (
           existingSlot === null ||
           existingSlot.getKey() !== slotNode.getKey()
         ) {
-          node.setSlot(name, slotNode);
+          $setSlot(node, name, slotNode);
         }
       }
     }
     // Drop slots that no longer exist in yjs. getSlotNames returns a snapshot
     // array, so mutating __slots via removeSlot during iteration is safe.
-    for (const name of node.getSlotNames()) {
+    for (const name of $getSlotNames(node)) {
       if (!yNames.has(name)) {
-        node.removeSlot(name);
+        $removeSlot(node, name);
       }
     }
   }
@@ -412,13 +416,13 @@ const $createSlotsYType = (
   node: LexicalNode,
   binding: BindingV2,
 ): YMap<XmlElement> | undefined => {
-  const names = node.getSlotNames();
+  const names = $getSlotNames(node);
   if (names.length === 0) {
     return undefined;
   }
   const slotsY = new YMap<XmlElement>();
   for (const name of names) {
-    const slotNode = node.getSlot(name);
+    const slotNode = $getSlot(node, name);
     if (slotNode == null) {
       continue;
     }
@@ -442,7 +446,7 @@ const $updateSlotsYType = (
   dirtyElements: Set<NodeKey>,
   y: YDoc,
 ): void => {
-  const names = node.getSlotNames();
+  const names = $getSlotNames(node);
   const existing = yDomFragment.getAttribute(SLOTS_ATTR_KEY) as unknown;
 
   if (names.length === 0) {
@@ -470,7 +474,7 @@ const $updateSlotsYType = (
   }
 
   for (const name of names) {
-    const slotNode = node.getSlot(name);
+    const slotNode = $getSlot(node, name);
     if (slotNode == null) {
       continue;
     }

@@ -14,6 +14,7 @@ import {
   $getNodeByKey,
   $getRoot,
   $getSelection,
+  $setSlot,
   ElementNode,
   type SerializedElementNode,
   type TextNode,
@@ -63,7 +64,7 @@ describe('slot clipboard export', () => {
       () => {
         const host = $createParagraphNode();
         $getRoot().append(host);
-        host.setSlot('title', $createExcludedShadowRootNode());
+        $setSlot(host, 'title', $createExcludedShadowRootNode());
       },
       {discrete: true},
     );
@@ -86,7 +87,7 @@ describe('slot clipboard export', () => {
         $getRoot().append($createParagraphNode().append(before));
         const host = $createParagraphNode();
         host.append($createTextNode('CHILD'));
-        host.setSlot('title', $createExcludedShadowRootNode());
+        $setSlot(host, 'title', $createExcludedShadowRootNode());
         $getRoot().append(host);
         beforeKey = before.getKey();
       },

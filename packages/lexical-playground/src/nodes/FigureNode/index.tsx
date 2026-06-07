@@ -8,7 +8,7 @@
 
 import type {LexicalNode} from 'lexical';
 
-import {ElementNode} from 'lexical';
+import {$setSlot, ElementNode} from 'lexical';
 
 import {$createEquationNode} from '../EquationNode';
 
@@ -30,7 +30,7 @@ export class FigureNode extends ElementNode {
 
 export function $createFigureNode(): FigureNode {
   const node = new FigureNode();
-  node.setSlot('media', $createEquationNode('E=mc^2', false));
+  $setSlot(node, 'media', $createEquationNode('E=mc^2', false));
   return node;
 }
 

@@ -19,6 +19,7 @@ import {LinkExtension} from '@lexical/link';
 import {
   $isElementNode,
   $isTextNode,
+  $setSlot,
   configExtension,
   defineExtension,
 } from 'lexical';
@@ -112,7 +113,8 @@ const CardImportRule = defineImportRule({
       if (name === null) {
         continue;
       }
-      card.setSlot(
+      $setSlot(
+        card,
         name,
         $createSlotContainerNode().append(...ctx.$importChildren(wrapper)),
       );

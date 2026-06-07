@@ -26,6 +26,8 @@ import {
   $getNearestNodeFromDOMNode,
   $getRoot,
   $getSelection,
+  $getSlot,
+  $getSlotNames,
   $getTextPointCaret,
   $isElementNode,
   $isRangeSelection,
@@ -532,11 +534,11 @@ function $appendNodesToJSON(
   // slots for a host that is itself emitted, so a host outside the selection
   // is never walked — its slots must not influence (or break) this export.
   if (shouldInclude && !shouldExclude) {
-    const slotNames = target.getSlotNames();
+    const slotNames = $getSlotNames(target);
     if (slotNames.length > 0) {
       const serializedSlots: Record<string, BaseSerializedNode> = {};
       for (const name of slotNames) {
-        const slotNode = target.getSlot(name);
+        const slotNode = $getSlot(target, name);
         invariant(
           slotNode !== null,
           'LexicalNode: Node %s has slot "%s" but it resolved to no node during export.',

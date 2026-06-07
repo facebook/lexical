@@ -7,8 +7,11 @@
  */
 
 import type {KlassConstructor, LexicalEditor} from '../LexicalEditor';
+import type {NodeKey, SlotChildNode, SlotHostNode} from '../LexicalNode';
 import type {ElementNode} from './LexicalElementNode';
 import type {EditorConfig} from 'lexical';
+
+import invariant from '@lexical/internal/invariant';
 
 import {LexicalNode} from '../LexicalNode';
 
@@ -20,9 +23,38 @@ export interface DecoratorNode<T> {
 
 /** @noInheritDoc */
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-export class DecoratorNode<T> extends LexicalNode {
+export class DecoratorNode<T>
+  extends LexicalNode
+  implements SlotHostNode, SlotChildNode
+{
   /** @internal */
   declare ['constructor']: KlassConstructor<typeof DecoratorNode<T>>;
+  /** @internal */
+  __slotHost: null | NodeKey;
+  /** @internal */
+  __slots: null | Map<string, NodeKey>;
+
+  constructor(key?: NodeKey) {
+    super(key);
+    this.__slotHost = null;
+    this.__slots = null;
+  }
+
+  afterCloneFrom(prevNode: this): void {
+    super.afterCloneFrom(prevNode);
+    if (this.__key === prevNode.__key) {
+      this.__slotHost = prevNode.__slotHost;
+      invariant(
+        this.__slotHost === null || this.__parent === null,
+        'DecoratorNode: node %s is both slotted into host %s and a child of parent %s; __slotHost and __parent are mutually exclusive',
+        this.__key,
+        String(this.__slotHost),
+        String(this.__parent),
+      );
+      this.__slots =
+        prevNode.__slots === null ? null : new Map(prevNode.__slots);
+    }
+  }
 
   /**
    * The returned value is added to the LexicalEditor._decorators

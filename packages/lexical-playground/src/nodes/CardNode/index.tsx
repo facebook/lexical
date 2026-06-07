@@ -20,7 +20,10 @@ import {useLexicalSlot} from '@lexical/react/useLexicalSlot';
 import {
   $createParagraphNode,
   $createTextNode,
+  $getSlot,
+  $getSlotNames,
   $isElementNode,
+  $setSlot,
   DecoratorNode,
 } from 'lexical';
 import * as React from 'react';
@@ -72,8 +75,8 @@ export class CardNode extends DecoratorNode<JSX.Element> {
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const element = document.createElement('div');
     element.className = 'lexical-card-node';
-    for (const name of this.getSlotNames()) {
-      const slot = this.getSlot(name);
+    for (const name of $getSlotNames(this)) {
+      const slot = $getSlot(this, name);
       if (!$isElementNode(slot)) {
         continue;
       }
@@ -90,13 +93,15 @@ export class CardNode extends DecoratorNode<JSX.Element> {
 
 export function $createCardNode(): CardNode {
   const node = new CardNode();
-  node.setSlot(
+  $setSlot(
+    node,
     'title',
     $createSlotContainerNode().append(
       $createParagraphNode().append($createTextNode('Title')),
     ),
   );
-  node.setSlot(
+  $setSlot(
+    node,
     'body',
     $createSlotContainerNode().append(
       $createParagraphNode().append($createTextNode('Body')),

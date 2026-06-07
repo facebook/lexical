@@ -15,10 +15,14 @@ import {
   $createChildrenArray,
   $getNodeByKey,
   $getNodeByKeyOrThrow,
+  $getSlot,
+  $getSlotNames,
   $isDecoratorNode,
   $isElementNode,
   $isTextNode,
-  removeFromParent,
+  $removeFromParent,
+  $removeSlot,
+  $setSlot,
 } from 'lexical';
 import {Map as YMap} from 'yjs';
 
@@ -353,7 +357,7 @@ export class CollabElementNode {
           !collabKeys.has(lexicalChildKey)
         ) {
           const nodeToRemove = $getNodeByKeyOrThrow(lexicalChildKey);
-          removeFromParent(nodeToRemove);
+          $removeFromParent(nodeToRemove);
           i--;
           prevIndex++;
           continue;
@@ -407,7 +411,7 @@ export class CollabElementNode {
         if (collabNode !== undefined) {
           collabNode.destroy(binding);
         }
-        removeFromParent(lexicalChildNode);
+        $removeFromParent(lexicalChildNode);
       }
     }
 
@@ -427,20 +431,20 @@ export class CollabElementNode {
     const yNames =
       slotsY instanceof YMap ? new Set(slotsY.keys()) : new Set<string>();
 
-    for (const name of lexicalNode.getSlotNames()) {
+    for (const name of $getSlotNames(lexicalNode)) {
       if (!yNames.has(name)) {
         // Mirror children removal (splice -> destroy): drop the departing slot's
         // collab node so its entry doesn't dangle in binding.collabNodeMap. The
         // slot's shared type is already gone from the Y.Map here, so reach the
         // collab node through the lexical key instead of the shared type.
-        const slotNode = lexicalNode.getSlot(name);
+        const slotNode = $getSlot(lexicalNode, name);
         if (slotNode !== null) {
           const slotCollab = binding.collabNodeMap.get(slotNode.__key);
           if (slotCollab !== undefined) {
             slotCollab.destroy(binding);
           }
         }
-        lexicalNode.removeSlot(name);
+        $removeSlot(lexicalNode, name);
       }
     }
 
@@ -448,7 +452,7 @@ export class CollabElementNode {
       return;
     }
     for (const [name, slotSharedType] of slotsY.entries()) {
-      if (lexicalNode.getSlot(name) !== null) {
+      if ($getSlot(lexicalNode, name) !== null) {
         continue;
       }
       const slotCollab = $getOrInitCollabNodeFromSharedType(
@@ -461,7 +465,7 @@ export class CollabElementNode {
         slotCollab,
         null,
       );
-      lexicalNode.setSlot(name, slotLexicalNode);
+      $setSlot(lexicalNode, name, slotLexicalNode);
     }
   }
 
@@ -558,7 +562,7 @@ export class CollabElementNode {
     dirtyElements: null | Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
     dirtyLeaves: null | Set<NodeKey>,
   ): void {
-    const slotNames = nextLexicalNode.getSlotNames();
+    const slotNames = $getSlotNames(nextLexicalNode);
     const existing = this._xmlText.getAttribute(SLOTS_ATTR_KEY) as unknown;
 
     if (slotNames.length === 0 && !(existing instanceof YMap)) {
@@ -589,7 +593,7 @@ export class CollabElementNode {
 
     const collabNodeMap = binding.collabNodeMap;
     for (const name of slotNames) {
-      const slotNode = nextLexicalNode.getSlot<LexicalNode>(name);
+      const slotNode = $getSlot<LexicalNode>(nextLexicalNode, name);
       if (slotNode === null) {
         continue;
       }

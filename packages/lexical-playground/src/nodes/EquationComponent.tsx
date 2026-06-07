@@ -17,6 +17,7 @@ import {
   $createParagraphNode,
   $getNodeByKey,
   $getSelection,
+  $getSlotHost,
   $isElementNode,
   $isNodeSelection,
   $isTextNode,
@@ -163,7 +164,7 @@ export default function EquationComponent({
       // and not independently deletable (deletion is host-unit only), so a
       // Backspace inside the empty editor is a no-op rather than a remove/
       // replace that would throw on a parentless slot value.
-      if (node.getSlotHost() !== null) {
+      if ($getSlotHost(node) !== null) {
         return;
       }
       if (node.isInline()) {
@@ -218,7 +219,7 @@ export default function EquationComponent({
         if ($isEquationNode(node)) {
           node.setEquation(equationValue);
           if (restoreSelection) {
-            const host = node.getSlotHost();
+            const host = $getSlotHost(node);
             if (host !== null) {
               // Slotted: selectNext would throw (the slot value has no
               // parent). Restore the selection onto the host instead,

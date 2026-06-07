@@ -26,6 +26,7 @@ import {
   $createTextNode,
   $getRoot,
   $isElementNode,
+  $setSlot,
   isHTMLElement,
   ParagraphNode,
   RangeSelection,
@@ -441,7 +442,7 @@ describe('HTML', () => {
           $createParagraphNode().append($createTextNode('SLOTTEXT')),
         );
         $getRoot().append(host);
-        host.setSlot('title', slot);
+        $setSlot(host, 'title', slot);
       },
       {discrete: true},
     );

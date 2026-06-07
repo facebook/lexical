@@ -45,6 +45,7 @@ import {
 } from './LexicalConstants';
 import {EditorState} from './LexicalEditorState';
 import {cloneMap} from './LexicalGenMap';
+import {$isSlotHost} from './LexicalSlot';
 import {
   $createChildrenArray,
   $getDOMSlot,
@@ -520,7 +521,9 @@ function $mountSlotChildren(
 // setSlot), so reads coalesce to this shared empty map. Never mutated.
 const EMPTY_SLOTS: Map<string, NodeKey> = new Map();
 function readSlots(node: LexicalNode): Map<string, NodeKey> {
-  return node.__slots !== null ? node.__slots : EMPTY_SLOTS;
+  return $isSlotHost(node) && node.__slots !== null
+    ? node.__slots
+    : EMPTY_SLOTS;
 }
 
 // @experimental named-slots. A slot value's DOM is mounted directly inside its

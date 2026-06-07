@@ -13,7 +13,15 @@ import type {DecoratorNode, LexicalNode, NodeKey, NodeMap} from 'lexical';
 import type {XmlElement, XmlText} from 'yjs';
 
 import invariant from '@lexical/internal/invariant';
-import {$getNodeByKey, $isDecoratorNode, $isElementNode} from 'lexical';
+import {
+  $getNodeByKey,
+  $getSlot,
+  $getSlotNames,
+  $isDecoratorNode,
+  $isElementNode,
+  $removeSlot,
+  $setSlot,
+} from 'lexical';
 import {Map as YMap} from 'yjs';
 
 import {CollabElementNode} from './CollabElementNode';
@@ -130,16 +138,16 @@ export class CollabDecoratorNode {
     const yNames =
       slotsY instanceof YMap ? new Set(slotsY.keys()) : new Set<string>();
 
-    for (const name of lexicalNode.getSlotNames()) {
+    for (const name of $getSlotNames(lexicalNode)) {
       if (!yNames.has(name)) {
-        const slotNode = lexicalNode.getSlot(name);
+        const slotNode = $getSlot(lexicalNode, name);
         if (slotNode !== null) {
           const slotCollab = binding.collabNodeMap.get(slotNode.__key);
           if (slotCollab !== undefined) {
             slotCollab.destroy(binding);
           }
         }
-        lexicalNode.removeSlot(name);
+        $removeSlot(lexicalNode, name);
       }
     }
 
@@ -147,7 +155,7 @@ export class CollabDecoratorNode {
       return;
     }
     for (const [name, slotSharedType] of slotsY.entries()) {
-      if (lexicalNode.getSlot(name) !== null) {
+      if ($getSlot(lexicalNode, name) !== null) {
         continue;
       }
       const slotCollab = $getOrInitCollabNodeFromSharedType(
@@ -160,7 +168,7 @@ export class CollabDecoratorNode {
         slotCollab,
         null,
       );
-      lexicalNode.setSlot(name, slotLexicalNode);
+      $setSlot(lexicalNode, name, slotLexicalNode);
     }
   }
 
@@ -175,7 +183,7 @@ export class CollabDecoratorNode {
     dirtyElements: null | Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
     dirtyLeaves: null | Set<NodeKey>,
   ): void {
-    const slotNames = nextLexicalNode.getSlotNames();
+    const slotNames = $getSlotNames(nextLexicalNode);
     const existing = this._xmlElem.getAttribute(SLOTS_ATTR_KEY) as unknown;
 
     if (slotNames.length === 0 && !(existing instanceof YMap)) {
@@ -204,7 +212,7 @@ export class CollabDecoratorNode {
 
     const collabNodeMap = binding.collabNodeMap;
     for (const name of slotNames) {
-      const slotNode = nextLexicalNode.getSlot<LexicalNode>(name);
+      const slotNode = $getSlot<LexicalNode>(nextLexicalNode, name);
       if (slotNode === null) {
         continue;
       }

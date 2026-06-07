@@ -15,6 +15,7 @@ import {
   $getAdjacentNode,
   $getNearestNodeFromDOMNode,
   $getSelection,
+  $getSlotHost,
   $isRangeSelection,
   $setSelection,
   CLICK_COMMAND,
@@ -103,7 +104,7 @@ function $resolveFigureChromeTarget(
   for (
     let cursor: LexicalNode | null = node;
     cursor !== null;
-    cursor = cursor.getParent() ?? cursor.getSlotHost()
+    cursor = cursor.getParent() ?? $getSlotHost(cursor)
   ) {
     if ($isFigureNode(cursor)) {
       figure = cursor;

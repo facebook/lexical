@@ -10,6 +10,8 @@ import type {
   DOMExportOutput,
   NodeKey,
   SerializedLexicalNode,
+  SlotChildNode,
+  SlotHostNode,
 } from '../LexicalNode';
 import type {
   BaseSelection,
@@ -41,13 +43,14 @@ import {
   $isRangeSelection,
   moveSelectionPointToSibling,
 } from '../LexicalSelection';
+import {$getSlot, $getSlotNames} from '../LexicalSlot';
 import {errorOnReadOnly, getActiveEditor} from '../LexicalUpdates';
 import {
   $getDOMSlot,
   $getNodeByKey,
   $isRootOrShadowRoot,
+  $removeFromParent,
   isHTMLElement,
-  removeFromParent,
   toggleTextFormatType,
 } from '../LexicalUtils';
 
@@ -82,7 +85,10 @@ export interface ElementNode {
 
 /** @noInheritDoc */
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-export class ElementNode extends LexicalNode {
+export class ElementNode
+  extends LexicalNode
+  implements SlotHostNode, SlotChildNode
+{
   /** @internal */
   declare ['constructor']: KlassConstructor<typeof ElementNode>;
   /** @internal */
@@ -103,6 +109,10 @@ export class ElementNode extends LexicalNode {
   __textFormat: number;
   /** @internal */
   __textStyle: string;
+  /** @internal */
+  __slotHost: null | NodeKey;
+  /** @internal */
+  __slots: null | Map<string, NodeKey>;
 
   constructor(key?: NodeKey) {
     super(key);
@@ -115,6 +125,8 @@ export class ElementNode extends LexicalNode {
     this.__dir = null;
     this.__textFormat = 0;
     this.__textStyle = '';
+    this.__slotHost = null;
+    this.__slots = null;
   }
 
   afterCloneFrom(prevNode: this) {
@@ -123,6 +135,16 @@ export class ElementNode extends LexicalNode {
       this.__first = prevNode.__first;
       this.__last = prevNode.__last;
       this.__size = prevNode.__size;
+      this.__slotHost = prevNode.__slotHost;
+      invariant(
+        this.__slotHost === null || this.__parent === null,
+        'ElementNode: node %s is both slotted into host %s and a child of parent %s; __slotHost and __parent are mutually exclusive',
+        this.__key,
+        String(this.__slotHost),
+        String(this.__parent),
+      );
+      this.__slots =
+        prevNode.__slots === null ? null : new Map(prevNode.__slots);
     }
     this.__indent = prevNode.__indent;
     this.__format = prevNode.__format;
@@ -185,7 +207,7 @@ export class ElementNode extends LexicalNode {
     // A host that holds content only in its slots is not empty: otherwise
     // $removeNode would cascade-prune it once its last child is gone and orphan
     // the slot subtrees.
-    return this.getChildrenSize() === 0 && this.getSlotNames().length === 0;
+    return this.getChildrenSize() === 0 && $getSlotNames(this).length === 0;
   }
   isDirty(): boolean {
     const editor = getActiveEditor();
@@ -205,8 +227,8 @@ export class ElementNode extends LexicalNode {
     // never leak into selection placement. A slot value is always a non-inline
     // element or decorator (setSlot enforces this), so only element slots
     // contribute text nodes.
-    for (const name of this.getSlotNames()) {
-      const slot = this.getSlot(name);
+    for (const name of $getSlotNames(this)) {
+      const slot = $getSlot(this, name);
       if ($isElementNode(slot)) {
         textNodes.push(...slot.getAllTextNodes());
       }
@@ -629,7 +651,7 @@ export class ElementNode extends LexicalNode {
         const nextSibling = nodeToDelete.getNextSibling();
         const nodeKeyToDelete = nodeToDelete.__key;
         const writableNodeToDelete = nodeToDelete.getWritable();
-        removeFromParent(writableNodeToDelete);
+        $removeFromParent(writableNodeToDelete);
         nodesToRemoveKeys.push(nodeKeyToDelete);
         nodeToDelete = nextSibling;
       }
@@ -644,7 +666,7 @@ export class ElementNode extends LexicalNode {
       if (writableNodeToInsert.__parent === writableSelfKey) {
         newSize--;
       }
-      removeFromParent(writableNodeToInsert);
+      $removeFromParent(writableNodeToInsert);
       const nodeKeyToInsert = nodeToInsert.__key;
       if (prevNode === null) {
         writableSelf.__first = nodeKeyToInsert;

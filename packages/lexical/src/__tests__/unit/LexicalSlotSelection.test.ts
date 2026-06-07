@@ -17,9 +17,11 @@ import {
   $getNodeByKey,
   $getRoot,
   $getSelection,
+  $getSlotHost,
   $isRangeSelection,
   $selectAll,
   $setSelection,
+  $setSlot,
   defineExtension,
   getDOMSelection,
   LexicalNode,
@@ -33,10 +35,10 @@ import {$createTestShadowRootNode, TestShadowRootNode} from '../utils';
 // Walk up via getParent() to the innermost slot-root ancestor (a node that
 // reports a slot host), mirroring the production $getPointSlotFrame. Returns
 // the slot root's key, or null when the node is not inside any slot.
-function slotFrameKeyOf(node: LexicalNode): string | null {
+function $slotFrameKeyOf(node: LexicalNode): string | null {
   let current: LexicalNode | null = node;
   while (current !== null) {
-    if (current.getSlotHost() !== null) {
+    if ($getSlotHost(current) !== null) {
       return current.getKey();
     }
     current = current.getParent();
@@ -85,8 +87,8 @@ describe('named-slots: selection containment (slot isolation)', () => {
           body.append(bodyText);
           $getRoot().clear().append(host);
           host.append(body);
-          host.setSlot('title', title);
-          host.setSlot('subtitle', subtitle);
+          $setSlot(host, 'title', title);
+          $setSlot(host, 'subtitle', subtitle);
           keys.host = host.getKey();
           keys.title = title.getKey();
           keys.titleText = titleText.getKey();
@@ -136,10 +138,10 @@ describe('named-slots: selection containment (slot isolation)', () => {
         assert($isRangeSelection(selection));
         // anchor stays where the drag started, inside the title slot
         const anchorNode = selection.anchor.getNode();
-        expect(slotFrameKeyOf(anchorNode)).toBe(keys.title);
+        expect($slotFrameKeyOf(anchorNode)).toBe(keys.title);
         // focus was pulled out of the body and into the anchor's slot frame
         const focusNode = selection.focus.getNode();
-        expect(slotFrameKeyOf(focusNode)).toBe(keys.title);
+        expect($slotFrameKeyOf(focusNode)).toBe(keys.title);
         // it did not stay on the body text it was dragged to
         expect(selection.focus.key).not.toBe(keys.bodyText);
       },
@@ -170,10 +172,10 @@ describe('named-slots: selection containment (slot isolation)', () => {
         assert($isRangeSelection(selection));
         // anchor stays in the body (outside any slot)
         const anchorNode = selection.anchor.getNode();
-        expect(slotFrameKeyOf(anchorNode)).toBe(null);
+        expect($slotFrameKeyOf(anchorNode)).toBe(null);
         // focus was pushed out of the slot; it is no longer inside the slot
         const focusNode = selection.focus.getNode();
-        expect(slotFrameKeyOf(focusNode)).toBe(null);
+        expect($slotFrameKeyOf(focusNode)).toBe(null);
         expect(selection.focus.key).not.toBe(keys.titleText);
       },
       {discrete: true},
@@ -225,9 +227,9 @@ describe('named-slots: selection containment (slot isolation)', () => {
 
         const active = $getSelection();
         assert($isRangeSelection(active));
-        expect(slotFrameKeyOf(active.anchor.getNode())).toBe(keys.title);
+        expect($slotFrameKeyOf(active.anchor.getNode())).toBe(keys.title);
         // focus pulled into the anchor's slot frame, off the body text
-        expect(slotFrameKeyOf(active.focus.getNode())).toBe(keys.title);
+        expect($slotFrameKeyOf(active.focus.getNode())).toBe(keys.title);
         expect(active.focus.key).not.toBe(keys.bodyText);
       },
       {discrete: true},
@@ -247,9 +249,9 @@ describe('named-slots: selection containment (slot isolation)', () => {
 
         const active = $getSelection();
         assert($isRangeSelection(active));
-        expect(slotFrameKeyOf(active.anchor.getNode())).toBe(null);
+        expect($slotFrameKeyOf(active.anchor.getNode())).toBe(null);
         // focus pushed out of the slot
-        expect(slotFrameKeyOf(active.focus.getNode())).toBe(null);
+        expect($slotFrameKeyOf(active.focus.getNode())).toBe(null);
         expect(active.focus.key).not.toBe(keys.titleText);
       },
       {discrete: true},
@@ -300,8 +302,8 @@ describe('named-slots: selection containment (slot isolation)', () => {
       const active = $getSelection();
       assert($isRangeSelection(active));
       // anchor stays in the body, focus was pushed out of the slot at commit
-      expect(slotFrameKeyOf(active.anchor.getNode())).toBe(null);
-      expect(slotFrameKeyOf(active.focus.getNode())).toBe(null);
+      expect($slotFrameKeyOf(active.anchor.getNode())).toBe(null);
+      expect($slotFrameKeyOf(active.focus.getNode())).toBe(null);
       expect(active.focus.key).not.toBe(keys.titleText);
     });
   });
@@ -317,8 +319,8 @@ describe('named-slots: selection containment (slot isolation)', () => {
         const out = $selectAll(selection);
         // scope is the slot's shadow root: both points stay inside the title
         // slot frame, so SELECT_ALL does not overrun into the document
-        expect(slotFrameKeyOf(out.anchor.getNode())).toBe(keys.title);
-        expect(slotFrameKeyOf(out.focus.getNode())).toBe(keys.title);
+        expect($slotFrameKeyOf(out.anchor.getNode())).toBe(keys.title);
+        expect($slotFrameKeyOf(out.focus.getNode())).toBe(keys.title);
       },
       {discrete: true},
     );
@@ -335,8 +337,8 @@ describe('named-slots: selection containment (slot isolation)', () => {
         const out = $selectAll(selection);
         // scope is the document, not a slot: the slot fix must not shrink
         // ordinary SELECT_ALL — neither point lands inside a slot frame
-        expect(slotFrameKeyOf(out.anchor.getNode())).toBe(null);
-        expect(slotFrameKeyOf(out.focus.getNode())).toBe(null);
+        expect($slotFrameKeyOf(out.anchor.getNode())).toBe(null);
+        expect($slotFrameKeyOf(out.focus.getNode())).toBe(null);
       },
       {discrete: true},
     );
@@ -356,9 +358,9 @@ describe('named-slots: selection containment (slot isolation)', () => {
         const active = $getSelection();
         assert($isRangeSelection(active));
         // anchor stays in its slot
-        expect(slotFrameKeyOf(active.anchor.getNode())).toBe(keys.title);
+        expect($slotFrameKeyOf(active.anchor.getNode())).toBe(keys.title);
         // focus is clamped into the anchor's slot, not the subtitle slot it was set to
-        expect(slotFrameKeyOf(active.focus.getNode())).toBe(keys.title);
+        expect($slotFrameKeyOf(active.focus.getNode())).toBe(keys.title);
         expect(active.focus.key).not.toBe(keys.subtitleText);
       },
       {discrete: true},

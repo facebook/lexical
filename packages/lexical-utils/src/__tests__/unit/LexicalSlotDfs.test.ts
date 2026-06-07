@@ -11,7 +11,10 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  $getSlot,
+  $getSlotNames,
   $isElementNode,
+  $setSlot,
   LexicalNode,
   NodeKey,
   ParagraphNode,
@@ -25,27 +28,27 @@ import {describe, expect, test} from 'vitest';
 import {$dfsWithSlots, $reverseDfsWithSlots} from '../..';
 
 // Slots-first preorder traversal: the shape a slot-aware $dfs must produce.
-function* slotAwareDfs(
+function* $slotAwareDfs(
   depth: number,
   node: LexicalNode,
 ): Iterable<{depth: number; key: NodeKey}> {
   yield {depth, key: node.getKey()};
   if ($isElementNode(node)) {
     const childDepth = depth + 1;
-    for (const name of node.getSlotNames()) {
-      const slot = node.getSlot(name);
+    for (const name of $getSlotNames(node)) {
+      const slot = $getSlot(node, name);
       if (slot !== null) {
-        yield* slotAwareDfs(childDepth, slot);
+        yield* $slotAwareDfs(childDepth, slot);
       }
     }
     for (const child of node.getChildren()) {
-      yield* slotAwareDfs(childDepth, child);
+      yield* $slotAwareDfs(childDepth, child);
     }
   }
 }
 
 // Right-to-left mirror: children in reverse, then slots in reverse.
-function* reverseSlotAwareDfs(
+function* $reverseSlotAwareDfs(
   depth: number,
   node: LexicalNode,
 ): Iterable<{depth: number; key: NodeKey}> {
@@ -54,13 +57,13 @@ function* reverseSlotAwareDfs(
     const childDepth = depth + 1;
     const children = node.getChildren();
     for (let i = children.length - 1; i >= 0; i--) {
-      yield* reverseSlotAwareDfs(childDepth, children[i]);
+      yield* $reverseSlotAwareDfs(childDepth, children[i]);
     }
-    const names = node.getSlotNames();
+    const names = $getSlotNames(node);
     for (let i = names.length - 1; i >= 0; i--) {
-      const slot = node.getSlot(names[i]);
+      const slot = $getSlot(node, names[i]);
       if (slot !== null) {
-        yield* reverseSlotAwareDfs(childDepth, slot);
+        yield* $reverseSlotAwareDfs(childDepth, slot);
       }
     }
   }
@@ -81,7 +84,7 @@ describe('named-slots: $dfs traversal', () => {
     body.append(bodyText);
     $getRoot().append(host);
     host.append(body);
-    host.setSlot('title', title);
+    $setSlot(host, 'title', title);
     keys.host = host.getKey();
     keys.title = title.getKey();
     keys.titlePara = titlePara.getKey();
@@ -128,7 +131,7 @@ describe('named-slots: $dfs traversal', () => {
         key: node.getKey(),
       }));
       // host sits at absolute depth 1 (direct child of root)
-      const reference = [...slotAwareDfs(1, host)];
+      const reference = [...$slotAwareDfs(1, host)];
       expect(fromDfs).toEqual(reference);
     });
   });
@@ -153,7 +156,7 @@ describe('named-slots: $dfs traversal', () => {
         {depth: 4, key: keys.titleText},
       ]);
       // matches the reference right-to-left mirror
-      expect(visited).toEqual([...reverseSlotAwareDfs(1, host)]);
+      expect(visited).toEqual([...$reverseSlotAwareDfs(1, host)]);
     });
   });
 

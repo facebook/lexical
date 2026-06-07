@@ -18,9 +18,14 @@ import {
   $getNodeByKey,
   $getRoot,
   $getSelection,
+  $getSlot,
   $getSlotContainer,
+  $getSlotHost,
+  $getSlotNames,
   $isRangeSelection,
+  $removeSlot,
   $setSelection,
+  $setSlot,
   createEditor,
   defineExtension,
   getDOMSelection,
@@ -94,7 +99,7 @@ describe('named-slots: core foundation', () => {
         const host = $createParagraphNode();
         const slot = $slotContainer();
         $getRoot().append(host);
-        host.setSlot('title', slot);
+        $setSlot(host, 'title', slot);
         hostKey = host.getKey();
         slotKey = slot.getKey();
       },
@@ -106,11 +111,11 @@ describe('named-slots: core foundation', () => {
       const slot = $getNodeByKey<TestShadowRootNode>(slotKey)!;
 
       // down-pointer: host -> slot by name
-      expect(host.getSlot('title')!.is(slot)).toBe(true);
-      expect(host.getSlotNames()).toEqual(['title']);
+      expect($getSlot(host, 'title')!.is(slot)).toBe(true);
+      expect($getSlotNames(host)).toEqual(['title']);
 
       // up-pointer is the slot host, not the parent
-      expect(slot.getSlotHost()!.is(host)).toBe(true);
+      expect($getSlotHost(slot)!.is(host)).toBe(true);
       expect(slot.getParent()).toBe(null);
 
       // mutual exclusivity invariant
@@ -137,7 +142,7 @@ describe('named-slots: core foundation', () => {
         para.append(text);
         slot.append(para);
         $getRoot().append(host);
-        host.setSlot('title', slot);
+        $setSlot(host, 'title', slot);
         slotKey = slot.getKey();
         paraKey = para.getKey();
         textKey = text.getKey();
@@ -169,7 +174,7 @@ describe('named-slots: core foundation', () => {
         const host = $createParagraphNode();
         const slot = $slotContainer();
         $getRoot().append(host);
-        host.setSlot('body', slot);
+        $setSlot(host, 'body', slot);
         hostKey = host.getKey();
         slotKey = slot.getKey();
       },
@@ -187,7 +192,7 @@ describe('named-slots: core foundation', () => {
     editor.read(() => {
       const host = $getNodeByKey<ParagraphNode>(hostKey)!;
       expect(host.getStyle()).toBe('color: red');
-      expect(host.getSlot('body')!.getKey()).toBe(slotKey);
+      expect($getSlot(host, 'body')!.getKey()).toBe(slotKey);
       expect($getNodeByKey<TestShadowRootNode>(slotKey)!.isAttached()).toBe(
         true,
       );
@@ -204,13 +209,13 @@ describe('named-slots: core foundation', () => {
         $getRoot().append(host).append(parented);
         expect(parented.getParent()).toBe($getRoot());
 
-        host.setSlot('title', parented);
+        $setSlot(host, 'title', parented);
 
         // setSlot detaches it from the child list, then slots it; a slotted
         // node and a child are mutually exclusive, so its parent is now null.
         expect(parented.getParent()).toBe(null);
         expect($getRoot().getChildrenSize()).toBe(1);
-        expect(host.getSlot('title')!.getKey()).toBe(parented.getKey());
+        expect($getSlot(host, 'title')!.getKey()).toBe(parented.getKey());
       },
       {discrete: true},
     );
@@ -225,8 +230,8 @@ describe('named-slots: core foundation', () => {
         const hostB = $createParagraphNode();
         const slot = $createTestShadowRootNode();
         $getRoot().append(hostA).append(hostB);
-        hostA.setSlot('title', slot);
-        expect(() => hostB.setSlot('title', slot)).toThrow();
+        $setSlot(hostA, 'title', slot);
+        expect(() => $setSlot(hostB, 'title', slot)).toThrow();
       },
       {discrete: true},
     );
@@ -247,9 +252,9 @@ describe('named-slots: core foundation', () => {
         outer.append(inner);
 
         // self-host
-        expect(() => outer.setSlot('x', outer)).toThrow(/cycle/);
+        expect(() => $setSlot(outer, 'x', outer)).toThrow(/cycle/);
         // ancestor-host: inner would slot its own ancestor
-        expect(() => inner.setSlot('x', outer)).toThrow(/cycle/);
+        expect(() => $setSlot(inner, 'x', outer)).toThrow(/cycle/);
       },
       {discrete: true},
     );
@@ -265,7 +270,7 @@ describe('named-slots: core foundation', () => {
         $getRoot().append(host).append(sibling);
 
         const slot = $createTestShadowRootNode();
-        host.setSlot('title', slot);
+        $setSlot(host, 'title', slot);
 
         // every child-insertion path funnels through removeFromParent first
         expect(() => host.append(slot)).toThrow();
@@ -285,7 +290,7 @@ describe('named-slots: core foundation', () => {
         const host = $createParagraphNode();
         $getRoot().append(host);
         const slot = $createTestShadowRootNode();
-        host.setSlot('title', slot);
+        $setSlot(host, 'title', slot);
 
         expect(() => slot.remove()).toThrow();
       },
@@ -303,7 +308,7 @@ describe('named-slots: core foundation', () => {
 
         for (const reserved of ['__proto__', 'constructor', 'prototype']) {
           const slot = $createTestShadowRootNode();
-          expect(() => host.setSlot(reserved, slot)).toThrow();
+          expect(() => $setSlot(host, reserved, slot)).toThrow();
         }
       },
       {discrete: true},
@@ -319,31 +324,31 @@ describe('named-slots: core foundation', () => {
         $getRoot().append(host);
 
         // a bare text node is neither an element nor a decorator
-        expect(() => host.setSlot('title', $createTextNode('x'))).toThrow(
+        expect(() => $setSlot(host, 'title', $createTextNode('x'))).toThrow(
           /not a valid slot value/,
         );
         // an element, but an inline one
         expect(() =>
-          host.setSlot('title', $createTestInlineElementNode()),
+          $setSlot(host, 'title', $createTestInlineElementNode()),
         ).toThrow(/not a valid slot value/);
         // TestDecoratorNode defaults to inline
-        expect(() => host.setSlot('title', $createTestDecoratorNode())).toThrow(
-          /not a valid slot value/,
-        );
+        expect(() =>
+          $setSlot(host, 'title', $createTestDecoratorNode()),
+        ).toThrow(/not a valid slot value/);
         // a block element that is NOT a shadow root is rejected
-        expect(() => host.setSlot('title', $createParagraphNode())).toThrow(
+        expect(() => $setSlot(host, 'title', $createParagraphNode())).toThrow(
           /not a valid slot value/,
         );
 
         // a shadow-root element is accepted
         const shadow = $createTestShadowRootNode();
-        expect(() => host.setSlot('title', shadow)).not.toThrow();
-        expect(host.getSlot('title')!.is(shadow)).toBe(true);
+        expect(() => $setSlot(host, 'title', shadow)).not.toThrow();
+        expect($getSlot(host, 'title')!.is(shadow)).toBe(true);
 
         // a non-inline (block) decorator is accepted
         const blockDecorator = $createTestDecoratorNode().setIsInline(false);
-        expect(() => host.setSlot('body', blockDecorator)).not.toThrow();
-        expect(host.getSlot('body')!.is(blockDecorator)).toBe(true);
+        expect(() => $setSlot(host, 'body', blockDecorator)).not.toThrow();
+        expect($getSlot(host, 'body')!.is(blockDecorator)).toBe(true);
       },
       {discrete: true},
     );
@@ -360,11 +365,11 @@ describe('named-slots: core foundation', () => {
         const oldSlot = $createTestShadowRootNode();
         const newSlot = $createTestShadowRootNode();
         $getRoot().append(host);
-        host.setSlot('title', oldSlot);
+        $setSlot(host, 'title', oldSlot);
         oldSlotKey = oldSlot.getKey();
         newSlotKey = newSlot.getKey();
         // overwrite the same slot name with a different node
-        host.setSlot('title', newSlot);
+        $setSlot(host, 'title', newSlot);
       },
       {discrete: true},
     );
@@ -372,7 +377,7 @@ describe('named-slots: core foundation', () => {
     editor.read(() => {
       const host = $getRoot().getFirstChild<ParagraphNode>()!;
       // the name now resolves to the new occupant
-      expect(host.getSlot('title')!.getKey()).toBe(newSlotKey);
+      expect($getSlot(host, 'title')!.getKey()).toBe(newSlotKey);
       // the replaced node is detached and garbage-collected, not leaked
       expect($getNodeByKey(oldSlotKey)).toBe(null);
       expect($getNodeByKey(newSlotKey)!.isAttached()).toBe(true);
@@ -390,7 +395,7 @@ describe('named-slots: core foundation', () => {
         normalChild.append($createTextNode('Body text'));
         $getRoot().append(host);
         host.append(normalChild);
-        host.setSlot('title', title);
+        $setSlot(host, 'title', title);
       },
       {discrete: true},
     );
@@ -406,10 +411,10 @@ describe('named-slots: core foundation', () => {
       expect(host.getTextContent()).toContain('Body text');
 
       // slot survived in its own keyed channel, with nested content
-      const title = host.getSlot<TestShadowRootNode>('title')!;
+      const title = $getSlot<TestShadowRootNode>(host, 'title')!;
       expect(title).not.toBe(null);
       expect(title.getTextContent()).toBe('Heading');
-      expect(title.getSlotHost()!.is(host)).toBe(true);
+      expect($getSlotHost(title)!.is(host)).toBe(true);
       expect(title.getParent()).toBe(null);
       expect(title.isAttached()).toBe(true);
     });
@@ -454,7 +459,7 @@ describe('named-slots: core foundation', () => {
         body.append($createTextNode('Body'));
         $getRoot().append(host);
         host.append(body);
-        host.setSlot('title', title);
+        $setSlot(host, 'title', title);
       },
       {discrete: true},
     );
@@ -475,7 +480,7 @@ describe('named-slots: core foundation', () => {
         const host = $createParagraphNode();
         const slot = $slotContainer();
         $getRoot().append(host);
-        host.setSlot('title', slot);
+        $setSlot(host, 'title', slot);
         slotKey = slot.getKey();
       },
       {discrete: true},
@@ -513,7 +518,7 @@ describe('named-slots: core foundation', () => {
         para.append(text);
         slot.append(para);
         $getRoot().append(host);
-        host.setSlot('title', slot);
+        $setSlot(host, 'title', slot);
         slotKey = slot.getKey();
         textKey = text.getKey();
       },
@@ -551,7 +556,7 @@ describe('named-slots: core foundation', () => {
         body.append($createTextNode('Body'));
         $getRoot().append(host);
         host.append(body);
-        host.setSlot('title', title);
+        $setSlot(host, 'title', title);
       },
       {discrete: true},
     );
@@ -575,7 +580,7 @@ describe('named-slots: core foundation', () => {
         body.append($createTextNode('Body'));
         $getRoot().append(host);
         host.append(body);
-        host.setSlot('title', title);
+        $setSlot(host, 'title', title);
       },
       {discrete: true},
     );
@@ -597,7 +602,7 @@ describe('named-slots: core foundation', () => {
         const host = $createParagraphNode();
         const title = $slotContainer('Title');
         $getRoot().append(host);
-        host.setSlot('title', title);
+        $setSlot(host, 'title', title);
       },
       {discrete: true},
     );
@@ -627,7 +632,7 @@ describe('named-slots: core foundation', () => {
         body.append($createTextNode('Body'));
         $getRoot().append(host);
         host.append(body);
-        host.setSlot('title', title);
+        $setSlot(host, 'title', title);
         hostKey = host.getKey();
         titleTextKey = titleText.getKey();
       },
@@ -660,7 +665,7 @@ describe('named-slots: core foundation', () => {
         titlePara.append(titleText);
         title.append(titlePara);
         $getRoot().append(host);
-        host.setSlot('title', title);
+        $setSlot(host, 'title', title);
         hostKey = host.getKey();
         slotKey = title.getKey();
         titleTextKey = titleText.getKey();
@@ -699,7 +704,7 @@ describe('named-slots: core foundation', () => {
         para.append(text);
         title.append(para);
         $getRoot().append(host);
-        host.setSlot('title', title);
+        $setSlot(host, 'title', title);
         slotKey = title.getKey();
         textKey = text.getKey();
       },
@@ -727,10 +732,10 @@ describe('named-slots: core foundation', () => {
       () => {
         const root = $getRoot();
         const decorator = $createTestDecoratorNode().setIsInline(false);
-        decorator.setSlot('title', $slotContainer('Deco'));
+        $setSlot(decorator, 'title', $slotContainer('Deco'));
         root.append(decorator);
         const element = $createParagraphNode();
-        element.setSlot('title', $slotContainer('Elem'));
+        $setSlot(element, 'title', $slotContainer('Elem'));
         element.append($createTextNode('body'));
         root.append(element);
         decoratorKey = decorator.getKey();
@@ -772,7 +777,7 @@ describe('named-slots: core foundation', () => {
         body.append($createTextNode('Body'));
         $getRoot().append(host);
         host.append(body);
-        host.setSlot('title', title);
+        $setSlot(host, 'title', title);
       },
       {discrete: true},
     );
@@ -796,7 +801,7 @@ describe('named-slots: core foundation', () => {
         const host = $createParagraphNode();
         const title = $slotContainer('Title');
         $getRoot().append(host);
-        host.setSlot('title', title);
+        $setSlot(host, 'title', title);
         hostKey = host.getKey();
       },
       {discrete: true},
@@ -825,7 +830,7 @@ describe('named-slots: core foundation', () => {
     editor.update(
       () => {
         const slotHost = $createParagraphNode();
-        slotHost.setSlot('title', $slotContainer('Title'));
+        $setSlot(slotHost, 'title', $slotContainer('Title'));
         const emptyHost = $createParagraphNode();
         $getRoot().append(slotHost);
         $getRoot().append(emptyHost);
@@ -860,7 +865,7 @@ describe('named-slots: core foundation', () => {
         body.append(bodyText);
         $getRoot().append(host);
         host.append(body);
-        host.setSlot('title', title);
+        $setSlot(host, 'title', title);
         bodyTextKey = bodyText.getKey();
       },
       {discrete: true},
@@ -892,7 +897,7 @@ describe('named-slots: core foundation', () => {
         body.append($createTextNode('Body'));
         $getRoot().append(host);
         host.append(body);
-        host.setSlot('title', title);
+        $setSlot(host, 'title', title);
         hostKey = host.getKey();
         titleTextKey = titleText.getKey();
       },
@@ -929,7 +934,7 @@ describe('named-slots: core foundation', () => {
         const host = $createParagraphNode();
         const oldTitle = $slotContainer('Old');
         $getRoot().append(host);
-        host.setSlot('title', oldTitle);
+        $setSlot(host, 'title', oldTitle);
         hostKey = host.getKey();
       },
       {discrete: true},
@@ -939,7 +944,7 @@ describe('named-slots: core foundation', () => {
       () => {
         const host = $getNodeByKey<ParagraphNode>(hostKey)!;
         const newTitle = $slotContainer('New');
-        host.setSlot('title', newTitle);
+        $setSlot(host, 'title', newTitle);
       },
       {discrete: true},
     );
@@ -963,8 +968,8 @@ describe('named-slots: core foundation', () => {
       () => {
         const host = $createParagraphNode();
         $getRoot().append(host);
-        host.setSlot('a', $slotContainer('A'));
-        host.setSlot('b', $slotContainer('B'));
+        $setSlot(host, 'a', $slotContainer('A'));
+        $setSlot(host, 'b', $slotContainer('B'));
         hostKey = host.getKey();
       },
       {discrete: true},
@@ -974,15 +979,15 @@ describe('named-slots: core foundation', () => {
       () => {
         const host = $getNodeByKey<ParagraphNode>(hostKey)!;
         // Drop 'a' and re-add it: in the Map it now trails 'b'.
-        host.removeSlot('a');
-        host.setSlot('a', $slotContainer('A2'));
+        $removeSlot(host, 'a');
+        $setSlot(host, 'a', $slotContainer('A2'));
       },
       {discrete: true},
     );
 
     let modelOrder: string[] = [];
     editor.read(() => {
-      modelOrder = $getNodeByKey<ParagraphNode>(hostKey)!.getSlotNames();
+      modelOrder = $getSlotNames($getNodeByKey<ParagraphNode>(hostKey)!);
     });
     expect(modelOrder).toEqual(['b', 'a']);
 
@@ -1019,7 +1024,7 @@ describe('named-slots: core foundation', () => {
           host.append(child);
           childTextKeys.push(childText.getKey());
         }
-        host.setSlot('title', title);
+        $setSlot(host, 'title', title);
         hostKey = host.getKey();
         titleTextKey = titleText.getKey();
       },
@@ -1063,7 +1068,7 @@ describe('named-slots: core foundation', () => {
           host.append(child);
           childTextKeys.push(childText.getKey());
         }
-        host.setSlot('title', title);
+        $setSlot(host, 'title', title);
         hostKey = host.getKey();
       },
       {discrete: true},
@@ -1096,7 +1101,7 @@ describe('named-slots: core foundation', () => {
         body.append($createTextNode('Body'));
         $getRoot().append(host);
         host.append(body);
-        host.setSlot('title', title);
+        $setSlot(host, 'title', title);
         hostKey = host.getKey();
       },
       {discrete: true},
@@ -1131,7 +1136,7 @@ describe('named-slots: core foundation', () => {
         const host = $createParagraphNode();
         const child = $createTextNode('A');
         host.append(child);
-        host.setSlot('title', $slotContainer('TT'));
+        $setSlot(host, 'title', $slotContainer('TT'));
         $getRoot().append(host);
         childKey = child.getKey();
         hostKey = host.getKey();
@@ -1148,7 +1153,7 @@ describe('named-slots: core foundation', () => {
 
     editor.read(() => {
       const host = $getNodeByKey<ParagraphNode>(hostKey)!;
-      expect(host.getSlotNames()).toEqual(['title']);
+      expect($getSlotNames(host)).toEqual(['title']);
       expect(host.getTextContent()).toBe('TT');
     });
 
@@ -1170,7 +1175,7 @@ describe('named-slots: core foundation', () => {
         const slot = $slotContainer('SLOTTEXT');
         const after = $createParagraphNode().append($createTextNode('AFTER'));
         $getRoot().append(before, host, after);
-        host.setSlot('title', slot);
+        $setSlot(host, 'title', slot);
       },
       {discrete: true},
     );
@@ -1197,10 +1202,10 @@ describe('named-slots: core foundation', () => {
         const host = $createParagraphNode();
         const slot = $slotContainer('SLOTTEXT');
         $getRoot().append(host);
-        host.setSlot('title', slot);
+        $setSlot(host, 'title', slot);
         const newHost = $createParagraphNode();
         host.replace(newHost, true);
-        const got = newHost.getSlot<TestShadowRootNode>('title');
+        const got = $getSlot<TestShadowRootNode>(newHost, 'title');
         survived = got !== null && got.getTextContent() === 'SLOTTEXT';
       },
       {discrete: true},
@@ -1221,10 +1226,10 @@ describe('named-slots: core foundation', () => {
         const host = $createTestDecoratorNode().setIsInline(false);
         const slot = $slotContainer('SLOTTEXT');
         $getRoot().append(host);
-        host.setSlot('media', slot);
+        $setSlot(host, 'media', slot);
         const newHost = $createTestDecoratorNode().setIsInline(false);
         host.replace(newHost);
-        const got = newHost.getSlot<TestShadowRootNode>('media');
+        const got = $getSlot<TestShadowRootNode>(newHost, 'media');
         survived = got !== null && got.getTextContent() === 'SLOTTEXT';
         oldHostAttached = host.isAttached();
       },
@@ -1248,7 +1253,7 @@ describe('named-slots: core foundation', () => {
         const host = $createParagraphNode();
         const slot = $slotContainer('SLOTTEXT');
         $getRoot().append(host);
-        host.setSlot('title', slot);
+        $setSlot(host, 'title', slot);
         hostKey = host.getKey();
         slotKey = slot.getKey();
         innerKey = slot.getFirstChildOrThrow().getKey();
@@ -1276,7 +1281,7 @@ describe('named-slots: core foundation', () => {
         const host = $createTestDecoratorNode().setIsInline(false);
         const slot = $slotContainer('SLOTTEXT');
         $getRoot().append(host);
-        host.setSlot('media', slot);
+        $setSlot(host, 'media', slot);
         hostKey = host.getKey();
         slotKey = slot.getKey();
       },
@@ -1293,19 +1298,15 @@ describe('named-slots: core foundation', () => {
     expect(editor.getElementByKey(slotKey)).toBe(null);
   });
 
-  test('setSlot throws when the host is neither an element nor a decorator', () => {
-    using editor = createSlotEditor();
-    editor.update(
-      () => {
-        const text = $createTextNode('host?');
-        $getRoot().append($createParagraphNode().append(text));
-        const slot = $slotContainer('SLOTTEXT');
-        expect(() => text.setSlot('title', slot)).toThrow(
-          /not a valid slot host/,
-        );
-      },
-      {discrete: true},
-    );
+  test('setSlot rejects a non-host at the type level', () => {
+    // A TextNode is neither an element nor a decorator, so it does not satisfy
+    // SlotHostNode. This call is never executed; it pins the compile-time
+    // rejection that replaced the former runtime host-validity invariant.
+    const $rejectNonHost = (text: TextNode, slot: TestShadowRootNode): void => {
+      // @ts-expect-error - text is not a valid slot host
+      $setSlot(text, 'title', slot);
+    };
+    expect($rejectNonHost).toBeInstanceOf(Function);
   });
 
   test('NodeSelection.insertNodes leaves a slotted node intact', () => {
@@ -1316,7 +1317,7 @@ describe('named-slots: core foundation', () => {
         const host = $createParagraphNode();
         const slot = $slotContainer('SLOTTEXT');
         $getRoot().append(host);
-        host.setSlot('title', slot);
+        $setSlot(host, 'title', slot);
         slotKey = slot.getKey();
       },
       {discrete: true},
@@ -1339,7 +1340,7 @@ describe('named-slots: core foundation', () => {
     let survived = false;
     editor.read(() => {
       const host = $getRoot().getFirstChild() as ParagraphNode;
-      const slot = host.getSlot<TestShadowRootNode>('title');
+      const slot = $getSlot<TestShadowRootNode>(host, 'title');
       survived = slot !== null && slot.getTextContent() === 'SLOTTEXT';
     });
     expect(survived).toBe(true);
@@ -1353,7 +1354,7 @@ describe('named-slots: core foundation', () => {
         const host = $createParagraphNode();
         const slot = $slotContainer('SLOTTEXT');
         $getRoot().append(host);
-        host.setSlot('title', slot);
+        $setSlot(host, 'title', slot);
         slotKey = slot.getKey();
       },
       {discrete: true},
@@ -1376,7 +1377,7 @@ describe('named-slots: core foundation', () => {
     let survived = false;
     editor.read(() => {
       const host = $getRoot().getFirstChild() as ParagraphNode;
-      const slot = host.getSlot<TestShadowRootNode>('title');
+      const slot = $getSlot<TestShadowRootNode>(host, 'title');
       survived = slot !== null && slot.getTextContent() === 'SLOTTEXT';
     });
     expect(survived).toBe(true);
@@ -1394,7 +1395,7 @@ describe('named-slots: core foundation', () => {
         para.append(text);
         slot.append(para);
         $getRoot().append(host);
-        host.setSlot('title', slot);
+        $setSlot(host, 'title', slot);
         textKey = text.getKey();
       },
       {discrete: true},
@@ -1420,7 +1421,7 @@ describe('named-slots: core foundation', () => {
     let remaining = '';
     editor.read(() => {
       const host = $getRoot().getFirstChild() as ParagraphNode;
-      remaining = host.getSlot<TestShadowRootNode>('title')!.getTextContent();
+      remaining = $getSlot<TestShadowRootNode>(host, 'title')!.getTextContent();
     });
     expect(remaining).toBe('TEXT');
   });
@@ -1435,7 +1436,7 @@ describe('named-slots: core foundation', () => {
           $createParagraphNode().append($createTextNode('AAA')),
         );
         const host = $createParagraphNode();
-        host.setSlot('title', $slotContainer('TITLE'));
+        $setSlot(host, 'title', $slotContainer('TITLE'));
         const child = $createTextNode('BBB');
         host.append(child);
         $getRoot().append(host);
@@ -1459,10 +1460,10 @@ describe('named-slots: core foundation', () => {
       // is never merged away, since the merge would discard its slots.
       const host = $getNodeByKey<ParagraphNode>(hostKey)!;
       expect($getRoot().getChildrenSize()).toBe(2);
-      expect(host.getSlotNames()).toEqual(['title']);
-      expect(host.getSlot<TestShadowRootNode>('title')!.getTextContent()).toBe(
-        'TITLE',
-      );
+      expect($getSlotNames(host)).toEqual(['title']);
+      expect(
+        $getSlot<TestShadowRootNode>(host, 'title')!.getTextContent(),
+      ).toBe('TITLE');
       expect(host.getTextContent()).toBe('TITLEBBB');
       // The caret stays where it was rather than jumping into the prior block.
       const sel = $getSelection();
@@ -1487,7 +1488,7 @@ describe('named-slots: core foundation', () => {
     editor.update(
       () => {
         const host = $getNodeByKey<ParagraphNode>(hostKey)!;
-        host.setSlot('title', $slotContainer('TITLE'));
+        $setSlot(host, 'title', $slotContainer('TITLE'));
       },
       {discrete: true},
     );
@@ -1507,8 +1508,8 @@ describe('named-slots: core foundation', () => {
       () => {
         const host = $createParagraphNode();
         $getRoot().append(host);
-        host.setSlot('title', $slotContainer('TITLE'));
-        slotKey = host.getSlot('title')!.getKey();
+        $setSlot(host, 'title', $slotContainer('TITLE'));
+        slotKey = $getSlot(host, 'title')!.getKey();
       },
       {discrete: true},
     );
@@ -1537,7 +1538,7 @@ describe('named-slots: core foundation', () => {
         const childB = $createParagraphNode().append($createTextNode('B'));
         $getRoot().append(host);
         host.append(childA, childB);
-        host.setSlot('title', $slotContainer('Title'));
+        $setSlot(host, 'title', $slotContainer('Title'));
         hostKey = host.getKey();
         childAKey = childA.getKey();
       },
@@ -1579,7 +1580,7 @@ describe('named-slots: core foundation', () => {
       () => {
         const host = $createParagraphNode();
         $getRoot().append(host);
-        host.setSlot('title', $slotContainer('Title'));
+        $setSlot(host, 'title', $slotContainer('Title'));
         hostKey = host.getKey();
       },
       {discrete: true},
@@ -1633,7 +1634,7 @@ describe('named-slots: slot name with selector metacharacters', () => {
         body.append($createTextNode('Body'));
         $getRoot().append(host);
         host.append(body);
-        host.setSlot(oddName, $slotContainer('Title'));
+        $setSlot(host, oddName, $slotContainer('Title'));
         hostKey = host.getKey();
       },
       {discrete: true},
@@ -1643,7 +1644,8 @@ describe('named-slots: slot name with selector metacharacters', () => {
     // replace (same name, new node): hits the container lookup on reconcile
     editor.update(
       () => {
-        $getNodeByKey<ParagraphNode>(hostKey)!.setSlot(
+        $setSlot(
+          $getNodeByKey<ParagraphNode>(hostKey)!,
           oddName,
           $slotContainer('Header'),
         );
@@ -1662,14 +1664,14 @@ describe('named-slots: slot name with selector metacharacters', () => {
     // remove: hits the stale-container lookup on reconcile
     editor.update(
       () => {
-        $getNodeByKey<ParagraphNode>(hostKey)!.removeSlot(oddName);
+        $removeSlot($getNodeByKey<ParagraphNode>(hostKey)!, oddName);
       },
       {discrete: true},
     );
 
     editor.read(() => {
       const host = $getNodeByKey<ParagraphNode>(hostKey)!;
-      expect(host.getSlotNames()).toEqual([]);
+      expect($getSlotNames(host)).toEqual([]);
       expect(host.getTextContent()).toBe('Body');
     });
 
@@ -1726,7 +1728,7 @@ describe('named-slots: selection resolution onto a slotted decorator', () => {
         // host whose `media` slot holds a block decorator (Figure shape)
         const host = $createParagraphNode();
         const slotted = $createTestDecoratorNode().setIsInline(false);
-        host.setSlot('media', slotted);
+        $setSlot(host, 'media', slotted);
         // baseline: a normal block decorator as an ordinary child
         const sibling = $createParagraphNode();
         const child = $createTestDecoratorNode().setIsInline(false);
